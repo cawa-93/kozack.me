@@ -97,7 +97,7 @@ module.exports = function() {
 	return {
 		name: 'Alex Kozack',
 		jobTitle: 'Full-stack web developer',
-		site: 'https://localhost:8080',
+		site: process.env.URL || 'https://localhost:8080',
 		avatar: {
 			src: '/images/avatar-origin.png',
 		},
