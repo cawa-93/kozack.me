@@ -12,17 +12,18 @@
 			"name": "{{ config.name }}",
 			"url": "{{ config.site }}",
 			"logo": "{{ config.site }}{{ config.avatar.src }}",
-			"sameAs": {{ config.contactUrls | dump }},
+			"sameAs": {{ config.contactUrls | dump | safe }},
             "employee": {
                 "@context": "https://schema.org",
                 "@type": "Person",
                 "name": "{{ config.name }}",
                 "url": "{{ config.site }}",
                 "image": "{{ config.site }}{{ config.avatar.src }}",
-                "sameAs": {{ config.contactUrls | dump }},
+                "sameAs": {{ config.contactUrls | dump | safe }},
                 "jobTitle": "{{ config.jobTitle }}"
 			}
 		}
+
 
     </script>
 </head>
@@ -59,9 +60,9 @@
             <li class="{{ item.type }}">
                 <a href="{{ item.url }}" title="{{ item.label }}">
                     <picture>
-{#                        {% for source in link.image.sources %}#}
-{#                            <source type="{{ source.type }}" srcset="{{ source.srcset }}">#}
-{#                        {% endfor %}#}
+                        {# {% for source in link.image.sources %} #}
+                        {# <source type="{{ source.type }}" srcset="{{ source.srcset }}"> #}
+                        {# {% endfor %} #}
                         <img aria-hidden="true" alt="{{ item.label }}" srcset="{{ item.picture.srcset }}">
                     </picture>
 
