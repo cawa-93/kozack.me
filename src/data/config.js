@@ -103,5 +103,14 @@ module.exports = function() {
 		},
 		contacts,
 		contactUrls,
+		skills: [
+			'JavaScript',
+			'TypeScript',
+			'VueJs',
+			'NodeJs',
+			'PHP',
+			'WordPress',
+			'Git'
+		]
 	};
 };

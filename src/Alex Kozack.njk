@@ -1,0 +1,17 @@
+---
+permalink: Alex Kozack.vcf
+---
+BEGIN:VCARD
+VERSION:3.0
+N;CHARSET=utf-8:Kozack;Alex;;;
+FN;CHARSET=utf-8:{{ config.name }}
+ORG;CHARSET=utf-8:Самозайнятий
+TITLE:{{ config.jobTitle }}
+EMAIL;PREF;WORK:k@gmail.com
+{% for url in config.contactUrls %}
+URL:{{ url }}
+{% endfor %}
+KIND:individual
+GENDER:M
+PHOTO;TYPE=JPEG;VALUE=URI:{{ config.avatar.src }}/images/avatar@1.jpg
+END:VCARD
