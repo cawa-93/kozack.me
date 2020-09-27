@@ -1,82 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content= "index, follow">
-
-    <link rel="canonical" href="https://kozack.netlify.app/" />
-
-    <!-- Primary Meta Tags -->
-    <title>{{ config.name }} — {{ config.jobTitle }} — Personal site</title>
-    <meta name="title" content="{{ config.name }} — {{ config.jobTitle }}">
-    <meta name="description" content="Personal site">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="profile">
-    <meta property="profile:first_name" content="{{ config.name.first }}">
-    <meta property="profile:last_name" content="{{ config.name.last }}">
-    <meta property="profile:username" content="{{ config.name }}">
-    <meta property="profile:gender" content="male">
-    <meta property="og:title" content="{{ config.name }} — {{ config.jobTitle }}">
-    <meta property="og:url" content="{{ config.site }}">
-    <meta property="og:description" content="Personal site">
-    <meta property="og:image" content="{{ config.site }}/images/avatar-origin.png">
-    <meta property="og:locale" content="en_US">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ config.site }}">
-    <meta property="twitter:title" content="{{ config.name }} — {{ config.jobTitle }}">
-    <meta property="twitter:description" content="Personal site">
-    <meta property="twitter:image" content="{{ config.site }}/images/avatar-origin.png">
-
-
-    <link rel="shortcut icon" href="/images/avatar@1.jpg" type="image/jpeg">
-    <link rel="apple-touch-icon" href="/images/avatar@1.jpg" type="image/jpeg">
-    <link rel="stylesheet" href="/styles/styles.css">
-    <script type="application/ld+json">
-		{
-			"@context": "https://schema.org",
-			"@type": "Organization",
-			"name": "{{ config.name }}",
-			"url": "{{ config.site }}",
-			"logo": "{{ config.site }}{{ config.avatar.src }}",
-			"sameAs": {{ config.links | dump | safe }},
-			"email":"{{ config.email }}",
-            "employee": {
-                "@context": "https://schema.org",
-                "email":"{{ config.email }}",
-                "@type": "Person",
-                "name": "{{ config.name }}",
-                "url": "{{ config.site }}",
-                "image": "{{ config.site }}{{ config.avatar.src }}",
-                "sameAs": {{ config.links | dump | safe }},
-                "jobTitle": "{{ config.jobTitle }}"
-			}
-		}
-
-
-
-    </script>
-</head>
-<body>
+---
+layout: page.njk
+---
 <div class="wrapper">
-
     <main>
-
         <section class="front card" onclick="this.parentElement.classList.add('flip')">
-            {# <picture class="profile-picture" aria-hidden="true"> #}
-            {# <source srcset="/images/avatar@1.avif 1x, /images/avatar@2.avif 2x, /images/avatar@3.avif 3x" #}
-            {# type="image/avif"> #}
-            {# <source srcset="/images/avatar@1.webp 1x, /images/avatar@2.webp 2x, /images/avatar@3.webp 3x" #}
-            {# type="image/webp"> #}
-            {# <img alt="Profile picture" #}
-            {# srcset="/images/avatar@1.jpg 1x, /images/avatar@2.jpg 2x, /images/avatar@3.jpg 3x" #}
-            {# width="225" #}
-            {# height="231"> #}
-            {# </picture> #}
-
             <h1>{{ config.name }}<br><span class="line-dash">—</span><br><small>{{ config.jobTitle }}</small></h1>
         </section>
         <div class="back card">
@@ -140,6 +67,3 @@
         </div>
     </main>
 </div>
-
-</body>
-</html>

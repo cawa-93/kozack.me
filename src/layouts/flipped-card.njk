@@ -1,0 +1,13 @@
+---
+layout: page.njk
+---
+<div class="wrapper flipe">
+    <main>
+        <section class="front card" onclick="this.parentElement.classList.add('flip')">
+            {% block front %}
+            default front
+            {% endblock  %}
+        </section>
+        <div class="back card">{% block back %}{% endblock  %}</div>
+    </main>
+</div>

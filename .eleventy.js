@@ -12,13 +12,13 @@ module.exports = function(config) {
 		})
 	})
 
+	config.addPairedShortcode('renderJS', (content, config) => {
+		return eval(content)({config})
+	});
+
+
 	return {
-		// templateFormats: [
-		// 	// "md",
-		// 	// "njk",
-		// 	"html",
-		// 	// "liquid"
-		// ],
+		templateFormats: ['html','ejs','njk','11ty.js'],
 
 		// If your site lives in a different subdirectory, change this.
 		// Leading or trailing slashes are all normalized away, so don’t worry about those.
@@ -31,7 +31,7 @@ module.exports = function(config) {
 		pathPrefix: "/",
 
 		// markdownTemplateEngine: "liquid",
-		// htmlTemplateEngine: "njk",
+		htmlTemplateEngine: "njk",
 		// dataTemplateEngine: "njk",
 
 		// These are all optional, defaults are shown:
@@ -39,6 +39,7 @@ module.exports = function(config) {
 			input: 'src',
 			output: 'dist',
 			includes: 'includes',
+			layouts: 'layouts',
 			data: 'data'
 		},
 	};

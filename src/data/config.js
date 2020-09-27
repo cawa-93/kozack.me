@@ -60,6 +60,10 @@ const name = {
 
 	toString() {
 		return this.first + ' ' + this.last
+	},
+
+	toJSON() {
+		return this.first + ' ' + this.last
 	}
 }
 
