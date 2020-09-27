@@ -70,7 +70,7 @@ const name = {
 module.exports = function() {
 	return {
 		name,
-		jobTitle: 'Full-stack web developer',
+		jobTitle: 'Full stack web developer',
 		site: process.env.URL || 'https://localhost:8080',
 		email: 'x73blk4om@relay.firefox.com',
 		avatar: {
