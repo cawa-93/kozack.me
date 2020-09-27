@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body, html {
     height: 100%;
     width: 100%;
@@ -16,26 +20,11 @@ body {
 }
 
 main {
-    /*height: 50vh;*/
-    /*width: 90vw;*/
     position: relative;
-    /*--avatar-size: 10rem;*/
-    /* width: 100%; */
-    /* min-height: 30rem; */
-    /* margin-top: calc(var(--avatar-size) / 2); */
-    /*box-shadow: 0 8px 60px -10px rgba(13, 28, 39, 0.6);*/
     background: #fff;
-    /*border-radius: 1rem;*/
-    /*max-width: 45rem;*/
-    /*position: relative;*/
-    /* text-align: center; */
-    /*display: grid;*/
-    /*grid-template-columns: 1fr 1fr;*/
-    /*gap: 1rem;*/
-    /*padding: 2rem 2rem 2rem 7rem;*/
-    /*box-sizing: border-box;*/
     perspective: 1000px;
-
+    width: 100%;
+    max-width: 95vw;
 }
 
 main:focus-within .front, main:hover .front, main.flip .front {
@@ -58,15 +47,70 @@ main:focus-within .back, main:hover .back, main.flip .back {
 .front, .back {
     width: 100%;
     height: 100%;
-    outline: 1px solid;
     /*box-sizing: border-box;*/
-    transition: all 0.3s ease-in;
+    transition: transform 0.3s ease-in;
+    transform-style: preserve-3d;
     /*color: white;*/
-    background-color: #fff;
     /*padding: 10px;*/
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
 }
+
+.card {
+    padding: 2rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .2), 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12);
+    border-radius: 4px;
+}
+
+.add-contact-container a {
+    display: flex;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+    padding: 1rem;
+    border: 1px solid #ddd;
+}
+
+.add-contact-container a:focus, .add-contact-container a:hover {
+    background-color: #ddd;
+}
+
+.add-contact-container a svg {
+    width: 100%;
+    height: 100%;
+}
+
+
+ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul li a {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #ddd;
+    color: #010101;
+    margin-top: -1px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 120%;
+}
+
+ul li a:focus, ul li a:hover {
+    background-color: #ddd;
+}
+
+ul li a svg {
+    margin-right: 1rem;
+}
+
+
 
 /*h1 {*/
 /*    grid-column-end: 3;*/
