@@ -10,13 +10,17 @@ body, html {
 }
 
 body {
-    display: flex;
     margin: 0;
     padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    background: #fefefe;
+}
+
+.wrapper {
+    display: flex;
     justify-content: center;
     align-items: center;
-    font-family: Arial, serif;
-    background: #fefefe;
+    min-height: 100%;
 }
 
 main {
@@ -24,7 +28,7 @@ main {
     background: #fff;
     perspective: 1000px;
     width: 100%;
-    max-width: 95vw;
+    max-width: 20rem;
 }
 
 main:focus-within .front, main:hover .front, main.flip .front {
@@ -38,10 +42,27 @@ main:focus-within .back, main:hover .back, main.flip .back {
 .front {
     position: absolute;
     z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .back {
     transform: rotateY(-180deg);
+    display: flex;
+    gap: 2rem;
+    flex-direction: column;
+}
+
+@media (min-width: 570px) {
+    main {
+        max-width: 50rem;
+    }
+
+    .back {
+        flex-direction: row;
+    }
 }
 
 .front, .back {
@@ -61,6 +82,14 @@ main:focus-within .back, main:hover .back, main.flip .back {
     background-color: #fff;
     box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .2), 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12);
     border-radius: 4px;
+}
+
+.back section {
+    flex-grow: 1;
+}
+
+.back section.add-contact-container {
+    flex-grow: unset;
 }
 
 .add-contact-container a {
@@ -110,7 +139,19 @@ ul li a svg {
     margin-right: 1rem;
 }
 
+h1 {
+    font-weight: 100;
+}
 
+h2 {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+h2:first-child {
+    margin-top: 0;
+}
 
 /*h1 {*/
 /*    grid-column-end: 3;*/
