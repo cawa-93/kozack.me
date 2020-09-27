@@ -59,7 +59,7 @@ module.exports = function() {
 		name: 'Alex Kozack',
 		jobTitle: 'Full-stack web developer',
 		site: process.env.URL || 'https://localhost:8080',
-		email: 'test@test.com',
+		email: 'x73blk4om@relay.firefox.com',
 		avatar: {
 			src: '/images/avatar-origin.png',
 		},

@@ -20,15 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/includes/vcard.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.eleventy.js" beforeDir="false" afterPath="$PROJECT_DIR$/.eleventy.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Alex Kozack.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Alex Kozack.njk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/data/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -137,7 +129,7 @@
       <workItem from="1601016448294" duration="18000" />
       <workItem from="1601016497151" duration="110000" />
       <workItem from="1601138156171" duration="8130000" />
-      <workItem from="1601188241795" duration="17341000" />
+      <workItem from="1601188241795" duration="17709000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -202,7 +194,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601199961473</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Добавлен qrcode">
+      <created>1601206758177</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1601206758177</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -232,7 +231,8 @@
     <MESSAGE value="Верстка внешнего вида" />
     <MESSAGE value="Очистка и минификация ресурсов" />
     <MESSAGE value="Идентификатор Google Search Console" />
-    <option name="LAST_COMMIT_MESSAGE" value="Идентификатор Google Search Console" />
+    <MESSAGE value="Добавлен qrcode" />
+    <option name="LAST_COMMIT_MESSAGE" value="Добавлен qrcode" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -267,10 +267,10 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1600701026330" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601199979581">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601206761281">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601199979581" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601206761281" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
