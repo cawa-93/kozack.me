@@ -1,21 +1,6 @@
-
-
-
-function base64_encode(file) {
-	console.log({file});
-	// read binary data
-	var bitmap = require('fs').readFileSync(file);
-	// convert binary data to base64 encoded string
-	return new Buffer(bitmap).toString('base64');
-}
-
 module.exports = function(config) {
-	config.addPassthroughCopy('src/styles.css');
+	config.addPassthroughCopy('src/styles');
 	config.addPassthroughCopy('src/images');
-
-	config.addFilter("base64", function(file) {
-		return base64_encode(file)
-	});
 
 	return {
 		// templateFormats: [

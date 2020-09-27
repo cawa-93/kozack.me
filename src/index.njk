@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.name }} — {{ config.jobTitle }} — Personal site</title>
-    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css">
     <script type="application/ld+json">
 		{
 			"@context": "https://schema.org",
@@ -29,17 +29,19 @@
 <body>
 <div class="wrapper">
 
-    <main class="">
+    <main>
 
-        <div class="front card">
-            {# <picture class="profile-picture" aria-hidden="true"> #}
-            {# <source srcset="/images/avatar@1.avif 1x, /images/avatar@2.avif 2x, /images/avatar@3.avif 3x" type="image/avif"> #}
-            {# <source srcset="/images/avatar@1.webp 1x, /images/avatar@2.webp 2x, /images/avatar@3.webp 3x" type="image/webp"> #}
-            {# <img alt="Profile picture" #}
-            {# srcset="/images/avatar@1.jpg 1x, /images/avatar@2.jpg 2x, /images/avatar@3.jpg 3x" #}
-            {# width="225" #}
-            {# height="231"> #}
-            {# </picture> #}
+        <div class="front card" onclick="this.parentElement.classList.add('flip')">
+{#            <picture class="profile-picture" aria-hidden="true">#}
+{#                <source srcset="/images/avatar@1.avif 1x, /images/avatar@2.avif 2x, /images/avatar@3.avif 3x"#}
+{#                        type="image/avif">#}
+{#                <source srcset="/images/avatar@1.webp 1x, /images/avatar@2.webp 2x, /images/avatar@3.webp 3x"#}
+{#                        type="image/webp">#}
+{#                <img alt="Profile picture"#}
+{#                     srcset="/images/avatar@1.jpg 1x, /images/avatar@2.jpg 2x, /images/avatar@3.jpg 3x"#}
+{#                     width="225"#}
+{#                     height="231">#}
+{#            </picture>#}
 
             <h1>{{ config.name }}<br><span class="line-dash">—</span><br><small>{{ config.jobTitle }}</small></h1>
         </div>
