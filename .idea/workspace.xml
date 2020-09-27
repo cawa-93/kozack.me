@@ -20,21 +20,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/gulpfile.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/includes/vcard.njk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.eleventy.js" beforeDir="false" afterPath="$PROJECT_DIR$/.eleventy.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/optimize-images.js" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Alex Kozack.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/Alex Kozack.njk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/data/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/links.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/skills.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/Facebook-origin.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/GitHub-origin.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/Habr-origin.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/Telegram-origin.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -69,7 +63,7 @@
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="javascript.nodejs.core.library.configured.version" value="14.5.0" />
     <property name="javascript.nodejs.core.library.typings.version" value="14.11.1" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/images" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
     <property name="list.type.of.created.stylesheet" value="CSS" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="settings.editor.selected.configurable" value="preferences.fileTypes" />
@@ -78,32 +72,24 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\Dev\kozack.me\src" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\images" />
       <recent name="C:\Users\kozac\Dev\kozack.me\dist\images" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\Dev\kozack.me\src\includes" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\styles" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src" />
       <recent name="C:\Users\kozac\Dev\kozack.me" />
       <recent name="C:\Users\kozac\Dev\kozack.me\_includes" />
     </key>
   </component>
-  <component name="RunManager" selected="npm.build">
+  <component name="RunManager" selected="npm.srart">
     <configuration name="build" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
       <scripts>
         <script value="build" />
-      </scripts>
-      <node-interpreter value="project" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="optimize-images" type="js.build_tools.npm" nameIsGenerated="true">
-      <package-json value="$PROJECT_DIR$/package.json" />
-      <command value="run" />
-      <scripts>
-        <script value="optimize-images" />
       </scripts>
       <node-interpreter value="project" />
       <envs />
@@ -119,10 +105,14 @@
       <envs />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="npm.build" />
+      <item itemvalue="npm.srart" />
+    </list>
     <recent_temporary>
       <list>
-        <item itemvalue="npm.build" />
         <item itemvalue="npm.srart" />
+        <item itemvalue="npm.build" />
       </list>
     </recent_temporary>
   </component>
@@ -147,7 +137,7 @@
       <workItem from="1601016448294" duration="18000" />
       <workItem from="1601016497151" duration="110000" />
       <workItem from="1601138156171" duration="8130000" />
-      <workItem from="1601188241795" duration="10950000" />
+      <workItem from="1601188241795" duration="17341000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -205,7 +195,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601198013708</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Очистка и минификация ресурсов">
+      <created>1601199961473</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1601199961473</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -233,7 +230,9 @@
     <MESSAGE value="Внешний вид списка с иконками" />
     <MESSAGE value="Список ссылок разделен на два" />
     <MESSAGE value="Верстка внешнего вида" />
-    <option name="LAST_COMMIT_MESSAGE" value="Верстка внешнего вида" />
+    <MESSAGE value="Очистка и минификация ресурсов" />
+    <MESSAGE value="Идентификатор Google Search Console" />
+    <option name="LAST_COMMIT_MESSAGE" value="Идентификатор Google Search Console" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -244,30 +243,34 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="804" y="349" key="#Twig/63.0.1857.1080@63.0.1857.1080" timestamp="1600701064711" />
-    <state width="1814" height="354" key="GridCell.Tab.0.bottom" timestamp="1601199812166">
+    <state x="445" y="195" width="1092" height="714" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1601201180581">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="354" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601199812166" />
-    <state width="1814" height="354" key="GridCell.Tab.0.center" timestamp="1601199812166">
+    <state x="445" y="195" width="1092" height="714" key="#com.intellij.execution.impl.EditConfigurationsDialog/63.0.1857.1080@63.0.1857.1080" timestamp="1601201180581" />
+    <state width="1814" height="354" key="GridCell.Tab.0.bottom" timestamp="1601206611338">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="354" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601199812166" />
-    <state width="1814" height="354" key="GridCell.Tab.0.left" timestamp="1601199812166">
+    <state width="1814" height="354" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601206611338" />
+    <state width="1814" height="354" key="GridCell.Tab.0.center" timestamp="1601206611338">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="354" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601199812166" />
-    <state width="1814" height="354" key="GridCell.Tab.0.right" timestamp="1601199812166">
+    <state width="1814" height="354" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601206611338" />
+    <state width="1814" height="354" key="GridCell.Tab.0.left" timestamp="1601206611338">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="354" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601199812166" />
+    <state width="1814" height="354" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601206611338" />
+    <state width="1814" height="354" key="GridCell.Tab.0.right" timestamp="1601206611338">
+      <screen x="63" y="0" width="1857" height="1080" />
+    </state>
+    <state width="1814" height="354" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601206611338" />
     <state x="492" y="185" key="SettingsEditor" timestamp="1600701026330">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1600701026330" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601198019794">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601199979581">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601198019794" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601199979581" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.name }} — {{ config.jobTitle }} — Personal site</title>
+    <link rel="shortcut icon" href="/images/avatar@1.jpg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="/images/avatar@1.jpg" type="image/jpeg">
     <link rel="stylesheet" href="/styles/styles.css">
     <script type="application/ld+json">
 		{
@@ -13,8 +15,10 @@
 			"url": "{{ config.site }}",
 			"logo": "{{ config.site }}{{ config.avatar.src }}",
 			"sameAs": {{ config.links | dump | safe }},
+			"email":"{{ config.email }}",
             "employee": {
                 "@context": "https://schema.org",
+                "email":"{{ config.email }}",
                 "@type": "Person",
                 "name": "{{ config.name }}",
                 "url": "{{ config.site }}",
@@ -32,16 +36,16 @@
     <main>
 
         <div class="front card" onclick="this.parentElement.classList.add('flip')">
-{#            <picture class="profile-picture" aria-hidden="true">#}
-{#                <source srcset="/images/avatar@1.avif 1x, /images/avatar@2.avif 2x, /images/avatar@3.avif 3x"#}
-{#                        type="image/avif">#}
-{#                <source srcset="/images/avatar@1.webp 1x, /images/avatar@2.webp 2x, /images/avatar@3.webp 3x"#}
-{#                        type="image/webp">#}
-{#                <img alt="Profile picture"#}
-{#                     srcset="/images/avatar@1.jpg 1x, /images/avatar@2.jpg 2x, /images/avatar@3.jpg 3x"#}
-{#                     width="225"#}
-{#                     height="231">#}
-{#            </picture>#}
+            {# <picture class="profile-picture" aria-hidden="true"> #}
+            {# <source srcset="/images/avatar@1.avif 1x, /images/avatar@2.avif 2x, /images/avatar@3.avif 3x" #}
+            {# type="image/avif"> #}
+            {# <source srcset="/images/avatar@1.webp 1x, /images/avatar@2.webp 2x, /images/avatar@3.webp 3x" #}
+            {# type="image/webp"> #}
+            {# <img alt="Profile picture" #}
+            {# srcset="/images/avatar@1.jpg 1x, /images/avatar@2.jpg 2x, /images/avatar@3.jpg 3x" #}
+            {# width="225" #}
+            {# height="231"> #}
+            {# </picture> #}
 
             <h1>{{ config.name }}<br><span class="line-dash">—</span><br><small>{{ config.jobTitle }}</small></h1>
         </div>
@@ -53,14 +57,15 @@
                         <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V8c0-.55-.45-1-1-1s-1 .45-1 1v2H2c-.55 0-1 .45-1 1s.45 1 1 1h2v2c0 .55.45 1 1 1s1-.45 1-1v-2h2c.55 0 1-.45 1-1s-.45-1-1-1H6zm9 4c-2.67 0-8 1.34-8 4v1c0 .55.45 1 1 1h14c.55 0 1-.45 1-1v-1c0-2.66-5.33-4-8-4z"/>
                     </svg>
                 </a>
-            </section>
 
-            {# <h2 id="list-skills-header">My skills</h2> #}
-            {# <ol id="list-skills" aria-labelledby="list-skills-header"> #}
-            {# {% for skill in config.skills %} #}
-            {# <li>{{ skill }}</li> #}
-            {# {% endfor %} #}
-            {# </ol> #}
+                {% set vcard %}
+                    {% include "src/includes/vcard.njk" %}
+                {% endset %}
+                {% set qrcode = vcard | qrcode %}
+                <a href="{{ qrcode }}" target="_blank" title="Open qrcode in full size">
+                    <img src="{{ qrcode }}" alt="Contact QRCode" width="120px">
+                </a>
+            </section>
 
             <section>
                 <h2 id="list-works-header">My works</h2>

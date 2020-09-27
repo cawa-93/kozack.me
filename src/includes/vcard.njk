@@ -1,0 +1,10 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Kozack;Alex;;;
+FN:{{ config.name }}
+ORG:ihappymama.ru
+TITLE:{{ config.jobTitle }}
+EMAIL;PREF;WORK:{{ config.email }}
+URL;type=pref:{{ config.site }}
+{% for url in config.links %}URL:{{ url }}
+{% endfor %}END:VCARD

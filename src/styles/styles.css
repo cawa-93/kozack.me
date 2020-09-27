@@ -13,7 +13,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-    background: #fefefe;
+    background: #eee;
 }
 
 .wrapper {
@@ -21,21 +21,21 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100%;
+    padding: 5px;
 }
 
 main {
     position: relative;
-    background: #fff;
     perspective: 1000px;
     width: 100%;
     max-width: 20rem;
 }
 
-main:focus-within .front, main:focus .front, main.flip .front {
+main:focus-within .front, main:hover .front, main.flip .front {
     transform: rotateY(180deg);
 }
 
-main:focus-within .back, main:focus .back, main.flip .back {
+main:focus-within .back, main:hover .back, main.flip .back {
     transform: rotateY(0deg);
 }
 
@@ -55,24 +55,12 @@ main:focus-within .back, main:focus .back, main.flip .back {
     flex-direction: column;
 }
 
-@media (min-width: 570px) {
-    main {
-        max-width: 50rem;
-    }
-
-    .back {
-        flex-direction: row;
-    }
-}
 
 .front, .back {
     width: 100%;
     height: 100%;
-    /*box-sizing: border-box;*/
     transition: transform 0.3s ease-in;
     transform-style: preserve-3d;
-    /*color: white;*/
-    /*padding: 10px;*/
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
 }
@@ -90,6 +78,8 @@ main:focus-within .back, main:focus .back, main.flip .back {
 
 .back section.add-contact-container {
     flex-grow: unset;
+    display: flex;
+    justify-content: space-between;
 }
 
 .add-contact-container a {
@@ -99,7 +89,6 @@ main:focus-within .back, main:focus .back, main.flip .back {
     border-radius: 50%;
     justify-content: center;
     align-items: center;
-    margin-left: auto;
     padding: 1rem;
     border: 1px solid #ddd;
 }
@@ -112,6 +101,13 @@ main:focus-within .back, main:focus .back, main.flip .back {
     width: 100%;
     height: 100%;
 }
+
+.back section.add-contact-container img {
+    width: 100px;
+    height: 100px;
+    margin: -1.5rem;
+}
+
 
 
 ul {
@@ -151,4 +147,20 @@ h2 {
 
 h2:first-child {
     margin-top: 0;
+}
+
+
+
+@media (min-width: 570px) {
+    main {
+        max-width: 50rem;
+    }
+
+    .back {
+        flex-direction: row;
+    }
+
+    .add-contact-container {
+        flex-direction: column;
+    }
 }

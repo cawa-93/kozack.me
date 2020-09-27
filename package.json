@@ -11,7 +11,8 @@
   "author": "Alex Kozack",
   "license": "ISC",
   "dependencies": {
-    "gulp-htmlmin": "^5.0.1"
+    "gulp-htmlmin": "^5.0.1",
+    "qrcode": "^1.4.4"
   },
   "devDependencies": {
     "@11ty/eleventy": "^0.11.0",

@@ -2,6 +2,16 @@ module.exports = function(config) {
 	config.addPassthroughCopy('src/styles');
 	config.addPassthroughCopy('src/images');
 
+	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
+		const QRCode = require('qrcode')
+		QRCode.toDataURL(text.trim(), {
+			errorCorrectionLevel: "L",
+			// version: 1
+		}).then(d => {
+			callback(null, d)
+		})
+	})
+
 	return {
 		// templateFormats: [
 		// 	// "md",
