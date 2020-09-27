@@ -21,7 +21,7 @@ body {
     justify-content: center;
     align-items: flex-end;
     min-height: 100%;
-    padding: 45px;
+    padding: 45px 5px;
 }
 
 main {
