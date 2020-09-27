@@ -19,9 +19,9 @@ body {
 .wrapper {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-end;
     min-height: 100%;
-    padding: 5px;
+    padding: 45px;
 }
 
 main {
@@ -152,8 +152,11 @@ h2:first-child {
 
 
 @media (min-width: 570px) {
+    .wrapper {
+        align-items: center;
+    }
     main {
-        max-width: 50rem;
+        max-width: 38rem;
     }
 
     .back {
