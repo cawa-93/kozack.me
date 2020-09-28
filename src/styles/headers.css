@@ -1,11 +1,21 @@
 h1 {
     font-weight: 100;
 }
+@media (prefers-color-scheme: dark) {
+    h1 {
+        font-weight: 400;
+    }
+}
 
 h2 {
     font-weight: 500;
     margin-bottom: 0.5rem;
     margin-top: 1.5rem;
+}
+@media (prefers-color-scheme: dark) {
+    h2 {
+        font-weight: 700;
+    }
 }
 
 h2:first-child {

@@ -20,7 +20,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/src/includes/schema.11ty.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/includes/schema.11ty.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/card.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/card.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/headers.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/headers.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/lists.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/lists.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/page.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/page.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,8 +114,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="npm.build" />
         <item itemvalue="npm.srart" />
+        <item itemvalue="npm.build" />
       </list>
     </recent_temporary>
   </component>
@@ -246,7 +251,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601282368207</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Исправлены ссылки в schema.11ty.js">
+      <created>1601282460091</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1601282460091</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -282,7 +294,9 @@
     <MESSAGE value="Рефакторинг&#10;&#10;Код перераспределен по файлам для удобства" />
     <MESSAGE value="Изменена опечатка в должности" />
     <MESSAGE value="Рефакторинг стилей" />
-    <option name="LAST_COMMIT_MESSAGE" value="Рефакторинг стилей" />
+    <MESSAGE value="Исправлены ссылки в schema.11ty.js" />
+    <MESSAGE value="Темная тема" />
+    <option name="LAST_COMMIT_MESSAGE" value="Темная тема" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -297,22 +311,22 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="445" y="195" width="1092" height="714" key="#com.intellij.execution.impl.EditConfigurationsDialog/63.0.1857.1080@63.0.1857.1080" timestamp="1601201180581" />
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom" timestamp="1601282249559">
+    <state width="1814" height="531" key="GridCell.Tab.0.bottom" timestamp="1601283578568">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601282249559" />
-    <state width="1814" height="531" key="GridCell.Tab.0.center" timestamp="1601282249559">
+    <state width="1814" height="531" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601283578568" />
+    <state width="1814" height="531" key="GridCell.Tab.0.center" timestamp="1601283578568">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601282249559" />
-    <state width="1814" height="531" key="GridCell.Tab.0.left" timestamp="1601282249559">
+    <state width="1814" height="531" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601283578568" />
+    <state width="1814" height="531" key="GridCell.Tab.0.left" timestamp="1601283578568">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601282249559" />
-    <state width="1814" height="531" key="GridCell.Tab.0.right" timestamp="1601282249559">
+    <state width="1814" height="531" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601283578568" />
+    <state width="1814" height="531" key="GridCell.Tab.0.right" timestamp="1601283578568">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601282249559" />
+    <state width="1814" height="531" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601283578568" />
     <state x="492" y="185" key="SettingsEditor" timestamp="1601281535091">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
