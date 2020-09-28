@@ -18,8 +18,8 @@ layout: page.njk
                     {% include "src/includes/vcard.njk" %}
                 {% endset %}
                 {% set qrcode = vcard | qrcode %}
-                <a href="{{ qrcode }}" target="_blank" title="Open qrcode in full size">
-                    <img src="{{ qrcode }}" alt="Contact QRCode" width="120" height="120">
+                <a href="{{ qrcode }}" target="_blank" title="Open QR code in full size">
+                    <img src="{{ qrcode }}" alt="Contact QR code" width="120" height="120" loading="lazy">
                 </a>
             </section>
 

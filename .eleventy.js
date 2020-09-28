@@ -3,22 +3,23 @@ module.exports = function(config) {
 	config.addPassthroughCopy('src/images');
 
 	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
-		const QRCode = require('qrcode')
-		QRCode.toDataURL(text.trim(), {
-			errorCorrectionLevel: "L",
-			// version: 1
-		}).then(d => {
-			callback(null, d)
-		})
-	})
+		const QRCode = require('qrcode');
+		const oxipng = require('@wasm-codecs/oxipng');
+		const {promises: fs} = require('fs');
 
-	config.addPairedShortcode('renderJS', (content, config) => {
-		return eval(content)({config})
+		QRCode
+			.toBuffer(text.trim(), {errorCorrectionLevel: 'L'})
+			.then(buffer => oxipng(buffer, {level: 3}))
+			.then(buffer => fs.writeFile('./dist/images/qrcode.png', buffer))
+			.then(() => callback(null, '/images/qrcode.png'));
 	});
 
+	config.addPairedShortcode('renderJS', (content, config) => {
+		return '';
+	});
 
 	return {
-		templateFormats: ['html','ejs','njk','11ty.js'],
+		templateFormats: ['html', 'ejs', 'njk', '11ty.js'],
 
 		// If your site lives in a different subdirectory, change this.
 		// Leading or trailing slashes are all normalized away, so don’t worry about those.
@@ -28,10 +29,10 @@ module.exports = function(config) {
 		// Best paired with the `url` filter: https://www.11ty.dev/docs/filters/url/
 
 		// You can also pass this in on the command line using `--pathprefix`
-		pathPrefix: "/",
+		pathPrefix: '/',
 
 		// markdownTemplateEngine: "liquid",
-		htmlTemplateEngine: "njk",
+		htmlTemplateEngine: 'njk',
 		// dataTemplateEngine: "njk",
 
 		// These are all optional, defaults are shown:
@@ -40,7 +41,7 @@ module.exports = function(config) {
 			output: 'dist',
 			includes: 'includes',
 			layouts: 'layouts',
-			data: 'data'
+			data: 'data',
 		},
 	};
-}
+};

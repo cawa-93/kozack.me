@@ -20,10 +20,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.eleventy.js" beforeDir="false" afterPath="$PROJECT_DIR$/.eleventy.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/styles/page.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/page.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +71,7 @@
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="javascript.nodejs.core.library.configured.version" value="14.5.0" />
     <property name="javascript.nodejs.core.library.typings.version" value="14.11.1" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/dist/images" />
     <property name="list.type.of.created.stylesheet" value="CSS" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.CSS" />
@@ -78,17 +79,17 @@
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\kozac\Dev\kozack.me\src" />
-      <recent name="C:\Users\kozac\Dev\kozack.me\src\images" />
-      <recent name="C:\Users\kozac\Dev\kozack.me\dist\images" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\kozac\Dev\kozack.me\src\layouts" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\includes" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\styles" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src" />
       <recent name="C:\Users\kozac\Dev\kozack.me" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\Dev\kozack.me\dist\images" />
+      <recent name="C:\Users\kozac\Dev\kozack.me\src" />
+      <recent name="C:\Users\kozac\Dev\kozack.me\src\images" />
     </key>
   </component>
   <component name="RunManager" selected="npm.srart">
@@ -151,7 +152,8 @@
       <workItem from="1601235092903" duration="27000" />
       <workItem from="1601300722519" duration="17000" />
       <workItem from="1601302537111" duration="1358000" />
-      <workItem from="1601313268839" duration="2013000" />
+      <workItem from="1601313268839" duration="2269000" />
+      <workItem from="1601316837493" duration="1107000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -279,7 +281,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601303509624</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Изменен контраст белого и черного&#10;&#10;Это нужно чтобы избежать смазывания на amoled экранах&#10;https://medium.com/lookup-design/designing-a-dark-theme-for-oled-iphones-e13cdfea7ffe">
+      <created>1601316294513</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1601316294513</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -319,7 +328,8 @@
     <MESSAGE value="Исправлены ссылки в schema.11ty.js" />
     <MESSAGE value="Темная тема" />
     <MESSAGE value="Заменены иконки" />
-    <option name="LAST_COMMIT_MESSAGE" value="Заменены иконки" />
+    <MESSAGE value="Изменен контраст белого и черного&#10;&#10;Это нужно чтобы избежать смазывания на amoled экранах&#10;https://medium.com/lookup-design/designing-a-dark-theme-for-oled-iphones-e13cdfea7ffe" />
+    <option name="LAST_COMMIT_MESSAGE" value="Изменен контраст белого и черного&#10;&#10;Это нужно чтобы избежать смазывания на amoled экранах&#10;https://medium.com/lookup-design/designing-a-dark-theme-for-oled-iphones-e13cdfea7ffe" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -334,30 +344,30 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="445" y="195" width="1092" height="714" key="#com.intellij.execution.impl.EditConfigurationsDialog/63.0.1857.1080@63.0.1857.1080" timestamp="1601201180581" />
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom" timestamp="1601304028207">
+    <state width="1814" height="360" key="GridCell.Tab.0.bottom" timestamp="1601317583282">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
-    <state width="1814" height="531" key="GridCell.Tab.0.center" timestamp="1601304028207">
+    <state width="1814" height="360" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601317583282" />
+    <state width="1814" height="360" key="GridCell.Tab.0.center" timestamp="1601317583282">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
-    <state width="1814" height="531" key="GridCell.Tab.0.left" timestamp="1601304028207">
+    <state width="1814" height="360" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601317583282" />
+    <state width="1814" height="360" key="GridCell.Tab.0.left" timestamp="1601317583282">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
-    <state width="1814" height="531" key="GridCell.Tab.0.right" timestamp="1601304028207">
+    <state width="1814" height="360" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601317583282" />
+    <state width="1814" height="360" key="GridCell.Tab.0.right" timestamp="1601317583282">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
+    <state width="1814" height="360" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601317583282" />
     <state x="492" y="185" key="SettingsEditor" timestamp="1601281535091">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601281535091" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601303515564">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601316383465">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601303515564" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601316383465" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
