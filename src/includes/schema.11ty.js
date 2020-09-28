@@ -18,7 +18,7 @@ module.exports = ({config}) => {
 	const base = {
 		'name': config.name,
 		'email': config.email,
-		'sameAs': [config.links, ...sideProfiles],
+		'sameAs': [...config.links, ...sideProfiles],
 		'url': config.site,
 	};
 

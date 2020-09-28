@@ -20,17 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/styles/add-to-contact-section.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/styles/box-sizing.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/styles/card.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/styles/headers.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/styles/lists.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/styles/page.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kozack.me.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kozack.me.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gulpfile.js" beforeDir="false" afterPath="$PROJECT_DIR$/gulpfile.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/includes/schema.11ty.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/includes/schema.11ty.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -249,7 +239,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601233789931</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Рефакторинг стилей">
+      <created>1601282368207</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1601282368207</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -284,7 +281,8 @@
     <MESSAGE value="Мета-теги для поисковых ботов" />
     <MESSAGE value="Рефакторинг&#10;&#10;Код перераспределен по файлам для удобства" />
     <MESSAGE value="Изменена опечатка в должности" />
-    <option name="LAST_COMMIT_MESSAGE" value="Изменена опечатка в должности" />
+    <MESSAGE value="Рефакторинг стилей" />
+    <option name="LAST_COMMIT_MESSAGE" value="Рефакторинг стилей" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
