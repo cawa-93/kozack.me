@@ -5,15 +5,18 @@ module.exports = function(config) {
 	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
 		const QRCode = require('qrcode');
 		const oxipng = require('@wasm-codecs/oxipng');
+		// const {promises: fs} = require('fs')
 
 		QRCode
 			.toBuffer(text.trim(), {errorCorrectionLevel: 'L'})
 			.then(buffer => oxipng(buffer, {level: 3}))
+			// .then(buffer => fs.writeFile('./dist/images/qrcode.png', buffer))
 			.then(buffer => callback(null, `data:image/png;base64,${buffer.toString('base64')}`));
 	});
 
-	config.addPairedShortcode('renderJS', (content, config) => {
-		return '';
+	config.addShortcode('schema', (config) => {
+		const schema = require('./src/includes/schema.11ty.js')
+		return schema({config})
 	});
 
 	return {
