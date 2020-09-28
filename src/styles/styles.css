@@ -4,3 +4,7 @@
 @import "add-to-contact-section.css";
 @import "lists.css";
 @import "headers.css";
+
+svg {
+    fill: var(--black);
+}

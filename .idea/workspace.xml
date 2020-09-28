@@ -21,17 +21,9 @@
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar-origin.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/images/avatar-origin.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@1.avif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@1.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@1.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@2.avif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@2.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@2.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@3.avif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@3.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/images/avatar@3.webp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/layouts/page.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/page.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/page.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/page.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,6 +52,9 @@
     <auto-save>true</auto-save>
   </component>
   <component name="ProjectId" id="1hPPeixRmcV8vraSjrU3EezSLBV" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
     <option name="compactDirectories" value="true" />
@@ -67,8 +62,11 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
+    <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="javascript.nodejs.core.library.configured.version" value="14.5.0" />
     <property name="javascript.nodejs.core.library.typings.version" value="14.11.1" />
@@ -93,7 +91,7 @@
       <recent name="C:\Users\kozac\Dev\kozack.me" />
     </key>
   </component>
-  <component name="RunManager" selected="npm.build">
+  <component name="RunManager" selected="npm.srart">
     <configuration name="build" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/package.json" />
       <command value="run" />
@@ -120,8 +118,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="npm.build" />
         <item itemvalue="npm.srart" />
+        <item itemvalue="npm.build" />
       </list>
     </recent_temporary>
   </component>
@@ -152,7 +150,8 @@
       <workItem from="1601233762142" duration="38000" />
       <workItem from="1601235092903" duration="27000" />
       <workItem from="1601300722519" duration="17000" />
-      <workItem from="1601302537111" duration="683000" />
+      <workItem from="1601302537111" duration="1358000" />
+      <workItem from="1601313268839" duration="2013000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -273,7 +272,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601283738462</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Заменены иконки">
+      <created>1601303509624</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1601303509624</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -292,6 +298,7 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="git init" />
     <MESSAGE value="Первый прототип" />
     <MESSAGE value="npm build" />
@@ -311,7 +318,8 @@
     <MESSAGE value="Рефакторинг стилей" />
     <MESSAGE value="Исправлены ссылки в schema.11ty.js" />
     <MESSAGE value="Темная тема" />
-    <option name="LAST_COMMIT_MESSAGE" value="Темная тема" />
+    <MESSAGE value="Заменены иконки" />
+    <option name="LAST_COMMIT_MESSAGE" value="Заменены иконки" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -326,34 +334,38 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="445" y="195" width="1092" height="714" key="#com.intellij.execution.impl.EditConfigurationsDialog/63.0.1857.1080@63.0.1857.1080" timestamp="1601201180581" />
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom" timestamp="1601283844036">
+    <state width="1814" height="531" key="GridCell.Tab.0.bottom" timestamp="1601304028207">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601283844036" />
-    <state width="1814" height="531" key="GridCell.Tab.0.center" timestamp="1601283844036">
+    <state width="1814" height="531" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
+    <state width="1814" height="531" key="GridCell.Tab.0.center" timestamp="1601304028207">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601283844036" />
-    <state width="1814" height="531" key="GridCell.Tab.0.left" timestamp="1601283844036">
+    <state width="1814" height="531" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
+    <state width="1814" height="531" key="GridCell.Tab.0.left" timestamp="1601304028207">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601283844036" />
-    <state width="1814" height="531" key="GridCell.Tab.0.right" timestamp="1601283844036">
+    <state width="1814" height="531" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
+    <state width="1814" height="531" key="GridCell.Tab.0.right" timestamp="1601304028207">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="531" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601283844036" />
+    <state width="1814" height="531" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601304028207" />
     <state x="492" y="185" key="SettingsEditor" timestamp="1601281535091">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601281535091" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601283751875">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601303515564">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601283751875" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601303515564" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601145941778" />
+    <state x="699" y="273" width="585" height="534" key="find.popup" timestamp="1601303414067">
+      <screen x="63" y="0" width="1857" height="1080" />
+    </state>
+    <state x="699" y="273" width="585" height="534" key="find.popup/63.0.1857.1080@63.0.1857.1080" timestamp="1601303414067" />
     <state x="833" y="270" key="ftp.server.browser" timestamp="1600957888655">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
