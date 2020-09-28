@@ -7,7 +7,10 @@ gulp.task('styles:compress', () => {
 	return gulp.src('src/styles/styles.css')
 		.pipe(postcss([
 			require('postcss-import'),
-			require('postcss-csso'),
+			require('postcss-csso')({
+				forceMediaMerge: true,
+				comments: false,
+			}),
 		]))
 		.pipe(gulp.dest('dist'));
 });

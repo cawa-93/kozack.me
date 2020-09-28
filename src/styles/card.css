@@ -1,0 +1,79 @@
+.wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    min-height: 100%;
+    padding: 45px 5px; /* Этот отступ нужен, чтобы при повороте картички не появлялся скролл */
+}
+
+@media (min-width: 570px) {
+    .wrapper {
+        align-items: center;
+    }
+}
+
+main {
+    position: relative;
+    perspective: 1000px;
+    width: 100%;
+    max-width: 25rem;
+}
+
+@media (min-width: 570px) {
+    main {
+        max-width: 38rem;
+    }
+}
+
+main:focus-within .front,
+main:hover .front,
+main.flip .front {
+    transform: rotateY(180deg);
+}
+
+main:focus-within .back,
+main:hover .back,
+main.flip .back {
+    transform: rotateY(0deg);
+}
+
+.front {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.back {
+    transform: rotateY(-180deg);
+    display: grid;
+    grid-gap: 2rem;
+    gap: 2rem;
+    grid-template-rows: 60px auto auto;
+}
+
+@media (min-width: 570px) {
+    .back {
+        grid-template-rows: auto;
+        grid-template-columns: 60px auto auto;
+    }
+}
+
+.front,
+.back {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.3s ease-in;
+    transform-style: preserve-3d;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.card {
+    padding: 2rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, .2), 0 4px 5px 0 rgba(0, 0, 0, .14), 0 1px 10px 0 rgba(0, 0, 0, .12);
+    border-radius: 4px;
+}

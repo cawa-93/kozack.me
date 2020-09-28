@@ -1,0 +1,25 @@
+ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul a {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #ddd;
+    color: #010101;
+    margin-top: -1px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 120%;
+}
+
+ul a:focus,
+ul a:hover {
+    background-color: #ddd;
+}
+
+ul svg {
+    margin-right: 1rem;
+}

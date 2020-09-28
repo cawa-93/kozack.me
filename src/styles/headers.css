@@ -1,0 +1,13 @@
+h1 {
+    font-weight: 100;
+}
+
+h2 {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+h2:first-child {
+    margin-top: 0;
+}
