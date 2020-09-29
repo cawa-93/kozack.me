@@ -3,4 +3,11 @@ from = "/"
 to = "/ru/"
 status = 302
 force = true
-conditions = { Language = ["ru"] }
+conditions = { Language = ["ru", "uk"] }
+
+[[redirects]]
+from = "/ru/"
+to = "/"
+status = 302
+force = true
+conditions = { Language = ["en"] }
