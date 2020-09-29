@@ -17,4 +17,4 @@ conditions = { Language = ["ru", "uk"] }
 from = "/*"
 to = "/"
 status = 301
-force = false
+force = true
