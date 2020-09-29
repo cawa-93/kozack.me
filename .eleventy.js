@@ -2,6 +2,8 @@ module.exports = function(config) {
 	config.addPassthroughCopy('src/styles');
 	config.addPassthroughCopy('src/images');
 
+	config.addWatchTarget("./src/l10n/");
+
 	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
 		const QRCode = require('qrcode');
 		const oxipng = require('@wasm-codecs/oxipng');
@@ -24,6 +26,11 @@ module.exports = function(config) {
 	config.addShortcode('schema', (config) => {
 		const schema = require('./src/includes/schema.11ty.js');
 		return schema({config});
+	});
+
+	config.addShortcode('_t', (id, locale, args) => {
+		const _ = require('./src/fluent.bundle.js');
+		return _(id, locale, args)
 	});
 
 	return {
