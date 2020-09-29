@@ -20,15 +20,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/vcards/en.njk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/vcards/ru.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.eleventy.js" beforeDir="false" afterPath="$PROJECT_DIR$/.eleventy.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Alex Kozack.njk" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fluent.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/fluent.bundle.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/includes/vcard.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/vcard.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/layouts/card.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/card.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test.njk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/layouts/base.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/base.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/sitemap.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/sitemap.njk" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -169,7 +163,7 @@
       <workItem from="1601364474113" duration="322000" />
       <workItem from="1601368483812" duration="7000" />
       <workItem from="1601376091663" duration="2585000" />
-      <workItem from="1601384260291" duration="8105000" />
+      <workItem from="1601384260291" duration="8611000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -374,7 +368,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601391098266</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Русская версия vcard">
+      <created>1601392639589</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1601392639589</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -397,7 +398,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="Исправлена ссылка на домен" />
     <MESSAGE value="Исправлено отображение расширенных результатов" />
     <MESSAGE value="vCard Прототип" />
     <MESSAGE value="Внешний вид списка с иконками" />
@@ -422,7 +422,8 @@
     <MESSAGE value="Рефакторинг стилей" />
     <MESSAGE value="Добавлен sitemap.xml" />
     <MESSAGE value="Русская версия главной страницы" />
-    <option name="LAST_COMMIT_MESSAGE" value="Русская версия главной страницы" />
+    <MESSAGE value="Русская версия vcard" />
+    <option name="LAST_COMMIT_MESSAGE" value="Русская версия vcard" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">

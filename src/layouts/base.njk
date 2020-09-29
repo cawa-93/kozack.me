@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index, follow">
 
-    <link rel="canonical" href="{{ config.site }}"/>
+    <link rel="canonical" href="{{ config.site }}/"/>
+    <link rel="alternate" href="{{ config.site }}/" hreflang="en"/>
+    <link rel="alternate" href="{{ config.site }}/" hreflang="x-default"/>
+    <link rel="alternate" href="{{ config.site }}/ru/" hreflang="ru"/>
 
     <!-- Primary Meta Tags -->
     <title>{% _t 'site-title-with-description', lang %}</title>
@@ -19,14 +22,14 @@
     <meta property="profile:username" content="{% _t 'name', lang %}">
     <meta property="profile:gender" content="male">
     <meta property="og:title" content="{% _t 'site-title', lang %}">
-    <meta property="og:url" content="{{ config.site }}">
+    <meta property="og:url" content="{{ config.site }}/">
     <meta property="og:description" content="{% _t 'site-description', lang %}">
     <meta property="og:image" content="{{ config.site }}/images/avatar-origin.png">
     <meta property="og:locale" content="{{ lang }}">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="{{ config.site }}">
+    <meta property="twitter:url" content="{{ config.site }}/">
     <meta property="twitter:title" content="{% _t 'site-title', lang %}">
     <meta property="twitter:description" content="{% _t 'site-description', lang %}">
     <meta property="twitter:image" content="{{ config.site }}/images/avatar-origin.png">
