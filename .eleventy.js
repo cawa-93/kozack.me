@@ -4,7 +4,7 @@ module.exports = function(config) {
 
 	config.addWatchTarget("./src/l10n/");
 
-	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
+	config.addNunjucksAsyncFilter('qrcode', function(text, path, callback) {
 		const QRCode = require('qrcode');
 		const oxipng = require('@wasm-codecs/oxipng');
 		const {promises: fs} = require('fs');
@@ -13,11 +13,11 @@ module.exports = function(config) {
 			.toBuffer(text.trim(), {errorCorrectionLevel: 'L'})
 			.then(buffer => oxipng(buffer, {level: 3}))
 			.then(buffer =>
-				fs.writeFile('./dist/images/qrcode.png', buffer)
+				fs.writeFile('./dist' + path, buffer)
 					.then(() => {
 						callback(null, {
 							dataurl: `data:image/png;base64,${buffer.toString('base64')}`,
-							url: '/images/qrcode.png',
+							url: path,
 						});
 					}),
 			);
@@ -29,7 +29,7 @@ module.exports = function(config) {
 	});
 
 	config.addShortcode('_t', (id, locale, args) => {
-		const _ = require('./src/fluent.bundle.js');
+		const _ = require('./src/utils/fluent.bundle.js');
 		return _(id, locale, args)
 	});
 

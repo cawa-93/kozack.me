@@ -20,20 +20,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/data/persone.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/fluent.bundle.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/l10n/en.ftl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/l10n/ru.ftl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ru.njk" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test.njk" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/vcards/en.njk" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/vcards/ru.njk" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.eleventy.js" beforeDir="false" afterPath="$PROJECT_DIR$/.eleventy.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/layouts/flipped-card.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/card.njk" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/layouts/page.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/base.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Alex Kozack.njk" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fluent.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/fluent.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/includes/vcard.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/vcard.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/layouts/card.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/layouts/card.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test.njk" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,7 +80,7 @@
     <property name="WebServerToolWindowFactoryState" value="true" />
     <property name="javascript.nodejs.core.library.configured.version" value="14.5.0" />
     <property name="javascript.nodejs.core.library.typings.version" value="14.11.1" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/vcards" />
     <property name="list.type.of.created.stylesheet" value="CSS" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
@@ -94,17 +89,18 @@
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\Dev\kozack.me\src\vcards" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\l10n" />
       <recent name="C:\Users\kozac\Dev\kozack.me\dist\images" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\images" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\Dev\kozack.me\src\vcards\" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\layouts" />
+      <recent name="C:\Users\kozac\Dev\kozack.me\src\utils" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\includes" />
       <recent name="C:\Users\kozac\Dev\kozack.me\src\styles" />
-      <recent name="C:\Users\kozac\Dev\kozack.me\src" />
-      <recent name="C:\Users\kozac\Dev\kozack.me" />
     </key>
   </component>
   <component name="RunManager" selected="npm.srart">
@@ -173,7 +169,7 @@
       <workItem from="1601364474113" duration="322000" />
       <workItem from="1601368483812" duration="7000" />
       <workItem from="1601376091663" duration="2585000" />
-      <workItem from="1601384260291" duration="6547000" />
+      <workItem from="1601384260291" duration="8105000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -371,7 +367,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601364640721</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Русская версия главной страницы">
+      <created>1601391098266</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1601391098266</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -394,7 +397,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="npm build" />
     <MESSAGE value="Исправлена ссылка на домен" />
     <MESSAGE value="Исправлено отображение расширенных результатов" />
     <MESSAGE value="vCard Прототип" />
@@ -419,7 +421,8 @@
     <MESSAGE value="SVG иконки скрыты от скринридеров" />
     <MESSAGE value="Рефакторинг стилей" />
     <MESSAGE value="Добавлен sitemap.xml" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавлен sitemap.xml" />
+    <MESSAGE value="Русская версия главной страницы" />
+    <option name="LAST_COMMIT_MESSAGE" value="Русская версия главной страницы" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -438,30 +441,30 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="749" y="342" key="#com.intellij.fileTypes.FileTypeChooser/63.0.1857.1080@63.0.1857.1080" timestamp="1601385912503" />
-    <state width="1814" height="404" key="GridCell.Tab.0.bottom" timestamp="1601389665194">
+    <state width="1814" height="404" key="GridCell.Tab.0.bottom" timestamp="1601392520732">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="404" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601389665194" />
-    <state width="1814" height="404" key="GridCell.Tab.0.center" timestamp="1601389665194">
+    <state width="1814" height="404" key="GridCell.Tab.0.bottom/63.0.1857.1080@63.0.1857.1080" timestamp="1601392520732" />
+    <state width="1814" height="404" key="GridCell.Tab.0.center" timestamp="1601392520732">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="404" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601389665194" />
-    <state width="1814" height="404" key="GridCell.Tab.0.left" timestamp="1601389665194">
+    <state width="1814" height="404" key="GridCell.Tab.0.center/63.0.1857.1080@63.0.1857.1080" timestamp="1601392520732" />
+    <state width="1814" height="404" key="GridCell.Tab.0.left" timestamp="1601392520732">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="404" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601389665194" />
-    <state width="1814" height="404" key="GridCell.Tab.0.right" timestamp="1601389665194">
+    <state width="1814" height="404" key="GridCell.Tab.0.left/63.0.1857.1080@63.0.1857.1080" timestamp="1601392520732" />
+    <state width="1814" height="404" key="GridCell.Tab.0.right" timestamp="1601392520732">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state width="1814" height="404" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601389665194" />
+    <state width="1814" height="404" key="GridCell.Tab.0.right/63.0.1857.1080@63.0.1857.1080" timestamp="1601392520732" />
     <state x="492" y="185" key="SettingsEditor" timestamp="1601385896107">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601385896107" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601364644427">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601391104821">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601364644427" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601391104821" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
