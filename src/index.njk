@@ -4,7 +4,7 @@ layout: page.njk
 <div class="wrapper">
     <main>
         <section class="front card" onclick="this.parentElement.classList.add('flip')">
-            <h1>{{ config.name }}<br><span class="line-dash">—</span><br><small>{{ config.jobTitle }}</small></h1>
+            <h1>{{ config.name }} <span>—</span> <small>{{ config.jobTitle }}</small></h1>
         </section>
         <div class="back card">
             <section class="add-contact-container">
@@ -36,7 +36,6 @@ layout: page.njk
                         {% endif %}
                         </li>
                     {% endfor %}
-
                 </ul>
             </section>
 

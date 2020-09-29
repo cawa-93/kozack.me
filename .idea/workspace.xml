@@ -21,8 +21,10 @@
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/config.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.njk" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.njk" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/add-to-contact-section.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/add-to-contact-section.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/card.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/card.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/styles/headers.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles/headers.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,7 +154,7 @@
       <workItem from="1601302537111" duration="1358000" />
       <workItem from="1601313268839" duration="2269000" />
       <workItem from="1601316837493" duration="3853000" />
-      <workItem from="1601360756910" duration="2050000" />
+      <workItem from="1601360756910" duration="2871000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -329,7 +331,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601362087947</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="SVG иконки скрыты от скринридеров">
+      <created>1601362869760</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1601362869760</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -349,7 +358,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="git init" />
     <MESSAGE value="Первый прототип" />
     <MESSAGE value="npm build" />
     <MESSAGE value="Исправлена ссылка на домен" />
@@ -374,7 +382,8 @@
     <MESSAGE value="Исправлена схема" />
     <MESSAGE value="Исправлено открытие QR кода в новой вкладке в Chrome&#10;&#10;Браузеры запрещают открывать data-ссылки простым кликом.&#10;https://stackoverflow.com/questions/49303964/html-chrome-doesnt-open-base64-pdf-without-right-click-open" />
     <MESSAGE value="Верстка доработана с использованием rem для лучшей масштабируемости" />
-    <option name="LAST_COMMIT_MESSAGE" value="Верстка доработана с использованием rem для лучшей масштабируемости" />
+    <MESSAGE value="SVG иконки скрыты от скринридеров" />
+    <option name="LAST_COMMIT_MESSAGE" value="SVG иконки скрыты от скринридеров" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -409,18 +418,18 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601281535091" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601320504116">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601362871651">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601320504116" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601362871651" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601145941778" />
-    <state x="699" y="273" width="585" height="534" key="find.popup" timestamp="1601362017946">
+    <state x="699" y="273" width="585" height="534" key="find.popup" timestamp="1601363638055">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="699" y="273" width="585" height="534" key="find.popup/63.0.1857.1080@63.0.1857.1080" timestamp="1601362017946" />
+    <state x="699" y="273" width="585" height="534" key="find.popup/63.0.1857.1080@63.0.1857.1080" timestamp="1601363638055" />
     <state x="833" y="270" key="ftp.server.browser" timestamp="1600957888655">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>

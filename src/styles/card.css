@@ -6,7 +6,7 @@
     padding: 45px 5px; /* Этот отступ нужен, чтобы при повороте картички не появлялся скролл */
 }
 
-@media (min-width: 570px) {
+@media (orientation: landscape) {
     .wrapper {
         align-items: center;
     }
@@ -19,7 +19,7 @@ main {
     max-width: 25rem;
 }
 
-@media (min-width: 570px) {
+@media (orientation: landscape) {
     main {
         max-width: 38rem;
     }
@@ -54,7 +54,7 @@ main.flip .back {
     grid-template-rows: 4rem auto auto;
 }
 
-@media (min-width: 570px) {
+@media (orientation: landscape) {
     .back {
         grid-template-rows: auto;
         grid-template-columns: 4rem auto auto;
