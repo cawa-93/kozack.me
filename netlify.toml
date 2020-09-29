@@ -11,10 +11,3 @@ to = "/ru/"
 status = 302
 force = true
 conditions = { Language = ["ru", "uk"] }
-
-
-[[redirects]]
-from = "/*"
-to = "/"
-status = 301
-force = false
