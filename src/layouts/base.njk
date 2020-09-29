@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="index, follow">
 
-    <link rel="canonical" href="{{ config.site }}/"/>
+    <link rel="canonical" href="{{ config.site }}{{ '' if (lang === 'en') else ('/' + lang) }}/"/>
     <link rel="alternate" href="{{ config.site }}/" hreflang="en"/>
     <link rel="alternate" href="{{ config.site }}/" hreflang="x-default"/>
     <link rel="alternate" href="{{ config.site }}/ru/" hreflang="ru"/>
@@ -44,3 +44,5 @@
 {{ content | safe }}
 </body>
 </html>
+
+
