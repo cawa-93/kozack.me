@@ -2,5 +2,4 @@
 from = "/"
 to = "/ru/"
 status = 302
-force = false
-conditions = { Language = ["ru"] }
+force = true
