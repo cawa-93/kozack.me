@@ -20,8 +20,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/netlify.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/netlify.toml" beforeDir="false" afterPath="$PROJECT_DIR$/netlify.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -162,7 +162,7 @@
       <workItem from="1601364474113" duration="322000" />
       <workItem from="1601368483812" duration="7000" />
       <workItem from="1601376091663" duration="2585000" />
-      <workItem from="1601384260291" duration="10009000" />
+      <workItem from="1601384260291" duration="10185000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -381,7 +381,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601393163900</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="Проба перенаправления на руский язык">
+      <created>1601395217820</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1601395217820</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -404,7 +411,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="vCard Прототип" />
     <MESSAGE value="Внешний вид списка с иконками" />
     <MESSAGE value="Список ссылок разделен на два" />
     <MESSAGE value="Верстка внешнего вида" />
@@ -429,7 +435,8 @@
     <MESSAGE value="Русская версия главной страницы" />
     <MESSAGE value="Русская версия vcard" />
     <MESSAGE value="Мета теги для мультиязычной страницы" />
-    <option name="LAST_COMMIT_MESSAGE" value="Мета теги для мультиязычной страницы" />
+    <MESSAGE value="Проба перенаправления на руский язык" />
+    <option name="LAST_COMMIT_MESSAGE" value="Проба перенаправления на руский язык" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -468,10 +475,10 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601385896107" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601393176872">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601395219526">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601393176872" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601395219526" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601145941778">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
