@@ -1,10 +1,7 @@
 @import "box-sizing.css";
 @import "page.css";
 @import "card.css";
-@import "add-to-contact-section.css";
-@import "lists.css";
 @import "headers.css";
-
-svg {
-    fill: var(--black);
-}
+@import "add-to-contact-section.css";
+@import "svg-icons.css";
+@import "lists.css";

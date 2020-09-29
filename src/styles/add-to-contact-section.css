@@ -10,7 +10,7 @@
     }
 }
 
-.add-contact-container a {
+.add-contact-container .vcard {
     display: flex;
     width: 4rem;
     height: 4rem;
@@ -21,8 +21,8 @@
     border: 1px solid #ddd;
 }
 
-.add-contact-container a:focus,
-.add-contact-container a:hover {
+.add-contact-container .vcard:focus,
+.add-contact-container .vcard:hover {
     background-color: #ddd;
 }
 
@@ -32,7 +32,7 @@
 }
 
 .add-contact-container img {
-    width: 100px;
-    height: 100px;
-    margin: -1.5rem;
+    width: 7rem;
+    height: 7rem;
+    margin: -1.9rem;
 }

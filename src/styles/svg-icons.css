@@ -1,0 +1,7 @@
+svg {
+    --oversize: 0.4em;
+    fill: var(--black);
+    height: calc(1em + var(--oversize));
+    width: auto;
+    margin: calc(var(--oversize) * -1) 0;
+}

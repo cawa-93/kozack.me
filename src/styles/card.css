@@ -51,13 +51,13 @@ main.flip .back {
     display: grid;
     grid-gap: 2rem;
     gap: 2rem;
-    grid-template-rows: 60px auto auto;
+    grid-template-rows: 4rem auto auto;
 }
 
 @media (min-width: 570px) {
     .back {
         grid-template-rows: auto;
-        grid-template-columns: 60px auto auto;
+        grid-template-columns: 4rem auto auto;
     }
 }
 
