@@ -1,0 +1,44 @@
+[[redirects]]
+from = "/ru/"
+to = "/"
+status = 301
+force = true
+conditions = { Language = ["en"] }
+
+[[redirects]]
+from = "/uk/"
+to = "/"
+status = 301
+force = true
+conditions = { Language = ["en"] }
+
+
+[[redirects]]
+from = "/"
+to = "/ru/"
+status = 301
+force = true
+conditions = { Language = ["ru"] }
+
+[[redirects]]
+from = "/uk/"
+to = "/ru/"
+status = 301
+force = true
+conditions = { Language = ["ru"] }
+
+
+
+[[redirects]]
+from = "/"
+to = "/uk/"
+status = 301
+force = true
+conditions = { Language = ["uk"] }
+
+[[redirects]]
+from = "/ru/"
+to = "/uk/"
+status = 301
+force = true
+conditions = { Language = ["uk"] }

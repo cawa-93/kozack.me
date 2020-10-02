@@ -2,7 +2,9 @@ module.exports = function(config) {
 	config.addPassthroughCopy('src/styles');
 	config.addPassthroughCopy('src/images');
 
-	config.addNunjucksAsyncFilter('qrcode', function(text, callback) {
+	config.addWatchTarget("./src/l10n/");
+
+	config.addNunjucksAsyncFilter('qrcode', function(text, path, callback) {
 		const QRCode = require('qrcode');
 		const oxipng = require('@wasm-codecs/oxipng');
 		const {promises: fs} = require('fs');
@@ -11,11 +13,11 @@ module.exports = function(config) {
 			.toBuffer(text.trim(), {errorCorrectionLevel: 'L'})
 			.then(buffer => oxipng(buffer, {level: 3}))
 			.then(buffer =>
-				fs.writeFile('./dist/images/qrcode.png', buffer)
+				fs.writeFile('./dist' + path, buffer)
 					.then(() => {
 						callback(null, {
 							dataurl: `data:image/png;base64,${buffer.toString('base64')}`,
-							url: '/images/qrcode.png',
+							url: path,
 						});
 					}),
 			);
@@ -24,6 +26,11 @@ module.exports = function(config) {
 	config.addShortcode('schema', (config) => {
 		const schema = require('./src/includes/schema.11ty.js');
 		return schema({config});
+	});
+
+	config.addShortcode('_t', (id, locale, args) => {
+		const _ = require('./src/utils/fluent.bundle.js');
+		return _(id, locale, args)
 	});
 
 	return {

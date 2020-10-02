@@ -1,9 +1,9 @@
 BEGIN:VCARD
 VERSION:3.0
-N:{{ config.name.last }};{{ config.name.first }};;;
-FN:{{ config.name }}
+N:{% _t 'last-name', lang %};{% _t 'first-name', lang %};;;
+FN:{% _t 'name', lang %}
 ORG:ihappymama.ru
-TITLE:{{ config.jobTitle }}
+TITLE:{% _t 'job', lang %}
 EMAIL;PREF;WORK:{{ config.email }}
 URL;type=pref:{{ config.site }}
 {% for url in config.links %}URL:{{ url }}

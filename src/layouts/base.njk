@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
+
+    <link rel="canonical" href="{{ config.site }}{{ '' if (lang === 'en') else ('/' + lang) }}/"/>
+    <link rel="alternate" href="{{ config.site }}/" hreflang="en"/>
+    <link rel="alternate" href="{{ config.site }}/" hreflang="x-default"/>
+    <link rel="alternate" href="{{ config.site }}/ru/" hreflang="ru"/>
+    <link rel="alternate" href="{{ config.site }}/uk/" hreflang="uk"/>
+
+    <!-- Primary Meta Tags -->
+    <title>{% _t 'site-title-with-description', lang %}</title>
+    <meta name="title" content="{% _t 'site-title', lang %}">
+    <meta name="description" content="{% _t 'site-description', lang %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="profile">
+    <meta property="profile:first_name" content="{% _t 'first-name', lang %}">
+    <meta property="profile:last_name" content="{% _t 'last-name', lang %}">
+    <meta property="profile:username" content="{% _t 'name', lang %}">
+    <meta property="profile:gender" content="male">
+    <meta property="og:title" content="{% _t 'site-title', lang %}">
+    <meta property="og:url" content="{{ config.site }}/">
+    <meta property="og:description" content="{% _t 'site-description', lang %}">
+    <meta property="og:image" content="{{ config.site }}/images/avatar-origin.png">
+    <meta property="og:locale" content="{{ lang }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ config.site }}/">
+    <meta property="twitter:title" content="{% _t 'site-title', lang %}">
+    <meta property="twitter:description" content="{% _t 'site-description', lang %}">
+    <meta property="twitter:image" content="{{ config.site }}/images/avatar-origin.png">
+
+
+    <link rel="shortcut icon" href="/images/avatar-face-32.jpg" type="image/jpeg">
+    <link rel="apple-touch-icon" href="/images/avatar-180.jpg" type="image/jpeg">
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script type="application/ld+json">{% schema config %}</script>
+</head>
+<body>
+{{ content | safe }}
+</body>
+</html>
+
+

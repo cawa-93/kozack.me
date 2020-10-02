@@ -11,6 +11,7 @@
   "author": "Alex Kozack",
   "license": "ISC",
   "dependencies": {
+    "@fluent/bundle": "^0.16.0",
     "@wasm-codecs/oxipng": "^1.0.1",
     "gulp-htmlmin": "^5.0.1",
     "qrcode": "^1.4.4"
