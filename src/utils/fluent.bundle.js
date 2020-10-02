@@ -42,7 +42,6 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 		return;
 	}
 
-	console.log({message: message.value, formated: bundle.formatPattern(message.value, args)});
 	const formattedMessage = {
 		value: bundle.formatPattern(message.value, args).trim(),
 		toString() {
