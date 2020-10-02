@@ -20,10 +20,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f3b0318-63d8-4f02-bf9f-9cd363fd6bbf" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/persone.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/utils/fluent.bundle.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/fluent.bundle.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/netlify.toml" beforeDir="false" afterPath="$PROJECT_DIR$/netlify.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -170,7 +167,7 @@
       <workItem from="1601451497153" duration="47000" />
       <workItem from="1601473982701" duration="1202000" />
       <workItem from="1601477537836" duration="228000" />
-      <workItem from="1601645187323" duration="1917000" />
+      <workItem from="1601645187323" duration="2344000" />
     </task>
     <task id="LOCAL-00001" summary="Первый прототип">
       <created>1600771401549</created>
@@ -508,7 +505,14 @@
       <option name="project" value="LOCAL" />
       <updated>1601646460540</updated>
     </task>
-    <option name="localTasksCounter" value="49" />
+    <task id="LOCAL-00049" summary="Рефакторинг">
+      <created>1601647164141</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1601647164141</updated>
+    </task>
+    <option name="localTasksCounter" value="50" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -531,7 +535,6 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
-    <MESSAGE value="Добавлен qrcode" />
     <MESSAGE value="Заменен email" />
     <MESSAGE value="Мета-теги для поисковых ботов" />
     <MESSAGE value="Рефакторинг&#10;&#10;Код перераспределен по файлам для удобства" />
@@ -556,7 +559,8 @@
     <MESSAGE value="Добавлена украинская версия" />
     <MESSAGE value="Украинская версия vcard" />
     <MESSAGE value="Исправлены размеры карточки для длинного текста" />
-    <option name="LAST_COMMIT_MESSAGE" value="Исправлены размеры карточки для длинного текста" />
+    <MESSAGE value="Рефакторинг" />
+    <option name="LAST_COMMIT_MESSAGE" value="Рефакторинг" />
   </component>
   <component name="WindowStateProjectService">
     <state x="568" y="185" key="#SSH_Configurations" timestamp="1600957848065">
@@ -599,10 +603,10 @@
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
     <state x="492" y="185" key="SettingsEditor/63.0.1857.1080@63.0.1857.1080" timestamp="1601385896107" />
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601646220217">
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2" timestamp="1601647171968">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
-    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601646220217" />
+    <state x="583" y="273" key="Vcs.Push.Dialog.v2/63.0.1857.1080@63.0.1857.1080" timestamp="1601647171968" />
     <state x="809" y="454" key="com.intellij.openapi.vcs.update.UpdateOrStatusOptionsDialogupdate-v2" timestamp="1601645403494">
       <screen x="63" y="0" width="1857" height="1080" />
     </state>
