@@ -54,23 +54,8 @@ const links = [
 	Facebook,
 ];
 
-const name = {
-	first: 'Alex',
-	last: 'Kozack',
-
-	toString() {
-		return this.first + ' ' + this.last
-	},
-
-	toJSON() {
-		return this.first + ' ' + this.last
-	}
-}
-
 module.exports = function() {
 	return {
-		name,
-		jobTitle: 'Full stack web developer',
 		site: process.env.URL || 'https://localhost:8080',
 		email: 'x73blk4om@relay.firefox.com',
 		avatar: {

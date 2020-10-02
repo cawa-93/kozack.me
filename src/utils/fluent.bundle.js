@@ -41,8 +41,10 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	if (!message) {
 		return;
 	}
+
+	console.log({message: message.value, formated: bundle.formatPattern(message.value, args)});
 	const formattedMessage = {
-		value: bundle.formatPattern(message.value, args),
+		value: bundle.formatPattern(message.value, args).trim(),
 		toString() {
 			return this.value;
 		},
@@ -52,7 +54,7 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	};
 
 	for (const key in message.attributes) {
-		formattedMessage[key] = bundle.formatPattern(message.attributes[key], args);
+		formattedMessage[key] = bundle.formatPattern(message.attributes[key], args).trim();
 	}
 
 	return formattedMessage;
