@@ -13,6 +13,22 @@ Link = '''
 '''
 
 
+[[headers]]
+for = "/images/qrcode-en.png"
+[headers.values]
+Content-Language = 'en'
+
+[[headers]]
+for = "/images/qrcode-ru.png"
+[headers.values]
+Content-Language = 'ru'
+
+[[headers]]
+for = "/images/qrcode-uk.png"
+[headers.values]
+Content-Language = 'uk'
+
+
 
 
 
