@@ -4,75 +4,80 @@ for = "/sitemap.xml"
 Content-type = "application/xml"
 
 [[headers]]
-for = "/images/qrcode-*"
+for = "*/qrcode/*"
 [headers.values]
 Link = '''
-</images/qrcode-en.png>; rel="alternate"; hreflang="en",
-</images/qrcode-ru.png>; rel="alternate"; hreflang="ru",
-</images/qrcode-uk.png>; rel="alternate"; hreflang="uk"
+</en/qrcode.png>; rel="alternate"; hreflang="en",
+</ru/qrcode.png>; rel="alternate"; hreflang="ru",
+</uk/qrcode.png>; rel="alternate"; hreflang="uk"
 '''
 
 
 [[headers]]
-for = "/images/qrcode-en.png"
+for = "/"
 [headers.values]
 Content-Language = 'en'
 
 [[headers]]
-for = "/images/qrcode-ru.png"
+for = "/en/*"
+[headers.values]
+Content-Language = 'en'
+
+[[headers]]
+for = "/ru/*"
 [headers.values]
 Content-Language = 'ru'
 
 [[headers]]
-for = "/images/qrcode-uk.png"
+for = "/uk/*"
 [headers.values]
 Content-Language = 'uk'
 
 
 
 
-
-[[redirects]]
-from = "/ru/"
-to = "/"
-status = 301
-force = true
-conditions = { Language = ["en"] }
-
-[[redirects]]
-from = "/uk/"
-to = "/"
-status = 301
-force = true
-conditions = { Language = ["en"] }
-
-
-[[redirects]]
-from = "/"
-to = "/ru/"
-status = 301
-force = true
-conditions = { Language = ["ru"] }
-
-[[redirects]]
-from = "/uk/"
-to = "/ru/"
-status = 301
-force = true
-conditions = { Language = ["ru"] }
-
-
-
-[[redirects]]
-from = "/"
-to = "/uk/"
-status = 301
-force = true
-conditions = { Language = ["uk"] }
-
-[[redirects]]
-from = "/ru/"
-to = "/uk/"
-status = 301
-force = true
-conditions = { Language = ["uk"] }
+#
+#[[redirects]]
+#from = "/ru/"
+#to = "/"
+#status = 301
+#force = true
+#conditions = { Language = ["en"] }
+#
+#[[redirects]]
+#from = "/uk/"
+#to = "/"
+#status = 301
+#force = true
+#conditions = { Language = ["en"] }
+#
+#
+#[[redirects]]
+#from = "/"
+#to = "/ru/"
+#status = 301
+#force = true
+#conditions = { Language = ["ru"] }
+#
+#[[redirects]]
+#from = "/uk/"
+#to = "/ru/"
+#status = 301
+#force = true
+#conditions = { Language = ["ru"] }
+#
+#
+#
+#[[redirects]]
+#from = "/"
+#to = "/uk/"
+#status = 301
+#force = true
+#conditions = { Language = ["uk"] }
+#
+#[[redirects]]
+#from = "/ru/"
+#to = "/uk/"
+#status = 301
+#force = true
+#conditions = { Language = ["uk"] }
