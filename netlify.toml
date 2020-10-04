@@ -47,13 +47,12 @@ Content-Language = 'uk'
 
 
 # Перенаправления для мультиязычности
-#
-#[[redirects]]
-#from = "/ru/"
-#to = "/"
-#status = 301
-#force = true
-#conditions = { Language = ["en"] }
+[[redirects]]
+from = ["/ru/", "/uk/"]
+to = "/"
+status = 301
+force = true
+conditions = { Language = ["en"] }
 #
 #[[redirects]]
 #from = "/uk/"
