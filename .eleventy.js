@@ -5,24 +5,6 @@ module.exports = function(config) {
 
 	config.addWatchTarget("./src/l10n/");
 
-	config.addNunjucksAsyncFilter('qrcode', function(text, path, callback) {
-		const QRCode = require('qrcode');
-		const oxipng = require('@wasm-codecs/oxipng');
-		const {promises: fs} = require('fs');
-
-		QRCode
-			.toBuffer(text.trim(), {errorCorrectionLevel: 'L'})
-			.then(buffer => oxipng(buffer, {level: 3}))
-			.then(buffer =>
-				fs.writeFile('./dist' + path, buffer)
-					.then(() => {
-						callback(null, {
-							src: `data:image/png;base64,${buffer.toString('base64')}`,
-						});
-					}),
-			);
-	});
-
 	config.addShortcode('schema', (config) => {
 		const schema = require('./src/includes/schema.11ty.js');
 		return schema({config});
@@ -34,7 +16,7 @@ module.exports = function(config) {
 	});
 
 	return {
-		templateFormats: ['njk'],
+		templateFormats: ['njk', '11ty.js'],
 
 		// If your site lives in a different subdirectory, change this.
 		// Leading or trailing slashes are all normalized away, so don’t worry about those.

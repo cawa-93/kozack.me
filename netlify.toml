@@ -3,35 +3,50 @@ for = "/sitemap.xml"
 [headers.values]
 Content-type = "application/xml"
 
+
+
+# Заголовки для мультиязычности
 [[headers]]
-for = "/images/qrcode-*"
+for = "*/qrcode.png"
 [headers.values]
 Link = '''
-</images/qrcode-en.png>; rel="alternate"; hreflang="en",
-</images/qrcode-ru.png>; rel="alternate"; hreflang="ru",
-</images/qrcode-uk.png>; rel="alternate"; hreflang="uk"
+</en/qrcode.png>; rel="alternate"; hreflang="en",
+</ru/qrcode.png>; rel="alternate"; hreflang="ru",
+</uk/qrcode.png>; rel="alternate"; hreflang="uk"
 '''
 
+[[headers]]
+for = "*/vcard.vcf"
+[headers.values]
+Link = '''
+</en/vcard.vcf>; rel="alternate"; hreflang="en",
+</ru/vcard.vcf>; rel="alternate"; hreflang="ru",
+</uk/vcard.vcf>; rel="alternate"; hreflang="uk"
+'''
 
 [[headers]]
-for = "/images/qrcode-en.png"
+for = "/"
 [headers.values]
 Content-Language = 'en'
 
 [[headers]]
-for = "/images/qrcode-ru.png"
+for = "/en/*"
+[headers.values]
+Content-Language = 'en'
+
+[[headers]]
+for = "/ru/*"
 [headers.values]
 Content-Language = 'ru'
 
 [[headers]]
-for = "/images/qrcode-uk.png"
+for = "/uk/*"
 [headers.values]
 Content-Language = 'uk'
 
 
 
-
-
+# Перенаправления для мультиязычности
 [[redirects]]
 from = "/ru/"
 to = "/"
