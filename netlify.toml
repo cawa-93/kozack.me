@@ -7,9 +7,9 @@ Content-type = "application/xml"
 for = "/images/qrcode-*"
 [headers.values]
 Link = '''
-</qrcode-en.png>; rel="alternate"; hreflang="en",
-</qrcode-ru.png>; rel="alternate"; hreflang="ru",
-</qrcode-uk.png>; rel="alternate"; hreflang="uk"
+</images/qrcode-en.png>; rel="alternate"; hreflang="en",
+</images/qrcode-ru.png>; rel="alternate"; hreflang="ru",
+</images/qrcode-uk.png>; rel="alternate"; hreflang="uk"
 '''
 
 
