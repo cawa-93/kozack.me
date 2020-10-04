@@ -6,7 +6,7 @@ ul {
 
 ul a {
     padding: 0.6rem 0;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--gray);
     color: var(--black);
     margin-top: -1px;
     text-decoration: none;
@@ -17,7 +17,7 @@ ul a {
 
 ul a:focus,
 ul a:hover {
-    background-color: #ddd;
+    background-color: var(--gray);
 }
 
 ul svg {
