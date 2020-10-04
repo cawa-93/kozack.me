@@ -1,4 +1,5 @@
 module.exports = function(config) {
+	config.addPassthroughCopy('src/favicon.ico');
 	config.addPassthroughCopy('src/styles');
 	config.addPassthroughCopy('src/images');
 
@@ -33,7 +34,7 @@ module.exports = function(config) {
 	});
 
 	return {
-		templateFormats: ['html', 'ejs', 'njk', '11ty.js'],
+		templateFormats: ['njk'],
 
 		// If your site lives in a different subdirectory, change this.
 		// Leading or trailing slashes are all normalized away, so don’t worry about those.
