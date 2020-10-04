@@ -18,12 +18,12 @@
     justify-content: center;
     align-items: center;
     padding: 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--gray);
 }
 
 .add-contact-container a:focus,
 .add-contact-container a:hover {
-    background-color: #ddd;
+    background-color: var(--gray);
 }
 
 .add-contact-container svg {
