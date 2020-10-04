@@ -3,6 +3,15 @@ for = "/sitemap.xml"
 [headers.values]
 Content-type = "application/xml"
 
+[[headers]]
+for = "/images/qrcode-*"
+[headers.values]
+Link = '''
+</qrcode-en.png>; rel="alternate"; hreflang="en",
+</qrcode-ru.png>; rel="alternate"; hreflang="ru",
+</qrcode-uk.png>; rel="alternate"; hreflang="uk"
+'''
+
 
 
 
