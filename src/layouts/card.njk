@@ -23,7 +23,7 @@ layout: base.njk
                 {% set qrcode = vcard | qrcode(qrCodePath) %}
 
                 <a href="{{ qrCodePath }}" target="_blank" title="{% _t 'qrcode', lang, 'title' %}">
-                    <img src="{{ qrCodePath }}" alt="{% _t 'qrcode', lang, 'alt' %}">
+                    <img src="{{ qrcode.src }}" alt="{% _t 'qrcode', lang, 'alt' %}">
                 </a>
             </section>
 

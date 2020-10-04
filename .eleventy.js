@@ -16,8 +16,7 @@ module.exports = function(config) {
 				fs.writeFile('./dist' + path, buffer)
 					.then(() => {
 						callback(null, {
-							dataurl: `data:image/png;base64,${buffer.toString('base64')}`,
-							url: path,
+							src: `data:image/png;base64,${buffer.toString('base64')}`,
 						});
 					}),
 			);
