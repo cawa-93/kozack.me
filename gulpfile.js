@@ -4,6 +4,7 @@ const gulp = require('gulp');
 
 gulp.task('styles:compress', () => {
 	const postcss = require('gulp-postcss');
+
 	return gulp.src('src/styles/styles.css')
 		.pipe(postcss([
 			require('postcss-import'),
