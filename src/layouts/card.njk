@@ -2,10 +2,13 @@
 layout: base.njk
 ---
 <div class="wrapper">
-    <main aria-labelledby="title">
+
+    <main aria-labelledby="title" class="{{ 'flip' if env.FLIP_CARD }}">
+
         <section class="front card" onclick="this.parentElement.classList.add('flip')">
             <h1 id="title">{% _t 'name', lang %} <span>—</span> <small>{% _t 'job', lang %}</small></h1>
         </section>
+
         <div class="back card">
             <section class="add-contact-container">
                 <a href="/{{ lang }}/vcard.vcf" title="{% _t 'add-contact', lang %}" class="vcard">

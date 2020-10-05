@@ -11,17 +11,18 @@
   "author": "Alex Kozack",
   "license": "ISC",
   "dependencies": {
+    "@11ty/eleventy": "^0.11.0",
     "@fluent/bundle": "^0.16.0",
     "@wasm-codecs/oxipng": "^1.0.1",
-    "gulp-htmlmin": "^5.0.1",
-    "qrcode": "^1.4.4",
-    "@11ty/eleventy": "^0.11.0",
     "del": "^6.0.0",
+    "dotenv": "^8.2.0",
     "gulp": "^4.0.2",
+    "gulp-htmlmin": "^5.0.1",
     "gulp-postcss": "^9.0.0",
     "gulp-replace": "^1.0.0",
     "postcss-csso": "^4.0.0",
-    "postcss-import": "^12.0.1"
+    "postcss-import": "^12.0.1",
+    "qrcode": "^1.4.4"
   },
   "devDependencies": {}
 }

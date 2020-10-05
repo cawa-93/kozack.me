@@ -32,6 +32,9 @@ gulp.task('html:compress', () => {
 	const htmlmin = require('gulp-htmlmin');
 	return gulp.src('dist/**/*.html')
 		.pipe(htmlmin({
+			removeEmptyAttributes: true,
+			removeRedundantAttributes: true,
+			collapseBooleanAttributes: true,
 			collapseWhitespace: true,
 			minifyJS: true,
 			removeComments: true,

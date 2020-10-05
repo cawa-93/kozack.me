@@ -4,6 +4,7 @@ module.exports = function(config) {
 	config.addPassthroughCopy('src/images');
 
 	config.addWatchTarget("./src/l10n/");
+	config.addWatchTarget(".env.local");
 
 	config.addShortcode('schema', (config) => {
 		const schema = require('./src/includes/schema.11ty.js');
