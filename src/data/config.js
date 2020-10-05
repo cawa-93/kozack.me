@@ -54,6 +54,9 @@ const links = [
 	Facebook,
 ];
 
+/*
+ * TODO: Разделить этот конфиг на несколько независимых частей
+ */
 module.exports = {
 	site: process.env.URL || 'https://localhost:8080',
 	email: 'x73blk4om@relay.firefox.com',
