@@ -7,12 +7,12 @@ Content-type = "application/xml"
 
 # Заголовки для мультиязычности
 [[headers]]
-for = "*/qrcode.png"
+for = "*/qr-code.png"
 [headers.values]
 Link = '''
-</en/qrcode.png>; rel="alternate"; hreflang="en",
-</ru/qrcode.png>; rel="alternate"; hreflang="ru",
-</uk/qrcode.png>; rel="alternate"; hreflang="uk"
+</en/qr-code.png>; rel="alternate"; hreflang="en",
+</ru/qr-code.png>; rel="alternate"; hreflang="ru",
+</uk/qr-code.png>; rel="alternate"; hreflang="uk"
 '''
 
 [[headers]]

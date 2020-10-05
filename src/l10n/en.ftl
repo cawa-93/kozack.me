@@ -11,7 +11,7 @@ site-title-with-description = { site-title } — { site-description }
 # "Download .vfc file" button
 add-contact = Add contact
 
-qrcode = QR Code
+qr-code = QR Code
     .title = Open QR code in full size
     .alt = Contact QR code
 

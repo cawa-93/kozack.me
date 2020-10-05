@@ -1,8 +1,8 @@
 module.exports = class {
 	data() {
 		return {
-			lang: 'en',
-			layout: 'qrcode.11ty.js'
+			lang: 'ru',
+			layout: 'qr-code.11ty.js'
 		}
 	}
 }

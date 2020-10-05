@@ -11,7 +11,7 @@ site-title-with-description = { site-title } — { site-description }
 # "Download .vfc file" button
 add-contact = Імпортувати контакт
 
-qrcode = QR Код
+qr-code = QR Код
     .title = Відкрити QR код в повному розмірі
     .alt = QR код контакта
 
