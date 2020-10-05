@@ -6,11 +6,6 @@ module.exports = function(config) {
 	config.addWatchTarget("./src/l10n/");
 	config.addWatchTarget(".env.local");
 
-	config.addShortcode('schema', (config) => {
-		const schema = require('./src/includes/schema.11ty.js');
-		return schema({config});
-	});
-
 	config.addShortcode('_t', (id, locale, args) => {
 		const _ = require('./src/utils/fluent.bundle.js');
 		return _(id, locale, args)
