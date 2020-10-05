@@ -1,7 +1,10 @@
-module.exports = class {
-	render(context) {
+const _t = require('../../utils/fluent.bundle.js');
 
-		const config = context.config
+
+module.exports = class {
+	render({links, env, lang, email}) {
+
+		const site = env.URL
 
 		const sideProfiles = [
 			'https://www.facebook.com/alex.kozack',
@@ -13,13 +16,13 @@ module.exports = class {
 		]
 
 		const base = {
-			'name': config.name,
-			'email': config.email,
-			'sameAs': [...config.links, ...sideProfiles],
-			'url': config.site,
+			'name': _t('name', lang),
+			'email': email,
+			'sameAs': [...links, ...sideProfiles],
+			'url': site,
 		};
 
-		const image = `${config.site}${config.avatar.src}`;
+		const image = `${site}/images/avatar-origin.png`;
 
 		const schema = {
 			'@context': 'https://schema.org',
@@ -31,7 +34,7 @@ module.exports = class {
 				'@type': 'Person',
 				...base,
 				'image': image,
-				'jobTitle': config.jobTitle,
+				'jobTitle': _t('job', lang)
 			},
 		};
 
