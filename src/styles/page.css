@@ -6,7 +6,7 @@ body {
     color: var(--black);
     height: 100%;
     width: 100%;
-    font-size: 15px;
+    font-size: 16px;
     background: #fafafa;
     margin: 0;
     padding: 0;
@@ -19,5 +19,17 @@ body {
         --white: #1e1e1e;
         --gray: rgb(74 74 74);
         background-color: rgb(20,20,20);
+    }
+}
+
+@media (min-width: 1920px), (min-height: 1920px) {
+    html, body {
+        font-size: calc(16px * 1.5);
+    }
+}
+
+@media (min-width: 2560px), (min-height: 2560px) {
+    html, body {
+        font-size: calc(16px * 3);
     }
 }
