@@ -1,7 +1,7 @@
 html,
 body {
-    --black: rgb(5,5,5);
-    --white: rgba(255,255,255, 0.8);
+    --black: rgb(5, 5, 5);
+    --white: rgba(255, 255, 255, 0.8);
     --gray: #ddd;
     color: var(--black);
     height: 100%;
@@ -15,10 +15,10 @@ body {
 
 @media (prefers-color-scheme: dark) {
     html, body {
-        --black: rgba(255,255,255, 0.8);
+        --black: rgba(255, 255, 255, 0.8);
         --white: #1e1e1e;
         --gray: rgb(74 74 74);
-        background-color: rgb(20,20,20);
+        background-color: rgb(20, 20, 20);
     }
 }
 

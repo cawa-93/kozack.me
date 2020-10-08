@@ -24,5 +24,10 @@ ul svg {
 }
 
 
-.works { grid-area: works; }
-.contacts { grid-area: contacts; }
+.works {
+    grid-area: works;
+}
+
+.contacts {
+    grid-area: contacts;
+}

@@ -3,6 +3,6 @@ module.exports = class {
 		return {
 			lang: 'en',
 			layout: 'vcard.11ty.js',
-		}
+		};
 	}
-}
+};

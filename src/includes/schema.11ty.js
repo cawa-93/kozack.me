@@ -7,7 +7,7 @@ module.exports = ({config}) => {
 		'https://ru.wordpress.org/support/users/cawa-93/',
 		'https://addons.mozilla.org/uk/firefox/user/13317680/',
 		'https://www.linkedin.com/in/alex-kozack-3a62a665/',
-	]
+	];
 
 	const base = {
 		'name': config.name,
@@ -32,5 +32,5 @@ module.exports = ({config}) => {
 		},
 	};
 
-	return JSON.stringify(schema)
+	return JSON.stringify(schema);
 };

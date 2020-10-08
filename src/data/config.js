@@ -61,4 +61,4 @@ module.exports = {
 		src: '/images/avatar-origin.png',
 	},
 	links,
-}
+};
