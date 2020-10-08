@@ -22,3 +22,7 @@ ul a:hover {
 ul svg {
     margin-right: 1rem;
 }
+
+
+.works { grid-area: works; }
+.contacts { grid-area: contacts; }

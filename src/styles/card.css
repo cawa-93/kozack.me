@@ -49,15 +49,21 @@ main.flip .back {
 .back {
     transform: rotateY(-180deg);
     display: grid;
-    grid-gap: 2rem;
-    gap: 2rem;
-    grid-template-rows: 4rem auto auto;
+    gap: 2rem 1rem;
+    grid-template:
+        "vcard    qrcode"   4rem
+        "works    works"    auto
+        "contacts contacts" auto /
+        auto      4rem;
 }
 
 @media (orientation: landscape) {
     .back {
-        grid-template-rows: auto;
-        grid-template-columns: 4rem auto auto;
+        column-gap: 2rem;
+        grid-template:
+            "vcard  works contacts" auto
+            "qrcode works contacts" auto /
+            4rem    auto  auto;
     }
 }
 
@@ -67,14 +73,10 @@ main.flip .back {
     transition: transform 0.3s ease-in;
     will-change: transform;
     transform-style: preserve-3d;
-    -webkit-backface-visibility: hidden;
+    -webkit-backface-visibility: hidden; /* Safari <= 14 */
     backface-visibility: hidden;
     padding: 2rem;
     background-color: var(--white);
-    box-shadow: 0 3px 3px -2px rgba(0,0,0,.2),0 3px 4px 0 rgba(0,0,0,.14),0 1px 8px 0 rgba(0,0,0,.12);
-    border-radius: 4px;
+    box-shadow: 0 0.2rem 0.2rem -0.13rem rgba(0, 0, 0, .2), 0 0.2rem 0.26rem 0 rgba(0, 0, 0, .14), 0 0.06rem 0.53rem 0 rgba(0, 0, 0, .12);
+    border-radius: 0.3rem;
 }
-
-/*main:hover .card {*/
-/*    box-shadow: 0 8px 9px -5px rgba(0,0,0,.2),0 15px 22px 2px rgba(0,0,0,.14),0 6px 28px 5px rgba(0,0,0,.12) !important;*/
-/*}*/

@@ -1,16 +1,12 @@
-.add-contact-container {
-    flex-grow: unset;
-    display: flex;
-    justify-content: space-between;
+.vcard {
+    grid-area: vcard;
 }
 
-@media (orientation: landscape) {
-    .add-contact-container {
-        flex-direction: column;
-    }
+.qrcode {
+    grid-area: qrcode;
 }
 
-.add-contact-container a {
+.vcard, .qrcode {
     display: flex;
     width: 4rem;
     height: 4rem;
@@ -19,14 +15,17 @@
     align-items: center;
     padding: 1rem;
     border: 0.1rem solid var(--gray);
+    justify-self: end;
+    margin-bottom: -2rem;
 }
 
-.add-contact-container a:focus,
-.add-contact-container a:hover {
+
+.vcard:focus, .qrcode:focus,
+.vcard:hover, .qrcode:hover {
     background-color: var(--gray);
 }
 
-.add-contact-container svg {
+.vcard svg, .qrcode svg {
     width: 100%;
     height: 100%;
 }
