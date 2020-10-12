@@ -4,20 +4,20 @@ permalink: sitemap.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
-        <loc>{{ config.site }}/</loc>
+        <loc>{{ env.URL }}/</loc>
         <changefreq>daily</changefreq>
         <xhtml:link
                 rel="alternate"
                 hreflang="en"
-                href="{{ config.site }}/"/>
+                href="{{ env.URL }}/"/>
         <xhtml:link
                 rel="alternate"
                 hreflang="ru"
-                href="{{ config.site }}/ru/"/>
+                href="{{ env.URL }}/ru/"/>
         <xhtml:link
                 rel="alternate"
                 hreflang="uk"
-                href="{{ config.site }}/uk/"/>
+                href="{{ env.URL }}/uk/"/>
 
     </url>
 </urlset>

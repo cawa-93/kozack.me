@@ -16,11 +16,11 @@ module.exports = class {
 			`FN:${_t('name', data.lang)}`,
 			`ORG:ihappymama.ru`,
 			`TITLE:${_t('job', data.lang)}`,
-			`EMAIL;PREF;WORK:${data.config.email}`,
-			`URL;type=pref:${data.config.site}`,
+			`EMAIL;PREF;WORK:${data.email}`,
+			`URL;type=pref:${data.env.URL}`,
 		];
 
-		rows.push(...data.config.links.map(link => `URL:${link}`));
+		rows.push(...data.links.map(link => `URL:${link}`));
 		rows.push(`END:VCARD`);
 		return rows.join('\n');
 	}
