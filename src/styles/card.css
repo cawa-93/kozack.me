@@ -1,17 +1,3 @@
-.wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    min-height: 100%;
-    padding: 45px 5px; /* Этот отступ нужен, чтобы при повороте картички не появлялся скролл */
-}
-
-@media (orientation: landscape) {
-    .wrapper {
-        align-items: center;
-    }
-}
-
 main {
     position: relative;
     perspective: 1000px;
@@ -49,21 +35,21 @@ main.flip .back {
 .back {
     transform: rotateY(-180deg);
     display: grid;
-    gap: 2rem 1rem;
+    gap: 1rem;
     grid-template:
         "vcard    qrcode"   4rem
         "works    works"    auto
         "contacts contacts" auto /
-        auto      4rem;
+         auto     4rem;
 }
 
 @media (orientation: landscape) {
     .back {
         column-gap: 2rem;
         grid-template:
-            "vcard  works contacts" auto
+            "vcard  works contacts" 4rem
             "qrcode works contacts" auto /
-            4rem    auto  auto;
+             4rem   auto  auto;
     }
 }
 
