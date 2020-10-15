@@ -2,7 +2,7 @@ const gulp = require('gulp');
 
 // Styles
 
-gulp.task('styles:compress', () => {
+const cssCompress = () => {
 	const postcss = require('gulp-postcss');
 
 	return gulp.src('src/styles/styles.css')
@@ -14,11 +14,14 @@ gulp.task('styles:compress', () => {
 			}),
 		]))
 		.pipe(gulp.dest('dist'));
-});
+};
 
-gulp.task('styles:inline', () => {
+module.exports.cssCompress = cssCompress;
+
+const cssInline = () => {
 	const replace = require('gulp-replace');
 	const fs = require('fs');
+
 	return gulp.src('dist/**/*.html')
 		.pipe(replace(
 			/<link rel="stylesheet" href="\/styles\/styles.css">/, () => {
@@ -27,12 +30,17 @@ gulp.task('styles:inline', () => {
 			},
 		))
 		.pipe(gulp.dest('dist'));
-});
+};
 
-gulp.task('html:compress', () => {
-	const htmlmin = require('gulp-htmlmin');
+module.exports.cssInline = cssInline;
+
+// HTML
+
+const html = () => {
+	const htmlMin = require('gulp-htmlmin');
+
 	return gulp.src('dist/**/*.html')
-		.pipe(htmlmin({
+		.pipe(htmlMin({
 			removeEmptyAttributes: true,
 			removeRedundantAttributes: true,
 			collapseBooleanAttributes: true,
@@ -41,22 +49,28 @@ gulp.task('html:compress', () => {
 			removeComments: true,
 		}))
 		.pipe(gulp.dest('dist'));
-});
+};
+module.exports.html = html;
 
-gulp.task('clean', () => {
+// Clean
+
+const clean = () => {
 	const del = require('del');
 
 	return del([
 		'dist/styles',
 		'dist/styles.css',
-		// 'dist/scripts',
-		// 'dist/scripts.js'
 	]);
-});
+};
 
-gulp.task('build', gulp.series(
-	'styles:compress',
-	'styles:inline',
-	'html:compress',
-	'clean',
-));
+module.exports.clean = clean;
+
+// Default task
+
+module.exports.default = gulp.series(
+	cssCompress,
+	cssInline,
+	html,
+	clean,
+);
+
