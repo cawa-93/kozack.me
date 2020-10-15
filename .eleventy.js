@@ -1,7 +1,7 @@
 module.exports = function(config) {
 	config.addPassthroughCopy('src/favicon.ico');
 	config.addPassthroughCopy('src/styles');
-	config.addPassthroughCopy('src/images');
+	config.addPassthroughCopy('src/images/**/!(*-origin*)');
 
 	config.addWatchTarget("./src/l10n/");
 	config.addWatchTarget(".env.local");

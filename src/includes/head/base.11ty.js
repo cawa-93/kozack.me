@@ -15,8 +15,11 @@ module.exports = class {
     <meta name="title" content="${_t('site-title', context.lang)}">
     <meta name="description" content="${_t('site-description', context.lang)}">
     
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="/images/avatar-180.jpg" type="image/jpeg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/avatar-face-32.png">
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/avatar-face-16.png">
+		<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+		
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/avatar-180.png">
     
     <link rel="stylesheet" href="/styles/styles.css">
     
