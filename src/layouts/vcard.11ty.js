@@ -20,7 +20,7 @@ module.exports = class {
 			`URL;type=pref:${data.env.URL}`,
 		];
 
-		const allLinks = [...data.links.works, ...data.links.contacts]
+		const allLinks = [...data.links.works, ...data.links.contacts];
 
 		rows.push(...allLinks.map(link => `URL:${link}`));
 		rows.push(`END:VCARD`);
