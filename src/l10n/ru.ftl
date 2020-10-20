@@ -20,6 +20,8 @@ my-works = Мои работы
 
 link-GitHub = Проекты на GitHub
 link-Habr = Статьи на Habr
+link-Patreon = Проекты на Patreon
+
 
 
 my-contacts = Мои контакты

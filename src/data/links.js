@@ -33,6 +33,13 @@ const Habr = new Link({
 	icon: '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="m14.68402,7.09114c-1.78656,-0.12905 -3.51322,0.67301 -4.56701,2.12145l0,-9.21259l-5.11701,0l0,23.5717l5.11701,0l0,-8.6233c0,-2.0626 1.17858,-3.0447 2.6027,-3.0447c1.5518,0 2.53399,1.0509 2.53399,2.9464l0,8.7216l5.117,0l0,-10.5287c0,-3.71255 -2.4849,-5.95186 -5.68668,-5.95186z" /></svg>',
 });
 
+const Patreon = new Link({
+	type: 'work',
+	url: 'https://www.patreon.com/Kozack',
+	label: 'Patreon',
+	icon: '<svg width="24" height="24" viewBox="0 0 24 24"><path d="M14.82 2.41C18.78 2.41 22 5.65 22 9.62C22 13.58 18.78 16.8 14.82 16.8C10.85 16.8 7.61 13.58 7.61 9.62C7.61 5.65 10.85 2.41 14.82 2.41M2 21.6H5.5V2.41H2V21.6Z"/></svg>',
+});
+
 const Facebook = new Link({
 	type: 'contact',
 	label: 'Facebook',
@@ -50,6 +57,7 @@ const Telegram = new Link({
 module.exports = [
 	GitHub,
 	Habr,
+	Patreon,
 	Telegram,
 	Facebook,
 ];

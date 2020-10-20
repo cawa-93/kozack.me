@@ -39,7 +39,7 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	const message = getMessage(id, locale, args);
 
 	if (!message) {
-		return;
+		return id;
 	}
 
 	const formattedMessage = {

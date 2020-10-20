@@ -18,8 +18,9 @@ qr-code = QR Code
 
 my-works = My works
 
-link-GitHub = Follow on GitHub
+link-GitHub = Projects on GitHub
 link-Habr = Articles on Habr
+link-Patreon = Projects on Patreon
 
 
 my-contacts = My contacts
