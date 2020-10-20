@@ -25,14 +25,12 @@ layout: base.11ty.js
         <section class="works">
             <h2 id="list-works-header">{% _t 'my-works', lang %}</h2>
             <ul id="list-works" aria-labelledby="list-works-header">
-                {% for item in links %}
-                    {% if item.type === 'work' %}
-                        <li class="{{ item.type }}">
+                {% for item in links.works %}
+                    <li class="{{ item.type }}">
                         <a href="{{ item.url }}">
                             {{ item.icon | safe }}
-                            {% _t 'link-' + item.label, lang %}
+                            {% _t 'link-' + item.id, lang %}
                         </a>
-                    {% endif %}
                     </li>
                 {% endfor %}
             </ul>
@@ -41,15 +39,13 @@ layout: base.11ty.js
         <section class="contacts">
             <h2 id="list-contacts-header">{% _t 'my-contacts', lang %}</h2>
             <ul id="list-contacts" aria-labelledby="list-contacts-header">
-                {% for item in links %}
-                    {% if item.type === 'contact' %}
-                        <li class="{{ item.type }}">
-                            <a href="{{ item.url }}">
-                                {{ item.icon | safe }}
-                                {% _t 'link-' + item.label, lang %}
-                            </a>
-                        </li>
-                    {% endif %}
+                {% for item in links.contacts %}
+                    <li class="{{ item.type }}">
+                        <a href="{{ item.url }}">
+                            {{ item.icon | safe }}
+                            {% _t 'link-' + item.id, lang %}
+                        </a>
+                    </li>
                 {% endfor %}
                 <li>
                     <a href="mailto:{{ email }}">

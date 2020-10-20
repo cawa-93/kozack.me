@@ -10,6 +10,7 @@ module.exports = class {
 
 
 	render(data) {
+		/** @type {string} */
 		const text = (new (require('./vcard.11ty.js'))).render(data);
 
 		return QRCode

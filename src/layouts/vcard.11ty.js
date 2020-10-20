@@ -20,7 +20,9 @@ module.exports = class {
 			`URL;type=pref:${data.env.URL}`,
 		];
 
-		rows.push(...data.links.map(link => `URL:${link}`));
+		const allLinks = [...data.links.works, ...data.links.contacts]
+
+		rows.push(...allLinks.map(link => `URL:${link}`));
 		rows.push(`END:VCARD`);
 		return rows.join('\n');
 	}

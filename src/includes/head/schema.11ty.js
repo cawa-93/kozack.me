@@ -1,10 +1,9 @@
 const _t = require('../../utils/fluent.bundle.js');
 
-
 module.exports = class {
 	render({links, env, lang, email}) {
 
-		const site = env.URL
+		const site = env.URL;
 
 		const sideProfiles = [
 			'https://www.facebook.com/alex.kozack',
@@ -13,12 +12,14 @@ module.exports = class {
 			'https://ru.wordpress.org/support/users/cawa-93/',
 			'https://addons.mozilla.org/uk/firefox/user/13317680/',
 			'https://www.linkedin.com/in/alex-kozack-3a62a665/',
-		]
+		];
+
+		const allLinks = [...links.works, ...links.contacts];
 
 		const base = {
 			'name': _t('name', lang),
 			'email': email,
-			'sameAs': [...links, ...sideProfiles],
+			'sameAs': [...allLinks, ...sideProfiles],
 			'url': site,
 		};
 
@@ -34,11 +35,11 @@ module.exports = class {
 				'@type': 'Person',
 				...base,
 				'image': image,
-				'jobTitle': _t('job', lang)
+				'jobTitle': _t('job', lang),
 			},
 		};
 
-		return `<script type="application/ld+json">${JSON.stringify(schema)}</script>`
+		return `<script type="application/ld+json">${JSON.stringify(schema)}</script>`;
 
 	}
-}
+};
