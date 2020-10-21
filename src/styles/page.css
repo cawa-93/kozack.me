@@ -16,13 +16,6 @@ body {
     align-items: center;
 }
 
-@media screen and (orientation: portrait) and (max-device-width: 480px) {
-    body {
-        justify-content: end;
-        align-items: end;
-    }
-}
-
 @media (prefers-color-scheme: dark) {
     body {
         --black: rgba(255, 255, 255, 0.8);
