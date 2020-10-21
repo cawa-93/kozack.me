@@ -8,6 +8,7 @@ const cssCompress = () => {
 	return gulp.src('src/styles/styles.css')
 		.pipe(postcss([
 			require('postcss-import'),
+			require('autoprefixer')(),
 			require('postcss-csso')({
 				forceMediaMerge: true,
 				comments: false,
