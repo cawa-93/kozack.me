@@ -9,14 +9,4 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    labels:
-      - "npm"
-      - "dependencies"
       
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "github-actions"
-      - "dependencies"
