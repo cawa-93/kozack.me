@@ -1,23 +1,25 @@
 ---
 permalink: sitemap.xml
+lang:
+    - code: en
+      path: /
+    - code: ru
+      path: /ru/
+    - code: uk
+      path: /uk/
 ---
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-    <url>
-        <loc>{{ env.URL }}/</loc>
-        <changefreq>daily</changefreq>
-        <xhtml:link
-                rel="alternate"
-                hreflang="en"
-                href="{{ env.URL }}/"/>
-        <xhtml:link
-                rel="alternate"
-                hreflang="ru"
-                href="{{ env.URL }}/ru/"/>
-        <xhtml:link
-                rel="alternate"
-                hreflang="uk"
-                href="{{ env.URL }}/uk/"/>
-
-    </url>
+    {% for loc in lang %}
+        <url>
+            <loc>{{ env.URL }}{{ loc.path }}</loc>
+            <changefreq>weekly</changefreq>
+            {% for link in lang %}
+                <xhtml:link
+                        rel="alternate"
+                        hreflang="{{ link.code }}"
+                        href="{{ env.URL }}{{ link.path }}"/>
+            {% endfor %}
+        </url>
+    {% endfor %}
 </urlset>
