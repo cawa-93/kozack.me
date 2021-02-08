@@ -18,7 +18,7 @@
     "gulp-htmlmin": "^5.0.1",
     "gulp-postcss": "^9.0.0",
     "gulp-replace": "^1.0.0",
-    "postcss": "^8.2.4",
+    "postcss": "^8.2.5",
     "postcss-csso": "^5.0.0",
     "postcss-import": "^14.0.0"
   }
