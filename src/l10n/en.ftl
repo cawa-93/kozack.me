@@ -27,3 +27,5 @@ my-contacts = My contacts
 link-Facebook = Facebook Messenger
 link-Telegram = Telegram
 link-Email = Email
+link-LinkedIn = LinkedIn
+link-Twitter = Twitter
