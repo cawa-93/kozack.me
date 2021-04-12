@@ -19,7 +19,7 @@
     "gulp-postcss": "^9.0.0",
     "gulp-replace": "^1.0.0",
     "postcss": "^8.2.10",
-    "postcss-csso": "^5.0.0",
+    "postcss-csso": "^5.0.1",
     "postcss-import": "^14.0.1"
   }
 }
