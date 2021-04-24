@@ -74,7 +74,7 @@ const works = [
 
 const contacts = [
 	Telegram,
-	Facebook,
+	// Facebook,
 	LinkedIn,
 	Twitter,
 	Email,
