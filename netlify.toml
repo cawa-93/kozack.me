@@ -3,6 +3,11 @@ for = "*"
 [headers.values]
 Cross-Origin-Opener-Policy = "same-origin"
 Cross-Origin-Embedder-Policy = "require-corp"
+Cache-Control = '''
+  public,
+  max-age 86400,
+  stale-while-revalidate 2592000,
+  stale-if-error 31536000'''
 
 
 
