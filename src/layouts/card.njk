@@ -5,7 +5,7 @@ layout: base.11ty.js
 <main aria-labelledby="title" class="{{ 'flip' if env.FLIP_CARD }}">
 
     <section class="front card" onclick="this.parentElement.classList.add('flip')">
-        <h1 id="title">{% _t 'name', lang %} <span>—</span> <small>{% _t 'job', lang %}</small></h1>
+        <h1 id="title">{% _t 'name', lang %} <span>—</span> <small lang="{% _t 'job', lang, 'lang' %}">{% _t 'job', lang %}</small></h1>
     </section>
 
     <div class="back card">

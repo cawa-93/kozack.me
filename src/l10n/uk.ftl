@@ -1,7 +1,8 @@
 first-name = Олександр
 last-name = Козак
 name = { first-name } { last-name }
-job =  Full stack web developer
+job = Full stack web developer
+    .lang = en
 
 site-description = Особистий сайт
 
