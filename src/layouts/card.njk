@@ -29,7 +29,10 @@ layout: base.11ty.js
                     <li class="{{ item.type }}">
                         <a href="{{ item.url }}">
                             {{ item.icon | safe }}
-                            {% _t 'link-' + item.id, lang %}
+                            <span>
+                                {% _t 'prefix-' + item.id, lang %}
+                                <span lang="en">{{ item.id }}</span>
+                            </span>
                         </a>
                     </li>
                 {% endfor %}
@@ -41,9 +44,9 @@ layout: base.11ty.js
             <ul id="list-contacts" aria-labelledby="list-contacts-header">
                 {% for item in links.contacts %}
                     <li class="{{ item.type }}">
-                        <a href="{{ item.url }}">
+                        <a href="{{ item.url }}" lang="en">
                             {{ item.icon | safe }}
-                            {% _t 'link-' + item.id, lang %}
+                            {{ item.id }}
                         </a>
                     </li>
                 {% endfor %}

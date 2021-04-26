@@ -17,15 +17,8 @@ qr-code = QR Code
 
 
 my-works = My works
-
-link-GitHub = Projects on GitHub
-link-Habr = Articles on Habr
-link-Patreon = Projects on Patreon
-
-
 my-contacts = My contacts
-link-Facebook = Facebook Messenger
-link-Telegram = Telegram
-link-Email = Email
-link-LinkedIn = LinkedIn
-link-Twitter = Twitter
+
+prefix-GitHub = Projects on
+prefix-Habr = Articles on
+prefix-Patreon = Projects on

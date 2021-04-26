@@ -22,12 +22,12 @@ function getBundle(locale) {
 }
 
 
-function getMessage(id, locale = 'en', args = {}) {
+function getMessage(id, locale = 'en') {
 	const bundle = getBundle(locale);
 	let message = bundle.getMessage(id);
 
 	if (!message && locale !== 'en') {
-		message = getMessage(id, 'en', args);
+		message = getMessage(id, 'en');
 	}
 
 	return message;
@@ -39,7 +39,7 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	const message = getMessage(id, locale, args);
 
 	if (!message) {
-		return id;
+		return '';
 	}
 
 	const formattedMessage = {

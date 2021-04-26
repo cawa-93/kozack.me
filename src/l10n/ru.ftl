@@ -17,17 +17,11 @@ qr-code = QR Код
 
 
 my-works = Мои работы
-
-link-GitHub = Проекты на GitHub
-link-Habr = Статьи на Habr
-link-Patreon = Проекты на Patreon
-
-
-
 my-contacts = Мои контакты
 
-link-Facebook = Facebook Messenger
-link-Telegram = Telegram
-link-Email = Email
-link-LinkedIn = LinkedIn
-link-Twitter = Twitter
+prefix-GitHub = Проекты на
+prefix-Habr = Статьи на
+prefix-Patreon = Проекты на
+
+
+
