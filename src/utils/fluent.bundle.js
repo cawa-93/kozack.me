@@ -43,7 +43,7 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	}
 
 	const formattedMessage = {
-		value: bundle.formatPattern(message.value, args).trim(),
+		value: bundle.formatPattern(message.value, args).trim().replace(/[⁨⁩]/g, ''),
 		toString() {
 			return this.value;
 		},
@@ -53,7 +53,7 @@ function getFormattedMessage(id, locale = 'en', args = {}) {
 	};
 
 	for (const key in message.attributes) {
-		formattedMessage[key] = bundle.formatPattern(message.attributes[key], args).trim();
+		formattedMessage[key] = bundle.formatPattern(message.attributes[key], args).trim().replace(/[⁨⁩]/g, '');
 	}
 
 	return formattedMessage;
