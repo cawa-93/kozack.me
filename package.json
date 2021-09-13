@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@11ty/eleventy": "^0.12.1",
-    "@fluent/bundle": "^0.16.1",
+    "@fluent/bundle": "^0.17.0",
     "@wasm-codecs/oxipng": "^1.0.1",
     "dotenv": "^10.0.0",
     "qrcode": "^1.4.4"
