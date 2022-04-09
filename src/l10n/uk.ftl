@@ -14,10 +14,10 @@ add-contact = Імпортувати контакт
 
 qr-code = QR Код
     .title = Відкрити QR код в повному розмірі
-    .alt = QR код контакта
+    .alt = QR код контакту
 
 
-my-works = Мої работи
+my-works = Мої роботи
 my-contacts = Мої контакти
 
 prefix-GitHub = Проекти на
