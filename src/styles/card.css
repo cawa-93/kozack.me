@@ -64,8 +64,11 @@
         backface-visibility: hidden;
         padding: 2rem;
         background-color: var(--white);
-        box-shadow: 0 0.2rem 0.2rem -0.13rem rgba(0, 0, 0, .2), 0 0.2rem 0.26rem 0 rgba(0, 0, 0, .14), 0 0.06rem 0.53rem 0 rgba(0, 0, 0, .12);
-        border-radius: 0.3rem;
+        box-shadow: 0 0.2rem 0.2rem -0.13rem rgba(255, 215, 0, .2), 0 0.2rem 0.26rem 0 rgba(255, 215, 0, .2), 0 0.06rem 0.53rem 0 rgba(0, 87, 183, .12);
+        border-top: 1px solid rgb(0, 87, 183);
+        border-left: 1px solid rgb(0, 87, 183);
+        border-bottom: 1px solid rgb(255, 215, 0);
+        border-right: 1px solid rgb(255, 215, 0);
     }
 
 }
