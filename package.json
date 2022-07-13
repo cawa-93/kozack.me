@@ -9,7 +9,7 @@
     "@fluent/bundle": "^0.17.1",
     "@wasm-codecs/oxipng": "^1.0.1",
     "dotenv": "^16.0.1",
-    "qrcode": "^1.5.0"
+    "qrcode": "^1.5.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.7",
