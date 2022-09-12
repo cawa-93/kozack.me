@@ -1,19 +1,19 @@
 ---
 layout: home
 
-title: Alex Kozack
-titleTemplate: Full-stack web developer
+title: Олександр Козак
+titleTemplate: Full-stack веб розробник
 
 hero:
-  name: Alex Kozack
-  text: Full-stack web developer
-  tagline: And active member of Open-Source community
+  name: Олександр Козак
+  text: Full-stack веб розробник
+  tagline: І активний учасник Open-Source спільноти
   image:
     src: /avatar.png
     alt: Avatar
   actions:
     - theme: brand
-      text: ☕ By me a coffee
+      text: ☕ Купити мені каву
       link: https://www.buymeacoffee.com/kozack/
     - theme: alt
       text: Email
@@ -32,18 +32,18 @@ hero:
       link: https://t.me/kozack
 
 features:
-  - title: Websites 
+  - title: Вебсайти 
     icon: 🌍
-    details: Full-stack development of traditional websites. Static sites. e11y. SPA. AdonisJs, Nuxt, Wordpress.
-  - title: Desktop apps
+    details: Розробка вебсайтів під ключ. Статичні сайти. e11y. SPA. AdonisJs, Nuxt, Wordpress.
+  - title: Комп’ютерні застосунки
     icon: 💻
-    details: Desktop applications based on web technologies. Electron.
-  - title: Browser extensions
+    details: Застосунки на основі вебтехнологій. Electron.
+  - title: Браузерні розширення
     icon: 🧩
-    details: Extension and addons for Firefox and Chrome-based browsers.
+    details: Розширення та плагіни для браузерів Firefox та Chrome-подібних.
   - title: Open-Source
     icon: 🤝
-    details: Various open source utilities, templates, sets of components. Numerous contributions to open source projects.
+    details: Безліч утиліт з відкритим кодом, шаблонів, наборів компонентів. Численні внески до open-source проектів.
 
   - title: JavaScript/TypeScript
   - title: Vue
