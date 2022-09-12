@@ -13,7 +13,7 @@ hero:
     alt: Avatar
   actions:
     - theme: brand
-      text: ☕ By me coffee
+      text: ☕ By me a coffee
       link: https://www.buymeacoffee.com/kozack/
     - theme: alt
       text: Email
