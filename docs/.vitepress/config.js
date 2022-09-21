@@ -1,4 +1,8 @@
 import {defineConfig} from "vitepress";
+import {resolve} from "path";
+
+import {SitemapStream} from "sitemap";
+import {createWriteStream} from 'node:fs'
 
 function languageDisplayName(code) {
   return new Intl.DisplayNames([code], {type: 'language'}).of(code)
@@ -14,13 +18,15 @@ const localeLinks = {
 }
 
 export default defineConfig({
+  lastUpdated: true,
+
   locales: {
     '/': {
       lang: 'uk',
       title: 'Олександр Козак',
       description: 'Full-stack веб розробник'
     },
-    '/en/': {
+    'en/': {
       lang: 'en',
       title: 'Alex Kozack',
       description: 'Full-stack web developer',
@@ -45,5 +51,37 @@ export default defineConfig({
         }
       },
     ],
+  },
+
+  buildEnd: ({outDir, pages, site,}) => {
+    const dynamicRoutes = pages.map(p => {
+
+      const pageUrl = p.replace(/\/?index\.md/, '/')
+
+      const langPrefixesRegEx = new RegExp(`^${Object.keys(site.locales).join('|')}`)
+      const pageLocale = pageUrl.match(langPrefixesRegEx)[0]
+      const alternates = Object.entries(site.locales)
+        .filter(([prefix]) => prefix !== pageLocale)
+        .map(([prefix, {lang}]) => {
+          return {
+            lang,
+            url: pageUrl.replace(pageLocale, prefix)
+          }
+        })
+
+      return ({
+        url: pageUrl,
+        changefreq: 'weekly',
+        links: alternates,
+      });
+    });
+
+    const sitemap = new SitemapStream({hostname: 'https://kozack.me/'})
+    const writeStream = createWriteStream(resolve(outDir, 'sitemap.xml'))
+    sitemap.pipe(writeStream);
+    dynamicRoutes.forEach((link) => sitemap.write(link))
+    sitemap.end()
+
   }
+
 })
