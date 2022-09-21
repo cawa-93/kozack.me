@@ -14,23 +14,18 @@ const localeLinks = {
 }
 
 export default defineConfig({
-  lang: 'uk',
-  title: 'Alex Kozack',
-  description: 'Full-stack web developer',
-
-  // locales: {
-  //   'uk': {
-  //     lang: 'uk',
-  //     description: 'Урк',
-  //     title: 'Олександр Козак'
-  //   }
-  // },
-  // langs: {
-  //     'uk': {
-  //       lang: 'uk',
-  //       label: 'Ukraine'
-  //     }
-  // },
+  locales: {
+    '/': {
+      lang: 'uk',
+      title: 'Олександр Козак',
+      description: 'Full-stack веб розробник'
+    },
+    '/en/': {
+      lang: 'en',
+      title: 'Alex Kozack',
+      description: 'Full-stack web developer',
+    }
+  },
   themeConfig: {
     localeLinks,
     socialLinks: [

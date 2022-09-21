@@ -1,6 +1,6 @@
 ---
 layout: home
-
+lang: en
 title: Alex Kozack
 titleTemplate: Full-stack web developer
 
