@@ -8,6 +8,33 @@ function languageDisplayName(code) {
   return new Intl.DisplayNames([code], {type: 'language'}).of(code)
 }
 
+const locales = {
+  '/': {
+    lang: 'uk',
+    title: 'Олександр Козак',
+    description: 'Full-stack веб розробник'
+  },
+  'en/': {
+    lang: 'en',
+    title: 'Alex Kozack',
+    description: 'Full-stack web developer',
+  }
+}
+
+function getAlternateForUrl(pageUrl) {
+  const langPrefixesRegEx = new RegExp(`^${Object.keys(locales).join('|')}`)
+  const pageLocale = pageUrl.match(langPrefixesRegEx)[0]
+
+  return Object.entries(locales)
+    .filter(([prefix]) => prefix !== pageLocale)
+    .map(([prefix, {lang}]) => {
+      return {
+        lang,
+        url: pageUrl.replace(pageLocale, prefix)
+      }
+    })
+}
+
 /** @type {import('vitepress').LocaleLinks} */
 const localeLinks = {
   text: 'Language',
@@ -17,21 +44,14 @@ const localeLinks = {
   ]
 }
 
+function relativePathToUrl(p) {
+  return p.replace(/\/?index\.md/, '/');
+}
+
 export default defineConfig({
   lastUpdated: true,
 
-  locales: {
-    '/': {
-      lang: 'uk',
-      title: 'Олександр Козак',
-      description: 'Full-stack веб розробник'
-    },
-    'en/': {
-      lang: 'en',
-      title: 'Alex Kozack',
-      description: 'Full-stack web developer',
-    }
-  },
+  locales,
   themeConfig: {
     localeLinks,
     socialLinks: [
@@ -53,21 +73,41 @@ export default defineConfig({
     ],
   },
 
+  transformHead({head, pageData}) {
+    if (!pageData.relativePath) {
+      return head
+    }
+
+    const pageUrl = relativePathToUrl(pageData.relativePath)
+
+    const toAbsolute = (url) => `https://kozack.me${url.startsWith('/') ? url : `/${url}`}`
+
+    const canonical = [
+      'link',
+      {
+        rel: 'canonical',
+        href: toAbsolute(pageUrl),
+      }
+    ]
+
+    const alternates = getAlternateForUrl(pageUrl)
+      .map(({lang, url}) => [
+        'link',
+        {
+          rel: 'alternate',
+          hreflang: lang,
+          href: toAbsolute(url)
+        }
+      ])
+    return [...head, canonical, ...alternates]
+  },
+
   buildEnd: ({outDir, pages, site,}) => {
-    const dynamicRoutes = pages.map(p => {
+    const dynamicRoutes = pages.map(relativePath => {
 
-      const pageUrl = p.replace(/\/?index\.md/, '/')
+      const pageUrl = relativePathToUrl(relativePath)
 
-      const langPrefixesRegEx = new RegExp(`^${Object.keys(site.locales).join('|')}`)
-      const pageLocale = pageUrl.match(langPrefixesRegEx)[0]
-      const alternates = Object.entries(site.locales)
-        .filter(([prefix]) => prefix !== pageLocale)
-        .map(([prefix, {lang}]) => {
-          return {
-            lang,
-            url: pageUrl.replace(pageLocale, prefix)
-          }
-        })
+      const alternates = getAlternateForUrl(pageUrl)
 
       return ({
         url: pageUrl,
