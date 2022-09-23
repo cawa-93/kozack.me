@@ -1,7 +1,7 @@
 [[redirects]]
   from = "/ru"
   to = "/en"
-  status = 303
+  status = 301
   force = false
 
 [[redirects]]
