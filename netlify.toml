@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/ru"
+  to = "/en"
+  status = 303
+  force = false
