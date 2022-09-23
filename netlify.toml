@@ -3,3 +3,9 @@
   to = "/en"
   status = 303
   force = false
+
+[[redirects]]
+  from = "/uk"
+  to = "/"
+  status = 302
+  force = false
