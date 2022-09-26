@@ -1,21 +1,12 @@
 {
   "extends": [
-    "config:base"
-  ],
-  "patch": {
-    "automerge": true
-  },
-  "minor": {
-    "automerge": true
-  },
-  "major": {
-    "assignees": [
-      "cawa-93"
-    ]
-  },
-  "labels": [
-    "dependencies"
-  ],
-  "bumpVersion": "patch",
-  "rangeStrategy": "bump"
+    "config:base",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(deps)",
+    ":semanticCommitScopeDisabled",
+    ":pinVersions",
+    ":automergeMinor",
+    ":automergeBranch",
+    ":onlyNpm"
+  ]
 }
