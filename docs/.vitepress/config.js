@@ -8,6 +8,14 @@ function languageDisplayName(code) {
   return new Intl.DisplayNames([code], {type: 'language'}).of(code)
 }
 
+/** @type {import('vitepress').HeadConfig[]} */
+const globalHeadConfig = [
+  ['link', {
+    rel: 'apple-touch-icon',
+    href: '/avatar.png'
+  }]
+]
+
 const locales = {
   '/': {
     lang: 'uk',
@@ -73,15 +81,16 @@ export default defineConfig({
     ],
   },
 
-  transformHead({head, pageData}) {
+  transformHead({head: pageHeadConfig, pageData}) {
     if (!pageData.relativePath) {
-      return head
+      return pageHeadConfig
     }
 
     const pageUrl = relativePathToUrl(pageData.relativePath)
 
     const toAbsolute = (url) => `https://kozack.me${url.startsWith('/') ? url : `/${url}`}`
 
+    /** @type {import('vitepress').HeadConfig} */
     const canonical = [
       'link',
       {
@@ -99,10 +108,10 @@ export default defineConfig({
           href: toAbsolute(url)
         }
       ])
-    return [...head, canonical, ...alternates]
+    return [...pageHeadConfig, canonical, ...alternates, ...globalHeadConfig]
   },
 
-  buildEnd: ({outDir, pages, site,}) => {
+  buildEnd: ({outDir, pages}) => {
     const dynamicRoutes = pages.map(relativePath => {
 
       const pageUrl = relativePathToUrl(relativePath)
