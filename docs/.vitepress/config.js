@@ -81,34 +81,36 @@ export default defineConfig({
     ],
   },
 
-  transformHead({head: pageHeadConfig, pageData}) {
-    if (!pageData.relativePath) {
-      return pageHeadConfig
-    }
+  transformHead({pageData}) {
+    const headConfig = [...globalHeadConfig]
 
-    const pageUrl = relativePathToUrl(pageData.relativePath)
-
-    const toAbsolute = (url) => `https://kozack.me${url.startsWith('/') ? url : `/${url}`}`
-
-    /** @type {import('vitepress').HeadConfig} */
-    const canonical = [
-      'link',
-      {
-        rel: 'canonical',
-        href: toAbsolute(pageUrl),
-      }
-    ]
-
-    const alternates = getAlternateForUrl(pageUrl)
-      .map(({lang, url}) => [
+    if (pageData.relativePath) {
+      const pageUrl = relativePathToUrl(pageData.relativePath)
+      const toAbsolute = (url) => `https://kozack.me${url.startsWith('/') ? url : `/${url}`}`
+      /** @type {import('vitepress').HeadConfig} */
+      const canonical = [
         'link',
         {
-          rel: 'alternate',
-          hreflang: lang,
-          href: toAbsolute(url)
+          rel: 'canonical',
+          href: toAbsolute(pageUrl),
         }
-      ])
-    return [...pageHeadConfig, canonical, ...alternates, ...globalHeadConfig]
+      ]
+
+      const alternates = getAlternateForUrl(pageUrl)
+        .map(({lang, url}) => [
+          'link',
+          {
+            rel: 'alternate',
+            hreflang: lang,
+            href: toAbsolute(url)
+          }
+        ])
+
+      headConfig.push(canonical, ...alternates)
+    }
+
+
+    return headConfig
   },
 
   buildEnd: ({outDir, pages}) => {
