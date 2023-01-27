@@ -44,5 +44,12 @@ features:
   - title: Open-Source
     icon: 🤝
     details: Various open source utilities, templates, sets of components. Numerous contributions to open source projects.
+
+banner:
+  title: ❤️ Thank You for Supporting Ukraine!
+  content: As Russia wages a genocidal war against my country, I'm grateful to everyone who continues to stand with Ukraine in our fight for freedom.
+  link:
+    content: See how you can help
+    url: https://stand-with-ukraine.pp.ua/
 ---
 

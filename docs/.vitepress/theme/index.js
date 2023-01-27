@@ -3,4 +3,12 @@ import './styles/fonts.css'
 import './styles/colors.css'
 import './styles/home-hero.css'
 
-export default DefaultTheme
+// .vitepress/theme/index.js
+import MyLayout from './HomeWithBanner.vue'
+
+export default {
+  ...DefaultTheme,
+  // override the Layout with a wrapper component that
+  // injects the slots
+  Layout: MyLayout
+}
