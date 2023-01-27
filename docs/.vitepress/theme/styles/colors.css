@@ -1,5 +1,7 @@
 :root {
-    --vp-c-brand: hsl(199deg 69% 60%);
-    --vp-c-brand-light: hsl(199deg 69% 75%);
-    --vp-c-brand-dark: hsl(199deg 69% 40%);
+  --vp-c-brand: hsl(199deg 69% 60%);
+  --vp-c-brand-light: hsl(199deg 69% 75%);
+  --vp-c-brand-dark: hsl(199deg 69% 40%);
+  --vp-button-brand-border: var(--vp-c-brand);
+  --vp-button-brand-hover-border: var(--vp-button-brand-hover-bg);
 }
