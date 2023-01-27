@@ -1,13 +1,10 @@
 ---
 layout: home
-lang: en
-title: Alex Kozack
-titleTemplate: Full-stack web developer
 
 hero:
   name: Alex Kozack
-  text: Full-stack web developer
-  tagline: And active member of Open-Source community
+  text: Web developer 
+  tagline: and opensource enthusiast from Ukraine. Passionate about creating solutions to help people
   image:
     src: /avatar.png
     alt: Avatar
@@ -32,23 +29,20 @@ hero:
       link: https://t.me/kozack
 
 features:
-  - title: Websites 
+  - title: Full-stack web sites
     icon: 🌍
-    details: Full-stack development of traditional websites. Static sites. e11y. SPA. AdonisJs, Nuxt, Wordpress.
-  - title: Desktop apps
+    details: JavaScript/TypeScript, Vue/Nuxt, NodeJs/Deno, Databases
+    
+  - title: Desktop applications based on web technologies
     icon: 💻
-    details: Desktop applications based on web technologies. Electron.
+    details: Electron
+
   - title: Browser extensions
     icon: 🧩
     details: Extension and addons for Firefox and Chrome-based browsers.
+
   - title: Open-Source
     icon: 🤝
     details: Various open source utilities, templates, sets of components. Numerous contributions to open source projects.
-
-  - title: JavaScript/TypeScript
-  - title: Vue
-  - title: Node.js
-  - title: PHP
-
 ---
 
