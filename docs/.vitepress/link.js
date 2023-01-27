@@ -1,5 +1,4 @@
 import {relativeToAbsolute} from "./relativeToAbsolute";
-import {resolveLocaleForPath} from "./resolveLocaleForPath";
 import {withSlash} from "./withSlash";
 
 /**
@@ -42,33 +41,29 @@ export function alterLink(url, lang) {
 
 /**
  *
- * @param {string} url
- * @param {import('vitepress').LocaleConfig} locales
+ * @param {string} pageUrl
+ * @param {import('vitepress').SiteData} siteData
  **/
-export function alterLinks(url, locales) {
-  const pageLocale = resolveLocaleForPath(url, locales)
+export function alterLinks(pageUrl, siteData) {
+  const headConfig = []
 
-  const alters = []
-
-  for (const localeKey in locales) {
-    if (pageLocale === localeKey) {
+  for (const localeIndex in siteData.locales) {
+    if (siteData.localeIndex === localeIndex) {
       continue
     }
 
-    if (pageLocale === 'root') {
-      alters.push(alterLink(
-        `${locales[localeKey].lang}${withSlash(url)}`,
-        locales[localeKey].lang
+    if (siteData.localeIndex === 'root') {
+      headConfig.push(alterLink(
+        `${siteData.locales[localeIndex].lang}${withSlash(pageUrl)}`,
+        siteData.locales[localeIndex].lang
       ))
     } else {
-      alters.push(alterLink(
-        url.replace(`${locales[pageLocale].lang}/`, localeKey === 'root' ? '/' : `${locales[localeKey].lang}/`),
-        locales[localeKey].lang
+      headConfig.push(alterLink(
+        pageUrl.replace(`${siteData.lang}/`, localeIndex === 'root' ? '/' : `${siteData.locales[localeIndex].lang}/`),
+        siteData.locales[localeIndex].lang
       ))
     }
-
-
   }
 
-  return alters
+  return headConfig
 }
