@@ -23,13 +23,35 @@ const {frontmatter} = useData()
 </template>
 
 <style scoped>
+html:not(.dark) .banner-container {
+  --vp-custom-block-tip-text: var(--vp-c-green-dark);
+}
+
 .banner-container {
+  position: relative;
+  padding: 0 24px;
+  margin-block-start: 1em;
+}
+
+@media (min-width: 640px) {
+  .banner-container {
+    padding: 0 48px;
+  }
+}
+
+@media (min-width: 960px) {
+  .banner-container {
+    padding: 0 64px;
+  }
+}
+
+.custom-block {
   margin: 0 auto;
   max-width: 1152px;
 }
 
 a {
   font-weight: bold;
-  color: var(--vp-button-brand-bg);
+  color: var(--vp-c-brand-dark);
 }
 </style>

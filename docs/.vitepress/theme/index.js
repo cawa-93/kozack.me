@@ -2,6 +2,7 @@ import DefaultTheme from 'vitepress/theme'
 import './styles/fonts.css'
 import './styles/colors.css'
 import './styles/home-hero.css'
+import './styles/header.css'
 
 // .vitepress/theme/index.js
 import MyLayout from './HomeWithBanner.vue'
