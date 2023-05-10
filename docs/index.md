@@ -11,25 +11,15 @@ hero:
   image:
     src: /avatar.png
     alt: Avatar
+
   actions:
     - theme: brand
-      text: ☕ Купити мені каву
+      text: ☕ Задонатити
       link: https://www.buymeacoffee.com/kozack/
-    - theme: alt
-      text: Email
-      link: mailto:x73blk4om@relay.firefox.com
-    - theme: alt
-      text: GitHub
-      link: https://github.com/cawa-93
-    - theme: alt
-      text: Twitter
-      link: https://twitter.com/alex_kozack/
-    - theme: alt
-      text: LinkedIn
-      link: https://www.linkedin.com/in/alex-kozack
-    - theme: alt
-      text: Telegram
-      link: https://t.me/kozack
+    - theme: sponsor
+      text: Статті на Друкарні
+      link: https://drukarnia.com.ua/kozack
+      
 
 features:
 - title: Full-stack вебсайти
@@ -50,7 +40,7 @@ features:
 
 banner:
   title: ❤️ Дякую за підтримку України!
-  content: Оскільки Росія веде геноцидну війну проти моєї країни, я вдячний усім, хто продовжує підтримувати Україну в нашій боротьбі за свободу.
+  content: Оскільки росія веде геноцидну війну проти моєї країни, я вдячний усім, хто продовжує підтримувати Україну в нашій боротьбі за свободу.
   link:
     content: Подивіться, як ви можете допомогти
     url: https://stand-with-ukraine.pp.ua/
