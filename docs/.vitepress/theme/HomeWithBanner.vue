@@ -27,6 +27,10 @@ html:not(.dark) .banner-container {
   --vp-custom-block-tip-text: var(--vp-c-green-dark);
 }
 
+html.dark .banner-container {
+  --vp-custom-block-tip-text: var(--vp-c-green-lighter);
+}
+
 .banner-container {
   position: relative;
   padding: 0 24px;
