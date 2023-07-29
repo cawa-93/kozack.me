@@ -1,6 +1,7 @@
 import {alterLinks, canonicalLink} from "./link";
 import {relativePathToUrl} from "./relativePathToUrl";
 import {getSitemapInstance} from "./sitemapGenerator";
+import {relativeToAbsolute} from "./relativeToAbsolute";
 
 /**
  *
@@ -13,7 +14,7 @@ export function transformHead({pageData, siteData, siteConfig}) {
 
   head.push(['meta', { property: 'og:title', content: pageData.frontmatter.title || pageData.frontmatter.hero?.name }])
   head.push(['meta', { property: 'og:description', content: pageData.frontmatter.description || (pageData.frontmatter.hero?.text + ' ' + pageData.frontmatter.hero?.tagline) }])
-  head.push(['meta', { property: 'og:image', content: `/og-image-${siteData.localeIndex}.png` }])
+  head.push(['meta', { property: 'og:image', content: relativeToAbsolute(`/og-image-${siteData.localeIndex}.png`) }])
 
 
 
