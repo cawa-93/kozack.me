@@ -1,6 +1,9 @@
 ---
 layout: home
 
+title: Alex Kozack
+titleTemplate: Full-stack web developer
+
 hero:
   name: Alex Kozack
   text: Web developer 

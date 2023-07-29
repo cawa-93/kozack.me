@@ -45,6 +45,8 @@ export function alterLink(url, lang) {
  * @param {import('vitepress').SiteData} siteData
  **/
 export function alterLinks(pageUrl, siteData) {
+
+  /** @type import('vitepress').HeadConfig[] */
   const headConfig = []
 
   for (const localeIndex in siteData.locales) {
