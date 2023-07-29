@@ -2,11 +2,11 @@
 layout: home
 
 title: Олександр Козак
-titleTemplate: Full-stack веб розробник
+titleTemplate: Full-stack веброзробник
 
 hero:
   name: Олександр Козак
-  text: Веб розробник
+  text: Веброзробник
   tagline: та ентузіаст opensource з України. Захоплюється створенням рішень для допомоги людям
   image:
     src: /avatar.png

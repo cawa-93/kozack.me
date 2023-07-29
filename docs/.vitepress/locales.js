@@ -10,10 +10,10 @@ export const locales = localesFactory({
     label: languageDisplayName('uk'),
     lang: 'uk',
     title: 'Олександр Козак',
-    description: 'Full-stack веб розробник',
+    description: 'Full-stack веброзробник',
   },
   en: {
     title: 'Alex Kozack',
-    description: 'Full-stack web developer',
+    description: 'Full-stack web-developer',
   },
 })
