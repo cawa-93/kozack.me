@@ -7,6 +7,7 @@ import imagick from "lume/plugins/imagick.ts";
 import sitemap from "lume/plugins/sitemap.ts";
 import tailwindcss from "lume/plugins/tailwindcss.ts";
 import postcss from "lume/plugins/postcss.ts";
+import resolveUrls from "lume/plugins/resolve_urls.ts";
 
 import tailwindConfig from './tailwind.config.js'
 
@@ -25,7 +26,8 @@ site.use(multilanguage({
 site.use(picture());
 site.use(imagick());
 site.use(sitemap());
-site.use(tailwindcss(tailwindConfig));
+site.use(tailwindcss({options: tailwindConfig}));
 site.use(postcss());
+site.use(resolveUrls());
 
 export default site;

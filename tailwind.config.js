@@ -2,7 +2,15 @@
 export default {
     darkMode: 'media',
     theme: {
-        extend: {},
+        extend: {
+            colors: {
+                brand: {
+                    blue: {
+                        DEFAULT: '#4cafdd'
+                    }
+                }
+            }
+        },
     },
     plugins: [],
 };

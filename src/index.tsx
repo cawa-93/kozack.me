@@ -1,8 +1,5 @@
 
-export const layout = "base.tsx";
 
-
-export const lang = ['uk', 'en']
 
 export const uk = {
     title: '❤️ Дякую за підтримку України!',
@@ -24,14 +21,18 @@ export default ({
                     title,
                     message,
                     linkUrl,
-                    linkText
+                    linkText,
+
+    name, job, tagline, description
                 }) => {
     return (
         <>
-            <comp.LayoutContainer>
+            <comp.LayoutContainer className={'flex flex-col gap-3'}>
                 <comp.StandWithUkraineBanner title={title} message={message}
                                              linkUrl={linkUrl}
                                              linkText={linkText}></comp.StandWithUkraineBanner>
+
+                <comp.HeroSection name={name} job={job} tagline={tagline}/>
             </comp.LayoutContainer>
         </>
     );
