@@ -1,23 +1,38 @@
-import Form from './_components/search.tsx'
 
-
-export const title = "Welcome to my page";
 export const layout = "base.tsx";
 
 
-export const css = `
-h1 {
-    color: blue;
+export const lang = ['uk', 'en']
+
+export const uk = {
+    title: '❤️ Дякую за підтримку України!',
+    message: 'Оскільки росія веде геноцидну війну проти моєї країни, я вдячний усім, хто продовжує підтримувати Україну в нашій боротьбі за свободу.',
+    linkText: 'Подивіться, як ви можете допомогти',
 }
-`
+
+export const en = {
+    title: '❤️ Thank You for Supporting Ukraine!',
+    message: 'As russia wages a genocidal war against my country, I\'m grateful to everyone who continues to stand with Ukraine in our fight for freedom.',
+    linkText: 'See how you can help',
+}
+
+export const linkUrl = 'https://stand-with-ukraine.pp.ua/'
 
 
-export default ({comp, title}) => {
+export default ({
+                    comp,
+                    title,
+                    message,
+                    linkUrl,
+                    linkText
+                }) => {
     return (
         <>
-            <comp.search/>
-            <h1 class={''}>{title}</h1>
-            <p>This is my first post using lume. I hope you like it!</p>
+            <comp.LayoutContainer>
+                <comp.StandWithUkraineBanner title={title} message={message}
+                                             linkUrl={linkUrl}
+                                             linkText={linkText}></comp.StandWithUkraineBanner>
+            </comp.LayoutContainer>
         </>
     );
 };

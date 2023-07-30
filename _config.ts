@@ -12,12 +12,16 @@ import tailwindConfig from './tailwind.config.js'
 
 const site = lume({
     src: './src'
+
 });
 
 
 site.use(jsx());
 site.use(metas());
-site.use(multilanguage());
+site.use(multilanguage({
+    languages: ["en", "uk"], // Available languages
+    defaultLanguage: "uk", // The default language
+}));
 site.use(picture());
 site.use(imagick());
 site.use(sitemap());

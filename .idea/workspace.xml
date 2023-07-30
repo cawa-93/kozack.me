@@ -4,18 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="lume">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tailwind.config.js" afterDir="false" />
+    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="tailwindcss">
+      <change afterPath="$PROJECT_DIR$/src/_components/LayoutContainer.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/_components/StandWithUkraineBanner.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/kozack.me.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kozack.me.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_components/search.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/search.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/_config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_includes/base.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/base.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_site/components.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/_site/components.js" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/_site/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/_site/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_site/sitemap.xml" beforeDir="false" afterPath="$PROJECT_DIR$/_site/sitemap.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/_site/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/_site/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deno.lock" beforeDir="false" afterPath="$PROJECT_DIR$/deno.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_components/search.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_includes/base.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/base.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tailwind.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/tailwind.config.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,10 +29,10 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="TypeScript JSX File" />
-        <option value="TypeScript File" />
         <option value="JavaScript File" />
         <option value="HTML File" />
+        <option value="TypeScript File" />
+        <option value="TypeScript JSX File" />
       </list>
     </option>
   </component>
@@ -76,6 +80,8 @@
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\kozac\dev\kozack.me\src" />
+      <recent name="C:\Users\kozac\dev\kozack.me" />
+      <recent name="C:\Users\kozac\dev\kozack.me\src\_components" />
     </key>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -92,6 +98,9 @@
       <workItem from="1690708601218" duration="3975000" />
       <workItem from="1690712618991" duration="934000" />
       <workItem from="1690713571718" duration="211000" />
+      <workItem from="1690713792831" duration="975000" />
+      <workItem from="1690714823933" duration="1391000" />
+      <workItem from="1690716253076" duration="2481000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -141,7 +150,15 @@
       <option name="project" value="LOCAL" />
       <updated>1690712410430</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="tailwindcss">
+      <option name="closed" value="true" />
+      <created>1690713840103</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1690713840103</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -164,6 +181,7 @@
     <MESSAGE value="Додано og:image" />
     <MESSAGE value="Абсолютні шляхи для og:image" />
     <MESSAGE value="lume" />
-    <option name="LAST_COMMIT_MESSAGE" value="lume" />
+    <MESSAGE value="tailwindcss" />
+    <option name="LAST_COMMIT_MESSAGE" value="tailwindcss" />
   </component>
 </project>

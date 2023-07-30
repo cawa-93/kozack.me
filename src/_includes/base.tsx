@@ -3,9 +3,9 @@ export default ({title, children} ) => (
     <head>
         <title>{title}</title>
         <link rel="stylesheet" href="/components.css"/>
-        <link rel="stylesheet" href="/src/styles.css"/>
+        <link rel="stylesheet" href="/styles.css"/>
     </head>
-    <body>
+    <body className={'dark:bg-zinc-900'}>
     {children}
     </body>
     </html>
