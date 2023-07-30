@@ -1,4 +1,4 @@
-export const layout = "base.tsx";
+export const layout = "withHeader.tsx";
 
 export const lang = ["uk", "en"];
 
