@@ -4,4 +4,8 @@
     <loc>http://localhost:3000/</loc>
     <lastmod>2023-07-30T09:38:52.284Z</lastmod>
   </url>
+  <url>
+    <loc>http://localhost:3000/en/</loc>
+    <lastmod>2023-07-30T09:38:52.284Z</lastmod>
+  </url>
 </urlset>
