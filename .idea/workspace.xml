@@ -4,42 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="Абсолютні шляхи для og:image">
-      <change afterPath="$PROJECT_DIR$/_components/search.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/_includes/base.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/index.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.editorconfig" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.github/renovate.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/buildEnd.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/config.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/languageDisplayName.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/link.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/locales.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/localesFactory.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/relativePathToUrl.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/relativeToAbsolute.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/resolveLocaleForPath.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/sitemapGenerator.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/HomeWithBanner.vue" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/components/VPHero.vue" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/styles/colors.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/styles/fonts.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/theme/styles/header.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/themeConfig.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/transformHead.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/.vitepress/withSlash.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/en/index.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/public/avatar.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/public/favicon.ico" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/public/og-image-en.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/public/og-image-root.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/public/robot.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" />
+    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="lume">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tailwind.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_components/search.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/search.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/_config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_includes/base.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/base.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_site/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/_site/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/_site/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/_site/styles.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/deno.lock" beforeDir="false" afterPath="$PROJECT_DIR$/deno.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +27,8 @@
       <list>
         <option value="TypeScript JSX File" />
         <option value="TypeScript File" />
+        <option value="JavaScript File" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -73,27 +51,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "lume",
-    "last_opened_file_path": "C:/Users/kozac/dev/kozack.me/docs/public",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.intellij.deno.DenoConfigurable",
-    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\WebStorm 2023.1.2\\plugins\\javascript-impl\\jsLanguageServicesImpl\\external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;lume&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/kozac/dev/kozack.me/docs/public&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.tailwindcss&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files\\JetBrains\\WebStorm 2023.1.2\\plugins\\javascript-impl\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\kozac\dev\kozack.me\docs\public" />
       <recent name="C:\Users\kozac\dev\kozack.me\docs" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\kozac\dev\kozack.me\src" />
     </key>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
@@ -107,7 +89,9 @@
       <workItem from="1690478029794" duration="546000" />
       <workItem from="1690651663687" duration="2779000" />
       <workItem from="1690654675156" duration="442000" />
-      <workItem from="1690708601218" duration="3733000" />
+      <workItem from="1690708601218" duration="3975000" />
+      <workItem from="1690712618991" duration="934000" />
+      <workItem from="1690713571718" duration="211000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -141,7 +125,23 @@
       <option name="project" value="LOCAL" />
       <updated>1690654726559</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="lume">
+      <option name="closed" value="true" />
+      <created>1690712388753</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1690712388753</updated>
+    </task>
+    <task id="LOCAL-00006" summary="lume">
+      <option name="closed" value="true" />
+      <created>1690712410430</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1690712410430</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -163,6 +163,7 @@
     <MESSAGE value="Виправлено граматичну помилку в написанні" />
     <MESSAGE value="Додано og:image" />
     <MESSAGE value="Абсолютні шляхи для og:image" />
-    <option name="LAST_COMMIT_MESSAGE" value="Абсолютні шляхи для og:image" />
+    <MESSAGE value="lume" />
+    <option name="LAST_COMMIT_MESSAGE" value="lume" />
   </component>
 </project>

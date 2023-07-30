@@ -3,7 +3,7 @@ export default ({title, children} ) => (
     <head>
         <title>{title}</title>
         <link rel="stylesheet" href="/components.css"/>
-        <link rel="stylesheet" href="/styles.css"/>
+        <link rel="stylesheet" href="/src/styles.css"/>
     </head>
     <body>
     {children}

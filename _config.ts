@@ -8,7 +8,12 @@ import sitemap from "lume/plugins/sitemap.ts";
 import tailwindcss from "lume/plugins/tailwindcss.ts";
 import postcss from "lume/plugins/postcss.ts";
 
-const site = lume();
+import tailwindConfig from './tailwind.config.js'
+
+const site = lume({
+    src: './src'
+});
+
 
 site.use(jsx());
 site.use(metas());
@@ -16,7 +21,7 @@ site.use(multilanguage());
 site.use(picture());
 site.use(imagick());
 site.use(sitemap());
-site.use(tailwindcss());
+site.use(tailwindcss(tailwindConfig));
 site.use(postcss());
 
 export default site;
