@@ -411,6 +411,8 @@
   },
   "npm": {
     "specifiers": {
+      "@iconify/icons-simple-icons": "@iconify/icons-simple-icons@1.2.61",
+      "@iconify/react": "@iconify/react@4.1.1_react@18.2.0",
       "autoprefixer@10.4.14": "autoprefixer@10.4.14_postcss@8.4.27",
       "date-fns@2.30.0": "date-fns@2.30.0",
       "markdown-it-attrs@4.1.6": "markdown-it-attrs@4.1.6_markdown-it@13.0.1",
@@ -441,6 +443,23 @@
         "dependencies": {
           "postcss-selector-parser": "postcss-selector-parser@6.0.13"
         }
+      },
+      "@iconify/icons-simple-icons@1.2.61": {
+        "integrity": "sha512-EXyqTuk0I/HeL7piMvwKVc44o3XGfu+qT+aW2NCq9MDtE96o85i5kUWNNrigXrCUn9Dq9V6dLYU9epPDrSwWmA==",
+        "dependencies": {
+          "@iconify/types": "@iconify/types@2.0.0"
+        }
+      },
+      "@iconify/react@4.1.1_react@18.2.0": {
+        "integrity": "sha512-jed14EjvKjee8mc0eoscGxlg7mSQRkwQG3iX3cPBCO7UlOjz0DtlvTqxqEcHUJGh+z1VJ31Yhu5B9PxfO0zbdg==",
+        "dependencies": {
+          "@iconify/types": "@iconify/types@2.0.0",
+          "react": "react@18.2.0"
+        }
+      },
+      "@iconify/types@2.0.0": {
+        "integrity": "sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==",
+        "dependencies": {}
       },
       "@jridgewell/gen-mapping@0.3.3": {
         "integrity": "sha512-HLhSWOLRi875zjjMG/r+Nv0oCW8umGb0BgEhyX3dDX3egwZtB8PqLnjz3yedt8R5StBrzcg4aBpnh8UA9D1BoQ==",
