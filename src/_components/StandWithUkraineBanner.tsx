@@ -1,7 +1,7 @@
 export default ({
   title,
   message,
-  linkUrl,
+  url,
   linkText,
 }) => {
   return (
@@ -13,7 +13,7 @@ export default ({
       </p>
       <p>{message}</p>
       <p>
-        <a className={"text-[#0056B9] dark:text-[#5ccbff]"} href={linkUrl}>
+        <a className={"text-[#0056B9] dark:text-[#5ccbff]"} href={url}>
           {linkText}
         </a>
       </p>

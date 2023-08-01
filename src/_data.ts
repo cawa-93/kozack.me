@@ -72,6 +72,7 @@ export const socialLinks: {
 export const uk = {
   name: "Олександр Козак",
   job: "Веброзробник",
+  ogImage: '/og-image.png',
   tagline:
     "та ентузіаст opensource з України. Захоплюється створенням рішень для допомоги людям",
   get description() {
@@ -82,9 +83,20 @@ export const uk = {
 export const en = {
   name: "Alex Kozack",
   job: "Web developer",
+  ogImage: '/en/og-image.png',
   tagline:
     "and opensource enthusiast from Ukraine. Passionate about creating solutions to help people",
   get description() {
     return `${this.job} ${this.tagline}`;
   },
 };
+
+export const metas = {
+  site: 'Персональний вебсайт Олександра Козака',
+  ['site.en']: 'Alex Kozack\'s Personal website',
+  twitter: '@'+socialLinks.find(l => l.url.startsWith('https://twitter.com'))?.url.split('/').at(-1),
+  lang: '=lang',
+  title: "=title",
+  description: "=description",
+  image: '=ogImage'
+}
