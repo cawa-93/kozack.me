@@ -12,6 +12,7 @@ import resolveUrls from "lume/plugins/resolve_urls.ts";
 import tailwindConfig from "./tailwind.config.js";
 
 const site = lume({
+  location: new URL('https://kozack.me'),
   src: "./src",
 });
 
@@ -26,6 +27,6 @@ site.use(imagick());
 site.use(sitemap());
 site.use(tailwindcss({ options: tailwindConfig }));
 site.use(postcss());
-site.use(resolveUrls());
+// site.use(resolveUrls());
 
 export default site;
