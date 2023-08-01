@@ -11,8 +11,14 @@ import favicon from "https://raw.githubusercontent.com/lumeland/experimental-plu
 
 import tailwindConfig from "./tailwind.config.js";
 
+console.log({
+  URL: Deno.env.get('URL'),
+  DEPLOY_URL: Deno.env.get('DEPLOY_URL'),
+  DEPLOY_PRIME_URL: Deno.env.get('DEPLOY_PRIME_URL'),
+})
+
 const site = lume({
-  location: new URL('https://kozack.me'),
+  location: new URL(Deno.env.get('URL') || 'http://localhost:3000'),
   src: "./src",
 });
 
