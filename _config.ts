@@ -18,7 +18,7 @@ console.log({
 })
 
 const site = lume({
-  location: new URL(Deno.env.get('URL') || 'http://localhost:3000'),
+  location: new URL(Deno.env.get('DEPLOY_PRIME_URL') || Deno.env.get('URL') || 'http://localhost:3000'),
   src: "./src",
 });
 
