@@ -1,3 +1,5 @@
+export {projects} from './_projects.ts'
+
 export const layout = "withHeader.tsx";
 
 export const lang = ["uk", "en"];
