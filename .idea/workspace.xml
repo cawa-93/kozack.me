@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="WiP">
-      <change afterPath="$PROJECT_DIR$/src/_includes/withHeader.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -90,7 +88,7 @@
       <workItem from="1690713792831" duration="975000" />
       <workItem from="1690714823933" duration="1391000" />
       <workItem from="1690716253076" duration="7212000" />
-      <workItem from="1690723542089" duration="5426000" />
+      <workItem from="1690723542089" duration="5847000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -180,7 +178,15 @@
       <option name="project" value="LOCAL" />
       <updated>1690727727822</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="WiP">
+      <option name="closed" value="true" />
+      <created>1690729048714</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1690729048714</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
