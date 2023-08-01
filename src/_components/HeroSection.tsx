@@ -37,7 +37,7 @@ export default (
         width={"320"}
         height={"320"}
         src="../images/avatar.png"
-        imagick="avif webp png jpg 320@2 320@3"
+        imagick="avif webp png 320@2 320@3"
       />
     </div>
   </section>
