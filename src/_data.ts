@@ -85,7 +85,7 @@ export const uk = {
     job: "Веброзробник",
     ogImage: '/og-image.png',
     tagline:
-        "та ентузіаст opensource з України. Захоплюється створенням рішень для допомоги людям",
+        "та ентузіаст відкритого коду з України. Захоплюється створенням рішень для допомоги людям",
     get description() {
         return `${this.job} ${this.tagline}`;
     },
@@ -96,7 +96,7 @@ export const en = {
     job: "Web developer",
     ogImage: '/en/og-image.png',
     tagline:
-        "and opensource enthusiast from Ukraine. Passionate about creating solutions to help people",
+        "and open source enthusiast from Ukraine. Passionate about creating solutions to help people",
     get description() {
         return `${this.job} ${this.tagline}`;
     },

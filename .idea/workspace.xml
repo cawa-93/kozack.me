@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="feat: додано посилання на проєкти">
+    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="правки розмірів шрифтів">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_components/HeroSection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/HeroSection.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +99,8 @@
       <workItem from="1690990426277" duration="20000" />
       <workItem from="1690990588969" duration="86000" />
       <workItem from="1690991081000" duration="140000" />
-      <workItem from="1690991528221" duration="263000" />
+      <workItem from="1690991528221" duration="315000" />
+      <workItem from="1690992440634" duration="71000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -301,7 +302,15 @@
       <option name="project" value="LOCAL" />
       <updated>1690991207472</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="правки розмірів шрифтів">
+      <option name="closed" value="true" />
+      <created>1690991840588</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1690991840588</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -340,6 +349,7 @@
     <MESSAGE value="fix: build" />
     <MESSAGE value="fix: youtube" />
     <MESSAGE value="feat: додано посилання на проєкти" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: додано посилання на проєкти" />
+    <MESSAGE value="правки розмірів шрифтів" />
+    <option name="LAST_COMMIT_MESSAGE" value="правки розмірів шрифтів" />
   </component>
 </project>
