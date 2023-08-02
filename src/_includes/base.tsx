@@ -8,7 +8,7 @@ export default ({ title, children }) => (
         <link rel="stylesheet" href="/components.css" />
       <link rel="stylesheet" href="/styles.css" />
     </head>
-    <body className={"dark:bg-zinc-900 scroll-my-20"}>
+    <body className={"bg-white dark:bg-zinc-900 scroll-my-20 dark:text-[rgb(226,226,226)]"}>
       {children}
     </body>
   </html>

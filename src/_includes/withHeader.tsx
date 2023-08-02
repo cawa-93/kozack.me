@@ -29,7 +29,7 @@ export default ({children, comp, nav, alternates, lang, uk, en}) => {
 
     return (
         <>
-            <header className={'min-h-[63px] border-t flex items-center justify-end fixed bottom-0 bg-white w-full'}>
+            <header className={'min-h-[63px] border-t flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full'}>
                 <comp.LayoutContainer className={'w-full flex items-center justify-between gap-2'}>
                     <nav>
                         <ul className={'flex items-center gap-5'}>
@@ -37,9 +37,9 @@ export default ({children, comp, nav, alternates, lang, uk, en}) => {
                                 <a href={langPrefix}>{contacts}</a>
                             </li>
 
-                            <li>
-                                <a href={langPrefix+'projects'}>{projects}</a>
-                            </li>
+                            {/*<li>*/}
+                            {/*    <a href={langPrefix+'projects'}>{projects}</a>*/}
+                            {/*</li>*/}
                         </ul>
                     </nav>
 
@@ -54,7 +54,7 @@ export default ({children, comp, nav, alternates, lang, uk, en}) => {
 
                 </comp.LayoutContainer>
             </header>
-            <main className={'py-12'}>
+            <main className={'py-12 pb-44'}>
                 {children}
             </main>
         </>
