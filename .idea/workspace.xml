@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="правки розмірів шрифтів">
+    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="змінено опис">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/og-image.png.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/og-image.png.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +100,8 @@
       <workItem from="1690990588969" duration="86000" />
       <workItem from="1690991081000" duration="140000" />
       <workItem from="1690991528221" duration="315000" />
-      <workItem from="1690992440634" duration="71000" />
+      <workItem from="1690992440634" duration="94000" />
+      <workItem from="1690992706489" duration="8000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -310,7 +311,15 @@
       <option name="project" value="LOCAL" />
       <updated>1690991840588</updated>
     </task>
-    <option name="localTasksCounter" value="27" />
+    <task id="LOCAL-00027" summary="змінено опис">
+      <option name="closed" value="true" />
+      <created>1690992521197</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1690992521197</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -350,6 +359,7 @@
     <MESSAGE value="fix: youtube" />
     <MESSAGE value="feat: додано посилання на проєкти" />
     <MESSAGE value="правки розмірів шрифтів" />
-    <option name="LAST_COMMIT_MESSAGE" value="правки розмірів шрифтів" />
+    <MESSAGE value="змінено опис" />
+    <option name="LAST_COMMIT_MESSAGE" value="змінено опис" />
   </component>
 </project>

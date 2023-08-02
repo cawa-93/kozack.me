@@ -10,7 +10,7 @@ export default async function ({name, job, tagline, lang}) {
     const descriptionLines = tagline.split(/\s/).reduce((lines, word) => {
 
 
-        if (lines.at(-1)?.text.endsWith('.') || (lines.at(-1)?.text.length + word.length) >= 40) {
+        if (lines.at(-1)?.text.endsWith('.') || (lines.at(-1)?.text.length + word.length) >= 42) {
             lines.push({
                 y: (lines.at(-1)?.y + 40),
                 text: word
