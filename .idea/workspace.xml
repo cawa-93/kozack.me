@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="Правки макета">
+    <list default="true" id="6188e634-6bde-40ea-a591-58d1c0ab6345" name="Changes" comment="fix: youtube">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_includes/withHeader.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/withHeader.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,6 +30,7 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -74,34 +75,6 @@
       <recent name="C:\Users\kozac\dev\kozack.me\src\_components" />
     </key>
   </component>
-  <component name="RunManager" selected="npm.build">
-    <configuration name="build" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
-      <package-json value="$PROJECT_DIR$/package.json" />
-      <command value="run" />
-      <scripts>
-        <script value="build" />
-      </scripts>
-      <node-interpreter value="project" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <configuration name="dev" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
-      <package-json value="$PROJECT_DIR$/package.json" />
-      <command value="run" />
-      <scripts>
-        <script value="dev" />
-      </scripts>
-      <node-interpreter value="project" />
-      <envs />
-      <method v="2" />
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="npm.dev" />
-        <item itemvalue="npm.build" />
-      </list>
-    </recent_temporary>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -124,7 +97,8 @@
       <workItem from="1690899288588" duration="4984000" />
       <workItem from="1690982012938" duration="7214000" />
       <workItem from="1690990426277" duration="20000" />
-      <workItem from="1690990588969" duration="36000" />
+      <workItem from="1690990588969" duration="86000" />
+      <workItem from="1690991081000" duration="68000" />
     </task>
     <task id="LOCAL-00001" summary="Додано посилання на YouTube">
       <option name="closed" value="true" />
@@ -310,7 +284,15 @@
       <option name="project" value="LOCAL" />
       <updated>1690989150955</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="fix: youtube">
+      <option name="closed" value="true" />
+      <created>1690990637364</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1690990637364</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -347,6 +329,7 @@
     <MESSAGE value="Правки макету" />
     <MESSAGE value="Правки макета" />
     <MESSAGE value="fix: build" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix: build" />
+    <MESSAGE value="fix: youtube" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix: youtube" />
   </component>
 </project>

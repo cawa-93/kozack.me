@@ -37,9 +37,9 @@ export default ({children, comp, nav, alternates, lang, uk, en}) => {
                                 <a href={langPrefix}>{contacts}</a>
                             </li>
 
-                            {/*<li>*/}
-                            {/*    <a href={langPrefix+'projects'}>{projects}</a>*/}
-                            {/*</li>*/}
+                            <li>
+                                <a href={'https://www.linkedin.com/in/alex-kozack/details/projects/'}>{projects}</a>
+                            </li>
                         </ul>
                     </nav>
 
