@@ -2,13 +2,13 @@ import * as globalData from './_data.ts'
 
 
 export const uk = {
-  title: globalData.uk.name,
-  description: globalData.uk.description
+    title: globalData.uk.name,
+    description: globalData.uk.description
 };
 
 export const en = {
-  title: globalData.en.name,
-  description: globalData.en.description
+    title: globalData.en.name,
+    description: globalData.en.description
 };
 
 export const banner = {
@@ -35,10 +35,14 @@ export default ({
                     job,
                     tagline,
                     socialLinks,
+                    donationLink,
+                    articlesLink
                 }) => {
     return (
         <>
             <comp.LayoutContainer className={"flex flex-col gap-20"}>
+
+
                 <comp.StandWithUkraineBanner {...banner}/>
 
                 <comp.HeroSection
@@ -46,6 +50,8 @@ export default ({
                     job={job}
                     tagline={tagline}
                     socialLinks={socialLinks}
+                    donationLink={donationLink}
+                    articlesLink={articlesLink}
                 />
             </comp.LayoutContainer>
         </>

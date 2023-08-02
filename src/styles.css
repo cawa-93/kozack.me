@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@layer utilities {
+    .word-wrap {
+        word-wrap: anywhere;
+    }
+}

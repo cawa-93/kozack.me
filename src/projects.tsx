@@ -8,6 +8,7 @@ export const en = {
   title: 'Projects'
 };
 
+
 function localizedDate(date: Date, lang: string) {
     const shouldShowMonth = date.getTime() === new Date(date.getFullYear())
     const formatter = new Intl.DateTimeFormat(lang, {

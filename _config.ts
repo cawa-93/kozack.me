@@ -8,14 +8,10 @@ import sitemap from "lume/plugins/sitemap.ts";
 import tailwindcss from "lume/plugins/tailwindcss.ts";
 import postcss from "lume/plugins/postcss.ts";
 import favicon from "https://raw.githubusercontent.com/lumeland/experimental-plugins/main/favicon/mod.ts";
+import resolveUrls from "lume/plugins/resolve_urls.ts";
+import nav from "lume/plugins/nav.ts";
 
 import tailwindConfig from "./tailwind.config.js";
-
-console.log({
-  URL: Deno.env.get('URL'),
-  DEPLOY_URL: Deno.env.get('DEPLOY_URL'),
-  DEPLOY_PRIME_URL: Deno.env.get('DEPLOY_PRIME_URL'),
-})
 
 const site = lume({
   location: new URL(Deno.env.get('DEPLOY_PRIME_URL') || Deno.env.get('URL') || 'http://localhost:3000'),
@@ -25,7 +21,6 @@ const site = lume({
 site.use(jsx());
 site.use(metas());
 site.use(multilanguage({
-  extensions: ['.png', '.tsx'],
   languages: ["en", "uk"], // Available languages
   defaultLanguage: "uk", // The default language
 }));
@@ -34,6 +29,8 @@ site.use(imagick());
 site.use(sitemap());
 site.use(tailwindcss({ options: tailwindConfig }));
 site.use(postcss());
+site.use(resolveUrls());
+site.use(nav());
 site.use(favicon({
   input: 'images/avatar.png'
 }));
