@@ -21,6 +21,7 @@ const site = lume({
 site.use(jsx());
 site.use(metas());
 site.use(multilanguage({
+  extensions: ['.png', '.tsx'],
   languages: ["en", "uk"], // Available languages
   defaultLanguage: "uk", // The default language
 }));
