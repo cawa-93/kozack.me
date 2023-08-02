@@ -14,16 +14,16 @@ export default (
         className={"flex items-center max-md:flex-col-reverse max-md:text-center gap-5"}
     >
         <div className={"flex flex-[5] flex-col gap-2 word-wrap"}>
-            <h1 className={"text-brand-blue text-[clamp(50px,5vw,60px)] leading-[1] font-bold"}>
+            <h1 className={"text-brand-blue text-[clamp(45px,7vw,60px)] leading-[1] font-bold"}>
                 {name}
             </h1>
-            <p className={"text-[clamp(50px,5vw,60px)] leading-[1] font-bold opacity-90"}>
+            <p className={"text-[clamp(38px,6vw,60px)] leading-[1] font-bold opacity-90"}>
                 {job}
             </p>
             <p className={"text-2xl opacity-75 mt-3"}>{tagline}</p>
             <div className={'flex flex-wrap gap-x-10 gap-y-5 justify-center items-center mt-5'}>
 
-                <div className={'flex flex-wrap gap-2 justify-between items-center'}>
+                <div className={'flex flex-wrap gap-2 justify-center items-center'}>
                     <comp.SocialIcon {...donationLink} className={`opacity-75 hover:opacity-100  flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
                     <comp.SocialIcon {...articlesLink} className={`opacity-75 hover:opacity-100  flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
                 </div>
