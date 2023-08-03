@@ -21,11 +21,11 @@ export default (
                 {job}
             </p>
             <p className={"text-2xl opacity-75 mt-3"}>{tagline}</p>
-            <div className={'flex flex-wrap gap-x-10 gap-y-5 justify-center items-center mt-5'}>
+            <section id={'contacts'} className={'flex flex-wrap gap-x-10 gap-y-5 justify-center items-center mt-5'}>
 
                 <div className={'flex flex-wrap gap-2 justify-center items-center'}>
-                    <comp.SocialIcon {...donationLink} className={`opacity-75 hover:opacity-100  flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
-                    <comp.SocialIcon {...articlesLink} className={`opacity-75 hover:opacity-100  flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
+                    <comp.SocialIcon {...donationLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
+                    <comp.SocialIcon {...articlesLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
                 </div>
 
                 <ul className={'flex flex-wrap gap-4 justify-between items-center'}>
@@ -33,19 +33,17 @@ export default (
                         (
                             <li>
                                 <comp.SocialIcon {...link}
-                                                 className={`opacity-75 hover:opacity-100`}/>
+                                                 className={`opacity-75 hover:opacity-100 focus-visible:opacity-100`}/>
                             </li>
                         ))}
                 </ul>
-            </div>
+            </section>
         </div>
         <div className={"text-center flex-[3]"}>
             <img
-                className={"min-w-[320px] mx-auto"}
-                width={"320"}
-                height={"320"}
+                className={"w-[240px] md:w-[320px] mx-auto"}
                 src="../images/avatar.png"
-                imagick="avif webp png 320@2 320@3"
+                imagick="avif webp png 320@2 320@3 240@2 240@3"
             />
         </div>
     </section>

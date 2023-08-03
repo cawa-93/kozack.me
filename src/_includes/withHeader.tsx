@@ -2,9 +2,9 @@ export const layout = 'base.tsx'
 
 
 type Messages = {
-    switchLang: string
-    contacts: string
-    projects: string
+    readonly switchLang: string
+    readonly contacts: string
+    readonly projects: string
 }
 
 export const en: Messages = {
@@ -20,30 +20,51 @@ export const uk: Messages = {
     projects: 'Проєкти',
 }
 
-export default ({children, comp, nav, alternates, lang, uk, en}) => {
+export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, helpers) => {
     const langLinkToDisplay = alternates.find(a => a.lang !== lang)
 
-    const {switchLang, contacts, projects} = (lang === 'uk' ? uk : en)
+    const {switchLang, contacts, projects} = ({uk, en})[lang] as Messages
 
-    const langPrefix = lang === 'uk' ? '/' : '/en/'
+    const links: { label: string, attributes: HTMLAnchorElement }[] = [
+        {
+            label: contacts,
+            attributes: {
+                href: helpers.url(`~/index.tsx(lang=${lang})`)+'#contacts',
+            }
+        },
+        {
+            label: projects,
+            attributes: {
+                href: `https://www.linkedin.com/in/alex-kozack/details/projects`,
+            }
+        },
+        {
+            label: articlesLink.label,
+            attributes: {
+                href: articlesLink.url,
+            }
+        }
+    ]
 
     return (
         <>
-            <header className={'min-h-[63px] border-t flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full'}>
-                <comp.LayoutContainer className={'w-full flex items-center justify-between gap-2'}>
+            <header className={'py-5 border-t flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full'}>
+                <comp.LayoutContainer
+                    className={'w-full flex flex-wrap max-sm:flex-col gap-x-3 gap-y-10 items-center justify-between gap-2'}>
                     <nav>
-                        <ul className={'flex items-center gap-5'}>
-                            <li>
-                                <a href={langPrefix}>{contacts}</a>
-                            </li>
-
-                            <li>
-                                <a href={'https://www.linkedin.com/in/alex-kozack/details/projects/'}>{projects}</a>
-                            </li>
+                        <ul className={'flex items-center gap-12'}>
+                            {
+                                links.map(({label, attributes}) => {
+                                    const isCurrentLink = attributes.href.split('#')[0] === url
+                                    return <li>
+                                        <a className={`underline ${isCurrentLink ? 'decoration-4' : 'decoration-1'} hover:decoration-4 focus-visible:decoration-4`} {...(isCurrentLink ? {'aria-current': 'page'} : {})} {...attributes}>{label}</a>
+                                    </li>;
+                                })
+                            }
                         </ul>
                     </nav>
 
-                    <a className={'capitalize flex items-center gap-2'} href={langLinkToDisplay.url}>
+                    <a className={'capitalize flex items-center gap-2'} href={langLinkToDisplay.url} rel={'alternate'}>
                         <svg aria-label={switchLang} xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                              viewBox="0 0 24 24">
                             <path fill="currentColor"

@@ -12,8 +12,8 @@ export const en = {
 };
 
 export const banner = {
-    title: "❤️ Дякую за підтримку України!",
-    'title.en': "❤️ Thank You for Supporting Ukraine!",
+    title: "Дякую за підтримку України!",
+    'title.en': "Thank You for Supporting Ukraine!",
 
     message:
         "Оскільки росія веде геноцидну війну проти моєї країни, я вдячний усім, хто продовжує підтримувати Україну в нашій боротьбі за свободу.",
@@ -40,7 +40,7 @@ export default ({
                 }) => {
     return (
         <>
-            <comp.LayoutContainer className={"flex flex-col gap-20"}>
+            <comp.LayoutContainer className={"flex flex-col gap-10 md:gap-20"}>
 
 
                 <comp.StandWithUkraineBanner {...banner}/>
