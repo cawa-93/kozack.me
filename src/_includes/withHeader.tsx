@@ -50,9 +50,9 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
         <>
             <header className={'py-5 border-t flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full'}>
                 <comp.LayoutContainer
-                    className={'w-full flex flex-wrap max-sm:flex-col gap-x-3 gap-y-10 items-center justify-between gap-2'}>
+                    className={'w-full flex flex-wrap items-center justify-between gap-2'}>
                     <nav>
-                        <ul className={'flex items-center gap-12'}>
+                        <ul className={'flex items-center gap-3 sm:gap-6 md:gap-12'}>
                             {
                                 links.map(({label, attributes}) => {
                                     const isCurrentLink = attributes.href.split('#')[0] === url
@@ -75,7 +75,7 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
 
                 </comp.LayoutContainer>
             </header>
-            <main className={'py-12 pb-44'}>
+            <main className={'py-4 md:py-6 pb-44'}>
                 {children}
             </main>
         </>
