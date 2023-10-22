@@ -41,6 +41,9 @@ export default (
         </div>
         <div className={"text-center flex-[3]"}>
             <img
+                width="320"
+                height="320"
+            
                 className={"w-[180px] md:w-[320px] mx-auto"}
                 src="../images/avatar.png"
                 imagick="avif webp png 320@2 320@3 180@2 180@3"
