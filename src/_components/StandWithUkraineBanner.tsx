@@ -6,7 +6,7 @@ export default ({
                 }) => {
     return (
         <article
-            className={"flex flex-col gap-2 text-sm border rounded text-[#059669] dark:text-[#52ce9f] border-green-400 dark:border-green-200 p-4 bg-[#f9f9fa] dark:bg-[#313136]"}
+            className={"flex flex-col gap-2 text-sm border rounded text-[#036144] dark:text-[#52ce9f] border-green-400 dark:border-green-200 p-4 bg-[#f9f9fa] dark:bg-[#313136]"}
         >
             <p className={'flex gap-2 items-center'}>
                 <span className={'text-lg motion-safe:animate-bounce'} style={{'animation-duration': '2s'}}>❤️</span>
@@ -14,7 +14,7 @@ export default ({
             </p>
             <p>{message}</p>
             <p>
-                <a className={"text-[#0056B9] dark:text-[#5ccbff]"} href={url}>
+                <a className={"text-[#0052af] dark:text-[#90c4ff]"} href={url}>
                     {linkText}
                     <svg className={'inline'} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <g transform="translate(24 0) scale(-1 1)">
