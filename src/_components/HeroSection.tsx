@@ -46,7 +46,7 @@ export default (
                 alt={name}
                 className={"w-[180px] md:w-[320px] mx-auto"}
                 src="../images/avatar.png"
-                imagick="avif webp png 320@2 320@3 180@2 180@3"
+                transform-images="avif webp png 320@2 320@3 180@2 180@3"
             />
         </div>
     </section>
