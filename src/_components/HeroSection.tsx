@@ -1,13 +1,16 @@
 import type {socialLinks as TsocialLinks} from "../_data.ts";
+import uid = Deno.uid;
 
 export default (
-    {comp, name, job, tagline, socialLinks, donationLink, articlesLink}: {
+    {comp, name, job, tagline, socialLinks, donationLink, articlesLink, emailLink, socialHeadlines}: {
         name: string;
         job: string;
         tagLine: string;
         socialLinks: TsocialLinks;
         donationLink: TsocialLinks[number]
         articlesLink: TsocialLinks[number]
+        emailLink: TsocialLinks[number],
+        socialHeadlines: {primary: string, secondary: string},
     },
 ) => (
     <section
@@ -23,20 +26,24 @@ export default (
             <p className={"text-2xl opacity-75 mt-3"}>{tagline}</p>
             <section id={'contacts'} className={'flex flex-wrap gap-x-10 gap-y-5 justify-center items-center mt-5'}>
 
-                <div className={'flex flex-wrap gap-2 justify-center items-center'}>
+                <section className={'flex flex-wrap gap-2 justify-center items-center'} aria-label={socialHeadlines.primary}>
                     <comp.SocialIcon {...donationLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
                     <comp.SocialIcon {...articlesLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
-                </div>
+                    <comp.SocialIcon {...emailLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
+                </section>
 
-                <ul className={'flex flex-wrap gap-4 justify-between items-center'}>
-                    {socialLinks.map((link, index) =>
-                        (
-                            <li>
-                                <comp.SocialIcon {...link}
-                                                 className={`opacity-75 hover:opacity-100 focus-visible:opacity-100`}/>
-                            </li>
-                        ))}
-                </ul>
+                <section aria-labelledby="socials">
+                    <h2 id="socials" class="text-center mb-2 text-sm">{socialHeadlines.secondary}</h2>
+                    <ul className={'flex flex-wrap gap-4 justify-between items-center'}>
+                        {socialLinks.map((link, index) =>
+                            (
+                                <li>
+                                    <comp.SocialIcon {...link}
+                                                     className={`opacity-75 hover:opacity-100 focus-visible:opacity-100`}/>
+                                </li>
+                            ))}
+                    </ul>
+                </section>
             </section>
         </div>
         <div className={"text-center flex-[3]"}>

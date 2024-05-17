@@ -6,11 +6,12 @@ export default ({
                 }) => {
     return (
         <article
+            aria-labelledby="banner-title"
             className={"flex flex-col gap-2 text-sm border rounded text-[#036144] dark:text-[#52ce9f] border-green-400 dark:border-green-200 p-4 bg-[#f9f9fa] dark:bg-[#313136]"}
         >
             <p className={'flex gap-2 items-center'}>
                 <span className={'text-lg motion-safe:animate-bounce'} style={{'animation-duration': '2s'}}>❤️</span>
-                <strong>{title}</strong>
+                <strong id="banner-title">{title}</strong>
             </p>
             <p>{message}</p>
             <p>

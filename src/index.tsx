@@ -5,6 +5,10 @@ const bannerUrl = 'https://stand-with-ukraine.pp.ua/'
 export const uk = {
     title: globalData.uk.name,
     description: globalData.uk.description,
+    socialHeadlines: {
+        primary: 'Основні контакти',
+        secondary: "Інші соціальні мережі"
+    },
     banner: {
         title: "Дякую за підтримку України!",
         message:
@@ -17,6 +21,10 @@ export const uk = {
 export const en = {
     title: globalData.en.name,
     description: globalData.en.description,
+    socialHeadlines: {
+        primary: 'Main Contacts',
+        secondary: "Other Social"
+    },
     banner: {
         title: "Thank You for Supporting Ukraine!",
         message:
@@ -36,7 +44,9 @@ export default ({
                     tagline,
                     socialLinks,
                     donationLink,
-                    articlesLink
+                    articlesLink,
+                    emailLink,
+                    socialHeadlines,
                 }) => {
     return (
         <>
@@ -52,6 +62,8 @@ export default ({
                     socialLinks={socialLinks}
                     donationLink={donationLink}
                     articlesLink={articlesLink}
+                    emailLink={emailLink}
+                    socialHeadlines={socialHeadlines}
                 />
             </comp.LayoutContainer>
         </>

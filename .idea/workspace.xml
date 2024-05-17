@@ -5,11 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="198a0b2a-1426-4154-8b0b-25032d178e47" name="Changes" comment="update to lume 2">
-      <change beforePath="$PROJECT_DIR$/_config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/_config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deno.json" beforeDir="false" afterPath="$PROJECT_DIR$/deno.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deno.lock" beforeDir="false" afterPath="$PROJECT_DIR$/deno.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/_components/HeroSection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/HeroSection.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_components/StandWithUkraineBanner.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/StandWithUkraineBanner.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/_includes/withHeader.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/withHeader.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -23,24 +23,24 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "cawa-93"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;cawa-93&quot;
   }
-}]]></component>
+}</component>
   <component name="GitToolBoxStore">
     <option name="projectConfigVersion" value="5" />
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/cawa-93/kozack.me.git",
-    "accountId": "7901eeef-cfe9-4f42-8bdc-be11f2b5e5dd"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/cawa-93/kozack.me.git&quot;,
+    &quot;accountId&quot;: &quot;7901eeef-cfe9-4f42-8bdc-be11f2b5e5dd&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2gKfh4A50FAuhWH0sMPiv0gpxLv" />
   <component name="ProjectViewState">
     <option name="compactDirectories" value="true" />
@@ -58,6 +58,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "C:\\Program Files (x86)\\JetBrains\\PhpStorm 2023.3.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -78,7 +79,18 @@
       <option name="presentableId" value="Default" />
       <updated>1715451308074</updated>
       <workItem from="1715451309483" duration="2598000" />
+      <workItem from="1715455898495" duration="637000" />
+      <workItem from="1715973950295" duration="1714000" />
     </task>
+    <task id="LOCAL-00001" summary="update to lume 2">
+      <option name="closed" value="true" />
+      <created>1715455914460</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1715455914460</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
