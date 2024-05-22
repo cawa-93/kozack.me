@@ -87,7 +87,7 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
 
                 </comp.LayoutContainer>
             </header>
-            <main className={'py-4 md:py-6 pb-44'}>
+            <main className={'pt-4 pb-44'}>
                 {children}
             </main>
         </>
