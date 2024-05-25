@@ -4,23 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="198a0b2a-1426-4154-8b0b-25032d178e47" name="Changes" comment="change i18n icon">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kozack.me.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kozack.me.iml" afterDir="false" />
+    <list default="true" id="198a0b2a-1426-4154-8b0b-25032d178e47" name="Changes" comment="optimize css">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/_config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/_config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deno.json" beforeDir="false" afterPath="$PROJECT_DIR$/deno.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/deno.lock" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/renovate.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/_components/HeroSection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/HeroSection.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_components/StandWithUkraineBanner.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_components/StandWithUkraineBanner.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_data.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/_data.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_includes/base.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/base.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/_includes/withHeader.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/_includes/withHeader.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/og-image.png.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/og-image.png.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/projects.tsx" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tailwind.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/tailwind.config.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +19,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -57,22 +45,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.laravel-idea.search-composer-json": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "C:/Users/kozac/dev/kozack.me",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "ts.external.directory.path": "C:\\Program Files (x86)\\JetBrains\\PhpStorm 2023.3.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.laravel-idea.search-composer-json&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/kozac/dev/kozack.me&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Program Files (x86)\\JetBrains\\PhpStorm 2023.3.3\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\kozac\dev\kozack.me" />
@@ -98,7 +86,7 @@
       <workItem from="1715455898495" duration="637000" />
       <workItem from="1715973950295" duration="1714000" />
       <workItem from="1716104282104" duration="1763000" />
-      <workItem from="1716636779887" duration="4968000" />
+      <workItem from="1716636779887" duration="5523000" />
     </task>
     <task id="LOCAL-00001" summary="update to lume 2">
       <option name="closed" value="true" />
@@ -116,7 +104,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716110689450</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="optimize css">
+      <option name="closed" value="true" />
+      <created>1716642081581</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1716642081581</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -136,6 +132,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="update to lume 2" />
     <MESSAGE value="change i18n icon" />
-    <option name="LAST_COMMIT_MESSAGE" value="change i18n icon" />
+    <MESSAGE value="optimize css" />
+    <option name="LAST_COMMIT_MESSAGE" value="optimize css" />
   </component>
 </project>
