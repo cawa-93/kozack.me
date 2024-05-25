@@ -23,7 +23,7 @@ export default (
             <p className={"text-[clamp(38px,6vw,60px)] leading-[1] font-bold opacity-90"}>
                 {job}
             </p>
-            <p className={"text-2xl opacity-75 mt-3"}>{tagline}</p>
+            <p className={"text-[clamp(20px,3vw,24px)] opacity-75 mt-3"}>{tagline}</p>
             <section id={'contacts'} className={'flex flex-col gap-x-10 gap-y-5 justify-center items-center mt-5'}>
 
                 <section className={'flex flex-wrap gap-2 justify-center items-center'} aria-label={socialHeadlines.primary}>
