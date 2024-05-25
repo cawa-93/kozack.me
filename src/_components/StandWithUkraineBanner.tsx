@@ -15,7 +15,7 @@ export default ({
             </p>
             <p>{message}</p>
             <p>
-                <a className={"text-[#0052af] dark:text-[#90c4ff]"} href={url}>
+                <a className={"text-[#0052af] dark:text-[#90c4ff] hover:underline focus:underline"} href={url}>
                     {linkText}
                     <svg className={'inline'} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <g transform="translate(24 0) scale(-1 1)">

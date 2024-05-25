@@ -24,7 +24,7 @@ export default (
                 {job}
             </p>
             <p className={"text-2xl opacity-75 mt-3"}>{tagline}</p>
-            <section id={'contacts'} className={'flex flex-wrap gap-x-10 gap-y-5 justify-center items-center mt-5'}>
+            <section id={'contacts'} className={'flex flex-col gap-x-10 gap-y-5 justify-center items-center mt-5'}>
 
                 <section className={'flex flex-wrap gap-2 justify-center items-center'} aria-label={socialHeadlines.primary}>
                     <comp.SocialIcon {...donationLink} className={`opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current`} expanded={true}/>
@@ -33,7 +33,7 @@ export default (
                 </section>
 
                 <section aria-labelledby="socials">
-                    <h2 id="socials" className="text-center font-light mb-2 text-sm">{socialHeadlines.secondary}</h2>
+                    <h2 id="socials" className="text-center font-light mt-0 text-sm">{socialHeadlines.secondary}</h2>
                     <ul role="list" className={'flex flex-wrap gap-4 justify-between items-center'}>
                         {socialLinks.map((link, index) =>
                             (

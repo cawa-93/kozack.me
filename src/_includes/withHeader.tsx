@@ -48,12 +48,12 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
 
     return (
         <>
-            <header className={'py-5 border-t flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full max-sm:text-sm'}>
+            <header className={'py-5 border-t border-[#cecece] flex items-center justify-end fixed bottom-0 bg-inherit z-10 w-full max-sm:text-sm'}>
                 <comp.LayoutContainer
                     className={'w-full flex flex-wrap items-center justify-between gap-2'}>
 
                     <a
-                        className={'capitalize flex items-center gap-2'}
+                        className={'capitalize flex items-center gap-2 opacity-75 hover:opacity-100 focus-visible:opacity-100'}
                         href={langLinkToDisplay.url} rel={'alternate'}
                         aria-label={switchLang + ' ' + new Intl.DisplayNames(langLinkToDisplay.lang, {type: "language"}).of(langLinkToDisplay.lang)}
                         title={switchLang + ' ' + new Intl.DisplayNames(langLinkToDisplay.lang, {type: "language"}).of(langLinkToDisplay.lang)}
@@ -79,7 +79,7 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
                                 links.map(({label, attributes}) => {
                                     const isCurrentLink = attributes.href.split('#')[0] === url
                                     return <li key={attributes.href}>
-                                        <a className={`underline ${isCurrentLink ? 'decoration-4' : 'decoration-1'} hover:decoration-4 focus-visible:decoration-4`} {...(isCurrentLink ? {'aria-current': 'page'} : {})} {...attributes}>{label}</a>
+                                        <a className={`underline opacity-75 hover:opacity-100 focus-visible:opacity-100 ${isCurrentLink ? 'decoration-4' : 'decoration-1'} hover:decoration-4 focus-visible:decoration-4`} {...(isCurrentLink ? {'aria-current': 'page'} : {})} {...attributes}>{label}</a>
                                     </li>;
                                 })
                             }
