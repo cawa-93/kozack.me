@@ -21,7 +21,7 @@ export default async function ({name, job, tagline, lang}) {
 
         return lines
     }, [{y: 380, text: ''}])
-        .map(line => `<text x="100" y="${line.y}" class="text-gray">${line.text}</text>`)
+        .map(line => `<text x="100" y="${line.y}" className="text-gray">${line.text}</text>`)
         .join('')
 
 
@@ -51,8 +51,8 @@ export default async function ({name, job, tagline, lang}) {
     </style>
 
     <!-- Text Elements -->
-    <text x="100" y="240" class="text-brand-blue">${name}</text>
-    <text x="100" y="320" class="text-secondary">${job}</text>
+    <text x="100" y="240" className="text-brand-blue">${name}</text>
+    <text x="100" y="320" className="text-secondary">${job}</text>
     ${descriptionLines}
     <!-- Друга колонка -->
 

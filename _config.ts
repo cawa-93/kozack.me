@@ -10,6 +10,9 @@ import postcss from "lume/plugins/postcss.ts";
 import favicon from "lume/plugins/favicon.ts";
 import resolveUrls from "lume/plugins/resolve_urls.ts";
 import nav from "lume/plugins/nav.ts";
+import minifyHTML from "lume/plugins/minify_html.ts";
+import cssnano from "npm:cssnano";
+import preset from "npm:cssnano-preset-advanced";
 
 import tailwindConfig from "./tailwind.config.js";
 
@@ -30,11 +33,14 @@ site.use(picture());
 site.use(transformImages());
 site.use(sitemap());
 site.use(tailwindcss({ options: tailwindConfig }));
-site.use(postcss());
+site.use(postcss({
+  plugins: [cssnano({preset})],
+}));
 site.use(resolveUrls());
 site.use(nav());
 site.use(favicon({
   input: 'images/avatar.png'
 }));
+site.use(minifyHTML(/* Options */));
 
 export default site;

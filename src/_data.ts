@@ -86,13 +86,14 @@ export const socialLinks: {
 ];
 
 const metas = {
-    site: 'Персональний вебсайт Олександра Козака',
-    ['site.en']: 'Alex Kozack\'s Personal website',
     twitter: '@' + socialLinks.find(l => l.url.startsWith('https://twitter.com'))?.url.split('/').at(-1),
     lang: '=lang',
     title: "=title",
     description: "=description",
-    image: '=ogImage'
+    image: '=ogImage',
+    generator: true,
+    robots: true,
+    canonical: '=site.url'
 }
 
 export const uk = {

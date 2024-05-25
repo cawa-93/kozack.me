@@ -33,11 +33,11 @@ export default (
                 </section>
 
                 <section aria-labelledby="socials">
-                    <h2 id="socials" class="text-center mb-2 text-sm">{socialHeadlines.secondary}</h2>
-                    <ul className={'flex flex-wrap gap-4 justify-between items-center'}>
+                    <h2 id="socials" className="text-center mb-2 text-sm">{socialHeadlines.secondary}</h2>
+                    <ul role="list" className={'flex flex-wrap gap-4 justify-between items-center'}>
                         {socialLinks.map((link, index) =>
                             (
-                                <li>
+                                <li key={link.url}>
                                     <comp.SocialIcon {...link}
                                                      className={`opacity-75 hover:opacity-100 focus-visible:opacity-100`}/>
                                 </li>

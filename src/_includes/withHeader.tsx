@@ -58,6 +58,8 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
                         aria-label={switchLang + ' ' + new Intl.DisplayNames(langLinkToDisplay.lang, {type: "language"}).of(langLinkToDisplay.lang)}
                         title={switchLang + ' ' + new Intl.DisplayNames(langLinkToDisplay.lang, {type: "language"}).of(langLinkToDisplay.lang)}
                         lang={langLinkToDisplay.lang}
+                        hrefLang={langLinkToDisplay.lang}
+                        rel="alternate"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
                             <g fill="currentColor">
@@ -72,11 +74,11 @@ export default ({children, comp, alternates, articlesLink, lang, uk, en, url}, h
 
 
                     <nav>
-                        <ul className={'flex items-center gap-3 sm:gap-6 md:gap-12'}>
+                        <ul role="list" className={'flex items-center gap-3 sm:gap-6 md:gap-12'}>
                             {
                                 links.map(({label, attributes}) => {
                                     const isCurrentLink = attributes.href.split('#')[0] === url
-                                    return <li>
+                                    return <li key={attributes.href}>
                                         <a className={`underline ${isCurrentLink ? 'decoration-4' : 'decoration-1'} hover:decoration-4 focus-visible:decoration-4`} {...(isCurrentLink ? {'aria-current': 'page'} : {})} {...attributes}>{label}</a>
                                     </li>;
                                 })
