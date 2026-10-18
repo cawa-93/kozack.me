@@ -1,0 +1,44 @@
+---
+import '../styles.css';
+import * as siteData from '../data/site';
+import {languages, langPrefix, pagePath, type Lang} from '../i18n';
+
+interface Props {
+    lang: Lang;
+    title: string;
+    description: string;
+}
+
+const {lang, title, description} = Astro.props;
+const {siteName, ogImage} = siteData[lang];
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const path = pagePath(Astro.url.pathname, lang);
+const alternates = languages.map(alt => ({lang: alt, url: new URL(langPrefix(alt) + path, Astro.site)}));
+---
+<html lang={lang}>
+<head>
+    <meta charset="utf-8"/>
+    <title>{title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="canonical" href={canonical}/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content={siteName}/>
+    <meta property="og:locale" content={lang}/>
+    <meta property="og:title" content={title}/>
+    <meta property="og:description" content={description}/>
+    <meta property="og:url" content={canonical}/>
+    <meta property="og:image" content={new URL(ogImage, Astro.site)}/>
+    <meta name="twitter:card" content="summary_large_image"/>
+    <meta name="twitter:site" content={siteData.twitterSite}/>
+    <meta name="description" content={description}/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="generator" content={Astro.generator}/>
+    {alternates.map(alt => <link rel="alternate" hreflang={alt.lang} href={alt.url}/>)}
+    <link rel="icon" href="/favicon.ico" sizes="48x48"/>
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180"/>
+</head>
+<body class="bg-white dark:bg-zinc-900 scroll-my-20 dark:text-[rgb(226,226,226)]">
+<slot/>
+</body>
+</html>

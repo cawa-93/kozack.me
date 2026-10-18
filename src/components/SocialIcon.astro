@@ -1,0 +1,13 @@
+---
+import type {SocialLink} from '../data/site';
+
+interface Props extends SocialLink {
+    class?: string;
+    expanded?: boolean;
+}
+
+const {class: className, label, icon, url, expanded = false} = Astro.props;
+---
+{expanded
+    ? <a class={className} href={url} set:html={icon.svg + ' ' + label}/>
+    : <a class={className} href={url} aria-label={label} title={label} set:html={icon.svg}/>}

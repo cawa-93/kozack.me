@@ -907,7 +907,7 @@ shared-field performance model.
 
 The game is published by the kozack.me site at `/games/kutochok-tyshi/`.
 `vite.config.ts` sets this `base` only for `vite build` and writes the output to
-`../../src/games/kutochok-tyshi`, where the site copies it without processing.
+`../../public/games/kutochok-tyshi`, the static files directory of the site.
 Every public asset URL is built from `import.meta.env.BASE_URL` instead of a
 root-relative `/assets/...` literal. The development server and Vitest keep the
 `/` base, so local URLs and asset-path tests are unchanged.

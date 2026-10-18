@@ -1,7 +1,3 @@
-export const layout = "withHeader.tsx";
-
-export const lang = ["uk", "en"];
-
 const donationLink = {
     url: "https://www.buymeacoffee.com/kozack/",
     icon: {
@@ -34,11 +30,13 @@ const emailLink = {
     },
 }
 
-export const socialLinks: {
+export type SocialLink = {
     url: string;
     icon: { svg: string };
     label: string;
-}[] = [
+}
+
+export const socialLinks: SocialLink[] = [
 
 
     {
@@ -85,16 +83,7 @@ export const socialLinks: {
     },
 ];
 
-const metas = {
-    twitter: '@' + socialLinks.find(l => l.url.startsWith('https://twitter.com'))?.url.split('/').at(-1),
-    lang: '=lang',
-    title: "=title",
-    description: "=description",
-    image: '=ogImage',
-    generator: true,
-    robots: true,
-    canonical: '=site.url'
-}
+export const twitterSite = '@' + socialLinks.find(l => l.url.startsWith('https://twitter.com'))?.url.split('/').at(-1);
 
 export const uk = {
     name: "Олександр Козак",
@@ -114,10 +103,7 @@ export const uk = {
         label: 'Статті'
     },
     emailLink,
-    metas: {
-        ...metas,
-        site: 'Персональний вебсайт Олександра Козака'
-    }
+    siteName: 'Персональний вебсайт Олександра Козака',
 };
 
 export const en = {
@@ -138,8 +124,5 @@ export const en = {
         label: 'Articles'
     },
     emailLink,
-    metas: {
-        ...metas,
-        site: 'Alex Kozack\'s Personal website'
-    }
+    siteName: 'Alex Kozack\'s Personal website',
 };

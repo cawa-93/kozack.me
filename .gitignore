@@ -1,7 +1,4 @@
-/pnpm-lock.yaml
-/package.json
 /node_modules/
-/_site/
-/src/_cache/
-/_cache/
+/dist/
+/.astro/
 /games/*/node_modules/
