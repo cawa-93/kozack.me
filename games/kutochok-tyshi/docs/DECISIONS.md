@@ -903,7 +903,7 @@ shared-field performance model.
 
 ## ADR-039: Production build is published under a site subpath
 
-**Status:** Accepted
+**Status:** Accepted; build workflow superseded by ADR-040
 
 The game is published by the kozack.me site at `/games/kutochok-tyshi/`.
 `vite.config.ts` sets this `base` only for `vite build` and writes the output to
@@ -914,3 +914,18 @@ root-relative `/assets/...` literal. The development server and Vitest keep the
 
 Reason: the game must work from a subdirectory of a larger static site while
 remaining an independent Vite project that is rebuilt only when it changes.
+
+## ADR-040: The game is an npm workspace built on every site deploy
+
+**Status:** Accepted; supersedes the build workflow portion of ADR-039
+
+The game is an npm workspace of the kozack.me repository. Dependencies are
+installed once from the repository root and locked in the root
+`package-lock.json`; the game keeps its own `package.json`, scripts, and pinned
+versions. The production build in `../../public/games/kutochok-tyshi` is no
+longer committed: the root `npm run build` builds every game and then the site
+on each deploy. The game alone is built with `npm run build` in its folder or
+`npm run build -w games/kutochok-tyshi` from the root.
+
+Reason: the repository should contain only source code, while a deploy still
+publishes the current game together with the site.
