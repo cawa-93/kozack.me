@@ -2,3 +2,4 @@
 /dist/
 /.astro/
 /games/*/node_modules/
+/public/games/

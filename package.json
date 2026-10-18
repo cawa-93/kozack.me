@@ -2,9 +2,14 @@
   "name": "kozack.me",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "games/*"
+  ],
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "npm run build:games && npm run build:site",
+    "build:site": "astro build",
+    "build:games": "npm run build --workspaces",
     "preview": "astro preview",
     "check": "astro check"
   },

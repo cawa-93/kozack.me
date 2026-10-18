@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
 // Netlify передає адресу поточного деплою через змінні оточення
 const site = (process.env.CONTEXT === 'production'
@@ -24,5 +26,12 @@ export default defineConfig({
     site,
     vite: {
         plugins: [publicDirIndex],
+        // PostCSS задано тут, а не в postcss.config.mjs: Vite шукає цей файл і в батьківських теках,
+        // тож кореневий конфіг сайту підхоплювали б і збірки ігор
+        css: {
+            postcss: {
+                plugins: [tailwindcss(), autoprefixer()],
+            },
+        },
     },
 });
