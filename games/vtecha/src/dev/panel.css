@@ -1,0 +1,73 @@
+/* Панель розробника (§12.7) — лише режим розробки. */
+
+.dev-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(20, 24, 30, 0.82);
+  border: 1px solid #3b4a5c;
+  border-radius: 6px;
+  font: 12px system-ui, sans-serif;
+  color: #9fb3c8;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.dev-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #6d8299;
+}
+
+.dev-row {
+  display: flex;
+  gap: 4px;
+}
+
+.dev-row button {
+  flex: 1;
+}
+
+.dev-panel button {
+  padding: 4px 6px;
+  background: #1e2630;
+  border: 1px solid #34414f;
+  border-radius: 3px;
+  color: #c3d3e3;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dev-row button {
+  text-align: center;
+}
+
+.dev-panel button:hover {
+  background: #2a3542;
+}
+
+.dev-panel button.on {
+  background: #3a4f2a;
+  border-color: #5f7d44;
+}
+
+.dev-panel button.ok {
+  border-color: #6fa35a;
+}
+
+.dev-panel button.fail {
+  border-color: #b0493d;
+}

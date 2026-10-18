@@ -5,12 +5,16 @@ type Messages = {
     readonly switchLang: string
     readonly contacts: string
     readonly projects: string
+    readonly games: string
+    readonly navigation: string
 }
 
 export const en: Messages = {
     switchLang: 'Змінити мову на', // Текст пропозиції змінити мову повинен бути протилежною мовою від поточної
     contacts: 'Contacts',
     projects: 'Projects',
+    games: 'Games',
+    navigation: 'Main navigation',
 }
 
 
@@ -18,18 +22,42 @@ export const uk: Messages = {
     switchLang: 'Switch language to', // Текст пропозиції змінити мову повинен бути протилежною мовою від поточної
     contacts: 'Контакти',
     projects: 'Проєкти',
+    games: 'Ігри',
+    navigation: 'Основна навігація',
 }
 
-export default ({children, comp, alternates, lang, uk, en}) => {
+export default ({children, comp, alternates, lang, url, uk, en}) => {
     const langLinkToDisplay = alternates.find(a => a.lang !== lang)
 
-    const {switchLang} = ({uk, en})[lang] as Messages
+    const {switchLang, contacts, games, navigation} = ({uk, en})[lang] as Messages
+
+    // Українська — мова за замовчуванням, тож її сторінки без префікса
+    const langPrefix = lang === 'uk' ? '' : `/${lang}`
+    const navLinks = [
+        {url: `${langPrefix}/`, label: contacts},
+        {url: `${langPrefix}/games/`, label: games},
+    ]
 
     return (
         <>
             <header className={'py-5'}>
                 <comp.LayoutContainer
-                    className={'w-full'}>
+                    className={'flex flex-wrap items-center justify-between gap-x-6 gap-y-3'}>
+                    <nav aria-label={navigation}>
+                        <ul role="list" className={'flex gap-6'}>
+                            {navLinks.map(link => (
+                                <li key={link.url}>
+                                    <a
+                                        className={'opacity-75 hover:opacity-100 focus-visible:opacity-100 aria-[current=page]:opacity-100 aria-[current=page]:font-bold'}
+                                        href={link.url}
+                                        aria-current={link.url === url ? 'page' : undefined}
+                                    >
+                                        {link.label}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
                     <a
                         className={'flex items-center gap-2 opacity-75 hover:opacity-100 focus-visible:opacity-100'}
                         href={langLinkToDisplay.url} rel={'alternate'}

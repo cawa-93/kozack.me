@@ -15,12 +15,16 @@ import cssnano from "npm:cssnano";
 import preset from "npm:cssnano-preset-advanced";
 
 import tailwindConfig from "./tailwind.config.js";
+import { games } from "./src/games/_games.ts";
 
 const site = lume({
   open: true,
   location: new URL( (Deno.env.get('CONTEXT') === 'production' ? Deno.env.get('URL') : Deno.env.get('DEPLOY_PRIME_URL') || Deno.env.get('URL')) || 'http://localhost:3000'),
   src: "./src",
 });
+
+// Готові збірки ігор публікуються як є, без обробки Lume
+games.forEach(({ slug }) => site.copy(`games/${slug}`));
 
 site.use(jsx());
 site.use(metas());

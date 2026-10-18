@@ -1,0 +1,1 @@
+export const DEBRIS_MOVEMENT_TIME_MULTIPLIER = 2;

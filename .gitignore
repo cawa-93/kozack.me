@@ -4,3 +4,4 @@
 /_site/
 /src/_cache/
 /_cache/
+/games/*/node_modules/
