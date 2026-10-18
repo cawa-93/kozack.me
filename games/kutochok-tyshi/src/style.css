@@ -1,0 +1,106 @@
+:root {
+  color: #51345f;
+  background: #ead8df;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 18%, #fff8e8 0, transparent 42%),
+    repeating-linear-gradient(
+      -35deg,
+      #ead8df 0,
+      #ead8df 18px,
+      #e4cbd7 18px,
+      #e4cbd7 36px
+    );
+}
+
+#app {
+  display: grid;
+  place-items: center;
+}
+
+#app canvas {
+  width: min(100vw, 100vh);
+  height: min(100vw, 100vh);
+  max-width: 1080px;
+  max-height: 1080px;
+  image-rendering: auto;
+  border: 0;
+  outline: 4px solid #51345f;
+  outline-offset: -4px;
+  border-radius: 10px;
+  box-shadow: 10px 12px 0 rgb(81 52 95 / 24%);
+}
+
+.development-level-launcher {
+  position: fixed;
+  z-index: 10_000;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  color: #51345f;
+  background: rgb(255 248 232 / 94%);
+  border: 2px solid #765080;
+  border-radius: 14px;
+  box-shadow: 4px 5px 0 rgb(81 52 95 / 22%);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.development-level-launcher__badge {
+  padding: 3px 6px;
+  color: #fff8e8;
+  background: #765080;
+  border-radius: 7px;
+  letter-spacing: 0.06em;
+}
+
+.development-level-launcher input {
+  width: 92px;
+  height: 30px;
+  padding: 3px 7px;
+  color: #51345f;
+  background: #fffdf5;
+  border: 2px solid #b78aaa;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.development-level-launcher button {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  color: #51345f;
+  background: #9fd7c7;
+  border: 2px solid #765080;
+  border-radius: 9px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.development-level-launcher button:hover {
+  background: #b8e4d7;
+}
