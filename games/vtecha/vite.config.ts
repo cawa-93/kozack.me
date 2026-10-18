@@ -7,7 +7,7 @@ export default defineConfig(({ command }) => ({
   build: {
     target: "es2022",
     sourcemap: true,
-    outDir: "../../src/games/vtecha",
+    outDir: "../../public/games/vtecha",
     emptyOutDir: true,
   },
   test: {

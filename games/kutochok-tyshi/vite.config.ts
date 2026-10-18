@@ -4,7 +4,7 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/games/kutochok-tyshi/' : '/',
   build: {
-    outDir: '../../src/games/kutochok-tyshi',
+    outDir: '../../public/games/kutochok-tyshi',
     emptyOutDir: true,
   },
 }));

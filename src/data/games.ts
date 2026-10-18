@@ -1,5 +1,9 @@
 // Каталог ігор. Вихідний код кожної гри лежить у games/<slug>, а її готова збірка —
-// у src/games/<slug>; обкладинка 16:9 — у src/images/games/<slug>.jpg.
+// у public/games/<slug>; обкладинка 16:9 — у src/assets/games/<slug>.jpg.
+import type { ImageMetadata } from 'astro';
+import vtechaCover from '../assets/games/vtecha.jpg';
+import kutochokTyshiCover from '../assets/games/kutochok-tyshi.jpg';
+
 type GameText = {
     title: string,
     description: string,
@@ -7,6 +11,7 @@ type GameText = {
 
 export type Game = {
     slug: string,
+    cover: ImageMetadata,
     uk: GameText,
     en: GameText,
 }
@@ -14,6 +19,7 @@ export type Game = {
 export const games: Game[] = [
     {
         slug: 'vtecha',
+        cover: vtechaCover,
         uk: {
             title: 'Втеча',
             description: 'Горор про втечу з темного підземного лабіринту. Ви бачите лише те, що вихоплює ваше світло, а десь поруч чатують павуки.',
@@ -25,6 +31,7 @@ export const games: Game[] = [
     },
     {
         slug: 'kutochok-tyshi',
+        cover: kutochokTyshiCover,
         uk: {
             title: 'Куточок тиші',
             description: 'Затишний tower defence про інтровертку. Зводьте стіни з книжок і саджайте на них котів-чарівників, щоб гості не розрядили її соціальну батарейку.',

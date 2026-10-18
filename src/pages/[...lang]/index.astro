@@ -1,0 +1,64 @@
+---
+import WithHeader from '../../layouts/WithHeader.astro';
+import LayoutContainer from '../../components/LayoutContainer.astro';
+import StandWithUkraineBanner from '../../components/StandWithUkraineBanner.astro';
+import HeroSection from '../../components/HeroSection.astro';
+import * as siteData from '../../data/site';
+import {getLangPaths, type Lang} from '../../i18n';
+
+export const getStaticPaths = getLangPaths;
+
+interface Props {
+    lang: Lang;
+}
+
+const {lang} = Astro.props;
+const {name, job, tagline, description, donationLink, articlesLink, emailLink} = siteData[lang];
+
+const bannerUrl = 'https://stand-with-ukraine.pp.ua/';
+
+const text = {
+    uk: {
+        socialHeadlines: {
+            primary: 'Основні контакти',
+            secondary: "Інші соціальні мережі"
+        },
+        banner: {
+            title: "Дякую за підтримку України!",
+            message:
+                "Оскільки росія веде геноцидну війну проти моєї країни, я вдячний усім, хто продовжує підтримувати Україну в нашій боротьбі за свободу.",
+            linkText: "Подивіться, як ви можете допомогти",
+            url: bannerUrl,
+        }
+    },
+    en: {
+        socialHeadlines: {
+            primary: 'Main Contacts',
+            secondary: "Other Social"
+        },
+        banner: {
+            title: "Thank You for Supporting Ukraine!",
+            message:
+                "As russia wages a genocidal war against my country, I'm grateful to everyone who continues to stand with Ukraine in our fight for freedom.",
+            linkText: "See how you can help",
+            url: bannerUrl,
+        }
+    },
+}[lang];
+---
+<WithHeader lang={lang} title={name} description={description}>
+    <LayoutContainer class="flex flex-col gap-10 md:gap-20">
+        <StandWithUkraineBanner {...text.banner}/>
+
+        <HeroSection
+            name={name}
+            job={job}
+            tagline={tagline}
+            socialLinks={siteData.socialLinks}
+            donationLink={donationLink}
+            articlesLink={articlesLink}
+            emailLink={emailLink}
+            socialHeadlines={text.socialHeadlines}
+        />
+    </LayoutContainer>
+</WithHeader>

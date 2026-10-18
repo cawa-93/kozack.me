@@ -1,0 +1,79 @@
+---
+import Base from './Base.astro';
+import LayoutContainer from '../components/LayoutContainer.astro';
+import {languages, langPrefix, pagePath, type Lang} from '../i18n';
+
+interface Props {
+    lang: Lang;
+    title: string;
+    description: string;
+}
+
+const {lang, title, description} = Astro.props;
+
+const messages = {
+    en: {
+        switchLang: 'Змінити мову на', // Текст пропозиції змінити мову повинен бути протилежною мовою від поточної
+        contacts: 'Contacts',
+        games: 'Games',
+        navigation: 'Main navigation',
+    },
+    uk: {
+        switchLang: 'Switch language to', // Текст пропозиції змінити мову повинен бути протилежною мовою від поточної
+        contacts: 'Контакти',
+        games: 'Ігри',
+        navigation: 'Основна навігація',
+    },
+};
+
+const {switchLang, contacts, games, navigation} = messages[lang];
+
+const otherLang = languages.find(l => l !== lang)!;
+const otherLangUrl = langPrefix(otherLang) + pagePath(Astro.url.pathname, lang);
+
+const navLinks = [
+    {url: `${langPrefix(lang)}/`, label: contacts},
+    {url: `${langPrefix(lang)}/games/`, label: games},
+];
+---
+<Base lang={lang} title={title} description={description}>
+    <header class="py-5">
+        <LayoutContainer class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <nav aria-label={navigation}>
+                <ul role="list" class="flex gap-6">
+                    {navLinks.map(link => (
+                        <li>
+                            <a
+                                class="opacity-75 hover:opacity-100 focus-visible:opacity-100 aria-[current=page]:opacity-100 aria-[current=page]:font-bold"
+                                href={link.url}
+                                aria-current={link.url === Astro.url.pathname ? 'page' : undefined}
+                            >
+                                {link.label}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </nav>
+            <a
+                class="flex items-center gap-2 opacity-75 hover:opacity-100 focus-visible:opacity-100"
+                href={otherLangUrl}
+                rel="alternate"
+                lang={otherLang}
+                hreflang={otherLang}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
+                    <g fill="currentColor">
+                        <path
+                            d="M4.545 6.714L4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286zm1.634-.736L5.5 3.956h-.049l-.679 2.022z"/>
+                        <path
+                            d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-3H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zm7.138 9.995q.289.451.63.846c-.748.575-1.673 1.001-2.768 1.292c.178.217.451.635.555.867c1.125-.359 2.08-.844 2.886-1.494c.777.665 1.739 1.165 2.93 1.472c.133-.254.414-.673.629-.89c-1.125-.253-2.057-.694-2.82-1.284c.681-.747 1.222-1.651 1.621-2.757H14V8h-3v1.047h.765c-.318.844-.74 1.546-1.272 2.13a6 6 0 0 1-.415-.492a2 2 0 0 1-.94.31"/>
+                    </g>
+                </svg>
+                {switchLang + ' ' + new Intl.DisplayNames(otherLang, {type: 'language'}).of(otherLang)}
+            </a>
+        </LayoutContainer>
+    </header>
+    <main class="pt-4 pb-44">
+        <slot/>
+    </main>
+</Base>

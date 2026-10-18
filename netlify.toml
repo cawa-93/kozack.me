@@ -1,9 +1,9 @@
 [build]
-publish = "_site"
-command = """
-    curl -fsSL https://deno.land/x/install/install.sh | sh && \
-    /opt/buildhome/.deno/bin/deno task build \
-  """
+publish = "dist"
+command = "npm run build"
+
+[build.environment]
+NODE_VERSION = "24"
 
 
 [[redirects]]
@@ -17,5 +17,3 @@ command = """
   to = "/"
   status = 302
   force = false
-
-

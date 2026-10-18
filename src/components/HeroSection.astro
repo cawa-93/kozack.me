@@ -1,0 +1,65 @@
+---
+import {Picture} from 'astro:assets';
+import SocialIcon from './SocialIcon.astro';
+import avatar from '../assets/avatar.png';
+import type {SocialLink} from '../data/site';
+
+interface Props {
+    name: string;
+    job: string;
+    tagline: string;
+    socialLinks: SocialLink[];
+    donationLink: SocialLink;
+    articlesLink: SocialLink;
+    emailLink: SocialLink;
+    socialHeadlines: { primary: string, secondary: string };
+}
+
+const {name, job, tagline, socialLinks, donationLink, articlesLink, emailLink, socialHeadlines} = Astro.props;
+
+const pillClass = 'opacity-75 hover:opacity-100 focus-visible:opacity-100 flex gap-2 items-center rounded-full border px-4 min-h-[40px] text-sm border-current';
+---
+<section class="flex items-center max-md:flex-col-reverse max-md:text-center gap-5">
+    <div class="flex flex-[5] flex-col gap-2 word-wrap">
+        <h1 class="text-brand-blue text-[clamp(45px,7vw,60px)] leading-[1] font-bold">
+            {name}
+        </h1>
+        <p class="text-[clamp(38px,6vw,60px)] leading-[1] font-bold opacity-90">
+            {job}
+        </p>
+        <p class="text-[clamp(20px,3vw,24px)] opacity-75 mt-3">{tagline}</p>
+        <section id="contacts" class="flex flex-col gap-x-10 gap-y-5 justify-center items-center mt-5">
+
+            <section class="flex flex-wrap gap-2 justify-center items-center" aria-label={socialHeadlines.primary}>
+                <SocialIcon {...donationLink} class={pillClass} expanded/>
+                <SocialIcon {...articlesLink} class={pillClass} expanded/>
+                <SocialIcon {...emailLink} class={pillClass} expanded/>
+            </section>
+
+            <section aria-labelledby="socials">
+                <h2 id="socials" class="text-center font-light mt-0 text-sm">{socialHeadlines.secondary}</h2>
+                <ul role="list" class="flex flex-wrap gap-4 justify-between items-center">
+                    {socialLinks.map(link => (
+                        <li>
+                            <SocialIcon {...link} class="opacity-75 hover:opacity-100 focus-visible:opacity-100"/>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        </section>
+    </div>
+    <div class="text-center flex-[3]">
+        <Picture
+            src={avatar}
+            formats={['avif', 'webp']}
+            fallbackFormat="png"
+            width={320}
+            height={320}
+            widths={[180, 320, 360, avatar.width]}
+            sizes="(min-width: 768px) 320px, 180px"
+            loading="eager"
+            alt={name}
+            class="w-[180px] md:w-[320px] mx-auto"
+        />
+    </div>
+</section>

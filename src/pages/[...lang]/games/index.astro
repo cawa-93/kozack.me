@@ -1,0 +1,64 @@
+---
+import {Picture} from 'astro:assets';
+import WithHeader from '../../../layouts/WithHeader.astro';
+import LayoutContainer from '../../../components/LayoutContainer.astro';
+import * as siteData from '../../../data/site';
+import {games} from '../../../data/games';
+import {getLangPaths, type Lang} from '../../../i18n';
+
+export const getStaticPaths = getLangPaths;
+
+interface Props {
+    lang: Lang;
+}
+
+const {lang} = Astro.props;
+
+const text = {
+    uk: {
+        heading: 'Ігри',
+        title: `Ігри — ${siteData.uk.name}`,
+        description: 'Невеликі ігри, які я роблю у вільний час. Вони запускаються просто в браузері, нічого не треба встановлювати.',
+    },
+    en: {
+        heading: 'Games',
+        title: `Games — ${siteData.en.name}`,
+        description: 'Small games I make in my spare time. They run right in your browser, no installation needed. For now, they are available in Ukrainian only.',
+    },
+}[lang];
+---
+<WithHeader lang={lang} title={text.title} description={text.description}>
+    <LayoutContainer class="flex flex-col gap-10 md:gap-16">
+        <section class="flex flex-col gap-3">
+            <h1 class="text-brand-blue text-[clamp(45px,7vw,60px)] leading-[1] font-bold">
+                {text.heading}
+            </h1>
+            <p class="text-[clamp(18px,2.5vw,22px)] opacity-75 max-w-3xl">{text.description}</p>
+        </section>
+
+        <ul role="list" class="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+            {games.map(game => (
+                <li>
+                    <a href={`/games/${game.slug}/`} class="group flex flex-col gap-3">
+                        <div class="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
+                            <Picture
+                                src={game.cover}
+                                formats={['avif', 'webp']}
+                                fallbackFormat="jpg"
+                                width={400}
+                                height={225}
+                                densities={[1, 2]}
+                                alt=""
+                                class="w-full aspect-video object-cover motion-safe:transition-transform motion-safe:duration-300 group-hover:scale-105 group-focus-visible:scale-105"
+                            />
+                        </div>
+                        <h2 class="m-0 text-xl font-bold group-hover:text-brand-blue group-focus-visible:text-brand-blue">
+                            {game[lang].title}
+                        </h2>
+                        <p class="opacity-75">{game[lang].description}</p>
+                    </a>
+                </li>
+            ))}
+        </ul>
+    </LayoutContainer>
+</WithHeader>
