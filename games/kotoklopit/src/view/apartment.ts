@@ -56,16 +56,16 @@ function shade(color: number, amount: number): number {
   );
 }
 
-export function drawApartment(scene: Phaser.Scene): Map<string, ObjectView> {
-  drawFloor(scene);
-  drawWalls(scene);
+export function drawApartment(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): Map<string, ObjectView> {
+  drawFloor(scene, layer);
+  drawWalls(scene, layer);
   const views = new Map<string, ObjectView>();
-  for (const object of OBJECTS) views.set(object.id, drawObject(scene, object));
+  for (const object of OBJECTS) views.set(object.id, drawObject(scene, layer, object));
   return views;
 }
 
-function drawFloor(scene: Phaser.Scene): void {
-  const g = scene.add.graphics().setDepth(-1);
+function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+  const g = scene.add.graphics().setDepth(-1).addToDisplayList(layer);
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== ".") continue;
@@ -83,9 +83,12 @@ function drawFloor(scene: Phaser.Scene): void {
 }
 
 // Стіни малюються рядами: кожен ряд перекриває те, що стоїть за ним.
-function drawWalls(scene: Phaser.Scene): void {
+function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
   for (let y = 0; y < MAP_HEIGHT; y++) {
-    const g = scene.add.graphics().setDepth(depthOf(toScreen({ x: 0, y: y + 1 }).y));
+    const g = scene.add
+      .graphics()
+      .setDepth(depthOf(toScreen({ x: 0, y: y + 1 }).y))
+      .addToDisplayList(layer);
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== "#") continue;
       const p = toScreen({ x, y });
@@ -112,12 +115,12 @@ function isWall(x: number, y: number): boolean {
   return MAP[y]?.[x] === "#";
 }
 
-function drawObject(scene: Phaser.Scene, object: HomeObject): ObjectView {
+function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object: HomeObject): ObjectView {
   const r = rectToScreen(object);
   const height = HEIGHT[object.kind];
   const bottom = r.y + r.h;
   const depth = depthOf(bottom);
-  const g = scene.add.graphics().setDepth(depth);
+  const g = scene.add.graphics().setDepth(depth).addToDisplayList(layer);
 
   if (object.kind === "door") {
     // Двері — у стіні: прямокутник на лицьовій грані з ручкою.

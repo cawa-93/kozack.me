@@ -4,14 +4,13 @@
 import Phaser from "phaser";
 
 import type { Vec } from "../sim/types";
-import { COLORS, SCREEN_HEIGHT, SCREEN_WIDTH } from "./geometry";
+import { COLORS } from "./geometry";
+import type { Frame } from "./viewport";
 
 const JOYSTICK_RADIUS = 70;
-const ACTION = { x: SCREEN_WIDTH - 110, y: SCREEN_HEIGHT - 110, r: 66 };
-const DASH = { x: SCREEN_WIDTH - 250, y: SCREEN_HEIGHT - 70, r: 46 };
+const ACTION_R = 66;
+const DASH_R = 46;
 const DEPTH = 30_000;
-/** Верхня смуга з інтерфейсом не належить джойстику. */
-const TOP_BAND = 80;
 
 export class TouchControls {
   /** Напрямок руху від джойстика, довжина до 1. */
@@ -22,19 +21,29 @@ export class TouchControls {
   private stickPointer: number | null = null;
   private actionPointer: number | null = null;
   private stickOrigin: Vec = { x: 0, y: 0 };
+  /** Джойстик — уся ліва половина екрана, будь-де, зокрема поза квартирою. */
+  private stickZone = 0;
+  private action = { x: 0, y: 0 };
+  private dashButton = { x: 0, y: 0 };
   private readonly base: Phaser.GameObjects.Arc;
   private readonly knob: Phaser.GameObjects.Arc;
   private readonly buttons: Phaser.GameObjects.Graphics;
 
   constructor(
     scene: Phaser.Scene,
+    layer: Phaser.GameObjects.Layer,
     private readonly onAction: () => void,
     private readonly onDash: () => void,
   ) {
     scene.input.addPointer(2);
-    this.base = scene.add.circle(0, 0, JOYSTICK_RADIUS, 0xffffff, 0.12).setStrokeStyle(3, 0xffffff, 0.35).setDepth(DEPTH).setVisible(false);
-    this.knob = scene.add.circle(0, 0, 30, 0xffffff, 0.35).setDepth(DEPTH).setVisible(false);
-    this.buttons = scene.add.graphics().setDepth(DEPTH).setVisible(false);
+    this.base = scene.add
+      .circle(0, 0, JOYSTICK_RADIUS, 0xffffff, 0.12)
+      .setStrokeStyle(3, 0xffffff, 0.35)
+      .setDepth(DEPTH)
+      .setVisible(false)
+      .addToDisplayList(layer);
+    this.knob = scene.add.circle(0, 0, 30, 0xffffff, 0.35).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
+    this.buttons = scene.add.graphics().setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
 
     scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.down(pointer));
     scene.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.moveStick(pointer));
@@ -42,21 +51,30 @@ export class TouchControls {
     scene.input.on("pointerupoutside", (pointer: Phaser.Input.Pointer) => this.up(pointer));
   }
 
+  /** Кнопки — у правому нижньому куті, але не під заокругленим кутом екрана. */
+  layout({ width, height, safe }: Frame): void {
+    const right = width - safe.right;
+    const bottom = height - safe.bottom;
+    this.stickZone = width / 2;
+    this.action = { x: right - 110, y: bottom - 110 };
+    this.dashButton = { x: right - 250, y: bottom - 70 };
+  }
+
   private down(pointer: Phaser.Input.Pointer): void {
     if (!pointer.wasTouch) return;
     this.visible = true;
     this.buttons.setVisible(true);
-    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, ACTION.x, ACTION.y) <= ACTION.r + 12) {
+    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this.action.x, this.action.y) <= ACTION_R + 12) {
       this.actionPointer = pointer.id;
       this.holding = true;
       this.onAction();
       return;
     }
-    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, DASH.x, DASH.y) <= DASH.r + 12) {
+    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this.dashButton.x, this.dashButton.y) <= DASH_R + 12) {
       this.onDash();
       return;
     }
-    if (pointer.x < SCREEN_WIDTH / 2 && pointer.y > TOP_BAND && this.stickPointer === null) {
+    if (pointer.x < this.stickZone && this.stickPointer === null) {
       this.stickPointer = pointer.id;
       this.stickOrigin = { x: pointer.x, y: pointer.y };
       this.base.setPosition(pointer.x, pointer.y).setVisible(true);
@@ -93,18 +111,20 @@ export class TouchControls {
   draw(canDash: boolean): void {
     if (!this.visible) return;
     const g = this.buttons.clear();
-    g.fillStyle(0xffffff, this.holding ? 0.4 : 0.22).fillCircle(ACTION.x, ACTION.y, ACTION.r);
-    g.lineStyle(3, 0xffffff, 0.5).strokeCircle(ACTION.x, ACTION.y, ACTION.r);
+    const action = this.action;
+    const dash = this.dashButton;
+    g.fillStyle(0xffffff, this.holding ? 0.4 : 0.22).fillCircle(action.x, action.y, ACTION_R);
+    g.lineStyle(3, 0xffffff, 0.5).strokeCircle(action.x, action.y, ACTION_R);
     // Рука — «взяти, покласти, увімкнути».
-    g.fillStyle(COLORS.paper, 0.9).fillRoundedRect(ACTION.x - 14, ACTION.y - 6, 28, 26, 8);
-    for (const dx of [-14, -6, 2, 10]) g.fillRoundedRect(ACTION.x + dx, ACTION.y - 24, 6, 22, 3);
-    g.fillStyle(0xffffff, canDash ? 0.22 : 0.08).fillCircle(DASH.x, DASH.y, DASH.r);
-    g.lineStyle(3, 0xffffff, canDash ? 0.5 : 0.2).strokeCircle(DASH.x, DASH.y, DASH.r);
+    g.fillStyle(COLORS.paper, 0.9).fillRoundedRect(action.x - 14, action.y - 6, 28, 26, 8);
+    for (const dx of [-14, -6, 2, 10]) g.fillRoundedRect(action.x + dx, action.y - 24, 6, 22, 3);
+    g.fillStyle(0xffffff, canDash ? 0.22 : 0.08).fillCircle(dash.x, dash.y, DASH_R);
+    g.lineStyle(3, 0xffffff, canDash ? 0.5 : 0.2).strokeCircle(dash.x, dash.y, DASH_R);
     // Подвійна стрілка — ривок.
     g.lineStyle(5, COLORS.paper, canDash ? 0.9 : 0.35);
     for (const dx of [-10, 6]) {
-      g.lineBetween(DASH.x + dx - 8, DASH.y - 12, DASH.x + dx + 4, DASH.y);
-      g.lineBetween(DASH.x + dx + 4, DASH.y, DASH.x + dx - 8, DASH.y + 12);
+      g.lineBetween(dash.x + dx - 8, dash.y - 12, dash.x + dx + 4, dash.y);
+      g.lineBetween(dash.x + dx + 4, dash.y, dash.x + dx - 8, dash.y + 12);
     }
   }
 

@@ -15,8 +15,8 @@ const LOOK = {
 export class PersonView {
   private readonly g: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene) {
-    this.g = scene.add.graphics();
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+    this.g = scene.add.graphics().addToDisplayList(layer);
   }
 
   /** Точка над головою для баблів. */

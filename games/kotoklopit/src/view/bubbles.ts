@@ -16,12 +16,15 @@ interface StateBubble {
 export class Bubbles {
   private readonly states = new Map<string, StateBubble>();
 
-  constructor(private readonly scene: Phaser.Scene) {}
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly layer: Phaser.GameObjects.Layer,
+  ) {}
 
   private make(icon: IconName, x: number, y: number, count?: number): Phaser.GameObjects.Container {
     const bg = this.scene.add.image(0, 0, "bubble").setOrigin(0.5, 1);
     const image = this.scene.add.image(0, -BUBBLE_HEIGHT / 2 - 4, `icon-${icon}`);
-    const container = this.scene.add.container(x, y, [bg, image]).setDepth(BUBBLE_DEPTH);
+    const container = this.scene.add.container(x, y, [bg, image]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
     if (count !== undefined) {
       const label = this.scene.add
         .text(16, -BUBBLE_HEIGHT + 6, String(count), {

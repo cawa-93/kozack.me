@@ -4,18 +4,25 @@
 import { MAP_HEIGHT, MAP_WIDTH, type Rect } from "../sim/home";
 import type { Vec } from "../sim/types";
 
-export const SCREEN_WIDTH = 1280;
-export const SCREEN_HEIGHT = 720;
+/** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
+export const BASE_WIDTH = 1280;
+export const BASE_HEIGHT = 720;
 
 export const TILE_W = 60;
 export const TILE_H = 50;
 /** Висота стіни на екрані. */
 export const WALL_RISE = 30;
 
-export const ORIGIN: Vec = {
-  x: (SCREEN_WIDTH - MAP_WIDTH * TILE_W) / 2,
-  y: SCREEN_HEIGHT - MAP_HEIGHT * TILE_H - 14,
-};
+/** Поле довкола квартири, щоб стіни не впиралися в край екрана. */
+const MARGIN = 14;
+
+export const ORIGIN: Vec = { x: MARGIN, y: MARGIN + WALL_RISE };
+
+/** Квартира з полем: у цих межах ходить камера (§8.4). */
+export const WORLD = {
+  width: MAP_WIDTH * TILE_W + MARGIN * 2,
+  height: WALL_RISE + MAP_HEIGHT * TILE_H + MARGIN * 2,
+} as const;
 
 export function toScreen(p: Vec): Vec {
   return { x: ORIGIN.x + p.x * TILE_W, y: ORIGIN.y + p.y * TILE_H };

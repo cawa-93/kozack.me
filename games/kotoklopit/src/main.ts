@@ -1,8 +1,10 @@
 import Phaser from "phaser";
 
 import { DayScene } from "./scenes/DayScene";
+import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
+import { BASE_HEIGHT, BASE_WIDTH } from "./view/geometry";
 
 const session = Session.restore({ sex: "female", difficulty: "normal" });
 
@@ -12,15 +14,17 @@ if (__DEV_TOOLS__) {
   installDev(session);
 }
 
-// Горизонтальне полотно 16:9, яке вписується в екран і телефона, і десктопа.
+// Гра на весь екран (§10): полотно 16:9 ширшає чи вищає під форму екрана, без порожніх смуг,
+// а що з квартири видно, вирішує камера (§8.4).
+fullscreenOnFirstAction();
 new Phaser.Game({
   type: Phaser.AUTO,
   parent: "game",
-  width: 1280,
-  height: 720,
+  width: BASE_WIDTH,
+  height: BASE_HEIGHT,
   backgroundColor: "#2b2530",
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.EXPAND,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   input: { activePointers: 3 },

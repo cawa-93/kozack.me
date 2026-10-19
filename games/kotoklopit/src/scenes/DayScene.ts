@@ -16,11 +16,12 @@ import { difficultyCard, endCard, morningCard, newGameCard, phoneCard } from "..
 import { Overlay } from "../ui/overlay";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
-import { COLORS, SCREEN_HEIGHT, SCREEN_WIDTH } from "../view/geometry";
+import { COLORS } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
 import { PersonView } from "../view/person";
 import { TouchControls } from "../view/touch";
+import { Viewport } from "../view/viewport";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -51,6 +52,7 @@ export class DayScene extends Phaser.Scene {
   private views = new Map<string, ObjectView>();
   /** Речі на плиті й поверхнях: окремий шар для кожного місця, щоб персонаж правильно їх перекривав. */
   private readonly items = new Map<string, Phaser.GameObjects.Graphics>();
+  private viewport!: Viewport;
   private marks!: Phaser.GameObjects.Graphics;
   private gloom!: Phaser.GameObjects.Rectangle;
   private person!: PersonView;
@@ -71,23 +73,29 @@ export class DayScene extends Phaser.Scene {
 
   create(): void {
     createIconTextures(this);
-    this.views = drawApartment(this);
+    this.viewport = new Viewport(this);
+    const { world, ui } = this.viewport;
+    this.views = drawApartment(this, world);
     for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
-      this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1));
+      this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1).addToDisplayList(world));
     }
-    this.marks = this.add.graphics().setDepth(9_000);
-    this.gloom = this.add
-      .rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x5b3a7a, 0)
-      .setOrigin(0)
-      .setDepth(15_000);
-    this.person = new PersonView(this);
-    this.bubbles = new Bubbles(this);
-    this.hud = new Hud(this, () => this.openPhone());
+    this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
+    this.person = new PersonView(this, world);
+    this.bubbles = new Bubbles(this, world);
+    // Серпанок над квартирою, але під інтерфейсом.
+    this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(15_000).addToDisplayList(ui);
+    this.hud = new Hud(this, ui, () => this.openPhone());
     this.touch = new TouchControls(
       this,
+      ui,
       () => this.act(),
       () => this.dash(),
     );
+    this.viewport.onLayout((frame) => {
+      this.gloom.setSize(frame.width, frame.height);
+      this.hud.layout(frame);
+      this.touch.layout(frame);
+    });
     this.setupKeyboard();
 
     this.cleanup.push(onEvent((event) => this.onGameEvent(event)));
@@ -134,6 +142,7 @@ export class DayScene extends Phaser.Scene {
     this.overlay.close();
     this.bubbles.clear();
     this.touch.reset();
+    this.viewport.jump();
     const state = this.state;
     if (state.end !== null) {
       this.showEnd();
@@ -183,21 +192,22 @@ export class DayScene extends Phaser.Scene {
   }
 
   override update(time: number, delta: number): void {
+    const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
     if (!this.blocked()) {
       const input = this.readInput();
       this.moving = this.state.character.activity === null && isMoving(input.move);
-      const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
       advance(this.session.save, gameMinutes(seconds) * this.session.speed, input);
     } else {
       this.moving = false;
     }
-    this.render(time);
+    this.render(time, seconds);
   }
 
-  private render(time: number): void {
+  private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
     this.person.draw(state.character, this.moving, time);
+    this.viewport.follow(this.person.head, seconds);
     this.drawItems();
     this.drawMarks(time);
     this.updateStateBubbles();

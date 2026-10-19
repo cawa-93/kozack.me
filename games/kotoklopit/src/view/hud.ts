@@ -3,13 +3,15 @@
 
 import Phaser from "phaser";
 
+import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
 import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { isWorkday } from "../sim/work";
 import { fill } from "../texts";
-import { COLORS } from "./geometry";
+import { BASE_WIDTH, COLORS } from "./geometry";
+import { HUD_HEIGHT, type Frame } from "./viewport";
 
 const FONT = "system-ui, sans-serif";
 const TEXT = "#f3e9dc";
@@ -27,44 +29,83 @@ const BAR_HEIGHT = 12;
 const STATS_X = 238;
 const STATS_STEP = 158;
 const LOW = 25;
+/** Кнопки праворуч: відстань від правого краю до їхнього центру. */
+const BUTTONS_INSET = 44;
+const DEPTH = 20_000;
+
+type EventData = Phaser.Types.Input.EventData;
 
 export class Hud {
+  private readonly band: Phaser.GameObjects.Rectangle;
+  /** Усе, що ліворуч: дата, годинник, шкали, гроші, розклад. */
+  private readonly left: Phaser.GameObjects.Container;
   private readonly date: Phaser.GameObjects.Text;
   private readonly clock: Phaser.GameObjects.Text;
   private readonly bars: Phaser.GameObjects.Graphics;
   private readonly money: Phaser.GameObjects.Text;
   private readonly effects: Phaser.GameObjects.Text;
   private readonly schedule: Phaser.GameObjects.Text;
+  private readonly phone: Phaser.GameObjects.Container;
+  /** Кнопка повного екрана (§10); на iPhone її немає. */
+  private readonly fullscreen: { button: Phaser.GameObjects.Container; icon: Phaser.GameObjects.Graphics } | null = null;
+  private fullscreenDrawn: boolean | null = null;
 
-  constructor(scene: Phaser.Scene, onPhone: () => void) {
+  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, onPhone: () => void) {
     const text = (x: number, y: number, size: number, color = TEXT) =>
-      scene.add
-        .text(x, y, "", { fontFamily: FONT, fontSize: `${size}px`, color, resolution: 2 })
-        .setDepth(20_000);
+      scene.add.text(x, y, "", { fontFamily: FONT, fontSize: `${size}px`, color, resolution: 2 });
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
-    scene.add.rectangle(0, 0, 1280, 76, COLORS.background, 0.92).setOrigin(0).setDepth(19_999);
+    this.band = scene.add
+      .rectangle(0, 0, BASE_WIDTH, HUD_HEIGHT, COLORS.background, 0.92)
+      .setOrigin(0)
+      .setDepth(DEPTH - 1)
+      .addToDisplayList(layer);
     this.date = text(20, 5, 17, MUTED);
     this.clock = text(20, 26, 36).setFontStyle("bold");
-    STATS.forEach((stat, i) => text(STATS_X + i * STATS_STEP, 4, 18, MUTED).setText(stat.label));
-    this.bars = scene.add.graphics().setDepth(20_000);
+    const labels = STATS.map((stat, i) => text(STATS_X + i * STATS_STEP, 4, 18, MUTED).setText(stat.label));
+    this.bars = scene.add.graphics();
     this.effects = text(STATS_X, 50, 18, "#e8a33a");
     this.money = text(892, 20, 30).setFontStyle("bold");
     this.schedule = text(990, 4, 18, MUTED);
+    this.left = scene.add
+      .container(0, 0, [this.date, this.clock, ...labels, this.bars, this.effects, this.money, this.schedule])
+      .setDepth(DEPTH)
+      .addToDisplayList(layer);
 
     // Телефон персонажа: доставка (§6.4).
-    const phone = scene.add.container(1236, 37).setDepth(20_000).setSize(56, 56);
     const g = scene.add.graphics();
     g.fillStyle(0x4a3f52).fillCircle(0, 0, 26).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 26);
     g.fillStyle(0x222026).fillRoundedRect(-9, -15, 18, 30, 4);
     g.fillStyle(0x79a6c2).fillRect(-6, -11, 12, 19);
-    phone.add(g);
-    phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
+    this.phone = scene.add.container(0, 0, [g]).setSize(56, 56).setDepth(DEPTH).addToDisplayList(layer);
+    this.phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
       onPhone();
     });
+
+    if (canFullscreen()) {
+      const icon = scene.add.graphics();
+      const button = scene.add.container(0, 0, [icon]).setSize(48, 48).setDepth(DEPTH).addToDisplayList(layer);
+      button
+        .setInteractive({ useHandCursor: true })
+        // Дотик до кнопки не запускає джойстик; а повний екран браузер вмикає, лише коли палець відпустили.
+        .on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => event.stopPropagation())
+        .on("pointerup", () => toggleFullscreen());
+      this.fullscreen = { button, icon };
+    }
+  }
+
+  /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
+  layout({ width, safe }: Frame): void {
+    this.band.setSize(width, safe.top + HUD_HEIGHT);
+    this.left.setPosition(safe.left, safe.top);
+    const x = width - safe.right - BUTTONS_INSET;
+    this.phone.setPosition(x, safe.top + HUD_HEIGHT / 2 - 1);
+    // Під телефоном, уже над квартирою: у смузі інтерфейсу на екрані 16:9 місця немає.
+    this.fullscreen?.button.setPosition(x, safe.top + HUD_HEIGHT + 34);
   }
 
   update(state: GameState, time: number): void {
+    this.drawFullscreen();
     const { stats, money, sleepSpeed } = state.character;
     this.date.setText(`Тиждень ${weekOf(state.day)} · ${WEEKDAY_NAMES[weekdayOf(state.day)]}`);
     this.clock.setText(formatClock(state.minute));
@@ -93,6 +134,27 @@ export class Hud {
     const schedule = scheduleOf(state).slice(0, 3);
     // Три рядки вміщуються лише дрібнішим шрифтом.
     this.schedule.setFontSize(schedule.length > 2 ? 15 : 18).setText(schedule.join("\n"));
+  }
+
+  /** Кутики назовні — увімкнути повний екран, усередину — вийти з нього. */
+  private drawFullscreen(): void {
+    if (!this.fullscreen) return;
+    const active = isFullscreen();
+    if (active === this.fullscreenDrawn) return;
+    this.fullscreenDrawn = active;
+    const g = this.fullscreen.icon.clear();
+    g.fillStyle(0x4a3f52, 0.85).fillCircle(0, 0, 22).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 22);
+    g.lineStyle(3, COLORS.paper);
+    // Вершина кутика й напрямок його плечей.
+    const corner = active ? 4 : 11;
+    const arm = active ? 6 : -6;
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        const x = sx * corner;
+        const y = sy * corner;
+        g.lineBetween(x, y, x + sx * arm, y).lineBetween(x, y, x, y + sy * arm);
+      }
+    }
   }
 }
 
