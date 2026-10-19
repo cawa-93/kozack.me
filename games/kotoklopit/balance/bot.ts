@@ -67,10 +67,19 @@ export class Bot {
       if (this.state.end !== null) return null;
       if (this.state.day !== day) return this.state.lastNight;
       if (hoursUntilWake(this.state) <= 8.05) return this.sleep();
+      // Оглушений персонаж нічого не може (§9.12): дочекатися, а не повторювати дію без руху часу.
+      const stun = this.state.character.body.stun;
+      if (stun > 0) {
+        this.wait(stun + 0.01);
+        continue;
+      }
       const task = this.next();
       this.trace?.(task?.name ?? "чекати");
+      const before = this.state.minute;
       if (task) task();
       else this.wait(10);
+      // Крок без руху часу повторився б нескінченно: перечекати хвилину.
+      if (this.state.minute === before && this.state.day === day) this.wait(1);
     }
     return this.sleep();
   }
@@ -94,9 +103,9 @@ export class Bot {
     const dirty = itemsOf(s, "litter").find((b) => isDirty(b) && !this.skipped(`item:${b.id}`));
     if (dirty) return named("litter", () => this.hold(`item:${dirty.id}`));
     if (s.cats.length > 0) {
-      const bowl = itemsOf(s, "bowl").find((b) => b.food < 2);
+      const bowl = itemsOf(s, "bowl").find((b) => b.food < 2 && !this.skipped(`item:${b.id}`));
       if (bowl && supplyCount(s, "catFood") > 0) return named("feed", () => this.feed(bowl.id));
-      const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2);
+      const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2 && !this.skipped(`item:${w.id}`));
       if (water) return named("use", () => this.use(`item:${water.id}`));
     }
     if (ch.stats.satiety < 60 && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
@@ -200,7 +209,8 @@ export class Bot {
         interact(this.save);
         return;
       case "catfood": {
-        const bowl = itemsOf(this.state, "bowl").find((b) => b.food < 2);
+        // До миски не підійти (кіт їсть) — повернути корм у шафку.
+        const bowl = itemsOf(this.state, "bowl").find((b) => b.food < 2 && !this.skipped(`item:${b.id}`));
         this.use(bowl ? `item:${bowl.id}` : "cat-cabinet");
         return;
       }
@@ -327,15 +337,18 @@ export class Bot {
 
   /** Дійти до цілі й повернутися до неї; true, якщо вона стала ціллю дії. */
   private goTo(id: string): boolean {
+    // Клітинки, звідки ціль перехопило інше (кіт біля миски, іграшка біля води): підійти з іншого боку.
+    const tried = new Set<string>();
     for (let attempt = 0; attempt < 3; attempt++) {
       const rect = this.rectOf(id);
       if (!rect) return false;
-      const path = this.path(rect);
-      if (!path) return false;
+      const path = this.path(rect, tried);
+      if (!path) break;
       for (const tile of path) this.walkToTile(tile);
       this.face(rect);
       if (targetOf(this.state)?.id === id) return true;
-      // Ціль утекла (кіт): спробувати ще раз.
+      const body = this.state.character.body;
+      tried.add(`${Math.floor(body.x)},${Math.floor(body.y)}`);
     }
     // Не застрягати: пропустити цю ціль на пів години.
     this.skip.set(id, this.state.minute + 30);
@@ -381,13 +394,13 @@ export class Bot {
   }
 
   /** Найкоротший шлях клітинками до місця, звідки ціль на відстані дії. */
-  private path(rect: Rect): Vec[] | null {
+  private path(rect: Rect, exclude: ReadonlySet<string> = new Set()): Vec[] | null {
     // Ставати поруч із ціллю, а не на неї: інакше ціллю може стати сусідня річ.
     const near = new Set<string>();
     const on = new Set<string>();
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
-        if (isSolid(x, y)) continue;
+        if (isSolid(x, y) || exclude.has(`${x},${y}`)) continue;
         const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect);
         if (distance <= 0) on.add(`${x},${y}`);
         else if (distance <= 0.7) near.add(`${x},${y}`);
