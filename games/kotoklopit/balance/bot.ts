@@ -9,7 +9,7 @@ import { PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
 import { order, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
-import { hoursUntilWake } from "../src/sim/sleep";
+import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetOf } from "../src/sim/targets";
 import type { Cat, GameState, NightReport, Product, Save, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
@@ -63,7 +63,7 @@ export class Bot {
     this.workedToday = 0;
     this.skip.clear();
     const day = this.state.day;
-    for (let guard = 0; guard < 3000; guard++) {
+    for (let guard = 0; guard < 50_000; guard++) {
       if (this.state.end !== null) return null;
       if (this.state.day !== day) return this.state.lastNight;
       if (hoursUntilWake(this.state) <= 8.05) return this.sleep();
@@ -308,6 +308,9 @@ export class Bot {
 
   private sleep(): NightReport | null {
     if (this.state.character.held) this.handleHeld();
+    // Лягти можна лише у вікні сну (§8.8): дочекатися його.
+    while (!canGoToSleep(this.state) && this.state.end === null) this.wait(10);
+    if (this.state.end !== null) return null;
     if (this.goTo("bed")) {
       const report = interact(this.save);
       if (report) return report;
