@@ -7,7 +7,6 @@ import {
   DASH_MINUTES,
   DASH_SPEED,
   DROWSY_SPEED,
-  FACING_PRIORITY,
   GLITCH_ANGLE_MAX,
   GLITCH_ANGLE_MIN,
   GLITCH_MAX_CHANCE_PER_MINUTE,
@@ -15,11 +14,10 @@ import {
   INPUT_DEADZONE,
   LOW_STAT,
   LOW_STAT_SPEED,
-  REACH,
   WALK_TILES_PER_MINUTE,
 } from "./config";
 import { emit } from "./events";
-import { centerOf, distanceToRect, isSolid, OBJECTS, SPAWN, type HomeObject } from "./home";
+import { isSolid, SPAWN } from "./home";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
 import type { Body, GameState, Vec } from "./types";
@@ -29,7 +27,7 @@ const SUBSTEP_TILES = 0.1;
 const GAP = 1e-6;
 
 export function newBody(): Body {
-  return { x: SPAWN.x, y: SPAWN.y, facing: { x: 0, y: 1 }, dash: 0, dashCooldown: 0, glitch: 0, glitchAngle: 0 };
+  return { x: SPAWN.x, y: SPAWN.y, facing: { x: 0, y: 1 }, dash: 0, dashCooldown: 0, glitch: 0, glitchAngle: 0, stun: 0 };
 }
 
 /**
@@ -77,6 +75,11 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   body.dash = Math.max(0, body.dash - minutes);
   body.dashCooldown = Math.max(0, body.dashCooldown - minutes);
   body.glitch = Math.max(0, body.glitch - minutes);
+  // Оглушений персонаж стоїть на місці (§9.12).
+  if (body.stun > 0) {
+    body.stun = Math.max(0, body.stun - minutes);
+    return;
+  }
 
   let dir: Vec;
   let magnitude: number;
@@ -138,25 +141,4 @@ function moveAxis(from: number, delta: number, blocked: (to: number) => boolean)
   return delta > 0
     ? Math.max(from, Math.floor(to + r) - r - GAP)
     : Math.min(from, Math.floor(to - r) + 1 + r + GAP);
-}
-
-/** Річ, з якою персонаж зараз взаємодіятиме: найближча, і передусім та, на яку він дивиться. */
-export function targetOf(state: GameState): HomeObject | null {
-  const body = state.character.body;
-  let best: HomeObject | null = null;
-  let bestScore = Infinity;
-  for (const o of OBJECTS) {
-    if (!o.interactive) continue;
-    const distance = distanceToRect(body, o);
-    if (distance > REACH) continue;
-    const center = centerOf(o);
-    const length = Math.hypot(center.x - body.x, center.y - body.y);
-    const facing = length > 0 ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : 1;
-    const score = distance - FACING_PRIORITY * facing;
-    if (score < bestScore) {
-      best = o;
-      bestScore = score;
-    }
-  }
-  return best;
 }

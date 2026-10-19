@@ -1,19 +1,25 @@
 // Сценарії режиму розробки (§11.5): іменовані стани гри у файлах JSON у теці `scenarios/`.
 // Сценарій — параметри нової гри й зміни стану поверх неї, тож нові поля стану його не ламають.
 
+import { createCat } from "../sim/cat";
 import { newGame, type NewGameOptions } from "../sim/game";
-import { seedDay } from "../sim/rng";
+import { addCat } from "../sim/night";
+import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { GameState, Save } from "../sim/types";
+import type { Cat, CatSource, GameState, Save } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
+
+/** Кіт сценарію: повний кіт створюється за віком і джерелом, решта полів накладається поверх. */
+export type CatSpec = DeepPartial<Cat> & { ageWeeks: number; source?: CatSource };
 
 export interface Scenario {
   name: string;
   description?: string;
   game?: Partial<NewGameOptions>;
   state?: DeepPartial<GameState>;
+  cats?: CatSpec[];
 }
 
 const DEFAULT_GAME: NewGameOptions = { sex: "female", difficulty: "normal", seed: 1 };
@@ -36,6 +42,16 @@ export function applyScenario(scenario: Scenario): Save {
   const state = deepMerge(save.current, structuredClone(scenario.state ?? {}));
   // День змінився — засіяти потоки для нього, якщо сценарій не задав їх сам.
   if (!scenario.state?.rng) seedDay(state);
+  const rng = createRng(state.seed);
+  for (const spec of scenario.cats ?? []) {
+    const cat = createCat(state, rng, {
+      source: spec.source ?? "shelter",
+      ageWeeks: spec.ageWeeks,
+      ...(spec.sex ? { sex: spec.sex } : {}),
+      ...(spec.name ? { name: spec.name } : {}),
+    });
+    addCat(state, deepMerge(cat, structuredClone(spec)));
+  }
   save.current = state;
   rebase(save);
   return save;

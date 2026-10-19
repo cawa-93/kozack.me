@@ -2,7 +2,7 @@
 
 import { onEvent, type GameEvent } from "../sim/events";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
-import type { GameState, Item } from "../sim/types";
+import type { GameState, Item, Quality } from "../sim/types";
 
 export interface JournalEntry {
   stamp: string;
@@ -15,19 +15,25 @@ const WEEKDAYS = ["пн", "вт", "ср", "чт", "пт", "сб", "нд"] as con
 const number = (value: number, digits = 1): string =>
   (Math.round(value * 10 ** digits) / 10 ** digits).toLocaleString("uk-UA");
 const signed = (value: number, digits = 1): string => (value >= 0 ? `+${number(value, digits)}` : `−${number(-value, digits)}`);
-const item = (i: Item): string =>
-  `${{ raw: "сира порція", meal: "страва", burnt: "підгоріла страва" }[i.kind]} (${i.quality === "premium" ? "дорога" : "дешева"})`;
+const quality = (q: Quality): string => (q === "premium" ? "дорога" : "дешева");
+const item = (i: Item): string => {
+  if (i.kind === "cat") return "кіт";
+  const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
+  return `${name} (${quality(i.quality)})`;
+};
+const catName = (state: GameState, id: number): string => state.cats.find((c) => c.id === id)?.name ?? `кіт ${id}`;
 
 export function stampOf(state: GameState): string {
   return `т${weekOf(state.day)} ${WEEKDAYS[weekdayOf(state.day)]} ${formatClock(state.minute)}`;
 }
 
 /** Текст події для журналу або null, якщо подія не варта запису. */
-export function describe(event: GameEvent): string | null {
+export function describe(event: GameEvent, state: GameState): string | null {
   switch (event.type) {
     case "night": {
       const r = event.report;
       const parts = [`Ніч: сон ${number(r.sleptHours)} год${r.collapsed ? " (впав без сил)" : ""}`];
+      for (const wake of r.wakeUps) parts.push(`розбудив ${catName(state, wake.cat)} (${wake.reason === "morning" ? "ранкова побудка" : "нічні пісні"})`);
       parts.push(`кроки — ${r.steps.join(", ")}`);
       if (r.utilities) parts.push(`комунальні — ${r.utilities.outcome}, сплачено ${r.utilities.paid}`);
       if (r.newCats.length > 0) parts.push(`нових котів: ${r.newCats.length}`);
@@ -74,6 +80,37 @@ export function describe(event: GameEvent): string | null {
       return null;
     case "glitch":
       return `Кидок: збій керування (шанс ${number(event.chance * 100, 0)}% за хвилину), зсув ${number(event.angle, 0)}°`;
+    case "cat-mood":
+      return `${catName(state, event.cat)}: настрій ${signed(event.delta)} — ${event.reason}`;
+    case "cat-love":
+      return `${catName(state, event.cat)}: любов ${signed(event.delta)} — ${event.reason}`;
+    case "cat-day":
+      return `${catName(state, event.cat)}: день — середній настрій ${number(event.mood)}, здоров'я ${signed(event.health)}, любов ${signed(event.love)}`;
+    case "cat-trait":
+      return `${catName(state, event.cat)}: нова риса «${event.title}» ${event.level > 0 ? "+" : ""}${event.level}`;
+    case "cat-arrived":
+      return `Новий кіт: ${catName(state, event.cat)}`;
+    case "cat-ate":
+      return `${catName(state, event.cat)} поїв (${quality(event.quality)} корм)`;
+    case "cat-refused-food":
+      return `${catName(state, event.cat)} відмовився від дешевого корму`;
+    case "meow":
+    case "purr":
+      return null;
+    case "mess":
+      return `Безлад: ${event.mess.kind}${event.mess.cat !== null ? ` від ${catName(state, event.mess.cat)}` : ""}`;
+    case "cleaned":
+      return `Прибрано: ${event.what}, здоровий глузд ${signed(event.sanity)}`;
+    case "fed":
+      return `Насипано корм: у мисці ${event.food}`;
+    case "watered":
+      return "Долито воду";
+    case "picked-up":
+      return `На руках: ${catName(state, event.cat)}${event.offended ? " (проти волі)" : ""}`;
+    case "put-down":
+      return `Опущено: ${catName(state, event.cat)}`;
+    case "bite":
+      return `${catName(state, event.cat)} вкусив: здоров'я −1`;
   }
 }
 
@@ -83,7 +120,7 @@ export class Journal {
 
   constructor(private readonly stateOf: () => GameState) {
     onEvent((event, state) => {
-      const text = describe(event);
+      const text = describe(event, state);
       if (text !== null) this.add(text, state);
     });
   }

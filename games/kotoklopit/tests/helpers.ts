@@ -1,10 +1,12 @@
-import { targetOf } from "../src/sim/body";
+import { targetOf } from "../src/sim/targets";
 import { changeStat } from "../src/sim/character";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, goToSleep, interact } from "../src/sim/game";
-import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById } from "../src/sim/home";
+import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { hoursUntilWake } from "../src/sim/sleep";
 import type { NightReport, Save, Vec } from "../src/sim/types";
+
+let current: Save | null = null;
 
 /** Хвилина дня з годин: 22.5 — 22:30, 26 — 02:00 наступної доби. */
 export function hours(value: number): number {
@@ -36,6 +38,7 @@ export function recordEvents(): { events: GameEvent[]; stop: () => void } {
 
 /** Поставити персонажа на клітинку й повернути обличчям до речі. */
 export function standAt(save: Save, id: string): void {
+  current = save;
   const tile = reachTiles(id)[0];
   if (!tile) throw new Error(`До «${id}» не підійти`);
   const body = save.current.character.body;
@@ -44,10 +47,20 @@ export function standAt(save: Save, id: string): void {
   face(save, id);
 }
 
+/** Прямокутник цілі: річ квартири чи місце речі котячого кутка (`item:<id>`). */
+function rectOf(id: string): Rect {
+  if (!id.startsWith("item:")) return objectById(id);
+  const item = current?.current.home.items.find((i) => `item:${i.id}` === id);
+  if (!item) throw new Error(`Немає «${id}»`);
+  const slot = slotById(item.slot);
+  return { x: slot.x + 0.15, y: slot.y + 0.15, w: 0.7, h: 0.7 };
+}
+
 /** Повернутися до речі, не зрушивши з місця. */
 function face(save: Save, id: string): void {
+  current = save;
   const body = save.current.character.body;
-  const o = objectById(id);
+  const o = rectOf(id);
   const dx = Math.min(Math.max(body.x, o.x), o.x + o.w) - body.x;
   const dy = Math.min(Math.max(body.y, o.y), o.y + o.h) - body.y;
   const length = Math.hypot(dx, dy) || 1;
@@ -56,7 +69,7 @@ function face(save: Save, id: string): void {
 
 /** Прохідні клітинки, з яких річ на відстані дії. */
 function reachTiles(id: string): Vec[] {
-  const o = objectById(id);
+  const o = rectOf(id);
   const tiles: Vec[] = [];
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
@@ -97,6 +110,7 @@ function path(from: Vec, id: string): Vec[] {
 
 /** Дійти до речі справжнім рухом, як гравець, і повернутися до неї обличчям. */
 export function walkTo(save: Save, id: string): void {
+  current = save;
   for (const tile of path(save.current.character.body, id)) {
     const goal = { x: tile.x + 0.5, y: tile.y + 0.5 };
     for (let i = 0; i < 500; i++) {

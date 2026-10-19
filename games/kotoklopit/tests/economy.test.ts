@@ -14,6 +14,8 @@ describe("стартові запаси (§6.4)", () => {
     expect(save.current.home.supplies).toEqual({
       food: { cheap: 6, premium: 0 },
       hygiene: { cheap: 7, premium: 0 },
+      catFood: { cheap: 0, premium: 0 },
+      litter: { cheap: 0, premium: 0 },
     });
   });
 });

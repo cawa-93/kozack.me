@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { actionSpeed, canDash, dash, glitchChance, targetOf } from "../src/sim/body";
+import { actionSpeed, canDash, dash, glitchChance } from "../src/sim/body";
+import { targetOf } from "../src/sim/targets";
 import { BODY_RADIUS } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
 import { OBJECTS } from "../src/sim/home";

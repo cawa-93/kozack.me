@@ -2,6 +2,7 @@
 
 import {
   CHRONOTYPE_WINDOWS,
+  DEPRESSION_CEILING,
   FIRST_DAY_MODIFIER,
   HUNGER_HEALTH_PER_HOUR,
   HUNGER_HEALTH_THRESHOLD,
@@ -23,9 +24,15 @@ export const STAT_NAMES: readonly StatName[] = ["health", "satiety", "hygiene", 
 
 /** Нижче цієї межі показник зараз не падає. */
 export function statFloor(state: GameState, stat: StatName): number {
-  // «Перший день»: здоровий глузд не опускається нижче 10% (§8.3).
-  if (stat === "sanity" && state.modifiers.day === FIRST_DAY_MODIFIER) return SANITY_FLOOR;
+  if (stat !== "sanity") return 0;
+  // «Перший день» (§8.3) і «Пригніченість» (§6.2): здоровий глузд не опускається нижче 10%.
+  if (state.modifiers.day === FIRST_DAY_MODIFIER || state.character.depressed) return SANITY_FLOOR;
   return 0;
+}
+
+/** Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 30% (§6.2). */
+export function statCeiling(state: GameState, stat: StatName): number {
+  return stat === "sanity" && state.character.depressed ? DEPRESSION_CEILING : STAT_MAX;
 }
 
 /**
@@ -36,7 +43,7 @@ export function changeStat(state: GameState, stat: StatName, delta: number, floo
   if (state.end !== null) return;
   const stats = state.character.stats;
   const current = stats[stat];
-  let next = Math.min(STAT_MAX, current + delta);
+  let next = Math.min(Math.max(current, statCeiling(state, stat)), current + delta);
   if (delta < 0) next = Math.max(next, Math.min(current, Math.max(floor, statFloor(state, stat))));
   stats[stat] = Math.max(next, 0);
   if (next <= 0) endGame(state, stat);

@@ -1,13 +1,13 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { Delivery, GameEnd, GameState, Item, NightReport, Quality } from "./types";
+import type { Delivery, GameEnd, GameState, Item, Mess, NightReport, Quality, TraitLevel } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
 
-/** Чому дія не вдалася. */
-export type Refusal = "empty" | "hands-full" | "occupied" | "too-early" | "nothing";
+/** Чому дія не вдалася: порожньо, руки зайняті, місце зайняте, зарано, нічого робити, річ не підходить. */
+export type Refusal = "empty" | "hands-full" | "occupied" | "too-early" | "nothing" | "wrong";
 
 export type GameEvent =
   | { type: "night"; report: NightReport }
@@ -28,7 +28,24 @@ export type GameEvent =
   | { type: "doorbell"; delivery: Delivery }
   | { type: "received"; deliveries: Delivery[] }
   | { type: "dash" }
-  | { type: "glitch"; chance: number; angle: number };
+  | { type: "glitch"; chance: number; angle: number }
+  // Коти (§9.3, §9.6, §9.12). Приховані зміни бачить лише журнал режиму розробки.
+  | { type: "cat-mood"; cat: number; delta: number; reason: string }
+  | { type: "cat-love"; cat: number; delta: number; reason: string }
+  | { type: "cat-day"; cat: number; mood: number; health: number; love: number }
+  | { type: "cat-trait"; cat: number; group: string; level: TraitLevel; title: string }
+  | { type: "cat-arrived"; cat: number }
+  | { type: "cat-ate"; cat: number; quality: Quality }
+  | { type: "cat-refused-food"; cat: number }
+  | { type: "meow"; cat: number }
+  | { type: "mess"; mess: Mess }
+  | { type: "cleaned"; what: "litter" | Mess["kind"]; sanity: number }
+  | { type: "fed"; item: number; food: number }
+  | { type: "watered"; item: number }
+  | { type: "picked-up"; cat: number; offended: boolean }
+  | { type: "put-down"; cat: number }
+  | { type: "purr"; cat: number; enjoyed: boolean }
+  | { type: "bite"; cat: number };
 
 export type Listener = (event: GameEvent, state: GameState) => void;
 

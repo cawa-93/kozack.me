@@ -3,6 +3,7 @@
 import { spend } from "./character";
 import {
   DELIVERY_HOURS,
+  WATER_CAPACITY,
   DELIVERY_NEXT_DAY_MINUTE,
   DELIVERY_PRICE,
   MINUTES_PER_HOUR,
@@ -13,16 +14,27 @@ import {
 import { emit, endGame } from "./events";
 import { SURFACE_IDS } from "./home";
 import { absoluteMinute } from "./time";
-import type { Delivery, GameState, Home, Product, Quality, UtilitiesReport } from "./types";
+import type { Delivery, GameState, Home, HomeItem, Product, Quality, UtilitiesReport } from "./types";
 
 /** Із запасів спершу береться дороге. */
 const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
 
-export function newHome(): Home {
+/**
+ * Квартира на старті: котячий куток уже є — дешева миска, миска з водою й дешевий лоток
+ * з наповнювачем (§9.12). `nextId` видає id речам.
+ */
+export function newHome(nextId: () => number): Home {
+  const items: HomeItem[] = [
+    { id: nextId(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null },
+    { id: nextId(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
+    { id: nextId(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
+  ];
   return {
     supplies: structuredClone(START_SUPPLIES),
     stove: { item: null, minutes: 0 },
     surfaces: Object.fromEntries(SURFACE_IDS.map((id) => [id, null])),
+    items,
+    messes: [],
     deliveries: [],
     porch: [],
     utilitiesDebt: 0,
@@ -82,7 +94,7 @@ export function tickDeliveries(state: GameState): void {
 export function receivePackages(state: GameState): Delivery[] {
   const home = state.home;
   const received = home.porch.splice(0);
-  for (const { product, quality } of received) home.supplies[product][quality] += PRODUCTS[product].units;
+  for (const { product, quality } of received) home.supplies[product][quality] += PRODUCTS[product].units[quality];
   if (received.length > 0) emit(state, { type: "received", deliveries: received });
   return received;
 }

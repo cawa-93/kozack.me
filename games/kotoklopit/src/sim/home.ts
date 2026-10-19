@@ -1,7 +1,7 @@
-// Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги.
-// Розкладка не змінюється під час гри, тож вона не входить у стан гри.
+// Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги, а також
+// місця для речей котячого кутка (§9.12). Розкладка не змінюється під час гри, тож вона не входить у стан гри.
 
-import type { Vec } from "./types";
+import type { HomeItem, Vec } from "./types";
 
 export type RoomId = "bedroom" | "bathroom" | "kitchen" | "living";
 
@@ -16,7 +16,8 @@ export type ObjectKind =
   | "trash"
   | "computer"
   | "door"
-  | "sofa";
+  | "sofa"
+  | "catCabinet";
 
 export interface Rect {
   x: number;
@@ -78,6 +79,7 @@ export const OBJECTS: readonly HomeObject[] = [
   object("counter-right", "counter", 16, 1, 2, 1),
   object("trash", "trash", 18, 1),
   object("table", "table", 13, 3, 2, 1),
+  object("cat-cabinet", "catCabinet", 18, 3),
   object("computer", "computer", 6, 6, 2, 1),
   object("sofa", "sofa", 13, 10, 3, 1),
   object("door", "door", 10, 11, 2, 1),
@@ -90,6 +92,42 @@ export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
 
 /** Де персонаж прокидається: біля ліжка (§8.7). */
 export const SPAWN: Vec = { x: 3.5, y: 2.5 };
+
+/** Місце на підлозі для речі котячого кутка (§9.12). Речі на підлозі не тверді. */
+export interface Slot {
+  id: string;
+  kind: HomeItem["kind"];
+  x: number;
+  y: number;
+}
+
+// Нижній ряд кімнат закриває передня стіна (камера «три чверті», §2.1), тож речі стоять вище.
+export const SLOTS: readonly Slot[] = [
+  { id: "bowl-1", kind: "bowl", x: 17, y: 3 },
+  { id: "bowl-2", kind: "bowl", x: 16, y: 3 },
+  { id: "bowl-3", kind: "bowl", x: 15, y: 3 },
+  { id: "bowl-4", kind: "bowl", x: 17, y: 2 },
+  { id: "water-1", kind: "water", x: 17, y: 6 },
+  { id: "water-2", kind: "water", x: 14, y: 6 },
+  { id: "litter-1", kind: "litter", x: 8, y: 3 },
+  { id: "litter-2", kind: "litter", x: 9, y: 3 },
+  { id: "litter-3", kind: "litter", x: 11, y: 3 },
+  { id: "litter-4", kind: "litter", x: 11, y: 2 },
+];
+
+const SLOT_BY_ID = new Map(SLOTS.map((s) => [s.id, s]));
+
+export function slotById(id: string): Slot {
+  const found = SLOT_BY_ID.get(id);
+  if (!found) throw new Error(`Немає місця «${id}»`);
+  return found;
+}
+
+/** Центр клітинки місця речі. */
+export function slotCenter(id: string): Vec {
+  const slot = slotById(id);
+  return { x: slot.x + 0.5, y: slot.y + 0.5 };
+}
 
 const BY_ID = new Map(OBJECTS.map((o) => [o.id, o]));
 
@@ -113,6 +151,21 @@ for (const o of OBJECTS) {
 /** Клітинка непрохідна; усе за межами карти — теж. */
 export function isSolid(x: number, y: number): boolean {
   return SOLID[y]?.[x] ?? true;
+}
+
+/** Річ квартири на клітинці, якщо вона там є: на меблях коти сплять і ховаються. */
+export function objectAt(x: number, y: number): HomeObject | null {
+  return OBJECTS.find((o) => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) ?? null;
+}
+
+/** Клітинку закриває передня стіна (камера «три чверті»): безлад туди не кладемо, щоб його було видно. */
+export function hiddenTile(x: number, y: number): boolean {
+  return MAP[y + 1]?.[x] === "#";
+}
+
+/** Стіна чи межа карти: крізь неї не пройде навіть кіт. */
+export function isWall(x: number, y: number): boolean {
+  return MAP[y]?.[x] !== ".";
 }
 
 /** Відстань від точки до прямокутника речі (0 — усередині). */

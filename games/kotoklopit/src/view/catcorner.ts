@@ -1,0 +1,85 @@
+// Котячий куток і безлад на підлозі (§9.12): миски з кормом і водою, лотки, «сюрпризи», блювота,
+// шерстяні грудки. Усе пласке й лежить на підлозі, тож малюється одним шаром під котами й персонажем.
+
+import Phaser from "phaser";
+
+import { isDirty } from "../sim/catai";
+import { BOWL_CAPACITY, WATER_CAPACITY } from "../sim/config";
+import { slotById } from "../sim/home";
+import type { GameState, HomeItem, Mess } from "../sim/types";
+import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
+
+const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
+const KIBBLE = { cheap: 0x8a5a33, premium: 0x6e2f22 } as const;
+const LITTER = { cheap: 0xd6c6a2, premium: 0xece4d2 } as const;
+
+/** Центр речі на екрані. */
+export function itemScreen(item: HomeItem): { x: number; y: number } {
+  const slot = slotById(item.slot);
+  return toScreen({ x: slot.x + 0.5, y: slot.y + 0.55 });
+}
+
+export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
+  g.clear();
+  for (const item of state.home.items) drawHomeItem(g, item);
+  for (const mess of state.home.messes) drawMess(g, mess);
+}
+
+function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
+  const { x, y } = itemScreen(item);
+  switch (item.kind) {
+    case "bowl": {
+      g.fillStyle(BOWL[item.quality]).fillEllipse(x, y, 30, 13);
+      g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 30, 13);
+      if (item.quality === "premium") g.lineStyle(1.5, 0xe8b93a).strokeEllipse(x, y - 1, 26, 10);
+      if (item.food > 0) {
+        const kibble = KIBBLE[item.foodQuality ?? "cheap"];
+        const size = 0.6 + (0.4 * item.food) / BOWL_CAPACITY;
+        g.fillStyle(kibble).fillEllipse(x, y - 2 * size, 20 * size, 8 * size);
+      }
+      return;
+    }
+    case "water": {
+      g.fillStyle(BOWL[item.quality]).fillEllipse(x, y, 28, 12);
+      g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 28, 12);
+      if (item.water > 0) g.fillStyle(0x6fb3d6, 0.9).fillEllipse(x, y - 1, 22 * (0.5 + (0.5 * item.water) / WATER_CAPACITY), 7);
+      return;
+    }
+    case "litter": {
+      const w = TILE_W * 0.78;
+      const h = TILE_H * 0.62;
+      g.fillStyle(item.quality === "premium" ? 0x6f8f8a : 0x8c9aa6).fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
+      g.fillStyle(item.litter ? LITTER[item.litter] : 0x4a4448).fillRoundedRect(x - w / 2 + 4, y - h / 2 + 4, w - 8, h - 8, 4);
+      g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
+      g.fillStyle(0x6b4a2b);
+      for (let i = 0; i < Math.min(item.uses, 6); i++) g.fillCircle(x - w / 3 + ((i * 11) % (w * 0.66)), y - 3 + ((i * 7) % 9), 3.2);
+      if (isDirty(item)) g.lineStyle(2, 0x7a8a3a, 0.8).lineBetween(x - 8, y - h / 2 - 2, x - 5, y - h / 2 - 12).lineBetween(x + 4, y - h / 2 - 2, x + 7, y - h / 2 - 12);
+      return;
+    }
+  }
+}
+
+function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
+  const { x, y } = toScreen(mess);
+  switch (mess.kind) {
+    case "surprise":
+      g.fillStyle(0x6b4a2b).fillEllipse(x, y, 16, 8).fillEllipse(x + 1, y - 4, 11, 6).fillEllipse(x, y - 7, 6, 4);
+      g.lineStyle(1.5, COLORS.ink, 0.7).strokeEllipse(x, y, 16, 8);
+      return;
+    case "vomit":
+      g.fillStyle(0xb5ad4a, 0.9).fillEllipse(x, y, 22, 10).fillEllipse(x + 8, y + 2, 9, 6).fillEllipse(x - 9, y - 1, 7, 5);
+      return;
+    case "hairball":
+      g.fillStyle(0x8a7a68).fillEllipse(x, y - 2, 14, 9);
+      g.lineStyle(1.5, 0x5a4c40).lineBetween(x - 6, y - 3, x + 5, y - 1).lineBetween(x - 4, y, x + 6, y - 4);
+      return;
+    case "litter":
+      g.fillStyle(LITTER.cheap);
+      for (const [dx, dy] of [[-10, 0], [-4, 3], [3, -2], [9, 2], [0, 5], [-7, -3], [6, 6]] as const) g.fillCircle(x + dx, y + dy, 2.2);
+      return;
+    case "broken":
+      g.fillStyle(0xf3efe6).fillTriangle(x - 10, y, x - 4, y - 6, x - 2, y + 2).fillTriangle(x + 2, y + 1, x + 9, y - 4, x + 10, y + 4);
+      g.lineStyle(1.5, COLORS.ink).strokeTriangle(x - 10, y, x - 4, y - 6, x - 2, y + 2).strokeTriangle(x + 2, y + 1, x + 9, y - 4, x + 10, y + 4);
+      return;
+  }
+}

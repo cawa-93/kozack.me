@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { createCat } from "../src/sim/cat";
+import { createRng } from "../src/sim/rng";
+
 import { goToSleep, newGame } from "../src/sim/game";
 import { applyMorningSanity } from "../src/sim/night";
 import type { Difficulty, NightStep } from "../src/sim/types";
@@ -84,12 +87,15 @@ describe("кошеня з притулку (§6.2)", () => {
   it("кошеня в ніч на понеділок має вік 1 тиждень, а старші коти дорослішають", () => {
     const save = game();
     save.current.day = 6;
-    save.current.cats.push({ id: 99, name: "Мурка", sex: "female", source: "shelter-forced", ageWeeks: 1, arrivedDay: 0 });
+    const older = createCat(save.current, createRng(1), { source: "shelter-forced", ageWeeks: 1 });
+    save.current.cats.push(older);
     save.current.character.stats.sanity = 25;
     save.current.minute = hours(22);
     goToSleep(save);
-    const ages = Object.fromEntries(save.current.cats.map((cat) => [cat.id, cat.ageWeeks]));
-    expect(ages).toEqual({ 99: 2, 1: 1 });
+    const kitten = save.current.cats.find((cat) => cat.id !== older.id);
+    expect(save.current.cats.find((cat) => cat.id === older.id)?.ageWeeks).toBe(2);
+    expect(kitten?.ageWeeks).toBe(1);
+    expect(kitten?.traits).toHaveLength(1);
   });
 });
 

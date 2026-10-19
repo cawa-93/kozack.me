@@ -93,8 +93,9 @@ describe("команди режиму розробки", () => {
 
 describe("журнал", () => {
   it("описує приховані зміни й кидки", () => {
-    expect(describeEvent({ type: "patience", level: "out" })).toContain("«Х»");
-    expect(describeEvent({ type: "glitch", chance: 0.32, angle: 112.4 })).toContain("32%");
-    expect(describeEvent({ type: "dash" })).toBeNull();
+    const { current } = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    expect(describeEvent({ type: "patience", level: "out" }, current)).toContain("«Х»");
+    expect(describeEvent({ type: "glitch", chance: 0.32, angle: 112.4 }, current)).toContain("32%");
+    expect(describeEvent({ type: "dash" }, current)).toBeNull();
   });
 });

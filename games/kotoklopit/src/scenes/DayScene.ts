@@ -1,22 +1,27 @@
 import Phaser from "phaser";
 
-import { canUse, IDLE, useProgress, type Input } from "../sim/actions";
-import { canDash, dash, isMoving, targetOf } from "../sim/body";
+import { useProgress, IDLE, type Input } from "../sim/actions";
+import { canDash, dash, isMoving } from "../sim/body";
+import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { order, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type Refusal } from "../sim/events";
 import { advance, interact, newGame, replayDay, replayWeek } from "../sim/game";
 import { objectById } from "../sim/home";
-import { isDrowsy, wakeMinute } from "../sim/sleep";
+import { isDrowsy } from "../sim/sleep";
+import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, Product, Quality, Sex } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
 import { difficultyCard, endCard, morningCard, newGameCard, phoneCard } from "../ui/cards";
 import { Overlay } from "../ui/overlay";
+import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
-import { COLORS } from "../view/geometry";
+import { CatView } from "../view/cat";
+import { drawCatCorner, itemScreen } from "../view/catcorner";
+import { COLORS, toScreen } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
 import { PersonView } from "../view/person";
@@ -32,6 +37,7 @@ const REFUSAL_ICONS: Record<Refusal, IconName | null> = {
   occupied: "hands",
   "too-early": "moon",
   nothing: null,
+  wrong: "hands",
 };
 
 type Keys = Record<
@@ -45,14 +51,18 @@ function isTyping(): boolean {
   return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
 }
 
-// Рівень — один день (§4): квартира, персонаж, бабли й інтерфейс. Сцена лише показує стан
+// Рівень — один день (§4): квартира, персонаж, коти, бабли й інтерфейс. Сцена лише показує стан
 // і передає дії гравця в симуляцію; правил гри тут немає.
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
   private views = new Map<string, ObjectView>();
   /** Речі на плиті й поверхнях: окремий шар для кожного місця, щоб персонаж правильно їх перекривав. */
   private readonly items = new Map<string, Phaser.GameObjects.Graphics>();
+  private readonly catViews = new Map<number, CatView>();
+  /** Приховані числа над котами в режимі розробки (§11.5). */
+  private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
   private viewport!: Viewport;
+  private corner!: Phaser.GameObjects.Graphics;
   private marks!: Phaser.GameObjects.Graphics;
   private gloom!: Phaser.GameObjects.Rectangle;
   private person!: PersonView;
@@ -76,6 +86,8 @@ export class DayScene extends Phaser.Scene {
     this.viewport = new Viewport(this);
     const { world, ui } = this.viewport;
     this.views = drawApartment(this, world);
+    // Миски, лотки й безлад лежать на підлозі: під меблями, котами й персонажем.
+    this.corner = this.add.graphics().setDepth(0).addToDisplayList(world);
     for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
       this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1).addToDisplayList(world));
     }
@@ -143,13 +155,18 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.clear();
     this.touch.reset();
     this.viewport.jump();
+    // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
+    for (const view of this.catViews.values()) view.destroy();
+    this.catViews.clear();
+    for (const label of this.hiddenLabels.values()) label.destroy();
+    this.hiddenLabels.clear();
     const state = this.state;
     if (state.end !== null) {
       this.showEnd();
       return;
     }
     // Титулка, якщо день щойно почався.
-    if (state.minute === wakeMinute(state)) {
+    if (state.minute === state.dayStartMinute) {
       const night = state.lastNight?.day === state.day - 1 ? state.lastNight : null;
       this.showMorning(night);
     }
@@ -195,7 +212,7 @@ export class DayScene extends Phaser.Scene {
     const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
     if (!this.blocked()) {
       const input = this.readInput();
-      this.moving = this.state.character.activity === null && isMoving(input.move);
+      this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
       advance(this.session.save, gameMinutes(seconds) * this.session.speed, input);
     } else {
       this.moving = false;
@@ -207,6 +224,8 @@ export class DayScene extends Phaser.Scene {
     const state = this.state;
     this.hud.update(state, time);
     this.person.draw(state.character, this.moving, time);
+    this.drawCats(time);
+    drawCatCorner(this.corner, state);
     this.viewport.follow(this.person.head, seconds);
     this.drawItems();
     this.drawMarks(time);
@@ -223,6 +242,50 @@ export class DayScene extends Phaser.Scene {
     return view;
   }
 
+  /** Коти: вигляд для кожного кота в домі; кота на руках малюємо біля грудей персонажа. */
+  private drawCats(time: number): void {
+    const state = this.state;
+    const held = state.character.held;
+    const alive = new Set<number>();
+    for (const cat of state.cats) {
+      alive.add(cat.id);
+      let view = this.catViews.get(cat.id);
+      if (!view) {
+        view = new CatView(this, this.viewport.world, cat);
+        this.catViews.set(cat.id, view);
+      }
+      const carried = held?.kind === "cat" && held.cat === cat.id ? this.person.hands : null;
+      view.draw(cat, time, carried);
+      this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
+    }
+    for (const [id, view] of this.catViews) {
+      if (alive.has(id)) continue;
+      view.destroy();
+      this.catViews.delete(id);
+      this.bubbles.setState(`cat:${id}`, null, 0, 0);
+      this.hiddenLabels.get(id)?.destroy();
+      this.hiddenLabels.delete(id);
+    }
+  }
+
+  /** Режим розробки: настрій, здоров'я й любов над котом (§11.5). */
+  private drawHidden(id: number, view: CatView, mood: number, health: number, love: number): void {
+    let label = this.hiddenLabels.get(id);
+    if (!this.session.showHidden) {
+      label?.setVisible(false);
+      return;
+    }
+    if (!label) {
+      label = this.add
+        .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#ffffff", backgroundColor: "#1f1a24", padding: { x: 3, y: 1 }, resolution: 2 })
+        .setOrigin(0.5, 1)
+        .setDepth(12_000)
+        .addToDisplayList(this.viewport.world);
+      this.hiddenLabels.set(id, label);
+    }
+    label.setVisible(true).setPosition(view.head.x, view.head.y - 30).setText(`н${Math.round(mood)} з${Math.round(health)} л${Math.round(love)}`);
+  }
+
   /** Речі на плиті й поверхнях. */
   private drawItems(): void {
     const { home } = this.state;
@@ -233,6 +296,27 @@ export class DayScene extends Phaser.Scene {
       const view = this.view(id);
       drawItem(g, item, view.top.x + view.top.w / 2, view.top.y + view.top.h / 2 + 6);
     }
+  }
+
+  /** Де на екрані ціль дії: для підсвітки й баблів. */
+  private anchorOf(id: string): { x: number; y: number } | null {
+    if (this.views.has(id)) return this.view(id).anchor;
+    const [kind, raw] = id.split(":");
+    const number = Number(raw);
+    if (kind === "item") {
+      const item = this.state.home.items.find((i) => i.id === number);
+      if (!item) return null;
+      const p = itemScreen(item);
+      return { x: p.x, y: p.y - 14 };
+    }
+    if (kind === "mess") {
+      const mess = this.state.home.messes.find((m) => m.id === number);
+      if (!mess) return null;
+      const p = toScreen(mess);
+      return { x: p.x, y: p.y - 12 };
+    }
+    if (kind === "cat") return this.catViews.get(number)?.head ?? null;
+    return null;
   }
 
   /** Підсвітка цілі, смуги прогресу, екран комп'ютера. */
@@ -247,17 +331,13 @@ export class DayScene extends Phaser.Scene {
     if (working && Math.floor(time / 300) % 2 === 0) g.fillStyle(0xffffff, 0.8).fillRect(screen.x + 5, screen.y + 6, 18, 3);
 
     const target = state.character.activity === null ? targetOf(state) : null;
-    if (target && !this.blocked()) {
-      const view = this.view(target.id);
-      const alpha = 0.55 + 0.35 * Math.sin(time / 180);
-      g.lineStyle(4, COLORS.highlight, alpha).strokeRect(view.top.x - 2, view.top.y - 2, view.top.w + 4, view.top.h + 4);
-    }
+    if (target && !this.blocked()) this.highlight(g, target, 0.55 + 0.35 * Math.sin(time / 180));
 
     const progress = useProgress(state);
     const activity = state.character.activity;
     if (progress !== null && activity?.kind === "use") {
-      const view = this.view(activity.target);
-      bar(g, view.anchor.x, view.top.y - 14, progress, COLORS.good);
+      const anchor = this.anchorOf(activity.target);
+      if (anchor) bar(g, anchor.x, anchor.y - 10, progress, COLORS.good);
     }
     const stove = state.home.stove;
     if (stove.item && stove.item.kind !== "burnt") {
@@ -269,12 +349,34 @@ export class DayScene extends Phaser.Scene {
     }
   }
 
+  private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): void {
+    g.lineStyle(4, COLORS.highlight, alpha);
+    if (target.type === "object") {
+      const { top } = this.view(target.id);
+      g.strokeRect(top.x - 2, top.y - 2, top.w + 4, top.h + 4);
+      return;
+    }
+    if (target.type === "item") {
+      const p = itemScreen(target.item);
+      g.strokeEllipse(p.x, p.y, target.item.kind === "litter" ? 56 : 40, target.item.kind === "litter" ? 40 : 22);
+      return;
+    }
+    if (target.type === "mess") {
+      const p = toScreen(target.mess);
+      g.strokeEllipse(p.x, p.y, 34, 18);
+      return;
+    }
+    const view = this.catViews.get(target.cat.id);
+    if (view) g.strokeEllipse(view.head.x, view.head.y + 30, 46, 46);
+  }
+
   /** Бабли стану (§11.4): що висить, поки триває. */
   private updateStateBubbles(): void {
     const state = this.state;
     const set = (id: string, icon: IconName | null): void => {
-      const view = this.view(id);
-      this.bubbles.setState(id, icon, view.anchor.x, view.anchor.y);
+      const anchor = this.anchorOf(id);
+      if (anchor) this.bubbles.setState(id, icon, anchor.x, anchor.y);
+      else this.bubbles.setState(id, null, 0, 0);
     };
     const working = isWorking(state);
     const standup = isWorkday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
@@ -292,15 +394,30 @@ export class DayScene extends Phaser.Scene {
     set("shower", supplyCount(state, "hygiene") === 0 ? "empty" : null);
     set("door", state.home.porch.length > 0 ? "box" : null);
     const table = objectById("table");
-    set("table", state.character.activity === null && canUse(state, table) && targetOf(state)?.id !== "table" ? "meal" : null);
+    const target = targetOf(state);
+    set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
+    set("cat-cabinet", state.cats.length > 0 && supplyCount(state, "catFood") === 0 ? "empty" : null);
+
+    // Котячий куток: порожня миска, коли кіт просить їсти; без води; брудний лоток.
+    const begging = new Set(state.cats.filter((c) => c.act.kind === "beg").map((c) => c.act.target));
+    for (const thing of state.home.items) {
+      const id = `item:${thing.id}`;
+      if (thing.kind === "bowl") set(id, thing.food === 0 && begging.has(id) ? "empty" : null);
+      else if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
+      else set(id, isDirty(thing) ? "dirty" : null);
+    }
+    for (const cat of state.cats) {
+      const hungry = cat.act.kind === "beg" && cat.act.goal === null;
+      set(`cat:${cat.id}`, cat.away === null && hungry ? "kibble" : null);
+    }
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
 
   /** Бабли подій і картки. */
   private onGameEvent(event: GameEvent): void {
     const popAt = (id: string, icon: IconName, count?: number): void => {
-      const view = this.view(id);
-      this.bubbles.pop(icon, view.anchor.x, view.anchor.y - 8, count);
+      const anchor = this.anchorOf(id);
+      if (anchor) this.bubbles.pop(icon, anchor.x, anchor.y - 8, count);
     };
     const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.person.head.x, this.person.head.y - 8);
     switch (event.type) {
@@ -330,6 +447,22 @@ export class DayScene extends Phaser.Scene {
       case "glitch":
         popPerson("dizzy");
         this.cameras.main.shake(180, 0.004);
+        break;
+      case "meow":
+        popAt(`cat:${event.cat}`, "meow");
+        break;
+      case "purr":
+        popAt(`cat:${event.cat}`, event.enjoyed ? "heart" : "angry");
+        break;
+      case "picked-up":
+        if (event.offended) popPerson("angry");
+        break;
+      case "cat-refused-food":
+        popAt(`cat:${event.cat}`, "angry");
+        break;
+      case "bite":
+        popPerson("bite");
+        this.cameras.main.shake(140, 0.003);
         break;
       case "night":
         if (this.state.end === null) {

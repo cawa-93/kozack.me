@@ -10,6 +10,7 @@ import { patienceLevel, positionOf } from "../sim/work";
 import type { Session } from "../session";
 import { DIFFICULTY_TITLES, fill, POSITION_TITLES } from "../texts";
 import { courierNow, jumpTo, rebase, setSeed, setTime, skipDays, skipToMonday, sleepNow, type TimeOfDay } from "./commands";
+import { CatsSection } from "./cats";
 import type { Journal } from "./journal";
 import {
   applyScenario,
@@ -47,6 +48,7 @@ export class DevPanel {
   private readonly hidden: HTMLElement;
   private readonly log: HTMLElement;
   private readonly scenarios: HTMLElement;
+  private readonly cats: CatsSection;
   private timer: number | null = null;
 
   constructor(
@@ -58,6 +60,7 @@ export class DevPanel {
     this.hidden = el("pre", { class: "dev-hidden" });
     this.log = el("ol", { class: "dev-log" });
     this.scenarios = el("div", { class: "dev-scenarios" });
+    this.cats = new CatsSection(session, el, (label, action) => this.button(label, action), (what) => this.changed(what, false));
 
     const close = el("button", { class: "dev-close", type: "button", "aria-label": "Закрити" }, "×");
     close.addEventListener("click", () => this.toggle(false));
@@ -65,6 +68,7 @@ export class DevPanel {
       el("header", { class: "dev-header" }, el("strong", {}, "Режим розробки"), el("span", { class: "dev-hint" }, "F1"), close),
       this.timeSection(),
       this.characterSection(),
+      this.section("Коти", this.cats.root),
       this.homeSection(),
       this.eventsSection(),
       this.scenarioSection(),
@@ -93,6 +97,7 @@ export class DevPanel {
     this.root.hidden = !open;
     if (open) {
       for (const opener of this.openers) opener();
+      this.cats.render();
       this.refresh();
       this.renderScenarios();
       this.renderLog();
@@ -105,6 +110,7 @@ export class DevPanel {
 
   private refresh(): void {
     for (const refresh of this.refreshers) refresh();
+    this.cats.refresh();
     this.hidden.textContent = this.hiddenNumbers();
   }
 
@@ -438,7 +444,7 @@ export class DevPanel {
       `збої керування ${round(glitchChance(state) * 100)}%/хв`,
       `тіло ${round(ch.body.x)}, ${round(ch.body.y)} · ривок ${round(ch.body.dashCooldown)} хв`,
       `дія ${ch.activity ? JSON.stringify(ch.activity) : "—"}`,
-      `у руках ${ch.held ? `${ch.held.kind}/${ch.held.quality}` : "—"} · плита ${home.stove.item?.kind ?? "—"} ${round(home.stove.minutes)} хв`,
+      `у руках ${ch.held ? (ch.held.kind === "cat" ? `кіт ${ch.held.cat}` : `${ch.held.kind}/${ch.held.quality}`) : "—"} · плита ${home.stove.item?.kind ?? "—"} ${round(home.stove.minutes)} хв`,
       `доставки ${home.deliveries.map((d) => `${d.product}@${formatClock(d.at % 1440)}`).join(", ") || "—"} · під дверима ${home.porch.length}`,
       `борг комунальних ${home.utilitiesDebt}`,
       `seed ${state.seed} · перегравань ${state.replays} · хвилина ${round(state.minute)}`,

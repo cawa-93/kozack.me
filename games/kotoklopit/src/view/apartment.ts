@@ -20,6 +20,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   computer: 30,
   sofa: 30,
   door: WALL_RISE,
+  catCabinet: 46,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -34,7 +35,13 @@ const FILL: Record<ObjectKind, number> = {
   computer: 0x5d4b3f,
   sofa: 0x7a5c6e,
   door: 0x6e4a32,
+  catCabinet: 0xb08a5a,
 };
+
+/** Видима висота речі: на неї вилазить кіт. */
+export function objectHeight(kind: ObjectKind): number {
+  return HEIGHT[kind];
+}
 
 /** Де на екрані верх речі: над ним висять бабли, на ньому лежать речі. */
 export interface ObjectView {
@@ -200,14 +207,27 @@ function decorate(
     case "sofa":
       g.fillStyle(shade(FILL.sofa, 0.15)).fillRoundedRect(t.x + 6, t.y + 4, t.w - 12, t.h - 6, 6);
       break;
+    case "catCabinet":
+      // Шафка з котячим кормом: дверцята з відбитком лапки.
+      g.lineStyle(2, COLORS.ink, 0.7).lineBetween(cx, t.y + t.h + 4, cx, t.y + t.h + height - 4);
+      g.fillStyle(0x6b4a2b).fillCircle(cx - 7, t.y + t.h + height / 2 + 3, 3.5).fillCircle(cx - 10, t.y + t.h + height / 2 - 3, 1.6).fillCircle(cx - 5, t.y + t.h + height / 2 - 4, 1.6).fillCircle(cx - 2, t.y + t.h + height / 2 - 1, 1.6);
+      break;
     case "door":
       break;
   }
 }
 
-/** Як виглядає річ у руках чи на поверхні. */
+/** Як виглядає річ у руках чи на поверхні. Кота на руках малює вигляд кота. */
 export function drawItem(g: Phaser.GameObjects.Graphics, item: Item, x: number, y: number, scale = 1): void {
   const s = scale;
+  if (item.kind === "cat") return;
+  if (item.kind === "catfood") {
+    // Совочок корму.
+    g.fillStyle(0xc9ccd1).fillRoundedRect(x - 10 * s, y - 8 * s, 20 * s, 9 * s, 3 * s);
+    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 10 * s, y - 8 * s, 20 * s, 9 * s, 3 * s);
+    g.fillStyle(item.quality === "premium" ? 0x6e2f22 : 0x8a5a33).fillEllipse(x, y - 9 * s, 16 * s, 6 * s);
+    return;
+  }
   if (item.kind === "raw") {
     // Сира порція — паперовий пакунок із зеленню.
     g.fillStyle(0xd9b98a).fillRoundedRect(x - 9 * s, y - 14 * s, 18 * s, 16 * s, 3 * s);

@@ -181,3 +181,16 @@
   color: #e8a33a;
   font-variant-numeric: tabular-nums;
 }
+
+.dev-cat {
+  margin: 6px 0;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.05);
+}
+
+.dev-traits {
+  margin: 4px 0;
+  padding-left: 16px;
+  font-size: 12px;
+}

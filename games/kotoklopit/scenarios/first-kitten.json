@@ -1,0 +1,12 @@
+{
+  "name": "Перше кошеня",
+  "description": "Вівторок першого тижня, ранок. Учора ввечері здоровий глузд упав нижче 30%, і тепер удома кошеня з притулку зі стартовим пакетом корму й наповнювача.",
+  "game": { "sex": "female", "difficulty": "normal", "seed": 2 },
+  "state": {
+    "day": 1,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 60, "hygiene": 60, "sanity": 70 } },
+    "home": { "supplies": { "catFood": { "cheap": 8, "premium": 0 }, "litter": { "cheap": 7, "premium": 0 } } }
+  },
+  "cats": [{ "source": "shelter-forced", "ageWeeks": 1, "name": "Мурчик", "sex": "male", "arrivedDay": 1, "x": 10.5, "y": 9.5 }]
+}

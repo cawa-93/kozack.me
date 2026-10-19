@@ -22,7 +22,14 @@ export type IconName =
   | "hands"
   | "drop"
   | "zz"
-  | "dizzy";
+  | "dizzy"
+  | "meow"
+  | "heart"
+  | "angry"
+  | "dirty"
+  | "thirst"
+  | "bite"
+  | "kibble";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -31,7 +38,7 @@ export const BUBBLE_HEIGHT = 52;
 const INK = COLORS.ink;
 type Draw = (g: Phaser.GameObjects.Graphics) => void;
 
-const ICONS: Record<IconName, Draw> = {
+const ICONS = {
   alert: (g) => {
     g.fillStyle(COLORS.warning).fillRoundedRect(16, 5, 8, 21, 3).fillCircle(20, 33, 4.5);
   },
@@ -112,7 +119,43 @@ const ICONS: Record<IconName, Draw> = {
     }
     g.strokePath();
   },
-};
+} as Record<IconName, Draw>;
+
+/** Іконки котів (§11.4): нявкання, сердечко, невдоволення, брудний лоток, немає води, укус, голод. */
+Object.assign(ICONS, {
+  meow: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0x6b5d6e).fillTriangle(9, 16, 15, 4, 19, 14).fillTriangle(31, 16, 25, 4, 21, 14).fillCircle(20, 22, 12);
+    g.fillStyle(0xffffff).fillCircle(15, 19, 2.5).fillCircle(25, 19, 2.5);
+    g.fillStyle(COLORS.danger).fillEllipse(20, 28, 7, 6);
+  },
+  heart: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0xd9455f).fillCircle(14, 15, 7.5).fillCircle(26, 15, 7.5).fillTriangle(7, 18, 33, 18, 20, 34);
+  },
+  angry: (g: Phaser.GameObjects.Graphics) => {
+    g.lineStyle(4, COLORS.danger);
+    for (const [x, y, a] of [[13, 13, 0], [27, 13, 1], [13, 27, 3], [27, 27, 2]] as const) {
+      g.beginPath().arc(x, y, 6, (a * Math.PI) / 2, (a * Math.PI) / 2 + Math.PI / 2).strokePath();
+    }
+  },
+  dirty: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0x6b4a2b).fillEllipse(20, 30, 20, 8).fillEllipse(20, 25, 13, 6).fillEllipse(20, 21, 7, 4);
+    g.lineStyle(2.5, 0x7a8a3a).lineBetween(10, 16, 12, 6).lineBetween(20, 15, 21, 4).lineBetween(30, 16, 28, 6);
+  },
+  thirst: (g: Phaser.GameObjects.Graphics) => {
+    ICONS.drop(g);
+    g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
+  },
+  bite: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(COLORS.danger).fillRoundedRect(6, 10, 28, 20, 8);
+    g.fillStyle(0xffffff).fillTriangle(9, 12, 14, 12, 11.5, 20).fillTriangle(17, 12, 22, 12, 19.5, 20).fillTriangle(25, 12, 30, 12, 27.5, 20);
+    g.fillTriangle(13, 28, 18, 28, 15.5, 21).fillTriangle(22, 28, 27, 28, 24.5, 21);
+  },
+  kibble: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0x8a5a33).fillEllipse(20, 21, 22, 10);
+    g.fillStyle(0x9aa3ab).fillEllipse(20, 27, 30, 11);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 27, 30, 11);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
 
 /** Намалювати текстури іконок і тла бабла один раз на старті. */
 export function createIconTextures(scene: Phaser.Scene): void {

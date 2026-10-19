@@ -2,20 +2,26 @@
 
 import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
+import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
+import { tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
 import {
   DIFFICULTY,
   KITTEN_AGE_WEEKS,
   KITTEN_SANITY_THRESHOLD,
+  MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
   SANITY_FLOOR,
+  SHELTER_STARTER_PACK,
+  WAKE_UP,
+  COLLAPSE_HOURS_BEFORE_WAKE,
 } from "./config";
 import { payUtilities, postponeDeliveries } from "./economy";
-import { pickCatName } from "./names";
+import { emit } from "./events";
 import { createRng, seedDay, streamSeed, type Rng } from "./rng";
-import { hoursUntilWake, sleepSpeedAfter, wakeMinute } from "./sleep";
+import { sleepSpeedAfter, wakeMinute } from "./sleep";
 import { isSunday } from "./time";
-import type { GameState, NightReport, NightStep } from "./types";
+import type { Cat, GameState, NightReport, NightStep } from "./types";
 import { morningJob } from "./work";
 
 interface Night {
@@ -37,8 +43,8 @@ const pending = (): void => {};
 
 const STEPS: readonly Step[] = [
   { id: "sleep", run: sleep },
-  // 1. Здоров'я котів від настрою й хвороб (§9.5, §9.6) — кроки 6 і 10 плану.
-  { id: "cat-health", run: pending },
+  // 1. Здоров'я котів від настрою (§9.6) і хвороб (§9.5 — крок 10 плану).
+  { id: "cat-health", run: catHealth },
   // 2. Смерть від нульового здоров'я (§9.5) — крок 10.
   { id: "cat-death", run: pending },
   // 3. Ніч із неділі на понеділок.
@@ -61,9 +67,11 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
   const sanity = state.character.stats.sanity;
   const report: NightReport = {
     day: state.day,
-    sleptHours: hoursUntilWake(state),
+    sleptHours: 0,
     collapsed,
     weekly: isSunday(state.day),
+    wakeUps: [],
+    wokeMinute: wakeMinute(state),
     steps: [],
     lostCats: [],
     newCats: [],
@@ -93,18 +101,75 @@ export function applyMorningSanity(state: GameState, lost: number, gained: numbe
   for (let i = 0; i < gained; i++) changeStat(state, "sanity", newCatSanity);
 }
 
-function sleep({ state, report }: Night): void {
-  dropEverything(state);
-  // Плита вночі не вимикається: страва, що лишилася на ній, підгорає (§8.7).
-  tickStove(state, report.sleptHours * MINUTES_PER_HOUR);
-  postponeDeliveries(state);
-  passSleepTime(state, report.sleptHours);
-  state.character.sleepSpeed = sleepSpeedAfter(report.sleptHours);
+/** Хто й коли будитиме персонажа цієї ночі (§9.12): ранкова побудка й нічні пісні. */
+function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night" }[] {
+  const wakes: { cat: Cat; minute: number; reason: "morning" | "night" }[] = [];
+  const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
+  for (const cat of state.cats) {
+    if (cat.away !== null) continue;
+    const nocturnal = traitLevel(cat, "nocturnal");
+    if (nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
+      wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
+    }
+    // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні.
+    const chance = WAKE_UP.morningBase + WAKE_UP.morningStep * Math.max(0, traitLevel(cat, "morning"));
+    if (dawn > from && dawn < to && rng.chance(chance)) wakes.push({ cat, minute: dawn, reason: "morning" });
+  }
+  return wakes.sort((a, b) => a.minute - b.minute);
 }
 
-function ageCats({ state }: Night): void {
-  // Нову рису за тиждень (§9.1) додасть модель кота — крок 6 плану.
-  for (const cat of state.cats) cat.ageWeeks += 1;
+/**
+ * Сон (§8.8, §9.12): коти живуть ніч, поки персонаж спить, і можуть його розбудити.
+ * Розбудили в межах вікна сну — 30 хвилин сну втрачено; пізніше — день починається одразу.
+ */
+function sleep({ state, report, rng }: Night): void {
+  dropEverything(state);
+  const start = state.minute;
+  const planned = wakeMinute(state) + MINUTES_PER_DAY;
+  const wakes = plannedWakeUps(state, rng, start, planned);
+  let lost = 0;
+  let woke = planned;
+  let minute = start;
+  while (minute < planned) {
+    const nextWake = wakes[0];
+    const until = Math.min(planned, nextWake ? nextWake.minute : planned);
+    // Коти живуть ніч похвилинно: безлад, порожні миски, брудний лоток (§4).
+    while (minute < until) {
+      const step = Math.min(1, until - minute);
+      tickCats(state, step, { present: false });
+      minute += step;
+      state.minute = minute;
+    }
+    if (!nextWake || minute >= planned) break;
+    wakes.shift();
+    const { cat, reason } = nextWake;
+    // Ранкова побудка — лише якщо кіт голодний і миски порожні.
+    if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
+    report.wakeUps.push({ cat: cat.id, reason });
+    if ((planned - minute) / MINUTES_PER_HOUR >= COLLAPSE_HOURS_BEFORE_WAKE) {
+      lost += WAKE_UP.lostMinutes;
+    } else {
+      woke = minute;
+      break;
+    }
+  }
+  const slept = Math.max(0, woke - start - lost) / MINUTES_PER_HOUR;
+  report.sleptHours = slept;
+  report.wokeMinute = woke - MINUTES_PER_DAY;
+  // Плита вночі не вимикається: страва, що лишилася на ній, підгорає (§8.7).
+  tickStove(state, woke - start);
+  postponeDeliveries(state);
+  passSleepTime(state, slept);
+  state.character.sleepSpeed = sleepSpeedAfter(slept);
+}
+
+/** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
+function catHealth({ state }: Night): void {
+  for (const cat of state.cats) closeCatDay(state, cat);
+}
+
+function ageCats({ state, rng }: Night): void {
+  for (const cat of state.cats) ageCat(state, cat, rng);
 }
 
 function utilities({ state, report }: Night): void {
@@ -113,25 +178,43 @@ function utilities({ state, report }: Night): void {
 
 /**
  * Здоровий глузд увечері нижче 30% — персонаж забирає кошеня з притулку (§6.2).
- * Кошеня випадкове: стать і ім'я — з нічних кидків. Решту моделі кота додасть крок 6 плану.
+ * Кошеня випадкове: 1 тиждень, 1 риса, жодної відомої; приходить зі стартовим пакетом (§9.12).
  */
 function kittenCheck({ state, report, rng }: Night): void {
   if (report.sanityEvening >= KITTEN_SANITY_THRESHOLD) return;
-  const id = state.nextId++;
-  const sex = rng.chance(0.5) ? "female" : "male";
-  const name = pickCatName(rng, sex, state.cats.map((cat) => cat.name));
-  state.cats.push({ id, name, sex, source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS, arrivedDay: state.day + 1 });
-  report.newCats.push(id);
+  const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS });
+  cat.arrivedDay = state.day + 1;
+  addCat(state, cat);
+  giveStarterPack(state);
+  report.newCats.push(cat.id);
 }
 
+/** Новий кіт у домі: «Пригніченість» знімається (§6.2). */
+export function addCat(state: GameState, cat: Cat): void {
+  state.cats.push(cat);
+  state.character.depressed = false;
+  emit(state, { type: "cat-arrived", cat: cat.id });
+}
+
+/** Стартовий пакет кота з притулку: корм і наповнювач (§9.12). */
+export function giveStarterPack(state: GameState): void {
+  const supplies = state.home.supplies;
+  supplies.catFood.cheap += SHELTER_STARTER_PACK.catFood;
+  supplies.litter.cheap += SHELTER_STARTER_PACK.litter;
+}
+
+/** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */
 function morning({ state, report }: Night): void {
   applyMorningSanity(state, report.lostCats.length, report.newCats.length);
-  report.sanityMorning = state.character.stats.sanity;
+  const character = state.character;
+  character.depressed = character.stats.sanity < KITTEN_SANITY_THRESHOLD && state.cats.length === 0;
+  report.sanityMorning = character.stats.sanity;
 }
 
-function newDay({ state }: Night): void {
+function newDay({ state, report }: Night): void {
   state.day += 1;
-  state.minute = wakeMinute(state);
+  state.minute = report.wokeMinute;
+  state.dayStartMinute = report.wokeMinute;
   state.character.body = newBody();
   morningJob(state);
   // Тут обиратиметься модифікатор дня (§4.1) — крок 14 плану.

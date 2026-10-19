@@ -21,6 +21,8 @@ export class PersonView {
 
   /** Точка над головою для баблів. */
   head = { x: 0, y: 0 };
+  /** Де персонаж тримає кота: біля грудей, трохи попереду (§9.12). */
+  hands = { x: 0, y: 0, depth: 0 };
 
   /** Намалювати персонажа; під час руху він трохи підстрибує на кроках. */
   draw(character: Character, moving: boolean, time: number): void {
@@ -57,5 +59,6 @@ export class PersonView {
     if (sex === "female") g.fillStyle(look.hair).fillRoundedRect(hx - 13, hy - 6, 6, 20, 3).fillRoundedRect(hx + 7, hy - 6, 6, 20, 3);
     if (held) drawItem(g, held, x + body.facing.x * 10, y - 22, 0.9);
     this.head = { x: hx, y: hy - 16 };
+    this.hands = { x: x + body.facing.x * 12, y: y - 14, depth: depthOf(feet.y) + (body.facing.y < -0.5 ? -1 : 1) };
   }
 }

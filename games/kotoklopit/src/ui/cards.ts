@@ -84,9 +84,12 @@ export function endCard(state: GameState, end: GameEnd, handlers: EndHandlers): 
   };
 }
 
+const portions = (n: number): string => `${n} ${plural(n, "порція", "порції", "порцій")}`;
 const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => string; place: string }> = {
-  food: { name: "Продукти", unit: (n) => `${n} ${plural(n, "порція", "порції", "порцій")}`, place: "у холодильнику" },
+  food: { name: "Продукти", unit: portions, place: "у холодильнику" },
   hygiene: { name: "Засоби гігієни", unit: (n) => `${n} ${plural(n, "душ", "душі", "душів")}`, place: "у ванній" },
+  catFood: { name: "Котячий корм", unit: portions, place: "у шафці" },
+  litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у запасі" },
 };
 
 const QUALITY_TITLES: Record<Quality, string> = { cheap: "Дешеві", premium: "Дорогі" };
@@ -107,12 +110,15 @@ export function phoneCard(state: GameState, onOrder: (product: Product, quality:
   for (const product of Object.keys(PRODUCTS) as Product[]) {
     const titles = PRODUCT_TITLES[product];
     const row = element("div", "shop-row");
-    const name = element("span", "shop-name", `${titles.name} · ${titles.unit(PRODUCTS[product].units)}`);
+    const { units } = PRODUCTS[product];
+    const pack = units.cheap === units.premium ? ` · ${titles.unit(units.cheap)}` : "";
+    const name = element("span", "shop-name", `${titles.name}${pack}`);
     name.append(element("span", "shop-stock", `Зараз ${titles.place}: ${titles.unit(supplyCount(state, product))}`));
     row.append(name);
     for (const quality of ["cheap", "premium"] as const) {
       const price = deliveryPrice(product, quality);
-      const button = element("button", "button", `${QUALITY_TITLES[quality]} — ${price}`);
+      const size = pack ? "" : ` (${titles.unit(units[quality])})`;
+      const button = element("button", "button", `${QUALITY_TITLES[quality]}${size} — ${price}`);
       button.disabled = price > money || state.end !== null;
       button.addEventListener("click", () => onOrder(product, quality));
       row.append(button);

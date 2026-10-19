@@ -7,8 +7,8 @@ export type Difficulty = "easy" | "normal" | "hard";
 
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
-/** Запаси, що поповнюються упаковками (§6.4). */
-export type Product = "food" | "hygiene";
+/** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
+export type Product = "food" | "hygiene" | "catFood" | "litter";
 
 /** Показники персонажа, шкали 0–100 (§6). Голод зберігається як ситість. */
 export type StatName = "health" | "satiety" | "hygiene" | "sanity";
@@ -24,11 +24,26 @@ export interface Vec {
   y: number;
 }
 
-/** Річ у руках чи на поверхні (§8.4): сира порція, готова страва або підгоріла. */
-export interface Item {
+/** Людська їжа на плиті чи поверхні (§8.7): сира порція, готова страва або підгоріла. */
+export interface Dish {
   kind: "raw" | "meal" | "burnt";
   quality: Quality;
 }
+
+/** Порція котячого корму, яку несуть до миски (§9.12). */
+export interface CatFoodScoop {
+  kind: "catfood";
+  quality: Quality;
+}
+
+/** Кіт на руках (§9.12). */
+export interface CarriedCat {
+  kind: "cat";
+  cat: number;
+}
+
+/** Річ у руках (§8.4): у руках лише одна. */
+export type Item = Dish | CatFoodScoop | CarriedCat;
 
 /** Положення персонажа в квартирі, у клітинках підлоги (§8.4). */
 export interface Body {
@@ -43,6 +58,8 @@ export interface Body {
   /** Збій керування від низького здорового глузду (§6.3): скільки ще триває й на який кут. */
   glitch: number;
   glitchAngle: number;
+  /** Скільки ігрових хвилин персонаж ще оглушений: спіткнувся об кота, посковзнувся (§9.12). */
+  stun: number;
 }
 
 /** Робота за комп'ютером: підсумок сесії, щоб показати його, коли персонаж устане. */
@@ -54,14 +71,22 @@ export interface WorkActivity {
   sanity: number;
 }
 
-/** Тривала дія утриманням кнопки (§10): душ, їжа. */
+/** Тривала дія утриманням кнопки (§10): душ, їжа, прибирання. Ціль — id з `targetId`. */
 export interface UseActivity {
   kind: "use";
   target: string;
   progress: number;
 }
 
-export type Activity = WorkActivity | UseActivity;
+/** Пестощі кота утриманням дії (§9.12). */
+export interface PetActivity {
+  kind: "pet";
+  cat: number;
+  /** Скільки хвилин кота пестять поспіль. */
+  minutes: number;
+}
+
+export type Activity = WorkActivity | UseActivity | PetActivity;
 
 export interface Character {
   name: string;
@@ -75,6 +100,8 @@ export interface Character {
   /** У руках лише одна річ (§8.4). */
   held: Item | null;
   activity: Activity | null;
+  /** «Пригніченість» (§6.2): без котів здоровий глузд між 10 і 30. */
+  depressed: boolean;
 }
 
 /** Робота (§8.6). Репутація й терпіння — шкали 0–100. */
@@ -97,14 +124,66 @@ export interface Delivery {
   at: number;
 }
 
-/** Квартира: запаси, плита, поверхні й пакунки (§6.4, §8.7). */
+/** Миска для корму (§9.12). */
+export interface BowlItem {
+  id: number;
+  kind: "bowl";
+  quality: Quality;
+  slot: string;
+  /** Порції корму в мисці. */
+  food: number;
+  foodQuality: Quality | null;
+}
+
+/** Миска для води (§9.12). */
+export interface WaterItem {
+  id: number;
+  kind: "water";
+  quality: Quality;
+  slot: string;
+  /** Ковтки води. */
+  water: number;
+}
+
+/** Лоток (§9.12). */
+export interface LitterItem {
+  id: number;
+  kind: "litter";
+  quality: Quality;
+  slot: string;
+  /** Наповнювач у лотку; null — порожній. */
+  litter: Quality | null;
+  /** Скільки разів котом користувалися після чистки. */
+  uses: number;
+}
+
+/** Речі для котів, що стоять на своїх місцях у квартирі (§9.12). */
+export type HomeItem = BowlItem | WaterItem | LitterItem;
+
+/** Котячий безлад на підлозі (§9.12). */
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken";
+
+export interface Mess {
+  id: number;
+  kind: MessKind;
+  /** Де лежить, у клітинках підлоги. */
+  x: number;
+  y: number;
+  /** Чий це безлад: для спостереження за рисами (§9.9). */
+  cat: number | null;
+}
+
+/** Квартира: запаси, плита, поверхні, речі для котів, безлад і пакунки (§6.4, §8.7, §9.12). */
 export interface Home {
-  /** Порції їжі й душі засобів гігієни. */
+  /** Порції їжі й корму, душі засобів гігієни, чистки наповнювача. */
   supplies: Record<Product, Record<Quality, number>>;
-  /** На плиті одна річ; хвилини — скільки вона там лежить. */
-  stove: { item: Item | null; minutes: number };
+  /** На плиті одна страва; хвилини — скільки вона там лежить. */
+  stove: { item: Dish | null; minutes: number };
   /** Що лежить на столі й робочих поверхнях: за id речі квартири. */
-  surfaces: Record<string, Item | null>;
+  surfaces: Record<string, Dish | null>;
+  /** Речі для котів на своїх місцях. */
+  items: HomeItem[];
+  messes: Mess[];
   /** Пакунки в дорозі. */
   deliveries: Delivery[];
   /** Пакунки під дверима. */
@@ -113,8 +192,82 @@ export interface Home {
   utilitiesDebt: number;
 }
 
-/** Звідки кіт (§4.2). Решту джерел додасть модель кота (крок 6 плану). */
-export type CatSource = "shelter-forced";
+/** Звідки кіт (§4.2): притулок, примусове кошеня, народився вдома, розплідник, знайда. */
+export type CatSource = "shelter" | "shelter-forced" | "born" | "breeder" | "foundling";
+
+/** Рівень риси (§9.1). */
+export type TraitLevel = -2 | -1 | 1 | 2;
+
+/** Риса характеру кота (§9.1, `TRAITS.md`). */
+export interface Trait {
+  /** Група рис: id з `TRAIT_GROUPS`. */
+  group: string;
+  level: TraitLevel;
+  /** Скільки проявів риси бачив персонаж (§9.9). */
+  seen: number;
+  /** Риса відома: її показали під час вибору кота (§9.9). */
+  known: boolean;
+}
+
+/** Гени забарвлення (§9.10): кожен ген — пара алелів; рудий у кота — один, у кішки — два. */
+export interface Genes {
+  /** Рудий, зчеплений зі статтю: true — рудий алель. */
+  orange: boolean[];
+  /** Колір пігменту: true — чорний (домінантний), false — шоколадний. */
+  black: [boolean, boolean];
+  /** Освітлення: true — насичений (домінантний), false — освітлений. */
+  dense: [boolean, boolean];
+  /** Агуті: true — видно табі-малюнок (домінантний). */
+  agouti: [boolean, boolean];
+  /** Тип табі: 0 — мармуровий, 1 — смугастий, 2 — плямистий, 3 — тікований; більший домінує. */
+  tabby: [number, number];
+  /** Білі плями: 0 — немає, 1 — трохи, 2 — багато; сума задає, скільки білого. */
+  white: [number, number];
+  /** Колорпойнт: true — звичайний (домінантний), false — сіамський. */
+  full: [boolean, boolean];
+  /** Довжина шерсті: true — коротка (домінантна), false — довга. */
+  short: [boolean, boolean];
+  /** Відтінок очей, якщо вони не блакитні: 0 — зелені, 1 — жовті, 2 — мідні. */
+  eyes: number;
+}
+
+/** Форми частин тіла (§9.10). */
+export interface Shape {
+  muzzle: "normal" | "flat" | "long";
+  ears: "normal" | "large" | "folded" | "curled" | "tufted";
+  tail: "long" | "short" | "fluffy" | "bobtail" | "none";
+  build: "slim" | "normal" | "stocky";
+  legs: "normal" | "short";
+  /** Шерсть від породи: безшерста чи кучерява; null — за генами. */
+  coat: "hairless" | "curly" | null;
+}
+
+/** Потреби кота 0–100 (§9.12). */
+export type CatNeed = "hunger" | "thirst" | "toilet" | "fatigue" | "attention" | "play";
+
+/** Що кіт робить зараз (§9.3, §9.12). */
+export type CatActKind =
+  | "idle"
+  | "wander"
+  | "eat"
+  | "drink"
+  | "toilet"
+  | "sleep"
+  | "beg"
+  | "attention"
+  | "hide";
+
+export interface CatAct {
+  kind: CatActKind;
+  /** Ціль дії: id предмета, речі квартири чи місця; null — без цілі. */
+  target: string | null;
+  /** Клітинка, куди йде кіт; null — уже на місці. */
+  goal: Vec | null;
+  /** Скільки хвилин дія ще триває на місці. */
+  minutes: number;
+  /** Скільки хвилин дія вже триває на місці. */
+  elapsed: number;
+}
 
 export interface Cat {
   id: number;
@@ -124,6 +277,32 @@ export interface Cat {
   ageWeeks: number;
   /** День, коли кіт з'явився в домі. */
   arrivedDay: number;
+  traits: Trait[];
+  /** Порода (§9.11): дві однакові — чистокровний; "mixed" — безпородний. */
+  breed: [string, string];
+  genes: Genes;
+  shape: Shape;
+  /** Приховані шкали 0–100 (§9.5–9.6, §7). */
+  health: number;
+  mood: number;
+  love: number;
+  needs: Record<CatNeed, number>;
+  /** Середній настрій за кожен прожитий день (§9.7). */
+  moodHistory: number[];
+  /** Настрій за поточну добу: сума «настрій × хвилини» і хвилини (§9.6). */
+  moodToday: { sum: number; minutes: number };
+  /** Чи взаємодіяв персонаж із котом сьогодні (§7). */
+  interacted: boolean;
+  /** Втрати здоров'я з джерелом за останній тиждень: з них — причина смерті (§9.7). */
+  healthLog: { day: number; source: string; amount: number }[];
+  /** Де кіт, у клітинках підлоги; facing — куди дивиться: −1 ліворуч, 1 праворуч. */
+  x: number;
+  y: number;
+  facing: number;
+  act: CatAct;
+  /** Кіт поза квартирою: утік на сходи (§9.12); null — удома. */
+  away: "stairs" | null;
+  parents: { mother: number | null; father: number | null };
 }
 
 export type NightStep =
@@ -160,6 +339,10 @@ export interface NightReport {
   collapsed: boolean;
   /** Ніч із неділі на понеділок. */
   weekly: boolean;
+  /** Хто будив персонажа вночі (§8.8). */
+  wakeUps: { cat: number; reason: "morning" | "night" }[];
+  /** Хвилина нового дня, коли персонаж прокинувся. */
+  wokeMinute: number;
   /** Кроки ночі в порядку виконання. */
   steps: NightStep[];
   lostCats: number[];
@@ -178,12 +361,14 @@ export interface GameState {
   day: number;
   /** Хвилина від 00:00 дати дня; після півночі більша за 1440, доки персонаж не ляже. */
   minute: number;
+  /** Хвилина, з якої почався день: пробудження чи побудка котами (§8.8). */
+  dayStartMinute: number;
   character: Character;
   job: Job;
   home: Home;
   modifiers: { day: string | null; week: string | null };
   cats: Cat[];
-  /** Наступний id для котів і пакунків. */
+  /** Наступний id для котів, речей, безладу й пакунків. */
   nextId: number;
   rng: Record<RngStream, number>;
   lastNight: NightReport | null;

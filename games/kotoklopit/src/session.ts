@@ -14,6 +14,8 @@ export class Session {
   paused = false;
   /** Чи зберігати гру в браузері; сценарії режиму розробки основне збереження не переписують. */
   persistent = true;
+  /** Режим розробки: приховані числа над котами (§11.5). */
+  showHidden = false;
   private readonly resetListeners = new Set<() => void>();
 
   constructor(save: Save) {

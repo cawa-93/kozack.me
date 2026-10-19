@@ -3,6 +3,7 @@
 
 import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { moveBody, newBody } from "./body";
+import { tickCats } from "./catai";
 import { passAwakeTime } from "./character";
 import { FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
@@ -14,7 +15,7 @@ import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
 import { newJob, tickWork } from "./work";
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 const EPSILON = 1e-6;
 
@@ -30,12 +31,14 @@ export interface NewGameOptions {
 
 export function newGame(options: NewGameOptions): Save {
   const { sex, difficulty } = options;
+  let nextId = 1;
   const state: GameState = {
     seed: (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0,
     replays: 0,
     difficulty,
     day: 0,
     minute: 0,
+    dayStartMinute: 0,
     character: {
       name: options.name ?? DEFAULT_NAME[sex],
       sex,
@@ -47,17 +50,20 @@ export function newGame(options: NewGameOptions): Save {
       body: newBody(),
       held: null,
       activity: null,
+      depressed: false,
     },
     job: newJob(),
-    home: newHome(),
+    home: newHome(() => nextId++),
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
     cats: [],
-    nextId: 1,
+    nextId: 0,
     rng: { conditions: 0, behavior: 0 },
     lastNight: null,
     end: null,
   };
+  state.nextId = nextId;
   state.minute = wakeMinute(state);
+  state.dayStartMinute = state.minute;
   seedDay(state);
   return { version: SAVE_VERSION, current: state, dayStart: clone(state), weekStart: clone(state) };
 }
@@ -93,6 +99,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
   moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
   tickWork(state, from, minutes);
   tickStove(state, minutes);
+  tickCats(state, minutes, { present: true });
   passAwakeTime(state, minutes / MINUTES_PER_HOUR);
   state.minute += minutes;
   tickDeliveries(state);
