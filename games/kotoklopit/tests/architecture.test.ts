@@ -27,13 +27,13 @@ describe("симуляція", () => {
 const app = import.meta.glob<string>("../src/**/*.ts", { query: "?raw", import: "default", eager: true });
 
 describe("режим розробки", () => {
-  it("підключається лише динамічно з main.ts під import.meta.env.DEV (§11.5)", () => {
+  it("підключається лише динамічно з main.ts під __DEV_TOOLS__ (§11.5)", () => {
     for (const [file, source] of Object.entries(app)) {
       if (file.includes("/src/dev/")) continue;
       const imports = source.match(/from\s+["'][^"']*\/dev(\/[^"']*)?["']|import\(["'][^"']*\/dev(\/[^"']*)?["']\)/g) ?? [];
       if (file.endsWith("/src/main.ts")) {
         expect(imports, file).toEqual(['import("./dev")']);
-        expect(source).toMatch(/if \(import\.meta\.env\.DEV\)/);
+        expect(source).toMatch(/if \(__DEV_TOOLS__\)/);
       } else {
         expect(imports, file).toEqual([]);
       }

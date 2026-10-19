@@ -6,8 +6,8 @@ import "./style.css";
 
 const session = Session.restore({ sex: "female", difficulty: "normal" });
 
-// Режим розробки (§11.5) не потрапляє в продакшн-збірку.
-if (import.meta.env.DEV) {
+// Режим розробки (§11.5): у `npm run dev` і на прев'ю Netlify; у продакшн-збірку не потрапляє.
+if (__DEV_TOOLS__) {
   const { installDev } = await import("./dev");
   installDev(session);
 }
