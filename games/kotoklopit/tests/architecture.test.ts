@@ -12,7 +12,8 @@ describe("симуляція", () => {
     expect(files.length).toBeGreaterThan(0);
     for (const [file, source] of files) {
       expect(source, file).not.toMatch(/from\s+["']phaser["']/);
-      expect(source, file).not.toMatch(/\b(window|document|localStorage)\b/);
+      // Звернення до браузера (`window.`, `localStorage[`), а не слово в рядку: є риса з id "window".
+      expect(source, file).not.toMatch(/\b(window|document|localStorage)\s*[.[]/);
     }
   });
 
