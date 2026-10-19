@@ -3,7 +3,8 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { bowlFull } from "./catai";
+import { bowlFull, catOnComputer, rollEscapes } from "./catai";
+import { visibleFloorNear } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
   BURN_MINUTES,
@@ -12,14 +13,17 @@ import {
   COOK_MINUTES,
   DIFFICULTY,
   EAT_MINUTES,
+  ESCAPE,
   LITTER_SANITY,
   MEAL_SATIETY,
   MESS_SANITY,
   MOOD,
   PET,
+  PLAY,
   REACH,
   SHOWER_HYGIENE,
   SHOWER_MINUTES,
+  SHOO,
   WATER_CAPACITY,
 } from "./config";
 import { receivePackages, returnSupply, supplyCount, takeSupply } from "./economy";
@@ -28,7 +32,7 @@ import { isSolid, type HomeObject } from "./home";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { targetById, targetOf, type Target } from "./targets";
-import type { Cat, Dish, GameState, HomeItem, Item, PetActivity, Vec } from "./types";
+import type { Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
 import { startWork, stopWork } from "./work";
 
 /** Керування на цю мить: напрямок руху й чи утримується кнопка дії. */
@@ -68,6 +72,11 @@ export function tap(state: GameState): TapResult {
     return null;
   }
   const target = targetOf(state);
+  // Іграшку кладуть на підлогу будь-де, крім смітника.
+  if (held?.kind === "toy" && (target === null || target.type !== "object" || target.object.kind !== "trash")) {
+    dropToy(state);
+    return null;
+  }
   if (target === null) return null;
   switch (target.type) {
     case "object":
@@ -155,15 +164,26 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "computer":
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // Кіт спить на комп'ютері чи сидить на клавіатурі — спершу його треба забрати (§9.12).
+      if (catOnComputer(state)) return refuse(state, target.id, "occupied");
       startWork(state);
       return null;
     case "bed":
       if (held !== null) return refuse(state, target.id, "hands-full");
       if (!canGoToSleep(state)) return refuse(state, target.id, "too-early");
       return "sleep";
-    case "door":
+    case "door": {
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      // Спершу — кіт на сходах: його треба впіймати (§9.12).
+      const escaped = state.cats.find((c) => c.away === "stairs");
+      if (escaped) {
+        catchCat(state, escaped);
+        return null;
+      }
       if (receivePackages(state).length === 0) return refuse(state, target.id, "nothing");
+      rollEscapes(state);
       return null;
+    }
     case "shower":
       // Душ — тривала дія: його вмикає утримання кнопки.
       if (held !== null) return refuse(state, target.id, "hands-full");
@@ -194,7 +214,33 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     case "litter":
       // Лоток чистять утриманням дії.
       return held === null ? null : refuse(state, id, "hands-full");
+    case "toy":
+      if (held !== null) return refuse(state, id, "hands-full");
+      state.home.items.splice(state.home.items.indexOf(item), 1);
+      state.character.held = { kind: "toy", toy: item };
+      return null;
   }
+}
+
+/** Покласти іграшку на підлогу під ногами. */
+function dropToy(state: GameState): void {
+  const held = state.character.held;
+  if (held?.kind !== "toy") return;
+  const { x, y, facing } = state.character.body;
+  const spot = visibleFloorNear({ x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
+  state.home.items.push({ ...held.toy, x: spot.x, y: spot.y });
+  state.character.held = null;
+}
+
+/** Повернути кота зі сходів (§9.12): ловити кота — неприємне завдання. */
+function catchCat(state: GameState, cat: Cat): void {
+  cat.away = null;
+  cat.x = 10.5;
+  cat.y = 10.3;
+  cat.act = idleAct(3);
+  cat.interacted = true;
+  unpleasantTask(state, ESCAPE.catchSanity);
+  emit(state, { type: "cat-returned", cat: cat.id, caught: true });
 }
 
 function take(state: GameState, object: HomeObject, item: Item): null {
@@ -208,11 +254,22 @@ function unwilling(cat: Cat): boolean {
   return cat.act.kind === "sleep" || (cat.needs.attention < 40 && traitLevel(cat, "lap") <= 0);
 }
 
-/** Узяти кота на руки (§9.12): сонного чи небажаючого це ображає. */
+/** Кіт займає місце: клавіатуру, комп'ютер чи коліна (§9.12). */
+function occupying(state: GameState, cat: Cat): boolean {
+  return cat.act.kind === "keyboard" || cat.act.kind === "lap" || catOnComputer(state) === cat;
+}
+
+/** Узяти кота на руки (§9.12): прогнаного з місця, сонного чи небажаючого це ображає. */
 export function pickUpCat(state: GameState, cat: Cat): void {
-  const offended = unwilling(cat);
-  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
-  if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");
+  const shooed = occupying(state, cat);
+  const offended = shooed || unwilling(cat);
+  if (shooed) {
+    changeMood(state, cat, SHOO.mood, "прогнали з місця");
+    changeLove(state, cat, SHOO.love, "прогнали з місця");
+  } else {
+    if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
+    if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");
+  }
   cat.interacted = true;
   cat.act = idleAct();
   state.character.held = { kind: "cat", cat: cat.id };
@@ -257,6 +314,11 @@ export function canUse(state: GameState, target: Target): boolean {
   }
 }
 
+/** Чи можна гратися: іграшка в руках, кіт поруч (§9.12). */
+function canPlay(state: GameState, target: Target): boolean {
+  return target.type === "cat" && state.character.held?.kind === "toy";
+}
+
 /** Частка виконаної тривалої дії 0–1 або null, якщо її немає. */
 export function useProgress(state: GameState): number | null {
   const activity = state.character.activity;
@@ -279,18 +341,23 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   }
   if (activity?.kind === "work") return;
   if (!input.hold) {
-    if (activity?.kind === "pet") character.activity = null;
+    if (activity?.kind === "pet" || activity?.kind === "play") character.activity = null;
     return;
   }
   if (activity === null) {
     const target = targetOf(state);
-    if (target === null || !canUse(state, target)) return;
-    character.activity =
-      target.type === "cat" ? { kind: "pet", cat: target.cat.id, minutes: 0 } : { kind: "use", target: target.id, progress: 0 };
+    if (target === null) return;
+    if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
+    else if (!canUse(state, target)) return;
+    else character.activity = target.type === "cat" ? { kind: "pet", cat: target.cat.id, minutes: 0 } : { kind: "use", target: target.id, progress: 0 };
   }
   const current = character.activity;
   if (current?.kind === "pet") {
     pet(state, current, minutes);
+    return;
+  }
+  if (current?.kind === "play") {
+    play(state, current, minutes);
     return;
   }
   if (current?.kind !== "use") return;
@@ -386,6 +453,44 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   }
 }
 
+/** Кіт поруч і не на сходах: з ним можна гратися чи його пестити. */
+function catNearby(state: GameState, id: number): Cat | null {
+  const body = state.character.body;
+  const cat = state.cats.find((c) => c.id === id);
+  if (!cat || cat.away !== null || Math.hypot(cat.x - body.x, cat.y - body.y) > REACH + 0.6) return null;
+  return cat;
+}
+
+/**
+ * Гра з котом (§8.2, §9.12): здоровий глузд, настрій і любов, поки кіт хоче гратися;
+ * коли гри вже не хоче — іде.
+ */
+function play(state: GameState, activity: PlayActivity, minutes: number): void {
+  const character = state.character;
+  const cat = catNearby(state, activity.cat);
+  if (!cat || character.held?.kind !== "toy") {
+    character.activity = null;
+    return;
+  }
+  const before = activity.minutes;
+  activity.minutes += minutes;
+  cat.interacted = true;
+  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили грою");
+  if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
+  cat.act.minutes = Math.max(cat.act.minutes, 1);
+  const playful = Math.max(0, 1 + PLAY.playfulStep * traitLevel(cat, "playful"));
+  changeStat(state, "sanity", PLAY.sanity * playful * DIFFICULTY[state.difficulty].catSanity * minutes);
+  changeMood(state, cat, PLAY.mood * minutes);
+  changeLove(state, cat, PLAY.love * minutes);
+  cat.needs.play = Math.max(0, cat.needs.play - PLAY.needPerMinute * minutes);
+  if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
+  if (cat.needs.play < PLAY.bored) {
+    character.activity = null;
+    cat.act = idleAct(0);
+    emit(state, { type: "played", cat: cat.id, minutes: activity.minutes });
+  }
+}
+
 /** Персонаж заснув: робота й тривала дія закінчуються, річ із рук випадає (§8.7). */
 export function dropEverything(state: GameState): void {
   const character = state.character;
@@ -395,6 +500,7 @@ export function dropEverything(state: GameState): void {
   if (held?.kind === "raw") returnSupply(state, "food", held.quality);
   if (held?.kind === "catfood") returnSupply(state, "catFood", held.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
+  if (held?.kind === "toy") dropToy(state);
   character.held = null;
 }
 

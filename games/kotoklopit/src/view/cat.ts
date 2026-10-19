@@ -32,9 +32,11 @@ export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried";
 
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
-  if (carried) return "carried";
   const act = cat.act;
-  if (act.goal !== null) return "walk";
+  // На колінах кіт спить клубочком.
+  if (act.kind === "lap") return "sleep";
+  if (carried) return "carried";
+  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies") return "walk";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
   if (act.kind === "eat" || act.kind === "drink") return "eat";
@@ -82,7 +84,8 @@ export class CatView {
     // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.
     const scale = 1.25 * (isKitten(cat) ? 0.78 : 1) * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
     const dir = cat.facing >= 0 ? 1 : -1;
-    const bob = pose === "walk" ? -Math.abs(Math.sin(time / 70 + cat.id)) * 2 : 0;
+    const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
+    const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
     const x = feet.x;
     const y = feet.y + bob;
     const body = this.coat.pointed ? POINT_BODY : PIGMENT[this.coat.base];

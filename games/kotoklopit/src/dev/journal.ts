@@ -18,6 +18,7 @@ const signed = (value: number, digits = 1): string => (value >= 0 ? `+${number(v
 const quality = (q: Quality): string => (q === "premium" ? "дорога" : "дешева");
 const item = (i: Item): string => {
   if (i.kind === "cat") return "кіт";
+  if (i.kind === "toy") return `іграшка (${quality(i.toy.quality)})`;
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
@@ -111,6 +112,26 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Опущено: ${catName(state, event.cat)}`;
     case "bite":
       return `${catName(state, event.cat)} вкусив: здоров'я −1`;
+    case "played":
+      return `Гра з ${catName(state, event.cat)}: ${number(event.minutes)} хв`;
+    case "knocked":
+      return `${catName(state, event.cat)} скинув ${item(event.item)} з «${event.object}»`;
+    case "stole":
+      return `${catName(state, event.cat)} украв ${item(event.item)} з «${event.object}»`;
+    case "toy-broke":
+      return "Іграшка зламалася";
+    case "keyboard":
+      return `${catName(state, event.cat)} сів на клавіатуру: робота зупинилася`;
+    case "knocked-down":
+      return `${catName(state, event.cat)} збив персонажа на зумі`;
+    case "tripped":
+      return `Персонаж спіткнувся об ${catName(state, event.cat)}`;
+    case "slipped":
+      return "Персонаж посковзнувся на шерстяній грудці";
+    case "escaped":
+      return `${catName(state, event.cat)} вибіг на сходи`;
+    case "cat-returned":
+      return `${catName(state, event.cat)} ${event.caught ? "спіймано на сходах" : "повернувся сам"}`;
   }
 }
 

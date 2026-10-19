@@ -5,7 +5,7 @@ import Phaser from "phaser";
 
 import { isDirty } from "../sim/catai";
 import { BOWL_CAPACITY, WATER_CAPACITY } from "../sim/config";
-import { slotById } from "../sim/home";
+import { itemPoint } from "../sim/home";
 import type { GameState, HomeItem, Mess } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
@@ -15,8 +15,17 @@ const LITTER = { cheap: 0xd6c6a2, premium: 0xece4d2 } as const;
 
 /** Центр речі на екрані. */
 export function itemScreen(item: HomeItem): { x: number; y: number } {
-  const slot = slotById(item.slot);
-  return toScreen({ x: slot.x + 0.5, y: slot.y + 0.55 });
+  const p = itemPoint(item);
+  return toScreen({ x: p.x, y: p.y + (item.kind === "toy" ? 0 : 0.05) });
+}
+
+/** Іграшка-вудочка: паличка з пір'ям; дорога — яскравіша. */
+export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "premium", x: number, y: number, scale = 1): void {
+  const s = scale;
+  g.lineStyle(2.5 * s, 0x8b5e3c).lineBetween(x - 12 * s, y, x + 6 * s, y - 10 * s);
+  g.lineStyle(1.5 * s, COLORS.ink, 0.7).lineBetween(x + 6 * s, y - 10 * s, x + 10 * s, y - 2 * s);
+  const feather = quality === "premium" ? 0xd9455f : 0x6fae6a;
+  g.fillStyle(feather).fillEllipse(x + 11 * s, y + 1 * s, 6 * s, 10 * s).fillEllipse(x + 14 * s, y + 2 * s, 5 * s, 8 * s);
 }
 
 export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
@@ -45,6 +54,9 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
       if (item.water > 0) g.fillStyle(0x6fb3d6, 0.9).fillEllipse(x, y - 1, 22 * (0.5 + (0.5 * item.water) / WATER_CAPACITY), 7);
       return;
     }
+    case "toy":
+      drawToy(g, item.quality, x, y);
+      return;
     case "litter": {
       const w = TILE_W * 0.78;
       const h = TILE_H * 0.62;

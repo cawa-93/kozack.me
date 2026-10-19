@@ -42,8 +42,14 @@ export interface CarriedCat {
   cat: number;
 }
 
+/** Іграшка в руках: з нею граються з котом (§9.12). */
+export interface HeldToy {
+  kind: "toy";
+  toy: ToyItem;
+}
+
 /** Річ у руках (§8.4): у руках лише одна. */
-export type Item = Dish | CatFoodScoop | CarriedCat;
+export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy;
 
 /** Положення персонажа в квартирі, у клітинках підлоги (§8.4). */
 export interface Body {
@@ -86,7 +92,14 @@ export interface PetActivity {
   minutes: number;
 }
 
-export type Activity = WorkActivity | UseActivity | PetActivity;
+/** Гра з котом: іграшка в руках і утримання дії (§9.12). */
+export interface PlayActivity {
+  kind: "play";
+  cat: number;
+  minutes: number;
+}
+
+export type Activity = WorkActivity | UseActivity | PetActivity | PlayActivity;
 
 export interface Character {
   name: string;
@@ -157,8 +170,19 @@ export interface LitterItem {
   uses: number;
 }
 
-/** Речі для котів, що стоять на своїх місцях у квартирі (§9.12). */
-export type HomeItem = BowlItem | WaterItem | LitterItem;
+/** Іграшка (§9.12): лежить будь-де на підлозі, кіт ганяє її, поки не зламає. */
+export interface ToyItem {
+  id: number;
+  kind: "toy";
+  quality: Quality;
+  x: number;
+  y: number;
+  /** Скільки ігор іграшка вже витримала. */
+  uses: number;
+}
+
+/** Речі для котів (§9.12): миски й лотки — на своїх місцях, іграшки — будь-де на підлозі. */
+export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem;
 
 /** Котячий безлад на підлозі (§9.12). */
 export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken";
@@ -255,7 +279,13 @@ export type CatActKind =
   | "sleep"
   | "beg"
   | "attention"
-  | "hide";
+  | "hide"
+  | "zoomies"
+  | "knock"
+  | "steal"
+  | "toy"
+  | "keyboard"
+  | "lap";
 
 export interface CatAct {
   kind: CatActKind;

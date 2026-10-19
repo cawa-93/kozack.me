@@ -363,3 +363,46 @@ export const WAKE_UP = {
   hungry: 80,
   lostMinutes: 30,
 } as const;
+
+// Гра й бешкет (§9.12, чернетка).
+/** Іграшка: скільки ігор витримує; гра наодинці триває кілька хвилин. */
+export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, number>, aloneMinutes: 4 } as const;
+/** Гра з персонажем: за хвилину. Нижче `bored` потреби гри кіт іде. */
+export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
+/** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
+export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, traitStep: 0.5 } as const;
+/** Зумі: утричі швидше 1–2 хвилини; після лотка — шанс 30%. Збиває персонажа на шляху. */
+export const ZOOMIES = { speed: 3, minMinutes: 1, maxMinutes: 2, afterToilet: 0.3, hit: 0.5 } as const;
+/** Скільки гри знімає забава наодинці. */
+export const PLAY_RELIEF = 50;
+/** Украдена страва знімає голод (§9.12). */
+export const STEAL_HUNGER = 50;
+/** Голодний кіт із порожньою мискою краде їжу: 25% за одиницю «Злодійства», дуже голодний (від 95) — ще 15%. */
+export const HUNGRY_THEFT = { step: 0.25, base: 0.15, starving: 95 } as const;
+/** Кіт і робота: клавіатура, коліна (§9.12). */
+export const WORK_CAT = {
+  keyboardStep: 0.35,
+  lapBase: 0.5,
+  lapStep: 0.25,
+  keyboardMinMinutes: 10,
+  keyboardMaxMinutes: 20,
+  lapSanity: 1,
+  lapMood: 0.5,
+  lapLove: 0.2,
+  lapAttention: 5,
+} as const;
+/** Сон на комп'ютері: вага 1 + 2 × «Теплолюбність» + 2 × «Робочий помічник». */
+export const COMPUTER_SLEEP = { base: 1, step: 2 } as const;
+/** Прогнали з місця (§9.12). */
+export const SHOO = { mood: -3, love: -2 } as const;
+/** Шерстяна грудка: раз на 3 дні, уночі вдвічі частіше, довгошерсті вдвічі частіше, риса ±50%. */
+export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5 } as const;
+/** Блювота після їжі: 20% за одиницю «Швидкості їжі». */
+export const VOMIT_STEP = 0.2;
+/** Оглушення: спіткнувся об кота, посковзнувся, збило зумі (§9.12). */
+export const STUN_MINUTES = 0.5;
+export const SLIP_CHANCE = 0.5;
+/** Тертя об ноги: персонаж повільніший; щохвилини руху шанс спіткнутися 10% + 10% за одиницю. */
+export const LEGS = { slow: 0.7, tripBase: 0.1, tripStep: 0.1, distance: 0.6 } as const;
+/** Втеча в двері (§9.12): кіт ближче 4 клітинок, шанс 10% + 25% за одиницю «Втеч»; повертається о 22:00. */
+export const ESCAPE = { distance: 4, base: 0.1, step: 0.25, returnMinute: 22 * MINUTES_PER_HOUR, returnMood: -10, catchSanity: -3 } as const;

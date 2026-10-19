@@ -3,7 +3,7 @@
 
 import { isCarried } from "./catai";
 import { FACING_PRIORITY, REACH } from "./config";
-import { centerOf, distanceToRect, OBJECTS, slotById, type HomeObject } from "./home";
+import { centerOf, distanceToRect, itemPoint, OBJECTS, slotById, type HomeObject } from "./home";
 import type { Cat, GameState, HomeItem, Mess, Vec } from "./types";
 
 export type Target =
@@ -36,10 +36,8 @@ export function targetCenter(target: Target): Vec {
   switch (target.type) {
     case "object":
       return centerOf(target.object);
-    case "item": {
-      const slot = slotById(target.item.slot);
-      return { x: slot.x + 0.5, y: slot.y + 0.5 };
-    }
+    case "item":
+      return itemPoint(target.item);
     case "mess":
       return { x: target.mess.x, y: target.mess.y };
     case "cat":
@@ -53,14 +51,15 @@ function distanceTo(p: Vec, target: Target): number {
     case "object":
       return distanceToRect(p, target.object);
     case "item": {
+      if (target.item.kind === "toy") break;
       const slot = slotById(target.item.slot);
       return distanceToRect(p, { x: slot.x + 0.15, y: slot.y + 0.15, w: 0.7, h: 0.7 });
     }
-    default: {
-      const c = targetCenter(target);
-      return Math.max(0, Math.hypot(c.x - p.x, c.y - p.y) - SMALL_RADIUS);
-    }
+    default:
+      break;
   }
+  const c = targetCenter(target);
+  return Math.max(0, Math.hypot(c.x - p.x, c.y - p.y) - SMALL_RADIUS);
 }
 
 /** Ціль дії: найближча, і передусім та, на яку дивиться персонаж. */

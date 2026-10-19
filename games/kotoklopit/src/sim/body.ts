@@ -13,14 +13,18 @@ import {
   GLITCH_MINUTES,
   INPUT_DEADZONE,
   LOW_STAT,
+  LEGS,
   LOW_STAT_SPEED,
+  SLIP_CHANCE,
+  STUN_MINUTES,
   WALK_TILES_PER_MINUTE,
 } from "./config";
+import { traitLevel } from "./cat";
 import { emit } from "./events";
 import { isSolid, SPAWN } from "./home";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
-import type { Body, GameState, Vec } from "./types";
+import type { Body, Cat, GameState, Vec } from "./types";
 
 /** Найбільший крок перевірки зіткнень, щоб не проскочити крізь стіну. */
 const SUBSTEP_TILES = 0.1;
@@ -68,6 +72,27 @@ export function glitchChance(state: GameState): number {
   return (GLITCH_MAX_CHANCE_PER_MINUTE * (LOW_STAT - sanity)) / LOW_STAT;
 }
 
+/** Кіт треться об ноги: хоче уваги, сидить поруч і не тримає дистанції (§9.12). */
+export function rubbingCat(state: GameState): Cat | null {
+  const body = state.character.body;
+  return (
+    state.cats.find(
+      (c) =>
+        c.away === null &&
+        c.act.kind === "attention" &&
+        traitLevel(c, "legs") >= 0 &&
+        Math.hypot(c.x - body.x, c.y - body.y) < LEGS.distance,
+    ) ?? null
+  );
+}
+
+/** Персонаж оглушений на пів хвилини: спіткнувся, посковзнувся, збило зумі (§9.12). */
+export function stun(state: GameState): void {
+  const body = state.character.body;
+  body.stun = Math.max(body.stun, STUN_MINUTES);
+  body.dash = 0;
+}
+
 /** Рух за ігрові хвилини. Під час ривка персонаж рухається вперед, навіть без керування. */
 export function moveBody(state: GameState, move: Vec, minutes: number): void {
   const body = state.character.body;
@@ -96,8 +121,31 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   } else {
     return;
   }
-  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * magnitude * (dashing ? DASH_SPEED : 1);
+  // Кіт під ногами сповільнює й може змусити спіткнутися (§9.12).
+  const rubbing = rubbingCat(state);
+  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
+  const from = { x: body.x, y: body.y };
   slide(body, dir.x * speed * minutes, dir.y * speed * minutes);
+  const rng = stateRng(state, "behavior");
+  if (rubbing) {
+    const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");
+    if (rng.chance(1 - (1 - chance) ** minutes)) {
+      stun(state);
+      emit(state, { type: "tripped", cat: rubbing.id });
+      return;
+    }
+  }
+  // Шерстяна грудка слизька: ступив на неї — може посковзнутися.
+  for (const mess of state.home.messes) {
+    if (mess.kind !== "hairball") continue;
+    const now = Math.hypot(mess.x - body.x, mess.y - body.y) < 0.35;
+    const before = Math.hypot(mess.x - from.x, mess.y - from.y) < 0.35;
+    if (now && !before && rng.chance(SLIP_CHANCE)) {
+      stun(state);
+      emit(state, { type: "slipped", mess: mess.id });
+      return;
+    }
+  }
 }
 
 /** Збої керування — поведінка, тож вони з потоку behavior (§6.1). */

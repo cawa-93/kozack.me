@@ -52,6 +52,7 @@ function rectOf(id: string): Rect {
   if (!id.startsWith("item:")) return objectById(id);
   const item = current?.current.home.items.find((i) => `item:${i.id}` === id);
   if (!item) throw new Error(`Немає «${id}»`);
+  if (item.kind === "toy") return { x: item.x - 0.3, y: item.y - 0.3, w: 0.6, h: 0.6 };
   const slot = slotById(item.slot);
   return { x: slot.x + 0.15, y: slot.y + 0.15, w: 0.7, h: 0.7 };
 }

@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { Delivery, GameEnd, GameState, Item, Mess, NightReport, Quality, TraitLevel } from "./types";
+import type { Delivery, Dish, GameEnd, GameState, Item, Mess, NightReport, Quality, TraitLevel } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -45,7 +45,17 @@ export type GameEvent =
   | { type: "picked-up"; cat: number; offended: boolean }
   | { type: "put-down"; cat: number }
   | { type: "purr"; cat: number; enjoyed: boolean }
-  | { type: "bite"; cat: number };
+  | { type: "bite"; cat: number }
+  | { type: "played"; cat: number; minutes: number }
+  | { type: "knocked"; cat: number; object: string; item: Dish }
+  | { type: "stole"; cat: number; object: string; item: Dish }
+  | { type: "toy-broke"; toy: number }
+  | { type: "keyboard"; cat: number }
+  | { type: "knocked-down"; cat: number }
+  | { type: "tripped"; cat: number }
+  | { type: "slipped"; mess: number }
+  | { type: "escaped"; cat: number }
+  | { type: "cat-returned"; cat: number; caught: boolean };
 
 export type Listener = (event: GameEvent, state: GameState) => void;
 

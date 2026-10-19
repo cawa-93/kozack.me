@@ -1,8 +1,11 @@
-// Поведінка котів (§9.3, §9.12): потреби, сутінковий ритм, рух квартирою й дії котів.
+// Поведінка котів (§9.3, §9.12): потреби, сутінковий ритм, вибір дії, гра, бешкет і кіт біля роботи.
 // Рішення приймаються, коли дія закінчилася чи з'явилася нагальна потреба, тож десятки котів
 // не навантажують кадр (§8.5).
 
+import { stun } from "./body";
 import { changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
+import { randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
+import { changeStat } from "./character";
 import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
@@ -10,13 +13,18 @@ import {
   BOWL_CAPACITY,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
-  FURNITURE_COST,
+  COMPUTER_SLEEP,
+  DIFFICULTY,
+  ESCAPE,
+  HAIRBALL,
+  HUNGRY_THEFT,
   KITTEN_PLAY,
   LITTER_CAPACITY,
   LOW_CAT_HEALTH,
   MIN_CAT_NAP_MINUTES,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
+  MISCHIEF,
   MOOD,
   NEED_PER_HOUR,
   NEED_THRESHOLD,
@@ -24,20 +32,27 @@ import {
   NOCTURNAL_STEP,
   OLD_PLAY,
   PICKY_REFUSAL_STEP,
+  PLAY_RELIEF,
   PORTION_HUNGER,
   SCATTER_CHANCE,
   SLEEP_END,
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
   SLEEP_TRAIT_STEP,
+  STEAL_HUNGER,
   SURPRISE_CHANCE,
   TIRED_FATIGUE,
+  TOY,
   TRAIT_NEED_STEP,
+  VOMIT_STEP,
+  WORK_CAT,
+  ZOOMIES,
 } from "./config";
 import { emit } from "./events";
-import { hiddenTile, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById } from "./home";
+import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { stateRng, type Rng } from "./rng";
-import type { BowlItem, Cat, CatActKind, GameState, HomeItem, LitterItem, MessKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, Vec, WaterItem } from "./types";
+import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
 export interface CatContext {
@@ -59,139 +74,16 @@ export function activityAt(cat: Cat, minute: number): number {
   return clamp(NIGHT_ACTIVITY + NOCTURNAL_STEP * traitLevel(cat, "nocturnal"), 0, 1);
 }
 
-// --- Рух -----------------------------------------------------------------------------------
-
-const FIELDS = new Map<number, Float32Array>();
-
-/** Ціна входу в клітинку для кота: підлога 1, меблі — дорожче, стіни — неможливо. */
-function tileCost(x: number, y: number): number {
-  if (isWall(x, y)) return Infinity;
-  return isSolid(x, y) ? FURNITURE_COST : 1;
-}
-
-/**
- * Відстань до клітинки-цілі від кожної клітинки (Дейкстра на сітці 20×12, кешується).
- * Кіт платить ціну клітинки, у яку входить: тож шлях обходить меблі, але може на них закінчитися.
- */
-function fieldTo(goal: Vec): Float32Array {
-  const key = goal.y * MAP_WIDTH + goal.x;
-  const cached = FIELDS.get(key);
-  if (cached) return cached;
-  const size = MAP_WIDTH * MAP_HEIGHT;
-  const dist = new Float32Array(size).fill(Infinity);
-  const done = new Uint8Array(size);
-  dist[key] = 0;
-  for (;;) {
-    let best = -1;
-    let bestDist = Infinity;
-    for (let i = 0; i < size; i++) {
-      const d = dist[i] ?? Infinity;
-      if (!done[i] && d < bestDist) {
-        best = i;
-        bestDist = d;
-      }
-    }
-    if (best < 0) break;
-    done[best] = 1;
-    const bx = best % MAP_WIDTH;
-    const by = Math.floor(best / MAP_WIDTH);
-    const enter = tileCost(bx, by);
-    if (enter === Infinity) continue;
-    for (const [dx, dy] of NEIGHBORS) {
-      const nx = bx + dx;
-      const ny = by + dy;
-      if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT || isWall(nx, ny)) continue;
-      if (dx !== 0 && dy !== 0 && (isWall(bx + dx, by) || isWall(bx, by + dy))) continue;
-      const next = ny * MAP_WIDTH + nx;
-      const candidate = bestDist + (dx !== 0 && dy !== 0 ? Math.SQRT2 : 1) * enter;
-      if (candidate < (dist[next] ?? Infinity)) dist[next] = candidate;
-    }
-  }
-  FIELDS.set(key, dist);
-  return dist;
-}
-
-const NEIGHBORS = [
-  [1, 0],
-  [-1, 0],
-  [0, 1],
-  [0, -1],
-  [1, 1],
-  [1, -1],
-  [-1, 1],
-  [-1, -1],
-] as const;
-
-/** Чи дійде кіт до клітинки. */
-export function reachable(from: Vec, goal: Vec): boolean {
-  const field = fieldTo(goal);
-  return (field[Math.floor(from.y) * MAP_WIDTH + Math.floor(from.x)] ?? Infinity) !== Infinity;
-}
-
-/** Наступна клітинка на шляху до цілі. */
-function nextTile(x: number, y: number, field: Float32Array): Vec | null {
-  let best: Vec | null = null;
-  let bestDist = field[y * MAP_WIDTH + x] ?? Infinity;
-  for (const [dx, dy] of NEIGHBORS) {
-    const nx = x + dx;
-    const ny = y + dy;
-    if (nx < 0 || ny < 0 || nx >= MAP_WIDTH || ny >= MAP_HEIGHT || isWall(nx, ny)) continue;
-    if (dx !== 0 && dy !== 0 && (isWall(x + dx, y) || isWall(x, y + dy))) continue;
-    const d = field[ny * MAP_WIDTH + nx] ?? Infinity;
-    if (d < bestDist) {
-      bestDist = d;
-      best = { x: nx, y: ny };
-    }
-  }
-  return best;
-}
-
-/** Іти до цілі дії. Повертає хвилини, що лишилися після прибуття. */
-function walk(cat: Cat, minutes: number, speed: number): number {
-  const goal = cat.act.goal;
-  if (!goal) return minutes;
-  const field = fieldTo(goal);
-  let budget = speed * minutes;
-  for (let guard = 0; guard < 64 && budget > 1e-9 && cat.act.goal; guard++) {
-    const tx = Math.floor(cat.x);
-    const ty = Math.floor(cat.y);
-    let target: Vec;
-    if (tx === goal.x && ty === goal.y) {
-      target = { x: goal.x + 0.5, y: goal.y + 0.5 };
-    } else {
-      const next = nextTile(tx, ty, field);
-      if (!next) {
-        // Шляху немає: кіт лишається, де є.
-        cat.act.goal = null;
-        break;
-      }
-      target = { x: next.x + 0.5, y: next.y + 0.5 };
-    }
-    const dx = target.x - cat.x;
-    const dy = target.y - cat.y;
-    const distance = Math.hypot(dx, dy);
-    if (Math.abs(dx) > 0.01) cat.facing = Math.sign(dx);
-    if (distance <= budget) {
-      cat.x = target.x;
-      cat.y = target.y;
-      budget -= distance;
-      if (tx === goal.x && ty === goal.y) cat.act.goal = null;
-    } else {
-      cat.x += (dx / distance) * budget;
-      cat.y += (dy / distance) * budget;
-      budget = 0;
-    }
-  }
-  return budget / speed;
-}
+/** Множник риси: 1 + крок × рівень, але не менше нуля. */
+const traitFactor = (cat: Cat, group: string, step: number): number => Math.max(0, 1 + step * traitLevel(cat, group));
 
 // --- Потреби --------------------------------------------------------------------------------
 
-function grow(state: GameState, cat: Cat, minutes: number): void {
+function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const hours = minutes / MINUTES_PER_HOUR;
   const n = cat.needs;
   const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
-  const appetite = Math.max(0, 1 + APPETITE_STEP * traitLevel(cat, "appetite"));
+  const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
   n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
   n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours);
   n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours);
@@ -204,8 +96,13 @@ function grow(state: GameState, cat: Cat, minutes: number): void {
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * (traitLevel(cat, "affection") + traitLevel(cat, "demanding")));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
-  const energy = Math.max(0, 1 + TRAIT_NEED_STEP * traitLevel(cat, "energy"));
-  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * energy * age);
+  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age);
+  // Шерстяна грудка: частіше вночі й у довгошерстих (§9.12).
+  const hour = hourOf(state.minute);
+  const night = hour >= 23 || hour < 5;
+  const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
+  const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
+  if (rng.chance(rate * hours)) addMess(state, "hairball", visibleFloorNear(cat), cat.id);
 }
 
 /** Потреби на межі псують настрій щогодини (§9.12). */
@@ -216,17 +113,10 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
   if (context.present && cat.needs.attention >= 100) changeMood(state, cat, MOOD.ignoredPerHour * hours);
 }
 
-// --- Рішення --------------------------------------------------------------------------------
+// --- Що є в квартирі ------------------------------------------------------------------------
 
 function start(cat: Cat, kind: CatActKind, goal: Vec | null, minutes: number, target: string | null = null): void {
   cat.act = { kind, target, goal, minutes, elapsed: 0 };
-}
-
-const tileOf = (p: Vec): Vec => ({ x: Math.floor(p.x), y: Math.floor(p.y) });
-
-function itemTile(item: HomeItem): Vec {
-  const slot = slotById(item.slot);
-  return { x: slot.x, y: slot.y };
 }
 
 function nearest<T extends HomeItem>(cat: Cat, items: readonly T[]): T | null {
@@ -243,7 +133,7 @@ function nearest<T extends HomeItem>(cat: Cat, items: readonly T[]): T | null {
   return best;
 }
 
-const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
+export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
   state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
 
 export function litterCapacity(box: LitterItem): number {
@@ -253,6 +143,42 @@ export function litterCapacity(box: LitterItem): number {
 export function isDirty(box: LitterItem): boolean {
   return box.uses >= litterCapacity(box);
 }
+
+/** Миска повна? Для персонажа: чи можна ще насипати (§9.12). */
+export function bowlFull(bowl: BowlItem): boolean {
+  return bowl.food >= BOWL_CAPACITY;
+}
+
+/** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */
+export function isCarried(state: GameState, cat: Cat): boolean {
+  const held = state.character.held;
+  return held?.kind === "cat" && held.cat === cat.id;
+}
+
+const inside = (p: Vec, o: HomeObject): boolean => p.x >= o.x && p.x < o.x + o.w && p.y >= o.y && p.y < o.y + o.h;
+
+/** Кіт займає комп'ютер: спить на ньому чи сидить на клавіатурі (§9.12). */
+export function catOnComputer(state: GameState): Cat | null {
+  const computer = objectById("computer");
+  return (
+    state.cats.find(
+      (c) => c.away === null && c.act.goal === null && (c.act.kind === "sleep" || c.act.kind === "keyboard") && inside(c, computer),
+    ) ?? null
+  );
+}
+
+/** Місця, де лежить людська їжа: стіл, поверхні й плита. Ключ — id речі квартири. */
+function dishes(state: GameState, withStove: boolean): { id: string; dish: Dish }[] {
+  const found: { id: string; dish: Dish }[] = [];
+  for (const [id, dish] of Object.entries(state.home.surfaces)) if (dish) found.push({ id, dish });
+  if (withStove && state.home.stove.item) found.push({ id: "stove", dish: state.home.stove.item });
+  return found;
+}
+
+const objectTile = (id: string): Vec => {
+  const o = objectById(id);
+  return { x: o.x, y: o.y };
+};
 
 /** Поріг голоду: «Апетит» змушує їсти раніше (§9.12). */
 function hungerThreshold(cat: Cat): number {
@@ -269,16 +195,6 @@ function urgent(state: GameState, cat: Cat): boolean {
   return n.toilet >= NEED_THRESHOLD.toilet || n.hunger >= hungerThreshold(cat) || n.thirst >= NEED_THRESHOLD.thirst || n.fatigue >= sleepThreshold(cat, state.minute);
 }
 
-/** Випадкова прохідна клітинка квартири, яку не закриває передня стіна. */
-export function randomFloor(rng: Rng): Vec {
-  for (let i = 0; i < 50; i++) {
-    const x = rng.int(1, MAP_WIDTH - 2);
-    const y = rng.int(1, MAP_HEIGHT - 2);
-    if (!isSolid(x, y) && !hiddenTile(x, y)) return { x, y };
-  }
-  return { x: 3, y: 7 };
-}
-
 /** Сонячна пляма у вітальні мандрує за годиною (§9.3). */
 export function sunSpot(minute: number): Vec | null {
   const hour = hourOf(minute);
@@ -288,23 +204,34 @@ export function sunSpot(minute: number): Vec | null {
   return null;
 }
 
-/** Місця для сну з вагою (§9.3): ліжко, диван, сонячна пляма, будь-де на підлозі. */
+function weightedPick<T>(rng: Rng, options: readonly { weight: number; value: T }[]): T | null {
+  const total = options.reduce((s, o) => s + Math.max(0, o.weight), 0);
+  if (total <= 0) return null;
+  let roll = rng.next() * total;
+  for (const option of options) {
+    roll -= Math.max(0, option.weight);
+    if (roll < 0) return option.value;
+  }
+  return options[options.length - 1]?.value ?? null;
+}
+
+/** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будь-де на підлозі. */
 function sleepSpot(state: GameState, cat: Cat, rng: Rng): Vec {
   const bed = objectById("bed");
   const sofa = objectById("sofa");
-  const options: { tile: Vec; weight: number }[] = [
-    { tile: { x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }, weight: 3 },
-    { tile: { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y }, weight: 3 },
-    { tile: randomFloor(rng), weight: 1 },
+  const options: { weight: number; value: Vec }[] = [
+    { weight: 3, value: { x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) } },
+    { weight: 3, value: { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y } },
+    { weight: 1, value: randomFloor(rng) },
   ];
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ tile: sun, weight: 2 + Math.max(0, traitLevel(cat, "warmth")) });
-  let roll = rng.next() * options.reduce((s, o) => s + o.weight, 0);
-  for (const option of options) {
-    roll -= option.weight;
-    if (roll < 0) return option.tile;
+  if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: sun });
+  if (!isWorking(state) && !catOnComputer(state)) {
+    const computer = objectById("computer");
+    const weight = COMPUTER_SLEEP.base + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
+    options.push({ weight, value: { x: computer.x + rng.int(0, computer.w - 1), y: computer.y } });
   }
-  return options[0]?.tile ?? randomFloor(rng);
+  return weightedPick(rng, options) ?? randomFloor(rng);
 }
 
 /** Сховатися під ліжком чи диваном (§9.6). */
@@ -312,6 +239,8 @@ function hideSpot(rng: Rng): Vec {
   const spot = objectById(rng.chance(0.5) ? "bed" : "sofa");
   return { x: spot.x + rng.int(0, spot.w - 1), y: spot.y + rng.int(0, spot.h - 1) };
 }
+
+// --- Рішення --------------------------------------------------------------------------------
 
 /** Обрати наступну дію (§9.12): туалет, їжа, вода, сон, адаптація, увага, гра, відпочинок. */
 export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext): void {
@@ -323,18 +252,29 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     // Лотка немає: «сюрприз» деінде.
     return start(cat, "toilet", randomFloor(rng), CAT_ACT_MINUTES.toilet, null);
   }
-  if (n.hunger >= hungerThreshold(cat)) {
+  const hungry = n.hunger >= hungerThreshold(cat);
+  if (hungry) {
     const bowls = itemsOf(state, "bowl");
     const full = nearest(cat, bowls.filter((b) => b.food > 0));
     if (full) return start(cat, "eat", itemTile(full), CAT_ACT_MINUTES.eat, `item:${full.id}`);
-    const empty = nearest(cat, bowls);
-    if (context.present && rng.chance(0.5)) return startAttention(state, cat);
-    if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
+  // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
   if (n.thirst >= NEED_THRESHOLD.thirst) {
     const waters = itemsOf(state, "water");
     const water = nearest(cat, waters.filter((w) => w.water > 0)) ?? nearest(cat, waters);
     if (water) return start(cat, water.water > 0 ? "drink" : "beg", itemTile(water), water.water > 0 ? CAT_ACT_MINUTES.drink : CAT_ACT_MINUTES.beg, `item:${water.id}`);
+  }
+  if (hungry) {
+    // Миски порожні: злодюжка краде людську їжу, а дуже голодний — будь-який кіт (§9.3).
+    const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
+    const steal = food[rng.int(0, food.length - 1)];
+    const thief = Math.max(0, traitLevel(cat, "thief"));
+    if (steal && rng.chance(HUNGRY_THEFT.step * thief + (n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base : 0))) {
+      return start(cat, "steal", objectTile(steal.id), 1, steal.id);
+    }
+    const empty = nearest(cat, itemsOf(state, "bowl"));
+    if (context.present && rng.chance(0.5)) return startAttention(state, cat);
+    if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
     const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(rng) : sleepSpot(state, cat, rng);
@@ -342,7 +282,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   if (isAdapting(state, cat)) return start(cat, "hide", hideSpot(rng), CAT_ACT_MINUTES.hide);
   if (context.present && n.attention >= NEED_THRESHOLD.attention) return startAttention(state, cat);
-  if (n.play >= NEED_THRESHOLD.play) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
+  if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
   if (rng.chance(0.4)) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
   start(cat, "idle", null, CAT_ACT_MINUTES.idle * (0.5 + rng.next()));
 }
@@ -350,6 +290,49 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
 /** Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). */
 function startAttention(state: GameState, cat: Cat): void {
   start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention, "character");
+}
+
+function startZoomies(cat: Cat, rng: Rng): void {
+  start(cat, "zoomies", randomFloor(rng), ZOOMIES.minMinutes + rng.next() * (ZOOMIES.maxMinutes - ZOOMIES.minMinutes));
+}
+
+/** Кіт хоче гратися (§9.12): зумі, скинути річ, украсти їжу, іграшка чи просто побродити. */
+function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
+  type Choice = () => void;
+  const options: { weight: number; value: Choice }[] = [
+    { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(cat, rng) },
+    { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander) },
+  ];
+  const onSurfaces = dishes(state, false);
+  const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
+  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep), value: () => start(cat, "knock", objectTile(knock.id), 0.5, knock.id) });
+  const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
+  const steal = food[rng.int(0, food.length - 1)];
+  if (steal) {
+    const hungry = cat.needs.hunger >= 60 ? 2 : 1;
+    options.push({ weight: MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, value: () => start(cat, "steal", objectTile(steal.id), 1, steal.id) });
+  }
+  const toy = nearest(cat, itemsOf(state, "toy"));
+  if (toy) options.push({ weight: MISCHIEF.toy, value: () => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`) });
+  (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
+}
+
+/**
+ * Кіт по увагу прийшов до персонажа, що працює (§9.12): сідає на клавіатуру, лягає на коліна
+ * чи просто сидить поруч і нявчить.
+ */
+function arriveAtWork(cat: Cat, rng: Rng): void {
+  cat.act.target = "asked";
+  const helper = traitLevel(cat, "helper");
+  const lap = traitLevel(cat, "lap");
+  if (helper > 0 && rng.chance(WORK_CAT.keyboardStep * helper)) {
+    const computer = objectById("computer");
+    const minutes = WORK_CAT.keyboardMinMinutes + rng.next() * (WORK_CAT.keyboardMaxMinutes - WORK_CAT.keyboardMinMinutes);
+    return start(cat, "keyboard", { x: computer.x, y: computer.y }, minutes, "computer");
+  }
+  if (lap >= 0 && rng.chance(WORK_CAT.lapBase + WORK_CAT.lapStep * lap)) {
+    start(cat, "lap", null, MINUTES_PER_HOUR * 4, "character");
+  }
 }
 
 // --- Дії на місці ---------------------------------------------------------------------------
@@ -365,7 +348,7 @@ function itemMood(state: GameState, cat: Cat, item: HomeItem): void {
   changeMood(state, cat, item.quality === "premium" ? MOOD.premiumItem : MOOD.cheapItem);
 }
 
-/** Безлад на клітинці поруч із котом. */
+/** Безлад на підлозі. */
 export function addMess(state: GameState, kind: MessKind, at: Vec, cat: number | null): void {
   const mess = { id: state.nextId++, kind, x: at.x, y: at.y, cat };
   state.home.messes.push(mess);
@@ -382,6 +365,19 @@ function surpriseSpot(rng: Rng): Vec {
   ];
   const spot = spots[rng.int(0, spots.length - 1)] ?? { x: 1.5, y: 7.5 };
   return { x: spot.x + (rng.next() - 0.5) * 0.4, y: spot.y + (rng.next() - 0.5) * 0.4 };
+}
+
+/** Людська їжа з місця: зі столу, поверхні чи плити. */
+function takeDish(state: GameState, id: string): Dish | null {
+  if (id === "stove") {
+    const item = state.home.stove.item;
+    state.home.stove.item = null;
+    state.home.stove.minutes = 0;
+    return item;
+  }
+  const item = state.home.surfaces[id] ?? null;
+  state.home.surfaces[id] = null;
+  return item;
 }
 
 /** Дія закінчилася на місці: що змінилося для кота й квартири. */
@@ -404,6 +400,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
       itemMood(state, cat, bowl);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
+      // Їсть надто швидко й одразу зригує (§9.3).
+      const gulping = traitLevel(cat, "gulping");
+      if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
       return;
     }
     case "drink": {
@@ -418,7 +417,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.toilet = 0;
       const box = itemById<LitterItem>(state, act.target);
       if (!box) {
-        addMess(state, "surprise", { x: cat.x, y: cat.y }, cat.id);
+        addMess(state, "surprise", visibleFloorNear(cat), cat.id);
         return;
       }
       if (isDirty(box)) {
@@ -431,55 +430,150 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       }
       box.uses += 1;
       itemMood(state, cat, box);
-      const scatter = traitLevel(cat, "scatter");
-      if (rng.chance(SCATTER_CHANCE.base + SCATTER_CHANCE.step * scatter)) {
+      if (rng.chance(SCATTER_CHANCE.base + SCATTER_CHANCE.step * traitLevel(cat, "scatter"))) {
         const slot = slotById(box.slot);
-        addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.5 + rng.next() * 0.4 }, cat.id);
+        addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.7 + rng.next() * 0.2 }, cat.id);
       }
+      // Після лотка — часто зумі (§9.3).
+      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(cat, rng);
       return;
     }
     case "sleep":
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
       return;
     case "wander":
-      cat.needs.play = Math.max(0, cat.needs.play - 40);
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
       return;
+    case "zoomies":
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      return;
+    case "knock": {
+      if (!act.target) return;
+      const dish = state.home.surfaces[act.target];
+      if (!dish) return;
+      takeDish(state, act.target);
+      const o = objectById(act.target);
+      addMess(state, "broken", visibleFloorNear({ x: o.x + o.w / 2, y: o.y + o.h + 0.5 }), cat.id);
+      changeMood(state, cat, 1);
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      emit(state, { type: "knocked", cat: cat.id, object: act.target, item: dish });
+      return;
+    }
+    case "steal": {
+      if (!act.target) return;
+      const dish = act.target === "stove" ? state.home.stove.item : state.home.surfaces[act.target];
+      if (!dish || dish.kind === "burnt") return;
+      takeDish(state, act.target);
+      cat.needs.hunger = Math.max(0, cat.needs.hunger - STEAL_HUNGER);
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      changeMood(state, cat, 2);
+      emit(state, { type: "stole", cat: cat.id, object: act.target, item: dish });
+      return;
+    }
+    case "toy": {
+      const toy = itemById<ToyItem>(state, act.target);
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      if (!toy) return;
+      changeMood(state, cat, 1);
+      // Іграшка відлітає трохи вбік і зношується.
+      const moved = visibleFloorNear({ x: toy.x + (rng.next() - 0.5) * 1.2, y: toy.y + (rng.next() - 0.5) * 1.2 });
+      toy.x = moved.x;
+      toy.y = moved.y;
+      toy.uses += 1;
+      if (toy.uses >= TOY.durability[toy.quality]) {
+        state.home.items.splice(state.home.items.indexOf(toy), 1);
+        emit(state, { type: "toy-broke", toy: toy.id });
+      }
+      return;
+    }
     default:
       return;
   }
 }
 
-/** Щохвилинне на місці: сон до відпочинку, нявкання біля порожньої миски. */
-function perform(state: GameState, cat: Cat, minutes: number): void {
+/** Щохвилинне на місці. */
+function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   const act = cat.act;
   act.elapsed += minutes;
-  if (act.kind === "sleep") {
-    const rested = cat.needs.fatigue <= SLEEP_END && act.elapsed >= MIN_CAT_NAP_MINUTES;
-    const woken = cat.needs.toilet >= 95 || cat.needs.hunger >= 95;
-    if (rested || woken) act.minutes = 0;
+  switch (act.kind) {
+    case "sleep": {
+      const rested = cat.needs.fatigue <= SLEEP_END && act.elapsed >= MIN_CAT_NAP_MINUTES;
+      const woken = cat.needs.toilet >= 95 || cat.needs.hunger >= 95;
+      if (rested || woken) act.minutes = 0;
+      return;
+    }
+    case "beg":
+    case "attention":
+      if (Math.floor(act.elapsed / 2) !== Math.floor((act.elapsed - minutes) / 2)) emit(state, { type: "meow", cat: cat.id });
+      if (act.kind === "attention") {
+        if (cat.needs.attention < 20) act.minutes = 0;
+        else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(cat, rng);
+      }
+      return;
+    case "keyboard":
+      // Кіт на клавіатурі: працювати не вийде (§9.12).
+      if (isWorking(state)) {
+        stopWork(state);
+        emit(state, { type: "keyboard", cat: cat.id });
+      }
+      return;
+    case "lap": {
+      const body = state.character.body;
+      if (!context.present || !isWorking(state) || cat.needs.attention < 1) {
+        act.minutes = 0;
+        return;
+      }
+      cat.x = body.x;
+      cat.y = body.y + 0.05;
+      changeStat(state, "sanity", WORK_CAT.lapSanity * DIFFICULTY[state.difficulty].catSanity * minutes);
+      changeMood(state, cat, WORK_CAT.lapMood * minutes);
+      cat.love = clamp(cat.love + WORK_CAT.lapLove * minutes);
+      cat.needs.attention = Math.max(0, cat.needs.attention - WORK_CAT.lapAttention * minutes);
+      cat.interacted = true;
+      return;
+    }
+    default:
+      return;
   }
-  if ((act.kind === "beg" || act.kind === "attention") && Math.floor(act.elapsed / 2) !== Math.floor((act.elapsed - minutes) / 2)) {
-    emit(state, { type: "meow", cat: cat.id });
-  }
-  if (act.kind === "attention" && cat.needs.attention < 20) act.minutes = 0;
 }
 
-const SPEED: Partial<Record<CatActKind, number>> = {};
+/** Зумі: кіт мчить утричі швидше від однієї точки до іншої й може збити персонажа (§9.12). */
+function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): number {
+  const used = Math.min(minutes, cat.act.minutes);
+  walk(cat, used, CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed);
+  cat.act.minutes -= used;
+  if (!cat.act.goal && cat.act.minutes > 0) cat.act.goal = randomFloor(rng);
+  const body = state.character.body;
+  if (context.present && cat.act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit) {
+    cat.act.target = "hit";
+    stun(state);
+    emit(state, { type: "knocked-down", cat: cat.id });
+  }
+  return minutes - used;
+}
 
-/** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */
-export function isCarried(state: GameState, cat: Cat): boolean {
-  const held = state.character.held;
-  return held?.kind === "cat" && held.cat === cat.id;
+/** Кіт повертається зі сходів сам о 22:00 (§9.12). */
+function returnFromStairs(state: GameState, cat: Cat): void {
+  cat.away = null;
+  cat.x = 10.5;
+  cat.y = 10.3;
+  start(cat, "idle", null, 5);
+  changeMood(state, cat, ESCAPE.returnMood, "повернувся сам зі сходів");
+  emit(state, { type: "cat-returned", cat: cat.id, caught: false });
 }
 
 /** Хвилини життя одного кота. */
 function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
-  grow(state, cat, minutes);
+  grow(state, cat, minutes, rng);
   needsMood(state, cat, minutes, context);
   recordMood(cat, minutes);
-  if (cat.away !== null || isCarried(state, cat)) return;
+  if (cat.away !== null) {
+    if (state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
+    return;
+  }
+  if (isCarried(state, cat)) return;
   // Спокійну дію кіт кидає заради нагальної потреби.
-  const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention";
+  const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy";
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
@@ -491,18 +585,28 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
+    if (cat.act.kind === "zoomies") {
+      left = zoom(state, cat, left, rng, context);
+      if (cat.act.minutes <= 1e-9) {
+        finish(state, cat, rng);
+        decide(state, cat, rng, context);
+      }
+      continue;
+    }
     if (cat.act.goal) {
-      left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE * (SPEED[cat.act.kind] ?? 1));
+      left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE);
       if (cat.act.goal) break;
       continue;
     }
     const used = Math.min(left, Math.max(0, cat.act.minutes));
-    perform(state, cat, used);
+    perform(state, cat, used, rng, context);
     cat.act.minutes -= used;
     left -= used;
     if (cat.act.minutes <= 1e-9) {
+      const kind = cat.act.kind;
       finish(state, cat, rng);
-      if (cat.act.minutes <= 1e-9 || cat.act.kind === "idle") decide(state, cat, rng, context);
+      // Дія, яку почала `finish` (зумі після лотка, прохання їсти), лишається.
+      if (cat.act.kind === kind || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
 }
@@ -514,8 +618,18 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
 }
 
-/** Миска повна? Для персонажа: чи можна ще насипати (§9.12). */
-export function bowlFull(bowl: BowlItem): boolean {
-  return bowl.food >= BOWL_CAPACITY;
+/** Двері відчинили (§9.12): коти поруч можуть вибігти на сходи. */
+export function rollEscapes(state: GameState): void {
+  const rng = stateRng(state, "behavior");
+  const door = { x: 11, y: 10.5 };
+  for (const cat of state.cats) {
+    if (cat.away !== null || isCarried(state, cat)) continue;
+    if (Math.hypot(cat.x - door.x, cat.y - door.y) > ESCAPE.distance) continue;
+    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * traitLevel(cat, "escape"), 0, 1))) continue;
+    cat.away = "stairs";
+    cat.x = door.x;
+    cat.y = 10.9;
+    start(cat, "idle", null, 0);
+    emit(state, { type: "escaped", cat: cat.id });
+  }
 }
-

@@ -254,7 +254,9 @@ export class DayScene extends Phaser.Scene {
         view = new CatView(this, this.viewport.world, cat);
         this.catViews.set(cat.id, view);
       }
-      const carried = held?.kind === "cat" && held.cat === cat.id ? this.person.hands : null;
+      // Кіт на руках чи на колінах — біля персонажа.
+      const withPerson = (held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap";
+      const carried = withPerson ? this.person.hands : null;
       view.draw(cat, time, carried);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
     }
@@ -392,19 +394,18 @@ export class DayScene extends Phaser.Scene {
     set("stove", item === null ? null : item.kind === "burnt" ? "smoke" : item.kind === "meal" ? "meal" : "pot");
     set("fridge", supplyCount(state, "food") === 0 ? "empty" : null);
     set("shower", supplyCount(state, "hygiene") === 0 ? "empty" : null);
-    set("door", state.home.porch.length > 0 ? "box" : null);
+    // Кіт на сходах важливіший за пакунок (§9.12).
+    set("door", state.cats.some((c) => c.away !== null) ? "meow" : state.home.porch.length > 0 ? "box" : null);
     const table = objectById("table");
     const target = targetOf(state);
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
     set("cat-cabinet", state.cats.length > 0 && supplyCount(state, "catFood") === 0 ? "empty" : null);
 
-    // Котячий куток: порожня миска, коли кіт просить їсти; без води; брудний лоток.
-    const begging = new Set(state.cats.filter((c) => c.act.kind === "beg").map((c) => c.act.target));
+    // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
       const id = `item:${thing.id}`;
-      if (thing.kind === "bowl") set(id, thing.food === 0 && begging.has(id) ? "empty" : null);
-      else if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
-      else set(id, isDirty(thing) ? "dirty" : null);
+      if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
+      else if (thing.kind === "litter") set(id, isDirty(thing) ? "dirty" : null);
     }
     for (const cat of state.cats) {
       const hungry = cat.act.kind === "beg" && cat.act.goal === null;
@@ -463,6 +464,22 @@ export class DayScene extends Phaser.Scene {
       case "bite":
         popPerson("bite");
         this.cameras.main.shake(140, 0.003);
+        break;
+      case "tripped":
+      case "slipped":
+      case "knocked-down":
+        popPerson("dizzy");
+        this.cameras.main.shake(160, 0.004);
+        break;
+      case "knocked":
+      case "stole":
+        popAt(`cat:${event.cat}`, "angry");
+        break;
+      case "keyboard":
+        popAt("computer", "meow");
+        break;
+      case "escaped":
+        popAt("door", "meow");
         break;
       case "night":
         if (this.state.end === null) {

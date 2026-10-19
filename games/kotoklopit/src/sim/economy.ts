@@ -20,14 +20,16 @@ import type { Delivery, GameState, Home, HomeItem, Product, Quality, UtilitiesRe
 const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
 
 /**
- * Квартира на старті: котячий куток уже є — дешева миска, миска з водою й дешевий лоток
- * з наповнювачем (§9.12). `nextId` видає id речам.
+ * Квартира на старті: котячий куток уже є — дешева миска, миска з водою, дешевий лоток
+ * з наповнювачем і іграшка (§9.12). `nextId` видає id речам.
  */
 export function newHome(nextId: () => number): Home {
   const items: HomeItem[] = [
     { id: nextId(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null },
     { id: nextId(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
     { id: nextId(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
+    // Дешева іграшка-вудочка у вітальні (§9.12).
+    { id: nextId(), kind: "toy", quality: "cheap", x: 5.5, y: 8.5, uses: 0 },
   ];
   return {
     supplies: structuredClone(START_SUPPLIES),

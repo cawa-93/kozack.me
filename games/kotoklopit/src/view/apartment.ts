@@ -5,6 +5,7 @@ import Phaser from "phaser";
 
 import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, type HomeObject, type ObjectKind } from "../sim/home";
 import type { Item } from "../sim/types";
+import { drawToy } from "./catcorner";
 import { COLORS, depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
 
 /** Видима висота речі на екрані. */
@@ -221,6 +222,10 @@ function decorate(
 export function drawItem(g: Phaser.GameObjects.Graphics, item: Item, x: number, y: number, scale = 1): void {
   const s = scale;
   if (item.kind === "cat") return;
+  if (item.kind === "toy") {
+    drawToy(g, item.toy.quality, x, y - 6 * s, s);
+    return;
+  }
   if (item.kind === "catfood") {
     // Совочок корму.
     g.fillStyle(0xc9ccd1).fillRoundedRect(x - 10 * s, y - 8 * s, 20 * s, 9 * s, 3 * s);

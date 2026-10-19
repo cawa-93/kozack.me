@@ -129,6 +129,17 @@ export function slotCenter(id: string): Vec {
   return { x: slot.x + 0.5, y: slot.y + 0.5 };
 }
 
+/** Де річ котячого кутка: центр її місця, а іграшка — там, де лежить. */
+export function itemPoint(item: HomeItem): Vec {
+  return item.kind === "toy" ? { x: item.x, y: item.y } : slotCenter(item.slot);
+}
+
+/** Клітинка речі. */
+export function itemTile(item: HomeItem): Vec {
+  const p = itemPoint(item);
+  return { x: Math.floor(p.x), y: Math.floor(p.y) };
+}
+
 const BY_ID = new Map(OBJECTS.map((o) => [o.id, o]));
 
 export function objectById(id: string): HomeObject {
