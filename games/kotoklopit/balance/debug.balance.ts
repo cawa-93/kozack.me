@@ -19,5 +19,5 @@ it.runIf(process.env["BALANCE_DEBUG"])("трасування бота", () => {
     );
   });
   for (let d = 0; d < Number(process.env["BALANCE_DEBUG"]); d++) bot.day();
-  console.log(lines.slice(0, 400).join("\n"));
+  writeFileSync(new URL("./TRACE.txt", import.meta.url), lines.join("\n"));
 });

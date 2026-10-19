@@ -38,9 +38,14 @@ export interface BotLog {
 
 type Task = () => void;
 
+/** Завдання з назвою: її бачить трасування. */
+const named = (name: string, run: () => void): Task => Object.defineProperty(run, "name", { value: name });
+
 export class Bot {
   readonly log: BotLog = { worked: 0, petted: 0, played: 0, walked: 0 };
   private workedToday = 0;
+  /** Цілі, до яких не вдалося дійти: до якої хвилини дня їх пропускати. */
+  private readonly skip = new Map<string, number>();
 
   constructor(
     readonly save: Save,
@@ -56,6 +61,7 @@ export class Bot {
   /** Прожити день до сну. Повертає звіт ночі або null, якщо гра закінчилася. */
   day(): NightReport | null {
     this.workedToday = 0;
+    this.skip.clear();
     const day = this.state.day;
     for (let guard = 0; guard < 3000; guard++) {
       if (this.state.end !== null) return null;
@@ -74,36 +80,42 @@ export class Bot {
   private next(): Task | null {
     const s = this.state;
     const ch = s.character;
-    if (ch.held) return () => this.handleHeld();
+    if (ch.held) return named("handleHeld", () => this.handleHeld());
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
-    if (escaped || s.home.porch.length > 0) return () => this.use("door");
-    if (s.home.stove.item?.kind === "meal") return () => this.serveMeal();
-    if (s.home.surfaces["table"]?.kind === "meal") return () => this.eat();
-    if (s.home.stove.item?.kind === "burnt") return () => this.trashBurnt();
-    if (this.wantsWork() && catOnComputer(s)) return () => this.shoo();
-    const dirty = itemsOf(s, "litter").find((b) => isDirty(b));
-    if (dirty) return () => this.hold(`item:${dirty.id}`);
+    if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
+    if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
+    if (s.home.surfaces["table"]?.kind === "meal") return named("eat", () => this.eat());
+    if (s.home.stove.item?.kind === "burnt") return named("trashBurnt", () => this.trashBurnt());
+    if (this.wantsWork() && catOnComputer(s)) return named("shoo", () => this.shoo());
+    // Безлад біля лотка заважає підійти до самого лотка, тож спершу безлад.
     const mess = this.nearestMess();
-    if (mess) return () => this.hold(mess);
+    if (mess) return named("clean", () => this.hold(mess));
+    const dirty = itemsOf(s, "litter").find((b) => isDirty(b) && !this.skipped(`item:${b.id}`));
+    if (dirty) return named("litter", () => this.hold(`item:${dirty.id}`));
     if (s.cats.length > 0) {
       const bowl = itemsOf(s, "bowl").find((b) => b.food < 2);
-      if (bowl && supplyCount(s, "catFood") > 0) return () => this.feed(bowl.id);
+      if (bowl && supplyCount(s, "catFood") > 0) return named("feed", () => this.feed(bowl.id));
       const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2);
-      if (water) return () => this.use(`item:${water.id}`);
+      if (water) return named("use", () => this.use(`item:${water.id}`));
     }
     if (ch.stats.satiety < 60 && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
-      return () => this.cook();
+      return named("cook", () => this.cook());
     }
-    if (ch.stats.hygiene < 45) return () => this.hold("shower");
+    if (ch.stats.hygiene < 45) return named("hold", () => this.hold("shower"));
     if (ch.stats.sanity < this.policy.sanityTarget && s.cats.length > 0) {
       const cat = this.catFor("attention");
-      if (cat) return () => this.pet(cat);
+      if (cat) return named("pet", () => this.pet(cat));
       const player = this.catFor("play");
-      if (player) return () => this.play(player);
+      if (player) return named("play", () => this.play(player));
     }
-    if (this.wantsWork()) return () => this.work();
+    if (this.wantsWork()) return named("work", () => this.work());
     return null;
+  }
+
+  private skipped(id: string): boolean {
+    const until = this.skip.get(id);
+    return until !== undefined && this.state.minute < until;
   }
 
   /** Скільки годин сьогодні працювати: вимога посади з запасом (§8.6). */
@@ -150,6 +162,7 @@ export class Bot {
     let best: string | null = null;
     let bestDistance = Infinity;
     for (const mess of s.home.messes) {
+      if (this.skipped(`mess:${mess.id}`)) continue;
       const d = Math.hypot(mess.x - body.x, mess.y - body.y);
       if (d < bestDistance) {
         bestDistance = d;
@@ -321,6 +334,10 @@ export class Bot {
       if (targetOf(this.state)?.id === id) return true;
       // Ціль утекла (кіт): спробувати ще раз.
     }
+    // Не застрягати: пропустити цю ціль на пів години.
+    this.skip.set(id, this.state.minute + 30);
+    const body = this.state.character.body;
+    this.trace?.(`не дійшов до ${id}: стою ${body.x.toFixed(2)},${body.y.toFixed(2)}, ціль — ${targetOf(this.state)?.id ?? "нічого"}`);
     return false;
   }
 
@@ -362,12 +379,18 @@ export class Bot {
 
   /** Найкоротший шлях клітинками до місця, звідки ціль на відстані дії. */
   private path(rect: Rect): Vec[] | null {
-    const goals = new Set<string>();
+    // Ставати поруч із ціллю, а не на неї: інакше ціллю може стати сусідня річ.
+    const near = new Set<string>();
+    const on = new Set<string>();
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
-        if (!isSolid(x, y) && distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect) <= 0.55) goals.add(`${x},${y}`);
+        if (isSolid(x, y)) continue;
+        const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect);
+        if (distance <= 0) on.add(`${x},${y}`);
+        else if (distance <= 0.7) near.add(`${x},${y}`);
       }
     }
+    const goals = near.size > 0 ? near : on;
     const body = this.state.character.body;
     const start = { x: Math.floor(body.x), y: Math.floor(body.y) };
     const previous = new Map<string, string | null>([[`${start.x},${start.y}`, null]]);

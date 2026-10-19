@@ -14,6 +14,15 @@ export type Target =
 
 /** Половина розміру безладу й кота на підлозі, у клітинках. */
 const SMALL_RADIUS = 0.35;
+/** Ближче за це до центру цілі персонаж стоїть просто на ній. */
+const UNDERFOOT = 0.3;
+/**
+ * Річ під ногами (миска) трохи «позаду»: перемагає те, до чого персонаж повернувся (шафка поруч),
+ * а якщо він ні до чого не повернувся — річ під ногами.
+ */
+const UNDERFOOT_FACING = -0.2;
+/** Безлад важливіший за річ поруч (лоток, миска): спершу прибирають його. */
+const MESS_PRIORITY = 0.3;
 
 export const itemTargetId = (item: HomeItem): string => `item:${item.id}`;
 export const messTargetId = (mess: Mess): string => `mess:${mess.id}`;
@@ -72,8 +81,8 @@ export function targetOf(state: GameState): Target | null {
     if (distance > REACH) continue;
     const center = targetCenter(target);
     const length = Math.hypot(center.x - body.x, center.y - body.y);
-    const facing = length > 0 ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : 1;
-    const score = distance - FACING_PRIORITY * facing;
+    const facing = length > UNDERFOOT ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : UNDERFOOT_FACING;
+    const score = distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0);
     if (score < bestScore) {
       best = target;
       bestScore = score;
