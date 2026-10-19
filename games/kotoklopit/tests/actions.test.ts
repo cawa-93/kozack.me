@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { useProgress } from "../src/sim/actions";
+import { targetOf } from "../src/sim/targets";
 import { BURN_MINUTES, COOK_MINUTES, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
@@ -208,5 +209,20 @@ describe("робочі поверхні", () => {
     expect(save.current.home.surfaces["counter-right"]).toEqual({ kind: "meal", quality: "cheap" });
     interact(save);
     expect(save.current.character.held).toEqual({ kind: "meal", quality: "cheap" });
+  });
+});
+
+describe("безлад як ціль (§10)", () => {
+  it("з річчю в руках безлад біля смітника не заступає його", () => {
+    const save = game();
+    standAt(save, "trash");
+    const body = save.current.character.body;
+    save.current.home.messes.push({ id: 1, kind: "vomit", x: body.x, y: body.y, cat: null });
+    expect(targetOf(save.current)?.id).toBe("mess:1");
+    save.current.character.held = { kind: "burnt", quality: "cheap" };
+    expect(targetOf(save.current)?.id).toBe("trash");
+    interact(save);
+    expect(save.current.character.held).toBeNull();
+    expect(save.current.home.messes).toHaveLength(1);
   });
 });

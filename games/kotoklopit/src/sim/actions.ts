@@ -84,8 +84,8 @@ export function tap(state: GameState): TapResult {
     case "item":
       return tapItem(state, target.item, target.id, held);
     case "mess":
-      // Безлад прибирають утриманням дії.
-      return held === null ? null : refuse(state, target.id, "hands-full");
+      // Безлад прибирають утриманням дії, і ціллю він буває лише з порожніми руками.
+      return null;
     case "cat":
       if (held !== null) return refuse(state, target.id, "hands-full");
       pickUpCat(state, target.cat);

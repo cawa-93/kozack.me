@@ -33,7 +33,10 @@ function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
   for (const object of OBJECTS) if (object.interactive) targets.push({ type: "object", id: object.id, object });
   for (const item of state.home.items) targets.push({ type: "item", id: itemTargetId(item), item });
-  for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });
+  // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
+  if (state.character.held === null) {
+    for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });
+  }
   for (const cat of state.cats) {
     if (cat.away === null && !isCarried(state, cat)) targets.push({ type: "cat", id: catTargetId(cat), cat });
   }
