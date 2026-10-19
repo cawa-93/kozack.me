@@ -346,7 +346,13 @@ export class Bot {
       if (!path) break;
       for (const tile of path) this.walkToTile(tile);
       this.face(rect);
-      if (targetOf(this.state)?.id === id) return true;
+      const target = targetOf(this.state);
+      if (target?.id === id) return true;
+      // Безлад заступає ціль (його прибирають порожніми руками): прибрати й підійти ще раз.
+      if (target?.type === "mess" && this.state.character.held === null) {
+        this.hold(target.id);
+        continue;
+      }
       const body = this.state.character.body;
       tried.add(`${Math.floor(body.x)},${Math.floor(body.y)}`);
     }
