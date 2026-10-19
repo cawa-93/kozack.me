@@ -1,0 +1,195 @@
+import { describe, expect, it } from "vitest";
+
+import { advance, interact, newGame } from "../src/sim/game";
+import type { Difficulty, Save, Sex } from "../src/sim/types";
+import { callImpression, patienceLevel, startWork, stopWork } from "../src/sim/work";
+import { hours, recordEvents, standAt, waitUntil } from "./helpers";
+
+const game = (sex: Sex = "female", difficulty: Difficulty = "normal"): Save => {
+  const save = newGame({ sex, difficulty, seed: 1 });
+  // Без захисту першого дня, щоб бачити повні втрати здорового глузду.
+  save.current.modifiers.day = null;
+  return save;
+};
+
+/** Попрацювати стільки хвилин, починаючи з хвилини дня. */
+const work = (save: Save, from: number, minutes: number): void => {
+  waitUntil(save, from);
+  startWork(save.current);
+  advance(save, minutes);
+  stopWork(save.current);
+};
+
+describe("робота за комп'ютером (§8.6)", () => {
+  it("сісти за комп'ютер і встати: дія, повторна дія чи рух", () => {
+    const save = game();
+    standAt(save, "computer");
+    interact(save);
+    expect(save.current.character.activity?.kind).toBe("work");
+    interact(save);
+    expect(save.current.character.activity).toBeNull();
+    interact(save);
+    const { events, stop } = recordEvents();
+    advance(save, hours(1));
+    advance(save, 0.1, { move: { x: 0, y: 1 }, hold: false });
+    stop();
+    expect(save.current.character.activity).toBeNull();
+    const stopped = events.find((e) => e.type === "work-stopped");
+    expect(stopped?.type === "work-stopped" && stopped.minutes).toBeCloseTo(60);
+  });
+
+  it("стажер заробляє 10 за годину на середній складності, 12,5 на легкій і 8 на важкій", () => {
+    for (const [difficulty, pay] of [["easy", 12.5], ["normal", 10], ["hard", 8]] as const) {
+      const save = game("female", difficulty);
+      const money = save.current.character.money;
+      work(save, hours(12), hours(2));
+      expect(save.current.character.money - money).toBeCloseTo(2 * pay);
+    }
+  });
+
+  it("година роботи: +3,09 репутації і −5 здорового глузду (12:00–15:00 без хронотипу)", () => {
+    const save = game();
+    save.current.minute = hours(12);
+    work(save, hours(12), hours(1));
+    expect(save.current.job.reputation).toBeCloseTo(50 + 3.09);
+    expect(save.current.character.stats.sanity).toBeCloseTo(35);
+  });
+
+  it("хронотип: зранку жайворонку легше, сові важче, а по обіді навпаки (§5.1)", () => {
+    const loss = (sex: Sex, from: number): number => {
+      const save = game(sex);
+      waitUntil(save, from);
+      const before = save.current.character.stats.sanity;
+      work(save, from, hours(1));
+      return before - save.current.character.stats.sanity;
+    };
+    expect(loss("female", hours(9))).toBeCloseTo(4.5);
+    expect(loss("male", hours(9))).toBeCloseTo(5.5);
+    expect(loss("female", hours(16))).toBeCloseTo(5.5);
+    expect(loss("male", hours(16))).toBeCloseTo(4.5);
+    expect(loss("male", hours(19))).toBeCloseTo(4.5);
+    expect(loss("female", hours(19))).toBeCloseTo(5);
+  });
+
+  it("у «Перший день» здоровий глузд не падає нижче 10% (§8.3)", () => {
+    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    work(save, hours(9), hours(9));
+    expect(save.current.character.stats.sanity).toBe(10);
+  });
+});
+
+describe("терпіння керівництва (§8.6)", () => {
+  it("без роботи «!» з'являється через 2 години, «Х» — через 4, далі репутація падає", () => {
+    const save = game();
+    waitUntil(save, hours(9));
+    const { events, stop } = recordEvents();
+    advance(save, hours(2) - 1);
+    expect(patienceLevel(save.current)).toBe("ok");
+    advance(save, 1);
+    expect(patienceLevel(save.current)).toBe("warning");
+    advance(save, hours(2) - 1);
+    expect(patienceLevel(save.current)).toBe("warning");
+    advance(save, 1);
+    expect(patienceLevel(save.current)).toBe("out");
+    // Пропущена летучка: −3,09.
+    const reputation = save.current.job.reputation;
+    expect(reputation).toBeCloseTo(50 - 3.09);
+    advance(save, hours(1));
+    expect(save.current.job.reputation).toBeCloseTo(reputation - 3 * 3.09);
+    stop();
+    const levels = events.flatMap((e) => (e.type === "patience" ? [e.level] : []));
+    expect(levels).toEqual(["warning", "out"]);
+  });
+
+  it("30% присутності утримує терпіння від нуля", () => {
+    const save = game();
+    for (let hour = 9; hour < 18; hour++) {
+      work(save, hours(hour), 18);
+      advance(save, 42);
+      expect(patienceLevel(save.current)).not.toBe("out");
+    }
+    // Терпіння не вище 100, тож запас після кожної відсутності — близько 82.
+    expect(save.current.job.patience).toBeGreaterThan(80);
+  });
+
+  it("поза робочим часом і у вихідні терпіння не спадає", () => {
+    const save = game();
+    save.current.minute = hours(18);
+    advance(save, hours(3));
+    expect(save.current.job.patience).toBe(100);
+    save.current.day = 5;
+    save.current.minute = hours(9);
+    advance(save, hours(6));
+    expect(save.current.job.patience).toBe(100);
+  });
+
+  it("щоранку терпіння знову повне", () => {
+    const save = game();
+    waitUntil(save, hours(15));
+    expect(patienceLevel(save.current)).toBe("out");
+    save.current.minute = hours(22);
+    standAt(save, "bed");
+    interact(save);
+    expect(save.current.job.patience).toBe(100);
+    expect(save.current.job.standupMinutes).toBe(0);
+  });
+});
+
+describe("щоденна летучка о 10:00 (§8.6)", () => {
+  const standup = (setup: (save: Save) => void): { reputation: number; attended: boolean } => {
+    const save = game();
+    const { events, stop } = recordEvents();
+    setup(save);
+    waitUntil(save, hours(10.5));
+    stop();
+    const result = events.find((e) => e.type === "standup");
+    if (result?.type !== "standup") throw new Error("летучки не було");
+    expect(events.some((e) => e.type === "standup-started")).toBe(true);
+    return { reputation: result.reputation, attended: result.attended };
+  };
+
+  it("пропуск — −1 × репутація за годину", () => {
+    expect(standup(() => {})).toEqual({ attended: false, reputation: -3.09 });
+  });
+
+  it("присутність із гігієною 75+ дає дзеркальний бонус, із низькою — штраф", () => {
+    const present = (hygiene: number) =>
+      standup((save) => {
+        save.current.character.stats.hygiene = hygiene;
+        waitUntil(save, hours(10) - 1);
+        startWork(save.current);
+      });
+    expect(present(100)).toEqual({ attended: true, reputation: 0.5 * 3.09 });
+    expect(present(60)).toEqual({ attended: true, reputation: 0 });
+    expect(present(26)).toEqual({ attended: true, reputation: -0.5 * 3.09 });
+  });
+
+  it("зараховано, якщо персонаж пробув щонайменше половину летучки", () => {
+    const late = (minutes: number) =>
+      standup((save) => {
+        save.current.character.stats.hygiene = 60;
+        waitUntil(save, hours(10) + 15 - minutes);
+        startWork(save.current);
+      });
+    expect(late(8).attended).toBe(true);
+    expect(late(7).attended).toBe(false);
+  });
+
+  it("у вихідні летучки немає", () => {
+    const save = game();
+    save.current.day = 5;
+    const { events, stop } = recordEvents();
+    waitUntil(save, hours(11));
+    stop();
+    expect(events.some((e) => e.type === "standup" || e.type === "standup-started")).toBe(false);
+  });
+
+  it("гігієна на відеодзвінку: нижче 25 — штраф, від 75 — бонус", () => {
+    const save = game();
+    const stats = save.current.character.stats;
+    for (const [hygiene, impression] of [[24, -0.5], [25, 0], [74, 0], [75, 0.5]] as const) {
+      stats.hygiene = hygiene;
+      expect(callImpression(save.current)).toBe(impression);
+    }
+  });
+});
