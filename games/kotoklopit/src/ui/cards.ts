@@ -1,15 +1,17 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
+import { DIFFICULTY, HAPPY_LIFE, PRODUCTS, SUFFERED_LIFE, THINGS } from "../sim/config";
 import { deliveryPrice, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
+import { allLives } from "../sim/finale";
+import { lifeLevel } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { priceFactor } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, Difficulty, GameEnd, GameState, HomeItem, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Cat, CatSource, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -115,13 +117,50 @@ export function endCard(state: GameState, end: GameEnd, handlers: EndHandlers): 
   return {
     kicker: retired ? "Вихід на пенсію" : "Кінець гри",
     title,
-    body: [text],
+    body: [text, ...statsNotes(state)],
     actions: [
       { label: "Переграти день", primary: !retired, onSelect: handlers.replayDay },
       { label: "Переграти тиждень", onSelect: handlers.replayWeek },
       { label: "Нова гра", primary: retired, onSelect: handlers.newGame },
     ],
   };
+}
+
+const hoursText = (minutes: number): string => {
+  const h = Math.round(minutes / 60);
+  return `${h} ${plural(h, "година", "години", "годин")}`;
+};
+
+const SOURCE_TITLES: Record<CatSource, string> = {
+  shelter: "з притулку",
+  "shelter-forced": "примусових кошенят із притулку",
+  born: "народилися вдома",
+  breeder: "з розплідника",
+  foundling: "знайд",
+};
+
+/** Статистика гри на екрані кінця (§4.2). */
+function statsNotes(state: GameState): HTMLElement[] {
+  const { minutes, raised } = state.stats;
+  const time = note("Час", `Робота: ${hoursText(minutes.work)}.`, `Коти: ${hoursText(minutes.cats)}.`, `Собі: ${hoursText(minutes.self)}.`, `Метушня між справами: ${hoursText(minutes.bustle)}.`);
+  const total = Object.values(raised).reduce((a, b) => a + b, 0);
+  const sources = (Object.keys(raised) as CatSource[]).filter((s) => raised[s] > 0).map((s) => `${raised[s]} ${SOURCE_TITLES[s]}`);
+  const died = state.album.filter((e) => e.cause.kind !== "given").length;
+  const given = state.album.length - died;
+  const lives = allLives(state);
+  const levels = new Array<number>(10).fill(0);
+  for (const mood of lives) levels[lifeLevel(mood)] = (levels[lifeLevel(mood)] ?? 0) + 1;
+  const happy = lives.filter((m) => m >= HAPPY_LIFE).length;
+  const suffered = lives.filter((m) => m < SUFFERED_LIFE).length;
+  const legends = levels[9] ?? 0;
+  const cats = note(
+    "Коти",
+    `Виростили: ${total}${sources.length > 0 ? ` (${sources.join(", ")})` : ""}.`,
+    `Пережили: ${died}; віддали в добрі руки: ${given}; живі зараз: ${state.cats.length}.`,
+    `Щасливих: ${happy}, страждали: ${suffered}${legends > 0 ? `, легенд: ${legends}` : ""}.`,
+    `Рівні життя від «Агонії» до «Легенди»: ${levels.join(" · ")}.`,
+  );
+  return [time, cats];
 }
 
 const portions = (n: number): string => `${n} ${plural(n, "порція", "порції", "порцій")}`;
@@ -165,18 +204,21 @@ const THING_TITLES: Record<ThingKind, string> = {
   robot: "Робот-пилосос",
 };
 
-export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album";
+export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album" | "game";
 
 export interface PhoneHandlers {
   order: (product: Product, quality: Quality) => void;
   orderThing: (thing: ThingKind, quality: Quality) => void;
   discard: (item: HomeItem) => void;
   advertise: (cat: Cat) => void;
+  newGame: () => void;
+  exportSave: () => void;
+  importSave: (file: File) => void;
   tab: (tab: PhoneTab) => void;
   close: () => void;
 }
 
-const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті" };
+const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті", game: "Гра" };
 
 /** Телефон персонажа (§6.4): доставка запасів і речей для котів, викинути річ. */
 export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
@@ -188,6 +230,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
+  if (tab === "game") body.push(...gameMenu(state, handlers));
   if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
   return {
     kicker: "Телефон",
@@ -199,6 +242,31 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
     ],
     onDismiss: handlers.close,
   };
+}
+
+/** Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження. */
+function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
+  const box = element("div", "shop");
+  const fresh = element("button", "button", "Нова гра");
+  fresh.addEventListener("click", handlers.newGame);
+  const save = element("button", "button", "Зберегти файлом");
+  save.addEventListener("click", handlers.exportSave);
+  const input = element("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.hidden = true;
+  input.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (file) handlers.importSave(file);
+  });
+  const load = element("button", "button", "Завантажити з файлу");
+  load.addEventListener("click", () => input.click());
+  box.append(fresh, save, load, input);
+  const { name } = state.character;
+  return [
+    `${name}, ${DIFFICULTY_TITLES[state.difficulty]}. Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.`,
+    box,
+  ];
 }
 
 const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
@@ -399,20 +467,86 @@ export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "
   };
 }
 
+/** Меню на старті (§4.2): продовжити збережену гру чи почати нову. */
+export function titleCard(state: GameState, onContinue: () => void, onNew: () => void): Card {
+  const { name } = state.character;
+  return {
+    kicker: "Котоклопіт",
+    title: "Котоклопіт",
+    body: [`Збережена гра: ${name}, тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)]}.`],
+    actions: [
+      { label: "Продовжити", primary: true, onSelect: onContinue },
+      { label: "Нова гра", onSelect: onNew },
+    ],
+  };
+}
+
 /** Нова гра: персонаж і складність (§5). Повний конструктор додасть крок 15 плану. */
 export function newGameCard(onPick: (sex: Sex) => void, onCancel?: () => void): Card {
   const actions = [
-    { label: "Марта — жайворонок", primary: true, onSelect: () => onPick("female") },
-    { label: "Тарас — сова", onSelect: () => onPick("male") },
+    { label: "Жінка — жайворонок", primary: true, onSelect: () => onPick("female") },
+    { label: "Чоловік — сова", onSelect: () => onPick("male") },
   ];
   return {
     kicker: "Нова гра",
     title: "Хто ви?",
     body: [
       "Жайворонок прокидається о 06:00 і легше працює зранку. Сова прокидається о 08:00 і краще почувається ввечері.",
+      "У жінки є цикл, у чоловіка — трохи швидший обмін речовин і борода, за якою треба доглядати. Сили врівноважені.",
     ],
     actions: onCancel ? [...actions, { label: "Скасувати", onSelect: onCancel }] : actions,
     ...(onCancel ? { onDismiss: onCancel } : {}),
+  };
+}
+
+const LOOK_OPTIONS: { key: keyof Look; label: string; options: readonly string[] }[] = [
+  { key: "face", label: "Обличчя", options: ["кругле", "овальне", "широке"] },
+  { key: "skin", label: "Шкіра", options: ["світла", "бежева", "смаглява", "темна", "дуже темна"] },
+  { key: "hair", label: "Зачіска", options: ["коротка", "довга", "хвостик", "кучері"] },
+  { key: "hairColor", label: "Волосся", options: ["чорне", "каштанове", "русяве", "біляве", "руде", "сиве"] },
+  { key: "eyes", label: "Очі", options: ["темні", "блакитні", "зелені", "карі"] },
+  { key: "build", label: "Статура", options: ["струнка", "звичайна", "кремезна"] },
+  { key: "top", label: "Верх", options: ["червоний", "синій", "зелений", "жовтий", "вишневий", "графітовий", "білий"] },
+  { key: "bottom", label: "Низ", options: ["графітовий", "білий", "червоний", "синій", "зелений", "жовтий", "вишневий"] },
+  { key: "shoes", label: "Взуття", options: ["графітове", "біле", "червоне", "синє", "зелене", "жовте", "вишневе"] },
+];
+
+/** Конструктор персонажа (§5.1): ім'я й зовнішність, суто косметична. */
+export function characterCard(sex: Sex, defaults: { name: string; look: Look }, onDone: (name: string, look: Look) => void, onBack: () => void): Card {
+  const look: Look = { ...defaults.look };
+  const form = element("div", "shop");
+  const name = element("input");
+  name.type = "text";
+  name.value = defaults.name;
+  name.maxLength = 20;
+  name.className = "button";
+  name.setAttribute("aria-label", "Ім'я");
+  const nameRow = element("label", "shop-row");
+  nameRow.append(element("span", "shop-name", "Ім'я"), name);
+  form.append(nameRow);
+  for (const { key, label, options } of LOOK_OPTIONS) {
+    const row = element("label", "shop-row");
+    const select = element("select");
+    select.className = "button";
+    options.forEach((option, i) => {
+      const o = element("option", undefined, option);
+      o.value = String(i);
+      select.append(o);
+    });
+    select.value = String(look[key]);
+    select.addEventListener("change", () => (look[key] = Number(select.value)));
+    row.append(element("span", "shop-name", label), select);
+    form.append(row);
+  }
+  return {
+    kicker: "Нова гра",
+    title: sex === "female" ? "Яка вона?" : "Який він?",
+    body: ["Зовнішність ні на що не впливає — лише на те, як персонаж виглядає.", form],
+    actions: [
+      { label: "Далі", primary: true, onSelect: () => onDone(name.value, look) },
+      { label: "Назад", onSelect: onBack },
+    ],
+    onDismiss: onBack,
   };
 }
 

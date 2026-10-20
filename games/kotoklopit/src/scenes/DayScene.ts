@@ -6,12 +6,13 @@ import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, order, orderThing, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
-import { advance, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
+import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
 import { adopt, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
+import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
@@ -20,7 +21,7 @@ import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, difficultyCard, endCard, foundlingCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, characterCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
@@ -128,6 +129,13 @@ export class DayScene extends Phaser.Scene {
     this.cleanup.push(this.session.onReset(() => this.restart()));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup.forEach((stop) => stop()));
     this.restart();
+    // Меню на старті (§4.2): лише для справжньої збереженої гри, не для сценаріїв режиму розробки.
+    const state = this.state;
+    if (this.session.persistent && state.end === null) {
+      // Зовсім нова гра — одразу вибір персонажа (§5.1); збережена — меню.
+      if (state.day === 0 && state.minute === state.dayStartMinute) this.chooseNewGame();
+      else this.overlay.show(titleCard(state, () => this.restart(), () => this.chooseNewGame()));
+    }
   }
 
   private setupKeyboard(): void {
@@ -823,14 +831,37 @@ export class DayScene extends Phaser.Scene {
     );
   }
 
+  private confirmNewGame(back: () => void): void {
+    this.overlay.show({
+      kicker: "Нова гра",
+      title: "Почати заново?",
+      body: ["Поточну гру буде втрачено, якщо її не зберегти файлом."],
+      actions: [
+        { label: "Почати нову гру", primary: true, onSelect: () => this.chooseNewGame() },
+        { label: "Повернутися", onSelect: back },
+      ],
+      onDismiss: back,
+    });
+  }
+
+  /** Нова гра (§5): персонаж, конструктор зовнішності, складність. */
   private chooseNewGame(): void {
-    this.overlay.show(
-      newGameCard((sex: Sex) =>
-        this.overlay.show(
-          difficultyCard((difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty }))),
-        ),
-      ),
-    );
+    const pickSex = (): void =>
+      this.overlay.show(
+        newGameCard((sex: Sex) => {
+          const defaults = { name: sex === "female" ? "Марта" : "Тарас", look: DEFAULT_LOOK[sex] };
+          this.overlay.show(
+            characterCard(
+              sex,
+              defaults,
+              (name, look) =>
+                this.overlay.show(difficultyCard((difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look })))),
+              pickSex,
+            ),
+          );
+        }),
+      );
+    pickSex();
   }
 
   private openPhone(): void {
@@ -853,6 +884,14 @@ export class DayScene extends Phaser.Scene {
           advertise: (cat) => {
             advertise(this.state, cat);
             show(tab);
+          },
+          newGame: () => this.confirmNewGame(() => show(tab)),
+          exportSave: () => exportSave(this.session.save),
+          importSave: (file) => {
+            void importSave(file).then(
+              (save) => this.session.replace(save),
+              () => this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри."),
+            );
           },
           tab: show,
           close: () => this.overlay.close(),

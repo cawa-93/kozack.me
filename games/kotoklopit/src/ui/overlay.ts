@@ -80,8 +80,10 @@ export class Overlay {
       card.onDismiss();
       return;
     }
-    // Пробіл і Enter на кнопці в фокусі натискають її самі.
-    if ((event.key === "Enter" || event.key === " ") && !(document.activeElement instanceof HTMLButtonElement)) {
+    // Пробіл і Enter на кнопці в фокусі натискають її самі; у полі вводу — друкують.
+    const active = document.activeElement;
+    const typing = active instanceof HTMLInputElement || active instanceof HTMLSelectElement || active instanceof HTMLTextAreaElement;
+    if ((event.key === "Enter" || event.key === " ") && !(active instanceof HTMLButtonElement) && !(typing && event.key === " ")) {
       const primary = card.actions.find((a) => a.primary && !a.disabled);
       if (primary) {
         event.preventDefault();

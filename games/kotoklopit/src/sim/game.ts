@@ -2,7 +2,7 @@
 // і збереження в JSON (§6.1).
 
 import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
-import { moveBody, newBody } from "./body";
+import { isMoving, moveBody, newBody } from "./body";
 import { tickCats } from "./catai";
 import { passAwakeTime } from "./character";
 import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
@@ -15,21 +15,27 @@ import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { tickHousehold } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
-import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
+import type { Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { powerOut, tickModifiers } from "./modifiers";
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 12;
 
 const EPSILON = 1e-6;
 
 /** Імена за замовчуванням; власне ім'я задасть конструктор персонажа (§5.1). */
 const DEFAULT_NAME: Record<Sex, string> = { female: "Марта", male: "Тарас" };
+/** Зовнішність за замовчуванням: такою вона була до конструктора (§5.1). */
+export const DEFAULT_LOOK: Record<Sex, Look> = {
+  female: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
+  male: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
+};
 
 export interface NewGameOptions {
   sex: Sex;
   difficulty: Difficulty;
   name?: string;
+  look?: Look;
   seed?: number;
 }
 
@@ -45,7 +51,8 @@ export function newGame(options: NewGameOptions): Save {
     minute: 0,
     dayStartMinute: 0,
     character: {
-      name: options.name ?? DEFAULT_NAME[sex],
+      name: options.name?.trim() || DEFAULT_NAME[sex],
+      look: options.look ?? DEFAULT_LOOK[sex],
       sex,
       // Хронотип за статтю (§5.1); режим розробки може змінити його окремо (§11.5).
       chronotype: sex === "female" ? "lark" : "owl",
@@ -74,6 +81,7 @@ export function newGame(options: NewGameOptions): Save {
     breeder: null,
     ads: [],
     album: [],
+    stats: { minutes: { work: 0, cats: 0, self: 0, bustle: 0 }, raised: { shelter: 0, "shelter-forced": 0, born: 0, breeder: 0, foundling: 0 } },
     nextId: 0,
     rng: { conditions: 0, behavior: 0 },
     lastNight: null,
@@ -110,9 +118,25 @@ export function advance(save: Save, minutes: number, input: Input = IDLE): Night
   return null;
 }
 
+const CAT_TRIPS = new Set(["vet", "groomer", "shelter", "breeder", "show"]);
+const CAT_USES = /^(item|mess):|^vacuum$/;
+
+/** На що йде час (§4.2): робота, коти, собі чи «метушня» — ходіння між справами. */
+function timeCategory(state: GameState, input: Input): keyof GameState["stats"]["minutes"] | null {
+  const trip = state.trip;
+  if (trip) return trip.destination === "office" ? "work" : CAT_TRIPS.has(trip.destination) ? "cats" : "self";
+  const activity = state.character.activity;
+  if (activity?.kind === "work") return "work";
+  if (activity?.kind === "pet" || activity?.kind === "play") return "cats";
+  if (activity?.kind === "use") return CAT_USES.test(activity.target) ? "cats" : "self";
+  return isMoving(input.move) ? "bustle" : null;
+}
+
 /** Усе, що відбувається за крок часу вдень. Поки персонаж у поїздці, удома його немає (§8.5). */
 function tick(state: GameState, minutes: number, input: Input): void {
   const from = state.minute;
+  const category = timeCategory(state, input);
+  if (category) state.stats.minutes[category] += minutes;
   const away = state.trip !== null;
   if (!away) {
     tickActivity(state, input, minutes);

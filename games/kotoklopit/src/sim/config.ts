@@ -643,6 +643,9 @@ export const MODIFIERS = {
     humanFlu: 0.1,
   },
 } as const;
+/** Фінал і статистика (§4.2): щасливі — від 60% середнього настрою, страждали — нижче 40%. */
+export const HAPPY_LIFE = 60;
+export const SUFFERED_LIFE = 40;
 /** Спостереження (§9.9): скільки проявів риси треба побачити, щоб відкрити її; рівні — на кожній третині. */
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */

@@ -242,6 +242,7 @@ function kittenCheck({ state, report, rng }: Night): void {
 /** Новий кіт у домі: «Пригніченість» знімається (§6.2). */
 export function addCat(state: GameState, cat: Cat): void {
   initRelations(state, cat);
+  state.stats.raised[cat.source] += 1;
   state.cats.push(cat);
   state.character.depressed = false;
   emit(state, { type: "cat-arrived", cat: cat.id });

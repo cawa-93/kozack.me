@@ -105,8 +105,22 @@ export interface PlayActivity {
 
 export type Activity = WorkActivity | UseActivity | PetActivity | PlayActivity;
 
+/** Зовнішність персонажа (§5.1): суто косметична; числа — номери варіантів у палітрах графіки. */
+export interface Look {
+  face: number;
+  skin: number;
+  hair: number;
+  hairColor: number;
+  eyes: number;
+  build: number;
+  top: number;
+  bottom: number;
+  shoes: number;
+}
+
 export interface Character {
   name: string;
+  look: Look;
   sex: Sex;
   chronotype: Chronotype;
   stats: Record<StatName, number>;
@@ -570,6 +584,14 @@ export interface NightReport {
   sanityMorning: number;
 }
 
+/** Статистика гри (§4.2). */
+export interface GameStats {
+  /** Хвилини: робота (й пошук роботи), коти, собі, «метушня» — ходіння між справами. */
+  minutes: { work: number; cats: number; self: number; bustle: number };
+  /** Скільки котів виростив персонаж, за тим, звідки вони. */
+  raised: Record<CatSource, number>;
+}
+
 /** Що сьогодні відбувається за модифікатором (§4.1). */
 export interface ModifierDay {
   /** Коли подзвонить мама; null — дзвінка немає чи вже був. */
@@ -614,6 +636,8 @@ export interface GameState {
   job: Job;
   home: Home;
   modifiers: { day: string | null; week: string | null };
+  /** Статистика для екрана кінця гри (§4.2): хвилини за категоріями й виховані коти. */
+  stats: GameStats;
   /** Стан модифікаторів дня (§4.1): дзвінок, нарада, щеплення, знайда тощо. */
   today: ModifierDay;
   cats: Cat[];
