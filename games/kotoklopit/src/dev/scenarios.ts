@@ -7,7 +7,7 @@ import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, GameState, Save } from "../sim/types";
+import type { Cat, CatSource, GameState, Product, Quality, Save } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
@@ -45,6 +45,10 @@ export function applyScenario(scenario: Scenario): Save {
   const state = deepMerge(save.current, structuredClone(scenario.state ?? {}));
   // День змінився — засіяти потоки для нього, якщо сценарій не задав їх сам.
   if (!scenario.state?.rng) seedDay(state);
+  // Запаси, які сценарій поклав додому, сховища показують, як придбані (§6.4).
+  for (const [product, supply] of Object.entries(state.home.supplies) as [Product, Record<Quality, number>][]) {
+    if (supply.cheap + supply.premium > 0 && !state.home.acquired.includes(product)) state.home.acquired.push(product);
+  }
   const rng = createRng(state.seed);
   for (const spec of scenario.cats ?? []) {
     const cat = createCat(state, rng, {

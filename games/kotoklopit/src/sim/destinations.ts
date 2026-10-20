@@ -20,7 +20,7 @@ import {
   VET,
 } from "./config";
 import { breedById, breederPrice, MIXED, PUREBREEDS } from "./breeds";
-import { freeSlots, place } from "./economy";
+import { addSupply, freeSlots, place } from "./economy";
 import { giveAway } from "./farewell";
 import { emit } from "./events";
 import { observe } from "./knowledge";
@@ -68,7 +68,7 @@ export function buyAtShop(state: GameState, goods: Goods, quality: Quality): boo
   if (state.trip?.destination !== "shop") return false;
   if ("thing" in goods && freeSlots(state, goods.thing) <= 0) return false;
   if (!spend(state, shopPrice(state, goods, quality))) return false;
-  if ("product" in goods) state.home.supplies[goods.product][quality] += PRODUCTS[goods.product].units[quality];
+  if ("product" in goods) addSupply(state, goods.product, quality, PRODUCTS[goods.product].units[quality]);
   else {
     const item = place(state, goods.thing, quality);
     if (item) state.home.items.push(item);

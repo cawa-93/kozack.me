@@ -225,4 +225,20 @@ describe("безлад як ціль (§10)", () => {
     expect(save.current.character.held).toBeNull();
     expect(save.current.home.messes).toHaveLength(1);
   });
+
+  it("з річчю в руках іграшка перед плитою не заступає її", () => {
+    const save = game();
+    standAt(save, "stove");
+    const body = save.current.character.body;
+    const toy = save.current.home.items.find((i) => i.kind === "toy")!;
+    Object.assign(toy, { x: body.x, y: body.y });
+    body.facing = { x: 0, y: 1 };
+    expect(targetOf(save.current)?.id).toBe(`item:${toy.id}`);
+    save.current.character.held = { kind: "raw", quality: "cheap" };
+    expect(targetOf(save.current)?.id).not.toBe(`item:${toy.id}`);
+    body.facing = { x: 0, y: -1 };
+    expect(targetOf(save.current)?.id).toBe("stove");
+    interact(save);
+    expect(save.current.home.stove.item?.kind).toBe("raw");
+  });
 });

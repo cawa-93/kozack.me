@@ -295,6 +295,7 @@ export class DevPanel {
     const supply = (product: Product, quality: Quality, label: string) =>
       this.number(label, () => home().supplies[product][quality], (v) => {
         home().supplies[product][quality] = Math.max(0, Math.round(v));
+        if (v > 0 && !home().acquired.includes(product)) home().acquired.push(product);
         this.changed(`запаси ${product} ${quality} — ${v}`, false);
       }, 1, 0);
     return this.section(

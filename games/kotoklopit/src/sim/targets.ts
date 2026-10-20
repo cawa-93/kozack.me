@@ -35,8 +35,11 @@ function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
   for (const object of OBJECTS) if (object.interactive) targets.push({ type: "object", id: object.id, object });
   // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
+  // Іграшку з повними руками не підняти, тож вона не заступає плиту чи стіл (§10).
+  const handsFull = state.character.held !== null;
   for (const item of state.home.items) {
-    if (item.kind !== "house" && item.kind !== "scratcher") targets.push({ type: "item", id: itemTargetId(item), item });
+    if (item.kind === "house" || item.kind === "scratcher" || (item.kind === "toy" && handsFull)) continue;
+    targets.push({ type: "item", id: itemTargetId(item), item });
   }
   // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
   if (state.character.held === null) {

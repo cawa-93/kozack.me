@@ -80,6 +80,7 @@ describe("прання (§8.7)", () => {
     cat.x = 10.5;
     cat.y = 1.5;
     cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+    save.current.home.supplies.detergent.cheap = 4;
     expect(tapWasher(save.current)).toBe("cat");
     expect(tapWasher(save.current)).toBe("started");
     tickHousehold(save.current, 600, 61);

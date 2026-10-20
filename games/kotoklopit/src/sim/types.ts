@@ -314,6 +314,8 @@ export interface Mess {
 export interface Home {
   /** Порції їжі й корму, душі засобів гігієни, чистки наповнювача. */
   supplies: Record<Product, Record<Quality, number>>;
+  /** Запаси, які вже бували вдома: лише їх показує сховище (§6.4). */
+  acquired: Product[];
   /** На плиті одна страва; хвилини — скільки вона там лежить. */
   stove: { item: Dish | null; minutes: number };
   /** Що лежить на столі й робочих поверхнях: за id речі квартири. */

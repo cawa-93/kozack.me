@@ -37,6 +37,7 @@ export function newHome(nextId: () => number): Home {
   ];
   return {
     supplies: structuredClone(START_SUPPLIES),
+    acquired: (Object.keys(START_SUPPLIES) as Product[]).filter((p) => START_SUPPLIES[p].cheap + START_SUPPLIES[p].premium > 0),
     stove: { item: null, minutes: 0 },
     surfaces: Object.fromEntries(SURFACE_IDS.map((id) => [id, null])),
     items,
@@ -79,6 +80,12 @@ export function useSupply(state: GameState, product: Product, quality?: Quality)
   } else taken = null;
   if (taken !== null) emit(state, { type: "supply-used", product, left: supplyCount(state, product) });
   return taken;
+}
+
+/** Поповнити запас: покупка, доставка, стартовий пакет. Відтепер сховище його показує (§6.4). */
+export function addSupply(state: GameState, product: Product, quality: Quality, amount: number): void {
+  state.home.supplies[product][quality] += amount;
+  if (!state.home.acquired.includes(product)) state.home.acquired.push(product);
 }
 
 export function returnSupply(state: GameState, product: Product, quality: Quality): void {
@@ -190,7 +197,7 @@ export function receivePackages(state: GameState): Delivery[] {
   const home = state.home;
   const received = home.porch.splice(0);
   for (const delivery of received) {
-    if ("product" in delivery) home.supplies[delivery.product][delivery.quality] += PRODUCTS[delivery.product].units[delivery.quality];
+    if ("product" in delivery) addSupply(state, delivery.product, delivery.quality, PRODUCTS[delivery.product].units[delivery.quality]);
     else {
       const item = place(state, delivery.thing, delivery.quality);
       if (item) home.items.push(item);

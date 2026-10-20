@@ -31,34 +31,19 @@ export interface StorageLine {
   count: number;
 }
 
-/** Нуль цього запасу видно над сховищем завжди: без нього не обійтися (§6.4). */
-export function isNeeded(state: GameState, product: Product): boolean {
-  switch (product) {
-    case "food":
-    case "hygiene":
-    case "detergent":
-      return true;
-    case "catFood":
-    case "litter":
-      return state.cats.length > 0;
-    case "sterileFood":
-      return state.cats.some((c) => c.sterilized);
-    default:
-      return false;
-  }
-}
-
 /** Персонаж біля сховища: видно весь вміст. */
 export function isNearStorage(state: GameState, storage: Storage): boolean {
   return state.trip === null && distanceToRect(state.character.body, objectById(storage.object)) <= STORAGE_NEAR;
 }
 
 /**
- * Що зараз видно над сховищем: увесь вміст, коли персонаж поруч, інакше — лише потрібні запаси,
- * які скінчилися. Порожній список — індикатора немає.
+ * Що зараз видно над сховищем (§6.4): лише запаси, які вже бували вдома; коли персонаж поруч — усі
+ * вони з кількістю, інакше — ті, що скінчилися. Порожній список — індикатора немає.
  */
 export function storageIndicator(state: GameState, storage: Storage): StorageLine[] {
-  const lines = storage.products.map((product) => ({ product, count: supplyCount(state, product) }));
+  const lines = storage.products
+    .filter((product) => state.home.acquired.includes(product))
+    .map((product) => ({ product, count: supplyCount(state, product) }));
   if (isNearStorage(state, storage)) return lines;
-  return lines.filter((line) => line.count === 0 && isNeeded(state, line.product));
+  return lines.filter((line) => line.count === 0);
 }

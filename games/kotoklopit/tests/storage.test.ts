@@ -3,12 +3,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { createCat } from "../src/sim/cat";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { interact, newGame } from "../src/sim/game";
 import { objectById } from "../src/sim/home";
-import { addCat } from "../src/sim/night";
-import { createRng } from "../src/sim/rng";
+import { addSupply } from "../src/sim/economy";
+import { giveStarterPack } from "../src/sim/night";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
 import type { Product, Save } from "../src/sim/types";
 import { walkTo } from "./helpers";
@@ -30,24 +29,21 @@ describe("сховища (§6.4)", () => {
     }
   });
 
-  it("здалеку видно лише потрібний нуль, зблизька — увесь вміст", () => {
+  it("видно лише придбане: здалеку — нуль, зблизька — увесь вміст", () => {
     const save = game();
     const state = save.current;
     expect(storageIndicator(state, storage("fridge"))).toEqual([]);
     state.home.supplies.food = { cheap: 0, premium: 0 };
     expect(storageIndicator(state, storage("fridge"))).toEqual([{ product: "food", count: 0 }]);
-    // Корм без котів не потрібен; з котом — нуль видно.
+    // Корму ще не купували — шафка мовчить і з нулем.
     expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([]);
-    addCat(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 2 }));
+    giveStarterPack(state);
+    state.home.supplies.catFood = { cheap: 0, premium: 0 };
     expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([{ product: "catFood", count: 0 }]);
-    // Необов'язкові запаси аптечки здалеку не показують нулі.
-    expect(storageIndicator(state, storage("cat-kit"))).toEqual([]);
-    state.home.supplies.hygiene = { cheap: 3, premium: 1 };
+    addSupply(state, "hygiene", "cheap", 3);
     walkTo(save, "shower");
-    expect(storageIndicator(state, storage("shower"))).toEqual([
-      { product: "hygiene", count: 4 },
-      { product: "shampoo", count: 0 },
-    ]);
+    // Шампуню не купували: зблизька видно лише засоби гігієни.
+    expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3 }]);
   });
 
   it("узята порція виринає над персонажем із залишком", () => {

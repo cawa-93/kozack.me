@@ -19,7 +19,7 @@ import {
   WAKE_UP,
   COLLAPSE_HOURS_BEFORE_WAKE,
 } from "./config";
-import { payUtilities, postponeDeliveries } from "./economy";
+import { addSupply, payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
@@ -250,9 +250,8 @@ export function addCat(state: GameState, cat: Cat): void {
 
 /** Стартовий пакет кота з притулку: корм і наповнювач (§9.12). */
 export function giveStarterPack(state: GameState): void {
-  const supplies = state.home.supplies;
-  supplies.catFood.cheap += SHELTER_STARTER_PACK.catFood;
-  supplies.litter.cheap += SHELTER_STARTER_PACK.litter;
+  addSupply(state, "catFood", "cheap", SHELTER_STARTER_PACK.catFood);
+  addSupply(state, "litter", "cheap", SHELTER_STARTER_PACK.litter);
 }
 
 /** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */

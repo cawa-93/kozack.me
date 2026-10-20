@@ -19,7 +19,7 @@ import type { Difficulty, GameState, Look, NightReport, Save, Sex } from "./type
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { powerOut, tickModifiers } from "./modifiers";
 
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 const EPSILON = 1e-6;
 
