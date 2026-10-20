@@ -1,7 +1,7 @@
 // Хвороби котів (§9.5, `DISEASES.md`): як кіт захворює, «безпечний» термін і шкода, симптоми,
 // лікування вдома, заразність. Ветеринара додасть крок 11 плану.
 
-import { changeHealth, changeLove, changeMood, isOld, lifeMood, traitLevel } from "./cat";
+import { changeHealth, changeLove, changeMood, isAdapting, isOld, lifeMood, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS } from "./config";
 import { takeSupply } from "./economy";
@@ -105,7 +105,8 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
     const hadCold = hasDisease(cat, "cold");
     maybeFallIll(state, cat, "cold", ILLNESS.cold, rng);
     maybeFallIll(state, cat, "conjunctivitis", hadCold ? ILLNESS.afterCold : ILLNESS.conjunctivitis, rng);
-    if (today < ILLNESS.cystitisMood) maybeFallIll(state, cat, "cystitis", ILLNESS.cystitis, rng);
+    // Новий кіт у перші дні сумує від переїзду: це ще не стрес, що доводить до циститу.
+    if (today < ILLNESS.cystitisMood && !isAdapting(state, cat)) maybeFallIll(state, cat, "cystitis", ILLNESS.cystitis, rng);
   }
   spread(state, rng);
 }

@@ -139,6 +139,19 @@ describe("дієта, спокій і травма (§9.5)", () => {
     expect(hasDisease(cat, "cystitis")).toBe(false);
   });
 
+  it("цистит не починається, поки новий кіт адаптується", () => {
+    const save = game();
+    const cat = withCat(save);
+    const sure = () => ({ ...createRng(1), chance: () => true });
+    cat.moodHistory = [10];
+    cat.arrivedDay = save.current.day;
+    nightlyDiseases(save.current, sure());
+    expect(hasDisease(cat, "cystitis")).toBe(false);
+    cat.arrivedDay = -10;
+    nightlyDiseases(save.current, sure());
+    expect(hasDisease(cat, "cystitis")).toBe(true);
+  });
+
   it("травма — кіт кульгає; глисти — їсть більше", () => {
     const save = game();
     const cat = withCat(save);

@@ -471,7 +471,10 @@ export class Bot {
     if (!this.goTo(id)) return this.wait(1);
     for (let spent = 0; spent < 60; spent += HOLD_STEP) {
       advance(this.save, HOLD_STEP, { move: { x: 0, y: 0 }, hold: true });
-      if (this.state.character.activity === null) break;
+      const activity = this.state.character.activity;
+      if (activity === null) break;
+      // Кіт підійшов під руку: утримання стало пестощами — відпустити, а не гладити годину.
+      if (activity.kind === "pet" && id !== `cat:${activity.cat}`) break;
     }
     advance(this.save, 0.01);
   }
@@ -506,7 +509,8 @@ export class Bot {
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         if (isSolid(x, y) || exclude.has(`${x},${y}`)) continue;
-        const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect);
+        // Запас на похибку округлення: кіт на меблях рівно за 0,7 клітинки.
+        const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect) - 1e-6;
         // Крізь стіну не дотягнутися: такі клітинки не годяться.
         if (distance <= 0.7 && !this.clearLine({ x: x + 0.5, y: y + 0.5 }, rect)) continue;
         if (distance <= 0) on.add(`${x},${y}`);
