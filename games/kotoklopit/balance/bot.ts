@@ -13,7 +13,7 @@ import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
-import { targetById, targetOf } from "../src/sim/targets";
+import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
 import { POSITIONS } from "../src/sim/config";
@@ -233,12 +233,16 @@ export class Bot {
       need("litter", Math.max(2, cats));
     }
     // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
-    const things = (kind: "litter" | "bowl", want: number): void => {
+    // Зламана річ (§8.7), без якої котам не обійтися, — одразу, навіть без запасу грошей.
+    const things = (kind: "litter" | "bowl" | "water" | "toy", want: number): void => {
       const have = s.home.items.filter((i) => i.kind === kind).length + [...s.home.deliveries, ...s.home.porch].filter((d) => "thing" in d && d.thing === kind).length;
-      if (have < want && freeSlots(s, kind) > 0 && s.character.money > 100) orderThing(s, kind, "cheap");
+      if (have < want && freeSlots(s, kind) > 0 && (s.character.money > 100 || have === 0)) orderThing(s, kind, "cheap");
     };
+    if (cats === 0) return;
     things("litter", cats + 1);
     things("bowl", cats);
+    things("water", Math.ceil(cats / 3));
+    things("toy", 1);
   }
 
   // --- Дії ----------------------------------------------------------------------------------
@@ -424,11 +428,28 @@ export class Bot {
       if (!path) break;
       for (const tile of path) this.walkToTile(tile);
       this.face(rect);
-      const target = targetOf(this.state);
+      let target = targetOf(this.state);
       if (target?.id === id) return true;
+      // Кіт під ногами, а персонаж дивиться на річ поруч (комп'ютер): відвернутися від неї.
+      if (target && id.startsWith("cat:")) {
+        const body = this.state.character.body;
+        const c = targetCenter(target);
+        const length = Math.hypot(c.x - body.x, c.y - body.y);
+        if (length > 1e-6) body.facing = { x: (body.x - c.x) / length, y: (body.y - c.y) / length };
+        target = targetOf(this.state);
+        if (target?.id === id) return true;
+      }
       // Безлад заступає ціль (його прибирають порожніми руками): прибрати й підійти ще раз.
       if (target?.type === "mess" && this.state.character.held === null) {
         this.hold(target.id);
+        continue;
+      }
+      // Іграшка заступає ціль (лежить перед плитою): підняти й покласти за спину.
+      if (target?.type === "item" && target.item.kind === "toy" && this.state.character.held === null) {
+        interact(this.save);
+        const body = this.state.character.body;
+        body.facing = { x: -body.facing.x, y: -body.facing.y };
+        interact(this.save);
         continue;
       }
       const body = this.state.character.body;
