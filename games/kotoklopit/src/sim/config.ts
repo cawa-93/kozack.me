@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Chronotype, Destination, Difficulty, DiseaseId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, Chronotype, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -136,6 +136,7 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   litter: { units: { cheap: 7, premium: 4 }, price: { cheap: 8, premium: 15 } },
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
   drops: { units: { cheap: 3, premium: 3 }, price: { cheap: 12, premium: 30 } },
+  humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
 };
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
@@ -145,6 +146,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   litter: { cheap: 0, premium: 0 },
   pills: { cheap: 0, premium: 0 },
   drops: { cheap: 0, premium: 0 },
+  humanMeds: { cheap: 0, premium: 0 },
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
@@ -550,6 +552,28 @@ export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */
 export const WITNESS_DISTANCE = 3;
+/** Хвороби персонажа (§6.5): безпечний термін, шкода, скільки днів із ліками лікує, лікарняний. */
+export const ILLNESSES: Record<IllnessId, { safe: number; damage: number; doses: number | null; sickLeave: number }> = {
+  cold: { safe: 3, damage: 2, doses: 3, sickLeave: 2 },
+  injury: { safe: 3, damage: 1, doses: 4, sickLeave: 1 },
+  exhaustion: { safe: 0, damage: 2, doses: null, sickLeave: 3 },
+};
+export const ILLNESS_EFFECTS = {
+  /** Застуда й травма сповільнюють рух; травма з річчю в руках — ще більше. */
+  slow: 0.8,
+  carrySlow: 0.8,
+  injuryOnStun: 0.1,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  shortSleepHours: 7,
+  shortNights: 3,
+  restHours: 8,
+  restNights: 2,
+  medsWork: 0.7,
+  /** Хвороба не опускає здоров'я нижче цього: закінчує гру лише недбалість (§6.1). */
+  floor: 0,
+} as const;
+/** Лікар (§6.5): лікування дешеве чи дороге, здоров'я після лікування. */
+export const DOCTOR_TREAT = { cheap: 30, premium: 80, cheapWorks: 0.7, health: 10 } as const;
 /** Смерть кота (§9.2, §9.5): нульове здоров'я ввечері — 60%; понад межу віку — 20% + 10% за тиждень − 5% за «Довголіття». */
 export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;
 /** Стосунки між котами (§9.4). */

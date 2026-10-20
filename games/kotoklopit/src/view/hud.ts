@@ -9,7 +9,7 @@ import { isDrowsy } from "../sim/sleep";
 import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { isWorkday } from "../sim/work";
-import { fill } from "../texts";
+import { fill, ILLNESS_TITLES } from "../texts";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
@@ -133,6 +133,7 @@ export class Hud {
     const job = state.job;
     if (job.unemployed) effects.push(`Пошук роботи ${Math.floor(job.searchHours)}/24 год`);
     if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
+    for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
     this.effects.setText(effects.join(" · "));
     const schedule = scheduleOf(state).slice(0, 3);
     // Три рядки вміщуються лише дрібнішим шрифтом.

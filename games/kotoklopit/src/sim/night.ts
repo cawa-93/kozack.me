@@ -21,6 +21,7 @@ import {
 import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
+import { nightlyIllness } from "./illness";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
 import { conceive, giveBirth, inHeat, nightlyStates } from "./reproduction";
@@ -170,6 +171,7 @@ function sleep({ state, report, rng }: Night): void {
   postponeDeliveries(state);
   passSleepTime(state, slept);
   state.character.sleepSpeed = sleepSpeedAfter(slept);
+  nightlyIllness(state, slept);
 }
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */

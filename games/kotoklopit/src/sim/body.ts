@@ -21,6 +21,7 @@ import {
 } from "./config";
 import { traitLevel } from "./cat";
 import { emit } from "./events";
+import { canDashWhenIll, illnessSpeed, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
 import { isSolid, SPAWN } from "./home";
 import { stateRng } from "./rng";
@@ -54,7 +55,7 @@ export function isMoving(move: Vec): boolean {
 /** Ривок доступний після перезарядки; з низьким здоров'ям ривка немає (§6.3). */
 export function canDash(state: GameState): boolean {
   const { body, stats, activity } = state.character;
-  return body.dashCooldown <= 0 && stats.health >= LOW_STAT && activity?.kind !== "work";
+  return body.dashCooldown <= 0 && stats.health >= LOW_STAT && activity?.kind !== "work" && canDashWhenIll(state);
 }
 
 export function dash(state: GameState): boolean {
@@ -92,6 +93,8 @@ export function stun(state: GameState): void {
   const body = state.character.body;
   body.stun = Math.max(body.stun, STUN_MINUTES);
   body.dash = 0;
+  // Упав — можна й травмуватися (§6.5).
+  maybeInjure(state, stateRng(state, "behavior"));
 }
 
 /** Рух за ігрові хвилини. Під час ривка персонаж рухається вперед, навіть без керування. */
@@ -124,7 +127,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   }
   // Кіт під ногами сповільнює й може змусити спіткнутися (§9.12).
   const rubbing = rubbingCat(state);
-  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
+  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
   const from = { x: body.x, y: body.y };
   slide(body, dir.x * speed * minutes, dir.y * speed * minutes);
   const rng = stateRng(state, "behavior");

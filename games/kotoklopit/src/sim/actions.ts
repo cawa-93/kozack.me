@@ -6,6 +6,7 @@ import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
 import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
+import { takeHumanMeds } from "./illness";
 import { observe } from "./knowledge";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -197,6 +198,10 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) return refuse(state, target.id, "hands-full");
       return null;
     case "sink":
+      // Ліки для себе — біля умивальника (§6.5).
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, "empty");
+      return null;
     case "sofa":
       return null;
   }

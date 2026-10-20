@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, Item, Medicine, Mess, NightReport, Quality, TraitLevel } from "./types";
+import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Quality, TraitLevel } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -24,6 +24,9 @@ export type GameEvent =
   | { type: "patience"; level: PatienceLevel }
   | { type: "standup-started" }
   | { type: "standup"; attended: boolean; reputation: number }
+  | { type: "person-ill"; illness: IllnessId }
+  | { type: "person-cured"; illness: IllnessId }
+  | { type: "person-meds"; quality: Quality }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   | { type: "doorbell"; delivery: Delivery }

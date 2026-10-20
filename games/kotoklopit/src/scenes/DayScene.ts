@@ -8,7 +8,8 @@ import { discard, order, orderThing, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type Refusal } from "../sim/events";
 import { advance, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
-import { adopt, buyAtShop, buyFromBreeder, cafe, doctorVisit, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
+import { doctorExam, doctorTreat } from "../sim/illness";
+import { adopt, buyAtShop, buyFromBreeder, cafe, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
@@ -296,7 +297,11 @@ export class DayScene extends Phaser.Scene {
           again();
         },
         doctor: () => {
-          if (doctorVisit(state)) log.done.push("doctor");
+          if (doctorExam(state)) log.done.push("doctor");
+          again();
+        },
+        treatSelf: (illness, quality) => {
+          doctorTreat(state, illness, quality, rng);
           again();
         },
         adopt: (id) => {

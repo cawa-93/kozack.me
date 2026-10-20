@@ -66,7 +66,7 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   y,
   w,
   h,
-  interactive: kind !== "sink" && kind !== "sofa",
+  interactive: kind !== "sofa",
 });
 
 export const OBJECTS: readonly HomeObject[] = [

@@ -8,7 +8,6 @@ import {
   CAFE,
   DIFFICULTY,
   DISEASES,
-  DOCTOR,
   GROOMER,
   MINUTES_PER_HOUR,
   POSITIONS,
@@ -127,13 +126,6 @@ export function vetSterilize(state: GameState): boolean {
 }
 
 // --- Лікар, грумер, котокафе, офіс ----------------------------------------------------------
-
-/** Огляд у лікаря (§8.5): здоров'я персонажа +20. Хвороби персонажа додасть крок 13. */
-export function doctorVisit(state: GameState): boolean {
-  if (state.trip?.destination !== "doctor" || !spend(state, DOCTOR.exam)) return false;
-  changeStat(state, "health", DOCTOR.health);
-  return true;
-}
 
 /** Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. */
 export function groom(state: GameState, quality: Quality): boolean {

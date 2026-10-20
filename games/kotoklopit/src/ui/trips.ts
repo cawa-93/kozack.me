@@ -1,15 +1,15 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, GROOMER, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
+import { DISEASES, DOCTOR_TREAT, GROOMER, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
 import { breederCatPrice, breederCats, GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { freeSlots } from "../sim/economy";
 import { visibility } from "../sim/knowledge";
 import { traitName } from "../sim/traits";
 import { tripBlocker } from "../sim/trips";
-import type { AccidentLoss, Destination, DiseaseId, GameState, Quality } from "../sim/types";
+import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { diseaseTitle, fill } from "../texts";
+import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
 import { element, type Card } from "./overlay";
 import { breedText, plural } from "./cards";
 
@@ -76,6 +76,7 @@ export interface VisitHandlers {
   exam: () => void;
   treat: (disease: DiseaseId, quality: Quality) => void;
   doctor: () => void;
+  treatSelf: (illness: IllnessId, quality: Quality) => void;
   adopt: (cat: number) => void;
   sterilize: () => void;
   giveAway: () => void;
@@ -167,10 +168,28 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (known.length > 0) body.push(list);
       break;
     }
-    case "doctor":
-      body.push(log.done.includes("doctor") ? "Лікар оглянув вас і дав кілька порад. Стало краще." : "Огляд у лікаря трохи поправить здоров'я.");
-      if (!log.done.includes("doctor")) body.push(row("Огляд", "1 година", button(`Оглянути — 40`, 40, h.doctor)));
+    case "doctor": {
+      if (!log.done.includes("doctor")) {
+        body.push("Лікар огляне вас і, якщо треба, призначить лікування й лікарняний.");
+        body.push(row("Огляд", "1 година", button(`Оглянути — 40`, 40, h.doctor)));
+        break;
+      }
+      const ill = state.character.illnesses;
+      if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного. Кілька порад — і стало краще.");
+      const list = element("div", "shop");
+      for (const i of ill) {
+        list.append(
+          row(
+            ILLNESS_TITLES[i.id],
+            "минає одразу; лікарняний з завтра",
+            button(`Дешеве — ${DOCTOR_TREAT.cheap}`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
+            button(`Дороге — ${DOCTOR_TREAT.premium}`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
+          ),
+        );
+      }
+      if (ill.length > 0) body.push("Лікар знайшов:", list);
       break;
+    }
     case "shelter": {
       body.push(`Кіт із притулку — ${SHELTER.price}. Вибір тижня:`);
       const list = element("div", "shop");
@@ -235,6 +254,7 @@ const GOODS_TITLES: Record<string, string> = {
   litter: "Наповнювач",
   pills: "Таблетки для котів",
   drops: "Краплі для котів",
+  humanMeds: "Ліки для себе",
   "thing:bowl": "Миска для корму",
   "thing:water": "Миска для води",
   "thing:litter": "Лоток",

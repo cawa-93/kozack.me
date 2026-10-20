@@ -2,7 +2,7 @@
 
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
-import type { AlbumEntry, FarewellCause, GameEnd, GameState, Sex, UtilitiesReport } from "./sim/types";
+import type { AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Sex, UtilitiesReport } from "./sim/types";
 
 /** Підставити значення й обрати форми за статтю того, про кого йдеться. */
 export function fill(template: string, sex: Sex, values: Record<string, string | number> = {}): string {
@@ -202,3 +202,6 @@ export const DISEASE_TITLES: Record<string, string> = {
 };
 
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
+
+/** Хвороби персонажа (§6.5). */
+export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };

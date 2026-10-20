@@ -8,7 +8,7 @@ export type Difficulty = "easy" | "normal" | "hard";
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
 /** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -119,6 +119,23 @@ export interface Character {
   activity: Activity | null;
   /** «Пригніченість» (§6.2): без котів здоровий глузд між 10 і 30. */
   depressed: boolean;
+  /** Хвороби персонажа (§6.5). */
+  illnesses: Illness[];
+  /** Скільки ночей поспіль персонаж недоспав, і скільки — добре виспався (§6.5). */
+  shortNights: number;
+  restedNights: number;
+}
+
+/** Хвороби персонажа (§6.5). */
+export type IllnessId = "cold" | "injury" | "exhaustion";
+
+export interface Illness {
+  id: IllnessId;
+  day: number;
+  /** Дні з ліками, що подіяли. */
+  doses: number;
+  /** Останній день, коли персонаж пив ліки. */
+  lastDose: number;
 }
 
 /** Робота (§8.6). Репутація й терпіння — шкали 0–100. */

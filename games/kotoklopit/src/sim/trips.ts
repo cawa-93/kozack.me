@@ -5,6 +5,7 @@ import { changeMood, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
 import { emit } from "./events";
+import { fallIllPerson } from "./illness";
 import { observe } from "./knowledge";
 import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
@@ -105,7 +106,10 @@ function crash(state: GameState, rng: Rng): void {
   while (losses.length > ACCIDENT.max[state.difficulty]) losses.splice(rng.int(0, losses.length - 1), 1);
   for (const loss of losses) {
     if (loss === "repair") spend(state, Math.min(ACCIDENT.repair, state.character.money));
-    if (loss === "health") changeStat(state, "health", ACCIDENT.health, ACCIDENT.floor);
+    if (loss === "health") {
+      changeStat(state, "health", ACCIDENT.health, ACCIDENT.floor);
+      fallIllPerson(state, "injury");
+    }
     if (loss === "sanity") changeStat(state, "sanity", ACCIDENT.sanity, ACCIDENT.floor);
     if (loss === "cat") {
       const cat = state.cats.find((c) => c.id === trip.cat);

@@ -19,6 +19,7 @@ describe("стартові запаси (§6.4)", () => {
       litter: { cheap: 0, premium: 0 },
       pills: { cheap: 0, premium: 0 },
       drops: { cheap: 0, premium: 0 },
+      humanMeds: { cheap: 0, premium: 0 },
     });
   });
 });
