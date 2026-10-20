@@ -32,7 +32,10 @@ export const catTargetId = (cat: Cat): string => `cat:${cat.id}`;
 function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
   for (const object of OBJECTS) if (object.interactive) targets.push({ type: "object", id: object.id, object });
-  for (const item of state.home.items) targets.push({ type: "item", id: itemTargetId(item), item });
+  // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
+  for (const item of state.home.items) {
+    if (item.kind !== "house" && item.kind !== "scratcher") targets.push({ type: "item", id: itemTargetId(item), item });
+  }
   // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
   if (state.character.held === null) {
     for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });

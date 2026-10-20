@@ -17,6 +17,7 @@ import {
   DIFFICULTY,
   ESCAPE,
   HAIRBALL,
+  HOUSE_SLEEP,
   HUNGRY_THEFT,
   KITTEN_PLAY,
   LITTER_CAPACITY,
@@ -35,6 +36,8 @@ import {
   PLAY_RELIEF,
   PORTION_HUNGER,
   SCATTER_CHANCE,
+  SCRATCH,
+  SOFA_REPAIR,
   SLEEP_END,
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
@@ -215,29 +218,44 @@ function weightedPick<T>(rng: Rng, options: readonly { weight: number; value: T 
   return options[options.length - 1]?.value ?? null;
 }
 
-/** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будь-де на підлозі. */
-function sleepSpot(state: GameState, cat: Cat, rng: Rng): Vec {
+/** Місце для сну чи схованки; target — будиночок, якщо кіт обрав його. */
+interface Spot {
+  at: Vec;
+  target: string | null;
+}
+
+const houseSpots = (state: GameState): { weight: number; value: Spot }[] =>
+  itemsOf(state, "house").map((h) => ({ weight: HOUSE_SLEEP[h.quality], value: { at: itemTile(h), target: `item:${h.id}` } }));
+
+/** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, будь-де на підлозі. */
+function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const bed = objectById("bed");
   const sofa = objectById("sofa");
-  const options: { weight: number; value: Vec }[] = [
-    { weight: 3, value: { x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) } },
-    { weight: 3, value: { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y } },
-    { weight: 1, value: randomFloor(rng) },
+  const at = (p: Vec): Spot => ({ at: p, target: null });
+  const options: { weight: number; value: Spot }[] = [
+    { weight: 3, value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
+    { weight: 3, value: at({ x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y }) },
+    { weight: 1, value: at(randomFloor(rng)) },
+    ...houseSpots(state),
   ];
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: sun });
+  if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
   if (!isWorking(state) && !catOnComputer(state)) {
     const computer = objectById("computer");
     const weight = COMPUTER_SLEEP.base + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
-    options.push({ weight, value: { x: computer.x + rng.int(0, computer.w - 1), y: computer.y } });
+    options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
-  return weightedPick(rng, options) ?? randomFloor(rng);
+  return weightedPick(rng, options) ?? at(randomFloor(rng));
 }
 
-/** Сховатися під ліжком чи диваном (§9.6). */
-function hideSpot(rng: Rng): Vec {
-  const spot = objectById(rng.chance(0.5) ? "bed" : "sofa");
-  return { x: spot.x + rng.int(0, spot.w - 1), y: spot.y + rng.int(0, spot.h - 1) };
+/** Сховатися під ліжком, диваном чи в будиночку (§9.6). */
+function hideSpot(state: GameState, rng: Rng): Spot {
+  const options: { weight: number; value: Spot }[] = houseSpots(state);
+  for (const id of ["bed", "sofa"]) {
+    const o = objectById(id);
+    options.push({ weight: 2, value: { at: { x: o.x + rng.int(0, o.w - 1), y: o.y + rng.int(0, o.h - 1) }, target: null } });
+  }
+  return weightedPick(rng, options) ?? { at: randomFloor(rng), target: null };
 }
 
 // --- Рішення --------------------------------------------------------------------------------
@@ -277,10 +295,13 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
-    const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(rng) : sleepSpot(state, cat, rng);
-    return start(cat, "sleep", spot, 8 * MINUTES_PER_HOUR);
+    const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(state, rng) : sleepSpot(state, cat, rng);
+    return start(cat, "sleep", spot.at, 8 * MINUTES_PER_HOUR, spot.target);
   }
-  if (isAdapting(state, cat)) return start(cat, "hide", hideSpot(rng), CAT_ACT_MINUTES.hide);
+  if (isAdapting(state, cat)) {
+    const spot = hideSpot(state, rng);
+    return start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+  }
   if (context.present && n.attention >= NEED_THRESHOLD.attention) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
   if (rng.chance(0.4)) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
@@ -314,7 +335,18 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   }
   const toy = nearest(cat, itemsOf(state, "toy"));
   if (toy) options.push({ weight: MISCHIEF.toy, value: () => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`) });
+  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep), value: () => startScratch(state, cat, rng) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
+}
+
+/** Точити кігті (§9.12): на кігтеточці, якщо вона є й кіт її обрав, інакше — на дивані. */
+function startScratch(state: GameState, cat: Cat, rng: Rng): void {
+  const level = traitLevel(cat, "scratching");
+  const posts = itemsOf(state, "scratcher").filter((p) => rng.chance(clamp(SCRATCH[p.quality] - SCRATCH.traitStep * level, 0, 1)));
+  const post = nearest(cat, posts);
+  if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
+  const sofa = objectById("sofa");
+  start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }
 
 /**
@@ -438,9 +470,21 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(cat, rng);
       return;
     }
-    case "sleep":
+    case "sleep": {
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
+      const house = itemById(state, act.target);
+      if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) itemMood(state, cat, house);
       return;
+    }
+    case "scratch": {
+      cat.needs.play = Math.max(0, cat.needs.play - SCRATCH.relief);
+      changeMood(state, cat, SCRATCH.mood);
+      const post = itemById(state, act.target);
+      if (post) itemMood(state, cat, post);
+      else state.home.repairs += SOFA_REPAIR;
+      emit(state, { type: "scratched", cat: cat.id, sofa: post === null });
+      return;
+    }
     case "wander":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
       return;

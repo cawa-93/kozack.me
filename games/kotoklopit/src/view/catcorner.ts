@@ -68,6 +68,27 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
       if (isDirty(item)) g.lineStyle(2, 0x7a8a3a, 0.8).lineBetween(x - 8, y - h / 2 - 2, x - 5, y - h / 2 - 12).lineBetween(x + 4, y - h / 2 - 2, x + 7, y - h / 2 - 12);
       return;
     }
+    case "house": {
+      // Будиночок: коробка з дахом і круглим входом; дорогий — м'який і яскравіший.
+      const w = TILE_W * 0.7;
+      const h = TILE_H * 0.55;
+      const wall = item.quality === "premium" ? 0xc77d9a : 0xb59a72;
+      g.fillStyle(wall).fillRect(x - w / 2, y - h, w, h);
+      g.fillStyle(item.quality === "premium" ? 0x8e4a6a : 0x8a6e48).fillTriangle(x - w / 2 - 4, y - h, x + w / 2 + 4, y - h, x, y - h - 18);
+      g.fillStyle(0x2b2530).fillEllipse(x, y - h * 0.38, w * 0.42, h * 0.62);
+      g.lineStyle(2, COLORS.ink).strokeRect(x - w / 2, y - h, w, h).strokeTriangle(x - w / 2 - 4, y - h, x + w / 2 + 4, y - h, x, y - h - 18);
+      return;
+    }
+    case "scratcher": {
+      // Кігтеточка: стовпчик, обмотаний мотузкою, на підставці.
+      g.fillStyle(0x8b6a4a).fillEllipse(x, y, 30, 12);
+      g.fillStyle(item.quality === "premium" ? 0xe0c48a : 0xc8b08a).fillRect(x - 6, y - 40, 12, 40);
+      g.lineStyle(1.5, 0x8a7350);
+      for (let i = 1; i < 8; i++) g.lineBetween(x - 6, y - 40 + i * 5, x + 6, y - 38 + i * 5);
+      if (item.quality === "premium") g.fillStyle(0xd9455f).fillEllipse(x, y - 44, 20, 8);
+      g.lineStyle(2, COLORS.ink).strokeRect(x - 6, y - 40, 12, 40).strokeEllipse(x, y, 30, 12);
+      return;
+    }
   }
 }
 

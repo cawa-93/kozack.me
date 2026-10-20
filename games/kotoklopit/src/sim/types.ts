@@ -128,14 +128,13 @@ export interface Job {
   standupMinutes: number;
 }
 
-/** Пакунок доставки (§6.4): одне замовлення — один пакунок. */
-export interface Delivery {
+/** Пакунок доставки (§6.4): одне замовлення — один пакунок із запасами чи річчю для котів. */
+export type Delivery = {
   id: number;
-  product: Product;
   quality: Quality;
   /** Коли прибуде: хвилина від початку гри. */
   at: number;
-}
+} & ({ product: Product } | { thing: ThingKind });
 
 /** Миска для корму (§9.12). */
 export interface BowlItem {
@@ -181,8 +180,26 @@ export interface ToyItem {
   uses: number;
 }
 
-/** Речі для котів (§9.12): миски й лотки — на своїх місцях, іграшки — будь-де на підлозі. */
-export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem;
+/** Будиночок для сну й схованки (§9.12). */
+export interface HouseItem {
+  id: number;
+  kind: "house";
+  quality: Quality;
+  slot: string;
+}
+
+/** Кігтеточка (§9.12). */
+export interface ScratcherItem {
+  id: number;
+  kind: "scratcher";
+  quality: Quality;
+  slot: string;
+}
+
+/** Речі для котів (§9.12): миски, лотки, будиночки й кігтеточки — на своїх місцях, іграшки — будь-де на підлозі. */
+export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
+/** Річ для котів, яку можна купити (§6.4). */
+export type ThingKind = HomeItem["kind"];
 
 /** Котячий безлад на підлозі (§9.12). */
 export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken";
@@ -214,6 +231,8 @@ export interface Home {
   porch: Delivery[];
   /** Неоплачений тиждень комунальних — попередження (§6.4); 0, якщо боргу немає. */
   utilitiesDebt: number;
+  /** Ремонт меблів (подертий диван) до найближчого платежу комунальних (§6.4). */
+  repairs: number;
 }
 
 /** Звідки кіт (§4.2): притулок, примусове кошеня, народився вдома, розплідник, знайда. */
@@ -285,7 +304,8 @@ export type CatActKind =
   | "steal"
   | "toy"
   | "keyboard"
-  | "lap";
+  | "lap"
+  | "scratch";
 
 export interface CatAct {
   kind: CatActKind;

@@ -4,17 +4,17 @@ import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { order, supplyCount } from "../sim/economy";
+import { discard, order, orderThing, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type Refusal } from "../sim/events";
 import { advance, interact, newGame, replayDay, replayWeek } from "../sim/game";
 import { objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
-import type { Difficulty, GameState, Product, Quality, Sex } from "../sim/types";
+import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { difficultyCard, endCard, morningCard, newGameCard, phoneCard } from "../ui/cards";
+import { difficultyCard, endCard, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
 import { Overlay } from "../ui/overlay";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
@@ -530,18 +530,26 @@ export class DayScene extends Phaser.Scene {
 
   private openPhone(): void {
     if (this.blocked()) return;
-    const show = (): void =>
+    const show = (tab: PhoneTab): void =>
       this.overlay.show(
-        phoneCard(
-          this.state,
-          (product: Product, quality: Quality) => {
+        phoneCard(this.state, tab, {
+          order: (product: Product, quality: Quality) => {
             order(this.state, product, quality);
-            show();
+            show(tab);
           },
-          () => this.overlay.close(),
-        ),
+          orderThing: (thing: ThingKind, quality: Quality) => {
+            orderThing(this.state, thing, quality);
+            show(tab);
+          },
+          discard: (item: HomeItem) => {
+            discard(this.state, item.id);
+            show(tab);
+          },
+          tab: show,
+          close: () => this.overlay.close(),
+        }),
       );
-    show();
+    show("supplies");
   }
 }
 

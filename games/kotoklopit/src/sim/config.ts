@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Chronotype, Difficulty, MessKind, Product, Quality, StatName } from "./types";
+import type { CatNeed, Chronotype, Difficulty, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -145,8 +145,21 @@ export const DELIVERY_PRICE = 1.1;
 export const DELIVERY_HOURS = 6;
 /** Якщо персонаж спатиме, коли прибуде пакунок, його привезуть о 09:00 наступного дня. */
 export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
-/** Комунальні за тиждень: базова сума (без внеску речей). */
-export const UTILITIES_BASE = 40;
+/** Комунальні за тиждень: базова сума без внеску речей; стартовий куток додає 6 (§6.4). */
+export const UTILITIES_BASE = 34;
+/** Речі для котів (§6.4): ціна в магазині й внесок у комунальні за тиждень. */
+export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utilities: number }> = {
+  bowl: { price: { cheap: 10, premium: 25 }, utilities: 1 },
+  water: { price: { cheap: 10, premium: 25 }, utilities: 1 },
+  litter: { price: { cheap: 25, premium: 60 }, utilities: 4 },
+  toy: { price: { cheap: 10, premium: 30 }, utilities: 0 },
+  house: { price: { cheap: 60, premium: 150 }, utilities: 6 },
+  scratcher: { price: { cheap: 60, premium: 150 }, utilities: 6 },
+};
+/** Подертий диван: ремонт до найближчого платежу (§6.4). */
+export const SOFA_REPAIR = 3;
+/** Куди лягає привезена іграшка: на підлогу біля дверей. */
+export const DELIVERED_TOY_AT = { x: 9.5, y: 9.3 } as const;
 
 // Робота (§8.6).
 export const WORK_START_MINUTE = 9 * MINUTES_PER_HOUR;
@@ -370,7 +383,11 @@ export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, n
 /** Гра з персонажем: за хвилину. Нижче `bored` потреби гри кіт іде. */
 export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
-export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, traitStep: 0.5 } as const;
+export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
+/** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
+export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1 } as const;
+/** Вага будиночка як місця для сну (§9.12). */
+export const HOUSE_SLEEP: Record<Quality, number> = { cheap: 2, premium: 4 };
 /** Зумі: утричі швидше 1–2 хвилини; після лотка — шанс 30%. Збиває персонажа на шляху. */
 export const ZOOMIES = { speed: 3, minMinutes: 1, maxMinutes: 2, afterToilet: 0.3, hit: 0.5 } as const;
 /** Скільки гри знімає забава наодинці. */

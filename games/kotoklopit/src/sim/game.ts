@@ -15,7 +15,7 @@ import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
 import { newJob, tickWork } from "./work";
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 const EPSILON = 1e-6;
 

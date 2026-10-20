@@ -1,9 +1,9 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { DIFFICULTY, PRODUCTS } from "../sim/config";
-import { deliveryPrice, supplyCount } from "../sim/economy";
+import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
+import { deliveryPrice, freeSlots, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Difficulty, GameEnd, GameState, NightReport, Product, Quality, Sex } from "../sim/types";
+import type { Difficulty, GameEnd, GameState, HomeItem, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -103,9 +103,86 @@ export function plural(n: number, one: string, few: string, many: string): strin
   return many;
 }
 
-/** Телефон персонажа: доставка (§6.4). */
-export function phoneCard(state: GameState, onOrder: (product: Product, quality: Quality) => void, onClose: () => void): Card {
+const THING_TITLES: Record<ThingKind, string> = {
+  bowl: "Миска для корму",
+  water: "Миска для води",
+  litter: "Лоток",
+  toy: "Іграшка-вудочка",
+  house: "Будиночок",
+  scratcher: "Кігтеточка",
+};
+
+export type PhoneTab = "supplies" | "things" | "mine";
+
+export interface PhoneHandlers {
+  order: (product: Product, quality: Quality) => void;
+  orderThing: (thing: ThingKind, quality: Quality) => void;
+  discard: (item: HomeItem) => void;
+  tab: (tab: PhoneTab) => void;
+  close: () => void;
+}
+
+const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі" };
+
+/** Телефон персонажа (§6.4): доставка запасів і речей для котів, викинути річ. */
+export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
   const money = Math.floor(state.character.money);
+  const waiting = state.home.deliveries.length;
+  const body: (string | HTMLElement)[] = [];
+  if (tab === "supplies") body.push(`Гроші: ${money}. Доставка коштує на 10% дорожче, ніж у магазині, і привозить пакунок приблизно за 6 годин. Пакунок чекатиме під дверима.`, suppliesShop(state, money, handlers));
+  if (tab === "things") body.push(`Гроші: ${money}. Нова річ стане на вільне місце, а кожна, крім іграшок, трохи збільшує комунальні.`, thingsShop(state, money, handlers));
+  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
+  if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
+  return {
+    kicker: "Телефон",
+    title: PHONE_TABS[tab],
+    body,
+    actions: [
+      ...(Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => t !== tab).map((t) => ({ label: PHONE_TABS[t], onSelect: () => handlers.tab(t) })),
+      { label: "Закрити", primary: true, onSelect: handlers.close },
+    ],
+    onDismiss: handlers.close,
+  };
+}
+
+function thingsShop(state: GameState, money: number, handlers: PhoneHandlers): HTMLElement {
+  const shop = element("div", "shop");
+  for (const thing of Object.keys(THINGS) as ThingKind[]) {
+    const row = element("div", "shop-row");
+    const have = state.home.items.filter((i) => i.kind === thing).length;
+    const free = freeSlots(state, thing);
+    const name = element("span", "shop-name", THING_TITLES[thing]);
+    const stock = thing === "toy" ? `Є: ${have}` : `Є: ${have} · вільних місць: ${Math.max(0, free)}`;
+    name.append(element("span", "shop-stock", `${stock} · комунальні +${THINGS[thing].utilities}`));
+    row.append(name);
+    for (const quality of ["cheap", "premium"] as const) {
+      const price = thingDeliveryPrice(thing, quality);
+      const button = element("button", "button", `${quality === "cheap" ? "Дешева" : "Дорога"} — ${price}`);
+      button.disabled = price > money || free <= 0 || state.end !== null;
+      button.addEventListener("click", () => handlers.orderThing(thing, quality));
+      row.append(button);
+    }
+    shop.append(row);
+  }
+  return shop;
+}
+
+function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
+  const shop = element("div", "shop");
+  for (const item of state.home.items) {
+    const row = element("div", "shop-row");
+    const name = element("span", "shop-name", THING_TITLES[item.kind]);
+    name.append(element("span", "shop-stock", `${item.quality === "cheap" ? "дешева" : "дорога"} · комунальні +${THINGS[item.kind].utilities}`));
+    row.append(name);
+    const button = element("button", "button", "Викинути");
+    button.addEventListener("click", () => handlers.discard(item));
+    row.append(button);
+    shop.append(row);
+  }
+  return shop;
+}
+
+function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers): HTMLElement {
   const shop = element("div", "shop");
   for (const product of Object.keys(PRODUCTS) as Product[]) {
     const titles = PRODUCT_TITLES[product];
@@ -120,24 +197,12 @@ export function phoneCard(state: GameState, onOrder: (product: Product, quality:
       const size = pack ? "" : ` (${titles.unit(units[quality])})`;
       const button = element("button", "button", `${QUALITY_TITLES[quality]}${size} — ${price}`);
       button.disabled = price > money || state.end !== null;
-      button.addEventListener("click", () => onOrder(product, quality));
+      button.addEventListener("click", () => handlers.order(product, quality));
       row.append(button);
     }
     shop.append(row);
   }
-  const waiting = state.home.deliveries.length;
-  const body: (string | HTMLElement)[] = [
-    `Гроші: ${money}. Доставка коштує на 10% дорожче, ніж у магазині, і привозить пакунок приблизно за 6 годин. Пакунок чекатиме під дверима.`,
-    shop,
-  ];
-  if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
-  return {
-    kicker: "Телефон",
-    title: "Доставка",
-    body,
-    actions: [{ label: "Закрити", primary: true, onSelect: onClose }],
-    onDismiss: onClose,
-  };
+  return shop;
 }
 
 /** Нова гра: персонаж і складність (§5). Повний конструктор додасть крок 15 плану. */

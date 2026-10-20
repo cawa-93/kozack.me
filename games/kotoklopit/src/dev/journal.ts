@@ -2,7 +2,7 @@
 
 import { onEvent, type GameEvent } from "../sim/events";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
-import type { GameState, Item, Quality } from "../sim/types";
+import type { Delivery, GameState, Item, Quality } from "../sim/types";
 
 export interface JournalEntry {
   stamp: string;
@@ -22,6 +22,7 @@ const item = (i: Item): string => {
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
+const goods = (d: Delivery): string => ("product" in d ? d.product : d.thing);
 const catName = (state: GameState, id: number): string => state.cats.find((c) => c.id === id)?.name ?? `кіт ${id}`;
 
 export function stampOf(state: GameState): string {
@@ -72,9 +73,13 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "standup":
       return `Летучка: ${event.attended ? "присутність" : "пропуск"}, репутація ${signed(event.reputation, 2)}`;
     case "ordered":
-      return `Замовлено ${event.delivery.product} (${event.delivery.quality}): −${event.price}`;
+      return `Замовлено ${goods(event.delivery)} (${event.delivery.quality}): −${event.price}`;
     case "doorbell":
-      return `Кур'єр під дверима: ${event.delivery.product} (${event.delivery.quality})`;
+      return `Кур'єр під дверима: ${goods(event.delivery)} (${event.delivery.quality})`;
+    case "discarded":
+      return `Викинуто: ${event.item.kind} (${event.item.quality})`;
+    case "scratched":
+      return `${catName(state, event.cat)} точить кігті: ${event.sofa ? "диван, ремонт до комунальних" : "кігтеточка"}`;
     case "received":
       return `Забрано пакунків: ${event.deliveries.length}`;
     case "dash":

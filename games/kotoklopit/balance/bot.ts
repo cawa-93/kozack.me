@@ -191,7 +191,7 @@ export class Bot {
     const s = this.state;
     const cats = s.cats.length;
     const coming = (product: Product): number =>
-      [...s.home.deliveries, ...s.home.porch].filter((d) => d.product === product).reduce((sum, d) => sum + PRODUCTS[product].units[d.quality], 0);
+      [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === product).reduce((sum, d) => sum + PRODUCTS[product].units[d.quality], 0);
     const need = (product: Product, below: number): void => {
       if (supplyCount(s, product) + coming(product) < below) order(s, product, "cheap");
     };

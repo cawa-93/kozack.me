@@ -219,6 +219,9 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       state.home.items.splice(state.home.items.indexOf(item), 1);
       state.character.held = { kind: "toy", toy: item };
       return null;
+    case "house":
+    case "scratcher":
+      return refuse(state, id, "nothing");
   }
 }
 

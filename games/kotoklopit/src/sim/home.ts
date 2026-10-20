@@ -113,6 +113,18 @@ export const SLOTS: readonly Slot[] = [
   { id: "litter-2", kind: "litter", x: 9, y: 3 },
   { id: "litter-3", kind: "litter", x: 11, y: 3 },
   { id: "litter-4", kind: "litter", x: 11, y: 2 },
+  // Купівельні місця (§6.4): ще миски й лотки, будиночки й кігтеточки у вітальні.
+  { id: "bowl-5", kind: "bowl", x: 18, y: 7 },
+  { id: "bowl-6", kind: "bowl", x: 18, y: 8 },
+  { id: "water-3", kind: "water", x: 9, y: 6 },
+  { id: "litter-5", kind: "litter", x: 1, y: 6 },
+  { id: "litter-6", kind: "litter", x: 2, y: 6 },
+  { id: "house-1", kind: "house", x: 1, y: 9 },
+  { id: "house-2", kind: "house", x: 18, y: 9 },
+  { id: "house-3", kind: "house", x: 5, y: 9 },
+  { id: "scratcher-1", kind: "scratcher", x: 4, y: 6 },
+  { id: "scratcher-2", kind: "scratcher", x: 12, y: 6 },
+  { id: "scratcher-3", kind: "scratcher", x: 11, y: 9 },
 ];
 
 const SLOT_BY_ID = new Map(SLOTS.map((s) => [s.id, s]));
