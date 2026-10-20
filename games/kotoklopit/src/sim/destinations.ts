@@ -47,10 +47,10 @@ export function tripCat(state: GameState): Cat | null {
 
 /** Модифікатор ціни товару на цю поїздку (§6.4): випадає окремо для кожного товару. */
 export function shopModifier(state: GameState, goods: Goods): number {
-  const window = SHOP_WINDOW[state.difficulty];
+  const range = SHOP_WINDOW[state.difficulty];
   const index = GOODS.findIndex((g) => goodsKey(g) === goodsKey(goods));
   const rng = createRng(deriveSeed(state.trip?.seed ?? state.seed, index + 1));
-  return window.min + rng.next() * (window.max - window.min);
+  return range.min + rng.next() * (range.max - range.min);
 }
 
 export function shopPrice(state: GameState, goods: Goods, quality: Quality): number {
