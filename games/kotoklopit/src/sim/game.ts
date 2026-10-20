@@ -15,7 +15,7 @@ import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { tickHousehold } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
-import type { Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
+import type { Chronotype, Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { powerOut, tickModifiers } from "./modifiers";
 
@@ -36,6 +36,8 @@ export interface NewGameOptions {
   difficulty: Difficulty;
   name?: string;
   look?: Look;
+  /** Хронотип обирає гравець (§5.1); без нього — як було: жінка — жайворонок, чоловік — сова. */
+  chronotype?: Chronotype;
   seed?: number;
 }
 
@@ -54,8 +56,8 @@ export function newGame(options: NewGameOptions): Save {
       name: options.name?.trim() || DEFAULT_NAME[sex],
       look: options.look ?? DEFAULT_LOOK[sex],
       sex,
-      // Хронотип за статтю (§5.1); режим розробки може змінити його окремо (§11.5).
-      chronotype: sex === "female" ? "lark" : "owl",
+      // Хронотип обирає гравець (§5.1); режим розробки може змінити його окремо (§11.5).
+      chronotype: options.chronotype ?? (sex === "female" ? "lark" : "owl"),
       stats: { ...START_STATS },
       money: START_MONEY,
       sleepSpeed: 0,

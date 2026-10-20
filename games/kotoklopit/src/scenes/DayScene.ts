@@ -18,10 +18,10 @@ import { isPresent, objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
-import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, characterCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, lookCard, morningCard, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
@@ -857,22 +857,25 @@ export class DayScene extends Phaser.Scene {
     });
   }
 
-  /** Нова гра (§5): персонаж, конструктор зовнішності, складність. */
+  /** Нова гра (§5.1): стать, зовнішність, хронотип, ім'я, потім складність. Кожен крок — з «Назад». */
   private chooseNewGame(): void {
-    const pickSex = (): void =>
+    const names: Record<Sex, string> = { female: "Марта", male: "Тарас" };
+    const pickSex = (): void => this.overlay.show(sexCard(DEFAULT_LOOK, (sex) => pickLook(sex, DEFAULT_LOOK[sex])));
+    const pickLook = (sex: Sex, look: Look): void =>
+      this.overlay.show(lookCard(sex, look, (chosen) => pickChronotype(sex, chosen), pickSex));
+    const pickChronotype = (sex: Sex, look: Look): void =>
+      this.overlay.show(chronotypeCard((chronotype) => pickName(sex, look, chronotype), () => pickLook(sex, look)));
+    const pickName = (sex: Sex, look: Look, chronotype: Chronotype): void =>
       this.overlay.show(
-        newGameCard((sex: Sex) => {
-          const defaults = { name: sex === "female" ? "Марта" : "Тарас", look: DEFAULT_LOOK[sex] };
-          this.overlay.show(
-            characterCard(
-              sex,
-              defaults,
-              (name, look) =>
-                this.overlay.show(difficultyCard((difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look })))),
-              pickSex,
-            ),
-          );
-        }),
+        nameCard(
+          sex,
+          names[sex],
+          (name) => {
+            names[sex] = name;
+            this.overlay.show(difficultyCard((difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look, chronotype }))));
+          },
+          () => pickChronotype(sex, look),
+        ),
       );
     pickSex();
   }

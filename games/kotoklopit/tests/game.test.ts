@@ -38,9 +38,16 @@ describe("нова гра", () => {
     expect(save.weekStart).toEqual(state);
   });
 
-  it("хронотип за статтю: жінка — жайворонок, чоловік — сова (§5.1)", () => {
+  it("хронотип обирає гравець, незалежно від статі; без вибору — як раніше (§5.1)", () => {
     expect(game("female").current.character.chronotype).toBe("lark");
     expect(game("male").current.character.chronotype).toBe("owl");
+    const owl = newGame({ sex: "female", difficulty: "normal", chronotype: "owl", seed: 1 }).current;
+    expect(owl.character.chronotype).toBe("owl");
+    const lark = newGame({ sex: "male", difficulty: "normal", chronotype: "lark", seed: 1 }).current;
+    expect(lark.character.chronotype).toBe("lark");
+    // Жайворонок прокидається о 06:00, сова — о 08:00 (§8.8).
+    expect(lark.minute).toBe(6 * 60);
+    expect(owl.minute).toBe(8 * 60);
   });
 });
 

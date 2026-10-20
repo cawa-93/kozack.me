@@ -164,3 +164,97 @@
     grid-column: 1 / -1;
   }
 }
+
+/* Створення персонажа (§5.1): портрети статі, редактор зовнішності з повзунками, ім'я. */
+.portrait {
+  display: block;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, #fffaf2, #e6d8c5);
+}
+
+.portrait-choice {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 4px 0 12px;
+}
+
+.portrait-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 3px solid #1f1a24;
+  border-radius: 16px;
+  background: #fffaf2;
+  font: 700 17px/1.2 system-ui, sans-serif;
+  color: #2b2530;
+  cursor: pointer;
+}
+
+.portrait-button:hover,
+.portrait-button:focus-visible {
+  background: #ffe9c4;
+}
+
+.look-editor {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.look-editor .portrait {
+  flex: none;
+  position: sticky;
+  top: 0;
+}
+
+.look-sliders {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2px 14px;
+}
+
+.look-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.look-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.look-label {
+  font-weight: 700;
+}
+
+.look-value {
+  color: #7a6a78;
+}
+
+.look-slider {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  accent-color: #2b2530;
+}
+
+.name-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 20px;
+  cursor: text;
+}
+
+@media (max-width: 420px) {
+  .look-editor {
+    flex-direction: column;
+    align-items: center;
+  }
+}

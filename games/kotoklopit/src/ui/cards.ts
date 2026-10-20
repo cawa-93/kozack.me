@@ -11,7 +11,7 @@ import { priceFactor } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Cat, CatSource, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -32,6 +32,7 @@ import {
   UTILITIES_MESSAGES,
 } from "../texts";
 import { element, type Card } from "./overlay";
+import { drawPortrait, portraitCanvas } from "./portrait";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -483,20 +484,22 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
   };
 }
 
-/** Нова гра: персонаж і складність (§5). Повний конструктор додасть крок 15 плану. */
-export function newGameCard(onPick: (sex: Sex) => void, onCancel?: () => void): Card {
-  const actions = [
-    { label: "Жінка — жайворонок", primary: true, onSelect: () => onPick("female") },
-    { label: "Чоловік — сова", onSelect: () => onPick("male") },
-  ];
+/** Створення персонажа (§5.1), крок 1: стать — натиснути на портрет. */
+export function sexCard(looks: Record<Sex, Look>, onPick: (sex: Sex) => void, onCancel?: () => void): Card {
+  const choice = element("div", "portrait-choice");
+  for (const sex of ["female", "male"] as const) {
+    const button = element("button", "portrait-button");
+    const canvas = portraitCanvas(110, 160);
+    drawPortrait(canvas, looks[sex], sex);
+    button.append(canvas, element("span", "portrait-label", sex === "female" ? "Жінка" : "Чоловік"));
+    button.addEventListener("click", () => onPick(sex));
+    choice.append(button);
+  }
   return {
-    kicker: "Нова гра",
+    kicker: "Нова гра · 1 з 4",
     title: "Хто ви?",
-    body: [
-      "Жайворонок прокидається о 06:00 і легше працює зранку. Сова прокидається о 08:00 і краще почувається ввечері.",
-      "У жінки є цикл, у чоловіка — трохи швидший обмін речовин і борода, за якою треба доглядати. Сили врівноважені.",
-    ],
-    actions: onCancel ? [...actions, { label: "Скасувати", onSelect: onCancel }] : actions,
+    body: [choice, "У жінки є цикл, у чоловіка — трохи швидший обмін речовин і борода, за якою треба доглядати. Сили врівноважені."],
+    actions: onCancel ? [{ label: "Скасувати", onSelect: onCancel }] : [],
     ...(onCancel ? { onDismiss: onCancel } : {}),
   };
 }
@@ -513,39 +516,79 @@ const LOOK_OPTIONS: { key: keyof Look; label: string; options: readonly string[]
   { key: "shoes", label: "Взуття", options: ["графітове", "біле", "червоне", "синє", "зелене", "жовте", "вишневе"] },
 ];
 
-/** Конструктор персонажа (§5.1): ім'я й зовнішність, суто косметична. */
-export function characterCard(sex: Sex, defaults: { name: string; look: Look }, onDone: (name: string, look: Look) => void, onBack: () => void): Card {
-  const look: Look = { ...defaults.look };
-  const form = element("div", "shop");
-  const name = element("input");
-  name.type = "text";
-  name.value = defaults.name;
-  name.maxLength = 20;
-  name.className = "button";
-  name.setAttribute("aria-label", "Ім'я");
-  const nameRow = element("label", "shop-row");
-  nameRow.append(element("span", "shop-name", "Ім'я"), name);
-  form.append(nameRow);
+/** Крок 2: зовнішність — портрет на весь зріст і повзунки; портрет змінюється одразу (§5.1). */
+export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, onBack: () => void): Card {
+  const look: Look = { ...start };
+  const editor = element("div", "look-editor");
+  const canvas = portraitCanvas(130, 220);
+  const redraw = (): void => drawPortrait(canvas, look, sex);
+  redraw();
+  const sliders = element("div", "look-sliders");
   for (const { key, label, options } of LOOK_OPTIONS) {
-    const row = element("label", "shop-row");
-    const select = element("select");
-    select.className = "button";
-    options.forEach((option, i) => {
-      const o = element("option", undefined, option);
-      o.value = String(i);
-      select.append(o);
+    const row = element("label", "look-row");
+    const value = element("span", "look-value", options[look[key]] ?? "");
+    const slider = element("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = String(options.length - 1);
+    slider.step = "1";
+    slider.value = String(look[key]);
+    slider.className = "look-slider";
+    slider.addEventListener("input", () => {
+      look[key] = Number(slider.value);
+      value.textContent = options[look[key]] ?? "";
+      redraw();
     });
-    select.value = String(look[key]);
-    select.addEventListener("change", () => (look[key] = Number(select.value)));
-    row.append(element("span", "shop-name", label), select);
-    form.append(row);
+    const head = element("span", "look-head");
+    head.append(element("span", "look-label", label), value);
+    row.append(head, slider);
+    sliders.append(row);
   }
+  editor.append(canvas, sliders);
   return {
-    kicker: "Нова гра",
+    kicker: "Нова гра · 2 з 4",
     title: sex === "female" ? "Яка вона?" : "Який він?",
-    body: ["Зовнішність ні на що не впливає — лише на те, як персонаж виглядає.", form],
+    body: [editor],
     actions: [
-      { label: "Далі", primary: true, onSelect: () => onDone(name.value, look) },
+      { label: "Далі", primary: true, onSelect: () => onDone(look) },
+      { label: "Назад", onSelect: onBack },
+    ],
+    onDismiss: onBack,
+  };
+}
+
+/** Крок 3: сова чи жайворонок (§5.1) — незалежно від статі. */
+export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
+  return {
+    kicker: "Нова гра · 3 з 4",
+    title: "Сова чи жайворонок?",
+    body: [
+      "Жайворонок прокидається о 06:00, легше працює й прибирає зранку, а ввечері втомлюється.",
+      "Сова прокидається о 08:00, ранок дається їй важче, зате по обіді й увечері — легше.",
+    ],
+    actions: [
+      { label: "Жайворонок", primary: true, onSelect: () => onPick("lark") },
+      { label: "Сова", onSelect: () => onPick("owl") },
+      { label: "Назад", onSelect: onBack },
+    ],
+    onDismiss: onBack,
+  };
+}
+
+/** Крок 4: ім'я героя. */
+export function nameCard(sex: Sex, start: string, onDone: (name: string) => void, onBack: () => void): Card {
+  const input = element("input");
+  input.type = "text";
+  input.value = start;
+  input.maxLength = 20;
+  input.className = "button name-input";
+  input.setAttribute("aria-label", "Ім'я");
+  return {
+    kicker: "Нова гра · 4 з 4",
+    title: sex === "female" ? "Як її звати?" : "Як його звати?",
+    body: [input],
+    actions: [
+      { label: "Далі", primary: true, onSelect: () => onDone(input.value) },
       { label: "Назад", onSelect: onBack },
     ],
     onDismiss: onBack,

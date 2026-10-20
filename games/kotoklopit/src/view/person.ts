@@ -7,17 +7,9 @@ import type { BeardLook } from "../sim/grooming";
 import { drawItem } from "./apartment";
 import { COLORS, depthOf, toScreen } from "./geometry";
 
-/** Палітри конструктора персонажа (§5.1): номери у `Look` — індекси тут. */
-export const PALETTE = {
-  skin: [0xf2d4b6, 0xe8c39e, 0xc99a6e, 0x9a6b45, 0x6b4630],
-  hairColor: [0x2f2420, 0x4a2f27, 0x8a5a33, 0xd9b45a, 0xb8462f, 0x9aa3ab],
-  eyes: [0x1f1a24, 0x4f7fb3, 0x5a8a3a, 0x7a5230],
-  clothes: [0xc0675a, 0x5a7fc0, 0x6fae6a, 0xe8b93a, 0x8e4a6a, 0x3a3440, 0xe9e6df],
-} as const;
-/** Зачіски: коротка, довга, хвостик, кучері. Обличчя: кругле, овальне, широке. Статура: струнка, звичайна, кремезна. */
-export const HAIR_STYLES = ["коротка", "довга", "хвостик", "кучері"] as const;
-export const FACES = ["кругле", "овальне", "широке"] as const;
-export const BUILDS = ["струнка", "звичайна", "кремезна"] as const;
+import { PALETTE } from "./palette";
+
+export { BUILDS, FACES, HAIR_STYLES, PALETTE } from "./palette";
 
 const pick = <T>(list: readonly T[], i: number): T => list[((i % list.length) + list.length) % list.length] as T;
 
