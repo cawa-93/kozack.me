@@ -27,7 +27,7 @@ const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
  */
 export function newHome(nextId: () => number): Home {
   const items: HomeItem[] = [
-    { id: nextId(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null },
+    { id: nextId(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null, sterile: false },
     { id: nextId(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
     { id: nextId(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
     // Дешева іграшка-вудочка у вітальні (§9.12).
@@ -125,7 +125,7 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
   if (!slot) return null;
   switch (thing) {
     case "bowl":
-      return { id, kind: "bowl", quality, slot, food: 0, foodQuality: null };
+      return { id, kind: "bowl", quality, slot, food: 0, foodQuality: null, sterile: false };
     case "water":
       return { id, kind: "water", quality, slot, water: WATER_CAPACITY };
     case "litter":

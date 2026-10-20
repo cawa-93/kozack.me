@@ -43,7 +43,7 @@ export const fatigueFactor = (cat: Cat): number => (hasDisease(cat, "cold") || h
 /** Множник відновлення сну: блохи заважають спати. */
 export const sleepFactor = (cat: Cat): number => (hasDisease(cat, "fleas") ? SYMPTOMS.fleasSleep : 1);
 export const hungerFactor = (cat: Cat): number => (hasDisease(cat, "worms") ? SYMPTOMS.wormsHunger : 1);
-export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") ? SYMPTOMS.cystitisToilet : 1);
+export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") || hasDisease(cat, "urolithiasis") ? SYMPTOMS.cystitisToilet : 1);
 /** Травма: кіт кульгає. */
 export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1);
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */

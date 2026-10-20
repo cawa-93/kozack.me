@@ -2,7 +2,9 @@
 
 import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
 import { deliveryPrice, freeSlots, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
+import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
+import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, Difficulty, GameEnd, GameState, HomeItem, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
@@ -16,6 +18,8 @@ import {
   farewellText,
   fill,
   FIRST_DAY_HINT,
+  BIRTH_BONUS,
+  BIRTH_MESSAGE,
   KITTEN_BONUS,
   KITTEN_MESSAGE,
   UTILITIES_MESSAGES,
@@ -43,11 +47,26 @@ export function morningCard(state: GameState, night: NightReport | null, onStart
   const body: (string | HTMLElement)[] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) body.push(note(modifier.title, modifier.situation, modifier.effect));
-  for (const id of night?.newCats ?? []) {
-    const cat = state.cats.find((c) => c.id === id);
-    if (!cat) continue;
+  const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
+  for (const cat of newCats.filter((c) => c.source !== "born")) {
     body.push(fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }));
     body.push(fill(KITTEN_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity }));
+  }
+  // Пологи (§9.8): одне повідомлення на кожну матір.
+  const born = newCats.filter((c) => c.source === "born");
+  for (const motherId of new Set(born.map((c) => c.parents.mother))) {
+    const kittens = born.filter((c) => c.parents.mother === motherId);
+    const mother = state.cats.find((c) => c.id === motherId);
+    const values = { кішка: mother?.name ?? "кішка", кількість: kittens.length, кошенята: kittens.map((c) => c.name).join(", ") };
+    // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
+    body.push(fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values));
+    body.push(fill(BIRTH_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity }));
+  }
+  for (const id of night?.givenCats ?? []) {
+    const entry = state.album.find((e) => e.id === id);
+    if (!entry) continue;
+    const text = farewellText(entry, diseaseTitle);
+    body.push(note(`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`));
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
@@ -99,6 +118,7 @@ const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => strin
   food: { name: "Продукти", unit: portions, place: "у холодильнику" },
   hygiene: { name: "Засоби гігієни", unit: (n) => `${n} ${plural(n, "душ", "душі", "душів")}`, place: "у ванній" },
   catFood: { name: "Котячий корм", unit: portions, place: "у шафці" },
+  sterileFood: { name: "Корм для стерилізованих", unit: portions, place: "у шафці" },
   litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у запасі" },
   pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "у шафці" },
   drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у шафці" },
@@ -131,6 +151,7 @@ export interface PhoneHandlers {
   order: (product: Product, quality: Quality) => void;
   orderThing: (thing: ThingKind, quality: Quality) => void;
   discard: (item: HomeItem) => void;
+  advertise: (cat: Cat) => void;
   tab: (tab: PhoneTab) => void;
   close: () => void;
 }
@@ -145,7 +166,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   if (tab === "supplies") body.push(`Гроші: ${money}. Доставка коштує на 10% дорожче, ніж у магазині, і привозить пакунок приблизно за 6 годин. Пакунок чекатиме під дверима.`, suppliesShop(state, money, handlers));
   if (tab === "things") body.push(`Гроші: ${money}. Нова річ стане на вільне місце, а кожна, крім іграшок, трохи збільшує комунальні.`, thingsShop(state, money, handlers));
   if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
-  if (tab === "cats") body.push(...catCards(state));
+  if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
   return {
@@ -162,11 +183,29 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
 
 const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
 
+/** Порода, як її знає персонаж (§9.11): «Мейнкун × ?», «невідома». */
+export function breedText(breed: readonly [string, string], known: readonly [boolean, boolean]): string {
+  const [a, b] = breed;
+  if (a === MIXED && b === MIXED) return known[0] || known[1] ? "безпородний" : "невідома";
+  if (a === b) return known[0] || known[1] ? `${breedById(a).name}, чистокровна` : "невідома";
+  const half = (id: string, k: boolean): string => (k ? (id === MIXED ? "безпородний" : breedById(id).name) : "?");
+  return known[0] || known[1] ? `${half(a, known[0])} × ${half(b, known[1])}` : "невідома";
+}
+
 /** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
-function catCards(state: GameState): (string | HTMLElement)[] {
+function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
-    const lines = [`${cat.name} — ${cat.sex === "male" ? "кіт" : "кішка"}, ${weeks(cat.ageWeeks)}`];
+    const lines = [`${cat.name} — ${cat.sex === "male" ? "кіт" : "кішка"}, ${weeks(cat.ageWeeks)}`, `Порода: ${breedText(cat.breed, cat.breedKnown)}.`];
+    const states: string[] = [];
+    if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
+    if (cat.pregnancy?.known) states.push("вагітна");
+    else if (showsPregnancy(state, cat)) states.push("здається, вагітна");
+    if (inHeat(state, cat)) states.push("у тічці");
+    if (isNursing(state, cat)) states.push("годує кошенят");
+    if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
+    if (state.ads.includes(cat.id)) states.push("завтра заберуть нові господарі");
+    if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
     const known = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
     if (known.length > 0) lines.push(`Ветеринар знайшов: ${known.join(", ")}.`);
     for (const trait of cat.traits) {
@@ -177,8 +216,15 @@ function catCards(state: GameState): (string | HTMLElement)[] {
         if (signs) lines.push(`Здається, ${cat.name} ${trait.level > 0 ? signs[0] : signs[1]}.`);
       } else if (seen === 1) lines.push("❓ Помічено щось дивне");
     }
-    if (lines.length === 1) lines.push("Характер поки загадка: придивляйтеся.");
-    return note(...lines);
+    if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер поки загадка: придивляйтеся.");
+    const card = note(...lines);
+    if (cat.ageWeeks >= 1 && !state.ads.includes(cat.id)) {
+      const ad = element("button", "button", "Дати оголошення «віддам у добрі руки»");
+      ad.style.marginTop = "8px";
+      ad.addEventListener("click", () => handlers.advertise(cat));
+      card.append(ad);
+    }
+    return card;
   });
 }
 

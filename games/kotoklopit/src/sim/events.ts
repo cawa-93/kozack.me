@@ -34,6 +34,10 @@ export type GameEvent =
   | { type: "trip-ended"; destination: Destination }
   | { type: "bought"; goods: string; quality: Quality }
   | { type: "vet-exam"; cat: number }
+  | { type: "sterilized"; cat: number }
+  | { type: "heat"; cat: number }
+  | { type: "pregnant"; cat: number }
+  | { type: "birth"; cat: number; kittens: number }
   | { type: "glitch"; chance: number; angle: number }
   // Коти (§9.3, §9.6, §9.12). Приховані зміни бачить лише журнал режиму розробки.
   | { type: "cat-mood"; cat: number; delta: number; reason: string }

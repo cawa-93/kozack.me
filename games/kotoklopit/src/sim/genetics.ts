@@ -104,3 +104,67 @@ export function coatOf(genes: Genes, shape: Pick<Shape, "coat">): Coat {
     eyes,
   };
 }
+
+// --- Порода й спадковість (§9.10, §9.11) ---------------------------------------------------
+
+/** Ген-пара: кожен батько дає один випадковий алель. */
+const inheritPair = <T>(rng: Rng, mother: readonly [T, T], father: readonly [T, T]): [T, T] => [
+  mother[rng.int(0, 1)] as T,
+  father[rng.int(0, 1)] as T,
+];
+
+/**
+ * Гени кошеняти (§9.10): по алелю від кожного батька; рудий зчеплений зі статтю — кіт отримує
+ * його лише від матері, кішка — від обох.
+ */
+export function inheritGenes(rng: Rng, sex: Sex, mother: Genes, father: Genes): Genes {
+  const fromMother = mother.orange[rng.int(0, mother.orange.length - 1)] ?? false;
+  const fromFather = father.orange[0] ?? false;
+  return {
+    orange: sex === "female" ? [fromMother, fromFather] : [fromMother],
+    black: inheritPair(rng, mother.black, father.black),
+    dense: inheritPair(rng, mother.dense, father.dense),
+    agouti: inheritPair(rng, mother.agouti, father.agouti),
+    tabby: inheritPair(rng, mother.tabby, father.tabby),
+    white: inheritPair(rng, mother.white, father.white),
+    full: inheritPair(rng, mother.full, father.full),
+    short: inheritPair(rng, mother.short, father.short),
+    eyes: rng.chance(0.5) ? mother.eyes : father.eyes,
+  };
+}
+
+/** Шанс, що частина тіла кошеняти — випадковий звичайний варіант, а не від батьків. */
+const SHAPE_MUTATION = 0.05;
+
+/** Форми кошеняти (§9.10): кожна від одного з батьків, зрідка — випадкова звичайна. */
+export function inheritShape(rng: Rng, mother: Shape, father: Shape): Shape {
+  const random = randomShape(rng);
+  const pick = <K extends keyof Shape>(key: K): Shape[K] => (rng.chance(SHAPE_MUTATION) ? random[key] : rng.chance(0.5) ? mother[key] : father[key]);
+  return { muzzle: pick("muzzle"), ears: pick("ears"), tail: pick("tail"), build: pick("build"), legs: pick("legs"), coat: pick("coat") };
+}
+
+/** Порода кошеняти (§9.11): по одній породі від кожного з батьків. */
+export function inheritBreed(rng: Rng, mother: readonly [string, string], father: readonly [string, string]): [string, string] {
+  return [mother[rng.int(0, 1)] ?? mother[0], father[rng.int(0, 1)] ?? father[0]];
+}
+
+export interface BreedLook {
+  genes?: Partial<Omit<Genes, "orange">>;
+  noOrange?: true;
+  shape?: Partial<Shape>;
+}
+
+/**
+ * Зовнішність породи поверх випадкових генів (§9.11): чистокровний має гени й форми породи напевно,
+ * напівкровка — по одному алелю й кожну форму з імовірністю 50%.
+ */
+export function applyBreedLook(rng: Rng, genes: Genes, shape: Shape, look: BreedLook, pure: boolean): void {
+  const g = genes as unknown as Record<string, unknown>;
+  for (const [key, pair] of Object.entries(look.genes ?? {})) {
+    if (Array.isArray(pair)) g[key] = pure ? [...pair] : [pair[0], (g[key] as unknown[])[1]];
+    else g[key] = pair;
+  }
+  if (look.noOrange && pure) genes.orange = genes.orange.map(() => false);
+  const s = shape as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(look.shape ?? {})) if (pure || rng.chance(0.5)) s[key] = value;
+}

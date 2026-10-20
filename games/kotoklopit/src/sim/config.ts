@@ -86,12 +86,14 @@ export const KITTEN_AGE_WEEKS = 1;
 /** Множники й ціни за складністю (§5.2). */
 export const DIFFICULTY: Record<
   Difficulty,
-  { earnings: number; catSanity: number; newCatSanity: number; lostCatSanity: number }
+  { earnings: number; catSanity: number; newCatSanity: number; lostCatSanity: number; givenCatSanity: number }
 > = {
-  easy: { earnings: 1.25, catSanity: 1.25, newCatSanity: 62, lostCatSanity: -20 },
-  normal: { earnings: 1, catSanity: 1, newCatSanity: 50, lostCatSanity: -25 },
-  hard: { earnings: 0.8, catSanity: 0.8, newCatSanity: 40, lostCatSanity: -31 },
+  easy: { earnings: 1.25, catSanity: 1.25, newCatSanity: 62, lostCatSanity: -20, givenCatSanity: -12 },
+  normal: { earnings: 1, catSanity: 1, newCatSanity: 50, lostCatSanity: -25, givenCatSanity: -15 },
+  hard: { earnings: 0.8, catSanity: 0.8, newCatSanity: 40, lostCatSanity: -31, givenCatSanity: -19 },
 };
+/** Віддати кота протягом 7 днів після появи — втратити весь бонус за нього (§9.8). */
+export const GIVE_AWAY_GRACE_DAYS = 7;
 
 /** «Пригніченість» (§6.2): без котів здоровий глузд не вище порогу кошеняти. */
 export const DEPRESSION_CEILING = KITTEN_SANITY_THRESHOLD;
@@ -130,6 +132,7 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   food: { units: { cheap: 21, premium: 21 }, price: { cheap: 40, premium: 80 } },
   hygiene: { units: { cheap: 14, premium: 14 }, price: { cheap: 15, premium: 35 } },
   catFood: { units: { cheap: 56, premium: 56 }, price: { cheap: 100, premium: 200 } },
+  sterileFood: { units: { cheap: 56, premium: 56 }, price: { cheap: 120, premium: 220 } },
   litter: { units: { cheap: 7, premium: 4 }, price: { cheap: 8, premium: 15 } },
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
   drops: { units: { cheap: 3, premium: 3 }, price: { cheap: 12, premium: 30 } },
@@ -138,6 +141,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
   hygiene: { cheap: 7, premium: 0 },
   catFood: { cheap: 0, premium: 0 },
+  sterileFood: { cheap: 0, premium: 0 },
   litter: { cheap: 0, premium: 0 },
   pills: { cheap: 0, premium: 0 },
   drops: { cheap: 0, premium: 0 },
@@ -298,7 +302,7 @@ export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1): здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {
@@ -409,6 +413,7 @@ export const DISEASES: Record<
   cystitis: { safe: 3, damage: 2, cure: { kind: "calm", days: 2 }, contagious: null },
   conjunctivitis: { safe: 4, damage: 1, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
   senior: { safe: 0, damage: 1, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  urolithiasis: { safe: 1, damage: 6, cure: { kind: "vet" }, contagious: null },
 };
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {
@@ -419,6 +424,8 @@ export const ILLNESS = {
   escapeFleas: 0.3,
   stolenWorms: 0.1,
   stolenStomach: 0.25,
+  /** Стерилізований кіт на звичайному кормі (§9.8). */
+  regularFoodStones: 0.03,
   cheapFoodStomach: 0.01,
   cystitisMood: 25,
   cystitis: 0.3,
@@ -447,6 +454,7 @@ export const SYMPTOMS = {
 export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1 } as const;
 /** Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. */
 export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean }> = {
+  breeder: { road: 120, visit: 60, cat: false },
   shop: { road: 45, visit: 30, cat: false },
   vet: { road: 60, visit: 60, cat: true },
   doctor: { road: 60, visit: 60, cat: false },
@@ -490,8 +498,44 @@ export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
 export const TRIP_REPUTATION_DIVIDER = 3;
 /** Пункти призначення (§8.5). */
 export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3 } as const;
+/** Розмноження (§9.8): вагітність, виводок, тічка, мітки, віддати кота. */
+export const BREEDING = {
+  pregnancy: 0.3,
+  minAge: 2,
+  friendWeight: 2,
+  /** Розмір виводку 1–4: ваги. */
+  litter: [0.25, 0.35, 0.25, 0.15],
+  restDays: 14,
+  nursingDays: 7,
+  nursingHunger: 1.5,
+  pregnantHunger: 1.5,
+  symptomsFromDay: 3,
+  heatDays: 3,
+  heatEvery: 14,
+  heatWake: 0.3,
+  escapeBonus: 0.25,
+  markPerHour: 1 / 72,
+  fightFactor: 1.5,
+} as const;
+/** «Природа й виховання» (§9.8): шанс, що нова риса кошеняти — від батьків. */
+export const INHERIT_TRAIT_CHANCE = 0.5;
+/** Стерилізація (§9.8): ціна, операція, відновлення. */
+export const STERILIZATION = { price: 120, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5 } as const;
 export const DOCTOR = { exam: 40, health: 20 } as const;
-export const SHELTER = { price: 50, cats: 3, minAge: 1, maxAge: 5, visibleTraits: { easy: 3, normal: 2, hard: 1 } as Record<Difficulty, number> } as const;
+export const SHELTER = {
+  price: 50,
+  cats: 3,
+  minAge: 1,
+  maxAge: 5,
+  visibleTraits: { easy: 3, normal: 2, hard: 1 } as Record<Difficulty, number>,
+  /** Від 3 тижнів кіт із притулку вже стерилізований з імовірністю 50% (§9.8). */
+  sterilizedFromAge: 3,
+  sterilized: 0.5,
+  /** Порода: 10%, навпіл чистокровний і напівкровка (§8.5). */
+  breed: 0.1,
+} as const;
+/** Розплідник (§9.11): 3 чистокровні кошенята однієї породи тижня, вік 2 тижні. */
+export const BREEDER = { cats: 3, age: 2 } as const;
 export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
 export const CAFE = { pricePerHour: 20, sanity: [12, 6, 3], jealousyMood: -5 } as const;
 /** Вікно ціни в магазині за складністю (§6.4). */

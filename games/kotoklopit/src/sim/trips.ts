@@ -42,6 +42,8 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
     if (state.home.carrier === null) return "carrier";
     return null;
   }
+  // До притулку кота можна взяти, щоб віддати (§9.8).
+  if (cat && destination === "shelter") return state.home.carrier === null ? "carrier" : null;
   if (cat) return "no-cat";
   if (destination === "office" && state.modifiers.day !== "office") return "office";
   return null;

@@ -10,6 +10,7 @@ import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
   APPETITE_STEP,
+  BREEDING,
   BOWL_CAPACITY,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
@@ -40,6 +41,7 @@ import {
   SCATTER_CHANCE,
   SCRATCH,
   SOFA_REPAIR,
+  STERILIZATION,
   SLEEP_END,
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
@@ -58,6 +60,7 @@ import { emit } from "./events";
 import { observe, setWitnessing } from "./knowledge";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
+import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
@@ -92,14 +95,15 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const n = cat.needs;
   const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
-  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
+  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
   n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours);
   n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours * toiletFactor(cat));
   if (sleeping) {
     n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * sleepFactor(cat) * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
   } else {
     const tired = isOld(cat) || cat.health < LOW_CAT_HEALTH ? TIRED_FATIGUE : 1;
-    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat));
+    const recovering = state.day <= cat.recoveryUntil ? STERILIZATION.recoveryFatigue : 1;
+    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering);
   }
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * (traitLevel(cat, "affection") + traitLevel(cat, "demanding")));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
@@ -110,6 +114,11 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
+  // Нестерилізований кіт мітить територію (§9.8).
+  if (cat.sex === "male" && !cat.sterilized && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(BREEDING.markPerHour * hours)) {
+    addMess(state, "mark", visibleFloorNear(cat), cat.id);
+    observe(state, cat, "marking");
+  }
   if (state.day > cat.groomedUntil && rng.chance(rate * hours)) {
     addMess(state, "hairball", visibleFloorNear(cat), cat.id);
     observe(state, cat, "hairballs");
@@ -507,6 +516,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       observe(state, cat, "appetite");
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
       afterMeal(state, cat, quality === "premium", rng);
+      // Стерилізованому — лише корм для стерилізованих (§9.8).
+      if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones, rng);
       // Їсть надто швидко й одразу зригує (§9.3) чи нездужає шлунком (§9.5).
       const gulping = traitLevel(cat, "gulping");
       if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) {
@@ -735,6 +746,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     return;
   }
   if (isCarried(state, cat)) return;
+  if (isNewborn(cat)) return nurse(state, cat);
   // Спокійну дію кіт кидає заради нагальної потреби.
   const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy";
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
@@ -774,6 +786,17 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
 }
 
+/** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */
+function nurse(state: GameState, kitten: Cat): void {
+  kitten.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+  const mother = motherOf(state, kitten);
+  if (mother && mother.away === null && !isCarried(state, mother) && asleep(mother)) {
+    kitten.x = mother.x + ((kitten.id % 3) - 1) * 0.25;
+    kitten.y = mother.y + 0.15;
+  }
+  if (kitten.act.kind !== "sleep") start(kitten, "sleep", null, 600);
+}
+
 /** Хвилини життя всіх котів удома (§9.3). */
 export function tickCats(state: GameState, minutes: number, context: CatContext): void {
   if (state.cats.length === 0) return;
@@ -807,7 +830,8 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
       if (asleep(a) || asleep(b) || a.act.kind === "fight" || b.act.kind === "fight") continue;
       if (distance(a, b) > fight.distance) continue;
       const territorial = Math.max(0, traitLevel(a, "territorial")) + Math.max(0, traitLevel(b, "territorial"));
-      if (rng.chance((fight.perMinute + fight.territorialStep * territorial) * minutes)) startFight(state, a, b);
+      const hormones = Math.max(fightFactor(a), fightFactor(b));
+      if (rng.chance((fight.perMinute + fight.territorialStep * territorial) * hormones * minutes)) startFight(state, a, b);
     }
   }
   for (const cat of cats) if (enemyNear.has(cat.id)) changeMood(state, cat, RELATIONS.enemyMoodPerHour * hours);
@@ -853,7 +877,7 @@ export function rollEscapes(state: GameState): void {
   for (const cat of state.cats) {
     if (cat.away !== null || isCarried(state, cat)) continue;
     if (Math.hypot(cat.x - door.x, cat.y - door.y) > ESCAPE.distance) continue;
-    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * traitLevel(cat, "escape"), 0, 1))) continue;
+    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * traitLevel(cat, "escape") + escapeBonus(state, cat), 0, 1))) continue;
     cat.away = "stairs";
     cat.x = door.x;
     cat.y = 10.9;

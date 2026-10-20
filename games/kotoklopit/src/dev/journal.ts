@@ -102,6 +102,14 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Куплено в магазині: ${event.goods} (${event.quality})`;
     case "vet-exam":
       return `Огляд у ветеринара: ${catName(state, event.cat)}`;
+    case "sterilized":
+      return `${catName(state, event.cat)}: стерилізовано`;
+    case "heat":
+      return `${catName(state, event.cat)}: тічка`;
+    case "pregnant":
+      return `${catName(state, event.cat)}: вагітна`;
+    case "birth":
+      return `${catName(state, event.cat)} народила кошенят: ${event.kittens}`;
     case "groomed":
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":

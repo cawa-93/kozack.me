@@ -169,7 +169,7 @@ describe("догляд персонажа (§9.12)", () => {
     save.current.home.supplies.catFood.cheap = 5;
     walkTo(save, "cat-cabinet");
     interact(save);
-    expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap" });
+    expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: false });
     const bowl = item<BowlItem>(save, "bowl");
     walkTo(save, `item:${bowl.id}`);
     interact(save);

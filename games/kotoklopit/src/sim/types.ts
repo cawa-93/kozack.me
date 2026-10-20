@@ -8,7 +8,7 @@ export type Difficulty = "easy" | "normal" | "hard";
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
 /** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "litter" | "pills" | "drops";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -36,6 +36,8 @@ export interface Dish {
 export interface CatFoodScoop {
   kind: "catfood";
   quality: Quality;
+  /** Корм для стерилізованих (§9.8). */
+  sterile: boolean;
 }
 
 /** Кіт на руках (§9.12). */
@@ -149,6 +151,8 @@ export interface BowlItem {
   /** Порції корму в мисці. */
   food: number;
   foodQuality: Quality | null;
+  /** У мисці корм для стерилізованих (§9.8). */
+  sterile: boolean;
 }
 
 /** Миска для води (§9.12). */
@@ -206,7 +210,7 @@ export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem |
 export type ThingKind = HomeItem["kind"] | "carrier";
 
 /** Куди можна поїхати (§8.5). Розплідник і виставку додасть крок 12. */
-export type Destination = "shop" | "vet" | "doctor" | "shelter" | "groomer" | "cafe" | "office";
+export type Destination = "shop" | "vet" | "doctor" | "shelter" | "breeder" | "groomer" | "cafe" | "office";
 
 /** Інша машина в гонці (§8.5): смуга й місце на дорозі на початку гонки (у хвилинах дороги). */
 export interface RaceCar {
@@ -252,7 +256,7 @@ export interface Trip {
 export type AccidentLoss = "repair" | "health" | "sanity" | "cat";
 
 /** Котячий безлад на підлозі (§9.12). */
-export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur";
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark";
 
 export interface Mess {
   id: number;
@@ -375,7 +379,7 @@ export interface CatAct {
 }
 
 /** Хвороби прототипу (§9.5, `DISEASES.md`). */
-export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior";
+export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis";
 
 /** Хвороба кота: коли почалася й скільки лікування вже було. */
 export interface CatDisease {
@@ -421,6 +425,23 @@ export interface Cat {
   diseases: CatDisease[];
   /** До якого дня кіт після грумера не зригує шерстяних грудок (§8.5). */
   groomedUntil: number;
+  /** Фізіологічні стани (§9.8). */
+  sterilized: boolean;
+  /** Про стерилізацію персонаж знає: возив до ветеринара чи сказав притулок (§9.9). */
+  sterilizedKnown: boolean;
+  /** До якого дня кіт відновлюється після операції. */
+  recoveryUntil: number;
+  /** Тічка триває до цього дня (включно); наступна — з дня `nextHeat`. */
+  heatUntil: number;
+  nextHeat: number;
+  /** Вагітність: батько й день пологів (ніч перед ним). */
+  pregnancy: { father: number | null; due: number; known: boolean } | null;
+  /** Скільки виводків уже було: перший — на одне кошеня менший. */
+  litters: number;
+  /** До якого дня кішка відпочиває після пологів і не вагітніє. */
+  restUntil: number;
+  /** Які половини породи знає персонаж (§9.11). */
+  breedKnown: [boolean, boolean];
   /** Втрати здоров'я з джерелом за останній тиждень: з них — причина смерті (§9.7). */
   healthLog: { day: number; source: string; amount: number }[];
   /** Де кіт, у клітинках підлоги; facing — куди дивиться: −1 ліворуч, 1 праворуч. */
@@ -497,6 +518,8 @@ export interface NightReport {
   /** Кроки ночі в порядку виконання. */
   steps: NightStep[];
   lostCats: number[];
+  /** Коти, яких забрали нові господарі (§9.8). */
+  givenCats: number[];
   newCats: number[];
   utilities: UtilitiesReport | null;
   sanityEvening: number;
@@ -517,8 +540,11 @@ export interface GameState {
   character: Character;
   /** Поїздка, якщо персонаж зараз поза домом (§8.5). */
   trip: Trip | null;
-  /** Котів притулку цього тижня (§8.5): вибір фіксований на тиждень. */
+  /** Котів притулку й розплідника цього тижня (§8.5): вибір фіксований на тиждень. */
   shelter: { week: number; cats: Cat[] } | null;
+  breeder: { week: number; breed: string; cats: Cat[] } | null;
+  /** Коти, яких завтра заберуть за оголошенням (§9.8). */
+  ads: number[];
   job: Job;
   home: Home;
   modifiers: { day: string | null; week: string | null };

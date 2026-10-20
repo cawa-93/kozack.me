@@ -1,7 +1,8 @@
 // Прощання (§9.7): смерть кота від нульового здоров'я чи старості, причина смерті й «Альбом пам'яті».
 
 import { lifeMood, traitLevel } from "./cat";
-import { CAT_AGE_LIMIT, DEATH } from "./config";
+import { changeStat } from "./character";
+import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, SANITY_FLOOR } from "./config";
 import { emit } from "./events";
 import { forgetRelations } from "./relations";
 import type { Rng } from "./rng";
@@ -49,6 +50,38 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
   state.album.push(entry);
   emit(state, { type: "cat-gone", entry });
   return entry;
+}
+
+/**
+ * Віддати кота в добрі руки (§9.8): −15 здорового глузду (не нижче 10%), а протягом 7 днів після
+ * появи — весь отриманий за нього бонус. Новонароджених не віддають.
+ */
+export function giveAway(state: GameState, cat: Cat, day: number): AlbumEntry | null {
+  if (cat.ageWeeks < 1) return null;
+  const { givenCatSanity, newCatSanity } = DIFFICULTY[state.difficulty];
+  const loss = state.day - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? -newCatSanity : givenCatSanity;
+  changeStat(state, "sanity", loss, SANITY_FLOOR);
+  state.ads = state.ads.filter((id) => id !== cat.id);
+  return removeCat(state, cat, { kind: "given" }, day);
+}
+
+/** Дати оголошення (§9.8): нові господарі заберуть кота завтра вранці. */
+export function advertise(state: GameState, cat: Cat): boolean {
+  if (cat.ageWeeks < 1 || state.ads.includes(cat.id)) return false;
+  state.ads.push(cat.id);
+  return true;
+}
+
+/** Ранок: нові господарі забирають котів за оголошеннями. */
+export function collectAds(state: GameState): AlbumEntry[] {
+  const given: AlbumEntry[] = [];
+  for (const id of [...state.ads]) {
+    const cat = state.cats.find((c) => c.id === id);
+    const entry = cat ? giveAway(state, cat, state.day) : null;
+    if (entry) given.push(entry);
+  }
+  state.ads = [];
+  return given;
 }
 
 /** Вечірня перевірка (§9.5): здоров'я на нулі — кіт помирає з шансом 60%. */

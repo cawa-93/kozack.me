@@ -6,6 +6,7 @@ import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
 import { tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
 import {
+  BREEDING,
   DIFFICULTY,
   ILLNESS,
   KITTEN_AGE_WEEKS,
@@ -20,8 +21,9 @@ import {
 import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
-import { oldAgeDeaths, zeroHealthDeaths } from "./farewell";
+import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
+import { conceive, giveBirth, inHeat, nightlyStates } from "./reproduction";
 import { createRng, seedDay, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
 import { isSunday } from "./time";
@@ -54,8 +56,8 @@ const STEPS: readonly Step[] = [
   // 3. Ніч із неділі на понеділок.
   { id: "cat-age", weekly: true, run: ageCats },
   { id: "age-limit", weekly: true, run: ageLimit }, // §9.2
-  { id: "births", weekly: true, run: pending }, // §9.8 — крок 12
-  { id: "pregnancies", weekly: true, run: pending }, // §9.8 — крок 12
+  { id: "births", weekly: true, run: births }, // §9.8
+  { id: "pregnancies", weekly: true, run: pregnancies }, // §9.8
   { id: "utilities", weekly: true, run: utilities },
   { id: "week-modifier", weekly: true, run: pending }, // §4.1 — крок 14
   // 4. Поріг 30% за здоровим глуздом увечері.
@@ -78,6 +80,7 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
     wokeMinute: wakeMinute(state),
     steps: [],
     lostCats: [],
+    givenCats: [],
     newCats: [],
     utilities: null,
     sanityEvening: sanity,
@@ -112,6 +115,8 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
   for (const cat of state.cats) {
     if (cat.away !== null) continue;
     const nocturnal = traitLevel(cat, "nocturnal");
+    // Кішка в тічці кричить уночі (§9.8).
+    if (inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     if (nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
       wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     }
@@ -172,6 +177,7 @@ function catHealth({ state, rng }: Night): void {
   for (const cat of state.cats) closeCatDay(state, cat);
   // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).
   nightlyDiseases(state, rng);
+  nightlyStates(state, rng);
   // Підсумок дня для пар: життя разом зближує (§9.4).
   nightlyRelations(state);
 }
@@ -182,6 +188,17 @@ function catDeath({ state, report, rng }: Night): void {
 
 function ageLimit({ state, report, rng }: Night): void {
   for (const entry of oldAgeDeaths(state, rng)) report.lostCats.push(entry.id);
+}
+
+function births({ state, report, rng }: Night): void {
+  for (const kitten of giveBirth(state, rng)) {
+    addCat(state, kitten);
+    report.newCats.push(kitten.id);
+  }
+}
+
+function pregnancies({ state, rng }: Night): void {
+  conceive(state, rng);
 }
 
 function ageCats({ state, rng }: Night): void {
@@ -226,6 +243,8 @@ export function giveStarterPack(state: GameState): void {
 /** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */
 function morning({ state, report }: Night): void {
   applyMorningSanity(state, report.lostCats.length, report.newCats.length);
+  // Нові господарі приїжджають по котів за оголошеннями (§9.8).
+  for (const entry of collectAds(state)) report.givenCats.push(entry.id);
   const character = state.character;
   character.depressed = character.stats.sanity < KITTEN_SANITY_THRESHOLD && state.cats.length === 0;
   report.sanityMorning = character.stats.sanity;

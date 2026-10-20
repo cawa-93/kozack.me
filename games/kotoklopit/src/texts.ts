@@ -15,6 +15,11 @@ export const KITTEN_MESSAGE =
   "Здоровий глузд тріщав по швах. Тож {персонаж} [зробив|зробила] те, що робить кожна розсудлива людина на межі: [поїхав|поїхала] до притулку «лише подивитися». Знайомтеся: {кошеня}.";
 export const KITTEN_BONUS = "Здоровий глузд +{бонус}.";
 
+/** Пологи (§9.8): форма `[одне|кілька]` — за кількістю кошенят, а не за статтю. */
+export const BIRTH_MESSAGE =
+  "Уночі {кішка} тихенько влаштувала собі гніздо — і тепер у домі на {кількість} [кошеня|кошенят] більше: {кошенята}. Поки що вони лише пищать, сплять і тиснуться до мами.";
+export const BIRTH_BONUS = "Здоровий глузд +{бонус} за кожне.";
+
 export const UTILITIES_MESSAGES: Record<Exclude<UtilitiesReport["outcome"], "evicted">, string> = {
   paid: "Комунальні за тиждень сплачено: −{сума}. Світло горить, вода тече, батареї теплі. Принаймні цього тижня.",
   warning:
@@ -185,6 +190,7 @@ export const DISEASE_TITLES: Record<string, string> = {
   cystitis: "Цистит від стресу",
   conjunctivitis: "Кон'юнктивіт",
   senior: "Старечі болячки",
+  urolithiasis: "Сечокам'яна хвороба",
 };
 
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;

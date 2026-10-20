@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { isKitten } from "../sim/cat";
+import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { objectAt } from "../sim/home";
 import type { Cat } from "../sim/types";
@@ -69,7 +69,7 @@ export class CatView {
     this.shape = cat.shape;
     const pose = poseOf(cat, carriedAt !== null);
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
-    const key = pose === "walk" ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${isKitten(cat)}`;
+    const key = pose === "walk" ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -88,7 +88,10 @@ export class CatView {
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
     // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.
-    const scale = 1.25 * (isKitten(cat) ? 0.78 : 1) * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
+    // Розмір породи (§9.11) — ±6% за одиницю; новонароджені зовсім крихітні.
+    const age = cat.ageWeeks === 0 ? 0.55 : isKitten(cat) ? 0.78 : 1;
+    const size = 1 + 0.06 * traitLevel(cat, "size");
+    const scale = 1.25 * age * size * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
     const dir = cat.facing >= 0 ? 1 : -1;
     const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;

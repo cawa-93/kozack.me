@@ -8,8 +8,9 @@ import { discard, order, orderThing, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type Refusal } from "../sim/events";
 import { advance, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
-import { adopt, buyAtShop, cafe, doctorVisit, groom, officeMeeting, vetExam, vetTreat } from "../sim/destinations";
+import { adopt, buyAtShop, buyFromBreeder, cafe, doctorVisit, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
+import { advertise } from "../sim/farewell";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
@@ -299,6 +300,19 @@ export class DayScene extends Phaser.Scene {
         },
         adopt: (id) => {
           const cat = adopt(state, id);
+          if (cat) log.done.push(cat.name);
+          again();
+        },
+        sterilize: () => {
+          vetSterilize(state);
+          again();
+        },
+        giveAway: () => {
+          giveToShelter(state);
+          again();
+        },
+        buyKitten: (id) => {
+          const cat = buyFromBreeder(state, id);
           if (cat) log.done.push(cat.name);
           again();
         },
@@ -668,6 +682,10 @@ export class DayScene extends Phaser.Scene {
           },
           discard: (item: HomeItem) => {
             discard(this.state, item.id);
+            show(tab);
+          },
+          advertise: (cat) => {
+            advertise(this.state, cat);
             show(tab);
           },
           tab: show,

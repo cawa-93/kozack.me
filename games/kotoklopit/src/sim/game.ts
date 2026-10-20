@@ -17,7 +17,7 @@ import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
 import { newJob, tickWork } from "./work";
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 const EPSILON = 1e-6;
 
@@ -61,6 +61,8 @@ export function newGame(options: NewGameOptions): Save {
     relations: {},
     trip: null,
     shelter: null,
+    breeder: null,
+    ads: [],
     album: [],
     nextId: 0,
     rng: { conditions: 0, behavior: 0 },

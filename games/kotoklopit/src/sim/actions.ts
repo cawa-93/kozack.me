@@ -113,15 +113,20 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "catCabinet": {
       if (held?.kind === "catfood") {
-        returnSupply(state, "catFood", held.quality);
+        // Друге натискання міняє корм на інший, якщо він є, інакше повертає порцію (§9.8).
+        returnSupply(state, held.sterile ? "sterileFood" : "catFood", held.quality);
         character.held = null;
+        const other = held.sterile ? "catFood" : "sterileFood";
+        const swapped = takeSupply(state, other);
+        if (swapped !== null) return take(state, target, { kind: "catfood", quality: swapped, sterile: other === "sterileFood" });
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
-      const quality = takeSupply(state, "catFood");
+      const regular = takeSupply(state, "catFood");
+      const quality = regular ?? takeSupply(state, "sterileFood");
       if (quality === null) return refuse(state, target.id, "empty");
-      return take(state, target, { kind: "catfood", quality });
+      return take(state, target, { kind: "catfood", quality, sterile: regular === null });
     }
     case "stove": {
       const stove = state.home.stove;
@@ -203,8 +208,11 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       if (held === null) return refuse(state, id, "nothing");
       if (held.kind !== "catfood") return refuse(state, id, "wrong");
       if (bowlFull(item)) return refuse(state, id, "occupied");
+      // Різні корми в одну миску не змішують.
+      if (item.food > 0 && item.sterile !== held.sterile) return refuse(state, id, "wrong");
       item.food += 1;
       item.foodQuality = held.quality;
+      item.sterile = held.sterile;
       state.character.held = null;
       emit(state, { type: "fed", item: item.id, food: item.food });
       return null;
@@ -512,7 +520,7 @@ export function dropEverything(state: GameState): void {
   character.activity = null;
   const held = character.held;
   if (held?.kind === "raw") returnSupply(state, "food", held.quality);
-  if (held?.kind === "catfood") returnSupply(state, "catFood", held.quality);
+  if (held?.kind === "catfood") returnSupply(state, held.sterile ? "sterileFood" : "catFood", held.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
   if (held?.kind === "toy") dropToy(state);
   character.held = null;

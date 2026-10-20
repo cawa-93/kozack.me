@@ -1,8 +1,9 @@
 // Модель кота (§9.1, §9.5–9.7, §7): створення, риси, приховані шкали настрою, здоров'я й любові,
 // підсумок дня й тижня.
 
-import { breedLevel, MIXED } from "./breeds";
+import { breedById, breedLevel, MIXED } from "./breeds";
 import {
+  INHERIT_TRAIT_CHANCE,
   ADAPTATION_DAYS,
   CAT_AGE_LIMIT,
   CAT_START,
@@ -18,11 +19,11 @@ import {
   STRONG_TRAIT_CHANCE,
 } from "./config";
 import { emit } from "./events";
-import { randomGenes, randomShape } from "./genetics";
+import { applyBreedLook, randomGenes, randomShape } from "./genetics";
 import { pickCatName } from "./names";
 import type { Rng } from "./rng";
-import { characterLevel, levelOf, TRAIT_GROUPS, traitGroup } from "./traits";
-import type { Cat, CatAct, CatSource, GameState, Sex } from "./types";
+import { characterLevel, isPositive, levelOf, TRAIT_GROUPS, traitGroup } from "./traits";
+import type { Cat, CatAct, CatSource, GameState, Sex, Trait } from "./types";
 
 const clamp = (value: number, min = 0, max = 100): number => Math.min(max, Math.max(min, value));
 
@@ -82,6 +83,15 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     healthLog: [],
     diseases: [],
     groomedUntil: -1,
+    sterilized: false,
+    sterilizedKnown: false,
+    recoveryUntil: -1,
+    heatUntil: -1,
+    nextHeat: -1,
+    pregnancy: null,
+    litters: 0,
+    restUntil: -1,
+    breedKnown: [false, false],
     x: at.x,
     y: at.y,
     facing: 1,
@@ -89,6 +99,10 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     away: null,
     parents: { mother: null, father: null },
   };
+  // Зовнішність породи поверх випадкових генів (§9.11).
+  const [a, b] = cat.breed;
+  const pure = a === b && a !== MIXED;
+  for (const half of pure ? [a] : [a, b]) if (half !== MIXED) applyBreedLook(rng, cat.genes, cat.shape, breedById(half), pure);
   for (let i = 0; i < options.ageWeeks; i++) addTrait(cat, rng, 0.5);
   const known = Math.min(options.knownTraits ?? 0, cat.traits.length);
   for (const trait of cat.traits.slice(0, known)) trait.known = true;
@@ -104,12 +118,19 @@ export function maxTraits(cat: Cat): number {
  * Нова риса (§9.1): позитивна з імовірністю `positive`; група — серед тих, яких у кота ще немає;
  * сильна (±2) з імовірністю 30%. Повертає false, якщо додати нічого.
  */
-export function addTrait(cat: Cat, rng: Rng, positive: number): boolean {
+export function addTrait(cat: Cat, rng: Rng, positive: number, inherited: readonly Trait[] = []): boolean {
   const free = TRAIT_GROUPS.filter((g) => !cat.traits.some((t) => t.group === g.id));
   if (free.length === 0) return false;
+  const good = rng.chance(positive);
+  // «Природа й виховання» (§9.8): знак — від догляду, а з шансом 50% сама риса — від батьків.
+  const fromParents = inherited.filter((t) => isPositive(t) === good && free.some((g) => g.id === t.group));
+  const parent = fromParents[rng.int(0, fromParents.length - 1)];
+  if (parent && rng.chance(INHERIT_TRAIT_CHANCE)) {
+    cat.traits.push({ group: parent.group, level: parent.level, seen: 0, known: false });
+    return true;
+  }
   const group = free[rng.int(0, free.length - 1)];
   if (!group) return false;
-  const good = rng.chance(positive);
   const sign = (good ? group.good : -group.good) as 1 | -1;
   cat.traits.push({ group: group.id, level: levelOf(sign, rng.chance(STRONG_TRAIT_CHANCE)), seen: 0, known: false });
   return true;
@@ -210,11 +231,17 @@ export function lifeMood(cat: Cat): number {
   return cat.moodHistory.length > 0 ? cat.moodHistory.reduce((a, b) => a + b, 0) / cat.moodHistory.length : cat.mood;
 }
 
+/** Риси батьків: живих чи з альбому пам'яті (§9.8). */
+function parentTraits(state: GameState, cat: Cat): Trait[] {
+  const ids = [cat.parents.mother, cat.parents.father];
+  return ids.flatMap((id) => state.cats.find((c) => c.id === id)?.traits ?? state.album.find((e) => e.id === id)?.traits ?? []);
+}
+
 /** Ніч на понеділок (§4, §9.1): вік +1 і нова риса, знак — за середнім настроєм тижня. */
 export function ageCat(state: GameState, cat: Cat, rng: Rng): void {
   cat.ageWeeks += 1;
   if (cat.traits.length >= Math.min(cat.ageWeeks, maxTraits(cat))) return;
-  if (addTrait(cat, rng, weekMood(cat) / 100)) {
+  if (addTrait(cat, rng, weekMood(cat) / 100, cat.source === "born" ? parentTraits(state, cat) : [])) {
     const trait = cat.traits[cat.traits.length - 1];
     if (trait) emit(state, { type: "cat-trait", cat: cat.id, group: trait.group, level: trait.level, title: traitGroup(trait.group).title });
   }

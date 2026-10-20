@@ -1,7 +1,8 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, GROOMER, SHELTER, TRIPS, VET } from "../sim/config";
-import { GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
+import { DISEASES, GROOMER, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
+import { breederCatPrice, breederCats, GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
+import { breedById } from "../sim/breeds";
 import { freeSlots } from "../sim/economy";
 import { visibility } from "../sim/knowledge";
 import { traitName } from "../sim/traits";
@@ -10,7 +11,7 @@ import type { AccidentLoss, Destination, DiseaseId, GameState, Quality } from ".
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
 import { diseaseTitle, fill } from "../texts";
 import { element, type Card } from "./overlay";
-import { plural } from "./cards";
+import { breedText, plural } from "./cards";
 
 const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} год${m % 60 ? ` ${m % 60} хв` : ""}` : `${m} хв`);
 
@@ -76,6 +77,9 @@ export interface VisitHandlers {
   treat: (disease: DiseaseId, quality: Quality) => void;
   doctor: () => void;
   adopt: (cat: number) => void;
+  sterilize: () => void;
+  giveAway: () => void;
+  buyKitten: (cat: number) => void;
   groom: (quality: Quality) => void;
   cafe: (hours: number) => void;
   home: () => void;
@@ -144,6 +148,10 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       );
       const known = cat.diseases.filter((d) => d.known);
       if (known.length === 0) body.push("Хвороб не знайдено.");
+      if (cat.pregnancy?.known) body.push(`${cat.name} вагітна: кошенята з'являться в ніч на понеділок.`);
+      body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
+      if (!cat.sterilized)
+        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "операція 2 години, потім 3 дні відновлення; потрібен корм для стерилізованих", button(`Зробити — ${STERILIZATION.price}`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
         const chronic = DISEASES[d.id].cure.kind === "control";
@@ -168,13 +176,28 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const list = element("div", "shop");
       for (const c of shelterCats(state)) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
+        const facts = [`порода: ${breedText(c.breed, c.breedKnown)}`, ...(c.sterilized ? [c.sex === "male" ? "кастрований" : "стерилізована"] : []), ...traits];
         list.append(
           row(
             `${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
-            traits.join(", ") || "характер — загадка",
+            facts.join(", "),
             button(`Взяти — ${SHELTER.price}`, SHELTER.price, () => h.adopt(c.id)),
           ),
         );
+      }
+      if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
+      body.push(list);
+      if (cat) body.push(row(`Віддати ${cat.name}`, "притулок прийме одразу й безкоштовно; здоровий глузд постраждає", button("Віддати", 0, h.giveAway)));
+      break;
+    }
+    case "breeder": {
+      const { breed, cats } = breederCats(state);
+      const price = breederCatPrice(state);
+      body.push(`Розплідник цього тижня пропонує кошенят породи «${breedById(breed).name}» з родоводом. Кошеня — ${price}.`);
+      const list = element("div", "shop");
+      for (const c of cats) {
+        const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
+        list.append(row(`${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} тижні`, traits.join(", ") || "характер — загадка", button(`Взяти — ${price}`, price, () => h.buyKitten(c.id))));
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);
@@ -208,6 +231,7 @@ const GOODS_TITLES: Record<string, string> = {
   food: "Продукти",
   hygiene: "Засоби гігієни",
   catFood: "Котячий корм",
+  sterileFood: "Корм для стерилізованих",
   litter: "Наповнювач",
   pills: "Таблетки для котів",
   drops: "Краплі для котів",

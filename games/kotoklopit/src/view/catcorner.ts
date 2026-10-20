@@ -42,7 +42,8 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
       g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 30, 13);
       if (item.quality === "premium") g.lineStyle(1.5, 0xe8b93a).strokeEllipse(x, y - 1, 26, 10);
       if (item.food > 0) {
-        const kibble = KIBBLE[item.foodQuality ?? "cheap"];
+        // Корм для стерилізованих — зеленуватий, щоб миски не плутати (§9.8).
+        const kibble = item.sterile ? 0x6f8a3a : KIBBLE[item.foodQuality ?? "cheap"];
         const size = 0.6 + (0.4 * item.food) / BOWL_CAPACITY;
         g.fillStyle(kibble).fillEllipse(x, y - 2 * size, 20 * size, 8 * size);
       }
@@ -109,6 +110,10 @@ function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
     case "litter":
       g.fillStyle(LITTER.cheap);
       for (const [dx, dy] of [[-10, 0], [-4, 3], [3, -2], [9, 2], [0, 5], [-7, -3], [6, 6]] as const) g.fillCircle(x + dx, y + dy, 2.2);
+      return;
+    case "mark":
+      g.fillStyle(0xd6c94a, 0.55).fillEllipse(x, y, 26, 10);
+      g.lineStyle(1.5, 0xa89a2a, 0.7).strokeEllipse(x, y, 26, 10);
       return;
     case "fur":
       g.fillStyle(0xcfc6bd, 0.95).fillEllipse(x - 6, y, 12, 7).fillEllipse(x + 5, y - 2, 10, 6).fillEllipse(x + 1, y + 4, 9, 5);
