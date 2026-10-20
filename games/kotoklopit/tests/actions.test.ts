@@ -6,9 +6,9 @@ import { BURN_MINUTES, COOK_MINUTES, MEAL_SATIETY, SHOWER_HYGIENE } from "../src
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, standAt } from "./helpers";
+import { holdUntilDone, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 1 });
+const game = (): Save => withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 1 }));
 
 const holdFor = (save: Save, minutes: number): void => {
   advance(save, minutes, { move: { x: 0, y: 0 }, hold: true });

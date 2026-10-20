@@ -10,9 +10,10 @@ import { addCat } from "../src/sim/night";
 import { nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import { withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 5 });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 5 }));
   save.current.minute = 19 * 60;
   return save;
 }

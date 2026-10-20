@@ -4,9 +4,9 @@ import { deliveryPrice, order, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
-import { hours, recordEvents, standAt, waitUntil } from "./helpers";
+import { hours, recordEvents, standAt, waitUntil, withCatCorner } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 1 });
+const game = (): Save => withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 1 }));
 
 describe("стартові запаси (§6.4)", () => {
   it("6 порцій дешевої їжі й 3 душі засобів гігієни, без ліків", () => {

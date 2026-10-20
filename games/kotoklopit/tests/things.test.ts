@@ -10,9 +10,10 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save } from "../src/sim/types";
+import { withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 3 }));
   save.current.character.money = 2000;
   return save;
 }

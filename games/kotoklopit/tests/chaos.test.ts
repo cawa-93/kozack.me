@@ -10,10 +10,10 @@ import { objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, standAt, walkTo } from "./helpers";
+import { hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
   save.current.modifiers.day = null;
   save.current.minute = hours(19);
   return save;

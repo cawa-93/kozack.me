@@ -12,10 +12,10 @@ import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Save } from "../src/sim/types";
-import { standAt } from "./helpers";
+import { standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 6 });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
   save.current.modifiers.day = null;
   save.current.minute = minute;
   save.current.character.money = 1000;

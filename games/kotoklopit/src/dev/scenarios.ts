@@ -1,6 +1,7 @@
 // Сценарії режиму розробки (§11.5): іменовані стани гри у файлах JSON у теці `scenarios/`.
 // Сценарій — параметри нової гри й зміни стану поверх неї, тож нові поля стану його не ламають.
 
+import { WATER_CAPACITY } from "../sim/config";
 import { createCat } from "../sim/cat";
 import { newGame, type NewGameOptions } from "../sim/game";
 import { addCat } from "../sim/night";
@@ -39,6 +40,20 @@ export function deepMerge<T>(base: T, patch: unknown): T {
   return result as T;
 }
 
+/**
+ * Простий котячий куток для сценаріїв і тестів: дешеві миска, вода, лоток із наповнювачем та іграшка.
+ * У грі на старті котячих речей немає (§9.12), а сценарію з котами вони потрібні одразу.
+ */
+export function addCatCorner(state: GameState): void {
+  const id = (): number => state.nextId++;
+  state.home.items.push(
+    { id: id(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null, sterile: false },
+    { id: id(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
+    { id: id(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
+    { id: id(), kind: "toy", quality: "cheap", x: 5.5, y: 8.5, uses: 0 },
+  );
+}
+
 /** Нова гра в стані сценарію. Знімки перегравання починаються з нього. */
 export function applyScenario(scenario: Scenario): Save {
   const save = newGame({ ...DEFAULT_GAME, ...scenario.game });
@@ -49,6 +64,8 @@ export function applyScenario(scenario: Scenario): Save {
   for (const [product, supply] of Object.entries(state.home.supplies) as [Product, Record<Quality, number>][]) {
     if (supply.cheap + supply.premium > 0 && !state.home.acquired.includes(product)) state.home.acquired.push(product);
   }
+  // Сценарій із котами без власних речей отримує котячий куток.
+  if ((scenario.cats?.length ?? 0) > 0 && !scenario.state?.home?.items) addCatCorner(state);
   const rng = createRng(state.seed);
   for (const spec of scenario.cats ?? []) {
     const cat = createCat(state, rng, {

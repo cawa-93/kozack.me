@@ -15,9 +15,10 @@ import { addCat } from "../src/sim/night";
 import { conceive } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, Sex } from "../src/sim/types";
+import { withCatCorner } from "./helpers";
 
 function game(): Save {
-  return newGame({ sex: "female", difficulty: "normal", seed: 12 });
+  return withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 12 }));
 }
 
 function withCat(save: Save, sex: Sex, ageWeeks = 3): Cat {

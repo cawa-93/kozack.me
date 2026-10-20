@@ -100,4 +100,14 @@ describe("сховища (§6.4)", () => {
     giveStarterPack(state);
     expect(state.home.supplies.catFood.cheap).toBe(110);
   });
+
+  it("на старті котячих речей немає; кошеня з притулку приносить найпростіші", () => {
+    const state = game().current;
+    expect(state.home.items).toEqual([]);
+    giveStarterPack(state);
+    expect(state.home.items.map((i) => i.kind).sort()).toEqual(["bowl", "litter", "water"]);
+    // Другий пакет нових речей не додає: вони вже є.
+    giveStarterPack(state);
+    expect(state.home.items).toHaveLength(3);
+  });
 });

@@ -28,14 +28,9 @@ const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
  * Квартира на старті: котячий куток уже є — дешева миска, миска з водою, дешевий лоток
  * з наповнювачем і іграшка (§9.12). `nextId` видає id речам.
  */
-export function newHome(nextId: () => number): Home {
-  const items: HomeItem[] = [
-    { id: nextId(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null, sterile: false },
-    { id: nextId(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
-    { id: nextId(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
-    // Дешева іграшка-вудочка у вітальні (§9.12).
-    { id: nextId(), kind: "toy", quality: "cheap", x: 5.5, y: 8.5, uses: 0 },
-  ];
+export function newHome(): Home {
+  // На старті котячих речей немає: миски, лотки й іграшки купує гравець (§9.12, правка автора 2026-10-20).
+  const items: HomeItem[] = [];
   return {
     supplies: structuredClone(START_SUPPLIES),
     acquired: (Object.keys(START_SUPPLIES) as Product[]).filter((p) => START_SUPPLIES[p].cheap + START_SUPPLIES[p].premium > 0),

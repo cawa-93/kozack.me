@@ -10,13 +10,13 @@ import { hygieneFactor, tapWasher, tickHousehold, wearOut } from "../src/sim/hou
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { holdUntilDone, hours, standAt } from "./helpers";
+import { holdUntilDone, hours, standAt, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
 const never = () => ({ ...createRng(1), chance: () => false });
 
 function game(): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 8 });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 8 }));
   save.current.modifiers.day = null;
   return save;
 }

@@ -43,7 +43,6 @@ export interface NewGameOptions {
 
 export function newGame(options: NewGameOptions): Save {
   const { sex, difficulty } = options;
-  let nextId = 1;
   const seed = (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0;
   const state: GameState = {
     seed,
@@ -73,7 +72,7 @@ export function newGame(options: NewGameOptions): Save {
       beard: { shaved: 0, trimmed: -100 },
     },
     job: newJob(),
-    home: newHome(() => nextId++),
+    home: newHome(),
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
     today: { callAt: null, meetingMinutes: 0, vaccinated: false, vaccineMissedUntil: -1, officeDone: false, foundling: false, lastFoundling: -100, utilitiesDiscount: 0, earlyWake: 0 },
     cats: [],
@@ -84,12 +83,11 @@ export function newGame(options: NewGameOptions): Save {
     ads: [],
     album: [],
     stats: { minutes: { work: 0, cats: 0, self: 0, bustle: 0 }, raised: { shelter: 0, "shelter-forced": 0, born: 0, breeder: 0, foundling: 0 } },
-    nextId: 0,
+    nextId: 1,
     rng: { conditions: 0, behavior: 0 },
     lastNight: null,
     end: null,
   };
-  state.nextId = nextId;
   state.minute = wakeMinute(state);
   state.dayStartMinute = state.minute;
   seedDay(state);

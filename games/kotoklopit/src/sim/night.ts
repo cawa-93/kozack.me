@@ -19,7 +19,7 @@ import {
   WAKE_UP,
   COLLAPSE_HOURS_BEFORE_WAKE,
 } from "./config";
-import { addSupply, payUtilities, postponeDeliveries } from "./economy";
+import { addSupply, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
@@ -248,10 +248,16 @@ export function addCat(state: GameState, cat: Cat): void {
   emit(state, { type: "cat-arrived", cat: cat.id });
 }
 
-/** Стартовий пакет кота з притулку: корм і наповнювач (§9.12). */
+/** Стартовий пакет кота з притулку: корм, наповнювач і, якщо вдома немає, дешеві миска, вода й лоток (§9.12). */
 export function giveStarterPack(state: GameState): void {
   addSupply(state, "catFood", "cheap", SHELTER_STARTER_PACK.catFood);
   addSupply(state, "litter", "cheap", SHELTER_STARTER_PACK.litter);
+  // Без мисок і лотка кіт не проживе й ночі: притулок дає найпростіші, якщо вдома їх немає.
+  for (const thing of ["bowl", "water", "litter"] as const) {
+    if (state.home.items.some((i) => i.kind === thing)) continue;
+    const item = place(state, thing, "cheap");
+    if (item) state.home.items.push(item);
+  }
 }
 
 /** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */

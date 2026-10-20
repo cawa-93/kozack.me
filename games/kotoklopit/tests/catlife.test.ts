@@ -12,10 +12,10 @@ import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, LitterItem, Save, WaterItem } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, walkTo } from "./helpers";
+import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 11 });
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 11 }));
   save.current.modifiers.day = null;
   return save;
 }

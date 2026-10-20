@@ -1,4 +1,5 @@
 import { targetOf } from "../src/sim/targets";
+import { addCatCorner } from "../src/dev/scenarios";
 import { changeStat } from "../src/sim/character";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, goToSleep, interact } from "../src/sim/game";
@@ -144,3 +145,12 @@ export function waitUntil(save: Save, minute: number): void {
 }
 
 export { interact };
+
+/** Котячий куток (як у сценаріях): на старті гри котячих речей немає (§9.12), а тестам механік вони потрібні. */
+export function withCatCorner(save: Save): Save {
+  addCatCorner(save.current);
+  // Знімки перегравання — з куточком.
+  save.dayStart = structuredClone(save.current);
+  save.weekStart = structuredClone(save.current);
+  return save;
+}
