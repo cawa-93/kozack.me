@@ -238,7 +238,7 @@ export type ThingKind = HomeItem["kind"] | "carrier" | Appliance;
 export type Appliance = "feeder" | "fountain" | "robot";
 
 /** Куди можна поїхати (§8.5). Розплідник і виставку додасть крок 12. */
-export type Destination = "shop" | "vet" | "doctor" | "shelter" | "breeder" | "groomer" | "cafe" | "office";
+export type Destination = "shop" | "vet" | "doctor" | "shelter" | "breeder" | "groomer" | "cafe" | "office" | "show";
 
 /** Інша машина в гонці (§8.5): смуга й місце на дорозі на початку гонки (у хвилинах дороги). */
 export interface RaceCar {
@@ -570,6 +570,28 @@ export interface NightReport {
   sanityMorning: number;
 }
 
+/** Що сьогодні відбувається за модифікатором (§4.1). */
+export interface ModifierDay {
+  /** Коли подзвонить мама; null — дзвінка немає чи вже був. */
+  callAt: number | null;
+  /** Хвилини за комп'ютером на важливій нараді. */
+  meetingMinutes: number;
+  /** Сьогодні вже возили кота до ветеринара (щеплення). */
+  vaccinated: boolean;
+  /** До якого дня коти хворіють частіше: щеплення пропущено. */
+  vaccineMissedUntil: number;
+  /** Сьогодні вже були в офісі. */
+  officeDone: boolean;
+  /** Під дверима знайда, рішення ще не ухвалено. */
+  foundling: boolean;
+  /** Коли востаннє була знайда. */
+  lastFoundling: number;
+  /** Знижка на найближчі комунальні (перерахунок). */
+  utilitiesDiscount: number;
+  /** Хвилина пробудження цієї ночі раніше на стільки (галасливі сусіди). */
+  earlyWake: number;
+}
+
 export interface GameState {
   seed: number;
   /** Скільки разів гравець переграв день чи тиждень; змінює поведінку котів (§6.1). */
@@ -592,6 +614,8 @@ export interface GameState {
   job: Job;
   home: Home;
   modifiers: { day: string | null; week: string | null };
+  /** Стан модифікаторів дня (§4.1): дзвінок, нарада, щеплення, знайда тощо. */
+  today: ModifierDay;
   cats: Cat[];
   /** «Альбом пам'яті» (§9.7): коти, яких більше немає. */
   album: AlbumEntry[];

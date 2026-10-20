@@ -11,6 +11,8 @@ export const isIll = (state: GameState, id: IllnessId): boolean => state.charact
 
 export function fallIllPerson(state: GameState, id: IllnessId): boolean {
   if (isIll(state, id)) return false;
+  // Тиждень профілактики: застуда не чіпляється (§4.1).
+  if (id === "cold" && state.modifiers.week === "human-prevention") return false;
   state.character.illnesses.push({ id, day: state.day, doses: 0, lastDose: -1 });
   emit(state, { type: "person-ill", illness: id });
   return true;

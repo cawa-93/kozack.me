@@ -9,16 +9,17 @@ import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, STA
 import { newHome, tickDeliveries } from "./economy";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
-import { createRng, deriveSeed, stateRng, seedDay } from "./rng";
+import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import type { RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { tickHousehold } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
-import { newJob, tickWork } from "./work";
+import { isWorking, newJob, stopWork, tickWork } from "./work";
+import { powerOut, tickModifiers } from "./modifiers";
 
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 const EPSILON = 1e-6;
 
@@ -65,6 +66,7 @@ export function newGame(options: NewGameOptions): Save {
     job: newJob(),
     home: newHome(() => nextId++),
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
+    today: { callAt: null, meetingMinutes: 0, vaccinated: false, vaccineMissedUntil: -1, officeDone: false, foundling: false, lastFoundling: -100, utilitiesDiscount: 0, earlyWake: 0 },
     cats: [],
     relations: {},
     trip: null,
@@ -116,7 +118,9 @@ function tick(state: GameState, minutes: number, input: Input): void {
     tickActivity(state, input, minutes);
     moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
   }
+  if (powerOut(state) && isWorking(state)) stopWork(state);
   tickWork(state, from, minutes);
+  tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);
   tickHousehold(state, from, minutes);
   tickCats(state, minutes, { present: !away });
@@ -208,7 +212,8 @@ function restore(save: Save, snapshot: GameState): void {
   const replays = save.current.replays + 1;
   save.current = clone(snapshot);
   save.current.replays = replays;
-  seedDay(save.current);
+  // Умови дня — зі знімка (модифікатор уже обрано з них), поведінка — нова.
+  save.current.rng.behavior = streamSeed(save.current.seed, "behavior", save.current.day, replays);
 }
 
 export function serialize(save: Save): string {

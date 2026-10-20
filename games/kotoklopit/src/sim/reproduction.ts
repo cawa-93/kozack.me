@@ -1,7 +1,7 @@
 // Розмноження (§9.8): тічка, мітки, вагітність, пологи й новонароджені; спадковість (§9.10, §9.11).
 
 import { changeMood, createCat } from "./cat";
-import { BREEDING, STERILIZATION } from "./config";
+import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
 import { inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
@@ -45,9 +45,11 @@ export function nightlyStates(state: GameState, rng: Rng): void {
     if (state.day <= cat.recoveryUntil) changeMood(state, cat, STERILIZATION.recoveryMoodPerDay, "відновлення після операції");
     if (cat.sex !== "female" || !fertile(cat) || cat.pregnancy || isNursing(state, cat)) continue;
     if (cat.nextHeat < 0) cat.nextHeat = state.day + rng.int(0, 6);
+    // Спокійний сезон — без тічок, котячий березень — частіше (§4.1).
+    if (state.modifiers.week === "calm-season") continue;
     if (state.day + 1 >= cat.nextHeat) {
       cat.heatUntil = state.day + BREEDING.heatDays;
-      cat.nextHeat = state.day + BREEDING.heatEvery;
+      cat.nextHeat = state.day + (state.modifiers.week === "cat-march" ? MODIFIERS.week.catMarch.heatEvery : BREEDING.heatEvery);
       emit(state, { type: "heat", cat: cat.id });
     }
   }
@@ -58,7 +60,9 @@ export function conceive(state: GameState, rng: Rng): void {
   for (const mother of state.cats) {
     if (mother.sex !== "female" || !fertile(mother) || mother.pregnancy || state.day < mother.restUntil) continue;
     const fathers = state.cats.filter((c) => c.sex === "male" && fertile(c) && !isEnemy(state, mother, c));
-    if (fathers.length === 0 || !rng.chance(BREEDING.pregnancy)) continue;
+    const week = state.modifiers.week;
+    const chance = week === "cat-march" ? MODIFIERS.week.catMarch.pregnancy : week === "calm-season" ? MODIFIERS.week.calmPregnancy : BREEDING.pregnancy;
+    if (fathers.length === 0 || !rng.chance(chance)) continue;
     const weights = fathers.map((f) => (isFriend(state, mother, f) ? BREEDING.friendWeight : 1));
     let roll = rng.next() * weights.reduce((a, b) => a + b, 0);
     let father = fathers[0];

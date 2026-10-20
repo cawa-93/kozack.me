@@ -23,6 +23,7 @@ export const DESTINATION_TITLES: Record<Destination, string> = {
   groomer: "Грумер",
   cafe: "Котокафе",
   office: "Офіс",
+  show: "Виставка котів",
 };
 
 const CAR_COLORS = [0x4f7fb3, 0x8e4a6a, 0x6fae6a, 0xe8b93a, 0x9aa3ab];

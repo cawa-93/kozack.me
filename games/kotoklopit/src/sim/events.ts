@@ -6,6 +6,20 @@ import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
 
+/** Події модифікаторів дня (§4.1): для баблів, карток і журналу. */
+export type ModifierEvent =
+  | "reputation"
+  | "meeting-start"
+  | "meeting-attended"
+  | "meeting-missed"
+  | "home-vet"
+  | "fireworks"
+  | "inspection"
+  | "guests"
+  | "office-missed"
+  | "vacation-pay"
+  | "mom-call";
+
 /** Чому дія не вдалася: порожньо, руки зайняті, місце зайняте, зарано, нічого робити, річ не підходить. */
 export type Refusal = "empty" | "hands-full" | "occupied" | "too-early" | "nothing" | "wrong";
 
@@ -36,6 +50,7 @@ export type GameEvent =
   | { type: "robot" }
   | { type: "broke"; what: string }
   | { type: "beard"; kind: "shave" | "trim" }
+  | { type: "modifier"; kind: ModifierEvent; value: number }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   | { type: "doorbell"; delivery: Delivery }

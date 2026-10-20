@@ -6,6 +6,7 @@ import { unpleasantTask } from "./character";
 import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS } from "./config";
 import { takeSupply } from "./economy";
 import { emit } from "./events";
+import { catIllnessFactor } from "./modifiers";
 import { isFriend } from "./relations";
 import type { Rng } from "./rng";
 import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
@@ -15,7 +16,7 @@ export const hasDisease = (cat: Cat, id: DiseaseId): boolean => cat.diseases.som
 /** Шанс з урахуванням «Витривалості» й складності (§9.5). */
 export function illnessChance(state: GameState, cat: Cat, base: number): number {
   const hardiness = Math.max(0, 1 - ILLNESS.hardinessStep * traitLevel(cat, "hardiness"));
-  return Math.min(1, base * hardiness * ILLNESS.difficulty[state.difficulty]);
+  return Math.min(1, base * hardiness * ILLNESS.difficulty[state.difficulty] * catIllnessFactor(state));
 }
 
 /** Кіт захворів (якщо ще не хворіє цим). */

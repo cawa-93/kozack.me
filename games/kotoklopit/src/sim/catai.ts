@@ -59,6 +59,7 @@ import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallI
 import { emit } from "./events";
 import { wearOut } from "./household";
 import { observe, setWitnessing } from "./knowledge";
+import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
@@ -97,19 +98,19 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
   n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
-  n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours);
+  n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours * thirstFactor(state));
   n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours * toiletFactor(cat));
   if (sleeping) {
     n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * sleepFactor(cat) * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
   } else {
     const tired = isOld(cat) || cat.health < LOW_CAT_HEALTH ? TIRED_FATIGUE : 1;
     const recovering = state.day <= cat.recoveryUntil ? STERILIZATION.recoveryFatigue : 1;
-    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering);
+    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering * catFatigueFactor(state));
   }
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * (traitLevel(cat, "affection") + traitLevel(cat, "demanding")));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
-  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age);
+  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state));
   // Шерстяна грудка: частіше вночі й у довгошерстих (§9.12).
   const hour = hourOf(state.minute);
   const night = hour >= 23 || hour < 5;
@@ -275,7 +276,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const sofa = objectById("sofa");
   const at = (p: Vec): Spot => ({ at: p, target: null });
   const options: { weight: number; value: Spot }[] = [
-    { weight: 3, value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
+    { weight: 3 + warmthBonus(state), value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
     { weight: 3, value: at({ x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y }) },
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
@@ -294,7 +295,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   if (!isWorking(state) && !catOnComputer(state)) {
     const computer = objectById("computer");
-    const weight = COMPUTER_SLEEP.base + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
+    const weight = COMPUTER_SLEEP.base + warmthBonus(state) + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
   return weightedPick(rng, options) ?? at(randomFloor(rng));

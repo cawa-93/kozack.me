@@ -10,6 +10,7 @@ import {
   DISEASES,
   GROOMER,
   MINUTES_PER_HOUR,
+  MODIFIERS,
   POSITIONS,
   PRODUCTS,
   SHELTER,
@@ -23,6 +24,7 @@ import { freeSlots, place } from "./economy";
 import { giveAway } from "./farewell";
 import { emit } from "./events";
 import { observe } from "./knowledge";
+import { priceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekOf } from "./time";
@@ -57,7 +59,7 @@ export function shopModifier(state: GameState, goods: Goods): number {
 }
 
 export function shopPrice(state: GameState, goods: Goods, quality: Quality): number {
-  const base = "product" in goods ? PRODUCTS[goods.product].price[quality] : THINGS[goods.thing].price[quality];
+  const base = "product" in goods ? PRODUCTS[goods.product].price[quality] * priceFactor(state, goods.product) : THINGS[goods.thing].price[quality];
   return Math.round(base * (1 + shopModifier(state, goods)));
 }
 
@@ -82,6 +84,8 @@ export function vetExam(state: GameState): { health: number; mood: number } | nu
   const cat = tripCat(state);
   if (!cat || state.trip?.destination !== "vet" || !spend(state, VET.exam)) return null;
   for (const disease of cat.diseases) disease.known = true;
+  // Щеплення (§4.1): кота довезли до ветеринара.
+  state.today.vaccinated = true;
   // Ветеринар бачить і фізіологічні стани, і породу (§9.9, §9.11).
   if (cat.pregnancy) cat.pregnancy.known = true;
   cat.sterilizedKnown = true;
@@ -150,10 +154,27 @@ export function cafe(state: GameState, hours: number): boolean {
   return true;
 }
 
+/** Виставка котів (§4.1): бал за настроєм і породою; приз — гроші й здоровий глузд; кіт хвилюється. */
+export function enterShow(state: GameState, rng: Rng): number | null {
+  const cat = tripCat(state);
+  const show = MODIFIERS.show;
+  if (!cat || state.trip?.destination !== "show" || !spend(state, show.fee)) return null;
+  const [a, b] = cat.breed;
+  const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
+  const score = cat.mood / 100 + pedigree + rng.next() * 0.3;
+  changeMood(state, cat, show.mood, "виставка");
+  const prize = show.prizes.find((p) => score >= p.score);
+  if (!prize) return 0;
+  earn(state, prize.money);
+  changeStat(state, "sanity", prize.sanity);
+  return prize.money;
+}
+
 /** Збори в офісі (§8.5): 3 години рахуються як робота. */
 export function officeMeeting(state: GameState): void {
   const trip = state.trip;
   if (trip?.destination !== "office") return;
+  state.today.officeDone = true;
   const position = POSITIONS[state.job.position];
   if (!position) return;
   const hours = trip.visit / MINUTES_PER_HOUR;

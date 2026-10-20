@@ -3,13 +3,13 @@ import Phaser from "phaser";
 import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, order, orderThing, supplyCount } from "../sim/economy";
-import { onEvent, type GameEvent, type Refusal } from "../sim/events";
+import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
 import { advance, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyAtShop, buyFromBreeder, cafe, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
@@ -20,13 +20,14 @@ import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { careCard, difficultyCard, endCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, difficultyCard, endCard, foundlingCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay } from "../ui/overlay";
-import { CAREER_MESSAGES, fill, POSITION_TITLES } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
@@ -364,6 +365,11 @@ export class DayScene extends Phaser.Scene {
           if (cafe(state, hours)) log.done.push("cafe");
           again();
         },
+        show: () => {
+          const prize = enterShow(state, rng);
+          if (prize !== null) log.done.push(`show:${prize}`);
+          again();
+        },
         home: () => {
           this.overlay.close();
           returnHome(this.session.save, trip.visit, TRIPS[trip.destination].road);
@@ -573,7 +579,10 @@ export class DayScene extends Phaser.Scene {
     const working = isWorking(state);
     const standup = isWorkday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
-    if (!working && standup) computer = "camera";
+    const day = state.minute % 1440;
+    const meeting = state.modifiers.day === "meeting" && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
+    if (!working && (standup || meeting)) computer = "camera";
+    else if (powerOut(state)) computer = "empty";
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
       computer = level === "out" ? "cross" : level === "warning" ? "alert" : null;
@@ -692,6 +701,9 @@ export class DayScene extends Phaser.Scene {
           this.showMorning(event.report);
         }
         break;
+      case "modifier":
+        this.onModifier(event.kind, event.value);
+        break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
         const { name, sex } = this.state.character;
@@ -717,7 +729,79 @@ export class DayScene extends Phaser.Scene {
   }
 
   private showMorning(night: GameState["lastNight"]): void {
-    this.overlay.show(morningCard(this.state, night, () => this.overlay.close()));
+    this.overlay.show(morningCard(this.state, night, () => this.afterMorning()));
+  }
+
+  private onModifier(kind: ModifierEvent, value: number): void {
+    const money = Math.round(Math.abs(value));
+    switch (kind) {
+      case "mom-call":
+        this.time.delayedCall(200, () =>
+          this.overlay.show(
+            callCard(
+              () => {
+                this.overlay.close();
+                advance(this.session.save, 30);
+              },
+              () => {
+                ignoreCall(this.state);
+                this.overlay.close();
+              },
+            ),
+          ),
+        );
+        return;
+      case "meeting-start":
+        this.bubbles.pop("camera", this.anchorOf("computer")?.x ?? 0, (this.anchorOf("computer")?.y ?? 0) - 8);
+        return;
+      case "meeting-missed":
+        this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було. Репутація помітно впала.");
+        return;
+      case "home-vet": {
+        const cat = this.state.cats.find((c) => c.id === value);
+        const known = cat?.diseases.map((d) => diseaseTitle(d.id)) ?? [];
+        this.notice("Ветеринарка оглянула кота", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.`);
+        return;
+      }
+      case "inspection":
+        this.notice("Перевірка від ОСББ", money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money}.` : "Представник ОСББ не знайшов, до чого причепитися.");
+        return;
+      case "guests":
+        this.notice("Прийшли гості", value < 0 ? "Гості чемно не помітили безладу. Але ви помітили, що вони помітили." : "Гості в захваті від котів і чистоти.");
+        return;
+      case "office-missed":
+        this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися. Репутація постраждала.");
+        return;
+      case "fireworks":
+        this.cameras.main.shake(300, 0.004);
+        return;
+      default:
+        return;
+    }
+  }
+
+  /** Після титулки: знайда під дверима (§8.5). */
+  private afterMorning(): void {
+    if (!this.state.today.foundling) return this.overlay.close();
+    this.overlay.show(
+      foundlingCard(
+        () => {
+          decideFoundling(this.state, true, stateRng(this.state, "behavior"));
+          this.overlay.close();
+        },
+        () => {
+          decideFoundling(this.state, false, stateRng(this.state, "behavior"));
+          this.overlay.close();
+          advance(this.session.save, 120);
+        },
+      ),
+    );
+  }
+
+  /** Повідомлення модифікатора посеред дня (§4.1). */
+  private notice(title: string, text: string): void {
+    if (this.overlay.isOpen) return;
+    this.overlay.show({ kicker: "Подія дня", title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }], onDismiss: () => this.overlay.close() });
   }
 
   private showEnd(): void {

@@ -6,6 +6,7 @@ import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
+import { trafficFactor } from "./modifiers";
 import { observe } from "./knowledge";
 import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
@@ -36,8 +37,10 @@ export function canLeave(state: GameState): boolean {
 }
 
 /** Чому сюди зараз не поїхати; null — можна. */
-export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "office" | null {
+export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "office" | "show" | null {
   const cat = heldCat(state);
+  // Виставка — лише в її день (§4.1).
+  if (destination === "show" && state.modifiers.day !== "show") return "show";
   if (TRIPS[destination].cat) {
     if (!cat) return "cat";
     if (state.home.carrier === null) return "carrier";
@@ -84,7 +87,7 @@ export interface TripClock {
 export function driveTrip(state: GameState, clock: TripClock, minutes: number, input: RaceInput): "arrived" | "crash" | null {
   const trip = state.trip;
   if (trip?.phase !== "drive") return null;
-  const result = driveRace(trip.race, minutes, input, state.difficulty);
+  const result = driveRace(trip.race, minutes, input, state.difficulty, trafficFactor(state));
   if (clock.advance(minutes)) return null;
   if (result === "arrived") {
     trip.phase = "visit";

@@ -16,6 +16,7 @@ import {
 } from "./config";
 import { emit, endGame } from "./events";
 import { SLOTS, SURFACE_IDS } from "./home";
+import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import type { Appliance, Delivery, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
 
@@ -70,8 +71,8 @@ export function returnSupply(state: GameState, product: Product, quality: Qualit
 }
 
 /** Доставка коштує 110% від базової ціни, округлено до цілого. */
-export function deliveryPrice(product: Product, quality: Quality): number {
-  return Math.round(PRODUCTS[product].price[quality] * DELIVERY_PRICE);
+export function deliveryPrice(product: Product, quality: Quality, factor = 1): number {
+  return Math.round(PRODUCTS[product].price[quality] * DELIVERY_PRICE * factor);
 }
 
 export function thingDeliveryPrice(thing: ThingKind, quality: Quality): number {
@@ -80,7 +81,7 @@ export function thingDeliveryPrice(thing: ThingKind, quality: Quality): number {
 
 /** Замовити доставку; null, якщо не вистачає грошей. Пакунок прибуде через 6 годин. */
 export function order(state: GameState, product: Product, quality: Quality): Delivery | null {
-  return send(state, { product }, quality, deliveryPrice(product, quality));
+  return send(state, { product }, quality, deliveryPrice(product, quality, priceFactor(state, product)));
 }
 
 function send(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number): Delivery | null {
@@ -210,7 +211,9 @@ export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "
  */
 export function payUtilities(state: GameState): UtilitiesReport {
   const home = state.home;
-  const due = utilitiesDue(state);
+  // Перерахунок комунальних (§4.1) зменшує цей платіж.
+  const due = Math.max(0, utilitiesDue(state) - state.today.utilitiesDiscount);
+  state.today.utilitiesDiscount = 0;
   // Ремонт іде в цей платіж (чи в борг), далі рахується наново.
   home.repairs = 0;
   const debt = home.utilitiesDebt;

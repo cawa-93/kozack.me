@@ -10,6 +10,7 @@ import { takeHumanMeds } from "./illness";
 import { bathe } from "./care";
 import { tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
+import { powerOut } from "./modifiers";
 import { changeStat, unpleasantTask } from "./character";
 import {
   HOUSEHOLD,
@@ -179,6 +180,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Кіт спить на комп'ютері чи сидить на клавіатурі — спершу його треба забрати (§9.12).
       if (catOnComputer(state)) return refuse(state, target.id, "occupied");
+      // Вимкнули світло (§4.1): комп'ютер не працює.
+      if (powerOut(state)) return refuse(state, target.id, "empty");
       startWork(state);
       return null;
     case "bed":

@@ -6,6 +6,7 @@ import { BOWL_CAPACITY, HOUSEHOLD, WATER_CAPACITY } from "./config";
 import { takeSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
+import { hygieneFactorMod } from "./modifiers";
 import { objectById } from "./home";
 import type { Rng } from "./rng";
 import type { Cat, GameState, HomeItem } from "./types";
@@ -13,7 +14,7 @@ import type { Cat, GameState, HomeItem } from "./types";
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
   const home = state.home;
-  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (home.fur >= HOUSEHOLD.dirtyFur ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state);
+  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (home.fur >= HOUSEHOLD.dirtyFur ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state) * hygieneFactorMod(state);
 }
 
 /** Скільки шерсті кіт лишає за годину (§8.7). */

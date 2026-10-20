@@ -22,12 +22,12 @@ export function newRace(road: number, seed: number): Race {
 export const carAt = (race: Race, car: RaceCar): number => car.start + RACE.carSpeed * race.minutes;
 
 /** Додати машини попереду, щоб дорога в полі зору була заповнена. */
-function spawn(race: Race, difficulty: Difficulty): void {
+function spawn(race: Race, difficulty: Difficulty, traffic: number): void {
   const ahead = race.done + RACE.view;
   // Машини рухаються, тож нова з'являється на дорозі там, де була б зараз.
   if (race.spawned + RACE.carSpeed * race.minutes < ahead) {
     const rng = createRng(race.rng);
-    const gap = RACE.gap / RACE.traffic[difficulty];
+    const gap = RACE.gap / (RACE.traffic[difficulty] * traffic);
     while (race.spawned + RACE.carSpeed * race.minutes < ahead) {
       race.spawned += gap * (0.4 + rng.next() * 1.2);
       race.cars.push({ lane: rng.int(0, RACE.lanes - 1), start: race.spawned });
@@ -41,14 +41,14 @@ function spawn(race: Race, difficulty: Difficulty): void {
 /**
  * Проїхати хвилини гонки. Повертає "crash", якщо персонаж у щось врізався, "arrived" — якщо доїхав.
  */
-export function driveRace(race: Race, minutes: number, input: RaceInput, difficulty: Difficulty): "crash" | "arrived" | null {
+export function driveRace(race: Race, minutes: number, input: RaceInput, difficulty: Difficulty, traffic = 1): "crash" | "arrived" | null {
   if (input.steer !== 0) race.targetLane = Math.min(RACE.lanes - 1, Math.max(0, Math.round(race.targetLane) + input.steer));
   race.speed = Math.min(RACE.maxSpeed, Math.max(RACE.minSpeed, race.speed + input.throttle * RACE.acceleration * minutes));
   const shift = RACE.laneSpeed * minutes;
   race.lane = race.lane < race.targetLane ? Math.min(race.targetLane, race.lane + shift) : Math.max(race.targetLane, race.lane - shift);
   race.minutes += minutes;
   race.done = Math.min(race.road, race.done + race.speed * minutes);
-  spawn(race, difficulty);
+  spawn(race, difficulty, traffic);
   for (const car of race.cars) {
     if (Math.abs(car.lane - race.lane) < 0.6 && Math.abs(carAt(race, car) - race.done) < RACE.carLength) return "crash";
   }

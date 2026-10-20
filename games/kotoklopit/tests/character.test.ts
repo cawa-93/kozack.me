@@ -102,7 +102,7 @@ describe("захист першого дня (§8.3)", () => {
     const save = game();
     save.current.minute = hours(22);
     goToSleep(save);
-    expect(save.current.modifiers.day).toBeNull();
+    expect(save.current.modifiers.day).not.toBe("first-day");
     changeStat(save.current, "sanity", -200);
     expect(save.current.end).toBe("sanity");
   });

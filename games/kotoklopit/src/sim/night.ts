@@ -8,6 +8,7 @@ import { changeStat, passSleepTime } from "./character";
 import {
   BREEDING,
   DIFFICULTY,
+  MODIFIERS,
   ILLNESS,
   KITTEN_AGE_WEEKS,
   KITTEN_SANITY_THRESHOLD,
@@ -27,9 +28,10 @@ import { nightlyHousehold, tickHousehold } from "./household";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
 import { conceive, giveBirth, inHeat, nightlyStates } from "./reproduction";
-import { createRng, seedDay, streamSeed, type Rng } from "./rng";
+import { chooseWeekModifier, startModifiers } from "./modifiers";
+import { createRng, seedDay, stateRng, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
-import { isSunday } from "./time";
+import { isSunday, weekOf } from "./time";
 import type { Cat, GameState, NightReport, NightStep } from "./types";
 import { morningJob } from "./work";
 
@@ -47,9 +49,6 @@ interface Step {
   run(night: Night): void;
 }
 
-/** Крок, механіки якого ще немає: її додасть указаний крок плану. */
-const pending = (): void => {};
-
 const STEPS: readonly Step[] = [
   { id: "sleep", run: sleep },
   // 1. Здоров'я котів від настрою (§9.6) і хвороб (§9.5 — крок 10 плану).
@@ -62,7 +61,7 @@ const STEPS: readonly Step[] = [
   { id: "births", weekly: true, run: births }, // §9.8
   { id: "pregnancies", weekly: true, run: pregnancies }, // §9.8
   { id: "utilities", weekly: true, run: utilities },
-  { id: "week-modifier", weekly: true, run: pending }, // §4.1 — крок 14
+  { id: "week-modifier", weekly: true, run: weekModifier }, // §4.1
   // 4. Поріг 30% за здоровим глуздом увечері.
   { id: "kitten-check", run: kittenCheck },
   // 5. Ранок: персонаж бачить, що сталося вночі.
@@ -117,6 +116,10 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
     if (cat.away !== null) continue;
+    // Тиха ніч: коти не будять (§4.1).
+    if (state.modifiers.day === "quiet-night" || state.modifiers.day === "quiet-evening") continue;
+    // Після феєрверків коти неспокійні.
+    if (state.modifiers.day === "festival" && rng.chance(MODIFIERS.festival.wake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     const nocturnal = traitLevel(cat, "nocturnal");
     // Кішка в тічці кричить уночі (§9.8).
     if (inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
@@ -137,7 +140,8 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
 function sleep({ state, report, rng }: Night): void {
   dropEverything(state);
   const start = state.minute;
-  const planned = wakeMinute(state) + MINUTES_PER_DAY;
+  // Галасливі сусіди будять раніше (§4.1).
+  const planned = wakeMinute(state) + MINUTES_PER_DAY - state.today.earlyWake;
   const wakes = plannedWakeUps(state, rng, start, planned);
   let lost = 0;
   let woke = planned;
@@ -207,6 +211,10 @@ function pregnancies({ state, rng }: Night): void {
   conceive(state, rng);
 }
 
+function weekModifier({ state }: Night): void {
+  state.modifiers.week = chooseWeekModifier(state, weekOf(state.day + 1));
+}
+
 function ageCats({ state, rng }: Night): void {
   for (const cat of state.cats) ageCat(state, cat, rng);
   weeklyDiseases(state, rng);
@@ -263,7 +271,7 @@ function newDay({ state, report }: Night): void {
   state.dayStartMinute = report.wokeMinute;
   state.character.body = newBody();
   morningJob(state);
-  // Тут обиратиметься модифікатор дня (§4.1) — крок 14 плану.
-  state.modifiers.day = null;
   seedDay(state);
+  // Модифікатор дня й тижня (§4.1): з потоку умов дня, тож на переграванні той самий.
+  startModifiers(state, stateRng(state, "conditions"));
 }

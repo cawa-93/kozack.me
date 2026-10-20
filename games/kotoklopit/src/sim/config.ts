@@ -480,6 +480,7 @@ export const TRIPS: Record<Destination, { road: number; visit: number; cat: bool
   groomer: { road: 45, visit: 90, cat: true },
   cafe: { road: 30, visit: 60, cat: false },
   office: { road: 60, visit: 180, cat: false },
+  show: { road: 90, visit: 180, cat: true },
 };
 /** Гонка (§8.5): швидкість, газ і гальмо, смуги, інші машини. */
 export const RACE = {
@@ -595,6 +596,53 @@ export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
   normal: { min: -0.2, max: 0.2 },
   hard: { min: -0.1, max: 0.3 },
 };
+/** Модифікатори (§4.1, `DAY_MODIFIERS.md`): вибір і ефекти (чернетка). */
+export const MODIFIERS = {
+  noneShare: 1 / 3,
+  hardShare: { easy: 0.4, normal: 0.5, hard: 0.6 } as Record<Difficulty, number>,
+  weekShare: 0.5,
+  foundling: 0.03,
+  foundlingGapDays: 14,
+  deadline: { decay: 2, reputation: 1.5 },
+  lull: { decay: 0.5, reputation: 0.5 },
+  meeting: { from: 14 * 60, minutes: 60, attended: 0.5, present: 1.5, absent: -5 },
+  lunch: { from: 12 * 60, to: 14 * 60 },
+  pay: { "pay-delay": 0.5, bonus: 1.5, "fast-internet": 1.25 } as Record<string, number>,
+  reprimand: -3,
+  praise: 3,
+  fullMoonPlay: 1.5,
+  rainFatigue: 1.3,
+  festival: { minute: 21 * 60, hideMinutes: 60, mood: -5, wake: 0.3 },
+  quietEvening: { minute: 20 * 60, mood: 2 },
+  vaccineDays: 7,
+  vaccineIllness: 1.5,
+  homeVetMinute: 11 * 60,
+  heat: { thirst: 1.5, fatigue: 1.2, hygiene: 1.2 },
+  coldWarmth: 3,
+  renovation: { unpleasant: 1.2, catMoodPerHour: -0.5 },
+  neighborsAway: 0.8,
+  outage: { from: 11 * 60, to: 15 * 60 },
+  inspection: { minute: 15 * 60, mess: 5, litter: 5, fur: 10 },
+  recalculation: 10,
+  guests: { minute: 19 * 60, mess: -3, max: -15, hideMinutes: 120 },
+  friend: { from: 10 * 60, to: 16 * 60 },
+  noisyWake: { min: 60, max: 120 },
+  vigor: 1.15,
+  call: { from: 10 * 60, to: 20 * 60, minutes: 30, ignored: -5 },
+  traffic: { traffic: 1.5, "empty-roads": 0.6 } as Record<string, number>,
+  catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
+  show: { fee: 20, mood: -5, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
+  officeAbsent: -5,
+  week: {
+    decay: { "deadline-week": 1.5, "quiet-week": 0.7 } as Record<string, number>,
+    vacationPayHours: 3,
+    vacationMinute: 18 * 60,
+    catMarch: { heatEvery: 7, pregnancy: 0.5 },
+    calmPregnancy: 0.1,
+    catIllness: { "cat-flu": 1.5, "cat-prevention": 0.5 } as Record<string, number>,
+    humanFlu: 0.1,
+  },
+} as const;
 /** Спостереження (§9.9): скільки проявів риси треба побачити, щоб відкрити її; рівні — на кожній третині. */
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */

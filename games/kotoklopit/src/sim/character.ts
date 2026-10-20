@@ -1,6 +1,7 @@
 // Показники персонажа й гроші (§6, §6.1, §6.3).
 
 import { hygieneFactor } from "./household";
+import { unpleasantFactor } from "./modifiers";
 import {
   CHRONOTYPE_WINDOWS,
   DEPRESSION_CEILING,
@@ -72,7 +73,7 @@ export function chronotypeFactor(state: GameState, minute: number): number {
 export function unpleasantTask(state: GameState, sanityLoss: number, minute = state.minute): number {
   const stats = state.character.stats;
   const before = stats.sanity;
-  changeStat(state, "sanity", sanityLoss * chronotypeFactor(state, minute));
+  changeStat(state, "sanity", sanityLoss * chronotypeFactor(state, minute) * unpleasantFactor(state));
   return stats.sanity - before;
 }
 

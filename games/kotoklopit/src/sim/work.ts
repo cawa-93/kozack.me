@@ -26,6 +26,7 @@ import {
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
 import { beardImpression } from "./grooming";
+import { patienceDecayFactor, payFactor, reputationFactor, workdayOverride } from "./modifiers";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -43,7 +44,9 @@ export function positionOf(state: GameState): (typeof POSITIONS)[number] {
 
 export function isWorkday(state: GameState): boolean {
   // Безробітний і на лікарняному — без робочих днів: керівництво нічого не чекає (§6.5, §8.6).
-  return weekdayOf(state.day) < WORKDAYS_PER_WEEK && !state.job.unemployed && state.day > state.job.sickLeaveUntil;
+  if (state.job.unemployed || state.day <= state.job.sickLeaveUntil) return false;
+  // Робоча субота, аврал, вихідний посеред тижня, відпустка (§4.1).
+  return workdayOverride(state) ?? weekdayOf(state.day) < WORKDAYS_PER_WEEK;
 }
 
 /** Робочий час — 09:00–18:00 у будні (§8.6). */
@@ -125,10 +128,10 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
       emit(state, { type: "career", change: "hired", position: 0 });
     }
   } else if (activity?.kind === "work") {
-    const money = position.pay * DIFFICULTY[state.difficulty].earnings * hours;
+    const money = position.pay * DIFFICULTY[state.difficulty].earnings * payFactor(state) * hours;
     const reputationBefore = job.reputation;
     earn(state, money);
-    changeReputation(state, position.reputation * hours);
+    changeReputation(state, position.reputation * reputationFactor(state) * hours);
     activity.sanity += unpleasantTask(state, WORK_SANITY_PER_HOUR * hours, from);
     activity.minutes += minutes;
     activity.money += money;
@@ -137,7 +140,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
   } else if (workTime) {
     // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини.
     if (levelBefore === "out") changeReputation(state, ABSENCE_REPUTATION * position.reputation * hours);
-    const patience = job.patience - position.patienceDecay * hours;
+    const patience = job.patience - position.patienceDecay * patienceDecayFactor(state) * hours;
     // Похибка дробових кроків не повинна відкладати «Х» на хвилину.
     job.patience = patience < PATIENCE_EPSILON ? 0 : patience;
   }

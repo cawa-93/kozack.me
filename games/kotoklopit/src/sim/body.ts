@@ -22,6 +22,7 @@ import {
 import { traitLevel } from "./cat";
 import { emit } from "./events";
 import { cycleDash, cycleMove } from "./grooming";
+import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
 import { isSolid, SPAWN } from "./home";
@@ -128,7 +129,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   }
   // Кіт під ногами сповільнює й може змусити спіткнутися (§9.12).
   const rubbing = rubbingCat(state);
-  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * cycleMove(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
+  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * cycleMove(state) * moveFactor(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
   const from = { x: body.x, y: body.y };
   slide(body, dir.x * speed * minutes, dir.y * speed * minutes);
   const rng = stateRng(state, "behavior");

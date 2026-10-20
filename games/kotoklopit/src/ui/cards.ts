@@ -5,6 +5,7 @@ import { deliveryPrice, freeSlots, isAppliance, supplyCount, thingDeliveryPrice,
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { visibility } from "../sim/knowledge";
+import { priceFactor } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -14,6 +15,7 @@ import {
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
+  WEEK_MODIFIER_TEXTS,
   diseaseTitle,
   endingText,
   farewellText,
@@ -48,6 +50,8 @@ const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 export function morningCard(state: GameState, night: NightReport | null, onStart: () => void): Card {
   const { name, sex } = state.character;
   const body: (string | HTMLElement)[] = [];
+  const week = state.modifiers.week ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
+  if (week) body.push(note(`Цього тижня: ${week.title}`, week.situation, week.effect));
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) body.push(note(modifier.title, modifier.situation, modifier.effect));
   const phase = cyclePhase(state);
@@ -306,7 +310,7 @@ function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers):
     name.append(element("span", "shop-stock", `Зараз ${titles.place}: ${titles.unit(supplyCount(state, product))}`));
     row.append(name);
     for (const quality of ["cheap", "premium"] as const) {
-      const price = deliveryPrice(product, quality);
+      const price = deliveryPrice(product, quality, priceFactor(state, product));
       const size = pack ? "" : ` (${titles.unit(units[quality])})`;
       const button = element("button", "button", `${QUALITY_TITLES[quality]}${size} — ${price}`);
       button.disabled = price > money || state.end !== null;
@@ -349,6 +353,32 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     ],
     actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
     onDismiss: onCancel,
+  };
+}
+
+/** Знайда (§8.5, §4.1): взяти кошеня чи віднести в притулок. */
+export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
+  return {
+    kicker: "Знайда",
+    title: "Кошеня під дверима",
+    body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало.", "Узяти — новий кіт і бонус до здорового глузду. Віднести в притулок — дві години дороги."],
+    actions: [
+      { label: "Узяти додому", primary: true, onSelect: onTake },
+      { label: "Віднести в притулок", onSelect: onShelter },
+    ],
+  };
+}
+
+/** Дзвінок мами (§4.1): відповісти — пів години, не відповісти — здоровий глузд падає. */
+export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
+  return {
+    kicker: "Телефон",
+    title: "Дзвонить мама",
+    body: ["Мама питає, як справи, чи ви їсте, і чи не забагато в домі котів."],
+    actions: [
+      { label: "Відповісти (30 хв)", primary: true, onSelect: onAnswer },
+      { label: "Не відповідати", onSelect: onIgnore },
+    ],
   };
 }
 

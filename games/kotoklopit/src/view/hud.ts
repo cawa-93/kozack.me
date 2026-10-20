@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
-import { STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
+import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
 import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
@@ -178,6 +178,20 @@ export function scheduleOf(state: GameState): string[] {
     items.push(`${formatClock(WORK_START_MINUTE)}–${formatClock(WORK_END_MINUTE)} робота`);
     if (minute < STANDUP_MINUTE + STANDUP_MINUTES) items.push(`${formatClock(STANDUP_MINUTE)} летучка`);
   }
+  // Події модифікатора дня (§4.1).
+  const events: Record<string, [number, string]> = {
+    meeting: [MODIFIERS.meeting.from, "нарада"],
+    lunch: [MODIFIERS.lunch.from, "обідня перерва"],
+    outage: [MODIFIERS.outage.from, "без світла до 15:00"],
+    inspection: [MODIFIERS.inspection.minute, "перевірка ОСББ"],
+    guests: [MODIFIERS.guests.minute, "гості"],
+    festival: [MODIFIERS.festival.minute, "феєрверки"],
+    "home-vet": [MODIFIERS.homeVetMinute, "ветеринарка"],
+    office: [18 * 60, "до цього — офіс"],
+  };
+  const event = events[state.modifiers.day ?? ""];
+  if (event && minute < event[0]) items.push(`${formatClock(event[0])} ${event[1]}`);
+  if (state.modifiers.day === "vaccination" && !state.today.vaccinated) items.push("сьогодні — щеплення котові");
   if (state.home.porch.length > 0) items.push("пакунок під дверима");
   const today = absoluteMinute(state.day, 0);
   for (const delivery of state.home.deliveries) {

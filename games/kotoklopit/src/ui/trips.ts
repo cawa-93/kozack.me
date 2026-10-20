@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, DOCTOR_TREAT, GROOMER, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
+import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
 import { breederCatPrice, breederCats, GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { freeSlots } from "../sim/economy";
@@ -20,6 +20,7 @@ const BLOCKERS = {
   carrier: "Потрібна переноска: її можна замовити з телефона.",
   "no-cat": "Спершу опустіть кота.",
   office: "Їхати в офіс треба лише в день зборів.",
+  show: "Виставка — лише в її день.",
 } as const;
 
 /** Куди поїхати (§8.5). */
@@ -27,7 +28,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   const list = element("div", "shop");
   for (const destination of Object.keys(TRIPS) as Destination[]) {
     const blocker = tripBlocker(state, destination);
-    if (destination === "office" && blocker === "office") continue;
+    if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
@@ -83,6 +84,7 @@ export interface VisitHandlers {
   buyKitten: (cat: number) => void;
   groom: (quality: Quality) => void;
   cafe: (hours: number) => void;
+  show: () => void;
   home: () => void;
 }
 
@@ -239,6 +241,18 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row("Скільки сидіти?", "", ...[1, 2, 3].map((n) => button(`${n} год`, 20 * n, () => h.cafe(n)))),
         );
       break;
+    case "show": {
+      if (!cat) break;
+      const result = log.done.find((d) => d.startsWith("show:"));
+      if (!result) {
+        body.push(`Виставка котів: участь — ${MODIFIERS.show.fee}. Журі дивиться на породу, вигляд і настрій. ${cat.name} у переносці.`);
+        body.push(row(`Записати ${cat.name}`, "3 години на місці", button(`Участь — ${MODIFIERS.show.fee}`, MODIFIERS.show.fee, h.show)));
+        break;
+      }
+      const prize = Number(result.slice(5));
+      body.push(prize > 0 ? `${cat.name} отримує приз: ${prize}! Журі в захваті.` : `${cat.name} цього разу без призу, зате всі охали й ахали.`);
+      break;
+    }
     case "office":
       body.push("Збори в офісі тривали три години. Керівництво бачило вас особисто — це рахується як робота.");
       break;
