@@ -43,7 +43,7 @@ describe("сховища (§6.4)", () => {
     expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([{ product: "catFood", count: 0 }]);
     walkTo(save, "shower");
     // Шампуню не купували: зблизька видно лише засоби гігієни.
-    expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3, limit: 28 }]);
+    expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3, limit: 30 }]);
   });
 
   it("окреме сховище з'являється в квартирі з першим запасом", () => {
@@ -91,13 +91,13 @@ describe("сховища (§6.4)", () => {
     const save = game();
     const state = save.current;
     state.character.money = 10_000;
-    // 6 порцій є; дві упаковки по 21 уже не влізуть у холодильник на 42.
+    // 6 порцій є; дві упаковки по 21 уже не влізуть у холодильник на 40.
     expect(order(state, "food", "cheap")).not.toBeNull();
     expect(fitsStorage(state, "food", "cheap")).toBe(false);
     expect(order(state, "food", "cheap")).toBeNull();
-    // Корм: 112 у шафці, пакет притулку додає лише до ліміту.
-    addSupply(state, "catFood", "cheap", 110);
+    // Корм: 110 у шафці, пакет притулку додає лише до ліміту.
+    addSupply(state, "catFood", "cheap", 108);
     giveStarterPack(state);
-    expect(state.home.supplies.catFood.cheap).toBe(112);
+    expect(state.home.supplies.catFood.cheap).toBe(110);
   });
 });

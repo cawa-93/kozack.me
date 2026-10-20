@@ -161,21 +161,21 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   shampoo: { cheap: 0, premium: 0 },
   detergent: { cheap: 0, premium: 0 },
 };
-/** Скільки кожного запасу вміщує його сховище (§6.4): приблизно дві упаковки. */
+/** Скільки кожного запасу вміщує його сховище (§6.4): кратно десяти, щонайменше 10. */
 export const STORAGE_LIMITS: Record<Product, number> = {
-  food: 42,
-  hygiene: 28,
-  catFood: 112,
-  sterileFood: 112,
-  litter: 21,
+  food: 40,
+  hygiene: 30,
+  catFood: 110,
+  sterileFood: 110,
+  litter: 20,
   pills: 10,
-  drops: 6,
+  drops: 10,
   humanMeds: 10,
   treats: 40,
-  collar: 2,
-  bell: 2,
+  collar: 10,
+  bell: 10,
   shampoo: 10,
-  detergent: 8,
+  detergent: 10,
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
