@@ -2,6 +2,8 @@
 
 import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
 import { deliveryPrice, freeSlots, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
+import { visibility } from "../sim/knowledge";
+import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, Difficulty, GameEnd, GameState, HomeItem, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
 import {
@@ -122,7 +124,7 @@ const THING_TITLES: Record<ThingKind, string> = {
   scratcher: "Кігтеточка",
 };
 
-export type PhoneTab = "supplies" | "things" | "mine";
+export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album";
 
 export interface PhoneHandlers {
   order: (product: Product, quality: Quality) => void;
@@ -132,7 +134,7 @@ export interface PhoneHandlers {
   close: () => void;
 }
 
-const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі" };
+const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті" };
 
 /** Телефон персонажа (§6.4): доставка запасів і речей для котів, викинути річ. */
 export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
@@ -142,6 +144,8 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   if (tab === "supplies") body.push(`Гроші: ${money}. Доставка коштує на 10% дорожче, ніж у магазині, і привозить пакунок приблизно за 6 годин. Пакунок чекатиме під дверима.`, suppliesShop(state, money, handlers));
   if (tab === "things") body.push(`Гроші: ${money}. Нова річ стане на вільне місце, а кожна, крім іграшок, трохи збільшує комунальні.`, thingsShop(state, money, handlers));
   if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
+  if (tab === "cats") body.push(...catCards(state));
+  if (tab === "album") body.push(...albumCards(state));
   if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
   return {
     kicker: "Телефон",
@@ -153,6 +157,41 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
     ],
     onDismiss: handlers.close,
   };
+}
+
+const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
+
+/** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
+function catCards(state: GameState): (string | HTMLElement)[] {
+  if (state.cats.length === 0) return ["Котів поки немає."];
+  return state.cats.map((cat) => {
+    const lines = [`${cat.name} — ${cat.sex === "male" ? "кіт" : "кішка"}, ${weeks(cat.ageWeeks)}`];
+    const known = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
+    if (known.length > 0) lines.push(`Ветеринар знайшов: ${known.join(", ")}.`);
+    for (const trait of cat.traits) {
+      const seen = visibility(state, trait);
+      if (seen === 3) lines.push(`${fill(traitName(trait), cat.sex)} (${traitGroup(trait.group).title})`);
+      else if (seen === 2) {
+        const signs = traitGroup(trait.group).signs;
+        if (signs) lines.push(`Здається, ${cat.name} ${trait.level > 0 ? signs[0] : signs[1]}.`);
+      } else if (seen === 1) lines.push("❓ Помічено щось дивне");
+    }
+    if (lines.length === 1) lines.push("Характер поки загадка: придивляйтеся.");
+    return note(...lines);
+  });
+}
+
+const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", given: "віддано в добрі руки" };
+
+/** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
+function albumCards(state: GameState): (string | HTMLElement)[] {
+  if (state.album.length === 0) return ["Альбом поки порожній."];
+  return [...state.album].reverse().map((entry) => {
+    const cause = entry.cause.kind === "disease" ? `хвороба «${diseaseTitle(entry.cause.disease)}»` : CAUSE_TITLES[entry.cause.kind] ?? "";
+    const text = farewellText(entry, diseaseTitle);
+    const traits = entry.traits.map((t) => fill(traitName(t), entry.sex)).join(", ") || "без помітних рис";
+    return note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${cause}`, `«${text.title}». ${text.life}`, `Характер: ${traits}.`);
+  });
 }
 
 function thingsShop(state: GameState, money: number, handlers: PhoneHandlers): HTMLElement {

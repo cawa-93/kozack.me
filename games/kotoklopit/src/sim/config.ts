@@ -444,6 +444,10 @@ export const SYMPTOMS = {
 } as const;
 /** Ліки вдома (§9.5): дешева доза діє з шансом 70%; дати ліки — неприємне завдання, любов −1. */
 export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1 } as const;
+/** Спостереження (§9.9): скільки проявів риси треба побачити, щоб відкрити її; рівні — на кожній третині. */
+export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
+/** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */
+export const WITNESS_DISTANCE = 3;
 /** Смерть кота (§9.2, §9.5): нульове здоров'я ввечері — 60%; понад межу віку — 20% + 10% за тиждень − 5% за «Довголіття». */
 export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;
 /** Стосунки між котами (§9.4). */

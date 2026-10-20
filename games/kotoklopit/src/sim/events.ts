@@ -34,6 +34,7 @@ export type GameEvent =
   | { type: "cat-love"; cat: number; delta: number; reason: string }
   | { type: "cat-day"; cat: number; mood: number; health: number; love: number }
   | { type: "cat-trait"; cat: number; group: string; level: TraitLevel; title: string }
+  | { type: "trait-noticed"; cat: number; group: string; stage: 1 | 2 | 3 }
   | { type: "cat-arrived"; cat: number }
   | { type: "cat-gone"; entry: AlbumEntry }
   | { type: "cat-ill"; cat: number; disease: DiseaseId }

@@ -21,6 +21,7 @@ import {
 } from "./config";
 import { traitLevel } from "./cat";
 import { emit } from "./events";
+import { observe } from "./knowledge";
 import { isSolid, SPAWN } from "./home";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
@@ -132,6 +133,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
     if (rng.chance(1 - (1 - chance) ** minutes)) {
       stun(state);
       emit(state, { type: "tripped", cat: rubbing.id });
+      observe(state, rubbing, "legs");
       return;
     }
   }

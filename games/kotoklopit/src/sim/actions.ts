@@ -6,6 +6,7 @@ import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
 import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
+import { observe } from "./knowledge";
 import { changeStat, unpleasantTask } from "./character";
 import {
   ILLNESS,
@@ -273,6 +274,7 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   if (shooed) {
     changeMood(state, cat, SHOO.mood, "прогнали з місця");
     changeLove(state, cat, SHOO.love, "прогнали з місця");
+    observe(state, cat, "touchy");
   } else {
     if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
     if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");
@@ -460,6 +462,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     character.activity = null;
     cat.act = idleAct(0);
     emit(state, { type: "bite", cat: cat.id });
+    observe(state, cat, "petting");
   }
 }
 
@@ -498,6 +501,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     character.activity = null;
     cat.act = idleAct(0);
     emit(state, { type: "played", cat: cat.id, minutes: activity.minutes });
+    observe(state, cat, "playful");
   }
 }
 

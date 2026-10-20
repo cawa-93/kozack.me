@@ -55,6 +55,7 @@ import {
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
+import { observe, setWitnessing } from "./knowledge";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { stateRng, type Rng } from "./rng";
@@ -109,7 +110,10 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
-  if (rng.chance(rate * hours)) addMess(state, "hairball", visibleFloorNear(cat), cat.id);
+  if (rng.chance(rate * hours)) {
+    addMess(state, "hairball", visibleFloorNear(cat), cat.id);
+    observe(state, cat, "hairballs");
+  }
 }
 
 /** Потреби на межі псують настрій щогодини (§9.12). */
@@ -162,7 +166,9 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean)
   if (!rng.chance(r.chance + r.territorialStep * Math.max(0, traitLevel(cat, "territorial")))) return;
   const others = state.cats.filter((c) => c.id !== cat.id && c.away === null);
   const other = others[rng.int(0, others.length - 1)];
-  if (other) changeRelation(state, cat, other, r.relation);
+  if (!other) return;
+  changeRelation(state, cat, other, r.relation);
+  observe(state, cat, "territorial");
 }
 
 export function litterCapacity(box: LitterItem): number {
@@ -348,17 +354,20 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
 /** Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). */
 function startAttention(state: GameState, cat: Cat): void {
   start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention, "character");
+  for (const group of ["affection", "demanding", "follower", "talkative"]) observe(state, cat, group);
 }
 
-function startZoomies(cat: Cat, rng: Rng): void {
+function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
   start(cat, "zoomies", randomFloor(rng), ZOOMIES.minMinutes + rng.next() * (ZOOMIES.maxMinutes - ZOOMIES.minMinutes));
+  observe(state, cat, "zoomies");
 }
 
 /** Кіт хоче гратися (§9.12): зумі, скинути річ, украсти їжу, іграшка чи просто побродити. */
 function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
+  if (traitLevel(cat, "energy") > 0) observe(state, cat, "energy");
   type Choice = () => void;
   const options: { weight: number; value: Choice }[] = [
-    { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(cat, rng) },
+    { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(state, cat, rng) },
     { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander) },
   ];
   const onSurfaces = dishes(state, false);
@@ -374,7 +383,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   if (toy) options.push({ weight: MISCHIEF.toy, value: () => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`) });
   options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep), value: () => startScratch(state, cat, rng) });
   const mate = playmate(state, cat);
-  if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: () => startWrestle(cat, mate) });
+  if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: () => startWrestle(state, cat, mate) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
 }
 
@@ -390,7 +399,8 @@ function playmate(state: GameState, cat: Cat): Cat | null {
 }
 
 /** Боротьба й погоня з другом (§9.4): друг чекає, поки кіт підбіжить. */
-function startWrestle(cat: Cat, mate: Cat): void {
+function startWrestle(state: GameState, cat: Cat, mate: Cat): void {
+  observe(state, cat, "sociability");
   const minutes = RELATIONS.wrestle.minutes;
   start(cat, "wrestle", tileOf(mate), minutes, `cat:${mate.id}`);
   start(mate, "wrestle", null, minutes + distance(cat, mate) / CAT_WALK_TILES_PER_MINUTE, `cat:${cat.id}`);
@@ -404,6 +414,7 @@ function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
+  observe(state, cat, "scratching");
 }
 
 /**
@@ -417,10 +428,12 @@ function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
   if (helper > 0 && rng.chance(WORK_CAT.keyboardStep * helper)) {
     const computer = objectById("computer");
     const minutes = WORK_CAT.keyboardMinMinutes + rng.next() * (WORK_CAT.keyboardMaxMinutes - WORK_CAT.keyboardMinMinutes);
+    observe(state, cat, "helper");
     return start(cat, "keyboard", { x: computer.x, y: computer.y }, minutes, "computer");
   }
   if (lap >= 0 && rng.chance(WORK_CAT.lapBase + WORK_CAT.lapStep * lap)) {
     start(cat, "lap", null, MINUTES_PER_HOUR * 4, "character");
+    observe(state, cat, "lap");
     jealousy(state, cat);
   }
 }
@@ -481,6 +494,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (bowl.foodQuality === "cheap" && picky > 0 && rng.chance(PICKY_REFUSAL_STEP * picky)) {
         changeMood(state, cat, MOOD.pickyRefusal, "відмовився від дешевого корму");
         emit(state, { type: "cat-refused-food", cat: cat.id });
+        observe(state, cat, "picky");
         return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       }
       bowl.food -= 1;
@@ -490,11 +504,15 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
       itemMood(state, cat, bowl);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
+      observe(state, cat, "appetite");
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
       afterMeal(state, cat, quality === "premium", rng);
       // Їсть надто швидко й одразу зригує (§9.3) чи нездужає шлунком (§9.5).
       const gulping = traitLevel(cat, "gulping");
-      if ((gulping > 0 && rng.chance(VOMIT_STEP * gulping)) || vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
+      if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) {
+        addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
+        observe(state, cat, "gulping");
+      } else if (vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
       return;
     }
     case "drink": {
@@ -522,6 +540,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         const picky = traitLevel(cat, "litterPicky");
         if (rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * Math.max(0, picky))) {
           addMess(state, "surprise", surpriseSpot(rng), cat.id);
+          observe(state, cat, "litterPicky");
           return;
         }
       }
@@ -531,13 +550,19 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (rng.chance(SCATTER_CHANCE.base + SCATTER_CHANCE.step * traitLevel(cat, "scatter"))) {
         const slot = slotById(box.slot);
         addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.7 + rng.next() * 0.2 }, cat.id);
+        observe(state, cat, "scatter");
       }
       // Після лотка — часто зумі (§9.3).
-      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(cat, rng);
+      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(state, cat, rng);
       return;
     }
     case "sleep": {
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
+      // Довгий сон — прояв «Тривалості сну», а спокійний кіт — «Енергійності» (§9.9).
+      if (act.elapsed >= 3 * MINUTES_PER_HOUR) {
+        observe(state, cat, "sleep");
+        if (traitLevel(cat, "energy") < 0) observe(state, cat, "energy");
+      }
       const house = itemById(state, act.target);
       if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) itemMood(state, cat, house);
       return;
@@ -557,6 +582,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       changeMood(state, friend, RELATIONS.groom.mood);
       changeRelation(state, cat, friend, RELATIONS.groom.relation);
       emit(state, { type: "groomed", cat: cat.id, friend: friend.id });
+      observe(state, cat, "grooming");
+      observe(state, cat, "sociability");
       return;
     }
     case "fight":
@@ -588,6 +615,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       changeMood(state, cat, 1);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       emit(state, { type: "knocked", cat: cat.id, object: act.target, item: dish });
+      observe(state, cat, "knocking");
       return;
     }
     case "steal": {
@@ -599,6 +627,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       changeMood(state, cat, 2);
       afterTheft(state, cat, rng);
+      observe(state, cat, "thief");
       emit(state, { type: "stole", cat: cat.id, object: act.target, item: dish });
       return;
     }
@@ -749,8 +778,11 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
 export function tickCats(state: GameState, minutes: number, context: CatContext): void {
   if (state.cats.length === 0) return;
   const rng = stateRng(state, "behavior");
+  // Уночі персонаж спить і проявів не бачить (§9.9).
+  setWitnessing(context.present);
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) tickRelations(state, minutes, rng);
+  setWitnessing(true);
 }
 
 /** Між котами (§9.4): сон купкою, бійки ворогів, сусідство з ворогом. */
@@ -791,6 +823,7 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   changeRelation(state, a, b, fight.relation);
   addMess(state, "fur", visibleFloorNear({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
+  for (const cat of [a, b]) for (const group of ["sociability", "territorial"]) observe(state, cat, group);
 }
 
 /** Персонаж узяв на руки кота, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно. */
@@ -807,7 +840,9 @@ export function jealousy(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
     if (other.id === cat.id || !home(state, other) || asleep(other)) continue;
     const level = traitLevel(other, "jealousy");
-    if (level > 0) changeRelation(state, other, cat, RELATIONS.jealousy * level);
+    if (level <= 0) continue;
+    changeRelation(state, other, cat, RELATIONS.jealousy * level);
+    observe(state, other, "jealousy");
   }
 }
 
@@ -824,5 +859,6 @@ export function rollEscapes(state: GameState): void {
     cat.y = 10.9;
     start(cat, "idle", null, 0);
     emit(state, { type: "escaped", cat: cat.id });
+    observe(state, cat, "escape");
   }
 }
