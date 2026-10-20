@@ -18,6 +18,7 @@ import {
 } from "./config";
 import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
+import { oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
 import { createRng, seedDay, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
@@ -46,11 +47,11 @@ const STEPS: readonly Step[] = [
   { id: "sleep", run: sleep },
   // 1. Здоров'я котів від настрою (§9.6) і хвороб (§9.5 — крок 10 плану).
   { id: "cat-health", run: catHealth },
-  // 2. Смерть від нульового здоров'я (§9.5) — крок 10.
-  { id: "cat-death", run: pending },
+  // 2. Смерть від нульового здоров'я (§9.5).
+  { id: "cat-death", run: catDeath },
   // 3. Ніч із неділі на понеділок.
   { id: "cat-age", weekly: true, run: ageCats },
-  { id: "age-limit", weekly: true, run: pending }, // §9.2 — крок 10
+  { id: "age-limit", weekly: true, run: ageLimit }, // §9.2
   { id: "births", weekly: true, run: pending }, // §9.8 — крок 12
   { id: "pregnancies", weekly: true, run: pending }, // §9.8 — крок 12
   { id: "utilities", weekly: true, run: utilities },
@@ -169,6 +170,14 @@ function catHealth({ state }: Night): void {
   for (const cat of state.cats) closeCatDay(state, cat);
   // Підсумок дня для пар: життя разом зближує (§9.4).
   nightlyRelations(state);
+}
+
+function catDeath({ state, report, rng }: Night): void {
+  for (const entry of zeroHealthDeaths(state, rng)) report.lostCats.push(entry.id);
+}
+
+function ageLimit({ state, report, rng }: Night): void {
+  for (const entry of oldAgeDeaths(state, rng)) report.lostCats.push(entry.id);
 }
 
 function ageCats({ state, rng }: Night): void {

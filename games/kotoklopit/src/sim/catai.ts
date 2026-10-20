@@ -553,7 +553,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "fight":
       // Нерозборонена бійка: можлива травма (§9.4).
-      if (rng.chance(RELATIONS.fight.injury)) changeHealth(state, cat, RELATIONS.fight.health, "травма в бійці");
+      if (rng.chance(RELATIONS.fight.injury)) changeHealth(state, cat, RELATIONS.fight.health, "disease:injury");
       return;
     case "scratch": {
       cat.needs.play = Math.max(0, cat.needs.play - SCRATCH.relief);

@@ -386,6 +386,8 @@ export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPe
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1 } as const;
+/** Смерть кота (§9.2, §9.5): нульове здоров'я ввечері — 60%; понад межу віку — 20% + 10% за тиждень − 5% за «Довголіття». */
+export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;
 /** Стосунки між котами (§9.4). */
 export const RELATIONS = {
   friend: 50,

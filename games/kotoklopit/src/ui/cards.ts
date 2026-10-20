@@ -9,7 +9,9 @@ import {
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
+  diseaseTitle,
   endingText,
+  farewellText,
   fill,
   FIRST_DAY_HINT,
   KITTEN_BONUS,
@@ -44,6 +46,12 @@ export function morningCard(state: GameState, night: NightReport | null, onStart
     if (!cat) continue;
     body.push(fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }));
     body.push(fill(KITTEN_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity }));
+  }
+  for (const id of night?.lostCats ?? []) {
+    const entry = state.album.find((e) => e.id === id);
+    if (!entry) continue;
+    const text = farewellText(entry, diseaseTitle);
+    body.push(note(`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, `Здоровий глузд ${DIFFICULTY[state.difficulty].lostCatSanity}.`));
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {

@@ -27,6 +27,9 @@ interface Run {
   kittens: number;
   cats: number;
   catMood: number[];
+  /** Середній настрій за життя всіх котів: і живих, і з альбому пам'яті (§9.7). */
+  lives: number[];
+  deaths: number;
   catHealth: number[];
   position: number;
   reputation: number;
@@ -57,6 +60,8 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
     kittens: 0,
     cats: 0,
     catMood: [],
+    lives: [],
+    deaths: 0,
     catHealth: [],
     position: 0,
     reputation: 0,
@@ -86,6 +91,8 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
   run.money = state.character.money;
   run.cats = state.cats.length;
   run.catMood = state.cats.map(lifeMood);
+  run.lives = [...run.catMood, ...state.album.map((e) => e.lifeMood)];
+  run.deaths = state.album.length;
   run.catHealth = state.cats.map((c) => c.health);
   run.position = state.job.position;
   run.reputation = state.job.reputation;
@@ -106,7 +113,7 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Кошенят | Котів | Настрій котів | Здоров'я котів | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
   lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
@@ -128,7 +135,7 @@ function report(runs: Run[]): string {
         `${fmt(avg(group.map((r) => r.money)), 0)} (${fmt(Math.min(...group.map((r) => r.minMoney)), 0)})`,
         `${fmt(avg(allSanity))} (${fmt(Math.min(...allSanity))})`,
         fmt(avg(group.map((r) => r.kittens))),
-        fmt(avg(group.map((r) => r.cats))),
+        `${fmt(avg(group.map((r) => r.cats)))} (${fmt(avg(group.map((r) => r.deaths)))})`,
         fmt(avg(group.flatMap((r) => r.catMood))),
         fmt(avg(group.flatMap((r) => r.catHealth))),
         fmt(avg(group.map((r) => r.position + 1))),
@@ -139,9 +146,9 @@ function report(runs: Run[]): string {
     );
   }
   const levels = new Array<number>(10).fill(0);
-  for (const mood of runs.flatMap((r) => r.catMood)) levels[level(mood)] = (levels[level(mood)] ?? 0) + 1;
+  for (const mood of runs.flatMap((r) => r.lives)) levels[level(mood)] = (levels[level(mood)] ?? 0) + 1;
   lines.push("");
-  lines.push(`Рівні життя котів (§9.7), від «Агонії» до «Легенди»: ${levels.join(" · ")}.`);
+  lines.push(`Рівні життя всіх котів, живих і з альбому (§9.7), від «Агонії» до «Легенди»: ${levels.join(" · ")}.`);
   lines.push("");
   lines.push(`Час прогону: ${fmt(runs.reduce((s, r) => s + r.seconds, 0), 0)} с.`);
   return lines.join("\n");

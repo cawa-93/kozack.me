@@ -358,6 +358,29 @@ export interface Cat {
   parents: { mother: number | null; father: number | null };
 }
 
+/** Чому кота не стало (§9.7): старість, хвороба, туга (поганий настрій) чи віддали в добрі руки. */
+export type FarewellCause = { kind: "old" } | { kind: "disease"; disease: string } | { kind: "sorrow" } | { kind: "given" };
+
+/** Запис «Альбому пам'яті» (§9.7): усе про кота, якого більше немає вдома. */
+export interface AlbumEntry {
+  id: number;
+  name: string;
+  sex: Sex;
+  source: CatSource;
+  ageWeeks: number;
+  /** Повний характер: на прощанні альбом показує всі риси (§9.9). */
+  traits: Trait[];
+  breed: [string, string];
+  genes: Genes;
+  shape: Shape;
+  cause: FarewellCause;
+  /** Середній настрій за все життя (§9.7). */
+  lifeMood: number;
+  arrivedDay: number;
+  /** Ніч, коли кота не стало: день, що закінчився. */
+  day: number;
+}
+
 export type NightStep =
   | "sleep"
   | "cat-health"
@@ -421,6 +444,8 @@ export interface GameState {
   home: Home;
   modifiers: { day: string | null; week: string | null };
   cats: Cat[];
+  /** «Альбом пам'яті» (§9.7): коти, яких більше немає. */
+  album: AlbumEntry[];
   /** Стосунки пар котів −100…+100 (§9.4): ключ — `id-id`, менший id першим. */
   relations: Record<string, number>;
   /** Наступний id для котів, речей, безладу й пакунків. */
