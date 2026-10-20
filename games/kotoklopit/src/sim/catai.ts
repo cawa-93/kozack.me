@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { changeHealth, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
+import { changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
 import { randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -18,6 +18,7 @@ import {
   ESCAPE,
   HAIRBALL,
   HOUSE_SLEEP,
+  ILLNESS,
   HUNGRY_THEFT,
   KITTEN_PLAY,
   LITTER_CAPACITY,
@@ -52,6 +53,7 @@ import {
   WORK_CAT,
   ZOOMIES,
 } from "./config";
+import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
@@ -89,14 +91,14 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const n = cat.needs;
   const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
-  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
+  n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
   n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours);
-  n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours);
+  n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours * toiletFactor(cat));
   if (sleeping) {
-    n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
+    n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * sleepFactor(cat) * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
   } else {
     const tired = isOld(cat) || cat.health < LOW_CAT_HEALTH ? TIRED_FATIGUE : 1;
-    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired);
+    n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat));
   }
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * (traitLevel(cat, "affection") + traitLevel(cat, "demanding")));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
@@ -489,9 +491,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       itemMood(state, cat, bowl);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
-      // Їсть надто швидко й одразу зригує (§9.3).
+      afterMeal(state, cat, quality === "premium", rng);
+      // Їсть надто швидко й одразу зригує (§9.3) чи нездужає шлунком (§9.5).
       const gulping = traitLevel(cat, "gulping");
-      if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
+      if ((gulping > 0 && rng.chance(VOMIT_STEP * gulping)) || vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
       return;
     }
     case "drink": {
@@ -505,6 +508,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "toilet": {
       cat.needs.toilet = 0;
       const box = itemById<LitterItem>(state, act.target);
+      // Хворий кіт не дотерпів до лотка (§9.5).
+      if (box && missesLitter(cat, rng)) {
+        addMess(state, "surprise", visibleFloorNear(cat), cat.id);
+        return;
+      }
       if (!box) {
         addMess(state, "surprise", visibleFloorNear(cat), cat.id);
         return;
@@ -553,7 +561,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "fight":
       // Нерозборонена бійка: можлива травма (§9.4).
-      if (rng.chance(RELATIONS.fight.injury)) changeHealth(state, cat, RELATIONS.fight.health, "disease:injury");
+      if (rng.chance(RELATIONS.fight.injury)) fallIll(state, cat, "injury");
       return;
     case "scratch": {
       cat.needs.play = Math.max(0, cat.needs.play - SCRATCH.relief);
@@ -590,6 +598,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.hunger = Math.max(0, cat.needs.hunger - STEAL_HUNGER);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       changeMood(state, cat, 2);
+      afterTheft(state, cat, rng);
       emit(state, { type: "stole", cat: cat.id, object: act.target, item: dish });
       return;
     }
@@ -682,6 +691,7 @@ function returnFromStairs(state: GameState, cat: Cat): void {
   cat.y = 10.3;
   start(cat, "idle", null, 5);
   changeMood(state, cat, ESCAPE.returnMood, "повернувся сам зі сходів");
+  maybeFallIll(state, cat, "fleas", ILLNESS.escapeFleas, stateRng(state, "behavior"));
   emit(state, { type: "cat-returned", cat: cat.id, caught: false });
 }
 
@@ -689,6 +699,7 @@ function returnFromStairs(state: GameState, cat: Cat): void {
 function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   grow(state, cat, minutes, rng);
   needsMood(state, cat, minutes, context);
+  if (cat.away === null && cat.diseases.length > 0) showSymptoms(state, cat, minutes, rng);
   recordMood(cat, minutes);
   if (cat.away !== null) {
     if (state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
@@ -717,7 +728,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       continue;
     }
     if (cat.act.goal) {
-      left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE);
+      left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
       if (cat.act.goal) break;
       continue;
     }

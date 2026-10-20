@@ -80,6 +80,14 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Викинуто: ${event.item.kind} (${event.item.quality})`;
     case "cat-gone":
       return `Кота не стало: ${event.entry.name} (${event.entry.cause.kind}${event.entry.cause.kind === "disease" ? ` ${event.entry.cause.disease}` : ""}), середній настрій ${number(event.entry.lifeMood)}`;
+    case "cat-ill":
+      return `${catName(state, event.cat)} захворів: ${event.disease}`;
+    case "cat-cured":
+      return `${catName(state, event.cat)} одужав: ${event.disease}`;
+    case "symptom":
+      return `${catName(state, event.cat)}: симптом ${event.symptom}`;
+    case "medicine":
+      return `${catName(state, event.cat)}: ліки ${event.medicine} (${quality(event.quality)})`;
     case "groomed":
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":

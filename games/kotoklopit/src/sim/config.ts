@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Chronotype, Difficulty, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, Chronotype, Difficulty, DiseaseId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -131,12 +131,16 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   hygiene: { units: { cheap: 14, premium: 14 }, price: { cheap: 15, premium: 35 } },
   catFood: { units: { cheap: 56, premium: 56 }, price: { cheap: 100, premium: 200 } },
   litter: { units: { cheap: 7, premium: 4 }, price: { cheap: 8, premium: 15 } },
+  pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
+  drops: { units: { cheap: 3, premium: 3 }, price: { cheap: 12, premium: 30 } },
 };
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
   hygiene: { cheap: 7, premium: 0 },
   catFood: { cheap: 0, premium: 0 },
   litter: { cheap: 0, premium: 0 },
+  pills: { cheap: 0, premium: 0 },
+  drops: { cheap: 0, premium: 0 },
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
@@ -386,6 +390,60 @@ export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPe
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1 } as const;
+/** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
+export const DISEASES: Record<
+  DiseaseId,
+  {
+    safe: number;
+    damage: number;
+    cure: { kind: Medicine; doses: number } | { kind: "diet"; portions: number } | { kind: "calm"; days: number } | { kind: "vet" } | { kind: "control"; medicine: Medicine };
+    contagious: "friends" | "litter" | null;
+  }
+> = {
+  cold: { safe: 3, damage: 2, cure: { kind: "pills", doses: 4 }, contagious: "friends" },
+  fleas: { safe: 5, damage: 1, cure: { kind: "drops", doses: 1 }, contagious: "friends" },
+  worms: { safe: 5, damage: 2, cure: { kind: "pills", doses: 1 }, contagious: "litter" },
+  stomach: { safe: 2, damage: 2, cure: { kind: "diet", portions: 4 }, contagious: null },
+  injury: { safe: 3, damage: 1, cure: { kind: "vet" }, contagious: null },
+  cystitis: { safe: 3, damage: 2, cure: { kind: "calm", days: 2 }, contagious: null },
+  conjunctivitis: { safe: 4, damage: 1, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
+  senior: { safe: 0, damage: 1, cure: { kind: "control", medicine: "pills" }, contagious: null },
+};
+/** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
+export const ILLNESS = {
+  cold: 1 / 60,
+  conjunctivitis: 1 / 100,
+  afterCold: 0.3,
+  shelterFleas: 0.2,
+  escapeFleas: 0.3,
+  stolenWorms: 0.1,
+  stolenStomach: 0.25,
+  cheapFoodStomach: 0.01,
+  cystitisMood: 25,
+  cystitis: 0.3,
+  calmMood: 50,
+  seniorPerWeek: 0.5,
+  friendContagion: 0.2,
+  otherContagion: 0.05,
+  litterContagion: 0.1,
+  hardinessStep: 0.1,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  moodPerDay: -3,
+} as const;
+/** Симптоми (§9.5): множники потреб і руху, шанси. */
+export const SYMPTOMS = {
+  tired: 1.3,
+  fleasSleep: 0.8,
+  wormsHunger: 1.3,
+  cystitisToilet: 2,
+  limp: 0.6,
+  stomachVomit: 0.3,
+  outsideLitter: 0.3,
+  /** Скільки разів на годину видно чхання, свербіж, тертя очей. */
+  showPerHour: 2,
+} as const;
+/** Ліки вдома (§9.5): дешева доза діє з шансом 70%; дати ліки — неприємне завдання, любов −1. */
+export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1 } as const;
 /** Смерть кота (§9.2, §9.5): нульове здоров'я ввечері — 60%; понад межу віку — 20% + 10% за тиждень − 5% за «Довголіття». */
 export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;
 /** Стосунки між котами (§9.4). */
@@ -400,7 +458,7 @@ export const RELATIONS = {
   wrestle: { weight: 0.6, minutes: 3, play: 40, mood: 2, relation: 1 },
   groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
-  fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, health: -10, separateSanity: -3 },
+  fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3 },
   enemyMoodPerHour: -0.5,
   resource: { chance: 0.15, territorialStep: 0.1, relation: -3 },
   jealousy: -1,

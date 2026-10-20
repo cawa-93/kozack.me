@@ -3,7 +3,7 @@
 import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
 import { deliveryPrice, freeSlots, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Difficulty, GameEnd, GameState, HomeItem, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Cat, Difficulty, GameEnd, GameState, HomeItem, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -98,6 +98,8 @@ const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => strin
   hygiene: { name: "Засоби гігієни", unit: (n) => `${n} ${plural(n, "душ", "душі", "душів")}`, place: "у ванній" },
   catFood: { name: "Котячий корм", unit: portions, place: "у шафці" },
   litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у запасі" },
+  pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "у шафці" },
+  drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у шафці" },
 };
 
 const QUALITY_TITLES: Record<Quality, string> = { cheap: "Дешеві", premium: "Дорогі" };
@@ -211,6 +213,21 @@ function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers):
     shop.append(row);
   }
   return shop;
+}
+
+/** Дати ліки коту на руках (§9.5): таблетку чи краплі. */
+export function medicineCard(state: GameState, cat: Cat, onGive: (medicine: Medicine) => void, onCancel: () => void): Card {
+  const options = (["pills", "drops"] as const).filter((m) => supplyCount(state, m) > 0);
+  return {
+    kicker: "Ліки",
+    title: `Що дати ${cat.name}?`,
+    body: ["Кіт опиратиметься: дати ліки — неприємна справа. Таблетка допомагає від застуди, глистів і старечих болячок, краплі — від бліх і кон'юнктивіту."],
+    actions: [
+      ...options.map((m) => ({ label: `${PRODUCT_TITLES[m].name} (${supplyCount(state, m)})`, primary: m === options[0], onSelect: () => onGive(m) })),
+      { label: "Скасувати", onSelect: onCancel },
+    ],
+    onDismiss: onCancel,
+  };
 }
 
 /** Нова гра: персонаж і складність (§5). Повний конструктор додасть крок 15 плану. */

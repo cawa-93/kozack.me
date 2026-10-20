@@ -5,13 +5,15 @@
 import { petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
-import { PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
+import { giveMedicine } from "../src/sim/diseases";
+import { stateRng } from "../src/sim/rng";
 import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetOf } from "../src/sim/targets";
-import type { Cat, GameState, NightReport, Product, Save, Vec } from "../src/sim/types";
+import type { Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
 import { POSITIONS } from "../src/sim/config";
 
@@ -47,6 +49,8 @@ const named = (name: string, run: () => void): Task => Object.defineProperty(run
 export class Bot {
   readonly log: BotLog = { worked: 0, petted: 0, played: 0, walked: 0 };
   private workedToday = 0;
+  /** Коли кожному коту востаннє давали ліки: хвилина від початку гри. */
+  private readonly dosed = new Map<number, number>();
   /** Цілі, до яких не вдалося дійти: до якої хвилини дня їх пропускати. */
   private readonly skip = new Map<string, number>();
 
@@ -96,6 +100,8 @@ export class Bot {
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
+    const patient = this.patient();
+    if (patient) return named("treat", () => this.treat(patient.cat, patient.medicine));
     const fighter = s.cats.find((c) => c.act.kind === "fight" && c.away === null);
     if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
@@ -200,6 +206,12 @@ export class Bot {
     need("food", 7);
     need("hygiene", 3);
     if (cats > 0) {
+      const sick = (medicine: Medicine): boolean => s.cats.some((c) => c.diseases.some((d) => {
+        const cure = DISEASES[d.id].cure;
+        return cure.kind === medicine || (cure.kind === "control" && cure.medicine === medicine);
+      }));
+      if (sick("pills")) need("pills", 2);
+      if (sick("drops")) need("drops", 1);
       need("catFood", cats * 4);
       need("litter", Math.max(2, cats));
     }
@@ -272,6 +284,34 @@ export class Bot {
     interact(this.save);
     // Віднести кота трохи вбік і опустити.
     this.walkToTile({ x: 4, y: 8 });
+    interact(this.save);
+  }
+
+  /**
+   * Хворий кіт, якому вже час дати ліки, і які саме (§9.5). Бот бачить хвороби напряму —
+   * так він заміняє уважного гравця, що помічає симптоми.
+   */
+  private patient(): { cat: Cat; medicine: Medicine } | null {
+    const s = this.state;
+    const now = s.day * 1440 + s.minute;
+    for (const cat of s.cats) {
+      if (cat.away !== null || now - (this.dosed.get(cat.id) ?? -Infinity) < 6 * 60) continue;
+      for (const d of cat.diseases) {
+        const cure = DISEASES[d.id].cure;
+        const medicine = cure.kind === "pills" || cure.kind === "drops" ? cure.kind : cure.kind === "control" ? cure.medicine : null;
+        if (medicine && supplyCount(s, medicine) > 0) return { cat, medicine };
+      }
+    }
+    return null;
+  }
+
+  private treat(cat: Cat, medicine: Medicine): void {
+    const s = this.state;
+    this.dosed.set(cat.id, s.day * 1440 + s.minute);
+    if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
+    interact(this.save);
+    if (s.character.held?.kind !== "cat") return;
+    if (this.goTo("cat-cabinet")) giveMedicine(s, medicine, stateRng(s, "behavior"));
     interact(this.save);
   }
 

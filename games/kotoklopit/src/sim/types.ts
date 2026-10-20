@@ -8,7 +8,9 @@ export type Difficulty = "easy" | "normal" | "hard";
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
 /** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "litter";
+export type Product = "food" | "hygiene" | "catFood" | "litter" | "pills" | "drops";
+/** Ліки вдома (§9.5). */
+export type Medicine = "pills" | "drops";
 
 /** Показники персонажа, шкали 0–100 (§6). Голод зберігається як ситість. */
 export type StatName = "health" | "satiety" | "hygiene" | "sanity";
@@ -322,6 +324,26 @@ export interface CatAct {
   elapsed: number;
 }
 
+/** Хвороби прототипу (§9.5, `DISEASES.md`). */
+export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior";
+
+/** Хвороба кота: коли почалася й скільки лікування вже було. */
+export interface CatDisease {
+  id: DiseaseId;
+  /** День, коли кіт захворів. */
+  day: number;
+  /** Дози ліків, що подіяли. */
+  doses: number;
+  /** Порції дорогого корму на дієті (розлад шлунка). */
+  diet: number;
+  /** Днів поспіль у доброму настрої (цистит від стресу). */
+  calm: number;
+  /** Останній день, коли хронічну хворобу контролювали ліками. */
+  controlled: number | null;
+  /** Діагноз відомий: його поставив ветеринар (§9.9). */
+  known: boolean;
+}
+
 export interface Cat {
   id: number;
   name: string;
@@ -346,6 +368,7 @@ export interface Cat {
   moodToday: { sum: number; minutes: number };
   /** Чи взаємодіяв персонаж із котом сьогодні (§7). */
   interacted: boolean;
+  diseases: CatDisease[];
   /** Втрати здоров'я з джерелом за останній тиждень: з них — причина смерті (§9.7). */
   healthLog: { day: number; source: string; amount: number }[];
   /** Де кіт, у клітинках підлоги; facing — куди дивиться: −1 ліворуч, 1 праворуч. */

@@ -16,6 +16,8 @@ describe("стартові запаси (§6.4)", () => {
       hygiene: { cheap: 7, premium: 0 },
       catFood: { cheap: 0, premium: 0 },
       litter: { cheap: 0, premium: 0 },
+      pills: { cheap: 0, premium: 0 },
+      drops: { cheap: 0, premium: 0 },
     });
   });
 });

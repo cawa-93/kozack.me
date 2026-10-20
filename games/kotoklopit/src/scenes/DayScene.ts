@@ -14,7 +14,9 @@ import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { difficultyCard, endCard, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
+import { difficultyCard, endCard, medicineCard, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
+import { giveMedicine, medicineCat } from "../sim/diseases";
+import { stateRng } from "../sim/rng";
 import { Overlay } from "../ui/overlay";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
@@ -174,6 +176,17 @@ export class DayScene extends Phaser.Scene {
 
   private act(): void {
     if (this.blocked()) return;
+    // Кіт на руках біля шафки: дати ліки (§9.5) — гравець обирає, які.
+    const cat = medicineCat(this.state);
+    if (cat && targetOf(this.state)?.id === "cat-cabinet" && supplyCount(this.state, "pills") + supplyCount(this.state, "drops") > 0) {
+      this.overlay.show(
+        medicineCard(this.state, cat, (medicine) => {
+          giveMedicine(this.state, medicine, stateRng(this.state, "behavior"));
+          this.overlay.close();
+        }, () => this.overlay.close()),
+      );
+      return;
+    }
     interact(this.session.save);
   }
 
@@ -478,6 +491,9 @@ export class DayScene extends Phaser.Scene {
         break;
       case "keyboard":
         popAt("computer", "meow");
+        break;
+      case "symptom":
+        popAt(`cat:${event.cat}`, event.symptom);
         break;
       case "groomed":
         popAt(`cat:${event.friend}`, "heart");

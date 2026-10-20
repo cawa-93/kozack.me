@@ -7,6 +7,7 @@ import { tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
 import {
   DIFFICULTY,
+  ILLNESS,
   KITTEN_AGE_WEEKS,
   KITTEN_SANITY_THRESHOLD,
   MINUTES_PER_DAY,
@@ -18,6 +19,7 @@ import {
 } from "./config";
 import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
+import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
 import { oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
 import { createRng, seedDay, streamSeed, type Rng } from "./rng";
@@ -166,8 +168,10 @@ function sleep({ state, report, rng }: Night): void {
 }
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
-function catHealth({ state }: Night): void {
+function catHealth({ state, rng }: Night): void {
   for (const cat of state.cats) closeCatDay(state, cat);
+  // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).
+  nightlyDiseases(state, rng);
   // Підсумок дня для пар: життя разом зближує (§9.4).
   nightlyRelations(state);
 }
@@ -182,6 +186,7 @@ function ageLimit({ state, report, rng }: Night): void {
 
 function ageCats({ state, rng }: Night): void {
   for (const cat of state.cats) ageCat(state, cat, rng);
+  weeklyDiseases(state, rng);
 }
 
 function utilities({ state, report }: Night): void {
@@ -197,6 +202,8 @@ function kittenCheck({ state, report, rng }: Night): void {
   const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS });
   cat.arrivedDay = state.day + 1;
   addCat(state, cat);
+  // Притулок: блохи (§9.5).
+  maybeFallIll(state, cat, "fleas", ILLNESS.shelterFleas, rng);
   giveStarterPack(state);
   report.newCats.push(cat.id);
 }

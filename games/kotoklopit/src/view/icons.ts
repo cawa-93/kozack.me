@@ -30,7 +30,10 @@ export type IconName =
   | "thirst"
   | "bite"
   | "kibble"
-  | "fight";
+  | "fight"
+  | "sneeze"
+  | "itch"
+  | "eyes";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -160,6 +163,26 @@ Object.assign(ICONS, {
     // Хмара бійки з зірочками.
     g.fillStyle(0xcfc6bd).fillCircle(14, 22, 9).fillCircle(24, 17, 10).fillCircle(27, 27, 8).fillCircle(16, 30, 7);
     g.lineStyle(2.5, COLORS.danger).lineBetween(8, 8, 12, 14).lineBetween(32, 6, 28, 13).lineBetween(34, 30, 29, 27);
+  },
+  sneeze: (g: Phaser.GameObjects.Graphics) => {
+    // Бризки чхання.
+    g.fillStyle(0x6fb3d6);
+    for (const [x, y, r] of [[12, 14, 3.5], [22, 10, 3], [30, 18, 3.5], [18, 24, 3], [28, 29, 2.5], [10, 28, 2.5]] as const) g.fillCircle(x, y, r);
+    g.lineStyle(2.5, INK).lineBetween(4, 20, 9, 20);
+  },
+  itch: (g: Phaser.GameObjects.Graphics) => {
+    // Блоха й рисочки свербежу.
+    g.fillStyle(0x5a3a22).fillEllipse(20, 22, 12, 9).fillCircle(26, 19, 3);
+    g.lineStyle(2, 0x5a3a22).lineBetween(16, 25, 11, 31).lineBetween(20, 26, 19, 32).lineBetween(24, 25, 28, 31);
+    g.lineStyle(2.5, COLORS.danger).lineBetween(8, 8, 12, 13).lineBetween(32, 8, 28, 13);
+  },
+  eyes: (g: Phaser.GameObjects.Graphics) => {
+    // Око, що сльозиться.
+    g.fillStyle(0xffffff).fillEllipse(20, 18, 26, 14);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 18, 26, 14);
+    g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
+    g.fillStyle(INK).fillCircle(20, 18, 4);
+    g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

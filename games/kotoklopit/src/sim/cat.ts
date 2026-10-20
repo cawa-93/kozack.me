@@ -80,6 +80,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     moodToday: { sum: 0, minutes: 0 },
     interacted: false,
     healthLog: [],
+    diseases: [],
     x: at.x,
     y: at.y,
     facing: 1,

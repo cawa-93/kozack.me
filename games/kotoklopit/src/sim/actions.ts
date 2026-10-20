@@ -5,8 +5,10 @@ import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
 import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
+import { maybeFallIll } from "./diseases";
 import { changeStat, unpleasantTask } from "./character";
 import {
+  ILLNESS,
   BURN_MINUTES,
   CLEAN_LITTER_MINUTES,
   CLEAN_MESS_MINUTES,
@@ -243,6 +245,7 @@ function catchCat(state: GameState, cat: Cat): void {
   cat.act = idleAct(3);
   cat.interacted = true;
   unpleasantTask(state, ESCAPE.catchSanity);
+  maybeFallIll(state, cat, "fleas", ILLNESS.escapeFleas, stateRng(state, "behavior"));
   emit(state, { type: "cat-returned", cat: cat.id, caught: true });
 }
 
