@@ -3,6 +3,7 @@
 
 import { createCat, traitLevel } from "../sim/cat";
 import { addCat } from "../sim/night";
+import { forgetRelations, relation } from "../sim/relations";
 import { stateRng } from "../sim/rng";
 import { TRAIT_GROUPS, traitGroup, traitName } from "../sim/traits";
 import type { Cat, CatNeed, Save, TraitLevel } from "../sim/types";
@@ -86,6 +87,17 @@ export class CatsSection {
       const cat = this.find(Number(out.dataset["act"]));
       if (cat) out.textContent = `${cat.act.kind}${cat.act.goal ? " (іде)" : ""} · ${round(cat.x)}, ${round(cat.y)}${cat.away ? " · на сходах" : ""}`;
     }
+    for (const out of this.list.querySelectorAll<HTMLElement>("[data-relations]")) {
+      const cat = this.find(Number(out.dataset["relations"]));
+      if (cat) out.textContent = this.relations(cat);
+    }
+  }
+
+  /** Стосунки з іншими котами (§9.4): від +50 — друзі, до −50 — вороги. */
+  private relations(cat: Cat): string {
+    const state = this.save.current;
+    const parts = state.cats.filter((c) => c.id !== cat.id).map((c) => `${c.name} ${round(relation(state, cat, c))}`);
+    return parts.length > 0 ? `Стосунки: ${parts.join(", ")}` : "";
   }
 
   private find(id: number): Cat | undefined {
@@ -159,12 +171,14 @@ export class CatsSection {
       el("div", { class: "dev-row" }, el("strong", {}, cat.name), sexSelect, el("span", { class: "dev-hint", "data-act": String(cat.id) }), this.button("Прибрати", () => {
         const state = this.save.current;
         state.cats = state.cats.filter((c) => c.id !== cat.id);
+        forgetRelations(state, cat);
         if (state.character.held?.kind === "cat" && state.character.held.cat === cat.id) state.character.held = null;
         this.changed(`прибрано кота ${cat.name}`);
         this.render();
       })),
       el("div", { class: "dev-grid" }, this.number(cat, "age", "Вік, тиж."), this.number(cat, "health", "Здоров'я"), this.number(cat, "mood", "Настрій"), this.number(cat, "love", "Любов")),
       el("div", { class: "dev-grid" }, ...NEEDS.map(([need, label]) => this.number(cat, need, label))),
+      el("p", { class: "dev-hint", "data-relations": String(cat.id) }, this.relations(cat)),
       traits,
       el("div", { class: "dev-row" }, groups, level, addTrait),
     );

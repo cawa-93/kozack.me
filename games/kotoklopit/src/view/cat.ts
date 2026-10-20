@@ -48,6 +48,8 @@ export class CatView {
   private readonly coat: Coat;
   /** Точка над котом для баблів. */
   head = { x: 0, y: 0 };
+  /** Що намальовано зараз: якщо нічого не змінилося, кадр не перемальовує кота. */
+  private drawn: string | null = null;
 
   /** Форми частин тіла: від кота, що є зараз (гени й форми не змінюються). */
   private shape: Cat["shape"];
@@ -66,6 +68,10 @@ export class CatView {
   draw(cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null): void {
     this.shape = cat.shape;
     const pose = poseOf(cat, carriedAt !== null);
+    // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
+    const key = pose === "walk" ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${isKitten(cat)}`;
+    if (key !== null && key === this.drawn) return;
+    this.drawn = key;
     const g = this.g.clear();
     if (cat.away !== null) {
       g.setVisible(false);

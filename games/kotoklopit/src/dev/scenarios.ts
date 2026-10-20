@@ -4,6 +4,7 @@
 import { createCat } from "../sim/cat";
 import { newGame, type NewGameOptions } from "../sim/game";
 import { addCat } from "../sim/night";
+import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, CatSource, GameState, Save } from "../sim/types";
@@ -20,6 +21,8 @@ export interface Scenario {
   game?: Partial<NewGameOptions>;
   state?: DeepPartial<GameState>;
   cats?: CatSpec[];
+  /** Стосунки котів сценарію (§9.4): [номер кота, номер кота, значення], номери — з `cats`. */
+  relations?: [number, number, number][];
 }
 
 const DEFAULT_GAME: NewGameOptions = { sex: "female", difficulty: "normal", seed: 1 };
@@ -51,6 +54,12 @@ export function applyScenario(scenario: Scenario): Save {
       ...(spec.name ? { name: spec.name } : {}),
     });
     addCat(state, deepMerge(cat, structuredClone(spec)));
+  }
+  const added = state.cats.slice(-(scenario.cats?.length ?? 0));
+  for (const [i, j, value] of scenario.relations ?? []) {
+    const a = added[i];
+    const b = added[j];
+    if (a && b) changeRelation(state, a, b, value - relation(state, a, b));
   }
   save.current = state;
   rebase(save);

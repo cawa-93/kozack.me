@@ -99,3 +99,26 @@ describe("журнал", () => {
     expect(describeEvent({ type: "dash" }, current)).toBeNull();
   });
 });
+
+describe("сценарій «10 котів» (§8.5, §9.4)", () => {
+  it("десять котів із друзями й ворогами живуть вечір: бійки, ігри друзів, вилизування", async () => {
+    const { advance } = await import("../src/sim/game");
+    const { onEvent } = await import("../src/sim/events");
+    const { isEnemy, isFriend } = await import("../src/sim/relations");
+    const scenario = FILE_SCENARIOS["ten-cats"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const cats = save.current.cats;
+    expect(cats).toHaveLength(10);
+    const [murka, barsyk, , sima, , , bonia, , ryzhyk] = cats;
+    if (!murka || !barsyk || !sima || !bonia || !ryzhyk) throw new Error("немає котів");
+    expect(isFriend(save.current, murka, sima)).toBe(true);
+    expect(isEnemy(save.current, barsyk, ryzhyk)).toBe(true);
+    const seen = new Set<string>();
+    const stop = onEvent((e) => seen.add(e.type));
+    for (let i = 0; i < 6 * 60; i++) advance(save, 1, { move: { x: 0, y: 0 }, hold: false });
+    stop();
+    expect(save.current.end).toBeNull();
+    expect(seen.has("meow")).toBe(true);
+  });
+});
