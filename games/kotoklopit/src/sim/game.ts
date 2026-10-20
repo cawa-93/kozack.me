@@ -5,17 +5,19 @@ import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { moveBody, newBody } from "./body";
 import { tickCats } from "./catai";
 import { passAwakeTime } from "./character";
-import { FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
+import { ACCIDENT, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
-import { seedDay } from "./rng";
+import { stateRng, seedDay } from "./rng";
+import type { RaceInput } from "./race";
+import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
 import { newJob, tickWork } from "./work";
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 const EPSILON = 1e-6;
 
@@ -57,6 +59,8 @@ export function newGame(options: NewGameOptions): Save {
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
     cats: [],
     relations: {},
+    trip: null,
+    shelter: null,
     album: [],
     nextId: 0,
     rng: { conditions: 0, behavior: 0 },
@@ -94,17 +98,55 @@ export function advance(save: Save, minutes: number, input: Input = IDLE): Night
   return null;
 }
 
-/** Усе, що відбувається за крок часу вдень. */
+/** Усе, що відбувається за крок часу вдень. Поки персонаж у поїздці, удома його немає (§8.5). */
 function tick(state: GameState, minutes: number, input: Input): void {
   const from = state.minute;
-  tickActivity(state, input, minutes);
-  moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
+  const away = state.trip !== null;
+  if (!away) {
+    tickActivity(state, input, minutes);
+    moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
+  }
   tickWork(state, from, minutes);
   tickStove(state, minutes);
-  tickCats(state, minutes, { present: true });
-  passAwakeTime(state, minutes / MINUTES_PER_HOUR);
+  tickCats(state, minutes, { present: !away });
+  // Поки день перемотується після аварії, показники не нижче 5 (§8.5).
+  passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident" ? ACCIDENT.floor : 0);
   state.minute += minutes;
   tickDeliveries(state);
+}
+
+/** Хвилини гонки (§8.5); при аварії день перемотується до сну. Повертає звіт про ніч, якщо вона настала. */
+export function drive(save: Save, minutes: number, input: RaceInput): { result: "arrived" | "crash" | null; night: NightReport | null } {
+  let night: NightReport | null = null;
+  const clock = {
+    advance: (m: number): boolean => (night = advance(save, m) ?? night) !== null,
+    rng: stateRng(save.current, "behavior"),
+  };
+  const result = driveTrip(save.current, clock, minutes, input);
+  return { result, night };
+}
+
+/**
+ * Після аварії (§8.5): решта дня проходить без персонажа до оптимального часу сну, потім він удома
+ * й засинає. Якщо аварія сталася пізніше, засинає одразу.
+ */
+export function rewindAccident(save: Save): NightReport | null {
+  const state = save.current;
+  const left = accidentBedtime(state) - state.minute;
+  if (left > 0) {
+    const night = advance(save, left);
+    if (night || state.end !== null) return night;
+  }
+  endTrip(state);
+  return sleep(save, false);
+}
+
+/** Подія на місці забрала хвилини, потім персонаж їде додому без гонки (§8.5). */
+export function returnHome(save: Save, visitMinutes: number, roadMinutes: number): NightReport | null {
+  const night = advance(save, visitMinutes) ?? advance(save, roadMinutes);
+  if (night || save.current.end !== null) return night;
+  endTrip(save.current);
+  return null;
 }
 
 /** Коротке натискання дії (§10). Повертає звіт про ніч, якщо персонаж ліг спати. */
@@ -122,6 +164,8 @@ export function goToSleep(save: Save): NightReport | null {
 
 function sleep(save: Save, collapsed: boolean): NightReport | null {
   const state = save.current;
+  // Персонаж засинає вдома, навіть якщо ніч застала його в поїздці.
+  endTrip(state);
   // Неділя 50-го тижня: пенсія, остання ніч уже не обробляється (§4.2).
   if (isLastDay(state.day)) {
     endGame(state, "retirement");

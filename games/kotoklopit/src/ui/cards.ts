@@ -122,6 +122,7 @@ const THING_TITLES: Record<ThingKind, string> = {
   toy: "Іграшка-вудочка",
   house: "Будиночок",
   scratcher: "Кігтеточка",
+  carrier: "Переноска",
 };
 
 export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album";
@@ -198,7 +199,7 @@ function thingsShop(state: GameState, money: number, handlers: PhoneHandlers): H
   const shop = element("div", "shop");
   for (const thing of Object.keys(THINGS) as ThingKind[]) {
     const row = element("div", "shop-row");
-    const have = state.home.items.filter((i) => i.kind === thing).length;
+    const have = thing === "carrier" ? (state.home.carrier ? 1 : 0) : state.home.items.filter((i) => i.kind === thing).length;
     const free = freeSlots(state, thing);
     const name = element("span", "shop-name", THING_TITLES[thing]);
     const stock = thing === "toy" ? `Є: ${have}` : `Є: ${have} · вільних місць: ${Math.max(0, free)}`;

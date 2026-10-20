@@ -90,6 +90,18 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: ліки ${event.medicine} (${quality(event.quality)})`;
     case "trait-noticed":
       return `${catName(state, event.cat)}: риса ${event.group} — рівень видимості ${event.stage}`;
+    case "trip-started":
+      return `Поїздка: ${event.destination}`;
+    case "trip-arrived":
+      return `Доїхали: ${event.destination}`;
+    case "trip-crashed":
+      return `Аварія: ${event.losses.join(", ") || "без втрат"}`;
+    case "trip-ended":
+      return `Удома після поїздки: ${event.destination}`;
+    case "bought":
+      return `Куплено в магазині: ${event.goods} (${event.quality})`;
+    case "vet-exam":
+      return `Огляд у ветеринара: ${catName(state, event.cat)}`;
     case "groomed":
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":

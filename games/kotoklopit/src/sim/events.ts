@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AlbumEntry, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, Item, Medicine, Mess, NightReport, Quality, TraitLevel } from "./types";
+import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, Item, Medicine, Mess, NightReport, Quality, TraitLevel } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -28,6 +28,12 @@ export type GameEvent =
   | { type: "doorbell"; delivery: Delivery }
   | { type: "received"; deliveries: Delivery[] }
   | { type: "dash" }
+  | { type: "trip-started"; destination: Destination }
+  | { type: "trip-arrived"; destination: Destination }
+  | { type: "trip-crashed"; losses: AccidentLoss[] }
+  | { type: "trip-ended"; destination: Destination }
+  | { type: "bought"; goods: string; quality: Quality }
+  | { type: "vet-exam"; cat: number }
   | { type: "glitch"; chance: number; angle: number }
   // Коти (§9.3, §9.6, §9.12). Приховані зміни бачить лише журнал режиму розробки.
   | { type: "cat-mood"; cat: number; delta: number; reason: string }

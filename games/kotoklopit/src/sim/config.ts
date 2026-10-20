@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Chronotype, Difficulty, DiseaseId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, Chronotype, Destination, Difficulty, DiseaseId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -159,6 +159,7 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   toy: { price: { cheap: 10, premium: 30 }, utilities: 0 },
   house: { price: { cheap: 60, premium: 150 }, utilities: 6 },
   scratcher: { price: { cheap: 60, premium: 150 }, utilities: 6 },
+  carrier: { price: { cheap: 30, premium: 80 }, utilities: 0 },
 };
 /** Подертий диван: ремонт до найближчого платежу (§6.4). */
 export const SOFA_REPAIR = 3;
@@ -444,6 +445,61 @@ export const SYMPTOMS = {
 } as const;
 /** Ліки вдома (§9.5): дешева доза діє з шансом 70%; дати ліки — неприємне завдання, любов −1. */
 export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1 } as const;
+/** Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. */
+export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean }> = {
+  shop: { road: 45, visit: 30, cat: false },
+  vet: { road: 60, visit: 60, cat: true },
+  doctor: { road: 60, visit: 60, cat: false },
+  shelter: { road: 75, visit: 60, cat: false },
+  groomer: { road: 45, visit: 90, cat: true },
+  cafe: { road: 30, visit: 60, cat: false },
+  office: { road: 60, visit: 180, cat: false },
+};
+/** Гонка (§8.5): швидкість, газ і гальмо, смуги, інші машини. */
+export const RACE = {
+  minSpeed: 0.5,
+  maxSpeed: 2,
+  acceleration: 1.5,
+  lanes: 3,
+  /** Скільки смуг за ігрову хвилину перестроюється машина. */
+  laneSpeed: 8,
+  /** Інші машини їдуть удвічі повільніше за звичайну швидкість. */
+  carSpeed: 0.5,
+  /** Середній проміжок між машинами на середній складності, у хвилинах дороги. */
+  gap: 1.5,
+  traffic: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+  /** Довжина машини: ближче — зіткнення. */
+  carLength: 0.15,
+  /** Наскільки далеко вперед видно машини. */
+  view: 2.5,
+} as const;
+/** Аварія (§8.5): шанс кожної втрати й найбільше втрат за складністю, розмір втрат. */
+export const ACCIDENT = {
+  chance: { easy: 0.4, normal: 0.5, hard: 0.625 } as Record<Difficulty, number>,
+  max: { easy: 2, normal: 3, hard: 4 } as Record<Difficulty, number>,
+  repair: 60,
+  health: -10,
+  sanity: -10,
+  catMood: -20,
+  /** Поки день перемотується, показники не опускаються нижче цього. */
+  floor: 5,
+} as const;
+/** Посадити кота в переноску (§8.5): настрій за якістю й «Переноску». */
+export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
+/** Штраф за годину поїздки в робочий час (§8.6): кількість поїздок за 7 днів × репутація за годину / 3. */
+export const TRIP_REPUTATION_DIVIDER = 3;
+/** Пункти призначення (§8.5). */
+export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3 } as const;
+export const DOCTOR = { exam: 40, health: 20 } as const;
+export const SHELTER = { price: 50, cats: 3, minAge: 1, maxAge: 5, visibleTraits: { easy: 3, normal: 2, hard: 1 } as Record<Difficulty, number> } as const;
+export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
+export const CAFE = { pricePerHour: 20, sanity: [12, 6, 3], jealousyMood: -5 } as const;
+/** Вікно ціни в магазині за складністю (§6.4). */
+export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
+  easy: { min: -0.3, max: 0.1 },
+  normal: { min: -0.2, max: 0.2 },
+  hard: { min: -0.1, max: 0.3 },
+};
 /** Спостереження (§9.9): скільки проявів риси треба побачити, щоб відкрити її; рівні — на кожній третині. */
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */

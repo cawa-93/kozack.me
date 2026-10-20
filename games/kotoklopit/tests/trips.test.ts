@@ -1,0 +1,173 @@
+// Поїздки (§8.5, §8.6): вирушити, гонка, аварія з перемотуванням, події на місці, штраф у робочий час.
+
+import { describe, expect, it } from "vitest";
+
+import { createCat } from "../src/sim/cat";
+import { TRIPS } from "../src/sim/config";
+import { adopt, buyAtShop, cafe, shelterCats, shopPrice, vetExam, vetTreat } from "../src/sim/destinations";
+import { fallIll } from "../src/sim/diseases";
+import { drive, newGame, returnHome, rewindAccident } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { NO_RACE_INPUT } from "../src/sim/race";
+import { createRng } from "../src/sim/rng";
+import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
+import type { Cat, Save } from "../src/sim/types";
+import { standAt } from "./helpers";
+
+function game(minute = 19 * 60): Save {
+  const save = newGame({ sex: "female", difficulty: "normal", seed: 6 });
+  save.current.modifiers.day = null;
+  save.current.minute = minute;
+  save.current.character.money = 1000;
+  standAt(save, "door");
+  return save;
+}
+
+function withCat(save: Save): Cat {
+  const cat = createCat(save.current, createRng(5), { source: "shelter", ageWeeks: 3, at: { x: 5.5, y: 8.5 } });
+  cat.traits = [];
+  cat.arrivedDay = -10;
+  addCat(save.current, cat);
+  return cat;
+}
+
+const SLOW = { steer: 0 as const, throttle: -1 };
+
+/** Їхати найповільніше: інших машин не наздогнати. */
+function driveSafely(save: Save): void {
+  for (let i = 0; i < 10_000 && save.current.trip?.phase === "drive"; i++) drive(save, 0.5, SLOW);
+}
+
+describe("вирушити (§8.5)", () => {
+  it("від дверей, коли під ними нічого не чекає", () => {
+    const save = game();
+    expect(canLeave(save.current)).toBe(true);
+    save.current.home.porch.push({ id: 900, product: "food", quality: "cheap", at: 0 });
+    expect(canLeave(save.current)).toBe(false);
+  });
+
+  it("до ветеринара — лише з котом на руках і переноскою", () => {
+    const save = game();
+    const cat = withCat(save);
+    expect(tripBlocker(save.current, "vet")).toBe("cat");
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(tripBlocker(save.current, "vet")).toBe("carrier");
+    save.current.home.carrier = "cheap";
+    expect(tripBlocker(save.current, "vet")).toBeNull();
+    expect(tripBlocker(save.current, "shop")).toBe("no-cat");
+    expect(startTrip(save.current, "vet")).toBe(true);
+    expect(cat.away).toBe("trip");
+    expect(save.current.character.held).toBeNull();
+  });
+});
+
+describe("гонка (§8.5)", () => {
+  it("на найменшій швидкості машин не наздогнати, і дорога вдвічі довша", () => {
+    const save = game(10 * 60);
+    save.current.day = 5; // субота: без штрафу роботи
+    startTrip(save.current, "shop");
+    const from = save.current.minute;
+    driveSafely(save);
+    expect(save.current.trip?.phase).toBe("visit");
+    expect(save.current.minute - from).toBeGreaterThan(TRIPS.shop.road * 2 - 3);
+  });
+
+  it("аварія: втрати не більше 3, решта дня минає, персонаж засинає вдома", () => {
+    const save = game(12 * 60);
+    save.current.day = 5;
+    startTrip(save.current, "shop");
+    const trip = save.current.trip;
+    if (!trip) throw new Error("немає поїздки");
+    trip.race.cars.push({ lane: 1, start: 0.05 });
+    drive(save, 0.1, NO_RACE_INPUT);
+    expect(save.current.trip?.phase).toBe("accident");
+    expect(save.current.trip?.losses.length).toBeLessThanOrEqual(3);
+    const night = rewindAccident(save);
+    expect(night).not.toBeNull();
+    expect(save.current.trip).toBeNull();
+    expect(night?.sleptHours).toBeCloseTo(8, 0);
+  });
+
+  it("поїздка в робочий час — штраф до репутації, а терпіння не падає", () => {
+    const save = game(11 * 60);
+    save.current.day = 1;
+    const reputation = save.current.job.reputation;
+    const patience = save.current.job.patience;
+    startTrip(save.current, "shop");
+    driveSafely(save);
+    expect(save.current.job.patience).toBe(patience);
+    expect(save.current.job.reputation).toBeLessThan(reputation);
+  });
+});
+
+describe("пункти призначення (§8.5)", () => {
+  function arrive(save: Save, destination: Parameters<typeof startTrip>[1]): void {
+    expect(startTrip(save.current, destination)).toBe(true);
+    driveSafely(save);
+    expect(save.current.trip?.phase).toBe("visit");
+  }
+
+  it("магазин: ціна в межах вікна, наповнювач і лоток — різні товари", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    arrive(save, "shop");
+    const price = shopPrice(save.current, { product: "catFood" }, "cheap");
+    expect(price).toBeGreaterThanOrEqual(80);
+    expect(price).toBeLessThanOrEqual(120);
+    buyAtShop(save.current, { product: "litter" }, "cheap");
+    buyAtShop(save.current, { thing: "litter" }, "cheap");
+    expect(save.current.home.supplies.litter.cheap).toBe(7);
+    expect(save.current.home.items.filter((i) => i.kind === "litter")).toHaveLength(2);
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shop.road);
+    expect(save.current.trip).toBeNull();
+    expect(save.current.character.body.x).toBeCloseTo(HOME_DOOR.x);
+  });
+
+  it("ветеринар: огляд відкриває хворобу, дороге лікування її лікує", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    fallIll(save.current, cat, "injury");
+    save.current.home.carrier = "premium";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    arrive(save, "vet");
+    expect(cat.diseases[0]?.known).toBe(false);
+    expect(vetExam(save.current)).not.toBeNull();
+    expect(cat.diseases[0]?.known).toBe(true);
+    expect(vetTreat(save.current, "injury", "premium", createRng(1))).toBe("cured");
+    expect(cat.diseases).toHaveLength(0);
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.vet.road);
+    expect(cat.away).toBeNull();
+  });
+
+  it("притулок: три коти на тиждень; новий кіт — зі стартовим пакетом і бонусом", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    save.current.character.stats.sanity = 40;
+    arrive(save, "shelter");
+    const cats = shelterCats(save.current);
+    expect(cats).toHaveLength(3);
+    expect(shelterCats(save.current)).toBe(cats);
+    const chosen = cats[0];
+    if (!chosen) throw new Error("немає котів");
+    expect(adopt(save.current, chosen.id)).not.toBeNull();
+    expect(save.current.cats).toHaveLength(1);
+    expect(save.current.character.stats.sanity).toBe(90);
+    expect(save.current.home.supplies.catFood.cheap).toBe(8);
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shelter.road);
+    expect(save.current.cats[0]?.away).toBeNull();
+  });
+
+  it("котокафе: здоровий глузд слабшає з кожною годиною, ревниві коти ображаються", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    cat.traits = [{ group: "jealousy", level: 1, seen: 0, known: false }];
+    const mood = cat.mood;
+    save.current.character.stats.sanity = 40;
+    arrive(save, "cafe");
+    expect(cafe(save.current, 3)).toBe(true);
+    expect(save.current.character.stats.sanity).toBe(61);
+    expect(cat.mood).toBeLessThan(mood);
+  });
+});

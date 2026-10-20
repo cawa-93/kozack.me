@@ -96,7 +96,7 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
           continue;
         }
       }
-      const controlled = rule.cure.kind === "control" && disease.controlled === state.day;
+      const controlled = rule.cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
       if (!controlled && state.day - disease.day >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
     }
     if (cat.diseases.length > 0) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");

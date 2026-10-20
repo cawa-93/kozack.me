@@ -25,7 +25,10 @@ export class PersonView {
   hands = { x: 0, y: 0, depth: 0 };
 
   /** Намалювати персонажа; під час руху він трохи підстрибує на кроках. */
-  draw(character: Character, moving: boolean, time: number): void {
+  draw(character: Character, moving: boolean, time: number, away = false): void {
+    // У поїздці персонажа вдома не видно (§8.5).
+    this.g.setVisible(!away);
+    if (away) return;
     const { body, sex, held } = character;
     const feet = toScreen(body);
     const g = this.g.clear().setDepth(depthOf(feet.y));

@@ -43,6 +43,7 @@ export function newHome(nextId: () => number): Home {
     porch: [],
     utilitiesDebt: 0,
     repairs: 0,
+    carrier: null,
   };
 }
 
@@ -95,6 +96,10 @@ function send(state: GameState, goods: { product: Product } | { thing: ThingKind
 export function freeSlots(state: GameState, thing: ThingKind): number {
   if (thing === "toy") return Infinity;
   const home = state.home;
+  if (thing === "carrier") {
+    const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === "carrier");
+    return home.carrier === null && !ordered ? 1 : 0;
+  }
   const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
   const coming = [...home.deliveries, ...home.porch].filter((d) => "thing" in d && d.thing === thing).length;
@@ -108,7 +113,11 @@ export function orderThing(state: GameState, thing: ThingKind, quality: Quality)
 }
 
 /** Нова річ стає на вільне місце свого типу, іграшка — на підлогу біля дверей. */
-function place(state: GameState, thing: ThingKind, quality: Quality): HomeItem | null {
+export function place(state: GameState, thing: ThingKind, quality: Quality): HomeItem | null {
+  if (thing === "carrier") {
+    state.home.carrier = quality;
+    return null;
+  }
   const id = state.nextId++;
   if (thing === "toy") return { id, kind: "toy", quality, x: DELIVERED_TOY_AT.x, y: DELIVERED_TOY_AT.y, uses: 0 };
   const taken = new Set(state.home.items.map((i) => ("slot" in i ? i.slot : "")));

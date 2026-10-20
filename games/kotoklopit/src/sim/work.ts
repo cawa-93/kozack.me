@@ -20,6 +20,7 @@ import {
   WORK_END_MINUTE,
   WORK_SANITY_PER_HOUR,
   WORK_START_MINUTE,
+  TRIP_REPUTATION_DIVIDER,
   WORKDAYS_PER_WEEK,
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
@@ -29,7 +30,7 @@ import type { GameState, Job } from "./types";
 const PATIENCE_EPSILON = 1e-9;
 
 export function newJob(): Job {
-  return { position: 0, reputation: START_REPUTATION, patience: PATIENCE_MAX, standupMinutes: 0 };
+  return { position: 0, reputation: START_REPUTATION, patience: PATIENCE_MAX, standupMinutes: 0, tripDays: [] };
 }
 
 export function positionOf(state: GameState): (typeof POSITIONS)[number] {
@@ -87,7 +88,10 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
   const activity = state.character.activity;
   const workTime = isWorkTime(state, from);
 
-  if (activity?.kind === "work") {
+  if (state.trip !== null) {
+    // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
+    if (workTime && state.trip.destination !== "office") changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
+  } else if (activity?.kind === "work") {
     const money = position.pay * DIFFICULTY[state.difficulty].earnings * hours;
     const reputationBefore = job.reputation;
     earn(state, money);
@@ -143,4 +147,10 @@ export function callImpression(state: GameState): number {
 export function morningJob(state: GameState): void {
   state.job.patience = PATIENCE_MAX;
   state.job.standupMinutes = 0;
+}
+
+/** Скільки поїздок у робочий час за останні 7 днів, разом із поточною (§8.6). */
+export function recentWorkTrips(state: GameState): number {
+  state.job.tripDays = state.job.tripDays.filter((d) => state.day - d < 7);
+  return state.job.tripDays.length;
 }

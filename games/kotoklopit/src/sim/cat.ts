@@ -81,6 +81,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     interacted: false,
     healthLog: [],
     diseases: [],
+    groomedUntil: -1,
     x: at.x,
     y: at.y,
     facing: 1,

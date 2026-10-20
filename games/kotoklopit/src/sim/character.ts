@@ -81,11 +81,11 @@ function metabolism(state: GameState): number {
 }
 
 /** Минув час, поки персонаж не спить. */
-export function passAwakeTime(state: GameState, hours: number): void {
-  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours);
-  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hours);
+export function passAwakeTime(state: GameState, hours: number, floor = 0): void {
+  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours, floor);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hours, floor);
   if (state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
-    changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours);
+    changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours, floor);
   }
 }
 

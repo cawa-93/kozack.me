@@ -6,7 +6,11 @@ import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, order, orderThing, supplyCount } from "../sim/economy";
 import { onEvent, type GameEvent, type Refusal } from "../sim/events";
-import { advance, interact, newGame, replayDay, replayWeek } from "../sim/game";
+import { advance, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
+import { TRIPS } from "../sim/config";
+import { adopt, buyAtShop, cafe, doctorVisit, groom, officeMeeting, vetExam, vetTreat } from "../sim/destinations";
+import { canLeave, startTrip } from "../sim/trips";
+import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
@@ -176,6 +180,20 @@ export class DayScene extends Phaser.Scene {
 
   private act(): void {
     if (this.blocked()) return;
+    // Біля дверей нічого не чекає: поїздка (§8.5).
+    if (canLeave(this.state)) {
+      this.overlay.show(
+        destinationCard(
+          this.state,
+          (destination) => {
+            this.overlay.close();
+            if (startTrip(this.state, destination)) this.visitLog = { exam: null, done: [] };
+          },
+          () => this.overlay.close(),
+        ),
+      );
+      return;
+    }
     // Кіт на руках біля шафки: дати ліки (§9.5) — гравець обирає, які.
     const cat = medicineCat(this.state);
     if (cat && targetOf(this.state)?.id === "cat-cabinet" && supplyCount(this.state, "pills") + supplyCount(this.state, "drops") > 0) {
@@ -221,7 +239,91 @@ export class DayScene extends Phaser.Scene {
     return { move: { x, y }, hold };
   }
 
+  /** Що вже зробили в пункті призначення цієї поїздки. */
+  private visitLog: VisitLog = { exam: null, done: [] };
+
+  /** Поїздка (§8.5): гонку веде своя сцена, подію на місці й аварію — картки. */
+  private updateTrip(): boolean {
+    const trip = this.state.trip;
+    if (trip === null || this.state.end !== null) return false;
+    if (trip.phase === "drive") {
+      if (!this.scene.isActive("race")) {
+        this.scene.launch("race");
+        this.scene.sleep();
+      }
+      return true;
+    }
+    if (this.overlay.isOpen) return true;
+    if (trip.phase === "accident") {
+      this.overlay.show(
+        accidentCard(this.state, () => {
+          this.overlay.close();
+          rewindAccident(this.session.save);
+        }),
+      );
+      return true;
+    }
+    this.showVisit();
+    return true;
+  }
+
+  private showVisit(): void {
+    const state = this.state;
+    const trip = state.trip;
+    if (!trip) return;
+    const log = this.visitLog;
+    if (trip.destination === "office" && !log.done.includes("office")) {
+      officeMeeting(state);
+      log.done.push("office");
+    }
+    const again = (): void => this.showVisit();
+    const rng = stateRng(state, "behavior");
+    this.overlay.show(
+      visitCard(state, log, {
+        buy: (goods, quality) => {
+          buyAtShop(state, goods, quality);
+          again();
+        },
+        exam: () => {
+          log.exam = vetExam(state);
+          again();
+        },
+        treat: (disease, quality) => {
+          const result = vetTreat(state, disease, quality, rng);
+          if (result) log.done.push(`${disease}:${result}`);
+          again();
+        },
+        doctor: () => {
+          if (doctorVisit(state)) log.done.push("doctor");
+          again();
+        },
+        adopt: (id) => {
+          const cat = adopt(state, id);
+          if (cat) log.done.push(cat.name);
+          again();
+        },
+        groom: (quality) => {
+          if (groom(state, quality)) log.done.push("groom");
+          again();
+        },
+        cafe: (hours) => {
+          if (cafe(state, hours)) log.done.push("cafe");
+          again();
+        },
+        home: () => {
+          this.overlay.close();
+          returnHome(this.session.save, trip.visit, TRIPS[trip.destination].road);
+          this.viewport.jump();
+        },
+      }),
+    );
+  }
+
   override update(time: number, delta: number): void {
+    if (this.updateTrip()) {
+      this.render(time, 0);
+      return;
+    }
     const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
     if (!this.blocked()) {
       const input = this.readInput();
@@ -236,7 +338,7 @@ export class DayScene extends Phaser.Scene {
   private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
-    this.person.draw(state.character, this.moving, time);
+    this.person.draw(state.character, this.moving, time, state.trip !== null);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.viewport.follow(this.person.head, seconds);
@@ -408,7 +510,7 @@ export class DayScene extends Phaser.Scene {
     set("fridge", supplyCount(state, "food") === 0 ? "empty" : null);
     set("shower", supplyCount(state, "hygiene") === 0 ? "empty" : null);
     // Кіт на сходах важливіший за пакунок (§9.12).
-    set("door", state.cats.some((c) => c.away !== null) ? "meow" : state.home.porch.length > 0 ? "box" : null);
+    set("door", state.cats.some((c) => c.away === "stairs") ? "meow" : state.home.porch.length > 0 ? "box" : null);
     const table = objectById("table");
     const target = targetOf(state);
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);

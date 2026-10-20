@@ -128,6 +128,8 @@ export interface Job {
   patience: number;
   /** Скільки хвилин сьогоднішньої летучки персонаж пробув за комп'ютером. */
   standupMinutes: number;
+  /** Дні поїздок у робочий час: штраф за годину росте з кожною за 7 днів (§8.6). */
+  tripDays: number[];
 }
 
 /** Пакунок доставки (§6.4): одне замовлення — один пакунок із запасами чи річчю для котів. */
@@ -200,8 +202,54 @@ export interface ScratcherItem {
 
 /** Речі для котів (§9.12): миски, лотки, будиночки й кігтеточки — на своїх місцях, іграшки — будь-де на підлозі. */
 export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
-/** Річ для котів, яку можна купити (§6.4). */
-export type ThingKind = HomeItem["kind"];
+/** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі. */
+export type ThingKind = HomeItem["kind"] | "carrier";
+
+/** Куди можна поїхати (§8.5). Розплідник і виставку додасть крок 12. */
+export type Destination = "shop" | "vet" | "doctor" | "shelter" | "groomer" | "cafe" | "office";
+
+/** Інша машина в гонці (§8.5): смуга й місце на дорозі на початку гонки (у хвилинах дороги). */
+export interface RaceCar {
+  lane: number;
+  start: number;
+}
+
+/** Гонка дорогою (§8.5). Відстані — у хвилинах дороги за звичайної швидкості. */
+export interface Race {
+  /** Довжина дороги. */
+  road: number;
+  /** Скільки проїхано. */
+  done: number;
+  /** Скільки ігрових хвилин триває гонка. */
+  minutes: number;
+  /** Смуга, у якій персонаж (дробова, поки перестроюється), і та, куди він їде. */
+  lane: number;
+  targetLane: number;
+  /** Швидкість: від 0,5 до 2 звичайної. */
+  speed: number;
+  cars: RaceCar[];
+  /** До якого місця дороги машини вже згенеровано. */
+  spawned: number;
+  /** Стан генератора машин: на переграванні дорога та сама. */
+  rng: number;
+}
+
+/** Поїздка (§8.5): гонка туди, подія на місці, повернення без гонки; аварія — перемотування. */
+export interface Trip {
+  destination: Destination;
+  phase: "drive" | "visit" | "accident";
+  /** Кіт у переносці. */
+  cat: number | null;
+  race: Race;
+  /** Втрати після аварії (§8.5). */
+  losses: AccidentLoss[];
+  /** Скільки хвилин забрала подія на місці. */
+  visit: number;
+  /** Зерно поїздки: знижки в магазині (§6.4). */
+  seed: number;
+}
+
+export type AccidentLoss = "repair" | "health" | "sanity" | "cat";
 
 /** Котячий безлад на підлозі (§9.12). */
 export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur";
@@ -235,6 +283,8 @@ export interface Home {
   utilitiesDebt: number;
   /** Ремонт меблів (подертий диван) до найближчого платежу комунальних (§6.4). */
   repairs: number;
+  /** Переноска для котів (§8.5): одна на дім; null — немає. */
+  carrier: Quality | null;
 }
 
 /** Звідки кіт (§4.2): притулок, примусове кошеня, народився вдома, розплідник, знайда. */
@@ -338,7 +388,7 @@ export interface CatDisease {
   diet: number;
   /** Днів поспіль у доброму настрої (цистит від стресу). */
   calm: number;
-  /** Останній день, коли хронічну хворобу контролювали ліками. */
+  /** До якого дня (включно) хронічну хворобу контролюють ліки чи ветеринар. */
   controlled: number | null;
   /** Діагноз відомий: його поставив ветеринар (§9.9). */
   known: boolean;
@@ -369,6 +419,8 @@ export interface Cat {
   /** Чи взаємодіяв персонаж із котом сьогодні (§7). */
   interacted: boolean;
   diseases: CatDisease[];
+  /** До якого дня кіт після грумера не зригує шерстяних грудок (§8.5). */
+  groomedUntil: number;
   /** Втрати здоров'я з джерелом за останній тиждень: з них — причина смерті (§9.7). */
   healthLog: { day: number; source: string; amount: number }[];
   /** Де кіт, у клітинках підлоги; facing — куди дивиться: −1 ліворуч, 1 праворуч. */
@@ -377,7 +429,7 @@ export interface Cat {
   facing: number;
   act: CatAct;
   /** Кіт поза квартирою: утік на сходи (§9.12); null — удома. */
-  away: "stairs" | null;
+  away: "stairs" | "trip" | null;
   parents: { mother: number | null; father: number | null };
 }
 
@@ -463,6 +515,10 @@ export interface GameState {
   /** Хвилина, з якої почався день: пробудження чи побудка котами (§8.8). */
   dayStartMinute: number;
   character: Character;
+  /** Поїздка, якщо персонаж зараз поза домом (§8.5). */
+  trip: Trip | null;
+  /** Котів притулку цього тижня (§8.5): вибір фіксований на тиждень. */
+  shelter: { week: number; cats: Cat[] } | null;
   job: Job;
   home: Home;
   modifiers: { day: string | null; week: string | null };

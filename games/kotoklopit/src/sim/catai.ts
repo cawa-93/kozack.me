@@ -110,7 +110,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
-  if (rng.chance(rate * hours)) {
+  if (state.day > cat.groomedUntil && rng.chance(rate * hours)) {
     addMess(state, "hairball", visibleFloorNear(cat), cat.id);
     observe(state, cat, "hairballs");
   }
@@ -731,7 +731,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (cat.away === null && cat.diseases.length > 0) showSymptoms(state, cat, minutes, rng);
   recordMood(cat, minutes);
   if (cat.away !== null) {
-    if (state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
+    if (cat.away === "stairs" && state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
     return;
   }
   if (isCarried(state, cat)) return;

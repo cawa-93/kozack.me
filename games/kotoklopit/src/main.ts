@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { DayScene } from "./scenes/DayScene";
+import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
@@ -28,5 +29,5 @@ new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   input: { activePointers: 3 },
-  scene: [new DayScene(session)],
+  scene: [new DayScene(session), new RaceScene(session)],
 });
