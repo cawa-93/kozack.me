@@ -18,6 +18,7 @@ import {
 } from "./config";
 import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
+import { initRelations, nightlyRelations } from "./relations";
 import { createRng, seedDay, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
 import { isSunday } from "./time";
@@ -166,6 +167,8 @@ function sleep({ state, report, rng }: Night): void {
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
 function catHealth({ state }: Night): void {
   for (const cat of state.cats) closeCatDay(state, cat);
+  // Підсумок дня для пар: життя разом зближує (§9.4).
+  nightlyRelations(state);
 }
 
 function ageCats({ state, rng }: Night): void {
@@ -191,6 +194,7 @@ function kittenCheck({ state, report, rng }: Night): void {
 
 /** Новий кіт у домі: «Пригніченість» знімається (§6.2). */
 export function addCat(state: GameState, cat: Cat): void {
+  initRelations(state, cat);
   state.cats.push(cat);
   state.character.depressed = false;
   emit(state, { type: "cat-arrived", cat: cat.id });

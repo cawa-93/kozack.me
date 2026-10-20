@@ -36,7 +36,7 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   // На колінах кіт спить клубочком.
   if (act.kind === "lap") return "sleep";
   if (carried) return "carried";
-  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies") return "walk";
+  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
   if (act.kind === "eat" || act.kind === "drink") return "eat";

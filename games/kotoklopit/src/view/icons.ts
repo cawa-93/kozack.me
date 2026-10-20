@@ -29,7 +29,8 @@ export type IconName =
   | "dirty"
   | "thirst"
   | "bite"
-  | "kibble";
+  | "kibble"
+  | "fight";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -154,6 +155,11 @@ Object.assign(ICONS, {
     g.fillStyle(0x8a5a33).fillEllipse(20, 21, 22, 10);
     g.fillStyle(0x9aa3ab).fillEllipse(20, 27, 30, 11);
     g.lineStyle(2.5, INK).strokeEllipse(20, 27, 30, 11);
+  },
+  fight: (g: Phaser.GameObjects.Graphics) => {
+    // Хмара бійки з зірочками.
+    g.fillStyle(0xcfc6bd).fillCircle(14, 22, 9).fillCircle(24, 17, 10).fillCircle(27, 27, 8).fillCircle(16, 30, 7);
+    g.lineStyle(2.5, COLORS.danger).lineBetween(8, 8, 12, 14).lineBetween(32, 6, 28, 13).lineBetween(34, 30, 29, 27);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

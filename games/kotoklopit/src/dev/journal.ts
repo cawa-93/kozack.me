@@ -78,6 +78,12 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Кур'єр під дверима: ${goods(event.delivery)} (${event.delivery.quality})`;
     case "discarded":
       return `Викинуто: ${event.item.kind} (${event.item.quality})`;
+    case "groomed":
+      return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
+    case "cat-fight":
+      return `Бійка: ${catName(state, event.cats[0])} і ${catName(state, event.cats[1])}`;
+    case "fight-stopped":
+      return `Бійку розборонено (${catName(state, event.cat)} на руках)`;
     case "scratched":
       return `${catName(state, event.cat)} точить кігті: ${event.sofa ? "диван, ремонт до комунальних" : "кігтеточка"}`;
     case "received":

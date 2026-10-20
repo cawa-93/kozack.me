@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { bowlFull, catOnComputer, rollEscapes } from "./catai";
+import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -264,6 +264,7 @@ function occupying(state: GameState, cat: Cat): boolean {
 
 /** Узяти кота на руки (§9.12): прогнаного з місця, сонного чи небажаючого це ображає. */
 export function pickUpCat(state: GameState, cat: Cat): void {
+  separateFight(state, cat);
   const shooed = occupying(state, cat);
   const offended = shooed || unwilling(cat);
   if (shooed) {
@@ -352,7 +353,10 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     if (target === null) return;
     if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
     else if (!canUse(state, target)) return;
-    else character.activity = target.type === "cat" ? { kind: "pet", cat: target.cat.id, minutes: 0 } : { kind: "use", target: target.id, progress: 0 };
+    else if (target.type === "cat") {
+      character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
+      jealousy(state, target.cat);
+    } else character.activity = { kind: "use", target: target.id, progress: 0 };
   }
   const current = character.activity;
   if (current?.kind === "pet") {

@@ -409,7 +409,8 @@ export class DayScene extends Phaser.Scene {
     }
     for (const cat of state.cats) {
       const hungry = cat.act.kind === "beg" && cat.act.goal === null;
-      set(`cat:${cat.id}`, cat.away === null && hungry ? "kibble" : null);
+      const fighting = cat.act.kind === "fight";
+      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : null);
     }
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
@@ -477,6 +478,12 @@ export class DayScene extends Phaser.Scene {
         break;
       case "keyboard":
         popAt("computer", "meow");
+        break;
+      case "groomed":
+        popAt(`cat:${event.friend}`, "heart");
+        break;
+      case "cat-fight":
+        this.cameras.main.shake(120, 0.002);
         break;
       case "escaped":
         popAt("door", "meow");

@@ -52,6 +52,9 @@ export type GameEvent =
   | { type: "toy-broke"; toy: number }
   | { type: "discarded"; item: HomeItem }
   | { type: "scratched"; cat: number; sofa: boolean }
+  | { type: "groomed"; cat: number; friend: number }
+  | { type: "cat-fight"; cats: [number, number] }
+  | { type: "fight-stopped"; cat: number }
   | { type: "keyboard"; cat: number }
   | { type: "knocked-down"; cat: number }
   | { type: "tripped"; cat: number }

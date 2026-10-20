@@ -293,7 +293,7 @@ export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1): здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {
@@ -386,6 +386,23 @@ export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPe
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1 } as const;
+/** Стосунки між котами (§9.4). */
+export const RELATIONS = {
+  friend: 50,
+  enemy: -50,
+  sociabilityStep: 10,
+  kittenBonus: 20,
+  motherKitten: 50,
+  siblings: 30,
+  nightly: 0.5,
+  wrestle: { weight: 0.6, minutes: 3, play: 40, mood: 2, relation: 1 },
+  groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2 },
+  sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
+  fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, health: -10, separateSanity: -3 },
+  enemyMoodPerHour: -0.5,
+  resource: { chance: 0.15, territorialStep: 0.1, relation: -3 },
+  jealousy: -1,
+} as const;
 /** Вага будиночка як місця для сну (§9.12). */
 export const HOUSE_SLEEP: Record<Quality, number> = { cheap: 2, premium: 4 };
 /** Зумі: утричі швидше 1–2 хвилини; після лотка — шанс 30%. Збиває персонажа на шляху. */

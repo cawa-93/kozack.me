@@ -202,7 +202,7 @@ export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem |
 export type ThingKind = HomeItem["kind"];
 
 /** Котячий безлад на підлозі (§9.12). */
-export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken";
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur";
 
 export interface Mess {
   id: number;
@@ -305,7 +305,10 @@ export type CatActKind =
   | "toy"
   | "keyboard"
   | "lap"
-  | "scratch";
+  | "scratch"
+  | "wrestle"
+  | "groom"
+  | "fight";
 
 export interface CatAct {
   kind: CatActKind;
@@ -418,6 +421,8 @@ export interface GameState {
   home: Home;
   modifiers: { day: string | null; week: string | null };
   cats: Cat[];
+  /** Стосунки пар котів −100…+100 (§9.4): ключ — `id-id`, менший id першим. */
+  relations: Record<string, number>;
   /** Наступний id для котів, речей, безладу й пакунків. */
   nextId: number;
   rng: Record<RngStream, number>;

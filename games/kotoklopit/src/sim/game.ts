@@ -56,6 +56,7 @@ export function newGame(options: NewGameOptions): Save {
     home: newHome(() => nextId++),
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
     cats: [],
+    relations: {},
     nextId: 0,
     rng: { conditions: 0, behavior: 0 },
     lastNight: null,

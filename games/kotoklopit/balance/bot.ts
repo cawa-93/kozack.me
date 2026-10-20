@@ -6,7 +6,7 @@ import { petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
 import { PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
-import { order, supplyCount } from "../src/sim/economy";
+import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
@@ -96,6 +96,8 @@ export class Bot {
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
+    const fighter = s.cats.find((c) => c.act.kind === "fight" && c.away === null);
+    if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
     if (s.home.surfaces["table"]?.kind === "meal") return named("eat", () => this.eat());
     if (s.home.stove.item?.kind === "burnt") return named("trashBurnt", () => this.trashBurnt());
@@ -201,6 +203,13 @@ export class Bot {
       need("catFood", cats * 4);
       need("litter", Math.max(2, cats));
     }
+    // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
+    const things = (kind: "litter" | "bowl", want: number): void => {
+      const have = s.home.items.filter((i) => i.kind === kind).length + [...s.home.deliveries, ...s.home.porch].filter((d) => "thing" in d && d.thing === kind).length;
+      if (have < want && freeSlots(s, kind) > 0 && s.character.money > 300) orderThing(s, kind, "cheap");
+    };
+    things("litter", cats + 1);
+    things("bowl", cats);
   }
 
   // --- Дії ----------------------------------------------------------------------------------
@@ -264,6 +273,13 @@ export class Bot {
     // Віднести кота трохи вбік і опустити.
     this.walkToTile({ x: 4, y: 8 });
     interact(this.save);
+  }
+
+  /** Розборонити бійку: узяти кота на руки й опустити (§9.4). */
+  private separate(cat: Cat): void {
+    if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
+    interact(this.save);
+    if (this.state.character.held?.kind === "cat") interact(this.save);
   }
 
   private work(): void {
