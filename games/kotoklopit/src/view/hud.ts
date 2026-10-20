@@ -130,6 +130,9 @@ export class Hud {
     if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? "Добре [виспався|виспалася]" : "[Виспався|Виспалася]", state.character.sex));
     if (stats.health < LOW) effects.push("Знесилення");
     if (stats.satiety < LOW) effects.push("Голод");
+    const job = state.job;
+    if (job.unemployed) effects.push(`Пошук роботи ${Math.floor(job.searchHours)}/24 год`);
+    if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
     this.effects.setText(effects.join(" · "));
     const schedule = scheduleOf(state).slice(0, 3);
     // Три рядки вміщуються лише дрібнішим шрифтом.

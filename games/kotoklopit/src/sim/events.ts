@@ -24,6 +24,7 @@ export type GameEvent =
   | { type: "patience"; level: PatienceLevel }
   | { type: "standup-started" }
   | { type: "standup"; attended: boolean; reputation: number }
+  | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   | { type: "doorbell"; delivery: Delivery }
   | { type: "received"; deliveries: Delivery[] }

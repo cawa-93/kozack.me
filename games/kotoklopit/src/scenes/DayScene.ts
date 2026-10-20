@@ -23,6 +23,7 @@ import { difficultyCard, endCard, medicineCard, morningCard, newGameCard, phoneC
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay } from "../ui/overlay";
+import { CAREER_MESSAGES, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
@@ -626,6 +627,22 @@ export class DayScene extends Phaser.Scene {
           this.showMorning(event.report);
         }
         break;
+      case "career": {
+        const message = CAREER_MESSAGES[event.change];
+        const { name, sex } = this.state.character;
+        const title = fill(POSITION_TITLES[event.position] ?? "", sex);
+        const position = event.change === "demoted" ? title : title.toLowerCase();
+        this.time.delayedCall(300, () =>
+          this.overlay.show({
+            kicker: "Робота",
+            title: message.title,
+            body: [fill(message.text, sex, { персонаж: name, посада: position })],
+            actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }],
+            onDismiss: () => this.overlay.close(),
+          }),
+        );
+        break;
+      }
       case "game-over":
         this.time.delayedCall(250, () => this.showEnd());
         break;

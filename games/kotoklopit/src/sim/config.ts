@@ -193,6 +193,8 @@ export const STANDUP_MISSED_REPUTATION = -1;
 /** Гігієна на відеодзвінку: нижче LOW_STAT — штраф, від HIGH_HYGIENE — бонус (× репутація за годину). */
 export const CALL_HYGIENE_REPUTATION = 0.5;
 export const HIGH_HYGIENE = 75;
+/** Після звільнення — 24 години пошуку роботи за комп'ютером (§8.6). */
+export const JOB_SEARCH_HOURS = 24;
 
 /** Посади від стажера до директора (§8.6, чернетка). Терпіння — за годину. */
 export const POSITIONS: readonly {

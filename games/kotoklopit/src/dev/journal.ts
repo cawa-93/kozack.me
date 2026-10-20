@@ -110,6 +110,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: вагітна`;
     case "birth":
       return `${catName(state, event.cat)} народила кошенят: ${event.kittens}`;
+    case "career":
+      return `Кар'єра: ${event.change}, посада ${event.position}`;
     case "groomed":
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":

@@ -20,6 +20,7 @@ import {
   WORK_END_MINUTE,
   WORK_SANITY_PER_HOUR,
   WORK_START_MINUTE,
+  JOB_SEARCH_HOURS,
   TRIP_REPUTATION_DIVIDER,
   WORKDAYS_PER_WEEK,
 } from "./config";
@@ -30,7 +31,7 @@ import type { GameState, Job } from "./types";
 const PATIENCE_EPSILON = 1e-9;
 
 export function newJob(): Job {
-  return { position: 0, reputation: START_REPUTATION, patience: PATIENCE_MAX, standupMinutes: 0, tripDays: [] };
+  return { position: 0, reputation: START_REPUTATION, patience: PATIENCE_MAX, standupMinutes: 0, tripDays: [], unemployed: false, searchHours: 0, sickLeaveUntil: -1 };
 }
 
 export function positionOf(state: GameState): (typeof POSITIONS)[number] {
@@ -40,7 +41,8 @@ export function positionOf(state: GameState): (typeof POSITIONS)[number] {
 }
 
 export function isWorkday(state: GameState): boolean {
-  return weekdayOf(state.day) < WORKDAYS_PER_WEEK;
+  // Безробітний і на лікарняному — без робочих днів: керівництво нічого не чекає (§6.5, §8.6).
+  return weekdayOf(state.day) < WORKDAYS_PER_WEEK && !state.job.unemployed && state.day > state.job.sickLeaveUntil;
 }
 
 /** Робочий час — 09:00–18:00 у будні (§8.6). */
@@ -59,10 +61,28 @@ export function patienceLevel(state: GameState): PatienceLevel {
   return patience < PATIENCE_WARNING ? "warning" : "ok";
 }
 
+/** Репутація (§8.6): на 100 — підвищення, на 0 — пониження чи звільнення; після зміни посади — знову 50. */
 export function changeReputation(state: GameState, delta: number): void {
   const job = state.job;
-  // Підвищення на 100 і пониження на 0 додасть крок 13 плану.
+  if (job.unemployed) return;
   job.reputation = Math.min(REPUTATION_MAX, Math.max(0, job.reputation + delta));
+  if (job.reputation >= REPUTATION_MAX && job.position < POSITIONS.length - 1) {
+    job.position += 1;
+    job.reputation = START_REPUTATION;
+    emit(state, { type: "career", change: "promoted", position: job.position });
+  } else if (job.reputation <= 0) {
+    if (job.position > 0) {
+      job.position -= 1;
+      job.reputation = START_REPUTATION;
+      emit(state, { type: "career", change: "demoted", position: job.position });
+    } else {
+      stopWork(state);
+      job.unemployed = true;
+      job.searchHours = 0;
+      job.reputation = START_REPUTATION;
+      emit(state, { type: "career", change: "fired", position: 0 });
+    }
+  }
 }
 
 /** Сісти за комп'ютер: персонаж працює, доки сам не встане (§8.4). */
@@ -91,6 +111,18 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
   if (state.trip !== null) {
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
     if (workTime && state.trip.destination !== "office") changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
+  } else if (activity?.kind === "work" && job.unemployed) {
+    // Пошук роботи (§8.6): 24 години за комп'ютером, без зарплати.
+    activity.sanity += unpleasantTask(state, WORK_SANITY_PER_HOUR * hours, from);
+    activity.minutes += minutes;
+    job.searchHours += hours;
+    if (job.searchHours >= JOB_SEARCH_HOURS) {
+      job.unemployed = false;
+      job.position = 0;
+      job.reputation = START_REPUTATION;
+      job.patience = PATIENCE_MAX;
+      emit(state, { type: "career", change: "hired", position: 0 });
+    }
   } else if (activity?.kind === "work") {
     const money = position.pay * DIFFICULTY[state.difficulty].earnings * hours;
     const reputationBefore = job.reputation;
