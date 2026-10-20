@@ -31,7 +31,7 @@ import {
   KITTEN_MESSAGE,
   UTILITIES_MESSAGES,
 } from "../texts";
-import { element, type Card } from "./overlay";
+import { element, type Card, type TitleSection } from "./overlay";
 import { drawPortrait, portraitCanvas } from "./portrait";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
@@ -50,21 +50,24 @@ function note(...lines: string[]): HTMLElement {
 const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 
 /** Титулка дня (§4): тиждень, день, модифікатор і що сталося вночі. */
-export function morningCard(state: GameState, night: NightReport | null, onStart: () => void): Card {
+/** Титулка дня (§4): тиждень і його ефекти, день і його ефекти, події ночі. Показує `Overlay.title`. */
+export function dayTitle(state: GameState, night: NightReport | null): TitleSection[] {
   const { name, sex } = state.character;
-  const body: (string | HTMLElement)[] = [];
+  const weekBlocks: string[][] = [];
   const week = state.modifiers.week ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
-  if (week) body.push(note(`Цього тижня: ${week.title}`, week.situation, week.effect));
+  if (week) weekBlocks.push([week.title, week.situation, week.effect]);
+  const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
-  if (modifier) body.push(note(modifier.title, modifier.situation, modifier.effect));
+  if (modifier) dayBlocks.push([modifier.title, modifier.situation, modifier.effect]);
   const phase = cyclePhase(state);
-  if (phase) body.push(note(fill(CYCLE_TEXTS[phase], sex, { день: cycleDay(state) })));
+  if (phase) dayBlocks.push([fill(CYCLE_TEXTS[phase], sex, { день: cycleDay(state) })]);
   const beard = sex === "male" ? beardLook(state) : null;
-  if (beard === "stubble" || beard === "unkempt") body.push(note(BEARD_TEXTS[beard]));
+  if (beard === "stubble" || beard === "unkempt") dayBlocks.push([BEARD_TEXTS[beard]]);
+
+  const events: string[][] = [];
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
-    body.push(fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }));
-    body.push(fill(KITTEN_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity }));
+    events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }), fill(KITTEN_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity })]);
   }
   // Пологи (§9.8): одне повідомлення на кожну матір.
   const born = newCats.filter((c) => c.source === "born");
@@ -73,36 +76,34 @@ export function morningCard(state: GameState, night: NightReport | null, onStart
     const mother = state.cats.find((c) => c.id === motherId);
     const values = { кішка: mother?.name ?? "кішка", кількість: kittens.length, кошенята: kittens.map((c) => c.name).join(", ") };
     // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
-    body.push(fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values));
-    body.push(fill(BIRTH_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity }));
+    events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values), fill(BIRTH_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity })]);
   }
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    body.push(note(`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`));
+    events.push([`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    body.push(note(`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, `Здоровий глузд ${DIFFICULTY[state.difficulty].lostCatSanity}.`));
+    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, `Здоровий глузд ${DIFFICULTY[state.difficulty].lostCatSanity}.`]);
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {
-    body.push(fill(UTILITIES_MESSAGES[utilities.outcome], sex, { сума: utilities.paid, борг: utilities.nextDue }));
+    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], sex, { сума: utilities.paid, борг: utilities.nextDue })]);
   }
   if (night === null && state.day === 0) {
-    body.push(FIRST_DAY_HINT);
-    body.push(note("Керування", isTouch() ? CONTROLS_TOUCH : CONTROLS_KEYBOARD));
+    events.push([FIRST_DAY_HINT]);
+    events.push(["Керування", isTouch() ? CONTROLS_TOUCH : CONTROLS_KEYBOARD]);
   }
-  return {
-    kicker: `Тиждень ${weekOf(state.day)}`,
-    title: capitalize(WEEKDAY_NAMES[weekdayOf(state.day)] ?? ""),
-    body,
-    actions: [{ label: "Почати день", primary: true, onSelect: onStart }],
-    onDismiss: onStart,
-  };
+  const sections: TitleSection[] = [
+    { heading: `Тиждень ${weekOf(state.day)}`, blocks: weekBlocks },
+    { heading: capitalize(WEEKDAY_NAMES[weekdayOf(state.day)] ?? ""), blocks: dayBlocks },
+  ];
+  if (events.length > 0) sections.push({ blocks: events });
+  return sections;
 }
 
 export interface EndHandlers {

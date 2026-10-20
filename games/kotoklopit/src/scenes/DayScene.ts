@@ -21,7 +21,7 @@ import { gameMinutes } from "../sim/time";
 import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, lookCard, morningCard, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
@@ -750,7 +750,7 @@ export class DayScene extends Phaser.Scene {
   }
 
   private showMorning(night: GameState["lastNight"]): void {
-    this.overlay.show(morningCard(this.state, night, () => this.afterMorning()));
+    this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 
   private onModifier(kind: ModifierEvent, value: number): void {
