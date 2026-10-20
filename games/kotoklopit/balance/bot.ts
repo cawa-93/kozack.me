@@ -24,9 +24,12 @@ export interface BotPolicy {
   work: number;
   /** Нижче цього здорового глузду бот іде пестити котів. */
   sanityTarget: number;
+  /** Від якої потреби уваги й гри бот іде до кота й без потреби в здоровому глузді. */
+  careAttention: number;
+  carePlay: number;
 }
 
-export const DEFAULT_POLICY: BotPolicy = { work: 1.3, sanityTarget: 65 };
+export const DEFAULT_POLICY: BotPolicy = { work: 1.3, sanityTarget: 65, careAttention: 60, carePlay: 70 };
 
 /** Що бот робив: години за категоріями (для звіту). */
 export interface BotLog {
@@ -112,10 +115,12 @@ export class Bot {
       return named("cook", () => this.cook());
     }
     if (ch.stats.hygiene < 45) return named("hold", () => this.hold("shower"));
-    if (ch.stats.sanity < this.policy.sanityTarget && s.cats.length > 0) {
-      const cat = this.catFor("attention");
+    if (s.cats.length > 0) {
+      // Уважний гравець відповідає котові, який просить уваги чи гри (§9.12), і пестить для здорового глузду.
+      const low = ch.stats.sanity < this.policy.sanityTarget;
+      const cat = this.catFor("attention", low ? 40 : this.policy.careAttention);
       if (cat) return named("pet", () => this.pet(cat));
-      const player = this.catFor("play");
+      const player = this.catFor("play", low ? 40 : this.policy.carePlay);
       if (player) return named("play", () => this.play(player));
     }
     if (this.wantsWork()) return named("work", () => this.work());
@@ -142,7 +147,7 @@ export class Bot {
     return standup || s.job.patience < 60 || this.workedToday < this.workTarget();
   }
 
-  private catFor(want: "attention" | "play"): Cat | null {
+  private catFor(want: "attention" | "play", min: number): Cat | null {
     const s = this.state;
     const body = s.character.body;
     let best: Cat | null = null;
@@ -150,7 +155,7 @@ export class Bot {
     for (const cat of s.cats) {
       if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "hide") continue;
       const need = want === "attention" ? cat.needs.attention : cat.needs.play;
-      if (need < 40) continue;
+      if (need < min) continue;
       if (want === "play" && !this.hasToy()) continue;
       const score = need - Math.hypot(cat.x - body.x, cat.y - body.y) * 3;
       if (score > bestScore) {
