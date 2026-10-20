@@ -10,6 +10,7 @@ import {
   MINUTES_PER_HOUR,
   PRODUCTS,
   START_CLOTHES,
+  STORAGE_LIMITS,
   START_SUPPLIES,
   THINGS,
   UTILITIES_BASE,
@@ -84,12 +85,26 @@ export function useSupply(state: GameState, product: Product, quality?: Quality)
 
 /** Поповнити запас: покупка, доставка, стартовий пакет. Відтепер сховище його показує (§6.4). */
 export function addSupply(state: GameState, product: Product, quality: Quality, amount: number): void {
-  state.home.supplies[product][quality] += amount;
+  // Що не влазить у сховище, пропадає (§6.4).
+  state.home.supplies[product][quality] += Math.max(0, Math.min(amount, STORAGE_LIMITS[product] - supplyCount(state, product)));
   if (!state.home.acquired.includes(product)) state.home.acquired.push(product);
 }
 
 export function returnSupply(state: GameState, product: Product, quality: Quality): void {
-  state.home.supplies[product][quality] += 1;
+  if (supplyCount(state, product) < STORAGE_LIMITS[product]) state.home.supplies[product][quality] += 1;
+}
+
+/** Скільки запасу їде доставкою чи чекає під дверима. */
+export function incoming(state: GameState, product: Product): number {
+  return [...state.home.deliveries, ...state.home.porch].reduce(
+    (sum, d) => sum + ("product" in d && d.product === product ? PRODUCTS[product].units[d.quality] : 0),
+    0,
+  );
+}
+
+/** Упаковка вміститься у сховище разом із тим, що вже є й що їде (§6.4). */
+export function fitsStorage(state: GameState, product: Product, quality: Quality): boolean {
+  return supplyCount(state, product) + incoming(state, product) + PRODUCTS[product].units[quality] <= STORAGE_LIMITS[product];
 }
 
 /** Доставка коштує 110% від базової ціни, округлено до цілого. */
@@ -101,8 +116,9 @@ export function thingDeliveryPrice(thing: ThingKind, quality: Quality): number {
   return Math.round(THINGS[thing].price[quality] * DELIVERY_PRICE);
 }
 
-/** Замовити доставку; null, якщо не вистачає грошей. Пакунок прибуде через 6 годин. */
+/** Замовити доставку; null, якщо не вистачає грошей чи місця у сховищі (§6.4). Пакунок прибуде через 6 годин. */
 export function order(state: GameState, product: Product, quality: Quality): Delivery | null {
+  if (!fitsStorage(state, product, quality)) return null;
   return send(state, { product }, quality, deliveryPrice(product, quality, priceFactor(state, product)));
 }
 

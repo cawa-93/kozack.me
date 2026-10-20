@@ -7,7 +7,7 @@ import { onEvent, type GameEvent } from "../src/sim/events";
 import { interact, newGame } from "../src/sim/game";
 import { isPresent, isSolid, objectById } from "../src/sim/home";
 import { targetById } from "../src/sim/targets";
-import { addSupply } from "../src/sim/economy";
+import { addSupply, fitsStorage, order } from "../src/sim/economy";
 import { giveStarterPack } from "../src/sim/night";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
 import type { Product, Save } from "../src/sim/types";
@@ -43,7 +43,7 @@ describe("сховища (§6.4)", () => {
     expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([{ product: "catFood", count: 0 }]);
     walkTo(save, "shower");
     // Шампуню не купували: зблизька видно лише засоби гігієни.
-    expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3 }]);
+    expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3, limit: 28 }]);
   });
 
   it("окреме сховище з'являється в квартирі з першим запасом", () => {
@@ -85,5 +85,19 @@ describe("сховища (§6.4)", () => {
     interact(save);
     expect(save.current.character.held).toBeNull();
     expect(supplies.sterileFood.cheap).toBe(1);
+  });
+
+  it("ліміт сховища: зайве не замовити й не купити, стартовий пакет — скільки влізе", () => {
+    const save = game();
+    const state = save.current;
+    state.character.money = 10_000;
+    // 6 порцій є; дві упаковки по 21 уже не влізуть у холодильник на 42.
+    expect(order(state, "food", "cheap")).not.toBeNull();
+    expect(fitsStorage(state, "food", "cheap")).toBe(false);
+    expect(order(state, "food", "cheap")).toBeNull();
+    // Корм: 112 у шафці, пакет притулку додає лише до ліміту.
+    addSupply(state, "catFood", "cheap", 110);
+    giveStarterPack(state);
+    expect(state.home.supplies.catFood.cheap).toBe(112);
   });
 });

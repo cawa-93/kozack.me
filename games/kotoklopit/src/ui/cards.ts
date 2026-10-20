@@ -1,7 +1,7 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { DIFFICULTY, HAPPY_LIFE, PRODUCTS, SUFFERED_LIFE, THINGS } from "../sim/config";
-import { deliveryPrice, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
+import { DIFFICULTY, HAPPY_LIFE, PRODUCTS, STORAGE_LIMITS, SUFFERED_LIFE, THINGS } from "../sim/config";
+import { deliveryPrice, fitsStorage, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { allLives } from "../sim/finale";
@@ -168,16 +168,16 @@ const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => strin
   food: { name: "Продукти", unit: portions, place: "у холодильнику" },
   hygiene: { name: "Засоби гігієни", unit: (n) => `${n} ${plural(n, "душ", "душі", "душів")}`, place: "у ванній" },
   catFood: { name: "Котячий корм", unit: portions, place: "у шафці" },
-  sterileFood: { name: "Корм для стерилізованих", unit: portions, place: "у шафці" },
-  litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у запасі" },
-  pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "у шафці" },
-  drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у шафці" },
-  humanMeds: { name: "Ліки для себе", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у ванній" },
-  treats: { name: "Ласощі для котів", unit: (n) => `${n} ${plural(n, "ласощі", "ласощі", "ласощів")}`, place: "у шафці" },
-  collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "у шафці" },
-  bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "у шафці" },
+  sterileFood: { name: "Корм для стерилізованих", unit: portions, place: "у баку" },
+  litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у мішку" },
+  pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "в аптечці" },
+  drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "в аптечці" },
+  humanMeds: { name: "Ліки для себе", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "біля умивальника" },
+  treats: { name: "Ласощі для котів", unit: (n) => `${n} ${plural(n, "ласощі", "ласощі", "ласощів")}`, place: "в аптечці" },
+  collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
+  bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
   shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
-  detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у ванній" },
+  detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у пральній машині" },
 };
 
 const QUALITY_TITLES: Record<Quality, string> = { cheap: "Дешеві", premium: "Дорогі" };
@@ -375,13 +375,15 @@ function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers):
     const { units } = PRODUCTS[product];
     const pack = units.cheap === units.premium ? ` · ${titles.unit(units.cheap)}` : "";
     const name = element("span", "shop-name", `${titles.name}${pack}`);
-    name.append(element("span", "shop-stock", `Зараз ${titles.place}: ${titles.unit(supplyCount(state, product))}`));
+    name.append(element("span", "shop-stock", `Зараз ${titles.place}: ${titles.unit(supplyCount(state, product))} з ${STORAGE_LIMITS[product]}`));
     row.append(name);
     for (const quality of ["cheap", "premium"] as const) {
       const price = deliveryPrice(product, quality, priceFactor(state, product));
       const size = pack ? "" : ` (${titles.unit(units[quality])})`;
-      const button = element("button", "button", `${QUALITY_TITLES[quality]}${size} — ${price}`);
-      button.disabled = price > money || state.end !== null;
+      // Упаковка не влізе у сховище (§6.4).
+      const fits = fitsStorage(state, product, quality);
+      const button = element("button", "button", fits ? `${QUALITY_TITLES[quality]}${size} — ${price}` : `${QUALITY_TITLES[quality]}${size} — не вміститься`);
+      button.disabled = !fits || price > money || state.end !== null;
       button.addEventListener("click", () => handlers.order(product, quality));
       row.append(button);
     }

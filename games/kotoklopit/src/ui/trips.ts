@@ -3,7 +3,7 @@
 import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
 import { breederCatPrice, breederCats, GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
-import { freeSlots } from "../sim/economy";
+import { fitsStorage, freeSlots } from "../sim/economy";
 import { visibility } from "../sim/knowledge";
 import { traitName } from "../sim/traits";
 import { tripBlocker } from "../sim/trips";
@@ -125,13 +125,16 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         const mod = Math.round(shopModifier(state, g) * 100);
         const tag = mod < 0 ? `ЗНИЖКА ${-mod}%` : mod > 0 ? `ПОДОРОЖЧАННЯ ${mod}%` : "звичайна ціна";
         const full = "thing" in g && freeSlots(state, g.thing) <= 0;
+        // Запас, що не влізе у сховище (§6.4).
+        const fits = (q: Quality): boolean => !("product" in g) || fitsStorage(state, g.product, q);
         list.append(
           row(
             GOODS_TITLES[goodsKey(g)] ?? goodsKey(g),
             full ? "немає місця вдома" : tag,
             ...(["cheap", "premium"] as const).map((q) => {
               const price = shopPrice(state, g, q);
-              return button(`${q === "cheap" ? "Дешеве" : "Дороге"} — ${price}`, price, () => h.buy(g, q), full);
+              const label = fits(q) ? `${q === "cheap" ? "Дешеве" : "Дороге"} — ${price}` : `${q === "cheap" ? "Дешеве" : "Дороге"} — не вміститься`;
+              return button(label, price, () => h.buy(g, q), full || !fits(q));
             }),
           ),
         );

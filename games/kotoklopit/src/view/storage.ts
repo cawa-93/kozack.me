@@ -13,6 +13,8 @@ const FONT = "system-ui, sans-serif";
 /** Розмір іконки запасу в індикаторі й крок між ними. */
 const ICON = 26;
 const CHIP = 50;
+/** Ширша клітинка, коли поруч із кількістю ліміт («12/42»). */
+const WIDE_CHIP = 76;
 const PAD = 5;
 
 /** Іконка кожного запасу: над сховищем і над персонажем, коли запас витрачено. */
@@ -48,7 +50,7 @@ export class StorageIndicators {
   /** Показати вміст над сховищем; порожній список прибирає індикатор. Викликати щокадру. */
   set(id: string, lines: readonly StorageLine[], x: number, y: number): void {
     const current = this.shown.get(id);
-    const key = lines.map((l) => `${l.product}:${l.count}`).join(",");
+    const key = lines.map((l) => `${l.product}:${l.count}/${l.limit ?? ""}`).join(",");
     if (lines.length === 0) {
       current?.container.destroy();
       this.shown.delete(id);
@@ -63,18 +65,19 @@ export class StorageIndicators {
   }
 
   private make(lines: readonly StorageLine[], x: number, y: number): Phaser.GameObjects.Container {
-    const width = lines.length * CHIP + PAD;
+    const chip = lines.some((l) => l.limit !== undefined) ? WIDE_CHIP : CHIP;
+    const width = lines.length * chip + PAD;
     const height = ICON + PAD * 2;
     const bg = this.scene.add.graphics();
     bg.fillStyle(0xffffff, 0.95).fillRoundedRect(-width / 2, -height, width, height, 8);
     bg.lineStyle(2, COLORS.ink, 0.6).strokeRoundedRect(-width / 2, -height, width, height, 8);
     const parts: Phaser.GameObjects.GameObject[] = [bg];
     lines.forEach((line, i) => {
-      const left = -width / 2 + PAD + i * CHIP;
+      const left = -width / 2 + PAD + i * chip;
       parts.push(this.scene.add.image(left + ICON / 2, -height / 2, `icon-${PRODUCT_ICONS[line.product]}`).setDisplaySize(ICON, ICON));
       parts.push(
         this.scene.add
-          .text(left + ICON + 2, -height / 2, String(line.count), {
+          .text(left + ICON + 2, -height / 2, line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`, {
             fontFamily: FONT,
             fontSize: "15px",
             fontStyle: "bold",
