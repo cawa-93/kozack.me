@@ -5,11 +5,11 @@ import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { moveBody, newBody } from "./body";
 import { tickCats } from "./catai";
 import { passAwakeTime } from "./character";
-import { ACCIDENT, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
+import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
-import { stateRng, seedDay } from "./rng";
+import { createRng, deriveSeed, stateRng, seedDay } from "./rng";
 import type { RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { tickHousehold } from "./household";
@@ -18,7 +18,7 @@ import { isLastDay, weekdayOf } from "./time";
 import type { Difficulty, GameState, NightReport, Save, Sex } from "./types";
 import { newJob, tickWork } from "./work";
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 const EPSILON = 1e-6;
 
@@ -35,8 +35,9 @@ export interface NewGameOptions {
 export function newGame(options: NewGameOptions): Save {
   const { sex, difficulty } = options;
   let nextId = 1;
+  const seed = (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0;
   const state: GameState = {
-    seed: (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0,
+    seed,
     replays: 0,
     difficulty,
     day: 0,
@@ -57,6 +58,9 @@ export function newGame(options: NewGameOptions): Save {
       illnesses: [],
       shortNights: 0,
       restedNights: 0,
+      // День початку циклу на старті випадковий (§4.1, `DAY_MODIFIERS.md`).
+      cycleStart: -Math.floor(createRng(deriveSeed(seed, 28)).next() * CYCLE.days),
+      beard: { shaved: 0, trimmed: -100 },
     },
     job: newJob(),
     home: newHome(() => nextId++),

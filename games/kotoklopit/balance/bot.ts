@@ -7,6 +7,7 @@ import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
 import { DISEASES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
+import { beardLook, groomBeard } from "../src/sim/grooming";
 import { stateRng } from "../src/sim/rng";
 import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
@@ -123,6 +124,15 @@ export class Bot {
       return named("cook", () => this.cook());
     }
     if (ch.stats.hygiene < 45) return named("hold", () => this.hold("shower"));
+    // Борода (§5.1): привести до ладу до летучки.
+    const look = ch.sex === "male" ? beardLook(s) : "clean";
+    if ((look === "stubble" || look === "unkempt") && s.minute < 9.75 * 60 && !this.skipped("sink")) {
+      return named("beard", () => {
+        if (!this.goTo("sink")) return this.wait(1);
+        const minutes = groomBeard(s, look === "unkempt" ? "trim" : "shave");
+        this.wait(minutes ?? 1);
+      });
+    }
     // Побут (§8.7): випране — розвісити, одяг закінчується — прати, шерсті багато — пилососити.
     const washer = s.home.washer.state;
     if (washer === "done" || (washer === "idle" && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {

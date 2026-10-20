@@ -3,6 +3,7 @@
 import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
 import { deliveryPrice, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
+import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
@@ -18,7 +19,9 @@ import {
   farewellText,
   fill,
   FIRST_DAY_HINT,
+  BEARD_TEXTS,
   BIRTH_BONUS,
+  CYCLE_TEXTS,
   BIRTH_MESSAGE,
   KITTEN_BONUS,
   KITTEN_MESSAGE,
@@ -47,6 +50,10 @@ export function morningCard(state: GameState, night: NightReport | null, onStart
   const body: (string | HTMLElement)[] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) body.push(note(modifier.title, modifier.situation, modifier.effect));
+  const phase = cyclePhase(state);
+  if (phase) body.push(note(fill(CYCLE_TEXTS[phase], sex, { день: cycleDay(state) })));
+  const beard = sex === "male" ? beardLook(state) : null;
+  if (beard === "stubble" || beard === "unkempt") body.push(note(BEARD_TEXTS[beard]));
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
     body.push(fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }));
@@ -340,6 +347,23 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     body: [
       "Ліки кіт не любить: дати їх — неприємна справа. Таблетка допомагає від застуди, глистів і старечих болячок, краплі — від бліх і кон'юнктивіту. Ласощі одразу після неприємного зменшують образу. З нашийником над котом видно його ім'я.",
     ],
+    actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
+    onDismiss: onCancel,
+  };
+}
+
+/** Умивальник для чоловічого персонажа (§5.1, §6.5): гоління, підрівнювання бороди, ліки. */
+export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "meds") => void, onCancel: () => void): Card {
+  const look = beardLook(state);
+  const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
+  if (look === "neat" || look === "unkempt") actions.push({ label: "Підрівняти бороду (5 хв)", primary: true, onSelect: () => onPick("trim") });
+  actions.push({ label: "Поголитися (10 хв)", primary: actions.length === 0, onSelect: () => onPick("shave") });
+  if (supplyCount(state, "humanMeds") > 0) actions.push({ label: `Ліки для себе (${supplyCount(state, "humanMeds")})`, onSelect: () => onPick("meds") });
+  const words = { clean: "Обличчя гладеньке.", stubble: "Щетина вже помітна.", neat: "Борода охайна.", unkempt: "Борода стирчить у різні боки." };
+  return {
+    kicker: "Ванна",
+    title: "Умивальник",
+    body: [`${words[look]} Доглянутий вигляд допомагає на відеодзвінках, неохайний — шкодить.`],
     actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
     onDismiss: onCancel,
   };

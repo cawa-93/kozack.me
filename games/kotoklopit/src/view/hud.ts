@@ -10,6 +10,7 @@ import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from ".
 import type { GameState, StatName } from "../sim/types";
 import { isWorkday } from "../sim/work";
 import { fill, ILLNESS_TITLES } from "../texts";
+import { beardLook, cyclePhase } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
@@ -134,6 +135,13 @@ export class Hud {
     if (job.unemployed) effects.push(`Пошук роботи ${Math.floor(job.searchHours)}/24 год`);
     if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
+    const phase = cyclePhase(state);
+    if (phase) effects.push(phase === "period" ? "Менструація" : "Приплив енергії");
+    if (state.character.sex === "male") {
+      const look = beardLook(state);
+      if (look === "stubble") effects.push("Щетина");
+      if (look === "unkempt") effects.push("Неохайна борода");
+    }
     this.effects.setText(effects.join(" · "));
     const schedule = scheduleOf(state).slice(0, 3);
     // Три рядки вміщуються лише дрібнішим шрифтом.

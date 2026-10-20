@@ -25,6 +25,7 @@ import {
   WORKDAYS_PER_WEEK,
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
+import { beardImpression } from "./grooming";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -170,9 +171,9 @@ function resolveStandup(state: GameState): void {
  */
 export function callImpression(state: GameState): number {
   const hygiene = state.character.stats.hygiene;
-  if (hygiene < LOW_STAT) return -CALL_HYGIENE_REPUTATION;
-  if (hygiene >= HIGH_HYGIENE) return CALL_HYGIENE_REPUTATION;
-  return 0;
+  const clean = hygiene < LOW_STAT ? -CALL_HYGIENE_REPUTATION : hygiene >= HIGH_HYGIENE ? CALL_HYGIENE_REPUTATION : 0;
+  // Борода (§5.1): доглянута — бонус, неохайна — штраф.
+  return clean + beardImpression(state);
 }
 
 /** Ранок: на початку кожного робочого дня терпіння повне (§8.6). */

@@ -20,7 +20,8 @@ import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { careCard, difficultyCard, endCard, hasCareSupplies, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
+import { careCard, difficultyCard, endCard, hasCareSupplies, morningCard, newGameCard, phoneCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
@@ -188,6 +189,25 @@ export class DayScene extends Phaser.Scene {
 
   private act(): void {
     if (this.blocked()) return;
+    // Умивальник для чоловічого персонажа: борода (§5.1) і ліки.
+    if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink") {
+      this.overlay.show(
+        sinkCard(
+          this.state,
+          (choice) => {
+            this.overlay.close();
+            if (choice === "meds") {
+              interact(this.session.save);
+              return;
+            }
+            const minutes = groomBeard(this.state, choice);
+            if (minutes !== null) advance(this.session.save, minutes);
+          },
+          () => this.overlay.close(),
+        ),
+      );
+      return;
+    }
     // Біля дверей нічого не чекає: поїздка (§8.5).
     if (canLeave(this.state)) {
       this.overlay.show(
@@ -372,7 +392,7 @@ export class DayScene extends Phaser.Scene {
   private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
-    this.person.draw(state.character, this.moving, time, state.trip !== null);
+    this.person.draw(state.character, this.moving, time, state.trip !== null, state.character.sex === "male" ? beardLook(state) : null);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.viewport.follow(this.person.head, seconds);

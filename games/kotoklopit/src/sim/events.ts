@@ -35,6 +35,7 @@ export type GameEvent =
   | { type: "vacuumed" }
   | { type: "robot" }
   | { type: "broke"; what: string }
+  | { type: "beard"; kind: "shave" | "trim" }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   | { type: "doorbell"; delivery: Delivery }

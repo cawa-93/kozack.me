@@ -535,6 +535,14 @@ export const HOUSEHOLD = {
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
+/** Жіночий цикл (§4.1, `DAY_MODIFIERS.md`): 28 днів; менструація 1–5, приплив енергії 10–14. */
+export const CYCLE = {
+  days: 28,
+  period: { from: 1, to: 5, move: 0.9, dash: 1.25, hygiene: 1.2 },
+  energy: { from: 10, to: 14, move: 1.1, dash: 0.75 },
+} as const;
+/** Борода (§5.1): гоління — охайно 2 дні, борода відростає за 4; підрівнювання тримає вигляд 3 дні. */
+export const BEARD = { neatAfterShave: 2, grows: 4, neatAfterTrim: 3, shaveMinutes: 10, trimMinutes: 5, impression: 0.5 } as const;
 /** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
 /** Нашийник (§9.10): настрій за день, шанс загубити дешевий, дзвіночок дратує чутливих. */
