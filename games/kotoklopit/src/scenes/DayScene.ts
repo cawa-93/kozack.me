@@ -4,7 +4,7 @@ import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, order, orderThing, supplyCount } from "../sim/economy";
+import { discard, order, orderThing } from "../sim/economy";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
@@ -32,9 +32,11 @@ import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
+import { PRODUCT_ICONS, StorageIndicators } from "../view/storage";
+import { STORAGES, storageIndicator } from "../sim/storage";
 import { CatView } from "../view/cat";
 import { drawCatCorner, itemScreen } from "../view/catcorner";
-import { COLORS, toScreen } from "../view/geometry";
+import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
 import { PersonView } from "../view/person";
@@ -82,6 +84,7 @@ export class DayScene extends Phaser.Scene {
   private gloom!: Phaser.GameObjects.Rectangle;
   private person!: PersonView;
   private bubbles!: Bubbles;
+  private storage!: StorageIndicators;
   private hud!: Hud;
   private touch!: TouchControls;
   private keys!: Keys;
@@ -109,6 +112,7 @@ export class DayScene extends Phaser.Scene {
     this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
     this.person = new PersonView(this, world);
     this.bubbles = new Bubbles(this, world);
+    this.storage = new StorageIndicators(this, world);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(15_000).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -175,6 +179,7 @@ export class DayScene extends Phaser.Scene {
   private restart(): void {
     this.overlay.close();
     this.bubbles.clear();
+    this.storage.clear();
     this.touch.reset();
     this.viewport.jump();
     // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
@@ -231,9 +236,9 @@ export class DayScene extends Phaser.Scene {
       );
       return;
     }
-    // Кіт на руках біля шафки: догляд (§8.7) — ліки, ласощі, нашийник.
+    // Кіт на руках біля аптечки: догляд (§8.7) — ліки, ласощі, нашийник.
     const cat = medicineCat(this.state);
-    if (cat && targetOf(this.state)?.id === "cat-cabinet" && hasCareSupplies(this.state)) {
+    if (cat && targetOf(this.state)?.id === "cat-kit" && hasCareSupplies(this.state)) {
       this.overlay.show(
         careCard(
           this.state,
@@ -599,14 +604,11 @@ export class DayScene extends Phaser.Scene {
 
     const item = state.home.stove.item;
     set("stove", item === null ? null : item.kind === "burnt" ? "smoke" : item.kind === "meal" ? "meal" : "pot");
-    set("fridge", supplyCount(state, "food") === 0 ? "empty" : null);
-    set("shower", supplyCount(state, "hygiene") === 0 ? "empty" : null);
     // Кіт на сходах важливіший за пакунок (§9.12).
     set("door", state.cats.some((c) => c.away === "stairs") ? "meow" : state.home.porch.length > 0 ? "box" : null);
     const table = objectById("table");
     const target = targetOf(state);
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
-    set("cat-cabinet", state.cats.length > 0 && supplyCount(state, "catFood") + supplyCount(state, "sterileFood") === 0 ? "empty" : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
     set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : state.home.clothes <= 0 ? "dirty" : null);
@@ -624,6 +626,15 @@ export class DayScene extends Phaser.Scene {
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : ringing ? "bell" : null);
     }
+    // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
+    // холодильником індикатор лягає на його лицьову грань.
+    const highest = toScreen({ x: 0, y: 1 }).y - WALL_RISE + 40;
+    for (const storage of STORAGES) {
+      const anchor = this.anchorOf(storage.object);
+      if (!anchor) continue;
+      const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
+      this.storage.set(storage.object, storageIndicator(state, storage), anchor.x, Math.max(highest, anchor.y - lift));
+    }
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
 
@@ -640,11 +651,8 @@ export class DayScene extends Phaser.Scene {
         if (icon) popAt(event.object, icon);
         break;
       }
-      case "ate":
-        popAt("fridge", event.food > 0 ? "food" : "empty", event.food);
-        break;
-      case "showered":
-        popAt("shower", "drop", event.left);
+      case "supply-used":
+        this.bubbles.pop(PRODUCT_ICONS[event.product], this.person.head.x, this.person.head.y - 8, event.left);
         break;
       case "doorbell":
         popAt("door", "bell");

@@ -107,6 +107,8 @@ export const DASH_COOLDOWN_MINUTES = 1.5;
 export const BODY_RADIUS = 0.3;
 /** На якій відстані від речі персонаж може з нею взаємодіяти. */
 export const REACH = 0.75;
+/** Ближче за це до сховища над ним видно вміст (§6.4). */
+export const STORAGE_NEAR = 1.2;
 /** Наскільки річ, на яку дивиться персонаж, важливіша за ближчу (у клітинках). */
 export const FACING_PRIORITY = 0.5;
 /** Відхилення джойстика, менше за це, — не рух. */

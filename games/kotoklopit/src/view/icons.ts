@@ -33,7 +33,16 @@ export type IconName =
   | "fight"
   | "sneeze"
   | "itch"
-  | "eyes";
+  | "eyes"
+  | "kibble-sterile"
+  | "litter"
+  | "shampoo"
+  | "detergent"
+  | "human-meds"
+  | "pills"
+  | "drops"
+  | "treats"
+  | "collar";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -183,6 +192,62 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
     g.fillStyle(INK).fillCircle(20, 18, 4);
     g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Іконки запасів (§6.4): над сховищем і над персонажем, коли запас витрачено. */
+Object.assign(ICONS, {
+  "kibble-sterile": (g: Phaser.GameObjects.Graphics) => {
+    ICONS.kibble(g);
+    g.fillStyle(0x4f86c6).fillCircle(31, 9, 6);
+    g.fillStyle(0xffffff).fillRect(28, 8, 6, 2);
+  },
+  litter: (g: Phaser.GameObjects.Graphics) => {
+    // Мішок із гірочкою гранул.
+    g.fillStyle(0xcdb98f).fillRoundedRect(9, 10, 22, 24, 5);
+    g.lineStyle(2.5, INK).strokeRoundedRect(9, 10, 22, 24, 5).lineBetween(14, 10, 26, 10);
+    g.fillStyle(0x8a7a5a);
+    for (const [x, y] of [[16, 22], [20, 20], [24, 23], [18, 27], [23, 28]] as const) g.fillCircle(x, y, 2);
+  },
+  shampoo: (g: Phaser.GameObjects.Graphics) => {
+    // Пляшка з лапкою.
+    g.fillStyle(0xd98fb8).fillRoundedRect(12, 12, 16, 22, 5).fillRect(16, 6, 8, 7);
+    g.lineStyle(2.5, INK).strokeRoundedRect(12, 12, 16, 22, 5);
+    g.fillStyle(0xffffff).fillCircle(20, 25, 3.5).fillCircle(16, 20, 1.6).fillCircle(20, 18, 1.6).fillCircle(24, 20, 1.6);
+  },
+  detergent: (g: Phaser.GameObjects.Graphics) => {
+    // Коробка порошку з бульбашками.
+    g.fillStyle(0xe8a33a).fillRect(9, 14, 22, 20);
+    g.lineStyle(2.5, INK).strokeRect(9, 14, 22, 20);
+    g.fillStyle(0x8fc3d6).fillCircle(15, 9, 4).fillCircle(24, 7, 3).fillCircle(27, 13, 2.5);
+  },
+  "human-meds": (g: Phaser.GameObjects.Graphics) => {
+    // Капсула: половина червона, половина біла.
+    g.fillStyle(COLORS.danger).fillRoundedRect(6, 14, 15, 13, 6);
+    g.fillStyle(0xffffff).fillRoundedRect(19, 14, 15, 13, 6);
+    g.lineStyle(2.5, INK).strokeRoundedRect(6, 14, 28, 13, 6);
+  },
+  pills: (g: Phaser.GameObjects.Graphics) => {
+    // Кругла таблетка з рискою й лапкою: для котів.
+    g.fillStyle(0xffffff).fillCircle(18, 22, 11);
+    g.lineStyle(2.5, INK).strokeCircle(18, 22, 11).lineBetween(10, 22, 26, 22);
+    g.fillStyle(0x6b4a2b).fillCircle(31, 9, 3).fillCircle(28, 5, 1.4).fillCircle(32, 4, 1.4).fillCircle(35, 6, 1.4);
+  },
+  drops: (g: Phaser.GameObjects.Graphics) => {
+    // Флакончик із піпеткою.
+    g.fillStyle(0x9ad0c2).fillRoundedRect(12, 18, 16, 16, 4);
+    g.fillStyle(INK).fillRect(16, 10, 8, 8).fillRect(18, 4, 4, 7);
+    g.fillStyle(0x6fb3d6).fillCircle(31, 30, 3.5);
+  },
+  treats: (g: Phaser.GameObjects.Graphics) => {
+    // Рибка.
+    g.fillStyle(0xe0893a).fillEllipse(18, 20, 22, 13).fillTriangle(28, 20, 36, 12, 36, 28);
+    g.fillStyle(INK).fillCircle(12, 18, 2);
+  },
+  collar: (g: Phaser.GameObjects.Graphics) => {
+    // Нашийник із жетоном.
+    g.lineStyle(5, COLORS.danger).strokeCircle(20, 17, 11);
+    g.fillStyle(0xe8b93a).fillCircle(20, 31, 5);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

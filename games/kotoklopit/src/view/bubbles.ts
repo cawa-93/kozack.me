@@ -61,6 +61,10 @@ export class Bubbles {
     this.states.set(anchor, { container, name: icon });
   }
 
+  hasState(anchor: string): boolean {
+    return this.states.has(anchor);
+  }
+
   /** Бабл події: виринає й за мить зникає. */
   pop(icon: IconName, x: number, y: number, count?: number): void {
     const container = this.make(icon, x, y, count);

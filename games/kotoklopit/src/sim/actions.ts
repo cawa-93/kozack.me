@@ -34,7 +34,7 @@ import {
   SHOO,
   WATER_CAPACITY,
 } from "./config";
-import { receivePackages, returnSupply, supplyCount, takeSupply } from "./economy";
+import { receivePackages, returnSupply, supplyCount, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, type HomeObject } from "./home";
 import { stateRng } from "./rng";
@@ -113,27 +113,33 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
-      const quality = takeSupply(state, "food");
+      const quality = useSupply(state, "food");
       if (quality === null) return refuse(state, target.id, "empty");
       return take(state, target, { kind: "raw", quality });
     }
-    case "catCabinet": {
+    case "catCabinet":
+    case "sterileBin": {
+      // Кожен корм — у своєму сховищі (§6.4): шафка — звичайний, бак — для стерилізованих (§9.8).
+      const sterile = target.kind === "sterileBin";
+      const product = sterile ? "sterileFood" : "catFood";
       if (held?.kind === "catfood") {
-        // Друге натискання міняє корм на інший, якщо він є, інакше повертає порцію (§9.8).
-        returnSupply(state, held.sterile ? "sterileFood" : "catFood", held.quality);
+        // Порцію повертають туди, звідки взяли.
+        if (held.sterile !== sterile) return refuse(state, target.id, "wrong");
+        returnSupply(state, product, held.quality);
         character.held = null;
-        const other = held.sterile ? "catFood" : "sterileFood";
-        const swapped = takeSupply(state, other);
-        if (swapped !== null) return take(state, target, { kind: "catfood", quality: swapped, sterile: other === "sterileFood" });
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
-      const regular = takeSupply(state, "catFood");
-      const quality = regular ?? takeSupply(state, "sterileFood");
+      const quality = useSupply(state, product);
       if (quality === null) return refuse(state, target.id, "empty");
-      return take(state, target, { kind: "catfood", quality, sterile: regular === null });
+      return take(state, target, { kind: "catfood", quality, sterile });
     }
+    case "catKit":
+      // Аптечка: догляд за котом на руках відкриває картка сцени (§8.7).
+      return refuse(state, target.id, "nothing");
+    case "litterBag":
+      return null;
     case "stove": {
       const stove = state.home.stove;
       if (held !== null) {
@@ -422,7 +428,7 @@ function finishUse(state: GameState, target: Target): void {
   if (target.type === "item" && target.item.kind === "litter") {
     const box = target.item;
     box.uses = 0;
-    box.litter = takeSupply(state, "litter");
+    box.litter = useSupply(state, "litter");
     const sanity = unpleasantTask(state, LITTER_SANITY);
     emit(state, { type: "cleaned", what: "litter", sanity });
     return;
@@ -438,7 +444,7 @@ function finishUse(state: GameState, target: Target): void {
   const object = target.object;
   if (object.kind === "vacuum") return vacuumed(state);
   if (object.kind === "shower") {
-    const quality = takeSupply(state, "hygiene");
+    const quality = useSupply(state, "hygiene");
     const hygiene = SHOWER_HYGIENE[quality ?? "none"];
     changeStat(state, "hygiene", hygiene);
     emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene") });

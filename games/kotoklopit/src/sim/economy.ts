@@ -66,6 +66,21 @@ export function takeSupply(state: GameState, product: Product): Quality | null {
   return quality;
 }
 
+/**
+ * Персонаж узяв чи витратив запас (§6.4): над ним виринає іконка із залишком. Без якості береться
+ * як завжди — спершу дорожчий; з якістю — саме вона. Повертає якість або null, якщо запасу немає.
+ */
+export function useSupply(state: GameState, product: Product, quality?: Quality): Quality | null {
+  let taken: Quality | null;
+  if (quality === undefined) taken = takeSupply(state, product);
+  else if (state.home.supplies[product][quality] > 0) {
+    state.home.supplies[product][quality] -= 1;
+    taken = quality;
+  } else taken = null;
+  if (taken !== null) emit(state, { type: "supply-used", product, left: supplyCount(state, product) });
+  return taken;
+}
+
 export function returnSupply(state: GameState, product: Product, quality: Quality): void {
   state.home.supplies[product][quality] += 1;
 }

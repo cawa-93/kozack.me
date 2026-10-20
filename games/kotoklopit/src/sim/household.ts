@@ -3,7 +3,7 @@
 import { traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, WATER_CAPACITY } from "./config";
-import { takeSupply } from "./economy";
+import { takeSupply, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
@@ -50,7 +50,7 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
     emit(state, { type: "laundry", stage: "cat", cat: cat.id });
     return "cat";
   }
-  const quality = takeSupply(state, "detergent");
+  const quality = useSupply(state, "detergent");
   if (quality === null) return "empty";
   state.home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };
   emit(state, { type: "laundry", stage: "started" });

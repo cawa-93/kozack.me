@@ -2,7 +2,7 @@
 
 import { changeStat, spend } from "./character";
 import { DOCTOR, DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES } from "./config";
-import { takeSupply } from "./economy";
+import { useSupply } from "./economy";
 import { emit } from "./events";
 import type { Rng } from "./rng";
 import type { GameState, IllnessId } from "./types";
@@ -57,7 +57,7 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
 
 /** Прийняти ліки біля умивальника (§6.5): одна доза на день, дешева діє з шансом 70%. */
 export function takeHumanMeds(state: GameState, rng: Rng): boolean {
-  const quality = takeSupply(state, "humanMeds");
+  const quality = useSupply(state, "humanMeds");
   if (quality === null) return false;
   for (const illness of [...state.character.illnesses]) {
     const doses = ILLNESSES[illness.id].doses;

@@ -4,7 +4,7 @@ import { changeLove, changeMood, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, COLLAR, TREATS } from "./config";
 import { fallIll, maybeFallIll } from "./diseases";
-import { takeSupply } from "./economy";
+import { useSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { observe } from "./knowledge";
@@ -27,7 +27,7 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   const cat = catInHands(state);
   const supply = state.home.supplies.treats;
   if (!cat || supply[quality] <= 0) return false;
-  supply[quality] -= 1;
+  useSupply(state, "treats", quality);
   changeMood(state, cat, TREATS.mood[quality]);
   changeLove(state, cat, TREATS.love, "ласощі");
   const now = absoluteMinute(state.day, state.minute);
@@ -48,7 +48,7 @@ export function putCollar(state: GameState, quality: Quality): boolean {
   const cat = catInHands(state);
   const supply = state.home.supplies.collar;
   if (!cat || supply[quality] <= 0) return false;
-  supply[quality] -= 1;
+  useSupply(state, "collar", quality);
   cat.collar = { quality, bell: cat.collar?.bell ?? false };
   emit(state, { type: "collar", cat: cat.id });
   return true;
@@ -58,8 +58,7 @@ export function addBell(state: GameState): boolean {
   const cat = catInHands(state);
   const supply = state.home.supplies.bell;
   if (!cat?.collar || cat.collar.bell || supply.cheap + supply.premium <= 0) return false;
-  if (supply.cheap > 0) supply.cheap -= 1;
-  else supply.premium -= 1;
+  useSupply(state, "bell", supply.cheap > 0 ? "cheap" : "premium");
   cat.collar.bell = true;
   return true;
 }
@@ -74,7 +73,7 @@ const bellAnnoys = (cat: Cat): boolean => traitLevel(cat, "weather") >= 1 || tra
 export function bathe(state: GameState, rng: Rng): boolean {
   const cat = catInHands(state);
   if (!cat) return false;
-  const quality = takeSupply(state, "shampoo");
+  const quality = useSupply(state, "shampoo");
   if (quality === null) return false;
   unpleasantTask(state, BATH.catchSanity);
   unpleasantTask(state, BATH.bathSanity);

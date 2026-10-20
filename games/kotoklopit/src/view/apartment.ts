@@ -24,6 +24,9 @@ const HEIGHT: Record<ObjectKind, number> = {
   catCabinet: 46,
   washer: 48,
   vacuum: 60,
+  litterBag: 28,
+  sterileBin: 36,
+  catKit: 40,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -41,6 +44,9 @@ const FILL: Record<ObjectKind, number> = {
   catCabinet: 0xb08a5a,
   washer: 0xe9e6df,
   vacuum: 0x8a7a6a,
+  litterBag: 0xcdb98f,
+  sterileBin: 0x8fb3c4,
+  catKit: 0xf0ece4,
 };
 
 /** Видима висота речі: на неї вилазить кіт. */
@@ -227,6 +233,19 @@ function decorate(
       // Шафа з пилососом: дверцята й ручка.
       g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
       g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
+      break;
+    case "litterBag":
+      // Мішок наповнювача: зав'язка й смужка.
+      g.fillStyle(shade(FILL.litterBag, -0.3)).fillRect(t.x + 8, t.y + t.h + height / 2 - 3, t.w - 16, 6);
+      break;
+    case "sterileBin":
+      // Бак корму для стерилізованих: кришка й мітка.
+      g.fillStyle(shade(FILL.sterileBin, -0.3)).fillRect(t.x + 4, t.y + t.h + 2, t.w - 8, 5);
+      g.fillStyle(0xffffff).fillCircle(cx, t.y + t.h + height / 2 + 4, 6);
+      break;
+    case "catKit":
+      // Котяча аптечка: червоний хрестик.
+      g.fillStyle(COLORS.danger).fillRect(cx - 3, t.y + t.h + height / 2 - 9, 6, 18).fillRect(cx - 9, t.y + t.h + height / 2 - 3, 18, 6);
       break;
     case "door":
       break;

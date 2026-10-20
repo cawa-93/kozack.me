@@ -392,12 +392,12 @@ function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers):
 
 export type CareChoice = { medicine: Medicine } | { treat: Quality } | { collar: Quality } | "bell";
 
-/** Чи є чим доглянути кота біля шафки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
+/** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
 export function hasCareSupplies(state: GameState): boolean {
   return (["pills", "drops", "treats", "collar", "bell"] as const).some((p) => supplyCount(state, p) > 0);
 }
 
-/** Догляд за котом на руках біля шафки (§8.7, §9.5, §9.10): ліки, ласощі, нашийник. */
+/** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10): ліки, ласощі, нашийник. */
 export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice) => void, onCancel: () => void): Card {
   const supply = state.home.supplies;
   const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];

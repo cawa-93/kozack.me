@@ -332,7 +332,7 @@ export class Bot {
     if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
     interact(this.save);
     if (s.character.held?.kind !== "cat") return;
-    if (this.goTo("cat-cabinet")) giveMedicine(s, medicine, stateRng(s, "behavior"));
+    if (this.goTo("cat-kit")) giveMedicine(s, medicine, stateRng(s, "behavior"));
     interact(this.save);
   }
 

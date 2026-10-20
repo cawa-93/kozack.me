@@ -4,7 +4,7 @@
 import { changeHealth, changeLove, changeMood, isAdapting, isOld, lifeMood, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS } from "./config";
-import { takeSupply } from "./economy";
+import { useSupply } from "./economy";
 import { emit } from "./events";
 import { catIllnessFactor } from "./modifiers";
 import { isFriend } from "./relations";
@@ -154,7 +154,7 @@ export function medicineCat(state: GameState): Cat | null {
 export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): boolean {
   const cat = medicineCat(state);
   if (!cat) return false;
-  const quality = takeSupply(state, medicine);
+  const quality = useSupply(state, medicine);
   if (quality === null) return false;
   unpleasantTask(state, MEDICINE.sanity);
   changeLove(state, cat, MEDICINE.love, "дали ліки");

@@ -19,7 +19,10 @@ export type ObjectKind =
   | "sofa"
   | "catCabinet"
   | "washer"
-  | "vacuum";
+  | "vacuum"
+  | "litterBag"
+  | "sterileBin"
+  | "catKit";
 
 export interface Rect {
   x: number;
@@ -68,7 +71,8 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   y,
   w,
   h,
-  interactive: kind !== "sofa",
+  // Мішок наповнювача лише зберігає: лоток бере з нього сам (§6.4).
+  interactive: kind !== "sofa" && kind !== "litterBag",
 });
 
 export const OBJECTS: readonly HomeObject[] = [
@@ -88,6 +92,10 @@ export const OBJECTS: readonly HomeObject[] = [
   // Побут (§8.7): пральна машина у ванній і шафа з пилососом у вітальні.
   object("washer", "washer", 10, 1),
   object("vacuum", "vacuum", 16, 10),
+  // Сховища запасів (§6.4): мішок наповнювача, бак корму для стерилізованих і котяча аптечка.
+  object("litter-bag", "litterBag", 5, 6),
+  object("sterile-bin", "sterileBin", 18, 6),
+  object("cat-kit", "catKit", 13, 6),
 ];
 
 /** Поверхні, на які можна покласти річ: стіл і робочі поверхні кухні. */
