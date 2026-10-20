@@ -1,5 +1,6 @@
 // Показники персонажа й гроші (§6, §6.1, §6.3).
 
+import { hygieneFactor } from "./household";
 import {
   CHRONOTYPE_WINDOWS,
   DEPRESSION_CEILING,
@@ -83,7 +84,7 @@ function metabolism(state: GameState): number {
 /** Минув час, поки персонаж не спить. */
 export function passAwakeTime(state: GameState, hours: number, floor = 0): void {
   changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours, floor);
-  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hours, floor);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * hours, floor);
   if (state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
     changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours, floor);
   }

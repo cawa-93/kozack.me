@@ -21,6 +21,7 @@ import {
 import { emit } from "./events";
 import { applyBreedLook, randomGenes, randomShape } from "./genetics";
 import { pickCatName } from "./names";
+import { absoluteMinute } from "./time";
 import type { Rng } from "./rng";
 import { characterLevel, isPositive, levelOf, TRAIT_GROUPS, traitGroup } from "./traits";
 import type { Cat, CatAct, CatSource, GameState, Sex, Trait } from "./types";
@@ -92,6 +93,10 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     litters: 0,
     restUntil: -1,
     breedKnown: [false, false],
+    collar: null,
+    treatsToday: 0,
+    hurt: null,
+    bathedDay: state.day,
     x: at.x,
     y: at.y,
     facing: 1,
@@ -161,6 +166,8 @@ export function changeLove(state: GameState, cat: Cat, delta: number, reason?: s
   const step = delta > 0 ? traitLevel(cat, "devotion") : traitLevel(cat, "touchy");
   const scaled = delta * Math.max(0, 1 + LOVE_TRAIT_STEP * step);
   cat.love = clamp(cat.love + scaled);
+  // Неприємне запам'ятовується: ласощі одразу після нього зменшують втрату (§7).
+  if (scaled < 0) cat.hurt = { at: absoluteMinute(state.day, state.minute), amount: -scaled };
   if (reason) emit(state, { type: "cat-love", cat: cat.id, delta: scaled, reason });
 }
 

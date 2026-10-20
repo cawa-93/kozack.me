@@ -7,9 +7,12 @@ import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from ".
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { takeHumanMeds } from "./illness";
+import { bathe } from "./care";
+import { tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { changeStat, unpleasantTask } from "./character";
 import {
+  HOUSEHOLD,
   ILLNESS,
   BURN_MINUTES,
   CLEAN_LITTER_MINUTES,
@@ -70,12 +73,13 @@ export function tap(state: GameState): TapResult {
   // Під час тривалої дії натискання її не перериває: інакше можна випадково взяти страву зі столу.
   if (character.activity !== null) return null;
   const held = character.held;
-  // Кота на руках опускають будь-де.
+  const target = targetOf(state);
+  // Кота на руках опускають будь-де, а біля душу — купають (§8.7).
   if (held?.kind === "cat") {
+    if (target?.type === "object" && target.object.kind === "shower") return tapObject(state, target.object, held);
     putDownCat(state, held.cat);
     return null;
   }
-  const target = targetOf(state);
   // Іграшку кладуть на підлогу будь-де, крім смітника.
   if (held?.kind === "toy" && (target === null || target.type !== "object" || target.object.kind !== "trash")) {
     dropToy(state);
@@ -194,7 +198,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       return null;
     }
     case "shower":
-      // Душ — тривала дія: його вмикає утримання кнопки.
+      // Кіт на руках біля душу — купання (§8.7); інакше душ — тривала дія утриманням.
+      if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, "empty");
       if (held !== null) return refuse(state, target.id, "hands-full");
       return null;
     case "sink":
@@ -203,6 +208,17 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, "empty");
       return null;
     case "sofa":
+      return null;
+    case "washer": {
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      const result = tapWasher(state);
+      if (result === "empty") return refuse(state, target.id, "empty");
+      if (result === "busy") return refuse(state, target.id, "too-early");
+      return null;
+    }
+    case "vacuum":
+      // Пилососять утриманням дії (§8.7).
+      if (held !== null) return refuse(state, target.id, "hands-full");
       return null;
   }
 }
@@ -317,6 +333,7 @@ export function putDownCat(state: GameState, catId: number): void {
 function useMinutes(target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
+  if (target.type === "object" && target.object.kind === "vacuum") return HOUSEHOLD.vacuumMinutes;
   return target.type === "object" && target.object.kind === "shower" ? SHOWER_MINUTES : EAT_MINUTES;
 }
 
@@ -325,7 +342,7 @@ export function canUse(state: GameState, target: Target): boolean {
   if (state.character.held !== null) return false;
   switch (target.type) {
     case "object":
-      if (target.object.kind === "shower") return true;
+      if (target.object.kind === "shower" || target.object.kind === "vacuum") return true;
       if (target.object.kind === "table") return state.home.surfaces[target.object.id]?.kind === "meal";
       return false;
     case "item":
@@ -416,6 +433,7 @@ function finishUse(state: GameState, target: Target): void {
   }
   if (target.type !== "object") return;
   const object = target.object;
+  if (object.kind === "vacuum") return vacuumed(state);
   if (object.kind === "shower") {
     const quality = takeSupply(state, "hygiene");
     const hygiene = SHOWER_HYGIENE[quality ?? "none"];

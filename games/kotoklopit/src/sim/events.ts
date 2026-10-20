@@ -27,6 +27,14 @@ export type GameEvent =
   | { type: "person-ill"; illness: IllnessId }
   | { type: "person-cured"; illness: IllnessId }
   | { type: "person-meds"; quality: Quality }
+  | { type: "treat"; cat: number; quality: Quality }
+  | { type: "collar"; cat: number }
+  | { type: "collar-lost"; cat: number }
+  | { type: "bathed"; cat: number }
+  | { type: "laundry"; stage: "cat" | "started" | "done" | "hung"; cat?: number }
+  | { type: "vacuumed" }
+  | { type: "robot" }
+  | { type: "broke"; what: string }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   | { type: "doorbell"; delivery: Delivery }

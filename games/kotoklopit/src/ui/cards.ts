@@ -1,7 +1,7 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
 import { DIFFICULTY, PRODUCTS, THINGS } from "../sim/config";
-import { deliveryPrice, freeSlots, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
+import { deliveryPrice, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
@@ -123,6 +123,11 @@ const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => strin
   pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "у шафці" },
   drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у шафці" },
   humanMeds: { name: "Ліки для себе", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "у ванній" },
+  treats: { name: "Ласощі для котів", unit: (n) => `${n} ${plural(n, "ласощі", "ласощі", "ласощів")}`, place: "у шафці" },
+  collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "у шафці" },
+  bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "у шафці" },
+  shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
+  detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у ванній" },
 };
 
 const QUALITY_TITLES: Record<Quality, string> = { cheap: "Дешеві", premium: "Дорогі" };
@@ -144,6 +149,9 @@ const THING_TITLES: Record<ThingKind, string> = {
   house: "Будиночок",
   scratcher: "Кігтеточка",
   carrier: "Переноска",
+  feeder: "Автогодівниця",
+  fountain: "Фонтанчик для води",
+  robot: "Робот-пилосос",
 };
 
 export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album";
@@ -246,7 +254,8 @@ function thingsShop(state: GameState, money: number, handlers: PhoneHandlers): H
   const shop = element("div", "shop");
   for (const thing of Object.keys(THINGS) as ThingKind[]) {
     const row = element("div", "shop-row");
-    const have = thing === "carrier" ? (state.home.carrier ? 1 : 0) : state.home.items.filter((i) => i.kind === thing).length;
+    const have =
+      thing === "carrier" ? (state.home.carrier ? 1 : 0) : isAppliance(thing) ? (state.home.appliances[thing] ? 1 : 0) : state.home.items.filter((i) => i.kind === thing).length;
     const free = freeSlots(state, thing);
     const name = element("span", "shop-name", THING_TITLES[thing]);
     const stock = thing === "toy" ? `Є: ${have}` : `Є: ${have} · вільних місць: ${Math.max(0, free)}`;
@@ -302,17 +311,36 @@ function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers):
   return shop;
 }
 
-/** Дати ліки коту на руках (§9.5): таблетку чи краплі. */
-export function medicineCard(state: GameState, cat: Cat, onGive: (medicine: Medicine) => void, onCancel: () => void): Card {
-  const options = (["pills", "drops"] as const).filter((m) => supplyCount(state, m) > 0);
+export type CareChoice = { medicine: Medicine } | { treat: Quality } | { collar: Quality } | "bell";
+
+/** Чи є чим доглянути кота біля шафки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
+export function hasCareSupplies(state: GameState): boolean {
+  return (["pills", "drops", "treats", "collar", "bell"] as const).some((p) => supplyCount(state, p) > 0);
+}
+
+/** Догляд за котом на руках біля шафки (§8.7, §9.5, §9.10): ліки, ласощі, нашийник. */
+export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice) => void, onCancel: () => void): Card {
+  const supply = state.home.supplies;
+  const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
+  for (const m of ["pills", "drops"] as const) {
+    if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} (${supplyCount(state, m)})`, onSelect: () => onPick({ medicine: m }) });
+  }
+  for (const q of ["premium", "cheap"] as const) {
+    if (supply.treats[q] > 0) actions.push({ label: `${q === "premium" ? "Дорогі" : "Дешеві"} ласощі (${supply.treats[q]})`, onSelect: () => onPick({ treat: q }) });
+  }
+  for (const q of ["premium", "cheap"] as const) {
+    if (supply.collar[q] > 0) actions.push({ label: `${q === "premium" ? "Дорогий" : "Дешевий"} нашийник`, onSelect: () => onPick({ collar: q }) });
+  }
+  if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: "Дзвіночок на нашийник", onSelect: () => onPick("bell") });
+  const first = actions[0];
+  if (first) first.primary = true;
   return {
-    kicker: "Ліки",
-    title: `Що дати ${cat.name}?`,
-    body: ["Кіт опиратиметься: дати ліки — неприємна справа. Таблетка допомагає від застуди, глистів і старечих болячок, краплі — від бліх і кон'юнктивіту."],
-    actions: [
-      ...options.map((m) => ({ label: `${PRODUCT_TITLES[m].name} (${supplyCount(state, m)})`, primary: m === options[0], onSelect: () => onGive(m) })),
-      { label: "Скасувати", onSelect: onCancel },
+    kicker: "Догляд",
+    title: `${cat.name} на руках`,
+    body: [
+      "Ліки кіт не любить: дати їх — неприємна справа. Таблетка допомагає від застуди, глистів і старечих болячок, краплі — від бліх і кон'юнктивіту. Ласощі одразу після неприємного зменшують образу. З нашийником над котом видно його ім'я.",
     ],
+    actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
     onDismiss: onCancel,
   };
 }

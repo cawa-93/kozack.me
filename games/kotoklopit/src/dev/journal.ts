@@ -118,6 +118,22 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Персонаж одужав: ${event.illness}`;
     case "person-meds":
       return `Ліки для себе (${quality(event.quality)})`;
+    case "treat":
+      return `${catName(state, event.cat)}: ласощі (${quality(event.quality)})`;
+    case "collar":
+      return `${catName(state, event.cat)}: новий нашийник`;
+    case "collar-lost":
+      return `${catName(state, event.cat)} загубив нашийник`;
+    case "bathed":
+      return `${catName(state, event.cat)}: купання`;
+    case "laundry":
+      return `Прання: ${event.stage}`;
+    case "vacuumed":
+      return "Пропилососено";
+    case "robot":
+      return "Робот-пилосос прибрав шерсть";
+    case "broke":
+      return `Зламалося: ${event.what}`;
     case "groomed":
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":

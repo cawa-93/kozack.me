@@ -22,6 +22,8 @@ import { payUtilities, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
+import { nightlyCare } from "./care";
+import { nightlyHousehold, tickHousehold } from "./household";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { initRelations, nightlyRelations } from "./relations";
 import { conceive, giveBirth, inHeat, nightlyStates } from "./reproduction";
@@ -146,6 +148,7 @@ function sleep({ state, report, rng }: Night): void {
     // Коти живуть ніч похвилинно: безлад, порожні миски, брудний лоток (§4).
     while (minute < until) {
       const step = Math.min(1, until - minute);
+      tickHousehold(state, minute, step);
       tickCats(state, step, { present: false });
       minute += step;
       state.minute = minute;
@@ -180,6 +183,7 @@ function catHealth({ state, rng }: Night): void {
   // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).
   nightlyDiseases(state, rng);
   nightlyStates(state, rng);
+  nightlyCare(state, rng);
   // Підсумок дня для пар: життя разом зближує (§9.4).
   nightlyRelations(state);
 }
@@ -243,7 +247,8 @@ export function giveStarterPack(state: GameState): void {
 }
 
 /** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */
-function morning({ state, report }: Night): void {
+function morning({ state, report, rng }: Night): void {
+  nightlyHousehold(state, rng);
   applyMorningSanity(state, report.lostCats.length, report.newCats.length);
   // Нові господарі приїжджають по котів за оголошеннями (§9.8).
   for (const entry of collectAds(state)) report.givenCats.push(entry.id);

@@ -137,6 +137,11 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
   drops: { units: { cheap: 3, premium: 3 }, price: { cheap: 12, premium: 30 } },
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
+  treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 35 } },
+  collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 10, premium: 25 } },
+  bell: { units: { cheap: 1, premium: 1 }, price: { cheap: 5, premium: 5 } },
+  shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
+  detergent: { units: { cheap: 4, premium: 4 }, price: { cheap: 10, premium: 25 } },
 };
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
@@ -147,6 +152,11 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   pills: { cheap: 0, premium: 0 },
   drops: { cheap: 0, premium: 0 },
   humanMeds: { cheap: 0, premium: 0 },
+  treats: { cheap: 0, premium: 0 },
+  collar: { cheap: 0, premium: 0 },
+  bell: { cheap: 0, premium: 0 },
+  shampoo: { cheap: 0, premium: 0 },
+  detergent: { cheap: 4, premium: 0 },
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
@@ -166,6 +176,9 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   house: { price: { cheap: 60, premium: 150 }, utilities: 6 },
   scratcher: { price: { cheap: 60, premium: 150 }, utilities: 6 },
   carrier: { price: { cheap: 30, premium: 80 }, utilities: 0 },
+  feeder: { price: { cheap: 120, premium: 250 }, utilities: 8 },
+  fountain: { price: { cheap: 60, premium: 140 }, utilities: 6 },
+  robot: { price: { cheap: 300, premium: 600 }, utilities: 10 },
 };
 /** Подертий диван: ремонт до найближчого платежу (§6.4). */
 export const SOFA_REPAIR = 3;
@@ -418,6 +431,7 @@ export const DISEASES: Record<
   conjunctivitis: { safe: 4, damage: 1, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
   senior: { safe: 0, damage: 1, cure: { kind: "control", medicine: "pills" }, contagious: null },
   urolithiasis: { safe: 1, damage: 6, cure: { kind: "vet" }, contagious: null },
+  dermatitis: { safe: 5, damage: 1, cure: { kind: "vet" }, contagious: null },
 };
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {
@@ -502,6 +516,31 @@ export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
 export const TRIP_REPUTATION_DIVIDER = 3;
 /** Пункти призначення (§8.5). */
 export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3 } as const;
+/** Побут (§8.7): шерсть, пилосос, прання, техніка, поломки. */
+export const START_CLOTHES = 5;
+export const HOUSEHOLD = {
+  furPerCatHour: 0.5,
+  longFur: 2,
+  sheddingStep: 0.5,
+  dirtyFur: 50,
+  furHygiene: 1.2,
+  noClothesHygiene: 1.5,
+  vacuumMinutes: 10,
+  vacuumSanity: -2,
+  washMinutes: 60,
+  clothesDays: { cheap: 7, premium: 8 } as Record<Quality, number>,
+  feederMinutes: [8 * 60, 19 * 60],
+  robotMinute: 12 * 60,
+  breakPerUse: 1 / 150,
+  applianceBreakPerDay: 0.02,
+  difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
+} as const;
+/** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
+export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
+/** Нашийник (§9.10): настрій за день, шанс загубити дешевий, дзвіночок дратує чутливих. */
+export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05, bellMood: -1 } as const;
+/** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
+export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, loverMood: 5, mood: -5, love: -2, scratch: 0.3, hairlessDays: 7, dermatitis: 0.3 } as const;
 /** Розмноження (§9.8): вагітність, виводок, тічка, мітки, віддати кота. */
 export const BREEDING = {
   pregnancy: 0.3,

@@ -28,8 +28,20 @@ export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "prem
   g.fillStyle(feather).fillEllipse(x + 11 * s, y + 1 * s, 6 * s, 10 * s).fillEllipse(x + 14 * s, y + 2 * s, 5 * s, 8 * s);
 }
 
+/** Де лежать клапті шерсті, коли її багато (§8.7): сталі місця по квартирі. */
+const FUR_SPOTS: readonly { x: number; y: number }[] = [
+  { x: 2.3, y: 7.4 }, { x: 5.2, y: 9.1 }, { x: 8.7, y: 7.8 }, { x: 12.4, y: 8.6 }, { x: 15.6, y: 7.2 }, { x: 17.4, y: 9.3 },
+  { x: 4.1, y: 2.6 }, { x: 14.6, y: 2.4 }, { x: 9.6, y: 3.6 }, { x: 6.8, y: 8.9 }, { x: 11.2, y: 7.1 }, { x: 3.4, y: 9.6 },
+];
+
 export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
   g.clear();
+  // Шерсть: що більше, то більше клаптів.
+  const tufts = Math.floor((state.home.fur / 100) * FUR_SPOTS.length);
+  for (const spot of FUR_SPOTS.slice(0, tufts)) {
+    const { x, y } = toScreen(spot);
+    g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
+  }
   for (const item of state.home.items) drawHomeItem(g, item);
   for (const mess of state.home.messes) drawMess(g, mess);
 }

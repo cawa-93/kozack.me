@@ -22,6 +22,8 @@ const HEIGHT: Record<ObjectKind, number> = {
   sofa: 30,
   door: WALL_RISE,
   catCabinet: 46,
+  washer: 48,
+  vacuum: 60,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -37,6 +39,8 @@ const FILL: Record<ObjectKind, number> = {
   sofa: 0x7a5c6e,
   door: 0x6e4a32,
   catCabinet: 0xb08a5a,
+  washer: 0xe9e6df,
+  vacuum: 0x8a7a6a,
 };
 
 /** Видима висота речі: на неї вилазить кіт. */
@@ -212,6 +216,17 @@ function decorate(
       // Шафка з котячим кормом: дверцята з відбитком лапки.
       g.lineStyle(2, COLORS.ink, 0.7).lineBetween(cx, t.y + t.h + 4, cx, t.y + t.h + height - 4);
       g.fillStyle(0x6b4a2b).fillCircle(cx - 7, t.y + t.h + height / 2 + 3, 3.5).fillCircle(cx - 10, t.y + t.h + height / 2 - 3, 1.6).fillCircle(cx - 5, t.y + t.h + height / 2 - 4, 1.6).fillCircle(cx - 2, t.y + t.h + height / 2 - 1, 1.6);
+      break;
+    case "washer":
+      // Пральна машина: кругле віконце барабана.
+      g.fillStyle(0x9ab3c4).fillCircle(cx, t.y + t.h + height / 2 + 2, 13);
+      g.lineStyle(3, COLORS.ink).strokeCircle(cx, t.y + t.h + height / 2 + 2, 13);
+      g.fillStyle(COLORS.ink).fillRect(t.x + 6, t.y + t.h + 4, 10, 3);
+      break;
+    case "vacuum":
+      // Шафа з пилососом: дверцята й ручка.
+      g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
+      g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
       break;
     case "door":
       break;

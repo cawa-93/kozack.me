@@ -11,15 +11,13 @@ const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 1 
 describe("стартові запаси (§6.4)", () => {
   it("6 порцій дешевої їжі й 7 душів дешевих засобів гігієни", () => {
     const save = game();
-    expect(save.current.home.supplies).toEqual({
+    // Решта запасів (корм, ліки, побут) на старті порожні, крім пачки прального засобу (§8.7).
+    expect(save.current.home.supplies).toMatchObject({
       food: { cheap: 6, premium: 0 },
       hygiene: { cheap: 7, premium: 0 },
       catFood: { cheap: 0, premium: 0 },
-      sterileFood: { cheap: 0, premium: 0 },
       litter: { cheap: 0, premium: 0 },
-      pills: { cheap: 0, premium: 0 },
-      drops: { cheap: 0, premium: 0 },
-      humanMeds: { cheap: 0, premium: 0 },
+      detergent: { cheap: 4, premium: 0 },
     });
   });
 });

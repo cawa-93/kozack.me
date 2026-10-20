@@ -8,7 +8,7 @@ export type Difficulty = "easy" | "normal" | "hard";
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
 /** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -229,7 +229,9 @@ export interface ScratcherItem {
 /** Речі для котів (§9.12): миски, лотки, будиночки й кігтеточки — на своїх місцях, іграшки — будь-де на підлозі. */
 export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
 /** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі. */
-export type ThingKind = HomeItem["kind"] | "carrier";
+export type ThingKind = HomeItem["kind"] | "carrier" | Appliance;
+/** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. */
+export type Appliance = "feeder" | "fountain" | "robot";
 
 /** Куди можна поїхати (§8.5). Розплідник і виставку додасть крок 12. */
 export type Destination = "shop" | "vet" | "doctor" | "shelter" | "breeder" | "groomer" | "cafe" | "office";
@@ -311,6 +313,14 @@ export interface Home {
   repairs: number;
   /** Переноска для котів (§8.5): одна на дім; null — немає. */
   carrier: Quality | null;
+  /** Техніка (§8.7): якість кожної, null — немає. */
+  appliances: Record<Appliance, Quality | null>;
+  /** Шерсть на меблях 0–100 (§8.7). */
+  fur: number;
+  /** На скільки днів лишилося чистого одягу (§8.7). */
+  clothes: number;
+  /** Пральна машина: стоїть, пере (хвилини до кінця) чи випрала — треба розвісити. */
+  washer: { state: "idle" | "washing" | "done"; minutes: number; quality: Quality };
 }
 
 /** Звідки кіт (§4.2): притулок, примусове кошеня, народився вдома, розплідник, знайда. */
@@ -401,7 +411,7 @@ export interface CatAct {
 }
 
 /** Хвороби прототипу (§9.5, `DISEASES.md`). */
-export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis";
+export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis";
 
 /** Хвороба кота: коли почалася й скільки лікування вже було. */
 export interface CatDisease {
@@ -464,6 +474,14 @@ export interface Cat {
   restUntil: number;
   /** Які половини породи знає персонаж (§9.11). */
   breedKnown: [boolean, boolean];
+  /** Нашийник (§9.10): якість і дзвіночок; null — без нашийника. */
+  collar: { quality: Quality; bell: boolean } | null;
+  /** Ласощі за сьогодні (§7). */
+  treatsToday: number;
+  /** Остання втрата любові від неприємного: коли (хвилина від початку гри) і скільки (§7). */
+  hurt: { at: number; amount: number } | null;
+  /** Останній день, коли кота купали (§8.7). */
+  bathedDay: number;
   /** Втрати здоров'я з джерелом за останній тиждень: з них — причина смерті (§9.7). */
   healthLog: { day: number; source: string; amount: number }[];
   /** Де кіт, у клітинках підлоги; facing — куди дивиться: −1 ліворуч, 1 праворуч. */

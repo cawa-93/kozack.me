@@ -9,6 +9,7 @@ import {
   DELIVERY_PRICE,
   MINUTES_PER_HOUR,
   PRODUCTS,
+  START_CLOTHES,
   START_SUPPLIES,
   THINGS,
   UTILITIES_BASE,
@@ -16,7 +17,7 @@ import {
 import { emit, endGame } from "./events";
 import { SLOTS, SURFACE_IDS } from "./home";
 import { absoluteMinute } from "./time";
-import type { Delivery, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
+import type { Appliance, Delivery, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
 
 /** Із запасів спершу береться дороге. */
 const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
@@ -44,6 +45,10 @@ export function newHome(nextId: () => number): Home {
     utilitiesDebt: 0,
     repairs: 0,
     carrier: null,
+    appliances: { feeder: null, fountain: null, robot: null },
+    fur: 0,
+    clothes: START_CLOTHES,
+    washer: { state: "idle", minutes: 0, quality: "cheap" },
   };
 }
 
@@ -96,9 +101,10 @@ function send(state: GameState, goods: { product: Product } | { thing: ThingKind
 export function freeSlots(state: GameState, thing: ThingKind): number {
   if (thing === "toy") return Infinity;
   const home = state.home;
-  if (thing === "carrier") {
-    const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === "carrier");
-    return home.carrier === null && !ordered ? 1 : 0;
+  if (thing === "carrier" || isAppliance(thing)) {
+    const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === thing);
+    const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
+    return !owned && !ordered ? 1 : 0;
   }
   const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
@@ -116,6 +122,10 @@ export function orderThing(state: GameState, thing: ThingKind, quality: Quality)
 export function place(state: GameState, thing: ThingKind, quality: Quality): HomeItem | null {
   if (thing === "carrier") {
     state.home.carrier = quality;
+    return null;
+  }
+  if (isAppliance(thing)) {
+    state.home.appliances[thing] = quality;
     return null;
   }
   const id = state.nextId++;
@@ -182,8 +192,17 @@ export function postponeDeliveries(state: GameState): void {
 
 /** Комунальні за тиждень (§6.4): базова сума, внесок кожної речі й ремонт меблів. */
 export function utilitiesDue(state: GameState): number {
-  return UTILITIES_BASE + state.home.items.reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) + state.home.repairs;
+  const home = state.home;
+  const appliances = (Object.keys(home.appliances) as Appliance[]).filter((a) => home.appliances[a] !== null);
+  return (
+    UTILITIES_BASE +
+    home.items.reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) +
+    appliances.reduce((sum, a) => sum + THINGS[a].utilities, 0) +
+    home.repairs
+  );
 }
+
+export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "feeder" || thing === "fountain" || thing === "robot";
 
 /**
  * Сплатити комунальні в ніч на понеділок (§6.4). Неоплачений тиждень — попередження;

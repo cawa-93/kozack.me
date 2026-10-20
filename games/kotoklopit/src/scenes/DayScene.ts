@@ -20,7 +20,8 @@ import { gameMinutes } from "../sim/time";
 import type { Difficulty, GameState, HomeItem, Product, Quality, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { difficultyCard, endCard, medicineCard, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
+import { careCard, difficultyCard, endCard, hasCareSupplies, morningCard, newGameCard, phoneCard, type PhoneTab } from "../ui/cards";
+import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay } from "../ui/overlay";
@@ -70,6 +71,8 @@ export class DayScene extends Phaser.Scene {
   private readonly catViews = new Map<number, CatView>();
   /** Приховані числа над котами в режимі розробки (§11.5). */
   private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
+  /** Імена над котами в нашийниках (§9.10). */
+  private readonly collarLabels = new Map<number, Phaser.GameObjects.Text>();
   private viewport!: Viewport;
   private corner!: Phaser.GameObjects.Graphics;
   private marks!: Phaser.GameObjects.Graphics;
@@ -169,6 +172,8 @@ export class DayScene extends Phaser.Scene {
     this.catViews.clear();
     for (const label of this.hiddenLabels.values()) label.destroy();
     this.hiddenLabels.clear();
+    for (const label of this.collarLabels.values()) label.destroy();
+    this.collarLabels.clear();
     const state = this.state;
     if (state.end !== null) {
       this.showEnd();
@@ -197,14 +202,23 @@ export class DayScene extends Phaser.Scene {
       );
       return;
     }
-    // Кіт на руках біля шафки: дати ліки (§9.5) — гравець обирає, які.
+    // Кіт на руках біля шафки: догляд (§8.7) — ліки, ласощі, нашийник.
     const cat = medicineCat(this.state);
-    if (cat && targetOf(this.state)?.id === "cat-cabinet" && supplyCount(this.state, "pills") + supplyCount(this.state, "drops") > 0) {
+    if (cat && targetOf(this.state)?.id === "cat-cabinet" && hasCareSupplies(this.state)) {
       this.overlay.show(
-        medicineCard(this.state, cat, (medicine) => {
-          giveMedicine(this.state, medicine, stateRng(this.state, "behavior"));
-          this.overlay.close();
-        }, () => this.overlay.close()),
+        careCard(
+          this.state,
+          cat,
+          (choice) => {
+            const rng = stateRng(this.state, "behavior");
+            if (choice === "bell") addBell(this.state);
+            else if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
+            else if ("treat" in choice) giveTreat(this.state, choice.treat, rng);
+            else putCollar(this.state, choice.collar);
+            this.overlay.close();
+          },
+          () => this.overlay.close(),
+        ),
       );
       return;
     }
@@ -394,6 +408,7 @@ export class DayScene extends Phaser.Scene {
       const carried = withPerson ? this.person.hands : null;
       view.draw(cat, time, carried);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
+      this.drawCollar(cat, view);
     }
     for (const [id, view] of this.catViews) {
       if (alive.has(id)) continue;
@@ -402,6 +417,8 @@ export class DayScene extends Phaser.Scene {
       this.bubbles.setState(`cat:${id}`, null, 0, 0);
       this.hiddenLabels.get(id)?.destroy();
       this.hiddenLabels.delete(id);
+      this.collarLabels.get(id)?.destroy();
+      this.collarLabels.delete(id);
     }
   }
 
@@ -421,6 +438,24 @@ export class DayScene extends Phaser.Scene {
       this.hiddenLabels.set(id, label);
     }
     label.setVisible(true).setPosition(view.head.x, view.head.y - 30).setText(`н${Math.round(mood)} з${Math.round(health)} л${Math.round(love)}`);
+  }
+
+  /** Ім'я над котом у нашийнику (§9.10). */
+  private drawCollar(cat: GameState["cats"][number], view: CatView): void {
+    let label = this.collarLabels.get(cat.id);
+    if (!cat.collar || cat.away !== null) {
+      label?.setVisible(false);
+      return;
+    }
+    if (!label) {
+      label = this.add
+        .text(0, 0, cat.name, { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#1f1a24", backgroundColor: "#f3e9dc", padding: { x: 4, y: 1 }, resolution: 2 })
+        .setOrigin(0.5, 1)
+        .setDepth(11_000)
+        .addToDisplayList(this.viewport.world);
+      this.collarLabels.set(cat.id, label);
+    }
+    label.setVisible(true).setPosition(view.head.x, view.head.y - 6).setText(cat.collar.bell ? `${cat.name} 🔔` : cat.name);
   }
 
   /** Речі на плиті й поверхнях. */
@@ -534,7 +569,10 @@ export class DayScene extends Phaser.Scene {
     const table = objectById("table");
     const target = targetOf(state);
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
-    set("cat-cabinet", state.cats.length > 0 && supplyCount(state, "catFood") === 0 ? "empty" : null);
+    set("cat-cabinet", state.cats.length > 0 && supplyCount(state, "catFood") + supplyCount(state, "sterileFood") === 0 ? "empty" : null);
+    // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
+    const washer = state.home.washer.state;
+    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : state.home.clothes <= 0 ? "dirty" : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
@@ -545,7 +583,9 @@ export class DayScene extends Phaser.Scene {
     for (const cat of state.cats) {
       const hungry = cat.act.kind === "beg" && cat.act.goal === null;
       const fighting = cat.act.kind === "fight";
-      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : null);
+      // Дзвіночок видає кота, що ховається (§9.10).
+      const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
+      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : ringing ? "bell" : null);
     }
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }

@@ -17,7 +17,9 @@ export type ObjectKind =
   | "computer"
   | "door"
   | "sofa"
-  | "catCabinet";
+  | "catCabinet"
+  | "washer"
+  | "vacuum";
 
 export interface Rect {
   x: number;
@@ -83,6 +85,9 @@ export const OBJECTS: readonly HomeObject[] = [
   object("computer", "computer", 6, 6, 2, 1),
   object("sofa", "sofa", 13, 10, 3, 1),
   object("door", "door", 10, 11, 2, 1),
+  // Побут (§8.7): пральна машина у ванній і шафа з пилососом у вітальні.
+  object("washer", "washer", 10, 1),
+  object("vacuum", "vacuum", 16, 10),
 ];
 
 /** Поверхні, на які можна покласти річ: стіл і робочі поверхні кухні. */

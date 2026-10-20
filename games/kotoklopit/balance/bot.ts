@@ -10,7 +10,7 @@ import { giveMedicine } from "../src/sim/diseases";
 import { stateRng } from "../src/sim/rng";
 import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
-import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
+import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetOf } from "../src/sim/targets";
 import type { Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
@@ -123,6 +123,12 @@ export class Bot {
       return named("cook", () => this.cook());
     }
     if (ch.stats.hygiene < 45) return named("hold", () => this.hold("shower"));
+    // Побут (§8.7): випране — розвісити, одяг закінчується — прати, шерсті багато — пилососити.
+    const washer = s.home.washer.state;
+    if (washer === "done" || (washer === "idle" && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {
+      return named("laundry", () => this.use("washer"));
+    }
+    if (s.home.fur >= 60 && !this.skipped("vacuum")) return named("vacuum", () => this.hold("vacuum"));
     if (s.cats.length > 0) {
       // Уважний гравець відповідає котові, який просить уваги чи гри (§9.12), і пестить для здорового глузду.
       const low = ch.stats.sanity < this.policy.sanityTarget;
@@ -205,6 +211,7 @@ export class Bot {
     };
     need("food", 7);
     need("hygiene", 3);
+    need("detergent", 2);
     if (cats > 0) {
       const sick = (medicine: Medicine): boolean => s.cats.some((c) => c.diseases.some((d) => {
         const cure = DISEASES[d.id].cure;
@@ -218,7 +225,7 @@ export class Bot {
     // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
     const things = (kind: "litter" | "bowl", want: number): void => {
       const have = s.home.items.filter((i) => i.kind === kind).length + [...s.home.deliveries, ...s.home.porch].filter((d) => "thing" in d && d.thing === kind).length;
-      if (have < want && freeSlots(s, kind) > 0 && s.character.money > 300) orderThing(s, kind, "cheap");
+      if (have < want && freeSlots(s, kind) > 0 && s.character.money > 100) orderThing(s, kind, "cheap");
     };
     things("litter", cats + 1);
     things("bowl", cats);
@@ -469,6 +476,8 @@ export class Bot {
       for (let x = 0; x < MAP_WIDTH; x++) {
         if (isSolid(x, y) || exclude.has(`${x},${y}`)) continue;
         const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect);
+        // Крізь стіну не дотягнутися: такі клітинки не годяться.
+        if (distance <= 0.7 && !this.clearLine({ x: x + 0.5, y: y + 0.5 }, rect)) continue;
         if (distance <= 0) on.add(`${x},${y}`);
         else if (distance <= 0.7) near.add(`${x},${y}`);
       }
@@ -499,6 +508,17 @@ export class Bot {
       }
     }
     return null;
+  }
+
+  /** Між точкою й прямокутником немає стіни. */
+  private clearLine(p: Vec, rect: Rect): boolean {
+    const to = { x: Math.min(Math.max(p.x, rect.x), rect.x + rect.w), y: Math.min(Math.max(p.y, rect.y), rect.y + rect.h) };
+    const steps = Math.ceil(Math.hypot(to.x - p.x, to.y - p.y) / 0.1);
+    for (let i = 1; i < steps - 1; i++) {
+      const t = i / steps;
+      if (isWall(Math.floor(p.x + (to.x - p.x) * t), Math.floor(p.y + (to.y - p.y) * t))) return false;
+    }
+    return true;
   }
 
   private walkToTile(tile: Vec): void {

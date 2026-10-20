@@ -57,6 +57,7 @@ import {
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
+import { wearOut } from "./household";
 import { observe, setWitnessing } from "./knowledge";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
@@ -286,6 +287,11 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
+  // Відчинена пральна машина — затишний барабан для допитливих (§8.7).
+  if (state.home.washer.state === "idle") {
+    const washer = objectById("washer");
+    options.push({ weight: 0.5 + Math.max(0, traitLevel(cat, "curiosity")), value: at({ x: washer.x, y: washer.y }) });
+  }
   if (!isWorking(state) && !catOnComputer(state)) {
     const computer = objectById("computer");
     const weight = COMPUTER_SLEEP.base + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
@@ -507,6 +513,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       }
       bowl.food -= 1;
+      wearOut(state, bowl, rng);
       const quality = bowl.foodQuality ?? "cheap";
       if (bowl.food <= 0) bowl.foodQuality = null;
       cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER);
@@ -532,6 +539,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       water.water -= 1;
       cat.needs.thirst = 0;
       itemMood(state, cat, water);
+      wearOut(state, water, rng);
       return;
     }
     case "toilet": {
@@ -557,6 +565,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       }
       box.uses += 1;
       itemMood(state, cat, box);
+      wearOut(state, box, rng);
       resourceConflict(state, cat, rng, itemsOf(state, "litter").length >= state.cats.length + 1);
       if (rng.chance(SCATTER_CHANCE.base + SCATTER_CHANCE.step * traitLevel(cat, "scatter"))) {
         const slot = slotById(box.slot);
@@ -575,7 +584,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         if (traitLevel(cat, "energy") < 0) observe(state, cat, "energy");
       }
       const house = itemById(state, act.target);
-      if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) itemMood(state, cat, house);
+      if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) {
+        itemMood(state, cat, house);
+        wearOut(state, house, rng);
+      }
       return;
     }
     case "wrestle": {
@@ -605,8 +617,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.play = Math.max(0, cat.needs.play - SCRATCH.relief);
       changeMood(state, cat, SCRATCH.mood);
       const post = itemById(state, act.target);
-      if (post) itemMood(state, cat, post);
-      else state.home.repairs += SOFA_REPAIR;
+      if (post) {
+        itemMood(state, cat, post);
+        wearOut(state, post, rng);
+      } else state.home.repairs += SOFA_REPAIR;
       emit(state, { type: "scratched", cat: cat.id, sofa: post === null });
       return;
     }

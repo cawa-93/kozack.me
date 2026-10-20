@@ -199,6 +199,7 @@ export const DISEASE_TITLES: Record<string, string> = {
   conjunctivitis: "Кон'юнктивіт",
   senior: "Старечі болячки",
   urolithiasis: "Сечокам'яна хвороба",
+  dermatitis: "Дерматит",
 };
 
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
