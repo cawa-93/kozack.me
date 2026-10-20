@@ -271,7 +271,7 @@ function dropToy(state: GameState): void {
   const held = state.character.held;
   if (held?.kind !== "toy") return;
   const { x, y, facing } = state.character.body;
-  const spot = visibleFloorNear({ x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
+  const spot = visibleFloorNear(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
   state.home.items.push({ ...held.toy, x: spot.x, y: spot.y });
   state.character.held = null;
 }
@@ -331,7 +331,7 @@ export function putDownCat(state: GameState, catId: number): void {
   if (!cat) return;
   const { x, y, facing } = character.body;
   const spot = { x: x + facing.x * 0.6, y: y + facing.y * 0.6 };
-  const free = !isSolid(Math.floor(spot.x), Math.floor(spot.y));
+  const free = !isSolid(state, Math.floor(spot.x), Math.floor(spot.y));
   cat.x = free ? spot.x : x;
   cat.y = free ? spot.y : y;
   cat.act = idleAct(3);

@@ -131,7 +131,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   const rubbing = rubbingCat(state);
   const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * cycleMove(state) * moveFactor(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
   const from = { x: body.x, y: body.y };
-  slide(body, dir.x * speed * minutes, dir.y * speed * minutes);
+  slide(state, body, dir.x * speed * minutes, dir.y * speed * minutes);
   const rng = stateRng(state, "behavior");
   if (rubbing) {
     const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");
@@ -169,22 +169,22 @@ function rollGlitch(state: GameState, minutes: number): void {
   emit(state, { type: "glitch", chance, angle: degrees });
 }
 
-function overlapsSolid(x: number, y: number): boolean {
+function overlapsSolid(state: GameState, x: number, y: number): boolean {
   const r = BODY_RADIUS;
   for (let ty = Math.floor(y - r); ty <= Math.floor(y + r - GAP); ty++) {
     for (let tx = Math.floor(x - r); tx <= Math.floor(x + r - GAP); tx++) {
-      if (isSolid(tx, ty)) return true;
+      if (isSolid(state, tx, ty)) return true;
     }
   }
   return false;
 }
 
 // Рух по осях окремо: персонаж ковзає вздовж стіни, а не застрягає.
-function slide(body: Body, dx: number, dy: number): void {
+function slide(state: GameState, body: Body, dx: number, dy: number): void {
   const steps = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / SUBSTEP_TILES);
   for (let i = 0; i < steps; i++) {
-    body.x = moveAxis(body.x, dx / steps, (x) => overlapsSolid(x, body.y));
-    body.y = moveAxis(body.y, dy / steps, (y) => overlapsSolid(body.x, y));
+    body.x = moveAxis(body.x, dx / steps, (x) => overlapsSolid(state, x, body.y));
+    body.y = moveAxis(body.y, dy / steps, (y) => overlapsSolid(state, body.x, y));
   }
 }
 

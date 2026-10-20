@@ -508,7 +508,7 @@ export class Bot {
     const on = new Set<string>();
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
-        if (isSolid(x, y) || exclude.has(`${x},${y}`)) continue;
+        if (isSolid(this.state, x, y) || exclude.has(`${x},${y}`)) continue;
         // Запас на похибку округлення: кіт на меблях рівно за 0,7 клітинки.
         const distance = distanceToRect({ x: x + 0.5, y: y + 0.5 }, rect) - 1e-6;
         // Крізь стіну не дотягнутися: такі клітинки не годяться.
@@ -537,7 +537,7 @@ export class Bot {
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
         const next = { x: tile.x + dx, y: tile.y + dy };
         const nextKey = `${next.x},${next.y}`;
-        if (isSolid(next.x, next.y) || previous.has(nextKey)) continue;
+        if (isSolid(this.state, next.x, next.y) || previous.has(nextKey)) continue;
         previous.set(nextKey, key);
         queue.push(next);
       }

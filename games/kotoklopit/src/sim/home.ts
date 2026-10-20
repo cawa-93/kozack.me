@@ -1,7 +1,7 @@
 // Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги, а також
 // місця для речей котячого кутка (§9.12). Розкладка не змінюється під час гри, тож вона не входить у стан гри.
 
-import type { HomeItem, Vec } from "./types";
+import type { GameState, HomeItem, Product, Vec } from "./types";
 
 export type RoomId = "bedroom" | "bathroom" | "kitchen" | "living";
 
@@ -36,6 +36,8 @@ export interface HomeObject extends Rect {
   kind: ObjectKind;
   /** З річчю можна взаємодіяти; решта — обстановка. */
   interactive: boolean;
+  /** Сховище, що з'являється вдома лише після першого отримання одного з цих запасів (§6.4). */
+  requires?: readonly Product[];
 }
 
 /** `#` — стіна, `.` — підлога. */
@@ -64,7 +66,7 @@ export const ROOMS: readonly (Rect & { id: RoomId })[] = [
   { id: "living", x: 1, y: 6, w: 18, h: 5 },
 ];
 
-const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1): HomeObject => ({
+const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1, requires?: readonly Product[]): HomeObject => ({
   id,
   kind,
   x,
@@ -73,6 +75,7 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   h,
   // Мішок наповнювача лише зберігає: лоток бере з нього сам (§6.4).
   interactive: kind !== "sofa" && kind !== "litterBag",
+  ...(requires ? { requires } : {}),
 });
 
 export const OBJECTS: readonly HomeObject[] = [
@@ -85,7 +88,8 @@ export const OBJECTS: readonly HomeObject[] = [
   object("counter-right", "counter", 16, 1, 2, 1),
   object("trash", "trash", 18, 1),
   object("table", "table", 13, 3, 2, 1),
-  object("cat-cabinet", "catCabinet", 18, 3),
+  // Сховища котячих запасів з'являються, коли запас уперше потрапив додому (§6.4).
+  object("cat-cabinet", "catCabinet", 18, 3, 1, 1, ["catFood"]),
   object("computer", "computer", 6, 6, 2, 1),
   object("sofa", "sofa", 13, 10, 3, 1),
   object("door", "door", 10, 11, 2, 1),
@@ -93,10 +97,20 @@ export const OBJECTS: readonly HomeObject[] = [
   object("washer", "washer", 10, 1),
   object("vacuum", "vacuum", 16, 10),
   // Сховища запасів (§6.4): мішок наповнювача, бак корму для стерилізованих і котяча аптечка.
-  object("litter-bag", "litterBag", 5, 6),
-  object("sterile-bin", "sterileBin", 18, 6),
-  object("cat-kit", "catKit", 13, 6),
+  object("litter-bag", "litterBag", 5, 6, 1, 1, ["litter"]),
+  object("sterile-bin", "sterileBin", 18, 6, 1, 1, ["sterileFood"]),
+  object("cat-kit", "catKit", 13, 6, 1, 1, ["pills", "drops", "treats", "collar", "bell"]),
 ];
+
+/** Річ є в квартирі: меблі — завжди, сховище — після першого отримання свого запасу (§6.4). */
+export function isPresent(state: Pick<GameState, "home">, object: HomeObject): boolean {
+  return !object.requires || object.requires.some((p) => state.home.acquired.includes(p));
+}
+
+/** Речі, які зараз є в квартирі. */
+export function objectsOf(state: Pick<GameState, "home">): HomeObject[] {
+  return OBJECTS.filter((o) => isPresent(state, o));
+}
 
 /** Поверхні, на які можна покласти річ: стіл і робочі поверхні кухні. */
 export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
@@ -173,9 +187,11 @@ export function objectById(id: string): HomeObject {
   return found;
 }
 
-// Сітка непрохідних клітинок: стіни й речі.
+// Сітка непрохідних клітинок: стіни й постійні речі. Сховища, що з'являються, — окремо.
 const SOLID: boolean[][] = MAP.map((row) => [...row].map((cell) => cell === "#"));
+const OPTIONAL = OBJECTS.filter((o) => o.requires);
 for (const o of OBJECTS) {
+  if (o.requires) continue;
   for (let y = o.y; y < o.y + o.h; y++) {
     for (let x = o.x; x < o.x + o.w; x++) {
       const row = SOLID[y];
@@ -184,14 +200,21 @@ for (const o of OBJECTS) {
   }
 }
 
-/** Клітинка непрохідна; усе за межами карти — теж. */
-export function isSolid(x: number, y: number): boolean {
+/** Стіна чи постійні меблі: без сховищ, що з'являються. Для шляхів котів, які й так лазять меблями. */
+export function isFixedSolid(x: number, y: number): boolean {
   return SOLID[y]?.[x] ?? true;
 }
 
+const covers = (o: Rect, x: number, y: number): boolean => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h;
+
+/** Клітинка непрохідна; усе за межами карти — теж. */
+export function isSolid(state: Pick<GameState, "home">, x: number, y: number): boolean {
+  return (SOLID[y]?.[x] ?? true) || OPTIONAL.some((o) => covers(o, x, y) && isPresent(state, o));
+}
+
 /** Річ квартири на клітинці, якщо вона там є: на меблях коти сплять і ховаються. */
-export function objectAt(x: number, y: number): HomeObject | null {
-  return OBJECTS.find((o) => x >= o.x && x < o.x + o.w && y >= o.y && y < o.y + o.h) ?? null;
+export function objectAt(state: Pick<GameState, "home">, x: number, y: number): HomeObject | null {
+  return OBJECTS.find((o) => covers(o, x, y) && isPresent(state, o)) ?? null;
 }
 
 /** Клітинку закриває передня стіна (камера «три чверті»): безлад туди не кладемо, щоб його було видно. */

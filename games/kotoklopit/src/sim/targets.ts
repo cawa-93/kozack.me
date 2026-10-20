@@ -3,7 +3,7 @@
 
 import { isCarried } from "./catai";
 import { FACING_PRIORITY, REACH } from "./config";
-import { centerOf, distanceToRect, isSolid, isWall, itemPoint, OBJECTS, slotById, type HomeObject } from "./home";
+import { centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
 import type { Cat, GameState, HomeItem, Mess, Vec } from "./types";
 
 export type Target =
@@ -33,7 +33,7 @@ export const catTargetId = (cat: Cat): string => `cat:${cat.id}`;
 /** Усі цілі, з якими зараз можна взаємодіяти. */
 function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
-  for (const object of OBJECTS) if (object.interactive) targets.push({ type: "object", id: object.id, object });
+  for (const object of objectsOf(state)) if (object.interactive) targets.push({ type: "object", id: object.id, object });
   // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
   // Іграшку з повними руками не підняти, тож вона не заступає плиту чи стіл (§10).
   const handsFull = state.character.held !== null;
@@ -120,7 +120,7 @@ export function targetOf(state: GameState): Target | null {
     const center = targetCenter(target);
     const length = Math.hypot(center.x - body.x, center.y - body.y);
     const facing = length > UNDERFOOT ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : UNDERFOOT_FACING;
-    const onObject = target.type === "cat" && isSolid(Math.floor(target.cat.x), Math.floor(target.cat.y));
+    const onObject = target.type === "cat" && isSolid(state, Math.floor(target.cat.x), Math.floor(target.cat.y));
     const score = distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0) - (onObject ? CAT_ON_OBJECT_PRIORITY : 0);
     if (score < bestScore) {
       best = target;

@@ -9,18 +9,18 @@ import { hours, recordEvents, standAt, waitUntil } from "./helpers";
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 1 });
 
 describe("стартові запаси (§6.4)", () => {
-  it("6 порцій дешевої їжі й одна доза ліків для себе", () => {
+  it("6 порцій дешевої їжі й 3 душі засобів гігієни, без ліків", () => {
     const save = game();
     // Решта запасів на старті порожні; сховища показують лише те, що вже бувало вдома.
     expect(save.current.home.supplies).toMatchObject({
       food: { cheap: 6, premium: 0 },
-      humanMeds: { cheap: 1, premium: 0 },
-      hygiene: { cheap: 0, premium: 0 },
+      humanMeds: { cheap: 0, premium: 0 },
+      hygiene: { cheap: 3, premium: 0 },
       catFood: { cheap: 0, premium: 0 },
       litter: { cheap: 0, premium: 0 },
       detergent: { cheap: 0, premium: 0 },
     });
-    expect(save.current.home.acquired).toEqual(["food", "humanMeds"]);
+    expect(save.current.home.acquired).toEqual(["food", "hygiene"]);
   });
 });
 
@@ -61,8 +61,7 @@ describe("доставка (§6.4)", () => {
     standAt(save, "door");
     interact(save);
     expect(supplyCount(save.current, "food")).toBe(6 + 21);
-    expect(supplyCount(save.current, "hygiene")).toBe(14);
-    expect(save.current.home.acquired).toContain("hygiene");
+    expect(supplyCount(save.current, "hygiene")).toBe(3 + 14);
   });
 
   it("без грошей замовити не можна", () => {

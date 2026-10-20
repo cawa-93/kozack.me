@@ -14,7 +14,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
-import { objectById } from "../sim/home";
+import { isPresent, objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
@@ -411,6 +411,8 @@ export class DayScene extends Phaser.Scene {
   private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
+    // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
+    for (const view of this.views.values()) if (view.object.requires) view.graphics.setVisible(isPresent(state, view.object));
     this.person.draw(state.character, this.moving, time, state.trip !== null, state.character.sex === "male" ? beardLook(state) : null);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
@@ -445,7 +447,7 @@ export class DayScene extends Phaser.Scene {
       // Кіт на руках чи на колінах — біля персонажа.
       const withPerson = (held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap";
       const carried = withPerson ? this.person.hands : null;
-      view.draw(cat, time, carried);
+      view.draw(state, cat, time, carried);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);
     }
@@ -511,7 +513,10 @@ export class DayScene extends Phaser.Scene {
 
   /** Де на екрані ціль дії: для підсвітки й баблів. */
   private anchorOf(id: string): { x: number; y: number } | null {
-    if (this.views.has(id)) return this.view(id).anchor;
+    if (this.views.has(id)) {
+      const view = this.view(id);
+      return isPresent(this.state, view.object) ? view.anchor : null;
+    }
     const [kind, raw] = id.split(":");
     const number = Number(raw);
     if (kind === "item") {

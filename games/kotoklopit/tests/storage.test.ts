@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { interact, newGame } from "../src/sim/game";
-import { objectById } from "../src/sim/home";
+import { isPresent, isSolid, objectById } from "../src/sim/home";
+import { targetById } from "../src/sim/targets";
 import { addSupply } from "../src/sim/economy";
 import { giveStarterPack } from "../src/sim/night";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
@@ -40,10 +41,21 @@ describe("сховища (§6.4)", () => {
     giveStarterPack(state);
     state.home.supplies.catFood = { cheap: 0, premium: 0 };
     expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([{ product: "catFood", count: 0 }]);
-    addSupply(state, "hygiene", "cheap", 3);
     walkTo(save, "shower");
     // Шампуню не купували: зблизька видно лише засоби гігієни.
     expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3 }]);
+  });
+
+  it("окреме сховище з'являється в квартирі з першим запасом", () => {
+    const state = game().current;
+    const kit = objectById("cat-kit");
+    expect(isPresent(state, kit)).toBe(false);
+    expect(isSolid(state, kit.x, kit.y)).toBe(false);
+    expect(targetById(state, "cat-kit")).toBeNull();
+    addSupply(state, "treats", "cheap", 20);
+    expect(isPresent(state, kit)).toBe(true);
+    expect(isSolid(state, kit.x, kit.y)).toBe(true);
+    expect(isPresent(state, objectById("fridge"))).toBe(true);
   });
 
   it("узята порція виринає над персонажем із залишком", () => {
@@ -60,8 +72,8 @@ describe("сховища (§6.4)", () => {
   it("корм для стерилізованих — у баку, і повертають його туди ж", () => {
     const save = game();
     const supplies = save.current.home.supplies;
-    supplies.catFood = { cheap: 2, premium: 0 };
-    supplies.sterileFood = { cheap: 1, premium: 0 };
+    addSupply(save.current, "catFood", "cheap", 2);
+    addSupply(save.current, "sterileFood", "cheap", 1);
     walkTo(save, "sterile-bin");
     interact(save);
     expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: true });

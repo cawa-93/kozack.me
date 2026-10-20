@@ -145,16 +145,16 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
   detergent: { units: { cheap: 4, premium: 4 }, price: { cheap: 10, premium: 25 } },
 };
-/** На старті вдома лише їжа й одна доза ліків для себе (§6.4, правило автора 2026-10-20). */
+/** На старті вдома лише їжа й трохи засобів гігієни, без ліків (§6.4, правило автора 2026-10-20). */
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
-  hygiene: { cheap: 0, premium: 0 },
+  hygiene: { cheap: 3, premium: 0 },
   catFood: { cheap: 0, premium: 0 },
   sterileFood: { cheap: 0, premium: 0 },
   litter: { cheap: 0, premium: 0 },
   pills: { cheap: 0, premium: 0 },
   drops: { cheap: 0, premium: 0 },
-  humanMeds: { cheap: 1, premium: 0 },
+  humanMeds: { cheap: 0, premium: 0 },
   treats: { cheap: 0, premium: 0 },
   collar: { cheap: 0, premium: 0 },
   bell: { cheap: 0, premium: 0 },

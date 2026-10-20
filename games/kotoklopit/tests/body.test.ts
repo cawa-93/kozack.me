@@ -127,6 +127,8 @@ describe("квартира", () => {
   it("до кожної речі можна дійти від ліжка", () => {
     for (const o of OBJECTS.filter((o) => o.interactive)) {
       const save = game();
+      // Усі сховища вже з'явилися (§6.4).
+      save.current.home.acquired = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "bell", "shampoo", "detergent"];
       walkTo(save, o.id);
       expect(targetOf(save.current)?.id).toBe(o.id);
     }

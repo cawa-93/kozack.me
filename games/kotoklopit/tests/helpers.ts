@@ -74,7 +74,7 @@ function reachTiles(id: string): Vec[] {
   const tiles: Vec[] = [];
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
-      if (!isSolid(x, y) && distanceToRect({ x: x + 0.5, y: y + 0.5 }, o) <= 0.55) tiles.push({ x, y });
+      if (!isSolid(current!.current, x, y) && distanceToRect({ x: x + 0.5, y: y + 0.5 }, o) <= 0.55) tiles.push({ x, y });
     }
   }
   return tiles;
@@ -101,7 +101,7 @@ function path(from: Vec, id: string): Vec[] {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
       const next = { x: tile.x + dx, y: tile.y + dy };
       const nextKey = `${next.x},${next.y}`;
-      if (isSolid(next.x, next.y) || previous.has(nextKey)) continue;
+      if (isSolid(current!.current, next.x, next.y) || previous.has(nextKey)) continue;
       previous.set(nextKey, key);
       queue.push(next);
     }

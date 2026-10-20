@@ -7,6 +7,7 @@ import { petTolerance } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { activityAt, decide, isDirty, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
+import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -166,7 +167,7 @@ describe("сон і увага (§9.12)", () => {
 describe("догляд персонажа (§9.12)", () => {
   it("корм із шафки — у миску, вода доливається одним натисканням", () => {
     const save = game();
-    save.current.home.supplies.catFood.cheap = 5;
+    addSupply(save.current, "catFood", "cheap", 5);
     walkTo(save, "cat-cabinet");
     interact(save);
     expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: false });

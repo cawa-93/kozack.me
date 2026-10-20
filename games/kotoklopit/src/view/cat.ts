@@ -6,7 +6,7 @@ import Phaser from "phaser";
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { objectAt } from "../sim/home";
-import type { Cat } from "../sim/types";
+import type { Cat, GameState } from "../sim/types";
 import { objectHeight } from "./apartment";
 import { COLORS, depthOf, toScreen } from "./geometry";
 
@@ -65,7 +65,7 @@ export class CatView {
   }
 
   /** Намалювати кота: у руках персонажа — біля грудей, інакше — на підлозі. */
-  draw(cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null): void {
+  draw(state: GameState, cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null): void {
     this.shape = cat.shape;
     const pose = poseOf(cat, carriedAt !== null);
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
@@ -80,7 +80,7 @@ export class CatView {
     g.setVisible(true);
     const feet = carriedAt ?? { ...toScreen(cat), depth: depthOf(toScreen(cat).y) + 0.5 };
     // На меблях кіт сидить зверху, а ховається — під ними, визираючи з-під краю.
-    const furniture = carriedAt ? null : objectAt(Math.floor(cat.x), Math.floor(cat.y));
+    const furniture = carriedAt ? null : objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
     if (furniture && furniture.kind !== "door") {
       const bottom = toScreen({ x: 0, y: furniture.y + furniture.h }).y;
       feet.depth = depthOf(bottom) + 2;

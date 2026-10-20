@@ -2,9 +2,9 @@
 // і місця на підлозі, які видно гравцеві.
 
 import { FURNITURE_COST } from "./config";
-import { hiddenTile, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH } from "./home";
+import { hiddenTile, isFixedSolid, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH } from "./home";
 import type { Rng } from "./rng";
-import type { Cat, Vec } from "./types";
+import type { Cat, GameState, Vec } from "./types";
 
 const FIELDS = new Map<number, Float32Array>();
 
@@ -22,7 +22,7 @@ const NEIGHBORS = [
 /** Ціна входу в клітинку для кота: підлога 1, меблі — дорожче, стіни — неможливо. */
 function tileCost(x: number, y: number): number {
   if (isWall(x, y)) return Infinity;
-  return isSolid(x, y) ? FURNITURE_COST : 1;
+  return isFixedSolid(x, y) ? FURNITURE_COST : 1;
 }
 
 /**
@@ -131,22 +131,22 @@ export function randomFloor(rng: Rng): Vec {
   for (let i = 0; i < 50; i++) {
     const x = rng.int(1, MAP_WIDTH - 2);
     const y = rng.int(1, MAP_HEIGHT - 2);
-    if (!isSolid(x, y) && !hiddenTile(x, y)) return { x, y };
+    if (!isFixedSolid(x, y) && !hiddenTile(x, y)) return { x, y };
   }
   return { x: 3, y: 7 };
 }
 
 /** Найближча до точки видима клітинка підлоги: туди падає безлад. */
-export function visibleFloorNear(p: Vec): Vec {
+export function visibleFloorNear(state: GameState, p: Vec): Vec {
   const tx = Math.floor(p.x);
   const ty = Math.floor(p.y);
-  if (!isSolid(tx, ty) && !hiddenTile(tx, ty)) return p;
+  if (!isSolid(state, tx, ty) && !hiddenTile(tx, ty)) return p;
   for (let r = 1; r < 4; r++) {
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
         const x = tx + dx;
         const y = ty + dy;
-        if (!isSolid(x, y) && !hiddenTile(x, y)) return { x: x + 0.5, y: y + 0.5 };
+        if (!isSolid(state, x, y) && !hiddenTile(x, y)) return { x: x + 0.5, y: y + 0.5 };
       }
     }
   }

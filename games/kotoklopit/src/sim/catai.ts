@@ -118,11 +118,11 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
   // Нестерилізований кіт мітить територію (§9.8).
   if (cat.sex === "male" && !cat.sterilized && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(BREEDING.markPerHour * hours)) {
-    addMess(state, "mark", visibleFloorNear(cat), cat.id);
+    addMess(state, "mark", visibleFloorNear(state, cat), cat.id);
     observe(state, cat, "marking");
   }
   if (state.day > cat.groomedUntil && rng.chance(rate * hours)) {
-    addMess(state, "hairball", visibleFloorNear(cat), cat.id);
+    addMess(state, "hairball", visibleFloorNear(state, cat), cat.id);
     observe(state, cat, "hairballs");
   }
 }
@@ -529,9 +529,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Їсть надто швидко й одразу зригує (§9.3) чи нездужає шлунком (§9.5).
       const gulping = traitLevel(cat, "gulping");
       if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) {
-        addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
+        addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
         observe(state, cat, "gulping");
-      } else if (vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear({ x: cat.x, y: cat.y + 0.6 }), cat.id);
+      } else if (vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
       return;
     }
     case "drink": {
@@ -548,11 +548,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const box = itemById<LitterItem>(state, act.target);
       // Хворий кіт не дотерпів до лотка (§9.5).
       if (box && missesLitter(cat, rng)) {
-        addMess(state, "surprise", visibleFloorNear(cat), cat.id);
+        addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
         return;
       }
       if (!box) {
-        addMess(state, "surprise", visibleFloorNear(cat), cat.id);
+        addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
         return;
       }
       if (isDirty(box)) {
@@ -637,7 +637,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (!dish) return;
       takeDish(state, act.target);
       const o = objectById(act.target);
-      addMess(state, "broken", visibleFloorNear({ x: o.x + o.w / 2, y: o.y + o.h + 0.5 }), cat.id);
+      addMess(state, "broken", visibleFloorNear(state, { x: o.x + o.w / 2, y: o.y + o.h + 0.5 }), cat.id);
       changeMood(state, cat, 1);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       emit(state, { type: "knocked", cat: cat.id, object: act.target, item: dish });
@@ -663,7 +663,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (!toy) return;
       changeMood(state, cat, 1);
       // Іграшка відлітає трохи вбік і зношується.
-      const moved = visibleFloorNear({ x: toy.x + (rng.next() - 0.5) * 1.2, y: toy.y + (rng.next() - 0.5) * 1.2 });
+      const moved = visibleFloorNear(state, { x: toy.x + (rng.next() - 0.5) * 1.2, y: toy.y + (rng.next() - 0.5) * 1.2 });
       toy.x = moved.x;
       toy.y = moved.y;
       toy.uses += 1;
@@ -860,7 +860,7 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   changeMood(state, a, fight.mood, "бійка");
   changeMood(state, b, fight.mood, "бійка");
   changeRelation(state, a, b, fight.relation);
-  addMess(state, "fur", visibleFloorNear({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
+  addMess(state, "fur", visibleFloorNear(state, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
   for (const cat of [a, b]) for (const group of ["sociability", "territorial"]) observe(state, cat, group);
 }

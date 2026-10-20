@@ -62,6 +62,8 @@ export interface ObjectView {
   /** Точка над річчю для бабла. */
   anchor: { x: number; y: number };
   depth: number;
+  /** Малюнок речі: сховище ховається, поки його немає в квартирі (§6.4). */
+  graphics: Phaser.GameObjects.Graphics;
 }
 
 function shade(color: number, amount: number): number {
@@ -152,6 +154,7 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
       top: { x: r.x + 8, y: top, w: r.w - 16, h: TILE_H + WALL_RISE },
       anchor: { x: r.x + r.w / 2, y: top - 4 },
       depth: depth + 1,
+      graphics: g,
     };
   }
 
@@ -164,7 +167,7 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   g.lineStyle(3, COLORS.ink).strokeRect(top.x, top.y, top.w, top.h + height);
   g.lineStyle(2, COLORS.ink, 0.7).lineBetween(top.x, top.y + top.h, top.x + top.w, top.y + top.h);
   decorate(g, object.kind, top, height);
-  return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth };
+  return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
 }
 
 /** Деталі, з яких річ упізнавано. */
