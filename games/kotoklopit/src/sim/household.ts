@@ -96,7 +96,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
 }
 
 /**
- * Робот-пилосос (§8.7): о 12:00 вирушає з бази (несміливі коти ховаються) й пів години їздить
+ * Робот-пилосос (§8.7): о 12:00 вирушає з бази (несміливі коти ховаються) й годину їздить усією
  * квартирою; шерсть зникає поступово й до кінця прибирання — повністю.
  */
 function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {

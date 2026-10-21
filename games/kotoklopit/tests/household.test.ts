@@ -116,19 +116,19 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
   });
 
-  it("робот-пилосос о 12:00 пів години їздить і прибирає шерсть поступово (§8.7)", () => {
+  it("робот-пилосос о 12:00 годину їздить і прибирає шерсть поступово (§8.7)", () => {
     const save = game();
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 60;
     save.current.minute = 11 * 60 + 50;
     expect(robotProgress(save.current)).toBeNull();
-    tickHousehold(save.current, 11 * 60 + 50, 25);
-    save.current.minute = 12 * 60 + 15;
+    tickHousehold(save.current, 11 * 60 + 50, 40);
+    save.current.minute = 12 * 60 + 30;
     expect(robotProgress(save.current)).toBeCloseTo(0.5);
     expect(save.current.home.fur).toBeGreaterThan(20);
     expect(save.current.home.fur).toBeLessThan(40);
-    tickHousehold(save.current, 12 * 60 + 15, 20);
-    save.current.minute = 12 * 60 + 35;
+    tickHousehold(save.current, 12 * 60 + 30, 35);
+    save.current.minute = 13 * 60 + 5;
     expect(save.current.home.fur).toBe(0);
     expect(robotProgress(save.current)).toBeNull();
   });
