@@ -31,10 +31,11 @@ import { stateRng } from "../sim/rng";
 import { Overlay } from "../ui/overlay";
 import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
-import { drawApartment, drawItem, type ObjectView } from "../view/apartment";
+import { drawApartment, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
 import { PRODUCT_ICONS, StorageIndicators } from "../view/storage";
-import { STORAGES, storageIndicator } from "../sim/storage";
+import { STORAGES, storageIndicator, storageStages } from "../sim/storage";
+import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
 import { drawCatCorner, itemScreen } from "../view/catcorner";
 import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
@@ -90,6 +91,8 @@ export class DayScene extends Phaser.Scene {
   private person!: PersonView;
   private bubbles!: Bubbles;
   private storage!: StorageIndicators;
+  /** Малюнки наповнення сховищ і що на них намальовано. */
+  private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
   private interaction!: Phaser.GameObjects.Graphics;
   private hud!: Hud;
   private touch!: TouchControls;
@@ -698,6 +701,23 @@ export class DayScene extends Phaser.Scene {
       // Дзвіночок видає кота, що ховається (§9.10).
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : ringing ? "bell" : null);
+    }
+    // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
+    for (const storage of STORAGES) {
+      const view = this.views.get(storage.object);
+      if (!view) continue;
+      let look = this.storageLooks.get(storage.object);
+      if (!look) {
+        look = { g: this.add.graphics().setDepth(view.depth + 0.5).addToDisplayList(this.viewport.world), key: "" };
+        this.storageLooks.set(storage.object, look);
+      }
+      const present = isPresent(state, view.object);
+      const stages = storageStages(state, storage);
+      const key = `${present}|${stages.join(",")}`;
+      if (key === look.key) continue;
+      look.key = key;
+      look.g.setVisible(present);
+      drawStorage(look.g, view.object.kind, view.top, objectHeight(view.object.kind), stages);
     }
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань.

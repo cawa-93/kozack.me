@@ -1,6 +1,6 @@
 // Сховища запасів (§6.4): де лежить кожен запас, що видно над сховищем і коли.
 
-import { STORAGE_LIMITS } from "./config";
+import { FILL_STAGES, STORAGE_LIMITS } from "./config";
 import { supplyCount } from "./economy";
 import { targetOf } from "./targets";
 import type { GameState, Product } from "./types";
@@ -52,4 +52,21 @@ export function storageIndicator(state: GameState, storage: Storage): StorageLin
   return storage.products
     .filter((product) => state.home.acquired.includes(product))
     .map((product) => ({ product, count: supplyCount(state, product), limit: STORAGE_LIMITS[product] }));
+}
+
+/** Стан наповнення (§6.4): 0 — порожньо, 1 — мало, 2 — половина, 3 — багато, 4 — ущерть. */
+export type FillStage = 0 | 1 | 2 | 3 | 4;
+
+export function fillStage(count: number, limit: number): FillStage {
+  if (count <= 0) return 0;
+  const share = count / limit;
+  if (share >= 1) return 4;
+  return share < FILL_STAGES[0] ? 1 : share < FILL_STAGES[1] ? 2 : 3;
+}
+
+/** Наповнення сховища для малюнка: стан кожного запасу, null — його ще не бувало вдома. */
+export function storageStages(state: GameState, storage: Storage): (FillStage | null)[] {
+  return storage.products.map((product) =>
+    state.home.acquired.includes(product) ? fillStage(supplyCount(state, product), STORAGE_LIMITS[product]) : null,
+  );
 }

@@ -159,6 +159,8 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   shampoo: { cheap: 0, premium: 0 },
   detergent: { cheap: 0, premium: 0 },
 };
+/** Наповнення сховища (§6.4): межі часток для станів «мало», «половина», «багато»; порожньо — 0, ущерть — 1. */
+export const FILL_STAGES = [0.45, 0.75, 1] as const;
 /** Скільки кожного запасу вміщує його сховище (§6.4): кратно десяти, щонайменше 10. */
 export const STORAGE_LIMITS: Record<Product, number> = {
   food: 40,

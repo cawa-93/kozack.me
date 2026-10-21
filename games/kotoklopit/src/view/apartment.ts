@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, type HomeObject, type ObjectKind } from "../sim/home";
 import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
+import { SHAPED_STORAGES } from "./storagelook";
 import { COLORS, depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
 
 /** Видима висота речі на екрані. */
@@ -24,7 +25,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   catCabinet: 46,
   washer: 48,
   vacuum: 60,
-  litterBag: 28,
+  litterBag: 42,
   sterileBin: 36,
   catKit: 40,
 };
@@ -160,6 +161,8 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
 
   const inset = 4;
   const top = { x: r.x + inset, y: r.y - height + inset, w: r.w - inset * 2, h: r.h - inset * 2 };
+  // Мішок, бак і аптечку цілком малює `storagelook.ts`: їхня форма залежить від наповнення.
+  if (SHAPED_STORAGES.has(object.kind)) return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
   const fill = FILL[object.kind];
   // Лицьова грань і верхня грань.
   g.fillStyle(shade(fill, -0.25)).fillRect(top.x, top.y + top.h, top.w, height);
@@ -236,19 +239,6 @@ function decorate(
       // Шафа з пилососом: дверцята й ручка.
       g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
       g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
-      break;
-    case "litterBag":
-      // Мішок наповнювача: зав'язка й смужка.
-      g.fillStyle(shade(FILL.litterBag, -0.3)).fillRect(t.x + 8, t.y + t.h + height / 2 - 3, t.w - 16, 6);
-      break;
-    case "sterileBin":
-      // Бак корму для стерилізованих: кришка й мітка.
-      g.fillStyle(shade(FILL.sterileBin, -0.3)).fillRect(t.x + 4, t.y + t.h + 2, t.w - 8, 5);
-      g.fillStyle(0xffffff).fillCircle(cx, t.y + t.h + height / 2 + 4, 6);
-      break;
-    case "catKit":
-      // Котяча аптечка: червоний хрестик.
-      g.fillStyle(COLORS.danger).fillRect(cx - 3, t.y + t.h + height / 2 - 9, 6, 18).fillRect(cx - 9, t.y + t.h + height / 2 - 3, 18, 6);
       break;
     case "door":
       break;
