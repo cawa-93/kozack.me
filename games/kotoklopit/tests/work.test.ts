@@ -47,12 +47,20 @@ describe("робота за комп'ютером (§8.6)", () => {
     }
   });
 
-  it("година роботи: +3,09 репутації і −5 здорового глузду (12:00–15:00 без хронотипу)", () => {
+  it("година роботи: +3,09 репутації і −6 здорового глузду (12:00–15:00 без хронотипу)", () => {
     const save = game();
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
     expect(save.current.job.reputation).toBeCloseTo(50 + 3.09);
-    expect(save.current.character.stats.sanity).toBeCloseTo(35);
+    expect(save.current.character.stats.sanity).toBeCloseTo(34);
+  });
+
+  it("що вища посада, то більше робота забирає здорового глузду: директору −10,5 за годину", () => {
+    const save = game();
+    save.current.job.position = 9;
+    save.current.minute = hours(12);
+    work(save, hours(12), hours(1));
+    expect(save.current.character.stats.sanity).toBeCloseTo(40 - 10.5);
   });
 
   it("хронотип: зранку жайворонку легше, сові важче, а по обіді навпаки (§5.1)", () => {
@@ -63,12 +71,12 @@ describe("робота за комп'ютером (§8.6)", () => {
       work(save, from, hours(1));
       return before - save.current.character.stats.sanity;
     };
-    expect(loss("female", hours(9))).toBeCloseTo(4.5);
-    expect(loss("male", hours(9))).toBeCloseTo(5.5);
-    expect(loss("female", hours(16))).toBeCloseTo(5.5);
-    expect(loss("male", hours(16))).toBeCloseTo(4.5);
-    expect(loss("male", hours(19))).toBeCloseTo(4.5);
-    expect(loss("female", hours(19))).toBeCloseTo(5);
+    expect(loss("female", hours(9))).toBeCloseTo(5.4);
+    expect(loss("male", hours(9))).toBeCloseTo(6.6);
+    expect(loss("female", hours(16))).toBeCloseTo(6.6);
+    expect(loss("male", hours(16))).toBeCloseTo(5.4);
+    expect(loss("male", hours(19))).toBeCloseTo(5.4);
+    expect(loss("female", hours(19))).toBeCloseTo(6);
   });
 
   it("у «Перший день» здоровий глузд не падає нижче 10% (§8.3)", () => {

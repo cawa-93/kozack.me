@@ -214,8 +214,8 @@ export const PATIENCE_MAX = 100;
 export const PATIENCE_WARNING = 50;
 export const START_REPUTATION = 50;
 export const REPUTATION_MAX = 100;
-/** Робота — неприємне завдання (§8.1): здоровий глузд за годину. */
-export const WORK_SANITY_PER_HOUR = -5;
+/** Пошук роботи — неприємне завдання (§8.1, §8.6): здоровий глузд за годину, як у стажера. */
+export const WORK_SANITY_PER_HOUR = -6;
 /** Стан «Х»: репутація за годину — стільки × (репутація за годину посади). */
 export const ABSENCE_REPUTATION = -3;
 export const STANDUP_MINUTE = 10 * MINUTES_PER_HOUR;
@@ -232,23 +232,24 @@ export const HIGH_HYGIENE = 75;
 /** Після звільнення — 24 години пошуку роботи за комп'ютером (§8.6). */
 export const JOB_SEARCH_HOURS = 24;
 
-/** Посади від стажера до директора (§8.6, чернетка). Терпіння — за годину. */
+/** Посади від стажера до директора (§8.6, чернетка). Терпіння й здоровий глузд (робота — неприємне, §8.1) — за годину. */
 export const POSITIONS: readonly {
   pay: number;
   patienceDecay: number;
   patienceRecovery: number;
   reputation: number;
+  sanity: number;
 }[] = [
-  { pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09 },
-  { pay: 13, patienceDecay: 28, patienceRecovery: 52, reputation: 1.59 },
-  { pay: 17, patienceDecay: 31, patienceRecovery: 46, reputation: 0.99 },
-  { pay: 22, patienceDecay: 34, patienceRecovery: 42, reputation: 0.65 },
-  { pay: 28, patienceDecay: 37, patienceRecovery: 37, reputation: 0.46 },
-  { pay: 35, patienceDecay: 40, patienceRecovery: 33, reputation: 0.34 },
-  { pay: 43, patienceDecay: 43, patienceRecovery: 29, reputation: 0.25 },
-  { pay: 52, patienceDecay: 46, patienceRecovery: 25, reputation: 0.19 },
-  { pay: 62, patienceDecay: 49, patienceRecovery: 21, reputation: 0.14 },
-  { pay: 75, patienceDecay: 52, patienceRecovery: 17, reputation: 0.1 },
+  { pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 },
+  { pay: 13, patienceDecay: 28, patienceRecovery: 52, reputation: 1.59, sanity: -6.5 },
+  { pay: 17, patienceDecay: 31, patienceRecovery: 46, reputation: 0.99, sanity: -7 },
+  { pay: 22, patienceDecay: 34, patienceRecovery: 42, reputation: 0.65, sanity: -7.5 },
+  { pay: 28, patienceDecay: 37, patienceRecovery: 37, reputation: 0.46, sanity: -8 },
+  { pay: 35, patienceDecay: 40, patienceRecovery: 33, reputation: 0.34, sanity: -8.5 },
+  { pay: 43, patienceDecay: 43, patienceRecovery: 29, reputation: 0.25, sanity: -9 },
+  { pay: 52, patienceDecay: 46, patienceRecovery: 25, reputation: 0.19, sanity: -9.5 },
+  { pay: 62, patienceDecay: 49, patienceRecovery: 21, reputation: 0.14, sanity: -10 },
+  { pay: 75, patienceDecay: 52, patienceRecovery: 17, reputation: 0.1, sanity: -10.5 },
 ];
 
 /**

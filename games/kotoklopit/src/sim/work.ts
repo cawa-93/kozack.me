@@ -133,7 +133,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     const reputationBefore = job.reputation;
     earn(state, money);
     changeReputation(state, position.reputation * reputationFactor(state) * hours);
-    activity.sanity += unpleasantTask(state, WORK_SANITY_PER_HOUR * hours, from);
+    activity.sanity += unpleasantTask(state, position.sanity * hours, from);
     activity.minutes += minutes;
     activity.money += money;
     activity.reputation += job.reputation - reputationBefore;
