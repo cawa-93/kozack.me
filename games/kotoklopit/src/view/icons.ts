@@ -42,7 +42,8 @@ export type IconName =
   | "pills"
   | "drops"
   | "treats"
-  | "collar";
+  | "collar"
+  | "mind";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -248,6 +249,16 @@ Object.assign(ICONS, {
     // Нашийник із жетоном.
     g.lineStyle(5, COLORS.danger).strokeCircle(20, 17, 11);
     g.fillStyle(0xe8b93a).fillCircle(20, 31, 5);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Здоровий глузд (§6): спокійна голова з думкою — для шкали на панелі. */
+Object.assign(ICONS, {
+  mind: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0x9b7fd1).fillCircle(17, 23, 12);
+    g.fillStyle(0xffffff).fillCircle(29, 10, 5).fillCircle(24, 7, 3);
+    g.lineStyle(2.5, INK).strokeCircle(17, 23, 12);
+    g.lineStyle(2, 0xffffff).beginPath().arc(17, 23, 5, Math.PI * 0.2, Math.PI * 1.6).strokePath();
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

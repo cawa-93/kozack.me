@@ -34,7 +34,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
-    name.append(element("span", "shop-stock", blocker ? BLOCKERS[blocker] : `дорога ~${minutesText(trip.road)}, на місці ~${minutesText(trip.visit)}`));
+    name.append(element("span", "shop-stock", blocker ? BLOCKERS[blocker] : `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}`));
     row.append(name);
     const button = element("button", "button", "Їхати");
     button.disabled = blocker !== null;
@@ -55,7 +55,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
 }
 
 const LOSS_TEXTS: Record<AccidentLoss, string> = {
-  repair: "Ремонт машини: −60.",
+  repair: "Ремонт машини: −60 ₴.",
   health: "Легкі забої.",
   sanity: "Нерви на межі.",
   cat: "Кіт у переносці страшенно перелякався.",
@@ -104,7 +104,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   const trip = state.trip;
   const destination = trip?.destination ?? "shop";
   const money = Math.floor(state.character.money);
-  const body: (string | HTMLElement)[] = [`Гроші: ${money}.`];
+  const body: (string | HTMLElement)[] = [`👛 ${money} ₴`];
   const actions = [{ label: "Додому", primary: true, onSelect: h.home }];
   const button = (label: string, price: number, onClick: () => void, disabled = false): HTMLButtonElement => {
     const b = element("button", "button", label);
@@ -128,7 +128,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (!cat) break;
       if (!log.exam) {
         body.push(`${cat.name} у переносці. Огляд покаже всі хвороби.`);
-        body.push(row("Огляд", "1 година", button(`Оглянути — ${VET.exam}`, VET.exam, h.exam)));
+        body.push(row("Огляд", "🕐 1 год", button(`Оглянути — ${VET.exam} ₴`, VET.exam, h.exam)));
         break;
       }
       body.push(
@@ -139,16 +139,16 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
       if (!cat.sterilized)
-        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "операція 2 години, потім кілька днів відновлення", button(`Зробити — ${STERILIZATION.price}`, STERILIZATION.price, h.sterilize)));
+        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год, потім кілька днів відновлення", button(`Зробити — ${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
         const chronic = DISEASES[d.id].cure.kind === "control";
         list.append(
           row(
             diseaseTitle(d.id),
-            chronic ? "хронічна: ліки на тиждень" : "1 година",
-            button(`${SERVICE_TITLES.treat.cheap} — ${VET.cheap}`, VET.cheap, () => h.treat(d.id, "cheap")),
-            button(`${SERVICE_TITLES.treat.premium} — ${VET.premium}`, VET.premium, () => h.treat(d.id, "premium")),
+            chronic ? "хронічна: ліки на тиждень" : "🕐 1 год",
+            button(`${SERVICE_TITLES.treat.cheap} — ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap")),
+            button(`${SERVICE_TITLES.treat.premium} — ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium")),
           ),
         );
       }
@@ -158,7 +158,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     case "doctor": {
       if (!log.done.includes("doctor")) {
         body.push("Лікар огляне вас і, якщо треба, призначить лікування й лікарняний.");
-        body.push(row("Огляд", "1 година", button(`Оглянути — 40`, 40, h.doctor)));
+        body.push(row("Огляд", "🕐 1 год", button(`Оглянути — 40 ₴`, 40, h.doctor)));
         break;
       }
       const ill = state.character.illnesses;
@@ -169,8 +169,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             ILLNESS_TITLES[i.id],
             "минає одразу; лікарняний з завтра",
-            button(`${SERVICE_TITLES.treat.cheap} — ${DOCTOR_TREAT.cheap}`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
-            button(`${SERVICE_TITLES.treat.premium} — ${DOCTOR_TREAT.premium}`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
+            button(`${SERVICE_TITLES.treat.cheap} — ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
+            button(`${SERVICE_TITLES.treat.premium} — ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
           ),
         );
       }
@@ -178,7 +178,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
     }
     case "shelter": {
-      body.push(`Кіт із притулку — ${SHELTER.price}. Вибір тижня:`);
+      body.push(`Кіт із притулку — ${SHELTER.price} ₴. Вибір тижня:`);
       const list = element("div", "shop");
       for (const c of shelterCats(state)) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
@@ -187,7 +187,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             `${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
             facts.join(", "),
-            button(`Взяти — ${SHELTER.price}`, SHELTER.price, () => h.adopt(c.id)),
+            button(`Взяти — ${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
           ),
         );
       }
@@ -199,11 +199,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     case "breeder": {
       const { breed, cats } = breederCats(state);
       const price = breederCatPrice(state);
-      body.push(`Розплідник цього тижня пропонує кошенят породи «${breedById(breed).name}» з родоводом. Кошеня — ${price}.`);
+      body.push(`Розплідник цього тижня пропонує кошенят породи «${breedById(breed).name}» з родоводом. Кошеня — ${price} ₴.`);
       const list = element("div", "shop");
       for (const c of cats) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
-        list.append(row(`${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} тижні`, traits.join(", ") || "характер — загадка", button(`Взяти — ${price}`, price, () => h.buyKitten(c.id))));
+        list.append(row(`${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} тижні`, traits.join(", ") || "характер — загадка", button(`Взяти — ${price} ₴`, price, () => h.buyKitten(c.id))));
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);
@@ -215,27 +215,27 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       else
         body.push(
           `Грумер приведе ${cat.name} до ладу.`,
-          row("Стрижка й вичісування", "1,5 години", button(`${SERVICE_TITLES.groom.cheap} — ${GROOMER.price.cheap}`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} — ${GROOMER.price.premium}`, GROOMER.price.premium, () => h.groom("premium"))),
+          row("Стрижка й вичісування", "🕐 1,5 год", button(`${SERVICE_TITLES.groom.cheap} — ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} — ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
         );
       break;
     case "cafe":
       if (log.done.includes("cafe")) body.push("Чужі коти — теж коти. Трохи полегшало.");
       else
         body.push(
-          "Посидіти з чужими котами: 20 за годину.",
-          row("Скільки сидіти?", "", ...[1, 2, 3].map((n) => button(`${n} год`, 20 * n, () => h.cafe(n)))),
+          "Посидіти з чужими котами: 20 ₴ за годину.",
+          row("Скільки сидіти?", "", ...[1, 2, 3].map((n) => button(`🕐 ${n} год — ${20 * n} ₴`, 20 * n, () => h.cafe(n)))),
         );
       break;
     case "show": {
       if (!cat) break;
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
-        body.push(`Виставка котів: участь — ${MODIFIERS.show.fee}. ${cat.name} у переносці.`);
-        body.push(row(`Записати ${cat.name}`, "3 години на місці", button(`Участь — ${MODIFIERS.show.fee}`, MODIFIERS.show.fee, h.show)));
+        body.push(`Виставка котів. ${cat.name} у переносці.`);
+        body.push(row(`Записати ${cat.name}`, "🕐 3 год", button(`Участь — ${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
       const prize = Number(result.slice(5));
-      body.push(prize > 0 ? `${cat.name} отримує приз: ${prize}! Журі в захваті.` : `${cat.name} цього разу без призу, зате всі охали й ахали.`);
+      body.push(prize > 0 ? `${cat.name} отримує приз: ${prize} ₴! Журі в захваті.` : `${cat.name} цього разу без призу, зате всі охали й ахали.`);
       break;
     }
     case "office":

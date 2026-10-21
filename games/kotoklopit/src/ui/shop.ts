@@ -16,11 +16,11 @@ function goodsName(goods: Goods): string {
 
 /** Що вже є вдома: запас — кількість і ліміт сховища видно в телефоні й так; річ — скільки штук. */
 function stockText(state: GameState, goods: Goods): string {
-  if ("product" in goods) return `удома: ${PRODUCT_TITLES[goods.product].unit(supplyCount(state, goods.product))}`;
+  if ("product" in goods) return `🏠 ${PRODUCT_TITLES[goods.product].unit(supplyCount(state, goods.product))}`;
   const { thing } = goods;
   const home = state.home;
   const have = thing === "carrier" ? (home.carrier ? 1 : 0) : thing === "feeder" || thing === "fountain" || thing === "robot" ? (home.appliances[thing] ? 1 : 0) : home.items.filter((i) => i.kind === thing).length;
-  return `удома: ${have}`;
+  return `🏠 ×${have}`;
 }
 
 /** Розмір упаковки для запасу, якщо дешева й дорога різні («7 чисток лотка»). */
@@ -43,7 +43,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
   const update = (): void => {
     for (const u of updaters) u();
     const sum = cartTotal(state, cart, mode);
-    total.textContent = `Разом: ${sum} · гроші: ${Math.floor(state.character.money)}`;
+    total.textContent = `🛒 ${sum} ₴ · 👛 ${Math.floor(state.character.money)} ₴`;
     total.classList.toggle("short", sum > state.character.money);
     pay.disabled = !canCheckout(state, cart, mode);
   };
@@ -65,7 +65,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
         const line: CartLine = { goods: g, quality, count: 0 };
         cart.push(line);
         const price = unitPrice(state, g, quality, mode);
-        const label = element("span", "shop-option", `${VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality}${packText(g, quality)} — ${price}`);
+        const label = element("span", "shop-option", `${VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality}${packText(g, quality)} — ${price} ₴`);
         const minus = element("button", "button step", "−");
         const count = element("span", "shop-count", "0");
         const plus = element("button", "button step", "+");

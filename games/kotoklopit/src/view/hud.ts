@@ -12,20 +12,25 @@ import { isWorkday } from "../sim/work";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { beardLook, cyclePhase } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
+import type { IconName } from "./icons";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
 const FONT = "system-ui, sans-serif";
 const TEXT = "#f3e9dc";
 const MUTED = "#c9b9a8";
 
-const STATS: readonly { name: StatName; label: string; color: number }[] = [
-  { name: "health", label: "Здоров'я", color: 0xd8574a },
-  { name: "satiety", label: "Ситість", color: 0xe0893a },
-  { name: "hygiene", label: "Гігієна", color: 0x5fa8d3 },
-  { name: "sanity", label: "Здоровий глузд", color: 0x9b7fd1 },
+/** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
+const STATS: readonly { name: StatName; icon: IconName; color: number }[] = [
+  { name: "health", icon: "heart", color: 0xd8574a },
+  { name: "satiety", icon: "food", color: 0xe0893a },
+  { name: "hygiene", icon: "soap", color: 0x5fa8d3 },
+  { name: "sanity", icon: "mind", color: 0x9b7fd1 },
 ];
 
-const BAR_WIDTH = 134;
+const ICON_SIZE = 30;
+const BAR_X = 34;
+const BAR_Y = 20;
+const BAR_WIDTH = 116;
 const BAR_HEIGHT = 12;
 const STATS_X = 238;
 const STATS_STEP = 158;
@@ -62,10 +67,12 @@ export class Hud {
       .addToDisplayList(layer);
     this.date = text(20, 5, 17, MUTED);
     this.clock = text(20, 26, 36).setFontStyle("bold");
-    const labels = STATS.map((stat, i) => text(STATS_X + i * STATS_STEP, 4, 18, MUTED).setText(stat.label));
+    const labels = STATS.map((stat, i) =>
+      scene.add.image(STATS_X + i * STATS_STEP + ICON_SIZE / 2, BAR_Y + BAR_HEIGHT / 2, `icon-${stat.icon}`).setDisplaySize(ICON_SIZE, ICON_SIZE),
+    );
     this.bars = scene.add.graphics();
-    this.effects = text(STATS_X, 50, 18, "#e8a33a");
-    this.money = text(892, 20, 30).setFontStyle("bold");
+    this.effects = text(STATS_X, 44, 18, "#e8a33a");
+    this.money = text(866, 20, 30).setFontStyle("bold");
     this.schedule = text(990, 4, 18, MUTED);
     this.left = scene.add
       .container(0, 0, [this.date, this.clock, ...labels, this.bars, this.effects, this.money, this.schedule])
@@ -113,16 +120,15 @@ export class Hud {
 
     const g = this.bars.clear();
     STATS.forEach((stat, i) => {
-      const x = STATS_X + i * STATS_STEP;
+      const x = STATS_X + i * STATS_STEP + BAR_X;
       const value = stats[stat.name];
       const blink = value < LOW && Math.floor(time / 400) % 2 === 0;
-      g.fillStyle(0x1a1520).fillRoundedRect(x, 32, BAR_WIDTH, BAR_HEIGHT, 5);
-      g.fillStyle(blink ? 0xffffff : stat.color).fillRoundedRect(x, 32, Math.max(0, (BAR_WIDTH * value) / 100), BAR_HEIGHT, 5);
-      g.lineStyle(2, COLORS.ink).strokeRoundedRect(x, 32, BAR_WIDTH, BAR_HEIGHT, 5);
+      g.fillStyle(0x1a1520).fillRoundedRect(x, BAR_Y, BAR_WIDTH, BAR_HEIGHT, 5);
+      g.fillStyle(blink ? 0xffffff : stat.color).fillRoundedRect(x, BAR_Y, Math.max(0, (BAR_WIDTH * value) / 100), BAR_HEIGHT, 5);
+      g.lineStyle(2, COLORS.ink).strokeRoundedRect(x, BAR_Y, BAR_WIDTH, BAR_HEIGHT, 5);
     });
-    // Монетка.
-    g.fillStyle(0xe8b93a).fillCircle(874, 38, 11).lineStyle(2, COLORS.ink).strokeCircle(874, 38, 11);
-    this.money.setText(String(Math.floor(money)));
+    // Гроші — символом гривні (§11.4).
+    this.money.setText(`${Math.floor(money)} ₴`);
 
     const effects: string[] = [];
     if (state.modifiers.day === "first-day") effects.push("Перший день");
@@ -132,7 +138,7 @@ export class Hud {
     if (stats.health < LOW) effects.push("Знесилення");
     if (stats.satiety < LOW) effects.push("Голод");
     const job = state.job;
-    if (job.unemployed) effects.push(`Пошук роботи ${Math.floor(job.searchHours)}/24 год`);
+    if (job.unemployed) effects.push("Пошук роботи");
     if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
     const phase = cyclePhase(state);

@@ -190,7 +190,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
   if (tab === "shop") body.push("Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.", shopCatalog(state, "delivery", handlers.checkout));
-  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}.`, myThings(state, handlers));
+  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)} ₴.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
@@ -321,10 +321,10 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
   const supply = state.home.supplies;
   const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
   for (const m of ["pills", "drops"] as const) {
-    if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} (${supplyCount(state, m)})`, onSelect: () => onPick({ medicine: m }) });
+    if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} ×${supplyCount(state, m)}`, onSelect: () => onPick({ medicine: m }) });
   }
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.treats[q] > 0) actions.push({ label: `${VARIANT_TITLES["treats"]?.[q] ?? ""} (${supply.treats[q]})`, onSelect: () => onPick({ treat: q }) });
+    if (supply.treats[q] > 0) actions.push({ label: `${VARIANT_TITLES["treats"]?.[q] ?? ""} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
   }
   for (const q of ["premium", "cheap"] as const) {
     if (supply.collar[q] > 0) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
@@ -363,7 +363,7 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
     title: "Дзвонить мама",
     body: ["Мама питає, як справи, чи ви їсте, і чи не забагато в домі котів."],
     actions: [
-      { label: "Відповісти (30 хв)", primary: true, onSelect: onAnswer },
+      { label: "Відповісти · 🕐 30 хв", primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },
     ],
   };
@@ -373,9 +373,9 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
 export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "meds") => void, onCancel: () => void): Card {
   const look = beardLook(state);
   const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
-  if (look === "neat" || look === "unkempt") actions.push({ label: "Підрівняти бороду (5 хв)", primary: true, onSelect: () => onPick("trim") });
-  actions.push({ label: "Поголитися (10 хв)", primary: actions.length === 0, onSelect: () => onPick("shave") });
-  if (supplyCount(state, "humanMeds") > 0) actions.push({ label: `Ліки для себе (${supplyCount(state, "humanMeds")})`, onSelect: () => onPick("meds") });
+  if (look === "neat" || look === "unkempt") actions.push({ label: "Підрівняти бороду · 🕐 5 хв", primary: true, onSelect: () => onPick("trim") });
+  actions.push({ label: "Поголитися · 🕐 10 хв", primary: actions.length === 0, onSelect: () => onPick("shave") });
+  if (supplyCount(state, "humanMeds") > 0) actions.push({ label: `Ліки для себе ×${supplyCount(state, "humanMeds")}`, onSelect: () => onPick("meds") });
   const words = { clean: "Обличчя гладеньке.", stubble: "Щетина вже помітна.", neat: "Борода охайна.", unkempt: "Борода стирчить у різні боки." };
   return {
     kicker: "Ванна",
