@@ -30,6 +30,7 @@ import {
   MISCHIEF,
   MOOD,
   NEED_PER_HOUR,
+  FOOD_SOUND,
   NEED_THRESHOLD,
   NIGHT_ACTIVITY,
   NOCTURNAL_STEP,
@@ -225,6 +226,29 @@ const objectTile = (id: string): Vec => {
   const o = objectById(id);
   return { x: o.x, y: o.y };
 };
+
+/** Дії, яких кіт не кидає, навіть почувши корм: ховається, б'ється, уже їсть, у лотку. */
+const BUSY_FOR_FOOD = new Set(["eat", "fight", "hide", "toilet"]);
+
+/**
+ * У миску насипали корм (§9.12): голодні коти чують це й біжать їсти — найближчі, скільки в мисці
+ * порцій, — якщо це їм не суперечить: гурман не біжить на простий корм, соня не прокидається.
+ */
+export function hearFood(state: GameState, bowl: BowlItem): void {
+  const listeners = state.cats.filter((cat) => {
+    if (cat.away !== null || isCarried(state, cat) || BUSY_FOR_FOOD.has(cat.act.kind) || isAdapting(state, cat)) return false;
+    if (cat.needs.hunger < FOOD_SOUND.hunger - FOOD_SOUND.appetiteStep * traitLevel(cat, "appetite")) return false;
+    if (bowl.foodQuality === "cheap" && traitLevel(cat, "picky") > 0) return false;
+    if (cat.act.kind === "sleep" && traitLevel(cat, "sleep") > 0) return false;
+    return true;
+  });
+  const tile = itemTile(bowl);
+  listeners.sort((a, b) => Math.hypot(a.x - tile.x, a.y - tile.y) - Math.hypot(b.x - tile.x, b.y - tile.y));
+  for (const cat of listeners.slice(0, bowl.food)) {
+    start(cat, "eat", tile, CAT_ACT_MINUTES.eat, `item:${bowl.id}`);
+    emit(state, { type: "meow", cat: cat.id });
+  }
+}
 
 /** Поріг голоду: «Апетит» змушує їсти раніше (§9.12). */
 function hungerThreshold(cat: Cat): number {

@@ -290,3 +290,66 @@ describe("кошеня й «Пригніченість» (§6.2)", () => {
     expect(state.character.depressed).toBe(false);
   });
 });
+
+describe("кіт чує корм (§9.12)", () => {
+  const feed = (save: Save, quality: "cheap" | "premium" = "cheap"): BowlItem => {
+    save.current.home.supplies.catFood[quality] = 5;
+    if (quality === "premium") save.current.home.supplies.catFood.cheap = 0;
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    const bowl = item<BowlItem>(save, "bowl");
+    walkTo(save, `item:${bowl.id}`);
+    interact(save);
+    return bowl;
+  };
+  const prepare = (save: Save): Cat => {
+    save.current.home.acquired.push("catFood");
+    const cat = withCat(save, { x: 3.5, y: 9.5 });
+    cat.needs.hunger = 60;
+    cat.act = { kind: "idle", target: null, goal: null, minutes: 30, elapsed: 0 };
+    return cat;
+  };
+
+  it("голодний кіт кидає справи й біжить до миски", () => {
+    const save = game();
+    const cat = prepare(save);
+    const bowl = feed(save);
+    expect(cat.act).toMatchObject({ kind: "eat", target: `item:${bowl.id}` });
+  });
+
+  it("ситий кіт не біжить", () => {
+    const save = game();
+    const cat = prepare(save);
+    cat.needs.hunger = 20;
+    feed(save);
+    expect(cat.act.kind).toBe("idle");
+  });
+
+  it("гурман не біжить на простий корм, а на дорогий — біжить", () => {
+    const save = game();
+    const cat = prepare(save);
+    cat.traits = [{ group: "picky", level: 2, seen: 0, known: false }];
+    feed(save, "cheap");
+    expect(cat.act.kind).toBe("idle");
+    const other = game();
+    const gourmet = prepare(other);
+    gourmet.traits = [{ group: "picky", level: 2, seen: 0, known: false }];
+    feed(other, "premium");
+    expect(gourmet.act.kind).toBe("eat");
+  });
+
+  it("соня спить далі, а чуйний кіт прокидається", () => {
+    const save = game();
+    const cat = prepare(save);
+    cat.traits = [{ group: "sleep", level: 2, seen: 0, known: false }];
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 120, elapsed: 0 };
+    feed(save);
+    expect(cat.act.kind).toBe("sleep");
+    const other = game();
+    const light = prepare(other);
+    light.traits = [{ group: "sleep", level: -1, seen: 0, known: false }];
+    light.act = { kind: "sleep", target: null, goal: null, minutes: 120, elapsed: 0 };
+    feed(other);
+    expect(light.act.kind).toBe("eat");
+  });
+});

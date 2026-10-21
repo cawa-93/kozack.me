@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { bowlFull, catOnComputer, jealousy, rollEscapes, separateFight } from "./catai";
+import { bowlFull, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { takeHumanMeds } from "./illness";
@@ -246,6 +246,7 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       item.sterile = held.sterile;
       state.character.held = null;
       emit(state, { type: "fed", item: item.id, food: item.food });
+      hearFood(state, item);
       return null;
     case "water":
       if (held !== null) return refuse(state, id, "hands-full");

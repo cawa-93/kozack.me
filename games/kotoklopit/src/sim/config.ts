@@ -328,6 +328,8 @@ export const FURNITURE_COST = 3;
 export const CAT_ACT_MINUTES = { eat: 3, drink: 1, toilet: 2, beg: 15, attention: 20, idle: 10, wander: 8, hide: 30 } as const;
 /** Порція корму знімає 100 голоду; ковток — усю спрагу (§9.12). */
 export const PORTION_HUNGER = 100;
+/** Кіт чує, як насипають корм (§9.12): з якого голоду біжить до миски; «Апетит» зсуває поріг на 10 за одиницю. */
+export const FOOD_SOUND = { hunger: 50, appetiteStep: 10 } as const;
 /** Миска вміщує 2 порції; миска для води — 8 ковтків (§9.12). */
 export const BOWL_CAPACITY = 2;
 export const WATER_CAPACITY = 8;
