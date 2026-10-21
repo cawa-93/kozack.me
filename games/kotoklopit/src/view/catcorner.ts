@@ -4,9 +4,11 @@
 import Phaser from "phaser";
 
 import { isDirty } from "../sim/catai";
+import { supplyCount } from "../sim/economy";
+import { feederBowls, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { itemPoint } from "../sim/home";
-import type { GameState, HomeItem, Mess } from "../sim/types";
+import type { GameState, HomeItem, Mess, Vec } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
 const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
@@ -42,11 +44,59 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
     const { x, y } = toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
   }
-  for (const item of state.home.items) drawHomeItem(g, item);
+  for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null);
   for (const mess of state.home.messes) drawMess(g, mess);
+  drawAppliances(g, state);
 }
 
-function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
+/** База робота-пилососа у вітальні й маршрут прибирання вільною підлогою (§8.7). */
+const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
+const ROBOT_ROUTE: readonly Vec[] = [ROBOT_DOCK, { x: 17.5, y: 7.4 }, { x: 2, y: 7.4 }, { x: 2, y: 8.7 }, { x: 15.5, y: 8.7 }, ROBOT_DOCK];
+
+/** Точка на маршруті за часткою пройденого шляху 0–1. */
+function along(route: readonly Vec[], progress: number): Vec {
+  const lengths = route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
+  let left = progress * lengths.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < lengths.length; i++) {
+    const length = lengths[i] ?? 0;
+    const a = route[i] ?? ROBOT_DOCK;
+    const b = route[i + 1] ?? ROBOT_DOCK;
+    if (left <= length) return { x: a.x + ((b.x - a.x) * left) / length, y: a.y + ((b.y - a.y) * left) / length };
+    left -= length;
+  }
+  return route[route.length - 1] ?? ROBOT_DOCK;
+}
+
+/**
+ * Техніка (§8.7) — видно, що вона є й що робить: бункер автогодівниці над мискою (у віконці — корм,
+ * поки він є в запасі), робот-пилосос на базі чи в дорозі. Фонтанчики малює сама миска з водою.
+ */
+function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void {
+  const appliances = state.home.appliances;
+  const stocked = supplyCount(state, "catFood") > 0;
+  for (const bowl of feederBowls(state)) {
+    const { x, y } = itemScreen(bowl);
+    const top = y - 46;
+    g.fillStyle(appliances.feeder === "premium" ? 0xe9e4da : 0xc9ccd0).fillRoundedRect(x - 11, top, 22, 34, 5);
+    g.fillStyle(0x2b2530, 0.25).fillRoundedRect(x - 7, top + 6, 14, 16, 3);
+    if (stocked) g.fillStyle(KIBBLE.cheap).fillRoundedRect(x - 7, top + 12, 14, 10, 3);
+    g.fillStyle(0x8c9aa6).fillRect(x - 3, top + 34, 6, 6);
+    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 11, top, 22, 34, 5).strokeRect(x - 3, top + 34, 6, 6);
+  }
+  if (appliances.robot) {
+    const dock = toScreen(ROBOT_DOCK);
+    g.fillStyle(0x4a4448).fillRoundedRect(dock.x - 16, dock.y + 4, 32, 8, 3);
+    const progress = robotProgress(state);
+    const { x, y } = toScreen(progress === null ? ROBOT_DOCK : along(ROBOT_ROUTE, progress));
+    g.fillStyle(appliances.robot === "premium" ? 0x2f2f36 : 0x8c9aa6).fillEllipse(x, y, 30, 15);
+    g.fillStyle(0xd8d4cc).fillEllipse(x, y - 3, 20, 9);
+    // Вогник: зелений — їде, синій — заряджається на базі.
+    g.fillStyle(progress === null ? 0x5fa8d3 : 0x5cbf5a).fillCircle(x, y - 4, 2.5);
+    g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 30, 15);
+  }
+}
+
+function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: boolean): void {
   const { x, y } = itemScreen(item);
   switch (item.kind) {
     case "bowl": {
@@ -65,6 +115,13 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem): void {
       g.fillStyle(BOWL[item.quality]).fillEllipse(x, y, 28, 12);
       g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 28, 12);
       if (item.water > 0) g.fillStyle(0x6fb3d6, 0.9).fillEllipse(x, y - 1, 22 * (0.5 + (0.5 * item.water) / WATER_CAPACITY), 7);
+      if (fountain) {
+        // Фонтанчик (§8.7): білий купол посередині й струмінь, що дугою падає у воду.
+        g.fillStyle(0xf3efe6).fillEllipse(x, y - 4, 12, 10);
+        g.lineStyle(1.5, COLORS.ink).strokeEllipse(x, y - 4, 12, 10);
+        g.lineStyle(2, 0x9fd0ea).beginPath().arc(x + 6, y - 8, 6, Math.PI, Math.PI * 1.9).strokePath();
+        g.beginPath().arc(x - 6, y - 8, 6, Math.PI * 1.1, 0).strokePath();
+      }
       return;
     }
     case "toy":

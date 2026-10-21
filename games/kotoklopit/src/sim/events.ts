@@ -52,6 +52,7 @@ export type GameEvent =
   | { type: "laundry"; stage: "cat" | "started" | "done" | "hung"; cat?: number }
   | { type: "vacuumed" }
   | { type: "robot" }
+  | { type: "feeder"; bowls: number[] }
   | { type: "broke"; what: string }
   | { type: "beard"; kind: "shave" | "trim" }
   | { type: "modifier"; kind: ModifierEvent; value: number }

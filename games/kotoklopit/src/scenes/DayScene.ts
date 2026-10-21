@@ -809,6 +809,10 @@ export class DayScene extends Phaser.Scene {
       case "meow":
         popAt(`cat:${event.cat}`, "meow");
         break;
+      case "feeder":
+        // Автогодівниця насипала: над мискою виринає корм (§8.7).
+        for (const bowl of event.bowls) popAt(`item:${bowl}`, "kibble");
+        break;
       case "cat-felt":
         // Настрій кота — сердечками, а не баблами (§9.12).
         this.hearts.add(event.cat, event.delta);

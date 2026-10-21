@@ -6,11 +6,11 @@ import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat } from "../src/sim/cat";
 import { utilitiesDue } from "../src/sim/economy";
 import { interact, newGame } from "../src/sim/game";
-import { hygieneFactor, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { feederBowls, hygieneFactor, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { holdUntilDone, hours, standAt, withCatCorner } from "./helpers";
+import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
+import { holdUntilDone, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
 const never = () => ({ ...createRng(1), chance: () => false });
@@ -114,6 +114,39 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(bowl?.kind === "bowl" && bowl.food).toBe(1);
     expect(water?.kind === "water" && water.water).toBe(8);
     expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
+  });
+
+  it("робот-пилосос о 12:00 пів години їздить і прибирає шерсть поступово (§8.7)", () => {
+    const save = game();
+    save.current.home.appliances.robot = "cheap";
+    save.current.home.fur = 60;
+    save.current.minute = 11 * 60 + 50;
+    expect(robotProgress(save.current)).toBeNull();
+    tickHousehold(save.current, 11 * 60 + 50, 25);
+    save.current.minute = 12 * 60 + 15;
+    expect(robotProgress(save.current)).toBeCloseTo(0.5);
+    expect(save.current.home.fur).toBeGreaterThan(20);
+    expect(save.current.home.fur).toBeLessThan(40);
+    tickHousehold(save.current, 12 * 60 + 15, 20);
+    save.current.minute = 12 * 60 + 35;
+    expect(save.current.home.fur).toBe(0);
+    expect(robotProgress(save.current)).toBeNull();
+  });
+
+  it("дешева автогодівниця наповнює лише першу миску й повідомляє, яку (§8.7)", () => {
+    const save = game();
+    save.current.home.supplies.catFood = { cheap: 10, premium: 0 };
+    save.current.home.appliances.feeder = "cheap";
+    const bowls = save.current.home.items.filter((i) => i.kind === "bowl");
+    save.current.home.items.push({ ...(bowls[0] as BowlItem), id: 999, slot: "bowl-3", food: 0 });
+    for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 0;
+    const { events, stop } = recordEvents();
+    tickHousehold(save.current, 18 * 60 + 59, 2);
+    stop();
+    const first = feederBowls(save.current)[0];
+    expect(feederBowls(save.current)).toHaveLength(1);
+    expect(events).toContainEqual({ type: "feeder", bowls: [first?.id] });
+    expect(save.current.home.items.filter((i) => i.kind === "bowl" && i.food > 0)).toHaveLength(1);
   });
 
   it("дешева річ може зламатися від використання, дорога — ні", () => {

@@ -9,7 +9,7 @@ import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
 import { objectById } from "./home";
 import type { Rng } from "./rng";
-import type { Cat, GameState, HomeItem } from "./types";
+import type { BowlItem, Cat, GameState, HomeItem } from "./types";
 
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
@@ -87,27 +87,64 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
     }
   }
   const crossed = (minute: number): boolean => from % 1440 < minute && (from + minutes) % 1440 >= minute && minutes < 1440;
-  const feeder = home.appliances.feeder;
-  if (feeder && HOUSEHOLD.feederMinutes.some(crossed)) feed(state, feeder === "premium");
-  if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
-  if (home.appliances.robot && crossed(HOUSEHOLD.robotMinute)) {
-    home.fur = 0;
-    scareCats(state);
-    emit(state, { type: "robot" });
+  if (home.appliances.feeder && HOUSEHOLD.feederMinutes.some(crossed)) {
+    const bowls = feed(state);
+    if (bowls.length > 0) emit(state, { type: "feeder", bowls });
   }
+  if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
+  if (home.appliances.robot && minutes < 1440) robotClean(state, from, minutes, crossed);
 }
 
-/** Автогодівниця (§8.7): порція в порожні миски (дешева — лише в одну). */
-function feed(state: GameState, all: boolean): void {
-  for (const bowl of state.home.items) {
-    if (bowl.kind !== "bowl" || bowl.food > 0) continue;
+/**
+ * Робот-пилосос (§8.7): о 12:00 вирушає з бази (несміливі коти ховаються) й пів години їздить
+ * квартирою; шерсть зникає поступово й до кінця прибирання — повністю.
+ */
+function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {
+  const start = HOUSEHOLD.robotMinute;
+  const end = start + HOUSEHOLD.robotMinutes;
+  if (crossed(start)) scareCats(state);
+  const a = from % 1440;
+  const lo = Math.max(a, start);
+  const hi = Math.min(a + minutes, end);
+  if (hi <= lo) return;
+  if (hi >= end) {
+    state.home.fur = 0;
+    emit(state, { type: "robot" });
+    return;
+  }
+  state.home.fur *= 1 - (hi - lo) / (end - lo);
+}
+
+/** Скільки проїхав робот-пилосос: 0–1 під час прибирання, null — стоїть на базі чи його немає (§8.7). */
+export function robotProgress(state: GameState): number | null {
+  if (!state.home.appliances.robot) return null;
+  const minute = state.minute % 1440;
+  const start = HOUSEHOLD.robotMinute;
+  if (minute < start || minute >= start + HOUSEHOLD.robotMinutes) return null;
+  return (minute - start) / HOUSEHOLD.robotMinutes;
+}
+
+/** Миски, які наповнює автогодівниця (§8.7): дешева — першу, дорога — кожну. */
+export function feederBowls(state: GameState): BowlItem[] {
+  const feeder = state.home.appliances.feeder;
+  if (!feeder) return [];
+  const bowls = state.home.items.filter((i): i is BowlItem => i.kind === "bowl");
+  return feeder === "premium" ? bowls : bowls.slice(0, 1);
+}
+
+/** Автогодівниця (§8.7): порція в порожні миски під нею (дешева — лише в першу). Повертає наповнені. */
+function feed(state: GameState): number[] {
+  const filled: number[] = [];
+  for (const bowl of feederBowls(state)) {
+    if (bowl.food > 0) continue;
     const quality = takeSupply(state, "catFood");
-    if (quality === null) return;
+    if (quality === null) break;
     bowl.food = Math.min(BOWL_CAPACITY, 1);
     bowl.foodQuality = quality;
     bowl.sterile = false;
-    if (!all) return;
+    filled.push(bowl.id);
   }
+  return filled;
 }
 
 /** Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. */

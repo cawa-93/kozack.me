@@ -579,6 +579,8 @@ export const HOUSEHOLD = {
   clothesDays: { cheap: 7, premium: 8 } as Record<Quality, number>,
   feederMinutes: [8 * 60, 19 * 60],
   robotMinute: 12 * 60,
+  /** Скільки хвилин робот-пилосос їздить квартирою. */
+  robotMinutes: 30,
   breakPerUse: 1 / 150,
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,

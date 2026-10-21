@@ -134,6 +134,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Прання: ${event.stage}`;
     case "vacuumed":
       return "Пропилососено";
+    case "feeder":
+      return `Автогодівниця насипала корм: мисок ${event.bowls.length}`;
     case "robot":
       return "Робот-пилосос прибрав шерсть";
     case "broke":
