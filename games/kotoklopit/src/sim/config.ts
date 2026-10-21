@@ -421,9 +421,9 @@ export const PET = {
   /** Кіт хоче уваги, якщо увага від 40. */
   wantsAttention: 40,
   attentionPerMinute: 10,
-  toleranceMinutes: 3,
+  toleranceMinutes: 5,
   toleranceStep: 0.5,
-  minToleranceMinutes: 1,
+  minToleranceMinutes: 2,
   biteChancePerMinute: 0.3,
   biteHealth: -1,
   /** Узяли на руки, коли кіт не хотів (§9.12). */

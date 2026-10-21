@@ -4,9 +4,10 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
-import { changeLove, createCat } from "../src/sim/cat";
+import { changeLove, changeMood, createCat } from "../src/sim/cat";
 import { activityAt, decide, envy, isDirty, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
+import { PET } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -273,7 +274,7 @@ describe("догляд персонажа (§9.12)", () => {
     expect(cat.interacted).toBe(true);
 
     cat.traits.push({ group: "petting", level: -2, seen: 0, known: false });
-    expect(petTolerance(cat)).toBe(1);
+    expect(petTolerance(cat)).toBe(PET.minToleranceMinutes);
     const { events, stop } = recordEvents();
     advance(save, 3, { move: { x: 0, y: 0 }, hold: true });
     stop();
@@ -365,6 +366,18 @@ describe("догляд персонажа (§9.12)", () => {
     expect(hater.bites).toBeGreaterThan(offended.bites);
     expect(hater.escapes).toBeGreaterThan(0);
     expect(hater.escapes).toBeLessThan(hater.bites);
+  });
+
+  it("кожна зміна настрою — подія для сердечок, навіть коли настрій уже на межі (§9.12)", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.mood = 100;
+    const { events, stop } = recordEvents();
+    changeMood(save.current, cat, 2);
+    changeMood(save.current, cat, -1);
+    stop();
+    expect(events).toContainEqual({ type: "cat-felt", cat: cat.id, delta: 2 });
+    expect(events.some((e) => e.type === "cat-felt" && e.delta < 0)).toBe(true);
   });
 
   it("чистюля не йде на руки в брудному одязі й відходить", () => {

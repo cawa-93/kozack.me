@@ -73,6 +73,8 @@ export type GameEvent =
   | { type: "glitch"; chance: number; angle: number }
   // Коти (§9.3, §9.6, §9.12). Приховані зміни бачить лише журнал режиму розробки.
   | { type: "cat-mood"; cat: number; delta: number; reason: string }
+  /** Будь-яка зміна настрою кота, зокрема тривала й без причини в журналі: для сердечок. */
+  | { type: "cat-felt"; cat: number; delta: number }
   | { type: "cat-love"; cat: number; delta: number; reason: string }
   | { type: "cat-day"; cat: number; mood: number; health: number; love: number }
   | { type: "cat-trait"; cat: number; group: string; level: TraitLevel; title: string }

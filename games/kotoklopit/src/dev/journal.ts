@@ -172,6 +172,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} відмовився від дешевого корму`;
     case "meow":
     case "purr":
+    case "cat-felt":
       return null;
     case "mess":
       return `Безлад: ${event.mess.kind}${event.mess.cat !== null ? ` від ${catName(state, event.mess.cat)}` : ""}`;

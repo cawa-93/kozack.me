@@ -43,6 +43,7 @@ import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
+import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { Viewport } from "../view/viewport";
 
@@ -92,6 +93,7 @@ export class DayScene extends Phaser.Scene {
   private gloom!: Phaser.GameObjects.Rectangle;
   private person!: PersonView;
   private bubbles!: Bubbles;
+  private hearts!: MoodHearts;
   private storage!: StorageIndicators;
   /** Малюнки наповнення сховищ і що на них намальовано. */
   private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
@@ -128,6 +130,7 @@ export class DayScene extends Phaser.Scene {
     this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
     this.person = new PersonView(this, world);
     this.bubbles = new Bubbles(this, world);
+    this.hearts = new MoodHearts(this, world, (cat) => this.anchorOf(`cat:${cat}`));
     this.storage = new StorageIndicators(this, world);
     this.interaction = this.add.graphics().setDepth(9_500).addToDisplayList(world);
     // Серпанок над квартирою, але під інтерфейсом.
@@ -196,6 +199,7 @@ export class DayScene extends Phaser.Scene {
   private restart(): void {
     this.overlay.close();
     this.bubbles.clear();
+    this.hearts.clear();
     this.storage.clear();
     this.moneySeen = null;
     this.earned = 0;
@@ -505,6 +509,7 @@ export class DayScene extends Phaser.Scene {
     this.drawInteraction(time);
     this.showEarnings(time);
     this.bubbles.update();
+    this.hearts.update();
     this.viewport.follow(this.person.head, seconds);
     this.drawItems();
     this.drawMarks(time);
@@ -804,20 +809,15 @@ export class DayScene extends Phaser.Scene {
       case "meow":
         popAt(`cat:${event.cat}`, "meow");
         break;
-      case "purr":
-        popAt(`cat:${event.cat}`, event.enjoyed ? "heart" : "angry");
+      case "cat-felt":
+        // Настрій кота — сердечками, а не баблами (§9.12).
+        this.hearts.add(event.cat, event.delta);
         break;
       case "picked-up":
         if (event.offended) popPerson("angry");
         break;
-      case "cat-broke-free":
-        popAt(`cat:${event.cat}`, "angry");
-        break;
       case "cat-dodged":
         popAt(`cat:${event.cat}`, "laundry");
-        break;
-      case "cat-refused-food":
-        popAt(`cat:${event.cat}`, "angry");
         break;
       case "bite":
         popPerson("bite");
@@ -838,9 +838,6 @@ export class DayScene extends Phaser.Scene {
         break;
       case "symptom":
         popAt(`cat:${event.cat}`, event.symptom);
-        break;
-      case "groomed":
-        popAt(`cat:${event.friend}`, "heart");
         break;
       case "cat-fight":
         this.cameras.main.shake(120, 0.002);
@@ -882,6 +879,8 @@ export class DayScene extends Phaser.Scene {
   }
 
   private showMorning(night: GameState["lastNight"]): void {
+    // Зміни настрою за ніч гравець не бачив: сердечками їх не показують.
+    this.hearts.clear();
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 

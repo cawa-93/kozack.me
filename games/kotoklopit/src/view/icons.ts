@@ -6,6 +6,8 @@ import Phaser from "phaser";
 import { COLORS } from "./geometry";
 
 export type IconName =
+  | "mood-up"
+  | "mood-down"
   | "alert"
   | "cross"
   | "camera"
@@ -263,6 +265,24 @@ Object.assign(ICONS, {
     g.fillStyle(0x8a7a5a).fillCircle(17, 25, 2).fillCircle(23, 29, 1.6);
     g.lineStyle(2, 0x7a8a3a);
     for (const x of [14, 20, 26]) g.beginPath().arc(x, 6, 2.5, Math.PI * 0.5, Math.PI * 1.5).strokePath();
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Настрій кота (§9.12): зелене сердечко — подобається, червоне з тріщиною — ні. Без бабла, з контуром. */
+const moodHeart = (g: Phaser.GameObjects.Graphics, color: number): void => {
+  // Спершу чорнильне сердечко трохи більше, зверху — кольорове: виходить контур.
+  g.fillStyle(INK).fillCircle(13.5, 14.5, 9.5).fillCircle(26.5, 14.5, 9.5).fillTriangle(4.5, 18, 35.5, 18, 20, 37);
+  g.fillStyle(color).fillCircle(13.5, 14.5, 7).fillCircle(26.5, 14.5, 7).fillTriangle(7.5, 17.5, 32.5, 17.5, 20, 33);
+};
+Object.assign(ICONS, {
+  "mood-up": (g: Phaser.GameObjects.Graphics) => {
+    moodHeart(g, 0x5cbf5a);
+    g.fillStyle(0xffffff, 0.75).fillCircle(11.5, 12.5, 2.4);
+  },
+  "mood-down": (g: Phaser.GameObjects.Graphics) => {
+    moodHeart(g, 0xd8453f);
+    // Тріщина-зигзаг через усе сердечко.
+    g.lineStyle(3, INK).beginPath().moveTo(20, 9).lineTo(17, 16).lineTo(22.5, 21).lineTo(18.5, 27).lineTo(20, 33).strokePath();
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

@@ -158,6 +158,8 @@ export function isOld(cat: Cat): boolean {
 export function changeMood(state: GameState, cat: Cat, delta: number, reason?: string): void {
   const scaled = delta < 0 ? delta * Math.max(0, 1 - STRESS_STEP * traitLevel(cat, "stress")) : delta;
   cat.mood = clamp(cat.mood + scaled);
+  // Сцена показує кожну зміну сердечками (§9.12), навіть якщо настрій уже на межі.
+  if (scaled !== 0) emit(state, { type: "cat-felt", cat: cat.id, delta: scaled });
   if (reason) emit(state, { type: "cat-mood", cat: cat.id, delta: scaled, reason });
 }
 
