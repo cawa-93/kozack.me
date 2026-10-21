@@ -31,19 +31,15 @@ describe("сховища (§6.4)", () => {
     }
   });
 
-  it("видно лише придбане: здалеку — нуль, зблизька — увесь вміст", () => {
+  it("видно лише придбане й лише в фокусі; поза фокусом — нічого, навіть нулів", () => {
     const save = game();
     const state = save.current;
-    expect(storageIndicator(state, storage("fridge"))).toEqual([]);
     state.home.supplies.food = { cheap: 0, premium: 0 };
-    expect(storageIndicator(state, storage("fridge"))).toEqual([{ product: "food", count: 0 }]);
-    // Корму ще не купували — шафка мовчить і з нулем.
-    expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([]);
-    giveStarterPack(state);
-    state.home.supplies.catFood = { cheap: 0, premium: 0 };
-    expect(storageIndicator(state, storage("cat-cabinet"))).toEqual([{ product: "catFood", count: 0 }]);
+    expect(storageIndicator(state, storage("fridge"))).toEqual([]);
+    walkTo(save, "fridge");
+    expect(storageIndicator(state, storage("fridge"))).toEqual([{ product: "food", count: 0, limit: 40 }]);
     walkTo(save, "shower");
-    // Шампуню не купували: зблизька видно лише засоби гігієни.
+    // Шампуню не купували: у фокусі видно лише засоби гігієни.
     expect(storageIndicator(state, storage("shower"))).toEqual([{ product: "hygiene", count: 3, limit: 30 }]);
   });
 

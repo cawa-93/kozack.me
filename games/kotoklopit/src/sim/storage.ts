@@ -44,16 +44,12 @@ export function isFocusedStorage(state: GameState, storage: Storage): boolean {
 }
 
 /**
- * Що зараз видно над сховищем (§6.4): лише запаси, які вже бували вдома; коли сховище в фокусі — усі
- * вони з кількістю й лімітом, інакше — ті, що скінчилися. Порожній список — індикатора немає.
+ * Що зараз видно над сховищем (§6.4): лише в фокусі й лише запаси, які вже бували вдома, — з
+ * кількістю й лімітом. Поза фокусом — нічого: скільки лишилося, видно з самого сховища.
  */
 export function storageIndicator(state: GameState, storage: Storage): StorageLine[] {
-  // Персонаж у душовій кабіні — над нею нічого (§8.7).
-  const activity = state.character.activity;
-  if (activity?.kind === "use" && activity.inside && activity.target === storage.object) return [];
-  const lines = storage.products
+  if (!isFocusedStorage(state, storage)) return [];
+  return storage.products
     .filter((product) => state.home.acquired.includes(product))
-    .map((product) => ({ product, count: supplyCount(state, product) }));
-  if (isFocusedStorage(state, storage)) return lines.map((line) => ({ ...line, limit: STORAGE_LIMITS[line.product] }));
-  return lines.filter((line) => line.count === 0);
+    .map((product) => ({ product, count: supplyCount(state, product), limit: STORAGE_LIMITS[product] }));
 }
