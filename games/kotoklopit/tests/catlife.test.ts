@@ -4,12 +4,13 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
-import { createCat } from "../src/sim/cat";
-import { activityAt, decide, isDirty, tickCats } from "../src/sim/catai";
+import { changeLove, createCat } from "../src/sim/cat";
+import { activityAt, decide, envy, isDirty, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
 import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
+import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, LitterItem, Save, WaterItem } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
@@ -135,6 +136,64 @@ describe("їжа, вода й лоток (§9.12)", () => {
       surprises = save.current.home.messes.filter((m) => m.kind === "surprise").length;
     }
     expect(surprises).toBeGreaterThan(5);
+  });
+
+  it("брудний лоток — мінус настрій і любов; грязнулі ображаються менше й ніколи не відмовляються", () => {
+    const visit = (level: number): { mood: number; love: number; surprises: number } => {
+      const save = game();
+      const cat = withCat(save);
+      if (level !== 0) cat.traits.push({ group: "litterPicky", level: level as -2 | -1 | 1 | 2, seen: 0, known: false });
+      const box = item<LitterItem>(save, "litter");
+      box.uses = 3;
+      cat.mood = 50;
+      cat.love = 50;
+      cat.needs.toilet = 90;
+      decide(save.current, cat, createRng(3), { present: false });
+      live(save, 15);
+      return { mood: 50 - cat.mood, love: 50 - cat.love, surprises: save.current.home.messes.filter((m) => m.kind === "surprise").length };
+    };
+    const usual = visit(0);
+    const slob = visit(-2);
+    expect(usual.love).toBeGreaterThan(0);
+    expect(slob.love).toBeGreaterThan(0);
+    expect(slob.love).toBeLessThan(usual.love);
+    expect(slob.surprises).toBe(0);
+    expect(usual.surprises).toBe(0);
+  });
+});
+
+describe("заздрісність і мстивість (§9.12)", () => {
+  it("заздрісний кіт дметься й свариться, коли іншому дали ласощі; добряк радіє", () => {
+    const save = game();
+    const lucky = withCat(save, { x: 4.5, y: 8.5 });
+    const envious = withCat(save, { x: 5.5, y: 8.5 });
+    envious.traits = [{ group: "envy", level: 2, seen: 0, known: false }];
+    envious.act = { kind: "idle", target: null, goal: null, minutes: 10, elapsed: 0 };
+    const mood = envious.mood;
+    const before = relation(save.current, envious, lucky);
+    envy(save.current, lucky);
+    expect(envious.mood).toBeLessThan(mood);
+    expect(relation(save.current, envious, lucky)).toBeLessThan(before);
+    envious.traits = [{ group: "envy", level: -2, seen: 0, known: false }];
+    const calm = envious.mood;
+    envy(save.current, lucky);
+    expect(envious.mood).toBeGreaterThan(calm);
+  });
+
+  it("мстивий кіт після образи залишає «сюрприз» біля ліжка, і образа минає", () => {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 8.5 });
+    cat.traits = [{ group: "vengeful", level: 2, seen: 0, known: false }];
+    cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
+    changeLove(save.current, cat, -5);
+    expect(cat.hurt).not.toBeNull();
+    for (let i = 0; i < 240 && cat.hurt !== null; i++) {
+      cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
+      live(save, 1);
+    }
+    expect(cat.hurt).toBeNull();
+    const bed = save.current.home.messes.find((m) => m.kind === "surprise");
+    expect(bed && bed.x < 4 && bed.y < 4).toBe(true);
   });
 });
 

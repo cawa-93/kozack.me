@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
+import { changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
 import { randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -30,7 +30,10 @@ import {
   MISCHIEF,
   MOOD,
   NEED_PER_HOUR,
+  DIRTY_LITTER,
+  ENVY,
   FOOD_SOUND,
+  REVENGE,
   NEED_THRESHOLD,
   NIGHT_ACTIVITY,
   NOCTURNAL_STEP,
@@ -65,6 +68,7 @@ import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
+import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
 
@@ -544,6 +548,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER);
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
       itemMood(state, cat, bowl);
+      if (quality === "premium") envy(state, cat);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
       observe(state, cat, "appetite");
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
@@ -580,13 +585,16 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         return;
       }
       if (isDirty(box)) {
-        changeMood(state, cat, MOOD.dirtyLitter, "брудний лоток");
+        // Грязнулі ображаються менше, чистюлі — більше; відмовитися можуть лише чистюлі (§9.12).
         const picky = traitLevel(cat, "litterPicky");
-        if (rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * Math.max(0, picky))) {
+        const factor = Math.max(0, 1 + DIRTY_LITTER.pickyStep * picky);
+        changeMood(state, cat, MOOD.dirtyLitter * factor, "брудний лоток");
+        if (picky > 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
           addMess(state, "surprise", surpriseSpot(rng), cat.id);
           observe(state, cat, "litterPicky");
           return;
         }
+        changeLove(state, cat, DIRTY_LITTER.love * factor, "брудний лоток");
       }
       box.uses += 1;
       itemMood(state, cat, box);
@@ -786,6 +794,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   if (isCarried(state, cat)) return;
   if (isNewborn(cat)) return nurse(state, cat);
+  revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.
   const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy";
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
@@ -899,6 +908,36 @@ export function separateFight(state: GameState, cat: Cat): void {
 }
 
 /** Персонаж приділяє увагу коту: ревниві коти, що не сплять, сердяться на нього (§9.4). */
+/**
+ * Іншому котові щось перепало — ласощі, нашийник, вишуканий корм (§9.12): заздрісні коти, що це
+ * бачать, дмуться й сваряться з ним; ті, хто «радіє за інших», навпаки, тішаться.
+ */
+export function envy(state: GameState, lucky: Cat): void {
+  for (const other of state.cats) {
+    if (other.id === lucky.id || !home(state, other) || asleep(other) || distance(other, lucky) > ENVY.sight) continue;
+    const level = traitLevel(other, "envy");
+    if (level === 0) continue;
+    if (level > 0) {
+      changeMood(state, other, ENVY.mood * level, "заздрить");
+      changeRelation(state, other, lucky, ENVY.relation * level);
+    } else changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
+    observe(state, other, "envy");
+  }
+}
+
+/** Мстивий кіт після образи може залишити «сюрприз» біля ліжка персонажа; тоді образа минає (§9.12). */
+function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
+  const level = traitLevel(cat, "vengeful");
+  const hurt = cat.hurt;
+  if (level <= 0 || hurt === null || asleep(cat)) return;
+  if (absoluteMinute(state.day, state.minute) - hurt.at > REVENGE.minutes) return;
+  if (!rng.chance(1 - (1 - REVENGE.perHour * level) ** (minutes / MINUTES_PER_HOUR))) return;
+  const bed = objectById("bed");
+  addMess(state, "surprise", visibleFloorNear(state, { x: bed.x + bed.w + 0.5, y: bed.y + bed.h - 0.5 }), cat.id);
+  observe(state, cat, "vengeful");
+  cat.hurt = null;
+}
+
 export function jealousy(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
     if (other.id === cat.id || !home(state, other) || asleep(other)) continue;

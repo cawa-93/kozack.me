@@ -361,7 +361,13 @@ export const PICKY_REFUSAL_STEP = 0.4;
 /** «Стресостійкість» змінює втрати настрою на 20% за одиницю (§9.12). */
 export const STRESS_STEP = 0.2;
 /** Безлад біля лотка (§9.12): «сюрприз» деінде й розкиданий наповнювач. */
-export const SURPRISE_CHANCE = { base: 0.15, step: 0.3 } as const;
+export const SURPRISE_CHANCE = { base: 0, step: 0.3 } as const;
+/** Брудний лоток (§9.12): любов за похід у брудний лоток; «Вибагливість до лотка» ±25% за одиницю до штрафів. */
+export const DIRTY_LITTER = { love: -1, pickyStep: 0.25 } as const;
+/** Заздрісність (§9.12): настрій і стосунки за одиницю риси, коли іншому котові щось перепало; бачить за стільки клітинок. */
+export const ENVY = { mood: -2, relation: -4, glad: 1, sight: 5 } as const;
+/** Мстивість (§9.12): скільки триває образа, шанс помсти за годину за одиницю, ласощі незлопам'ятним. */
+export const REVENGE = { minutes: 240, perHour: 0.1, refundStep: 0.25 } as const;
 export const SCATTER_CHANCE = { base: 0.2, step: 0.2 } as const;
 
 /** Любов (§7, §9.12): день без взаємодії; дрейф настрою за день — (любов − 50) × 6 / 100 (§9.6). */

@@ -2,7 +2,8 @@
 
 import { changeLove, changeMood, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, COLLAR, TREATS } from "./config";
+import { BATH, COLLAR, REVENGE, TREATS } from "./config";
+import { envy } from "./catai";
 import { fallIll, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
 import { emit } from "./events";
@@ -32,13 +33,16 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   changeLove(state, cat, TREATS.love, "ласощі");
   const now = absoluteMinute(state.day, state.minute);
   if (cat.hurt && now - cat.hurt.at <= TREATS.hurtMinutes) {
-    changeLove(state, cat, cat.hurt.amount * TREATS.refund, "ласощі після неприємного");
+    // «Поступливий» і «Добряк» оттають більше (§9.12).
+    const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
+    changeLove(state, cat, cat.hurt.amount * refund, "ласощі після неприємного");
     cat.hurt = null;
   }
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
   observe(state, cat, "begging");
   cat.interacted = true;
+  envy(state, cat);
   emit(state, { type: "treat", cat: cat.id, quality });
   return true;
 }
@@ -50,6 +54,7 @@ export function putCollar(state: GameState, quality: Quality): boolean {
   if (!cat || supply[quality] <= 0) return false;
   useSupply(state, "collar", quality);
   cat.collar = { quality, bell: cat.collar?.bell ?? false };
+  envy(state, cat);
   emit(state, { type: "collar", cat: cat.id });
   return true;
 }
