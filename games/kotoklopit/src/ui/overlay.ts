@@ -1,6 +1,7 @@
 // Картки поверх гри: титулка й ранкові повідомлення (§4), кінець гри (§6.1), телефон (§6.4).
 // Це DOM, а не полотно: текст лишається чітким на будь-якому екрані. Поки картка відкрита, гра на паузі.
 
+import { drawGlyphs } from "./glyphs";
 import "./overlay.css";
 
 export interface CardAction {
@@ -124,6 +125,7 @@ export class Overlay {
       actions.append(button);
     }
     panel.append(actions);
+    drawGlyphs(panel);
     this.root.replaceChildren(panel);
     this.root.hidden = false;
     panel.querySelector<HTMLButtonElement>(".primary:not(:disabled)")?.focus({ preventScroll: true });

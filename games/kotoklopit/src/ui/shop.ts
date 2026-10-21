@@ -6,6 +6,7 @@ import { shopModifier } from "../sim/destinations";
 import { supplyCount } from "../sim/economy";
 import { canCheckout, cartTotal, GOODS, goodsKey, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
+import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
 import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
@@ -44,6 +45,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
     for (const u of updaters) u();
     const sum = cartTotal(state, cart, mode);
     total.textContent = `🛒 ${sum} ₴ · 👛 ${Math.floor(state.character.money)} ₴`;
+    drawGlyphs(total);
     total.classList.toggle("short", sum > state.character.money);
     pay.disabled = !canCheckout(state, cart, mode);
   };

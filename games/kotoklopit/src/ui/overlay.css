@@ -444,3 +444,14 @@
 .shop-total.short {
   color: #d8483b;
 }
+
+/* Іконки інтерфейсу замість емодзі (§11.4). */
+.glyph {
+  display: inline-block;
+  vertical-align: -0.2em;
+  line-height: 1;
+}
+
+.glyph svg {
+  display: block;
+}
