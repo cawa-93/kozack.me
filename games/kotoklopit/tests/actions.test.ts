@@ -100,6 +100,8 @@ describe("їжа за столом (§8.7)", () => {
     const save = game();
     serveMeal(save);
     expect(save.current.home.surfaces["table"]?.kind).toBe("meal");
+    // Голодний персонаж: порція не впирається в стелю 100.
+    save.current.character.stats.satiety = 30;
     const satiety = save.current.character.stats.satiety;
     const { events, stop } = recordEvents();
     holdFor(save, 5);
@@ -107,7 +109,7 @@ describe("їжа за столом (§8.7)", () => {
     holdFor(save, 5);
     stop();
     expect(save.current.home.surfaces["table"]).toBeNull();
-    // Ситість за 10 хвилин їжі трохи спала, але порція дала +24.
+    // Ситість за 10 хвилин їжі трохи спала, але порція додала свою частку.
     expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap - 4 / 6);
     expect(events).toContainEqual({ type: "ate", satiety: MEAL_SATIETY.cheap, food: 5 });
   });

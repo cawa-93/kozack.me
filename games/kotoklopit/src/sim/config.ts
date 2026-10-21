@@ -122,9 +122,9 @@ export const BURN_MINUTES = COOK_MINUTES + 15;
 export const EAT_MINUTES = 10;
 export const SHOWER_MINUTES = 10;
 /** Ситість за порцію (§6.4). */
-export const MEAL_SATIETY: Record<Quality, number> = { cheap: 24, premium: 32 };
+export const MEAL_SATIETY: Record<Quality, number> = { cheap: 40, premium: 55 };
 /** Гігієна за душ залежно від засобів гігієни (§6.4); none — без засобів. */
-export const SHOWER_HYGIENE: Record<Quality | "none", number> = { none: 20, cheap: 45, premium: 60 };
+export const SHOWER_HYGIENE: Record<Quality | "none", number> = { none: 8, cheap: 60, premium: 80 };
 
 // Економіка (§6.4, чернетка).
 /** Запаси: скільки порцій чи душів в упаковці й скільки вона коштує в магазині. */
