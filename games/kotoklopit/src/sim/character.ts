@@ -8,6 +8,7 @@ import {
   FIRST_DAY_MODIFIER,
   HUNGER_HEALTH_PER_HOUR,
   HUNGER_HEALTH_THRESHOLD,
+  HOUSEHOLD,
   HYGIENE_PER_HOUR,
   MALE_METABOLISM,
   MINUTES_PER_DAY,
@@ -32,9 +33,14 @@ export function statFloor(state: GameState, stat: StatName): number {
   return 0;
 }
 
-/** Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 30% (§6.2). */
+/**
+ * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 30% (§6.2),
+ * брудний одяг — гігієну до 60 (§8.7).
+ */
 export function statCeiling(state: GameState, stat: StatName): number {
-  return stat === "sanity" && state.character.depressed ? DEPRESSION_CEILING : STAT_MAX;
+  if (stat === "sanity" && state.character.depressed) return DEPRESSION_CEILING;
+  if (stat === "hygiene" && state.home.clothes <= 0) return HOUSEHOLD.noClothesHygieneCeiling;
+  return STAT_MAX;
 }
 
 /**

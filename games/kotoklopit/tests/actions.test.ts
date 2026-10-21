@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { useProgress } from "../src/sim/actions";
 import { targetOf } from "../src/sim/targets";
-import { BURN_MINUTES, COOK_MINUTES, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
+import { BURN_MINUTES, COOK_MINUTES, HOUSEHOLD, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
@@ -134,7 +134,7 @@ describe("їжа за столом (§8.7)", () => {
 });
 
 describe("душ (§8.7)", () => {
-  it("натиснути — і 10 хвилин у кабіні: дешеві засоби +45, дорогі +60, без засобів +20", () => {
+  it("натиснути — і 10 хвилин у кабіні: гігієна росте залежно від засобів", () => {
     for (const [supply, hygiene] of [
       [{ cheap: 1, premium: 0 }, SHOWER_HYGIENE.cheap],
       [{ cheap: 1, premium: 1 }, SHOWER_HYGIENE.premium],
@@ -150,6 +150,20 @@ describe("душ (§8.7)", () => {
       expect(stats.hygiene).toBeCloseTo(20 + hygiene - 3 / 6);
       expect(supplyCount(save.current, "hygiene")).toBe(Math.max(0, supply.cheap + supply.premium - 1));
     }
+  });
+
+  it("у брудному одязі душ не піднімає гігієну вище 60, а падає вона вдвічі швидше", () => {
+    const save = game();
+    const stats = save.current.character.stats;
+    stats.hygiene = 20;
+    save.current.home.clothes = 0;
+    save.current.home.supplies.hygiene = { cheap: 0, premium: 1 };
+    standAt(save, "shower");
+    interact(save);
+    advance(save, 10);
+    expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling, 0);
+    advance(save, 60);
+    expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling - 3 * HOUSEHOLD.noClothesHygiene, 0);
   });
 
   it("сповільнення подовжує душ (§8.8)", () => {

@@ -554,7 +554,9 @@ export const HOUSEHOLD = {
   sheddingStep: 0.5,
   dirtyFur: 50,
   furHygiene: 1.2,
-  noClothesHygiene: 1.5,
+  noClothesHygiene: 2,
+  /** Вище цієї гігієни персонаж у брудному одязі не стає навіть після душу. */
+  noClothesHygieneCeiling: 60,
   vacuumMinutes: 10,
   vacuumSanity: -2,
   washMinutes: 60,
