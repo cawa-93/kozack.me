@@ -40,7 +40,8 @@ describe("понеділок без котів (§8.3)", () => {
 
       cook(save);
       walkTo(save, "shower");
-      holdUntilDone(save);
+      interact(save);
+      advance(save, 11);
       eat(save);
       expect(order(save.current, "food", "cheap")).not.toBeNull();
       workUntil(save, hours(12.5));

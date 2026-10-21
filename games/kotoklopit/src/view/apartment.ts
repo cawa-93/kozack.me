@@ -11,7 +11,7 @@ import { COLORS, depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } fr
 /** Видима висота речі на екрані. */
 const HEIGHT: Record<ObjectKind, number> = {
   bed: 22,
-  shower: 64,
+  shower: 52,
   sink: 30,
   fridge: 72,
   stove: 32,

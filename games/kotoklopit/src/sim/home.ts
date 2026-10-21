@@ -79,8 +79,9 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
 });
 
 export const OBJECTS: readonly HomeObject[] = [
-  object("bed", "bed", 1, 1, 2, 3),
-  object("shower", "shower", 8, 1, 2, 2),
+  // Меблі в масштабі персонажа: ліжко 1×2, душова кабіна 1×1 (§8.4).
+  object("bed", "bed", 1, 1, 1, 2),
+  object("shower", "shower", 8, 1),
   object("sink", "sink", 11, 1),
   object("fridge", "fridge", 13, 1),
   object("counter-left", "counter", 14, 1),
@@ -118,7 +119,7 @@ export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
 ).map((o) => o.id);
 
 /** Де персонаж прокидається: біля ліжка (§8.7). */
-export const SPAWN: Vec = { x: 3.5, y: 2.5 };
+export const SPAWN: Vec = { x: 2.5, y: 2.5 };
 
 /** Місце на підлозі для речі котячого кутка (§9.12). Речі на підлозі не тверді. */
 export interface Slot {

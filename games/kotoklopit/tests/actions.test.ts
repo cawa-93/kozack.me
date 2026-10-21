@@ -6,7 +6,7 @@ import { BURN_MINUTES, COOK_MINUTES, MEAL_SATIETY, SHOWER_HYGIENE } from "../src
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 const game = (): Save => withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 1 }));
 
@@ -132,7 +132,7 @@ describe("їжа за столом (§8.7)", () => {
 });
 
 describe("душ (§8.7)", () => {
-  it("10 хвилин утримання: дешеві засоби +45, дорогі +60, без засобів +20", () => {
+  it("натиснути — і 10 хвилин у кабіні: дешеві засоби +45, дорогі +60, без засобів +20", () => {
     for (const [supply, hygiene] of [
       [{ cheap: 1, premium: 0 }, SHOWER_HYGIENE.cheap],
       [{ cheap: 1, premium: 1 }, SHOWER_HYGIENE.premium],
@@ -143,7 +143,8 @@ describe("душ (§8.7)", () => {
       stats.hygiene = 20;
       save.current.home.supplies.hygiene = { ...supply };
       standAt(save, "shower");
-      holdUntilDone(save);
+      interact(save);
+      advance(save, 10);
       expect(stats.hygiene).toBeCloseTo(20 + hygiene - 3 / 6);
       expect(supplyCount(save.current, "hygiene")).toBe(Math.max(0, supply.cheap + supply.premium - 1));
     }
@@ -153,8 +154,28 @@ describe("душ (§8.7)", () => {
     const save = game();
     save.current.minute = hours(22.5);
     standAt(save, "shower");
-    holdFor(save, 10);
+    interact(save);
+    advance(save, 10);
     expect(useProgress(save.current)).toBeCloseTo(0.8);
+  });
+
+  it("у кабіні рух і ривок не діють, вийти можна лише після душу", () => {
+    const save = game();
+    standAt(save, "shower");
+    const { x, y } = save.current.character.body;
+    interact(save);
+    advance(save, 5, { move: { x: 0, y: 1 }, hold: false });
+    expect(save.current.character.body).toMatchObject({ x, y });
+    expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
+    advance(save, 6, { move: { x: 0, y: 1 }, hold: false });
+    expect(save.current.character.activity).toBeNull();
+  });
+
+  it("утриманням у душ не зайти", () => {
+    const save = game();
+    standAt(save, "shower");
+    holdFor(save, 10);
+    expect(save.current.character.activity).toBeNull();
   });
 
   it("з річчю в руках у душ не піти", () => {
@@ -196,7 +217,7 @@ describe("ліжко (§8.8)", () => {
     expect(held).toBeNull();
     expect(save.current.home.supplies.food.premium).toBe(1);
     expect(save.current.day).toBe(1);
-    expect({ x: body.x, y: body.y }).toEqual({ x: 3.5, y: 2.5 });
+    expect({ x: body.x, y: body.y }).toEqual({ x: 2.5, y: 2.5 });
   });
 });
 

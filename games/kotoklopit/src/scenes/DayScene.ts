@@ -437,7 +437,10 @@ export class DayScene extends Phaser.Scene {
     this.hud.update(state, time);
     // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
     for (const view of this.views.values()) if (view.object.requires) view.graphics.setVisible(isPresent(state, view.object));
-    this.person.draw(state.character, this.moving, time, state.trip !== null, state.character.sex === "male" ? beardLook(state) : null);
+    // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
+    const activity = state.character.activity;
+    const inside = activity?.kind === "use" && activity.inside === true;
+    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.showEarnings(time);
@@ -633,6 +636,9 @@ export class DayScene extends Phaser.Scene {
     }
     set("computer", computer);
 
+    // Персонаж у душовій кабіні — над нею вода.
+    const activity = state.character.activity;
+    set("shower", activity?.kind === "use" && activity.inside ? "drop" : null);
     const item = state.home.stove.item;
     set("stove", item === null ? null : item.kind === "burnt" ? "smoke" : item.kind === "meal" ? "meal" : "pot");
     // Кіт на сходах важливіший за пакунок (§9.12).

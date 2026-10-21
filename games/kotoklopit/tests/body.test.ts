@@ -33,11 +33,11 @@ describe("рух (§8.4)", () => {
     walk(save, { x: 0, y: -1 }, 3);
     expect(save.current.character.body.y).toBeCloseTo(1 + BODY_RADIUS, 4);
     walk(save, { x: -1, y: 0 }, 3);
-    // Ліжко займає клітинки x 1–2: персонаж зупиняється біля нього.
-    expect(save.current.character.body.x).toBeCloseTo(3 + BODY_RADIUS, 4);
+    // Ліжко займає клітинку x 1: персонаж зупиняється біля нього.
+    expect(save.current.character.body.x).toBeCloseTo(2 + BODY_RADIUS, 4);
     // Наискіс уздовж ліжка: уліво не пускає ліжко, а вниз персонаж ковзає.
     walk(save, { x: -Math.SQRT1_2, y: Math.SQRT1_2 }, 0.5);
-    expect(save.current.character.body.x).toBeCloseTo(3 + BODY_RADIUS, 4);
+    expect(save.current.character.body.x).toBeCloseTo(2 + BODY_RADIUS, 4);
     expect(save.current.character.body.y).toBeCloseTo(1 + BODY_RADIUS + 3 * Math.SQRT1_2 * 0.5);
   });
 

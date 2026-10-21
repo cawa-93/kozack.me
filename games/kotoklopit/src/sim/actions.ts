@@ -207,9 +207,10 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       return null;
     }
     case "shower":
-      // Кіт на руках біля душу — купання (§8.7); інакше душ — тривала дія утриманням.
+      // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
       if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, "empty");
       if (held !== null) return refuse(state, target.id, "hands-full");
+      character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
     case "sink":
       // Ліки для себе — біля умивальника (§6.5).
@@ -382,6 +383,20 @@ export function useProgress(state: GameState): number | null {
 export function tickActivity(state: GameState, input: Input, minutes: number): void {
   const character = state.character;
   const activity = character.activity;
+  // У душовій кабіні рух не діє: персонаж виходить, коли душ скінчився (§8.7).
+  if (activity?.kind === "use" && activity.inside) {
+    const target = targetById(state, activity.target);
+    if (target === null) {
+      character.activity = null;
+      return;
+    }
+    activity.progress += minutes * actionSpeed(state);
+    if (activity.progress >= useMinutes(target)) {
+      character.activity = null;
+      finishUse(state, target);
+    }
+    return;
+  }
   if (isMoving(input.move)) {
     if (activity?.kind === "work") stopWork(state);
     else character.activity = null;
@@ -397,6 +412,8 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     if (target === null) return;
     if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
     else if (!canUse(state, target)) return;
+    // У душ заходять натисканням, а не утриманням.
+    else if (target.type === "object" && target.object.kind === "shower") return;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
       jealousy(state, target.cat);

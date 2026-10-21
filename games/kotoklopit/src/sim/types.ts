@@ -86,6 +86,8 @@ export interface UseActivity {
   kind: "use";
   target: string;
   progress: number;
+  /** Персонаж усередині (душова кабіна, §8.7): не виходить, доки дія не скінчиться. */
+  inside?: boolean;
 }
 
 /** Пестощі кота утриманням дії (§9.12). */

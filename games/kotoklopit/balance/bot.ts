@@ -123,7 +123,7 @@ export class Bot {
     if (ch.stats.satiety < 60 && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
       return named("cook", () => this.cook());
     }
-    if (ch.stats.hygiene < 45) return named("hold", () => this.hold("shower"));
+    if (ch.stats.hygiene < 45) return named("shower", () => this.shower());
     // Борода (§5.1): привести до ладу до летучки.
     const look = ch.sex === "male" ? beardLook(s) : "clean";
     if ((look === "stubble" || look === "unkempt") && s.minute < 9.75 * 60 && !this.skipped("sink")) {
@@ -477,6 +477,13 @@ export class Bot {
       if (activity.kind === "pet" && id !== `cat:${activity.cat}`) break;
     }
     advance(this.save, 0.01);
+  }
+
+  /** Душ (§8.7): натиснути біля кабіни й дочекатися, поки персонаж вийде. */
+  private shower(): void {
+    if (!this.goTo("shower")) return this.wait(1);
+    interact(this.save);
+    for (let spent = 0; spent < 60 && this.state.character.activity?.kind === "use"; spent += HOLD_STEP) advance(this.save, HOLD_STEP);
   }
 
   private holdFor(minutes: number): void {

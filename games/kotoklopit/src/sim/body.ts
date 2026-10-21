@@ -57,7 +57,8 @@ export function isMoving(move: Vec): boolean {
 /** Ривок доступний після перезарядки; з низьким здоров'ям ривка немає (§6.3). */
 export function canDash(state: GameState): boolean {
   const { body, stats, activity } = state.character;
-  return body.dashCooldown <= 0 && stats.health >= LOW_STAT && activity?.kind !== "work" && canDashWhenIll(state);
+  const inside = activity?.kind === "use" && activity.inside === true;
+  return body.dashCooldown <= 0 && stats.health >= LOW_STAT && activity?.kind !== "work" && !inside && canDashWhenIll(state);
 }
 
 export function dash(state: GameState): boolean {
