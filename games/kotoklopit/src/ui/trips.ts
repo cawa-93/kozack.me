@@ -44,7 +44,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     kicker: "Поїздка",
     title: "Куди поїхати?",
     body: [
-      "Дорогою — гонка: оминайте машини. Повільно — безпечно, але довго; швидко — ризиковано. Поки вас немає, коти вдома самі.",
+      "Поки вас немає, коти вдома самі.",
       list,
     ],
     actions: [{ label: "Залишитися вдома", primary: true, onSelect: onCancel }],
@@ -54,8 +54,8 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
 
 const LOSS_TEXTS: Record<AccidentLoss, string> = {
   repair: "Ремонт машини: −60.",
-  health: "Легкі забої: здоров'я −10.",
-  sanity: "Нерви: здоровий глузд −10.",
+  health: "Легкі забої.",
+  sanity: "Нерви на межі.",
   cat: "Кіт у переносці страшенно перелякався.",
 };
 
@@ -119,11 +119,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   const cat = tripCat(state);
   switch (destination) {
     case "shop": {
-      body.push("Ціни магазину сьогодні:");
       const list = element("div", "shop");
       for (const g of GOODS) {
         const mod = Math.round(shopModifier(state, g) * 100);
-        const tag = mod < 0 ? `ЗНИЖКА ${-mod}%` : mod > 0 ? `ПОДОРОЖЧАННЯ ${mod}%` : "звичайна ціна";
+        // Що дешевше чи дорожче — видно, а на скільки й чому — ні (§11.3а).
+        const tag = mod < 0 ? "сьогодні дешевше" : mod > 0 ? "сьогодні дорожче" : "";
         const full = "thing" in g && freeSlots(state, g.thing) <= 0;
         // Запас, що не влізе у сховище (§6.4).
         const fits = (q: Quality): boolean => !("product" in g) || fitsStorage(state, g.product, q);
@@ -154,10 +154,10 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       );
       const known = cat.diseases.filter((d) => d.known);
       if (known.length === 0) body.push("Хвороб не знайдено.");
-      if (cat.pregnancy?.known) body.push(`${cat.name} вагітна: кошенята з'являться в ніч на понеділок.`);
+      if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
       if (!cat.sterilized)
-        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "операція 2 години, потім 3 дні відновлення; потрібен корм для стерилізованих", button(`Зробити — ${STERILIZATION.price}`, STERILIZATION.price, h.sterilize)));
+        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "операція 2 години, потім кілька днів відновлення", button(`Зробити — ${STERILIZATION.price}`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
         const chronic = DISEASES[d.id].cure.kind === "control";
@@ -240,7 +240,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (log.done.includes("cafe")) body.push("Чужі коти — теж коти. Трохи полегшало.");
       else
         body.push(
-          "Посидіти з чужими котами: 20 за годину. Кожна наступна година тішить менше, а вдома ревниві коти відчують чужий запах.",
+          "Посидіти з чужими котами: 20 за годину.",
           row("Скільки сидіти?", "", ...[1, 2, 3].map((n) => button(`${n} год`, 20 * n, () => h.cafe(n)))),
         );
       break;
@@ -248,7 +248,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (!cat) break;
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
-        body.push(`Виставка котів: участь — ${MODIFIERS.show.fee}. Журі дивиться на породу, вигляд і настрій. ${cat.name} у переносці.`);
+        body.push(`Виставка котів: участь — ${MODIFIERS.show.fee}. ${cat.name} у переносці.`);
         body.push(row(`Записати ${cat.name}`, "3 години на місці", button(`Участь — ${MODIFIERS.show.fee}`, MODIFIERS.show.fee, h.show)));
         break;
       }
@@ -257,7 +257,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
     }
     case "office":
-      body.push("Збори в офісі тривали три години. Керівництво бачило вас особисто — це рахується як робота.");
+      body.push("Збори в офісі тривали три години. Керівництво бачило вас особисто.");
       break;
   }
   return { kicker: "Поїздка", title: DESTINATION_TITLES[destination], body, actions };

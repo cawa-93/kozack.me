@@ -1,6 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { DIFFICULTY, HAPPY_LIFE, PRODUCTS, STORAGE_LIMITS, SUFFERED_LIFE, THINGS } from "../sim/config";
+import { HAPPY_LIFE, PRODUCTS, STORAGE_LIMITS, SUFFERED_LIFE, THINGS } from "../sim/config";
 import { deliveryPrice, fitsStorage, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
@@ -24,10 +24,8 @@ import {
   fill,
   FIRST_DAY_HINT,
   BEARD_TEXTS,
-  BIRTH_BONUS,
   CYCLE_TEXTS,
   BIRTH_MESSAGE,
-  KITTEN_BONUS,
   KITTEN_MESSAGE,
   UTILITIES_MESSAGES,
 } from "../texts";
@@ -55,10 +53,10 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const { name, sex } = state.character;
   const weekBlocks: string[][] = [];
   const week = state.modifiers.week ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
-  if (week) weekBlocks.push([week.title, week.situation, week.effect]);
+  if (week) weekBlocks.push([week.title, week.situation]);
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
-  if (modifier) dayBlocks.push([modifier.title, modifier.situation, modifier.effect]);
+  if (modifier) dayBlocks.push([modifier.title, modifier.situation]);
   const phase = cyclePhase(state);
   if (phase) dayBlocks.push([fill(CYCLE_TEXTS[phase], sex, { день: cycleDay(state) })]);
   const beard = sex === "male" ? beardLook(state) : null;
@@ -67,7 +65,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const events: string[][] = [];
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
-    events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name }), fill(KITTEN_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity })]);
+    events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name })]);
   }
   // Пологи (§9.8): одне повідомлення на кожну матір.
   const born = newCats.filter((c) => c.source === "born");
@@ -76,7 +74,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     const mother = state.cats.find((c) => c.id === motherId);
     const values = { кішка: mother?.name ?? "кішка", кількість: kittens.length, кошенята: kittens.map((c) => c.name).join(", ") };
     // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
-    events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values), fill(BIRTH_BONUS, sex, { бонус: DIFFICULTY[state.difficulty].newCatSanity })]);
+    events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values)]);
   }
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
@@ -88,7 +86,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, `Здоровий глузд ${DIFFICULTY[state.difficulty].lostCatSanity}.`]);
+    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`]);
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {
@@ -227,7 +225,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   const money = Math.floor(state.character.money);
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
-  if (tab === "supplies") body.push(`Гроші: ${money}. Доставка коштує на 10% дорожче, ніж у магазині, і привозить пакунок приблизно за 6 годин. Пакунок чекатиме під дверима.`, suppliesShop(state, money, handlers));
+  if (tab === "supplies") body.push(`Гроші: ${money}. Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.`, suppliesShop(state, money, handlers));
   if (tab === "things") body.push(`Гроші: ${money}. Нова річ стане на вільне місце, а кожна, крім іграшок, трохи збільшує комунальні.`, thingsShop(state, money, handlers));
   if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
@@ -421,7 +419,7 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     kicker: "Догляд",
     title: `${cat.name} на руках`,
     body: [
-      "Ліки кіт не любить: дати їх — неприємна справа. Таблетка допомагає від застуди, глистів і старечих болячок, краплі — від бліх і кон'юнктивіту. Ласощі одразу після неприємного зменшують образу. З нашийником над котом видно його ім'я.",
+      "Кіт насторожено дивиться на аптечку.",
     ],
     actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
     onDismiss: onCancel,
@@ -433,7 +431,7 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
   return {
     kicker: "Знайда",
     title: "Кошеня під дверима",
-    body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало.", "Узяти — новий кіт і бонус до здорового глузду. Віднести в притулок — дві години дороги."],
+    body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало."],
     actions: [
       { label: "Узяти додому", primary: true, onSelect: onTake },
       { label: "Віднести в притулок", onSelect: onShelter },
@@ -465,7 +463,7 @@ export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "
   return {
     kicker: "Ванна",
     title: "Умивальник",
-    body: [`${words[look]} Доглянутий вигляд допомагає на відеодзвінках, неохайний — шкодить.`],
+    body: [words[look]],
     actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
     onDismiss: onCancel,
   };
@@ -499,7 +497,7 @@ export function sexCard(looks: Record<Sex, Look>, onPick: (sex: Sex) => void, on
   return {
     kicker: "Нова гра · 1 з 4",
     title: "Хто ви?",
-    body: [choice, "У жінки є цикл, у чоловіка — трохи швидший обмін речовин і борода, за якою треба доглядати. Сили врівноважені."],
+    body: [choice],
     actions: onCancel ? [{ label: "Скасувати", onSelect: onCancel }] : [],
     ...(onCancel ? { onDismiss: onCancel } : {}),
   };
@@ -564,8 +562,8 @@ export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack:
     kicker: "Нова гра · 3 з 4",
     title: "Сова чи жайворонок?",
     body: [
-      "Жайворонок прокидається о 06:00, легше працює й прибирає зранку, а ввечері втомлюється.",
-      "Сова прокидається о 08:00, ранок дається їй важче, зате по обіді й увечері — легше.",
+      "Жайворонок прокидається рано й найбадьоріший зранку.",
+      "Сова прокидається пізніше й оживає ближче до вечора.",
     ],
     actions: [
       { label: "Жайворонок", primary: true, onSelect: () => onPick("lark") },
@@ -600,7 +598,7 @@ export function difficultyCard(onPick: (difficulty: Difficulty) => void): Card {
   return {
     kicker: "Нова гра",
     title: "Складність",
-    body: ["Складність змінює заробіток, ціну втрати кота й бонус за нового. Обрати її можна лише на початку гри."],
+    body: ["Змінити її потім не вийде."],
     actions: (["easy", "normal", "hard"] as const).map((difficulty) => ({
       label: DIFFICULTY_TITLES[difficulty],
       primary: difficulty === "normal",
