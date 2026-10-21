@@ -323,7 +323,7 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   }
   cat.interacted = true;
   cat.act = idleAct();
-  state.character.held = { kind: "cat", cat: cat.id };
+  state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}) };
   emit(state, { type: "picked-up", cat: cat.id, offended });
 }
 
@@ -371,15 +371,18 @@ function canPlay(state: GameState, target: Target): boolean {
   return target.type === "cat" && state.character.held?.kind === "toy";
 }
 
-/** Підказки, які гравець уже засвоїв (§11.3а): показуються, доки він сам не спробує. */
-export type Hint = "pet" | "play";
+/** Що відчуває кіт, якого гладять чи тримають на руках (§9.12): це видно з нього самого. */
+export type CatFeeling = "content" | "reluctant" | "struggling";
 
-export function hintLearned(state: GameState, hint: Hint): boolean {
-  return state.hints?.includes(hint) ?? false;
-}
-
-function learnHint(state: GameState, hint: Hint): void {
-  if (!hintLearned(state, hint)) state.hints = [...(state.hints ?? []), hint];
+export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
+  const { held, activity } = state.character;
+  if (held?.kind === "cat" && held.cat === cat.id) return held.offended ? "struggling" : "content";
+  if (activity?.kind === "pet" && activity.cat === cat.id) {
+    if (activity.minutes > petTolerance(cat)) return "struggling";
+    return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
+  }
+  if (activity?.kind === "play" && activity.cat === cat.id) return "content";
+  return null;
 }
 
 /** Частка виконаної тривалої дії 0–1 або null, якщо її немає. */
@@ -424,15 +427,12 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   if (activity === null) {
     const target = targetOf(state);
     if (target === null) return;
-    if (canPlay(state, target) && target.type === "cat") {
-      character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
-      learnHint(state, "play");
-    } else if (!canUse(state, target)) return;
+    if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
+    else if (!canUse(state, target)) return;
     // У душ заходять натисканням, а не утриманням.
     else if (target.type === "object" && target.object.kind === "shower") return;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
-      learnHint(state, "pet");
       jealousy(state, target.cat);
     } else character.activity = { kind: "use", target: target.id, progress: 0 };
   }

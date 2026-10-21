@@ -44,6 +44,8 @@ export interface CatFoodScoop {
 export interface CarriedCat {
   kind: "cat";
   cat: number;
+  /** Узяли проти волі: кіт пручається, поки на руках (§9.12). */
+  offended?: boolean;
 }
 
 /** Іграшка в руках: з нею граються з котом (§9.12). */
@@ -654,8 +656,6 @@ export interface GameState {
   rng: Record<RngStream, number>;
   lastNight: NightReport | null;
   end: GameEnd | null;
-  /** Підказки, які гравець уже спробував (§11.3а); у старих збереженнях поля немає. */
-  hints?: string[];
 }
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */

@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { petTolerance } from "../src/sim/actions";
+import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { activityAt, decide, isDirty, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
@@ -226,7 +226,7 @@ describe("догляд персонажа (§9.12)", () => {
     save.current.character.body.facing = { x: 0, y: -1 };
     const love = cat.love;
     interact(save);
-    expect(save.current.character.held).toEqual({ kind: "cat", cat: cat.id });
+    expect(save.current.character.held).toEqual({ kind: "cat", cat: cat.id, offended: true });
     expect(cat.love).toBeLessThan(love);
     interact(save);
     expect(save.current.character.held).toBeNull();
@@ -351,5 +351,26 @@ describe("кіт чує корм (§9.12)", () => {
     light.act = { kind: "sleep", target: null, goal: null, minutes: 120, elapsed: 0 };
     feed(other);
     expect(light.act.kind).toBe("eat");
+  });
+});
+
+describe("що відчуває кіт (§9.12)", () => {
+  it("видно з нього самого: подобається, терпить, пручається", () => {
+    const save = game();
+    const state = save.current;
+    const cat = withCat(save, { x: 4.5, y: 8.5 });
+    cat.needs.attention = 90;
+    state.character.activity = { kind: "pet", cat: cat.id, minutes: 0.5 };
+    expect(catFeeling(state, cat)).toBe("content");
+    cat.needs.attention = 10;
+    expect(catFeeling(state, cat)).toBe("reluctant");
+    state.character.activity = { kind: "pet", cat: cat.id, minutes: 30 };
+    expect(catFeeling(state, cat)).toBe("struggling");
+    state.character.activity = null;
+    expect(catFeeling(state, cat)).toBeNull();
+    // Сплячого кота взяли на руки — пручається.
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 60, elapsed: 0 };
+    pickUpCat(state, cat);
+    expect(catFeeling(state, cat)).toBe("struggling");
   });
 });

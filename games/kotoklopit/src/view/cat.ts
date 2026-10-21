@@ -7,6 +7,7 @@ import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { objectAt } from "../sim/home";
 import type { Cat, GameState } from "../sim/types";
+import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { COLORS, depthOf, toScreen } from "./geometry";
 
@@ -51,6 +52,9 @@ export class CatView {
   /** Що намальовано зараз: якщо нічого не змінилося, кадр не перемальовує кота. */
   private drawn: string | null = null;
 
+  /** Що кіт відчуває в цьому кадрі (§9.12): з цього малюються очі й вуха. */
+  private feeling: CatFeeling | null = null;
+
   /** Форми частин тіла: від кота, що є зараз (гени й форми не змінюються). */
   private shape: Cat["shape"];
 
@@ -66,14 +70,23 @@ export class CatView {
 
   /** Намалювати кота: у руках персонажа — біля грудей, інакше — на підлозі. */
   /**
-   * `interaction` — персонаж саме гладить кота чи грається з ним (§8.2): кіт муркоче й погойдується
-   * з заплющеними очима чи підстрибує й ловить лапками пір'їнку.
+   * `interaction` — персонаж саме гладить кота чи грається з ним (§8.2); `feeling` — що кіт відчуває
+   * (§9.12): мружиться й погойдується, терпить з очима-щілинками чи пручається, смикаючись із
+   * притиснутими вухами. Показуй, а не розказуй (§11.3а).
    */
-  draw(state: GameState, cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null, interaction: "pet" | "play" | null = null): void {
+  draw(
+    state: GameState,
+    cat: Cat,
+    time: number,
+    carriedAt: { x: number; y: number; depth: number } | null,
+    interaction: "pet" | "play" | null = null,
+    feeling: CatFeeling | null = null,
+  ): void {
     this.shape = cat.shape;
     const pose = interaction ? "sit" : poseOf(cat, carriedAt !== null);
+    this.feeling = feeling;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
-    const key = pose === "walk" || interaction ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
+    const key = pose === "walk" || interaction || feeling ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -101,7 +114,8 @@ export class CatView {
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
     // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
     const jump = interaction === "play" ? -Math.abs(Math.sin(time / 130)) * 12 * scale : 0;
-    const sway = interaction === "pet" ? Math.sin(time / 280) * 1.5 : 0;
+    // Задоволений погойдується повільно, невдоволений — смикається, а той, хто пручається, вертиться.
+    const sway = feeling === "content" ? Math.sin(time / 280) * 1.5 : feeling === "reluctant" ? Math.sin(time / 90) * 1.2 : feeling === "struggling" ? Math.sin(time / 35) * 3.5 : 0;
     const x = feet.x + sway;
     const y = feet.y + bob + jump;
     const body = this.coat.pointed ? POINT_BODY : PIGMENT[this.coat.base];
@@ -157,13 +171,14 @@ export class CatView {
         const paws = interaction === "play" ? y - 30 * s : y - 1;
         const reach = interaction === "play" ? dir * 6 * s : 0;
         g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws, 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws, 6 * s, 4 * s);
-        this.headAt(g, hx, headY, s, dir, body, point, interaction === "pet");
+        this.headAt(g, hx + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY, s, dir, body, point);
         return;
       }
     }
   }
 
-  private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number, content = false): void {
+  private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number): void {
+    const feeling = this.feeling;
     const r = 9 * s * (this.shape.muzzle === "long" ? 0.95 : 1);
     this.ears(g, x, y, s, dir, point);
     g.fillStyle(this.coat.pointed ? point : body).fillCircle(x, y, r);
@@ -172,10 +187,19 @@ export class CatView {
     g.lineStyle(2.5, COLORS.ink).strokeCircle(x, y, r);
     if (this.coat.long) g.lineStyle(2, COLORS.ink, 0.6).strokeCircle(x, y, r + 2.5 * s);
     const ex = x + dir * 3 * s;
-    if (content) {
+    if (feeling === "content") {
       // Задоволений кіт мружиться: очі — дужки.
       g.lineStyle(1.6, COLORS.ink);
       for (const ox of [-2.6, 2.6]) g.beginPath().arc(ex + ox * s, y - 0.5 * s, 2 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
+    } else if (feeling === "reluctant") {
+      // Терпить: очі-щілинки.
+      g.lineStyle(1.8, COLORS.ink);
+      for (const ox of [-2.6, 2.6]) g.lineBetween(ex + ox * s - 2 * s, y - 1 * s, ex + ox * s + 2 * s, y - 1 * s);
+    } else if (feeling === "struggling") {
+      // Пручається: очі круглі, зіниці-цятки.
+      g.fillStyle(0xffffff).fillCircle(ex - 2.8 * s, y - 1 * s, 2.8 * s).fillCircle(ex + 2.8 * s, y - 1 * s, 2.8 * s);
+      g.lineStyle(1.2, COLORS.ink).strokeCircle(ex - 2.8 * s, y - 1 * s, 2.8 * s).strokeCircle(ex + 2.8 * s, y - 1 * s, 2.8 * s);
+      g.fillStyle(COLORS.ink).fillCircle(ex - 2.8 * s, y - 1 * s, 0.9 * s).fillCircle(ex + 2.8 * s, y - 1 * s, 0.9 * s);
     } else {
       g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, y - 1 * s, 2.2 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 2.2 * s);
       g.fillStyle(COLORS.ink).fillCircle(ex - 2.6 * s, y - 1 * s, 1 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 1 * s);
@@ -187,7 +211,8 @@ export class CatView {
   private ears(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, color: number): void {
     const shape = this.shape.ears;
     const big = shape === "large" || shape === "tufted" ? 1.3 : 1;
-    const folded = shape === "folded";
+    // Невдоволений чи переляканий кіт притискає вуха (§9.12).
+    const folded = shape === "folded" || this.feeling === "struggling" || this.feeling === "reluctant";
     g.fillStyle(color);
     for (const side of [-1, 1]) {
       const bx = x + side * 5 * s + dir;

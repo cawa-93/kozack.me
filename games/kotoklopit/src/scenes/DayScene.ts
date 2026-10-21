@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { hintLearned, useProgress, IDLE, type Input } from "../sim/actions";
+import { catFeeling, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
@@ -91,8 +91,6 @@ export class DayScene extends Phaser.Scene {
   private bubbles!: Bubbles;
   private storage!: StorageIndicators;
   private interaction!: Phaser.GameObjects.Graphics;
-  private hint!: Phaser.GameObjects.Container;
-  private hintText!: Phaser.GameObjects.Text;
   private hud!: Hud;
   private touch!: TouchControls;
   private keys!: Keys;
@@ -122,10 +120,6 @@ export class DayScene extends Phaser.Scene {
     this.bubbles = new Bubbles(this, world);
     this.storage = new StorageIndicators(this, world);
     this.interaction = this.add.graphics().setDepth(9_500).addToDisplayList(world);
-    this.hintText = this.add
-      .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "15px", fontStyle: "bold", color: "#2b2530", backgroundColor: "#fffaf2", padding: { x: 8, y: 4 }, resolution: 2 })
-      .setOrigin(0.5, 1);
-    this.hint = this.add.container(0, 0, [this.hintText]).setDepth(10_500).setVisible(false).addToDisplayList(world);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(15_000).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -453,40 +447,6 @@ export class DayScene extends Phaser.Scene {
     g.lineStyle(1.5, COLORS.ink).strokeEllipse(px, py, 11, 8);
   }
 
-  /**
-   * Підказка над першим котом (§11.3а): як погладити, а з вудкою в руках — як погратися. Зникає
-   * назавжди, щойно гравець спробує.
-   */
-  private showHint(): void {
-    const state = this.state;
-    const toy = state.character.held?.kind === "toy";
-    const hint = toy ? (hintLearned(state, "play") ? null : "play") : hintLearned(state, "pet") ? null : "pet";
-    const body = state.character.body;
-    let nearest: CatView | null = null;
-    let best = Infinity;
-    if (hint && state.trip === null && state.character.activity === null) {
-      for (const cat of state.cats) {
-        // Сховався під меблями — не видно, тож і підказки над ним немає; дорогою до схованки — є.
-        if (cat.away !== null || (cat.act.kind === "hide" && cat.act.goal === null) || (state.character.held?.kind === "cat" && state.character.held.cat === cat.id)) continue;
-        const d = Math.hypot(cat.x - body.x, cat.y - body.y);
-        const view = this.catViews.get(cat.id);
-        if (view && d < best) {
-          best = d;
-          nearest = view;
-        }
-      }
-    }
-    if (!hint || !nearest) {
-      this.hint.setVisible(false);
-      return;
-    }
-    const touch = window.matchMedia("(pointer: coarse)").matches;
-    const verb = hint === "play" ? "погратися" : "погладити";
-    this.hintText.setText(touch ? `Утримуйте дію поруч — ${verb}` : `Утримуйте пробіл поруч — ${verb}`);
-    // Вище за ім'я на нашийнику.
-    this.hint.setPosition(nearest.head.x, nearest.head.y - 24).setVisible(true);
-  }
-
   /** Скільки грошей бачила сцена: приріст показується над персонажем (§11.4). */
   private moneySeen: number | null = null;
   private earned = 0;
@@ -517,7 +477,6 @@ export class DayScene extends Phaser.Scene {
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.drawInteraction(time);
-    this.showHint();
     this.showEarnings(time);
     this.bubbles.update();
     this.viewport.follow(this.person.head, seconds);
@@ -553,7 +512,7 @@ export class DayScene extends Phaser.Scene {
       const carried = withPerson ? this.person.hands : null;
       const activity = state.character.activity;
       const interaction = (activity?.kind === "pet" || activity?.kind === "play") && activity.cat === cat.id ? activity.kind : null;
-      view.draw(state, cat, time, carried, interaction);
+      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat));
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);
     }

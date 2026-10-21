@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { catOnComputer, decide, tickCats } from "../src/sim/catai";
-import { hintLearned } from "../src/sim/actions";
 import { advance, interact, newGame } from "../src/sim/game";
 import { objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
@@ -62,7 +61,7 @@ describe("гра з котом (§8.2, §9.12)", () => {
     expect(events.some((e) => e.type === "played")).toBe(true);
   });
 
-  it("натиснути й утримати дію біля кота з вудкою — гра, вудка лишається в руках, підказку засвоєно", () => {
+  it("натиснути й утримати дію біля кота з вудкою — гра, вудка лишається в руках", () => {
     const save = game();
     const toy = save.current.home.items.find((i): i is ToyItem => i.kind === "toy");
     walkTo(save, `item:${toy?.id}`);
@@ -71,13 +70,11 @@ describe("гра з котом (§8.2, §9.12)", () => {
     const cat = withCat(save, {}, { x: body.x, y: body.y - 0.6 });
     cat.needs.play = 80;
     body.facing = { x: 0, y: -1 };
-    expect(hintLearned(save.current, "play")).toBe(false);
     // Натискання спрацьовує на початку утримання: вудка не має випасти.
     interact(save);
     expect(save.current.character.held?.kind).toBe("toy");
     advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
     expect(save.current.character.activity).toMatchObject({ kind: "play", cat: cat.id });
-    expect(hintLearned(save.current, "play")).toBe(true);
   });
 
   it("іграшка ламається після 15 ігор наодинці (дешева)", () => {
