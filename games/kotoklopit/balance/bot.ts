@@ -489,7 +489,10 @@ export class Bot {
   private holdFor(minutes: number): void {
     for (let spent = 0; spent < minutes; spent += HOLD_STEP) {
       advance(this.save, HOLD_STEP, { move: { x: 0, y: 0 }, hold: true });
-      if (this.state.character.activity === null && spent > 0) break;
+      // Гра й пестощі, що закінчилися, чекають, поки кнопку відпустять (§9.12).
+      const activity = this.state.character.activity;
+      const over = activity === null || (activity.kind === "play" && activity.done === true) || (activity.kind === "pet" && activity.bitten === true);
+      if (over && spent > 0) break;
     }
     advance(this.save, 0.01);
   }

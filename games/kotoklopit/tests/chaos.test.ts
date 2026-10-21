@@ -61,6 +61,33 @@ describe("гра з котом (§8.2, §9.12)", () => {
     expect(events.some((e) => e.type === "played")).toBe(true);
   });
 
+  it("кіт награвся — гра не починається знову, поки дію тримають; сплячого не будять щокадру", () => {
+    const save = game();
+    const toy = save.current.home.items.find((i): i is ToyItem => i.kind === "toy");
+    walkTo(save, `item:${toy?.id}`);
+    interact(save);
+    const body = save.current.character.body;
+    const cat = withCat(save, {}, { x: body.x, y: body.y - 0.6 });
+    body.facing = { x: 0, y: -1 };
+    // Сплячий кіт, що не хоче гратися: на вудку не зважає, настрій не падає.
+    cat.needs.play = 2;
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+    cat.mood = 50;
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 40; i++) advance(save, 0.1, { move: { x: 0, y: 0 }, hold: true });
+    expect(cat.mood).toBeGreaterThan(49);
+    expect(cat.act.kind).toBe("sleep");
+    // Кіт, що хоче гратися: одна гра до кінця, без перезапусків.
+    cat.needs.play = 40;
+    advance(save, 0.1, { move: { x: 0, y: 0 }, hold: false });
+    for (let i = 0; i < 80; i++) advance(save, 0.1, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(events.filter((e) => e.type === "played")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "cat-mood" && e.reason === "розбудили грою")).toHaveLength(1);
+    const activity = save.current.character.activity;
+    expect(activity?.kind === "play" && !activity.done).toBe(false);
+  });
+
   it("натиснути й утримати дію біля кота з вудкою — гра, вудка лишається в руках", () => {
     const save = game();
     const toy = save.current.home.items.find((i): i is ToyItem => i.kind === "toy");

@@ -454,7 +454,7 @@ export class DayScene extends Phaser.Scene {
   private drawInteraction(time: number): void {
     const g = this.interaction.clear();
     const activity = this.state.character.activity;
-    if ((activity?.kind !== "pet" || activity.bitten) && activity?.kind !== "play") return;
+    if ((activity?.kind !== "pet" || activity.bitten) && (activity?.kind !== "play" || activity.done)) return;
     const cat = this.catViews.get(activity.cat);
     if (!cat) return;
     const hand = this.person.hands;
@@ -543,7 +543,8 @@ export class DayScene extends Phaser.Scene {
       const carried = withPerson ? this.person.hands : null;
       const activity = state.character.activity;
       const petting = activity?.kind === "pet" && !activity.bitten;
-      const interaction = (petting || activity?.kind === "play") && activity?.cat === cat.id ? activity.kind : null;
+      const playing = activity?.kind === "play" && !activity.done;
+      const interaction = (petting || playing) && activity?.cat === cat.id ? activity.kind : null;
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat));
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);

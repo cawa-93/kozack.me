@@ -393,7 +393,7 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
     if (activity.minutes > petTolerance(cat)) return "struggling";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
-  if (activity?.kind === "play" && activity.cat === cat.id) return "content";
+  if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
   return null;
 }
 
@@ -573,6 +573,12 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     character.activity = null;
     return;
   }
+  if (activity.done) return;
+  // Кіт, що не хоче гратися, на вудку не зважає: ні радості, ні пробудження.
+  if (activity.minutes === 0 && cat.needs.play < PLAY.bored) {
+    activity.done = true;
+    return;
+  }
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
@@ -586,7 +592,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   cat.needs.play = Math.max(0, cat.needs.play - PLAY.needPerMinute * minutes);
   if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
   if (cat.needs.play < PLAY.bored) {
-    character.activity = null;
+    activity.done = true;
     cat.act = idleAct(0);
     emit(state, { type: "played", cat: cat.id, minutes: activity.minutes });
     observe(state, cat, "playful");

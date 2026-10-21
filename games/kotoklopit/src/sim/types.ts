@@ -107,6 +107,11 @@ export interface PlayActivity {
   kind: "play";
   cat: number;
   minutes: number;
+  /**
+   * Кіт награвся чи не хоче гратися: гра не почнеться знову, поки кнопку не відпустили (§9.12).
+   * Інакше утримання щокадру починало гру наново й щоразу будило кота.
+   */
+  done?: boolean;
 }
 
 export type Activity = WorkActivity | UseActivity | PetActivity | PlayActivity;
