@@ -4,7 +4,7 @@ import { catFeeling, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard } from "../sim/economy";
+import { discard, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
@@ -687,7 +687,7 @@ export class DayScene extends Phaser.Scene {
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : state.home.clothes <= 0 ? "dirty" : null);
+    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : state.home.clothes <= 0 ? "laundry" : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
@@ -743,6 +743,13 @@ export class DayScene extends Phaser.Scene {
     const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.personAnchor);
     switch (event.type) {
       case "refused": {
+        // Порожнє сховище показує, чого саме бракує: іконку запасу з нулем (§11.4).
+        const storage = event.reason === "empty" ? STORAGES.find((s) => s.object === event.object) : undefined;
+        const missing = storage?.products.find((p) => supplyCount(this.state, p) === 0);
+        if (missing) {
+          popAt(event.object, PRODUCT_ICONS[missing], 0);
+          break;
+        }
         const icon = REFUSAL_ICONS[event.reason];
         if (icon) popAt(event.object, icon);
         break;
