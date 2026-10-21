@@ -30,6 +30,7 @@ import {
   MISCHIEF,
   MOOD,
   NEED_PER_HOUR,
+  DIRTY_CLOTHES_CATS,
   DIRTY_LITTER,
   ENVY,
   FOOD_SOUND,
@@ -905,6 +906,16 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
 }
 
 /** Персонаж узяв на руки кота, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно. */
+/** Чистюля відходить від персонажа в брудному одязі (§9.12). */
+export function backAway(state: GameState, cat: Cat, from: Vec): void {
+  const dx = cat.x - from.x;
+  const dy = cat.y - from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const step = DIRTY_CLOTHES_CATS.backAway;
+  const spot = visibleFloorNear(state, { x: cat.x + (dx / length) * step, y: cat.y + (dy / length) * step });
+  start(cat, "wander", { x: Math.floor(spot.x), y: Math.floor(spot.y) }, CAT_ACT_MINUTES.wander);
+}
+
 export function separateFight(state: GameState, cat: Cat): void {
   if (cat.act.kind !== "fight") return;
   const other = catById(state, cat.act.target);

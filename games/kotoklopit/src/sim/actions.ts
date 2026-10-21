@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { bowlFull, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
+import { backAway, bowlFull, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { takeHumanMeds } from "./illness";
@@ -20,6 +20,7 @@ import {
   CLEAN_MESS_MINUTES,
   COOK_MINUTES,
   DIFFICULTY,
+  DIRTY_CLOTHES_CATS,
   EAT_MINUTES,
   ESCAPE,
   LITTER_SANITY,
@@ -99,6 +100,12 @@ export function tap(state: GameState): TapResult {
       return null;
     case "cat":
       if (held !== null) return refuse(state, target.id, "hands-full");
+      if (avoidsDirtyClothes(state, target.cat)) {
+        backAway(state, target.cat, state.character.body);
+        observe(state, target.cat, "litterPicky");
+        emit(state, { type: "cat-dodged", cat: target.cat.id, issue: "clothes" });
+        return null;
+      }
       pickUpCat(state, target.cat);
       return null;
   }
@@ -296,6 +303,11 @@ function take(state: GameState, object: HomeObject, item: Item): null {
   state.character.held = item;
   emit(state, { type: "took", object: object.id, item });
   return null;
+}
+
+/** Чистюля не йде на руки до персонажа в брудному одязі (§9.12). */
+export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
+  return state.home.clothes <= 0 && traitLevel(cat, "litterPicky") >= DIRTY_CLOTHES_CATS.picky;
 }
 
 /** Чи кіт зараз не хоче на руки: спить або не хоче уваги й не любить рук (§9.12). */

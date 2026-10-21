@@ -786,6 +786,9 @@ export class DayScene extends Phaser.Scene {
       case "picked-up":
         if (event.offended) popPerson("angry");
         break;
+      case "cat-dodged":
+        popAt(`cat:${event.cat}`, "laundry");
+        break;
       case "cat-refused-food":
         popAt(`cat:${event.cat}`, "angry");
         break;

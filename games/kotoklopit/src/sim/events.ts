@@ -91,6 +91,7 @@ export type GameEvent =
   | { type: "fed"; item: number; food: number }
   | { type: "watered"; item: number }
   | { type: "picked-up"; cat: number; offended: boolean }
+  | { type: "cat-dodged"; cat: number; issue: "clothes" }
   | { type: "put-down"; cat: number }
   | { type: "purr"; cat: number; enjoyed: boolean }
   | { type: "bite"; cat: number }

@@ -183,6 +183,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return "Долито воду";
     case "picked-up":
       return `На руках: ${catName(state, event.cat)}${event.offended ? " (проти волі)" : ""}`;
+    case "cat-dodged":
+      return `${catName(state, event.cat)} не йде на руки: брудний одяг`;
     case "put-down":
       return `Опущено: ${catName(state, event.cat)}`;
     case "bite":

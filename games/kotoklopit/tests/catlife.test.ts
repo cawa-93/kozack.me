@@ -294,6 +294,29 @@ describe("догляд персонажа (§9.12)", () => {
     interact(save);
     expect(save.current.character.held).toBeNull();
   });
+
+  it("чистюля не йде на руки в брудному одязі й відходить", () => {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    cat.traits.push({ group: "litterPicky", level: 1, seen: 0, known: false });
+    cat.act = { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 };
+    save.current.character.body.x = 4.5;
+    save.current.character.body.y = 8.2;
+    save.current.character.body.facing = { x: 0, y: -1 };
+    save.current.home.clothes = 0;
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(save.current.character.held).toBeNull();
+    expect(events).toContainEqual({ type: "cat-dodged", cat: cat.id, issue: "clothes" });
+    expect(cat.act.kind).toBe("wander");
+    expect(cat.act.goal?.y).toBeLessThan(7);
+    // Поблажливий кіт іде на руки й у брудному одязі.
+    cat.traits = [{ group: "litterPicky", level: -1, seen: 0, known: false }];
+    cat.act = { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 };
+    interact(save);
+    expect(save.current.character.held?.kind).toBe("cat");
+  });
 });
 
 describe("ніч із котами (§4, §8.8, §9.12)", () => {
