@@ -666,8 +666,9 @@ export class DayScene extends Phaser.Scene {
   private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): void {
     g.lineStyle(4, COLORS.highlight, alpha);
     if (target.type === "object") {
-      const { top } = this.view(target.id);
-      g.strokeRect(top.x - 2, top.y - 2, top.w + 4, top.h + 4);
+      const view = this.view(target.id);
+      const box = view.outline ?? view.top;
+      g.strokeRect(box.x - 2, box.y - 2, box.w + 4, box.h + 4);
       return;
     }
     if (target.type === "item") {

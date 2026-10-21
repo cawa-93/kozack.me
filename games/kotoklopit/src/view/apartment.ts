@@ -62,6 +62,11 @@ export interface ObjectView {
   top: { x: number; y: number; w: number; h: number };
   /** Точка над річчю для бабла. */
   anchor: { x: number; y: number };
+  /**
+   * Що обводить підсвітка цілі, якщо не верхню грань: сховища-фігури (мішок, бак, аптечка) стоять
+   * на підлозі, і рамка по «верхній грані» висіла б на стіні над ними.
+   */
+  outline?: { x: number; y: number; w: number; h: number };
   depth: number;
   /** Малюнок речі: сховище ховається, поки його немає в квартирі (§6.4). */
   graphics: Phaser.GameObjects.Graphics;
@@ -162,7 +167,12 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   const inset = 4;
   const top = { x: r.x + inset, y: r.y - height + inset, w: r.w - inset * 2, h: r.h - inset * 2 };
   // Мішок, бак і аптечку цілком малює `storagelook.ts`: їхня форма залежить від наповнення.
-  if (SHAPED_STORAGES.has(object.kind)) return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
+  if (SHAPED_STORAGES.has(object.kind)) {
+    // Фігура стоїть на підлозі клітинки: від її низу на висоту речі (ручка чи горловина — трохи вище).
+    const floor = top.y + top.h + height;
+    const outline = { x: top.x, y: floor - height - 8, w: top.w, h: height + 8 };
+    return { object, top, anchor: { x: top.x + top.w / 2, y: outline.y - 4 }, depth, graphics: g, outline };
+  }
   const fill = FILL[object.kind];
   // Лицьова грань і верхня грань.
   g.fillStyle(shade(fill, -0.25)).fillRect(top.x, top.y + top.h, top.w, height);

@@ -82,8 +82,17 @@ export class PersonView {
     g.fillStyle(hair);
     const style = ((look.hair % 4) + 4) % 4;
     if (back) {
+      // Зі спини видно лише волосся, і кожна зачіска — своя (§5.1): коротка — шапочка,
+      // довга — пасмо до плечей, хвостик — гумка й хвіст, кучері — кучерики довкола.
+      if (style === 1) g.fillRoundedRect(hx - face.w / 2 - 1, hy - 4, face.w + 2, face.h / 2 + 16, 6);
+      if (style === 3) for (const [dx, dy] of [[-10, -11], [-4, -13], [4, -13], [10, -11], [-13, -3], [13, -3], [-12, 5], [12, 5]] as const) g.fillCircle(hx + dx, hy + dy, 5);
       g.fillEllipse(hx, hy, face.w, face.h);
-      if (style === 2) g.fillCircle(hx, hy - 12, 6);
+      if (style === 2) {
+        g.fillEllipse(hx, hy + face.h / 2 + 6, 8, 16);
+        g.fillStyle(0xd9455f).fillCircle(hx, hy + face.h / 2 - 2, 3);
+      }
+      // Контур голови — поверх волосся, інакше потилиця зливається з тлом.
+      g.lineStyle(2.5, COLORS.ink).strokeEllipse(hx, hy, face.w, face.h);
     } else {
       g.fillEllipse(hx, hy - 8, face.w + 2, 11);
       if (style === 3) for (const dx of [-10, -4, 4, 10]) g.fillCircle(hx + dx, hy - 11, 5);
@@ -93,7 +102,7 @@ export class PersonView {
         .fillCircle(hx - 4 + body.facing.x * 4, hy + 1 + body.facing.y * 2, 1.8)
         .fillCircle(hx + 4 + body.facing.x * 4, hy + 1 + body.facing.y * 2, 1.8);
     }
-    if (style === 1) g.fillStyle(hair).fillRoundedRect(hx - face.w / 2 - 1, hy - 6, 6, 20, 3).fillRoundedRect(hx + face.w / 2 - 5, hy - 6, 6, 20, 3);
+    if (style === 1 && !back) g.fillStyle(hair).fillRoundedRect(hx - face.w / 2 - 1, hy - 6, 6, 20, 3).fillRoundedRect(hx + face.w / 2 - 5, hy - 6, 6, 20, 3);
     // Борода (§5.1): щетина — крапки, охайна — акуратна, неохайна — кошлата.
     if (!back && beard === "stubble") {
       g.fillStyle(hair, 0.7);
