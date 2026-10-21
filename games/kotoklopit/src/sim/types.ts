@@ -654,6 +654,8 @@ export interface GameState {
   rng: Record<RngStream, number>;
   lastNight: NightReport | null;
   end: GameEnd | null;
+  /** Підказки, які гравець уже спробував (§11.3а); у старих збереженнях поля немає. */
+  hints?: string[];
 }
 
 /** Збереження: поточний стан і знімки для перегравання (§6.1). */

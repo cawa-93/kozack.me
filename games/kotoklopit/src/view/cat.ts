@@ -65,11 +65,15 @@ export class CatView {
   }
 
   /** Намалювати кота: у руках персонажа — біля грудей, інакше — на підлозі. */
-  draw(state: GameState, cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null): void {
+  /**
+   * `interaction` — персонаж саме гладить кота чи грається з ним (§8.2): кіт муркоче й погойдується
+   * з заплющеними очима чи підстрибує й ловить лапками пір'їнку.
+   */
+  draw(state: GameState, cat: Cat, time: number, carriedAt: { x: number; y: number; depth: number } | null, interaction: "pet" | "play" | null = null): void {
     this.shape = cat.shape;
-    const pose = poseOf(cat, carriedAt !== null);
+    const pose = interaction ? "sit" : poseOf(cat, carriedAt !== null);
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
-    const key = pose === "walk" ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
+    const key = pose === "walk" || interaction ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -95,8 +99,11 @@ export class CatView {
     const dir = cat.facing >= 0 ? 1 : -1;
     const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
-    const x = feet.x;
-    const y = feet.y + bob;
+    // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
+    const jump = interaction === "play" ? -Math.abs(Math.sin(time / 130)) * 12 * scale : 0;
+    const sway = interaction === "pet" ? Math.sin(time / 280) * 1.5 : 0;
+    const x = feet.x + sway;
+    const y = feet.y + bob + jump;
     const body = this.coat.pointed ? POINT_BODY : PIGMENT[this.coat.base];
     const point = PIGMENT[this.coat.base];
     const stripe = shade(PIGMENT[this.coat.base], 0.72);
@@ -146,15 +153,17 @@ export class CatView {
         if (this.coat.tabby) this.stripes(g, x, y - 15 * s, 18 * s, stripe, false);
         if (this.coat.white >= 1) g.fillStyle(WHITE).fillEllipse(x + dir * 3 * s, y - 13 * s, 9 * s, 14 * s);
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 13 * s, 22 * s, 26 * s);
-        // Передні лапки.
-        g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s, y - 1, 6 * s, 4 * s).fillEllipse(x + 5 * s, y - 1, 6 * s, 4 * s);
-        this.headAt(g, hx, headY, s, dir, body, point);
+        // Передні лапки: у грі — догори, ловлять пір'їнку.
+        const paws = interaction === "play" ? y - 30 * s : y - 1;
+        const reach = interaction === "play" ? dir * 6 * s : 0;
+        g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws, 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws, 6 * s, 4 * s);
+        this.headAt(g, hx, headY, s, dir, body, point, interaction === "pet");
         return;
       }
     }
   }
 
-  private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number): void {
+  private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number, content = false): void {
     const r = 9 * s * (this.shape.muzzle === "long" ? 0.95 : 1);
     this.ears(g, x, y, s, dir, point);
     g.fillStyle(this.coat.pointed ? point : body).fillCircle(x, y, r);
@@ -163,8 +172,14 @@ export class CatView {
     g.lineStyle(2.5, COLORS.ink).strokeCircle(x, y, r);
     if (this.coat.long) g.lineStyle(2, COLORS.ink, 0.6).strokeCircle(x, y, r + 2.5 * s);
     const ex = x + dir * 3 * s;
-    g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, y - 1 * s, 2.2 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 2.2 * s);
-    g.fillStyle(COLORS.ink).fillCircle(ex - 2.6 * s, y - 1 * s, 1 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 1 * s);
+    if (content) {
+      // Задоволений кіт мружиться: очі — дужки.
+      g.lineStyle(1.6, COLORS.ink);
+      for (const ox of [-2.6, 2.6]) g.beginPath().arc(ex + ox * s, y - 0.5 * s, 2 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
+    } else {
+      g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, y - 1 * s, 2.2 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 2.2 * s);
+      g.fillStyle(COLORS.ink).fillCircle(ex - 2.6 * s, y - 1 * s, 1 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 1 * s);
+    }
     g.fillStyle(0xd88a8a).fillTriangle(ex - 1.4 * s, y + 2.5 * s, ex + 1.4 * s, y + 2.5 * s, ex, y + 4 * s);
     this.head = { x, y: y - r - 8 * s };
   }

@@ -81,6 +81,8 @@ export function tap(state: GameState): TapResult {
     putDownCat(state, held.cat);
     return null;
   }
+  // З іграшкою біля кота натискання нічого не робить: утримання тут же почне гру (§8.2).
+  if (held?.kind === "toy" && target?.type === "cat") return null;
   // Іграшку кладуть на підлогу будь-де, крім смітника.
   if (held?.kind === "toy" && (target === null || target.type !== "object" || target.object.kind !== "trash")) {
     dropToy(state);
@@ -369,6 +371,17 @@ function canPlay(state: GameState, target: Target): boolean {
   return target.type === "cat" && state.character.held?.kind === "toy";
 }
 
+/** Підказки, які гравець уже засвоїв (§11.3а): показуються, доки він сам не спробує. */
+export type Hint = "pet" | "play";
+
+export function hintLearned(state: GameState, hint: Hint): boolean {
+  return state.hints?.includes(hint) ?? false;
+}
+
+function learnHint(state: GameState, hint: Hint): void {
+  if (!hintLearned(state, hint)) state.hints = [...(state.hints ?? []), hint];
+}
+
 /** Частка виконаної тривалої дії 0–1 або null, якщо її немає. */
 export function useProgress(state: GameState): number | null {
   const activity = state.character.activity;
@@ -411,12 +424,15 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   if (activity === null) {
     const target = targetOf(state);
     if (target === null) return;
-    if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
-    else if (!canUse(state, target)) return;
+    if (canPlay(state, target) && target.type === "cat") {
+      character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
+      learnHint(state, "play");
+    } else if (!canUse(state, target)) return;
     // У душ заходять натисканням, а не утриманням.
     else if (target.type === "object" && target.object.kind === "shower") return;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
+      learnHint(state, "pet");
       jealousy(state, target.cat);
     } else character.activity = { kind: "use", target: target.id, progress: 0 };
   }
