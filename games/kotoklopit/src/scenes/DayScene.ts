@@ -1002,7 +1002,12 @@ export class DayScene extends Phaser.Scene {
           names[sex],
           (name) => {
             names[sex] = name;
-            this.overlay.show(difficultyCard((difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look, chronotype }))));
+            this.overlay.show(
+              difficultyCard(
+                (difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look, chronotype })),
+                () => pickName(sex, look, chronotype),
+              ),
+            );
           },
           () => pickChronotype(sex, look),
         ),

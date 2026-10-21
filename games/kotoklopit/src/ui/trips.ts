@@ -28,13 +28,16 @@ const BLOCKERS = {
 /** Куди поїхати (§8.5). */
 export function destinationCard(state: GameState, onPick: (d: Destination) => void, onCancel: () => void): Card {
   const list = element("div", "shop");
+  // Причину, через яку не можна їхати нікуди, кажуть один раз, а не в кожному рядку.
+  const everywhere = state.character.held?.kind === "cat" && tripBlocker(state, "shop") === "no-cat";
   for (const destination of Object.keys(TRIPS) as Destination[]) {
     const blocker = tripBlocker(state, destination);
     if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
-    name.append(element("span", "shop-stock", blocker ? BLOCKERS[blocker] : `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}`));
+    const note = blocker === null || (everywhere && blocker === "no-cat") ? `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
+    name.append(element("span", "shop-stock", note));
     row.append(name);
     const button = element("button", "button", "Їхати");
     button.disabled = blocker !== null;
@@ -45,12 +48,10 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   return {
     kicker: "Поїздка",
     title: "Куди поїхати?",
-    body: [
-      "Поки вас немає, коти вдома самі.",
-      list,
-    ],
-    actions: [{ label: "Залишитися вдома", primary: true, onSelect: onCancel }],
+    body: [...(everywhere ? ["З котом на руках — лише туди, де потрібен кіт."] : []), list],
+    actions: [],
     onDismiss: onCancel,
+    closable: true,
   };
 }
 

@@ -11,6 +11,10 @@
   color: #2b2530;
 }
 
+.overlay.solid {
+  background: rgb(20 16 24 / 0.94);
+}
+
 .overlay[hidden] {
   display: none;
 }
@@ -25,6 +29,55 @@
   border-radius: 18px;
   background: #f3e9dc;
   box-shadow: 0 8px 0 #1f1a24;
+}
+
+/* Хрестик у кутку: закриває картку, як Esc; липне до верху, коли вміст прокручують. */
+.card-close {
+  position: sticky;
+  top: -10px;
+  z-index: 2;
+  float: right;
+  width: 40px;
+  height: 40px;
+  margin: -12px -14px 0 8px;
+  border: 2px solid #1f1a24;
+  border-radius: 50%;
+  background: #fffaf2;
+  color: #2b2530;
+  font: 700 24px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.card-close:focus-visible {
+  outline: 3px solid #e8a33a;
+  outline-offset: 2px;
+}
+
+/* Вкладки (телефон): один компактний рядок угорі, прокручується вбік, якщо не вміщується. */
+.card-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 48px 12px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.card-tab {
+  flex: none;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 2px solid #1f1a24;
+  border-radius: 999px;
+  background: #fffaf2;
+  color: #2b2530;
+  font: 600 15px/1.2 system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Активна вкладка — жовта, а не темна: на темному тлі чорнильні іконки зникли б. */
+.card-tab.active {
+  background: #e8b93a;
 }
 
 .card-kicker {

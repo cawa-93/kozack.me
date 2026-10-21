@@ -192,27 +192,26 @@ export interface PhoneHandlers {
   close: () => void;
 }
 
-const PHONE_TABS: Record<PhoneTab, string> = { shop: "Магазин", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті", game: "Гра" };
+const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", game: "Гра" };
 
 /** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
 export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
-  if (tab === "shop") body.push("Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.", shopCatalog(state, "delivery", handlers.checkout));
-  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)} ₴.`, myThings(state, handlers));
+  if (tab === "shop" && waiting > 0) body.push(note(`🚗 У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
+  if (tab === "shop") body.push(shopCatalog(state, "delivery", handlers.checkout));
+  if (tab === "mine") body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
-  if (waiting > 0) body.push(note(`У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
+  // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту.
   return {
-    kicker: "Телефон",
-    title: PHONE_TABS[tab],
+    title: "",
+    tabs: (Object.keys(PHONE_TABS) as PhoneTab[]).map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
     body,
-    actions: [
-      ...(Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => t !== tab).map((t) => ({ label: PHONE_TABS[t], onSelect: () => handlers.tab(t) })),
-      { label: "Закрити", primary: true, onSelect: handlers.close },
-    ],
+    actions: [],
     onDismiss: handlers.close,
+    closable: true,
   };
 }
 
@@ -236,7 +235,8 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   box.append(fresh, save, load, input);
   const { name } = state.character;
   return [
-    `${name}, ${DIFFICULTY_TITLES[state.difficulty]}. Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.`,
+    `${name} · ${DIFFICULTY_TITLES[state.difficulty]}`,
+    "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.",
     box,
   ];
 }
@@ -256,7 +256,9 @@ export function breedText(breed: readonly [string, string], known: readonly [boo
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
-    const lines = [`${cat.name} — ${cat.sex === "male" ? "кіт" : "кішка"}, ${weeks(cat.ageWeeks)}`, `Порода: ${breedText(cat.breed, cat.breedKnown)}.`];
+    const lines = [`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`];
+    const breed = breedText(cat.breed, cat.breedKnown);
+    if (breed !== "невідома") lines.push(`Порода: ${breed}.`);
     const states: string[] = [];
     if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
     if (cat.pregnancy?.known) states.push("вагітна");
@@ -276,10 +278,10 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
         if (signs) lines.push(`Здається, ${cat.name} ${trait.level > 0 ? signs[0] : signs[1]}.`);
       } else if (seen === 1) lines.push("❓ Помічено щось дивне");
     }
-    if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер поки загадка: придивляйтеся.");
+    if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
     const card = note(...lines);
     if (cat.ageWeeks >= 1 && !state.ads.includes(cat.id)) {
-      const ad = element("button", "button", "Дати оголошення «віддам у добрі руки»");
+      const ad = element("button", "button", "Віддати в добрі руки");
       ad.style.marginTop = "8px";
       ad.addEventListener("click", () => handlers.advertise(cat));
       card.append(ad);
@@ -347,8 +349,9 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     body: [
       "Кіт насторожено дивиться на аптечку.",
     ],
-    actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
+    actions,
     onDismiss: onCancel,
+    closable: true,
   };
 }
 
@@ -390,8 +393,9 @@ export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "
     kicker: "Ванна",
     title: "Умивальник",
     body: [words[look]],
-    actions: [...actions, { label: "Скасувати", onSelect: onCancel }],
+    actions,
     onDismiss: onCancel,
+    closable: true,
   };
 }
 
@@ -400,6 +404,7 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
   const { name } = state.character;
   return {
     kicker: "Котоклопіт",
+    solid: true,
     title: "Котоклопіт",
     body: [`Збережена гра: ${name}, тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)]}.`],
     actions: [
@@ -421,11 +426,12 @@ export function sexCard(looks: Record<Sex, Look>, onPick: (sex: Sex) => void, on
     choice.append(button);
   }
   return {
-    kicker: "Нова гра · 1 з 4",
+    kicker: "Нова гра · 1 з 5",
+    solid: true,
     title: "Хто ви?",
     body: [choice],
-    actions: onCancel ? [{ label: "Скасувати", onSelect: onCancel }] : [],
-    ...(onCancel ? { onDismiss: onCancel } : {}),
+    actions: [],
+    ...(onCancel ? { onDismiss: onCancel, closable: true } : {}),
   };
 }
 
@@ -471,7 +477,8 @@ export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, on
   }
   editor.append(canvas, sliders);
   return {
-    kicker: "Нова гра · 2 з 4",
+    kicker: "Нова гра · 2 з 5",
+    solid: true,
     title: sex === "female" ? "Яка вона?" : "Який він?",
     body: [editor],
     actions: [
@@ -485,7 +492,8 @@ export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, on
 /** Крок 3: сова чи жайворонок (§5.1) — незалежно від статі. */
 export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
   return {
-    kicker: "Нова гра · 3 з 4",
+    kicker: "Нова гра · 3 з 5",
+    solid: true,
     title: "Сова чи жайворонок?",
     body: [
       "Жайворонок прокидається рано й найбадьоріший зранку.",
@@ -509,7 +517,8 @@ export function nameCard(sex: Sex, start: string, onDone: (name: string) => void
   input.className = "button name-input";
   input.setAttribute("aria-label", "Ім'я");
   return {
-    kicker: "Нова гра · 4 з 4",
+    kicker: "Нова гра · 4 з 5",
+    solid: true,
     title: sex === "female" ? "Як її звати?" : "Як його звати?",
     body: [input],
     actions: [
@@ -520,15 +529,21 @@ export function nameCard(sex: Sex, start: string, onDone: (name: string) => void
   };
 }
 
-export function difficultyCard(onPick: (difficulty: Difficulty) => void): Card {
+/** Створення персонажа (§5.2), крок 5: складність. */
+export function difficultyCard(onPick: (difficulty: Difficulty) => void, onBack: () => void): Card {
   return {
-    kicker: "Нова гра",
+    kicker: "Нова гра · 5 з 5",
+    solid: true,
     title: "Складність",
     body: ["Змінити її потім не вийде."],
-    actions: (["easy", "normal", "hard"] as const).map((difficulty) => ({
-      label: DIFFICULTY_TITLES[difficulty],
-      primary: difficulty === "normal",
-      onSelect: () => onPick(difficulty),
-    })),
+    actions: [
+      ...(["easy", "normal", "hard"] as const).map((difficulty) => ({
+        label: DIFFICULTY_TITLES[difficulty],
+        primary: difficulty === "normal",
+        onSelect: () => onPick(difficulty),
+      })),
+      { label: "Назад", onSelect: onBack },
+    ],
+    onDismiss: onBack,
   };
 }

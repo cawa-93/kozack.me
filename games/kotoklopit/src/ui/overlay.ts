@@ -12,14 +12,27 @@ export interface CardAction {
   onSelect: () => void;
 }
 
+/** Вкладка картки: компактний рядок угорі замість кнопок унизу. */
+export interface CardTab {
+  label: string;
+  active?: boolean;
+  onSelect: () => void;
+}
+
 export interface Card {
   kicker?: string;
+  /** Порожній заголовок не показується: так картка з вкладками економить висоту. */
   title: string;
+  tabs?: CardTab[];
   /** Абзаци тексту або готові елементи. */
   body: (string | HTMLElement)[];
   actions: CardAction[];
   /** Esc закриває картку. */
   onDismiss?: () => void;
+  /** Хрестик у кутку замість кнопки «Скасувати» чи «Закрити»; натискання — як Esc. */
+  closable?: boolean;
+  /** Темне тло: гра ще не почалася (меню, нова гра), тож квартиру за карткою не видно. */
+  solid?: boolean;
 }
 
 /** Розділ титулки дня: заголовок (тиждень, день) і блоки — кожен із кількох рядків, перший головний. */
@@ -137,14 +150,36 @@ export class Overlay {
   show(card: Card): void {
     this.card = card;
     this.root.classList.remove("cinematic", "dawn");
+    this.root.classList.toggle("solid", card.solid ?? false);
     const panel = element("section", "card");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
+    if (card.closable && card.onDismiss) {
+      const dismiss = card.onDismiss;
+      const close = element("button", "card-close", "×");
+      close.setAttribute("aria-label", "Закрити");
+      close.addEventListener("click", () => dismiss());
+      panel.append(close);
+    }
     if (card.kicker) panel.append(element("p", "card-kicker", card.kicker));
-    const title = element("h2", "card-title", card.title);
-    title.id = "card-title";
-    panel.setAttribute("aria-labelledby", title.id);
-    panel.append(title);
+    if (card.title) {
+      const title = element("h2", "card-title", card.title);
+      title.id = "card-title";
+      panel.setAttribute("aria-labelledby", title.id);
+      panel.append(title);
+    }
+    if (card.tabs) {
+      const tabs = element("div", "card-tabs");
+      tabs.setAttribute("role", "tablist");
+      for (const tab of card.tabs) {
+        const button = element("button", tab.active ? "card-tab active" : "card-tab", tab.label);
+        button.setAttribute("role", "tab");
+        button.setAttribute("aria-selected", String(tab.active ?? false));
+        button.addEventListener("click", () => tab.onSelect());
+        tabs.append(button);
+      }
+      panel.append(tabs);
+    }
     for (const part of card.body) {
       if (typeof part !== "string") panel.append(part);
       else for (const paragraph of part.split("\n\n")) panel.append(element("p", "card-text", paragraph));
@@ -156,7 +191,7 @@ export class Overlay {
       button.addEventListener("click", () => action.onSelect());
       actions.append(button);
     }
-    panel.append(actions);
+    if (card.actions.length > 0) panel.append(actions);
     drawGlyphs(panel);
     this.root.replaceChildren(panel);
     this.root.hidden = false;

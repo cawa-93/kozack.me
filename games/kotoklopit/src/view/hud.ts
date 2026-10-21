@@ -66,9 +66,15 @@ export class Hud {
       .addToDisplayList(layer);
     this.date = text(20, 5, 17, MUTED);
     this.clock = text(20, 26, 36).setFontStyle("bold");
-    const labels = STATS.map((stat, i) =>
-      scene.add.image(STATS_X + i * STATS_STEP + ICON_SIZE / 2, BAR_Y + BAR_HEIGHT / 2, `icon-${stat.icon}`).setDisplaySize(ICON_SIZE, ICON_SIZE),
-    );
+    // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка.
+    const labels = STATS.flatMap((stat, i) => {
+      const x = STATS_X + i * STATS_STEP + ICON_SIZE / 2;
+      const y = BAR_Y + BAR_HEIGHT / 2;
+      return [
+        scene.add.circle(x, y, ICON_SIZE / 2 + 2, COLORS.paper).setStrokeStyle(2, COLORS.ink),
+        scene.add.image(x, y, `icon-${stat.icon}`).setDisplaySize(ICON_SIZE - 2, ICON_SIZE - 2),
+      ];
+    });
     this.bars = scene.add.graphics();
     this.effects = text(STATS_X, 44, 18, "#e8a33a");
     this.money = text(866, 20, 30).setFontStyle("bold");

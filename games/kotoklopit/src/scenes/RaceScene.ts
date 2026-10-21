@@ -167,7 +167,7 @@ export class RaceScene extends Phaser.Scene {
     }
     this.label
       .setPosition(safe.left + 20, safe.top + 16)
-      .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · швидкість ×${race.speed.toFixed(1)}`);
+      .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · ×${race.speed.toFixed(1).replace(".", ",")}`);
   }
 
   private car(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, color: number): void {
