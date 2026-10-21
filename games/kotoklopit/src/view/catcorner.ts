@@ -110,12 +110,13 @@ function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void 
   const stocked = supplyCount(state, "catFood") > 0;
   for (const bowl of feederBowls(state)) {
     const { x, y } = itemScreen(bowl);
-    const top = y - 46;
-    g.fillStyle(appliances.feeder === "premium" ? 0xe9e4da : 0xc9ccd0).fillRoundedRect(x - 11, top, 22, 34, 5);
-    g.fillStyle(0x2b2530, 0.25).fillRoundedRect(x - 7, top + 6, 14, 16, 3);
-    if (stocked) g.fillStyle(KIBBLE.cheap).fillRoundedRect(x - 7, top + 12, 14, 10, 3);
-    g.fillStyle(0x8c9aa6).fillRect(x - 3, top + 34, 6, 6);
-    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 11, top, 22, 34, 5).strokeRect(x - 3, top + 34, 6, 6);
+    // Бункер — у межах клітинки миски: позаду неї може стояти ще одна миска.
+    const top = y - 24;
+    g.fillStyle(appliances.feeder === "premium" ? 0xe9e4da : 0xc9ccd0).fillRoundedRect(x - 10, top, 20, 20, 4);
+    g.fillStyle(0x2b2530, 0.25).fillRoundedRect(x - 6, top + 4, 12, 10, 3);
+    if (stocked) g.fillStyle(KIBBLE.cheap).fillRoundedRect(x - 6, top + 8, 12, 6, 2);
+    g.fillStyle(0x8c9aa6).fillRect(x - 3, top + 20, 6, 4);
+    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 10, top, 20, 20, 4).strokeRect(x - 3, top + 20, 6, 4);
   }
   if (appliances.robot) {
     const dock = toScreen(ROBOT_DOCK);

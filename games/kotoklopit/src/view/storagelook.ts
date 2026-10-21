@@ -186,8 +186,9 @@ function bottle(g: G, x: number, y: number, color: number, s: FillStage): void {
 function shelf(g: G, t: Rect, y0: number, stages: Stages): void {
   const [gel, shampoo] = stages;
   if (gel === null && shampoo === null) return;
-  const sx = t.x + t.w + 2;
-  const sy = y0 + 10;
+  // Поличка — усередині кабіни, біля задньої стінки: сховище душу на його ж клітинці, а не на сусідній.
+  const sx = t.x + t.w - 24;
+  const sy = y0 + 12;
   g.fillStyle(0x8b5e3c).fillRect(sx - 2, sy, 20, 3);
   if (gel !== null && gel !== undefined) bottle(g, sx + 4, sy, 0x5fa8d3, gel);
   if (shampoo !== null && shampoo !== undefined) bottle(g, sx + 14, sy, 0xd98fb8, shampoo);
