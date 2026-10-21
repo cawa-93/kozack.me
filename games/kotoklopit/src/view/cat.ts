@@ -110,8 +110,9 @@ export class CatView {
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
     // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.
-    // Розмір породи (§9.11) — ±6% за одиницю; новонароджені зовсім крихітні.
-    const age = cat.ageWeeks === 0 ? 0.55 : isKitten(cat) ? 0.78 : 1;
+    // Розмір породи (§9.11) — ±6% за одиницю. Кошеня помітно менше й підростає щотижня:
+    // новонароджене — 0,4 дорослого, тижневе — 0,55, двотижневе — 0,65 (правка автора 2026-10-21).
+    const age = cat.ageWeeks === 0 ? 0.4 : isKitten(cat) ? 0.45 + 0.1 * cat.ageWeeks : 1;
     const size = 1 + 0.06 * traitLevel(cat, "size");
     const scale = 1.25 * age * size * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
     const dir = cat.facing >= 0 ? 1 : -1;
