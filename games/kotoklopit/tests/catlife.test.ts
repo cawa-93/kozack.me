@@ -12,7 +12,7 @@ import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
-import type { BowlItem, Cat, LitterItem, Save, WaterItem } from "../src/sim/types";
+import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -293,6 +293,58 @@ describe("догляд персонажа (§9.12)", () => {
     expect(cat.love).toBeLessThan(love);
     interact(save);
     expect(save.current.character.held).toBeNull();
+  });
+
+  it("на руках: «Коліночний» радіє, без риси — терпить, «Не чіпай мене» пручається", () => {
+    const moodAfter = (lap: TraitLevel | 0): { mood: number; attention: number; feeling: string | null } => {
+      const save = game();
+      const cat = withCat(save);
+      if (lap !== 0) cat.traits.push({ group: "lap", level: lap, seen: 0, known: false });
+      cat.mood = 50;
+      cat.needs.attention = 60;
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      const feeling = catFeeling(save.current, cat);
+      tickCats(save.current, 1, { present: true });
+      return { mood: cat.mood, attention: cat.needs.attention, feeling };
+    };
+    const lover = moodAfter(2);
+    const neutral = moodAfter(0);
+    const hater = moodAfter(-2);
+    expect(lover.feeling).toBe("content");
+    expect(neutral.feeling).toBe("reluctant");
+    expect(hater.feeling).toBe("struggling");
+    expect(lover.mood).toBeCloseTo(neutral.mood + 1);
+    expect(hater.mood).toBeCloseTo(neutral.mood - 1);
+    expect(lover.attention).toBeLessThan(neutral.attention);
+  });
+
+  it("хто пручається — кусає тим частіше, чим менше любить руки; іноді вирветься й утече", () => {
+    const bites = (lap: TraitLevel | 0): { bites: number; escapes: number } => {
+      let bites = 0;
+      let escapes = 0;
+      for (let seed = 0; seed < 60; seed++) {
+        const save = game();
+        save.current.rng.behavior = seed;
+        const cat = withCat(save);
+        if (lap !== 0) cat.traits.push({ group: "lap", level: lap, seen: 0, known: false });
+        save.current.character.held = { kind: "cat", cat: cat.id, offended: true };
+        const { events, stop } = recordEvents();
+        for (let i = 0; i < 5 && save.current.character.held !== null; i++) tickCats(save.current, 1, { present: true });
+        stop();
+        bites += events.filter((e) => e.type === "bite").length;
+        if (events.some((e) => e.type === "cat-broke-free")) {
+          escapes += 1;
+          expect(save.current.character.held).toBeNull();
+          expect(cat.act.kind).toBe("hide");
+        }
+      }
+      return { bites, escapes };
+    };
+    const offended = bites(0);
+    const hater = bites(-2);
+    expect(hater.bites).toBeGreaterThan(offended.bites);
+    expect(hater.escapes).toBeGreaterThan(0);
+    expect(hater.escapes).toBeLessThan(hater.bites);
   });
 
   it("чистюля не йде на руки в брудному одязі й відходить", () => {

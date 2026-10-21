@@ -12,6 +12,7 @@ import {
   APPETITE_STEP,
   BREEDING,
   BOWL_CAPACITY,
+  CARRY,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
@@ -39,6 +40,7 @@ import {
   NIGHT_ACTIVITY,
   NOCTURNAL_STEP,
   OLD_PLAY,
+  PET,
   PICKY_REFUSAL_STEP,
   PLAY_RELIEF,
   PORTION_HUNGER,
@@ -789,6 +791,43 @@ function returnFromStairs(state: GameState, cat: Cat): void {
   emit(state, { type: "cat-returned", cat: cat.id, caught: false });
 }
 
+/** Що відчуває кіт на руках (§9.12, «Коліна»): любить руки, терпить чи пручається. */
+export function carryFeeling(state: GameState, cat: Cat): "content" | "reluctant" | "struggling" {
+  const held = state.character.held;
+  const lap = traitLevel(cat, "lap");
+  if (lap < 0 || (held?.kind === "cat" && held.offended === true)) return "struggling";
+  return lap > 0 ? "content" : "reluctant";
+}
+
+/**
+ * Хвилини на руках (§9.12): хто любить руки — настрій і менше потреби в увазі; хто пручається —
+ * настрій падає, кіт може вкусити, а після укусу — вирватися й утекти ховатися.
+ */
+function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
+  const lap = traitLevel(cat, "lap");
+  const feeling = carryFeeling(state, cat);
+  if (feeling === "content") {
+    changeMood(state, cat, CARRY.mood * lap * minutes);
+    cat.needs.attention = Math.max(0, cat.needs.attention - CARRY.attention * minutes);
+    return;
+  }
+  if (feeling === "reluctant") return;
+  const dislike = Math.max(0, -lap);
+  changeMood(state, cat, CARRY.struggleMood * Math.max(1, dislike) * minutes);
+  if (!rng.chance(1 - (1 - (CARRY.bite + CARRY.biteStep * dislike)) ** minutes)) return;
+  changeStat(state, "health", PET.biteHealth);
+  emit(state, { type: "bite", cat: cat.id });
+  observe(state, cat, "lap");
+  if (!rng.chance(CARRY.escape)) return;
+  state.character.held = null;
+  const at = visibleFloorNear(state, state.character.body);
+  cat.x = at.x;
+  cat.y = at.y;
+  const spot = hideSpot(state, rng);
+  start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+  emit(state, { type: "cat-broke-free", cat: cat.id });
+}
+
 /** Хвилини життя одного кота. */
 function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   grow(state, cat, minutes, rng);
@@ -799,7 +838,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     if (cat.away === "stairs" && state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
     return;
   }
-  if (isCarried(state, cat)) return;
+  if (isCarried(state, cat)) return carried(state, cat, minutes, rng);
   if (isNewborn(cat)) return nurse(state, cat);
   revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.

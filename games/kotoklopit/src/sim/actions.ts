@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { backAway, bowlFull, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
+import { backAway, bowlFull, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { takeHumanMeds } from "./illness";
@@ -388,7 +388,7 @@ export type CatFeeling = "content" | "reluctant" | "struggling";
 
 export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   const { held, activity } = state.character;
-  if (held?.kind === "cat" && held.cat === cat.id) return held.offended ? "struggling" : "content";
+  if (held?.kind === "cat" && held.cat === cat.id) return carryFeeling(state, cat);
   if (activity?.kind === "pet" && activity.cat === cat.id) {
     if (activity.minutes > petTolerance(cat)) return "struggling";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
