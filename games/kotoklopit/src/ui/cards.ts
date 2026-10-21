@@ -64,7 +64,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const beard = sex === "male" ? beardLook(state) : null;
   if (beard === "stubble" || beard === "unkempt") dayBlocks.push([BEARD_TEXTS[beard]]);
 
-  const events: string[][] = [];
+  const events: (string | HTMLElement)[][] = [];
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
     events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name })]);
@@ -82,13 +82,14 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    events.push([`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`]);
+    events.push([`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`]);
+    // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику.
+    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {

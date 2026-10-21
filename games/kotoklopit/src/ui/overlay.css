@@ -66,6 +66,31 @@
   display: none;
 }
 
+/* Риси на чорній титулці (прощання): світлі контури замість паперових чипів. */
+.title-screen .traits {
+  margin-top: 8px;
+}
+
+.title-screen .trait-row {
+  justify-content: center;
+}
+
+.title-screen .trait {
+  border-color: #7a6a78;
+  background: transparent;
+  color: #f3e9dc;
+}
+
+.title-screen .trait.active {
+  border-color: #e8b93a;
+  background: #e8b93a;
+  color: #1f1a24;
+}
+
+.title-screen .trait-about {
+  color: #b9adb8;
+}
+
 /* Хрестик у кутку: закриває картку, як Esc; липне до верху, коли вміст прокручують. */
 .card-close {
   position: sticky;

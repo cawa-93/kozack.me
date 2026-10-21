@@ -38,7 +38,8 @@ export interface Card {
 /** Розділ титулки дня: заголовок (тиждень, день) і блоки — кожен із кількох рядків, перший головний. */
 export interface TitleSection {
   heading?: string;
-  blocks: string[][];
+  /** Рядки блоку; готовий елемент (як-от риси кота на прощанні) стоїть окремим рядком. */
+  blocks: (string | HTMLElement)[][];
 }
 
 /** Ритм титулки (секунди): затемнення, заголовок, кожен наступний рядок, пауза між розділами. */
@@ -79,7 +80,7 @@ export class Overlay {
       }
       for (const block of section.blocks) {
         const box = element("div", block.length > 1 ? "title-block" : "title-block single");
-        block.forEach((line, i) => box.append(element("p", i === 0 ? "title-line main" : "title-line", line)));
+        block.forEach((line, i) => box.append(typeof line === "string" ? element("p", i === 0 ? "title-line main" : "title-line", line) : line));
         reveal(box, delay);
         delay += TITLE_TIMING.line * block.length;
       }

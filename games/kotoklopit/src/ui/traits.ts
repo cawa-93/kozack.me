@@ -28,7 +28,11 @@ export function traitChips(traits: readonly Pick<Trait, "group" | "level">[], se
     chip.type = "button";
     const text = traitAbout(trait, sex);
     chip.addEventListener("mouseenter", () => show(chip, text));
-    chip.addEventListener("click", () => show(chip, text));
+    // Натискання не йде далі: на титулці воно інакше закрило б її.
+    chip.addEventListener("click", (event) => {
+      event.stopPropagation();
+      show(chip, text);
+    });
     row.append(chip);
   }
   box.append(row, about);
