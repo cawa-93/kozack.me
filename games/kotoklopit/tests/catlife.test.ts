@@ -280,6 +280,26 @@ describe("догляд персонажа (§9.12)", () => {
     expect(events.some((e) => e.type === "bite")).toBe(true);
   });
 
+  it("після укусу кіт відходить, а утримання не починає пестощі знову", () => {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    cat.needs.attention = 90;
+    cat.traits.push({ group: "petting", level: -2, seen: 0, known: false });
+    save.current.character.body.x = 4.5;
+    save.current.character.body.y = 8.2;
+    save.current.character.body.facing = { x: 0, y: -1 };
+    const { events, stop } = recordEvents();
+    const feelings = new Set<string | null>();
+    for (let i = 0; i < 20; i++) {
+      advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+      if (events.some((e) => e.type === "bite")) feelings.add(catFeeling(save.current, cat));
+    }
+    stop();
+    expect(events.filter((e) => e.type === "bite")).toHaveLength(1);
+    expect(feelings.has("content")).toBe(false);
+    expect(cat.act.kind).toBe("wander");
+  });
+
   it("кота беруть на руки й опускають; сонного це ображає", () => {
     const save = game();
     const cat = withCat(save, { x: 4.5, y: 7.6 });

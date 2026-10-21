@@ -49,6 +49,10 @@ export class CatView {
   private readonly coat: Coat;
   /** Точка над котом для баблів. */
   head = { x: 0, y: 0 };
+  /** Спинка сидячого кота: тут його гладить рука (§9.12). */
+  back = { x: 0, y: 0 };
+  /** Хвіст смикається, коли котові не до вподоби: −1…1. */
+  private lash = 0;
   /** Що намальовано зараз: якщо нічого не змінилося, кадр не перемальовує кота. */
   private drawn: string | null = null;
 
@@ -85,6 +89,7 @@ export class CatView {
     this.shape = cat.shape;
     const pose = interaction ? "sit" : poseOf(cat, carriedAt !== null);
     this.feeling = feeling;
+    this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const key = pose === "walk" || interaction || feeling ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
     if (key !== null && key === this.drawn) return;
@@ -172,6 +177,7 @@ export class CatView {
         const reach = interaction === "play" ? dir * 6 * s : 0;
         g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws, 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws, 6 * s, 4 * s);
         this.headAt(g, hx + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY, s, dir, body, point);
+        this.back = { x: x - dir * 4 * s, y: y - 22 * s };
         return;
       }
     }
@@ -192,9 +198,13 @@ export class CatView {
       g.lineStyle(1.6, COLORS.ink);
       for (const ox of [-2.6, 2.6]) g.beginPath().arc(ex + ox * s, y - 0.5 * s, 2 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
     } else if (feeling === "reluctant") {
-      // Терпить: очі-щілинки.
-      g.lineStyle(1.8, COLORS.ink);
-      for (const ox of [-2.6, 2.6]) g.lineBetween(ex + ox * s - 2 * s, y - 1 * s, ex + ox * s + 2 * s, y - 1 * s);
+      // Терпить: сердито примружений — видно колір очей, а повіки навскіс, до носа нижче.
+      for (const side of [-1, 1]) {
+        const cx = ex + side * 2.6 * s;
+        g.fillStyle(EYES[this.coat.eyes]).fillEllipse(cx, y - 0.4 * s, 4.4 * s, 2.6 * s);
+        g.fillStyle(COLORS.ink).fillCircle(cx, y - 0.2 * s, 0.9 * s);
+        g.lineStyle(1.8, COLORS.ink).lineBetween(cx - side * 2.6 * s, y - 0.8 * s, cx + side * 2.4 * s, y - 2.8 * s);
+      }
     } else if (feeling === "struggling") {
       // Пручається: очі круглі, зіниці-цятки.
       g.fillStyle(0xffffff).fillCircle(ex - 2.8 * s, y - 1 * s, 2.8 * s).fillCircle(ex + 2.8 * s, y - 1 * s, 2.8 * s);
@@ -233,7 +243,7 @@ export class CatView {
     const color = this.coat.pointed ? PIGMENT[this.coat.base] : PIGMENT[this.coat.second ?? this.coat.base];
     g.lineStyle(width, color);
     const tx = x - dir * 12 * s * length;
-    const ty = up ? y - 16 * s * length : y + 2;
+    const ty = up ? y - 16 * s * length : y + 2 - (this.lash + 1) * 5 * s * length;
     g.beginPath().moveTo(x, y).lineTo((x + tx) / 2 - dir * 2 * s, (y + ty) / 2).lineTo(tx, ty).strokePath();
   }
 

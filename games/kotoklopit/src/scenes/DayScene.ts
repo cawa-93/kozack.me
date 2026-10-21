@@ -450,7 +450,7 @@ export class DayScene extends Phaser.Scene {
   private drawInteraction(time: number): void {
     const g = this.interaction.clear();
     const activity = this.state.character.activity;
-    if (activity?.kind !== "pet" && activity?.kind !== "play") return;
+    if ((activity?.kind !== "pet" || activity.bitten) && activity?.kind !== "play") return;
     const cat = this.catViews.get(activity.cat);
     if (!cat) return;
     const hand = this.person.hands;
@@ -463,11 +463,11 @@ export class DayScene extends Phaser.Scene {
       g.fillStyle(0xd9455f).fillEllipse(fx, fy + 4, 6, 12).fillStyle(0x5fa8d3).fillEllipse(fx - 4, fy + 6, 5, 10).fillStyle(0xe8b93a).fillEllipse(fx + 4, fy + 6, 5, 10);
       return;
     }
-    // Рука ходить по спинці кота туди-сюди.
+    // Рука ходить по спинці кота туди-сюди, не закриваючи морди.
     const skins = PALETTE.skin;
     const skin = skins[((this.state.character.look.skin % skins.length) + skins.length) % skins.length] ?? skins[0];
-    const px = cat.head.x + Math.sin(time / 260) * 7;
-    const py = cat.head.y + 16;
+    const px = cat.back.x + Math.sin(time / 260) * 5;
+    const py = cat.back.y;
     g.lineStyle(6, skin).lineBetween(hand.x, hand.y, px, py);
     g.fillStyle(skin).fillEllipse(px, py, 11, 8);
     g.lineStyle(1.5, COLORS.ink).strokeEllipse(px, py, 11, 8);
@@ -537,7 +537,8 @@ export class DayScene extends Phaser.Scene {
       const withPerson = (held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap";
       const carried = withPerson ? this.person.hands : null;
       const activity = state.character.activity;
-      const interaction = (activity?.kind === "pet" || activity?.kind === "play") && activity.cat === cat.id ? activity.kind : null;
+      const petting = activity?.kind === "pet" && !activity.bitten;
+      const interaction = (petting || activity?.kind === "play") && activity?.cat === cat.id ? activity.kind : null;
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat));
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);

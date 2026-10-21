@@ -389,7 +389,7 @@ export type CatFeeling = "content" | "reluctant" | "struggling";
 export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   const { held, activity } = state.character;
   if (held?.kind === "cat" && held.cat === cat.id) return carryFeeling(state, cat);
-  if (activity?.kind === "pet" && activity.cat === cat.id) {
+  if (activity?.kind === "pet" && activity.cat === cat.id && !activity.bitten) {
     if (activity.minutes > petTolerance(cat)) return "struggling";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
@@ -521,6 +521,8 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     character.activity = null;
     return;
   }
+  // Вкушений кіт відходить; рука чекає, поки кнопку відпустять.
+  if (activity.bitten) return;
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
@@ -545,8 +547,8 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   const trap = traitLevel(cat, "petting") <= -2;
   if (trap || rng.chance(1 - (1 - PET.biteChancePerMinute) ** minutes)) {
     changeStat(state, "health", PET.biteHealth);
-    character.activity = null;
-    cat.act = idleAct(0);
+    activity.bitten = true;
+    backAway(state, cat, character.body);
     emit(state, { type: "bite", cat: cat.id });
     observe(state, cat, "petting");
   }
