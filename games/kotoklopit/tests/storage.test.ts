@@ -10,6 +10,7 @@ import { targetById } from "../src/sim/targets";
 import { addSupply, fitsStorage, order } from "../src/sim/economy";
 import { giveStarterPack } from "../src/sim/night";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
+import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
 import { walkTo } from "./helpers";
 
@@ -109,5 +110,20 @@ describe("сховища (§6.4)", () => {
     // Другий пакет нових речей не додає: вони вже є.
     giveStarterPack(state);
     expect(state.home.items).toHaveLength(3);
+  });
+
+  it("вміст видно лише тоді, коли сховище в фокусі; з душової кабіни — нічого", () => {
+    const save = game();
+    const state = save.current;
+    walkTo(save, "shower");
+    expect(storageIndicator(state, storage("shower"))).toHaveLength(1);
+    // Поруч, але повернутий до іншої речі — вмісту не видно.
+    state.character.body.facing = { x: 1, y: 0 };
+    if (targetOf(state)?.id !== "shower") expect(storageIndicator(state, storage("shower"))).toEqual([]);
+    state.character.body.facing = { x: -1, y: 0 };
+    walkTo(save, "shower");
+    interact(save);
+    state.home.supplies.hygiene = { cheap: 0, premium: 0 };
+    expect(storageIndicator(state, storage("shower"))).toEqual([]);
   });
 });

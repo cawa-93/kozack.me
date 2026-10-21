@@ -1,8 +1,8 @@
 // Сховища запасів (§6.4): де лежить кожен запас, що видно над сховищем і коли.
 
-import { STORAGE_LIMITS, STORAGE_NEAR } from "./config";
+import { STORAGE_LIMITS } from "./config";
 import { supplyCount } from "./economy";
-import { distanceToRect, objectById } from "./home";
+import { targetOf } from "./targets";
 import type { GameState, Product } from "./types";
 
 export interface Storage {
@@ -33,19 +33,27 @@ export interface StorageLine {
   limit?: number;
 }
 
-/** Персонаж біля сховища: видно весь вміст. */
-export function isNearStorage(state: GameState, storage: Storage): boolean {
-  return state.trip === null && distanceToRect(state.character.body, objectById(storage.object)) <= STORAGE_NEAR;
+/**
+ * Сховище в фокусі (§6.4): саме воно ціль дії персонажа, а персонаж не в поїздці й не всередині
+ * (душова кабіна). Лише тоді видно весь вміст.
+ */
+export function isFocusedStorage(state: GameState, storage: Storage): boolean {
+  const activity = state.character.activity;
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return false;
+  return targetOf(state)?.id === storage.object;
 }
 
 /**
- * Що зараз видно над сховищем (§6.4): лише запаси, які вже бували вдома; коли персонаж поруч — усі
+ * Що зараз видно над сховищем (§6.4): лише запаси, які вже бували вдома; коли сховище в фокусі — усі
  * вони з кількістю й лімітом, інакше — ті, що скінчилися. Порожній список — індикатора немає.
  */
 export function storageIndicator(state: GameState, storage: Storage): StorageLine[] {
+  // Персонаж у душовій кабіні — над нею нічого (§8.7).
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.inside && activity.target === storage.object) return [];
   const lines = storage.products
     .filter((product) => state.home.acquired.includes(product))
     .map((product) => ({ product, count: supplyCount(state, product) }));
-  if (isNearStorage(state, storage)) return lines.map((line) => ({ ...line, limit: STORAGE_LIMITS[line.product] }));
+  if (isFocusedStorage(state, storage)) return lines.map((line) => ({ ...line, limit: STORAGE_LIMITS[line.product] }));
   return lines.filter((line) => line.count === 0);
 }

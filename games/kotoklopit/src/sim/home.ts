@@ -73,8 +73,7 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   y,
   w,
   h,
-  // Мішок наповнювача лише зберігає: лоток бере з нього сам (§6.4).
-  interactive: kind !== "sofa" && kind !== "litterBag",
+  interactive: kind !== "sofa",
   ...(requires ? { requires } : {}),
 });
 
