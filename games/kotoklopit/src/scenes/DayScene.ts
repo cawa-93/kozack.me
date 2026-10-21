@@ -48,6 +48,8 @@ import { Viewport } from "../view/viewport";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
+/** Коротше за це (мс) — натискання біля кота бере його на руки, довше — пестощі. */
+const CAT_TAP_MS = 250;
 
 const REFUSAL_ICONS: Record<Refusal, IconName | null> = {
   empty: "empty",
@@ -98,6 +100,11 @@ export class DayScene extends Phaser.Scene {
   private touch!: TouchControls;
   private keys!: Keys;
   private moving = false;
+  /**
+   * Натискання біля кота з порожніми руками: що це — коротке натискання (взяти на руки) чи утримання
+   * (пестощі), стає ясно лише після відпускання. Час натискання в мс або null.
+   */
+  private catPress: number | null = null;
   private readonly cleanup: (() => void)[] = [];
 
   constructor(private readonly session: Session) {
@@ -215,6 +222,11 @@ export class DayScene extends Phaser.Scene {
 
   private act(): void {
     if (this.blocked()) return;
+    const { held, activity } = this.state.character;
+    if (held === null && activity === null && targetOf(this.state)?.type === "cat") {
+      this.catPress = this.time.now;
+      return;
+    }
     // Умивальник для чоловічого персонажа: борода (§5.1) і ліки.
     if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink") {
       this.overlay.show(
@@ -404,6 +416,16 @@ export class DayScene extends Phaser.Scene {
     );
   }
 
+  /** Відпустили швидко — взяти кота на руки; тримають довше — це пестощі, їх веде симуляція (§8.2). */
+  private resolveCatPress(hold: boolean): void {
+    if (this.catPress === null) return;
+    const elapsed = this.time.now - this.catPress;
+    if (hold && elapsed < CAT_TAP_MS) return;
+    this.catPress = null;
+    // Пестощі, що встигли початися за мить натискання, симуляція вже зупинила: руки вільні.
+    if (!hold && elapsed < CAT_TAP_MS) interact(this.session.save);
+  }
+
   override update(time: number, delta: number): void {
     if (this.updateTrip()) {
       this.render(time, 0);
@@ -414,6 +436,7 @@ export class DayScene extends Phaser.Scene {
       const input = this.readInput();
       this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
       advance(this.session.save, gameMinutes(seconds) * this.session.speed, input);
+      this.resolveCatPress(input.hold);
     } else {
       this.moving = false;
     }
