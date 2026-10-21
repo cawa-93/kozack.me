@@ -11,6 +11,15 @@ import { PALETTE } from "./palette";
 
 export { BUILDS, FACES, HAIR_STYLES, PALETTE } from "./palette";
 
+/** Колір плями для тканини: на світлій — темний бруд, на темній — світлий пил (§8.7). */
+function stainOn(cloth: number): number {
+  const r = (cloth >> 16) & 0xff;
+  const gr = (cloth >> 8) & 0xff;
+  const b = cloth & 0xff;
+  const light = (0.299 * r + 0.587 * gr + 0.114 * b) / 255;
+  return light < 0.45 ? 0xd8c8a0 : 0x5a4a30;
+}
+
 const pick = <T>(list: readonly T[], i: number): T => list[((i % list.length) + list.length) % list.length] as T;
 
 export class PersonView {
@@ -55,8 +64,15 @@ export class PersonView {
     g.fillStyle(shirt).fillRoundedRect(x - width / 2, y - 42, width, 30, 9);
     g.lineStyle(2.5, COLORS.ink).strokeRoundedRect(x - width / 2, y - 42, width, 30, 9);
     if (dirty) {
-      // Брудний одяг: плями на сорочці й штанях.
-      g.fillStyle(0x6b5a3a, 0.75).fillEllipse(x - width / 4, y - 30, 7, 5).fillEllipse(x + width / 5, y - 22, 6, 4).fillEllipse(x + 5, y - 8, 4, 4);
+      // Брудний одяг: плями на сорочці й штанях — контрастні до кольору одягу й з контуром,
+      // щоб їх було видно і на білому, і на графітовому.
+      const stain = (cloth: number, sx: number, sy: number, w: number, h: number): void => {
+        g.fillStyle(stainOn(cloth), 0.9).fillEllipse(sx, sy, w, h);
+        g.lineStyle(1, COLORS.ink, 0.45).strokeEllipse(sx, sy, w, h);
+      };
+      stain(shirt, x - width / 4, y - 30, 7, 5);
+      stain(shirt, x + width / 5, y - 22, 6, 4);
+      stain(pants, x + 5, y - 8, 4, 4);
     }
     // Голова.
     const hx = x + body.facing.x * 2;
