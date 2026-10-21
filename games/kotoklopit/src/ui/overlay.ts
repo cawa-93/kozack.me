@@ -102,6 +102,38 @@ export class Overlay {
     this.root.hidden = false;
   }
 
+  /**
+   * Екран кінця гри (§4.2): як титулка дня — на чорному екрані по черзі проявляються частини, а
+   * кнопки — останніми. Натискання до кінця показу відкриває все одразу.
+   */
+  ending(parts: HTMLElement[], actions: CardAction[]): void {
+    const screen = element("div", "title-screen ending-screen");
+    let delay: number = TITLE_TIMING.start;
+    for (const part of parts) {
+      part.style.animationDelay = `${delay}s`;
+      screen.append(part);
+      delay += part.classList.contains("title-heading") ? TITLE_TIMING.heading : TITLE_TIMING.line * 2;
+    }
+    const buttons = element("div", "card-actions ending-actions");
+    for (const action of actions) {
+      const button = element("button", action.primary ? "button primary" : "button", action.label);
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        action.onSelect();
+      });
+      buttons.append(button);
+    }
+    buttons.style.animationDelay = `${delay}s`;
+    screen.append(buttons);
+    screen.addEventListener("click", () => screen.classList.add("all"));
+    drawGlyphs(screen);
+    this.card = { title: "", body: [], actions };
+    this.root.classList.remove("dawn");
+    this.root.classList.add("cinematic");
+    this.root.replaceChildren(screen);
+    this.root.hidden = false;
+  }
+
   show(card: Card): void {
     this.card = card;
     this.root.classList.remove("cinematic", "dawn");
@@ -133,6 +165,7 @@ export class Overlay {
 
   close(): void {
     this.card = null;
+    this.root.classList.remove("cinematic", "dawn");
     this.root.hidden = true;
     this.root.replaceChildren();
   }

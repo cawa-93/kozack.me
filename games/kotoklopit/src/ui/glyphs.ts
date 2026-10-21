@@ -1,10 +1,18 @@
-// Іконки інтерфейсу карток (§11.4): у тексті стоять символи-позначки (🛒 👛 🏠 🕐 🚗), а на екрані —
+// Іконки інтерфейсу карток (§11.4): у тексті стоять символи-позначки (🛒 👛 🏠 🕐 🚗 💻 🐱 ☕ 👣), а на екрані —
 // намальовані іконки в чорнильному стилі гри, однакові на будь-якому телефоні.
 
 const INK = "#1f1a24";
 
 /** SVG кожної іконки, поле 24×24. */
 const GLYPHS: Record<string, string> = {
+  // Ноутбук — робота.
+  "💻": `<rect x="5" y="5" width="14" height="10" rx="1.5" fill="#cfe3ec" stroke="${INK}" stroke-width="2"/><path d="M2.5 18.5h19l-1.5-3h-16z" fill="#9aa3ab" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>`,
+  // Котяча голова — коти.
+  "🐱": `<path d="M4.5 9.5L5 3.5l5 3.2h4L19 3.5l.5 6c1 1.4 1.5 3 1.5 4.5 0 4-4 6.5-9 6.5S3 18 3 14c0-1.5.5-3.1 1.5-4.5z" fill="#e8a25a" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="13" r="1.2" fill="${INK}"/><circle cx="15" cy="13" r="1.2" fill="${INK}"/><path d="M11 15.5h2l-1 1z" fill="${INK}"/>`,
+  // Горнятко — час собі.
+  "☕": `<path d="M5 9h11v6.5a4.5 4.5 0 0 1-4.5 4.5h-2A4.5 4.5 0 0 1 5 15.5z" fill="#fffaf2" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="${INK}" stroke-width="2"/><path d="M9 3.5c-1 1.2 1 2 0 3.5M12.5 3.5c-1 1.2 1 2 0 3.5" fill="none" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>`,
+  // Сліди — метушня між справами.
+  "👣": `<ellipse cx="8" cy="9" rx="3" ry="4.5" fill="#9a8e98" stroke="${INK}" stroke-width="1.8"/><ellipse cx="16" cy="15" rx="3" ry="4.5" fill="#9a8e98" stroke="${INK}" stroke-width="1.8"/>`,
   // Кошик.
   "🛒": `<path d="M2 5h3l2.5 10h11L21 8H7" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 9h11.5l-1.7 5H9.2z" fill="#e8b93a"/><circle cx="9.5" cy="19" r="1.8" fill="${INK}"/><circle cx="17" cy="19" r="1.8" fill="${INK}"/>`,
   // Гаманець.

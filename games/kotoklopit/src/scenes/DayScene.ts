@@ -22,7 +22,7 @@ import { gameMinutes } from "../sim/time";
 import type { Chronotype, Difficulty, GameState, HomeItem, Look, Sex } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
@@ -934,19 +934,18 @@ export class DayScene extends Phaser.Scene {
     const end = this.state.end;
     if (end === null) return;
     const save = this.session.save;
-    this.overlay.show(
-      endCard(this.state, end, {
-        replayDay: () => {
-          replayDay(save);
-          this.session.replace(save);
-        },
-        replayWeek: () => {
-          replayWeek(save);
-          this.session.replace(save);
-        },
-        newGame: () => this.chooseNewGame(),
-      }),
-    );
+    const { parts, actions } = endScreen(this.state, end, {
+      replayDay: () => {
+        replayDay(save);
+        this.session.replace(save);
+      },
+      replayWeek: () => {
+        replayWeek(save);
+        this.session.replace(save);
+      },
+      newGame: () => this.chooseNewGame(),
+    });
+    this.overlay.ending(parts, actions);
   }
 
   private confirmNewGame(back: () => void): void {

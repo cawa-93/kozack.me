@@ -1,16 +1,13 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { HAPPY_LIFE, SUFFERED_LIFE } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
-import { allLives } from "../sim/finale";
-import { lifeLevel } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
+import type { Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -28,7 +25,7 @@ import {
   KITTEN_MESSAGE,
   UTILITIES_MESSAGES,
 } from "../texts";
-import { element, type Card, type TitleSection } from "./overlay";
+import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
 import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
@@ -114,14 +111,23 @@ export interface EndHandlers {
   newGame: () => void;
 }
 
-/** Екран кінця гри (§6.1). Статистику додасть крок 15 плану. */
-export function endCard(state: GameState, end: GameEnd, handlers: EndHandlers): Card {
+/**
+ * Екран кінця гри (§4.2, §6.1): хто й скільки протримався, назва завершення й текст, на що пішов час,
+ * коти. Лише те, що гравець і так бачив: без розбивок і порогів, що розкривали б механіки (§11.3а).
+ */
+export function endScreen(state: GameState, end: GameEnd, handlers: EndHandlers): { parts: HTMLElement[]; actions: CardAction[] } {
   const { title, text } = endingText(state, end);
   const retired = end === "retirement";
+  const { name } = state.character;
+  const when = retired ? weeks(weekOf(state.day)) : `тиждень ${weekOf(state.day)}, ${WEEKDAY_NAMES[weekdayOf(state.day)] ?? ""}`;
+  const parts: HTMLElement[] = [element("p", "ending-who", `${name} · ${when}`), element("h2", "title-heading", title)];
+  for (const paragraph of text.split("\n\n")) parts.push(element("p", "ending-text", paragraph));
+  const time = timeBar(state);
+  if (time) parts.push(time);
+  const cats = catChips(state);
+  if (cats) parts.push(cats);
   return {
-    kicker: retired ? "Вихід на пенсію" : "Кінець гри",
-    title,
-    body: [text, ...statsNotes(state)],
+    parts,
     actions: [
       { label: "Переграти день", primary: !retired, onSelect: handlers.replayDay },
       { label: "Переграти тиждень", onSelect: handlers.replayWeek },
@@ -130,44 +136,47 @@ export function endCard(state: GameState, end: GameEnd, handlers: EndHandlers): 
   };
 }
 
-const hoursText = (minutes: number): string => {
-  const h = Math.round(minutes / 60);
-  return `${h} ${plural(h, "година", "години", "годин")}`;
-};
+/** На що пішов час (§4.2): смуга з чотирьох частин, під нею — іконка й години кожної. */
+const TIME_PARTS = [
+  { key: "work", glyph: "💻", color: "#5a7fc0" },
+  { key: "cats", glyph: "🐱", color: "#e8a25a" },
+  { key: "self", glyph: "☕", color: "#6fae6a" },
+  { key: "bustle", glyph: "👣", color: "#7a6a78" },
+] as const;
 
-const SOURCE_TITLES: Record<CatSource, string> = {
-  shelter: "з притулку",
-  "shelter-forced": "примусових кошенят із притулку",
-  born: "народилися вдома",
-  breeder: "з розплідника",
-  foundling: "знайд",
-};
-
-/** Статистика гри на екрані кінця (§4.2). */
-function statsNotes(state: GameState): HTMLElement[] {
-  const { minutes, raised } = state.stats;
-  const time = note("Час", `Робота: ${hoursText(minutes.work)}.`, `Коти: ${hoursText(minutes.cats)}.`, `Собі: ${hoursText(minutes.self)}.`, `Метушня між справами: ${hoursText(minutes.bustle)}.`);
-  const total = Object.values(raised).reduce((a, b) => a + b, 0);
-  const sources = (Object.keys(raised) as CatSource[]).filter((s) => raised[s] > 0).map((s) => `${raised[s]} ${SOURCE_TITLES[s]}`);
-  const died = state.album.filter((e) => e.cause.kind !== "given").length;
-  const given = state.album.length - died;
-  const lives = allLives(state);
-  const levels = new Array<number>(10).fill(0);
-  for (const mood of lives) levels[lifeLevel(mood)] = (levels[lifeLevel(mood)] ?? 0) + 1;
-  const happy = lives.filter((m) => m >= HAPPY_LIFE).length;
-  const suffered = lives.filter((m) => m < SUFFERED_LIFE).length;
-  const legends = levels[9] ?? 0;
-  const cats = note(
-    "Коти",
-    `Виростили: ${total}${sources.length > 0 ? ` (${sources.join(", ")})` : ""}.`,
-    `Пережили: ${died}; віддали в добрі руки: ${given}; живі зараз: ${state.cats.length}.`,
-    `Щасливих: ${happy}, страждали: ${suffered}${legends > 0 ? `, легенд: ${legends}` : ""}.`,
-    `Рівні життя від «Агонії» до «Легенди»: ${levels.join(" · ")}.`,
-  );
-  return [time, cats];
+function timeBar(state: GameState): HTMLElement | null {
+  const minutes = state.stats.minutes;
+  const total = TIME_PARTS.reduce((sum, p) => sum + minutes[p.key], 0);
+  if (total <= 0) return null;
+  const box = element("div", "ending-time");
+  const bar = element("div", "ending-bar");
+  const legend = element("div", "ending-legend");
+  for (const part of TIME_PARTS) {
+    const value = minutes[part.key];
+    const segment = element("span");
+    segment.style.width = `${(value / total) * 100}%`;
+    segment.style.background = part.color;
+    bar.append(segment);
+    const item = element("span", undefined, `${part.glyph} ${Math.round(value / 60)} год`);
+    item.style.setProperty("--part", part.color);
+    legend.append(item);
+  }
+  box.append(bar, legend);
+  return box;
 }
 
-
+/** Коти, що жили з персонажем (§4.2): з альбому — з назвою рівня життя з прощання, живі — з іконкою дому. */
+function catChips(state: GameState): HTMLElement | null {
+  if (state.album.length === 0 && state.cats.length === 0) return null;
+  const box = element("div", "ending-cats");
+  for (const entry of state.album) {
+    const chip = element("span", "ending-cat", entry.name);
+    chip.append(element("small", undefined, farewellText(entry, diseaseTitle).title));
+    box.append(chip);
+  }
+  for (const cat of state.cats) box.append(element("span", "ending-cat", `🏠 ${cat.name}`));
+  return box;
+}
 
 export type PhoneTab = "shop" | "mine" | "cats" | "album" | "game";
 
