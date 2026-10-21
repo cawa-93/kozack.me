@@ -4,15 +4,14 @@
 import Phaser from "phaser";
 
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
-import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
-import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
+import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
-import { isWorkday } from "../sim/work";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { beardLook, cyclePhase } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import type { IconName } from "./icons";
+import { scheduleOf } from "./schedule";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
 const FONT = "system-ui, sans-serif";
@@ -174,36 +173,4 @@ export class Hud {
       }
     }
   }
-}
-
-/** Короткий розклад: заплановані події, про які персонаж знає (§8.4). */
-export function scheduleOf(state: GameState): string[] {
-  const items: string[] = [];
-  const minute = state.minute;
-  if (isWorkday(state) && minute < WORK_END_MINUTE) {
-    items.push(`${formatClock(WORK_START_MINUTE)}–${formatClock(WORK_END_MINUTE)} робота`);
-    if (minute < STANDUP_MINUTE + STANDUP_MINUTES) items.push(`${formatClock(STANDUP_MINUTE)} летучка`);
-  }
-  // Події модифікатора дня (§4.1).
-  const events: Record<string, [number, string]> = {
-    meeting: [MODIFIERS.meeting.from, "нарада"],
-    lunch: [MODIFIERS.lunch.from, "обідня перерва"],
-    outage: [MODIFIERS.outage.from, "без світла до 15:00"],
-    inspection: [MODIFIERS.inspection.minute, "перевірка ОСББ"],
-    guests: [MODIFIERS.guests.minute, "гості"],
-    festival: [MODIFIERS.festival.minute, "феєрверки"],
-    "home-vet": [MODIFIERS.homeVetMinute, "ветеринарка"],
-    office: [18 * 60, "до цього — офіс"],
-  };
-  const event = events[state.modifiers.day ?? ""];
-  if (event && minute < event[0]) items.push(`${formatClock(event[0])} ${event[1]}`);
-  if (state.modifiers.day === "vaccination" && !state.today.vaccinated) items.push("сьогодні — щеплення котові");
-  if (state.home.porch.length > 0) items.push("пакунок під дверима");
-  const today = absoluteMinute(state.day, 0);
-  for (const delivery of state.home.deliveries) {
-    // Кур'єр приїде «приблизно»: час округлено до чверті години.
-    const at = Math.round((delivery.at - today) / 15) * 15;
-    items.push(`≈${formatClock(at)} кур'єр`);
-  }
-  return items;
 }
