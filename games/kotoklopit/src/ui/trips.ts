@@ -1,15 +1,16 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
-import { breederCatPrice, breederCats, GOODS, goodsKey, shelterCats, shopModifier, shopPrice, tripCat, type Goods } from "../sim/destinations";
+import { breederCatPrice, breederCats, shelterCats, tripCat } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
-import { fitsStorage, freeSlots } from "../sim/economy";
 import { visibility } from "../sim/knowledge";
 import { traitName } from "../sim/traits";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
 import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
+import { shopCatalog } from "./shop";
+import type { CartLine } from "../sim/shop";
 import { element, type Card } from "./overlay";
 import { breedText, plural } from "./cards";
 
@@ -73,7 +74,8 @@ export function accidentCard(state: GameState, onClose: () => void): Card {
 }
 
 export interface VisitHandlers {
-  buy: (goods: Goods, quality: Quality) => void;
+  /** Купити кошик на місці (§6.4). */
+  checkout: (cart: CartLine[]) => void;
   exam: () => void;
   treat: (disease: DiseaseId, quality: Quality) => void;
   doctor: () => void;
@@ -118,30 +120,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   };
   const cat = tripCat(state);
   switch (destination) {
-    case "shop": {
-      const list = element("div", "shop");
-      for (const g of GOODS) {
-        const mod = Math.round(shopModifier(state, g) * 100);
-        // Що дешевше чи дорожче — видно, а на скільки й чому — ні (§11.3а).
-        const tag = mod < 0 ? "сьогодні дешевше" : mod > 0 ? "сьогодні дорожче" : "";
-        const full = "thing" in g && freeSlots(state, g.thing) <= 0;
-        // Запас, що не влізе у сховище (§6.4).
-        const fits = (q: Quality): boolean => !("product" in g) || fitsStorage(state, g.product, q);
-        list.append(
-          row(
-            GOODS_TITLES[goodsKey(g)] ?? goodsKey(g),
-            full ? "немає місця вдома" : tag,
-            ...(["cheap", "premium"] as const).map((q) => {
-              const price = shopPrice(state, g, q);
-              const label = fits(q) ? `${q === "cheap" ? "Дешеве" : "Дороге"} — ${price}` : `${q === "cheap" ? "Дешеве" : "Дороге"} — не вміститься`;
-              return button(label, price, () => h.buy(g, q), full || !fits(q));
-            }),
-          ),
-        );
-      }
-      body.push(list);
+    case "shop":
+      body.push(shopCatalog(state, "store", h.checkout));
       break;
-    }
     case "vet": {
       if (!cat) break;
       if (!log.exam) {
@@ -263,28 +244,3 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   return { kicker: "Поїздка", title: DESTINATION_TITLES[destination], body, actions };
 }
 
-const GOODS_TITLES: Record<string, string> = {
-  food: "Продукти",
-  hygiene: "Засоби гігієни",
-  catFood: "Котячий корм",
-  sterileFood: "Корм для стерилізованих",
-  litter: "Наповнювач",
-  pills: "Таблетки для котів",
-  drops: "Краплі для котів",
-  humanMeds: "Ліки для себе",
-  treats: "Ласощі для котів",
-  collar: "Нашийник",
-  bell: "Дзвіночок на нашийник",
-  shampoo: "Шампунь для котів",
-  detergent: "Пральний засіб",
-  "thing:bowl": "Миска для корму",
-  "thing:water": "Миска для води",
-  "thing:litter": "Лоток",
-  "thing:toy": "Іграшка-вудочка",
-  "thing:house": "Будиночок",
-  "thing:scratcher": "Кігтеточка",
-  "thing:carrier": "Переноска",
-  "thing:feeder": "Автогодівниця",
-  "thing:fountain": "Фонтанчик для води",
-  "thing:robot": "Робот-пилосос",
-};

@@ -4,12 +4,13 @@ import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, order, orderThing } from "../sim/economy";
+import { discard } from "../sim/economy";
+import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
@@ -18,7 +19,7 @@ import { isPresent, objectById } from "../sim/home";
 import { isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
-import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Chronotype, Difficulty, GameState, HomeItem, Look, Sex } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endCard, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
@@ -331,8 +332,8 @@ export class DayScene extends Phaser.Scene {
     const rng = stateRng(state, "behavior");
     this.overlay.show(
       visitCard(state, log, {
-        buy: (goods, quality) => {
-          buyAtShop(state, goods, quality);
+        checkout: (cart) => {
+          checkout(state, cart, "store");
           again();
         },
         exam: () => {
@@ -885,12 +886,8 @@ export class DayScene extends Phaser.Scene {
     const show = (tab: PhoneTab): void =>
       this.overlay.show(
         phoneCard(this.state, tab, {
-          order: (product: Product, quality: Quality) => {
-            order(this.state, product, quality);
-            show(tab);
-          },
-          orderThing: (thing: ThingKind, quality: Quality) => {
-            orderThing(this.state, thing, quality);
+          checkout: (cart) => {
+            checkout(this.state, cart, "delivery");
             show(tab);
           },
           discard: (item: HomeItem) => {
@@ -913,7 +910,7 @@ export class DayScene extends Phaser.Scene {
           close: () => this.overlay.close(),
         }),
       );
-    show("supplies");
+    show("shop");
   }
 }
 

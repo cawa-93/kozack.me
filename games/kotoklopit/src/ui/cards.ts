@@ -1,17 +1,16 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { HAPPY_LIFE, PRODUCTS, STORAGE_LIMITS, SUFFERED_LIFE, THINGS } from "../sim/config";
-import { deliveryPrice, fitsStorage, freeSlots, isAppliance, supplyCount, thingDeliveryPrice, utilitiesDue } from "../sim/economy";
+import { HAPPY_LIFE, SUFFERED_LIFE, THINGS } from "../sim/config";
+import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { allLives } from "../sim/finale";
 import { lifeLevel } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
-import { priceFactor } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup, traitName } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Product, Quality, Sex, ThingKind } from "../sim/types";
+import type { Cat, CatSource, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -30,6 +29,11 @@ import {
   UTILITIES_MESSAGES,
 } from "../texts";
 import { element, type Card, type TitleSection } from "./overlay";
+import { shopCatalog } from "./shop";
+import type { CartLine } from "../sim/shop";
+import { plural, PRODUCT_TITLES, THING_TITLES } from "./titles";
+
+export { plural };
 import { drawPortrait, portraitCanvas } from "./portrait";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
@@ -163,52 +167,13 @@ function statsNotes(state: GameState): HTMLElement[] {
   return [time, cats];
 }
 
-const portions = (n: number): string => `${n} ${plural(n, "порція", "порції", "порцій")}`;
-const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) => string; place: string }> = {
-  food: { name: "Продукти", unit: portions, place: "у холодильнику" },
-  hygiene: { name: "Засоби гігієни", unit: (n) => `${n} ${plural(n, "душ", "душі", "душів")}`, place: "у ванній" },
-  catFood: { name: "Котячий корм", unit: portions, place: "у шафці" },
-  sterileFood: { name: "Корм для стерилізованих", unit: portions, place: "у баку" },
-  litter: { name: "Наповнювач", unit: (n) => `${n} ${plural(n, "чистка", "чистки", "чисток")} лотка`, place: "у мішку" },
-  pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "в аптечці" },
-  drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "в аптечці" },
-  humanMeds: { name: "Ліки для себе", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "біля умивальника" },
-  treats: { name: "Ласощі для котів", unit: (n) => `${n} ${plural(n, "ласощі", "ласощі", "ласощів")}`, place: "в аптечці" },
-  collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
-  bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
-  shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
-  detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у пральній машині" },
-};
 
-const QUALITY_TITLES: Record<Quality, string> = { cheap: "Дешеві", premium: "Дорогі" };
 
-/** Українська множина: 1 порція, 2 порції, 5 порцій. */
-export function plural(n: number, one: string, few: string, many: string): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}
-
-const THING_TITLES: Record<ThingKind, string> = {
-  bowl: "Миска для корму",
-  water: "Миска для води",
-  litter: "Лоток",
-  toy: "Іграшка-вудочка",
-  house: "Будиночок",
-  scratcher: "Кігтеточка",
-  carrier: "Переноска",
-  feeder: "Автогодівниця",
-  fountain: "Фонтанчик для води",
-  robot: "Робот-пилосос",
-};
-
-export type PhoneTab = "supplies" | "things" | "mine" | "cats" | "album" | "game";
+export type PhoneTab = "shop" | "mine" | "cats" | "album" | "game";
 
 export interface PhoneHandlers {
-  order: (product: Product, quality: Quality) => void;
-  orderThing: (thing: ThingKind, quality: Quality) => void;
+  /** Оплатити кошик доставкою (§6.4). */
+  checkout: (cart: CartLine[]) => void;
   discard: (item: HomeItem) => void;
   advertise: (cat: Cat) => void;
   newGame: () => void;
@@ -218,15 +183,13 @@ export interface PhoneHandlers {
   close: () => void;
 }
 
-const PHONE_TABS: Record<PhoneTab, string> = { supplies: "Запаси", things: "Речі для котів", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті", game: "Гра" };
+const PHONE_TABS: Record<PhoneTab, string> = { shop: "Магазин", mine: "Мої речі", cats: "Коти", album: "Альбом пам'яті", game: "Гра" };
 
-/** Телефон персонажа (§6.4): доставка запасів і речей для котів, викинути річ. */
+/** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
 export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
-  const money = Math.floor(state.character.money);
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
-  if (tab === "supplies") body.push(`Гроші: ${money}. Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.`, suppliesShop(state, money, handlers));
-  if (tab === "things") body.push(`Гроші: ${money}. Нова річ стане на вільне місце, а кожна, крім іграшок, трохи збільшує комунальні.`, thingsShop(state, money, handlers));
+  if (tab === "shop") body.push("Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.", shopCatalog(state, "delivery", handlers.checkout));
   if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
@@ -329,28 +292,6 @@ function albumCards(state: GameState): (string | HTMLElement)[] {
   });
 }
 
-function thingsShop(state: GameState, money: number, handlers: PhoneHandlers): HTMLElement {
-  const shop = element("div", "shop");
-  for (const thing of Object.keys(THINGS) as ThingKind[]) {
-    const row = element("div", "shop-row");
-    const have =
-      thing === "carrier" ? (state.home.carrier ? 1 : 0) : isAppliance(thing) ? (state.home.appliances[thing] ? 1 : 0) : state.home.items.filter((i) => i.kind === thing).length;
-    const free = freeSlots(state, thing);
-    const name = element("span", "shop-name", THING_TITLES[thing]);
-    const stock = thing === "toy" ? `Є: ${have}` : `Є: ${have} · вільних місць: ${Math.max(0, free)}`;
-    name.append(element("span", "shop-stock", `${stock} · комунальні +${THINGS[thing].utilities}`));
-    row.append(name);
-    for (const quality of ["cheap", "premium"] as const) {
-      const price = thingDeliveryPrice(thing, quality);
-      const button = element("button", "button", `${quality === "cheap" ? "Дешева" : "Дорога"} — ${price}`);
-      button.disabled = price > money || free <= 0 || state.end !== null;
-      button.addEventListener("click", () => handlers.orderThing(thing, quality));
-      row.append(button);
-    }
-    shop.append(row);
-  }
-  return shop;
-}
 
 function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   const shop = element("div", "shop");
@@ -367,30 +308,6 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   return shop;
 }
 
-function suppliesShop(state: GameState, money: number, handlers: PhoneHandlers): HTMLElement {
-  const shop = element("div", "shop");
-  for (const product of Object.keys(PRODUCTS) as Product[]) {
-    const titles = PRODUCT_TITLES[product];
-    const row = element("div", "shop-row");
-    const { units } = PRODUCTS[product];
-    const pack = units.cheap === units.premium ? ` · ${titles.unit(units.cheap)}` : "";
-    const name = element("span", "shop-name", `${titles.name}${pack}`);
-    name.append(element("span", "shop-stock", `Зараз ${titles.place}: ${titles.unit(supplyCount(state, product))} з ${STORAGE_LIMITS[product]}`));
-    row.append(name);
-    for (const quality of ["cheap", "premium"] as const) {
-      const price = deliveryPrice(product, quality, priceFactor(state, product));
-      const size = pack ? "" : ` (${titles.unit(units[quality])})`;
-      // Упаковка не влізе у сховище (§6.4).
-      const fits = fitsStorage(state, product, quality);
-      const button = element("button", "button", fits ? `${QUALITY_TITLES[quality]}${size} — ${price}` : `${QUALITY_TITLES[quality]}${size} — не вміститься`);
-      button.disabled = !fits || price > money || state.end !== null;
-      button.addEventListener("click", () => handlers.order(product, quality));
-      row.append(button);
-    }
-    shop.append(row);
-  }
-  return shop;
-}
 
 export type CareChoice = { medicine: Medicine } | { treat: Quality } | { collar: Quality } | "bell";
 
