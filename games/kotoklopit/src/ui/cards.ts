@@ -5,7 +5,7 @@ import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
-import { traitGroup, traitName } from "../sim/traits";
+import { traitGroup } from "../sim/traits";
 import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
 import {
@@ -32,6 +32,7 @@ import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 export { plural };
 import { drawPortrait, portraitCanvas } from "./portrait";
+import { traitChips } from "./traits";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -268,18 +269,23 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
     if (state.ads.includes(cat.id)) states.push("завтра заберуть нові господарі");
     if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
-    const known = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
-    if (known.length > 0) lines.push(`Ветеринар знайшов: ${known.join(", ")}.`);
+    const found = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
+    if (found.length > 0) lines.push(`Ветеринар знайшов: ${found.join(", ")}.`);
+    // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
+    const known = cat.traits.filter((t) => visibility(state, t) === 3);
     for (const trait of cat.traits) {
       const seen = visibility(state, trait);
-      if (seen === 3) lines.push(`${fill(traitName(trait), cat.sex)} (${traitGroup(trait.group).title})`);
-      else if (seen === 2) {
+      if (seen === 2) {
         const signs = traitGroup(trait.group).signs;
         if (signs) lines.push(`Здається, ${cat.name} ${trait.level > 0 ? signs[0] : signs[1]}.`);
       } else if (seen === 1) lines.push("❓ Помічено щось дивне");
     }
     if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
     const card = note(...lines);
+    // Ім'я — заголовок картки, навіть коли під ним самі риси.
+    const title = card.firstElementChild;
+    if (title instanceof HTMLElement) title.style.fontWeight = "600";
+    if (known.length > 0) card.append(traitChips(known, cat.sex));
     if (cat.ageWeeks >= 1 && !state.ads.includes(cat.id)) {
       const ad = element("button", "button", "Віддати в добрі руки");
       ad.style.marginTop = "8px";
@@ -298,8 +304,9 @@ function albumCards(state: GameState): (string | HTMLElement)[] {
   return [...state.album].reverse().map((entry) => {
     const cause = entry.cause.kind === "disease" ? `хвороба «${diseaseTitle(entry.cause.disease)}»` : CAUSE_TITLES[entry.cause.kind] ?? "";
     const text = farewellText(entry, diseaseTitle);
-    const traits = entry.traits.map((t) => fill(traitName(t), entry.sex)).join(", ") || "без помітних рис";
-    return note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${cause}`, `«${text.title}». ${text.life}`, `Характер: ${traits}.`);
+    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${cause}`, `«${text.title}». ${text.life}`);
+    card.append(entry.traits.length > 0 ? traitChips(entry.traits, entry.sex) : element("p", "trait-about", "Без помітних рис."));
+    return card;
   });
 }
 

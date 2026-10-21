@@ -4,16 +4,16 @@ import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRI
 import { breederCatPrice, breederCats, shelterCats, tripCat } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
-import { traitName } from "../sim/traits";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
+import { diseaseTitle, ILLNESS_TITLES } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
 import { element, type Card } from "./overlay";
 import { breedText, plural } from "./cards";
+import { traitChips } from "./traits";
 
 const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} год${m % 60 ? ` ${m % 60} хв` : ""}` : `${m} хв`);
 
@@ -182,15 +182,16 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(`Кіт із притулку — ${SHELTER.price} ₴. Вибір тижня:`);
       const list = element("div", "shop");
       for (const c of shelterCats(state)) {
-        const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
-        const facts = [`порода: ${breedText(c.breed, c.breedKnown)}`, ...(c.sterilized ? [c.sex === "male" ? "кастрований" : "стерилізована"] : []), ...traits];
-        list.append(
-          row(
-            `${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
-            facts.join(", "),
-            button(`Взяти — ${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
-          ),
+        const traits = c.traits.filter((t) => visibility(state, t) === 3);
+        const breed = breedText(c.breed, c.breedKnown);
+        const facts = [...(breed !== "невідома" ? [`порода: ${breed}`] : []), ...(c.sterilized ? [c.sex === "male" ? "кастрований" : "стерилізована"] : [])];
+        const r = row(
+          `${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
+          facts.join(", "),
+          button(`Взяти — ${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
         );
+        if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
+        list.append(r);
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);
@@ -203,8 +204,10 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(`Розплідник цього тижня пропонує кошенят породи «${breedById(breed).name}» з родоводом. Кошеня — ${price} ₴.`);
       const list = element("div", "shop");
       for (const c of cats) {
-        const traits = c.traits.filter((t) => visibility(state, t) === 3).map((t) => fill(traitName(t), c.sex));
-        list.append(row(`${c.name} — ${c.sex === "male" ? "кіт" : "кішка"}, ${c.ageWeeks} тижні`, traits.join(", ") || "характер — загадка", button(`Взяти — ${price} ₴`, price, () => h.buyKitten(c.id))));
+        const traits = c.traits.filter((t) => visibility(state, t) === 3);
+        const r = row(`${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} тижні`, traits.length > 0 ? "" : "Характер: ?", button(`Взяти — ${price} ₴`, price, () => h.buyKitten(c.id)));
+        if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
+        list.append(r);
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);

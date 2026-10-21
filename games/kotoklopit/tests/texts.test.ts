@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
-import { endingText, fill, KITTEN_MESSAGE, POSITION_TITLES } from "../src/texts";
+import { TRAIT_GROUPS } from "../src/sim/traits";
+import { endingText, fill, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -27,5 +28,21 @@ describe("тексти (TEXTS.md)", () => {
     expect(endingText(state, "retirement").title).toBe("Тихе життя");
     state.job.position = 9;
     expect(endingText(state, "retirement").title).toBe("Кар'єрист");
+  });
+});
+
+describe("опис рис для картки кота (§9.9)", () => {
+  it("у кожної групи є опис для «+» і для «−», без незаповнених форм", () => {
+    for (const group of TRAIT_GROUPS) {
+      const about = TRAIT_ABOUT[group.id];
+      expect(about, group.id).toBeDefined();
+      for (const text of about ?? []) {
+        for (const sex of ["male", "female"] as const) {
+          const filled = fill(text, sex);
+          expect(filled.length, group.id).toBeGreaterThan(5);
+          expect(filled, group.id).not.toMatch(/[[\]|]/);
+        }
+      }
+    }
   });
 });
