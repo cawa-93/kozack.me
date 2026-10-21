@@ -428,21 +428,34 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   }
   if (isMoving(input.move)) {
     if (activity?.kind === "work") stopWork(state);
-    else character.activity = null;
+    else {
+      if (activity !== null && input.hold) character.holdSpent = true;
+      character.activity = null;
+    }
     return;
   }
   if (activity?.kind === "work") return;
   if (!input.hold) {
+    character.holdSpent = false;
     if (activity?.kind === "pet" || activity?.kind === "play") character.activity = null;
     return;
   }
-  if (activity === null) {
+  // Одне утримання — одна дія: щоб почати наступну, кнопку треба відпустити (§10).
+  if (activity === null && character.holdSpent) return;
+  // Дія була й закінчилася, а кнопку ще тримають — наступна чекає, поки її відпустять.
+  if (holdTick(state, minutes) && character.activity === null) character.holdSpent = true;
+}
+
+/** Утримання дії: почати тривалу дію біля цілі чи продовжити поточну. false — дії не було. */
+function holdTick(state: GameState, minutes: number): boolean {
+  const character = state.character;
+  if (character.activity === null) {
     const target = targetOf(state);
-    if (target === null) return;
+    if (target === null) return false;
     if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
-    else if (!canUse(state, target)) return;
+    else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.
-    else if (target.type === "object" && target.object.kind === "shower") return;
+    else if (target.type === "object" && target.object.kind === "shower") return false;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
       jealousy(state, target.cat);
@@ -451,23 +464,24 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
   const current = character.activity;
   if (current?.kind === "pet") {
     pet(state, current, minutes);
-    return;
+    return true;
   }
   if (current?.kind === "play") {
     play(state, current, minutes);
-    return;
+    return true;
   }
-  if (current?.kind !== "use") return;
+  if (current?.kind !== "use") return false;
   const target = targetById(state, current.target);
   if (target === null || !canUse(state, target)) {
     character.activity = null;
-    return;
+    return true;
   }
   current.progress += minutes * actionSpeed(state);
   if (current.progress >= useMinutes(target)) {
     character.activity = null;
     finishUse(state, target);
   }
+  return true;
 }
 
 function finishUse(state: GameState, target: Target): void {

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat } from "../src/sim/cat";
 import { utilitiesDue } from "../src/sim/economy";
-import { interact, newGame } from "../src/sim/game";
+import { advance, interact, newGame } from "../src/sim/game";
 import { feederBowls, hygieneFactor, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -114,6 +114,20 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(bowl?.kind === "bowl" && bowl.food).toBe(1);
     expect(water?.kind === "water" && water.water).toBe(8);
     expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
+  });
+
+  it("одне утримання — одна дія: після пилососа, що тримають далі, новий не починається (§10)", () => {
+    const save = game();
+    save.current.home.fur = 80;
+    standAt(save, "vacuum");
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 60; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    expect(events.filter((e) => e.type === "vacuumed")).toHaveLength(1);
+    // Відпустили й знову тримають — пилосос знову працює.
+    advance(save, 0.1, { move: { x: 0, y: 0 }, hold: false });
+    for (let i = 0; i < 30; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(events.filter((e) => e.type === "vacuumed")).toHaveLength(2);
   });
 
   it("робот-пилосос о 12:00 годину їздить і прибирає шерсть поступово (§8.7)", () => {
