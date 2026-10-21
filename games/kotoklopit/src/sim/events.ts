@@ -30,6 +30,8 @@ export type GameEvent =
   | { type: "put"; object: string; item: Item }
   /** Персонаж узяв чи витратив запас (§6.4): над ним виринає залишок. */
   | { type: "supply-used"; product: Product; left: number }
+  /** Колеги на відеодзвінку помітили поганий вигляд (§5.1). */
+  | { type: "call-remark"; issue: "clothes" }
   | { type: "trashed"; item: Item }
   | { type: "refused"; object: string; reason: Refusal }
   | { type: "cooked"; result: "ready" | "burnt" }

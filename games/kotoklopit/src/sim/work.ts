@@ -3,6 +3,7 @@
 import { earn, unpleasantTask } from "./character";
 import {
   ABSENCE_REPUTATION,
+  CALL_DIRTY_CLOTHES,
   CALL_HYGIENE_REPUTATION,
   DIFFICULTY,
   HIGH_HYGIENE,
@@ -157,6 +158,7 @@ function tickStandup(state: GameState, from: number, to: number): void {
   const end = STANDUP_MINUTE + STANDUP_MINUTES;
   if (from < start && to >= start) emit(state, { type: "standup-started" });
   if (isWorking(state)) state.job.standupMinutes += Math.max(0, Math.min(to, end) - Math.max(from, start));
+  noticeCallLook(state, from, to, start);
   if (from < end && to >= end) resolveStandup(state);
 }
 
@@ -175,8 +177,15 @@ function resolveStandup(state: GameState): void {
 export function callImpression(state: GameState): number {
   const hygiene = state.character.stats.hygiene;
   const clean = hygiene < LOW_STAT ? -CALL_HYGIENE_REPUTATION : hygiene >= HIGH_HYGIENE ? CALL_HYGIENE_REPUTATION : 0;
-  // Борода (§5.1): доглянута — бонус, неохайна — штраф.
-  return clean + beardImpression(state);
+  // Борода (§5.1): доглянута — бонус, неохайна — штраф; брудний одяг — штраф (§8.7).
+  const clothes = state.home.clothes <= 0 ? -CALL_DIRTY_CLOTHES.reputation : 0;
+  return clean + beardImpression(state) + clothes;
+}
+
+/** На відеодзвінку колеги помічають брудний одяг (§5.1): бабл над комп'ютером. */
+export function noticeCallLook(state: GameState, from: number, to: number, callStart: number): void {
+  const at = callStart + CALL_DIRTY_CLOTHES.noticeMinute;
+  if (from < at && to >= at && isWorking(state) && state.home.clothes <= 0) emit(state, { type: "call-remark", issue: "clothes" });
 }
 
 /** Ранок: на початку кожного робочого дня терпіння повне (§8.6). */

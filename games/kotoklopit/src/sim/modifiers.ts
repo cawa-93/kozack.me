@@ -12,7 +12,7 @@ import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { callImpression, changeReputation } from "./work";
+import { callImpression, changeReputation, noticeCallLook } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -275,6 +275,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     const minute = from % 1440;
     if (crossed(from, minutes, start)) emit(state, { type: "modifier", kind: "meeting-start", value: 0 });
     if (working && minute >= start && minute < end) today.meetingMinutes += minutes;
+    noticeCallLook(state, minute, minute + minutes, start);
     if (crossed(from, minutes, end)) {
       const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
       const attended = today.meetingMinutes >= m.meeting.minutes * m.meeting.attended;

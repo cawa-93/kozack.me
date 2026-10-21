@@ -192,4 +192,17 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
       expect(callImpression(save.current)).toBe(impression);
     }
   });
+
+  it("брудний одяг на відеодзвінку — штраф, і колеги це помічають", () => {
+    const save = game();
+    const state = save.current;
+    state.character.stats.hygiene = 50;
+    const clean = callImpression(state);
+    state.home.clothes = 0;
+    expect(callImpression(state)).toBe(clean - 0.5);
+    const { events, stop } = recordEvents();
+    work(save, hours(9.9), 20);
+    stop();
+    expect(events).toContainEqual({ type: "call-remark", issue: "clothes" });
+  });
 });

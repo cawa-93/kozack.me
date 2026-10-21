@@ -226,6 +226,8 @@ export const STANDUP_ATTENDANCE = 0.5;
 export const STANDUP_MISSED_REPUTATION = -1;
 /** Гігієна на відеодзвінку: нижче LOW_STAT — штраф, від HIGH_HYGIENE — бонус (× репутація за годину). */
 export const CALL_HYGIENE_REPUTATION = 0.5;
+/** Брудний одяг на відеодзвінку (§5.1, §8.7): штраф у «годинах роботи»; на якій хвилині колеги це помічають. */
+export const CALL_DIRTY_CLOTHES = { reputation: 0.5, noticeMinute: 5 } as const;
 export const HIGH_HYGIENE = 75;
 /** Після звільнення — 24 години пошуку роботи за комп'ютером (§8.6). */
 export const JOB_SEARCH_HOURS = 24;

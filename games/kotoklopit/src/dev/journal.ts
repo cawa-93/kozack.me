@@ -46,6 +46,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Кінець гри: ${event.end}`;
     case "took":
       return `Узято з «${event.object}»: ${item(event.item)}`;
+    case "call-remark":
+      return "Колеги помітили брудний одяг на відеодзвінку";
     case "supply-used":
       return `Запас «${event.product}»: лишилося ${event.left}`;
     case "put":

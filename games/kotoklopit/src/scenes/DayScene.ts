@@ -754,6 +754,10 @@ export class DayScene extends Phaser.Scene {
         if (icon) popAt(event.object, icon);
         break;
       }
+      case "call-remark":
+        // Колеги на дзвінку помітили брудний одяг.
+        popAt("computer", "laundry");
+        break;
       case "supply-used":
         this.bubbles.pop(PRODUCT_ICONS[event.product], this.personAnchor, event.left);
         break;
