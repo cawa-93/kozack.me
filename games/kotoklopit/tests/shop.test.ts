@@ -57,3 +57,15 @@ describe("універсальний магазин (§6.4)", () => {
     expect(state.home.items.filter((i) => i.kind === "toy")).toHaveLength(2);
   });
 });
+
+describe("назви варіантів (§6.4)", () => {
+  it("кожен товар має дві назви без «дешевий» і «дорогий»", async () => {
+    const { VARIANT_TITLES } = await import("../src/ui/titles");
+    const { goodsKey } = await import("../src/sim/shop");
+    for (const g of GOODS) {
+      const names = VARIANT_TITLES[goodsKey(g)];
+      expect(names, goodsKey(g)).toBeDefined();
+      for (const name of Object.values(names ?? {})) expect(name).not.toMatch(/дешев|дорог/i);
+    }
+  });
+});

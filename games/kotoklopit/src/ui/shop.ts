@@ -4,12 +4,11 @@
 import { PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
 import { supplyCount } from "../sim/economy";
-import { canCheckout, cartTotal, GOODS, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
+import { canCheckout, cartTotal, GOODS, goodsKey, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { element } from "./overlay";
-import { PRODUCT_TITLES, THING_TITLES } from "./titles";
+import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
-const QUALITY = { cheap: "дешеве", premium: "дороге" } as const;
 
 function goodsName(goods: Goods): string {
   return "product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing];
@@ -66,7 +65,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
         const line: CartLine = { goods: g, quality, count: 0 };
         cart.push(line);
         const price = unitPrice(state, g, quality, mode);
-        const label = element("span", "shop-option", `${QUALITY[quality]}${packText(g, quality)} — ${price}`);
+        const label = element("span", "shop-option", `${VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality}${packText(g, quality)} — ${price}`);
         const minus = element("button", "button step", "−");
         const count = element("span", "shop-count", "0");
         const plus = element("button", "button step", "+");

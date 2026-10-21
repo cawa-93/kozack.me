@@ -10,6 +10,7 @@ import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Qualit
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
 import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
 import { shopCatalog } from "./shop";
+import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
 import { element, type Card } from "./overlay";
 import { breedText, plural } from "./cards";
@@ -146,8 +147,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             diseaseTitle(d.id),
             chronic ? "хронічна: ліки на тиждень" : "1 година",
-            button(`Дешеве — ${VET.cheap}`, VET.cheap, () => h.treat(d.id, "cheap")),
-            button(`Дороге — ${VET.premium}`, VET.premium, () => h.treat(d.id, "premium")),
+            button(`${SERVICE_TITLES.treat.cheap} — ${VET.cheap}`, VET.cheap, () => h.treat(d.id, "cheap")),
+            button(`${SERVICE_TITLES.treat.premium} — ${VET.premium}`, VET.premium, () => h.treat(d.id, "premium")),
           ),
         );
       }
@@ -168,8 +169,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             ILLNESS_TITLES[i.id],
             "минає одразу; лікарняний з завтра",
-            button(`Дешеве — ${DOCTOR_TREAT.cheap}`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
-            button(`Дороге — ${DOCTOR_TREAT.premium}`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
+            button(`${SERVICE_TITLES.treat.cheap} — ${DOCTOR_TREAT.cheap}`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
+            button(`${SERVICE_TITLES.treat.premium} — ${DOCTOR_TREAT.premium}`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
           ),
         );
       }
@@ -213,8 +214,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (log.done.includes("groom")) body.push(`${cat.name} вичесаний і пухнастий, хоч і трохи ображений.`);
       else
         body.push(
-          `Грумер вичеше ${cat.name}: шерстяних грудок не буде тиждень (дорогий — два).`,
-          row("Стрижка й вичісування", "1,5 години", button(`Дешевий — ${GROOMER.price.cheap}`, GROOMER.price.cheap, () => h.groom("cheap")), button(`Дорогий — ${GROOMER.price.premium}`, GROOMER.price.premium, () => h.groom("premium"))),
+          `Грумер приведе ${cat.name} до ладу.`,
+          row("Стрижка й вичісування", "1,5 години", button(`${SERVICE_TITLES.groom.cheap} — ${GROOMER.price.cheap}`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} — ${GROOMER.price.premium}`, GROOMER.price.premium, () => h.groom("premium"))),
         );
       break;
     case "cafe":

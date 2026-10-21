@@ -1,6 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { HAPPY_LIFE, SUFFERED_LIFE, THINGS } from "../sim/config";
+import { HAPPY_LIFE, SUFFERED_LIFE } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
@@ -31,7 +31,7 @@ import {
 import { element, type Card, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
-import { plural, PRODUCT_TITLES, THING_TITLES } from "./titles";
+import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 export { plural };
 import { drawPortrait, portraitCanvas } from "./portrait";
@@ -190,7 +190,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
   if (tab === "shop") body.push("Кур'єр привезе замовлення сьогодні ж — чи завтра, якщо вже пізно.", shopCatalog(state, "delivery", handlers.checkout));
-  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}. Викинута річ зникає, і комунальні зменшуються.`, myThings(state, handlers));
+  if (tab === "mine") body.push(`Комунальні цього тижня: ${utilitiesDue(state)}.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));
@@ -298,7 +298,7 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   for (const item of state.home.items) {
     const row = element("div", "shop-row");
     const name = element("span", "shop-name", THING_TITLES[item.kind]);
-    name.append(element("span", "shop-stock", `${item.quality === "cheap" ? "дешева" : "дорога"} · комунальні +${THINGS[item.kind].utilities}`));
+    name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${item.kind}`]?.[item.quality] ?? ""));
     row.append(name);
     const button = element("button", "button", "Викинути");
     button.addEventListener("click", () => handlers.discard(item));
@@ -324,10 +324,10 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} (${supplyCount(state, m)})`, onSelect: () => onPick({ medicine: m }) });
   }
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.treats[q] > 0) actions.push({ label: `${q === "premium" ? "Дорогі" : "Дешеві"} ласощі (${supply.treats[q]})`, onSelect: () => onPick({ treat: q }) });
+    if (supply.treats[q] > 0) actions.push({ label: `${VARIANT_TITLES["treats"]?.[q] ?? ""} (${supply.treats[q]})`, onSelect: () => onPick({ treat: q }) });
   }
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.collar[q] > 0) actions.push({ label: `${q === "premium" ? "Дорогий" : "Дешевий"} нашийник`, onSelect: () => onPick({ collar: q }) });
+    if (supply.collar[q] > 0) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
   }
   if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: "Дзвіночок на нашийник", onSelect: () => onPick("bell") });
   const first = actions[0];
