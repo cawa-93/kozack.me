@@ -13,8 +13,20 @@ interface StateBubble {
   name: IconName;
 }
 
+/** Де виринає бабл: точка чи той, за ким він летить. */
+export type Anchor = { x: number; y: number } | (() => { x: number; y: number } | null);
+
+interface Floater {
+  container: Phaser.GameObjects.Container;
+  at: Anchor;
+  rise: number;
+}
+
+const place = (at: Anchor): { x: number; y: number } | null => (typeof at === "function" ? at() : at);
+
 export class Bubbles {
   private readonly states = new Map<string, StateBubble>();
+  private readonly floaters = new Set<Floater>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -65,23 +77,60 @@ export class Bubbles {
     return this.states.has(anchor);
   }
 
-  /** Бабл події: виринає й за мить зникає. */
-  pop(icon: IconName, x: number, y: number, count?: number): void {
-    const container = this.make(icon, x, y, count);
+  /**
+   * Бабл події: виринає й за мить зникає. Якщо місце — функція, бабл летить за тим, над ким виринув
+   * (персонаж чи кіт іде далі, а бабл — з ним).
+   */
+  pop(icon: IconName, at: Anchor, count?: number): void {
+    const start = place(at);
+    if (!start) return;
+    const container = this.make(icon, start.x, start.y - 8, count);
     container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
+    this.float(container, at, 1100);
+  }
+
+  /** Короткий напис над кимось (§11.4): «+12 ₴» тощо. Так само виринає й летить за ним. */
+  popText(text: string, at: Anchor, color: string): void {
+    const start = place(at);
+    if (!start) return;
+    const label = this.scene.add
+      .text(0, 0, text, { fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color, stroke: "#1f1a24", strokeThickness: 3, resolution: 2 })
+      .setOrigin(0.5, 1)
+      .setAlpha(0.75);
+    const container = this.scene.add.container(start.x, start.y - 4, [label]).setDepth(BUBBLE_DEPTH + 2).addToDisplayList(this.layer);
+    this.float(container, at, 700);
+  }
+
+  /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
+  private float(container: Phaser.GameObjects.Container, at: Anchor, delay: number): void {
+    const floater: Floater = { container, at, rise: 0 };
+    this.floaters.add(floater);
+    this.scene.tweens.add({ targets: floater, rise: -34, delay, duration: 500 });
     this.scene.tweens.add({
       targets: container,
-      y: y - 34,
       alpha: 0,
-      delay: 1100,
+      delay,
       duration: 500,
-      onComplete: () => container.destroy(),
+      onComplete: () => {
+        this.floaters.delete(floater);
+        container.destroy();
+      },
     });
+  }
+
+  /** Бабли подій летять за тими, над ким виринули. Викликати щокадру. */
+  update(): void {
+    for (const f of this.floaters) {
+      const p = place(f.at);
+      if (p) f.container.setPosition(p.x, p.y - 8 + f.rise);
+    }
   }
 
   clear(): void {
     for (const bubble of this.states.values()) bubble.container.destroy();
     this.states.clear();
+    for (const f of this.floaters) f.container.destroy();
+    this.floaters.clear();
   }
 }

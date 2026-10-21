@@ -69,6 +69,9 @@ function isTyping(): boolean {
 
 // Рівень — один день (§4): квартира, персонаж, коти, бабли й інтерфейс. Сцена лише показує стан
 // і передає дії гравця в симуляцію; правил гри тут немає.
+/** Як часто виринає «+N ₴» над персонажем, мс. */
+const EARNINGS_POP_MS = 3000;
+
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
   private views = new Map<string, ObjectView>();
@@ -181,6 +184,8 @@ export class DayScene extends Phaser.Scene {
     this.overlay.close();
     this.bubbles.clear();
     this.storage.clear();
+    this.moneySeen = null;
+    this.earned = 0;
     this.touch.reset();
     this.viewport.jump();
     // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
@@ -409,6 +414,24 @@ export class DayScene extends Phaser.Scene {
     this.render(time, seconds);
   }
 
+  /** Скільки грошей бачила сцена: приріст показується над персонажем (§11.4). */
+  private moneySeen: number | null = null;
+  private earned = 0;
+  private earnedShownAt = 0;
+
+  /** Гроші прийшли (робота, премія, приз) — над персонажем виринає зелене «+N ₴», не частіше ніж раз на 3 секунди. */
+  private showEarnings(time: number): void {
+    const money = this.state.character.money;
+    if (this.moneySeen !== null && money > this.moneySeen) this.earned += money - this.moneySeen;
+    this.moneySeen = money;
+    if (this.earned >= 1 && time - this.earnedShownAt >= EARNINGS_POP_MS && this.state.trip === null) {
+      const shown = Math.floor(this.earned);
+      this.earned -= shown;
+      this.earnedShownAt = time;
+      this.bubbles.popText(`+${shown} ₴`, this.personAnchor, "#8fdc7a");
+    }
+  }
+
   private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
@@ -417,6 +440,8 @@ export class DayScene extends Phaser.Scene {
     this.person.draw(state.character, this.moving, time, state.trip !== null, state.character.sex === "male" ? beardLook(state) : null);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
+    this.showEarnings(time);
+    this.bubbles.update();
     this.viewport.follow(this.person.head, seconds);
     this.drawItems();
     this.drawMarks(time);
@@ -644,13 +669,16 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
 
+  /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
+  private readonly personAnchor = (): { x: number; y: number } => ({ x: this.person.head.x, y: this.person.head.y });
+
   /** Бабли подій і картки. */
   private onGameEvent(event: GameEvent): void {
     const popAt = (id: string, icon: IconName, count?: number): void => {
-      const anchor = this.anchorOf(id);
-      if (anchor) this.bubbles.pop(icon, anchor.x, anchor.y - 8, count);
+      // Бабл летить за котом чи річчю, над якими виринув.
+      this.bubbles.pop(icon, () => this.anchorOf(id), count);
     };
-    const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.person.head.x, this.person.head.y - 8);
+    const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.personAnchor);
     switch (event.type) {
       case "refused": {
         const icon = REFUSAL_ICONS[event.reason];
@@ -658,7 +686,7 @@ export class DayScene extends Phaser.Scene {
         break;
       }
       case "supply-used":
-        this.bubbles.pop(PRODUCT_ICONS[event.product], this.person.head.x, this.person.head.y - 8, event.left);
+        this.bubbles.pop(PRODUCT_ICONS[event.product], this.personAnchor, event.left);
         break;
       case "doorbell":
         popAt("door", "bell");
@@ -774,7 +802,7 @@ export class DayScene extends Phaser.Scene {
         );
         return;
       case "meeting-start":
-        this.bubbles.pop("camera", this.anchorOf("computer")?.x ?? 0, (this.anchorOf("computer")?.y ?? 0) - 8);
+        this.bubbles.pop("camera", () => this.anchorOf("computer"));
         return;
       case "meeting-missed":
         this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було. Репутація помітно впала.");
