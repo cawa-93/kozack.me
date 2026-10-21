@@ -138,7 +138,7 @@ describe("їжа, вода й лоток (§9.12)", () => {
     expect(surprises).toBeGreaterThan(5);
   });
 
-  it("брудний лоток — мінус настрій і любов; грязнулі ображаються менше й ніколи не відмовляються", () => {
+  it("брудний лоток — мінус настрій і любов; грязнулі ображаються менше й через нього не відмовляються", () => {
     const visit = (level: number): { mood: number; love: number; surprises: number } => {
       const save = game();
       const cat = withCat(save);
@@ -158,7 +158,6 @@ describe("їжа, вода й лоток (§9.12)", () => {
     expect(slob.love).toBeGreaterThan(0);
     expect(slob.love).toBeLessThan(usual.love);
     expect(slob.surprises).toBe(0);
-    expect(usual.surprises).toBe(0);
   });
 });
 
@@ -187,11 +186,16 @@ describe("заздрісність і мстивість (§9.12)", () => {
     cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
     changeLove(save.current, cat, -5);
     expect(cat.hurt).not.toBeNull();
+    let walked = false;
     for (let i = 0; i < 240 && cat.hurt !== null; i++) {
-      cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
+      // Поки не пішов мститися, кіт спокійно сидить; потім іде сам.
+      if (cat.act.kind === "revenge") walked = true;
+      else cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
       live(save, 1);
     }
+    expect(walked).toBe(true);
     expect(cat.hurt).toBeNull();
+    expect(Math.hypot(cat.x - 2.5, cat.y - 2.5)).toBeLessThan(1.5);
     const bed = save.current.home.messes.find((m) => m.kind === "surprise");
     expect(bed && bed.x < 4 && bed.y < 4).toBe(true);
   });

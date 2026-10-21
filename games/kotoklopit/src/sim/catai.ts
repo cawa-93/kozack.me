@@ -572,6 +572,12 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       wearOut(state, water, rng);
       return;
     }
+    case "revenge":
+      // Дійшов до ліжка: помста здійснилася, образа минає.
+      addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
+      observe(state, cat, "vengeful");
+      cat.hurt = null;
+      return;
     case "toilet": {
       cat.needs.toilet = 0;
       const box = itemById<LitterItem>(state, act.target);
@@ -585,11 +591,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         return;
       }
       if (isDirty(box)) {
-        // Грязнулі ображаються менше, чистюлі — більше; відмовитися можуть лише чистюлі (§9.12).
+        // Грязнулі ображаються менше й від брудного лотка не відмовляються; чистюлі — навпаки (§9.12).
         const picky = traitLevel(cat, "litterPicky");
         const factor = Math.max(0, 1 + DIRTY_LITTER.pickyStep * picky);
         changeMood(state, cat, MOOD.dirtyLitter * factor, "брудний лоток");
-        if (picky > 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
+        if (picky >= 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
           addMess(state, "surprise", surpriseSpot(rng), cat.id);
           observe(state, cat, "litterPicky");
           return;
@@ -925,17 +931,20 @@ export function envy(state: GameState, lucky: Cat): void {
   }
 }
 
-/** Мстивий кіт після образи може залишити «сюрприз» біля ліжка персонажа; тоді образа минає (§9.12). */
+/**
+ * Мстивий кіт після образи може піти до ліжка персонажа й залишити там «сюрприз»; тоді образа
+ * минає (§9.12). Іде лише з дій, які не шкода кинути.
+ */
+const REVENGE_FROM = new Set(["idle", "wander", "attention", "toy"]);
+
 function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const level = traitLevel(cat, "vengeful");
   const hurt = cat.hurt;
-  if (level <= 0 || hurt === null || asleep(cat)) return;
+  if (level <= 0 || hurt === null || !REVENGE_FROM.has(cat.act.kind)) return;
   if (absoluteMinute(state.day, state.minute) - hurt.at > REVENGE.minutes) return;
   if (!rng.chance(1 - (1 - REVENGE.perHour * level) ** (minutes / MINUTES_PER_HOUR))) return;
   const bed = objectById("bed");
-  addMess(state, "surprise", visibleFloorNear(state, { x: bed.x + bed.w + 0.5, y: bed.y + bed.h - 0.5 }), cat.id);
-  observe(state, cat, "vengeful");
-  cat.hurt = null;
+  start(cat, "revenge", { x: bed.x + bed.w, y: bed.y + bed.h - 1 }, CAT_ACT_MINUTES.toilet, "bed");
 }
 
 export function jealousy(state: GameState, cat: Cat): void {

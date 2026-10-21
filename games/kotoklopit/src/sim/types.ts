@@ -420,7 +420,9 @@ export type CatActKind =
   | "scratch"
   | "wrestle"
   | "groom"
-  | "fight";
+  | "fight"
+  /** Мстивий кіт іде до ліжка персонажа, щоб залишити там «сюрприз» (§9.12). */
+  | "revenge";
 
 export interface CatAct {
   kind: CatActKind;
