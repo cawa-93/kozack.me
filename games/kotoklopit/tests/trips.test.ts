@@ -12,7 +12,7 @@ import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Save } from "../src/sim/types";
-import { standAt, withCatCorner } from "./helpers";
+import { driveSafely, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
@@ -29,13 +29,6 @@ function withCat(save: Save): Cat {
   cat.arrivedDay = -10;
   addCat(save.current, cat);
   return cat;
-}
-
-const SLOW = { steer: 0 as const, throttle: -1 };
-
-/** Їхати найповільніше: інших машин не наздогнати. */
-function driveSafely(save: Save): void {
-  for (let i = 0; i < 10_000 && save.current.trip?.phase === "drive"; i++) drive(save, 0.5, SLOW);
 }
 
 describe("вирушити (§8.5)", () => {
@@ -62,7 +55,7 @@ describe("вирушити (§8.5)", () => {
 });
 
 describe("гонка (§8.5)", () => {
-  it("на найменшій швидкості машин не наздогнати, і дорога вдвічі довша", () => {
+  it("повільніше за інші машини їх не наздогнати, але дорога довша вдвічі й більше", () => {
     const save = game(10 * 60);
     save.current.day = 5; // субота: без штрафу роботи
     startTrip(save.current, "shop");

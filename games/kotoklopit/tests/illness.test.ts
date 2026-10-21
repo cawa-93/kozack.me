@@ -3,13 +3,13 @@
 import { describe, expect, it } from "vitest";
 
 import { canDash } from "../src/sim/body";
-import { drive, newGame } from "../src/sim/game";
+import { newGame } from "../src/sim/game";
 import { doctorExam, doctorTreat, fallIllPerson, illnessSpeed, isIll, nightlyIllness, takeHumanMeds } from "../src/sim/illness";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
 import type { Save } from "../src/sim/types";
 import { isWorkday } from "../src/sim/work";
-import { standAt } from "./helpers";
+import { driveSafely, standAt } from "./helpers";
 
 const game = (): Save => newGame({ sex: "male", difficulty: "normal", seed: 3 });
 const always = () => ({ ...createRng(1), chance: () => true });
@@ -63,7 +63,7 @@ describe("хвороби персонажа (§6.5)", () => {
     fallIllPerson(save.current, "cold");
     standAt(save, "door");
     expect(startTrip(save.current, "doctor")).toBe(true);
-    for (let i = 0; i < 10_000 && save.current.trip?.phase === "drive"; i++) drive(save, 0.5, { steer: 0, throttle: -1 });
+    driveSafely(save);
     expect(doctorExam(save.current)).toBe(true);
     expect(doctorTreat(save.current, "cold", "premium", always())).toBe("cured");
     expect(isIll(save.current, "cold")).toBe(false);

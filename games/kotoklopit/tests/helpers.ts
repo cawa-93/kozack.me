@@ -2,7 +2,7 @@ import { targetOf } from "../src/sim/targets";
 import { addCatCorner } from "../src/dev/scenarios";
 import { changeStat } from "../src/sim/character";
 import { onEvent, type GameEvent } from "../src/sim/events";
-import { advance, goToSleep, interact } from "../src/sim/game";
+import { advance, drive, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { hoursUntilWake } from "../src/sim/sleep";
 import type { NightReport, Save, Vec } from "../src/sim/types";
@@ -153,4 +153,12 @@ export function withCatCorner(save: Save): Save {
   save.dayStart = structuredClone(save.current);
   save.weekStart = structuredClone(save.current);
   return save;
+}
+
+/** Їхати повільніше за інші машини (×0,25–0,4): їх не наздогнати (§8.5). */
+export function driveSafely(save: Save): void {
+  for (let i = 0; i < 100_000 && save.current.trip?.phase === "drive"; i++) {
+    const speed = save.current.trip.race.speed;
+    drive(save, 0.1, { steer: 0, throttle: speed < 0.25 ? 1 : 0 });
+  }
 }
