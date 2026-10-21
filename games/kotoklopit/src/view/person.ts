@@ -26,7 +26,8 @@ export class PersonView {
   hands = { x: 0, y: 0, depth: 0 };
 
   /** Намалювати персонажа; під час руху він трохи підстрибує на кроках. */
-  draw(character: Character, moving: boolean, time: number, away = false, beard: BeardLook | null = null): void {
+  /** `dirty` — чистого одягу немає (§8.7): плями на одязі й хвилі запаху над персонажем. */
+  draw(character: Character, moving: boolean, time: number, away = false, beard: BeardLook | null = null, dirty = false): void {
     // У поїздці персонажа вдома не видно (§8.5).
     this.g.setVisible(!away);
     if (away) return;
@@ -53,6 +54,10 @@ export class PersonView {
     g.fillStyle(shoes).fillRoundedRect(x - 10, y - 4, 9, 5, 2).fillRoundedRect(x + 1, y - 4, 9, 5, 2);
     g.fillStyle(shirt).fillRoundedRect(x - width / 2, y - 42, width, 30, 9);
     g.lineStyle(2.5, COLORS.ink).strokeRoundedRect(x - width / 2, y - 42, width, 30, 9);
+    if (dirty) {
+      // Брудний одяг: плями на сорочці й штанях.
+      g.fillStyle(0x6b5a3a, 0.75).fillEllipse(x - width / 4, y - 30, 7, 5).fillEllipse(x + width / 5, y - 22, 6, 4).fillEllipse(x + 5, y - 8, 4, 4);
+    }
     // Голова.
     const hx = x + body.facing.x * 2;
     const hy = y - 54;
@@ -81,6 +86,14 @@ export class PersonView {
     if (!back && beard === "neat") g.fillStyle(hair).fillEllipse(hx, hy + 7, 16, 9);
     if (!back && beard === "unkempt") g.fillStyle(hair).fillEllipse(hx, hy + 9, 22, 15).fillTriangle(hx - 9, hy + 10, hx - 13, hy + 18, hx - 5, hy + 14).fillTriangle(hx + 9, hy + 10, hx + 13, hy + 19, hx + 4, hy + 14);
     if (held) drawItem(g, held, x + body.facing.x * 10, y - 22, 0.9);
+    if (dirty) {
+      // Хвилі запаху підіймаються над персонажем.
+      g.lineStyle(2, 0x7a8a3a, 0.8);
+      for (const [dx, phase] of [[-10, 0], [0, 1.3], [10, 2.6]] as const) {
+        const wy = hy - 26 - ((time / 40 + phase * 12) % 14);
+        g.beginPath().arc(hx + dx + Math.sin(time / 200 + phase) * 2, wy, 3, Math.PI * 0.5, Math.PI * 1.5).strokePath();
+      }
+    }
     this.head = { x: hx, y: hy - 16 };
     this.hands = { x: x + body.facing.x * 12, y: y - 14, depth: depthOf(feet.y) + (body.facing.y < -0.5 ? -1 : 1) };
   }

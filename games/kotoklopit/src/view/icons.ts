@@ -43,8 +43,7 @@ export type IconName =
   | "drops"
   | "treats"
   | "collar"
-  | "mind"
-  | "laundry";
+  | "mind";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -250,19 +249,6 @@ Object.assign(ICONS, {
     // Нашийник із жетоном.
     g.lineStyle(5, COLORS.danger).strokeCircle(20, 17, 11);
     g.fillStyle(0xe8b93a).fillCircle(20, 31, 5);
-  },
-} satisfies Partial<Record<IconName, Draw>>);
-
-/** Брудний одяг (§8.7): зім'ята сорочка з хвилями запаху — щоб не плутати з брудним лотком. */
-Object.assign(ICONS, {
-  laundry: (g: Phaser.GameObjects.Graphics) => {
-    const v = (points: [number, number][]) => points.map(([x, y]) => new Phaser.Math.Vector2(x, y));
-    const shirt = v([[12, 14], [16, 11], [24, 11], [28, 14], [33, 18], [29, 22], [27, 20], [27, 33], [13, 33], [13, 20], [11, 22], [7, 18]]);
-    g.fillStyle(0xc9b28a).fillPoints(shirt, true);
-    g.lineStyle(2.5, INK).strokePoints(shirt, true);
-    g.fillStyle(0x8a7a5a).fillCircle(17, 25, 2).fillCircle(23, 29, 1.6);
-    g.lineStyle(2, 0x7a8a3a);
-    for (const x of [14, 20, 26]) g.beginPath().arc(x, 6, 2.5, Math.PI * 0.5, Math.PI * 1.5).strokePath();
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

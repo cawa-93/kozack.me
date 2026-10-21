@@ -476,7 +476,7 @@ export class DayScene extends Phaser.Scene {
     // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
     const activity = state.character.activity;
     const inside = activity?.kind === "use" && activity.inside === true;
-    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null);
+    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null, state.home.clothes <= 0);
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.drawInteraction(time);
@@ -687,7 +687,7 @@ export class DayScene extends Phaser.Scene {
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : state.home.clothes <= 0 ? "laundry" : null);
+    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
