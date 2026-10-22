@@ -437,6 +437,26 @@ describe("ніч із котами (§4, §8.8, §9.12)", () => {
   });
 });
 
+describe("нічні побудки й «Галасливі сусіди» (§8.8)", () => {
+  it("побудка до півночі не починає день: персонаж засинає знову", () => {
+    let early = 0;
+    for (let seed = 0; seed < 100; seed++) {
+      const save = game();
+      const cat = withCat(save);
+      cat.traits.push({ group: "nocturnal", level: 2, seen: 0, known: false });
+      save.current.seed = seed;
+      // Сусіди будять на 2 години раніше: до пробудження менше 6 годин уже о 22:00.
+      save.current.today.earlyWake = 120;
+      save.current.minute = hours(22);
+      const report = goToSleep(save);
+      if (report?.wakeUps.some((w) => w.reason === "night")) early += 1;
+      expect(report?.wokeMinute).toBeGreaterThanOrEqual(0);
+      expect(save.current.minute).toBeGreaterThanOrEqual(0);
+    }
+    expect(early).toBeGreaterThan(0);
+  });
+});
+
 describe("кошеня й «Пригніченість» (§6.2)", () => {
   it("кошеня приходить зі стартовим пакетом корму й наповнювача", () => {
     const save = game();

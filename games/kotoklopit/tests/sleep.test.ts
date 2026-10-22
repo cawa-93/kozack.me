@@ -105,6 +105,17 @@ describe("ефекти сну (§8.8)", () => {
   });
 });
 
+describe("страва в руках на ніч (§8.7)", () => {
+  it("лягає на вільну поверхню кухні, а не зникає", () => {
+    const save = game("female");
+    const state = save.current;
+    state.character.held = { kind: "meal", quality: "cheap" };
+    state.minute = hours(22);
+    goToSleep(save);
+    expect(Object.values(state.home.surfaces).filter((i) => i?.kind === "meal")).toHaveLength(1);
+  });
+});
+
 describe("показники уві сні (§8.8)", () => {
   it("голод і гігієна падають учетверо повільніше, здоров'я відновлюється, глузд не змінюється", () => {
     const save = game("female");

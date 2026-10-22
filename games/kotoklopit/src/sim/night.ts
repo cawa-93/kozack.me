@@ -163,7 +163,8 @@ function sleep({ state, report, rng }: Night): void {
     // Ранкова побудка — лише якщо кіт голодний і миски порожні.
     if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
     report.wakeUps.push({ cat: cat.id, reason });
-    if ((planned - minute) / MINUTES_PER_HOUR >= COLLAPSE_HOURS_BEFORE_WAKE) {
+    // До півночі день не починається: персонаж засинає знову (з «Галасливими сусідами» вікно зсувається).
+    if ((planned - minute) / MINUTES_PER_HOUR >= COLLAPSE_HOURS_BEFORE_WAKE || minute < MINUTES_PER_DAY) {
       lost += WAKE_UP.lostMinutes;
     } else {
       woke = minute;

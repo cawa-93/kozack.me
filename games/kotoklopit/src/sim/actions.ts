@@ -37,7 +37,7 @@ import {
 } from "./config";
 import { receivePackages, returnSupply, supplyCount, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
-import { isSolid, type HomeObject } from "./home";
+import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { targetById, targetOf, type Target } from "./targets";
@@ -626,6 +626,12 @@ export function dropEverything(state: GameState): void {
   if (held?.kind === "catfood") returnSupply(state, held.sterile ? "sterileFood" : "catFood", held.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
   if (held?.kind === "toy") dropToy(state);
+  // Страву з рук — на вільну поверхню кухні, а не в нікуди.
+  if (held?.kind === "meal" || held?.kind === "burnt") {
+    const surfaces = state.home.surfaces;
+    const free = SURFACE_IDS.find((id) => surfaces[id] === null);
+    if (free !== undefined) surfaces[free] = held;
+  }
   character.held = null;
 }
 
