@@ -5,6 +5,7 @@ import Phaser from "phaser";
 
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
+import { LOW_STAT } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
@@ -34,7 +35,6 @@ const BAR_WIDTH = 116;
 const BAR_HEIGHT = 12;
 const STATS_X = 238;
 const STATS_STEP = 158;
-const LOW = 25;
 /** Штрихування частини шкали над межею (§6.3): крок і колір смужок. */
 const HATCH_STEP = 6;
 const HATCH_COLOR = 0x6b5f73;
@@ -131,7 +131,7 @@ export class Hud {
     STATS.forEach((stat, i) => {
       const x = STATS_X + i * STATS_STEP + BAR_X;
       const value = stats[stat.name];
-      const blink = value < LOW && Math.floor(time / 400) % 2 === 0;
+      const blink = value < LOW_STAT && Math.floor(time / 400) % 2 === 0;
       g.fillStyle(0x1a1520).fillRoundedRect(x, BAR_Y, BAR_WIDTH, BAR_HEIGHT, 5);
       g.fillStyle(blink ? 0xffffff : stat.color).fillRoundedRect(x, BAR_Y, Math.max(0, (BAR_WIDTH * value) / 100), BAR_HEIGHT, 5);
       // Вище межі показник зараз не росте (брудний одяг, «Пригніченість»): цю частину шкали заштриховано.
