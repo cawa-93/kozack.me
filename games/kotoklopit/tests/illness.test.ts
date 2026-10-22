@@ -96,6 +96,32 @@ describe("хвороби персонажа (§6.5)", () => {
     }
   });
 
+  it("застуда минає сама за 7 днів, травма — за 10; остання ніч ще шкодить", () => {
+    for (const [id, days, damage] of [["cold", 7, 4], ["injury", 10, 3]] as const) {
+      const save = game();
+      const state = save.current;
+      state.character.stats.health = 100;
+      fallIllPerson(state, id);
+      for (let night = 0; night < days; night++) {
+        expect(isIll(state, id)).toBe(true);
+        nightlyIllness(state, 8);
+        state.day += 1;
+      }
+      expect(isIll(state, id)).toBe(false);
+      expect(state.character.stats.health).toBe(100 - days * damage);
+    }
+  });
+
+  it("виснаження само не минає: лише добрий сон", () => {
+    const save = game();
+    fallIllPerson(save.current, "exhaustion");
+    for (let night = 0; night < 20; night++) {
+      nightlyIllness(save.current, 7.5);
+      save.current.day += 1;
+    }
+    expect(isIll(save.current, "exhaustion")).toBe(true);
+  });
+
   it("огляд без хвороб не додає здоров'я", () => {
     const save = game();
     save.current.day = 1;

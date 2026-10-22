@@ -721,18 +721,23 @@ export const SUFFERED_LIFE = 40;
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок — у тій самій кімнаті або ближче цього (у проході між кімнатами). */
 export const WITNESS_DISTANCE = 3;
-/** Хвороби персонажа (§6.5): безпечний термін, шкода, скільки днів із ліками лікує, лікарняний. */
-export const ILLNESSES: Record<IllnessId, { safe: number; damage: number; doses: number | null; sickLeave: number }> = {
-  // Правка автора 2026-10-22: шкода з першої ночі (було 3 безпечні дні), застуда −4, травма −3, виснаження −5 (було −2, −1, −2).
-  cold: { safe: 0, damage: 4, doses: 3, sickLeave: 2 },
-  injury: { safe: 0, damage: 3, doses: 4, sickLeave: 1 },
-  exhaustion: { safe: 0, damage: 5, doses: null, sickLeave: 3 },
+/**
+ * Хвороби персонажа (§6.5): безпечний термін, шкода, скільки днів із ліками лікує, за скільки днів
+ * минає сама (null — лише відпочинок чи лікування), лікарняний.
+ */
+export const ILLNESSES: Record<IllnessId, { safe: number; damage: number; doses: number | null; recovers: number | null; sickLeave: number }> = {
+  // Правка автора 2026-10-22: шкода з першої ночі (було 3 безпечні дні), застуда −4, травма −3, виснаження −5 (було −2, −1, −2);
+  // застуда й травма минають самі за 7 і 10 днів (було — ніколи).
+  cold: { safe: 0, damage: 4, doses: 3, recovers: 7, sickLeave: 2 },
+  injury: { safe: 0, damage: 3, doses: 4, recovers: 10, sickLeave: 1 },
+  exhaustion: { safe: 0, damage: 5, doses: null, recovers: null, sickLeave: 3 },
 };
 export const ILLNESS_EFFECTS = {
   /** Застуда й травма сповільнюють рух; травма з річчю в руках — ще більше. */
   slow: 0.8,
   carrySlow: 0.8,
-  injuryOnStun: 0.1,
+  /** Правка автора 2026-10-22: було 10% — бот травмувався більшу частину часу. */
+  injuryOnStun: 0.05,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
   shortSleepHours: 7,
   shortNights: 3,

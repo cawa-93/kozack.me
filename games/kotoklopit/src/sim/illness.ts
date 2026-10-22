@@ -42,6 +42,7 @@ export const canDashWhenIll = (state: GameState): boolean => !isIll(state, "cold
 /**
  * Ніч (§6.5): виснаження від недосипу кілька ночей поспіль і одужання від доброго сну; після
  * «безпечних» днів — щоденна шкода здоров'ю. Уві сні показники не нижче 5 (§8.8): хвороба не вбиває вночі.
+ * Застуда й травма минають самі: остання ніч ще шкодить, потім хвороба минає.
  */
 export function nightlyIllness(state: GameState, sleptHours: number): void {
   const ch = state.character;
@@ -51,7 +52,9 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
   if (isIll(state, "exhaustion") && ch.restedNights >= ILLNESS_EFFECTS.restNights) curePerson(state, "exhaustion");
   for (const illness of [...ch.illnesses]) {
     const rule = ILLNESSES[illness.id];
-    if (state.day - illness.day >= rule.safe) changeStat(state, "health", -rule.damage, SLEEP_STAT_FLOOR);
+    const days = state.day - illness.day;
+    if (days >= rule.safe) changeStat(state, "health", -rule.damage, SLEEP_STAT_FLOOR);
+    if (rule.recovers !== null && days + 1 >= rule.recovers) curePerson(state, illness.id);
   }
 }
 
