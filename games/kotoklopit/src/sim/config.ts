@@ -733,8 +733,6 @@ export const ILLNESS_EFFECTS = {
   restHours: 8,
   restNights: 2,
   medsWork: 0.7,
-  /** Хвороба не опускає здоров'я нижче цього: закінчує гру лише недбалість (§6.1). */
-  floor: 0,
 } as const;
 /** Лікар (§6.5): лікування дешеве чи дороге, здоров'я після лікування. */
 export const DOCTOR_TREAT = { cheap: 30, premium: 80, cheapWorks: 0.7, health: 10 } as const;

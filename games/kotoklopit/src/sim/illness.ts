@@ -1,7 +1,7 @@
 // Хвороби персонажа (§6.5): застуда, травма, виснаження; ліки з магазину й лікар з лікарняним.
 
 import { changeStat, spend } from "./character";
-import { DOCTOR, DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES } from "./config";
+import { DOCTOR, DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import type { Rng } from "./rng";
@@ -41,7 +41,7 @@ export const canDashWhenIll = (state: GameState): boolean => !isIll(state, "cold
 
 /**
  * Ніч (§6.5): виснаження від недосипу кілька ночей поспіль і одужання від доброго сну; після
- * «безпечних» днів — щоденна шкода здоров'ю.
+ * «безпечних» днів — щоденна шкода здоров'ю. Уві сні показники не нижче 5 (§8.8): хвороба не вбиває вночі.
  */
 export function nightlyIllness(state: GameState, sleptHours: number): void {
   const ch = state.character;
@@ -51,16 +51,16 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
   if (isIll(state, "exhaustion") && ch.restedNights >= ILLNESS_EFFECTS.restNights) curePerson(state, "exhaustion");
   for (const illness of [...ch.illnesses]) {
     const rule = ILLNESSES[illness.id];
-    if (state.day - illness.day >= rule.safe) changeStat(state, "health", -rule.damage, ILLNESS_EFFECTS.floor);
+    if (state.day - illness.day >= rule.safe) changeStat(state, "health", -rule.damage, SLEEP_STAT_FLOOR);
   }
 }
 
-/** Прийняти ліки біля умивальника (§6.5): одна доза на день, дешева діє з шансом 70%. */
 /** Чи є що лікувати таблеткою сьогодні: хвороба, що лікується ліками, і сьогодні ще без дози (§6.5). */
 export function needsHumanMeds(state: GameState): boolean {
   return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null && i.lastDose !== state.day);
 }
 
+/** Прийняти ліки біля умивальника (§6.5): одна доза на день, дешева діє з шансом 70%. */
 export function takeHumanMeds(state: GameState, rng: Rng): boolean {
   // Без хвороби, що лікується, ліки не п'ють: доза не марнується.
   if (!needsHumanMeds(state)) return false;

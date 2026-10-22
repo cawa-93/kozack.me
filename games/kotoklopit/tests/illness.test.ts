@@ -26,6 +26,18 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(isIll(save.current, "exhaustion")).toBe(false);
   });
 
+  it("уві сні хвороба не опускає здоров'я нижче 5 і не закінчує гру (§8.8)", () => {
+    const save = game();
+    fallIllPerson(save.current, "cold");
+    save.current.day += 10;
+    save.current.character.stats.health = 6;
+    nightlyIllness(save.current, 8);
+    expect(save.current.character.stats.health).toBe(5);
+    nightlyIllness(save.current, 8);
+    expect(save.current.character.stats.health).toBe(5);
+    expect(save.current.end).toBeNull();
+  });
+
   it("застуда сповільнює й забирає ривок", () => {
     const save = game();
     fallIllPerson(save.current, "cold");
