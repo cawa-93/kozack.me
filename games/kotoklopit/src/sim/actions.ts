@@ -11,7 +11,7 @@ import { bathe } from "./care";
 import { tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { powerOut } from "./modifiers";
-import { changeStat, unpleasantTask } from "./character";
+import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   HOUSEHOLD,
   ILLNESS,
@@ -505,7 +505,9 @@ function finishUse(state: GameState, target: Target): void {
   const object = target.object;
   if (object.kind === "vacuum") return vacuumed(state);
   if (object.kind === "shower") {
-    const quality = useSupply(state, "hygiene");
+    // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі (§8.7).
+    const plain = state.character.stats.hygiene + SHOWER_HYGIENE.none >= statCeiling(state, "hygiene");
+    const quality = plain ? null : useSupply(state, "hygiene");
     const hygiene = SHOWER_HYGIENE[quality ?? "none"];
     changeStat(state, "hygiene", hygiene);
     emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene") });

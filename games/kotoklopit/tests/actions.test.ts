@@ -166,6 +166,21 @@ describe("душ (§8.7)", () => {
     expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling - 3 * HOUSEHOLD.noClothesHygiene, 0);
   });
 
+  it("засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі", () => {
+    for (const [clothes, hygiene, used] of [[5, 95, 0], [0, 55, 0], [5, 80, 1], [0, 40, 1]] as const) {
+      const save = game();
+      const stats = save.current.character.stats;
+      stats.hygiene = hygiene;
+      save.current.home.clothes = clothes;
+      save.current.home.supplies.hygiene = { cheap: 2, premium: 0 };
+      standAt(save, "shower");
+      interact(save);
+      advance(save, 10);
+      expect(supplyCount(save.current, "hygiene")).toBe(2 - used);
+      expect(stats.hygiene).toBeCloseTo(clothes > 0 ? 100 : HOUSEHOLD.noClothesHygieneCeiling, 0);
+    }
+  });
+
   it("сповільнення подовжує душ (§8.8)", () => {
     const save = game();
     save.current.minute = hours(22.5);
