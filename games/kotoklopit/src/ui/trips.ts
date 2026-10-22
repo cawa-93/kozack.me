@@ -1,13 +1,13 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
+import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, tripCat } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { diseaseTitle, ILLNESS_TITLES } from "../texts";
+import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -33,6 +33,8 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   for (const destination of Object.keys(TRIPS) as Destination[]) {
     const blocker = tripBlocker(state, destination);
     if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
+    // Ветеринар і грумер — коли вже є кіт: до першого кошеняти вони лише муляли б очі (§11.3а).
+    if (TRIPS[destination].cat && state.cats.length === 0) continue;
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
@@ -128,28 +130,31 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     case "vet": {
       if (!cat) break;
       if (!log.exam) {
-        body.push(`${cat.name} у переносці. Огляд покаже всі хвороби.`);
-        body.push(row("Огляд", "🕐 1 год", button(`Оглянути — ${VET.exam} ₴`, VET.exam, h.exam)));
+        body.push(`${cat.name} у переносці.`);
+        body.push(row("Огляд", "🕐 1 год", button(`${VET.exam} ₴`, VET.exam, h.exam)));
         break;
       }
       body.push(
-        `Ветеринар оглянув ${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}.`,
+        `${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}.`,
       );
       const known = cat.diseases.filter((d) => d.known);
       if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
       if (!cat.sterilized)
-        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год, потім кілька днів відновлення", button(`Зробити — ${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
+        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
         const chronic = DISEASES[d.id].cure.kind === "control";
+        // Що дало лікування цієї поїздки: без цього рядок не змінювався, і хотілося платити знову.
+        const result = log.done.filter((x) => x.startsWith(`${d.id}:`)).at(-1)?.split(":")[1];
+        const note = result === "failed" ? "не допомогло" : result === "controlled" ? "✓ під контролем" : chronic ? "хронічна" : "🕐 1 год";
         list.append(
           row(
             diseaseTitle(d.id),
-            chronic ? "хронічна: ліки на тиждень" : "🕐 1 год",
-            button(`${SERVICE_TITLES.treat.cheap} — ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap")),
-            button(`${SERVICE_TITLES.treat.premium} — ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium")),
+            note,
+            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled"),
+            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled"),
           ),
         );
       }
@@ -158,8 +163,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     }
     case "doctor": {
       if (!log.done.includes("doctor")) {
-        body.push("Лікар огляне вас і, якщо треба, призначить лікування й лікарняний.");
-        body.push(row("Огляд", "🕐 1 год", button(`Оглянути — 40 ₴`, 40, h.doctor)));
+        body.push(row("Огляд", "🕐 1 год", button(`${DOCTOR.exam} ₴`, DOCTOR.exam, h.doctor)));
         break;
       }
       const ill = state.character.illnesses;
@@ -169,9 +173,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         list.append(
           row(
             ILLNESS_TITLES[i.id],
-            "минає одразу; лікарняний з завтра",
-            button(`${SERVICE_TITLES.treat.cheap} — ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
-            button(`${SERVICE_TITLES.treat.premium} — ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
+            "",
+            button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
+            button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
           ),
         );
       }
@@ -179,7 +183,6 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
     }
     case "shelter": {
-      body.push(`Кіт із притулку — ${SHELTER.price} ₴. Вибір тижня:`);
       const list = element("div", "shop");
       for (const c of shelterCats(state)) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3);
@@ -188,24 +191,24 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         const r = row(
           `${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
           facts.join(", "),
-          button(`Взяти — ${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
+          button(`${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
         );
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);
-      if (cat) body.push(row(`Віддати ${cat.name}`, "притулок прийме одразу й безкоштовно; здоровий глузд постраждає", button("Віддати", 0, h.giveAway)));
+      if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
       break;
     }
     case "breeder": {
       const { breed, cats } = breederCats(state);
       const price = breederCatPrice(state);
-      body.push(`Розплідник цього тижня пропонує кошенят породи «${breedById(breed).name}» з родоводом. Кошеня — ${price} ₴.`);
+      body.push(`«${breedById(breed).name}», з родоводом.`);
       const list = element("div", "shop");
       for (const c of cats) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3);
-        const r = row(`${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} тижні`, traits.length > 0 ? "" : "Характер: ?", button(`Взяти — ${price} ₴`, price, () => h.buyKitten(c.id)));
+        const r = row(`${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`, traits.length > 0 ? "" : "Характер: ?", button(`${price} ₴`, price, () => h.buyKitten(c.id)));
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
       }
@@ -215,27 +218,26 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     }
     case "groomer":
       if (!cat) break;
-      if (log.done.includes("groom")) body.push(`${cat.name} вичесаний і пухнастий, хоч і трохи ображений.`);
+      if (log.done.includes("groom")) body.push(fill("{кіт} [вичесаний|вичесана] й [пухнастий|пухнаста], хоч і трохи [ображений|ображена].", cat.sex, { кіт: cat.name }));
       else
         body.push(
-          `Грумер приведе ${cat.name} до ладу.`,
-          row("Стрижка й вичісування", "🕐 1,5 год", button(`${SERVICE_TITLES.groom.cheap} — ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} — ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
+          `${cat.name} у переносці.`,
+          row("Грумінг", "🕐 1,5 год", button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
         );
       break;
     case "cafe":
       if (log.done.includes("cafe")) body.push("Чужі коти — теж коти. Трохи полегшало.");
       else
         body.push(
-          "Посидіти з чужими котами: 20 ₴ за годину.",
-          row("Скільки сидіти?", "", ...[1, 2, 3].map((n) => button(`🕐 ${n} год — ${20 * n} ₴`, 20 * n, () => h.cafe(n)))),
+          row("Посидіти з котами", "", ...[1, 2, 3].map((n) => button(`🕐 ${n} год · ${CAFE.pricePerHour * n} ₴`, CAFE.pricePerHour * n, () => h.cafe(n)))),
         );
       break;
     case "show": {
       if (!cat) break;
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
-        body.push(`Виставка котів. ${cat.name} у переносці.`);
-        body.push(row(`Записати ${cat.name}`, "🕐 3 год", button(`Участь — ${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
+        body.push(`${cat.name} у переносці.`);
+        body.push(row("Участь", "🕐 3 год", button(`${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
       const prize = Number(result.slice(5));

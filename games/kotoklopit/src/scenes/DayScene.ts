@@ -267,7 +267,7 @@ export class DayScene extends Phaser.Scene {
     }
     // Кіт на руках біля аптечки: догляд (§8.7) — ліки, ласощі, нашийник.
     const cat = medicineCat(this.state);
-    if (cat && targetOf(this.state)?.id === "cat-kit" && hasCareSupplies(this.state)) {
+    if (cat && targetOf(this.state)?.id === "cat-kit" && hasCareSupplies(this.state, cat)) {
       this.overlay.show(
         careCard(
           this.state,

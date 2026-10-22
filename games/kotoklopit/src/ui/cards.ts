@@ -130,11 +130,14 @@ export function endScreen(state: GameState, end: GameEnd, handlers: EndHandlers)
   if (cats) parts.push(cats);
   return {
     parts,
-    actions: [
-      { label: "Переграти день", primary: !retired, onSelect: handlers.replayDay },
-      { label: "Переграти тиждень", onSelect: handlers.replayWeek },
-      { label: "Нова гра", primary: retired, onSelect: handlers.newGame },
-    ],
+    // Пенсія — успішний кінець: переграти нема чого, лишається нова гра (§6.1).
+    actions: retired
+      ? [{ label: "Нова гра", primary: true, onSelect: handlers.newGame }]
+      : [
+          { label: "Переграти день", primary: true, onSelect: handlers.replayDay },
+          { label: "Переграти тиждень", onSelect: handlers.replayWeek },
+          { label: "Нова гра", onSelect: handlers.newGame },
+        ],
   };
 }
 
@@ -197,7 +200,10 @@ export interface PhoneHandlers {
 const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", game: "Гра" };
 
 /** Телефон персонажа (§6.4): магазин із доставкою, викинути річ, коти, альбом, гра. */
-export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandlers): Card {
+export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHandlers): Card {
+  // Коти й альбом з'являються, коли в них є що показати (§11.3а): до першого кота — лише порожні сторінки.
+  const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => (t !== "cats" || state.cats.length > 0) && (t !== "album" || state.album.length > 0));
+  const tab = tabs.includes(wanted) ? wanted : "shop";
   const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
   if (tab === "shop" && waiting > 0) body.push(note(`🚗 У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
@@ -209,7 +215,7 @@ export function phoneCard(state: GameState, tab: PhoneTab, handlers: PhoneHandle
   // Вкладки — компактний рядок угорі, закрити — хрестиком: на телефоні горизонтально лишається місце для вмісту.
   return {
     title: "",
-    tabs: (Object.keys(PHONE_TABS) as PhoneTab[]).map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
+    tabs: tabs.map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
     body,
     actions: [],
     onDismiss: handlers.close,
@@ -331,8 +337,10 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
 export type CareChoice = { medicine: Medicine } | { treat: Quality } | { collar: Quality } | "bell";
 
 /** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
-export function hasCareSupplies(state: GameState): boolean {
-  return (["pills", "drops", "treats", "collar", "bell"] as const).some((p) => supplyCount(state, p) > 0);
+export function hasCareSupplies(state: GameState, cat: Cat): boolean {
+  // Дзвіночок — лише на нашийник без дзвіночка: інакше картка відкрилася б порожньою.
+  const bell = cat.collar !== null && !cat.collar.bell && supplyCount(state, "bell") > 0;
+  return bell || (["pills", "drops", "treats", "collar"] as const).some((p) => supplyCount(state, p) > 0);
 }
 
 /** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10): ліки, ласощі, нашийник. */
@@ -348,15 +356,13 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
   for (const q of ["premium", "cheap"] as const) {
     if (supply.collar[q] > 0) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
   }
-  if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: "Дзвіночок на нашийник", onSelect: () => onPick("bell") });
+  if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: `Дзвіночок ×${supplyCount(state, "bell")}`, onSelect: () => onPick("bell") });
   const first = actions[0];
   if (first) first.primary = true;
   return {
     kicker: "Догляд",
     title: `${cat.name} на руках`,
-    body: [
-      "Кіт насторожено дивиться на аптечку.",
-    ],
+    body: [],
     actions,
     onDismiss: onCancel,
     closable: true,

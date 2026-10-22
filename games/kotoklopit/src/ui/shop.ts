@@ -15,6 +15,18 @@ function goodsName(goods: Goods): string {
   return "product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing];
 }
 
+/**
+ * Магазин відкривається поступово (§11.3а): корм для стерилізованих — коли є стерилізований кіт
+ * чи такий корм уже бував удома, дзвіночок — коли є нашийник (на коті чи в запасі).
+ */
+function offered(state: GameState, goods: Goods): boolean {
+  if (!("product" in goods)) return true;
+  const acquired = state.home.acquired.includes(goods.product);
+  if (goods.product === "sterileFood") return acquired || state.cats.some((c) => c.sterilized);
+  if (goods.product === "bell") return acquired || supplyCount(state, "collar") > 0 || state.cats.some((c) => c.collar !== null);
+  return true;
+}
+
 /** Що вже є вдома: запас — кількість і ліміт сховища видно в телефоні й так; річ — скільки штук. */
 function stockText(state: GameState, goods: Goods): string {
   if ("product" in goods) return `🏠 ${PRODUCT_TITLES[goods.product].unit(supplyCount(state, goods.product))}`;
@@ -57,9 +69,9 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
       const name = element("span", "shop-name", goodsName(g));
       let stock = stockText(state, g);
       if (mode === "store") {
-        // Що дешевше чи дорожче — видно, а на скільки й чому — ні (§11.3а).
+        // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
         const mod = shopModifier(state, g);
-        if (Math.abs(mod) >= 0.005) stock += mod < 0 ? " · сьогодні дешевше" : " · сьогодні дорожче";
+        if (Math.abs(mod) >= 0.005) stock += mod < 0 ? " · ₴↓" : " · ₴↑";
       }
       name.append(element("span", "shop-stock", stock));
       row.append(name);
@@ -93,8 +105,9 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
       box.append(row);
     }
   };
-  section("Запаси", GOODS.filter((g) => "product" in g));
-  section("Речі", GOODS.filter((g) => "thing" in g));
+  const shown = GOODS.filter((g) => offered(state, g));
+  section("Запаси", shown.filter((g) => "product" in g));
+  section("Речі", shown.filter((g) => "thing" in g));
 
   pay.addEventListener("click", () => {
     if (canCheckout(state, cart, mode)) onCheckout(cart.filter((l) => l.count > 0));
