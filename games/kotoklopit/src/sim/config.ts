@@ -57,6 +57,8 @@ export const SATIETY_PER_HOUR = -4;
 export const MALE_METABOLISM = 1.1;
 /** Гігієна за годину неспання. */
 export const HYGIENE_PER_HOUR = -3;
+/** Ситість за один ривок — «біганина» (§6.3, правка автора 2026-10-22). */
+export const DASH_SATIETY = -0.25;
 /** Здоров'я за годину неспання, коли ситість нижче порогу (правка автора 2026-10-22: було −1 нижче 20). */
 export const HUNGER_HEALTH_PER_HOUR = -2;
 export const HUNGER_HEALTH_THRESHOLD = 25;

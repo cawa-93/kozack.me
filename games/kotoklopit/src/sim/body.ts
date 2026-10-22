@@ -20,6 +20,7 @@ import {
   WALK_TILES_PER_MINUTE,
 } from "./config";
 import { traitLevel } from "./cat";
+import { dashHunger } from "./character";
 import { emit } from "./events";
 import { cycleDash, cycleMove } from "./grooming";
 import { moveFactor } from "./modifiers";
@@ -66,6 +67,7 @@ export function dash(state: GameState): boolean {
   const body = state.character.body;
   body.dash = DASH_MINUTES;
   body.dashCooldown = DASH_COOLDOWN_MINUTES * cycleDash(state);
+  dashHunger(state);
   emit(state, { type: "dash" });
   return true;
 }

@@ -4,6 +4,7 @@ import { hygieneFactor } from "./household";
 import { unpleasantFactor } from "./modifiers";
 import {
   CHRONOTYPE_WINDOWS,
+  DASH_SATIETY,
   DEPRESSION_CEILING,
   FIRST_WEEK_PROTECTION,
   HUNGER_HEALTH_PER_HOUR,
@@ -97,6 +98,11 @@ export function unpleasantTask(state: GameState, sanityLoss: number, minute = st
 /** Чоловічий персонаж має трохи вищий обмін речовин (§5.1). */
 function metabolism(state: GameState): number {
   return state.character.sex === "male" ? MALE_METABOLISM : 1;
+}
+
+/** Ривок — «біганина» (§6.3): трохи ситості, з тим самим обміном речовин. */
+export function dashHunger(state: GameState): void {
+  changeStat(state, "satiety", DASH_SATIETY * metabolism(state));
 }
 
 /** Минув час, поки персонаж не спить. */

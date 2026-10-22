@@ -63,6 +63,19 @@ describe("рух (§8.4)", () => {
     expect(save.current.character.body.x).toBeCloseTo(2.5 + 9 * 0.25);
   });
 
+  it("ривок — «біганина»: ситість −0,25, у чоловічого персонажа ×1,1 (§6.3)", () => {
+    for (const [sex, cost] of [["female", 0.25], ["male", 0.275]] as const) {
+      const save = newGame({ sex, difficulty: "normal", seed: 1 });
+      const stats = save.current.character.stats;
+      const before = stats.satiety;
+      expect(dash(save.current)).toBe(true);
+      expect(stats.satiety).toBeCloseTo(before - cost);
+      // Ривок на перезарядці не вдається й ситості не забирає.
+      expect(dash(save.current)).toBe(false);
+      expect(stats.satiety).toBeCloseTo(before - cost);
+    }
+  });
+
   it("з низьким здоров'ям ривка немає, а низькі здоров'я й ситість уповільнюють (§6.3)", () => {
     const save = game();
     const stats = save.current.character.stats;
