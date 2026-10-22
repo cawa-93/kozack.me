@@ -913,12 +913,12 @@ export class DayScene extends Phaser.Scene {
         this.bubbles.pop("camera", () => this.anchorOf("computer"));
         return;
       case "meeting-missed":
-        this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було. Репутація помітно впала.");
+        this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
         return;
       case "home-vet": {
         const cat = this.state.cats.find((c) => c.id === value);
         const known = cat?.diseases.map((d) => diseaseTitle(d.id)) ?? [];
-        this.notice("Ветеринарка оглянула кота", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.`);
+        this.notice("Заходила ветеринарка", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.`);
         return;
       }
       case "inspection":
@@ -928,7 +928,7 @@ export class DayScene extends Phaser.Scene {
         this.notice("Прийшли гості", value < 0 ? "Гості чемно не помітили безладу. Але ви помітили, що вони помітили." : "Гості в захваті від котів і чистоти.");
         return;
       case "office-missed":
-        this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися. Репутація постраждала.");
+        this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися.");
         return;
       case "fireworks":
         this.cameras.main.shake(300, 0.004);

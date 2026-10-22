@@ -5,16 +5,18 @@ import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
 import { isWorkday } from "../sim/work";
 
-/** Події модифікатора дня (§4.1): коли й що. */
+const at = (minute: number, what: string): [number, string] => [minute, `${formatClock(minute)} ${what}`];
+
+/** Події модифікатора дня (§4.1): коли й готовий рядок розкладу. */
 const DAY_EVENTS: Record<string, [number, string]> = {
-  meeting: [MODIFIERS.meeting.from, "нарада"],
-  lunch: [MODIFIERS.lunch.from, "обідня перерва"],
-  outage: [MODIFIERS.outage.from, "без світла до 15:00"],
-  inspection: [MODIFIERS.inspection.minute, "перевірка ОСББ"],
-  guests: [MODIFIERS.guests.minute, "гості"],
-  festival: [MODIFIERS.festival.minute, "феєрверки"],
-  "home-vet": [MODIFIERS.homeVetMinute, "ветеринарка"],
-  office: [18 * 60, "до цього — офіс"],
+  meeting: at(MODIFIERS.meeting.from, "нарада"),
+  lunch: at(MODIFIERS.lunch.from, "обідня перерва"),
+  outage: [MODIFIERS.outage.from, `${formatClock(MODIFIERS.outage.from)}–${formatClock(MODIFIERS.outage.to)} без світла`],
+  inspection: at(MODIFIERS.inspection.minute, "перевірка ОСББ"),
+  guests: at(MODIFIERS.guests.minute, "гості"),
+  festival: at(MODIFIERS.festival.minute, "феєрверки"),
+  "home-vet": at(MODIFIERS.homeVetMinute, "ветеринарка"),
+  office: [18 * 60, "до 18:00 офіс"],
 };
 
 /**
@@ -30,8 +32,8 @@ export function scheduleOf(state: GameState): string[] {
     if (minute < STANDUP_MINUTE + STANDUP_MINUTES) timed.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летучка`]);
   }
   const event = DAY_EVENTS[state.modifiers.day ?? ""];
-  if (event && minute < event[0]) timed.push([event[0], `${formatClock(event[0])} ${event[1]}`]);
-  if (state.modifiers.day === "vaccination" && !state.today.vaccinated) now.push("сьогодні — щеплення котові");
+  if (event && minute < event[0]) timed.push(event);
+  if (state.modifiers.day === "vaccination" && !state.today.vaccinated) now.push("щеплення");
   if (state.home.porch.length > 0) now.push("пакунок під дверима");
   const today = absoluteMinute(state.day, 0);
   const next = Math.min(...state.home.deliveries.map((d) => d.at - today));

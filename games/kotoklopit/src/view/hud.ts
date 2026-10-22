@@ -136,12 +136,10 @@ export class Hud {
     this.money.setText(`${Math.floor(money)} ₴`);
 
     const effects: string[] = [];
-    if (state.modifiers.day === "first-day") effects.push("Перший день");
     if (isDrowsy(state)) effects.push("Сонливість");
     if (sleepSpeed < 0) effects.push("Недосип");
     if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? "Добре [виспався|виспалася]" : "[Виспався|Виспалася]", state.character.sex));
-    if (stats.health < LOW) effects.push("Знесилення");
-    if (stats.satiety < LOW) effects.push("Голод");
+    // Знесилення й голод видно з самих шкал: вони блимають (§11.4), тож слово не повторює їх.
     const job = state.job;
     if (job.unemployed) effects.push("Пошук роботи");
     if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
@@ -154,9 +152,8 @@ export class Hud {
       if (look === "unkempt") effects.push("Неохайна борода");
     }
     this.effects.setText(effects.join(" · "));
-    const schedule = scheduleOf(state).slice(0, 3);
-    // Три рядки вміщуються лише дрібнішим шрифтом.
-    this.schedule.setFontSize(schedule.length > 2 ? 15 : 18).setText(schedule.join("\n"));
+    // Два найближчі пункти: на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
+    this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
   }
 
   /** Кутики назовні — увімкнути повний екран, усередину — вийти з нього. */

@@ -18,7 +18,6 @@ import {
   endingText,
   farewellText,
   fill,
-  FIRST_DAY_HINT,
   BEARD_TEXTS,
   CYCLE_TEXTS,
   BIRTH_MESSAGE,
@@ -96,7 +95,6 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     events.push([fill(UTILITIES_MESSAGES[utilities.outcome], sex, { сума: utilities.paid, борг: utilities.nextDue })]);
   }
   if (night === null && state.day === 0) {
-    events.push([FIRST_DAY_HINT]);
     events.push(["Керування", isTouch() ? CONTROLS_TOUCH : CONTROLS_KEYBOARD]);
   }
   const sections: TitleSection[] = [
