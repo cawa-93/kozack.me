@@ -34,6 +34,9 @@ export class Viewport {
   private center: Vec = { x: WORLD.width / 2, y: WORLD.height / 2 };
   /** Наступного кадру камера стає на місце одразу, без наїзду. */
   private snap = true;
+  /** Масштаб, за якого квартира вміщується й читається, і наїзд поверх нього. */
+  private zoomBase = 1;
+  private zoomFocus = 1;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.world = scene.add.layer();
@@ -55,6 +58,12 @@ export class Viewport {
   onLayout(listener: (frame: Frame) => void): void {
     this.listeners.push(listener);
     listener(this.frame);
+  }
+
+  /** Наїзд камери: множник до звичайного масштабу (засинання, §8.8). 1 — без наїзду. */
+  focus(k: number): void {
+    this.zoomFocus = k;
+    this.camera.setZoom(this.zoomBase * k);
   }
 
   /** Поставити камеру на місце без наїзду: наприклад, на початку дня. */
@@ -88,7 +97,8 @@ export class Viewport {
     this.camera.setViewport(0, top, width, height - top);
     const fit = Math.min(width / WORLD.width, (height - top) / WORLD.height);
     const readable = (MIN_TILE_CSS * k.y) / TILE_H;
-    this.camera.setZoom(Math.max(fit, readable));
+    this.zoomBase = Math.max(fit, readable);
+    this.camera.setZoom(this.zoomBase * this.zoomFocus);
     this.snap = true;
     for (const listener of this.listeners) listener(this.frame);
   }

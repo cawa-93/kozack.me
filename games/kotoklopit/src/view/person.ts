@@ -36,7 +36,8 @@ export class PersonView {
 
   /** Намалювати персонажа; під час руху він трохи підстрибує на кроках. */
   /** `dirty` — чистого одягу немає (§8.7): плями на одязі й хвилі запаху над персонажем. */
-  draw(character: Character, moving: boolean, time: number, away = false, beard: BeardLook | null = null, dirty = false): void {
+  /** `sleep` — засинання 0–1 (§8.8): очі поступово заплющуються, голова хилиться. */
+  draw(character: Character, moving: boolean, time: number, away = false, beard: BeardLook | null = null, dirty = false, sleep = 0): void {
     // У поїздці персонажа вдома не видно (§8.5).
     this.g.setVisible(!away);
     if (away) return;
@@ -76,7 +77,7 @@ export class PersonView {
     }
     // Голова.
     const hx = x + body.facing.x * 2;
-    const hy = y - 54;
+    const hy = y - 54 + sleep * 3;
     g.fillStyle(skin).fillEllipse(hx, hy, face.w, face.h);
     g.lineStyle(2.5, COLORS.ink).strokeEllipse(hx, hy, face.w, face.h);
     g.fillStyle(hair);
@@ -97,10 +98,17 @@ export class PersonView {
       g.fillEllipse(hx, hy - 8, face.w + 2, 11);
       if (style === 3) for (const dx of [-10, -4, 4, 10]) g.fillCircle(hx + dx, hy - 11, 5);
       if (style === 2) g.fillCircle(hx - body.facing.x * 10, hy - 12, 6);
-      // Очі дивляться в бік руху.
-      g.fillStyle(pick(PALETTE.eyes, look.eyes))
-        .fillCircle(hx - 4 + body.facing.x * 4, hy + 1 + body.facing.y * 2, 1.8)
-        .fillCircle(hx + 4 + body.facing.x * 4, hy + 1 + body.facing.y * 2, 1.8);
+      // Очі дивляться в бік руху; засинаючи, звужуються й заплющуються (§8.8).
+      const ex = hx + body.facing.x * 4;
+      const ey = hy + 1 + body.facing.y * 2;
+      const open = 1 - Math.min(1, sleep / 0.85);
+      if (open > 0.15) {
+        g.fillStyle(pick(PALETTE.eyes, look.eyes))
+          .fillEllipse(ex - 4, ey, 3.6, 3.6 * open)
+          .fillEllipse(ex + 4, ey, 3.6, 3.6 * open);
+      } else {
+        g.lineStyle(1.5, COLORS.ink).lineBetween(ex - 6, ey, ex - 2, ey).lineBetween(ex + 2, ey, ex + 6, ey);
+      }
     }
     if (style === 1 && !back) g.fillStyle(hair).fillRoundedRect(hx - face.w / 2 - 1, hy - 6, 6, 20, 3).fillRoundedRect(hx + face.w / 2 - 5, hy - 6, 6, 20, 3);
     // Борода (§5.1): щетина — крапки, охайна — акуратна, неохайна — кошлата.

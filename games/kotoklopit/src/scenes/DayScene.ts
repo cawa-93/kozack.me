@@ -16,7 +16,7 @@ import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
 import { isPresent, objectById } from "../sim/home";
-import { isDrowsy } from "../sim/sleep";
+import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
 import type { Chronotype, Difficulty, GameState, HomeItem, Look, Sex } from "../sim/types";
@@ -51,6 +51,11 @@ import { Viewport } from "../view/viewport";
 const MAX_FRAME_SECONDS = 0.1;
 /** Коротше за це (мс) — натискання біля кота бере його на руки, довше — пестощі. */
 const CAT_TAP_MS = 250;
+/**
+ * Засинання (§8.8): за `eyes` мс очі заплющуються, з `darkFrom` до `total` екран темніє, камера
+ * наїжджає на `zoom`; потім ніч. Падіння без сил починається за `lead` ігрових хвилин до межі.
+ */
+const FALL_ASLEEP = { eyes: 1300, darkFrom: 1000, total: 2300, zoom: 0.5, lead: 0.01 } as const;
 
 const REFUSAL_ICONS: Record<Refusal, IconName | null> = {
   empty: "empty",
@@ -91,6 +96,10 @@ export class DayScene extends Phaser.Scene {
   private corner!: Phaser.GameObjects.Graphics;
   private marks!: Phaser.GameObjects.Graphics;
   private gloom!: Phaser.GameObjects.Rectangle;
+  /** Темрява засинання — над усім, і над інтерфейсом. */
+  private dark!: Phaser.GameObjects.Rectangle;
+  /** Персонаж засинає (§8.8): коли почав (мс) і чи падає без сил. */
+  private asleep: { started: number; collapsed: boolean } | null = null;
   private person!: PersonView;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
@@ -136,6 +145,7 @@ export class DayScene extends Phaser.Scene {
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(15_000).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
+    this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(30_000).addToDisplayList(ui);
     this.touch = new TouchControls(
       this,
       ui,
@@ -144,6 +154,7 @@ export class DayScene extends Phaser.Scene {
     );
     this.viewport.onLayout((frame) => {
       this.gloom.setSize(frame.width, frame.height);
+      this.dark.setSize(frame.width, frame.height);
       this.hud.layout(frame);
       this.touch.layout(frame);
     });
@@ -199,6 +210,7 @@ export class DayScene extends Phaser.Scene {
   private restart(): void {
     this.overlay.close();
     this.queued.length = 0;
+    this.wakeUp();
     this.bubbles.clear();
     this.hearts.clear();
     this.storage.clear();
@@ -285,7 +297,39 @@ export class DayScene extends Phaser.Scene {
       );
       return;
     }
+    // Ліжко у вікні сну: персонаж засинає не миттєво (§8.8).
+    if (this.state.character.held === null && targetOf(this.state)?.id === "bed" && canGoToSleep(this.state)) {
+      this.fallAsleep(false);
+      return;
+    }
     interact(this.session.save);
+  }
+
+  /** Почати засинання: очі заплющуються, екран темніє, потім ніч (§8.8). */
+  private fallAsleep(collapsed: boolean): void {
+    this.asleep = { started: this.time.now, collapsed };
+    this.moving = false;
+  }
+
+  /** Засинання триває; коли екран уже темний — ніч (у ліжку чи там, де впав без сил). */
+  private tickAsleep(time: number): void {
+    const asleep = this.asleep;
+    if (!asleep || time - asleep.started < FALL_ASLEEP.total) return;
+    this.asleep = null;
+    const save = this.session.save;
+    // До межі лишалися частки хвилини; більше — стан змінився, і перемотувати день не можна.
+    if (asleep.collapsed) advance(save, Math.min(1, Math.max(0, collapseMinute(save.current) - save.current.minute)));
+    else interact(save);
+    // Темряву прибрати, коли екран уже закрила титулка чи екран кінця гри; без них — одразу.
+    const covered = this.overlay.isOpen || this.state.end !== null;
+    this.time.delayedCall(covered ? 1000 : 0, () => this.wakeUp());
+  }
+
+  /** Прибрати засинання: очі, наїзд і темряву. */
+  private wakeUp(): void {
+    this.asleep = null;
+    this.dark.setFillStyle(0x000000, 0);
+    this.viewport.focus(1);
   }
 
   private dash(): void {
@@ -294,7 +338,7 @@ export class DayScene extends Phaser.Scene {
   }
 
   private blocked(): boolean {
-    return this.overlay.isOpen || this.session.paused || this.state.end !== null;
+    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null;
   }
 
   private readInput(): Input {
@@ -450,10 +494,19 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
+    this.tickAsleep(time);
     if (!this.blocked()) {
       const input = this.readInput();
       this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
-      advance(this.session.save, gameMinutes(seconds) * this.session.speed, input);
+      const minutes = gameMinutes(seconds) * this.session.speed;
+      // Пора падати без сил (§8.8): зупинитися перед межею й засинати анімацією, а не миттєво.
+      const untilCollapse = collapseMinute(this.state) - this.state.minute - FALL_ASLEEP.lead;
+      if (minutes >= untilCollapse) {
+        const night = advance(this.session.save, Math.max(0, untilCollapse), input);
+        if (night === null && this.state.end === null) this.fallAsleep(true);
+      } else {
+        advance(this.session.save, minutes, input);
+      }
       this.resolveCatPress(input.hold);
     } else {
       this.moving = false;
@@ -517,7 +570,7 @@ export class DayScene extends Phaser.Scene {
     // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
     const activity = state.character.activity;
     const inside = activity?.kind === "use" && activity.inside === true;
-    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null, state.home.clothes <= 0);
+    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null, state.home.clothes <= 0, this.sleepiness(time));
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.drawInteraction(time);
@@ -529,9 +582,28 @@ export class DayScene extends Phaser.Scene {
     this.drawMarks(time);
     this.updateStateBubbles();
     this.touch.draw(canDash(state));
+    this.drawFallingAsleep(time);
     // Низький здоровий глузд — світ трохи пливе (§6.3).
     const sanity = state.character.stats.sanity;
     this.gloom.setFillStyle(0x5b3a7a, sanity < LOW_STAT ? ((LOW_STAT - sanity) / LOW_STAT) * 0.22 : 0);
+  }
+
+  /** Наскільки заплющені очі під час засинання: 0–1 (§8.8). */
+  private sleepiness(time: number): number {
+    if (!this.asleep) return 0;
+    const t = Math.min(1, (time - this.asleep.started) / FALL_ASLEEP.eyes);
+    // Повіки опускаються повільно й нерівно, як коли засинаєш.
+    return t * t * (3 - 2 * t);
+  }
+
+  /** Засинання: камера наїжджає на персонажа, екран поступово темніє до чорного титулки (§8.8). */
+  private drawFallingAsleep(time: number): void {
+    if (!this.asleep) return;
+    const t = time - this.asleep.started;
+    const eyes = this.sleepiness(time);
+    this.viewport.focus(1 + FALL_ASLEEP.zoom * eyes);
+    const dark = Phaser.Math.Clamp((t - FALL_ASLEEP.darkFrom) / (FALL_ASLEEP.total - FALL_ASLEEP.darkFrom), 0, 1);
+    this.dark.setFillStyle(0x000000, dark);
   }
 
   private view(id: string): ObjectView {
