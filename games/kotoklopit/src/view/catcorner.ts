@@ -106,6 +106,7 @@ function along(route: readonly Vec[], progress: number): Vec {
  * поки він є в запасі), робот-пилосос на базі чи в дорозі. Фонтанчики малює сама миска з водою.
  */
 function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void {
+  drawHousehold(g, state);
   const appliances = state.home.appliances;
   const stocked = supplyCount(state, "catFood") > 0;
   for (const bowl of feederBowls(state)) {
@@ -129,6 +130,37 @@ function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void 
     g.fillStyle(progress === null ? 0x5fa8d3 : 0x5cbf5a).fillCircle(x, y - 4, 2.5);
     g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 30, 15);
   }
+}
+
+/** Біля дверей — переноска, якщо вона є (§8.5); біля пральної машини — кошик білизни (§8.7). */
+const CARRIER_AT: Vec = { x: 12.5, y: 9.9 };
+const BASKET_AT: Vec = { x: 9.5, y: 1.75 };
+
+/**
+ * Побут, видний у квартирі (ревізія 2026-10-22): переноска стоїть біля дверей — видно, що вона є;
+ * кошик брудної білизни наповнюється, поки чистого одягу стає менше, і переповнюється, коли він
+ * скінчився (§8.7): так видно, що час прати, ще до плям на одязі.
+ */
+function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
+  const carrier = state.home.carrier;
+  if (carrier) {
+    const { x, y } = toScreen(CARRIER_AT);
+    g.fillStyle(carrier === "premium" ? 0x8e4a6a : 0x9aa3ab).fillRoundedRect(x - 18, y - 22, 36, 24, 6);
+    g.fillStyle(0x2b2530, 0.6).fillRoundedRect(x - 10, y - 16, 20, 12, 3);
+    g.lineStyle(1.5, 0xd8d4cc).lineBetween(x - 5, y - 16, x - 5, y - 4).lineBetween(x, y - 16, x, y - 4).lineBetween(x + 5, y - 16, x + 5, y - 4);
+    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 18, y - 22, 36, 24, 6);
+    g.lineStyle(3, COLORS.ink).beginPath().arc(x, y - 22, 8, Math.PI, 0).strokePath();
+  }
+  const { x, y } = toScreen(BASKET_AT);
+  // Скільки днів одягу вже брудні: від порожнього кошика (5 і більше чистих днів) до гірки.
+  const dirty = Math.max(0, Math.min(5, 5 - state.home.clothes));
+  const colors = [0xc0675a, 0x5a7fc0, 0xe0c060, 0x6fae6a, 0x8e4a6a];
+  for (let i = 0; i < dirty; i++) g.fillStyle(colors[i] ?? 0xc0675a).fillEllipse(x - 8 + (i % 3) * 8, y - 14 - Math.floor(i / 3) * 6, 14, 9);
+  if (state.home.clothes <= 0) g.fillStyle(0xd8d4cc).fillEllipse(x + 12, y + 2, 12, 6).fillStyle(0xc0675a).fillEllipse(x - 14, y + 3, 10, 5);
+  g.fillStyle(0xb98a57).fillRoundedRect(x - 14, y - 14, 28, 16, 4);
+  g.lineStyle(1.5, 0x8b5e3c);
+  for (const dx of [-7, 0, 7]) g.lineBetween(x + dx, y - 12, x + dx, y);
+  g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 14, y - 14, 28, 16, 4);
 }
 
 function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: boolean): void {
@@ -170,6 +202,11 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: 
       g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
       g.fillStyle(0x6b4a2b);
       for (let i = 0; i < Math.min(item.uses, 6); i++) g.fillCircle(x - w / 3 + ((i * 11) % (w * 0.66)), y - 3 + ((i * 7) % 9), 3.2);
+      if (item.quality === "premium") {
+        // «Закритий лоток»: дашок над задньою половиною, вхід — спереду.
+        g.fillStyle(0x5f7d78).fillRoundedRect(x - w / 2, y - h / 2 - 10, w, h / 2 + 8, { tl: 14, tr: 14, bl: 2, br: 2 });
+        g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - w / 2, y - h / 2 - 10, w, h / 2 + 8, { tl: 14, tr: 14, bl: 2, br: 2 });
+      }
       if (isDirty(item)) g.lineStyle(2, 0x7a8a3a, 0.8).lineBetween(x - 8, y - h / 2 - 2, x - 5, y - h / 2 - 12).lineBetween(x + 4, y - h / 2 - 2, x + 7, y - h / 2 - 12);
       return;
     }
