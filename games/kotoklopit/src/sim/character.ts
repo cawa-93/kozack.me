@@ -5,7 +5,7 @@ import { unpleasantFactor } from "./modifiers";
 import {
   CHRONOTYPE_WINDOWS,
   DEPRESSION_CEILING,
-  FIRST_DAY_MODIFIER,
+  FIRST_WEEK_PROTECTION,
   HUNGER_HEALTH_PER_HOUR,
   HUNGER_HEALTH_THRESHOLD,
   HOUSEHOLD,
@@ -28,13 +28,21 @@ export const STAT_NAMES: readonly StatName[] = ["health", "satiety", "hygiene", 
 /** Нижче цієї межі показник зараз не падає. */
 export function statFloor(state: GameState, stat: StatName): number {
   if (stat !== "sanity") return 0;
-  // «Перший день» (§8.3) і «Пригніченість» (§6.2): здоровий глузд не опускається нижче 10%.
-  if (state.modifiers.day === FIRST_DAY_MODIFIER || state.character.depressed) return SANITY_FLOOR;
+  // «Пригніченість» (§6.2): здоровий глузд не опускається нижче 10%.
+  if (state.character.depressed) return SANITY_FLOOR;
+  // Захист першого тижня (§8.3): не нижче 1%, поки в домі не з'явився перший кіт.
+  if (firstWeekProtected(state)) return FIRST_WEEK_PROTECTION.floor;
   return 0;
 }
 
+/** Перший тиждень гри, і в домі ще жодного разу не було кота (§8.3). */
+export function firstWeekProtected(state: GameState): boolean {
+  if (state.day >= FIRST_WEEK_PROTECTION.days || state.cats.length > 0) return false;
+  return Object.values(state.stats.raised).every((count) => count === 0);
+}
+
 /**
- * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 30% (§6.2),
+ * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 35% (§6.2),
  * брудний одяг — гігієну до 60 (§8.7).
  */
 export function statCeiling(state: GameState, stat: StatName): number {

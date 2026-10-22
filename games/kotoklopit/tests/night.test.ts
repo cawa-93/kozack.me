@@ -56,20 +56,20 @@ describe("порядок ночі (§4)", () => {
 });
 
 describe("кошеня з притулку (§6.2)", () => {
-  it("здоровий глузд увечері нижче 30% — кошеня й бонус уранці", () => {
-    const { save, report } = sleepOn(2, 29);
+  it("здоровий глузд увечері нижче 35% — кошеня й бонус уранці", () => {
+    const { save, report } = sleepOn(2, 34);
     expect(report.newCats).toHaveLength(1);
     expect(save.current.cats).toHaveLength(1);
     expect(save.current.cats[0]).toMatchObject({ source: "shelter-forced", ageWeeks: 1, arrivedDay: 3 });
-    expect(report.sanityEvening).toBe(29);
-    expect(report.sanityMorning).toBe(79);
-    expect(save.current.character.stats.sanity).toBe(79);
+    expect(report.sanityEvening).toBe(34);
+    expect(report.sanityMorning).toBe(84);
+    expect(save.current.character.stats.sanity).toBe(84);
   });
 
-  it("рівно 30% — кошеня немає", () => {
-    const { save, report } = sleepOn(2, 30);
+  it("рівно 35% — кошеня немає", () => {
+    const { save, report } = sleepOn(2, 35);
     expect(report.newCats).toHaveLength(0);
-    expect(save.current.character.stats.sanity).toBe(30);
+    expect(save.current.character.stats.sanity).toBe(35);
   });
 
   it("бонус залежить від складності: +62 / +50 / +40", () => {
@@ -78,10 +78,10 @@ describe("кошеня з притулку (§6.2)", () => {
     expect(sleepOn(2, 20, "hard").report.sanityMorning).toBe(60);
   });
 
-  it("після першого дня з захистом 10% кошеня приходить у вівторок (§8.3)", () => {
-    const { save, report } = sleepOn(0, 10);
+  it("після першого дня з захистом 1% кошеня приходить у вівторок (§8.3)", () => {
+    const { save, report } = sleepOn(0, 1);
     expect(report.newCats).toHaveLength(1);
-    expect(save.current.character.stats.sanity).toBe(60);
+    expect(save.current.character.stats.sanity).toBe(51);
   });
 
   it("кошеня в ніч на понеділок має вік 1 тиждень, а старші коти дорослішають", () => {

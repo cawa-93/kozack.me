@@ -63,8 +63,8 @@ describe("понеділок без котів (§8.3)", () => {
 
       expect(save.current.end).toBeNull();
       expect(night).not.toBeNull();
-      expect(night?.sanityEvening).toBeLessThan(30);
-      expect(night?.sanityEvening).toBeGreaterThanOrEqual(10);
+      expect(night?.sanityEvening).toBeLessThan(35);
+      expect(night?.sanityEvening).toBeGreaterThanOrEqual(1);
       expect(night?.newCats).toHaveLength(1);
       expect(save.current.cats).toHaveLength(1);
       expect(save.current.day).toBe(1);

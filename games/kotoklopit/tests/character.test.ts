@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { createCat } from "../src/sim/cat";
 import { changeStat, earn, spend } from "../src/sim/character";
-import { START_MONEY, START_STATS } from "../src/sim/config";
+import { FIRST_WEEK_PROTECTION, START_MONEY, START_STATS } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import type { Sex, StatName } from "../src/sim/types";
 import { hours } from "./helpers";
 
@@ -53,7 +56,7 @@ describe("кінець гри (§6.1)", () => {
   for (const stat of ["health", "satiety", "hygiene", "sanity"] as const satisfies readonly StatName[]) {
     it(`показник «${stat}» на нулі закінчує гру`, () => {
       const { current } = game();
-      current.day = 1;
+      current.day = FIRST_WEEK_PROTECTION.days;
       current.modifiers.day = null;
       changeStat(current, stat, -200);
       expect(current.character.stats[stat]).toBe(0);
@@ -83,28 +86,47 @@ describe("кінець гри (§6.1)", () => {
   });
 });
 
-describe("захист першого дня (§8.3)", () => {
-  it("у «Перший день» здоровий глузд не нижче 10%", () => {
-    const { current } = game();
-    changeStat(current, "sanity", -200);
-    expect(current.character.stats.sanity).toBe(10);
-    expect(current.end).toBeNull();
+describe("захист першого тижня (§8.3)", () => {
+  it("поки котів не було, здоровий глузд не нижче 1% увесь перший тиждень", () => {
+    for (const day of [0, FIRST_WEEK_PROTECTION.days - 1]) {
+      const { current } = game();
+      current.day = day;
+      changeStat(current, "sanity", -200);
+      expect(current.character.stats.sanity).toBe(1);
+      expect(current.end).toBeNull();
+    }
   });
 
   it("межа не піднімає показник, що вже нижчий за неї", () => {
     const { current } = game();
-    current.character.stats.sanity = 5;
+    current.character.stats.sanity = 0.5;
     changeStat(current, "sanity", -3);
-    expect(current.character.stats.sanity).toBe(5);
+    expect(current.character.stats.sanity).toBe(0.5);
   });
 
-  it("з другого дня захисту немає", () => {
+  it("з восьмого дня захисту немає", () => {
+    const { current } = game();
+    current.day = FIRST_WEEK_PROTECTION.days;
+    changeStat(current, "sanity", -200);
+    expect(current.end).toBe("sanity");
+  });
+
+  it("перший кіт знімає захист назавжди, навіть коли його вже немає", () => {
+    const { current } = game();
+    current.day = 2;
+    addCat(current, createCat(current, createRng(4), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } }));
+    current.cats = [];
+    changeStat(current, "sanity", -200);
+    expect(current.end).toBe("sanity");
+  });
+
+  it("захисту ніде не видно: він не змінює модифікатор дня", () => {
     const save = game();
     save.current.minute = hours(22);
     goToSleep(save);
     expect(save.current.modifiers.day).not.toBe("first-day");
     changeStat(save.current, "sanity", -200);
-    expect(save.current.end).toBe("sanity");
+    expect(save.current.character.stats.sanity).toBe(1);
   });
 });
 

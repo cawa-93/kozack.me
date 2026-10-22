@@ -448,13 +448,13 @@ describe("кошеня й «Пригніченість» (§6.2)", () => {
     expect(save.current.home.supplies.litter.cheap).toBe(7);
   });
 
-  it("без котів і нижче 30% уранці — «Пригніченість»: здоровий глузд між 10 і 30", () => {
+  it("без котів і нижче 35% уранці — «Пригніченість»: здоровий глузд між 10 і 35", () => {
     const save = game();
     const state = save.current;
     state.character.depressed = true;
     state.character.stats.sanity = 20;
     changeStat(state, "sanity", 50);
-    expect(state.character.stats.sanity).toBe(30);
+    expect(state.character.stats.sanity).toBe(35);
     changeStat(state, "sanity", -50);
     expect(state.character.stats.sanity).toBe(10);
     withCat(save);

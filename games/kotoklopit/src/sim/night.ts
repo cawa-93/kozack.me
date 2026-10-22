@@ -62,7 +62,7 @@ const STEPS: readonly Step[] = [
   { id: "pregnancies", weekly: true, run: pregnancies }, // §9.8
   { id: "utilities", weekly: true, run: utilities },
   { id: "week-modifier", weekly: true, run: weekModifier }, // §4.1
-  // 4. Поріг 30% за здоровим глуздом увечері.
+  // 4. Поріг 35% за здоровим глуздом увечері.
   { id: "kitten-check", run: kittenCheck },
   // 5. Ранок: персонаж бачить, що сталося вночі.
   { id: "morning", run: morning },
@@ -225,7 +225,7 @@ function utilities({ state, report }: Night): void {
 }
 
 /**
- * Здоровий глузд увечері нижче 30% — персонаж забирає кошеня з притулку (§6.2).
+ * Здоровий глузд увечері нижче 35% — персонаж забирає кошеня з притулку (§6.2).
  * Кошеня випадкове: 1 тиждень, 1 риса, жодної відомої; приходить зі стартовим пакетом (§9.12).
  */
 function kittenCheck({ state, report, rng }: Night): void {
@@ -260,7 +260,7 @@ export function giveStarterPack(state: GameState): void {
   }
 }
 
-/** Ранок: здоровий глузд від нічних подій; без котів і нижче 30% — «Пригніченість» (§6.2). */
+/** Ранок: здоровий глузд від нічних подій; без котів і нижче 35% — «Пригніченість» (§6.2). */
 function morning({ state, report, rng }: Night): void {
   nightlyHousehold(state, rng);
   applyMorningSanity(state, report.lostCats.length, report.newCats.length);

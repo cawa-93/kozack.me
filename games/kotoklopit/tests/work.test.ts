@@ -79,10 +79,10 @@ describe("робота за комп'ютером (§8.6)", () => {
     expect(loss("female", hours(19))).toBeCloseTo(6);
   });
 
-  it("у «Перший день» здоровий глузд не падає нижче 10% (§8.3)", () => {
+  it("у перший тиждень без котів здоровий глузд не падає нижче 1% (§8.3)", () => {
     const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
     work(save, hours(9), hours(9));
-    expect(save.current.character.stats.sanity).toBe(10);
+    expect(save.current.character.stats.sanity).toBe(1);
   });
 });
 
