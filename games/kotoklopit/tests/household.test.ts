@@ -163,6 +163,24 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(save.current.home.items.filter((i) => i.kind === "bowl" && i.food > 0)).toHaveLength(1);
   });
 
+  it("автогодівниця сипле стерилізованим котам корм для стерилізованих, поки він є (§8.7, §9.8)", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.character.held = null;
+    cat.sterilized = true;
+    save.current.home.supplies.catFood = { cheap: 10, premium: 0 };
+    save.current.home.supplies.sterileFood = { cheap: 1, premium: 0 };
+    save.current.home.appliances.feeder = "cheap";
+    const bowl = feederBowls(save.current)[0];
+    if (!bowl) throw new Error("немає миски");
+    bowl.food = 0;
+    tickHousehold(save.current, 7 * 60 + 59, 2);
+    expect(bowl.sterile).toBe(true);
+    bowl.food = 0;
+    tickHousehold(save.current, 18 * 60 + 59, 2);
+    expect(bowl.sterile).toBe(false);
+  });
+
   it("дешева річ може зламатися від використання, дорога — ні", () => {
     const save = game();
     const bowl = save.current.home.items.find((i) => i.kind === "bowl");
@@ -171,5 +189,7 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(save.current.home.items).toContain(bowl);
     wearOut(save.current, bowl, always());
     expect(save.current.home.items).not.toContain(bowl);
+    // На місці зламаної речі — уламки.
+    expect(save.current.home.messes.some((m) => m.kind === "broken")).toBe(true);
   });
 });

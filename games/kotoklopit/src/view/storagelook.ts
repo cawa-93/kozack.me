@@ -244,11 +244,13 @@ function kit(g: G, t: Rect, cx: number, y1: number, height: number, stages: Stag
     poly(g, [[cx - w / 2, top], [cx + w / 2, top], [cx + w / 2 - 4, top - 12], [cx - w / 2 + 4, top - 12]], 0x5a9a56);
     return;
   }
-  if (s >= 2) {
+  // Рибка й нашийник — лише коли ласощі чи нашийники справді є (порядок запасів — як у `STORAGES`).
+  const [, , treats, collar] = stages;
+  if (treats !== null && treats !== undefined && treats > 0) {
     // Рибка-ласощі з-під кришки.
     poly(g, [[cx - 12, top + 1], [cx - 4, top - 5], [cx - 4, top + 3]], 0xe0893a, false);
   }
-  if (s >= 3) {
+  if (collar !== null && collar !== undefined && collar > 0) {
     // Нашийник звисає збоку.
     g.lineStyle(3, 0xd8483b).beginPath().arc(cx + w / 2, top + 8, 5, -Math.PI / 2, Math.PI / 2).strokePath();
     g.fillStyle(0xe8b93a).fillCircle(cx + w / 2 + 5, top + 12, 2);

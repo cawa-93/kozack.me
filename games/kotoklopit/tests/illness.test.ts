@@ -33,7 +33,7 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(canDash(save.current)).toBe(false);
   });
 
-  it("ліки з магазину: одна доза на день, травма минає за 4 дні", () => {
+  it("ліки з магазину: одна доза на день, друга того ж дня не витрачається; травма минає за 4 дні", () => {
     const save = game();
     save.current.home.supplies.humanMeds = { cheap: 0, premium: 10 };
     fallIllPerson(save.current, "injury");
@@ -43,14 +43,17 @@ describe("хвороби персонажа (§6.5)", () => {
       takeHumanMeds(save.current, always());
     }
     expect(isIll(save.current, "injury")).toBe(false);
-    expect(save.current.home.supplies.humanMeds.premium).toBe(2);
+    expect(save.current.home.supplies.humanMeds.premium).toBe(6);
   });
 
-  it("ліки п'ють біля умивальника", async () => {
+  it("ліки п'ють біля умивальника — лише коли є що лікувати", async () => {
     const { interact } = await import("../src/sim/game");
     const save = game();
     save.current.home.supplies.humanMeds = { cheap: 0, premium: 1 };
     standAt(save, "sink");
+    interact(save);
+    expect(save.current.home.supplies.humanMeds.premium).toBe(1);
+    fallIllPerson(save.current, "injury");
     interact(save);
     expect(save.current.home.supplies.humanMeds.premium).toBe(0);
   });

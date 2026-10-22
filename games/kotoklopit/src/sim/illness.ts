@@ -56,7 +56,14 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
 }
 
 /** Прийняти ліки біля умивальника (§6.5): одна доза на день, дешева діє з шансом 70%. */
+/** Чи є що лікувати таблеткою сьогодні: хвороба, що лікується ліками, і сьогодні ще без дози (§6.5). */
+export function needsHumanMeds(state: GameState): boolean {
+  return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null && i.lastDose !== state.day);
+}
+
 export function takeHumanMeds(state: GameState, rng: Rng): boolean {
+  // Без хвороби, що лікується, ліки не п'ють: доза не марнується.
+  if (!needsHumanMeds(state)) return false;
   const quality = useSupply(state, "humanMeds");
   if (quality === null) return false;
   for (const illness of [...state.character.illnesses]) {

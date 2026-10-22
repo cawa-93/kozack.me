@@ -7,7 +7,8 @@ import { takeSupply, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
-import { objectById } from "./home";
+import { addMess } from "./catai";
+import { itemPoint, objectById } from "./home";
 import type { Rng } from "./rng";
 import type { BowlItem, Cat, GameState, HomeItem } from "./types";
 
@@ -132,16 +133,21 @@ export function feederBowls(state: GameState): BowlItem[] {
   return feeder === "premium" ? bowls : bowls.slice(0, 1);
 }
 
-/** Автогодівниця (§8.7): порція в порожні миски під нею (дешева — лише в першу). Повертає наповнені. */
+/**
+ * Автогодівниця (§8.7): порція в порожні миски під нею (дешева — лише в першу). Коли вдома є
+ * стерилізований кіт, сипле корм для стерилізованих, поки він є: звичайний йому шкодить (§9.8).
+ */
 function feed(state: GameState): number[] {
   const filled: number[] = [];
+  const sterile = state.cats.some((c) => c.sterilized && c.away === null);
   for (const bowl of feederBowls(state)) {
     if (bowl.food > 0) continue;
-    const quality = takeSupply(state, "catFood");
+    const special = sterile ? takeSupply(state, "sterileFood") : null;
+    const quality = special ?? takeSupply(state, "catFood");
     if (quality === null) break;
     bowl.food = Math.min(BOWL_CAPACITY, 1);
     bowl.foodQuality = quality;
-    bowl.sterile = false;
+    bowl.sterile = special !== null;
     filled.push(bowl.id);
   }
   return filled;
@@ -165,5 +171,7 @@ export function wearOut(state: GameState, item: HomeItem, rng: Rng): void {
   if (item.quality !== "cheap" || item.kind === "toy") return;
   if (!rng.chance(HOUSEHOLD.breakPerUse * HOUSEHOLD.difficulty[state.difficulty])) return;
   state.home.items = state.home.items.filter((i) => i !== item);
+  // Зламана річ лишає уламки на своєму місці: видно, куди вона поділася (§11.3а).
+  addMess(state, "broken", itemPoint(item), null);
   emit(state, { type: "broke", what: item.kind });
 }

@@ -3,6 +3,7 @@
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
+import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup } from "../sim/traits";
@@ -393,7 +394,7 @@ export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "
   const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
   if (look === "neat" || look === "unkempt") actions.push({ label: "Підрівняти бороду · 🕐 5 хв", primary: true, onSelect: () => onPick("trim") });
   actions.push({ label: "Поголитися · 🕐 10 хв", primary: actions.length === 0, onSelect: () => onPick("shave") });
-  if (supplyCount(state, "humanMeds") > 0) actions.push({ label: `Ліки для себе ×${supplyCount(state, "humanMeds")}`, onSelect: () => onPick("meds") });
+  if (supplyCount(state, "humanMeds") > 0 && needsHumanMeds(state)) actions.push({ label: `Ліки для себе ×${supplyCount(state, "humanMeds")}`, onSelect: () => onPick("meds") });
   const words = { clean: "Обличчя гладеньке.", stubble: "Щетина вже помітна.", neat: "Борода охайна.", unkempt: "Борода стирчить у різні боки." };
   return {
     kicker: "Ванна",
