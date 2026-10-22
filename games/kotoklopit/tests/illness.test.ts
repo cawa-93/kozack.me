@@ -85,4 +85,27 @@ describe("хвороби персонажа (§6.5)", () => {
     save.current.day = 2;
     expect(isWorkday(save.current)).toBe(false);
   });
+
+  it("хвороба шкодить з першої ночі: застуда −4, травма −3, виснаження −5", () => {
+    for (const [id, damage] of [["cold", 4], ["injury", 3], ["exhaustion", 5]] as const) {
+      const save = game();
+      save.current.character.stats.health = 50;
+      fallIllPerson(save.current, id);
+      nightlyIllness(save.current, 8);
+      expect(save.current.character.stats.health).toBe(50 - damage);
+    }
+  });
+
+  it("огляд без хвороб не додає здоров'я", () => {
+    const save = game();
+    save.current.day = 1;
+    save.current.minute = 19 * 60;
+    save.current.character.stats.health = 50;
+    standAt(save, "door");
+    expect(startTrip(save.current, "doctor")).toBe(true);
+    driveSafely(save);
+    const health = save.current.character.stats.health;
+    expect(doctorExam(save.current)).toBe(true);
+    expect(save.current.character.stats.health).toBe(health);
+  });
 });

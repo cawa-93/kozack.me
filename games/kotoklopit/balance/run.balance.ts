@@ -24,6 +24,8 @@ interface Run {
   money: number;
   minMoney: number;
   sanity: number[];
+  /** Здоров'я персонажа щоранку (§6.5, §8.8). */
+  health: number[];
   kittens: number;
   cats: number;
   catMood: number[];
@@ -57,6 +59,7 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
     money: 0,
     minMoney: Infinity,
     sanity: [],
+    health: [],
     kittens: 0,
     cats: 0,
     catMood: [],
@@ -80,6 +83,7 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
       run.kittens += report.newCats.length;
       if (report.utilities?.outcome === "warning" || report.utilities?.outcome === "partial") run.warnings += 1;
     }
+    run.health.push(save.current.character.stats.health);
     run.days = d + 1;
     run.minMoney = Math.min(run.minMoney, save.current.character.money);
     if (save.current.end !== null) {
@@ -113,8 +117,8 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
-  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
     const key = `${run.sex}/${run.difficulty}`;
@@ -128,6 +132,7 @@ function report(runs: Run[]): string {
     const survived = group.filter((r) => !lost(r)).length;
     const ends = group.filter(lost).map((r) => `${r.end} (д${r.days})`).join(", ") || "—";
     const allSanity = group.flatMap((r) => r.sanity);
+    const allHealth = group.flatMap((r) => r.health);
     lines.push(
       [
         first.sex === "female" ? "жайворонок" : "сова",
@@ -136,6 +141,7 @@ function report(runs: Run[]): string {
         ends,
         `${fmt(avg(group.map((r) => r.money)), 0)} (${fmt(Math.min(...group.map((r) => r.minMoney)), 0)})`,
         `${fmt(avg(allSanity))} (${fmt(Math.min(...allSanity))})`,
+        `${fmt(avg(allHealth))} (${fmt(Math.min(...allHealth))})`,
         fmt(avg(group.map((r) => r.kittens))),
         `${fmt(avg(group.map((r) => r.cats)))} (${fmt(avg(group.map((r) => r.deaths)))})`,
         fmt(avg(group.flatMap((r) => r.catMood))),

@@ -78,11 +78,9 @@ export function takeHumanMeds(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Огляд у лікаря (§6.5): без хвороб — здоров'я +20, інакше — діагноз. */
+/** Огляд у лікаря (§6.5): діагноз; без хвороб — лише «здорові» (правка автора 2026-10-22). */
 export function doctorExam(state: GameState): boolean {
-  if (state.trip?.destination !== "doctor" || !spend(state, DOCTOR.exam)) return false;
-  if (state.character.illnesses.length === 0) changeStat(state, "health", DOCTOR.health);
-  return true;
+  return state.trip?.destination === "doctor" && spend(state, DOCTOR.exam);
 }
 
 /** Лікування в лікаря (§6.5): хвороба минає, здоров'я +10, лікарняний з завтра. */

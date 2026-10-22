@@ -29,8 +29,10 @@ export const SLEEP_SPEED_MAX_BONUS = 0.1;
 export const DROWSY_SPEED = 0.8;
 /** Уві сні голод і гігієна падають учетверо повільніше. */
 export const SLEEP_DECAY_DIVIDER = 4;
-/** Уві сні здоров'я відновлюється на 1 за годину. */
+/** Уві сні здоров'я відновлюється на 1 за годину, якщо персонаж ліг ситим (від LOW_STAT) і не хворий (правка автора 2026-10-22). */
 export const SLEEP_HEALTH_PER_HOUR = 1;
+/** Здоров'я за кожну годину сну менше SLEEP_NEED_HOURS (правка автора 2026-10-22). */
+export const SLEEP_DEBT_HEALTH_PER_HOUR = -2;
 /** Уві сні показники не опускаються нижче 5. */
 export const SLEEP_STAT_FLOOR = 5;
 
@@ -55,9 +57,9 @@ export const SATIETY_PER_HOUR = -4;
 export const MALE_METABOLISM = 1.1;
 /** Гігієна за годину неспання. */
 export const HYGIENE_PER_HOUR = -3;
-/** Здоров'я за годину неспання, коли ситість нижче порогу. */
-export const HUNGER_HEALTH_PER_HOUR = -1;
-export const HUNGER_HEALTH_THRESHOLD = 20;
+/** Здоров'я за годину неспання, коли ситість нижче порогу (правка автора 2026-10-22: було −1 нижче 20). */
+export const HUNGER_HEALTH_PER_HOUR = -2;
+export const HUNGER_HEALTH_THRESHOLD = 25;
 
 // Низькі показники (§6.3, чернетка).
 /** Нижче цього значення показник вважається низьким. */
@@ -438,7 +440,8 @@ export const PET = {
   toleranceStep: 0.5,
   minToleranceMinutes: 2,
   biteChancePerMinute: 0.3,
-  biteHealth: -1,
+  /** Правка автора 2026-10-22: було −1. */
+  biteHealth: -3,
   /** Узяли на руки, коли кіт не хотів (§9.12). */
   unwantedLove: -2,
 } as const;
@@ -635,7 +638,7 @@ export const BREEDING = {
 export const INHERIT_TRAIT_CHANCE = 0.5;
 /** Стерилізація (§9.8): ціна, операція, відновлення. */
 export const STERILIZATION = { price: 120, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5 } as const;
-export const DOCTOR = { exam: 40, health: 20 } as const;
+export const DOCTOR = { exam: 40 } as const;
 export const SHELTER = {
   price: 50,
   cats: 3,
@@ -718,9 +721,10 @@ export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, ha
 export const WITNESS_DISTANCE = 3;
 /** Хвороби персонажа (§6.5): безпечний термін, шкода, скільки днів із ліками лікує, лікарняний. */
 export const ILLNESSES: Record<IllnessId, { safe: number; damage: number; doses: number | null; sickLeave: number }> = {
-  cold: { safe: 3, damage: 2, doses: 3, sickLeave: 2 },
-  injury: { safe: 3, damage: 1, doses: 4, sickLeave: 1 },
-  exhaustion: { safe: 0, damage: 2, doses: null, sickLeave: 3 },
+  // Правка автора 2026-10-22: шкода з першої ночі (було 3 безпечні дні), застуда −4, травма −3, виснаження −5 (було −2, −1, −2).
+  cold: { safe: 0, damage: 4, doses: 3, sickLeave: 2 },
+  injury: { safe: 0, damage: 3, doses: 4, sickLeave: 1 },
+  exhaustion: { safe: 0, damage: 5, doses: null, sickLeave: 3 },
 };
 export const ILLNESS_EFFECTS = {
   /** Застуда й травма сповільнюють рух; травма з річчю в руках — ще більше. */

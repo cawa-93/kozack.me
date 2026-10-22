@@ -15,8 +15,11 @@ import {
   MINUTES_PER_HOUR,
   SANITY_FLOOR,
   SATIETY_PER_HOUR,
+  LOW_STAT,
+  SLEEP_DEBT_HEALTH_PER_HOUR,
   SLEEP_DECAY_DIVIDER,
   SLEEP_HEALTH_PER_HOUR,
+  SLEEP_NEED_HOURS,
   SLEEP_STAT_FLOOR,
   STAT_MAX,
 } from "./config";
@@ -105,13 +108,22 @@ export function passAwakeTime(state: GameState, hours: number, floor = 0): void 
   }
 }
 
+/** Сон відновлює здоров'я, лише якщо персонаж ліг ситим і не хворий (§8.8). */
+export function sleepHeals(state: GameState): boolean {
+  const ch = state.character;
+  return ch.stats.satiety >= LOW_STAT && ch.illnesses.length === 0;
+}
+
 /**
- * Минув час сну (§8.8): голод і гігієна падають учетверо повільніше, здоров'я
- * відновлюється, здоровий глузд не змінюється, показники не опускаються нижче 5.
+ * Минув час сну (§8.8): голод і гігієна падають учетверо повільніше, здоров'я відновлюється
+ * ситому й здоровому, а недосип його забирає; здоровий глузд не змінюється, показники не нижче 5.
  */
 export function passSleepTime(state: GameState, hours: number): void {
+  const heals = sleepHeals(state);
   const decay = hours / SLEEP_DECAY_DIVIDER;
   changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * decay, SLEEP_STAT_FLOOR);
   changeStat(state, "hygiene", HYGIENE_PER_HOUR * decay, SLEEP_STAT_FLOOR);
-  changeStat(state, "health", SLEEP_HEALTH_PER_HOUR * hours);
+  if (heals) changeStat(state, "health", SLEEP_HEALTH_PER_HOUR * hours);
+  const debt = Math.max(0, SLEEP_NEED_HOURS - hours);
+  if (debt > 0) changeStat(state, "health", SLEEP_DEBT_HEALTH_PER_HOUR * debt, SLEEP_STAT_FLOOR);
 }

@@ -5,9 +5,10 @@
 import { petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
-import { DISEASES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, ILLNESSES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
+import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
 import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact } from "../src/sim/game";
@@ -103,6 +104,8 @@ export class Bot {
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
     const patient = this.patient();
     if (patient) return named("treat", () => this.treat(patient.cat, patient.medicine));
+    // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
+    if (needsHumanMeds(s) && supplyCount(s, "humanMeds") > 0 && !this.skipped("sink")) return named("meds", () => this.use("sink"));
     const fighter = s.cats.find((c) => c.act.kind === "fight" && c.away === null);
     if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
@@ -222,6 +225,7 @@ export class Bot {
     need("food", 7);
     need("hygiene", 3);
     need("detergent", 2);
+    if (s.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null)) need("humanMeds", 1);
     if (cats > 0) {
       const sick = (medicine: Medicine): boolean => s.cats.some((c) => c.diseases.some((d) => {
         const cure = DISEASES[d.id].cure;

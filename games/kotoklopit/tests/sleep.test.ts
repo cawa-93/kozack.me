@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { actionSpeed } from "../src/sim/body";
 import { advance, goToSleep, newGame } from "../src/sim/game";
+import { fallIllPerson } from "../src/sim/illness";
 import {
   canGoToSleep,
   collapseMinute,
@@ -115,6 +116,29 @@ describe("показники уві сні (§8.8)", () => {
     expect(stats.hygiene).toBeCloseTo(50 - (3 * 8) / 4);
     expect(stats.health).toBeCloseTo(58);
     expect(stats.sanity).toBe(50);
+  });
+
+  it("сон відновлює здоров'я, лише якщо персонаж ліг ситим і не хворий", () => {
+    for (const [satiety, ill, health] of [[24, false, 50], [50, true, 50], [25, false, 58]] as const) {
+      const save = game("female");
+      const { stats } = save.current.character;
+      Object.assign(stats, { health: 50, satiety });
+      if (ill) fallIllPerson(save.current, "injury");
+      save.current.minute = hours(22);
+      goToSleep(save);
+      // Травма шкодить і сама: −3 за ніч.
+      expect(stats.health).toBeCloseTo(ill ? health - 3 : health);
+    }
+  });
+
+  it("за кожну годину сну менше 8 здоров'я −2", () => {
+    const save = game("female");
+    const { stats } = save.current.character;
+    stats.health = 50;
+    // Жайворонок падає без сил о 24:00 і спить 6 годин: +6 за сон, −4 за недосип.
+    save.current.minute = hours(24);
+    goToSleep(save);
+    expect(stats.health).toBeCloseTo(52);
   });
 
   it("чоловічий персонаж голоднішає на 10% швидше й уві сні", () => {

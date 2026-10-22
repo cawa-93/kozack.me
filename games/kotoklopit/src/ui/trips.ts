@@ -167,7 +167,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         break;
       }
       const ill = state.character.illnesses;
-      if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного. Кілька порад — і стало краще.");
+      if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного.");
       const list = element("div", "shop");
       for (const i of ill) {
         list.append(

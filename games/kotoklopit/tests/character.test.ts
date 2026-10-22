@@ -37,12 +37,12 @@ describe("показники персонажа (§6, §6.3)", () => {
     expect(save.current.character.stats.satiety).toBeCloseTo(START_STATS.satiety - 4.4);
   });
 
-  it("коли ситість нижче 20, здоров'я падає на 1 за годину", () => {
+  it("коли ситість нижче 25, здоров'я падає на 2 за годину", () => {
     const save = game();
     const { stats } = save.current.character;
-    stats.satiety = 15;
+    stats.satiety = 24;
     advance(save, hours(1));
-    expect(stats.health).toBeCloseTo(99);
+    expect(stats.health).toBeCloseTo(98);
   });
 
   it("показник не виходить за 100", () => {
