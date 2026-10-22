@@ -214,3 +214,42 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     expect(events).toContainEqual({ type: "call-remark", issue: "clothes" });
   });
 });
+
+describe("справедливість роботи (ревізія 2026-10-22)", () => {
+  it("прийти на летучку неохайним — не гірше, ніж пропустити", () => {
+    const run = (attend: boolean): number => {
+      const save = game();
+      save.current.day = 1;
+      save.current.minute = hours(9.8);
+      save.current.home.clothes = 0;
+      save.current.character.stats.hygiene = 20;
+      const before = save.current.job.reputation;
+      if (attend) work(save, hours(9.9), hours(0.5));
+      else waitUntil(save, hours(10.5));
+      // Репутація від самої роботи за пів години — окремо.
+      return save.current.job.reputation - before - (attend ? 0.5 * 3.09 : 0);
+    };
+    expect(run(true)).toBeGreaterThan(run(false));
+  });
+
+  it("«Х» не штрафує в обідню перерву", () => {
+    const save = game();
+    save.current.day = 1;
+    save.current.modifiers.day = "lunch";
+    waitUntil(save, hours(12));
+    save.current.job.patience = 0;
+    const before = save.current.job.reputation;
+    advance(save, hours(1));
+    expect(save.current.job.reputation).toBe(before);
+  });
+
+  it("нарада на лікарняному не штрафує", () => {
+    const save = game();
+    save.current.day = 1;
+    save.current.modifiers.day = "meeting";
+    save.current.job.sickLeaveUntil = 1;
+    const before = save.current.job.reputation;
+    waitUntil(save, hours(16));
+    expect(save.current.job.reputation).toBe(before);
+  });
+});

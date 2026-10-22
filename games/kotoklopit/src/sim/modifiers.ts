@@ -12,7 +12,8 @@ import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { callImpression, changeReputation, noticeCallLook } from "./work";
+import { takeBowlFood } from "./household";
+import { callImpression, changeReputation, isWorkday, noticeCallLook } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -269,7 +270,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   const today = state.today;
   const m = MODIFIERS;
   const day = state.modifiers.day;
-  if (day === "meeting") {
+  // Нарада й збори в офісі — лише в робочий день: на лікарняному й у відпустці їх немає (§6.5, §4.1).
+  if (day === "meeting" && isWorkday(state)) {
     const start = m.meeting.from;
     const end = start + m.meeting.minutes;
     const minute = from % 1440;
@@ -320,7 +322,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     }
     emit(state, { type: "modifier", kind: "guests", value: shame });
   }
-  if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !state.job.unemployed) {
+  if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);
     changeReputation(state, delta);
     emit(state, { type: "modifier", kind: "office-missed", value: delta });
@@ -344,11 +346,11 @@ function friendHelps(state: GameState, from: number, minutes: number): void {
   if (minute < m.from || minute >= m.to || Math.floor(minute / 60) === Math.floor((minute + minutes) / 60)) return;
   for (const item of state.home.items) {
     if (item.kind === "bowl" && item.food < BOWL_CAPACITY) {
-      const quality = takeSupply(state, "catFood");
-      if (quality !== null) {
+      const food = takeBowlFood(state);
+      if (food !== null) {
         item.food = BOWL_CAPACITY;
-        item.foodQuality = quality;
-        item.sterile = false;
+        item.foodQuality = food.quality;
+        item.sterile = food.sterile;
       }
     }
     if (item.kind === "water") item.water = WATER_CAPACITY;

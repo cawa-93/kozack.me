@@ -139,8 +139,9 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     activity.reputation += job.reputation - reputationBefore;
     job.patience = Math.min(PATIENCE_MAX, job.patience + position.patienceRecovery * hours);
   } else if (workTime) {
-    // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини.
-    if (levelBefore === "out") changeReputation(state, ABSENCE_REPUTATION * position.reputation * hours);
+    // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини — але не в обідню
+    // перерву й не без світла: тоді й терпіння не падає (§4.1).
+    if (levelBefore === "out" && patienceDecayFactor(state) > 0) changeReputation(state, ABSENCE_REPUTATION * position.reputation * hours);
     const patience = job.patience - position.patienceDecay * patienceDecayFactor(state) * hours;
     // Похибка дробових кроків не повинна відкладати «Х» на хвилину.
     job.patience = patience < PATIENCE_EPSILON ? 0 : patience;
@@ -165,7 +166,8 @@ function tickStandup(state: GameState, from: number, to: number): void {
 function resolveStandup(state: GameState): void {
   const perHour = positionOf(state).reputation;
   const attended = state.job.standupMinutes >= STANDUP_MINUTES * STANDUP_ATTENDANCE;
-  const delta = attended ? callImpression(state) * perHour : STANDUP_MISSED_REPUTATION * perHour;
+  // Прийти, навіть неохайним, ніколи не гірше, ніж пропустити: найбільший штраф — пів пропуску.
+  const delta = attended ? Math.max(callImpression(state), STANDUP_MISSED_REPUTATION / 2) * perHour : STANDUP_MISSED_REPUTATION * perHour;
   changeReputation(state, delta);
   emit(state, { type: "standup", attended, reputation: delta });
 }

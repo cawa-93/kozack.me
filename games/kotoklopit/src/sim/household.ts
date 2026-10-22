@@ -10,7 +10,7 @@ import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
 import { itemPoint, objectById } from "./home";
 import type { Rng } from "./rng";
-import type { BowlItem, Cat, GameState, HomeItem } from "./types";
+import type { BowlItem, Cat, GameState, HomeItem, Quality } from "./types";
 
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
@@ -139,18 +139,28 @@ export function feederBowls(state: GameState): BowlItem[] {
  */
 function feed(state: GameState): number[] {
   const filled: number[] = [];
-  const sterile = state.cats.some((c) => c.sterilized && c.away === null);
   for (const bowl of feederBowls(state)) {
     if (bowl.food > 0) continue;
-    const special = sterile ? takeSupply(state, "sterileFood") : null;
-    const quality = special ?? takeSupply(state, "catFood");
-    if (quality === null) break;
+    const food = takeBowlFood(state);
+    if (food === null) break;
     bowl.food = Math.min(BOWL_CAPACITY, 1);
-    bowl.foodQuality = quality;
-    bowl.sterile = special !== null;
+    bowl.foodQuality = food.quality;
+    bowl.sterile = food.sterile;
     filled.push(bowl.id);
   }
   return filled;
+}
+
+/**
+ * Порція в миску, яку насипає не персонаж (автогодівниця, друг, §4.1, §8.7): коли вдома є
+ * стерилізований кіт — корм для стерилізованих, поки він є, бо звичайний йому шкодить (§9.8).
+ */
+export function takeBowlFood(state: GameState): { quality: Quality; sterile: boolean } | null {
+  const sterile = state.cats.some((c) => c.sterilized && c.away === null);
+  const special = sterile ? takeSupply(state, "sterileFood") : null;
+  if (special !== null) return { quality: special, sterile: true };
+  const quality = takeSupply(state, "catFood");
+  return quality === null ? null : { quality, sterile: false };
 }
 
 /** Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. */
