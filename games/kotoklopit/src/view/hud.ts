@@ -4,6 +4,7 @@
 import Phaser from "phaser";
 
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
+import { statCeiling } from "../sim/character";
 import { isDrowsy } from "../sim/sleep";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
@@ -34,6 +35,9 @@ const BAR_HEIGHT = 12;
 const STATS_X = 238;
 const STATS_STEP = 158;
 const LOW = 25;
+/** Штрихування частини шкали над межею (§6.3): крок і колір смужок. */
+const HATCH_STEP = 6;
+const HATCH_COLOR = 0x6b5f73;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
 const BUTTONS_INSET = 44;
 const DEPTH = 20_000;
@@ -130,6 +134,9 @@ export class Hud {
       const blink = value < LOW && Math.floor(time / 400) % 2 === 0;
       g.fillStyle(0x1a1520).fillRoundedRect(x, BAR_Y, BAR_WIDTH, BAR_HEIGHT, 5);
       g.fillStyle(blink ? 0xffffff : stat.color).fillRoundedRect(x, BAR_Y, Math.max(0, (BAR_WIDTH * value) / 100), BAR_HEIGHT, 5);
+      // Вище межі показник зараз не росте (брудний одяг, «Пригніченість»): цю частину шкали заштриховано.
+      const ceiling = Math.max(value, statCeiling(state, stat.name));
+      if (ceiling < 100) hatch(g, x + (BAR_WIDTH * ceiling) / 100, x + BAR_WIDTH);
       g.lineStyle(2, COLORS.ink).strokeRoundedRect(x, BAR_Y, BAR_WIDTH, BAR_HEIGHT, 5);
     });
     // Гроші — символом гривні (§11.4).
@@ -175,5 +182,19 @@ export class Hud {
         g.lineBetween(x, y, x + sx * arm, y).lineBetween(x, y, x, y + sy * arm);
       }
     }
+  }
+}
+
+/** Косі смужки між x0 і x1 по висоті шкали; кожна смужка обрізана краями ділянки. */
+function hatch(g: Phaser.GameObjects.Graphics, x0: number, x1: number): void {
+  const top = BAR_Y + 1;
+  const bottom = BAR_Y + BAR_HEIGHT - 1;
+  const height = bottom - top;
+  g.lineStyle(2, HATCH_COLOR);
+  for (let start = x0 - height; start < x1; start += HATCH_STEP) {
+    // Смужка під 45°: від (start, низ) до (start + висота, верх).
+    const ax = Math.max(start, x0);
+    const bx = Math.min(start + height, x1);
+    if (bx > ax) g.lineBetween(ax, bottom - (ax - start), bx, bottom - (bx - start));
   }
 }
