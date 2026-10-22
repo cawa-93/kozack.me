@@ -123,8 +123,10 @@ function report(runs: Run[]): string {
   for (const group of combos.values()) {
     const first = group[0];
     if (!first) continue;
-    const survived = group.filter((r) => r.end === null).length;
-    const ends = group.filter((r) => r.end !== null).map((r) => `${r.end} (д${r.days})`).join(", ") || "—";
+    // Пенсія (§4.2) — успішний фінал, а не програш.
+    const lost = (r: Run): boolean => r.end !== null && r.end !== "retirement";
+    const survived = group.filter((r) => !lost(r)).length;
+    const ends = group.filter(lost).map((r) => `${r.end} (д${r.days})`).join(", ") || "—";
     const allSanity = group.flatMap((r) => r.sanity);
     lines.push(
       [
