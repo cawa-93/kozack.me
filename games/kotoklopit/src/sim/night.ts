@@ -135,7 +135,8 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
 
 /**
  * Сон (§8.8, §9.12): коти живуть ніч, поки персонаж спить, і можуть його розбудити.
- * Розбудили в межах вікна сну — 30 хвилин сну втрачено; пізніше — день починається одразу.
+ * Нічна побудка — година сну, і персонаж засинає знову. Ранкова в межах вікна сну — пів години;
+ * пізніше — день починається одразу.
  */
 function sleep({ state, report, rng }: Night): void {
   dropEverything(state);
@@ -163,6 +164,10 @@ function sleep({ state, report, rng }: Night): void {
     // Ранкова побудка — лише якщо кіт голодний і миски порожні.
     if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
     report.wakeUps.push({ cat: cat.id, reason });
+    if (reason === "night") {
+      lost += WAKE_UP.nightLostMinutes;
+      continue;
+    }
     // До півночі день не починається: персонаж засинає знову (з «Галасливими сусідами» вікно зсувається).
     if ((planned - minute) / MINUTES_PER_HOUR >= COLLAPSE_HOURS_BEFORE_WAKE || minute < MINUTES_PER_DAY) {
       lost += WAKE_UP.lostMinutes;

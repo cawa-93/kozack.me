@@ -438,6 +438,25 @@ describe("ніч із котами (§4, §8.8, §9.12)", () => {
 });
 
 describe("нічні побудки й «Галасливі сусіди» (§8.8)", () => {
+  it("нічна побудка забирає годину сну й не починає день", () => {
+    let woken = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const save = game();
+      const cat = withCat(save);
+      cat.traits.push({ group: "nocturnal", level: 2, seen: 0, known: false });
+      // Миски повні: ранкової побудки не буде.
+      for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 2;
+      save.current.seed = seed;
+      save.current.minute = hours(22);
+      const report = goToSleep(save);
+      const nights = report?.wakeUps.filter((w) => w.reason === "night").length ?? 0;
+      if (nights > 0) woken += 1;
+      expect(report?.wokeMinute).toBe(hours(6));
+      expect(report?.sleptHours).toBeCloseTo(8 - nights);
+    }
+    expect(woken).toBeGreaterThan(0);
+  });
+
   it("побудка до півночі не починає день: персонаж засинає знову", () => {
     let early = 0;
     for (let seed = 0; seed < 100; seed++) {

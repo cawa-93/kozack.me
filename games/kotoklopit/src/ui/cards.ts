@@ -1,6 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { MODIFIERS } from "../sim/config";
+import { MODIFIERS, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
@@ -8,7 +8,7 @@ import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { traitGroup } from "../sim/traits";
-import { weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
+import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
@@ -25,6 +25,7 @@ import {
   BIRTH_MESSAGE,
   KITTEN_MESSAGE,
   UTILITIES_MESSAGES,
+  WAKE_TEXTS,
 } from "../texts";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
@@ -66,6 +67,14 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   if (beard === "stubble" || beard === "unkempt") dayBlocks.push([BEARD_TEXTS[beard]]);
 
   const events: (string | HTMLElement)[][] = [];
+  // Хто будив уночі (§8.8): по рядку на кота, без пояснень.
+  for (const reason of ["night", "morning"] as const) {
+    const ids = new Set((night?.wakeUps ?? []).filter((w) => w.reason === reason).map((w) => w.cat));
+    for (const id of ids) {
+      const cat = state.cats.find((c) => c.id === id) ?? state.album.find((e) => e.id === id);
+      if (cat) events.push([fill(WAKE_TEXTS[reason], cat.sex, { кіт: cat.name, час: formatClock(WAKE_UP.morningMinute) })]);
+    }
+  }
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
     events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name })]);
