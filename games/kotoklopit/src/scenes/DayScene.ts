@@ -28,7 +28,7 @@ import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
-import { Overlay } from "../ui/overlay";
+import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, objectHeight, type ObjectView } from "../view/apartment";
@@ -198,6 +198,7 @@ export class DayScene extends Phaser.Scene {
   /** Показати день заново: після нової гри, перегравання чи сценарію. */
   private restart(): void {
     this.overlay.close();
+    this.queued.length = 0;
     this.bubbles.clear();
     this.hearts.clear();
     this.storage.clear();
@@ -430,7 +431,20 @@ export class DayScene extends Phaser.Scene {
     if (!hold && elapsed < CAT_TAP_MS) interact(this.session.save);
   }
 
+  /**
+   * Картка, що чекає своєї черги: подія сталася, поки відкрита титулка чи інша картка. Раніше
+   * нова картка заміняла відкриту — і титулка ранку, картка знайди чи телефон зникали.
+   */
+  private readonly queued: Card[] = [];
+
+  private queueCard(card: Card): void {
+    if (this.overlay.isOpen) this.queued.push(card);
+    else this.overlay.show(card);
+  }
+
   override update(time: number, delta: number): void {
+    const next = this.overlay.isOpen ? undefined : this.queued.shift();
+    if (next) this.overlay.show(next);
     if (this.updateTrip()) {
       this.render(time, 0);
       return;
@@ -865,15 +879,13 @@ export class DayScene extends Phaser.Scene {
         const { name, sex } = this.state.character;
         const title = fill(POSITION_TITLES[event.position] ?? "", sex);
         const position = event.change === "demoted" ? title : title.toLowerCase();
-        this.time.delayedCall(300, () =>
-          this.overlay.show({
-            kicker: "Робота",
-            title: message.title,
-            body: [fill(message.text, sex, { персонаж: name, посада: position })],
-            actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }],
-            onDismiss: () => this.overlay.close(),
-          }),
-        );
+        this.queueCard({
+          kicker: "Робота",
+          title: message.title,
+          body: [fill(message.text, sex, { персонаж: name, посада: position })],
+          actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }],
+          onDismiss: () => this.overlay.close(),
+        });
         break;
       }
       case "game-over":
@@ -894,18 +906,16 @@ export class DayScene extends Phaser.Scene {
     const money = Math.round(Math.abs(value));
     switch (kind) {
       case "mom-call":
-        this.time.delayedCall(200, () =>
-          this.overlay.show(
-            callCard(
-              () => {
-                this.overlay.close();
-                advance(this.session.save, 30);
-              },
-              () => {
-                ignoreCall(this.state);
-                this.overlay.close();
-              },
-            ),
+        this.queueCard(
+          callCard(
+            () => {
+              this.overlay.close();
+              advance(this.session.save, MODIFIERS.call.minutes);
+            },
+            () => {
+              ignoreCall(this.state);
+              this.overlay.close();
+            },
           ),
         );
         return;
@@ -950,16 +960,15 @@ export class DayScene extends Phaser.Scene {
         () => {
           decideFoundling(this.state, false, stateRng(this.state, "behavior"));
           this.overlay.close();
-          advance(this.session.save, 120);
+          advance(this.session.save, MODIFIERS.foundlingShelterMinutes);
         },
       ),
     );
   }
 
-  /** Повідомлення модифікатора посеред дня (§4.1). */
-  private notice(title: string, text: string): void {
-    if (this.overlay.isOpen) return;
-    this.overlay.show({ kicker: "Подія дня", title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }], onDismiss: () => this.overlay.close() });
+  /** Повідомлення посеред дня (§4.1): стає в чергу, якщо відкрита інша картка. */
+  private notice(title: string, text: string, kicker = "Подія дня"): void {
+    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }], onDismiss: () => this.overlay.close() });
   }
 
   private showEnd(): void {
@@ -1043,7 +1052,10 @@ export class DayScene extends Phaser.Scene {
           importSave: (file) => {
             void importSave(file).then(
               (save) => this.session.replace(save),
-              () => this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри."),
+              () => {
+                this.overlay.close();
+                this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри.", "Гра");
+              },
             );
           },
           tab: show,

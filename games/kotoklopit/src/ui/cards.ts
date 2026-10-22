@@ -1,5 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
+import { MODIFIERS } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
@@ -370,7 +371,7 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
     body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало."],
     actions: [
       { label: "Узяти додому", primary: true, onSelect: onTake },
-      { label: "Віднести в притулок", onSelect: onShelter },
+      { label: `Віднести в притулок · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`, onSelect: onShelter },
     ],
   };
 }
@@ -382,7 +383,7 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
     title: "Дзвонить мама",
     body: ["Мама питає, як справи, чи ви їсте, і чи не забагато в домі котів."],
     actions: [
-      { label: "Відповісти · 🕐 30 хв", primary: true, onSelect: onAnswer },
+      { label: `Відповісти · 🕐 ${MODIFIERS.call.minutes} хв`, primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },
     ],
   };

@@ -662,6 +662,8 @@ export const MODIFIERS = {
   weekShare: 0.5,
   foundling: 0.03,
   foundlingGapDays: 14,
+  /** Віднести знайду в притулок — 2 години (§4.1). */
+  foundlingShelterMinutes: 120,
   deadline: { decay: 2, reputation: 1.5 },
   lull: { decay: 0.5, reputation: 0.5 },
   meeting: { from: 14 * 60, minutes: 60, attended: 0.5, present: 1.5, absent: -5 },
