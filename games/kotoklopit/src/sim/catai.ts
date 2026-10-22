@@ -57,6 +57,7 @@ import {
   SURPRISE_CHANCE,
   TIRED_FATIGUE,
   TOY,
+  TRAIT_EFFECTS,
   TRAIT_NEED_STEP,
   VOMIT_STEP,
   WORK_CAT,
@@ -124,8 +125,12 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
-  // Нестерилізований кіт мітить територію (§9.8).
-  if (cat.sex === "male" && !cat.sterilized && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(BREEDING.markPerHour * hours)) {
+  // Нестерилізований кіт мітить територію (§9.8); схильний до міток — ще й від стресу, «Ніколи не мітить» — ніколи.
+  const marking = traitLevel(cat, "marking");
+  const intact = cat.sex === "male" && !cat.sterilized;
+  const stressed = marking > 0 && cat.mood < TRAIT_EFFECTS.stressMarkMood;
+  const markChance = BREEDING.markPerHour * hours * traitFactor(cat, "marking", TRAIT_EFFECTS.markingStep);
+  if ((intact || stressed) && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(markChance)) {
     addMess(state, "mark", visibleFloorNear(state, cat), cat.id);
     observe(state, cat, "marking");
   }
@@ -400,7 +405,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
 
 /** Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). */
 function startAttention(state: GameState, cat: Cat): void {
-  start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention, "character");
+  const follower = Math.max(0, traitLevel(cat, "follower"));
+  start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower), "character");
   for (const group of ["affection", "demanding", "follower", "talkative"]) observe(state, cat, group);
 }
 
@@ -564,6 +570,12 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
         observe(state, cat, "gulping");
       } else if (vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
+      // «Жебракування»: щойно поїв — уже просить ще біля миски.
+      const begging = traitLevel(cat, "begging");
+      if (begging > 0 && rng.chance(TRAIT_EFFECTS.beggingChance * begging)) {
+        observe(state, cat, "begging");
+        return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
+      }
       return;
     }
     case "drink": {
@@ -732,7 +744,11 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
     case "beg":
     case "attention":
-      if (Math.floor(act.elapsed / 2) !== Math.floor((act.elapsed - minutes) / 2)) emit(state, { type: "meow", cat: cat.id });
+      {
+        // Нявкає раз на 2 хвилини; «Балакучість» частішає чи рідшає це, «Тихоня» мовчить.
+        const rate = traitFactor(cat, "talkative", TRAIT_EFFECTS.talkativeStep) / 2;
+        if (Math.floor(act.elapsed * rate) !== Math.floor((act.elapsed - minutes) * rate)) emit(state, { type: "meow", cat: cat.id });
+      }
       if (act.kind === "attention") {
         if (cat.needs.attention < 20) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
@@ -847,9 +863,9 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {
-      // Іти слідом за персонажем.
+      // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
-      if (Math.hypot(body.x - cat.x, body.y - cat.y) > 1.2) cat.act.goal = tileOf(body);
+      if (traitLevel(cat, "follower") >= 0 && Math.hypot(body.x - cat.x, body.y - cat.y) > 1.2) cat.act.goal = tileOf(body);
     }
   }
   let left = minutes;

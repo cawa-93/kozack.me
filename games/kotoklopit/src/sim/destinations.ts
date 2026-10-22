@@ -17,6 +17,7 @@ import {
   SHOP_WINDOW,
   STERILIZATION,
   THINGS,
+  TRAIT_EFFECTS,
   VET,
 } from "./config";
 import { breedById, breederPrice, MIXED, PUREBREEDS } from "./breeds";
@@ -91,7 +92,8 @@ export function vetExam(state: GameState): { health: number; mood: number } | nu
   if (cat.pregnancy) cat.pregnancy.known = true;
   cat.sterilizedKnown = true;
   cat.breedKnown = [true, true];
-  changeLove(state, cat, VET.love, "ветеринар");
+  // «Ветеринар»: улюбленець майже не ображається на огляд, «Жах клініки» — удвічі більше.
+  changeLove(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * traitLevel(cat, "vet")), "ветеринар");
   observe(state, cat, "vet");
   emit(state, { type: "vet-exam", cat: cat.id });
   return { health: cat.health, mood: cat.mood };

@@ -11,7 +11,7 @@ import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
-import type { Cat, Save } from "../src/sim/types";
+import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { driveSafely, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
@@ -114,6 +114,23 @@ describe("пункти призначення (§8.5)", () => {
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shop.road);
     expect(save.current.trip).toBeNull();
     expect(save.current.character.body.x).toBeCloseTo(HOME_DOOR.x);
+  });
+
+  it("«Ветеринар»: улюбленець не ображається на огляд, «Жах клініки» — удвічі більше (§9.12)", () => {
+    const loss = (level: TraitLevel | 0): number => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      const cat = withCat(save);
+      if (level !== 0) cat.traits.push({ group: "vet", level, seen: 0, known: false });
+      save.current.home.carrier = "premium";
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      arrive(save, "vet");
+      const love = cat.love;
+      vetExam(save.current);
+      return love - cat.love;
+    };
+    expect(loss(2)).toBe(0);
+    expect(loss(-2)).toBeCloseTo(loss(0) * 2);
   });
 
   it("ветеринар: огляд відкриває хворобу, дороге лікування її лікує", () => {
