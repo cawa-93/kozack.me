@@ -34,6 +34,8 @@ export function newHome(): Home {
   return {
     supplies: structuredClone(START_SUPPLIES),
     acquired: (Object.keys(START_SUPPLIES) as Product[]).filter((p) => START_SUPPLIES[p].cheap + START_SUPPLIES[p].premium > 0),
+    ranOut: [],
+    phoneHints: [],
     stove: { item: null, minutes: 0 },
     surfaces: Object.fromEntries(SURFACE_IDS.map((id) => [id, null])),
     items,
@@ -59,8 +61,32 @@ export function supplyCount(state: GameState, product: Product): number {
 export function takeSupply(state: GameState, product: Product): Quality | null {
   const supply = state.home.supplies[product];
   const quality = TAKE_ORDER.find((q) => supply[q] > 0) ?? null;
-  if (quality !== null) supply[quality] -= 1;
+  if (quality !== null) {
+    supply[quality] -= 1;
+    noteEmpty(state, product);
+  }
   return quality;
+}
+
+/** Нашийник і дзвіночок — штучні: що вони закінчилися, не підказують. */
+const NO_HINT: readonly Product[] = ["collar", "bell"];
+
+/**
+ * Запас уперше закінчився, а в дорозі його немає (§6.4, правка автора 2026-10-23): кнопка телефону
+ * пульсує з його іконкою, доки телефон не відкриють.
+ */
+function noteEmpty(state: GameState, product: Product): void {
+  if (supplyCount(state, product) > 0 || NO_HINT.includes(product) || incoming(state, product) > 0) return;
+  const home = state.home;
+  const ranOut = (home.ranOut ??= []);
+  if (ranOut.includes(product)) return;
+  ranOut.push(product);
+  (home.phoneHints ??= []).push(product);
+}
+
+/** Телефон відкрили: підказки побачено. */
+export function seePhoneHints(state: GameState): void {
+  state.home.phoneHints = [];
 }
 
 /**
@@ -73,6 +99,7 @@ export function useSupply(state: GameState, product: Product, quality?: Quality)
   else if (state.home.supplies[product][quality] > 0) {
     state.home.supplies[product][quality] -= 1;
     taken = quality;
+    noteEmpty(state, product);
   } else taken = null;
   if (taken !== null) emit(state, { type: "supply-used", product, left: supplyCount(state, product) });
   return taken;

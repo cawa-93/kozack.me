@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deliveryCost, order, productPrice, supplyCount } from "../src/sim/economy";
+import { deliveryCost, order, productPrice, seePhoneHints, supplyCount, useSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -21,6 +21,40 @@ describe("стартові запаси (§6.4)", () => {
       detergent: { cheap: 0, premium: 0 },
     });
     expect(save.current.home.acquired).toEqual(["food", "hygiene"]);
+  });
+});
+
+describe("підказка телефоном (§6.4)", () => {
+  it("запас уперше закінчився — підказка, доки телефон не відкриють; удруге — ні", () => {
+    const { current: state } = game();
+    state.home.supplies.hygiene = { cheap: 1, premium: 0 };
+    useSupply(state, "hygiene");
+    expect(state.home.phoneHints).toEqual(["hygiene"]);
+    seePhoneHints(state);
+    expect(state.home.phoneHints).toEqual([]);
+    state.home.supplies.hygiene = { cheap: 1, premium: 0 };
+    useSupply(state, "hygiene");
+    expect(state.home.phoneHints).toEqual([]);
+  });
+
+  it("без підказки, якщо запас уже їде, і для нашийника", () => {
+    const { current: state } = game();
+    state.character.money = 1000;
+    state.home.supplies.food = { cheap: 1, premium: 0 };
+    order(state, "food", "cheap");
+    useSupply(state, "food");
+    state.home.supplies.collar = { cheap: 1, premium: 0 };
+    useSupply(state, "collar");
+    expect(state.home.phoneHints).toEqual([]);
+  });
+
+  it("старе збереження без полів підказки не ламається", () => {
+    const { current: state } = game();
+    delete state.home.ranOut;
+    delete state.home.phoneHints;
+    state.home.supplies.hygiene = { cheap: 1, premium: 0 };
+    useSupply(state, "hygiene");
+    expect(state.home.phoneHints).toEqual(["hygiene"]);
   });
 });
 

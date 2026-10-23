@@ -14,6 +14,7 @@ import { beardLook, cyclePhase } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import type { IconName } from "./icons";
 import { scheduleOf } from "./schedule";
+import { PRODUCT_ICONS } from "./storage";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
 const FONT = "system-ui, sans-serif";
@@ -55,6 +56,9 @@ export class Hud {
   private readonly effects: Phaser.GameObjects.Text;
   private readonly schedule: Phaser.GameObjects.Text;
   private readonly phone: Phaser.GameObjects.Container;
+  /** Підказка на телефоні (§6.4): іконка запасу, що вперше закінчився. */
+  private readonly hint: Phaser.GameObjects.Container;
+  private readonly hintIcon: Phaser.GameObjects.Image;
   /** Кнопка повного екрана (§10); на iPhone її немає. */
   private readonly fullscreen: { button: Phaser.GameObjects.Container; icon: Phaser.GameObjects.Graphics } | null = null;
   private fullscreenDrawn: boolean | null = null;
@@ -93,7 +97,9 @@ export class Hud {
     g.fillStyle(0x4a3f52).fillCircle(0, 0, 26).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 26);
     g.fillStyle(0x222026).fillRoundedRect(-9, -15, 18, 30, 4);
     g.fillStyle(0x79a6c2).fillRect(-6, -11, 12, 19);
-    this.phone = scene.add.container(0, 0, [g]).setSize(56, 56).setDepth(DEPTH).addToDisplayList(layer);
+    this.hintIcon = scene.add.image(19, 19, "icon-food").setDisplaySize(22, 22);
+    this.hint = scene.add.container(0, 0, [scene.add.circle(19, 19, 15, COLORS.paper).setStrokeStyle(2, COLORS.ink), this.hintIcon]).setVisible(false);
+    this.phone = scene.add.container(0, 0, [g, this.hint]).setSize(56, 56).setDepth(DEPTH).addToDisplayList(layer);
     this.phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
       onPhone();
@@ -159,6 +165,14 @@ export class Hud {
       if (look === "unkempt") effects.push("Неохайна борода");
     }
     this.effects.setText(effects.join(" · "));
+    // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.
+    const hints = state.home.phoneHints ?? [];
+    const product = hints[hints.length - 1];
+    this.hint.setVisible(product !== undefined);
+    if (product !== undefined) {
+      this.hintIcon.setTexture(`icon-${PRODUCT_ICONS[product]}`).setDisplaySize(22, 22);
+      this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
+    } else this.phone.setScale(1);
     // Два найближчі пункти: на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
     this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
   }

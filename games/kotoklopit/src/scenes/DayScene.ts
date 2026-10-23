@@ -4,7 +4,7 @@ import { catFeeling, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, supplyCount } from "../sim/economy";
+import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
@@ -1104,6 +1104,8 @@ export class DayScene extends Phaser.Scene {
 
   private openPhone(): void {
     if (this.blocked()) return;
+    // Підказку телефоном побачено (§6.4).
+    seePhoneHints(this.state);
     const show = (tab: PhoneTab): void =>
       this.overlay.show(
         phoneCard(this.state, tab, {
