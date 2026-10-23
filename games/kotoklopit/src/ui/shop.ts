@@ -3,8 +3,8 @@
 
 import { PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
-import { supplyCount } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, GOODS, goodsKey, goodsTotal, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
+import { incoming, supplyCount } from "../sim/economy";
+import { canCheckout, cartDelivery, cartTotal, GOODS, goodsKey, goodsTotal, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
@@ -27,13 +27,33 @@ function offered(state: GameState, goods: Goods): boolean {
   return true;
 }
 
-/** Що вже є вдома: запас — кількість і ліміт сховища видно в телефоні й так; річ — скільки штук. */
+/** Чому товар не взяти — коротким підписом у рядку (§6.4). */
+const UNAVAILABLE: Record<Unavailable, string> = {
+  boxes: "у ящиках",
+  "no-room": "немає місця",
+  owned: "уже є",
+  ordered: "уже їде",
+};
+
+/**
+ * Під назвою товару (§6.4, правка автора 2026-10-23): скільки його вже їде (з тим, що чекає під
+ * дверима), і чому його не взяти. Скільки вдома — не показуємо: це видно зі сховищ.
+ */
 function stockText(state: GameState, goods: Goods): string {
-  if ("product" in goods) return `🏠 ${PRODUCT_TITLES[goods.product].unit(supplyCount(state, goods.product))}`;
-  const { thing } = goods;
+  const parts: string[] = [];
   const home = state.home;
-  const have = thing === "carrier" ? (home.carrier ? 1 : 0) : thing === "feeder" || thing === "fountain" || thing === "robot" ? (home.appliances[thing] ? 1 : 0) : home.items.filter((i) => i.kind === thing).length;
-  return `🏠 ×${have}`;
+  const packages = [...home.deliveries, ...home.porch];
+  if ("product" in goods) {
+    const coming = incoming(state, goods.product);
+    if (coming > 0) parts.push(`🚗 ${PRODUCT_TITLES[goods.product].unit(coming)}`);
+  } else {
+    const coming = packages.filter((d) => "thing" in d && d.thing === goods.thing).length;
+    if (coming > 0) parts.push(`🚗 ×${coming}`);
+  }
+  const reason = unavailable(state, goods);
+  // «Уже їде» дублював би 🚗.
+  if (reason !== null && reason !== "ordered") parts.push(UNAVAILABLE[reason]);
+  return parts.join(" · ");
 }
 
 /** Розмір упаковки для запасу, якщо дешева й дорога різні («7 чисток лотка»). */
@@ -72,13 +92,14 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
     for (const g of goods) {
       const row = element("div", "shop-item");
       const name = element("span", "shop-name", goodsName(g));
-      let stock = stockText(state, g);
+      const stock = [stockText(state, g)];
       if (mode === "store") {
         // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
         const mod = shopModifier(state, g);
-        if (Math.abs(mod) >= 0.005) stock += mod < 0 ? " · ₴↓" : " · ₴↑";
+        if (Math.abs(mod) >= 0.005) stock.push(mod < 0 ? "₴↓" : "₴↑");
       }
-      name.append(element("span", "shop-stock", stock));
+      const text = stock.filter((s) => s !== "").join(" · ");
+      if (text !== "") name.append(element("span", "shop-stock", text));
       row.append(name);
       for (const quality of ["cheap", "premium"] as const) {
         const line: CartLine = { goods: g, quality, count: 0 };

@@ -6,7 +6,7 @@ import { newGame } from "../src/sim/game";
 import { SHOP_WINDOW } from "../src/sim/config";
 import { shopModifier } from "../src/sim/destinations";
 import { deliveryCost } from "../src/sim/economy";
-import { canCheckout, cartDelivery, cartTotal, checkout, GOODS, room, unitPrice, type CartLine } from "../src/sim/shop";
+import { canCheckout, cartDelivery, cartTotal, checkout, GOODS, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
@@ -59,6 +59,23 @@ describe("універсальний магазин (§6.4)", () => {
       expect(mod).toBeGreaterThanOrEqual(-0.3);
       expect(mod).toBeLessThanOrEqual(0.1);
     }
+  });
+
+  it("чому товар не взяти: у ящиках, немає місця, уже є, уже їде", () => {
+    const state = game().current;
+    state.character.money = 10_000;
+    expect(unavailable(state, { product: "food" })).toBeNull();
+    state.home.boxes = { food: { cheap: 5, premium: 0 } };
+    expect(unavailable(state, { product: "food" })).toBe("boxes");
+    expect(unavailable(state, { thing: "carrier" })).toBeNull();
+    checkout(state, [line({ thing: "carrier" }, "cheap", 1)], "delivery");
+    expect(unavailable(state, { thing: "carrier" })).toBe("ordered");
+    state.home.deliveries = [];
+    state.home.carrier = "cheap";
+    expect(unavailable(state, { thing: "carrier" })).toBe("owned");
+    checkout(state, [line({ thing: "house" }, "cheap", 3)], "delivery");
+    expect(unavailable(state, { thing: "house" })).toBe("no-room");
+    expect(unavailable(state, { thing: "toy" })).toBeNull();
   });
 
   it("не вистачає грошей чи місця — нічого не купується", () => {

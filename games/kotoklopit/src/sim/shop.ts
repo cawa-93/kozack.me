@@ -4,7 +4,7 @@
 import { spend } from "./character";
 import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
 import { buyAtShop, GOODS, goodsKey, shopPrice, type Goods } from "./destinations";
-import { canOrderProduct, deliveryCost, dispatch, freeSlots, productPrice } from "./economy";
+import { canOrderProduct, deliveryCost, dispatch, freeSlots, isAppliance, productPrice } from "./economy";
 import type { GameState, Quality } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -50,6 +50,21 @@ export function cartDelivery(state: GameState, cart: readonly CartLine[], mode: 
 }
 
 /** Разом до сплати: товари й доставка. */
+/** Чому товар зараз не взяти (§6.4): запас ще в ящиках, немає місця, річ уже є чи вже їде; null — можна. */
+export type Unavailable = "boxes" | "no-room" | "owned" | "ordered";
+
+export function unavailable(state: GameState, goods: Goods): Unavailable | null {
+  if ("product" in goods) return canOrderProduct(state, goods.product) ? null : "boxes";
+  const { thing } = goods;
+  if (freeSlots(state, thing) > 0) return null;
+  const home = state.home;
+  if (thing === "carrier" || isAppliance(thing)) {
+    const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
+    return owned ? "owned" : "ordered";
+  }
+  return "no-room";
+}
+
 export function cartTotal(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {
   const lines = cart.filter((l) => l.count > 0);
   return lines.length === 0 ? 0 : goodsTotal(state, lines, mode) + cartDelivery(state, lines, mode);

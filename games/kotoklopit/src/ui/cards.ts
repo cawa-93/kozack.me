@@ -213,9 +213,8 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   // Коти й альбом з'являються, коли в них є що показати (§11.3а): до першого кота — лише порожні сторінки.
   const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => (t !== "cats" || state.cats.length > 0) && (t !== "album" || state.album.length > 0));
   const tab = tabs.includes(wanted) ? wanted : "shop";
-  const waiting = state.home.deliveries.length;
   const body: (string | HTMLElement)[] = [];
-  if (tab === "shop" && waiting > 0) body.push(note(`🚗 У дорозі: ${waiting} ${plural(waiting, "пакунок", "пакунки", "пакунків")}`));
+  // Що вже їде, видно в рядку кожного товару (§6.4).
   if (tab === "shop") body.push(shopCatalog(state, "delivery", handlers.checkout));
   if (tab === "mine") body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`, myThings(state, handlers));
   if (tab === "cats") body.push(...catCards(state, handlers));
