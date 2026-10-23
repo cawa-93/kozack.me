@@ -66,9 +66,17 @@ export function shopPrice(state: GameState, goods: Goods, quality: Quality): num
 
 /** Купити в магазині: речі одразу на своїх місцях, запаси — у ящиках біля входу (§6.4, §8.5). */
 export function buyAtShop(state: GameState, goods: Goods, quality: Quality): boolean {
+  if ("product" in goods && !canOrderProduct(state, goods.product)) return false;
+  return purchase(state, goods, quality);
+}
+
+/**
+ * Оплатити й забрати додому одну штуку. Що запасу ще немає в ящиках, перевіряє той, хто купує:
+ * кошик перевіряє це один раз, бо після першої упаковки запас уже в ящиках.
+ */
+export function purchase(state: GameState, goods: Goods, quality: Quality): boolean {
   if (state.trip?.destination !== "shop") return false;
   if ("thing" in goods && freeSlots(state, goods.thing) <= 0) return false;
-  if ("product" in goods && !canOrderProduct(state, goods.product)) return false;
   if (!spend(state, shopPrice(state, goods, quality))) return false;
   // Запаси з магазину, як і доставка, — у ящики біля входу (§6.4).
   if ("product" in goods) stash(state, goods.product, quality, PRODUCTS[goods.product].units[quality]);

@@ -3,7 +3,7 @@
 
 import { spend } from "./character";
 import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
-import { buyAtShop, GOODS, goodsKey, shopPrice, type Goods } from "./destinations";
+import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
 import { canOrderProduct, deliveryCost, dispatch, freeSlots, isAppliance, productPrice } from "./economy";
 import type { GameState, Quality } from "./types";
 
@@ -88,7 +88,8 @@ export function checkout(state: GameState, cart: readonly CartLine[], mode: Shop
   if (mode === "delivery" && !spend(state, cartDelivery(state, cart.filter((l) => l.count > 0), mode))) return false;
   for (const line of cart) {
     for (let i = 0; i < line.count; i++) {
-      if (mode === "store") buyAtShop(state, line.goods, line.quality);
+      // Кошик уже перевірено: кілька упаковок одного запасу — усі в ящики.
+      if (mode === "store") purchase(state, line.goods, line.quality);
       else dispatch(state, line.goods, line.quality, unitPrice(state, line.goods, line.quality, mode));
     }
   }
