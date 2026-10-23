@@ -351,10 +351,11 @@ export class Bot {
     if (!this.goTo("computer")) return this.wait(5);
     interact(this.save);
     if (this.state.character.activity?.kind !== "work") return this.wait(2);
-    // Сеанс до години, але з перервами на нагальне.
-    for (let i = 0; i < 4; i++) {
+    // Сеанс до години, але з перервами на нагальне: перевірка щоп'ять хвилин, інакше страва
+    // на плиті встигає підгоріти (готова за 20 хвилин, підгорає ще за 15, §8.7).
+    for (let i = 0; i < 12; i++) {
       const before = this.state.minute;
-      advance(this.save, 15);
+      advance(this.save, 5);
       const spent = (this.state.minute - before) / 60;
       if (this.state.character.activity?.kind !== "work") break;
       this.workedToday += spent;

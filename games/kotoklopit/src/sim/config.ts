@@ -660,9 +660,9 @@ export const SHELTER = {
 export const BREEDER = { cats: 3, age: 2 } as const;
 export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
 export const CAFE = { pricePerHour: 20, sanity: [12, 6, 3], jealousyMood: -5 } as const;
-/** Вікно ціни в магазині за складністю (§6.4). */
 /** Скільки однакових іграшок можна взяти в кошик за раз (§6.4): місця їм не треба. */
 export const SHOP_TOYS_PER_ORDER = 5;
+/** Вікно ціни в магазині за складністю (§6.4). */
 export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
   easy: { min: -0.3, max: 0.1 },
   normal: { min: -0.2, max: 0.2 },
