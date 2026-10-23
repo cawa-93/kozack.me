@@ -743,7 +743,7 @@ export class DayScene extends Phaser.Scene {
     if (stove.item && stove.item.kind !== "burnt") {
       const view = this.view("stove");
       const cooking = stove.item.kind === "raw";
-      const value = cooking ? stove.minutes / COOK_MINUTES : (stove.minutes - COOK_MINUTES) / (BURN_MINUTES - COOK_MINUTES);
+      const value = cooking ? stove.minutes / COOK_MINUTES : (stove.minutes - COOK_MINUTES) / (BURN_MINUTES[state.difficulty] - COOK_MINUTES);
       // Смуга на лицьовій грані плити: зелена — готується, червона — скоро підгорить.
       bar(g, view.anchor.x, view.top.y + view.top.h + 10, value, cooking ? COLORS.good : COLORS.danger);
     }

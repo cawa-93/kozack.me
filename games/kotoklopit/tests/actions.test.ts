@@ -53,7 +53,20 @@ describe("холодильник (§6.4, §8.7)", () => {
 });
 
 describe("плита (§8.7)", () => {
-  it("страва готова за 20 хвилин, підгорає ще через 15, а підгорілу викидають", () => {
+  it("підгорає за складністю: 45 / 30 / 15 хвилин після готовності", () => {
+    for (const [difficulty, after] of [["easy", 45], ["normal", 30], ["hard", 15]] as const) {
+      const save = newGame({ sex: "female", difficulty, seed: 1 });
+      const stove = save.current.home.stove;
+      stove.item = { kind: "meal", quality: "cheap" };
+      stove.minutes = COOK_MINUTES;
+      advance(save, after - 1);
+      expect(stove.item?.kind).toBe("meal");
+      advance(save, 1);
+      expect(stove.item?.kind).toBe("burnt");
+    }
+  });
+
+  it("страва готова за 20 хвилин, підгорає ще через 30 на середній, а підгорілу викидають", () => {
     const save = game();
     standAt(save, "fridge");
     interact(save);
@@ -65,7 +78,9 @@ describe("плита (§8.7)", () => {
     expect(stove.item?.kind).toBe("raw");
     advance(save, 1);
     expect(stove.item?.kind).toBe("meal");
-    advance(save, BURN_MINUTES - COOK_MINUTES);
+    advance(save, BURN_MINUTES.normal - COOK_MINUTES - 1);
+    expect(stove.item?.kind).toBe("meal");
+    advance(save, 1);
     expect(stove.item?.kind).toBe("burnt");
     interact(save);
     expect(save.current.character.held?.kind).toBe("burnt");

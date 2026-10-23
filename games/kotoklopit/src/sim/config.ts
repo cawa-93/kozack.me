@@ -124,8 +124,8 @@ export const INPUT_DEADZONE = 0.15;
 // Побут (§8.7, чернетка). Час — в ігрових хвилинах.
 /** Страва на плиті готова. */
 export const COOK_MINUTES = 20;
-/** Страва на плиті підгорає. */
-export const BURN_MINUTES = COOK_MINUTES + 15;
+/** Страва на плиті підгорає: від того, як поставили сиру, за складністю (правка автора 2026-10-23: було +15 для всіх). */
+export const BURN_MINUTES: Record<Difficulty, number> = { easy: COOK_MINUTES + 45, normal: COOK_MINUTES + 30, hard: COOK_MINUTES + 15 };
 export const EAT_MINUTES = 10;
 export const SHOWER_MINUTES = 10;
 /** Ситість за порцію (§6.4). */

@@ -645,7 +645,7 @@ export function tickStove(state: GameState, minutes: number): void {
     stove.item = { kind: "meal", quality: item.quality };
     emit(state, { type: "cooked", result: "ready" });
   }
-  if (stove.item?.kind === "meal" && stove.minutes >= BURN_MINUTES) {
+  if (stove.item?.kind === "meal" && stove.minutes >= BURN_MINUTES[state.difficulty]) {
     stove.item = { kind: "burnt", quality: item.quality };
     emit(state, { type: "cooked", result: "burnt" });
   }
