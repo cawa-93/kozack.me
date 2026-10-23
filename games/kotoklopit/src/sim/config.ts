@@ -188,8 +188,11 @@ export const STORAGE_LIMITS: Record<Product, number> = {
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
-/** Доставка коштує 110% від базової ціни. */
-export const DELIVERY_PRICE = 1.1;
+/**
+ * Доставка (§6.4, правка автора 2026-10-23): ціни в каталозі базові, доставка — окремо: 10% бази
+ * кожного товару й надбавка за замовлення, що залежить лише від складності.
+ */
+export const DELIVERY = { share: 0.1, fee: { easy: 8, normal: 10, hard: 12 } as Record<Difficulty, number> } as const;
 export const DELIVERY_HOURS = 6;
 /** Якщо персонаж спатиме, коли прибуде пакунок, його привезуть о 09:00 наступного дня. */
 export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
@@ -664,9 +667,10 @@ export const CAFE = { pricePerHour: 20, sanity: [12, 6, 3], jealousyMood: -5 } a
 export const SHOP_TOYS_PER_ORDER = 5;
 /** Вікно ціни в магазині за складністю (§6.4). */
 export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
-  easy: { min: -0.3, max: 0.1 },
-  normal: { min: -0.2, max: 0.2 },
-  hard: { min: -0.1, max: 0.3 },
+  // Правка автора 2026-10-23: зсунуто на 10% у бік знижок, щоб поїздка була варта часу.
+  easy: { min: -0.4, max: 0 },
+  normal: { min: -0.3, max: 0.1 },
+  hard: { min: -0.2, max: 0.2 },
 };
 /** Модифікатори (§4.1, `DAY_MODIFIERS.md`): вибір і ефекти (чернетка). */
 export const MODIFIERS = {

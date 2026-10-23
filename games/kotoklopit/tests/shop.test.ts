@@ -3,7 +3,10 @@
 import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
-import { canCheckout, cartTotal, checkout, GOODS, room, unitPrice, type CartLine } from "../src/sim/shop";
+import { SHOP_WINDOW } from "../src/sim/config";
+import { shopModifier } from "../src/sim/destinations";
+import { deliveryCost } from "../src/sim/economy";
+import { canCheckout, cartDelivery, cartTotal, checkout, GOODS, room, unitPrice, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
@@ -31,10 +34,31 @@ describe("універсальний магазин (§6.4)", () => {
     state.character.money = 1000;
     const cart = [line({ product: "food" }, "cheap", 1), line({ thing: "bowl" }, "cheap", 2)];
     const total = cartTotal(state, cart, "delivery");
-    expect(total).toBe(unitPrice(state, { product: "food" }, "cheap", "delivery") + 2 * unitPrice(state, { thing: "bowl" }, "cheap", "delivery"));
+    // У каталозі — базові ціни, доставка — раз на весь кошик.
+    const goods = unitPrice(state, { product: "food" }, "cheap", "delivery") + 2 * unitPrice(state, { thing: "bowl" }, "cheap", "delivery");
+    expect(goods).toBe(40 + 2 * 10);
+    expect(total).toBe(goods + deliveryCost(state, goods));
     expect(checkout(state, cart, "delivery")).toBe(true);
     expect(state.character.money).toBe(1000 - total);
     expect(state.home.deliveries).toHaveLength(3);
+  });
+
+  it("доставка в телефоні: порожній кошик — лише надбавка, у магазині доставки немає", () => {
+    const state = game().current;
+    expect(cartDelivery(state, [], "delivery")).toBe(10);
+    expect(cartTotal(state, [], "delivery")).toBe(0);
+    expect(cartDelivery(state, [line({ product: "food" }, "cheap", 1)], "store")).toBe(0);
+  });
+
+  it("ціни в магазині на 10% у бік знижок: середня — від −30% до +10%", () => {
+    expect(SHOP_WINDOW.normal).toEqual({ min: -0.3, max: 0.1 });
+    const state = game().current;
+    state.trip = { destination: "shop", seed: 7 } as Save["current"]["trip"];
+    for (const g of GOODS) {
+      const mod = shopModifier(state, g);
+      expect(mod).toBeGreaterThanOrEqual(-0.3);
+      expect(mod).toBeLessThanOrEqual(0.1);
+    }
   });
 
   it("не вистачає грошей чи місця — нічого не купується", () => {

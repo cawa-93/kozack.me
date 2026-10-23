@@ -44,7 +44,8 @@ describe("купівля речей (§6.4)", () => {
     const save = game();
     expect(freeSlots(save.current, "litter")).toBe(5);
     buy(save, "litter", "cheap");
-    expect(save.current.character.money).toBe(2000 - 28);
+    // Лоток 25, доставка — 10% бази (2,5 → 3) і надбавка 10 (§6.4).
+    expect(save.current.character.money).toBe(2000 - 38);
     const boxes = save.current.home.items.filter((i) => i.kind === "litter");
     expect(boxes.map((b) => ("slot" in b ? b.slot : ""))).toEqual(["litter-1", "litter-2"]);
     expect(freeSlots(save.current, "litter")).toBe(4);

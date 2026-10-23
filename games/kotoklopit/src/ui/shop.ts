@@ -4,7 +4,7 @@
 import { PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
 import { supplyCount } from "../sim/economy";
-import { canCheckout, cartTotal, GOODS, goodsKey, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
+import { canCheckout, cartDelivery, cartTotal, GOODS, goodsKey, goodsTotal, room, unitPrice, type CartLine, type Goods, type ShopMode } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
@@ -52,12 +52,17 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
   const box = element("div", "shop");
   const updaters: (() => void)[] = [];
   const total = element("span", "shop-total");
-  const pay = element("button", "button primary", mode === "store" ? "Купити" : "Замовити");
+  const verb = mode === "store" ? "Купити" : "Замовити";
+  const pay = element("button", "button primary", verb);
   const update = (): void => {
     for (const u of updaters) u();
     const sum = cartTotal(state, cart, mode);
-    total.textContent = `🛒 ${sum} ₴ · 👛 ${Math.floor(state.character.money)} ₴`;
+    // Ціни в каталозі базові; доставка — окремим підписом (§6.4): 10% бази й надбавка, раз на кошик.
+    const filled = cart.filter((l) => l.count > 0);
+    const delivery = mode === "delivery" ? ` · 🚗 доставка ${cartDelivery(state, filled, mode)} ₴` : "";
+    total.textContent = `🛒 ${goodsTotal(state, filled, mode)} ₴${delivery} · 👛 ${Math.floor(state.character.money)} ₴`;
     drawGlyphs(total);
+    pay.textContent = sum > 0 ? `${verb} · ${sum} ₴` : verb;
     total.classList.toggle("short", sum > state.character.money);
     pay.disabled = !canCheckout(state, cart, mode);
   };

@@ -2,11 +2,11 @@
 
 import { spend } from "./character";
 import {
+  DELIVERY,
   DELIVERY_HOURS,
   WATER_CAPACITY,
   DELIVERY_NEXT_DAY_MINUTE,
   DELIVERED_TOY_AT,
-  DELIVERY_PRICE,
   MINUTES_PER_HOUR,
   PRODUCTS,
   START_CLOTHES,
@@ -102,22 +102,28 @@ export function fitsStorage(state: GameState, product: Product, quality: Quality
   return supplyCount(state, product) + incoming(state, product) + PRODUCTS[product].units[quality] <= STORAGE_LIMITS[product];
 }
 
-/** Доставка коштує 110% від базової ціни, округлено до цілого. */
-export function deliveryPrice(product: Product, quality: Quality, factor = 1): number {
-  return Math.round(PRODUCTS[product].price[quality] * DELIVERY_PRICE * factor);
+/** Базова ціна запасу (§6.4): модифікатор дня змінює ціну корму. */
+export function productPrice(state: GameState, product: Product, quality: Quality): number {
+  return Math.round(PRODUCTS[product].price[quality] * priceFactor(state, product));
 }
 
-export function thingDeliveryPrice(thing: ThingKind, quality: Quality): number {
-  return Math.round(THINGS[thing].price[quality] * DELIVERY_PRICE);
+/**
+ * Вартість доставки замовлення (§6.4): 10% бази його товарів, округлено, і надбавка за складністю
+ * один раз на замовлення.
+ */
+export function deliveryCost(state: GameState, base: number): number {
+  return Math.round(base * DELIVERY.share) + DELIVERY.fee[state.difficulty];
 }
 
-/** Замовити доставку; null, якщо не вистачає грошей чи місця у сховищі (§6.4). Пакунок прибуде через 6 годин. */
+/** Замовити одну упаковку окремим замовленням; null, якщо не вистачає грошей чи місця у сховищі (§6.4). */
 export function order(state: GameState, product: Product, quality: Quality): Delivery | null {
   if (!fitsStorage(state, product, quality)) return null;
-  return send(state, { product }, quality, deliveryPrice(product, quality, priceFactor(state, product)));
+  const base = productPrice(state, product, quality);
+  return dispatch(state, { product }, quality, base + deliveryCost(state, base));
 }
 
-function send(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number): Delivery | null {
+/** Відправити пакунок за вказану ціну: гроші списано, пакунок прибуде через 6 годин (§6.4). */
+export function dispatch(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number): Delivery | null {
   if (state.end !== null) return null;
   if (!spend(state, price)) return null;
   const delivery: Delivery = {
@@ -146,10 +152,11 @@ export function freeSlots(state: GameState, thing: ThingKind): number {
   return free - coming;
 }
 
-/** Замовити річ для котів (§6.4); null, якщо немає місця чи грошей. */
+/** Замовити річ для котів окремим замовленням (§6.4); null, якщо немає місця чи грошей. */
 export function orderThing(state: GameState, thing: ThingKind, quality: Quality): Delivery | null {
   if (freeSlots(state, thing) <= 0) return null;
-  return send(state, { thing }, quality, thingDeliveryPrice(thing, quality));
+  const base = THINGS[thing].price[quality];
+  return dispatch(state, { thing }, quality, base + deliveryCost(state, base));
 }
 
 /** Нова річ стає на вільне місце свого типу, іграшка — на підлогу біля дверей. */

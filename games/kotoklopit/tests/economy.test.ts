@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deliveryPrice, order, supplyCount } from "../src/sim/economy";
+import { deliveryCost, order, productPrice, supplyCount } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -25,11 +25,15 @@ describe("стартові запаси (§6.4)", () => {
 });
 
 describe("доставка (§6.4)", () => {
-  it("коштує 110% базової ціни, округлено", () => {
-    expect(deliveryPrice("food", "cheap")).toBe(44);
-    expect(deliveryPrice("food", "premium")).toBe(88);
-    expect(deliveryPrice("hygiene", "cheap")).toBe(17);
-    expect(deliveryPrice("hygiene", "premium")).toBe(39);
+  it("ціна — базова, доставка окремо: 10% бази й надбавка за складністю (правка 2026-10-23)", () => {
+    for (const [difficulty, fee] of [["easy", 8], ["normal", 10], ["hard", 12]] as const) {
+      const state = newGame({ sex: "female", difficulty, seed: 1 }).current;
+      expect(productPrice(state, "food", "cheap")).toBe(40);
+      expect(productPrice(state, "hygiene", "premium")).toBe(35);
+      expect(deliveryCost(state, 40)).toBe(4 + fee);
+      // 10% від 15 — 1,5, округлено до 2.
+      expect(deliveryCost(state, 15)).toBe(2 + fee);
+    }
   });
 
   it("пакунок прибуває через 6 годин і чекає під дверима, доки їх не відчинять", () => {
@@ -37,7 +41,8 @@ describe("доставка (§6.4)", () => {
     const { events, stop } = recordEvents();
     const delivery = order(save.current, "food", "premium");
     expect(delivery?.at).toBe(absoluteMinute(0, hours(12)));
-    expect(save.current.character.money).toBe(150 - 88);
+    // Окреме замовлення: 80 за товар, 8 — 10% бази й 10 — надбавка.
+    expect(save.current.character.money).toBe(150 - 98);
     advance(save, hours(6) - 1);
     expect(save.current.home.porch).toEqual([]);
     advance(save, 1);

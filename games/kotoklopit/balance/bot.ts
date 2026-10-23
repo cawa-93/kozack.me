@@ -10,7 +10,8 @@ import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
-import { freeSlots, order, orderThing, supplyCount } from "../src/sim/economy";
+import { freeSlots, supplyCount } from "../src/sim/economy";
+import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
@@ -213,14 +214,22 @@ export class Bot {
     return best;
   }
 
-  /** Замовити доставкою, що закінчується (§6.4): з телефона, без ходьби. */
+  /**
+   * Замовити доставкою, що закінчується (§6.4): з телефона, без ходьби, одним кошиком — доставка
+   * з надбавкою береться раз на замовлення, тож заразом і те, що скоро закінчиться (менше вдвічі
+   * від порогу). Не вистачає грошей на все — без найменш нагального.
+   */
   private orderSupplies(): void {
     const s = this.state;
     const cats = s.cats.length;
+    const cart: CartLine[] = [];
+    const soon: CartLine[] = [];
     const coming = (product: Product): number =>
       [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === product).reduce((sum, d) => sum + PRODUCTS[product].units[d.quality], 0);
     const need = (product: Product, below: number): void => {
-      if (supplyCount(s, product) + coming(product) < below) order(s, product, "cheap");
+      const have = supplyCount(s, product) + coming(product);
+      if (have < below) cart.push({ goods: { product }, quality: "cheap", count: 1 });
+      else if (have < below * 2) soon.push({ goods: { product }, quality: "cheap", count: 1 });
     };
     need("food", 7);
     need("hygiene", 3);
@@ -240,13 +249,18 @@ export class Bot {
     // Зламана річ (§8.7), без якої котам не обійтися, — одразу, навіть без запасу грошей.
     const things = (kind: "litter" | "bowl" | "water" | "toy", want: number): void => {
       const have = s.home.items.filter((i) => i.kind === kind).length + [...s.home.deliveries, ...s.home.porch].filter((d) => "thing" in d && d.thing === kind).length;
-      if (have < want && freeSlots(s, kind) > 0 && (s.character.money > 100 || have === 0)) orderThing(s, kind, "cheap");
+      if (have < want && freeSlots(s, kind) > 0 && (s.character.money > 100 || have === 0)) cart.push({ goods: { thing: kind }, quality: "cheap", count: 1 });
     };
-    if (cats === 0) return;
-    things("litter", cats + 1);
-    things("bowl", cats);
-    things("water", Math.ceil(cats / 3));
-    things("toy", 1);
+    if (cats > 0) {
+      things("litter", cats + 1);
+      things("bowl", cats);
+      things("water", Math.ceil(cats / 3));
+      things("toy", 1);
+    }
+    if (cart.length === 0) return;
+    // Що скоро закінчиться — у той самий кошик, якщо влазить.
+    for (const line of soon) if (room(s, cart, line.goods, line.quality) > 0) cart.push(line);
+    while (cart.length > 0 && !checkout(s, cart, "delivery")) cart.pop();
   }
 
   // --- Дії ----------------------------------------------------------------------------------

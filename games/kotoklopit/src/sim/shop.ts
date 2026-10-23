@@ -1,10 +1,10 @@
 // Універсальний магазин (§6.4): один каталог запасів і речей, кошик із кількістю, оплата цілком.
 // Той самий кошик — доставкою з телефона чи на місці в поїздці.
 
-import { PRODUCTS, SHOP_TOYS_PER_ORDER, STORAGE_LIMITS } from "./config";
+import { spend } from "./character";
+import { PRODUCTS, SHOP_TOYS_PER_ORDER, STORAGE_LIMITS, THINGS } from "./config";
 import { buyAtShop, GOODS, goodsKey, shopPrice, type Goods } from "./destinations";
-import { deliveryPrice, freeSlots, incoming, order, orderThing, supplyCount, thingDeliveryPrice } from "./economy";
-import { priceFactor } from "./modifiers";
+import { deliveryCost, dispatch, freeSlots, incoming, productPrice, supplyCount } from "./economy";
 import type { GameState, Quality } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -18,9 +18,10 @@ export interface CartLine {
   count: number;
 }
 
+/** Ціна штуки: у магазині — сьогоднішня, у телефоні — базова; доставка рахується окремо (§6.4). */
 export function unitPrice(state: GameState, goods: Goods, quality: Quality, mode: ShopMode): number {
   if (mode === "store") return shopPrice(state, goods, quality);
-  return "product" in goods ? deliveryPrice(goods.product, quality, priceFactor(state, goods.product)) : thingDeliveryPrice(goods.thing, quality);
+  return "product" in goods ? productPrice(state, goods.product, quality) : THINGS[goods.thing].price[quality];
 }
 
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
@@ -42,8 +43,20 @@ export function room(state: GameState, cart: readonly CartLine[], goods: Goods, 
   return Math.max(0, free - used);
 }
 
-export function cartTotal(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {
+/** Скільки коштують товари кошика, без доставки. */
+export function goodsTotal(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {
   return cart.reduce((sum, l) => sum + l.count * unitPrice(state, l.goods, l.quality, mode), 0);
+}
+
+/** Вартість доставки кошика (§6.4): у магазині її немає; порожній кошик — лише надбавка. */
+export function cartDelivery(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {
+  return mode === "delivery" ? deliveryCost(state, goodsTotal(state, cart, mode)) : 0;
+}
+
+/** Разом до сплати: товари й доставка. */
+export function cartTotal(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {
+  const lines = cart.filter((l) => l.count > 0);
+  return lines.length === 0 ? 0 : goodsTotal(state, lines, mode) + cartDelivery(state, lines, mode);
 }
 
 /** Кошик можна оплатити: усе вміщується й грошей досить. */
@@ -55,14 +68,17 @@ export function canCheckout(state: GameState, cart: readonly CartLine[], mode: S
   return cartTotal(state, lines, mode) <= state.character.money;
 }
 
-/** Оплатити кошик цілком: доставкою — окремими пакунками, у магазині — одразу вдома. */
+/**
+ * Оплатити кошик цілком: доставкою — одне замовлення (доставка — раз на весь кошик) окремими
+ * пакунками, у магазині — одразу вдома.
+ */
 export function checkout(state: GameState, cart: readonly CartLine[], mode: ShopMode): boolean {
   if (!canCheckout(state, cart, mode)) return false;
+  if (mode === "delivery" && !spend(state, cartDelivery(state, cart.filter((l) => l.count > 0), mode))) return false;
   for (const line of cart) {
     for (let i = 0; i < line.count; i++) {
       if (mode === "store") buyAtShop(state, line.goods, line.quality);
-      else if ("product" in line.goods) order(state, line.goods.product, line.quality);
-      else orderThing(state, line.goods.thing, line.quality);
+      else dispatch(state, line.goods, line.quality, unitPrice(state, line.goods, line.quality, mode));
     }
   }
   return true;
