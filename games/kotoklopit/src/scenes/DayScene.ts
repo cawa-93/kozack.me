@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { catFeeling, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
@@ -20,7 +20,7 @@ import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
 import type { Chronotype, Difficulty, GameState, HomeItem, Look, Sex } from "../sim/types";
-import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
+import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
@@ -98,6 +98,8 @@ export class DayScene extends Phaser.Scene {
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
   private dark!: Phaser.GameObjects.Rectangle;
+  /** Остання відмова в пошуку роботи (§8.6): коли (мс) і на якому місці смужки. */
+  private rejection: { at: number; end: number } | null = null;
   /** Персонаж засинає (§8.8): коли почав (мс) і чи падає без сил. */
   private asleep: { started: number; collapsed: boolean } | null = null;
   private person!: PersonView;
@@ -759,6 +761,13 @@ export class DayScene extends Phaser.Scene {
       // Смуга на лицьовій грані плити: зелена — готується, червона — скоро підгорить.
       bar(g, view.anchor.x, view.top.y + view.top.h + 10, value, cooking ? COLORS.good : COLORS.danger);
     }
+    // Пошук роботи (§8.6): над монітором — етапи поточної вакансії (персонаж за столом не закриває); на відмові смужка червона.
+    if (state.job.unemployed) {
+      const view = this.view("computer");
+      const rejected = this.rejection !== null && time - this.rejection.at < REJECTION_MS;
+      const value = rejected && this.rejection ? this.rejection.end : searchProgress(state).progress;
+      searchBar(g, view.anchor.x, view.anchor.y - 40, value, JOB_SEARCH.stages, rejected);
+    }
   }
 
   private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): void {
@@ -935,6 +944,11 @@ export class DayScene extends Phaser.Scene {
         break;
       case "standup-started":
         popAt("computer", "camera");
+        break;
+      case "job-rejected":
+        // Вакансія — відмова (§8.6): хрестик і червона смужка, далі нова вакансія з нуля.
+        this.rejection = { at: this.time.now, end: event.vacancy / JOB_SEARCH.stages };
+        popAt("computer", "cross");
         break;
       case "standup":
         if (!event.attended) popAt("computer", "camera-missed");
@@ -1186,6 +1200,27 @@ export class DayScene extends Phaser.Scene {
         }),
       );
     show("shop");
+  }
+}
+
+/** Скільки триває червона смужка відмови в пошуку роботи (§8.6), мс. */
+const REJECTION_MS = 1500;
+
+/**
+ * Смужка пошуку роботи (§8.6): одна вакансія — етапи з позначками-кружечками на межах; пройдений
+ * етап — світлий кружечок, на відмові — червона смужка й червоний кружечок, де все скінчилося.
+ */
+function searchBar(g: Phaser.GameObjects.Graphics, cx: number, y: number, value: number, stages: number, rejected: boolean): void {
+  const width = 96;
+  const x = cx - width / 2;
+  g.fillStyle(COLORS.ink).fillRoundedRect(x - 2, y - 2, width + 4, 10, 4);
+  g.fillStyle(rejected ? COLORS.danger : COLORS.good).fillRoundedRect(x, y, Math.max(0, Math.min(1, value)) * width, 6, 3);
+  for (let i = 1; i <= stages; i++) {
+    const mark = i / stages;
+    const passed = value >= mark - 1e-6;
+    const failedHere = rejected && Math.abs(value - mark) < 1e-6;
+    g.fillStyle(failedHere ? COLORS.danger : passed ? COLORS.paper : 0x3a3340).fillCircle(x + width * mark, y + 3, 5);
+    g.lineStyle(2, COLORS.ink).strokeCircle(x + width * mark, y + 3, 5);
   }
 }
 

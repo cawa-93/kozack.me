@@ -58,6 +58,8 @@ export type GameEvent =
   | { type: "modifier"; kind: ModifierEvent; value: number }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
+  /** Пошук роботи: вакансія закінчилася відмовою, далі — нова (§8.6). */
+  | { type: "job-rejected"; vacancy: number }
   /** Ящики розпаковано (§6.4): що й скільки розлетілося по сховищах. */
   | { type: "unpacked"; moved: { product: Product; amount: number }[] }
   | { type: "doorbell"; delivery: Delivery }

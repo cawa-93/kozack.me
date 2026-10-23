@@ -78,6 +78,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Летучка: ${event.attended ? "присутність" : "пропуск"}, репутація ${signed(event.reputation, 2)}`;
     case "ordered":
       return `Замовлено ${goods(event.delivery)} (${event.delivery.quality}): −${event.price}`;
+    case "job-rejected":
+      return `Пошук роботи: вакансія ${event.vacancy} — відмова`;
     case "unpacked":
       return `Ящики розпаковано: ${event.moved.map((m) => `${m.product} ${m.amount}`).join(", ")}`;
     case "doorbell":

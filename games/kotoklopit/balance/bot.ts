@@ -18,11 +18,13 @@ import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
-import { POSITIONS } from "../src/sim/config";
+import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
 /** Скільки ігрових хвилин один крок ходьби. */
 const WALK_STEP = 0.1;
 const HOLD_STEP = 0.5;
+/** Скільки годин на день бот шукає роботу після звільнення (§8.6). */
+const SEARCH_HOURS_PER_DAY = 6;
 
 export interface BotPolicy {
   /** У скільки разів більше працювати, ніж вимагає посада (частка присутності × 9 годин). */
@@ -171,6 +173,11 @@ export class Bot {
 
   private wantsWork(): boolean {
     const s = this.state;
+    // Безробітний шукає роботу щодня в робочі години, як і працював би (§8.6).
+    if (s.job.unemployed) {
+      const minute = s.minute % 1440;
+      return minute >= WORK_START_MINUTE && minute < WORK_END_MINUTE && this.workedToday < SEARCH_HOURS_PER_DAY;
+    }
     if (!isWorkday(s) || !isWorkTime(s)) return false;
     // Терпіння не можна доводити до «Х»; летучка о 10:00.
     const standup = s.minute >= 9.9 * 60 && s.minute < 10.25 * 60;

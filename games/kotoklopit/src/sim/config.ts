@@ -226,8 +226,6 @@ export const PATIENCE_MAX = 100;
 export const PATIENCE_WARNING = 50;
 export const START_REPUTATION = 50;
 export const REPUTATION_MAX = 100;
-/** Пошук роботи — неприємне завдання (§8.1, §8.6): здоровий глузд за годину, як у стажера. */
-export const WORK_SANITY_PER_HOUR = -6;
 /** Стан «Х»: репутація за годину — стільки × (репутація за годину посади). */
 export const ABSENCE_REPUTATION = -3;
 export const STANDUP_MINUTE = 10 * MINUTES_PER_HOUR;
@@ -241,8 +239,11 @@ export const CALL_HYGIENE_REPUTATION = 0.5;
 /** Брудний одяг на відеодзвінку (§5.1, §8.7): штраф у «годинах роботи»; на якій хвилині колеги це помічають. */
 export const CALL_DIRTY_CLOTHES = { reputation: 0.5, noticeMinute: 5 } as const;
 export const HIGH_HYGIENE = 75;
-/** Після звільнення — 24 години пошуку роботи за комп'ютером (§8.6). */
-export const JOB_SEARCH_HOURS = 24;
+/**
+ * Пошук роботи після звільнення (§8.6, правка автора 2026-10-23): години за комп'ютером за складністю
+ * (було 24 для всіх); здоровий глузд — частка від роботи на найнижчій посаді; етапів однієї вакансії.
+ */
+export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
 
 /** Посади від стажера до директора (§8.6, чернетка). Терпіння й здоровий глузд (робота — неприємне, §8.1) — за годину. */
 export const POSITIONS: readonly {

@@ -19,9 +19,8 @@ import {
   STANDUP_MISSED_REPUTATION,
   START_REPUTATION,
   WORK_END_MINUTE,
-  WORK_SANITY_PER_HOUR,
   WORK_START_MINUTE,
-  JOB_SEARCH_HOURS,
+  JOB_SEARCH,
   TRIP_REPUTATION_DIVIDER,
   WORKDAYS_PER_WEEK,
 } from "./config";
@@ -126,11 +125,17 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
       changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
     }
   } else if (activity?.kind === "work" && job.unemployed) {
-    // Пошук роботи (§8.6): 24 години за комп'ютером, без зарплати.
-    activity.sanity += unpleasantTask(state, WORK_SANITY_PER_HOUR * hours, from);
+    // Пошук роботи (§8.6): години за комп'ютером за складністю, без зарплати; удвічі легше за роботу стажера.
+    const sanity = (POSITIONS[0]?.sanity ?? 0) * JOB_SEARCH.sanityShare;
+    activity.sanity += unpleasantTask(state, sanity * hours, from);
     activity.minutes += minutes;
+    const vacancy = searchProgress(state).vacancy;
     job.searchHours += hours;
-    if (job.searchHours >= JOB_SEARCH_HOURS) {
+    if (job.searchHours < JOB_SEARCH.hours[state.difficulty] && searchProgress(state).vacancy > vacancy) {
+      // Чергова вакансія — відмова; далі нова (§8.6).
+      emit(state, { type: "job-rejected", vacancy });
+    }
+    if (job.searchHours >= JOB_SEARCH.hours[state.difficulty]) {
       job.unemployed = false;
       job.position = 0;
       job.reputation = START_REPUTATION;
@@ -199,6 +204,25 @@ export function callImpression(state: GameState): number {
 export function noticeCallLook(state: GameState, from: number, to: number, callStart: number): void {
   const at = callStart + CALL_DIRTY_CLOTHES.noticeMinute;
   if (from < at && to >= at && isWorking(state) && state.home.clothes <= 0) emit(state, { type: "call-remark", issue: "clothes" });
+}
+
+/**
+ * Пошук роботи як низка вакансій (§8.6, правка автора 2026-10-23): у кожної — етапи відгук,
+ * співбесіда, тестове, пропозиція; k-та вакансія закінчується відмовою після k-го етапу, остання —
+ * наймом. Етапи однакові за часом: увесь пошук — 1 + 2 + … + N етапів. `vacancy` — з 1,
+ * `progress` — скільки пройдено з усіх етапів поточної вакансії (0–1).
+ */
+export function searchProgress(state: GameState): { vacancy: number; progress: number } {
+  const stages = JOB_SEARCH.stages;
+  const units = (stages * (stages + 1)) / 2;
+  // Похибка дробів не повинна відкладати відмову: 2,4 / 24 × 10 — це рівно один етап.
+  const done = Math.min(units, (state.job.searchHours / JOB_SEARCH.hours[state.difficulty]) * units + 1e-9);
+  let start = 0;
+  for (let vacancy = 1; vacancy <= stages; vacancy++) {
+    if (done < start + vacancy || vacancy === stages) return { vacancy, progress: Math.min(vacancy, done - start) / stages };
+    start += vacancy;
+  }
+  return { vacancy: stages, progress: 1 };
 }
 
 /** Ранок: на початку кожного робочого дня терпіння повне (§8.6). */
