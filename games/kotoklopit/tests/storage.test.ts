@@ -10,7 +10,7 @@ import { targetById } from "../src/sim/targets";
 import { addSupply, boxCount, order, receivePackages, unpack } from "../src/sim/economy";
 import { advance } from "../src/sim/game";
 import { hasBoxes } from "../src/sim/home";
-import { boxesIndicator } from "../src/sim/storage";
+import { boxesIndicator, boxesShown } from "../src/sim/storage";
 import { buyAtShop } from "../src/sim/destinations";
 import { giveStarterPack } from "../src/sim/night";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
@@ -156,6 +156,19 @@ describe("ящики біля входу (§6.4, правка 2026-10-23)", () =
     expect(buyAtShop(state, { product: "detergent" }, "cheap")).toBe(true);
     expect(boxCount(state, "detergent")).toBe(4);
     expect(state.home.supplies.detergent.cheap).toBe(0);
+  });
+
+  it("ящиків видно від 1 до 4 — за кількістю упаковок усередині (правка 2026-10-23)", () => {
+    const state = game().current;
+    expect(boxesShown(state)).toBe(0);
+    state.home.boxes = { food: { cheap: 5, premium: 0 } };
+    expect(boxesShown(state)).toBe(1);
+    state.home.boxes = { food: { cheap: 21, premium: 0 }, hygiene: { cheap: 14, premium: 0 } };
+    expect(boxesShown(state)).toBe(2);
+    state.home.boxes = { food: { cheap: 22, premium: 21 } };
+    expect(boxesShown(state)).toBe(3);
+    state.home.boxes = { catFood: { cheap: 56 * 9, premium: 0 }, litter: { cheap: 7, premium: 4 } };
+    expect(boxesShown(state)).toBe(4);
   });
 
   it("зблизька видно, що в ящиках", () => {

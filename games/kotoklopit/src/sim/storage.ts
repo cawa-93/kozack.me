@@ -1,6 +1,6 @@
 // Сховища запасів (§6.4): де лежить кожен запас, що видно над сховищем і коли.
 
-import { FILL_STAGES, STORAGE_LIMITS } from "./config";
+import { FILL_STAGES, PRODUCTS, STORAGE_LIMITS } from "./config";
 import { boxCount, supplyCount } from "./economy";
 import { targetOf } from "./targets";
 import type { GameState, Product } from "./types";
@@ -59,6 +59,23 @@ export function boxesIndicator(state: GameState): StorageLine[] {
   const activity = state.character.activity;
   if (state.trip !== null || (activity?.kind === "use" && activity.inside) || targetOf(state)?.id !== "boxes") return [];
   return (Object.keys(state.home.boxes ?? {}) as Product[]).filter((p) => boxCount(state, p) > 0).map((product) => ({ product, count: boxCount(state, product) }));
+}
+
+/** Найбільше коробок у купі ящиків біля входу (§6.4). */
+export const MAX_BOXES = 4;
+
+/**
+ * Скільки коробок у купі ящиків біля входу (§6.4, правка автора 2026-10-23): за кількістю
+ * упаковок усередині — одна упаковка — один ящик, неповна — як ціла, від чотирьох — чотири; 0 — ящиків немає.
+ */
+export function boxesShown(state: GameState): number {
+  let packs = 0;
+  for (const [product, box] of Object.entries(state.home.boxes ?? {}) as [Product, { cheap: number; premium: number } | undefined][]) {
+    if (!box) continue;
+    const units = PRODUCTS[product].units;
+    packs += box.cheap / units.cheap + box.premium / units.premium;
+  }
+  return Math.max(0, Math.min(MAX_BOXES, Math.ceil(packs - 1e-9)));
 }
 
 /** Стан наповнення (§6.4): 0 — порожньо, 1 — мало, 2 — половина, 3 — багато, 4 — ущерть. */

@@ -168,7 +168,7 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
 
   const inset = 4;
   const top = { x: r.x + inset, y: r.y - height + inset, w: r.w - inset * 2, h: r.h - inset * 2 };
-  if (object.kind === "boxes") return drawBoxes(g, object, top, height, depth);
+  if (object.kind === "boxes") return boxesView(g, object, top, height, depth);
   // Мішок, бак і аптечку цілком малює `storagelook.ts`: їхня форма залежить від наповнення.
   if (SHAPED_STORAGES.has(object.kind)) {
     // Фігура стоїть на підлозі клітинки: від її низу на висоту речі (ручка чи горловина — трохи вище).
@@ -186,11 +186,8 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
 }
 
-/**
- * Ящики біля входу (§6.4): дві картонні коробки, менша на більшій, зі скотчем. Стоять на підлозі
- * клітинки; рамка цілі обводить їх самих.
- */
-function drawBoxes(
+/** Ящики біля входу (§6.4): купа коробок на підлозі клітинки; рамка цілі обводить саму купу. */
+function boxesView(
   g: Phaser.GameObjects.Graphics,
   object: HomeObject,
   top: { x: number; y: number; w: number; h: number },
@@ -198,21 +195,43 @@ function drawBoxes(
   depth: number,
 ): ObjectView {
   const floor = top.y + top.h + height;
+  drawBoxPile(g, top, height, 2);
+  const outline = { x: top.x, y: floor - height - 2, w: top.w, h: height + 2 };
+  return { object, top, anchor: { x: top.x + top.w / 2, y: outline.y - 4 }, depth, graphics: g, outline };
+}
+
+/**
+ * Купа ящиків (§6.4, правка автора 2026-10-23): 1–4 картонні коробки зі скотчем — що більше
+ * упаковок усередині, то більше коробок. Одна — велика; дві — менша на більшій; три — дві внизу й
+ * одна зверху; чотири — по дві внизу й зверху.
+ */
+export function drawBoxPile(g: Phaser.GameObjects.Graphics, top: { x: number; y: number; w: number; h: number }, height: number, count: number): void {
+  g.clear();
+  const floor = top.y + top.h + height;
   const box = (x: number, y: number, w: number, h: number): void => {
     // Кришка (верхня грань) і бік коробки.
-    g.fillStyle(shade(FILL.boxes, -0.2)).fillRect(x, y + 8, w, h - 8);
-    g.fillStyle(FILL.boxes).fillRect(x, y, w, 8);
+    g.fillStyle(shade(FILL.boxes, -0.2)).fillRect(x, y + 7, w, h - 7);
+    g.fillStyle(FILL.boxes).fillRect(x, y, w, 7);
     g.lineStyle(2.5, COLORS.ink).strokeRect(x, y, w, h);
-    g.lineStyle(1.5, COLORS.ink, 0.6).lineBetween(x, y + 8, x + w, y + 8);
+    g.lineStyle(1.5, COLORS.ink, 0.6).lineBetween(x, y + 7, x + w, y + 7);
     // Скотч через кришку й бік.
     g.fillStyle(0xe8d9b0).fillRect(x + w / 2 - 3, y, 6, h);
     g.lineStyle(1, COLORS.ink, 0.4).strokeRect(x + w / 2 - 3, y, 6, h);
   };
-  const w = top.w;
-  box(top.x, floor - 24, w, 24);
-  box(top.x + 8, floor - 24 - 16, w - 22, 16);
-  const outline = { x: top.x, y: floor - height - 2, w, h: height + 2 };
-  return { object, top, anchor: { x: top.x + w / 2, y: outline.y - 4 }, depth, graphics: g, outline };
+  const { x, w } = top;
+  const half = w / 2 - 1;
+  if (count <= 0) return;
+  if (count <= 2) box(x, floor - 24, w, 24);
+  else {
+    box(x - 4, floor - 22, half + 2, 22);
+    box(x + w / 2 + 3, floor - 22, half + 2, 22);
+  }
+  if (count === 2) box(x + 8, floor - 24 - 16, w - 22, 16);
+  if (count === 3) box(x + w * 0.2, floor - 22 - 17, w * 0.6, 17);
+  if (count >= 4) {
+    box(x + 2, floor - 22 - 16, half - 4, 16);
+    box(x + w / 2 + 3, floor - 22 - 16, half - 4, 16);
+  }
 }
 
 /** Деталі, з яких річ упізнавано. */

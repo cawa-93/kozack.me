@@ -31,10 +31,10 @@ import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
-import { drawApartment, drawItem, objectHeight, type ObjectView } from "../view/apartment";
+import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
 import { PRODUCT_ICONS, StorageIndicators } from "../view/storage";
-import { boxesIndicator, STORAGES, storageIndicator, storageStages } from "../sim/storage";
+import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
 import { drawCatCorner, itemScreen } from "../view/catcorner";
@@ -567,6 +567,7 @@ export class DayScene extends Phaser.Scene {
     this.hud.update(state, time);
     // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
     for (const view of this.views.values()) if (view.object.requires || view.object.kind === "boxes") view.graphics.setVisible(isPresent(state, view.object));
+    this.drawBoxes();
     // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
     const activity = state.character.activity;
     const inside = activity?.kind === "use" && activity.inside === true;
@@ -586,6 +587,17 @@ export class DayScene extends Phaser.Scene {
     // Низький здоровий глузд — світ трохи пливе (§6.3).
     const sanity = state.character.stats.sanity;
     this.gloom.setFillStyle(0x5b3a7a, sanity < LOW_STAT ? ((LOW_STAT - sanity) / LOW_STAT) * 0.22 : 0);
+  }
+
+  /** Купа ящиків біля входу: 1–4 коробки за вмістом (§6.4); перемальовується, лише коли змінилася. */
+  private boxesDrawn = -1;
+
+  private drawBoxes(): void {
+    const count = boxesShown(this.state);
+    if (count === this.boxesDrawn) return;
+    this.boxesDrawn = count;
+    const view = this.view("boxes");
+    drawBoxPile(view.graphics, view.top, objectHeight("boxes"), count);
   }
 
   /** Наскільки заплющені очі під час засинання: 0–1 (§8.8). */
