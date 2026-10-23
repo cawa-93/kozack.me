@@ -303,7 +303,8 @@ export const NEED_PER_HOUR: Record<CatNeed, number> = {
   toilet: 12,
   fatigue: 7,
   attention: 8,
-  play: 10,
+  /** Правка автора 2026-10-23: було 10 — коти хотіли гратися надто рідко. */
+  play: 15,
 };
 /** Кіт іде задовольняти потребу, щойно вона сягає порогу (§9.12). */
 export const NEED_THRESHOLD = { hunger: 80, thirst: 60, toilet: 80, attention: 60, play: 70 } as const;
@@ -441,7 +442,8 @@ export const PET = {
   tooLongMood: -2,
   /** Кіт хоче уваги, якщо увага від 40. */
   wantsAttention: 40,
-  attentionPerMinute: 10,
+  /** Правка автора 2026-10-23: було 10 — кіт «хотів» лише перші ~2 з 5 хвилин, які терпить. */
+  attentionPerMinute: 4,
   toleranceMinutes: 5,
   toleranceStep: 0.5,
   minToleranceMinutes: 2,
@@ -470,7 +472,8 @@ export const WAKE_UP = {
 /** Іграшка: скільки ігор витримує; гра наодинці триває кілька хвилин. */
 export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, number>, aloneMinutes: 4 } as const;
 /** Гра з персонажем: за хвилину. Нижче `bored` потреби гри кіт іде. */
-export const PLAY = { sanity: 2.5, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
+/** Правка автора 2026-10-23: здоровий глузд +4 за хвилину (було 2,5). */
+export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
@@ -786,6 +789,8 @@ export const STEAL_HUNGER = 50;
 export const HUNGRY_THEFT = { step: 0.25, base: 0.15, starving: 95 } as const;
 /** Кіт і робота: клавіатура, коліна (§9.12). */
 export const WORK_CAT = {
+  /** До того, хто працює, кіт іде вже з такою увагою, як для пестощів (правка автора 2026-10-23: було 60). */
+  seekAttention: 40,
   keyboardStep: 0.35,
   lapBase: 0.5,
   lapStep: 0.25,
@@ -796,6 +801,11 @@ export const WORK_CAT = {
   lapLove: 0.2,
   lapAttention: 5,
 } as const;
+/**
+ * Кіт у полі зору (§8.2, §9.12, правка автора 2026-10-23): здоровий глузд за годину — спить чи не
+ * спить і щось робить; рахується один, найкращий кіт.
+ */
+export const WATCH_SANITY = { asleep: 1, awake: 3 } as const;
 /** Сон на комп'ютері: вага 1 + 2 × «Теплолюбність» + 2 × «Робочий помічник». */
 export const COMPUTER_SLEEP = { base: 1, step: 2 } as const;
 /** Прогнали з місця (§9.12). */

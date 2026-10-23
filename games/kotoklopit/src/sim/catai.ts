@@ -60,13 +60,14 @@ import {
   TRAIT_EFFECTS,
   TRAIT_NEED_STEP,
   VOMIT_STEP,
+  WATCH_SANITY,
   WORK_CAT,
   ZOOMIES,
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
 import { wearOut } from "./household";
-import { observe, setWitnessing } from "./knowledge";
+import { observe, setWitnessing, witnesses } from "./knowledge";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { itemTile, objectById, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
@@ -391,7 +392,9 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     const spot = hideSpot(state, rng);
     return start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
   }
-  if (context.present && n.attention >= NEED_THRESHOLD.attention) return startAttention(state, cat);
+  // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
+  const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
+  if (context.present && n.attention >= seek) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
@@ -915,7 +918,24 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   setWitnessing(context.present);
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) tickRelations(state, minutes, rng);
+  if (context.present) watchCats(state, minutes);
   setWitnessing(true);
+}
+
+/**
+ * Кіт у полі зору (§8.2, §9.12): просто дивитися на кота трохи піднімає здоровий глузд — більше,
+ * коли він не спить і щось робить. Рахується один, найкращий кіт; схованого не видно, а з
+ * душової кабіни — нікого.
+ */
+export function watchCats(state: GameState, minutes: number): void {
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.inside) return;
+  let best = 0;
+  for (const cat of state.cats) {
+    if (cat.act.kind === "hide" || !witnesses(state, cat)) continue;
+    best = Math.max(best, cat.act.kind === "sleep" ? WATCH_SANITY.asleep : WATCH_SANITY.awake);
+  }
+  if (best > 0) changeStat(state, "sanity", best * DIFFICULTY[state.difficulty].catSanity * (minutes / MINUTES_PER_HOUR));
 }
 
 /** Між котами (§9.4): сон купкою, бійки ворогів, сусідство з ворогом. */
