@@ -13,7 +13,7 @@ import { deriveSeed, type Rng } from "./rng";
 import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
 import type { AccidentLoss, Cat, Destination, GameState } from "./types";
-import { isWorkTime, stopWork } from "./work";
+import { stopWork } from "./work";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
 export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
@@ -67,8 +67,7 @@ export function startTrip(state: GameState, destination: Destination): boolean {
     changeMood(state, cat, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * Math.min(0, trait), "переноска");
     if (trait < 0) observe(state, cat, "carrier");
   }
-  // Збори в офісі — це робота, а не відсутність (§8.5).
-  if (isWorkTime(state) && destination !== "office") state.job.tripDays.push(state.day);
+  // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);
   state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(TRIPS[destination].road, seed), losses: [], visit: TRIPS[destination].visit, seed };
   emit(state, { type: "trip-started", destination });

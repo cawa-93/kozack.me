@@ -115,7 +115,16 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
 
   if (state.trip !== null) {
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
-    if (workTime && state.trip.destination !== "office") changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
+    // Збори в офісі — це робота, а не відсутність (§8.5).
+    const trip = state.trip;
+    if (workTime && trip.destination !== "office") {
+      // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00.
+      if (trip.workTrip !== true) {
+        trip.workTrip = true;
+        job.tripDays.push(state.day);
+      }
+      changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
+    }
   } else if (activity?.kind === "work" && job.unemployed) {
     // Пошук роботи (§8.6): 24 години за комп'ютером, без зарплати.
     activity.sanity += unpleasantTask(state, WORK_SANITY_PER_HOUR * hours, from);
@@ -158,7 +167,9 @@ function tickStandup(state: GameState, from: number, to: number): void {
   const start = STANDUP_MINUTE;
   const end = STANDUP_MINUTE + STANDUP_MINUTES;
   if (from < start && to >= start) emit(state, { type: "standup-started" });
-  if (isWorking(state)) state.job.standupMinutes += Math.max(0, Math.min(to, end) - Math.max(from, start));
+  // На зборах в офісі персонаж і так на роботі: летучка — там (§8.5).
+  const present = isWorking(state) || state.trip?.destination === "office";
+  if (present) state.job.standupMinutes += Math.max(0, Math.min(to, end) - Math.max(from, start));
   noticeCallLook(state, from, to, start);
   if (from < end && to >= end) resolveStandup(state);
 }

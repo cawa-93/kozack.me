@@ -6,13 +6,13 @@ import { createCat } from "../src/sim/cat";
 import { TRIPS } from "../src/sim/config";
 import { adopt, buyAtShop, cafe, shelterCats, shopPrice, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
-import { drive, newGame, returnHome, rewindAccident } from "../src/sim/game";
+import { advance, drive, newGame, returnHome, rewindAccident } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { driveSafely, standAt, withCatCorner } from "./helpers";
+import { driveSafely, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
@@ -90,6 +90,30 @@ describe("гонка (§8.5)", () => {
     driveSafely(save);
     expect(save.current.job.patience).toBe(patience);
     expect(save.current.job.reputation).toBeLessThan(reputation);
+  });
+});
+
+describe("поїздки й робота (§8.6)", () => {
+  it("поїздка, що почалася до 09:00, теж зараховується поїздкою в робочий час", () => {
+    const save = game(8 * 60 + 50);
+    save.current.day = 1;
+    expect(startTrip(save.current, "shop")).toBe(true);
+    expect(save.current.job.tripDays).toEqual([]);
+    driveSafely(save);
+    expect(save.current.job.tripDays).toEqual([1]);
+  });
+
+  it("на зборах в офісі летучку не пропущено", () => {
+    const save = game(8 * 60 + 50);
+    save.current.day = 1;
+    save.current.modifiers.day = "office";
+    const { events, stop } = recordEvents();
+    expect(startTrip(save.current, "office")).toBe(true);
+    driveSafely(save);
+    advance(save, 60);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "standup", attended: true }));
+    expect(save.current.job.tripDays).toEqual([]);
   });
 });
 

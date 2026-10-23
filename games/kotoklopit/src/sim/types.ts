@@ -309,6 +309,8 @@ export interface Trip {
   visit: number;
   /** Зерно поїздки: знижки в магазині (§6.4). */
   seed: number;
+  /** Поїздка вже зарахована як поїздка в робочий час (§8.6). У старих збереженнях немає. */
+  workTrip?: boolean;
 }
 
 export type AccidentLoss = "repair" | "health" | "sanity" | "cat";
