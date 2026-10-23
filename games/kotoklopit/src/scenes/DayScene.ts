@@ -34,7 +34,7 @@ import { canUse } from "../sim/actions";
 import { drawApartment, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
 import { PRODUCT_ICONS, StorageIndicators } from "../view/storage";
-import { STORAGES, storageIndicator, storageStages } from "../sim/storage";
+import { boxesIndicator, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
 import { drawCatCorner, itemScreen } from "../view/catcorner";
@@ -566,7 +566,7 @@ export class DayScene extends Phaser.Scene {
     const state = this.state;
     this.hud.update(state, time);
     // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
-    for (const view of this.views.values()) if (view.object.requires) view.graphics.setVisible(isPresent(state, view.object));
+    for (const view of this.views.values()) if (view.object.requires || view.object.kind === "boxes") view.graphics.setVisible(isPresent(state, view.object));
     // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
     const activity = state.character.activity;
     const inside = activity?.kind === "use" && activity.inside === true;
@@ -845,7 +845,32 @@ export class DayScene extends Phaser.Scene {
       const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
       this.storage.set(storage.object, storageIndicator(state, storage), anchor.x, Math.max(highest, anchor.y - lift));
     }
+    // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
+    const boxes = this.anchorOf("boxes");
+    this.storage.set("boxes", boxes ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
+  }
+
+  /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків — у сховища (§6.4). */
+  private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
+    const image = this.add.image(from.x, from.y, `icon-${icon}`).setDisplaySize(48, 48).setDepth(10_500).setVisible(false).addToDisplayList(this.viewport.world);
+    const flight = { t: 0 };
+    this.tweens.add({
+      targets: flight,
+      t: 1,
+      delay,
+      duration: 900,
+      ease: "Sine.easeInOut",
+      onStart: () => image.setVisible(true),
+      onUpdate: () => {
+        const t = flight.t;
+        image.setPosition(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t - Math.sin(Math.PI * t) * 120);
+      },
+      onComplete: () => {
+        image.destroy();
+        onArrive();
+      },
+    });
   }
 
   /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
@@ -875,6 +900,18 @@ export class DayScene extends Phaser.Scene {
         // Колеги на дзвінку помітили брудний одяг.
         popAt("computer", "laundry");
         break;
+      case "unpacked": {
+        // Запаси розлітаються з ящиків по своїх сховищах (§6.4), там — іконка із залишком.
+        const from = this.view("boxes").anchor;
+        event.moved.forEach((moved, i) => {
+          const storage = STORAGES.find((s) => s.products.includes(moved.product));
+          const to = storage ? this.anchorOf(storage.object) : null;
+          if (!storage || !to) return;
+          const icon = PRODUCT_ICONS[moved.product];
+          this.flyIcon(icon, from, to, i * 140, () => popAt(storage.object, icon, supplyCount(this.state, moved.product)));
+        });
+        break;
+      }
       case "supply-used":
         this.bubbles.pop(PRODUCT_ICONS[event.product], this.personAnchor, event.left);
         break;

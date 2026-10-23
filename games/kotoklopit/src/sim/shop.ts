@@ -2,9 +2,9 @@
 // Той самий кошик — доставкою з телефона чи на місці в поїздці.
 
 import { spend } from "./character";
-import { PRODUCTS, SHOP_TOYS_PER_ORDER, STORAGE_LIMITS, THINGS } from "./config";
+import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
 import { buyAtShop, GOODS, goodsKey, shopPrice, type Goods } from "./destinations";
-import { deliveryCost, dispatch, freeSlots, incoming, productPrice, supplyCount } from "./economy";
+import { canOrderProduct, deliveryCost, dispatch, freeSlots, productPrice } from "./economy";
 import type { GameState, Quality } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -27,17 +27,13 @@ export function unitPrice(state: GameState, goods: Goods, quality: Quality, mode
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
 
 /**
- * Скільки ще штук цього товару й якості влізе вдома, з урахуванням решти кошика: запаси — у ліміт
- * сховища (і з тим, що вже їде), речі — на вільні місця.
+ * Скільки ще штук цього товару й якості можна взяти, з урахуванням решти кошика (§6.4): запасів —
+ * скільки завгодно (зайве чекає в ящиках біля входу), але не того, що ще лежить у ящиках; речей —
+ * не більше вільних місць.
  */
 export function room(state: GameState, cart: readonly CartLine[], goods: Goods, quality: Quality): number {
   const others = cart.filter((l) => same(l.goods, goods) && l.quality !== quality);
-  if ("product" in goods) {
-    const { product } = goods;
-    const units = PRODUCTS[product].units;
-    const taken = supplyCount(state, product) + incoming(state, product) + others.reduce((sum, l) => sum + l.count * units[l.quality], 0);
-    return Math.max(0, Math.floor((STORAGE_LIMITS[product] - taken) / units[quality]));
-  }
+  if ("product" in goods) return canOrderProduct(state, goods.product) ? Infinity : 0;
   const used = others.reduce((sum, l) => sum + l.count, 0);
   const free = goods.thing === "toy" ? SHOP_TOYS_PER_ORDER : freeSlots(state, goods.thing);
   return Math.max(0, free - used);

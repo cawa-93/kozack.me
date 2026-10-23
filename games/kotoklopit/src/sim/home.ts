@@ -22,7 +22,8 @@ export type ObjectKind =
   | "vacuum"
   | "litterBag"
   | "sterileBin"
-  | "catKit";
+  | "catKit"
+  | "boxes";
 
 export interface Rect {
   x: number;
@@ -38,6 +39,8 @@ export interface HomeObject extends Rect {
   interactive: boolean;
   /** Сховище, що з'являється вдома лише після першого отримання одного з цих запасів (§6.4). */
   requires?: readonly Product[];
+  /** Крізь річ можна пройти: вона не заступає дорогу (ящики біля входу). */
+  walkable?: true;
 }
 
 /** `#` — стіна, `.` — підлога. */
@@ -100,10 +103,19 @@ export const OBJECTS: readonly HomeObject[] = [
   object("litter-bag", "litterBag", 5, 6, 1, 1, ["litter"]),
   object("sterile-bin", "sterileBin", 18, 6, 1, 1, ["sterileFood"]),
   object("cat-kit", "catKit", 13, 6, 1, 1, ["pills", "drops", "treats", "collar", "bell"]),
+  // Ящики біля входу (§6.4): стоять, поки в них є куплені запаси; невисокі — через них переступають.
+  // Не в ряду біля дверей: його закриває передня стіна (камера «три чверті»).
+  { ...object("boxes", "boxes", 12, 9), walkable: true },
 ];
+
+/** У ящиках біля входу щось є (§6.4). */
+export function hasBoxes(state: Pick<GameState, "home">): boolean {
+  return Object.values(state.home.boxes ?? {}).some((box) => box.cheap + box.premium > 0);
+}
 
 /** Річ є в квартирі: меблі — завжди, сховище — після першого отримання свого запасу (§6.4). */
 export function isPresent(state: Pick<GameState, "home">, object: HomeObject): boolean {
+  if (object.kind === "boxes") return hasBoxes(state);
   return !object.requires || object.requires.some((p) => state.home.acquired.includes(p));
 }
 
@@ -191,7 +203,7 @@ export function objectById(id: string): HomeObject {
 const SOLID: boolean[][] = MAP.map((row) => [...row].map((cell) => cell === "#"));
 const OPTIONAL = OBJECTS.filter((o) => o.requires);
 for (const o of OBJECTS) {
-  if (o.requires) continue;
+  if (o.requires || o.walkable) continue;
   for (let y = o.y; y < o.y + o.h; y++) {
     for (let x = o.x; x < o.x + o.w; x++) {
       const row = SOLID[y];

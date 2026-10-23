@@ -142,6 +142,8 @@ describe("квартира", () => {
       const save = game();
       // Усі сховища вже з'явилися (§6.4).
       save.current.home.acquired = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "bell", "shampoo", "detergent"];
+      // Ящики біля входу стоять, лише коли в них щось є (§6.4).
+      save.current.home.boxes = { food: { cheap: 1, premium: 0 } };
       walkTo(save, o.id);
       expect(targetOf(save.current)?.id).toBe(o.id);
     }

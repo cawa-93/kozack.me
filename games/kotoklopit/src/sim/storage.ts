@@ -1,7 +1,7 @@
 // Сховища запасів (§6.4): де лежить кожен запас, що видно над сховищем і коли.
 
 import { FILL_STAGES, STORAGE_LIMITS } from "./config";
-import { supplyCount } from "./economy";
+import { boxCount, supplyCount } from "./economy";
 import { targetOf } from "./targets";
 import type { GameState, Product } from "./types";
 
@@ -52,6 +52,13 @@ export function storageIndicator(state: GameState, storage: Storage): StorageLin
   return storage.products
     .filter((product) => state.home.acquired.includes(product))
     .map((product) => ({ product, count: supplyCount(state, product), limit: STORAGE_LIMITS[product] }));
+}
+
+/** Ящики біля входу в фокусі (§6.4): що в них лежить, без ліміту — вони безлімітні. */
+export function boxesIndicator(state: GameState): StorageLine[] {
+  const activity = state.character.activity;
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside) || targetOf(state)?.id !== "boxes") return [];
+  return (Object.keys(state.home.boxes ?? {}) as Product[]).filter((p) => boxCount(state, p) > 0).map((product) => ({ product, count: boxCount(state, product) }));
 }
 
 /** Стан наповнення (§6.4): 0 — порожньо, 1 — мало, 2 — половина, 3 — багато, 4 — ущерть. */

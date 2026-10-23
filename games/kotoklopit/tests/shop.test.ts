@@ -18,12 +18,12 @@ describe("універсальний магазин (§6.4)", () => {
     expect(GOODS.some((g) => "thing" in g && g.thing === "bowl")).toBe(true);
   });
 
-  it("місце рахується разом з усім кошиком: дешеве й дороге ділять сховище", () => {
+  it("запасів — скільки завгодно, крім того, що лежить у ящиках; речей — не більше вільних місць", () => {
     const state = game().current;
-    // 6 порцій удома, ліміт 40, упаковка 21: одна влазить.
-    expect(room(state, [], { product: "food" }, "cheap")).toBe(1);
-    const cart = [line({ product: "food" }, "premium", 1)];
-    expect(room(state, cart, { product: "food" }, "cheap")).toBe(0);
+    // Більше, ніж влазить у холодильник, — можна: зайве почекає в ящиках (правка 2026-10-23).
+    expect(room(state, [line({ product: "food" }, "premium", 3)], { product: "food" }, "cheap")).toBe(Infinity);
+    state.home.boxes = { food: { cheap: 5, premium: 0 } };
+    expect(room(state, [], { product: "food" }, "cheap")).toBe(0);
     // Миски: скільки вільних місць.
     expect(room(state, [], { thing: "bowl" }, "cheap")).toBeGreaterThan(1);
     expect(room(state, [line({ thing: "carrier" }, "premium", 1)], { thing: "carrier" }, "cheap")).toBe(0);
@@ -66,6 +66,7 @@ describe("універсальний магазин (§6.4)", () => {
     state.character.money = 10;
     expect(canCheckout(state, [line({ thing: "bowl" }, "cheap", 1)], "delivery")).toBe(false);
     state.character.money = 1000;
+    state.home.boxes = { food: { cheap: 5, premium: 0 } };
     expect(checkout(state, [line({ product: "food" }, "cheap", 2)], "delivery")).toBe(false);
     expect(state.home.deliveries).toHaveLength(0);
     expect(state.character.money).toBe(1000);

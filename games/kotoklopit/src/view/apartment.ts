@@ -28,6 +28,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   litterBag: 42,
   sterileBin: 36,
   catKit: 40,
+  boxes: 40,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -48,6 +49,7 @@ const FILL: Record<ObjectKind, number> = {
   litterBag: 0xcdb98f,
   sterileBin: 0x8fb3c4,
   catKit: 0xf0ece4,
+  boxes: 0xc49a62,
 };
 
 /** Видима висота речі: на неї вилазить кіт. */
@@ -166,6 +168,7 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
 
   const inset = 4;
   const top = { x: r.x + inset, y: r.y - height + inset, w: r.w - inset * 2, h: r.h - inset * 2 };
+  if (object.kind === "boxes") return drawBoxes(g, object, top, height, depth);
   // Мішок, бак і аптечку цілком малює `storagelook.ts`: їхня форма залежить від наповнення.
   if (SHAPED_STORAGES.has(object.kind)) {
     // Фігура стоїть на підлозі клітинки: від її низу на висоту речі (ручка чи горловина — трохи вище).
@@ -181,6 +184,35 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   g.lineStyle(2, COLORS.ink, 0.7).lineBetween(top.x, top.y + top.h, top.x + top.w, top.y + top.h);
   decorate(g, object.kind, top, height);
   return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
+}
+
+/**
+ * Ящики біля входу (§6.4): дві картонні коробки, менша на більшій, зі скотчем. Стоять на підлозі
+ * клітинки; рамка цілі обводить їх самих.
+ */
+function drawBoxes(
+  g: Phaser.GameObjects.Graphics,
+  object: HomeObject,
+  top: { x: number; y: number; w: number; h: number },
+  height: number,
+  depth: number,
+): ObjectView {
+  const floor = top.y + top.h + height;
+  const box = (x: number, y: number, w: number, h: number): void => {
+    // Кришка (верхня грань) і бік коробки.
+    g.fillStyle(shade(FILL.boxes, -0.2)).fillRect(x, y + 8, w, h - 8);
+    g.fillStyle(FILL.boxes).fillRect(x, y, w, 8);
+    g.lineStyle(2.5, COLORS.ink).strokeRect(x, y, w, h);
+    g.lineStyle(1.5, COLORS.ink, 0.6).lineBetween(x, y + 8, x + w, y + 8);
+    // Скотч через кришку й бік.
+    g.fillStyle(0xe8d9b0).fillRect(x + w / 2 - 3, y, 6, h);
+    g.lineStyle(1, COLORS.ink, 0.4).strokeRect(x + w / 2 - 3, y, 6, h);
+  };
+  const w = top.w;
+  box(top.x, floor - 24, w, 24);
+  box(top.x + 8, floor - 24 - 16, w - 22, 16);
+  const outline = { x: top.x, y: floor - height - 2, w, h: height + 2 };
+  return { object, top, anchor: { x: top.x + w / 2, y: outline.y - 4 }, depth, graphics: g, outline };
 }
 
 /** Деталі, з яких річ упізнавано. */

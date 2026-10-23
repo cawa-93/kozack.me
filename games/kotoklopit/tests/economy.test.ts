@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { deliveryCost, order, productPrice, seePhoneHints, supplyCount, useSupply } from "../src/sim/economy";
+import { deliveryCost, order, productPrice, seePhoneHints, supplyCount, unpack, useSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -87,6 +87,9 @@ describe("доставка (§6.4)", () => {
     interact(save);
     stop();
     expect(save.current.home.porch).toEqual([]);
+    // Пакунки — у ящиках біля входу; розпакувати — і запаси в холодильнику (§6.4).
+    expect(save.current.home.boxes?.food).toEqual({ cheap: 0, premium: 21 });
+    unpack(save.current);
     expect(save.current.home.supplies.food).toEqual({ cheap: 6, premium: 21 });
     expect(events.some((e) => e.type === "received")).toBe(true);
   });
@@ -99,6 +102,7 @@ describe("доставка (§6.4)", () => {
     advance(save, hours(6));
     standAt(save, "door");
     interact(save);
+    unpack(save.current);
     expect(supplyCount(save.current, "food")).toBe(6 + 21);
     expect(supplyCount(save.current, "hygiene")).toBe(3 + 14);
   });

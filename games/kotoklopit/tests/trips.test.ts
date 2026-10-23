@@ -105,11 +105,13 @@ describe("пункти призначення (§8.5)", () => {
     save.current.day = 5;
     arrive(save, "shop");
     const price = shopPrice(save.current, { product: "catFood" }, "cheap");
-    expect(price).toBeGreaterThanOrEqual(80);
-    expect(price).toBeLessThanOrEqual(120);
+    // Середня складність: від −30% до +10% (правка 2026-10-23).
+    expect(price).toBeGreaterThanOrEqual(70);
+    expect(price).toBeLessThanOrEqual(110);
     buyAtShop(save.current, { product: "litter" }, "cheap");
     buyAtShop(save.current, { thing: "litter" }, "cheap");
-    expect(save.current.home.supplies.litter.cheap).toBe(7);
+    // Запас — у ящиках біля входу, річ — одразу на місці (§6.4).
+    expect(save.current.home.boxes?.litter?.cheap).toBe(7);
     expect(save.current.home.items.filter((i) => i.kind === "litter")).toHaveLength(2);
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shop.road);
     expect(save.current.trip).toBeNull();

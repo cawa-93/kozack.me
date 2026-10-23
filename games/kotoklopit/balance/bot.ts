@@ -10,7 +10,7 @@ import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
-import { freeSlots, supplyCount } from "../src/sim/economy";
+import { boxCount, canUnpack, freeSlots, supplyCount } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
@@ -103,6 +103,8 @@ export class Bot {
     this.orderSupplies();
     const escaped = s.cats.find((c) => c.away !== null);
     if (escaped || s.home.porch.length > 0) return named("use", () => this.use("door"));
+    // Ящики біля входу (§6.4): розкласти запаси по сховищах, коли є куди.
+    if (canUnpack(s) && !this.skipped("boxes")) return named("unpack", () => this.use("boxes"));
     const patient = this.patient();
     if (patient) return named("treat", () => this.treat(patient.cat, patient.medicine));
     // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
@@ -227,7 +229,8 @@ export class Bot {
     const coming = (product: Product): number =>
       [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === product).reduce((sum, d) => sum + PRODUCTS[product].units[d.quality], 0);
     const need = (product: Product, below: number): void => {
-      const have = supplyCount(s, product) + coming(product);
+      // Що в ящиках біля входу — уже вдома; поки воно там, такий запас і не замовити.
+      const have = supplyCount(s, product) + coming(product) + boxCount(s, product);
       if (have < below) cart.push({ goods: { product }, quality: "cheap", count: 1 });
       else if (have < below * 2) soon.push({ goods: { product }, quality: "cheap", count: 1 });
     };
@@ -270,8 +273,14 @@ export class Bot {
     if (!held) return;
     switch (held.kind) {
       case "cat":
-      case "toy":
         interact(this.save);
+        return;
+      case "toy":
+        // Біля кота натискання з іграшкою нічого не робить (утримання почало б гру, §8.2):
+        // відійти до дверей і покласти там, інакше бот так і стоїть з іграшкою годинами.
+        if (targetOf(this.state)?.type === "cat") this.goTo("door");
+        interact(this.save);
+        if (this.state.character.held?.kind === "toy") this.wait(1);
         return;
       case "catfood": {
         // До миски не підійти (кіт їсть) — повернути корм у шафку.

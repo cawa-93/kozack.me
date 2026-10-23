@@ -35,7 +35,7 @@ import {
   SHOO,
   WATER_CAPACITY,
 } from "./config";
-import { receivePackages, returnSupply, supplyCount, useSupply } from "./economy";
+import { receivePackages, returnSupply, supplyCount, unpack, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { stateRng } from "./rng";
@@ -148,6 +148,11 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // Аптечка: догляд за котом на руках відкриває картка сцени (§8.7).
       return refuse(state, target.id, "nothing");
     case "litterBag":
+      return null;
+    case "boxes":
+      // Ящики біля входу (§6.4): брати з них нічого не можна — лише розкласти все по сховищах.
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      if (unpack(state).length === 0) return refuse(state, target.id, "occupied");
       return null;
     case "stove": {
       const stove = state.home.stove;

@@ -76,7 +76,7 @@ const NO_HINT: readonly Product[] = ["collar", "bell"];
  * пульсує з його іконкою, доки телефон не відкриють.
  */
 function noteEmpty(state: GameState, product: Product): void {
-  if (supplyCount(state, product) > 0 || NO_HINT.includes(product) || incoming(state, product) > 0) return;
+  if (supplyCount(state, product) > 0 || NO_HINT.includes(product) || incoming(state, product) > 0 || boxCount(state, product) > 0) return;
   const home = state.home;
   const ranOut = (home.ranOut ??= []);
   if (ranOut.includes(product)) return;
@@ -105,15 +105,73 @@ export function useSupply(state: GameState, product: Product, quality?: Quality)
   return taken;
 }
 
-/** Поповнити запас: покупка, доставка, стартовий пакет. Відтепер сховище його показує (§6.4). */
-export function addSupply(state: GameState, product: Product, quality: Quality, amount: number): void {
-  // Що не влазить у сховище, пропадає (§6.4).
-  state.home.supplies[product][quality] += Math.max(0, Math.min(amount, STORAGE_LIMITS[product] - supplyCount(state, product)));
+/** Запас уже бував удома: відтепер сховище його показує (§6.4). */
+function acquire(state: GameState, product: Product): void {
   if (!state.home.acquired.includes(product)) state.home.acquired.push(product);
 }
 
+/** Поклати запас просто в сховище (стартовий пакет кошеняти); що не влазить, чекає в ящиках біля входу (§6.4). */
+export function addSupply(state: GameState, product: Product, quality: Quality, amount: number): void {
+  const fits = Math.max(0, Math.min(amount, STORAGE_LIMITS[product] - supplyCount(state, product)));
+  state.home.supplies[product][quality] += fits;
+  acquire(state, product);
+  stash(state, product, quality, amount - fits);
+}
+
+/** Повернути взяте назад у сховище; переповнене — у ящики, нічого не пропадає. */
 export function returnSupply(state: GameState, product: Product, quality: Quality): void {
-  if (supplyCount(state, product) < STORAGE_LIMITS[product]) state.home.supplies[product][quality] += 1;
+  addSupply(state, product, quality, 1);
+}
+
+/** Скільки запасу лежить у ящиках біля входу (§6.4). */
+export function boxCount(state: GameState, product: Product): number {
+  const box = state.home.boxes?.[product];
+  return box ? box.cheap + box.premium : 0;
+}
+
+/** Поклати запас у ящики біля входу (§6.4): безлімітне сховище, з якого нічого не беруть. */
+export function stash(state: GameState, product: Product, quality: Quality, amount: number): void {
+  if (amount <= 0) return;
+  const boxes = (state.home.boxes ??= {});
+  const box = (boxes[product] ??= { cheap: 0, premium: 0 });
+  box[quality] += amount;
+}
+
+/** У ящиках є запас, для якого є місце у сховищі: розпакувати є що. */
+export function canUnpack(state: GameState): boolean {
+  return (Object.keys(state.home.boxes ?? {}) as Product[]).some((p) => boxCount(state, p) > 0 && supplyCount(state, p) < STORAGE_LIMITS[p]);
+}
+
+/**
+ * Розпакувати ящики (§6.4): кожен запас розлітається у своє сховище, скільки влазить, — спершу
+ * дорожчий; що не влізло, лишається в ящиках. Повертає, що й скільки розкладено.
+ */
+export function unpack(state: GameState): { product: Product; amount: number }[] {
+  const boxes = state.home.boxes ?? {};
+  const moved: { product: Product; amount: number }[] = [];
+  for (const product of Object.keys(boxes) as Product[]) {
+    const box = boxes[product];
+    if (!box) continue;
+    let amount = 0;
+    for (const quality of TAKE_ORDER) {
+      const fits = Math.max(0, Math.min(box[quality], STORAGE_LIMITS[product] - supplyCount(state, product)));
+      state.home.supplies[product][quality] += fits;
+      box[quality] -= fits;
+      amount += fits;
+    }
+    if (amount > 0) {
+      acquire(state, product);
+      moved.push({ product, amount });
+    }
+    if (box.cheap + box.premium <= 0) delete boxes[product];
+  }
+  if (moved.length > 0) emit(state, { type: "unpacked", moved });
+  return moved;
+}
+
+/** Запас можна замовити чи купити, поки його немає в ящиках біля входу (§6.4). */
+export function canOrderProduct(state: GameState, product: Product): boolean {
+  return boxCount(state, product) === 0;
 }
 
 /** Скільки запасу їде доставкою чи чекає під дверима. */
@@ -122,11 +180,6 @@ export function incoming(state: GameState, product: Product): number {
     (sum, d) => sum + ("product" in d && d.product === product ? PRODUCTS[product].units[d.quality] : 0),
     0,
   );
-}
-
-/** Упаковка вміститься у сховище разом із тим, що вже є й що їде (§6.4). */
-export function fitsStorage(state: GameState, product: Product, quality: Quality): boolean {
-  return supplyCount(state, product) + incoming(state, product) + PRODUCTS[product].units[quality] <= STORAGE_LIMITS[product];
 }
 
 /** Базова ціна запасу (§6.4): модифікатор дня змінює ціну корму. */
@@ -142,9 +195,9 @@ export function deliveryCost(state: GameState, base: number): number {
   return Math.round(base * DELIVERY.share) + DELIVERY.fee[state.difficulty];
 }
 
-/** Замовити одну упаковку окремим замовленням; null, якщо не вистачає грошей чи місця у сховищі (§6.4). */
+/** Замовити одну упаковку окремим замовленням; null, якщо не вистачає грошей чи запас ще в ящиках (§6.4). */
 export function order(state: GameState, product: Product, quality: Quality): Delivery | null {
-  if (!fitsStorage(state, product, quality)) return null;
+  if (!canOrderProduct(state, product)) return null;
   const base = productPrice(state, product, quality);
   return dispatch(state, { product }, quality, base + deliveryCost(state, base));
 }
@@ -237,12 +290,13 @@ export function tickDeliveries(state: GameState): void {
   }
 }
 
-/** Відчинити двері й забрати пакунки: запаси одразу поповнюються. */
+/** Відчинити двері й забрати пакунки: запаси — у ящики біля входу, речі — на свої місця (§6.4). */
 export function receivePackages(state: GameState): Delivery[] {
   const home = state.home;
   const received = home.porch.splice(0);
   for (const delivery of received) {
-    if ("product" in delivery) addSupply(state, delivery.product, delivery.quality, PRODUCTS[delivery.product].units[delivery.quality]);
+    // Сховище з'явиться, коли запас розпакують.
+    if ("product" in delivery) stash(state, delivery.product, delivery.quality, PRODUCTS[delivery.product].units[delivery.quality]);
     else {
       const item = place(state, delivery.thing, delivery.quality);
       if (item) home.items.push(item);

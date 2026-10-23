@@ -50,9 +50,11 @@ describe("понеділок без котів (§8.3)", () => {
       eat(save);
       workUntil(save, hours(15));
 
-      // Доставка, замовлена зранку, уже під дверима.
+      // Доставка, замовлена зранку, уже під дверима; з ящиків біля входу — у холодильник.
       waitUntil(save, hours(18));
       walkTo(save, "door");
+      interact(save);
+      walkTo(save, "boxes");
       interact(save);
       cook(save);
       eat(save);
