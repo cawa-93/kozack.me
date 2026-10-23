@@ -74,10 +74,23 @@ describe("кіт у полі зору (§8.2, правка 2026-10-23)", () => {
   };
   const act = (kind: "sleep" | "idle" | "hide") => ({ kind, target: null, goal: null, minutes: 60, elapsed: 0 });
 
-  it("спить — +1 за годину, не спить — +3; рахується один, найкращий кіт", () => {
-    expect(watch((_, [a, b]) => { a!.act = act("sleep"); b!.act = act("sleep"); })).toBeCloseTo(WATCH_SANITY.asleep);
-    expect(watch((_, [a, b]) => { a!.act = act("idle"); b!.act = act("sleep"); })).toBeCloseTo(WATCH_SANITY.awake);
-    expect(watch((_, [a, b]) => { a!.act = act("idle"); b!.act = act("idle"); })).toBeCloseTo(WATCH_SANITY.awake);
+  it("спить — +1 за годину, не спить — +3; кожен наступний кіт дає менше: другий — половину свого", () => {
+    expect(watch((_, [a, b]) => { a!.act = act("sleep"); b!.act = act("hide"); })).toBeCloseTo(WATCH_SANITY.asleep);
+    expect(watch((_, [a, b]) => { a!.act = act("idle"); b!.act = act("hide"); })).toBeCloseTo(WATCH_SANITY.awake);
+    expect(watch((_, [a, b]) => { a!.act = act("sleep"); b!.act = act("sleep"); })).toBeCloseTo(1 + 1 / 2);
+    // Найкращий — той, що не спить, хоч він і другий у списку.
+    expect(watch((_, [a, b]) => { a!.act = act("sleep"); b!.act = act("idle"); })).toBeCloseTo(3 + 1 / 2);
+    expect(watch((_, [a, b]) => { a!.act = act("idle"); b!.act = act("idle"); })).toBeCloseTo(3 + 3 / 2);
+  });
+
+  it("десять котів, що не сплять, — не вдесятеро більше, а ≈ +8,8", () => {
+    const save = game();
+    const cats = Array.from({ length: 10 }, (_, i) => withCat(save, { x: 2.5 + i, y: 8.5 }));
+    for (const cat of cats) cat.act = act("idle");
+    standAt(save, "computer");
+    const before = save.current.character.stats.sanity;
+    watchCats(save.current, 60);
+    expect(save.current.character.stats.sanity - before).toBeCloseTo(3 * (1 + 1 / 2 + 1 / 3 + 1 / 4 + 1 / 5 + 1 / 6 + 1 / 7 + 1 / 8 + 1 / 9 + 1 / 10), 1);
   });
 
   it("схованого кота й кота в іншій кімнаті не видно", () => {

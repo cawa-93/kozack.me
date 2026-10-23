@@ -924,18 +924,18 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
 
 /**
  * Кіт у полі зору (§8.2, §9.12): просто дивитися на кота трохи піднімає здоровий глузд — більше,
- * коли він не спить і щось робить. Рахується один, найкращий кіт; схованого не видно, а з
- * душової кабіни — нікого.
+ * коли він не спить і щось робить. Більше котів — більше, але кожен наступний дає менше: від
+ * найкращого k-й кіт дає 1/k свого. Схованого не видно, а з душової кабіни — нікого.
  */
 export function watchCats(state: GameState, minutes: number): void {
   const activity = state.character.activity;
   if (activity?.kind === "use" && activity.inside) return;
-  let best = 0;
-  for (const cat of state.cats) {
-    if (cat.act.kind === "hide" || !witnesses(state, cat)) continue;
-    best = Math.max(best, cat.act.kind === "sleep" ? WATCH_SANITY.asleep : WATCH_SANITY.awake);
-  }
-  if (best > 0) changeStat(state, "sanity", best * DIFFICULTY[state.difficulty].catSanity * (minutes / MINUTES_PER_HOUR));
+  const rates = state.cats
+    .filter((cat) => cat.act.kind !== "hide" && witnesses(state, cat))
+    .map((cat) => (cat.act.kind === "sleep" ? WATCH_SANITY.asleep : WATCH_SANITY.awake))
+    .sort((a, b) => b - a);
+  const perHour = rates.reduce((sum, rate, i) => sum + rate / (i + 1), 0);
+  if (perHour > 0) changeStat(state, "sanity", perHour * DIFFICULTY[state.difficulty].catSanity * (minutes / MINUTES_PER_HOUR));
 }
 
 /** Між котами (§9.4): сон купкою, бійки ворогів, сусідство з ворогом. */
