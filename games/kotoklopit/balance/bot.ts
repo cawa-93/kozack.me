@@ -23,6 +23,8 @@ import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config
 /** Скільки ігрових хвилин один крок ходьби. */
 const WALK_STEP = 0.1;
 const HOLD_STEP = 0.5;
+/** Нижче цього здорового глузду бот рятується: пестить будь-якого кота й працює лише від «Х». */
+const CRISIS_SANITY = 30;
 /** Скільки годин на день бот шукає роботу після звільнення (§8.6). */
 const SEARCH_HOURS_PER_DAY = 6;
 
@@ -154,6 +156,9 @@ export class Bot {
       if (cat) return named("pet", () => this.pet(cat));
       const player = this.catFor("play", low ? 40 : this.policy.carePlay);
       if (player) return named("play", () => this.play(player));
+      // Здоровий глузд на межі: пестити будь-якого кота, що не спить, — навіть без прохання (+1 за хвилину).
+      const any = ch.stats.sanity < CRISIS_SANITY ? this.catFor("attention", 0) : null;
+      if (any) return named("pet", () => this.pet(any));
     }
     if (this.wantsWork()) return named("work", () => this.work());
     return null;
@@ -181,6 +186,8 @@ export class Bot {
     if (!isWorkday(s) || !isWorkTime(s)) return false;
     // Терпіння не можна доводити до «Х»; летучка о 10:00.
     const standup = s.minute >= 9.9 * 60 && s.minute < 10.25 * 60;
+    // Здоровий глузд на межі: працювати лише щоб не дійшло до «Х» — краще втратити трохи репутації, ніж розум.
+    if (s.character.stats.sanity < CRISIS_SANITY) return s.job.patience < 15;
     return standup || s.job.patience < 60 || this.workedToday < this.workTarget();
   }
 
