@@ -1,7 +1,7 @@
 // Універсальний магазин (§6.4): один каталог запасів і речей, кількість кнопками «−» і «+», разом
 // до сплати й одна кнопка. Той самий компонент — у телефоні (доставка) і в поїздці (на місці).
 
-import { PRODUCTS } from "../sim/config";
+import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
 import { incoming, supplyCount } from "../sim/economy";
 import { canCheckout, cartDelivery, cartTotal, GOODS, goodsKey, goodsTotal, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
@@ -57,8 +57,9 @@ function stockText(state: GameState, goods: Goods): string {
   return parts.join(" · ");
 }
 
-/** Розмір упаковки для запасу, якщо дешева й дорога різні («7 чисток лотка»). */
+/** Розмір упаковки для запасу («7 чисток лотка»), а для автогодівниці — скільки корму вміщує (§9.12). */
 function packText(goods: Goods, quality: Quality): string {
+  if ("thing" in goods && goods.thing === "feeder") return ` · ${PRODUCT_TITLES.catFood.unit(FEEDER_CAPACITY[quality])}`;
   if (!("product" in goods)) return "";
   const units = PRODUCTS[goods.product].units;
   return ` · ${PRODUCT_TITLES[goods.product].unit(units[quality])}`;
