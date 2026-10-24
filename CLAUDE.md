@@ -20,6 +20,12 @@
 
 Як оновити чи додати гру — у `games/README.md`.
 
+## Поточна робота й хмарні сесії
+
+- Зараз автор розробляє гру `games/kotoklopit` у гілці `new-game` (PR [#213](https://github.com/cawa-93/kozack.me/pull/213)), працюючи з мобільного застосунку Claude: кожна сесія — свіжий хмарний клон без локального комп'ютера.
+- Перед будь-якою роботою над грою прочитай `games/kotoklopit/CLAUDE.md` (порядок роботи з телефона, коміти й пуші) і розділ «Де зупинились» у `games/kotoklopit/IMPLEMENTATION_PLAN.md`.
+- Залежності в хмарній сесії ставить хук `SessionStart` (`.claude/settings.json` → `.claude/hooks/session-start.sh`, `npm ci`).
+
 ## Загальні правила
 
 - Кожна гра лежить в окремій папці `games/<slug>` і має власний стек та збірку.

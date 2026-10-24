@@ -1,0 +1,103 @@
+// Смерть кота й прощання (§9.2, §9.5, §9.7).
+
+import { describe, expect, it } from "vitest";
+
+import { createCat } from "../src/sim/cat";
+import { lifeLevel, oldAgeChance, removeCat, zeroHealthCause, zeroHealthDeaths } from "../src/sim/farewell";
+import { goToSleep, newGame } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
+import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import { diseaseTitle, farewellText } from "../src/texts";
+
+function game(): Save {
+  return newGame({ sex: "female", difficulty: "normal", seed: 7 });
+}
+
+function withCat(save: Save, ageWeeks = 3, traits: Record<string, TraitLevel> = {}): Cat {
+  const cat = createCat(save.current, createRng(save.current.cats.length + 3), { source: "shelter", ageWeeks, at: { x: 9.5, y: 8.5 } });
+  cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
+  cat.arrivedDay = -10;
+  addCat(save.current, cat);
+  return cat;
+}
+
+describe("смерть від нульового здоров'я (§9.5)", () => {
+  it("щовечора з шансом 60%, поки здоров'я на нулі", () => {
+    let died = 0;
+    for (let seed = 0; seed < 500; seed++) {
+      const save = game();
+      const cat = withCat(save);
+      cat.health = 0;
+      died += zeroHealthDeaths(save.current, createRng(seed)).length;
+    }
+    expect(died / 500).toBeGreaterThan(0.53);
+    expect(died / 500).toBeLessThan(0.67);
+  });
+
+  it("причина — джерело найбільшої шкоди за тиждень: хвороба чи туга", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.healthLog = [
+      { day: 0, source: "mood", amount: 10 },
+      { day: 1, source: "disease:cold", amount: 6 },
+      { day: 2, source: "disease:cold", amount: 6 },
+    ];
+    expect(zeroHealthCause(cat)).toEqual({ kind: "disease", disease: "cold" });
+    cat.healthLog = [{ day: 0, source: "mood", amount: 10 }];
+    expect(zeroHealthCause(cat)).toEqual({ kind: "sorrow" });
+  });
+
+  it("уночі кіт помирає, іде в альбом пам'яті, а здоровий глузд уранці падає", () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const save = newGame({ sex: "female", difficulty: "normal", seed });
+      const cat = withCat(save);
+      cat.health = 0;
+      cat.healthLog = [{ day: 0, source: "mood", amount: 50 }];
+      save.current.character.stats.sanity = 80;
+      save.current.minute = 23 * 60;
+      const report = goToSleep(save);
+      if (report?.lostCats.length !== 1) continue;
+      expect(save.current.cats).toHaveLength(0);
+      expect(save.current.album[0]?.name).toBe(cat.name);
+      expect(save.current.album[0]?.cause).toEqual({ kind: "sorrow" });
+      expect(save.current.character.stats.sanity).toBeLessThan(80);
+      return;
+    }
+    throw new Error("за 40 ночей кіт так і не помер");
+  });
+});
+
+describe("старість (§9.2)", () => {
+  it("30% у шостому тижні, +10% за тиждень, −5% за одиницю «Довголіття»", () => {
+    const save = game();
+    // Безпородний кіт має «Довголіття» +1 від породи (§9.11).
+    expect(oldAgeChance(withCat(save, 5))).toBe(0);
+    expect(oldAgeChance(withCat(save, 6))).toBeCloseTo(0.25);
+    expect(oldAgeChance(withCat(save, 8))).toBeCloseTo(0.45);
+    expect(oldAgeChance(withCat(save, 6, { longevity: 2 }))).toBeCloseTo(0.15);
+    expect(oldAgeChance(withCat(save, 14))).toBe(1);
+  });
+});
+
+describe("прощання (§9.7)", () => {
+  it("десять рівнів опису життя за середнім настроєм", () => {
+    expect(lifeLevel(0)).toBe(0);
+    expect(lifeLevel(9.9)).toBe(0);
+    expect(lifeLevel(55)).toBe(5);
+    expect(lifeLevel(100)).toBe(9);
+  });
+
+  it("причина й опис життя — у роді кота", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.sex = "female";
+    cat.moodHistory = [95, 92];
+    const entry = removeCat(save.current, cat, { kind: "disease", disease: "cold" }, 0);
+    const text = farewellText(entry, diseaseTitle);
+    expect(text.title).toBe("Легенда");
+    expect(text.cause).toContain("Застуда");
+    expect(text.cause).toContain("здолала");
+    expect(text.life).toContain("богиня");
+  });
+});

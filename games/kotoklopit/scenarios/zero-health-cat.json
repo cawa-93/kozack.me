@@ -1,0 +1,13 @@
+{
+  "name": "Кіт на нулі здоров'я",
+  "description": "Середа першого тижня, 21:00. Барсик довго сумував, і його здоров'я на нулі. Ляжте спати — нічна перевірка вирішить, чи доживе він до ранку (60% смерті, §9.5).",
+  "game": { "sex": "female", "difficulty": "normal", "seed": 5 },
+  "state": {
+    "day": 2,
+    "minute": 1260,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 55 } },
+    "home": { "supplies": { "catFood": { "cheap": 10, "premium": 0 }, "litter": { "cheap": 5, "premium": 0 } } }
+  },
+  "cats": [{ "source": "shelter", "ageWeeks": 3, "name": "Барсик", "sex": "male", "arrivedDay": -7, "health": 0, "mood": 12, "love": 20, "x": 4.5, "y": 8.5 }]
+}
