@@ -4,11 +4,10 @@
 import Phaser from "phaser";
 
 import { isDirty } from "../sim/catai";
-import { supplyCount } from "../sim/economy";
-import { feederBowls, robotProgress } from "../sim/household";
-import { BOWL_CAPACITY, WATER_CAPACITY } from "../sim/config";
-import { itemPoint } from "../sim/home";
-import type { GameState, HomeItem, Mess, Vec } from "../sim/types";
+import { robotProgress } from "../sim/household";
+import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
+import { itemPoint, slotCenter } from "../sim/home";
+import type { Feeder, GameState, HomeItem, Mess, Vec } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
 const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
@@ -102,23 +101,44 @@ function along(route: readonly Vec[], progress: number): Vec {
 }
 
 /**
- * Техніка (§8.7) — видно, що вона є й що робить: бункер автогодівниці над мискою (у віконці — корм,
- * поки він є в запасі), робот-пилосос на базі чи в дорозі. Фонтанчики малює сама миска з водою.
+ * Автогодівниця над місцем миски (§9.12): дешева — вузький сірий бункер, дорога — ширший світлий із
+ * вогником. У віконці видно, скільки корму лишилося; бункер — у межах клітинки миски, бо позаду неї
+ * може стояти ще одна миска.
+ */
+function drawFeeder(g: Phaser.GameObjects.Graphics, feeder: Feeder): void {
+  const c = slotCenter(feeder.slot);
+  const { x, y } = toScreen({ x: c.x, y: c.y + 0.05 });
+  const premium = feeder.quality === "premium";
+  const w = premium ? 22 : 16;
+  const h = premium ? 21 : 19;
+  const top = y - 4 - h;
+  g.fillStyle(premium ? 0xf1ece2 : 0xb9bec4).fillRoundedRect(x - w / 2, top, w, h, premium ? 6 : 2);
+  if (premium) g.fillStyle(0x4f7fb3).fillRect(x - w / 2, top + h - 5, w, 3);
+  // Віконце: корм насипаний знизу на частку від повного бункера.
+  const win = { x: x - (premium ? 5 : 3), y: top + 3, w: premium ? 10 : 6, h: h - (premium ? 10 : 7) };
+  g.fillStyle(0x2b2530, 0.25).fillRect(win.x, win.y, win.w, win.h);
+  const level = Math.min(1, feeder.food / FEEDER_CAPACITY[feeder.quality]);
+  if (level > 0) {
+    // Корм для стерилізованих — зеленуватий, як у мисці (§9.8).
+    const kibble = feeder.sterile ? 0x6f8a3a : KIBBLE[feeder.foodQuality ?? "cheap"];
+    const fill = Math.max(2, Math.round(win.h * level));
+    g.fillStyle(kibble).fillRect(win.x, win.y + win.h - fill, win.w, fill);
+  }
+  g.lineStyle(1.5, COLORS.ink).strokeRect(win.x, win.y, win.w, win.h);
+  // Розумна годівниця світиться: зелений — корм є, жовтий — бункер порожній.
+  if (premium) g.fillStyle(level > 0 ? 0x5cbf5a : 0xe8b93a).fillCircle(x + 7.5, top + 5, 2);
+  g.fillStyle(0x8c9aa6).fillRect(x - 3, top + h, 6, 4);
+  g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - w / 2, top, w, h, premium ? 6 : 2).strokeRect(x - 3, top + h, 6, 4);
+}
+
+/**
+ * Техніка (§8.7) — видно, що вона є й що робить: автогодівниці над мисками, робот-пилосос на базі
+ * чи в дорозі. Фонтанчики малює сама миска з водою.
  */
 function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void {
   drawHousehold(g, state);
   const appliances = state.home.appliances;
-  const stocked = supplyCount(state, "catFood") > 0;
-  for (const bowl of feederBowls(state)) {
-    const { x, y } = itemScreen(bowl);
-    // Бункер — у межах клітинки миски: позаду неї може стояти ще одна миска.
-    const top = y - 24;
-    g.fillStyle(appliances.feeder === "premium" ? 0xe9e4da : 0xc9ccd0).fillRoundedRect(x - 10, top, 20, 20, 4);
-    g.fillStyle(0x2b2530, 0.25).fillRoundedRect(x - 6, top + 4, 12, 10, 3);
-    if (stocked) g.fillStyle(KIBBLE.cheap).fillRoundedRect(x - 6, top + 8, 12, 6, 2);
-    g.fillStyle(0x8c9aa6).fillRect(x - 3, top + 20, 6, 4);
-    g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 10, top, 20, 20, 4).strokeRect(x - 3, top + 20, 6, 4);
-  }
+  for (const feeder of state.home.feeders ?? []) drawFeeder(g, feeder);
   if (appliances.robot) {
     const dock = toScreen(ROBOT_DOCK);
     g.fillStyle(0x4a4448).fillRoundedRect(dock.x - 16, dock.y + 4, 32, 8, 3);

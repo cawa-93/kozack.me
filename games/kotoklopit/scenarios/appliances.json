@@ -1,6 +1,6 @@
 {
  "name": "Техніка",
- "description": "Субота другого тижня, 11:55, дорога автогодівниця, фонтанчик і робот-пилосос, шерсті багато. О 12:00 робот пів години їздить вітальнею, і шерсть зникає.",
+ "description": "Субота другого тижня, 11:55: над мисками дорога автогодівниця (майже повна) і дешева (майже порожня) — запас видно у віконцях; фонтанчик і робот-пилосос, шерсті багато. О 12:00 робот годину їздить квартирою, і шерсть поступово зникає.",
  "game": {
   "sex": "female",
   "difficulty": "normal",
@@ -241,10 +241,13 @@
    "repairs": 0,
    "carrier": "cheap",
    "appliances": {
-    "feeder": "premium",
     "fountain": "premium",
     "robot": "premium"
    },
+   "feeders": [
+    { "slot": "bowl-1", "quality": "premium", "food": 14, "foodQuality": "premium", "sterile": false },
+    { "slot": "bowl-2", "quality": "cheap", "food": 2, "foodQuality": "premium", "sterile": false }
+   ],
    "fur": 70,
    "clothes": 2,
    "washer": {

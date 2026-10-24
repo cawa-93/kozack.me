@@ -19,7 +19,7 @@ import { emit, endGame } from "./events";
 import { SLOTS, SURFACE_IDS } from "./home";
 import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
-import type { Appliance, Delivery, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
+import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
 
 /** Із запасів спершу береться дороге. */
 const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
@@ -45,7 +45,8 @@ export function newHome(): Home {
     utilitiesDebt: 0,
     repairs: 0,
     carrier: null,
-    appliances: { feeder: null, fountain: null, robot: null },
+    appliances: { fountain: null, robot: null },
+    feeders: [],
     fur: 0,
     clothes: START_CLOTHES,
     washer: { state: "idle", minutes: 0, quality: "cheap" },
@@ -250,10 +251,33 @@ export function freeSlots(state: GameState, thing: ThingKind): number {
     const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
     return !owned && !ordered ? 1 : 0;
   }
+  const coming = [...home.deliveries, ...home.porch].filter((d) => "thing" in d && d.thing === thing).length;
+  // Автогодівниця — одна на миску (§9.12): місце є над кожною миской без годівниці.
+  if (thing === "feeder") return bowlsWithoutFeeder(state).length - coming;
   const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
-  const coming = [...home.deliveries, ...home.porch].filter((d) => "thing" in d && d.thing === thing).length;
   return free - coming;
+}
+
+/** Автогодівниця над місцем миски (§9.12) або null. */
+export function feederAt(state: GameState, slot: string): Feeder | null {
+  return state.home.feeders?.find((f) => f.slot === slot) ?? null;
+}
+
+/** Миски, над якими ще немає автогодівниці (§9.12). */
+function bowlsWithoutFeeder(state: GameState): BowlItem[] {
+  return state.home.items.filter((i): i is BowlItem => i.kind === "bowl" && feederAt(state, i.slot) === null);
+}
+
+/**
+ * Привезена автогодівниця стає над миской без годівниці; якщо такої вже немає (миска зламалася,
+ * поки годівниця їхала) — над вільним місцем миски й чекає нову (§9.12).
+ */
+function placeFeeder(state: GameState, quality: Quality): void {
+  const slot =
+    bowlsWithoutFeeder(state)[0]?.slot ?? SLOTS.find((s) => s.kind === "bowl" && feederAt(state, s.id) === null)?.id;
+  if (slot === undefined) return;
+  (state.home.feeders ??= []).push({ slot, quality, food: 0, foodQuality: null, sterile: false });
 }
 
 /** Замовити річ для котів окремим замовленням (§6.4); null, якщо немає місця чи грошей. */
@@ -273,10 +297,16 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
     state.home.appliances[thing] = quality;
     return null;
   }
+  if (thing === "feeder") {
+    placeFeeder(state, quality);
+    return null;
+  }
   const id = state.nextId++;
   if (thing === "toy") return { id, kind: "toy", quality, x: DELIVERED_TOY_AT.x, y: DELIVERED_TOY_AT.y, uses: 0 };
   const taken = new Set(state.home.items.map((i) => ("slot" in i ? i.slot : "")));
-  const slot = SLOTS.find((s) => s.kind === thing && !taken.has(s.id))?.id;
+  const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id));
+  // Нова миска — спершу під автогодівницю, що чекає миску (§9.12).
+  const slot = (free.find((s) => feederAt(state, s.id) !== null) ?? free[0])?.id;
   if (!slot) return null;
   switch (thing) {
     case "bowl":
@@ -344,11 +374,12 @@ export function utilitiesDue(state: GameState): number {
     UTILITIES_BASE +
     home.items.reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) +
     appliances.reduce((sum, a) => sum + THINGS[a].utilities, 0) +
+    (home.feeders?.length ?? 0) * THINGS.feeder.utilities +
     home.repairs
   );
 }
 
-export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "feeder" || thing === "fountain" || thing === "robot";
+export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "fountain" || thing === "robot";
 
 /**
  * Сплатити комунальні в ніч на понеділок (§6.4). Неоплачений тиждень — попередження;

@@ -51,7 +51,7 @@ export function cartDelivery(state: GameState, cart: readonly CartLine[], mode: 
 
 /** Разом до сплати: товари й доставка. */
 /** Чому товар зараз не взяти (§6.4): запас ще в ящиках, немає місця, річ уже є чи вже їде; null — можна. */
-export type Unavailable = "boxes" | "no-room" | "owned" | "ordered";
+export type Unavailable = "boxes" | "no-room" | "no-bowl" | "owned" | "ordered";
 
 export function unavailable(state: GameState, goods: Goods): Unavailable | null {
   if ("product" in goods) return canOrderProduct(state, goods.product) ? null : "boxes";
@@ -62,7 +62,8 @@ export function unavailable(state: GameState, goods: Goods): Unavailable | null 
     const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
     return owned ? "owned" : "ordered";
   }
-  return "no-room";
+  // Автогодівниця — одна на миску (§9.12).
+  return thing === "feeder" ? "no-bowl" : "no-room";
 }
 
 export function cartTotal(state: GameState, cart: readonly CartLine[], mode: ShopMode): number {

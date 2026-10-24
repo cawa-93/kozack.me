@@ -263,9 +263,23 @@ export interface ScratcherItem {
 /** Речі для котів (§9.12): миски, лотки, будиночки й кігтеточки — на своїх місцях, іграшки — будь-де на підлозі. */
 export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
 /** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі. */
-export type ThingKind = HomeItem["kind"] | "carrier" | Appliance;
-/** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. */
-export type Appliance = "feeder" | "fountain" | "robot";
+export type ThingKind = HomeItem["kind"] | "carrier" | "feeder" | Appliance;
+/** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. Автогодівниці — окремо, на мисках. */
+export type Appliance = "fountain" | "robot";
+
+/**
+ * Автогодівниця (§9.12, правка автора 2026-10-23): стоїть над місцем миски й тримає її повною, доки
+ * в ній є корм. Миска зламалася чи її викинули — годівниця лишається й чекає нову.
+ */
+export interface Feeder {
+  /** Місце миски, над яким стоїть годівниця. */
+  slot: string;
+  quality: Quality;
+  /** Порції корму в бункері. */
+  food: number;
+  foodQuality: Quality | null;
+  sterile: boolean;
+}
 
 /** Куди можна поїхати (§8.5). Розплідник і виставку додасть крок 12. */
 export type Destination = "shop" | "vet" | "doctor" | "shelter" | "breeder" | "groomer" | "cafe" | "office" | "show";
@@ -362,6 +376,8 @@ export interface Home {
   carrier: Quality | null;
   /** Техніка (§8.7): якість кожної, null — немає. */
   appliances: Record<Appliance, Quality | null>;
+  /** Автогодівниці над мисками (§9.12). У старих збереженнях немає. */
+  feeders?: Feeder[];
   /** Шерсть на меблях 0–100 (§8.7). */
   fur: number;
   /** На скільки днів лишилося чистого одягу (§8.7). */

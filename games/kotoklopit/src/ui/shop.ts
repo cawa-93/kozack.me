@@ -31,6 +31,7 @@ function offered(state: GameState, goods: Goods): boolean {
 const UNAVAILABLE: Record<Unavailable, string> = {
   boxes: "у ящиках",
   "no-room": "немає місця",
+  "no-bowl": "немає миски без годівниці",
   owned: "уже є",
   ordered: "уже їде",
 };

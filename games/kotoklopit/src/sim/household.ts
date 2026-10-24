@@ -9,7 +9,7 @@ import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
-import { itemPoint, objectById } from "./home";
+import { itemPoint, objectById, slotCenter } from "./home";
 import type { Rng } from "./rng";
 import type { BowlItem, Cat, GameState, HomeItem, Quality } from "./types";
 
@@ -102,10 +102,8 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
     }
   }
   const crossed = (minute: number): boolean => from % 1440 < minute && (from + minutes) % 1440 >= minute && minutes < 1440;
-  if (home.appliances.feeder && HOUSEHOLD.feederMinutes.some(crossed)) {
-    const bowls = feed(state);
-    if (bowls.length > 0) emit(state, { type: "feeder", bowls });
-  }
+  const fed = feed(state);
+  if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
   if (home.appliances.robot && minutes < 1440) robotClean(state, from, minutes, crossed);
 }
@@ -139,23 +137,26 @@ export function robotProgress(state: GameState): number | null {
   return (minute - start) / HOUSEHOLD.robotMinutes;
 }
 
-/** Миски, які наповнює автогодівниця (§8.7): дешева — першу, дорога — кожну. */
-export function feederBowls(state: GameState): BowlItem[] {
-  const feeder = state.home.appliances.feeder;
-  if (!feeder) return [];
-  const bowls = state.home.items.filter((i): i is BowlItem => i.kind === "bowl");
-  return feeder === "premium" ? bowls : bowls.slice(0, 1);
+/** Корм у мисці й у годівниці однаковий: корми не змішують (§6.4, §9.12). */
+export function sameFood(a: { food: number; foodQuality: Quality | null; sterile: boolean }, quality: Quality, sterile: boolean): boolean {
+  return a.food === 0 || (a.foodQuality === quality && a.sterile === sterile);
 }
 
 /**
- * Автогодівниця (§8.7): порція в порожні миски під нею (дешева — лише в першу). Коли вдома є
- * стерилізований кіт, сипле корм для стерилізованих, поки він є: звичайний йому шкодить (§9.8).
+ * Автогодівниці (§9.12, правка автора 2026-10-23) не за годинами, а завжди тримають миску під собою
+ * повною, доки в бункері є корм; мисці з іншим кормом не досипають. Повертає миски, куди насипали.
  */
 function feed(state: GameState): number[] {
   const filled: number[] = [];
-  for (const bowl of feederBowls(state)) {
-    if (bowl.food > 0) continue;
-    if (stockBowl(state, bowl, 1) === 0) break;
+  for (const feeder of state.home.feeders ?? []) {
+    if (feeder.food <= 0 || feeder.foodQuality === null) continue;
+    const bowl = state.home.items.find((i): i is BowlItem => i.kind === "bowl" && i.slot === feeder.slot);
+    if (!bowl || bowl.food >= BOWL_CAPACITY || !sameFood(bowl, feeder.foodQuality, feeder.sterile)) continue;
+    const poured = Math.min(feeder.food, BOWL_CAPACITY - bowl.food);
+    feeder.food -= poured;
+    bowl.food += poured;
+    bowl.foodQuality = feeder.foodQuality;
+    bowl.sterile = feeder.sterile;
     filled.push(bowl.id);
   }
   return filled;
@@ -189,16 +190,36 @@ export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY
   return poured;
 }
 
+/**
+ * Старе збереження (до правки автора 2026-10-23): одна автогодівниця на дім, у `appliances.feeder`.
+ * Вона стає порожньою годівницею тієї ж якості над першою миской.
+ */
+export function upgradeFeeder(state: GameState): void {
+  const appliances = state.home.appliances as Partial<Record<string, Quality | null>>;
+  const quality = appliances["feeder"];
+  delete appliances["feeder"];
+  const feeders = (state.home.feeders ??= []);
+  const bowl = state.home.items.find((i) => i.kind === "bowl");
+  if (quality && bowl && "slot" in bowl && feeders.length === 0) feeders.push({ slot: bowl.slot, quality, food: 0, foodQuality: null, sterile: false });
+}
+
 /** Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. */
 export function nightlyHousehold(state: GameState, rng: Rng): void {
   const home = state.home;
   home.clothes = Math.max(0, home.clothes - 1);
   const factor = HOUSEHOLD.difficulty[state.difficulty];
-  for (const appliance of ["feeder", "fountain", "robot"] as const) {
+  for (const appliance of ["fountain", "robot"] as const) {
     if (home.appliances[appliance] === "cheap" && rng.chance(HOUSEHOLD.applianceBreakPerDay * factor)) {
       home.appliances[appliance] = null;
       emit(state, { type: "broke", what: appliance });
     }
+  }
+  // Дешева автогодівниця ламається разом із кормом у бункері й лишає уламки над миской (§9.12).
+  for (const feeder of [...(home.feeders ?? [])]) {
+    if (feeder.quality !== "cheap" || !rng.chance(HOUSEHOLD.applianceBreakPerDay * factor)) continue;
+    home.feeders = (home.feeders ?? []).filter((f) => f !== feeder);
+    addMess(state, "broken", slotCenter(feeder.slot), null);
+    emit(state, { type: "broke", what: "feeder" });
   }
 }
 

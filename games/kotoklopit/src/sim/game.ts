@@ -12,7 +12,7 @@ import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import type { RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
-import { annoyingMesses, tickHousehold } from "./household";
+import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
 import type { Chronotype, Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
@@ -249,7 +249,9 @@ export function deserialize(json: string): Save {
   const data: unknown = JSON.parse(json);
   const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
   if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
-  return data as Save;
+  const save = data as Save;
+  for (const state of [save.current, save.dayStart, save.weekStart]) upgradeFeeder(state);
+  return save;
 }
 
 function clone<T>(value: T): T {

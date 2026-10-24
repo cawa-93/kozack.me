@@ -3,12 +3,12 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
-import { backAway, bowlFull, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
+import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds } from "./illness";
 import { bathe } from "./care";
-import { tapWasher, vacuumed } from "./household";
+import { sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
@@ -23,6 +23,7 @@ import {
   DIFFICULTY,
   DIRTY_CLOTHES_CATS,
   EAT_MINUTES,
+  FEEDER_CAPACITY,
   ESCAPE,
   LITTER_SANITY,
   MEAL_SATIETY,
@@ -36,13 +37,13 @@ import {
   SHOO,
   WATER_CAPACITY,
 } from "./config";
-import { receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
+import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { targetById, targetOf, type Target } from "./targets";
-import type { Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
+import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
 import { startWork, stopWork } from "./work";
 
 /** Керування на цю мить: напрямок руху й чи утримується кнопка дії. */
@@ -253,21 +254,7 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     case "bowl":
       if (held === null) return refuse(state, id, "nothing");
       if (held.kind !== "catfood") return refuse(state, id, "wrong");
-      // Різні корми в одну миску не змішують (§6.4): ні звичайний зі стерилізованим, ні дешевий з преміальним.
-      if (item.food > 0 && (item.sterile !== held.sterile || item.foodQuality !== held.quality)) return refuse(state, id, "wrong");
-      if (bowlFull(item)) return refuse(state, id, "occupied");
-      {
-        // Насипають одразу доверху — або все, що лишилося (§6.4, правка автора 2026-10-24).
-        const poured = useSupplies(state, held.sterile ? "sterileFood" : "catFood", held.quality, BOWL_CAPACITY - item.food);
-        if (poured === 0) return refuse(state, id, "empty");
-        item.food += poured;
-      }
-      item.foodQuality = held.quality;
-      item.sterile = held.sterile;
-      state.character.held = null;
-      emit(state, { type: "fed", item: item.id, food: item.food });
-      hearFood(state, item);
-      return null;
+      return pourFood(state, item, id, held);
     case "water":
       if (held !== null) return refuse(state, id, "hands-full");
       if (item.water >= WATER_CAPACITY) return refuse(state, id, "nothing");
@@ -286,6 +273,34 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     case "scratcher":
       return refuse(state, id, "nothing");
   }
+}
+
+/**
+ * Насипати корм із рук (§6.4, §9.12, правка автора 2026-10-24): одразу доверху — і миску, і
+ * автогодівницю над нею; якщо в сховищі менше — усе, що лишилося. Різні корми не змішують: ні
+ * звичайний зі стерилізованим, ні дешевий з преміальним — ні в мисці, ні в годівниці.
+ */
+function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { kind: "catfood" }): TapResult {
+  const feeder = feederAt(state, bowl.slot);
+  if (!sameFood(bowl, held.quality, held.sterile) || (feeder && !sameFood(feeder, held.quality, held.sterile))) return refuse(state, id, "wrong");
+  const bowlRoom = BOWL_CAPACITY - bowl.food;
+  const room = bowlRoom + (feeder ? FEEDER_CAPACITY[feeder.quality] - feeder.food : 0);
+  if (room <= 0) return refuse(state, id, "occupied");
+  const poured = useSupplies(state, held.sterile ? "sterileFood" : "catFood", held.quality, room);
+  if (poured === 0) return refuse(state, id, "empty");
+  const toBowl = Math.min(poured, bowlRoom);
+  bowl.food += toBowl;
+  bowl.foodQuality = held.quality;
+  bowl.sterile = held.sterile;
+  if (feeder && poured > toBowl) {
+    feeder.food += poured - toBowl;
+    feeder.foodQuality = held.quality;
+    feeder.sterile = held.sterile;
+  }
+  state.character.held = null;
+  emit(state, { type: "fed", item: bowl.id, food: bowl.food });
+  hearFood(state, bowl);
+  return null;
 }
 
 /** Покласти іграшку на підлогу під ногами. */

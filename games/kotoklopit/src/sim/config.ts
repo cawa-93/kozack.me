@@ -211,6 +211,8 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   fountain: { price: { cheap: 60, premium: 140 }, utilities: 6 },
   robot: { price: { cheap: 300, premium: 600 }, utilities: 10 },
 };
+/** Скільки порцій уміщує автогодівниця (§9.12, правка автора 2026-10-23): дешева — ~4 дні одному коту, дорога — ~10. */
+export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
 /** Подертий диван: ремонт до найближчого платежу (§6.4). */
 export const SOFA_REPAIR = 3;
 /** Куди лягає привезена іграшка: на підлогу біля дверей. */
@@ -605,7 +607,6 @@ export const HOUSEHOLD = {
   vacuumSanity: -2,
   washMinutes: 60,
   clothesDays: { cheap: 7, premium: 8 } as Record<Quality, number>,
-  feederMinutes: [8 * 60, 19 * 60],
   robotMinute: 12 * 60,
   /** Скільки хвилин робот-пилосос їздить квартирою: усі кімнати за годину. */
   robotMinutes: 60,
