@@ -7,6 +7,7 @@ import { changeLove, createCat } from "../src/sim/cat";
 import { utilitiesDue } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import { annoyingMesses, feederBowls, hygieneFactor, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
@@ -215,5 +216,38 @@ describe("безлад дратує (§9.12, правка 2026-10-23)", () => {
 
   it("безлад в іншій кімнаті не дратує", () => {
     expect(annoyed(2, { x: 15.5, y: 2.5 })).toBe(0);
+  });
+});
+
+describe("друг досипає миски (§4.1, правка 2026-10-24)", () => {
+  function friendVisit(save: Save): void {
+    save.current.modifiers.day = "friend-help";
+    tickModifiers(save.current, hours(10) + 59, 2, false);
+  }
+
+  it("порожню миску — доверху зі сховища, без дарової порції; надкушену — досипає", () => {
+    const save = game();
+    const supplies = save.current.home.supplies.catFood;
+    Object.assign(supplies, { cheap: 5, premium: 0 });
+    const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+    Object.assign(bowl, { food: 0, foodQuality: null, sterile: false });
+    friendVisit(save);
+    expect(bowl.food).toBe(2);
+    expect(supplies.cheap).toBe(3);
+    bowl.food = 1;
+    friendVisit(save);
+    expect(bowl.food).toBe(2);
+    expect(supplies.cheap).toBe(2);
+  });
+
+  it("корми не змішує: дорогого немає — миску з дорогим не досипає", () => {
+    const save = game();
+    const supplies = save.current.home.supplies.catFood;
+    Object.assign(supplies, { cheap: 5, premium: 0 });
+    const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+    Object.assign(bowl, { food: 1, foodQuality: "premium", sterile: false });
+    friendVisit(save);
+    expect(bowl.food).toBe(1);
+    expect(supplies.cheap).toBe(5);
   });
 });

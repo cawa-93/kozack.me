@@ -4,7 +4,7 @@ import { traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, WATER_CAPACITY } from "./config";
 import { inView } from "./knowledge";
-import { takeSupply, useSupply } from "./economy";
+import { takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
@@ -155,26 +155,38 @@ function feed(state: GameState): number[] {
   const filled: number[] = [];
   for (const bowl of feederBowls(state)) {
     if (bowl.food > 0) continue;
-    const food = takeBowlFood(state);
-    if (food === null) break;
-    bowl.food = Math.min(BOWL_CAPACITY, 1);
-    bowl.foodQuality = food.quality;
-    bowl.sterile = food.sterile;
+    if (stockBowl(state, bowl, 1) === 0) break;
     filled.push(bowl.id);
   }
   return filled;
 }
 
 /**
- * Порція в миску, яку насипає не персонаж (автогодівниця, друг, §4.1, §8.7): коли вдома є
- * стерилізований кіт — корм для стерилізованих, поки він є, бо звичайний йому шкодить (§9.8).
+ * Яким кормом насипати порожню миску не персонажу (автогодівниця, друг, §4.1, §8.7): коли вдома є
+ * стерилізований кіт — кормом для стерилізованих, поки він є, бо звичайний йому шкодить (§9.8).
  */
-export function takeBowlFood(state: GameState): { quality: Quality; sterile: boolean } | null {
-  const sterile = state.cats.some((c) => c.sterilized && c.away === null);
-  const special = sterile ? takeSupply(state, "sterileFood") : null;
-  if (special !== null) return { quality: special, sterile: true };
-  const quality = takeSupply(state, "catFood");
+function bowlFoodKind(state: GameState): { quality: Quality; sterile: boolean } | null {
+  if (state.cats.some((c) => c.sterilized && c.away === null)) {
+    const quality = topQuality(state, "sterileFood");
+    if (quality !== null) return { quality, sterile: true };
+  }
+  const quality = topQuality(state, "catFood");
   return quality === null ? null : { quality, sterile: false };
+}
+
+/**
+ * Досипати миску зі сховища до `upTo` порцій (§6.4): тим самим кормом, що вже в ній, — корми не
+ * змішують; порожню — за bowlFoodKind. Повертає, скільки насипано.
+ */
+export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY): number {
+  const kind = bowl.food > 0 && bowl.foodQuality !== null ? { quality: bowl.foodQuality, sterile: bowl.sterile } : bowlFoodKind(state);
+  if (kind === null || bowl.food >= upTo) return 0;
+  const poured = takeSupplies(state, kind.sterile ? "sterileFood" : "catFood", kind.quality, upTo - bowl.food);
+  if (poured === 0) return 0;
+  bowl.food += poured;
+  bowl.foodQuality = kind.quality;
+  bowl.sterile = kind.sterile;
+  return poured;
 }
 
 /** Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. */

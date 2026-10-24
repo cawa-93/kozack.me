@@ -5,14 +5,14 @@ import { changeMood, createCat, traitLevel } from "./cat";
 import { addCat, applyMorningSanity } from "./night";
 import { isDirty } from "./catai";
 import { changeStat, earn, spend } from "./character";
-import { BOWL_CAPACITY, DIFFICULTY, MODIFIERS, POSITIONS, WATER_CAPACITY } from "./config";
+import { DIFFICULTY, MODIFIERS, POSITIONS, WATER_CAPACITY } from "./config";
 import { takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { takeBowlFood } from "./household";
+import { stockBowl } from "./household";
 import { callImpression, changeReputation, isWorkday, noticeCallLook } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
@@ -345,14 +345,7 @@ function friendHelps(state: GameState, from: number, minutes: number): void {
   const minute = from % 1440;
   if (minute < m.from || minute >= m.to || Math.floor(minute / 60) === Math.floor((minute + minutes) / 60)) return;
   for (const item of state.home.items) {
-    if (item.kind === "bowl" && item.food < BOWL_CAPACITY) {
-      const food = takeBowlFood(state);
-      if (food !== null) {
-        item.food = BOWL_CAPACITY;
-        item.foodQuality = food.quality;
-        item.sterile = food.sterile;
-      }
-    }
+    if (item.kind === "bowl") stockBowl(state, item);
     if (item.kind === "water") item.water = WATER_CAPACITY;
     if (item.kind === "litter" && item.uses > 0) {
       const litter = takeSupply(state, "litter");

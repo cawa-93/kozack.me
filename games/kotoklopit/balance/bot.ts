@@ -10,13 +10,13 @@ import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
-import { boxCount, canUnpack, freeSlots, supplyCount } from "../src/sim/economy";
+import { boxCount, canUnpack, freeSlots, supplyCount, topQuality } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
-import type { Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
+import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Quality, Save, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
 import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
@@ -125,8 +125,9 @@ export class Bot {
     const dirty = itemsOf(s, "litter").find((b) => isDirty(b) && !this.skipped(`item:${b.id}`));
     if (dirty) return named("litter", () => this.hold(`item:${dirty.id}`));
     if (s.cats.length > 0) {
-      const bowl = itemsOf(s, "bowl").find((b) => b.food < 2 && !this.skipped(`item:${b.id}`));
-      if (bowl && supplyCount(s, "catFood") > 0) return named("feed", () => this.feed(bowl.id));
+      const quality = topQuality(s, "catFood");
+      const bowl = quality && this.bowlFor(quality);
+      if (bowl) return named("feed", () => this.feed(bowl.id));
       const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2 && !this.skipped(`item:${w.id}`));
       if (water) return named("use", () => this.use(`item:${water.id}`));
     }
@@ -297,8 +298,8 @@ export class Bot {
         if (this.state.character.held?.kind === "toy") this.wait(1);
         return;
       case "catfood": {
-        // До миски не підійти (кіт їсть) — повернути корм у шафку.
-        const bowl = itemsOf(this.state, "bowl").find((b) => b.food < 2 && !this.skipped(`item:${b.id}`));
+        // До миски не підійти (кіт їсть) чи в ній інший корм — повернути корм у шафку.
+        const bowl = this.bowlFor(held.quality);
         this.use(bowl ? `item:${bowl.id}` : "cat-cabinet");
         return;
       }
@@ -312,6 +313,11 @@ export class Bot {
         this.use("trash");
         return;
     }
+  }
+
+  /** Миска, куди можна досипати цей корм: порожня чи з таким самим, корми не змішують (§6.4). */
+  private bowlFor(quality: Quality): BowlItem | undefined {
+    return itemsOf(this.state, "bowl").find((b) => b.food < 2 && (b.food === 0 || (b.foodQuality === quality && !b.sterile)) && !this.skipped(`item:${b.id}`));
   }
 
   private feed(bowl: number): void {

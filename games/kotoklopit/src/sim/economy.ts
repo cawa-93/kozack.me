@@ -105,6 +105,30 @@ export function useSupply(state: GameState, product: Product, quality?: Quality)
   return taken;
 }
 
+/** Якість, яку зі сховища беруть першою (спершу дорожча), або null, якщо запасу немає. */
+export function topQuality(state: GameState, product: Product): Quality | null {
+  const supply = state.home.supplies[product];
+  return TAKE_ORDER.find((q) => supply[q] > 0) ?? null;
+}
+
+/** Узяти кілька порцій саме цієї якості: стільки, скільки просять, або все, що лишилося. Повертає взяте. */
+export function takeSupplies(state: GameState, product: Product, quality: Quality, amount: number): number {
+  const supply = state.home.supplies[product];
+  const taken = Math.max(0, Math.min(amount, supply[quality]));
+  if (taken > 0) {
+    supply[quality] -= taken;
+    noteEmpty(state, product);
+  }
+  return taken;
+}
+
+/** Те саме, що takeSupplies, але персонаж бачить, скільки лишилося (§6.4). */
+export function useSupplies(state: GameState, product: Product, quality: Quality, amount: number): number {
+  const taken = takeSupplies(state, product, quality, amount);
+  if (taken > 0) emit(state, { type: "supply-used", product, left: supplyCount(state, product) });
+  return taken;
+}
+
 /** Запас уже бував удома: відтепер сховище його показує (§6.4). */
 function acquire(state: GameState, product: Product): void {
   if (!state.home.acquired.includes(product)) state.home.acquired.push(product);

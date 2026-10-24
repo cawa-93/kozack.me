@@ -229,22 +229,60 @@ describe("сон і увага (§9.12)", () => {
 });
 
 describe("догляд персонажа (§9.12)", () => {
-  it("корм із шафки — у миску, вода доливається одним натисканням", () => {
+  it("корм із шафки — у миску одразу доверху, вода доливається одним натисканням", () => {
     const save = game();
-    addSupply(save.current, "catFood", "cheap", 5);
+    addSupply(save.current, "catFood", "cheap", 0); // шафку видно, коли корм уже бував удома
+    const supplies = save.current.home.supplies.catFood;
+    supplies.cheap = 5;
+    supplies.premium = 0;
     walkTo(save, "cat-cabinet");
     interact(save);
     expect(save.current.character.held).toEqual({ kind: "catfood", quality: "cheap", sterile: false });
+    // Узяти в руки — ще не витратити: корм зі сховища списується, коли його насипають.
+    expect(supplies.cheap).toBe(5);
     const bowl = item<BowlItem>(save, "bowl");
     walkTo(save, `item:${bowl.id}`);
     interact(save);
-    expect(bowl.food).toBe(1);
+    expect(bowl.food).toBe(2);
+    expect(supplies.cheap).toBe(3);
     expect(save.current.character.held).toBeNull();
     const water = item<WaterItem>(save, "water");
     water.water = 1;
     walkTo(save, `item:${water.id}`);
     interact(save);
     expect(water.water).toBe(8);
+  });
+
+  it("корму менше, ніж влазить, — насипається все, що є; змішувати корми не можна", () => {
+    const save = game();
+    addSupply(save.current, "catFood", "cheap", 0); // шафку видно, коли корм уже бував удома
+    const supplies = save.current.home.supplies.catFood;
+    supplies.cheap = 1;
+    supplies.premium = 0;
+    const bowl = item<BowlItem>(save, "bowl");
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    walkTo(save, `item:${bowl.id}`);
+    interact(save);
+    expect(bowl.food).toBe(1);
+    expect(supplies.cheap).toBe(0);
+    // Дорогий у миску з дешевим не досипають: відмова, корм лишається в руках.
+    supplies.premium = 3;
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    expect(save.current.character.held).toEqual({ kind: "catfood", quality: "premium", sterile: false });
+    walkTo(save, `item:${bowl.id}`);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "wrong" }));
+    expect(bowl.food).toBe(1);
+    expect(supplies.premium).toBe(3);
+    // Покласти назад — нічого не втрачається.
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    expect(save.current.character.held).toBeNull();
+    expect(supplies.premium).toBe(3);
   });
 
   it("чистка лотка: 3 хвилини, −3 здорового глузду, новий наповнювач із запасу", () => {

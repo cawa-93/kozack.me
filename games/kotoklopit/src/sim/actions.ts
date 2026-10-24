@@ -13,6 +13,7 @@ import { observe } from "./knowledge";
 import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
+  BOWL_CAPACITY,
   HOUSEHOLD,
   ILLNESS,
   BURN_MINUTES,
@@ -35,7 +36,7 @@ import {
   SHOO,
   WATER_CAPACITY,
 } from "./config";
-import { receivePackages, returnSupply, supplyCount, unpack, useSupply } from "./economy";
+import { receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { stateRng } from "./rng";
@@ -132,15 +133,14 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const sterile = target.kind === "sterileBin";
       const product = sterile ? "sterileFood" : "catFood";
       if (held?.kind === "catfood") {
-        // Порцію повертають туди, звідки взяли.
+        // Корм у руках — лише «з чого насипати» (§6.4): зі сховища його ще не взято, тож просто кладуть назад.
         if (held.sterile !== sterile) return refuse(state, target.id, "wrong");
-        returnSupply(state, product, held.quality);
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
-      const quality = useSupply(state, product);
+      const quality = topQuality(state, product);
       if (quality === null) return refuse(state, target.id, "empty");
       return take(state, target, { kind: "catfood", quality, sterile });
     }
@@ -253,10 +253,15 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     case "bowl":
       if (held === null) return refuse(state, id, "nothing");
       if (held.kind !== "catfood") return refuse(state, id, "wrong");
+      // Різні корми в одну миску не змішують (§6.4): ні звичайний зі стерилізованим, ні дешевий з преміальним.
+      if (item.food > 0 && (item.sterile !== held.sterile || item.foodQuality !== held.quality)) return refuse(state, id, "wrong");
       if (bowlFull(item)) return refuse(state, id, "occupied");
-      // Різні корми в одну миску не змішують.
-      if (item.food > 0 && item.sterile !== held.sterile) return refuse(state, id, "wrong");
-      item.food += 1;
+      {
+        // Насипають одразу доверху — або все, що лишилося (§6.4, правка автора 2026-10-24).
+        const poured = useSupplies(state, held.sterile ? "sterileFood" : "catFood", held.quality, BOWL_CAPACITY - item.food);
+        if (poured === 0) return refuse(state, id, "empty");
+        item.food += poured;
+      }
       item.foodQuality = held.quality;
       item.sterile = held.sterile;
       state.character.held = null;
@@ -628,7 +633,6 @@ export function dropEverything(state: GameState): void {
   character.activity = null;
   const held = character.held;
   if (held?.kind === "raw") returnSupply(state, "food", held.quality);
-  if (held?.kind === "catfood") returnSupply(state, held.sterile ? "sterileFood" : "catFood", held.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
   if (held?.kind === "toy") dropToy(state);
   // Страву з рук — на вільну поверхню кухні, а не в нікуди.
