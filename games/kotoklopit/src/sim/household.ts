@@ -1,8 +1,9 @@
 // Побут (§8.7): шерсть і пилосос, прання, техніка (автогодівниця, фонтанчик, робот-пилосос), поломки.
 
 import { traitLevel } from "./cat";
-import { unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, WATER_CAPACITY } from "./config";
+import { changeStat, unpleasantTask } from "./character";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, WATER_CAPACITY } from "./config";
+import { inView } from "./knowledge";
 import { takeSupply, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
@@ -16,6 +17,19 @@ import type { BowlItem, Cat, GameState, HomeItem, Quality } from "./types";
 export function hygieneFactor(state: GameState): number {
   const home = state.home;
   return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (home.fur >= HOUSEHOLD.dirtyFur ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state) * hygieneFactorMod(state);
+}
+
+/**
+ * Безлад дратує (§9.12, правка автора 2026-10-23): кожен, що в полі зору персонажа, — здоровий
+ * глузд за годину, разом не більше межі. З душової кабіни безладу не видно. Лише вдень, удома.
+ */
+export function annoyingMesses(state: GameState, minutes: number): void {
+  const activity = state.character.activity;
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return;
+  const seen = state.home.messes.filter((m) => inView(state, m)).length;
+  if (seen === 0) return;
+  const perHour = Math.max(MESS_ANNOYANCE.max, seen * MESS_ANNOYANCE.perHour);
+  changeStat(state, "sanity", perHour * (minutes / MINUTES_PER_HOUR));
 }
 
 /** Скільки шерсті кіт лишає за годину (§8.7). */

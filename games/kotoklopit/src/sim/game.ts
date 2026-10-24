@@ -12,7 +12,7 @@ import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import type { RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
-import { tickHousehold } from "./household";
+import { annoyingMesses, tickHousehold } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { isLastDay, weekdayOf } from "./time";
 import type { Chronotype, Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
@@ -148,6 +148,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
   tickStove(state, minutes);
   tickHousehold(state, from, minutes);
   tickCats(state, minutes, { present: !away });
+  if (!away) annoyingMesses(state, minutes);
   // Поки день перемотується після аварії, показники не нижче 5 (§8.5).
   passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident" ? ACCIDENT.floor : 0);
   state.minute += minutes;

@@ -6,7 +6,7 @@ import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat } from "../src/sim/cat";
 import { utilitiesDue } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
-import { feederBowls, hygieneFactor, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { annoyingMesses, feederBowls, hygieneFactor, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
@@ -191,5 +191,29 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(save.current.home.items).not.toContain(bowl);
     // На місці зламаної речі — уламки.
     expect(save.current.home.messes.some((m) => m.kind === "broken")).toBe(true);
+  });
+});
+
+describe("безлад дратує (§9.12, правка 2026-10-23)", () => {
+  const annoyed = (count: number, at: { x: number; y: number }): number => {
+    const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const state = save.current;
+    state.day = 8;
+    state.character.body.x = 9.5;
+    state.character.body.y = 8.5;
+    for (let i = 0; i < count; i++) state.home.messes.push({ id: 100 + i, kind: "vomit", x: at.x + i * 0.5, y: at.y, cat: null });
+    const before = state.character.stats.sanity;
+    annoyingMesses(state, 60);
+    return state.character.stats.sanity - before;
+  };
+
+  it("кожен безлад у полі зору — −1 за годину, разом не більше −4", () => {
+    expect(annoyed(1, { x: 4.5, y: 8.5 })).toBeCloseTo(-1);
+    expect(annoyed(3, { x: 4.5, y: 8.5 })).toBeCloseTo(-3);
+    expect(annoyed(6, { x: 3.5, y: 8.5 })).toBeCloseTo(-4);
+  });
+
+  it("безлад в іншій кімнаті не дратує", () => {
+    expect(annoyed(2, { x: 15.5, y: 2.5 })).toBe(0);
   });
 });

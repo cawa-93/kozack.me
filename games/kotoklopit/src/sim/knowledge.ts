@@ -21,10 +21,15 @@ function roomOf(p: Vec): string | null {
 /** Персонаж бачить кота: та сама кімната або зовсім поруч (§9.9). */
 export function witnesses(state: GameState, cat: Cat): boolean {
   if (!witnessing || state.end !== null || cat.away !== null) return false;
+  return inView(state, cat);
+}
+
+/** Точка в полі зору персонажа: та сама кімната або зовсім поруч (§9.9). */
+export function inView(state: GameState, p: Vec): boolean {
   const body = state.character.body;
   const room = roomOf(body);
-  if (room !== null && room === roomOf(cat)) return true;
-  return Math.hypot(body.x - cat.x, body.y - cat.y) <= WITNESS_DISTANCE;
+  if (room !== null && room === roomOf(p)) return true;
+  return Math.hypot(body.x - p.x, body.y - p.y) <= WITNESS_DISTANCE;
 }
 
 /** Рівень видимості риси (§9.9): 0 — нічого, 1 — «❓ Помічено щось дивне», 2 — підказка, 3 — відкрито. */

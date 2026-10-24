@@ -806,6 +806,8 @@ export const WORK_CAT = {
  * спить і щось робить; кожен наступний кіт (від найкращого) дає 1/k свого.
  */
 export const WATCH_SANITY = { asleep: 1, awake: 3 } as const;
+/** Безлад у полі зору дратує (§9.12, правка автора 2026-10-23): здоровий глузд за годину за кожен і найбільше разом. */
+export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
 /** Сон на комп'ютері: вага 1 + 2 × «Теплолюбність» + 2 × «Робочий помічник». */
 export const COMPUTER_SLEEP = { base: 1, step: 2 } as const;
 /** Прогнали з місця (§9.12). */
