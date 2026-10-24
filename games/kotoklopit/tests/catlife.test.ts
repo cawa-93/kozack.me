@@ -285,6 +285,22 @@ describe("догляд персонажа (§9.12)", () => {
     expect(supplies.premium).toBe(3);
   });
 
+  it("у миску з дешевим досипають дешевий, хоч шафка й дає спершу дорогий", () => {
+    const save = game();
+    addSupply(save.current, "catFood", "cheap", 0);
+    const supplies = save.current.home.supplies.catFood;
+    Object.assign(supplies, { cheap: 5, premium: 5 });
+    const bowl = item<BowlItem>(save, "bowl");
+    Object.assign(bowl, { food: 1, foodQuality: "cheap", sterile: false });
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    walkTo(save, `item:${bowl.id}`);
+    interact(save);
+    expect(bowl).toMatchObject({ food: 2, foodQuality: "cheap" });
+    expect(supplies).toEqual({ cheap: 4, premium: 5 });
+    expect(save.current.character.held).toBeNull();
+  });
+
   it("чистка лотка: 3 хвилини, −3 здорового глузду, новий наповнювач із запасу", () => {
     const save = game();
     save.current.home.supplies.litter.premium = 2;

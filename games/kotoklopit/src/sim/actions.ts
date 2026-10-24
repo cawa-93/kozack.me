@@ -278,23 +278,29 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
 /**
  * Насипати корм із рук (§6.4, §9.12, правка автора 2026-10-24): одразу доверху — і миску, і
  * автогодівницю над нею; якщо в сховищі менше — усе, що лишилося. Різні корми не змішують: ні
- * звичайний зі стерилізованим, ні дешевий з преміальним — ні в мисці, ні в годівниці.
+ * звичайний зі стерилізованим, ні дешевий з преміальним — ні в мисці, ні в годівниці. Корм у руках —
+ * лише «з чого насипати»: де корм уже є, досипають тим самим, у порожню — тим, що в руках.
  */
 function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { kind: "catfood" }): TapResult {
   const feeder = feederAt(state, bowl.slot);
-  if (!sameFood(bowl, held.quality, held.sterile) || (feeder && !sameFood(feeder, held.quality, held.sterile))) return refuse(state, id, "wrong");
+  const product = held.sterile ? "sterileFood" : "catFood";
+  const inside = bowl.food > 0 ? bowl : feeder && feeder.food > 0 ? feeder : null;
+  const quality = inside?.foodQuality ?? (state.home.supplies[product][held.quality] > 0 ? held.quality : topQuality(state, product));
+  if (quality === null) return refuse(state, id, "empty");
+  if (!sameFood(bowl, quality, held.sterile) || (feeder && !sameFood(feeder, quality, held.sterile))) return refuse(state, id, "wrong");
   const bowlRoom = BOWL_CAPACITY - bowl.food;
   const room = bowlRoom + (feeder ? FEEDER_CAPACITY[feeder.quality] - feeder.food : 0);
   if (room <= 0) return refuse(state, id, "occupied");
-  const poured = useSupplies(state, held.sterile ? "sterileFood" : "catFood", held.quality, room);
-  if (poured === 0) return refuse(state, id, "empty");
+  const poured = useSupplies(state, product, quality, room);
+  // Того самого корму вже немає, а інший є — змішувати не можна.
+  if (poured === 0) return refuse(state, id, supplyCount(state, product) > 0 ? "wrong" : "empty");
   const toBowl = Math.min(poured, bowlRoom);
   bowl.food += toBowl;
-  bowl.foodQuality = held.quality;
+  bowl.foodQuality = quality;
   bowl.sterile = held.sterile;
   if (feeder && poured > toBowl) {
     feeder.food += poured - toBowl;
-    feeder.foodQuality = held.quality;
+    feeder.foodQuality = quality;
     feeder.sterile = held.sterile;
   }
   state.character.held = null;
