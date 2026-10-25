@@ -1,14 +1,15 @@
 // Спільні механіки рис (§9.12, рішення автора 2026-10-25, `TRAITS_REVIEW.md`): пауза між оглушеннями,
-// пауза шипіння, не більше двох нічних побудок, гучний звук і кроки; «Стресостійкість» з поведінки.
+// пауза шипіння, не більше двох нічних побудок, гучний звук і кроки; групи етапу «Енергія й сон».
 
 import { describe, expect, it } from "vitest";
 
 import { pickUpCat, putDownCat } from "../src/sim/actions";
 import { stun } from "../src/sim/body";
 import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
-import { jealousy, tickCats } from "../src/sim/catai";
+import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
+import { itemTile } from "../src/sim/home";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
@@ -292,5 +293,95 @@ describe("«Стресостійкість» видно з поведінки (�
     expect(calm[0]?.traits[0]?.seen).toBe(1);
     expect(sleepers(0)).toHaveLength(0);
     expect(sleepers(-2)).toHaveLength(0);
+  });
+});
+
+describe("«Енергійність» і «Зумі» (§9.12, рішення автора 2026-10-25)", () => {
+  it("енергійний увечері не дрімає, спокійний дрімає й у години пік", () => {
+    const naps = (level: TraitLevel | 0): boolean => {
+      const save = game();
+      save.current.minute = hours(20);
+      const cat = awake(withCat(save, level === 0 ? {} : { energy: level }));
+      cat.needs.fatigue = 70;
+      decide(save.current, cat, createRng(1), { present: true });
+      return cat.act.kind === "sleep";
+    };
+    expect(naps(-2)).toBe(true);
+    expect(naps(0)).toBe(false);
+    expect(naps(2)).toBe(false);
+  });
+
+  it("задрімав у годину пік на очах персонажа — прояв «Енергійності −», раз на день", () => {
+    const save = game();
+    const state = save.current;
+    state.minute = hours(20);
+    const cat = awake(withCat(save, { energy: -1 }, { x: 4.5, y: 8.5 }));
+    const nap = (): void => {
+      cat.act = { kind: "sleep", target: null, goal: { x: 6, y: 8 }, minutes: 480, elapsed: 0 };
+      cat.x = 4.5;
+      tickCats(state, 1, { present: true });
+    };
+    nap();
+    expect(cat.act).toMatchObject({ kind: "sleep", goal: null });
+    expect(cat.traits[0]?.seen).toBe(1);
+    nap();
+    expect(cat.traits[0]?.seen).toBe(1);
+    state.day += 1;
+    nap();
+    expect(cat.traits[0]?.seen).toBe(2);
+  });
+
+  it("енергійний, з яким давно не гралися, бешкетує охочіше", () => {
+    const mischief = (play: number): number => {
+      const save = game();
+      save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      const cat = awake(withCat(save, { energy: 2 }));
+      let count = 0;
+      const rng = createRng(3);
+      for (let i = 0; i < 300; i++) {
+        cat.needs.play = play;
+        decide(save.current, cat, rng, { present: false });
+        if (cat.act.kind === "knock" || cat.act.kind === "scratch") count += 1;
+      }
+      return count;
+    };
+    expect(mischief(100)).toBeGreaterThan(mischief(80));
+  });
+
+  it("«Статечний» після лотка спокійно йде геть — прояв «Зумі −», раз на день", () => {
+    const save = game();
+    const state = save.current;
+    const box = state.home.items.find((i) => i.kind === "litter");
+    if (!box) throw new Error("немає лотка");
+    const tile = itemTile(box);
+    const cat = awake(withCat(save, { zoomies: -2 }, { x: tile.x + 0.5, y: tile.y + 0.5 }));
+    state.character.body.x = tile.x + 1.5;
+    state.character.body.y = tile.y + 0.5;
+    const toilet = (): void => {
+      cat.act = { kind: "toilet", target: `item:${box.id}`, goal: null, minutes: 0.05, elapsed: 0 };
+      tickCats(state, 0.1, { present: true });
+    };
+    toilet();
+    expect(cat.act.kind).not.toBe("zoomies");
+    expect(cat.traits[0]?.seen).toBe(1);
+    toilet();
+    expect(cat.traits[0]?.seen).toBe(1);
+  });
+
+  it("зумі: річ зі столу на шляху падає — не щоразу", () => {
+    let knocked = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const save = game(seed);
+      const state = save.current;
+      state.character.body.x = 2.5;
+      state.character.body.y = 2.5;
+      state.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      const cat = awake(withCat(save, {}, { x: 17.5, y: 3.5 }));
+      cat.act = { kind: "zoomies", target: null, goal: { x: 15, y: 3 }, minutes: 2, elapsed: 0 };
+      for (let i = 0; i < 6 && cat.act.goal?.x === 15; i++) tickCats(state, 0.05, { present: false });
+      if (state.home.surfaces["table"] === null) knocked += 1;
+    }
+    expect(knocked).toBeGreaterThan(0);
+    expect(knocked).toBeLessThan(40);
   });
 });

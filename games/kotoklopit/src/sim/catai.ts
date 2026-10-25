@@ -21,6 +21,7 @@ import {
   DIRTY_CLOTHES_CATS,
   DEMANDING_SEEN_MINUTES,
   DIRTY_LITTER,
+  ENERGY,
   ENVY,
   ESCAPE,
   FOLLOWER,
@@ -76,7 +77,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { itemTile, objectById, roomAt, ROOMS, slotById, type HomeObject } from "./home";
+import { distanceToRect, itemTile, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -304,8 +305,13 @@ export function hungerThreshold(cat: Cat): number {
   return NEED_THRESHOLD.hunger - 10 * Math.max(0, traitLevel(cat, "appetite"));
 }
 
+/**
+ * З якої втоми кіт засинає (§9.12): що активніша година, то пізніше; «Енергійність» зсуває це для обох боків
+ * (рішення автора 2026-10-25): енергійний майже не дрімає ввечері, спокійний дрімає й у години пік.
+ */
 function sleepThreshold(cat: Cat, minute: number): number {
-  return SLEEP_START.base + SLEEP_START.activity * activityAt(cat, minute);
+  const energy = Math.max(0, 1 + ENERGY.sleepStep * traitLevel(cat, "energy"));
+  return Math.min(ENERGY.maxThreshold, SLEEP_START.base + SLEEP_START.activity * activityAt(cat, minute) * energy);
 }
 
 /** Чи є нагальна потреба, заради якої варто кинути спокійну дію. */
@@ -534,9 +540,11 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
     // Побродити заради гри — ціль «play»: лише така прогулянка знімає потребу гри.
     { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander, "play") },
   ];
+  // Енергійний, з яким давно не гралися, нудьгує й бешкетує охочіше (§9.12, рішення автора 2026-10-25).
+  const bored = traitLevel(cat, "energy") > 0 && cat.needs.play >= 100 ? ENERGY.bored : 1;
   const onSurfaces = dishes(state, false);
   const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
-  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep), value: active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)) });
+  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, value: active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)) });
   const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
@@ -545,7 +553,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   }
   const toy = nearest(cat, itemsOf(state, "toy"));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
-  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep), value: active(() => startScratch(state, cat, rng)) });
+  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep) * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
@@ -756,14 +764,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.7 + rng.next() * 0.2 }, cat.id);
         observe(state, cat, "scatter");
       } else observe(state, cat, "scatter", -1);
-      // Після лотка — часто зумі (§9.3).
+      // Після лотка — часто зумі (§9.3); «Статечний» спокійно йде геть — прояв «Зумі −», раз на день.
       if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(state, cat, rng);
+      else observe(state, cat, "zoomies", -1, false, MINUTES_PER_DAY);
       return;
     }
     case "sleep": {
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
-      // Довгий сон — прояв «Енергійності −» (§9.9). «Тривалість сну» видно з того, чи будить кота шум (§9.12).
-      if (act.elapsed >= 3 * MINUTES_PER_HOUR) observe(state, cat, "energy", -1);
       const house = itemById(state, act.target);
       if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) {
         itemMood(state, cat, house);
@@ -819,18 +826,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       return;
     case "knock": {
-      if (!act.target) return;
-      const dish = state.home.surfaces[act.target];
-      if (!dish) return;
-      takeDish(state, act.target);
-      const o = objectById(act.target);
-      const shards = visibleFloorNear(state, { x: o.x + o.w / 2, y: o.y + o.h + 0.5 });
-      addMess(state, "broken", shards, cat.id);
-      // Річ розбилася — гучний звук (§9.12).
-      loudNoise(state, "broken", shards);
+      if (!act.target || !knockOff(state, cat, act.target)) return;
       changeMood(state, cat, 1);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
-      emit(state, { type: "knocked", cat: cat.id, object: act.target, item: dish });
       observe(state, cat, "knocking");
       return;
     }
@@ -866,6 +864,20 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     default:
       return;
   }
+}
+
+/** Кіт скинув річ зі столу чи кухонної поверхні (§9.12): страва пропадає, на підлозі уламки, і гуркіт. */
+function knockOff(state: GameState, cat: Cat, id: string): Dish | null {
+  const dish = state.home.surfaces[id];
+  if (!dish) return null;
+  takeDish(state, id);
+  const o = objectById(id);
+  const shards = visibleFloorNear(state, { x: o.x + o.w / 2, y: o.y + o.h + 0.5 });
+  addMess(state, "broken", shards, cat.id);
+  emit(state, { type: "knocked", cat: cat.id, object: id, item: dish });
+  // Річ розбилася — гучний звук (§9.12).
+  loudNoise(state, "broken", shards);
+  return dish;
 }
 
 /** Щохвилинне на місці. */
@@ -924,7 +936,14 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
 /** Зумі: кіт мчить утричі швидше від однієї точки до іншої й може збити персонажа (§9.12). */
 function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): number {
   const used = Math.min(minutes, cat.act.minutes);
+  const from = { x: cat.x, y: cat.y };
   walk(cat, used, CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed);
+  // Річ на шляху падає (§9.12): забіг повз стіл чи поверхню зі стравою, раз за прохід.
+  for (const id of SURFACE_IDS) {
+    if (!state.home.surfaces[id]) continue;
+    const near = (p: Vec): boolean => distanceToRect(p, objectById(id)) <= ZOOMIES.knockReach;
+    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockOff(state, cat, id);
+  }
   cat.act.minutes -= used;
   if (!cat.act.goal && cat.act.minutes > 0) cat.act.goal = randomFloor(rng);
   const body = state.character.body;
@@ -1047,6 +1066,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     if (cat.act.goal) {
       left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
       if (cat.act.goal) break;
+      if (cat.act.kind === "sleep") fellAsleep(state, cat);
       continue;
     }
     const used = Math.min(left, Math.max(0, cat.act.minutes));
@@ -1100,6 +1120,14 @@ function ride(state: GameState, cat: Cat): void {
   const at = robotAt(state);
   cat.x = at.x;
   cat.y = at.y;
+}
+
+/**
+ * Кіт дійшов до місця й заснув (§9.12): задрімав у годину пік на очах персонажа — прояв «Енергійності −», раз на
+ * день (рішення автора 2026-10-25).
+ */
+function fellAsleep(state: GameState, cat: Cat): void {
+  if (activityAt(cat, state.minute) >= ENERGY.activeHour) observe(state, cat, "energy", -1, false, MINUTES_PER_DAY);
 }
 
 /** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */

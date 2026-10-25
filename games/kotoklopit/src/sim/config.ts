@@ -313,6 +313,13 @@ export const NEED_THRESHOLD = { hunger: 80, thirst: 60, toilet: 80, attention: 6
 /** Сон знімає втому за годину; засинає від 40 + 40 × активність, прокидається на 10, сон щонайменше 30 хвилин. */
 export const SLEEP_RECOVERY_PER_HOUR = 5;
 export const SLEEP_START = { base: 40, activity: 40 } as const;
+/**
+ * «Енергійність» (рішення автора 2026-10-25, §9.12): засинає від 40 + 40 × активність × (1 + `sleepStep` × рівень),
+ * не вище `maxThreshold` — енергійний майже не дрімає ввечері, спокійний дрімає й у години пік; сумарно сну стільки ж.
+ * Задрімав у годину з активністю від `activeHour` на очах персонажа — прояв «−», раз на день. Енергійний, якому
+ * потреба гри дійшла до 100, нудьгує: скидає речі й дере кігтями в `bored` раза охочіше.
+ */
+export const ENERGY = { sleepStep: 0.2, maxThreshold: 95, activeHour: 1, bored: 1.5 } as const;
 export const SLEEP_END = 10;
 export const MIN_CAT_NAP_MINUTES = 30;
 /** Втома росте швидше понад межу віку чи зі здоров'ям нижче 50 (§9.12). */
@@ -853,8 +860,11 @@ export const RELATIONS = {
 } as const;
 /** Вага будиночка як місця для сну (§9.12). */
 export const HOUSE_SLEEP: Record<Quality, number> = { cheap: 2, premium: 4 };
-/** Зумі: утричі швидше 1–2 хвилини; після лотка — шанс 30%. Збиває персонажа на шляху. */
-export const ZOOMIES = { speed: 3, minMinutes: 1, maxMinutes: 2, afterToilet: 0.3, hit: 0.5 } as const;
+/**
+ * Зумі: утричі швидше 1–2 хвилини; після лотка — шанс 30%. Збиває персонажа на шляху. Забіг повз стіл чи кухонну
+ * поверхню (ближче `knockReach` клітинки) скидає річ із шансом `knock` за прохід (2026-10-25).
+ */
+export const ZOOMIES = { speed: 3, minMinutes: 1, maxMinutes: 2, afterToilet: 0.3, hit: 0.5, knock: 0.15, knockReach: 0.8 } as const;
 /** Скільки гри знімає забава наодинці. */
 export const PLAY_RELIEF = 50;
 /** Украдена страва знімає голод (§9.12). */
