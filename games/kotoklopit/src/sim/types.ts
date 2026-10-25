@@ -356,7 +356,8 @@ export interface Trip {
 export type AccidentLoss = "repair" | "health" | "sanity" | "cat";
 
 /** Котячий безлад на підлозі (§9.12). */
-export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark";
+/** Калюжа (`puddle`) — «Фонтанолюб» перекинув миску з водою (§9.12, «Пиття»). */
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark" | "puddle";
 
 export interface Mess {
   id: number;

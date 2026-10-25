@@ -7,15 +7,16 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, eatMinutes, envy, tickCats } from "../src/sim/catai";
-import { APPETITE, BEGGING, CAT_ACT_MINUTES, ENVY, GULPING, THIEF } from "../src/sim/config";
+import { bowlEaten, decide, eatMinutes, envy, stonesFactor, tickCats } from "../src/sim/catai";
+import { APPETITE, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, THIEF } from "../src/sim/config";
+import { interact } from "../src/sim/game";
 import { relation } from "../src/sim/relations";
 import { emptyFeeder } from "../src/sim/household";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, withCatCorner } from "./helpers";
+import type { BowlItem, Cat, Save, TraitLevel, WaterItem } from "../src/sim/types";
+import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -420,5 +421,99 @@ describe("«Заздрісність»: тригер (рішення автор�
     };
     expect(treat(false).relation).toBeLessThan(0);
     expect(treat(true).relation).toBe(0);
+  });
+});
+
+describe("«Пиття» (рішення автора 2026-10-25)", () => {
+  const waterOf = (save: Save): WaterItem => save.current.home.items.find((i): i is WaterItem => i.kind === "water") as WaterItem;
+
+  it("спраглий «Фонтанолюб» без фонтанчика сідає на умивальник, з фонтанчиком — п'є з миски", () => {
+    let sink = 0;
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      const cat = withCat(save, { drinking: 2 });
+      cat.needs.thirst = 70;
+      decide(save.current, cat, createRng(seed), { present: false });
+      if (cat.act.kind === "beg" && cat.act.target === "sink") sink += 1;
+      save.current.home.appliances.fountain = "cheap";
+      decide(save.current, cat, createRng(seed), { present: false });
+      expect(cat.act.kind).toBe("drink");
+    }
+    expect(sink).toBeGreaterThan(10);
+  });
+
+  it("натискання на кота на умивальнику відкриває кран, навіть коли ліків не треба; це видно", () => {
+    const save = game();
+    standAt(save, "sink");
+    const cat = withCat(save, { drinking: 1 }, { x: 11.5, y: 1.5 });
+    cat.needs.thirst = 80;
+    cat.mood = 50;
+    cat.act = { kind: "beg", target: "sink", goal: null, minutes: CAT_ACT_MINUTES.beg, elapsed: 0 };
+    tickCats(save.current, 0.1, { present: true });
+    expect(seen(cat, "drinking")).toBe(1);
+    tickCats(save.current, 0.1, { present: true });
+    expect(seen(cat, "drinking")).toBe(1);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events.some((e) => e.type === "tap-opened" && e.cat === cat.id)).toBe(true);
+    expect(events.some((e) => e.type === "refused")).toBe(false);
+    expect(save.current.character.held).toBeNull();
+    tickCats(save.current, 2, { present: true });
+    expect(cat.needs.thirst).toBeLessThan(5);
+    expect(cat.mood).toBeGreaterThan(50);
+  });
+
+  it("кран так і не відкрили — «Фонтанолюб» іде до миски без радості", () => {
+    const save = game();
+    const cat = withCat(save, { drinking: 1 }, { x: 11.5, y: 1.5 });
+    cat.needs.thirst = 70;
+    cat.mood = 50;
+    cat.act = { kind: "beg", target: "sink", goal: null, minutes: 0.1, elapsed: 0 };
+    tickCats(save.current, 0.2, { present: false });
+    expect(cat.mood).toBeLessThan(50);
+    expect(cat.act).toMatchObject({ kind: "drink", target: `item:${waterOf(save).id}` });
+  });
+
+  it("+2 інколи перекидає миску з водою — калюжа", () => {
+    let spilled = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { drinking: 2 }, { x: 17.5, y: 6.5 });
+      const water = waterOf(save);
+      cat.needs.thirst = 70;
+      cat.act = { kind: "drink", target: `item:${water.id}`, goal: null, minutes: 0.1, elapsed: 0 };
+      tickCats(save.current, 0.2, { present: false });
+      if (save.current.home.messes.some((m) => m.kind === "puddle")) {
+        spilled += 1;
+        expect(water.water).toBe(0);
+      }
+    }
+    expect(spilled).toBeGreaterThan(3);
+    expect(spilled).toBeLessThan(40 * DRINKING.spill * 2);
+  });
+
+  it("«Зразковий поїльник» іде пити, щойно воду долили", () => {
+    const save = game();
+    const water = waterOf(save);
+    water.water = 2;
+    standAt(save, `item:${water.id}`);
+    const cat = withCat(save, { drinking: -1 }, { x: 15.5, y: 7.5 });
+    cat.needs.thirst = 30;
+    const plain = withCat(save, {}, { x: 14.5, y: 7.5 });
+    plain.needs.thirst = 30;
+    interact(save);
+    expect(cat.act).toMatchObject({ kind: "drink", target: `item:${water.id}` });
+    expect(plain.act.kind).toBe("idle");
+    expect(seen(cat, "drinking")).toBe(1);
+  });
+
+  it("сечокам'яна: «Фонтанолюб» без фонтанчика ризикує більше, «Зразковий поїльник» — менше", () => {
+    const save = game();
+    expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBeCloseTo(1.5);
+    expect(stonesFactor(save.current, withCat(save, { drinking: -2 }))).toBeCloseTo(0.5);
+    save.current.home.appliances.fountain = "cheap";
+    expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBe(1);
   });
 });

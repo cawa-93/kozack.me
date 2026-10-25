@@ -225,6 +225,11 @@ function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
       g.fillStyle(LITTER.cheap);
       for (const [dx, dy] of [[-10, 0], [-4, 3], [3, -2], [9, 2], [0, 5], [-7, -3], [6, 6]] as const) g.fillCircle(x + dx, y + dy, 2.2);
       return;
+    case "puddle":
+      // Калюжа від перекинутої миски з водою (§9.12, «Пиття»).
+      g.fillStyle(0x6fb3d6, 0.6).fillEllipse(x, y, 30, 11).fillEllipse(x + 10, y + 3, 12, 6);
+      g.lineStyle(1.5, 0x4f8fb3, 0.7).strokeEllipse(x, y, 30, 11);
+      return;
     case "mark":
       g.fillStyle(0xd6c94a, 0.55).fillEllipse(x, y, 26, 10);
       g.lineStyle(1.5, 0xa89a2a, 0.7).strokeEllipse(x, y, 26, 10);

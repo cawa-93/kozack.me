@@ -24,6 +24,7 @@ import {
   DEMANDING_SEEN_MINUTES,
   DEVOTION,
   DIRTY_LITTER,
+  DRINKING,
   ENERGY,
   ENVY,
   ESCAPE,
@@ -459,6 +460,12 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
   if (n.thirst >= NEED_THRESHOLD.thirst) {
+    // «Фонтанолюб» без фонтанчика сідає на умивальник і чекає, щоб відкрили кран (§9.12, рішення автора 2026-10-25).
+    const drinking = traitLevel(cat, "drinking");
+    if (drinking > 0 && state.home.appliances.fountain === null && rng.chance(DRINKING.sinkStep * drinking)) {
+      const sink = objectById("sink");
+      return start(cat, "beg", { x: sink.x, y: sink.y }, CAT_ACT_MINUTES.beg, "sink");
+    }
     const waters = itemsOf(state, "water");
     const water = nearest(cat, waters.filter((w) => w.water > 0)) ?? nearest(cat, waters);
     if (water) return start(cat, water.water > 0 ? "drink" : "beg", itemTile(water), water.water > 0 ? CAT_ACT_MINUTES.drink : CAT_ACT_MINUTES.beg, `item:${water.id}`);
@@ -916,7 +923,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
-      if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones, rng);
+      if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
       // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9).
       if (nibble) observe(state, cat, "appetite", -1);
       // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
@@ -954,6 +961,14 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "beg": {
+      // Кран так і не відкрили: «Фонтанолюб» іде пити з миски, хоч і без радості (§9.12).
+      if (act.target === "sink") {
+        if (cat.needs.thirst < NEED_THRESHOLD.thirst) return;
+        changeMood(state, cat, DRINKING.bowlMood, "кран не відкрили");
+        const water = nearest(cat, itemsOf(state, "water").filter((w) => w.water > 0));
+        if (water) start(cat, "drink", itemTile(water), CAT_ACT_MINUTES.drink, `item:${water.id}`);
+        return;
+      }
       // Голодний «Чесний» посидів біля їжі на столі й не взяв її — прояв «Злодійства −» (§9.9), не частіше ніж раз на
       // годину: голодний, він сідає туди знову й знову.
       if (act.target === null || !(SURFACE_IDS.includes(act.target) || act.target === "stove")) return;
@@ -968,12 +983,27 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "drink": {
+      // З крана — улюблене «Фонтанолюба» (§9.12).
+      if (act.target === "sink") {
+        cat.needs.thirst = 0;
+        changeMood(state, cat, DRINKING.tapMood, "п'є з крана");
+        return;
+      }
       const water = itemById<WaterItem>(state, act.target);
       if (!water || water.water <= 0) return;
       water.water -= 1;
       cat.needs.thirst = 0;
       itemMood(state, cat, water);
       wearOut(state, water, rng);
+      const drinking = traitLevel(cat, "drinking");
+      if (drinking > 0 && state.home.appliances.fountain !== null) changeMood(state, cat, DRINKING.fountainMood, "фонтанчик");
+      // +2 перекидає миску з водою — калюжа (§9.12): так видно, що з миски він пити не любить.
+      if (drinking >= 2 && state.home.appliances.fountain === null && water.water > 0 && rng.chance(DRINKING.spill)) {
+        water.water = 0;
+        const slot = slotById(water.slot);
+        addMess(state, "puddle", visibleFloorNear(state, { x: slot.x + 0.5, y: slot.y + 1 }), cat.id);
+        observe(state, cat, "drinking");
+      }
       return;
     }
     case "attention": {
@@ -1472,6 +1502,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
   }
   revengeSeen(state, cat);
+  sinkSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
     if (cat.act.kind === "follow") {
@@ -1764,6 +1795,51 @@ function revengeSeen(state: GameState, cat: Cat): void {
   if (cat.act.kind !== "revenge" || cat.act.seen === true || !witnesses(state, cat)) return;
   cat.act.seen = true;
   observe(state, cat, "vengeful");
+}
+
+/** «Фонтанолюб» сидить на умивальнику й чекає, щоб відкрили кран, — на очах персонажа (§9.9): прояв «Пиття +», раз за раз. */
+function sinkSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "beg" || act.target !== "sink" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "drinking");
+}
+
+/** Кіт, що сидить на умивальнику й чекає крана (§9.12, «Пиття»). */
+export function catOnSink(state: GameState): Cat | null {
+  return state.cats.find((c) => home(state, c) && c.act.kind === "beg" && c.act.target === "sink" && c.act.goal === null) ?? null;
+}
+
+/** Персонаж відкрив кран котові на умивальнику (§9.12): той п'є хвилину й задоволений. */
+export function openTap(state: GameState, cat: Cat): void {
+  start(cat, "drink", null, CAT_ACT_MINUTES.drink, "sink");
+  emit(state, { type: "tap-opened", cat: cat.id });
+}
+
+/**
+ * Воду щойно долили (§9.12, рішення автора 2026-10-25): «Зразковий поїльник», що не спить і нічим важливим не зайнятий,
+ * одразу йде пити, якщо хоч трохи спраглий, — прояв «Пиття −» (раз на годину).
+ */
+export function freshWater(state: GameState, water: WaterItem): void {
+  for (const cat of state.cats) {
+    if (traitLevel(cat, "drinking") >= 0 || !home(state, cat) || asleep(cat) || !FRESH_FROM.has(cat.act.kind) || isAdapting(state, cat)) continue;
+    if (cat.needs.thirst < DRINKING.freshThirst) continue;
+    start(cat, "drink", itemTile(water), CAT_ACT_MINUTES.drink, `item:${water.id}`);
+    observe(state, cat, "drinking", -1, false, MINUTES_PER_HOUR);
+  }
+}
+
+/** Звідки «Зразковий поїльник» іде до свіжої води: з дій, які не шкода кинути. */
+const FRESH_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow"]);
+
+/**
+ * Сечокам'яна від звичайного корму стерилізованому (§9.8, §9.12 «Пиття»): «Фонтанолюб» без фонтанчика п'є мало — ризик
+ * вищий, «Зразковий поїльник» п'є багато — нижчий.
+ */
+export function stonesFactor(state: GameState, cat: Cat): number {
+  const level = traitLevel(cat, "drinking");
+  if (level > 0 && state.home.appliances.fountain !== null) return 1;
+  return Math.max(0, 1 + DRINKING.stonesStep * level);
 }
 
 /**

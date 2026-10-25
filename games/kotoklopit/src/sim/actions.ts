@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight, turnAway } from "./catai";
+import { backAway, beggingFood, carryFeeling, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, turnAway } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -111,6 +111,11 @@ export function tap(state: GameState): TapResult {
       return null;
     case "cat":
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // Кіт сидить на умивальнику й просить води — натискання відкриває йому кран, а не бере на руки (§9.12, «Пиття»).
+      if (catOnSink(state) === target.cat) {
+        openTap(state, target.cat);
+        return null;
+      }
       if (avoidsDirtyClothes(state, target.cat)) {
         backAway(state, target.cat, state.character.body);
         observe(state, target.cat, "litterPicky");
@@ -240,12 +245,18 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) return refuse(state, target.id, "hands-full");
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
-    case "sink":
-      // Ліки для себе — біля умивальника (§6.5).
+    case "sink": {
+      // Ліки для себе — біля умивальника (§6.5). Кіт на умивальнику чекає крана — спершу відкрити воду йому (§9.12).
       if (held !== null) return refuse(state, target.id, "hands-full");
+      const drinker = catOnSink(state);
+      if (drinker) {
+        openTap(state, drinker);
+        return null;
+      }
       if (!needsHumanMeds(state)) return refuse(state, target.id, treatable(state) ? "dose-taken" : "healthy");
       if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, { reason: "empty", product: "humanMeds" });
       return null;
+    }
     case "sofa":
       return null;
     case "washer": {
@@ -279,6 +290,7 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       if (item.water >= WATER_CAPACITY) return refuse(state, id, { reason: "full", what: "water" });
       item.water = WATER_CAPACITY;
       emit(state, { type: "watered", item: item.id });
+      freshWater(state, item);
       return null;
     case "litter":
       // Лоток чистять утриманням дії; чистий — нічого чистити.

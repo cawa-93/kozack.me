@@ -192,6 +192,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Насипано корм: у мисці ${event.food}`;
     case "watered":
       return "Долито воду";
+    case "tap-opened":
+      return `Відкрито кран: ${catName(state, event.cat)} п'є`;
     case "picked-up":
       return `На руках: ${catName(state, event.cat)}${event.offended ? " (проти волі)" : ""}`;
     case "cat-broke-free":

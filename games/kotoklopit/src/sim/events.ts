@@ -141,6 +141,8 @@ export type GameEvent =
   | { type: "cleaned"; what: "litter" | Mess["kind"]; sanity: number }
   | { type: "fed"; item: number; food: number }
   | { type: "watered"; item: number }
+  /** Персонаж відкрив кран котові, що чекав на умивальнику (§9.12, «Пиття»): тече вода. */
+  | { type: "tap-opened"; cat: number }
   | { type: "picked-up"; cat: number; offended: boolean }
   | { type: "cat-dodged"; cat: number; issue: "clothes" }
   | { type: "cat-broke-free"; cat: number }

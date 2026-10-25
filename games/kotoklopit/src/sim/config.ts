@@ -428,6 +428,15 @@ export const CAT_ACT_MINUTES = { eat: 3, drink: 1, toilet: 2, beg: 15, attention
 export const PORTION_HUNGER = 100;
 /** Кіт чує, як насипають корм (§9.12): з якого голоду біжить до миски; «Апетит» зсуває поріг на 10 за одиницю. */
 export const FOOD_SOUND = { hunger: 50, appetiteStep: 10 } as const;
+/**
+ * «Пиття» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §9.12 «Їжа й гігієна»). «+», спраглий і без фонтанчика вдома, з
+ * шансом `sinkStep` × рівень сідає на умивальник і просить відкрити кран (до `CAT_ACT_MINUTES.beg` хвилин); відкрили — п'є
+ * з крана (спрага 0, настрій +`tapMood`), ні — іде до миски, настрій `bowlMood`. З фонтанчика «+» п'є з радістю
+ * (+`fountainMood`); +2 і більше без фонтанчика з шансом `spill` перекидає миску з водою — калюжа. «−» іде пити, щойно воду
+ * долили, якщо спрага від `freshThirst`. Сечокам'яна від звичайного корму стерилізованому — × (1 + `stonesStep` × рівень):
+ * «+» без фонтанчика п'є мало, «−» — багато; «+» з фонтанчиком — ×1.
+ */
+export const DRINKING = { sinkStep: 0.4, tapMood: 2, bowlMood: -1, fountainMood: 1, spill: 0.25, freshThirst: 20, stonesStep: 0.25 } as const;
 /** Миска вміщує 2 порції; миска для води — 8 ковтків (§9.12). */
 export const BOWL_CAPACITY = 2;
 export const WATER_CAPACITY = 8;
@@ -438,7 +447,7 @@ export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1): здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {

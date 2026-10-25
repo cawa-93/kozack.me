@@ -169,6 +169,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       return [{ kind: "think", at: cat(event.cat), icon: "lick" }];
     case "doorbell":
       return [{ kind: "say", at: "door", icon: "bell" }];
+    case "tap-opened":
+      // Кран відкрили котові (§9.12): тече вода — звук речі, вголос над умивальником.
+      return [{ kind: "say", at: "sink", icon: "drop" }];
     case "feeder":
       // Автогодівниця насипала (§8.7) — чути, як корм стукає в миску.
       return event.bowls.map((bowl) => ({ kind: "say", at: `item:${bowl}`, icon: "kibble" }));
