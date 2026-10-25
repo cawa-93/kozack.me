@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
+import { courierNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
 import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
 import { interact, newGame } from "../src/sim/game";
 import { weekdayOf, weekOf } from "../src/sim/time";
-import { hours } from "./helpers";
+import { createCat, idleAct } from "../src/sim/cat";
+import { dispatch } from "../src/sim/economy";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
+import { hours, recordEvents } from "./helpers";
 
 describe("сценарії (§11.5)", () => {
   it("зміни накладаються поверх нової гри: об'єкти зливаються, масиви й числа замінюються", () => {
@@ -99,6 +103,25 @@ describe("команди режиму розробки", () => {
     expect(save.current.day).toBe(3);
     skipToMonday(save);
     expect(save.current.day).toBe(7);
+  });
+
+  it("кур'єр зараз дзвонить, як справжній: «Душа компанії» біжить до дверей (перевірка етапу 2026-10-26)", () => {
+    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    save.current.minute = hours(12);
+    const host = createCat(save.current, createRng(4), { source: "shelter", ageWeeks: 10, at: { x: 5.5, y: 8.5 } });
+    host.traits = [{ group: "guests", level: 2, seen: 0, known: false }];
+    host.arrivedDay = -10;
+    host.act = idleAct(30);
+    host.needs = { hunger: 10, thirst: 10, toilet: 10, fatigue: 10, attention: 10, play: 10 };
+    addCat(save.current, host);
+    save.current.character.money = 1000;
+    dispatch(save.current, { product: "food" }, "cheap", 10);
+    const { events, stop } = recordEvents();
+    courierNow(save.current);
+    stop();
+    expect(save.current.home.porch).toHaveLength(1);
+    expect(events.some((e) => e.type === "doorbell")).toBe(true);
+    expect(host.act.target).toBe("guest");
   });
 });
 

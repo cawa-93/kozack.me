@@ -11,6 +11,7 @@ import {
   MINUTES_PER_HOUR,
   WORK_END_MINUTE,
 } from "../sim/config";
+import { ringBell } from "../sim/door";
 import { tickDeliveries } from "../sim/economy";
 import { goToSleep } from "../sim/game";
 import { seedDay } from "../sim/rng";
@@ -80,11 +81,14 @@ export function skipToMonday(save: Save): void {
   skipDays(save, days);
 }
 
-/** Кур'єр приїжджає зараз: усі пакунки в дорозі — під дверима. */
+/**
+ * Кур'єр приїжджає зараз: усі пакунки в дорозі — під дверима. Дзвонить, як справжній (§9.12 «Двері й гості»): «Душа
+ * компанії» біжить до дверей, сором'язливий ховається (перевірка етапу 2026-10-26: на прев'ю коти дзвінка не чули).
+ */
 export function courierNow(state: GameState): void {
   const now = absoluteMinute(state.day, state.minute);
   for (const delivery of state.home.deliveries) delivery.at = Math.min(delivery.at, now);
-  tickDeliveries(state);
+  if (tickDeliveries(state) > 0) ringBell(state, false);
 }
 
 /** Новий seed: умови й поведінка з наступного дня підуть інакше. */
