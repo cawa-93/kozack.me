@@ -421,7 +421,7 @@ describe("догляд персонажа (§9.12)", () => {
     save.current.character.body.facing = { x: 0, y: -1 };
     const love = cat.love;
     interact(save);
-    expect(save.current.character.held).toEqual({ kind: "cat", cat: cat.id, offended: true });
+    expect(save.current.character.held).toEqual({ kind: "cat", cat: cat.id, offended: true, disturbed: true });
     expect(cat.love).toBeLessThan(love);
     interact(save);
     expect(save.current.character.held).toBeNull();

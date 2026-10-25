@@ -37,6 +37,7 @@ import {
   SHOWER_HYGIENE,
   SHOWER_MINUTES,
   SHOO,
+  STRESS_EFFECTS,
   WATER_CAPACITY,
 } from "./config";
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
@@ -382,15 +383,18 @@ export function pickUpCat(state: GameState, cat: Cat): void {
     if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
     if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");
   }
+  // Розбудили чи прогнали — спокійний, коли опустять, може заснути знову (§9.12).
+  const disturbed = shooed || cat.act.kind === "sleep";
   cat.interacted = true;
   cat.act = idleAct();
-  state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}) };
+  state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}), ...(disturbed ? { disturbed: true } : {}) };
   emit(state, { type: "picked-up", cat: cat.id, offended });
 }
 
 /** Опустити кота з рук поруч із персонажем. */
 export function putDownCat(state: GameState, catId: number): void {
   const character = state.character;
+  const held = character.held;
   character.held = null;
   const cat = state.cats.find((c) => c.id === catId);
   if (!cat) return;
@@ -401,6 +405,12 @@ export function putDownCat(state: GameState, catId: number): void {
   cat.y = free ? spot.y : y;
   cat.act = idleAct(3);
   emit(state, { type: "put-down", cat: cat.id });
+  // Спокійного розбудили чи прогнали, а він одразу лягає й спить далі — прояв «Стресостійкості +» (§9.12).
+  const calm = traitLevel(cat, "stress");
+  if (held?.kind === "cat" && held.disturbed === true && calm > 0 && stateRng(state, "behavior").chance(STRESS_EFFECTS.sleepStep * calm)) {
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 8 * 60, elapsed: 0 };
+    observe(state, cat, "stress", 1, false, STRESS_EFFECTS.everyMinutes);
+  }
 }
 
 /** Тривалість тривалої дії з ціллю, без урахування швидкості. */

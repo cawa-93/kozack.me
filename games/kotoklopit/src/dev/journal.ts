@@ -224,6 +224,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} злякався гучного звуку й ховається`;
     case "cat-woke":
       return `${catName(state, event.cat)} прокинувся від шуму`;
+    case "nervous":
+      return `${catName(state, event.cat)} нервово вилизується й ховатиметься`;
     case "cat-returned":
       return `${catName(state, event.cat)} ${event.caught ? "спіймано на сходах" : "повернувся сам"}`;
   }

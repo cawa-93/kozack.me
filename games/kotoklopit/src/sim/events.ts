@@ -166,6 +166,8 @@ export type GameEvent =
   | { type: "scared"; cat: number }
   /** Кота розбудили шум чи кроки (§9.12). */
   | { type: "cat-woke"; cat: number }
+  /** Нервовий кіт нервово вилизується після неприємного (§9.12). */
+  | { type: "nervous"; cat: number }
   | { type: "cat-returned"; cat: number; caught: boolean };
 
 export type Listener = (event: GameEvent, state: GameState) => void;

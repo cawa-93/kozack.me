@@ -58,7 +58,8 @@ export type IconName =
   | "toy"
   | "taken"
   | "sad"
-  | "loud";
+  | "loud"
+  | "lick";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -366,6 +367,12 @@ Object.assign(ICONS, {
     g.fillStyle(INK).fillRect(5, 15, 6, 10).fillTriangle(10, 15, 19, 7, 19, 33).fillTriangle(10, 25, 10, 15, 19, 33);
     g.lineStyle(3, COLORS.danger);
     for (const radius of [6, 11, 16]) g.beginPath().arc(19, 20, radius, -Math.PI / 4, Math.PI / 4).strokePath();
+  },
+  lick: (g: Phaser.GameObjects.Graphics) => {
+    // Кіт нервово вилизується (§9.12): рожевий язик і краплина.
+    g.fillStyle(0xe58fa2).fillRoundedRect(12, 6, 15, 24, 7);
+    g.lineStyle(2.5, INK).strokeRoundedRect(12, 6, 15, 24, 7).lineBetween(19.5, 11, 19.5, 22);
+    g.fillStyle(0x8fc6e8).fillCircle(30, 31, 3.5).fillTriangle(26.8, 30, 33.2, 30, 30, 24);
   },
   washer: (g: Phaser.GameObjects.Graphics) => {
     // Пральна машина: барабан із бульбашками й стрілкою обертання — пере.

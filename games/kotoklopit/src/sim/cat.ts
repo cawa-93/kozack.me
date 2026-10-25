@@ -17,6 +17,7 @@ import {
   MOOD_HEALTH_RECOVERY,
   RECOVERY_BY_AGE,
   RECOVERY_TRAIT_STEP,
+  STRESS_EFFECTS,
   STRESS_STEP,
   MOOD_SATURATION,
   STRONG_TRAIT_CHANCE,
@@ -176,6 +177,11 @@ function moodDelta(cat: Cat, delta: number): number {
 export function changeMood(state: GameState, cat: Cat, delta: number, reason?: string): void {
   const scaled = moodDelta(cat, delta);
   cat.mood = clamp(cat.mood + scaled);
+  // Нервовий кіт сильно засмутився, не спить і не на руках — щойно звільниться, може нервово вилизатися (§9.12).
+  const held = state.character.held;
+  const carried = held?.kind === "cat" && held.cat === cat.id;
+  const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
+  if (scaled <= -STRESS_EFFECTS.shaken && !sleeping && !carried && traitLevel(cat, "stress") < 0) cat.shaken = absoluteMinute(state.day, state.minute);
   // Сцена показує кожну зміну сердечками (§9.12), навіть якщо настрій уже на межі: сердечка кажуть, що
   // котові сподобалося, тож приємне — повністю, хоч щасливому настрій і росте менше (§9.6).
   const felt = delta > 0 ? delta : scaled;

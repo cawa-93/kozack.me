@@ -1,12 +1,13 @@
 // Спільні механіки рис (§9.12, рішення автора 2026-10-25, `TRAITS_REVIEW.md`): пауза між оглушеннями,
-// пауза шипіння, не більше двох нічних побудок, гучний звук і кроки.
+// пауза шипіння, не більше двох нічних побудок, гучний звук і кроки; «Стресостійкість» з поведінки.
 
 import { describe, expect, it } from "vitest";
 
+import { pickUpCat, putDownCat } from "../src/sim/actions";
 import { stun } from "../src/sim/body";
-import { createCat, idleAct, isAdapting } from "../src/sim/cat";
+import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
 import { jealousy, tickCats } from "../src/sim/catai";
-import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
+import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
 import { tickModifiers } from "../src/sim/modifiers";
@@ -233,5 +234,63 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     expect(days(2)).toBe(1);
     expect(days(0)).toBe(2);
     expect(days(-2)).toBe(3);
+  });
+});
+
+describe("«Стресостійкість» видно з поведінки (§9.12, рішення автора 2026-10-25)", () => {
+  it("нервовий після неприємного вилизується, а тоді ховається — не частіше ніж раз на годину", () => {
+    const save = game();
+    const state = save.current;
+    const nervous = Array.from({ length: 10 }, (_, i) => awake(withCat(save, { stress: -2 }, { x: 3.5 + i, y: 8.5 })));
+    const plain = awake(withCat(save, {}, { x: 14.5, y: 8.5 }));
+    const { events, stop } = recordEvents();
+    for (const cat of [...nervous, plain]) changeMood(state, cat, -STRESS_EFFECTS.shaken);
+    tickCats(state, 0.1, { present: true });
+    const groomers = nervous.filter((c) => c.act.kind === "groom" && c.act.target === "nervous");
+    expect(groomers.length).toBeGreaterThan(0);
+    expect(groomers.length).toBeLessThan(10);
+    expect(plain.act.kind).toBe("idle");
+    expect(events.filter((e) => e.type === "nervous")).toHaveLength(groomers.length);
+    const first = groomers[0] as Cat;
+    expect(first.traits[0]?.seen).toBe(1);
+    tickCats(state, STRESS_EFFECTS.groomMinutes + 0.1, { present: true });
+    expect(first.act.kind).toBe("hide");
+    expect(first.act.minutes).toBeGreaterThan(STRESS_EFFECTS.hideStep * 2 - 1);
+    // За пів години знову засмутився — та година ще не минула: без вилизування.
+    state.minute += 30;
+    awake(first);
+    changeMood(state, first, -STRESS_EFFECTS.shaken);
+    tickCats(state, 0.1, { present: true });
+    stop();
+    expect(first.act.kind).toBe("idle");
+  });
+
+  it("сплячого чи того, кого тримають на руках, неприємне так не зачіпає", () => {
+    const save = game();
+    const sleeping = asleep(withCat(save, { stress: -2 }, { x: 7.5, y: 8.5 }));
+    changeMood(save.current, sleeping, -STRESS_EFFECTS.shaken);
+    expect(sleeping.shaken).toBeUndefined();
+    const held = awake(withCat(save, { stress: -2 }, { x: 8.5, y: 8.5 }));
+    save.current.character.held = { kind: "cat", cat: held.id };
+    changeMood(save.current, held, -STRESS_EFFECTS.shaken);
+    expect(held.shaken).toBeUndefined();
+  });
+
+  it("спокійного розбудили на руки — опущений, одразу спить далі", () => {
+    const sleepers = (level: TraitLevel | 0): Cat[] => {
+      const save = game();
+      const cats = Array.from({ length: 10 }, (_, i) => asleep(withCat(save, level === 0 ? {} : { stress: level }, { x: 3.5 + i, y: 8.5 })));
+      for (const cat of cats) {
+        pickUpCat(save.current, cat);
+        putDownCat(save.current, cat.id);
+      }
+      return cats.filter((c) => c.act.kind === "sleep");
+    };
+    const calm = sleepers(2);
+    expect(calm.length).toBeGreaterThan(0);
+    expect(calm.length).toBeLessThan(10);
+    expect(calm[0]?.traits[0]?.seen).toBe(1);
+    expect(sleepers(0)).toHaveLength(0);
+    expect(sleepers(-2)).toHaveLength(0);
   });
 });

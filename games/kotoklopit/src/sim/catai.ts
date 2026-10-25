@@ -59,6 +59,7 @@ import {
   SOFA_REPAIR,
   STEAL_HUNGER,
   STERILIZATION,
+  STRESS_EFFECTS,
   SURPRISE_CHANCE,
   TIRED_FATIGUE,
   TOY,
@@ -779,6 +780,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "groom": {
+      // Нервово вилизався — тепер ховається (§9.12).
+      if (act.target === "nervous") {
+        const spot = hideSpot(state, rng);
+        return start(cat, "hide", spot.at, STRESS_EFFECTS.hideStep * Math.max(1, -traitLevel(cat, "stress")), spot.target);
+      }
       const friend = catById(state, act.target);
       if (!friend || distance(cat, friend) > 1.5) return;
       changeMood(state, cat, RELATIONS.groom.mood);
@@ -1000,6 +1006,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (isCarried(state, cat)) return carried(state, cat, minutes, rng);
   if (isNewborn(cat)) return nurse(state, cat);
   if (cat.act.target === "robot") ride(state, cat);
+  nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.
   const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy" || cat.act.kind === "follow";
@@ -1053,6 +1060,35 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.kind === kind || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
+}
+
+/** Звідки нервовий кіт кидає справи, щоб вилизатися: з тих, які не шкода кинути (§9.12). */
+const NERVOUS_FROM = new Set(["idle", "wander", "attention", "beg", "toy", "follow"]);
+
+/**
+ * Нервовий кіт сильно засмутився (§9.12 «Настрій»): щойно звільниться — нічим важливим не зайнятий і його не гладять,
+ * не пізніше ніж за 30 хвилин, — з шансом 25% × |рівень| 2 хвилини нервово вилизується, а тоді ховається. Не частіше
+ * ніж раз на годину. Прояв «Стресостійкості −».
+ */
+function nervous(state: GameState, cat: Cat, rng: Rng): void {
+  const shaken = cat.shaken;
+  if (shaken === undefined) return;
+  const e = STRESS_EFFECTS;
+  const now = absoluteMinute(state.day, state.minute);
+  const activity = state.character.activity;
+  const touched = (activity?.kind === "pet" || activity?.kind === "play") && activity.cat === cat.id;
+  if (!NERVOUS_FROM.has(cat.act.kind) || touched) {
+    if (now - shaken > e.waitMinutes) delete cat.shaken;
+    return;
+  }
+  delete cat.shaken;
+  const level = traitLevel(cat, "stress");
+  if (level >= 0 || (cat.nervousAt !== undefined && now - cat.nervousAt < e.everyMinutes)) return;
+  if (!rng.chance(e.nervousStep * -level)) return;
+  cat.nervousAt = now;
+  start(cat, "groom", null, e.groomMinutes, "nervous");
+  emit(state, { type: "nervous", cat: cat.id });
+  observe(state, cat, "stress", -1);
 }
 
 /** «Безстрашний» катається на роботі-пилососі (§8.7, §9.12), поки той їде; робот на базі — злазить. */

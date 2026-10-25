@@ -924,6 +924,13 @@ export const NOISE = {
  * «Тривалістю сну» −1 і менше — той прокидається з шансом `step` × |рівень|, раз за прохід.
  */
 export const STEPS_WAKE = { distance: 1.5, step: 0.15 } as const;
+/**
+ * «Стресостійкість» видно з поведінки (§9.12 «Настрій», рішення автора 2026-10-25). Нервовий: втратив за раз `shaken`
+ * настрою чи більше — щойно звільниться (до `waitMinutes`), з шансом `nervousStep` × |рівень| `groomMinutes` хвилин
+ * вилизується, а тоді ховається на `hideStep` × |рівень| хвилин, не частіше ніж раз на `everyMinutes`. Спокійний:
+ * розбудили чи прогнали на руки — коли опускають, з шансом `sleepStep` × рівень одразу спить далі.
+ */
+export const STRESS_EFFECTS = { shaken: 3, waitMinutes: 30, nervousStep: 0.25, groomMinutes: 2, hideStep: 10, everyMinutes: 60, sleepStep: 0.25 } as const;
 /** Адаптація кота ззовні в новому домі (§9.6): 2 − 0,5 × «Сміливість» днів, від 1 до 3 (рішення автора 2026-10-25). */
 export const ADAPTATION_BRAVERY = { step: 0.5, min: 1, max: 3 } as const;
 export const SLIP_CHANCE = 0.5;
