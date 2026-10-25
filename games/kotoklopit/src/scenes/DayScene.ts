@@ -25,7 +25,7 @@ import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
-import { addBell, giveTreat, putCollar } from "../sim/care";
+import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
@@ -310,6 +310,7 @@ export class DayScene extends Phaser.Scene {
             if (choice === "bell") addBell(this.state);
             else if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
             else if ("treat" in choice) giveTreat(this.state, choice.treat, rng);
+            else if ("catnip" in choice) giveCatnip(this.state, choice.catnip, rng);
             else putCollar(this.state, choice.collar);
             this.overlay.close();
           },

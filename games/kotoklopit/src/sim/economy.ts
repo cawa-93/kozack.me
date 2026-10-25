@@ -69,8 +69,8 @@ export function takeSupply(state: GameState, product: Product): Quality | null {
   return quality;
 }
 
-/** Нашийник і дзвіночок — штучні: що вони закінчилися, не підказують. */
-const NO_HINT: readonly Product[] = ["collar", "bell"];
+/** Нашийник і дзвіночок — штучні, котяча м'ята — не щоденна (§9.12): що вони закінчилися, не підказують. */
+const NO_HINT: readonly Product[] = ["collar", "bell", "catnip"];
 
 /**
  * Запас уперше закінчився, а в дорозі його немає (§6.4, правка автора 2026-10-23): кнопка телефону

@@ -19,6 +19,7 @@ import {
   CUNNING,
   CARRIER_HOME,
   CARRY,
+  CATNIP,
   CAT_ACT_MINUTES,
   CHEWING,
   CLIMBING,
@@ -113,7 +114,7 @@ import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, Product, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
@@ -1686,6 +1687,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "idle": {
+      // Понюхав котячу м'яту й не зреагував — іде геть (§9.12, «Котяча м'ята»).
+      if (act.target === "catnip") return backAway(state, cat, state.character.body);
       // Обнюхав нову річ (§9.12, «Допитливість»): допитливий посидів поруч — прояв «+»; обачний відходить подалі — «−».
       const [kind, id] = act.target?.split(":") ?? [];
       if (kind !== "sniff" && kind !== "shun") return;
@@ -1717,6 +1720,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      // Нагасався від м'яти — задирає кота поруч (§9.12, «Котяча м'ята»).
+      if (act.target === "catnip") catnipFight(state, cat);
+      return;
+    case "catnip":
+      // Накатався по м'яті: награвся, а «+» засинає просто тут (§9.12, «Котяча м'ята»).
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      if (traitLevel(cat, "catnip") > 0) start(cat, "sleep", null, 8 * MINUTES_PER_HOUR);
       return;
     case "carry":
       return carryDone(state, cat);
@@ -1975,6 +1985,12 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       cat.facing = -1;
       if (act.elapsed <= minutes) emit(state, { type: "chewing", cat: cat.id, what: act.target === "boxes" ? "boxes" : "wire" });
       return;
+    case "catnip": {
+      // Катається по м'яті довше, ніж кіт без риси, — прояв «Котячої м'яти +» (§9.9).
+      const plain = CATNIP.rollMinutes[0] ?? 0;
+      if (act.elapsed >= plain && act.elapsed - minutes < plain && traitLevel(cat, "catnip") > 0) observe(state, cat, "catnip");
+      return;
+    }
     case "raid":
       // Лапає дверцята шафки чи смітник — обличчям до них, праворуч (§9.12, «Кмітливість у бешкеті»).
       cat.facing = 1;
@@ -2307,8 +2323,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     if (cat.act.kind === "zoomies") {
       left = zoom(state, cat, left, rng, context);
       if (cat.act.minutes <= 1e-9) {
+        const done = cat.act;
         finish(state, cat, rng);
-        decide(state, cat, rng, context);
+        // Бійка, яку почала `finish` (нагасався від м'яти), лишається.
+        if (cat.act === done || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
       }
       continue;
     }
@@ -2838,3 +2856,49 @@ export function jealousy(state: GameState, cat: Cat): void {
   }
 }
 
+// --- Гра й стосунки котів (§9.12) -----------------------------------------------------------
+
+/**
+ * Котові на руках дали котячу м'яту (§9.12, «Котяча м'ята», рішення автора 2026-10-25). Кіт зістрибує на підлогу. Кошеня й кіт,
+ * що реагував на м'яту менше ніж 2 години тому, лише понюхають її й підуть; «Байдужий» (−1) — так само (прояв «−»), а мататабі
+ * діє на нього, як на кота без риси. «Шаленіє від м'яти» (−2) кусає руку, вистрибує й гасає, а тоді задирає кота поруч (прояв
+ * «−»). Решта катається по ній — «+» довше, а потім засинає (прояв «+» — коли катається довше, ніж кіт без риси).
+ */
+export function catnipReaction(state: GameState, cat: Cat, quality: Quality, rng: Rng): "roll" | "sniff" | "frenzy" {
+  const now = absoluteMinute(state.day, state.minute);
+  const level = clamp(traitLevel(cat, "catnip"), -2, 2);
+  const numb = isKitten(cat) || (cat.catnipAt !== undefined && now - cat.catnipAt < CATNIP.refractoryMinutes);
+  state.character.held = null;
+  const at = visibleFloorNear(state, state.character.body);
+  cat.x = at.x;
+  cat.y = at.y;
+  const reaction = numb || (level === -1 && quality === "cheap") ? "sniff" : level <= -2 ? "frenzy" : "roll";
+  emit(state, { type: "catnip", cat: cat.id, reaction });
+  if (reaction === "sniff") {
+    start(cat, "idle", null, CATNIP.sniffMinutes, "catnip");
+    if (!numb) observe(state, cat, "catnip", -1);
+    return reaction;
+  }
+  cat.catnipAt = now;
+  if (reaction === "frenzy") {
+    changeStat(state, "health", PET.biteHealth);
+    emit(state, { type: "bite", cat: cat.id });
+    changeMood(state, cat, CATNIP.frenzyMood, "шаленіє від м'яти");
+    start(cat, "zoomies", randomFloor(rng), CATNIP.frenzyMinutes, "catnip");
+    observe(state, cat, "catnip", -1);
+    return reaction;
+  }
+  const effective = Math.max(0, level);
+  changeMood(state, cat, CATNIP.mood[effective] ?? 0, "котяча м'ята");
+  if (effective >= CATNIP.loveLevel) changeLove(state, cat, CATNIP.love, "котяча м'ята");
+  start(cat, "catnip", null, CATNIP.rollMinutes[effective] ?? 0);
+  return reaction;
+}
+
+/** Нагасався від м'яти (§9.12, «Котяча м'ята»): шипить на найближчого кота, що не спить, і задирається з ним. */
+function catnipFight(state: GameState, cat: Cat): void {
+  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= CATNIP.fightReach);
+  others.sort((a, b) => distance(a, cat) - distance(b, cat));
+  const other = others[0];
+  if (other && hiss(state, cat, other)) startFight(state, cat, other);
+}

@@ -110,7 +110,7 @@ export const OBJECTS: readonly HomeObject[] = [
   // Сховища запасів (§6.4): мішок наповнювача, бак корму для стерилізованих і котяча аптечка.
   object("litter-bag", "litterBag", 5, 6, 1, 1, ["litter"]),
   object("sterile-bin", "sterileBin", 18, 6, 1, 1, ["sterileFood"]),
-  object("cat-kit", "catKit", 13, 6, 1, 1, ["pills", "drops", "treats", "collar", "bell"]),
+  object("cat-kit", "catKit", 13, 6, 1, 1, ["pills", "drops", "treats", "collar", "bell", "catnip"]),
   // Ящики біля входу (§6.4): стоять, поки в них є куплені запаси; невисокі — через них переступають.
   // Не в ряду біля дверей: його закриває передня стіна (камера «три чверті»).
   { ...object("boxes", "boxes", 12, 9), walkable: true },

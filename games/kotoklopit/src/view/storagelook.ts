@@ -244,11 +244,17 @@ function kit(g: G, t: Rect, cx: number, y1: number, height: number, stages: Stag
     poly(g, [[cx - w / 2, top], [cx + w / 2, top], [cx + w / 2 - 4, top - 12], [cx - w / 2 + 4, top - 12]], 0x5a9a56);
     return;
   }
-  // Рибка й нашийник — лише коли ласощі чи нашийники справді є (порядок запасів — як у `STORAGES`).
+  // Рибка, нашийник і м'ята — лише коли вони справді є (порядок запасів — як у `STORAGES`).
   const [, , treats, collar] = stages;
   if (treats !== null && treats !== undefined && treats > 0) {
     // Рибка-ласощі з-під кришки.
     poly(g, [[cx - 12, top + 1], [cx - 4, top - 5], [cx - 4, top + 3]], 0xe0893a, false);
+  }
+  // Гілочка котячої м'яти з-під кришки — коли м'ята є (§9.12).
+  const catnip = stages[5];
+  if (catnip !== null && catnip !== undefined && catnip > 0) {
+    g.lineStyle(2, 0x4f7f3a).lineBetween(cx + 8, top + 2, cx + 11, top - 8);
+    g.fillStyle(0x7fbf5a).fillEllipse(cx + 8, top - 6, 6, 4).fillEllipse(cx + 14, top - 8, 6, 4).fillEllipse(cx + 11, top - 11, 5, 5);
   }
   if (collar !== null && collar !== undefined && collar > 0) {
     // Нашийник звисає збоку.

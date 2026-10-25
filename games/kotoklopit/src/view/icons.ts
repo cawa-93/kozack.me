@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { drawPadlock, drawSock, drawTrinket } from "./catcorner";
+import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./catcorner";
 import { COLORS } from "./geometry";
 
 export type IconName =
@@ -78,7 +78,8 @@ export type IconName =
   | "wire"
   | "chew-wire"
   | "chew-bag"
-  | "bored";
+  | "bored"
+  | "catnip";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -567,6 +568,7 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9708a).fillEllipse(16, 29, 8, 9);
     g.lineStyle(1.5, INK).strokeEllipse(16, 29, 8, 9);
   },
+  catnip: (g: Phaser.GameObjects.Graphics) => drawCatnip(g, 20, 21, 1),
 } satisfies Partial<Record<IconName, Draw>>);
 
 /** Позначки поверх іконки (§11.4): перекреслення на всю іконку, знак питання й галочка — кружечком у куті. */

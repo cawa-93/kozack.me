@@ -342,16 +342,16 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
 }
 
 
-export type CareChoice = { medicine: Medicine } | { treat: Quality } | { collar: Quality } | "bell";
+export type CareChoice = { medicine: Medicine } | { treat: Quality } | { catnip: Quality } | { collar: Quality } | "bell";
 
 /** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
 export function hasCareSupplies(state: GameState, cat: Cat): boolean {
   // Дзвіночок — лише на нашийник без дзвіночка: інакше картка відкрилася б порожньою.
   const bell = cat.collar !== null && !cat.collar.bell && supplyCount(state, "bell") > 0;
-  return bell || (["pills", "drops", "treats", "collar"] as const).some((p) => supplyCount(state, p) > 0);
+  return bell || (["pills", "drops", "treats", "catnip", "collar"] as const).some((p) => supplyCount(state, p) > 0);
 }
 
-/** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10): ліки, ласощі, нашийник. */
+/** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10, §9.12): ліки, ласощі, котяча м'ята, нашийник. */
 export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice) => void, onCancel: () => void): Card {
   const supply = state.home.supplies;
   const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
@@ -360,6 +360,10 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
   }
   for (const q of ["premium", "cheap"] as const) {
     if (supply.treats[q] > 0) actions.push({ label: `${VARIANT_TITLES["treats"]?.[q] ?? ""} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
+  }
+  // Котяча м'ята (§9.12): кіт зістрибне з рук — що він із нею робитиме, видно з нього самого.
+  for (const q of ["premium", "cheap"] as const) {
+    if (supply.catnip[q] > 0) actions.push({ label: `${VARIANT_TITLES["catnip"]?.[q] ?? ""} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
   }
   for (const q of ["premium", "cheap"] as const) {
     if (supply.collar[q] > 0) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });

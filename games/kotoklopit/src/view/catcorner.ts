@@ -82,6 +82,20 @@ export function drawSock(g: Phaser.GameObjects.Graphics, x: number, y: number, s
   g.lineStyle(Math.max(1, 0.8 * s), COLORS.ink).strokePoints(points, true);
 }
 
+/** Гілочка котячої м'яти (§9.12, «Котяча м'ята»): стеблинка й зубчасті листочки. */
+export function drawCatnip(g: Phaser.GameObjects.Graphics, x: number, y: number, scale = 1): void {
+  const s = scale;
+  g.lineStyle(Math.max(1.5, 2 * s), 0x4f7f3a).lineBetween(x, y + 14 * s, x, y - 12 * s);
+  for (const [dx, dy, flip] of [[0, -9, 1], [0, -2, -1], [0, 5, 1], [0, 10, -1]] as const) {
+    const lx = x + dx * s + flip * 7 * s;
+    const ly = y + dy * s;
+    g.fillStyle(0x7fbf5a).fillEllipse(lx, ly, 13 * s, 7 * s);
+    g.lineStyle(Math.max(1, 1.2 * s), COLORS.ink).strokeEllipse(lx, ly, 13 * s, 7 * s);
+  }
+  g.fillStyle(0x9ad07a).fillEllipse(x, y - 15 * s, 7 * s, 8 * s);
+  g.lineStyle(Math.max(1, 1.2 * s), COLORS.ink).strokeEllipse(x, y - 15 * s, 7 * s, 8 * s);
+}
+
 /**
  * Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): тримач, а на ньому рулон; розмотаний —
  * порожня втулка й короткий хвостик паперу. `x`, `y` — точка стіни над підлогою.

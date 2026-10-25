@@ -151,6 +151,8 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   bell: { units: { cheap: 1, premium: 1 }, price: { cheap: 5, premium: 5 } },
   shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
   detergent: { units: { cheap: 4, premium: 4 }, price: { cheap: 10, premium: 25 } },
+  // Котяча м'ята й мататабі (§9.12, «Котяча м'ята», 2026-10-26): по 5 разів.
+  catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 30 } },
 };
 /** На старті вдома лише їжа й трохи засобів гігієни, без ліків (§6.4, правило автора 2026-10-20). */
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
@@ -167,6 +169,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   bell: { cheap: 0, premium: 0 },
   shampoo: { cheap: 0, premium: 0 },
   detergent: { cheap: 0, premium: 0 },
+  catnip: { cheap: 0, premium: 0 },
 };
 /** Наповнення сховища (§6.4): межі часток для станів «мало», «половина», «багато»; порожньо — 0, ущерть — 1. */
 export const FILL_STAGES = [0.45, 0.75, 1] as const;
@@ -185,6 +188,7 @@ export const STORAGE_LIMITS: Record<Product, number> = {
   bell: 10,
   shampoo: 10,
   detergent: 10,
+  catnip: 10,
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
@@ -683,6 +687,25 @@ export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerM
  * зважає — відмова. «+» кличе гратися: коли хоче гратися, персонаж удома й не працює, а іграшка лежить на підлозі, — з вагою
  * `inviteStep` × рівень несе її до ніг персонажа й до `inviteMinutes` хвилин чекає поруч (пограєтеся — любов, як за подарунок).
  */
+/**
+ * «Котяча м'ята» (§9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): м'яту чи
+ * мататабі дають котові на руках біля аптечки. Кіт без риси й «+» катаються по ній `rollMinutes[рівень]` хвилин — настрій
+ * `mood[рівень]`, від `loveLevel` ще й любов `love`, гра знімається на `PLAY_RELIEF` — а «+» потім засинає там само. «Байдужий»
+ * (−1) понюхає м'яту `sniffMinutes` хвилин і йде, а мататабі діє на нього, як на кота без риси. «Шаленіє від м'яти» (−2)
+ * кусає руку, вистрибує й `frenzyMinutes` гасає (настрій `frenzyMood`), а тоді задирає кота, що не спить, поруч (до
+ * `fightReach` клітинок). Після реакції `refractoryMinutes` хвилин м'ята не діє; кошенята не реагують зовсім.
+ */
+export const CATNIP = {
+  rollMinutes: [5, 10, 15] as readonly number[],
+  mood: [3, 6, 10] as readonly number[],
+  love: 1,
+  loveLevel: 2,
+  sniffMinutes: 0.5,
+  frenzyMinutes: 2,
+  frenzyMood: -2,
+  fightReach: 3,
+  refractoryMinutes: 120,
+} as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

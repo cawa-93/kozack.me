@@ -17,13 +17,15 @@ function goodsName(goods: Goods): string {
 
 /**
  * Магазин відкривається поступово (§11.3а): корм для стерилізованих — коли є стерилізований кіт
- * чи такий корм уже бував удома, дзвіночок — коли є нашийник (на коті чи в запасі).
+ * чи такий корм уже бував удома, дзвіночок — коли є нашийник (на коті чи в запасі), котяча м'ята — коли вдома є кіт.
  */
 function offered(state: GameState, goods: Goods): boolean {
   if (!("product" in goods)) return true;
   const acquired = state.home.acquired.includes(goods.product);
   if (goods.product === "sterileFood") return acquired || state.cats.some((c) => c.sterilized);
   if (goods.product === "bell") return acquired || supplyCount(state, "collar") > 0 || state.cats.some((c) => c.collar !== null);
+  // Котяча м'ята — коли вдома вже є кіт (§9.12).
+  if (goods.product === "catnip") return acquired || state.cats.length > 0;
   return true;
 }
 

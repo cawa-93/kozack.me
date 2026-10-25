@@ -7,7 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
+import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, PRODUCTS, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -19,7 +19,7 @@ import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
-import type { Chronotype, Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
+import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { powerOut, tickModifiers } from "./modifiers";
 
@@ -267,8 +267,14 @@ export function deserialize(json: string): Save {
     upgradeFeeder(state);
     upgradeTraits(state);
     upgradeWardrobe(state);
+    upgradeSupplies(state);
   }
   return save;
+}
+
+/** Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. */
+export function upgradeSupplies(state: GameState): void {
+  for (const product of Object.keys(PRODUCTS) as Product[]) state.home.supplies[product] ??= { cheap: 0, premium: 0 };
 }
 
 /**

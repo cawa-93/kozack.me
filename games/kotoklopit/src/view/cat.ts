@@ -32,7 +32,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier" | "crouch";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "roll" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier" | "crouch";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -80,8 +80,12 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "hide") return "hide";
   // У засідці (§9.12, «Засідки»): припав до підлоги й виляє задом.
   if (act.kind === "ambush") return "crouch";
+  // Катається по котячій м'яті (§9.12): на спині, лапи догори, перевертається з боку на бік.
+  if (act.kind === "catnip") return "roll";
   // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
-  const sniffing = (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
+  // Нюхає котячу м'яту, на яку не зважає (§9.12, «Котяча м'ята»), — так само.
+  const sniffing =
+    (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target === "catnip" || act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
   // Гризе дріт чи пакет (§9.12, «Гризіння») — так само голова донизу.
   if (act.kind === "eat" || act.kind === "drink" || act.kind === "chew" || sniffing) return "eat";
   // Гребе лапою (§9.12): закопує корм біля миски.
@@ -160,7 +164,7 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
+      pose === "walk" || pose === "roll" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
@@ -220,6 +224,20 @@ export class CatView {
         g.fillStyle(WHITE, 0.6).fillEllipse(x, y - 11 * s, 20 * s, 7 * s);
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 32 * s, 14 * s);
         this.headAt(g, x + dir * 17 * s, y - 11 * s, s, dir, body, point);
+        this.back = { x: x - dir * 2 * s, y: y - 14 * s };
+        return;
+      }
+      case "roll": {
+        // Катається по м'яті (§9.12): на спині, лапи дриґають, тіло перевалюється з боку на бік, голова закинута.
+        const rock = Math.sin(time / 260) * 5 * s;
+        const kick = (phase: number): number => Math.sin(time / 120 + phase) * 3 * s;
+        this.tail(g, x - dir * 15 * s, y - 5 * s, s, dir, "rest");
+        g.fillStyle(this.coat.pointed ? point : body);
+        for (const [i, lx] of [-10, -4, 4, 10].entries()) g.fillRoundedRect(x + rock + lx * s - 2, y - 22 * s + kick(i), 4 * s, 9 * s, 2);
+        g.fillStyle(body).fillEllipse(x + rock * 0.6, y - 9 * s, 32 * s, 14 * s);
+        g.fillStyle(WHITE, 0.6).fillEllipse(x + rock * 0.6, y - 11 * s, 20 * s, 7 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x + rock * 0.6, y - 9 * s, 32 * s, 14 * s);
+        this.headAt(g, x + dir * 17 * s + rock * 0.3, y - 9 * s, s, dir, body, point);
         this.back = { x: x - dir * 2 * s, y: y - 14 * s };
         return;
       }

@@ -20,6 +20,7 @@ export const PRODUCT_ICONS: Record<Product, IconName> = {
   bell: "bell",
   shampoo: "shampoo",
   detergent: "detergent",
+  catnip: "catnip",
 };
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
@@ -210,6 +211,10 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "cat-refused-food":
       // Перебірливий не хоче простого корму (§9.12): «не цей корм» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "kibble", mark: "no" }];
+    case "catnip":
+      // Котяча м'ята (§9.12): блаженство й «не діє» — думка кота; той, що шаленіє, верещить уголос.
+      if (event.reaction === "frenzy") return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
+      return [{ kind: "think", at: cat(event.cat), icon: "catnip", ...(event.reaction === "sniff" ? { mark: "no" as const } : {}) }];
     case "nervous":
       // Нервовий кіт вилизується після неприємного (§9.12): його тривога.
       return [{ kind: "think", at: cat(event.cat), icon: "lick" }];

@@ -23,7 +23,7 @@ export const STORAGES: readonly Storage[] = [
   { object: "shower", products: ["hygiene", "shampoo"] },
   { object: "washer", products: ["detergent"] },
   { object: "sink", products: ["humanMeds"] },
-  { object: "cat-kit", products: ["pills", "drops", "treats", "collar", "bell"] },
+  { object: "cat-kit", products: ["pills", "drops", "treats", "collar", "bell", "catnip"] },
 ];
 
 export interface StorageLine {

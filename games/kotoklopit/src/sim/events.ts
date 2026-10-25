@@ -187,6 +187,11 @@ export type GameEvent =
   /** Кіт подряпав персонажа, пручаючись біля переноски (§9.12, «Переноска»). */
   | { type: "clawed"; cat: number }
   | { type: "played"; cat: number; minutes: number }
+  /**
+   * Котові дали котячу м'яту (§9.12, «Котяча м'ята»): катається по ній, лише понюхав і пішов (байдужий, кошеня чи м'ята ще
+   * не діє) або шаленіє.
+   */
+  | { type: "catnip"; cat: number; reaction: "roll" | "sniff" | "frenzy" }
   | { type: "knocked"; cat: number; object: string; item: Dish }
   /** Кіт скинув дрібничку зі столу (§9.12, «Скидання речей»): стук, а кухоль може й розбитися. */
   | { type: "trinket-fell"; cat: number; trinket: TrinketKind; object: string; broken: boolean }

@@ -3,7 +3,7 @@
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, REVENGE, TREATS } from "./config";
-import { envy, hideSpot, startAct } from "./catai";
+import { catnipReaction, envy, hideSpot, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { fallIll, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
@@ -63,6 +63,16 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   cat.treatAt = now;
   envy(state, cat, "treat");
   emit(state, { type: "treat", cat: cat.id, quality });
+  return true;
+}
+
+/** Котяча м'ята котові на руках біля аптечки (§9.12, «Котяча м'ята»): як він зреагує, вирішує `catnipReaction`. */
+export function giveCatnip(state: GameState, quality: Quality, rng: Rng): boolean {
+  const cat = catInHands(state);
+  if (!cat || state.home.supplies.catnip[quality] <= 0) return false;
+  useSupply(state, "catnip", quality);
+  cat.interacted = true;
+  catnipReaction(state, cat, quality, rng);
   return true;
 }
 

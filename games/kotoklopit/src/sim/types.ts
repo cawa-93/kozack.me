@@ -8,7 +8,7 @@ export type Difficulty = "easy" | "normal" | "hard";
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
 /** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent" | "catnip";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -564,7 +564,9 @@ export type CatActKind =
    * Кіт несе річ у зубах (§9.12, «Подарунки й схованки»): спершу йде по неї (`carry`, `picked` ще немає), тоді несе до ніг
    * персонажа чи в схованку (`dest`).
    */
-  | "carry";
+  | "carry"
+  /** Кіт катається по котячій м'яті (§9.12, «Котяча м'ята»): на спині, лапи догори, муркоче. */
+  | "catnip";
 
 export interface CatAct {
   kind: CatActKind;
@@ -691,6 +693,8 @@ export interface Cat {
   gift?: number;
   /** Кіт застряг нагорі — на холодильнику чи шафі (§9.12, «Лазіння»): кричить, доки не знімуть. У старих збереженнях немає. */
   stuck?: true;
+  /** Коли (хвилина від початку гри) кіт востаннє реагував на котячу м'яту: 2 години нова не діє (§9.12). У старих збереженнях немає. */
+  catnipAt?: number;
   /** Остання втрата любові від неприємного: коли (хвилина від початку гри) і скільки (§7). */
   hurt: { at: number; amount: number } | null;
   /**

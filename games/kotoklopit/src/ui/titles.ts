@@ -26,6 +26,7 @@ export const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) =
   bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
   shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
   detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у пральній машині" },
+  catnip: { name: "Котяча м'ята", unit: (n) => `${n} ${plural(n, "раз", "рази", "разів")}`, place: "в аптечці" },
 };
 
 
@@ -61,6 +62,7 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   bell: { cheap: "Мідний дзвіночок", premium: "Срібний дзвіночок" },
   shampoo: { cheap: "Простий шампунь", premium: "Делікатний шампунь" },
   detergent: { cheap: "Пральний порошок", premium: "Пральний концентрат" },
+  catnip: { cheap: "Сушена м'ята", premium: "Мататабі" },
   "thing:bowl": { cheap: "Пластикова миска", premium: "Керамічна миска" },
   "thing:water": { cheap: "Пластикова поїлка", premium: "Керамічна поїлка" },
   "thing:litter": { cheap: "Простий лоток", premium: "Закритий лоток" },
