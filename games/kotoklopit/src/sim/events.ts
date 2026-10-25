@@ -145,6 +145,8 @@ export type GameEvent =
   | { type: "cat-broke-free"; cat: number }
   | { type: "put-down"; cat: number }
   | { type: "purr"; cat: number; enjoyed: boolean }
+  /** «Незалежний» не хотів пестощів і пішов з-під руки (§9.12, «Ласкавість»). */
+  | { type: "cat-left"; cat: number }
   | { type: "bite"; cat: number }
   | { type: "played"; cat: number; minutes: number }
   | { type: "knocked"; cat: number; object: string; item: Dish }

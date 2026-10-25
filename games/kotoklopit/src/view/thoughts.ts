@@ -1,8 +1,9 @@
 // Стан думками й настрій з поведінки (§11.4, правка автора 2026-10-25): про що час від часу думають кіт
 // і персонаж, як часто, і коли кіт повільно моргає чи сумує. Без Phaser — щоб тести могли перевірити.
 
+import { traitLevel } from "../sim/cat";
 import { hungerThreshold } from "../sim/catai";
-import { LOVE_BEHAVIOR, MOOD_LOOK, THOUGHTS } from "../sim/config";
+import { LOVE_BEHAVIOR, MOOD_LOOK, PETTING, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
 import type { IconName } from "./icons";
@@ -52,17 +53,31 @@ export function personThought(state: GameState): IconName | null {
   return lowest?.icon ?? null;
 }
 
-/** Настрій з поведінки (§11.4): «blink» — повільно моргає до персонажа, «sad» — сумна поза. */
-export type CatLook = "blink" | "sad";
+/**
+ * Настрій і характер з поведінки (§11.4, §9.12): «blink» — повільно моргає до персонажа, «sad» — сумна поза, «belly» —
+ * «Пастка на животику» показує живіт, «nudge» — ласкавий кіт, що прийшов по увагу, бодається головою.
+ */
+export type CatLook = "blink" | "sad" | "belly" | "nudge";
 
-/** Як кіт показує настрій: сумний — завжди, щасливий і відданий — лише поруч із персонажем, сидячи. */
+/** Відстань від персонажа до кота в клітинках. */
+const away = (state: GameState, cat: Cat): number => Math.hypot(state.character.body.x - cat.x, state.character.body.y - cat.y);
+
+/**
+ * Як кіт показує настрій: сумний — завжди; «Пастка на животику», до якої підійшли, перевертається животом догори
+ * (рішення автора 2026-10-25); ласкавий, що прийшов по увагу, бодається головою; щасливий і відданий — лише поруч із
+ * персонажем, сидячи.
+ */
 export function catLook(state: GameState, cat: Cat): CatLook | null {
   if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "lap") return null;
   if (cat.mood < THOUGHTS.sad) return "sad";
+  if (isHeld(state, cat)) return null;
+  const act = cat.act;
+  const near = (distance: number): boolean => away(state, cat) <= distance && inView(state, cat);
+  if (act.kind === "idle" && act.goal === null && traitLevel(cat, "petting") <= -2 && near(PETTING.bellyDistance)) return "belly";
+  if (act.kind === "attention" && act.seen === true && act.goal === null && traitLevel(cat, "affection") > 0 && near(MOOD_LOOK.nudgeDistance)) return "nudge";
   if (cat.mood < MOOD_LOOK.blinkMood || cat.love < LOVE_BEHAVIOR.devoted) return null;
-  if (!THINKING_ACTS.has(cat.act.kind) || cat.act.goal !== null || playing(cat) || isHeld(state, cat)) return null;
-  const body = state.character.body;
-  if (Math.hypot(body.x - cat.x, body.y - cat.y) > MOOD_LOOK.blinkDistance || !inView(state, cat)) return null;
+  if (!THINKING_ACTS.has(act.kind) || act.goal !== null || playing(cat)) return null;
+  if (!near(MOOD_LOOK.blinkDistance)) return null;
   return "blink";
 }
 

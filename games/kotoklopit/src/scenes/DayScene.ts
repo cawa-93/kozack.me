@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { catFeeling, useProgress, IDLE, type Input } from "../sim/actions";
+import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
@@ -533,7 +533,7 @@ export class DayScene extends Phaser.Scene {
   private drawInteraction(time: number): void {
     const g = this.interaction.clear();
     const activity = this.state.character.activity;
-    if ((activity?.kind !== "pet" || activity.bitten) && (activity?.kind !== "play" || activity.done)) return;
+    if ((activity?.kind !== "pet" || petOver(activity)) && (activity?.kind !== "play" || activity.done)) return;
     const cat = this.catViews.get(activity.cat);
     if (!cat) return;
     const hand = this.person.hands;
@@ -656,17 +656,22 @@ export class DayScene extends Phaser.Scene {
       const withPerson = (held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap";
       const carried = withPerson ? this.person.hands : null;
       const activity = state.character.activity;
-      const petting = activity?.kind === "pet" && !activity.bitten;
+      const petting = activity?.kind === "pet" && !petOver(activity);
       const playing = activity?.kind === "play" && !activity.done;
       const interaction = (petting || playing) && activity?.cat === cat.id ? activity.kind : null;
       // Настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
       const look = catLook(state, cat);
+      const toward = state.character.body.x >= cat.x ? 1 : -1;
       const mood =
         look === null
           ? null
           : look === "sad"
             ? { sad: true, blink: 0, face: null }
-            : { sad: false, blink: blinkAmount(time, cat.id), face: state.character.body.x >= cat.x ? 1 : -1 };
+            : look === "belly"
+              ? { sad: false, blink: 0, face: null, belly: true }
+              : look === "nudge"
+                ? { sad: false, blink: 0, face: toward, nudge: true }
+                : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);

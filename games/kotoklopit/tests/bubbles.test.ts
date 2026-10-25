@@ -23,6 +23,7 @@ const EVENTS: GameEvent[] = [
   { type: "bite", cat: 1 },
   { type: "picked-up", cat: 1, offended: true },
   { type: "cat-dodged", cat: 1, issue: "clothes" },
+  { type: "cat-left", cat: 1 },
   { type: "symptom", cat: 1, symptom: "sneeze" },
   { type: "symptom", cat: 1, symptom: "itch" },
   { type: "symptom", cat: 1, symptom: "eyes" },

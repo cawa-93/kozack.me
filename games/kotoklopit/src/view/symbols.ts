@@ -129,6 +129,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "picked-up":
       // Ображений кіт на руках шипить.
       return event.offended ? [{ kind: "say", at: cat(event.cat), icon: "angry" }] : [];
+    case "cat-left":
+      // «Незалежний» не хоче пестощів і йде з-під руки (§9.12): «не треба рук» — його думка.
+      return [{ kind: "think", at: cat(event.cat), icon: "hands" }];
     case "cat-dodged":
       // Чистюля не йде на руки в брудному одязі — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "laundry" }];

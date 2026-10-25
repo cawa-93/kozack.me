@@ -14,6 +14,7 @@ import { loudNoise } from "./noise";
 import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
+  AFFECTION,
   BOWL_CAPACITY,
   HOUSEHOLD,
   ILLNESS,
@@ -32,6 +33,7 @@ import {
   MOOD,
   LOVE_BEHAVIOR,
   PET,
+  PETTING,
   PLAY,
   REACH,
   SHOWER_HYGIENE,
@@ -448,8 +450,11 @@ export type CatFeeling = "content" | "reluctant" | "struggling";
 export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   const { held, activity } = state.character;
   if (held?.kind === "cat" && held.cat === cat.id) return carryFeeling(state, cat);
-  if (activity?.kind === "pet" && activity.cat === cat.id && !activity.bitten) {
-    if (activity.minutes > petTolerance(cat)) return "struggling";
+  if (activity?.kind === "pet" && activity.cat === cat.id && !petOver(activity)) {
+    const tolerance = petTolerance(cat);
+    if (activity.minutes > tolerance) return "struggling";
+    // За хвилину до кінця терпіння кожен кіт попереджає: б'є хвостом і притискає вуха (§9.12, рішення автора 2026-10-25).
+    if (activity.minutes > tolerance - PETTING.warnMinutes) return "reluctant";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
@@ -583,11 +588,19 @@ function finishUse(state: GameState, target: Target): void {
   emit(state, { type: "ate", satiety, food: supplyCount(state, "food") });
 }
 
-/** Скільки хвилин поспіль кіт терпить пестощі (§9.12). */
-export function petTolerance(cat: Cat): number {
+/**
+ * Скільки хвилин поспіль кіт терпить пестощі (§9.12). `level` — рівень «Терпимості до гладження»; без нього — самого
+ * кота (порода й характер), 0 — як терпів би кіт без риси з тією самою любов'ю.
+ */
+export function petTolerance(cat: Cat, level = traitLevel(cat, "petting")): number {
   // Хто любить персонажа, терпить пестощі довше (§9.12, правка автора 2026-10-25).
   const love = 1 + LOVE_BEHAVIOR.tolerancePerPoint * Math.max(0, cat.love - 50);
-  return Math.max(PET.minToleranceMinutes, PET.toleranceMinutes * (1 + PET.toleranceStep * traitLevel(cat, "petting")) * love);
+  return Math.max(PET.minToleranceMinutes, PET.toleranceMinutes * (1 + PET.toleranceStep * level) * love);
+}
+
+/** Пестощі закінчилися, але кнопку ще тримають (§10): кіт вкусив чи пішов з-під руки. */
+export function petOver(activity: PetActivity): boolean {
+  return activity.bitten === true || activity.left === true;
 }
 
 /**
@@ -602,12 +615,25 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     character.activity = null;
     return;
   }
-  // Вкушений кіт відходить; рука чекає, поки кнопку відпустять.
-  if (activity.bitten) return;
+  // Вкушений кіт чи той, що пішов з-під руки, відходить; рука чекає, поки кнопку відпустять.
+  if (petOver(activity)) return;
+  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили пестощами");
+  // «Незалежний» не терпить пестощів, коли уваги не хоче: «Незалежний» іде з-під руки за хвилину, «Відлюдник» — одразу.
+  // Без укусу: укус — «Терпимість до гладження» (§9.12, рішення автора 2026-10-25).
+  const aloofness = -traitLevel(cat, "affection");
+  if (aloofness > 0 && cat.needs.attention < PET.wantsAttention) {
+    activity.unwanted = (activity.unwanted ?? 0) + minutes;
+    if (activity.unwanted > Math.max(0, AFFECTION.leaveAfter - aloofness)) {
+      activity.left = true;
+      backAway(state, cat, character.body);
+      emit(state, { type: "cat-left", cat: cat.id });
+      observe(state, cat, "affection", -1);
+      return;
+    }
+  }
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
-  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили пестощами");
   // Кіт лишається на місці, поки його гладять.
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
@@ -620,6 +646,10 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     if (wants) changeLove(state, cat, PET.love * minutes);
     cat.needs.attention = Math.max(0, cat.needs.attention - PET.attentionPerMinute * minutes);
     if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: wants });
+    // Гладять довше, ніж витерпів би кіт без риси з тією самою любов'ю, а він муркоче — прояв «Терпимості +», раз за
+    // пестощі (§9.9, рішення автора 2026-10-25).
+    const plain = petTolerance(cat, 0);
+    if (before <= plain && activity.minutes > plain) observe(state, cat, "petting");
     return;
   }
   changeMood(state, cat, PET.tooLongMood * minutes);

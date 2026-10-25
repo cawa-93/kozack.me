@@ -196,6 +196,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `На руках: ${catName(state, event.cat)}${event.offended ? " (проти волі)" : ""}`;
     case "cat-broke-free":
       return `${catName(state, event.cat)} вирвався з рук і втік`;
+    case "cat-left":
+      return `${catName(state, event.cat)} не хоче пестощів і йде з-під руки`;
     case "cat-dodged":
       return `${catName(state, event.cat)} не йде на руки: брудний одяг`;
     case "put-down":

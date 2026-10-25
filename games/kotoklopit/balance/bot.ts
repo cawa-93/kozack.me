@@ -2,7 +2,7 @@
 // справжнім рухом квартирою й тими самими діями, що й людина. Пріоритети — нагальне (кіт на
 // клавіатурі, безлад, порожні миски) раніше за своє (їжа, душ) і роботу.
 
-import { petTolerance } from "../src/sim/actions";
+import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
@@ -542,7 +542,7 @@ export class Bot {
       advance(this.save, HOLD_STEP, { move: { x: 0, y: 0 }, hold: true });
       // Гра й пестощі, що закінчилися, чекають, поки кнопку відпустять (§9.12).
       const activity = this.state.character.activity;
-      const over = activity === null || (activity.kind === "play" && activity.done === true) || (activity.kind === "pet" && activity.bitten === true);
+      const over = activity === null || (activity.kind === "play" && activity.done === true) || (activity.kind === "pet" && petOver(activity));
       if (over && spent > 0) break;
     }
     advance(this.save, 0.01);

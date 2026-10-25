@@ -29,7 +29,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -40,6 +40,10 @@ export interface CatMoodLook {
   sad: boolean;
   blink: number;
   face: number | null;
+  /** «Пастка на животику» лежить на спині животом догори (§9.12). */
+  belly?: boolean;
+  /** Ласкавий кіт бодається головою в руку (§9.12). */
+  nudge?: boolean;
 }
 
 /** Наскільки прикриті очі сумного кота. */
@@ -112,16 +116,17 @@ export class CatView {
     look: CatMoodLook | null = null,
   ): void {
     this.shape = cat.shape;
-    const pose = interaction ? "sit" : poseOf(cat, carriedAt !== null);
+    // «Пастка на животику» й під рукою лежить животом догори — у цьому й пастка (§9.12).
+    const pose = look?.belly === true && carriedAt === null ? "belly" : interaction ? "sit" : poseOf(cat, carriedAt !== null);
     this.feeling = feeling;
     this.look = look;
     this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
-    const blinking = (look?.blink ?? 0) > 0;
+    const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
       pose === "walk" || interaction || feeling || blinking
         ? null
-        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}`;
+        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -164,6 +169,18 @@ export class CatView {
     if (pose !== "carried" && pose !== "hide") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
 
     switch (pose) {
+      case "belly": {
+        // На спині: світлий живіт, чотири лапки догори, голова збоку — так і хочеться погладити (§9.12).
+        this.tail(g, x - dir * 15 * s, y - 6 * s, s, dir, "rest");
+        g.fillStyle(this.coat.pointed ? point : body);
+        for (const lx of [-10, -4, 4, 10]) g.fillRoundedRect(x + lx * s - 2, y - 22 * s, 4 * s, 9 * s, 2);
+        g.fillStyle(body).fillEllipse(x, y - 9 * s, 32 * s, 14 * s);
+        g.fillStyle(WHITE, 0.6).fillEllipse(x, y - 11 * s, 20 * s, 7 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 32 * s, 14 * s);
+        this.headAt(g, x + dir * 17 * s, y - 11 * s, s, dir, body, point);
+        this.back = { x: x - dir * 2 * s, y: y - 14 * s };
+        return;
+      }
       case "sleep": {
         // Клубочок із хвостом довкола.
         g.fillStyle(body).fillEllipse(x, y - 9 * s, 34 * s, 20 * s);
@@ -211,7 +228,9 @@ export class CatView {
         const paws = interaction === "play" ? y - 30 * s : y - 1;
         const reach = interaction === "play" ? dir * 6 * s : 0;
         g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws, 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws, 6 * s, 4 * s);
-        this.headAt(g, hx + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY, s, dir, body, point);
+        // Ласкавий бодається головою: голова раз у раз подається вперед, до руки (§9.12).
+        const nudge = look?.nudge === true ? dir * Math.max(0, Math.sin(time / 170)) * 4 * s : 0;
+        this.headAt(g, hx + nudge + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY - Math.abs(nudge) * 0.4, s, dir, body, point);
         this.back = { x: x - dir * 4 * s, y: y - 22 * s };
         return;
       }
