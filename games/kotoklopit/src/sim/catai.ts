@@ -1147,18 +1147,35 @@ export function carryBiteChance(cat: Cat): number {
 function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const lap = traitLevel(cat, "lap");
   const feeling = carryFeeling(state, cat);
+  const held = state.character.held;
+  if (held?.kind !== "cat") return;
+  held.minutes = (held.minutes ?? 0) + minutes;
+  // Прояв «Колін» — раз за взяття на руки (рішення автора 2026-10-25, §9.9).
+  const notice = (side: 1 | -1): void => {
+    if (held.seen === true) return;
+    held.seen = true;
+    observe(state, cat, "lap", side);
+  };
   if (feeling === "content") {
     changeMood(state, cat, CARRY.mood * lap * minutes);
     cat.needs.attention = Math.max(0, cat.needs.attention - CARRY.attention * minutes);
+    // Хвилину муркоче й топчеться на руках — так на руках не поводиться кіт без риси.
+    if (held.minutes >= CARRY.seenContent && held.seen !== true) {
+      emit(state, { type: "purr", cat: cat.id, enjoyed: true });
+      notice(1);
+    }
     return;
   }
   if (feeling === "reluctant") return;
+  // Пручається саме через рису — не тому, що взяли проти волі чи кіт не любить персонажа.
+  const byTrait = lap < 0 && held.offended !== true && !aloof(cat);
+  if (byTrait && held.minutes >= CARRY.seenStruggle) notice(-1);
   const dislike = Math.max(0, -lap);
   changeMood(state, cat, CARRY.struggleMood * Math.max(1, dislike) * minutes);
   if (!rng.chance(1 - (1 - carryBiteChance(cat)) ** minutes)) return;
   changeStat(state, "health", PET.biteHealth);
   emit(state, { type: "bite", cat: cat.id });
-  observe(state, cat, "lap", -1);
+  if (byTrait) notice(-1);
   if (!rng.chance(CARRY.escape)) return;
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);

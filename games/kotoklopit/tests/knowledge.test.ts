@@ -309,7 +309,7 @@ describe("що видно про кота з самого початку (пош
   it("прояви в картці — у роді кота й до гравця на «ви»", () => {
     for (const group of TRAIT_GROUPS) for (const sign of group.signs ?? []) if (sign !== null) expect(sign, group.id).not.toMatch(/персонаж/);
     const lap = TRAIT_GROUPS.find((g) => g.id === "lap")?.signs?.[0] ?? "";
-    expect(fill(lap, "female")).toBe("сама застрибує на коліна");
+    expect(fill(lap, "female")).toBe("сама застрибує на коліна й муркоче на руках");
   });
 });
 
@@ -319,7 +319,7 @@ describe("телефон каже, що стало відомо про кота 
     const cat = withCat(save, { lap: 2 });
     Object.assign(cat, { name: "Мурка", sex: "female" });
     expect(traitNews(save.current, cat.id, "lap", 1)).toBeNull();
-    expect(traitNews(save.current, cat.id, "lap", 2)).toEqual({ title: "Мурка", text: "Здається, сама застрибує на коліна." });
+    expect(traitNews(save.current, cat.id, "lap", 2)).toEqual({ title: "Мурка", text: "Здається, сама застрибує на коліна й муркоче на руках." });
     const known = traitNews(save.current, cat.id, "lap", 3);
     expect(known?.title).toBe("Мурка — Коліночна");
     expect(known?.text.length).toBeGreaterThan(10);

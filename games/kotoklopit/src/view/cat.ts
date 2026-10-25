@@ -226,10 +226,12 @@ export class CatView {
         if (this.coat.tabby) this.stripes(g, x, y - 15 * s, 18 * s, stripe, false);
         if (this.coat.white >= 1) g.fillStyle(WHITE).fillEllipse(x + dir * 3 * s, y - 13 * s, 9 * s, 14 * s);
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 13 * s, 22 * s, 26 * s);
-        // Передні лапки: у грі — догори, ловлять пір'їнку.
+        // Передні лапки: у грі — догори, ловлять пір'їнку; задоволений на руках топчеться — лапки по черзі (§9.12).
         const paws = interaction === "play" ? y - 30 * s : y - 1;
         const reach = interaction === "play" ? dir * 6 * s : 0;
-        g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws, 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws, 6 * s, 4 * s);
+        const kneading = pose === "carried" && feeling === "content";
+        const knead = (phase: number): number => (kneading ? -Math.max(0, Math.sin(time / 180 + phase)) * 3 * s : 0);
+        g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws + knead(0), 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws + knead(Math.PI), 6 * s, 4 * s);
         // Ласкавий бодається головою: голова раз у раз подається вперед, до руки (§9.12).
         const nudge = look?.nudge === true ? dir * Math.max(0, Math.sin(time / 170)) * 4 * s : 0;
         this.headAt(g, hx + nudge + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY - Math.abs(nudge) * 0.4, s, dir, body, point);

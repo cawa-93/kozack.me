@@ -4,11 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { catFeeling, petTolerance } from "../src/sim/actions";
+import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { rubbingCat } from "../src/sim/body";
 import { createCat, idleAct } from "../src/sim/cat";
 import { catOnComputer, decide, tickCats } from "../src/sim/catai";
-import { AFFECTION, LEGS, PET, PETTING, TALKATIVE } from "../src/sim/config";
+import { AFFECTION, CARRY, LEGS, PET, PETTING, TALKATIVE } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
@@ -313,5 +313,35 @@ describe("«Робочий помічник» (рішення автора 2026-
     expect(onComputer(-1)).toBeLessThan(plain);
     expect(onComputer(-2)).toBe(0);
     expect(catOnComputer).toBeTypeOf("function");
+  });
+});
+
+describe("«Коліна» на руках (рішення автора 2026-10-25)", () => {
+  const held = (traits: Record<string, TraitLevel>, setup: (cat: Cat) => void, minutes: number): { cat: Cat; purrs: number } => {
+    const save = game();
+    faceCat(save);
+    const cat = withCat(save, traits);
+    cat.needs.attention = 90;
+    setup(cat);
+    pickUpCat(save.current, cat);
+    const { events, stop } = recordEvents();
+    advance(save, minutes);
+    stop();
+    return { cat, purrs: events.filter((e) => e.type === "purr" && e.cat === cat.id).length };
+  };
+
+  it("«Любить на руки» хвилину муркоче й топчеться на руках — прояв «+», раз за взяття", () => {
+    expect(held({ lap: 1 }, () => undefined, CARRY.seenContent - 0.2).cat.traits[0]?.seen).toBe(0);
+    const fond = held({ lap: 1 }, () => undefined, CARRY.seenContent * 3);
+    expect(fond.purrs).toBe(1);
+    expect(seen(fond.cat, "lap")).toBe(1);
+  });
+
+  it("«Не на руки» пручається через рису — прояв «−»; узятий проти волі чи нелюбий — ні", () => {
+    expect(seen(held({ lap: -1 }, () => undefined, CARRY.seenStruggle + 0.1).cat, "lap")).toBe(1);
+    const asleep = held({ lap: -1 }, (cat) => (cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 }), 1);
+    expect(seen(asleep.cat, "lap")).toBe(0);
+    const cold = held({ lap: -1 }, (cat) => (cat.love = 10), 1);
+    expect(seen(cold.cat, "lap")).toBe(0);
   });
 });
