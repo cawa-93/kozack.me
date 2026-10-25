@@ -41,6 +41,11 @@ const HATCH_STEP = 6;
 const HATCH_COLOR = 0x6b5f73;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
 const BUTTONS_INSET = 44;
+/**
+ * «Балакучий» бабл телефона (§9.9, правка автора 2026-10-25): ширина тексту, відступи, скільки висить —
+ * основа й за кожен символ, найдовше, — і як довго згасає, мс.
+ */
+const NEWS = { width: 340, pad: 12, baseMs: 2500, perCharMs: 45, maxMs: 8000, fadeMs: 400 } as const;
 const DEPTH = 20_000;
 
 type EventData = Phaser.Types.Input.EventData;
@@ -62,8 +67,19 @@ export class Hud {
   /** Кнопка повного екрана (§10); на iPhone її немає. */
   private readonly fullscreen: { button: Phaser.GameObjects.Container; icon: Phaser.GameObjects.Graphics } | null = null;
   private fullscreenDrawn: boolean | null = null;
+  /** «Балакучий» бабл телефона: що стало відомо про кота (§9.9). */
+  private readonly news: Phaser.GameObjects.Container;
+  private readonly newsBg: Phaser.GameObjects.Graphics;
+  private readonly newsTitle: Phaser.GameObjects.Text;
+  private readonly newsText: Phaser.GameObjects.Text;
+  /** Коли бабл почне згасати (час сцени, мс); null — бабла немає. */
+  private newsUntil: number | null = null;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, onPhone: () => void) {
+  constructor(
+    private readonly scene: Phaser.Scene,
+    layer: Phaser.GameObjects.Layer,
+    onPhone: () => void,
+  ) {
     const text = (x: number, y: number, size: number, color = TEXT) =>
       scene.add.text(x, y, "", { fontFamily: FONT, fontSize: `${size}px`, color, resolution: 2 });
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
@@ -105,6 +121,16 @@ export class Hud {
       onPhone();
     });
 
+    // Бабл телефона: мовна хмаринка під панеллю, хвостиком до телефона; натиснути — сховати.
+    this.newsBg = scene.add.graphics();
+    this.newsTitle = scene.add.text(0, 0, "", { fontFamily: FONT, fontSize: "17px", fontStyle: "bold", color: "#1f1a24", resolution: 2 });
+    this.newsText = scene.add.text(0, 0, "", { fontFamily: FONT, fontSize: "17px", color: "#1f1a24", resolution: 2, wordWrap: { width: NEWS.width } });
+    this.news = scene.add.container(0, 0, [this.newsBg, this.newsTitle, this.newsText]).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
+    this.news.on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
+      event.stopPropagation();
+      this.hideNews();
+    });
+
     if (canFullscreen()) {
       const icon = scene.add.graphics();
       const button = scene.add.container(0, 0, [icon]).setSize(48, 48).setDepth(DEPTH).addToDisplayList(layer);
@@ -125,10 +151,51 @@ export class Hud {
     this.phone.setPosition(x, safe.top + HUD_HEIGHT / 2 - 1);
     // Під телефоном, уже над квартирою: у смузі інтерфейсу на екрані 16:9 місця немає.
     this.fullscreen?.button.setPosition(x, safe.top + HUD_HEIGHT + 34);
+    // Бабл телефона — правим верхнім кутом під телефоном, лівіше кнопки повного екрана.
+    this.news.setPosition(x - 30, safe.top + HUD_HEIGHT + 10);
+  }
+
+  /** Чи показує телефон зараз бабл. */
+  get saying(): boolean {
+    return this.newsUntil !== null;
+  }
+
+  /**
+   * Телефон «каже» (§9.9, правка автора 2026-10-25): мовна хмаринка під ним із заголовком і текстом. Висить
+   * тим довше, чим довший текст; натиснути — сховати.
+   */
+  say(title: string, text: string, time: number): void {
+    this.scene.tweens.killTweensOf(this.news);
+    const pad = NEWS.pad;
+    this.newsTitle.setText(title);
+    this.newsText.setText(text);
+    const width = Math.max(this.newsTitle.width, this.newsText.width) + pad * 2;
+    const height = this.newsTitle.height + this.newsText.height + pad * 2 + 2;
+    // Контейнер стоїть у правому верхньому куті бабла: усе всередині — ліворуч і нижче.
+    this.newsTitle.setPosition(-width + pad, pad);
+    this.newsText.setPosition(-width + pad, pad + this.newsTitle.height + 2);
+    const g = this.newsBg.clear();
+    g.fillStyle(0xffffff).fillRoundedRect(-width, 0, width, height, 14);
+    g.lineStyle(3, COLORS.ink).strokeRoundedRect(-width, 0, width, height, 14);
+    // Хвостик угору праворуч — до телефона.
+    g.fillStyle(0xffffff).fillTriangle(-34, 1.5, -12, 1.5, 4, -14);
+    g.lineStyle(3, COLORS.ink).lineBetween(-34, 0, 4, -14).lineBetween(4, -14, -12, 0);
+    this.news.setSize(width * 2, height * 2).setInteractive(new Phaser.Geom.Rectangle(-width, 0, width, height), Phaser.Geom.Rectangle.Contains);
+    this.news.setVisible(true).setAlpha(1).setScale(0.85);
+    this.scene.tweens.add({ targets: this.news, scale: 1, duration: 180, ease: "Back.easeOut" });
+    this.newsUntil = time + Math.min(NEWS.maxMs, NEWS.baseMs + NEWS.perCharMs * (title.length + text.length));
+  }
+
+  private hideNews(): void {
+    if (this.newsUntil === null) return;
+    this.newsUntil = null;
+    this.scene.tweens.killTweensOf(this.news);
+    this.scene.tweens.add({ targets: this.news, alpha: 0, duration: NEWS.fadeMs, onComplete: () => this.news.setVisible(false) });
   }
 
   update(state: GameState, time: number): void {
     this.drawFullscreen();
+    if (this.newsUntil !== null && time >= this.newsUntil) this.hideNews();
     const { stats, money, sleepSpeed } = state.character;
     this.date.setText(`Тиждень ${weekOf(state.day)} · ${WEEKDAY_NAMES[weekdayOf(state.day)]}`);
     this.clock.setText(formatClock(state.minute));

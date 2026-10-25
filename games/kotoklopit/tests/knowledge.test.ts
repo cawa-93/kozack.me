@@ -8,6 +8,7 @@ import { advance, newGame } from "../src/sim/game";
 import { decideFoundling } from "../src/sim/modifiers";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { fill } from "../src/texts";
+import { traitNews } from "../src/ui/traits";
 import { observe, visibility, witnesses } from "../src/sim/knowledge";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -166,5 +167,18 @@ describe("що видно про кота з самого початку (пош
     for (const group of TRAIT_GROUPS) for (const sign of group.signs ?? []) expect(sign, group.id).not.toMatch(/персонаж/);
     const lap = TRAIT_GROUPS.find((g) => g.id === "lap")?.signs?.[0] ?? "";
     expect(fill(lap, "female")).toBe("сама застрибує на коліна");
+  });
+});
+
+describe("телефон каже, що стало відомо про кота (§9.9, правка автора 2026-10-25)", () => {
+  it("підказка — «Здається, …», відкрита риса — назва й опис, «❓» — нічого", () => {
+    const save = game();
+    const cat = withCat(save, { lap: 2 });
+    Object.assign(cat, { name: "Мурка", sex: "female" });
+    expect(traitNews(save.current, cat.id, "lap", 1)).toBeNull();
+    expect(traitNews(save.current, cat.id, "lap", 2)).toEqual({ title: "Мурка", text: "Здається, сама застрибує на коліна." });
+    const known = traitNews(save.current, cat.id, "lap", 3);
+    expect(known?.title).toBe("Мурка — Коліночна");
+    expect(known?.text.length).toBeGreaterThan(10);
   });
 });

@@ -43,6 +43,7 @@ import { Hud } from "../view/hud";
 import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
 import { eventBubbles, PRODUCT_ICONS } from "../view/symbols";
 import { blinkAmount, catLook, ThoughtClock } from "../view/thoughts";
+import { type TraitNews, traitNews } from "../ui/traits";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
@@ -105,6 +106,8 @@ export class DayScene extends Phaser.Scene {
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
   private thoughts = new ThoughtClock();
+  /** Що стало відомо про котів: телефон каже це по черзі, поки не відкрита картка (§9.9). */
+  private readonly news: TraitNews[] = [];
   private storage!: StorageIndicators;
   /** Малюнки наповнення сховищ і що на них намальовано. */
   private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
@@ -216,6 +219,7 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.clear();
     this.hearts.clear();
     this.thoughts = new ThoughtClock();
+    this.news.length = 0;
     this.storage.clear();
     this.moneySeen = null;
     this.earned = 0;
@@ -573,6 +577,10 @@ export class DayScene extends Phaser.Scene {
   private render(time: number, seconds: number): void {
     const state = this.state;
     this.hud.update(state, time);
+    if (!this.overlay.isOpen && !this.hud.saying) {
+      const news = this.news.shift();
+      if (news) this.hud.say(news.title, news.text, time);
+    }
     // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
     for (const view of this.views.values()) if (view.object.requires || view.object.kind === "boxes") view.graphics.setVisible(isPresent(state, view.object));
     this.drawBoxes();
@@ -995,6 +1003,12 @@ export class DayScene extends Phaser.Scene {
       case "cat-fight":
         this.cameras.main.shake(120, 0.002);
         break;
+      case "trait-noticed": {
+        // Про кота щось стало відомо — телефон скаже (§9.9, правка автора 2026-10-25).
+        const news = traitNews(this.state, event.cat, event.group, event.stage);
+        if (news) this.news.push(news);
+        break;
+      }
       case "night":
         if (this.state.end === null) {
           this.cameras.main.fadeIn(500, 20, 16, 24);

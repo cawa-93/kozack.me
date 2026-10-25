@@ -7,7 +7,6 @@ import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
 import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
-import { traitGroup } from "../sim/traits";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
 import {
@@ -34,7 +33,7 @@ import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 export { plural };
 import { drawPortrait, portraitCanvas } from "./portrait";
-import { traitChips } from "./traits";
+import { traitChips, traitHint } from "./traits";
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -291,8 +290,8 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     for (const trait of cat.traits) {
       const seen = visibility(state, trait);
       if (seen === 2) {
-        const signs = traitGroup(trait.group).signs;
-        if (signs) lines.push(`Здається, ${cat.name} ${fill(trait.level > 0 ? signs[0] : signs[1], cat.sex)}.`);
+        const hint = traitHint(cat, trait);
+        if (hint) lines.push(hint);
       } else if (seen === 1) lines.push("❓ Помічено щось дивне");
     }
     if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
