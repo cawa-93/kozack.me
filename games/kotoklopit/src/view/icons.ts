@@ -26,6 +26,7 @@ export type IconName =
   | "zz"
   | "dizzy"
   | "meow"
+  | "meow-silent"
   | "heart"
   | "angry"
   | "dirty"
@@ -176,6 +177,14 @@ Object.assign(ICONS, {
     g.fillStyle(0x6b5d6e).fillTriangle(9, 16, 15, 4, 19, 14).fillTriangle(31, 16, 25, 4, 21, 14).fillCircle(20, 22, 12);
     g.fillStyle(0xffffff).fillCircle(15, 19, 2.5).fillCircle(25, 19, 2.5);
     g.fillStyle(COLORS.danger).fillEllipse(20, 28, 7, 6);
+  },
+  "meow-silent": (g: Phaser.GameObjects.Graphics) => {
+    // Беззвучне нявкання «Тихоні» (§9.12): та сама котяча голова з відкритим ротом, але рот порожній, а звуку — лише
+    // три крапки.
+    g.fillStyle(0x6b5d6e).fillTriangle(9, 16, 15, 4, 19, 14).fillTriangle(31, 16, 25, 4, 21, 14).fillCircle(20, 22, 12);
+    g.fillStyle(0xffffff).fillCircle(15, 19, 2.5).fillCircle(25, 19, 2.5);
+    g.fillStyle(0x3a3140).fillEllipse(20, 28, 7, 6);
+    g.fillStyle(0x9a8f9c).fillCircle(31, 36, 1.8).fillCircle(35.5, 36, 1.8).fillCircle(26.5, 36, 1.8);
   },
   heart: (g: Phaser.GameObjects.Graphics) => {
     g.fillStyle(0xd9455f).fillCircle(14, 15, 7.5).fillCircle(26, 15, 7.5).fillTriangle(7, 18, 33, 18, 20, 34);

@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { AFFECTION, PET, PETTING } from "../src/sim/config";
+import { AFFECTION, PET, PETTING, TALKATIVE } from "../src/sim/config";
+import { tickCats } from "../src/sim/catai";
+import { startWork } from "../src/sim/work";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -124,5 +126,70 @@ describe("«Терпимість до гладження» (рішення ав�
     faceCat(save);
     expect(catLook(save.current, trap)).toBe("belly");
     expect(catLook(save.current, biter)).toBeNull();
+  });
+});
+
+describe("«Балакучість» (рішення автора 2026-10-25)", () => {
+  /** Кіт просить уваги поруч із персонажем стільки хвилин; повертає, скільки разів зараховано прояв. */
+  const asking = (traits: Record<string, TraitLevel>, minutes: number): { cat: Cat; save: Save } => {
+    const save = game();
+    faceCat(save);
+    const cat = withCat(save, traits, { x: 4.5, y: 7.5 });
+    cat.needs.attention = 100;
+    cat.act = { kind: "attention", target: "character", goal: null, minutes: 30, elapsed: 0, seen: true };
+    for (let i = 0; i < minutes * 4; i++) tickCats(save.current, 0.25, { present: true });
+    return { cat, save };
+  };
+
+  it("балакучий нявкає помітно більше за кота без риси — прояв «+», раз за прохання", () => {
+    expect(seen(asking({ talkative: 1 }, 15).cat, "talkative")).toBe(1);
+    expect(seen(asking({ talkative: 2 }, 15).cat, "talkative")).toBe(1);
+  });
+
+  it("мовчазний за 10 хвилин прохання нявкає на два рази менше — прояв «−»; тихоня — лише беззвучно", () => {
+    expect(seen(asking({ talkative: -1 }, 12).cat, "talkative")).toBe(1);
+    expect(seen(asking({ talkative: -2 }, 12).cat, "talkative")).toBe(1);
+    // Мовчить, бо «Невибагливий», а не «Мовчазний», — не прояв.
+    expect(seen(asking({ talkative: -1, demanding: -2 }, 12).cat, "talkative")).toBe(0);
+  });
+
+  it("балакучий вітається вголос, коли персонаж заходить у кімнату; прояв — не частіше ніж раз на годину", () => {
+    const save = game();
+    const cat = withCat(save, { talkative: 2 }, { x: 15.5, y: 2.5 });
+    const enter = (): number => {
+      const { events, stop } = recordEvents();
+      save.current.character.room = "living";
+      Object.assign(save.current.character.body, { x: 16.5, y: 3.5 });
+      tickCats(save.current, 0.01, { present: true });
+      stop();
+      return events.filter((e) => e.type === "meow" && e.cat === cat.id).length;
+    };
+    let greeted = 0;
+    for (let i = 0; i < 10; i++) greeted += enter();
+    expect(greeted).toBeGreaterThan(1);
+    expect(seen(cat, "talkative")).toBe(1);
+    save.current.minute += TALKATIVE.observeEvery;
+    for (let i = 0; i < 10; i++) enter();
+    expect(seen(cat, "talkative")).toBe(2);
+  });
+
+  it("нявкання поруч із тим, хто працює, забирає здоровий глузд — не більше 2 за годину", () => {
+    const sanityLost = (talkative: TraitLevel | 0): number => {
+      const save = game();
+      save.current.minute = hours(10);
+      Object.assign(save.current.character.body, { x: 6.5, y: 7.5 });
+      startWork(save.current);
+      save.current.character.stats.sanity = 50;
+      const traits: Record<string, TraitLevel> = { lap: -2, helper: -2 };
+      if (talkative !== 0) traits.talkative = talkative;
+      const cat = withCat(save, traits, { x: 7.5, y: 7.5 });
+      cat.needs.attention = 100;
+      cat.act = { kind: "attention", target: "character", goal: null, minutes: 60, elapsed: 0 };
+      for (let i = 0; i < 59; i++) tickCats(save.current, 1, { present: true });
+      return 50 - save.current.character.stats.sanity;
+    };
+    const plain = sanityLost(0);
+    expect(sanityLost(1) - plain).toBeGreaterThan(1);
+    expect(sanityLost(2) - plain).toBeCloseTo(TALKATIVE.workMaxPerHour);
   });
 });

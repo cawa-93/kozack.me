@@ -33,17 +33,20 @@ const attention = (cat: Cat): void => {
 };
 
 describe("риси, що діють (ревізія 2026-10-22)", () => {
-  it("«Балакучість»: тихоня мовчить, оперний співак нявкає частіше", () => {
-    const meows = (level: TraitLevel | 0): number => {
+  it("«Балакучість»: тихоня нявкає беззвучно, мовчазний — рідко, оперний співак — частіше", () => {
+    const meows = (level: TraitLevel | 0, silent = false): number => {
       const save = game();
       const cat = withCat(save, level === 0 ? {} : { talkative: level });
       attention(cat);
       const { events, stop } = recordEvents();
-      for (let i = 0; i < 10; i++) tickCats(save.current, 1, { present: true });
+      for (let i = 0; i < 20; i++) tickCats(save.current, 1, { present: true });
       stop();
-      return events.filter((e) => e.type === "meow" && e.cat === cat.id).length;
+      return events.filter((e) => e.type === "meow" && e.cat === cat.id && (e.silent === true) === silent).length;
     };
     expect(meows(-2)).toBe(0);
+    expect(meows(-2, true)).toBeGreaterThan(0);
+    expect(meows(-1)).toBeLessThan(meows(0));
+    expect(meows(-1, true)).toBe(0);
     expect(meows(2)).toBeGreaterThan(meows(0));
   });
 

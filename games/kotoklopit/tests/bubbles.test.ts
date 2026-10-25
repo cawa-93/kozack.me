@@ -28,6 +28,7 @@ const EVENTS: GameEvent[] = [
   { type: "symptom", cat: 1, symptom: "itch" },
   { type: "symptom", cat: 1, symptom: "eyes" },
   { type: "meow", cat: 1 },
+  { type: "meow", cat: 1, silent: true },
   { type: "knocked", cat: 1, object: "table", item: { kind: "meal", quality: "cheap" } },
   { type: "stole", cat: 1, object: "stove", item: { kind: "meal", quality: "cheap" } },
   { type: "hissed", cat: 1, at: 2 },

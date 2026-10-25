@@ -135,7 +135,8 @@ export type GameEvent =
   | { type: "medicine"; cat: number; medicine: Medicine; quality: Quality }
   | { type: "cat-ate"; cat: number; quality: Quality }
   | { type: "cat-refused-food"; cat: number }
-  | { type: "meow"; cat: number }
+  /** Кіт нявкнув; `silent` — «Тихоня» відкрила рота, а звуку немає (§9.12). */
+  | { type: "meow"; cat: number; silent?: true }
   | { type: "mess"; mess: Mess }
   | { type: "cleaned"; what: "litter" | Mess["kind"]; sanity: number }
   | { type: "fed"; item: number; food: number }

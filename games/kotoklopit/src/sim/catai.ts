@@ -64,6 +64,7 @@ import {
   STERILIZATION,
   STRESS_EFFECTS,
   SURPRISE_CHANCE,
+  TALKATIVE,
   TIRED_FATIGUE,
   TOY,
   TRAIT_EFFECTS,
@@ -494,6 +495,7 @@ function noticeRoomChange(state: GameState, rng: Rng): void {
   const before = state.character.room;
   state.character.room = room;
   if (before === undefined || before === room) return;
+  greetAloud(state, room, rng);
   for (const cat of state.cats) {
     if (!home(state, cat) || (cat.act.kind !== "idle" && cat.act.kind !== "wander") || roomAt(cat) !== before) continue;
     const level = traitLevel(cat, "follower");
@@ -915,13 +917,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
     case "beg":
     case "attention":
-      {
-        // Нявкає раз на 2 хвилини; «Балакучість» частішає чи рідшає це, «Тихоня» мовчить; «Вимогливий»,
-        // що прийшов по увагу, нявчить наполегливіше (§9.9).
-        const demanding = act.kind === "attention" ? traitFactor(cat, "demanding", TRAIT_EFFECTS.demandingMeowStep) : 1;
-        const rate = (traitFactor(cat, "talkative", TRAIT_EFFECTS.talkativeStep) * demanding) / 2;
-        if (Math.floor(act.elapsed * rate) !== Math.floor((act.elapsed - minutes) * rate)) emit(state, { type: "meow", cat: cat.id });
-      }
+      askAloud(state, cat, minutes);
       if (act.kind === "attention") {
         if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
@@ -951,6 +947,73 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
     default:
       return;
+  }
+}
+
+/**
+ * Голос кота (§9.12, «Балакучість»): у скільки разів частіше за звичайне він нявкає, просячи, і чи чути це. «Тихоня»
+ * (−2 і менше) відкриває рота так само часто, як «Мовчазний», але беззвучно.
+ */
+export function meowVoice(cat: Cat): { rate: number; silent: boolean } {
+  const level = traitLevel(cat, "talkative");
+  if (level >= 0) return { rate: 1 + TALKATIVE.step * level, silent: false };
+  return { rate: TALKATIVE.quiet, silent: level <= -2 };
+}
+
+/**
+ * Кіт просить — нявкає (§9.12): раз на 2 хвилини, «Балакучість» частішає чи рідшає це, «Вимогливий», що прийшов по
+ * увагу, нявчить наполегливіше (§9.9). Прояв «Балакучості» — різниця з котом без риси з тією самою «Вимогливістю»:
+ * нявкнув уже на 2 рази більше, ніж нявкнув би той, — «+»; за 10 хвилин прохання — на 2 рази менше — «−» (рішення
+ * автора 2026-10-25), не частіше ніж раз на годину. Беззвучне нявкання «Тихоні» не рахується.
+ */
+function askAloud(state: GameState, cat: Cat, minutes: number): void {
+  const act = cat.act;
+  const demanding = act.kind === "attention" ? traitFactor(cat, "demanding", TRAIT_EFFECTS.demandingMeowStep) : 1;
+  const plain = demanding / TALKATIVE.meowMinutes;
+  const voice = meowVoice(cat);
+  const rate = voice.rate * plain;
+  if (Math.floor(act.elapsed * rate) !== Math.floor((act.elapsed - minutes) * rate)) {
+    if (voice.silent) emit(state, { type: "meow", cat: cat.id, silent: true });
+    else {
+      emit(state, { type: "meow", cat: cat.id });
+      act.meows = (act.meows ?? 0) + 1;
+      if (act.voiced !== true && act.meows - Math.floor(act.elapsed * plain) >= TALKATIVE.seenDifference) {
+        act.voiced = true;
+        observe(state, cat, "talkative", 1, false, TALKATIVE.observeEvery);
+      }
+      noisyAtWork(state, cat);
+    }
+  }
+  const quiet = TALKATIVE.quietMinutes;
+  if (act.elapsed >= quiet && act.elapsed - minutes < quiet && Math.floor(quiet * plain) - (act.meows ?? 0) >= TALKATIVE.seenDifference) {
+    observe(state, cat, "talkative", -1, false, TALKATIVE.observeEvery);
+  }
+}
+
+/** Балакучий кіт нявчить поруч із тим, хто працює (§9.12): заважає — здоровий глузд, не більше −2 за годину. */
+function noisyAtWork(state: GameState, cat: Cat): void {
+  const level = traitLevel(cat, "talkative");
+  if (level <= 0 || !isWorking(state) || distance(cat, state.character.body) > TALKATIVE.workReach) return;
+  const hour = Math.floor(absoluteMinute(state.day, state.minute) / MINUTES_PER_HOUR);
+  const noise = state.character.meowNoise?.hour === hour ? state.character.meowNoise : { hour, lost: 0 };
+  const loss = Math.min(TALKATIVE.workSanity * level, TALKATIVE.workMaxPerHour - noise.lost);
+  if (loss <= 0) return;
+  noise.lost += loss;
+  state.character.meowNoise = noise;
+  changeStat(state, "sanity", -loss);
+}
+
+/**
+ * Персонаж зайшов у кімнату (§9.12): балакучі коти, що там не сплять, вітаються вголос — з шансом 30% за одиницю. Це
+ * прояв «Балакучості +», не частіше ніж раз на годину (як і нявкання в проханні).
+ */
+function greetAloud(state: GameState, room: string, rng: Rng): void {
+  for (const cat of state.cats) {
+    const level = traitLevel(cat, "talkative");
+    if (level <= 0 || !home(state, cat) || asleep(cat) || roomAt(cat) !== room) continue;
+    if (cat.act.kind === "hide" || cat.act.kind === "fight" || !rng.chance(TALKATIVE.greet * level)) continue;
+    emit(state, { type: "meow", cat: cat.id });
+    observe(state, cat, "talkative", 1, false, TALKATIVE.observeEvery);
   }
 }
 
@@ -1065,7 +1128,6 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         cat.act.seen = true;
         // Прийшов через голод, бо миски порожні, — це не «Ласкавість» (§9.9).
         if (cat.act.forFood !== true) observe(state, cat, "affection");
-        observe(state, cat, "talkative");
         // «Сам по собі» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
         if (cat.act.goal === null && cat.act.elapsed >= FOLLOWER.waited) observe(state, cat, "follower", -1);
       }
