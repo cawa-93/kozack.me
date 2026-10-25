@@ -59,8 +59,8 @@ const isDark = (color: number): boolean => {
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
   const act = cat.act;
-  // На колінах кіт спить клубочком.
-  if (act.kind === "lap") return "sleep";
+  // На колінах кіт спить клубочком; «Поважає роботу» так само лежить поруч зі столом (§9.12).
+  if (act.kind === "lap" || (act.kind === "idle" && act.target === "desk" && act.goal === null)) return "sleep";
   if (carried) return "carried";
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
   if (act.kind === "sleep") return "sleep";
@@ -188,7 +188,9 @@ export class CatView {
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 34 * s, 20 * s);
         g.lineStyle(5 * s, this.coat.pointed ? point : body).beginPath().arc(x, y - 8 * s, 15 * s, 0.2, 2.4).strokePath();
         this.ears(g, x + dir * 9 * s, y - 16 * s, s * 0.85, dir, point);
-        if (Math.floor(time / 900 + cat.id) % 2 === 0) g.fillStyle(COLORS.ink, 0.5).fillCircle(x + dir * 14 * s, y - 26 * s, 2);
+        // Сопе лише той, хто спить: кіт біля столу просто лежить.
+        const sleeping = cat.act.kind === "sleep" || cat.act.kind === "lap";
+        if (sleeping && Math.floor(time / 900 + cat.id) % 2 === 0) g.fillStyle(COLORS.ink, 0.5).fillCircle(x + dir * 14 * s, y - 26 * s, 2);
         this.head = { x, y: y - 26 * s };
         return;
       }

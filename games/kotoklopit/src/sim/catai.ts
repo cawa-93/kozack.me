@@ -4,7 +4,7 @@
 
 import { stun } from "./body";
 import { adaptsLonger, changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
-import { lastTileWithin, randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
+import { lastTileWithin, randomFloor, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
   ACTIVITY_BY_HOUR,
@@ -32,6 +32,7 @@ import {
   HUNGRY_THEFT,
   ILLNESS,
   KITTEN_PLAY,
+  LEGS,
   LITTER_CAPACITY,
   LOVE_BEHAVIOR,
   LOW_CAT_HEALTH,
@@ -77,7 +78,7 @@ import {
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
-import { observe, setWitnessing, witnesses } from "./knowledge";
+import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { distanceToRect, itemTile, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
@@ -385,7 +386,10 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   if (!isWorking(state) && !catOnComputer(state)) {
     const computer = objectById("computer");
-    const weight = COMPUTER_SLEEP.base + warmthBonus(state) + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, traitLevel(cat, "helper")));
+    // «Поважає роботу» спить на комп'ютері вдвічі рідше, «Байдужий до техніки» — ніколи (рішення автора 2026-10-25).
+    const helper = traitLevel(cat, "helper");
+    const respect = Math.max(0, 1 + COMPUTER_SLEEP.helperStep * Math.min(0, helper));
+    const weight = (COMPUTER_SLEEP.base + warmthBonus(state) + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, helper))) * respect;
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
   return weightedPick(rng, options) ?? at(randomFloor(rng));
@@ -513,23 +517,80 @@ function noticeRoomChange(state: GameState, rng: Rng): void {
  */
 function escort(state: GameState, cat: Cat, minutes: number, context: CatContext): number {
   const act = cat.act;
-  if (!context.present) {
+  const food = act.target === "food";
+  // Корм насипали чи поклали — «вісімці» кінець (§9.12, «Тертя об ноги»).
+  if (!context.present || (food && state.character.held?.kind !== "catfood")) {
     act.minutes = 0;
     return minutes;
   }
   const body = state.character.body;
   const used = Math.min(minutes, act.minutes);
   // Як і кіт, що просить уваги: відстав — іде туди, де персонаж, і крутиться під ногами (`rubbingCat`).
-  if (distance(cat, body) > FOLLOWER.near) act.goal = tileOf(body);
+  if (distance(cat, body) > FOLLOWER.near + keepDistance(cat)) approach(state, cat);
   if (act.goal) walk(cat, used, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
   act.minutes -= used;
   act.elapsed += used;
+  if (food) {
+    // Пів хвилини «вісімкою» під ногами — прояв «Тертя об ноги +», не частіше ніж раз на годину (§9.9).
+    if (distance(cat, body) < LEGS.distance) act.rubbed = (act.rubbed ?? 0) + used;
+    if (act.seen !== true && (act.rubbed ?? 0) >= LEGS.eightMinutes) {
+      act.seen = true;
+      observe(state, cat, "legs", 1, false, MINUTES_PER_HOUR);
+    }
+    return minutes - used;
+  }
   const room = roomAt(body);
   if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat) && room !== act.from) {
     act.seen = true;
     observe(state, cat, "follower");
   }
   return minutes - used;
+}
+
+/** Кіт поруч із персонажем, коли до нього ближче цього (§9.9): прийшов по увагу. */
+const ARRIVED = 1.2;
+
+/** На якій відстані від персонажа тримається кіт (§9.12, «Тертя об ноги»): 0 — під ногами. */
+function keepDistance(cat: Cat): number {
+  const legs = traitLevel(cat, "legs");
+  if (legs >= 0) return 0;
+  return legs === -1 ? LEGS.keep[0] : LEGS.keep[1];
+}
+
+/**
+ * Кіт іде до персонажа (§9.12): під ноги; «Тримає дистанцію» сідає за клітинку від нього, «Обходить стороною» — за
+ * півтори й раз за похід відступає, коли персонаж підходить ближче (рішення автора 2026-10-25). Лише раз — інакше
+ * його, що сам прийшов по увагу, не вдалося б погладити.
+ */
+function approach(state: GameState, cat: Cat): void {
+  const body = state.character.body;
+  const keep = keepDistance(cat);
+  const gap = distance(cat, body);
+  if (keep === 0) {
+    if (gap > ARRIVED) cat.act.goal = tileOf(body);
+    return;
+  }
+  if (gap > keep + ARRIVED) cat.act.goal = tileAtDistance(state, body, cat, keep);
+  else if (keep >= LEGS.keep[1] && gap < LEGS.backOff && cat.act.kept !== true) {
+    cat.act.kept = true;
+    cat.act.goal = tileAtDistance(state, body, cat, keep + 0.5);
+  }
+}
+
+/** Звідки голодний кіт кидає справи, щоб покрутитися під ногами того, хто несе корм (§9.12). */
+const EIGHT_FROM = new Set(["idle", "wander", "beg"]);
+
+/**
+ * Персонаж несе корм (§9.12, рішення автора 2026-10-25): голодний кіт із «Тертям об ноги» +, що це бачить і нічим
+ * важливим не зайнятий, іде слідом і крутиться «вісімкою» під ногами, поки корм не насиплють.
+ */
+function figureEight(state: GameState): void {
+  if (state.character.held?.kind !== "catfood") return;
+  for (const cat of state.cats) {
+    if (!home(state, cat) || traitLevel(cat, "legs") <= 0 || cat.needs.hunger < LEGS.hunger) continue;
+    if (!EIGHT_FROM.has(cat.act.kind) || isAdapting(state, cat) || !inView(state, cat)) continue;
+    start(cat, "follow", tileOf(state.character.body), LEGS.foodMinutes, "food");
+  }
 }
 
 function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
@@ -621,13 +682,15 @@ export function lapChance(cat: Cat): number {
 
 /**
  * Кіт по увагу прийшов до персонажа, що працює (§9.12): сідає на клавіатуру, лягає на коліна
- * чи просто сидить поруч і нявчить.
+ * чи просто сидить поруч і нявчить. Клавіатуру пробує майже кожен кіт — 10% + 30% за одиницю «Робочого помічника»;
+ * «Поважає роботу» на неї не сідає, а якщо не ліг на коліна — лягає поруч зі столом і не заважає (рішення автора
+ * 2026-10-25): це прояв «−», раз на день.
  */
 function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
   cat.act.target = "asked";
   const helper = traitLevel(cat, "helper");
   const lap = traitLevel(cat, "lap");
-  if (helper > 0 && rng.chance(WORK_CAT.keyboardStep * helper)) {
+  if (helper >= 0 && rng.chance(WORK_CAT.keyboardBase + WORK_CAT.keyboardStep * helper)) {
     const computer = objectById("computer");
     const minutes = WORK_CAT.keyboardMinMinutes + rng.next() * (WORK_CAT.keyboardMaxMinutes - WORK_CAT.keyboardMinMinutes);
     observe(state, cat, "helper");
@@ -637,6 +700,13 @@ function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
     start(cat, "lap", null, MINUTES_PER_HOUR * 4, "character");
     observe(state, cat, "lap");
     jealousy(state, cat);
+    return;
+  }
+  if (helper < 0) {
+    const computer = objectById("computer");
+    const beside = visibleFloorNear(state, { x: computer.x + computer.w + 0.5, y: computer.y + 1.5 });
+    start(cat, "idle", tileOf(beside), WORK_CAT.besideMinutes, "desk");
+    observe(state, cat, "helper", -1, false, MINUTES_PER_DAY);
   }
 }
 
@@ -1115,14 +1185,21 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.
-  const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy" || cat.act.kind === "follow";
+  // «Вісімка» під ногами того, хто несе корм, — заради їжі, тож її голод не перериває (§9.12).
+  const calm =
+    cat.act.kind === "idle" ||
+    cat.act.kind === "wander" ||
+    cat.act.kind === "hide" ||
+    cat.act.kind === "attention" ||
+    cat.act.kind === "toy" ||
+    (cat.act.kind === "follow" && cat.act.target !== "food");
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {
       // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
-      const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= 1.2;
+      const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= ARRIVED + keepDistance(cat);
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід.
       if (near && cat.act.seen !== true) {
         cat.act.seen = true;
@@ -1131,7 +1208,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         // «Сам по собі» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
         if (cat.act.goal === null && cat.act.elapsed >= FOLLOWER.waited) observe(state, cat, "follower", -1);
       }
-      if (traitLevel(cat, "follower") >= 0 && !near) cat.act.goal = tileOf(body);
+      if (traitLevel(cat, "follower") >= 0) approach(state, cat);
     }
   }
   let left = minutes;
@@ -1245,7 +1322,10 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   const rng = stateRng(state, "behavior");
   // Уночі персонаж спить і проявів не бачить (§9.9).
   setWitnessing(context.present);
-  if (context.present) noticeRoomChange(state, rng);
+  if (context.present) {
+    noticeRoomChange(state, rng);
+    figureEight(state);
+  }
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) tickRelations(state, minutes, rng);
   if (context.present) watchCats(state, minutes);

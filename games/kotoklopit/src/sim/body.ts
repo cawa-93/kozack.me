@@ -15,6 +15,7 @@ import {
   LOW_STAT,
   LEGS,
   LOW_STAT_SPEED,
+  MINUTES_PER_DAY,
   SLIP_CHANCE,
   STUN_MINUTES,
   STUN_PAUSE_MINUTES,
@@ -148,6 +149,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   slide(state, body, dir.x * speed * minutes, dir.y * speed * minutes);
   // Кроки поруч будять чуйних котів (§9.12).
   hearSteps(state, from);
+  keptAway(state);
   const rng = stateRng(state, "behavior");
   if (rubbing) {
     const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");
@@ -166,6 +168,19 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
       emit(state, { type: "slipped", mess: mess.id });
       return;
     }
+  }
+}
+
+/**
+ * Персонаж проходить повз кота, що прийшов по увагу й сидить поруч, а той під ноги не лізе — прояв «Тертя об ноги −»,
+ * раз на день (§9.12, рішення автора 2026-10-25).
+ */
+function keptAway(state: GameState): void {
+  const body = state.character.body;
+  for (const cat of state.cats) {
+    if (cat.away !== null || (cat.act.kind !== "attention" && cat.act.kind !== "follow") || cat.act.goal !== null) continue;
+    if (traitLevel(cat, "legs") >= 0 || Math.hypot(cat.x - body.x, cat.y - body.y) > LEGS.passBy) continue;
+    observe(state, cat, "legs", -1, false, MINUTES_PER_DAY);
   }
 }
 

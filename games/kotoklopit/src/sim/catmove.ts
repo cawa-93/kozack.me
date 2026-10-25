@@ -142,6 +142,29 @@ export function lastTileWithin(from: Vec, goal: Vec, area: Rect): Vec {
   return tile;
 }
 
+/**
+ * Клітинка підлоги, центр якої приблизно за `keep` клітинок від `center`, — з боку `from` (§9.12, «Тертя об ноги»): кіт,
+ * що тримає дистанцію, сідає не під ноги, а поруч. Серед видимих вільних клітинок довкола — найближча до цієї відстані,
+ * а з рівних — ближча до кота.
+ */
+export function tileAtDistance(state: GameState, center: Vec, from: Vec, keep: number): Vec {
+  let best: Vec = tileOf(from);
+  let bestScore = Infinity;
+  const reach = Math.ceil(keep) + 2;
+  for (let y = Math.floor(center.y) - reach; y <= Math.floor(center.y) + reach; y++) {
+    for (let x = Math.floor(center.x) - reach; x <= Math.floor(center.x) + reach; x++) {
+      if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT || isSolid(state, x, y) || hiddenTile(x, y)) continue;
+      const gap = Math.hypot(x + 0.5 - center.x, y + 0.5 - center.y);
+      const score = Math.abs(gap - keep) * 2 + Math.hypot(x + 0.5 - from.x, y + 0.5 - from.y) * 0.3;
+      if (score < bestScore) {
+        best = { x, y };
+        bestScore = score;
+      }
+    }
+  }
+  return best;
+}
+
 /** Випадкова прохідна клітинка квартири, яку не закриває передня стіна. */
 export function randomFloor(rng: Rng): Vec {
   for (let i = 0; i < 50; i++) {

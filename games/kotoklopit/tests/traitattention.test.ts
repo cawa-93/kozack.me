@@ -5,16 +5,18 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance } from "../src/sim/actions";
+import { rubbingCat } from "../src/sim/body";
 import { createCat, idleAct } from "../src/sim/cat";
-import { AFFECTION, PET, PETTING, TALKATIVE } from "../src/sim/config";
-import { tickCats } from "../src/sim/catai";
-import { startWork } from "../src/sim/work";
-import { advance, newGame } from "../src/sim/game";
+import { catOnComputer, decide, tickCats } from "../src/sim/catai";
+import { AFFECTION, LEGS, PET, PETTING, TALKATIVE } from "../src/sim/config";
+import { advance, interact, newGame } from "../src/sim/game";
+import { objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import { startWork } from "../src/sim/work";
 import { catLook } from "../src/view/thoughts";
-import { hours, recordEvents, withCatCorner } from "./helpers";
+import { hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -180,16 +182,136 @@ describe("«Балакучість» (рішення автора 2026-10-25)", 
       Object.assign(save.current.character.body, { x: 6.5, y: 7.5 });
       startWork(save.current);
       save.current.character.stats.sanity = 50;
-      const traits: Record<string, TraitLevel> = { lap: -2, helper: -2 };
+      const traits: Record<string, TraitLevel> = {};
       if (talkative !== 0) traits.talkative = talkative;
       const cat = withCat(save, traits, { x: 7.5, y: 7.5 });
       cat.needs.attention = 100;
-      cat.act = { kind: "attention", target: "character", goal: null, minutes: 60, elapsed: 0 };
+      // Уже прийшов і сидить поруч, нявкаючи: не на клавіатурі й не на колінах.
+      cat.act = { kind: "attention", target: "asked", goal: null, minutes: 60, elapsed: 0 };
       for (let i = 0; i < 59; i++) tickCats(save.current, 1, { present: true });
       return 50 - save.current.character.stats.sanity;
     };
     const plain = sanityLost(0);
     expect(sanityLost(1) - plain).toBeGreaterThan(1);
     expect(sanityLost(2) - plain).toBeCloseTo(TALKATIVE.workMaxPerHour);
+  });
+});
+
+describe("«Тертя об ноги» (рішення автора 2026-10-25)", () => {
+  it("голодний «Заплітайло» крутиться «вісімкою» під ногами того, хто несе корм, — прояв «+»; кіт без риси — ні", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 16.5, y: 2.5 });
+    save.current.character.held = { kind: "catfood", quality: "cheap", sterile: false };
+    const legs = withCat(save, { legs: 1 }, { x: 14.5, y: 3.5 });
+    const plain = withCat(save, {}, { x: 13.5, y: 2.5 });
+    for (const cat of [legs, plain]) cat.needs.hunger = 70;
+    for (let i = 0; i < 12; i++) tickCats(save.current, 0.25, { present: true });
+    expect(legs.act).toMatchObject({ kind: "follow", target: "food" });
+    expect(plain.act.kind).not.toBe("follow");
+    expect(rubbingCat(save.current)?.id).toBe(legs.id);
+    expect(seen(legs, "legs")).toBe(1);
+    // Корм насипали — «вісімці» кінець.
+    save.current.character.held = null;
+    tickCats(save.current, 0.25, { present: true });
+    expect(legs.act.kind).not.toBe("follow");
+  });
+
+  it("«Тримає дистанцію» сідає за клітинку, «Обходить стороною» — за півтори й раз відступає", () => {
+    const sitting = (level: TraitLevel): { gap: number; cat: Cat; save: Save } => {
+      const save = game();
+      Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
+      const cat = withCat(save, { legs: level }, { x: 3.5, y: 8.5 });
+      cat.needs.attention = 100;
+      cat.act = { kind: "attention", target: "asked", goal: null, minutes: 30, elapsed: 0 };
+      for (let i = 0; i < 20; i++) tickCats(save.current, 0.25, { present: true });
+      const body = save.current.character.body;
+      return { gap: Math.hypot(cat.x - body.x, cat.y - body.y), cat, save };
+    };
+    const near = sitting(-1);
+    expect(near.gap).toBeGreaterThan(LEGS.distance);
+    expect(near.gap).toBeLessThan(2);
+    expect(rubbingCat(near.save.current)).toBeNull();
+    const far = sitting(-2);
+    expect(far.gap).toBeGreaterThan(1);
+    // Персонаж підійшов упритул — кіт відступає, але лише раз за похід.
+    const body = far.save.current.character.body;
+    Object.assign(body, { x: far.cat.x + 0.3, y: far.cat.y });
+    tickCats(far.save.current, 0.01, { present: true });
+    expect(far.cat.act.goal).not.toBeNull();
+    for (let i = 0; i < 8; i++) tickCats(far.save.current, 0.25, { present: true });
+    Object.assign(body, { x: far.cat.x + 0.3, y: far.cat.y });
+    tickCats(far.save.current, 0.01, { present: true });
+    expect(far.cat.act.goal).toBeNull();
+  });
+
+  it("персонаж проходить повз, а кіт по увагу під ноги не лізе — прояв «−», раз на день", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 6.5, y: 8.5 });
+    const cat = withCat(save, { legs: -1 }, { x: 8.5, y: 8.5 });
+    cat.needs.attention = 100;
+    cat.act = { kind: "attention", target: "asked", goal: null, minutes: 30, elapsed: 5, seen: true };
+    for (let i = 0; i < 6; i++) advance(save, 0.1, { move: { x: 1, y: 0 }, hold: false });
+    expect(seen(cat, "legs")).toBe(1);
+    for (let i = 0; i < 6; i++) advance(save, 0.1, { move: { x: -1, y: 0 }, hold: false });
+    expect(seen(cat, "legs")).toBe(1);
+  });
+});
+
+describe("«Робочий помічник» (рішення автора 2026-10-25)", () => {
+  /** Кіт по увагу приходить до персонажа, що працює; повертає, що він зробив. */
+  const atWork = (seed: number, traits: Record<string, TraitLevel>): { cat: Cat; save: Save; keyboard: boolean } => {
+    const save = game(seed);
+    // Потік поведінки засівається на початку дня; нова гра в тесті починає його з нуля — тож різний для кожного seed.
+    save.current.rng.behavior = 1000 + seed;
+    save.current.minute = hours(10);
+    walkTo(save, "computer");
+    interact(save);
+    const body = save.current.character.body;
+    const cat = withCat(save, { lap: -1, ...traits }, { x: body.x + 1, y: body.y + 1 });
+    cat.needs.attention = 90;
+    decide(save.current, cat, createRng(seed), { present: true });
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 40 && cat.act.kind === "attention"; i++) advance(save, 0.25);
+    stop();
+    return { cat, save, keyboard: cat.act.kind === "keyboard" || events.some((e) => e.type === "keyboard") };
+  };
+
+  it("на клавіатуру пробує й кіт без риси; «Поважає роботу» — ніколи, а лягає поруч зі столом — прояв «−»", () => {
+    let plain = 0;
+    let respectful = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      if (atWork(seed, {}).keyboard) plain += 1;
+      const quiet = atWork(seed, { helper: -1 });
+      if (quiet.keyboard) respectful += 1;
+      if (seed === 0) {
+        expect(quiet.cat.act).toMatchObject({ kind: "idle", target: "desk" });
+        expect(seen(quiet.cat, "helper")).toBe(1);
+        expect(quiet.save.current.character.activity?.kind).toBe("work");
+      }
+    }
+    expect(plain).toBeGreaterThan(0);
+    expect(plain).toBeLessThan(15);
+    expect(respectful).toBe(0);
+  });
+
+  it("«Байдужий до техніки» на комп'ютері не спить, «Поважає роботу» — рідше", () => {
+    const onComputer = (helper: TraitLevel | 0): number => {
+      let count = 0;
+      const computer = objectById("computer");
+      for (let seed = 0; seed < 300; seed++) {
+        const save = game(seed % 7);
+        const cat = withCat(save, helper === 0 ? {} : { helper }, { x: 9.5, y: 8.5 });
+        cat.needs.fatigue = 95;
+        decide(save.current, cat, createRng(seed), { present: true });
+        const goal = cat.act.goal;
+        if (cat.act.kind === "sleep" && goal && goal.y === computer.y && goal.x >= computer.x && goal.x < computer.x + computer.w) count += 1;
+      }
+      return count;
+    };
+    const plain = onComputer(0);
+    expect(plain).toBeGreaterThan(5);
+    expect(onComputer(-1)).toBeLessThan(plain);
+    expect(onComputer(-2)).toBe(0);
+    expect(catOnComputer).toBeTypeOf("function");
   });
 });

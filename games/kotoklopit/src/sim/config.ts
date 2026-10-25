@@ -917,7 +917,14 @@ export const HUNGRY_THEFT = { step: 0.25, base: 0.15, starving: 95 } as const;
 export const WORK_CAT = {
   /** До того, хто працює, кіт іде вже з такою увагою, як для пестощів (правка автора 2026-10-23: було 60). */
   seekAttention: 40,
-  keyboardStep: 0.35,
+  /**
+   * Клавіатура (рішення автора 2026-10-25, `TRAITS_REVIEW.md`): пробує майже кожен кіт — 10% + 30% за одиницю «Робочого
+   * помічника»; «−» не сідає ніколи, а коли не лягає на коліна, лягає поруч зі столом на `besideMinutes` хвилин і не
+   * заважає.
+   */
+  keyboardBase: 0.1,
+  keyboardStep: 0.3,
+  besideMinutes: 20,
   lapBase: 0.5,
   lapStep: 0.25,
   keyboardMinMinutes: 10,
@@ -934,8 +941,11 @@ export const WORK_CAT = {
 export const WATCH_SANITY = { asleep: 1, awake: 3 } as const;
 /** Безлад у полі зору дратує (§9.12, правка автора 2026-10-23): здоровий глузд за годину за кожен і найбільше разом. */
 export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
-/** Сон на комп'ютері: вага 1 + 2 × «Теплолюбність» + 2 × «Робочий помічник». */
-export const COMPUTER_SLEEP = { base: 1, step: 2 } as const;
+/**
+ * Сон на комп'ютері: вага 1 + 2 × «Теплолюбність» + 2 × «Робочий помічник»; «Поважає роботу» (−1) — удвічі менша,
+ * «Байдужий до техніки» (−2 і менше) на комп'ютері не спить (`helperStep` за одиницю «−», рішення автора 2026-10-25).
+ */
+export const COMPUTER_SLEEP = { base: 1, step: 2, helperStep: 0.5 } as const;
 /** Прогнали з місця (§9.12). */
 export const SHOO = { mood: -3, love: -2 } as const;
 /** Шерстяна грудка: раз на 3 дні, уночі вдвічі частіше, довгошерсті вдвічі частіше, риса ±50%. */
@@ -989,7 +999,25 @@ export const STRESS_EFFECTS = { shaken: 3, waitMinutes: 30, nervousStep: 0.25, g
 /** Адаптація кота ззовні в новому домі (§9.6): 2 − 0,5 × «Сміливість» днів, від 1 до 3 (рішення автора 2026-10-25). */
 export const ADAPTATION_BRAVERY = { step: 0.5, min: 1, max: 3 } as const;
 export const SLIP_CHANCE = 0.5;
-/** Тертя об ноги: персонаж повільніший; щохвилини руху шанс спіткнутися 10% + 10% за одиницю. */
-export const LEGS = { slow: 0.7, tripBase: 0.1, tripStep: 0.1, distance: 0.6 } as const;
+/**
+ * Тертя об ноги (§9.12): кіт ближче `distance` клітинки — персонаж повільніший; щохвилини руху шанс спіткнутися
+ * `tripBase` + `tripStep` за одиницю. Рішення автора 2026-10-25 (`TRAITS_REVIEW.md`): «+» крутиться «вісімкою» й тоді,
+ * коли персонаж несе корм, а кіт голодний (від `hunger`) і бачить це, — `foodMinutes` хвилин іде слідом; пів хвилини
+ * (`eightMinutes`) під ногами — прояв. «Тримає дистанцію» (−1) сідає за `keep[0]` клітинки від персонажа, «Обходить
+ * стороною» (−2 і менше) — за `keep[1]` і раз за похід відступає, коли персонаж підходить ближче `backOff`. Персонаж
+ * пройшов ближче `passBy` клітинки, а кіт по увагу під ноги не поліз, — прояв «−», раз на день.
+ */
+export const LEGS = {
+  slow: 0.7,
+  tripBase: 0.1,
+  tripStep: 0.1,
+  distance: 0.6,
+  hunger: 50,
+  foodMinutes: 5,
+  eightMinutes: 0.5,
+  keep: [1, 1.5],
+  backOff: 0.8,
+  passBy: 2,
+} as const;
 /** Втеча в двері (§9.12): кіт ближче 4 клітинок, шанс 10% + 25% за одиницю «Втеч»; повертається о 22:00. */
 export const ESCAPE = { distance: 4, base: 0.1, step: 0.25, returnMinute: 22 * MINUTES_PER_HOUR, returnMood: -10, catchSanity: -3 } as const;
