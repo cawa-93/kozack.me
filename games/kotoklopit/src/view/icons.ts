@@ -363,16 +363,22 @@ Object.assign(ICONS, {
     g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
   },
   loud: (g: Phaser.GameObjects.Graphics) => {
-    // Гучний звук (§9.12): гучномовець і три хвилі.
-    g.fillStyle(INK).fillRect(5, 15, 6, 10).fillTriangle(10, 15, 19, 7, 19, 33).fillTriangle(10, 25, 10, 15, 19, 33);
+    // Гучний звук (§9.12): гучномовець і три хвилі. Одним многокутником — без світлого шва між трикутниками.
+    const speaker = [[5, 15], [10, 15], [19, 7], [19, 33], [10, 25], [5, 25]].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    g.fillStyle(INK).fillPoints(speaker, true);
     g.lineStyle(3, COLORS.danger);
     for (const radius of [6, 11, 16]) g.beginPath().arc(19, 20, radius, -Math.PI / 4, Math.PI / 4).strokePath();
   },
   lick: (g: Phaser.GameObjects.Graphics) => {
-    // Кіт нервово вилизується (§9.12): рожевий язик і краплина.
-    g.fillStyle(0xe58fa2).fillRoundedRect(12, 6, 15, 24, 7);
-    g.lineStyle(2.5, INK).strokeRoundedRect(12, 6, 15, 24, 7).lineBetween(19.5, 11, 19.5, 22);
-    g.fillStyle(0x8fc6e8).fillCircle(30, 31, 3.5).fillTriangle(26.8, 30, 33.2, 30, 30, 24);
+    // Кіт нервово вилизується (§9.12): котячий ніс і рот «ω», з якого звисає рожевий язик, і краплина.
+    const tongue = { tl: 0, tr: 0, bl: 7, br: 7 };
+    g.fillStyle(0xe58fa2).fillRoundedRect(14, 15, 12, 21, tongue);
+    g.lineStyle(3, INK).strokeRoundedRect(14, 15, 12, 21, tongue).lineBetween(20, 20, 20, 31);
+    g.fillStyle(0xd9708a).fillTriangle(15, 1, 25, 1, 20, 6);
+    g.lineStyle(3, INK).lineBetween(20, 6, 20, 9);
+    g.beginPath().arc(14.5, 9, 5.5, 0, Math.PI).strokePath();
+    g.beginPath().arc(25.5, 9, 5.5, 0, Math.PI).strokePath();
+    g.fillStyle(0x8fc6e8).fillCircle(34, 32, 3.5).fillTriangle(30.8, 31, 37.2, 31, 34, 25);
   },
   washer: (g: Phaser.GameObjects.Graphics) => {
     // Пральна машина: барабан із бульбашками й стрілкою обертання — пере.

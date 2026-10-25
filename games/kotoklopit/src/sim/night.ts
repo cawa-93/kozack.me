@@ -241,8 +241,10 @@ function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h
     }
     const busy = cat.act.kind === "eat" || cat.act.kind === "toilet" || cat.act.kind === "fight" || cat.act.kind === "hide";
     if (traitLevel(cat, "morning") >= 0 || cat.needs.hunger < WAKE_UP.waitHunger || busy || isNewborn(cat)) continue;
-    cat.x = bed.x + bed.w + 0.5;
-    cat.y = bed.y + 0.6;
+    // Біля ліжка, попереду й праворуч від персонажа, що встає (`SPAWN`), обличчям до нього: за ним кота не видно було б.
+    cat.x = bed.x + bed.w + 1.3;
+    cat.y = bed.y + bed.h + 0.2;
+    cat.facing = -1;
     cat.act = { kind: "beg", target: "bed", goal: null, minutes: CAT_ACT_MINUTES.beg, elapsed: 0 };
     observe(state, cat, "morning", -1, true);
   }

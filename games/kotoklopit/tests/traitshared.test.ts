@@ -555,6 +555,8 @@ describe("«Нічна активність» і «Ранкова побудка
     expect(patient.act).toMatchObject({ kind: "beg", target: "bed" });
     expect(patient.traits[0]?.seen).toBe(1);
     expect(Math.hypot(patient.x - save.current.character.body.x, patient.y - save.current.character.body.y)).toBeLessThan(1.5);
+    // Попереду персонажа (камера «три чверті»): позаду його кота не видно.
+    expect(patient.y).toBeGreaterThan(save.current.character.body.y);
     expect(plain.act.target).not.toBe("bed");
   });
 });
