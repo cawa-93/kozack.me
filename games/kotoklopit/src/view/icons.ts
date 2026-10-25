@@ -3,6 +3,7 @@
 
 import Phaser from "phaser";
 
+import { drawTrinket } from "./catcorner";
 import { COLORS } from "./geometry";
 
 export type IconName =
@@ -63,7 +64,10 @@ export type IconName =
   | "loud"
   | "lick"
   | "cough"
-  | "fur";
+  | "fur"
+  | "mug"
+  | "phone"
+  | "pen";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -470,6 +474,10 @@ Object.assign(ICONS, {
     g.lineStyle(2, INK).strokeEllipse(20, 22, 26, 8);
     g.fillStyle(COLORS.danger).fillRoundedRect(33, 3, 4.5, 11, 1.5).fillCircle(35.25, 18.5, 2.3);
   },
+  // Дрібнички на столах (§9.12, «Скидання речей»): ті самі, що лежать на столах і падають на підлогу.
+  mug: (g: Phaser.GameObjects.Graphics) => drawTrinket(g, "mug", 18, 33, 2.3),
+  phone: (g: Phaser.GameObjects.Graphics) => drawTrinket(g, "phone", 20, 22, 2.6),
+  pen: (g: Phaser.GameObjects.Graphics) => drawTrinket(g, "pen", 20, 22, 1.8),
   toy: (g: Phaser.GameObjects.Graphics) => {
     // Іграшка-вудочка з пір'ям (§9.12).
     g.lineStyle(3, 0x8b5e3c).lineBetween(5, 34, 26, 10);

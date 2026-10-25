@@ -1,7 +1,7 @@
 // Квартира прототипу (§8.4): стіни, кімнати й речі на сітці клітинок підлоги, а також
 // місця для речей котячого кутка (§9.12). Розкладка не змінюється під час гри, тож вона не входить у стан гри.
 
-import type { GameState, HomeItem, Product, Vec } from "./types";
+import type { GameState, HomeItem, Product, TrinketKind, Vec } from "./types";
 
 export type RoomId = "bedroom" | "bathroom" | "kitchen" | "living";
 
@@ -133,6 +133,23 @@ export function objectsOf(state: Pick<GameState, "home">): HomeObject[] {
 export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
   (o) => o.kind === "table" || o.kind === "counter",
 ).map((o) => o.id);
+
+/**
+ * Дрібнички на столах (§9.12, «Скидання речей»): кухоль на кухонному столі, телефон на кухонній поверхні, ручка на
+ * комп'ютерному столі. `at` — де саме на речі: частка її ширини (страва лежить посередині, дрібничка — збоку).
+ */
+export const TRINKETS: readonly { kind: TrinketKind; object: string; at: number }[] = [
+  { kind: "mug", object: "table", at: 0.8 },
+  { kind: "phone", object: "counter-left", at: 0.75 },
+  { kind: "pen", object: "computer", at: 0.85 },
+];
+
+/** Клітинка речі, на якій лежить дрібничка: туди кіт вилазить, щоб її скинути. */
+export function trinketTile(kind: TrinketKind): Vec {
+  const trinket = TRINKETS.find((t) => t.kind === kind) ?? TRINKETS[0]!;
+  const o = objectById(trinket.object);
+  return { x: Math.min(o.x + o.w - 1, Math.floor(o.x + trinket.at * o.w)), y: o.y };
+}
 
 /** Кошик брудної білизни біля пральної машини (§8.7): його видно, а мстивий кіт іде до нього, як і до ліжка (§9.12). */
 export const LAUNDRY_BASKET: Vec = { x: 9.5, y: 1.75 };

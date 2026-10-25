@@ -37,6 +37,7 @@ import {
   HUNGRY_THEFT,
   ILLNESS,
   KITTEN_PLAY,
+  KNOCKING,
   LEGS,
   LITTER_CAPACITY,
   LOVE_BEHAVIOR,
@@ -96,12 +97,12 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
+import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
@@ -817,6 +818,14 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   const onSurfaces = dishes(state, false);
   const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
   if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, value: active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)) });
+  // Дрібничка на столі (§9.12, «Скидання речей»): «−» ходить столами так само часто, як кіт без риси, а дійшовши — може
+  // лише обнюхати її й обійти.
+  const standing = standingTrinkets(state);
+  const trinket = standing[rng.int(0, standing.length - 1)];
+  if (trinket) {
+    const weight = KNOCKING.weight * Math.max(1, traitFactor(cat, "knocking", MISCHIEF.traitStep)) * bored;
+    options.push({ weight, value: active(() => start(cat, "knock", trinketTile(trinket.kind), KNOCKING.sniffMinutes, `trinket:${trinket.kind}`)) });
+  }
   const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
@@ -1215,6 +1224,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       return;
     case "knock": {
+      if (act.target?.startsWith("trinket:")) return trinketDone(state, cat, rng);
       if (!act.target || !knockOff(state, cat, act.target)) return;
       changeMood(state, cat, 1);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
@@ -1331,6 +1341,69 @@ function knockOff(state: GameState, cat: Cat, id: string): Dish | null {
   return dish;
 }
 
+/** Дрібнички, що стоять на своїх місцях (§9.12, «Скидання речей»): скинуті лежать на підлозі до ранку. */
+export function standingTrinkets(state: GameState): (typeof TRINKETS)[number][] {
+  return TRINKETS.filter((t) => !state.home.trinkets?.[t.kind]);
+}
+
+/**
+ * Кіт скинув дрібничку (§9.12, «Скидання речей»): вона лежить на підлозі під столом до ранку; кухоль розбивається з шансом
+ * 50% — уламки, гучний звук і ремонт.
+ */
+function knockTrinket(state: GameState, cat: Cat, kind: TrinketKind, rng: Rng): boolean {
+  const home = state.home;
+  const place = TRINKETS.find((t) => t.kind === kind);
+  if (!place || home.trinkets?.[kind]) return false;
+  const o = objectById(place.object);
+  const spot = visibleFloorNear(state, { x: o.x + place.at * o.w, y: o.y + o.h + 0.5 });
+  const broken = kind === "mug" && rng.chance(KNOCKING.mugBreaks);
+  (home.trinkets ??= {})[kind] = broken ? { x: spot.x, y: spot.y, broken: true } : { x: spot.x, y: spot.y };
+  emit(state, { type: "trinket-fell", cat: cat.id, trinket: kind, object: place.object, broken });
+  if (broken) {
+    addMess(state, "broken", spot, cat.id);
+    home.repairs += KNOCKING.repair;
+    loudNoise(state, "broken", spot);
+  }
+  return true;
+}
+
+/**
+ * Кіт дійшов до дрібнички (§9.12): скинув — прояв «+» (ще й дивлячись на персонажа, коли це заради уваги); «−» лише
+ * обнюхав її й обійшов — прояв «−».
+ */
+function trinketDone(state: GameState, cat: Cat, rng: Rng): void {
+  const kind = cat.act.target?.slice("trinket:".length) as TrinketKind;
+  if (cat.act.refused === true) {
+    emit(state, { type: "trinket-sniffed", cat: cat.id, trinket: kind });
+    observe(state, cat, "knocking", -1);
+    return;
+  }
+  if (!knockTrinket(state, cat, kind, rng)) return;
+  changeMood(state, cat, 1);
+  cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+  observe(state, cat, "knocking");
+}
+
+/**
+ * «Скидання речей +» прийшов по увагу (§9.12): персонаж працює чи вже 5 хвилин його не гладить — раз за візит, з шансом 20% ×
+ * рівень, кіт іде до дрібнички в кімнаті персонажа (не далі 6 клітинок), дивиться на нього й зіштовхує її.
+ */
+function showOffKnock(state: GameState, cat: Cat, rng: Rng): void {
+  const act = cat.act;
+  const level = traitLevel(cat, "knocking");
+  if (level <= 0 || act.seen !== true || act.knockTried === true) return;
+  if (!isWorking(state) && act.elapsed < KNOCKING.ignoredMinutes) return;
+  act.knockTried = true;
+  if (!rng.chance(KNOCKING.attentionStep * level)) return;
+  const room = roomAt(state.character.body);
+  const near = standingTrinkets(state).filter((t) => roomAt(objectById(t.object)) === room && distance(trinketTile(t.kind), cat) <= KNOCKING.reach);
+  near.sort((a, b) => distance(trinketTile(a.kind), cat) - distance(trinketTile(b.kind), cat));
+  const trinket = near[0];
+  if (!trinket) return;
+  start(cat, "knock", trinketTile(trinket.kind), KNOCKING.sniffMinutes, `trinket:${trinket.kind}`);
+  cat.act.showOff = true;
+}
+
 /** Щохвилинне на місці. */
 function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   const act = cat.act;
@@ -1379,7 +1452,18 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (act.kind === "attention") {
         if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
+        // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
+        if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
+      return;
+    case "knock":
+      // Дійшов до дрібнички (§9.12, «Скидання речей»): «−» з шансом 50% × |рівень| лише обнюхує її; хто скидає заради
+      // уваги — дивиться на персонажа.
+      if (act.refused === undefined && act.target?.startsWith("trinket:")) {
+        const level = traitLevel(cat, "knocking");
+        act.refused = level < 0 && rng.chance(KNOCKING.sniffStep * -level);
+      }
+      if (act.showOff === true) cat.facing = state.character.body.x >= cat.x ? 1 : -1;
       return;
     case "keyboard":
       // Кіт на клавіатурі: працювати не вийде (§9.12).
@@ -1488,6 +1572,11 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
     if (!state.home.surfaces[id]) continue;
     const near = (p: Vec): boolean => distanceToRect(p, objectById(id)) <= ZOOMIES.knockReach;
     if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockOff(state, cat, id);
+  }
+  // Так само й дрібничка на столі (§9.12, «Скидання речей»).
+  for (const trinket of standingTrinkets(state)) {
+    const near = (p: Vec): boolean => distanceToRect(p, objectById(trinket.object)) <= ZOOMIES.knockReach;
+    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockTrinket(state, cat, trinket.kind, rng);
   }
   act.minutes -= used;
   if (!act.goal && act.minutes > 0) act.goal = randomFloor(rng);

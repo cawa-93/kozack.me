@@ -72,7 +72,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
-  if (act.kind === "eat" || act.kind === "drink") return "eat";
+  // Їсть, п'є чи обнюхує дрібничку на столі (§9.12, «Скидання речей»): голова донизу.
+  if (act.kind === "eat" || act.kind === "drink" || (act.kind === "knock" && act.refused === true)) return "eat";
   // Гребе лапою (§9.12): закопує корм біля миски.
   if (act.kind === "bury") return "bury";
   // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).

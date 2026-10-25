@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel } from "./types";
+import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -161,6 +161,10 @@ export type GameEvent =
   | { type: "bite"; cat: number }
   | { type: "played"; cat: number; minutes: number }
   | { type: "knocked"; cat: number; object: string; item: Dish }
+  /** Кіт скинув дрібничку зі столу (§9.12, «Скидання речей»): стук, а кухоль може й розбитися. */
+  | { type: "trinket-fell"; cat: number; trinket: TrinketKind; object: string; broken: boolean }
+  /** «Делікатний» обнюхав дрібничку на столі й обійшов її (§9.12): його обережність — думка. */
+  | { type: "trinket-sniffed"; cat: number; trinket: TrinketKind }
   | { type: "stole"; cat: number; object: string; item: Dish }
   | { type: "toy-broke"; toy: number }
   | { type: "discarded"; item: HomeItem }

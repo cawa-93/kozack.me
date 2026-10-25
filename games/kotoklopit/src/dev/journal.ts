@@ -218,6 +218,10 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Гра з ${catName(state, event.cat)}: ${number(event.minutes)} хв`;
     case "knocked":
       return `${catName(state, event.cat)} скинув ${item(event.item)} з «${event.object}»`;
+    case "trinket-fell":
+      return `${catName(state, event.cat)} скинув «${event.trinket}» з «${event.object}»${event.broken ? ": розбився, ремонт" : ""}`;
+    case "trinket-sniffed":
+      return `${catName(state, event.cat)} обнюхав «${event.trinket}» і обійшов`;
     case "stole":
       return `${catName(state, event.cat)} украв ${item(event.item)} з «${event.object}»`;
     case "toy-broke":

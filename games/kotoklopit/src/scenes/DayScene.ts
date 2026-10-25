@@ -15,7 +15,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
-import { isPresent, objectById } from "../sim/home";
+import { isPresent, objectById, TRINKETS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
@@ -37,7 +37,7 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
-import { drawCatCorner, itemScreen } from "../view/catcorner";
+import { drawCatCorner, drawTrinket, itemScreen } from "../view/catcorner";
 import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
@@ -86,6 +86,8 @@ export class DayScene extends Phaser.Scene {
   private views = new Map<string, ObjectView>();
   /** Речі на плиті й поверхнях: окремий шар для кожного місця, щоб персонаж правильно їх перекривав. */
   private readonly items = new Map<string, Phaser.GameObjects.Graphics>();
+  /** Дрібнички на столах (§9.12, «Скидання речей»): кожна — над своєю річчю квартири. */
+  private readonly trinkets = new Map<string, Phaser.GameObjects.Graphics>();
   private readonly catViews = new Map<number, CatView>();
   /** Приховані числа над котами в режимі розробки (§11.5). */
   private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
@@ -140,6 +142,9 @@ export class DayScene extends Phaser.Scene {
     this.corner = this.add.graphics().setDepth(0).addToDisplayList(world);
     for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
       this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1).addToDisplayList(world));
+    }
+    for (const trinket of TRINKETS) {
+      this.trinkets.set(trinket.kind, this.add.graphics().setDepth(this.view(trinket.object).depth + 1).addToDisplayList(world));
     }
     this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
     this.person = new PersonView(this, world);
@@ -737,6 +742,15 @@ export class DayScene extends Phaser.Scene {
       if (!item) continue;
       const view = this.view(id);
       drawItem(g, item, view.top.x + view.top.w / 2, view.top.y + view.top.h / 2 + 6);
+    }
+    // Дрібнички стоять на своїх місцях, поки їх не скинули (§9.12).
+    for (const trinket of TRINKETS) {
+      const g = this.trinkets.get(trinket.kind);
+      if (!g) continue;
+      g.clear();
+      if (home.trinkets?.[trinket.kind]) continue;
+      const view = this.view(trinket.object);
+      drawTrinket(g, trinket.kind, view.top.x + view.top.w * trinket.at, view.top.y + view.top.h / 2 + 6);
     }
   }
 

@@ -148,6 +148,12 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "stole":
     case "hissed":
       return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
+    case "trinket-fell":
+      // Дрібничка впала зі столу (§9.12): стук — звук речі, вголос над столом; кухоль розбився — гуркіт.
+      return [{ kind: "say", at: event.object, icon: event.broken ? "loud" : event.trinket }];
+    case "trinket-sniffed":
+      // «Делікатний» обнюхав дрібничку й обходить її (§9.12): «не чіпати» — його думка.
+      return [{ kind: "think", at: cat(event.cat), icon: event.trinket, mark: "no" }];
     case "keyboard":
       return [{ kind: "say", at: "computer", icon: "meow" }];
     case "escaped":

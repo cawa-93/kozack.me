@@ -676,6 +676,14 @@ export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, n
 export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
+/**
+ * Дрібнички на столах (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`): кіт, що хоче гратися, іде
+ * скинути дрібничку з вагою `weight` × (1 + 0,5 × «Скидання речей»), «−» — з `weight`, але, дійшовши, з шансом `sniffStep` ×
+ * |рівень| лише обнюхує її `sniffMinutes` хвилин і обходить. Кухоль розбивається з шансом `mugBreaks`: +`repair` до ремонту.
+ * «+» скидає й заради уваги: персонаж працює чи `ignoredMinutes` хвилин його не гладить — з шансом `attentionStep` × рівень
+ * за візит іде до дрібнички в кімнаті персонажа, не далі `reach` клітинок від себе.
+ */
+export const KNOCKING = { weight: 0.15, sniffStep: 0.5, sniffMinutes: 0.5, mugBreaks: 0.5, repair: 2, ignoredMinutes: 5, attentionStep: 0.2, reach: 6 } as const;
 /** Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */

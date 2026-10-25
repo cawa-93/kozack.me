@@ -7,7 +7,7 @@ import { bowlEaten, isDirty } from "../sim/catai";
 import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { itemPoint, LAUNDRY_BASKET, slotCenter } from "../sim/home";
-import type { Feeder, GameState, HomeItem, Mess, Vec } from "../sim/types";
+import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
 const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
@@ -29,6 +29,39 @@ export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "prem
   g.fillStyle(feather).fillEllipse(x + 11 * s, y + 1 * s, 6 * s, 10 * s).fillEllipse(x + 14 * s, y + 2 * s, 5 * s, 8 * s);
 }
 
+/**
+ * Дрібничка зі столу (§9.12, «Скидання речей»): кухоль, телефон, ручка. `fallen` — лежить на підлозі: кухоль — на боці,
+ * телефон — екраном догори, ручка — навскіс.
+ */
+export function drawTrinket(g: Phaser.GameObjects.Graphics, kind: TrinketKind, x: number, y: number, scale = 1, fallen = false): void {
+  const s = scale;
+  const line = s >= 2 ? 3 : 2;
+  switch (kind) {
+    case "mug": {
+      const handle = { x: fallen ? x - 2 * s : x + 6 * s, y: fallen ? y - 9 * s : y - 6 * s };
+      g.lineStyle(line, COLORS.ink).beginPath().arc(handle.x, handle.y, 3 * s, fallen ? Math.PI : -Math.PI / 2, fallen ? 0 : Math.PI / 2).strokePath();
+      const body = fallen ? { x: x - 7 * s, y: y - 7 * s, w: 13 * s, h: 8 * s } : { x: x - 5 * s, y: y - 12 * s, w: 10 * s, h: 12 * s };
+      g.fillStyle(0xd9455f).fillRoundedRect(body.x, body.y, body.w, body.h, 2 * s);
+      // Відблиск на боці кухля.
+      g.fillStyle(0xffffff, 0.8).fillRect(body.x + 2 * s, body.y + 2 * s, fallen ? 3 * s : 2 * s, fallen ? 2 * s : 5 * s);
+      g.lineStyle(line, COLORS.ink).strokeRoundedRect(body.x, body.y, body.w, body.h, 2 * s);
+      return;
+    }
+    case "phone":
+      g.fillStyle(0x222026).fillRoundedRect(x - 6 * s, y - 4 * s, 12 * s, 7 * s, 1.5 * s);
+      g.fillStyle(0x5fa8d3).fillRect(x - 4.5 * s, y - 2.8 * s, 9 * s, 4.6 * s);
+      g.lineStyle(line - 0.5, COLORS.ink).strokeRoundedRect(x - 6 * s, y - 4 * s, 12 * s, 7 * s, 1.5 * s);
+      return;
+    case "pen": {
+      const dx = (fallen ? 7 : 8) * s;
+      const dy = (fallen ? 3 : 1) * s;
+      g.lineStyle(3 * s, 0x4f7fb3).lineBetween(x - dx, y + dy, x + dx, y - dy);
+      g.lineStyle(3 * s, COLORS.ink).lineBetween(x + dx - 2 * s, y - dy + 0.5 * s, x + dx, y - dy);
+      return;
+    }
+  }
+}
+
 /** Де лежать клапті шерсті, коли її багато (§8.7): сталі місця по квартирі. */
 const FUR_SPOTS: readonly { x: number; y: number }[] = [
   { x: 2.3, y: 7.4 }, { x: 5.2, y: 9.1 }, { x: 8.7, y: 7.8 }, { x: 12.4, y: 8.6 }, { x: 15.6, y: 7.2 }, { x: 17.4, y: 9.3 },
@@ -45,6 +78,12 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
   }
   for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
   for (const mess of state.home.messes) drawMess(g, mess);
+  // Скинуті дрібнички лежать на підлозі до ранку; розбитий кухоль — уламки, їх малює безлад (§9.12).
+  for (const [kind, fallen] of Object.entries(state.home.trinkets ?? {}) as [TrinketKind, FallenTrinket | undefined][]) {
+    if (!fallen || fallen.broken === true) continue;
+    const { x, y } = toScreen(fallen);
+    drawTrinket(g, kind, x, y, 1, true);
+  }
   drawAppliances(g, state);
 }
 
