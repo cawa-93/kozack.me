@@ -41,6 +41,7 @@ import {
   PET,
   PETTING,
   PLAY,
+  PLAYFUL,
   REACH,
   SHOWER_HYGIENE,
   SHOWER_MINUTES,
@@ -780,6 +781,16 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     activity.done = true;
     return;
   }
+  // «Нудьгар» і того, що хоче гратися, з шансом 30% на вудку не зважає — відвертається (§9.12, «Ігривість»): відмова зі
+  // своєю іконкою й прояв «−».
+  const playful = traitLevel(cat, "playful");
+  if (activity.minutes === 0 && playful <= -PLAYFUL.boredLevel && cat.act.kind !== "sleep" && stateRng(state, "behavior").chance(PLAYFUL.ignore)) {
+    activity.done = true;
+    cat.facing = character.body.x >= cat.x ? -1 : 1;
+    refuse(state, `cat:${cat.id}`, "cat-bored");
+    observe(state, cat, "playful", -1);
+    return;
+  }
   // Кіт щойно приніс іграшку до ніг, і з ним пограли — він тішиться: любов (§9.12, «Подарунки й схованки»).
   if (activity.minutes === 0 && cat.gift !== undefined) {
     if (absoluteMinute(state.day, state.minute) - cat.gift <= GIFTS.thanksMinutes) changeLove(state, cat, GIFTS.thanksLove, "пограли з подарунком");
@@ -793,18 +804,30 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили грою");
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
-  const playful = Math.max(0, 1 + PLAY.playfulStep * traitLevel(cat, "playful"));
-  changeStat(state, "sanity", PLAY.sanity * playful * DIFFICULTY[state.difficulty].catSanity * minutes);
+  const joy = Math.max(0, 1 + PLAY.playfulStep * playful);
+  changeStat(state, "sanity", PLAY.sanity * joy * DIFFICULTY[state.difficulty].catSanity * minutes);
   changeMood(state, cat, PLAY.mood * minutes);
   changeLove(state, cat, PLAY.love * minutes);
-  cat.needs.play = Math.max(0, cat.needs.play - PLAY.needPerMinute * minutes);
+  cat.needs.play = Math.max(0, cat.needs.play - playDrain(cat) * minutes);
   if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
   if (cat.needs.play < PLAY.bored) {
     activity.done = true;
     cat.act = idleAct(0);
     emit(state, { type: "played", cat: cat.id, minutes: activity.minutes });
-    observe(state, cat, "playful");
+    // Гра тривала довше чи коротше, ніж із котом без риси з тією самою потребою гри, — прояв «Ігривості» (§9.9); «−»,
+    // награвшись, ліниво йде геть (рішення автора 2026-10-25).
+    if (playful !== 0) observe(state, cat, "playful", playful > 0 ? 1 : -1);
+    if (playful < 0) backAway(state, cat, character.body);
   }
+}
+
+/**
+ * Скільки потреби гри знімає хвилина гри вудкою (§9.12, «Ігривість»): «+» грається довше — 15 / (1 + 0,25 × рівень), «−» —
+ * коротше: 15 × (1 + 0,25 × |рівень|).
+ */
+export function playDrain(cat: Cat): number {
+  const level = traitLevel(cat, "playful");
+  return level >= 0 ? PLAY.needPerMinute / (1 + PLAYFUL.lengthStep * level) : PLAY.needPerMinute * (1 + PLAYFUL.lengthStep * -level);
 }
 
 /** Персонаж заснув: робота й тривала дія закінчуються, річ із рук випадає (§8.7). */

@@ -98,6 +98,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "cat-high" };
     case "wire-chewed":
       return { icon: "wire" };
+    case "cat-bored":
+      return { icon: "bored" };
   }
 }
 

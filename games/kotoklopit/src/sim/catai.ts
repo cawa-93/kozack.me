@@ -69,6 +69,7 @@ import {
   PICKY,
   PICKY_REFUSAL_STEP,
   PLAY_RELIEF,
+  PLAYFUL,
   PORTION_HUNGER,
   RELATIONS,
   REVENGE,
@@ -934,6 +935,9 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   // Понести річ — до ніг персонажа чи в схованку (§9.12, «Подарунки й схованки»).
   const gift = giftWeight(cat);
   if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng, context.present)) });
+  // «Ігривість +» кличе гратися: несе іграшку до ніг того, хто вдома й не працює (§9.12, «Гра й стосунки котів»).
+  const playful = traitLevel(cat, "playful");
+  if (playful > 0 && toy !== null && context.present && !isWorking(state)) options.push({ weight: PLAYFUL.inviteStep * playful, value: active(() => startInvite(cat, toy)) });
   // Точити кігті — потреба кожного кота: «Дряпання» трохи змінює, як часто, а передусім — де (§9.12, 2026-10-25).
   const scratching = Math.max(SCRATCH.minWeight, SCRATCH.weight * (1 + SCRATCH.frequencyStep * traitLevel(cat, "scratching")));
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
@@ -1135,6 +1139,17 @@ export function startCarry(state: GameState, cat: Cat, rng: Rng, present: boolea
   cat.act.dest = present && rng.chance(GIFTS.feet) ? "feet" : rng.chance(GIFTS.fridge) ? "fridge" : "sofa";
 }
 
+/**
+ * «Ігривість +» кличе гратися (§9.12, «Гра й стосунки котів»): іде по іграшку й несе її до ніг персонажа — як подарунок, але
+ * чекає поруч довше (`PLAYFUL.inviteMinutes`).
+ */
+function startInvite(cat: Cat, toy: ToyItem): void {
+  start(cat, "carry", itemTile(toy), GIFTS.pickMinutes, `item:${toy.id}`);
+  cat.act.carry = "toy";
+  cat.act.dest = "feet";
+  cat.act.invite = true;
+}
+
 /** Іграшка під диваном чи холодильником (§9.12): видно лише краєчок, поки її не дістануть. */
 function hideToy(toy: ToyItem, where: "sofa" | "fridge"): void {
   toy.hidden = where;
@@ -1154,8 +1169,9 @@ function carryDone(state: GameState, cat: Cat): void {
   const dest = act.dest ?? "sofa";
   if (act.picked !== true) {
     const goal = dest === "feet" ? tileOf(state.character.body) : { ...STASHES[dest].tile };
-    start(cat, "carry", goal, dest === "feet" ? GIFTS.waitMinutes : GIFTS.pickMinutes, act.target);
-    Object.assign(cat.act, { carry: act.carry, dest, picked: true });
+    const wait = act.invite === true ? PLAYFUL.inviteMinutes : GIFTS.waitMinutes;
+    start(cat, "carry", goal, dest === "feet" ? wait : GIFTS.pickMinutes, act.target);
+    Object.assign(cat.act, { carry: act.carry, dest, picked: true, ...(act.invite === true ? { invite: true } : {}) });
     return;
   }
   if (dest === "feet") return;
@@ -1179,6 +1195,8 @@ function dropGift(state: GameState, cat: Cat): void {
   toy.y = at.y;
   cat.gift = absoluteMinute(state.day, state.minute);
   emit(state, { type: "meow", cat: cat.id, ...(meowVoice(cat).silent ? { silent: true as const } : {}) });
+  // Поклав іграшку й кличе гратися — прояв «Ігривості +» (§9.9).
+  if (act.invite === true) observe(state, cat, "playful");
 }
 
 /**
@@ -1211,7 +1229,8 @@ function carrySeen(state: GameState, cat: Cat): void {
   const act = cat.act;
   if (act.kind !== "carry" || act.picked !== true || act.seen === true || !witnesses(state, cat)) return;
   act.seen = true;
-  observe(state, cat, "gifts");
+  // Кличе гратися — це «Ігривість», а не «Подарунки» (прояв — коли поклав іграшку, `dropGift`).
+  if (act.invite !== true) observe(state, cat, "gifts");
 }
 
 /**

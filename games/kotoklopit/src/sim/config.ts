@@ -676,6 +676,14 @@ export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, n
 /** Гра з персонажем: за хвилину. Нижче `bored` потреби гри кіт іде. */
 /** Правка автора 2026-10-23: здоровий глузд +4 за хвилину (було 2,5). */
 export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
+/**
+ * «Ігривість» (§9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): з «+» гра
+ * вудкою триває довше — потреба гри знімається `PLAY.needPerMinute` / (1 + `lengthStep` × рівень) за хвилину, з «−» — коротше,
+ * × (1 + `lengthStep` × |рівень|), і, награвшись, «−» іде геть. «Нудьгар» (від −`boredLevel`) з шансом `ignore` на вудку не
+ * зважає — відмова. «+» кличе гратися: коли хоче гратися, персонаж удома й не працює, а іграшка лежить на підлозі, — з вагою
+ * `inviteStep` × рівень несе її до ніг персонажа й до `inviteMinutes` хвилин чекає поруч (пограєтеся — любов, як за подарунок).
+ */
+export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /**

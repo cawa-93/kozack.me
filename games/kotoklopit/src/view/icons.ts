@@ -77,7 +77,8 @@ export type IconName =
   | "cat-high"
   | "wire"
   | "chew-wire"
-  | "chew-bag";
+  | "chew-bag"
+  | "bored";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -552,6 +553,19 @@ Object.assign(ICONS, {
     g.lineStyle(3, 0x8b5e3c).lineBetween(5, 34, 26, 10);
     g.lineStyle(1.5, INK, 0.8).lineBetween(26, 10, 30, 22);
     g.fillStyle(0xd9455f).fillEllipse(30, 26, 7, 12).fillEllipse(34, 27, 6, 10);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Іконки етапу «Гра й стосунки котів» (§9.12). */
+Object.assign(ICONS, {
+  bored: (g: Phaser.GameObjects.Graphics) => {
+    // «Нудьгар» відвернувся від вудки (§9.12, «Ігривість»): котяча голова позіхає, очі-рисочки, а пір'їнка висить без діла.
+    g.lineStyle(2, 0x8b5e3c).lineBetween(31, 2, 34, 14);
+    g.fillStyle(0xd9455f).fillEllipse(34, 19, 5, 9);
+    g.fillStyle(0x6b5d6e).fillTriangle(5, 17, 10, 5, 15, 14).fillTriangle(27, 17, 22, 5, 17, 14).fillCircle(16, 23, 12);
+    g.lineStyle(2, 0xffffff).lineBetween(9, 20, 14, 20).lineBetween(18, 20, 23, 20);
+    g.fillStyle(0xd9708a).fillEllipse(16, 29, 8, 9);
+    g.lineStyle(1.5, INK).strokeEllipse(16, 29, 8, 9);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

@@ -45,6 +45,7 @@ const ALL: Refusal[] = [
   { reason: "trash-tipped" },
   { reason: "cat-up-high" },
   { reason: "wire-chewed" },
+  { reason: "cat-bored" },
 ];
 
 function game(): Save {
