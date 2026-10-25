@@ -204,10 +204,14 @@ export function robotAt(state: GameState): Vec {
  */
 export function emptyFeeder(state: GameState, bowl: BowlItem, feeder: Feeder): Product[] {
   const products: Product[] = [];
+  // Надкльовану половинку порції (§9.12, «Апетит») назад у сховище не кладуть — її викидають.
+  const nibbled = bowl.half === true ? 1 : 0;
+  delete bowl.half;
   for (const holder of [feeder, bowl]) {
-    if (holder.food > 0 && holder.foodQuality !== null) {
+    const food = holder.food - (holder === bowl ? nibbled : 0);
+    if (food > 0 && holder.foodQuality !== null) {
       const product = holder.sterile ? "sterileFood" : "catFood";
-      addSupply(state, product, holder.foodQuality, holder.food);
+      addSupply(state, product, holder.foodQuality, food);
       if (!products.includes(product)) products.push(product);
     }
     holder.food = 0;

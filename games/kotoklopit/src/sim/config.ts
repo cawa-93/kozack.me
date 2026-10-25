@@ -380,6 +380,21 @@ export const TALKATIVE = {
 /** «Вимогливість» видно за тривалістю походу (§9.9): довше чи коротше за звичайний на стільки хвилин. */
 export const DEMANDING_SEEN_MINUTES = 0.5;
 export const APPETITE_STEP = 0.15;
+/**
+ * «Апетит» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §9.12 «Їжа й гігієна»): голод росте ±`APPETITE_STEP` за
+ * одиницю; «+» іде їсти раніше — поріг голоду нижчий на `thresholdStep` за одиницю — і, доївши порцію, з'їдає й другу,
+ * якщо в мисці ще є корм, з шансом `secondStep` × рівень, не більше `secondMax`. «−» клює: з шансом `halfStep` × |рівень|,
+ * не більше `halfMax`, з'їдає пів порції (голод −`PORTION_HUNGER` / 2) і лишає в мисці половину — її доїсть наступний.
+ * Стелі — бо британська й бомбейська породи вже мають «Апетит» +1.
+ */
+export const APPETITE = { thresholdStep: 10, secondStep: 0.1, secondMax: 0.4, halfStep: 0.3, halfMax: 0.8 } as const;
+/**
+ * «Швидкість їжі» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`): порція їсться `CAT_ACT_MINUTES.eat` × `factor`^рівень
+ * хвилин, від `min` до `max`: «Пилосос» — за мить, «Їсть по зернятку» — довго сидить над мискою. «+» після їжі зригує з
+ * шансом `VOMIT_STEP` × рівень, ×`crowded`, коли поруч (до `near` клітинок) їсть інший кіт, і ×`slowBowl` з керамічної
+ * (дорогої) миски.
+ */
+export const GULPING = { factor: 0.7, min: 1.5, max: 6, crowded: 1.5, near: 3, slowBowl: 0.5 } as const;
 export const SLEEP_TRAIT_STEP = 0.15;
 
 /** Активність за годиною доби — сутінковий ритм (§9.3, §9.12). */

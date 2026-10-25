@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { isDirty } from "../sim/catai";
+import { bowlEaten, isDirty } from "../sim/catai";
 import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { itemPoint, LAUNDRY_BASKET, slotCenter } from "../sim/home";
@@ -43,7 +43,7 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
     const { x, y } = toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
   }
-  for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null);
+  for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
   for (const mess of state.home.messes) drawMess(g, mess);
   drawAppliances(g, state);
 }
@@ -131,17 +131,22 @@ function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
   g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 14, y - 14, 28, 16, 4);
 }
 
-function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: boolean): void {
+/**
+ * Річ котячого кутка. `eaten` — скільки порції вже з'їв кіт, що зараз їсть із миски (§9.12): корм меншає поступово, і
+ * видно, хто ковтає за мить, а хто їсть по зернятку; надкльована половинка — менша купка.
+ */
+function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: boolean, eaten: number): void {
   const { x, y } = itemScreen(item);
   switch (item.kind) {
     case "bowl": {
       g.fillStyle(BOWL[item.quality]).fillEllipse(x, y, 30, 13);
       g.lineStyle(2, COLORS.ink).strokeEllipse(x, y, 30, 13);
       if (item.quality === "premium") g.lineStyle(1.5, 0xe8b93a).strokeEllipse(x, y - 1, 26, 10);
-      if (item.food > 0) {
+      const food = item.food - (item.half === true ? 0.5 : 0) - eaten;
+      if (food > 0.02) {
         // Корм для стерилізованих — зеленуватий, щоб миски не плутати (§9.8).
         const kibble = item.sterile ? 0x6f8a3a : KIBBLE[item.foodQuality ?? "cheap"];
-        const size = 0.6 + (0.4 * item.food) / BOWL_CAPACITY;
+        const size = 0.3 + (0.7 * food) / BOWL_CAPACITY;
         g.fillStyle(kibble).fillEllipse(x, y - 2 * size, 20 * size, 8 * size);
       }
       return;

@@ -9,6 +9,7 @@ import { changeStat, unpleasantTask } from "./character";
 import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
+  APPETITE,
   APPETITE_STEP,
   ATTENTION_SATISFIED,
   BOWL_CAPACITY,
@@ -27,6 +28,7 @@ import {
   ESCAPE,
   FOLLOWER,
   FOOD_SOUND,
+  GULPING,
   HAIRBALL,
   HISS_PAUSE_MINUTES,
   HOUSE_SLEEP,
@@ -309,15 +311,31 @@ export function hearFood(state: GameState, bowl: BowlItem): void {
   const tile = itemTile(bowl);
   listeners.sort((a, b) => Math.hypot(a.x - tile.x, a.y - tile.y) - Math.hypot(b.x - tile.x, b.y - tile.y));
   for (const cat of listeners.slice(0, bowl.food)) {
-    start(cat, "eat", tile, CAT_ACT_MINUTES.eat, `item:${bowl.id}`);
+    start(cat, "eat", tile, eatMinutes(cat), `item:${bowl.id}`);
     emit(state, { type: "meow", cat: cat.id });
   }
 }
 
-/** Поріг голоду: «Апетит» змушує їсти раніше (§9.12). */
 /** З якого голоду кіт іде їсти (§9.12): «Апетит» — раніше. */
 export function hungerThreshold(cat: Cat): number {
-  return NEED_THRESHOLD.hunger - 10 * Math.max(0, traitLevel(cat, "appetite"));
+  return NEED_THRESHOLD.hunger - APPETITE.thresholdStep * Math.max(0, traitLevel(cat, "appetite"));
+}
+
+/** Скільки хвилин кіт їсть порцію (§9.12, «Швидкість їжі»): 3 × 0,7^рівень, від 1,5 до 6. */
+export function eatMinutes(cat: Cat): number {
+  return clamp(CAT_ACT_MINUTES.eat * GULPING.factor ** traitLevel(cat, "gulping"), GULPING.min, GULPING.max);
+}
+
+/**
+ * Яку частку порції кіт уже з'їв із миски (§9.12): корм меншає поступово, поки кіт їсть, — так видно, хто ковтає за
+ * мить, а хто їсть по зернятку. null — з цієї миски зараз ніхто не їсть.
+ */
+export function bowlEaten(state: GameState, bowl: BowlItem): number | null {
+  const eater = state.cats.find((c) => c.away === null && c.act.kind === "eat" && c.act.goal === null && c.act.target === `item:${bowl.id}` && c.act.nibble !== undefined);
+  if (!eater) return null;
+  const act = eater.act;
+  const progress = Math.min(1, act.elapsed / Math.max(1e-9, act.elapsed + act.minutes));
+  return progress * (act.nibble === true || bowl.half === true ? 0.5 : 1);
 }
 
 /**
@@ -426,7 +444,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (hungry) {
     const bowls = itemsOf(state, "bowl");
     const full = nearest(cat, bowls.filter((b) => b.food > 0));
-    if (full) return start(cat, "eat", itemTile(full), CAT_ACT_MINUTES.eat, `item:${full.id}`);
+    if (full) return start(cat, "eat", itemTile(full), eatMinutes(cat), `item:${full.id}`);
   }
   // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
   if (n.thirst >= NEED_THRESHOLD.thirst) {
@@ -853,26 +871,48 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         observe(state, cat, "picky");
         return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       }
-      bowl.food -= 1;
+      // «Малоїжка» поклювала пів порції й лишила половину в мисці; половинку, що лишилася, доїдає наступний (§9.12).
+      const nibble = act.nibble === true && bowl.half !== true;
+      const portion = nibble || bowl.half === true ? 0.5 : 1;
+      if (nibble) bowl.half = true;
+      else {
+        bowl.food -= 1;
+        delete bowl.half;
+      }
       wearOut(state, bowl, rng);
       const quality = bowl.foodQuality ?? "cheap";
       if (bowl.food <= 0) bowl.foodQuality = null;
-      cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER);
+      cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * portion);
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
       itemMood(state, cat, bowl);
       if (quality === "premium") envy(state, cat);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
-      observe(state, cat, "appetite");
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones, rng);
-      // Їсть надто швидко й одразу зригує (§9.3) чи нездужає шлунком (§9.5).
+      // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9).
+      if (nibble) observe(state, cat, "appetite", -1);
+      // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
+      // він уже після другої.
+      const appetite = traitLevel(cat, "appetite");
+      if (act.second !== true && appetite > 0 && bowl.food > 0 && bowl.half !== true && rng.chance(Math.min(APPETITE.secondMax, APPETITE.secondStep * appetite))) {
+        start(cat, "eat", null, eatMinutes(cat), act.target);
+        cat.act.nibble = false;
+        cat.act.second = true;
+        return;
+      }
+      // Спустошив дві порції за раз — прояв «Апетиту +».
+      if (act.second === true) observe(state, cat, "appetite");
+      // Як довго кіт їв — прояв «Швидкості їжі» (§9.9): «Пилосос» ковтає порцію за мить, «Їсть по зернятку» довго
+      // сидить над мискою. Раз на годину: дві порції поспіль — одна трапеза.
       const gulping = traitLevel(cat, "gulping");
-      if (gulping > 0 && rng.chance(VOMIT_STEP * gulping)) {
-        addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
-        observe(state, cat, "gulping");
-      } else if (vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
+      if (gulping !== 0) observe(state, cat, "gulping", gulping > 0 ? 1 : -1, false, MINUTES_PER_HOUR);
+      // Їсть надто швидко й одразу зригує (§9.3) — частіше, коли поруч їсть інший кіт, рідше з керамічної миски; чи
+      // нездужає шлунком (§9.5).
+      const crowded = state.cats.some((o) => o.id !== cat.id && home(state, o) && o.act.kind === "eat" && o.act.goal === null && distance(o, cat) <= GULPING.near);
+      const vomit = VOMIT_STEP * Math.max(0, gulping) * (crowded ? GULPING.crowded : 1) * (bowl.quality === "premium" ? GULPING.slowBowl : 1);
+      if (rng.chance(vomit) || vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
       // «Жебракування»: щойно поїв — уже просить ще біля миски.
       const begging = traitLevel(cat, "begging");
       if (begging > 0 && rng.chance(TRAIT_EFFECTS.beggingChance * begging)) {
@@ -1069,6 +1109,13 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (rested || woken) act.minutes = 0;
       return;
     }
+    case "eat":
+      // Сів до миски: «Малоїжка» вирішує, чи лише поклює (§9.12, «Апетит»). Половинку, що лишилася, доїдає цілком.
+      if (act.nibble === undefined) {
+        const appetite = traitLevel(cat, "appetite");
+        act.nibble = appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite));
+      }
+      return;
     case "beg":
     case "attention":
       askAloud(state, cat, minutes);
@@ -1349,10 +1396,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     cat.act.minutes -= used;
     left -= used;
     if (cat.act.minutes <= 1e-9) {
-      const kind = cat.act.kind;
+      const done = cat.act;
       finish(state, cat, rng);
-      // Дія, яку почала `finish` (зумі після лотка, прохання їсти), лишається.
-      if (cat.act.kind === kind || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
+      // Дія, яку почала `finish` (зумі після лотка, прохання їсти, друга порція), лишається.
+      if (cat.act === done || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
 }
