@@ -113,8 +113,8 @@ export function applyMorningSanity(state: GameState, lost: number, gained: numbe
 }
 
 /** Хто й коли будитиме персонажа цієї ночі (§9.12): ранкова побудка й нічні пісні. */
-function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night"; trait?: string }[] {
-  const wakes: { cat: Cat; minute: number; reason: "morning" | "night"; trait?: string }[] = [];
+function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night"; trait?: "nocturnal" | "morning" }[] {
+  const wakes: { cat: Cat; minute: number; reason: "morning" | "night"; trait?: "nocturnal" | "morning" }[] = [];
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
     if (cat.away !== null) continue;
@@ -166,8 +166,10 @@ function sleep({ state, report, rng }: Night): void {
     // Ранкова побудка — лише якщо кіт голодний і миски порожні.
     if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
     report.wakeUps.push({ cat: cat.id, reason });
-    // Розбудив — прояв «Нічної активності» чи «Ранкової побудки» (§9.9).
-    if (nextWake.trait) observe(state, cat, nextWake.trait, 1, true);
+    // Розбудив — прояв «Нічної активності» чи «Ранкової побудки» (§9.9). Групи — рядками: так тест повноти рис
+    // бачить, що прояв є.
+    if (nextWake.trait === "nocturnal") observe(state, cat, "nocturnal", 1, true);
+    if (nextWake.trait === "morning") observe(state, cat, "morning", 1, true);
     if (reason === "night") {
       lost += WAKE_UP.nightLostMinutes;
       continue;
