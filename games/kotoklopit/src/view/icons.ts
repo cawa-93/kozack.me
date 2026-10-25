@@ -64,9 +64,22 @@ export type IconName =
  */
 export type Mark = "no" | "ask" | "ok";
 
+/**
+ * Вид бабла (§11.4, правка автора 2026-10-25): «say» — вголос (нявкання, дзвінок, річ «каже» про свій стан),
+ * «think» — думка персонажа чи кота (що відчуває, хоче чи усвідомлює). Думка — лише над головою того, хто думає.
+ */
+export type BubbleKind = "say" | "think";
+
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
 export const BUBBLE_HEIGHT = 52;
+/** Хмаринка-думка ширша й вища за мовну: хвилястий край і кружечки під нею, тож висить трохи вище. */
+const THOUGHT_WIDTH = 64;
+const THOUGHT_HEIGHT = 71;
+/** Центр хмаринки-думки від верху текстури. */
+const THOUGHT_CENTER = 25;
+/** Де центр іконки відносно вістря бабла (низу текстури). */
+export const BUBBLE_ICON_Y: Record<BubbleKind, number> = { say: -BUBBLE_HEIGHT / 2 - 4, think: THOUGHT_CENTER - THOUGHT_HEIGHT };
 
 const INK = COLORS.ink;
 type Draw = (g: Phaser.GameObjects.Graphics) => void;
@@ -421,9 +434,61 @@ const MARKS: Record<Mark, Draw> = {
   },
 };
 
-/** Намалювати текстури іконок і тла бабла один раз на старті. */
+/**
+ * Мовна хмаринка (вголос): заокруглене тло з чітким контуром і гострим хвостиком, скошеним, як у коміксі.
+ * Контур — одним шляхом, тож хвостик зливається з тлом без шва. Вістря — посередині низу (там, де той, хто говорить).
+ */
+function drawSpeech(g: Phaser.GameObjects.Graphics): void {
+  const left = 2;
+  const top = 2;
+  const right = BUBBLE_WIDTH - 2;
+  const bottom = BUBBLE_HEIGHT - 10;
+  const r = 14;
+  g.beginPath();
+  g.moveTo(left + r, top);
+  g.lineTo(right - r, top);
+  g.arc(right - r, top + r, r, -Math.PI / 2, 0);
+  g.lineTo(right, bottom - r);
+  g.arc(right - r, bottom - r, r, 0, Math.PI / 2);
+  // Вістря трохи вище за низ текстури: гострий кут контуру виступає ще на ~3,5 px, інакше його зріже.
+  g.lineTo(BUBBLE_WIDTH / 2 + 10, bottom);
+  g.lineTo(BUBBLE_WIDTH / 2, BUBBLE_HEIGHT - 4.5);
+  g.lineTo(BUBBLE_WIDTH / 2 + 2, bottom);
+  g.lineTo(left + r, bottom);
+  g.arc(left + r, bottom - r, r, Math.PI / 2, Math.PI);
+  g.lineTo(left, top + r);
+  g.arc(left + r, top + r, r, Math.PI, Math.PI * 1.5);
+  g.closePath();
+  g.fillStyle(0xffffff).fillPath();
+  g.lineStyle(3, COLORS.ink).strokePath();
+}
+
+/**
+ * Хмаринка-думка: хвилястий край із кружечків довкола овалу й два менші кружечки під нею замість хвостика —
+ * до голови того, хто думає. Контур — ті самі фігури чорнилом, трохи більші, під білими.
+ */
+function drawThought(g: Phaser.GameObjects.Graphics): void {
+  const cx = THOUGHT_WIDTH / 2;
+  const cy = THOUGHT_CENTER;
+  // Вісім великих горбиків довкола овалу 20×12 — западини між ними глибокі, хмаринку видно здалеку.
+  const shapes: [number, number, number, number][] = [];
+  for (let i = 0; i < 8; i++) {
+    const a = ((i + 0.5) / 8) * Math.PI * 2;
+    shapes.push([cx + Math.cos(a) * 20, cy + Math.sin(a) * 12, 10.5, 2.5]);
+  }
+  // Кружечки сходять донизу до вістря, з проміжком, щоб не злипалися з хмаринкою.
+  shapes.push([cx - 3, cy + 30.5, 3.4, 2], [cx - 0.5, cy + 41.6, 2.2, 2]);
+  g.fillStyle(COLORS.ink);
+  for (const [x, y, r, line] of shapes) g.fillCircle(x, y, r + line);
+  g.fillEllipse(cx, cy, 2 * (20 + 2.5), 2 * (12 + 2.5));
+  g.fillStyle(0xffffff);
+  for (const [x, y, r] of shapes) g.fillCircle(x, y, r);
+  g.fillEllipse(cx, cy, 2 * 20, 2 * 12);
+}
+
+/** Намалювати текстури іконок і тла баблів один раз на старті. */
 export function createIconTextures(scene: Phaser.Scene): void {
-  if (scene.textures.exists("bubble")) return;
+  if (scene.textures.exists("bubble-say")) return;
   const g = scene.make.graphics({}, false);
   for (const [name, draw] of Object.entries(ICONS)) {
     g.clear();
@@ -435,11 +500,12 @@ export function createIconTextures(scene: Phaser.Scene): void {
     draw(g);
     g.generateTexture(`mark-${name}`, ICON_SIZE, ICON_SIZE);
   }
-  // Тло бабла з хвостиком донизу.
+  // Тло баблів: вголос і думка (§11.4).
   g.clear();
-  g.fillStyle(0xffffff).fillRoundedRect(2, 2, BUBBLE_WIDTH - 4, BUBBLE_HEIGHT - 12, 12);
-  g.fillTriangle(BUBBLE_WIDTH / 2 - 7, BUBBLE_HEIGHT - 11, BUBBLE_WIDTH / 2 + 7, BUBBLE_HEIGHT - 11, BUBBLE_WIDTH / 2, BUBBLE_HEIGHT - 2);
-  g.lineStyle(3, COLORS.ink).strokeRoundedRect(2, 2, BUBBLE_WIDTH - 4, BUBBLE_HEIGHT - 12, 12);
-  g.generateTexture("bubble", BUBBLE_WIDTH, BUBBLE_HEIGHT);
+  drawSpeech(g);
+  g.generateTexture("bubble-say", BUBBLE_WIDTH, BUBBLE_HEIGHT);
+  g.clear();
+  drawThought(g);
+  g.generateTexture("bubble-think", THOUGHT_WIDTH, THOUGHT_HEIGHT);
   g.destroy();
 }

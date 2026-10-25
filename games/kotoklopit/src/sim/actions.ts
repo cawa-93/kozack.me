@@ -61,7 +61,7 @@ export type TapResult = "sleep" | null;
 /** Причини відмови без подробиць: їх можна передати просто назвою. */
 type BareRefusal = Exclude<Refusal, { product: unknown } | { item: unknown } | { what: unknown } | { need: unknown }>["reason"];
 
-/** Відмовити (§11.4): сцена покаже над ціллю іконку саме цієї причини. */
+/** Відмовити (§11.4): сцена покаже над персонажем думку з іконкою саме цієї причини. */
 function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal): null {
   emit(state, { type: "refused", object: target, ...(typeof refusal === "string" ? { reason: refusal } : refusal) });
   return null;

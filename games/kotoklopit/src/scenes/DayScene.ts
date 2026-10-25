@@ -19,7 +19,7 @@ import { isPresent, objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
-import type { Chronotype, Difficulty, GameState, HomeItem, Look, Sex } from "../sim/types";
+import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Sex } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
@@ -32,7 +32,7 @@ import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
-import { Bubbles } from "../view/bubbles";
+import { type Anchor, Bubbles } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
@@ -41,7 +41,7 @@ import { drawCatCorner, itemScreen } from "../view/catcorner";
 import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
-import { PRODUCT_ICONS, refusalBubble } from "../view/symbols";
+import { eventBubbles, PRODUCT_ICONS } from "../view/symbols";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
@@ -74,6 +74,8 @@ function isTyping(): boolean {
 // і передає дії гравця в симуляцію; правил гри тут немає.
 /** Як часто виринає «+N ₴» над персонажем, мс. */
 const EARNINGS_POP_MS = 3000;
+/** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4). */
+const CARRIED_BUBBLE_SHIFT = 34;
 
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
@@ -646,7 +648,7 @@ export class DayScene extends Phaser.Scene {
       if (alive.has(id)) continue;
       view.destroy();
       this.catViews.delete(id);
-      this.bubbles.setState(`cat:${id}`, null, 0, 0);
+      this.bubbles.setState(`cat:${id}`, "say", null, 0, 0);
       this.hiddenLabels.get(id)?.destroy();
       this.hiddenLabels.delete(id);
       this.collarLabels.get(id)?.destroy();
@@ -722,7 +724,18 @@ export class DayScene extends Phaser.Scene {
       const p = toScreen(mess);
       return { x: p.x, y: p.y - 12 };
     }
-    if (kind === "cat") return this.catViews.get(number)?.head ?? null;
+    if (kind === "cat") {
+      const head = this.catViews.get(number)?.head;
+      if (!head) return null;
+      // Кіт на руках — на рівні грудей персонажа: бабл над ним зсунутий убік, інакше накриває голову персонажа
+      // й здається, що це каже персонаж (§11.4).
+      const held = this.state.character.held;
+      if (held?.kind === "cat" && held.cat === number) {
+        const side = head.x >= this.person.head.x ? 1 : -1;
+        return { x: this.person.head.x + side * CARRIED_BUBBLE_SHIFT, y: head.y };
+      }
+      return head;
+    }
     return null;
   }
 
@@ -785,13 +798,13 @@ export class DayScene extends Phaser.Scene {
     if (view) g.strokeEllipse(view.head.x, view.head.y + 30, 46, 46);
   }
 
-  /** Бабли стану (§11.4): що висить, поки триває. */
+  /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
   private updateStateBubbles(): void {
     const state = this.state;
     const set = (id: string, icon: IconName | null): void => {
       const anchor = this.anchorOf(id);
-      if (anchor) this.bubbles.setState(id, icon, anchor.x, anchor.y);
-      else this.bubbles.setState(id, null, 0, 0);
+      if (anchor) this.bubbles.setState(id, "say", icon, anchor.x, anchor.y);
+      else this.bubbles.setState(id, "say", null, 0, 0);
     };
     const working = isWorking(state);
     const standup = isWorkday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
@@ -826,6 +839,7 @@ export class DayScene extends Phaser.Scene {
       if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
       else if (thing.kind === "litter") set(id, isDirty(thing) ? "dirty" : null);
     }
+    // Кіт просить їсти, б'ється чи дзеленчить дзвіночком — це чути.
     for (const cat of state.cats) {
       const hungry = cat.act.kind === "beg" && cat.act.goal === null;
       const fighting = cat.act.kind === "fight";
@@ -851,18 +865,22 @@ export class DayScene extends Phaser.Scene {
       drawStorage(look.g, view.object.kind, view.top, objectHeight(view.object.kind), stages);
     }
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
-    // холодильником індикатор лягає на його лицьову грань.
+    // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
+    // чи над самим сховищем бабл події, індикатор схований: бабл і так каже, скільки лишилося.
     const highest = toScreen({ x: 0, y: 1 }).y - WALL_RISE + 40;
+    const personBusy = this.bubbles.busy("person");
     for (const storage of STORAGES) {
       const anchor = this.anchorOf(storage.object);
       if (!anchor) continue;
       const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
-      this.storage.set(storage.object, storageIndicator(state, storage), anchor.x, Math.max(highest, anchor.y - lift));
+      const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage);
+      this.storage.set(storage.object, lines, anchor.x, Math.max(highest, anchor.y - lift));
     }
     // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
     const boxes = this.anchorOf("boxes");
-    this.storage.set("boxes", boxes ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
-    this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
+    this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
+    // Сонливість — думка персонажа.
+    this.bubbles.setState("person", "think", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
@@ -890,114 +908,63 @@ export class DayScene extends Phaser.Scene {
   /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
   private readonly personAnchor = (): { x: number; y: number } => ({ x: this.person.head.x, y: this.person.head.y });
 
-  /** Бабли подій і картки. */
+  /** Де бабл події: над персонажем, котом чи річчю — і летить за ним. */
+  private anchorFn(id: string): Anchor {
+    return id === "person" ? this.personAnchor : () => this.anchorOf(id);
+  }
+
+  /** Бабли подій (вголос чи думка — `eventBubbles`, §11.4) і картки. */
   private onGameEvent(event: GameEvent): void {
-    const popAt = (id: string, icon: IconName, count?: number): void => {
-      // Бабл летить за котом чи річчю, над якими виринув.
-      this.bubbles.pop(icon, () => this.anchorOf(id), count);
+    for (const bubble of eventBubbles(event)) this.bubbles.show(bubble, this.anchorFn(bubble.at));
+    // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
+    const landed = (storage: string, product: Product): void => {
+      this.bubbles.show({ kind: "say", at: storage, icon: PRODUCT_ICONS[product], count: supplyCount(this.state, product) }, this.anchorFn(storage));
     };
-    const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.personAnchor);
     switch (event.type) {
-      case "refused": {
-        const { icon, count, mark } = refusalBubble(event);
-        this.bubbles.pop(icon, () => this.anchorOf(event.object), count, mark);
-        break;
-      }
-      case "call-remark":
-        // Колеги на дзвінку помітили брудний одяг.
-        popAt("computer", "laundry");
-        break;
       case "unpacked": {
-        // Запаси розлітаються з ящиків по своїх сховищах (§6.4), там — іконка із залишком.
+        // Запаси розлітаються з ящиків по своїх сховищах (§6.4).
         const from = this.view("boxes").anchor;
         event.moved.forEach((moved, i) => {
           const storage = STORAGES.find((s) => s.products.includes(moved.product));
           const to = storage ? this.anchorOf(storage.object) : null;
           if (!storage || !to) return;
-          const icon = PRODUCT_ICONS[moved.product];
-          this.flyIcon(icon, from, to, i * 140, () => popAt(storage.object, icon, supplyCount(this.state, moved.product)));
+          this.flyIcon(PRODUCT_ICONS[moved.product], from, to, i * 140, () => landed(storage.object, moved.product));
         });
         break;
       }
       case "feeder-emptied": {
-        // Корм із годівниці летить назад у своє сховище (§9.12), там — іконка із залишком.
+        // Корм із годівниці летить назад у своє сховище (§9.12).
         const from = this.anchorOf(`item:${event.item}`);
         if (!from) break;
         event.products.forEach((product, i) => {
           const storage = STORAGES.find((s) => s.products.includes(product));
           const to = storage ? this.anchorOf(storage.object) : null;
           if (!storage || !to) return;
-          const icon = PRODUCT_ICONS[product];
-          this.flyIcon(icon, from, to, i * 140, () => popAt(storage.object, icon, supplyCount(this.state, product)));
+          this.flyIcon(PRODUCT_ICONS[product], from, to, i * 140, () => landed(storage.object, product));
         });
         break;
       }
-      case "supply-used":
-        this.bubbles.pop(PRODUCT_ICONS[event.product], this.personAnchor, event.left);
-        break;
-      case "doorbell":
-        popAt("door", "bell");
-        break;
-      case "received":
-        popPerson("box");
-        break;
-      case "standup-started":
-        popAt("computer", "camera");
-        break;
       case "job-rejected":
         // Вакансія — відмова (§8.6): хрестик і червона смужка, далі нова вакансія з нуля.
         this.rejection = { at: this.time.now, end: event.vacancy / JOB_SEARCH.stages };
-        popAt("computer", "cross");
-        break;
-      case "standup":
-        if (!event.attended) popAt("computer", "camera-missed");
         break;
       case "glitch":
-        popPerson("dizzy");
         this.cameras.main.shake(180, 0.004);
-        break;
-      case "meow":
-        popAt(`cat:${event.cat}`, "meow");
-        break;
-      case "feeder":
-        // Автогодівниця насипала: над мискою виринає корм (§8.7).
-        for (const bowl of event.bowls) popAt(`item:${bowl}`, "kibble");
         break;
       case "cat-felt":
         // Настрій кота — сердечками, а не баблами (§9.12).
         this.hearts.add(event.cat, event.delta);
         break;
-      case "picked-up":
-        if (event.offended) popPerson("angry");
-        break;
-      case "cat-dodged":
-        popAt(`cat:${event.cat}`, "laundry");
-        break;
       case "bite":
-        popPerson("bite");
         this.cameras.main.shake(140, 0.003);
         break;
       case "tripped":
       case "slipped":
       case "knocked-down":
-        popPerson("dizzy");
         this.cameras.main.shake(160, 0.004);
-        break;
-      case "knocked":
-      case "stole":
-        popAt(`cat:${event.cat}`, "angry");
-        break;
-      case "keyboard":
-        popAt("computer", "meow");
-        break;
-      case "symptom":
-        popAt(`cat:${event.cat}`, event.symptom);
         break;
       case "cat-fight":
         this.cameras.main.shake(120, 0.002);
-        break;
-      case "escaped":
-        popAt("door", "meow");
         break;
       case "night":
         if (this.state.end === null) {
@@ -1054,7 +1021,7 @@ export class DayScene extends Phaser.Scene {
         );
         return;
       case "meeting-start":
-        this.bubbles.pop("camera", () => this.anchorOf("computer"));
+        // Бабл камери над комп'ютером — `eventBubbles`.
         return;
       case "meeting-missed":
         this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
