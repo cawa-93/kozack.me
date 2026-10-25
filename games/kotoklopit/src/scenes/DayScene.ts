@@ -668,11 +668,12 @@ export class DayScene extends Phaser.Scene {
           : look === "sad"
             ? { sad: true, blink: 0, face: null }
             : look === "belly"
-              ? { sad: false, blink: 0, face: null, belly: true }
+              ? // Головою від персонажа: рука гладить живіт і не закриває морду (§9.12, перевірка етапу 2026-10-25).
+                { sad: false, blink: 0, face: -toward, belly: true }
               : look === "nudge"
                 ? { sad: false, blink: 0, face: toward, nudge: true }
                 : look === "sulk"
-                  ? { sad: false, blink: 0, face: -toward }
+                  ? { sad: false, blink: 0, face: -toward, back: true }
                   : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);

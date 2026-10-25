@@ -1,9 +1,9 @@
 // Стан думками й настрій з поведінки (§11.4, правка автора 2026-10-25): про що час від часу думають кіт
 // і персонаж, як часто, і коли кіт повільно моргає чи сумує. Без Phaser — щоб тести могли перевірити.
 
-import { sulking, traitLevel } from "../sim/cat";
-import { hungerThreshold, slowBlinks } from "../sim/catai";
-import { MOOD_LOOK, PETTING, THOUGHTS } from "../sim/config";
+import { sulking } from "../sim/cat";
+import { bellyUp, headNudges, hungerThreshold, slowBlinks } from "../sim/catai";
+import { MOOD_LOOK, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
 import type { IconName } from "./icons";
@@ -60,9 +60,6 @@ export function personThought(state: GameState): IconName | null {
  */
 export type CatLook = "blink" | "sad" | "belly" | "nudge" | "sulk";
 
-/** Відстань від персонажа до кота в клітинках. */
-const away = (state: GameState, cat: Cat): number => Math.hypot(state.character.body.x - cat.x, state.character.body.y - cat.y);
-
 /**
  * Як кіт показує настрій: сумний — завжди; «Пастка на животику», до якої підійшли, перевертається животом догори
  * (рішення автора 2026-10-25); ласкавий, що прийшов по увагу, бодається головою; щасливий і відданий — лише поруч із
@@ -74,10 +71,9 @@ export function catLook(state: GameState, cat: Cat): CatLook | null {
   if (isHeld(state, cat)) return null;
   const act = cat.act;
   if (sulking(state, cat) && act.goal === null && inView(state, cat)) return "sulk";
-  const near = (distance: number): boolean => away(state, cat) <= distance && inView(state, cat);
-  if (act.kind === "idle" && act.goal === null && traitLevel(cat, "petting") <= -2 && near(PETTING.bellyDistance)) return "belly";
-  if (act.kind === "attention" && act.seen === true && act.goal === null && traitLevel(cat, "affection") > 0 && near(MOOD_LOOK.nudgeDistance)) return "nudge";
-  // Повільне моргання — правило симуляції: «Відданий» моргає з нижчої любові, і це прояв (§9.12).
+  // Живіт догори, бодання й повільне моргання — правила симуляції: «Відданий» моргає з нижчої любові, і це прояв (§9.12).
+  if (bellyUp(state, cat)) return "belly";
+  if (headNudges(state, cat)) return "nudge";
   return slowBlinks(state, cat) ? "blink" : null;
 }
 

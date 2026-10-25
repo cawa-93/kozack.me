@@ -2,8 +2,8 @@
 // на руки; утримання — тривала дія: душ, їжа, прибирання, пестощі. Плита готує своїм часом.
 
 import { actionSpeed, isMoving } from "./body";
-import { changeLove, changeMood, idleAct, offend, traitLevel } from "./cat";
-import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
+import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
+import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight, turnAway } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -618,6 +618,13 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   // Вкушений кіт чи той, що пішов з-під руки, відходить; рука чекає, поки кнопку відпустять.
   if (petOver(activity)) return;
   if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили пестощами");
+  // «Образливий», що дметься, гладити себе не дає: одразу йде з-під руки й сідає спиною (§9.12, перевірка етапу
+  // 2026-10-25: пестощі щокадру зупиняли кота, і той, що дметься, муркотів під рукою).
+  if (sulking(state, cat)) {
+    activity.left = true;
+    turnAway(state, cat);
+    return;
+  }
   // «Незалежний» не терпить пестощів, коли уваги не хоче: «Незалежний» іде з-під руки за хвилину, «Відлюдник» — одразу.
   // Без укусу: укус — «Терпимість до гладження» (§9.12, рішення автора 2026-10-25).
   const aloofness = -traitLevel(cat, "affection");
@@ -627,7 +634,8 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
       activity.left = true;
       backAway(state, cat, character.body);
       emit(state, { type: "cat-left", cat: cat.id });
-      observe(state, cat, "affection", -1);
+      // Не частіше ніж раз на годину: «Відлюдник» іде миттєво, і кілька натискань поспіль не мають відкривати рису.
+      observe(state, cat, "affection", -1, false, AFFECTION.observeEvery);
       return;
     }
   }

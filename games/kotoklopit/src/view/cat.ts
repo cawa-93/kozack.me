@@ -44,6 +44,11 @@ export interface CatMoodLook {
   belly?: boolean;
   /** Ласкавий кіт бодається головою в руку (§9.12). */
   nudge?: boolean;
+  /**
+   * «Образливий» дметься й сидить спиною до персонажа (§9.12): видно потилицю й спину — ні очей, ні носа, ні білої
+   * грудки (перевірка етапу 2026-10-25: кіт лише дивився в інший бік, а морду було видно, як і завжди).
+   */
+  back?: boolean;
 }
 
 /** Наскільки прикриті очі сумного кота. */
@@ -126,7 +131,7 @@ export class CatView {
     const key =
       pose === "walk" || interaction || feeling || blinking
         ? null
-        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}`;
+        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -224,7 +229,8 @@ export class CatView {
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
         this.patches(g, x, y - 13 * s, 22 * s, 26 * s);
         if (this.coat.tabby) this.stripes(g, x, y - 15 * s, 18 * s, stripe, false);
-        if (this.coat.white >= 1) g.fillStyle(WHITE).fillEllipse(x + dir * 3 * s, y - 13 * s, 9 * s, 14 * s);
+        // Біла грудка — спереду: у кота, що сидить спиною, її не видно.
+        if (this.coat.white >= 1 && look?.back !== true) g.fillStyle(WHITE).fillEllipse(x + dir * 3 * s, y - 13 * s, 9 * s, 14 * s);
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 13 * s, 22 * s, 26 * s);
         // Передні лапки: у грі — догори, ловлять пір'їнку; задоволений на руках топчеться — лапки по черзі (§9.12).
         const paws = interaction === "play" ? y - 30 * s : y - 1;
@@ -247,9 +253,14 @@ export class CatView {
     this.ears(g, x, y, s, dir, point);
     g.fillStyle(this.coat.pointed ? point : body).fillCircle(x, y, r);
     if (this.coat.second) g.fillStyle(PIGMENT[this.coat.second]).fillCircle(x - dir * 3 * s, y - 2 * s, r * 0.55);
-    if (this.coat.white >= 2) g.fillStyle(WHITE).fillEllipse(x + dir * 2 * s, y + 3 * s, r * 1.1, r * 0.9);
+    if (this.coat.white >= 2 && this.look?.back !== true) g.fillStyle(WHITE).fillEllipse(x + dir * 2 * s, y + 3 * s, r * 1.1, r * 0.9);
     g.lineStyle(2.5, COLORS.ink).strokeCircle(x, y, r);
     if (this.coat.long) g.lineStyle(2, COLORS.ink, 0.6).strokeCircle(x, y, r + 2.5 * s);
+    // Спиною до персонажа — потилиця: ні очей, ні носа (§9.12, «Образливість»).
+    if (this.look?.back === true) {
+      this.head = { x, y: y - r - 8 * s };
+      return;
+    }
     const ex = x + dir * 3 * s;
     if (feeling === "content") {
       // Задоволений кіт мружиться: очі — дужки.

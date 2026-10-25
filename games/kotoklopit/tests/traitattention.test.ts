@@ -9,7 +9,7 @@ import { giveTreat } from "../src/sim/care";
 import { rubbingCat } from "../src/sim/body";
 import { changeLove, createCat, idleAct, offend } from "../src/sim/cat";
 import { catOnComputer, decide, greetAtDoor, slowBlinks, tickCats } from "../src/sim/catai";
-import { AFFECTION, CARRY, LEGS, PET, PETTING, TALKATIVE, TOUCHY } from "../src/sim/config";
+import { AFFECTION, CARRY, LEGS, MINUTES_PER_HOUR, PET, PETTING, TALKATIVE, TOUCHY } from "../src/sim/config";
 import { advance, interact, newGame, returnHome } from "../src/sim/game";
 import { LAUNDRY_BASKET, objectById } from "../src/sim/home";
 import { endTrip, HOME_DOOR } from "../src/sim/trips";
@@ -78,6 +78,25 @@ describe("«Ласкавість» (рішення автора 2026-10-25)", ()
     expect(fond.current.character.activity).toMatchObject({ kind: "pet" });
     expect(fond.current.character.activity).not.toHaveProperty("left");
     expect(seen(wants, "affection")).toBe(0);
+  });
+
+  it("«Відлюдник», якого пестять раз у раз, відкривається не частіше ніж раз на годину (перевірка етапу)", () => {
+    const save = game();
+    const cat = withCat(save, { affection: -2 });
+    const petAgain = (): void => {
+      Object.assign(save.current.character.body, { x: cat.x, y: cat.y + 0.6, facing: { x: 0, y: -1 } });
+      cat.act = idleAct(30);
+      for (let i = 0; i < 4; i++) advance(save, 0.05, HOLD);
+      advance(save, 0.05);
+    };
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 6; i++) petAgain();
+    stop();
+    expect(events.filter((e) => e.type === "cat-left")).toHaveLength(6);
+    expect(seen(cat, "affection")).toBe(1);
+    save.current.minute += AFFECTION.observeEvery;
+    petAgain();
+    expect(seen(cat, "affection")).toBe(2);
   });
 
   it("ласкавий, що прийшов по увагу, бодається головою; кіт без риси — ні", () => {
@@ -339,6 +358,27 @@ describe("«Коліна» на руках (рішення автора 2026-10-
     expect(seen(fond.cat, "lap")).toBe(1);
   });
 
+  it("кота, якого беруть на руки раз у раз, «Коліна» відкривають не частіше ніж раз на годину (перевірка етапу)", () => {
+    const save = game();
+    faceCat(save);
+    const cat = withCat(save, { lap: -1 });
+    cat.needs.attention = 90;
+    for (let i = 0; i < 5; i++) {
+      save.current.character.held = null;
+      Object.assign(cat, { x: 4.5, y: 7.6 });
+      cat.act = idleAct(30);
+      pickUpCat(save.current, cat);
+      advance(save, CARRY.seenStruggle + 0.1);
+    }
+    expect(seen(cat, "lap")).toBe(1);
+    save.current.character.held = null;
+    save.current.minute += CARRY.observeEvery;
+    cat.act = idleAct(30);
+    pickUpCat(save.current, cat);
+    advance(save, CARRY.seenStruggle + 0.1);
+    expect(seen(cat, "lap")).toBe(2);
+  });
+
   it("«Не на руки» пручається через рису — прояв «−»; узятий проти волі чи нелюбий — ні", () => {
     expect(seen(held({ lap: -1 }, () => undefined, CARRY.seenStruggle + 0.1).cat, "lap")).toBe(1);
     const asleep = held({ lap: -1 }, (cat) => (cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 }), 1);
@@ -383,7 +423,8 @@ describe("«Образливість» (рішення автора 2026-10-25)"
     expect(seen(cat, "touchy")).toBe(1);
     for (let i = 0; i < 20; i++) tickCats(save.current, 0.25, { present: true });
     expect(catLook(save.current, cat)).toBe("sulk");
-    // Підійшов знову — знову відходить, але прояв той самий.
+    // Згодом підійшов знову — знову відходить, але прояв той самий.
+    save.current.minute += TOUCHY.againMinutes;
     const before = events.filter((e) => e.type === "sulked").length;
     Object.assign(save.current.character.body, { x: cat.x + 0.5, y: cat.y });
     cat.act = idleAct(10);
@@ -391,6 +432,56 @@ describe("«Образливість» (рішення автора 2026-10-25)"
     stop();
     expect(events.filter((e) => e.type === "sulked")).toHaveLength(before + 1);
     expect(seen(cat, "touchy")).toBe(1);
+  });
+
+  it("«Образливий» відходить раз, а не щокадру — і коли персонаж стоїть, і коли йде слідом (перевірка етапу)", () => {
+    const frame = 1 / 45;
+    const save = game();
+    const cat = withCat(save, { touchy: 2 }, { x: 8.5, y: 8.5 });
+    offend(save.current, cat, -2, "прогнали з місця");
+    Object.assign(save.current.character.body, { x: 7.6, y: 8.5, facing: { x: 1, y: 0 } });
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 60; i++) advance(save, frame);
+    expect(events.filter((e) => e.type === "sulked")).toHaveLength(1);
+    // Іде слідом півтори хвилини — кіт не «відходить» знову щокадру.
+    for (let i = 0; i < 60; i++) {
+      const body = save.current.character.body;
+      const dx = cat.x - body.x;
+      const dy = cat.y - body.y;
+      const gap = Math.hypot(dx, dy) || 1;
+      advance(save, frame, { move: gap > 0.8 ? { x: dx / gap, y: dy / gap } : { x: 0, y: 0 }, hold: false });
+    }
+    stop();
+    expect(events.filter((e) => e.type === "sulked").length).toBeLessThanOrEqual(2);
+    expect(seen(cat, "touchy")).toBe(1);
+    expect(TOUCHY.againMinutes).toBeGreaterThan(60 * frame);
+  });
+
+  it("«Образливий», що дметься, гладити себе не дає — іде з-під руки; утримання не гладить знову (перевірка етапу)", () => {
+    const save = game();
+    const cat = withCat(save, { touchy: 2 });
+    cat.needs.attention = 80;
+    offend(save.current, cat, -2, "купання");
+    faceCat(save);
+    const love = cat.love;
+    const { events, stop } = recordEvents();
+    advance(save, 0.05, HOLD);
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", left: true });
+    for (let i = 0; i < 40; i++) advance(save, 0.1, HOLD);
+    stop();
+    expect(cat.act.kind).not.toBe("idle");
+    expect(events.filter((e) => e.type === "sulked")).toHaveLength(1);
+    expect(events.some((e) => e.type === "purr")).toBe(false);
+    expect(cat.love).toBe(love);
+    expect(seen(cat, "touchy")).toBe(1);
+    // Образа минула — гладити можна.
+    advance(save, 0.1);
+    save.current.minute += TOUCHY.sulkMinutes * 2;
+    Object.assign(save.current.character.body, { x: cat.x, y: cat.y + 0.6, facing: { x: 0, y: -1 } });
+    cat.act = idleAct(30);
+    advance(save, 0.5, HOLD);
+    expect(save.current.character.activity).toMatchObject({ kind: "pet" });
+    expect(save.current.character.activity).not.toHaveProperty("left");
   });
 
   it("«Відхідливий» одразу приходить по ласку — прояв «−»; на руках через образу не пручається", () => {
@@ -568,5 +659,26 @@ describe("«Відданість» (рішення автора 2026-10-25)", ()
       tickCats(save.current, 0.25, { present: true });
     }
     expect(seen(devoted, "devotion")).toBe(1);
+  });
+
+  it("кіт, що бодається головою чи лежить животом догори, не моргає — і «Відданість» так не відкривається (перевірка етапу)", () => {
+    const save = game();
+    faceCat(save);
+    const fond = withCat(save, { devotion: 1, affection: 1 }, { x: 4.5, y: 7.5 });
+    const trap = withCat(save, { devotion: 1, petting: -2 }, { x: 5.1, y: 7.5 });
+    for (const cat of [fond, trap]) {
+      cat.love = 68;
+      cat.mood = 85;
+    }
+    fond.needs.attention = 100;
+    fond.act = { kind: "attention", target: "character", goal: null, minutes: 30, elapsed: 2, seen: true };
+    expect(catLook(save.current, fond)).toBe("nudge");
+    expect(catLook(save.current, trap)).toBe("belly");
+    expect(slowBlinks(save.current, fond)).toBe(false);
+    expect(slowBlinks(save.current, trap)).toBe(false);
+    tickCats(save.current, 0.01, { present: true });
+    expect(seen(fond, "devotion")).toBe(0);
+    expect(seen(trap, "devotion")).toBe(0);
+    expect(MINUTES_PER_HOUR).toBe(60);
   });
 });

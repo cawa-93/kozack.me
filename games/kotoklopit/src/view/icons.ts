@@ -185,7 +185,7 @@ Object.assign(ICONS, {
     g.fillStyle(0x6b5d6e).fillTriangle(9, 16, 15, 4, 19, 14).fillTriangle(31, 16, 25, 4, 21, 14).fillCircle(20, 22, 12);
     g.fillStyle(0xffffff).fillCircle(15, 19, 2.5).fillCircle(25, 19, 2.5);
     g.fillStyle(0x3a3140).fillEllipse(20, 28, 7, 6);
-    g.fillStyle(0x9a8f9c).fillCircle(31, 36, 1.8).fillCircle(35.5, 36, 1.8).fillCircle(26.5, 36, 1.8);
+    g.fillStyle(0x6b5d6e).fillCircle(26, 36, 2.2).fillCircle(31, 36, 2.2).fillCircle(36, 36, 2.2);
   },
   sulk: (g: Phaser.GameObjects.Graphics) => {
     // Кіт дметься (§9.12): надуте личко із заплющеними очима, брови насуплені, рот рискою, а збоку — пара «пф».

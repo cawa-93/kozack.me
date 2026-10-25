@@ -51,6 +51,7 @@ import {
   NOISE,
   OLD_PLAY,
   PET,
+  PETTING,
   PICKY_REFUSAL_STEP,
   PLAY_RELIEF,
   PORTION_HUNGER,
@@ -589,15 +590,35 @@ export function blinkLove(cat: Cat): number {
 /** Дії, з яких кіт моргає до персонажа: сидить, блукає, просить уваги (§11.4). */
 const BLINK_ACTS = new Set(["idle", "wander", "attention"]);
 
+/** Кіт вільний, на місці й на очах персонажа не далі `reach` клітинок (§9.12): так видно, як він поводиться поруч. */
+function besidePerson(state: GameState, cat: Cat, reach: number): boolean {
+  return cat.away === null && !isCarried(state, cat) && cat.act.goal === null && distance(cat, state.character.body) <= reach && inView(state, cat);
+}
+
+/**
+ * «Пастка на животику» (−2 і менше) лежить животом догори, коли персонаж ближче 1,5 клітинки (§9.12, рішення автора
+ * 2026-10-25): сидить на місці — зокрема й під рукою.
+ */
+export function bellyUp(state: GameState, cat: Cat): boolean {
+  return cat.act.kind === "idle" && traitLevel(cat, "petting") <= -2 && besidePerson(state, cat, PETTING.bellyDistance);
+}
+
+/** Ласкавий кіт, що прийшов по увагу й сидить поруч, бодається головою в руку (§9.12) — лише анімація. */
+export function headNudges(state: GameState, cat: Cat): boolean {
+  return cat.act.kind === "attention" && cat.act.seen === true && traitLevel(cat, "affection") > 0 && besidePerson(state, cat, MOOD_LOOK.nudgeDistance);
+}
+
 /**
  * Кіт повільно моргає до персонажа (§11.4, правка автора 2026-10-25): щасливий (настрій від 70) і любить його, сидить
- * поруч (до 4 клітинок) на його очах, не грається, не на руках і не дметься.
+ * поруч (до 4 клітинок) на його очах, не грається, не на руках і не дметься. Хто лежить животом догори чи бодається
+ * головою, не моргає — сцена показує саме це (перевірка етапу 2026-10-25: інакше «Відданість» відкривалася морганням,
+ * якого не було видно).
  */
 export function slowBlinks(state: GameState, cat: Cat): boolean {
   const act = cat.act;
-  if (cat.away !== null || isCarried(state, cat) || cat.mood < MOOD_LOOK.blinkMood || cat.love < blinkLove(cat)) return false;
-  if (!BLINK_ACTS.has(act.kind) || act.goal !== null || (act.kind === "wander" && act.target === "play") || sulking(state, cat)) return false;
-  return distance(cat, state.character.body) <= MOOD_LOOK.blinkDistance && inView(state, cat);
+  if (cat.mood < MOOD_LOOK.blinkMood || cat.love < blinkLove(cat)) return false;
+  if (!BLINK_ACTS.has(act.kind) || (act.kind === "wander" && act.target === "play") || sulking(state, cat)) return false;
+  return besidePerson(state, cat, MOOD_LOOK.blinkDistance) && !bellyUp(state, cat) && !headNudges(state, cat);
 }
 
 /**
@@ -1215,11 +1236,12 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const held = state.character.held;
   if (held?.kind !== "cat") return;
   held.minutes = (held.minutes ?? 0) + minutes;
-  // Прояв «Колін» — раз за взяття на руки (рішення автора 2026-10-25, §9.9).
+  // Прояв «Колін» — раз за взяття на руки (рішення автора 2026-10-25, §9.9), але не частіше ніж раз на годину: кота, якого
+  // брали й опускали раз у раз, інакше відкривали б за кілька хвилин (перевірка етапу 2026-10-25).
   const notice = (side: 1 | -1): void => {
     if (held.seen === true) return;
     held.seen = true;
-    observe(state, cat, "lap", side);
+    observe(state, cat, "lap", side, false, CARRY.observeEvery);
   };
   if (feeling === "content") {
     changeMood(state, cat, CARRY.mood * lap * minutes);
@@ -1553,17 +1575,31 @@ function revengeSeen(state: GameState, cat: Cat): void {
 
 /**
  * «Образливий» дметься після неприємного (§9.12, рішення автора 2026-10-25): персонаж підійшов ближче півтори клітинки —
- * кіт відходить на три й сідає спиною. Прояв «+», раз за образу.
+ * кіт відходить на три й сідає спиною. Прояв «+», раз за образу. Відходить не частіше ніж раз на `TOUCHY.againMinutes`:
+ * поки кіт іще йде геть (чи забився в куток і відійти нікуди), він не «відходить» знову щокадру (перевірка етапу
+ * 2026-10-25).
  */
 const SULK_FROM = new Set(["idle", "wander", "toy"]);
 
 function sulk(state: GameState, cat: Cat): void {
-  const body = state.character.body;
-  if (!sulking(state, cat) || !SULK_FROM.has(cat.act.kind) || distance(cat, body) >= TOUCHY.near) return;
-  backAway(state, cat, body);
-  emit(state, { type: "sulked", cat: cat.id });
   const offense = cat.offense;
-  if (offense && offense.seen !== true) {
+  if (!offense || !sulking(state, cat) || !SULK_FROM.has(cat.act.kind) || distance(cat, state.character.body) >= TOUCHY.near) return;
+  const now = absoluteMinute(state.day, state.minute);
+  if (offense.turnedAt !== undefined && now - offense.turnedAt < TOUCHY.againMinutes) return;
+  turnAway(state, cat);
+}
+
+/**
+ * «Образливий» відходить від персонажа на три клітинки й сідає спиною, над ним — думка «дметься» (§9.12): так і тоді,
+ * коли персонаж підійшов, і коли взявся його гладити. Прояв «+» — раз за образу.
+ */
+export function turnAway(state: GameState, cat: Cat): void {
+  const offense = cat.offense;
+  if (!offense) return;
+  offense.turnedAt = absoluteMinute(state.day, state.minute);
+  backAway(state, cat, state.character.body);
+  emit(state, { type: "sulked", cat: cat.id });
+  if (offense.seen !== true) {
     offense.seen = true;
     observe(state, cat, "touchy");
   }
