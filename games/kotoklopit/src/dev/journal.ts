@@ -154,6 +154,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
     case "cat-fight":
       return `Бійка: ${catName(state, event.cats[0])} і ${catName(state, event.cats[1])}`;
+    case "hissed":
+      return `${catName(state, event.cat)} шипить на ${catName(state, event.at)}`;
     case "fight-stopped":
       return `Бійку розборонено (${catName(state, event.cat)} на руках)`;
     case "scratched":

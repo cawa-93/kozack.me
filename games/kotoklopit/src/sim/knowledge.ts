@@ -63,12 +63,13 @@ export function visibility(state: GameState, trait: Trait): 0 | 1 | 2 | 3 {
  * диван), −1 — менше (годинами лежить, дере лише кігтеточку). Знак — самої риси характеру, без породи.
  * Без цього «Тихоня» відкривалася тим, що приходила по увагу (пошук багів 2026-10-25).
  */
-export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1): void {
+export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1, woke = false): void {
   const trait = cat.traits.find((t) => t.group === group);
   if (!trait || trait.known || Math.sign(trait.level) !== side) return;
   const info = traitGroup(group);
-  if (info.quiet || info.nocturnal) return;
-  if (!witnesses(state, cat)) return;
+  if (info.quiet || (info.nocturnal && !woke)) return;
+  // Кіт розбудив персонажа (`woke`): персонаж спав, але прокинувся саме від нього (§9.9).
+  if (!woke && !witnesses(state, cat)) return;
   const before = visibility(state, trait);
   trait.seen += 1;
   const after = visibility(state, trait);

@@ -3,6 +3,7 @@
 import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
 import { knownBreedHalves } from "./breeds";
+import { observe } from "./knowledge";
 import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
 import { tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
@@ -112,8 +113,8 @@ export function applyMorningSanity(state: GameState, lost: number, gained: numbe
 }
 
 /** Хто й коли будитиме персонажа цієї ночі (§9.12): ранкова побудка й нічні пісні. */
-function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night" }[] {
-  const wakes: { cat: Cat; minute: number; reason: "morning" | "night" }[] = [];
+function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night"; trait?: string }[] {
+  const wakes: { cat: Cat; minute: number; reason: "morning" | "night"; trait?: string }[] = [];
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
     if (cat.away !== null) continue;
@@ -125,11 +126,11 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
     // Кішка в тічці кричить уночі (§9.8).
     if (inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     if (nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
-      wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
+      wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night", trait: "nocturnal" });
     }
     // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні.
     const chance = WAKE_UP.morningBase + WAKE_UP.morningStep * Math.max(0, traitLevel(cat, "morning"));
-    if (dawn > from && dawn < to && rng.chance(chance)) wakes.push({ cat, minute: dawn, reason: "morning" });
+    if (dawn > from && dawn < to && rng.chance(chance)) wakes.push({ cat, minute: dawn, reason: "morning", trait: "morning" });
   }
   return wakes.sort((a, b) => a.minute - b.minute);
 }
@@ -165,6 +166,8 @@ function sleep({ state, report, rng }: Night): void {
     // Ранкова побудка — лише якщо кіт голодний і миски порожні.
     if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
     report.wakeUps.push({ cat: cat.id, reason });
+    // Розбудив — прояв «Нічної активності» чи «Ранкової побудки» (§9.9).
+    if (nextWake.trait) observe(state, cat, nextWake.trait, 1, true);
     if (reason === "night") {
       lost += WAKE_UP.nightLostMinutes;
       continue;

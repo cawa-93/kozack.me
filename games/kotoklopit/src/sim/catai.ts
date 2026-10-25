@@ -10,33 +10,33 @@ import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
   APPETITE_STEP,
-  BREEDING,
+  ATTENTION_SATISFIED,
   BOWL_CAPACITY,
+  BREEDING,
   CARRY,
-  LOVE_BEHAVIOR,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
   DIFFICULTY,
-  ESCAPE,
-  HAIRBALL,
-  HOUSE_SLEEP,
-  ILLNESS,
-  HUNGRY_THEFT,
-  KITTEN_PLAY,
-  LITTER_CAPACITY,
-  LOW_CAT_HEALTH,
-  MIN_CAT_NAP_MINUTES,
-  MINUTES_PER_DAY,
-  MINUTES_PER_HOUR,
-  MISCHIEF,
-  MOOD,
-  NEED_PER_HOUR,
   DIRTY_CLOTHES_CATS,
   DIRTY_LITTER,
   ENVY,
+  ESCAPE,
   FOOD_SOUND,
-  REVENGE,
+  HAIRBALL,
+  HOUSE_SLEEP,
+  HUNGRY_THEFT,
+  ILLNESS,
+  KITTEN_PLAY,
+  LITTER_CAPACITY,
+  LOVE_BEHAVIOR,
+  LOW_CAT_HEALTH,
+  MINUTES_PER_DAY,
+  MINUTES_PER_HOUR,
+  MIN_CAT_NAP_MINUTES,
+  MISCHIEF,
+  MOOD,
+  NEED_PER_HOUR,
   NEED_THRESHOLD,
   NIGHT_ACTIVITY,
   NOCTURNAL_STEP,
@@ -46,15 +46,16 @@ import {
   PLAY_RELIEF,
   PORTION_HUNGER,
   RELATIONS,
+  REVENGE,
   SCATTER_CHANCE,
   SCRATCH,
-  SOFA_REPAIR,
-  STERILIZATION,
   SLEEP_END,
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
   SLEEP_TRAIT_STEP,
+  SOFA_REPAIR,
   STEAL_HUNGER,
+  STERILIZATION,
   SURPRISE_CHANCE,
   TIRED_FATIGUE,
   TOY,
@@ -118,7 +119,8 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
     const recovering = state.day <= cat.recoveryUntil ? STERILIZATION.recoveryFatigue : 1;
     n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering * catFatigueFactor(state));
   }
-  const attention = Math.max(0, 1 + TRAIT_NEED_STEP * (traitLevel(cat, "affection") + traitLevel(cat, "demanding")));
+  // Як часто кіт сам приходить по ласку — «Ласкавість»; як наполегливо вимагає — «Вимогливість» (§9.9).
+  const attention = Math.max(0, 1 + TRAIT_NEED_STEP * traitLevel(cat, "affection"));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
   n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state));
@@ -150,7 +152,10 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
   const hours = minutes / MINUTES_PER_HOUR;
   if (cat.needs.hunger >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
   if (cat.needs.thirst >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
-  if (context.present && !asleep(cat) && cat.needs.attention >= 100) changeMood(state, cat, MOOD.ignoredPerHour * hours);
+  if (context.present && !asleep(cat) && cat.needs.attention >= 100) {
+    const demanding = Math.max(0, 1 + TRAIT_EFFECTS.demandingIgnoredStep * traitLevel(cat, "demanding"));
+    changeMood(state, cat, MOOD.ignoredPerHour * hours * demanding);
+  }
 }
 
 // --- Що є в квартирі ------------------------------------------------------------------------
@@ -194,14 +199,16 @@ const catById = (state: GameState, target: string | null): Cat | null =>
   target?.startsWith("cat:") ? (state.cats.find((c) => `cat:${c.id}` === target) ?? null) : null;
 
 /** Ресурсів замало (§9.4): кіт сердиться на випадкового іншого кота вдома. */
+/** Сварка за миску чи лоток (§9.4): лише з котом поруч — кіт шипить на нього, і це видно. */
 function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean): void {
   if (enough) return;
   const r = RELATIONS.resource;
   if (!rng.chance(r.chance + r.territorialStep * Math.max(0, traitLevel(cat, "territorial")))) return;
-  const others = state.cats.filter((c) => c.id !== cat.id && c.away === null);
+  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && distance(c, cat) <= r.distance);
   const other = others[rng.int(0, others.length - 1)];
   if (!other) return;
   changeRelation(state, cat, other, r.relation);
+  emit(state, { type: "hissed", cat: cat.id, at: other.id });
   observe(state, cat, "territorial");
 }
 
@@ -423,7 +430,9 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
 function startAttention(state: GameState, cat: Cat): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   const follower = Math.max(0, traitLevel(cat, "follower"));
-  start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower), "character");
+  // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9).
+  const demanding = Math.max(0.25, 1 + TRAIT_EFFECTS.demandingStep * traitLevel(cat, "demanding"));
+  start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower) * demanding, "character");
 }
 
 function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
@@ -613,6 +622,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       wearOut(state, water, rng);
       return;
     }
+    case "attention":
+      // Прийшов, ходив слідом і нявчив, а ласки так і не дочекався — прояв «Вимогливості» (§9.9).
+      if (act.seen === true && cat.needs.attention >= ATTENTION_SATISFIED) observe(state, cat, "demanding");
+      return;
     case "revenge":
       // Дійшов до ліжка: помста здійснилася, образа минає.
       addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
@@ -774,12 +787,14 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     case "beg":
     case "attention":
       {
-        // Нявкає раз на 2 хвилини; «Балакучість» частішає чи рідшає це, «Тихоня» мовчить.
-        const rate = traitFactor(cat, "talkative", TRAIT_EFFECTS.talkativeStep) / 2;
+        // Нявкає раз на 2 хвилини; «Балакучість» частішає чи рідшає це, «Тихоня» мовчить; «Вимогливий»,
+        // що прийшов по увагу, нявчить наполегливіше (§9.9).
+        const demanding = act.kind === "attention" ? traitFactor(cat, "demanding", TRAIT_EFFECTS.demandingMeowStep) : 1;
+        const rate = (traitFactor(cat, "talkative", TRAIT_EFFECTS.talkativeStep) * demanding) / 2;
         if (Math.floor(act.elapsed * rate) !== Math.floor((act.elapsed - minutes) * rate)) emit(state, { type: "meow", cat: cat.id });
       }
       if (act.kind === "attention") {
-        if (cat.needs.attention < 20) act.minutes = 0;
+        if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
       }
       return;
@@ -905,7 +920,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід.
       if (near && cat.act.seen !== true) {
         cat.act.seen = true;
-        for (const group of ["affection", "demanding", "follower", "talkative"]) observe(state, cat, group);
+        for (const group of ["affection", "follower", "talkative"]) observe(state, cat, group);
       }
       if (traitLevel(cat, "follower") >= 0 && !near) cat.act.goal = tileOf(body);
     }
@@ -1077,10 +1092,12 @@ function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
 /** Персонаж приділяє увагу коту: ревниві коти, що не сплять, сердяться на нього (§9.4). */
 export function jealousy(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
-    if (other.id === cat.id || !home(state, other) || asleep(other)) continue;
+    if (other.id === cat.id || !home(state, other) || asleep(other) || distance(other, cat) > RELATIONS.jealousySight) continue;
     const level = traitLevel(other, "jealousy");
     if (level <= 0) continue;
     changeRelation(state, other, cat, RELATIONS.jealousy * level);
+    // Ревнивий шипить на щасливця — це видно й чути (§9.4).
+    emit(state, { type: "hissed", cat: other.id, at: cat.id });
     observe(state, other, "jealousy");
   }
 }

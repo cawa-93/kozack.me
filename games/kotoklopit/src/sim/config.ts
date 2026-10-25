@@ -331,7 +331,22 @@ export const TRAIT_NEED_STEP = 0.25;
  * від огляду ∓50% за одиницю; «Мітки» — шанс мітити ±50% за одиницю, а схильний мітить і від стресу
  * (настрій нижче 30), навіть стерилізований.
  */
-export const TRAIT_EFFECTS = { talkativeStep: 0.5, followerStep: 0.5, beggingChance: 0.3, vetStep: 0.5, markingStep: 0.5, stressMarkMood: 30 } as const;
+/**
+ * Ефекти рис, що раніше лише проявлялися (ревізія 2026-10-22), і «Вимогливість» (рішення автора 2026-10-25,
+ * §9.9): ходить слідом довше на `demandingStep`, нявчить частіше на `demandingMeowStep`, без уваги ображається
+ * сильніше на `demandingIgnoredStep` — за одиницю.
+ */
+export const TRAIT_EFFECTS = {
+  talkativeStep: 0.5,
+  followerStep: 0.5,
+  beggingChance: 0.3,
+  vetStep: 0.5,
+  markingStep: 0.5,
+  stressMarkMood: 30,
+  demandingStep: 0.25,
+  demandingMeowStep: 0.5,
+  demandingIgnoredStep: 0.5,
+} as const;
 export const APPETITE_STEP = 0.15;
 export const SLEEP_TRAIT_STEP = 0.15;
 
@@ -352,6 +367,8 @@ export const CAT_WALK_TILES_PER_MINUTE = 2.5;
 export const FURNITURE_COST = 3;
 
 /** Тривалість дій кота на місці, хвилини (§9.12). */
+/** Кіт, що прийшов по увагу, задоволений і йде, щойно потреба уваги нижче цього (§9.12). */
+export const ATTENTION_SATISFIED = 20;
 export const CAT_ACT_MINUTES = { eat: 3, drink: 1, toilet: 2, beg: 15, attention: 20, idle: 10, wander: 8, hide: 30 } as const;
 /** Порція корму знімає 100 голоду; ковток — усю спрагу (§9.12). */
 export const PORTION_HUNGER = 100;
@@ -810,13 +827,18 @@ export const RELATIONS = {
   motherKitten: 50,
   siblings: 30,
   nightly: 0.5,
+  /** «Товариськість» обох — щоночі за одиницю (рішення автора 2026-10-25). */
+  sociabilityNightly: 0.5,
   wrestle: { weight: 0.6, minutes: 3, play: 40, mood: 2, relation: 1 },
   groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
   fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3 },
   enemyMoodPerHour: -0.5,
-  resource: { chance: 0.15, territorialStep: 0.1, relation: -3 },
+  /** Сварка за ресурс — лише з котом поруч (до `distance` клітинок). */
+  resource: { chance: 0.15, territorialStep: 0.1, relation: -3, distance: 3 },
+  /** Ревнує той, хто бачить (до `sight` клітинок). */
   jealousy: -1,
+  jealousySight: 5,
 } as const;
 /** Вага будиночка як місця для сну (§9.12). */
 export const HOUSE_SLEEP: Record<Quality, number> = { cheap: 2, premium: 4 };

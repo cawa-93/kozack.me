@@ -153,6 +153,8 @@ export type GameEvent =
   | { type: "scratched"; cat: number; sofa: boolean }
   | { type: "groomed"; cat: number; friend: number }
   | { type: "cat-fight"; cats: [number, number] }
+  /** Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). */
+  | { type: "hissed"; cat: number; at: number }
   | { type: "fight-stopped"; cat: number }
   | { type: "keyboard"; cat: number }
   | { type: "knocked-down"; cat: number }

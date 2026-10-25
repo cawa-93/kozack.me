@@ -139,6 +139,7 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       return [{ kind: "say", at: cat(event.cat), icon: "meow" }];
     case "knocked":
     case "stole":
+    case "hissed":
       return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
     case "keyboard":
       return [{ kind: "say", at: "computer", icon: "meow" }];

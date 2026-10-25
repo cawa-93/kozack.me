@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
+import { jealousy, tickCats } from "../src/sim/catai";
 import { advance, newGame } from "../src/sim/game";
 import { decideFoundling } from "../src/sim/modifiers";
 import { TRAIT_GROUPS } from "../src/sim/traits";
@@ -13,7 +13,8 @@ import { observe, visibility, witnesses } from "../src/sim/knowledge";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { withCatCorner } from "./helpers";
+import { nightlyRelations, relation } from "../src/sim/relations";
+import { recordEvents, withCatCorner } from "./helpers";
 
 function game(difficulty: "easy" | "normal" | "hard" = "normal"): Save {
   const save = newGame({ sex: "female", difficulty, seed: 4 });
@@ -105,9 +106,28 @@ describe("прояв — лише того боку, що показала по�
     // Дві години кіт то просить біля миски, то йде до персонажа: раніше кожен крок давав прояв (9 за дві години).
     for (let i = 0; i < 6000; i++) advance(save, 0.02);
     for (const trait of cat.traits) {
-      expect(trait.seen, trait.group).toBeGreaterThan(0);
+      if (trait.group !== "demanding") expect(trait.seen, trait.group).toBeGreaterThan(0);
       expect(trait.seen, trait.group).toBeLessThanOrEqual(5);
     }
+  });
+
+  it("«Вимогливість» видно, коли кіт так і не дочекався ласки; «Ласкавість» — коли прийшов (рішення автора 2026-10-25)", () => {
+    const seenAfterVisit = (demanding: TraitLevel): { demanding: number; affection: number } => {
+      const save = withCatCorner(game());
+      save.current.modifiers.day = null;
+      save.current.day = 8;
+      save.current.minute = 14 * 60;
+      const cat = withCat(save, { demanding, affection: 1 }, { x: 8.5, y: 8.5 });
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 90, play: 0 };
+      cat.act = { kind: "attention", target: "character", goal: null, minutes: 20, elapsed: 0 };
+      // Персонаж не гладить: кіт ходить слідом, поки похід не скінчиться.
+      for (let i = 0; i < 60; i++) advance(save, 0.5);
+      return { demanding: cat.traits[0]?.seen ?? 0, affection: cat.traits[1]?.seen ?? 0 };
+    };
+    const loud = seenAfterVisit(2);
+    expect(loud.demanding).toBeGreaterThanOrEqual(1);
+    expect(loud.affection).toBeGreaterThanOrEqual(1);
+    expect(seenAfterVisit(-2).demanding).toBe(0);
   });
 });
 
@@ -180,5 +200,43 @@ describe("телефон каже, що стало відомо про кота 
     const known = traitNews(save.current, cat.id, "lap", 3);
     expect(known?.title).toBe("Мурка — Коліночна");
     expect(known?.text.length).toBeGreaterThan(10);
+  });
+});
+
+describe("дрібниці з рішення автора 2026-10-25", () => {
+  it("«Товариськість» діє щоночі, а не лише в мить знайомства", () => {
+    const save = game();
+    const a = withCat(save, { sociability: -2 });
+    const b = withCat(save, { sociability: -2 });
+    const c = withCat(save, { sociability: 2 });
+    const d = withCat(save, { sociability: 2 });
+    save.current.relations = {};
+    for (const [x, y] of [[a, b], [c, d]] as const) save.current.relations[`${Math.min(x.id, y.id)}-${Math.max(x.id, y.id)}`] = 0;
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBeCloseTo(-1.5);
+    expect(relation(save.current, c, d)).toBeCloseTo(2.5);
+  });
+
+  it("ревнивий кіт, що бачить, шипить на щасливця; далекий — ні", () => {
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const near = withCat(save, { jealousy: 2 }, { x: 7.5, y: 8.5 });
+    const far = withCat(save, { jealousy: 2 }, { x: 16.5, y: 2.5 });
+    const { events, stop } = recordEvents();
+    jealousy(save.current, lucky);
+    stop();
+    const hisses = events.filter((e) => e.type === "hissed");
+    expect(hisses).toEqual([{ type: "hissed", cat: near.id, at: lucky.id }]);
+    expect(near.traits[0]?.seen).toBe(1);
+    expect(far.traits[0]?.seen).toBe(0);
+  });
+
+  it("кіт, що розбудив уночі, — прояв «Нічної активності», хоч персонаж і спав", () => {
+    const save = game();
+    const cat = withCat(save, { nocturnal: 2 }, { x: 16.5, y: 2.5 });
+    observe(save.current, cat, "nocturnal");
+    expect(cat.traits[0]?.seen).toBe(0);
+    observe(save.current, cat, "nocturnal", 1, true);
+    expect(cat.traits[0]?.seen).toBe(1);
   });
 });

@@ -46,5 +46,11 @@ export function forgetRelations(state: GameState, cat: Cat): void {
 
 /** Ніч: життя разом потроху зближує (§9.4). */
 export function nightlyRelations(state: GameState): void {
-  for (const k of Object.keys(state.relations)) state.relations[k] = clamp((state.relations[k] ?? 0) + RELATIONS.nightly);
+  for (const k of Object.keys(state.relations)) {
+    const [a, b] = k.split("-").map(Number);
+    const cats = state.cats.filter((c) => c.id === a || c.id === b);
+    // «Товариськість» діє щодня, а не лише в мить знайомства (рішення автора 2026-10-25).
+    const sociability = cats.reduce((sum, c) => sum + traitLevel(c, "sociability"), 0) * RELATIONS.sociabilityNightly;
+    state.relations[k] = clamp((state.relations[k] ?? 0) + RELATIONS.nightly + sociability);
+  }
 }
