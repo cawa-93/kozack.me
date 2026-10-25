@@ -19,9 +19,11 @@ import {
   COMPUTER_SLEEP,
   DIFFICULTY,
   DIRTY_CLOTHES_CATS,
+  DEMANDING_SEEN_MINUTES,
   DIRTY_LITTER,
   ENVY,
   ESCAPE,
+  FOLLOWER,
   FOOD_SOUND,
   HAIRBALL,
   HOUSE_SLEEP,
@@ -71,7 +73,7 @@ import { emit } from "./events";
 import { wearOut } from "./household";
 import { observe, setWitnessing, witnesses } from "./knowledge";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { itemTile, objectById, slotById, type HomeObject } from "./home";
+import { itemTile, objectById, roomAt, ROOMS, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -429,11 +431,62 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
  */
 function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
-  const follower = Math.max(0, traitLevel(cat, "follower"));
-  // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9).
+  // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
   const demanding = Math.max(0.25, 1 + TRAIT_EFFECTS.demandingStep * traitLevel(cat, "demanding"));
-  start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower) * demanding, "character");
+  start(cat, "attention", attentionGoal(state, cat), CAT_ACT_MINUTES.attention * demanding, "character");
   if (forFood) cat.act.forFood = true;
+}
+
+/**
+ * Куди кіт іде по увагу: до персонажа; «Сам по собі» — лише до межі своєї кімнати, звідки кличе й чекає (§9.12).
+ */
+function attentionGoal(state: GameState, cat: Cat): Vec {
+  const body = tileOf(state.character.body);
+  const own = ROOMS.find((r) => r.id === roomAt(cat));
+  if (traitLevel(cat, "follower") >= 0 || !own) return body;
+  return { x: clamp(body.x, own.x, own.x + own.w - 1), y: clamp(body.y, own.y, own.y + own.h - 1) };
+}
+
+/**
+ * Персонаж перейшов у іншу кімнату (§9.12): вільний «Хвостик», що був у тій кімнаті, іде слідом. Кімнату
+ * пам'ятає `character.room`; прохід між кімнатами — ще не нова кімната.
+ */
+function noticeRoomChange(state: GameState, rng: Rng): void {
+  const room = roomAt(state.character.body);
+  if (room === null) return;
+  const before = state.character.room;
+  state.character.room = room;
+  if (before === undefined || before === room) return;
+  for (const cat of state.cats) {
+    if (!home(state, cat) || (cat.act.kind !== "idle" && cat.act.kind !== "wander") || roomAt(cat) !== before) continue;
+    const level = traitLevel(cat, "follower");
+    if (level > 0 && rng.chance(FOLLOWER.chanceStep * level)) start(cat, "follow", tileOf(state.character.body), FOLLOWER.minutes, "character");
+  }
+}
+
+/**
+ * «Хвостик» іде за персонажем і тримається поруч (§9.12): час супроводу йде й тоді, коли кіт крокує. Зайшов за
+ * персонажем у його кімнату — прояв, раз за супровід.
+ */
+function escort(state: GameState, cat: Cat, minutes: number, context: CatContext): number {
+  const act = cat.act;
+  if (!context.present) {
+    act.minutes = 0;
+    return minutes;
+  }
+  const body = state.character.body;
+  const used = Math.min(minutes, act.minutes);
+  // Як і кіт, що просить уваги: відстав — іде туди, де персонаж, і крутиться під ногами (`rubbingCat`).
+  if (distance(cat, body) > FOLLOWER.near) act.goal = tileOf(body);
+  if (act.goal) walk(cat, used, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
+  act.minutes -= used;
+  act.elapsed += used;
+  const room = roomAt(body);
+  if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat)) {
+    act.seen = true;
+    observe(state, cat, "follower");
+  }
+  return minutes - used;
 }
 
 function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
@@ -629,10 +682,14 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       wearOut(state, water, rng);
       return;
     }
-    case "attention":
-      // Прийшов, ходив слідом і нявчив, а ласки так і не дочекався — прояв «Вимогливості» (§9.9).
-      if (act.seen === true && cat.needs.attention >= ATTENTION_SATISFIED) observe(state, cat, "demanding");
+    case "attention": {
+      // Прийшов, ходив слідом і нявчив, а ласки так і не дочекався — прояв «Вимогливості» (§9.9): довше за
+      // звичайний похід — «+», пішов раніше — «−» (рішення автора 2026-10-25).
+      if (act.seen !== true || cat.needs.attention < ATTENTION_SATISFIED) return;
+      const longer = act.elapsed - CAT_ACT_MINUTES.attention;
+      if (Math.abs(longer) >= DEMANDING_SEEN_MINUTES) observe(state, cat, "demanding", longer > 0 ? 1 : -1);
       return;
+    }
     case "revenge":
       // Дійшов до ліжка: помста здійснилася, образа минає.
       addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
@@ -918,7 +975,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (isNewborn(cat)) return nurse(state, cat);
   revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.
-  const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy";
+  const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy" || cat.act.kind === "follow";
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
@@ -931,14 +988,20 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         cat.act.seen = true;
         // Прийшов через голод, бо миски порожні, — це не «Ласкавість» (§9.9).
         if (cat.act.forFood !== true) observe(state, cat, "affection");
-        observe(state, cat, "follower");
         observe(state, cat, "talkative");
+        // «Сам по собі» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
+        if (cat.act.goal === null && cat.act.elapsed >= FOLLOWER.waited) observe(state, cat, "follower", -1);
       }
       if (traitLevel(cat, "follower") >= 0 && !near) cat.act.goal = tileOf(body);
     }
   }
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
+    if (cat.act.kind === "follow") {
+      left = escort(state, cat, left, context);
+      if (cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
+      continue;
+    }
     if (cat.act.kind === "zoomies") {
       left = zoom(state, cat, left, rng, context);
       if (cat.act.minutes <= 1e-9) {
@@ -982,6 +1045,7 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   const rng = stateRng(state, "behavior");
   // Уночі персонаж спить і проявів не бачить (§9.9).
   setWitnessing(context.present);
+  if (context.present) noticeRoomChange(state, rng);
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) tickRelations(state, minutes, rng);
   if (context.present) watchCats(state, minutes);
@@ -1087,7 +1151,7 @@ export function envy(state: GameState, lucky: Cat): void {
  * Мстивий кіт після образи може піти до ліжка персонажа й залишити там «сюрприз»; тоді образа
  * минає (§9.12). Іде лише з дій, які не шкода кинути.
  */
-const REVENGE_FROM = new Set(["idle", "wander", "attention", "toy"]);
+const REVENGE_FROM = new Set(["idle", "wander", "attention", "toy", "follow"]);
 
 function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const level = traitLevel(cat, "vengeful");

@@ -4,7 +4,7 @@
 import { traitLevel } from "./cat";
 import { OBSERVATIONS, WITNESS_DISTANCE } from "./config";
 import { emit } from "./events";
-import { ROOMS } from "./home";
+import { roomAt } from "./home";
 import { traitGroup } from "./traits";
 import type { Cat, GameState, Trait, Vec } from "./types";
 
@@ -13,10 +13,6 @@ let witnessing = true;
 
 export function setWitnessing(value: boolean): void {
   witnessing = value;
-}
-
-function roomOf(p: Vec): string | null {
-  return ROOMS.find((r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h)?.id ?? null;
 }
 
 /**
@@ -41,8 +37,8 @@ export function witnesses(state: GameState, cat: Cat): boolean {
  */
 export function inView(state: GameState, p: Vec): boolean {
   const body = state.character.body;
-  const room = roomOf(body);
-  const other = roomOf(p);
+  const room = roomAt(body);
+  const other = roomAt(p);
   if (room !== null && room === other) return true;
   if (room !== null && other !== null) return false;
   return Math.hypot(body.x - p.x, body.y - p.y) <= WITNESS_DISTANCE;

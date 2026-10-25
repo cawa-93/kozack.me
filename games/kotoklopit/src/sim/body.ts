@@ -79,14 +79,14 @@ export function glitchChance(state: GameState): number {
   return (GLITCH_MAX_CHANCE_PER_MINUTE * (LOW_STAT - sanity)) / LOW_STAT;
 }
 
-/** Кіт треться об ноги: хоче уваги, сидить поруч і не тримає дистанції (§9.12). */
+/** Кіт треться об ноги: хоче уваги чи супроводжує персонажа, поруч і не тримає дистанції (§9.12). */
 export function rubbingCat(state: GameState): Cat | null {
   const body = state.character.body;
   return (
     state.cats.find(
       (c) =>
         c.away === null &&
-        c.act.kind === "attention" &&
+        (c.act.kind === "attention" || c.act.kind === "follow") &&
         traitLevel(c, "legs") >= 0 &&
         Math.hypot(c.x - body.x, c.y - body.y) < LEGS.distance,
     ) ?? null

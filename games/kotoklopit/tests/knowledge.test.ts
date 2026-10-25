@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { jealousy, tickCats } from "../src/sim/catai";
+import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { giveTreat } from "../src/sim/care";
 import { pickUpCat } from "../src/sim/actions";
 import { advance, newGame } from "../src/sim/game";
@@ -116,23 +116,27 @@ describe("прояв — лише того боку, що показала по�
     expect(seen("affection")).toBe(0);
   });
 
-  it("«Вимогливість» видно, коли кіт так і не дочекався ласки; «Ласкавість» — коли прийшов (рішення автора 2026-10-25)", () => {
-    const seenAfterVisit = (demanding: TraitLevel): { demanding: number; affection: number } => {
+  it("«Вимогливість» видно за тривалістю походу без ласки: довше звичайного — «+», пішов раніше — «−»; «Ласкавість» — коли прийшов", () => {
+    const seenAfterVisit = (demanding: TraitLevel): { demanding: number; affection: number; minutes: number } => {
       const save = withCatCorner(game());
       save.current.modifiers.day = null;
       save.current.day = 8;
       save.current.minute = 14 * 60;
       const cat = withCat(save, { demanding, affection: 1 }, { x: 8.5, y: 8.5 });
       cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 90, play: 0 };
-      cat.act = { kind: "attention", target: "character", goal: null, minutes: 20, elapsed: 0 };
+      decide(save.current, cat, createRng(1), { present: true });
+      const minutes = cat.act.kind === "attention" ? cat.act.minutes : 0;
       // Персонаж не гладить: кіт ходить слідом, поки похід не скінчиться.
-      for (let i = 0; i < 60; i++) advance(save, 0.5);
-      return { demanding: cat.traits[0]?.seen ?? 0, affection: cat.traits[1]?.seen ?? 0 };
+      for (let i = 0; i < 80; i++) advance(save, 0.5);
+      return { demanding: cat.traits[0]?.seen ?? 0, affection: cat.traits[1]?.seen ?? 0, minutes };
     };
     const loud = seenAfterVisit(2);
+    expect(loud.minutes).toBeCloseTo(30);
     expect(loud.demanding).toBeGreaterThanOrEqual(1);
     expect(loud.affection).toBeGreaterThanOrEqual(1);
-    expect(seenAfterVisit(-2).demanding).toBe(0);
+    const modest = seenAfterVisit(-2);
+    expect(modest.minutes).toBeCloseTo(10);
+    expect(modest.demanding).toBeGreaterThanOrEqual(1);
   });
 });
 

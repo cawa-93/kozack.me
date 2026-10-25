@@ -69,6 +69,11 @@ export const ROOMS: readonly (Rect & { id: RoomId })[] = [
   { id: "living", x: 1, y: 6, w: 18, h: 5 },
 ];
 
+/** Кімната, у якій точка; у проході між кімнатами — null (§9.9, §9.12). */
+export function roomAt(p: Vec): RoomId | null {
+  return ROOMS.find((r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h)?.id ?? null;
+}
+
 const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1, requires?: readonly Product[]): HomeObject => ({
   id,
   kind,
