@@ -198,6 +198,8 @@ export type GameEvent =
   | { type: "fight-stopped"; cat: number }
   | { type: "keyboard"; cat: number }
   | { type: "knocked-down"; cat: number }
+  /** Кіт вистрибнув із засідки персонажу на ноги й збив його (§9.12, «Засідки»). */
+  | { type: "ambushed"; cat: number }
   | { type: "tripped"; cat: number }
   | { type: "slipped"; mess: number }
   | { type: "escaped"; cat: number }

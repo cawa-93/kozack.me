@@ -699,6 +699,15 @@ export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinu
  * `afterSleep` одразу точить кігті.
  */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, boxes: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
+/**
+ * «Засідки» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що хоче
+ * гратися, сідає в засідку з вагою `step` × рівень (кіт без риси — `base`, кошеня — щонайменше `kitten`; «−» — ніколи),
+ * ×`bored`, якщо сьогодні з ним ще не гралися вудкою `playedMinutes` хвилин, і ×`played`, якщо гралися. Чекає до `minutes`
+ * хвилин у місці з `AMBUSH_SPOTS`; персонаж ближче `reach` клітинки — стрибок на ноги: оглушення (спільна пауза), від
+ * `strongLevel` ще й подряпина (здоров'я `health`); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
+ * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
+ */
+export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<
   DiseaseId,

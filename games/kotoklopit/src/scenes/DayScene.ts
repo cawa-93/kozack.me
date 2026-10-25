@@ -1023,6 +1023,7 @@ export class DayScene extends Phaser.Scene {
       case "tripped":
       case "slipped":
       case "knocked-down":
+      case "ambushed":
         this.cameras.main.shake(160, 0.004);
         break;
       case "cat-fight":

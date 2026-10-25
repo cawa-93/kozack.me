@@ -31,7 +31,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier" | "crouch";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -77,6 +77,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "sleep" && act.target === "carrier") return "carrier";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
+  // У засідці (§9.12, «Засідки»): припав до підлоги й виляє задом.
+  if (act.kind === "ambush") return "crouch";
   // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
   const sniffing = (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
   if (act.kind === "eat" || act.kind === "drink" || sniffing) return "eat";
@@ -147,7 +149,7 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || interaction || feeling || blinking
+      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
@@ -268,6 +270,20 @@ export class CatView {
         g.fillStyle(pawColor).fillEllipse(x + dir * (20 * s + scrape), y - 1, 7 * s, 4 * s).fillEllipse(x + dir * (17 * s - scrape), y + 1, 7 * s, 4 * s);
         this.headAt(g, x + dir * 13 * s, y - 11 * s, s, dir, body, point);
         this.back = { x: x - dir * 5 * s, y: y - 20 * s };
+        return;
+      }
+      case "crouch": {
+        // Засідка (§9.12): тіло притиснуте до підлоги, зад трохи піднятий і виляє, хвіст низько смикається, голова вперед.
+        const wiggle = Math.sin(time / 55) * 2 * s;
+        this.tail(g, x - dir * 15 * s + wiggle, y - 4 * s, s, dir, "rest");
+        g.fillStyle(this.coat.pointed ? point : body);
+        for (const lx of [-9, 8]) g.fillRoundedRect(x + dir * lx * s - 3, y - 4 * s, 6 * s, 4 * s, 2);
+        g.fillStyle(body).fillEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s, 11 * s);
+        this.patches(g, x - dir * 3 * s, y - 9 * s, 30 * s, 11 * s);
+        if (this.coat.tabby) this.stripes(g, x - dir * 3 * s, y - 9 * s, 24 * s, stripe, true);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s, 11 * s);
+        this.headAt(g, x + dir * 14 * s, y - 10 * s, s, dir, body, point);
+        this.back = { x: x - dir * 4 * s, y: y - 14 * s };
         return;
       }
       case "walk":

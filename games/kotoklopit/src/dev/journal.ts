@@ -238,6 +238,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} збив персонажа на зумі`;
     case "tripped":
       return `Персонаж спіткнувся об ${catName(state, event.cat)}`;
+    case "ambushed":
+      return `${catName(state, event.cat)} вистрибнув із засідки на ноги`;
     case "slipped":
       return "Персонаж посковзнувся на шерстяній грудці";
     case "escaped":

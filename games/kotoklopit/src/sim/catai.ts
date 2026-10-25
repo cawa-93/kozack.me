@@ -9,6 +9,7 @@ import { changeStat, unpleasantTask } from "./character";
 import {
   ACTIVITY_BY_HOUR,
   ADAPTATION_HUNGER,
+  AMBUSH,
   APPETITE,
   APPETITE_STEP,
   ATTENTION_SATISFIED,
@@ -99,7 +100,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { BOX_SCRATCH, CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -587,7 +588,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
   // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
   if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat)) return startAttention(state, cat);
-  if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
+  if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
   const friend = state.cats.find((c) => c.id !== cat.id && home(state, c) && isFriend(state, cat, c) && distance(cat, c) <= groom.distance);
@@ -809,7 +810,7 @@ function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
 }
 
 /** Кіт хоче гратися (§9.12): зумі, скинути річ, украсти їжу, іграшка чи просто побродити. */
-function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
+function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): void {
   type Choice = () => void;
   // Активна забава — прояв «Енергійності +»; просто побродити — ні: так поводиться будь-який кіт (§9.9).
   const active =
@@ -850,7 +851,63 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
+  // Засідка на персонажа (§9.12, «Засідки»): лише коли є на кого чатувати.
+  const ambush = ambushWeight(cat);
+  if (ambush > 0 && context.present) options.push({ weight: ambush, value: active(() => startAmbush(cat, rng)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
+}
+
+/**
+ * Вага засідки, коли кіт хоче гратися (§9.12, рішення автора 2026-10-25): 0,25 × «Засідки», кіт без риси — 0,04, кошеня —
+ * щонайменше 0,1, «−» — ніколи; ×2, якщо сьогодні з ним ще не гралися вудкою 5 хвилин, і ×0,5, якщо гралися.
+ */
+export function ambushWeight(cat: Cat): number {
+  const level = traitLevel(cat, "ambush");
+  if (level < 0) return 0;
+  const base = Math.max(AMBUSH.step * level, level === 0 ? AMBUSH.base : 0, isKitten(cat) ? AMBUSH.kitten : 0);
+  return base * ((cat.playedToday ?? 0) >= AMBUSH.playedMinutes ? AMBUSH.played : AMBUSH.bored);
+}
+
+/**
+ * Кіт сідає в засідку (§9.12, «Засідки»): за диваном, біля ліжка чи в проході — в одне з двох найближчих до нього місць — і
+ * чекає до 10 хвилин.
+ */
+export function startAmbush(cat: Cat, rng: Rng): void {
+  const spots = [...AMBUSH_SPOTS].sort((a, b) => distance(a, cat) - distance(b, cat));
+  const spot = spots[rng.int(0, Math.min(1, spots.length - 1))] ?? spots[0] ?? tileOf(cat);
+  start(cat, "ambush", { ...spot }, AMBUSH.minutes);
+}
+
+/**
+ * Персонаж пройшов повз кота в засідці (§9.12, «Засідки»): кіт кидається на ноги — пів хвилини оглушення (спільна пауза:
+ * щойно оглушеного не валить знову), «Ніндзя» ще й дряпає, — і мчить геть. Прояв «+» — раз за засідку.
+ */
+function pounce(state: GameState, cat: Cat, rng: Rng): void {
+  const seen = cat.act.seen === true;
+  cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+  changeMood(state, cat, 1);
+  // Кіт мчить геть і вже нікого не збиває (ціль «hit», як у зумі, що вже збили персонажа).
+  start(cat, "zoomies", randomFloor(rng), AMBUSH.dashMinutes, "hit");
+  if (!seen) observe(state, cat, "ambush");
+  if (!stun(state)) return;
+  emit(state, { type: "ambushed", cat: cat.id });
+  if (traitLevel(cat, "ambush") >= AMBUSH.strongLevel) changeStat(state, "health", AMBUSH.health);
+}
+
+/**
+ * Кіт у засідці (§9.12): персонаж поруч — стрибок; з вудкою в руках кіт на ноги не кидається — з ним можна гратися.
+ * Кіт у засідці на очах персонажа (виляє задом) — прояв «Засідок +», раз за засідку.
+ */
+function lurk(state: GameState, cat: Cat, rng: Rng, context: CatContext): void {
+  const act = cat.act;
+  if (act.kind !== "ambush" || act.goal !== null || !context.present) return;
+  const character = state.character;
+  const inside = character.activity?.kind === "use" && character.activity.inside === true;
+  if (!inside && character.held?.kind !== "toy" && distance(cat, character.body) < AMBUSH.reach) return pounce(state, cat, rng);
+  if (act.seen !== true && witnesses(state, cat)) {
+    act.seen = true;
+    observe(state, cat, "ambush");
+  }
 }
 
 /**
@@ -1269,6 +1326,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      return;
+    case "ambush":
+      // Просиділа засідку й ніхто не пройшов — теж трохи гра (§9.12, «Засідки»).
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * AMBUSH.waitRelief);
       return;
     case "knock": {
       if (act.target?.startsWith("trinket:")) return trinketDone(state, cat, rng);
@@ -1782,6 +1843,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     cat.act.kind === "hide" ||
     cat.act.kind === "attention" ||
     cat.act.kind === "toy" ||
+    cat.act.kind === "ambush" ||
     (cat.act.kind === "follow" && cat.act.target !== "food");
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
@@ -1807,6 +1869,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (traitLevel(cat, "follower") >= 0) approach(state, cat);
     }
   }
+  lurk(state, cat, rng, context);
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);

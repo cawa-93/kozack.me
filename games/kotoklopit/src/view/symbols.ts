@@ -124,6 +124,7 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "tripped":
     case "slipped":
     case "knocked-down":
+    case "ambushed":
       // Запаморочення персонаж відчуває; удар і так видно з трусіння камери.
       return [{ kind: "think", at: "person", icon: "dizzy" }];
     case "bite":

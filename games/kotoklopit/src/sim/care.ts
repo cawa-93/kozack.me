@@ -134,10 +134,12 @@ export function bathe(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Ніч (§8.7, §9.10): нашийник і дзвіночок, ласощі за день, дерматит безшерстих без купання. */
+/** Ніч (§8.7, §9.10): нашийник і дзвіночок, ласощі й гра вудкою за день, дерматит безшерстих без купання. */
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
+    // Гра вудкою рахується за день: уранці засідки знову частіші (§9.12, «Засідки»).
+    delete cat.playedToday;
     // Звичка жебракувати згасає (§7).
     if (cat.begHabit !== undefined) {
       cat.begHabit = Math.max(0, cat.begHabit - BEGGING.habitDecay);

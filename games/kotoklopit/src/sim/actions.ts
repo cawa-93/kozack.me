@@ -749,6 +749,8 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
+  // З ким сьогодні гралися вудкою, той рідше сидить у засідці (§9.12, «Засідки»).
+  cat.playedToday = (cat.playedToday ?? 0) + minutes;
   if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили грою");
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
