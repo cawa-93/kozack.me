@@ -26,6 +26,7 @@ import {
   FOLLOWER,
   FOOD_SOUND,
   HAIRBALL,
+  HISS_PAUSE_MINUTES,
   HOUSE_SLEEP,
   HUNGRY_THEFT,
   ILLNESS,
@@ -208,10 +209,21 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean)
   if (!rng.chance(r.chance + r.territorialStep * Math.max(0, traitLevel(cat, "territorial")))) return;
   const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && distance(c, cat) <= r.distance);
   const other = others[rng.int(0, others.length - 1)];
-  if (!other) return;
+  if (!other || !hiss(state, cat, other)) return;
   changeRelation(state, cat, other, r.relation);
-  emit(state, { type: "hissed", cat: cat.id, at: other.id });
   observe(state, cat, "territorial");
+}
+
+/**
+ * Кіт шипить на іншого (§9.4) — це видно й чути. Спільна пауза шипіння (§9.12): після попереднього минуло
+ * менше 20 хвилин — кіт мовчить, і сварки теж немає (false).
+ */
+export function hiss(state: GameState, cat: Cat, at: Cat): boolean {
+  const now = absoluteMinute(state.day, state.minute);
+  if (cat.hissedAt !== undefined && now - cat.hissedAt < HISS_PAUSE_MINUTES) return false;
+  cat.hissedAt = now;
+  emit(state, { type: "hissed", cat: cat.id, at: at.id });
+  return true;
 }
 
 export function litterCapacity(box: LitterItem): number {
@@ -903,9 +915,9 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
   cat.act.minutes -= used;
   if (!cat.act.goal && cat.act.minutes > 0) cat.act.goal = randomFloor(rng);
   const body = state.character.body;
-  if (context.present && cat.act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit) {
+  // Спільна пауза між оглушеннями (§9.12): щойно оглушений персонаж не падає знову — кіт пробігає повз.
+  if (context.present && cat.act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit && stun(state)) {
     cat.act.target = "hit";
-    stun(state);
     emit(state, { type: "knocked-down", cat: cat.id });
   }
   return minutes - used;
@@ -1173,10 +1185,9 @@ export function jealousy(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
     if (other.id === cat.id || !home(state, other) || asleep(other) || distance(other, cat) > RELATIONS.jealousySight) continue;
     const level = traitLevel(other, "jealousy");
-    if (level <= 0) continue;
+    // Ревнивий шипить на щасливця — це видно й чути (§9.4); щойно шипів — мовчить і не сердиться (§9.12).
+    if (level <= 0 || !hiss(state, other, cat)) continue;
     changeRelation(state, other, cat, RELATIONS.jealousy * level);
-    // Ревнивий шипить на щасливця — це видно й чути (§9.4).
-    emit(state, { type: "hissed", cat: other.id, at: cat.id });
     observe(state, other, "jealousy");
   }
 }

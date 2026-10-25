@@ -17,6 +17,7 @@ import {
   LOW_STAT_SPEED,
   SLIP_CHANCE,
   STUN_MINUTES,
+  STUN_PAUSE_MINUTES,
   WALK_TILES_PER_MINUTE,
 } from "./config";
 import { traitLevel } from "./cat";
@@ -29,6 +30,7 @@ import { observe } from "./knowledge";
 import { isSolid, SPAWN } from "./home";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
+import { absoluteMinute } from "./time";
 import type { Body, Cat, GameState, Vec } from "./types";
 
 /** Найбільший крок перевірки зіткнень, щоб не проскочити крізь стіну. */
@@ -93,13 +95,20 @@ export function rubbingCat(state: GameState): Cat | null {
   );
 }
 
-/** Персонаж оглушений на пів хвилини: спіткнувся, посковзнувся, збило зумі (§9.12). */
-export function stun(state: GameState): void {
+/**
+ * Персонаж оглушений на пів хвилини: спіткнувся, посковзнувся, збило зумі (§9.12). Спільна пауза: від
+ * попереднього оглушення минуло менше 5 хвилин — не валить з ніг (false), і той, хто кличе, нічого не показує.
+ */
+export function stun(state: GameState): boolean {
   const body = state.character.body;
+  const now = absoluteMinute(state.day, state.minute);
+  if (body.stunAt !== undefined && now - body.stunAt < STUN_PAUSE_MINUTES) return false;
+  body.stunAt = now;
   body.stun = Math.max(body.stun, STUN_MINUTES);
   body.dash = 0;
   // Упав — можна й травмуватися (§6.5).
   maybeInjure(state, stateRng(state, "behavior"));
+  return true;
 }
 
 /** Рух за ігрові хвилини. Під час ривка персонаж рухається вперед, навіть без керування. */
@@ -138,8 +147,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   const rng = stateRng(state, "behavior");
   if (rubbing) {
     const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");
-    if (rng.chance(1 - (1 - chance) ** minutes)) {
-      stun(state);
+    if (rng.chance(1 - (1 - chance) ** minutes) && stun(state)) {
       emit(state, { type: "tripped", cat: rubbing.id });
       observe(state, rubbing, "legs");
       return;
@@ -150,8 +158,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
     if (mess.kind !== "hairball") continue;
     const now = Math.hypot(mess.x - body.x, mess.y - body.y) < 0.35;
     const before = Math.hypot(mess.x - from.x, mess.y - from.y) < 0.35;
-    if (now && !before && rng.chance(SLIP_CHANCE)) {
-      stun(state);
+    if (now && !before && rng.chance(SLIP_CHANCE) && stun(state)) {
       emit(state, { type: "slipped", mess: mess.id });
       return;
     }

@@ -162,6 +162,8 @@ function sleep({ state, report, rng }: Night): void {
     }
     if (!nextWake || minute >= planned) break;
     wakes.shift();
+    // Не більше двох побудок за ніч сумарно (§9.12, «Спільні механіки рис»): третій кіт уже не будить.
+    if (report.wakeUps.length >= WAKE_UP.maxPerNight) continue;
     const { cat, reason } = nextWake;
     // Ранкова побудка — лише якщо кіт голодний і миски порожні.
     if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
