@@ -1,7 +1,7 @@
 // Хвороби котів (§9.5, `DISEASES.md`): як кіт захворює, «безпечний» термін і шкода, симптоми,
 // лікування вдома, заразність. Ветеринара додасть крок 11 плану.
 
-import { changeHealth, changeLove, changeMood, isAdapting, isOld, lifeMood, traitLevel } from "./cat";
+import { changeHealth, changeMood, isAdapting, isOld, lifeMood, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS } from "./config";
 import { useSupply } from "./economy";
@@ -157,7 +157,7 @@ export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): bo
   const quality = useSupply(state, medicine);
   if (quality === null) return false;
   unpleasantTask(state, MEDICINE.sanity);
-  changeLove(state, cat, MEDICINE.love, "дали ліки");
+  offend(state, cat, MEDICINE.love, "дали ліки");
   cat.interacted = true;
   for (const disease of [...cat.diseases]) {
     const rule = DISEASES[disease.id].cure;

@@ -1,7 +1,7 @@
 // Поїздки (§8.5): вирушити з дому, гонка, подія на місці, повернення без гонки; аварія —
 // втрати й перемотування дня до сну. Події на місці — `destinations.ts`.
 
-import { changeMood, traitLevel } from "./cat";
+import { changeMood, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
 import { emit } from "./events";
@@ -67,6 +67,7 @@ export function startTrip(state: GameState, destination: Destination): boolean {
     cat.away = "trip";
     const carrier = state.home.carrier ?? "cheap";
     changeMood(state, cat, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * Math.min(0, trait), "переноска");
+    stress(state, cat);
   }
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);
@@ -144,6 +145,9 @@ export function endTrip(state: GameState): void {
     cat.x = HOME_DOOR.x - 0.6;
     cat.y = HOME_DOOR.y - 0.3;
     cat.act = { kind: "idle", target: null, goal: null, minutes: 3, elapsed: 0 };
+    // Переноска й неприємне в поїздці — щойно кіт удома (§9.12): дметься й може помститися з цієї миті.
+    stress(state, cat);
+    if (cat.offense?.away === true) cat.offense = { at: cat.stressedAt ?? 0 };
   }
   emit(state, { type: "trip-ended", destination: trip.destination });
 }

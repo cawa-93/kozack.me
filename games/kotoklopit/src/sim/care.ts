@@ -1,6 +1,6 @@
 // Догляд за котом (§7, §8.7, §9.10): ласощі, нашийник, купання; щоденні наслідки нашийника й купання.
 
-import { changeLove, changeMood, traitLevel } from "./cat";
+import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, COLLAR, REVENGE, TREATS } from "./config";
 import { envy } from "./catai";
@@ -37,12 +37,14 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
     const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
     changeLove(state, cat, cat.hurt.amount * refund, "ласощі після неприємного");
     cat.hurt = null;
-    // «Поступливий» одразу відтає й муркоче — це видно (§9.9). Ласощі — дія гравця, тож «Жебракування» вони не
-    // відкривають (рішення автора 2026-10-25).
-    if (traitLevel(cat, "vengeful") < 0) {
-      emit(state, { type: "purr", cat: cat.id, enjoyed: true });
-      observe(state, cat, "vengeful", -1);
-    }
+  }
+  // «Поступливий» протягом години після неприємного від персонажа чи стресу одразу відтає й муркоче — це видно (§9.9),
+  // і образа минає. Ласощі — дія гравця, тож «Жебракування» вони не відкривають (рішення автора 2026-10-25).
+  const grudge = grudgeAt(cat);
+  if (traitLevel(cat, "vengeful") < 0 && grudge !== null && now - grudge <= TREATS.hurtMinutes) {
+    emit(state, { type: "purr", cat: cat.id, enjoyed: true });
+    observe(state, cat, "vengeful", -1);
+    forgive(cat);
   }
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
@@ -94,7 +96,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   if (water >= 1) changeMood(state, cat, BATH.loverMood, "купання");
   else {
     changeMood(state, cat, BATH.mood, "купання");
-    changeLove(state, cat, BATH.love, "купання");
+    offend(state, cat, BATH.love, "купання");
   }
   if (water <= -2 && rng.chance(BATH.scratch)) fallIllPerson(state, "injury");
   if (water !== 0) observe(state, cat, "water", water > 0 ? 1 : -1);

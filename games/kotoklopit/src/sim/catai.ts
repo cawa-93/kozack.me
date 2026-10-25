@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { adaptsLonger, changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
+import { adaptsLonger, avoiding, changeLove, changeMood, forgive, grudgeAt, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel } from "./cat";
 import { lastTileWithin, randomFloor, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -61,12 +61,14 @@ import {
   SLEEP_START,
   SLEEP_TRAIT_STEP,
   SOFA_REPAIR,
+  START_CLOTHES,
   STEAL_HUNGER,
   STERILIZATION,
   STRESS_EFFECTS,
   SURPRISE_CHANCE,
   TALKATIVE,
   TIRED_FATIGUE,
+  TOUCHY,
   TOY,
   TRAIT_EFFECTS,
   TRAIT_NEED_STEP,
@@ -81,7 +83,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, itemTile, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
+import { distanceToRect, itemTile, LAUNDRY_BASKET, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -438,7 +440,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
       return start(cat, "steal", objectTile(steal.id), 1, steal.id);
     }
     const empty = nearest(cat, itemsOf(state, "bowl"));
-    if (context.present && !aloof(cat) && rng.chance(0.5)) return startAttention(state, cat, true);
+    if (context.present && !aloof(cat) && !avoiding(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
@@ -454,7 +456,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
-  if (context.present && n.attention >= seek && !aloof(cat)) return startAttention(state, cat);
+  // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
+  if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
@@ -815,10 +818,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "revenge":
-      // Дійшов до ліжка: помста здійснилася, образа минає.
+      // Дійшов до ліжка чи кошика з білизною: помста здійснилася, образа минає.
       addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
-      observe(state, cat, "vengeful");
       cat.hurt = null;
+      forgive(cat);
       return;
     case "toilet": {
       cat.needs.toilet = 0;
@@ -1129,8 +1132,10 @@ function returnFromStairs(state: GameState, cat: Cat): void {
 export function carryFeeling(state: GameState, cat: Cat): "content" | "reluctant" | "struggling" {
   const held = state.character.held;
   const lap = traitLevel(cat, "lap");
+  // Узяли проти волі — пручається; «Відхідливий» через образу не пручається (§9.12, рішення автора 2026-10-25).
+  const offended = held?.kind === "cat" && held.offended === true && traitLevel(cat, "touchy") >= 0;
   // Хто не любить персонажа, пручається сильніше: терплячий — пручається, любитель рук — лише терпить.
-  if (lap < 0 || (held?.kind === "cat" && held.offended === true) || (aloof(cat) && lap === 0)) return "struggling";
+  if (lap < 0 || offended || (aloof(cat) && lap === 0)) return "struggling";
   return lap > 0 && !aloof(cat) ? "content" : "reluctant";
 }
 
@@ -1201,6 +1206,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (cat.act.target === "robot") ride(state, cat);
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
+  if (context.present) sulk(state, cat);
   // Спокійну дію кіт кидає заради нагальної потреби.
   // «Вісімка» під ногами того, хто несе корм, — заради їжі, тож її голод не перериває (§9.12).
   const calm =
@@ -1222,12 +1228,19 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         cat.act.seen = true;
         // Прийшов через голод, бо миски порожні, — це не «Ласкавість» (§9.9).
         if (cat.act.forFood !== true) observe(state, cat, "affection");
+        // Кіт без риси після неприємного ще чверть години не прийшов би, а «Відхідливий» уже ластиться (§9.12).
+        const since = sinceOffense(state, cat);
+        if (cat.act.forFood !== true && since !== null && since < TOUCHY.baseMinutes && cat.offense?.seen !== true) {
+          cat.offense = { ...cat.offense!, seen: true };
+          observe(state, cat, "touchy", -1);
+        }
         // «Сам по собі» не пішов слідом, а чекав, поки персонаж повернеться (§9.12).
         if (cat.act.goal === null && cat.act.elapsed >= FOLLOWER.waited) observe(state, cat, "follower", -1);
       }
       if (traitLevel(cat, "follower") >= 0) approach(state, cat);
     }
   }
+  revengeSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
     if (cat.act.kind === "follow") {
@@ -1397,6 +1410,8 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
 /** Бійка ворогів (§9.4): обидва зупиняються, летить шерсть. */
 function startFight(state: GameState, a: Cat, b: Cat): void {
   const fight = RELATIONS.fight;
+  stress(state, a);
+  stress(state, b);
   start(a, "fight", null, fight.minutes, `cat:${b.id}`);
   start(b, "fight", null, fight.minutes, `cat:${a.id}`);
   changeMood(state, a, fight.mood, "бійка");
@@ -1445,19 +1460,52 @@ export function envy(state: GameState, lucky: Cat): void {
 }
 
 /**
- * Мстивий кіт після образи може піти до ліжка персонажа й залишити там «сюрприз»; тоді образа
- * минає (§9.12). Іде лише з дій, які не шкода кинути.
+ * Мстивий кіт після неприємного від персонажа чи стресу (бійка, переноска) може піти до речей із запахом персонажа — ліжка
+ * чи кошика брудної білизни — і залишити там «сюрприз»; тоді образа минає (§9.12, рішення автора 2026-10-25). Іде лише
+ * з дій, які не шкода кинути. Брудний лоток і день без уваги — не привід.
  */
 const REVENGE_FROM = new Set(["idle", "wander", "attention", "toy", "follow"]);
 
 function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const level = traitLevel(cat, "vengeful");
-  const hurt = cat.hurt;
-  if (level <= 0 || hurt === null || !REVENGE_FROM.has(cat.act.kind)) return;
-  if (absoluteMinute(state.day, state.minute) - hurt.at > REVENGE.minutes) return;
+  const grudge = grudgeAt(cat);
+  if (level <= 0 || grudge === null || !REVENGE_FROM.has(cat.act.kind)) return;
+  if (absoluteMinute(state.day, state.minute) - grudge > REVENGE.minutes) return;
   if (!rng.chance(1 - (1 - REVENGE.perHour * level) ** (minutes / MINUTES_PER_HOUR))) return;
+  // Брудна білизна пахне персонажем так само, як ліжко.
+  if (state.home.clothes < START_CLOTHES && rng.chance(0.5)) {
+    return start(cat, "revenge", tileOf(LAUNDRY_BASKET), CAT_ACT_MINUTES.toilet, "laundry");
+  }
   const bed = objectById("bed");
   start(cat, "revenge", { x: bed.x + bed.w, y: bed.y + bed.h - 1 }, CAT_ACT_MINUTES.toilet, "bed");
+}
+
+/**
+ * Мстивий кіт іде мститися на очах персонажа — дорогою до ліжка чи кошика або вже там (§9.9, рішення автора
+ * 2026-10-25): прояв «Мстивості +», раз за помсту.
+ */
+function revengeSeen(state: GameState, cat: Cat): void {
+  if (cat.act.kind !== "revenge" || cat.act.seen === true || !witnesses(state, cat)) return;
+  cat.act.seen = true;
+  observe(state, cat, "vengeful");
+}
+
+/**
+ * «Образливий» дметься після неприємного (§9.12, рішення автора 2026-10-25): персонаж підійшов ближче півтори клітинки —
+ * кіт відходить на три й сідає спиною. Прояв «+», раз за образу.
+ */
+const SULK_FROM = new Set(["idle", "wander", "toy"]);
+
+function sulk(state: GameState, cat: Cat): void {
+  const body = state.character.body;
+  if (!sulking(state, cat) || !SULK_FROM.has(cat.act.kind) || distance(cat, body) >= TOUCHY.near) return;
+  backAway(state, cat, body);
+  emit(state, { type: "sulked", cat: cat.id });
+  const offense = cat.offense;
+  if (offense && offense.seen !== true) {
+    offense.seen = true;
+    observe(state, cat, "touchy");
+  }
 }
 
 /** Персонаж приділяє увагу коту: ревниві коти, що не сплять, сердяться на нього (§9.4). */

@@ -27,6 +27,7 @@ export type IconName =
   | "dizzy"
   | "meow"
   | "meow-silent"
+  | "sulk"
   | "heart"
   | "angry"
   | "dirty"
@@ -185,6 +186,15 @@ Object.assign(ICONS, {
     g.fillStyle(0xffffff).fillCircle(15, 19, 2.5).fillCircle(25, 19, 2.5);
     g.fillStyle(0x3a3140).fillEllipse(20, 28, 7, 6);
     g.fillStyle(0x9a8f9c).fillCircle(31, 36, 1.8).fillCircle(35.5, 36, 1.8).fillCircle(26.5, 36, 1.8);
+  },
+  sulk: (g: Phaser.GameObjects.Graphics) => {
+    // Кіт дметься (§9.12): надуте личко із заплющеними очима, брови насуплені, рот рискою, а збоку — пара «пф».
+    g.fillStyle(0xe9a66b).fillCircle(18, 22, 13);
+    g.lineStyle(2.5, INK).strokeCircle(18, 22, 13);
+    g.lineStyle(2, INK).lineBetween(10, 20, 15, 20).lineBetween(21, 20, 26, 20);
+    g.lineBetween(9, 14, 15, 17).lineBetween(27, 14, 21, 17);
+    g.lineStyle(2.5, INK).lineBetween(14, 29, 22, 29);
+    g.fillStyle(0xcfd8e0).fillCircle(33, 12, 4).fillCircle(37, 7, 2.8);
   },
   heart: (g: Phaser.GameObjects.Graphics) => {
     g.fillStyle(0xd9455f).fillCircle(14, 15, 7.5).fillCircle(26, 15, 7.5).fillTriangle(7, 18, 33, 18, 20, 34);

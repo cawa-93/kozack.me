@@ -1,7 +1,7 @@
 // Стан думками й настрій з поведінки (§11.4, правка автора 2026-10-25): про що час від часу думають кіт
 // і персонаж, як часто, і коли кіт повільно моргає чи сумує. Без Phaser — щоб тести могли перевірити.
 
-import { traitLevel } from "../sim/cat";
+import { sulking, traitLevel } from "../sim/cat";
 import { hungerThreshold } from "../sim/catai";
 import { LOVE_BEHAVIOR, MOOD_LOOK, PETTING, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
@@ -55,9 +55,10 @@ export function personThought(state: GameState): IconName | null {
 
 /**
  * Настрій і характер з поведінки (§11.4, §9.12): «blink» — повільно моргає до персонажа, «sad» — сумна поза, «belly» —
- * «Пастка на животику» показує живіт, «nudge» — ласкавий кіт, що прийшов по увагу, бодається головою.
+ * «Пастка на животику» показує живіт, «nudge» — ласкавий кіт, що прийшов по увагу, бодається головою, «sulk» —
+ * «Образливий» дметься й сидить спиною до персонажа.
  */
-export type CatLook = "blink" | "sad" | "belly" | "nudge";
+export type CatLook = "blink" | "sad" | "belly" | "nudge" | "sulk";
 
 /** Відстань від персонажа до кота в клітинках. */
 const away = (state: GameState, cat: Cat): number => Math.hypot(state.character.body.x - cat.x, state.character.body.y - cat.y);
@@ -72,6 +73,7 @@ export function catLook(state: GameState, cat: Cat): CatLook | null {
   if (cat.mood < THOUGHTS.sad) return "sad";
   if (isHeld(state, cat)) return null;
   const act = cat.act;
+  if (sulking(state, cat) && act.goal === null && inView(state, cat)) return "sulk";
   const near = (distance: number): boolean => away(state, cat) <= distance && inView(state, cat);
   if (act.kind === "idle" && act.goal === null && traitLevel(cat, "petting") <= -2 && near(PETTING.bellyDistance)) return "belly";
   if (act.kind === "attention" && act.seen === true && act.goal === null && traitLevel(cat, "affection") > 0 && near(MOOD_LOOK.nudgeDistance)) return "nudge";

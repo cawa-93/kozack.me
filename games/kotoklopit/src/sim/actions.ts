@@ -2,7 +2,7 @@
 // на руки; утримання — тривала дія: душ, їжа, прибирання, пестощі. Плита готує своїм часом.
 
 import { actionSpeed, isMoving } from "./body";
-import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
+import { changeLove, changeMood, idleAct, offend, traitLevel } from "./cat";
 import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
@@ -380,10 +380,10 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   const offended = shooed || unwilling(cat);
   if (shooed) {
     changeMood(state, cat, SHOO.mood, "прогнали з місця");
-    changeLove(state, cat, SHOO.love, "прогнали з місця");
+    offend(state, cat, SHOO.love, "прогнали з місця");
   } else {
     if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
-    if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");
+    if (offended) offend(state, cat, PET.unwantedLove, "узяли на руки проти волі");
   }
   // Розбудили чи прогнали — спокійний, коли опустять, може заснути знову (§9.12).
   const disturbed = shooed || cat.act.kind === "sleep";

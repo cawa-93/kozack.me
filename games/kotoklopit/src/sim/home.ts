@@ -134,6 +134,9 @@ export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
   (o) => o.kind === "table" || o.kind === "counter",
 ).map((o) => o.id);
 
+/** Кошик брудної білизни біля пральної машини (§8.7): його видно, а мстивий кіт іде до нього, як і до ліжка (§9.12). */
+export const LAUNDRY_BASKET: Vec = { x: 9.5, y: 1.75 };
+
 /** Де персонаж прокидається: біля ліжка (§8.7). */
 export const SPAWN: Vec = { x: 2.5, y: 2.5 };
 

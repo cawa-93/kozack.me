@@ -169,7 +169,12 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     giveTreat(save.current, "cheap", createRng(1));
     expect(cat.traits[0]?.seen).toBe(0);
     expect(cat.traits[1]?.seen).toBe(0);
+    // Неприємне від персонажа (§9.12): за брудний лоток чи день без уваги «Поступливий» не «відтає» — образи не було.
     cat.hurt = { at: absoluteMinute(save.current.day, save.current.minute), amount: 2 };
+    giveTreat(save.current, "cheap", createRng(1));
+    expect(cat.traits[1]?.seen).toBe(0);
+    cat.hurt = { at: absoluteMinute(save.current.day, save.current.minute), amount: 2 };
+    cat.offense = { at: absoluteMinute(save.current.day, save.current.minute) };
     const { events, stop } = recordEvents();
     giveTreat(save.current, "cheap", createRng(1));
     stop();

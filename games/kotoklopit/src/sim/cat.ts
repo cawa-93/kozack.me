@@ -20,6 +20,7 @@ import {
   STRESS_EFFECTS,
   STRESS_STEP,
   MOOD_SATURATION,
+  TOUCHY,
   STRONG_TRAIT_CHANCE,
 } from "./config";
 import { emit } from "./events";
@@ -210,6 +211,65 @@ export function changeLove(state: GameState, cat: Cat, delta: number, reason?: s
   // Неприємне запам'ятовується: ласощі одразу після нього зменшують втрату (§7).
   if (scaled < 0) cat.hurt = { at: absoluteMinute(state.day, state.minute), amount: -scaled };
   if (reason) emit(state, { type: "cat-love", cat: cat.id, delta: scaled, reason });
+}
+
+/**
+ * Неприємне від персонажа (§9.12, «Увага й ласка»): прогнали з місця, узяли на руки проти волі, купали, возили до
+ * ветеринара, дали ліки. Любов падає (з «Образливістю»), а кіт це запам'ятовує: «Образливий» дметься, мстивий може
+ * помститися. Брудний лоток і день без уваги — не образа: персонаж котові нічого не зробив. Неприємне в поїздці
+ * рахується з повернення додому.
+ */
+export function offend(state: GameState, cat: Cat, delta: number, reason: string): void {
+  changeLove(state, cat, delta, reason);
+  if (delta >= 0) return;
+  cat.offense = { at: absoluteMinute(state.day, state.minute), ...(cat.away === "trip" ? { away: true } : {}) };
+}
+
+/** Кіт пережив стрес — бійку чи переноску (§9.12): мстивий може помститися. */
+export function stress(state: GameState, cat: Cat): void {
+  cat.stressedAt = absoluteMinute(state.day, state.minute);
+}
+
+/** Коли було останнє, за що мстивий кіт може помститися: неприємне від персонажа чи стрес; null — нічого. */
+export function grudgeAt(cat: Cat): number | null {
+  const offense = cat.offense && cat.offense.away !== true ? cat.offense.at : null;
+  const stressed = cat.stressedAt ?? null;
+  if (offense === null) return stressed;
+  return stressed === null ? offense : Math.max(offense, stressed);
+}
+
+/** Кіт відтанув чи помстився (§9.12): образа й стрес минають. */
+export function forgive(cat: Cat): void {
+  delete cat.offense;
+  delete cat.stressedAt;
+}
+
+/**
+ * Скільки хвилин після неприємного кіт сам не приходить по ласку (§9.12, «Образливість»): кіт без риси — 15,
+ * «Образливий» дметься 30 × рівень, «Відхідливий» приходить одразу.
+ */
+export function sulkMinutes(cat: Cat): number {
+  const level = traitLevel(cat, "touchy");
+  if (level < 0) return 0;
+  return level > 0 ? TOUCHY.sulkMinutes * level : TOUCHY.baseMinutes;
+}
+
+/** Хвилин від неприємного, якщо воно було вдома чи кіт уже повернувся з поїздки; null — не було. */
+export function sinceOffense(state: GameState, cat: Cat): number | null {
+  const offense = cat.offense;
+  if (!offense || offense.away === true) return null;
+  return absoluteMinute(state.day, state.minute) - offense.at;
+}
+
+/** Кіт після неприємного ще сам не приходить по ласку (§9.12). */
+export function avoiding(state: GameState, cat: Cat): boolean {
+  const since = sinceOffense(state, cat);
+  return since !== null && since < sulkMinutes(cat);
+}
+
+/** «Образливий» дметься: сам не приходить і відходить від персонажа (§9.12). */
+export function sulking(state: GameState, cat: Cat): boolean {
+  return traitLevel(cat, "touchy") > 0 && avoiding(state, cat);
 }
 
 /** Додати хвилини до середнього настрою дня (§9.6). */

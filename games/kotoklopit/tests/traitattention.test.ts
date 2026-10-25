@@ -5,12 +5,14 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
+import { giveTreat } from "../src/sim/care";
 import { rubbingCat } from "../src/sim/body";
-import { createCat, idleAct } from "../src/sim/cat";
+import { changeLove, createCat, idleAct, offend } from "../src/sim/cat";
 import { catOnComputer, decide, tickCats } from "../src/sim/catai";
-import { AFFECTION, CARRY, LEGS, PET, PETTING, TALKATIVE } from "../src/sim/config";
+import { AFFECTION, CARRY, LEGS, PET, PETTING, TALKATIVE, TOUCHY } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
-import { objectById } from "../src/sim/home";
+import { LAUNDRY_BASKET, objectById } from "../src/sim/home";
+import { endTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
@@ -343,5 +345,152 @@ describe("«Коліна» на руках (рішення автора 2026-10-
     expect(seen(asleep.cat, "lap")).toBe(0);
     const cold = held({ lap: -1 }, (cat) => (cat.love = 10), 1);
     expect(seen(cold.cat, "lap")).toBe(0);
+  });
+});
+
+describe("«Образливість» (рішення автора 2026-10-25)", () => {
+  /** Кіт хоче уваги, персонаж поруч; повертає, чи пішов кіт по ласку. */
+  const comes = (save: Save, cat: Cat): boolean => {
+    cat.act = idleAct(0);
+    cat.needs.attention = 90;
+    decide(save.current, cat, createRng(1), { present: true });
+    return cat.act.kind === "attention";
+  };
+
+  it("після неприємного кіт без риси чверть години сам не приходить, «Образливий» дметься довше", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
+    const plain = withCat(save, {}, { x: 5.5, y: 8.5 });
+    const touchy = withCat(save, { touchy: 1 }, { x: 4.5, y: 8.5 });
+    for (const cat of [plain, touchy]) offend(save.current, cat, -2, "купання");
+    expect(comes(save, plain)).toBe(false);
+    expect(comes(save, touchy)).toBe(false);
+    save.current.minute += TOUCHY.baseMinutes;
+    expect(comes(save, plain)).toBe(true);
+    expect(comes(save, touchy)).toBe(false);
+    save.current.minute += TOUCHY.sulkMinutes - TOUCHY.baseMinutes;
+    expect(comes(save, touchy)).toBe(true);
+  });
+
+  it("«Образливий» відходить від персонажа й сідає спиною — прояв «+», раз за образу", () => {
+    const save = game();
+    const cat = withCat(save, { touchy: 2 }, { x: 8.5, y: 8.5 });
+    offend(save.current, cat, -2, "прогнали з місця");
+    Object.assign(save.current.character.body, { x: 7.6, y: 8.5, facing: { x: 1, y: 0 } });
+    const { events, stop } = recordEvents();
+    tickCats(save.current, 0.1, { present: true });
+    expect(cat.act.kind).toBe("wander");
+    expect(seen(cat, "touchy")).toBe(1);
+    for (let i = 0; i < 20; i++) tickCats(save.current, 0.25, { present: true });
+    expect(catLook(save.current, cat)).toBe("sulk");
+    // Підійшов знову — знову відходить, але прояв той самий.
+    const before = events.filter((e) => e.type === "sulked").length;
+    Object.assign(save.current.character.body, { x: cat.x + 0.5, y: cat.y });
+    cat.act = idleAct(10);
+    tickCats(save.current, 0.1, { present: true });
+    stop();
+    expect(events.filter((e) => e.type === "sulked")).toHaveLength(before + 1);
+    expect(seen(cat, "touchy")).toBe(1);
+  });
+
+  it("«Відхідливий» одразу приходить по ласку — прояв «−»; на руках через образу не пручається", () => {
+    const save = game();
+    faceCat(save);
+    const cat = withCat(save, { touchy: -1 }, { x: 6.5, y: 7.5 });
+    offend(save.current, cat, -2, "дали ліки");
+    expect(comes(save, cat)).toBe(true);
+    for (let i = 0; i < 20 && cat.act.seen !== true; i++) tickCats(save.current, 0.25, { present: true });
+    expect(seen(cat, "touchy")).toBe(1);
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 100, elapsed: 0 };
+    pickUpCat(save.current, cat);
+    expect(catFeeling(save.current, cat)).not.toBe("struggling");
+    const plain = withCat(save, {}, { x: 4.5, y: 7.5 });
+    plain.act = { kind: "sleep", target: null, goal: null, minutes: 100, elapsed: 0 };
+    save.current.character.held = null;
+    pickUpCat(save.current, plain);
+    expect(catFeeling(save.current, plain)).toBe("struggling");
+  });
+
+  it("неприємне в поїздці — відлік з повернення додому; брудний лоток і день без уваги — не образа", () => {
+    const save = game();
+    const cat = withCat(save, { touchy: 1 });
+    cat.away = "trip";
+    save.current.trip = { destination: "vet", cat: cat.id } as unknown as NonNullable<Save["current"]["trip"]>;
+    offend(save.current, cat, -3, "ветеринар");
+    expect(cat.offense?.away).toBe(true);
+    save.current.minute += 120;
+    endTrip(save.current);
+    expect(cat.offense).toEqual({ at: (save.current.day * 24 + 0) * 60 + save.current.minute });
+    const other = withCat(save, { touchy: 1 }, { x: 6.5, y: 8.5 });
+    changeLove(save.current, other, -1, "брудний лоток");
+    expect(other.offense).toBeUndefined();
+  });
+});
+
+describe("«Мстивість» (рішення автора 2026-10-25)", () => {
+  /** Мстивий кіт удома й без справ; скільки хвилин чекати помсти. */
+  const avenger = (save: Save, level: TraitLevel = 2): Cat => {
+    const cat = withCat(save, { vengeful: level }, { x: 9.5, y: 8.5 });
+    cat.act = idleAct(600);
+    return cat;
+  };
+  const wait = (save: Save, cat: Cat, minutes: number): void => {
+    for (let i = 0; i < minutes && cat.act.kind !== "revenge"; i++) {
+      cat.act = idleAct(600);
+      tickCats(save.current, 1, { present: false });
+    }
+  };
+
+  it("день без уваги чи брудний лоток — не привід; бійка й переноска — привід", () => {
+    const save = game();
+    const calm = avenger(save);
+    changeLove(save.current, calm, -3, "брудний лоток");
+    wait(save, calm, 240);
+    expect(calm.act.kind).not.toBe("revenge");
+    let avenged = 0;
+    for (let seed = 0; seed < 20; seed++) {
+      const fight = game(seed);
+      fight.current.rng.behavior = 500 + seed;
+      const cat = avenger(fight);
+      cat.stressedAt = (fight.current.day * 24 * 60) + fight.current.minute;
+      wait(fight, cat, 240);
+      if (cat.act.kind === "revenge") avenged += 1;
+    }
+    expect(avenged).toBeGreaterThan(5);
+  });
+
+  it("мститься й біля кошика з брудною білизною; прояв «+» — коли персонаж бачить, як кіт іде мститися", () => {
+    let laundry = 0;
+    for (let seed = 0; seed < 12; seed++) {
+      const save = game(seed);
+      save.current.rng.behavior = 900 + seed;
+      save.current.home.clothes = 2;
+      Object.assign(save.current.character.body, { x: 9.5, y: 7.5 });
+      const cat = avenger(save);
+      offend(save.current, cat, -2, "купання");
+      wait(save, cat, 240);
+      if (cat.act.kind !== "revenge") continue;
+      if (cat.act.target === "laundry") {
+        laundry += 1;
+        expect(cat.act.goal).toEqual({ x: Math.floor(LAUNDRY_BASKET.x), y: Math.floor(LAUNDRY_BASKET.y) });
+      }
+      tickCats(save.current, 0.01, { present: true });
+      expect(seen(cat, "vengeful")).toBe(1);
+    }
+    expect(laundry).toBeGreaterThan(0);
+  });
+
+  it("«Поступливий» після бійки від ласощів одразу відтає й муркоче — прояв «−»", () => {
+    const save = game();
+    save.current.home.supplies.treats.cheap = 3;
+    const cat = withCat(save, { vengeful: -1 }, { x: 9.5, y: 8.5 });
+    cat.stressedAt = save.current.day * 24 * 60 + save.current.minute;
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    const { events, stop } = recordEvents();
+    giveTreat(save.current, "cheap", createRng(1));
+    stop();
+    expect(events.some((e) => e.type === "purr" && e.cat === cat.id)).toBe(true);
+    expect(seen(cat, "vengeful")).toBe(1);
+    expect(cat.stressedAt).toBeUndefined();
   });
 });

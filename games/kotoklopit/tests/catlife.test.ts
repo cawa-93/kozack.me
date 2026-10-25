@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
-import { changeLove, changeMood, createCat } from "../src/sim/cat";
+import { changeMood, createCat, offend } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
@@ -186,16 +186,17 @@ describe("заздрісність і мстивість (§9.12)", () => {
     const cat = withCat(save, { x: 4.5, y: 8.5 });
     cat.traits = [{ group: "vengeful", level: 2, seen: 0, known: false }];
     cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
-    changeLove(save.current, cat, -5);
-    expect(cat.hurt).not.toBeNull();
+    offend(save.current, cat, -5, "прогнали з місця");
+    expect(cat.offense).toBeDefined();
     let walked = false;
-    for (let i = 0; i < 240 && cat.hurt !== null; i++) {
+    for (let i = 0; i < 240 && cat.offense !== undefined; i++) {
       // Поки не пішов мститися, кіт спокійно сидить; потім іде сам.
       if (cat.act.kind === "revenge") walked = true;
       else cat.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
       live(save, 1);
     }
     expect(walked).toBe(true);
+    expect(cat.offense).toBeUndefined();
     expect(cat.hurt).toBeNull();
     expect(Math.hypot(cat.x - 2.5, cat.y - 2.5)).toBeLessThan(1.5);
     const bed = save.current.home.messes.find((m) => m.kind === "surprise");

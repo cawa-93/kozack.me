@@ -1,7 +1,7 @@
 // Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, грумер,
 // котокафе, офіс. Кожна подія додає свій час до поїздки; додому персонаж їде вже без гонки.
 
-import { changeLove, changeMood, createCat, traitLevel } from "./cat";
+import { changeMood, createCat, offend, traitLevel } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
@@ -103,7 +103,7 @@ export function vetExam(state: GameState): { health: number; mood: number } | nu
   cat.breedKnown = [true, true];
   // «Ветеринар»: улюбленець майже не ображається на огляд, «Жах клініки» — удвічі більше.
   const vet = traitLevel(cat, "vet");
-  changeLove(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
+  offend(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
   // Спокійний чи наляканий на огляді — персонаж поруч і бачить (§9.9).
   if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });

@@ -671,7 +671,9 @@ export class DayScene extends Phaser.Scene {
               ? { sad: false, blink: 0, face: null, belly: true }
               : look === "nudge"
                 ? { sad: false, blink: 0, face: toward, nudge: true }
-                : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
+                : look === "sulk"
+                  ? { sad: false, blink: 0, face: -toward }
+                  : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);
