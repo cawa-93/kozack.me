@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
+import { adaptsLonger, changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
 import { lastTileWithin, randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -45,6 +45,7 @@ import {
   NIGHT_ACTIVITY,
   NOCTURNAL,
   NOCTURNAL_STEP,
+  NOISE,
   OLD_PLAY,
   PET,
   PICKY_REFUSAL_STEP,
@@ -442,8 +443,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (isAdapting(state, cat)) {
     const spot = hideSpot(state, rng);
     start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
-    // Полохливий звикає довше — у новому домі він ховається на очах персонажа (§9.6), прояв раз на день.
-    observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
+    // Полохливий звикає довше: ховається й тоді, коли кіт без риси вже звик би (§9.6, §9.12), — прояв раз на день.
+    if (adaptsLonger(state, cat)) observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
     return;
   }
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
@@ -955,7 +956,10 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
 
 /** Зумі: кіт мчить утричі швидше від однієї точки до іншої й може збити персонажа (§9.12). */
 function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): number {
-  const used = Math.min(minutes, cat.act.minutes);
+  // Забіг — саме ця дія: гуркіт (скинута річ, падіння персонажа) може налякати й самого бігуна, і тоді в кота вже
+  // інша дія — схованка, яку забіг не чіпає (перевірка 2026-10-25).
+  const act = cat.act;
+  const used = Math.min(minutes, act.minutes);
   const from = { x: cat.x, y: cat.y };
   walk(cat, used, CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed);
   // Річ на шляху падає (§9.12): забіг повз стіл чи поверхню зі стравою, раз за прохід.
@@ -964,12 +968,12 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
     const near = (p: Vec): boolean => distanceToRect(p, objectById(id)) <= ZOOMIES.knockReach;
     if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockOff(state, cat, id);
   }
-  cat.act.minutes -= used;
-  if (!cat.act.goal && cat.act.minutes > 0) cat.act.goal = randomFloor(rng);
+  act.minutes -= used;
+  if (!act.goal && act.minutes > 0) act.goal = randomFloor(rng);
+  if (cat.act !== act) return minutes - used;
   const body = state.character.body;
   // Спільна пауза між оглушеннями (§9.12): щойно оглушений персонаж не падає знову — кіт пробігає повз.
   // Падіння персонажа — гучний звук (§9.12): полохливий бігун сам може кинутися ховатися, тож позначка — на забігу.
-  const act = cat.act;
   if (context.present && act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit && stun(state)) {
     act.target = "hit";
     emit(state, { type: "knocked-down", cat: cat.id });
@@ -1131,23 +1135,35 @@ function nervous(state: GameState, cat: Cat, rng: Rng): void {
   observe(state, cat, "stress", -1);
 }
 
-/** «Безстрашний» катається на роботі-пилососі (§8.7, §9.12), поки той їде; робот на базі — злазить. */
+/**
+ * «Безстрашний» катається на роботі-пилососі (§8.7, §9.12): спершу підбігає до нього (о 12:00 робот ще на базі), а
+ * застрибнувши (дія на місці вже йде, `elapsed` > 0), їде з ним; робот повернувся на базу — злазить. Перевірка
+ * 2026-10-25: раніше кіт «злазив» у ту саму мить, коли робот рушав, і ніколи не катався.
+ */
 function ride(state: GameState, cat: Cat): void {
-  if (robotProgress(state) === null) {
-    cat.act.minutes = 0;
+  const act = cat.act;
+  const at = robotAt(state);
+  if (act.elapsed > 0) {
+    if (robotProgress(state) === null) act.minutes = 0;
+    else {
+      cat.x = at.x;
+      cat.y = at.y;
+    }
     return;
   }
-  const at = robotAt(state);
-  cat.x = at.x;
-  cat.y = at.y;
+  // Ще не на роботі — наздоганяє його.
+  act.goal = Math.hypot(cat.x - at.x, cat.y - at.y) > NOISE.board ? tileOf(at) : null;
 }
 
 /**
- * Кіт дійшов до місця й заснув (§9.12): задрімав у годину пік на очах персонажа — прояв «Енергійності −», раз на
- * день (рішення автора 2026-10-25).
+ * Кіт дійшов до місця й заснув (§9.12): задрімав у годину пік на очах персонажа, коли кіт без риси ще не задрімав би
+ * (втома нижча за звичайний поріг сну цієї години), — прояв «Енергійності −», раз на день (рішення автора 2026-10-25;
+ * поріг — перевірка 2026-10-25: дуже втомлений дрімає в години пік і без риси).
  */
 function fellAsleep(state: GameState, cat: Cat): void {
-  if (activityAt(cat, state.minute) >= ENERGY.activeHour) observe(state, cat, "energy", -1, false, MINUTES_PER_DAY);
+  const activity = activityAt(cat, state.minute);
+  if (activity < ENERGY.activeHour || cat.needs.fatigue >= SLEEP_START.base + SLEEP_START.activity * activity) return;
+  observe(state, cat, "energy", -1, false, MINUTES_PER_DAY);
 }
 
 /** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */

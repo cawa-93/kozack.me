@@ -182,20 +182,79 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     expect(brave.mood).toBe(50);
   });
 
-  it("«Безстрашний» катається на роботі-пилососі, «Сміливий» — ні", () => {
+  it("«Безстрашний» підбігає до робота-пилососа й катається на ньому, поки той їде; «Сміливий» — ні", () => {
+    // Кадрами гри (перевірка 2026-10-25): робот рушає посеред кадру, і кіт не мав «злазити» тієї ж миті.
     const save = game();
+    save.current.minute = HOUSEHOLD.robotMinute - 0.5;
     save.current.home.appliances.robot = "cheap";
     const fearless = Array.from({ length: 8 }, (_, i) => awake(withCat(save, { bravery: 2 }, { x: 2.5 + i, y: 8.5 })));
     const brave = Array.from({ length: 8 }, (_, i) => awake(withCat(save, { bravery: 1 }, { x: 2.5 + i, y: 9.5 })));
-    tickHousehold(save.current, HOUSEHOLD.robotMinute - 1, 2);
+    for (const cat of [...fearless, ...brave]) cat.act.minutes = 120;
+    advance(save, 1);
     const riders = fearless.filter((c) => c.act.target === "robot");
     expect(riders.length).toBeGreaterThan(0);
     expect(brave.some((c) => c.act.target === "robot")).toBe(false);
-    save.current.minute = HOUSEHOLD.robotMinute + 20;
-    tickCats(save.current, 0.1, { present: true });
+    for (let i = 0; i < 20 * 20; i++) advance(save, 0.05);
     const at = robotAt(save.current);
-    expect(riders[0]?.x).toBeCloseTo(at.x);
-    expect(riders[0]?.y).toBeCloseTo(at.y);
+    const rider = riders[0] as Cat;
+    expect(rider.act.target).toBe("robot");
+    // Кіт на роботі: на кадр позаду (робот їде й під час кадру).
+    expect(Math.hypot(rider.x - at.x, rider.y - at.y)).toBeLessThan(0.2);
+    // Робот повернувся на базу — кіт злазить.
+    advance(save, HOUSEHOLD.robotMinutes - 20);
+    advance(save, 1);
+    expect(rider.act.target).not.toBe("robot");
+  });
+
+  it("пилосос, який вмикають раз у раз, відкриває риси не частіше ніж раз на годину", () => {
+    const save = game();
+    standAt(save, "vacuum");
+    const brave = awake(withCat(save, { bravery: 1 }, { x: 14.5, y: 8.5 }));
+    save.current.home.fur = 50;
+    const tap = (): void => {
+      advance(save, 0.1, { move: { x: 0, y: 0 }, hold: true });
+      advance(save, 0.02, { move: { x: 1, y: 0 }, hold: false });
+      standAt(save, "vacuum");
+    };
+    for (let i = 0; i < 10; i++) tap();
+    expect(brave.traits[0]?.seen).toBe(1);
+    advance(save, NOISE.observeEvery);
+    awake(brave);
+    brave.x = 14.5;
+    brave.y = 8.5;
+    tap();
+    expect(brave.traits[0]?.seen).toBe(2);
+  });
+
+  it("кіт, чий сон саме скінчився, від тріску вже не «прокидається»", () => {
+    const save = game();
+    const cat = asleep(withCat(save, { sleep: 2 }, { x: 7.5, y: 8.5 }));
+    cat.act.minutes = 0;
+    const { events, stop } = recordEvents();
+    loudNoise(save.current, "broken", { x: 7.5, y: 8.5 });
+    stop();
+    expect(events.some((e) => e.type === "cat-woke")).toBe(false);
+    expect(cat.traits[0]?.seen).toBe(0);
+  });
+
+  it("полохливий бігун, що скинув річ і злякався, ховається повністю й нікого не збиває", () => {
+    let scared = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const save = game(seed);
+      const state = save.current;
+      state.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      const cat = awake(withCat(save, { bravery: -2 }, { x: 17.5, y: 3.5 }));
+      cat.act = { kind: "zoomies", target: null, goal: { x: 15, y: 3 }, minutes: 2, elapsed: 0 };
+      // Персонаж — на шляху бігуна.
+      state.character.body.x = 15.5;
+      state.character.body.y = 4.2;
+      for (let i = 0; i < 6 && cat.act.kind === "zoomies"; i++) tickCats(state, 0.05, { present: true });
+      if (state.home.surfaces["table"] !== null || cat.act.kind !== "hide") continue;
+      scared += 1;
+      expect(cat.act.minutes).toBeCloseTo(NOISE.smallMinutes * 2);
+      expect(cat.act.target).not.toBe("hit");
+    }
+    expect(scared).toBeGreaterThan(0);
   });
 
   it("кроки будять лише чуйного кота, раз за прохід", () => {
@@ -217,6 +276,26 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     expect(wakes(1)).toBe(0);
     expect(wakes(-2)).toBeGreaterThan(0);
     expect(wakes(-2)).toBeLessThan(40);
+  });
+
+  it("полохливий, що ховається в новому домі, — прояв лише тоді, коли кіт без риси вже звик би", () => {
+    const save = game();
+    const state = save.current;
+    const cat = withCat(save, { bravery: -1 }, { x: 8.5, y: 8.5 });
+    cat.arrivedDay = state.day;
+    const hideAt = (day: number, hour: number): void => {
+      state.day = cat.arrivedDay + day;
+      state.minute = hours(hour);
+      awake(cat);
+      cat.x = 8.5;
+      cat.y = 8.5;
+      decide(state, cat, createRng(day * 24 + hour), { present: true });
+      expect(cat.act.kind).toBe("hide");
+    };
+    for (const day of [0, 1]) for (const hour of [8, 12, 20]) hideAt(day, hour);
+    expect(cat.traits[0]?.seen).toBe(0);
+    hideAt(2, 8);
+    expect(cat.traits[0]?.seen).toBe(1);
   });
 
   it("сміливий звикає до нового дому за день, полохливий — за три (§9.6)", () => {
@@ -327,6 +406,11 @@ describe("«Енергійність» і «Зумі» (§9.12, рішення �
     nap();
     expect(cat.traits[0]?.seen).toBe(1);
     state.day += 1;
+    nap();
+    expect(cat.traits[0]?.seen).toBe(2);
+    // Дуже втомлений задрімав би й без риси — це не прояв (перевірка 2026-10-25).
+    state.day += 1;
+    cat.needs.fatigue = 85;
     nap();
     expect(cat.traits[0]?.seen).toBe(2);
   });

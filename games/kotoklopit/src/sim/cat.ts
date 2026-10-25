@@ -153,7 +153,20 @@ export function isAdapting(state: GameState, cat: Cat): boolean {
   if (cat.source === "born") return false;
   const a = ADAPTATION_BRAVERY;
   const days = Math.min(a.max, Math.max(a.min, ADAPTATION_DAYS - a.step * traitLevel(cat, "bravery")));
-  return state.day + state.minute / MINUTES_PER_DAY - cat.arrivedDay < days;
+  return daysAtHome(state, cat) < days;
+}
+
+/**
+ * Полохливий ще звикає, хоча кіт без риси вже звик би (§9.12 «Спільні механіки рис», перевірка 2026-10-25): лише тоді
+ * схованка в новому домі — видима різниця, прояв «Сміливості −». Перші 2 дні ховається кожен новий кіт.
+ */
+export function adaptsLonger(state: GameState, cat: Cat): boolean {
+  return isAdapting(state, cat) && daysAtHome(state, cat) >= ADAPTATION_DAYS;
+}
+
+/** Скільки днів кіт удома: від ранку дня появи разом із часом доби. */
+function daysAtHome(state: GameState, cat: Cat): number {
+  return state.day + state.minute / MINUTES_PER_DAY - cat.arrivedDay;
 }
 
 export function isKitten(cat: Cat): boolean {

@@ -18,7 +18,9 @@ export type NoiseKind = "vacuum" | "robot" | "fireworks" | "spin" | "broken" | "
 
 const BIG: Partial<Record<NoiseKind, number>> = NOISE.big;
 
-const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal === null;
+/** Кіт спить на місці; сон, що саме скінчився (`finish`, напр. тріснув будиночок), — уже не сон. */
+const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal === null && cat.act.minutes > 1e-9;
+
 
 /** Звідки сміливий кіт іде дивитися на пилосос: з дій, які не шкода кинути. */
 const WATCH_FROM = new Set(["idle", "wander", "toy"]);
@@ -44,8 +46,9 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null): vo
     if (at !== null && !hears(cat, at)) continue;
     if (asleep(cat)) {
       if (!rng.chance(NOISE.wake * (1 - NOISE.wakeStep * traitLevel(cat, "sleep")))) {
-        // Поруч гуркоче, а кіт спить далі — прояв «Тривалості сну +».
-        observe(state, cat, "sleep");
+        // Поруч гуркоче, а кіт спить далі — прояв «Тривалості сну +». Прояви від звуку й кроків — не частіше ніж раз на
+        // годину (перевірка 2026-10-25): інакше пилосос, увімкнений кілька разів поспіль, відкривав риси за хвилину.
+        observe(state, cat, "sleep", 1, false, NOISE.observeEvery);
         continue;
       }
       wake(state, cat);
@@ -59,7 +62,7 @@ export function wake(state: GameState, cat: Cat): void {
   changeMood(state, cat, NOISE.wokenMood, "розбудив шум");
   startAct(cat, "idle", null, 2);
   emit(state, { type: "cat-woke", cat: cat.id });
-  observe(state, cat, "sleep", -1);
+  observe(state, cat, "sleep", -1, false, NOISE.observeEvery);
 }
 
 /**
@@ -71,7 +74,7 @@ function react(state: GameState, cat: Cat, kind: NoiseKind, rng: Rng): void {
   const big = BIG[kind];
   if (big !== undefined) {
     if (bravery <= 0) return scare(state, cat, kind, big, rng);
-    observe(state, cat, "bravery");
+    observe(state, cat, "bravery", 1, false, NOISE.observeEvery);
     if (kind === "vacuum" && WATCH_FROM.has(cat.act.kind)) return watch(state, cat);
     if (kind === "robot" && bravery >= 2 && rng.chance(NOISE.ride)) startAct(cat, "idle", null, HOUSEHOLD.robotMinutes, "robot");
     return;
@@ -86,7 +89,7 @@ function scare(state: GameState, cat: Cat, kind: NoiseKind, minutes: number, rng
   startAct(cat, "hide", spot.at, minutes * stress, spot.target);
   if (kind === "fireworks") changeMood(state, cat, MODIFIERS.festival.mood, "феєрверки");
   emit(state, { type: "scared", cat: cat.id });
-  observe(state, cat, "bravery", -1);
+  observe(state, cat, "bravery", -1, false, NOISE.observeEvery);
 }
 
 /** Сміливий кіт іде подивитися на пилосос (§9.12): сідає поруч із персонажем, за його спиною. */
