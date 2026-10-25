@@ -28,6 +28,7 @@ import { cycleDash, cycleMove } from "./grooming";
 import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
+import { visibleFloorNear } from "./catmove";
 import { isSolid, SPAWN } from "./home";
 import { hearSteps, loudNoise } from "./noise";
 import { stateRng } from "./rng";
@@ -196,6 +197,18 @@ function rollGlitch(state: GameState, minutes: number): void {
   body.glitch = GLITCH_MINUTES;
   body.glitchAngle = angle;
   emit(state, { type: "glitch", chance, angle: degrees });
+}
+
+/**
+ * Персонаж стоїть у речі (стара гра, збережена, коли на цьому місці ще нічого не стояло: шафа в спальні з'явилася 2026-10-26,
+ * §9.12 «Лазіння») — переставити його на найближчу вільну клітинку, інакше він не зрушить з місця.
+ */
+export function unstickBody(state: GameState): void {
+  const body = state.character.body;
+  if (!overlapsSolid(state, body.x, body.y)) return;
+  const free = visibleFloorNear(state, body);
+  body.x = Math.floor(free.x) + 0.5;
+  body.y = Math.floor(free.y) + 0.5;
 }
 
 function overlapsSolid(state: GameState, x: number, y: number): boolean {

@@ -11,7 +11,7 @@ import { AMBUSH, CHEWING, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_
 import { startWork } from "../src/sim/work";
 import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
-import { advance, interact, newGame, returnHome } from "../src/sim/game";
+import { advance, deserialize, interact, newGame, returnHome, serialize } from "../src/sim/game";
 import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, HIGH_PLACES, hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, PAPER_TRAIL, roomAt, ROLL_TILE, SPAWN, STASHES, TRASH_PAW, WIRE_TILE } from "../src/sim/home";
 import { nightlyHousehold, vacuumed } from "../src/sim/household";
 import { startTrip } from "../src/sim/trips";
@@ -602,6 +602,27 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
     expect(cat.act.kind).toBe("beg");
     expect(cat.act.target).toBe("high");
     expect(cat.stuck).toBe(true);
+  });
+
+  it("стара гра: персонаж і речі там, де тепер шафа, після завантаження — поруч, і персонаж ходить (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    const wardrobe = objectById("wardrobe");
+    Object.assign(save.current.character.body, { x: wardrobe.x + 0.4, y: wardrobe.y + 0.5 });
+    const toy = toyOf(save);
+    Object.assign(toy, { x: wardrobe.x + 0.5, y: wardrobe.y + 0.5 });
+    save.current.home.messes.push({ id: 990, kind: "vomit", x: wardrobe.x + 0.3, y: wardrobe.y + 0.6, cat: null });
+    const loaded = deserialize(serialize(save));
+    const state = loaded.current;
+    const body = state.character.body;
+    expect(isSolid(state, Math.floor(body.x), Math.floor(body.y))).toBe(false);
+    const loadedToy = state.home.items.find((i) => i.id === toy.id);
+    expect(loadedToy?.kind === "toy" && isSolid(state, Math.floor(loadedToy.x), Math.floor(loadedToy.y))).toBe(false);
+    const mess = state.home.messes.find((m) => m.id === 990)!;
+    expect(isSolid(state, Math.floor(mess.x), Math.floor(mess.y))).toBe(false);
+    // Персонаж рушає з місця.
+    const from = { x: body.x, y: body.y };
+    for (let i = 0; i < 10; i++) advance(loaded, 0.05, { move: { x: 0, y: 1 }, hold: false });
+    expect(Math.hypot(body.x - from.x, body.y - from.y)).toBeGreaterThan(0.1);
   });
 
   it("кошеня застрягає нагорі: кричить, доки не знімуть (неприємне), а від нагального зістрибує саме", () => {

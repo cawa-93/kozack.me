@@ -2,8 +2,10 @@
 // і збереження в JSON (§6.1).
 
 import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
-import { isMoving, moveBody, newBody } from "./body";
+import { isMoving, moveBody, newBody, unstickBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
+import { visibleFloorNear } from "./catmove";
+import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
 import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
@@ -264,8 +266,25 @@ export function deserialize(json: string): Save {
   for (const state of [save.current, save.dayStart, save.weekStart]) {
     upgradeFeeder(state);
     upgradeTraits(state);
+    upgradeWardrobe(state);
   }
   return save;
+}
+
+/**
+ * Шафа в спальні (2026-10-26, §9.12 «Лазіння») стала там, де в грі, збереженій раніше, міг стояти персонаж чи лежати іграшка,
+ * безлад або скинута дрібничка: персонажа — на вільну клітинку поруч, речі — на видну підлогу поруч (перевірка етапу 2026-10-26).
+ */
+export function upgradeWardrobe(state: GameState): void {
+  unstickBody(state);
+  const toys = state.home.items.filter((item) => item.kind === "toy");
+  const fallen = Object.values(state.home.trinkets ?? {}).filter((t) => t !== undefined);
+  for (const thing of [...toys, ...state.home.messes, ...fallen]) {
+    if (!isSolid(state, Math.floor(thing.x), Math.floor(thing.y))) continue;
+    const at = visibleFloorNear(state, thing);
+    thing.x = at.x;
+    thing.y = at.y;
+  }
 }
 
 /**
