@@ -5,7 +5,7 @@ import Phaser from "phaser";
 
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
-import { objectAt } from "../sim/home";
+import { CARRIER_SPOT, objectAt } from "../sim/home";
 import type { Cat, GameState } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
@@ -31,7 +31,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -70,6 +70,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "lap" || (act.kind === "idle" && act.target === "desk" && act.goal === null)) return "sleep";
   if (carried) return "carried";
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
+  // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
+  if (act.kind === "sleep" && act.target === "carrier") return "carrier";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
   // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
@@ -189,7 +191,7 @@ export class CatView {
     const stripe = shade(PIGMENT[this.coat.base], 0.72);
     const s = scale;
 
-    if (pose !== "carried" && pose !== "hide") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
+    if (pose !== "carried" && pose !== "hide" && pose !== "carrier") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
 
     switch (pose) {
       case "belly": {
@@ -215,6 +217,17 @@ export class CatView {
         const sleeping = cat.act.kind === "sleep" || cat.act.kind === "lap";
         if (sleeping && Math.floor(time / 900 + cat.id) % 2 === 0) g.fillStyle(COLORS.ink, 0.5).fillCircle(x + dir * 14 * s, y - 26 * s, 2);
         this.head = { x, y: y - 26 * s };
+        return;
+      }
+      case "carrier": {
+        // Спить у переносці (§9.12): крізь віконце дверцят видно клубочок шерсті й вушко, поверх — ґратки.
+        const door = toScreen(CARRIER_SPOT);
+        g.setDepth(depthOf(door.y) + 0.5);
+        g.fillStyle(body).fillEllipse(door.x, door.y - 9, 18, 10);
+        this.patches(g, door.x, door.y - 9, 18, 10);
+        g.fillStyle(this.coat.pointed ? point : body).fillTriangle(door.x + 2, door.y - 13, door.x + 7, door.y - 13, door.x + 5, door.y - 16);
+        g.lineStyle(1.5, 0xd8d4cc).lineBetween(door.x - 5, door.y - 16, door.x - 5, door.y - 4).lineBetween(door.x, door.y - 16, door.x, door.y - 4).lineBetween(door.x + 5, door.y - 16, door.x + 5, door.y - 4);
+        this.head = { x: door.x, y: door.y - 30 };
         return;
       }
       case "hide": {

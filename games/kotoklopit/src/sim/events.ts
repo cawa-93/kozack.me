@@ -165,6 +165,8 @@ export type GameEvent =
   /** «Незалежний» не хотів пестощів і пішов з-під руки (§9.12, «Ласкавість»). */
   | { type: "cat-left"; cat: number }
   | { type: "bite"; cat: number }
+  /** Кіт подряпав персонажа, пручаючись біля переноски (§9.12, «Переноска»). */
+  | { type: "clawed"; cat: number }
   | { type: "played"; cat: number; minutes: number }
   | { type: "knocked"; cat: number; object: string; item: Dish }
   /** Кіт скинув дрібничку зі столу (§9.12, «Скидання речей»): стук, а кухоль може й розбитися. */

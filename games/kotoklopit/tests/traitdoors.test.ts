@@ -4,8 +4,9 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
-import { ESCAPE, GUESTS, MODIFIERS } from "../src/sim/config";
+import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
+import { CARRIER_HOME, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
+import { vetExam, vetManner } from "../src/sim/destinations";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
 import { dispatch } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
@@ -14,7 +15,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -194,5 +195,123 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
       if (host.away === "stairs") escaped += 1;
     }
     expect(escaped).toBeGreaterThan(3);
+  });
+});
+
+/** Персонаж біля дверей з котом на руках, удома дешева переноска. */
+function atDoorWith(save: Save, cat: Cat): void {
+  standAt(save, "door");
+  save.current.home.carrier = "cheap";
+  save.current.character.held = { kind: "cat", cat: cat.id };
+}
+
+describe("«Переноска» (§9.12 «Переноска й ветеринар», рішення автора 2026-10-25)", () => {
+  it("дзеркально: «Спокійний у переносці» втрачає менше, «Сам лізе в переноску» — нічого", () => {
+    const loss = (level: TraitLevel | 0): number => {
+      const save = game();
+      const cat = withCat(save, level === 0 ? {} : { carrier: level }, { x: 5.5, y: 8.5 });
+      atDoorWith(save, cat);
+      cat.mood = 60;
+      expect(startTrip(save.current, "vet")).toBe(true);
+      return 60 - cat.mood;
+    };
+    expect(loss(0)).toBe(5);
+    expect(loss(1)).toBe(2);
+    expect(loss(2)).toBe(0);
+    expect(loss(-1)).toBe(8);
+  });
+
+  it("«+» спить у переносці, як у будиночку (прояв «+»), — коли вона є; кіт без риси туди не лягає", () => {
+    let inside = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      for (const level of [0, 2] as const) {
+        const save = game(seed);
+        save.current.home.carrier = "cheap";
+        const cat = withCat(save, level === 0 ? {} : { carrier: level }, { x: 5.5, y: 8.5 });
+        cat.needs.fatigue = 90;
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.target === "carrier") {
+          expect(level).toBe(2);
+          inside += 1;
+        }
+      }
+    }
+    expect(inside).toBeGreaterThan(5);
+    const save = game();
+    const cat = withCat(save, { carrier: 2 }, { x: 5.5, y: 8.5 });
+    cat.needs.fatigue = 90;
+    for (let seed = 1; seed <= 30; seed++) {
+      decide(save.current, cat, createRng(seed), { present: true });
+      expect(cat.act.target).not.toBe("carrier");
+    }
+    save.current.home.carrier = "cheap";
+    cat.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 0 };
+    Object.assign(cat, { x: 8.5, y: 9.5 });
+    tickCats(save.current, 0.25, { present: true });
+    expect(seen(cat, "carrier")).toBe(1);
+  });
+
+  it("«−» на руках біля дверей пручається (прояв «−»), дряпається й може вирватися; без переноски — ні", () => {
+    let clawed = 0;
+    let freed = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const cat = withCat(save, { carrier: -2 }, { x: 5.5, y: 8.5 });
+      atDoorWith(save, cat);
+      expect(carryFeeling(save.current, cat)).toBe("struggling");
+      const health = save.current.character.stats.health;
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 5 && save.current.character.held !== null; i++) tickCats(save.current, 1, { present: true });
+      stop();
+      expect(seen(cat, "carrier")).toBe(1);
+      const scratches = events.filter((e) => e.type === "clawed").length;
+      clawed += scratches;
+      expect(save.current.character.stats.health).toBeCloseTo(health + scratches * CARRIER_HOME.health);
+      if (save.current.character.held === null) {
+        freed += 1;
+        expect(cat.act.kind).toBe("hide");
+      }
+    }
+    // 20% за хвилину в −2, вирвався — чверть подряпин.
+    expect(clawed).toBeGreaterThan(10);
+    expect(freed).toBeGreaterThan(0);
+    const save = game();
+    const cat = withCat(save, { carrier: -2 }, { x: 5.5, y: 8.5 });
+    atDoorWith(save, cat);
+    save.current.home.carrier = null;
+    expect(carrierDread(save.current, cat)).toBe(0);
+  });
+});
+
+describe("«Ветеринар»: рядок у картці огляду (§9.12, рішення автора 2026-10-25)", () => {
+  it("«+» спокійний, −1 шипить, −2 вирвався й забився під шафу — огляд довший на 15 хвилин", () => {
+    // Кіт без риси (і без породної) — без рядка.
+    const plain = withCat(game(), {});
+    plain.breed = ["mixed", "mixed"];
+    expect(vetManner(plain)).toBeNull();
+    const exam = (level: TraitLevel): { manner: string | null; extra: number } => {
+      const save = game();
+      save.current.character.money = 1000;
+      const cat = withCat(save, { vet: level }, { x: 5.5, y: 8.5 });
+      atDoorWith(save, cat);
+      expect(startTrip(save.current, "vet")).toBe(true);
+      driveSafely(save);
+      const visit = save.current.trip?.visit ?? 0;
+      const result = vetExam(save.current);
+      expect(seen(cat, "vet")).toBe(1);
+      return { manner: result?.manner ?? null, extra: (save.current.trip?.visit ?? 0) - visit };
+    };
+    expect(exam(1)).toEqual({ manner: "calm", extra: 0 });
+    expect(exam(-1)).toEqual({ manner: "hiss", extra: 0 });
+    expect(exam(-2)).toEqual({ manner: "hid", extra: VET.hideMinutes });
+  });
+
+  it("ветеринарка вдома: «Жах клініки» потім ховається, а прояв видно, якщо персонаж удома", () => {
+    const save = game();
+    save.current.modifiers.day = "home-vet";
+    const cat = withCat(save, { vet: -2 }, { x: 5.5, y: 8.5 });
+    tickModifiers(save.current, MODIFIERS.homeVetMinute - 1, 2, false);
+    expect(cat.act.kind).toBe("hide");
+    expect(seen(cat, "vet")).toBe(1);
   });
 });

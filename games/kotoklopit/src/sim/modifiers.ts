@@ -5,13 +5,15 @@ import { knownBreedHalves } from "./breeds";
 import { changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
-import { isDirty } from "./catai";
+import { hideSpot, isDirty, startAct } from "./catai";
+import { vetManner } from "./destinations";
+import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, WATER_CAPACITY } from "./config";
+import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, VET, WATER_CAPACITY } from "./config";
 import { takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
-import { createRng, deriveSeed, type Rng } from "./rng";
+import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
@@ -303,6 +305,14 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       for (const d of cat.diseases) d.known = true;
       if (cat.pregnancy) cat.pregnancy.known = true;
       cat.breedKnown = [true, true];
+      // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
+      // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.
+      const manner = vetManner(cat);
+      if (manner !== null && state.trip === null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
+      if (manner === "hid") {
+        const spot = hideSpot(state, stateRng(state, "behavior"));
+        startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
+      }
       emit(state, { type: "modifier", kind: "home-vet", value: cat.id });
     }
   }

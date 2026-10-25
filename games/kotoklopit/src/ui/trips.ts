@@ -1,13 +1,13 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
-import { breederCatPrice, breederCats, shelterCats, tripCat } from "../sim/destinations";
+import { breederCatPrice, breederCats, shelterCats, tripCat, vetExam, vetManner } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { diseaseTitle, fill, ILLNESS_TITLES } from "../texts";
+import { diseaseTitle, fill, ILLNESS_TITLES, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -96,7 +96,7 @@ export interface VisitHandlers {
 
 /** Що вже зробили на місці: огляд, лікування, кафе. */
 export interface VisitLog {
-  exam: { health: number; mood: number } | null;
+  exam: ReturnType<typeof vetExam>;
   done: string[];
 }
 
@@ -137,6 +137,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(
         `${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}.`,
       );
+      // Як кіт поводився на огляді (§9.12): спокійний, шипів чи вирвався.
+      if (log.exam.manner) body.push(fill(VET_MANNER.vet[log.exam.manner], cat.sex, { кіт: cat.name }));
       const known = cat.diseases.filter((d) => d.known);
       if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
@@ -218,8 +220,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     }
     case "groomer":
       if (!cat) break;
-      if (log.done.includes("groom")) body.push(fill("{кіт} [вичесаний|вичесана] й [пухнастий|пухнаста], хоч і трохи [ображений|ображена].", cat.sex, { кіт: cat.name }));
-      else
+      if (log.done.includes("groom")) {
+        body.push(fill("{кіт} [вичесаний|вичесана] й [пухнастий|пухнаста], хоч і трохи [ображений|ображена].", cat.sex, { кіт: cat.name }));
+        const manner = vetManner(cat);
+        if (manner) body.push(fill(VET_MANNER.groomer[manner], cat.sex, { кіт: cat.name }));
+      } else
         body.push(
           `${cat.name} у переносці.`,
           row("Грумінг", "🕐 1,5 год", button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),

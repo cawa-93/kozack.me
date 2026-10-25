@@ -804,12 +804,21 @@ export const ACCIDENT = {
   /** Поки день перемотується, показники не опускаються нижче цього. */
   floor: 5,
 } as const;
-/** Посадити кота в переноску (§8.5): настрій за якістю й «Переноску». */
+/** Посадити кота в переноску (§8.5): настрій за якістю + `traitStep` × «Переноска», не більше нуля (2026-10-25). */
 export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
+/**
+ * Переноска вдома (§9.12 «Переноска й ветеринар», рішення автора 2026-10-25): «+» спить у ній з вагою `sleepStep` × рівень;
+ * «−» на руках ближче `reach` клітинок до дверей, коли переноска є, щохвилини з шансом `scratchStep` × |рівень| дряпає
+ * персонажа (здоров'я `health`), а після подряпини з шансом `escape` виривається й ховається.
+ */
+export const CARRIER_HOME = { sleepStep: 1.5, reach: 2, scratchStep: 0.1, health: -3, escape: 0.25 } as const;
 /** Штраф за годину поїздки в робочий час (§8.6): кількість поїздок за 7 днів × репутація за годину / 3. */
 export const TRIP_REPUTATION_DIVIDER = 3;
-/** Пункти призначення (§8.5). */
-export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3 } as const;
+/**
+ * Пункти призначення (§8.5). «Жах клініки» (−2) виривається й ховається під шафу: огляд чи грумінг довші на `hideMinutes`, а
+ * вдома після ветеринарки він ховається `homeHideMinutes` (§9.12 «Переноска й ветеринар», 2026-10-25).
+ */
+export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3, hideMinutes: 15, homeHideMinutes: 30 } as const;
 /** Побут (§8.7): шерсть, пилосос, прання, техніка, поломки. */
 export const START_CLOTHES = 5;
 export const HOUSEHOLD = {

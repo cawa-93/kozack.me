@@ -128,6 +128,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       return [{ kind: "think", at: "person", icon: "dizzy" }];
     case "bite":
       return [{ kind: "say", at: "person", icon: "bite" }];
+    case "clawed":
+      // Кіт подряпав персонажа біля переноски (§9.12): «ай» — уголос.
+      return [{ kind: "say", at: "person", icon: "claws" }];
     case "picked-up":
       // Ображений кіт на руках шипить.
       return event.offended ? [{ kind: "say", at: cat(event.cat), icon: "angry" }] : [];

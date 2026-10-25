@@ -68,7 +68,8 @@ export type IconName =
   | "mug"
   | "phone"
   | "pen"
-  | "cat-box";
+  | "cat-box"
+  | "claws";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -392,6 +393,11 @@ Object.assign(ICONS, {
     g.fillStyle(0x6b5d6e).fillEllipse(22, 25, 26, 11).fillCircle(9, 24, 6.5).fillTriangle(4, 21, 5, 14, 9, 18).fillTriangle(14, 21, 13, 14, 9, 18);
     g.lineStyle(3.5, 0x6b5d6e).lineBetween(34, 26, 37, 34);
     g.fillStyle(0xffffff).fillCircle(7, 24, 1.4).fillCircle(11, 24, 1.4);
+  },
+  claws: (g: Phaser.GameObjects.Graphics) => {
+    // Подряпина (§9.12, «Переноска»): три червоні смуги від кігтів навскіс.
+    g.lineStyle(4, COLORS.danger);
+    for (const dx of [-8, 0, 8]) g.lineBetween(12 + dx, 8, 26 + dx, 32);
   },
   "cat-box": (g: Phaser.GameObjects.Graphics) => {
     // Картонна коробка, а з неї визирає кіт — вуха й очі (§9.12, «Допитливість»).

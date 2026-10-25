@@ -6,7 +6,7 @@ import Phaser from "phaser";
 import { bowlEaten, isDirty } from "../sim/catai";
 import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
-import { itemPoint, LAUNDRY_BASKET, slotCenter } from "../sim/home";
+import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter } from "../sim/home";
 import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
@@ -140,7 +140,7 @@ function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void 
 }
 
 /** Біля дверей — переноска, якщо вона є (§8.5); біля пральної машини — кошик білизни (§8.7). */
-const CARRIER_AT: Vec = { x: 12.5, y: 9.9 };
+const CARRIER_AT: Vec = CARRIER_SPOT;
 const BASKET_AT: Vec = LAUNDRY_BASKET;
 
 /**

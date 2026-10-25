@@ -71,7 +71,8 @@ export function startTrip(state: GameState, destination: Destination): boolean {
     state.character.held = null;
     cat.away = "trip";
     const carrier = state.home.carrier ?? "cheap";
-    changeMood(state, cat, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * Math.min(0, trait), "переноска");
+    // «Переноска» дзеркальна (§9.12, рішення автора 2026-10-25): «+» втрачає менше, «Сам лізе в переноску» — нічого.
+    changeMood(state, cat, Math.min(0, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * trait), "переноска");
     stress(state, cat);
   }
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).

@@ -15,6 +15,7 @@ import {
   BEGGING,
   BOWL_CAPACITY,
   BREEDING,
+  CARRIER_HOME,
   CARRY,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
@@ -98,9 +99,9 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
-import { DOOR_TILE } from "./door";
+import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
@@ -491,6 +492,9 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
+  // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
+  const carrier = traitLevel(cat, "carrier");
+  if (carrier > 0 && state.home.carrier !== null) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });
@@ -1630,8 +1634,21 @@ function returnFromStairs(state: GameState, cat: Cat): void {
   emit(state, { type: "cat-returned", cat: cat.id, caught: false });
 }
 
+/**
+ * Як сильно кіт на руках боїться переноски (§9.12, «Переноска»): «−» біля дверей (ближче 2 клітинок), коли вдома є переноска, —
+ * |рівень|; інакше 0.
+ */
+export function carrierDread(state: GameState, cat: Cat): number {
+  const level = traitLevel(cat, "carrier");
+  if (level >= 0 || state.home.carrier === null || !isCarried(state, cat)) return 0;
+  const body = state.character.body;
+  return Math.hypot(body.x - DOOR.x, body.y - DOOR.y) <= CARRIER_HOME.reach ? -level : 0;
+}
+
 /** Що відчуває кіт на руках (§9.12, «Коліна»): любить руки, терпить чи пручається. */
 export function carryFeeling(state: GameState, cat: Cat): "content" | "reluctant" | "struggling" {
+  // Біля дверей «−» бачить переноску й пручається (§9.12, «Переноска»).
+  if (carrierDread(state, cat) > 0) return "struggling";
   const held = state.character.held;
   const lap = traitLevel(cat, "lap");
   // Узяли проти волі — пручається; «Відхідливий» через образу не пручається (§9.12, рішення автора 2026-10-25).
@@ -1657,6 +1674,8 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const held = state.character.held;
   if (held?.kind !== "cat") return;
   held.minutes = (held.minutes ?? 0) + minutes;
+  const dread = carrierDread(state, cat);
+  if (dread > 0) return dreadCarrier(state, cat, dread, minutes, rng);
   // Прояв «Колін» — раз за взяття на руки (рішення автора 2026-10-25, §9.9), але не частіше ніж раз на годину: кота, якого
   // брали й опускали раз у раз, інакше відкривали б за кілька хвилин (перевірка етапу 2026-10-25).
   const notice = (side: 1 | -1): void => {
@@ -1685,6 +1704,27 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   emit(state, { type: "bite", cat: cat.id });
   if (byTrait) notice(-1);
   if (!rng.chance(CARRY.escape)) return;
+  state.character.held = null;
+  const at = visibleFloorNear(state, state.character.body);
+  cat.x = at.x;
+  cat.y = at.y;
+  const spot = hideSpot(state, rng);
+  start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+  emit(state, { type: "cat-broke-free", cat: cat.id });
+}
+
+/**
+ * «−» на руках біля дверей бачить переноску (§9.12, «Переноска», рішення автора 2026-10-25): пручається — прояв «−», не
+ * частіше ніж раз на годину, — і щохвилини з шансом 10% × |рівень| дряпає персонажа (здоров'я −3); після подряпини з шансом
+ * 25% виривається з рук і ховається.
+ */
+function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number, rng: Rng): void {
+  changeMood(state, cat, CARRY.struggleMood * dread * minutes);
+  observe(state, cat, "carrier", -1, false, CARRY.observeEvery);
+  if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread) ** minutes)) return;
+  changeStat(state, "health", CARRIER_HOME.health);
+  emit(state, { type: "clawed", cat: cat.id });
+  if (!rng.chance(CARRIER_HOME.escape)) return;
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);
   cat.x = at.x;
@@ -2149,12 +2189,15 @@ export function catInBox(state: GameState): Cat | null {
   return state.cats.find((c) => home(state, c) && c.act.target === "boxes" && c.act.goal === null && c.act.kind === "sleep") ?? null;
 }
 
-/** Допитливий спить у коробці на очах персонажа (§9.9): прояв «Допитливості +», раз за раз. */
+/**
+ * Спить у коробці чи в переносці на очах персонажа (§9.9): прояв «Допитливості +» чи «Переноски +», раз за сон.
+ */
 function boxSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
-  if (act.kind !== "sleep" || act.target !== "boxes" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  if (act.kind !== "sleep" || act.goal !== null || act.seen === true || (act.target !== "boxes" && act.target !== "carrier") || !witnesses(state, cat)) return;
   act.seen = true;
-  observe(state, cat, "curiosity");
+  if (act.target === "boxes") observe(state, cat, "curiosity");
+  else observe(state, cat, "carrier");
 }
 
 /** Звідки «Втікач» іде кричати під двері: нічим важливим не зайнятий (§9.12). */

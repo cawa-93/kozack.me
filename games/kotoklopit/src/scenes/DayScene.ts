@@ -10,7 +10,7 @@ import { onEvent, type GameEvent, type ModifierEvent } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
@@ -29,7 +29,7 @@ import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES, VET_MANNER } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1098,7 +1098,10 @@ export class DayScene extends Phaser.Scene {
       case "home-vet": {
         const cat = this.state.cats.find((c) => c.id === value);
         const known = cat?.diseases.map((d) => diseaseTitle(d.id)) ?? [];
-        this.notice("Заходила ветеринарка", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.`);
+        // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»).
+        const manner = cat ? vetManner(cat) : null;
+        const behaved = cat && manner ? ` ${fill(VET_MANNER.home[manner], cat.sex, { кіт: cat.name })}` : "";
+        this.notice("Заходила ветеринарка", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.${behaved}`);
         return;
       }
       case "inspection":

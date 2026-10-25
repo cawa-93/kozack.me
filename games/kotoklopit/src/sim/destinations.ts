@@ -91,10 +91,22 @@ export function purchase(state: GameState, goods: Goods, quality: Quality): bool
 
 // --- Ветеринар ------------------------------------------------------------------------------
 
-/** Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я й настрій — знімок. */
-export function vetExam(state: GameState): { health: number; mood: number } | null {
+/** Як кіт поводиться на огляді чи грумінгу (§9.12 «Переноска й ветеринар»): спокійний, шипить чи виривається й ховається. */
+export type VetManner = "calm" | "hiss" | "hid";
+
+/** Поведінка кота на огляді за «Ветеринаром» (§9.12): кіт без риси — null, рядка в картці немає. */
+export function vetManner(cat: Cat): VetManner | null {
+  const level = traitLevel(cat, "vet");
+  if (level === 0) return null;
+  if (level > 0) return "calm";
+  return level <= -2 ? "hid" : "hiss";
+}
+
+/** Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я й настрій — знімок; як кіт поводився (§9.12). */
+export function vetExam(state: GameState): { health: number; mood: number; manner: VetManner | null } | null {
   const cat = tripCat(state);
-  if (!cat || state.trip?.destination !== "vet" || !spend(state, VET.exam)) return null;
+  const trip = state.trip;
+  if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam)) return null;
   for (const disease of cat.diseases) disease.known = true;
   // Щеплення (§4.1): кота довезли до ветеринара.
   state.today.vaccinated = true;
@@ -105,10 +117,13 @@ export function vetExam(state: GameState): { health: number; mood: number } | nu
   // «Ветеринар»: улюбленець майже не ображається на огляд, «Жах клініки» — удвічі більше.
   const vet = traitLevel(cat, "vet");
   offend(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
-  // Спокійний чи наляканий на огляді — персонаж поруч і бачить (§9.9).
+  // Спокійний чи наляканий на огляді — персонаж поруч і бачить, а картка каже це рядком (§9.9, §9.12). «Жах клініки»
+  // виривається й забивається під шафу: огляд довший.
+  const manner = vetManner(cat);
+  if (manner === "hid") trip.visit += VET.hideMinutes;
   if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });
-  return { health: cat.health, mood: cat.mood };
+  return { health: cat.health, mood: cat.mood, manner };
 }
 
 /** Лікування знайденої хвороби (§8.5): дешеве допомагає з шансом 70%, дороге — завжди; хронічну контролює 7 днів. */
@@ -149,9 +164,14 @@ export function vetSterilize(state: GameState): boolean {
 /** Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. */
 export function groom(state: GameState, quality: Quality): boolean {
   const cat = tripCat(state);
-  if (!cat || state.trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality])) return false;
+  const trip = state.trip;
+  if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality])) return false;
   cat.groomedUntil = state.day + GROOMER.days[quality];
   changeMood(state, cat, GROOMER.mood[quality], "грумер");
+  // Як і на огляді, «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
+  const manner = vetManner(cat);
+  if (manner === "hid") trip.visit += VET.hideMinutes;
+  if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1);
   return true;
 }
 
