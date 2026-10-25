@@ -7,6 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { passAwakeTime } from "./character";
 import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
+import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
@@ -153,7 +154,8 @@ function tick(state: GameState, minutes: number, input: Input): void {
   // Поки день перемотується після аварії, показники не нижче 5 (§8.5).
   passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident" ? ACCIDENT.floor : 0);
   state.minute += minutes;
-  tickDeliveries(state);
+  // Кур'єр дзвонить у двері (§9.12 «Двері й гості»): коти реагують на дзвінок.
+  if (tickDeliveries(state) > 0) ringBell(state, false);
 }
 
 /** Хвилини гонки (§8.5); при аварії день перемотується до сну. Повертає звіт про ніч, якщо вона настала. */
@@ -187,8 +189,12 @@ export function returnHome(save: Save, visitMinutes: number, roadMinutes: number
   const night = advance(save, visitMinutes) ?? advance(save, roadMinutes);
   if (night || save.current.end !== null) return night;
   const trip = endTrip(save.current);
-  // Персонаж повернувся вдень — коти можуть вийти зустрічати до дверей (§9.12, «Відданість»).
-  if (trip) greetAtDoor(save.current, trip.cat);
+  if (trip) {
+    // Персонаж відчинив двері (§9.12 «Двері й гості»): кіт біля них може вибігти — крім того, що заходить у переносці.
+    openDoor(save.current, trip.cat);
+    // Персонаж повернувся вдень — коти можуть вийти зустрічати до дверей (§9.12, «Відданість»).
+    greetAtDoor(save.current, trip.cat);
+  }
   return null;
 }
 

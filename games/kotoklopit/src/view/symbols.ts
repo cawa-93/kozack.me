@@ -149,6 +149,7 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "knocked":
     case "stole":
     case "hissed":
+    case "hissed-guests":
       return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
     case "trinket-fell":
       // Дрібничка впала зі столу (§9.12): стук — звук речі, вголос над столом; кухоль розбився — гуркіт.

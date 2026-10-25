@@ -1171,5 +1171,26 @@ export const LEGS = {
   backOff: 0.8,
   passBy: 2,
 } as const;
-/** Втеча в двері (§9.12): кіт ближче 4 клітинок, шанс 10% + 25% за одиницю «Втеч»; повертається о 22:00. */
-export const ESCAPE = { distance: 4, base: 0.1, step: 0.25, returnMinute: 22 * MINUTES_PER_HOUR, returnMood: -10, catchSanity: -3 } as const;
+/**
+ * Втеча в двері (§9.12): кіт ближче 4 клітинок, шанс 10% + 25% за одиницю «Втеч»; повертається о 22:00. Рішення автора
+ * 2026-10-25 («Двері й гості»): «+» удень щогодини з шансом `callStep` × рівень (у тічці ще `heatCall`) `callMinutes` хвилин
+ * кричить під дверима; «Боїться дверей» тікає від відчинених дверей з `fearReach` клітинок.
+ */
+export const ESCAPE = {
+  distance: 4,
+  base: 0.1,
+  step: 0.25,
+  returnMinute: 22 * MINUTES_PER_HOUR,
+  returnMood: -10,
+  catchSanity: -3,
+  callStep: 0.04,
+  heatCall: 0.04,
+  callMinutes: { min: 5, max: 10 },
+  fearReach: 6,
+} as const;
+/**
+ * Дзвінок у двері (§9.12 «Двері й гості», рішення автора 2026-10-25): «+» `greetMinutes` хвилин сидить біля дверей, «−»
+ * ховається на `hideStep` × |рівень| хвилин. Гості дзвонять за `ringLead` хвилини до того, як зайти; у день «Гості» кожен «+»
+ * дає здоровий глузд `delight` (разом не більше `delightMax`), кожен −2 — `hissSanity`. На виставці бал + `showStep` × рівень.
+ */
+export const GUESTS = { greetMinutes: 5, hideStep: 30, ringLead: 2, delight: 3, delightMax: 6, hissSanity: -2, showStep: 0.05 } as const;

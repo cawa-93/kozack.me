@@ -2,11 +2,12 @@
 // Числові ефекти інші модулі беруть через функції-множники звідси.
 
 import { knownBreedHalves } from "./breeds";
-import { changeMood, createCat, traitLevel } from "./cat";
+import { changeMood, createCat, isAdapting, traitLevel } from "./cat";
+import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { isDirty } from "./catai";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, MODIFIERS, POSITIONS, WATER_CAPACITY } from "./config";
+import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, WATER_CAPACITY } from "./config";
 import { takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
@@ -167,6 +168,9 @@ export function startModifiers(state: GameState, rng: Rng): void {
       break;
     case "mom-food":
       for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
+      // Мама дзвонить і заходить з гостинцями (§9.12 «Двері й гості»): двері відчиняються.
+      ringBell(state);
+      openDoor(state);
       break;
     case "recalculation":
       today.utilitiesDiscount = MODIFIERS.recalculation;
@@ -187,6 +191,8 @@ export function startModifiers(state: GameState, rng: Rng): void {
 export function decideFoundling(state: GameState, take: boolean, rng: Rng): Cat | null {
   if (!state.today.foundling) return null;
   state.today.foundling = false;
+  // Персонаж відчиняє двері знайді (§9.12 «Двері й гості»): і коли бере її, і коли відносить у притулок.
+  openDoor(state);
   if (!take) return null;
   const cat = createCat(state, rng, { source: "foundling", ageWeeks: 1, at: { x: 10.5, y: 10.2 } });
   // Що видно про породу — як у притулку (§9.11).
@@ -309,19 +315,35 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "renovation") {
     for (const cat of state.cats) if (cat.away === null && cat.act.kind !== "sleep") changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
   }
+  // Дзвонять за 2 хвилини до того, як зайти; заходять — двері відчинено (§9.12 «Двері й гості»).
+  if ((day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) || (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead))) ringBell(state);
   if (day === "inspection" && crossed(from, minutes, m.inspection.minute)) {
+    openDoor(state);
     const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
     const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (state.home.fur >= 50 ? m.inspection.fur : 0);
     spend(state, Math.min(fine, state.character.money));
     emit(state, { type: "modifier", kind: "inspection", value: fine });
   }
   if (day === "guests" && crossed(from, minutes, m.guests.minute)) {
+    openDoor(state);
     const shame = Math.max(m.guests.max, state.home.messes.length * m.guests.mess);
-    changeStat(state, "sanity", shame);
+    // «Душа компанії» тішить гостей, «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»).
+    let delight = 0;
+    let hissing = 0;
     for (const cat of state.cats) {
-      if (cat.away === null && traitLevel(cat, "guests") < 0) cat.act = { kind: "hide", target: null, goal: { x: 1, y: 2 }, minutes: m.guests.hideMinutes, elapsed: 0 };
+      if (cat.away !== null) continue;
+      const level = traitLevel(cat, "guests");
+      if (level > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
+      if (level >= 0) continue;
+      cat.act = { kind: "hide", target: null, goal: { x: 1, y: 2 }, minutes: m.guests.hideMinutes, elapsed: 0 };
+      if (level <= -2) {
+        hissing += GUESTS.hissSanity;
+        emit(state, { type: "hissed-guests", cat: cat.id });
+      }
     }
-    emit(state, { type: "modifier", kind: "guests", value: shame });
+    const total = shame + Math.min(GUESTS.delightMax, delight) + hissing;
+    changeStat(state, "sanity", total);
+    emit(state, { type: "modifier", kind: "guests", value: total });
   }
   if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);

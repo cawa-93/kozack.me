@@ -14,6 +14,7 @@ import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
 import type { AccidentLoss, Cat, Destination, GameState, Trip } from "./types";
 import { stopWork } from "./work";
+import { catOnStairs, openDoor } from "./door";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
 export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
@@ -56,9 +57,13 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
 /** Вирушити (§8.5): кота з рук — у переноску, гонка починається. */
 export function startTrip(state: GameState, destination: Destination): boolean {
   if (!canLeave(state) || tripBlocker(state, destination) !== null) return false;
+  const cat = heldCat(state);
+  // Персонаж відчиняє двері (§9.12 «Двері й гості»): кіт біля них може вибігти на сходи — тоді поїздка не починається,
+  // доки його не впіймали.
+  openDoor(state);
+  if (catOnStairs(state)) return false;
   stopWork(state);
   state.character.activity = null;
-  const cat = heldCat(state);
   if (cat) {
     const trait = traitLevel(cat, "carrier");
     // Як кіт опирається переносці, персонаж бачить: кіт у нього в руках (§9.9).

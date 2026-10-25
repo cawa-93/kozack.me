@@ -335,15 +335,17 @@ export function discard(state: GameState, itemId: number): boolean {
   return true;
 }
 
-/** Пакунки, час яких настав, кур'єр лишає під дверима й дзвонить. */
-export function tickDeliveries(state: GameState): void {
+/** Пакунки, час яких настав, кур'єр лишає під дверима й дзвонить. Повертає, скільки пакунків привіз. */
+export function tickDeliveries(state: GameState): number {
   const now = absoluteMinute(state.day, state.minute);
   const home = state.home;
-  for (const delivery of home.deliveries.filter((d) => d.at <= now)) {
+  const arrived = home.deliveries.filter((d) => d.at <= now);
+  for (const delivery of arrived) {
     home.deliveries.splice(home.deliveries.indexOf(delivery), 1);
     home.porch.push(delivery);
     emit(state, { type: "doorbell", delivery });
   }
+  return arrived.length;
 }
 
 /** Відчинити двері й забрати пакунки: запаси — у ящики біля входу, речі — на свої місця (§6.4). */

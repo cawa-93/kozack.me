@@ -110,7 +110,8 @@ export type GameEvent =
   | { type: "job-rejected"; vacancy: number }
   /** Ящики розпаковано (§6.4): що й скільки розлетілося по сховищах. */
   | { type: "unpacked"; moved: { product: Product; amount: number }[] }
-  | { type: "doorbell"; delivery: Delivery }
+  /** Дзвонять у двері (§9.12 «Двері й гості»): кур'єр із пакунком (`delivery`), гості, ОСББ чи мама. */
+  | { type: "doorbell"; delivery?: Delivery }
   | { type: "received"; deliveries: Delivery[] }
   | { type: "dash" }
   | { type: "trip-started"; destination: Destination }
@@ -179,6 +180,8 @@ export type GameEvent =
   | { type: "cat-fight"; cats: [number, number] }
   /** Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). */
   | { type: "hissed"; cat: number; at: number }
+  /** «Шипить на гостей» шипить з-під дивана на дзвінок чи на гостей (§9.12, «Гості»). */
+  | { type: "hissed-guests"; cat: number }
   | { type: "fight-stopped"; cat: number }
   | { type: "keyboard"; cat: number }
   | { type: "knocked-down"; cat: number }

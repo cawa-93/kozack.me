@@ -100,7 +100,8 @@ import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
-import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
+import { DOOR_TILE } from "./door";
+import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
@@ -320,7 +321,7 @@ export function bowlFull(bowl: BowlItem): boolean {
  * бо голодний. Ласощі йому зараз привчають до жебракування.
  */
 export function beggingFood(cat: Cat): boolean {
-  return (cat.act.kind === "beg" && cat.act.target !== "sink") || (cat.act.kind === "attention" && cat.act.forFood === true);
+  return (cat.act.kind === "beg" && cat.act.target !== "sink" && cat.act.target !== "door") || (cat.act.kind === "attention" && cat.act.forFood === true);
 }
 
 /** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */
@@ -1708,6 +1709,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (cat.act.target === "robot") ride(state, cat);
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
+  doorCall(state, cat, minutes, rng);
   if (context.present) sulk(state, cat);
   // Спокійну дію кіт кидає заради нагальної потреби.
   // «Вісімка» під ногами того, хто несе корм, — заради їжі, тож її голод не перериває (§9.12).
@@ -1745,6 +1747,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);
+  doorSeen(state, cat);
   dropsSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
@@ -2154,6 +2157,39 @@ function boxSeen(state: GameState, cat: Cat): void {
   observe(state, cat, "curiosity");
 }
 
+/** Звідки «Втікач» іде кричати під двері: нічим важливим не зайнятий (§9.12). */
+const DOOR_CALL_FROM = new Set(["idle", "wander", "toy"]);
+
+/**
+ * «Втікач» кричить під дверима (§9.12 «Двері й гості», рішення автора 2026-10-25): удень щогодини з шансом 4% × рівень (у
+ * тічці ще +4%) 5–10 хвилин сидить під вхідними дверима й нявчить, як кіт, що просить.
+ */
+function doorCall(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
+  const level = traitLevel(cat, "escape");
+  if (level <= 0 || isNight(state.minute) || !home(state, cat) || !DOOR_CALL_FROM.has(cat.act.kind) || isAdapting(state, cat) || isNewborn(cat)) return;
+  const perHour = ESCAPE.callStep * level + (inHeat(state, cat) ? ESCAPE.heatCall : 0);
+  if (!rng.chance(1 - (1 - perHour) ** (minutes / MINUTES_PER_HOUR))) return;
+  const { min, max } = ESCAPE.callMinutes;
+  start(cat, "beg", { ...DOOR_TILE }, min + rng.next() * (max - min), "door");
+}
+
+/**
+ * Під дверима на очах персонажа (§9.9): «Втікач» кричить, просячись на сходи, — прояв «Втеч +»; «Душа компанії» прибігла
+ * на дзвінок — прояв «Гостей +». Раз за раз.
+ */
+function doorSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.seen === true || !witnesses(state, cat)) return;
+  if (act.kind === "beg" && act.target === "door" && act.goal === null) {
+    act.seen = true;
+    observe(state, cat, "escape");
+  }
+  if (act.kind === "idle" && act.target === "guest") {
+    act.seen = true;
+    observe(state, cat, "guests");
+  }
+}
+
 /** Кіт, що сидить на умивальнику й чекає крана (§9.12, «Пиття»). */
 export function catOnSink(state: GameState): Cat | null {
   return state.cats.find((c) => home(state, c) && c.act.kind === "beg" && c.act.target === "sink" && c.act.goal === null) ?? null;
@@ -2236,20 +2272,3 @@ export function jealousy(state: GameState, cat: Cat): void {
   }
 }
 
-/** Двері відчинили (§9.12): коти поруч можуть вибігти на сходи. */
-export function rollEscapes(state: GameState): void {
-  const rng = stateRng(state, "behavior");
-  const door = { x: 11, y: 10.5 };
-  for (const cat of state.cats) {
-    if (cat.away !== null || isCarried(state, cat)) continue;
-    if (Math.hypot(cat.x - door.x, cat.y - door.y) > ESCAPE.distance) continue;
-    if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * traitLevel(cat, "escape") + escapeBonus(state, cat), 0, 1))) continue;
-    // Персонаж бачить, як кіт вислизнув, — ще поки той біля дверей (§9.9).
-    observe(state, cat, "escape");
-    cat.away = "stairs";
-    cat.x = door.x;
-    cat.y = 10.9;
-    start(cat, "idle", null, 0);
-    emit(state, { type: "escaped", cat: cat.id });
-  }
-}

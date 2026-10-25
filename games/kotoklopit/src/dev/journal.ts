@@ -85,7 +85,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "unpacked":
       return `Ящики розпаковано: ${event.moved.map((m) => `${m.product} ${m.amount}`).join(", ")}`;
     case "doorbell":
-      return `Кур'єр під дверима: ${goods(event.delivery)} (${event.delivery.quality})`;
+      return event.delivery ? `Кур'єр під дверима: ${goods(event.delivery)} (${event.delivery.quality})` : "Дзвонять у двері";
     case "discarded":
       return `Викинуто: ${event.item.kind} (${event.item.quality})`;
     case "cat-gone":
@@ -158,6 +158,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Бійка: ${catName(state, event.cats[0])} і ${catName(state, event.cats[1])}`;
     case "hissed":
       return `${catName(state, event.cat)} шипить на ${catName(state, event.at)}`;
+    case "hissed-guests":
+      return `${catName(state, event.cat)} шипить на гостей`;
     case "fight-stopped":
       return `Бійку розборонено (${catName(state, event.cat)} на руках)`;
     case "scratched":

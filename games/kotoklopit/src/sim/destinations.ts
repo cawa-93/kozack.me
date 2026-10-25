@@ -9,6 +9,7 @@ import {
   DIFFICULTY,
   DISEASES,
   GROOMER,
+  GUESTS,
   MINUTES_PER_HOUR,
   MODIFIERS,
   POSITIONS,
@@ -175,7 +176,8 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   if (!cat || state.trip?.destination !== "show" || !spend(state, show.fee)) return null;
   const [a, b] = cat.breed;
   const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
-  const score = cat.mood / 100 + pedigree + rng.next() * 0.3;
+  // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).
+  const score = cat.mood / 100 + pedigree + rng.next() * 0.3 + GUESTS.showStep * traitLevel(cat, "guests");
   changeMood(state, cat, show.mood, "виставка");
   const prize = show.prizes.find((p) => score >= p.score);
   if (!prize) return 0;

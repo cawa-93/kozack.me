@@ -3,7 +3,8 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, showerDrops, turnAway, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, turnAway, waterFright } from "./catai";
+import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -241,7 +242,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         return null;
       }
       if (receivePackages(state).length === 0) return refuse(state, target.id, "no-packages");
-      rollEscapes(state);
+      openDoor(state);
       return null;
     }
     case "shower":
