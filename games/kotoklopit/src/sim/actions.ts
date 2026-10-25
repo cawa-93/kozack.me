@@ -539,6 +539,10 @@ function holdTick(state: GameState, minutes: number): boolean {
     else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.
     else if (target.type === "object" && target.object.kind === "shower") return false;
+    // Кота на умивальнику, що чекає крана, не гладять: натискання відкриває йому кран (§9.12, «Пиття»). Пестощі, що
+    // почалися б за мить натискання, зсадили б його з умивальника, і натискання брало б кота на руки (перевірка етапу
+    // 2026-10-25).
+    else if (target.type === "cat" && catOnSink(state) === target.cat) return false;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
       jealousy(state, target.cat);

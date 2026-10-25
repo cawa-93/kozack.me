@@ -466,6 +466,30 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     expect(cat.mood).toBeGreaterThan(50);
   });
 
+  it("натискання як у сцені (кнопку тримають мить): кота на умивальнику не гладять — кран відкривається, на руки не бере", () => {
+    // Перевірка етапу 2026-10-25: сцена тримає кнопку, поки не відпустили, і пестощі за цю мить зсаджували спраглого кота
+    // з умивальника — «Фонтанолюб» (+1) щоразу вирішував заново, і натискання частіше брало його на руки.
+    for (let seed = 0; seed < 12; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      standAt(save, "sink");
+      const cat = withCat(save, { drinking: 1 }, { x: 11.5, y: 1.5 });
+      cat.needs.thirst = 80;
+      cat.act = { kind: "beg", target: "sink", goal: null, minutes: CAT_ACT_MINUTES.beg, elapsed: 0 };
+      tickCats(save.current, 0.1, { present: true });
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 4; i++) advance(save, 0.03, { move: { x: 0, y: 0 }, hold: true });
+      expect(save.current.character.activity).toBeNull();
+      expect(cat.act).toMatchObject({ kind: "beg", target: "sink" });
+      advance(save, 0.03);
+      interact(save);
+      stop();
+      expect(events.some((e) => e.type === "tap-opened" && e.cat === cat.id)).toBe(true);
+      expect(save.current.character.held).toBeNull();
+      expect(cat.act).toMatchObject({ kind: "drink", target: "sink" });
+    }
+  });
+
   it("кран так і не відкрили — «Фонтанолюб» іде до миски без радості", () => {
     const save = game();
     const cat = withCat(save, { drinking: 1 }, { x: 11.5, y: 1.5 });

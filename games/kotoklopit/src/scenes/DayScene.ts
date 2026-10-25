@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
-import { isDirty } from "../sim/catai";
+import { catOnSink, isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -251,8 +251,9 @@ export class DayScene extends Phaser.Scene {
       this.catPress = this.time.now;
       return;
     }
-    // Умивальник для чоловічого персонажа: борода (§5.1) і ліки.
-    if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink") {
+    // Умивальник для чоловічого персонажа: борода (§5.1) і ліки. Кіт на умивальнику чекає крана — натискання одразу
+    // відкриває йому воду, без картки (§9.12, «Пиття»).
+    if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink" && catOnSink(this.state) === null) {
       this.overlay.show(
         sinkCard(
           this.state,
@@ -874,13 +875,14 @@ export class DayScene extends Phaser.Scene {
       if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
       else if (thing.kind === "litter") set(id, isDirty(thing) ? "dirty" : null);
     }
-    // Кіт просить їсти, б'ється чи дзеленчить дзвіночком — це чути.
+    // Кіт просить їсти (на умивальнику — пити з крана, §9.12 «Пиття»), б'ється чи дзеленчить дзвіночком — це чути.
     for (const cat of state.cats) {
-      const hungry = cat.act.kind === "beg" && cat.act.goal === null;
+      const asking = cat.act.kind === "beg" && cat.act.goal === null;
       const fighting = cat.act.kind === "fight";
       // Дзвіночок видає кота, що ховається (§9.10).
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
-      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : hungry ? "kibble" : ringing ? "bell" : null);
+      const ask: IconName = cat.act.target === "sink" ? "thirst" : "kibble";
+      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
     for (const storage of STORAGES) {
