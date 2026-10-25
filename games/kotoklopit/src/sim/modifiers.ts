@@ -14,6 +14,7 @@ import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
+import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
@@ -299,12 +300,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       emit(state, { type: "modifier", kind: "home-vet", value: cat.id });
     }
   }
+  // Феєрверки — гучний звук на всю квартиру (§9.12): несміливі ховаються й засмучуються.
   if (day === "festival" && crossed(from, minutes, m.festival.minute)) {
-    for (const cat of state.cats) {
-      if (cat.away !== null || (cat.act.kind === "sleep" && cat.act.goal === null) || traitLevel(cat, "bravery") > 0) continue;
-      changeMood(state, cat, m.festival.mood, "феєрверки");
-      cat.act = { kind: "hide", target: null, goal: { x: 1, y: 1 }, minutes: m.festival.hideMinutes, elapsed: 0 };
-    }
+    loudNoise(state, "fireworks", null);
     emit(state, { type: "modifier", kind: "fireworks", value: 0 });
   }
   if (day === "quiet-evening" && crossed(from, minutes, m.quietEvening.minute)) for (const cat of state.cats) changeMood(state, cat, m.quietEvening.mood);

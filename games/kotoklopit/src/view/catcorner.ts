@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import { isDirty } from "../sim/catai";
-import { robotProgress } from "../sim/household";
+import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { itemPoint, slotCenter } from "../sim/home";
 import type { Feeder, GameState, HomeItem, Mess, Vec } from "../sim/types";
@@ -46,58 +46,6 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
   for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null);
   for (const mess of state.home.messes) drawMess(g, mess);
   drawAppliances(g, state);
-}
-
-/**
- * База робота-пилососа у вітальні й маршрут прибирання всією квартирою (§8.7): кухня, ванна,
- * спальня — крізь дверні прорізи (x 16, 11 і 4), потім уся вітальня й назад на базу.
- */
-const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
-const ROBOT_ROUTE: readonly Vec[] = [
-  ROBOT_DOCK,
-  { x: 16, y: 7 },
-  // Кухня.
-  { x: 16, y: 4.3 },
-  { x: 18.4, y: 4.3 },
-  { x: 13.5, y: 4.3 },
-  { x: 16, y: 4.3 },
-  { x: 16, y: 7 },
-  // Ванна.
-  { x: 11, y: 7 },
-  { x: 11, y: 4.3 },
-  { x: 8.6, y: 4.3 },
-  { x: 8.6, y: 3.4 },
-  { x: 11.4, y: 3.4 },
-  { x: 11, y: 4.3 },
-  { x: 11, y: 7 },
-  // Спальня.
-  { x: 4, y: 7 },
-  { x: 4, y: 4.3 },
-  { x: 1.6, y: 4.3 },
-  { x: 1.6, y: 2.8 },
-  { x: 6.4, y: 2.8 },
-  { x: 6.4, y: 4.3 },
-  { x: 4, y: 4.3 },
-  { x: 4, y: 7 },
-  // Вітальня — двома смугами.
-  { x: 1.6, y: 7 },
-  { x: 1.6, y: 9.2 },
-  { x: 17, y: 9.2 },
-  ROBOT_DOCK,
-];
-
-/** Точка на маршруті за часткою пройденого шляху 0–1. */
-function along(route: readonly Vec[], progress: number): Vec {
-  const lengths = route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
-  let left = progress * lengths.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < lengths.length; i++) {
-    const length = lengths[i] ?? 0;
-    const a = route[i] ?? ROBOT_DOCK;
-    const b = route[i + 1] ?? ROBOT_DOCK;
-    if (left <= length) return { x: a.x + ((b.x - a.x) * left) / length, y: a.y + ((b.y - a.y) * left) / length };
-    left -= length;
-  }
-  return route[route.length - 1] ?? ROBOT_DOCK;
 }
 
 /**
@@ -143,7 +91,7 @@ function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void 
     const dock = toScreen(ROBOT_DOCK);
     g.fillStyle(0x4a4448).fillRoundedRect(dock.x - 16, dock.y + 4, 32, 8, 3);
     const progress = robotProgress(state);
-    const { x, y } = toScreen(progress === null ? ROBOT_DOCK : along(ROBOT_ROUTE, progress));
+    const { x, y } = toScreen(robotAt(state));
     g.fillStyle(appliances.robot === "premium" ? 0x2f2f36 : 0x8c9aa6).fillEllipse(x, y, 30, 15);
     g.fillStyle(0xd8d4cc).fillEllipse(x, y - 3, 20, 9);
     // Вогник: зелений — їде, синій — заряджається на базі.

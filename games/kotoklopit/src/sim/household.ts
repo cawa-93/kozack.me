@@ -2,7 +2,7 @@
 
 import { traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, WATER_CAPACITY } from "./config";
 import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
@@ -10,8 +10,9 @@ import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
 import { itemPoint, objectById, slotCenter } from "./home";
+import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
-import type { BowlItem, Cat, Feeder, GameState, HomeItem, Product, Quality } from "./types";
+import type { BowlItem, Cat, Feeder, GameState, HomeItem, Product, Quality, Vec } from "./types";
 
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
@@ -74,21 +75,14 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   return "started";
 }
 
-/** Пилососити завершено (§8.7): шерсті немає, коти, що не сплять і не сміливі, ховаються. */
+/**
+ * Пилососити завершено (§8.7): шерсті немає. Котів лякає сам гул пилососа — гучний звук, щойно він загудів
+ * (`holdTick`, §9.12).
+ */
 export function vacuumed(state: GameState): void {
   state.home.fur = 0;
   unpleasantTask(state, HOUSEHOLD.vacuumSanity);
-  scareCats(state);
   emit(state, { type: "vacuumed" });
-}
-
-/** Коти бояться пилососа (§8.7): несміливі ховаються. */
-function scareCats(state: GameState): void {
-  for (const cat of state.cats) {
-    if (cat.away !== null || (cat.act.kind === "sleep" && cat.act.goal === null) || traitLevel(cat, "bravery") > 0) continue;
-    const bed = objectById("bed");
-    cat.act = { kind: "hide", target: null, goal: { x: bed.x, y: bed.y }, minutes: 20, elapsed: 0 };
-  }
 }
 
 /** Хвилини побуту вдень і вночі: шерсть, прання, техніка за розкладом. */
@@ -97,7 +91,14 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const hours = minutes / 60;
   for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(100, home.fur + furPerHour(cat) * hours);
   if (home.washer.state === "washing") {
+    const before = home.washer.minutes;
     home.washer.minutes -= minutes;
+    // Віджим — останні хвилини прання: машина гуркоче на всю ванну (§9.12).
+    if (before > NOISE.spinMinutes && home.washer.minutes <= NOISE.spinMinutes) {
+      emit(state, { type: "laundry", stage: "spin" });
+      const washer = objectById("washer");
+      loudNoise(state, "spin", { x: washer.x + 0.5, y: washer.y + 0.5 });
+    }
     if (home.washer.minutes <= 0) {
       home.washer.state = "done";
       emit(state, { type: "laundry", stage: "done" });
@@ -111,13 +112,13 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
 }
 
 /**
- * Робот-пилосос (§8.7): о 12:00 вирушає з бази (несміливі коти ховаються) й годину їздить усією
+ * Робот-пилосос (§8.7): о 12:00 вирушає з бази — гучний звук на всю квартиру (§9.12) — і годину їздить усією
  * квартирою; шерсть зникає поступово й до кінця прибирання — повністю.
  */
 function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {
   const start = HOUSEHOLD.robotMinute;
   const end = start + HOUSEHOLD.robotMinutes;
-  if (crossed(start)) scareCats(state);
+  if (crossed(start)) loudNoise(state, "robot", null);
   const a = from % 1440;
   const lo = Math.max(a, start);
   const hi = Math.min(a + minutes, end);
@@ -137,6 +138,64 @@ export function robotProgress(state: GameState): number | null {
   const start = HOUSEHOLD.robotMinute;
   if (minute < start || minute >= start + HOUSEHOLD.robotMinutes) return null;
   return (minute - start) / HOUSEHOLD.robotMinutes;
+}
+
+/**
+ * База робота-пилососа у вітальні й маршрут прибирання всією квартирою (§8.7): кухня, ванна, спальня — крізь
+ * дверні прорізи (x 16, 11 і 4), потім уся вітальня й назад на базу. У симуляції — бо на роботі катається кіт (§9.12).
+ */
+export const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
+const ROBOT_ROUTE: readonly Vec[] = [
+  ROBOT_DOCK,
+  { x: 16, y: 7 },
+  // Кухня.
+  { x: 16, y: 4.3 },
+  { x: 18.4, y: 4.3 },
+  { x: 13.5, y: 4.3 },
+  { x: 16, y: 4.3 },
+  { x: 16, y: 7 },
+  // Ванна.
+  { x: 11, y: 7 },
+  { x: 11, y: 4.3 },
+  { x: 8.6, y: 4.3 },
+  { x: 8.6, y: 3.4 },
+  { x: 11.4, y: 3.4 },
+  { x: 11, y: 4.3 },
+  { x: 11, y: 7 },
+  // Спальня.
+  { x: 4, y: 7 },
+  { x: 4, y: 4.3 },
+  { x: 1.6, y: 4.3 },
+  { x: 1.6, y: 2.8 },
+  { x: 6.4, y: 2.8 },
+  { x: 6.4, y: 4.3 },
+  { x: 4, y: 4.3 },
+  { x: 4, y: 7 },
+  // Вітальня — двома смугами.
+  { x: 1.6, y: 7 },
+  { x: 1.6, y: 9.2 },
+  { x: 17, y: 9.2 },
+  ROBOT_DOCK,
+];
+
+/** Точка на маршруті за часткою пройденого шляху 0–1. */
+function along(route: readonly Vec[], progress: number): Vec {
+  const lengths = route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
+  let left = progress * lengths.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < lengths.length; i++) {
+    const length = lengths[i] ?? 0;
+    const a = route[i] ?? ROBOT_DOCK;
+    const b = route[i + 1] ?? ROBOT_DOCK;
+    if (left <= length) return { x: a.x + ((b.x - a.x) * left) / length, y: a.y + ((b.y - a.y) * left) / length };
+    left -= length;
+  }
+  return route[route.length - 1] ?? ROBOT_DOCK;
+}
+
+/** Де робот-пилосос: у дорозі — на маршруті, інакше — на базі (§8.7). */
+export function robotAt(state: GameState): Vec {
+  const progress = robotProgress(state);
+  return progress === null ? ROBOT_DOCK : along(ROBOT_ROUTE, progress);
 }
 
 /**
@@ -250,7 +309,8 @@ export function wearOut(state: GameState, item: HomeItem, rng: Rng): void {
   if (item.quality !== "cheap" || item.kind === "toy") return;
   if (!rng.chance(HOUSEHOLD.breakPerUse * HOUSEHOLD.difficulty[state.difficulty])) return;
   state.home.items = state.home.items.filter((i) => i !== item);
-  // Зламана річ лишає уламки на своєму місці: видно, куди вона поділася (§11.3а).
+  // Зламана річ лишає уламки на своєму місці: видно, куди вона поділася (§11.3а). Тріск — гучний звук (§9.12).
   addMess(state, "broken", itemPoint(item), null);
   emit(state, { type: "broke", what: item.kind });
+  loudNoise(state, "broken", itemPoint(item));
 }

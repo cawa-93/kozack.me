@@ -23,7 +23,6 @@ const PENDING: ReadonlySet<string> = new Set([
   "touchy",
   "devotion",
   "shedding",
-  "bravery",
   "stress",
   "guests",
   "warmth",

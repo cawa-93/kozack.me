@@ -5,6 +5,7 @@ import { traitLevel } from "./cat";
 import { OBSERVATIONS, WITNESS_DISTANCE } from "./config";
 import { emit } from "./events";
 import { roomAt } from "./home";
+import { absoluteMinute } from "./time";
 import { traitGroup } from "./traits";
 import type { Cat, GameState, Trait, Vec } from "./types";
 
@@ -61,8 +62,10 @@ export function visibility(state: GameState, trait: Trait): 0 | 1 | 2 | 3 {
  * Без цього «Тихоня» відкривалася тим, що приходила по увагу (пошук багів 2026-10-25).
  * Порода й характер протилежні — кіт поводиться за знаком суми, тож прояв зараховується, лише коли сума того
  * самого знака, що й риса: «Спокійна» сомалі (+2 породи, −1 характеру) поводиться як енергійна (§9.9).
+ * `every` — прояв, що трапляється часто (кіт задрімав, спокійно вийшов із лотка), зараховується не частіше ніж раз
+ * на стільки хвилин (рішення автора 2026-10-25, `TRAITS_REVIEW.md`).
  */
-export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1, woke = false): void {
+export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1, woke = false, every = 0): void {
   const trait = cat.traits.find((t) => t.group === group);
   if (!trait || trait.known || Math.sign(trait.level) !== side) return;
   if (Math.sign(traitLevel(cat, group)) !== side) return;
@@ -70,6 +73,11 @@ export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 
   if (info.quiet || (info.nocturnal && !woke)) return;
   // Кіт розбудив персонажа (`woke`): персонаж спав, але прокинувся саме від нього (§9.9).
   if (!woke && !witnesses(state, cat)) return;
+  const key = `${group}${side > 0 ? "+" : "-"}`;
+  const now = absoluteMinute(state.day, state.minute);
+  const last = cat.observedAt?.[key];
+  if (every > 0 && last !== undefined && now - last < every) return;
+  if (every > 0) (cat.observedAt ??= {})[key] = now;
   const before = visibility(state, trait);
   trait.seen += 1;
   const after = visibility(state, trait);

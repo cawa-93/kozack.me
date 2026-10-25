@@ -71,8 +71,9 @@ import {
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { emit } from "./events";
-import { wearOut } from "./household";
+import { robotAt, robotProgress, wearOut } from "./household";
 import { observe, setWitnessing, witnesses } from "./knowledge";
+import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { itemTile, objectById, roomAt, ROOMS, slotById, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
@@ -166,6 +167,9 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
 function start(cat: Cat, kind: CatActKind, goal: Vec | null, minutes: number, target: string | null = null): void {
   cat.act = { kind, target, goal, minutes, elapsed: 0 };
 }
+
+/** Почати дію кота — для інших модулів симуляції (гучний звук, §9.12). */
+export const startAct = start;
 
 function nearest<T extends HomeItem>(cat: Cat, items: readonly T[]): T | null {
   let best: T | null = null;
@@ -370,7 +374,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
 }
 
 /** Сховатися під ліжком, диваном чи в будиночку (§9.6). */
-function hideSpot(state: GameState, rng: Rng): Spot {
+export function hideSpot(state: GameState, rng: Rng): Spot {
   const options: { weight: number; value: Spot }[] = houseSpots(state);
   for (const id of ["bed", "sofa"]) {
     const o = objectById(id);
@@ -421,7 +425,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   if (isAdapting(state, cat)) {
     const spot = hideSpot(state, rng);
-    return start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+    start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
+    // Полохливий звикає довше — у новому домі він ховається на очах персонажа (§9.6), прояв раз на день.
+    observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
+    return;
   }
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
@@ -754,11 +761,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "sleep": {
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
-      // Довгий сон — прояв «Тривалості сну», а спокійний кіт — «Енергійності» (§9.9).
-      if (act.elapsed >= 3 * MINUTES_PER_HOUR) {
-        observe(state, cat, "sleep");
-        observe(state, cat, "energy", -1);
-      }
+      // Довгий сон — прояв «Енергійності −» (§9.9). «Тривалість сну» видно з того, чи будить кота шум (§9.12).
+      if (act.elapsed >= 3 * MINUTES_PER_HOUR) observe(state, cat, "energy", -1);
       const house = itemById(state, act.target);
       if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) {
         itemMood(state, cat, house);
@@ -814,7 +818,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (!dish) return;
       takeDish(state, act.target);
       const o = objectById(act.target);
-      addMess(state, "broken", visibleFloorNear(state, { x: o.x + o.w / 2, y: o.y + o.h + 0.5 }), cat.id);
+      const shards = visibleFloorNear(state, { x: o.x + o.w / 2, y: o.y + o.h + 0.5 });
+      addMess(state, "broken", shards, cat.id);
+      // Річ розбилася — гучний звук (§9.12).
+      loudNoise(state, "broken", shards);
       changeMood(state, cat, 1);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       emit(state, { type: "knocked", cat: cat.id, object: act.target, item: dish });
@@ -916,8 +923,10 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
   if (!cat.act.goal && cat.act.minutes > 0) cat.act.goal = randomFloor(rng);
   const body = state.character.body;
   // Спільна пауза між оглушеннями (§9.12): щойно оглушений персонаж не падає знову — кіт пробігає повз.
-  if (context.present && cat.act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit && stun(state)) {
-    cat.act.target = "hit";
+  // Падіння персонажа — гучний звук (§9.12): полохливий бігун сам може кинутися ховатися, тож позначка — на забігу.
+  const act = cat.act;
+  if (context.present && act.target === null && Math.hypot(body.x - cat.x, body.y - cat.y) < ZOOMIES.hit && stun(state)) {
+    act.target = "hit";
     emit(state, { type: "knocked-down", cat: cat.id });
   }
   return minutes - used;
@@ -990,6 +999,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   if (isCarried(state, cat)) return carried(state, cat, minutes, rng);
   if (isNewborn(cat)) return nurse(state, cat);
+  if (cat.act.target === "robot") ride(state, cat);
   revenge(state, cat, minutes, rng);
   // Спокійну дію кіт кидає заради нагальної потреби.
   const calm = cat.act.kind === "idle" || cat.act.kind === "wander" || cat.act.kind === "hide" || cat.act.kind === "attention" || cat.act.kind === "toy" || cat.act.kind === "follow";
@@ -1043,6 +1053,17 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.kind === kind || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
+}
+
+/** «Безстрашний» катається на роботі-пилососі (§8.7, §9.12), поки той їде; робот на базі — злазить. */
+function ride(state: GameState, cat: Cat): void {
+  if (robotProgress(state) === null) {
+    cat.act.minutes = 0;
+    return;
+  }
+  const at = robotAt(state);
+  cat.x = at.x;
+  cat.y = at.y;
 }
 
 /** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */

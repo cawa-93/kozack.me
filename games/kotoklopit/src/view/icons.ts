@@ -57,7 +57,8 @@ export type IconName =
   | "palms"
   | "toy"
   | "taken"
-  | "sad";
+  | "sad"
+  | "loud";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -359,6 +360,12 @@ Object.assign(ICONS, {
     g.fillStyle(0xe8b93a).fillPoints(bolt, true);
     g.lineStyle(2, INK).strokePoints(bolt, true);
     g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
+  },
+  loud: (g: Phaser.GameObjects.Graphics) => {
+    // Гучний звук (§9.12): гучномовець і три хвилі.
+    g.fillStyle(INK).fillRect(5, 15, 6, 10).fillTriangle(10, 15, 19, 7, 19, 33).fillTriangle(10, 25, 10, 15, 19, 33);
+    g.lineStyle(3, COLORS.danger);
+    for (const radius of [6, 11, 16]) g.beginPath().arc(19, 20, radius, -Math.PI / 4, Math.PI / 4).strokePath();
   },
   washer: (g: Phaser.GameObjects.Graphics) => {
     // Пральна машина: барабан із бульбашками й стрілкою обертання — пере.

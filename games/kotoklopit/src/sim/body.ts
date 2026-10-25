@@ -28,6 +28,7 @@ import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
 import { isSolid, SPAWN } from "./home";
+import { hearSteps, loudNoise } from "./noise";
 import { stateRng } from "./rng";
 import { isDrowsy } from "./sleep";
 import { absoluteMinute } from "./time";
@@ -106,8 +107,9 @@ export function stun(state: GameState): boolean {
   body.stunAt = now;
   body.stun = Math.max(body.stun, STUN_MINUTES);
   body.dash = 0;
-  // Упав — можна й травмуватися (§6.5).
+  // Упав — можна й травмуватися (§6.5); гупнув — гучний звук для котів поруч (§9.12).
   maybeInjure(state, stateRng(state, "behavior"));
+  loudNoise(state, "fall", body);
   return true;
 }
 
@@ -144,6 +146,8 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * cycleMove(state) * moveFactor(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
   const from = { x: body.x, y: body.y };
   slide(state, body, dir.x * speed * minutes, dir.y * speed * minutes);
+  // Кроки поруч будять чуйних котів (§9.12).
+  hearSteps(state, from);
   const rng = stateRng(state, "behavior");
   if (rubbing) {
     const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");

@@ -145,6 +145,15 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       return [{ kind: "say", at: "computer", icon: "meow" }];
     case "escaped":
       return [{ kind: "say", at: "door", icon: "meow" }];
+    case "laundry":
+      // Віджим (§9.12): пральна машина гуркоче — звук речі, вголос.
+      return event.stage === "spin" ? [{ kind: "say", at: "washer", icon: "loud" }] : [];
+    case "scared":
+      // Кіт злякався гучного звуку й біжить ховатися (§9.12) — його переляк.
+      return [{ kind: "think", at: cat(event.cat), icon: "alert" }];
+    case "cat-woke":
+      // Кота розбудили шум чи кроки (§9.12): поспати не дали.
+      return [{ kind: "think", at: cat(event.cat), icon: "zz", mark: "no" }];
     case "doorbell":
       return [{ kind: "say", at: "door", icon: "bell" }];
     case "feeder":

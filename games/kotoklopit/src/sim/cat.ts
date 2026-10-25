@@ -4,6 +4,7 @@
 import { breedById, breedLevel, MIXED } from "./breeds";
 import {
   INHERIT_TRAIT_CHANCE,
+  ADAPTATION_BRAVERY,
   ADAPTATION_DAYS,
   CAT_AGE_LIMIT,
   CAT_START,
@@ -11,6 +12,7 @@ import {
   LOVE,
   LOVE_TRAIT_STEP,
   MAX_TRAITS,
+  MINUTES_PER_DAY,
   MOOD_HEALTH_DAMAGE,
   MOOD_HEALTH_RECOVERY,
   RECOVERY_BY_AGE,
@@ -142,9 +144,15 @@ export function addTrait(cat: Cat, rng: Rng, positive: number, inherited: readon
   return true;
 }
 
-/** Кіт адаптується в новому домі перші 2 дні (§9.6). */
+/**
+ * Кіт ззовні адаптується в новому домі (§9.6): 2 дні, «Сміливість» — на пів дня менше за одиницю, від 1 до 3 днів
+ * (рішення автора 2026-10-25). Дні рахуються від ранку дня появи разом із часом доби.
+ */
 export function isAdapting(state: GameState, cat: Cat): boolean {
-  return cat.source !== "born" && state.day - cat.arrivedDay < ADAPTATION_DAYS;
+  if (cat.source === "born") return false;
+  const a = ADAPTATION_BRAVERY;
+  const days = Math.min(a.max, Math.max(a.min, ADAPTATION_DAYS - a.step * traitLevel(cat, "bravery")));
+  return state.day + state.minute / MINUTES_PER_DAY - cat.arrivedDay < days;
 }
 
 export function isKitten(cat: Cat): boolean {

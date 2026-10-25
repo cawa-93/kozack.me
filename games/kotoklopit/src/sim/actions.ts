@@ -10,6 +10,7 @@ import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
 import { emptyFeeder, sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
+import { loudNoise } from "./noise";
 import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
@@ -507,7 +508,11 @@ function holdTick(state: GameState, minutes: number): boolean {
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
       jealousy(state, target.cat);
-    } else character.activity = { kind: "use", target: target.id, progress: 0 };
+    } else {
+      character.activity = { kind: "use", target: target.id, progress: 0 };
+      // Пилосос загудів — гучний звук на всю квартиру (§9.12).
+      if (target.type === "object" && target.object.kind === "vacuum") loudNoise(state, "vacuum", null);
+    }
   }
   const current = character.activity;
   if (current?.kind === "pet") {

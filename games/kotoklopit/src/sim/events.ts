@@ -89,7 +89,8 @@ export type GameEvent =
   | { type: "collar"; cat: number }
   | { type: "collar-lost"; cat: number }
   | { type: "bathed"; cat: number }
-  | { type: "laundry"; stage: "cat" | "started" | "done" | "hung"; cat?: number }
+  /** Прання (§8.7): віджим — гучний звук (§9.12). */
+  | { type: "laundry"; stage: "cat" | "started" | "spin" | "done" | "hung"; cat?: number }
   | { type: "vacuumed" }
   | { type: "robot" }
   | { type: "feeder"; bowls: number[] }
@@ -161,6 +162,10 @@ export type GameEvent =
   | { type: "tripped"; cat: number }
   | { type: "slipped"; mess: number }
   | { type: "escaped"; cat: number }
+  /** Кіт злякався гучного звуку й біжить ховатися (§9.12). */
+  | { type: "scared"; cat: number }
+  /** Кота розбудили шум чи кроки (§9.12). */
+  | { type: "cat-woke"; cat: number }
   | { type: "cat-returned"; cat: number; caught: boolean };
 
 export type Listener = (event: GameEvent, state: GameState) => void;

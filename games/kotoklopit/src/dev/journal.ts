@@ -220,6 +220,10 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return "Персонаж посковзнувся на шерстяній грудці";
     case "escaped":
       return `${catName(state, event.cat)} вибіг на сходи`;
+    case "scared":
+      return `${catName(state, event.cat)} злякався гучного звуку й ховається`;
+    case "cat-woke":
+      return `${catName(state, event.cat)} прокинувся від шуму`;
     case "cat-returned":
       return `${catName(state, event.cat)} ${event.caught ? "спіймано на сходах" : "повернувся сам"}`;
   }
