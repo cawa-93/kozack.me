@@ -2,7 +2,7 @@
 // і місця на підлозі, які видно гравцеві.
 
 import { FURNITURE_COST } from "./config";
-import { hiddenTile, isFixedSolid, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH } from "./home";
+import { hiddenTile, isFixedSolid, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, type Rect } from "./home";
 import type { Rng } from "./rng";
 import type { Cat, GameState, Vec } from "./types";
 
@@ -125,6 +125,22 @@ export function walk(cat: Cat, minutes: number, speed: number): number {
 }
 
 export const tileOf = (p: Vec): Vec => ({ x: Math.floor(p.x), y: Math.floor(p.y) });
+
+/**
+ * Остання клітинка шляху до цілі, що ще лежить у прямокутнику (§9.12): «Сам по собі» доходить лише до виходу зі
+ * своєї кімнати в бік персонажа й чекає там — біля дверей, а не біля найближчої до персонажа стіни (перевірка
+ * 2026-10-25). Шляху немає — кіт лишається, де є.
+ */
+export function lastTileWithin(from: Vec, goal: Vec, area: Rect): Vec {
+  const field = fieldTo(goal);
+  let tile = tileOf(from);
+  for (let guard = 0; guard < MAP_WIDTH * MAP_HEIGHT; guard++) {
+    const next = nextTile(tile.x, tile.y, field);
+    if (!next || next.x < area.x || next.x >= area.x + area.w || next.y < area.y || next.y >= area.y + area.h) return tile;
+    tile = next;
+  }
+  return tile;
+}
 
 /** Випадкова прохідна клітинка квартири, яку не закриває передня стіна. */
 export function randomFloor(rng: Rng): Vec {

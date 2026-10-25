@@ -4,7 +4,7 @@
 
 import { stun } from "./body";
 import { changeLove, changeMood, isAdapting, isKitten, isOld, recordMood, traitLevel } from "./cat";
-import { randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
+import { lastTileWithin, randomFloor, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
   ACTIVITY_BY_HOUR,
@@ -438,13 +438,14 @@ function startAttention(state: GameState, cat: Cat, forFood = false): void {
 }
 
 /**
- * Куди кіт іде по увагу: до персонажа; «Сам по собі» — лише до межі своєї кімнати, звідки кличе й чекає (§9.12).
+ * Куди кіт іде по увагу: до персонажа; «Сам по собі» — лише до виходу зі своєї кімнати в бік персонажа, звідки
+ * кличе й чекає (§9.12).
  */
 function attentionGoal(state: GameState, cat: Cat): Vec {
   const body = tileOf(state.character.body);
   const own = ROOMS.find((r) => r.id === roomAt(cat));
   if (traitLevel(cat, "follower") >= 0 || !own) return body;
-  return { x: clamp(body.x, own.x, own.x + own.w - 1), y: clamp(body.y, own.y, own.y + own.h - 1) };
+  return lastTileWithin(cat, body, own);
 }
 
 /**
@@ -460,13 +461,17 @@ function noticeRoomChange(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     if (!home(state, cat) || (cat.act.kind !== "idle" && cat.act.kind !== "wander") || roomAt(cat) !== before) continue;
     const level = traitLevel(cat, "follower");
-    if (level > 0 && rng.chance(FOLLOWER.chanceStep * level)) start(cat, "follow", tileOf(state.character.body), FOLLOWER.minutes, "character");
+    if (level > 0 && rng.chance(FOLLOWER.chanceStep * level)) {
+      start(cat, "follow", tileOf(state.character.body), FOLLOWER.minutes, "character");
+      cat.act.from = before;
+    }
   }
 }
 
 /**
  * «Хвостик» іде за персонажем і тримається поруч (§9.12): час супроводу йде й тоді, коли кіт крокує. Зайшов за
- * персонажем у його кімнату — прояв, раз за супровід.
+ * персонажем у нову кімнату — прояв, раз за супровід. Персонаж сам повернувся в кімнату кота — це не прояв: кіт
+ * нікуди не зайшов (перевірка 2026-10-25).
  */
 function escort(state: GameState, cat: Cat, minutes: number, context: CatContext): number {
   const act = cat.act;
@@ -482,7 +487,7 @@ function escort(state: GameState, cat: Cat, minutes: number, context: CatContext
   act.minutes -= used;
   act.elapsed += used;
   const room = roomAt(body);
-  if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat)) {
+  if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat) && room !== act.from) {
     act.seen = true;
     observe(state, cat, "follower");
   }

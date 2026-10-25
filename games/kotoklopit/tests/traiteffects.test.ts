@@ -111,7 +111,9 @@ describe("риси, що діють (ревізія 2026-10-22)", () => {
     const cat = withCat(save, { follower: -1 });
     cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 90, play: 0 };
     decide(save.current, cat, createRng(1), { present: true });
-    expect(cat.act.goal).toEqual({ x: 16, y: 6 });
+    // Біля дверей на кухню (прохід — x 15–16), а не біля найближчої до персонажа стіни (перевірка 2026-10-25).
+    expect(cat.act.goal?.y).toBe(6);
+    expect([15, 16]).toContain(cat.act.goal?.x);
     for (let i = 0; i < 100; i++) tickCats(save.current, 0.1, { present: true });
     expect(cat.act.kind).toBe("attention");
     expect(Math.floor(cat.y)).toBe(6);
@@ -119,6 +121,42 @@ describe("риси, що діють (ревізія 2026-10-22)", () => {
     Object.assign(save.current.character.body, { x: cat.x + 0.8, y: cat.y });
     tickCats(save.current, 0.1, { present: true });
     expect(cat.traits[0]?.seen).toBe(1);
+  });
+
+  it("«Сам по собі» з кухні кличе до спальні від дверей кухні, а не від стіни (перевірка 2026-10-25)", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 3.5, y: 2.5 });
+    const cat = withCat(save, { follower: -2 });
+    Object.assign(cat, { x: 17.5, y: 1.5 });
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 90, play: 0 };
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.kind).toBe("attention");
+    // Остання клітинка кухні на шляху до спальні — біля проходу внизу кухні (y 4), не біля стіни з ванною (x 13).
+    expect(cat.act.goal?.y).toBe(4);
+    expect([15, 16]).toContain(cat.act.goal?.x);
+  });
+
+  it("«Хвостик +»: ви вийшли й одразу повернулися в кімнату кота — це ще не прояв (перевірка 2026-10-25)", () => {
+    let followed = 0;
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      Object.assign(save.current.character.body, { x: 10.5, y: 8.5 });
+      const shadow = withCat(save, { follower: 2 });
+      Object.assign(shadow, { x: 4.5, y: 9.5 });
+      shadow.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+      shadow.act = { kind: "idle", target: null, goal: null, minutes: 60, elapsed: 0 };
+      tickCats(save.current, 0.1, { present: true });
+      // Персонаж зазирнув у ванну й повернувся до вітальні, а кіт ще не дійшов до дверей.
+      Object.assign(save.current.character.body, { x: 10.5, y: 2.5 });
+      tickCats(save.current, 0.1, { present: true });
+      if (shadow.act.kind !== "follow") continue;
+      followed += 1;
+      Object.assign(save.current.character.body, { x: 10.5, y: 8.5 });
+      for (let i = 0; i < 20; i++) tickCats(save.current, 0.1, { present: true });
+      expect(shadow.traits[0]?.seen, `seed ${seed}`).toBe(0);
+    }
+    expect(followed).toBeGreaterThan(3);
   });
 
   it("«Жебракування»: щойно поїв — уже просить ще біля миски", () => {
