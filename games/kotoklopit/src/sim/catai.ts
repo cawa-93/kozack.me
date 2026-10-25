@@ -261,6 +261,12 @@ export function isDirty(box: LitterItem): boolean {
   return box.uses >= litterCapacity(box);
 }
 
+/** Лоток брудний для цього кота (§9.12): «Принц на горошині» вважає його брудним на одне відвідування раніше. */
+export function dirtyFor(cat: Cat, box: LitterItem): boolean {
+  const early = traitLevel(cat, "litterPicky") >= DIRTY_LITTER.earlyLevel ? 1 : 0;
+  return box.uses >= Math.max(1, litterCapacity(box) - early);
+}
+
 /** Миска повна? Для персонажа: чи можна ще насипати (§9.12). */
 export function bowlFull(bowl: BowlItem): boolean {
   return bowl.food >= BOWL_CAPACITY;
@@ -447,7 +453,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   const n = cat.needs;
   if (n.toilet >= NEED_THRESHOLD.toilet) {
     const boxes = itemsOf(state, "litter");
-    const box = nearest(cat, boxes.filter((b) => !isDirty(b))) ?? nearest(cat, boxes);
+    const box = nearest(cat, boxes.filter((b) => !dirtyFor(cat, b))) ?? nearest(cat, boxes);
     if (box) return start(cat, "toilet", itemTile(box), CAT_ACT_MINUTES.toilet, `item:${box.id}`);
     // Лотка немає: «сюрприз» деінде.
     return start(cat, "toilet", randomFloor(rng), CAT_ACT_MINUTES.toilet, null);
@@ -977,9 +983,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "bury": {
-      // Закопав простий корм — тепер просить кращого біля миски (§9.12).
-      const bowl = itemById<BowlItem>(state, act.target);
-      if (bowl?.kind === "bowl") return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
+      // Закопав простий корм — тепер просить кращого біля миски (§9.12); загріб за собою в лотку — далі, як після лотка.
+      const item = itemById(state, act.target);
+      if (item?.kind === "bowl") return start(cat, "beg", itemTile(item), CAT_ACT_MINUTES.beg, act.target);
+      if (item?.kind === "litter") afterToilet(state, cat, rng);
       return;
     }
     case "drink": {
@@ -1021,8 +1028,20 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       forgive(cat);
       return;
     case "toilet": {
-      cat.needs.toilet = 0;
       const box = itemById<LitterItem>(state, act.target);
+      const dirty = box !== null && dirtyFor(cat, box);
+      const picky = traitLevel(cat, "litterPicky");
+      // Грязнулі ображаються менше (−2 — зовсім ні) й від брудного лотка не відмовляються; чистюлі — навпаки (§9.12).
+      const factor = Math.max(0, 1 + DIRTY_LITTER.pickyStep * picky);
+      if (dirty) changeMood(state, cat, MOOD.dirtyLitter * factor, "брудний лоток");
+      // Чистюля понюхав брудний лоток, постояв на борту й іде шукати інше місце — це видно біля лотка, прояв «+»
+      // (рішення автора 2026-10-25). «Сюрприз» він лишить там, куди дійде.
+      if (dirty && picky >= 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
+        emit(state, { type: "litter-refused", cat: cat.id });
+        observe(state, cat, "litterPicky");
+        return start(cat, "toilet", tileOf(surpriseSpot(rng)), CAT_ACT_MINUTES.toilet, null);
+      }
+      cat.needs.toilet = 0;
       // Хворий кіт не дотерпів до лотка (§9.5).
       if (box && missesLitter(cat, rng)) {
         addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
@@ -1032,16 +1051,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
         return;
       }
-      if (isDirty(box)) {
-        // Грязнулі ображаються менше й від брудного лотка не відмовляються; чистюлі — навпаки (§9.12).
-        const picky = traitLevel(cat, "litterPicky");
-        const factor = Math.max(0, 1 + DIRTY_LITTER.pickyStep * picky);
-        changeMood(state, cat, MOOD.dirtyLitter * factor, "брудний лоток");
-        if (picky >= 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
-          addMess(state, "surprise", surpriseSpot(rng), cat.id);
-          observe(state, cat, "litterPicky");
-          return;
-        }
+      if (dirty) {
         changeLove(state, cat, DIRTY_LITTER.love * factor, "брудний лоток");
         // Спокійно сходив і в повний лоток — прояв «Спартанця» (§9.9).
         observe(state, cat, "litterPicky", -1);
@@ -1050,17 +1060,19 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       itemMood(state, cat, box);
       wearOut(state, box, rng);
       resourceConflict(state, cat, rng, itemsOf(state, "litter").length >= state.cats.length + 1);
-      if (rng.chance(SCATTER_CHANCE.base + SCATTER_CHANCE.step * traitLevel(cat, "scatter"))) {
+      // Розкидає наповнювач (§9.12): 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше.
+      const scatter = traitLevel(cat, "scatter");
+      const scatters = SCATTER_CHANCE.base * Math.max(0, 1 + SCATTER_CHANCE.step * scatter) * (box.quality === "premium" ? SCATTER_CHANCE.closedBox : 1);
+      if (rng.chance(scatters)) {
         const slot = slotById(box.slot);
         addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.7 + rng.next() * 0.2 }, cat.id);
         observe(state, cat, "scatter");
-      } else observe(state, cat, "scatter", -1);
-      // Після лотка — часто зумі (§9.3); «Статечний» спокійно йде геть — прояв «Зумі −», раз на день.
-      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) {
-        startZoomies(state, cat, rng);
-        nightMischief(state, cat);
-      } else observe(state, cat, "zoomies", -1, false, MINUTES_PER_DAY);
-      return;
+      } else if (scatter < 0) {
+        // «Акуратний» ще хвилину загрібає за собою — довкола чисто: прояв «−» (рішення автора 2026-10-25).
+        observe(state, cat, "scatter", -1);
+        return start(cat, "bury", null, SCATTER_CHANCE.buryMinutes, act.target);
+      }
+      return afterToilet(state, cat, rng);
     }
     case "sleep": {
       if (act.elapsed >= MIN_CAT_NAP_MINUTES) changeMood(state, cat, MOOD.restedSleep);
@@ -1211,6 +1223,14 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
     backAway(state, victim, thief);
   }
   start(thief, "eat", null, eatMinutes(thief), act.target);
+}
+
+/** Після лотка — часто зумі (§9.3); «Статечний» спокійно йде геть — прояв «Зумі −», раз на день. */
+function afterToilet(state: GameState, cat: Cat, rng: Rng): void {
+  if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) {
+    startZoomies(state, cat, rng);
+    nightMischief(state, cat);
+  } else observe(state, cat, "zoomies", -1, false, MINUTES_PER_DAY);
 }
 
 /** Кіт скинув річ зі столу чи кухонної поверхні (§9.12): страва пропадає, на підлозі уламки, і гуркіт. */

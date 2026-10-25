@@ -155,11 +155,15 @@ describe("їжа, вода й лоток (§9.12)", () => {
       return { mood: 50 - cat.mood, love: 50 - cat.love, surprises: save.current.home.messes.filter((m) => m.kind === "surprise").length };
     };
     const usual = visit(0);
-    const slob = visit(-2);
+    const slob = visit(-1);
     expect(usual.love).toBeGreaterThan(0);
     expect(slob.love).toBeGreaterThan(0);
     expect(slob.love).toBeLessThan(usual.love);
     expect(slob.surprises).toBe(0);
+    // «Спартанець» (−2) не ображається зовсім (рішення автора 2026-10-25).
+    const spartan = visit(-2);
+    expect(spartan.love).toBe(0);
+    expect(spartan.mood).toBeLessThanOrEqual(0.5);
   });
 });
 

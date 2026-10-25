@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, eatMinutes, envy, stonesFactor, tickCats } from "../src/sim/catai";
+import { bowlEaten, decide, dirtyFor, eatMinutes, envy, stonesFactor, tickCats } from "../src/sim/catai";
 import { APPETITE, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, THIEF } from "../src/sim/config";
 import { interact } from "../src/sim/game";
 import { relation } from "../src/sim/relations";
@@ -15,7 +15,7 @@ import { emptyFeeder } from "../src/sim/household";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { BowlItem, Cat, Save, TraitLevel, WaterItem } from "../src/sim/types";
+import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -515,5 +515,82 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     expect(stonesFactor(save.current, withCat(save, { drinking: -2 }))).toBeCloseTo(0.5);
     save.current.home.appliances.fountain = "cheap";
     expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBe(1);
+  });
+});
+
+describe("лоток: «Розкидання наповнювача» й «Вибагливість до лотка» (рішення автора 2026-10-25)", () => {
+  const boxOf = (save: Save): LitterItem => save.current.home.items.find((i): i is LitterItem => i.kind === "litter") as LitterItem;
+
+  /** Кіт сходив у лоток на очах персонажа (у ванній). */
+  function visit(save: Save, cat: Cat): LitterItem {
+    const box = boxOf(save);
+    Object.assign(save.current.character.body, { x: 9.5, y: 2.5 });
+    cat.x = 8.5;
+    cat.y = 3.5;
+    cat.needs.toilet = 90;
+    cat.act = { kind: "toilet", target: `item:${box.id}`, goal: null, minutes: 0.05, elapsed: 0 };
+    tickCats(save.current, 0.1, { present: true });
+    return box;
+  }
+
+  it("шанс розкидати — 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше", () => {
+    const share = (level: number, premium = false): number => {
+      let count = 0;
+      for (let seed = 0; seed < 300; seed++) {
+        const save = game();
+        save.current.rng.behavior = seed;
+        const cat = withCat(save, level === 0 ? {} : { scatter: level as TraitLevel });
+        if (premium) boxOf(save).quality = "premium";
+        visit(save, cat);
+        if (save.current.home.messes.some((m) => m.kind === "litter")) count += 1;
+      }
+      return count / 300;
+    };
+    expect(share(2)).toBeGreaterThan(0.4);
+    expect(share(2)).toBeLessThan(0.6);
+    expect(share(2, true)).toBeLessThan(0.33);
+    expect(share(-1)).toBeLessThan(0.1);
+    expect(share(-2)).toBe(0);
+  });
+
+  it("«Ювелір» ще хвилину акуратно загрібає за собою — це видно", () => {
+    const save = game();
+    const cat = withCat(save, { scatter: -2 });
+    const box = visit(save, cat);
+    expect(cat.act).toMatchObject({ kind: "bury", target: `item:${box.id}` });
+    expect(seen(cat, "scatter")).toBe(1);
+    tickCats(save.current, 1.2, { present: true });
+    expect(cat.act.kind).not.toBe("bury");
+  });
+
+  it("«Принц на горошині» вважає лоток брудним на одне відвідування раніше", () => {
+    const save = game();
+    const box = boxOf(save);
+    box.uses = 2;
+    expect(dirtyFor(withCat(save, { litterPicky: 2 }), box)).toBe(true);
+    expect(dirtyFor(withCat(save, { litterPicky: 1 }), box)).toBe(false);
+    expect(dirtyFor(withCat(save), box)).toBe(false);
+  });
+
+  it("чистюля нюхає брудний лоток і йде шукати інше місце — «сюрприз» там, куди дійшов", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { litterPicky: 1 });
+      boxOf(save).uses = 3;
+      const { events, stop } = recordEvents();
+      const box = visit(save, cat);
+      stop();
+      if (!events.some((e) => e.type === "litter-refused")) continue;
+      expect(seen(cat, "litterPicky")).toBe(1);
+      expect(cat.act).toMatchObject({ kind: "toilet", target: null });
+      expect(save.current.home.messes).toHaveLength(0);
+      for (let i = 0; i < 30 && cat.act.kind === "toilet"; i++) tickCats(save.current, 0.5, { present: false });
+      expect(save.current.home.messes.filter((m) => m.kind === "surprise")).toHaveLength(1);
+      expect(box.uses).toBe(3);
+      expect(cat.needs.toilet).toBeLessThan(5);
+      return;
+    }
+    throw new Error("чистюля жодного разу не відмовився від брудного лотка");
   });
 });
