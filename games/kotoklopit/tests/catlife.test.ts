@@ -228,6 +228,47 @@ describe("сон і увага (§9.12)", () => {
   });
 });
 
+describe("поведінка котів: пошук багів 2026-10-25 (§9.12)", () => {
+  const sleeping = (cat: Cat): void => {
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 8 * 60, elapsed: 60 };
+  };
+
+  it("сплячий кіт прокидається від спраги, а не спить годинами зі спрагою на 100", () => {
+    const save = game();
+    const cat = withCat(save);
+    save.current.minute = hours(13);
+    sleeping(cat);
+    cat.needs = { hunger: 0, thirst: 96, toilet: 0, fatigue: 80, attention: 0, play: 0 };
+    live(save, 1);
+    expect(cat.act.kind).toBe("drink");
+  });
+
+  it("сплячий кіт без уваги не сумує: він нічого не просить", () => {
+    const save = game();
+    const cat = withCat(save);
+    save.current.minute = hours(13);
+    sleeping(cat);
+    cat.mood = 50;
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 90, attention: 100, play: 0 };
+    live(save, 60, true);
+    expect(cat.act.kind).toBe("sleep");
+    expect(cat.mood).toBe(50);
+  });
+
+  it("просто побродити гри не знімає — лише прогулянка заради гри", () => {
+    const save = game();
+    const cat = withCat(save);
+    save.current.minute = hours(13);
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 50 };
+    cat.act = { kind: "wander", target: null, goal: null, minutes: 0.5, elapsed: 0 };
+    live(save, 1);
+    expect(cat.needs.play).toBeGreaterThanOrEqual(50);
+    cat.act = { kind: "wander", target: "play", goal: null, minutes: 0.5, elapsed: 0 };
+    live(save, 1);
+    expect(cat.needs.play).toBeLessThan(20);
+  });
+});
+
 describe("догляд персонажа (§9.12)", () => {
   it("корм із шафки — у миску одразу доверху, вода доливається одним натисканням", () => {
     const save = game();

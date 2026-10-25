@@ -154,9 +154,14 @@ export function isOld(cat: Cat): boolean {
   return cat.ageWeeks > CAT_AGE_LIMIT;
 }
 
+/** Втрати настрою масштабує «Стресостійкість» (§9.12): стійкий кіт втрачає менше. */
+function stressScaled(cat: Cat, delta: number): number {
+  return delta < 0 ? delta * Math.max(0, 1 - STRESS_STEP * traitLevel(cat, "stress")) : delta;
+}
+
 /** Змінити настрій кота. Втрати масштабує «Стресостійкість» (§9.12); причину бачить журнал. */
 export function changeMood(state: GameState, cat: Cat, delta: number, reason?: string): void {
-  const scaled = delta < 0 ? delta * Math.max(0, 1 - STRESS_STEP * traitLevel(cat, "stress")) : delta;
+  const scaled = stressScaled(cat, delta);
   cat.mood = clamp(cat.mood + scaled);
   // Сцена показує кожну зміну сердечками (§9.12), навіть якщо настрій уже на межі.
   if (scaled !== 0) emit(state, { type: "cat-felt", cat: cat.id, delta: scaled });
@@ -220,7 +225,8 @@ export function closeCatDay(state: GameState, cat: Cat): CatDay {
   const loveBefore = cat.love;
   if (!cat.interacted) changeLove(state, cat, LOVE.noInteractionPerDay);
   cat.interacted = false;
-  cat.mood = clamp(cat.mood + (cat.love - 50) * LOVE.driftPerPoint);
+  // Дрейф від любові — як і всі втрати настрою, з «Стресостійкістю» (пошук багів 2026-10-25).
+  cat.mood = clamp(cat.mood + stressScaled(cat, (cat.love - 50) * LOVE.driftPerPoint));
   const healthBefore = cat.health;
   const change = moodHealth(average);
   changeHealth(state, cat, change > 0 ? change * recoveryMultiplier(cat) : change, "mood");

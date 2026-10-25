@@ -426,6 +426,8 @@ export class Bot {
 
   private pet(cat: Cat): void {
     if (!this.goTo(`cat:${cat.id}`)) return this.wait(3);
+    // Поки йшов, кіт заснув: не будити (пестощі сплячого — мінус настрій).
+    if (cat.act.kind === "sleep") return;
     // Гладити трохи менше, ніж кіт терпить.
     const tolerance = Math.max(0.5, petTolerance(cat) - 0.5);
     const before = this.state.minute;
@@ -439,7 +441,7 @@ export class Bot {
       if (!toy || !this.goTo(`item:${toy.id}`)) return this.wait(3);
       interact(this.save);
     }
-    if (!this.goTo(`cat:${cat.id}`)) return this.wait(3);
+    if (!this.goTo(`cat:${cat.id}`) || cat.act.kind === "sleep") return this.wait(3);
     const before = this.state.minute;
     this.holdFor(6);
     this.log.played += (this.state.minute - before) / 60;

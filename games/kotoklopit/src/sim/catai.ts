@@ -141,12 +141,15 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   }
 }
 
-/** Потреби на межі псують настрій щогодини (§9.12). */
+/**
+ * Потреби на межі псують настрій щогодини (§9.12). Без уваги кіт сумує, лише коли не спить: сплячий
+ * нічого не просить (пошук багів 2026-10-25).
+ */
 function needsMood(state: GameState, cat: Cat, minutes: number, context: CatContext): void {
   const hours = minutes / MINUTES_PER_HOUR;
   if (cat.needs.hunger >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
   if (cat.needs.thirst >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
-  if (context.present && cat.needs.attention >= 100) changeMood(state, cat, MOOD.ignoredPerHour * hours);
+  if (context.present && !asleep(cat) && cat.needs.attention >= 100) changeMood(state, cat, MOOD.ignoredPerHour * hours);
 }
 
 // --- Що є в квартирі ------------------------------------------------------------------------
@@ -424,7 +427,8 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   type Choice = () => void;
   const options: { weight: number; value: Choice }[] = [
     { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(state, cat, rng) },
-    { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander) },
+    // Побродити заради гри — ціль «play»: лише така прогулянка знімає потребу гри.
+    { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander, "play") },
   ];
   const onSurfaces = dishes(state, false);
   const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
@@ -682,7 +686,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "wander":
-      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
+      // Просто побродити без діла гри не знімає: інакше коти майже не гралися б самі, не бешкетували
+      // й не влаштовували зумі (пошук багів 2026-10-25).
+      if (act.target === "play") cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
       return;
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
@@ -741,7 +747,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   switch (act.kind) {
     case "sleep": {
       const rested = cat.needs.fatigue <= SLEEP_END && act.elapsed >= MIN_CAT_NAP_MINUTES;
-      const woken = cat.needs.toilet >= 95 || cat.needs.hunger >= 95;
+      // Прокидається від голоду, спраги чи туалету: інакше спав би годинами зі спрагою на 100 (пошук багів 2026-10-25).
+      const woken = cat.needs.toilet >= 95 || cat.needs.hunger >= 95 || cat.needs.thirst >= 95;
       if (rested || woken) act.minutes = 0;
       return;
     }
@@ -774,7 +781,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       cat.y = body.y + 0.05;
       changeStat(state, "sanity", WORK_CAT.lapSanity * DIFFICULTY[state.difficulty].catSanity * minutes);
       changeMood(state, cat, WORK_CAT.lapMood * minutes);
-      cat.love = clamp(cat.love + WORK_CAT.lapLove * minutes);
+      changeLove(state, cat, WORK_CAT.lapLove * minutes);
       cat.needs.attention = Math.max(0, cat.needs.attention - WORK_CAT.lapAttention * minutes);
       cat.interacted = true;
       return;
@@ -980,7 +987,6 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   for (const cat of [a, b]) for (const group of ["sociability", "territorial"]) observe(state, cat, group);
 }
 
-/** Персонаж узяв на руки кота, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно. */
 /** Чистюля відходить від персонажа в брудному одязі (§9.12). */
 export function backAway(state: GameState, cat: Cat, from: Vec): void {
   const dx = cat.x - from.x;
@@ -991,6 +997,7 @@ export function backAway(state: GameState, cat: Cat, from: Vec): void {
   start(cat, "wander", { x: Math.floor(spot.x), y: Math.floor(spot.y) }, CAT_ACT_MINUTES.wander);
 }
 
+/** Персонаж узяв на руки кота, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно. */
 export function separateFight(state: GameState, cat: Cat): void {
   if (cat.act.kind !== "fight") return;
   const other = catById(state, cat.act.target);
@@ -999,7 +1006,6 @@ export function separateFight(state: GameState, cat: Cat): void {
   emit(state, { type: "fight-stopped", cat: cat.id });
 }
 
-/** Персонаж приділяє увагу коту: ревниві коти, що не сплять, сердяться на нього (§9.4). */
 /**
  * Іншому котові щось перепало — ласощі, нашийник, вишуканий корм (§9.12): заздрісні коти, що це
  * бачать, дмуться й сваряться з ним; ті, хто «радіє за інших», навпаки, тішаться.
@@ -1033,6 +1039,7 @@ function revenge(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   start(cat, "revenge", { x: bed.x + bed.w, y: bed.y + bed.h - 1 }, CAT_ACT_MINUTES.toilet, "bed");
 }
 
+/** Персонаж приділяє увагу коту: ревниві коти, що не сплять, сердяться на нього (§9.4). */
 export function jealousy(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
     if (other.id === cat.id || !home(state, other) || asleep(other)) continue;
