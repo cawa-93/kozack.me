@@ -161,6 +161,21 @@ describe("«Скидання речей»: дрібнички на столах 
     expect(seen(cat, "knocking")).toBe(0);
   });
 
+  it("зумі повз стіл із дрібничкою інколи скидає й її (перевірка етапу 2026-10-26)", () => {
+    let fell = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 3.5, y: 9.5 });
+      const cat = withCat(save, {}, { x: 4.5, y: 7.6 });
+      cat.act = { kind: "zoomies", target: null, goal: { x: 9, y: 7 }, minutes: 2, elapsed: 0 };
+      for (let i = 0; i < 40 && cat.act.kind === "zoomies"; i++) tickCats(save.current, 0.05, { present: true });
+      if (save.current.home.trinkets?.pen) fell += 1;
+    }
+    // 15% за прохід.
+    expect(fell).toBeGreaterThan(2);
+    expect(fell).toBeLessThan(25);
+  });
+
   it("кіт без риси заради уваги нічого не скидає", () => {
     const save = game();
     const cat = withCat(save, {}, { x: 15.5, y: 2.5 });

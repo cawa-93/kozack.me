@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
 import { CARRIER_HOME, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
-import { vetExam, vetManner } from "../src/sim/destinations";
+import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
 import { dispatch } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
-import { tickModifiers } from "../src/sim/modifiers";
+import { decideFoundling, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
@@ -215,6 +215,25 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     expect(guestsText(visit([]))).not.toContain("кот");
   });
 
+  it("мама з гостинцями дзвонить і заходить, знайді двері відчиняють — коти це помічають (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    save.current.day = 3;
+    const host = withCat(save, { guests: 2 }, { x: 5.5, y: 8.5 });
+    for (let seed = 0; seed < 2000; seed++) {
+      host.act = idleAct(30);
+      save.current.modifiers.day = null;
+      startModifiers(save.current, createRng(seed));
+      if (save.current.modifiers.day === "mom-food") break;
+    }
+    expect(save.current.modifiers.day).toBe("mom-food");
+    expect(host.act.target).toBe("guest");
+    // Знайду відносять у притулок — двері однаково відчиняють: «Домосід» біля них відходить.
+    const homebody = withCat(save, { escape: -1 });
+    save.current.today.foundling = true;
+    decideFoundling(save.current, false, createRng(1));
+    expect(homebody.act.kind).toBe("wander");
+  });
+
   it("гості дзвонять за 2 хвилини, а заходять — двері відчинено: «Душа компанії» біля дверей може й вибігти", () => {
     let escaped = 0;
     for (let seed = 1; seed <= 30; seed++) {
@@ -354,6 +373,22 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     expect(exam(1)).toEqual({ manner: "calm", extra: 0 });
     expect(exam(-1)).toEqual({ manner: "hiss", extra: 0 });
     expect(exam(-2)).toEqual({ manner: "hid", extra: VET.hideMinutes });
+  });
+
+  it("у грумера так само: «Жах клініки» затягує грумінг на 15 хвилин, «Терпить огляд» — ні; обидва — прояв (перевірка етапу 2026-10-26)", () => {
+    const groomed = (traits: Record<string, TraitLevel>): { extra: number; seen: number } => {
+      const save = game();
+      save.current.character.money = 1000;
+      const cat = withCat(save, traits, { x: 5.5, y: 8.5 });
+      atDoorWith(save, cat);
+      expect(startTrip(save.current, "groomer")).toBe(true);
+      driveSafely(save);
+      const visit = save.current.trip?.visit ?? 0;
+      expect(groom(save.current, "cheap")).toBe(true);
+      return { extra: (save.current.trip?.visit ?? 0) - visit, seen: seen(cat, "vet") };
+    };
+    expect(groomed({ vet: -2 })).toEqual({ extra: VET.hideMinutes, seen: 1 });
+    expect(groomed({ vet: 1 })).toEqual({ extra: 0, seen: 1 });
   });
 
   it("ветеринарка вдома: «Жах клініки» потім ховається, а прояв видно, якщо персонаж удома", () => {
