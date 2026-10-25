@@ -1359,6 +1359,13 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         bowlThief(state, cat, rng);
       }
       return;
+    case "mark": {
+      // Мітить задом до кута: піднятий хвіст — до стіни (§9.12; перевірка етапу 2026-10-25 — кіт дивився в кут, наче
+      // нюхав його).
+      const room = ROOMS.find((r) => r.id === roomAt(cat));
+      if (room) cat.facing = cat.x < room.x + room.w / 2 ? 1 : -1;
+      return;
+    }
     case "toilet":
       // Дійшов до лотка: чистюля нюхає брудний і може піти шукати інше місце, не сходивши (§9.12).
       if (act.refused === undefined) {

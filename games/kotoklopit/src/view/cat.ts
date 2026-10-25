@@ -23,6 +23,8 @@ const WHITE = 0xf4f0e8;
 /** Тіло колорпойнта світле, колір лише на «кінчиках». */
 const POINT_BODY = 0xeee2cc;
 const EYES = { blue: 0x6fb3e0, green: 0x7fbf5a, yellow: 0xe0c040, copper: 0xd2803a } as const;
+/** На скільки пікселів кіт, що їсть чи п'є з миски, сидить за нею (§9.12): корм у мисці видно спереду. */
+const BOWL_BEHIND = 9;
 
 const shade = (color: number, k: number): number => {
   const c = Phaser.Display.Color.IntegerToColor(color);
@@ -155,6 +157,10 @@ export class CatView {
       feet.depth = depthOf(bottom) + 2;
       // У душовій кабіні кіт сидить на мокрому піддоні біля входу, а не на даху кабіни (§9.12, «Любов до води»).
       feet.y = pose === "hide" ? bottom - 2 : furniture.kind === "shower" ? bottom - 4 : feet.y - objectHeight(furniture.kind) + 6;
+    } else if (pose === "eat" && carriedAt === null) {
+      // Їсть чи п'є з миски — сидить за нею, схилившись, а не на ній: видно, як корм меншає (§9.12, «Швидкість їжі»;
+      // перевірка етапу 2026-10-25 — кіт закривав миску, і корму не було видно). Глибина — та сама, з клітинки кота.
+      feet.y -= BOWL_BEHIND;
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
     // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.
@@ -241,7 +247,7 @@ export class CatView {
         // Сумний кіт опускає голову; той, хто їсть чи гребе лапою (корм біля миски, наповнювач у лотку), — до самої підлоги;
         // хто вмивається — хитає головою.
         const headY =
-          pose === "eat" || pose === "bury" ? y - 12 * s : pose === "cough" ? y - 18 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
+          pose === "eat" ? y - 8 * s : pose === "bury" ? y - 12 * s : pose === "cough" ? y - 18 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
         this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
         this.patches(g, x, y - 13 * s, 22 * s, 26 * s);

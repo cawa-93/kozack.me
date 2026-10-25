@@ -711,7 +711,13 @@ describe("«Мітки» (рішення автора 2026-10-25)", () => {
     }
     expect(cat.act.kind).toBe("mark");
     expect(cat.act.goal?.y).toBe(6);
-    for (let i = 0; i < 40 && cat.act.kind === "mark"; i++) tickCats(save.current, 0.5, { present: true });
+    // Задом до кута: кут ліворуч — кіт дивиться праворуч, піднятий хвіст — до стіни (перевірка етапу 2026-10-25).
+    let backed = false;
+    for (let i = 0; i < 40 && cat.act.kind === "mark"; i++) {
+      tickCats(save.current, 0.25, { present: true });
+      if (cat.act.kind === "mark" && cat.act.goal === null && cat.act.elapsed > 0) backed ||= cat.facing === 1;
+    }
+    expect(backed).toBe(true);
     const mark = save.current.home.messes.find((m) => m.kind === "mark");
     expect(mark?.cat).toBe(cat.id);
     expect(Math.floor(mark?.y ?? 0)).toBe(6);
