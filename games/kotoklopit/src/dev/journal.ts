@@ -1,5 +1,6 @@
 // Журнал режиму розробки (§11.5): приховані зміни й кидки випадковості з подій симуляції.
 
+import { CHEWING, GIFTS } from "../sim/config";
 import { onEvent, type GameEvent } from "../sim/events";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
 import type { Delivery, GameState, Item, Quality } from "../sim/types";
@@ -249,9 +250,9 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "bag-chewed":
       return `${catName(state, event.cat)} прогриз пакет: −1 ${event.product}`;
     case "wire-fixed":
-      return "Дріт комп'ютера полагоджено: ремонт +5";
+      return `Дріт комп'ютера полагоджено: ремонт +${CHEWING.wireRepair}`;
     case "sock-found":
-      return event.where === "trip" ? "Шукали шкарпетку перед виїздом: +10 хв" : "Пилосос знайшов шкарпетку в котячій схованці";
+      return event.where === "trip" ? `Шукали шкарпетку перед виїздом: +${GIFTS.sockSearch} хв` : "Пилосос знайшов шкарпетку в котячій схованці";
     case "ambushed":
       return `${catName(state, event.cat)} вистрибнув із засідки на ноги`;
     case "slipped":

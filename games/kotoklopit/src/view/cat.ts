@@ -6,7 +6,7 @@ import Phaser from "phaser";
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../sim/home";
-import type { Cat, GameState } from "../sim/types";
+import type { Cat, GameState, Quality } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
@@ -114,6 +114,8 @@ export class CatView {
   private feeling: CatFeeling | null = null;
   /** Настрій з поведінки в цьому кадрі (§11.4): сумна поза чи повільне моргання. */
   private look: CatMoodLook | null = null;
+  /** Іграшка в зубах (§9.12, «Подарунки й схованки»): якої вона якості — така й пір'їнка. */
+  private mouthToy: Quality = "cheap";
 
   /** Форми частин тіла: від кота, що є зараз (гени й форми не змінюються). */
   private shape: Cat["shape"];
@@ -152,6 +154,8 @@ export class CatView {
     const pose = onHigh && base === "hide" ? "sleep" : base;
     this.feeling = feeling;
     this.look = look;
+    const toy = cat.act.kind === "carry" && cat.act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === cat.act.target) : undefined;
+    this.mouthToy = toy?.kind === "toy" ? toy.quality : "cheap";
     this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
@@ -364,7 +368,7 @@ export class CatView {
     const act = cat.act;
     if (act.kind !== "carry" || act.picked !== true || act.dropped === true) return;
     if (act.carry === "sock") drawSock(g, x, y + 4 * s, 0.7 * s);
-    else drawToy(g, "cheap", x, y + 2 * s, 0.6 * s);
+    else drawToy(g, this.mouthToy, x, y + 2 * s, 0.6 * s);
   }
 
   private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number): void {
