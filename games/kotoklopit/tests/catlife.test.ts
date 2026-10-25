@@ -141,8 +141,9 @@ describe("їжа, вода й лоток (§9.12)", () => {
   });
 
   it("брудний лоток — мінус настрій і любов; грязнулі ображаються менше й через нього не відмовляються", () => {
-    const visit = (level: number): { mood: number; love: number; surprises: number } => {
+    const visit = (level: number, seed?: number): { mood: number; love: number; surprises: number } => {
       const save = game();
+      if (seed !== undefined) save.current.rng.behavior = seed;
       const cat = withCat(save);
       if (level !== 0) cat.traits.push({ group: "litterPicky", level: level as -2 | -1 | 1 | 2, seen: 0, known: false });
       const box = item<LitterItem>(save, "litter");
@@ -154,7 +155,9 @@ describe("їжа, вода й лоток (§9.12)", () => {
       live(save, 15);
       return { mood: 50 - cat.mood, love: 50 - cat.love, surprises: save.current.home.messes.filter((m) => m.kind === "surprise").length };
     };
-    const usual = visit(0);
+    // Кіт без риси теж інколи (15%) іде лишити «сюрприз» деінде — беремо похід, коли він сходив у лоток.
+    const usual = [0, 1, 2, 3, 4, 5].map((seed) => visit(0, seed)).find((v) => v.surprises === 0);
+    if (!usual) throw new Error("кіт без риси жодного разу не сходив у брудний лоток");
     const slob = visit(-1);
     expect(usual.love).toBeGreaterThan(0);
     expect(slob.love).toBeGreaterThan(0);

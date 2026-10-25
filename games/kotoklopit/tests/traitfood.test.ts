@@ -8,7 +8,7 @@ import { pickUpCat } from "../src/sim/actions";
 import { addTrait, createCat, idleAct } from "../src/sim/cat";
 import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
 import { bowlEaten, decide, dirtyFor, eatMinutes, envy, markTriggered, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, THIEF, WAKE_UP } from "../src/sim/config";
+import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP } from "../src/sim/config";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
@@ -194,6 +194,27 @@ describe("«Перебірливість» (рішення автора 2026-10-
       tickCats(save.current, 1, { present: true });
       expect(cat.act.kind).toBe("beg");
       expect(cat.act.target).toBe(`item:${bowl.id}`);
+      return;
+    }
+    throw new Error("«Гурман» так і не відмовився від простого корму");
+  });
+
+  it("«Гурман» відмовляється, лише понюхавши: корму не торкається, біля миски — пів хвилини", () => {
+    // Перевірка етапу 2026-10-25: раніше він їв цілу трапезу (корм у мисці меншав), а тоді «відмовлявся».
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { picky: 2, gulping: -2 });
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+      cat.needs.hunger = 90;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0 };
+      tickCats(save.current, 0.1, { present: true });
+      if (cat.act.refused !== true) continue;
+      expect(bowlEaten(save.current, bowl)).toBeNull();
+      tickCats(save.current, SNIFF_MINUTES, { present: true });
+      expect(cat.act.kind).toBe("bury");
+      expect(bowl.food).toBe(2);
       return;
     }
     throw new Error("«Гурман» так і не відмовився від простого корму");
@@ -615,6 +636,27 @@ describe("лоток: «Розкидання наповнювача» й «Ви�
       expect(save.current.home.messes.filter((m) => m.kind === "surprise")).toHaveLength(1);
       expect(box.uses).toBe(3);
       expect(cat.needs.toilet).toBeLessThan(5);
+      return;
+    }
+    throw new Error("чистюля жодного разу не відмовився від брудного лотка");
+  });
+
+  it("чистюля лише нюхає брудний лоток — пів хвилини, а не сидить у ньому, наче сходив", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { litterPicky: 2 });
+      const box = boxOf(save);
+      box.uses = 3;
+      Object.assign(save.current.character.body, { x: 9.5, y: 2.5 });
+      Object.assign(cat, { x: 8.5, y: 3.5 });
+      cat.needs.toilet = 90;
+      cat.act = { kind: "toilet", target: `item:${box.id}`, goal: null, minutes: CAT_ACT_MINUTES.toilet, elapsed: 0 };
+      tickCats(save.current, 0.1, { present: true });
+      if (cat.act.refused !== true) continue;
+      tickCats(save.current, SNIFF_MINUTES, { present: true });
+      expect(cat.act).toMatchObject({ kind: "toilet", target: null });
+      expect(box.uses).toBe(3);
       return;
     }
     throw new Error("чистюля жодного разу не відмовився від брудного лотка");

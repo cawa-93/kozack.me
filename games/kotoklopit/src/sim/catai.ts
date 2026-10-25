@@ -70,6 +70,7 @@ import {
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
   SLEEP_TRAIT_STEP,
+  SNIFF_MINUTES,
   SOFA_REPAIR,
   START_CLOTHES,
   STEAL_HUNGER,
@@ -379,6 +380,31 @@ export function hungerThreshold(cat: Cat): number {
   return NEED_THRESHOLD.hunger - APPETITE.thresholdStep * Math.max(0, traitLevel(cat, "appetite"));
 }
 
+/**
+ * Перебірливий понюхав простий корм і відмовляється (§9.12, рішення автора 2026-10-25): з шансом 40% за одиницю, від
+ * голоду 95 — удвічі рідше (голод сильніший). Вирішується, щойно кіт сів до миски, — тож корму він не торкнувся
+ * (перевірка етапу 2026-10-25: раніше він їв цілу трапезу, корм меншав, а тоді «відмовлявся», і корм з'являвся знову).
+ */
+function refusesFood(state: GameState, cat: Cat, rng: Rng): boolean {
+  const picky = traitLevel(cat, "picky");
+  const bowl = itemById<BowlItem>(state, cat.act.target);
+  if (picky <= 0 || !bowl || bowl.food <= 0 || bowl.foodQuality !== "cheap") return false;
+  const starving = cat.needs.hunger >= PICKY.starving ? PICKY.starvingFactor : 1;
+  return rng.chance(PICKY_REFUSAL_STEP * picky * starving);
+}
+
+/**
+ * Чистюля понюхав брудний лоток і йде лишити «сюрприз» деінде (§9.12): з шансом 15% + 30% за одиницю «Вибагливості до
+ * лотка»; грязнулі не відмовляються. Вирішується, щойно кіт дійшов, — 2 хвилини в лотку він, не сходивши, не сидить
+ * (перевірка етапу 2026-10-25).
+ */
+function refusesLitter(state: GameState, cat: Cat, rng: Rng): boolean {
+  const picky = traitLevel(cat, "litterPicky");
+  const box = itemById<LitterItem>(state, cat.act.target);
+  if (picky < 0 || box?.kind !== "litter" || !dirtyFor(cat, box)) return false;
+  return rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky);
+}
+
 /** Скільки хвилин кіт їсть порцію (§9.12, «Швидкість їжі»): 3 × 0,7^рівень, від 1,5 до 6. */
 export function eatMinutes(cat: Cat): number {
   return clamp(CAT_ACT_MINUTES.eat * GULPING.factor ** traitLevel(cat, "gulping"), GULPING.min, GULPING.max);
@@ -389,7 +415,9 @@ export function eatMinutes(cat: Cat): number {
  * мить, а хто їсть по зернятку. null — з цієї миски зараз ніхто не їсть.
  */
 export function bowlEaten(state: GameState, bowl: BowlItem): number | null {
-  const eater = state.cats.find((c) => c.away === null && c.act.kind === "eat" && c.act.goal === null && c.act.target === `item:${bowl.id}` && c.act.nibble !== undefined);
+  const eater = state.cats.find(
+    (c) => c.away === null && c.act.kind === "eat" && c.act.goal === null && c.act.target === `item:${bowl.id}` && c.act.nibble !== undefined && c.act.refused !== true,
+  );
   if (!eater) return null;
   const act = eater.act;
   const progress = Math.min(1, act.elapsed / Math.max(1e-9, act.elapsed + act.minutes));
@@ -932,11 +960,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "eat": {
       const bowl = itemById<BowlItem>(state, act.target);
       if (!bowl || bowl.food <= 0) return;
-      // Перебірливий нюхає простий корм, гребе біля миски лапою — «закопує» — і відходить просити кращого; від голоду
-      // 95 — удвічі рідше: голод сильніший (§9.12, рішення автора 2026-10-25).
+      // Перебірливий понюхав простий корм (`refusesFood`), гребе біля миски лапою — «закопує» — і відходить просити
+      // кращого (§9.12, рішення автора 2026-10-25).
       const picky = traitLevel(cat, "picky");
-      const starving = cat.needs.hunger >= PICKY.starving ? PICKY.starvingFactor : 1;
-      if (bowl.foodQuality === "cheap" && picky > 0 && rng.chance(PICKY_REFUSAL_STEP * picky * starving)) {
+      if (act.refused === true) {
         changeMood(state, cat, MOOD.pickyRefusal, "відмовився від дешевого корму");
         emit(state, { type: "cat-refused-food", cat: cat.id });
         observe(state, cat, "picky");
@@ -1084,9 +1111,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Грязнулі ображаються менше (−2 — зовсім ні) й від брудного лотка не відмовляються; чистюлі — навпаки (§9.12).
       const factor = Math.max(0, 1 + DIRTY_LITTER.pickyStep * picky);
       if (dirty) changeMood(state, cat, MOOD.dirtyLitter * factor, "брудний лоток");
-      // Чистюля понюхав брудний лоток, постояв на борту й іде шукати інше місце — це видно біля лотка, прояв «+»
-      // (рішення автора 2026-10-25). «Сюрприз» він лишить там, куди дійде.
-      if (dirty && picky >= 0 && rng.chance(SURPRISE_CHANCE.base + SURPRISE_CHANCE.step * picky)) {
+      // Чистюля понюхав брудний лоток (`refusesLitter`), постояв на борту й іде шукати інше місце — це видно біля лотка,
+      // прояв «+» (рішення автора 2026-10-25). «Сюрприз» він лишить там, куди дійде.
+      if (act.refused === true) {
         emit(state, { type: "litter-refused", cat: cat.id });
         observe(state, cat, "litterPicky");
         return start(cat, "toilet", tileOf(surpriseSpot(rng)), CAT_ACT_MINUTES.toilet, null);
@@ -1317,12 +1344,26 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       return;
     }
     case "eat":
-      // Сів до миски: «Малоїжка» вирішує, чи лише поклює (§9.12, «Апетит»). Половинку, що лишилася, доїдає цілком.
+      // Сів до миски: перебірливий нюхає корм і, якщо той простий, може відмовитися, не з'ївши ні крихти; «Малоїжка»
+      // вирішує, чи лише поклює (§9.12, «Апетит»). Половинку, що лишилася, доїдає цілком.
       if (act.nibble === undefined) {
+        if (refusesFood(state, cat, rng)) {
+          act.refused = true;
+          act.nibble = false;
+          act.minutes = Math.min(act.minutes, SNIFF_MINUTES);
+          return;
+        }
         const appetite = traitLevel(cat, "appetite");
         act.nibble = appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite));
         // Кіт сів їсти — злодій поруч може піти відтіснити його (§9.12, «Злодійство»).
         bowlThief(state, cat, rng);
+      }
+      return;
+    case "toilet":
+      // Дійшов до лотка: чистюля нюхає брудний і може піти шукати інше місце, не сходивши (§9.12).
+      if (act.refused === undefined) {
+        act.refused = refusesLitter(state, cat, rng);
+        if (act.refused) act.minutes = Math.min(act.minutes, SNIFF_MINUTES);
       }
       return;
     case "beg":
