@@ -3,10 +3,10 @@
 
 import Phaser from "phaser";
 
-import { bowlEaten, isDirty } from "../sim/catai";
+import { bowlEaten, carriedToy, isDirty } from "../sim/catai";
 import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
-import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter } from "../sim/home";
+import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter, STASHES } from "../sim/home";
 import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../sim/types";
 import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
 
@@ -27,6 +27,17 @@ export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "prem
   g.lineStyle(1.5 * s, COLORS.ink, 0.7).lineBetween(x + 6 * s, y - 10 * s, x + 10 * s, y - 2 * s);
   const feather = quality === "premium" ? 0xd9455f : 0x6fae6a;
   g.fillStyle(feather).fillEllipse(x + 11 * s, y + 1 * s, 6 * s, 10 * s).fillEllipse(x + 14 * s, y + 2 * s, 5 * s, 8 * s);
+}
+
+/** Шкарпетка (§9.12, «Подарунки й схованки»): смугаста, п'ятою вбік; `x`, `y` — центр. */
+export function drawSock(g: Phaser.GameObjects.Graphics, x: number, y: number, scale = 1): void {
+  const s = scale;
+  const points = [
+    [-4, -8], [3, -8], [3, 2], [8, 4], [8, 8], [-2, 8], [-4, 5],
+  ].map(([dx, dy]) => new Phaser.Math.Vector2(x + dx! * s, y + dy! * s));
+  g.fillStyle(0x5a7fc0).fillPoints(points, true);
+  g.fillStyle(0xf3efe6).fillRect(x - 4 * s, y - 8 * s, 7 * s, 3 * s);
+  g.lineStyle(Math.max(1, 0.8 * s), COLORS.ink).strokePoints(points, true);
 }
 
 /**
@@ -95,7 +106,11 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
     const { x, y } = toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
   }
-  for (const item of state.home.items) drawHomeItem(g, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
+  for (const item of state.home.items) {
+    // Іграшку в зубах малює кіт (§9.12, «Подарунки й схованки»).
+    if (item.kind === "toy" && carriedToy(state, item)) continue;
+    drawHomeItem(g, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
+  }
   for (const mess of state.home.messes) drawMess(g, mess);
   // Скинуті дрібнички лежать на підлозі до ранку; розбитий кухоль — уламки, їх малює безлад (§9.12).
   for (const [kind, fallen] of Object.entries(state.home.trinkets ?? {}) as [TrinketKind, FallenTrinket | undefined][]) {
@@ -177,6 +192,11 @@ function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
     g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 18, y - 22, 36, 24, 6);
     g.lineStyle(3, COLORS.ink).beginPath().arc(x, y - 22, 8, Math.PI, 0).strokePath();
   }
+  // Шкарпетка в котячій схованці за диваном (§9.12, «Подарунки й схованки»): видно п'ятку.
+  if (state.home.sock === true) {
+    const sock = toScreen(STASHES.sofa.at);
+    drawSock(g, sock.x - 14, sock.y - 1, 0.9);
+  }
   const { x, y } = toScreen(BASKET_AT);
   // Скільки днів одягу вже брудні: від порожнього кошика (5 і більше чистих днів) до гірки.
   const dirty = Math.max(0, Math.min(5, 5 - state.home.clothes));
@@ -223,6 +243,13 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: 
       return;
     }
     case "toy":
+      // Під диваном чи холодильником видно лише пір'їнку (§9.12, «Подарунки й схованки»).
+      if (item.hidden !== undefined) {
+        const feather = item.quality === "premium" ? 0xd9455f : 0x6fae6a;
+        g.fillStyle(feather).fillEllipse(x, y, 9, 5).fillEllipse(x + 5, y + 1, 7, 4);
+        g.lineStyle(1, COLORS.ink, 0.6).strokeEllipse(x, y, 9, 5);
+        return;
+      }
       drawToy(g, item.quality, x, y);
       return;
     case "litter": {

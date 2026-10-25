@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { drawTrinket } from "./catcorner";
+import { drawSock, drawTrinket } from "./catcorner";
 import { COLORS } from "./geometry";
 
 export type IconName =
@@ -69,7 +69,8 @@ export type IconName =
   | "phone"
   | "pen"
   | "cat-box"
-  | "claws";
+  | "claws"
+  | "sock";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -399,6 +400,7 @@ Object.assign(ICONS, {
     g.lineStyle(4, COLORS.danger);
     for (const dx of [-8, 0, 8]) g.lineBetween(12 + dx, 8, 26 + dx, 32);
   },
+  sock: (g: Phaser.GameObjects.Graphics) => drawSock(g, 20, 20, 2),
   "cat-box": (g: Phaser.GameObjects.Graphics) => {
     // Картонна коробка, а з неї визирає кіт — вуха й очі (§9.12, «Допитливість»).
     g.fillStyle(0x6b5d6e).fillCircle(20, 17, 9).fillTriangle(12, 13, 13, 4, 18, 10).fillTriangle(28, 13, 27, 4, 22, 10);

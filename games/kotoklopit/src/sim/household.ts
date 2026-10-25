@@ -84,6 +84,11 @@ export function vacuumed(state: GameState): void {
   state.home.fur = 0;
   unpleasantTask(state, HOUSEHOLD.vacuumSanity);
   emit(state, { type: "vacuumed" });
+  // Пилосос знаходить шкарпетку в котячій схованці під диваном (§9.12, «Подарунки й схованки»).
+  if (state.home.sock === true) {
+    delete state.home.sock;
+    emit(state, { type: "sock-found", where: "vacuum" });
+  }
 }
 
 /** Хвилини побуту вдень і вночі: шерсть, прання, техніка за розкладом. */

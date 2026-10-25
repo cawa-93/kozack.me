@@ -33,6 +33,7 @@ import {
   ESCAPE,
   FOLLOWER,
   FOOD_SOUND,
+  GIFTS,
   GULPING,
   HAIRBALL,
   HISS_PAUSE_MINUTES,
@@ -101,7 +102,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, PAPER_TRAIL, ROLL_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -845,8 +846,12 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
     const hungry = cat.needs.hunger >= 60 ? 2 : 1;
     options.push({ weight: MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, value: active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)) });
   }
-  const toy = nearest(cat, itemsOf(state, "toy"));
+  // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Подарунки й схованки»).
+  const toy = nearest(cat, looseToys(state));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
+  // Понести річ — до ніг персонажа чи в схованку (§9.12, «Подарунки й схованки»).
+  const gift = giftWeight(cat);
+  if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng, context.present)) });
   // Точити кігті — потреба кожного кота: «Дряпання» трохи змінює, як часто, а передусім — де (§9.12, 2026-10-25).
   const scratching = Math.max(SCRATCH.minWeight, SCRATCH.weight * (1 + SCRATCH.frequencyStep * traitLevel(cat, "scratching")));
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
@@ -869,6 +874,132 @@ export function rollWeight(state: GameState, cat: Cat): number {
   const level = traitLevel(cat, "hunting");
   if (level < 0 || state.home.rollDown === true) return 0;
   return HUNTING.roll * (1 + HUNTING.rollStep * level) * (isKitten(cat) ? HUNTING.kitten : 1);
+}
+
+/**
+ * Вага «понести річ», коли кіт хоче гратися (§9.12, рішення автора 2026-10-25): 0,15 × (1 + «Подарунки й схованки»), кіт без
+ * риси — 0,05, «−» — ніколи.
+ */
+export function giftWeight(cat: Cat): number {
+  const level = traitLevel(cat, "gifts");
+  if (level < 0) return 0;
+  return level === 0 ? GIFTS.base : GIFTS.weight * (1 + level);
+}
+
+/** Кіт несе іграшку з цим id у зубах (§9.12): її малюють у нього в зубах, а не на підлозі. */
+export function carriedToy(state: GameState, toy: ToyItem): Cat | null {
+  return state.cats.find((c) => c.act.kind === "carry" && c.act.carry === "toy" && c.act.picked === true && c.act.dropped !== true && c.act.target === `item:${toy.id}`) ?? null;
+}
+
+/** Іграшки на підлозі, якими кіт може гратися чи які може понести: не під меблями й не в зубах в іншого кота (§9.12). */
+function looseToys(state: GameState): ToyItem[] {
+  const taken = new Set(state.cats.filter((c) => c.act.kind === "carry" && c.act.carry === "toy").map((c) => c.act.target));
+  return itemsOf(state, "toy").filter((t) => t.hidden === undefined && !taken.has(`item:${t.id}`));
+}
+
+/** Шкарпетку можна взяти (§9.12): кошик брудної білизни не порожній, у схованці її ще немає й ніхто інший її не несе. */
+function sockFree(state: GameState, cat: Cat): boolean {
+  if (state.home.clothes >= START_CLOTHES || state.home.sock === true) return false;
+  return !state.cats.some((c) => c.id !== cat.id && c.act.kind === "carry" && c.act.carry === "sock");
+}
+
+/**
+ * Кіт іде по річ (§9.12, «Подарунки й схованки»): іграшку з підлоги чи вашу шкарпетку з кошика білизни — навпіл, коли є і те,
+ * і те. Іграшку з шансом 50% несе до ваших ніг (коли ви вдома), інакше заганяє під диван чи холодильник; шкарпетку — у схованку
+ * під диваном.
+ */
+export function startCarry(state: GameState, cat: Cat, rng: Rng, present: boolean): void {
+  const toy = nearest(cat, looseToys(state));
+  const sock = sockFree(state, cat);
+  if (sock && (toy === null || rng.chance(0.5))) {
+    start(cat, "carry", tileOf(LAUNDRY_BASKET), GIFTS.pickMinutes, "sock");
+    cat.act.carry = "sock";
+    cat.act.dest = "sofa";
+    return;
+  }
+  if (!toy) return;
+  start(cat, "carry", itemTile(toy), GIFTS.pickMinutes, `item:${toy.id}`);
+  cat.act.carry = "toy";
+  cat.act.dest = present && rng.chance(GIFTS.feet) ? "feet" : rng.chance(GIFTS.fridge) ? "fridge" : "sofa";
+}
+
+/** Іграшка під диваном чи холодильником (§9.12): видно лише краєчок, поки її не дістануть. */
+function hideToy(toy: ToyItem, where: "sofa" | "fridge"): void {
+  toy.hidden = where;
+  toy.x = STASHES[where].at.x;
+  toy.y = STASHES[where].at.y;
+}
+
+/**
+ * Кіт дійшов із річчю (§9.12): узяв у зуби — несе далі; у схованці — шкарпетка чи іграшка під диваном чи холодильником. Річ
+ * забрали чи вже сховали — нести нічого.
+ */
+function carryDone(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  const toy = act.carry === "toy" ? itemById<ToyItem>(state, act.target) : null;
+  if (act.carry === "toy" && (toy?.kind !== "toy" || toy.hidden !== undefined)) return;
+  if (act.carry === "sock" && !sockFree(state, cat)) return;
+  const dest = act.dest ?? "sofa";
+  if (act.picked !== true) {
+    const goal = dest === "feet" ? tileOf(state.character.body) : { ...STASHES[dest].tile };
+    start(cat, "carry", goal, dest === "feet" ? GIFTS.waitMinutes : GIFTS.pickMinutes, act.target);
+    Object.assign(cat.act, { carry: act.carry, dest, picked: true });
+    return;
+  }
+  if (dest === "feet") return;
+  if (act.carry === "sock") state.home.sock = true;
+  else if (toy) hideToy(toy, dest);
+}
+
+/**
+ * Кіт приніс іграшку до ніг персонажа (§9.12): кладе її, дивиться на нього й нявкає. Пограєтеся з ним вудкою протягом 10 хвилин —
+ * любов +1 (`play` у `actions.ts`).
+ */
+function dropGift(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  act.dropped = true;
+  const toy = itemById<ToyItem>(state, act.target);
+  if (toy?.kind !== "toy") return;
+  const body = state.character.body;
+  cat.facing = body.x >= cat.x ? 1 : -1;
+  const at = visibleFloorNear(state, { x: (cat.x + body.x) / 2, y: (cat.y + body.y) / 2 + 0.2 });
+  toy.x = at.x;
+  toy.y = at.y;
+  cat.gift = absoluteMinute(state.day, state.minute);
+  emit(state, { type: "meow", cat: cat.id, ...(meowVoice(cat).silent ? { silent: true as const } : {}) });
+}
+
+/**
+ * Поки кіт несе річ (§9.12): іграшка в зубах їде разом із ним; до ніг персонажа він іде туди, де той зараз, а персонажа вдома
+ * вже немає — несе в схованку під диваном. Іграшку забрали з зубів — нести нічого.
+ */
+function carryAlong(state: GameState, cat: Cat, context: CatContext): void {
+  const act = cat.act;
+  if (act.kind !== "carry" || act.picked !== true || act.dropped === true) return;
+  if (act.dest === "feet") {
+    if (!context.present) {
+      act.dest = "sofa";
+      act.goal = { ...STASHES.sofa.tile };
+      act.minutes = GIFTS.pickMinutes;
+    } else if (act.goal !== null && distance(cat, state.character.body) > ARRIVED) act.goal = tileOf(state.character.body);
+  }
+  if (act.carry !== "toy") return;
+  const toy = itemById<ToyItem>(state, act.target);
+  if (toy?.kind !== "toy") {
+    act.goal = null;
+    act.minutes = 0;
+    return;
+  }
+  toy.x = cat.x;
+  toy.y = cat.y;
+}
+
+/** Кіт несе річ у зубах на очах персонажа (§9.9): прояв «Подарунків +», раз за річ. */
+function carrySeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "carry" || act.picked !== true || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "gifts");
 }
 
 /**
@@ -1356,6 +1487,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       return;
+    case "carry":
+      return carryDone(state, cat);
     case "ambush":
       // Просиділа засідку й ніхто не пройшов — теж трохи гра (§9.12, «Засідки»).
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * AMBUSH.waitRelief);
@@ -1397,7 +1530,12 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (toy.uses >= TOY.durability[toy.quality]) {
         state.home.items.splice(state.home.items.indexOf(toy), 1);
         emit(state, { type: "toy-broke", toy: toy.id });
+        return;
       }
+      // Іграшка, що відлетіла близько до дивана чи холодильника, інколи залітає під них — у кожного кота (§9.12, «Подарунки й
+      // схованки»).
+      const under = (["sofa", "fridge"] as const).find((where) => distance(toy, STASHES[where].at) <= GIFTS.strayReach);
+      if (under && rng.chance(GIFTS.stray)) hideToy(toy, under);
       return;
     }
     default:
@@ -1596,6 +1734,10 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
+      return;
+    case "carry":
+      // Приніс іграшку до ніг персонажа (§9.12, «Подарунки й схованки»): кладе її й чекає поруч.
+      if (act.picked === true && act.dest === "feet" && act.dropped !== true) dropGift(state, cat);
       return;
     case "knock":
       // Дійшов до дрібнички (§9.12, «Скидання речей»): «−» з шансом 50% × |рівень| лише обнюхує її; хто скидає заради
@@ -1901,7 +2043,9 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
   }
   lurk(state, cat, rng, context);
+  carryAlong(state, cat, context);
   paperSeen(state, cat);
+  carrySeen(state, cat);
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);
@@ -1939,6 +2083,8 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act === done || cat.act.minutes <= 1e-9) decide(state, cat, rng, context);
     }
   }
+  // Іграшка в зубах їде разом із котом (§9.12, «Подарунки й схованки»).
+  carryAlong(state, cat, context);
 }
 
 /** Звідки нервовий кіт кидає справи, щоб вилизатися: з тих, які не шкода кинути (§9.12). */

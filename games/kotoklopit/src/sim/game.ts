@@ -186,7 +186,9 @@ export function rewindAccident(save: Save): NightReport | null {
 
 /** Подія на місці забрала хвилини, потім персонаж їде додому без гонки (§8.5). */
 export function returnHome(save: Save, visitMinutes: number, roadMinutes: number): NightReport | null {
-  const night = advance(save, visitMinutes) ?? advance(save, roadMinutes);
+  // Час, поки шукали шкарпетку перед виїздом (§9.12, «Подарунки й схованки»), — теж час поїздки.
+  const search = save.current.trip?.search ?? 0;
+  const night = advance(save, visitMinutes + search) ?? advance(save, roadMinutes);
   if (night || save.current.end !== null) return night;
   const trip = endTrip(save.current);
   if (trip) {

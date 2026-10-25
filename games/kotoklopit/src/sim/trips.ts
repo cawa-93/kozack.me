@@ -3,7 +3,7 @@
 
 import { changeMood, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
-import { ACCIDENT, CARRIER_MOOD, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
+import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { trafficFactor } from "./modifiers";
@@ -80,6 +80,12 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);
   state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(TRIPS[destination].road, seed), losses: [], visit: TRIPS[destination].visit, seed };
+  // Шкарпетку кіт заніс у схованку (§9.12, «Подарунки й схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
+  if (state.home.sock === true) {
+    delete state.home.sock;
+    state.trip.search = GIFTS.sockSearch;
+    emit(state, { type: "sock-found", where: "trip" });
+  }
   emit(state, { type: "trip-started", destination });
   return true;
 }

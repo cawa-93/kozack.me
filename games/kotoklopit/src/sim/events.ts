@@ -200,6 +200,8 @@ export type GameEvent =
   | { type: "knocked-down"; cat: number }
   /** Кіт вистрибнув із засідки персонажу на ноги й збив його (§9.12, «Засідки»). */
   | { type: "ambushed"; cat: number }
+  /** Знайшлася шкарпетка з котячої схованки (§9.12, «Подарунки й схованки»): шукали перед виїздом чи її витяг пилосос. */
+  | { type: "sock-found"; where: "trip" | "vacuum" }
   | { type: "tripped"; cat: number }
   | { type: "slipped"; mess: number }
   | { type: "escaped"; cat: number }

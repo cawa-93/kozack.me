@@ -9,6 +9,7 @@ import { CARRIER_SPOT, objectAt } from "../sim/home";
 import type { Cat, GameState } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
+import { drawSock, drawToy } from "./catcorner";
 import { COLORS, depthOf, toScreen } from "./geometry";
 
 const PIGMENT: Record<Pigment, number> = {
@@ -306,6 +307,7 @@ export class CatView {
         if (this.coat.tabby) this.stripes(g, x, y - 14 * s, 26 * s, stripe, true);
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 14 * s, 32 * s, 15 * s);
         this.headAt(g, x + dir * 15 * s, y - 22 * s, s, dir, body, point);
+        this.inMouth(g, cat, x + dir * 21 * s, y - 15 * s, s);
         return;
       }
       case "carried":
@@ -347,9 +349,18 @@ export class CatView {
           g.lineStyle(1.5, COLORS.ink).strokeEllipse(hx + dir * 5 * s, headY + (6 + Math.sin(time / 160) * 2) * s, 5 * s, 7 * s);
         }
         this.back = { x: x - dir * 4 * s, y: y - 22 * s };
+        if (pose === "sit") this.inMouth(g, cat, hx + dir * 5 * s, headY + 7 * s, s);
         return;
       }
     }
+  }
+
+  /** Річ у зубах (§9.12, «Подарунки й схованки»): іграшка чи ваша шкарпетка, поки кіт її несе. */
+  private inMouth(g: Phaser.GameObjects.Graphics, cat: Cat, x: number, y: number, s: number): void {
+    const act = cat.act;
+    if (act.kind !== "carry" || act.picked !== true || act.dropped === true) return;
+    if (act.carry === "sock") drawSock(g, x, y + 4 * s, 0.7 * s);
+    else drawToy(g, "cheap", x, y + 2 * s, 0.6 * s);
   }
 
   private headAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, body: number, point: number): void {

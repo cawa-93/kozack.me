@@ -715,6 +715,15 @@ export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, r
  * раз на `observeEvery` хвилин (лапає й тягне — один бешкет).
  */
 export const HUNTING = { roll: 0.12, rollStep: 0.75, kitten: 2, pawMinutes: 1, soloStep: 0.25, soloMin: 0.5, wearStep: 0.5, observeEvery: 30 } as const;
+/**
+ * «Подарунки й схованки» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
+ * хоче гратися, несе річ з вагою `weight` × (1 + рівень), кіт без риси — `base`, «−» — ніколи. Іграшку з підлоги з шансом
+ * `feet` приносить персонажу до ніг (тоді `waitMinutes` сидить поруч; пограєтеся вудкою протягом `thanksMinutes` хвилин — любов
+ * +`thanksLove`), інакше заганяє під диван чи (з шансом `fridge`) під холодильник. Шкарпетку з кошика брудної білизни несе в
+ * схованку під диваном: найближчий виїзд довший на `sockSearch` хвилин, поки її шукають, а пилосос знаходить її сам. Підняти
+ * річ — `pickMinutes`. Гра наодинці заганяє іграшку під меблі (ближче `strayReach` клітинок) з шансом `stray` — кожен кіт.
+ */
+export const GIFTS = { weight: 0.15, base: 0.05, feet: 0.5, fridge: 0.5, pickMinutes: 0.3, waitMinutes: 2, thanksMinutes: 10, thanksLove: 1, sockSearch: 10, stray: 0.03, strayReach: 3 } as const;
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<

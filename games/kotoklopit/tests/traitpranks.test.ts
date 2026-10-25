@@ -5,15 +5,16 @@ import { describe, expect, it } from "vitest";
 
 import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { ambushWeight, rollWeight, startAmbush, tickCats } from "../src/sim/catai";
-import { AMBUSH, HUNTING, PLAY_RELIEF, STUN_PAUSE_MINUTES } from "../src/sim/config";
-import { advance, newGame } from "../src/sim/game";
-import { AMBUSH_SPOTS, hiddenTile, isSolid, PAPER_TRAIL, roomAt, ROLL_TILE } from "../src/sim/home";
-import { nightlyHousehold } from "../src/sim/household";
+import { ambushWeight, giftWeight, rollWeight, startAmbush, startCarry, tickCats } from "../src/sim/catai";
+import { AMBUSH, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { advance, interact, newGame, returnHome } from "../src/sim/game";
+import { AMBUSH_SPOTS, hiddenTile, isSolid, itemTile, PAPER_TRAIL, roomAt, ROLL_TILE, STASHES } from "../src/sim/home";
+import { nightlyHousehold, vacuumed } from "../src/sim/household";
+import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, withCatCorner } from "./helpers";
+import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
+import { hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -199,5 +200,125 @@ describe("«Мисливський інстинкт» (§9.12, рішення а
     const pacifist = playAlone(withCat(save, { hunting: -2 }));
     expect(pacifist.relief).toBeCloseTo(PLAY_RELIEF * HUNTING.soloMin, 0);
     expect(pacifist.wear).toBe(1);
+  });
+});
+
+/** Іграшка-вудочка котячого кутка. */
+function toyOf(save: Save): ToyItem {
+  const toy = save.current.home.items.find((i) => i.kind === "toy");
+  if (toy?.kind !== "toy") throw new Error("немає іграшки");
+  return toy;
+}
+
+/** Кіт іде по річ і несе її: тікати, доки не донесе. */
+function carryOut(save: Save, cat: Cat, present = true): void {
+  for (let i = 0; i < 80 && cat.act.kind === "carry"; i++) tickCats(save.current, 0.25, { present });
+}
+
+describe("«Подарунки й схованки» (§9.12, рішення автора 2026-10-25)", () => {
+  it("вага «понести річ»: «−» — ніколи, кіт без риси — 0,05, «+» — 0,15 × (1 + рівень)", () => {
+    const save = game();
+    expect(giftWeight(withCat(save, { gifts: -1 }))).toBe(0);
+    expect(giftWeight(withCat(save))).toBeCloseTo(GIFTS.base);
+    expect(giftWeight(withCat(save, { gifts: 1 }))).toBeCloseTo(2 * GIFTS.weight);
+  });
+
+  it("приносить іграшку до ніг і нявкає; пограєтеся з ним протягом 10 хвилин — любов +1", () => {
+    const save = game();
+    const toy = toyOf(save);
+    Object.assign(toy, { x: 6.5, y: 8.5 });
+    const cat = withCat(save, { gifts: 1 }, { x: 5.5, y: 8.5 });
+    cat.act = { kind: "carry", target: `item:${toy.id}`, goal: itemTile(toy), minutes: GIFTS.pickMinutes, elapsed: 0, carry: "toy", dest: "feet" };
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 80 && cat.act.dropped !== true; i++) tickCats(save.current, 0.25, { present: true });
+    stop();
+    const body = save.current.character.body;
+    expect(cat.act.dropped).toBe(true);
+    expect(Math.hypot(toy.x - body.x, toy.y - body.y)).toBeLessThan(1.5);
+    expect(events.some((e) => e.type === "meow" && e.cat === cat.id)).toBe(true);
+    expect(cat.gift).toBeDefined();
+    // Кіт із іграшкою в зубах на очах персонажа — прояв «+», раз за річ.
+    expect(seen(cat, "gifts")).toBe(1);
+    // Узяти вудку й пограти з котом поруч.
+    cat.needs.play = 90;
+    cat.act = idleAct(5);
+    save.current.home.items = save.current.home.items.filter((i) => i !== toy);
+    save.current.character.held = { kind: "toy", toy };
+    Object.assign(body, { x: cat.x - 0.5, y: cat.y, facing: { x: 1, y: 0 } });
+    const love = cat.love;
+    advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+    expect(cat.love).toBeGreaterThanOrEqual(love + GIFTS.thanksLove);
+    expect(cat.gift).toBeUndefined();
+  });
+
+  it("заганяє іграшку під холодильник: видно краєчок, сам нею не грається, а дістали — знову звичайна", () => {
+    const save = game();
+    const toy = toyOf(save);
+    Object.assign(toy, { x: 14.5, y: 3.5 });
+    save.current.home.clothes = START_CLOTHES;
+    const cat = withCat(save, { gifts: 2 }, { x: 15.5, y: 3.5 });
+    cat.act = { kind: "carry", target: `item:${toy.id}`, goal: itemTile(toy), minutes: GIFTS.pickMinutes, elapsed: 0, carry: "toy", dest: "fridge" };
+    carryOut(save, cat);
+    expect(toy.hidden).toBe("fridge");
+    expect(toy.x).toBeCloseTo(STASHES.fridge.at.x);
+    // Іграшка під холодильником, а шкарпеток у кошику немає — нести нічого.
+    cat.act = idleAct(1);
+    startCarry(save.current, cat, createRng(2), true);
+    expect(cat.act.kind).toBe("idle");
+    // Персонаж дістає іграшку й кладе на підлогу — вона знову звичайна.
+    walkTo(save, `item:${toy.id}`);
+    interact(save);
+    expect(save.current.character.held?.kind).toBe("toy");
+    interact(save);
+    const back = toyOf(save);
+    expect(back.hidden).toBeUndefined();
+  });
+
+  it("шкарпетку з кошика білизни несе в схованку під диваном: найближчий виїзд довший на 10 хвилин", () => {
+    const save = game();
+    save.current.home.clothes = 2;
+    const cat = withCat(save, { gifts: 1 }, { x: 9.5, y: 2.5 });
+    save.current.home.items = save.current.home.items.filter((i) => i.kind !== "toy");
+    startCarry(save.current, cat, createRng(2), true);
+    expect(cat.act.carry).toBe("sock");
+    carryOut(save, cat, false);
+    expect(save.current.home.sock).toBe(true);
+    save.current.cats = [];
+    walkTo(save, "door");
+    const { events, stop } = recordEvents();
+    expect(startTrip(save.current, "shop")).toBe(true);
+    stop();
+    expect(events.some((e) => e.type === "sock-found" && e.where === "trip")).toBe(true);
+    expect(save.current.home.sock).toBeUndefined();
+    const before = save.current.minute;
+    returnHome(save, TRIPS.shop.visit, TRIPS.shop.road);
+    expect(save.current.minute - before).toBeCloseTo(TRIPS.shop.visit + GIFTS.sockSearch + TRIPS.shop.road);
+  });
+
+  it("пилосос знаходить шкарпетку сам", () => {
+    const save = game();
+    save.current.home.sock = true;
+    const { events, stop } = recordEvents();
+    vacuumed(save.current);
+    stop();
+    expect(save.current.home.sock).toBeUndefined();
+    expect(events.some((e) => e.type === "sock-found" && e.where === "vacuum")).toBe(true);
+  });
+
+  it("гра наодинці біля дивана інколи заганяє іграшку під нього — у будь-якого кота", () => {
+    const save = game();
+    const toy = toyOf(save);
+    const cat = withCat(save);
+    let hidden = 0;
+    for (let i = 0; i < 200; i++) {
+      delete toy.hidden;
+      Object.assign(toy, { x: 14.5, y: 8.5, uses: 0 });
+      Object.assign(cat, { x: 14.5, y: 8.5 });
+      cat.act = { kind: "toy", target: `item:${toy.id}`, goal: null, minutes: 0.05, elapsed: 0 };
+      tickCats(save.current, 0.05, { present: false });
+      if (toy.hidden === "sofa") hidden += 1;
+    }
+    expect(hidden).toBeGreaterThan(0);
+    expect(hidden).toBeLessThan(25);
   });
 });

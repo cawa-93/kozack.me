@@ -190,6 +190,15 @@ export const TOILET_ROLL: Vec = { x: 9.5, y: 1 };
 export const ROLL_TILE: Vec = { x: 9, y: 1 };
 export const PAPER_TRAIL: Vec = { x: 10.5, y: 7.5 };
 
+/**
+ * Схованки кота (§9.12, «Подарунки й схованки»): куди він заганяє іграшки й несе вашу шкарпетку. `tile` — звідки кіт заштовхує
+ * річ, `at` — де видно її краєчок: за диваном (передня стіна закриває його низ) і перед холодильником.
+ */
+export const STASHES: Record<"sofa" | "fridge", { tile: Vec; at: Vec }> = {
+  sofa: { tile: { x: 14, y: 9 }, at: { x: 14.4, y: 9.42 } },
+  fridge: { tile: { x: 13, y: 2 }, at: { x: 13.5, y: 2.06 } },
+};
+
 /** Одвірок кухні: «Руйнівник диванів» дере його, стоячи в проході з вітальні (§9.12). */
 export const DOORFRAME: Vec = { x: 16, y: 5 };
 

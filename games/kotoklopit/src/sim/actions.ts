@@ -28,6 +28,7 @@ import {
   EAT_MINUTES,
   FEEDER_CAPACITY,
   ESCAPE,
+  GIFTS,
   LITTER_SANITY,
   MEAL_SATIETY,
   MESS_SANITY,
@@ -51,6 +52,7 @@ import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
+import { absoluteMinute } from "./time";
 import { targetById, targetOf, type Target } from "./targets";
 import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
 import { startWork, stopWork } from "./work";
@@ -356,7 +358,9 @@ function dropToy(state: GameState): void {
   if (held?.kind !== "toy") return;
   const { x, y, facing } = state.character.body;
   const spot = visibleFloorNear(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
-  state.home.items.push({ ...held.toy, x: spot.x, y: spot.y });
+  // Дістану з-під меблів іграшку кладуть уже на видне місце (§9.12, «Подарунки й схованки»).
+  const { hidden: _hidden, ...toy } = held.toy;
+  state.home.items.push({ ...toy, x: spot.x, y: spot.y });
   state.character.held = null;
 }
 
@@ -745,6 +749,11 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   if (activity.minutes === 0 && cat.needs.play < PLAY.bored) {
     activity.done = true;
     return;
+  }
+  // Кіт щойно приніс іграшку до ніг, і з ним пограли — він тішиться: любов (§9.12, «Подарунки й схованки»).
+  if (activity.minutes === 0 && cat.gift !== undefined) {
+    if (absoluteMinute(state.day, state.minute) - cat.gift <= GIFTS.thanksMinutes) changeLove(state, cat, GIFTS.thanksLove, "пограли з подарунком");
+    delete cat.gift;
   }
   const before = activity.minutes;
   activity.minutes += minutes;

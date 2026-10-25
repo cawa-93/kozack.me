@@ -21,6 +21,8 @@ const EVENTS: GameEvent[] = [
   { type: "slipped", mess: 1 },
   { type: "knocked-down", cat: 1 },
   { type: "ambushed", cat: 1 },
+  { type: "sock-found", where: "trip" },
+  { type: "sock-found", where: "vacuum" },
   { type: "bite", cat: 1 },
   { type: "clawed", cat: 1 },
   { type: "picked-up", cat: 1, offended: true },
