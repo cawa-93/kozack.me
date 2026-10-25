@@ -385,3 +385,92 @@ describe("«Енергійність» і «Зумі» (§9.12, рішення �
     expect(knocked).toBeLessThan(40);
   });
 });
+
+describe("«Нічна активність» і «Ранкова побудка» (§9.12, рішення автора 2026-10-25)", () => {
+  it("«Нічний сплюх» уночі частіше обирає для сну ліжко", () => {
+    const onBed = (level: TraitLevel | 0): number => {
+      const save = game();
+      save.current.minute = hours(23.5);
+      const cat = awake(withCat(save, level === 0 ? {} : { nocturnal: level }));
+      const rng = createRng(5);
+      let count = 0;
+      for (let i = 0; i < 300; i++) {
+        cat.needs.fatigue = 90;
+        decide(save.current, cat, rng, { present: false });
+        if (cat.act.kind === "sleep" && cat.act.goal?.x === 1) count += 1;
+      }
+      return count;
+    };
+    expect(onBed(-2)).toBeGreaterThan(onBed(0));
+  });
+
+  it("персонаж прокинувся, а «Нічний сплюх» проспав усю ніч у нього на ліжку — прояв «−»", () => {
+    const seen = (onBed: boolean): number => {
+      const save = game();
+      const cat = withCat(save, { nocturnal: -1 }, onBed ? { x: 1.5, y: 1.5 } : { x: 5.5, y: 3.5 });
+      asleep(cat).act.minutes = 10 * 60;
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 100, attention: 0, play: 0 };
+      save.current.minute = hours(23);
+      goToSleep(save);
+      return cat.traits[0]?.seen ?? 0;
+    };
+    expect(seen(true)).toBe(1);
+    expect(seen(false)).toBe(0);
+  });
+
+  it("сова бачить, як «Нічний розбишака» гасає вночі, — прояв «+», раз за ніч", () => {
+    const save = game();
+    const state = save.current;
+    state.minute = hours(23.5);
+    const cat = awake(withCat(save, { nocturnal: 2 }, { x: 8.5, y: 8.5 }));
+    const rng = createRng(7);
+    const play = (): void => {
+      for (let i = 0; i < 40; i++) {
+        cat.needs.play = 90;
+        decide(state, cat, rng, { present: true });
+      }
+    };
+    play();
+    expect(cat.traits[0]?.seen).toBe(1);
+    state.day += 1;
+    play();
+    expect(cat.traits[0]?.seen).toBe(2);
+    // Увечері, до нічної години, бешкет — не прояв нічної активності.
+    state.day += 1;
+    state.minute = hours(20);
+    play();
+    expect(cat.traits[0]?.seen).toBe(2);
+  });
+
+  it("«Живий будильник» будить і з повною мискою, «Терплячий зранку» — ніколи", () => {
+    const mornings = (level: TraitLevel, full: boolean): number => {
+      let woke = 0;
+      for (let seed = 0; seed < 30; seed++) {
+        const save = game(seed);
+        const cat = withCat(save, { morning: level });
+        cat.needs.hunger = 70;
+        for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = full ? 2 : 0;
+        save.current.minute = hours(22);
+        const report = goToSleep(save);
+        if (report?.wakeUps.some((w) => w.reason === "morning")) woke += 1;
+      }
+      return woke;
+    };
+    expect(mornings(2, true)).toBeGreaterThan(0);
+    expect(mornings(-2, false)).toBe(0);
+  });
+
+  it("голодний «Терплячий зранку» чекає біля ліжка, поки персонаж прокинеться, — прояв «−»", () => {
+    const save = game();
+    const patient = withCat(save, { morning: -1 });
+    const plain = withCat(save, {}, { x: 7.5, y: 8.5 });
+    for (const cat of [patient, plain]) cat.needs = { hunger: 30, thirst: 0, toilet: 0, fatigue: 20, attention: 0, play: 0 };
+    for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 0;
+    save.current.minute = hours(22);
+    goToSleep(save);
+    expect(patient.act).toMatchObject({ kind: "beg", target: "bed" });
+    expect(patient.traits[0]?.seen).toBe(1);
+    expect(Math.hypot(patient.x - save.current.character.body.x, patient.y - save.current.character.body.y)).toBeLessThan(1.5);
+    expect(plain.act.target).not.toBe("bed");
+  });
+});

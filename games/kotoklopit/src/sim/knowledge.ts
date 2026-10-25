@@ -70,8 +70,9 @@ export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 
   if (!trait || trait.known || Math.sign(trait.level) !== side) return;
   if (Math.sign(traitLevel(cat, group)) !== side) return;
   const info = traitGroup(group);
-  if (info.quiet || (info.nocturnal && !woke)) return;
-  // Кіт розбудив персонажа (`woke`): персонаж спав, але прокинувся саме від нього (§9.9).
+  if (info.quiet) return;
+  // Персонаж щойно прокинувся (`woke`) — саме від цього кота чи бачить його біля ліжка (§9.9): хоч уночі він і спав,
+  // це видно. Те, що коти роблять, поки він спить, і так не видно (`witnesses`).
   if (!woke && !witnesses(state, cat)) return;
   const key = `${group}${side > 0 ? "+" : "-"}`;
   const now = absoluteMinute(state.day, state.minute);

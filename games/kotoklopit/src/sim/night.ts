@@ -5,7 +5,7 @@ import { newBody } from "./body";
 import { knownBreedHalves } from "./breeds";
 import { observe } from "./knowledge";
 import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
-import { tickCats } from "./catai";
+import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
 import {
   BREEDING,
@@ -20,6 +20,8 @@ import {
   SHELTER_STARTER_PACK,
   WAKE_UP,
   COLLAPSE_HOURS_BEFORE_WAKE,
+  NOCTURNAL,
+  CAT_ACT_MINUTES,
 } from "./config";
 import { addSupply, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
@@ -28,8 +30,9 @@ import { nightlyIllness } from "./illness";
 import { nightlyCare } from "./care";
 import { nightlyHousehold, tickHousehold } from "./household";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
+import { objectById } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
-import { conceive, giveBirth, inHeat, nightlyStates } from "./reproduction";
+import { conceive, giveBirth, inHeat, isNewborn, nightlyStates } from "./reproduction";
 import { chooseWeekModifier, startModifiers } from "./modifiers";
 import { createRng, seedDay, stateRng, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
@@ -112,9 +115,18 @@ export function applyMorningSanity(state: GameState, lost: number, gained: numbe
   for (let i = 0; i < gained; i++) changeStat(state, "sanity", newCatSanity);
 }
 
+/** Побудка, яку кіт планує цієї ночі; `ritual` — «Живий будильник» будить і без голоду чи з кормом у мисці. */
+interface PlannedWake {
+  cat: Cat;
+  minute: number;
+  reason: "morning" | "night";
+  trait?: "nocturnal" | "morning";
+  ritual?: boolean;
+}
+
 /** Хто й коли будитиме персонажа цієї ночі (§9.12): ранкова побудка й нічні пісні. */
-function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): { cat: Cat; minute: number; reason: "morning" | "night"; trait?: "nocturnal" | "morning" }[] {
-  const wakes: { cat: Cat; minute: number; reason: "morning" | "night"; trait?: "nocturnal" | "morning" }[] = [];
+function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): PlannedWake[] {
+  const wakes: PlannedWake[] = [];
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
     if (cat.away !== null) continue;
@@ -128,9 +140,13 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): {
     if (nocturnal > 0 && rng.chance(WAKE_UP.nightStep * nocturnal)) {
       wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night", trait: "nocturnal" });
     }
-    // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні.
-    const chance = WAKE_UP.morningBase + WAKE_UP.morningStep * Math.max(0, traitLevel(cat, "morning"));
-    if (dawn > from && dawn < to && rng.chance(chance)) wakes.push({ cat, minute: dawn, reason: "morning", trait: "morning" });
+    // Чи кіт справді будить, вирішиться о 05:00: якщо він голодний, а миски порожні. «Живий будильник» будить і
+    // заради ритуалу — удвічі рідше; «Терплячий зранку» не будить ніколи (рішення автора 2026-10-25).
+    const morning = traitLevel(cat, "morning");
+    const chance = morning < 0 ? 0 : WAKE_UP.morningBase + WAKE_UP.morningStep * morning;
+    if (dawn > from && dawn < to && rng.chance(chance)) {
+      wakes.push({ cat, minute: dawn, reason: "morning", trait: "morning", ...(morning > 0 && rng.chance(WAKE_UP.ritual) ? { ritual: true } : {}) });
+    }
   }
   return wakes.sort((a, b) => a.minute - b.minute);
 }
@@ -149,6 +165,10 @@ function sleep({ state, report, rng }: Night): void {
   let lost = 0;
   let woke = planned;
   let minute = start;
+  // Хто скільки нічного сну персонажа проспав у нього на ліжку (§9.12): прояв «Нічної активності −».
+  const bed = objectById("bed");
+  const onBed = new Map<number, number>();
+  let nightMinutes = 0;
   while (minute < planned) {
     const nextWake = wakes[0];
     const until = Math.min(planned, nextWake ? nextWake.minute : planned);
@@ -159,14 +179,20 @@ function sleep({ state, report, rng }: Night): void {
       tickCats(state, step, { present: false });
       minute += step;
       state.minute = minute;
+      const hour = hourOf(minute);
+      if (hour >= NOCTURNAL.bedFrom || hour < NOCTURNAL.bedTo) {
+        nightMinutes += step;
+        for (const cat of state.cats) if (sleepsOnBed(cat, bed)) onBed.set(cat.id, (onBed.get(cat.id) ?? 0) + step);
+      }
     }
     if (!nextWake || minute >= planned) break;
     wakes.shift();
     // Не більше двох побудок за ніч сумарно (§9.12, «Спільні механіки рис»): третій кіт уже не будить.
     if (report.wakeUps.length >= WAKE_UP.maxPerNight) continue;
     const { cat, reason } = nextWake;
-    // Ранкова побудка — лише якщо кіт голодний і миски порожні.
-    if (reason === "morning" && !(cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0))) continue;
+    // Ранкова побудка — лише якщо кіт голодний і миски порожні, а «Живий будильник» — і заради ритуалу.
+    const hungry = cat.needs.hunger >= WAKE_UP.hungry && !state.home.items.some((i) => i.kind === "bowl" && i.food > 0);
+    if (reason === "morning" && !hungry && nextWake.ritual !== true) continue;
     report.wakeUps.push({ cat: cat.id, reason });
     // Розбудив — прояв «Нічної активності» чи «Ранкової побудки» (§9.9). Групи — рядками: так тест повноти рис
     // бачить, що прояв є.
@@ -186,6 +212,7 @@ function sleep({ state, report, rng }: Night): void {
   }
   const slept = Math.max(0, woke - start - lost) / MINUTES_PER_HOUR;
   report.sleptHours = slept;
+  wakingSight(state, bed, onBed, nightMinutes);
   report.wokeMinute = woke - MINUTES_PER_DAY;
   // Плита вночі не вимикається: страва, що лишилася на ній, підгорає (§8.7).
   tickStove(state, woke - start);
@@ -193,6 +220,32 @@ function sleep({ state, report, rng }: Night): void {
   passSleepTime(state, slept);
   state.character.sleepSpeed = sleepSpeedAfter(slept);
   nightlyIllness(state, slept);
+}
+
+/** Кіт спить на ліжку персонажа (§9.12). */
+function sleepsOnBed(cat: Cat, bed: { x: number; y: number; w: number; h: number }): boolean {
+  return cat.away === null && cat.act.kind === "sleep" && cat.act.goal === null && cat.x >= bed.x && cat.x < bed.x + bed.w && cat.y >= bed.y && cat.y < bed.y + bed.h;
+}
+
+/**
+ * Що персонаж бачить, щойно прокинувся (§9.12, рішення автора 2026-10-25): «Нічний сплюх» спить у нього на ліжку,
+ * проспавши там майже всю ніч, — прояв «Нічної активності −»; голодний «Терплячий зранку» сидить біля ліжка й чекає
+ * сніданку (дія «просить» біля ліжка) — прояв «Ранкової побудки −». Раз за ранок.
+ */
+function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h: number }, onBed: Map<number, number>, nightMinutes: number): void {
+  for (const cat of state.cats) {
+    if (cat.away !== null || isCarried(state, cat)) continue;
+    const slept = onBed.get(cat.id) ?? 0;
+    if (nightMinutes >= NOCTURNAL.minNightMinutes && slept >= NOCTURNAL.bedShare * nightMinutes && sleepsOnBed(cat, bed)) {
+      observe(state, cat, "nocturnal", -1, true);
+    }
+    const busy = cat.act.kind === "eat" || cat.act.kind === "toilet" || cat.act.kind === "fight" || cat.act.kind === "hide";
+    if (traitLevel(cat, "morning") >= 0 || cat.needs.hunger < WAKE_UP.waitHunger || busy || isNewborn(cat)) continue;
+    cat.x = bed.x + bed.w + 0.5;
+    cat.y = bed.y + 0.6;
+    cat.act = { kind: "beg", target: "bed", goal: null, minutes: CAT_ACT_MINUTES.beg, elapsed: 0 };
+    observe(state, cat, "morning", -1, true);
+  }
 }
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */

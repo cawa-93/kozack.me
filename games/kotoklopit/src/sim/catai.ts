@@ -43,6 +43,7 @@ import {
   NEED_PER_HOUR,
   NEED_THRESHOLD,
   NIGHT_ACTIVITY,
+  NOCTURNAL,
   NOCTURNAL_STEP,
   OLD_PLAY,
   PET,
@@ -95,6 +96,12 @@ const clamp = (value: number, min = 0, max = 100): number => Math.min(max, Math.
 /** Година доби 0–24 для хвилини дня. */
 export function hourOf(minute: number): number {
   return (((minute % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY) / MINUTES_PER_HOUR;
+}
+
+/** Нічна година (23:00–04:00): поза сутінковим ритмом, коти сплять, а нічні гасають (§9.12). */
+export function isNight(minute: number): boolean {
+  const hour = hourOf(minute);
+  return !ACTIVITY_BY_HOUR.some((s) => hour >= s.from && hour < s.to);
 }
 
 /** Активність кота о цій годині — сутінковий ритм (§9.12). */
@@ -354,8 +361,10 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const bed = objectById("bed");
   const sofa = objectById("sofa");
   const at = (p: Vec): Spot => ({ at: p, target: null });
+  // «Нічний сплюх» уночі спить у персонажа в ногах (§9.12, рішення автора 2026-10-25).
+  const owl = isNight(state.minute) ? 1 + NOCTURNAL.bedStep * Math.max(0, -traitLevel(cat, "nocturnal")) : 1;
   const options: { weight: number; value: Spot }[] = [
-    { weight: 3 + warmthBonus(state), value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
+    { weight: (3 + warmthBonus(state)) * owl, value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
     { weight: 3, value: at({ x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y }) },
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
@@ -533,6 +542,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
     (choice: Choice): Choice =>
     () => {
       observe(state, cat, "energy");
+      nightMischief(state, cat);
       choice();
     };
   const options: { weight: number; value: Choice }[] = [
@@ -557,6 +567,14 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
+}
+
+/**
+ * Зумі чи бешкет у нічну годину (§9.12): сова, що ще не спить, бачить, як нічний кіт гасає, — прояв «Нічної
+ * активності +», не частіше ніж раз за ніч (рішення автора 2026-10-25).
+ */
+function nightMischief(state: GameState, cat: Cat): void {
+  if (isNight(state.minute)) observe(state, cat, "nocturnal", 1, false, NOCTURNAL.mischiefEvery);
 }
 
 /** Друг, з яким можна погратися: удома, не спить і нічим не зайнятий (§9.4). */
@@ -765,8 +783,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         observe(state, cat, "scatter");
       } else observe(state, cat, "scatter", -1);
       // Після лотка — часто зумі (§9.3); «Статечний» спокійно йде геть — прояв «Зумі −», раз на день.
-      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(state, cat, rng);
-      else observe(state, cat, "zoomies", -1, false, MINUTES_PER_DAY);
+      if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) {
+        startZoomies(state, cat, rng);
+        nightMischief(state, cat);
+      } else observe(state, cat, "zoomies", -1, false, MINUTES_PER_DAY);
       return;
     }
     case "sleep": {
