@@ -274,7 +274,7 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     Object.assign(feeder, { food: 3, foodQuality: "cheap" });
     save.current.home.supplies.catFood.premium = 10;
     const events = pour(save, bowl);
-    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "wrong" }));
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "mixed" }));
     expect(save.current.home.supplies.catFood.premium).toBe(10);
     // Поки персонаж ходив, годівниця сама насипала свій корм у миску — і більше нічого не додалося.
     expect(feeder.food + bowl.food).toBe(3);
@@ -302,7 +302,7 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     const again = recordEvents();
     interact(save);
     again.stop();
-    expect(again.events).toContainEqual(expect.objectContaining({ type: "refused", reason: "nothing" }));
+    expect(again.events).toContainEqual({ type: "refused", object: `item:${bowl.id}`, reason: "need", need: "catfood" });
   });
 
   it("годівниця не за годинами, а завжди тримає миску повною, доки в ній є корм", () => {

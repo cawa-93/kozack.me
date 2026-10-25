@@ -59,6 +59,11 @@ export function nightlyIllness(state: GameState, sleptHours: number): void {
 }
 
 /** Чи є що лікувати таблеткою сьогодні: хвороба, що лікується ліками, і сьогодні ще без дози (§6.5). */
+/** Персонаж хворий тим, що лікують ліками (§6.5), — хай навіть сьогоднішню дозу вже випито. */
+export function treatable(state: GameState): boolean {
+  return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null);
+}
+
 export function needsHumanMeds(state: GameState): boolean {
   return state.character.illnesses.some((i) => ILLNESSES[i.id].doses !== null && i.lastDose !== state.day);
 }

@@ -6,7 +6,7 @@ import { changeLove, changeMood, idleAct, traitLevel } from "./cat";
 import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
-import { needsHumanMeds, takeHumanMeds } from "./illness";
+import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
 import { emptyFeeder, sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
@@ -57,8 +57,12 @@ export const IDLE: Input = { move: { x: 0, y: 0 }, hold: false };
 /** Що має статися після натискання: зараз лише сон, бо його обробляє хід гри. */
 export type TapResult = "sleep" | null;
 
-function refuse(state: GameState, target: string, reason: Refusal): null {
-  emit(state, { type: "refused", object: target, reason });
+/** Причини відмови без подробиць: їх можна передати просто назвою. */
+type BareRefusal = Exclude<Refusal, { product: unknown } | { item: unknown } | { what: unknown } | { need: unknown }>["reason"];
+
+/** Відмовити (§11.4): сцена покаже над ціллю іконку саме цієї причини. */
+function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal): null {
+  emit(state, { type: "refused", object: target, ...(typeof refusal === "string" ? { reason: refusal } : refusal) });
   return null;
 }
 
@@ -125,7 +129,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
       const quality = useSupply(state, "food");
-      if (quality === null) return refuse(state, target.id, "empty");
+      if (quality === null) return refuse(state, target.id, { reason: "empty", product: "food" });
       return take(state, target, { kind: "raw", quality });
     }
     case "catCabinet":
@@ -135,30 +139,34 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const product = sterile ? "sterileFood" : "catFood";
       if (held?.kind === "catfood") {
         // Корм у руках — лише «з чого насипати» (§6.4): зі сховища його ще не взято, тож просто кладуть назад.
-        if (held.sterile !== sterile) return refuse(state, target.id, "wrong");
+        if (held.sterile !== sterile) return refuse(state, target.id, { reason: "not-here", item: held });
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
       const quality = topQuality(state, product);
-      if (quality === null) return refuse(state, target.id, "empty");
+      if (quality === null) return refuse(state, target.id, { reason: "empty", product });
       return take(state, target, { kind: "catfood", quality, sterile });
     }
     case "catKit":
-      // Аптечка: догляд за котом на руках відкриває картка сцени (§8.7).
-      return refuse(state, target.id, "nothing");
+      // Аптечка: догляд за котом на руках відкриває картка сцени (§8.7); сюди доходить, коли для кота нічого немає.
+      if (held?.kind === "cat") return refuse(state, target.id, "kit-empty");
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      return refuse(state, target.id, { reason: "need", need: "cat" });
     case "litterBag":
-      return null;
+      // Наповнювач не носять: він сам сиплеться в лоток, коли той чистять (§9.12).
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      return refuse(state, target.id, { reason: "need", need: "dirty-litter" });
     case "boxes":
       // Ящики біля входу (§6.4): брати з них нічого не можна — лише розкласти все по сховищах.
       if (held !== null) return refuse(state, target.id, "hands-full");
-      if (unpack(state).length === 0) return refuse(state, target.id, "occupied");
+      if (unpack(state).length === 0) return refuse(state, target.id, "no-room");
       return null;
     case "stove": {
       const stove = state.home.stove;
       if (held !== null) {
-        if (!isDish(held)) return refuse(state, target.id, "wrong");
+        if (!isDish(held)) return refuse(state, target.id, { reason: "not-here", item: held });
         if (stove.item !== null) return refuse(state, target.id, "occupied");
         stove.item = held;
         // Готова страва, яку повернули на плиту, знову може підгоріти.
@@ -167,7 +175,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
-      if (stove.item === null) return refuse(state, target.id, "nothing");
+      if (stove.item === null) return refuse(state, target.id, { reason: "need", need: "raw" });
       const item = stove.item;
       stove.item = null;
       stove.minutes = 0;
@@ -178,21 +186,21 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const surfaces = state.home.surfaces;
       const item = surfaces[target.id] ?? null;
       if (held !== null) {
-        if (!isDish(held)) return refuse(state, target.id, "wrong");
+        if (!isDish(held)) return refuse(state, target.id, { reason: "not-here", item: held });
         if (item !== null) return refuse(state, target.id, "occupied");
         surfaces[target.id] = held;
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
-      if (item === null) return refuse(state, target.id, "nothing");
+      if (item === null) return refuse(state, target.id, { reason: "need", need: "dish" });
       // Страву на столі їдять утриманням дії, а не беруть назад.
       if (target.kind === "table" && item.kind === "meal") return null;
       surfaces[target.id] = null;
       return take(state, target, item);
     }
     case "trash": {
-      if (held === null) return refuse(state, target.id, "nothing");
+      if (held === null) return refuse(state, target.id, { reason: "need", need: "item" });
       character.held = null;
       emit(state, { type: "trashed", item: held });
       return null;
@@ -200,9 +208,9 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     case "computer":
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Кіт спить на комп'ютері чи сидить на клавіатурі — спершу його треба забрати (§9.12).
-      if (catOnComputer(state)) return refuse(state, target.id, "occupied");
+      if (catOnComputer(state)) return refuse(state, target.id, "cat-on-computer");
       // Вимкнули світло (§4.1): комп'ютер не працює.
-      if (powerOut(state)) return refuse(state, target.id, "empty");
+      if (powerOut(state)) return refuse(state, target.id, "no-power");
       startWork(state);
       return null;
     case "bed":
@@ -217,29 +225,29 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
         catchCat(state, escaped);
         return null;
       }
-      if (receivePackages(state).length === 0) return refuse(state, target.id, "nothing");
+      if (receivePackages(state).length === 0) return refuse(state, target.id, "no-packages");
       rollEscapes(state);
       return null;
     }
     case "shower":
       // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
-      if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, "empty");
+      if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, { reason: "empty", product: "shampoo" });
       if (held !== null) return refuse(state, target.id, "hands-full");
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
     case "sink":
       // Ліки для себе — біля умивальника (§6.5).
       if (held !== null) return refuse(state, target.id, "hands-full");
-      if (!needsHumanMeds(state)) return refuse(state, target.id, "nothing");
-      if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, "empty");
+      if (!needsHumanMeds(state)) return refuse(state, target.id, treatable(state) ? "dose-taken" : "healthy");
+      if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, { reason: "empty", product: "humanMeds" });
       return null;
     case "sofa":
       return null;
     case "washer": {
       if (held !== null) return refuse(state, target.id, "hands-full");
       const result = tapWasher(state);
-      if (result === "empty") return refuse(state, target.id, "empty");
-      if (result === "busy") return refuse(state, target.id, "too-early");
+      if (result === "empty") return refuse(state, target.id, { reason: "empty", product: "detergent" });
+      if (result === "busy") return refuse(state, target.id, "washing");
       return null;
     }
     case "vacuum":
@@ -256,20 +264,21 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
         // З порожніми руками біля годівниці — спорожнити її, щоб змінити корм (§9.12, правка автора 2026-10-25).
         const feeder = feederAt(state, item.slot);
         if (feeder && emptyFeeder(state, item, feeder).length > 0) return null;
-        return refuse(state, id, "nothing");
+        return refuse(state, id, { reason: "need", need: "catfood" });
       }
-      if (held.kind !== "catfood") return refuse(state, id, "wrong");
+      if (held.kind !== "catfood") return refuse(state, id, { reason: "not-here", item: held });
       return pourFood(state, item, id, held);
     }
     case "water":
       if (held !== null) return refuse(state, id, "hands-full");
-      if (item.water >= WATER_CAPACITY) return refuse(state, id, "nothing");
+      if (item.water >= WATER_CAPACITY) return refuse(state, id, { reason: "full", what: "water" });
       item.water = WATER_CAPACITY;
       emit(state, { type: "watered", item: item.id });
       return null;
     case "litter":
-      // Лоток чистять утриманням дії.
-      return held === null ? null : refuse(state, id, "hands-full");
+      // Лоток чистять утриманням дії; чистий — нічого чистити.
+      if (held !== null) return refuse(state, id, "hands-full");
+      return canUse(state, { type: "item", id, item }) ? null : refuse(state, id, "clean");
     case "toy":
       if (held !== null) return refuse(state, id, "hands-full");
       state.home.items.splice(state.home.items.indexOf(item), 1);
@@ -277,7 +286,8 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       return null;
     case "house":
     case "scratcher":
-      return refuse(state, id, "nothing");
+      // Будиночок і кігтеточка — для котів, ціллю персонажа вони не бувають (`targets.ts`).
+      return null;
   }
 }
 
@@ -292,14 +302,14 @@ function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { k
   const product = held.sterile ? "sterileFood" : "catFood";
   const inside = bowl.food > 0 ? bowl : feeder && feeder.food > 0 ? feeder : null;
   const quality = inside?.foodQuality ?? (state.home.supplies[product][held.quality] > 0 ? held.quality : topQuality(state, product));
-  if (quality === null) return refuse(state, id, "empty");
-  if (!sameFood(bowl, quality, held.sterile) || (feeder && !sameFood(feeder, quality, held.sterile))) return refuse(state, id, "wrong");
+  if (quality === null) return refuse(state, id, { reason: "empty", product });
+  if (!sameFood(bowl, quality, held.sterile) || (feeder && !sameFood(feeder, quality, held.sterile))) return refuse(state, id, "mixed");
   const bowlRoom = BOWL_CAPACITY - bowl.food;
   const room = bowlRoom + (feeder ? FEEDER_CAPACITY[feeder.quality] - feeder.food : 0);
-  if (room <= 0) return refuse(state, id, "occupied");
+  if (room <= 0) return refuse(state, id, { reason: "full", what: "bowl" });
   const poured = useSupplies(state, product, quality, room);
   // Того самого корму вже немає, а інший є — змішувати не можна.
-  if (poured === 0) return refuse(state, id, supplyCount(state, product) > 0 ? "wrong" : "empty");
+  if (poured === 0) return refuse(state, id, supplyCount(state, product) > 0 ? "mixed" : { reason: "empty", product });
   const toBowl = Math.min(poured, bowlRoom);
   bowl.food += toBowl;
   bowl.foodQuality = quality;

@@ -3,10 +3,9 @@
 
 import Phaser from "phaser";
 
-import type { Product } from "../sim/types";
 import type { StorageLine } from "../sim/storage";
 import { COLORS } from "./geometry";
-import type { IconName } from "./icons";
+import { PRODUCT_ICONS } from "./symbols";
 
 const DEPTH = 10_000;
 const FONT = "system-ui, sans-serif";
@@ -16,23 +15,6 @@ const CHIP = 50;
 /** Ширша клітинка, коли поруч із кількістю ліміт («12/42»). */
 const WIDE_CHIP = 76;
 const PAD = 5;
-
-/** Іконка кожного запасу: над сховищем і над персонажем, коли запас витрачено. */
-export const PRODUCT_ICONS: Record<Product, IconName> = {
-  food: "food",
-  hygiene: "soap",
-  catFood: "kibble",
-  sterileFood: "kibble-sterile",
-  litter: "litter",
-  pills: "pills",
-  drops: "drops",
-  humanMeds: "human-meds",
-  treats: "treats",
-  collar: "collar",
-  bell: "bell",
-  shampoo: "shampoo",
-  detergent: "detergent",
-};
 
 interface Indicator {
   container: Phaser.GameObjects.Container;

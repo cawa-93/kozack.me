@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { BUBBLE_HEIGHT, type IconName } from "./icons";
+import { BUBBLE_HEIGHT, type IconName, type Mark } from "./icons";
 
 const BUBBLE_DEPTH = 10_000;
 const FONT = "system-ui, sans-serif";
@@ -33,10 +33,11 @@ export class Bubbles {
     private readonly layer: Phaser.GameObjects.Layer,
   ) {}
 
-  private make(icon: IconName, x: number, y: number, count?: number): Phaser.GameObjects.Container {
+  private make(icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
     const bg = this.scene.add.image(0, 0, "bubble").setOrigin(0.5, 1);
     const image = this.scene.add.image(0, -BUBBLE_HEIGHT / 2 - 4, `icon-${icon}`);
     const container = this.scene.add.container(x, y, [bg, image]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
+    if (mark !== undefined) container.add(this.scene.add.image(0, -BUBBLE_HEIGHT / 2 - 4, `mark-${mark}`));
     if (count !== undefined) {
       const label = this.scene.add
         .text(16, -BUBBLE_HEIGHT + 6, String(count), {
@@ -81,10 +82,10 @@ export class Bubbles {
    * Бабл події: виринає й за мить зникає. Якщо місце — функція, бабл летить за тим, над ким виринув
    * (персонаж чи кіт іде далі, а бабл — з ним).
    */
-  pop(icon: IconName, at: Anchor, count?: number): void {
+  pop(icon: IconName, at: Anchor, count?: number, mark?: Mark): void {
     const start = place(at);
     if (!start) return;
-    const container = this.make(icon, start.x, start.y - 8, count);
+    const container = this.make(icon, start.x, start.y - 8, count, mark);
     container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
     this.float(container, at, 1100);

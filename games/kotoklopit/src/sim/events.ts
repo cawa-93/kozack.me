@@ -20,8 +20,48 @@ export type ModifierEvent =
   | "vacation-pay"
   | "mom-call";
 
-/** Чому дія не вдалася: порожньо, руки зайняті, місце зайняте, зарано, нічого робити, річ не підходить. */
-export type Refusal = "empty" | "hands-full" | "occupied" | "too-early" | "nothing" | "wrong";
+/** Що треба мати в руках чи поруч, щоб дія вдалася (§11.4): продукти, страву, корм, кота, будь-що, брудний лоток. */
+export type Need = "raw" | "dish" | "catfood" | "cat" | "item" | "dirty-litter";
+
+/**
+ * Чому дія не вдалася (§11.4, правило автора 2026-10-25): кожна причина — своя зрозуміла іконка, тож
+ * причина каже, що саме заважає, а не загальне «не можна». Нова відмова — нова причина.
+ */
+export type Refusal =
+  /** Руки зайняті. */
+  | { reason: "hands-full" }
+  /** Запасу немає: холодильник, шафка, порошок, шампунь, ліки, корм, коли насипають. */
+  | { reason: "empty"; product: Product }
+  /** Річ із рук сюди не покласти. */
+  | { reason: "not-here"; item: Item }
+  /** Місце зайняте: тут уже стоїть страва. */
+  | { reason: "occupied" }
+  /** Уже повне: миска з кормом (і годівниця), миска з водою. */
+  | { reason: "full"; what: "bowl" | "water" }
+  /** Лоток і так чистий. */
+  | { reason: "clean" }
+  /** Корми не змішують (§6.4). */
+  | { reason: "mixed" }
+  /** Потрібна річ у руках чи брудний лоток. */
+  | { reason: "need"; need: Need }
+  /** Спати ще рано (§8.1). */
+  | { reason: "too-early" }
+  /** Пральна машина ще пере. */
+  | { reason: "washing" }
+  /** На комп'ютері кіт (§9.12). */
+  | { reason: "cat-on-computer" }
+  /** Вимкнули світло (§4.1). */
+  | { reason: "no-power" }
+  /** Під дверима пакунків немає. */
+  | { reason: "no-packages" }
+  /** Ліки не потрібні: хвороби, яку лікують ліками, немає (§6.5). */
+  | { reason: "healthy" }
+  /** Ліки на сьогодні вже випито (§6.5). */
+  | { reason: "dose-taken" }
+  /** Розкласти запаси з ящиків нікуди: сховища повні (§6.4). */
+  | { reason: "no-room" }
+  /** В аптечці нічого для цього кота (§8.7). */
+  | { reason: "kit-empty" };
 
 export type GameEvent =
   | { type: "night"; report: NightReport }
@@ -33,7 +73,7 @@ export type GameEvent =
   /** Колеги на відеодзвінку помітили поганий вигляд (§5.1). */
   | { type: "call-remark"; issue: "clothes" }
   | { type: "trashed"; item: Item }
-  | { type: "refused"; object: string; reason: Refusal }
+  | ({ type: "refused"; object: string } & Refusal)
   | { type: "cooked"; result: "ready" | "burnt" }
   | { type: "ate"; satiety: number; food: number }
   | { type: "showered"; hygiene: number; quality: Quality | null; left: number }

@@ -48,7 +48,7 @@ describe("холодильник (§6.4, §8.7)", () => {
     interact(save);
     stop();
     expect(save.current.character.held).toBeNull();
-    expect(events).toContainEqual({ type: "refused", object: "fridge", reason: "empty" });
+    expect(events).toContainEqual({ type: "refused", object: "fridge", reason: "empty", product: "food" });
   });
 });
 

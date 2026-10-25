@@ -46,7 +46,23 @@ export type IconName =
   | "treats"
   | "collar"
   | "mind"
-  | "laundry";
+  | "laundry"
+  | "cat"
+  | "cat-laptop"
+  | "no-power"
+  | "washer"
+  | "mix"
+  | "no-room"
+  | "kit"
+  | "palms"
+  | "toy"
+  | "taken";
+
+/**
+ * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
+ * не потрібно), «ask» — знак питання (потрібно це), «ok» — галочка (це вже є).
+ */
+export type Mark = "no" | "ask" | "ok";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -296,6 +312,115 @@ Object.assign(ICONS, {
   },
 } satisfies Partial<Record<IconName, Draw>>);
 
+/** Іконки відмов (§11.4, правило автора 2026-10-25): кожна причина — своя, ні з чим не сплутати. */
+Object.assign(ICONS, {
+  cat: (g: Phaser.GameObjects.Graphics) => {
+    // Кіт сидить: голова з вухами, тулуб, хвіст. Без рота — щоб не плутати з нявканням.
+    g.lineStyle(4, 0x6b5d6e).beginPath().arc(30, 26, 7, Math.PI * 0.5, Math.PI * 1.6, true).strokePath();
+    g.fillStyle(0x6b5d6e).fillEllipse(19, 29, 22, 16).fillTriangle(11, 12, 14, 2, 18, 9).fillTriangle(27, 12, 24, 2, 20, 9).fillCircle(19, 14, 9);
+    g.fillStyle(0xffffff).fillCircle(15.5, 13, 2).fillCircle(22.5, 13, 2);
+  },
+  "cat-laptop": (g: Phaser.GameObjects.Graphics) => {
+    // Ноутбук, а на клавіатурі розлігся кіт (§9.12).
+    g.fillStyle(0x9fc3d6).fillRect(9, 4, 22, 15);
+    g.lineStyle(2.5, INK).strokeRect(9, 4, 22, 15);
+    g.fillStyle(INK).fillRect(4, 19, 32, 4);
+    g.fillStyle(0x6b5d6e).fillEllipse(22, 25, 26, 11).fillCircle(9, 24, 6.5).fillTriangle(4, 21, 5, 14, 9, 18).fillTriangle(14, 21, 13, 14, 9, 18);
+    g.lineStyle(3.5, 0x6b5d6e).lineBetween(34, 26, 37, 34);
+    g.fillStyle(0xffffff).fillCircle(7, 24, 1.4).fillCircle(11, 24, 1.4);
+  },
+  "no-power": (g: Phaser.GameObjects.Graphics) => {
+    // Блискавка, перекреслена: світла немає (§4.1).
+    const v = (points: [number, number][]) => points.map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    const bolt = v([[23, 3], [10, 22], [19, 22], [15, 37], [30, 16], [21, 16], [26, 3]]);
+    g.fillStyle(0xe8b93a).fillPoints(bolt, true);
+    g.lineStyle(2, INK).strokePoints(bolt, true);
+    g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
+  },
+  washer: (g: Phaser.GameObjects.Graphics) => {
+    // Пральна машина: барабан із бульбашками й стрілкою обертання — пере.
+    g.fillStyle(0xf3efe6).fillRoundedRect(7, 4, 26, 32, 3);
+    g.lineStyle(2.5, INK).strokeRoundedRect(7, 4, 26, 32, 3).lineBetween(7, 11, 33, 11);
+    g.fillStyle(0x6fb3d6).fillCircle(20, 23, 8.5);
+    g.lineStyle(2.5, INK).strokeCircle(20, 23, 8.5);
+    g.lineStyle(2, 0xffffff).beginPath().arc(20, 23, 4.5, Math.PI * 0.1, Math.PI * 1.4).strokePath();
+    g.fillStyle(INK).fillCircle(12, 7.5, 1.6).fillCircle(17, 7.5, 1.6);
+  },
+  mix: (g: Phaser.GameObjects.Graphics) => {
+    // Миска, у якій навпіл два різні корми (§6.4).
+    g.fillStyle(0x8a5a33).fillEllipse(14, 21, 14, 10);
+    g.fillStyle(0x6f8a3a).fillEllipse(26, 21, 14, 10);
+    g.lineStyle(1.5, 0xffffff).lineBetween(20, 16, 20, 25);
+    g.fillStyle(0x9aa3ab).fillEllipse(20, 27, 30, 11);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 27, 30, 11);
+  },
+  "no-room": (g: Phaser.GameObjects.Graphics) => {
+    // Шафа, де всі полиці повні, і зверху вже не влазить коробка (§6.4).
+    g.fillStyle(0xb98a57).fillRect(4, 12, 27, 25);
+    g.lineStyle(2.5, INK).strokeRect(4, 12, 27, 25).lineBetween(4, 24, 31, 24);
+    const goods = [0xd98fb8, 0x8fc3d6, 0xe8a33a, 0x9ad0c2, 0xe0893a, 0xcdb98f];
+    goods.forEach((color, i) => g.fillStyle(color).fillRect(6 + (i % 3) * 8.3, i < 3 ? 15 : 27, 6.6, 8));
+    g.fillStyle(0xe8d3a6).fillRect(10, 2, 14, 9);
+    g.lineStyle(2, INK).strokeRect(10, 2, 14, 9);
+    g.fillStyle(COLORS.danger).fillRoundedRect(33, 4, 4.5, 11, 1.5).fillCircle(35.25, 19, 2.3);
+  },
+  kit: (g: Phaser.GameObjects.Graphics) => {
+    // Аптечка з ручкою й хрестом (§8.7).
+    g.lineStyle(3, INK).strokeRoundedRect(14, 6, 12, 8, 3);
+    g.fillStyle(0xffffff).fillRoundedRect(5, 12, 30, 23, 4);
+    g.lineStyle(2.5, INK).strokeRoundedRect(5, 12, 30, 23, 4);
+    g.fillStyle(COLORS.danger).fillRect(17, 16, 6, 15).fillRect(12.5, 20.5, 15, 6);
+  },
+  palms: (g: Phaser.GameObjects.Graphics) => {
+    // Дві розкриті порожні долоні: у руках нічого.
+    for (const [x, thumb] of [[3, 1], [22, -1]] as const) {
+      g.fillStyle(INK).fillRoundedRect(x - 1.5, 21.5, 18, 15, 6);
+      for (const f of [0, 4.3, 8.6]) g.fillRoundedRect(x + f + 0.5, 12.5, 6, 13, 3);
+      g.fillStyle(0xe8c39e).fillRoundedRect(x, 23, 15, 12, 5);
+      for (const f of [0, 4.3, 8.6]) g.fillRoundedRect(x + f + 2, 14, 3, 12, 1.5);
+      // Великий палець — убік.
+      const tx = thumb > 0 ? x + 15 : x - 4;
+      g.fillStyle(INK).fillRoundedRect(tx - 1, 23, 6, 9, 3);
+      g.fillStyle(0xe8c39e).fillRoundedRect(tx + 0.5, 24.5, 3, 6, 1.5);
+    }
+  },
+  taken: (g: Phaser.GameObjects.Graphics) => {
+    // Місце зайняте: на поверхні вже стоїть тарілка зі стравою.
+    g.fillStyle(0x8b5e3c).fillRect(3, 26, 34, 5).fillRect(6, 31, 3.5, 7).fillRect(30.5, 31, 3.5, 7);
+    g.lineStyle(2, INK).strokeRect(3, 26, 34, 5);
+    g.fillStyle(0xe0893a).fillEllipse(20, 17, 16, 9);
+    g.fillStyle(0xffffff).fillEllipse(20, 22, 26, 8);
+    g.lineStyle(2, INK).strokeEllipse(20, 22, 26, 8);
+    g.fillStyle(COLORS.danger).fillRoundedRect(33, 3, 4.5, 11, 1.5).fillCircle(35.25, 18.5, 2.3);
+  },
+  toy: (g: Phaser.GameObjects.Graphics) => {
+    // Іграшка-вудочка з пір'ям (§9.12).
+    g.lineStyle(3, 0x8b5e3c).lineBetween(5, 34, 26, 10);
+    g.lineStyle(1.5, INK, 0.8).lineBetween(26, 10, 30, 22);
+    g.fillStyle(0xd9455f).fillEllipse(30, 26, 7, 12).fillEllipse(34, 27, 6, 10);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Позначки поверх іконки (§11.4): перекреслення на всю іконку, знак питання й галочка — кружечком у куті. */
+const MARKS: Record<Mark, Draw> = {
+  no: (g) => {
+    g.lineStyle(7, 0xffffff).lineBetween(6, 34, 34, 6);
+    g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
+  },
+  ask: (g) => {
+    g.fillStyle(0x4f86c6).fillCircle(30, 10, 9);
+    g.lineStyle(2, INK).strokeCircle(30, 10, 9);
+    g.lineStyle(2.6, 0xffffff).beginPath().arc(30, 7.5, 3, Math.PI, Math.PI * 2.5).strokePath();
+    g.lineBetween(30, 10.5, 30, 12.5);
+    g.fillStyle(0xffffff).fillCircle(30, 15.5, 1.6);
+  },
+  ok: (g) => {
+    g.fillStyle(COLORS.good).fillCircle(30, 10, 9);
+    g.lineStyle(2, INK).strokeCircle(30, 10, 9);
+    g.lineStyle(3, 0xffffff).lineBetween(25.5, 10, 28.5, 13.5).lineBetween(28.5, 13.5, 34.5, 6.5);
+  },
+};
+
 /** Намалювати текстури іконок і тла бабла один раз на старті. */
 export function createIconTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists("bubble")) return;
@@ -304,6 +429,11 @@ export function createIconTextures(scene: Phaser.Scene): void {
     g.clear();
     draw(g);
     g.generateTexture(`icon-${name}`, ICON_SIZE, ICON_SIZE);
+  }
+  for (const [name, draw] of Object.entries(MARKS)) {
+    g.clear();
+    draw(g);
+    g.generateTexture(`mark-${name}`, ICON_SIZE, ICON_SIZE);
   }
   // Тло бабла з хвостиком донизу.
   g.clear();

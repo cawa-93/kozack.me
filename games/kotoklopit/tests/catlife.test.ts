@@ -275,7 +275,7 @@ describe("догляд персонажа (§9.12)", () => {
     const { events, stop } = recordEvents();
     interact(save);
     stop();
-    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "wrong" }));
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "mixed" }));
     expect(bowl.food).toBe(1);
     expect(supplies.premium).toBe(3);
     // Покласти назад — нічого не втрачається.

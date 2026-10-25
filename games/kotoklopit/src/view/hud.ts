@@ -14,7 +14,7 @@ import { beardLook, cyclePhase } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import type { IconName } from "./icons";
 import { scheduleOf } from "./schedule";
-import { PRODUCT_ICONS } from "./storage";
+import { PRODUCT_ICONS } from "./symbols";
 import { HUD_HEIGHT, type Frame } from "./viewport";
 
 const FONT = "system-ui, sans-serif";

@@ -6,7 +6,7 @@ import { isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
-import { onEvent, type GameEvent, type ModifierEvent, type Refusal } from "../sim/events";
+import { onEvent, type GameEvent, type ModifierEvent } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
@@ -33,7 +33,7 @@ import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { Bubbles } from "../view/bubbles";
-import { PRODUCT_ICONS, StorageIndicators } from "../view/storage";
+import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
@@ -41,6 +41,7 @@ import { drawCatCorner, itemScreen } from "../view/catcorner";
 import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { createIconTextures, type IconName } from "../view/icons";
+import { PRODUCT_ICONS, refusalBubble } from "../view/symbols";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
@@ -57,14 +58,6 @@ const CAT_TAP_MS = 250;
  */
 const FALL_ASLEEP = { eyes: 1300, darkFrom: 1000, total: 2300, zoom: 0.5, lead: 0.01 } as const;
 
-const REFUSAL_ICONS: Record<Refusal, IconName | null> = {
-  empty: "empty",
-  "hands-full": "hands",
-  occupied: "hands",
-  "too-early": "moon",
-  nothing: null,
-  wrong: "hands",
-};
 
 type Keys = Record<
   "up" | "down" | "left" | "right" | "up2" | "down2" | "left2" | "right2" | "action" | "action2",
@@ -806,7 +799,7 @@ export class DayScene extends Phaser.Scene {
     const day = state.minute % 1440;
     const meeting = state.modifiers.day === "meeting" && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
     if (!working && (standup || meeting)) computer = "camera";
-    else if (powerOut(state)) computer = "empty";
+    else if (powerOut(state)) computer = "no-power";
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
       computer = level === "out" ? "cross" : level === "warning" ? "alert" : null;
@@ -825,7 +818,7 @@ export class DayScene extends Phaser.Scene {
     set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? "drop" : washer === "done" ? "alert" : null);
+    set("washer", washer === "washing" ? "washer" : washer === "done" ? "alert" : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
@@ -906,15 +899,8 @@ export class DayScene extends Phaser.Scene {
     const popPerson = (icon: IconName): void => this.bubbles.pop(icon, this.personAnchor);
     switch (event.type) {
       case "refused": {
-        // Порожнє сховище показує, чого саме бракує: іконку запасу з нулем (§11.4).
-        const storage = event.reason === "empty" ? STORAGES.find((s) => s.object === event.object) : undefined;
-        const missing = storage?.products.find((p) => supplyCount(this.state, p) === 0);
-        if (missing) {
-          popAt(event.object, PRODUCT_ICONS[missing], 0);
-          break;
-        }
-        const icon = REFUSAL_ICONS[event.reason];
-        if (icon) popAt(event.object, icon);
+        const { icon, count, mark } = refusalBubble(event);
+        this.bubbles.pop(icon, () => this.anchorOf(event.object), count, mark);
         break;
       }
       case "call-remark":
