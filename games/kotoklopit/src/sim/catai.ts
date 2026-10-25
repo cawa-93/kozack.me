@@ -38,6 +38,7 @@ import {
   HISS_PAUSE_MINUTES,
   HOUSE_SLEEP,
   HUNGRY_THEFT,
+  HUNTING,
   ILLNESS,
   KITTEN_PLAY,
   KNOCKING,
@@ -100,7 +101,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, PAPER_TRAIL, ROLL_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -744,7 +745,7 @@ export function headNudges(state: GameState, cat: Cat): boolean {
 export function slowBlinks(state: GameState, cat: Cat): boolean {
   const act = cat.act;
   if (cat.mood < MOOD_LOOK.blinkMood || cat.love < blinkLove(cat)) return false;
-  if (!BLINK_ACTS.has(act.kind) || (act.kind === "wander" && act.target === "play") || sulking(state, cat)) return false;
+  if (!BLINK_ACTS.has(act.kind) || (act.kind === "wander" && (act.target === "play" || act.target === "paper")) || sulking(state, cat)) return false;
   return besidePerson(state, cat, MOOD_LOOK.blinkDistance) && !bellyUp(state, cat) && !headNudges(state, cat);
 }
 
@@ -851,10 +852,23 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
+  // Рулон туалетного паперу у ванній (§9.12, «Мисливський інстинкт»): полювання лапою на річ, що рухається.
+  const roll = rollWeight(state, cat);
+  if (roll > 0) options.push({ weight: roll * bored, value: active(() => start(cat, "unroll", { ...ROLL_TILE }, HUNTING.pawMinutes, "roll")) });
   // Засідка на персонажа (§9.12, «Засідки»): лише коли є на кого чатувати.
   const ambush = ambushWeight(cat);
   if (ambush > 0 && context.present) options.push({ weight: ambush, value: active(() => startAmbush(cat, rng)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
+}
+
+/**
+ * Вага розмотування рулону, коли кіт хоче гратися (§9.12, рішення автора 2026-10-25): 0,12 × (1 + 0,75 × «Мисливський
+ * інстинкт»), кошеня — удвічі більша; «−» не розмотує; розмотаний рулон до ранку не повісять новий.
+ */
+export function rollWeight(state: GameState, cat: Cat): number {
+  const level = traitLevel(cat, "hunting");
+  if (level < 0 || state.home.rollDown === true) return 0;
+  return HUNTING.roll * (1 + HUNTING.rollStep * level) * (isKitten(cat) ? HUNTING.kitten : 1);
 }
 
 /**
@@ -1323,7 +1337,22 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Просто побродити без діла гри не знімає: інакше коти майже не гралися б самі, не бешкетували
       // й не влаштовували зумі (пошук багів 2026-10-25).
       if (act.target === "play") cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
+      // Дотягнув паперову стрічку у вітальню — кінець стрічки лишається тут (§9.12, «Мисливський інстинкт»).
+      if (act.target === "paper") {
+        cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.5);
+        addMess(state, "paper", visibleFloorNear(state, cat), cat.id);
+      }
       return;
+    case "unroll": {
+      // Рулон уже розмотав інший кіт — лапати нічого (§9.12).
+      if (state.home.rollDown === true) return;
+      state.home.rollDown = true;
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.5);
+      changeMood(state, cat, 1);
+      addMess(state, "paper", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.8 }), cat.id);
+      // Тягне стрічку з ванної у вітальню.
+      return start(cat, "wander", tileOf(PAPER_TRAIL), CAT_ACT_MINUTES.wander, "paper");
+    }
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       return;
@@ -1355,14 +1384,16 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "toy": {
       const toy = itemById<ToyItem>(state, act.target);
-      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      // Мисливець награється іграшкою досхочу, а «Пацифіст» — ледве (§9.12, «Мисливський інстинкт»).
+      const hunting = traitLevel(cat, "hunting");
+      cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * Math.max(HUNTING.soloMin, 1 + HUNTING.soloStep * hunting));
       if (!toy) return;
       changeMood(state, cat, 1);
-      // Іграшка відлітає трохи вбік і зношується.
+      // Іграшка відлітає трохи вбік і зношується — у мисливця швидше.
       const moved = visibleFloorNear(state, { x: toy.x + (rng.next() - 0.5) * 1.2, y: toy.y + (rng.next() - 0.5) * 1.2 });
       toy.x = moved.x;
       toy.y = moved.y;
-      toy.uses += 1;
+      toy.uses += 1 + HUNTING.wearStep * Math.max(0, hunting);
       if (toy.uses >= TOY.durability[toy.quality]) {
         state.home.items.splice(state.home.items.indexOf(toy), 1);
         emit(state, { type: "toy-broke", toy: toy.id });
@@ -1870,6 +1901,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
   }
   lurk(state, cat, rng, context);
+  paperSeen(state, cat);
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);
@@ -2168,6 +2200,18 @@ function revengeSeen(state: GameState, cat: Cat): void {
   if (cat.act.kind !== "revenge" || cat.act.seen === true || !witnesses(state, cat)) return;
   cat.act.seen = true;
   observe(state, cat, "vengeful");
+}
+
+/**
+ * Кіт лапає рулон чи тягне паперову стрічку на очах персонажа (§9.9): прояв «Мисливського інстинкту +» — раз за бешкет (лапає й
+ * тягне — один бешкет, тож не частіше ніж раз на пів години).
+ */
+function paperSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  const paper = (act.kind === "unroll" && act.goal === null) || (act.kind === "wander" && act.target === "paper");
+  if (!paper || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "hunting", 1, false, HUNTING.observeEvery);
 }
 
 /** «Фонтанолюб» сидить на умивальнику й чекає, щоб відкрили кран, — на очах персонажа (§9.9): прояв «Пиття +», раз за раз. */

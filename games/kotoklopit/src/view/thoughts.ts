@@ -21,7 +21,7 @@ const PERSON_STATS: readonly (readonly [StatName, IconName])[] = [
 ];
 
 /** Кіт сам грається — гуляє «заради гри» (§9.12): думати «хочу гратися» саме тоді нема чого. */
-const playing = (cat: Cat): boolean => cat.act.kind === "wander" && cat.act.target === "play";
+const playing = (cat: Cat): boolean => cat.act.kind === "wander" && (cat.act.target === "play" || cat.act.target === "paper");
 
 const isHeld = (state: GameState, cat: Cat): boolean => {
   const held = state.character.held;

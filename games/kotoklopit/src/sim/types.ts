@@ -358,8 +358,8 @@ export interface Trip {
 export type AccidentLoss = "repair" | "health" | "sanity" | "cat";
 
 /** Котячий безлад на підлозі (§9.12). */
-/** Калюжа (`puddle`) — «Фонтанолюб» перекинув миску з водою (§9.12, «Пиття»). */
-export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark" | "puddle";
+/** Калюжа (`puddle`) — «Фонтанолюб» перекинув миску з водою (§9.12, «Пиття»); папір (`paper`) — розмотаний рулон («Мисливський інстинкт»). */
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark" | "puddle" | "paper";
 
 export interface Mess {
   id: number;
@@ -383,6 +383,8 @@ export interface FallenTrinket {
 
 /** Квартира: запаси, плита, поверхні, речі для котів, безлад і пакунки (§6.4, §8.7, §9.12). */
 export interface Home {
+  /** Рулон туалетного паперу у ванній розмотано (§9.12, «Мисливський інстинкт»): уранці новий. У старих збереженнях немає. */
+  rollDown?: true;
   /**
    * Скинуті дрібнички (§9.12, «Скидання речей»): лежать на підлозі до ранку, а вранці знову на місцях. Немає ключа — річ на
    * своєму місці. У старих збереженнях немає.
@@ -526,7 +528,9 @@ export type CatActKind =
    */
   | "follow"
   /** Кіт у засідці (§9.12, «Засідки»): припав до підлоги й чекає, щоб кинутися персонажу на ноги. */
-  | "ambush";
+  | "ambush"
+  /** Кіт лапає рулон туалетного паперу у ванній, розмотуючи його (§9.12, «Мисливський інстинкт»). */
+  | "unroll";
 
 export interface CatAct {
   kind: CatActKind;

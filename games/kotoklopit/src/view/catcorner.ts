@@ -30,6 +30,25 @@ export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "prem
 }
 
 /**
+ * Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): тримач, а на ньому рулон; розмотаний —
+ * порожня втулка й короткий хвостик паперу. `x`, `y` — точка стіни над підлогою.
+ */
+export function drawToiletRoll(g: Phaser.GameObjects.Graphics, x: number, y: number, down: boolean): void {
+  const top = y - 26;
+  g.lineStyle(2, COLORS.ink).lineBetween(x - 9, top, x + 9, top);
+  if (down) {
+    g.fillStyle(0xb9a27a).fillRect(x - 5, top - 3, 10, 6);
+    g.lineStyle(1.5, COLORS.ink).strokeRect(x - 5, top - 3, 10, 6);
+    g.lineStyle(3, 0xf8f6f0).lineBetween(x + 2, top + 3, x + 4, top + 12);
+    return;
+  }
+  g.fillStyle(0xf8f6f0).fillRoundedRect(x - 8, top - 6, 16, 12, 4);
+  g.lineStyle(1.5, COLORS.ink).strokeRoundedRect(x - 8, top - 6, 16, 12, 4);
+  g.fillStyle(0xf8f6f0).fillRect(x + 3, top + 4, 5, 8);
+  g.lineStyle(1, COLORS.ink, 0.6).strokeRect(x + 3, top + 4, 5, 8);
+}
+
+/**
  * Дрібничка зі столу (§9.12, «Скидання речей»): кухоль, телефон, ручка. `fallen` — лежить на підлозі: кухоль — на боці,
  * телефон — екраном догори, ручка — навскіс.
  */
@@ -276,6 +295,12 @@ function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
     case "fur":
       g.fillStyle(0xcfc6bd, 0.95).fillEllipse(x - 6, y, 12, 7).fillEllipse(x + 5, y - 2, 10, 6).fillEllipse(x + 1, y + 4, 9, 5);
       g.lineStyle(1, 0x8a7a68).lineBetween(x - 10, y, x - 2, y - 1).lineBetween(x + 1, y - 3, x + 9, y - 1);
+      return;
+    case "paper":
+      // Розмотаний туалетний папір (§9.12, «Мисливський інстинкт»): біла стрічка петлями.
+      g.lineStyle(4, 0xf8f6f0).beginPath().moveTo(x - 14, y + 2).lineTo(x - 7, y - 4).lineTo(x - 1, y + 3).lineTo(x + 6, y - 3).lineTo(x + 14, y + 1).strokePath();
+      g.lineStyle(1, 0xb9b4aa).beginPath().moveTo(x - 14, y + 4).lineTo(x - 7, y - 2).lineTo(x - 1, y + 5).lineTo(x + 6, y - 1).lineTo(x + 14, y + 3).strokePath();
+      g.fillStyle(0xf8f6f0).fillEllipse(x - 4, y + 1, 9, 6);
       return;
     case "broken":
       g.fillStyle(0xf3efe6).fillTriangle(x - 10, y, x - 4, y - 6, x - 2, y + 2).fillTriangle(x + 2, y + 1, x + 9, y - 4, x + 10, y + 4);

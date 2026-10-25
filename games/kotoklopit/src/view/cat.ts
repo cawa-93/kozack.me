@@ -89,6 +89,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "cough") return "cough";
   // Точить кігті: стоїть на задніх лапах; на килимку — потягується, витягнувши лапи вперед (§9.12, «Дряпання»).
   if (act.kind === "scratch") return act.target === "rug" ? "stretch" : "scratch";
+  // Лапає рулон туалетного паперу на стіні — так само на задніх лапах (§9.12, «Мисливський інстинкт»).
+  if (act.kind === "unroll") return "scratch";
   // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
   if (act.kind === "groom" && !act.target?.startsWith("cat:")) return "groom";
   return "sit";
@@ -288,6 +290,11 @@ export class CatView {
       }
       case "walk":
       case "mark": {
+        // Тягне паперову стрічку з ванної (§9.12, «Мисливський інстинкт»): вона в'ється за котом від морди.
+        if (cat.act.kind === "wander" && cat.act.target === "paper") {
+          const wave = Math.sin(time / 120) * 3;
+          g.lineStyle(4, 0xf8f6f0).beginPath().moveTo(x + dir * 18 * s, y - 18 * s).lineTo(x - dir * 6 * s, y - 2 + wave).lineTo(x - dir * 22 * s, y + 1 - wave).lineTo(x - dir * 38 * s, y + wave).strokePath();
+        }
         // Тіло горизонтально, голова попереду, хвіст угору; той, хто мітить, стоїть, і піднятий хвіст тремтить (§9.12).
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-9, -3, 6, 11]) g.fillRoundedRect(x + lx * s - 2, y - 8 * s, 4 * s, 9 * s, 2);

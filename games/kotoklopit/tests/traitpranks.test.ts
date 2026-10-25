@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { ambushWeight, startAmbush, tickCats } from "../src/sim/catai";
-import { AMBUSH, STUN_PAUSE_MINUTES } from "../src/sim/config";
+import { ambushWeight, rollWeight, startAmbush, tickCats } from "../src/sim/catai";
+import { AMBUSH, HUNTING, PLAY_RELIEF, STUN_PAUSE_MINUTES } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
-import { AMBUSH_SPOTS, hiddenTile, isSolid } from "../src/sim/home";
+import { AMBUSH_SPOTS, hiddenTile, isSolid, PAPER_TRAIL, roomAt, ROLL_TILE } from "../src/sim/home";
+import { nightlyHousehold } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
@@ -140,5 +141,63 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
     expect(save.current.character.body.stun).toBe(0);
     for (let i = 0; i < 20; i++) advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
     expect(cat.playedToday ?? 0).toBeGreaterThan(0);
+  });
+});
+
+describe("«Мисливський інстинкт» (§9.12, рішення автора 2026-10-25)", () => {
+  it("вага розмотування: «−» — ніколи, кіт без риси — 0,12, «+» — більше, кошеня — удвічі; розмотаний рулон — до ранку", () => {
+    const save = game();
+    expect(rollWeight(save.current, withCat(save, { hunting: -1 }))).toBe(0);
+    expect(rollWeight(save.current, withCat(save))).toBeCloseTo(HUNTING.roll);
+    expect(rollWeight(save.current, withCat(save, { hunting: 2 }))).toBeCloseTo(HUNTING.roll * (1 + 2 * HUNTING.rollStep));
+    expect(rollWeight(save.current, withCat(save, {}, { x: 9.5, y: 7.5 }, 1))).toBeCloseTo(HUNTING.roll * HUNTING.kitten);
+    save.current.home.rollDown = true;
+    expect(rollWeight(save.current, withCat(save, { hunting: 2 }))).toBe(0);
+    nightlyHousehold(save.current, createRng(1));
+    expect(save.current.home.rollDown).toBeUndefined();
+  });
+
+  it("кіт лапає рулон у ванній і тягне стрічку у вітальню: два клапті паперу й прояв «+» раз за бешкет", () => {
+    const save = game();
+    // Персонаж у ванній: бачить, як кіт лапає рулон.
+    Object.assign(save.current.character.body, { x: 10.5, y: 3.5 });
+    const cat = withCat(save, { hunting: 1 }, { x: ROLL_TILE.x + 0.5, y: ROLL_TILE.y + 0.5 });
+    cat.needs.play = 80;
+    cat.act = { kind: "unroll", target: "roll", goal: null, minutes: HUNTING.pawMinutes, elapsed: 0 };
+    tickCats(save.current, HUNTING.pawMinutes + 0.1, { present: true });
+    expect(save.current.home.rollDown).toBe(true);
+    expect(save.current.home.messes.filter((m) => m.kind === "paper")).toHaveLength(1);
+    expect(cat.act.kind).toBe("wander");
+    expect(cat.act.target).toBe("paper");
+    expect(seen(cat, "hunting")).toBe(1);
+    // Персонаж іде у вітальню слідом: кіт тягне стрічку на очах, але це той самий бешкет.
+    Object.assign(save.current.character.body, { x: 10.5, y: 8.5 });
+    for (let i = 0; i < 40 && cat.act.target === "paper"; i++) tickCats(save.current, 0.5, { present: true });
+    const papers = save.current.home.messes.filter((m) => m.kind === "paper");
+    expect(papers).toHaveLength(2);
+    expect(roomAt(papers[1]!)).toBe("living");
+    expect(Math.hypot(papers[1]!.x - PAPER_TRAIL.x, papers[1]!.y - PAPER_TRAIL.y)).toBeLessThan(1.5);
+    expect(seen(cat, "hunting")).toBe(1);
+  });
+
+  it("гра наодинці: мисливцеві дає більше й зношує іграшку швидше, «Пацифістові» — менше", () => {
+    const save = game();
+    const toy = save.current.home.items.find((i) => i.kind === "toy");
+    if (toy?.kind !== "toy") throw new Error("немає іграшки");
+    const playAlone = (cat: Cat): { relief: number; wear: number } => {
+      cat.x = toy.x;
+      cat.y = toy.y;
+      cat.needs.play = 100;
+      const uses = toy.uses;
+      cat.act = { kind: "toy", target: `item:${toy.id}`, goal: null, minutes: 0.1, elapsed: 0 };
+      tickCats(save.current, 0.1, { present: false });
+      return { relief: 100 - cat.needs.play, wear: toy.uses - uses };
+    };
+    const hunter = playAlone(withCat(save, { hunting: 2 }));
+    expect(hunter.relief).toBeCloseTo(PLAY_RELIEF * (1 + 2 * HUNTING.soloStep), 0);
+    expect(hunter.wear).toBeCloseTo(1 + 2 * HUNTING.wearStep);
+    const pacifist = playAlone(withCat(save, { hunting: -2 }));
+    expect(pacifist.relief).toBeCloseTo(PLAY_RELIEF * HUNTING.soloMin, 0);
+    expect(pacifist.wear).toBe(1);
   });
 });

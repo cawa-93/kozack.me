@@ -446,7 +446,7 @@ export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1): здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1, paper: -1 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {
@@ -707,6 +707,14 @@ export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, r
  * `strongLevel` ще й подряпина (здоров'я `health`); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
  * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
  */
+/**
+ * «Мисливський інстинкт» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
+ * хоче гратися, розмотує рулон туалетного паперу у ванній з вагою `roll` × (1 + `rollStep` × рівень), кошеня — ×`kitten`,
+ * «−» — ніколи; лапає рулон `pawMinutes` хвилин і тягне паперову стрічку у вітальню. Гра наодинці знімає потребу гри
+ * ×(1 + `soloStep` × рівень), не менше ×`soloMin`, а іграшка «+» зношується ×(1 + `wearStep` × рівень). Прояв — не частіше ніж
+ * раз на `observeEvery` хвилин (лапає й тягне — один бешкет).
+ */
+export const HUNTING = { roll: 0.12, rollStep: 0.75, kitten: 2, pawMinutes: 1, soloStep: 0.25, soloMin: 0.5, wearStep: 0.5, observeEvery: 30 } as const;
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<

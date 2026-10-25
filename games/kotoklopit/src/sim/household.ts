@@ -295,6 +295,8 @@ export function nightlyHousehold(state: GameState, rng: Rng): void {
   home.clothes = Math.max(0, home.clothes - 1);
   // Скинуті дрібнички вранці знову на столах, а розбитий кухоль — уже новий (§9.12, «Скидання речей»).
   delete home.trinkets;
+  // Розмотаний рулон туалетного паперу вранці замінено новим (§9.12, «Мисливський інстинкт»).
+  delete home.rollDown;
   const factor = HOUSEHOLD.difficulty[state.difficulty];
   for (const appliance of ["fountain", "robot"] as const) {
     if (home.appliances[appliance] === "cheap" && rng.chance(HOUSEHOLD.applianceBreakPerDay * factor)) {

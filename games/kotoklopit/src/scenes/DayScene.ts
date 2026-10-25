@@ -15,7 +15,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
-import { isPresent, objectById, TRINKETS } from "../sim/home";
+import { isPresent, objectById, TOILET_ROLL, TRINKETS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
@@ -37,8 +37,8 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
-import { drawCatCorner, drawTrinket, itemScreen } from "../view/catcorner";
-import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
+import { drawCatCorner, drawToiletRoll, drawTrinket, itemScreen } from "../view/catcorner";
+import { COLORS, depthOf, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
 import { eventBubbles, PRODUCT_ICONS } from "../view/symbols";
@@ -88,6 +88,8 @@ export class DayScene extends Phaser.Scene {
   private readonly items = new Map<string, Phaser.GameObjects.Graphics>();
   /** Дрібнички на столах (§9.12, «Скидання речей»): кожна — над своєю річчю квартири. */
   private readonly trinkets = new Map<string, Phaser.GameObjects.Graphics>();
+  /** Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): над стіною, під котом. */
+  private toiletRoll!: Phaser.GameObjects.Graphics;
   private readonly catViews = new Map<number, CatView>();
   /** Приховані числа над котами в режимі розробки (§11.5). */
   private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
@@ -146,6 +148,7 @@ export class DayScene extends Phaser.Scene {
     for (const trinket of TRINKETS) {
       this.trinkets.set(trinket.kind, this.add.graphics().setDepth(this.view(trinket.object).depth + 1).addToDisplayList(world));
     }
+    this.toiletRoll = this.add.graphics().setDepth(depthOf(toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
     this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
     this.person = new PersonView(this, world);
     this.bubbles = new Bubbles(this, world);
@@ -743,6 +746,8 @@ export class DayScene extends Phaser.Scene {
       const view = this.view(id);
       drawItem(g, item, view.top.x + view.top.w / 2, view.top.y + view.top.h / 2 + 6);
     }
+    const roll = toScreen(TOILET_ROLL);
+    drawToiletRoll(this.toiletRoll.clear(), roll.x, roll.y, home.rollDown === true);
     // Дрібнички стоять на своїх місцях, поки їх не скинули (§9.12).
     for (const trinket of TRINKETS) {
       const g = this.trinkets.get(trinket.kind);
