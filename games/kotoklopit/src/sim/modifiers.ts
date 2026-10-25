@@ -1,6 +1,7 @@
 // Модифікатори дня й тижня (§4.1, `DAY_MODIFIERS.md`): вибір, ранкові ефекти й події за часом.
 // Числові ефекти інші модулі беруть через функції-множники звідси.
 
+import { knownBreedHalves } from "./breeds";
 import { changeMood, createCat, traitLevel } from "./cat";
 import { addCat, applyMorningSanity } from "./night";
 import { isDirty } from "./catai";
@@ -187,6 +188,8 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng): Cat 
   state.today.foundling = false;
   if (!take) return null;
   const cat = createCat(state, rng, { source: "foundling", ageWeeks: 1, at: { x: 10.5, y: 10.2 } });
+  // Що видно про породу — як у притулку (§9.11).
+  cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   addCat(state, cat);
   applyMorningSanity(state, 0, 1);
   return cat;

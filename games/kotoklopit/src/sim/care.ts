@@ -89,7 +89,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
     changeLove(state, cat, BATH.love, "купання");
   }
   if (water <= -2 && rng.chance(BATH.scratch)) fallIllPerson(state, "injury");
-  if (water !== 0) observe(state, cat, "water");
+  if (water !== 0) observe(state, cat, "water", water > 0 ? 1 : -1);
   cat.bathedDay = state.day;
   if (quality === "premium") cat.diseases = cat.diseases.filter((d) => d.id !== "dermatitis");
   emit(state, { type: "bathed", cat: cat.id });

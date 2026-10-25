@@ -2,6 +2,7 @@
 
 import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
+import { knownBreedHalves } from "./breeds";
 import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
 import { tickCats } from "./catai";
 import { changeStat, passSleepTime } from "./character";
@@ -237,6 +238,8 @@ function utilities({ state, report }: Night): void {
 function kittenCheck({ state, report, rng }: Night): void {
   if (report.sanityEvening >= KITTEN_SANITY_THRESHOLD) return;
   const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS });
+  // Що видно про породу — як у притулку (§9.11; пошук багів 2026-10-25: було невідомо навіть на легкій).
+  cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   cat.arrivedDay = state.day + 1;
   addCat(state, cat);
   // Притулок: блохи (§9.5).

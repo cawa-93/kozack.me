@@ -617,7 +617,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     activity.bitten = true;
     backAway(state, cat, character.body);
     emit(state, { type: "bite", cat: cat.id });
-    observe(state, cat, "petting");
+    observe(state, cat, "petting", -1);
   }
 }
 

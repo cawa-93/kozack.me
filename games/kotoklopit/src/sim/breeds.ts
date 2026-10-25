@@ -1,6 +1,7 @@
 // Породи котів (§9.11, `BREEDS.md`): риси породи, схильності до хвороб і особливості зовнішності.
 
-import type { Genes, Shape } from "./types";
+import type { Rng } from "./rng";
+import type { GameState, Genes, Shape } from "./types";
 
 export interface Breed {
   id: string;
@@ -103,4 +104,13 @@ export function breedLevel(breed: readonly [string, string], group: string): num
 /** Чистокровний: дві однакові справжні породи (§9.11). */
 export function isPurebred(breed: readonly [string, string]): boolean {
   return breed[0] === breed[1] && breed[0] !== MIXED;
+}
+
+/** Що видно про породу (§9.11): легка — усе, середня — чистокровна повністю, напівкровка — половина; важка — нічого. */
+export function knownBreedHalves(state: GameState, breed: readonly [string, string], rng: Rng): [boolean, boolean] {
+  if (state.difficulty === "easy") return [true, true];
+  if (state.difficulty === "hard") return [false, false];
+  if (breed[0] === breed[1]) return [true, true];
+  const first = rng.chance(0.5);
+  return [first, !first];
 }

@@ -60,12 +60,13 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   state.character.activity = null;
   const cat = heldCat(state);
   if (cat) {
+    const trait = traitLevel(cat, "carrier");
+    // Як кіт опирається переносці, персонаж бачить: кіт у нього в руках (§9.9).
+    if (trait < 0) observe(state, cat, "carrier", -1);
     state.character.held = null;
     cat.away = "trip";
     const carrier = state.home.carrier ?? "cheap";
-    const trait = traitLevel(cat, "carrier");
     changeMood(state, cat, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * Math.min(0, trait), "переноска");
-    if (trait < 0) observe(state, cat, "carrier");
   }
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);

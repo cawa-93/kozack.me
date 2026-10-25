@@ -20,7 +20,7 @@ import {
   TRAIT_EFFECTS,
   VET,
 } from "./config";
-import { breedById, breederPrice, MIXED, PUREBREEDS } from "./breeds";
+import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS } from "./breeds";
 import { canOrderProduct, freeSlots, place, stash } from "./economy";
 import { giveAway } from "./farewell";
 import { emit } from "./events";
@@ -102,8 +102,10 @@ export function vetExam(state: GameState): { health: number; mood: number } | nu
   cat.sterilizedKnown = true;
   cat.breedKnown = [true, true];
   // «Ветеринар»: улюбленець майже не ображається на огляд, «Жах клініки» — удвічі більше.
-  changeLove(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * traitLevel(cat, "vet")), "ветеринар");
-  observe(state, cat, "vet");
+  const vet = traitLevel(cat, "vet");
+  changeLove(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
+  // Спокійний чи наляканий на огляді — персонаж поруч і бачить (§9.9).
+  if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });
   return { health: cat.health, mood: cat.mood };
 }
@@ -196,14 +198,6 @@ export function officeMeeting(state: GameState): void {
 
 // --- Притулок -------------------------------------------------------------------------------
 
-/** Що видно про породу (§9.11): легка — усе, середня — чистокровна повністю, напівкровка — половина; важка — нічого. */
-export function knownBreedHalves(state: GameState, breed: readonly [string, string], rng: Rng): [boolean, boolean] {
-  if (state.difficulty === "easy") return [true, true];
-  if (state.difficulty === "hard") return [false, false];
-  if (breed[0] === breed[1]) return [true, true];
-  const first = rng.chance(0.5);
-  return [first, !first];
-}
 
 /** Коти притулку цього тижня (§8.5): той самий вибір до кінця тижня. */
 export function shelterCats(state: GameState): Cat[] {

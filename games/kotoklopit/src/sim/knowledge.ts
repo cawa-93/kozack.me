@@ -18,17 +18,32 @@ function roomOf(p: Vec): string | null {
   return ROOMS.find((r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h)?.id ?? null;
 }
 
-/** Персонаж бачить кота: та сама кімната або зовсім поруч (§9.9). */
+/**
+ * Персонаж бачить кота (§9.9): та сама кімната чи поруч у проході; кота на руках — завжди, кота в переносці —
+ * у спільній поїздці; з душової кабіни — нікого (пошук багів 2026-10-25: кіт на руках «лишався» там, де його
+ * підняли, а кота, що втік чи поїхав, не бачили ніколи).
+ */
 export function witnesses(state: GameState, cat: Cat): boolean {
-  if (!witnessing || state.end !== null || cat.away !== null) return false;
+  if (!witnessing || state.end !== null) return false;
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.inside === true) return false;
+  const held = state.character.held;
+  if (held?.kind === "cat" && held.cat === cat.id) return true;
+  if (cat.away === "trip") return state.trip !== null;
+  if (cat.away !== null) return false;
   return inView(state, cat);
 }
 
-/** Точка в полі зору персонажа: та сама кімната або зовсім поруч (§9.9). */
+/**
+ * Точка в полі зору персонажа (§9.9): та сама кімната; крізь стіну — ні; поруч (до `WITNESS_DISTANCE`) — лише
+ * коли хтось стоїть у проході між кімнатами.
+ */
 export function inView(state: GameState, p: Vec): boolean {
   const body = state.character.body;
   const room = roomOf(body);
-  if (room !== null && room === roomOf(p)) return true;
+  const other = roomOf(p);
+  if (room !== null && room === other) return true;
+  if (room !== null && other !== null) return false;
   return Math.hypot(body.x - p.x, body.y - p.y) <= WITNESS_DISTANCE;
 }
 
@@ -42,10 +57,15 @@ export function visibility(state: GameState, trait: Trait): 0 | 1 | 2 | 3 {
   return 0;
 }
 
-/** Прояв риси групи: якщо в кота є така риса й персонаж це бачив, спостереження зараховується. */
-export function observe(state: GameState, cat: Cat, group: string): void {
+/**
+ * Прояв риси групи: зараховується, якщо в кота є така риса, її знак збігається з побаченою поведінкою і персонаж
+ * це бачив. `side` — котрий бік показала поведінка: 1 — більше того, що називає група (нявчить, мчить, дере
+ * диван), −1 — менше (годинами лежить, дере лише кігтеточку). Знак — самої риси характеру, без породи.
+ * Без цього «Тихоня» відкривалася тим, що приходила по увагу (пошук багів 2026-10-25).
+ */
+export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1): void {
   const trait = cat.traits.find((t) => t.group === group);
-  if (!trait || trait.known) return;
+  if (!trait || trait.known || Math.sign(trait.level) !== side) return;
   const info = traitGroup(group);
   if (info.quiet || info.nocturnal) return;
   if (!witnesses(state, cat)) return;

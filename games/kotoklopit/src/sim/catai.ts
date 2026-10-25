@@ -416,11 +416,14 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   start(cat, "idle", null, CAT_ACT_MINUTES.idle * (0.5 + rng.next()));
 }
 
-/** Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). */
+/**
+ * Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). Хто вже йде — не починає заново: інакше
+ * голодний кіт щокроку «приходив» би знову (пошук багів 2026-10-25). Прояв рис — коли дійде (`tickCat`).
+ */
 function startAttention(state: GameState, cat: Cat): void {
+  if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   const follower = Math.max(0, traitLevel(cat, "follower"));
   start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower), "character");
-  for (const group of ["affection", "demanding", "follower", "talkative"]) observe(state, cat, group);
 }
 
 function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
@@ -430,7 +433,7 @@ function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
 
 /** Кіт хоче гратися (§9.12): зумі, скинути річ, украсти їжу, іграшка чи просто побродити. */
 function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
-  if (traitLevel(cat, "energy") > 0) observe(state, cat, "energy");
+  observe(state, cat, "energy");
   type Choice = () => void;
   const options: { weight: number; value: Choice }[] = [
     { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(state, cat, rng) },
@@ -478,7 +481,11 @@ function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   const level = traitLevel(cat, "scratching");
   const posts = itemsOf(state, "scratcher").filter((p) => rng.chance(clamp(SCRATCH[p.quality] - SCRATCH.traitStep * level, 0, 1)));
   const post = nearest(cat, posts);
-  if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
+  if (post) {
+    // Дере кігтеточку, а не диван — прояв «Любить кігтеточку» (§9.9).
+    observe(state, cat, "scratching", -1);
+    return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
+  }
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
   observe(state, cat, "scratching");
@@ -654,7 +661,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Довгий сон — прояв «Тривалості сну», а спокійний кіт — «Енергійності» (§9.9).
       if (act.elapsed >= 3 * MINUTES_PER_HOUR) {
         observe(state, cat, "sleep");
-        if (traitLevel(cat, "energy") < 0) observe(state, cat, "energy");
+        observe(state, cat, "energy", -1);
       }
       const house = itemById(state, act.target);
       if (house && act.elapsed >= MIN_CAT_NAP_MINUTES) {
@@ -862,7 +869,7 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   if (!rng.chance(1 - (1 - carryBiteChance(cat)) ** minutes)) return;
   changeStat(state, "health", PET.biteHealth);
   emit(state, { type: "bite", cat: cat.id });
-  observe(state, cat, "lap");
+  observe(state, cat, "lap", -1);
   if (!rng.chance(CARRY.escape)) return;
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);
@@ -894,7 +901,13 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     else {
       // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
-      if (traitLevel(cat, "follower") >= 0 && Math.hypot(body.x - cat.x, body.y - cat.y) > 1.2) cat.act.goal = tileOf(body);
+      const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= 1.2;
+      // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід.
+      if (near && cat.act.seen !== true) {
+        cat.act.seen = true;
+        for (const group of ["affection", "demanding", "follower", "talkative"]) observe(state, cat, group);
+      }
+      if (traitLevel(cat, "follower") >= 0 && !near) cat.act.goal = tileOf(body);
     }
   }
   let left = minutes;
@@ -1003,7 +1016,10 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   changeRelation(state, a, b, fight.relation);
   addMess(state, "fur", visibleFloorNear(state, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
-  for (const cat of [a, b]) for (const group of ["sociability", "territorial"]) observe(state, cat, group);
+  for (const cat of [a, b]) {
+    observe(state, cat, "sociability", -1);
+    observe(state, cat, "territorial");
+  }
 }
 
 /** Чистюля відходить від персонажа в брудному одязі (§9.12). */
@@ -1038,7 +1054,7 @@ export function envy(state: GameState, lucky: Cat): void {
       changeMood(state, other, ENVY.mood * level, "заздрить");
       changeRelation(state, other, lucky, ENVY.relation * level);
     } else changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
-    observe(state, other, "envy");
+    observe(state, other, "envy", level > 0 ? 1 : -1);
   }
 }
 
@@ -1077,11 +1093,12 @@ export function rollEscapes(state: GameState): void {
     if (cat.away !== null || isCarried(state, cat)) continue;
     if (Math.hypot(cat.x - door.x, cat.y - door.y) > ESCAPE.distance) continue;
     if (!rng.chance(clamp(ESCAPE.base + ESCAPE.step * traitLevel(cat, "escape") + escapeBonus(state, cat), 0, 1))) continue;
+    // Персонаж бачить, як кіт вислизнув, — ще поки той біля дверей (§9.9).
+    observe(state, cat, "escape");
     cat.away = "stairs";
     cat.x = door.x;
     cat.y = 10.9;
     start(cat, "idle", null, 0);
     emit(state, { type: "escaped", cat: cat.id });
-    observe(state, cat, "escape");
   }
 }

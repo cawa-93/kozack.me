@@ -292,7 +292,7 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
       const seen = visibility(state, trait);
       if (seen === 2) {
         const signs = traitGroup(trait.group).signs;
-        if (signs) lines.push(`Здається, ${cat.name} ${trait.level > 0 ? signs[0] : signs[1]}.`);
+        if (signs) lines.push(`Здається, ${cat.name} ${fill(trait.level > 0 ? signs[0] : signs[1], cat.sex)}.`);
       } else if (seen === 1) lines.push("❓ Помічено щось дивне");
     }
     if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
@@ -311,7 +311,8 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   });
 }
 
-const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", given: "віддано в добрі руки" };
+/** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
+const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", given: "живе в нових руках" };
 
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
