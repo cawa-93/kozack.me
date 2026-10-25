@@ -67,7 +67,8 @@ export type IconName =
   | "fur"
   | "mug"
   | "phone"
-  | "pen";
+  | "pen"
+  | "cat-box";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -391,6 +392,14 @@ Object.assign(ICONS, {
     g.fillStyle(0x6b5d6e).fillEllipse(22, 25, 26, 11).fillCircle(9, 24, 6.5).fillTriangle(4, 21, 5, 14, 9, 18).fillTriangle(14, 21, 13, 14, 9, 18);
     g.lineStyle(3.5, 0x6b5d6e).lineBetween(34, 26, 37, 34);
     g.fillStyle(0xffffff).fillCircle(7, 24, 1.4).fillCircle(11, 24, 1.4);
+  },
+  "cat-box": (g: Phaser.GameObjects.Graphics) => {
+    // Картонна коробка, а з неї визирає кіт — вуха й очі (§9.12, «Допитливість»).
+    g.fillStyle(0x6b5d6e).fillCircle(20, 17, 9).fillTriangle(12, 13, 13, 4, 18, 10).fillTriangle(28, 13, 27, 4, 22, 10);
+    g.fillStyle(0xffffff).fillCircle(16.5, 17, 1.8).fillCircle(23.5, 17, 1.8);
+    g.fillStyle(0xc49a62).fillRect(5, 21, 30, 15);
+    g.fillStyle(0xe8d9b0).fillRect(17, 21, 6, 15);
+    g.lineStyle(2.5, INK).strokeRect(5, 21, 30, 15);
   },
   "no-power": (g: Phaser.GameObjects.Graphics) => {
     // Блискавка, перекреслена: світла немає (§4.1).

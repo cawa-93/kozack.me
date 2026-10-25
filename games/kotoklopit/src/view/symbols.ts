@@ -90,6 +90,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "no-room" };
     case "kit-empty":
       return { icon: "kit", count: 0 };
+    case "cat-in-box":
+      return { icon: "cat-box" };
   }
 }
 

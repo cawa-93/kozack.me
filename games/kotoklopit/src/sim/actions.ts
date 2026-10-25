@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, showerDrops, turnAway, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, showerDrops, turnAway, waterFright } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -174,6 +174,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     case "boxes":
       // Ящики біля входу (§6.4): брати з них нічого не можна — лише розкласти все по сховищах.
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // У коробці спить допитливий кіт (§9.12): спершу його треба забрати.
+      if (catInBox(state)) return refuse(state, target.id, "cat-in-box");
       if (unpack(state).length === 0) return refuse(state, target.id, "no-room");
       return null;
     case "stove": {

@@ -4,15 +4,16 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, standingTrinkets, startScratch, tickCats } from "../src/sim/catai";
-import { KNOCKING, SCRATCH, SOFA_REPAIR } from "../src/sim/config";
-import { newGame } from "../src/sim/game";
-import { trinketTile } from "../src/sim/home";
+import { catInBox, decide, standingTrinkets, startScratch, tickCats } from "../src/sim/catai";
+import { CURIOSITY, KNOCKING, SCRATCH, SOFA_REPAIR } from "../src/sim/config";
+import { place } from "../src/sim/economy";
+import { interact, newGame } from "../src/sim/game";
+import { slotById, trinketTile } from "../src/sim/home";
 import { nightlyHousehold } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel, TrinketKind } from "../src/sim/types";
-import { hours, recordEvents, withCatCorner } from "./helpers";
+import type { BowlItem, Cat, Save, TraitLevel, TrinketKind } from "../src/sim/types";
+import { hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -237,5 +238,109 @@ describe("«Дряпання»: де кіт точить кігті (§9.12, р�
       tickCats(save.current, 1, { present: true });
       expect(cat.act.kind).not.toBe("scratch");
     }
+  });
+});
+
+/** Привезти й поставити нову миску (§6.4): її бачать коти, якщо персонаж удома. */
+function newBowl(save: Save): BowlItem {
+  const bowl = place(save.current, "bowl", "cheap");
+  if (bowl?.kind !== "bowl") throw new Error("немає місця для миски");
+  save.current.home.items.push(bowl);
+  return bowl;
+}
+
+describe("«Допитливість»: коробки й нові речі (§9.12, рішення автора 2026-10-25)", () => {
+  it("на нову річ «+» іде обнюхати її й сидить поруч, «−» обнюхує й відходить — прояви обох боків", () => {
+    const save = game();
+    // Персонаж на кухні, біля мисок.
+    Object.assign(save.current.character.body, { x: 16.5, y: 2.5 });
+    const curious = withCat(save, { curiosity: 2 }, { x: 15.5, y: 2.5 });
+    const wary = withCat(save, { curiosity: -2 }, { x: 14.5, y: 2.5 });
+    const plain = withCat(save, {}, { x: 14.5, y: 3.5 });
+    const bowl = newBowl(save);
+    tickCats(save.current, 0.1, { present: true });
+    expect(curious.act.target).toBe(`sniff:${bowl.id}`);
+    expect(wary.act.target).toBe(`shun:${bowl.id}`);
+    expect(plain.act.target).toBeNull();
+    for (let i = 0; i < 30; i++) tickCats(save.current, 0.25, { present: true });
+    expect(seen(curious, "curiosity")).toBe(1);
+    expect(seen(wary, "curiosity")).toBe(1);
+    // Кожна річ — одна реакція.
+    for (let i = 0; i < 20; i++) tickCats(save.current, 0.25, { present: true });
+    expect(seen(curious, "curiosity")).toBe(1);
+  });
+
+  it("поки персонажа немає, коти нової речі не помічають — зреагують, щойно він удома", () => {
+    const save = game();
+    const curious = withCat(save, { curiosity: 2 }, { x: 15.5, y: 2.5 });
+    const bowl = newBowl(save);
+    tickCats(save.current, 0.1, { present: false });
+    expect(curious.act.target).toBeNull();
+    tickCats(save.current, 0.1, { present: true });
+    expect(curious.act.target).toBe(`sniff:${bowl.id}`);
+  });
+
+  it("«Байдужий до нового» 2 години × |рівень| обходить нову миску, поки є стара з кормом", () => {
+    const save = game();
+    const cat = withCat(save, { curiosity: -2 }, { x: 15.5, y: 2.5 });
+    const old = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");
+    if (!old) throw new Error("немає миски");
+    const fresh = newBowl(save);
+    for (const bowl of [old, fresh]) Object.assign(bowl, { food: 1, foodQuality: "cheap" });
+    // Нова миска ближче до кота.
+    Object.assign(cat, { x: slotById(fresh.slot).x + 0.5, y: slotById(fresh.slot).y + 0.5 });
+    cat.needs.hunger = 90;
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.target).toBe(`item:${old.id}`);
+    // За 4 години нова миска вже звична.
+    save.current.minute += hours(CURIOSITY.shunHours * 2);
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.target).toBe(`item:${fresh.id}`);
+  });
+
+  it("стара миска порожня — бере й нову; кіт без риси нової не цурається", () => {
+    const save = game();
+    const wary = withCat(save, { curiosity: -2 }, { x: 15.5, y: 2.5 });
+    const plain = withCat(save, {}, { x: 15.5, y: 2.5 });
+    const fresh = newBowl(save);
+    Object.assign(fresh, { food: 2, foodQuality: "cheap" });
+    for (const cat of [wary, plain]) {
+      cat.needs.hunger = 90;
+      decide(save.current, cat, createRng(1), { present: true });
+      expect(cat.act.target).toBe(`item:${fresh.id}`);
+    }
+  });
+
+  it("«+» спить у ящиках із покупками — розпакувати їх не можна, поки кота не забрали; прояв «+»", () => {
+    let boxes = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      for (const level of [0, 2] as const) {
+        const save = game(seed);
+        save.current.home.boxes = { food: { cheap: 2, premium: 0 } };
+        const cat = withCat(save, level === 0 ? {} : { curiosity: level }, { x: 10.5, y: 8.5 });
+        cat.needs.fatigue = 90;
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.target === "boxes") {
+          expect(level).toBe(2);
+          boxes += 1;
+        }
+      }
+    }
+    expect(boxes).toBeGreaterThan(3);
+    const save = game();
+    save.current.home.boxes = { food: { cheap: 2, premium: 0 } };
+    Object.assign(save.current.character.body, { x: 11.5, y: 8.5 });
+    const cat = withCat(save, { curiosity: 1 }, { x: 12.5, y: 9.5 });
+    cat.act = { kind: "sleep", target: "boxes", goal: null, minutes: 300, elapsed: 0 };
+    cat.needs.fatigue = 60;
+    tickCats(save.current, 0.5, { present: true });
+    expect(catInBox(save.current)).toBe(cat);
+    expect(seen(cat, "curiosity")).toBe(1);
+    const { events, stop } = recordEvents();
+    walkTo(save, "boxes");
+    interact(save);
+    stop();
+    expect(events.some((e) => e.type === "refused" && e.reason === "cat-in-box")).toBe(true);
+    expect(save.current.home.boxes?.food?.cheap).toBe(2);
   });
 });

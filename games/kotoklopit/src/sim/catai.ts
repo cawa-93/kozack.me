@@ -19,6 +19,7 @@ import {
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
+  CURIOSITY,
   DIFFICULTY,
   DIRTY_CLOTHES_CATS,
   DEMANDING_SEEN_MINUTES,
@@ -97,7 +98,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -489,6 +490,9 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
+  // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
+  const curiosity = traitLevel(cat, "curiosity");
+  if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });
   // Відчинена пральна машина — затишний барабан для допитливих (§8.7).
   if (state.home.washer.state === "idle") {
     const washer = objectById("washer");
@@ -521,7 +525,8 @@ export function hideSpot(state: GameState, rng: Rng): Spot {
 export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext): void {
   const n = cat.needs;
   if (n.toilet >= NEED_THRESHOLD.toilet) {
-    const boxes = itemsOf(state, "litter");
+    // «Байдужий до нового» обходить новий лоток, поки є старий, — навіть брудний (§9.12, «Допитливість»).
+    const boxes = avoidNew(state, cat, itemsOf(state, "litter"));
     const box = nearest(cat, boxes.filter((b) => !dirtyFor(cat, b))) ?? nearest(cat, boxes);
     if (box) return start(cat, "toilet", itemTile(box), CAT_ACT_MINUTES.toilet, `item:${box.id}`);
     // Лотка немає: «сюрприз» деінде.
@@ -530,7 +535,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   const hungry = n.hunger >= hungerThreshold(cat);
   if (hungry) {
     const bowls = itemsOf(state, "bowl");
-    const full = nearest(cat, bowls.filter((b) => b.food > 0));
+    const full = nearest(cat, avoidNew(state, cat, bowls.filter((b) => b.food > 0)));
     if (full) return start(cat, "eat", itemTile(full), eatMinutes(cat), `item:${full.id}`);
   }
   // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
@@ -542,7 +547,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
       return start(cat, "beg", { x: sink.x, y: sink.y }, CAT_ACT_MINUTES.beg, "sink");
     }
     const waters = itemsOf(state, "water");
-    const water = nearest(cat, waters.filter((w) => w.water > 0)) ?? nearest(cat, waters);
+    const water = nearest(cat, avoidNew(state, cat, waters.filter((w) => w.water > 0))) ?? nearest(cat, waters);
     if (water) return start(cat, water.water > 0 ? "drink" : "beg", itemTile(water), water.water > 0 ? CAT_ACT_MINUTES.drink : CAT_ACT_MINUTES.beg, `item:${water.id}`);
   }
   if (hungry) {
@@ -876,7 +881,7 @@ function startWrestle(state: GameState, cat: Cat, mate: Cat): void {
  */
 export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   const level = traitLevel(cat, "scratching");
-  const posts = itemsOf(state, "scratcher").filter((p) => rng.chance(clamp(SCRATCH[p.quality] - SCRATCH.traitStep * level, 0, 1)));
+  const posts = avoidNew(state, cat, itemsOf(state, "scratcher")).filter((p) => rng.chance(clamp(SCRATCH[p.quality] - SCRATCH.traitStep * level, 0, 1)));
   const post = nearest(cat, posts);
   if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
   if (level <= -2 || (level === -1 && !rng.chance(SCRATCH.calmSofa))) {
@@ -1226,6 +1231,16 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Прояв — на місці, на очах персонажа (§9.9): «+» дере диван чи одвірок, «−» — кігтеточку, килимок чи коробки.
       observe(state, cat, "scratching", where === "sofa" || where === "doorframe" ? 1 : -1);
       return;
+    }
+    case "idle": {
+      // Обнюхав нову річ (§9.12, «Допитливість»): допитливий посидів поруч — прояв «+»; обачний відходить подалі — «−».
+      const [kind, id] = act.target?.split(":") ?? [];
+      if (kind !== "sniff" && kind !== "shun") return;
+      const item = state.home.items.find((i) => i.id === Number(id));
+      if (!item) return;
+      if (kind === "sniff") return observe(state, cat, "curiosity");
+      observe(state, cat, "curiosity", -1);
+      return backAway(state, cat, itemPoint(item));
     }
     case "wander":
       // Просто побродити без діла гри не знімає: інакше коти майже не гралися б самі, не бешкетували
@@ -1729,6 +1744,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   revengeSeen(state, cat);
   sinkSeen(state, cat);
+  boxSeen(state, cat);
   dropsSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
@@ -1845,6 +1861,7 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
     noticeRoomChange(state, rng);
     figureEight(state);
     devotedBlinks(state);
+    newThings(state, rng);
   }
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) {
@@ -2071,6 +2088,70 @@ export function waterFright(state: GameState): void {
     emit(state, { type: "scared", cat: cat.id });
     observe(state, cat, "water", -1, false, WATER_PLAY.observeEvery);
   }
+}
+
+/** Хвилина, коли річ з'явилася вдома, якщо вона ще нова (§9.12, «Допитливість»); null — річ уже звична. */
+function freshAt(state: GameState, item: HomeItem): number | null {
+  const entry = state.home.fresh?.find((f) => f.item === item.id);
+  if (!entry || absoluteMinute(state.day, state.minute) - entry.at >= CURIOSITY.freshHours * MINUTES_PER_HOUR) return null;
+  return entry.at;
+}
+
+/**
+ * «Обачний» обходить нову річ (§9.12, «Допитливість», рішення автора 2026-10-25): 2 години × |рівень| не бере нової миски,
+ * води, лотка чи кігтеточки, поки серед цих речей є стара. Немає старої — бере нову.
+ */
+function avoidNew<T extends HomeItem>(state: GameState, cat: Cat, items: T[]): T[] {
+  const level = traitLevel(cat, "curiosity");
+  if (level >= 0) return items;
+  const now = absoluteMinute(state.day, state.minute);
+  const shunned = (item: T): boolean => {
+    const at = freshAt(state, item);
+    return at !== null && now - at < CURIOSITY.shunHours * MINUTES_PER_HOUR * -level;
+  };
+  const old = items.filter((i) => !shunned(i));
+  return old.length > 0 ? old : items;
+}
+
+/** Звідки кіт іде до нової речі: не спить і нічим важливим не зайнятий (§9.12). */
+const SNIFF_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow"]);
+
+/**
+ * Удома з'явилася нова річ, а персонаж удома й не спить (§9.12, «Допитливість»): кожен вільний кіт, що звик до дому, раз на
+ * річ реагує — «+» з шансом 50% × рівень іде її обнюхати й сидить поруч, «−» з шансом 50% × |рівень| обнюхує й відходить.
+ */
+function newThings(state: GameState, rng: Rng): void {
+  const fresh = state.home.fresh;
+  if (!fresh) return;
+  const now = absoluteMinute(state.day, state.minute);
+  state.home.fresh = fresh.filter((f) => now - f.at < CURIOSITY.freshHours * MINUTES_PER_HOUR);
+  for (const entry of state.home.fresh) {
+    if (entry.noticed === true) continue;
+    entry.noticed = true;
+    const item = state.home.items.find((i) => i.id === entry.item);
+    if (!item) continue;
+    for (const cat of state.cats) {
+      const level = traitLevel(cat, "curiosity");
+      if (level === 0 || !home(state, cat) || asleep(cat) || !SNIFF_FROM.has(cat.act.kind) || isAdapting(state, cat)) continue;
+      if (!rng.chance(CURIOSITY.sniffStep * Math.abs(level))) continue;
+      if (level > 0) start(cat, "idle", itemTile(item), CURIOSITY.sniffMinutes, `sniff:${item.id}`);
+      else start(cat, "idle", itemTile(item), CURIOSITY.shunMinutes, `shun:${item.id}`);
+    }
+  }
+  if (state.home.fresh.length === 0) delete state.home.fresh;
+}
+
+/** Кіт спить у ящиках біля входу (§9.12, «Допитливість»): розпакувати їх не можна, поки його не забрали. */
+export function catInBox(state: GameState): Cat | null {
+  return state.cats.find((c) => home(state, c) && c.act.target === "boxes" && c.act.goal === null && c.act.kind === "sleep") ?? null;
+}
+
+/** Допитливий спить у коробці на очах персонажа (§9.9): прояв «Допитливості +», раз за раз. */
+function boxSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "sleep" || act.target !== "boxes" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "curiosity");
 }
 
 /** Кіт, що сидить на умивальнику й чекає крана (§9.12, «Пиття»). */

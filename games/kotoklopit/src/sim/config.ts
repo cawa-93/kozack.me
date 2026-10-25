@@ -685,6 +685,13 @@ export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander
  */
 export const KNOCKING = { weight: 0.15, sniffStep: 0.5, sniffMinutes: 0.5, mugBreaks: 0.5, repair: 2, ignoredMinutes: 5, attentionStep: 0.2, reach: 6 } as const;
 /**
+ * «Допитливість» і нові речі (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`): «+» спить у ящиках біля
+ * входу з вагою `boxStep` × рівень; на нову річ «+» з шансом `sniffStep` × рівень іде обнюхати її й сидить поруч
+ * `sniffMinutes`, «−» з шансом `sniffStep` × |рівень| обнюхує `shunMinutes` і відходить, а ще `shunHours` × |рівень| годин
+ * обходить нову миску, воду, лоток чи кігтеточку, поки є стара. Нова річ лишається новою `freshHours` годин.
+ */
+export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinutes: 0.5, shunHours: 2, freshHours: 4 } as const;
+/**
  * Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. Рішення автора
  * 2026-10-25 (`TRAITS_REVIEW.md`): вага `weight` × (1 + `frequencyStep` × рівень), не менше `minWeight`; без кігтеточки
  * «Любить кігтеточку» (−1) дере диван лише з шансом `calmSofa` (інакше килимок чи коробки), −2 — ніколи; «Руйнівник

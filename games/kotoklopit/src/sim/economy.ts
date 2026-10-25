@@ -302,6 +302,8 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
     return null;
   }
   const id = state.nextId++;
+  // Нова річ (§9.12, «Допитливість»): допитливі підуть її обнюхати, обачні якийсь час обходитимуть.
+  (state.home.fresh ??= []).push({ item: id, at: absoluteMinute(state.day, state.minute) });
   if (thing === "toy") return { id, kind: "toy", quality, x: DELIVERED_TOY_AT.x, y: DELIVERED_TOY_AT.y, uses: 0 };
   const taken = new Set(state.home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id));

@@ -64,7 +64,9 @@ export type Refusal =
   /** Розкласти запаси з ящиків нікуди: сховища повні (§6.4). */
   | { reason: "no-room" }
   /** В аптечці нічого для цього кота (§8.7). */
-  | { reason: "kit-empty" };
+  | { reason: "kit-empty" }
+  /** У ящиках біля входу спить кіт: розпакувати їх не можна, поки його не забрали (§9.12, «Допитливість»). */
+  | { reason: "cat-in-box" };
 
 export type GameEvent =
   | { type: "night"; report: NightReport }
