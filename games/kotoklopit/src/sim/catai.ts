@@ -493,8 +493,9 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
   // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
+  // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
-  if (carrier > 0 && state.home.carrier !== null) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
+  if (carrier > 0 && state.home.carrier !== null && (state.trip?.cat ?? null) === null) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });

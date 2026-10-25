@@ -1,7 +1,7 @@
 // Поїздки (§8.5): вирушити з дому, гонка, подія на місці, повернення без гонки; аварія —
 // втрати й перемотування дня до сну. Події на місці — `destinations.ts`.
 
-import { changeMood, stress, traitLevel } from "./cat";
+import { changeMood, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
 import { emit } from "./events";
@@ -70,6 +70,8 @@ export function startTrip(state: GameState, destination: Destination): boolean {
     if (trait < 0) observe(state, cat, "carrier", -1);
     state.character.held = null;
     cat.away = "trip";
+    // Переноску беруть у дорогу (§9.12 «Переноска»): кіт, що спав у ній, вилазить (перевірка етапу 2026-10-26).
+    for (const other of state.cats) if (other.act.kind === "sleep" && other.act.target === "carrier") other.act = idleAct();
     const carrier = state.home.carrier ?? "cheap";
     // «Переноска» дзеркальна (§9.12, рішення автора 2026-10-25): «+» втрачає менше, «Сам лізе в переноску» — нічого.
     changeMood(state, cat, Math.min(0, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * trait), "переноска");

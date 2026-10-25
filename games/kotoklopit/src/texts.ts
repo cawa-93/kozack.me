@@ -2,6 +2,7 @@
 
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
+import type { GuestsVisit } from "./sim/events";
 import type { AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Sex, UtilitiesReport } from "./sim/types";
 
 /** Підставити значення й обрати форми за статтю того, про кого йдеться. */
@@ -432,6 +433,20 @@ export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда
  * Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): у ветеринара, у грумера й коли заходила ветеринарка. Рядок
  * у картці — прояв «Ветеринара».
  */
+/**
+ * Повідомлення дня «Прийшли гості» (§4.1, §9.12 «Двері й гості»): що саме бачили гості — безлад, шипіння з-під дивана,
+ * захват від котів (перевірка етапу 2026-10-26: шипіння в чистій квартирі називалося «безладом», а «захват від котів»
+ * бував і без котів).
+ */
+export function guestsText(visit: GuestsVisit | undefined): string {
+  const { mess = false, hissed = false, delighted = false } = visit ?? {};
+  if (mess && hissed) return "Гості чемно не помітили ні безладу, ні шипіння з-під дивана. Але ви помітили, що вони помітили.";
+  if (hissed) return "Гості хвалили чистоту, але з-під дивана на них шипіли.";
+  if (mess && delighted) return "Гості в захваті від котів — безладу майже не помітили.";
+  if (mess) return "Гості чемно не помітили безладу. Але ви помітили, що вони помітили.";
+  return delighted ? "Гості в захваті від котів і чистоти." : "Гості хвалили чистоту.";
+}
+
 export const VET_MANNER: Record<"vet" | "groomer" | "home", Record<"calm" | "hiss" | "hid", string>> = {
   vet: {
     calm: "{кіт} спокійно [сидів|сиділа] на столі й [муркотів|муркотіла].",
@@ -446,7 +461,8 @@ export const VET_MANNER: Record<"vet" | "groomer" | "home", Record<"calm" | "his
   home: {
     calm: "{кіт} спокійно [дався|далася] оглянути й [муркотів|муркотіла].",
     hiss: "{кіт} [шипів|шипіла] на ветеринарку.",
-    hid: "{кіт} [вирвався|вирвалася] з рук і [забився|забилася] під ліжко.",
+    // Де саме сховався, вирішує схованка (під ліжком, диваном чи в будиночку, §9.6), тож без «під ліжко».
+    hid: "{кіт} [вирвався|вирвалася] з рук і [сховався|сховалася].",
   },
 };
 

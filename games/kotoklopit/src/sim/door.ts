@@ -26,7 +26,7 @@ const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal =
 const nearDoor = (cat: Cat, reach: number): boolean => Math.hypot(cat.x - DOOR.x, cat.y - DOOR.y) <= reach;
 const clamp = (value: number): number => Math.min(1, Math.max(0, value));
 
-/** Звідки кіт реагує на дзвінок: не спить і нічим важливим не зайнятий (§9.12). */
+/** Звідки кіт реагує на дзвінок, а «−» — і на відчинені двері: не спить і нічим важливим не зайнятий (§9.12). */
 const BELL_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow", "groom", "scratch"]);
 
 /**
@@ -40,7 +40,9 @@ export function openDoor(state: GameState, except: number | null = null): void {
     if (cat.id === except || cat.away !== null || isCarried(state, cat) || asleep(cat) || isNewborn(cat)) continue;
     const level = traitLevel(cat, "escape");
     if (level < 0) {
-      if (!nearDoor(cat, level <= -2 ? ESCAPE.fearReach : ESCAPE.distance)) continue;
+      // Хто ховається, їсть чи в лотку, на двері не зважає (перевірка етапу 2026-10-26: кіт, що сховався під диван від
+      // дзвінка, вилазив зі схованки, щойно гості заходили).
+      if (!BELL_FROM.has(cat.act.kind) || !nearDoor(cat, level <= -2 ? ESCAPE.fearReach : ESCAPE.distance)) continue;
       // Відходить від відчинених дверей — прояв «−» (§9.9): «Домосід» — на кілька кроків, «Боїться дверей» — углиб квартири.
       if (level <= -2) {
         startAct(cat, "wander", tileOf(visibleFloorNear(state, AWAY_FROM_DOOR)), CAT_ACT_MINUTES.wander, "flee");

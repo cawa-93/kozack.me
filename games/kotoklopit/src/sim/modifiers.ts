@@ -353,7 +353,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     }
     const total = shame + Math.min(GUESTS.delightMax, delight) + hissing;
     changeStat(state, "sanity", total);
-    emit(state, { type: "modifier", kind: "guests", value: total });
+    emit(state, { type: "modifier", kind: "guests", value: total, guests: { mess: shame < 0, hissed: hissing < 0, delighted: delight > 0 } });
   }
   if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);

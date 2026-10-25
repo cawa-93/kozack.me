@@ -7,6 +7,13 @@ import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, 
 export type PatienceLevel = "ok" | "warning" | "out";
 
 /** Події модифікаторів дня (§4.1): для баблів, карток і журналу. */
+/** Як минув візит гостей (§9.12 «Двері й гості»): безлад, шипіння «Шипить на гостей», захват від «Душі компанії». */
+export interface GuestsVisit {
+  mess: boolean;
+  hissed: boolean;
+  delighted: boolean;
+}
+
 export type ModifierEvent =
   | "reputation"
   | "meeting-start"
@@ -103,7 +110,11 @@ export type GameEvent =
   | { type: "feeder-emptied"; item: number; products: Product[] }
   | { type: "broke"; what: string }
   | { type: "beard"; kind: "shave" | "trim" }
-  | { type: "modifier"; kind: ModifierEvent; value: number }
+  /**
+   * Подія дня (§4.1). `guests` — що сталося з гостями (§9.12 «Двері й гості»): безлад, шипіння з-під дивана, захват від котів;
+   * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26).
+   */
+  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   /** Пошук роботи: вакансія закінчилася відмовою, далі — нова (§8.6). */

@@ -6,7 +6,7 @@ import { catOnSink, isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
-import { onEvent, type GameEvent, type ModifierEvent } from "../sim/events";
+import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
@@ -29,7 +29,7 @@ import { addBell, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES, VET_MANNER } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, POSITION_TITLES, VET_MANNER } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1041,7 +1041,7 @@ export class DayScene extends Phaser.Scene {
         }
         break;
       case "modifier":
-        this.onModifier(event.kind, event.value);
+        this.onModifier(event.kind, event.value, event.guests);
         break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
@@ -1072,7 +1072,7 @@ export class DayScene extends Phaser.Scene {
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 
-  private onModifier(kind: ModifierEvent, value: number): void {
+  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
       case "mom-call":
@@ -1108,7 +1108,7 @@ export class DayScene extends Phaser.Scene {
         this.notice("Перевірка від ОСББ", money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.` : "Представник ОСББ не знайшов, до чого причепитися.");
         return;
       case "guests":
-        this.notice("Прийшли гості", value < 0 ? "Гості чемно не помітили безладу. Але ви помітили, що вони помітили." : "Гості в захваті від котів і чистоти.");
+        this.notice("Прийшли гості", guestsText(guests));
         return;
       case "office-missed":
         this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися.");

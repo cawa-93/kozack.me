@@ -14,7 +14,9 @@ import { tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
+import type { GuestsVisit } from "../src/sim/events";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import { guestsText } from "../src/texts";
 import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -69,6 +71,20 @@ describe("«Втечі»: відчинені двері (§9.12, рішення 
     expect(events.some((e) => e.type === "scared" && e.cat === afraid.id)).toBe(true);
     expect(seen(homebody, "escape")).toBe(1);
     expect(seen(afraid, "escape")).toBe(1);
+  });
+
+  it("«−», що ховається, їсть чи в лотку, на відчинені двері не зважає (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    // Сховався під диван від дзвінка — гості заходять, а він лишається в схованці.
+    const hiding = withCat(save, { escape: -2 }, { x: 13.5, y: 10.5 });
+    hiding.act = { kind: "hide", target: null, goal: null, minutes: 60, elapsed: 5 };
+    const eating = withCat(save, { escape: -1 }, { x: 10.5, y: 9.5 });
+    eating.act = { kind: "eat", target: null, goal: null, minutes: 3, elapsed: 1 };
+    openDoor(save.current);
+    expect(hiding.act.kind).toBe("hide");
+    expect(eating.act.kind).toBe("eat");
+    expect(seen(hiding, "escape")).toBe(0);
+    expect(seen(eating, "escape")).toBe(0);
   });
 
   it("кіт утік, коли персонаж вирушав, — поїздка не починається, доки його не впіймали", () => {
@@ -180,6 +196,25 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     expect(sanityAfter([{ guests: -2 }])).toBe(50 + GUESTS.hissSanity);
   });
 
+  it("повідомлення дня каже, що бачили гості: шипіння в чистій квартирі — не «безлад» (перевірка етапу 2026-10-26)", () => {
+    const visit = (traits: Record<string, TraitLevel>[], messes = 0): GuestsVisit | undefined => {
+      const save = game();
+      save.current.modifiers.day = "guests";
+      traits.forEach((t, i) => withCat(save, t, { x: 3.5 + i, y: 8.5 }));
+      for (let i = 0; i < messes; i++) save.current.home.messes.push({ id: 900 + i, kind: "vomit", x: 5.5, y: 7.5, cat: null });
+      const { events, stop } = recordEvents();
+      tickModifiers(save.current, MODIFIERS.guests.minute - 1, 2, false);
+      stop();
+      const event = events.find((e) => e.type === "modifier" && e.kind === "guests");
+      return event?.type === "modifier" ? event.guests : undefined;
+    };
+    expect(visit([{ guests: -2 }])).toEqual({ mess: false, hissed: true, delighted: false });
+    expect(guestsText(visit([{ guests: -2 }]))).not.toContain("безлад");
+    expect(visit([{ guests: 1 }], 1)).toEqual({ mess: true, hissed: false, delighted: true });
+    // Без котів гості в захваті хіба що від чистоти.
+    expect(guestsText(visit([]))).not.toContain("кот");
+  });
+
   it("гості дзвонять за 2 хвилини, а заходять — двері відчинено: «Душа компанії» біля дверей може й вибігти", () => {
     let escaped = 0;
     for (let seed = 1; seed <= 30; seed++) {
@@ -249,6 +284,21 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
     Object.assign(cat, { x: 8.5, y: 9.5 });
     tickCats(save.current, 0.25, { present: true });
     expect(seen(cat, "carrier")).toBe(1);
+  });
+
+  it("переноску беруть у дорогу: хто в ній спав, вилазить, а поки вона з котом у дорозі, у ній не сплять (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    const sleeper = withCat(save, { carrier: 2 }, { x: 8.5, y: 9.5 });
+    sleeper.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 10 };
+    const passenger = withCat(save, {}, { x: 5.5, y: 8.5 });
+    atDoorWith(save, passenger);
+    expect(startTrip(save.current, "vet")).toBe(true);
+    expect(sleeper.act.kind).not.toBe("sleep");
+    sleeper.needs.fatigue = 90;
+    for (let seed = 1; seed <= 40; seed++) {
+      decide(save.current, sleeper, createRng(seed), { present: false });
+      expect(sleeper.act.target).not.toBe("carrier");
+    }
   });
 
   it("«−» на руках біля дверей пручається (прояв «−»), дряпається й може вирватися; без переноски — ні", () => {
