@@ -377,7 +377,6 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   if (shooed) {
     changeMood(state, cat, SHOO.mood, "прогнали з місця");
     changeLove(state, cat, SHOO.love, "прогнали з місця");
-    observe(state, cat, "touchy");
   } else {
     if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
     if (offended) changeLove(state, cat, PET.unwantedLove, "узяли на руки проти волі");

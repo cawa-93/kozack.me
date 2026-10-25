@@ -17,9 +17,9 @@ export function traitAbout(trait: Pick<Trait, "group" | "level">, sex: Sex): str
  * імені (`name` null) — для бабла телефона, де ім'я вже в заголовку.
  */
 export function traitHint(cat: Pick<Cat, "name" | "sex">, trait: Pick<Trait, "group" | "level">, name: string | null = cat.name): string | null {
-  const signs = traitGroup(trait.group).signs;
-  if (!signs) return null;
-  return `Здається, ${name === null ? "" : `${name} `}${fill(trait.level > 0 ? signs[0] : signs[1], cat.sex)}.`;
+  const sign = traitGroup(trait.group).signs?.[trait.level > 0 ? 0 : 1];
+  if (!sign) return null;
+  return `Здається, ${name === null ? "" : `${name} `}${fill(sign, cat.sex)}.`;
 }
 
 /** Що стало відомо про кота — для бабла телефона (§9.9, правка автора 2026-10-25). */

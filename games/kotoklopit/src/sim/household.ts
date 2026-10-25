@@ -3,7 +3,7 @@
 import { traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, WATER_CAPACITY } from "./config";
-import { inView } from "./knowledge";
+import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
@@ -60,6 +60,8 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   }
   const cat = catInWasher(state);
   if (cat) {
+    // Застали кота в барабані — прояв «Допитливості» (§9.9).
+    observe(state, cat, "curiosity");
     cat.y += 1;
     cat.act = { kind: "idle", target: null, goal: null, minutes: 2, elapsed: 0 };
     emit(state, { type: "laundry", stage: "cat", cat: cat.id });

@@ -1,6 +1,7 @@
 // Що знає персонаж (§9.9): риси відкриваються спостереженням — прояв зараховується, лише якщо
 // персонаж його бачив (був у тій самій кімнаті й не спав).
 
+import { traitLevel } from "./cat";
 import { OBSERVATIONS, WITNESS_DISTANCE } from "./config";
 import { emit } from "./events";
 import { ROOMS } from "./home";
@@ -62,10 +63,13 @@ export function visibility(state: GameState, trait: Trait): 0 | 1 | 2 | 3 {
  * це бачив. `side` — котрий бік показала поведінка: 1 — більше того, що називає група (нявчить, мчить, дере
  * диван), −1 — менше (годинами лежить, дере лише кігтеточку). Знак — самої риси характеру, без породи.
  * Без цього «Тихоня» відкривалася тим, що приходила по увагу (пошук багів 2026-10-25).
+ * Порода й характер протилежні — кіт поводиться за знаком суми, тож прояв зараховується, лише коли сума того
+ * самого знака, що й риса: «Спокійна» сомалі (+2 породи, −1 характеру) поводиться як енергійна (§9.9).
  */
 export function observe(state: GameState, cat: Cat, group: string, side: 1 | -1 = 1, woke = false): void {
   const trait = cat.traits.find((t) => t.group === group);
   if (!trait || trait.known || Math.sign(trait.level) !== side) return;
+  if (Math.sign(traitLevel(cat, group)) !== side) return;
   const info = traitGroup(group);
   if (info.quiet || (info.nocturnal && !woke)) return;
   // Кіт розбудив персонажа (`woke`): персонаж спав, але прокинувся саме від нього (§9.9).

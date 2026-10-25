@@ -37,10 +37,15 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
     const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
     changeLove(state, cat, cat.hurt.amount * refund, "ласощі після неприємного");
     cat.hurt = null;
+    // «Поступливий» одразу відтає й муркоче — це видно (§9.9). Ласощі — дія гравця, тож «Жебракування» вони не
+    // відкривають (рішення автора 2026-10-25).
+    if (traitLevel(cat, "vengeful") < 0) {
+      emit(state, { type: "purr", cat: cat.id, enjoyed: true });
+      observe(state, cat, "vengeful", -1);
+    }
   }
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
-  observe(state, cat, "begging");
   cat.interacted = true;
   envy(state, cat);
   emit(state, { type: "treat", cat: cat.id, quality });

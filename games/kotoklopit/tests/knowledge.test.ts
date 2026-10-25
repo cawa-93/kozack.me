@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { jealousy, tickCats } from "../src/sim/catai";
+import { giveTreat } from "../src/sim/care";
+import { pickUpCat } from "../src/sim/actions";
 import { advance, newGame } from "../src/sim/game";
+import { tapWasher } from "../src/sim/household";
+import { absoluteMinute } from "../src/sim/time";
 import { decideFoundling } from "../src/sim/modifiers";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { fill } from "../src/texts";
@@ -93,22 +97,23 @@ describe("прояв — лише того боку, що показала по�
     expect(calm.traits[0]?.seen).toBe(1);
   });
 
-  it("голодний кіт без корму не відкриває риси уваги за мить: похід по увагу — один прояв", () => {
+  it("голодний кіт без корму не відкриває риси уваги за мить: похід по увагу — один прояв, і він не «Ласкавість»", () => {
     const save = withCatCorner(game("hard"));
     save.current.modifiers.day = null;
     save.current.day = 8;
     save.current.minute = 14 * 60;
     Object.assign(save.current.character.body, { x: 16.5, y: 3.5 });
     for (const item of save.current.home.items) if (item.kind === "bowl") item.food = 0;
-    const cat = withCat(save, { affection: 2, demanding: 2, follower: 2, talkative: 2 }, { x: 15.5, y: 3.5 });
+    const cat = withCat(save, { affection: 2, demanding: 2, talkative: 2 }, { x: 15.5, y: 3.5 });
     cat.needs = { hunger: 95, thirst: 0, toilet: 0, fatigue: 0, attention: 70, play: 0 };
-    cat.act = { kind: "attention", target: "character", goal: null, minutes: 20, elapsed: 0 };
+    cat.act = { kind: "attention", target: "character", goal: null, minutes: 20, elapsed: 0, forFood: true };
     // Дві години кіт то просить біля миски, то йде до персонажа: раніше кожен крок давав прояв (9 за дві години).
     for (let i = 0; i < 6000; i++) advance(save, 0.02);
-    for (const trait of cat.traits) {
-      if (trait.group !== "demanding") expect(trait.seen, trait.group).toBeGreaterThan(0);
-      expect(trait.seen, trait.group).toBeLessThanOrEqual(5);
-    }
+    const seen = (group: string): number => cat.traits.find((t) => t.group === group)?.seen ?? 0;
+    expect(seen("talkative")).toBeGreaterThan(0);
+    for (const trait of cat.traits) expect(trait.seen, trait.group).toBeLessThanOrEqual(5);
+    // Прийшов, бо голодний, а миски порожні, — це не «Ласкавість» (рішення автора 2026-10-25).
+    expect(seen("affection")).toBe(0);
   });
 
   it("«Вимогливість» видно, коли кіт так і не дочекався ласки; «Ласкавість» — коли прийшов (рішення автора 2026-10-25)", () => {
@@ -128,6 +133,103 @@ describe("прояв — лише того боку, що показала по�
     expect(loud.demanding).toBeGreaterThanOrEqual(1);
     expect(loud.affection).toBeGreaterThanOrEqual(1);
     expect(seenAfterVisit(-2).demanding).toBe(0);
+  });
+});
+
+describe("чесні прояви (рішення автора 2026-10-25, `TRAITS_REVIEW.md`)", () => {
+  it("порода й характер протилежні: прояв — лише коли знак суми збігається зі знаком риси", () => {
+    const save = game();
+    // «Спокійна» сомалі: +2 породи й −1 характеру — поводиться як енергійна, тож не відкривається ні так, ні так.
+    const somali = withCat(save, { energy: -1 });
+    somali.breed = ["somali", "somali"];
+    observe(save.current, somali, "energy", -1);
+    observe(save.current, somali, "energy");
+    expect(somali.traits[0]?.seen).toBe(0);
+    // «Вічний двигун» перська напівкровка: +2 характеру й −1 породи — сума +1, енергійна.
+    const persian = withCat(save, { energy: 2 });
+    persian.breed = ["perska", "mixed"];
+    observe(save.current, persian, "energy");
+    expect(persian.traits[0]?.seen).toBe(1);
+    // Сума 0 — кіт поводиться як звичайний, риса не відкривається.
+    const zero = withCat(save, { energy: 1 });
+    zero.breed = ["perska", "mixed"];
+    observe(save.current, zero, "energy");
+    expect(zero.traits[0]?.seen).toBe(0);
+  });
+
+  it("ласощі — дія гравця: «Жебракування» не відкривають, а «Поступливий» після неприємного відтає й муркоче", () => {
+    const save = game();
+    save.current.home.supplies.treats.cheap = 5;
+    const cat = withCat(save, { begging: 2, vengeful: -1 }, { x: 9.5, y: 8.5 });
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    giveTreat(save.current, "cheap", createRng(1));
+    expect(cat.traits[0]?.seen).toBe(0);
+    expect(cat.traits[1]?.seen).toBe(0);
+    cat.hurt = { at: absoluteMinute(save.current.day, save.current.minute), amount: 2 };
+    const { events, stop } = recordEvents();
+    giveTreat(save.current, "cheap", createRng(1));
+    stop();
+    expect(cat.traits[0]?.seen).toBe(0);
+    expect(cat.traits[1]?.seen).toBe(1);
+    expect(events.some((e) => e.type === "purr" && e.cat === cat.id)).toBe(true);
+  });
+
+  it("прогнати кота з місця — ще не прояв «Образливості»: дутися він має потім", () => {
+    const save = game();
+    const cat = withCat(save, { touchy: 2 }, { x: 9.5, y: 8.5 });
+    cat.act = { kind: "lap", target: "character", goal: null, minutes: 60, elapsed: 0 };
+    pickUpCat(save.current, cat);
+    expect(cat.traits[0]?.seen).toBe(0);
+  });
+
+  it("«Енергійність +» — активна забава, а не прогулянка", () => {
+    let wandered = 0;
+    let played = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const save = withCatCorner(game());
+      save.current.modifiers.day = null;
+      save.current.minute = 19 * 60;
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { energy: 2 }, { x: 8.5, y: 8.5 });
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 100 };
+      cat.act = { kind: "idle", target: null, goal: null, minutes: 0, elapsed: 0 };
+      tickCats(save.current, 0.01, { present: true });
+      const seen = cat.traits[0]?.seen ?? 0;
+      if (cat.act.kind === "wander") {
+        wandered += 1;
+        expect(seen, `seed ${seed}`).toBe(0);
+      } else {
+        played += 1;
+        expect(seen, `seed ${seed}: ${cat.act.kind}`).toBe(1);
+      }
+    }
+    expect(wandered).toBeGreaterThan(0);
+    expect(played).toBeGreaterThan(0);
+  });
+
+  it("застали кота в барабані пральної машини — прояв «Допитливості»", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 10.5, y: 2.5 });
+    const cat = withCat(save, { curiosity: 1 }, { x: 10.5, y: 1.5 });
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 60, elapsed: 0 };
+    expect(tapWasher(save.current)).toBe("cat");
+    expect(cat.traits[0]?.seen).toBe(1);
+  });
+
+  it("біля лотка: «Акуратний» нічого не розкидав, «Спартанець» спокійно сходив у брудний лоток", () => {
+    const save = withCatCorner(game());
+    save.current.modifiers.day = null;
+    Object.assign(save.current.character.body, { x: 9.5, y: 2.5 });
+    const box = save.current.home.items.find((i) => i.kind === "litter");
+    if (box?.kind !== "litter") throw new Error("немає лотка");
+    box.uses = 99;
+    const cat = withCat(save, { scatter: -1, litterPicky: -2 }, { x: 8.5, y: 3.5 });
+    cat.needs = { hunger: 0, thirst: 0, toilet: 90, fatigue: 0, attention: 0, play: 0 };
+    cat.act = { kind: "toilet", target: `item:${box.id}`, goal: null, minutes: 0.05, elapsed: 0 };
+    tickCats(save.current, 0.1, { present: true });
+    expect(cat.traits[0]?.seen).toBe(1);
+    expect(cat.traits[1]?.seen).toBe(1);
+    expect(save.current.home.messes.some((m) => m.kind === "litter")).toBe(false);
   });
 });
 
@@ -184,7 +286,7 @@ describe("що видно про кота з самого початку (пош
   });
 
   it("прояви в картці — у роді кота й до гравця на «ви»", () => {
-    for (const group of TRAIT_GROUPS) for (const sign of group.signs ?? []) expect(sign, group.id).not.toMatch(/персонаж/);
+    for (const group of TRAIT_GROUPS) for (const sign of group.signs ?? []) if (sign !== null) expect(sign, group.id).not.toMatch(/персонаж/);
     const lap = TRAIT_GROUPS.find((g) => g.id === "lap")?.signs?.[0] ?? "";
     expect(fill(lap, "female")).toBe("сама застрибує на коліна");
   });

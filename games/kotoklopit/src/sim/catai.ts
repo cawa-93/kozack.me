@@ -398,7 +398,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
       return start(cat, "steal", objectTile(steal.id), 1, steal.id);
     }
     const empty = nearest(cat, itemsOf(state, "bowl"));
-    if (context.present && !aloof(cat) && rng.chance(0.5)) return startAttention(state, cat);
+    if (context.present && !aloof(cat) && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
@@ -427,12 +427,13 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
  * Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). Хто вже йде — не починає заново: інакше
  * голодний кіт щокроку «приходив» би знову (пошук багів 2026-10-25). Прояв рис — коли дійде (`tickCat`).
  */
-function startAttention(state: GameState, cat: Cat): void {
+function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   const follower = Math.max(0, traitLevel(cat, "follower"));
   // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9).
   const demanding = Math.max(0.25, 1 + TRAIT_EFFECTS.demandingStep * traitLevel(cat, "demanding"));
   start(cat, "attention", tileOf(state.character.body), CAT_ACT_MINUTES.attention * (1 + TRAIT_EFFECTS.followerStep * follower) * demanding, "character");
+  if (forFood) cat.act.forFood = true;
 }
 
 function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
@@ -442,27 +443,33 @@ function startZoomies(state: GameState, cat: Cat, rng: Rng): void {
 
 /** Кіт хоче гратися (§9.12): зумі, скинути річ, украсти їжу, іграшка чи просто побродити. */
 function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
-  observe(state, cat, "energy");
   type Choice = () => void;
+  // Активна забава — прояв «Енергійності +»; просто побродити — ні: так поводиться будь-який кіт (§9.9).
+  const active =
+    (choice: Choice): Choice =>
+    () => {
+      observe(state, cat, "energy");
+      choice();
+    };
   const options: { weight: number; value: Choice }[] = [
-    { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: () => startZoomies(state, cat, rng) },
+    { weight: MISCHIEF.zoomies * traitFactor(cat, "zoomies", MISCHIEF.traitStep) * activityAt(cat, state.minute), value: active(() => startZoomies(state, cat, rng)) },
     // Побродити заради гри — ціль «play»: лише така прогулянка знімає потребу гри.
     { weight: MISCHIEF.wander, value: () => start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander, "play") },
   ];
   const onSurfaces = dishes(state, false);
   const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
-  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep), value: () => start(cat, "knock", objectTile(knock.id), 0.5, knock.id) });
+  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep), value: active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)) });
   const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
     const hungry = cat.needs.hunger >= 60 ? 2 : 1;
-    options.push({ weight: MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, value: () => start(cat, "steal", objectTile(steal.id), 1, steal.id) });
+    options.push({ weight: MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, value: active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)) });
   }
   const toy = nearest(cat, itemsOf(state, "toy"));
-  if (toy) options.push({ weight: MISCHIEF.toy, value: () => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`) });
-  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep), value: () => startScratch(state, cat, rng) });
+  if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
+  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep), value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
-  if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: () => startWrestle(state, cat, mate) });
+  if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
 }
 
@@ -655,6 +662,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
           return;
         }
         changeLove(state, cat, DIRTY_LITTER.love * factor, "брудний лоток");
+        // Спокійно сходив і в повний лоток — прояв «Спартанця» (§9.9).
+        observe(state, cat, "litterPicky", -1);
       }
       box.uses += 1;
       itemMood(state, cat, box);
@@ -664,7 +673,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         const slot = slotById(box.slot);
         addMess(state, "litter", { x: slot.x + 0.5 + (rng.next() - 0.5), y: slot.y + 0.7 + rng.next() * 0.2 }, cat.id);
         observe(state, cat, "scatter");
-      }
+      } else observe(state, cat, "scatter", -1);
       // Після лотка — часто зумі (§9.3).
       if (rng.chance(ZOOMIES.afterToilet * traitFactor(cat, "zoomies", MISCHIEF.traitStep))) startZoomies(state, cat, rng);
       return;
@@ -920,7 +929,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід.
       if (near && cat.act.seen !== true) {
         cat.act.seen = true;
-        for (const group of ["affection", "follower", "talkative"]) observe(state, cat, group);
+        // Прийшов через голод, бо миски порожні, — це не «Ласкавість» (§9.9).
+        if (cat.act.forFood !== true) observe(state, cat, "affection");
+        observe(state, cat, "follower");
+        observe(state, cat, "talkative");
       }
       if (traitLevel(cat, "follower") >= 0 && !near) cat.act.goal = tileOf(body);
     }
@@ -1031,10 +1043,8 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   changeRelation(state, a, b, fight.relation);
   addMess(state, "fur", visibleFloorNear(state, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
-  for (const cat of [a, b]) {
-    observe(state, cat, "sociability", -1);
-    observe(state, cat, "territorial");
-  }
+  // Бійка — прояв лише «Товариськості»: «Територіальність» видно у сварці за миску чи лоток (§9.9).
+  for (const cat of [a, b]) observe(state, cat, "sociability", -1);
 }
 
 /** Чистюля відходить від персонажа в брудному одязі (§9.12). */
