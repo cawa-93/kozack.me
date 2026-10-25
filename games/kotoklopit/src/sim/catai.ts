@@ -1071,7 +1071,8 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
   if (state.home.cabinetOpen !== true) {
     const opened = cabinetGives(state, cat, rng);
     emit(state, { type: "cabinet-pawed", cat: cat.id, opened });
-    observe(state, cat, "cunning");
+    // Дверцята на замку голодний кіт смикає знову й знову — прояв не частіше ніж раз на пів години (перевірка етапу 2026-10-26).
+    observe(state, cat, "cunning", 1, false, opened ? 0 : CUNNING.observeEvery);
     if (!opened) return;
     state.home.cabinetOpen = true;
     return start(cat, "raid", null, eatMinutes(cat), "cabinet");
@@ -1240,9 +1241,9 @@ export function startAmbush(cat: Cat, rng: Rng): void {
  */
 function pounce(state: GameState, cat: Cat, rng: Rng): void {
   const seen = cat.act.seen === true;
-  cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
   changeMood(state, cat, 1);
-  // Кіт мчить геть і вже нікого не збиває (ціль «hit», як у зумі, що вже збили персонажа).
+  // Кіт мчить геть і вже нікого не збиває (ціль «hit», як у зумі, що вже збили персонажа); домчавши, награвся — як після гри
+  // наодинці (`finish` зумі знімає потребу гри; перевірка етапу 2026-10-26: тут вона знімалася ще раз, удвічі).
   start(cat, "zoomies", randomFloor(rng), AMBUSH.dashMinutes, "hit");
   if (!seen) observe(state, cat, "ambush");
   if (!stun(state)) return;

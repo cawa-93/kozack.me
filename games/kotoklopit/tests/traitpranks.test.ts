@@ -102,6 +102,22 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
     expect(save.current.character.stats.health).toBe(health);
   });
 
+  it("стрибок із засідки знімає потребу гри раз — як гра наодинці (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    const cat = withCat(save, { ambush: 1 });
+    lurking(cat);
+    cat.needs.play = 90;
+    Object.assign(save.current.character.body, { x: cat.x - 0.6, y: cat.y });
+    tickCats(save.current, 0.01, { present: true });
+    expect(cat.act.kind).toBe("zoomies");
+    const before = cat.needs.play;
+    for (let i = 0; i < 20 && cat.act.kind === "zoomies"; i++) tickCats(save.current, 0.1, { present: false });
+    expect(cat.act.kind).not.toBe("zoomies");
+    expect(90 - cat.needs.play).toBeGreaterThan(PLAY_RELIEF - 1);
+    expect(90 - cat.needs.play).toBeLessThan(PLAY_RELIEF + 1);
+    expect(before).toBeGreaterThan(cat.needs.play);
+  });
+
   it("«Ніндзя» (+2) ще й дряпає: здоров'я −1", () => {
     const save = game();
     const cat = withCat(save, { ambush: 2 });
@@ -416,6 +432,29 @@ describe("«Кмітливість у бешкеті» (§9.12, рішення �
     const strong = opens(2);
     expect(strong).toBeGreaterThan(0);
     expect(strong).toBeLessThan(30);
+  });
+
+  it("дверцята на замку кіт смикає знову й знову — прояв не частіше ніж раз на пів години (перевірка етапу 2026-10-26)", () => {
+    const save = kitchen();
+    save.current.home.lock = "premium";
+    const cat = withCat(save, { cunning: 2 });
+    cat.needs.hunger = 90;
+    const paw = (): void => {
+      raidAt(cat, "cabinet");
+      tickCats(save.current, CUNNING.pawMinutes + 0.05, { present: true });
+    };
+    paw();
+    paw();
+    paw();
+    expect(seen(cat, "cunning")).toBe(1);
+    save.current.minute += CUNNING.observeEvery + 1;
+    paw();
+    expect(seen(cat, "cunning")).toBe(2);
+    // Відчинені дверцята (без замка) — окремий прояв одразу.
+    delete save.current.home.lock;
+    paw();
+    expect(save.current.home.cabinetOpen).toBe(true);
+    expect(seen(cat, "cunning")).toBe(3);
   });
 
   it("«Зломник» лізе в шафку й ситим — і тоді інколи зригує", () => {

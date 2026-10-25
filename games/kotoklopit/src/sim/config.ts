@@ -702,14 +702,6 @@ export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinu
  */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, boxes: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
 /**
- * «Засідки» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що хоче
- * гратися, сідає в засідку з вагою `step` × рівень (кіт без риси — `base`, кошеня — щонайменше `kitten`; «−» — ніколи),
- * ×`bored`, якщо сьогодні з ним ще не гралися вудкою `playedMinutes` хвилин, і ×`played`, якщо гралися. Чекає до `minutes`
- * хвилин у місці з `AMBUSH_SPOTS`; персонаж ближче `reach` клітинки — стрибок на ноги: оглушення (спільна пауза), від
- * `strongLevel` ще й подряпина (здоров'я `health`); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
- * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
- */
-/**
  * «Мисливський інстинкт» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
  * хоче гратися, розмотує рулон туалетного паперу у ванній з вагою `roll` × (1 + `rollStep` × рівень), кошеня — ×`kitten`,
  * «−» — ніколи; лапає рулон `pawMinutes` хвилин і тягне паперову стрічку у вітальню. Гра наодинці знімає потребу гри
@@ -732,9 +724,9 @@ export const GIFTS = { weight: 0.15, base: 0.05, feet: 0.5, fridge: 0.5, pickMin
  * кормом, відчиняє їх і з'їдає порцію із запасу; шафка лишається відчиненою — з неї їсть кожен голодний кіт, доки персонаж її не
  * зачинить. Від `fullLevel` кіт лізе в шафку й ситим, коли хоче гратися (вага `fullWeight`), і тоді з шансом `fullVomit` зригує.
  * Перекидає смітник з вагою `trashStep` × рівень. Дешевий замок відчиняє лише кіт від `fullLevel`, з шансом `cheapLock`; надійний —
- * ніхто.
+ * ніхто. Спроба на замку — прояв не частіше ніж раз на `observeEvery` хвилин (перевірка етапу 2026-10-26).
  */
-export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight: 0.1, fullVomit: 0.3, trashStep: 0.1, cheapLock: 0.3 } as const;
+export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight: 0.1, fullVomit: 0.3, trashStep: 0.1, cheapLock: 0.3, observeEvery: 30 } as const;
 /**
  * «Лазіння» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): високі місця — верх
  * холодильника й шафи в спальні. Спить там кіт з вагою `step` × рівень, кіт без риси — `base`, «−» — ніколи; на теплому
@@ -753,6 +745,14 @@ export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, stro
  * комунальних). Із пакета пропадає одиниця запасу; корм і ласощі кіт з'їдає.
  */
 export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMinutes: 2, maxMinutes: 3, wireChance: 0.15, fixMinutes: 15, fixSanity: -2, wireRepair: 5 } as const;
+/**
+ * «Засідки» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що хоче
+ * гратися, сідає в засідку з вагою `step` × рівень (кіт без риси — `base`, кошеня — щонайменше `kitten`; «−» — ніколи),
+ * ×`bored`, якщо сьогодні з ним ще не гралися вудкою `playedMinutes` хвилин, і ×`played`, якщо гралися. Чекає до `minutes`
+ * хвилин у місці з `AMBUSH_SPOTS`; персонаж ближче `reach` клітинки — стрибок на ноги: оглушення (спільна пауза), від
+ * `strongLevel` ще й подряпина (здоров'я `health`); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
+ * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
+ */
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<
