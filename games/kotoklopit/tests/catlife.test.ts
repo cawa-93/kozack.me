@@ -172,12 +172,12 @@ describe("заздрісність і мстивість (§9.12)", () => {
     envious.act = { kind: "idle", target: null, goal: null, minutes: 10, elapsed: 0 };
     const mood = envious.mood;
     const before = relation(save.current, envious, lucky);
-    envy(save.current, lucky);
+    envy(save.current, lucky, "collar");
     expect(envious.mood).toBeLessThan(mood);
     expect(relation(save.current, envious, lucky)).toBeLessThan(before);
     envious.traits = [{ group: "envy", level: -2, seen: 0, known: false }];
     const calm = envious.mood;
-    envy(save.current, lucky);
+    envy(save.current, lucky, "collar");
     expect(envious.mood).toBeGreaterThan(calm);
   });
 

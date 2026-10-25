@@ -59,7 +59,8 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
   cat.interacted = true;
-  envy(state, cat);
+  cat.treatAt = now;
+  envy(state, cat, "treat");
   emit(state, { type: "treat", cat: cat.id, quality });
   return true;
 }
@@ -71,7 +72,7 @@ export function putCollar(state: GameState, quality: Quality): boolean {
   if (!cat || supply[quality] <= 0) return false;
   useSupply(state, "collar", quality);
   cat.collar = { quality, bell: cat.collar?.bell ?? false };
-  envy(state, cat);
+  envy(state, cat, "collar");
   emit(state, { type: "collar", cat: cat.id });
   return true;
 }

@@ -7,8 +7,9 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, eatMinutes, tickCats } from "../src/sim/catai";
-import { APPETITE, BEGGING, CAT_ACT_MINUTES, GULPING } from "../src/sim/config";
+import { bowlEaten, decide, eatMinutes, envy, tickCats } from "../src/sim/catai";
+import { APPETITE, BEGGING, CAT_ACT_MINUTES, ENVY, GULPING, THIEF } from "../src/sim/config";
+import { relation } from "../src/sim/relations";
 import { emptyFeeder } from "../src/sim/household";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -314,5 +315,110 @@ describe("«Жебракування» (рішення автора 2026-10-25)"
     }
     expect(asked).toBeGreaterThan(8);
     expect(asked).toBeLessThan(30);
+  });
+});
+
+describe("«Злодійство» (рішення автора 2026-10-25)", () => {
+  it("«Злодюжка» відтісняє іншого кота від миски: шипить, той відходить голодний, стосунки псуються", () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const eater = withCat(save, { gulping: -2 });
+      const thief = withCat(save, { thief: 2 }, { x: 14.5, y: 2.5 });
+      thief.needs.hunger = 50;
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+      eater.needs.hunger = 90;
+      eater.mood = 60;
+      eater.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(eater), elapsed: 0 };
+      const before = relation(save.current, eater, thief);
+      const { events, stop } = recordEvents();
+      tickCats(save.current, 0.1, { present: true });
+      if (thief.act.kind !== "steal") {
+        stop();
+        continue;
+      }
+      expect(thief.act.victim).toBe(eater.id);
+      for (let i = 0; i < 40 && thief.act.kind === "steal"; i++) {
+        thief.act.minutes = Math.max(thief.act.minutes, 0.05);
+        tickCats(save.current, 0.1, { present: true });
+      }
+      stop();
+      expect(thief.act).toMatchObject({ kind: "eat", target: `item:${bowl.id}` });
+      expect(eater.act.kind).toBe("wander");
+      expect(eater.needs.hunger).toBeGreaterThan(80);
+      expect(eater.mood).toBeLessThan(60);
+      expect(relation(save.current, eater, thief)).toBeLessThanOrEqual(before + THIEF.relation);
+      expect(events.some((e) => e.type === "hissed" && e.cat === thief.id && e.at === eater.id)).toBe(true);
+      expect(seen(thief, "thief")).toBe(1);
+      return;
+    }
+    throw new Error("злодій так і не пішов до миски");
+  });
+
+  it("«Шляхетний» не краде й голодуючи, а сідає біля їжі на столі й не чіпає її", () => {
+    let waited = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const save = game();
+      save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      const cat = withCat(save, { thief: -2 }, { x: 14.5, y: 2.5 });
+      bowlOf(save).food = 0;
+      cat.needs.hunger = 99;
+      decide(save.current, cat, createRng(seed), { present: false });
+      expect(cat.act.kind, `seed ${seed}`).not.toBe("steal");
+      if (cat.act.kind !== "beg" || cat.act.target !== "table") continue;
+      waited += 1;
+      for (let i = 0; i < 20 && cat.act.target === "table"; i++) tickCats(save.current, 0.5, { present: true });
+      expect(save.current.home.surfaces["table"]).not.toBeNull();
+      expect(seen(cat, "thief"), `seed ${seed}`).toBe(1);
+    }
+    expect(waited).toBeGreaterThan(5);
+  });
+});
+
+describe("«Заздрісність»: тригер (рішення автора 2026-10-25)", () => {
+  function pair(save: Save): { lucky: Cat; envious: Cat } {
+    const lucky = withCat(save);
+    const envious = withCat(save, { envy: 2 }, { x: 16.5, y: 3.5 });
+    envious.mood = 60;
+    return { lucky, envious };
+  }
+
+  it("дорогому корму не заздрить, коли він є в домі чи заздрісник сам їв його за останні 6 годин", () => {
+    const save = game();
+    const { lucky, envious } = pair(save);
+    save.current.home.supplies.catFood.premium = 3;
+    envy(save.current, lucky, "premium");
+    expect(envious.mood).toBe(60);
+    save.current.home.supplies.catFood.premium = 0;
+    envious.premiumAt = (save.current.day * 24 + 10) * 60;
+    envy(save.current, lucky, "premium");
+    expect(envious.mood).toBe(60);
+    envious.premiumAt = (save.current.day * 24 + 12) * 60 - ENVY.premiumMinutes - 1;
+    envy(save.current, lucky, "premium");
+    expect(envious.mood).toBeLessThan(60);
+  });
+
+  it("ласощі всім котам поруч протягом 2 хвилин заздрощів не викликають", () => {
+    const treat = (both: boolean): { mood: number; relation: number } => {
+      const save = game();
+      const { lucky, envious } = pair(save);
+      const before = relation(save.current, envious, lucky);
+      save.current.home.supplies.treats.cheap = 5;
+      for (const cat of both ? [lucky, envious] : [lucky]) {
+        save.current.character.held = { kind: "cat", cat: cat.id };
+        giveTreat(save.current, "cheap", createRng(1));
+        save.current.character.held = null;
+        tickCats(save.current, 1, { present: true });
+        save.current.minute += 1;
+      }
+      for (let i = 0; i < 4; i++) {
+        tickCats(save.current, 1, { present: true });
+        save.current.minute += 1;
+      }
+      return { mood: envious.mood, relation: relation(save.current, envious, lucky) - before };
+    };
+    expect(treat(false).relation).toBeLessThan(0);
+    expect(treat(true).relation).toBe(0);
   });
 });

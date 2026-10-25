@@ -74,6 +74,7 @@ import {
   STRESS_EFFECTS,
   SURPRISE_CHANCE,
   TALKATIVE,
+  THIEF,
   TIRED_FATIGUE,
   TOUCHY,
   TOY,
@@ -90,7 +91,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, itemTile, LAUNDRY_BASKET, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
+import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -466,10 +467,13 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     // Миски порожні: злодюжка краде людську їжу, а дуже голодний — будь-який кіт (§9.3).
     const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
     const steal = food[rng.int(0, food.length - 1)];
-    const thief = Math.max(0, traitLevel(cat, "thief"));
-    if (steal && rng.chance(HUNGRY_THEFT.step * thief + (n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base : 0))) {
+    const thief = traitLevel(cat, "thief");
+    const starving = n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
+    if (steal && rng.chance(HUNGRY_THEFT.step * Math.max(0, thief) + starving)) {
       return start(cat, "steal", objectTile(steal.id), 1, steal.id);
     }
+    // «Чесний» сідає біля їжі на столі й не чіпає її (§9.12, рішення автора 2026-10-25).
+    if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal.id)), THIEF.waitMinutes, steal.id);
     const empty = nearest(cat, itemsOf(state, "bowl"));
     // «Не випрошує» (−2) не йде просити до персонажа — чекає біля миски (§9.12, рішення автора 2026-10-25).
     if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && rng.chance(0.5)) return startAttention(state, cat, true);
@@ -904,7 +908,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         observe(state, cat, "picky", -1, false, MINUTES_PER_HOUR);
       }
       itemMood(state, cat, bowl);
-      if (quality === "premium") envy(state, cat);
+      if (quality === "premium") {
+        cat.premiumAt = absoluteMinute(state.day, state.minute);
+        envy(state, cat, "premium");
+      }
       emit(state, { type: "cat-ate", cat: cat.id, quality });
       resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
       afterMeal(state, cat, quality === "premium", rng);
@@ -944,6 +951,14 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         start(cat, "groom", null, BEGGING.washMinutes, "wash");
         observe(state, cat, "begging", -1, false, MINUTES_PER_HOUR);
       }
+      return;
+    }
+    case "beg": {
+      // Голодний «Чесний» посидів біля їжі на столі й не взяв її — прояв «Злодійства −» (§9.9), не частіше ніж раз на
+      // годину: голодний, він сідає туди знову й знову.
+      if (act.target === null || !(SURFACE_IDS.includes(act.target) || act.target === "stove")) return;
+      const dish = act.target === "stove" ? state.home.stove.item : state.home.surfaces[act.target];
+      if (dish && dish.kind !== "burnt" && cat.needs.hunger >= hungerThreshold(cat)) observe(state, cat, "thief", -1, false, MINUTES_PER_HOUR);
       return;
     }
     case "bury": {
@@ -1082,6 +1097,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "steal": {
       if (!act.target) return;
+      if (act.target.startsWith("item:")) return pushAway(state, cat, rng);
       const dish = act.target === "stove" ? state.home.stove.item : state.home.surfaces[act.target];
       if (!dish || dish.kind === "burnt") return;
       takeDish(state, act.target);
@@ -1112,6 +1128,59 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     default:
       return;
   }
+}
+
+/** Клітинка підлоги впритул до речі квартири, яку не закриває передня стіна: спереду, ззаду чи збоку. */
+function besideObject(state: GameState, o: HomeObject): Vec {
+  const around = [
+    { x: o.x, y: o.y + o.h },
+    { x: o.x, y: o.y - 1 },
+    { x: o.x - 1, y: o.y },
+    { x: o.x + o.w, y: o.y },
+  ];
+  return around.find((t) => !isSolid(state, t.x, t.y) && !hiddenTile(t.x, t.y)) ?? tileOf(visibleFloorNear(state, o));
+}
+
+/** Звідки злодій іде відтіснити іншого від миски: з дій, які не шкода кинути (§9.12). */
+const THIEF_FROM = new Set(["idle", "wander", "beg", "toy"]);
+
+/**
+ * Інший кіт сів їсти (§9.12, рішення автора 2026-10-25): злодій поруч, голодний і нічим важливим не зайнятий, може піти
+ * до цієї миски — відтіснити його. Кожен злодій — зі своїм шансом; іде лише один.
+ */
+function bowlThief(state: GameState, eater: Cat, rng: Rng): void {
+  const target = eater.act.target;
+  if (!target?.startsWith("item:")) return;
+  for (const cat of state.cats) {
+    const level = traitLevel(cat, "thief");
+    if (cat.id === eater.id || level <= 0 || !home(state, cat) || !THIEF_FROM.has(cat.act.kind) || isAdapting(state, cat)) continue;
+    if (cat.needs.hunger < THIEF.hunger || distance(cat, eater) > THIEF.reach || !rng.chance(THIEF.pushStep * level)) continue;
+    start(cat, "steal", tileOf(eater), 0.05, target);
+    cat.act.victim = eater.id;
+    return;
+  }
+}
+
+/**
+ * Злодій дійшов до миски (§9.12): той ще їсть — злодій шипить і займає миску, а той відходить голодний (настрій −2,
+ * стосунки −3); «Охоронець миски» може побитися. Це прояв «Злодійства +». Той уже поїв — злодій просто доїдає, що лишилося.
+ */
+function pushAway(state: GameState, thief: Cat, rng: Rng): void {
+  const act = thief.act;
+  const bowl = itemById<BowlItem>(state, act.target);
+  if (bowl?.kind !== "bowl" || bowl.food <= 0) return;
+  const victim = state.cats.find((c) => c.id === act.victim);
+  const eating = victim && home(state, victim) && victim.act.kind === "eat" && victim.act.goal === null && victim.act.target === act.target;
+  if (victim && eating) {
+    hiss(state, thief, victim);
+    observe(state, thief, "thief");
+    const guard = traitLevel(victim, "territorial");
+    if (guard > 0 && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim);
+    changeMood(state, victim, THIEF.victimMood, "відігнали від миски");
+    changeRelation(state, victim, thief, THIEF.relation);
+    backAway(state, victim, thief);
+  }
+  start(thief, "eat", null, eatMinutes(thief), act.target);
 }
 
 /** Кіт скинув річ зі столу чи кухонної поверхні (§9.12): страва пропадає, на підлозі уламки, і гуркіт. */
@@ -1145,6 +1214,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (act.nibble === undefined) {
         const appetite = traitLevel(cat, "appetite");
         act.nibble = appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite));
+        // Кіт сів їсти — злодій поруч може піти відтіснити його (§9.12, «Злодійство»).
+        bowlThief(state, cat, rng);
       }
       return;
     case "beg":
@@ -1518,7 +1589,10 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
     devotedBlinks(state);
   }
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
-  if (state.cats.length > 1) tickRelations(state, minutes, rng);
+  if (state.cats.length > 1) {
+    tickRelations(state, minutes, rng);
+    settleEnvy(state);
+  }
   if (context.present) watchCats(state, minutes);
   setWitnessing(true);
 }
@@ -1603,20 +1677,61 @@ export function separateFight(state: GameState, cat: Cat): void {
   emit(state, { type: "fight-stopped", cat: cat.id });
 }
 
+/** Дорогий корм є в домі: у сховищі, у мисці чи в годівниці (§9.12, «Заздрісність»). */
+function premiumAtHome(state: GameState): boolean {
+  const home = state.home;
+  if (home.supplies.catFood.premium + home.supplies.sterileFood.premium > 0) return true;
+  if (itemsOf(state, "bowl").some((b) => b.food > 0 && b.foodQuality === "premium")) return true;
+  return (home.feeders ?? []).some((f) => f.food > 0 && f.foodQuality === "premium");
+}
+
 /**
- * Іншому котові щось перепало — ласощі, нашийник, вишуканий корм (§9.12): заздрісні коти, що це
- * бачать, дмуться й сваряться з ним; ті, хто «радіє за інших», навпаки, тішаться.
+ * Іншому котові щось перепало — ласощі, нашийник, вишуканий корм (§9.12): заздрісні коти, що це бачать, дмуться й
+ * сваряться з ним; ті, хто «радіє за інших», навпаки, тішаться. Тригер (рішення автора 2026-10-25): дорогому корму не
+ * заздрять, коли він є в домі чи заздрісник сам їв його за останні 6 годин; ласощам — коли й сам отримав ласощі протягом
+ * 2 хвилин (тож заздрість до ласощів чекає 2 хвилини, `settleEnvy`); нашийнику — коли сам у нашийнику.
  */
-export function envy(state: GameState, lucky: Cat): void {
+export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar" | "premium"): void {
+  const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
     if (other.id === lucky.id || !home(state, other) || asleep(other) || distance(other, lucky) > ENVY.sight) continue;
-    const level = traitLevel(other, "envy");
-    if (level === 0) continue;
-    if (level > 0) {
-      changeMood(state, other, ENVY.mood * level, "заздрить");
-      changeRelation(state, other, lucky, ENVY.relation * level);
-    } else changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
-    observe(state, other, "envy", level > 0 ? 1 : -1);
+    if (traitLevel(other, "envy") === 0) continue;
+    if (gift === "premium" && (premiumAtHome(state) || (other.premiumAt !== undefined && now - other.premiumAt <= ENVY.premiumMinutes))) continue;
+    if (gift === "collar" && other.collar !== null) continue;
+    if (gift === "treat") {
+      if (other.treatAt !== undefined && now - other.treatAt <= ENVY.graceMinutes) continue;
+      other.envyOf = { cat: lucky.id, at: now };
+      continue;
+    }
+    feelEnvy(state, other, lucky);
+  }
+}
+
+/** Заздрість спрацювала (§9.12): заздрісний дметься й свариться з тим, кому перепало; щиросердий радіє за нього. */
+function feelEnvy(state: GameState, other: Cat, lucky: Cat): void {
+  const level = traitLevel(other, "envy");
+  if (level === 0) return;
+  if (level > 0) {
+    changeMood(state, other, ENVY.mood * level, "заздрить");
+    changeRelation(state, other, lucky, ENVY.relation * level);
+  } else changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
+  observe(state, other, "envy", level > 0 ? 1 : -1);
+}
+
+/**
+ * Заздрість до ласощів (§9.12): за 2 хвилини після того, як іншому дали ласощі, кіт, що ласощів так і не отримав,
+ * заздрить (чи радіє); отримав — нічого.
+ */
+function settleEnvy(state: GameState): void {
+  const now = absoluteMinute(state.day, state.minute);
+  for (const cat of state.cats) {
+    const pending = cat.envyOf;
+    if (!pending || now - pending.at < ENVY.graceMinutes) continue;
+    delete cat.envyOf;
+    const lucky = state.cats.find((c) => c.id === pending.cat);
+    const treated = cat.treatAt !== undefined && cat.treatAt >= pending.at;
+    if (!lucky || treated || !home(state, cat) || asleep(cat)) continue;
+    feelEnvy(state, cat, lucky);
   }
 }
 
