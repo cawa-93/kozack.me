@@ -94,9 +94,26 @@ describe("підсумок дня (§9.6, §7)", () => {
     const day = closeCatDay(s, c);
     expect(day.mood).toBeCloseTo(65);
     expect(c.moodHistory).toEqual([65]);
-    // Любов 100 → 99 без взаємодії, дрейф (99 − 50) × 0,06.
+    // Любов 100 → 99 без взаємодії, дрейф (99 − 50) × 0,06; за настрою 80 приріст — удвічі менший (§9.6).
     expect(c.love).toBeCloseTo(99);
-    expect(c.mood).toBeCloseTo(80 + 49 * 0.06);
+    expect(c.mood).toBeCloseTo(80 + 49 * 0.06 * 0.5);
+  });
+
+  it("що щасливіший кіт, то менше йому дає приємне: вище 60 приріст спадає, втрати — повністю (§9.6)", () => {
+    const s = state();
+    const c = cat(s, 3);
+    c.traits = [];
+    c.mood = 50;
+    changeMood(s, c, 8);
+    expect(c.mood).toBeCloseTo(58);
+    c.mood = 80;
+    changeMood(s, c, 8);
+    expect(c.mood).toBeCloseTo(84);
+    c.mood = 90;
+    changeMood(s, c, 8);
+    expect(c.mood).toBeCloseTo(92);
+    changeMood(s, c, -8);
+    expect(c.mood).toBeCloseTo(84);
   });
 
   it("відновлення здоров'я множиться на вік, шкода — ні (§9.5)", () => {
