@@ -56,7 +56,8 @@ export type IconName =
   | "kit"
   | "palms"
   | "toy"
-  | "taken";
+  | "taken"
+  | "sad";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -176,6 +177,15 @@ Object.assign(ICONS, {
   },
   heart: (g: Phaser.GameObjects.Graphics) => {
     g.fillStyle(0xd9455f).fillCircle(14, 15, 7.5).fillCircle(26, 15, 7.5).fillTriangle(7, 18, 33, 18, 20, 34);
+  },
+  sad: (g: Phaser.GameObjects.Graphics) => {
+    // Сумне личко (думка сумного кота, §11.4): брівки будиночком, кутики рота донизу, сльоза.
+    g.fillStyle(0x8fb4d9).fillCircle(20, 21, 14);
+    g.lineStyle(2.5, INK).strokeCircle(20, 21, 14);
+    g.fillStyle(INK).fillCircle(15, 19, 1.8).fillCircle(25, 19, 1.8);
+    g.lineStyle(2, INK).lineBetween(11, 15, 17, 12).lineBetween(29, 15, 23, 12);
+    g.lineStyle(2.5, INK).beginPath().arc(20, 32, 6, Math.PI * 1.15, Math.PI * 1.85).strokePath();
+    g.fillStyle(0x5fa8d3).fillCircle(12, 27, 2.4).fillTriangle(9.8, 26.2, 14.2, 26.2, 12, 21.5);
   },
   angry: (g: Phaser.GameObjects.Graphics) => {
     g.lineStyle(4, COLORS.danger);

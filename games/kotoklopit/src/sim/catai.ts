@@ -273,7 +273,8 @@ export function hearFood(state: GameState, bowl: BowlItem): void {
 }
 
 /** Поріг голоду: «Апетит» змушує їсти раніше (§9.12). */
-function hungerThreshold(cat: Cat): number {
+/** З якого голоду кіт іде їсти (§9.12): «Апетит» — раніше. */
+export function hungerThreshold(cat: Cat): number {
   return NEED_THRESHOLD.hunger - 10 * Math.max(0, traitLevel(cat, "appetite"));
 }
 

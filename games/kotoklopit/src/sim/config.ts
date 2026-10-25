@@ -421,6 +421,35 @@ export const LOVE = {
  * укус на руках × `biteFactor`; нижче `aloof` — сам по увагу не йде й на руках пручається сильніше.
  */
 export const LOVE_BEHAVIOR = { aloof: 25, devoted: 75, tolerancePerPoint: 0.01, lapBonus: 0.25, biteFactor: 0.5 } as const;
+/**
+ * Стан думками (§11.4, правка автора 2026-10-25): з яких потреб кіт думає про корм (на `hungerLead` нижче за
+ * поріг, з якого він іде їсти, — з «Апетитом» теж), воду, гру й увагу — із запасом до `NEED_THRESHOLD`, щоб
+ * думку встигло бути видно навіть на важкій, перш ніж кіт піде сам; з якого настрою — сумує; персонаж — про
+ * показник нижче `personLow`. Кожен кіт — раз на `catSeconds` реальних секунд гри, між думками різних котів —
+ * щонайменше `catGapSeconds`; обидва ділить множник складності `frequency` (правка автора: ×1,25 / ×1 / ×0,8).
+ * Персонаж — раз на `personSeconds`. Думки кота й персонажа — не разом, щонайменше `apartSeconds` між ними.
+ * Розкид проміжків — ±`jitter`.
+ */
+export const THOUGHTS = {
+  hungerLead: 20,
+  thirst: 35,
+  play: 45,
+  attention: 40,
+  sad: 35,
+  personLow: 40,
+  catSeconds: 60,
+  catGapSeconds: 15,
+  personSeconds: 60,
+  apartSeconds: 2,
+  jitter: 0.2,
+  frequency: { easy: 1.25, normal: 1, hard: 0.8 } as Record<Difficulty, number>,
+} as const;
+/**
+ * Настрій з поведінки (§11.4, рішення автора 2026-10-25): щасливий кіт (настрій від `blinkMood`), що
+ * любить персонажа (від `LOVE_BEHAVIOR.devoted`), за `blinkDistance` клітинок повільно моргає до нього раз
+ * на `blinkSeconds`; сумний (нижче `THOUGHTS.sad`) — сумна поза.
+ */
+export const MOOD_LOOK = { blinkMood: 70, blinkDistance: 4, blinkSeconds: 8 } as const;
 /** «Відданість» і «Образливість» змінюють зростання й втрати любові на 25% за одиницю (§9.12). */
 export const LOVE_TRAIT_STEP = 0.25;
 

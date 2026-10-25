@@ -32,7 +32,7 @@ import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, diseaseTitle, fill, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
-import { type Anchor, Bubbles } from "../view/bubbles";
+import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
@@ -40,8 +40,9 @@ import { CatView } from "../view/cat";
 import { drawCatCorner, itemScreen } from "../view/catcorner";
 import { COLORS, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
-import { createIconTextures, type IconName } from "../view/icons";
+import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
 import { eventBubbles, PRODUCT_ICONS } from "../view/symbols";
+import { blinkAmount, catLook, ThoughtClock } from "../view/thoughts";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
@@ -74,6 +75,8 @@ function isTyping(): boolean {
 // і передає дії гравця в симуляцію; правил гри тут немає.
 /** Як часто виринає «+N ₴» над персонажем, мс. */
 const EARNINGS_POP_MS = 3000;
+/** Скільки місця над точкою бабла займає сам бабл разом із виринанням, px: мовна хмаринка й думка (§11.4). */
+const BUBBLE_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4). */
 const CARRIED_BUBBLE_SHIFT = 34;
 
@@ -100,6 +103,8 @@ export class DayScene extends Phaser.Scene {
   private person!: PersonView;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
+  /** Хто й коли думає про свій стан (§11.4). */
+  private thoughts = new ThoughtClock();
   private storage!: StorageIndicators;
   /** Малюнки наповнення сховищ і що на них намальовано. */
   private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
@@ -210,6 +215,7 @@ export class DayScene extends Phaser.Scene {
     this.wakeUp();
     this.bubbles.clear();
     this.hearts.clear();
+    this.thoughts = new ThoughtClock();
     this.storage.clear();
     this.moneySeen = null;
     this.earned = 0;
@@ -505,6 +511,11 @@ export class DayScene extends Phaser.Scene {
         advance(this.session.save, minutes, input);
       }
       this.resolveCatPress(input.hold);
+      // Стан думками (§11.4): час думок іде лише разом із грою.
+      if (!this.blocked()) {
+        const taken = (owner: string): boolean => this.bubbles.busy(owner) || this.bubbles.hasState(owner);
+        for (const thought of this.thoughts.tick(this.state, seconds, taken)) this.bubbles.show(thought, this.anchorFn(thought.at, "think"), THOUGHT_HOLD_MS);
+      }
     } else {
       this.moving = false;
     }
@@ -640,7 +651,15 @@ export class DayScene extends Phaser.Scene {
       const petting = activity?.kind === "pet" && !activity.bitten;
       const playing = activity?.kind === "play" && !activity.done;
       const interaction = (petting || playing) && activity?.cat === cat.id ? activity.kind : null;
-      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat));
+      // Настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
+      const look = catLook(state, cat);
+      const mood =
+        look === null
+          ? null
+          : look === "sad"
+            ? { sad: true, blink: 0, face: null }
+            : { sad: false, blink: blinkAmount(time, cat.id), face: state.character.body.x >= cat.x ? 1 : -1 };
+      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);
     }
@@ -802,7 +821,7 @@ export class DayScene extends Phaser.Scene {
   private updateStateBubbles(): void {
     const state = this.state;
     const set = (id: string, icon: IconName | null): void => {
-      const anchor = this.anchorOf(id);
+      const anchor = this.belowHud(this.anchorOf(id), "say");
       if (anchor) this.bubbles.setState(id, "say", icon, anchor.x, anchor.y);
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
@@ -880,7 +899,8 @@ export class DayScene extends Phaser.Scene {
     const boxes = this.anchorOf("boxes");
     this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
     // Сонливість — думка персонажа.
-    this.bubbles.setState("person", "think", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
+    const head = this.belowHud(this.person.head, "think") ?? this.person.head;
+    this.bubbles.setState("person", "think", isDrowsy(state) ? "zz" : null, head.x, head.y);
   }
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
@@ -908,17 +928,26 @@ export class DayScene extends Phaser.Scene {
   /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
   private readonly personAnchor = (): { x: number; y: number } => ({ x: this.person.head.x, y: this.person.head.y });
 
-  /** Де бабл події: над персонажем, котом чи річчю — і летить за ним. */
-  private anchorFn(id: string): Anchor {
-    return id === "person" ? this.personAnchor : () => this.anchorOf(id);
+  /**
+   * Де бабл події: над персонажем, котом чи річчю — і летить за ним. Не вище видимого краю квартири: інакше
+   * над котом на шафі чи над верхнім рядом бабл ховається під панеллю.
+   */
+  private anchorFn(id: string, kind: BubbleKind): Anchor {
+    return () => this.belowHud(id === "person" ? this.personAnchor() : this.anchorOf(id), kind);
+  }
+
+  /** Точка бабла, опущена так, щоб увесь бабл лишався під панеллю (§11.4). */
+  private belowHud(p: { x: number; y: number } | null, kind: BubbleKind): { x: number; y: number } | null {
+    if (!p) return null;
+    return { x: p.x, y: Math.max(p.y, this.viewport.worldTop + BUBBLE_ROOM[kind]) };
   }
 
   /** Бабли подій (вголос чи думка — `eventBubbles`, §11.4) і картки. */
   private onGameEvent(event: GameEvent): void {
-    for (const bubble of eventBubbles(event)) this.bubbles.show(bubble, this.anchorFn(bubble.at));
+    for (const bubble of eventBubbles(event)) this.bubbles.show(bubble, this.anchorFn(bubble.at, bubble.kind));
     // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
     const landed = (storage: string, product: Product): void => {
-      this.bubbles.show({ kind: "say", at: storage, icon: PRODUCT_ICONS[product], count: supplyCount(this.state, product) }, this.anchorFn(storage));
+      this.bubbles.show({ kind: "say", at: storage, icon: PRODUCT_ICONS[product], count: supplyCount(this.state, product) }, this.anchorFn(storage, "say"));
     };
     switch (event.type) {
       case "unpacked": {
@@ -998,8 +1027,9 @@ export class DayScene extends Phaser.Scene {
   }
 
   private showMorning(night: GameState["lastNight"]): void {
-    // Зміни настрою за ніч гравець не бачив: сердечками їх не показують.
+    // Зміни настрою за ніч гравець не бачив: сердечками їх не показують. Думки вранці — з нуля.
     this.hearts.clear();
+    this.thoughts = new ThoughtClock();
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 

@@ -10,6 +10,10 @@ import { BUBBLE_ICON_Y, type BubbleKind, type IconName, type Mark } from "./icon
 import type { EventBubble, Thinker } from "./symbols";
 
 const BUBBLE_DEPTH = 10_000;
+/** Скільки висить бабл події, перш ніж згаснути, мс. */
+const EVENT_HOLD_MS = 1100;
+/** Думка про стан (§11.4) виринає сама, без дії гравця, тож висить довше — щоб уважний встиг помітити. */
+export const THOUGHT_HOLD_MS = 1900;
 const FONT = "system-ui, sans-serif";
 /** У хмаринці-думці іконка трохи менша: край хвилястий, і кути іконки інакше лягали б на контур. */
 const THOUGHT_ICON_SCALE = 0.85;
@@ -110,13 +114,13 @@ export class Bubbles {
    * бабл летить за тим, над ким виринув (персонаж чи кіт іде далі, а бабл — з ним). Поки він видно, бабл
    * стану там само схований, щоб дві хмаринки не злипалися в одну.
    */
-  show(bubble: EventBubble, at: Anchor): void {
+  show(bubble: EventBubble, at: Anchor, hold = EVENT_HOLD_MS): void {
     const start = place(at);
     if (!start) return;
     const container = this.make(bubble.kind, bubble.icon, start.x, start.y - 8, bubble.count, bubble.mark);
     container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, 1100, bubble.at);
+    this.float(container, at, hold, bubble.at);
     this.states.get(bubble.at)?.container.setVisible(false);
   }
 

@@ -54,6 +54,11 @@ export class Viewport {
     this.layout();
   }
 
+  /** Верхній край видимої квартири (під панеллю) у координатах світу: вище бабли не видно. */
+  get worldTop(): number {
+    return this.camera.worldView.y;
+  }
+
   /** Підписатися на зміну розміру екрана; слухача викликано й одразу. */
   onLayout(listener: (frame: Frame) => void): void {
     this.listeners.push(listener);

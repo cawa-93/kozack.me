@@ -31,6 +31,27 @@ const shade = (color: number, k: number): number => {
 
 export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried";
 
+/**
+ * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
+ * напівзаплющені, хвіст униз; щасливий і відданий — повертається до персонажа (`face`) і повільно моргає
+ * (`blink`: 0 — очі розплющені, 1 — заплющені).
+ */
+export interface CatMoodLook {
+  sad: boolean;
+  blink: number;
+  face: number | null;
+}
+
+/** Наскільки прикриті очі сумного кота. */
+const SAD_LID = 0.45;
+/** На темній шерсті повіку й брівки видно світлою лінією. */
+const DARK_LID = 0xc9bfc6;
+
+const isDark = (color: number): boolean => {
+  const c = Phaser.Display.Color.IntegerToColor(color);
+  return 0.299 * c.red + 0.587 * c.green + 0.114 * c.blue < 90;
+};
+
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
   const act = cat.act;
@@ -58,6 +79,8 @@ export class CatView {
 
   /** Що кіт відчуває в цьому кадрі (§9.12): з цього малюються очі й вуха. */
   private feeling: CatFeeling | null = null;
+  /** Настрій з поведінки в цьому кадрі (§11.4): сумна поза чи повільне моргання. */
+  private look: CatMoodLook | null = null;
 
   /** Форми частин тіла: від кота, що є зараз (гени й форми не змінюються). */
   private shape: Cat["shape"];
@@ -76,7 +99,8 @@ export class CatView {
   /**
    * `interaction` — персонаж саме гладить кота чи грається з ним (§8.2); `feeling` — що кіт відчуває
    * (§9.12): мружиться й погойдується, терпить з очима-щілинками чи пручається, смикаючись із
-   * притиснутими вухами. Показуй, а не розказуй (§11.3а).
+   * притиснутими вухами. `look` — настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
+   * Показуй, а не розказуй (§11.3а).
    */
   draw(
     state: GameState,
@@ -85,13 +109,19 @@ export class CatView {
     carriedAt: { x: number; y: number; depth: number } | null,
     interaction: "pet" | "play" | null = null,
     feeling: CatFeeling | null = null,
+    look: CatMoodLook | null = null,
   ): void {
     this.shape = cat.shape;
     const pose = interaction ? "sit" : poseOf(cat, carriedAt !== null);
     this.feeling = feeling;
+    this.look = look;
     this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
-    const key = pose === "walk" || interaction || feeling ? null : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}`;
+    const blinking = (look?.blink ?? 0) > 0;
+    const key =
+      pose === "walk" || interaction || feeling || blinking
+        ? null
+        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -115,7 +145,9 @@ export class CatView {
     const age = cat.ageWeeks === 0 ? 0.4 : isKitten(cat) ? 0.45 + 0.1 * cat.ageWeeks : 1;
     const size = 1 + 0.06 * traitLevel(cat, "size");
     const scale = 1.25 * age * size * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
-    const dir = cat.facing >= 0 ? 1 : -1;
+    // Відданий кіт дивиться на персонажа, коли моргає до нього.
+    const dir = look?.face ?? (cat.facing >= 0 ? 1 : -1);
+    const sad = look?.sad === true;
     const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
     // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
@@ -154,7 +186,8 @@ export class CatView {
         // Тіло горизонтально, голова попереду, хвіст угору.
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-9, -3, 6, 11]) g.fillRoundedRect(x + lx * s - 2, y - 8 * s, 4 * s, 9 * s, 2);
-        this.tail(g, x - dir * 15 * s, y - 15 * s, s, dir, true);
+        // Сумний кіт і в ході тримає хвіст донизу.
+        this.tail(g, x - dir * 15 * s, y - 15 * s, s, dir, sad ? "down" : "up");
         g.fillStyle(body).fillEllipse(x, y - 14 * s, 32 * s, 15 * s);
         this.patches(g, x, y - 14 * s, 32 * s, 15 * s);
         if (this.coat.tabby) this.stripes(g, x, y - 14 * s, 26 * s, stripe, true);
@@ -166,8 +199,9 @@ export class CatView {
       case "sit":
       case "eat": {
         const hx = x + dir * 3 * s;
-        const headY = pose === "eat" ? y - 12 * s : y - 33 * s;
-        this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, false);
+        // Сумний кіт опускає голову.
+        const headY = pose === "eat" ? y - 12 * s : y - (sad ? 29 : 33) * s;
+        this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
         this.patches(g, x, y - 13 * s, 22 * s, 26 * s);
         if (this.coat.tabby) this.stripes(g, x, y - 15 * s, 18 * s, stripe, false);
@@ -212,8 +246,29 @@ export class CatView {
       g.lineStyle(1.2, COLORS.ink).strokeCircle(ex - 2.8 * s, y - 1 * s, 2.8 * s).strokeCircle(ex + 2.8 * s, y - 1 * s, 2.8 * s);
       g.fillStyle(COLORS.ink).fillCircle(ex - 2.8 * s, y - 1 * s, 0.9 * s).fillCircle(ex + 2.8 * s, y - 1 * s, 0.9 * s);
     } else {
-      g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, y - 1 * s, 2.2 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 2.2 * s);
-      g.fillStyle(COLORS.ink).fillCircle(ex - 2.6 * s, y - 1 * s, 1 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 1 * s);
+      // Повіки (§11.4): сумний кіт дивиться з-під напівзаплющених, відданий повільно моргає до персонажа.
+      const lid = Math.max(this.look?.sad ? SAD_LID : 0, this.look?.blink ?? 0);
+      const er = 2.2 * s;
+      if (lid > 0) {
+        // Видно нижню частину ока, а над нею — рівна повіка; заплющене око — повіка внизу ока.
+        const half = er * (1 - lid);
+        const line = isDark(this.coat.pointed ? point : body) ? DARK_LID : COLORS.ink;
+        const width = Math.max(1, 1.2 * s);
+        for (const side of [-1, 1]) {
+          const cx = ex + side * 2.6 * s;
+          const cy = y - 1 * s + er * lid;
+          if (half > 0.3) {
+            g.fillStyle(EYES[this.coat.eyes]).fillEllipse(cx, cy, 2 * er, 2 * half);
+            g.fillStyle(COLORS.ink).fillEllipse(cx, cy, 2 * s, Math.min(2 * s, 2 * half));
+          }
+          g.lineStyle(width, line).lineBetween(cx - er, cy - half, cx + er, cy - half);
+          // Сумний — брівки будиночком: до носа вище, як на іконці смутку.
+          if (this.look?.sad) g.lineBetween(cx + side * er, cy - half - 1.4 * s, cx - side * er * 0.4, cy - half - 2.8 * s);
+        }
+      } else {
+        g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, y - 1 * s, er).fillCircle(ex + 2.6 * s, y - 1 * s, er);
+        g.fillStyle(COLORS.ink).fillCircle(ex - 2.6 * s, y - 1 * s, 1 * s).fillCircle(ex + 2.6 * s, y - 1 * s, 1 * s);
+      }
     }
     g.fillStyle(0xd88a8a).fillTriangle(ex - 1.4 * s, y + 2.5 * s, ex + 1.4 * s, y + 2.5 * s, ex, y + 4 * s);
     this.head = { x, y: y - r - 8 * s };
@@ -224,10 +279,18 @@ export class CatView {
     const big = shape === "large" || shape === "tufted" ? 1.3 : 1;
     // Невдоволений чи переляканий кіт притискає вуха (§9.12).
     const folded = shape === "folded" || this.feeling === "struggling" || this.feeling === "reluctant";
+    // Сумний кіт опускає вуха вбік (§11.4).
+    const droop = !folded && this.look?.sad === true;
     g.fillStyle(color);
     for (const side of [-1, 1]) {
       const bx = x + side * 5 * s + dir;
-      if (folded) {
+      if (droop) {
+        // Опущене вухо звисає вбік і трохи вниз; основу ховає голова, видно саме вухо кольору шерсті.
+        const tx = bx + side * 9 * s * big;
+        const ty = y + 1 * s;
+        g.fillTriangle(bx - side * 1 * s, y - 8 * s, bx + side * 4 * s, y - 3 * s, tx, ty);
+        g.lineStyle(2, COLORS.ink).strokeTriangle(bx - side * 1 * s, y - 8 * s, bx + side * 4 * s, y - 3 * s, tx, ty);
+      } else if (folded) {
         g.fillTriangle(bx - 3 * s, y - 6 * s, bx + 3 * s, y - 6 * s, bx + side * 4 * s, y - 2 * s);
       } else {
         g.fillTriangle(bx - 4 * s, y - 5 * s, bx + 4 * s, y - 5 * s, bx + side * 1 * s, y - (12 + 4 * (big - 1) * 3) * s);
@@ -236,7 +299,8 @@ export class CatView {
     }
   }
 
-  private tail(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, up: boolean): void {
+  /** Хвіст: «up» — трубою в ході, «rest» — лежить біля сидячого (смикається), «down» — опущений у сумного. */
+  private tail(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, pose: "up" | "rest" | "down"): void {
     const shape = this.shape.tail;
     if (shape === "none") return;
     const length = shape === "bobtail" ? 0.3 : shape === "short" ? 0.6 : 1;
@@ -244,7 +308,7 @@ export class CatView {
     const color = this.coat.pointed ? PIGMENT[this.coat.base] : PIGMENT[this.coat.second ?? this.coat.base];
     g.lineStyle(width, color);
     const tx = x - dir * 12 * s * length;
-    const ty = up ? y - 16 * s * length : y + 2 - (this.lash + 1) * 5 * s * length;
+    const ty = pose === "up" ? y - 16 * s * length : pose === "down" ? y + 8 * s * length : y + 2 - (this.lash + 1) * 5 * s * length;
     g.beginPath().moveTo(x, y).lineTo((x + tx) / 2 - dir * 2 * s, (y + ty) / 2).lineTo(tx, ty).strokePath();
   }
 
