@@ -912,13 +912,14 @@ export class DayScene extends Phaser.Scene {
     }
     // Кіт просить їсти (на умивальнику — пити з крана, §9.12 «Пиття»), б'ється чи дзеленчить дзвіночком — це чути.
     for (const cat of state.cats) {
-      const asking = cat.act.kind === "beg" && cat.act.goal === null;
+      // Застряглий нагорі (§9.12, «Лазіння») кричить баблами нявкання: сталий бабл над ним, притиснутий під панель, закривав би
+      // самого кота (перевірка скриншотом 2026-10-26).
+      const asking = cat.act.kind === "beg" && cat.act.goal === null && cat.act.target !== "high";
       const fighting = cat.act.kind === "fight";
       // Дзвіночок видає кота, що ховається (§9.10).
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       // «Втікач» під дверима просить на сходи — кричить (§9.12 «Двері й гості»).
-      // Застряг нагорі (§9.12, «Лазіння») — кричить, щоб зняли.
-      const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" || cat.act.target === "high" ? "meow" : "kibble";
+      const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
       set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.

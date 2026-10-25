@@ -29,7 +29,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   sterileBin: 36,
   catKit: 40,
   boxes: 40,
-  wardrobe: 84,
+  wardrobe: 64,
 };
 
 const FILL: Record<ObjectKind, number> = {

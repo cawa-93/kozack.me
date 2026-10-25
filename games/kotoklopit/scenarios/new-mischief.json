@@ -1,0 +1,24 @@
+{
+  "name": "Новий бешкет",
+  "description": "Четвер першого тижня, 12:00. Три коти з рисами етапу «Новий бешкет» (2026-10-26): засідки й лазіння, мисливець і подарунки (кошеня), кмітливий гризун. Миски порожні, у шафці корм, біля входу ящики з покупками, у кошику брудна білизна.",
+  "game": { "sex": "female", "difficulty": "normal", "seed": 21 },
+  "state": {
+    "day": 3,
+    "minute": 720,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 60 } },
+    "home": {
+      "clothes": 2,
+      "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } },
+      "boxes": { "food": { "cheap": 4, "premium": 0 }, "catFood": { "cheap": 3, "premium": 0 } }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 6, "name": "Ніндзя", "sex": "male", "arrivedDay": -10, "x": 12.5, "y": 8.5, "needs": { "play": 90, "attention": 10, "fatigue": 20 },
+      "traits": [{ "group": "ambush", "level": 2, "seen": 0, "known": true }, { "group": "climbing", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 1, "name": "Мисливиця", "sex": "female", "arrivedDay": -10, "x": 9.5, "y": 3.5, "needs": { "play": 85, "attention": 10, "fatigue": 20 },
+      "traits": [{ "group": "hunting", "level": 2, "seen": 0, "known": true }, { "group": "gifts", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 8, "name": "Зломник", "sex": "male", "arrivedDay": -10, "x": 16.5, "y": 3.5, "needs": { "hunger": 85, "play": 80, "attention": 10, "fatigue": 20 },
+      "traits": [{ "group": "cunning", "level": 2, "seen": 0, "known": true }, { "group": "chewing", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

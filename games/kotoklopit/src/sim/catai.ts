@@ -1053,8 +1053,8 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
   const act = cat.act;
   if (act.target === "trash") {
     if (trashTipped(state)) return;
-    const trash = objectById("trash");
-    const at = visibleFloorNear(state, { x: trash.x + 0.5, y: trash.y + 1.3 });
+    // Сміття висипається зліва спереду від смітника: просто перед ним клітинку закриває шафка з кормом (перевірка скриншотом).
+    const at = visibleFloorNear(state, { x: TRASH_PAW.x + 0.6, y: TRASH_PAW.y + 0.4 });
     addMess(state, "garbage", at, cat.id);
     emit(state, { type: "trash-tipped", cat: cat.id });
     loudNoise(state, "broken", at);
@@ -1952,8 +1952,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (act.elapsed <= minutes) emit(state, { type: "chewing", cat: cat.id, what: act.target === "boxes" ? "boxes" : "wire" });
       return;
     case "raid":
-      // Лапає дверцята шафки — обличчям до неї, праворуч (§9.12, «Кмітливість у бешкеті»).
-      if (act.target === "cabinet") cat.facing = 1;
+      // Лапає дверцята шафки чи смітник — обличчям до них, праворуч (§9.12, «Кмітливість у бешкеті»).
+      cat.facing = 1;
       return;
     case "carry":
       // Приніс іграшку до ніг персонажа (§9.12, «Подарунки й схованки»): кладе її й чекає поруч.
