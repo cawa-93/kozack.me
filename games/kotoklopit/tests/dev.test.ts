@@ -59,6 +59,17 @@ describe("сценарії (§11.5)", () => {
     expect(restored.current).toEqual(save.current);
   });
 
+  it("сценарій, збережений до злиття груп рис, відкривається з рисами в нових групах (2026-10-25)", () => {
+    const save = applyScenario({
+      name: "Старий",
+      cats: [{ ageWeeks: 10, traits: [{ group: "weather", level: 2, seen: 1, known: false }, { group: "toiletPaper", level: -1, seen: 0, known: false }] }],
+    });
+    expect(save.current.cats[0]?.traits).toEqual([
+      { group: "warmth", level: 2, seen: 1, known: false },
+      { group: "hunting", level: -1, seen: 0, known: false },
+    ]);
+  });
+
   it("id сценарію — латиницею з назви", () => {
     expect(scenarioId("Вечір неділі")).toBe("vechir-nedili");
     expect(scenarioId("Здоровий глузд 29")).toBe("zdorovyi-hluzd-29");

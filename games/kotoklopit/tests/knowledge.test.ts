@@ -17,7 +17,7 @@ import { observe, visibility, witnesses } from "../src/sim/knowledge";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { nightlyRelations, relation } from "../src/sim/relations";
+import { changeRelation, nightlyRelations, relation } from "../src/sim/relations";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(difficulty: "easy" | "normal" | "hard" = "normal"): Save {
@@ -184,6 +184,23 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     cat.act = { kind: "lap", target: "character", goal: null, minutes: 60, elapsed: 0 };
     pickUpCat(save.current, cat);
     expect(cat.traits[0]?.seen).toBe(0);
+  });
+
+  it("бійка — прояв лише «Товариськості −»: «Територіальність» вона не відкриває", () => {
+    const save = game();
+    const a = withCat(save, { sociability: -1, territorial: 2 }, { x: 9.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.3, y: 8.5 });
+    changeRelation(save.current, a, b, -80 - relation(save.current, a, b));
+    for (let i = 0; i < 300 && a.act.kind !== "fight"; i++) {
+      for (const cat of [a, b]) {
+        cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+        cat.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
+      }
+      tickCats(save.current, 1, { present: true });
+    }
+    expect(a.act.kind).toBe("fight");
+    expect(a.traits[0]?.seen).toBe(1);
+    expect(a.traits[1]?.seen).toBe(0);
   });
 
   it("«Енергійність +» — активна забава, а не прогулянка", () => {
