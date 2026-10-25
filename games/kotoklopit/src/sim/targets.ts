@@ -1,7 +1,7 @@
 // Ціль дії персонажа (§10): річ квартири, річ котячого кутка, безлад чи кіт — найближча,
 // і передусім та, на яку дивиться персонаж.
 
-import { isCarried } from "./catai";
+import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, REACH } from "./config";
 import { centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
 import type { Cat, GameState, HomeItem, Mess, Vec } from "./types";
@@ -120,7 +120,10 @@ export function targetOf(state: GameState): Target | null {
     const center = targetCenter(target);
     const length = Math.hypot(center.x - body.x, center.y - body.y);
     const facing = length > UNDERFOOT ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : UNDERFOOT_FACING;
-    const onObject = target.type === "cat" && isSolid(state, Math.floor(target.cat.x), Math.floor(target.cat.y));
+    // Кіт нагорі — на холодильнику чи шафі — річ під собою не заступає: його й так не дістати; застрягле кошеня — ціль, його
+    // знімають (§9.12, «Лазіння», перевірка етапу 2026-10-26).
+    const high = target.type === "cat" && target.cat.stuck !== true && highPlaceOf(state, target.cat) !== null;
+    const onObject = target.type === "cat" && !high && isSolid(state, Math.floor(target.cat.x), Math.floor(target.cat.y));
     const score = distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0) - (onObject ? CAT_ON_OBJECT_PRIORITY : 0);
     if (score < bestScore) {
       best = target;

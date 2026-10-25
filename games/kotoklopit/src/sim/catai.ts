@@ -602,7 +602,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   const n = cat.needs;
   // Застряг нагорі (§9.12, «Лазіння»): кричить, доки не знімуть; від нагального (95) зістрибує сам, переляканий.
   if (cat.stuck === true && highPlaceOf(state, cat) !== null) {
-    if (Math.max(n.hunger, n.thirst, n.toilet) < CLIMBING.jumpNeed) return start(cat, "beg", null, CAT_ACT_MINUTES.beg, "high");
+    if (Math.max(n.hunger, n.thirst, n.toilet) < CLIMBING.jumpNeed) {
+      // Утомилося кричати — засинає нагорі, а прокинувшись, кричить знову (перевірка етапу 2026-10-26).
+      if (n.fatigue >= sleepThreshold(cat, state.minute)) return start(cat, "sleep", null, 8 * MINUTES_PER_HOUR);
+      return start(cat, "beg", null, CAT_ACT_MINUTES.beg, "high");
+    }
     changeMood(state, cat, CLIMBING.jumpMood, "зістрибнув сам");
   }
   delete cat.stuck;

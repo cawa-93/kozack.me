@@ -508,20 +508,61 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
     expect(upHigh(save.current, cat)).toBe(true);
     expect(seen(cat, "climbing")).toBe(1);
     expect(cat.stuck).toBeUndefined();
-    // Натиснути на кота нагорі — відмова «не дотягтися».
-    Object.assign(save.current.character.body, { x: 13.5, y: 2.4, facing: { x: 0, y: -1 } });
+    // Натиснути на кота на шафі — відмова «не дотягтися».
+    const wardrobe = objectById("wardrobe");
+    Object.assign(cat, { x: wardrobe.x + 0.5, y: wardrobe.y + 0.5 });
+    Object.assign(save.current.character.body, { x: wardrobe.x + 0.5, y: wardrobe.y + 1.4, facing: { x: 0, y: -1 } });
     const { events, stop } = recordEvents();
     interact(save);
     stop();
     expect(events.find((e) => e.type === "refused")).toMatchObject({ reason: "cat-up-high" });
     expect(save.current.character.held).toBeNull();
     // Кіт не спить, а персонаж з вудкою поруч — злазить.
+    Object.assign(cat, { x: 13.5, y: 1.5 });
+    Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
     cat.act = idleAct(10);
     const toy = toyOf(save);
     save.current.home.items = save.current.home.items.filter((i) => i !== toy);
     save.current.character.held = { kind: "toy", toy };
     for (let i = 0; i < 20 && upHigh(save.current, cat); i++) tickCats(save.current, 0.25, { present: true });
     expect(upHigh(save.current, cat)).toBe(false);
+  });
+
+  it("кіт, що спить на холодильнику, не заступає самого холодильника: продукти взяти можна (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    addSupply(save.current, "food", "cheap", 2);
+    Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
+    const cat = withCat(save, { climbing: 1 });
+    climbFridge(save, cat);
+    expect(upHigh(save.current, cat)).toBe(true);
+    Object.assign(save.current.character.body, { x: 13.5, y: 2.4, facing: { x: 0, y: -1 } });
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events.some((e) => e.type === "refused")).toBe(false);
+    expect(save.current.character.held).toMatchObject({ kind: "raw" });
+    expect(cat.act.kind).toBe("sleep");
+  });
+
+  it("застрягле кошеня, втомившись кричати, засинає нагорі — і прокинувшись, кричить знову (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
+    const cat = withCat(save, {}, { x: 13.5, y: 2.5 }, 1);
+    climbFridge(save, cat);
+    cat.stuck = true;
+    cat.act = { kind: "beg", target: "high", goal: null, minutes: 0.01, elapsed: 0 };
+    cat.needs.fatigue = 100;
+    tickCats(save.current, 0.1, { present: true });
+    expect(cat.act.kind).toBe("sleep");
+    expect(cat.stuck).toBe(true);
+    expect(upHigh(save.current, cat)).toBe(true);
+    // Виспалося — і знову кричить, а не злазить.
+    cat.needs.fatigue = 0;
+    cat.act.minutes = 0.01;
+    tickCats(save.current, 0.1, { present: true });
+    expect(cat.act.kind).toBe("beg");
+    expect(cat.act.target).toBe("high");
+    expect(cat.stuck).toBe(true);
   });
 
   it("кошеня застрягає нагорі: кричить, доки не знімуть (неприємне), а від нагального зістрибує саме", () => {
