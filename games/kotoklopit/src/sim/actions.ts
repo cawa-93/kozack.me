@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight, turnAway } from "./catai";
+import { backAway, beggingFood, carryFeeling, catOnComputer, hearFood, jealousy, rollEscapes, separateFight, turnAway } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -387,9 +387,11 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   }
   // Розбудили чи прогнали — спокійний, коли опустять, може заснути знову (§9.12).
   const disturbed = shooed || cat.act.kind === "sleep";
+  // Узяли, коли кіт саме просив їсти: ласощі зараз привчать його жебракувати (§7).
+  const begging = beggingFood(cat);
   cat.interacted = true;
   cat.act = idleAct();
-  state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}), ...(disturbed ? { disturbed: true } : {}) };
+  state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}), ...(disturbed ? { disturbed: true } : {}), ...(begging ? { begging: true } : {}) };
   emit(state, { type: "picked-up", cat: cat.id, offended });
 }
 

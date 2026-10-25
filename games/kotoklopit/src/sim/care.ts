@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, COLLAR, REVENGE, TREATS } from "./config";
+import { BATH, BEGGING, COLLAR, MINUTES_PER_HOUR, REVENGE, TREATS } from "./config";
 import { envy } from "./catai";
 import { fallIll, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
@@ -45,6 +45,16 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
     emit(state, { type: "purr", cat: cat.id, enjoyed: true });
     observe(state, cat, "vengeful", -1);
     forgive(cat);
+  }
+  // Звичка (§7, рішення автора 2026-10-25): ласощі котові, що саме просив їсти, привчають його жебракувати — навіть кота
+  // без риси; «Не випрошує» (−2) не привчається.
+  const begging = traitLevel(cat, "begging");
+  const held = state.character.held;
+  if (held?.kind === "cat" && held.begging === true && begging > -2) cat.begHabit = Math.min(BEGGING.habitMax, (cat.begHabit ?? 0) + BEGGING.habitStep);
+  // «Жебрак» одразу нявчить, просячи ще, — це видно (прояв «+», раз на годину).
+  if (begging > 0 && rng.chance(BEGGING.treatAsk * begging)) {
+    emit(state, { type: "meow", cat: cat.id });
+    observe(state, cat, "begging", 1, false, MINUTES_PER_HOUR);
   }
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
@@ -110,6 +120,11 @@ export function bathe(state: GameState, rng: Rng): boolean {
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
+    // Звичка жебракувати згасає (§7).
+    if (cat.begHabit !== undefined) {
+      cat.begHabit = Math.max(0, cat.begHabit - BEGGING.habitDecay);
+      if (cat.begHabit <= 0) delete cat.begHabit;
+    }
     if (cat.collar) {
       changeMood(state, cat, COLLAR.mood[cat.collar.quality]);
       if (cat.collar.bell && bellAnnoys(cat)) changeMood(state, cat, COLLAR.bellMood, "дзвіночок");

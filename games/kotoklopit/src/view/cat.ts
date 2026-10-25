@@ -29,7 +29,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -71,6 +71,10 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
   if (act.kind === "eat" || act.kind === "drink") return "eat";
+  // Гребе лапою (§9.12): закопує корм біля миски.
+  if (act.kind === "bury") return "bury";
+  // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
+  if (act.kind === "groom" && !act.target?.startsWith("cat:")) return "groom";
   return "sit";
 }
 
@@ -129,7 +133,7 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || interaction || feeling || blinking
+      pose === "walk" || pose === "bury" || pose === "groom" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
@@ -221,10 +225,13 @@ export class CatView {
       }
       case "carried":
       case "sit":
-      case "eat": {
+      case "eat":
+      case "bury":
+      case "groom": {
         const hx = x + dir * 3 * s;
-        // Сумний кіт опускає голову.
-        const headY = pose === "eat" ? y - 12 * s : y - (sad ? 29 : 33) * s;
+        // Сумний кіт опускає голову; той, хто їсть чи гребе лапою, — до самої підлоги; хто вмивається — хитає головою.
+        const headY =
+          pose === "eat" || pose === "bury" ? y - 12 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
         this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
         this.patches(g, x, y - 13 * s, 22 * s, 26 * s);
@@ -237,10 +244,19 @@ export class CatView {
         const reach = interaction === "play" ? dir * 6 * s : 0;
         const kneading = pose === "carried" && feeling === "content";
         const knead = (phase: number): number => (kneading ? -Math.max(0, Math.sin(time / 180 + phase)) * 3 * s : 0);
-        g.fillStyle(this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body).fillEllipse(x - 3 * s + reach, paws + knead(0), 6 * s, 4 * s).fillEllipse(x + 5 * s + reach, paws + knead(Math.PI), 6 * s, 4 * s);
+        const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
+        // Гребе: передня лапка (з боку морди) ходить уперед-назад по підлозі.
+        const scrape = pose === "bury" ? dir * (4 + Math.sin(time / 110) * 5) * s : 0;
+        g.fillStyle(pawColor).fillEllipse(x - 3 * s + reach, paws + knead(0), 6 * s, 4 * s);
+        if (pose !== "groom") g.fillEllipse(x + 5 * s + reach + scrape, paws + knead(Math.PI), 6 * s, 4 * s);
         // Ласкавий бодається головою: голова раз у раз подається вперед, до руки (§9.12).
         const nudge = look?.nudge === true ? dir * Math.max(0, Math.sin(time / 170)) * 4 * s : 0;
         this.headAt(g, hx + nudge + (feeling === "struggling" ? Math.sin(time / 50) * 2 : 0), headY - Math.abs(nudge) * 0.4, s, dir, body, point);
+        // Вмивається: лапка піднята до рота й ходить угору-вниз — поверх морди.
+        if (pose === "groom") {
+          g.fillStyle(pawColor).fillEllipse(hx + dir * 5 * s, headY + (6 + Math.sin(time / 160) * 2) * s, 5 * s, 7 * s);
+          g.lineStyle(1.5, COLORS.ink).strokeEllipse(hx + dir * 5 * s, headY + (6 + Math.sin(time / 160) * 2) * s, 5 * s, 7 * s);
+        }
         this.back = { x: x - dir * 4 * s, y: y - 22 * s };
         return;
       }

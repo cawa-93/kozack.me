@@ -4,15 +4,17 @@
 
 import { describe, expect, it } from "vitest";
 
+import { pickUpCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { bowlEaten, eatMinutes, tickCats } from "../src/sim/catai";
-import { APPETITE, GULPING } from "../src/sim/config";
+import { giveTreat, nightlyCare } from "../src/sim/care";
+import { bowlEaten, decide, eatMinutes, tickCats } from "../src/sim/catai";
+import { APPETITE, BEGGING, CAT_ACT_MINUTES, GULPING } from "../src/sim/config";
 import { emptyFeeder } from "../src/sim/household";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
-import { hours, withCatCorner } from "./helpers";
+import { hours, recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -165,5 +167,152 @@ describe("«Швидкість їжі» (рішення автора 2026-10-25)
     expect(alone).toBeGreaterThan(20);
     expect(vomits(true, false)).toBeGreaterThan(alone);
     expect(vomits(false, true)).toBeLessThan(alone);
+  });
+});
+
+describe("«Перебірливість» (рішення автора 2026-10-25)", () => {
+  it("«Гурман» нюхає простий корм, хвилину гребе лапою й іде просити кращого", () => {
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { picky: 2 });
+      const { events, stop } = recordEvents();
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+      cat.needs.hunger = 90;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.1, elapsed: 0 };
+      tickCats(save.current, 0.2, { present: true });
+      stop();
+      if (cat.act.kind !== "bury") continue;
+      expect(events.some((e) => e.type === "cat-refused-food")).toBe(true);
+      expect(bowl.food).toBe(2);
+      expect(seen(cat, "picky")).toBe(1);
+      tickCats(save.current, 1, { present: true });
+      expect(cat.act.kind).toBe("beg");
+      expect(cat.act.target).toBe(`item:${bowl.id}`);
+      return;
+    }
+    throw new Error("«Гурман» так і не відмовився від простого корму");
+  });
+
+  it("від голоду 95 «Гурман» відмовляється вдвічі рідше", () => {
+    const refusals = (hunger: number): number => {
+      let count = 0;
+      for (let seed = 0; seed < 300; seed++) {
+        const save = game();
+        save.current.rng.behavior = seed;
+        const cat = withCat(save, { picky: 1 });
+        const bowl = bowlOf(save);
+        Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+        cat.needs.hunger = hunger;
+        cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.1, elapsed: 0 };
+        tickCats(save.current, 0.2, { present: true });
+        if (cat.act.kind === "bury") count += 1;
+      }
+      return count;
+    };
+    const fed = refusals(85);
+    const starving = refusals(97);
+    expect(fed).toBeGreaterThan(80);
+    expect(starving).toBeLessThan(fed * 0.7);
+    expect(starving).toBeGreaterThan(fed * 0.3);
+  });
+
+  it("«Їсть усе» тішиться простим кормом, кіт без риси — ні", () => {
+    const save = game();
+    const plain = withCat(save);
+    plain.mood = 50;
+    meal(save, plain, 1);
+    const glutton = withCat(save, { picky: -2 });
+    glutton.mood = 50;
+    meal(save, glutton, 1);
+    expect(plain.mood).toBeLessThanOrEqual(50);
+    expect(glutton.mood).toBeGreaterThan(51);
+    expect(seen(glutton, "picky")).toBe(1);
+  });
+});
+
+describe("«Жебракування» (рішення автора 2026-10-25)", () => {
+  /** Узяти на руки кота, що просить їсти біля миски, і дати ласощі. */
+  function treatBeggar(save: Save, cat: Cat): void {
+    const bowl = bowlOf(save);
+    cat.act = { kind: "beg", target: `item:${bowl.id}`, goal: null, minutes: CAT_ACT_MINUTES.beg, elapsed: 0 };
+    save.current.home.supplies.treats.cheap = 5;
+    pickUpCat(save.current, cat);
+    giveTreat(save.current, "cheap", createRng(9));
+    save.current.character.held = null;
+  }
+
+  it("ласощі котові, що просить їсти, привчають жебракувати — навіть без риси; «Не випрошує» — ні; щоночі звичка згасає", () => {
+    const save = game();
+    const cat = withCat(save);
+    for (let i = 0; i < 5; i++) treatBeggar(save, cat);
+    expect(cat.begHabit).toBeCloseTo(BEGGING.habitMax);
+    nightlyCare(save.current, createRng(1));
+    expect(cat.begHabit).toBeCloseTo(BEGGING.habitMax - BEGGING.habitDecay);
+    // Ласощі котові, що нічого не просив, — не привчають.
+    const calm = withCat(save);
+    save.current.home.supplies.treats.cheap = 5;
+    pickUpCat(save.current, calm);
+    giveTreat(save.current, "cheap", createRng(9));
+    save.current.character.held = null;
+    expect(calm.begHabit).toBeUndefined();
+    const modest = withCat(save, { begging: -2 });
+    treatBeggar(save, modest);
+    expect(modest.begHabit).toBeUndefined();
+  });
+
+  it("привчений кіт без риси після їди інколи просить ще, а без звички — ніколи", () => {
+    let begged = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save);
+      cat.begHabit = BEGGING.habitMax;
+      meal(save, cat, 1);
+      if (cat.act.kind === "beg") begged += 1;
+      expect(seen(cat, "begging")).toBe(0);
+      const fresh = game();
+      fresh.current.rng.behavior = seed;
+      const plain = withCat(fresh);
+      meal(fresh, plain, 1);
+      expect(plain.act.kind).not.toBe("beg");
+    }
+    expect(begged).toBeGreaterThan(5);
+    expect(begged).toBeLessThan(40);
+  });
+
+  it("«Знає міру» поїв і вмивається; голодний «Не випрошує» чекає біля миски, а не йде до персонажа", () => {
+    const save = game();
+    const cat = withCat(save, { begging: -1 });
+    meal(save, cat, 1);
+    expect(cat.act).toMatchObject({ kind: "groom", target: "wash" });
+    expect(seen(cat, "begging")).toBe(1);
+    for (let seed = 0; seed < 20; seed++) {
+      const hungry = withCat(save, { begging: -2 });
+      bowlOf(save).food = 0;
+      hungry.needs.hunger = 95;
+      decide(save.current, hungry, createRng(seed), { present: true });
+      expect(hungry.act.kind, `seed ${seed}`).toBe("beg");
+    }
+  });
+
+  it("«Артист голоду» після ласощів одразу нявчить, просячи ще", () => {
+    let asked = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const save = game();
+      const cat = withCat(save, { begging: 2 });
+      save.current.home.supplies.treats.cheap = 5;
+      pickUpCat(save.current, cat);
+      const { events, stop } = recordEvents();
+      giveTreat(save.current, "cheap", createRng(seed));
+      stop();
+      if (events.some((e) => e.type === "meow" && e.cat === cat.id)) {
+        asked += 1;
+        expect(seen(cat, "begging")).toBe(1);
+      } else expect(seen(cat, "begging")).toBe(0);
+    }
+    expect(asked).toBeGreaterThan(8);
+    expect(asked).toBeLessThan(30);
   });
 });

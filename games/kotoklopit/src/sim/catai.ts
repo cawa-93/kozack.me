@@ -12,6 +12,7 @@ import {
   APPETITE,
   APPETITE_STEP,
   ATTENTION_SATISFIED,
+  BEGGING,
   BOWL_CAPACITY,
   BREEDING,
   CARRY,
@@ -54,6 +55,7 @@ import {
   OLD_PLAY,
   PET,
   PETTING,
+  PICKY,
   PICKY_REFUSAL_STEP,
   PLAY_RELIEF,
   PORTION_HUNGER,
@@ -262,6 +264,14 @@ export function bowlFull(bowl: BowlItem): boolean {
   return bowl.food >= BOWL_CAPACITY;
 }
 
+/**
+ * Кіт саме просить їсти (§7, §9.12): нявчить біля миски, біля ліжка зранку чи біля їжі на столі, або прийшов до персонажа,
+ * бо голодний. Ласощі йому зараз привчають до жебракування.
+ */
+export function beggingFood(cat: Cat): boolean {
+  return (cat.act.kind === "beg" && cat.act.target !== "sink") || (cat.act.kind === "attention" && cat.act.forFood === true);
+}
+
 /** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */
 export function isCarried(state: GameState, cat: Cat): boolean {
   const held = state.character.held;
@@ -461,7 +471,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
       return start(cat, "steal", objectTile(steal.id), 1, steal.id);
     }
     const empty = nearest(cat, itemsOf(state, "bowl"));
-    if (context.present && !aloof(cat) && !avoiding(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
+    // «Не випрошує» (−2) не йде просити до персонажа — чекає біля миски (§9.12, рішення автора 2026-10-25).
+    if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
@@ -864,12 +875,15 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "eat": {
       const bowl = itemById<BowlItem>(state, act.target);
       if (!bowl || bowl.food <= 0) return;
+      // Перебірливий нюхає простий корм, гребе біля миски лапою — «закопує» — і відходить просити кращого; від голоду
+      // 95 — удвічі рідше: голод сильніший (§9.12, рішення автора 2026-10-25).
       const picky = traitLevel(cat, "picky");
-      if (bowl.foodQuality === "cheap" && picky > 0 && rng.chance(PICKY_REFUSAL_STEP * picky)) {
+      const starving = cat.needs.hunger >= PICKY.starving ? PICKY.starvingFactor : 1;
+      if (bowl.foodQuality === "cheap" && picky > 0 && rng.chance(PICKY_REFUSAL_STEP * picky * starving)) {
         changeMood(state, cat, MOOD.pickyRefusal, "відмовився від дешевого корму");
         emit(state, { type: "cat-refused-food", cat: cat.id });
         observe(state, cat, "picky");
-        return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
+        return start(cat, "bury", null, PICKY.buryMinutes, act.target);
       }
       // «Малоїжка» поклювала пів порції й лишила половину в мисці; половинку, що лишилася, доїдає наступний (§9.12).
       const nibble = act.nibble === true && bowl.half !== true;
@@ -884,6 +898,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (bowl.food <= 0) bowl.foodQuality = null;
       cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * portion);
       changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, quality === "premium" ? "дорогий корм" : undefined);
+      // «Їсть усе» наминає простий корм і тішиться ним, як дорогим, — прояв «Перебірливості −» (раз на годину).
+      if (quality === "cheap" && picky < 0) {
+        changeMood(state, cat, PICKY.cheapJoy * -picky, "радіє простому корму");
+        observe(state, cat, "picky", -1, false, MINUTES_PER_HOUR);
+      }
       itemMood(state, cat, bowl);
       if (quality === "premium") envy(state, cat);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
@@ -913,12 +932,24 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const crowded = state.cats.some((o) => o.id !== cat.id && home(state, o) && o.act.kind === "eat" && o.act.goal === null && distance(o, cat) <= GULPING.near);
       const vomit = VOMIT_STEP * Math.max(0, gulping) * (crowded ? GULPING.crowded : 1) * (bowl.quality === "premium" ? GULPING.slowBowl : 1);
       if (rng.chance(vomit) || vomitsAfterMeal(cat, rng)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
-      // «Жебракування»: щойно поїв — уже просить ще біля миски.
+      // «Жебракування»: щойно поїв — уже просить ще біля миски; звичка від ласощів — і в кота без риси (§7).
       const begging = traitLevel(cat, "begging");
-      if (begging > 0 && rng.chance(TRAIT_EFFECTS.beggingChance * begging)) {
-        observe(state, cat, "begging");
+      const asks = TRAIT_EFFECTS.beggingChance * Math.max(0, begging) + (begging <= -2 ? 0 : (cat.begHabit ?? 0));
+      if (asks > 0 && rng.chance(asks)) {
+        if (begging > 0) observe(state, cat, "begging");
         return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       }
+      // «Знає міру» поїв, умивається й іде відпочивати — прояв «−», раз на годину (рішення автора 2026-10-25).
+      if (begging < 0) {
+        start(cat, "groom", null, BEGGING.washMinutes, "wash");
+        observe(state, cat, "begging", -1, false, MINUTES_PER_HOUR);
+      }
+      return;
+    }
+    case "bury": {
+      // Закопав простий корм — тепер просить кращого біля миски (§9.12).
+      const bowl = itemById<BowlItem>(state, act.target);
+      if (bowl?.kind === "bowl") return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       return;
     }
     case "drink": {
