@@ -92,12 +92,12 @@ import {
   ZOOMIES,
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
-import { emit } from "./events";
+import { emit, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -834,7 +834,9 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng): void {
   }
   const toy = nearest(cat, itemsOf(state, "toy"));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
-  options.push({ weight: MISCHIEF.scratch * traitFactor(cat, "scratching", MISCHIEF.traitStep) * bored, value: active(() => startScratch(state, cat, rng)) });
+  // Точити кігті — потреба кожного кота: «Дряпання» трохи змінює, як часто, а передусім — де (§9.12, 2026-10-25).
+  const scratching = Math.max(SCRATCH.minWeight, SCRATCH.weight * (1 + SCRATCH.frequencyStep * traitLevel(cat, "scratching")));
+  options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
   (weightedPick(rng, options) ?? (() => start(cat, "idle", null, CAT_ACT_MINUTES.idle)))();
@@ -867,19 +869,23 @@ function startWrestle(state: GameState, cat: Cat, mate: Cat): void {
   start(mate, "wrestle", null, minutes + distance(cat, mate) / CAT_WALK_TILES_PER_MINUTE, `cat:${cat.id}`);
 }
 
-/** Точити кігті (§9.12): на кігтеточці, якщо вона є й кіт її обрав, інакше — на дивані. */
-function startScratch(state: GameState, cat: Cat, rng: Rng): void {
+/**
+ * Точити кігті (§9.12, рішення автора 2026-10-25): на кігтеточці, якщо вона є й кіт її обрав; інакше кіт без риси й «+» дере
+ * диван («Руйнівник диванів» — інколи одвірок), «Любить кігтеточку» — диван лише через раз, а то потягується на килимку чи
+ * дере коробки біля входу, «Бережливий» дивана не дере ніколи. Прояв — на місці (`finish`).
+ */
+export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   const level = traitLevel(cat, "scratching");
   const posts = itemsOf(state, "scratcher").filter((p) => rng.chance(clamp(SCRATCH[p.quality] - SCRATCH.traitStep * level, 0, 1)));
   const post = nearest(cat, posts);
-  if (post) {
-    // Дере кігтеточку, а не диван — прояв «Любить кігтеточку» (§9.9).
-    observe(state, cat, "scratching", -1);
-    return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
+  if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
+  if (level <= -2 || (level === -1 && !rng.chance(SCRATCH.calmSofa))) {
+    if (hasBoxes(state) && rng.chance(0.5)) return start(cat, "scratch", objectTile("boxes"), SCRATCH.minutes, "boxes");
+    return start(cat, "scratch", { x: RUG.x + rng.int(0, RUG.w - 1), y: RUG.y + rng.int(0, RUG.h - 1) }, SCRATCH.minutes, "rug");
   }
+  if (level >= 2 && rng.chance(SCRATCH.doorframe)) return start(cat, "scratch", { ...DOORFRAME }, SCRATCH.minutes, "doorframe");
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
-  observe(state, cat, "scratching");
 }
 
 /** Шанс, що кіт ляже на коліна тому, хто працює (§9.12): «Коліна» й любов до персонажа. */
@@ -1174,6 +1180,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "fur", visibleFloorNear(state, cat), cat.id);
         observe(state, cat, "shedding");
       }
+      // Проспав від години — прокинувшись, одразу точить кігті (§9.12, рішення автора 2026-10-25): їсти й пити можна й за
+      // дві хвилини (після довгого сну кіт майже завжди голодний чи спраглий), а в лоток — ні.
+      if (act.elapsed >= SCRATCH.afterSleepMinutes && cat.needs.toilet < NEED_THRESHOLD.toilet && !isAdapting(state, cat) && rng.chance(SCRATCH.afterSleep)) startScratch(state, cat, rng);
       return;
     }
     case "wrestle": {
@@ -1211,8 +1220,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (post) {
         itemMood(state, cat, post);
         wearOut(state, post, rng);
-      } else state.home.repairs += SOFA_REPAIR;
-      emit(state, { type: "scratched", cat: cat.id, sofa: post === null });
+      } else if (act.target === "sofa" || act.target === "doorframe") state.home.repairs += SOFA_REPAIR;
+      const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" ? act.target : "sofa";
+      emit(state, { type: "scratched", cat: cat.id, where });
+      // Прояв — на місці, на очах персонажа (§9.9): «+» дере диван чи одвірок, «−» — кігтеточку, килимок чи коробки.
+      observe(state, cat, "scratching", where === "sofa" || where === "doorframe" ? 1 : -1);
       return;
     }
     case "wander":

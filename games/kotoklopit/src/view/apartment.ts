@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, type HomeObject, type ObjectKind } from "../sim/home";
+import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, type HomeObject, type ObjectKind } from "../sim/home";
 import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
 import { SHAPED_STORAGES } from "./storagelook";
@@ -106,7 +106,7 @@ function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
     }
   }
   // Килим у вітальні.
-  const rug = rectToScreen({ x: 9, y: 7, w: 4, h: 3 });
+  const rug = rectToScreen(RUG);
   g.fillStyle(0x9a5f55, 0.55).fillRoundedRect(rug.x, rug.y, rug.w, rug.h, 10);
 }
 

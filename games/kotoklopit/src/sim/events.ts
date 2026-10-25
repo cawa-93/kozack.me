@@ -20,6 +20,9 @@ export type ModifierEvent =
   | "vacation-pay"
   | "mom-call";
 
+/** Де кіт точить кігті (§9.12, «Дряпання»). */
+export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes";
+
 /** Що треба мати в руках чи поруч, щоб дія вдалася (§11.4): продукти, страву, корм, кота, будь-що, брудний лоток. */
 export type Need = "raw" | "dish" | "catfood" | "cat" | "item" | "dirty-litter";
 
@@ -168,7 +171,8 @@ export type GameEvent =
   | { type: "stole"; cat: number; object: string; item: Dish }
   | { type: "toy-broke"; toy: number }
   | { type: "discarded"; item: HomeItem }
-  | { type: "scratched"; cat: number; sofa: boolean }
+  /** Кіт поточив кігті (§9.12, «Дряпання»): де саме — кігтеточка, диван, одвірок, килимок чи коробки. */
+  | { type: "scratched"; cat: number; where: ScratchSpot }
   | { type: "groomed"; cat: number; friend: number }
   | { type: "cat-fight"; cats: [number, number] }
   /** Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). */

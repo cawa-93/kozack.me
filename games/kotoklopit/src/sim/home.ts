@@ -151,6 +151,12 @@ export function trinketTile(kind: TrinketKind): Vec {
   return { x: Math.min(o.x + o.w - 1, Math.floor(o.x + trinket.at * o.w)), y: o.y };
 }
 
+/** Килим у вітальні (§8.4): на ньому «Любить кігтеточку» потягується, точачи кігті (§9.12). */
+export const RUG: Rect = { x: 9, y: 7, w: 4, h: 3 };
+
+/** Одвірок кухні: «Руйнівник диванів» дере його, стоячи в проході з вітальні (§9.12). */
+export const DOORFRAME: Vec = { x: 16, y: 5 };
+
 /** Кошик брудної білизни біля пральної машини (§8.7): його видно, а мстивий кіт іде до нього, як і до ліжка (§9.12). */
 export const LAUNDRY_BASKET: Vec = { x: 9.5, y: 1.75 };
 

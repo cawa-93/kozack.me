@@ -22,6 +22,8 @@ const item = (i: Item): string => {
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
+/** Де кіт точить кігті (§9.12). */
+const SCRATCH_SPOTS = { post: "кігтеточка", sofa: "диван, ремонт до комунальних", doorframe: "одвірок, ремонт до комунальних", rug: "потягується на килимку", boxes: "коробки біля входу" } as const;
 const goods = (d: Delivery): string => ("product" in d ? d.product : d.thing);
 const catName = (state: GameState, id: number): string => state.cats.find((c) => c.id === id)?.name ?? `кіт ${id}`;
 
@@ -159,7 +161,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "fight-stopped":
       return `Бійку розборонено (${catName(state, event.cat)} на руках)`;
     case "scratched":
-      return `${catName(state, event.cat)} точить кігті: ${event.sofa ? "диван, ремонт до комунальних" : "кігтеточка"}`;
+      return `${catName(state, event.cat)} точить кігті: ${SCRATCH_SPOTS[event.where]}`;
     case "received":
       return `Забрано пакунків: ${event.deliveries.length}`;
     case "dash":

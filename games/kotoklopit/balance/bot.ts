@@ -264,7 +264,7 @@ export class Bot {
     }
     // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
     // Зламана річ (§8.7), без якої котам не обійтися, — одразу, навіть без запасу грошей.
-    const things = (kind: "litter" | "bowl" | "water" | "toy", want: number): void => {
+    const things = (kind: "litter" | "bowl" | "water" | "toy" | "scratcher", want: number): void => {
       const have = s.home.items.filter((i) => i.kind === kind).length + [...s.home.deliveries, ...s.home.porch].filter((d) => "thing" in d && d.thing === kind).length;
       if (have < want && freeSlots(s, kind) > 0 && (s.character.money > 100 || have === 0)) cart.push({ goods: { thing: kind }, quality: "cheap", count: 1 });
     };
@@ -273,6 +273,9 @@ export class Bot {
       things("bowl", cats);
       things("water", Math.ceil(cats / 3));
       things("toy", 1);
+      // Кігтеточка — коли грошей удосталь: інакше кожен кіт дере диван, а ремонт росте щотижня (§9.12, «Дряпання»,
+      // 2026-10-25); на бідному старті вона з'їла б гроші на комунальні.
+      if (s.character.money > 250) things("scratcher", 1);
     }
     if (cart.length === 0) return;
     // Що скоро закінчиться — у той самий кошик, якщо влазить.

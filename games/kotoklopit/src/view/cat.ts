@@ -31,7 +31,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -79,6 +79,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).
   if (act.kind === "mark") return "mark";
   if (act.kind === "cough") return "cough";
+  // Точить кігті: стоїть на задніх лапах; на килимку — потягується, витягнувши лапи вперед (§9.12, «Дряпання»).
+  if (act.kind === "scratch") return act.target === "rug" ? "stretch" : "scratch";
   // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
   if (act.kind === "groom" && !act.target?.startsWith("cat:")) return "groom";
   return "sit";
@@ -139,7 +141,7 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || interaction || feeling || blinking
+      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
@@ -219,6 +221,35 @@ export class CatView {
         g.fillStyle(COLORS.ink, 0.55).fillEllipse(x, y - 4, 26 * s, 10 * s);
         g.fillStyle(EYES[this.coat.eyes]).fillCircle(x - 4 * s, y - 5, 2.4).fillCircle(x + 4 * s, y - 5, 2.4);
         this.head = { x, y: y - 14 };
+        return;
+      }
+      case "scratch": {
+        // Точить кігті (§9.12): стоїть на задніх лапах, витягнувшись угору, і по черзі дере передніми.
+        this.tail(g, x - dir * 8 * s, y - 3 * s, s, dir, "rest");
+        g.fillStyle(body).fillEllipse(x, y - 17 * s, 17 * s, 32 * s);
+        this.patches(g, x, y - 17 * s, 17 * s, 32 * s);
+        if (this.coat.tabby) this.stripes(g, x, y - 18 * s, 14 * s, stripe, false);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 17 * s, 17 * s, 32 * s);
+        this.headAt(g, x + dir * 2 * s, y - 37 * s, s, dir, body, point);
+        const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
+        const claw = Math.sin(time / 80) * 4 * s;
+        g.fillStyle(pawColor).fillEllipse(x + dir * 9 * s, y - 30 * s + claw, 5 * s, 7 * s).fillEllipse(x + dir * 10 * s, y - 26 * s - claw, 5 * s, 7 * s);
+        g.lineStyle(1.5, COLORS.ink).strokeEllipse(x + dir * 9 * s, y - 30 * s + claw, 5 * s, 7 * s).strokeEllipse(x + dir * 10 * s, y - 26 * s - claw, 5 * s, 7 * s);
+        this.back = { x: x - dir * 3 * s, y: y - 24 * s };
+        return;
+      }
+      case "stretch": {
+        // Потягується на килимку (§9.12, «Дряпання»): зад піднятий, передні лапи далеко вперед і по черзі шкрябають килим.
+        this.tail(g, x - dir * 13 * s, y - 20 * s, s, dir, "up");
+        g.fillStyle(this.coat.pointed ? point : body);
+        for (const lx of [-10, -5] as const) g.fillRoundedRect(x + dir * lx * s - 2, y - 12 * s, 4 * s, 13 * s, 2);
+        g.fillStyle(body).fillEllipse(x - dir * 5 * s, y - 15 * s, 22 * s, 13 * s).fillEllipse(x + dir * 6 * s, y - 9 * s, 20 * s, 11 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 5 * s, y - 15 * s, 22 * s, 13 * s);
+        const scrape = Math.sin(time / 110) * 3 * s;
+        const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
+        g.fillStyle(pawColor).fillEllipse(x + dir * (20 * s + scrape), y - 1, 7 * s, 4 * s).fillEllipse(x + dir * (17 * s - scrape), y + 1, 7 * s, 4 * s);
+        this.headAt(g, x + dir * 13 * s, y - 11 * s, s, dir, body, point);
+        this.back = { x: x - dir * 5 * s, y: y - 20 * s };
         return;
       }
       case "walk":
