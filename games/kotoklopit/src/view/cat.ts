@@ -53,6 +53,9 @@ export interface CatMoodLook {
   back?: boolean;
 }
 
+/** Де лежить кіт у ящиках біля входу: на верхній коробці купи, від низу клітинки (§9.12). */
+const BOX_TOP = 24;
+
 /** Наскільки прикриті очі сумного кота. */
 const SAD_LID = 0.45;
 /** На темній шерсті повіку й брівки видно світлою лінією. */
@@ -162,7 +165,8 @@ export class CatView {
       const bottom = toScreen({ x: 0, y: furniture.y + furniture.h }).y;
       feet.depth = depthOf(bottom) + 2;
       // У душовій кабіні кіт сидить на мокрому піддоні біля входу, а не на даху кабіни (§9.12, «Любов до води»).
-      feet.y = pose === "hide" ? bottom - 2 : furniture.kind === "shower" ? bottom - 4 : feet.y - objectHeight(furniture.kind) + 6;
+      // У ящиках біля входу кіт лежить у верхній коробці: купа нижча за висоту місця (1–2 коробки, §9.12 «Допитливість»).
+      feet.y = pose === "hide" ? bottom - 2 : furniture.kind === "shower" ? bottom - 4 : furniture.kind === "boxes" ? bottom - BOX_TOP : feet.y - objectHeight(furniture.kind) + 6;
     } else if (pose === "eat" && carriedAt === null) {
       // Їсть чи п'є з миски — сидить за нею, схилившись, а не на ній: видно, як корм меншає (§9.12, «Швидкість їжі»;
       // перевірка етапу 2026-10-25 — кіт закривав миску, і корму не було видно). Глибина — та сама, з клітинки кота.
