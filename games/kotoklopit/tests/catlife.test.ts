@@ -5,9 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { changeLove, changeMood, createCat } from "../src/sim/cat";
+import { nightlyCare } from "../src/sim/care";
 import { activityAt, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
-import { LOVE_BEHAVIOR, PET } from "../src/sim/config";
+import { COLLAR, LOVE_BEHAVIOR, PET } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -270,6 +271,21 @@ describe("поведінка котів: пошук багів 2026-10-25 (§9.1
 });
 
 describe("догляд персонажа (§9.12)", () => {
+  it("дзвіночок дратує полохливого й нестресостійкого кота, а сміливого — ні (злиття груп 2026-10-25)", () => {
+    const lost = (traits: Record<string, TraitLevel>): number => {
+      const save = game();
+      const cat = withCat(save);
+      cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
+      cat.collar = { quality: "premium", bell: true };
+      cat.mood = 50;
+      nightlyCare(save.current, createRng(1));
+      return 50 + COLLAR.mood.premium - cat.mood;
+    };
+    expect(lost({ bravery: -1 })).toBeGreaterThan(0);
+    expect(lost({ stress: -1 })).toBeGreaterThan(0);
+    expect(lost({ bravery: 1 })).toBeCloseTo(0);
+  });
+
   it("корм із шафки — у миску одразу доверху, вода доливається одним натисканням", () => {
     const save = game();
     addSupply(save.current, "catFood", "cheap", 0); // шафку видно, коли корм уже бував удома

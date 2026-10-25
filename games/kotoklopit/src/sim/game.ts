@@ -14,6 +14,7 @@ import type { RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
+import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
 import type { Chronotype, Difficulty, GameState, Look, NightReport, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
@@ -250,8 +251,18 @@ export function deserialize(json: string): Save {
   const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
   if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
   const save = data as Save;
-  for (const state of [save.current, save.dayStart, save.weekStart]) upgradeFeeder(state);
+  for (const state of [save.current, save.dayStart, save.weekStart]) {
+    upgradeFeeder(state);
+    upgradeTraits(state);
+  }
   return save;
+}
+
+/** Злиті групи рис (2026-10-25): у котів удома, у притулку, у розпліднику й в альбомі пам'яті. */
+function upgradeTraits(state: GameState): void {
+  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
+  for (const cat of cats) cat.traits = migrateTraits(cat.traits);
+  for (const entry of state.album) entry.traits = migrateTraits(entry.traits);
 }
 
 function clone<T>(value: T): T {

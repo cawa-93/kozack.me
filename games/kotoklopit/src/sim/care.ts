@@ -73,8 +73,11 @@ export function addBell(state: GameState): boolean {
   return true;
 }
 
-/** Чи дратує кота дзвіночок: чутливий до погоди чи нестресостійкий (§9.10). */
-const bellAnnoys = (cat: Cat): boolean => traitLevel(cat, "weather") >= 1 || traitLevel(cat, "stress") <= -1;
+/**
+ * Чи дратує кота дзвіночок (§9.10): полохливий чи нестресостійкий. До злиття груп (2026-10-25) — ще й «Чутливий
+ * до погоди», якої більше немає.
+ */
+const bellAnnoys = (cat: Cat): boolean => traitLevel(cat, "bravery") <= -1 || traitLevel(cat, "stress") <= -1;
 
 /**
  * Купання (§8.7): кота на руках — до душу; потрібен шампунь. «Водолаз» радіє, решта ображається,
