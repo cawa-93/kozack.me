@@ -29,6 +29,48 @@ export function drawToy(g: Phaser.GameObjects.Graphics, quality: "cheap" | "prem
   g.fillStyle(feather).fillEllipse(x + 11 * s, y + 1 * s, 6 * s, 10 * s).fillEllipse(x + 14 * s, y + 2 * s, 5 * s, 8 * s);
 }
 
+/**
+ * Шафка з кормом (§9.12, «Кмітливість у бешкеті»): `t` — її верхня грань, `height` — висота лицьової. Відчинена котом — праві
+ * дверцята розчахнуті, усередині темно; замок — на стику дверцят.
+ */
+export function drawCabinetExtras(g: Phaser.GameObjects.Graphics, t: { x: number; y: number; w: number; h: number }, height: number, open: boolean, lock: boolean): void {
+  const cx = t.x + t.w / 2;
+  const y0 = t.y + t.h;
+  const y1 = y0 + height;
+  if (open) {
+    g.fillStyle(0x2a2428).fillRect(cx, y0 + 2, t.w / 2 - 1, height - 4);
+    const right = t.x + t.w;
+    const door = [
+      [right, y0 + 1],
+      [right + 13, y0 + 6],
+      [right + 13, y1 - 2],
+      [right, y1 - 1],
+    ].map(([x, y]) => new Phaser.Math.Vector2(x!, y!));
+    g.fillStyle(0xc49e6a).fillPoints(door, true);
+    g.lineStyle(2, COLORS.ink).strokePoints(door, true);
+  }
+  if (lock) drawPadlock(g, open ? cx - 7 : cx, (y0 + y1) / 2 + 2, 1.2);
+}
+
+/** Перекинутий смітник (§9.12, «Кмітливість у бешкеті»): лежить на боці кришкою вперед, поки сміття не прибрали. */
+export function drawTippedTrash(g: Phaser.GameObjects.Graphics, t: { x: number; y: number; w: number; h: number }, height: number): void {
+  const floor = t.y + t.h + height;
+  const w = t.w;
+  g.fillStyle(0x5a625a).fillRoundedRect(t.x, floor - 18, w - 8, 18, 4);
+  g.lineStyle(2.5, COLORS.ink).strokeRoundedRect(t.x, floor - 18, w - 8, 18, 4);
+  g.fillStyle(0x3e453e).fillEllipse(t.x + w - 8, floor - 9, 10, 18);
+  g.lineStyle(2, COLORS.ink).strokeEllipse(t.x + w - 8, floor - 9, 10, 18);
+}
+
+/** Навісний замочок (§9.12, «Кмітливість у бешкеті»): дужка й корпус; `x`, `y` — центр корпусу. */
+export function drawPadlock(g: Phaser.GameObjects.Graphics, x: number, y: number, scale = 1): void {
+  const s = scale;
+  g.lineStyle(2 * s, 0x8c9aa6).beginPath().arc(x, y - 3 * s, 3.2 * s, Math.PI, 0).strokePath();
+  g.fillStyle(0xe8b93a).fillRoundedRect(x - 4.5 * s, y - 3 * s, 9 * s, 7 * s, 1.5 * s);
+  g.lineStyle(Math.max(1, 0.8 * s), COLORS.ink).strokeRoundedRect(x - 4.5 * s, y - 3 * s, 9 * s, 7 * s, 1.5 * s);
+  g.fillStyle(COLORS.ink).fillCircle(x, y, 1 * s);
+}
+
 /** Шкарпетка (§9.12, «Подарунки й схованки»): смугаста, п'ятою вбік; `x`, `y` — центр. */
 export function drawSock(g: Phaser.GameObjects.Graphics, x: number, y: number, scale = 1): void {
   const s = scale;
@@ -328,6 +370,14 @@ function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
       g.lineStyle(4, 0xf8f6f0).beginPath().moveTo(x - 14, y + 2).lineTo(x - 7, y - 4).lineTo(x - 1, y + 3).lineTo(x + 6, y - 3).lineTo(x + 14, y + 1).strokePath();
       g.lineStyle(1, 0xb9b4aa).beginPath().moveTo(x - 14, y + 4).lineTo(x - 7, y - 2).lineTo(x - 1, y + 5).lineTo(x + 6, y - 1).lineTo(x + 14, y + 3).strokePath();
       g.fillStyle(0xf8f6f0).fillEllipse(x - 4, y + 1, 9, 6);
+      return;
+    case "garbage":
+      // Сміття з перекинутого смітника (§9.12, «Кмітливість у бешкеті»): шкірка банана, папірці, обгортка.
+      g.fillStyle(0x6b5d4a, 0.35).fillEllipse(x, y + 1, 30, 10);
+      g.fillStyle(0xe8c34a).fillEllipse(x - 8, y, 12, 5);
+      g.fillStyle(0xd8d4cc).fillRect(x + 1, y - 4, 7, 5).fillRect(x + 9, y - 1, 5, 4);
+      g.fillStyle(0xc0675a).fillRect(x - 3, y + 2, 6, 3);
+      g.lineStyle(1, COLORS.ink, 0.6).strokeRect(x + 1, y - 4, 7, 5);
       return;
     case "broken":
       g.fillStyle(0xf3efe6).fillTriangle(x - 10, y, x - 4, y - 6, x - 2, y + 2).fillTriangle(x + 2, y + 1, x + 9, y - 4, x + 10, y + 4);

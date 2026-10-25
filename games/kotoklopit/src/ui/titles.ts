@@ -40,6 +40,7 @@ export const THING_TITLES: Record<ThingKind, string> = {
   feeder: "Автогодівниця",
   fountain: "Фонтанчик для води",
   robot: "Робот-пилосос",
+  lock: "Замок на шафку з кормом",
 };
 
 /**
@@ -70,6 +71,7 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   "thing:feeder": { cheap: "Проста автогодівниця", premium: "Розумна автогодівниця" },
   "thing:fountain": { cheap: "Простий фонтанчик", premium: "Тихий фонтанчик" },
   "thing:robot": { cheap: "Простий робот-пилосос", premium: "Розумний робот-пилосос" },
+  "thing:lock": { cheap: "Дитячий замочок", premium: "Магнітний замок" },
 };
 
 /** Два варіанти послуги на місці (§8.5): лікування, грумінг. */

@@ -16,6 +16,7 @@ import {
   BEGGING,
   BOWL_CAPACITY,
   BREEDING,
+  CUNNING,
   CARRIER_HOME,
   CARRY,
   CAT_ACT_MINUTES,
@@ -97,12 +98,13 @@ import {
   ZOOMIES,
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { takeSupply } from "./economy";
 import { emit, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CARRIER_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, isPresent, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -560,6 +562,9 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (water) return start(cat, water.water > 0 ? "drink" : "beg", itemTile(water), water.water > 0 ? CAT_ACT_MINUTES.drink : CAT_ACT_MINUTES.beg, `item:${water.id}`);
   }
   if (hungry) {
+    // Миски порожні: шафка з кормом відчинена — їсть звідти будь-хто, а кмітливий відчиняє її сам — раніше, ніж красти зі
+    // столу (§9.12, «Кмітливість у бешкеті»).
+    if (cabinetFood(state) && (state.home.cabinetOpen === true || rng.chance(CUNNING.openStep * Math.max(0, traitLevel(cat, "cunning"))))) return startRaid(state, cat, "cabinet");
     // Миски порожні: злодюжка краде людську їжу, а дуже голодний — будь-який кіт (§9.3).
     const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
     const steal = food[rng.int(0, food.length - 1)];
@@ -857,6 +862,10 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
+  // Кмітливий перекидає смітник, а «Зломник» лізе в шафку з кормом і ситим (§9.12, «Кмітливість у бешкеті»).
+  const cunning = traitLevel(cat, "cunning");
+  if (cunning > 0 && !trashTipped(state)) options.push({ weight: CUNNING.trashStep * cunning * bored, value: active(() => startRaid(state, cat, "trash")) });
+  if (cunning >= CUNNING.fullLevel && cabinetFood(state)) options.push({ weight: CUNNING.fullWeight, value: active(() => startRaid(state, cat, "cabinet")) });
   // Рулон туалетного паперу у ванній (§9.12, «Мисливський інстинкт»): полювання лапою на річ, що рухається.
   const roll = rollWeight(state, cat);
   if (roll > 0) options.push({ weight: roll * bored, value: active(() => start(cat, "unroll", { ...ROLL_TILE }, HUNTING.pawMinutes, "roll")) });
@@ -874,6 +883,70 @@ export function rollWeight(state: GameState, cat: Cat): number {
   const level = traitLevel(cat, "hunting");
   if (level < 0 || state.home.rollDown === true) return 0;
   return HUNTING.roll * (1 + HUNTING.rollStep * level) * (isKitten(cat) ? HUNTING.kitten : 1);
+}
+
+/** У шафці з кормом є корм (§9.12, «Кмітливість у бешкеті»): шафка стоїть удома, і в ній щось лишилося. */
+function cabinetFood(state: GameState): boolean {
+  return isPresent(state, objectById("cat-cabinet")) && state.home.supplies.catFood.cheap + state.home.supplies.catFood.premium > 0;
+}
+
+/** Смітник перекинуто, поки сміття не прибрали (§9.12, «Кмітливість у бешкеті»). */
+export function trashTipped(state: GameState): boolean {
+  return state.home.messes.some((m) => m.kind === "garbage");
+}
+
+/**
+ * Кіт іде до шафки з кормом чи до смітника (§9.12, «Кмітливість у бешкеті»): зачинену шафку спершу лапає, з відчиненої одразу їсть.
+ */
+function startRaid(state: GameState, cat: Cat, target: "cabinet" | "trash"): void {
+  const open = target === "cabinet" && state.home.cabinetOpen === true;
+  start(cat, "raid", { ...(target === "cabinet" ? CABINET_PAW : TRASH_PAW) }, open ? eatMinutes(cat) : CUNNING.pawMinutes, target);
+}
+
+/** Чи піддадуться дверцята (§9.12): без замка — так; дешевий замок відчиняє лише «Зломник», і то не завжди; надійний — ніхто. */
+function cabinetGives(state: GameState, cat: Cat, rng: Rng): boolean {
+  const lock = state.home.lock;
+  if (lock === undefined) return true;
+  return lock === "cheap" && traitLevel(cat, "cunning") >= CUNNING.fullLevel && rng.chance(CUNNING.cheapLock);
+}
+
+/**
+ * Кіт біля шафки чи смітника (§9.12, «Кмітливість у бешкеті»). Зачинену шафку лапає — відчинив і їсть, а на замку дверцята
+ * лише брязкають; з відчиненої шафки з'їдає порцію запасу (ситий «Зломник» з шансом 30% зригує). Смітник перекидає: гуркіт і
+ * сміття на підлозі. Прояв «+» — лапає дверцята чи перекидає смітник на очах персонажа.
+ */
+function raidDone(state: GameState, cat: Cat, rng: Rng): void {
+  const act = cat.act;
+  if (act.target === "trash") {
+    if (trashTipped(state)) return;
+    const trash = objectById("trash");
+    const at = visibleFloorNear(state, { x: trash.x + 0.5, y: trash.y + 1.3 });
+    addMess(state, "garbage", at, cat.id);
+    emit(state, { type: "trash-tipped", cat: cat.id });
+    loudNoise(state, "broken", at);
+    cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+    changeMood(state, cat, 1);
+    observe(state, cat, "cunning");
+    return;
+  }
+  if (!cabinetFood(state)) return;
+  if (state.home.cabinetOpen !== true) {
+    const opened = cabinetGives(state, cat, rng);
+    emit(state, { type: "cabinet-pawed", cat: cat.id, opened });
+    observe(state, cat, "cunning");
+    if (!opened) return;
+    state.home.cabinetOpen = true;
+    return start(cat, "raid", null, eatMinutes(cat), "cabinet");
+  }
+  const full = cat.needs.hunger < hungerThreshold(cat);
+  const quality = takeSupply(state, "catFood");
+  if (quality === null) return;
+  cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER);
+  changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, "корм із шафки");
+  emit(state, { type: "cat-ate", cat: cat.id, quality });
+  // Стерилізованому — лише корм для стерилізованих (§9.8): у шафці — звичайний.
+  if (cat.sterilized) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
+  if (full && rng.chance(CUNNING.fullVomit)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
 }
 
 /**
@@ -1489,6 +1562,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     case "carry":
       return carryDone(state, cat);
+    case "raid":
+      return raidDone(state, cat, rng);
     case "ambush":
       // Просиділа засідку й ніхто не пройшов — теж трохи гра (§9.12, «Засідки»).
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * AMBUSH.waitRelief);
@@ -1734,6 +1809,10 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
+      return;
+    case "raid":
+      // Лапає дверцята шафки — обличчям до неї, праворуч (§9.12, «Кмітливість у бешкеті»).
+      if (act.target === "cabinet") cat.facing = 1;
       return;
     case "carry":
       // Приніс іграшку до ніг персонажа (§9.12, «Подарунки й схованки»): кладе її й чекає поруч.

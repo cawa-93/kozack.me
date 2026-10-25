@@ -5,16 +5,18 @@ import { describe, expect, it } from "vitest";
 
 import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { ambushWeight, giftWeight, rollWeight, startAmbush, startCarry, tickCats } from "../src/sim/catai";
-import { AMBUSH, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { ambushWeight, decide, giftWeight, rollWeight, startAmbush, startCarry, tickCats, trashTipped } from "../src/sim/catai";
+import { AMBUSH, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
+import { unavailable } from "../src/sim/shop";
 import { advance, interact, newGame, returnHome } from "../src/sim/game";
-import { AMBUSH_SPOTS, hiddenTile, isSolid, itemTile, PAPER_TRAIL, roomAt, ROLL_TILE, STASHES } from "../src/sim/home";
+import { AMBUSH_SPOTS, CABINET_PAW, hiddenTile, isSolid, itemTile, PAPER_TRAIL, roomAt, ROLL_TILE, STASHES, TRASH_PAW } from "../src/sim/home";
 import { nightlyHousehold, vacuumed } from "../src/sim/household";
 import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, walkTo, withCatCorner } from "./helpers";
+import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -320,5 +322,138 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     }
     expect(hidden).toBeGreaterThan(0);
     expect(hidden).toBeLessThan(25);
+  });
+});
+
+/** Кухня з шафкою корму: персонаж на кухні бачить шафку й смітник. */
+function kitchen(seed = 11): Save {
+  const save = game(seed);
+  addSupply(save.current, "catFood", "cheap", 6);
+  Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
+  return save;
+}
+
+/** Кіт біля шафки з кормом чи смітника: лапає їх. */
+function raidAt(cat: Cat, target: "cabinet" | "trash"): void {
+  const tile = target === "cabinet" ? CABINET_PAW : TRASH_PAW;
+  Object.assign(cat, { x: tile.x + 0.5, y: tile.y + 0.5 });
+  cat.act = { kind: "raid", target, goal: null, minutes: CUNNING.pawMinutes, elapsed: 0 };
+}
+
+describe("«Кмітливість у бешкеті» (§9.12, рішення автора 2026-10-25)", () => {
+  it("голодний кіт лапою відчиняє шафку з кормом і з'їдає порцію із запасу; шафка лишається відчиненою", () => {
+    const save = kitchen();
+    const cat = withCat(save, { cunning: 1 });
+    cat.needs.hunger = 90;
+    raidAt(cat, "cabinet");
+    const { events, stop } = recordEvents();
+    tickCats(save.current, CUNNING.pawMinutes + 0.05, { present: true });
+    expect(events.some((e) => e.type === "cabinet-pawed" && e.opened)).toBe(true);
+    expect(save.current.home.cabinetOpen).toBe(true);
+    expect(seen(cat, "cunning")).toBe(1);
+    for (let i = 0; i < 40 && cat.act.kind === "raid"; i++) tickCats(save.current, 0.25, { present: true });
+    stop();
+    expect(supplyCount(save.current, "catFood")).toBe(5);
+    expect(cat.needs.hunger).toBeLessThan(10);
+    expect(events.some((e) => e.type === "cat-ate" && e.cat === cat.id)).toBe(true);
+  });
+
+  it("з відчиненої шафки їсть і голодний кіт без риси; персонаж, підійшовши до шафки, зачиняє її", () => {
+    const save = kitchen();
+    save.current.home.cabinetOpen = true;
+    const cat = withCat(save);
+    cat.needs.hunger = 90;
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.kind).toBe("raid");
+    expect(cat.act.target).toBe("cabinet");
+    // Шафка зачинена — кіт без риси її не відчинить і їсти звідти не піде.
+    save.current.cats = [];
+    walkTo(save, "cat-cabinet");
+    interact(save);
+    expect(save.current.home.cabinetOpen).toBeUndefined();
+    save.current.cats = [cat];
+    for (let seed = 1; seed <= 10; seed++) {
+      cat.act = idleAct(1);
+      decide(save.current, cat, createRng(seed), { present: true });
+      expect(cat.act.kind).not.toBe("raid");
+    }
+  });
+
+  it("замок на шафку: надійний не відчиняє ніхто, дешевий — лише «Зломник» і не завжди; спробу видно", () => {
+    const save = kitchen();
+    expect(freeSlots(save.current, "lock")).toBe(1);
+    place(save.current, "lock", "premium");
+    expect(save.current.home.lock).toBe("premium");
+    expect(freeSlots(save.current, "lock")).toBe(0);
+    expect(unavailable(save.current, { thing: "lock" })).toBe("owned");
+    const cat = withCat(save, { cunning: 2 });
+    cat.needs.hunger = 90;
+    raidAt(cat, "cabinet");
+    const { events, stop } = recordEvents();
+    tickCats(save.current, CUNNING.pawMinutes + 0.05, { present: true });
+    stop();
+    expect(events.some((e) => e.type === "cabinet-pawed" && !e.opened)).toBe(true);
+    expect(save.current.home.cabinetOpen).toBeUndefined();
+    expect(supplyCount(save.current, "catFood")).toBe(6);
+    expect(seen(cat, "cunning")).toBe(1);
+    // Дешевий замок: «Відчиняє дверцята» (+1) — ніколи, «Зломник» (+2) — інколи.
+    const opens = (level: TraitLevel): number => {
+      let opened = 0;
+      for (let seed = 1; seed <= 40; seed++) {
+        const s = kitchen(seed);
+        s.current.home.lock = "cheap";
+        const c = withCat(s, { cunning: level });
+        c.needs.hunger = 90;
+        raidAt(c, "cabinet");
+        tickCats(s.current, CUNNING.pawMinutes + 0.05, { present: true });
+        if (s.current.home.cabinetOpen === true) opened += 1;
+      }
+      return opened;
+    };
+    expect(opens(1)).toBe(0);
+    const strong = opens(2);
+    expect(strong).toBeGreaterThan(0);
+    expect(strong).toBeLessThan(30);
+  });
+
+  it("«Зломник» лізе в шафку й ситим — і тоді інколи зригує", () => {
+    let vomits = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = kitchen(seed);
+      save.current.home.cabinetOpen = true;
+      const cat = withCat(save, { cunning: 2 });
+      cat.needs.hunger = 0;
+      raidAt(cat, "cabinet");
+      cat.act.minutes = 1;
+      for (let i = 0; i < 40 && cat.act.kind === "raid"; i++) tickCats(save.current, 0.25, { present: true });
+      if (save.current.home.messes.some((m) => m.kind === "vomit")) vomits += 1;
+    }
+    expect(vomits).toBeGreaterThan(2);
+    expect(vomits).toBeLessThan(20);
+  });
+
+  it("кіт перекидає смітник: гуркіт, сміття, викинути щось не вийде, доки сміття не прибрали", () => {
+    const save = kitchen();
+    const cat = withCat(save, { cunning: 1 });
+    raidAt(cat, "trash");
+    const { events, stop } = recordEvents();
+    tickCats(save.current, CUNNING.pawMinutes + 0.05, { present: true });
+    stop();
+    expect(trashTipped(save.current)).toBe(true);
+    expect(events.some((e) => e.type === "trash-tipped")).toBe(true);
+    expect(seen(cat, "cunning")).toBe(1);
+    save.current.cats = [];
+    save.current.character.held = { kind: "burnt", quality: "cheap" };
+    walkTo(save, "trash");
+    const refusal = recordEvents();
+    interact(save);
+    refusal.stop();
+    expect(refusal.events.find((e) => e.type === "refused")).toMatchObject({ reason: "trash-tipped" });
+    save.current.character.held = null;
+    const garbage = save.current.home.messes.find((m) => m.kind === "garbage");
+    if (!garbage) throw new Error('немає сміття');
+    Object.assign(save.current.character.body, { x: garbage.x - 0.9, y: garbage.y, facing: { x: 1, y: 0 } });
+    holdUntilDone(save);
+    expect(trashTipped(save.current)).toBe(false);
   });
 });

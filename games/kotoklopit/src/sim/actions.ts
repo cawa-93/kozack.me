@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, turnAway, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, trashTipped, turnAway, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
@@ -150,6 +150,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "catCabinet":
     case "sterileBin": {
+      // Кіт відчинив шафку з кормом — персонаж, підійшовши, зачиняє її (§9.12, «Кмітливість у бешкеті»).
+      if (target.kind === "catCabinet") delete state.home.cabinetOpen;
       // Кожен корм — у своєму сховищі (§6.4): шафка — звичайний, бак — для стерилізованих (§9.8).
       const sterile = target.kind === "sterileBin";
       const product = sterile ? "sterileFood" : "catFood";
@@ -219,6 +221,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "trash": {
       if (held === null) return refuse(state, target.id, { reason: "need", need: "item" });
+      // Кіт перекинув смітник — спершу прибрати сміття (§9.12, «Кмітливість у бешкеті»).
+      if (trashTipped(state)) return refuse(state, target.id, "trash-tipped");
       character.held = null;
       emit(state, { type: "trashed", item: held });
       return null;

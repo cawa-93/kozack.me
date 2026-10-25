@@ -4,7 +4,7 @@
 import { spend } from "./character";
 import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
 import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
-import { canOrderProduct, deliveryCost, dispatch, freeSlots, isAppliance, productPrice } from "./economy";
+import { canOrderProduct, deliveryCost, dispatch, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
 import type { GameState, Quality } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -57,11 +57,7 @@ export function unavailable(state: GameState, goods: Goods): Unavailable | null 
   if ("product" in goods) return canOrderProduct(state, goods.product) ? null : "boxes";
   const { thing } = goods;
   if (freeSlots(state, thing) > 0) return null;
-  const home = state.home;
-  if (thing === "carrier" || isAppliance(thing)) {
-    const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
-    return owned ? "owned" : "ordered";
-  }
+  if (thing === "carrier" || thing === "lock" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
   // Автогодівниця — одна на миску (§9.12).
   return thing === "feeder" ? "no-bowl" : "no-room";
 }

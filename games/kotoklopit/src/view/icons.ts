@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { drawSock, drawTrinket } from "./catcorner";
+import { drawPadlock, drawSock, drawTrinket } from "./catcorner";
 import { COLORS } from "./geometry";
 
 export type IconName =
@@ -70,7 +70,10 @@ export type IconName =
   | "pen"
   | "cat-box"
   | "claws"
-  | "sock";
+  | "sock"
+  | "bin-tipped"
+  | "cabinet-open"
+  | "lock";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -401,6 +404,25 @@ Object.assign(ICONS, {
     for (const dx of [-8, 0, 8]) g.lineBetween(12 + dx, 8, 26 + dx, 32);
   },
   sock: (g: Phaser.GameObjects.Graphics) => drawSock(g, 20, 20, 2),
+  "bin-tipped": (g: Phaser.GameObjects.Graphics) => {
+    // Смітник на боці, з якого висипалося сміття (§9.12, «Кмітливість у бешкеті»).
+    g.fillStyle(0x707a70).fillRoundedRect(4, 14, 22, 16, 3);
+    g.lineStyle(2.5, INK).strokeRoundedRect(4, 14, 22, 16, 3);
+    g.fillStyle(0x4e564e).fillEllipse(27, 22, 6, 16);
+    g.fillStyle(0xe8c34a).fillEllipse(32, 32, 9, 4);
+    g.fillStyle(0xd8d4cc).fillRect(28, 26, 6, 4).fillRect(34, 24, 4, 5);
+    g.fillStyle(0x8a5a33).fillCircle(24, 34, 2.5);
+  },
+  "cabinet-open": (g: Phaser.GameObjects.Graphics) => {
+    // Шафка з прочиненими дверцятами, у темряві — пачка корму (§9.12, «Кмітливість у бешкеті»).
+    g.fillStyle(0xb08a5a).fillRect(6, 6, 24, 30);
+    g.fillStyle(0x2a2428).fillRect(18, 9, 10, 24);
+    g.fillStyle(0xe8b93a).fillRoundedRect(20, 18, 7, 12, 2);
+    g.fillStyle(0xd2b080).fillPoints([new Phaser.Math.Vector2(30, 6), new Phaser.Math.Vector2(37, 10), new Phaser.Math.Vector2(37, 32), new Phaser.Math.Vector2(30, 36)], true);
+    g.lineStyle(2.5, INK).strokeRect(6, 6, 24, 30).lineBetween(18, 6, 18, 36);
+    g.lineStyle(2, INK).strokePoints([new Phaser.Math.Vector2(30, 6), new Phaser.Math.Vector2(37, 10), new Phaser.Math.Vector2(37, 32), new Phaser.Math.Vector2(30, 36)], true);
+  },
+  lock: (g: Phaser.GameObjects.Graphics) => drawPadlock(g, 20, 22, 2),
   "cat-box": (g: Phaser.GameObjects.Graphics) => {
     // Картонна коробка, а з неї визирає кіт — вуха й очі (§9.12, «Допитливість»).
     g.fillStyle(0x6b5d6e).fillCircle(20, 17, 9).fillTriangle(12, 13, 13, 4, 18, 10).fillTriangle(28, 13, 27, 4, 22, 10);

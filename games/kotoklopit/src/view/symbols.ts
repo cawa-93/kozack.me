@@ -92,6 +92,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "kit", count: 0 };
     case "cat-in-box":
       return { icon: "cat-box" };
+    case "trash-tipped":
+      return { icon: "bin-tipped" };
   }
 }
 
@@ -174,6 +176,13 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "cat-woke":
       // Кота розбудили шум чи кроки (§9.12): поспати не дали.
       return [{ kind: "think", at: cat(event.cat), icon: "zz", mark: "no" }];
+    case "cabinet-pawed":
+      // Кіт смикає дверцята шафки з кормом (§9.12, «Кмітливість у бешкеті»): клацнули й відчинилися чи брязкає замок —
+      // звук речі, вголос над шафкою.
+      return [{ kind: "say", at: "cat-cabinet", icon: event.opened ? "cabinet-open" : "lock" }];
+    case "trash-tipped":
+      // Смітник перекинувся (§9.12): гуркіт — звук речі.
+      return [{ kind: "say", at: "trash", icon: "bin-tipped" }];
     case "sock-found":
       // Шкарпетка знайшлася (§9.12, «Подарунки й схованки»): персонаж зрозумів, куди вона поділася.
       return [{ kind: "think", at: "person", icon: "sock" }];

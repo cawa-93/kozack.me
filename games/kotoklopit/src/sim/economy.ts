@@ -246,10 +246,9 @@ export function dispatch(state: GameState, goods: { product: Product } | { thing
 export function freeSlots(state: GameState, thing: ThingKind): number {
   if (thing === "toy") return Infinity;
   const home = state.home;
-  if (thing === "carrier" || isAppliance(thing)) {
+  if (thing === "carrier" || thing === "lock" || isAppliance(thing)) {
     const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === thing);
-    const owned = thing === "carrier" ? home.carrier !== null : home.appliances[thing] !== null;
-    return !owned && !ordered ? 1 : 0;
+    return !ownsThing(state, thing) && !ordered ? 1 : 0;
   }
   const coming = [...home.deliveries, ...home.porch].filter((d) => "thing" in d && d.thing === thing).length;
   // Автогодівниця — одна на миску (§9.12): місце є над кожною миской без годівниці.
@@ -257,6 +256,14 @@ export function freeSlots(state: GameState, thing: ThingKind): number {
   const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
   return free - coming;
+}
+
+/** Річ без місця вже є вдома: переноска, замок на шафці чи техніка (§6.4). */
+export function ownsThing(state: GameState, thing: "carrier" | "lock" | Appliance): boolean {
+  const home = state.home;
+  if (thing === "carrier") return home.carrier !== null;
+  if (thing === "lock") return home.lock !== undefined;
+  return home.appliances[thing] !== null;
 }
 
 /** Автогодівниця над місцем миски (§9.12) або null. */
@@ -291,6 +298,11 @@ export function orderThing(state: GameState, thing: ThingKind, quality: Quality)
 export function place(state: GameState, thing: ThingKind, quality: Quality): HomeItem | null {
   if (thing === "carrier") {
     state.home.carrier = quality;
+    return null;
+  }
+  // Замок — на шафку з кормом (§9.12, «Кмітливість у бешкеті»).
+  if (thing === "lock") {
+    state.home.lock = quality;
     return null;
   }
   if (isAppliance(thing)) {

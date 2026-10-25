@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
-import { catOnSink, isDirty } from "../sim/catai";
+import { catOnSink, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -37,7 +37,7 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
-import { drawCatCorner, drawToiletRoll, drawTrinket, itemScreen } from "../view/catcorner";
+import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, drawTrinket, itemScreen } from "../view/catcorner";
 import { COLORS, depthOf, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
@@ -90,6 +90,9 @@ export class DayScene extends Phaser.Scene {
   private readonly trinkets = new Map<string, Phaser.GameObjects.Graphics>();
   /** Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): над стіною, під котом. */
   private toiletRoll!: Phaser.GameObjects.Graphics;
+  /** Шафка з кормом відчинена котом, замок на ній; перекинутий смітник (§9.12, «Кмітливість у бешкеті»). */
+  private cabinetLook!: Phaser.GameObjects.Graphics;
+  private trashLook!: Phaser.GameObjects.Graphics;
   private readonly catViews = new Map<number, CatView>();
   /** Приховані числа над котами в режимі розробки (§11.5). */
   private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
@@ -149,6 +152,8 @@ export class DayScene extends Phaser.Scene {
       this.trinkets.set(trinket.kind, this.add.graphics().setDepth(this.view(trinket.object).depth + 1).addToDisplayList(world));
     }
     this.toiletRoll = this.add.graphics().setDepth(depthOf(toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
+    this.cabinetLook = this.add.graphics().setDepth(this.view("cat-cabinet").depth + 0.6).addToDisplayList(world);
+    this.trashLook = this.add.graphics().setDepth(this.view("trash").depth).addToDisplayList(world);
     this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
     this.person = new PersonView(this, world);
     this.bubbles = new Bubbles(this, world);
@@ -748,6 +753,15 @@ export class DayScene extends Phaser.Scene {
     }
     const roll = toScreen(TOILET_ROLL);
     drawToiletRoll(this.toiletRoll.clear(), roll.x, roll.y, home.rollDown === true);
+    // Шафка з кормом: відчинена котом і з замком (§9.12, «Кмітливість у бешкеті»); смітник лежить, поки сміття не прибрали.
+    const cabinet = this.view("cat-cabinet");
+    this.cabinetLook.clear();
+    if (isPresent(this.state, cabinet.object)) drawCabinetExtras(this.cabinetLook, cabinet.top, objectHeight("catCabinet"), home.cabinetOpen === true, home.lock !== undefined);
+    const tipped = trashTipped(this.state);
+    const trash = this.view("trash");
+    trash.graphics.setVisible(!tipped);
+    this.trashLook.clear();
+    if (tipped) drawTippedTrash(this.trashLook, trash.top, objectHeight("trash"));
     // Дрібнички стоять на своїх місцях, поки їх не скинули (§9.12).
     for (const trinket of TRINKETS) {
       const g = this.trinkets.get(trinket.kind);

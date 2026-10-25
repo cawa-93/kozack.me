@@ -4,7 +4,7 @@
 
 import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
-import { catOnComputer, isDirty, itemsOf } from "../src/sim/catai";
+import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
@@ -117,6 +117,8 @@ export class Bot {
     if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
     if (s.home.surfaces["table"]?.kind === "meal") return named("eat", () => this.eat());
+    const garbage = s.home.messes.find((m) => m.kind === "garbage");
+    if (garbage && s.home.stove.item?.kind === "burnt") return named("clean", () => this.hold(`mess:${garbage.id}`));
     if (s.home.stove.item?.kind === "burnt") return named("trashBurnt", () => this.trashBurnt());
     if (this.wantsWork() && catOnComputer(s)) return named("shoo", () => this.shoo());
     // Безлад біля лотка заважає підійти до самого лотка, тож спершу безлад.
@@ -312,7 +314,8 @@ export class Bot {
         this.use(this.state.home.surfaces["table"] ? "counter-left" : "table");
         return;
       case "burnt":
-        this.use("trash");
+        // Смітник перекинув кіт (§9.12, «Кмітливість у бешкеті»): страву — назад на плиту, спершу прибрати сміття.
+        this.use(trashTipped(this.state) ? "stove" : "trash");
         return;
     }
   }

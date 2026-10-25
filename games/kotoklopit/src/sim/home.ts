@@ -199,6 +199,13 @@ export const STASHES: Record<"sofa" | "fridge", { tile: Vec; at: Vec }> = {
   fridge: { tile: { x: 13, y: 2 }, at: { x: 13.5, y: 2.06 } },
 };
 
+/**
+ * Звідки кмітливий кіт лапає шафку з кормом — збоку від неї, обличчям до дверцят, — і перекидає смітник — перед ним (§9.12,
+ * «Кмітливість у бешкеті»).
+ */
+export const CABINET_PAW: Vec = { x: 17, y: 3 };
+export const TRASH_PAW: Vec = { x: 18, y: 2 };
+
 /** Одвірок кухні: «Руйнівник диванів» дере його, стоячи в проході з вітальні (§9.12). */
 export const DOORFRAME: Vec = { x: 16, y: 5 };
 

@@ -238,6 +238,10 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} збив персонажа на зумі`;
     case "tripped":
       return `Персонаж спіткнувся об ${catName(state, event.cat)}`;
+    case "cabinet-pawed":
+      return `${catName(state, event.cat)} лапою смикає шафку з кормом: ${event.opened ? "відчинив" : "замок тримає"}`;
+    case "trash-tipped":
+      return `${catName(state, event.cat)} перекинув смітник`;
     case "sock-found":
       return event.where === "trip" ? "Шукали шкарпетку перед виїздом: +10 хв" : "Пилосос знайшов шкарпетку в котячій схованці";
     case "ambushed":

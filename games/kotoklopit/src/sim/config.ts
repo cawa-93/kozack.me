@@ -210,6 +210,8 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   feeder: { price: { cheap: 120, premium: 250 }, utilities: 8 },
   fountain: { price: { cheap: 60, premium: 140 }, utilities: 6 },
   robot: { price: { cheap: 300, premium: 600 }, utilities: 10 },
+  // Замок на шафку з кормом (§9.12, «Кмітливість у бешкеті»): дешевий «Зломник» інколи відчиняє, надійний — ні.
+  lock: { price: { cheap: 15, premium: 40 }, utilities: 0 },
 };
 /** Скільки порцій уміщує автогодівниця (§9.12, правка автора 2026-10-23): дешева — ~4 дні одному коту, дорога — ~10. */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
@@ -446,7 +448,7 @@ export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1): здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1, paper: -1 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1, paper: -1, garbage: -3 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {
@@ -724,6 +726,15 @@ export const HUNTING = { roll: 0.12, rollStep: 0.75, kitten: 2, pawMinutes: 1, s
  * річ — `pickMinutes`. Гра наодинці заганяє іграшку під меблі (ближче `strayReach` клітинок) з шансом `stray` — кожен кіт.
  */
 export const GIFTS = { weight: 0.15, base: 0.05, feet: 0.5, fridge: 0.5, pickMinutes: 0.3, waitMinutes: 2, thanksMinutes: 10, thanksLove: 1, sockSearch: 10, stray: 0.03, strayReach: 3 } as const;
+/**
+ * «Кмітливість у бешкеті» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): голодний
+ * кіт при порожніх мисках з шансом `openStep` × рівень (раніше, ніж красти зі столу) `pawMinutes` хвилин лапає дверцята шафки з
+ * кормом, відчиняє їх і з'їдає порцію із запасу; шафка лишається відчиненою — з неї їсть кожен голодний кіт, доки персонаж її не
+ * зачинить. Від `fullLevel` кіт лізе в шафку й ситим, коли хоче гратися (вага `fullWeight`), і тоді з шансом `fullVomit` зригує.
+ * Перекидає смітник з вагою `trashStep` × рівень. Дешевий замок відчиняє лише кіт від `fullLevel`, з шансом `cheapLock`; надійний —
+ * ніхто.
+ */
+export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight: 0.1, fullVomit: 0.3, trashStep: 0.1, cheapLock: 0.3 } as const;
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<
