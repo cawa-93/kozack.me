@@ -5,7 +5,7 @@ import Phaser from "phaser";
 
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
-import { CARRIER_SPOT, objectAt } from "../sim/home";
+import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../sim/home";
 import type { Cat, GameState } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
@@ -145,7 +145,10 @@ export class CatView {
   ): void {
     this.shape = cat.shape;
     // «Пастка на животику» й під рукою лежить животом догори — у цьому й пастка (§9.12).
-    const pose = look?.belly === true && carriedAt === null ? "belly" : interaction ? "sit" : poseOf(cat, carriedAt !== null);
+    // Хто ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»), — лежить там клубочком, а не визирає з-під низу.
+    const onHigh = carriedAt === null && HIGH_PLACES.includes(objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.id ?? "");
+    const base = look?.belly === true && carriedAt === null ? "belly" : interaction ? "sit" : poseOf(cat, carriedAt !== null);
+    const pose = onHigh && base === "hide" ? "sleep" : base;
     this.feeling = feeling;
     this.look = look;
     this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;

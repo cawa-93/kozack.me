@@ -23,7 +23,6 @@ const PENDING: ReadonlySet<string> = new Set([
   "warmth",
   // Ще не реалізовано.
   "chewing",
-  "climbing",
   "catnip",
   "window",
   "obedience",

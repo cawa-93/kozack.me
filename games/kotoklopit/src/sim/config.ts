@@ -735,6 +735,15 @@ export const GIFTS = { weight: 0.15, base: 0.05, feet: 0.5, fridge: 0.5, pickMin
  * ніхто.
  */
 export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight: 0.1, fullVomit: 0.3, trashStep: 0.1, cheapLock: 0.3 } as const;
+/**
+ * «Лазіння» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): високі місця — верх
+ * холодильника й шафи в спальні. Спить там кіт з вагою `step` × рівень, кіт без риси — `base`, «−» — ніколи; на теплому
+ * холодильнику — ще `warmStep` × «Теплолюбність». Верхолаз ховається нагорі, а не під ліжком. Застрягає кошеня з шансом `kitten`,
+ * кіт від `strongLevel` — `strong` за підйом. Кота нагорі на руки не взяти: злазить сам — на корм, на вудку (ближче `lureReach`)
+ * чи прокинувшись; застряглий кричить, доки не знімуть (неприємне — `rescueSanity`), а від потреби `jumpNeed` зістрибує сам
+ * (настрій `jumpMood`).
+ */
+export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, strong: 0.05, strongLevel: 2, lureReach: 2.5, rescueSanity: -1, jumpNeed: 95, jumpMood: -3 } as const;
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<

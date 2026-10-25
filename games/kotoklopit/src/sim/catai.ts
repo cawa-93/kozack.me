@@ -20,6 +20,7 @@ import {
   CARRIER_HOME,
   CARRY,
   CAT_ACT_MINUTES,
+  CLIMBING,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
   CURIOSITY,
@@ -104,7 +105,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, isPresent, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -327,7 +328,57 @@ export function bowlFull(bowl: BowlItem): boolean {
  * бо голодний. Ласощі йому зараз привчають до жебракування.
  */
 export function beggingFood(cat: Cat): boolean {
-  return (cat.act.kind === "beg" && cat.act.target !== "sink" && cat.act.target !== "door") || (cat.act.kind === "attention" && cat.act.forFood === true);
+  const target = cat.act.target;
+  return (cat.act.kind === "beg" && target !== "sink" && target !== "door" && target !== "high") || (cat.act.kind === "attention" && cat.act.forFood === true);
+}
+
+/** Висока річ під котом — верх холодильника чи шафи (§9.12, «Лазіння»); null — не нагорі. */
+export function highPlaceOf(state: GameState, p: Vec): HomeObject | null {
+  const o = objectAt(state, Math.floor(p.x), Math.floor(p.y));
+  return o && HIGH_PLACES.includes(o.id) ? o : null;
+}
+
+/** Кіт нагорі (§9.12, «Лазіння»): сидить чи спить на холодильнику чи шафі — на руки його не взяти, доки не злізе. */
+export function upHigh(state: GameState, cat: Cat): boolean {
+  return home(state, cat) && cat.act.goal === null && highPlaceOf(state, cat) !== null;
+}
+
+/** Вага високого місця для сну (§9.12, «Лазіння»): 1,5 × рівень, кіт без риси — 0,3, «−» — ніколи. */
+export function climbWeight(cat: Cat): number {
+  const level = traitLevel(cat, "climbing");
+  if (level < 0) return 0;
+  return level === 0 ? CLIMBING.base : CLIMBING.step * level;
+}
+
+/**
+ * Кіт виліз нагору (§9.12, «Лазіння»): на очах персонажа — прояв «+». Кошеня застрягає з шансом 20%, «Альпініст» (від +2) — 5%:
+ * злізти сам боїться й кричить.
+ */
+function climbed(state: GameState, cat: Cat, rng: Rng): void {
+  if (highPlaceOf(state, cat) === null) return;
+  observe(state, cat, "climbing");
+  const level = traitLevel(cat, "climbing");
+  const chance = isKitten(cat) ? CLIMBING.kitten : level >= CLIMBING.strongLevel ? CLIMBING.strong : 0;
+  if (chance > 0 && rng.chance(chance)) cat.stuck = true;
+}
+
+/**
+ * Кіт нагорі (§9.12, «Лазіння»): застряглий нікуди не йде, а кричить (крім нагального від 95 — тоді зістрибує сам); вільний
+ * злазить на вудку в руках персонажа поруч.
+ */
+function onHigh(state: GameState, cat: Cat, context: CatContext): void {
+  if (cat.stuck === true) {
+    if (highPlaceOf(state, cat) === null) {
+      delete cat.stuck;
+      return;
+    }
+    // Куди б не зібрався — злізти не може: кричить (`decide`).
+    if (cat.act.goal !== null) start(cat, "beg", null, CAT_ACT_MINUTES.beg, "high");
+    return;
+  }
+  if (!upHigh(state, cat) || asleep(cat) || !context.present || state.character.held?.kind !== "toy") return;
+  const body = state.character.body;
+  if (distance(cat, body) <= CLIMBING.lureReach && cat.act.target !== "lured") start(cat, "idle", tileAtDistance(state, body, cat, 1), 2, "lured");
 }
 
 /** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */
@@ -370,7 +421,8 @@ const BUSY_FOR_FOOD = new Set(["eat", "fight", "hide", "toilet"]);
  */
 export function hearFood(state: GameState, bowl: BowlItem): void {
   const listeners = state.cats.filter((cat) => {
-    if (cat.away !== null || isCarried(state, cat) || BUSY_FOR_FOOD.has(cat.act.kind) || isAdapting(state, cat)) return false;
+    // Застряглий нагорі злізти не може й на корм (§9.12, «Лазіння»).
+    if (cat.away !== null || isCarried(state, cat) || BUSY_FOR_FOOD.has(cat.act.kind) || isAdapting(state, cat) || cat.stuck === true) return false;
     if (cat.needs.hunger < FOOD_SOUND.hunger - FOOD_SOUND.appetiteStep * traitLevel(cat, "appetite")) return false;
     if (bowl.foodQuality === "cheap" && traitLevel(cat, "picky") > 0) return false;
     if (cat.act.kind === "sleep" && traitLevel(cat, "sleep") > 0) return false;
@@ -497,6 +549,14 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
+  // Нагорі — на холодильнику (він теплий: вага й від «Теплолюбності») і на шафі в спальні (§9.12, «Лазіння»).
+  const climb = climbWeight(cat);
+  if (climb > 0) {
+    const fridge = objectById("fridge");
+    const wardrobe = objectById("wardrobe");
+    options.push({ weight: climb + CLIMBING.warmStep * Math.max(0, traitLevel(cat, "warmth")), value: at({ x: fridge.x, y: fridge.y }) });
+    options.push({ weight: climb, value: at({ x: wardrobe.x, y: wardrobe.y }) });
+  }
   // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
@@ -520,8 +580,12 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   return weightedPick(rng, options) ?? at(randomFloor(rng));
 }
 
-/** Сховатися під ліжком, диваном чи в будиночку (§9.6). */
-export function hideSpot(state: GameState, rng: Rng): Spot {
+/** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
+export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
+  if (cat && traitLevel(cat, "climbing") > 0) {
+    const high = objectById(HIGH_PLACES[rng.int(0, HIGH_PLACES.length - 1)] ?? "fridge");
+    return { at: { x: high.x, y: high.y }, target: null };
+  }
   const options: { weight: number; value: Spot }[] = houseSpots(state);
   for (const id of ["bed", "sofa"]) {
     const o = objectById(id);
@@ -535,6 +599,12 @@ export function hideSpot(state: GameState, rng: Rng): Spot {
 /** Обрати наступну дію (§9.12): туалет, їжа, вода, сон, адаптація, увага, гра, відпочинок. */
 export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext): void {
   const n = cat.needs;
+  // Застряг нагорі (§9.12, «Лазіння»): кричить, доки не знімуть; від нагального (95) зістрибує сам, переляканий.
+  if (cat.stuck === true && highPlaceOf(state, cat) !== null) {
+    if (Math.max(n.hunger, n.thirst, n.toilet) < CLIMBING.jumpNeed) return start(cat, "beg", null, CAT_ACT_MINUTES.beg, "high");
+    changeMood(state, cat, CLIMBING.jumpMood, "зістрибнув сам");
+  }
+  delete cat.stuck;
   if (n.toilet >= NEED_THRESHOLD.toilet) {
     // «Байдужий до нового» обходить новий лоток, поки є старий, — навіть брудний (§9.12, «Допитливість»).
     const boxes = avoidNew(state, cat, itemsOf(state, "litter"));
@@ -581,11 +651,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
-    const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(state, rng) : sleepSpot(state, cat, rng);
+    const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(state, rng, cat) : sleepSpot(state, cat, rng);
     return start(cat, "sleep", spot.at, 8 * MINUTES_PER_HOUR, spot.target);
   }
   if (isAdapting(state, cat)) {
-    const spot = hideSpot(state, rng);
+    const spot = hideSpot(state, rng, cat);
     start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
     // Полохливий звикає довше: ховається й тоді, коли кіт без риси вже звик би (§9.6, §9.12), — прояв раз на день.
     if (adaptsLonger(state, cat)) observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
@@ -1496,7 +1566,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "groom": {
       // Нервово вилизався — тепер ховається (§9.12).
       if (act.target === "nervous") {
-        const spot = hideSpot(state, rng);
+        const spot = hideSpot(state, rng, cat);
         return start(cat, "hide", spot.at, STRESS_EFFECTS.hideStep * Math.max(1, -traitLevel(cat, "stress")), spot.target);
       }
       const friend = catById(state, act.target);
@@ -2044,7 +2114,7 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const at = visibleFloorNear(state, state.character.body);
   cat.x = at.x;
   cat.y = at.y;
-  const spot = hideSpot(state, rng);
+  const spot = hideSpot(state, rng, cat);
   start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
   emit(state, { type: "cat-broke-free", cat: cat.id });
 }
@@ -2065,7 +2135,7 @@ function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number
   const at = visibleFloorNear(state, state.character.body);
   cat.x = at.x;
   cat.y = at.y;
-  const spot = hideSpot(state, rng);
+  const spot = hideSpot(state, rng, cat);
   start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
   emit(state, { type: "cat-broke-free", cat: cat.id });
 }
@@ -2122,6 +2192,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     }
   }
   lurk(state, cat, rng, context);
+  onHigh(state, cat, context);
   carryAlong(state, cat, context);
   paperSeen(state, cat);
   carrySeen(state, cat);
@@ -2148,6 +2219,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     if (cat.act.goal) {
       left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
       if (cat.act.goal) break;
+      climbed(state, cat, rng);
       if (cat.act.kind === "sleep") fellAsleep(state, cat);
       continue;
     }

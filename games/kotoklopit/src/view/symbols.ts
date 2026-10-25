@@ -94,6 +94,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "cat-box" };
     case "trash-tipped":
       return { icon: "bin-tipped" };
+    case "cat-up-high":
+      return { icon: "cat-high" };
   }
 }
 

@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 
 import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { ambushWeight, decide, giftWeight, rollWeight, startAmbush, startCarry, tickCats, trashTipped } from "../src/sim/catai";
-import { AMBUSH, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { ambushWeight, climbWeight, decide, giftWeight, hideSpot, rollWeight, startAmbush, startCarry, tickCats, trashTipped, upHigh } from "../src/sim/catai";
+import { AMBUSH, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
 import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
 import { advance, interact, newGame, returnHome } from "../src/sim/game";
-import { AMBUSH_SPOTS, CABINET_PAW, hiddenTile, isSolid, itemTile, PAPER_TRAIL, roomAt, ROLL_TILE, STASHES, TRASH_PAW } from "../src/sim/home";
+import { AMBUSH_SPOTS, CABINET_PAW, HIGH_PLACES, hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, PAPER_TRAIL, roomAt, ROLL_TILE, SPAWN, STASHES, TRASH_PAW } from "../src/sim/home";
 import { nightlyHousehold, vacuumed } from "../src/sim/household";
 import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
@@ -457,3 +457,116 @@ describe("«Кмітливість у бешкеті» (§9.12, рішення �
     expect(trashTipped(save.current)).toBe(false);
   });
 });
+
+/** Кіт вилазить нагору: іде спати на холодильник з сусідньої клітинки. */
+function climbFridge(save: Save, cat: Cat): void {
+  const fridge = objectById("fridge");
+  Object.assign(cat, { x: fridge.x + 0.5, y: fridge.y + 1.5 });
+  cat.act = { kind: "sleep", target: null, goal: { x: fridge.x, y: fridge.y }, minutes: 60, elapsed: 0 };
+  for (let i = 0; i < 20 && cat.act.goal !== null; i++) tickCats(save.current, 0.1, { present: true });
+}
+
+describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", () => {
+  it("шафа в спальні не заступає дороги: кожну клітинку підлоги видно досяжною від ліжка", () => {
+    const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
+    const start = { x: Math.floor(SPAWN.x), y: Math.floor(SPAWN.y) };
+    const seen = new Set([`${start.x},${start.y}`]);
+    const queue = [start];
+    while (queue.length > 0) {
+      const t = queue.shift()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const n = { x: t.x + dx, y: t.y + dy };
+        if (isSolid(state, n.x, n.y) || seen.has(`${n.x},${n.y}`)) continue;
+        seen.add(`${n.x},${n.y}`);
+        queue.push(n);
+      }
+    }
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) if (!isSolid(state, x, y)) expect(seen.has(`${x},${y}`), `${x},${y}`).toBe(true);
+    }
+  });
+
+  it("вага високого місця: «−» — ніколи, кіт без риси — 0,3, «+» — 1,5 × рівень; верхолаз ховається нагорі", () => {
+    const save = game();
+    expect(climbWeight(withCat(save, { climbing: -1 }))).toBe(0);
+    expect(climbWeight(withCat(save))).toBeCloseTo(CLIMBING.base);
+    const climber = withCat(save, { climbing: 2 });
+    expect(climbWeight(climber)).toBeCloseTo(2 * CLIMBING.step);
+    for (let seed = 1; seed <= 10; seed++) {
+      const spot = hideSpot(save.current, createRng(seed), climber);
+      expect(HIGH_PLACES.map((id) => `${objectById(id).x},${objectById(id).y}`)).toContain(`${spot.at.x},${spot.at.y}`);
+    }
+  });
+
+  it("виліз на холодильник на очах персонажа — прояв «+»; нагорі на руки не взяти, на вудку злазить сам", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
+    const cat = withCat(save, { climbing: 1 });
+    climbFridge(save, cat);
+    expect(upHigh(save.current, cat)).toBe(true);
+    expect(seen(cat, "climbing")).toBe(1);
+    expect(cat.stuck).toBeUndefined();
+    // Натиснути на кота нагорі — відмова «не дотягтися».
+    Object.assign(save.current.character.body, { x: 13.5, y: 2.4, facing: { x: 0, y: -1 } });
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events.find((e) => e.type === "refused")).toMatchObject({ reason: "cat-up-high" });
+    expect(save.current.character.held).toBeNull();
+    // Кіт не спить, а персонаж з вудкою поруч — злазить.
+    cat.act = idleAct(10);
+    const toy = toyOf(save);
+    save.current.home.items = save.current.home.items.filter((i) => i !== toy);
+    save.current.character.held = { kind: "toy", toy };
+    for (let i = 0; i < 20 && upHigh(save.current, cat); i++) tickCats(save.current, 0.25, { present: true });
+    expect(upHigh(save.current, cat)).toBe(false);
+  });
+
+  it("кошеня застрягає нагорі: кричить, доки не знімуть (неприємне), а від нагального зістрибує саме", () => {
+    let stuck: { save: Save; cat: Cat } | null = null;
+    for (let seed = 1; seed <= 40 && !stuck; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
+      const cat = withCat(save, {}, { x: 13.5, y: 2.5 }, 1);
+      climbFridge(save, cat);
+      if (cat.stuck === true) stuck = { save, cat };
+    }
+    if (!stuck) throw new Error("кошеня не застрягло жодного разу");
+    const { save, cat } = stuck;
+    // Сон скінчився — злізти не може: кричить.
+    cat.act.minutes = 0.01;
+    const meows = recordEvents();
+    for (let i = 0; i < 20; i++) tickCats(save.current, 0.5, { present: true });
+    meows.stop();
+    expect(cat.act.kind).toBe("beg");
+    expect(cat.act.target).toBe("high");
+    expect(upHigh(save.current, cat)).toBe(true);
+    expect(meows.events.some((e) => e.type === "meow" && e.cat === cat.id)).toBe(true);
+    // Зняти кошеня — можна, і воно не ображається.
+    Object.assign(save.current.character.body, { x: 13.5, y: 2.4, facing: { x: 0, y: -1 } });
+    const sanity = save.current.character.stats.sanity;
+    interact(save);
+    expect(save.current.character.held).toMatchObject({ kind: "cat", cat: cat.id });
+    expect(save.current.character.held?.kind === "cat" && save.current.character.held.offended).toBeFalsy();
+    expect(cat.stuck).toBeUndefined();
+    expect(save.current.character.stats.sanity).toBeLessThan(sanity);
+    // Інше застрягле кошеня, якого ніхто не зняв: дуже захотіло в лоток — зістрибує саме.
+    interact(save);
+    climbFridge(save, cat);
+    cat.stuck = true;
+    cat.needs.toilet = CLIMBING.jumpNeed;
+    cat.act.minutes = 0.01;
+    tickCats(save.current, 0.5, { present: true });
+    expect(cat.stuck).toBeUndefined();
+    for (let i = 0; i < 20 && highPlaceOfCat(save, cat); i++) tickCats(save.current, 0.25, { present: true });
+    expect(upHigh(save.current, cat)).toBe(false);
+  });
+});
+
+/** Кіт на холодильнику чи шафі. */
+function highPlaceOfCat(save: Save, cat: Cat): boolean {
+  return HIGH_PLACES.some((id) => {
+    const o = objectById(id);
+    return Math.floor(cat.x) === o.x && Math.floor(cat.y) === o.y;
+  }) && save.current.cats.includes(cat);
+}

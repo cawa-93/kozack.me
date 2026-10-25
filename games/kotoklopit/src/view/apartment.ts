@@ -29,6 +29,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   sterileBin: 36,
   catKit: 40,
   boxes: 40,
+  wardrobe: 84,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -50,6 +51,7 @@ const FILL: Record<ObjectKind, number> = {
   sterileBin: 0x8fb3c4,
   catKit: 0xf0ece4,
   boxes: 0xc49a62,
+  wardrobe: 0x8a6e48,
 };
 
 /** Видима висота речі: на неї вилазить кіт. */
@@ -300,6 +302,11 @@ function decorate(
       // Шафа з пилососом: дверцята й ручка.
       g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
       g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
+      break;
+    case "wardrobe":
+      // Шафа (§9.12, «Лазіння»): дві стулки з ручками.
+      g.lineStyle(2, COLORS.ink, 0.7).lineBetween(cx, t.y + t.h + 4, cx, t.y + t.h + height - 6);
+      g.fillStyle(COLORS.ink).fillCircle(cx - 5, t.y + t.h + height / 2, 2).fillCircle(cx + 5, t.y + t.h + height / 2, 2);
       break;
     case "door":
       break;

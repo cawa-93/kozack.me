@@ -85,7 +85,7 @@ function react(state: GameState, cat: Cat, kind: NoiseKind, rng: Rng): void {
 /** Кіт злякався й ховається (§9.12): як довго — «Стресостійкість»; від феєрверків ще й псується настрій (§4.1). */
 function scare(state: GameState, cat: Cat, kind: NoiseKind, minutes: number, rng: Rng): void {
   const stress = Math.max(NOISE.stressMin, 1 - NOISE.stressStep * traitLevel(cat, "stress"));
-  const spot = hideSpot(state, rng);
+  const spot = hideSpot(state, rng, cat);
   startAct(cat, "hide", spot.at, minutes * stress, spot.target);
   if (kind === "fireworks") changeMood(state, cat, MODIFIERS.festival.mood, "феєрверки");
   emit(state, { type: "scared", cat: cat.id });

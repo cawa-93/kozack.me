@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, trashTipped, turnAway, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, trashTipped, turnAway, upHigh, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
@@ -21,6 +21,7 @@ import {
   ILLNESS,
   BURN_MINUTES,
   CLEAN_LITTER_MINUTES,
+  CLIMBING,
   CLEAN_MESS_MINUTES,
   COOK_MINUTES,
   DIFFICULTY,
@@ -120,6 +121,14 @@ export function tap(state: GameState): TapResult {
       // Кіт сидить на умивальнику й просить води — натискання відкриває йому кран, а не бере на руки (§9.12, «Пиття»).
       if (catOnSink(state) === target.cat) {
         openTap(state, target.cat);
+        return null;
+      }
+      // Кіт нагорі не дотягтися: злізе сам — на корм, на вудку чи прокинувшись; застряглого знімають (§9.12, «Лазіння»).
+      if (upHigh(state, target.cat)) {
+        if (target.cat.stuck !== true) return refuse(state, target.id, "cat-up-high");
+        unpleasantTask(state, CLIMBING.rescueSanity);
+        pickUpCat(state, target.cat);
+        delete target.cat.stuck;
         return null;
       }
       if (avoidsDirtyClothes(state, target.cat)) {
@@ -272,6 +281,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       return null;
     }
     case "sofa":
+    case "wardrobe":
       return null;
     case "washer": {
       if (held !== null) return refuse(state, target.id, "hands-full");
@@ -393,6 +403,8 @@ export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
 
 /** Чи кіт зараз не хоче на руки: спить або не хоче уваги й не любить рук (§9.12). */
 function unwilling(cat: Cat): boolean {
+  // Застряглий нагорі радий, що його знімають (§9.12, «Лазіння»).
+  if (cat.stuck === true) return false;
   return cat.act.kind === "sleep" || (cat.needs.attention < 40 && traitLevel(cat, "lap") <= 0);
 }
 

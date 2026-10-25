@@ -126,7 +126,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
     const at = visibleFloorNear(state, state.character.body);
     cat.x = at.x;
     cat.y = at.y;
-    const spot = hideSpot(state, rng);
+    const spot = hideSpot(state, rng, cat);
     startAct(cat, "hide", spot.at, BATH.hideMinutes, spot.target);
     emit(state, { type: "cat-broke-free", cat: cat.id });
   }

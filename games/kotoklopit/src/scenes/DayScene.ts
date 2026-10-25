@@ -915,7 +915,8 @@ export class DayScene extends Phaser.Scene {
       // Дзвіночок видає кота, що ховається (§9.10).
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       // «Втікач» під дверима просить на сходи — кричить (§9.12 «Двері й гості»).
-      const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
+      // Застряг нагорі (§9.12, «Лазіння») — кричить, щоб зняли.
+      const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" || cat.act.target === "high" ? "meow" : "kibble";
       set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.

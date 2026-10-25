@@ -23,7 +23,8 @@ export type ObjectKind =
   | "litterBag"
   | "sterileBin"
   | "catKit"
-  | "boxes";
+  | "boxes"
+  | "wardrobe";
 
 export interface Rect {
   x: number;
@@ -81,7 +82,7 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   y,
   w,
   h,
-  interactive: kind !== "sofa",
+  interactive: kind !== "sofa" && kind !== "wardrobe",
   ...(requires ? { requires } : {}),
 });
 
@@ -99,6 +100,8 @@ export const OBJECTS: readonly HomeObject[] = [
   // Сховища котячих запасів з'являються, коли запас уперше потрапив додому (§6.4).
   object("cat-cabinet", "catCabinet", 18, 3, 1, 1, ["catFood"]),
   object("computer", "computer", 6, 6, 2, 1),
+  // Шафа в спальні (§9.12, «Лазіння», 2026-10-26): обстановка, але й високе місце для котів, як верх холодильника.
+  object("wardrobe", "wardrobe", 6, 1),
   object("sofa", "sofa", 13, 10, 3, 1),
   object("door", "door", 10, 11, 2, 1),
   // Побут (§8.7): пральна машина у ванній і шафа з пилососом у вітальні.
@@ -112,6 +115,9 @@ export const OBJECTS: readonly HomeObject[] = [
   // Не в ряду біля дверей: його закриває передня стіна (камера «три чверті»).
   { ...object("boxes", "boxes", 12, 9), walkable: true },
 ];
+
+/** Високі місця (§9.12, «Лазіння»): верх холодильника й шафи — туди вилазять коти. */
+export const HIGH_PLACES: readonly string[] = ["fridge", "wardrobe"];
 
 /** У ящиках біля входу щось є (§6.4). */
 export function hasBoxes(state: Pick<GameState, "home">): boolean {

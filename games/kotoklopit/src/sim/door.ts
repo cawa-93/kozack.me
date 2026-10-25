@@ -83,7 +83,7 @@ export function ringBell(state: GameState, ring = true): void {
       startAct(cat, "idle", { ...DOOR_TILE }, GUESTS.greetMinutes, "guest");
       continue;
     }
-    const spot = hideSpot(state, rng);
+    const spot = hideSpot(state, rng, cat);
     startAct(cat, "hide", spot.at, GUESTS.hideStep * -level, spot.target);
     emit(state, { type: "scared", cat: cat.id });
     if (level <= -2) emit(state, { type: "hissed-guests", cat: cat.id });

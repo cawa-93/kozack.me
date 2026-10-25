@@ -310,7 +310,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       const manner = vetManner(cat);
       if (manner !== null && state.trip === null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
       if (manner === "hid") {
-        const spot = hideSpot(state, stateRng(state, "behavior"));
+        const spot = hideSpot(state, stateRng(state, "behavior"), cat);
         startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
       }
       emit(state, { type: "modifier", kind: "home-vet", value: cat.id });

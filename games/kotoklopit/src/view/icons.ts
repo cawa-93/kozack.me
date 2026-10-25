@@ -73,7 +73,8 @@ export type IconName =
   | "sock"
   | "bin-tipped"
   | "cabinet-open"
-  | "lock";
+  | "lock"
+  | "cat-high";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -423,6 +424,14 @@ Object.assign(ICONS, {
     g.lineStyle(2, INK).strokePoints([new Phaser.Math.Vector2(30, 6), new Phaser.Math.Vector2(37, 10), new Phaser.Math.Vector2(37, 32), new Phaser.Math.Vector2(30, 36)], true);
   },
   lock: (g: Phaser.GameObjects.Graphics) => drawPadlock(g, 20, 22, 2),
+  "cat-high": (g: Phaser.GameObjects.Graphics) => {
+    // Висока шафа, а на ній — кіт; рука до нього не дістає (§9.12, «Лазіння»).
+    g.fillStyle(0x8a6e48).fillRect(16, 16, 18, 22);
+    g.lineStyle(2.5, INK).strokeRect(16, 16, 18, 22).lineBetween(25, 16, 25, 38);
+    g.fillStyle(0x6b5d6e).fillEllipse(25, 11, 16, 9).fillCircle(31, 7, 4.5).fillTriangle(28, 5, 29, 0, 31, 3).fillTriangle(34, 5, 33, 0, 31, 3);
+    g.fillStyle(0xe8c39e).fillRoundedRect(2, 26, 9, 10, 3).fillRoundedRect(4, 18, 4, 10, 2);
+    g.lineStyle(2, COLORS.danger).lineBetween(7, 14, 12, 9).lineBetween(12, 9, 13, 14);
+  },
   "cat-box": (g: Phaser.GameObjects.Graphics) => {
     // Картонна коробка, а з неї визирає кіт — вуха й очі (§9.12, «Допитливість»).
     g.fillStyle(0x6b5d6e).fillCircle(20, 17, 9).fillTriangle(12, 13, 13, 4, 18, 10).fillTriangle(28, 13, 27, 4, 22, 10);
