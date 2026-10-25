@@ -99,7 +99,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { BOX_SCRATCH, CARRIER_TILE, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -890,12 +890,26 @@ export function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   const post = nearest(cat, posts);
   if (post) return start(cat, "scratch", itemTile(post), SCRATCH.minutes, `item:${post.id}`);
   if (level <= -2 || (level === -1 && !rng.chance(SCRATCH.calmSofa))) {
-    if (hasBoxes(state) && rng.chance(0.5)) return start(cat, "scratch", objectTile("boxes"), SCRATCH.minutes, "boxes");
-    return start(cat, "scratch", { x: RUG.x + rng.int(0, RUG.w - 1), y: RUG.y + rng.int(0, RUG.h - 1) }, SCRATCH.minutes, "rug");
+    // Коробки дере, стоячи поруч із купою, а не на ній (перевірка етапу 2026-10-26).
+    if (hasBoxes(state) && rng.chance(SCRATCH.boxes)) return start(cat, "scratch", { ...BOX_SCRATCH }, SCRATCH.minutes, "boxes");
+    return start(cat, "scratch", rugTile(state, rng), SCRATCH.minutes, "rug");
   }
   if (level >= 2 && rng.chance(SCRATCH.doorframe)) return start(cat, "scratch", { ...DOORFRAME }, SCRATCH.minutes, "doorframe");
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
+}
+
+/**
+ * Вільна клітинка килимка, де кіт потягується (§9.12, «Дряпання»): не під ящиками біля входу й не під річчю котячого кутка
+ * (кігтеточка на килимку) — інакше він потягувався б на коробці згори чи на кігтеточці (перевірка етапу 2026-10-26).
+ */
+export function rugTile(state: GameState, rng: Rng): Vec {
+  const taken = new Set(state.home.items.flatMap((i) => ("slot" in i ? [`${slotById(i.slot).x},${slotById(i.slot).y}`] : [])));
+  const tiles: Vec[] = [];
+  for (let y = RUG.y; y < RUG.y + RUG.h; y++) {
+    for (let x = RUG.x; x < RUG.x + RUG.w; x++) if (objectAt(state, x, y) === null && !taken.has(`${x},${y}`)) tiles.push({ x, y });
+  }
+  return tiles[rng.int(0, tiles.length - 1)] ?? { x: RUG.x, y: RUG.y };
 }
 
 /** Шанс, що кіт ляже на коліна тому, хто працює (§9.12): «Коліна» й любов до персонажа. */
@@ -1386,8 +1400,8 @@ function knockTrinket(state: GameState, cat: Cat, kind: TrinketKind, rng: Rng): 
   const home = state.home;
   const place = TRINKETS.find((t) => t.kind === kind);
   if (!place || home.trinkets?.[kind]) return false;
-  const o = objectById(place.object);
-  const spot = visibleFloorNear(state, { x: o.x + place.at * o.w, y: o.y + o.h + 0.5 });
+  // Падає на видне місце біля речі, а не за стіл чи передню стіну (перевірка етапу 2026-10-26).
+  const spot = visibleFloorNear(state, place.fall);
   const broken = kind === "mug" && rng.chance(KNOCKING.mugBreaks);
   (home.trinkets ??= {})[kind] = broken ? { x: spot.x, y: spot.y, broken: true } : { x: spot.x, y: spot.y };
   emit(state, { type: "trinket-fell", cat: cat.id, trinket: kind, object: place.object, broken });
@@ -1405,6 +1419,8 @@ function knockTrinket(state: GameState, cat: Cat, kind: TrinketKind, rng: Rng): 
  */
 function trinketDone(state: GameState, cat: Cat, rng: Rng): void {
   const kind = cat.act.target?.slice("trinket:".length) as TrinketKind;
+  // Дрібничку вже скинули (зумі чи інший кіт), поки цей ішов до неї: обнюхувати чи скидати нічого (перевірка етапу 2026-10-26).
+  if (state.home.trinkets?.[kind]) return;
   if (cat.act.refused === true) {
     emit(state, { type: "trinket-sniffed", cat: cat.id, trinket: kind });
     observe(state, cat, "knocking", -1);
@@ -1496,6 +1512,12 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         act.refused = level < 0 && rng.chance(KNOCKING.sniffStep * -level);
       }
       if (act.showOff === true) cat.facing = state.character.body.x >= cat.x ? 1 : -1;
+      return;
+    case "scratch":
+      // Дере коробки чи одвірок — обличчям до них (§9.12, «Дряпання»; перевірка етапу 2026-10-26): купа ящиків ліворуч,
+      // стіна одвірка праворуч.
+      if (act.goal === null && act.target === "boxes") cat.facing = -1;
+      if (act.goal === null && act.target === "doorframe") cat.facing = 1;
       return;
     case "keyboard":
       // Кіт на клавіатурі: працювати не вийде (§9.12).

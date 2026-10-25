@@ -694,10 +694,11 @@ export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinu
 /**
  * Кігтеточка чи диван (§9.12): шанс обрати кігтеточку, крок «Дряпання», тривалість, скільки гри знімає. Рішення автора
  * 2026-10-25 (`TRAITS_REVIEW.md`): вага `weight` × (1 + `frequencyStep` × рівень), не менше `minWeight`; без кігтеточки
- * «Любить кігтеточку» (−1) дере диван лише з шансом `calmSofa` (інакше килимок чи коробки), −2 — ніколи; «Руйнівник
- * диванів» (+2) з шансом `doorframe` дере одвірок. Проспав від `afterSleepMinutes` — з шансом `afterSleep` одразу точить кігті.
+ * «Любить кігтеточку» (−1) дере диван лише з шансом `calmSofa` (інакше килимок чи, з шансом `boxes`, коробки, коли вони є),
+ * −2 — ніколи; «Руйнівник диванів» (+2) з шансом `doorframe` дере одвірок. Проспав від `afterSleepMinutes` — з шансом
+ * `afterSleep` одразу точить кігті.
  */
-export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
+export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, boxes: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<
   DiseaseId,

@@ -4,11 +4,11 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { catInBox, decide, standingTrinkets, startScratch, tickCats } from "../src/sim/catai";
+import { catInBox, decide, rugTile, standingTrinkets, startScratch, tickCats } from "../src/sim/catai";
 import { CURIOSITY, KNOCKING, SCRATCH, SOFA_REPAIR } from "../src/sim/config";
 import { place } from "../src/sim/economy";
 import { interact, newGame } from "../src/sim/game";
-import { slotById, trinketTile } from "../src/sim/home";
+import { BOX_SCRATCH, hiddenTile, isSolid, objectAt, slotById, TRINKETS, trinketTile } from "../src/sim/home";
 import { nightlyHousehold } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -134,6 +134,33 @@ describe("«Скидання речей»: дрібнички на столах 
     expect(shows).toBeLessThan(15);
   });
 
+  it("скинута дрібничка лежить на видному місці: не за столом і не за передньою стіною (перевірка етапу 2026-10-26)", () => {
+    for (const { kind } of TRINKETS) {
+      const save = game();
+      const cat = withCat(save, { knocking: 2 });
+      knockAt(save, cat, kind);
+      const fallen = save.current.home.trinkets?.[kind];
+      expect(fallen, kind).toBeDefined();
+      const x = Math.floor(fallen!.x);
+      const y = Math.floor(fallen!.y);
+      expect(hiddenTile(x, y), kind).toBe(false);
+      expect(isSolid(save.current, x, y), kind).toBe(false);
+      // На клітинку нижче немає меблів, які на екрані закрили б річ.
+      expect(objectAt(save.current, x, y + 1), kind).toBeNull();
+    }
+  });
+
+  it("дрібничку вже скинули, поки кіт ішов до неї, — ні обнюхування, ні прояву (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    const cat = withCat(save, { knocking: -2 });
+    save.current.home.trinkets = { mug: { x: 15.35, y: 4.3 } };
+    const { events, stop } = recordEvents();
+    knockAt(save, cat, "mug");
+    stop();
+    expect(events.some((e) => e.type === "trinket-sniffed")).toBe(false);
+    expect(seen(cat, "knocking")).toBe(0);
+  });
+
   it("кіт без риси заради уваги нічого не скидає", () => {
     const save = game();
     const cat = withCat(save, {}, { x: 15.5, y: 2.5 });
@@ -195,6 +222,36 @@ describe("«Дряпання»: де кіт точить кігті (§9.12, р�
     expect(events.filter((e) => e.type === "scratched").map((e) => (e.type === "scratched" ? e.where : null)).sort()).toEqual(["doorframe", "rug"]);
     expect(seen(wrecker, "scratching")).toBe(1);
     expect(seen(careful, "scratching")).toBe(1);
+  });
+
+  it("коробки дере, стоячи поруч із купою й обличчям до неї; потягується на вільній клітинці килимка (перевірка етапу 2026-10-26)", () => {
+    const save = game();
+    save.current.home.boxes = { food: { cheap: 2, premium: 0 } };
+    Object.assign(save.current.character.body, { x: 11.5, y: 7.5 });
+    const cat = withCat(save, { scratching: -2 }, { x: 10.5, y: 8.5 });
+    let boxes = 0;
+    for (let seed = 1; seed <= 40 && boxes === 0; seed++) {
+      startScratch(save.current, cat, createRng(seed));
+      if (cat.act.target === "boxes") boxes += 1;
+    }
+    expect(cat.act.goal).toEqual(BOX_SCRATCH);
+    // Не на ящиках: там кіт стояв би на коробці згори.
+    expect(objectAt(save.current, BOX_SCRATCH.x, BOX_SCRATCH.y)).toBeNull();
+    for (let i = 0; i < 20 && cat.act.goal !== null; i++) tickCats(save.current, 0.25, { present: true });
+    tickCats(save.current, 0.25, { present: true });
+    expect(cat.act.kind).toBe("scratch");
+    // Купа ящиків ліворуч — кіт дивиться на неї.
+    expect(cat.facing).toBe(-1);
+    // Килимок: не клітинка ящиків і не кігтеточка, що стоїть на килимку.
+    const post = place(save.current, "scratcher", "cheap");
+    if (!post || post.kind !== "scratcher") throw new Error("немає кігтеточки");
+    save.current.home.items.push({ ...post, slot: "scratcher-3" });
+    const postTile = slotById("scratcher-3");
+    for (let seed = 1; seed <= 200; seed++) {
+      const tile = rugTile(save.current, createRng(seed));
+      expect(objectAt(save.current, tile.x, tile.y)).toBeNull();
+      expect(tile.x === postTile.x && tile.y === postTile.y).toBe(false);
+    }
   });
 
   it("точити кігті хоче й «Бережливий»: вага не нижча за половину звичайної", () => {
