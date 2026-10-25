@@ -5,12 +5,14 @@ import { describe, expect, it } from "vitest";
 
 import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { ambushWeight, climbWeight, decide, giftWeight, hideSpot, rollWeight, startAmbush, startCarry, tickCats, trashTipped, upHigh } from "../src/sim/catai";
-import { AMBUSH, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { pickUpCat } from "../src/sim/actions";
+import { ambushWeight, chewChance, climbWeight, decide, giftWeight, hideSpot, rollWeight, startAmbush, startCarry, startChew, tickCats, trashTipped, upHigh } from "../src/sim/catai";
+import { AMBUSH, CHEWING, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { startWork } from "../src/sim/work";
 import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
 import { advance, interact, newGame, returnHome } from "../src/sim/game";
-import { AMBUSH_SPOTS, CABINET_PAW, HIGH_PLACES, hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, PAPER_TRAIL, roomAt, ROLL_TILE, SPAWN, STASHES, TRASH_PAW } from "../src/sim/home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, HIGH_PLACES, hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, PAPER_TRAIL, roomAt, ROLL_TILE, SPAWN, STASHES, TRASH_PAW, WIRE_TILE } from "../src/sim/home";
 import { nightlyHousehold, vacuumed } from "../src/sim/household";
 import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
@@ -570,3 +572,93 @@ function highPlaceOfCat(save: Save, cat: Cat): boolean {
     return Math.floor(cat.x) === o.x && Math.floor(cat.y) === o.y;
   }) && save.current.cats.includes(cat);
 }
+
+/** Кіт уже біля дроту комп'ютера чи коробок і гризе. */
+function chewAt(cat: Cat, target: "wire" | "boxes"): void {
+  const tile = target === "wire" ? WIRE_TILE : BOX_SCRATCH;
+  Object.assign(cat, { x: tile.x + 0.5, y: tile.y + 0.5 });
+  cat.act = { kind: "chew", target, goal: null, minutes: CHEWING.minMinutes, elapsed: 0 };
+}
+
+describe("«Гризіння» (§9.12, рішення автора 2026-10-25)", () => {
+  it("шанс погризти: «−» і дорослий без риси — ніколи, кошеня без риси — 1% (зуби), «+» — 2% × рівень", () => {
+    const save = game();
+    expect(chewChance(withCat(save, { chewing: -1 }))).toBe(0);
+    expect(chewChance(withCat(save))).toBe(0);
+    expect(chewChance(withCat(save, {}, { x: 9.5, y: 7.5 }, 1))).toBeCloseTo(CHEWING.kitten);
+    expect(chewChance(withCat(save, { chewing: 2 }))).toBeCloseTo(2 * CHEWING.decideStep);
+  });
+
+  it("дріт гризе, лише коли ніхто не працює; кошеня, яке забрали з рук, дроту не перегризе", () => {
+    const save = game();
+    const cat = withCat(save, { chewing: 1 });
+    Object.assign(save.current.character.body, { x: 6.5, y: 7.4, facing: { x: 0, y: -1 } });
+    startWork(save.current);
+    expect(startChew(save.current, cat, createRng(1))).toBe(false);
+    save.current.character.activity = null;
+    expect(startChew(save.current, cat, createRng(1))).toBe(true);
+    expect(cat.act.target).toBe("wire");
+    // Забрали кота, поки гриз — дріт цілий, хоч би як довго після цього.
+    for (let seed = 1; seed <= 20; seed++) {
+      chewAt(cat, "wire");
+      tickCats(save.current, 1, { present: true });
+      pickUpCat(save.current, cat);
+      save.current.character.held = null;
+      tickCats(save.current, 3, { present: true });
+    }
+    expect(save.current.home.wireChewed).toBeUndefined();
+  });
+
+  it("кіт гризе дріт на очах персонажа — прояв «+»; перегриз — комп'ютер не працює, доки дріт не полагодять утриманням", () => {
+    let found: { save: Save; cat: Cat } | null = null;
+    for (let seed = 1; seed <= 60 && !found; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
+      const cat = withCat(save, { chewing: 2 });
+      chewAt(cat, "wire");
+      const { events, stop } = recordEvents();
+      tickCats(save.current, 0.5, { present: true });
+      expect(events.some((e) => e.type === "chewing" && e.what === "wire")).toBe(true);
+      expect(seen(cat, "chewing")).toBe(1);
+      tickCats(save.current, CHEWING.minMinutes, { present: true });
+      stop();
+      if (save.current.home.wireChewed === true) found = { save, cat };
+    }
+    if (!found) throw new Error("дріт не перегризено жодного разу");
+    const { save } = found;
+    save.current.cats = [];
+    walkTo(save, "computer");
+    const refusal = recordEvents();
+    interact(save);
+    refusal.stop();
+    expect(refusal.events.find((e) => e.type === "refused")).toMatchObject({ reason: "wire-chewed" });
+    expect(save.current.character.activity).toBeNull();
+    // Лагодити — утримати дію біля комп'ютера; тримати довше, ніж треба, — полагоджено один раз.
+    const repairs = save.current.home.repairs;
+    const fixed = recordEvents();
+    for (let i = 0; i < 80; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    fixed.stop();
+    expect(save.current.home.wireChewed).toBeUndefined();
+    expect(fixed.events.filter((e) => e.type === "wire-fixed")).toHaveLength(1);
+    expect(save.current.home.repairs).toBe(repairs + CHEWING.wireRepair);
+    expect(save.current.character.activity).toBeNull();
+    // Тепер працювати можна.
+    advance(save, 0.1);
+    interact(save);
+    expect(save.current.character.activity?.kind).toBe("work");
+  });
+
+  it("гризе пакети в ящиках біля входу: одиниці запасу немає, а корм кіт з'їдає", () => {
+    const save = game();
+    save.current.home.boxes = { catFood: { cheap: 3, premium: 0 } };
+    const cat = withCat(save, { chewing: 1 });
+    cat.needs.hunger = 70;
+    chewAt(cat, "boxes");
+    const { events, stop } = recordEvents();
+    tickCats(save.current, CHEWING.minMinutes + 0.1, { present: true });
+    stop();
+    expect(save.current.home.boxes?.catFood?.cheap).toBe(2);
+    expect(events.some((e) => e.type === "bag-chewed" && e.product === "catFood")).toBe(true);
+    expect(cat.needs.hunger).toBeLessThan(10);
+  });
+});

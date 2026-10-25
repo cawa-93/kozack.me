@@ -880,7 +880,9 @@ export class DayScene extends Phaser.Scene {
     let computer: IconName | null = null;
     const day = state.minute % 1440;
     const meeting = state.modifiers.day === "meeting" && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
-    if (!working && (standup || meeting)) computer = "camera";
+    // Дріт перегризено (§9.12, «Гризіння»): над комп'ютером — перегризений дріт, доки його не полагодять.
+    if (state.home.wireChewed === true) computer = "wire";
+    else if (!working && (standup || meeting)) computer = "camera";
     else if (powerOut(state)) computer = "no-power";
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);

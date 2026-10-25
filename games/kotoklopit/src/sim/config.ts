@@ -744,6 +744,15 @@ export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight
  * (настрій `jumpMood`).
  */
 export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, strong: 0.05, strongLevel: 2, lureReach: 2.5, rescueSanity: -1, jumpNeed: 95, jumpMood: -3 } as const;
+/**
+ * «Гризіння» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт гризе з шансом
+ * `decideStep` × рівень за кожне спокійне рішення, кошеня без риси — `kitten` (міняються зуби), а коли хоче гратися — з вагою
+ * `playWeight` × (1 + рівень); «−» — ніколи. Гризе `minMinutes`–`maxMinutes` хвилин дріт комп'ютера (коли ніхто не працює) чи
+ * пакети в ящиках біля входу. Дріт, який гризли до кінця (кота не забрали), перегризено з шансом `wireChance`: комп'ютер не
+ * працює, доки персонаж не полагодить дріт утриманням дії (`fixMinutes`, неприємне `fixSanity`, ремонт +`wireRepair` ₴ до
+ * комунальних). Із пакета пропадає одиниця запасу; корм і ласощі кіт з'їдає.
+ */
+export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMinutes: 2, maxMinutes: 3, wireChance: 0.15, fixMinutes: 15, fixSanity: -2, wireRepair: 5 } as const;
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
 export const DISEASES: Record<

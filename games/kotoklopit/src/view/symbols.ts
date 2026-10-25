@@ -96,6 +96,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "bin-tipped" };
     case "cat-up-high":
       return { icon: "cat-high" };
+    case "wire-chewed":
+      return { icon: "wire" };
   }
 }
 
@@ -185,6 +187,12 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "trash-tipped":
       // Смітник перекинувся (§9.12): гуркіт — звук речі.
       return [{ kind: "say", at: "trash", icon: "bin-tipped" }];
+    case "chewing":
+      // Кіт гризе (§9.12, «Гризіння»): хрумтить — уголос над котом.
+      return [{ kind: "say", at: cat(event.cat), icon: event.what === "wire" ? "chew-wire" : "chew-bag" }];
+    case "wire-chewed":
+      // Дріт перегризено (§9.12): іскра й клацання — звук речі над комп'ютером.
+      return [{ kind: "say", at: "computer", icon: "wire" }];
     case "sock-found":
       // Шкарпетка знайшлася (§9.12, «Подарунки й схованки»): персонаж зрозумів, куди вона поділася.
       return [{ kind: "think", at: "person", icon: "sock" }];

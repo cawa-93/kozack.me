@@ -399,6 +399,8 @@ export class Bot {
 
   private work(): void {
     if (!this.goTo("computer")) return this.wait(5);
+    // Кіт перегриз дріт (§9.12, «Гризіння»): спершу полагодити.
+    if (this.state.home.wireChewed === true) this.hold("computer");
     interact(this.save);
     if (this.state.character.activity?.kind !== "work") return this.wait(2);
     // Сеанс до години, але з перервами на нагальне: перевірка щоп'ять хвилин, інакше страва

@@ -20,6 +20,7 @@ import {
   HOUSEHOLD,
   ILLNESS,
   BURN_MINUTES,
+  CHEWING,
   CLEAN_LITTER_MINUTES,
   CLIMBING,
   CLEAN_MESS_MINUTES,
@@ -240,6 +241,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Кіт спить на комп'ютері чи сидить на клавіатурі — спершу його треба забрати (§9.12).
       if (catOnComputer(state)) return refuse(state, target.id, "cat-on-computer");
+      // Кіт перегриз дріт — спершу полагодити: утримати дію біля комп'ютера (§9.12, «Гризіння»).
+      if (state.home.wireChewed === true) return refuse(state, target.id, "wire-chewed");
       // Вимкнули світло (§4.1): комп'ютер не працює.
       if (powerOut(state)) return refuse(state, target.id, "no-power");
       startWork(state);
@@ -462,6 +465,7 @@ function useMinutes(target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
   if (target.type === "object" && target.object.kind === "vacuum") return HOUSEHOLD.vacuumMinutes;
+  if (target.type === "object" && target.object.kind === "computer") return CHEWING.fixMinutes;
   return target.type === "object" && target.object.kind === "shower" ? SHOWER_MINUTES : EAT_MINUTES;
 }
 
@@ -471,6 +475,8 @@ export function canUse(state: GameState, target: Target): boolean {
   switch (target.type) {
     case "object":
       if (target.object.kind === "shower" || target.object.kind === "vacuum") return true;
+      // Перегризений дріт лагодять утриманням дії (§9.12, «Гризіння»).
+      if (target.object.kind === "computer") return state.home.wireChewed === true && catOnComputer(state) === null;
       if (target.object.kind === "table") return state.home.surfaces[target.object.id]?.kind === "meal";
       return false;
     case "item":
@@ -617,6 +623,14 @@ function finishUse(state: GameState, target: Target): void {
   if (target.type !== "object") return;
   const object = target.object;
   if (object.kind === "vacuum") return vacuumed(state);
+  if (object.kind === "computer") {
+    // Дріт замотано й замінено (§9.12, «Гризіння»): неприємно, а новий дріт — до ремонту на комунальних.
+    delete state.home.wireChewed;
+    unpleasantTask(state, CHEWING.fixSanity);
+    state.home.repairs += CHEWING.wireRepair;
+    emit(state, { type: "wire-fixed" });
+    return;
+  }
   if (object.kind === "shower") {
     // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі (§8.7).
     const plain = state.character.stats.hygiene + SHOWER_HYGIENE.none >= statCeiling(state, "hygiene");

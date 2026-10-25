@@ -242,6 +242,14 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} лапою смикає шафку з кормом: ${event.opened ? "відчинив" : "замок тримає"}`;
     case "trash-tipped":
       return `${catName(state, event.cat)} перекинув смітник`;
+    case "chewing":
+      return `${catName(state, event.cat)} гризе ${event.what === "wire" ? "дріт комп'ютера" : "пакети біля входу"}`;
+    case "wire-chewed":
+      return `${catName(state, event.cat)} перегриз дріт: комп'ютер не працює`;
+    case "bag-chewed":
+      return `${catName(state, event.cat)} прогриз пакет: −1 ${event.product}`;
+    case "wire-fixed":
+      return "Дріт комп'ютера полагоджено: ремонт +5";
     case "sock-found":
       return event.where === "trip" ? "Шукали шкарпетку перед виїздом: +10 хв" : "Пилосос знайшов шкарпетку в котячій схованці";
     case "ambushed":

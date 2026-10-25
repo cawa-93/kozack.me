@@ -82,7 +82,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "ambush") return "crouch";
   // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
   const sniffing = (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
-  if (act.kind === "eat" || act.kind === "drink" || sniffing) return "eat";
+  // Гризе дріт чи пакет (§9.12, «Гризіння») — так само голова донизу.
+  if (act.kind === "eat" || act.kind === "drink" || act.kind === "chew" || sniffing) return "eat";
   // Гребе лапою (§9.12): закопує корм біля миски.
   if (act.kind === "bury") return "bury";
   // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).

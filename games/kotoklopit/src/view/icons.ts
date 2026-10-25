@@ -74,7 +74,10 @@ export type IconName =
   | "bin-tipped"
   | "cabinet-open"
   | "lock"
-  | "cat-high";
+  | "cat-high"
+  | "wire"
+  | "chew-wire"
+  | "chew-bag";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -424,6 +427,24 @@ Object.assign(ICONS, {
     g.lineStyle(2, INK).strokePoints([new Phaser.Math.Vector2(30, 6), new Phaser.Math.Vector2(37, 10), new Phaser.Math.Vector2(37, 32), new Phaser.Math.Vector2(30, 36)], true);
   },
   lock: (g: Phaser.GameObjects.Graphics) => drawPadlock(g, 20, 22, 2),
+  wire: (g: Phaser.GameObjects.Graphics) => {
+    // Перегризений дріт (§9.12, «Гризіння»): два кінці кабелю з мідними жилками, а між ними — іскра.
+    g.lineStyle(5, INK).lineBetween(3, 30, 15, 22).lineBetween(25, 18, 37, 10);
+    g.lineStyle(2, 0xd9822b).lineBetween(15, 22, 18, 20).lineBetween(22, 19, 25, 18);
+    g.fillStyle(0xe8b93a).fillPoints([[20, 9], [23, 17], [29, 18], [23, 21], [20, 30], [18, 22], [11, 20], [18, 17]].map(([x, y]) => new Phaser.Math.Vector2(x, y)), true);
+  },
+  "chew-wire": (g: Phaser.GameObjects.Graphics) => {
+    // Кіт гризе дріт (§9.12, «Гризіння»): кабель, а на ньому сліди зубів.
+    g.lineStyle(5, INK).beginPath().moveTo(3, 28).lineTo(14, 22).lineTo(26, 24).lineTo(37, 16).strokePath();
+    g.fillStyle(0xffffff);
+    for (const [x, y] of [[16, 19], [20, 19], [24, 20], [16, 26], [20, 26], [24, 27]] as const) g.fillTriangle(x - 1.8, y, x + 1.8, y, x, y + (y < 23 ? 3 : -3));
+  },
+  "chew-bag": (g: Phaser.GameObjects.Graphics) => {
+    // Кіт гризе пакет (§9.12, «Гризіння»): пакет із надкушеним кутом, з якого сиплеться корм.
+    g.fillStyle(0xd9c7a0).fillPoints([[8, 8], [30, 8], [30, 20], [26, 24], [30, 28], [30, 36], [8, 36]].map(([x, y]) => new Phaser.Math.Vector2(x, y)), true);
+    g.lineStyle(2.5, INK).strokePoints([[8, 8], [30, 8], [30, 20], [26, 24], [30, 28], [30, 36], [8, 36]].map(([x, y]) => new Phaser.Math.Vector2(x, y)), true);
+    g.fillStyle(0x8a5a33).fillCircle(33, 26, 2).fillCircle(35, 31, 2).fillCircle(32, 34, 1.8);
+  },
   "cat-high": (g: Phaser.GameObjects.Graphics) => {
     // Висока шафа, а на ній — кіт; рука до нього не дістає (§9.12, «Лазіння»).
     g.fillStyle(0x8a6e48).fillRect(16, 16, 18, 22);

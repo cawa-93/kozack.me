@@ -210,6 +210,8 @@ export const STASHES: Record<"sofa" | "fridge", { tile: Vec; at: Vec }> = {
  * «Кмітливість у бешкеті»).
  */
 export const CABINET_PAW: Vec = { x: 17, y: 3 };
+/** Де кіт гризе дріт комп'ютера (§9.12, «Гризіння»): праворуч від столу, де дріт іде по підлозі до розетки. */
+export const WIRE_TILE: Vec = { x: 8, y: 6 };
 export const TRASH_PAW: Vec = { x: 18, y: 2 };
 
 /** Одвірок кухні: «Руйнівник диванів» дере його, стоячи в проході з вітальні (§9.12). */

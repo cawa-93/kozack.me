@@ -20,6 +20,7 @@ import {
   CARRIER_HOME,
   CARRY,
   CAT_ACT_MINUTES,
+  CHEWING,
   CLIMBING,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
@@ -105,13 +106,13 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, Product, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
@@ -672,6 +673,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (friend && rng.chance(groom.chance + groom.step * traitLevel(cat, "grooming"))) {
     return start(cat, "groom", tileOf(friend), groom.minutes, `cat:${friend.id}`);
   }
+  // Погризти щось (§9.12, «Гризіння»): гризун — частіше, кошеня без риси — інколи (міняються зуби).
+  if (rng.chance(chewChance(cat)) && startChew(state, cat, rng)) return;
   if (rng.chance(0.4)) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
   start(cat, "idle", null, CAT_ACT_MINUTES.idle * (0.5 + rng.next()));
 }
@@ -932,6 +935,9 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
   if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
+  // Гризун гризе й заради гри (§9.12, «Гризіння»).
+  const chewing = traitLevel(cat, "chewing");
+  if (chewing > 0 && chewTarget(state) !== null) options.push({ weight: CHEWING.playWeight * (1 + chewing), value: active(() => startChew(state, cat, rng)) });
   // Кмітливий перекидає смітник, а «Зломник» лізе в шафку з кормом і ситим (§9.12, «Кмітливість у бешкеті»).
   const cunning = traitLevel(cat, "cunning");
   if (cunning > 0 && !trashTipped(state)) options.push({ weight: CUNNING.trashStep * cunning * bored, value: active(() => startRaid(state, cat, "trash")) });
@@ -953,6 +959,64 @@ export function rollWeight(state: GameState, cat: Cat): number {
   const level = traitLevel(cat, "hunting");
   if (level < 0 || state.home.rollDown === true) return 0;
   return HUNTING.roll * (1 + HUNTING.rollStep * level) * (isKitten(cat) ? HUNTING.kitten : 1);
+}
+
+/** Шанс погризти щось за спокійне рішення (§9.12, «Гризіння»): 2% × рівень, кошеня без риси — 1%, «−» — ніколи. */
+export function chewChance(cat: Cat): number {
+  const level = traitLevel(cat, "chewing");
+  if (level > 0) return CHEWING.decideStep * level;
+  return level === 0 && isKitten(cat) ? CHEWING.kitten : 0;
+}
+
+/** Що погризти (§9.12, «Гризіння»): пакети в ящиках біля входу, коли вони є, а дріт — коли ніхто не працює й він ще цілий. */
+function chewTarget(state: GameState, rng?: Rng): "wire" | "boxes" | null {
+  const wire = !isWorking(state) && state.home.wireChewed !== true;
+  const boxes = hasBoxes(state);
+  if (wire && boxes) return rng?.chance(0.5) === true ? "boxes" : "wire";
+  return wire ? "wire" : boxes ? "boxes" : null;
+}
+
+/** Кіт іде гризти дріт комп'ютера чи пакети біля входу (§9.12, «Гризіння»). false — гризти нічого. */
+export function startChew(state: GameState, cat: Cat, rng: Rng): boolean {
+  const target = chewTarget(state, rng);
+  if (target === null) return false;
+  const minutes = CHEWING.minMinutes + rng.next() * (CHEWING.maxMinutes - CHEWING.minMinutes);
+  start(cat, "chew", { ...(target === "wire" ? WIRE_TILE : BOX_SCRATCH) }, minutes, target);
+  return true;
+}
+
+/**
+ * Кіт догриз (§9.12, «Гризіння»): кота так і не забрали — дріт перегризено з шансом 15% (комп'ютер не працює, доки його не
+ * полагодять); з пакета в ящиках біля входу пропадає одиниця запасу, а корм і ласощі кіт з'їдає.
+ */
+function chewDone(state: GameState, cat: Cat, rng: Rng): void {
+  const act = cat.act;
+  if (act.target === "wire") {
+    if (state.home.wireChewed === true || !rng.chance(CHEWING.wireChance)) return;
+    state.home.wireChewed = true;
+    stopWork(state);
+    emit(state, { type: "wire-chewed", cat: cat.id });
+    return;
+  }
+  const boxes = state.home.boxes ?? {};
+  const bags = (Object.keys(boxes) as Product[]).flatMap((product) => (["cheap", "premium"] as const).filter((q) => (boxes[product]?.[q] ?? 0) > 0).map((quality) => ({ product, quality })));
+  const bag = bags[rng.int(0, bags.length - 1)];
+  const box = bag ? boxes[bag.product] : undefined;
+  if (!bag || !box) return;
+  box[bag.quality] -= 1;
+  emit(state, { type: "bag-chewed", cat: cat.id, product: bag.product });
+  if (bag.product === "catFood" || bag.product === "sterileFood" || bag.product === "treats") {
+    cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * (bag.product === "treats" ? 0.25 : 1));
+    changeMood(state, cat, 1);
+  }
+}
+
+/** Кіт гризе на очах персонажа (§9.9): прояв «Гризіння +», раз за раз. */
+function chewSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "chew" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "chewing");
 }
 
 /** У шафці з кормом є корм (§9.12, «Кмітливість у бешкеті»): шафка стоїть удома, і в ній щось лишилося. */
@@ -1634,6 +1698,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return carryDone(state, cat);
     case "raid":
       return raidDone(state, cat, rng);
+    case "chew":
+      return chewDone(state, cat, rng);
     case "ambush":
       // Просиділа засідку й ніхто не пройшов — теж трохи гра (§9.12, «Засідки»).
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * AMBUSH.waitRelief);
@@ -1879,6 +1945,11 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
+      return;
+    case "chew":
+      // Почав гризти — хрумтить (§9.12, «Гризіння»); дріт — обличчям до столу ліворуч, коробки — до купи ліворуч.
+      cat.facing = -1;
+      if (act.elapsed <= minutes) emit(state, { type: "chewing", cat: cat.id, what: act.target === "boxes" ? "boxes" : "wire" });
       return;
     case "raid":
       // Лапає дверцята шафки — обличчям до неї, праворуч (§9.12, «Кмітливість у бешкеті»).
@@ -2196,6 +2267,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   carryAlong(state, cat, context);
   paperSeen(state, cat);
   carrySeen(state, cat);
+  chewSeen(state, cat);
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);
