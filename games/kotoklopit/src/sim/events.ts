@@ -139,6 +139,8 @@ export type GameEvent =
   | { type: "litter-refused"; cat: number }
   /** Кіт кахикає перед шерстяною грудкою (§9.12): це чути. */
   | { type: "coughing"; cat: number }
+  /** Після пестощів з руки злетів жмут шерсті (§9.12, «Догляд за шерстю»): персонаж це помічає. */
+  | { type: "fur-tuft"; cat: number }
   /** Кіт нявкнув; `silent` — «Тихоня» відкрила рота, а звуку немає (§9.12). */
   | { type: "meow"; cat: number; silent?: true }
   | { type: "mess"; mess: Mess }

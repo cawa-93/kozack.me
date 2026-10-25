@@ -65,6 +65,7 @@ import {
   REVENGE,
   SCATTER_CHANCE,
   SCRATCH,
+  SHEDDING,
   SLEEP_END,
   SLEEP_RECOVERY_PER_HOUR,
   SLEEP_START,
@@ -84,6 +85,7 @@ import {
   TRAIT_NEED_STEP,
   VOMIT_STEP,
   WATCH_SANITY,
+  WATER_PLAY,
   WORK_CAT,
   ZOOMIES,
 } from "./config";
@@ -93,7 +95,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
+import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -1129,6 +1131,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         itemMood(state, cat, house);
         wearOut(state, house, rng);
       }
+      // «Хмаринка шерсті» після довгого сну на ліжку, дивані чи комп'ютері лишає там клапоть шерсті (§9.12).
+      const shedding = traitLevel(cat, "shedding");
+      const furniture = objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.kind;
+      if (shedding > 0 && act.elapsed >= SHEDDING.napMinutes && cat.shape.coat !== "hairless" && (furniture === "bed" || furniture === "sofa" || furniture === "computer") && rng.chance(SHEDDING.patchStep * shedding)) {
+        addMess(state, "fur", visibleFloorNear(state, cat), cat.id);
+        observe(state, cat, "shedding");
+      }
       return;
     }
     case "wrestle": {
@@ -1571,6 +1580,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   revengeSeen(state, cat);
   sinkSeen(state, cat);
+  dropsSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
     if (cat.act.kind === "follow") {
@@ -1873,6 +1883,47 @@ function sinkSeen(state: GameState, cat: Cat): void {
   observe(state, cat, "drinking");
 }
 
+/**
+ * «Водолаз» сидить у мокрій кабіні й ловить краплі на очах персонажа (§9.9): прояв «Любові до води +», раз за раз.
+ */
+function dropsSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "idle" || act.target !== "drops" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  act.seen = true;
+  observe(state, cat, "water");
+}
+
+/** Звідки кіт іде до води чи тікає від неї: не спить і нічим важливим не зайнятий (§9.12). */
+const WATER_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow", "groom"]);
+
+/** Кіт поруч із водою вільний: удома, не спить, нічим важливим не зайнятий і не звикає до нового дому. */
+const freeForWater = (state: GameState, cat: Cat): boolean =>
+  home(state, cat) && !asleep(cat) && WATER_FROM.has(cat.act.kind) && !(cat.act.kind === "beg" && cat.act.target === "sink") && !isAdapting(state, cat);
+
+/** Після вашого душу кабіна мокра (§9.12): «Водолаз» з шансом 30% за одиницю приходить ловити краплі. */
+export function showerDrops(state: GameState): void {
+  const rng = stateRng(state, "behavior");
+  const shower = objectById("shower");
+  for (const cat of state.cats) {
+    const level = traitLevel(cat, "water");
+    if (level <= 0 || !freeForWater(state, cat) || !rng.chance(WATER_PLAY.dropsStep * level)) continue;
+    start(cat, "idle", { x: shower.x, y: shower.y }, WATER_PLAY.dropsMinutes, "drops");
+  }
+}
+
+/**
+ * Увімкнули воду — душ чи кран (§9.12): «Водобоязнь», що не спить у ванній, перелякано тікає з неї у вітальню — прояв
+ * «Любові до води −» (раз на годину).
+ */
+export function waterFright(state: GameState): void {
+  for (const cat of state.cats) {
+    if (traitLevel(cat, "water") >= 0 || roomAt(cat) !== "bathroom" || !freeForWater(state, cat)) continue;
+    start(cat, "wander", tileOf(visibleFloorNear(state, { x: 10.5, y: 7.5 })), CAT_ACT_MINUTES.wander, "flee");
+    emit(state, { type: "scared", cat: cat.id });
+    observe(state, cat, "water", -1, false, WATER_PLAY.observeEvery);
+  }
+}
+
 /** Кіт, що сидить на умивальнику й чекає крана (§9.12, «Пиття»). */
 export function catOnSink(state: GameState): Cat | null {
   return state.cats.find((c) => home(state, c) && c.act.kind === "beg" && c.act.target === "sink" && c.act.goal === null) ?? null;
@@ -1882,6 +1933,7 @@ export function catOnSink(state: GameState): Cat | null {
 export function openTap(state: GameState, cat: Cat): void {
   start(cat, "drink", null, CAT_ACT_MINUTES.drink, "sink");
   emit(state, { type: "tap-opened", cat: cat.id });
+  waterFright(state);
 }
 
 /**

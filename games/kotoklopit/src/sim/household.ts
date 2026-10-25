@@ -2,7 +2,7 @@
 
 import { traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, WATER_CAPACITY } from "./config";
 import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
@@ -33,11 +33,12 @@ export function annoyingMesses(state: GameState, minutes: number): void {
   changeStat(state, "sanity", perHour * (minutes / MINUTES_PER_HOUR));
 }
 
-/** Скільки шерсті кіт лишає за годину (§8.7). */
-export function furPerHour(cat: Cat): number {
+/** Скільки шерсті кіт лишає за годину (§8.7): після грумера — удвічі менше (рішення автора 2026-10-25). */
+export function furPerHour(state: GameState, cat: Cat): number {
   if (cat.shape.coat === "hairless") return 0;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
-  return HOUSEHOLD.furPerCatHour * (long ? HOUSEHOLD.longFur : 1) * Math.max(0, 1 + HOUSEHOLD.sheddingStep * traitLevel(cat, "shedding"));
+  const groomed = state.day <= cat.groomedUntil ? SHEDDING.groomed : 1;
+  return HOUSEHOLD.furPerCatHour * (long ? HOUSEHOLD.longFur : 1) * Math.max(0, 1 + HOUSEHOLD.sheddingStep * traitLevel(cat, "shedding")) * groomed;
 }
 
 /** Кіт у барабані відчиненої пральної машини (§8.7). */
@@ -89,7 +90,7 @@ export function vacuumed(state: GameState): void {
 export function tickHousehold(state: GameState, from: number, minutes: number): void {
   const home = state.home;
   const hours = minutes / 60;
-  for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(100, home.fur + furPerHour(cat) * hours);
+  for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(100, home.fur + furPerHour(state, cat) * hours);
   if (home.washer.state === "washing") {
     const before = home.washer.minutes;
     home.washer.minutes -= minutes;

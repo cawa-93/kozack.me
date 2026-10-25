@@ -5,19 +5,20 @@
 import { describe, expect, it } from "vitest";
 
 import { pickUpCat } from "../src/sim/actions";
-import { createCat, idleAct } from "../src/sim/cat";
-import { giveTreat, nightlyCare } from "../src/sim/care";
+import { addTrait, createCat, idleAct } from "../src/sim/cat";
+import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
 import { bowlEaten, decide, dirtyFor, eatMinutes, envy, markTriggered, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, THIEF, WAKE_UP } from "../src/sim/config";
+import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, THIEF, WAKE_UP } from "../src/sim/config";
+import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
 import { relation } from "../src/sim/relations";
-import { emptyFeeder } from "../src/sim/household";
-import { newGame } from "../src/sim/game";
+import { emptyFeeder, furPerHour } from "../src/sim/household";
+import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, LitterItem, NightReport, Save, TraitLevel, WaterItem } from "../src/sim/types";
-import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { holdUntilDone, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -700,5 +701,156 @@ describe("«Шерстяні грудки» (рішення автора 2026-10
     save.current.home.messes.push({ id: save.current.nextId++, kind: "hairball", x: 3.5, y: 2.5, cat: cat.id });
     expect(coughWakes(save.current, report, { next: () => 0, int: () => 0, chance: () => true } as never, 0)).toBe(0);
     expect(report.wakeUps).toHaveLength(WAKE_UP.maxPerNight);
+  });
+});
+
+describe("«Догляд за шерстю» (рішення автора 2026-10-25)", () => {
+  const HOLD = { move: { x: 0, y: 0 }, hold: true };
+
+  /** Пестити кота 2,5 хвилини (він уваги хоче й терпить). */
+  function petFor(save: Save, cat: Cat): ReturnType<typeof recordEvents>["events"] {
+    Object.assign(save.current.character.body, { x: cat.x, y: cat.y + 0.6, facing: { x: 0, y: -1 } });
+    cat.needs.attention = 90;
+    cat.love = 80;
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 10; i++) advance(save, 0.25, HOLD);
+    stop();
+    return events;
+  }
+
+  const longHair = (cat: Cat): void => {
+    cat.shape.coat = null;
+    cat.genes.short = [false, false];
+  };
+
+  it("після 2 хвилин пестощів з руки «Хмаринки шерсті» злітає жмут — раз за пестощі; шерсті в квартирі більшає", () => {
+    const save = game();
+    const cat = withCat(save, { shedding: 2 }, { x: 8.5, y: 8.5 });
+    longHair(cat);
+    const fur = save.current.home.fur;
+    const events = petFor(save, cat);
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", shed: true });
+    expect(events.filter((e) => e.type === "fur-tuft")).toHaveLength(1);
+    expect(save.current.home.fur).toBeGreaterThan(fur + SHEDDING.tuftFur);
+    expect(seen(cat, "shedding")).toBe(1);
+  });
+
+  it("«Мало линяє» і безшерстий не лишають шерсті на руках; «−» — прояв", () => {
+    const save = game();
+    const cat = withCat(save, { shedding: -1 }, { x: 8.5, y: 8.5 });
+    longHair(cat);
+    expect(petFor(save, cat).some((e) => e.type === "fur-tuft")).toBe(false);
+    expect(seen(cat, "shedding")).toBe(1);
+    const bald = game();
+    const sphynx = withCat(bald, {}, { x: 8.5, y: 8.5 });
+    sphynx.shape.coat = "hairless";
+    expect(petFor(bald, sphynx).some((e) => e.type === "fur-tuft")).toBe(false);
+  });
+
+  it("після довгого сну на дивані «Хмаринка шерсті» інколи лишає там клапоть шерсті", () => {
+    let patches = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      Object.assign(save.current.character.body, { x: 14.5, y: 9.5 });
+      const cat = withCat(save, { shedding: 2 }, { x: 13.5, y: 10.5 });
+      cat.shape.coat = null;
+      cat.needs.fatigue = 0;
+      cat.act = { kind: "sleep", target: null, goal: null, minutes: 0.1, elapsed: SHEDDING.napMinutes };
+      tickCats(save.current, 0.2, { present: true });
+      if (save.current.home.messes.some((m) => m.kind === "fur" && m.cat === cat.id)) {
+        patches += 1;
+        expect(seen(cat, "shedding")).toBe(1);
+      }
+    }
+    expect(patches).toBeGreaterThan(10);
+    expect(patches).toBeLessThan(30);
+  });
+
+  it("після грумера кіт линяє вдвічі менше; безшерстому «Догляду за шерстю» не видають", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.shape.coat = null;
+    const usual = furPerHour(save.current, cat);
+    cat.groomedUntil = save.current.day + 3;
+    expect(furPerHour(save.current, cat)).toBeCloseTo(usual * SHEDDING.groomed);
+    const sphynx = withCat(save);
+    sphynx.shape.coat = "hairless";
+    for (let seed = 0; seed < 20; seed++) {
+      sphynx.traits = TRAIT_GROUPS.filter((g) => g.id !== "shedding" && g.id !== "energy").map((g) => ({ group: g.id, level: 1, seen: 0, known: false }));
+      addTrait(sphynx, createRng(seed), 0.5);
+      expect(sphynx.traits.some((t) => t.group === "shedding")).toBe(false);
+    }
+  });
+});
+
+describe("«Любов до води» (рішення автора 2026-10-25)", () => {
+  function bath(level: number, seed = 1): { save: Save; cat: Cat; events: ReturnType<typeof recordEvents>["events"] } {
+    const save = game();
+    standAt(save, "shower");
+    const cat = withCat(save, level === 0 ? {} : { water: level as TraitLevel }, { x: 8.5, y: 2.5 });
+    cat.mood = 60;
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    const { events, stop } = recordEvents();
+    bathe(save.current, createRng(seed));
+    stop();
+    return { save, cat, events };
+  }
+
+  it("купання дзеркальне: «Любить воду» муркоче, «Водобоязнь» виривається й ховається", () => {
+    const lover = bath(1);
+    expect(lover.cat.mood).toBeGreaterThan(60);
+    expect(lover.cat.love).toBe(50);
+    expect(lover.events.some((e) => e.type === "purr")).toBe(true);
+    expect(seen(lover.cat, "water")).toBe(1);
+    const diver = bath(2);
+    expect(diver.cat.love).toBeGreaterThan(50);
+    const plain = bath(0);
+    expect(plain.cat.love).toBeLessThan(50);
+    expect(plain.save.current.character.held).not.toBeNull();
+    const phobic = bath(-2);
+    expect(phobic.cat.love).toBeLessThan(plain.cat.love);
+    expect(phobic.save.current.character.held).toBeNull();
+    expect(phobic.cat.act).toMatchObject({ kind: "hide", minutes: BATH.hideMinutes });
+    expect(seen(phobic.cat, "water")).toBe(1);
+  });
+
+  it("«Боїться води» без подряпини нічим не видно: прояв лише з подряпиною", () => {
+    let scratched = 0;
+    for (let seed = 0; seed < 60; seed++) {
+      const { save, cat } = bath(-1, seed);
+      const hurt = save.current.character.illnesses.some((i) => i.id === "injury");
+      if (hurt) scratched += 1;
+      expect(seen(cat, "water"), `seed ${seed}`).toBe(hurt ? 1 : 0);
+    }
+    expect(scratched).toBeGreaterThan(2);
+    expect(scratched).toBeLessThan(20);
+  });
+
+  it("після душу «Водолаз» приходить у мокру кабіну ловити краплі, а «Водобоязнь» тікає, щойно ввімкнули воду", () => {
+    let came = 0;
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      standAt(save, "shower");
+      const diver = withCat(save, { water: 2 }, { x: 10.5, y: 3.5 });
+      const phobic = withCat(save, { water: -1 }, { x: 9.5, y: 3.5 });
+      const { events, stop } = recordEvents();
+      interact(save);
+      stop();
+      expect(phobic.act).toMatchObject({ kind: "wander", target: "flee" });
+      expect(events.some((e) => e.type === "scared" && e.cat === phobic.id)).toBe(true);
+      expect(seen(phobic, "water")).toBe(1);
+      diver.act = idleAct(60);
+      holdUntilDone(save);
+      if (diver.act.target !== "drops") continue;
+      came += 1;
+      for (let i = 0; i < 20 && diver.act.goal !== null; i++) tickCats(save.current, 0.25, { present: true });
+      tickCats(save.current, 0.25, { present: true });
+      expect(diver.act).toMatchObject({ kind: "idle", target: "drops", goal: null });
+      expect(seen(diver, "water")).toBe(1);
+    }
+    expect(came).toBeGreaterThan(5);
   });
 });

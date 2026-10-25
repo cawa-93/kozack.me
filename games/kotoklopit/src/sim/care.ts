@@ -2,8 +2,9 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BEGGING, COLLAR, MINUTES_PER_HOUR, REVENGE, TREATS } from "./config";
-import { envy } from "./catai";
+import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, REVENGE, TREATS } from "./config";
+import { envy, hideSpot, startAct } from "./catai";
+import { visibleFloorNear } from "./catmove";
 import { fallIll, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
 import { emit } from "./events";
@@ -93,8 +94,10 @@ export function addBell(state: GameState): boolean {
 const bellAnnoys = (cat: Cat): boolean => traitLevel(cat, "bravery") <= -1 || traitLevel(cat, "stress") <= -1;
 
 /**
- * Купання (§8.7): кота на руках — до душу; потрібен шампунь. «Водолаз» радіє, решта ображається,
- * «Водобоязнь» може подряпати. Дорогий шампунь лікує дерматит.
+ * Купання (§8.7): кота на руках — до душу; потрібен шампунь. Дорогий шампунь лікує дерматит. «Любов до води» — дзеркально
+ * (рішення автора 2026-10-25): «Водолаз» радіє й муркоче, «Любить воду» — терпить із задоволенням, кіт без риси
+ * ображається, «Боїться води» ображається сильніше й може подряпати, «Водобоязнь» — ще сильніше, а потім виривається з рук
+ * і ховається. Прояви — те, що видно: муркотіння у ванні («+»), подряпина чи втеча («−»).
  */
 export function bathe(state: GameState, rng: Rng): boolean {
   const cat = catInHands(state);
@@ -103,17 +106,31 @@ export function bathe(state: GameState, rng: Rng): boolean {
   if (quality === null) return false;
   unpleasantTask(state, BATH.catchSanity);
   unpleasantTask(state, BATH.bathSanity);
-  const water = traitLevel(cat, "water");
-  if (water >= 1) changeMood(state, cat, BATH.loverMood, "купання");
-  else {
-    changeMood(state, cat, BATH.mood, "купання");
-    offend(state, cat, BATH.love, "купання");
+  const water = Math.max(-2, Math.min(2, traitLevel(cat, "water"))) as -2 | -1 | 0 | 1 | 2;
+  const feel = BATH_FEEL[water];
+  changeMood(state, cat, feel.mood, "купання");
+  if (feel.love > 0) changeLove(state, cat, feel.love, "купання");
+  else if (feel.love < 0) offend(state, cat, feel.love, "купання");
+  if (water > 0) {
+    emit(state, { type: "purr", cat: cat.id, enjoyed: true });
+    observe(state, cat, "water");
   }
-  if (water <= -2 && rng.chance(BATH.scratch)) fallIllPerson(state, "injury");
-  if (water !== 0) observe(state, cat, "water", water > 0 ? 1 : -1);
+  const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
+  if (scratched) fallIllPerson(state, "injury");
   cat.bathedDay = state.day;
   if (quality === "premium") cat.diseases = cat.diseases.filter((d) => d.id !== "dermatitis");
   emit(state, { type: "bathed", cat: cat.id });
+  if (water <= -2) {
+    // Вирвався з рук і тікає ховатися.
+    state.character.held = null;
+    const at = visibleFloorNear(state, state.character.body);
+    cat.x = at.x;
+    cat.y = at.y;
+    const spot = hideSpot(state, rng);
+    startAct(cat, "hide", spot.at, BATH.hideMinutes, spot.target);
+    emit(state, { type: "cat-broke-free", cat: cat.id });
+  }
+  if (scratched || water <= -2) observe(state, cat, "water", -1);
   return true;
 }
 

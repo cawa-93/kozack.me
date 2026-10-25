@@ -153,7 +153,8 @@ export class CatView {
     if (furniture && furniture.kind !== "door") {
       const bottom = toScreen({ x: 0, y: furniture.y + furniture.h }).y;
       feet.depth = depthOf(bottom) + 2;
-      feet.y = pose === "hide" ? bottom - 2 : feet.y - objectHeight(furniture.kind) + 6;
+      // У душовій кабіні кіт сидить на мокрому піддоні біля входу, а не на даху кабіни (§9.12, «Любов до води»).
+      feet.y = pose === "hide" ? bottom - 2 : furniture.kind === "shower" ? bottom - 4 : feet.y - objectHeight(furniture.kind) + 6;
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
     // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.

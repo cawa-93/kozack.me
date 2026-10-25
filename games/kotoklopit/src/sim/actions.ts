@@ -3,12 +3,12 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, turnAway } from "./catai";
+import { backAway, beggingFood, carryFeeling, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, rollEscapes, separateFight, showerDrops, turnAway, waterFright } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
-import { emptyFeeder, sameFood, tapWasher, vacuumed } from "./household";
+import { emptyFeeder, furPerHour, sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { loudNoise } from "./noise";
 import { powerOut } from "./modifiers";
@@ -32,12 +32,15 @@ import {
   MESS_SANITY,
   MOOD,
   LOVE_BEHAVIOR,
+  MINUTES_PER_DAY,
+  MINUTES_PER_HOUR,
   PET,
   PETTING,
   PLAY,
   REACH,
   SHOWER_HYGIENE,
   SHOWER_MINUTES,
+  SHEDDING,
   SHOO,
   STRESS_EFFECTS,
   WATER_CAPACITY,
@@ -243,6 +246,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
       if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, { reason: "empty", product: "shampoo" });
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // Увімкнули воду: «Водобоязнь» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
+      waterFright(state);
       character.activity = { kind: "use", target: target.id, progress: 0, inside: true };
       return null;
     case "sink": {
@@ -592,6 +597,8 @@ function finishUse(state: GameState, target: Target): void {
     const hygiene = SHOWER_HYGIENE[quality ?? "none"];
     changeStat(state, "hygiene", hygiene);
     emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene") });
+    // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
+    showerDrops(state);
     return;
   }
   const meal = state.home.surfaces[object.id];
@@ -656,6 +663,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
+  shedOnHands(state, cat, activity, minutes);
   // Кіт лишається на місці, поки його гладять.
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
@@ -685,6 +693,25 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     emit(state, { type: "bite", cat: cat.id });
     observe(state, cat, "petting", -1);
   }
+}
+
+/**
+ * Шерсть від пестощів (§8.7, §9.12, рішення автора 2026-10-25): кожна хвилина додає шерсті в квартирі; після 2 хвилин з
+ * руки злітає жмут — раз за пестощі, з шансом 30% × (1 + «Догляд за шерстю»), у довгошерстого — частіше; «−» і безшерсті
+ * — ніколи. Жмут — прояв «+»; чиста рука після 2 хвилин пестощів «−» — прояв «−» (раз на день).
+ */
+function shedOnHands(state: GameState, cat: Cat, activity: PetActivity, minutes: number): void {
+  state.home.fur = Math.min(100, state.home.fur + (furPerHour(state, cat) * SHEDDING.petting * minutes) / 60);
+  if (activity.shed !== undefined || activity.minutes < SHEDDING.tuftMinutes) return;
+  const level = traitLevel(cat, "shedding");
+  const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
+  const chance = cat.shape.coat === "hairless" ? 0 : Math.min(1, SHEDDING.tuft * Math.max(0, 1 + level) * (long ? SHEDDING.longTuft : 1));
+  activity.shed = chance > 0 && stateRng(state, "behavior").chance(chance);
+  if (activity.shed) {
+    state.home.fur = Math.min(100, state.home.fur + SHEDDING.tuftFur);
+    emit(state, { type: "fur-tuft", cat: cat.id });
+    observe(state, cat, "shedding", 1, false, MINUTES_PER_HOUR);
+  } else if (level < 0) observe(state, cat, "shedding", -1, false, MINUTES_PER_DAY);
 }
 
 /** Кіт поруч і не на сходах: з ним можна гратися чи його пестити. */

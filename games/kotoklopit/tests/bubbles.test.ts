@@ -43,6 +43,7 @@ const EVENTS: GameEvent[] = [
   { type: "tap-opened", cat: 1 },
   { type: "litter-refused", cat: 1 },
   { type: "coughing", cat: 1 },
+  { type: "fur-tuft", cat: 1 },
   { type: "doorbell", delivery },
   { type: "feeder", bowls: [3, 4] },
   { type: "call-remark", issue: "clothes" },

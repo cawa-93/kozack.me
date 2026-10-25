@@ -62,7 +62,8 @@ export type IconName =
   | "sad"
   | "loud"
   | "lick"
-  | "cough";
+  | "cough"
+  | "fur";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -257,6 +258,12 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
     g.fillStyle(INK).fillCircle(20, 18, 4);
     g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
+  },
+  fur: (g: Phaser.GameObjects.Graphics) => {
+    // Жмут шерсті на долоні (§9.12): долоня, а над нею пухнастий клубок з волосинками, що розлітаються.
+    g.fillStyle(0xe8c39e).fillRoundedRect(9, 24, 22, 12, 5);
+    g.fillStyle(0xcfc6bd).fillCircle(16, 20, 6).fillCircle(23, 18, 7).fillCircle(27, 23, 5);
+    g.lineStyle(1.5, 0x8a7a68).lineBetween(12, 13, 15, 16).lineBetween(22, 8, 22, 12).lineBetween(31, 13, 28, 16).lineBetween(34, 20, 31, 21);
   },
   cough: (g: Phaser.GameObjects.Graphics) => {
     // Кахикання перед шерстяною грудкою (§9.12): клубок шерсті й три хвилі звуку «кх» над ним.

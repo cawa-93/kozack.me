@@ -20,7 +20,6 @@ const sources = Object.values(
  */
 const PENDING: ReadonlySet<string> = new Set([
   // Діють, але прояву ще немає.
-  "shedding",
   "guests",
   "warmth",
   // Ще не реалізовано.

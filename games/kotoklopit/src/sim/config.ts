@@ -820,7 +820,33 @@ export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number
 /** Нашийник (§9.10): настрій за день, шанс загубити дешевий, дзвіночок дратує чутливих. */
 export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05, bellMood: -1 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
-export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, loverMood: 5, mood: -5, love: -2, scratch: 0.3, hairlessDays: 7, dermatitis: 0.3 } as const;
+export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;
+/**
+ * Купання за «Любов'ю до води» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §8.7, §9.12 «Їжа й гігієна») — дзеркально:
+ * настрій, любов і шанс подряпати персонажа за рівнем (порода й характер разом, від −2 до +2). «Водобоязнь» (−2) після
+ * купання ще й виривається з рук і `BATH.hideMinutes` хвилин ховається.
+ */
+export const BATH_FEEL: Record<-2 | -1 | 0 | 1 | 2, { mood: number; love: number; scratch: number }> = {
+  2: { mood: 5, love: 1, scratch: 0 },
+  1: { mood: 2, love: 0, scratch: 0 },
+  0: { mood: -5, love: -2, scratch: 0 },
+  [-1]: { mood: -7, love: -3, scratch: 0.15 },
+  [-2]: { mood: -10, love: -4, scratch: 0.3 },
+};
+/**
+ * «Любов до води» поза купанням (рішення автора 2026-10-25): після вашого душу «+» з шансом `dropsStep` × рівень приходить
+ * у мокру кабіну ловити краплі (`dropsMinutes` хвилин); «−», що не спить у ванній, тікає звідти, щойно ввімкнули воду
+ * (душ чи кран), — прояв не частіше ніж раз на `observeEvery` хвилин.
+ */
+export const WATER_PLAY = { dropsStep: 0.3, dropsMinutes: 5, observeEvery: 60 } as const;
+/**
+ * «Догляд за шерстю» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §8.7, §9.12 «Їжа й гігієна»): після `tuftMinutes` хвилин
+ * пестощів з руки злітає жмут шерсті — раз за пестощі, з шансом `tuft` × (1 + рівень) (довгошерстий — ×`longTuft`;
+ * «−» і безшерстий — ніколи), і шерсті в квартирі +`tuftFur`. Пестощі й самі додають шерсті: × `petting` від того, що кіт
+ * лишає за годину, за кожну хвилину. «+» після сну від `napMinutes` хвилин на ліжку, дивані чи комп'ютері лишає там клапоть
+ * шерсті з шансом `patchStep` × рівень. Після грумера кіт линяє вдвічі менше (`groomed`).
+ */
+export const SHEDDING = { tuftMinutes: 2, tuft: 0.3, longTuft: 1.5, tuftFur: 1, petting: 10, napMinutes: 60, patchStep: 0.25, groomed: 0.5 } as const;
 /** Розмноження (§9.8): вагітність, виводок, тічка, мітки, віддати кота. */
 export const BREEDING = {
   pregnancy: 0.3,

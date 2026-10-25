@@ -129,7 +129,8 @@ export function maxTraits(cat: Cat): number {
  * сильна (±2) з імовірністю 30%. Повертає false, якщо додати нічого.
  */
 export function addTrait(cat: Cat, rng: Rng, positive: number, inherited: readonly Trait[] = []): boolean {
-  const free = TRAIT_GROUPS.filter((g) => !cat.traits.some((t) => t.group === g.id));
+  // Безшерстому «Догляду за шерстю» не видають: линяти нічим (рішення автора 2026-10-25, `TRAITS_REVIEW.md`).
+  const free = TRAIT_GROUPS.filter((g) => !cat.traits.some((t) => t.group === g.id) && !(g.id === "shedding" && cat.shape.coat === "hairless"));
   if (free.length === 0) return false;
   const good = rng.chance(positive);
   // «Природа й виховання» (§9.8): знак — від догляду, а з шансом 50% сама риса — від батьків.
