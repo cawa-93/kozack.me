@@ -4,14 +4,14 @@ import { traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, WATER_CAPACITY } from "./config";
 import { inView } from "./knowledge";
-import { takeSupplies, topQuality, useSupply } from "./economy";
+import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
 import { itemPoint, objectById, slotCenter } from "./home";
 import type { Rng } from "./rng";
-import type { BowlItem, Cat, GameState, HomeItem, Quality } from "./types";
+import type { BowlItem, Cat, Feeder, GameState, HomeItem, Product, Quality } from "./types";
 
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
@@ -135,6 +135,26 @@ export function robotProgress(state: GameState): number | null {
   const start = HOUSEHOLD.robotMinute;
   if (minute < start || minute >= start + HOUSEHOLD.robotMinutes) return null;
   return (minute - start) / HOUSEHOLD.robotMinutes;
+}
+
+/**
+ * Спорожнити автогодівницю (§9.12, правка автора 2026-10-25): корм із неї й з миски під нею — назад у
+ * сховище, а що не влазить — у ящики біля входу. Повертає, які запаси поповнилися.
+ */
+export function emptyFeeder(state: GameState, bowl: BowlItem, feeder: Feeder): Product[] {
+  const products: Product[] = [];
+  for (const holder of [feeder, bowl]) {
+    if (holder.food > 0 && holder.foodQuality !== null) {
+      const product = holder.sterile ? "sterileFood" : "catFood";
+      addSupply(state, product, holder.foodQuality, holder.food);
+      if (!products.includes(product)) products.push(product);
+    }
+    holder.food = 0;
+    holder.foodQuality = null;
+    holder.sterile = false;
+  }
+  if (products.length > 0) emit(state, { type: "feeder-emptied", item: bowl.id, products });
+  return products;
 }
 
 /** Корм у мисці й у годівниці однаковий: корми не змішують (§6.4, §9.12). */

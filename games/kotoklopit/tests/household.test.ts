@@ -280,6 +280,31 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     expect(feeder.food + bowl.food).toBe(3);
   });
 
+  it("з порожніми руками біля годівниці — її корм і корм із миски повертаються у сховище", () => {
+    const { save, bowl, feeder } = withFeeder("premium", 0);
+    Object.assign(feeder, { food: 12, foodQuality: "cheap", sterile: false });
+    Object.assign(bowl, { food: 2, foodQuality: "cheap", sterile: false });
+    walkTo(save, `item:${bowl.id}`);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events).toContainEqual({ type: "feeder-emptied", item: bowl.id, products: ["catFood"] });
+    expect(save.current.home.supplies.catFood.cheap).toBe(14);
+    expect(feeder).toMatchObject({ food: 0, foodQuality: null });
+    expect(bowl).toMatchObject({ food: 0, foodQuality: null });
+    // Тепер можна насипати інший корм.
+    save.current.home.supplies.catFood = { cheap: 0, premium: 30 };
+    pour(save, bowl);
+    expect(feeder).toMatchObject({ food: FEEDER_CAPACITY.premium, foodQuality: "premium" });
+    // Порожня годівниця з порожньою миской — нічого спорожняти.
+    Object.assign(feeder, { food: 0, foodQuality: null });
+    Object.assign(bowl, { food: 0, foodQuality: null });
+    const again = recordEvents();
+    interact(save);
+    again.stop();
+    expect(again.events).toContainEqual(expect.objectContaining({ type: "refused", reason: "nothing" }));
+  });
+
   it("годівниця не за годинами, а завжди тримає миску повною, доки в ній є корм", () => {
     const { save, bowl, feeder } = withFeeder("cheap", 0);
     Object.assign(feeder, { food: 3, foodQuality: "cheap" });

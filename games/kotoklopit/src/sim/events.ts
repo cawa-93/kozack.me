@@ -53,6 +53,8 @@ export type GameEvent =
   | { type: "vacuumed" }
   | { type: "robot" }
   | { type: "feeder"; bowls: number[] }
+  /** Автогодівницю спорожнили (§9.12): корм повернувся в ці сховища. */
+  | { type: "feeder-emptied"; item: number; products: Product[] }
   | { type: "broke"; what: string }
   | { type: "beard"; kind: "shave" | "trim" }
   | { type: "modifier"; kind: ModifierEvent; value: number }

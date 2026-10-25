@@ -8,7 +8,7 @@ import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds } from "./illness";
 import { bathe } from "./care";
-import { sameFood, tapWasher, vacuumed } from "./household";
+import { emptyFeeder, sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
@@ -251,10 +251,16 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
 
 function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null): TapResult {
   switch (item.kind) {
-    case "bowl":
-      if (held === null) return refuse(state, id, "nothing");
+    case "bowl": {
+      if (held === null) {
+        // З порожніми руками біля годівниці — спорожнити її, щоб змінити корм (§9.12, правка автора 2026-10-25).
+        const feeder = feederAt(state, item.slot);
+        if (feeder && emptyFeeder(state, item, feeder).length > 0) return null;
+        return refuse(state, id, "nothing");
+      }
       if (held.kind !== "catfood") return refuse(state, id, "wrong");
       return pourFood(state, item, id, held);
+    }
     case "water":
       if (held !== null) return refuse(state, id, "hands-full");
       if (item.water >= WATER_CAPACITY) return refuse(state, id, "nothing");

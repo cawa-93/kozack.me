@@ -140,6 +140,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return "Пропилососено";
     case "feeder":
       return `Автогодівниця насипала корм: мисок ${event.bowls.length}`;
+    case "feeder-emptied":
+      return `Автогодівницю спорожнено: корм повернувся в сховище (${event.products.join(", ")})`;
     case "robot":
       return "Робот-пилосос прибрав шерсть";
     case "broke":

@@ -872,7 +872,7 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.setState("person", isDrowsy(state) ? "zz" : null, this.person.head.x, this.person.head.y);
   }
 
-  /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків — у сховища (§6.4). */
+  /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
     const image = this.add.image(from.x, from.y, `icon-${icon}`).setDisplaySize(48, 48).setDepth(10_500).setVisible(false).addToDisplayList(this.viewport.world);
     const flight = { t: 0 };
@@ -930,6 +930,19 @@ export class DayScene extends Phaser.Scene {
           if (!storage || !to) return;
           const icon = PRODUCT_ICONS[moved.product];
           this.flyIcon(icon, from, to, i * 140, () => popAt(storage.object, icon, supplyCount(this.state, moved.product)));
+        });
+        break;
+      }
+      case "feeder-emptied": {
+        // Корм із годівниці летить назад у своє сховище (§9.12), там — іконка із залишком.
+        const from = this.anchorOf(`item:${event.item}`);
+        if (!from) break;
+        event.products.forEach((product, i) => {
+          const storage = STORAGES.find((s) => s.products.includes(product));
+          const to = storage ? this.anchorOf(storage.object) : null;
+          if (!storage || !to) return;
+          const icon = PRODUCT_ICONS[product];
+          this.flyIcon(icon, from, to, i * 140, () => popAt(storage.object, icon, supplyCount(this.state, product)));
         });
         break;
       }
