@@ -161,6 +161,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "cat-woke":
       // Кота розбудили шум чи кроки (§9.12): поспати не дали.
       return [{ kind: "think", at: cat(event.cat), icon: "zz", mark: "no" }];
+    case "coughing":
+      // Кахикання перед грудкою (§9.12) — звук, вголос над котом.
+      return [{ kind: "say", at: cat(event.cat), icon: "cough" }];
     case "litter-refused":
       // Чистюля понюхав брудний лоток (§9.12): «брудно» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "dirty" }];

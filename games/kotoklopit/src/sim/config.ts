@@ -342,7 +342,6 @@ export const TRAIT_EFFECTS = {
   beggingChance: 0.3,
   vetStep: 0.5,
   markingStep: 0.5,
-  stressMarkMood: 30,
   demandingStep: 0.25,
   demandingMeowStep: 0.5,
   demandingIgnoredStep: 0.5,
@@ -1037,8 +1036,21 @@ export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
 export const COMPUTER_SLEEP = { base: 1, step: 2, helperStep: 0.5 } as const;
 /** Прогнали з місця (§9.12). */
 export const SHOO = { mood: -3, love: -2 } as const;
-/** Шерстяна грудка: раз на 3 дні, уночі вдвічі частіше, довгошерсті вдвічі частіше, риса ±50%. */
-export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5 } as const;
+/**
+ * Шерстяна грудка: раз на 3 дні, уночі вдвічі частіше, довгошерсті вдвічі частіше, риса ±50%, «Догляд за шерстю» ±`sheddingStep`
+ * за одиницю. Рішення автора 2026-10-25 (`TRAITS_REVIEW.md`, §9.12 «Їжа й гігієна»): перед грудкою кіт `coughMinutes`
+ * хвилин кахикає (чути); уночі кахикання будить персонажа з шансом `wakeBedroom`, якщо кіт у спальні, і `wakeElsewhere` —
+ * деінде (спільна стеля нічних побудок).
+ */
+export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
+/**
+ * «Мітки» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §9.8, §9.12 «Їжа й гігієна»): некастрований кіт мітить з шансом
+ * `BREEDING.markPerHour` за годину; «+» (і стерилізований, і кішка) — від тригерів з шансом `triggerPerHour`, без них —
+ * `calmPerHour`; усе × (1 + `TRAIT_EFFECTS.markingStep` × рівень). Тригери: настрій нижче `mood`, новий кіт удома (до
+ * `newCatDays` днів), гості, від `crowd` котів, брудний лоток, у кішки — тічка. Мітка — коротка дія: кіт задкує до кута й
+ * `minutes` хвилин тремтить піднятим хвостом.
+ */
+export const MARKING = { triggerPerHour: 1 / 48, calmPerHour: 1 / 144, mood: 50, newCatDays: 3, crowd: 4, minutes: 1 } as const;
 /** Блювота після їжі: 20% за одиницю «Швидкості їжі». */
 export const VOMIT_STEP = 0.2;
 /** Оглушення: спіткнувся об кота, посковзнувся, збило зумі (§9.12). */

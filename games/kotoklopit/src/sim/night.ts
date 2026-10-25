@@ -10,6 +10,7 @@ import { changeStat, passSleepTime } from "./character";
 import {
   BREEDING,
   DIFFICULTY,
+  HAIRBALL,
   MODIFIERS,
   ILLNESS,
   KITTEN_AGE_WEEKS,
@@ -30,7 +31,7 @@ import { nightlyIllness } from "./illness";
 import { nightlyCare } from "./care";
 import { nightlyHousehold, tickHousehold } from "./household";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
-import { objectById } from "./home";
+import { objectById, roomAt } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
 import { conceive, giveBirth, inHeat, isNewborn, nightlyStates } from "./reproduction";
 import { chooseWeekModifier, startModifiers } from "./modifiers";
@@ -176,7 +177,9 @@ function sleep({ state, report, rng }: Night): void {
     while (minute < until) {
       const step = Math.min(1, until - minute);
       tickHousehold(state, minute, step);
+      const since = state.nextId;
       tickCats(state, step, { present: false });
+      lost += coughWakes(state, report, rng, since);
       minute += step;
       state.minute = minute;
       const hour = hourOf(minute);
@@ -220,6 +223,24 @@ function sleep({ state, report, rng }: Night): void {
   passSleepTime(state, slept);
   state.character.sleepSpeed = sleepSpeedAfter(slept);
   nightlyIllness(state, slept);
+}
+
+/**
+ * Кахикання перед шерстяною грудкою будить персонажа (§9.12, рішення автора 2026-10-25): з шансом 20%, якщо кіт у спальні,
+ * і 5% — деінде; це звичайна нічна побудка (спільна стеля) і прояв «Шерстяних грудок» — персонаж прокинувся саме від цього
+ * кота. `since` — грудки з id від цього з'явилися щойно. Повертає, скільки хвилин сну втрачено.
+ */
+export function coughWakes(state: GameState, report: NightReport, rng: Rng, since: number): number {
+  let lost = 0;
+  for (const mess of state.home.messes) {
+    if (mess.kind !== "hairball" || mess.id < since || mess.cat === null || report.wakeUps.length >= WAKE_UP.maxPerNight) continue;
+    const cat = state.cats.find((c) => c.id === mess.cat);
+    if (!cat || !rng.chance(roomAt(cat) === "bedroom" ? HAIRBALL.wakeBedroom : HAIRBALL.wakeElsewhere)) continue;
+    report.wakeUps.push({ cat: cat.id, reason: "hairball" });
+    observe(state, cat, "hairballs", 1, true);
+    lost += WAKE_UP.nightLostMinutes;
+  }
+  return lost;
 }
 
 /** Кіт спить на ліжку персонажа (§9.12). */

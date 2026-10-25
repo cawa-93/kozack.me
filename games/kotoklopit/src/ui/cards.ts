@@ -67,7 +67,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
 
   const events: (string | HTMLElement)[][] = [];
   // Хто будив уночі (§8.8): по рядку на кота, без пояснень.
-  for (const reason of ["night", "morning"] as const) {
+  for (const reason of ["night", "hairball", "morning"] as const) {
     const ids = new Set((night?.wakeUps ?? []).filter((w) => w.reason === reason).map((w) => w.cat));
     for (const id of ids) {
       const cat = state.cats.find((c) => c.id === id) ?? state.album.find((e) => e.id === id);

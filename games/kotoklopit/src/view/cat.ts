@@ -29,7 +29,7 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom";
+export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "bury" | "groom" | "mark" | "cough";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -73,6 +73,9 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "eat" || act.kind === "drink") return "eat";
   // Гребе лапою (§9.12): закопує корм біля миски.
   if (act.kind === "bury") return "bury";
+  // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).
+  if (act.kind === "mark") return "mark";
+  if (act.kind === "cough") return "cough";
   // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
   if (act.kind === "groom" && !act.target?.startsWith("cat:")) return "groom";
   return "sit";
@@ -133,7 +136,7 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "bury" || pose === "groom" || interaction || feeling || blinking
+      pose === "walk" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
     if (key !== null && key === this.drawn) return;
@@ -210,12 +213,14 @@ export class CatView {
         this.head = { x, y: y - 14 };
         return;
       }
-      case "walk": {
-        // Тіло горизонтально, голова попереду, хвіст угору.
+      case "walk":
+      case "mark": {
+        // Тіло горизонтально, голова попереду, хвіст угору; той, хто мітить, стоїть, і піднятий хвіст тремтить (§9.12).
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-9, -3, 6, 11]) g.fillRoundedRect(x + lx * s - 2, y - 8 * s, 4 * s, 9 * s, 2);
         // Сумний кіт і в ході тримає хвіст донизу.
-        this.tail(g, x - dir * 15 * s, y - 15 * s, s, dir, sad ? "down" : "up");
+        const tremble = pose === "mark" ? Math.sin(time / 25) * 1.5 * s : 0;
+        this.tail(g, x - dir * 15 * s + tremble, y - 15 * s, s, dir, sad && pose === "walk" ? "down" : "up");
         g.fillStyle(body).fillEllipse(x, y - 14 * s, 32 * s, 15 * s);
         this.patches(g, x, y - 14 * s, 32 * s, 15 * s);
         if (this.coat.tabby) this.stripes(g, x, y - 14 * s, 26 * s, stripe, true);
@@ -227,12 +232,15 @@ export class CatView {
       case "sit":
       case "eat":
       case "bury":
-      case "groom": {
-        const hx = x + dir * 3 * s;
+      case "groom":
+      case "cough": {
+        // Кахикає: витягає шию вперед і смикається.
+        const jerk = pose === "cough" ? Math.abs(Math.sin(time / 90)) * 3 * s : 0;
+        const hx = x + dir * (3 + (pose === "cough" ? 5 : 0)) * s + dir * jerk;
         // Сумний кіт опускає голову; той, хто їсть чи гребе лапою (корм біля миски, наповнювач у лотку), — до самої підлоги;
         // хто вмивається — хитає головою.
         const headY =
-          pose === "eat" || pose === "bury" ? y - 12 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
+          pose === "eat" || pose === "bury" ? y - 12 * s : pose === "cough" ? y - 18 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
         this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
         this.patches(g, x, y - 13 * s, 22 * s, 26 * s);

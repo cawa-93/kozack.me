@@ -137,6 +137,8 @@ export type GameEvent =
   | { type: "cat-refused-food"; cat: number }
   /** Вибагливий понюхав брудний лоток і йде шукати інше місце (§9.12, «Вибагливість до лотка»). */
   | { type: "litter-refused"; cat: number }
+  /** Кіт кахикає перед шерстяною грудкою (§9.12): це чути. */
+  | { type: "coughing"; cat: number }
   /** Кіт нявкнув; `silent` — «Тихоня» відкрила рота, а звуку немає (§9.12). */
   | { type: "meow"; cat: number; silent?: true }
   | { type: "mess"; mess: Mess }

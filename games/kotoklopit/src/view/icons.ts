@@ -61,7 +61,8 @@ export type IconName =
   | "taken"
   | "sad"
   | "loud"
-  | "lick";
+  | "lick"
+  | "cough";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -256,6 +257,13 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
     g.fillStyle(INK).fillCircle(20, 18, 4);
     g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
+  },
+  cough: (g: Phaser.GameObjects.Graphics) => {
+    // Кахикання перед шерстяною грудкою (§9.12): клубок шерсті й три хвилі звуку «кх» над ним.
+    g.fillStyle(0x8a7a68).fillEllipse(22, 28, 18, 12);
+    g.lineStyle(2, 0x5a4c40).lineBetween(15, 27, 28, 29).lineBetween(17, 31, 29, 25);
+    g.lineStyle(3, INK);
+    for (const [x, r] of [[10, 5], [20, 6], [30, 5]] as const) g.beginPath().arc(x, 14, r, Math.PI * 1.15, Math.PI * 1.85).strokePath();
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

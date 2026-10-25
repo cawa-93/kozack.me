@@ -183,7 +183,7 @@ describe("риси, що діють (ревізія 2026-10-22)", () => {
     expect(begged).toBeLessThan(40);
   });
 
-  it("«Мітки»: схильна до міток кішка мітить і стерилізована, коли їй погано; «Ніколи не мітить» — ніколи", () => {
+  it("«Мітки»: схильна до міток кішка мітить і стерилізована, коли їй погано (за три дні); «Ніколи не мітить» — ніколи", () => {
     const marks = (traits: Record<string, TraitLevel>, sex: "male" | "female", sterilized: boolean, mood: number): number => {
       const save = game();
       const cat = withCat(save, traits);
@@ -192,7 +192,7 @@ describe("риси, що діють (ревізія 2026-10-22)", () => {
       cat.mood = mood;
       cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
       let count = 0;
-      for (let i = 0; i < 24 * 60; i++) {
+      for (let i = 0; i < 3 * 24 * 60; i++) {
         cat.mood = mood;
         cat.needs.fatigue = 0;
         tickCats(save.current, 1, { present: false });

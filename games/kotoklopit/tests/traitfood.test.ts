@@ -7,15 +7,16 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, dirtyFor, eatMinutes, envy, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, THIEF } from "../src/sim/config";
+import { bowlEaten, decide, dirtyFor, eatMinutes, envy, markTriggered, stonesFactor, tickCats } from "../src/sim/catai";
+import { APPETITE, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, THIEF, WAKE_UP } from "../src/sim/config";
+import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
 import { relation } from "../src/sim/relations";
 import { emptyFeeder } from "../src/sim/household";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
+import type { BowlItem, Cat, LitterItem, NightReport, Save, TraitLevel, WaterItem } from "../src/sim/types";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -592,5 +593,112 @@ describe("лоток: «Розкидання наповнювача» й «Ви�
       return;
     }
     throw new Error("чистюля жодного разу не відмовився від брудного лотка");
+  });
+});
+
+describe("«Мітки» (рішення автора 2026-10-25)", () => {
+  it("тригери: поганий настрій, новий кіт, гості, від 4 котів, брудний лоток, тічка", () => {
+    const save = game();
+    const cat = withCat(save, { marking: 1 });
+    cat.mood = 80;
+    expect(markTriggered(save.current, cat)).toBe(false);
+    cat.mood = 40;
+    expect(markTriggered(save.current, cat)).toBe(true);
+    cat.mood = 80;
+    save.current.modifiers.day = "guests";
+    expect(markTriggered(save.current, cat)).toBe(true);
+    save.current.modifiers.day = null;
+    const box = save.current.home.items.find((i): i is LitterItem => i.kind === "litter") as LitterItem;
+    box.uses = 3;
+    expect(markTriggered(save.current, cat)).toBe(true);
+    box.uses = 0;
+    const newcomer = withCat(save);
+    newcomer.arrivedDay = save.current.day;
+    expect(markTriggered(save.current, cat)).toBe(true);
+    newcomer.arrivedDay = -10;
+    withCat(save);
+    expect(markTriggered(save.current, cat)).toBe(false);
+    withCat(save);
+    expect(markTriggered(save.current, cat)).toBe(true);
+    const queen = game();
+    const female = withCat(queen, { marking: 1 });
+    female.mood = 80;
+    female.sex = "female";
+    female.heatUntil = queen.current.day;
+    expect(markTriggered(queen.current, female)).toBe(true);
+  });
+
+  it("мітка — коротка дія: кіт задкує до верхнього кута кімнати, тремтить хвостом, і мітка лишається там", () => {
+    const save = game();
+    save.current.minute = hours(14);
+    Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
+    const cat = withCat(save, { marking: 2 }, { x: 8.5, y: 8.5 });
+    cat.sterilized = true;
+    cat.sex = "female";
+    for (let i = 0; i < 3 * 24 * 60 * 4 && cat.act.kind !== "mark"; i++) {
+      cat.mood = 10;
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+      if (cat.act.kind !== "idle") cat.act = idleAct(30);
+      Object.assign(cat, { x: 8.5, y: 8.5 });
+      tickCats(save.current, 0.25, { present: true });
+    }
+    expect(cat.act.kind).toBe("mark");
+    expect(cat.act.goal?.y).toBe(6);
+    for (let i = 0; i < 40 && cat.act.kind === "mark"; i++) tickCats(save.current, 0.5, { present: true });
+    const mark = save.current.home.messes.find((m) => m.kind === "mark");
+    expect(mark?.cat).toBe(cat.id);
+    expect(Math.floor(mark?.y ?? 0)).toBe(6);
+    expect(seen(cat, "marking")).toBe(1);
+  });
+});
+
+describe("«Шерстяні грудки» (рішення автора 2026-10-25)", () => {
+  it("перед грудкою кіт хвилину кахикає — це чути й видно", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
+    const cat = withCat(save, { hairballs: 2 }, { x: 8.5, y: 8.5 });
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 5 * 24 * 60 * 4 && cat.act.kind !== "cough"; i++) {
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+      if (cat.act.kind !== "idle") cat.act = idleAct(30);
+      Object.assign(cat, { x: 8.5, y: 8.5 });
+      tickCats(save.current, 0.25, { present: true });
+    }
+    stop();
+    expect(cat.act.kind).toBe("cough");
+    expect(events.some((e) => e.type === "coughing" && e.cat === cat.id)).toBe(true);
+    expect(save.current.home.messes.some((m) => m.kind === "hairball")).toBe(false);
+    tickCats(save.current, HAIRBALL.coughMinutes + 0.1, { present: true });
+    expect(save.current.home.messes.filter((m) => m.kind === "hairball")).toHaveLength(1);
+    expect(seen(cat, "hairballs")).toBe(1);
+  });
+
+  it("уночі кахикання будить персонажа: зі спальні — частіше, не більше двох побудок за ніч", () => {
+    const wakes = (at: { x: number; y: number }): number => {
+      let count = 0;
+      for (let seed = 0; seed < 400; seed++) {
+        const save = game();
+        const cat = withCat(save, { hairballs: 1 }, at);
+        const since = save.current.nextId;
+        save.current.home.messes.push({ id: save.current.nextId++, kind: "hairball", x: at.x, y: at.y, cat: cat.id });
+        const report = { wakeUps: [] } as unknown as NightReport;
+        if (coughWakes(save.current, report, createRng(seed), since) > 0) {
+          count += 1;
+          expect(report.wakeUps).toEqual([{ cat: cat.id, reason: "hairball" }]);
+          expect(seen(cat, "hairballs")).toBe(1);
+        }
+      }
+      return count / 400;
+    };
+    expect(wakes({ x: 3.5, y: 2.5 })).toBeGreaterThan(0.12);
+    expect(wakes({ x: 3.5, y: 2.5 })).toBeLessThan(0.28);
+    expect(wakes({ x: 8.5, y: 8.5 })).toBeLessThan(0.1);
+    // Спільна стеля нічних побудок.
+    const save = game();
+    const cat = withCat(save, {}, { x: 3.5, y: 2.5 });
+    const report = { wakeUps: [{ cat: cat.id, reason: "night" }, { cat: cat.id, reason: "night" }] } as unknown as NightReport;
+    save.current.home.messes.push({ id: save.current.nextId++, kind: "hairball", x: 3.5, y: 2.5, cat: cat.id });
+    expect(coughWakes(save.current, report, { next: () => 0, int: () => 0, chance: () => true } as never, 0)).toBe(0);
+    expect(report.wakeUps).toHaveLength(WAKE_UP.maxPerNight);
   });
 });

@@ -41,6 +41,7 @@ import {
   LITTER_CAPACITY,
   LOVE_BEHAVIOR,
   LOW_CAT_HEALTH,
+  MARKING,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
   MIN_CAT_NAP_MINUTES,
@@ -94,7 +95,7 @@ import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { distanceToRect, hiddenTile, isSolid, itemTile, LAUNDRY_BASKET, objectById, roomAt, ROOMS, slotById, SURFACE_IDS, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
-import { breedingHunger, escapeBonus, fightFactor, isNewborn, motherOf } from "./reproduction";
+import { breedingHunger, escapeBonus, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, ToyItem, Vec, WaterItem } from "./types";
@@ -151,24 +152,61 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
   n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state));
-  // Шерстяна грудка: частіше вночі й у довгошерстих (§9.12).
+  // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
   const hour = hourOf(state.minute);
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
-  const rate = HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step);
-  // Нестерилізований кіт мітить територію (§9.8); схильний до міток — ще й від стресу, «Ніколи не мітить» — ніколи.
+  const rate =
+    HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step) * traitFactor(cat, "shedding", HAIRBALL.sheddingStep);
+  // Мітить (§9.8): некастрований кіт; схильний до міток — і стерилізований, і кішка, від тригерів частіше; «Ніколи не
+  // мітить» — ніколи (рішення автора 2026-10-25).
   const marking = traitLevel(cat, "marking");
   const intact = cat.sex === "male" && !cat.sterilized;
-  const stressed = marking > 0 && cat.mood < TRAIT_EFFECTS.stressMarkMood;
-  const markChance = BREEDING.markPerHour * hours * traitFactor(cat, "marking", TRAIT_EFFECTS.markingStep);
-  if ((intact || stressed) && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(markChance)) {
-    addMess(state, "mark", visibleFloorNear(state, cat), cat.id);
-    observe(state, cat, "marking");
+  let markRate = intact ? BREEDING.markPerHour : 0;
+  if (marking > 0) markRate = Math.max(markRate, markTriggered(state, cat) ? MARKING.triggerPerHour : MARKING.calmPerHour);
+  const markChance = markRate * hours * traitFactor(cat, "marking", TRAIT_EFFECTS.markingStep);
+  const marks = (intact || marking > 0) && cat.ageWeeks >= BREEDING.minAge && !sleeping && rng.chance(markChance);
+  const coughs = state.day > cat.groomedUntil && rng.chance(rate * hours);
+  // Лише вдома, не на руках і коли кіт вільний: мітки й грудки лишаються в квартирі. Мітити кіт іде, сидячи чи блукаючи;
+  // перед грудкою кахикає — і зі сну (§9.12).
+  if (!home(state, cat) || isNewborn(cat)) return;
+  if (marks && MARK_FROM.has(cat.act.kind)) {
+    start(cat, "mark", markSpot(state, cat), MARKING.minutes);
+    return;
   }
-  if (state.day > cat.groomedUntil && rng.chance(rate * hours)) {
-    addMess(state, "hairball", visibleFloorNear(state, cat), cat.id);
-    observe(state, cat, "hairballs");
+  if (coughs && COUGH_FROM.has(cat.act.kind)) {
+    start(cat, "cough", null, HAIRBALL.coughMinutes);
+    emit(state, { type: "coughing", cat: cat.id });
   }
+}
+
+/** Звідки кіт іде мітити: з дій, які не шкода кинути (§9.12). */
+const MARK_FROM = new Set(["idle", "wander", "toy", "beg", "attention"]);
+/** Звідки кіт починає кахикати перед грудкою: спить чи нічим важливим не зайнятий (§9.12). */
+const COUGH_FROM = new Set(["idle", "wander", "toy", "sleep", "beg", "attention", "follow", "hide"]);
+
+/**
+ * Тригери міток (§9.12, рішення автора 2026-10-25): поганий настрій (нижче 50), новий кіт удома (до 3 днів), гості, від 4
+ * котів, брудний лоток, у кішки — тічка.
+ */
+export function markTriggered(state: GameState, cat: Cat): boolean {
+  if (cat.mood < MARKING.mood || state.modifiers.day === "guests") return true;
+  if (cat.sex === "female" && inHeat(state, cat)) return true;
+  const others = state.cats.filter((c) => c.id !== cat.id && c.away === null);
+  if (others.length + 1 >= MARKING.crowd || others.some((c) => state.day - c.arrivedDay < MARKING.newCatDays)) return true;
+  return itemsOf(state, "litter").some(isDirty);
+}
+
+/** Куди кіт задкує мітити (§9.12): у найближчий верхній кут своєї кімнати (нижні закриває передня стіна). */
+function markSpot(state: GameState, cat: Cat): Vec {
+  const room = ROOMS.find((r) => r.id === roomAt(cat)) ?? ROOMS[ROOMS.length - 1];
+  if (!room) return tileOf(cat);
+  const corners = [
+    { x: room.x + 0.5, y: room.y + 0.5 },
+    { x: room.x + room.w - 0.5, y: room.y + 0.5 },
+  ].map((p) => visibleFloorNear(state, p));
+  corners.sort((a, b) => distance(a, cat) - distance(b, cat));
+  return tileOf(corners[0] ?? cat);
 }
 
 /**
@@ -1021,6 +1059,16 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (Math.abs(longer) >= DEMANDING_SEEN_MINUTES) observe(state, cat, "demanding", longer > 0 ? 1 : -1);
       return;
     }
+    case "mark":
+      // Мітка в кутку: кіт тремтів піднятим хвостом — і це видно (§9.12, прояв «Міток +»).
+      addMess(state, "mark", visibleFloorNear(state, cat), cat.id);
+      observe(state, cat, "marking");
+      return;
+    case "cough":
+      // Відкахикався — шерстяна грудка на підлозі (§9.12, прояв «Шерстяних грудок +»).
+      addMess(state, "hairball", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);
+      observe(state, cat, "hairballs");
+      return;
     case "revenge":
       // Дійшов до ліжка чи кошика з білизною: помста здійснилася, образа минає.
       addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
