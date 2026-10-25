@@ -13,6 +13,7 @@ import {
   BREEDING,
   BOWL_CAPACITY,
   CARRY,
+  LOVE_BEHAVIOR,
   CAT_ACT_MINUTES,
   CAT_WALK_TILES_PER_MINUTE,
   COMPUTER_SLEEP,
@@ -176,6 +177,11 @@ export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): 
   state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
 
 const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+/** Кіт не любить персонажа (§9.12, правка автора 2026-10-25): сам по увагу не йде, на руках пручається сильніше. */
+const aloof = (cat: Cat): boolean => cat.love < LOVE_BEHAVIOR.aloof;
+/** Кіт дуже любить персонажа: частіше на коліна, рідше кусає на руках. */
+const devoted = (cat: Cat): boolean => cat.love >= LOVE_BEHAVIOR.devoted;
 
 /** Кіт удома й не на руках. */
 function home(state: GameState, cat: Cat): boolean {
@@ -384,7 +390,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
       return start(cat, "steal", objectTile(steal.id), 1, steal.id);
     }
     const empty = nearest(cat, itemsOf(state, "bowl"));
-    if (context.present && rng.chance(0.5)) return startAttention(state, cat);
+    if (context.present && !aloof(cat) && rng.chance(0.5)) return startAttention(state, cat);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
@@ -397,7 +403,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
-  if (context.present && n.attention >= seek) return startAttention(state, cat);
+  if (context.present && n.attention >= seek && !aloof(cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng);
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
@@ -477,6 +483,11 @@ function startScratch(state: GameState, cat: Cat, rng: Rng): void {
   observe(state, cat, "scratching");
 }
 
+/** Шанс, що кіт ляже на коліна тому, хто працює (§9.12): «Коліна» й любов до персонажа. */
+export function lapChance(cat: Cat): number {
+  return WORK_CAT.lapBase + WORK_CAT.lapStep * traitLevel(cat, "lap") + (devoted(cat) ? LOVE_BEHAVIOR.lapBonus : 0);
+}
+
 /**
  * Кіт по увагу прийшов до персонажа, що працює (§9.12): сідає на клавіатуру, лягає на коліна
  * чи просто сидить поруч і нявчить.
@@ -491,7 +502,7 @@ function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
     observe(state, cat, "helper");
     return start(cat, "keyboard", { x: computer.x, y: computer.y }, minutes, "computer");
   }
-  if (lap >= 0 && rng.chance(WORK_CAT.lapBase + WORK_CAT.lapStep * lap)) {
+  if (lap >= 0 && rng.chance(lapChance(cat))) {
     start(cat, "lap", null, MINUTES_PER_HOUR * 4, "character");
     observe(state, cat, "lap");
     jealousy(state, cat);
@@ -821,8 +832,15 @@ function returnFromStairs(state: GameState, cat: Cat): void {
 export function carryFeeling(state: GameState, cat: Cat): "content" | "reluctant" | "struggling" {
   const held = state.character.held;
   const lap = traitLevel(cat, "lap");
-  if (lap < 0 || (held?.kind === "cat" && held.offended === true)) return "struggling";
-  return lap > 0 ? "content" : "reluctant";
+  // Хто не любить персонажа, пручається сильніше: терплячий — пручається, любитель рук — лише терпить.
+  if (lap < 0 || (held?.kind === "cat" && held.offended === true) || (aloof(cat) && lap === 0)) return "struggling";
+  return lap > 0 && !aloof(cat) ? "content" : "reluctant";
+}
+
+/** Шанс укусу за хвилину на руках, коли кіт пручається (§9.12): хто дуже любить персонажа, кусає вдвічі рідше. */
+export function carryBiteChance(cat: Cat): number {
+  const dislike = Math.max(0, -traitLevel(cat, "lap"));
+  return (CARRY.bite + CARRY.biteStep * dislike) * (devoted(cat) ? LOVE_BEHAVIOR.biteFactor : 1);
 }
 
 /**
@@ -840,7 +858,7 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   if (feeling === "reluctant") return;
   const dislike = Math.max(0, -lap);
   changeMood(state, cat, CARRY.struggleMood * Math.max(1, dislike) * minutes);
-  if (!rng.chance(1 - (1 - (CARRY.bite + CARRY.biteStep * dislike)) ** minutes)) return;
+  if (!rng.chance(1 - (1 - carryBiteChance(cat)) ** minutes)) return;
   changeStat(state, "health", PET.biteHealth);
   emit(state, { type: "bite", cat: cat.id });
   observe(state, cat, "lap");

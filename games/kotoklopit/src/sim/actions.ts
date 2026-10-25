@@ -29,6 +29,7 @@ import {
   MEAL_SATIETY,
   MESS_SANITY,
   MOOD,
+  LOVE_BEHAVIOR,
   PET,
   PLAY,
   REACH,
@@ -570,7 +571,9 @@ function finishUse(state: GameState, target: Target): void {
 
 /** Скільки хвилин поспіль кіт терпить пестощі (§9.12). */
 export function petTolerance(cat: Cat): number {
-  return Math.max(PET.minToleranceMinutes, PET.toleranceMinutes * (1 + PET.toleranceStep * traitLevel(cat, "petting")));
+  // Хто любить персонажа, терпить пестощі довше (§9.12, правка автора 2026-10-25).
+  const love = 1 + LOVE_BEHAVIOR.tolerancePerPoint * Math.max(0, cat.love - 50);
+  return Math.max(PET.minToleranceMinutes, PET.toleranceMinutes * (1 + PET.toleranceStep * traitLevel(cat, "petting")) * love);
 }
 
 /**

@@ -5,9 +5,9 @@ import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { changeLove, changeMood, createCat } from "../src/sim/cat";
-import { activityAt, decide, envy, isDirty, tickCats } from "../src/sim/catai";
+import { activityAt, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
-import { PET } from "../src/sim/config";
+import { LOVE_BEHAVIOR, PET } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -677,5 +677,48 @@ describe("що відчуває кіт (§9.12)", () => {
     cat.act = { kind: "sleep", target: null, goal: null, minutes: 60, elapsed: 0 };
     pickUpCat(state, cat);
     expect(catFeeling(state, cat)).toBe("struggling");
+  });
+});
+
+describe("любов змінює поведінку (§9.12, правка автора 2026-10-25)", () => {
+  it("хто любить, довше терпить пестощі, частіше лягає на коліна й рідше кусає на руках", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.love = 50;
+    const tolerance = petTolerance(cat);
+    const lap = lapChance(cat);
+    const bite = carryBiteChance(cat);
+    cat.love = 100;
+    expect(petTolerance(cat)).toBeCloseTo(tolerance * 1.5);
+    expect(lapChance(cat)).toBeCloseTo(lap + LOVE_BEHAVIOR.lapBonus);
+    expect(carryBiteChance(cat)).toBeCloseTo(bite * LOVE_BEHAVIOR.biteFactor);
+  });
+
+  it("хто не любить, сам по увагу не йде — до нього треба підійти", () => {
+    const save = game();
+    const cat = withCat(save);
+    save.current.minute = hours(19);
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 90, play: 0 };
+    cat.love = 10;
+    decide(save.current, cat, createRng(3), { present: true });
+    expect(cat.act.kind).not.toBe("attention");
+    cat.love = 50;
+    decide(save.current, cat, createRng(3), { present: true });
+    expect(cat.act.kind).toBe("attention");
+  });
+
+  it("хто не любить, на руках пручається сильніше: терплячий пручається, любитель рук лише терпить", () => {
+    const save = game();
+    const state = save.current;
+    const cat = withCat(save, { x: 4.5, y: 8.5 });
+    state.character.held = { kind: "cat", cat: cat.id };
+    cat.love = 50;
+    expect(catFeeling(state, cat)).toBe("reluctant");
+    cat.love = 10;
+    expect(catFeeling(state, cat)).toBe("struggling");
+    cat.traits = [{ group: "lap", level: 1, seen: 0, known: false }];
+    expect(catFeeling(state, cat)).toBe("reluctant");
+    cat.love = 50;
+    expect(catFeeling(state, cat)).toBe("content");
   });
 });

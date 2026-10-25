@@ -415,6 +415,12 @@ export const LOVE = {
   noInteractionPerDay: -1,
   driftPerPoint: 6 / 100,
 } as const;
+/**
+ * Любов змінює поведінку (§9.12, правка автора 2026-10-25): пестощі кіт терпить довше — на
+ * `tolerancePerPoint` за кожне очко любові понад 50; від `devoted` — шанс лягти на коліна +`lapBonus`,
+ * укус на руках × `biteFactor`; нижче `aloof` — сам по увагу не йде й на руках пручається сильніше.
+ */
+export const LOVE_BEHAVIOR = { aloof: 25, devoted: 75, tolerancePerPoint: 0.01, lapBonus: 0.25, biteFactor: 0.5 } as const;
 /** «Відданість» і «Образливість» змінюють зростання й втрати любові на 25% за одиницю (§9.12). */
 export const LOVE_TRAIT_STEP = 0.25;
 
