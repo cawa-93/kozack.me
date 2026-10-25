@@ -3,7 +3,7 @@
 
 import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { isMoving, moveBody, newBody } from "./body";
-import { tickCats } from "./catai";
+import { greetAtDoor, tickCats } from "./catai";
 import { passAwakeTime } from "./character";
 import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
@@ -186,7 +186,9 @@ export function rewindAccident(save: Save): NightReport | null {
 export function returnHome(save: Save, visitMinutes: number, roadMinutes: number): NightReport | null {
   const night = advance(save, visitMinutes) ?? advance(save, roadMinutes);
   if (night || save.current.end !== null) return night;
-  endTrip(save.current);
+  const trip = endTrip(save.current);
+  // Персонаж повернувся вдень — коти можуть вийти зустрічати до дверей (§9.12, «Відданість»).
+  if (trip) greetAtDoor(save.current, trip.cat);
   return null;
 }
 

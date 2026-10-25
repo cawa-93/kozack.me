@@ -20,6 +20,7 @@ import {
   DIFFICULTY,
   DIRTY_CLOTHES_CATS,
   DEMANDING_SEEN_MINUTES,
+  DEVOTION,
   DIRTY_LITTER,
   ENERGY,
   ENVY,
@@ -41,6 +42,7 @@ import {
   MIN_CAT_NAP_MINUTES,
   MISCHIEF,
   MOOD,
+  MOOD_LOOK,
   NEED_PER_HOUR,
   NEED_THRESHOLD,
   NIGHT_ACTIVITY,
@@ -533,6 +535,16 @@ function escort(state: GameState, cat: Cat, minutes: number, context: CatContext
   if (act.goal) walk(cat, used, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
   act.minutes -= used;
   act.elapsed += used;
+  if (act.target === "door") {
+    // Дійшов до персонажа біля дверей: вітається — нявкає (як уміє) і ще трохи крутиться поруч; це прояв «Відданості +».
+    if (act.seen !== true && distance(cat, body) <= ARRIVED + keepDistance(cat)) {
+      act.seen = true;
+      act.minutes = Math.min(act.minutes, DEVOTION.stayMinutes);
+      emit(state, { type: "meow", cat: cat.id, ...(meowVoice(cat).silent ? { silent: true as const } : {}) });
+      observe(state, cat, "devotion");
+    }
+    return minutes - used;
+  }
   if (food) {
     // Пів хвилини «вісімкою» під ногами — прояв «Тертя об ноги +», не частіше ніж раз на годину (§9.9).
     if (distance(cat, body) < LEGS.distance) act.rubbed = (act.rubbed ?? 0) + used;
@@ -548,6 +560,54 @@ function escort(state: GameState, cat: Cat, minutes: number, context: CatContext
     observe(state, cat, "follower");
   }
   return minutes - used;
+}
+
+/** Звідки кіт іде зустрічати персонажа біля дверей: не спить і нічим важливим не зайнятий (§9.12). */
+const GREET_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow", "groom"]);
+
+/**
+ * Персонаж повернувся з поїздки (§9.12, рішення автора 2026-10-25): кожен кіт, що не спить, нічим важливим не зайнятий і
+ * не ображений, іде зустрічати до дверей з шансом 0,2 + 0,2 × «Відданість» + 0,4 × (любов − 50) / 50, від 0 до 0,9.
+ * Кіт, що їздив разом із персонажем, не зустрічає. Біля дверей він нявкає й треться об ноги («Балакучість», «Тертя об
+ * ноги»), а кіт біля дверей може втекти, коли їх відчинять наступного разу («Втечі»).
+ */
+export function greetAtDoor(state: GameState, except: number | null): void {
+  const rng = stateRng(state, "behavior");
+  const d = DEVOTION;
+  for (const cat of state.cats) {
+    if (cat.id === except || !home(state, cat) || asleep(cat) || !GREET_FROM.has(cat.act.kind) || isAdapting(state, cat) || avoiding(state, cat)) continue;
+    const chance = clamp(d.greetBase + d.greetStep * traitLevel(cat, "devotion") + (d.greetLove * (cat.love - 50)) / 50, 0, d.greetMax);
+    if (rng.chance(chance)) start(cat, "follow", tileOf(state.character.body), d.greetMinutes, "door");
+  }
+}
+
+/** З якої любові кіт повільно моргає до персонажа (§11.4): 75, а «Відданий» — на 10 нижче за одиницю (§9.12). */
+export function blinkLove(cat: Cat): number {
+  return LOVE_BEHAVIOR.devoted - DEVOTION.blinkStep * Math.max(0, traitLevel(cat, "devotion"));
+}
+
+/** Дії, з яких кіт моргає до персонажа: сидить, блукає, просить уваги (§11.4). */
+const BLINK_ACTS = new Set(["idle", "wander", "attention"]);
+
+/**
+ * Кіт повільно моргає до персонажа (§11.4, правка автора 2026-10-25): щасливий (настрій від 70) і любить його, сидить
+ * поруч (до 4 клітинок) на його очах, не грається, не на руках і не дметься.
+ */
+export function slowBlinks(state: GameState, cat: Cat): boolean {
+  const act = cat.act;
+  if (cat.away !== null || isCarried(state, cat) || cat.mood < MOOD_LOOK.blinkMood || cat.love < blinkLove(cat)) return false;
+  if (!BLINK_ACTS.has(act.kind) || act.goal !== null || (act.kind === "wander" && act.target === "play") || sulking(state, cat)) return false;
+  return distance(cat, state.character.body) <= MOOD_LOOK.blinkDistance && inView(state, cat);
+}
+
+/**
+ * «Відданий» повільно моргає до персонажа, коли кіт без риси з тією самою любов'ю ще не моргав би (любов нижче 75) —
+ * прояв «Відданості +», раз на день (§9.9, рішення автора 2026-10-25).
+ */
+function devotedBlinks(state: GameState): void {
+  for (const cat of state.cats) {
+    if (cat.love < LOVE_BEHAVIOR.devoted && slowBlinks(state, cat)) observe(state, cat, "devotion", 1, false, MINUTES_PER_DAY);
+  }
 }
 
 /** Кіт поруч із персонажем, коли до нього ближче цього (§9.9): прийшов по увагу. */
@@ -1355,6 +1415,7 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   if (context.present) {
     noticeRoomChange(state, rng);
     figureEight(state);
+    devotedBlinks(state);
   }
   for (const cat of state.cats) tickCat(state, cat, minutes, rng, context);
   if (state.cats.length > 1) tickRelations(state, minutes, rng);

@@ -8,11 +8,11 @@ import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { giveTreat } from "../src/sim/care";
 import { rubbingCat } from "../src/sim/body";
 import { changeLove, createCat, idleAct, offend } from "../src/sim/cat";
-import { catOnComputer, decide, tickCats } from "../src/sim/catai";
+import { catOnComputer, decide, greetAtDoor, slowBlinks, tickCats } from "../src/sim/catai";
 import { AFFECTION, CARRY, LEGS, PET, PETTING, TALKATIVE, TOUCHY } from "../src/sim/config";
-import { advance, interact, newGame } from "../src/sim/game";
+import { advance, interact, newGame, returnHome } from "../src/sim/game";
 import { LAUNDRY_BASKET, objectById } from "../src/sim/home";
-import { endTrip } from "../src/sim/trips";
+import { endTrip, HOME_DOOR } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
@@ -492,5 +492,81 @@ describe("«Мстивість» (рішення автора 2026-10-25)", () =
     expect(events.some((e) => e.type === "purr" && e.cat === cat.id)).toBe(true);
     expect(seen(cat, "vengeful")).toBe(1);
     expect(cat.stressedAt).toBeUndefined();
+  });
+});
+
+describe("«Відданість» (рішення автора 2026-10-25)", () => {
+  /** Персонаж повертається з магазину; скільки котів пішли зустрічати. */
+  const greeters = (seed: number, setup: (save: Save) => Cat[]): { save: Save; cats: Cat[] } => {
+    const save = game(seed);
+    save.current.rng.behavior = 300 + seed;
+    const cats = setup(save);
+    save.current.trip = { destination: "shop", phase: "visit", cat: null } as unknown as NonNullable<Save["current"]["trip"]>;
+    returnHome(save, 0.01, 0.01);
+    return { save, cats };
+  };
+
+  it("відданий кіт виходить зустрічати до дверей частіше за холодного й вітається — прояв «+»", () => {
+    let devoted = 0;
+    let cold = 0;
+    let arrived = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const { save, cats } = greeters(seed, (s) => {
+        const a = withCat(s, { devotion: 2 }, { x: 5.5, y: 8.5 });
+        const b = withCat(s, { devotion: -2 }, { x: 6.5, y: 8.5 });
+        a.love = 70;
+        b.love = 70;
+        return [a, b];
+      });
+      const [a, b] = cats as [Cat, Cat];
+      if (a.act.kind === "follow" && a.act.target === "door") devoted += 1;
+      if (b.act.kind === "follow" && b.act.target === "door") cold += 1;
+      if (seed === 0 || a.act.target === "door") {
+        const { events, stop } = recordEvents();
+        for (let i = 0; i < 30 && a.act.kind === "follow"; i++) tickCats(save.current, 0.25, { present: true });
+        stop();
+        if (seen(a, "devotion") > 0) {
+          arrived += 1;
+          expect(events.some((e) => e.type === "meow" && e.cat === a.id)).toBe(true);
+          expect(Math.hypot(a.x - HOME_DOOR.x, a.y - HOME_DOOR.y)).toBeLessThan(2.5);
+        }
+      }
+    }
+    expect(devoted).toBeGreaterThan(cold + 10);
+    expect(arrived).toBeGreaterThan(0);
+  });
+
+  it("сплячий, ображений і той, хто їздив разом, — не зустрічають", () => {
+    const save = game();
+    const sleeper = withCat(save, { devotion: 2 }, { x: 5.5, y: 8.5 });
+    sleeper.love = 100;
+    sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+    const hurt = withCat(save, { devotion: 2 }, { x: 6.5, y: 8.5 });
+    hurt.love = 100;
+    offend(save.current, hurt, -1, "прогнали з місця");
+    const rider = withCat(save, { devotion: 2 }, { x: 7.5, y: 8.5 });
+    rider.love = 100;
+    Object.assign(save.current.character.body, HOME_DOOR);
+    for (let i = 0; i < 10; i++) greetAtDoor(save.current, rider.id);
+    for (const cat of [sleeper, hurt, rider]) expect(cat.act.target).not.toBe("door");
+  });
+
+  it("«Відданий» повільно моргає з нижчої любові — прояв «+», раз на день; кіт без риси — ні", () => {
+    const save = game();
+    faceCat(save);
+    const devoted = withCat(save, { devotion: 1 }, { x: 4.5, y: 7.5 });
+    const plain = withCat(save, {}, { x: 5.5, y: 7.5 });
+    for (const cat of [devoted, plain]) {
+      cat.love = 68;
+      cat.mood = 85;
+    }
+    expect(slowBlinks(save.current, devoted)).toBe(true);
+    expect(slowBlinks(save.current, plain)).toBe(false);
+    expect(catLook(save.current, devoted)).toBe("blink");
+    for (let i = 0; i < 4; i++) {
+      devoted.act = idleAct(30);
+      tickCats(save.current, 0.25, { present: true });
+    }
+    expect(seen(devoted, "devotion")).toBe(1);
   });
 });

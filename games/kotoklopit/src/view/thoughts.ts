@@ -2,8 +2,8 @@
 // і персонаж, як часто, і коли кіт повільно моргає чи сумує. Без Phaser — щоб тести могли перевірити.
 
 import { sulking, traitLevel } from "../sim/cat";
-import { hungerThreshold } from "../sim/catai";
-import { LOVE_BEHAVIOR, MOOD_LOOK, PETTING, THOUGHTS } from "../sim/config";
+import { hungerThreshold, slowBlinks } from "../sim/catai";
+import { MOOD_LOOK, PETTING, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
 import type { IconName } from "./icons";
@@ -77,10 +77,8 @@ export function catLook(state: GameState, cat: Cat): CatLook | null {
   const near = (distance: number): boolean => away(state, cat) <= distance && inView(state, cat);
   if (act.kind === "idle" && act.goal === null && traitLevel(cat, "petting") <= -2 && near(PETTING.bellyDistance)) return "belly";
   if (act.kind === "attention" && act.seen === true && act.goal === null && traitLevel(cat, "affection") > 0 && near(MOOD_LOOK.nudgeDistance)) return "nudge";
-  if (cat.mood < MOOD_LOOK.blinkMood || cat.love < LOVE_BEHAVIOR.devoted) return null;
-  if (!THINKING_ACTS.has(act.kind) || act.goal !== null || playing(cat)) return null;
-  if (!near(MOOD_LOOK.blinkDistance)) return null;
-  return "blink";
+  // Повільне моргання — правило симуляції: «Відданий» моргає з нижчої любові, і це прояв (§9.12).
+  return slowBlinks(state, cat) ? "blink" : null;
 }
 
 /** Тривалість повільного моргання, мс: заплющує, тримає, розплющує. */

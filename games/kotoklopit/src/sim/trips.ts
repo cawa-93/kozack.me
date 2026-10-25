@@ -12,7 +12,7 @@ import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
 import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
-import type { AccidentLoss, Cat, Destination, GameState } from "./types";
+import type { AccidentLoss, Cat, Destination, GameState, Trip } from "./types";
 import { stopWork } from "./work";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
@@ -130,10 +130,10 @@ export function accidentBedtime(state: GameState): number {
   return wakeMinute(state) + MINUTES_PER_DAY - SLEEP_NEED_HOURS * MINUTES_PER_HOUR;
 }
 
-/** Персонаж удома: біля дверей, кіт із переноски виходить поруч. */
-export function endTrip(state: GameState): void {
+/** Персонаж удома: біля дверей, кіт із переноски виходить поруч. Повертає поїздку, що скінчилася. */
+export function endTrip(state: GameState): Trip | null {
   const trip = state.trip;
-  if (!trip) return;
+  if (!trip) return null;
   state.trip = null;
   const body = state.character.body;
   body.x = HOME_DOOR.x;
@@ -150,4 +150,5 @@ export function endTrip(state: GameState): void {
     if (cat.offense?.away === true) cat.offense = { at: cat.stressedAt ?? 0 };
   }
   emit(state, { type: "trip-ended", destination: trip.destination });
+  return trip;
 }

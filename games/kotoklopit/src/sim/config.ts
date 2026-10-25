@@ -522,6 +522,13 @@ export const THOUGHTS = {
 export const MOOD_LOOK = { blinkMood: 70, blinkDistance: 4, blinkSeconds: 8, nudgeDistance: 1.2 } as const;
 /** «Відданість» і «Образливість» змінюють зростання й втрати любові на 25% за одиницю (§9.12). */
 export const LOVE_TRAIT_STEP = 0.25;
+/**
+ * «Відданість» (§9.12, рішення автора 2026-10-25, `TRAITS_REVIEW.md`). Персонаж повернувся з поїздки — кіт, що не спить і
+ * нічим важливим не зайнятий, іде зустрічати до дверей з шансом `greetBase` + `greetStep` × рівень + `greetLove` × (любов −
+ * 50) / 50, від 0 до `greetMax`; до персонажа він іде щонайбільше `greetMinutes` хвилин, а дійшовши, нявкає й крутиться
+ * поруч `stayMinutes` хвилин. «+» повільно моргає до персонажа вже з любові 75 − `blinkStep` × рівень.
+ */
+export const DEVOTION = { greetBase: 0.2, greetStep: 0.2, greetLove: 0.4, greetMax: 0.9, greetMinutes: 6, stayMinutes: 2, blinkStep: 10 } as const;
 
 /** Здоров'я кота за день від середнього настрою (§9.6): поріг — зміна; між 25 і 75 — 0. */
 export const MOOD_HEALTH_DAMAGE: readonly { atMost: number; health: number }[] = [
