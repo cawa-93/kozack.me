@@ -3071,6 +3071,8 @@ export function windowWeight(state: GameState, cat: Cat): number {
   if (hour < WINDOW.from || hour >= WINDOW.to || isNewborn(cat)) return 0;
   const level = traitLevel(cat, "window");
   if (level === -1) return 0;
+  // Щойно злився біля вікна — якийсь час туди не йде.
+  if (cat.windowAngryAt !== undefined && absoluteMinute(state.day, state.minute) - cat.windowAngryAt < WINDOW.angerPause) return 0;
   return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level));
 }
 
@@ -3090,13 +3092,19 @@ export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
  */
 function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const act = cat.act;
+  // Сідає на дошку підвіконня біля скла, обличчям до вікна.
   const pane = WINDOWS.find((w) => w.sill === act.target);
-  if (pane) cat.facing = pane.facing;
+  if (pane) {
+    cat.facing = pane.facing;
+    cat.x = pane.seat.x;
+    cat.y = pane.seat.y;
+  }
   const level = traitLevel(cat, "window");
   if (level <= -2) {
     if (act.elapsed < WINDOW.angerMinutes || act.refused === true) return;
     act.refused = true;
     act.minutes = 0;
+    cat.windowAngryAt = absoluteMinute(state.day, state.minute);
     emit(state, { type: "window-angry", cat: cat.id });
     observe(state, cat, "window", -1, false, WINDOW.observeEvery);
     return;

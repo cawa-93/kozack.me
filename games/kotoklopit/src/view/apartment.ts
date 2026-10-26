@@ -209,6 +209,7 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   const inset = 4;
   const top = { x: r.x + inset, y: r.y - height + inset, w: r.w - inset * 2, h: r.h - inset * 2 };
   if (object.kind === "boxes") return boxesView(g, object, top, height, depth);
+  if (object.kind === "windowsill") return sillView(g, object, r, height, depth);
   // Мішок, бак і аптечку цілком малює `storagelook.ts`: їхня форма залежить від наповнення.
   if (SHAPED_STORAGES.has(object.kind)) {
     // Фігура стоїть на підлозі клітинки: від її низу на висоту речі (ручка чи горловина — трохи вище).
@@ -223,6 +224,30 @@ function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object
   g.lineStyle(3, COLORS.ink).strokeRect(top.x, top.y, top.w, top.h + height);
   g.lineStyle(2, COLORS.ink, 0.7).lineBetween(top.x, top.y + top.h, top.x + top.w, top.y + top.h);
   decorate(g, object.kind, top, height);
+  return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
+}
+
+/**
+ * Підвіконня (§9.12, «Вікно»): вузька біла дошка вздовж стіни з вікном, а під нею — батарея з ребрами. Решта клітинки — підлога
+ * перед батареєю; кіт сидить на дошці (`WINDOWS[].seat`).
+ */
+function sillView(g: Phaser.GameObjects.Graphics, object: HomeObject, r: { x: number; y: number; w: number; h: number }, height: number, depth: number): ObjectView {
+  const back = WINDOWS.find((w) => w.sill === object.id)?.wall.y !== object.y;
+  // Слід на підлозі: смуга біля задньої стіни чи біля лівої.
+  const x0 = r.x + (back ? 4 : 2);
+  const x1 = back ? r.x + r.w - 4 : r.x + 24;
+  const y0 = r.y + 2;
+  const y1 = back ? r.y + 20 : r.y + r.h - 2;
+  // Батарея — лицьова грань з ребрами.
+  g.fillStyle(0xc9ccd1).fillRect(x0, y1 - height, x1 - x0, height);
+  g.lineStyle(1.5, COLORS.ink, 0.55);
+  const fins = Math.max(3, Math.round((x1 - x0) / 7));
+  for (let i = 1; i < fins; i++) g.lineBetween(x0 + ((x1 - x0) * i) / fins, y1 - height + 3, x0 + ((x1 - x0) * i) / fins, y1 - 2);
+  g.lineStyle(2.5, COLORS.ink).strokeRect(x0, y1 - height, x1 - x0, height);
+  // Дошка підвіконня згори, трохи нависла над батареєю.
+  const top = { x: x0 - 2, y: y0 - height, w: x1 - x0 + 4, h: y1 - y0 };
+  g.fillStyle(FILL.windowsill).fillRect(top.x, top.y, top.w, top.h);
+  g.lineStyle(2.5, COLORS.ink).strokeRect(top.x, top.y, top.w, top.h);
   return { object, top, anchor: { x: top.x + top.w / 2, y: top.y - 4 }, depth, graphics: g };
 }
 
@@ -340,12 +365,6 @@ function decorate(
       // Шафа з пилососом: дверцята й ручка.
       g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
       g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
-      break;
-    case "windowsill":
-      // Підвіконня (§9.12, «Вікно»): біла дошка, а під нею — батарея з ребрами.
-      g.fillStyle(0xc9ccd1).fillRect(t.x + 4, t.y + t.h + 4, t.w - 8, height - 6);
-      g.lineStyle(1.5, COLORS.ink, 0.6);
-      for (let i = 1; i < 7; i++) g.lineBetween(t.x + 4 + ((t.w - 8) * i) / 7, t.y + t.h + 5, t.x + 4 + ((t.w - 8) * i) / 7, t.y + t.h + height - 3);
       break;
     case "wardrobe":
       // Шафа (§9.12, «Лазіння»): дві стулки з ручками.

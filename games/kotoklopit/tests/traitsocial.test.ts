@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip, nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
@@ -936,5 +937,22 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
     }
     expect(swatted).toBeGreaterThan(5);
     expect(swatted).toBeLessThan(28);
+  });
+});
+
+describe("сценарій «Гра й стосунки котів» (`scenarios/play-social.json`)", () => {
+  it("«Орнітолог» «кекає» на підвіконні, «Нудьгує біля вікна» злиться й шипить, «Фанат м'яти» накатався й спить", () => {
+    const scenario = FILE_SCENARIOS["play-social"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const byName = (name: string): Cat => save.current.cats.find((c) => c.name === name)!;
+    const { events, stop } = recordEvents();
+    advance(save, 40);
+    stop();
+    const of = (name: string, type: string): boolean => events.some((e) => e.type === type && "cat" in e && e.cat === byName(name).id);
+    expect(of("Пташка", "chatter")).toBe(true);
+    expect(of("Буркотун", "window-angry")).toBe(true);
+    expect(of("Буркотун", "hissed")).toBe(true);
+    expect(byName("М'ятка").act.kind).toBe("sleep");
   });
 });

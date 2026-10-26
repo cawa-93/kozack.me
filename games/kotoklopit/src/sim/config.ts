@@ -714,7 +714,8 @@ export const CATNIP = {
  * вікна» (−2) — як кіт без риси. Біля вікна потреба гри знімається на `playPerHour` × той самий множник за годину, настрій
  * +`moodPerHour` (від `strongLevel` — +`strongMood`); «+» «кекає» на птахів — у середньому раз на `chatterMinutes` хвилин.
  * «Нудьгує біля вікна» за `angerMinutes` хвилин злиться: шипить на кота, що не спить, поруч (до `redirectReach` клітинок;
- * стосунки `relation`) чи йде дерти диван. Прояви — не частіше ніж раз на `observeEvery` хвилин.
+ * стосунки `relation`) чи йде дерти диван, а тоді `angerPause` хвилин на підвіконня не йде (перевірка скриншотом 2026-10-26: він
+ * вертався знову й знову). Прояви — не частіше ніж раз на `observeEvery` хвилин.
  */
 export const WINDOW = {
   from: 7,
@@ -731,6 +732,7 @@ export const WINDOW = {
   angerMinutes: 4,
   redirectReach: 4,
   relation: -2,
+  angerPause: 180,
   observeEvery: 60,
 } as const;
 /**
