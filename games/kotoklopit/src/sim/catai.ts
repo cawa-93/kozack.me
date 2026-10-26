@@ -3477,6 +3477,10 @@ function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
     faceOff(a, b, fight.gap);
     a.act.paired = true;
     b.act.paired = true;
+    // Зчепилися одразу (з протистояння) — стрес для обох, як і в `metFoe` (§9.4, В2; перевірка блоку 3, 2026-10-26: бійка з
+    // протистояння, тобто майже кожна бійка ворогів, стресом не була, і друга після неї не втішали).
+    upset(state, a, b.id);
+    upset(state, b, a.id);
   }
   const at = near ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : { x: b.x, y: b.y };
   changeMood(state, a, fight.mood, "бійка");

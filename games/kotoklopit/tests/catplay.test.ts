@@ -247,6 +247,28 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
     expect(c.upset).toBeDefined();
   });
 
+  it("бійка з протистояння (коти вже зчепилися) — теж стрес для обох (перевірка блоку 3)", () => {
+    let fights = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const a = withCat(save, {}, { x: 9.2, y: 8.5 });
+      const b = withCat(save, {}, { x: 9.8, y: 8.5 });
+      a.sterilized = true;
+      b.sterilized = true;
+      setRelation(save, a, b, -80);
+      a.act = { kind: "standoff", target: `cat:${b.id}`, goal: null, minutes: 0.01, elapsed: 4, paired: true };
+      b.act = { kind: "standoff", target: `cat:${a.id}`, goal: null, minutes: 0.01, elapsed: 4, paired: true };
+      const { events, stop } = recordEvents();
+      tickCats(save.current, 0.05, { present: false });
+      stop();
+      if (count(events, "cat-fight") === 0) continue;
+      fights++;
+      expect(a.upset?.by).toBe(b.id);
+      expect(b.upset?.by).toBe(a.id);
+    }
+    expect(fights).toBeGreaterThan(5);
+  });
+
   it("після феєрверків друга втішають, коли він вийде зі схованки: година на втіху — від виходу (перевірка блоку 3)", () => {
     const rate = groomRate(2.5, (save, _a, b) => {
       b.act = idleAct(30);
