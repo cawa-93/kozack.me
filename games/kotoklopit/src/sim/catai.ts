@@ -3468,12 +3468,16 @@ export function noMemory(cat: Cat): number {
 
 /**
  * Чи піде кіт на заборонене місце (§9.12, «Слухняність»): «go» — «ні» не пам'ятає; «skip» — пам'ятає й туди не йде; «remember» —
- * пам'ятає, і це видно: «+» підходить, дивиться й розвертається.
+ * пам'ятає, і це видно: «+» підходить, дивиться й розвертається. Підходив до цього місця менше ніж пів години тому — «skip»
+ * (рішення автора 2026-10-26: голодний «Слухняний» без корму вертався до столу майже щохвилини).
  */
 export function noGo(state: GameState, cat: Cat, zone: ForbiddenZone): "go" | "skip" | "remember" {
+  const now = absoluteMinute(state.day, state.minute);
   const at = cat.toldNo?.[zone];
-  if (at === undefined || absoluteMinute(state.day, state.minute) - at >= noMemory(cat)) return "go";
-  return traitLevel(cat, "obedience") > 0 ? "remember" : "skip";
+  if (at === undefined || now - at >= noMemory(cat)) return "go";
+  if (traitLevel(cat, "obedience") <= 0) return "skip";
+  const visited = cat.noVisitAt?.[zone];
+  return visited !== undefined && now - visited < OBEDIENCE.approachEvery ? "skip" : "remember";
 }
 
 /**
@@ -3487,8 +3491,12 @@ export function sayNo(state: GameState, cat: Cat, zone: ForbiddenZone, rng: Rng)
   if (traitLevel(cat, "obedience") <= -OBEDIENCE.comebackLevel && rng.chance(OBEDIENCE.comeback)) cat.comeback = { zone, at: now + OBEDIENCE.comebackMinutes };
 }
 
-/** «+» іде до забороненого місця, щоб, підійшовши, згадати «ні» й розвернутися (§9.12, «Слухняність»). */
+/**
+ * «+» іде до забороненого місця, щоб, підійшовши, згадати «ні» й розвернутися (§9.12, «Слухняність»); туди знову — не раніше ніж
+ * за пів години (`noGo`).
+ */
 function startRemember(state: GameState, cat: Cat, zone: ForbiddenZone, objectId: string): void {
+  (cat.noVisitAt ??= {})[zone] = absoluteMinute(state.day, state.minute);
   start(cat, "idle", besideObject(state, objectById(objectId)), OBEDIENCE.rememberMinutes, `no:${zone}`);
 }
 

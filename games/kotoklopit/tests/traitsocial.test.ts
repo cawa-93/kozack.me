@@ -16,6 +16,7 @@ import { addCat } from "../src/sim/night";
 import { isEnemy, nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import { GOODS } from "../src/sim/shop";
+import { absoluteMinute } from "../src/sim/time";
 import type { BowlItem, Cat, LitterItem, Save, ToyItem, TraitLevel } from "../src/sim/types";
 import { startWork } from "../src/sim/work";
 import { careCard } from "../src/ui/cards";
@@ -569,7 +570,7 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
     expect(seen(cat, "obedience")).toBe(1);
   });
 
-  it("думка «пам'ятає «ні»» — не частіше ніж раз на 30 хвилин на кота, хоч голодний ходить до столу частіше (рішення автора 2026-10-26)", () => {
+  it("голодний «Слухняний» без корму підходить до столу не частіше ніж раз на 30 хв, а між підходами просить корм; думка — теж раз на 30 хв (рішення автора 2026-10-26)", () => {
     const save = game();
     Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
     const cat = withCat(save, { obedience: 2, thief: 2 }, { x: 15.5, y: 4.5 });
@@ -579,23 +580,39 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
     sayNo(save.current, cat, "kitchen", createRng(1));
     const { events, stop } = recordEvents();
     const thoughts: number[] = [];
-    let approaches = 0;
-    let before = false;
+    const approaches: number[] = [];
+    let begs = 0;
+    let before = "";
     for (let t = 0; t < 120; t += 0.25) {
       cat.needs.fatigue = 0;
       const seen = events.length;
       save.current.minute += 0.25;
       tickCats(save.current, 0.25, { present: true });
       if (events.slice(seen).some((e) => e.type === "cat-remembered" && e.cat === cat.id)) thoughts.push(t);
-      const now = cat.act.target === "no:kitchen";
-      if (now && !before) approaches += 1;
+      const now = `${cat.act.kind}:${cat.act.target}`;
+      if (now !== before && cat.act.target === "no:kitchen") approaches.push(t);
+      if (now !== before && (cat.act.kind === "beg" || (cat.act.kind === "attention" && cat.act.forFood === true))) begs += 1;
       before = now;
     }
     stop();
-    // Підходить і розвертається так само часто, а думка — рідше.
+    expect(approaches.length).toBeGreaterThan(1);
+    for (let i = 1; i < approaches.length; i++) expect((approaches[i] ?? 0) - (approaches[i - 1] ?? 0)).toBeGreaterThanOrEqual(OBEDIENCE.approachEvery);
+    expect(begs).toBeGreaterThan(approaches.length);
     expect(thoughts.length).toBeGreaterThan(1);
-    expect(approaches).toBeGreaterThan(thoughts.length);
     for (let i = 1; i < thoughts.length; i++) expect((thoughts[i] ?? 0) - (thoughts[i - 1] ?? 0)).toBeGreaterThanOrEqual(OBEDIENCE.thoughtEvery);
+    expect(events.some((e) => e.type === "stole" && e.cat === cat.id)).toBe(false);
+  });
+
+  it("підійшовши до забороненого місця, «+» пів години туди не йде — до іншого місця може (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const cat = withCat(save, { obedience: 2 }, { x: 15.5, y: 4.5 });
+    sayNo(save.current, cat, "kitchen", createRng(1));
+    sayNo(save.current, cat, "desk", createRng(1));
+    cat.noVisitAt = { kitchen: absoluteMinute(save.current.day, save.current.minute) };
+    expect(noGo(save.current, cat, "kitchen")).toBe("skip");
+    expect(noGo(save.current, cat, "desk")).toBe("remember");
+    save.current.minute += OBEDIENCE.approachEvery;
+    expect(noGo(save.current, cat, "kitchen")).toBe("remember");
   });
 
   it("«Анархіст» інколи повертається на кухонний стіл за 10 хвилин — прояв «−»; «Пропускає повз вуха» — за годину", () => {
