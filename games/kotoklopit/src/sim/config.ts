@@ -1283,9 +1283,10 @@ export const RELATIONS = {
   /**
    * Гра з другом: друг чекає ініціатора до `wait` хвилин, `minutes` — обом від зустрічі; пара — поки обидва ближче `reach` клітинки
    * (перевірка стосунків 2026-10-26). З приятелем — вага `palWeight`, удвічі менша (§9.4, рішення автора 2026-10-26, Г1); кошеня
-   * кличе будь-кого, хто не ворог, з вагою `weight` × `kitten` — 1,5 (Г2).
+   * кличе будь-кого, хто не ворог, з вагою `weight` × `kitten` — 1,5 (Г2). Старий кличе з вагою × `old`, «Ігривість» — × (1 +
+   * `playfulStep` × рівень), не менше нуля (Г7).
    */
-  wrestle: { weight: 0.6, palWeight: 0.3, kitten: 2.5, minutes: 3, play: 40, mood: 2, relation: 1, wait: 10, reach: 1.5 },
+  wrestle: { weight: 0.6, palWeight: 0.3, kitten: 2.5, old: 0.5, playfulStep: 0.5, minutes: 3, play: 40, mood: 2, relation: 1, wait: 10, reach: 1.5 },
   /** Вилизує, поки друг ближче `reach` клітинки; відійшов далі — вилизування скасовується (перевірка стосунків 2026-10-26). */
   groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2, reach: 1.5 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },

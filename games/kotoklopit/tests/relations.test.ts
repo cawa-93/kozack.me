@@ -19,7 +19,8 @@ function game(): Save {
   return save;
 }
 
-function withCat(save: Save, traits: Record<string, TraitLevel> = {}, at = { x: 9.5, y: 8.5 }, ageWeeks = 30): Cat {
+// Дорослий, не старий (старший за 5 тижнів кличе гратися вдвічі рідше, Г7).
+function withCat(save: Save, traits: Record<string, TraitLevel> = {}, at = { x: 9.5, y: 8.5 }, ageWeeks = 3): Cat {
   const cat = createCat(save.current, createRng(save.current.cats.length + 7), { source: "shelter", ageWeeks, at });
   cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
   cat.arrivedDay = -10;
@@ -103,7 +104,7 @@ describe("друзі (§9.4)", () => {
   });
 
   it("кошеня кличе гратися будь-кого, хто не ворог, — і з вагою 1,5 замість 0,6 (рішення автора 2026-10-26, Г2)", () => {
-    const chosen = (value: number, kittenAge: number, mateAge = 30): number => {
+    const chosen = (value: number, kittenAge: number, mateAge = 3): number => {
       let count = 0;
       for (let seed = 0; seed < 400; seed++) {
         const save = game();
@@ -122,8 +123,31 @@ describe("друзі (§9.4)", () => {
     expect(chosen(0, 1, 1)).toBeGreaterThan(0);
     expect(chosen(-60, 1)).toBe(0);
     // Дорослий нейтрального не кличе, а друга кличе рідше, ніж кошеня.
-    expect(chosen(0, 30)).toBe(0);
-    expect(chosen(80, 1)).toBeGreaterThan(chosen(80, 30) * 1.5);
+    expect(chosen(0, 3)).toBe(0);
+    expect(chosen(80, 1)).toBeGreaterThan(chosen(80, 3) * 1.5);
+  });
+
+  it("старий кличе друга гратися вдвічі рідше, «Ігривість» — ±50% за одиницю, «Нудьгар» не кличе (рішення автора 2026-10-26, Г7)", () => {
+    const chosen = (traits: Record<string, TraitLevel>, ageWeeks = 3): number => {
+      let count = 0;
+      for (let seed = 0; seed < 600; seed++) {
+        const save = game();
+        const a = withCat(save, traits, { x: 8.5, y: 8.5 }, ageWeeks);
+        const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+        setRelation(save, a, b, 80);
+        b.act = idleAct(30);
+        a.needs.play = 100;
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind === "wrestle" && a.act.target === `cat:${b.id}`) count++;
+      }
+      return count;
+    };
+    const plain = chosen({});
+    expect(chosen({}, 6)).toBeLessThan(plain * 0.7);
+    expect(chosen({}, 6)).toBeGreaterThan(plain * 0.3);
+    expect(chosen({ playful: 2 })).toBeGreaterThan(plain * 1.4);
+    expect(chosen({ playful: -1 })).toBeLessThan(plain * 0.75);
+    expect(chosen({ playful: -2 })).toBe(0);
   });
 
   it("брати й сестри починають з +50 — одразу друзі (рішення автора 2026-10-26, Г2: було +30)", () => {
