@@ -58,7 +58,7 @@ import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
 import { targetById, targetOf, type Target } from "./targets";
-import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
+import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, Vec } from "./types";
 import { exercise } from "./weight";
 import { startWork, stopWork } from "./work";
 
@@ -84,6 +84,12 @@ function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal
 
 export function isDish(item: Item | null): item is Dish {
   return item?.kind === "raw" || item?.kind === "meal" || item?.kind === "burnt";
+}
+
+/** Запас холодильника в руках (§6.4): сира порція — продукти, мамин судочок — судочки; інше — null. */
+function fridgeSupply(item: Item | null): { product: "food" | "momMeal"; quality: Quality } | null {
+  if (item?.kind === "raw") return { product: "food", quality: item.quality };
+  return item?.kind === "meal" && item.mom === true ? { product: "momMeal", quality: item.quality } : null;
 }
 
 /** Коротке натискання дії (§10). */
@@ -150,13 +156,18 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
   const character = state.character;
   switch (target.kind) {
     case "fridge": {
-      if (held?.kind === "raw") {
-        returnSupply(state, "food", held.quality);
+      // Сиру порцію й мамин судочок кладуть назад (§6.4).
+      const back = fridgeSupply(held);
+      if (held !== null && back !== null) {
+        returnSupply(state, back.product, back.quality);
         character.held = null;
         emit(state, { type: "put", object: target.id, item: held });
         return null;
       }
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // Спершу — мамин судочок: він уже готовий, без плити (§6.4, рішення автора 2026-10-26).
+      const mom = useSupply(state, "momMeal");
+      if (mom !== null) return take(state, target, { kind: "meal", quality: mom, mom: true });
       const quality = useSupply(state, "food");
       if (quality === null) return refuse(state, target.id, { reason: "empty", product: "food" });
       return take(state, target, { kind: "raw", quality });
@@ -864,11 +875,13 @@ export function dropEverything(state: GameState): void {
   stopWork(state);
   character.activity = null;
   const held = character.held;
-  if (held?.kind === "raw") returnSupply(state, "food", held.quality);
+  // Сира порція й мамин судочок — назад у холодильник (§6.4).
+  const back = fridgeSupply(held);
+  if (back !== null) returnSupply(state, back.product, back.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
   if (held?.kind === "toy") dropToy(state);
   // Страву з рук — на вільну поверхню кухні, а не в нікуди.
-  if (held?.kind === "meal" || held?.kind === "burnt") {
+  if (back === null && (held?.kind === "meal" || held?.kind === "burnt")) {
     const surfaces = state.home.surfaces;
     const free = SURFACE_IDS.find((id) => surfaces[id] === null);
     if (free !== undefined) surfaces[free] = held;

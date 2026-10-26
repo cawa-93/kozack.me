@@ -18,7 +18,7 @@ import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
 import { walkTo } from "./helpers";
 
-const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "bell", "shampoo", "detergent"];
+const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "bell", "shampoo", "detergent", "catnip", "momMeal"];
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 3 });
 const storage = (object: string) => STORAGES.find((s) => s.object === object)!;
@@ -29,10 +29,11 @@ describe("сховища (§6.4)", () => {
     for (const s of STORAGES) expect(objectById(s.object)).toBeDefined();
   });
 
-  it("запаси, які треба дістати, мають власне сховище", () => {
-    for (const product of ["food", "catFood", "sterileFood", "litter"] as const) {
+  it("запаси, які треба дістати, мають власне сховище; мамині судочки — у холодильнику з продуктами (рішення автора 2026-10-26)", () => {
+    for (const product of ["catFood", "sterileFood", "litter"] as const) {
       expect(STORAGES.find((s) => s.products.includes(product))!.products).toEqual([product]);
     }
+    expect(storage("fridge").products).toEqual(["food", "momMeal"]);
   });
 
   it("видно лише придбане й лише в фокусі; поза фокусом — нічого, навіть нулів", () => {

@@ -13,6 +13,7 @@ import {
   STORAGE_LIMITS,
   START_SUPPLIES,
   THINGS,
+  UNSOLD,
   UTILITIES_BASE,
 } from "./config";
 import { emit, endGame } from "./events";
@@ -69,8 +70,11 @@ export function takeSupply(state: GameState, product: Product): Quality | null {
   return quality;
 }
 
-/** Нашийник і дзвіночок — штучні, котяча м'ята — не щоденна (§9.12): що вони закінчилися, не підказують. */
-const NO_HINT: readonly Product[] = ["collar", "bell", "catnip"];
+/**
+ * Нашийник і дзвіночок — штучні, котяча м'ята — не щоденна (§9.12), мамині судочки не замовити (§6.4): що вони закінчилися, не
+ * підказують.
+ */
+const NO_HINT: readonly Product[] = ["collar", "bell", "catnip", ...UNSOLD];
 
 /**
  * Запас уперше закінчився, а в дорозі його немає (§6.4, правка автора 2026-10-23): кнопка телефону
@@ -194,9 +198,9 @@ export function unpack(state: GameState): { product: Product; amount: number }[]
   return moved;
 }
 
-/** Запас можна замовити чи купити, поки його немає в ящиках біля входу (§6.4). */
+/** Запас можна замовити чи купити, поки його немає в ящиках біля входу (§6.4); мамині судочки не продаються. */
 export function canOrderProduct(state: GameState, product: Product): boolean {
-  return boxCount(state, product) === 0;
+  return !UNSOLD.includes(product) && boxCount(state, product) === 0;
 }
 
 /** Скільки запасу їде доставкою чи чекає під дверима. */

@@ -153,7 +153,11 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   detergent: { units: { cheap: 4, premium: 4 }, price: { cheap: 10, premium: 25 } },
   // Котяча м'ята й мататабі (§9.12, «Котяча м'ята», 2026-10-26): по 5 разів.
   catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 30 } },
+  // Мамині судочки (§4.1, §6.4, рішення автора 2026-10-26): пакет від мами — 2 судочки; не продаються (`UNSOLD`), ціни немає.
+  momMeal: { units: { cheap: 2, premium: 2 }, price: { cheap: 0, premium: 0 } },
 };
+/** Запаси, яких немає в магазині (§6.4): мамині судочки — лише від мами (§4.1, рішення автора 2026-10-26). */
+export const UNSOLD: readonly Product[] = ["momMeal"];
 /** На старті вдома лише їжа й трохи засобів гігієни, без ліків (§6.4, правило автора 2026-10-20). */
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
@@ -170,6 +174,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   shampoo: { cheap: 0, premium: 0 },
   detergent: { cheap: 0, premium: 0 },
   catnip: { cheap: 0, premium: 0 },
+  momMeal: { cheap: 0, premium: 0 },
 };
 /** Наповнення сховища (§6.4): межі часток для станів «мало», «половина», «багато»; порожньо — 0, ущерть — 1. */
 export const FILL_STAGES = [0.45, 0.75, 1] as const;
@@ -189,6 +194,8 @@ export const STORAGE_LIMITS: Record<Product, number> = {
   shampoo: 10,
   detergent: 10,
   catnip: 10,
+  // Мамині судочки в холодильнику (§6.4, рішення автора 2026-10-26).
+  momMeal: 10,
 };
 /** Стартовий пакет кота з притулку (§9.12): порції дешевого корму й чистки дешевого наповнювача. */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
@@ -1205,7 +1212,8 @@ export const MODIFIERS = {
   call: { from: 10 * 60, to: 20 * 60, minutes: 30, ignored: -5 },
   /**
    * «Мама привезла гостинців» (§4.1, рішення автора 2026-10-26): дзвонить у двері у випадкову хвилину `from`–`to`; персонажа
-   * немає — приходить, щойно він повернувся, якщо до `until`, інакше лишає гостинці під дверима.
+   * немає — приходить, щойно він повернувся, якщо до `until`, інакше лишає гостинці під дверима. Гостинці — пакет маминих
+   * судочків (`PRODUCTS.momMeal`, §6.4).
    */
   mom: { from: 11 * 60, to: 18 * 60, until: 20 * 60 },
   traffic: { traffic: 1.5, "empty-roads": 0.6 } as Record<string, number>,

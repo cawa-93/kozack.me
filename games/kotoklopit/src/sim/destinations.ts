@@ -19,6 +19,7 @@ import {
   STERILIZATION,
   THINGS,
   TRAIT_EFFECTS,
+  UNSOLD,
   VET,
 } from "./config";
 import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS } from "./breeds";
@@ -36,9 +37,9 @@ import { changeReputation } from "./work";
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
 export type Goods = { product: Product } | { thing: ThingKind };
 
-/** Усі товари магазину по порядку. */
+/** Усі товари магазину по порядку; мамині судочки не продаються (§6.4) — їх у каталозі немає. */
 export const GOODS: readonly Goods[] = [
-  ...(Object.keys(PRODUCTS) as Product[]).map((product) => ({ product })),
+  ...(Object.keys(PRODUCTS) as Product[]).filter((product) => !UNSOLD.includes(product)).map((product) => ({ product })),
   ...(Object.keys(THINGS) as ThingKind[]).map((thing) => ({ thing })),
 ];
 

@@ -83,7 +83,8 @@ export type IconName =
   | "bird"
   | "table"
   | "chilly"
-  | "hot";
+  | "hot"
+  | "mom-meal";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -622,6 +623,25 @@ Object.assign(ICONS, {
     g.fillStyle(0x6fa8d6).fillTriangle(33, 24, 29, 31, 37, 31).fillCircle(33, 32, 4);
   },
 } satisfies Partial<Record<IconName, Draw>>);
+
+/** Мамині судочки (§4.1, §6.4, рішення автора 2026-10-26). */
+Object.assign(ICONS, {
+  "mom-meal": (g: Phaser.GameObjects.Graphics) => drawMomMeal(g, 20, 34, 1.25),
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
+ * Мамин судочок (§6.4): прозорий пластиковий контейнер зі стравою й синя кришка із сердечком — щоб не сплутати ні зі
+ * звичайною тарілкою, ні з сирими продуктами. `x`, `y` — середина низу, `s` — масштаб; та сама форма в руках і на столі.
+ */
+export function drawMomMeal(g: Phaser.GameObjects.Graphics, x: number, y: number, s = 1): void {
+  g.fillStyle(0xeef3f5).fillRoundedRect(x - 11 * s, y - 13 * s, 22 * s, 13 * s, 3 * s);
+  g.fillStyle(0xe0893a).fillRoundedRect(x - 9 * s, y - 9 * s, 18 * s, 7 * s, 2 * s);
+  g.lineStyle(2, INK).strokeRoundedRect(x - 11 * s, y - 13 * s, 22 * s, 13 * s, 3 * s);
+  g.fillStyle(0x4f86c6).fillRoundedRect(x - 12.5 * s, y - 18 * s, 25 * s, 6 * s, 2 * s);
+  g.lineStyle(2, INK).strokeRoundedRect(x - 12.5 * s, y - 18 * s, 25 * s, 6 * s, 2 * s);
+  g.fillStyle(0xd9455f).fillCircle(x - 1.3 * s, y - 15.6 * s, 1.5 * s).fillCircle(x + 1.3 * s, y - 15.6 * s, 1.5 * s);
+  g.fillTriangle(x - 2.8 * s, y - 15.2 * s, x + 2.8 * s, y - 15.2 * s, x, y - 12.8 * s);
+}
 
 /** Позначки поверх іконки (§11.4): перекреслення на всю іконку, знак питання й галочка — кружечком у куті. */
 const MARKS: Record<Mark, Draw> = {

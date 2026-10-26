@@ -782,4 +782,18 @@ describe("«Гризіння» (§9.12, рішення автора 2026-10-25)"
     expect(events.some((e) => e.type === "bag-chewed" && e.product === "catFood")).toBe(true);
     expect(cat.needs.hunger).toBeLessThan(10);
   });
+
+  it("пакет маминих судочків у ящиках (рішення автора 2026-10-26): прогризений — судочок пропадає, як продукти, кіт його не їсть", () => {
+    const save = game();
+    save.current.home.boxes = { momMeal: { cheap: 2, premium: 0 } };
+    const cat = withCat(save, { chewing: 1 });
+    cat.needs.hunger = 70;
+    chewAt(cat, "boxes");
+    const { events, stop } = recordEvents();
+    tickCats(save.current, CHEWING.minMinutes + 0.1, { present: true });
+    stop();
+    expect(save.current.home.boxes?.momMeal?.cheap).toBe(1);
+    expect(events.some((e) => e.type === "bag-chewed" && e.product === "momMeal")).toBe(true);
+    expect(cat.needs.hunger).toBeGreaterThan(60);
+  });
 });

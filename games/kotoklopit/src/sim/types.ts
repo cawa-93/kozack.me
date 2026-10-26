@@ -7,8 +7,11 @@ export type Difficulty = "easy" | "normal" | "hard";
 
 /** Якість речей і запасів: дешеве чи дороге (§6.4). */
 export type Quality = "cheap" | "premium";
-/** Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent" | "catnip";
+/**
+ * Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. Мамині судочки (`momMeal`,
+ * §4.1, рішення автора 2026-10-26) — лише від мами, у магазині їх немає.
+ */
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent" | "catnip" | "momMeal";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -30,6 +33,8 @@ export interface Vec {
 export interface Dish {
   kind: "raw" | "meal" | "burnt";
   quality: Quality;
+  /** Мамин судочок (§6.4, рішення автора 2026-10-26): готова страва з холодильника — туди її й повертають. */
+  mom?: true;
 }
 
 /** Порція котячого корму, яку несуть до миски (§9.12). */

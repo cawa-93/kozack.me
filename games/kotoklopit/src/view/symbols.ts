@@ -21,6 +21,7 @@ export const PRODUCT_ICONS: Record<Product, IconName> = {
   shampoo: "shampoo",
   detergent: "detergent",
   catnip: "catnip",
+  momMeal: "mom-meal",
 };
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
@@ -29,7 +30,8 @@ export function itemIcon(item: Item): IconName {
     case "raw":
       return "food";
     case "meal":
-      return "meal";
+      // Мамин судочок — своя іконка (§6.4, рішення автора 2026-10-26).
+      return item.mom === true ? "mom-meal" : "meal";
     case "burnt":
       return "smoke";
     case "catfood":

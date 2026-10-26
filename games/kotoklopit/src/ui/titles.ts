@@ -27,6 +27,8 @@ export const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) =
   shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
   detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у пральній машині" },
   catnip: { name: "Котяча м'ята", unit: (n) => `${n} ${plural(n, "раз", "рази", "разів")}`, place: "в аптечці" },
+  // Лише від мами (§4.1, §6.4, рішення автора 2026-10-26): у магазині їх немає.
+  momMeal: { name: "Мамині судочки", unit: (n) => `${n} ${plural(n, "судочок", "судочки", "судочків")}`, place: "у холодильнику" },
 };
 
 

@@ -9,8 +9,8 @@ import { hideSpot, isDirty, startAct } from "./catai";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, VET, WATER_CAPACITY } from "./config";
-import { takeSupply } from "./economy";
+import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WATER_CAPACITY } from "./config";
+import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
@@ -281,9 +281,9 @@ const crossed = (from: number, minutes: number, at: number): boolean => from % 1
 
 /**
  * Мама з гостинцями (§4.1, рішення автора 2026-10-26): удень дзвонить у двері (коти реагують за «Гостями», §9.12), за
- * `GUESTS.ringLead` хвилин заходить — двері відчинено, страви на кухні. Персонажа немає вдома — приходить, щойно він
- * повернувся, якщо до `MODIFIERS.mom.until`; інакше (чи він пішов між дзвінком і візитом) лишає гостинці під дверима, без
- * дзвінка: на кухні вони з'являються, коли персонаж повернувся.
+ * `GUESTS.ringLead` хвилин заходить — двері відчинено, судочки в холодильнику. Персонажа немає вдома — приходить, щойно він
+ * повернувся, якщо до `MODIFIERS.mom.until`; інакше (чи він пішов між дзвінком і візитом) лишає пакет під дверима, без
+ * дзвінка: коли персонаж повернувся, пакет у ящиках біля входу.
  */
 function tickMom(state: GameState, from: number, minutes: number): void {
   const mom = state.today.mom;
@@ -317,26 +317,28 @@ function tickMom(state: GameState, from: number, minutes: number): void {
   momGifts(state, true);
 }
 
-/** Гостинці мами — дві готові страви на вільних кухонних поверхнях (§4.1). */
+/**
+ * Гостинці мами — пакет маминих судочків (§4.1, §6.4, рішення автора 2026-10-26; раніше — дві страви на кухонних поверхнях, а
+ * коли обидві були зайняті, гостинців не було). Мама заходила — сама ставить судочки в холодильник (що не влізло — у ящики біля
+ * входу); не застала — пакет у ящиках, як покупка: «Розпакувати» покладе судочки в холодильник.
+ */
 function momGifts(state: GameState, visited: boolean): void {
-  placeMomFood(state);
+  const meals = PRODUCTS.momMeal.units.cheap;
+  if (visited) addSupply(state, "momMeal", "cheap", meals);
+  else stash(state, "momMeal", "cheap", meals);
   emit(state, { type: "modifier", kind: "mom-food", value: visited ? 1 : 0 });
-}
-
-function placeMomFood(state: GameState): void {
-  for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
 }
 
 /**
  * Ніч, а мама вже подзвонила чи лишила гостинці під дверима (§4.1, рішення автора 2026-10-26): персонаж ліг, не дочекавшись, поки
- * вона зайде, чи ніч застала його в поїздці — судочки однаково на кухні, зранку, без повідомлення (перевірка 2026-10-26: раніше
- * вони пропадали).
+ * вона зайде, чи ніч застала його в поїздці — пакет однаково в ящиках біля входу, зранку, без повідомлення (перевірка 2026-10-26:
+ * раніше судочки пропадали).
  */
 export function momAtNight(state: GameState): void {
   const mom = state.today.mom;
   if (mom?.rang !== true && mom?.porch !== true) return;
   delete state.today.mom;
-  placeMomFood(state);
+  stash(state, "momMeal", "cheap", PRODUCTS.momMeal.units.cheap);
 }
 
 /** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, друг, відпускні. */

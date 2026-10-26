@@ -13,10 +13,11 @@ export interface Storage {
 
 /**
  * Запаси, які треба дістати й донести, мають власне сховище; запаси, що застосовуються одразу,
- * ділять сховище з іншими.
+ * ділять сховище з іншими. Виняток — мамині судочки: вони в холодильнику з продуктами, і першими береться судочок
+ * (§6.4, рішення автора 2026-10-26).
  */
 export const STORAGES: readonly Storage[] = [
-  { object: "fridge", products: ["food"] },
+  { object: "fridge", products: ["food", "momMeal"] },
   { object: "cat-cabinet", products: ["catFood"] },
   { object: "sterile-bin", products: ["sterileFood"] },
   { object: "litter-bag", products: ["litter"] },

@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, WINDOWS, type HomeObject, type ObjectKind } from "../sim/home";
 import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
+import { drawMomMeal } from "./icons";
 import { SHAPED_STORAGES } from "./storagelook";
 import { COLORS, depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
 
@@ -420,6 +421,11 @@ export function drawItem(g: Phaser.GameObjects.Graphics, item: Item, x: number, 
     g.fillStyle(0xc9ccd1).fillRoundedRect(x - 10 * s, y - 8 * s, 20 * s, 9 * s, 3 * s);
     g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - 10 * s, y - 8 * s, 20 * s, 9 * s, 3 * s);
     g.fillStyle(item.quality === "premium" ? 0x6e2f22 : 0x8a5a33).fillEllipse(x, y - 9 * s, 16 * s, 6 * s);
+    return;
+  }
+  if (item.kind === "meal" && item.mom === true) {
+    // Мамин судочок (§6.4, рішення автора 2026-10-26).
+    drawMomMeal(g, x, y + 1 * s, s);
     return;
   }
   if (item.kind === "raw") {

@@ -4,11 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
-import { GUESTS, MODIFIERS } from "../src/sim/config";
+import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
+import { unpack } from "../src/sim/economy";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { boxesShown } from "../src/sim/storage";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
 import { isWorkday } from "../src/sim/work";
@@ -126,31 +128,59 @@ describe("ефекти (§4.1)", () => {
     expect(save.current.modifiers.day).toBe("mom-food");
     return save.current.today.mom?.at ?? -1;
   }
-  const meal = { kind: "meal", quality: "cheap" };
+  /** Мамині судочки (§6.4, рішення автора 2026-10-26): скільки в холодильнику й скільки в ящиках біля входу. */
+  const inFridge = (save: Save): number => save.current.home.supplies.momMeal.cheap;
+  const inBoxes = (save: Save): number => save.current.home.boxes?.momMeal?.cheap ?? 0;
   const away = (save: Save): void => {
     save.current.trip = { destination: "shop" } as unknown as NonNullable<Save["current"]["trip"]>;
   };
 
-  it("мама привезла гостинців — удень дзвонить у двері, за 2 хвилини заходить, і дві страви вже на кухні (рішення автора 2026-10-26)", () => {
+  it("мама привезла гостинців — удень дзвонить у двері, за 2 хвилини заходить і ставить два судочки в холодильник (рішення автора 2026-10-26)", () => {
     const save = game();
     const at = momDay(save);
     // Зранку ще нічого: мама приїде вдень.
     expect(at).toBeGreaterThanOrEqual(MODIFIERS.mom.from);
     expect(at).toBeLessThan(MODIFIERS.mom.to);
-    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    expect(inFridge(save)).toBe(0);
     const { events, stop } = recordEvents();
     tickModifiers(save.current, at - 0.5, 1, false);
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
-    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    expect(inFridge(save)).toBe(0);
     tickModifiers(save.current, at + 0.5, GUESTS.ringLead, false);
     stop();
-    expect(save.current.home.surfaces["counter-left"]).toEqual(meal);
-    expect(save.current.home.surfaces["counter-right"]).toEqual(meal);
+    expect(inFridge(save)).toBe(PRODUCTS.momMeal.units.cheap);
+    expect(inFridge(save)).toBe(2);
+    expect(inBoxes(save)).toBe(0);
+    // На кухні — нічого: судочки в холодильнику, і холодильник їх показує.
+    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    expect(save.current.home.acquired).toContain("momMeal");
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);
     expect(save.current.today.mom).toBeUndefined();
   });
 
-  it("персонажа немає — мама приходить, щойно він повернувся (до 20:00), а пізніше лишає гостинці під дверима без дзвінка", () => {
+  it("обидві кухонні поверхні зайняті — судочки однаково є: вони в холодильнику (раніше їх не було зовсім)", () => {
+    const save = game();
+    const at = momDay(save);
+    const dish = { kind: "raw", quality: "cheap" } as const;
+    save.current.home.surfaces["counter-left"] = { ...dish };
+    save.current.home.surfaces["counter-right"] = { ...dish };
+    tickModifiers(save.current, at - 0.5, 1, false);
+    tickModifiers(save.current, at + 0.5, GUESTS.ringLead, false);
+    expect(inFridge(save)).toBe(2);
+    expect(save.current.home.surfaces["counter-left"]).toEqual(dish);
+  });
+
+  it("холодильник повний — що не влізло, мама лишає в ящиках біля входу, нічого не пропадає", () => {
+    const save = game();
+    const at = momDay(save);
+    save.current.home.supplies.momMeal.cheap = STORAGE_LIMITS.momMeal - 1;
+    tickModifiers(save.current, at - 0.5, 1, false);
+    tickModifiers(save.current, at + 0.5, GUESTS.ringLead, false);
+    expect(inFridge(save)).toBe(STORAGE_LIMITS.momMeal);
+    expect(inBoxes(save)).toBe(1);
+  });
+
+  it("персонажа немає — мама приходить, щойно він повернувся (до 20:00), а пізніше лишає пакет під дверима: він у ящиках біля входу", () => {
     const back = game();
     const at = momDay(back);
     away(back);
@@ -161,7 +191,7 @@ describe("ефекти (§4.1)", () => {
     tickModifiers(back.current, hours(19), 0.5, false);
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
     tickModifiers(back.current, hours(19) + 0.5, GUESTS.ringLead, false);
-    expect(back.current.home.surfaces["counter-left"]).toEqual(meal);
+    expect(inFridge(back)).toBe(2);
     events.length = 0;
 
     const late = game();
@@ -169,16 +199,22 @@ describe("ефекти (§4.1)", () => {
     away(late);
     tickModifiers(late.current, MODIFIERS.mom.until - 0.5, 1, false);
     expect(late.current.today.mom?.porch).toBe(true);
-    expect(late.current.home.surfaces["counter-left"]).toBeNull();
+    expect(inBoxes(late)).toBe(0);
     late.current.trip = null;
     tickModifiers(late.current, hours(21), 0.5, false);
     stop();
-    expect(late.current.home.surfaces["counter-left"]).toEqual(meal);
+    // Пакет — у ящиках, як покупка; у холодильник судочки кладе «Розпакувати».
+    expect(inBoxes(late)).toBe(2);
+    expect(inFridge(late)).toBe(0);
+    expect(boxesShown(late.current)).toBe(1);
     expect(events.some((e) => e.type === "doorbell")).toBe(false);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 0)).toBe(true);
+    unpack(late.current);
+    expect(inFridge(late)).toBe(2);
+    expect(inBoxes(late)).toBe(0);
   });
 
-  it("ніч застала персонажа в поїздці чи він ліг, не дочекавшись мами після дзвінка, — судочки однаково на кухні зранку (перевірка 2026-10-26)", () => {
+  it("ніч застала персонажа в поїздці чи він ліг, не дочекавшись мами після дзвінка, — пакет однаково в ящиках біля входу зранку (перевірка 2026-10-26)", () => {
     for (const rang of [false, true]) {
       const save = game();
       const at = momDay(save);
@@ -190,12 +226,12 @@ describe("ефекти (§4.1)", () => {
       expect(save.current.today.mom?.[rang ? "rang" : "porch"], `rang ${rang}`).toBe(true);
       save.current.minute = hours(23);
       goToSleep(save);
-      expect(save.current.home.surfaces["counter-left"], `rang ${rang}`).toEqual(meal);
-      expect(save.current.home.surfaces["counter-right"], `rang ${rang}`).toEqual(meal);
+      expect(inBoxes(save), `rang ${rang}`).toBe(2);
+      expect(inFridge(save), `rang ${rang}`).toBe(0);
     }
   });
 
-  it("сценарій «Мама з гостинцями»: о 12:03 дзвінок — «Душа компанії» біжить до дверей, сором'язлива ховається; за 2 хвилини судочки на кухні", () => {
+  it("сценарій «Мама з гостинцями»: о 12:03 дзвінок — «Душа компанії» біжить до дверей, сором'язлива ховається; за 2 хвилини судочки в холодильнику", () => {
     const scenario = FILE_SCENARIOS["mom-visit"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
@@ -206,11 +242,10 @@ describe("ефекти (§4.1)", () => {
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
     expect(host?.act.target).toBe("guest");
     expect(shy?.act.kind).toBe("hide");
-    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    expect(inFridge(save)).toBe(0);
     advance(save, GUESTS.ringLead);
     stop();
-    expect(save.current.home.surfaces["counter-left"]).toEqual(meal);
-    expect(save.current.home.surfaces["counter-right"]).toEqual(meal);
+    expect(inFridge(save)).toBe(2);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);
   });
 });

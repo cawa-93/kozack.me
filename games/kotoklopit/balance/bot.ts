@@ -144,6 +144,9 @@ export class Bot {
       const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2 && !this.skipped(`item:${w.id}`));
       if (water) return named("use", () => this.use(`item:${water.id}`));
     }
+    // Мамині судочки (§6.4, рішення автора 2026-10-26): готові — з холодильника одразу на стіл, без плити. Холодильник і так
+    // видає їх першими.
+    if (ch.stats.satiety < 60 && supplyCount(s, "momMeal") > 0 && !s.home.surfaces["table"]) return named("momMeal", () => this.momMeal());
     if (ch.stats.satiety < 60 && s.home.stove.item === null && supplyCount(s, "food") > 0 && !s.home.surfaces["table"]) {
       return named("cook", () => this.cook());
     }
@@ -323,7 +326,9 @@ export class Bot {
         this.use(this.state.home.stove.item === null ? "stove" : "fridge");
         return;
       case "meal":
-        this.use(this.state.home.surfaces["table"] ? "counter-left" : "table");
+        // Мамин судочок, коли стіл зайнятий, — назад у холодильник (§6.4).
+        if (held.mom === true && this.state.home.surfaces["table"]) this.use("fridge");
+        else this.use(this.state.home.surfaces["table"] ? "counter-left" : "table");
         return;
       case "burnt":
         // Смітник перекинув кіт (§9.12, «Кмітливість у бешкеті»): страву — назад на плиту, спершу прибрати сміття.
@@ -347,6 +352,12 @@ export class Bot {
   private cook(): void {
     this.use("fridge");
     if (this.state.character.held?.kind === "raw") this.use("stove");
+  }
+
+  private momMeal(): void {
+    this.use("fridge");
+    if (this.state.character.held?.kind === "meal") this.use("table");
+    this.eat();
   }
 
   private serveMeal(): void {

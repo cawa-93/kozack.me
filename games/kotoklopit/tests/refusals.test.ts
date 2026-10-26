@@ -13,6 +13,8 @@ import { recordEvents, walkTo, withCatCorner } from "./helpers";
 const ITEMS: Item[] = [
   { kind: "raw", quality: "cheap" },
   { kind: "meal", quality: "cheap" },
+  // Мамин судочок (§6.4, рішення автора 2026-10-26) — своя іконка.
+  { kind: "meal", quality: "cheap", mom: true },
   { kind: "burnt", quality: "cheap" },
   { kind: "catfood", quality: "cheap", sterile: false },
   { kind: "catfood", quality: "cheap", sterile: true },
