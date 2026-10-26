@@ -296,3 +296,54 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
     expect(relation(save.current, a, b)).toBe(81);
   });
 });
+
+describe("взаємність (§9.4, рішення автора 2026-10-26, В3)", () => {
+  /** Вилизати друга (`b`, поруч) до кінця й подивитися, чи він відповів тим самим. */
+  function groomAndSee(seed: number, friend: CatAct, traits: Record<string, TraitLevel> = {}): { back: boolean; save: Save; a: Cat; b: Cat; events: GameEvent[] } {
+    const save = game(seed);
+    const a = withCat(save, {}, { x: 9.1, y: 8.5 });
+    const b = withCat(save, traits, { x: 9.5, y: 8.5 });
+    setRelation(save, a, b, 60);
+    b.act = friend;
+    a.act = { kind: "groom", target: `cat:${b.id}`, goal: null, minutes: 4, elapsed: 0 };
+    const { events, stop } = recordEvents();
+    for (let t = 0; t < 100 && a.act.kind === "groom"; t++) tickCats(save.current, 0.05, { present: false });
+    stop();
+    const back = b.act.kind === "groom" && b.act.target === `cat:${a.id}` && b.act.back === true;
+    return { back, save, a, b, events };
+  }
+
+  it("друг, що не спить, з шансом 40% хвилину вилизує у відповідь — тепер мружиться перший; окремих наслідків немає", () => {
+    let back = 0;
+    const runs = 120;
+    for (let seed = 1; seed <= runs; seed++) {
+      const { back: answered, save, a, b, events: before } = groomAndSee(seed, idleAct(60));
+      if (!answered) continue;
+      back++;
+      expect(b.act.minutes).toBeLessThanOrEqual(1);
+      expect(a.act).toMatchObject({ kind: "idle", target: `licked:${b.id}` });
+      const value = relation(save.current, a, b);
+      const mood = a.mood;
+      const { events, stop } = recordEvents();
+      for (let t = 0; t < 40 && b.act.kind === "groom"; t++) tickCats(save.current, 0.05, { present: false });
+      stop();
+      // Над тим, кого тепер вилизують у відповідь, — теж сердечко.
+      expect([...before, ...events].filter((e) => e.type === "groom-started").map((e) => e.type === "groom-started" && e.friend)).toEqual([b.id, a.id]);
+      expect(count(events, "groomed")).toBe(0);
+      expect(relation(save.current, a, b)).toBe(value);
+      expect(a.mood).toBeCloseTo(mood, 1);
+      // Вилизав у відповідь — обидва вільні.
+      tickCats(save.current, 0.1, { present: false });
+      expect(a.act.target === `licked:${b.id}`).toBe(false);
+    }
+    expect(back / runs).toBeGreaterThan(0.28);
+    expect(back / runs).toBeLessThan(0.52);
+  });
+
+  it("сплячий друг і «Не терпить дотиків» (−2) у відповідь не вилизують", () => {
+    for (let seed = 1; seed <= 60; seed++) {
+      expect(groomAndSee(seed, sleeping()).back).toBe(false);
+      expect(groomAndSee(seed, idleAct(60), { grooming: -2 }).back).toBe(false);
+    }
+  });
+});

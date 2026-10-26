@@ -2057,7 +2057,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (act.target?.startsWith("kitten:") === true) return groomedKitten(state, cat);
       const friend = catById(state, act.target);
       // Друг відсторонився (§9.12, «Вилизування друзів») чи пішов: ні радості, ні дружби.
-      if (friend && distance(cat, friend) <= RELATIONS.groom.reach && act.refused !== true) groomedFriend(state, cat, friend, act);
+      // Вилизування у відповідь окремих наслідків не дає: їх уже дало вилизування (§9.4, В3).
+      if (friend && distance(cat, friend) <= RELATIONS.groom.reach && act.refused !== true && act.back !== true) groomedFriend(state, cat, friend, act, rng);
       // Прийшов спати до друга — тепер лягає поруч (§9.4, В2).
       if (act.beforeSleep === true) lieDownAfterGroom(state, cat, friend);
       return;
@@ -2444,7 +2445,7 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           return;
         }
         // Друг, що не спить, сидить на місці й мружиться, а над ним — думка-сердечко (§9.4, рішення автора 2026-10-26, В1).
-        holdStill(other, cat, act.minutes);
+        if (!isLickedBy(other, cat)) holdStill(other, cat, act.minutes);
         emit(state, { type: "groom-started", cat: cat.id, friend: other.id });
       }
       // Друг чи кошеня пішли (нагальна потреба, руки) чи відійшли — вилизування скасовується, а не сидіння самому (§9.4, перевірка
@@ -4221,7 +4222,7 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
  * Вилизав друга (§9.4): обом настрій +1, а тому, кого вилизали після стресу, — +2, раз за стрес; стосунки — що міцніша дружба, то
  * менше (рішення автора 2026-10-26, В2: було +2 завжди, і друзі з +55 доходили до 100 за 4–5 днів).
  */
-function groomedFriend(state: GameState, cat: Cat, friend: Cat, act: CatAct): void {
+function groomedFriend(state: GameState, cat: Cat, friend: Cat, act: CatAct, rng: Rng): void {
   const g = RELATIONS.groom;
   changeMood(state, cat, g.mood);
   changeMood(state, friend, act.comfort === true ? g.upsetMood : g.mood);
@@ -4230,6 +4231,11 @@ function groomedFriend(state: GameState, cat: Cat, friend: Cat, act: CatAct): vo
   emit(state, { type: "groomed", cat: cat.id, friend: friend.id });
   observe(state, cat, "grooming");
   observe(state, cat, "sociability");
+  // Друг, що не спить і досі сидить поруч, з шансом 40% хвилину вилизує у відповідь — тепер мружиться перший (§9.4, В3).
+  if (!isLickedBy(friend, cat) || !rng.chance(groomChance(friend, g.back))) return;
+  start(friend, "groom", null, g.backMinutes, `cat:${cat.id}`);
+  friend.act.back = true;
+  holdStill(cat, friend, g.backMinutes);
 }
 
 function groomedKitten(state: GameState, cat: Cat): void {
