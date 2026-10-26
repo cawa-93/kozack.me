@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { pickUpCat, tickActivity } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, jealousy, tickCats } from "../src/sim/catai";
+import { decide, enoughFor, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import type { Cat, LitterItem, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
@@ -676,6 +676,53 @@ describe("ресурси й ревнощі (§9.4)", () => {
     const b = withCat(save);
     noteStrife(save.current, a, b, "quarrel");
     expect(Object.keys(save.current.strife ?? {})).toHaveLength(1);
+  });
+
+  it("нестачу рахують чесно: коти вдома без новонароджених, брудний лоток не лоток, від 6 котів — 6 лотків (§9.4, Р3, Р4)", () => {
+    const save = game();
+    const s = save.current;
+    s.home.items = s.home.items.filter((it) => it.kind !== "litter" && it.kind !== "bowl");
+    const litters = (n: number): LitterItem[] => {
+      s.home.items = s.home.items.filter((it) => it.kind !== "litter");
+      const boxes = Array.from({ length: n }, (_, i): LitterItem => ({ id: 900 + i, kind: "litter", quality: "cheap", slot: `litter-${i + 1}`, litter: "cheap", uses: 0 }));
+      s.home.items.push(...boxes);
+      return boxes;
+    };
+    const bowls = (n: number): void => {
+      s.home.items = s.home.items.filter((it) => it.kind !== "bowl");
+      for (let i = 0; i < n; i++) s.home.items.push({ id: 950 + i, kind: "bowl", quality: "cheap", slot: `bowl-${i + 1}`, food: 0, foodQuality: null, sterile: false });
+    };
+    const cats = [withCat(save), withCat(save), withCat(save)];
+    // Троє котів: лотків треба 4, мисок 3.
+    litters(4);
+    bowls(3);
+    expect(enoughFor(s, "litter")).toBe(true);
+    expect(enoughFor(s, "bowl")).toBe(true);
+    // Брудний лоток не рахується (Р3).
+    const boxes = litters(4);
+    boxes[0]!.uses = 99;
+    expect(enoughFor(s, "litter")).toBe(false);
+    // Кіт у поїздці й новонароджений не рахуються (Р4): удома двоє — трьох лотків досить, двох мисок теж.
+    litters(3);
+    bowls(2);
+    expect(enoughFor(s, "litter")).toBe(false);
+    cats[2]!.away = "trip";
+    expect(enoughFor(s, "litter")).toBe(true);
+    expect(enoughFor(s, "bowl")).toBe(true);
+    const newborn = withCat(save, {}, { x: 5.5, y: 8.5 }, 0);
+    newborn.source = "born";
+    expect(enoughFor(s, "litter")).toBe(true);
+    cats[2]!.away = null;
+    // Шестеро котів: шести чистих лотків і шести мисок досить — місць більше немає.
+    while (s.cats.filter((c) => c.ageWeeks > 0).length < 6) withCat(save);
+    litters(6);
+    bowls(6);
+    expect(enoughFor(s, "litter")).toBe(true);
+    expect(enoughFor(s, "bowl")).toBe(true);
+    withCat(save);
+    expect(enoughFor(s, "bowl")).toBe(true);
+    litters(5);
+    expect(enoughFor(s, "litter")).toBe(false);
   });
 
   it("ревнивий кіт сердиться, коли персонаж гладить іншого", () => {

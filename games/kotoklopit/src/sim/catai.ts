@@ -453,6 +453,18 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean,
 }
 
 /**
+ * Чи вистачає мисок чи лотків (§9.4 «Ресурси»; «Згода, охорона й сварки», рішення автора 2026-10-26, Р3 і Р4): котів рахують лише
+ * тих, що вдома, без новонароджених; брудний лоток не рахується; лотків — на один більше, ніж котів, мисок — скільки котів, але
+ * не більше, ніж є місць. Раніше рахували всіх котів і всі лотки, і з 6 котами лотків не вистачало ніколи.
+ */
+export function enoughFor(state: GameState, kind: "bowl" | "litter"): boolean {
+  const cats = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
+  const places = SLOTS.filter((s) => s.kind === kind).length;
+  if (kind === "bowl") return itemsOf(state, "bowl").length >= Math.min(cats, places);
+  return itemsOf(state, "litter").filter((box) => !isDirty(box)).length >= Math.min(cats + 1, places);
+}
+
+/**
  * Кіт шипить на іншого (§9.4) — це видно й чути; причину (`why`) видно значком поруч зі злістю (§9.4 «Згода, охорона й сварки»,
  * рішення автора 2026-10-26, Р2). Спільна пауза шипіння (§9.12): після попереднього минуло менше 20 хвилин — кіт мовчить, і
  * сварки теж немає (false).
@@ -2046,7 +2058,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         envy(state, cat, "premium");
       }
       emit(state, { type: "cat-ate", cat: cat.id, quality });
-      resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length, "bowl");
+      resourceConflict(state, cat, rng, enoughFor(state, "bowl"), "bowl");
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
@@ -2201,7 +2213,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       box.uses += 1;
       itemMood(state, cat, box);
       wearOut(state, box, rng);
-      resourceConflict(state, cat, rng, itemsOf(state, "litter").length >= state.cats.length + 1, "litter");
+      resourceConflict(state, cat, rng, enoughFor(state, "litter"), "litter");
       // Розкидає наповнювач (§9.12): 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше.
       const scatter = traitLevel(cat, "scatter");
       const scatters = SCATTER_CHANCE.base * Math.max(0, 1 + SCATTER_CHANCE.step * scatter) * (box.quality === "premium" ? SCATTER_CHANCE.closedBox : 1);
