@@ -615,6 +615,37 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
     expect(noGo(save.current, cat, "kitchen")).toBe("remember");
   });
 
+  it("пів години відлічуються від того, як «+» дійшов до забороненого місця, а не як вирушив (пошук багів 2026-10-26)", () => {
+    const save = game();
+    // Кіт далеко від кухні: до столу — кілька хвилин дороги.
+    const cat = withCat(save, { obedience: 2, thief: 2 }, { x: 3.5, y: 8.5 });
+    for (const item of save.current.home.items) if (item.kind === "bowl") item.food = 0;
+    save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+    cat.needs.hunger = 80;
+    sayNo(save.current, cat, "kitchen", createRng(1));
+    let left: number | null = null;
+    let arrived: number | null = null;
+    for (let t = 0; t < 120 && arrived === null; t += 0.25) {
+      cat.needs.fatigue = 0;
+      save.current.minute += 0.25;
+      tickCats(save.current, 0.25, { present: true });
+      const now = absoluteMinute(save.current.day, save.current.minute);
+      if (cat.act.target === "no:kitchen" && left === null) left = now;
+      if (cat.act.target === "no:kitchen" && cat.act.goal === null) arrived = now;
+    }
+    if (left === null || arrived === null) throw new Error("кіт не підійшов до столу");
+    expect(arrived - left).toBeGreaterThanOrEqual(1);
+    // Дійшов — згадує «ні» на наступному кроці симуляції.
+    save.current.minute += 0.25;
+    tickCats(save.current, 0.25, { present: true });
+    expect(cat.act.target).toBe("no:kitchen");
+    const at = save.current.minute;
+    save.current.minute = at + OBEDIENCE.approachEvery - 0.5;
+    expect(noGo(save.current, cat, "kitchen")).toBe("skip");
+    save.current.minute = at + OBEDIENCE.approachEvery;
+    expect(noGo(save.current, cat, "kitchen")).toBe("remember");
+  });
+
   it("«Анархіст» інколи повертається на кухонний стіл за 10 хвилин — прояв «−»; «Пропускає повз вуха» — за годину", () => {
     let back = 0;
     for (let seed = 1; seed <= 20; seed++) {

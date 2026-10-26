@@ -3493,10 +3493,9 @@ export function sayNo(state: GameState, cat: Cat, zone: ForbiddenZone, rng: Rng)
 
 /**
  * «+» іде до забороненого місця, щоб, підійшовши, згадати «ні» й розвернутися (§9.12, «Слухняність»); туди знову — не раніше ніж
- * за пів години (`noGo`).
+ * за пів години від того, як дійшов (`rememberSeen`, `noGo`).
  */
 function startRemember(state: GameState, cat: Cat, zone: ForbiddenZone, objectId: string): void {
-  (cat.noVisitAt ??= {})[zone] = absoluteMinute(state.day, state.minute);
   start(cat, "idle", besideObject(state, objectById(objectId)), OBEDIENCE.rememberMinutes, `no:${zone}`);
 }
 
@@ -3524,7 +3523,10 @@ function rememberSeen(state: GameState, cat: Cat): void {
   if (act.kind !== "idle" || !act.target?.startsWith("no:") || act.goal !== null || act.seen === true) return;
   if (act.done !== true) {
     act.done = true;
-    rememberNo(state, cat, act.target.slice(3) as ForbiddenZone);
+    const zone = act.target.slice(3) as ForbiddenZone;
+    // Відлік пів години — від того, як дійшов, а не як вирушив: дорога через квартиру — кілька хвилин (пошук багів 2026-10-26).
+    (cat.noVisitAt ??= {})[zone] = absoluteMinute(state.day, state.minute);
+    rememberNo(state, cat, zone);
   }
   if (!witnesses(state, cat)) return;
   act.seen = true;
