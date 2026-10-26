@@ -41,7 +41,7 @@ import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, draw
 import { COLORS, depthOf, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { type BubbleKind, createIconTextures, type IconName } from "../view/icons";
-import { eventBubbles, PRODUCT_ICONS } from "../view/symbols";
+import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
 import { blinkAmount, catLook, ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { PALETTE } from "../view/palette";
@@ -899,13 +899,14 @@ export class DayScene extends Phaser.Scene {
     // Персонаж у душовій кабіні — над нею вода.
     const activity = state.character.activity;
     set("shower", activity?.kind === "use" && activity.inside ? "drop" : null);
-    const item = state.home.stove.item;
-    set("stove", item === null ? null : item.kind === "burnt" ? "smoke" : item.kind === "meal" ? "meal" : "pot");
+    set("stove", stoveIcon(state.home.stove.item));
     // Кіт на сходах важливіший за пакунок (§9.12).
     set("door", state.cats.some((c) => c.away === "stairs") ? "meow" : state.home.porch.length > 0 ? "box" : null);
     const table = objectById("table");
     const target = targetOf(state);
-    set("table", state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? "meal" : null);
+    // Страва на столі — її іконкою: мамин судочок — своєю (§6.4).
+    const onTable = state.home.surfaces["table"] ?? null;
+    set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
     set("washer", washer === "washing" ? "washer" : washer === "done" ? "alert" : null);

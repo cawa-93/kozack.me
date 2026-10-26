@@ -2,7 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, Need, Refusal } from "../sim/events";
-import type { Item, Product } from "../sim/types";
+import type { Dish, Item, Product } from "../sim/types";
 import type { IconName, Mark } from "./icons";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
@@ -41,6 +41,15 @@ export function itemIcon(item: Item): IconName {
     case "toy":
       return "toy";
   }
+}
+
+/**
+ * Що каже плита (§11.4): вариться, готово, підгоріло. Готова страва — іконкою речі: мамин судочок — своєю, як у руках (§6.4;
+ * перевірка 2026-10-26: над ним була звичайна тарілка).
+ */
+export function stoveIcon(item: Dish | null): IconName | null {
+  if (item === null) return null;
+  return item.kind === "burnt" ? "smoke" : item.kind === "meal" ? itemIcon(item) : "pot";
 }
 
 /** Що треба мати (§11.4): іконка зі знаком питання. */

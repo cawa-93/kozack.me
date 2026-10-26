@@ -11,7 +11,7 @@ import { tickModifiers } from "../src/sim/modifiers";
 import { GOODS } from "../src/sim/shop";
 import { boxesIndicator, STORAGES, storageIndicator } from "../src/sim/storage";
 import type { GameState, Product, Quality, Save } from "../src/sim/types";
-import { eventBubbles, itemIcon, PRODUCT_ICONS } from "../src/view/symbols";
+import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../src/view/symbols";
 import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 5 });
@@ -113,6 +113,14 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     expect(eventBubbles({ type: "supply-used", product: "momMeal", left: 1 })).toEqual([{ kind: "think", at: "person", icon: "mom-meal", count: 1 }]);
     const icons = Object.values(PRODUCT_ICONS);
     expect(new Set(icons).size).toBe(icons.length);
+  });
+
+  it("судочок на плиті — над плитою його іконка, а не тарілка (перевірка 2026-10-26); решта станів плити — як були", () => {
+    expect(stoveIcon(SUDOCHOK)).toBe("mom-meal");
+    expect(stoveIcon({ kind: "meal", quality: "cheap" })).toBe("meal");
+    expect(stoveIcon({ kind: "raw", quality: "cheap" })).toBe("pot");
+    expect(stoveIcon({ kind: "burnt", quality: "cheap" })).toBe("smoke");
+    expect(stoveIcon(null)).toBeNull();
   });
 
   it("старі збереження: судочків немає — порожньо; пакет мами під дверима зі старої гри — у ящиках біля входу", () => {
