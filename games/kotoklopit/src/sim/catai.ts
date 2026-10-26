@@ -2146,7 +2146,8 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
     hiss(state, thief, victim);
     observe(state, thief, "thief");
     const guard = traitLevel(victim, "territorial");
-    if (guard > 0 && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim, rng);
+    // З тим, з ким пара ще не відійшла від бійки, «Охоронець» не б'ється (§9.4, «Пауза пари»).
+    if (guard > 0 && !truced(state, thief, victim) && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim, rng);
     changeMood(state, victim, THIEF.victimMood, "відігнали від миски");
     changeRelation(state, victim, thief, THIEF.relation);
     backAway(state, victim, thief);
@@ -3709,7 +3710,8 @@ function catnipFight(state: GameState, cat: Cat, rng: Rng): void {
   const others = state.cats.filter((c) => c.id !== cat.id && approachable(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= CATNIP.fightReach);
   others.sort((a, b) => distance(a, cat) - distance(b, cat));
   const other = others[0];
-  if (other && hiss(state, cat, other)) startFight(state, cat, other, rng);
+  // Пара ще не відійшла від бійки (§9.4, «Пауза пари») — лише шипить.
+  if (other && hiss(state, cat, other) && !truced(state, cat, other)) startFight(state, cat, other, rng);
 }
 
 /**

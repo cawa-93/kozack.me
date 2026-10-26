@@ -9,7 +9,7 @@ import { decide, tickCats, upHigh } from "../src/sim/catai";
 import { addSupply } from "../src/sim/economy";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
-import { objectAt, objectById } from "../src/sim/home";
+import { itemTile, objectAt, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
@@ -324,6 +324,64 @@ describe("після бійки (§9.4, рішення автора 2026-10-26)"
       expect(fights).toBeGreaterThan(0);
     }
     expect(checked).toBe(true);
+  });
+
+  it("у паузу пари не б'ються й від котячої м'яти чи «Охоронця миски» — лише шипить", () => {
+    // Перевірка блоку 1 (2026-10-26): раніше пауза стримувала лише протистояння.
+    const truce = (s: Save["current"], a: Cat, b: Cat): void => {
+      const until = absoluteMinute(s.day, s.minute) + 100;
+      a.truce = { [b.id]: until };
+      b.truce = { [a.id]: until };
+    };
+    // Котяча м'ята: нагасався поруч із тим, з ким щойно бився.
+    for (const paused of [false, true]) {
+      const save = game();
+      const s = save.current;
+      const cat = withCat(save, { catnip: -2 }, { x: 9.5, y: 7.5 });
+      addSupply(s, "catnip", "cheap", 5);
+      pickUpCat(s, cat);
+      const other = withCat(save, {}, { x: 11.5, y: 8.5 });
+      other.act = idle(60);
+      giveCatnip(s, "cheap", createRng(1));
+      if (paused) truce(s, cat, other);
+      Object.assign(cat, { x: 9.6, y: 8.4 });
+      cat.act.minutes = 0.001;
+      const { events, stop } = recordEvents();
+      tickCats(s, 0.001, { present: false });
+      stop();
+      expect(events.some((e) => e.type === "hissed" && e.cat === cat.id && e.at === other.id)).toBe(true);
+      expect(count(events, "cat-fight")).toBe(paused ? 0 : 1);
+    }
+    // «Охоронець миски»: злодій відтісняє його від миски.
+    const fights = { free: 0, paused: 0 };
+    for (const paused of [false, true]) {
+      for (let seed = 0; seed < 40; seed++) {
+        const save = game();
+        const s = save.current;
+        s.rng.behavior = seed;
+        const bowl = s.home.items.find((i) => i.kind === "bowl");
+        if (bowl?.kind !== "bowl") throw new Error("немає миски");
+        Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+        const tile = itemTile(bowl);
+        const guard = withCat(save, { territorial: 2, gulping: -2 }, { x: tile.x + 0.5, y: tile.y + 0.5 });
+        const thief = withCat(save, { thief: 2 }, { x: tile.x - 1.5, y: tile.y + 0.5 });
+        if (paused) truce(s, thief, guard);
+        guard.needs.hunger = 90;
+        thief.needs.hunger = 50;
+        thief.act = idle();
+        guard.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 10, elapsed: 0 };
+        const { events, stop } = recordEvents();
+        for (let i = 0; i < 40 && thief.act.kind !== "fight" && !(thief.act.kind === "eat" && thief.act.goal === null); i++) {
+          if (thief.act.kind === "steal") thief.act.minutes = Math.max(thief.act.minutes, 0.05);
+          guard.needs.hunger = 90;
+          tickCats(s, 0.1, { present: false });
+        }
+        stop();
+        if (count(events, "cat-fight") > 0) fights[paused ? "paused" : "free"]++;
+      }
+    }
+    expect(fights.free).toBeGreaterThan(3);
+    expect(fights.paused).toBe(0);
   });
 
   it("вільний кіт, до якого ворог ближче 2 клітинок, відходить від нього на 3 клітинки; від нейтрального — ні", () => {
