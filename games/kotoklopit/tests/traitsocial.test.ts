@@ -694,16 +694,27 @@ const setRelation = (save: Save, a: Cat, b: Cat, value: number): void => {
 };
 
 describe("«Товариськість» і «Вилизування друзів» (§9.4, §9.12, рішення автора 2026-10-25)", () => {
-  it("двоє «Задирак» щоночі віддаляються на 1: лише від ночей стають ворогами на десятий вечір — так і задумано", () => {
-    // З +1 за ніч (рішення автора 2026-10-26, Г1) — −1 за ніч; з +0,5 було −1,5 і сьомий вечір.
+  it("двоє «Задирак» щоночі віддаляються на 3: лише від ночей стають ворогами на четвертий вечір — так і задумано", () => {
+    // Рішення автора 2026-10-26 після блоку 2: +3 за ніч і ±1,5 за одиницю «Товариськості» — 3 − 6 = −3. З +1 і ±0,5 було −1 і
+    // десятий вечір, з +0,5 і ±0,5 — −1,5 і сьомий.
     const save = game();
     const a = withCat(save, { sociability: -2 });
     const b = withCat(save, { sociability: -2 });
     expect(relation(save.current, a, b)).toBe(-4 * RELATIONS.sociabilityStep);
-    for (let night = 1; night <= 9; night++) nightlyRelations(save.current);
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(-43);
+    for (let night = 2; night <= 3; night++) nightlyRelations(save.current);
     expect(isEnemy(save.current, a, b)).toBe(false);
     nightlyRelations(save.current);
     expect(isEnemy(save.current, a, b)).toBe(true);
+  });
+
+  it("двоє «Миротворців» щоночі зближуються на 9 (рішення автора 2026-10-26 після блоку 2)", () => {
+    const save = game();
+    const a = withCat(save, { sociability: 2 });
+    const b = withCat(save, { sociability: 2 });
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(4 * RELATIONS.sociabilityStep + 9);
   });
 
   it("«Конфліктний» шипить на кота, що не друг і проходить повз, — раз за зустріч; прояв «−»", () => {

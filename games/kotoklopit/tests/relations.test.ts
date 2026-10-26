@@ -47,12 +47,12 @@ describe("початок стосунків (§9.4)", () => {
     expect(relation(save.current, a, kitten)).toBe(30);
   });
 
-  it("щоночі життя разом додає 1 (рішення автора 2026-10-26, Г1: було 0,5)", () => {
+  it("щоночі життя разом додає 3 (рішення автора 2026-10-26 після блоку 2; спершу, Г1, — 1, а ще раніше 0,5)", () => {
     const save = game();
     const a = withCat(save);
     const b = withCat(save);
     nightlyRelations(save.current);
-    expect(relation(save.current, a, b)).toBe(1);
+    expect(relation(save.current, a, b)).toBe(3);
   });
 });
 
