@@ -99,7 +99,7 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   // Лапає рулон туалетного паперу на стіні — так само на задніх лапах (§9.12, «Мисливський інстинкт»).
   if (act.kind === "unroll") return "scratch";
   // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
-  if (act.kind === "groom" && !act.target?.startsWith("cat:")) return "groom";
+  if (act.kind === "groom" && !act.target?.startsWith("cat:") && !act.target?.startsWith("kitten:")) return "groom";
   return "sit";
 }
 

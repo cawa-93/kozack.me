@@ -4,10 +4,10 @@
 import { describe, expect, it } from "vitest";
 
 import { pickUpCat, playDrain } from "../src/sim/actions";
-import { giveCatnip } from "../src/sim/care";
+import { giveCatnip, nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, forbiddenZoneAt, jealousy, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
-import { CATNIP, GIFTS, GROOMING, JEALOUSY, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, TERRITORY, WINDOW } from "../src/sim/config";
+import { CATNIP, GIFTS, GROOMING, JEALOUSY, NURTURING, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, TERRITORY, WINDOW } from "../src/sim/config";
 import { addSupply, place, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
@@ -848,5 +848,93 @@ describe("«Територіальність» (§9.4, §9.12, рішення а
     }
     stop();
     expect(events.some((e) => e.type === "hissed" && e.cat === calm.id)).toBe(false);
+  });
+});
+
+describe("«Турбота про кошенят» (§9.4, §9.12, рішення автора 2026-10-25)", () => {
+  it("початкові стосунки з кошеням: 20 + 10 × рівень дорослого", () => {
+    const save = game();
+    const nanny = withCat(save, { nurturing: 2 });
+    const grump = withCat(save, { nurturing: -2 });
+    const kitten = withCat(save, {}, { x: 9.5, y: 7.5 }, 1);
+    expect(relation(save.current, nanny, kitten)).toBe(RELATIONS.kittenBonus + 2 * NURTURING.relationStep);
+    expect(relation(save.current, grump, kitten)).toBe(RELATIONS.kittenBonus - 2 * NURTURING.relationStep);
+  });
+
+  it("«Нянька» вилизує кошеня поруч — малому приємно, прояв «+»; кіт без риси — ні", () => {
+    const grooms = (traits: Record<string, TraitLevel>): Cat | null => {
+      for (let seed = 1; seed <= 60; seed++) {
+        const save = game(seed);
+        const kitten = withCat(save, {}, { x: 10.5, y: 7.5 }, 1);
+        const adult = withCat(save, traits, { x: 9.5, y: 7.5 });
+        setRelation(save, adult, kitten, 0);
+        decide(save.current, adult, createRng(seed), { present: true });
+        if (adult.act.kind !== "groom" || adult.act.target !== `kitten:${kitten.id}`) continue;
+        kitten.mood = 50;
+        kitten.act = idleAct(10);
+        live(save, RELATIONS.groom.minutes + 1);
+        expect(kitten.mood).toBeGreaterThan(50);
+        expect(seen(adult, "nurturing")).toBe(1);
+        return adult;
+      }
+      return null;
+    };
+    expect(grooms({ nurturing: 2 })).not.toBeNull();
+    expect(grooms({})).toBeNull();
+  });
+
+  it("«Нянька» спить, обійнявши кошеня, — малому тепло; прояв «+»", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 7.5, y: 8.5 });
+    const kitten = withCat(save, {}, { x: 5.5, y: 8.5 }, 1);
+    kitten.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 30 };
+    kitten.needs.fatigue = 90;
+    kitten.mood = 50;
+    const nanny = withCat(save, { nurturing: 1 }, { x: 8.5, y: 8.5 });
+    nanny.needs.fatigue = 99;
+    let hugged = false;
+    for (let seed = 1; seed <= 40 && !hugged; seed++) {
+      decide(save.current, nanny, createRng(seed), { present: true });
+      hugged = nanny.act.kind === "sleep" && nanny.act.target === `pile:${kitten.id}`;
+    }
+    expect(hugged).toBe(true);
+    live(save, 62);
+    expect(seen(nanny, "nurturing")).toBe(1);
+    expect(kitten.mood).toBeGreaterThan(50);
+  });
+
+  it("мати щоночі тішить новонароджених, «Сам ще кошеня» — засмучує", () => {
+    for (const level of [1, -1] as const) {
+      const save = game();
+      const mother = withCat(save, { nurturing: level });
+      const baby = createCat(save.current, createRng(9), { source: "born", ageWeeks: 0, at: { x: 9.5, y: 7.5 } });
+      baby.parents = { mother: mother.id, father: null };
+      baby.traits = [];
+      baby.mood = 50;
+      addCat(save.current, baby);
+      nightlyCare(save.current, createRng(1));
+      expect(Math.sign(baby.mood - 50)).toBe(level);
+    }
+  });
+
+  it("«Сам ще кошеня» шипить і б'є лапою кошеня, що лізе до нього, — прояв «−»", () => {
+    let swatted = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const grump = withCat(save, { nurturing: -1 }, { x: 9.5, y: 7.5 });
+      grump.act = idleAct(60);
+      const kitten = withCat(save, {}, { x: 7.5, y: 7.5 }, 1);
+      kitten.mood = 50;
+      kitten.act = { kind: "wander", target: "play", goal: { x: 12, y: 7 }, minutes: 8, elapsed: 0 };
+      const { events, stop } = recordEvents();
+      live(save, 2);
+      stop();
+      if (!events.some((e) => e.type === "hissed" && e.cat === grump.id && e.at === kitten.id)) continue;
+      swatted += 1;
+      expect(kitten.mood).toBeLessThan(50);
+      expect(seen(grump, "nurturing")).toBe(1);
+    }
+    expect(swatted).toBeGreaterThan(5);
+    expect(swatted).toBeLessThan(28);
   });
 });

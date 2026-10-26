@@ -777,6 +777,16 @@ export const JEALOUSY = { near: 2, leave: 0.5, lapLevel: 2, comeStep: 0.25, conf
  * ніхто не їсть, якщо така є з кормом; «−» їсть і разом — прояв «−», не частіше ніж раз на `shareEvery` хвилин.
  */
 export const TERRITORY = { guardStep: 0.3, guardReach: 2, guardRelation: -3, guardPause: 30, guardLevel: 2, guardMinutes: 10, surpriseNeed: 95, surpriseChance: 0.3, shareEvery: 30 } as const;
+/**
+ * «Турбота про кошенят» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26):
+ * початкові стосунки дорослого з кошеням — `RELATIONS.kittenBonus` + `relationStep` × рівень дорослого. «+», нічим не зайнятий, з
+ * шансом `groomStep` × рівень іде вилизати кошеня поруч (до `RELATIONS.groom.distance` клітинок): кошеняті настрій +`groomMood`,
+ * стосунки +`groomRelation`; спить, обійнявши кошеня (вага `hugStep` × рівень), — поки обидва сплять поруч, кошеняті настрій
+ * +`warmPerHour` за годину. Мати щоночі дає новонародженим `motherMood` настрою за знаком своєї риси. «−» шипить і б'є лапою
+ * кошеня, що лізе до нього (ближче `swatReach`), з шансом `swatStep` × |рівень|: кошеняті настрій `swatMood`, на це кошеня —
+ * `swatPause` хвилин спокою. Прояв «+» уві сні з кошеням — не частіше ніж раз на `observeEvery` хвилин.
+ */
+export const NURTURING = { relationStep: 10, groomStep: 0.2, groomMood: 2, groomRelation: 1, hugStep: 1.5, warmPerHour: 0.5, motherMood: 1, swatReach: 1.2, swatStep: 0.5, swatMood: -2, swatPause: 60, observeEvery: 60 } as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

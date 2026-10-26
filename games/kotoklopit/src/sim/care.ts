@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, REVENGE, TREATS } from "./config";
+import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS } from "./config";
 import { catnipReaction, envy, hideSpot, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { fallIll, maybeFallIll } from "./diseases";
@@ -10,6 +10,7 @@ import { useSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { observe } from "./knowledge";
+import { isNewborn, motherOf } from "./reproduction";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { Cat, GameState, Quality } from "./types";
@@ -144,10 +145,14 @@ export function bathe(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Ніч (§8.7, §9.10): нашийник і дзвіночок, ласощі й гра вудкою за день, дерматит безшерстих без купання. */
+/** Ніч (§8.7, §9.10, §9.12): нашийник і дзвіночок, ласощі й гра вудкою за день, дерматит безшерстих без купання, мати й новонароджені. */
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
+    // Мати з «Турботою про кошенят» щодня тішить новонароджених, «Сам ще кошеня» — засмучує (§9.12).
+    const mother = isNewborn(cat) ? motherOf(state, cat) : null;
+    const care = mother && mother.away === null ? Math.sign(traitLevel(mother, "nurturing")) : 0;
+    if (care !== 0) changeMood(state, cat, NURTURING.motherMood * care);
     // Гра вудкою рахується за день: уранці засідки знову частіші (§9.12, «Засідки»).
     delete cat.playedToday;
     // Звичка жебракувати згасає (§7).

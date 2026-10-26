@@ -66,6 +66,7 @@ import {
   NOCTURNAL,
   NOCTURNAL_STEP,
   NOISE,
+  NURTURING,
   OBEDIENCE,
   OLD_PLAY,
   PET,
@@ -553,15 +554,20 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     ...houseSpots(state),
   ];
   // Сон купкою: до сплячого друга (§9.4); «Не терпить дотиків» — рідше (§9.12, «Вилизування друзів»). «Товариський» лягає й до
-  // кота, що не друг і не ворог (§9.12, «Товариськість»): ціль — `pile:<id>`, так видно, до кого ліг.
+  // кота, що не друг і не ворог (§9.12, «Товариськість»), «Нянька» — до кошеняти: ціль — `pile:<id>`, так видно, до кого ліг.
   const touch = Math.max(0, 1 + GROOMING.pileStep * Math.min(0, traitLevel(cat, "grooming")));
   const social = traitLevel(cat, "sociability");
+  const nurturing = traitLevel(cat, "nurturing");
   for (const other of state.cats) {
     if (other.id === cat.id || !home(state, other) || !asleep(other) || isNewborn(other)) continue;
     const friend = isFriend(state, cat, other);
-    const weight = friend ? RELATIONS.sleepTogether.weight * touch : social > 0 && !isEnemy(state, cat, other) ? SOCIABILITY.pileStep * social : 0;
+    // «Нянька» спить, обійнявши кошеня (§9.12, «Турбота про кошенят»).
+    const hug = nurturing > 0 && isKitten(other) && !isKitten(cat) ? NURTURING.hugStep * nurturing : 0;
+    const weight = Math.max(hug, friend ? RELATIONS.sleepTogether.weight * touch : social > 0 && !isEnemy(state, cat, other) ? SOCIABILITY.pileStep * social : 0);
     if (weight <= 0) continue;
-    options.push({ weight, value: { at: { x: other.x - 0.5 + (rng.next() - 0.5) * 0.6, y: other.y - 0.5 }, target: friend ? null : `pile:${other.id}` } });
+    // Ціль — клітинка того кота: шлях котів веде лише до клітинок (перевірка етапу 2026-10-26: точка між клітинками лишала кота
+    // спати там, де стояв), а лягає поруч — `sleptBeside`.
+    options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
@@ -692,6 +698,12 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
   if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
+  // «Нянька» вилизує кошеня поруч (§9.12, «Турбота про кошенят»).
+  const nurturing = traitLevel(cat, "nurturing");
+  if (nurturing > 0 && !isKitten(cat)) {
+    const kitten = state.cats.find((c) => c.id !== cat.id && home(state, c) && isKitten(c) && distance(cat, c) <= RELATIONS.groom.distance);
+    if (kitten && rng.chance(NURTURING.groomStep * nurturing)) return start(cat, "groom", tileOf(kitten), RELATIONS.groom.minutes, `kitten:${kitten.id}`);
+  }
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
   // Той, хто щойно відсторонився від вилизування, годину нікого до себе не підпускає (§9.12, «Вилизування друзів»).
@@ -1696,6 +1708,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         const spot = hideSpot(state, rng, cat);
         return start(cat, "hide", spot.at, STRESS_EFFECTS.hideStep * Math.max(1, -traitLevel(cat, "stress")), spot.target);
       }
+      // Вилизав кошеня (§9.12, «Турбота про кошенят»): малому приємно, а це видно — прояв «+».
+      if (act.target?.startsWith("kitten:") === true) return groomedKitten(state, cat);
       const friend = catById(state, act.target);
       // Друг відсторонився (§9.12, «Вилизування друзів»): ні радості, ні дружби.
       if (!friend || distance(cat, friend) > 1.5 || act.refused === true) return;
@@ -2506,6 +2520,7 @@ export function tickCats(state: GameState, minutes: number, context: CatContext)
   if (state.cats.length > 1) {
     tickRelations(state, minutes, rng);
     settleEnvy(state);
+    warmKittens(state, minutes);
   }
   if (context.present) watchCats(state, minutes);
   setWitnessing(true);
@@ -2545,6 +2560,9 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
         if (together) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
         continue;
       }
+      // Кошеня лізе до «Сам ще кошеня» — той шипить і б'є лапою (§9.12, «Турбота про кошенят»).
+      swatKitten(state, a, b, rng);
+      swatKitten(state, b, a, rng);
       // Не-друг проходить повз — «Конфліктний» може зашипіти (§9.12, «Товариськість»).
       snubPasser(state, a, b, rng);
       snubPasser(state, b, a, rng);
@@ -3224,12 +3242,17 @@ function snubPasser(state: GameState, cat: Cat, other: Cat, rng: Rng): void {
 }
 
 /**
- * Кіт ліг спати поруч з іншим котом, що не друг (§9.12): «Товариський» спить купкою навіть із малознайомим — прояв «+», не частіше
- * ніж раз на годину.
+ * Кіт ліг спати поруч з іншим котом (§9.12): «Товариський» — купкою навіть із малознайомим, «Нянька» — обійнявши кошеня; прояви
+ * «+», не частіше ніж раз на годину.
  */
 function sleptBeside(state: GameState, cat: Cat): void {
   const other = cat.act.target?.startsWith("pile:") === true ? state.cats.find((c) => `pile:${c.id}` === cat.act.target) : undefined;
   if (!other || !asleep(other) || distance(cat, other) > RELATIONS.sleepTogether.distance) return;
+  // Лягає впритул збоку, а не на того кота.
+  cat.x = other.x + (other.x - Math.floor(other.x) > 0.5 ? -0.4 : 0.4);
+  cat.y = other.y;
+  // «Нянька» гріє кошеня (§9.12, «Турбота про кошенят»).
+  if (isKitten(other) && !isKitten(cat) && traitLevel(cat, "nurturing") > 0) observe(state, cat, "nurturing", 1, false, NURTURING.observeEvery);
   if (!isFriend(state, cat, other)) observe(state, cat, "sociability", 1, false, SOCIABILITY.observeEvery);
 }
 
@@ -3305,4 +3328,42 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
     cat.needs.toilet = 0;
   }
   backAway(state, cat, guard);
+}
+
+/** «Нянька» вилизала кошеня (§9.12, «Турбота про кошенят»): малому приємно, вони зближуються — прояв «+». */
+function groomedKitten(state: GameState, cat: Cat): void {
+  const kitten = state.cats.find((c) => `kitten:${c.id}` === cat.act.target);
+  if (!kitten || !home(state, kitten) || distance(cat, kitten) > 1.5) return;
+  changeMood(state, kitten, NURTURING.groomMood);
+  changeRelation(state, cat, kitten, NURTURING.groomRelation);
+  emit(state, { type: "groomed", cat: cat.id, friend: kitten.id });
+  observe(state, cat, "nurturing");
+}
+
+/** Поки «Нянька» спить, обійнявши кошеня, малому тепло (§9.12, «Турбота про кошенят»): настрій +0,5 за годину. */
+function warmKittens(state: GameState, minutes: number): void {
+  for (const kitten of state.cats) {
+    if (!isKitten(kitten) || !home(state, kitten) || !asleep(kitten)) continue;
+    const nanny = state.cats.some((c) => c.id !== kitten.id && !isKitten(c) && home(state, c) && asleep(c) && traitLevel(c, "nurturing") > 0 && distance(c, kitten) <= RELATIONS.sleepTogether.distance);
+    if (nanny) changeMood(state, kitten, NURTURING.warmPerHour * (minutes / MINUTES_PER_HOUR));
+  }
+}
+
+/**
+ * Кошеня лізе до «Сам ще кошеня» (§9.12, «Турбота про кошенят», рішення автора 2026-10-25): той, не сплячи, з шансом 50% × |рівень|
+ * шипить і б'є лапою — кошеняті настрій −2, і воно відскакує; на це кошеня — година спокою. Прояв «−».
+ */
+function swatKitten(state: GameState, cat: Cat, kitten: Cat, rng: Rng): void {
+  const level = traitLevel(cat, "nurturing");
+  if (level >= 0 || isKitten(cat) || !isKitten(kitten) || isNewborn(kitten) || asleep(cat) || asleep(kitten) || !SNUB_FROM.has(cat.act.kind)) return;
+  if (distance(cat, kitten) > NURTURING.swatReach || (kitten.act.goal === null && kitten.act.kind !== "zoomies")) return;
+  const now = absoluteMinute(state.day, state.minute);
+  const next = cat.snubAt?.[kitten.id];
+  if (next !== undefined && now < next) return;
+  const hissed = rng.chance(NURTURING.swatStep * -level) && hiss(state, cat, kitten);
+  (cat.snubAt ??= {})[kitten.id] = now + (hissed ? NURTURING.swatPause : SOCIABILITY.passEvery);
+  if (!hissed) return;
+  changeMood(state, kitten, NURTURING.swatMood, "відігнали");
+  backAway(state, kitten, cat);
+  observe(state, cat, "nurturing", -1);
 }

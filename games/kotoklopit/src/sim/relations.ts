@@ -2,7 +2,7 @@
 // Поведінку друзів і ворогів (ігри, вилизування, бійки) веде `catai.ts`.
 
 import { isKitten, traitLevel } from "./cat";
-import { RELATIONS } from "./config";
+import { NURTURING, RELATIONS } from "./config";
 import type { Cat, GameState } from "./types";
 
 const clamp = (value: number): number => Math.min(100, Math.max(-100, value));
@@ -27,7 +27,8 @@ export function initRelations(state: GameState, cat: Cat): void {
   for (const other of state.cats) {
     if (other.id === cat.id) continue;
     let value = (traitLevel(cat, "sociability") + traitLevel(other, "sociability")) * RELATIONS.sociabilityStep;
-    if (isKitten(cat) !== isKitten(other)) value += RELATIONS.kittenBonus;
+    // З кошеням дорослі ладнають легше, а «Турбота про кошенят» дорослого — ще й ±10 за одиницю (§9.12).
+    if (isKitten(cat) !== isKitten(other)) value += RELATIONS.kittenBonus + NURTURING.relationStep * traitLevel(isKitten(cat) ? other : cat, "nurturing");
     const mother = cat.parents.mother === other.id || other.parents.mother === cat.id;
     const siblings = cat.parents.mother !== null && cat.parents.mother === other.parents.mother;
     if (mother) value += RELATIONS.motherKitten;
