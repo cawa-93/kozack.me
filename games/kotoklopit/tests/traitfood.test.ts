@@ -140,9 +140,9 @@ describe("«Апетит» (рішення автора 2026-10-25)", () => {
   });
 
   it("«Апетит +» інколи перекушує не голодним, коли в мисці є корм; кіт без риси, «−», щойно поївши, гурман і біля зайнятої миски — ні (рішення автора 2026-10-26)", () => {
-    const snacks = (traits: Record<string, TraitLevel>, hunger: number, taken = false): number => {
+    const snacks = (traits: Record<string, TraitLevel>, hunger: number, taken = false, runs = 200): number => {
       let count = 0;
-      for (let seed = 0; seed < 200; seed++) {
+      for (let seed = 0; seed < runs; seed++) {
         const save = game();
         const bowl = bowlOf(save);
         Object.assign(bowl, { food: 2, foodQuality: "cheap" });
@@ -163,11 +163,14 @@ describe("«Апетит» (рішення автора 2026-10-25)", () => {
     expect(snacks({ appetite: 2 }, APPETITE.snackHunger - 1)).toBe(0);
     expect(snacks({ appetite: 2, picky: 1 }, 50)).toBe(0);
     expect(snacks({ appetite: 2 }, 50, true)).toBe(0);
-    const one = snacks({ appetite: 1 }, 50);
-    const two = snacks({ appetite: 2 }, 50);
-    expect(one).toBeGreaterThan(200 * APPETITE.snackStep * 0.5);
-    expect(two).toBeGreaterThan(one);
-    expect(two).toBeLessThan(200 * 2 * APPETITE.snackStep * 1.5);
+    // Шанс — 7% за одиницю (рішення автора 2026-10-26; було 10%).
+    const runs = 2000;
+    const one = snacks({ appetite: 1 }, 50, false, runs) / runs;
+    const two = snacks({ appetite: 2 }, 50, false, runs) / runs;
+    expect(one).toBeGreaterThan(0.055);
+    expect(one).toBeLessThan(0.085);
+    expect(two).toBeGreaterThan(0.12);
+    expect(two).toBeLessThan(0.16);
   });
 
   it("перекус увесь зайвий — гладшає, як від порції без голоду, а звичайна трапеза при тому ж голоді — менше; другої порції після перекусу немає", () => {
