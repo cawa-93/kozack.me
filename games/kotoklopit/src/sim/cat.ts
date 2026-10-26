@@ -235,6 +235,15 @@ export function stress(state: GameState, cat: Cat): void {
   cat.stressedAt = absoluteMinute(state.day, state.minute);
 }
 
+/**
+ * Кіт пережив стрес — бився з іншим котом (`by`) або від гучного звуку сховався чи прокинувся (§9.4, «Гру й вилизування видно»,
+ * рішення автора 2026-10-26, В2): друг поруч може прийти його вилизати.
+ */
+export function upset(state: GameState, cat: Cat, by?: number): void {
+  const at = absoluteMinute(state.day, state.minute);
+  cat.upset = by === undefined ? { at } : { at, by };
+}
+
 /** Коли було останнє, за що мстивий кіт може помститися: неприємне від персонажа чи стрес; null — нічого. */
 export function grudgeAt(cat: Cat): number | null {
   const offense = cat.offense && cat.offense.away !== true ? cat.offense.at : null;

@@ -82,7 +82,8 @@ describe("друзі (§9.4)", () => {
       for (let seed = 0; seed < 400; seed++) {
         const save = game();
         const a = withCat(save, {}, { x: 8.5, y: 8.5 });
-        const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+        // Ближче 2 клітинок: в інший час вилизують лише такого друга (§9.4, рішення автора 2026-10-26, В2).
+        const b = withCat(save, {}, { x: 10.3, y: 8.5 });
         setRelation(save, a, b, value);
         b.act = kind === "pile" ? { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 } : idleAct(30);
         if (kind === "wrestle") a.needs.play = 100;
@@ -224,7 +225,8 @@ describe("друзі (§9.4)", () => {
       let arrived = 0;
       for (let seed = 0; seed < 300 && arrived < 5; seed++) {
         const save = game();
-        const a = withCat(save, {}, { x: 7.5, y: 8.5 });
+        // Ближче 2 клітинок — вилизують і в звичайний час (§9.4, В2).
+        const a = withCat(save, {}, { x: 8.7, y: 8.5 });
         // Друг — у центрі клітинки: туди веде шлях.
         const b = withCat(save, {}, { x: 10.5, y: 8.5 });
         setRelation(save, a, b, 80);
@@ -291,7 +293,7 @@ describe("друзі (§9.4)", () => {
       for (let seed = 0; seed < 200; seed++) {
         const save = game();
         const a = withCat(save, {}, { x: 9.5, y: 8.5 });
-        const b = withCat(save, {}, { x: 11.5, y: 8.5 });
+        const b = withCat(save, {}, { x: 11.3, y: 8.5 });
         setRelation(save, a, b, 80);
         setFriend(b, save);
         decide(save.current, a, createRng(seed), { present: false });
@@ -314,7 +316,7 @@ describe("друзі (§9.4)", () => {
     // Найближчого: дальній друг — перший у списку котів.
     const save = game();
     const a = withCat(save, {}, { x: 9.5, y: 8.5 });
-    const far = withCat(save, {}, { x: 12.3, y: 8.5 });
+    const far = withCat(save, {}, { x: 11.2, y: 8.5 });
     const near = withCat(save, {}, { x: 10.5, y: 8.5 });
     setRelation(save, a, far, 80);
     setRelation(save, a, near, 80);

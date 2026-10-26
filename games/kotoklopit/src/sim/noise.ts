@@ -3,7 +3,7 @@
 // Персонажа гучний звук не будить. Чи ховатися — вирішує «Сміливість», як довго —
 // «Стресостійкість», чи прокинутися — «Тривалість сну». Кроки персонажа будять лише чуйних.
 
-import { changeMood, traitLevel } from "./cat";
+import { changeMood, traitLevel, upset } from "./cat";
 import { hideSpot, isCarried, startAct } from "./catai";
 import { tileOf, visibleFloorNear } from "./catmove";
 import { HOUSEHOLD, MODIFIERS, NOISE, STEPS_WAKE } from "./config";
@@ -57,6 +57,8 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, onl
         continue;
       }
       wake(state, cat);
+      // Прокинувся від гучного звуку — стрес: друг поруч може прийти вилизати (§9.4, рішення автора 2026-10-26, В2).
+      upset(state, cat);
     }
     react(state, cat, kind, rng);
   }
@@ -93,6 +95,8 @@ function scare(state: GameState, cat: Cat, kind: NoiseKind, minutes: number, rng
   const stress = Math.max(NOISE.stressMin, 1 - NOISE.stressStep * traitLevel(cat, "stress"));
   const spot = hideSpot(state, rng, cat);
   startAct(cat, "hide", spot.at, minutes * stress, spot.target);
+  // Сховався від гучного звуку — стрес: друг поруч може потім прийти вилизати (§9.4, рішення автора 2026-10-26, В2).
+  upset(state, cat);
   if (kind === "fireworks") changeMood(state, cat, MODIFIERS.festival.mood, "феєрверки");
   emit(state, { type: "scared", cat: cat.id });
   observe(state, cat, "bravery", -1, false, NOISE.observeEvery);
