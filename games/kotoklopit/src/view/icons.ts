@@ -79,7 +79,8 @@ export type IconName =
   | "chew-wire"
   | "chew-bag"
   | "bored"
-  | "catnip";
+  | "catnip"
+  | "bird";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -569,6 +570,16 @@ Object.assign(ICONS, {
     g.lineStyle(1.5, INK).strokeEllipse(16, 29, 8, 9);
   },
   catnip: (g: Phaser.GameObjects.Graphics) => drawCatnip(g, 20, 21, 1),
+  bird: (g: Phaser.GameObjects.Graphics) => {
+    // Пташка за вікном (§9.12, «Вікно»): кругле тільце, крило, дзьобик і хвостик.
+    g.fillStyle(0x8a6e48).fillTriangle(6, 18, 14, 22, 8, 28);
+    g.fillStyle(0xb08a5a).fillEllipse(20, 23, 22, 15).fillCircle(29, 15, 7);
+    g.fillStyle(0xe0893a).fillEllipse(19, 26, 12, 7);
+    g.fillStyle(0x6b4a2b).fillEllipse(17, 20, 12, 6);
+    g.fillStyle(0xe8b93a).fillTriangle(35, 13, 35, 18, 40, 15);
+    g.fillStyle(INK).fillCircle(30, 13, 1.6);
+    g.lineStyle(2, INK).strokeEllipse(20, 23, 22, 15).strokeCircle(29, 15, 7).lineBetween(17, 30, 16, 36).lineBetween(23, 30, 24, 36);
+  },
 } satisfies Partial<Record<IconName, Draw>>);
 
 /** Позначки поверх іконки (§11.4): перекреслення на всю іконку, знак питання й галочка — кружечком у куті. */

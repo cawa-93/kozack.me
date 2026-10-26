@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, tickCats } from "../src/sim/catai";
-import { CATNIP, GIFTS, PET, PLAY, PLAYFUL, PRODUCTS } from "../src/sim/config";
+import { decide, startWindow, tickCats, windowWeight } from "../src/sim/catai";
+import { CATNIP, GIFTS, PET, PLAY, PLAYFUL, PRODUCTS, SOFA_REPAIR, WINDOW } from "../src/sim/config";
 import { addSupply, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
-import { itemTile } from "../src/sim/home";
+import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -269,5 +269,124 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     delete data.current.home.supplies.catnip;
     const loaded = deserialize(JSON.stringify(data));
     expect(loaded.current.home.supplies.catnip).toEqual({ cheap: 0, premium: 0 });
+  });
+});
+
+/** Кіт уже на підвіконні й дивиться у вікно. */
+function atWindow(cat: Cat, sill = WINDOWS[0]!.sill, minutes = 60): void {
+  const o = objectById(sill);
+  Object.assign(cat, { x: o.x + 0.5, y: o.y + 0.5 });
+  cat.act = { kind: "window", target: sill, goal: null, minutes, elapsed: 0 };
+}
+
+describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () => {
+  it("підвіконня в спальні й вітальні видно, вони — меблі, а квартира лишається прохідною", () => {
+    const state = game().current;
+    expect(WINDOWS.map((w) => objectById(w.sill).kind)).toEqual(["windowsill", "windowsill"]);
+    for (const { sill } of WINDOWS) {
+      const o = objectById(sill);
+      expect(isSolid(state, o.x, o.y)).toBe(true);
+      expect(hiddenTile(o.x, o.y)).toBe(false);
+    }
+    // З місця пробудження дійти можна до кожної вільної клітинки підлоги.
+    const seen = new Set<string>([`${Math.floor(SPAWN.x)},${Math.floor(SPAWN.y)}`]);
+    const queue = [{ x: Math.floor(SPAWN.x), y: Math.floor(SPAWN.y) }];
+    for (let tile = queue.shift(); tile; tile = queue.shift()) {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const next = { x: tile.x + dx, y: tile.y + dy };
+        if (isSolid(state, next.x, next.y) || seen.has(`${next.x},${next.y}`)) continue;
+        seen.add(`${next.x},${next.y}`);
+        queue.push(next);
+      }
+    }
+    for (let y = 0; y < MAP_HEIGHT; y++) for (let x = 0; x < MAP_WIDTH; x++) if (!isSolid(state, x, y)) expect(seen.has(`${x},${y}`), `${x},${y}`).toBe(true);
+  });
+
+  it("вага вікна: удень 0,4 × (1 + 0,5 × рівень); «Не дивиться у вікно» — ніколи, уночі — ніхто", () => {
+    const save = game();
+    expect(windowWeight(save.current, withCat(save))).toBeCloseTo(WINDOW.weight);
+    expect(windowWeight(save.current, withCat(save, { window: 2 }))).toBeCloseTo(WINDOW.weight * 2);
+    expect(windowWeight(save.current, withCat(save, { window: -1 }))).toBe(0);
+    expect(windowWeight(save.current, withCat(save, { window: -2 }))).toBeCloseTo(WINDOW.weight);
+    save.current.minute = hours(23);
+    expect(windowWeight(save.current, withCat(save, { window: 2 }))).toBe(0);
+  });
+
+  it("кіт без справ удень інколи йде на підвіконня, «+» — частіше; на одному підвіконні — один кіт", () => {
+    const count = (traits: Record<string, TraitLevel>): number => {
+      let n = 0;
+      for (let seed = 1; seed <= 80; seed++) {
+        const save = game(seed);
+        const cat = withCat(save, traits);
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.kind === "window") n += 1;
+      }
+      return n;
+    };
+    const plain = count({});
+    expect(plain).toBeGreaterThan(5);
+    expect(count({ window: 2 })).toBeGreaterThan(plain);
+    expect(count({ window: -1 })).toBe(0);
+    const save = game();
+    const [a, b, c] = [withCat(save), withCat(save), withCat(save)];
+    expect(startWindow(save.current, a!, createRng(1))).toBe(true);
+    expect(startWindow(save.current, b!, createRng(1))).toBe(true);
+    expect(b!.act.target).not.toBe(a!.act.target);
+    expect(startWindow(save.current, c!, createRng(1))).toBe(false);
+  });
+
+  it("на підвіконні: гра знімається, настрій росте; «+» «кекає» на птахів — прояв «+», не частіше разу на годину", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 4.5, y: 2.5 });
+    const plain = withCat(save);
+    const lover = withCat(save, { window: 2 });
+    for (const cat of [plain, lover]) Object.assign(cat, { mood: 50, needs: { ...cat.needs, play: 60 } });
+    atWindow(plain, WINDOWS[0]!.sill);
+    atWindow(lover, WINDOWS[1]!.sill);
+    // Персонаж у спальні бачить «+» на підвіконні спальні.
+    atWindow(lover, WINDOWS[0]!.sill);
+    atWindow(plain, WINDOWS[1]!.sill);
+    const { events, stop } = recordEvents();
+    live(save, 50);
+    stop();
+    for (const cat of [plain, lover]) {
+      expect(cat.needs.play).toBeLessThan(60);
+      expect(cat.mood).toBeGreaterThan(50);
+    }
+    expect(lover.needs.play).toBeLessThan(plain.needs.play);
+    expect(events.filter((e) => e.type === "chatter" && e.cat === lover.id).length).toBeGreaterThan(0);
+    expect(events.some((e) => e.type === "chatter" && e.cat === plain.id)).toBe(false);
+    expect(seen(lover, "window")).toBe(1);
+  });
+
+  it("«Нудьгує біля вікна» злиться — прояв «−» — і шипить на кота поруч, а сам — дере диван", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 2.5, y: 8.5 });
+    const angry = withCat(save, { window: -2 });
+    const other = withCat(save, {}, { x: 2.5, y: 7.5 });
+    other.act = idleAct(60);
+    atWindow(angry, WINDOWS[1]!.sill);
+    const { events, stop } = recordEvents();
+    live(save, WINDOW.angerMinutes + 0.5);
+    stop();
+    expect(events.some((e) => e.type === "window-angry" && e.cat === angry.id)).toBe(true);
+    expect(events.some((e) => e.type === "hissed" && e.cat === angry.id && e.at === other.id)).toBe(true);
+    expect(relation(save.current, angry, other)).toBeLessThan(0);
+    expect(seen(angry, "window")).toBe(1);
+    // Нікого поруч — іде дерти диван (ремонт).
+    const alone = game();
+    const cat = withCat(alone, { window: -2 });
+    atWindow(cat, WINDOWS[1]!.sill);
+    const repairs = alone.current.home.repairs;
+    live(alone, WINDOW.angerMinutes + 10);
+    expect(alone.current.home.repairs).toBe(repairs + SOFA_REPAIR);
+  });
+
+  it("стара гра: персонаж там, де тепер підвіконня, після завантаження — поруч", () => {
+    const save = game();
+    const sill = objectById(WINDOWS[0]!.sill);
+    Object.assign(save.current.character.body, { x: sill.x + 0.5, y: sill.y + 0.5 });
+    const body = deserialize(serialize(save)).current.character.body;
+    expect(isSolid(save.current, Math.floor(body.x), Math.floor(body.y))).toBe(false);
   });
 });

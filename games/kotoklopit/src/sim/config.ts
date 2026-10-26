@@ -706,6 +706,33 @@ export const CATNIP = {
   fightReach: 3,
   refractoryMinutes: 120,
 } as const;
+/**
+ * «Вікно» (§9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): підвіконня в
+ * спальні й вітальні — місця в квартирі (справжні вікна, світло й ніч — пізніше, разом із днем і ніччю). Удень (`from`–`to`
+ * година) кіт без справ сідає на вільне підвіконня з вагою `weight` × (1 + `step` × рівень) серед спокійних варіантів (поруч:
+ * побродити — 0,4, посидіти — 0,6) на `minMinutes`–`maxMinutes` хвилин; «Не дивиться у вікно» (−1) — ніколи, «Нудьгує біля
+ * вікна» (−2) — як кіт без риси. Біля вікна потреба гри знімається на `playPerHour` × той самий множник за годину, настрій
+ * +`moodPerHour` (від `strongLevel` — +`strongMood`); «+» «кекає» на птахів — у середньому раз на `chatterMinutes` хвилин.
+ * «Нудьгує біля вікна» за `angerMinutes` хвилин злиться: шипить на кота, що не спить, поруч (до `redirectReach` клітинок;
+ * стосунки `relation`) чи йде дерти диван. Прояви — не частіше ніж раз на `observeEvery` хвилин.
+ */
+export const WINDOW = {
+  from: 7,
+  to: 21,
+  weight: 0.4,
+  step: 0.5,
+  minMinutes: 20,
+  maxMinutes: 60,
+  playPerHour: 8,
+  moodPerHour: 1,
+  strongMood: 2,
+  strongLevel: 2,
+  chatterMinutes: 15,
+  angerMinutes: 4,
+  redirectReach: 4,
+  relation: -2,
+  observeEvery: 60,
+} as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

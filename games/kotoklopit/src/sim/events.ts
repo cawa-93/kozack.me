@@ -192,6 +192,10 @@ export type GameEvent =
    * не діє) або шаленіє.
    */
   | { type: "catnip"; cat: number; reaction: "roll" | "sniff" | "frenzy" }
+  /** Кіт на підвіконні «кекає» на птахів за вікном (§9.12, «Вікно»). */
+  | { type: "chatter"; cat: number }
+  /** «Нудьгує біля вікна» злиться на підвіконні, сіпаючи хвостом (§9.12, «Вікно»). */
+  | { type: "window-angry"; cat: number }
   | { type: "knocked"; cat: number; object: string; item: Dish }
   /** Кіт скинув дрібничку зі столу (§9.12, «Скидання речей»): стук, а кухоль може й розбитися. */
   | { type: "trinket-fell"; cat: number; trinket: TrinketKind; object: string; broken: boolean }

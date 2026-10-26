@@ -286,6 +286,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "sofa":
     case "wardrobe":
+    case "windowsill":
       return null;
     case "washer": {
       if (held !== null) return refuse(state, target.id, "hands-full");
@@ -507,6 +508,8 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";
+  // «Нудьгує біля вікна» сіпає хвостом і мружиться на птахів за склом (§9.12, «Вікно»).
+  if (cat.act.kind === "window" && cat.act.goal === null && traitLevel(cat, "window") <= -2) return "reluctant";
   return null;
 }
 

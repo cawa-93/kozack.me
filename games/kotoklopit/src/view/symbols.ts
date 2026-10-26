@@ -215,6 +215,12 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Котяча м'ята (§9.12): блаженство й «не діє» — думка кота; той, що шаленіє, верещить уголос.
       if (event.reaction === "frenzy") return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
       return [{ kind: "think", at: cat(event.cat), icon: "catnip", ...(event.reaction === "sniff" ? { mark: "no" as const } : {}) }];
+    case "chatter":
+      // Кіт на підвіконні «кекає» на птахів (§9.12, «Вікно») — звук, уголос.
+      return [{ kind: "say", at: cat(event.cat), icon: "bird" }];
+    case "window-angry":
+      // «Нудьгує біля вікна» злиться на птахів за склом — його злість.
+      return [{ kind: "think", at: cat(event.cat), icon: "bird", mark: "no" }];
     case "nervous":
       // Нервовий кіт вилизується після неприємного (§9.12): його тривога.
       return [{ kind: "think", at: cat(event.cat), icon: "lick" }];

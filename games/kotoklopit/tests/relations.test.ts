@@ -3,9 +3,10 @@
 import { describe, expect, it } from "vitest";
 
 import { pickUpCat } from "../src/sim/actions";
-import { createCat } from "../src/sim/cat";
+import { createCat, idleAct } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
+import { itemTile } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -120,7 +121,11 @@ describe("ресурси й ревнощі (§9.4)", () => {
     const save = game();
     const a = withCat(save, { territorial: 2 });
     const b = withCat(save, {}, { x: 5.5, y: 8.5 });
+    const litter = save.current.home.items.find((it) => it.kind === "litter");
+    if (!litter) throw new Error("немає лотка");
     for (let i = 0; i < 40; i++) {
+      // Другий кіт сидить біля лотка (сварка — лише з котом поруч, §9.4), а не на підвіконні чи деінде.
+      Object.assign(b, { x: itemTile(litter).x + 1.5, y: itemTile(litter).y + 0.5, act: idleAct(30) });
       a.needs.toilet = 100;
       decide(save.current, a, createRng(i), { present: false });
       for (let t = 0; t < 20 && a.act.kind === "toilet"; t++) tickCats(save.current, 1, { present: false });

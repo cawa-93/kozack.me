@@ -98,6 +98,7 @@ import {
   VOMIT_STEP,
   WATCH_SANITY,
   WATER_PLAY,
+  WINDOW,
   WORK_CAT,
   ZOOMIES,
 } from "./config";
@@ -108,7 +109,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -681,6 +682,9 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   // Погризти щось (§9.12, «Гризіння»): гризун — частіше, кошеня без риси — інколи (міняються зуби).
   if (rng.chance(chewChance(cat)) && startChew(state, cat, rng)) return;
+  // Подивитися у вікно (§9.12, «Вікно»): удень, поруч зі спокійними варіантами — побродити (0,4) і посидіти (0,6).
+  const sill = windowWeight(state, cat);
+  if (sill > 0 && rng.chance(sill / (1 + sill)) && startWindow(state, cat, rng)) return;
   if (rng.chance(0.4)) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
   start(cat, "idle", null, CAT_ACT_MINUTES.idle * (0.5 + rng.next()));
 }
@@ -1723,6 +1727,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Нагасався від м'яти — задирає кота поруч (§9.12, «Котяча м'ята»).
       if (act.target === "catnip") catnipFight(state, cat);
       return;
+    case "window":
+      // «Нудьгує біля вікна» зриває злість (§9.12, «Вікно»).
+      if (act.refused === true) windowRage(state, cat, rng);
+      return;
     case "catnip":
       // Накатався по м'яті: награвся, а «+» засинає просто тут (§9.12, «Котяча м'ята»).
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
@@ -1985,6 +1993,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       cat.facing = -1;
       if (act.elapsed <= minutes) emit(state, { type: "chewing", cat: cat.id, what: act.target === "boxes" ? "boxes" : "wire" });
       return;
+    case "window":
+      return watchWindow(state, cat, minutes, rng);
     case "catnip": {
       // Катається по м'яті довше, ніж кіт без риси, — прояв «Котячої м'яти +» (§9.9).
       const plain = CATNIP.rollMinutes[0] ?? 0;
@@ -2277,6 +2287,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     cat.act.kind === "attention" ||
     cat.act.kind === "toy" ||
     cat.act.kind === "ambush" ||
+    cat.act.kind === "window" ||
     (cat.act.kind === "follow" && cat.act.target !== "food");
   if (calm && urgent(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
@@ -2901,4 +2912,68 @@ function catnipFight(state: GameState, cat: Cat): void {
   others.sort((a, b) => distance(a, cat) - distance(b, cat));
   const other = others[0];
   if (other && hiss(state, cat, other)) startFight(state, cat, other);
+}
+
+/**
+ * Вага «подивитися у вікно» серед спокійних варіантів (§9.12, «Вікно», рішення автора 2026-10-25): удень 0,4 × (1 + 0,5 × рівень);
+ * «Не дивиться у вікно» (−1) — ніколи, «Нудьгує біля вікна» (−2 і менше) — як кіт без риси; новонароджене — ніколи.
+ */
+export function windowWeight(state: GameState, cat: Cat): number {
+  const hour = hourOf(state.minute);
+  if (hour < WINDOW.from || hour >= WINDOW.to || isNewborn(cat)) return 0;
+  const level = traitLevel(cat, "window");
+  if (level === -1) return 0;
+  return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level));
+}
+
+/** Кіт іде на найближче вільне підвіконня (§9.12, «Вікно»): там нікого немає й ніхто туди не йде. false — вільного немає. */
+export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
+  const sills = WINDOWS.map((w) => objectById(w.sill)).filter((o) => !state.cats.some((c) => c.id !== cat.id && c.away === null && (c.act.target === o.id || inside(c, o))));
+  sills.sort((a, b) => distance(a, cat) - distance(b, cat));
+  const sill = sills[0];
+  if (!sill) return false;
+  start(cat, "window", { x: sill.x, y: sill.y }, WINDOW.minMinutes + rng.next() * (WINDOW.maxMinutes - WINDOW.minMinutes), sill.id);
+  return true;
+}
+
+/**
+ * Кіт на підвіконні (§9.12, «Вікно»): дивиться у вікно — потреба гри потроху знімається, настрій росте, «+» «кекає» на птахів
+ * (прояв «+»); «Нудьгує біля вікна» сіпає хвостом і за кілька хвилин злиться (прояв «−»), і дивитися у вікно йому кінець.
+ */
+function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
+  const act = cat.act;
+  const pane = WINDOWS.find((w) => w.sill === act.target);
+  if (pane) cat.facing = pane.facing;
+  const level = traitLevel(cat, "window");
+  if (level <= -2) {
+    if (act.elapsed < WINDOW.angerMinutes || act.refused === true) return;
+    act.refused = true;
+    act.minutes = 0;
+    emit(state, { type: "window-angry", cat: cat.id });
+    observe(state, cat, "window", -1, false, WINDOW.observeEvery);
+    return;
+  }
+  const hours = minutes / MINUTES_PER_HOUR;
+  cat.needs.play = Math.max(0, cat.needs.play - WINDOW.playPerHour * (1 + WINDOW.step * Math.max(0, level)) * hours);
+  changeMood(state, cat, (level >= WINDOW.strongLevel ? WINDOW.strongMood : WINDOW.moodPerHour) * hours);
+  if (level <= 0 || !rng.chance(1 - (1 - 1 / WINDOW.chatterMinutes) ** minutes)) return;
+  emit(state, { type: "chatter", cat: cat.id });
+  observe(state, cat, "window", 1, false, WINDOW.observeEvery);
+}
+
+/**
+ * «Нудьгує біля вікна» зриває злість (§9.12, «Вікно»): перенаправлена агресія — шипить на найближчого кота, що не спить, поруч
+ * (стосунки падають, той відходить), а нікого поруч — іде дерти диван.
+ */
+function windowRage(state: GameState, cat: Cat, rng: Rng): void {
+  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= WINDOW.redirectReach);
+  others.sort((a, b) => distance(a, cat) - distance(b, cat));
+  const other = others[0];
+  if (other && hiss(state, cat, other)) {
+    changeRelation(state, cat, other, WINDOW.relation);
+    backAway(state, other, cat);
+    return;
+  }
+  const sofa = objectById("sofa");
+  start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }

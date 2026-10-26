@@ -24,7 +24,8 @@ export type ObjectKind =
   | "sterileBin"
   | "catKit"
   | "boxes"
-  | "wardrobe";
+  | "wardrobe"
+  | "windowsill";
 
 export interface Rect {
   x: number;
@@ -82,7 +83,7 @@ const object = (id: string, kind: ObjectKind, x: number, y: number, w = 1, h = 1
   y,
   w,
   h,
-  interactive: kind !== "sofa" && kind !== "wardrobe",
+  interactive: kind !== "sofa" && kind !== "wardrobe" && kind !== "windowsill",
   ...(requires ? { requires } : {}),
 });
 
@@ -102,6 +103,10 @@ export const OBJECTS: readonly HomeObject[] = [
   object("computer", "computer", 6, 6, 2, 1),
   // Шафа в спальні (§9.12, «Лазіння», 2026-10-26): обстановка, але й високе місце для котів, як верх холодильника.
   object("wardrobe", "wardrobe", 6, 1),
+  // Підвіконня з батареєю під ним (§9.12, «Вікно», 2026-10-26): у спальні — під вікном у задній стіні, у вітальні — під вікном у
+  // лівій стіні. Обстановка, як диван: тут коти дивляться у вікно. Справжні вікна й світло — пізніше, разом із днем і ніччю.
+  object("sill-bedroom", "windowsill", 4, 1),
+  object("sill-living", "windowsill", 1, 8),
   object("sofa", "sofa", 13, 10, 3, 1),
   object("door", "door", 10, 11, 2, 1),
   // Побут (§8.7): пральна машина у ванній і шафа з пилососом у вітальні.
@@ -114,6 +119,15 @@ export const OBJECTS: readonly HomeObject[] = [
   // Ящики біля входу (§6.4): стоять, поки в них є куплені запаси; невисокі — через них переступають.
   // Не в ряду біля дверей: його закриває передня стіна (камера «три чверті»).
   { ...object("boxes", "boxes", 12, 9), walkable: true },
+];
+
+/**
+ * Вікна (§9.12, «Вікно»): підвіконня, клітинка стіни з вікном над ним і куди дивиться кіт на підвіконні (−1 — ліворуч, 1 —
+ * праворуч; вікно в задній стіні — просто вгору, тож байдуже).
+ */
+export const WINDOWS: readonly { sill: string; wall: Vec; facing: 1 | -1 }[] = [
+  { sill: "sill-bedroom", wall: { x: 4, y: 0 }, facing: 1 },
+  { sill: "sill-living", wall: { x: 0, y: 8 }, facing: -1 },
 ];
 
 /** Високі місця (§9.12, «Лазіння»): верх холодильника й шафи — туди вилазять коти. */

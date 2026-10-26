@@ -29,7 +29,8 @@ describe("рух (§8.4)", () => {
 
   it("стіни й речі не пропускають, а вздовж стіни персонаж ковзає", () => {
     const save = game();
-    place(save, 4.5, 2.5);
+    // Не під підвіконням спальні (4, 1): воно теж річ (§9.12, «Вікно»).
+    place(save, 3.5, 2.5);
     walk(save, { x: 0, y: -1 }, 3);
     expect(save.current.character.body.y).toBeCloseTo(1 + BODY_RADIUS, 4);
     walk(save, { x: -1, y: 0 }, 3);

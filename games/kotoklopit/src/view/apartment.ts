@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, type HomeObject, type ObjectKind } from "../sim/home";
+import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, WINDOWS, type HomeObject, type ObjectKind } from "../sim/home";
 import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
 import { SHAPED_STORAGES } from "./storagelook";
@@ -30,6 +30,7 @@ const HEIGHT: Record<ObjectKind, number> = {
   catKit: 40,
   boxes: 40,
   wardrobe: 64,
+  windowsill: 22,
 };
 
 const FILL: Record<ObjectKind, number> = {
@@ -52,6 +53,7 @@ const FILL: Record<ObjectKind, number> = {
   catKit: 0xf0ece4,
   boxes: 0xc49a62,
   wardrobe: 0x8a6e48,
+  windowsill: 0xeeeae2,
 };
 
 /** Видима висота речі: на неї вилазить кіт. */
@@ -89,6 +91,7 @@ function shade(color: number, amount: number): number {
 export function drawApartment(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): Map<string, ObjectView> {
   drawFloor(scene, layer);
   drawWalls(scene, layer);
+  drawWindows(scene, layer);
   const views = new Map<string, ObjectView>();
   for (const object of OBJECTS) views.set(object.id, drawObject(scene, layer, object));
   return views;
@@ -143,6 +146,41 @@ function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
 
 function isWall(x: number, y: number): boolean {
   return MAP[y]?.[x] === "#";
+}
+
+/** Скло вікна: світле, з відблиском неба. */
+const GLASS = 0xbfe0ef;
+
+/**
+ * Вікна над підвіконнями (§9.12, «Вікно»): скло в товщі стіни, як на плані квартири, а у вікні задньої стіни — ще й шибка на її
+ * лицьовій грані. Світла й ночі вікна поки не змінюють — це прийде разом із днем і ніччю.
+ */
+function drawWindows(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+  for (const pane of WINDOWS) {
+    const { x, y } = pane.wall;
+    const p = toScreen(pane.wall);
+    const g = scene.add
+      .graphics()
+      .setDepth(depthOf(toScreen({ x: 0, y: y + 1 }).y) + 0.01)
+      .addToDisplayList(layer);
+    const top = p.y - WALL_RISE;
+    const cx = p.x + TILE_W / 2;
+    g.lineStyle(2, COLORS.ink, 0.9);
+    if (MAP[y + 1]?.[x] === ".") {
+      // Задня стіна: скло вздовж неї в товщі стіни й шибка з рамою на лицьовій грані.
+      g.fillStyle(GLASS).fillRect(p.x + 6, top + TILE_H / 2 - 6, TILE_W - 12, 12);
+      g.strokeRect(p.x + 6, top + TILE_H / 2 - 6, TILE_W - 12, 12);
+      const face = p.y + TILE_H - WALL_RISE;
+      g.fillStyle(GLASS).fillRect(p.x + 8, face + 3, TILE_W - 16, WALL_RISE - 6);
+      g.fillStyle(0xffffff, 0.6).fillTriangle(p.x + 12, face + 5, p.x + 22, face + 5, p.x + 12, face + 14);
+      g.strokeRect(p.x + 8, face + 3, TILE_W - 16, WALL_RISE - 6).lineBetween(cx, face + 3, cx, face + WALL_RISE - 3);
+    } else {
+      // Бічна стіна: скло смугою вздовж стіни в її товщі.
+      g.fillStyle(GLASS).fillRect(cx - 6, top + 4, 12, TILE_H - 8);
+      g.fillStyle(0xffffff, 0.6).fillRect(cx - 4, top + 7, 3, 12);
+      g.strokeRect(cx - 6, top + 4, 12, TILE_H - 8).lineBetween(cx - 6, top + TILE_H / 2, cx + 6, top + TILE_H / 2);
+    }
+  }
 }
 
 function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object: HomeObject): ObjectView {
@@ -302,6 +340,12 @@ function decorate(
       // Шафа з пилососом: дверцята й ручка.
       g.lineStyle(2, COLORS.ink, 0.7).strokeRect(t.x + 6, t.y + t.h + 4, t.w - 12, height - 8);
       g.fillStyle(COLORS.ink).fillCircle(t.x + t.w - 14, t.y + t.h + height / 2, 2.5);
+      break;
+    case "windowsill":
+      // Підвіконня (§9.12, «Вікно»): біла дошка, а під нею — батарея з ребрами.
+      g.fillStyle(0xc9ccd1).fillRect(t.x + 4, t.y + t.h + 4, t.w - 8, height - 6);
+      g.lineStyle(1.5, COLORS.ink, 0.6);
+      for (let i = 1; i < 7; i++) g.lineBetween(t.x + 4 + ((t.w - 8) * i) / 7, t.y + t.h + 5, t.x + 4 + ((t.w - 8) * i) / 7, t.y + t.h + height - 3);
       break;
     case "wardrobe":
       // Шафа (§9.12, «Лазіння»): дві стулки з ручками.
