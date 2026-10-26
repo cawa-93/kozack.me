@@ -391,7 +391,7 @@ function groomWhenFree(state: GameState, cat: Cat, rng: Rng): boolean {
     return true;
   }
   // Найближчого, хто відпочиває (перевірка стосунків 2026-10-26: раніше — першого в списку, хай що він робив).
-  const friend = nearestCat(state, cat, (c) => groomable(state, cat, c) && distance(cat, c) < g.near);
+  const friend = nearestCat(state, cat, (c) => groomable(state, cat, c) && distance(cat, c) <= g.near);
   if (!friend || !rng.chance(groomChance(cat, g.other))) return false;
   startGroom(cat, friend, rng);
   return true;

@@ -179,23 +179,29 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
       setup(save, a, b);
       decide(save.current, a, createRng(seed), { present: false });
       if (a.act.kind === "groom" && a.act.target === `cat:${b.id}`) chosen++;
+      comfortOf.get(a)?.();
     }
     return chosen / runs;
   }
 
+  /** Що перевірити після рішення кота (для утіхи після стресу). */
+  const comfortOf = new WeakMap<Cat, () => void>();
+
   const now = (save: Save): number => absoluteMinute(save.current.day, save.current.minute);
 
-  it("в інший час — 15% і лише коли друг ближче 2 клітинок (було 30% до 3 клітинок)", () => {
-    const near = groomRate(1.5);
-    expect(near).toBeGreaterThan(0.08);
-    expect(near).toBeLessThan(0.23);
-    expect(groomRate(2.5)).toBe(0);
+  it("в інший час — 30%, коли друг до 3 клітинок (рішення автора 2026-10-26 після блоку 3; було 15% і ближче 2)", () => {
+    for (const gap of [1.5, 2.5]) {
+      const rate = groomRate(gap);
+      expect(rate).toBeGreaterThan(0.2);
+      expect(rate).toBeLessThan(0.4);
+    }
+    expect(groomRate(3.5)).toBe(0);
   });
 
   it("«Вилизування друзів» множить шанс на 1 + 0,5 × рівень; «−2» не вилизує ніколи", () => {
     const keen = groomRate(1.5, undefined, { grooming: 2 });
-    expect(keen).toBeGreaterThan(0.2);
-    expect(keen).toBeLessThan(0.4);
+    expect(keen).toBeGreaterThan(0.45);
+    expect(keen).toBeLessThan(0.75);
     expect(groomRate(1.5, undefined, { grooming: -2 })).toBe(0);
   });
 
@@ -203,12 +209,21 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
     const upset = (ago: number, by?: (a: Cat) => number) => (save: Save, a: Cat, b: Cat) => {
       b.upset = { at: now(save) - ago, by: by ? by(a) : 999 };
     };
-    const rate = groomRate(2.5, upset(10));
+    // Утішити (настрій +2) — 30%; давно (понад годину) чи через самого кота — як в інший час, без утіхи (з 2026-10-26 після блоку 3
+    // «в інший час» — теж 30% до 3 клітинок, тож різницю видно лише з утіхи).
+    const comfort = (setup: (save: Save, a: Cat, b: Cat) => void): number => {
+      let comforted = 0;
+      groomRate(2.5, (save, a, b) => {
+        setup(save, a, b);
+        comfortOf.set(a, () => (a.act.comfort === true ? comforted++ : 0));
+      });
+      return comforted / 400;
+    };
+    const rate = comfort(upset(10));
     expect(rate).toBeGreaterThan(0.2);
     expect(rate).toBeLessThan(0.4);
-    // Давно (понад годину) чи через самого кота — як завжди: за 2,5 клітинки не вилизують.
-    expect(groomRate(2.5, upset(90))).toBe(0);
-    expect(groomRate(2.5, upset(10, (a) => a.id))).toBe(0);
+    expect(comfort(upset(90))).toBe(0);
+    expect(comfort(upset(10, (a) => a.id))).toBe(0);
   });
 
   it("вилизаному після стресу настрій +2 замість +1 — раз за стрес", () => {
@@ -303,10 +318,12 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
       }
       return groomed / runs;
     };
+    // Після сну купкою — 50%, а ні — ще 30% «в інший час» (з 2026-10-26 після блоку 3 — до 3 клітинок): разом ~65%; далі 3 клітинок —
+    // ні того, ні іншого.
     const pile = rate(0.6);
-    expect(pile).toBeGreaterThan(0.38);
-    expect(pile).toBeLessThan(0.72);
-    expect(rate(2.5)).toBe(0);
+    expect(pile).toBeGreaterThan(0.5);
+    expect(pile).toBeLessThan(0.8);
+    expect(rate(3.5)).toBe(0);
   });
 
   it("після сну вилизує й голодний чи спраглий (поїсть потім), але не той, кому треба в лоток", () => {
