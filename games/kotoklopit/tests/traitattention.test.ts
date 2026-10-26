@@ -8,7 +8,7 @@ import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { giveTreat } from "../src/sim/care";
 import { rubbingCat } from "../src/sim/body";
 import { changeLove, createCat, idleAct, offend } from "../src/sim/cat";
-import { catOnComputer, decide, greetAtDoor, slowBlinks, tickCats } from "../src/sim/catai";
+import { catOnComputer, decide, greetAtDoor, slowBlinks, tickCats, turnAway } from "../src/sim/catai";
 import { AFFECTION, CARRY, LEGS, MINUTES_PER_HOUR, PET, PETTING, TALKATIVE, TOUCHY } from "../src/sim/config";
 import { advance, interact, newGame, returnHome } from "../src/sim/game";
 import { LAUNDRY_BASKET, objectById } from "../src/sim/home";
@@ -490,6 +490,26 @@ describe("«Образливість» (рішення автора 2026-10-25)"
     tickCats(save.current, 0.1, { present: true });
     stop();
     expect(events.filter((e) => e.type === "sulked")).toHaveLength(before + 1);
+    expect(seen(cat, "touchy")).toBe(1);
+  });
+
+  it("«Образливий» відійшов, коли персонаж його не бачив, — прояв зараховується наступного разу, коли бачить (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const cat = withCat(save, { touchy: 2 }, { x: 8.5, y: 8.5 });
+    offend(save.current, cat, -2, "прогнали з місця");
+    // Персонаж у спальні: вітальні крізь стіну не видно.
+    Object.assign(save.current.character.body, { x: 2.5, y: 2.5 });
+    const { events, stop } = recordEvents();
+    turnAway(save.current, cat);
+    expect(events.filter((e) => e.type === "sulked")).toHaveLength(1);
+    expect(seen(cat, "touchy")).toBe(0);
+    expect(cat.offense?.seen).toBeUndefined();
+    save.current.minute += TOUCHY.againMinutes;
+    cat.act = idleAct(10);
+    Object.assign(save.current.character.body, { x: cat.x - 0.9, y: cat.y, facing: { x: 1, y: 0 } });
+    tickCats(save.current, 0.1, { present: true });
+    stop();
+    expect(events.filter((e) => e.type === "sulked")).toHaveLength(2);
     expect(seen(cat, "touchy")).toBe(1);
   });
 

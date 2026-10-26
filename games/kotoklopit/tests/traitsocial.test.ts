@@ -854,6 +854,29 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     expect(took).toBeGreaterThan(3);
   });
 
+  it("«Щедра душа» ліг муркотіти, коли персонаж не бачив, — прояв зараховується, щойно побачить, а муркотіння й стосунки — раз (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const kind = withCat(save, { jealousy: -2 }, { x: 8.6, y: 8.5 });
+    lucky.act = idleAct(30);
+    kind.act = { kind: "idle", target: `cuddle:${lucky.id}`, goal: null, minutes: JEALOUSY.cuddleMinutes, elapsed: 0 };
+    // Персонаж у спальні: вітальні крізь стіну не видно.
+    Object.assign(save.current.character.body, { x: 2.5, y: 2.5 });
+    const before = relation(save.current, kind, lucky);
+    const { events, stop } = recordEvents();
+    tickCats(save.current, 0.25, { present: true });
+    const cuddled = (): number => events.filter((e) => e.type === "cat-cuddled" && e.cat === kind.id).length;
+    expect(cuddled()).toBe(1);
+    expect(seen(kind, "jealousy")).toBe(0);
+    Object.assign(save.current.character.body, { x: 10.5, y: 7.5 });
+    tickCats(save.current, 0.25, { present: true });
+    stop();
+    expect(kind.act.target).toBe(`cuddle:${lucky.id}`);
+    expect(seen(kind, "jealousy")).toBe(1);
+    expect(cuddled()).toBe(1);
+    expect(relation(save.current, kind, lucky)).toBe(before + JEALOUSY.cuddleRelation);
+  });
+
   it("«Щедра душа» приходить, лягає поруч із тим, кого гладять, і муркоче — прояв «−»; гра так не діє", () => {
     let cuddled = 0;
     for (let seed = 1; seed <= 30; seed++) {

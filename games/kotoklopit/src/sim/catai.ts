@@ -822,15 +822,15 @@ function startSnack(state: GameState, cat: Cat, rng: Rng): boolean {
   return true;
 }
 
-/**
- * Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). Хто вже йде — не починає заново: інакше
- * голодний кіт щокроку «приходив» би знову (пошук багів 2026-10-25). Прояв рис — коли дійде (`tickCat`).
- */
 /** Кіт голодний, а корму в мисках немає: по увагу він іде через голод (§9.9, «Ласкавість»). */
 function wantsFood(state: GameState, cat: Cat): boolean {
   return cat.needs.hunger >= hungerThreshold(cat) && !itemsOf(state, "bowl").some((b) => b.food > 0);
 }
 
+/**
+ * Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). Хто вже йде — не починає заново: інакше
+ * голодний кіт щокроку «приходив» би знову (пошук багів 2026-10-25). Прояв рис — коли дійде (`tickCat`).
+ */
 function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
