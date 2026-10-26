@@ -307,6 +307,7 @@ export class DevPanel {
         supply("food", "premium", "Їжа дорога"),
         supply("hygiene", "cheap", "Гігієна дешева"),
         supply("hygiene", "premium", "Гігієна дорога"),
+        supply("momMeal", "cheap", "Мамині судочки"),
         this.number("Борг комунальних", () => home().utilitiesDebt, (v) => {
           home().utilitiesDebt = Math.max(0, v);
           this.changed(`борг — ${v}`, false);

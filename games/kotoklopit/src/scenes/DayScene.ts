@@ -1149,8 +1149,15 @@ export class DayScene extends Phaser.Scene {
         this.notice("Прийшли гості", guestsText(guests));
         return;
       case "mom-food": {
-        const text = value > 0 ? MOM_FOOD_TEXTS.visit : MOM_FOOD_TEXTS.porch;
-        this.notice(text.title, text.text);
+        const visit = value > 0;
+        const text = visit ? MOM_FOOD_TEXTS.visit : MOM_FOOD_TEXTS.porch;
+        // Мама поставила судочки в холодильник (§6.4, §11.4): закрили повідомлення — над холодильником вголос, скільки їх там.
+        // Не застала — пакет у ящиках біля входу, їх і так видно.
+        const fridge = (): void => {
+          const count = supplyCount(this.state, "momMeal");
+          this.bubbles.show({ kind: "say", at: "fridge", icon: PRODUCT_ICONS.momMeal, count }, this.anchorFn("fridge", "say"));
+        };
+        this.notice(text.title, text.text, undefined, visit ? fridge : undefined);
         return;
       }
       case "office-missed":
@@ -1183,8 +1190,13 @@ export class DayScene extends Phaser.Scene {
   }
 
   /** Повідомлення посеред дня (§4.1): стає в чергу, якщо відкрита інша картка. */
-  private notice(title: string, text: string, kicker = "Подія дня"): void {
-    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }], onDismiss: () => this.overlay.close() });
+  /** Повідомлення дня; `after` — коли його закрили. */
+  private notice(title: string, text: string, kicker = "Подія дня", after?: () => void): void {
+    const close = (): void => {
+      this.overlay.close();
+      after?.();
+    };
+    this.queueCard({ kicker, title, body: [text], actions: [{ label: "Зрозуміло", primary: true, onSelect: close }], onDismiss: close });
   }
 
   private showEnd(): void {

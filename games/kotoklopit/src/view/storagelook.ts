@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import type { ObjectKind } from "../sim/home";
 import type { FillStage } from "../sim/storage";
 import { COLORS } from "./geometry";
+import { drawMomMeal } from "./icons";
 
 const INK = COLORS.ink;
 type G = Phaser.GameObjects.Graphics;
@@ -42,7 +43,7 @@ export function drawStorage(g: G, kind: ObjectKind, t: Rect, height: number, sta
   const y1 = y0 + height;
   switch (kind) {
     case "fridge":
-      return fridge(g, t, y0, y1, s);
+      return fridge(g, t, y0, y1, s, stages[1] ?? null);
     case "catCabinet":
       return cabinet(g, t, y0, y1, s);
     case "sterileBin":
@@ -62,8 +63,14 @@ export function drawStorage(g: G, kind: ObjectKind, t: Rect, height: number, sta
   }
 }
 
-/** Холодильник: порожній — прочинений і темний; ущерть — роздутий, з дверцят стирчить їжа. */
-function fridge(g: G, t: Rect, y0: number, y1: number, s: FillStage | null): void {
+/**
+ * Холодильник: порожній — прочинений і темний; ущерть — роздутий, з дверцят стирчить їжа. Мамині судочки (§6.4, рішення
+ * автора 2026-10-26) видно окремо: поки вони є, на холодильнику стоїть судочок, а порожнім він не буває.
+ */
+function fridge(g: G, t: Rect, y0: number, y1: number, food: FillStage | null, mom: FillStage | null): void {
+  const meals = mom !== null && mom > 0;
+  const s: FillStage | null = meals && !food ? 1 : food;
+  if (meals) drawMomMeal(g, t.x + t.w / 2 + 1, t.y + t.h * 0.55, 0.62);
   if (s === null) return;
   const right = t.x + t.w;
   if (s === 0) {
