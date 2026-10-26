@@ -70,8 +70,9 @@ const isDark = (color: number): boolean => {
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
   const act = cat.act;
-  // На колінах кіт спить клубочком; «Поважає роботу» так само лежить поруч зі столом (§9.12).
-  if (act.kind === "lap" || (act.kind === "idle" && act.target === "desk" && act.goal === null)) return "sleep";
+  // На колінах кіт спить клубочком; «Поважає роботу» так само лежить поруч зі столом, а «Щедра душа» — поруч із котом, якого
+  // гладять (§9.12).
+  if (act.kind === "lap" || (act.kind === "idle" && act.goal === null && (act.target === "desk" || act.target?.startsWith("cuddle:") === true))) return "sleep";
   if (carried) return "carried";
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
   // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.

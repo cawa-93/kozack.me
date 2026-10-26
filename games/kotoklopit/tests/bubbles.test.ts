@@ -34,6 +34,7 @@ const EVENTS: GameEvent[] = [
   { type: "catnip", cat: 1, reaction: "frenzy" },
   { type: "chatter", cat: 1 },
   { type: "groom-refused", cat: 1, by: 2 },
+  { type: "cat-cuddled", cat: 1, with: 2 },
   { type: "window-angry", cat: 1 },
   { type: "cat-remembered", cat: 1, zone: "desk" },
   { type: "cat-remembered", cat: 1, zone: "kitchen" },

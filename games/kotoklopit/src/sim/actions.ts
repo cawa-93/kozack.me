@@ -441,6 +441,8 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   cat.act = idleAct();
   state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}), ...(disturbed ? { disturbed: true } : {}), ...(begging ? { begging: true } : {}) };
   emit(state, { type: "picked-up", cat: cat.id, offended });
+  // Іншого кота взяли на руки — ревнивці це бачать (§9.12, «Ревнивість»).
+  jealousy(state, cat, "hands");
 }
 
 /** Опустити кота з рук поруч із персонажем. */
@@ -571,7 +573,11 @@ function holdTick(state: GameState, minutes: number): boolean {
   if (character.activity === null) {
     const target = targetOf(state);
     if (target === null) return false;
-    if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
+    if (canPlay(state, target) && target.type === "cat") {
+      character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
+      // З іншим котом граються — ревнивці це бачать (§9.12, «Ревнивість»).
+      jealousy(state, target.cat, "play");
+    }
     else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.
     else if (target.type === "object" && target.object.kind === "shower") return false;
@@ -581,7 +587,7 @@ function holdTick(state: GameState, minutes: number): boolean {
     else if (target.type === "cat" && catOnSink(state) === target.cat) return false;
     else if (target.type === "cat") {
       character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
-      jealousy(state, target.cat);
+      jealousy(state, target.cat, "pet");
     } else {
       character.activity = { kind: "use", target: target.id, progress: 0 };
       // Пилосос загудів — гучний звук на всю квартиру (§9.12).

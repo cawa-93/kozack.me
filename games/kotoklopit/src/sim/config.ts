@@ -757,6 +757,16 @@ export const SOCIABILITY = { passDistance: 1.5, passStep: 0.15, passEvery: 10, p
  * (1 + `pileStep` × рівень).
  */
 export const GROOMING = { refuseStep: 0.4, refuseRelation: -1, pileStep: 0.25, refusedMinutes: 60 } as const;
+/**
+ * «Ревнивість» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): персонаж
+ * гладить кота, грається з ним, той у нього на колінах чи на руках — ревнивець, що бачить (до `RELATIONS.jealousySight`),
+ * шипить на щасливця (стосунки `RELATIONS.jealousy` × рівень). Поруч (до `near` клітинок) — одразу, і щасливець з шансом
+ * `leave` іде: пестощі чи гра перериваються, з колін зганяють, а від `lapLevel` ревнивець ще й лягає на коліна сам; здалеку —
+ * з шансом `comeStep` × рівень приходить шипіти зблизька (за `confrontMinutes` на місці), інакше шипить звідти. «−»: ви гладите
+ * іншого кота — з шансом `cuddleStep` × |рівень| приходить, лягає поруч і муркоче (`cuddleMinutes`), стосунки +`cuddleRelation`.
+ * Прийти — не частіше ніж раз на `pauseMinutes`.
+ */
+export const JEALOUSY = { near: 2, leave: 0.5, lapLevel: 2, comeStep: 0.25, confrontMinutes: 0.25, cuddleStep: 0.2, cuddleMinutes: 5, cuddleRelation: 1, pauseMinutes: 30 } as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

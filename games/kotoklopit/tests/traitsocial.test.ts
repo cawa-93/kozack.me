@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, forbiddenZoneAt, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
-import { CATNIP, GIFTS, GROOMING, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, WINDOW } from "../src/sim/config";
+import { decide, forbiddenZoneAt, jealousy, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
+import { CATNIP, GIFTS, GROOMING, JEALOUSY, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, WINDOW } from "../src/sim/config";
 import { addSupply, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
@@ -610,5 +610,133 @@ describe("«Товариськість» і «Вилизування друзі�
     }
     expect(refused).toBeGreaterThan(15);
     expect(refused).toBeLessThan(30);
+  });
+});
+
+/** Персонаж гладить кота: пестощі вже тривають. */
+function petting(save: Save, cat: Cat): void {
+  cat.act = idleAct(5);
+  save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 1 };
+}
+
+describe("«Ревнивість» (§9.4, §9.12, рішення автора 2026-10-25)", () => {
+  it("ревнивець поруч шипить на того, кого гладять, і інколи зганяє його — пестощі перериваються", () => {
+    let left = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+      const rival = withCat(save, { jealousy: 2 }, { x: 8.5, y: 8.5 });
+      petting(save, lucky);
+      const before = relation(save.current, rival, lucky);
+      const { events, stop } = recordEvents();
+      jealousy(save.current, lucky, "pet");
+      stop();
+      expect(events.filter((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toHaveLength(1);
+      expect(relation(save.current, rival, lucky)).toBe(before + 2 * RELATIONS.jealousy);
+      expect(seen(rival, "jealousy")).toBe(1);
+      const activity = save.current.character.activity;
+      if (activity?.kind === "pet" && activity.left === true) {
+        left += 1;
+        expect(lucky.act.kind).toBe("wander");
+      }
+    }
+    expect(left).toBeGreaterThan(5);
+    expect(left).toBeLessThan(25);
+  });
+
+  it("ревнивець здалеку інколи приходить і шипить зблизька — не частіше ніж раз на пів години", () => {
+    let came = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 10.5, y: 8.5 });
+      const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+      const rival = withCat(save, { jealousy: 2 }, { x: 5.5, y: 8.5 });
+      petting(save, lucky);
+      const { events, stop } = recordEvents();
+      jealousy(save.current, lucky, "pet");
+      if (rival.act.kind !== "jealous") {
+        stop();
+        // Не прийшов — шипить звідти.
+        expect(events.some((e) => e.type === "hissed" && e.cat === rival.id)).toBe(true);
+        continue;
+      }
+      came += 1;
+      expect(events.some((e) => e.type === "hissed")).toBe(false);
+      for (let i = 0; i < 20 && rival.act.kind === "jealous"; i++) {
+        save.current.minute += 0.25;
+        tickCats(save.current, 0.25, { present: true });
+      }
+      stop();
+      expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
+      // Ще раз за хвилину — уже не йде.
+      rival.act = idleAct(10);
+      save.current.minute += JEALOUSY.pauseMinutes - 5;
+      Object.assign(rival, { x: 5.5, y: 8.5 });
+      delete rival.hissedAt;
+      jealousy(save.current, lucky, "pet");
+      expect(rival.act.kind).not.toBe("jealous");
+    }
+    expect(came).toBeGreaterThan(5);
+    expect(came).toBeLessThan(25);
+  });
+
+  it("«Ревнивець» (+2) зганяє суперника з колін і лягає сам", () => {
+    let took = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 7.5, y: 7.5, facing: { x: 0, y: -1 } });
+      startWork(save.current);
+      const lucky = withCat(save, {}, { x: 7.5, y: 7.55 });
+      lucky.act = { kind: "lap", target: "character", goal: null, minutes: 240, elapsed: 0 };
+      lucky.needs.attention = 80;
+      const rival = withCat(save, { jealousy: 2 }, { x: 8.5, y: 7.5 });
+      jealousy(save.current, lucky, "lap");
+      if (rival.act.kind !== "lap") continue;
+      took += 1;
+      expect(lucky.act.kind).toBe("wander");
+    }
+    expect(took).toBeGreaterThan(3);
+  });
+
+  it("«Щедра душа» приходить, лягає поруч із тим, кого гладять, і муркоче — прояв «−»; гра так не діє", () => {
+    let cuddled = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 10.5, y: 8.5 });
+      const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+      const kind = withCat(save, { jealousy: -2 }, { x: 6.5, y: 8.5 });
+      petting(save, lucky);
+      const before = relation(save.current, kind, lucky);
+      jealousy(save.current, lucky, "pet");
+      if (kind.act.target !== `cuddle:${lucky.id}`) continue;
+      cuddled += 1;
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 12 && kind.act.goal !== null; i++) {
+        save.current.minute += 0.25;
+        tickCats(save.current, 0.25, { present: true });
+      }
+      tickCats(save.current, 0.01, { present: true });
+      stop();
+      expect(events.some((e) => e.type === "cat-cuddled" && e.cat === kind.id)).toBe(true);
+      expect(relation(save.current, kind, lucky)).toBe(before + JEALOUSY.cuddleRelation);
+      expect(seen(kind, "jealousy")).toBe(1);
+    }
+    expect(cuddled).toBeGreaterThan(5);
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const kind = withCat(save, { jealousy: -2 }, { x: 6.5, y: 8.5 });
+    for (let i = 0; i < 10; i++) jealousy(save.current, lucky, "play");
+    expect(kind.act.target?.startsWith("cuddle:")).not.toBe(true);
+  });
+
+  it("ревнують і тоді, коли іншого кота беруть на руки", () => {
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const rival = withCat(save, { jealousy: 1 }, { x: 8.5, y: 8.5 });
+    Object.assign(save.current.character.body, { x: 9.5, y: 9.1 });
+    const { events, stop } = recordEvents();
+    pickUpCat(save.current, lucky);
+    stop();
+    expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
   });
 });
