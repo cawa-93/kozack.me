@@ -56,7 +56,7 @@ const met = (cat: Cat): boolean => cat.act.kind === "standoff" && cat.act.paired
 
 /** Вороги без справ стоять неподалік, доки не зійдуться в протистояння (кожна спроба — знову на своїх місцях). */
 function untilStandoff(save: Save, a: Cat, b: Cat): void {
-  for (let i = 0; i < 2000 && !met(a); i++) {
+  for (let i = 0; i < 40_000 && !met(a); i++) {
     calm(a);
     calm(b);
     if (a.act.kind !== "standoff" && b.act.kind !== "standoff") {
@@ -125,6 +125,29 @@ describe("протистояння ворогів (§9.4, рішення авт�
       expect(at.length).toBeLessThanOrEqual(1 + Math.floor(total));
       for (let i = 1; i < at.length; i++) expect((at[i] ?? 0) - (at[i - 1] ?? 0)).toBeCloseTo(1, 0);
     }
+  });
+
+  it("вороги поруч сходяться в середньому раз на ~100 хвилин (1% за хвилину), а не щодесять хвилин", () => {
+    // Заміри 2026-10-26: з 10% за хвилину вороги сходилися 14–75 разів на день і билися 2–10 разів замість 3–5 і ~1 (§9.4).
+    let total = 0;
+    const runs = 40;
+    for (let seed = 0; seed < runs; seed++) {
+      const { save, a, b } = enemies(seed);
+      let minutes = 0;
+      for (let i = 0; i < 40_000 && a.act.kind !== "standoff"; i++) {
+        calm(a);
+        calm(b);
+        Object.assign(a, A_AT);
+        Object.assign(b, B_AT);
+        a.act = idle();
+        b.act = idle();
+        tickCats(save.current, 0.25, { present: false });
+        minutes += 0.25;
+      }
+      total += minutes;
+    }
+    expect(total / runs).toBeGreaterThan(60);
+    expect(total / runs).toBeLessThan(160);
   });
 
   it("без втручання — бійка з шансом 40%, інакше той, хто програв би, відступає й ховається 15–30 хвилин, а другий сидить", () => {
@@ -415,7 +438,7 @@ describe("бійку видно й чути (§9.4, рішення автора 
         }
         if ((e.type === "knocked" || e.type === "trinket-fell") && fought) knocked++;
       });
-      for (let i = 0; i < 2000 && !fought; i++) {
+      for (let i = 0; i < 40_000 && !fought; i++) {
         calm(a);
         calm(b);
         if (a.act.kind !== "standoff" && b.act.kind !== "standoff" && a.act.kind !== "fight") {
@@ -439,7 +462,7 @@ describe("пози протистояння й бійки (§9.4, «Пози с�
     const { save, a, b } = enemies();
     const s = save.current;
     // Протистояння почалося, але коти ще не зійшлися: сміливіший іде, другий чекає.
-    for (let i = 0; i < 2000 && a.act.kind !== "standoff"; i++) {
+    for (let i = 0; i < 40_000 && a.act.kind !== "standoff"; i++) {
       calm(a);
       calm(b);
       Object.assign(a, A_AT);
