@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, groomGain, tickCats } from "../src/sim/catai";
 import type { GameEvent } from "../src/sim/events";
+import { removeCat } from "../src/sim/farewell";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { loudNoise } from "../src/sim/noise";
@@ -125,6 +126,23 @@ describe("вилизування видно (§9.4, рішення автора 
     expect(a.act.kind === "groom" && a.act.target === `cat:${b.id}`).toBe(false);
     expect(count(events, "groomed")).toBe(0);
     expect(relation(save.current, a, b)).toBe(60);
+  });
+
+  it("друга чи кошеняти більше немає (помер, віддали) — кіт не вилизує порожнє місце (перевірка блоку 3)", () => {
+    for (const kitten of [false, true]) {
+      const save = game();
+      const a = withCat(save, kitten ? { nurturing: 2 } : {}, { x: 8.5, y: 8.5 });
+      const b = withCat(save, {}, { x: 10.5, y: 8.5 }, kitten ? 1 : 3);
+      setRelation(save, a, b, 60);
+      b.act = idleAct(60);
+      const target = `${kitten ? "kitten" : "cat"}:${b.id}`;
+      a.act = { kind: "groom", target, goal: { x: 10, y: 8 }, minutes: 5, elapsed: 0 };
+      for (let t = 0; t < 200 && b.act.target !== `licked:${a.id}`; t++) tickCats(save.current, 0.05, { present: false });
+      expect(b.act.target).toBe(`licked:${a.id}`);
+      removeCat(save.current, b, { kind: "old" }, save.current.day);
+      tickCats(save.current, 0.05, { present: false });
+      expect(a.act.kind === "groom" && a.act.target === target).toBe(false);
+    }
   });
 
   it("«Нянька» вилизує кошеня так само: кошеня сидить і мружиться, над ним сердечко", () => {

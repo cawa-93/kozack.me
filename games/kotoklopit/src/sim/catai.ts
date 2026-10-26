@@ -2596,7 +2596,15 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     case "groom": {
       // Вмивається сам (нервово, після їди) — нікого не чекає.
       const other = groomee(state, act.target);
-      if (other === null) return;
+      if (other === null) {
+        // Друга чи кошеняти більше немає (помер, віддали) — вилизування скасовується (перевірка блоку 3, 2026-10-26: кіт до
+        // 6 хвилин вилизував порожнє місце).
+        if (act.target?.startsWith("cat:") === true || act.target?.startsWith("kitten:") === true) {
+          act.refused = true;
+          act.minutes = 0;
+        }
+        return;
+      }
       if (act.refused === undefined) {
         // Друг чи кошеня вже зайняті іншим (не відпочивають, їх гладять) — вилизування немає (§9.4).
         if (!home(state, other) || distance(cat, other) > RELATIONS.groom.reach || getsAttention(state, other) || !(resting(state, other) || asleep(other) || isLickedBy(other, cat))) {
@@ -4390,7 +4398,6 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   backAway(state, cat, guard);
 }
 
-/** «Нянька» вилизала кошеня (§9.12, «Турбота про кошенят»): малому приємно, вони зближуються — прояв «+». */
 /**
  * Вилизав друга (§9.4): обом настрій +1, а тому, кого вилизали після стресу, — +2, раз за стрес; стосунки — що міцніша дружба, то
  * менше (рішення автора 2026-10-26, В2: було +2 завжди, і друзі з +55 доходили до 100 за 4–5 днів).
@@ -4411,6 +4418,7 @@ function groomedFriend(state: GameState, cat: Cat, friend: Cat, act: CatAct, rng
   holdStill(cat, friend, g.backMinutes);
 }
 
+/** «Нянька» вилизала кошеня (§9.12, «Турбота про кошенят»): малому приємно, вони зближуються — прояв «+». */
 function groomedKitten(state: GameState, cat: Cat): void {
   const kitten = state.cats.find((c) => `kitten:${c.id}` === cat.act.target);
   if (!kitten || !home(state, kitten) || distance(cat, kitten) > RELATIONS.groom.reach || cat.act.refused === true) return;
