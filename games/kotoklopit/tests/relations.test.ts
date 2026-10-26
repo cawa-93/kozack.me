@@ -252,8 +252,9 @@ describe("вороги (§9.4)", () => {
       calm(a);
       calm(b);
       if (a.act.kind !== "standoff" && b.act.kind !== "standoff") {
-        Object.assign(a, { x: 9.5, y: 8.5 });
-        Object.assign(b, { x: 10.3, y: 8.5 });
+        // За 2,4 клітинки: ближче 2 вільні вороги розходяться (§9.4).
+        Object.assign(a, { x: 8.3, y: 8.5 });
+        Object.assign(b, { x: 10.7, y: 8.5 });
         a.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
         b.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
       }

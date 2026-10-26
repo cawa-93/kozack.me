@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 
 import { tap } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
+import { decide, tickCats } from "../src/sim/catai";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
+import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -143,6 +144,7 @@ describe("протистояння ворогів (§9.4, рішення авт�
       expect(b.act.minutes).toBeGreaterThanOrEqual(15);
       expect(b.act.minutes).toBeLessThanOrEqual(30);
       expect(a.act.kind).toBe("idle");
+      expect(a.act.target).toBe("won");
     }
     expect(fights).toBeGreaterThanOrEqual(12);
     expect(fights).toBeLessThanOrEqual(36);
@@ -207,5 +209,133 @@ describe("протистояння ворогів (§9.4, рішення авт�
     expect(b.act.kind).not.toBe("standoff");
     expect(count(events, "cat-fight")).toBe(0);
     expect(count(events, "cat-retreated")).toBe(0);
+  });
+});
+
+/** Довести протистояння до кінця; якщо почалася бійка — дочекатися й її кінця без втручання. */
+function fightToEnd(save: Save, a: Cat, b: Cat): { loser: Cat; winner: Cat } | null {
+  untilStandoff(save, a, b);
+  untilSettled(save, a, b);
+  if (a.act.kind !== "fight") return null;
+  const loser = a.act.lost === true ? a : b;
+  const winner = loser === a ? b : a;
+  for (let i = 0; i < 100 && (a.act.kind === "fight" || b.act.kind === "fight"); i++) {
+    calm(a);
+    calm(b);
+    tickCats(save.current, 0.1, { present: false });
+  }
+  return { loser, winner };
+}
+
+const injured = (cat: Cat): boolean => cat.diseases.some((d) => d.id === "injury");
+
+describe("після бійки (§9.4, рішення автора 2026-10-26)", () => {
+  it("нерозборонена бійка: той, хто програв, ховається 15–30 хвилин, переможець сидить; травма — лише тому, хто програв (10%, некастрованому самцю ×2)", () => {
+    const fights = { plain: 0, intact: 0 };
+    const injuries = { plain: 0, intact: 0 };
+    for (const kind of ["plain", "intact"] as const) {
+      for (let seed = 0; seed < 150; seed++) {
+        // «Територіальність» обох +2: бійка з шансом 80% (некастрованим — завжди).
+        const { save, a, b } = enemies(seed, { territorial: 2 }, { territorial: 2 });
+        if (kind === "intact") {
+          for (const cat of [a, b]) Object.assign(cat, { sterilized: false, sex: "male" });
+        }
+        const end = fightToEnd(save, a, b);
+        if (!end) continue;
+        fights[kind]++;
+        expect(end.loser.act.lost, "у того, хто програв, бійка вже скінчилася").toBeUndefined();
+        expect(injured(end.winner)).toBe(false);
+        expect(end.winner.act.kind).toBe("idle");
+        expect(end.winner.act.target).toBe("won");
+        expect(end.loser.act.kind).toBe("hide");
+        expect(end.loser.act.minutes).toBeGreaterThanOrEqual(14);
+        expect(end.loser.act.minutes).toBeLessThanOrEqual(30);
+        if (injured(end.loser)) injuries[kind]++;
+      }
+    }
+    expect(fights.plain).toBeGreaterThan(90);
+    expect(fights.intact).toBe(150);
+    expect(injuries.plain).toBeGreaterThanOrEqual(3);
+    expect(injuries.plain).toBeLessThanOrEqual(25);
+    expect(injuries.intact).toBeGreaterThanOrEqual(15);
+    expect(injuries.intact).toBeLessThanOrEqual(50);
+    expect(injuries.intact).toBeGreaterThan(injuries.plain);
+  });
+
+  it("після бійки пара 90–120 хвилин не б'ється: протистояння закінчується відступом", () => {
+    let checked = false;
+    for (let seed = 0; seed < 20 && !checked; seed++) {
+      const { save, a, b } = enemies(seed, { territorial: 2 }, { territorial: 2 });
+      const s = save.current;
+      if (!fightToEnd(save, a, b)) continue;
+      checked = true;
+      const now = absoluteMinute(s.day, s.minute);
+      const until = a.truce?.[b.id] ?? 0;
+      expect(until - now).toBeGreaterThanOrEqual(90);
+      expect(until - now).toBeLessThanOrEqual(120);
+      expect(b.truce?.[a.id]).toBe(until);
+      let fights = 0;
+      let retreats = 0;
+      const stop = onEvent((e) => {
+        if (e.type === "cat-fight") fights++;
+        if (e.type === "cat-retreated") retreats++;
+      });
+      // Час у `tickCats` стоїть: усі ці протистояння — під час паузи.
+      for (let i = 0; i < 10; i++) {
+        untilStandoff(save, a, b);
+        untilSettled(save, a, b);
+      }
+      expect(fights).toBe(0);
+      expect(retreats).toBe(10);
+      // Пауза минула — знову б'ються.
+      s.minute += 121;
+      for (let i = 0; i < 10; i++) {
+        untilStandoff(save, a, b);
+        untilSettled(save, a, b);
+      }
+      stop();
+      expect(fights).toBeGreaterThan(0);
+    }
+    expect(checked).toBe(true);
+  });
+
+  it("вільний кіт, до якого ворог ближче 2 клітинок, відходить від нього на 3 клітинки; від нейтрального — ні", () => {
+    for (const relation of [-80, 0]) {
+      const { save, a, b } = enemies();
+      const s = save.current;
+      s.relations[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`] = relation;
+      Object.assign(a, { x: 9.3, y: 8.5 });
+      Object.assign(b, { x: 10.7, y: 8.5 });
+      a.act = idle();
+      // Другий грається сам: зайнятий, тож не відходить і сам.
+      b.act = { kind: "toy", target: null, goal: null, minutes: 30, elapsed: 0 };
+      tickCats(s, FRAME, { present: false });
+      if (relation === 0) {
+        expect(a.act.kind).toBe("idle");
+        continue;
+      }
+      expect(a.act.kind).toBe("wander");
+      expect(a.act.target).toBe("avoid");
+      const goal = a.act.goal;
+      if (!goal) throw new Error("відходить без цілі");
+      expect(Math.hypot(goal.x + 0.5 - b.x, goal.y + 0.5 - b.y)).toBeGreaterThanOrEqual(3);
+      expect(b.act.kind).toBe("toy");
+    }
+  });
+
+  it("кіт не йде по увагу до персонажа, біля якого вже стоїть його ворог", () => {
+    const { save, a, b } = enemies();
+    const s = save.current;
+    Object.assign(s.character.body, { x: 12.5, y: 8.5 });
+    Object.assign(b, { x: 12.5, y: 9.2 });
+    b.act = idle();
+    Object.assign(a, { x: 5.5, y: 8.5 });
+    a.needs.attention = 100;
+    decide(s, a, createRng(1), { present: true });
+    expect(a.act.kind).not.toBe("attention");
+    // Ворог відійшов від персонажа — іде.
+    Object.assign(b, { x: 17.5, y: 7.5 });
+    decide(s, a, createRng(1), { present: true });
+    expect(a.act.kind).toBe("attention");
   });
 });

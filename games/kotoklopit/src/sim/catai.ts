@@ -802,7 +802,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal.id)), THIEF.waitMinutes, steal.id);
     const empty = nearest(cat, itemsOf(state, "bowl"));
     // «Не випрошує» (−2) не йде просити до персонажа — чекає біля миски (§9.12, рішення автора 2026-10-25).
-    if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && rng.chance(0.5)) return startAttention(state, cat, true);
+    // Біля персонажа ворог — до нього не йде (§9.4, рішення автора 2026-10-26).
+    if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && !enemyAtPerson(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
@@ -820,7 +821,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
   // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
-  if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat)) return startAttention(state, cat);
+  // Біля персонажа вже стоїть ворог — по увагу не йде (§9.4, рішення автора 2026-10-26: 76–79% бійок були біля ніг персонажа).
+  if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat) && !enemyAtPerson(state, cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
   // «Нянька» вилизує кошеня поруч (§9.12, «Турбота про кошенят»).
   const nurturing = traitLevel(cat, "nurturing");
@@ -1952,10 +1954,14 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       observe(state, cat, "sociability");
       return;
     }
-    case "fight":
-      // Нерозборонена бійка: можлива травма (§9.4).
-      if (rng.chance(RELATIONS.fight.injury)) fallIll(state, cat, "injury");
-      return;
+    case "fight": {
+      // Нерозборонена бійка (§9.4, рішення автора 2026-10-26): той, хто програв, може травмуватися й ховається, переможець сидить.
+      if (act.refused === true) return;
+      const f = RELATIONS.fight;
+      if (act.lost !== true) return start(cat, "idle", null, f.winnerSits, "won");
+      if (rng.chance(f.injury * (fightFactor(cat) > 1 ? f.injuryIntact : 1))) fallIll(state, cat, "injury");
+      return hideFrom(state, cat, catById(state, act.target) ?? cat, rng);
+    }
     case "standoff": {
       // Протистояння добігло кінця, ніхто не втрутився (§9.4): бійка чи відступ — раз на пару, тим, хто закінчив першим.
       if (act.refused === true || act.paired !== true) return;
@@ -2016,7 +2022,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       exercise(cat);
       // Нагасався від м'яти — задирає кота поруч (§9.12, «Котяча м'ята»).
-      if (act.target === "catnip") catnipFight(state, cat);
+      if (act.target === "catnip") catnipFight(state, cat, rng);
       return;
     case "jealous":
       // Заздрісник дійшов до того, кому перепало (§9.12, «Заздрісність»); ревнивець — до суперника («Ревнивість»).
@@ -2140,7 +2146,7 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
     hiss(state, thief, victim);
     observe(state, thief, "thief");
     const guard = traitLevel(victim, "territorial");
-    if (guard > 0 && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim);
+    if (guard > 0 && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim, rng);
     changeMood(state, victim, THIEF.victimMood, "відігнали від миски");
     changeRelation(state, victim, thief, THIEF.relation);
     backAway(state, victim, thief);
@@ -2908,7 +2914,12 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
       }
       if (!asleep(a)) enemyNear.add(a.id);
       if (!asleep(b)) enemyNear.add(b.id);
-      // Вороги поруч сходяться в протистояння, а не б'ються одразу (§9.4, рішення автора 2026-10-26).
+      // Вороги уникають одне одного (§9.4, рішення автора 2026-10-26): вільний кіт відходить від ворога, що ближче 2 клітинок.
+      if (distance(a, b) < RELATIONS.avoid.distance) {
+        if (freeToAvoid(state, a)) stepAway(state, a, b, RELATIONS.avoid.step, "avoid");
+        if (freeToAvoid(state, b)) stepAway(state, b, a, RELATIONS.avoid.step, "avoid");
+      }
+      // Вороги поруч сходяться в протистояння, а не б'ються одразу.
       if (distance(a, b) > standoff.distance || !readyToFaceOff(state, a) || !readyToFaceOff(state, b)) continue;
       if (rng.chance(standoff.perMinute * minutes)) startStandoff(state, a, b);
     }
@@ -3008,7 +3019,8 @@ function settleStandoff(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   const s = RELATIONS.standoff;
   const territorial = Math.max(0, traitLevel(a, "territorial")) + Math.max(0, traitLevel(b, "territorial"));
   const hormones = Math.max(fightFactor(a), fightFactor(b));
-  if (rng.chance((s.fight + s.territorialStep * territorial) * hormones)) return startFight(state, a, b);
+  // Після бійки пара 90–120 хвилин не б'ється: протистояння закінчується відступом.
+  if (!truced(state, a, b) && rng.chance((s.fight + s.territorialStep * territorial) * hormones)) return startFight(state, a, b, rng);
   const loser = loserOf(a, b, rng);
   retreat(state, loser, loser === a ? b : a, rng);
 }
@@ -3021,14 +3033,44 @@ function loserOf(a: Cat, b: Cat, rng: Rng): Cat {
   return scoreA < scoreB ? a : b;
 }
 
-/** Той, хто програв, відступає й ховається на 15–30 хвилин; переможець сидить на місці (§9.4). */
-function retreat(state: GameState, loser: Cat, winner: Cat, rng: Rng): void {
-  const f = RELATIONS.fight;
+/** Випадкове число хвилин від і до (§9.4). */
+const between = ([shortest, longest]: readonly [number, number], rng: Rng): number => shortest + rng.next() * (longest - shortest);
+
+/** Пара ще не відійшла від бійки (§9.4): 90–120 хвилин після неї не б'ється. */
+function truced(state: GameState, a: Cat, b: Cat): boolean {
+  const until = a.truce?.[b.id];
+  return until !== undefined && absoluteMinute(state.day, state.minute) < until;
+}
+
+/** Той, хто програв бійку чи протистояння, відступає й ховається на 15–30 хвилин (§9.4). */
+function hideFrom(state: GameState, loser: Cat, winner: Cat, rng: Rng): void {
   const spot = hideSpot(state, rng, loser);
-  const [shortest, longest] = f.hide;
-  start(loser, "hide", spot.at, shortest + rng.next() * (longest - shortest), spot.target);
-  start(winner, "idle", null, f.winnerSits);
+  start(loser, "hide", spot.at, between(RELATIONS.fight.hide, rng), spot.target);
   emit(state, { type: "cat-retreated", cat: loser.id, from: winner.id });
+}
+
+/**
+ * Протистояння без бійки (§9.4): той, хто програв би, відступає й ховається, а переможець сидить на місці (ціль «won»: від
+ * ворога, що йде повз, він не відходить і нового протистояння не починає).
+ */
+function retreat(state: GameState, loser: Cat, winner: Cat, rng: Rng): void {
+  hideFrom(state, loser, winner, rng);
+  start(winner, "idle", null, RELATIONS.fight.winnerSits, "won");
+}
+
+/** Кіт може відійти від ворога (§9.4): не спить і стоїть чи бродить без мети, а персонаж його не гладить і не тримає. */
+function freeToAvoid(state: GameState, cat: Cat): boolean {
+  const act = cat.act;
+  const free = (act.kind === "idle" && act.target === null && act.goal === null) || (act.kind === "wander" && act.target === null);
+  return free && home(state, cat) && !isNewborn(cat) && !getsAttention(state, cat);
+}
+
+/** Біля персонажа вже стоїть ворог цього кота (§9.4, рішення автора 2026-10-26): по увагу кіт туди не йде. */
+function enemyAtPerson(state: GameState, cat: Cat): boolean {
+  const body = state.character.body;
+  return state.cats.some(
+    (other) => other.id !== cat.id && other.away === null && isEnemy(state, cat, other) && (isCarried(state, other) || Math.hypot(other.x - body.x, other.y - body.y) < RELATIONS.avoid.person),
+  );
 }
 
 /** Кіт відходить на `step` клітинки від точки (§9.4, §9.12): ворога, персонажа в брудному одязі. */
@@ -3066,7 +3108,7 @@ export function touchStandoff(state: GameState, cat: Cat): boolean {
 }
 
 /** Бійка ворогів (§9.4): обидва зупиняються, летить шерсть. */
-function startFight(state: GameState, a: Cat, b: Cat): void {
+function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   const fight = RELATIONS.fight;
   stress(state, a);
   stress(state, b);
@@ -3077,6 +3119,13 @@ function startFight(state: GameState, a: Cat, b: Cat): void {
   changeRelation(state, a, b, fight.relation);
   addMess(state, "fur", visibleFloorNear(state, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
+  // Хто програє, ясно з самого початку (§9.4): травма й схованка — йому, якщо бійку не розборонять.
+  const loser = loserOf(a, b, rng);
+  loser.act.lost = true;
+  // Пауза пари (§9.4): 90–120 хвилин після бійки, і розбороненої, пара не б'ється.
+  const until = absoluteMinute(state.day, state.minute) + between(fight.truce, rng);
+  (a.truce ??= {})[b.id] = until;
+  (b.truce ??= {})[a.id] = until;
   // Бійка — прояв лише «Товариськості»: «Територіальність» видно у сварці за миску чи лоток (§9.9).
   for (const cat of [a, b]) observe(state, cat, "sociability", -1);
 }
@@ -3610,11 +3659,11 @@ export function catnipReaction(state: GameState, cat: Cat, quality: Quality, rng
 }
 
 /** Нагасався від м'яти (§9.12, «Котяча м'ята»): шипить на найближчого кота, що не спить, і задирається з ним. */
-function catnipFight(state: GameState, cat: Cat): void {
+function catnipFight(state: GameState, cat: Cat, rng: Rng): void {
   const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= CATNIP.fightReach);
   others.sort((a, b) => distance(a, cat) - distance(b, cat));
   const other = others[0];
-  if (other && hiss(state, cat, other)) startFight(state, cat, other);
+  if (other && hiss(state, cat, other)) startFight(state, cat, other, rng);
 }
 
 /**

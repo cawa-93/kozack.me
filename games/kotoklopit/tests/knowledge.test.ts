@@ -200,8 +200,9 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     for (let i = 0; i < 2000 && a.act.kind !== "fight"; i++) {
       for (const cat of [a, b]) cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
       if (a.act.kind !== "standoff" && b.act.kind !== "standoff") {
-        Object.assign(a, { x: 9.5, y: 8.5 });
-        Object.assign(b, { x: 10.3, y: 8.5 });
+        // За 2,4 клітинки: ближче 2 вільні вороги розходяться (§9.4).
+        Object.assign(a, { x: 8.3, y: 8.5 });
+        Object.assign(b, { x: 10.7, y: 8.5 });
         for (const cat of [a, b]) cat.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
       }
       tickCats(save.current, 0.25, { present: true });
