@@ -237,10 +237,12 @@ export function stress(state: GameState, cat: Cat): void {
 
 /**
  * Кіт пережив стрес — бився з іншим котом (`by`) або від гучного звуку сховався чи прокинувся (§9.4, «Гру й вилизування видно»,
- * рішення автора 2026-10-26, В2): друг поруч може прийти його вилизати.
+ * рішення автора 2026-10-26, В2): друг поруч може прийти його вилизати. Сховався — стрес минає, коли кіт вийде зі схованки
+ * (`calmsIn` хвилин): від цієї миті й лічиться година на втіху (перевірка блоку 3, 2026-10-26: від феєрверків кіт ховається на
+ * годину й довше, і година від того, як сховався, минала ще в схованці).
  */
-export function upset(state: GameState, cat: Cat, by?: number): void {
-  const at = absoluteMinute(state.day, state.minute);
+export function upset(state: GameState, cat: Cat, by?: number, calmsIn = 0): void {
+  const at = absoluteMinute(state.day, state.minute) + calmsIn;
   cat.upset = by === undefined ? { at } : { at, by };
 }
 

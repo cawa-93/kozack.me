@@ -229,6 +229,21 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
     expect(c.upset).toBeDefined();
   });
 
+  it("після феєрверків друга втішають, коли він вийде зі схованки: година на втіху — від виходу (перевірка блоку 3)", () => {
+    const rate = groomRate(2.5, (save, _a, b) => {
+      b.act = idleAct(30);
+      loudNoise(save.current, "fireworks", null);
+      // Ховається годину (кіт без рис) — довше, ніж година від того, як сховався.
+      expect(b.act.kind).toBe("hide");
+      expect(b.act.minutes).toBeGreaterThanOrEqual(60);
+      // Вийшов зі схованки 5 хвилин тому й сидить без справ.
+      save.current.minute += Math.ceil(b.act.minutes) + 5;
+      b.act = idleAct(60);
+    });
+    expect(rate).toBeGreaterThan(0.2);
+    expect(rate).toBeLessThan(0.4);
+  });
+
   it("прокинувся після сну купкою — 50% вилизує друга поруч; друг далі (2,5 клітинки) — ні", () => {
     const rate = (gap: number): number => {
       let groomed = 0;

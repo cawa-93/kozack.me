@@ -95,8 +95,9 @@ function scare(state: GameState, cat: Cat, kind: NoiseKind, minutes: number, rng
   const stress = Math.max(NOISE.stressMin, 1 - NOISE.stressStep * traitLevel(cat, "stress"));
   const spot = hideSpot(state, rng, cat);
   startAct(cat, "hide", spot.at, minutes * stress, spot.target);
-  // Сховався від гучного звуку — стрес: друг поруч може потім прийти вилизати (§9.4, рішення автора 2026-10-26, В2).
-  upset(state, cat);
+  // Сховався від гучного звуку — стрес: друг поруч може прийти вилизати, коли кіт вийде зі схованки (§9.4, рішення автора
+  // 2026-10-26, В2; перевірка блоку 3: інакше після феєрверків година на втіху минала ще в схованці).
+  upset(state, cat, undefined, minutes * stress);
   if (kind === "fireworks") changeMood(state, cat, MODIFIERS.festival.mood, "феєрверки");
   emit(state, { type: "scared", cat: cat.id });
   observe(state, cat, "bravery", -1, false, NOISE.observeEvery);
