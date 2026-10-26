@@ -1,0 +1,245 @@
+{
+ "name": "Хто з ким грається",
+ "description": "Субота другого тижня, 17:00, вітальня (§9.4, «Хто з ким грається», рішення автора 2026-10-26). Зірка спить, а її троє кошенят тижня вовтузяться: брати й сестри одразу друзі (+50), а кошеня кличе гратися будь-кого, хто не ворог, утричі охочіше за дорослого, — кошенята підбігають одне до одного й до чужих дорослих і стають обличчям одне до одного (поза гри — у блоці 3). Шустрик і Тихон — приятелі (+30): граються, але вдвічі рідше за друзів і не вилизують одне одного. Ластівка прийшла вчора: з дорослими починала з −20, і до півночі ті шиплять на неї, коли вона проходить повз ближче 2 клітинок (бабл вголос, стосунки −1). Стосунки видно в панелі розробника («Коти»).",
+ "game": {
+  "sex": "female",
+  "difficulty": "normal",
+  "seed": 27
+ },
+ "state": {
+  "day": 12,
+  "minute": 1020,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 600,
+   "body": {
+    "x": 6.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 70,
+    "hygiene": 70,
+    "sanity": 70
+   }
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Зірка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 4.5,
+   "y": 10.4,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 70
+   },
+   "act": {
+    "kind": "sleep",
+    "target": null,
+    "goal": null,
+    "minutes": 90,
+    "elapsed": 10
+   },
+   "traits": []
+  },
+  {
+   "source": "born",
+   "ageWeeks": 1,
+   "name": "Пиріжок",
+   "sex": "male",
+   "arrivedDay": 4,
+   "parents": {
+    "mother": 104,
+    "father": null
+   },
+   "x": 6.5,
+   "y": 8.5,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 95,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 0.5,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "born",
+   "ageWeeks": 1,
+   "name": "Ґудзик",
+   "sex": "male",
+   "arrivedDay": 4,
+   "parents": {
+    "mother": 104,
+    "father": null
+   },
+   "x": 7.5,
+   "y": 8.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 95,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 1,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "born",
+   "ageWeeks": 1,
+   "name": "Квасолька",
+   "sex": "female",
+   "arrivedDay": 4,
+   "parents": {
+    "mother": 104,
+    "father": null
+   },
+   "x": 7.0,
+   "y": 9.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 85,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 3,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Шустрик",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 10.5,
+   "y": 8.5,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 95,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 2,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 4,
+   "name": "Тихон",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 11.5,
+   "y": 9.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 30,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 30,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Ластівка",
+   "sex": "female",
+   "sterilized": true,
+   "arrivedDay": 11,
+   "x": 13.5,
+   "y": 10.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 20,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "wander",
+    "target": null,
+    "goal": {
+     "x": 4,
+     "y": 10
+    },
+    "minutes": 10,
+    "elapsed": 0
+   },
+   "traits": [
+    {
+     "group": "bravery",
+     "level": 2,
+     "seen": 0,
+     "known": true
+    }
+   ]
+  }
+ ],
+ "relations": [
+  [
+   4,
+   5,
+   30
+  ]
+ ]
+}
