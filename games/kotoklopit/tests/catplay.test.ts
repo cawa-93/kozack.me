@@ -738,6 +738,62 @@ describe("друг може відмовитися (§9.4 «Згода, охор
   });
 });
 
+describe("кличуть лише поруч і лише вільного (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г6)", () => {
+  /** Скільки з 200 рішень кота, що хоче гратися, — покликати цього друга. */
+  function invites(save: Save, a: Cat, b: Cat, act: () => CatAct): number {
+    let n = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      a.needs.play = 100;
+      b.act = act();
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind === "wrestle" && a.act.target === `cat:${b.id}`) n += 1;
+    }
+    return n;
+  }
+
+  it("друга в тій самій кімнаті кличуть і здалеку, з іншої кімнати — лише ближче 4 клітинок", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 2.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 16.5, y: 8.5 });
+    setRelation(save, a, b, 70);
+    // Обидва у вітальні, за 14 клітинок.
+    expect(invites(save, a, b, () => idleAct(30))).toBeGreaterThan(10);
+    // Спальня й кухня — далеко.
+    Object.assign(a, { x: 3.5, y: 3.5 });
+    Object.assign(b, { x: 15.5, y: 3.5 });
+    expect(invites(save, a, b, () => idleAct(30))).toBe(0);
+    // Кухня й вітальня — ближче 4 клітинок.
+    Object.assign(a, { x: 13.5, y: 3.5 });
+    Object.assign(b, { x: 15.5, y: 6.5 });
+    expect(invites(save, a, b, () => idleAct(30))).toBeGreaterThan(10);
+  });
+
+  it("кличуть лише того, хто стоїть чи бродить без особливої цілі", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+    const c = withCat(save, {}, { x: 4.5, y: 9.5 });
+    setRelation(save, a, b, 70);
+    const goal = { x: 12, y: 8 };
+    expect(invites(save, a, b, () => idleAct(30))).toBeGreaterThan(10);
+    expect(invites(save, a, b, () => ({ kind: "wander", target: null, goal, minutes: 5, elapsed: 0 }))).toBeGreaterThan(10);
+    expect(invites(save, a, b, () => ({ kind: "wander", target: "play", goal, minutes: 5, elapsed: 0 }))).toBeGreaterThan(10);
+    const busy: CatAct[] = [
+      { kind: "toy", target: "item:1", goal: null, minutes: 5, elapsed: 0 },
+      { kind: "idle", target: `cuddle:${c.id}`, goal: null, minutes: 5, elapsed: 0 },
+      { kind: "idle", target: "desk", goal: null, minutes: 5, elapsed: 0 },
+      { kind: "idle", target: "lured", goal: null, minutes: 2, elapsed: 0 },
+      { kind: "idle", target: "sniff:1", goal: null, minutes: 2, elapsed: 0 },
+      { kind: "idle", target: "guard:item:1", goal: null, minutes: 10, elapsed: 0 },
+      { kind: "idle", target: "won", goal: null, minutes: 3, elapsed: 0 },
+      { kind: "idle", target: `licked:${c.id}`, goal: null, minutes: 5, elapsed: 0 },
+      { kind: "wander", target: "paper", goal, minutes: 5, elapsed: 0 },
+      { kind: "wander", target: "avoid", goal, minutes: 5, elapsed: 0 },
+    ];
+    for (const act of busy) expect(invites(save, a, b, () => ({ ...act }))).toBe(0);
+  });
+});
+
 describe("пози гри й вилизування (§9.4, «Пози стосунків», 3–5; заглушки до кроку 16)", () => {
   const act = (fields: Partial<CatAct>): CatAct => ({ kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0, ...fields });
 

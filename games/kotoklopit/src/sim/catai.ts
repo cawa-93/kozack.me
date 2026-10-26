@@ -1602,7 +1602,7 @@ function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | nu
   // Щойно відмовився гратися — пів години його не кличуть (§9.4 «Згода, охорона й сварки», Г5).
   const declined = (other: Cat): boolean => other.playDeclinedAt !== undefined && now - other.playDeclinedAt < w.decline.pause;
   const free = (other: Cat): boolean =>
-    (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") &&
+    callable(cat, other) &&
     approachable(state, other) &&
     !declined(other) &&
     !shoos(state, cat, other) &&
@@ -1615,6 +1615,19 @@ function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | nu
   }
   const pal = nearestCat(state, cat, (other) => free(other) && isPal(state, cat, other));
   return pal ? { cat: pal, weight: w.palWeight } : null;
+}
+
+/**
+ * Кого можна кликати гратися (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г6): лише поруч — у тій самій кімнаті чи
+ * ближче 4 клітинок — і лише вільного: стоїть чи бродить без особливої цілі. Раніше кликали з будь-якої кімнати й зривали з
+ * особливих станів (папір, коліно персонажа, вудка, вилизування).
+ */
+function callable(cat: Cat, other: Cat): boolean {
+  const act = other.act;
+  const free = (act.kind === "idle" && act.target === null) || (act.kind === "wander" && (act.target === null || act.target === "play"));
+  if (!free) return false;
+  const room = roomAt(cat);
+  return (room !== null && room === roomAt(other)) || distance(cat, other) < RELATIONS.wrestle.call;
 }
 
 /**
