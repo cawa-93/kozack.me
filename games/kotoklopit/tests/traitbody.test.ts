@@ -10,7 +10,7 @@ import { climbWeight, decide, envy, sunSpot, tickCats } from "../src/sim/catai";
 import { CLIMBING, ENVY, MINUTES_PER_DAY, NEED_PER_HOUR, PLAY_RELIEF, WARMTH, WEIGHT } from "../src/sim/config";
 import { fallIll, hasDisease, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { advance, newGame } from "../src/sim/game";
-import { COOL_TILE, objectById } from "../src/sim/home";
+import { COOL_TILE, objectById, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -156,9 +156,9 @@ describe("«Заздрісність»: видимі реакції (§9.12, р�
   });
 });
 
-/** Куди кіт ляже спати: сонячна пляма, плитка, комп'ютер чи ліжко — за 300 рішень. */
+/** Куди кіт ляже спати: сонячна пляма, плитка, підвіконня над батареєю, комп'ютер чи ліжко — за 300 рішень. */
 function sleepSpots(traits: Record<string, TraitLevel>, day: string | null = null, minute = hours(12)): Record<string, number> {
-  const counts: Record<string, number> = { sun: 0, tile: 0, computer: 0, bed: 0 };
+  const counts: Record<string, number> = { sun: 0, tile: 0, sill: 0, computer: 0, bed: 0 };
   const computer = objectById("computer");
   const bed = objectById("bed");
   for (let seed = 0; seed < 300; seed++) {
@@ -171,6 +171,7 @@ function sleepSpots(traits: Record<string, TraitLevel>, day: string | null = nul
     const goal = cat.act.goal;
     const sun = sunSpot(save.current.minute);
     if (cat.act.target === "tile") counts["tile"]! += 1;
+    else if (WINDOWS.some((w) => w.sill === cat.act.target)) counts["sill"]! += 1;
     else if (goal && sun && goal.x === sun.x && goal.y === sun.y) counts["sun"]! += 1;
     else if (goal && goal.y === computer.y && goal.x >= computer.x && goal.x < computer.x + computer.w) counts["computer"]! += 1;
     else if (goal && goal.x >= bed.x && goal.x < bed.x + bed.w && goal.y >= bed.y && goal.y < bed.y + bed.h) counts["bed"]! += 1;
@@ -223,9 +224,9 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     }
   });
 
-  it("у «Холод» ліжко й комп'ютер тягнуть теплолюба сильніше, а «Холодостійкого» — як у звичайний день", () => {
+  it("у «Холод» теплі місця (ліжко, комп'ютер, підвіконня над батареєю) тягнуть теплолюба сильніше, а «Холодостійкого» — як у звичайний день", () => {
     const night = hours(23.5);
-    const warmPlaces = (spots: Record<string, number>): number => spots["bed"]! + spots["computer"]!;
+    const warmPlaces = (spots: Record<string, number>): number => spots["bed"]! + spots["computer"]! + spots["sill"]!;
     const plain = warmPlaces(sleepSpots({}, null, night));
     const warm = warmPlaces(sleepSpots({ warmth: 2 }, "cold", night));
     const usual = warmPlaces(sleepSpots({}, "cold", night));
@@ -255,6 +256,72 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     cat.act = { kind: "sleep", target: null, goal: { x: 1, y: 2 }, minutes: 480, elapsed: 0 };
     arrive(save, cat);
     expect(cat.act.blanket).toBe(true);
+  });
+
+  it("підвіконня над батареєю (фінальна перевірка рис 2026-10-26): «+» лягає туди, у «Холод» — частіше; кіт без риси й «−» — ніколи", () => {
+    expect(sleepSpots({})["sill"]).toBe(0);
+    expect(sleepSpots({ warmth: -2 }, "cold")["sill"]).toBe(0);
+    const warm = sleepSpots({ warmth: 1 })["sill"]!;
+    expect(warm).toBeGreaterThan(0);
+    expect(sleepSpots({ warmth: 1 }, "cold")["sill"]).toBeGreaterThan(warm);
+    expect(sleepSpots({ warmth: 2 })["sill"]).toBeGreaterThan(warm);
+  });
+
+  it("на одному підвіконні — один кіт: туди, де сидить, спить чи вже йде інший кіт, теплолюб не лягає", () => {
+    const [bedroom, living] = WINDOWS.map((w) => objectById(w.sill));
+    for (let seed = 0; seed < 100; seed++) {
+      const save = game();
+      const watcher = withCat(save, {}, { x: bedroom!.x + 0.5, y: bedroom!.y + 0.5 });
+      watcher.act = { kind: "window", target: bedroom!.id, goal: null, minutes: 30, elapsed: 0 };
+      const sleeper = withCat(save, {}, { x: 9.5, y: 7.5 });
+      sleeper.act = { kind: "sleep", target: living!.id, goal: { x: living!.x, y: living!.y }, minutes: 480, elapsed: 0 };
+      const cat = withCat(save, { warmth: 2 }, { x: 10.5, y: 7.5 });
+      cat.needs.fatigue = 100;
+      decide(save.current, cat, createRng(seed), { present: true });
+      expect(WINDOWS.some((w) => w.sill === cat.act.target)).toBe(false);
+    }
+  });
+
+  it("теплолюб спить клубочком на дошці над батареєю — прояв «+»; у «Холод» там не мерзне", () => {
+    const pane = WINDOWS.find((w) => w.sill === "sill-living")!;
+    const sill = objectById(pane.sill);
+    const save = game();
+    save.current.modifiers.day = "cold";
+    Object.assign(save.current.character.body, { x: 3.5, y: 8.5 });
+    const cat = withCat(save, { warmth: 1 }, { x: 3.5, y: 9.5 });
+    cat.needs.fatigue = 100;
+    cat.mood = 60;
+    cat.act = { kind: "sleep", target: sill.id, goal: { x: sill.x, y: sill.y }, minutes: 480, elapsed: 0 };
+    // Що мерзне дорогою, видно й так; тут — лише підвіконня.
+    cat.weatherAt = save.current.day * MINUTES_PER_DAY + save.current.minute;
+    arrive(save, cat);
+    expect(cat.act).toMatchObject({ kind: "sleep", target: sill.id, goal: null });
+    expect({ x: cat.x, y: cat.y }).toEqual(pane.seat);
+    expect(seen(cat, "warmth")).toBe(1);
+    const mood = cat.mood;
+    live(save, 120);
+    expect(cat.act.kind).toBe("sleep");
+    expect(cat.mood).toBeGreaterThanOrEqual(mood);
+    // Вікно цього підвіконня тепер зайняте: інший кіт туди дивитися не сяде.
+    const other = withCat(save, {}, { x: 3.5, y: 7.5 });
+    other.act = { kind: "window", target: sill.id, goal: null, minutes: 30, elapsed: 0 };
+    live(save, 1);
+    expect(other.act.kind).not.toBe("window");
+  });
+
+  it("поки теплолюб ішов, підвіконня зайняв інший кіт — спить на підлозі поруч", () => {
+    const sill = objectById("sill-living");
+    const save = game();
+    const watcher = withCat(save, {}, { x: sill.x + 0.5, y: sill.y + 0.5 });
+    watcher.act = { kind: "window", target: sill.id, goal: null, minutes: 60, elapsed: 0 };
+    const cat = withCat(save, { warmth: 2 }, { x: 3.5, y: 8.5 });
+    cat.needs.fatigue = 100;
+    cat.act = { kind: "sleep", target: sill.id, goal: { x: sill.x, y: sill.y }, minutes: 480, elapsed: 0 };
+    arrive(save, cat);
+    arrive(save, cat);
+    expect(cat.act.kind).toBe("sleep");
+    expect(cat.act.target).toBeNull();
+    expect(Math.floor(cat.x) === sill.x && Math.floor(cat.y) === sill.y).toBe(false);
   });
 
   it("«−» розпластався на плитці — прояв «−», але не в «Спеку» (там лежать усі)", () => {
@@ -487,7 +554,7 @@ describe("«Схильність до повноти» (§9.12, рішення �
 });
 
 describe("сценарій «Тіло й тепло» (`scenarios/body-warmth.json`)", () => {
-  it("«Мерзлячка» мерзне, «Ковдрочка» під ковдрою, «Холодостійкий» на плитці, «Пухкенький» ширший і нагору не лізе", () => {
+  it("«Мерзлячка» мерзне, «Ковдрочка» під ковдрою, «Холодостійкий» на плитці, «Батарейка» над батареєю, «Кухлик» п'є з кухля, «Пухкенький» ширший і нагору не лізе", () => {
     const scenario = FILE_SCENARIOS["body-warmth"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
@@ -501,6 +568,12 @@ describe("сценарій «Тіло й тепло» (`scenarios/body-warmth.js
     expect(hardy.act.target).toBe("tile");
     expect(Math.floor(hardy.x)).toBe(COOL_TILE.x);
     expect(hardy.facing).toBe(1);
+    // Фінальна перевірка рис (2026-10-26): «Батарейка» спить над батареєю, «Кухлик» напився з кухля.
+    const radiator = byName("Батарейка");
+    expect(radiator.act).toMatchObject({ kind: "sleep", target: "sill-living", goal: null });
+    expect({ x: radiator.x, y: radiator.y }).toEqual(WINDOWS.find((w) => w.sill === "sill-living")!.seat);
+    expect(byName("Кухлик").needs.thirst).toBeLessThan(10);
+    expect(events.some((e) => e.type === "cat-mood" && e.cat === byName("Кухлик").id && e.reason === "п'є з кухля")).toBe(true);
     const plump = byName("Пухкенький");
     expect(hasDisease(plump, "obesity")).toBe(true);
     expect(girthOf(plump)).toBeGreaterThan(1.3);

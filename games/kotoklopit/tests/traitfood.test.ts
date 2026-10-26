@@ -7,8 +7,9 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { addTrait, createCat, idleAct } from "../src/sim/cat";
 import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, dirtyFor, eatMinutes, envy, markTriggered, stonesFactor, tickCats } from "../src/sim/catai";
+import { bowlEaten, decide, dirtyFor, eatMinutes, envy, forbiddenZoneAt, markTriggered, sayNo, stonesFactor, tickCats } from "../src/sim/catai";
 import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP } from "../src/sim/config";
+import { trinketTile } from "../src/sim/home";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
@@ -539,6 +540,57 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     }
     expect(spilled).toBeGreaterThan(3);
     expect(spilled).toBeLessThan(40 * DRINKING.spill * 2);
+  });
+
+  it("«+» без фонтанчика інколи п'є з вашого кухля (фінальна перевірка рис 2026-10-26); скинутий кухоль, «ні» про кухню, фонтанчик чи кіт без риси — ні", () => {
+    const mugAt = trinketTile("mug");
+    const pick = (traits: Record<string, TraitLevel>, setup: (save: Save, cat: Cat) => void = () => {}): number => {
+      let mug = 0;
+      for (let seed = 0; seed < 40; seed++) {
+        const save = game();
+        const cat = withCat(save, traits);
+        cat.needs.thirst = 70;
+        setup(save, cat);
+        decide(save.current, cat, createRng(seed), { present: false });
+        if (cat.act.kind === "drink" && cat.act.target === "mug") {
+          mug += 1;
+          expect(cat.act.goal).toEqual(mugAt);
+        }
+      }
+      return mug;
+    };
+    expect(pick({})).toBe(0);
+    expect(pick({ drinking: -1 })).toBe(0);
+    const often = pick({ drinking: 1 });
+    expect(often).toBeGreaterThan(5);
+    // «Фонтанолюб» здебільшого сідає на умивальник.
+    expect(pick({ drinking: 2 })).toBeLessThan(often);
+    expect(pick({ drinking: 1 }, (save) => (save.current.home.trinkets = { mug: { x: 15.35, y: 4.3 } }))).toBe(0);
+    expect(pick({ drinking: 1 }, (save) => (save.current.home.appliances.fountain = "cheap"))).toBe(0);
+    expect(pick({ drinking: 1 }, (save, cat) => sayNo(save.current, cat, "kitchen", createRng(1)))).toBe(0);
+  });
+
+  it("п'є з кухля на кухонному столі: спрага 0, настрій +1, прояв «+»; це кухня — «ні» знімає звідти; кухоль скинули, поки йшов, — не напився", () => {
+    const save = game();
+    const at = trinketTile("mug");
+    const cat = withCat(save, { drinking: 1 }, { x: at.x + 0.5, y: at.y + 0.5 });
+    cat.needs.thirst = 80;
+    cat.mood = 50;
+    cat.act = { kind: "drink", target: "mug", goal: null, minutes: CAT_ACT_MINUTES.drink, elapsed: 0 };
+    expect(forbiddenZoneAt(save.current, cat)).toBe("kitchen");
+    tickCats(save.current, CAT_ACT_MINUTES.drink + 0.1, { present: true });
+    expect(cat.needs.thirst).toBeLessThan(5);
+    expect(cat.mood).toBeGreaterThan(50);
+    expect(seen(cat, "drinking")).toBe(1);
+
+    const other = game();
+    const thirsty = withCat(other, { drinking: 1 }, { x: at.x + 0.5, y: at.y + 0.5 });
+    thirsty.needs.thirst = 80;
+    thirsty.act = { kind: "drink", target: "mug", goal: null, minutes: CAT_ACT_MINUTES.drink, elapsed: 0 };
+    other.current.home.trinkets = { mug: { x: 15.35, y: 4.3 } };
+    tickCats(other.current, CAT_ACT_MINUTES.drink + 0.1, { present: true });
+    expect(seen(thirsty, "drinking")).toBe(0);
+    expect(thirsty.needs.thirst).toBeGreaterThan(50);
   });
 
   it("«Зразковий поїльник» іде пити, щойно воду долили", () => {

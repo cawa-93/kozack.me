@@ -415,4 +415,19 @@ describe("«Допитливість»: коробки й нові речі (§9
     expect(events.some((e) => e.type === "refused" && e.reason === "cat-in-box")).toBe(true);
     expect(save.current.home.boxes?.food?.cheap).toBe(2);
   });
+
+  it("клубочок у барабані пральної машини видно й так — прояв «+», раз за сон (фінальна перевірка рис 2026-10-26); у пранні — ні", () => {
+    for (const washing of [false, true]) {
+      const save = game();
+      // Персонаж у ванній, біля пральної машини.
+      Object.assign(save.current.character.body, { x: 10.5, y: 2.5 });
+      if (washing) save.current.home.washer = { state: "washing", minutes: 60, quality: "cheap" };
+      const cat = withCat(save, { curiosity: 2 }, { x: 10.5, y: 1.5 });
+      cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+      cat.needs.fatigue = 60;
+      tickCats(save.current, 0.5, { present: true });
+      tickCats(save.current, 0.5, { present: true });
+      expect(seen(cat, "curiosity")).toBe(washing ? 0 : 1);
+    }
+  });
 });

@@ -440,8 +440,10 @@ export const FOOD_SOUND = { hunger: 50, appetiteStep: 10 } as const;
  * (+`fountainMood`); +2 і більше без фонтанчика з шансом `spill` перекидає миску з водою — калюжа. «−» іде пити, щойно воду
  * долили, якщо спрага від `freshThirst`. Сечокам'яна від звичайного корму стерилізованому — × (1 + `stonesStep` × рівень):
  * «+» без фонтанчика п'є мало, «−» — багато; «+» з фонтанчиком — ×1.
+ * [Пропозиція] (фінальна перевірка рис 2026-10-26, «П'є зі склянок»): «+» без фонтанчика, що не сів на умивальник, з шансом `mug`
+ * п'є з вашого кухля на кухонному столі (кухоль стоїть, «ні» про кухню не пам'ятає): спрага 0, настрій +`mugMood`.
  */
-export const DRINKING = { sinkStep: 0.4, tapMood: 2, bowlMood: -1, fountainMood: 1, spill: 0.25, freshThirst: 20, stonesStep: 0.25 } as const;
+export const DRINKING = { sinkStep: 0.4, tapMood: 2, bowlMood: -1, fountainMood: 1, spill: 0.25, freshThirst: 20, stonesStep: 0.25, mug: 0.5, mugMood: 1 } as const;
 /** Миска вміщує 2 порції; миска для води — 8 ковтків (§9.12). */
 export const BOWL_CAPACITY = 2;
 export const WATER_CAPACITY = 8;
@@ -569,8 +571,10 @@ export const WEIGHT = {
  * `weatherMood` настрою за одиницю на добу, а не сплячи, раз на `feelEvery` хвилин показують це (думка); «−» у «Спеку» ще й п'є
  * більше: спрага × (1 + `heatThirstStep` × |рівень|). Прояв у теплому чи прохолодному місці — не частіше ніж раз на `observeEvery`
  * хвилин.
+ * [Пропозиція] (фінальна перевірка рис 2026-10-26): підвіконня над батареєю — тепле місце сну «+»: вага `sillStep` × рівень, а в
+ * «Холод» ще той самий бонус холоду, що й для ліжка та комп'ютера; на одному підвіконні — один кіт.
  */
-export const WARMTH = { sun: 2, coldStep: 0.5, coolStep: 0.5, tileStep: 1.5, heatTile: 2, blanketLevel: 2, weatherMood: -1, feelEvery: 180, heatThirstStep: 0.25, observeEvery: 120 } as const;
+export const WARMTH = { sun: 2, coldStep: 0.5, coolStep: 0.5, tileStep: 1.5, heatTile: 2, blanketLevel: 2, weatherMood: -1, feelEvery: 180, heatThirstStep: 0.25, observeEvery: 120, sillStep: 1 } as const;
 /**
  * Мстивість (§9.12): скільки триває образа, шанс помсти за годину за одиницю, ласощі незлопам'ятним. Рішення автора
  * 2026-10-25 (`TRAITS_REVIEW.md`): мститься лише за неприємне від персонажа (`offend`) і стрес — бійку чи переноску, і

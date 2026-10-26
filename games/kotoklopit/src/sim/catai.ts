@@ -261,15 +261,15 @@ function heatThirst(state: GameState, cat: Cat): number {
 }
 
 /**
- * Кіт гріється (§9.12, «Теплолюбність»): спить під ковдрою, на комп'ютері, на холодильнику, у будиночку, у сонячній плямі чи купкою з
- * іншим котом, лежить на колінах чи сидить на руках.
+ * Кіт гріється (§9.12, «Теплолюбність»): спить під ковдрою, на комп'ютері, на холодильнику, над батареєю на підвіконні, у будиночку,
+ * у сонячній плямі чи купкою з іншим котом, лежить на колінах чи сидить на руках.
  */
 function warming(state: GameState, cat: Cat): boolean {
   if (isCarried(state, cat) || cat.act.kind === "lap") return true;
   if (!asleep(cat)) return false;
   if (cat.act.blanket === true || cat.act.target?.startsWith("pile:") === true || cat.act.target?.startsWith("item:") === true) return true;
   const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
-  if (o?.kind === "computer" || o?.kind === "fridge") return true;
+  if (o?.kind === "computer" || o?.kind === "fridge" || o?.kind === "windowsill") return true;
   const sun = sunSpot(state.minute);
   return sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
 }
@@ -639,6 +639,10 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const tile = WARMTH.tileStep * Math.max(0, -warmth) + (isHot(state) ? WARMTH.heatTile : 0);
   const tileTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "tile");
   if (tile > 0 && !tileTaken) options.push({ weight: tile, value: { at: { ...COOL_TILE }, target: "tile" } });
+  // Підвіконня над батареєю — тепле місце теплолюба (фінальна перевірка рис 2026-10-26, «Живе на батареї»): найближче вільне,
+  // а в «Холод» тягне ще сильніше. Ціль — id підвіконня: так його бачать зайнятим інші коти.
+  const sill = warmth > 0 ? (freeSills(state, cat)[0] ?? null) : null;
+  if (sill) options.push({ weight: WARMTH.sillStep * warmth + cold, value: { at: { x: sill.x, y: sill.y }, target: sill.id } });
   // Нагорі — на холодильнику (він теплий: вага й від «Теплолюбності») і на шафі в спальні (§9.12, «Лазіння»).
   const climb = climbWeight(cat);
   if (climb > 0) {
@@ -725,6 +729,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (drinking > 0 && state.home.appliances.fountain === null && rng.chance(DRINKING.sinkStep * drinking)) {
       const sink = objectById("sink");
       return start(cat, "beg", { x: sink.x, y: sink.y }, CAT_ACT_MINUTES.beg, "sink");
+    }
+    // «+» п'є з вашого кухля на кухонному столі (фінальна перевірка рис 2026-10-26, «П'є зі склянок»): кухоль стоїть, а «ні» про
+    // кухню кіт не пам'ятає. Шанс — останнім: кіт без риси rng тут не витрачає.
+    if (drinking > 0 && state.home.appliances.fountain === null && !state.home.trinkets?.mug && noGo(state, cat, "kitchen") === "go" && rng.chance(DRINKING.mug)) {
+      return start(cat, "drink", trinketTile("mug"), CAT_ACT_MINUTES.drink, "mug");
     }
     const waters = itemsOf(state, "water");
     const water = nearest(cat, avoidNew(state, cat, waters.filter((w) => w.water > 0))) ?? nearest(cat, waters);
@@ -1665,6 +1674,15 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         changeMood(state, cat, DRINKING.tapMood, "п'є з крана");
         return;
       }
+      // З вашого кухля на кухонному столі (фінальна перевірка рис 2026-10-26, «П'є зі склянок»): кухоль скинули, поки кіт ішов, — не
+      // напився.
+      if (act.target === "mug") {
+        if (state.home.trinkets?.mug) return;
+        cat.needs.thirst = 0;
+        changeMood(state, cat, DRINKING.mugMood, "п'є з кухля");
+        observe(state, cat, "drinking");
+        return;
+      }
       const water = itemById<WaterItem>(state, act.target);
       if (!water || water.water <= 0) return;
       water.water -= 1;
@@ -2593,6 +2611,18 @@ function fellAsleep(state: GameState, cat: Cat): void {
  */
 function sleptWarm(state: GameState, cat: Cat): void {
   const level = traitLevel(cat, "warmth");
+  // Над батареєю на підвіконні (фінальна перевірка рис 2026-10-26, «Живе на батареї»): клубочком на дошці біля скла — прояв «+»;
+  // поки йшов, підвіконня зайняв інший кіт — спить на підлозі поруч.
+  const pane = WINDOWS.find((w) => w.sill === cat.act.target);
+  if (pane) {
+    const sill = objectById(pane.sill);
+    if (sillTaken(state, cat, sill)) return start(cat, "sleep", besideObject(state, sill), cat.act.minutes);
+    cat.facing = pane.facing;
+    cat.x = pane.seat.x;
+    cat.y = pane.seat.y;
+    if (level > 0) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
+    return;
+  }
   if (cat.act.target === "tile") {
     // Ліворуч від плитки — стіна ванної: кіт лягає головою до кімнати (перевірка етапу 2026-10-26: голову ховала стіна).
     cat.facing = 1;
@@ -2988,14 +3018,19 @@ export function catInBox(state: GameState): Cat | null {
 }
 
 /**
- * Спить у коробці чи в переносці на очах персонажа (§9.9): прояв «Допитливості +» чи «Переноски +», раз за сон.
+ * Спить у коробці, у барабані пральної машини чи в переносці на очах персонажа (§9.9): прояв «Допитливості +» чи «Переноски +», раз
+ * за сон. Барабан — фінальна перевірка рис 2026-10-26: досі кота в ньому «помічали», лише натиснувши на пральну машину, хоча
+ * клубочок у барабані видно й так.
  */
 function boxSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
-  if (act.kind !== "sleep" || act.goal !== null || act.seen === true || (act.target !== "boxes" && act.target !== "carrier") || !witnesses(state, cat)) return;
+  if (act.kind !== "sleep" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  const washer = objectById("washer");
+  const drum = state.home.washer.state === "idle" && Math.floor(cat.x) === washer.x && Math.floor(cat.y) === washer.y;
+  if (act.target !== "boxes" && act.target !== "carrier" && !drum) return;
   act.seen = true;
-  if (act.target === "boxes") observe(state, cat, "curiosity");
-  else observe(state, cat, "carrier");
+  if (act.target === "carrier") observe(state, cat, "carrier");
+  else observe(state, cat, "curiosity");
 }
 
 /** Звідки «Втікач» іде кричати під двері: нічим важливим не зайнятий (§9.12). */
@@ -3248,6 +3283,21 @@ export function windowWeight(state: GameState, cat: Cat): number {
   return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level));
 }
 
+/**
+ * Підвіконня зайняте для цього кота (§9.12): там сидить чи спить інший кіт або вже йде туди — дивитися у вікно чи спати над
+ * батареєю (фінальна перевірка рис 2026-10-26: на одному підвіконні — один кіт).
+ */
+function sillClaimed(state: GameState, cat: Cat, sill: HomeObject): boolean {
+  return state.cats.some((c) => c.id !== cat.id && c.away === null && (inside(c, sill) || ((c.act.kind === "window" || c.act.kind === "sleep") && c.act.target === sill.id)));
+}
+
+/** Вільні підвіконня для сну над батареєю, найближче — першим (§9.12, «Теплолюбність»). */
+function freeSills(state: GameState, cat: Cat): HomeObject[] {
+  return WINDOWS.map((w) => objectById(w.sill))
+    .filter((o) => !sillClaimed(state, cat, o))
+    .sort((a, b) => distance(a, cat) - distance(b, cat));
+}
+
 /** На підвіконні вже сидить інший кіт (§9.12, «Вікно»). */
 function sillTaken(state: GameState, cat: Cat, sill: HomeObject): boolean {
   return state.cats.some((c) => c.id !== cat.id && c.away === null && (inside(c, sill) || (c.act.kind === "window" && c.act.target === sill.id && c.act.goal === null)));
@@ -3259,8 +3309,10 @@ function sillTaken(state: GameState, cat: Cat, sill: HomeObject): boolean {
  * на зайняте підвіконня не йшли зовсім, і охороняти його не було від кого). false — нікуди не пішов.
  */
 export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
-  // Туди, куди вже йде інший кіт, не йде.
-  const sills = WINDOWS.map((w) => objectById(w.sill)).filter((o) => !state.cats.some((c) => c.id !== cat.id && c.away === null && c.act.kind === "window" && c.act.target === o.id && c.act.goal !== null));
+  // Туди, куди вже йде інший кіт — дивитися у вікно чи спати над батареєю, — не йде.
+  const sills = WINDOWS.map((w) => objectById(w.sill)).filter(
+    (o) => !state.cats.some((c) => c.id !== cat.id && c.away === null && (c.act.kind === "window" || c.act.kind === "sleep") && c.act.target === o.id && c.act.goal !== null),
+  );
   sills.sort((a, b) => distance(a, cat) - distance(b, cat));
   const free = sills.find((o) => !sillTaken(state, cat, o));
   const sill = free ?? (rng.chance(WINDOW.contest) ? sills[0] : undefined);
