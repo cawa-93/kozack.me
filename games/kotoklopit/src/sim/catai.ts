@@ -1508,12 +1508,14 @@ function nightMischief(state: GameState, cat: Cat): void {
 /**
  * З ким погратися й з якою вагою (§9.4): удома, не спить, нічим не зайнятий і до нього можна підійти (`approachable`). Найближчий
  * друг, а нема — найближчий приятель з удвічі меншою вагою (рішення автора 2026-10-26, Г1). Кошеня кличе й будь-кого, хто не
- * ворог, — і всіх з вагою друга × 2,5 (Г2).
+ * ворог, — і всіх з вагою друга × 2,5 (Г2). Дорослий з «Турботою про кошенят» «−» і кошеня, що не друзі, разом не граються: він
+ * таких кошенят відганяє (`shoos`; перевірка блоку 2).
  */
 function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | null {
   const w = RELATIONS.wrestle;
   const kitten = isKitten(cat);
-  const free = (other: Cat): boolean => (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") && approachable(state, other);
+  const free = (other: Cat): boolean =>
+    (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") && approachable(state, other) && !shoos(state, cat, other) && !shoos(state, other, cat);
   const friend = nearestCat(state, cat, (other) => free(other) && isFriend(state, cat, other));
   if (friend) return { cat: friend, weight: w.weight * (kitten ? w.kitten : 1) };
   if (kitten) {
@@ -1523,6 +1525,14 @@ function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | nu
   const pal = nearestCat(state, cat, (other) => free(other) && isPal(state, cat, other));
   return pal ? { cat: pal, weight: w.palWeight } : null;
 }
+
+/**
+ * Дорослий з «Турботою про кошенят» «−» відганяє це кошеня (§9.12): шипить і б'є лапою, коли воно лізе, — якщо вони не друзі
+ * (`swatKitten`). Тож і гратися вони разом не кличуть (перевірка блоку 2, 2026-10-26: кошеня кликало «Сам ще кошеня», і той
+ * слухняно грався).
+ */
+const shoos = (state: GameState, adult: Cat, kitten: Cat): boolean =>
+  !isKitten(adult) && isKitten(kitten) && traitLevel(adult, "nurturing") < 0 && !isFriend(state, adult, kitten);
 
 /**
  * Боротьба й погоня з другом (§9.4): друг чекає, поки кіт підбіжить (не довше `wait`), а хвилини гри йдуть обом від зустрічі

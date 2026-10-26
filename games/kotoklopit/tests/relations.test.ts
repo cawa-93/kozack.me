@@ -127,6 +127,33 @@ describe("друзі (§9.4)", () => {
     expect(chosen(80, 1)).toBeGreaterThan(chosen(80, 3) * 1.5);
   });
 
+  it("«Сам ще кошеня» й кошеня, що не друзі, разом не граються: він таких кошенят відганяє (перевірка блоку 2)", () => {
+    const chosen = (value: number, nurturing: TraitLevel, kittenCalls: boolean): number => {
+      let count = 0;
+      for (let seed = 0; seed < 300; seed++) {
+        const save = game();
+        const kitten = withCat(save, {}, { x: 8.5, y: 8.5 }, 1);
+        const adult = withCat(save, { nurturing }, { x: 10.5, y: 8.5 });
+        setRelation(save, kitten, adult, value);
+        const [caller, mate] = kittenCalls ? [kitten, adult] : [adult, kitten];
+        mate.act = idleAct(30);
+        caller.needs.play = 100;
+        decide(save.current, caller, createRng(seed), { present: false });
+        if (caller.act.kind === "wrestle" && caller.act.target === `cat:${mate.id}`) count++;
+      }
+      return count;
+    };
+    // Нейтральний і приятель — ні кошеня його не кличе, ні він кошеня; «Байдужий до малечі» — так само.
+    expect(chosen(0, -2, true)).toBe(0);
+    expect(chosen(30, -2, true)).toBe(0);
+    expect(chosen(30, -2, false)).toBe(0);
+    expect(chosen(0, -1, true)).toBe(0);
+    // Друзі граються, як і завжди; «Нянька» — і нейтральна.
+    expect(chosen(60, -2, true)).toBeGreaterThan(0);
+    expect(chosen(60, -2, false)).toBeGreaterThan(0);
+    expect(chosen(0, 2, true)).toBeGreaterThan(0);
+  });
+
   it("старий кличе друга гратися вдвічі рідше, «Ігривість» — ±50% за одиницю, «Нудьгар» не кличе (рішення автора 2026-10-26, Г7)", () => {
     const chosen = (traits: Record<string, TraitLevel>, ageWeeks = 3): number => {
       let count = 0;
