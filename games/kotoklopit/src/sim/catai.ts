@@ -2690,8 +2690,10 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         emit(state, { type: "groom-started", cat: cat.id, friend: other.id });
       }
       // Друг чи кошеня пішли (нагальна потреба, руки) чи відійшли — вилизування скасовується, а не сидіння самому (§9.4, перевірка
-      // стосунків 2026-10-26).
-      if (!home(state, other) || distance(cat, other) > RELATIONS.groom.reach || !(asleep(other) || isLickedBy(other, cat))) {
+      // стосунків 2026-10-26). Так само, коли персонаж гладить чи грається з одним із двох, — як і гра (рішення автора 2026-10-26
+      // після блоку 3).
+      const touched = getsAttention(state, other) || getsAttention(state, cat);
+      if (touched || !home(state, other) || distance(cat, other) > RELATIONS.groom.reach || !(asleep(other) || isLickedBy(other, cat))) {
         act.refused = true;
         act.minutes = 0;
       }

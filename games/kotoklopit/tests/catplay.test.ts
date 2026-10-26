@@ -96,6 +96,28 @@ describe("вилизування видно (§9.4, рішення автора 
     expect(b.act.target === `licked:${a.id}`).toBe(false);
   });
 
+  it("погладили того, кого вилизують, чи того, хто вилизує, — вилизування переривається, як і гра (рішення автора 2026-10-26 після блоку 3)", () => {
+    for (const petted of ["groomee", "groomer"] as const) {
+      const save = game();
+      const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+      const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+      setRelation(save, a, b, 60);
+      b.act = idleAct(60);
+      groomFriend(a, b);
+      for (let t = 0; t < 100 && !isLicked(b); t++) tickCats(save.current, 0.05, { present: false });
+      expect(isLicked(b)).toBe(true);
+      const { events, stop } = recordEvents();
+      save.current.character.activity = { kind: "pet", cat: (petted === "groomee" ? b : a).id, minutes: 0 };
+      tickCats(save.current, 0.05, { present: true });
+      tickCats(save.current, 0.05, { present: true });
+      stop();
+      expect(a.act.kind === "groom" && a.act.target === `cat:${b.id}`).toBe(false);
+      expect(isLicked(b)).toBe(false);
+      expect(count(events, "groomed")).toBe(0);
+      expect(relation(save.current, a, b)).toBe(60);
+    }
+  });
+
   it("друг, що спить, спить далі", () => {
     const save = game();
     const a = withCat(save, {}, { x: 8.5, y: 8.5 });
