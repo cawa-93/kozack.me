@@ -1059,6 +1059,43 @@ describe("«Територіальність» (§9.4, §9.12, рішення а
     expect(guarded).toBeLessThan(28);
   });
 
+  it("ворог охороняє миску й без риси, як «Охоронець» +1: шипить, той відходить голодний; прояву «Територіальності» немає (§9.4, Б3)", () => {
+    const guarded = (relationValue: number, traits: Record<string, TraitLevel> = {}): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 60; seed++) {
+        const save = game(seed);
+        Object.assign(save.current.character.body, { x: 15.5, y: 3.5 });
+        const bowl = fullBowl(save);
+        const guard = withCat(save, traits);
+        eating(guard, bowl);
+        guard.act.minutes = 10;
+        const hungry = withCat(save, {}, { x: 13.5, y: 4.5 });
+        hungry.needs.hunger = 90;
+        setRelation(save, guard, hungry, relationValue);
+        decide(save.current, hungry, createRng(seed), { present: true });
+        const { events, stop } = recordEvents();
+        for (let i = 0; i < 8 && hungry.act.kind === "eat" && hungry.act.goal !== null; i++) {
+          save.current.minute += 0.25;
+          tickCats(save.current, 0.25, { present: true });
+        }
+        stop();
+        if (!events.some((e) => e.type === "hissed" && e.cat === guard.id && e.at === hungry.id)) continue;
+        count += 1;
+        expect(hungry.act.kind).toBe("wander");
+        expect(hungry.needs.hunger).toBeGreaterThanOrEqual(90);
+        expect(relation(save.current, guard, hungry)).toBe(relationValue + TERRITORY.guardRelation);
+        expect(seen(guard, "territorial")).toBe(0);
+      }
+      return count;
+    };
+    // Не ворог — кіт без риси не охороняє; ворог — з шансом 30%, навіть «Ділиться».
+    expect(guarded(0)).toBe(0);
+    const enemy = guarded(-80);
+    expect(enemy).toBeGreaterThan(8);
+    expect(enemy).toBeLessThan(32);
+    expect(guarded(-80, { territorial: -1 })).toBeGreaterThan(8);
+  });
+
   it("«Господар території» після їди ще 10 хвилин вартує біля миски", () => {
     const save = game();
     const bowl = fullBowl(save);

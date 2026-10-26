@@ -4422,17 +4422,19 @@ function guardableTarget(cat: Cat): string | null {
 /**
  * Кіт іде до миски, лотка чи підвіконня, де вже «Охоронець» (§9.12, «Територіальність», рішення автора 2026-10-25): той, щойно кіт
  * підійшов ближче 2 клітинок, з шансом 30% × рівень шипить, і кіт відходить — потреба лишається, стосунки −3. Відігнаний від лотка з
- * терміновою потребою може не дотерпіти (30%). Прояв «+».
+ * терміновою потребою може не дотерпіти (30%). Прояв «+». Від ворога так само охороняє й кіт без риси — як «Охоронець» +1 (§9.4
+ * «Згода, охорона й сварки», рішення автора 2026-10-26, Б3).
  */
 function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   const target = guardableTarget(cat);
   if (target === null || cat.act.guarded === true) return;
+  const guardLevel = (g: Cat): number => Math.max(traitLevel(g, "territorial"), isEnemy(state, g, cat) ? 1 : 0);
   const guard = state.cats.find(
     (g) =>
       g.id !== cat.id &&
       home(state, g) &&
       !asleep(g) &&
-      traitLevel(g, "territorial") > 0 &&
+      guardLevel(g) > 0 &&
       g.act.goal === null &&
       (g.act.target === target || g.act.target === `guard:${target}`) &&
       distance(g, cat) <= TERRITORY.guardReach,
@@ -4441,10 +4443,11 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   cat.act.guarded = true;
   const now = absoluteMinute(state.day, state.minute);
   if (guard.guardedAt !== undefined && now - guard.guardedAt < TERRITORY.guardPause) return;
-  if (!rng.chance(TERRITORY.guardStep * traitLevel(guard, "territorial")) || !hiss(state, guard, cat)) return;
+  if (!rng.chance(TERRITORY.guardStep * guardLevel(guard)) || !hiss(state, guard, cat)) return;
   guard.guardedAt = now;
   changeRelation(state, guard, cat, TERRITORY.guardRelation);
-  observe(state, guard, "territorial");
+  // Прояв «Територіальності» — лише в «Охоронця»: ворог без риси охороняє через ворожнечу.
+  if (traitLevel(guard, "territorial") > 0) observe(state, guard, "territorial");
   if (cat.act.kind === "toilet" && cat.needs.toilet >= TERRITORY.surpriseNeed && rng.chance(TERRITORY.surpriseChance)) {
     addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
     cat.needs.toilet = 0;
