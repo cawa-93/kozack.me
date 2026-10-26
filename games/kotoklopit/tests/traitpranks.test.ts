@@ -18,6 +18,7 @@ import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
+import { targetOf } from "../src/sim/targets";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -285,6 +286,8 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     cat.act = idleAct(1);
     startCarry(save.current, cat, createRng(2), true);
     expect(cat.act.kind).toBe("idle");
+    // Кіт відійшов: з іграшкою в руках біля кота натискання нічого не робить (пір'їнка тепер збоку, біля кота).
+    Object.assign(cat, { x: 9.5, y: 7.5 });
     // Персонаж дістає іграшку й кладе на підлогу — вона знову звичайна.
     walkTo(save, `item:${toy.id}`);
     interact(save);
@@ -292,6 +295,23 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     interact(save);
     const back = toyOf(save);
     expect(back.hidden).toBeUndefined();
+  });
+
+  it("іграшка під холодильником не заступає його: перед холодильником ціль — він, біля пір'їнки — іграшка (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const toy = toyOf(save);
+    Object.assign(toy, { x: STASHES.fridge.at.x, y: STASHES.fridge.at.y, hidden: "fridge" });
+    const body = save.current.character.body;
+    const targetAt = (x: number, y: number): string | undefined => {
+      Object.assign(body, { x, y, facing: { x: 0, y: -1 } });
+      return targetOf(save.current)?.id;
+    };
+    // Перед холодильником — і впритул, і на крок далі.
+    for (const [x, y] of [[13.5, 2.3], [13.5, 2.5], [13.5, 2.7], [13.3, 2.4], [13.6, 2.4]] as const) expect(targetAt(x, y), `${x}, ${y}`).toBe("fridge");
+    // Перед кухонною поверхнею праворуч — вона.
+    expect(targetAt(14.6, 2.4)).toBe("counter-left");
+    // Біля самої пір'їнки — іграшка.
+    expect(targetAt(STASHES.fridge.at.x, 2.4)).toBe(`item:${toy.id}`);
   });
 
   it("шкарпетку з кошика білизни несе в схованку під диваном: найближчий виїзд довший на 10 хвилин", () => {
