@@ -19,7 +19,7 @@ import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, LitterItem, NightReport, Save, TraitLevel, WaterItem } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
@@ -108,6 +108,24 @@ describe("«Апетит» (рішення автора 2026-10-25)", () => {
     }
     expect(both).toBeGreaterThan(3);
     expect(both).toBeLessThan(60 * APPETITE.secondMax);
+  });
+
+  it("миску з надкльованою половинкою можна досипати: половинку доповнюють цілою порцією (рішення автора 2026-10-26)", () => {
+    for (const [food, used] of [[2, 1], [1, 2]] as const) {
+      const save = game();
+      const supplies = save.current.home.supplies.catFood;
+      supplies.cheap = 5;
+      supplies.premium = 0;
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food, foodQuality: "cheap", sterile: false, half: true });
+      save.current.character.held = { kind: "catfood", quality: "cheap", sterile: false };
+      walkTo(save, `item:${bowl.id}`);
+      interact(save);
+      expect(save.current.character.held, `${food}`).toBeNull();
+      expect(bowl.food).toBe(2);
+      expect(bowl.half).toBeUndefined();
+      expect(supplies.cheap).toBe(5 - used);
+    }
   });
 
   it("надкльовану половинку годівниця назад у сховище не повертає", () => {

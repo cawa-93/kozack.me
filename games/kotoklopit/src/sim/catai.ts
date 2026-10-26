@@ -378,7 +378,7 @@ export function dirtyFor(cat: Cat, box: LitterItem): boolean {
 
 /** Миска повна? Для персонажа: чи можна ще насипати (§9.12). */
 export function bowlFull(bowl: BowlItem): boolean {
-  return bowl.food >= BOWL_CAPACITY;
+  return bowl.food >= BOWL_CAPACITY && bowl.half !== true;
 }
 
 /**

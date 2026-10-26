@@ -343,7 +343,8 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
  * Насипати корм із рук (§6.4, §9.12, правка автора 2026-10-24): одразу доверху — і миску, і
  * автогодівницю над нею; якщо в сховищі менше — усе, що лишилося. Різні корми не змішують: ні
  * звичайний зі стерилізованим, ні дешевий з преміальним — ні в мисці, ні в годівниці. Корм у руках —
- * лише «з чого насипати»: де корм уже є, досипають тим самим, у порожню — тим, що в руках.
+ * лише «з чого насипати»: де корм уже є, досипають тим самим, у порожню — тим, що в руках. Надкльовану
+ * половинку («Апетит −», §9.12) доповнюють цілою порцією: миска з 1,5 порції стає повною (рішення автора 2026-10-26).
  */
 function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { kind: "catfood" }): TapResult {
   const feeder = feederAt(state, bowl.slot);
@@ -352,14 +353,19 @@ function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { k
   const quality = inside?.foodQuality ?? (state.home.supplies[product][held.quality] > 0 ? held.quality : topQuality(state, product));
   if (quality === null) return refuse(state, id, { reason: "empty", product });
   if (!sameFood(bowl, quality, held.sterile) || (feeder && !sameFood(feeder, quality, held.sterile))) return refuse(state, id, "mixed");
-  const bowlRoom = BOWL_CAPACITY - bowl.food;
+  // Надкльована половинка займає місце цілої порції, але її доповнюють: на неї йде ще одна порція.
+  const half = bowl.half === true ? 1 : 0;
+  const bowlRoom = BOWL_CAPACITY - bowl.food + half;
   const room = bowlRoom + (feeder ? FEEDER_CAPACITY[feeder.quality] - feeder.food : 0);
   if (room <= 0) return refuse(state, id, { reason: "full", what: "bowl" });
   const poured = useSupplies(state, product, quality, room);
   // Того самого корму вже немає, а інший є — змішувати не можна.
   if (poured === 0) return refuse(state, id, supplyCount(state, product) > 0 ? "mixed" : { reason: "empty", product });
   const toBowl = Math.min(poured, bowlRoom);
-  bowl.food += toBowl;
+  if (half > 0 && toBowl > 0) {
+    delete bowl.half;
+    bowl.food += toBowl - 1;
+  } else bowl.food += toBowl;
   bowl.foodQuality = quality;
   bowl.sterile = held.sterile;
   if (feeder && poured > toBowl) {
