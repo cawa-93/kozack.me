@@ -5,10 +5,10 @@
 import { describe, expect, it } from "vitest";
 
 import { pickUpCat } from "../src/sim/actions";
-import { addTrait, createCat, idleAct } from "../src/sim/cat";
+import { addTrait, createCat, idleAct, weightOf } from "../src/sim/cat";
 import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
 import { bowlEaten, decide, dirtyFor, eatMinutes, envy, forbiddenZoneAt, markTriggered, sayNo, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP } from "../src/sim/config";
+import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP, WEIGHT } from "../src/sim/config";
 import { trinketTile } from "../src/sim/home";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
@@ -119,6 +119,64 @@ describe("«Апетит» (рішення автора 2026-10-25)", () => {
     emptyFeeder(save.current, bowl, feeder);
     expect(save.current.home.supplies.catFood.cheap + (save.current.home.boxes?.catFood?.cheap ?? 0)).toBe(before + 4);
     expect(bowl.half).toBeUndefined();
+  });
+
+  it("«Апетит +» інколи перекушує не голодним, коли в мисці є корм; кіт без риси, «−», щойно поївши, гурман і біля зайнятої миски — ні (рішення автора 2026-10-26)", () => {
+    const snacks = (traits: Record<string, TraitLevel>, hunger: number, taken = false): number => {
+      let count = 0;
+      for (let seed = 0; seed < 200; seed++) {
+        const save = game();
+        const bowl = bowlOf(save);
+        Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+        if (taken) withCat(save).act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 3, elapsed: 0 };
+        const cat = withCat(save, traits, { x: 9.5, y: 7.5 });
+        cat.breed = ["mixed", "mixed"];
+        cat.needs.hunger = hunger;
+        decide(save.current, cat, createRng(seed), { present: false });
+        if (cat.act.kind !== "eat") continue;
+        expect(cat.act.snack).toBe(true);
+        expect(cat.act.target).toBe(`item:${bowl.id}`);
+        count += 1;
+      }
+      return count;
+    };
+    expect(snacks({}, 50)).toBe(0);
+    expect(snacks({ appetite: -1 }, 50)).toBe(0);
+    expect(snacks({ appetite: 2 }, APPETITE.snackHunger - 1)).toBe(0);
+    expect(snacks({ appetite: 2, picky: 1 }, 50)).toBe(0);
+    expect(snacks({ appetite: 2 }, 50, true)).toBe(0);
+    const one = snacks({ appetite: 1 }, 50);
+    const two = snacks({ appetite: 2 }, 50);
+    expect(one).toBeGreaterThan(200 * APPETITE.snackStep * 0.5);
+    expect(two).toBeGreaterThan(one);
+    expect(two).toBeLessThan(200 * 2 * APPETITE.snackStep * 1.5);
+  });
+
+  it("перекус увесь зайвий — гладшає, як від порції без голоду, а звичайна трапеза при тому ж голоді — менше; другої порції після перекусу немає", () => {
+    const gain = (snack: boolean, seed: number): { weight: number; second: boolean } => {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const cat = withCat(save, { appetite: 2 });
+      cat.breed = ["mixed", "mixed"];
+      cat.sterilized = false;
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+      cat.needs.hunger = 55;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0, ...(snack ? { snack: true as const } : {}) };
+      for (let i = 0; i < 40 && cat.act.kind === "eat" && cat.act.second !== true; i++) tickCats(save.current, 0.5, { present: true });
+      return { weight: weightOf(cat) - WEIGHT.norm, second: cat.act.kind === "eat" && cat.act.second === true };
+    };
+    let seconds = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const snack = gain(true, seed);
+      expect(snack.weight, `seed ${seed}`).toBeCloseTo(WEIGHT.portion, 2);
+      expect(snack.second, `seed ${seed}`).toBe(false);
+      const plain = gain(false, seed);
+      expect(plain.weight).toBeCloseTo((WEIGHT.portion * (WEIGHT.fullHunger - 55)) / WEIGHT.excessRange, 1);
+      if (plain.second) seconds += 1;
+    }
+    // Звичайна трапеза «+2» інколи переходить у другу порцію, а перекус — ніколи.
+    expect(seconds).toBeGreaterThan(0);
   });
 });
 

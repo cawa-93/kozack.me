@@ -772,6 +772,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (adaptsLonger(state, cat)) observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
     return;
   }
+  if (startSnack(state, cat, rng)) return;
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
   // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
@@ -800,6 +801,25 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (sill > 0 && rng.chance(sill / (1 + sill)) && startWindow(state, cat, rng)) return;
   if (rng.chance(0.4)) return start(cat, "wander", randomFloor(rng), CAT_ACT_MINUTES.wander);
   start(cat, "idle", null, CAT_ACT_MINUTES.idle * (0.5 + rng.next()));
+}
+
+/**
+ * «Апетит +» перекушує біля повної миски (§9.12, рішення автора 2026-10-26): не голодний (голод від `APPETITE.snackHunger`, але
+ * нижче свого порогу), а в мисці вдома є корм — його насипав персонаж чи тримає автогодівниця. З шансом `snackStep` × рівень іде
+ * до найближчої такої миски й з'їдає порцію; уся вона зайва — гладшає, як від порції без голоду. Миска — будь-яка вдома: не
+ * голодний кіт рідко буває поруч із мискою (з умовою «до 3 клітинок» перекус траплявся раз на 10–20 днів). Гурман простого корму
+ * не перекушує, миску, з якої вже їдять, не займає. Кіт без риси й «−» rng тут не витрачають.
+ */
+function startSnack(state: GameState, cat: Cat, rng: Rng): boolean {
+  const appetite = traitLevel(cat, "appetite");
+  if (appetite <= 0 || cat.needs.hunger < APPETITE.snackHunger || cat.needs.hunger >= hungerThreshold(cat)) return false;
+  const picky = traitLevel(cat, "picky") > 0;
+  const full = itemsOf(state, "bowl").filter((b) => b.food > 0 && !(picky && b.foodQuality === "cheap") && !bowlTaken(state, cat, b));
+  const bowl = nearest(cat, avoidNew(state, cat, full));
+  if (!bowl || !rng.chance(APPETITE.snackStep * appetite)) return false;
+  start(cat, "eat", itemTile(bowl), eatMinutes(cat), `item:${bowl.id}`);
+  cat.act.snack = true;
+  return true;
 }
 
 /**
@@ -1578,7 +1598,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const portion = nibble || bowl.half === true ? 0.5 : 1;
       // Їв, не бувши голодним, — гладшає (§9.12, «Схильність до повноти»): що менший голод, то більше зайвого — друга порція
       // «Ненаситного», миска, до якої збіглися на звук корму, частіші трапези «Ласуна».
-      const excess = Math.min(1, Math.max(0, WEIGHT.fullHunger - cat.needs.hunger) / WEIGHT.excessRange);
+      // Перекус «Апетиту +» біля повної миски — увесь зайвий (рішення автора 2026-10-26).
+      const excess = act.snack === true ? 1 : Math.min(1, Math.max(0, WEIGHT.fullHunger - cat.needs.hunger) / WEIGHT.excessRange);
       // Корм для стерилізованих тримає вагу стерилізованого: без його множника (рішення автора 2026-10-26).
       if (excess > 0) gainWeight(state, cat, WEIGHT.portion * portion * excess, bowl.sterile);
       if (nibble) bowl.half = true;
@@ -1611,7 +1632,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
       // він уже після другої.
       const appetite = traitLevel(cat, "appetite");
-      if (act.second !== true && appetite > 0 && bowl.food > 0 && bowl.half !== true && rng.chance(Math.min(APPETITE.secondMax, APPETITE.secondStep * appetite))) {
+      if (act.second !== true && act.snack !== true && appetite > 0 && bowl.food > 0 && bowl.half !== true && rng.chance(Math.min(APPETITE.secondMax, APPETITE.secondStep * appetite))) {
         start(cat, "eat", null, eatMinutes(cat), act.target);
         cat.act.nibble = false;
         cat.act.second = true;

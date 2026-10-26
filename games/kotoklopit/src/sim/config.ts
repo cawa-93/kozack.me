@@ -391,8 +391,11 @@ export const APPETITE_STEP = 0.15;
  * якщо в мисці ще є корм, з шансом `secondStep` × рівень, не більше `secondMax`. «−» клює: з шансом `halfStep` × |рівень|,
  * не більше `halfMax`, з'їдає пів порції (голод −`PORTION_HUNGER` / 2) і лишає в мисці половину — її доїсть наступний.
  * Стелі — бо британська й бомбейська породи вже мають «Апетит» +1.
+ * Перекус (рішення автора 2026-10-26): «+», не голодний (голод від `snackHunger`, але нижче свого порогу), коли вдома в мисці є
+ * корм, щоразу, як вирішує, що робити далі, з шансом `snackStep` × рівень іде до миски й з'їдає порцію — уся вона зайва («переїв»,
+ * §9.12 «Схильність до повноти»).
  */
-export const APPETITE = { thresholdStep: 10, secondStep: 0.1, secondMax: 0.4, halfStep: 0.3, halfMax: 0.8 } as const;
+export const APPETITE = { thresholdStep: 10, secondStep: 0.1, secondMax: 0.4, halfStep: 0.3, halfMax: 0.8, snackHunger: 30, snackStep: 0.1 } as const;
 /**
  * «Швидкість їжі» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`): порція їсться `CAT_ACT_MINUTES.eat` × `factor`^рівень
  * хвилин, від `min` до `max`: «Пилосос» — за мить, «Їсть по зернятку» — довго сидить над мискою. «+» після їжі зригує з
