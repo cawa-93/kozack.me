@@ -2,7 +2,8 @@
 // Поведінку друзів і ворогів (ігри, вилизування, бійки) веде `catai.ts`.
 
 import { daysAtHome, isKitten, traitLevel } from "./cat";
-import { NURTURING, RELATIONS } from "./config";
+import { KITTEN_MAX_AGE, NURTURING, RELATIONS } from "./config";
+import { weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 
 const clamp = (value: number): number => Math.min(100, Math.max(-100, value));
@@ -26,10 +27,16 @@ export const isEnemy = (state: GameState, a: Cat, b: Cat): boolean => relation(s
 
 /**
  * Новий дорослий кіт (§9.4 «Хто з ким грається», рішення автора 2026-10-26, Б5 а): прийшов ззовні (не народився вдома) не
- * кошеням і живе тут менше 2 днів. Кіт, якого сценарій чи тест додає «давнім» (день появи в минулому), — не новий.
+ * кошеням і живе тут менше 2 днів. Кіт, якого сценарій чи тест додає «давнім» (день появи в минулому), — не новий. Кошеня, що
+ * подорослішало за ці 2 дні (вік росте в ніч на понеділок, §9.1), — теж: прийшло воно кошеням (перевірка блоку 2: кошеня від
+ * заводчика, взяте в неділю, з понеділка вважалося новим дорослим котом, і на нього шипіли).
  */
 export function isNewcomer(state: GameState, cat: Cat): boolean {
-  return cat.source !== "born" && !isKitten(cat) && daysAtHome(state, cat) < RELATIONS.newcomer.days;
+  if (cat.source === "born" || daysAtHome(state, cat) >= RELATIONS.newcomer.days) return false;
+  // Вік у день появи: відтоді він ріс щоночі на понеділок. Кіт, що з'явився вночі, має днем появи наступний — тоді різниця
+  // від'ємна, тож не менше нуля.
+  const grew = Math.max(0, weekOf(state.day) - weekOf(cat.arrivedDay));
+  return cat.ageWeeks - grew > KITTEN_MAX_AGE;
 }
 
 /** Початкові стосунки нового кота з кожним, хто вже живе вдома (§9.4). */

@@ -8,7 +8,7 @@ import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
-import { nightlyRelations, relation } from "../src/sim/relations";
+import { isNewcomer, nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -387,6 +387,36 @@ describe("новий дорослий кіт (§9.4, рішення автора
     // Минуло 2 дні — уже не новий; кошеня на новенького не шипить.
     expect(hisses({}, { daysAgo: 2 })).toBe(0);
     expect(hisses({}, { kitten: true })).toBe(0);
+  });
+
+  it("кошеня, що подорослішало в перші 2 дні, — не новий дорослий кіт: на нього не шиплять (перевірка блоку 2)", () => {
+    // Неділя (день 13): кіт приходить у дім; у ніч на понеділок йому +1 тиждень. Понеділок, 10:00 — він іде повз.
+    const hisses = (arrivedAge: number): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 60; seed++) {
+        const save = game(seed);
+        save.current.day = 13;
+        const resident = withCat(save, {}, { x: 9.5, y: 8.5 });
+        const fresh = newcomer(save, {}, { x: 7.5, y: 7.5 }, arrivedAge);
+        save.current.day = 14;
+        save.current.minute = 10 * 60;
+        fresh.ageWeeks = arrivedAge + 1;
+        expect(isNewcomer(save.current, fresh)).toBe(arrivedAge > 2);
+        resident.act = idleAct(60);
+        fresh.act = { kind: "wander", target: null, goal: { x: 12, y: 7 }, minutes: 8, elapsed: 0 };
+        const { events, stop } = recordEvents();
+        for (let t = 0; t < 2; t += 0.25) {
+          save.current.minute += 0.25;
+          tickCats(save.current, 0.25, { present: false });
+        }
+        stop();
+        count += events.filter((e) => e.type === "hissed" && e.cat === resident.id && e.at === fresh.id).length;
+      }
+      return count;
+    };
+    // Кошеня 2 тижнів (як від заводчика) — ні; дорослий 3 тижнів — так.
+    expect(hisses(2)).toBe(0);
+    expect(hisses(3)).toBeGreaterThan(0);
   });
 });
 
