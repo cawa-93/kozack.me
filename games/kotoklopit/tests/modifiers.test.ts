@@ -6,7 +6,7 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { unpack } from "../src/sim/economy";
-import { advance, goToSleep, newGame } from "../src/sim/game";
+import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -14,7 +14,7 @@ import { boxesShown } from "../src/sim/storage";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
 import { isWorkday } from "../src/sim/work";
-import { hours, recordEvents } from "./helpers";
+import { hours, recordEvents, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
 
@@ -247,5 +247,29 @@ describe("ефекти (§4.1)", () => {
     stop();
     expect(inFridge(save)).toBe(2);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);
+    // Першим із холодильника — судочок (§6.4).
+    walkTo(save, "fridge");
+    interact(save);
+    expect(save.current.character.held).toEqual({ kind: "meal", quality: "cheap", mom: true });
+  });
+
+  it("сценарій «Гостинці від мами під дверима»: пакет одразу в ящиках біля входу, «Розпакувати» — судочки в холодильнику", () => {
+    const scenario = FILE_SCENARIOS["mom-porch"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(weekdayOf(save.current.day)).toBe(5);
+    expect(save.current.cats[0]?.traits).toContainEqual(expect.objectContaining({ group: "chewing", level: 2 }));
+    const { events, stop } = recordEvents();
+    advance(save, 0.1);
+    stop();
+    expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 0)).toBe(true);
+    expect(events.some((e) => e.type === "doorbell")).toBe(false);
+    expect(inBoxes(save)).toBe(2);
+    expect(inFridge(save)).toBe(0);
+    save.current.cats = [];
+    walkTo(save, "boxes");
+    interact(save);
+    expect(inFridge(save)).toBe(2);
+    expect(inBoxes(save)).toBe(0);
   });
 });
