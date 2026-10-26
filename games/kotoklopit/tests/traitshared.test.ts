@@ -9,7 +9,7 @@ import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
-import { itemTile } from "../src/sim/home";
+import { itemTile, roomAt } from "../src/sim/home";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
@@ -204,6 +204,38 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     advance(save, HOUSEHOLD.robotMinutes - 20);
     advance(save, 1);
     expect(rider.act.target).not.toBe("robot");
+  });
+
+  it("робот-пилосос чути лише в кімнаті, де він їде, і кожен кіт чує його раз за прибирання (рішення автора 2026-10-26)", () => {
+    const save = game();
+    save.current.minute = HOUSEHOLD.robotMinute - 0.5;
+    save.current.home.appliances.robot = "cheap";
+    const living = awake(withCat(save, {}, { x: 5.5, y: 8.5 }));
+    // Подалі від дверного прорізу: з проходу робота чути до `NOISE.reach` клітинок.
+    const timid = awake(withCat(save, { bravery: -1 }, { x: 1.5, y: 1.5 }));
+    const light = asleep(withCat(save, { sleep: -2, bravery: 1 }, { x: 5.5, y: 1.5 }));
+    for (const cat of [living, timid]) cat.act.minutes = 120;
+    const { events, stop } = recordEvents();
+    const woke = (): boolean => events.some((e) => e.type === "cat-woke" && e.cat === light.id);
+    advance(save, 1);
+    // О 12:00 робот рушає з бази у вітальні: там його чути, а в спальні — ні.
+    expect(living.act.kind).toBe("hide");
+    expect(timid.act.kind).toBe("idle");
+    expect(woke()).toBe(false);
+    for (let minutes = 0; minutes < HOUSEHOLD.robotMinutes; minutes += 0.5) {
+      advance(save, 0.5);
+      if (roomAt(robotAt(save.current)) === "bedroom") break;
+      expect(timid.act.kind).toBe("idle");
+      expect(woke()).toBe(false);
+    }
+    // Робот у спальні — несміливий ховається, чуйний прокидається.
+    expect(timid.act.kind).toBe("hide");
+    expect(woke()).toBe(true);
+    advance(save, HOUSEHOLD.robotMinutes);
+    stop();
+    // Робот вертався у вітальню ще не раз, але кіт там злякався лише раз.
+    expect(events.filter((e) => e.type === "scared" && e.cat === living.id)).toHaveLength(1);
+    expect(save.current.home.robotHeard).toBeUndefined();
   });
 
   it("пилосос, який вмикають раз у раз, відкриває риси не частіше ніж раз на годину", () => {

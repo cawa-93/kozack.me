@@ -34,16 +34,20 @@ function hears(cat: Cat, at: Vec): boolean {
 }
 
 /**
- * Гучний звук (§9.12): `at` — звідки; null — чути в усій квартирі (пилосос, робот, феєрверки). Сплячий кіт може
- * прокинутися («Тривалість сну»), а той, хто не спить, ховається чи ні («Сміливість»).
+ * Гучний звук (§9.12): `at` — звідки; null — чути в усій квартирі (пилосос, феєрверки). Сплячий кіт може
+ * прокинутися («Тривалість сну»), а той, хто не спить, ховається чи ні («Сміливість»). `only` — кого звук стосується
+ * (робот-пилосос: хто ще не чув його за це прибирання). Повертає id котів, що почули звук.
  */
-export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null): void {
+export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, only?: (cat: Cat) => boolean): number[] {
   const rng = stateRng(state, "behavior");
+  const heard: number[] = [];
   for (const cat of state.cats) {
     if (cat.away !== null || isCarried(state, cat) || isNewborn(cat)) continue;
     // Хто вже ховається чи б'ється, на звук не зважає.
     if (cat.act.kind === "hide" || cat.act.kind === "fight") continue;
     if (at !== null && !hears(cat, at)) continue;
+    if (only && !only(cat)) continue;
+    heard.push(cat.id);
     if (asleep(cat)) {
       if (!rng.chance(NOISE.wake * (1 - NOISE.wakeStep * traitLevel(cat, "sleep")))) {
         // Поруч гуркоче, а кіт спить далі — прояв «Тривалості сну +». Прояви від звуку й кроків — не частіше ніж раз на
@@ -55,6 +59,7 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null): vo
     }
     react(state, cat, kind, rng);
   }
+  return heard;
 }
 
 /** Кота розбудили шум чи кроки (§9.12): настрій −1, і це видно; чуйний сон — прояв «Тривалості сну −». */

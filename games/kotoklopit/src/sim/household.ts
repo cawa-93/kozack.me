@@ -118,22 +118,26 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
 }
 
 /**
- * Робот-пилосос (§8.7): о 12:00 вирушає з бази — гучний звук на всю квартиру (§9.12) — і годину їздить усією
- * квартирою; шерсть зникає поступово й до кінця прибирання — повністю.
+ * Робот-пилосос (§8.7): о 12:00 вирушає з бази й годину їздить усією квартирою; шерсть зникає поступово й до кінця
+ * прибирання — повністю. Він тихий (§9.12, рішення автора 2026-10-26): гучний звук чути лише в кімнаті, де він зараз
+ * їде (з проходу — до `NOISE.reach` клітинок), і кожен кіт чує його раз за прибирання — коли робот проїжджає повз.
  */
 function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {
   const start = HOUSEHOLD.robotMinute;
   const end = start + HOUSEHOLD.robotMinutes;
-  if (crossed(start)) loudNoise(state, "robot", null);
+  if (crossed(start)) state.home.robotHeard = [];
   const a = from % 1440;
   const lo = Math.max(a, start);
   const hi = Math.min(a + minutes, end);
   if (hi <= lo) return;
   if (hi >= end) {
     state.home.fur = 0;
+    delete state.home.robotHeard;
     emit(state, { type: "robot" });
     return;
   }
+  const heard = (state.home.robotHeard ??= []);
+  heard.push(...loudNoise(state, "robot", along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes), (cat) => !heard.includes(cat.id)));
   state.home.fur *= 1 - (hi - lo) / (end - lo);
 }
 
