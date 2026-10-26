@@ -2,9 +2,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { tap } from "../src/sim/actions";
+import { pickUpCat, tap } from "../src/sim/actions";
+import { giveCatnip } from "../src/sim/care";
 import { createCat } from "../src/sim/cat";
 import { decide, tickCats } from "../src/sim/catai";
+import { addSupply } from "../src/sim/economy";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -337,5 +339,96 @@ describe("після бійки (§9.4, рішення автора 2026-10-26)"
     Object.assign(b, { x: 17.5, y: 7.5 });
     decide(s, a, createRng(1), { present: true });
     expect(a.act.kind).toBe("attention");
+  });
+});
+
+describe("бійку видно й чути (§9.4, рішення автора 2026-10-26, Б4)", () => {
+  it("бійка не з протистояння (котяча м'ята) — нападник підбігає, і обидва стають за 0,6 клітинки обличчям одне до одного", () => {
+    const save = game();
+    const s = save.current;
+    const cat = withCat(save, { catnip: -2 }, { x: 9.5, y: 7.5 });
+    addSupply(s, "catnip", "cheap", 5);
+    pickUpCat(s, cat);
+    const other = withCat(save, {}, { x: 11.5, y: 8.5 });
+    other.act = idle(60);
+    giveCatnip(s, "cheap", createRng(1));
+    expect(cat.act.kind).toBe("zoomies");
+    // Догасав за 1,9 клітинки від іншого кота.
+    Object.assign(cat, { x: 9.6, y: 8.4 });
+    cat.act.minutes = 0.1;
+    for (let i = 0; i < 20 && cat.act.kind !== "fight"; i++) tickCats(s, 0.05, { present: false });
+    expect(cat.act.kind).toBe("fight");
+    expect(cat.act.goal).not.toBeNull();
+    expect(other.act.kind).toBe("fight");
+    for (let i = 0; i < 100 && cat.act.paired !== true; i++) tickCats(s, 0.05, { present: false });
+    expect(cat.act.paired).toBe(true);
+    expect(other.act.paired).toBe(true);
+    expect(Math.abs(cat.x - other.x)).toBeCloseTo(0.6, 5);
+    expect(cat.y).toBe(other.y);
+    const [left, right] = cat.x < other.x ? [cat, other] : [other, cat];
+    expect(left.facing).toBe(1);
+    expect(right.facing).toBe(-1);
+  });
+
+  it("бійка — гучний звук для котів: сплячий кіт у тій самій кімнаті може прокинутися, в іншій кімнаті — ні", () => {
+    const woke = { living: 0, bedroom: 0 };
+    let fights = 0;
+    for (const room of ["living", "bedroom"] as const) {
+      for (let seed = 0; seed < 30; seed++) {
+        const { save, a, b } = enemies(seed, { territorial: 2 }, { territorial: 2 });
+        const sleeper = withCat(save, {}, room === "living" ? { x: 9.5, y: 10.3 } : { x: 3.5, y: 3.5 });
+        sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 0 };
+        let fought = false;
+        const stop = onEvent((e) => {
+          if (e.type === "cat-fight") fought = true;
+          if (e.type === "cat-woke" && e.cat === sleeper.id && fought) woke[room]++;
+        });
+        untilStandoff(save, a, b);
+        sleeper.needs.fatigue = 100;
+        untilSettled(save, a, b);
+        stop();
+        if (fought) fights++;
+      }
+    }
+    expect(fights).toBeGreaterThan(30);
+    expect(woke.living).toBeGreaterThan(3);
+    expect(woke.bedroom).toBe(0);
+  });
+
+  it("бійка біля столу з шансом 15% скидає з нього страву чи дрібничку", () => {
+    let fights = 0;
+    let knocked = 0;
+    for (let seed = 0; seed < 80; seed++) {
+      const save = game(seed);
+      const s = save.current;
+      // На кухні під столом: за 2,4 клітинки одне від одного.
+      const a = withCat(save, { territorial: 2 }, { x: 13.3, y: 4.5 });
+      const b = withCat(save, { territorial: 2 }, { x: 15.7, y: 4.5 });
+      s.relations[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`] = -80;
+      s.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      let fought = false;
+      const stop = onEvent((e) => {
+        if (e.type === "cat-fight") {
+          fought = true;
+          fights++;
+        }
+        if ((e.type === "knocked" || e.type === "trinket-fell") && fought) knocked++;
+      });
+      for (let i = 0; i < 2000 && !fought; i++) {
+        calm(a);
+        calm(b);
+        if (a.act.kind !== "standoff" && b.act.kind !== "standoff" && a.act.kind !== "fight") {
+          Object.assign(a, { x: 13.3, y: 4.5 });
+          Object.assign(b, { x: 15.7, y: 4.5 });
+          a.act = idle();
+          b.act = idle();
+        }
+        tickCats(s, 0.25, { present: false });
+      }
+      stop();
+    }
+    expect(fights).toBe(80);
+    expect(knocked).toBeGreaterThanOrEqual(4);
+    expect(knocked).toBeLessThanOrEqual(24);
   });
 });

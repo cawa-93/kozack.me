@@ -1956,7 +1956,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "fight": {
       // Нерозборонена бійка (§9.4, рішення автора 2026-10-26): той, хто програв, може травмуватися й ховається, переможець сидить.
-      if (act.refused === true) return;
+      if (act.refused === true || act.paired !== true) return;
       const f = RELATIONS.fight;
       if (act.lost !== true) return start(cat, "idle", null, f.winnerSits, "won");
       if (rng.chance(f.injury * (fightFactor(cat) > 1 ? f.injuryIntact : 1))) fallIll(state, cat, "injury");
@@ -2327,6 +2327,17 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Друг чи кошеня відійшли — вилизування скасовується, а не 3 хвилини сидіння самому (§9.4, перевірка стосунків 2026-10-26).
       const other = groomee(state, act.target);
       if (other !== null && (!home(state, other) || distance(cat, other) > RELATIONS.groom.reach)) act.minutes = 0;
+      return;
+    }
+    case "fight": {
+      // Нападник не добіг, а другий кіт уже не чекає (взяли на руки, налякав звук): бійки немає (§9.4). Коли обидва поруч,
+      // бійку закінчує розборонити (`separateFight`) чи час — тоді переможець може закінчити на мить раніше.
+      if (act.paired === true) return;
+      const foe = catById(state, act.target);
+      if (!foe || !home(state, foe) || foe.act.kind !== "fight" || foe.act.target !== `cat:${cat.id}`) {
+        act.refused = true;
+        act.minutes = 0;
+      }
       return;
     }
     case "standoff": {
@@ -2720,7 +2731,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       defied(state, cat);
       if (cat.act.kind === "wrestle") metMate(state, cat);
       if (cat.act.kind === "groom") metGroomee(state, cat);
-      if (cat.act.kind === "standoff") metFoe(state, cat, rng);
+      if (cat.act.kind === "standoff" || cat.act.kind === "fight") metFoe(state, cat, rng);
       if (cat.act.kind === "sleep") {
         fellAsleep(state, cat);
         sleptBeside(state, cat);
@@ -2981,26 +2992,27 @@ function faceOff(cat: Cat, foe: Cat, gap: number): void {
 }
 
 /**
- * Кіт підійшов до ворога (§9.4): той ще чекає — обидва стають за 0,6 клітинки обличчям одне до одного й шиплять, а хвилини
- * протистояння (2–4) йдуть обом від цієї миті; не дочекався — протистояння немає.
+ * Кіт підійшов до ворога (§9.4): той ще чекає — обидва стають за 0,6 клітинки обличчям одне до одного, а хвилини протистояння
+ * (2–4, щохвилини шипіння) чи бійки йдуть обом від цієї миті; не дочекався — нічого немає.
  */
 function metFoe(state: GameState, cat: Cat, rng: Rng): void {
   const act = cat.act;
   const foe = catById(state, act.target);
   const s = RELATIONS.standoff;
-  if (!foe || !home(state, foe) || !facesOff(foe, cat) || distance(cat, foe) > s.reach) {
+  const waits = foe !== null && foe.act.kind === act.kind && foe.act.target === `cat:${cat.id}`;
+  if (!foe || !home(state, foe) || !waits || distance(cat, foe) > s.reach) {
     act.refused = true;
     act.minutes = 0;
     return;
   }
   faceOff(cat, foe, RELATIONS.fight.gap);
-  const [shortest, longest] = s.minutes;
-  const minutes = shortest + rng.next() * (longest - shortest);
+  const minutes = act.kind === "standoff" ? between(s.minutes, rng) : RELATIONS.fight.minutes;
   for (const c of [cat, foe]) {
     c.act.paired = true;
     c.act.minutes = minutes;
     c.act.elapsed = 0;
   }
+  if (act.kind !== "standoff") return;
   standoffHiss(state, cat, foe);
   standoffHiss(state, foe, cat);
 }
@@ -3073,6 +3085,24 @@ function enemyAtPerson(state: GameState, cat: Cat): boolean {
   );
 }
 
+/** Бійка біля столу чи робочої поверхні (§9.4, Б4): з шансом 15% скидає з нього страву чи дрібничку, як зумі. */
+function knockInFight(state: GameState, cat: Cat, at: Vec, rng: Rng): void {
+  const f = RELATIONS.fight;
+  const near = (id: string): boolean => distanceToRect(at, objectById(id)) <= f.knockReach;
+  const dishes = SURFACE_IDS.filter((id) => state.home.surfaces[id] && near(id));
+  const trinkets = standingTrinkets(state).filter((t) => near(t.object));
+  const total = dishes.length + trinkets.length;
+  if (total === 0 || !rng.chance(f.knock)) return;
+  const pick = rng.int(0, total - 1);
+  const dish = dishes[pick];
+  if (dish !== undefined) {
+    knockOff(state, cat, dish);
+    return;
+  }
+  const trinket = trinkets[pick - dishes.length];
+  if (trinket) knockTrinket(state, cat, trinket.kind, rng);
+}
+
 /** Кіт відходить на `step` клітинки від точки (§9.4, §9.12): ворога, персонажа в брудному одязі. */
 function stepAway(state: GameState, cat: Cat, from: Vec, step: number, target: string | null): void {
   let dx = cat.x - from.x;
@@ -3112,12 +3142,21 @@ function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   const fight = RELATIONS.fight;
   stress(state, a);
   stress(state, b);
-  start(a, "fight", null, fight.minutes, `cat:${b.id}`);
-  start(b, "fight", null, fight.minutes, `cat:${a.id}`);
+  // Коти зчіплюються за 0,6 клітинки обличчям одне до одного (§9.4, Б4): з протистояння вони вже поруч, а нападник (котяча м'ята,
+  // «Охоронець») підбігає до другого, і той чекає (`metFoe`).
+  const near = distance(a, b) <= fight.gap + 0.05;
+  start(a, "fight", near ? null : tileOf(b), fight.minutes, `cat:${b.id}`);
+  start(b, "fight", null, near ? fight.minutes : fight.minutes + RELATIONS.standoff.wait, `cat:${a.id}`);
+  if (near) {
+    faceOff(a, b, fight.gap);
+    a.act.paired = true;
+    b.act.paired = true;
+  }
+  const at = near ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : { x: b.x, y: b.y };
   changeMood(state, a, fight.mood, "бійка");
   changeMood(state, b, fight.mood, "бійка");
   changeRelation(state, a, b, fight.relation);
-  addMess(state, "fur", visibleFloorNear(state, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }), null);
+  addMess(state, "fur", visibleFloorNear(state, at), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
   // Хто програє, ясно з самого початку (§9.4): травма й схованка — йому, якщо бійку не розборонять.
   const loser = loserOf(a, b, rng);
@@ -3126,6 +3165,10 @@ function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   const until = absoluteMinute(state.day, state.minute) + between(fight.truce, rng);
   (a.truce ??= {})[b.id] = until;
   (b.truce ??= {})[a.id] = until;
+  // Бійку чути (§9.4, §9.12): дрібний гучний звук для котів поруч — сплячі можуть прокинутися, полохливі сховатися; персонажа
+  // не будить. Біля столу вона може скинути річ, як зумі.
+  loudNoise(state, "fight", at);
+  knockInFight(state, a, at, rng);
   // Бійка — прояв лише «Товариськості»: «Територіальність» видно у сварці за миску чи лоток (§9.9).
   for (const cat of [a, b]) observe(state, cat, "sociability", -1);
 }
