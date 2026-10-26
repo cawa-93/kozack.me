@@ -528,6 +528,26 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
     expect(shown).toBe(true);
   });
 
+  it("голодний «Слухняний» злодій доходить до столу, згадує «ні» й не краде (перевірка етапу: голод переривав його щокроку)", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
+    const cat = withCat(save, { obedience: 2, thief: 2 }, { x: 15.5, y: 4.5 });
+    for (const item of save.current.home.items) if (item.kind === "bowl") item.food = 0;
+    save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+    cat.needs.hunger = 80;
+    sayNo(save.current, cat, "kitchen", createRng(1));
+    const { events, stop } = recordEvents();
+    for (let t = 0; t < 60; t += 0.25) {
+      cat.needs.fatigue = 0;
+      save.current.minute += 0.25;
+      tickCats(save.current, 0.25, { present: true });
+    }
+    stop();
+    expect(events.some((e) => e.type === "cat-remembered" && e.cat === cat.id && e.zone === "kitchen")).toBe(true);
+    expect(events.some((e) => e.type === "stole" && e.cat === cat.id)).toBe(false);
+    expect(seen(cat, "obedience")).toBe(1);
+  });
+
   it("«Анархіст» інколи повертається на кухонний стіл за 10 хвилин — прояв «−»; «Пропускає повз вуха» — за годину", () => {
     let back = 0;
     for (let seed = 1; seed <= 20; seed++) {

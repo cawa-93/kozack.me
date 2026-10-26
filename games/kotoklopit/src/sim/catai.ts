@@ -2354,8 +2354,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (context.present) sulk(state, cat);
   // Спокійну дію кіт кидає заради нагальної потреби.
   // «Вісімка» під ногами того, хто несе корм, — заради їжі, тож її голод не перериває (§9.12).
+  // Голодний «Слухняний», що йде до столу згадати «ні», — не спокійна дія: інакше голод щокроку переривав би її, і кіт так і не
+  // доходив би (перевірка етапу 2026-10-26).
   const calm =
-    cat.act.kind === "idle" ||
+    (cat.act.kind === "idle" && cat.act.target?.startsWith("no:") !== true) ||
     cat.act.kind === "wander" ||
     cat.act.kind === "hide" ||
     cat.act.kind === "attention" ||
