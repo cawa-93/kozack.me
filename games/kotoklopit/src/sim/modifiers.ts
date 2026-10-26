@@ -319,8 +319,24 @@ function tickMom(state: GameState, from: number, minutes: number): void {
 
 /** Гостинці мами — дві готові страви на вільних кухонних поверхнях (§4.1). */
 function momGifts(state: GameState, visited: boolean): void {
-  for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
+  placeMomFood(state);
   emit(state, { type: "modifier", kind: "mom-food", value: visited ? 1 : 0 });
+}
+
+function placeMomFood(state: GameState): void {
+  for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
+}
+
+/**
+ * Ніч, а мама вже подзвонила чи лишила гостинці під дверима (§4.1, рішення автора 2026-10-26): персонаж ліг, не дочекавшись, поки
+ * вона зайде, чи ніч застала його в поїздці — судочки однаково на кухні, зранку, без повідомлення (перевірка 2026-10-26: раніше
+ * вони пропадали).
+ */
+export function momAtNight(state: GameState): void {
+  const mom = state.today.mom;
+  if (mom?.rang !== true && mom?.porch !== true) return;
+  delete state.today.mom;
+  placeMomFood(state);
 }
 
 /** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, друг, відпускні. */

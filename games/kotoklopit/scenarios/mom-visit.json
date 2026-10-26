@@ -1,0 +1,20 @@
+{
+  "name": "Мама з гостинцями",
+  "description": "Субота першого тижня, 12:00, «Мама привезла гостинців» (рішення автора 2026-10-26: мама заходить удень). О 12:03 мама дзвонить у двері: «Зустрічайко» («Гості» +2) біжить до дверей, «Тихоня» («Гості» −1) ховається. За 2 хвилини мама заходить, і на кухонних поверхнях з'являються дві страви — повідомлення «Заходила мама». Вийдіть з дому до 12:03 (наприклад, у магазин) — мама подзвонить, щойно ви повернетеся, якщо до 20:00; повернетеся пізніше — судочки під дверима, без дзвінка («Гостинці від мами»).",
+  "game": { "sex": "female", "difficulty": "normal", "seed": 17 },
+  "state": {
+    "day": 5,
+    "minute": 720,
+    "modifiers": { "day": "mom-food" },
+    "today": { "mom": { "at": 723 } },
+    "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Зустрічайко", "sex": "male", "arrivedDay": -10, "x": 12.5, "y": 7.5, "needs": { "hunger": 10, "attention": 10, "play": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "guests", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 30, "name": "Тихоня", "sex": "female", "arrivedDay": -10, "x": 6.5, "y": 8.5, "needs": { "hunger": 10, "attention": 10, "play": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "guests", "level": -1, "seen": 0, "known": true }] }
+  ]
+}

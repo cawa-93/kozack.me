@@ -21,7 +21,7 @@ import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
 import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
-import { powerOut, tickModifiers } from "./modifiers";
+import { momAtNight, powerOut, tickModifiers } from "./modifiers";
 
 export const SAVE_VERSION = 13;
 
@@ -219,6 +219,8 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
   const state = save.current;
   // Персонаж засинає вдома, навіть якщо ніч застала його в поїздці.
   endTrip(state);
+  // Гостинці мами, що чекали під дверима чи щойно приїхали з нею, — на кухні (§4.1).
+  momAtNight(state);
   // Неділя 50-го тижня: пенсія, остання ніч уже не обробляється (§4.2).
   if (isLastDay(state.day)) {
     endGame(state, "retirement");

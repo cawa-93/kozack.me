@@ -2,13 +2,15 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS } from "../src/sim/config";
-import { goToSleep, newGame } from "../src/sim/game";
+import { advance, goToSleep, newGame } from "../src/sim/game";
 import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
+import { weekdayOf } from "../src/sim/time";
 import { isWorkday } from "../src/sim/work";
 import { hours, recordEvents } from "./helpers";
 
@@ -174,5 +176,41 @@ describe("ефекти (§4.1)", () => {
     expect(late.current.home.surfaces["counter-left"]).toEqual(meal);
     expect(events.some((e) => e.type === "doorbell")).toBe(false);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 0)).toBe(true);
+  });
+
+  it("ніч застала персонажа в поїздці чи він ліг, не дочекавшись мами після дзвінка, — судочки однаково на кухні зранку (перевірка 2026-10-26)", () => {
+    for (const rang of [false, true]) {
+      const save = game();
+      const at = momDay(save);
+      if (rang) tickModifiers(save.current, at - 0.5, 1, false);
+      else {
+        away(save);
+        tickModifiers(save.current, MODIFIERS.mom.until - 0.5, 1, false);
+      }
+      expect(save.current.today.mom?.[rang ? "rang" : "porch"], `rang ${rang}`).toBe(true);
+      save.current.minute = hours(23);
+      goToSleep(save);
+      expect(save.current.home.surfaces["counter-left"], `rang ${rang}`).toEqual(meal);
+      expect(save.current.home.surfaces["counter-right"], `rang ${rang}`).toEqual(meal);
+    }
+  });
+
+  it("сценарій «Мама з гостинцями»: о 12:03 дзвінок — «Душа компанії» біжить до дверей, сором'язлива ховається; за 2 хвилини судочки на кухні", () => {
+    const scenario = FILE_SCENARIOS["mom-visit"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(weekdayOf(save.current.day)).toBe(5);
+    const [host, shy] = save.current.cats;
+    const { events, stop } = recordEvents();
+    advance(save, 4);
+    expect(events.some((e) => e.type === "doorbell")).toBe(true);
+    expect(host?.act.target).toBe("guest");
+    expect(shy?.act.kind).toBe("hide");
+    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    advance(save, GUESTS.ringLead);
+    stop();
+    expect(save.current.home.surfaces["counter-left"]).toEqual(meal);
+    expect(save.current.home.surfaces["counter-right"]).toEqual(meal);
+    expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);
   });
 });
