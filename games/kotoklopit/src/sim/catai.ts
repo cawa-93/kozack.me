@@ -1531,6 +1531,25 @@ function metMate(state: GameState, cat: Cat): void {
   act.minutes = w.minutes;
   mate.act.paired = true;
   mate.act.minutes = w.minutes;
+  standBeside(cat, mate);
+  mate.facing = cat.x > mate.x ? 1 : -1;
+}
+
+/**
+ * Кіт підійшов до іншого кота — стає впритул збоку й обличчям до нього, а не на нього (§9.4, перевірка стосунків 2026-10-26:
+ * шлях веде в центр клітинки друга, і двох котів було видно як одного). Лишається на тій самій клітинці.
+ */
+function standBeside(cat: Cat, other: Cat): void {
+  const gap = RELATIONS.beside;
+  cat.x = other.x + (other.x - Math.floor(other.x) > 0.5 ? -gap : gap);
+  cat.y = other.y;
+  cat.facing = other.x > cat.x ? 1 : -1;
+}
+
+/** Кіт підійшов вилизати друга чи кошеня (§9.4): той ще поруч — стає впритул збоку; відійшов — вилизування скасує `perform`. */
+function metGroomee(state: GameState, cat: Cat): void {
+  const other = groomee(state, cat.act.target);
+  if (other && home(state, other) && distance(cat, other) <= RELATIONS.groom.reach) standBeside(cat, other);
 }
 
 /** Гра з другом зарахована (§9.4): потреба гри, рух, настрій і стосунки. */
@@ -2671,6 +2690,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       climbed(state, cat, rng);
       defied(state, cat);
       if (cat.act.kind === "wrestle") metMate(state, cat);
+      if (cat.act.kind === "groom") metGroomee(state, cat);
       if (cat.act.kind === "sleep") {
         fellAsleep(state, cat);
         sleptBeside(state, cat);
@@ -3687,7 +3707,7 @@ function sleptBeside(state: GameState, cat: Cat): void {
   const other = cat.act.target?.startsWith("pile:") === true ? state.cats.find((c) => `pile:${c.id}` === cat.act.target) : undefined;
   if (!other || !asleep(other) || distance(cat, other) > RELATIONS.sleepTogether.distance) return;
   // Лягає впритул збоку, а не на того кота.
-  cat.x = other.x + (other.x - Math.floor(other.x) > 0.5 ? -0.4 : 0.4);
+  cat.x = other.x + (other.x - Math.floor(other.x) > 0.5 ? -RELATIONS.beside : RELATIONS.beside);
   cat.y = other.y;
   // «Нянька» гріє кошеня (§9.12, «Турбота про кошенят»).
   if (isKitten(other) && !isKitten(cat) && traitLevel(cat, "nurturing") > 0) observe(state, cat, "nurturing", 1, false, NURTURING.observeEvery);

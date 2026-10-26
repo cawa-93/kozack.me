@@ -101,6 +101,32 @@ describe("друзі (§9.4)", () => {
     expect(sessions).toBe(5);
   });
 
+  it("підійшовши гратися чи вилизати, кіт стає впритул збоку й обличчям до друга, а не на нього (перевірка стосунків 2026-10-26)", () => {
+    for (const kind of ["wrestle", "groom"] as const) {
+      let arrived = 0;
+      for (let seed = 0; seed < 300 && arrived < 5; seed++) {
+        const save = game();
+        const a = withCat(save, {}, { x: 7.5, y: 8.5 });
+        // Друг — у центрі клітинки: туди веде шлях.
+        const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+        setRelation(save, a, b, 80);
+        b.act = idleAct(30);
+        a.needs.play = kind === "wrestle" ? 100 : 0;
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind !== kind || a.act.target !== `cat:${b.id}`) continue;
+        for (let t = 0; t < 40 && a.act.goal !== null; t++) tickCats(save.current, 0.05, { present: false });
+        expect(a.act.kind, kind).toBe(kind);
+        arrived++;
+        const gap = Math.hypot(a.x - b.x, a.y - b.y);
+        expect(gap, kind).toBeGreaterThan(0.3);
+        expect(gap, kind).toBeLessThan(0.6);
+        expect(a.facing, kind).toBe(b.x > a.x ? 1 : -1);
+        if (kind === "wrestle") expect(b.facing).toBe(a.x > b.x ? 1 : -1);
+      }
+      expect(arrived, kind).toBe(5);
+    }
+  });
+
   it("друг пішов посеред гри — гри немає нікому", () => {
     const save = game();
     const a = withCat(save, {}, { x: 8.5, y: 8.5 });

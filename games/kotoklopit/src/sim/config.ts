@@ -1284,6 +1284,8 @@ export const RELATIONS = {
   /** Вилизує, поки друг ближче `reach` клітинки; відійшов далі — вилизування скасовується (перевірка стосунків 2026-10-26). */
   groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2, reach: 1.5 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
+  /** Кіт підійшов до іншого кота (гратися, вилизати, лягти купкою) — стає впритул збоку на стільки клітинки, а не на нього. */
+  beside: 0.4,
   fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3 },
   enemyMoodPerHour: -0.5,
   /** Сварка за ресурс — лише з котом поруч (до `distance` клітинок). */
