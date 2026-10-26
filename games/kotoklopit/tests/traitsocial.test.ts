@@ -1085,6 +1085,8 @@ describe("«Територіальність» (§9.4, §9.12, рішення а
         expect(hungry.needs.hunger).toBeGreaterThanOrEqual(90);
         expect(relation(save.current, guard, hungry)).toBe(relationValue + TERRITORY.guardRelation);
         expect(seen(guard, "territorial")).toBe(0);
+        // Охорона — теж сварка за ресурс: уночі пара не зближується (Б6).
+        expect(Object.values(save.current.strife ?? {})).toEqual([{ quarrel: true }]);
       }
       return count;
     };

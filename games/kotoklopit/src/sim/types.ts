@@ -1005,6 +1005,11 @@ export interface GameState {
   album: AlbumEntry[];
   /** Стосунки пар котів −100…+100 (§9.4): ключ — `id-id`, менший id першим. */
   relations: Record<string, number>;
+  /**
+   * Пари, що сьогодні сварилися за ресурс чи билися (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Б6): ключ — як у
+   * `relations`. Уночі від цього залежить зближення, і список починається заново. У старих збереженнях немає.
+   */
+  strife?: Record<string, { quarrel?: true; fight?: true }>;
   /** Наступний id для котів, речей, безладу й пакунків. */
   nextId: number;
   rng: Record<RngStream, number>;

@@ -118,7 +118,7 @@ import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
-import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, relation } from "./relations";
+import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -448,6 +448,7 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean)
   const other = others[rng.int(0, others.length - 1)];
   if (!other || !hiss(state, cat, other)) return;
   changeRelation(state, cat, other, r.relation);
+  noteStrife(state, cat, other, "quarrel");
   observe(state, cat, "territorial");
 }
 
@@ -3536,6 +3537,7 @@ function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   changeMood(state, a, fight.mood, "бійка");
   changeMood(state, b, fight.mood, "бійка");
   changeRelation(state, a, b, fight.relation);
+  noteStrife(state, a, b, "fight");
   addMess(state, "fur", visibleFloorNear(state, at), null);
   emit(state, { type: "cat-fight", cats: [a.id, b.id] });
   // Хто програє, ясно з самого початку (§9.4): травма й схованка — йому, якщо бійку не розборонять.
@@ -4446,6 +4448,8 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   if (!rng.chance(TERRITORY.guardStep * guardLevel(guard)) || !hiss(state, guard, cat)) return;
   guard.guardedAt = now;
   changeRelation(state, guard, cat, TERRITORY.guardRelation);
+  // Охорона — теж сварка за ресурс (§9.4, Б6).
+  noteStrife(state, guard, cat, "quarrel");
   // Прояв «Територіальності» — лише в «Охоронця»: ворог без риси охороняє через ворожнечу.
   if (traitLevel(guard, "territorial") > 0) observe(state, guard, "territorial");
   if (cat.act.kind === "toilet" && cat.needs.toilet >= TERRITORY.surpriseNeed && rng.chance(TERRITORY.surpriseChance)) {

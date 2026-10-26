@@ -61,17 +61,37 @@ export function initRelations(state: GameState, cat: Cat): void {
 export function forgetRelations(state: GameState, cat: Cat): void {
   for (const k of Object.keys(state.relations)) {
     const [a, b] = k.split("-").map(Number);
-    if (a === cat.id || b === cat.id) delete state.relations[k];
+    if (a === cat.id || b === cat.id) {
+      delete state.relations[k];
+      if (state.strife) delete state.strife[k];
+    }
   }
 }
 
-/** Ніч: життя разом потроху зближує (§9.4). */
+/**
+ * Пара сьогодні сварилася за ресурс (сварка за миску чи лоток, охорона) чи билася (§9.4 «Згода, охорона й сварки», рішення автора
+ * 2026-10-26, Б6): уночі від цього залежить зближення.
+ */
+export function noteStrife(state: GameState, a: Cat, b: Cat, kind: "quarrel" | "fight"): void {
+  if (a.id === b.id) return;
+  ((state.strife ??= {})[key(a.id, b.id)] ??= {})[kind] = true;
+}
+
+/**
+ * Ніч: життя разом потроху зближує (§9.4) — пару, що того дня не сварилася; вороги, що ані билися, ані сварилися, зближуються
+ * ще (Б6). Потім день сварок починається заново.
+ */
 export function nightlyRelations(state: GameState): void {
   for (const k of Object.keys(state.relations)) {
     const [a, b] = k.split("-").map(Number);
     const cats = state.cats.filter((c) => c.id === a || c.id === b);
     // «Товариськість» діє щодня, а не лише в мить знайомства (рішення автора 2026-10-25).
     const sociability = cats.reduce((sum, c) => sum + traitLevel(c, "sociability"), 0) * RELATIONS.sociabilityNightly;
-    state.relations[k] = clamp((state.relations[k] ?? 0) + RELATIONS.nightly + sociability);
+    const value = state.relations[k] ?? 0;
+    const strife = state.strife?.[k];
+    const together = strife?.quarrel === true ? 0 : RELATIONS.nightly;
+    const calm = value <= RELATIONS.enemy && strife === undefined ? RELATIONS.enemyCalm : 0;
+    state.relations[k] = clamp(value + together + sociability + calm);
   }
+  delete state.strife;
 }

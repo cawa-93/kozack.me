@@ -1406,8 +1406,13 @@ export const RELATIONS = {
    */
   avoid: { distance: 2, step: 3, person: 2 },
   enemyMoodPerHour: -0.5,
-  /** Сварка за ресурс — лише з котом поруч (до `distance` клітинок). */
-  resource: { chance: 0.15, territorialStep: 0.1, relation: -3, distance: 3 },
+  /**
+   * Сварка за ресурс — лише з котом поруч (до `distance` клітинок); стосунки `relation` (§9.4 «Згода, охорона й сварки», рішення
+   * автора 2026-10-26, Б6 (3): було −3), і того дня пара не отримує нічних `nightly`.
+   */
+  resource: { chance: 0.15, territorialStep: 0.1, relation: -5, distance: 3 },
+  /** Пара ворогів, що за день ані билася, ані сварилася, уночі отримує ще стільки (§9.4, Б6 (1)). */
+  enemyCalm: 2,
   /** Ревнує той, хто бачить (до `sight` клітинок). */
   jealousy: -1,
   jealousySight: 5,

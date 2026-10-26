@@ -8,7 +8,7 @@ import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
-import { isNewcomer, nightlyRelations, relation } from "../src/sim/relations";
+import { isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -593,6 +593,81 @@ describe("ресурси й ревнощі (§9.4)", () => {
     };
     expect(hisses(false)).toBeGreaterThan(0);
     expect(hisses(true)).toBe(0);
+  });
+
+  it("сварка за миску — стосунки −5, і того дня пара сварилася (§9.4, Б6 (3): було −3)", () => {
+    let quarrels = 0;
+    for (let seed = 1; seed <= 120; seed++) {
+      const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+      save.current.minute = 12 * 60;
+      const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
+      save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);
+      const bowl = bowls[0];
+      if (bowl?.kind !== "bowl") throw new Error("немає миски");
+      Object.assign(bowl, { food: 3, foodQuality: "cheap" });
+      const tile = itemTile(bowl);
+      const a = withCat(save, {}, tile);
+      const b = withCat(save, {}, { x: tile.x + 1, y: tile.y });
+      a.needs.hunger = 80;
+      a.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.01, elapsed: 0 };
+      b.act = idleAct(300);
+      const { events, stop } = recordEvents();
+      tickCats(save.current, 0.05, { present: false });
+      stop();
+      if (!events.some((e) => e.type === "hissed" && e.cat === a.id && e.at === b.id)) continue;
+      quarrels += 1;
+      expect(relation(save.current, a, b)).toBe(-5);
+      expect(save.current.strife?.[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`]).toEqual({ quarrel: true });
+    }
+    expect(quarrels).toBeGreaterThan(5);
+  });
+
+  it("пара, що того дня сварилася, уночі не зближується (+3), а «Товариськість» діє; день сварок — заново (§9.4, Б6 (3))", () => {
+    const save = game();
+    const a = withCat(save, { sociability: 1 });
+    const b = withCat(save, { sociability: 1 });
+    const c = withCat(save);
+    setRelation(save, a, b, 30);
+    setRelation(save, a, c, 10);
+    setRelation(save, b, c, 10);
+    noteStrife(save.current, a, b, "quarrel");
+    noteStrife(save.current, b, c, "fight");
+    nightlyRelations(save.current);
+    // a і b посварилися: лише «Товариськість» (+1,5 × 2); b і c лише билися — життя разом діє.
+    expect(relation(save.current, a, b)).toBe(33);
+    expect(relation(save.current, b, c)).toBeCloseTo(14.5);
+    expect(relation(save.current, a, c)).toBeCloseTo(14.5);
+    expect(save.current.strife).toBeUndefined();
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(39);
+  });
+
+  it("вороги, що за день ані билися, ані сварилися, уночі зближуються ще на 2 (§9.4, Б6 (1))", () => {
+    const save = game();
+    const a = withCat(save);
+    const b = withCat(save);
+    const c = withCat(save);
+    const d = withCat(save);
+    for (const [x, y] of [[a, b], [a, c], [a, d], [b, c], [b, d], [c, d]] as const) setRelation(save, x, y, 0);
+    setRelation(save, a, b, -80);
+    setRelation(save, c, d, -80);
+    setRelation(save, b, c, -80);
+    noteStrife(save.current, c, d, "fight");
+    noteStrife(save.current, b, c, "quarrel");
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(-75);
+    expect(relation(save.current, c, d)).toBe(-77);
+    expect(relation(save.current, b, c)).toBe(-80);
+    // Не вороги — без надбавки.
+    expect(relation(save.current, a, c)).toBe(3);
+  });
+
+  it("охорона миски — теж сварка за ресурс (§9.4, Б6)", () => {
+    const save = game();
+    const a = withCat(save);
+    const b = withCat(save);
+    noteStrife(save.current, a, b, "quarrel");
+    expect(Object.keys(save.current.strife ?? {})).toHaveLength(1);
   });
 
   it("ревнивий кіт сердиться, коли персонаж гладить іншого", () => {
