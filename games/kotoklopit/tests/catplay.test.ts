@@ -252,6 +252,28 @@ describe("коли вилизують (§9.4, рішення автора 2026-1
     expect(rate(2.5)).toBe(0);
   });
 
+  it("після сну вилизує й голодний чи спраглий (поїсть потім), але не той, кому треба в лоток", () => {
+    const rate = (needs: Partial<Cat["needs"]>): number => {
+      let groomed = 0;
+      const runs = 120;
+      for (let seed = 0; seed < runs; seed++) {
+        const save = game(seed + 1);
+        const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+        const b = withCat(save, {}, { x: 9.1, y: 8.5 });
+        setRelation(save, a, b, 80);
+        a.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 60 };
+        Object.assign(a.needs, needs);
+        b.act = sleeping();
+        tickCats(save.current, 0.05, { present: false });
+        if (a.act.kind === "groom" && a.act.target === `cat:${b.id}`) groomed++;
+      }
+      return groomed / runs;
+    };
+    // Голод і спрага, як завжди після довгого сну (заміри блоку 3: з умовою «нічого нагального» — ніколи).
+    expect(rate({ hunger: 90, thirst: 80 })).toBeGreaterThan(0.3);
+    expect(rate({ toilet: 95 })).toBe(0);
+  });
+
   it("прийшов лягти до сплячого друга — 30%: 1–2 хвилини вилизує, потім лягає поруч", () => {
     let groomed = 0;
     const runs = 120;

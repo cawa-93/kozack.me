@@ -2177,8 +2177,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "fur", visibleFloorNear(state, cat), cat.id);
         observe(state, cat, "shedding");
       }
-      // Прокинувся поруч із другом після сну купкою — може вилизати його (§9.4, рішення автора 2026-10-26, В2).
-      if (act.elapsed >= MIN_CAT_NAP_MINUTES && !urgent(state, cat) && !isAdapting(state, cat) && groomAfterSleep(state, cat, rng)) return;
+      // Прокинувся поруч із другом після сну купкою — може вилизати його (§9.4, рішення автора 2026-10-26, В2). Як і кігтеточка
+      // після сну, — якщо не треба в лоток: голодний чи спраглий після довгого сну кіт майже завжди, а поїсть і за 4–6 хвилин
+      // (заміри блоку 3: з умовою «нічого нагального» вилизування після сну не траплялося ніколи).
+      if (act.elapsed >= MIN_CAT_NAP_MINUTES && cat.needs.toilet < NEED_THRESHOLD.toilet && !isAdapting(state, cat) && groomAfterSleep(state, cat, rng)) return;
       // Проспав від години — прокинувшись, одразу точить кігті (§9.12, рішення автора 2026-10-25): їсти й пити можна й за
       // дві хвилини (після довгого сну кіт майже завжди голодний чи спраглий), а в лоток — ні.
       if (act.elapsed >= SCRATCH.afterSleepMinutes && cat.needs.toilet < NEED_THRESHOLD.toilet && !isAdapting(state, cat) && rng.chance(SCRATCH.afterSleep)) startScratch(state, cat, rng);
