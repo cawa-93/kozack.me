@@ -15,7 +15,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
-import { isPresent, objectById, TOILET_ROLL, TRINKETS } from "../sim/home";
+import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
@@ -677,19 +677,24 @@ export class DayScene extends Phaser.Scene {
       // Настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
       const look = catLook(state, cat);
       const toward = state.character.body.x >= cat.x ? 1 : -1;
+      // На підвіконні під вікном у задній стіні кіт дивиться у вікно — спиною до нас (§9.12, «Вікно»; перевірка етапу 2026-10-26).
+      const pane = cat.act.kind === "window" && cat.act.goal === null ? WINDOWS.find((w) => w.sill === cat.act.target) : undefined;
+      const toWindow = pane !== undefined && pane.wall.y < objectById(pane.sill).y;
       const mood =
-        look === null
-          ? null
-          : look === "sad"
-            ? { sad: true, blink: 0, face: null }
-            : look === "belly"
-              ? // Головою від персонажа: рука гладить живіт і не закриває морду (§9.12, перевірка етапу 2026-10-25).
-                { sad: false, blink: 0, face: -toward, belly: true }
-              : look === "nudge"
-                ? { sad: false, blink: 0, face: toward, nudge: true }
-                : look === "sulk"
-                  ? { sad: false, blink: 0, face: -toward, back: true }
-                  : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
+        toWindow && look !== "sad"
+          ? { sad: false, blink: 0, face: null, back: true }
+          : look === null
+            ? null
+            : look === "sad"
+              ? { sad: true, blink: 0, face: null }
+              : look === "belly"
+                ? // Головою від персонажа: рука гладить живіт і не закриває морду (§9.12, перевірка етапу 2026-10-25).
+                  { sad: false, blink: 0, face: -toward, belly: true }
+                : look === "nudge"
+                  ? { sad: false, blink: 0, face: toward, nudge: true }
+                  : look === "sulk"
+                    ? { sad: false, blink: 0, face: -toward, back: true }
+                    : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
       view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
       this.drawCollar(cat, view);

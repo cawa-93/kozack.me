@@ -386,6 +386,65 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
     expect(alone.current.home.repairs).toBe(repairs + SOFA_REPAIR);
   });
 
+  it("обидва підвіконня зайняті — кіт інколи підходить подивитися й іде, а «Охоронець» на підвіконні відганяє його — прояв «+»", () => {
+    let came = 0;
+    let guarded = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 4.5, y: 9.5 });
+      const guard = withCat(save, { territorial: 2 });
+      const plain = withCat(save);
+      atWindow(guard, WINDOWS[1]!.sill);
+      atWindow(plain, WINDOWS[0]!.sill);
+      live(save, 0.25);
+      const visitor = withCat(save, {}, { x: 5.5, y: 8.5 });
+      if (!startWindow(save.current, visitor, createRng(seed))) continue;
+      came += 1;
+      const sill = objectById(WINDOWS[1]!.sill);
+      expect(visitor.act.target).toBe(sill.id);
+      // До зайнятого — на підлогу поруч, а не на чужу дошку.
+      expect(visitor.act.goal).not.toEqual({ x: sill.x, y: sill.y });
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 60 && visitor.act.kind === "window"; i++) {
+        save.current.minute += 0.25;
+        tickCats(save.current, 0.25, { present: true });
+      }
+      stop();
+      expect(visitor.act.kind).not.toBe("window");
+      expect(Math.floor(visitor.x) === sill.x && Math.floor(visitor.y) === sill.y).toBe(false);
+      expect(guard.act.kind).toBe("window");
+      if (events.some((e) => e.type === "hissed" && e.cat === guard.id && e.at === visitor.id)) {
+        guarded += 1;
+        expect(seen(guard, "territorial")).toBe(1);
+        expect(visitor.act.kind).toBe("wander");
+      }
+    }
+    expect(came).toBeGreaterThan(10);
+    expect(came).toBeLessThan(30);
+    expect(guarded).toBeGreaterThan(3);
+    expect(guarded).toBeLessThan(came);
+  });
+
+  it("«Бережливий» і в злості біля вікна дивана не дере", () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const save = game(seed);
+      const cat = withCat(save, { window: -2, scratching: -2 });
+      atWindow(cat, WINDOWS[1]!.sill);
+      const repairs = save.current.home.repairs;
+      const { events, stop } = recordEvents();
+      live(save, WINDOW.angerMinutes + 10);
+      stop();
+      expect(events.some((e) => e.type === "window-angry")).toBe(true);
+      expect(events.some((e) => e.type === "scratched" && e.cat === cat.id && e.where === "sofa")).toBe(false);
+      expect(save.current.home.repairs).toBe(repairs);
+    }
+  });
+
+  it("описи: «Не дивиться у вікно» й «Нудьгує біля вікна» різні", () => {
+    expect(traitAbout({ group: "window", level: -1 }, "male")).not.toBe(traitAbout({ group: "window", level: -2 }, "male"));
+    expect(traitAbout({ group: "window", level: -2 }, "male")).toContain("злиться");
+  });
+
   it("стара гра: персонаж там, де тепер підвіконня, після завантаження — поруч", () => {
     const save = game();
     const sill = objectById(WINDOWS[0]!.sill);
@@ -586,6 +645,32 @@ describe("«Товариськість» і «Вилизування друзі�
     expect(relation(save.current, cat, sleeper)).toBeGreaterThan(10);
   });
 
+  it("купкою — лише до кота на підлозі, ліжку чи дивані: за другом на холодильник чи на комп'ютер не лізуть (перевірка етапу)", () => {
+    const piles = (where: "floor" | "fridge" | "computer" | "house"): number => {
+      let n = 0;
+      for (let seed = 1; seed <= 60; seed++) {
+        const save = game(seed);
+        const sleeper = withCat(save, {}, { x: 5.5, y: 8.5 });
+        sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 30 };
+        if (where === "fridge" || where === "computer") {
+          const o = objectById(where);
+          Object.assign(sleeper, { x: o.x + 0.5, y: o.y + 0.5 });
+        }
+        if (where === "house") sleeper.act.target = "item:999";
+        const cat = withCat(save, { climbing: -2 }, { x: 9.5, y: 8.5 });
+        setRelation(save, cat, sleeper, 80);
+        cat.needs.fatigue = 99;
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.kind === "sleep" && cat.act.target === `pile:${sleeper.id}`) n += 1;
+      }
+      return n;
+    };
+    expect(piles("floor")).toBeGreaterThan(10);
+    expect(piles("fridge")).toBe(0);
+    expect(piles("computer")).toBe(0);
+    expect(piles("house")).toBe(0);
+  });
+
   it("«Не терпить дотиків» відсторонюється, коли друг прийшов його вилизати: стосунки −1 замість +2, прояв «−»", () => {
     let refused = 0;
     for (let seed = 1; seed <= 30; seed++) {
@@ -728,6 +813,24 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     const kind = withCat(save, { jealousy: -2 }, { x: 6.5, y: 8.5 });
     for (let i = 0; i < 10; i++) jealousy(save.current, lucky, "play");
     expect(kind.act.target?.startsWith("cuddle:")).not.toBe(true);
+  });
+
+  it("ревнують, лише коли гра справді почалася: на кота, що на вудку не зважає, не шипить (перевірка етапу)", () => {
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const rival = withCat(save, { jealousy: 2 }, { x: 9.5, y: 7.5 });
+    rival.act = idleAct(60);
+    toyInHands(save, lucky);
+    lucky.needs.play = 0;
+    const { events, stop } = recordEvents();
+    for (let t = 0; t < 1; t += 0.25) advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+    expect(events.some((e) => e.type === "hissed" && e.cat === rival.id)).toBe(false);
+    // Кнопку відпустили, кіт захотів гратися — тепер ревнивець бачить гру.
+    advance(save, 0.25, { move: { x: 0, y: 0 }, hold: false });
+    lucky.needs.play = 90;
+    for (let t = 0; t < 1; t += 0.25) advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
   });
 
   it("ревнують і тоді, коли іншого кота беруть на руки", () => {

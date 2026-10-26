@@ -573,11 +573,7 @@ function holdTick(state: GameState, minutes: number): boolean {
   if (character.activity === null) {
     const target = targetOf(state);
     if (target === null) return false;
-    if (canPlay(state, target) && target.type === "cat") {
-      character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
-      // З іншим котом граються — ревнивці це бачать (§9.12, «Ревнивість»).
-      jealousy(state, target.cat, "play");
-    }
+    if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
     else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.
     else if (target.type === "object" && target.object.kind === "shower") return false;
@@ -585,10 +581,8 @@ function holdTick(state: GameState, minutes: number): boolean {
     // почалися б за мить натискання, зсадили б його з умивальника, і натискання брало б кота на руки (перевірка етапу
     // 2026-10-25).
     else if (target.type === "cat" && catOnSink(state) === target.cat) return false;
-    else if (target.type === "cat") {
-      character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
-      jealousy(state, target.cat, "pet");
-    } else {
+    else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
+    else {
       character.activity = { kind: "use", target: target.id, progress: 0 };
       // Пилосос загудів — гучний звук на всю квартиру (§9.12).
       if (target.type === "object" && target.object.kind === "vacuum") loudNoise(state, "vacuum", null);
@@ -714,6 +708,12 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
       return;
     }
   }
+  // Пестощі справді почалися — ревнивці це бачать (§9.4, §9.12 «Ревнивість»; перевірка етапу 2026-10-26: раніше ревнували й тоді,
+  // коли кіт одразу йшов з-під руки). Ревнивець поруч може зігнати щасливця — тоді пестощам кінець.
+  if (activity.minutes === 0 && minutes > 0) {
+    jealousy(state, cat, "pet");
+    if (petOver(activity)) return;
+  }
   const before = activity.minutes;
   activity.minutes += minutes;
   cat.interacted = true;
@@ -802,6 +802,12 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     refuse(state, `cat:${cat.id}`, "cat-bored");
     observe(state, cat, "playful", -1);
     return;
+  }
+  // Гра справді почалася — ревнивці це бачать (§9.12, «Ревнивість»; перевірка етапу 2026-10-26: раніше шипіли й на кота, що
+  // на вудку не зважав). Ревнивець поруч може зігнати щасливця — тоді гри немає.
+  if (activity.minutes === 0 && minutes > 0) {
+    jealousy(state, cat, "play");
+    if (activity.done) return;
   }
   // Кіт щойно приніс іграшку до ніг, і з ним пограли — він тішиться: любов (§9.12, «Подарунки й схованки»).
   if (activity.minutes === 0 && cat.gift !== undefined) {

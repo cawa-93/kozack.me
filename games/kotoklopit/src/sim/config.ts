@@ -687,6 +687,7 @@ export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerM
  * зважає — відмова. «+» кличе гратися: коли хоче гратися, персонаж удома й не працює, а іграшка лежить на підлозі, — з вагою
  * `inviteStep` × рівень несе її до ніг персонажа й до `inviteMinutes` хвилин чекає поруч (пограєтеся — любов, як за подарунок).
  */
+export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /**
  * «Котяча м'ята» (§9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): м'яту чи
  * мататабі дають котові на руках біля аптечки. Кіт без риси й «+» катаються по ній `rollMinutes[рівень]` хвилин — настрій
@@ -715,9 +716,13 @@ export const CATNIP = {
  * +`moodPerHour` (від `strongLevel` — +`strongMood`); «+» «кекає» на птахів — у середньому раз на `chatterMinutes` хвилин.
  * «Нудьгує біля вікна» за `angerMinutes` хвилин злиться: шипить на кота, що не спить, поруч (до `redirectReach` клітинок;
  * стосунки `relation`) чи йде дерти диван, а тоді `angerPause` хвилин на підвіконня не йде (перевірка скриншотом 2026-10-26: він
- * вертався знову й знову). Прояви — не частіше ніж раз на `observeEvery` хвилин.
+ * вертався знову й знову). Прояви — не частіше ніж раз на `observeEvery` хвилин. Обидва підвіконня зайняті — з шансом `contest`
+ * кіт підходить до найближчого подивитися й, якщо там досі сидять, `takenMinutes` хвилин постоїть і піде (там його може відігнати
+ * «Охоронець», «Територіальність»; перевірка етапу 2026-10-26).
  */
 export const WINDOW = {
+  contest: 0.5,
+  takenMinutes: 0.5,
   from: 7,
   to: 21,
   weight: 0.4,
@@ -789,7 +794,6 @@ export const TERRITORY = { guardStep: 0.3, guardReach: 2, guardRelation: -3, gua
  * `swatPause` хвилин спокою. Прояв «+» уві сні з кошеням — не частіше ніж раз на `observeEvery` хвилин.
  */
 export const NURTURING = { relationStep: 10, groomStep: 0.2, groomMood: 2, groomRelation: 1, hugStep: 1.5, warmPerHour: 0.5, motherMood: 1, swatReach: 1.2, swatStep: 0.5, swatMood: -2, swatPause: 60, observeEvery: 60 } as const;
-export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
 /**

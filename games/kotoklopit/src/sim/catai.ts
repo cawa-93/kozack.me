@@ -540,6 +540,17 @@ interface Spot {
 const houseSpots = (state: GameState): { weight: number; value: Spot }[] =>
   itemsOf(state, "house").map((h) => ({ weight: HOUSE_SLEEP[h.quality], value: { at: itemTile(h), target: `item:${h.id}` } }));
 
+/**
+ * До цього сплячого кота можна лягти купкою (§9.4): він спить на підлозі, ліжку чи дивані — не в будиночку, переносці,
+ * коробках, пральній машині, на комп'ютері чи нагорі (перевірка етапу 2026-10-26: інакше кіт ліз би за іншим на холодильник
+ * чи в переноску, хоч сам туди не лазить, а кошеня застрягало б нагорі).
+ */
+function pileable(state: GameState, other: Cat): boolean {
+  if (other.act.goal !== null || (other.act.target !== null && !other.act.target.startsWith("pile:"))) return false;
+  const o = objectAt(state, Math.floor(other.x), Math.floor(other.y));
+  return o === null || o.kind === "bed" || o.kind === "sofa";
+}
+
 /** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, будь-де на підлозі. */
 function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const bed = objectById("bed");
@@ -559,7 +570,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const social = traitLevel(cat, "sociability");
   const nurturing = traitLevel(cat, "nurturing");
   for (const other of state.cats) {
-    if (other.id === cat.id || !home(state, other) || !asleep(other) || isNewborn(other)) continue;
+    if (other.id === cat.id || !home(state, other) || !asleep(other) || isNewborn(other) || !pileable(state, other)) continue;
     const friend = isFriend(state, cat, other);
     // «Нянька» спить, обійнявши кошеня (§9.12, «Турбота про кошенят»).
     const hug = nurturing > 0 && isKitten(other) && !isKitten(cat) ? NURTURING.hugStep * nurturing : 0;
@@ -3076,13 +3087,25 @@ export function windowWeight(state: GameState, cat: Cat): number {
   return WINDOW.weight * (1 + WINDOW.step * Math.max(0, level));
 }
 
-/** Кіт іде на найближче вільне підвіконня (§9.12, «Вікно»): там нікого немає й ніхто туди не йде. false — вільного немає. */
+/** На підвіконні вже сидить інший кіт (§9.12, «Вікно»). */
+function sillTaken(state: GameState, cat: Cat, sill: HomeObject): boolean {
+  return state.cats.some((c) => c.id !== cat.id && c.away === null && (inside(c, sill) || (c.act.kind === "window" && c.act.target === sill.id && c.act.goal === null)));
+}
+
+/**
+ * Кіт іде на найближче вільне підвіконня (§9.12, «Вікно»): там нікого немає й ніхто туди не йде. Обидва зайняті — з шансом 50%
+ * підходить до найближчого подивитися (там його може відігнати «Охоронець», «Територіальність»; перевірка етапу 2026-10-26: раніше
+ * на зайняте підвіконня не йшли зовсім, і охороняти його не було від кого). false — нікуди не пішов.
+ */
 export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
-  const sills = WINDOWS.map((w) => objectById(w.sill)).filter((o) => !state.cats.some((c) => c.id !== cat.id && c.away === null && (c.act.target === o.id || inside(c, o))));
+  // Туди, куди вже йде інший кіт, не йде.
+  const sills = WINDOWS.map((w) => objectById(w.sill)).filter((o) => !state.cats.some((c) => c.id !== cat.id && c.away === null && c.act.kind === "window" && c.act.target === o.id && c.act.goal !== null));
   sills.sort((a, b) => distance(a, cat) - distance(b, cat));
-  const sill = sills[0];
+  const free = sills.find((o) => !sillTaken(state, cat, o));
+  const sill = free ?? (rng.chance(WINDOW.contest) ? sills[0] : undefined);
   if (!sill) return false;
-  start(cat, "window", { x: sill.x, y: sill.y }, WINDOW.minMinutes + rng.next() * (WINDOW.maxMinutes - WINDOW.minMinutes), sill.id);
+  // До зайнятого — на підлогу поруч: на чужу дошку не стрибає.
+  start(cat, "window", free ? { x: sill.x, y: sill.y } : besideObject(state, sill), WINDOW.minMinutes + rng.next() * (WINDOW.maxMinutes - WINDOW.minMinutes), sill.id);
   return true;
 }
 
@@ -3092,8 +3115,15 @@ export function startWindow(state: GameState, cat: Cat, rng: Rng): boolean {
  */
 function watchWindow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const act = cat.act;
-  // Сідає на дошку підвіконня біля скла, обличчям до вікна.
   const pane = WINDOWS.find((w) => w.sill === act.target);
+  // Підійшов, а підвіконня досі зайняте: постоїть, подивиться й піде (перевірка етапу 2026-10-26).
+  if (pane && act.elapsed <= minutes + 1e-9 && sillTaken(state, cat, objectById(pane.sill))) {
+    const sill = objectById(pane.sill);
+    cat.facing = sill.x + 0.5 >= cat.x ? 1 : -1;
+    start(cat, "idle", null, WINDOW.takenMinutes);
+    return;
+  }
+  // Сідає на дошку підвіконня біля скла, обличчям до вікна.
   if (pane) {
     cat.facing = pane.facing;
     cat.x = pane.seat.x;
@@ -3130,6 +3160,9 @@ function windowRage(state: GameState, cat: Cat, rng: Rng): void {
     backAway(state, other, cat);
     return;
   }
+  // «Любить кігтеточку» й «Бережливий» і в злості деруть там, де завжди (§9.12, «Дряпання»; перевірка етапу 2026-10-26:
+  // «Бережливий» дивана не дере ніколи).
+  if (traitLevel(cat, "scratching") < 0) return startScratch(state, cat, rng);
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
 }
