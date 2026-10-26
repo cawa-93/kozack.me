@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TRAIT_GROUPS } from "../src/sim/traits";
+import { TRAIT_ABOUT_LEVEL } from "../src/texts";
 
 const sources = Object.values(
   import.meta.glob<string>("../src/sim/**/*.ts", {
@@ -66,6 +67,23 @@ describe("повнота рис (рішення автора 2026-10-25)", () =>
       const sides = observed.get(group.id) ?? new Set();
       if (plus === null) expect(sides.has(1), `${group.id}: «+» проявляється, а підказки немає`).toBe(false);
       if (minus === null) expect(sides.has(-1), `${group.id}: «−» проявляється, а підказки немає`).toBe(false);
+      // Підказка без прояву ніколи не з'явиться в картці кота (фінальна перевірка рис 2026-10-26).
+      if (plus !== null) expect(sides.has(1), `${group.id}: є підказка «+», а прояву «+» немає`).toBe(true);
+      if (minus !== null) expect(sides.has(-1), `${group.id}: є підказка «−», а прояву «−» немає`).toBe(true);
+    }
+  });
+
+  it("окремі підказки й описи рівнів — лише для рівнів свого боку, що проявляється", () => {
+    for (const group of TRAIT_GROUPS) {
+      for (const key of Object.keys(group.levelSigns ?? {})) {
+        const level = Number(key);
+        expect([2, 1, -1, -2], group.id).toContain(level);
+        expect(observed.get(group.id)?.has(Math.sign(level) as 1 | -1), `${group.id}: підказка рівня ${level} без прояву`).toBe(true);
+      }
+    }
+    for (const [id, levels] of Object.entries(TRAIT_ABOUT_LEVEL)) {
+      expect(TRAIT_GROUPS.some((g) => g.id === id), id).toBe(true);
+      for (const key of Object.keys(levels)) expect([2, 1, -1, -2], id).toContain(Number(key));
     }
   });
 });

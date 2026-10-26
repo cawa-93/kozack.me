@@ -1,6 +1,6 @@
 // Журнал режиму розробки (§11.5): приховані зміни й кидки випадковості з подій симуляції.
 
-import { CHEWING, GIFTS } from "../sim/config";
+import { CARRIER_HOME, CHEWING, GIFTS, PET } from "../sim/config";
 import { onEvent, type GameEvent } from "../sim/events";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
 import type { Delivery, GameState, Item, Quality } from "../sim/types";
@@ -218,9 +218,9 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "put-down":
       return `Опущено: ${catName(state, event.cat)}`;
     case "bite":
-      return `${catName(state, event.cat)} вкусив: здоров'я −1`;
+      return `${catName(state, event.cat)} вкусив: здоров'я ${signed(PET.biteHealth)}`;
     case "clawed":
-      return `${catName(state, event.cat)} подряпав біля переноски: здоров'я −3`;
+      return `${catName(state, event.cat)} подряпав біля переноски: здоров'я ${signed(CARRIER_HOME.health)}`;
     case "catnip":
       return `${catName(state, event.cat)}: котяча м'ята — ${event.reaction === "roll" ? "катається" : event.reaction === "frenzy" ? "шаленіє" : "понюхав і пішов"}`;
     case "cat-cuddled":

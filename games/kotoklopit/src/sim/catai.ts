@@ -2449,8 +2449,9 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
       const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= ARRIVED + keepDistance(cat);
-      // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід.
-      if (near && cat.act.seen !== true) {
+      // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід. Поки персонаж кота не бачить (у душовій
+      // кабіні), похід ще не «побачений»: інакше єдиний прояв за похід пропадав би (фінальна перевірка рис 2026-10-26).
+      if (near && cat.act.seen !== true && witnesses(state, cat)) {
         cat.act.seen = true;
         // Прийшов через голод, бо миски порожні, — це не «Ласкавість» (§9.9).
         if (cat.act.forFood !== true) observe(state, cat, "affection");
