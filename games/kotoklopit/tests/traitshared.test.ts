@@ -7,13 +7,14 @@ import { pickUpCat, putDownCat } from "../src/sim/actions";
 import { stun } from "../src/sim/body";
 import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
-import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
+import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, RELATIONS, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { itemTile, roomAt } from "../src/sim/home";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { hearSteps, loudNoise } from "../src/sim/noise";
+import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
@@ -63,16 +64,19 @@ describe("спільні паузи (§9.12, рішення автора 2026-10
     expect(stun(state)).toBe(true);
   });
 
-  it("кіт шипить не частіше ніж раз на 20 хвилин, і без шипіння немає сварки", () => {
+  it("кіт шипить не частіше ніж раз на 20 хвилин, а ревнивець сердиться за кожен сеанс уваги й без шипіння (рішення автора 2026-10-26)", () => {
     const save = game();
     const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
     const jealous = withCat(save, { jealousy: 2 }, { x: 7.5, y: 8.5 });
+    const before = relation(save.current, jealous, lucky);
     const { events, stop } = recordEvents();
     jealousy(save.current, lucky);
     jealousy(save.current, lucky);
     const hissed = (): number => events.filter((e) => e.type === "hissed").length;
     expect(hissed()).toBe(1);
     expect(jealous.traits[0]?.seen).toBe(1);
+    // Шипіння на паузі, але друге пестощі суперника теж коштують стосунків.
+    expect(relation(save.current, jealous, lucky)).toBe(before + 2 * 2 * RELATIONS.jealousy);
     save.current.minute += HISS_PAUSE_MINUTES;
     jealousy(save.current, lucky);
     stop();

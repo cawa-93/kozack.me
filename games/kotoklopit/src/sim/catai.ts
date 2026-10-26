@@ -3159,6 +3159,9 @@ export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "la
       start(other, "idle", tileOf(visibleFloorNear(state, { x: lucky.x + side, y: lucky.y })), JEALOUSY.cuddleMinutes, `cuddle:${lucky.id}`);
       continue;
     }
+    // Стосунки падають за кожен сеанс уваги до суперника, навіть коли шипіння ще на спільній паузі: пауза обмежує лише саме
+    // шипіння (§9.12, рішення автора 2026-10-26; раніше без шипіння не було й сварки, і пауза ослаблювала рису).
+    changeRelation(state, other, lucky, RELATIONS.jealousy * level);
     // Кота на руках персонаж несе далі, тож до нього не йдуть — шипить звідти (перевірка етапу 2026-10-26: ревнивець ішов туди,
     // де кота взяли, і, не заставши його, нічого не робив).
     if (why !== "hands" && distance(other, lucky) > JEALOUSY.near && free && rng.chance(JEALOUSY.comeStep * level)) {
@@ -3179,13 +3182,13 @@ function getsAttention(state: GameState, cat: Cat): boolean {
 }
 
 /**
- * Ревнивець шипить на щасливця — це видно й чути (§9.4); щойно шипів — мовчить і не сердиться (§9.12). Поруч (до 2 клітинок)
- * щасливець з шансом 50% іде: пестощі чи гра перериваються, з колін зганяють; «Ревнивець» (+2) лягає на коліна сам.
+ * Ревнивець шипить на щасливця — це видно й чути (§9.4); щойно шипів — мовчить (§9.12), а стосунки вже впали в `jealousy`.
+ * Поруч (до 2 клітинок) щасливець з шансом 50% іде: пестощі чи гра перериваються, з колін зганяють; «Ревнивець» (+2) лягає
+ * на коліна сам.
  */
 function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
   if (!hiss(state, cat, lucky)) return;
   const level = traitLevel(cat, "jealousy");
-  changeRelation(state, cat, lucky, RELATIONS.jealousy * level);
   observe(state, cat, "jealousy");
   if (distance(cat, lucky) > JEALOUSY.near || !getsAttention(state, lucky) || isCarried(state, lucky) || !rng.chance(JEALOUSY.leave)) return;
   const activity = state.character.activity;
