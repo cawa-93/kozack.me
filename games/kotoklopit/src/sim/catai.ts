@@ -336,14 +336,16 @@ const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal =
 const catById = (state: GameState, target: string | null): Cat | null =>
   target?.startsWith("cat:") ? (state.cats.find((c) => `cat:${c.id}` === target) ?? null) : null;
 
-/** Ресурсів замало (§9.4): кіт сердиться на випадкового іншого кота вдома. */
-/** Сварка за миску чи лоток (§9.4): лише з котом поруч — кіт шипить на нього, і це видно. */
+/**
+ * Сварка за миску чи лоток (§9.4): лише з котом поруч, що не спить, — кіт шипить на нього, і це видно. На сплячого й
+ * новонародженого не шипить (перевірка стосунків 2026-10-26: раніше шипів на сусіда, що спав біля миски, — стосунки −3).
+ */
 function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean): void {
   if (enough) return;
   const r = RELATIONS.resource;
   // Дзеркально (§9.12, «Територіальність»): «Ділиться» свариться рідше, «Комунар» — ніколи.
   if (!rng.chance(Math.max(0, r.chance + r.territorialStep * traitLevel(cat, "territorial")))) return;
-  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && distance(c, cat) <= r.distance);
+  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && distance(c, cat) <= r.distance);
   const other = others[rng.int(0, others.length - 1)];
   if (!other || !hiss(state, cat, other)) return;
   changeRelation(state, cat, other, r.relation);

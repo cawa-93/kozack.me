@@ -11,7 +11,7 @@ import { addCat } from "../src/sim/night";
 import { nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { withCatCorner } from "./helpers";
+import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 5 }));
@@ -133,6 +133,34 @@ describe("ресурси й ревнощі (§9.4)", () => {
       if (box?.kind === "litter") box.uses = 0;
     }
     expect(relation(save.current, a, b)).toBeLessThan(0);
+  });
+
+  it("сварка за миску — лише з котом, що не спить: на сплячого сусіда не шипить (перевірка стосунків 2026-10-26)", () => {
+    const hisses = (sleeping: boolean): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 120; seed++) {
+        const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+        save.current.minute = 12 * 60;
+        const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
+        save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);
+        const bowl = bowls[0];
+        if (bowl?.kind !== "bowl") throw new Error("немає миски");
+        Object.assign(bowl, { food: 3, foodQuality: "cheap" });
+        const tile = itemTile(bowl);
+        const a = withCat(save, {}, tile);
+        const b = withCat(save, {}, { x: tile.x + 1, y: tile.y });
+        a.needs.hunger = 80;
+        a.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.01, elapsed: 0 };
+        b.act = sleeping ? { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 } : idleAct(300);
+        const { events, stop } = recordEvents();
+        tickCats(save.current, 0.05, { present: false });
+        stop();
+        if (events.some((e) => e.type === "hissed" && e.cat === a.id && e.at === b.id)) count++;
+      }
+      return count;
+    };
+    expect(hisses(false)).toBeGreaterThan(0);
+    expect(hisses(true)).toBe(0);
   });
 
   it("ревнивий кіт сердиться, коли персонаж гладить іншого", () => {
