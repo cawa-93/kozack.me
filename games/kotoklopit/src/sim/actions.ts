@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, freshWater, hearFood, jealousy, openTap, separateFight, showerDrops, trashTipped, turnAway, upHigh, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, trashTipped, turnAway, upHigh, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
@@ -418,10 +418,13 @@ function occupying(state: GameState, cat: Cat): boolean {
   return cat.act.kind === "keyboard" || cat.act.kind === "lap" || catOnComputer(state) === cat;
 }
 
-/** Узяти кота на руки (§9.12): прогнаного з місця, сонного чи небажаючого це ображає. */
+/** Узяти кота на руки (§9.12): прогнаного з місця (зокрема з забороненого — «ні»), сонного чи небажаючого це ображає. */
 export function pickUpCat(state: GameState, cat: Cat): void {
   separateFight(state, cat);
-  const shooed = occupying(state, cat);
+  // «Ні» (§9.12, «Слухняність»): зняти кота з комп'ютера чи кухонного столу — так само прогнати з місця, і кіт це запам'ятає.
+  const zone = forbiddenZoneAt(state, cat);
+  if (zone !== null) sayNo(state, cat, zone, stateRng(state, "behavior"));
+  const shooed = occupying(state, cat) || zone !== null;
   const offended = shooed || unwilling(cat);
   if (shooed) {
     changeMood(state, cat, SHOO.mood, "прогнали з місця");

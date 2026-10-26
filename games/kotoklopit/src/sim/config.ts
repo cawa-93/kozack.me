@@ -733,6 +733,15 @@ export const WINDOW = {
   relation: -2,
   observeEvery: 60,
 } as const;
+/**
+ * «Слухняність» (§9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): «ні» мовою
+ * гри — зняти кота з забороненого місця: з комп'ютера (клавіатура чи сон на ньому) чи з кухонного столу, поверхні або плити
+ * (крадіжка чи скидання скасовуються); ціна — як прогнати з місця (`SHOO`). Після цього кіт `minutes` × max(0, 1 + `step` ×
+ * рівень) хвилин туди не лізе; «+» пам'ятає це видно — підходить, `rememberMinutes` дивиться й розвертається. «Анархіст» (від
+ * −`comebackLevel`) з шансом `comeback` повертається туди за `comebackMinutes` хвилин (зайнятий довше за `comebackWindow` —
+ * забуває). Прояви — не частіше ніж раз на `observeEvery` хвилин.
+ */
+export const OBEDIENCE = { minutes: 120, step: 0.5, rememberMinutes: 1, comebackLevel: 2, comeback: 0.5, comebackMinutes: 10, comebackWindow: 30, observeEvery: 60 } as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

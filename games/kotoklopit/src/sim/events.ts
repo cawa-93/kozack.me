@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
+import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -192,6 +192,8 @@ export type GameEvent =
    * не діє) або шаленіє.
    */
   | { type: "catnip"; cat: number; reaction: "roll" | "sniff" | "frenzy" }
+  /** Кіт підійшов до забороненого місця, пам'ятає «ні» й розвертається (§9.12, «Слухняність»). */
+  | { type: "cat-remembered"; cat: number; zone: ForbiddenZone }
   /** Кіт на підвіконні «кекає» на птахів за вікном (§9.12, «Вікно»). */
   | { type: "chatter"; cat: number }
   /** «Нудьгує біля вікна» злиться на підвіконні, сіпаючи хвостом (§9.12, «Вікно»). */

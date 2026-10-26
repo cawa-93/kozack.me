@@ -80,7 +80,8 @@ export type IconName =
   | "chew-bag"
   | "bored"
   | "catnip"
-  | "bird";
+  | "bird"
+  | "table";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -570,6 +571,13 @@ Object.assign(ICONS, {
     g.lineStyle(1.5, INK).strokeEllipse(16, 29, 8, 9);
   },
   catnip: (g: Phaser.GameObjects.Graphics) => drawCatnip(g, 20, 21, 1),
+  table: (g: Phaser.GameObjects.Graphics) => {
+    // Кухонний стіл із кухлем (§9.12, «Слухняність»): туди котові не можна.
+    g.fillStyle(0x8b5e3c).fillRect(3, 24, 34, 6).fillRect(6, 30, 4, 9).fillRect(30, 30, 4, 9);
+    g.lineStyle(2, INK).strokeRect(3, 24, 34, 6);
+    g.fillStyle(0xd9e4ea).fillRoundedRect(15, 11, 11, 13, 2);
+    g.lineStyle(2, INK).strokeRoundedRect(15, 11, 11, 13, 2).beginPath().arc(27, 17, 3.5, -Math.PI / 2, Math.PI / 2).strokePath();
+  },
   bird: (g: Phaser.GameObjects.Graphics) => {
     // Пташка за вікном (§9.12, «Вікно»): кругле тільце, крило, дзьобик і хвостик.
     g.fillStyle(0x8a6e48).fillTriangle(6, 18, 14, 22, 8, 28);

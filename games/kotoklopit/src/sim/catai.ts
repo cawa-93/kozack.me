@@ -64,6 +64,7 @@ import {
   NOCTURNAL,
   NOCTURNAL_STEP,
   NOISE,
+  OBEDIENCE,
   OLD_PLAY,
   PET,
   PETTING,
@@ -115,7 +116,7 @@ import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CatActKind, Dish, GameState, HomeItem, LitterItem, MessKind, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
@@ -573,7 +574,8 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     const washer = objectById("washer");
     options.push({ weight: 0.5 + Math.max(0, traitLevel(cat, "curiosity")), value: at({ x: washer.x, y: washer.y }) });
   }
-  if (!isWorking(state) && !catOnComputer(state)) {
+  // Пам'ятає «ні» про комп'ютер — там не спить (§9.12, «Слухняність»).
+  if (!isWorking(state) && !catOnComputer(state) && noGo(state, cat, "desk") === "go") {
     const computer = objectById("computer");
     // «Поважає роботу» спить на комп'ютері вдвічі рідше, «Байдужий до техніки» — ніколи (рішення автора 2026-10-25).
     const helper = traitLevel(cat, "helper");
@@ -649,7 +651,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     const thief = traitLevel(cat, "thief");
     const starving = n.hunger >= HUNGRY_THEFT.starving ? HUNGRY_THEFT.base * Math.max(0, 1 + HUNGRY_THEFT.starvingStep * thief) : 0;
     if (steal && rng.chance(HUNGRY_THEFT.step * Math.max(0, thief) + starving)) {
-      return start(cat, "steal", objectTile(steal.id), 1, steal.id);
+      // Пам'ятає «ні» про кухню — не краде; «+» підходить і розвертається (§9.12, «Слухняність»).
+      const verdict = noGo(state, cat, "kitchen");
+      if (verdict === "go") return start(cat, "steal", objectTile(steal.id), 1, steal.id);
+      if (verdict === "remember") return startRemember(state, cat, "kitchen", steal.id);
     }
     // «Чесний» сідає біля їжі на столі й не чіпає її (§9.12, рішення автора 2026-10-25).
     if (steal && thief < 0 && rng.chance(THIEF.waitChance)) return start(cat, "beg", besideObject(state, objectById(steal.id)), THIEF.waitMinutes, steal.id);
@@ -919,20 +924,26 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   const bored = traitLevel(cat, "energy") > 0 && cat.needs.play >= 100 ? ENERGY.bored : 1;
   const onSurfaces = dishes(state, false);
   const knock = onSurfaces[rng.int(0, onSurfaces.length - 1)];
-  if (knock) options.push({ weight: MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, value: active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)) });
+  // Заборонене місце, яке кіт ще пам'ятає (§9.12, «Слухняність»): «+» підходить і розвертається, решта туди не йде.
+  const allowed = (zone: ForbiddenZone, id: string, weight: number, value: Choice): void => {
+    const verdict = noGo(state, cat, zone);
+    if (verdict === "go") options.push({ weight, value });
+    else if (verdict === "remember") options.push({ weight, value: () => startRemember(state, cat, zone, id) });
+  };
+  if (knock) allowed("kitchen", knock.id, MISCHIEF.knock * traitFactor(cat, "knocking", MISCHIEF.traitStep) * bored, active(() => start(cat, "knock", objectTile(knock.id), 0.5, knock.id)));
   // Дрібничка на столі (§9.12, «Скидання речей»): «−» ходить столами так само часто, як кіт без риси, а дійшовши — може
   // лише обнюхати її й обійти.
   const standing = standingTrinkets(state);
   const trinket = standing[rng.int(0, standing.length - 1)];
   if (trinket) {
     const weight = KNOCKING.weight * Math.max(1, traitFactor(cat, "knocking", MISCHIEF.traitStep)) * bored;
-    options.push({ weight, value: active(() => start(cat, "knock", trinketTile(trinket.kind), KNOCKING.sniffMinutes, `trinket:${trinket.kind}`)) });
+    allowed(zoneOf(trinket.object), trinket.object, weight, active(() => start(cat, "knock", trinketTile(trinket.kind), KNOCKING.sniffMinutes, `trinket:${trinket.kind}`)));
   }
   const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
     const hungry = cat.needs.hunger >= 60 ? 2 : 1;
-    options.push({ weight: MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, value: active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)) });
+    allowed("kitchen", steal.id, MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)));
   }
   // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Подарунки й схованки»).
   const toy = nearest(cat, looseToys(state));
@@ -1366,7 +1377,10 @@ function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
   cat.act.target = "asked";
   const helper = traitLevel(cat, "helper");
   const lap = traitLevel(cat, "lap");
-  if (helper >= 0 && rng.chance(WORK_CAT.keyboardBase + WORK_CAT.keyboardStep * helper)) {
+  // Пам'ятає «ні» про комп'ютер — на клавіатуру не сідає; «+» дивиться на неї й розвертається (§9.12, «Слухняність»).
+  const desk = noGo(state, cat, "desk");
+  if (desk === "remember") rememberNo(state, cat, "desk");
+  if (helper >= 0 && desk === "go" && rng.chance(WORK_CAT.keyboardBase + WORK_CAT.keyboardStep * helper)) {
     const computer = objectById("computer");
     const minutes = WORK_CAT.keyboardMinMinutes + rng.next() * (WORK_CAT.keyboardMaxMinutes - WORK_CAT.keyboardMinMinutes);
     observe(state, cat, "helper");
@@ -1928,7 +1942,7 @@ function showOffKnock(state: GameState, cat: Cat, rng: Rng): void {
   act.knockTried = true;
   if (!rng.chance(KNOCKING.attentionStep * level)) return;
   const room = roomAt(state.character.body);
-  const near = standingTrinkets(state).filter((t) => roomAt(objectById(t.object)) === room && distance(trinketTile(t.kind), cat) <= KNOCKING.reach);
+  const near = standingTrinkets(state).filter((t) => roomAt(objectById(t.object)) === room && distance(trinketTile(t.kind), cat) <= KNOCKING.reach && noGo(state, cat, zoneOf(t.object)) === "go");
   near.sort((a, b) => distance(trinketTile(a.kind), cat) - distance(trinketTile(b.kind), cat));
   const trinket = near[0];
   if (!trinket) return;
@@ -2277,6 +2291,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
   doorCall(state, cat, minutes, rng);
+  comeBack(state, cat);
   if (context.present) sulk(state, cat);
   // Спокійну дію кіт кидає заради нагальної потреби.
   // «Вісімка» під ногами того, хто несе корм, — заради їжі, тож її голод не перериває (§9.12).
@@ -2324,6 +2339,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   boxSeen(state, cat);
   doorSeen(state, cat);
   dropsSeen(state, cat);
+  rememberSeen(state, cat);
   let left = minutes;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
     if (cat.act.kind === "follow") {
@@ -2345,6 +2361,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       left = walk(cat, left, CAT_WALK_TILES_PER_MINUTE * walkFactor(cat));
       if (cat.act.goal) break;
       climbed(state, cat, rng);
+      defied(state, cat);
       if (cat.act.kind === "sleep") fellAsleep(state, cat);
       continue;
     }
@@ -2976,4 +2993,99 @@ function windowRage(state: GameState, cat: Cat, rng: Rng): void {
   }
   const sofa = objectById("sofa");
   start(cat, "scratch", { x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y - 1 }, SCRATCH.minutes, "sofa");
+}
+
+/** Заборонене місце, якому належить річ квартири (§9.12, «Слухняність»): комп'ютер — стіл із комп'ютером, решта — кухня. */
+function zoneOf(objectId: string): ForbiddenZone {
+  return objectById(objectId).kind === "computer" ? "desk" : "kitchen";
+}
+
+/** Заборонене місце, на якому кіт зараз сидить (§9.12, «Слухняність»): комп'ютер чи кухонний стіл, поверхня або плита; null — ні. */
+export function forbiddenZoneAt(state: GameState, cat: Cat): ForbiddenZone | null {
+  if (cat.act.goal !== null) return null;
+  const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
+  if (o?.kind === "computer") return "desk";
+  return o?.kind === "table" || o?.kind === "counter" || o?.kind === "stove" ? "kitchen" : null;
+}
+
+/** Скільки хвилин кіт пам'ятає «ні» (§9.12, «Слухняність»): 2 години × max(0, 1 + 0,5 × рівень). */
+export function noMemory(cat: Cat): number {
+  return OBEDIENCE.minutes * Math.max(0, 1 + OBEDIENCE.step * traitLevel(cat, "obedience"));
+}
+
+/**
+ * Чи піде кіт на заборонене місце (§9.12, «Слухняність»): «go» — «ні» не пам'ятає; «skip» — пам'ятає й туди не йде; «remember» —
+ * пам'ятає, і це видно: «+» підходить, дивиться й розвертається.
+ */
+export function noGo(state: GameState, cat: Cat, zone: ForbiddenZone): "go" | "skip" | "remember" {
+  const at = cat.toldNo?.[zone];
+  if (at === undefined || absoluteMinute(state.day, state.minute) - at >= noMemory(cat)) return "go";
+  return traitLevel(cat, "obedience") > 0 ? "remember" : "skip";
+}
+
+/**
+ * «Ні» (§9.12, «Слухняність», рішення автора 2026-10-25): персонаж зняв кота з забороненого місця. Кіт запам'ятовує; «Анархіст» з
+ * шансом 50% повернеться туди за 10 хвилин.
+ */
+export function sayNo(state: GameState, cat: Cat, zone: ForbiddenZone, rng: Rng): void {
+  const now = absoluteMinute(state.day, state.minute);
+  (cat.toldNo ??= {})[zone] = now;
+  delete cat.comeback;
+  if (traitLevel(cat, "obedience") <= -OBEDIENCE.comebackLevel && rng.chance(OBEDIENCE.comeback)) cat.comeback = { zone, at: now + OBEDIENCE.comebackMinutes };
+}
+
+/** «+» іде до забороненого місця, щоб, підійшовши, згадати «ні» й розвернутися (§9.12, «Слухняність»). */
+function startRemember(state: GameState, cat: Cat, zone: ForbiddenZone, objectId: string): void {
+  start(cat, "idle", besideObject(state, objectById(objectId)), OBEDIENCE.rememberMinutes, `no:${zone}`);
+}
+
+/** Кіт згадав «ні» й розвертається — над ним думка, перекреслене місце (§9.12); прояв «Слухняності +», раз на годину. */
+function rememberNo(state: GameState, cat: Cat, zone: ForbiddenZone): void {
+  emit(state, { type: "cat-remembered", cat: cat.id, zone });
+  observe(state, cat, "obedience", 1, false, OBEDIENCE.observeEvery);
+}
+
+/** «+» підійшов до забороненого місця (§9.12): згадав «ні» — раз за підхід. */
+function rememberSeen(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  if (act.kind !== "idle" || !act.target?.startsWith("no:") || act.goal !== null || act.seen === true) return;
+  act.seen = true;
+  rememberNo(state, cat, act.target.slice(3) as ForbiddenZone);
+}
+
+/**
+ * Кіт дійшов на заборонене місце, коли кіт без риси ще пам'ятав би «ні» (2 години), — прояв «Слухняності −» (§9.9): «Пропускає
+ * повз вуха» повертається за годину, «Анархіст» — хоч одразу.
+ */
+function defied(state: GameState, cat: Cat): void {
+  const zone = forbiddenZoneAt(state, cat);
+  const at = zone === null ? undefined : cat.toldNo?.[zone];
+  if (at === undefined || absoluteMinute(state.day, state.minute) - at >= OBEDIENCE.minutes) return;
+  observe(state, cat, "obedience", -1, false, OBEDIENCE.observeEvery);
+}
+
+/** Звідки «Анархіст» повертається на заборонене місце: нічим важливим не зайнятий (§9.12). */
+const COMEBACK_FROM = new Set(["idle", "wander", "toy", "attention", "follow"]);
+
+/**
+ * «Анархіст» повертається туди, звідки його зняли (§9.12, «Слухняність»): на клавіатуру чи на кухонний стіл. Зайнятий довше
+ * за пів години — забуває.
+ */
+function comeBack(state: GameState, cat: Cat): void {
+  const plan = cat.comeback;
+  if (!plan) return;
+  const now = absoluteMinute(state.day, state.minute);
+  if (now < plan.at) return;
+  if (now - plan.at > OBEDIENCE.comebackWindow) {
+    delete cat.comeback;
+    return;
+  }
+  if (!home(state, cat) || asleep(cat) || !COMEBACK_FROM.has(cat.act.kind)) return;
+  delete cat.comeback;
+  if (plan.zone === "desk") {
+    const computer = objectById("computer");
+    return start(cat, "keyboard", { x: computer.x, y: computer.y }, WORK_CAT.keyboardMinMinutes, "computer");
+  }
+  const table = objectById("table");
+  start(cat, "idle", { x: table.x, y: table.y }, OBEDIENCE.comebackMinutes, "table");
 }

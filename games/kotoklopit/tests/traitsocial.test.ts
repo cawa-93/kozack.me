@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, startWindow, tickCats, windowWeight } from "../src/sim/catai";
-import { CATNIP, GIFTS, PET, PLAY, PLAYFUL, PRODUCTS, SOFA_REPAIR, WINDOW } from "../src/sim/config";
+import { decide, forbiddenZoneAt, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
+import { CATNIP, GIFTS, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, SHOO, SOFA_REPAIR, WINDOW } from "../src/sim/config";
 import { addSupply, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
@@ -164,9 +164,12 @@ function catnipCat(save: Save, traits: Record<string, TraitLevel> = {}, ageWeeks
   return cat;
 }
 
-/** Хвилини життя котів (персонаж удома й бачить). */
+/** Хвилини життя котів (персонаж удома й бачить); годинник іде. */
 function live(save: Save, minutes: number): void {
-  for (let t = 0; t < minutes; t += 0.25) tickCats(save.current, 0.25, { present: true });
+  for (let t = 0; t < minutes; t += 0.25) {
+    save.current.minute += 0.25;
+    tickCats(save.current, 0.25, { present: true });
+  }
 }
 
 describe("«Котяча м'ята» (§9.12, рішення автора 2026-10-25)", () => {
@@ -388,5 +391,122 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
     Object.assign(save.current.character.body, { x: sill.x + 0.5, y: sill.y + 0.5 });
     const body = deserialize(serialize(save)).current.character.body;
     expect(isSolid(save.current, Math.floor(body.x), Math.floor(body.y))).toBe(false);
+  });
+});
+
+/** Кіт хоче гратися, а на кухонному столі — страва: що він обере (ціль дії). */
+function playChoice(save: Save, cat: Cat, seed: number): string | null {
+  save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+  cat.needs.play = 90;
+  cat.act = idleAct(0);
+  decide(save.current, cat, createRng(seed), { present: true });
+  return cat.act.target;
+}
+
+/** Ціль на кухні: страва чи дрібничка на кухонному столі чи поверхні. */
+const kitchenTarget = (target: string | null): boolean => target === "table" || target === "stove" || target?.startsWith("counter") === true || target === "trinket:mug" || target === "trinket:phone";
+
+describe("«Слухняність» (§9.12, рішення автора 2026-10-25)", () => {
+  it("«ні» — зняти кота з кухонного столу чи комп'ютера: як прогнати з місця, і кіт це пам'ятає", () => {
+    const save = game();
+    const cat = withCat(save);
+    const table = objectById("table");
+    Object.assign(cat, { x: table.x + 0.5, y: table.y + 0.5, mood: 60, love: 60 });
+    cat.act = { kind: "steal", target: "table", goal: null, minutes: 1, elapsed: 0 };
+    expect(forbiddenZoneAt(save.current, cat)).toBe("kitchen");
+    pickUpCat(save.current, cat);
+    expect(cat.toldNo?.kitchen).toBeDefined();
+    expect(cat.mood).toBeLessThan(60);
+    expect(cat.love).toBeCloseTo(60 + SHOO.love);
+    // Кіт на підлозі — це не «ні».
+    const other = withCat(save);
+    pickUpCat(save.current, other);
+    expect(other.toldNo).toBeUndefined();
+  });
+
+  it("скільки пам'ятає: 2 години × (1 + 0,5 × рівень) — «Анархіст» не пам'ятає зовсім", () => {
+    const save = game();
+    expect(noMemory(withCat(save))).toBe(OBEDIENCE.minutes);
+    expect(noMemory(withCat(save, { obedience: 2 }))).toBe(2 * OBEDIENCE.minutes);
+    expect(noMemory(withCat(save, { obedience: -1 }))).toBe(OBEDIENCE.minutes / 2);
+    expect(noMemory(withCat(save, { obedience: -2 }))).toBe(0);
+  });
+
+  it("кіт без риси 2 години не лізе на кухню, а тоді — знову", () => {
+    let before = 0;
+    let after = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const save = game(seed);
+      const cat = withCat(save);
+      sayNo(save.current, cat, "kitchen", createRng(seed));
+      if (kitchenTarget(playChoice(save, cat, seed))) before += 1;
+      save.current.minute += OBEDIENCE.minutes + 1;
+      if (kitchenTarget(playChoice(save, cat, seed))) after += 1;
+    }
+    expect(before).toBe(0);
+    expect(after).toBeGreaterThan(5);
+  });
+
+  it("«+» підходить до забороненого місця, дивиться й розвертається — думка й прояв «+»", () => {
+    let shown = false;
+    for (let seed = 1; seed <= 60 && !shown; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
+      const cat = withCat(save, { obedience: 2 }, { x: 15.5, y: 4.5 });
+      sayNo(save.current, cat, "kitchen", createRng(seed));
+      save.current.minute += OBEDIENCE.minutes + 30;
+      expect(noGo(save.current, cat, "kitchen")).toBe("remember");
+      if (playChoice(save, cat, seed) !== "no:kitchen") continue;
+      const { events, stop } = recordEvents();
+      live(save, 2);
+      stop();
+      expect(events.some((e) => e.type === "cat-remembered" && e.cat === cat.id && e.zone === "kitchen")).toBe(true);
+      expect(seen(cat, "obedience")).toBe(1);
+      expect(forbiddenZoneAt(save.current, cat)).toBeNull();
+      shown = true;
+    }
+    expect(shown).toBe(true);
+  });
+
+  it("«Анархіст» інколи повертається на кухонний стіл за 10 хвилин — прояв «−»; «Пропускає повз вуха» — за годину", () => {
+    let back = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
+      const cat = withCat(save, { obedience: -2 }, { x: 15.5, y: 4.5 });
+      sayNo(save.current, cat, "kitchen", createRng(seed));
+      if (!cat.comeback) continue;
+      live(save, OBEDIENCE.comebackMinutes + 3);
+      expect(forbiddenZoneAt(save.current, cat)).toBe("kitchen");
+      expect(seen(cat, "obedience")).toBe(1);
+      back += 1;
+    }
+    expect(back).toBeGreaterThan(3);
+    expect(back).toBeLessThan(17);
+    const save = game();
+    const cat = withCat(save, { obedience: -1 });
+    sayNo(save.current, cat, "kitchen", createRng(1));
+    save.current.minute += OBEDIENCE.minutes / 2 + 1;
+    expect(noGo(save.current, cat, "kitchen")).toBe("go");
+  });
+
+  it("«+», що пам'ятає «ні» про комп'ютер, приходить до того, хто працює, і на клавіатуру не сідає", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 7.5, y: 7.5, facing: { x: 0, y: -1 } });
+    startWork(save.current);
+    let keyboard = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const cat = withCat(save, { obedience: 1, helper: 2 }, { x: 7.5, y: 7.8 });
+      sayNo(save.current, cat, "desk", createRng(seed));
+      cat.needs.attention = 90;
+      cat.act = { kind: "attention", target: "character", goal: null, minutes: 20, elapsed: 0, seen: true };
+      const { events, stop } = recordEvents();
+      tickCats(save.current, 0.25, { present: true });
+      stop();
+      if (cat.act.kind === "keyboard") keyboard += 1;
+      expect(events.some((e) => e.type === "cat-remembered" && e.cat === cat.id)).toBe(true);
+      save.current.cats = save.current.cats.filter((c) => c.id !== cat.id);
+    }
+    expect(keyboard).toBe(0);
   });
 });

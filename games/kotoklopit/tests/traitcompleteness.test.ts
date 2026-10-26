@@ -22,7 +22,6 @@ const PENDING: ReadonlySet<string> = new Set([
   // Діють, але прояву ще немає.
   "warmth",
   // Ще не реалізовано.
-  "obedience",
   "nurturing",
   "chubby",
 ]);
