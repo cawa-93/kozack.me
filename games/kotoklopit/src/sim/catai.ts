@@ -498,11 +498,14 @@ export function bowlFull(bowl: BowlItem): boolean {
 
 /**
  * Кіт саме просить їсти (§7, §9.12): нявчить біля миски, біля ліжка зранку чи біля їжі на столі, або прийшов до персонажа,
- * бо голодний. Ласощі йому зараз привчають до жебракування.
+ * бо голодний. Ласощі йому зараз привчають до жебракування. Біля порожньої миски для води він просить пити, а не їсти (§9.4
+ * «Згода, охорона й сварки», рішення автора 2026-10-26, Р6).
  */
-export function beggingFood(cat: Cat): boolean {
-  const target = cat.act.target;
-  return (cat.act.kind === "beg" && target !== "sink" && target !== "water" && target !== "door" && target !== "high") || (cat.act.kind === "attention" && cat.act.forFood === true);
+export function beggingFood(state: GameState, cat: Cat): boolean {
+  const act = cat.act;
+  if (act.kind === "attention") return act.forFood === true;
+  if (act.kind !== "beg" || act.target === "sink" || act.target === "water" || act.target === "door" || act.target === "high") return false;
+  return itemById<HomeItem>(state, act.target)?.kind !== "water";
 }
 
 /** Висока річ під котом — верх холодильника чи шафи (§9.12, «Лазіння»); null — не нагорі. */

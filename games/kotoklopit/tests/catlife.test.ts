@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
 import { changeMood, createCat, offend } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { activityAt, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
+import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
 import { COLLAR, LOVE_BEHAVIOR, PET } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
@@ -269,6 +269,24 @@ describe("поведінка котів: пошук багів 2026-10-25 (§9.1
     expect(naps).toBe(0);
     expect(cat.act).toMatchObject({ kind: "beg", target: "water" });
     expect(events.filter((e) => e.type === "meow" && e.cat === cat.id).length).toBeGreaterThan(0);
+  });
+
+  it("кіт, що просить пити біля порожньої миски для води, — не жебрак; біля порожньої миски для корму — жебрак (§9.4, Р6)", () => {
+    const save = game();
+    const water = save.current.home.items.find((i): i is WaterItem => i.kind === "water")!;
+    water.water = 0;
+    const cat = withCat(save, { x: 9.5, y: 8.5 });
+    save.current.minute = hours(13);
+    cat.needs = { hunger: 0, thirst: 96, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+    decide(save.current, cat, createRng(1), { present: false });
+    expect(cat.act).toMatchObject({ kind: "beg", target: `item:${water.id}` });
+    expect(beggingFood(save.current, cat)).toBe(false);
+    for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 0;
+    cat.needs = { hunger: 96, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+    decide(save.current, cat, createRng(1), { present: false });
+    expect(cat.act.kind).toBe("beg");
+    expect(cat.act.target?.startsWith("item:")).toBe(true);
+    expect(beggingFood(save.current, cat)).toBe(true);
   });
 
   it("сплячий кіт без уваги не сумує: він нічого не просить", () => {

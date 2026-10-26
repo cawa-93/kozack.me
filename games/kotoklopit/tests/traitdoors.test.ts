@@ -137,7 +137,7 @@ describe("«Втечі»: відчинені двері (§9.12, рішення 
     const save = game();
     const cat = withCat(save, { escape: 1 });
     cat.act = { kind: "beg", target: "door", goal: null, minutes: 5, elapsed: 0 };
-    expect(beggingFood(cat)).toBe(false);
+    expect(beggingFood(save.current, cat)).toBe(false);
     expect(ESCAPE.callStep).toBeGreaterThan(0);
   });
 });
