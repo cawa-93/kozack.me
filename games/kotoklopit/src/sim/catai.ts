@@ -1245,8 +1245,9 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   // Точити кігті — потреба кожного кота: «Дряпання» трохи змінює, як часто, а передусім — де (§9.12, 2026-10-25).
   const scratching = Math.max(SCRATCH.minWeight, SCRATCH.weight * (1 + SCRATCH.frequencyStep * traitLevel(cat, "scratching")));
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
-  // Як часто кличе гратися іншого кота — за віком і «Ігривістю» (§9.4, рішення автора 2026-10-26, Г7).
-  const mate = playmate(state, cat);
+  // Як часто кличе гратися іншого кота — за віком і «Ігривістю» (§9.4, рішення автора 2026-10-26, Г7). Хворий не кличе, як і не
+  // погоджується (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26 після блоку 4): решта забав — як у здорового.
+  const mate = isUnwell(cat) ? null : playmate(state, cat);
   const wrestle = RELATIONS.wrestle;
   const often = (isOld(cat) ? wrestle.old : 1) * traitFactor(cat, "playful", wrestle.playfulStep);
   if (mate && often > 0) options.push({ weight: mate.weight * often, value: active(() => startWrestle(state, cat, mate.cat)) });

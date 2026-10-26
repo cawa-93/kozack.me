@@ -759,6 +759,43 @@ describe("друг може відмовитися (§9.4 «Згода, охор
     }
   });
 
+  it("хворий і сам не кличе гратися (рішення автора 2026-10-26 після блоку 4), а решта забав — як у здорового", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+    setRelation(save, a, b, 70);
+    /** Що обирає `a`, коли хоче гратися, за 200 рішень; друг `b` поруч вільний чи спить. */
+    const choices = (friendFree: boolean, present: boolean): string[] => {
+      const out: string[] = [];
+      for (let seed = 0; seed < 200; seed++) {
+        a.needs.play = 100;
+        b.act = friendFree ? idleAct(30) : sleeping();
+        decide(save.current, a, createRng(seed), { present });
+        out.push(`${a.act.kind}:${a.act.target ?? ""}`);
+      }
+      return out;
+    };
+    const calls = (list: string[]): number => list.filter((c) => c === `wrestle:cat:${b.id}`).length;
+    for (const present of [false, true]) {
+      expect(calls(choices(true, present))).toBeGreaterThan(10);
+      // Друг спить — здоровий обирає з решти забав: зумі, іграшка, кігтеточка, бешкет, засідка на персонажа.
+      const alone = choices(false, present);
+      expect(new Set(alone.map((c) => c.split(":")[0])).size).toBeGreaterThan(3);
+      for (const disease of ["cold", "injury"] as const) {
+        fallIll(save.current, a, disease);
+        // Хворий друга не кличе, хоч той вільний, а решту обирає так само, як здоровий, — рішення в рішення.
+        expect(choices(true, present)).toEqual(alone);
+        expect(choices(false, present)).toEqual(alone);
+        a.diseases = [];
+      }
+      // Старість і ожиріння — не хвороба (Г5): такий кличе, як і раніше.
+      fallIll(save.current, a, "senior");
+      fallIll(save.current, a, "obesity");
+      expect(calls(choices(true, present))).toBeGreaterThan(10);
+      a.diseases = [];
+    }
+  });
+
   it("відмовився — пів години його не кличе й інший кіт (перевірка блоку 4: що відмова ставить паузу, не перевіряв жоден тест)", () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { save, a, b } = invite(seed, { play: 0, fatigue: 40 });
@@ -919,7 +956,7 @@ describe("пози гри й вилизування (§9.4, «Пози стос�
   });
 });
 
-describe("сценарій «Згода, охорона й сварки» (`scenarios/cats-agree-guard.json`, блок 4)", () => {
+describe("сценарій «Згода, охорона й сварки» (`scenarios/cats-agree-guard.json`, блок 4 і рішення 10)", () => {
   it("хворий Тихон відмовляється й шипить, Буся відмовляється, Мурка охороняє миску від ворога, Буркотун шипить на кошеня", () => {
     const scenario = FILE_SCENARIOS["cats-agree-guard"];
     if (!scenario) throw new Error("немає сценарію");
@@ -933,5 +970,21 @@ describe("сценарій «Згода, охорона й сварки» (`scen
     expect(events).toContainEqual({ type: "play-declined", cat: id("Буся"), by: id("Рижик"), sick: false });
     expect(events).toContainEqual({ type: "hissed", cat: id("Мурка"), at: id("Барсик"), why: "bowl" });
     expect(events).toContainEqual({ type: "hissed", cat: id("Буркотун"), at: id("Малюк"), why: "kitten" });
+  });
+
+  it("застуджений Тихон хоче гратися, але сам не кличе ні друга Ревнивця, ні Малюка — грається сам (рішення автора 2026-10-26 після блоку 4)", () => {
+    const scenario = FILE_SCENARIOS["cats-agree-guard"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const tykhon = save.current.cats.find((c) => c.name === "Тихон")!;
+    const alone = new Set<string>();
+    for (let t = 0; t < 120; t += 0.25) {
+      advance(save, 0.25);
+      // Хворий не грається в парі ні як той, кого кличуть (Г5), ні як той, хто кличе.
+      expect(tykhon.act.kind === "wrestle" && tykhon.act.paired === true).toBe(false);
+      if (tykhon.act.kind === "wrestle") expect(tykhon.act.goal).toBeNull();
+      if (["toy", "zoomies", "scratch"].includes(tykhon.act.kind) || (tykhon.act.kind === "wander" && tykhon.act.target === "play")) alone.add(tykhon.act.kind);
+    }
+    expect(alone.size).toBeGreaterThan(0);
   });
 });
