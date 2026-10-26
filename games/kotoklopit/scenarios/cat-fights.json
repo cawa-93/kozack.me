@@ -1,6 +1,6 @@
 {
  "name": "Бійки котів",
- "description": "Субота другого тижня, 17:00, вітальня. Три пари ворогів (§9.4, рішення автора 2026-10-26): Барсик і Рижик уже в протистоянні — «спина дугою», щохвилини шиплять; Мурка й Сніжка б'ються — «клубок бійки»; кошеня Кузя й гладка Димка стоять за 2 клітинки й скоро зійдуться. Натисніть на кота в протистоянні — розійдуться; візьміть на руки того, хто б'ється, — розборонити.",
+ "description": "Субота другого тижня, 17:00, вітальня. Три пари ворогів (§9.4, рішення автора 2026-10-26): Барсик і Рижик уже в протистоянні — «спина дугою», щохвилини шиплять; Мурка й Сніжка б'ються — «клубок бійки»; сміливе кошеня Кузя йде до гладкої Димки, а та чекає, вигнувши спину. Натисніть на кота в протистоянні — розійдуться; візьміть на руки того, хто б'ється, — розборонити. Далі вороги сходяться рідко: у середньому раз на ~100 хвилин поруч (§9.4) — перемотуйте час.",
  "game": {
   "sex": "female",
   "difficulty": "normal",
@@ -96,7 +96,7 @@
    "genes": { "orange": [false], "black": [true, true], "dense": [false, false], "agouti": [true, true], "tabby": [1, 1], "white": [0, 0], "full": [true, true], "short": [true, true], "eyes": 0 },
    "shape": { "muzzle": "normal", "ears": "normal", "tail": "long", "build": "normal", "legs": "normal", "coat": null },
    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
-   "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+   "act": { "kind": "standoff", "target": "cat:109", "goal": { "x": 13, "y": 8 }, "minutes": 3, "elapsed": 0 },
    "traits": [{ "group": "bravery", "level": 2, "seen": 0, "known": true }]
   },
   {
@@ -112,7 +112,7 @@
    "genes": { "orange": [false, false], "black": [false, false], "dense": [false, false], "agouti": [true, true], "tabby": [2, 2], "white": [0, 0], "full": [true, true], "short": [true, true], "eyes": 1 },
    "shape": { "muzzle": "normal", "ears": "curled", "tail": "bobtail", "build": "stocky", "legs": "normal", "coat": null },
    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
-   "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }
+   "act": { "kind": "standoff", "target": "cat:108", "goal": null, "minutes": 3, "elapsed": 0 }
   }
  ],
  "relations": [[0, 1, -70], [2, 3, -70], [4, 5, -70]]
