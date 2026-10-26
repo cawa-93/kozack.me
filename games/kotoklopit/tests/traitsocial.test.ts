@@ -528,6 +528,27 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
     expect(shown).toBe(true);
   });
 
+  it("прояв «ні» — коли персонаж бачить кота біля місця, а не лише в мить, коли той дійшов; думка — раз за підхід (рішення автора 2026-10-26)", () => {
+    const save = game();
+    // Персонаж у спальні: кухні крізь стіну не видно.
+    Object.assign(save.current.character.body, { x: 2.5, y: 2.5 });
+    const cat = withCat(save, { obedience: 2 }, { x: 15.5, y: 4.5 });
+    sayNo(save.current, cat, "kitchen", createRng(1));
+    save.current.minute += OBEDIENCE.minutes + 30;
+    cat.act = { kind: "idle", target: "no:kitchen", goal: null, minutes: OBEDIENCE.rememberMinutes, elapsed: 0 };
+    const { events, stop } = recordEvents();
+    live(save, 0.25);
+    expect(events.filter((e) => e.type === "cat-remembered" && e.cat === cat.id)).toHaveLength(1);
+    expect(seen(cat, "obedience")).toBe(0);
+    // Персонаж зайшов на кухню, поки кіт ще стоїть біля столу, — побачив.
+    Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });
+    live(save, 0.25);
+    stop();
+    expect(cat.act.target).toBe("no:kitchen");
+    expect(seen(cat, "obedience")).toBe(1);
+    expect(events.filter((e) => e.type === "cat-remembered" && e.cat === cat.id)).toHaveLength(1);
+  });
+
   it("голодний «Слухняний» злодій доходить до столу, згадує «ні» й не краде (перевірка етапу: голод переривав його щокроку)", () => {
     const save = game();
     Object.assign(save.current.character.body, { x: 15.5, y: 2.5 });

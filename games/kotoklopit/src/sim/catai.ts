@@ -887,11 +887,16 @@ function escort(state: GameState, cat: Cat, minutes: number, context: CatContext
   act.minutes -= used;
   act.elapsed += used;
   if (act.target === "door") {
-    // Дійшов до персонажа біля дверей: вітається — нявкає (як уміє) і ще трохи крутиться поруч; це прояв «Відданості +».
-    if (act.seen !== true && distance(cat, body) <= ARRIVED + keepDistance(cat)) {
-      act.seen = true;
+    // Дійшов до персонажа біля дверей: вітається — нявкає (як уміє) і ще трохи крутиться поруч.
+    if (act.done !== true && act.seen !== true && distance(cat, body) <= ARRIVED + keepDistance(cat)) {
+      act.done = true;
       act.minutes = Math.min(act.minutes, DEVOTION.stayMinutes);
       emit(state, { type: "meow", cat: cat.id, ...(meowVoice(cat).silent ? { silent: true as const } : {}) });
+    }
+    // Привітання — прояв «Відданості +», щойно персонаж його бачить, а не лише в мить, коли кіт дійшов (рішення автора 2026-10-26:
+    // `seen` ставився до `observe`, і прояв пропадав, якщо персонаж саме не бачив кота).
+    if (act.done === true && act.seen !== true && witnesses(state, cat)) {
+      act.seen = true;
       observe(state, cat, "devotion");
     }
     return minutes - used;
@@ -899,14 +904,14 @@ function escort(state: GameState, cat: Cat, minutes: number, context: CatContext
   if (food) {
     // Пів хвилини «вісімкою» під ногами — прояв «Тертя об ноги +», не частіше ніж раз на годину (§9.9).
     if (distance(cat, body) < LEGS.distance) act.rubbed = (act.rubbed ?? 0) + used;
-    if (act.seen !== true && (act.rubbed ?? 0) >= LEGS.eightMinutes) {
+    if (act.seen !== true && (act.rubbed ?? 0) >= LEGS.eightMinutes && witnesses(state, cat)) {
       act.seen = true;
       observe(state, cat, "legs", 1, false, MINUTES_PER_HOUR);
     }
     return minutes - used;
   }
   const room = roomAt(body);
-  if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat) && room !== act.from) {
+  if (act.seen !== true && act.elapsed <= FOLLOWER.seenWithin && room !== null && room === roomAt(cat) && room !== act.from && witnesses(state, cat)) {
     act.seen = true;
     observe(state, cat, "follower");
   }
@@ -1511,7 +1516,10 @@ function arriveAtWork(state: GameState, cat: Cat, rng: Rng): void {
   const lap = traitLevel(cat, "lap");
   // Пам'ятає «ні» про комп'ютер — на клавіатуру не сідає; «+» дивиться на неї й розвертається (§9.12, «Слухняність»).
   const desk = noGo(state, cat, "desk");
-  if (desk === "remember") rememberNo(state, cat, "desk");
+  if (desk === "remember") {
+    rememberNo(state, cat, "desk");
+    obeyed(state, cat);
+  }
   if (helper >= 0 && desk === "go" && rng.chance(WORK_CAT.keyboardBase + WORK_CAT.keyboardStep * helper)) {
     const computer = objectById("computer");
     const minutes = WORK_CAT.keyboardMinMinutes + rng.next() * (WORK_CAT.keyboardMaxMinutes - WORK_CAT.keyboardMinMinutes);
@@ -3153,7 +3161,7 @@ export function turnAway(state: GameState, cat: Cat): void {
   offense.turnedAt = absoluteMinute(state.day, state.minute);
   backAway(state, cat, state.character.body);
   emit(state, { type: "sulked", cat: cat.id });
-  if (offense.seen !== true) {
+  if (offense.seen !== true && witnesses(state, cat)) {
     offense.seen = true;
     observe(state, cat, "touchy");
   }
@@ -3234,18 +3242,23 @@ function jealousArrived(state: GameState, cat: Cat, rng: Rng): void {
 function cuddleSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
   if (act.kind !== "idle" || !act.target?.startsWith("cuddle:") || act.goal !== null || act.seen === true) return;
-  act.seen = true;
-  const lucky = state.cats.find((c) => `cuddle:${c.id}` === act.target);
-  if (!lucky || !home(state, lucky) || distance(cat, whereIs(state, lucky)) > JEALOUSY.near) return;
-  emit(state, { type: "cat-cuddled", cat: cat.id, with: lucky.id });
-  // Щиросердий радіє за того, кого пригостили (§9.12, «Заздрісність»), — так само муркоче поруч, але це прояв іншої риси.
-  if (act.envy === true) {
-    changeRelation(state, cat, lucky, ENVY.cuddleRelation);
-    observe(state, cat, "envy", -1);
-    return;
+  if (act.done !== true) {
+    act.done = true;
+    const lucky = state.cats.find((c) => `cuddle:${c.id}` === act.target);
+    // Того, до кого йшов, уже немає поруч — лягати й муркотіти нема до кого, і бачити нічого.
+    if (!lucky || !home(state, lucky) || distance(cat, whereIs(state, lucky)) > JEALOUSY.near) {
+      act.seen = true;
+      return;
+    }
+    emit(state, { type: "cat-cuddled", cat: cat.id, with: lucky.id });
+    // Щиросердий радіє за того, кого пригостили (§9.12, «Заздрісність»), — так само муркоче поруч, але це прояв іншої риси.
+    changeRelation(state, cat, lucky, act.envy === true ? ENVY.cuddleRelation : JEALOUSY.cuddleRelation);
   }
-  changeRelation(state, cat, lucky, JEALOUSY.cuddleRelation);
-  observe(state, cat, "jealousy", -1);
+  // Прояв — коли персонаж бачить, як кіт муркоче поруч, а не лише в мить, коли той ліг (рішення автора 2026-10-26).
+  if (!witnesses(state, cat)) return;
+  act.seen = true;
+  if (act.envy === true) observe(state, cat, "envy", -1);
+  else observe(state, cat, "jealousy", -1);
 }
 
 // --- Гра й стосунки котів (§9.12) -----------------------------------------------------------
@@ -3452,7 +3465,7 @@ function startRemember(state: GameState, cat: Cat, zone: ForbiddenZone, objectId
 
 /**
  * Кіт згадав «ні» й розвертається — над ним думка, перекреслене місце (§9.12), не частіше ніж раз на 30 хвилин на кота (рішення
- * автора 2026-10-26: голодний «Слухняний» ходить до столу щокілька хвилин); прояв «Слухняності +», раз на годину.
+ * автора 2026-10-26: голодний «Слухняний» ходить до столу щокілька хвилин). Прояв «Слухняності +» — `obeyed`.
  */
 function rememberNo(state: GameState, cat: Cat, zone: ForbiddenZone): void {
   const now = absoluteMinute(state.day, state.minute);
@@ -3460,15 +3473,25 @@ function rememberNo(state: GameState, cat: Cat, zone: ForbiddenZone): void {
     cat.noThoughtAt = now;
     emit(state, { type: "cat-remembered", cat: cat.id, zone });
   }
-  observe(state, cat, "obedience", 1, false, OBEDIENCE.observeEvery);
 }
 
-/** «+» підійшов до забороненого місця (§9.12): згадав «ні» — раз за підхід. */
+/** Кіт на очах персонажа згадав «ні» — прояв «Слухняності +», раз на годину (§9.9). */
+const obeyed = (state: GameState, cat: Cat): void => observe(state, cat, "obedience", 1, false, OBEDIENCE.observeEvery);
+
+/**
+ * «+» підійшов до забороненого місця (§9.12): згадав «ні» — раз за підхід; прояв — коли персонаж бачить, як він стоїть біля місця,
+ * а не лише в мить, коли кіт дійшов (рішення автора 2026-10-26).
+ */
 function rememberSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
   if (act.kind !== "idle" || !act.target?.startsWith("no:") || act.goal !== null || act.seen === true) return;
+  if (act.done !== true) {
+    act.done = true;
+    rememberNo(state, cat, act.target.slice(3) as ForbiddenZone);
+  }
+  if (!witnesses(state, cat)) return;
   act.seen = true;
-  rememberNo(state, cat, act.target.slice(3) as ForbiddenZone);
+  obeyed(state, cat);
 }
 
 /**
