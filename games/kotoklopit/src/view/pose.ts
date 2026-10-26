@@ -75,6 +75,20 @@ export function brawlFoe(state: GameState, cat: Cat): Cat | null {
   return foe;
 }
 
+/** Куля в «клубку бійки», менша за цю частку чужої, — помітно менша (кошеня проти дорослого). */
+const BRAWL_SMALLER = 0.8;
+
+/**
+ * Чия куля в «клубку бійки» зараз спереду (§9.4, «Пози стосунків»): клубок крутиться, і кулі по черзі виринають наперед
+ * (`phase` — кут оберту); помітно менша — завжди спереду, інакше більша ховала б її цілком пів оберту, і гравець не бачив би,
+ * хто з ким б'ється (перевірка блоку 1 2026-10-26). `mine` і `theirs` — радіуси куль; `theirs` null — суперника не видно.
+ */
+export function brawlInFront(mine: number, theirs: number | null, phase: number): boolean {
+  if (theirs !== null && mine < theirs * BRAWL_SMALLER) return true;
+  if (theirs !== null && theirs < mine * BRAWL_SMALLER) return false;
+  return Math.sin(phase) > 0;
+}
+
 /**
  * Бабл «бійка» (§9.4, «Пози стосунків»): над клубком — один на двох (його показує кіт із меншим номером), а нападник, що ще
  * біжить, і той, хто його чекає, — кожен свій.

@@ -14,7 +14,7 @@ import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
 import { COLORS, depthOf, toScreen } from "./geometry";
-import { brawlFoe, poseOf } from "./pose";
+import { brawlFoe, brawlInFront, poseOf } from "./pose";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,
@@ -271,11 +271,12 @@ export class CatView {
         const cy = y - 15 * s;
         const first = foe === null || cat.id < foe.id;
         const spin = time / 120 + (first ? 0 : Math.PI);
-        const front = Math.sin(spin) > 0;
         const jitter = Math.sin(time / 23 + cat.id) * 1.2 * s;
         const ox = mx + Math.cos(spin) * 5 * s + jitter;
         const oy = cy + Math.sin(spin) * 3 * s;
         const r = 14 * s * fw;
+        // Помітно менша куля (кошеня проти дорослого) — завжди спереду, щоб її було видно.
+        const front = brawlInFront(r, foe ? 14 * this.scaleOf(foe) * girthOf(foe) : null, spin);
         const limb = this.coat.pointed ? point : body;
         const pawColor = this.coat.white >= 1 ? WHITE : limb;
         // Верх клубка — за більшим із двох (кошеня б'ється з дорослим): над ним бабл «бійка».

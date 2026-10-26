@@ -15,7 +15,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel } from "../src/sim/types";
-import { poseOf, showsFightBubble } from "../src/view/pose";
+import { brawlInFront, poseOf, showsFightBubble } from "../src/view/pose";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
@@ -592,5 +592,19 @@ describe("пози протистояння й бійки (§9.4, «Пози с�
     expect(poseOf(cat, false)).toBe("brawl");
     expect(poseOf(other, false)).toBe("brawl");
     expect([cat, other].filter((c) => showsFightBubble(s, c))).toHaveLength(1);
+  });
+
+  it("«клубок бійки»: помітно менша куля (кошеня проти дорослого) завжди спереду, однакові — по черзі", () => {
+    // Перевірка блоку 1 (2026-10-26): більша куля пів оберту цілком ховала кошеня.
+    const phases = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12 + 0.1);
+    for (const phase of phases) {
+      // Кулі двох котів кружляють у протифазі.
+      expect(brawlInFront(11, 22, phase)).toBe(true);
+      expect(brawlInFront(22, 11, phase + Math.PI)).toBe(false);
+      expect(brawlInFront(17, 18, phase)).not.toBe(brawlInFront(18, 17, phase + Math.PI));
+    }
+    expect(new Set(phases.map((phase) => brawlInFront(17, 18, phase))).size).toBe(2);
+    // Суперника не видно — крутиться сам.
+    expect(new Set(phases.map((phase) => brawlInFront(17, null, phase))).size).toBe(2);
   });
 });
