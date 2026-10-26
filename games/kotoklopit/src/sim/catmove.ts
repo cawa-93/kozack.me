@@ -89,9 +89,21 @@ function nextTile(x: number, y: number, field: Float32Array): Vec | null {
 export function walk(cat: Cat, minutes: number, speed: number): number {
   const goal = cat.act.goal;
   if (!goal) return minutes;
+  const { left, arrived } = stepTo(cat, goal, minutes, speed);
+  if (arrived) cat.act.goal = null;
+  return left;
+}
+
+/**
+ * Іти до клітинки `goal` шляхом сіткою зі швидкістю (клітинок за хвилину) — не чіпаючи цілі дії: так коти бігають у грі (§9.4,
+ * «Гру й вилизування видно»). `arrived` — дійшов до середини клітинки (або шляху немає, і кіт лишився, де є); `left` — хвилини, що
+ * лишилися.
+ */
+export function stepTo(cat: Cat, goal: Vec, minutes: number, speed: number): { left: number; arrived: boolean } {
   const field = fieldTo(goal);
   let budget = speed * minutes;
-  for (let guard = 0; guard < 64 && budget > 1e-9 && cat.act.goal; guard++) {
+  let arrived = false;
+  for (let guard = 0; guard < 64 && budget > 1e-9 && !arrived; guard++) {
     const tx = Math.floor(cat.x);
     const ty = Math.floor(cat.y);
     let target: Vec;
@@ -101,7 +113,7 @@ export function walk(cat: Cat, minutes: number, speed: number): number {
       const next = nextTile(tx, ty, field);
       if (!next) {
         // Шляху немає: кіт лишається, де є.
-        cat.act.goal = null;
+        arrived = true;
         break;
       }
       target = { x: next.x + 0.5, y: next.y + 0.5 };
@@ -114,14 +126,14 @@ export function walk(cat: Cat, minutes: number, speed: number): number {
       cat.x = target.x;
       cat.y = target.y;
       budget -= distance;
-      if (tx === goal.x && ty === goal.y) cat.act.goal = null;
+      if (tx === goal.x && ty === goal.y) arrived = true;
     } else {
       cat.x += (dx / distance) * budget;
       cat.y += (dy / distance) * budget;
       budget = 0;
     }
   }
-  return budget / speed;
+  return { left: budget / speed, arrived };
 }
 
 export const tileOf = (p: Vec): Vec => ({ x: Math.floor(p.x), y: Math.floor(p.y) });

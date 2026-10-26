@@ -4,7 +4,7 @@
 
 import { stun } from "./body";
 import { adaptsLonger, avoiding, changeLove, changeMood, forgive, grudgeAt, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
-import { lastTileWithin, randomFloor, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
+import { lastTileWithin, randomFloor, stepTo, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
   ACTIVITY_BY_HOUR,
@@ -123,7 +123,7 @@ import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
 
@@ -1626,15 +1626,19 @@ const shoos = (state: GameState, adult: Cat, kitten: Cat): boolean =>
 function startWrestle(state: GameState, cat: Cat, mate: Cat): void {
   observe(state, cat, "sociability");
   const w = RELATIONS.wrestle;
-  start(cat, "wrestle", tileOf(mate), w.minutes, `cat:${mate.id}`);
+  // Хвилини гри ініціатора відлічуються від зустрічі (`metMate`): доти він біжить до друга.
+  start(cat, "wrestle", tileOf(mate), w.minutes[1], `cat:${mate.id}`);
   start(mate, "wrestle", null, w.wait, `cat:${cat.id}`);
 }
 
 /** Кіт зараз грається саме з цим другом (§9.4). */
 const wrestlesWith = (cat: Cat, mate: Cat): boolean => cat.act.kind === "wrestle" && cat.act.target === `cat:${mate.id}`;
 
-/** Кіт підбіг до друга гратися (§9.4): друг дочекався — хвилини гри йдуть обом від цієї миті; ні — гри немає. */
-function metMate(state: GameState, cat: Cat): void {
+/**
+ * Кіт підбіг до друга гратися (§9.4): друг дочекався — 6–8 хвилин гри йдуть обом від цієї миті, і гра йде фазами; веде їх той, хто
+ * кликав, і першу засідку влаштовує він (рішення автора 2026-10-26, Г3). Друг не дочекався — гри немає.
+ */
+function metMate(state: GameState, cat: Cat, rng: Rng): void {
   const act = cat.act;
   const mate = catById(state, act.target);
   const w = RELATIONS.wrestle;
@@ -1643,12 +1647,155 @@ function metMate(state: GameState, cat: Cat): void {
     act.minutes = 0;
     return;
   }
+  const minutes = between(w.minutes, rng);
   act.paired = true;
-  act.minutes = w.minutes;
+  act.minutes = minutes;
   mate.act.paired = true;
-  mate.act.minutes = w.minutes;
+  mate.act.minutes = minutes;
   standBeside(cat, mate);
   mate.facing = cat.x > mate.x ? 1 : -1;
+  act.lead = true;
+  enterPhase(state, cat, mate, "ambush", cat.id, rng);
+}
+
+// --- Гра двох котів фазами (§9.4, «Гру й вилизування видно», рішення автора 2026-10-26, Г3) --------
+
+/** Яка фаза йде за якою: по колу, доки не скінчиться час гри. */
+const NEXT_PHASE: Record<PlayPhase, PlayPhase> = { ambush: "chase", chase: "tussle", tussle: "pause", pause: "ambush" };
+
+/** Повернути кота обличчям до іншого. */
+function faceTo(cat: Cat, other: Vec): void {
+  if (Math.abs(other.x - cat.x) > 0.01) cat.facing = other.x > cat.x ? 1 : -1;
+}
+
+/**
+ * Куди бігти чи відходити в грі (§9.4, Г3): випадкова клітинка підлоги в кімнаті кота (у проході — до `passage` клітинок від
+ * нього), яку видно й яка підходить (`fits` — за серединою клітинки). Немає такої — null.
+ */
+function playSpot(state: GameState, cat: Cat, rng: Rng, fits: (p: Vec) => boolean): Vec | null {
+  const near = RELATIONS.wrestle.passage;
+  const room = ROOMS.find((r) => r.id === roomAt(cat));
+  const area = room ?? { x: Math.floor(cat.x) - near, y: Math.floor(cat.y) - near, w: 2 * near + 1, h: 2 * near + 1 };
+  const tiles: Vec[] = [];
+  for (let y = area.y; y < area.y + area.h; y++) {
+    for (let x = area.x; x < area.x + area.w; x++) {
+      if (!isSolid(state, x, y) && !hiddenTile(x, y) && fits({ x: x + 0.5, y: y + 0.5 })) tiles.push({ x, y });
+    }
+  }
+  return tiles[rng.int(0, tiles.length - 1)] ?? null;
+}
+
+/** Утікач обирає, куди бігти (§9.4, Г3): щонайменше на `run` клітинок. */
+function runFrom(state: GameState, cat: Cat, rng: Rng): void {
+  const spot = playSpot(state, cat, rng, (p) => distance(cat, p) >= RELATIONS.wrestle.run);
+  if (spot) cat.act.run = spot;
+  else delete cat.act.run;
+}
+
+/**
+ * Почати фазу гри (§9.4, Г3): її тривалість, мисливець (`chaser`) і що роблять обидва. Засідка — той, на кого чатують, відходить
+ * на 1,5–2,5 клітинки; погоня — тікає; боротьба — мисливець наздоганяє й стає впритул; пауза — обидва сидять обличчям одне до
+ * одного. Веде той, хто кликав (`lead`), а другому копіює фазу.
+ */
+function enterPhase(state: GameState, lead: Cat, mate: Cat, phase: PlayPhase, chaser: number, rng: Rng): void {
+  const w = RELATIONS.wrestle;
+  const hunter = chaser === lead.id ? lead : mate;
+  const prey = hunter === lead ? mate : lead;
+  lead.act.game = { phase, left: between(w[phase], rng), chaser, swap: 1 };
+  delete hunter.act.run;
+  delete prey.act.run;
+  if (phase === "ambush") {
+    const [near, far] = w.sneak;
+    const spot = playSpot(state, prey, rng, (p) => distance(hunter, p) >= near && distance(hunter, p) <= far);
+    if (spot) prey.act.run = spot;
+    faceTo(hunter, prey);
+  }
+  if (phase === "chase") runFrom(state, prey, rng);
+  if (phase === "tussle") hunter.act.run = tileOf(prey);
+  if (phase === "pause") {
+    faceTo(hunter, prey);
+    faceTo(prey, hunter);
+  }
+  mate.act.game = { ...lead.act.game };
+}
+
+/**
+ * Хвилини гри для того, хто веде (§9.4, Г3): у погоні й боротьбі щохвилини ролі міняються з шансом 50%; фаза скінчилася — наступна
+ * (у засідку — будь-хто з двох мисливцем, 50%).
+ */
+function advanceGame(state: GameState, lead: Cat, mate: Cat, minutes: number, rng: Rng): void {
+  const game = lead.act.game;
+  if (!game) return;
+  const w = RELATIONS.wrestle;
+  game.left -= minutes;
+  if (game.phase === "chase" || game.phase === "tussle") {
+    game.swap -= minutes;
+    if (game.swap <= 0) {
+      game.swap += 1;
+      if (rng.chance(w.swap)) {
+        game.chaser = game.chaser === lead.id ? mate.id : lead.id;
+        const hunter = game.chaser === lead.id ? lead : mate;
+        const prey = hunter === lead ? mate : lead;
+        // У погоні тепер тікає той, хто наздоганяв; у боротьбі той, хто був знизу, — зверху.
+        delete hunter.act.run;
+        if (game.phase === "chase") runFrom(state, prey, rng);
+      }
+    }
+  }
+  if (game.left > 0) {
+    mate.act.game = { ...game };
+    return;
+  }
+  const next = NEXT_PHASE[game.phase];
+  const chaser = next === "ambush" ? (rng.chance(0.5) ? lead.id : mate.id) : game.chaser;
+  enterPhase(state, lead, mate, next, chaser, rng);
+}
+
+/**
+ * Рух кота в грі (§9.4, Г3): у засідці мисливець припав до підлоги обличчям до другого, а той відходить; у погоні утікач біжить
+ * кімнатою швидкістю зумі, а мисливець тримається за ним за клітинку, і обидва можуть скинути річ зі столу, як зумі; у боротьбі
+ * мисливець наздоганяє й стає впритул збоку; у паузі обидва сидять обличчям одне до одного.
+ */
+function playMove(state: GameState, cat: Cat, mate: Cat, minutes: number, rng: Rng): void {
+  const act = cat.act;
+  const game = act.game;
+  if (!game) return;
+  const w = RELATIONS.wrestle;
+  const hunting = game.chaser === cat.id;
+  const fast = CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed;
+  if (game.phase === "ambush") {
+    if (hunting) return faceTo(cat, mate);
+    if (act.run && stepTo(cat, act.run, minutes, CAT_WALK_TILES_PER_MINUTE * w.trot * walkFactor(cat)).arrived) delete act.run;
+    return;
+  }
+  if (game.phase === "chase") {
+    const from = { x: cat.x, y: cat.y };
+    if (hunting) {
+      const gap = distance(cat, mate) - w.behind;
+      if (gap > 0) stepTo(cat, tileOf(mate), Math.min(minutes, gap / fast), fast);
+    } else {
+      let left = minutes;
+      for (let guard = 0; guard < 4 && left > 1e-9; guard++) {
+        if (!act.run) runFrom(state, cat, rng);
+        if (!act.run) break;
+        const step = stepTo(cat, act.run, left, fast);
+        left = step.left;
+        if (step.arrived) delete act.run;
+      }
+    }
+    knockInPassing(state, cat, from, rng);
+    return;
+  }
+  if (game.phase === "tussle" && hunting && act.run) {
+    // Наздогнав — стає впритул збоку обличчям до того, хто вже лежить на спині.
+    const gap = distance(cat, mate) - RELATIONS.beside;
+    if (gap > 0.3) stepTo(cat, tileOf(mate), Math.min(minutes, (gap - 0.25) / fast), fast);
+    if (distance(cat, mate) - RELATIONS.beside <= 0.3) {
+      standBeside(cat, mate);
+      delete act.run;
+    }
+  }
+  faceTo(cat, mate);
 }
 
 /**
@@ -2045,6 +2192,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         mate.act.done = true;
         mate.act.minutes = 0;
       }
+      // Гра мовчазна — без бабла, лише для журналу (§9.4, рішення автора 2026-10-26, Г3).
+      emit(state, { type: "cats-played", cats: [cat.id, mate.id] });
       return;
     }
     case "groom": {
@@ -2419,12 +2568,21 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       }
       return;
     case "wrestle": {
-      // Пара розпалася — друг пішов, його взяли на руки, ініціатора перебили: гра скінчилася для обох без наслідків (§9.4).
+      // Пара розпалася — друг пішов, його взяли на руки, погладили чи з ним гралися вудкою, ініціатора перебили, коти розбіглися:
+      // гра скінчилася для обох без наслідків (§9.4).
       const mate = catById(state, act.target);
-      if (!mate || !home(state, mate) || !wrestlesWith(mate, cat) || (act.paired === true && distance(cat, mate) > RELATIONS.wrestle.reach)) {
+      const w = RELATIONS.wrestle;
+      const reach = act.game ? w.chaseReach : w.reach;
+      const broken = act.paired === true && (distance(cat, mate ?? cat) > reach || getsAttention(state, cat) || (mate !== null && getsAttention(state, mate)));
+      if (!mate || !home(state, mate) || !wrestlesWith(mate, cat) || broken) {
         act.refused = true;
         act.minutes = 0;
+        return;
       }
+      if (act.paired !== true) return;
+      // Гра фазами (§9.4, рішення автора 2026-10-26, Г3): фази веде той, хто кликав.
+      if (act.lead === true) advanceGame(state, cat, mate, minutes, rng);
+      playMove(state, cat, mate, minutes, rng);
       return;
     }
     case "groom": {
@@ -2630,17 +2788,7 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
   const used = Math.min(minutes, act.minutes);
   const from = { x: cat.x, y: cat.y };
   walk(cat, used, CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed);
-  // Річ на шляху падає (§9.12): забіг повз стіл чи поверхню зі стравою, раз за прохід.
-  for (const id of SURFACE_IDS) {
-    if (!state.home.surfaces[id]) continue;
-    const near = (p: Vec): boolean => distanceToRect(p, objectById(id)) <= ZOOMIES.knockReach;
-    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockOff(state, cat, id);
-  }
-  // Так само й дрібничка на столі (§9.12, «Скидання речей»).
-  for (const trinket of standingTrinkets(state)) {
-    const near = (p: Vec): boolean => distanceToRect(p, objectById(trinket.object)) <= ZOOMIES.knockReach;
-    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockTrinket(state, cat, trinket.kind, rng);
-  }
+  knockInPassing(state, cat, from, rng);
   act.minutes -= used;
   if (!act.goal && act.minutes > 0) act.goal = randomFloor(rng);
   if (cat.act !== act) return minutes - used;
@@ -2652,6 +2800,23 @@ function zoom(state: GameState, cat: Cat, minutes: number, rng: Rng, context: Ca
     emit(state, { type: "knocked-down", cat: cat.id });
   }
   return minutes - used;
+}
+
+/**
+ * Кіт мчить повз стіл чи кухонну поверхню (ближче `ZOOMIES.knockReach`) — страва чи дрібничка на них падає з шансом `ZOOMIES.knock`,
+ * раз за прохід (§9.12): забіг зумі й погоня в грі двох котів (§9.4, Г3).
+ */
+function knockInPassing(state: GameState, cat: Cat, from: Vec, rng: Rng): void {
+  for (const id of SURFACE_IDS) {
+    if (!state.home.surfaces[id]) continue;
+    const near = (p: Vec): boolean => distanceToRect(p, objectById(id)) <= ZOOMIES.knockReach;
+    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockOff(state, cat, id);
+  }
+  // Так само й дрібничка на столі (§9.12, «Скидання речей»).
+  for (const trinket of standingTrinkets(state)) {
+    const near = (p: Vec): boolean => distanceToRect(p, objectById(trinket.object)) <= ZOOMIES.knockReach;
+    if (!near(from) && near(cat) && rng.chance(ZOOMIES.knock)) knockTrinket(state, cat, trinket.kind, rng);
+  }
 }
 
 /** Кіт повертається зі сходів сам о 22:00 (§9.12). */
@@ -2864,7 +3029,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.goal) break;
       climbed(state, cat, rng);
       defied(state, cat);
-      if (cat.act.kind === "wrestle") metMate(state, cat);
+      if (cat.act.kind === "wrestle") metMate(state, cat, rng);
       if (cat.act.kind === "groom") metGroomee(state, cat);
       if (cat.act.kind === "standoff" || cat.act.kind === "fight") metFoe(state, cat, rng);
       if (cat.act.kind === "sleep") {

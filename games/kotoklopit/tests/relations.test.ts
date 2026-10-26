@@ -237,11 +237,13 @@ describe("друзі (§9.4)", () => {
         for (let t = 0; t < 40 && a.act.goal !== null; t++) tickCats(save.current, 0.05, { present: false });
         expect(a.act.kind, kind).toBe(kind);
         arrived++;
-        const gap = Math.hypot(a.x - b.x, a.y - b.y);
+        // У грі друг, на якого чатують, одразу відходить (засідка, §9.4, рішення автора 2026-10-26, Г3): міряємо від того, де він
+        // чекав; той, хто прибіг, чатує на нього обличчям до нього.
+        const at = kind === "wrestle" ? { x: 10.5, y: 8.5 } : b;
+        const gap = Math.hypot(a.x - at.x, a.y - at.y);
         expect(gap, kind).toBeGreaterThan(0.3);
         expect(gap, kind).toBeLessThan(0.6);
         expect(a.facing, kind).toBe(b.x > a.x ? 1 : -1);
-        if (kind === "wrestle") expect(b.facing).toBe(a.x > b.x ? 1 : -1);
       }
       expect(arrived, kind).toBe(5);
     }

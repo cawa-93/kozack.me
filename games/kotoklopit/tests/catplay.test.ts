@@ -347,3 +347,146 @@ describe("взаємність (§9.4, рішення автора 2026-10-26, �
     }
   });
 });
+
+describe("гра фазами (§9.4, рішення автора 2026-10-26, Г3)", () => {
+  /** Двоє друзів: `a` підбігає до `b` гратися (як після `decide`). */
+  function friendsPlay(seed: number, at = { x: 8.5, y: 8.5 }, gap = 2): { save: Save; a: Cat; b: Cat } {
+    const save = game(seed);
+    const a = withCat(save, {}, at);
+    const b = withCat(save, {}, { x: at.x + gap, y: at.y });
+    setRelation(save, a, b, 70);
+    a.act = { kind: "wrestle", target: `cat:${b.id}`, goal: { x: Math.floor(b.x), y: Math.floor(b.y) }, minutes: 8, elapsed: 0 };
+    b.act = { kind: "wrestle", target: `cat:${a.id}`, goal: null, minutes: 10, elapsed: 0 };
+    return { save, a, b };
+  }
+
+  const DT = 0.05;
+  const playing = (a: Cat, b: Cat): boolean => a.act.kind === "wrestle" && b.act.kind === "wrestle";
+
+  it("6–8 хвилин від зустрічі, по колу: засідка (0,5–1) → погоня → боротьба → пауза (0,3–0,5); догралися — подія без бабла", () => {
+    for (let seed = 1; seed <= 12; seed++) {
+      const { save, a, b } = friendsPlay(seed);
+      for (let t = 0; t < 100 && a.act.paired !== true; t++) tickCats(save.current, DT, { present: false });
+      expect(a.act.lead).toBe(true);
+      const phases: { phase: string; minutes: number }[] = [];
+      let total = 0;
+      const { events, stop } = recordEvents();
+      for (let t = 0; t < 400 && playing(a, b); t++) {
+        const phase = a.act.game?.phase ?? "";
+        // Друг бачить ту саму фазу й того самого мисливця.
+        expect(b.act.game?.phase).toBe(phase);
+        expect(b.act.game?.chaser).toBe(a.act.game?.chaser);
+        const last = phases[phases.length - 1];
+        if (last?.phase === phase) last.minutes += DT;
+        else phases.push({ phase, minutes: DT });
+        tickCats(save.current, DT, { present: false });
+        total += DT;
+      }
+      stop();
+      expect(total).toBeGreaterThan(6 - 2 * DT);
+      expect(total).toBeLessThan(8 + 2 * DT);
+      expect(phases[0]?.phase).toBe("ambush");
+      const order = ["ambush", "chase", "tussle", "pause"];
+      phases.forEach((p, i) => expect(p.phase).toBe(order[i % 4]));
+      for (const p of phases.slice(0, -1)) {
+        if (p.phase === "ambush") expect(p.minutes).toBeGreaterThan(0.5 - 2 * DT);
+        if (p.phase === "ambush") expect(p.minutes).toBeLessThan(1 + 2 * DT);
+        if (p.phase === "pause") expect(p.minutes).toBeLessThan(0.5 + 2 * DT);
+      }
+      const played = events.filter((e) => e.type === "cats-played");
+      expect(played).toHaveLength(1);
+      const [event] = played;
+      if (event) expect(eventBubbles(event)).toEqual([]);
+      expect(a.needs.play).toBe(0);
+      expect(relation(save.current, a, b)).toBe(72);
+    }
+  });
+
+  it("засідка: мисливець на місці обличчям до другого, а той відходить на 1,5–2,5 клітинки", () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      const { save, a, b } = friendsPlay(seed);
+      for (let t = 0; t < 100 && a.act.paired !== true; t++) tickCats(save.current, DT, { present: false });
+      const at = { x: a.x, y: a.y };
+      for (let t = 0; t < 30 && a.act.game?.phase === "ambush"; t++) {
+        expect({ x: a.x, y: a.y }).toEqual(at);
+        if (b.act.run === undefined && t > 0) {
+          expect(a.facing).toBe(b.x > a.x ? 1 : -1);
+          const gap = Math.hypot(a.x - b.x, a.y - b.y);
+          expect(gap).toBeGreaterThan(1.5 - 1e-6);
+          expect(gap).toBeLessThan(2.5 + 1e-6);
+          checked++;
+          break;
+        }
+        tickCats(save.current, DT, { present: false });
+      }
+    }
+    expect(checked).toBeGreaterThan(6);
+  });
+
+  it("погоня: швидкістю зумі в межах кімнати, мисливець тримається позаду; ролі щохвилини міняються з шансом 50%", () => {
+    let swaps = 0;
+    let chaseMinutes = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const { save, a, b } = friendsPlay(seed);
+      for (let t = 0; t < 400 && playing(a, b); t++) {
+        const game = a.act.game;
+        const before = { a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, chaser: game?.chaser, phase: game?.phase };
+        tickCats(save.current, DT, { present: false });
+        if (before.phase !== "chase" || a.act.game?.phase !== "chase") continue;
+        chaseMinutes += DT;
+        if (a.act.game.chaser !== before.chaser) swaps++;
+        for (const [cat, from] of [[a, before.a], [b, before.b]] as const) {
+          expect(Math.hypot(cat.x - from.x, cat.y - from.y)).toBeLessThan(2.5 * 3 * DT + 1e-6);
+          expect(cat.y).toBeGreaterThanOrEqual(6);
+        }
+      }
+    }
+    // Щохвилини — з шансом 50%.
+    expect(swaps / chaseMinutes).toBeGreaterThan(0.3);
+    expect(swaps / chaseMinutes).toBeLessThan(0.7);
+  });
+
+  it("погоня повз стіл скидає з нього страву, як зумі", () => {
+    let knocked = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      // Кухня: стіл посередині.
+      const { save, a, b } = friendsPlay(seed, { x: 13.5, y: 2.5 }, 1);
+      save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" };
+      const { events, stop } = recordEvents();
+      for (let t = 0; t < 400 && playing(a, b); t++) tickCats(save.current, DT, { present: false });
+      stop();
+      knocked += count(events, "knocked");
+    }
+    expect(knocked).toBeGreaterThan(0);
+  });
+
+  it("погладили одного з котів посеред гри — гри немає нікому", () => {
+    const { save, a, b } = friendsPlay(3);
+    for (let t = 0; t < 100 && a.act.paired !== true; t++) tickCats(save.current, DT, { present: false });
+    tickCats(save.current, 1, { present: true });
+    save.current.character.activity = { kind: "pet", cat: b.id, minutes: 0 };
+    const { events, stop } = recordEvents();
+    tickCats(save.current, DT, { present: true });
+    stop();
+    expect(playing(a, b)).toBe(false);
+    expect(count(events, "cats-played")).toBe(0);
+    expect(relation(save.current, a, b)).toBe(70);
+  });
+
+  it("стара гра без фаз (збереження до блоку 3) догравається, як раніше", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 9.1, y: 8.5 });
+    const b = withCat(save, {}, { x: 9.5, y: 8.5 });
+    setRelation(save, a, b, 70);
+    a.needs.play = 80;
+    a.act = { kind: "wrestle", target: `cat:${b.id}`, goal: null, minutes: 2, elapsed: 1, paired: true };
+    b.act = { kind: "wrestle", target: `cat:${a.id}`, goal: null, minutes: 2, elapsed: 1, paired: true };
+    const { events, stop } = recordEvents();
+    for (let t = 0; t < 60 && playing(a, b); t++) tickCats(save.current, DT, { present: false });
+    stop();
+    expect(count(events, "cats-played")).toBe(1);
+    expect(a.needs.play).toBeLessThan(80);
+    expect(relation(save.current, a, b)).toBe(72);
+  });
+});

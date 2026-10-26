@@ -222,6 +222,8 @@ export type GameEvent =
   | { type: "groom-started"; cat: number; friend: number }
   | { type: "groomed"; cat: number; friend: number }
   | { type: "cat-fight"; cats: [number, number] }
+  /** Двоє котів догралися — засідка, погоня, боротьба (§9.4, рішення автора 2026-10-26, Г3): без бабла, для журналу. */
+  | { type: "cats-played"; cats: [number, number] }
   /** Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). */
   | { type: "hissed"; cat: number; at: number }
   /** «Шипить на гостей» шипить з-під дивана на дзвінок чи на гостей (§9.12, «Гості»). */
