@@ -33,6 +33,9 @@ const calm = (cat: Cat): void => {
   cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
 };
 
+/** Шанси: скільки разів так проти скількох інакше. */
+const odds = (count: number, of: number): number => count / Math.max(1, of - count);
+
 const setRelation = (save: Save, a: Cat, b: Cat, value: number): void => {
   save.current.relations[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`] = value;
 };
@@ -123,9 +126,9 @@ describe("друзі (§9.4)", () => {
     expect(chosen(0, 1)).toBeGreaterThan(0);
     expect(chosen(0, 1, 1)).toBeGreaterThan(0);
     expect(chosen(-60, 1)).toBe(0);
-    // Дорослий нейтрального не кличе, а друга кличе рідше, ніж кошеня.
+    // Дорослий нейтрального не кличе, а друга кличе рідше, ніж кошеня: вага × 2,5 — і шанси (гра проти решти забав) ~ ×2,5.
     expect(chosen(0, 3)).toBe(0);
-    expect(chosen(80, 1)).toBeGreaterThan(chosen(80, 3) * 1.5);
+    expect(odds(chosen(80, 1), 400)).toBeGreaterThan(odds(chosen(80, 3), 400) * 1.8);
   });
 
   it("«Сам ще кошеня» й кошеня, що не друзі, разом не граються: він таких кошенят відганяє (перевірка блоку 2)", () => {
@@ -155,6 +158,22 @@ describe("друзі (§9.4)", () => {
     expect(chosen(0, 2, true)).toBeGreaterThan(0);
   });
 
+  it("з вільним другом поруч кіт, що хоче гратися, найчастіше кличе гратися його: вага 3 (рішення автора 2026-10-26 після блоку 2, заміри блоку 4; було 0,6)", () => {
+    let count = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const save = game();
+      const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+      const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+      setRelation(save, a, b, 80);
+      b.act = idleAct(30);
+      a.needs.play = 100;
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind === "wrestle" && a.act.target === `cat:${b.id}`) count++;
+    }
+    // З вагою 0,6 — близько 20% рішень, з 3 — понад половину.
+    expect(count / 400).toBeGreaterThan(0.45);
+  });
+
   it("старий кличе друга гратися вдвічі рідше, «Ігривість» — ±50% за одиницю, «Нудьгар» не кличе (рішення автора 2026-10-26, Г7)", () => {
     const chosen = (traits: Record<string, TraitLevel>, ageWeeks = 3): number => {
       let count = 0;
@@ -170,11 +189,12 @@ describe("друзі (§9.4)", () => {
       }
       return count;
     };
-    const plain = chosen({});
-    expect(chosen({}, 6)).toBeLessThan(plain * 0.7);
-    expect(chosen({}, 6)).toBeGreaterThan(plain * 0.3);
-    expect(chosen({ playful: 2 })).toBeGreaterThan(plain * 1.4);
-    expect(chosen({ playful: -1 })).toBeLessThan(plain * 0.75);
+    // Вага множиться — і шанси гри проти решти забав множаться так само (з вагою 3 імовірність уже насичується, блок 4).
+    const plain = odds(chosen({}), 600);
+    expect(odds(chosen({}, 6), 600)).toBeLessThan(plain * 0.7);
+    expect(odds(chosen({}, 6), 600)).toBeGreaterThan(plain * 0.3);
+    expect(odds(chosen({ playful: 2 }), 600)).toBeGreaterThan(plain * 1.5);
+    expect(odds(chosen({ playful: -1 }), 600)).toBeLessThan(plain * 0.7);
     expect(chosen({ playful: -2 })).toBe(0);
   });
 
