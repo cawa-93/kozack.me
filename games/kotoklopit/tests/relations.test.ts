@@ -102,6 +102,46 @@ describe("друзі (§9.4)", () => {
     expect(chosen(30, "pile")).toBe(0);
   });
 
+  it("кошеня кличе гратися будь-кого, хто не ворог, — і з вагою 1,5 замість 0,6 (рішення автора 2026-10-26, Г2)", () => {
+    const chosen = (value: number, kittenAge: number, mateAge = 30): number => {
+      let count = 0;
+      for (let seed = 0; seed < 400; seed++) {
+        const save = game();
+        const a = withCat(save, {}, { x: 8.5, y: 8.5 }, kittenAge);
+        const b = withCat(save, {}, { x: 10.5, y: 8.5 }, mateAge);
+        setRelation(save, a, b, value);
+        b.act = idleAct(30);
+        a.needs.play = 100;
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind === "wrestle" && a.act.target === `cat:${b.id}`) count++;
+      }
+      return count;
+    };
+    // Нейтральний дорослий, нейтральне кошеня — кличе; ворога — ні.
+    expect(chosen(0, 1)).toBeGreaterThan(0);
+    expect(chosen(0, 1, 1)).toBeGreaterThan(0);
+    expect(chosen(-60, 1)).toBe(0);
+    // Дорослий нейтрального не кличе, а друга кличе рідше, ніж кошеня.
+    expect(chosen(0, 30)).toBe(0);
+    expect(chosen(80, 1)).toBeGreaterThan(chosen(80, 30) * 1.5);
+  });
+
+  it("брати й сестри починають з +50 — одразу друзі (рішення автора 2026-10-26, Г2: було +30)", () => {
+    const save = game();
+    const mother = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const born = (): Cat => {
+      const kitten = createCat(save.current, createRng(save.current.cats.length + 7), { source: "born", ageWeeks: 1, at: { x: 9.5, y: 8.5 } });
+      kitten.traits = [];
+      kitten.parents = { mother: mother.id, father: null };
+      addCat(save.current, kitten);
+      return kitten;
+    };
+    const a = born();
+    const b = born();
+    expect(relation(save.current, a, b)).toBe(50);
+    expect(relation(save.current, mother, a)).toBe(70);
+  });
+
   it("друг з іншої кімнати дочікується: хвилини гри йдуть обом від зустрічі (перевірка стосунків 2026-10-26)", () => {
     let sessions = 0;
     for (let seed = 0; seed < 60 && sessions < 5; seed++) {

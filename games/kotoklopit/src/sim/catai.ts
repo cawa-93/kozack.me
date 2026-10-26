@@ -1504,13 +1504,19 @@ function nightMischief(state: GameState, cat: Cat): void {
 
 /**
  * З ким погратися й з якою вагою (§9.4): удома, не спить, нічим не зайнятий і до нього можна підійти (`approachable`). Найближчий
- * друг, а нема — найближчий приятель з удвічі меншою вагою (рішення автора 2026-10-26, Г1).
+ * друг, а нема — найближчий приятель з удвічі меншою вагою (рішення автора 2026-10-26, Г1). Кошеня кличе й будь-кого, хто не
+ * ворог, — і всіх з вагою друга × 2,5 (Г2).
  */
 function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | null {
   const w = RELATIONS.wrestle;
+  const kitten = isKitten(cat);
   const free = (other: Cat): boolean => (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") && approachable(state, other);
   const friend = nearestCat(state, cat, (other) => free(other) && isFriend(state, cat, other));
-  if (friend) return { cat: friend, weight: w.weight };
+  if (friend) return { cat: friend, weight: w.weight * (kitten ? w.kitten : 1) };
+  if (kitten) {
+    const anyone = nearestCat(state, cat, (other) => free(other) && !isEnemy(state, cat, other));
+    return anyone ? { cat: anyone, weight: w.weight * w.kitten } : null;
+  }
   const pal = nearestCat(state, cat, (other) => free(other) && isPal(state, cat, other));
   return pal ? { cat: pal, weight: w.palWeight } : null;
 }
