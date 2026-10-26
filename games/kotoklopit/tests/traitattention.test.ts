@@ -140,6 +140,35 @@ describe("«Ласкавість»: похід через голод (рішен
   });
 });
 
+describe("пестощі й гра голодного кота (рішення автора 2026-10-26)", () => {
+  it("голодного кота під рукою пестощі не скидають щокадру: він не вирішує щоразу, куди йти, і rng не витрачає більше за ситого; відпустили — іде просити їсти", () => {
+    const petted = (hunger: number): { save: Save; cat: Cat } => {
+      const save = game();
+      for (const item of save.current.home.items) if (item.kind === "bowl") item.food = 0;
+      const cat = withCat(save);
+      cat.needs.hunger = hunger;
+      cat.needs.attention = 80;
+      faceCat(save);
+      advance(save, 0.05, HOLD);
+      expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
+      for (let i = 0; i < 20; i++) {
+        advance(save, 0.05, HOLD);
+        expect(cat.act.kind, `кадр ${i}`).toBe("idle");
+      }
+      return { save, cat };
+    };
+    const full = petted(10);
+    const { save, cat } = petted(95);
+    // Голодний під рукою щокадру не вирішує, куди йти: випадковість та сама, що й у ситого.
+    expect(save.current.rng.behavior).toBe(full.save.current.rng.behavior);
+    // Відпустили кнопку — голодний кіт одразу йде просити.
+    advance(save, 0.05);
+    advance(save, 0.05);
+    expect(save.current.character.activity).toBeNull();
+    expect(["beg", "attention"]).toContain(cat.act.kind);
+  });
+});
+
 describe("«Терпимість до гладження» (рішення автора 2026-10-25)", () => {
   it("за хвилину до кінця терпіння кіт попереджає: невдоволений, хоч уваги ще хоче", () => {
     const save = game();

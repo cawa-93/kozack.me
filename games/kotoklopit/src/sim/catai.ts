@@ -2496,7 +2496,9 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     cat.act.kind === "ambush" ||
     cat.act.kind === "window" ||
     (cat.act.kind === "follow" && cat.act.target !== "food");
-  if (calm && urgent(state, cat)) decide(state, cat, rng, context);
+  // Кота під рукою — його пестять чи з ним грають — нагальне не перериває: інакше пестощі щокадру повертали б голодного кота на
+  // місце, а він щокадру знову вирішував би, куди йти, витрачаючи rng (рішення автора 2026-10-26). Відпустили — вирішить сам.
+  if (calm && urgent(state, cat) && !getsAttention(state, cat)) decide(state, cat, rng, context);
   if (cat.act.kind === "attention") {
     if (!context.present) cat.act.minutes = 0;
     else {
