@@ -25,6 +25,13 @@ const WALK_STEP = 0.1;
 const HOLD_STEP = 0.5;
 /** Нижче цього здорового глузду бот рятується: пестить будь-якого кота й працює лише від «Х». */
 const CRISIS_SANITY = 30;
+/**
+ * За скільки годин до пробудження бот іде спати: дорога до ліжка забирає кілька хвилин, а сон коротший за 8 годин не
+ * відновлює (§8.8) і не лікує виснаження (§6.5). Хворий лягає раніше: так він висипається й після нічних побудок
+ * (баланс 2026-10-26: з 8,05 бот спав ~7,8 години, і виснаження не минало ніколи — 5 з 17 програшів від здоров'я).
+ */
+const BEDTIME_HOURS = 8.4;
+const BEDTIME_ILL_HOURS = 9.5;
 /** Скільки годин на день бот шукає роботу після звільнення (§8.6). */
 const SEARCH_HOURS_PER_DAY = 6;
 
@@ -80,7 +87,7 @@ export class Bot {
     for (let guard = 0; guard < 50_000; guard++) {
       if (this.state.end !== null) return null;
       if (this.state.day !== day) return this.state.lastNight;
-      if (hoursUntilWake(this.state) <= 8.05) return this.sleep();
+      if (hoursUntilWake(this.state) <= this.bedtime()) return this.sleep();
       // Оглушений персонаж нічого не може (§9.12): дочекатися, а не повторювати дію без руху часу.
       const stun = this.state.character.body.stun;
       if (stun > 0) {
@@ -96,6 +103,11 @@ export class Bot {
       if (this.state.minute === before && this.state.day === day) this.wait(1);
     }
     return this.sleep();
+  }
+
+  /** За скільки годин до пробудження лягати (див. `BEDTIME_HOURS`). */
+  private bedtime(): number {
+    return this.state.character.illnesses.length > 0 ? BEDTIME_ILL_HOURS : BEDTIME_HOURS;
   }
 
   // --- Рішення ------------------------------------------------------------------------------
