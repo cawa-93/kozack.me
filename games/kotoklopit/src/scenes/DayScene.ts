@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
-import { catOnSink, isDirty, trashTipped } from "../sim/catai";
+import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -260,7 +260,9 @@ export class DayScene extends Phaser.Scene {
   private act(): void {
     if (this.blocked()) return;
     const { held, activity } = this.state.character;
-    if (held === null && activity === null && targetOf(this.state)?.type === "cat") {
+    const target = targetOf(this.state);
+    // Кота в протистоянні торкаються одразу, натисканням (§9.4): відпустивши кнопку, його не беруть на руки.
+    if (held === null && activity === null && target?.type === "cat" && !inStandoff(target.cat)) {
       this.catPress = this.time.now;
       return;
     }

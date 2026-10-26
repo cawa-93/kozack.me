@@ -125,7 +125,8 @@ export class Bot {
     if (patient) return named("treat", () => this.treat(patient.cat, patient.medicine));
     // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
     if (needsHumanMeds(s) && supplyCount(s, "humanMeds") > 0 && !this.skipped("sink")) return named("meds", () => this.use("sink"));
-    const fighter = s.cats.find((c) => c.act.kind === "fight" && c.away === null);
+    // Бійку розбороняє, а протистояння розводить — торкнувшись кота (§9.4).
+    const fighter = s.cats.find((c) => (c.act.kind === "fight" || c.act.kind === "standoff") && c.away === null);
     if (fighter) return named("separate", () => this.separate(fighter));
     if (s.home.stove.item?.kind === "meal") return named("serveMeal", () => this.serveMeal());
     if (s.home.surfaces["table"]?.kind === "meal") return named("eat", () => this.eat());

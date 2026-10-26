@@ -163,6 +163,12 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} шипить на гостей`;
     case "fight-stopped":
       return `Бійку розборонено (${catName(state, event.cat)} на руках)`;
+    case "standoff":
+      return `Протистояння: ${catName(state, event.cats[0])} підходить до ${catName(state, event.cats[1])}`;
+    case "standoff-parted":
+      return `Протистояння розвели (торкнулися: ${catName(state, event.cat)})`;
+    case "cat-retreated":
+      return `${catName(state, event.cat)} відступає від ${catName(state, event.from)} і ховається`;
     case "scratched":
       return `${catName(state, event.cat)} точить кігті: ${SCRATCH_SPOTS[event.where]}`;
     case "received":

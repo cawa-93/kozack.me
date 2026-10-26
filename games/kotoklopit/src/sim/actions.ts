@@ -3,7 +3,7 @@
 
 import { actionSpeed, isMoving } from "./body";
 import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
-import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, trashTipped, turnAway, upHigh, waterFright } from "./catai";
+import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, touchStandoff, trashTipped, turnAway, upHigh, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
@@ -127,6 +127,8 @@ export function tap(state: GameState): TapResult {
       // Безлад прибирають утриманням дії, і ціллю він буває лише з порожніми руками.
       return null;
     case "cat":
+      // Кота в протистоянні торкаються — коти розходяться (§9.4, рішення автора 2026-10-26); рук для цього не треба.
+      if (touchStandoff(state, target.cat)) return null;
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Кіт сидить на умивальнику й просить води — натискання відкриває йому кран, а не бере на руки (§9.12, «Пиття»).
       if (catOnSink(state) === target.cat) {
@@ -592,6 +594,9 @@ function holdTick(state: GameState, minutes: number): boolean {
   if (character.activity === null) {
     const target = targetOf(state);
     if (target === null) return false;
+    // Кота в протистоянні не гладять і з ним не граються — утримання торкається його раз (§9.4): коти розходяться, а
+    // пестощі не почнуться, доки кнопку не відпустили.
+    if (target.type === "cat" && touchStandoff(state, target.cat)) return true;
     if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
     else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.

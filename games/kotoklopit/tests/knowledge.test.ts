@@ -196,12 +196,15 @@ describe("чесні прояви (рішення автора 2026-10-25, `TRAI
     const a = withCat(save, { sociability: -1, territorial: 2 }, { x: 9.5, y: 8.5 });
     const b = withCat(save, {}, { x: 10.3, y: 8.5 });
     changeRelation(save.current, a, b, -80 - relation(save.current, a, b));
-    for (let i = 0; i < 300 && a.act.kind !== "fight"; i++) {
-      for (const cat of [a, b]) {
-        cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
-        cat.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
+    // До бійки — протистояння (§9.4, рішення автора 2026-10-26): поки його немає, обидва знову стоять поруч без справ.
+    for (let i = 0; i < 2000 && a.act.kind !== "fight"; i++) {
+      for (const cat of [a, b]) cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+      if (a.act.kind !== "standoff" && b.act.kind !== "standoff") {
+        Object.assign(a, { x: 9.5, y: 8.5 });
+        Object.assign(b, { x: 10.3, y: 8.5 });
+        for (const cat of [a, b]) cat.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
       }
-      tickCats(save.current, 1, { present: true });
+      tickCats(save.current, 0.25, { present: true });
     }
     expect(a.act.kind).toBe("fight");
     expect(a.traits[0]?.seen).toBe(1);

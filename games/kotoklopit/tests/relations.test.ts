@@ -243,13 +243,21 @@ describe("вороги (§9.4)", () => {
     return { save, a, b };
   }
 
+  /**
+   * До бійки — протистояння (§9.4, рішення автора 2026-10-26): поки його немає, обидва знову стоять поруч без справ, а
+   * протистояння добігає кінця — бійкою чи відступом.
+   */
   function untilFight(save: Save, a: Cat, b: Cat): void {
-    for (let i = 0; i < 300 && a.act.kind !== "fight"; i++) {
+    for (let i = 0; i < 2000 && a.act.kind !== "fight"; i++) {
       calm(a);
       calm(b);
-      a.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
-      b.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
-      tickCats(save.current, 1, { present: false });
+      if (a.act.kind !== "standoff" && b.act.kind !== "standoff") {
+        Object.assign(a, { x: 9.5, y: 8.5 });
+        Object.assign(b, { x: 10.3, y: 8.5 });
+        a.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
+        b.act = { kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0 };
+      }
+      tickCats(save.current, 0.25, { present: false });
     }
   }
 
@@ -277,9 +285,10 @@ describe("вороги (§9.4)", () => {
     for (const kind of ["pet", "play"] as const) {
       const { save, a, b } = enemies();
       const s = save.current;
-      Object.assign(s.character.body, { x: 9.5, y: 9.5 });
       untilFight(save, a, b);
       expect(a.act.kind).toBe("fight");
+      // Бійка — там, де коти зійшлися в протистояння (§9.4): персонаж поруч.
+      Object.assign(s.character.body, { x: a.x, y: a.y + 0.6 });
       a.needs.attention = 90;
       a.needs.play = 90;
       if (kind === "play") {

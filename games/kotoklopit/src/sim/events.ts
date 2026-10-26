@@ -225,6 +225,12 @@ export type GameEvent =
   /** «Шипить на гостей» шипить з-під дивана на дзвінок чи на гостей (§9.12, «Гості»). */
   | { type: "hissed-guests"; cat: number }
   | { type: "fight-stopped"; cat: number }
+  /** Вороги сходяться в протистояння (§9.4, рішення автора 2026-10-26): перший підходить до другого. */
+  | { type: "standoff"; cats: [number, number] }
+  /** Гравець торкнувся кота в протистоянні — коти розходяться (§9.4). */
+  | { type: "standoff-parted"; cat: number }
+  /** Кіт відступив від ворога й ховається (§9.4): програв бійку чи протистояння. */
+  | { type: "cat-retreated"; cat: number; from: number }
   | { type: "keyboard"; cat: number }
   | { type: "knocked-down"; cat: number }
   /** Кіт вистрибнув із засідки персонажу на ноги й збив його (§9.12, «Засідки»). */

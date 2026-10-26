@@ -1286,7 +1286,20 @@ export const RELATIONS = {
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
   /** Кіт підійшов до іншого кота (гратися, вилизати, лягти купкою) — стає впритул збоку на стільки клітинки, а не на нього. */
   beside: 0.4,
-  fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3 },
+  /**
+   * Бійка ворогів (§9.4): `minutes` хвилин, обом настрій і стосунки; розборонити — `separateSanity`; нерозборонена — травма з
+   * шансом `injury`. Хто програє — менша «Сміливість» + «Територіальність» + випадковість 0…`luck`; він відступає й ховається на
+   * `hide` хвилин (від і до), а переможець сидить `winnerSits` хвилин (рішення автора 2026-10-26). Коти стоять за `gap` клітинки.
+   */
+  fight: { minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3, luck: 2, hide: [15, 30], winnerSits: 3, gap: 0.6 },
+  /**
+   * Протистояння перед бійкою (§9.4, рішення автора 2026-10-26): вороги ближче `distance` клітинок щохвилини з шансом `perMinute`
+   * сходяться — один підходить, другий чекає до `wait` хвилин; пара — поки обидва ближче `reach`. Від зустрічі — `minutes` хвилин
+   * (від і до), щохвилини шипіння. Далі бійка з шансом `fight` + `territorialStep` за одиницю «Територіальності» обох (лише «+»),
+   * некастрованим самцям × `BREEDING.fightFactor`; інакше той, хто програв би, відступає. Торкнутися — коти розходяться на `part`
+   * клітинки, здоровий глузд `touchSanity`.
+   */
+  standoff: { distance: 3, perMinute: 0.1, wait: 3, reach: 1.5, minutes: [2, 4], fight: 0.4, territorialStep: 0.1, part: 2, touchSanity: -1 },
   enemyMoodPerHour: -0.5,
   /** Сварка за ресурс — лише з котом поруч (до `distance` клітинок). */
   resource: { chance: 0.15, territorialStep: 0.1, relation: -3, distance: 3 },

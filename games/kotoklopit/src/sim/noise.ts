@@ -43,8 +43,8 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, onl
   const heard: number[] = [];
   for (const cat of state.cats) {
     if (cat.away !== null || isCarried(state, cat) || isNewborn(cat)) continue;
-    // Хто вже ховається чи б'ється, на звук не зважає.
-    if (cat.act.kind === "hide" || cat.act.kind === "fight") continue;
+    // Хто вже ховається, б'ється чи стоїть у протистоянні (§9.4), на звук не зважає.
+    if (cat.act.kind === "hide" || cat.act.kind === "fight" || cat.act.kind === "standoff") continue;
     if (at !== null && !hears(cat, at)) continue;
     if (only && !only(cat)) continue;
     heard.push(cat.id);
