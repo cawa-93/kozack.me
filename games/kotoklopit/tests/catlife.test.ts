@@ -252,6 +252,25 @@ describe("поведінка котів: пошук багів 2026-10-25 (§9.1
     expect(cat.act.kind).toBe("drink");
   });
 
+  it("спраглий кіт без жодної миски для води просить пити, а не засинає щохвилини (перевірка стосунків 2026-10-26)", () => {
+    const save = game();
+    save.current.home.items = save.current.home.items.filter((i) => i.kind !== "water");
+    const cat = withCat(save, { x: 9.5, y: 8.5 });
+    save.current.minute = hours(13);
+    cat.needs = { hunger: 0, thirst: 96, toilet: 0, fatigue: 70, attention: 0, play: 0 };
+    const { events, stop } = recordEvents();
+    let naps = 0;
+    for (let i = 0; i < 120; i++) {
+      const before = cat.act;
+      live(save, 1, true);
+      if (cat.act !== before && cat.act.kind === "sleep") naps++;
+    }
+    stop();
+    expect(naps).toBe(0);
+    expect(cat.act).toMatchObject({ kind: "beg", target: "water" });
+    expect(events.filter((e) => e.type === "meow" && e.cat === cat.id).length).toBeGreaterThan(0);
+  });
+
   it("сплячий кіт без уваги не сумує: він нічого не просить", () => {
     const save = game();
     const cat = withCat(save);

@@ -925,8 +925,11 @@ export class DayScene extends Phaser.Scene {
       const fighting = cat.act.kind === "fight";
       // Дзвіночок видає кота, що ховається (§9.10).
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
+      // Пити просить і біля порожньої миски для води, і там, де вона стояла, коли мисок немає (перевірка стосунків 2026-10-26:
+      // біля порожньої миски для води над котом був корм).
+      const thirsty = cat.act.target === "sink" || cat.act.target === "water" || state.home.items.some((i) => i.kind === "water" && `item:${i.id}` === cat.act.target);
       // «Втікач» під дверима просить на сходи — кричить (§9.12 «Двері й гості»).
-      const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
+      const ask: IconName = thirsty ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
       // «Терплячий зранку» біля ліжка чекає мовчки (§9.12, рішення автора 2026-10-26): хоче їсти — думка, а не нявкання.
       const key = `cat:${cat.id}` as const;
       if (cat.away === null && !fighting && asking && cat.act.target === "bed") {

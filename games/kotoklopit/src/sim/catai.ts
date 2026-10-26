@@ -117,7 +117,7 @@ import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -393,7 +393,7 @@ export function bowlFull(bowl: BowlItem): boolean {
  */
 export function beggingFood(cat: Cat): boolean {
   const target = cat.act.target;
-  return (cat.act.kind === "beg" && target !== "sink" && target !== "door" && target !== "high") || (cat.act.kind === "attention" && cat.act.forFood === true);
+  return (cat.act.kind === "beg" && target !== "sink" && target !== "water" && target !== "door" && target !== "high") || (cat.act.kind === "attention" && cat.act.forFood === true);
 }
 
 /** Висока річ під котом — верх холодильника чи шафи (§9.12, «Лазіння»); null — не нагорі. */
@@ -778,6 +778,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     const waters = itemsOf(state, "water");
     const water = nearest(cat, avoidNew(state, cat, waters.filter((w) => w.water > 0))) ?? nearest(cat, waters);
     if (water) return start(cat, water.water > 0 ? "drink" : "beg", itemTile(water), water.water > 0 ? CAT_ACT_MINUTES.drink : CAT_ACT_MINUTES.beg, `item:${water.id}`);
+    // Мисок для води немає зовсім (розбилися): кіт просить пити там, де вона стояла (§9.12, перевірка стосунків 2026-10-26: раніше
+    // мовчки лягав спати й прокидався від спраги щохвилини).
+    const slot = SLOTS.find((s) => s.kind === "water");
+    if (slot) return start(cat, "beg", { x: slot.x, y: slot.y }, CAT_ACT_MINUTES.beg, "water");
   }
   if (hungry) {
     // Миски порожні: шафка з кормом відчинена — їсть звідти будь-хто, а кмітливий відчиняє її сам — раніше, ніж красти зі
