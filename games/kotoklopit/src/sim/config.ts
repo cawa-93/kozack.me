@@ -874,12 +874,13 @@ export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinu
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, boxes: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
 /**
  * «Мисливський інстинкт» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
- * хоче гратися, розмотує рулон туалетного паперу у ванній з вагою `roll` × (1 + `rollStep` × рівень), кошеня — ×`kitten`,
+ * хоче гратися, розмотує рулон туалетного паперу у ванній з вагою `roll` × (1 + `rollStep` × рівень) (`roll` 0,05 — рішення автора
+ * 2026-10-26, було 0,12), кошеня — ×`kitten`,
  * «−» — ніколи; лапає рулон `pawMinutes` хвилин і тягне паперову стрічку у вітальню. Гра наодинці знімає потребу гри
  * ×(1 + `soloStep` × рівень), не менше ×`soloMin`, а іграшка «+» зношується ×(1 + `wearStep` × рівень). Прояв — не частіше ніж
  * раз на `observeEvery` хвилин (лапає й тягне — один бешкет).
  */
-export const HUNTING = { roll: 0.12, rollStep: 0.75, kitten: 2, pawMinutes: 1, soloStep: 0.25, soloMin: 0.5, wearStep: 0.5, observeEvery: 30 } as const;
+export const HUNTING = { roll: 0.05, rollStep: 0.75, kitten: 2, pawMinutes: 1, soloStep: 0.25, soloMin: 0.5, wearStep: 0.5, observeEvery: 30 } as const;
 /**
  * «Подарунки й схованки» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
  * хоче гратися, несе річ з вагою `weight` × (1 + рівень), кіт без риси — `base`, «−» — ніколи. Іграшку з підлоги з шансом

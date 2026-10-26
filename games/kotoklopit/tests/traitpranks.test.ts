@@ -166,10 +166,10 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
 });
 
 describe("«Мисливський інстинкт» (§9.12, рішення автора 2026-10-25)", () => {
-  it("вага розмотування: «−» — ніколи, кіт без риси — 0,12, «+» — більше, кошеня — удвічі; розмотаний рулон — до ранку", () => {
+  it("вага розмотування: «−» — ніколи, кіт без риси — 0,05 (рішення автора 2026-10-26), «+» — більше, кошеня — удвічі; розмотаний рулон — до ранку", () => {
     const save = game();
     expect(rollWeight(save.current, withCat(save, { hunting: -1 }))).toBe(0);
-    expect(rollWeight(save.current, withCat(save))).toBeCloseTo(HUNTING.roll);
+    expect(rollWeight(save.current, withCat(save))).toBeCloseTo(0.05);
     expect(rollWeight(save.current, withCat(save, { hunting: 2 }))).toBeCloseTo(HUNTING.roll * (1 + 2 * HUNTING.rollStep));
     expect(rollWeight(save.current, withCat(save, {}, { x: 9.5, y: 7.5 }, 1))).toBeCloseTo(HUNTING.roll * HUNTING.kitten);
     save.current.home.rollDown = true;
