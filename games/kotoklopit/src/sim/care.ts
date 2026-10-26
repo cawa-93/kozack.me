@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS } from "./config";
+import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WEIGHT } from "./config";
 import { catnipReaction, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { fallIll, maybeFallIll } from "./diseases";
@@ -14,6 +14,7 @@ import { isNewborn, motherOf } from "./reproduction";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { Cat, GameState, Quality } from "./types";
+import { gainWeight } from "./weight";
 
 /** Кіт на руках персонажа. */
 export function catInHands(state: GameState): Cat | null {
@@ -73,6 +74,8 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
 
 /** Кіт з'їв ласощі (§7): понад 2 на день — ризик розладу шлунка; інші коти можуть позаздрити (§9.12). */
 function ateTreat(state: GameState, cat: Cat, now: number, rng: Rng): void {
+  // Ласощі — понад порції (§9.12, «Схильність до повноти»).
+  gainWeight(state, cat, WEIGHT.treat);
   cat.treatsToday += 1;
   if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
   cat.treatAt = now;

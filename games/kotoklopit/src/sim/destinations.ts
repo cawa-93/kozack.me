@@ -1,7 +1,7 @@
 // Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, грумер,
 // котокафе, офіс. Кожна подія додає свій час до поїздки; додому персонаж їде вже без гонки.
 
-import { changeMood, createCat, offend, traitLevel } from "./cat";
+import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
@@ -102,8 +102,8 @@ export function vetManner(cat: Cat): VetManner | null {
   return level <= -2 ? "hid" : "hiss";
 }
 
-/** Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я й настрій — знімок; як кіт поводився (§9.12). */
-export function vetExam(state: GameState): { health: number; mood: number; manner: VetManner | null } | null {
+/** Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я, настрій і вага — знімок; як кіт поводився (§9.12). */
+export function vetExam(state: GameState): { health: number; mood: number; weight: number; manner: VetManner | null } | null {
   const cat = tripCat(state);
   const trip = state.trip;
   if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam)) return null;
@@ -123,7 +123,7 @@ export function vetExam(state: GameState): { health: number; mood: number; manne
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });
-  return { health: cat.health, mood: cat.mood, manner };
+  return { health: cat.health, mood: cat.mood, weight: weightOf(cat), manner };
 }
 
 /** Лікування знайденої хвороби (§8.5): дешеве допомагає з шансом 70%, дороге — завжди; хронічну контролює 7 днів. */
@@ -131,7 +131,8 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   const cat = tripCat(state);
   const trip = state.trip;
   const found = cat?.diseases.find((d) => d.id === disease && d.known);
-  if (!cat || !trip || !found || !spend(state, quality === "premium" ? VET.premium : VET.cheap)) return null;
+  // Ожиріння грошима не лікують: минає від дієти й ігор (§9.12, «Схильність до повноти»).
+  if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap)) return null;
   trip.visit += VET.treatMinutes;
   if (DISEASES[disease].cure.kind === "control") {
     found.controlled = state.day + VET.controlDays;

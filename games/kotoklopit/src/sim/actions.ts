@@ -42,6 +42,7 @@ import {
   PETTING,
   PLAY,
   PLAYFUL,
+  PLAY_RELIEF,
   REACH,
   SHOWER_HYGIENE,
   SHOWER_MINUTES,
@@ -58,6 +59,7 @@ import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
 import { targetById, targetOf, type Target } from "./targets";
 import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Vec } from "./types";
+import { exercise } from "./weight";
 import { startWork, stopWork } from "./work";
 
 /** Керування на цю мить: напрямок руху й чи утримується кнопка дії. */
@@ -827,6 +829,8 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   changeMood(state, cat, PLAY.mood * minutes);
   changeLove(state, cat, PLAY.love * minutes);
   cat.needs.play = Math.max(0, cat.needs.play - playDrain(cat) * minutes);
+  // Гра вудкою — рух: зайва вага йде (§9.12, «Схильність до повноти»), як від гри наодинці за ту саму частку потреби гри.
+  exercise(cat, (playDrain(cat) * minutes) / PLAY_RELIEF);
   if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
   if (cat.needs.play < PLAY.bored) {
     activity.done = true;

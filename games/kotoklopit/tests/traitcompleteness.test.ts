@@ -1,6 +1,7 @@
 // Повнота рис (рішення автора 2026-10-25, `TRAITS_REVIEW.md`): кожна група, яку видають котам, або діє й
 // проявляється хоча б одним боком, або тиха. Перевіряється за кодом симуляції: ефект — `traitLevel`,
-// `traitFactor` чи `characterLevel` з назвою групи, прояв — `observe` з назвою групи й боком.
+// `traitFactor` чи `characterLevel` з назвою групи, прояв — `observe` з назвою групи й боком. Тимчасового списку недоведених груп
+// (PENDING) більше немає: етап «Тіло й завершення» (2026-10-26) довів до критерію останню — «Схильність до повноти».
 
 import { describe, expect, it } from "vitest";
 
@@ -13,15 +14,6 @@ const sources = Object.values(
     eager: true,
   }),
 ).join("\n");
-
-/**
- * Групи, які ще не доведено до критерію: без ефекту або без жодного прояву. Тимчасовий список — наступні етапи
- * реалізації розбору скорочують його до порожнього. Готову групу тест проганяє з цього списку.
- */
-const PENDING: ReadonlySet<string> = new Set([
-  // Ще не реалізовано.
-  "chubby",
-]);
 
 /** Групи, які щось змінюють у симуляції. */
 const effects = new Set([...sources.matchAll(/\b(?:traitLevel|traitFactor|characterLevel)\(\s*[\w.]+,\s*"(\w+)"/g)].map((m) => m[1]));
@@ -57,10 +49,6 @@ describe("повнота рис (рішення автора 2026-10-25)", () =>
         expect(sides.size, `${group.id}: тиха, але проявляється`).toBe(0);
         continue;
       }
-      if (PENDING.has(group.id)) {
-        expect(effects.has(group.id) && sides.size > 0, `${group.id} уже діє й проявляється — приберіть її з PENDING`).toBe(false);
-        continue;
-      }
       expect(effects.has(group.id), `${group.id}: немає ефекту`).toBe(true);
       expect(sides.size, `${group.id}: немає прояву`).toBeGreaterThan(0);
     }
@@ -79,9 +67,5 @@ describe("повнота рис (рішення автора 2026-10-25)", () =>
       if (plus === null) expect(sides.has(1), `${group.id}: «+» проявляється, а підказки немає`).toBe(false);
       if (minus === null) expect(sides.has(-1), `${group.id}: «−» проявляється, а підказки немає`).toBe(false);
     }
-  });
-
-  it("у PENDING — лише справжні групи", () => {
-    for (const id of PENDING) expect(TRAIT_GROUPS.some((g) => g.id === id), id).toBe(true);
   });
 });

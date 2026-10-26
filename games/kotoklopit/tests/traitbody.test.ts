@@ -3,16 +3,19 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { giveTreat } from "../src/sim/care";
-import { createCat, idleAct } from "../src/sim/cat";
-import { decide, envy, sunSpot, tickCats } from "../src/sim/catai";
-import { ENVY, MINUTES_PER_DAY, NEED_PER_HOUR, WARMTH } from "../src/sim/config";
-import { newGame } from "../src/sim/game";
+import { createCat, idleAct, weightOf } from "../src/sim/cat";
+import { climbWeight, decide, envy, sunSpot, tickCats } from "../src/sim/catai";
+import { CLIMBING, ENVY, MINUTES_PER_DAY, NEED_PER_HOUR, PLAY_RELIEF, WARMTH, WEIGHT } from "../src/sim/config";
+import { fallIll, hasDisease, nightlyDiseases, walkFactor } from "../src/sim/diseases";
+import { advance, newGame } from "../src/sim/game";
 import { COOL_TILE, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
+import { exercise, gainWeight, girthOf, settleWeight } from "../src/sim/weight";
 import { recordEvents, withCatCorner, hours } from "./helpers";
 
 function game(seed = 11): Save {
@@ -288,5 +291,155 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     stop();
     expect(events.some((e) => e.type === "weather-felt" && e.feel === "hot")).toBe(true);
     expect(seen(cat, "warmth")).toBe(1);
+  });
+});
+
+describe("«Схильність до повноти» (§9.12, рішення автора 2026-10-25)", () => {
+  it("набір ваги: «+» гладшає швидше, «Не товстіє» — ніколи, стерилізований — на 30% швидше", () => {
+    const save = game();
+    const gained = (traits: Record<string, TraitLevel>, sterilized = false): number => {
+      const cat = withCat(save, traits);
+      cat.sterilized = sterilized;
+      gainWeight(save.current, cat, 2);
+      return weightOf(cat) - WEIGHT.norm;
+    };
+    expect(gained({})).toBe(2);
+    expect(gained({ chubby: 2 })).toBe(4);
+    expect(gained({ chubby: -1 })).toBe(1);
+    expect(gained({ chubby: -2 })).toBe(0);
+    expect(gained({}, true)).toBeCloseTo(2.6);
+  });
+
+  it("порція не з голоду, ласощі й крадена їжа — гладшає; порція з голоду — ні", () => {
+    const meal = (hunger: number): number => {
+      const save = game();
+      const cat = withCat(save, {}, { x: 17.5, y: 4.5 });
+      const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+      bowl.food = 2;
+      bowl.foodQuality = "cheap";
+      cat.needs.hunger = hunger;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.25, elapsed: 0, nibble: false, second: true };
+      live(save, 0.25);
+      expect(bowl.food).toBe(1);
+      return weightOf(cat) - WEIGHT.norm;
+    };
+    expect(meal(90)).toBe(0);
+    expect(meal(30)).toBeCloseTo(WEIGHT.portion);
+    // Ласощі.
+    const save = game();
+    const cat = withCat(save, {}, { x: 9.5, y: 8.5 });
+    save.current.home.supplies.treats.cheap = 5;
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    giveTreat(save.current, "cheap", createRng(1));
+    expect(weightOf(cat)).toBe(WEIGHT.norm + WEIGHT.treat);
+    // Крадена страва зі столу.
+    save.current.character.held = null;
+    save.current.home.surfaces["table"] = { kind: "meal", quality: "cheap" } as never;
+    cat.act = { kind: "steal", target: "table", goal: null, minutes: 0.25, elapsed: 0 };
+    live(save, 0.25);
+    expect(weightOf(cat)).toBeCloseTo(WEIGHT.norm + WEIGHT.treat + WEIGHT.stolen, 2);
+  });
+
+  it("гра, зумі й боротьба та час повертають вагу до норми, але не нижче", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.weight = 53;
+    exercise(cat);
+    expect(weightOf(cat)).toBe(53 - WEIGHT.playLoss);
+    settleWeight(cat, 20 * 60);
+    expect(weightOf(cat)).toBeCloseTo(52 - 20 * WEIGHT.perHour);
+    exercise(cat, 5);
+    expect(weightOf(cat)).toBe(WEIGHT.norm);
+    expect(cat.weight).toBeUndefined();
+    // Зумі — теж рух.
+    cat.weight = 60;
+    cat.act = { kind: "zoomies", target: null, goal: null, minutes: 0.25, elapsed: 0 };
+    live(save, 0.25);
+    expect(weightOf(cat)).toBeLessThanOrEqual(60 - WEIGHT.playLoss);
+    // Гра вудкою знімає вагу за часткою потреби гри.
+    expect(PLAY_RELIEF).toBeGreaterThan(0);
+  });
+
+  it("від 75 — ожиріння: менше грається, ходить повільніше, нагору не лізе; нижче 65 — минає", () => {
+    const save = game();
+    const cat = withCat(save, { climbing: 1 });
+    cat.weight = 74;
+    nightlyDiseases(save.current, createRng(1));
+    expect(hasDisease(cat, "obesity")).toBe(false);
+    cat.weight = WEIGHT.obese;
+    nightlyDiseases(save.current, createRng(1));
+    expect(hasDisease(cat, "obesity")).toBe(true);
+    expect(climbWeight(cat)).toBe(0);
+    expect(walkFactor(cat)).toBeCloseTo(WEIGHT.obeseWalk);
+    // Потреба гри росте повільніше.
+    const play = (obese: boolean): number => {
+      const s = game();
+      const c = withCat(s, {}, { x: 9.5, y: 7.5 });
+      if (obese) fallIll(s.current, c, "obesity");
+      c.weight = obese ? 80 : 50;
+      c.act = idleAct(600);
+      c.needs.play = 0;
+      s.current.minute = hours(19);
+      live(s, 60);
+      return c.needs.play;
+    };
+    expect(play(true)).toBeCloseTo(play(false) * WEIGHT.obesePlay, 1);
+    cat.weight = WEIGHT.cured;
+    nightlyDiseases(save.current, createRng(1));
+    expect(hasDisease(cat, "obesity")).toBe(true);
+    cat.weight = WEIGHT.cured - 1;
+    nightlyDiseases(save.current, createRng(1));
+    expect(hasDisease(cat, "obesity")).toBe(false);
+    expect(climbWeight(cat)).toBe(CLIMBING.step);
+  });
+
+  it("повний кіт на малюнку ширшає поступово", () => {
+    const save = game();
+    const cat = withCat(save);
+    expect(girthOf(cat)).toBe(1);
+    cat.weight = 60;
+    const plump = girthOf(cat);
+    cat.weight = 80;
+    expect(plump).toBeGreaterThan(1);
+    expect(girthOf(cat)).toBeGreaterThan(plump);
+  });
+
+  it("«+» помітно гладшає — вага від 60 на очах персонажа, прояв раз на день; «−» переїв, а вага нижче 55 — прояв «−»", () => {
+    const save = game();
+    const plump = withCat(save, { chubby: 1 }, { x: 9.5, y: 7.5 });
+    plump.act = idleAct(600);
+    plump.weight = 59;
+    live(save, 1);
+    expect(seen(plump, "chubby")).toBe(0);
+    plump.weight = 61;
+    live(save, 30);
+    expect(seen(plump, "chubby")).toBe(1);
+    const slim = withCat(save, { chubby: -2 }, { x: 10.5, y: 7.5 });
+    gainWeight(save.current, slim, WEIGHT.portion);
+    expect(weightOf(slim)).toBe(WEIGHT.norm);
+    expect(seen(slim, "chubby")).toBe(1);
+    gainWeight(save.current, slim, WEIGHT.portion);
+    expect(seen(slim, "chubby")).toBe(1);
+  });
+});
+
+describe("сценарій «Тіло й тепло» (`scenarios/body-warmth.json`)", () => {
+  it("«Мерзлячка» мерзне, «Ковдрочка» під ковдрою, «Холодостійкий» на плитці, «Пухкенький» ширший і нагору не лізе", () => {
+    const scenario = FILE_SCENARIOS["body-warmth"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const byName = (name: string): Cat => save.current.cats.find((c) => c.name === name)!;
+    const { events, stop } = recordEvents();
+    advance(save, 20);
+    stop();
+    expect(events.some((e) => e.type === "weather-felt" && e.cat === byName("Мерзлячка").id && e.feel === "cold")).toBe(true);
+    expect(byName("Ковдрочка").act.blanket).toBe(true);
+    const hardy = byName("Холодостійкий");
+    expect(hardy.act.target).toBe("tile");
+    expect(Math.floor(hardy.x)).toBe(COOL_TILE.x);
+    const plump = byName("Пухкенький");
+    expect(hasDisease(plump, "obesity")).toBe(true);
+    expect(girthOf(plump)).toBeGreaterThan(1.3);
+    expect(climbWeight(plump)).toBe(0);
   });
 });

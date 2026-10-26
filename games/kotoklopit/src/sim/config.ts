@@ -527,6 +527,38 @@ export const DIRTY_CLOTHES_CATS = { picky: 1, backAway: 3 } as const;
  */
 export const ENVY = { mood: -2, relation: -4, glad: 1, sight: 5, premiumMinutes: 6 * 60, graceMinutes: 2, near: 2, snatch: 0.2, snatchLevel: 2, snatchReach: 1.5, cuddleMinutes: 5, cuddleRelation: 1 } as const;
 /**
+ * Вага кота й «Схильність до повноти» (§9.12 «Тіло й тепло», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26):
+ * прихована вага 0–`max`, норма `norm`. Набір: порція, з'їдена при голоді h нижче `fullHunger` (звичайний поріг їжі), —
+ * `portion` × min(1, (`fullHunger` − h) / `excessRange`), тобто повні `portion` від голоду 40 і нижче (пів порції — половина;
+ * пропозиція розбору — `portion` нижче 60 і нічого вище, змінено на плавне: без стрибка між 59 і 61, і «Ласун», що їсть частіше,
+ * трохи гладшає й від звичайних трапез),
+ * ласощі — `treat`, крадена їжа (зі столу, із шафки) — `stolen`; усе × max(0, 1 + `traitStep` × рівень), стерилізованим ще ×
+ * `sterilized`. Втрата — лише до норми: `perHour` за годину й `playLoss` за гру, зумі чи боротьбу (гра вудкою — за часткою
+ * `PLAY_RELIEF`). Від `obese` — «Ожиріння» (оборотне, §9.5): потреба гри × `obesePlay`, ходить × `obeseWalk`, нагору не лізе;
+ * минає нижче `cured`. Прояв «+» — вага від `visible` на очах персонажа, «−» — переїв, а вага нижче `slim`; раз на день. На малюнку
+ * кіт ширшає на `girthStep` × (вага − норма) / (max − норма).
+ */
+export const WEIGHT = {
+  norm: 50,
+  max: 100,
+  fullHunger: 80,
+  excessRange: 40,
+  portion: 2,
+  treat: 1,
+  stolen: 2,
+  traitStep: 0.5,
+  sterilized: 1.3,
+  perHour: 0.05,
+  playLoss: 1,
+  obese: 75,
+  cured: 65,
+  obesePlay: 0.7,
+  obeseWalk: 0.85,
+  visible: 60,
+  slim: 55,
+  girthStep: 0.6,
+} as const;
+/**
  * «Теплолюбність» (§9.12 «Тіло й тепло», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; сюди злито «Чутливість до погоди», зроблено
  * 2026-10-26). Сонячна пляма — вага `sun` + рівень (не менше нуля); бонус «Холоду» до ліжка й комп'ютера (`MODIFIERS.coldWarmth`) —
  * × max(0, 1 + `coldStep` × рівень); на комп'ютері «−» спить рідше: × max(0, 1 + `coolStep` × рівень), −2 — ніколи. Прохолодна
@@ -892,7 +924,7 @@ export const DISEASES: Record<
   {
     safe: number;
     damage: number;
-    cure: { kind: Medicine; doses: number } | { kind: "diet"; portions: number } | { kind: "calm"; days: number } | { kind: "vet" } | { kind: "control"; medicine: Medicine };
+    cure: { kind: Medicine; doses: number } | { kind: "diet"; portions: number } | { kind: "calm"; days: number } | { kind: "vet" } | { kind: "control"; medicine: Medicine } | { kind: "weight" };
     contagious: "friends" | "litter" | null;
   }
 > = {
@@ -906,6 +938,8 @@ export const DISEASES: Record<
   senior: { safe: 0, damage: 1, cure: { kind: "control", medicine: "pills" }, contagious: null },
   urolithiasis: { safe: 1, damage: 6, cure: { kind: "vet" }, contagious: null },
   dermatitis: { safe: 5, damage: 1, cure: { kind: "vet" }, contagious: null },
+  // Ожиріння (§9.5, §9.12 «Тіло й тепло», 2026-10-26): оборотне — минає, щойно вага повернеться до норми (`WEIGHT.cured`).
+  obesity: { safe: 7, damage: 1, cure: { kind: "weight" }, contagious: null },
 };
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {

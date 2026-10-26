@@ -1,9 +1,9 @@
 // Хвороби котів (§9.5, `DISEASES.md`): як кіт захворює, «безпечний» термін і шкода, симптоми,
 // лікування вдома, заразність. Ветеринара додасть крок 11 плану.
 
-import { changeHealth, changeMood, isAdapting, isOld, lifeMood, offend, traitLevel } from "./cat";
+import { changeHealth, changeMood, isAdapting, isOld, lifeMood, offend, traitLevel, weightOf } from "./cat";
 import { unpleasantTask } from "./character";
-import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS } from "./config";
+import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS, WEIGHT } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import { catIllnessFactor } from "./modifiers";
@@ -45,8 +45,10 @@ export const fatigueFactor = (cat: Cat): number => (hasDisease(cat, "cold") || h
 export const sleepFactor = (cat: Cat): number => (hasDisease(cat, "fleas") ? SYMPTOMS.fleasSleep : 1);
 export const hungerFactor = (cat: Cat): number => (hasDisease(cat, "worms") ? SYMPTOMS.wormsHunger : 1);
 export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") || hasDisease(cat, "urolithiasis") ? SYMPTOMS.cystitisToilet : 1);
-/** Травма: кіт кульгає. */
-export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1);
+/** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»). */
+export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1);
+/** Ожиріння (§9.5, §9.12): менше грається й не лізе нагору. */
+export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
   (hasDisease(cat, "stomach") || hasDisease(cat, "cystitis")) && rng.chance(SYMPTOMS.outsideLitter);
@@ -97,11 +99,17 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
           continue;
         }
       }
+      // Ожиріння минає, щойно вага повернулася майже до норми (§9.12, «Схильність до повноти»).
+      if (rule.cure.kind === "weight" && weightOf(cat) < WEIGHT.cured) {
+        cure(state, cat, disease);
+        continue;
+      }
       const controlled = rule.cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
       if (!controlled && state.day - disease.day >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
     }
     if (cat.diseases.length > 0) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
-    // Нові хвороби.
+    // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.
+    if (weightOf(cat) >= WEIGHT.obese) fallIll(state, cat, "obesity");
     const hadCold = hasDisease(cat, "cold");
     maybeFallIll(state, cat, "cold", ILLNESS.cold, rng);
     maybeFallIll(state, cat, "conjunctivitis", hadCold ? ILLNESS.afterCold : ILLNESS.conjunctivitis, rng);

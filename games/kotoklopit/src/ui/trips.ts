@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET } from "../sim/config";
+import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, tripCat, vetExam, vetManner } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -135,7 +135,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         break;
       }
       body.push(
-        `${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}.`,
+        `${cat.name}: здоров'я — ${describe(log.exam.health, ["відмінне", "добре", "так собі", "погане"])}, настрій — ${describe(log.exam.mood, ["чудовий", "добрий", "кепський", "жахливий"])}, вага — ${log.exam.weight >= WEIGHT.visible ? "зайва" : "у нормі"}.`,
       );
       // Як кіт поводився на огляді (§9.12): спокійний, шипів чи вирвався.
       if (log.exam.manner) body.push(fill(VET_MANNER.vet[log.exam.manner], cat.sex, { кіт: cat.name }));
@@ -147,6 +147,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
+        // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).
+        if (DISEASES[d.id].cure.kind === "weight") {
+          list.append(row(diseaseTitle(d.id), "дієта й ігри"));
+          continue;
+        }
         const chronic = DISEASES[d.id].cure.kind === "control";
         // Що дало лікування цієї поїздки: без цього рядок не змінювався, і хотілося платити знову.
         const result = log.done.filter((x) => x.startsWith(`${d.id}:`)).at(-1)?.split(":")[1];

@@ -22,6 +22,7 @@ import {
   MOOD_SATURATION,
   TOUCHY,
   STRONG_TRAIT_CHANCE,
+  WEIGHT,
 } from "./config";
 import { emit } from "./events";
 import { applyBreedLook, randomGenes, randomShape } from "./genetics";
@@ -42,6 +43,9 @@ const WEEK_DAYS = 7;
 export function traitLevel(cat: Pick<Cat, "traits" | "breed">, group: string): number {
   return clamp(characterLevel(cat, group) + breedLevel(cat.breed, group), -4, 4);
 }
+
+/** Вага кота 0–100 (§9.12, «Схильність до повноти»): без поля — норма. */
+export const weightOf = (cat: Pick<Cat, "weight">): number => cat.weight ?? WEIGHT.norm;
 
 export function idleAct(minutes = 0): CatAct {
   return { kind: "idle", target: null, goal: null, minutes, elapsed: 0 };

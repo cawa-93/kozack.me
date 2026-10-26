@@ -636,7 +636,7 @@ export interface CatAct {
 }
 
 /** Хвороби прототипу (§9.5, `DISEASES.md`). */
-export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis";
+export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis" | "obesity";
 
 /** Хвороба кота: коли почалася й скільки лікування вже було. */
 export interface CatDisease {
@@ -737,6 +737,11 @@ export interface Cat {
   guardedAt?: number;
   /** Коли (хвилина від початку гри) «Нудьгує біля вікна» востаннє злився на підвіконні (§9.12): 3 години туди не йде. У старих збереженнях немає. */
   windowAngryAt?: number;
+  /**
+   * Прихована вага 0–100 (§9.12, «Схильність до повноти»): без поля — норма, 50. Росте від їжі понад голод, ласощів і краденого,
+   * спадає до норми від гри й з часом; від 75 — ожиріння. У старих збереженнях немає.
+   */
+  weight?: number;
   /**
    * Коли (хвилина від початку гри) кіт востаннє показав, що мерзне в «Холод» чи знемагає в «Спеку» (§9.12, «Теплолюбність»): не
    * частіше ніж раз на 3 години. У старих збереженнях немає.

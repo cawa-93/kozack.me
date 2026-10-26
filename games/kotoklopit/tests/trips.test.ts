@@ -176,6 +176,24 @@ describe("пункти призначення (§8.5)", () => {
     expect(cat.away).toBeNull();
   });
 
+  it("ветеринар: ожиріння бачить і каже про зайву вагу, але грошима не лікує — лише дієта й ігри (§9.12)", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    cat.weight = 80;
+    fallIll(save.current, cat, "obesity");
+    save.current.home.carrier = "premium";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    arrive(save, "vet");
+    // Дорогою зайва вага трохи йде.
+    expect(vetExam(save.current)?.weight).toBeCloseTo(80, 0);
+    expect(cat.diseases[0]?.known).toBe(true);
+    const money = save.current.character.money;
+    expect(vetTreat(save.current, "obesity", "premium", createRng(1))).toBeNull();
+    expect(cat.diseases).toHaveLength(1);
+    expect(save.current.character.money).toBe(money);
+  });
+
   it("притулок: три коти на тиждень; новий кіт — зі стартовим пакетом і бонусом", () => {
     const save = game(9 * 60);
     save.current.day = 5;

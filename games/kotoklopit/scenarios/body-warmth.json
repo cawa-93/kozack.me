@@ -1,0 +1,39 @@
+{
+  "name": "Тіло й тепло",
+  "description": "Четвер першого тижня, 12:00, «Холод». Коти з рисами етапу «Тіло й завершення» (2026-10-26): «Мерзлячка» («Теплолюбність» +2) не спить і мерзне — над нею думка-сніжинка; «Ковдрочка» йде спати на ліжко й залазить під ковдру; «Холодостійкий» іде розпластатися на прохолодній плитці у ванній біля душової кабіни; «Пухкенький» з ожирінням помітно ширший за інших і нагору не лізе. В аптечці є ласощі: візьміть на руки «Пухкенького» й пригостіть біля аптечки — «Заздрісник» поруч може вихопити ласощі (над ним хрумтять ласощі, над «Пухкеньким» — думка «ласощів немає»), а «Щиросерда» підійде й муркотітиме поруч.",
+  "game": { "sex": "female", "difficulty": "normal", "seed": 29 },
+  "state": {
+    "day": 3,
+    "minute": 720,
+    "modifiers": { "day": "cold" },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 60 }, "body": { "x": 13.5, "y": 7.5 } },
+    "home": {
+      "supplies": {
+        "catFood": { "cheap": 20, "premium": 0 },
+        "litter": { "cheap": 6, "premium": 0 },
+        "treats": { "cheap": 10, "premium": 0 }
+      }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 8, "name": "Мерзлячка", "sex": "female", "arrivedDay": -10, "x": 7.5, "y": 8.5, "needs": { "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 60, "elapsed": 0 },
+      "traits": [{ "group": "warmth", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 9, "name": "Ковдрочка", "sex": "female", "arrivedDay": -10, "x": 3.5, "y": 3.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": { "x": 1, "y": 2 }, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "warmth", "level": 1, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 10, "name": "Холодостійкий", "sex": "male", "arrivedDay": -10, "x": 10.5, "y": 6.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": "tile", "goal": { "x": 8, "y": 2 }, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "warmth", "level": -2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 12, "name": "Пухкенький", "sex": "male", "arrivedDay": -10, "x": 11.5, "y": 8.5, "weight": 85, "needs": { "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 60, "elapsed": 0 },
+      "diseases": [{ "id": "obesity", "day": 0, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": true }],
+      "traits": [{ "group": "chubby", "level": 2, "seen": 0, "known": true }, { "group": "climbing", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 10, "name": "Заздрісник", "sex": "male", "arrivedDay": -10, "x": 14.5, "y": 7.5, "needs": { "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 60, "elapsed": 0 },
+      "traits": [{ "group": "envy", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 11, "name": "Щиросерда", "sex": "female", "arrivedDay": -10, "x": 16.5, "y": 8.5, "needs": { "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 60, "elapsed": 0 },
+      "traits": [{ "group": "envy", "level": -2, "seen": 0, "known": true }] }
+  ]
+}

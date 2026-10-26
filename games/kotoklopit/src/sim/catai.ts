@@ -104,12 +104,13 @@ import {
   VOMIT_STEP,
   WATCH_SANITY,
   WATER_PLAY,
+  WEIGHT,
   WARMTH,
   WINDOW,
   WORK_CAT,
   ZOOMIES,
 } from "./config";
-import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, isObese, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
 import { emit, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -123,6 +124,7 @@ import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./repr
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
+import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
@@ -175,7 +177,11 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * traitLevel(cat, "affection"));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
-  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state));
+  // З ожирінням кіт менше грається (§9.12, «Схильність до повноти»).
+  const heavy = isObese(cat) ? WEIGHT.obesePlay : 1;
+  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state) * heavy);
+  // Зайва вага потроху йде (§9.12).
+  settleWeight(cat, minutes);
   // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
   const hour = hourOf(state.minute);
   const night = hour >= 23 || hour < 5;
@@ -398,7 +404,8 @@ export function upHigh(state: GameState, cat: Cat): boolean {
 /** Вага високого місця для сну (§9.12, «Лазіння»): 1,5 × рівень, кіт без риси — 0,3, «−» — ніколи. */
 export function climbWeight(cat: Cat): number {
   const level = traitLevel(cat, "climbing");
-  if (level < 0) return 0;
+  // З ожирінням нагору не стрибнути (§9.12, «Схильність до повноти»).
+  if (level < 0 || isObese(cat)) return 0;
   return level === 0 ? CLIMBING.base : CLIMBING.step * level;
 }
 
@@ -665,7 +672,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
 
 /** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
 export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
-  if (cat && traitLevel(cat, "climbing") > 0) {
+  if (cat && traitLevel(cat, "climbing") > 0 && !isObese(cat)) {
     const high = objectById(HIGH_PLACES[rng.int(0, HIGH_PLACES.length - 1)] ?? "fridge");
     return { at: { x: high.x, y: high.y }, target: null };
   }
@@ -1190,6 +1197,8 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
   const quality = takeSupply(state, "catFood");
   if (quality === null) return;
   cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER);
+  // Крадене з шафки — понад порції (§9.12, «Схильність до повноти»).
+  gainWeight(state, cat, WEIGHT.stolen);
   changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, "корм із шафки");
   emit(state, { type: "cat-ate", cat: cat.id, quality });
   // Стерилізованому — лише корм для стерилізованих (§9.8): у шафці — звичайний.
@@ -1553,6 +1562,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // «Малоїжка» поклювала пів порції й лишила половину в мисці; половинку, що лишилася, доїдає наступний (§9.12).
       const nibble = act.nibble === true && bowl.half !== true;
       const portion = nibble || bowl.half === true ? 0.5 : 1;
+      // Їв, не бувши голодним, — гладшає (§9.12, «Схильність до повноти»): що менший голод, то більше зайвого — друга порція
+      // «Ненаситного», миска, до якої збіглися на звук корму, частіші трапези «Ласуна».
+      const excess = Math.min(1, Math.max(0, WEIGHT.fullHunger - cat.needs.hunger) / WEIGHT.excessRange);
+      if (excess > 0) gainWeight(state, cat, WEIGHT.portion * portion * excess);
       if (nibble) bowl.half = true;
       else {
         bowl.food -= 1;
@@ -1757,6 +1770,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "wrestle": {
       const w = RELATIONS.wrestle;
       cat.needs.play = Math.max(0, cat.needs.play - w.play);
+      exercise(cat);
       changeMood(state, cat, w.mood);
       const mate = catById(state, act.target);
       if (mate) changeRelation(state, cat, mate, w.relation);
@@ -1814,7 +1828,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "wander":
       // Просто побродити без діла гри не знімає: інакше коти майже не гралися б самі, не бешкетували
       // й не влаштовували зумі (пошук багів 2026-10-25).
-      if (act.target === "play") cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
+      if (act.target === "play") {
+        cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.8);
+        exercise(cat, 0.8);
+      }
       // Дотягнув паперову стрічку у вітальню — кінець стрічки лишається тут (§9.12, «Мисливський інстинкт»).
       if (act.target === "paper") {
         cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * 0.5);
@@ -1833,6 +1850,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     }
     case "zoomies":
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      exercise(cat);
       // Нагасався від м'яти — задирає кота поруч (§9.12, «Котяча м'ята»).
       if (act.target === "catnip") catnipFight(state, cat);
       return;
@@ -1847,6 +1865,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
     case "catnip":
       // Накатався по м'яті: награвся, а «+» засинає просто тут (§9.12, «Котяча м'ята»).
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
+      exercise(cat);
       if (traitLevel(cat, "catnip") > 0) start(cat, "sleep", null, 8 * MINUTES_PER_HOUR);
       return;
     case "carry":
@@ -1874,6 +1893,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (!dish || dish.kind === "burnt") return;
       takeDish(state, act.target);
       cat.needs.hunger = Math.max(0, cat.needs.hunger - STEAL_HUNGER);
+      // Людська їжа — понад порції (§9.12, «Схильність до повноти»).
+      gainWeight(state, cat, WEIGHT.stolen);
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF);
       changeMood(state, cat, 2);
       afterTheft(state, cat, rng);
@@ -1886,6 +1907,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Мисливець награється іграшкою досхочу, а «Пацифіст» — ледве (§9.12, «Мисливський інстинкт»).
       const hunting = traitLevel(cat, "hunting");
       cat.needs.play = Math.max(0, cat.needs.play - PLAY_RELIEF * Math.max(HUNTING.soloMin, 1 + HUNTING.soloStep * hunting));
+      exercise(cat);
       if (!toy) return;
       changeMood(state, cat, 1);
       // Іграшка відлітає трохи вбік і зношується — у мисливця швидше.
@@ -2449,6 +2471,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   revengeSeen(state, cat);
   sinkSeen(state, cat);
   boxSeen(state, cat);
+  weightSeen(state, cat);
   doorSeen(state, cat);
   dropsSeen(state, cat);
   rememberSeen(state, cat);

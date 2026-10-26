@@ -6,7 +6,7 @@ import { writeFileSync } from "node:fs";
 
 import { it } from "vitest";
 
-import { lifeMood } from "../src/sim/cat";
+import { lifeMood, weightOf } from "../src/sim/cat";
 import { newGame } from "../src/sim/game";
 import type { Difficulty, GameState, Sex } from "../src/sim/types";
 import { DIFFICULTY_TITLES } from "../src/texts";
@@ -33,6 +33,9 @@ interface Run {
   lives: number[];
   deaths: number;
   catHealth: number[];
+  /** Вага котів наприкінці й скільки котів за прогін мали ожиріння (§9.12, «Схильність до повноти»). */
+  catWeight: number[];
+  obese: number;
   position: number;
   reputation: number;
   worked: number;
@@ -66,6 +69,8 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
     lives: [],
     deaths: 0,
     catHealth: [],
+    catWeight: [],
+    obese: 0,
     position: 0,
     reputation: 0,
     worked: 0,
@@ -75,9 +80,11 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
     warnings: 0,
     seconds: 0,
   };
+  const obese = new Set<number>();
   for (let d = 0; d < WEEKS * 7; d++) {
     const evening = save.current.character.stats.sanity;
     const report = bot.day();
+    for (const cat of save.current.cats) if (cat.diseases.some((x) => x.id === "obesity")) obese.add(cat.id);
     run.sanity.push(report?.sanityEvening ?? evening);
     if (report) {
       run.kittens += report.newCats.length;
@@ -98,6 +105,8 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
   run.lives = [...run.catMood, ...state.album.map((e) => e.lifeMood)];
   run.deaths = state.album.length;
   run.catHealth = state.cats.map((c) => c.health);
+  run.catWeight = state.cats.map(weightOf);
+  run.obese = obese.size;
   run.position = state.job.position;
   run.reputation = state.job.reputation;
   run.worked = bot.log.worked / run.days;
@@ -117,8 +126,8 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
-  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
+  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
     const key = `${run.sex}/${run.difficulty}`;
@@ -146,6 +155,7 @@ function report(runs: Run[]): string {
         `${fmt(avg(group.map((r) => r.cats)))} (${fmt(avg(group.map((r) => r.deaths)))})`,
         fmt(avg(group.flatMap((r) => r.catMood))),
         fmt(avg(group.flatMap((r) => r.catHealth))),
+        `${fmt(avg(group.flatMap((r) => r.catWeight)))} (${fmt(avg(group.map((r) => r.obese)))})`,
         fmt(avg(group.map((r) => r.position + 1))),
         fmt(avg(group.map((r) => r.worked))),
         fmt(avg(group.map((r) => r.petted))),

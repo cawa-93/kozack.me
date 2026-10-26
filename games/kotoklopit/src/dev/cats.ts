@@ -1,7 +1,8 @@
 // Розділ «Коти» панелі розробника (§11.5): додати й прибрати кота, змінити вік, стать, приховані
 // шкали, потреби й риси, показати приховані числа над котами.
 
-import { createCat, traitLevel } from "../sim/cat";
+import { createCat, traitLevel, weightOf } from "../sim/cat";
+import { WEIGHT } from "../sim/config";
 import { addCat } from "../sim/night";
 import { forgetRelations, relation } from "../sim/relations";
 import { stateRng } from "../sim/rng";
@@ -106,6 +107,7 @@ export class CatsSection {
 
   private read(cat: Cat, field: string): number {
     if (field === "age") return cat.ageWeeks;
+    if (field === "weight") return weightOf(cat);
     if (field === "health" || field === "mood" || field === "love") return cat[field];
     return cat.needs[field as CatNeed] ?? 0;
   }
@@ -113,7 +115,11 @@ export class CatsSection {
   private write(cat: Cat, field: string, value: number): void {
     const v = Math.max(0, Math.min(100, value));
     if (field === "age") cat.ageWeeks = Math.max(0, Math.round(value));
-    else if (field === "health" || field === "mood" || field === "love") cat[field] = v;
+    // Вага (§9.12, «Схильність до повноти»): норма — без поля.
+    else if (field === "weight") {
+      if (v === WEIGHT.norm) delete cat.weight;
+      else cat.weight = v;
+    } else if (field === "health" || field === "mood" || field === "love") cat[field] = v;
     else cat.needs[field as CatNeed] = v;
   }
 
@@ -176,7 +182,7 @@ export class CatsSection {
         this.changed(`прибрано кота ${cat.name}`);
         this.render();
       })),
-      el("div", { class: "dev-grid" }, this.number(cat, "age", "Вік, тиж."), this.number(cat, "health", "Здоров'я"), this.number(cat, "mood", "Настрій"), this.number(cat, "love", "Любов")),
+      el("div", { class: "dev-grid" }, this.number(cat, "age", "Вік, тиж."), this.number(cat, "health", "Здоров'я"), this.number(cat, "mood", "Настрій"), this.number(cat, "love", "Любов"), this.number(cat, "weight", "Вага")),
       el("div", { class: "dev-grid" }, ...NEEDS.map(([need, label]) => this.number(cat, need, label))),
       el("p", { class: "dev-hint", "data-relations": String(cat.id) }, this.relations(cat)),
       traits,

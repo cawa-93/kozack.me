@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../sim/home";
+import { girthOf } from "../sim/weight";
 import type { Cat, GameState, Quality } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
@@ -190,7 +191,7 @@ export class CatView {
     const key =
       pose === "walk" || pose === "roll" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
         ? null
-        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}`;
+        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}|${Math.round(girthOf(cat) * 20)}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -235,6 +236,9 @@ export class CatView {
     const point = PIGMENT[this.coat.base];
     const stripe = shade(PIGMENT[this.coat.base], 0.72);
     const s = scale;
+    // Повний кіт ширшає поступово (§9.12, «Схильність до повноти»): тіло ширшає, а трохи — і вищає.
+    const fw = girthOf(cat);
+    const fh = 1 + (fw - 1) * 0.4;
 
     if (pose !== "carried" && pose !== "hide" && pose !== "carrier") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
 
@@ -244,9 +248,9 @@ export class CatView {
         this.tail(g, x - dir * 15 * s, y - 6 * s, s, dir, "rest");
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-10, -4, 4, 10]) g.fillRoundedRect(x + lx * s - 2, y - 22 * s, 4 * s, 9 * s, 2);
-        g.fillStyle(body).fillEllipse(x, y - 9 * s, 32 * s, 14 * s);
+        g.fillStyle(body).fillEllipse(x, y - 9 * s, 32 * s * fw, 14 * s * fh);
         g.fillStyle(WHITE, 0.6).fillEllipse(x, y - 11 * s, 20 * s, 7 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 32 * s, 14 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 32 * s * fw, 14 * s * fh);
         this.headAt(g, x + dir * 17 * s, y - 11 * s, s, dir, body, point);
         this.back = { x: x - dir * 2 * s, y: y - 14 * s };
         return;
@@ -258,18 +262,18 @@ export class CatView {
         this.tail(g, x - dir * 15 * s, y - 5 * s, s, dir, "rest");
         g.fillStyle(this.coat.pointed ? point : body);
         for (const [i, lx] of [-10, -4, 4, 10].entries()) g.fillRoundedRect(x + rock + lx * s - 2, y - 22 * s + kick(i), 4 * s, 9 * s, 2);
-        g.fillStyle(body).fillEllipse(x + rock * 0.6, y - 9 * s, 32 * s, 14 * s);
+        g.fillStyle(body).fillEllipse(x + rock * 0.6, y - 9 * s, 32 * s * fw, 14 * s * fh);
         g.fillStyle(WHITE, 0.6).fillEllipse(x + rock * 0.6, y - 11 * s, 20 * s, 7 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x + rock * 0.6, y - 9 * s, 32 * s, 14 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x + rock * 0.6, y - 9 * s, 32 * s * fw, 14 * s * fh);
         this.headAt(g, x + dir * 17 * s + rock * 0.3, y - 9 * s, s, dir, body, point);
         this.back = { x: x - dir * 2 * s, y: y - 14 * s };
         return;
       }
       case "sleep": {
         // Клубочок із хвостом довкола.
-        g.fillStyle(body).fillEllipse(x, y - 9 * s, 34 * s, 20 * s);
-        this.patches(g, x, y - 9 * s, 34 * s, 20 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 34 * s, 20 * s);
+        g.fillStyle(body).fillEllipse(x, y - 9 * s, 34 * s * fw, 20 * s * fh);
+        this.patches(g, x, y - 9 * s, 34 * s * fw, 20 * s * fh);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 9 * s, 34 * s * fw, 20 * s * fh);
         g.lineStyle(5 * s, this.coat.pointed ? point : body).beginPath().arc(x, y - 8 * s, 15 * s, 0.2, 2.4).strokePath();
         this.ears(g, x + dir * 9 * s, y - 16 * s, s * 0.85, dir, point);
         // Сопе лише той, хто спить: кіт біля столу просто лежить.
@@ -281,8 +285,8 @@ export class CatView {
       case "blanket": {
         // Під ковдрою (§9.12, «Теплолюбність»): горбик ковдри на ліжку, з-під якого стирчать вушка й кінчик хвоста.
         this.ears(g, x + dir * 9 * s, y - 13 * s, s * 0.8, dir, point);
-        g.fillStyle(BLANKET).fillEllipse(x, y - 8 * s, 38 * s, 18 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 8 * s, 38 * s, 18 * s);
+        g.fillStyle(BLANKET).fillEllipse(x, y - 8 * s, 38 * s * fw, 18 * s * fh);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 8 * s, 38 * s * fw, 18 * s * fh);
         g.lineStyle(1.5, COLORS.ink, 0.35).lineBetween(x - 9 * s, y - 14 * s, x - 3 * s, y - 3 * s).lineBetween(x + 4 * s, y - 15 * s, x + 9 * s, y - 4 * s);
         g.lineStyle(4 * s, this.coat.pointed ? point : body).lineBetween(x - dir * 18 * s, y - 4 * s, x - dir * 25 * s, y - 2 * s);
         this.head = { x, y: y - 26 * s };
@@ -294,10 +298,10 @@ export class CatView {
         const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
         g.fillStyle(pawColor);
         for (const lx of [-15, -9, 7, 13]) g.fillRoundedRect(x + dir * lx * s - (dir < 0 ? 9 * s : 0), y - 3 * s, 9 * s, 3.5 * s, 1.5);
-        g.fillStyle(body).fillEllipse(x, y - 6 * s, 40 * s, 12 * s);
-        this.patches(g, x, y - 6 * s, 40 * s, 12 * s);
+        g.fillStyle(body).fillEllipse(x, y - 6 * s, 40 * s * fw, 12 * s * fh);
+        this.patches(g, x, y - 6 * s, 40 * s * fw, 12 * s * fh);
         if (this.coat.tabby) this.stripes(g, x, y - 6 * s, 30 * s, stripe, true);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 6 * s, 40 * s, 12 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 6 * s, 40 * s * fw, 12 * s * fh);
         const hx = x + dir * 22 * s;
         const hy = y - 7 * s;
         this.ears(g, hx, hy, s * 0.9, dir, point);
@@ -329,10 +333,10 @@ export class CatView {
       case "scratch": {
         // Точить кігті (§9.12): стоїть на задніх лапах, витягнувшись угору, і по черзі дере передніми.
         this.tail(g, x - dir * 8 * s, y - 3 * s, s, dir, "rest");
-        g.fillStyle(body).fillEllipse(x, y - 17 * s, 17 * s, 32 * s);
-        this.patches(g, x, y - 17 * s, 17 * s, 32 * s);
+        g.fillStyle(body).fillEllipse(x, y - 17 * s, 17 * s * fw, 32 * s * fh);
+        this.patches(g, x, y - 17 * s, 17 * s * fw, 32 * s * fh);
         if (this.coat.tabby) this.stripes(g, x, y - 18 * s, 14 * s, stripe, false);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 17 * s, 17 * s, 32 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 17 * s, 17 * s * fw, 32 * s * fh);
         this.headAt(g, x + dir * 2 * s, y - 37 * s, s, dir, body, point);
         const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
         const claw = Math.sin(time / 80) * 4 * s;
@@ -346,8 +350,8 @@ export class CatView {
         this.tail(g, x - dir * 13 * s, y - 20 * s, s, dir, "up");
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-10, -5] as const) g.fillRoundedRect(x + dir * lx * s - 2, y - 12 * s, 4 * s, 13 * s, 2);
-        g.fillStyle(body).fillEllipse(x - dir * 5 * s, y - 15 * s, 22 * s, 13 * s).fillEllipse(x + dir * 6 * s, y - 9 * s, 20 * s, 11 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 5 * s, y - 15 * s, 22 * s, 13 * s);
+        g.fillStyle(body).fillEllipse(x - dir * 5 * s, y - 15 * s, 22 * s * fw, 13 * s * fh).fillEllipse(x + dir * 6 * s, y - 9 * s, 20 * s * fw, 11 * s * fh);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 5 * s, y - 15 * s, 22 * s * fw, 13 * s * fh);
         const scrape = Math.sin(time / 110) * 3 * s;
         const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
         g.fillStyle(pawColor).fillEllipse(x + dir * (20 * s + scrape), y - 1, 7 * s, 4 * s).fillEllipse(x + dir * (17 * s - scrape), y + 1, 7 * s, 4 * s);
@@ -361,10 +365,10 @@ export class CatView {
         this.tail(g, x - dir * 15 * s + wiggle, y - 4 * s, s, dir, "rest");
         g.fillStyle(this.coat.pointed ? point : body);
         for (const lx of [-9, 8]) g.fillRoundedRect(x + dir * lx * s - 3, y - 4 * s, 6 * s, 4 * s, 2);
-        g.fillStyle(body).fillEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s, 11 * s);
-        this.patches(g, x - dir * 3 * s, y - 9 * s, 30 * s, 11 * s);
+        g.fillStyle(body).fillEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s * fw, 11 * s * fh);
+        this.patches(g, x - dir * 3 * s, y - 9 * s, 30 * s * fw, 11 * s * fh);
         if (this.coat.tabby) this.stripes(g, x - dir * 3 * s, y - 9 * s, 24 * s, stripe, true);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s, 11 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x - dir * 3 * s + wiggle * 0.5, y - 9 * s, 30 * s * fw, 11 * s * fh);
         this.headAt(g, x + dir * 14 * s, y - 10 * s, s, dir, body, point);
         this.back = { x: x - dir * 4 * s, y: y - 14 * s };
         return;
@@ -382,10 +386,10 @@ export class CatView {
         // Сумний кіт і в ході тримає хвіст донизу.
         const tremble = pose === "mark" ? Math.sin(time / 25) * 1.5 * s : 0;
         this.tail(g, x - dir * 15 * s + tremble, y - 15 * s, s, dir, sad && pose === "walk" ? "down" : "up");
-        g.fillStyle(body).fillEllipse(x, y - 14 * s, 32 * s, 15 * s);
-        this.patches(g, x, y - 14 * s, 32 * s, 15 * s);
+        g.fillStyle(body).fillEllipse(x, y - 14 * s, 32 * s * fw, 15 * s * fh);
+        this.patches(g, x, y - 14 * s, 32 * s * fw, 15 * s * fh);
         if (this.coat.tabby) this.stripes(g, x, y - 14 * s, 26 * s, stripe, true);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 14 * s, 32 * s, 15 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 14 * s, 32 * s * fw, 15 * s * fh);
         this.headAt(g, x + dir * 15 * s, y - 22 * s, s, dir, body, point);
         this.inMouth(g, cat, x + dir * 21 * s, y - 15 * s, s);
         return;
@@ -404,12 +408,12 @@ export class CatView {
         const headY =
           pose === "eat" ? y - 8 * s : pose === "bury" ? y - 12 * s : pose === "cough" ? y - 18 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
         this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
-        g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s, 26 * s);
-        this.patches(g, x, y - 13 * s, 22 * s, 26 * s);
+        g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s * fw, 26 * s * fh);
+        this.patches(g, x, y - 13 * s, 22 * s * fw, 26 * s * fh);
         if (this.coat.tabby) this.stripes(g, x, y - 15 * s, 18 * s, stripe, false);
         // Біла грудка — спереду: у кота, що сидить спиною, її не видно.
         if (this.coat.white >= 1 && look?.back !== true) g.fillStyle(WHITE).fillEllipse(x + dir * 3 * s, y - 13 * s, 9 * s, 14 * s);
-        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 13 * s, 22 * s, 26 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 13 * s, 22 * s * fw, 26 * s * fh);
         // Передні лапки: у грі — догори, ловлять пір'їнку; задоволений на руках топчеться — лапки по черзі (§9.12).
         const paws = interaction === "play" ? y - 30 * s : y - 1;
         const reach = interaction === "play" ? dir * 6 * s : 0;
