@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { pickUpCat } from "../src/sim/actions";
+import { pickUpCat, tickActivity } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
@@ -113,6 +113,33 @@ describe("вороги (§9.4)", () => {
     pickUpCat(save.current, a);
     expect(b.act.kind).not.toBe("fight");
     expect(save.current.character.stats.sanity).toBeLessThan(sanity);
+  });
+
+  it("погладити чи погратися вудкою з котом, що б'ється, — так само розборонити обох (перевірка стосунків 2026-10-26)", () => {
+    for (const kind of ["pet", "play"] as const) {
+      const { save, a, b } = enemies();
+      const s = save.current;
+      Object.assign(s.character.body, { x: 9.5, y: 9.5 });
+      untilFight(save, a, b);
+      expect(a.act.kind).toBe("fight");
+      a.needs.attention = 90;
+      a.needs.play = 90;
+      if (kind === "play") {
+        const toy = s.home.items.find((i) => i.kind === "toy");
+        if (toy?.kind !== "toy") throw new Error("немає іграшки");
+        s.home.items = s.home.items.filter((i) => i !== toy);
+        s.character.held = { kind: "toy", toy };
+      }
+      s.character.activity = { kind, cat: a.id, minutes: 0 };
+      const sanity = s.character.stats.sanity;
+      const { events, stop } = recordEvents();
+      tickActivity(s, { move: { x: 0, y: 0 }, hold: true }, 0.1);
+      stop();
+      expect(a.act.kind, kind).not.toBe("fight");
+      expect(b.act.kind, kind).not.toBe("fight");
+      expect(events.some((e) => e.type === "fight-stopped"), kind).toBe(true);
+      expect(s.character.stats.sanity, kind).toBeLessThan(sanity);
+    }
   });
 });
 

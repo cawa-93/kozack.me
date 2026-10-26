@@ -705,6 +705,12 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   }
   // Вкушений кіт чи той, що пішов з-під руки, відходить; рука чекає, поки кнопку відпустять.
   if (petOver(activity)) return;
+  // Погладити кота, що б'ється, — розборонити (§9.4, перевірка стосунків 2026-10-26): бійка закінчується для обох, а не лише
+  // для того, кого гладять (другий бився сам і міг травмуватися), і це неприємно, як узяти на руки.
+  if (cat.act.kind === "fight") {
+    separateFight(state, cat);
+    cat.act = idleAct(1);
+  }
   if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили пестощами");
   // «Образливий», що дметься, гладити себе не дає: одразу йде з-під руки й сідає спиною (§9.12, перевірка етапу
   // 2026-10-25: пестощі щокадру зупиняли кота, і той, що дметься, муркотів під рукою).
@@ -839,6 +845,8 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   // З ким сьогодні гралися вудкою, той рідше сидить у засідці (§9.12, «Засідки»).
   cat.playedToday = (cat.playedToday ?? 0) + minutes;
   if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили грою");
+  // Погратися вудкою з котом, що б'ється, — так само розборонити (§9.4).
+  separateFight(state, cat);
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
   const joy = Math.max(0, 1 + PLAY.playfulStep * playful);
