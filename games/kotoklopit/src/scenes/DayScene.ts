@@ -926,7 +926,15 @@ export class DayScene extends Phaser.Scene {
       const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       // «Втікач» під дверима просить на сходи — кричить (§9.12 «Двері й гості»).
       const ask: IconName = cat.act.target === "sink" ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
-      set(`cat:${cat.id}`, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
+      // «Терплячий зранку» біля ліжка чекає мовчки (§9.12, рішення автора 2026-10-26): хоче їсти — думка, а не нявкання.
+      const key = `cat:${cat.id}` as const;
+      if (cat.away === null && !fighting && asking && cat.act.target === "bed") {
+        const anchor = this.belowHud(this.anchorOf(key), "think");
+        if (anchor) this.bubbles.setState(key, "think", "kibble", anchor.x, anchor.y);
+        else this.bubbles.setState(key, "think", null, 0, 0);
+        continue;
+      }
+      set(key, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
     for (const storage of STORAGES) {

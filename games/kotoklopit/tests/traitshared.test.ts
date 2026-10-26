@@ -7,7 +7,7 @@ import { pickUpCat, putDownCat } from "../src/sim/actions";
 import { stun } from "../src/sim/body";
 import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
-import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, RELATIONS, STRESS_EFFECTS, STUN_PAUSE_MINUTES, WAKE_UP } from "../src/sim/config";
+import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, RELATIONS, STRESS_EFFECTS, STUN_PAUSE_MINUTES, TALKATIVE, WAKE_UP } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { itemTile, roomAt } from "../src/sim/home";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
@@ -594,5 +594,14 @@ describe("«Нічна активність» і «Ранкова побудка
     // Попереду персонажа (камера «три чверті»): позаду його кота не видно.
     expect(patient.y).toBeGreaterThan(save.current.character.body.y);
     expect(plain.act.target).not.toBe("bed");
+    // Чекає мовчки, як каже підказка (рішення автора 2026-10-26): за кілька хвилин біля ліжка — жодного нявкання.
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 20 && patient.act.target === "bed"; i++) {
+      save.current.minute += 0.25;
+      tickCats(save.current, 0.25, { present: true });
+    }
+    stop();
+    expect(patient.act.elapsed).toBeGreaterThan(TALKATIVE.meowMinutes);
+    expect(events.some((e) => e.type === "meow" && e.cat === patient.id)).toBe(false);
   });
 });

@@ -2140,7 +2140,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       return;
     case "beg":
     case "attention":
-      askAloud(state, cat, minutes);
+      // «Терплячий зранку» біля ліжка чекає мовчки, як і каже підказка (§9.12, рішення автора 2026-10-26).
+      if (act.kind !== "beg" || act.target !== "bed") askAloud(state, cat, minutes);
       if (act.kind === "attention") {
         if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
