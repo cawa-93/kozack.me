@@ -9,7 +9,8 @@ import { RELATIONS } from "../src/sim/config";
 import { fallIll } from "../src/sim/diseases";
 import type { GameEvent } from "../src/sim/events";
 import { removeCat } from "../src/sim/farewell";
-import { newGame } from "../src/sim/game";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
+import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { loudNoise } from "../src/sim/noise";
 import { relation } from "../src/sim/relations";
@@ -884,5 +885,22 @@ describe("пози гри й вилизування (§9.4, «Пози стос�
     expect(poseOf(a, false)).toBe("walk");
     b.act = act({ kind: "wrestle", target: `cat:${a.id}` });
     expect(poseOf(b, false)).toBe("sit");
+  });
+});
+
+describe("сценарій «Згода, охорона й сварки» (`scenarios/cats-agree-guard.json`, блок 4)", () => {
+  it("хворий Тихон відмовляється й шипить, Буся відмовляється, Мурка охороняє миску від ворога, Буркотун шипить на кошеня", () => {
+    const scenario = FILE_SCENARIOS["cats-agree-guard"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const id = (name: string): number => save.current.cats.find((c) => c.name === name)!.id;
+    const { events, stop } = recordEvents();
+    for (let t = 0; t < 5; t += 0.25) advance(save, 0.25);
+    stop();
+    expect(events).toContainEqual({ type: "play-declined", cat: id("Тихон"), by: id("Мурчик"), sick: true });
+    expect(events).toContainEqual({ type: "hissed", cat: id("Тихон"), at: id("Мурчик") });
+    expect(events).toContainEqual({ type: "play-declined", cat: id("Буся"), by: id("Рижик"), sick: false });
+    expect(events).toContainEqual({ type: "hissed", cat: id("Мурка"), at: id("Барсик"), why: "bowl" });
+    expect(events).toContainEqual({ type: "hissed", cat: id("Буркотун"), at: id("Малюк"), why: "kitten" });
   });
 });
