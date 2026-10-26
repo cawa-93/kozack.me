@@ -455,7 +455,7 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean,
 /**
  * Чи вистачає мисок чи лотків (§9.4 «Ресурси»; «Згода, охорона й сварки», рішення автора 2026-10-26, Р3 і Р4): котів рахують лише
  * тих, що вдома, без новонароджених; брудний лоток не рахується; лотків — на один більше, ніж котів, мисок — скільки котів, але
- * не більше, ніж є місць (для мисок — поширення виконавця; лишити — рішення автора 2026-10-26 після блоку 4). Раніше рахували всіх котів і всі лотки, і з 6 котами лотків не вистачало ніколи.
+ * не більше, ніж є місць (для мисок — поширення виконавця, ухвалено — рішення автора 2026-10-26 після блоку 4). Раніше рахували всіх котів і всі лотки, і з 6 котами лотків не вистачало ніколи.
  */
 export function enoughFor(state: GameState, kind: "bowl" | "litter"): boolean {
   const cats = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
@@ -4475,7 +4475,7 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   if (!rng.chance(TERRITORY.guardStep * guardLevel(guard)) || !hiss(state, guard, cat, guardCause(state, target))) return;
   guard.guardedAt = now;
   changeRelation(state, guard, cat, TERRITORY.guardRelation);
-  // Охорона — теж сварка за ресурс (§9.4, Б6; лишити — рішення автора 2026-10-26 після блоку 4).
+  // Охорона — теж сварка за ресурс (§9.4, Б6; ухвалено — рішення автора 2026-10-26 після блоку 4).
   noteStrife(state, guard, cat, "quarrel");
   // Прояв «Територіальності» — лише в «Охоронця»: ворог без риси охороняє через ворожнечу.
   if (traitLevel(guard, "territorial") > 0) observe(state, guard, "territorial");
