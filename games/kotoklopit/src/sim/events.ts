@@ -228,8 +228,11 @@ export type GameEvent =
    * Покликаний гратися кіт відмовився (§9.4 «Згода, охорона й сварки», Г5): лягає й сіпає хвостом; `sick` — хворий, ще й шипить.
    */
   | { type: "play-declined"; cat: number; by: number; sick: boolean }
-  /** Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). */
-  | { type: "hissed"; cat: number; at: number }
+  /**
+   * Кіт шипить на іншого: ревнощі чи сварка за миску й лоток (§9.4). `why` — причина, яку видно значком (§9.4 «Згода, охорона й
+   * сварки», рішення автора 2026-10-26, Р2); без неї — сама злість.
+   */
+  | { type: "hissed"; cat: number; at: number; why?: HissCause }
   /** «Шипить на гостей» шипить з-під дивана на дзвінок чи на гостей (§9.12, «Гості»). */
   | { type: "hissed-guests"; cat: number }
   | { type: "fight-stopped"; cat: number }
@@ -270,6 +273,12 @@ export type GameEvent =
   /** Нервовий кіт нервово вилизується після неприємного (§9.12). */
   | { type: "nervous"; cat: number }
   | { type: "cat-returned"; cat: number; caught: boolean };
+
+/**
+ * Причина шипіння, яку видно значком (§9.4 «Згода, охорона й сварки», Р2): миска чи лоток — сварка й охорона, вікно — охорона
+ * підвіконня, рука — ревнощі, кошеня — «Сам ще кошеня» відганяє малого.
+ */
+export type HissCause = "bowl" | "litter" | "window" | "hand" | "kitten";
 
 export type Listener = (event: GameEvent, state: GameState) => void;
 

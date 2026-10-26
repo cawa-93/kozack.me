@@ -555,6 +555,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
     const b = withCat(save, {}, { x: 5.5, y: 8.5 });
     const litter = save.current.home.items.find((it) => it.kind === "litter");
     if (!litter) throw new Error("немає лотка");
+    const { events, stop } = recordEvents();
     for (let i = 0; i < 40; i++) {
       // Другий кіт сидить біля лотка (сварка — лише з котом поруч, §9.4), а не на підвіконні чи деінде.
       Object.assign(b, { x: itemTile(litter).x + 1.5, y: itemTile(litter).y + 0.5, act: idleAct(30) });
@@ -564,7 +565,12 @@ describe("ресурси й ревнощі (§9.4)", () => {
       const box = save.current.home.items.find((it) => it.kind === "litter");
       if (box?.kind === "litter") box.uses = 0;
     }
+    stop();
     expect(relation(save.current, a, b)).toBeLessThan(0);
+    // Причину видно: значок лотка поруч зі злістю (§9.4, Р2).
+    const hisses = events.filter((e) => e.type === "hissed" && e.cat === a.id);
+    expect(hisses.length).toBeGreaterThan(0);
+    for (const e of hisses) expect(e).toMatchObject({ why: "litter" });
   });
 
   it("сварка за миску — лише з котом, що не спить: на сплячого сусіда не шипить (перевірка стосунків 2026-10-26)", () => {
@@ -616,6 +622,8 @@ describe("ресурси й ревнощі (§9.4)", () => {
       stop();
       if (!events.some((e) => e.type === "hissed" && e.cat === a.id && e.at === b.id)) continue;
       quarrels += 1;
+      // Причину видно: значок миски поруч зі злістю (§9.4, Р2).
+      expect(events.find((e) => e.type === "hissed")).toMatchObject({ why: "bowl" });
       expect(relation(save.current, a, b)).toBe(-5);
       expect(save.current.strife?.[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`]).toEqual({ quarrel: true });
     }

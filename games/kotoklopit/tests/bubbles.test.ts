@@ -55,6 +55,11 @@ const EVENTS: GameEvent[] = [
   { type: "trinket-fell", cat: 1, trinket: "pen", object: "computer", broken: false },
   { type: "trinket-sniffed", cat: 1, trinket: "phone" },
   { type: "hissed", cat: 1, at: 2 },
+  { type: "hissed", cat: 1, at: 2, why: "bowl" },
+  { type: "hissed", cat: 1, at: 2, why: "litter" },
+  { type: "hissed", cat: 1, at: 2, why: "window" },
+  { type: "hissed", cat: 1, at: 2, why: "hand" },
+  { type: "hissed", cat: 1, at: 2, why: "kitten" },
   { type: "keyboard", cat: 1 },
   { type: "escaped", cat: 1 },
   { type: "laundry", stage: "spin" },
@@ -121,6 +126,19 @@ describe("бабли вголос і думки (§11.4, правка автор
       { kind: "say", at: "item:3", icon: "kibble" },
       { kind: "say", at: "item:4", icon: "kibble" },
     ]);
+  });
+
+  it("шипіння з причиною — вголос над тим, хто шипить, і кожна причина — своя іконка, не така, як без причини (§9.4, Р2)", () => {
+    const causes = ["bowl", "litter", "window", "hand", "kitten"] as const;
+    const icons = causes.map((why) => {
+      const bubble = only({ type: "hissed", cat: 1, at: 2, why });
+      expect(bubble.kind).toBe("say");
+      expect(bubble.at).toBe("cat:1");
+      return bubble.icon;
+    });
+    const plain = only({ type: "hissed", cat: 1, at: 2 }).icon;
+    expect(plain).toBe("angry");
+    expect(new Set([...icons, plain]).size).toBe(causes.length + 1);
   });
 
   it("пропущеної летучки немає — бабла немає", () => {

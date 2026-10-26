@@ -84,7 +84,12 @@ export type IconName =
   | "table"
   | "chilly"
   | "hot"
-  | "mom-meal";
+  | "mom-meal"
+  | "hiss-bowl"
+  | "hiss-litter"
+  | "hiss-window"
+  | "hiss-hand"
+  | "hiss-kitten";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -627,6 +632,55 @@ Object.assign(ICONS, {
 /** Мамині судочки (§4.1, §6.4, рішення автора 2026-10-26). */
 Object.assign(ICONS, {
   "mom-meal": (g: Phaser.GameObjects.Graphics) => drawMomMeal(g, 20, 34, 1.25),
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
+ * Шипіння з причиною (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Р2; §11.4): злість ліворуч угорі, а праворуч
+ * унизу — значок причини: миска, лоток, вікно, рука чи кошеня.
+ */
+function hissWith(cause: Draw): Draw {
+  return (g) => {
+    // Злість — менша, але з товстою рискою, як і повна: інакше дужки злипаються в червоний хрестик.
+    g.lineStyle(4, COLORS.danger);
+    for (const [x, y, a] of [[8, 8, 0], [19, 8, 1], [8, 19, 3], [19, 19, 2]] as const) {
+      g.beginPath().arc(x, y, 5, (a * Math.PI) / 2, (a * Math.PI) / 2 + Math.PI / 2).strokePath();
+    }
+    g.save().translateCanvas(15, 15).scaleCanvas(0.63, 0.63);
+    cause(g);
+    g.restore();
+  };
+}
+
+/** Лоток збоку: сірий піддон із наповнювачем. */
+const tray: Draw = (g) => {
+  g.fillStyle(0x8c9aa6).fillRoundedRect(3, 17, 34, 17, 5);
+  g.fillStyle(0xd6c6a2).fillRoundedRect(7, 14, 26, 8, 3);
+  g.lineStyle(2.5, INK).strokeRoundedRect(3, 17, 34, 17, 5);
+  g.fillStyle(0x8a7a5a);
+  for (const [x, y] of [[12, 17], [19, 16], [26, 17]] as const) g.fillCircle(x, y, 1.8);
+};
+
+/** Вікно: рама з хрестом і блакитне скло. */
+const pane: Draw = (g) => {
+  g.fillStyle(0xbfe1f2).fillRect(6, 5, 28, 28);
+  g.lineStyle(3, INK).strokeRect(6, 5, 28, 28).lineBetween(20, 5, 20, 33).lineBetween(6, 19, 34, 19);
+  g.fillStyle(0x8a6a4a).fillRect(3, 33, 34, 4);
+};
+
+/** Розкрита долоня — рука, що гладить. */
+const palm: Draw = (g) => {
+  g.fillStyle(INK).fillRoundedRect(9.5, 14.5, 21, 21, 6);
+  for (const x of [9.5, 14.5, 19.5, 24.5]) g.fillRoundedRect(x, 4.5, 6, 15, 3);
+  g.fillStyle(0xe8c39e).fillRoundedRect(11, 16, 18, 18, 5);
+  for (const x of [11, 16, 21, 26]) g.fillRoundedRect(x, 6, 3.5, 13, 1.75);
+};
+
+Object.assign(ICONS, {
+  "hiss-bowl": hissWith((g) => ICONS.kibble(g)),
+  "hiss-litter": hissWith(tray),
+  "hiss-window": hissWith(pane),
+  "hiss-hand": hissWith(palm),
+  "hiss-kitten": hissWith((g) => ICONS.cat(g)),
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**

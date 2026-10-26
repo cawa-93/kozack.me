@@ -112,7 +112,7 @@ import {
 } from "./config";
 import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
-import { emit, type ScratchSpot } from "./events";
+import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
@@ -439,28 +439,29 @@ export function groomGain(value: number): number {
  * Сварка за миску чи лоток (§9.4): лише з котом поруч, що не спить, — кіт шипить на нього, і це видно. На сплячого й
  * новонародженого не шипить (перевірка стосунків 2026-10-26: раніше шипів на сусіда, що спав біля миски, — стосунки −3).
  */
-function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean): void {
+function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean, why: "bowl" | "litter"): void {
   if (enough) return;
   const r = RELATIONS.resource;
   // Дзеркально (§9.12, «Територіальність»): «Ділиться» свариться рідше, «Комунар» — ніколи.
   if (!rng.chance(Math.max(0, r.chance + r.territorialStep * traitLevel(cat, "territorial")))) return;
   const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && distance(c, cat) <= r.distance);
   const other = others[rng.int(0, others.length - 1)];
-  if (!other || !hiss(state, cat, other)) return;
+  if (!other || !hiss(state, cat, other, why)) return;
   changeRelation(state, cat, other, r.relation);
   noteStrife(state, cat, other, "quarrel");
   observe(state, cat, "territorial");
 }
 
 /**
- * Кіт шипить на іншого (§9.4) — це видно й чути. Спільна пауза шипіння (§9.12): після попереднього минуло
- * менше 20 хвилин — кіт мовчить, і сварки теж немає (false).
+ * Кіт шипить на іншого (§9.4) — це видно й чути; причину (`why`) видно значком поруч зі злістю (§9.4 «Згода, охорона й сварки»,
+ * рішення автора 2026-10-26, Р2). Спільна пауза шипіння (§9.12): після попереднього минуло менше 20 хвилин — кіт мовчить, і
+ * сварки теж немає (false).
  */
-export function hiss(state: GameState, cat: Cat, at: Cat): boolean {
+export function hiss(state: GameState, cat: Cat, at: Cat, why?: HissCause): boolean {
   const now = absoluteMinute(state.day, state.minute);
   if (cat.hissedAt !== undefined && now - cat.hissedAt < HISS_PAUSE_MINUTES) return false;
   cat.hissedAt = now;
-  emit(state, { type: "hissed", cat: cat.id, at: at.id });
+  emit(state, { type: "hissed", cat: cat.id, at: at.id, ...(why ? { why } : {}) });
   return true;
 }
 
@@ -2045,7 +2046,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         envy(state, cat, "premium");
       }
       emit(state, { type: "cat-ate", cat: cat.id, quality });
-      resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length);
+      resourceConflict(state, cat, rng, itemsOf(state, "bowl").length >= state.cats.length, "bowl");
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
@@ -2200,7 +2201,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       box.uses += 1;
       itemMood(state, cat, box);
       wearOut(state, box, rng);
-      resourceConflict(state, cat, rng, itemsOf(state, "litter").length >= state.cats.length + 1);
+      resourceConflict(state, cat, rng, itemsOf(state, "litter").length >= state.cats.length + 1, "litter");
       // Розкидає наповнювач (§9.12): 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше.
       const scatter = traitLevel(cat, "scatter");
       const scatters = SCATTER_CHANCE.base * Math.max(0, 1 + SCATTER_CHANCE.step * scatter) * (box.quality === "premium" ? SCATTER_CHANCE.closedBox : 1);
@@ -2459,7 +2460,7 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
   const victim = state.cats.find((c) => c.id === act.victim);
   const eating = victim && home(state, victim) && victim.act.kind === "eat" && victim.act.goal === null && victim.act.target === act.target;
   if (victim && eating) {
-    hiss(state, thief, victim);
+    hiss(state, thief, victim, "bowl");
     observe(state, thief, "thief");
     const guard = traitLevel(victim, "territorial");
     // З тим, з ким пара ще не відійшла від бійки, «Охоронець» не б'ється (§9.4, «Пауза пари»).
@@ -4001,7 +4002,7 @@ function getsAttention(state: GameState, cat: Cat): boolean {
  * на коліна сам.
  */
 function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
-  if (!hiss(state, cat, lucky)) return;
+  if (!hiss(state, cat, lucky, "hand")) return;
   const level = traitLevel(cat, "jealousy");
   observe(state, cat, "jealousy");
   if (distance(cat, lucky) > JEALOUSY.near || !getsAttention(state, lucky) || isCarried(state, lucky) || !rng.chance(JEALOUSY.leave)) return;
@@ -4423,6 +4424,12 @@ function guardableTarget(cat: Cat): string | null {
   return act.kind === "window" ? act.target : null;
 }
 
+/** Що охороняють (§9.4, Р2): миска, лоток чи підвіконня — значок у шипінні. */
+function guardCause(state: GameState, target: string): HissCause {
+  const item = itemById<HomeItem>(state, target);
+  return item?.kind === "bowl" ? "bowl" : item?.kind === "litter" ? "litter" : "window";
+}
+
 /**
  * Кіт іде до миски, лотка чи підвіконня, де вже «Охоронець» (§9.12, «Територіальність», рішення автора 2026-10-25): той, щойно кіт
  * підійшов ближче 2 клітинок, з шансом 30% × рівень шипить, і кіт відходить — потреба лишається, стосунки −3. Відігнаний від лотка з
@@ -4447,7 +4454,7 @@ function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
   cat.act.guarded = true;
   const now = absoluteMinute(state.day, state.minute);
   if (guard.guardedAt !== undefined && now - guard.guardedAt < TERRITORY.guardPause) return;
-  if (!rng.chance(TERRITORY.guardStep * guardLevel(guard)) || !hiss(state, guard, cat)) return;
+  if (!rng.chance(TERRITORY.guardStep * guardLevel(guard)) || !hiss(state, guard, cat, guardCause(state, target))) return;
   guard.guardedAt = now;
   changeRelation(state, guard, cat, TERRITORY.guardRelation);
   // Охорона — теж сварка за ресурс (§9.4, Б6).
@@ -4511,7 +4518,7 @@ function swatKitten(state: GameState, cat: Cat, kitten: Cat, rng: Rng): void {
   const now = absoluteMinute(state.day, state.minute);
   const next = cat.snubAt?.[kitten.id];
   if (next !== undefined && now < next) return;
-  const hissed = rng.chance(NURTURING.swatStep * -level) && hiss(state, cat, kitten);
+  const hissed = rng.chance(NURTURING.swatStep * -level) && hiss(state, cat, kitten, "kitten");
   (cat.snubAt ??= {})[kitten.id] = now + (hissed ? NURTURING.swatPause : SOCIABILITY.passEvery);
   if (!hissed) return;
   changeMood(state, kitten, NURTURING.swatMood, "відігнали");

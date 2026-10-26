@@ -1,7 +1,7 @@
 // Яка іконка в чого (§11.4): запаси, речі в руках і причини відмов. Без Phaser — щоб тести могли
 // перевірити, що кожна відмова має свою іконку.
 
-import type { GameEvent, Need, Refusal } from "../sim/events";
+import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import type { Dish, Item, Product } from "../sim/types";
 import type { IconName, Mark } from "./icons";
 
@@ -115,6 +115,18 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
   }
 }
 
+/**
+ * Шипіння з причиною (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Р2; §11.4): злість і значок причини — кожна
+ * причина своя.
+ */
+export const HISS_ICONS: Record<HissCause, IconName> = {
+  bowl: "hiss-bowl",
+  litter: "hiss-litter",
+  window: "hiss-window",
+  hand: "hiss-hand",
+  kitten: "hiss-kitten",
+};
+
 /** Над ким бабл-думка (§11.4): лише над головою персонажа чи кота — речі не думають. */
 export type Thinker = "person" | `cat:${number}`;
 
@@ -170,9 +182,11 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "meow":
       // «Тихоня» нявкає беззвучно (§9.12): рот відкрито, як для нявкання, тож це мовна хмаринка, але без звуку.
       return [{ kind: "say", at: cat(event.cat), icon: event.silent === true ? "meow-silent" : "meow" }];
+    case "hissed":
+      // Шипить на іншого кота — уголос; причину видно значком поруч зі злістю (§9.4, Р2).
+      return [{ kind: "say", at: cat(event.cat), icon: event.why ? HISS_ICONS[event.why] : "angry" }];
     case "knocked":
     case "stole":
-    case "hissed":
     case "hissed-guests":
       return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
     case "trinket-fell":

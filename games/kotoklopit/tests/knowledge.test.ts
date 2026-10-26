@@ -359,7 +359,7 @@ describe("дрібниці з рішення автора 2026-10-25", () => {
     jealousy(save.current, lucky);
     stop();
     const hisses = events.filter((e) => e.type === "hissed");
-    expect(hisses).toEqual([{ type: "hissed", cat: near.id, at: lucky.id }]);
+    expect(hisses).toEqual([{ type: "hissed", cat: near.id, at: lucky.id, why: "hand" }]);
     expect(near.traits[0]?.seen).toBe(1);
     expect(far.traits[0]?.seen).toBe(0);
   });

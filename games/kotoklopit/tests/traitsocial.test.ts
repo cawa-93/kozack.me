@@ -416,6 +416,7 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
       expect(guard.act.kind).toBe("window");
       if (events.some((e) => e.type === "hissed" && e.cat === guard.id && e.at === visitor.id)) {
         guarded += 1;
+        expect(events.find((e) => e.type === "hissed" && e.cat === guard.id)).toMatchObject({ why: "window" });
         expect(seen(guard, "territorial")).toBe(1);
         expect(visitor.act.kind).toBe("wander");
       }
@@ -1081,6 +1082,7 @@ describe("«Територіальність» (§9.4, §9.12, рішення а
         stop();
         if (!events.some((e) => e.type === "hissed" && e.cat === guard.id && e.at === hungry.id)) continue;
         count += 1;
+        expect(events.find((e) => e.type === "hissed" && e.cat === guard.id)).toMatchObject({ why: "bowl" });
         expect(hungry.act.kind).toBe("wander");
         expect(hungry.needs.hunger).toBeGreaterThanOrEqual(90);
         expect(relation(save.current, guard, hungry)).toBe(relationValue + TERRITORY.guardRelation);
@@ -1239,6 +1241,8 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
       stop();
       if (!events.some((e) => e.type === "hissed" && e.cat === grump.id && e.at === kitten.id)) continue;
       swatted += 1;
+      // Причину видно: значок кошеняти поруч зі злістю (§9.4, Р2).
+      expect(events.find((e) => e.type === "hissed" && e.cat === grump.id)).toMatchObject({ why: "kitten" });
       expect(kitten.mood).toBeLessThan(50);
       expect(seen(grump, "nurturing")).toBe(1);
     }
