@@ -157,6 +157,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} почав вилизувати ${catName(state, event.friend)}`;
     case "groomed":
       return `${catName(state, event.cat)} вилизав ${catName(state, event.friend)}`;
+    case "play-declined":
+      return `${catName(state, event.cat)} не хоче гратися з ${catName(state, event.by)}${event.sick ? " — хворий, шипить" : ""}`;
     case "cats-played":
       return `Догралися: ${catName(state, event.cats[0])} і ${catName(state, event.cats[1])}`;
     case "cat-fight":

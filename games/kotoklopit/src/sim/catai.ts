@@ -110,7 +110,7 @@ import {
   WORK_CAT,
   ZOOMIES,
 } from "./config";
-import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, isObese, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
 import { emit, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -1598,8 +1598,15 @@ function nightMischief(state: GameState, cat: Cat): void {
 function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | null {
   const w = RELATIONS.wrestle;
   const kitten = isKitten(cat);
+  const now = absoluteMinute(state.day, state.minute);
+  // Щойно відмовився гратися — пів години його не кличуть (§9.4 «Згода, охорона й сварки», Г5).
+  const declined = (other: Cat): boolean => other.playDeclinedAt !== undefined && now - other.playDeclinedAt < w.decline.pause;
   const free = (other: Cat): boolean =>
-    (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") && approachable(state, other) && !shoos(state, cat, other) && !shoos(state, other, cat);
+    (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") &&
+    approachable(state, other) &&
+    !declined(other) &&
+    !shoos(state, cat, other) &&
+    !shoos(state, other, cat);
   const friend = nearestCat(state, cat, (other) => free(other) && isFriend(state, cat, other));
   if (friend) return { cat: friend, weight: w.weight * (kitten ? w.kitten : 1) };
   if (kitten) {
@@ -1647,6 +1654,8 @@ function metMate(state: GameState, cat: Cat, rng: Rng): void {
     act.minutes = 0;
     return;
   }
+  // Друг може й не схотіти (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5).
+  if (!rng.chance(playAcceptance(mate))) return declinePlay(state, mate, cat);
   const minutes = between(w.minutes, rng);
   act.paired = true;
   act.minutes = minutes;
@@ -1656,6 +1665,34 @@ function metMate(state: GameState, cat: Cat, rng: Rng): void {
   mate.facing = cat.x > mate.x ? 1 : -1;
   act.lead = true;
   enterPhase(state, cat, mate, "ambush", cat.id, rng);
+}
+
+/**
+ * Шанс, що покликаний кіт погодиться гратися (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5): 0,3 + гра/100 −
+ * втома/200 + 0,15 × «Ігривість», кошеня — +0,3, старий — −0,3, у межах 0,1…0,95; хворий — ніколи.
+ */
+export function playAcceptance(mate: Cat): number {
+  const a = RELATIONS.wrestle.accept;
+  if (isUnwell(mate)) return 0;
+  const chance =
+    a.base + a.play * mate.needs.play + a.fatigue * mate.needs.fatigue + a.playfulStep * traitLevel(mate, "playful") + (isKitten(mate) ? a.kitten : 0) + (isOld(mate) ? a.old : 0);
+  return clamp(chance, a.min, a.max);
+}
+
+/**
+ * Покликаний відмовився гратися (§9.4, Г5): лягає обличчям до того, хто кликав, і сіпає хвостом, хворий ще й шипить на нього; той
+ * хвилину сидить поруч. Гри немає нікому, і пів години цього кота не кличуть.
+ */
+function declinePlay(state: GameState, mate: Cat, cat: Cat): void {
+  const d = RELATIONS.wrestle.decline;
+  const sick = isUnwell(mate);
+  standBeside(cat, mate);
+  mate.facing = cat.x > mate.x ? 1 : -1;
+  start(mate, "idle", null, d.minutes, `declined:${cat.id}`);
+  mate.playDeclinedAt = absoluteMinute(state.day, state.minute);
+  start(cat, "idle", null, d.sit, `refused:${mate.id}`);
+  emit(state, { type: "play-declined", cat: mate.id, by: cat.id, sick });
+  if (sick) hiss(state, mate, cat);
 }
 
 // --- Гра двох котів фазами (§9.4, «Гру й вилизування видно», рішення автора 2026-10-26, Г3) --------

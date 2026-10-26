@@ -170,6 +170,7 @@ export class CatView {
       pose === "scratch" ||
       pose === "stretch" ||
       pose === "crouch" ||
+      pose === "lie" ||
       interaction ||
       feeling ||
       blinking
@@ -591,6 +592,21 @@ export class CatView {
         g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 14 * s, 32 * s * fw, 15 * s * fh);
         this.headAt(g, x + dir * 15 * s, y - 22 * s, s, dir, body, point);
         this.inMouth(g, cat, x + dir * 21 * s, y - 15 * s, s);
+        return;
+      }
+      case "lie": {
+        // «Не хоче гратися» (§9.4, «Пози стосунків», 6; заглушка до кроку 16): лежить «буханцем» — низьке тіло з підібраними
+        // лапками, голова піднята до того, хто кликав, очі розплющені, а хвіст лежить позаду й швидко сіпається.
+        this.lash = Math.sin(time / 55 + cat.id);
+        this.tail(g, x - dir * 14 * s, y - 4 * s, s, dir, "rest");
+        g.fillStyle(body).fillEllipse(x, y - 8 * s, 32 * s * fw, 15 * s * fh);
+        this.patches(g, x, y - 8 * s, 32 * s * fw, 15 * s * fh);
+        if (this.coat.tabby) this.stripes(g, x - dir * 3 * s, y - 9 * s, 22 * s, stripe, true);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 8 * s, 32 * s * fw, 15 * s * fh);
+        const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
+        g.fillStyle(pawColor).fillEllipse(x + dir * 12 * s, y - 1.5 * s, 7 * s, 3.5 * s).fillEllipse(x + dir * 7 * s, y - 1 * s, 7 * s, 3.5 * s);
+        this.headAt(g, x + dir * 12 * s, y - 17 * s, s, dir, body, point);
+        this.back = { x: x - dir * 4 * s, y: y - 14 * s };
         return;
       }
       case "carried":

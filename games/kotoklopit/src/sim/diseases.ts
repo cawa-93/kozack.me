@@ -49,6 +49,12 @@ export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") |
 export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1);
 /** Ожиріння (§9.5, §9.12): менше грається й не лізе нагору. */
 export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
+
+/**
+ * Кіт нездужає (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5): будь-яка хвороба, зокрема травма, — крім старості й
+ * ожиріння (з ними кіт не хворий, а старий чи повний). Такий гратися не погоджується й шипить на того, хто кличе.
+ */
+export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => d.id !== "senior" && d.id !== "obesity");
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
   (hasDisease(cat, "stomach") || hasDisease(cat, "cystitis")) && rng.chance(SYMPTOMS.outsideLitter);

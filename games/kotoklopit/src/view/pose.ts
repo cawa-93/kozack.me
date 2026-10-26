@@ -25,7 +25,8 @@ export type CatPose =
   | "brawl"
   | "lick"
   | "paw"
-  | "kick";
+  | "kick"
+  | "lie";
 
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
@@ -41,6 +42,8 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   // Гра з другом фазами (§9.4, «Гру й вилизування видно», рішення автора 2026-10-26, Г3).
   if (act.kind === "wrestle") return playPose(cat);
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "fight") return "walk";
+  // Не хоче гратися з тим, хто кликав (§9.4, «Пози стосунків», 6; рішення автора 2026-10-26, Г5): лежить і сіпає хвостом.
+  if (isDeclining(cat)) return "lie";
   // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
   if (act.kind === "sleep" && act.target === "carrier") return "carrier";
   // Теплолюб під ковдрою, «Не мерзне» розпластався на прохолодній плитці (§9.12, «Теплолюбність»).
@@ -97,6 +100,12 @@ function playPose(cat: Cat): CatPose {
   }
 }
 
+/** Кіт відмовився гратися (§9.4 «Згода, охорона й сварки», Г5): лежить обличчям до того, хто кликав, і сіпає хвостом. */
+export const isDeclining = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("declined:") === true;
+
+/** Кіт покликав гратися, а друг відмовився (§9.4, Г5): хвилину сидить поруч обличчям до нього. */
+const isRefused = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("refused:") === true;
+
 /** Кота саме вилизує друг (§9.4, «Гру й вилизування видно», В1): сидить і мружиться, як під пестощами. */
 export const isLicked = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("licked:") === true;
 
@@ -105,7 +114,11 @@ export const isLicked = (cat: Cat): boolean => cat.act.kind === "idle" && cat.ac
  * моргання до персонажа, як і перед ворогом.
  */
 export const withFriend = (cat: Cat): boolean =>
-  cat.act.kind === "wrestle" || (cat.act.kind === "groom" && (cat.act.target?.startsWith("cat:") === true || cat.act.target?.startsWith("kitten:") === true)) || isLicked(cat);
+  cat.act.kind === "wrestle" ||
+  (cat.act.kind === "groom" && (cat.act.target?.startsWith("cat:") === true || cat.act.target?.startsWith("kitten:") === true)) ||
+  isLicked(cat) ||
+  isDeclining(cat) ||
+  isRefused(cat);
 
 /** Суперник у «клубку бійки» (§9.4): обидва вже зійшлися й б'ються саме одне з одним; інакше null. */
 export function brawlFoe(state: GameState, cat: Cat): Cat | null {

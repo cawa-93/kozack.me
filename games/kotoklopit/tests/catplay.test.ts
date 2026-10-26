@@ -4,7 +4,9 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, groomGain, tickCats } from "../src/sim/catai";
+import { decide, groomGain, playAcceptance, tickCats } from "../src/sim/catai";
+import { RELATIONS } from "../src/sim/config";
+import { fallIll } from "../src/sim/diseases";
 import type { GameEvent } from "../src/sim/events";
 import { removeCat } from "../src/sim/farewell";
 import { newGame } from "../src/sim/game";
@@ -14,7 +16,7 @@ import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, PlayPhase, Save, TraitLevel } from "../src/sim/types";
-import { isLicked, poseOf, withFriend } from "../src/view/pose";
+import { isDeclining, isLicked, poseOf, withFriend } from "../src/view/pose";
 import { eventBubbles } from "../src/view/symbols";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -433,6 +435,8 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     const a = withCat(save, {}, at);
     const b = withCat(save, {}, { x: at.x + gap, y: at.y });
     setRelation(save, a, b, 70);
+    // Друг сам хоче гратися — погоджується з шансом 95% (§9.4 «Згода, охорона й сварки», Г5).
+    b.needs.play = 100;
     a.act = { kind: "wrestle", target: `cat:${b.id}`, goal: { x: Math.floor(b.x), y: Math.floor(b.y) }, minutes: 8, elapsed: 0 };
     b.act = { kind: "wrestle", target: `cat:${a.id}`, goal: null, minutes: 10, elapsed: 0 };
     return { save, a, b };
@@ -542,14 +546,18 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
 
   it("уночі (крок — хвилина, утікач за крок пробігає 7,5 клітинки) мисливець не відстає, і гра догравається", () => {
     let played = 0;
+    let declined = 0;
     for (let seed = 1; seed <= 20; seed++) {
       const { save, a, b } = friendsPlay(seed);
       const { events, stop } = recordEvents();
       for (let t = 0; t < 20 && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) tickCats(save.current, 1, { present: false });
       stop();
       played += count(events, "cats-played");
+      declined += count(events, "play-declined");
     }
-    expect(played).toBe(20);
+    // Хто погодився (95%, Г5), той і догрався.
+    expect(played + declined).toBe(20);
+    expect(declined).toBeLessThanOrEqual(3);
   });
 
   it("боротьба: мисливець добігає й стає впритул, навіть коли утікач ліг біля самого кута клітинки", () => {
@@ -592,6 +600,141 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     expect(count(events, "cats-played")).toBe(1);
     expect(a.needs.play).toBeLessThan(80);
     expect(relation(save.current, a, b)).toBe(72);
+  });
+});
+
+describe("друг може відмовитися (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5)", () => {
+  /** `a` біжить до `b` гратися (як після `decide`); `b` чекає. */
+  function invite(seed: number, needs: { play: number; fatigue: number }, ageWeeks = 3): { save: Save; a: Cat; b: Cat } {
+    const save = game(seed);
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.5, y: 8.5 }, ageWeeks);
+    setRelation(save, a, b, 70);
+    a.needs.play = 90;
+    Object.assign(b.needs, needs);
+    a.act = { kind: "wrestle", target: `cat:${b.id}`, goal: { x: Math.floor(b.x), y: Math.floor(b.y) }, minutes: 8, elapsed: 0 };
+    b.act = { kind: "wrestle", target: `cat:${a.id}`, goal: null, minutes: 10, elapsed: 0 };
+    return { save, a, b };
+  }
+
+  /** Тікати, доки `a` не добіг до `b`. */
+  function arrive(save: Save, a: Cat): void {
+    for (let t = 0; t < 100 && a.act.kind === "wrestle" && a.act.goal !== null; t++) tickCats(save.current, 0.05, { present: false });
+  }
+
+  it("шанс погодитися: 0,3 + гра/100 − втома/200 + 0,15 × «Ігривість», кошеня +0,3, старий −0,3, у межах 0,1…0,95", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.needs.play = 50;
+    cat.needs.fatigue = 40;
+    expect(playAcceptance(cat)).toBeCloseTo(0.6);
+    cat.traits = [{ group: "playful", level: 1, seen: 0, known: false }];
+    expect(playAcceptance(cat)).toBeCloseTo(0.75);
+    cat.traits = [];
+    cat.needs.play = 0;
+    cat.needs.fatigue = 100;
+    expect(playAcceptance(cat)).toBeCloseTo(0.1);
+    cat.needs.play = 100;
+    cat.needs.fatigue = 0;
+    expect(playAcceptance(cat)).toBeCloseTo(0.95);
+    const kitten = withCat(save, {}, { x: 5.5, y: 8.5 }, 1);
+    kitten.needs.play = 20;
+    expect(playAcceptance(kitten)).toBeCloseTo(0.8);
+    const old = withCat(save, {}, { x: 6.5, y: 8.5 }, 60);
+    old.needs.play = 50;
+    expect(playAcceptance(old)).toBeCloseTo(0.5);
+  });
+
+  it("хворий чи травмований не погоджується зовсім; старість і ожиріння — не хвороба", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.needs.play = 100;
+    fallIll(save.current, cat, "obesity");
+    fallIll(save.current, cat, "senior");
+    expect(playAcceptance(cat)).toBeCloseTo(0.95);
+    fallIll(save.current, cat, "injury");
+    expect(playAcceptance(cat)).toBe(0);
+  });
+
+  it("покликаний погоджується так часто, як каже шанс", () => {
+    let accepted = 0;
+    let declined = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const { save, a } = invite(seed, { play: 50, fatigue: 40 });
+      const { events, stop } = recordEvents();
+      arrive(save, a);
+      stop();
+      if (a.act.kind === "wrestle" && a.act.paired === true) accepted += 1;
+      declined += count(events, "play-declined");
+    }
+    expect(accepted + declined).toBe(200);
+    expect(accepted / 200).toBeGreaterThan(0.5);
+    expect(accepted / 200).toBeLessThan(0.7);
+  });
+
+  it("відмовився — лягає обличчям до того, хто кликав, і сіпає хвостом, а той хвилину сидить поруч; гри немає нікому", () => {
+    let refusals = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const { save, a, b } = invite(seed, { play: 0, fatigue: 40 });
+      const { events, stop } = recordEvents();
+      arrive(save, a);
+      if (count(events, "play-declined") === 0) {
+        stop();
+        continue;
+      }
+      refusals += 1;
+      expect(isDeclining(b)).toBe(true);
+      expect(b.act.target).toBe(`declined:${a.id}`);
+      expect(poseOf(b, false)).toBe("lie");
+      expect(withFriend(b)).toBe(true);
+      expect(b.facing).toBe(a.x > b.x ? 1 : -1);
+      expect(a.act.kind).toBe("idle");
+      expect(a.act.target).toBe(`refused:${b.id}`);
+      expect(a.facing).toBe(b.x > a.x ? 1 : -1);
+      expect(Math.abs(a.x - b.x)).toBeCloseTo(RELATIONS.beside);
+      // Здоровий друг не шипить.
+      expect(events.some((e) => e.type === "hissed")).toBe(false);
+      for (let t = 0; t < 10; t++) tickCats(save.current, 1, { present: false });
+      stop();
+      expect(count(events, "cats-played")).toBe(0);
+      expect(relation(save.current, a, b)).toBe(70);
+    }
+    // Шанс погодитися тут — 10%.
+    expect(refusals).toBeGreaterThan(14);
+  });
+
+  it("хворий друг завжди відмовляється й шипить на того, хто кличе", () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const { save, a, b } = invite(seed, { play: 100, fatigue: 0 });
+      fallIll(save.current, b, "cold");
+      const { events, stop } = recordEvents();
+      arrive(save, a);
+      stop();
+      expect(events.filter((e) => e.type === "play-declined")).toEqual([{ type: "play-declined", cat: b.id, by: a.id, sick: true }]);
+      expect(events.some((e) => e.type === "hissed" && e.cat === b.id && e.at === a.id)).toBe(true);
+    }
+  });
+
+  it("пів години після відмови цього кота гратися не кличуть", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+    setRelation(save, a, b, 70);
+    const now = absoluteMinute(save.current.day, save.current.minute);
+    const invites = (): number => {
+      let n = 0;
+      for (let seed = 0; seed < 200; seed++) {
+        a.needs.play = 100;
+        b.act = idleAct(30);
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind === "wrestle") n += 1;
+      }
+      return n;
+    };
+    b.playDeclinedAt = now - RELATIONS.wrestle.decline.pause + 1;
+    expect(invites()).toBe(0);
+    b.playDeclinedAt = now - RELATIONS.wrestle.decline.pause;
+    expect(invites()).toBeGreaterThan(10);
   });
 });
 

@@ -30,7 +30,7 @@
       "traits": [{ "group": "jealousy", "level": 2, "seen": 0, "known": true }, { "group": "sociability", "level": -2, "seen": 0, "known": true }] },
     { "source": "shelter", "ageWeeks": 12, "name": "Нянька", "sex": "female", "arrivedDay": -10, "x": 12.5, "y": 8.5, "needs": { "attention": 70, "fatigue": 20 },
       "traits": [{ "group": "nurturing", "level": 2, "seen": 0, "known": true }, { "group": "grooming", "level": 2, "seen": 0, "known": true }, { "group": "jealousy", "level": -2, "seen": 0, "known": true }] },
-    { "source": "shelter", "ageWeeks": 1, "name": "Малюк", "sex": "male", "arrivedDay": -3, "x": 13.5, "y": 8.5, "needs": { "play": 80, "attention": 10, "fatigue": 20 } },
+    { "source": "shelter", "ageWeeks": 1, "name": "Малюк", "sex": "male", "arrivedDay": -3, "x": 13.5, "y": 8.5, "needs": { "play": 50, "attention": 10, "fatigue": 20 } },
     { "source": "shelter", "ageWeeks": 12, "name": "Чемна", "sex": "female", "arrivedDay": -10, "x": 11.5, "y": 8.5, "needs": { "hunger": 85, "attention": 10, "fatigue": 0 },
       "toldNo": { "kitchen": 5030 },
       "traits": [{ "group": "obedience", "level": 2, "seen": 0, "known": true }, { "group": "thief", "level": 2, "seen": 0, "known": true }] }
