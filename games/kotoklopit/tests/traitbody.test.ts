@@ -429,6 +429,26 @@ describe("«Схильність до повноти» (§9.12, рішення �
     expect(gained({}, true)).toBeCloseTo(2.6);
   });
 
+  it("стерилізованому ×1,3 — лише за звичайного корму, порція корму для стерилізованих — ×1 (рішення автора 2026-10-26)", () => {
+    const meal = (sterilized: boolean, sterileFood: boolean): number => {
+      const save = game();
+      const cat = withCat(save, {}, { x: 17.5, y: 4.5 });
+      cat.sterilized = sterilized;
+      const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+      bowl.food = 2;
+      bowl.foodQuality = "cheap";
+      bowl.sterile = sterileFood;
+      cat.needs.hunger = 30;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.25, elapsed: 0, nibble: false, second: true };
+      live(save, 0.25);
+      expect(bowl.food).toBe(1);
+      return weightOf(cat) - WEIGHT.norm;
+    };
+    expect(meal(true, false)).toBeCloseTo(WEIGHT.portion * WEIGHT.sterilized);
+    expect(meal(true, true)).toBeCloseTo(WEIGHT.portion);
+    expect(meal(false, true)).toBeCloseTo(WEIGHT.portion);
+  });
+
   it("порція не з голоду, ласощі й крадена їжа — гладшає; порція з голоду — ні", () => {
     const meal = (hunger: number): number => {
       const save = game();

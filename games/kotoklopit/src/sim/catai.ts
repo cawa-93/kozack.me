@@ -1579,7 +1579,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Їв, не бувши голодним, — гладшає (§9.12, «Схильність до повноти»): що менший голод, то більше зайвого — друга порція
       // «Ненаситного», миска, до якої збіглися на звук корму, частіші трапези «Ласуна».
       const excess = Math.min(1, Math.max(0, WEIGHT.fullHunger - cat.needs.hunger) / WEIGHT.excessRange);
-      if (excess > 0) gainWeight(state, cat, WEIGHT.portion * portion * excess);
+      // Корм для стерилізованих тримає вагу стерилізованого: без його множника (рішення автора 2026-10-26).
+      if (excess > 0) gainWeight(state, cat, WEIGHT.portion * portion * excess, bowl.sterile);
       if (nibble) bowl.half = true;
       else {
         bowl.food -= 1;
