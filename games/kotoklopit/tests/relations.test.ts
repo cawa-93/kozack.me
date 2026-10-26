@@ -91,6 +91,55 @@ describe("друзі (§9.4)", () => {
     expect(chosen).toBe(0);
   });
 
+  it("вилизують лише друга, що відпочиває, — найближчого; друг відійшов — вилизування скасовується (перевірка стосунків 2026-10-26)", () => {
+    const groomChoices = (setFriend: (b: Cat, save: Save) => void): number => {
+      let chosen = 0;
+      for (let seed = 0; seed < 200; seed++) {
+        const save = game();
+        const a = withCat(save, {}, { x: 9.5, y: 8.5 });
+        const b = withCat(save, {}, { x: 11.5, y: 8.5 });
+        setRelation(save, a, b, 80);
+        setFriend(b, save);
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind === "groom" && a.act.target === `cat:${b.id}`) chosen++;
+      }
+      return chosen;
+    };
+    expect(groomChoices((b) => (b.act = idleAct(30)))).toBeGreaterThan(0);
+    expect(groomChoices((b) => (b.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 }))).toBeGreaterThan(0);
+    // Іде геть, у лотку, б'ється — не вилизують.
+    expect(groomChoices((b) => (b.act = { kind: "wander", target: null, goal: { x: 17, y: 9 }, minutes: 5, elapsed: 0 }))).toBe(0);
+    expect(
+      groomChoices((b, save) => {
+        const box = save.current.home.items.find((it) => it.kind === "litter");
+        b.act = { kind: "toilet", target: `item:${box?.id ?? 0}`, goal: null, minutes: 2, elapsed: 0 };
+      }),
+    ).toBe(0);
+    expect(groomChoices((b) => (b.act = { kind: "fight", target: "cat:999", goal: null, minutes: 2, elapsed: 0 }))).toBe(0);
+
+    // Найближчого: дальній друг — перший у списку котів.
+    const save = game();
+    const a = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const far = withCat(save, {}, { x: 12.3, y: 8.5 });
+    const near = withCat(save, {}, { x: 10.5, y: 8.5 });
+    setRelation(save, a, far, 80);
+    setRelation(save, a, near, 80);
+    const targets = new Set<string | null>();
+    for (let seed = 0; seed < 100; seed++) {
+      for (const c of [a, far, near]) c.act = idleAct(30);
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind === "groom") targets.add(a.act.target);
+    }
+    expect([...targets]).toEqual([`cat:${near.id}`]);
+
+    // Дійшов, а друг відійшов — не сидить сам 3 хвилини.
+    a.act = { kind: "groom", target: `cat:${near.id}`, goal: null, minutes: 3, elapsed: 0 };
+    near.act = { kind: "wander", target: null, goal: null, minutes: 30, elapsed: 0 };
+    Object.assign(near, { x: 13.5, y: 8.5 });
+    tickCats(save.current, 0.5, { present: false });
+    expect(a.act.kind === "groom" && a.act.target === `cat:${near.id}`).toBe(false);
+  });
+
   it("кота, якого гладять, боротися не забирають", () => {
     let chosen = 0;
     for (let seed = 0; seed < 200; seed++) {

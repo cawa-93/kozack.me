@@ -1277,7 +1277,8 @@ export const RELATIONS = {
   /** «Товариськість» обох — щоночі за одиницю (рішення автора 2026-10-25). */
   sociabilityNightly: 0.5,
   wrestle: { weight: 0.6, minutes: 3, play: 40, mood: 2, relation: 1 },
-  groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2 },
+  /** Вилизує, поки друг ближче `reach` клітинки; відійшов далі — вилизування скасовується (перевірка стосунків 2026-10-26). */
+  groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2, reach: 1.5 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },
   fight: { distance: 1.5, perMinute: 0.05, territorialStep: 0.025, minutes: 2, mood: -3, relation: -5, injury: 0.25, separateSanity: -3 },
   enemyMoodPerHour: -0.5,
