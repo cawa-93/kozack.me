@@ -798,9 +798,10 @@ export const WINDOW = {
  * (крадіжка чи скидання скасовуються); ціна — як прогнати з місця (`SHOO`). Після цього кіт `minutes` × max(0, 1 + `step` ×
  * рівень) хвилин туди не лізе; «+» пам'ятає це видно — підходить, `rememberMinutes` дивиться й розвертається. «Анархіст» (від
  * −`comebackLevel`) з шансом `comeback` повертається туди за `comebackMinutes` хвилин (зайнятий довше за `comebackWindow` —
- * забуває). Прояви — не частіше ніж раз на `observeEvery` хвилин.
+ * забуває). Прояви — не частіше ніж раз на `observeEvery` хвилин; думка «пам'ятає «ні»» — не частіше ніж раз на `thoughtEvery`
+ * хвилин на кота (рішення автора 2026-10-26).
  */
-export const OBEDIENCE = { minutes: 120, step: 0.5, rememberMinutes: 1, comebackLevel: 2, comeback: 0.5, comebackMinutes: 10, comebackWindow: 30, observeEvery: 60 } as const;
+export const OBEDIENCE = { minutes: 120, step: 0.5, rememberMinutes: 1, comebackLevel: 2, comeback: 0.5, comebackMinutes: 10, comebackWindow: 30, observeEvery: 60, thoughtEvery: 30 } as const;
 /**
  * «Товариськість» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): «−»
  * шипить на кота, що не друг і проходить повз ближче `passDistance` клітинки, — з шансом `passStep` × |рівень| за зустріч

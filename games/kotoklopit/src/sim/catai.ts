@@ -3427,9 +3427,16 @@ function startRemember(state: GameState, cat: Cat, zone: ForbiddenZone, objectId
   start(cat, "idle", besideObject(state, objectById(objectId)), OBEDIENCE.rememberMinutes, `no:${zone}`);
 }
 
-/** Кіт згадав «ні» й розвертається — над ним думка, перекреслене місце (§9.12); прояв «Слухняності +», раз на годину. */
+/**
+ * Кіт згадав «ні» й розвертається — над ним думка, перекреслене місце (§9.12), не частіше ніж раз на 30 хвилин на кота (рішення
+ * автора 2026-10-26: голодний «Слухняний» ходить до столу щокілька хвилин); прояв «Слухняності +», раз на годину.
+ */
 function rememberNo(state: GameState, cat: Cat, zone: ForbiddenZone): void {
-  emit(state, { type: "cat-remembered", cat: cat.id, zone });
+  const now = absoluteMinute(state.day, state.minute);
+  if (cat.noThoughtAt === undefined || now - cat.noThoughtAt >= OBEDIENCE.thoughtEvery) {
+    cat.noThoughtAt = now;
+    emit(state, { type: "cat-remembered", cat: cat.id, zone });
+  }
   observe(state, cat, "obedience", 1, false, OBEDIENCE.observeEvery);
 }
 
