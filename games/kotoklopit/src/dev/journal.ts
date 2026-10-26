@@ -223,6 +223,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} подряпав біля переноски: здоров'я −3`;
     case "catnip":
       return `${catName(state, event.cat)}: котяча м'ята — ${event.reaction === "roll" ? "катається" : event.reaction === "frenzy" ? "шаленіє" : "понюхав і пішов"}`;
+    case "groom-refused":
+      return `${catName(state, event.cat)} відсторонився від ${catName(state, event.by)}, що хотів вилизати`;
     case "cat-remembered":
       return `${catName(state, event.cat)} пам'ятає «ні»: не лізе ${event.zone === "desk" ? "на комп'ютер" : "на кухонний стіл"}`;
     case "chatter":

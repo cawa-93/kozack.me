@@ -742,6 +742,21 @@ export const WINDOW = {
  * забуває). Прояви — не частіше ніж раз на `observeEvery` хвилин.
  */
 export const OBEDIENCE = { minutes: 120, step: 0.5, rememberMinutes: 1, comebackLevel: 2, comeback: 0.5, comebackMinutes: 10, comebackWindow: 30, observeEvery: 60 } as const;
+/**
+ * «Товариськість» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): «−»
+ * шипить на кота, що не друг і проходить повз ближче `passDistance` клітинки, — з шансом `passStep` × |рівень| за зустріч
+ * (наступна зустріч із тим самим котом — не раніше ніж за `passEvery` хвилин, а після шипіння — за `passPause`), стосунки
+ * `passRelation`. «+» лягає спати й поруч із котом, що не друг і не ворог, — вага `pileStep` × рівень. Прояв «+» уві сні поруч —
+ * не частіше ніж раз на `observeEvery` хвилин.
+ */
+export const SOCIABILITY = { passDistance: 1.5, passStep: 0.15, passEvery: 10, passPause: 120, passRelation: -1, pileStep: 1.5, observeEvery: 60 } as const;
+/**
+ * «Вилизування друзів» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26):
+ * друг прийшов вилизати «−», а той з шансом `refuseStep` × |рівень| відсторонюється (від −2 — ще й шипить): стосунки
+ * `refuseRelation` замість +2, і `refusedMinutes` хвилин друзі його не чіпають. Купкою з другом «−» спить рідше — вага сну поруч ×
+ * (1 + `pileStep` × рівень).
+ */
+export const GROOMING = { refuseStep: 0.4, refuseRelation: -1, pileStep: 0.25, refusedMinutes: 60 } as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;

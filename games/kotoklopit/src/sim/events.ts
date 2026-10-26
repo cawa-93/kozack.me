@@ -192,6 +192,8 @@ export type GameEvent =
    * не діє) або шаленіє.
    */
   | { type: "catnip"; cat: number; reaction: "roll" | "sniff" | "frenzy" }
+  /** Друг прийшов вилизати кота, а той відсторонюється (§9.12, «Вилизування друзів»). */
+  | { type: "groom-refused"; cat: number; by: number }
   /** Кіт підійшов до забороненого місця, пам'ятає «ні» й розвертається (§9.12, «Слухняність»). */
   | { type: "cat-remembered"; cat: number; zone: ForbiddenZone }
   /** Кіт на підвіконні «кекає» на птахів за вікном (§9.12, «Вікно»). */

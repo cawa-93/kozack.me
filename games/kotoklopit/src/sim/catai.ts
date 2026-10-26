@@ -37,6 +37,7 @@ import {
   ESCAPE,
   FOLLOWER,
   FOOD_SOUND,
+  GROOMING,
   GIFTS,
   GULPING,
   HAIRBALL,
@@ -83,6 +84,7 @@ import {
   SLEEP_START,
   SLEEP_TRAIT_STEP,
   SNIFF_MINUTES,
+  SOCIABILITY,
   SOFA_REPAIR,
   START_CLOTHES,
   STEAL_HUNGER,
@@ -547,10 +549,16 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
   ];
-  // Сон купкою: до сплячого друга (§9.4).
-  for (const friend of state.cats) {
-    if (friend.id === cat.id || !home(state, friend) || !asleep(friend) || !isFriend(state, cat, friend)) continue;
-    options.push({ weight: RELATIONS.sleepTogether.weight, value: at({ x: friend.x - 0.5 + (rng.next() - 0.5) * 0.6, y: friend.y - 0.5 }) });
+  // Сон купкою: до сплячого друга (§9.4); «Не терпить дотиків» — рідше (§9.12, «Вилизування друзів»). «Товариський» лягає й до
+  // кота, що не друг і не ворог (§9.12, «Товариськість»): ціль — `pile:<id>`, так видно, до кого ліг.
+  const touch = Math.max(0, 1 + GROOMING.pileStep * Math.min(0, traitLevel(cat, "grooming")));
+  const social = traitLevel(cat, "sociability");
+  for (const other of state.cats) {
+    if (other.id === cat.id || !home(state, other) || !asleep(other) || isNewborn(other)) continue;
+    const friend = isFriend(state, cat, other);
+    const weight = friend ? RELATIONS.sleepTogether.weight * touch : social > 0 && !isEnemy(state, cat, other) ? SOCIABILITY.pileStep * social : 0;
+    if (weight <= 0) continue;
+    options.push({ weight, value: { at: { x: other.x - 0.5 + (rng.next() - 0.5) * 0.6, y: other.y - 0.5 }, target: friend ? null : `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
@@ -681,7 +689,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
   // Вилизати друга поруч (§9.4).
   const groom = RELATIONS.groom;
-  const friend = state.cats.find((c) => c.id !== cat.id && home(state, c) && isFriend(state, cat, c) && distance(cat, c) <= groom.distance);
+  // Той, хто щойно відсторонився від вилизування, годину нікого до себе не підпускає (§9.12, «Вилизування друзів»).
+  const now = absoluteMinute(state.day, state.minute);
+  const friend = state.cats.find(
+    (c) => c.id !== cat.id && home(state, c) && isFriend(state, cat, c) && distance(cat, c) <= groom.distance && (c.untouchedAt === undefined || now - c.untouchedAt >= GROOMING.refusedMinutes),
+  );
   if (friend && rng.chance(groom.chance + groom.step * traitLevel(cat, "grooming"))) {
     return start(cat, "groom", tileOf(friend), groom.minutes, `cat:${friend.id}`);
   }
@@ -1677,7 +1689,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         return start(cat, "hide", spot.at, STRESS_EFFECTS.hideStep * Math.max(1, -traitLevel(cat, "stress")), spot.target);
       }
       const friend = catById(state, act.target);
-      if (!friend || distance(cat, friend) > 1.5) return;
+      // Друг відсторонився (§9.12, «Вилизування друзів»): ні радості, ні дружби.
+      if (!friend || distance(cat, friend) > 1.5 || act.refused === true) return;
       changeMood(state, cat, RELATIONS.groom.mood);
       changeMood(state, friend, RELATIONS.groom.mood);
       changeRelation(state, cat, friend, RELATIONS.groom.relation);
@@ -2000,6 +2013,14 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
         // Не дочекався ласки — «Скидання речей +» може скинути дрібничку на очах персонажа (§9.12).
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
+      }
+      return;
+    case "groom":
+      // Друг прийшов вилизати «Не терпить дотиків» — той може відсторонитися (§9.12, «Вилизування друзів»).
+      if (act.refused === undefined && act.target?.startsWith("cat:") === true) {
+        const friend = catById(state, act.target);
+        act.refused = friend !== null && refusesGrooming(state, friend, cat, rng);
+        if (act.refused) act.minutes = 0;
       }
       return;
     case "chew":
@@ -2362,7 +2383,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.goal) break;
       climbed(state, cat, rng);
       defied(state, cat);
-      if (cat.act.kind === "sleep") fellAsleep(state, cat);
+      if (cat.act.kind === "sleep") {
+        fellAsleep(state, cat);
+        sleptBeside(state, cat);
+      }
       continue;
     }
     const used = Math.min(left, Math.max(0, cat.act.minutes));
@@ -2500,11 +2524,19 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
     for (let j = i + 1; j < cats.length; j++) {
       const b = cats[j];
       if (!b) continue;
+      // Сон поруч зближує (§9.4) — і тих, хто ще не друзі: «Товариський» лягає й до малознайомих (§9.12).
+      const together = asleep(a) && asleep(b) && distance(a, b) <= RELATIONS.sleepTogether.distance;
       if (isFriend(state, a, b)) {
-        if (asleep(a) && asleep(b) && distance(a, b) <= RELATIONS.sleepTogether.distance) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
+        if (together) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
         continue;
       }
-      if (!isEnemy(state, a, b)) continue;
+      // Не-друг проходить повз — «Конфліктний» може зашипіти (§9.12, «Товариськість»).
+      snubPasser(state, a, b, rng);
+      snubPasser(state, b, a, rng);
+      if (!isEnemy(state, a, b)) {
+        if (together) changeRelation(state, a, b, RELATIONS.sleepTogether.perHour * hours);
+        continue;
+      }
       if (!asleep(a)) enemyNear.add(a.id);
       if (!asleep(b)) enemyNear.add(b.id);
       if (asleep(a) || asleep(b) || a.act.kind === "fight" || b.act.kind === "fight") continue;
@@ -3088,4 +3120,50 @@ function comeBack(state: GameState, cat: Cat): void {
   }
   const table = objectById("table");
   start(cat, "idle", { x: table.x, y: table.y }, OBEDIENCE.comebackMinutes, "table");
+}
+
+/** Звідки «Конфліктний» шипить на кота, що проходить повз: не спить і нічим важливим не зайнятий (§9.12). */
+const SNUB_FROM = new Set(["idle", "wander", "toy", "beg", "eat", "drink", "window"]);
+
+/**
+ * «Конфліктний» шипить на кота, що не друг і проходить повз ближче 1,5 клітинки (§9.12, «Товариськість», рішення автора
+ * 2026-10-25): раз за зустріч, з шансом 15% × |рівень|; стосунки −1, а на цього кота — 2 години спокою. Прояв «−».
+ */
+function snubPasser(state: GameState, cat: Cat, other: Cat, rng: Rng): void {
+  const level = traitLevel(cat, "sociability");
+  if (level >= 0 || asleep(cat) || !SNUB_FROM.has(cat.act.kind) || other.act.goal === null || isNewborn(other) || distance(cat, other) > SOCIABILITY.passDistance) return;
+  const now = absoluteMinute(state.day, state.minute);
+  const next = cat.snubAt?.[other.id];
+  if (next !== undefined && now < next) return;
+  const hissed = rng.chance(SOCIABILITY.passStep * -level) && hiss(state, cat, other);
+  (cat.snubAt ??= {})[other.id] = now + (hissed ? SOCIABILITY.passPause : SOCIABILITY.passEvery);
+  if (!hissed) return;
+  changeRelation(state, cat, other, SOCIABILITY.passRelation);
+  observe(state, cat, "sociability", -1);
+}
+
+/**
+ * Кіт ліг спати поруч з іншим котом, що не друг (§9.12): «Товариський» спить купкою навіть із малознайомим — прояв «+», не частіше
+ * ніж раз на годину.
+ */
+function sleptBeside(state: GameState, cat: Cat): void {
+  const other = cat.act.target?.startsWith("pile:") === true ? state.cats.find((c) => `pile:${c.id}` === cat.act.target) : undefined;
+  if (!other || !asleep(other) || distance(cat, other) > RELATIONS.sleepTogether.distance) return;
+  if (!isFriend(state, cat, other)) observe(state, cat, "sociability", 1, false, SOCIABILITY.observeEvery);
+}
+
+/**
+ * Друг прийшов вилизати кота, а той не терпить дотиків (§9.12, «Вилизування друзів», рішення автора 2026-10-25): з шансом 40% ×
+ * |рівень| відсторонюється (від −2 — ще й шипить), стосунки −1. Прояв «−».
+ */
+function refusesGrooming(state: GameState, cat: Cat, by: Cat, rng: Rng): boolean {
+  const level = traitLevel(cat, "grooming");
+  if (level >= 0 || !home(state, cat) || asleep(cat) || distance(cat, by) > 1.5 || !rng.chance(GROOMING.refuseStep * -level)) return false;
+  emit(state, { type: "groom-refused", cat: cat.id, by: by.id });
+  cat.untouchedAt = absoluteMinute(state.day, state.minute);
+  if (level <= -2) hiss(state, cat, by);
+  changeRelation(state, cat, by, GROOMING.refuseRelation);
+  backAway(state, cat, by);
+  observe(state, cat, "grooming", -1);
+  return true;
 }

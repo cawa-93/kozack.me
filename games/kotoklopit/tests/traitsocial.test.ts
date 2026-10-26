@@ -7,12 +7,12 @@ import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, forbiddenZoneAt, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
-import { CATNIP, GIFTS, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, SHOO, SOFA_REPAIR, WINDOW } from "../src/sim/config";
+import { CATNIP, GIFTS, GROOMING, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, WINDOW } from "../src/sim/config";
 import { addSupply, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
-import { relation } from "../src/sim/relations";
+import { isEnemy, nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import { GOODS } from "../src/sim/shop";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
@@ -508,5 +508,107 @@ describe("«Слухняність» (§9.12, рішення автора 2026-1
       save.current.cats = save.current.cats.filter((c) => c.id !== cat.id);
     }
     expect(keyboard).toBe(0);
+  });
+});
+
+const setRelation = (save: Save, a: Cat, b: Cat, value: number): void => {
+  save.current.relations[a.id < b.id ? `${a.id}-${b.id}` : `${b.id}-${a.id}`] = value;
+};
+
+describe("«Товариськість» і «Вилизування друзів» (§9.4, §9.12, рішення автора 2026-10-25)", () => {
+  it("двоє «Задирак» стають ворогами приблизно за тиждень — так і задумано", () => {
+    const save = game();
+    const a = withCat(save, { sociability: -2 });
+    const b = withCat(save, { sociability: -2 });
+    expect(relation(save.current, a, b)).toBe(-4 * RELATIONS.sociabilityStep);
+    for (let night = 1; night <= 6; night++) nightlyRelations(save.current);
+    expect(isEnemy(save.current, a, b)).toBe(false);
+    nightlyRelations(save.current);
+    expect(isEnemy(save.current, a, b)).toBe(true);
+  });
+
+  it("«Конфліктний» шипить на кота, що не друг і проходить повз, — раз за зустріч; прояв «−»", () => {
+    let hissed = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const grumpy = withCat(save, { sociability: -2 }, { x: 9.5, y: 7.5 });
+      grumpy.act = idleAct(60);
+      const other = withCat(save, {}, { x: 7.5, y: 7.5 });
+      setRelation(save, grumpy, other, 0);
+      // Інший кіт іде повз — через клітинку від «Задираки».
+      other.act = { kind: "wander", target: null, goal: { x: 12, y: 7 }, minutes: 8, elapsed: 0 };
+      const { events, stop } = recordEvents();
+      live(save, 2);
+      stop();
+      const hisses = events.filter((e) => e.type === "hissed" && e.cat === grumpy.id);
+      expect(hisses.length).toBeLessThanOrEqual(1);
+      if (hisses.length === 0) continue;
+      hissed += 1;
+      expect(relation(save.current, grumpy, other)).toBe(SOCIABILITY.passRelation);
+      expect(seen(grumpy, "sociability")).toBe(1);
+    }
+    expect(hissed).toBeGreaterThan(3);
+    expect(hissed).toBeLessThan(20);
+  });
+
+  it("«Товариський» лягає спати й поруч із малознайомим котом — прояв «+»; кіт без риси — лише до друга", () => {
+    const piles = (traits: Record<string, TraitLevel>): number => {
+      let n = 0;
+      for (let seed = 1; seed <= 60; seed++) {
+        const save = game(seed);
+        const sleeper = withCat(save, {}, { x: 5.5, y: 8.5 });
+        sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 30 };
+        const cat = withCat(save, traits, { x: 9.5, y: 8.5 });
+        setRelation(save, cat, sleeper, 10);
+        cat.needs.fatigue = 99;
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.kind === "sleep" && cat.act.target === `pile:${sleeper.id}`) n += 1;
+      }
+      return n;
+    };
+    expect(piles({ sociability: 2 })).toBeGreaterThan(5);
+    expect(piles({})).toBe(0);
+    const save = game();
+    Object.assign(save.current.character.body, { x: 6.5, y: 8.5 });
+    const sleeper = withCat(save, {}, { x: 5.5, y: 8.5 });
+    sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 30 };
+    const cat = withCat(save, { sociability: 1 }, { x: 8.5, y: 8.5 });
+    // Обидва втомлені — сплять довго.
+    sleeper.needs.fatigue = 90;
+    cat.needs.fatigue = 90;
+    setRelation(save, cat, sleeper, 10);
+    cat.act = { kind: "sleep", target: `pile:${sleeper.id}`, goal: { x: 5, y: 8 }, minutes: 480, elapsed: 0 };
+    live(save, 2);
+    expect(seen(cat, "sociability")).toBe(1);
+    // Сон поруч зближує й малознайомих (§9.4).
+    live(save, 60);
+    expect(relation(save.current, cat, sleeper)).toBeGreaterThan(10);
+  });
+
+  it("«Не терпить дотиків» відсторонюється, коли друг прийшов його вилизати: стосунки −1 замість +2, прояв «−»", () => {
+    let refused = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      const prickly = withCat(save, { grooming: -2 }, { x: 9.5, y: 7.5 });
+      prickly.act = idleAct(60);
+      const groomer = withCat(save, {}, { x: 10.3, y: 7.5 });
+      setRelation(save, prickly, groomer, 60);
+      groomer.act = { kind: "groom", target: `cat:${prickly.id}`, goal: null, minutes: RELATIONS.groom.minutes, elapsed: 0 };
+      // Відсторонюється чи ні — вирішується, щойно друг підійшов.
+      const { events, stop } = recordEvents();
+      live(save, 0.5);
+      stop();
+      const before = 60;
+      if (!events.some((e) => e.type === "groom-refused" && e.cat === prickly.id)) {
+        expect(groomer.act.kind).toBe("groom");
+        continue;
+      }
+      refused += 1;
+      expect(relation(save.current, prickly, groomer)).toBe(before + GROOMING.refuseRelation);
+      expect(events.some((e) => e.type === "groomed")).toBe(false);
+      expect(seen(prickly, "grooming")).toBe(1);
+    }
+    expect(refused).toBeGreaterThan(15);
+    expect(refused).toBeLessThan(30);
   });
 });
