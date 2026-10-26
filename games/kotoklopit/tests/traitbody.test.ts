@@ -5,9 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import { giveTreat } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
-import { envy, tickCats } from "../src/sim/catai";
-import { ENVY } from "../src/sim/config";
+import { decide, envy, sunSpot, tickCats } from "../src/sim/catai";
+import { ENVY, MINUTES_PER_DAY, NEED_PER_HOUR, WARMTH } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
+import { COOL_TILE, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -136,5 +137,156 @@ describe("«Заздрісність»: видимі реакції (§9.12, р�
         expect(events.some((e) => e.type === "treat-snatched")).toBe(false);
       }
     }
+  });
+});
+
+/** Куди кіт ляже спати: сонячна пляма, плитка, комп'ютер чи ліжко — за 300 рішень. */
+function sleepSpots(traits: Record<string, TraitLevel>, day: string | null = null, minute = hours(12)): Record<string, number> {
+  const counts: Record<string, number> = { sun: 0, tile: 0, computer: 0, bed: 0 };
+  const computer = objectById("computer");
+  const bed = objectById("bed");
+  for (let seed = 0; seed < 300; seed++) {
+    const save = game();
+    save.current.modifiers.day = day;
+    save.current.minute = minute;
+    const cat = withCat(save, traits);
+    cat.needs.fatigue = 100;
+    decide(save.current, cat, createRng(seed), { present: true });
+    const goal = cat.act.goal;
+    const sun = sunSpot(save.current.minute);
+    if (cat.act.target === "tile") counts["tile"]! += 1;
+    else if (goal && sun && goal.x === sun.x && goal.y === sun.y) counts["sun"]! += 1;
+    else if (goal && goal.y === computer.y && goal.x >= computer.x && goal.x < computer.x + computer.w) counts["computer"]! += 1;
+    else if (goal && goal.x >= bed.x && goal.x < bed.x + bed.w && goal.y >= bed.y && goal.y < bed.y + bed.h) counts["bed"]! += 1;
+  }
+  return counts;
+}
+
+/** Кіт дійшов до місця сну й заснув: прожити, поки він іде. */
+function arrive(save: Save, cat: Cat): void {
+  for (let i = 0; i < 400 && cat.act.goal !== null; i++) live(save, 0.25);
+}
+
+describe("«Теплолюбність» (§9.12, рішення автора 2026-10-25)", () => {
+  it("сонячна пляма: «+» лягає туди частіше, «Холодостійкий» — ніколи; «−» спить на комп'ютері рідше, −2 — ніколи", () => {
+    const plain = sleepSpots({});
+    const warm = sleepSpots({ warmth: 2 });
+    const cool = sleepSpots({ warmth: -1 });
+    const cold = sleepSpots({ warmth: -2 });
+    expect(warm["sun"]).toBeGreaterThan(plain["sun"]!);
+    expect(warm["computer"]).toBeGreaterThan(plain["computer"]!);
+    expect(cool["sun"]).toBeLessThan(plain["sun"]!);
+    // Хіба що випадкове місце на підлозі збіглося з плямою.
+    expect(cold["sun"]).toBeLessThan(plain["sun"]! / 5);
+    expect(cold["computer"]).toBe(0);
+    expect(cool["computer"]).toBeGreaterThan(0);
+  });
+
+  it("прохолодна плитка у ванній: «−» лягає туди й без спеки, у «Спеку» — і кіт без риси; без спеки кіт без риси — ніколи", () => {
+    expect(sleepSpots({})["tile"]).toBe(0);
+    expect(sleepSpots({ warmth: 2 })["tile"]).toBe(0);
+    expect(sleepSpots({ warmth: -2 })["tile"]).toBeGreaterThan(30);
+    expect(sleepSpots({}, "heat")["tile"]).toBeGreaterThan(10);
+    expect(sleepSpots({ warmth: 2 }, "heat")["tile"]).toBeGreaterThan(10);
+  });
+
+  it("у «Холод» ліжко й комп'ютер тягнуть теплолюба сильніше, а «Холодостійкого» — як у звичайний день", () => {
+    const night = hours(23.5);
+    const warmPlaces = (spots: Record<string, number>): number => spots["bed"]! + spots["computer"]!;
+    const plain = warmPlaces(sleepSpots({}, null, night));
+    const warm = warmPlaces(sleepSpots({ warmth: 2 }, "cold", night));
+    const usual = warmPlaces(sleepSpots({}, "cold", night));
+    const hardy = warmPlaces(sleepSpots({ warmth: -2 }, "cold", night));
+    expect(usual).toBeGreaterThan(plain);
+    expect(warm).toBeGreaterThan(usual);
+    expect(hardy).toBeLessThan(usual);
+  });
+
+  it("теплолюб у «Холод» залазить під ковдру — прояв «+»; кіт без риси спить на ковдрі", () => {
+    for (const [traits, under] of [[{ warmth: 1 }, true], [{}, false]] as const) {
+      const save = game();
+      save.current.modifiers.day = "cold";
+      Object.assign(save.current.character.body, { x: 3.5, y: 3.5 });
+      const cat = withCat(save, traits, { x: 2.5, y: 3.5 });
+      cat.needs.fatigue = 100;
+      cat.act = { kind: "sleep", target: null, goal: { x: 1, y: 2 }, minutes: 480, elapsed: 0 };
+      // Що мерзне дорогою до ліжка, видно й так (нижче); тут — лише ковдра.
+      cat.weatherAt = save.current.day * MINUTES_PER_DAY + save.current.minute;
+      arrive(save, cat);
+      expect(cat.act.blanket === true, JSON.stringify(traits)).toBe(under);
+      if (under) expect(seen(cat, "warmth")).toBe(1);
+    }
+    // «Живе на батареї» (+2) — і без холоду.
+    const save = game();
+    const cat = withCat(save, { warmth: 2 }, { x: 2.5, y: 3.5 });
+    cat.act = { kind: "sleep", target: null, goal: { x: 1, y: 2 }, minutes: 480, elapsed: 0 };
+    arrive(save, cat);
+    expect(cat.act.blanket).toBe(true);
+  });
+
+  it("«−» розпластався на плитці — прояв «−», але не в «Спеку» (там лежать усі)", () => {
+    for (const [day, expected] of [[null, 1], ["heat", 0]] as const) {
+      const save = game();
+      save.current.modifiers.day = day;
+      const cat = withCat(save, { warmth: -1 }, { x: 9.5, y: 3.5 });
+      Object.assign(save.current.character.body, { x: 10.5, y: 3.5 });
+      cat.act = { kind: "sleep", target: "tile", goal: { ...COOL_TILE }, minutes: 480, elapsed: 0 };
+      // Що знемагає від спеки, видно й так (нижче); тут — лише сон на плитці.
+      cat.weatherAt = save.current.day * MINUTES_PER_DAY + save.current.minute;
+      arrive(save, cat);
+      expect(Math.floor(cat.x)).toBe(COOL_TILE.x);
+      expect(seen(cat, "warmth")).toBe(expected);
+    }
+  });
+
+  it("теплолюб у «Холод» мерзне — думка-сніжинка, настрій падає, прояв «+»; під ковдрою — ні; кіт без риси — ні", () => {
+    const run = (traits: Record<string, TraitLevel>, blanket = false): { mood: number; felt: number; seen: number } => {
+      const save = game();
+      save.current.modifiers.day = "cold";
+      const cat = withCat(save, traits, { x: 9.5, y: 7.5 });
+      cat.mood = 60;
+      cat.act = blanket ? { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0, blanket: true } : idleAct(600);
+      if (blanket) Object.assign(cat, { x: 1.5, y: 1.5 });
+      cat.needs.fatigue = blanket ? 100 : 0;
+      const { events, stop } = recordEvents();
+      live(save, 6 * 60);
+      stop();
+      return { mood: cat.mood, felt: events.filter((e) => e.type === "weather-felt" && e.cat === cat.id).length, seen: seen(cat, "warmth") };
+    };
+    const warm = run({ warmth: 2 });
+    // Раз на 3 години — і щоразу це видно.
+    expect(warm.felt).toBe(2);
+    expect(warm.seen).toBe(2);
+    expect(warm.mood).toBeLessThan(60);
+    const plain = run({});
+    expect(plain.felt).toBe(0);
+    const covered = run({ warmth: 2 }, true);
+    expect(covered.felt).toBe(0);
+    expect(covered.mood).toBeGreaterThanOrEqual(60);
+    // −1 за одиницю на добу: за 6 годин без тепла «+2» втрачає на пів одиниці настрою більше, ніж кіт без риси.
+    expect(plain.mood - warm.mood).toBeCloseTo((-WARMTH.weatherMood * 2 * (6 * 60)) / MINUTES_PER_DAY, 1);
+  });
+
+  it("«Не мерзне» у «Спеку» знемагає й п'є більше", () => {
+    const thirst = (traits: Record<string, TraitLevel>, day: string | null): number => {
+      const save = game();
+      save.current.modifiers.day = day;
+      const cat = withCat(save, traits, { x: 9.5, y: 7.5 });
+      cat.act = idleAct(600);
+      cat.needs.thirst = 0;
+      live(save, 60);
+      return cat.needs.thirst;
+    };
+    expect(thirst({ warmth: -2 }, null)).toBeCloseTo(NEED_PER_HOUR.thirst, 0);
+    expect(thirst({ warmth: -2 }, "heat")).toBeCloseTo(thirst({}, "heat") * (1 + 2 * WARMTH.heatThirstStep), 0);
+    const save = game();
+    save.current.modifiers.day = "heat";
+    const cat = withCat(save, { warmth: -1 }, { x: 9.5, y: 7.5 });
+    cat.act = idleAct(600);
+    const { events, stop } = recordEvents();
+    live(save, 30);
+    stop();
+    expect(events.some((e) => e.type === "weather-felt" && e.feel === "hot")).toBe(true);
+    expect(seen(cat, "warmth")).toBe(1);
   });
 });

@@ -81,7 +81,9 @@ export type IconName =
   | "bored"
   | "catnip"
   | "bird"
-  | "table";
+  | "table"
+  | "chilly"
+  | "hot";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -587,6 +589,37 @@ Object.assign(ICONS, {
     g.fillStyle(0xe8b93a).fillTriangle(35, 13, 35, 18, 40, 15);
     g.fillStyle(INK).fillCircle(30, 13, 1.6);
     g.lineStyle(2, INK).strokeEllipse(20, 23, 22, 15).strokeCircle(29, 15, 7).lineBetween(17, 30, 16, 36).lineBetween(23, 30, 24, 36);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Іконки етапу «Тіло й завершення» (§9.12). */
+Object.assign(ICONS, {
+  chilly: (g: Phaser.GameObjects.Graphics) => {
+    // Сніжинка (§9.12, «Теплолюбність»): теплолюб мерзне в «Холод».
+    g.lineStyle(3.5, 0x6fa8d6);
+    for (let i = 0; i < 3; i++) {
+      const a = (i * Math.PI) / 3 + Math.PI / 2;
+      const dx = Math.cos(a) * 15;
+      const dy = Math.sin(a) * 15;
+      g.lineBetween(20 - dx, 20 - dy, 20 + dx, 20 + dy);
+      for (const end of [1, -1]) {
+        const tx = 20 + end * dx * 0.65;
+        const ty = 20 + end * dy * 0.65;
+        const b = a + (end > 0 ? 0 : Math.PI);
+        g.lineBetween(tx, ty, tx + Math.cos(b + 0.7) * 6, ty + Math.sin(b + 0.7) * 6).lineBetween(tx, ty, tx + Math.cos(b - 0.7) * 6, ty + Math.sin(b - 0.7) * 6);
+      }
+    }
+  },
+  hot: (g: Phaser.GameObjects.Graphics) => {
+    // Пекуче сонце й крапля поту (§9.12, «Теплолюбність»): «Не мерзне» знемагає в «Спеку».
+    g.lineStyle(3, 0xe0893a);
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      g.lineBetween(17 + Math.cos(a) * 11, 17 + Math.sin(a) * 11, 17 + Math.cos(a) * 16, 17 + Math.sin(a) * 16);
+    }
+    g.fillStyle(0xf2b53a).fillCircle(17, 17, 8);
+    g.lineStyle(2, INK).strokeCircle(17, 17, 8);
+    g.fillStyle(0x6fa8d6).fillTriangle(33, 24, 29, 31, 37, 31).fillCircle(33, 32, 4);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

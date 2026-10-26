@@ -218,6 +218,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "cat-cuddled":
       // «Щедра душа» лягла поруч із тим, кого гладять (§9.12, «Ревнивість»): муркоче — тепло на душі, думка.
       return [{ kind: "think", at: cat(event.cat), icon: "heart" }];
+    case "weather-felt":
+      // Теплолюб мерзне, «Не мерзне» знемагає від спеки (§9.12, «Теплолюбність»): що кіт відчуває — думка.
+      return [{ kind: "think", at: cat(event.cat), icon: event.feel === "cold" ? "chilly" : "hot" }];
     case "treat-snatched":
       // «Заздрісник» вихопив ласощі (§9.12, «Заздрісність»): хрумтить ними вголос, а той, кого пригощали, лишився ні з чим — його
       // думка.

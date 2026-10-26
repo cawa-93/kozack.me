@@ -21,6 +21,8 @@ const PIGMENT: Record<Pigment, number> = {
   cream: 0xe9c995,
 };
 const WHITE = 0xf4f0e8;
+/** Ковдра на ліжку — той самий колір, що в `apartment.ts`: під нею спить теплолюб (§9.12, «Теплолюбність»). */
+const BLANKET = 0x6c7fa3;
 /** Тіло колорпойнта світле, колір лише на «кінчиках». */
 const POINT_BODY = 0xeee2cc;
 const EYES = { blue: 0x6fb3e0, green: 0x7fbf5a, yellow: 0xe0c040, copper: 0xd2803a } as const;
@@ -32,7 +34,25 @@ const shade = (color: number, k: number): number => {
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
 
-export type CatPose = "walk" | "sit" | "eat" | "sleep" | "hide" | "carried" | "belly" | "roll" | "bury" | "groom" | "mark" | "cough" | "scratch" | "stretch" | "carrier" | "crouch";
+export type CatPose =
+  | "walk"
+  | "sit"
+  | "eat"
+  | "sleep"
+  | "hide"
+  | "carried"
+  | "belly"
+  | "roll"
+  | "bury"
+  | "groom"
+  | "mark"
+  | "cough"
+  | "scratch"
+  | "stretch"
+  | "carrier"
+  | "crouch"
+  | "blanket"
+  | "sprawl";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -77,6 +97,9 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
   // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
   if (act.kind === "sleep" && act.target === "carrier") return "carrier";
+  // Теплолюб під ковдрою, «Не мерзне» розпластався на прохолодній плитці (§9.12, «Теплолюбність»).
+  if (act.kind === "sleep" && act.blanket === true) return "blanket";
+  if (act.kind === "sleep" && act.target === "tile") return "sprawl";
   if (act.kind === "sleep") return "sleep";
   if (act.kind === "hide") return "hide";
   // У засідці (§9.12, «Засідки»): припав до підлоги й виляє задом.
@@ -253,6 +276,36 @@ export class CatView {
         const sleeping = cat.act.kind === "sleep" || cat.act.kind === "lap";
         if (sleeping && Math.floor(time / 900 + cat.id) % 2 === 0) g.fillStyle(COLORS.ink, 0.5).fillCircle(x + dir * 14 * s, y - 26 * s, 2);
         this.head = { x, y: y - 26 * s };
+        return;
+      }
+      case "blanket": {
+        // Під ковдрою (§9.12, «Теплолюбність»): горбик ковдри на ліжку, з-під якого стирчать вушка й кінчик хвоста.
+        this.ears(g, x + dir * 9 * s, y - 13 * s, s * 0.8, dir, point);
+        g.fillStyle(BLANKET).fillEllipse(x, y - 8 * s, 38 * s, 18 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 8 * s, 38 * s, 18 * s);
+        g.lineStyle(1.5, COLORS.ink, 0.35).lineBetween(x - 9 * s, y - 14 * s, x - 3 * s, y - 3 * s).lineBetween(x + 4 * s, y - 15 * s, x + 9 * s, y - 4 * s);
+        g.lineStyle(4 * s, this.coat.pointed ? point : body).lineBetween(x - dir * 18 * s, y - 4 * s, x - dir * 25 * s, y - 2 * s);
+        this.head = { x, y: y - 26 * s };
+        return;
+      }
+      case "sprawl": {
+        // Розпластався на прохолодній плитці (§9.12, «Теплолюбність»): лежить на боці, лапи витягнуті, очі заплющені.
+        this.tail(g, x - dir * 19 * s, y - 4 * s, s, dir, "rest");
+        const pawColor = this.coat.white >= 1 ? WHITE : this.coat.pointed ? point : body;
+        g.fillStyle(pawColor);
+        for (const lx of [-15, -9, 7, 13]) g.fillRoundedRect(x + dir * lx * s - (dir < 0 ? 9 * s : 0), y - 3 * s, 9 * s, 3.5 * s, 1.5);
+        g.fillStyle(body).fillEllipse(x, y - 6 * s, 40 * s, 12 * s);
+        this.patches(g, x, y - 6 * s, 40 * s, 12 * s);
+        if (this.coat.tabby) this.stripes(g, x, y - 6 * s, 30 * s, stripe, true);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(x, y - 6 * s, 40 * s, 12 * s);
+        const hx = x + dir * 22 * s;
+        const hy = y - 7 * s;
+        this.ears(g, hx, hy, s * 0.9, dir, point);
+        g.fillStyle(this.coat.pointed ? point : body).fillCircle(hx, hy, 8 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeCircle(hx, hy, 8 * s);
+        g.lineStyle(1.5, COLORS.ink);
+        for (const ox of [-2.6, 2.6]) g.beginPath().arc(hx + dir * 2 * s + ox * s, hy - 1 * s, 1.8 * s, 0.2, Math.PI - 0.2).strokePath();
+        this.head = { x: hx, y: hy - 16 * s };
         return;
       }
       case "carrier": {

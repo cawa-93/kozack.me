@@ -104,6 +104,7 @@ import {
   VOMIT_STEP,
   WATCH_SANITY,
   WATER_PLAY,
+  WARMTH,
   WINDOW,
   WORK_CAT,
   ZOOMIES,
@@ -114,8 +115,8 @@ import { emit, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
-import { catFatigueFactor, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -161,7 +162,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
   n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
-  n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours * thirstFactor(state));
+  n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours * thirstFactor(state) * heatThirst(state, cat));
   n.toilet = clamp(n.toilet + NEED_PER_HOUR.toilet * hours * toiletFactor(cat));
   if (sleeping) {
     n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * sleepFactor(cat) * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
@@ -244,6 +245,46 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
     const demanding = Math.max(0, 1 + TRAIT_EFFECTS.demandingIgnoredStep * traitLevel(cat, "demanding"));
     changeMood(state, cat, MOOD.ignoredPerHour * hours * demanding);
   }
+  weatherFeel(state, cat, minutes);
+}
+
+/** «Не мерзне» в «Спеку» п'є більше (§9.12, «Теплолюбність»; сюди злито «Чутливість до погоди»). */
+function heatThirst(state: GameState, cat: Cat): number {
+  const level = traitLevel(cat, "warmth");
+  return level < 0 && isHot(state) ? 1 + WARMTH.heatThirstStep * -level : 1;
+}
+
+/**
+ * Кіт гріється (§9.12, «Теплолюбність»): спить під ковдрою, на комп'ютері, на холодильнику, у будиночку, у сонячній плямі чи купкою з
+ * іншим котом, лежить на колінах чи сидить на руках.
+ */
+function warming(state: GameState, cat: Cat): boolean {
+  if (isCarried(state, cat) || cat.act.kind === "lap") return true;
+  if (!asleep(cat)) return false;
+  if (cat.act.blanket === true || cat.act.target?.startsWith("pile:") === true || cat.act.target?.startsWith("item:") === true) return true;
+  const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
+  if (o?.kind === "computer" || o?.kind === "fridge") return true;
+  const sun = sunSpot(state.minute);
+  return sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
+}
+
+/**
+ * Погода (§9.12, «Теплолюбність»; сюди злито «Чутливість до погоди», рішення автора 2026-10-25): «+» у «Холод» мерзне, «−» у «Спеку»
+ * знемагає — поки не гріється (не лежить на прохолодній плитці), втрачає 1 настрою за одиницю на добу, а не сплячи, раз на 3 години
+ * показує це (думка — сніжинка чи сонце). Кіт без риси спеки й холоду так не відчуває — це прояв.
+ */
+function weatherFeel(state: GameState, cat: Cat, minutes: number): void {
+  const level = traitLevel(cat, "warmth");
+  const feel = level > 0 && isCold(state) ? "cold" : level < 0 && isHot(state) ? "hot" : null;
+  if (feel === null || cat.away !== null || isNewborn(cat)) return;
+  if (feel === "cold" ? warming(state, cat) : asleep(cat) && cat.act.target === "tile") return;
+  changeMood(state, cat, (WARMTH.weatherMood * Math.abs(level) * minutes) / MINUTES_PER_DAY);
+  if (asleep(cat) || !home(state, cat)) return;
+  const now = absoluteMinute(state.day, state.minute);
+  if (cat.weatherAt !== undefined && now - cat.weatherAt < WARMTH.feelEvery) return;
+  cat.weatherAt = now;
+  emit(state, { type: "weather-felt", cat: cat.id, feel });
+  observe(state, cat, "warmth", feel === "cold" ? 1 : -1);
 }
 
 // --- Що є в квартирі ------------------------------------------------------------------------
@@ -558,8 +599,11 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const at = (p: Vec): Spot => ({ at: p, target: null });
   // «Нічний сплюх» уночі спить у персонажа в ногах (§9.12, рішення автора 2026-10-25).
   const owl = isNight(state.minute) ? 1 + NOCTURNAL.bedStep * Math.max(0, -traitLevel(cat, "nocturnal")) : 1;
+  // «Теплолюбність» (§9.12): холод тягне теплолюбів до ліжка й комп'ютера сильніше, а «Холодостійкого» — ніяк.
+  const warmth = traitLevel(cat, "warmth");
+  const cold = warmthBonus(state) * Math.max(0, 1 + WARMTH.coldStep * warmth);
   const options: { weight: number; value: Spot }[] = [
-    { weight: (3 + warmthBonus(state)) * owl, value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
+    { weight: (3 + cold) * owl, value: at({ x: bed.x + rng.int(0, bed.w - 1), y: bed.y + rng.int(0, bed.h - 1) }) },
     { weight: 3, value: at({ x: sofa.x + rng.int(0, sofa.w - 1), y: sofa.y }) },
     { weight: 1, value: at(randomFloor(rng)) },
     ...houseSpots(state),
@@ -581,7 +625,10 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ weight: 2 + Math.max(0, traitLevel(cat, "warmth")), value: at(sun) });
+  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(sun) });
+  // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
+  const tile = WARMTH.tileStep * Math.max(0, -warmth) + (isHot(state) ? WARMTH.heatTile : 0);
+  if (tile > 0) options.push({ weight: tile, value: { at: { ...COOL_TILE }, target: "tile" } });
   // Нагорі — на холодильнику (він теплий: вага й від «Теплолюбності») і на шафі в спальні (§9.12, «Лазіння»).
   const climb = climbWeight(cat);
   if (climb > 0) {
@@ -608,7 +655,9 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     // «Поважає роботу» спить на комп'ютері вдвічі рідше, «Байдужий до техніки» — ніколи (рішення автора 2026-10-25).
     const helper = traitLevel(cat, "helper");
     const respect = Math.max(0, 1 + COMPUTER_SLEEP.helperStep * Math.min(0, helper));
-    const weight = (COMPUTER_SLEEP.base + warmthBonus(state) + COMPUTER_SLEEP.step * (Math.max(0, traitLevel(cat, "warmth")) + Math.max(0, helper))) * respect;
+    // «Не мерзне» на теплому комп'ютері спить рідше, «Холодостійкий» — ніколи (§9.12, «Теплолюбність»).
+    const cool = Math.max(0, 1 + WARMTH.coolStep * Math.min(0, warmth));
+    const weight = (COMPUTER_SLEEP.base + cold + COMPUTER_SLEEP.step * (Math.max(0, warmth) + Math.max(0, helper))) * respect * cool;
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
   return weightedPick(rng, options) ?? at(randomFloor(rng));
@@ -2429,6 +2478,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.kind === "sleep") {
         fellAsleep(state, cat);
         sleptBeside(state, cat);
+        sleptWarm(state, cat);
       }
       continue;
     }
@@ -2505,6 +2555,24 @@ function fellAsleep(state: GameState, cat: Cat): void {
   const activity = activityAt(cat, state.minute);
   if (activity < ENERGY.activeHour || cat.needs.fatigue >= SLEEP_START.base + SLEEP_START.activity * activity) return;
   observe(state, cat, "energy", -1, false, MINUTES_PER_DAY);
+}
+
+/**
+ * Кіт заснув у теплому чи прохолодному місці (§9.12, «Теплолюбність», рішення автора 2026-10-25): «+» на ліжку в «Холод» (а «Живе на
+ * батареї» — завжди) залазить під ковдру; прояв «+» — заснув під ковдрою, на комп'ютері чи в сонячній плямі; «−» — розпластався на
+ * прохолодній плитці у ванній, коли не спека (у спеку там лежать усі). Не частіше ніж раз на 2 години.
+ */
+function sleptWarm(state: GameState, cat: Cat): void {
+  const level = traitLevel(cat, "warmth");
+  if (cat.act.target === "tile") {
+    if (!isHot(state)) observe(state, cat, "warmth", -1, false, WARMTH.observeEvery);
+    return;
+  }
+  const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
+  if (level > 0 && o?.kind === "bed" && (isCold(state) || level >= WARMTH.blanketLevel)) cat.act.blanket = true;
+  const sun = sunSpot(state.minute);
+  const sunny = sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
+  if (cat.act.blanket === true || o?.kind === "computer" || sunny) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
 }
 
 /** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */

@@ -225,6 +225,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: котяча м'ята — ${event.reaction === "roll" ? "катається" : event.reaction === "frenzy" ? "шаленіє" : "понюхав і пішов"}`;
     case "cat-cuddled":
       return `${catName(state, event.cat)} ліг поруч із ${catName(state, event.with)} і муркоче`;
+    case "weather-felt":
+      return `${catName(state, event.cat)} ${event.feel === "cold" ? "мерзне" : "знемагає від спеки"}`;
     case "treat-snatched":
       return `${catName(state, event.cat)} вихопив ласощі в ${catName(state, event.from)}`;
     case "groom-refused":

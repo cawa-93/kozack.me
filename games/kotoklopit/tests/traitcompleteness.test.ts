@@ -19,8 +19,6 @@ const sources = Object.values(
  * реалізації розбору скорочують його до порожнього. Готову групу тест проганяє з цього списку.
  */
 const PENDING: ReadonlySet<string> = new Set([
-  // Діють, але прояву ще немає.
-  "warmth",
   // Ще не реалізовано.
   "chubby",
 ]);

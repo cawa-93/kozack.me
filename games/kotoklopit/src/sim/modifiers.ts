@@ -262,6 +262,9 @@ export function catFatigueFactor(state: GameState): number {
 }
 export const thirstFactor = (state: GameState): number => (active(state, "heat") ? MODIFIERS.heat.thirst : 1);
 export const warmthBonus = (state: GameState): number => (active(state, "cold") ? MODIFIERS.coldWarmth : 0);
+/** «Холод» і «Спека» (§4.1) — дня чи тижня: від них залежить «Теплолюбність» (§9.12). */
+export const isCold = (state: GameState): boolean => active(state, "cold");
+export const isHot = (state: GameState): boolean => active(state, "heat");
 export const trafficFactor = (state: GameState): number => MODIFIERS.traffic[state.modifiers.day ?? ""] ?? 1;
 export function priceFactor(state: GameState, product: string): number {
   return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
