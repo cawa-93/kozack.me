@@ -134,7 +134,8 @@ export class CatView {
     const base = look?.belly === true && carriedAt === null ? "belly" : interaction ? "sit" : poseOf(cat, carriedAt !== null);
     const pose = onHigh && base === "hide" ? "sleep" : base;
     this.feeling = feeling;
-    this.look = look;
+    // Перед ворогом і в бійці кіту не до персонажа: ні смутку, ні моргання, ні «дметься спиною» (§9.4, «Пози стосунків»).
+    this.look = pose === "arch" || pose === "brawl" ? null : look;
     this.threat = pose === "arch";
     this.hissing = pose === "arch" && cat.hissedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.hissedAt < HISS_OPEN;
     const toy = cat.act.kind === "carry" && cat.act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === cat.act.target) : undefined;
