@@ -1169,8 +1169,9 @@ function chewDone(state: GameState, cat: Cat, rng: Rng): void {
   emit(state, { type: "bag-chewed", cat: cat.id, product: bag.product });
   if (bag.product === "catFood" || bag.product === "sterileFood" || bag.product === "treats") {
     cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * (bag.product === "treats" ? 0.25 : 1));
-    // Прогризене — теж крадене (§9.12, «Схильність до повноти»; перевірка етапу 2026-10-26: кіт з'їдав пакет, не гладшаючи).
-    gainWeight(state, cat, bag.product === "treats" ? WEIGHT.treat : WEIGHT.stolen);
+    // Прогризене — теж крадене (§9.12, «Схильність до повноти»; перевірка етапу 2026-10-26: кіт з'їдав пакет, не гладшаючи). Корм
+    // для стерилізованих і з пакета — без множника стерилізованого (рішення автора 2026-10-26).
+    gainWeight(state, cat, bag.product === "treats" ? WEIGHT.treat : WEIGHT.stolen, bag.product === "sterileFood");
     changeMood(state, cat, 1);
   }
 }

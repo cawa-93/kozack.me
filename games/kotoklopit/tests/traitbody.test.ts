@@ -508,6 +508,19 @@ describe("«Схильність до повноти» (§9.12, рішення �
     }
   });
 
+  it("стерилізований прогриз пакет корму для стерилізованих — без ×1,3, пакет звичайного — ×1,3 (рішення автора 2026-10-26, перевірка правок)", () => {
+    for (const [product, factor] of [["sterileFood", 1], ["catFood", WEIGHT.sterilized]] as const) {
+      const save = game();
+      save.current.home.boxes = { [product]: { cheap: 1, premium: 0 } };
+      const cat = withCat(save, {}, { x: 12.5, y: 8.5 });
+      cat.sterilized = true;
+      cat.act = { kind: "chew", target: "boxes", goal: null, minutes: 0.25, elapsed: 0 };
+      live(save, 0.25);
+      expect(save.current.home.boxes[product]?.cheap, product).toBe(0);
+      expect(weightOf(cat), product).toBeCloseTo(WEIGHT.norm + WEIGHT.stolen * factor);
+    }
+  });
+
   it("«−» «переїв» лише помітно: трапеза трохи раніше звичайного — ні, порція при голоді 60 і нижче — так (перевірка етапу 2026-10-26)", () => {
     const meal = (hunger: number): number => {
       const save = game();
