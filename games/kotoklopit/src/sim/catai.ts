@@ -2971,7 +2971,9 @@ export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "la
       start(other, "idle", tileOf(visibleFloorNear(state, { x: lucky.x + side, y: lucky.y })), JEALOUSY.cuddleMinutes, `cuddle:${lucky.id}`);
       continue;
     }
-    if (distance(other, lucky) > JEALOUSY.near && free && rng.chance(JEALOUSY.comeStep * level)) {
+    // Кота на руках персонаж несе далі, тож до нього не йдуть — шипить звідти (перевірка етапу 2026-10-26: ревнивець ішов туди,
+    // де кота взяли, і, не заставши його, нічого не робив).
+    if (why !== "hands" && distance(other, lucky) > JEALOUSY.near && free && rng.chance(JEALOUSY.comeStep * level)) {
       other.jealousAt = now;
       start(other, "jealous", tileOf(lucky), JEALOUSY.confrontMinutes, `cat:${lucky.id}`);
       continue;

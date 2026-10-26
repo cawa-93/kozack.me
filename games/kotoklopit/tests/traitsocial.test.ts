@@ -842,6 +842,18 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     pickUpCat(save.current, lucky);
     stop();
     expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
+    // Здалеку до кота на руках не йдуть — його несуть далі; шипить звідти (перевірка етапу).
+    for (let seed = 1; seed <= 20; seed++) {
+      const s = game(seed);
+      const held = withCat(s, {}, { x: 9.5, y: 8.5 });
+      const far = withCat(s, { jealousy: 2 }, { x: 5.5, y: 8.5 });
+      Object.assign(s.current.character.body, { x: 9.5, y: 9.1 });
+      const log = recordEvents();
+      pickUpCat(s.current, held);
+      log.stop();
+      expect(far.act.kind).not.toBe("jealous");
+      expect(log.events.some((e) => e.type === "hissed" && e.cat === far.id && e.at === held.id)).toBe(true);
+    }
   });
 });
 
