@@ -94,7 +94,7 @@ const count = (events: GameEvent[], type: GameEvent["type"]): number => events.f
 const FRAME = 0.02;
 
 describe("протистояння ворогів (§9.4, рішення автора 2026-10-26)", () => {
-  it("вороги поруч не б'ються одразу, а сходяться: за 0,6 клітинки обличчям одне до одного, 2–4 хвилини, щохвилини шиплять", () => {
+  it("вороги поруч не б'ються одразу, а сходяться: за 0,6 клітинки обличчям одне до одного, 4–8 хвилин, щохвилини шиплять", () => {
     const { save, a, b } = enemies();
     const s = save.current;
     const hisses = new Map<number, number[]>();
@@ -114,9 +114,10 @@ describe("протистояння ворогів (§9.4, рішення авт�
     expect(left.facing).toBe(1);
     expect(right.facing).toBe(-1);
     expect(fights).toBe(0);
+    // 4–8 хвилин, щоб гравець встиг утрутитися (рішення автора 2026-10-26 після блоку 1: було 2–4).
     const total = a.act.elapsed + a.act.minutes;
-    expect(total).toBeGreaterThanOrEqual(2);
-    expect(total).toBeLessThanOrEqual(4);
+    expect(total).toBeGreaterThanOrEqual(4);
+    expect(total).toBeLessThanOrEqual(8);
     // Шиплять обидва: при зустрічі й далі щохвилини, доки протистояння не скінчилося.
     for (let i = 0; i < 200 && (a.act.kind === "standoff" || b.act.kind === "standoff"); i++) tickCats(s, 0.05, { present: false });
     stop();
@@ -490,14 +491,18 @@ describe("бійку видно й чути (§9.4, рішення автора 
     for (const room of ["living", "bedroom"] as const) {
       for (let seed = 0; seed < 30; seed++) {
         const { save, a, b } = enemies(seed, { territorial: 2 }, { territorial: 2 });
-        const sleeper = withCat(save, {}, room === "living" ? { x: 9.5, y: 10.3 } : { x: 3.5, y: 3.5 });
-        sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 0 };
+        const spot = room === "living" ? { x: 9.5, y: 10.3 } : { x: 3.5, y: 3.5 };
+        const sleeper = withCat(save, {}, spot);
         let fought = false;
         const stop = onEvent((e) => {
           if (e.type === "cat-fight") fought = true;
           if (e.type === "cat-woke" && e.cat === sleeper.id && fought) woke[room]++;
         });
         untilStandoff(save, a, b);
+        // Поки вороги сходилися, сплячий міг прокинутися й піти: кладемо його спати на місце, утомленим, на все протистояння
+        // (4–8 хвилин — за цей час він устиг би дійти й до вітальні).
+        Object.assign(sleeper, spot);
+        sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 0 };
         sleeper.needs.fatigue = 100;
         untilSettled(save, a, b);
         stop();
