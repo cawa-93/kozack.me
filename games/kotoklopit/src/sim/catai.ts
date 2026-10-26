@@ -826,6 +826,11 @@ function startSnack(state: GameState, cat: Cat, rng: Rng): boolean {
  * Кіт іде до персонажа по увагу й ходить слідом, нявкаючи (§9.12). Хто вже йде — не починає заново: інакше
  * голодний кіт щокроку «приходив» би знову (пошук багів 2026-10-25). Прояв рис — коли дійде (`tickCat`).
  */
+/** Кіт голодний, а корму в мисках немає: по увагу він іде через голод (§9.9, «Ласкавість»). */
+function wantsFood(state: GameState, cat: Cat): boolean {
+  return cat.needs.hunger >= hungerThreshold(cat) && !itemsOf(state, "bowl").some((b) => b.food > 0);
+}
+
 function startAttention(state: GameState, cat: Cat, forFood = false): void {
   if (cat.act.kind === "attention" && cat.act.minutes > 0) return;
   // «Вимогливий» ходить слідом довше, «Скромний» — менше (§9.9); «Хвостик» тривалості не змінює (2026-10-25).
@@ -2498,6 +2503,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Іти слідом за персонажем; «Сам по собі» не ходить слідом, а чекає, поки підійдуть.
       const body = state.character.body;
       const near = Math.hypot(body.x - cat.x, body.y - cat.y) <= ARRIVED + keepDistance(cat);
+      // Похід «через голод» — поки кіт голодний, а миски порожні: зголоднів дорогою — тепер через голод, наївся — вже ні (рішення
+      // автора 2026-10-26: раніше це вирішувалося лише на початку походу).
+      if (wantsFood(state, cat)) cat.act.forFood = true;
+      else delete cat.act.forFood;
       // Прийшов і просить уваги — прояв, який персонаж бачить (§9.9), раз за похід. Поки персонаж кота не бачить (у душовій
       // кабіні), похід ще не «побачений»: інакше єдиний прояв за похід пропадав би (фінальна перевірка рис 2026-10-26).
       if (near && cat.act.seen !== true && witnesses(state, cat)) {

@@ -110,6 +110,36 @@ describe("«Ласкавість» (рішення автора 2026-10-25)", ()
   });
 });
 
+describe("«Ласкавість»: похід через голод (рішення автора 2026-10-26)", () => {
+  it("чи похід «через голод», вирішується, коли кіт дійшов: наївся дорогою — «Ласкавість», зголоднів дорогою при порожніх мисках — ні", () => {
+    // Вийшов голодним до порожніх мисок, а дійшов уже не голодним — це похід по ласку.
+    const fed = game();
+    for (const item of fed.current.home.items) if (item.kind === "bowl") item.food = 0;
+    const cat = withCat(fed, { affection: 2 });
+    Object.assign(fed.current.character.body, { x: 4.5, y: 8.1 });
+    cat.act = { kind: "attention", target: "character", goal: null, minutes: 10, elapsed: 0, forFood: true };
+    tickCats(fed.current, 0.25, { present: true });
+    expect(seen(cat, "affection")).toBe(1);
+    // Зголоднів дорогою, а миски порожні — прийшов по їжу, а не по ласку.
+    let stayed = 0;
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game(seed);
+      for (const item of save.current.home.items) if (item.kind === "bowl") item.food = 0;
+      const hungry = withCat(save, { affection: 2 });
+      Object.assign(save.current.character.body, { x: 4.5, y: 8.1 });
+      hungry.needs.hunger = 95;
+      hungry.act = { kind: "attention", target: "character", goal: null, minutes: 10, elapsed: 0 };
+      tickCats(save.current, 0.25, { present: true });
+      if (hungry.act.kind === "attention") {
+        stayed += 1;
+        expect(hungry.act.forFood, `seed ${seed}`).toBe(true);
+      }
+      expect(seen(hungry, "affection"), `seed ${seed}`).toBe(0);
+    }
+    expect(stayed).toBeGreaterThan(0);
+  });
+});
+
 describe("«Терпимість до гладження» (рішення автора 2026-10-25)", () => {
   it("за хвилину до кінця терпіння кіт попереджає: невдоволений, хоч уваги ще хоче", () => {
     const save = game();
