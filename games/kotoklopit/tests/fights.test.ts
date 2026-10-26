@@ -14,6 +14,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel } from "../src/sim/types";
+import { poseOf, showsFightBubble } from "../src/view/pose";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
@@ -430,5 +431,53 @@ describe("бійку видно й чути (§9.4, рішення автора 
     expect(fights).toBe(80);
     expect(knocked).toBeGreaterThanOrEqual(4);
     expect(knocked).toBeLessThanOrEqual(24);
+  });
+});
+
+describe("пози протистояння й бійки (§9.4, «Пози стосунків»)", () => {
+  it("хто підходить до ворога — іде, хто чекає й хто вже зійшовся — «спина дугою»", () => {
+    const { save, a, b } = enemies();
+    const s = save.current;
+    // Протистояння почалося, але коти ще не зійшлися: сміливіший іде, другий чекає.
+    for (let i = 0; i < 2000 && a.act.kind !== "standoff"; i++) {
+      calm(a);
+      calm(b);
+      Object.assign(a, A_AT);
+      Object.assign(b, B_AT);
+      a.act = idle();
+      b.act = idle();
+      tickCats(s, 0.25, { present: false });
+    }
+    const [mover, waiter] = a.act.goal !== null ? [a, b] : [b, a];
+    expect(mover.act.goal).not.toBeNull();
+    expect(poseOf(mover, false)).toBe("walk");
+    expect(poseOf(waiter, false)).toBe("arch");
+    untilStandoff(save, a, b);
+    expect(poseOf(a, false)).toBe("arch");
+    expect(poseOf(b, false)).toBe("arch");
+  });
+
+  it("бійка: нападник біжить, другий чекає дугою; зійшлися — обидва «клубок бійки», і бабл «бійка» один на двох", () => {
+    const save = game();
+    const s = save.current;
+    const cat = withCat(save, { catnip: -2 }, { x: 9.5, y: 7.5 });
+    addSupply(s, "catnip", "cheap", 5);
+    pickUpCat(s, cat);
+    const other = withCat(save, {}, { x: 11.5, y: 8.5 });
+    other.act = idle(60);
+    giveCatnip(s, "cheap", createRng(1));
+    Object.assign(cat, { x: 9.6, y: 8.4 });
+    cat.act.minutes = 0.1;
+    for (let i = 0; i < 20 && cat.act.kind !== "fight"; i++) tickCats(s, 0.05, { present: false });
+    expect(cat.act.kind).toBe("fight");
+    expect(poseOf(cat, false)).toBe("walk");
+    expect(poseOf(other, false)).toBe("arch");
+    // Поки нападник біжить, бабл «бійка» — над кожним.
+    expect(showsFightBubble(s, cat)).toBe(true);
+    expect(showsFightBubble(s, other)).toBe(true);
+    for (let i = 0; i < 100 && cat.act.paired !== true; i++) tickCats(s, 0.05, { present: false });
+    expect(poseOf(cat, false)).toBe("brawl");
+    expect(poseOf(other, false)).toBe("brawl");
+    expect([cat, other].filter((c) => showsFightBubble(s, c))).toHaveLength(1);
   });
 });

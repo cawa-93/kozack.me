@@ -37,6 +37,7 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/storagelook";
 import { CatView } from "../view/cat";
+import { showsFightBubble } from "../view/pose";
 import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, drawTrinket, itemScreen } from "../view/catcorner";
 import { COLORS, depthOf, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
@@ -940,7 +941,8 @@ export class DayScene extends Phaser.Scene {
         else this.bubbles.setState(key, "think", null, 0, 0);
         continue;
       }
-      set(key, cat.away !== null ? null : fighting ? "fight" : asking ? ask : ringing ? "bell" : null);
+      // Бабл «бійка» над клубком — один на двох (§9.4, «Пози стосунків»).
+      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : asking ? ask : ringing ? "bell" : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
     for (const storage of STORAGES) {

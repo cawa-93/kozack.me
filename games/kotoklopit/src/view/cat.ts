@@ -1,17 +1,20 @@
 // Кіт-заглушка (§11.3): простий силует із забарвленням за генами (§9.10), що вже показує пози —
-// іде, сидить, їсть, спить клубочком, ховається. Згодом його замінить конструктор із частин (крок 16).
+// іде, сидить, їсть, спить клубочком, ховається, вигинає спину перед ворогом, клубком б'ється (§9.4, «Пози стосунків»).
+// Згодом його замінить конструктор із частин (крок 16). Яка поза за дією — `pose.ts`.
 
 import Phaser from "phaser";
 
 import { isKitten, traitLevel } from "../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../sim/genetics";
 import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../sim/home";
+import { absoluteMinute } from "../sim/time";
 import { girthOf } from "../sim/weight";
 import type { Cat, GameState, Quality } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
 import { COLORS, depthOf, toScreen } from "./geometry";
+import { brawlFoe, poseOf } from "./pose";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,
@@ -29,31 +32,15 @@ const POINT_BODY = 0xeee2cc;
 const EYES = { blue: 0x6fb3e0, green: 0x7fbf5a, yellow: 0xe0c040, copper: 0xd2803a } as const;
 /** На скільки пікселів кіт, що їсть чи п'є з миски, сидить за нею (§9.12): корм у мисці видно спереду. */
 const BOWL_BEHIND = 9;
+/** Скільки ігрових хвилин після шипіння в протистоянні рот відкритий, а голова подана вперед (§9.4, «Спина дугою»). */
+const HISS_OPEN = 0.8;
+/** Відкритий рот, що шипить. */
+const MOUTH = 0x5a2232;
 
 const shade = (color: number, k: number): number => {
   const c = Phaser.Display.Color.IntegerToColor(color);
   return Phaser.Display.Color.GetColor(Math.round(c.red * k), Math.round(c.green * k), Math.round(c.blue * k));
 };
-
-export type CatPose =
-  | "walk"
-  | "sit"
-  | "eat"
-  | "sleep"
-  | "hide"
-  | "carried"
-  | "belly"
-  | "roll"
-  | "bury"
-  | "groom"
-  | "mark"
-  | "cough"
-  | "scratch"
-  | "stretch"
-  | "carrier"
-  | "crouch"
-  | "blanket"
-  | "sprawl";
 
 /**
  * Настрій з поведінки (§11.4, рішення автора 2026-10-25): сумний кіт — вуха вбік, голова нижче, очі
@@ -88,45 +75,6 @@ const isDark = (color: number): boolean => {
   return 0.299 * c.red + 0.587 * c.green + 0.114 * c.blue < 90;
 };
 
-/** Поза за дією кота. */
-export function poseOf(cat: Cat, carried: boolean): CatPose {
-  const act = cat.act;
-  // На колінах кіт спить клубочком; «Поважає роботу» так само лежить поруч зі столом, а «Щедра душа» — поруч із котом, якого
-  // гладять (§9.12).
-  if (act.kind === "lap" || (act.kind === "idle" && act.goal === null && (act.target === "desk" || act.target?.startsWith("cuddle:") === true))) return "sleep";
-  if (carried) return "carried";
-  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
-  // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
-  if (act.kind === "sleep" && act.target === "carrier") return "carrier";
-  // Теплолюб під ковдрою, «Не мерзне» розпластався на прохолодній плитці (§9.12, «Теплолюбність»).
-  if (act.kind === "sleep" && act.blanket === true) return "blanket";
-  if (act.kind === "sleep" && act.target === "tile") return "sprawl";
-  if (act.kind === "sleep") return "sleep";
-  if (act.kind === "hide") return "hide";
-  // У засідці (§9.12, «Засідки»): припав до підлоги й виляє задом.
-  if (act.kind === "ambush") return "crouch";
-  // Катається по котячій м'яті (§9.12): на спині, лапи догори, перевертається з боку на бік.
-  if (act.kind === "catnip") return "roll";
-  // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
-  // Нюхає котячу м'яту, на яку не зважає (§9.12, «Котяча м'ята»), — так само.
-  const sniffing =
-    (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target === "catnip" || act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
-  // Гризе дріт чи пакет (§9.12, «Гризіння») — так само голова донизу.
-  if (act.kind === "eat" || act.kind === "drink" || act.kind === "chew" || sniffing) return "eat";
-  // Гребе лапою (§9.12): закопує корм біля миски.
-  if (act.kind === "bury") return "bury";
-  // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).
-  if (act.kind === "mark") return "mark";
-  if (act.kind === "cough") return "cough";
-  // Точить кігті: стоїть на задніх лапах; на килимку — потягується, витягнувши лапи вперед (§9.12, «Дряпання»).
-  if (act.kind === "scratch") return act.target === "rug" ? "stretch" : "scratch";
-  // Лапає рулон туалетного паперу на стіні — так само на задніх лапах (§9.12, «Мисливський інстинкт»).
-  if (act.kind === "unroll") return "scratch";
-  // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
-  if (act.kind === "groom" && !act.target?.startsWith("cat:") && !act.target?.startsWith("kitten:")) return "groom";
-  return "sit";
-}
-
 export class CatView {
   private readonly g: Phaser.GameObjects.Graphics;
   private readonly coat: Coat;
@@ -148,6 +96,10 @@ export class CatView {
 
   /** Форми частин тіла: від кота, що є зараз (гени й форми не змінюються). */
   private shape: Cat["shape"];
+  /** «Спина дугою» (§9.4): вуха притиснуті вбік і назад, очі широко розплющені. */
+  private threat = false;
+  /** Кіт саме шипить на ворога: рот відкритий. */
+  private hissing = false;
 
   constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, cat: Cat) {
     this.g = scene.add.graphics().addToDisplayList(layer);
@@ -183,13 +135,15 @@ export class CatView {
     const pose = onHigh && base === "hide" ? "sleep" : base;
     this.feeling = feeling;
     this.look = look;
+    this.threat = pose === "arch";
+    this.hissing = pose === "arch" && cat.hissedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.hissedAt < HISS_OPEN;
     const toy = cat.act.kind === "carry" && cat.act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === cat.act.target) : undefined;
     this.mouthToy = toy?.kind === "toy" ? toy.quality : "cheap";
     this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "roll" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
+      pose === "walk" || pose === "arch" || pose === "brawl" || pose === "roll" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}|${Math.round(girthOf(cat) * 20)}`;
     if (key !== null && key === this.drawn) return;
@@ -215,15 +169,11 @@ export class CatView {
       feet.y -= BOWL_BEHIND;
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
-    // Дорослий кіт — приблизно до пояса персонажу; кошеня менше.
-    // Розмір породи (§9.11) — ±6% за одиницю. Кошеня помітно менше й підростає щотижня:
-    // новонароджене — 0,4 дорослого, тижневе — 0,55, двотижневе — 0,65 (правка автора 2026-10-21).
-    const age = cat.ageWeeks === 0 ? 0.4 : isKitten(cat) ? 0.45 + 0.1 * cat.ageWeeks : 1;
-    const size = 1 + 0.06 * traitLevel(cat, "size");
-    const scale = 1.25 * age * size * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
-    // Відданий кіт дивиться на персонажа, коли моргає до нього.
-    const dir = look?.face ?? (cat.facing >= 0 ? 1 : -1);
-    const sad = look?.sad === true;
+    const scale = this.scaleOf(cat);
+    // Відданий кіт дивиться на персонажа, коли моргає до нього; перед ворогом і в бійці — лише на ворога.
+    const foeFacing = pose === "arch" || pose === "brawl";
+    const dir = (foeFacing ? null : look?.face) ?? (cat.facing >= 0 ? 1 : -1);
+    const sad = look?.sad === true && !foeFacing;
     const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
     // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
@@ -240,9 +190,173 @@ export class CatView {
     const fw = girthOf(cat);
     const fh = 1 + (fw - 1) * 0.4;
 
-    if (pose !== "carried" && pose !== "hide" && pose !== "carrier") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
+    if (pose !== "carried" && pose !== "hide" && pose !== "carrier" && pose !== "brawl") g.fillStyle(0x000000, 0.22).fillEllipse(x, y, 34 * s, 9 * s);
 
     switch (pose) {
+      case "arch": {
+        // «Спина дугою» (§9.4, «Пози стосунків»; заглушка до кроку 16): спина — висока дуга підковою догори, живіт підтягнутий,
+        // лапи прямі й напружені, шерсть настовбурчена (зубчастий контур), хвіст трубою й пухнастий, вуха притиснуті, очі широко
+        // розплющені; кіт дрібно тремтить, а на шипінні подає голову вперед і відкриває рот. Тіло — позаду передніх лап (точки
+        // кота): двоє за 0,6 клітинки стоять морда до морди, а не один в одному.
+        const shiver = Math.sin(time / 28 + cat.id) * 0.5 * s;
+        const lunge = this.hissing ? dir * 1.5 * s : 0;
+        const bx = x - dir * 12 * s + shiver;
+        const belly = y - 13 * s;
+        // Зовнішній край дуги — спина, внутрішній — підтягнутий живіт; у повного кота дуга товща.
+        const outerX = 14 * s * fw;
+        const outerY = 17 * s * fh;
+        const innerX = 7 * s;
+        const innerY = Math.max(3 * s, 9 * s - (fw - 1) * 8 * s);
+        const at = (a: number, rx: number, ry: number): Phaser.Math.Vector2 => new Phaser.Math.Vector2(bx - dir * Math.cos(a) * rx, belly - Math.sin(a) * ry);
+        const limb = this.coat.pointed ? point : body;
+        this.tail(g, bx - dir * 10 * s, belly - 6 * s, s, dir, "puff");
+        g.fillStyle(limb);
+        for (const lx of [-12, -8.5, 8.5, 12]) g.fillRoundedRect(bx + dir * lx * s - 2 * s, belly - 2 * s, 4 * s, y - belly + 2 * s, 1.5 * s);
+        const n = 20;
+        const outline: Phaser.Math.Vector2[] = [];
+        for (let i = 0; i <= n; i++) {
+          const fur = i % 2 === 1 ? 1.08 : 1;
+          outline.push(at((Math.PI * i) / n, outerX * fur, outerY * fur));
+        }
+        for (let i = n; i >= 0; i--) outline.push(at((Math.PI * i) / n, innerX, innerY));
+        g.fillStyle(body).fillPoints(outline, true);
+        // Забарвлення на дузі: плями черепахового, біле знизу й на грудях, смужки табі поперек спини.
+        const midX = (outerX + innerX) / 2;
+        const midY = (outerY + innerY) / 2;
+        if (this.coat.second && !this.coat.pointed) {
+          for (const a of [0.3, 0.62]) {
+            const p = at(Math.PI * a, midX, midY);
+            g.fillStyle(PIGMENT[this.coat.second]).fillEllipse(p.x, p.y, 8 * s, 6 * s);
+          }
+        }
+        if (this.coat.white >= 2) {
+          const band = (this.coat.white >= 3 ? 5 : 3) * s;
+          const rim: Phaser.Math.Vector2[] = [];
+          for (let i = 0; i <= n; i++) rim.push(at((Math.PI * i) / n, innerX + band / 2, innerY + band / 2));
+          g.lineStyle(band, WHITE).strokePoints(rim);
+        }
+        if (this.coat.white >= 1) {
+          const chest = at(Math.PI * 0.9, midX, midY * 0.6);
+          g.fillStyle(WHITE).fillEllipse(chest.x, chest.y, 6 * s, 8 * s);
+        }
+        if (this.coat.tabby === "spotted" || this.coat.tabby === "ticked") {
+          g.fillStyle(stripe, this.coat.tabby === "ticked" ? 0.35 : 0.8);
+          for (const a of [0.22, 0.38, 0.5, 0.62, 0.78]) {
+            const p = at(Math.PI * a, midX + (a === 0.5 ? 2 * s : 0), midY + (a === 0.5 ? 2 * s : 0));
+            g.fillCircle(p.x, p.y, 1.8);
+          }
+        } else if (this.coat.tabby) {
+          g.lineStyle(2, stripe, 0.85);
+          for (const a of [0.3, 0.42, 0.54, 0.66]) {
+            const from = at(Math.PI * a, outerX - 1.5 * s, outerY - 1.5 * s);
+            const to = at(Math.PI * a, midX, midY);
+            g.lineBetween(from.x, from.y, to.x, to.y);
+          }
+        }
+        g.lineStyle(2.5, COLORS.ink).strokePoints(outline, true);
+        const hx = x - dir * 0.5 * s + lunge + shiver;
+        const hy = belly - 2 * s;
+        this.headAt(g, hx, hy, s, dir, body, point);
+        this.head = { x: bx, y: Math.min(belly - outerY * 1.08, hy - 13 * s) - 8 * s };
+        this.back = { x: bx, y: belly - outerY };
+        return;
+      }
+      case "brawl": {
+        // «Клубок бійки» (§9.4, «Пози стосунків»; заглушка до кроку 16): двоє — одна фігура посередині між котами. Кожен кіт
+        // малює свою половину: настовбурчену кулю свого забарвлення, що кружляє довкола середини, з лапами й хвостом, які
+        // стирчать і міняються місцями, проблисками вух і очей та клаптями шерсті, що летять навсібіч; позаду — хмара пилу.
+        const foe = brawlFoe(state, cat);
+        const mx = foe ? (feet.x + toScreen(foe).x) / 2 : x;
+        const cy = y - 15 * s;
+        const first = foe === null || cat.id < foe.id;
+        const spin = time / 120 + (first ? 0 : Math.PI);
+        const front = Math.sin(spin) > 0;
+        const jitter = Math.sin(time / 23 + cat.id) * 1.2 * s;
+        const ox = mx + Math.cos(spin) * 5 * s + jitter;
+        const oy = cy + Math.sin(spin) * 3 * s;
+        const r = 14 * s * fw;
+        const limb = this.coat.pointed ? point : body;
+        const pawColor = this.coat.white >= 1 ? WHITE : limb;
+        // Верх клубка — за більшим із двох (кошеня б'ється з дорослим): над ним бабл «бійка».
+        const topOf = (c: Cat): number => {
+          const cs = this.scaleOf(c);
+          return y - 15 * cs - 14 * cs * girthOf(c) * 1.14 - 3 * cs;
+        };
+        const top = Math.min(topOf(cat), foe ? topOf(foe) : Infinity);
+        // Хто зараз ближче до нас, той і поверх: клубок крутиться, а не стоїть одним боком.
+        g.setDepth(feet.depth + (front ? 0.01 : 0));
+        g.fillStyle(0x000000, 0.12).fillEllipse(mx, y, 50 * s, 10 * s);
+        if (!front) {
+          // Хмара пилу позаду клубка — малює той, хто зараз позаду.
+          const rr = (y - top) * 0.55;
+          g.fillStyle(0xf3ede2, 0.5);
+          for (let i = 0; i < 9; i++) {
+            const a = (Math.PI * 2 * i) / 9 + time / 400;
+            g.fillCircle(mx + Math.cos(a) * rr * 1.15, (y + top) / 2 + Math.sin(a) * rr * 0.8, rr * 0.45);
+          }
+        }
+        // Хвіст стирчить із клубка й мотається.
+        if (this.shape.tail !== "none") {
+          const length = (this.shape.tail === "bobtail" ? 0.3 : this.shape.tail === "short" ? 0.6 : 1) * 14 * s;
+          const ta = spin + Math.PI * 0.85 + Math.sin(time / 90 + cat.id) * 0.6;
+          const width = (this.shape.tail === "fluffy" || this.coat.long ? 8 : 5.5) * s;
+          const [x1, y1, x2, y2] = [ox + Math.cos(ta) * r * 0.6, oy + Math.sin(ta) * r * 0.6, ox + Math.cos(ta) * (r + length), oy + Math.sin(ta) * (r + length)];
+          g.lineStyle(width + 2.5, COLORS.ink).lineBetween(x1, y1, x2, y2);
+          g.lineStyle(width, this.coat.pointed ? point : PIGMENT[this.coat.second ?? this.coat.base]).lineBetween(x1, y1, x2, y2);
+        }
+        // Лапи дриґають на всі боки.
+        for (const k of [0, 1, 2]) {
+          const pa = spin * 1.6 + k * 2.1 + Math.sin(time / 70 + k) * 0.4;
+          const reach = r + (6 + Math.sin(time / 60 + k * 1.3) * 2) * s;
+          const [x1, y1, x2, y2] = [ox + Math.cos(pa) * r * 0.6, oy + Math.sin(pa) * r * 0.6, ox + Math.cos(pa) * reach, oy + Math.sin(pa) * reach];
+          g.lineStyle(5 * s + 2.5, COLORS.ink).lineBetween(x1, y1, x2, y2);
+          g.lineStyle(5 * s, limb).lineBetween(x1, y1, x2, y2);
+          g.fillStyle(pawColor).fillEllipse(x2, y2, 6.5 * s, 5 * s);
+          g.lineStyle(1.5, COLORS.ink).strokeEllipse(x2, y2, 6.5 * s, 5 * s);
+        }
+        // Куля настовбурченої шерсті.
+        const n = 18;
+        const puff: Phaser.Math.Vector2[] = [];
+        for (let i = 0; i < n; i++) {
+          const a = spin * 0.7 + (Math.PI * 2 * i) / n;
+          const fur = i % 2 === 1 ? 1.14 : 1;
+          puff.push(new Phaser.Math.Vector2(ox + Math.cos(a) * r * fur, oy + Math.sin(a) * r * fur * 0.9));
+        }
+        g.fillStyle(body).fillPoints(puff, true);
+        this.patches(g, ox, oy, r * 1.7, r * 1.5);
+        if (this.coat.tabby) this.stripes(g, ox, oy, r * 1.3, stripe, true);
+        g.lineStyle(2.5, COLORS.ink).strokePoints(puff, true);
+        // Проблиски вух і очей.
+        const ha = -Math.PI / 2 + Math.sin(time / 200 + cat.id) * 0.9;
+        if (Math.sin(time / 140 + cat.id * 1.7) > 0.1) {
+          const ex = ox + Math.cos(ha) * r * 0.75;
+          const ey = oy + Math.sin(ha) * r * 0.75;
+          const tall = this.shape.ears === "folded" ? 3 : this.shape.ears === "large" || this.shape.ears === "tufted" ? 8 : 6;
+          g.fillStyle(this.coat.pointed ? point : body);
+          for (const side of [-1, 1]) g.fillTriangle(ex + side * 1 * s, ey, ex + side * 6 * s, ey + 1 * s, ex + side * 5 * s, ey - tall * s);
+          g.lineStyle(1.5, COLORS.ink);
+          for (const side of [-1, 1]) g.strokeTriangle(ex + side * 1 * s, ey, ex + side * 6 * s, ey + 1 * s, ex + side * 5 * s, ey - tall * s);
+        }
+        if (Math.sin(time / 95 + cat.id * 2.3) > 0.6) {
+          const ex = ox + Math.cos(ha) * r * 0.35;
+          const ey = oy + Math.sin(ha) * r * 0.35 + 3 * s;
+          g.fillStyle(EYES[this.coat.eyes]).fillCircle(ex - 2.6 * s, ey, 2.2 * s).fillCircle(ex + 2.6 * s, ey, 2.2 * s);
+          g.fillStyle(COLORS.ink).fillEllipse(ex - 2.6 * s, ey, 0.9 * s, 3 * s).fillEllipse(ex + 2.6 * s, ey, 0.9 * s, 3 * s);
+        }
+        // Клапті шерсті летять навсібіч і тануть.
+        for (const k of [0, 1, 2, 3]) {
+          const cycle = time / 700 + k / 4 + cat.id * 0.13;
+          const p = cycle - Math.floor(cycle);
+          const fa = k * 1.7 + cat.id + Math.floor(cycle) * 2.3;
+          const fx = mx + Math.cos(fa) * (r + p * 22 * s);
+          const fy = cy + Math.sin(fa) * (r * 0.6 + p * 12 * s) - p * 8 * s;
+          g.fillStyle(limb, 0.9 * (1 - p)).fillEllipse(fx, fy, 6 * s, 4 * s);
+          g.lineStyle(1.2, COLORS.ink, 0.6 * (1 - p)).strokeEllipse(fx, fy, 6 * s, 4 * s);
+        }
+        this.head = { x: mx, y: top - 6 * s };
+        this.back = { x: mx, y: cy };
+        return;
+      }
       case "belly": {
         // На спині: світлий живіт, чотири лапки догори, голова збоку — так і хочеться погладити (§9.12).
         this.tail(g, x - dir * 15 * s, y - 6 * s, s, dir, "rest");
@@ -439,6 +553,17 @@ export class CatView {
     }
   }
 
+  /**
+   * Розмір кота на екрані. Дорослий кіт — приблизно до пояса персонажу; кошеня менше. Розмір породи (§9.11) — ±6% за одиницю.
+   * Кошеня помітно менше й підростає щотижня: новонароджене — 0,4 дорослого, тижневе — 0,55, двотижневе — 0,65 (правка автора
+   * 2026-10-21).
+   */
+  private scaleOf(cat: Cat): number {
+    const age = cat.ageWeeks === 0 ? 0.4 : isKitten(cat) ? 0.45 + 0.1 * cat.ageWeeks : 1;
+    const size = 1 + 0.06 * traitLevel(cat, "size");
+    return 1.25 * age * size * (cat.shape.build === "stocky" ? 1.08 : cat.shape.build === "slim" ? 0.94 : 1);
+  }
+
   /** Річ у зубах (§9.12, «Подарунки й схованки»): іграшка чи ваша шкарпетка, поки кіт її несе. */
   private inMouth(g: Phaser.GameObjects.Graphics, cat: Cat, x: number, y: number, s: number): void {
     const act = cat.act;
@@ -462,7 +587,22 @@ export class CatView {
       return;
     }
     const ex = x + dir * 3 * s;
-    if (feeling === "content") {
+    if (this.threat) {
+      // Перед ворогом (§9.4, «Спина дугою»): очі широко розплющені, зіниці-щілинки, брови насуплені.
+      const brow = isDark(this.coat.pointed ? point : body) ? DARK_LID : COLORS.ink;
+      for (const side of [-1, 1]) {
+        const cx = ex + side * 2.8 * s;
+        g.fillStyle(EYES[this.coat.eyes]).fillCircle(cx, y - 1 * s, 2.5 * s);
+        g.lineStyle(1.2, COLORS.ink).strokeCircle(cx, y - 1 * s, 2.5 * s);
+        g.fillStyle(COLORS.ink).fillEllipse(cx, y - 1 * s, 1 * s, 3.6 * s);
+        g.lineStyle(Math.max(1, 1.3 * s), brow).lineBetween(cx + side * 2.6 * s, y - 4.8 * s, cx - side * 1.8 * s, y - 3.4 * s);
+      }
+      if (this.hissing) {
+        // Шипить: рот відкритий, видно ікла.
+        g.fillStyle(MOUTH).fillEllipse(ex + dir * 0.5 * s, y + 5.4 * s, 4.6 * s, 3.2 * s);
+        g.fillStyle(0xffffff).fillTriangle(ex - 1.6 * s, y + 4 * s, ex - 0.6 * s, y + 4 * s, ex - 1.1 * s, y + 5.6 * s).fillTriangle(ex + 0.9 * s, y + 4 * s, ex + 1.9 * s, y + 4 * s, ex + 1.4 * s, y + 5.6 * s);
+      }
+    } else if (feeling === "content") {
       // Задоволений кіт мружиться: очі — дужки.
       g.lineStyle(1.6, COLORS.ink);
       for (const ox of [-2.6, 2.6]) g.beginPath().arc(ex + ox * s, y - 0.5 * s, 2 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
@@ -514,7 +654,9 @@ export class CatView {
     // Невдоволений чи переляканий кіт притискає вуха (§9.12).
     const folded = shape === "folded" || this.feeling === "struggling" || this.feeling === "reluctant";
     // Сумний кіт опускає вуха вбік (§11.4).
-    const droop = !folded && this.look?.sad === true;
+    const droop = !folded && !this.threat && this.look?.sad === true;
+    // Перед ворогом (§9.4, «Спина дугою») вуха притиснуті вбік і назад: з-за голови стирчать лише кінчики.
+    const flat = !folded && this.threat;
     g.fillStyle(color);
     for (const side of [-1, 1]) {
       const bx = x + side * 5 * s + dir;
@@ -526,6 +668,11 @@ export class CatView {
         g.lineStyle(2, COLORS.ink).strokeTriangle(bx - side * 1 * s, y - 8 * s, bx + side * 4 * s, y - 3 * s, tx, ty);
       } else if (folded) {
         g.fillTriangle(bx - 3 * s, y - 6 * s, bx + 3 * s, y - 6 * s, bx + side * 4 * s, y - 2 * s);
+      } else if (flat) {
+        const tx = bx + side * 7 * s * big - dir * 2 * s;
+        const ty = y - 8 * s - (big - 1) * 3 * s;
+        g.fillTriangle(bx - 3 * s, y - 5 * s, bx + 3 * s, y - 6 * s, tx, ty);
+        g.lineStyle(2, COLORS.ink).strokeTriangle(bx - 3 * s, y - 5 * s, bx + 3 * s, y - 6 * s, tx, ty);
       } else {
         g.fillTriangle(bx - 4 * s, y - 5 * s, bx + 4 * s, y - 5 * s, bx + side * 1 * s, y - (12 + 4 * (big - 1) * 3) * s);
         g.lineStyle(2, COLORS.ink).strokeTriangle(bx - 4 * s, y - 5 * s, bx + 4 * s, y - 5 * s, bx + side * 1 * s, y - (12 + 4 * (big - 1) * 3) * s);
@@ -533,12 +680,31 @@ export class CatView {
     }
   }
 
-  /** Хвіст: «up» — трубою в ході, «rest» — лежить біля сидячого (смикається), «down» — опущений у сумного. */
-  private tail(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, pose: "up" | "rest" | "down"): void {
+  /**
+   * Хвіст: «up» — трубою в ході, «rest» — лежить біля сидячого (смикається), «down» — опущений у сумного, «puff» — піднятий,
+   * настовбурчений і товщий перед ворогом (§9.4, «Спина дугою»).
+   */
+  private tail(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number, dir: number, pose: "up" | "rest" | "down" | "puff"): void {
     const shape = this.shape.tail;
     if (shape === "none") return;
     const length = shape === "bobtail" ? 0.3 : shape === "short" ? 0.6 : 1;
-    const width = (shape === "fluffy" || this.coat.long ? 7 : 4.5) * s;
+    const width = (shape === "fluffy" || this.coat.long ? 7 : 4.5) * s * (pose === "puff" ? 1.7 : 1);
+    if (pose === "puff") {
+      // Пухнастий хвіст трубою — ланцюжок кружечків із контуром: настовбурчена шерсть, а не палиця.
+      const color = this.coat.pointed ? PIGMENT[this.coat.base] : PIGMENT[this.coat.second ?? this.coat.base];
+      const tx = x - dir * 5 * s * length;
+      const ty = y - 22 * s * length;
+      const steps = 6;
+      const blobs = Array.from({ length: steps + 1 }, (_, i) => {
+        const t = i / steps;
+        return { x: x + (tx - x) * t - dir * Math.sin(t * Math.PI) * 2 * s, y: y + (ty - y) * t, r: (width / 2) * (i % 2 === 1 ? 1.15 : 1) * (t > 0.85 ? 0.8 : 1) };
+      });
+      g.fillStyle(COLORS.ink);
+      for (const b of blobs) g.fillCircle(b.x, b.y, b.r + 1.3);
+      g.fillStyle(color);
+      for (const b of blobs) g.fillCircle(b.x, b.y, b.r);
+      return;
+    }
     const color = this.coat.pointed ? PIGMENT[this.coat.base] : PIGMENT[this.coat.second ?? this.coat.base];
     g.lineStyle(width, color);
     const tx = x - dir * 12 * s * length;

@@ -1,0 +1,86 @@
+// Пози кота за його дією (§11.3, §9.4 «Пози стосунків»). Без Phaser — щоб тести могли перевірити.
+
+import type { Cat, GameState } from "../sim/types";
+
+export type CatPose =
+  | "walk"
+  | "sit"
+  | "eat"
+  | "sleep"
+  | "hide"
+  | "carried"
+  | "belly"
+  | "roll"
+  | "bury"
+  | "groom"
+  | "mark"
+  | "cough"
+  | "scratch"
+  | "stretch"
+  | "carrier"
+  | "crouch"
+  | "blanket"
+  | "sprawl"
+  | "arch"
+  | "brawl";
+
+/** Поза за дією кота. */
+export function poseOf(cat: Cat, carried: boolean): CatPose {
+  const act = cat.act;
+  // На колінах кіт спить клубочком; «Поважає роботу» так само лежить поруч зі столом, а «Щедра душа» — поруч із котом, якого
+  // гладять (§9.12).
+  if (act.kind === "lap" || (act.kind === "idle" && act.goal === null && (act.target === "desk" || act.target?.startsWith("cuddle:") === true))) return "sleep";
+  if (carried) return "carried";
+  // Протистояння й бійка (§9.4, рішення автора 2026-10-26): хто підходить до ворога — іде; хто чекає й хто вже зійшовся — «спина
+  // дугою»; зійшлися в бійці — «клубок бійки». Заглушки до кроку 16 (графіка).
+  if (act.goal === null && act.kind === "standoff") return "arch";
+  if (act.goal === null && act.kind === "fight") return act.paired === true ? "brawl" : "arch";
+  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
+  // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
+  if (act.kind === "sleep" && act.target === "carrier") return "carrier";
+  // Теплолюб під ковдрою, «Не мерзне» розпластався на прохолодній плитці (§9.12, «Теплолюбність»).
+  if (act.kind === "sleep" && act.blanket === true) return "blanket";
+  if (act.kind === "sleep" && act.target === "tile") return "sprawl";
+  if (act.kind === "sleep") return "sleep";
+  if (act.kind === "hide") return "hide";
+  // У засідці (§9.12, «Засідки»): припав до підлоги й виляє задом.
+  if (act.kind === "ambush") return "crouch";
+  // Катається по котячій м'яті (§9.12): на спині, лапи догори, перевертається з боку на бік.
+  if (act.kind === "catnip") return "roll";
+  // Їсть, п'є, обнюхує дрібничку на столі чи нову річ (§9.12, «Скидання речей», «Допитливість»): голова донизу.
+  // Нюхає котячу м'яту, на яку не зважає (§9.12, «Котяча м'ята»), — так само.
+  const sniffing =
+    (act.kind === "knock" && act.refused === true) || (act.kind === "idle" && (act.target === "catnip" || act.target?.startsWith("sniff:") === true || act.target?.startsWith("shun:") === true));
+  // Гризе дріт чи пакет (§9.12, «Гризіння») — так само голова донизу.
+  if (act.kind === "eat" || act.kind === "drink" || act.kind === "chew" || sniffing) return "eat";
+  // Гребе лапою (§9.12): закопує корм біля миски.
+  if (act.kind === "bury") return "bury";
+  // Мітить: стоїть, задерши хвіст; кахикає: пригнувся й смикається (§9.12).
+  if (act.kind === "mark") return "mark";
+  if (act.kind === "cough") return "cough";
+  // Точить кігті: стоїть на задніх лапах; на килимку — потягується, витягнувши лапи вперед (§9.12, «Дряпання»).
+  if (act.kind === "scratch") return act.target === "rug" ? "stretch" : "scratch";
+  // Лапає рулон туалетного паперу на стіні — так само на задніх лапах (§9.12, «Мисливський інстинкт»).
+  if (act.kind === "unroll") return "scratch";
+  // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
+  if (act.kind === "groom" && !act.target?.startsWith("cat:") && !act.target?.startsWith("kitten:")) return "groom";
+  return "sit";
+}
+
+/** Суперник у «клубку бійки» (§9.4): обидва вже зійшлися й б'ються саме одне з одним; інакше null. */
+export function brawlFoe(state: GameState, cat: Cat): Cat | null {
+  if (cat.act.kind !== "fight" || cat.act.paired !== true) return null;
+  const foe = state.cats.find((c) => `cat:${c.id}` === cat.act.target);
+  if (!foe || foe.away !== null || foe.act.kind !== "fight" || foe.act.paired !== true || foe.act.target !== `cat:${cat.id}`) return null;
+  return foe;
+}
+
+/**
+ * Бабл «бійка» (§9.4, «Пози стосунків»): над клубком — один на двох (його показує кіт із меншим номером), а нападник, що ще
+ * біжить, і той, хто його чекає, — кожен свій.
+ */
+export function showsFightBubble(state: GameState, cat: Cat): boolean {
+  if (cat.act.kind !== "fight" || cat.away !== null) return false;
+  const foe = brawlFoe(state, cat);
+  return foe === null || cat.id < foe.id;
+}
