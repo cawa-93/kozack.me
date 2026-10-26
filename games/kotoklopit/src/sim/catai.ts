@@ -634,8 +634,11 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const sun = sunSpot(state.minute);
   if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(sun) });
   // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
+  // Плитка одна: поки на ній спить кіт чи вже йде туди спати, інший її не обирає (перевірка етапу 2026-10-26: у спеку коти лягали
+  // в ту саму точку, один в одного).
   const tile = WARMTH.tileStep * Math.max(0, -warmth) + (isHot(state) ? WARMTH.heatTile : 0);
-  if (tile > 0) options.push({ weight: tile, value: { at: { ...COOL_TILE }, target: "tile" } });
+  const tileTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "tile");
+  if (tile > 0 && !tileTaken) options.push({ weight: tile, value: { at: { ...COOL_TILE }, target: "tile" } });
   // Нагорі — на холодильнику (він теплий: вага й від «Теплолюбності») і на шафі в спальні (§9.12, «Лазіння»).
   const climb = climbWeight(cat);
   if (climb > 0) {
@@ -1127,6 +1130,8 @@ function chewDone(state: GameState, cat: Cat, rng: Rng): void {
   emit(state, { type: "bag-chewed", cat: cat.id, product: bag.product });
   if (bag.product === "catFood" || bag.product === "sterileFood" || bag.product === "treats") {
     cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * (bag.product === "treats" ? 0.25 : 1));
+    // Прогризене — теж крадене (§9.12, «Схильність до повноти»; перевірка етапу 2026-10-26: кіт з'їдав пакет, не гладшаючи).
+    gainWeight(state, cat, bag.product === "treats" ? WEIGHT.treat : WEIGHT.stolen);
     changeMood(state, cat, 1);
   }
 }
@@ -2588,6 +2593,8 @@ function fellAsleep(state: GameState, cat: Cat): void {
 function sleptWarm(state: GameState, cat: Cat): void {
   const level = traitLevel(cat, "warmth");
   if (cat.act.target === "tile") {
+    // Ліворуч від плитки — стіна ванної: кіт лягає головою до кімнати (перевірка етапу 2026-10-26: голову ховала стіна).
+    cat.facing = 1;
     if (!isHot(state)) observe(state, cat, "warmth", -1, false, WARMTH.observeEvery);
     return;
   }

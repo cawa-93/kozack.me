@@ -9,14 +9,16 @@ import type { Cat, GameState } from "./types";
 
 /**
  * Кіт з'їв більше, ніж треба (§9.12): порцію, коли не був голодний, ласощі чи крадене. Набір × max(0, 1 + 0,5 × «Схильність до
- * повноти»), у стерилізованого ще × 1,3. «Не товстіє» (−2) не гладшає зовсім. «−», що переїв, а вага нижче 55, — прояв «−»: не
- * гладшає, хоч скільки їсть (раз на день).
+ * повноти»), у стерилізованого ще × 1,3. «Не товстіє» (−2) не гладшає зовсім. «−», що помітно переїв (зайвого до множників
+ * щонайменше `WEIGHT.overate`: порція при голоді 60 і нижче, ласощі чи крадене), а вага нижче 55, — прояв «−»: не гладшає, хоч
+ * скільки їсть (раз на день). Трапеза трохи раніше звичайного — не «переїв»: її не відрізнити від звичайної (перевірка етапу
+ * 2026-10-26).
  */
 export function gainWeight(state: GameState, cat: Cat, amount: number): void {
   const level = traitLevel(cat, "chubby");
   const gain = amount * Math.max(0, 1 + WEIGHT.traitStep * level) * (cat.sterilized ? WEIGHT.sterilized : 1);
   cat.weight = Math.min(WEIGHT.max, weightOf(cat) + gain);
-  if (level < 0 && weightOf(cat) < WEIGHT.slim) observe(state, cat, "chubby", -1, false, MINUTES_PER_DAY);
+  if (level < 0 && amount >= WEIGHT.overate && weightOf(cat) < WEIGHT.slim) observe(state, cat, "chubby", -1, false, MINUTES_PER_DAY);
 }
 
 /** Кіт награвся, нагасався чи поборовся (§9.12): худне на `playLoss` × частку гри, але не нижче норми. */

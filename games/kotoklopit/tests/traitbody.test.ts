@@ -126,6 +126,19 @@ describe("«Заздрісність»: видимі реакції (§9.12, р�
     expect(snatched).toBeLessThan(20);
   });
 
+  it("до кота у вас на руках заздрісник здалеку не йде — шипить звідти, прояв «+»", () => {
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    const envious = withCat(save, { envy: 1 }, { x: 5.5, y: 8.5 });
+    save.current.character.held = { kind: "cat", cat: lucky.id };
+    const { events, stop } = recordEvents();
+    envy(save.current, lucky, "collar");
+    stop();
+    expect(envious.act.kind).not.toBe("jealous");
+    expect(events.some((e) => e.type === "hissed" && e.cat === envious.id && e.at === lucky.id)).toBe(true);
+    expect(seen(envious, "envy")).toBe(1);
+  });
+
   it("«Заздрісний» (+1) і далекий «Заздрісник» ласощів не вихоплюють", () => {
     for (const [level, x] of [[1, 10.5], [2, 13.5]] as const) {
       for (let seed = 1; seed <= 20; seed++) {
@@ -193,6 +206,23 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     expect(sleepSpots({ warmth: 2 }, "heat")["tile"]).toBeGreaterThan(10);
   });
 
+  it("плитка одна: поки на ній спить кіт чи вже йде туди, інший її не обирає навіть у «Спеку» (перевірка етапу 2026-10-26)", () => {
+    for (const goal of [null, { ...COOL_TILE }]) {
+      let tile = 0;
+      for (let seed = 0; seed < 100; seed++) {
+        const save = game();
+        save.current.modifiers.day = "heat";
+        const first = withCat(save, {}, goal ? { x: 9.5, y: 7.5 } : { x: COOL_TILE.x + 0.5, y: COOL_TILE.y + 0.5 });
+        first.act = { kind: "sleep", target: "tile", goal, minutes: 480, elapsed: 0 };
+        const cat = withCat(save, { warmth: -2 }, { x: 10.5, y: 7.5 });
+        cat.needs.fatigue = 100;
+        decide(save.current, cat, createRng(seed), { present: true });
+        if (cat.act.target === "tile") tile += 1;
+      }
+      expect(tile).toBe(0);
+    }
+  });
+
   it("у «Холод» ліжко й комп'ютер тягнуть теплолюба сильніше, а «Холодостійкого» — як у звичайний день", () => {
     const night = hours(23.5);
     const warmPlaces = (spots: Record<string, number>): number => spots["bed"]! + spots["computer"]!;
@@ -238,6 +268,8 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
       cat.weatherAt = save.current.day * MINUTES_PER_DAY + save.current.minute;
       arrive(save, cat);
       expect(Math.floor(cat.x)).toBe(COOL_TILE.x);
+      // Прийшов справа, але лягає головою до кімнати: ліворуч — стіна ванної (перевірка етапу 2026-10-26).
+      expect(cat.facing).toBe(1);
       expect(seen(cat, "warmth")).toBe(expected);
     }
   });
@@ -340,6 +372,37 @@ describe("«Схильність до повноти» (§9.12, рішення �
     expect(weightOf(cat)).toBeCloseTo(WEIGHT.norm + WEIGHT.treat + WEIGHT.stolen, 2);
   });
 
+  it("прогризений пакет у ящиках біля входу — теж крадене: корм +2, ласощі +1 (перевірка етапу 2026-10-26)", () => {
+    for (const [product, gain] of [["catFood", WEIGHT.stolen], ["treats", WEIGHT.treat]] as const) {
+      const save = game();
+      save.current.home.boxes = { [product]: { cheap: 1, premium: 0 } };
+      const cat = withCat(save, {}, { x: 12.5, y: 8.5 });
+      cat.act = { kind: "chew", target: "boxes", goal: null, minutes: 0.25, elapsed: 0 };
+      live(save, 0.25);
+      expect(save.current.home.boxes[product]?.cheap, product).toBe(0);
+      expect(weightOf(cat), product).toBeCloseTo(WEIGHT.norm + gain);
+    }
+  });
+
+  it("«−» «переїв» лише помітно: трапеза трохи раніше звичайного — ні, порція при голоді 60 і нижче — так (перевірка етапу 2026-10-26)", () => {
+    const meal = (hunger: number): number => {
+      const save = game();
+      Object.assign(save.current.character.body, { x: 15.5, y: 3.5 });
+      const cat = withCat(save, { chubby: -1 }, { x: 17.5, y: 4.5 });
+      const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+      bowl.food = 2;
+      bowl.foodQuality = "cheap";
+      cat.needs.hunger = hunger;
+      cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.25, elapsed: 0, nibble: false, second: true };
+      live(save, 0.25);
+      expect(bowl.food).toBe(1);
+      return seen(cat, "chubby");
+    };
+    expect(meal(70)).toBe(0);
+    expect(meal(55)).toBe(1);
+    expect(meal(30)).toBe(1);
+  });
+
   it("гра, зумі й боротьба та час повертають вагу до норми, але не нижче", () => {
     const save = game();
     const cat = withCat(save);
@@ -437,6 +500,7 @@ describe("сценарій «Тіло й тепло» (`scenarios/body-warmth.js
     const hardy = byName("Холодостійкий");
     expect(hardy.act.target).toBe("tile");
     expect(Math.floor(hardy.x)).toBe(COOL_TILE.x);
+    expect(hardy.facing).toBe(1);
     const plump = byName("Пухкенький");
     expect(hasDisease(plump, "obesity")).toBe(true);
     expect(girthOf(plump)).toBeGreaterThan(1.3);
