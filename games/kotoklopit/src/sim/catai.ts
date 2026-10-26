@@ -1752,50 +1752,54 @@ function advanceGame(state: GameState, lead: Cat, mate: Cat, minutes: number, rn
 }
 
 /**
- * Рух кота в грі (§9.4, Г3): у засідці мисливець припав до підлоги обличчям до другого, а той відходить; у погоні утікач біжить
- * кімнатою швидкістю зумі, а мисливець тримається за ним за клітинку, і обидва можуть скинути річ зі столу, як зумі; у боротьбі
- * мисливець наздоганяє й стає впритул збоку; у паузі обидва сидять обличчям одне до одного.
+ * Рух обох котів у грі (§9.4, Г3) — за того, хто веде: спершу утікач, потім мисливець до його нового місця, тож і за довгий крок
+ * часу (уночі — хвилина, коли утікач пробігає 7,5 клітинки) мисливець не відстає. У засідці мисливець припав до підлоги обличчям
+ * до другого, а той підтюпцем відходить; у погоні утікач біжить кімнатою швидкістю зумі, а мисливець тримається за ним за
+ * клітинку, і обидва можуть скинути річ зі столу, як зумі; у боротьбі мисливець наздоганяє й стає впритул збоку; у паузі обидва
+ * сидять обличчям одне до одного.
  */
-function playMove(state: GameState, cat: Cat, mate: Cat, minutes: number, rng: Rng): void {
-  const act = cat.act;
-  const game = act.game;
+function playMoves(state: GameState, lead: Cat, mate: Cat, minutes: number, rng: Rng): void {
+  const game = lead.act.game;
   if (!game) return;
   const w = RELATIONS.wrestle;
-  const hunting = game.chaser === cat.id;
+  const hunter = game.chaser === lead.id ? lead : mate;
+  const prey = hunter === lead ? mate : lead;
   const fast = CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed;
   if (game.phase === "ambush") {
-    if (hunting) return faceTo(cat, mate);
-    if (act.run && stepTo(cat, act.run, minutes, CAT_WALK_TILES_PER_MINUTE * w.trot * walkFactor(cat)).arrived) delete act.run;
+    faceTo(hunter, prey);
+    const spot = prey.act.run;
+    if (spot && stepTo(prey, spot, minutes, CAT_WALK_TILES_PER_MINUTE * w.trot * walkFactor(prey)).arrived) delete prey.act.run;
     return;
   }
   if (game.phase === "chase") {
-    const from = { x: cat.x, y: cat.y };
-    if (hunting) {
-      const gap = distance(cat, mate) - w.behind;
-      if (gap > 0) stepTo(cat, tileOf(mate), Math.min(minutes, gap / fast), fast);
-    } else {
-      let left = minutes;
-      for (let guard = 0; guard < 4 && left > 1e-9; guard++) {
-        if (!act.run) runFrom(state, cat, rng);
-        if (!act.run) break;
-        const step = stepTo(cat, act.run, left, fast);
-        left = step.left;
-        if (step.arrived) delete act.run;
-      }
+    const preyFrom = { x: prey.x, y: prey.y };
+    let left = minutes;
+    for (let guard = 0; guard < 4 && left > 1e-9; guard++) {
+      if (!prey.act.run) runFrom(state, prey, rng);
+      const spot = prey.act.run;
+      if (!spot) break;
+      const step = stepTo(prey, spot, left, fast);
+      left = step.left;
+      if (step.arrived) delete prey.act.run;
     }
-    knockInPassing(state, cat, from, rng);
+    knockInPassing(state, prey, preyFrom, rng);
+    const hunterFrom = { x: hunter.x, y: hunter.y };
+    const gap = distance(hunter, prey) - w.behind;
+    if (gap > 0) stepTo(hunter, tileOf(prey), Math.min(minutes, gap / fast), fast);
+    knockInPassing(state, hunter, hunterFrom, rng);
     return;
   }
-  if (game.phase === "tussle" && hunting && act.run) {
+  if (game.phase === "tussle" && hunter.act.run) {
     // Наздогнав — стає впритул збоку обличчям до того, хто вже лежить на спині.
-    const gap = distance(cat, mate) - RELATIONS.beside;
-    if (gap > 0.3) stepTo(cat, tileOf(mate), Math.min(minutes, (gap - 0.25) / fast), fast);
-    if (distance(cat, mate) - RELATIONS.beside <= 0.3) {
-      standBeside(cat, mate);
-      delete act.run;
+    const gap = distance(hunter, prey) - RELATIONS.beside;
+    if (gap > 0.3) stepTo(hunter, tileOf(prey), Math.min(minutes, (gap - 0.25) / fast), fast);
+    if (distance(hunter, prey) - RELATIONS.beside <= 0.3) {
+      standBeside(hunter, prey);
+      delete hunter.act.run;
     }
   }
-  faceTo(cat, mate);
+  faceTo(hunter, prey);
+  faceTo(prey, hunter);
 }
 
 /**
@@ -2580,9 +2584,10 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         return;
       }
       if (act.paired !== true) return;
-      // Гра фазами (§9.4, рішення автора 2026-10-26, Г3): фази веде той, хто кликав.
-      if (act.lead === true) advanceGame(state, cat, mate, minutes, rng);
-      playMove(state, cat, mate, minutes, rng);
+      // Гра фазами (§9.4, рішення автора 2026-10-26, Г3): фази й рух обох веде той, хто кликав.
+      if (act.lead !== true) return;
+      advanceGame(state, cat, mate, minutes, rng);
+      playMoves(state, cat, mate, minutes, rng);
       return;
     }
     case "groom": {

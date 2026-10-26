@@ -433,7 +433,8 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
         const game = a.act.game;
         const before = { a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, chaser: game?.chaser, phase: game?.phase };
         tickCats(save.current, DT, { present: false });
-        if (before.phase !== "chase" || a.act.game?.phase !== "chase") continue;
+        // Лише поки обидва ще граються (той, хто догрався першим, уже йде у своїх справах).
+        if (before.phase !== "chase" || a.act.game?.phase !== "chase" || !playing(a, b)) continue;
         chaseMinutes += DT;
         if (a.act.game.chaser !== before.chaser) swaps++;
         for (const [cat, from] of [[a, before.a], [b, before.b]] as const) {
@@ -459,6 +460,18 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
       knocked += count(events, "knocked");
     }
     expect(knocked).toBeGreaterThan(0);
+  });
+
+  it("уночі (крок — хвилина, утікач за крок пробігає 7,5 клітинки) мисливець не відстає, і гра догравається", () => {
+    let played = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const { save, a, b } = friendsPlay(seed);
+      const { events, stop } = recordEvents();
+      for (let t = 0; t < 20 && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) tickCats(save.current, 1, { present: false });
+      stop();
+      played += count(events, "cats-played");
+    }
+    expect(played).toBe(20);
   });
 
   it("погладили одного з котів посеред гри — гри немає нікому", () => {
