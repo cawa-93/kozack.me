@@ -1791,9 +1791,10 @@ function playMoves(state: GameState, lead: Cat, mate: Cat, minutes: number, rng:
   }
   if (game.phase === "tussle" && hunter.act.run) {
     // Наздогнав — стає впритул збоку обличчям до того, хто вже лежить на спині.
+    // Добіг до клітинки утікача (а той міг лягти й біля її краю) чи вже поруч — стає впритул.
     const gap = distance(hunter, prey) - RELATIONS.beside;
-    if (gap > 0.3) stepTo(hunter, tileOf(prey), Math.min(minutes, (gap - 0.25) / fast), fast);
-    if (distance(hunter, prey) - RELATIONS.beside <= 0.3) {
+    const close = gap <= 0.3 || stepTo(hunter, tileOf(prey), Math.min(minutes, (gap - 0.25) / fast), fast).arrived || distance(hunter, prey) - RELATIONS.beside <= 0.3;
+    if (close) {
       standBeside(hunter, prey);
       delete hunter.act.run;
     }

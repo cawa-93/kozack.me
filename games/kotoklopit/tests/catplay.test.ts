@@ -497,6 +497,19 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     expect(played).toBe(20);
   });
 
+  it("боротьба: мисливець добігає й стає впритул, навіть коли утікач ліг біля самого кута клітинки", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 10.996, y: 8.996 });
+    setRelation(save, a, b, 70);
+    const tussle = { phase: "tussle" as const, left: 2, chaser: a.id, swap: 5 };
+    a.act = { kind: "wrestle", target: `cat:${b.id}`, goal: null, minutes: 3, elapsed: 0, paired: true, lead: true, game: { ...tussle }, run: { x: 10, y: 8 } };
+    b.act = { kind: "wrestle", target: `cat:${a.id}`, goal: null, minutes: 3, elapsed: 0, paired: true, game: { ...tussle } };
+    for (let t = 0; t < 20 && a.act.run !== undefined; t++) tickCats(save.current, DT, { present: false });
+    expect(a.act.run).toBeUndefined();
+    expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeCloseTo(0.4, 5);
+  });
+
   it("погладили одного з котів посеред гри — гри немає нікому", () => {
     const { save, a, b } = friendsPlay(3);
     for (let t = 0; t < 100 && a.act.paired !== true; t++) tickCats(save.current, DT, { present: false });
