@@ -798,7 +798,7 @@ describe("«Товариськість» і «Вилизування друзі�
       prickly.act = idleAct(60);
       const groomer = withCat(save, {}, { x: 10.3, y: 7.5 });
       setRelation(save, prickly, groomer, 60);
-      groomer.act = { kind: "groom", target: `cat:${prickly.id}`, goal: null, minutes: RELATIONS.groom.minutes, elapsed: 0 };
+      groomer.act = { kind: "groom", target: `cat:${prickly.id}`, goal: null, minutes: RELATIONS.groom.minutes[0], elapsed: 0 };
       // Відсторонюється чи ні — вирішується, щойно друг підійшов.
       const { events, stop } = recordEvents();
       live(save, 0.5);
@@ -1130,7 +1130,7 @@ describe("«Турбота про кошенят» (§9.4, §9.12, рішенн�
         if (adult.act.kind !== "groom" || adult.act.target !== `kitten:${kitten.id}`) continue;
         kitten.mood = 50;
         kitten.act = idleAct(10);
-        live(save, RELATIONS.groom.minutes + 1);
+        live(save, RELATIONS.groom.minutes[1] + 1);
         expect(kitten.mood).toBeGreaterThan(50);
         expect(seen(adult, "nurturing")).toBe(1);
         return adult;

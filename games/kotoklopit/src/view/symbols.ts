@@ -239,6 +239,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
         { kind: "say", at: cat(event.cat), icon: "treats" },
         { kind: "think", at: cat(event.from), icon: "treats", mark: "no" },
       ];
+    case "groom-started":
+      // Кота почав вилизувати друг (§9.4, рішення автора 2026-10-26, В1): йому приємно — думка-сердечко над тим, кого вилизують.
+      return [{ kind: "think", at: cat(event.friend), icon: "heart" }];
     case "groom-refused":
       // Кіт не терпить, щоб його вилизували (§9.12, «Вилизування друзів»): «не треба» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "lick", mark: "no" }];

@@ -153,8 +153,10 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return event.kind === "shave" ? "Поголився" : "Підрівняв бороду";
     case "modifier":
       return `Модифікатор: ${event.kind} (${number(event.value)})`;
+    case "groom-started":
+      return `${catName(state, event.cat)} почав вилизувати ${catName(state, event.friend)}`;
     case "groomed":
-      return `${catName(state, event.cat)} вилизує ${catName(state, event.friend)}`;
+      return `${catName(state, event.cat)} вилизав ${catName(state, event.friend)}`;
     case "cat-fight":
       return `Бійка: ${catName(state, event.cats[0])} і ${catName(state, event.cats[1])}`;
     case "hissed":
