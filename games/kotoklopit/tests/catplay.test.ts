@@ -759,6 +759,33 @@ describe("друг може відмовитися (§9.4 «Згода, охор
     }
   });
 
+  it("відмовився — пів години його не кличе й інший кіт (перевірка блоку 4: що відмова ставить паузу, не перевіряв жоден тест)", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { save, a, b } = invite(seed, { play: 0, fatigue: 40 });
+      const { events, stop } = recordEvents();
+      arrive(save, a);
+      stop();
+      if (count(events, "play-declined") === 0) continue;
+      const c = withCat(save, {}, { x: 12.5, y: 8.5 });
+      setRelation(save, b, c, 70);
+      const calls = (): number => {
+        let n = 0;
+        for (let s = 0; s < 100; s++) {
+          c.needs.play = 100;
+          b.act = idleAct(30);
+          decide(save.current, c, createRng(s), { present: false });
+          if (c.act.kind === "wrestle" && c.act.target === `cat:${b.id}`) n += 1;
+        }
+        return n;
+      };
+      expect(calls()).toBe(0);
+      save.current.minute += RELATIONS.wrestle.decline.pause;
+      expect(calls()).toBeGreaterThan(10);
+      return;
+    }
+    throw new Error("друг так і не відмовився");
+  });
+
   it("пів години після відмови цього кота гратися не кличуть", () => {
     const save = game();
     const a = withCat(save, {}, { x: 8.5, y: 8.5 });

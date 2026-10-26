@@ -453,7 +453,8 @@ describe("«Злодійство» (рішення автора 2026-10-25)", ()
       expect(eater.needs.hunger).toBeGreaterThan(80);
       expect(eater.mood).toBeLessThan(60);
       expect(relation(save.current, eater, thief)).toBeLessThanOrEqual(before + THIEF.relation);
-      expect(events.some((e) => e.type === "hissed" && e.cat === thief.id && e.at === eater.id)).toBe(true);
+      // Причину видно: значок миски поруч зі злістю (§9.4 «Згода, охорона й сварки», Р2; перевірка блоку 4: це не перевіряв жоден тест).
+      expect(events.find((e) => e.type === "hissed" && e.cat === thief.id && e.at === eater.id)).toMatchObject({ why: "bowl" });
       expect(seen(thief, "thief")).toBe(1);
       return;
     }

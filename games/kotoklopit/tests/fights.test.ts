@@ -475,6 +475,9 @@ describe("бійку видно й чути (§9.4, рішення автора 
       expect(events.some((e) => e.type === "hissed" && e.cat === cat.id && e.at === other.id)).toBe(true);
       expect(cat.act.kind === "fight").toBe(who === "adult");
       expect(other.act.kind === "fight").toBe(who === "adult");
+      // Бійка — і пара того дня билася: уночі ворогам без надбавки за мир (§9.4, Б6 (1); перевірка блоку 4: це не перевіряв жоден тест).
+      const pair = cat.id < other.id ? `${cat.id}-${other.id}` : `${other.id}-${cat.id}`;
+      expect(s.strife?.[pair]).toEqual(who === "adult" ? { fight: true } : undefined);
     }
   });
 
