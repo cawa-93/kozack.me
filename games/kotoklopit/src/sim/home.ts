@@ -159,12 +159,13 @@ export const SURFACE_IDS: readonly string[] = OBJECTS.filter(
  * Дрібнички на столах (§9.12, «Скидання речей»): кухоль на кухонному столі, телефон на кухонній поверхні, ручка на
  * комп'ютерному столі. `at` — де саме на речі: частка її ширини (страва лежить посередині, дрібничка — збоку). `fall` — куди
  * вона падає: на видне місце біля речі, а не за стіл чи передню стіну (перевірка етапу 2026-10-26: телефон, що впав між
- * поверхнею й кухонним столом, ховався за столом).
+ * поверхнею й кухонним столом, ховався за столом). `seat` — де на речі сидить кіт, що обнюхує чи скидає дрібничку або п'є з
+ * кухля: поруч, ліворуч від неї, обличчям до неї, а не на ній (рішення автора 2026-10-26: кіт закривав собою кухоль).
  */
-export const TRINKETS: readonly { kind: TrinketKind; object: string; at: number; fall: Vec }[] = [
-  { kind: "mug", object: "table", at: 0.8, fall: { x: 15.35, y: 4.3 } },
-  { kind: "phone", object: "counter-left", at: 0.75, fall: { x: 15.4, y: 2.4 } },
-  { kind: "pen", object: "computer", at: 0.85, fall: { x: 7.7, y: 7.5 } },
+export const TRINKETS: readonly { kind: TrinketKind; object: string; at: number; fall: Vec; seat: Vec }[] = [
+  { kind: "mug", object: "table", at: 0.8, fall: { x: 15.35, y: 4.3 }, seat: { x: 14.2, y: 3.5 } },
+  { kind: "phone", object: "counter-left", at: 0.75, fall: { x: 15.4, y: 2.4 }, seat: { x: 14.3, y: 1.5 } },
+  { kind: "pen", object: "computer", at: 0.85, fall: { x: 7.7, y: 7.5 }, seat: { x: 7.3, y: 6.5 } },
 ];
 
 /** Клітинка речі, на якій лежить дрібничка: туди кіт вилазить, щоб її скинути. */

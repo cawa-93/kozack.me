@@ -8,7 +8,7 @@ import { catInBox, decide, rugTile, standingTrinkets, startScratch, tickCats } f
 import { CURIOSITY, KNOCKING, SCRATCH, SOFA_REPAIR } from "../src/sim/config";
 import { place } from "../src/sim/economy";
 import { interact, newGame } from "../src/sim/game";
-import { BOX_SCRATCH, hiddenTile, isSolid, objectAt, slotById, TRINKETS, trinketTile } from "../src/sim/home";
+import { BOX_SCRATCH, hiddenTile, isSolid, objectAt, objectById, slotById, TRINKETS, trinketTile } from "../src/sim/home";
 import { nightlyHousehold } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -132,6 +132,37 @@ describe("«Скидання речей»: дрібнички на столах 
     // 40% за візит у +2.
     expect(shows).toBeGreaterThan(3);
     expect(shows).toBeLessThan(15);
+  });
+
+  it("кіт, що обнюхує дрібничку чи п'є з кухля, сидить поруч на тій самій речі, обличчям до неї, і не закриває її (рішення автора 2026-10-26)", () => {
+    const beside = (cat: Cat, kind: TrinketKind): void => {
+      const trinket = TRINKETS.find((t) => t.kind === kind)!;
+      const o = objectById(trinket.object);
+      const x = o.x + trinket.at * o.w;
+      expect(Math.abs(cat.x - x), kind).toBeGreaterThanOrEqual(0.3);
+      expect(Math.sign(x - cat.x), kind).toBe(cat.facing);
+      // Так само на речі: на тій самій клітинці, що й дрібничка.
+      expect({ x: Math.floor(cat.x), y: Math.floor(cat.y) }, kind).toEqual(trinketTile(kind));
+    };
+    for (const { kind } of TRINKETS) {
+      const save = game();
+      const cat = withCat(save, { knocking: -2 });
+      const tile = trinketTile(kind);
+      Object.assign(cat, { x: tile.x + 0.5, y: tile.y + 0.5, facing: -1 });
+      cat.act = { kind: "knock", target: `trinket:${kind}`, goal: null, minutes: KNOCKING.sniffMinutes, elapsed: 0, refused: true };
+      tickCats(save.current, 0.25, { present: true });
+      expect(cat.act.kind).toBe("knock");
+      beside(cat, kind);
+    }
+    // П'є з кухля.
+    const save = game();
+    const cat = withCat(save, { drinking: 1 });
+    const tile = trinketTile("mug");
+    Object.assign(cat, { x: tile.x + 0.5, y: tile.y + 0.5, facing: -1 });
+    cat.act = { kind: "drink", target: "mug", goal: null, minutes: 1, elapsed: 0 };
+    tickCats(save.current, 0.25, { present: true });
+    expect(cat.act.kind).toBe("drink");
+    beside(cat, "mug");
   });
 
   it("скинута дрібничка лежить на видному місці: не за столом і не за передньою стіною (перевірка етапу 2026-10-26)", () => {

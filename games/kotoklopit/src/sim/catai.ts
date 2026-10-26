@@ -2129,6 +2129,18 @@ function showOffKnock(state: GameState, cat: Cat, rng: Rng): void {
   cat.act.showOff = true;
 }
 
+/**
+ * Кіт біля дрібнички на столі (§9.12): сидить поруч, ліворуч від неї, обличчям до неї (`TRINKETS[].seat`), а не на ній — інакше
+ * закривав собою кухоль, телефон чи ручку (рішення автора 2026-10-26).
+ */
+function sitBesideTrinket(cat: Cat, kind: TrinketKind): void {
+  const seat = TRINKETS.find((t) => t.kind === kind)?.seat;
+  if (!seat) return;
+  cat.x = seat.x;
+  cat.y = seat.y;
+  cat.facing = 1;
+}
+
 /** Щохвилинне на місці. */
 function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   const act = cat.act;
@@ -2213,9 +2225,14 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       // Приніс іграшку до ніг персонажа (§9.12, «Подарунки й схованки»): кладе її й чекає поруч.
       if (act.picked === true && act.dest === "feet" && act.dropped !== true) dropGift(state, cat);
       return;
+    case "drink":
+      // П'є з вашого кухля — сидить поруч із ним, а не на ньому (рішення автора 2026-10-26).
+      if (act.target === "mug") sitBesideTrinket(cat, "mug");
+      return;
     case "knock":
       // Дійшов до дрібнички (§9.12, «Скидання речей»): «−» з шансом 50% × |рівень| лише обнюхує її; хто скидає заради
-      // уваги — дивиться на персонажа.
+      // уваги — дивиться на персонажа. Сидить поруч із дрібничкою, а не на ній (рішення автора 2026-10-26).
+      if (act.target?.startsWith("trinket:")) sitBesideTrinket(cat, act.target.slice(8) as TrinketKind);
       if (act.refused === undefined && act.target?.startsWith("trinket:")) {
         const level = traitLevel(cat, "knocking");
         act.refused = level < 0 && rng.chance(KNOCKING.sniffStep * -level);
