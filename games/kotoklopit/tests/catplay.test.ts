@@ -712,7 +712,7 @@ describe("друг може відмовитися (§9.4 «Згода, охор
     expect(accepted / 200).toBeLessThan(0.7);
   });
 
-  it("відмовився — лягає обличчям до того, хто кликав, і сіпає хвостом, а той хвилину сидить поруч; гри немає нікому", () => {
+  it("відмовився — лягає обличчям до того, хто кликав, і сіпає хвостом, а той відходить; гри немає нікому", () => {
     let refusals = 0;
     for (let seed = 1; seed <= 20; seed++) {
       const { save, a, b } = invite(seed, { play: 0, fatigue: 40 });
@@ -727,11 +727,15 @@ describe("друг може відмовитися (§9.4 «Згода, охор
       expect(b.act.target).toBe(`declined:${a.id}`);
       expect(poseOf(b, false)).toBe("lie");
       expect(withFriend(b)).toBe(true);
-      expect(b.facing).toBe(a.x > b.x ? 1 : -1);
-      expect(a.act.kind).toBe("idle");
+      expect(a.act.kind).toBe("wander");
       expect(a.act.target).toBe(`refused:${b.id}`);
-      expect(a.facing).toBe(b.x > a.x ? 1 : -1);
-      expect(Math.abs(a.x - b.x)).toBeCloseTo(RELATIONS.beside);
+      expect(withFriend(a)).toBe(true);
+      const before = Math.hypot(a.x - b.x, a.y - b.y);
+      for (let t = 0; t < 10 && a.act.kind === "wander"; t++) tickCats(save.current, 0.1, { present: false });
+      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(before + 0.5);
+      // Лежить обличчям до того, хто кликав, і дивиться йому вслід.
+      expect(isDeclining(b)).toBe(true);
+      expect(b.facing).toBe(a.x > b.x ? 1 : -1);
       // Здоровий друг не шипить.
       expect(events.some((e) => e.type === "hissed")).toBe(false);
       for (let t = 0; t < 10; t++) tickCats(save.current, 1, { present: false });

@@ -1711,16 +1711,16 @@ export function playAcceptance(mate: Cat): number {
 
 /**
  * Покликаний відмовився гратися (§9.4, Г5): лягає обличчям до того, хто кликав, і сіпає хвостом, хворий ще й шипить на нього; той
- * хвилину сидить поруч. Гри немає нікому, і пів години цього кота не кличуть.
+ * відходить (упритул двоє котів на телефоні зливалися в одну пляму). Гри немає нікому, і пів години цього кота не кличуть.
  */
 function declinePlay(state: GameState, mate: Cat, cat: Cat): void {
   const d = RELATIONS.wrestle.decline;
   const sick = isUnwell(mate);
-  standBeside(cat, mate);
-  mate.facing = cat.x > mate.x ? 1 : -1;
+  // Обличчям до того, хто кликав; той, добігши, міг стати на ту саму точку — тоді назустріч йому.
+  mate.facing = Math.abs(cat.x - mate.x) > 0.05 ? (cat.x > mate.x ? 1 : -1) : -cat.facing;
   start(mate, "idle", null, d.minutes, `declined:${cat.id}`);
   mate.playDeclinedAt = absoluteMinute(state.day, state.minute);
-  start(cat, "idle", null, d.sit, `refused:${mate.id}`);
+  stepAway(state, cat, mate, d.leave, `refused:${mate.id}`);
   emit(state, { type: "play-declined", cat: mate.id, by: cat.id, sick });
   if (sick) hiss(state, mate, cat);
 }

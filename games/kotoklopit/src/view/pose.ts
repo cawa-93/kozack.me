@@ -103,8 +103,8 @@ function playPose(cat: Cat): CatPose {
 /** Кіт відмовився гратися (§9.4 «Згода, охорона й сварки», Г5): лежить обличчям до того, хто кликав, і сіпає хвостом. */
 export const isDeclining = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("declined:") === true;
 
-/** Кіт покликав гратися, а друг відмовився (§9.4, Г5): хвилину сидить поруч обличчям до нього. */
-const isRefused = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("refused:") === true;
+/** Кіт покликав гратися, а друг відмовився (§9.4, Г5): відходить від нього. */
+const isRefused = (cat: Cat): boolean => cat.act.kind === "wander" && cat.act.target?.startsWith("refused:") === true;
 
 /** Кота саме вилизує друг (§9.4, «Гру й вилизування видно», В1): сидить і мружиться, як під пестощами. */
 export const isLicked = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("licked:") === true;
