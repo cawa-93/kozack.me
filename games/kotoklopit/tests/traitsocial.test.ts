@@ -1211,4 +1211,28 @@ describe("сценарій «Гра й стосунки котів» (`scenarios
     expect(of("Буркотун", "hissed")).toBe(true);
     expect(byName("М'ятка").act.kind).toBe("sleep");
   });
+
+  it("голодна «Чемна» пам'ятає «ні» про кухню: до столу з їжею — раз на пів години, між підходами просить корм, не краде (пошук багів 2026-10-26)", () => {
+    const scenario = FILE_SCENARIOS["play-social"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const cat = save.current.cats.find((c) => c.name === "Чемна")!;
+    const { events, stop } = recordEvents();
+    const approaches: number[] = [];
+    let begs = 0;
+    let before = "";
+    for (let t = 0; t < 90; t += 0.25) {
+      advance(save, 0.25);
+      const now = `${cat.act.kind}:${cat.act.target}`;
+      if (now !== before && cat.act.target === "no:kitchen") approaches.push(t);
+      if (now !== before && (cat.act.kind === "beg" || (cat.act.kind === "attention" && cat.act.forFood === true))) begs += 1;
+      before = now;
+    }
+    stop();
+    expect(approaches.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < approaches.length; i++) expect((approaches[i] ?? 0) - (approaches[i - 1] ?? 0)).toBeGreaterThanOrEqual(OBEDIENCE.approachEvery);
+    expect(begs).toBeGreaterThan(approaches.length);
+    expect(events.some((e) => e.type === "cat-remembered" && e.cat === cat.id && e.zone === "kitchen")).toBe(true);
+    expect(events.some((e) => e.type === "stole" && e.cat === cat.id)).toBe(false);
+  });
 });
