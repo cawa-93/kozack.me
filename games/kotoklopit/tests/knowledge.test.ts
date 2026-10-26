@@ -345,8 +345,9 @@ describe("дрібниці з рішення автора 2026-10-25", () => {
     save.current.relations = {};
     for (const [x, y] of [[a, b], [c, d]] as const) save.current.relations[`${Math.min(x.id, y.id)}-${Math.max(x.id, y.id)}`] = 0;
     nightlyRelations(save.current);
-    expect(relation(save.current, a, b)).toBeCloseTo(-1.5);
-    expect(relation(save.current, c, d)).toBeCloseTo(2.5);
+    // Життя разом +1 (рішення автора 2026-10-26, Г1) і ±0,5 за одиницю «Товариськості» обох.
+    expect(relation(save.current, a, b)).toBeCloseTo(-1);
+    expect(relation(save.current, c, d)).toBeCloseTo(3);
   });
 
   it("ревнивий кіт, що бачить, шипить на щасливця; далекий — ні", () => {

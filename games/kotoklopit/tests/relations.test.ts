@@ -46,12 +46,12 @@ describe("початок стосунків (§9.4)", () => {
     expect(relation(save.current, a, kitten)).toBe(30);
   });
 
-  it("щоночі життя разом додає 0,5", () => {
+  it("щоночі життя разом додає 1 (рішення автора 2026-10-26, Г1: було 0,5)", () => {
     const save = game();
     const a = withCat(save);
     const b = withCat(save);
     nightlyRelations(save.current);
-    expect(relation(save.current, a, b)).toBe(0.5);
+    expect(relation(save.current, a, b)).toBe(1);
   });
 });
 
@@ -73,6 +73,33 @@ describe("друзі (§9.4)", () => {
     for (let i = 0; i < 10; i++) tickCats(save.current, 1, { present: false });
     expect(relation(save.current, a, b)).toBeGreaterThan(60);
     expect(a.needs.play).toBeLessThan(100);
+  });
+
+  it("приятелі (від +20) граються удвічі рідше, ніж друзі, але не вилизують одне одного й не сплять купкою (рішення автора 2026-10-26, Г1)", () => {
+    const chosen = (value: number, kind: "wrestle" | "groom" | "pile"): number => {
+      let count = 0;
+      for (let seed = 0; seed < 400; seed++) {
+        const save = game();
+        const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+        const b = withCat(save, {}, { x: 10.5, y: 8.5 });
+        setRelation(save, a, b, value);
+        b.act = kind === "pile" ? { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 } : idleAct(30);
+        if (kind === "wrestle") a.needs.play = 100;
+        if (kind === "pile") a.needs.fatigue = 100;
+        decide(save.current, a, createRng(seed), { present: false });
+        if (a.act.kind === (kind === "pile" ? "sleep" : kind) && (a.act.target === `cat:${b.id}` || a.act.target === `pile:${b.id}`)) count++;
+      }
+      return count;
+    };
+    const friends = chosen(80, "wrestle");
+    const pals = chosen(30, "wrestle");
+    expect(chosen(15, "wrestle")).toBe(0);
+    expect(pals).toBeGreaterThan(friends * 0.3);
+    expect(pals).toBeLessThan(friends * 0.75);
+    expect(chosen(80, "groom")).toBeGreaterThan(0);
+    expect(chosen(30, "groom")).toBe(0);
+    expect(chosen(80, "pile")).toBeGreaterThan(0);
+    expect(chosen(30, "pile")).toBe(0);
   });
 
   it("друг з іншої кімнати дочікується: хвилини гри йдуть обом від зустрічі (перевірка стосунків 2026-10-26)", () => {

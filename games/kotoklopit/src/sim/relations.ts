@@ -20,6 +20,8 @@ export function changeRelation(state: GameState, a: Cat, b: Cat, delta: number):
 }
 
 export const isFriend = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) >= RELATIONS.friend;
+/** Приятелі чи друзі (§9.4, рішення автора 2026-10-26, Г1): від +20 коти граються разом. */
+export const isPal = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) >= RELATIONS.pal;
 export const isEnemy = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) <= RELATIONS.enemy;
 
 /** Початкові стосунки нового кота з кожним, хто вже живе вдома (§9.4). */

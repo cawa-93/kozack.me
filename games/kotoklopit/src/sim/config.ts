@@ -1268,19 +1268,22 @@ export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevitySte
 /** Стосунки між котами (§9.4). */
 export const RELATIONS = {
   friend: 50,
+  /** Приятелі — від `pal` до друзів: граються, але не вилизують і не сплять купкою (§9.4, рішення автора 2026-10-26, Г1). */
+  pal: 20,
   enemy: -50,
   sociabilityStep: 10,
   kittenBonus: 20,
   motherKitten: 50,
   siblings: 30,
-  nightly: 0.5,
+  /** Життя разом — щоночі (рішення автора 2026-10-26, Г1: було 0,5). */
+  nightly: 1,
   /** «Товариськість» обох — щоночі за одиницю (рішення автора 2026-10-25). */
   sociabilityNightly: 0.5,
   /**
    * Гра з другом: друг чекає ініціатора до `wait` хвилин, `minutes` — обом від зустрічі; пара — поки обидва ближче `reach` клітинки
-   * (перевірка стосунків 2026-10-26).
+   * (перевірка стосунків 2026-10-26). З приятелем — вага `palWeight`, удвічі менша (§9.4, рішення автора 2026-10-26, Г1).
    */
-  wrestle: { weight: 0.6, minutes: 3, play: 40, mood: 2, relation: 1, wait: 10, reach: 1.5 },
+  wrestle: { weight: 0.6, palWeight: 0.3, minutes: 3, play: 40, mood: 2, relation: 1, wait: 10, reach: 1.5 },
   /** Вилизує, поки друг ближче `reach` клітинки; відійшов далі — вилизування скасовується (перевірка стосунків 2026-10-26). */
   groom: { chance: 0.3, step: 0.15, distance: 3, minutes: 3, mood: 1, relation: 2, reach: 1.5 },
   sleepTogether: { weight: 3, distance: 1, perHour: 0.5 },

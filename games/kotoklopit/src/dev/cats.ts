@@ -94,7 +94,7 @@ export class CatsSection {
     }
   }
 
-  /** Стосунки з іншими котами (§9.4): від +50 — друзі, до −50 — вороги. */
+  /** Стосунки з іншими котами (§9.4): від +50 — друзі, від +20 — приятелі, до −50 — вороги. */
   private relations(cat: Cat): string {
     const state = this.save.current;
     const parts = state.cats.filter((c) => c.id !== cat.id).map((c) => `${c.name} ${round(relation(state, cat, c))}`);

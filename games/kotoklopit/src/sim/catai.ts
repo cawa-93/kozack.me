@@ -118,7 +118,7 @@ import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
-import { changeRelation, isEnemy, isFriend } from "./relations";
+import { changeRelation, isEnemy, isFriend, isPal } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -1145,7 +1145,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   const scratching = Math.max(SCRATCH.minWeight, SCRATCH.weight * (1 + SCRATCH.frequencyStep * traitLevel(cat, "scratching")));
   options.push({ weight: scratching * bored, value: active(() => startScratch(state, cat, rng)) });
   const mate = playmate(state, cat);
-  if (mate) options.push({ weight: RELATIONS.wrestle.weight, value: active(() => startWrestle(state, cat, mate)) });
+  if (mate) options.push({ weight: mate.weight, value: active(() => startWrestle(state, cat, mate.cat)) });
   // Гризун гризе й заради гри (§9.12, «Гризіння»).
   const chewing = traitLevel(cat, "chewing");
   if (chewing > 0 && chewTarget(state) !== null) options.push({ weight: CHEWING.playWeight * (1 + chewing), value: active(() => startChew(state, cat, rng)) });
@@ -1502,10 +1502,17 @@ function nightMischief(state: GameState, cat: Cat): void {
   if (isNight(state.minute)) observe(state, cat, "nocturnal", 1, false, NOCTURNAL.mischiefEvery);
 }
 
-/** Друг, з яким можна погратися: удома, не спить, нічим не зайнятий і до нього можна підійти (§9.4, `approachable`). */
-function playmate(state: GameState, cat: Cat): Cat | null {
-  const free = (other: Cat): boolean => other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy";
-  return nearestCat(state, cat, (other) => free(other) && approachable(state, other) && isFriend(state, cat, other));
+/**
+ * З ким погратися й з якою вагою (§9.4): удома, не спить, нічим не зайнятий і до нього можна підійти (`approachable`). Найближчий
+ * друг, а нема — найближчий приятель з удвічі меншою вагою (рішення автора 2026-10-26, Г1).
+ */
+function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | null {
+  const w = RELATIONS.wrestle;
+  const free = (other: Cat): boolean => (other.act.kind === "idle" || other.act.kind === "wander" || other.act.kind === "toy") && approachable(state, other);
+  const friend = nearestCat(state, cat, (other) => free(other) && isFriend(state, cat, other));
+  if (friend) return { cat: friend, weight: w.weight };
+  const pal = nearestCat(state, cat, (other) => free(other) && isPal(state, cat, other));
+  return pal ? { cat: pal, weight: w.palWeight } : null;
 }
 
 /**
