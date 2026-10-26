@@ -3,7 +3,7 @@
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
 import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS } from "./config";
-import { catnipReaction, envy, hideSpot, startAct } from "./catai";
+import { catnipReaction, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { fallIll, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
@@ -31,9 +31,17 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
   const supply = state.home.supplies.treats;
   if (!cat || supply[quality] <= 0) return false;
   useSupply(state, "treats", quality);
+  const now = absoluteMinute(state.day, state.minute);
+  cat.interacted = true;
+  // «Заздрісник» поруч може вихопити ласощі й з'їсти сам (§9.12, «Заздрісність»): тоді вони дістаються йому, а не коту на руках.
+  const thief = snatchTreat(state, cat, rng);
+  if (thief) {
+    changeMood(state, thief, TREATS.mood[quality], "вихопив ласощі");
+    ateTreat(state, thief, now, rng);
+    return true;
+  }
   changeMood(state, cat, TREATS.mood[quality]);
   changeLove(state, cat, TREATS.love, "ласощі");
-  const now = absoluteMinute(state.day, state.minute);
   if (cat.hurt && now - cat.hurt.at <= TREATS.hurtMinutes) {
     // «Поступливий» і «Добряк» оттають більше (§9.12).
     const refund = TREATS.refund + REVENGE.refundStep * Math.max(0, -traitLevel(cat, "vengeful"));
@@ -58,13 +66,17 @@ export function giveTreat(state: GameState, quality: Quality, rng: Rng): boolean
     emit(state, { type: "meow", cat: cat.id });
     observe(state, cat, "begging", 1, false, MINUTES_PER_HOUR);
   }
-  cat.treatsToday += 1;
-  if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
-  cat.interacted = true;
-  cat.treatAt = now;
-  envy(state, cat, "treat");
+  ateTreat(state, cat, now, rng);
   emit(state, { type: "treat", cat: cat.id, quality });
   return true;
+}
+
+/** Кіт з'їв ласощі (§7): понад 2 на день — ризик розладу шлунка; інші коти можуть позаздрити (§9.12). */
+function ateTreat(state: GameState, cat: Cat, now: number, rng: Rng): void {
+  cat.treatsToday += 1;
+  if (cat.treatsToday > TREATS.perDay) maybeFallIll(state, cat, "stomach", TREATS.stomach, rng);
+  cat.treatAt = now;
+  envy(state, cat, "treat");
 }
 
 /** Котяча м'ята котові на руках біля аптечки (§9.12, «Котяча м'ята»): як він зреагує, вирішує `catnipReaction`. */

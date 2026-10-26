@@ -224,7 +224,9 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "catnip":
       return `${catName(state, event.cat)}: котяча м'ята — ${event.reaction === "roll" ? "катається" : event.reaction === "frenzy" ? "шаленіє" : "понюхав і пішов"}`;
     case "cat-cuddled":
-      return `${catName(state, event.cat)} ліг поруч із ${catName(state, event.with)}, якого гладять, і муркоче`;
+      return `${catName(state, event.cat)} ліг поруч із ${catName(state, event.with)} і муркоче`;
+    case "treat-snatched":
+      return `${catName(state, event.cat)} вихопив ласощі в ${catName(state, event.from)}`;
     case "groom-refused":
       return `${catName(state, event.cat)} відсторонився від ${catName(state, event.by)}, що хотів вилизати`;
     case "cat-remembered":

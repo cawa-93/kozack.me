@@ -1788,7 +1788,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (act.target === "catnip") catnipFight(state, cat);
       return;
     case "jealous":
-      // Ревнивець дійшов до суперника (§9.12, «Ревнивість»).
+      // Заздрісник дійшов до того, кому перепало (§9.12, «Заздрісність»); ревнивець — до суперника («Ревнивість»).
+      if (act.envy === true) return enviousArrived(state, cat);
       return jealousArrived(state, cat, rng);
     case "window":
       // «Нудьгує біля вікна» зриває злість (§9.12, «Вікно»).
@@ -2647,7 +2648,7 @@ function premiumAtHome(state: GameState): boolean {
 export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar" | "premium"): void {
   const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
-    if (other.id === lucky.id || !home(state, other) || asleep(other) || distance(other, lucky) > ENVY.sight) continue;
+    if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || distance(other, whereIs(state, lucky)) > ENVY.sight) continue;
     if (traitLevel(other, "envy") === 0) continue;
     if (gift === "premium" && (premiumAtHome(state) || (other.premiumAt !== undefined && now - other.premiumAt <= ENVY.premiumMinutes))) continue;
     if (gift === "collar" && other.collar !== null) continue;
@@ -2660,15 +2661,66 @@ export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar" | "p
   }
 }
 
-/** Заздрість спрацювала (§9.12): заздрісний дметься й свариться з тим, кому перепало; щиросердий радіє за нього. */
+/** Де кіт зараз: кота на руках персонаж несе з собою (його клітинка — та, де його взяли). */
+const whereIs = (state: GameState, cat: Cat): Vec => (isCarried(state, cat) ? state.character.body : cat);
+
+/**
+ * Заздрість спрацювала (§9.12, «Заздрісність», рішення автора 2026-10-25): заздрісний дметься й свариться з тим, кому перепало, і
+ * це видно — поруч (до 2 клітинок) шипить на нього одразу, а здалеку, нічим важливим не зайнятий, підходить і шипить зблизька (до
+ * кота на руках не йде — шипить звідти); прояв «+» — шипіння. Щиросердий радіє за нього: підходить, сідає поруч і муркоче — прояв
+ * «−». Самі настрій і стосунки змінюються й тоді, коли кіт не встиг ні зашипіти, ні підійти.
+ */
 function feelEnvy(state: GameState, other: Cat, lucky: Cat): void {
   const level = traitLevel(other, "envy");
   if (level === 0) return;
+  const where = whereIs(state, lucky);
+  const free = JEALOUS_FROM.has(other.act.kind);
   if (level > 0) {
     changeMood(state, other, ENVY.mood * level, "заздрить");
     changeRelation(state, other, lucky, ENVY.relation * level);
-  } else changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
-  observe(state, other, "envy", level > 0 ? 1 : -1);
+    if (distance(other, where) > ENVY.near && free && !isCarried(state, lucky)) {
+      start(other, "jealous", tileOf(lucky), JEALOUSY.confrontMinutes, `cat:${lucky.id}`);
+      other.act.envy = true;
+      return;
+    }
+    if (hiss(state, other, lucky)) observe(state, other, "envy");
+    return;
+  }
+  changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
+  if (!free) return;
+  const side = other.x < where.x ? -0.9 : 0.9;
+  start(other, "idle", tileOf(visibleFloorNear(state, { x: where.x + side, y: where.y })), ENVY.cuddleMinutes, `cuddle:${lucky.id}`);
+  other.act.envy = true;
+}
+
+/** Заздрісник дійшов до того, кому перепало (§9.12, «Заздрісність»): той ще поруч — шипить зблизька, прояв «+». */
+function enviousArrived(state: GameState, cat: Cat): void {
+  const lucky = catById(state, cat.act.target);
+  if (lucky && home(state, lucky) && distance(cat, whereIs(state, lucky)) <= ENVY.near && hiss(state, cat, lucky)) observe(state, cat, "envy");
+}
+
+/**
+ * «Заздрісник» (+2) вихоплює ласощі (§9.12, «Заздрісність», рішення автора 2026-10-25): ви даєте ласощі котові на руках, а він
+ * поруч з вами (до 1,5 клітинки), не спить і нічим важливим не зайнятий, — з шансом 20% вихоплює їх і з'їдає сам. Тоді ласощі
+ * дістаються йому, а той, кого пригощали, лишається ні з чим. Прояв «+».
+ */
+export function snatchTreat(state: GameState, lucky: Cat, rng: Rng): Cat | null {
+  const body = state.character.body;
+  const thief = state.cats.find(
+    (c) =>
+      c.id !== lucky.id &&
+      home(state, c) &&
+      !asleep(c) &&
+      !isNewborn(c) &&
+      !isCarried(state, c) &&
+      JEALOUS_FROM.has(c.act.kind) &&
+      traitLevel(c, "envy") >= ENVY.snatchLevel &&
+      Math.hypot(c.x - body.x, c.y - body.y) <= ENVY.snatchReach,
+  );
+  if (!thief || !rng.chance(ENVY.snatch)) return null;
+  emit(state, { type: "treat-snatched", cat: thief.id, from: lucky.id });
+  observe(state, thief, "envy");
+  return thief;
 }
 
 /**
@@ -3024,8 +3076,14 @@ function cuddleSeen(state: GameState, cat: Cat): void {
   if (act.kind !== "idle" || !act.target?.startsWith("cuddle:") || act.goal !== null || act.seen === true) return;
   act.seen = true;
   const lucky = state.cats.find((c) => `cuddle:${c.id}` === act.target);
-  if (!lucky || !home(state, lucky) || distance(cat, lucky) > JEALOUSY.near) return;
+  if (!lucky || !home(state, lucky) || distance(cat, whereIs(state, lucky)) > JEALOUSY.near) return;
   emit(state, { type: "cat-cuddled", cat: cat.id, with: lucky.id });
+  // Щиросердий радіє за того, кого пригостили (§9.12, «Заздрісність»), — так само муркоче поруч, але це прояв іншої риси.
+  if (act.envy === true) {
+    changeRelation(state, cat, lucky, ENVY.cuddleRelation);
+    observe(state, cat, "envy", -1);
+    return;
+  }
   changeRelation(state, cat, lucky, JEALOUSY.cuddleRelation);
   observe(state, cat, "jealousy", -1);
 }

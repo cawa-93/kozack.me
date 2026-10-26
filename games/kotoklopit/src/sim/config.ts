@@ -522,7 +522,13 @@ export const DIRTY_CLOTHES_CATS = { picky: 1, backAway: 3 } as const;
  * протягом `graceMinutes` хвилин до чи після: ласощі всім котам поруч заздрощів не викликають. Нашийнику — коли сам у
  * нашийнику.
  */
-export const ENVY = { mood: -2, relation: -4, glad: 1, sight: 5, premiumMinutes: 6 * 60, graceMinutes: 2 } as const;
+/**
+ * Видимі реакції (рішення автора 2026-10-25, зроблено 2026-10-26, §9.12 «Гра й стосунки котів»): заздрісник поруч (до `near`
+ * клітинок) шипить на того, кому перепало, здалеку підходить і шипить зблизька; від `snatchLevel` з шансом `snatch` вихоплює
+ * ласощі, коли він поруч із вами (до `snatchReach` клітинки); щиросердий сідає поруч і муркоче `cuddleMinutes` хвилин, стосунки
+ * +`cuddleRelation`.
+ */
+export const ENVY = { mood: -2, relation: -4, glad: 1, sight: 5, premiumMinutes: 6 * 60, graceMinutes: 2, near: 2, snatch: 0.2, snatchLevel: 2, snatchReach: 1.5, cuddleMinutes: 5, cuddleRelation: 1 } as const;
 /**
  * Мстивість (§9.12): скільки триває образа, шанс помсти за годину за одиницю, ласощі незлопам'ятним. Рішення автора
  * 2026-10-25 (`TRAITS_REVIEW.md`): мститься лише за неприємне від персонажа (`offend`) і стрес — бійку чи переноску, і
