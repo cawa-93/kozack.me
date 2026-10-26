@@ -6,7 +6,7 @@ import { pickUpCat, tickActivity } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { newGame } from "../src/sim/game";
-import { itemTile } from "../src/sim/home";
+import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -73,6 +73,39 @@ describe("друзі (§9.4)", () => {
     for (let i = 0; i < 10; i++) tickCats(save.current, 1, { present: false });
     expect(relation(save.current, a, b)).toBeGreaterThan(60);
     expect(a.needs.play).toBeLessThan(100);
+  });
+
+  it("за другом нагору не лізуть ні гратися, ні вилизувати (перевірка стосунків 2026-10-26: кошеня застрягало на шафі)", () => {
+    const wardrobe = objectById("wardrobe");
+    let chosen = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const save = game();
+      const b = withCat(save, {}, { x: wardrobe.x + 0.5, y: wardrobe.y + 0.5 });
+      const kitten = withCat(save, {}, { x: wardrobe.x + 0.5, y: wardrobe.y + 2.5 }, 1);
+      setRelation(save, kitten, b, 80);
+      b.act = seed % 2 === 0 ? idleAct(30) : { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+      kitten.needs.play = seed % 4 < 2 ? 100 : 0;
+      decide(save.current, kitten, createRng(seed), { present: false });
+      if (kitten.act.target === `cat:${b.id}`) chosen++;
+    }
+    expect(chosen).toBe(0);
+  });
+
+  it("кота, якого гладять, боротися не забирають", () => {
+    let chosen = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const save = game();
+      Object.assign(save.current.character.body, { x: 9.5, y: 9.5 });
+      const b = withCat(save, {}, { x: 9.5, y: 8.5 });
+      const a = withCat(save, {}, { x: 6.5, y: 8.5 });
+      setRelation(save, a, b, 80);
+      b.act = idleAct(30);
+      save.current.character.activity = { kind: "pet", cat: b.id, minutes: 0.5 };
+      a.needs.play = 100;
+      decide(save.current, a, createRng(seed), { present: true });
+      if (a.act.kind === "wrestle") chosen++;
+    }
+    expect(chosen).toBe(0);
   });
 });
 

@@ -597,8 +597,23 @@ const houseSpots = (state: GameState): { weight: number; value: Spot }[] =>
  */
 function pileable(state: GameState, other: Cat): boolean {
   if (other.act.goal !== null || (other.act.target !== null && !other.act.target.startsWith("pile:"))) return false;
-  const o = objectAt(state, Math.floor(other.x), Math.floor(other.y));
+  return onFloor(state, other);
+}
+
+/** Кіт на підлозі, ліжку чи дивані — туди за ним може прийти будь-який кіт (§9.4). */
+function onFloor(state: GameState, cat: Cat): boolean {
+  const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   return o === null || o.kind === "bed" || o.kind === "sofa";
+}
+
+/**
+ * До цього кота можна підійти погратися чи вилизати його (§9.4): він удома, на підлозі, ліжку чи дивані — не нагорі, не в
+ * пральній машині, не на комп'ютері чи столі, — і персонаж зараз його не гладить, не грається з ним і не тримає (перевірка
+ * стосунків 2026-10-26: кошеня лізло за другом на шафу й застрягало, а кота з-під руки забирали боротися — і ініціатор
+ * «боровся» сам, бо пестощі одразу повертали друга до персонажа).
+ */
+function approachable(state: GameState, other: Cat): boolean {
+  return home(state, other) && !getsAttention(state, other) && onFloor(state, other);
 }
 
 /** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, будь-де на підлозі. */
@@ -783,7 +798,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   // «Нянька» вилизує кошеня поруч (§9.12, «Турбота про кошенят»).
   const nurturing = traitLevel(cat, "nurturing");
   if (nurturing > 0 && !isKitten(cat)) {
-    const kitten = state.cats.find((c) => c.id !== cat.id && home(state, c) && isKitten(c) && distance(cat, c) <= RELATIONS.groom.distance);
+    const kitten = state.cats.find((c) => c.id !== cat.id && approachable(state, c) && isKitten(c) && distance(cat, c) <= RELATIONS.groom.distance);
     if (kitten && rng.chance(NURTURING.groomStep * nurturing)) return start(cat, "groom", tileOf(kitten), RELATIONS.groom.minutes, `kitten:${kitten.id}`);
   }
   // Вилизати друга поруч (§9.4).
@@ -791,7 +806,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   // Той, хто щойно відсторонився від вилизування, годину нікого до себе не підпускає (§9.12, «Вилизування друзів»).
   const now = absoluteMinute(state.day, state.minute);
   const friend = state.cats.find(
-    (c) => c.id !== cat.id && home(state, c) && isFriend(state, cat, c) && distance(cat, c) <= groom.distance && (c.untouchedAt === undefined || now - c.untouchedAt >= GROOMING.refusedMinutes),
+    (c) => c.id !== cat.id && approachable(state, c) && isFriend(state, cat, c) && distance(cat, c) <= groom.distance && (c.untouchedAt === undefined || now - c.untouchedAt >= GROOMING.refusedMinutes),
   );
   if (friend && rng.chance(groom.chance + groom.step * traitLevel(cat, "grooming"))) {
     return start(cat, "groom", tileOf(friend), groom.minutes, `cat:${friend.id}`);
@@ -1455,11 +1470,11 @@ function nightMischief(state: GameState, cat: Cat): void {
   if (isNight(state.minute)) observe(state, cat, "nocturnal", 1, false, NOCTURNAL.mischiefEvery);
 }
 
-/** Друг, з яким можна погратися: удома, не спить і нічим не зайнятий (§9.4). */
+/** Друг, з яким можна погратися: удома, не спить, нічим не зайнятий і до нього можна підійти (§9.4, `approachable`). */
 function playmate(state: GameState, cat: Cat): Cat | null {
   let best: Cat | null = null;
   for (const other of state.cats) {
-    if (other.id === cat.id || !home(state, other) || !isFriend(state, cat, other)) continue;
+    if (other.id === cat.id || !approachable(state, other) || !isFriend(state, cat, other)) continue;
     if (other.act.kind !== "idle" && other.act.kind !== "wander" && other.act.kind !== "toy") continue;
     if (!best || distance(cat, other) < distance(cat, best)) best = other;
   }
