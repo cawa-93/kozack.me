@@ -2625,7 +2625,7 @@ function sleptWarm(state: GameState, cat: Cat): void {
     return;
   }
   if (cat.act.target === "tile") {
-    // Ліворуч від плитки — стіна ванної: кіт лягає головою до кімнати (перевірка етапу 2026-10-26: голову ховала стіна).
+    // Лягає завжди головою праворуч, звідки б не прийшов (перевірка етапу 2026-10-26: біля стіни голову ховала стіна).
     cat.facing = 1;
     if (!isHot(state)) observe(state, cat, "warmth", -1, false, WARMTH.observeEvery);
     return;

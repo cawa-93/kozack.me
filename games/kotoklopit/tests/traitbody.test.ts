@@ -10,7 +10,7 @@ import { climbWeight, decide, envy, sunSpot, tickCats } from "../src/sim/catai";
 import { CLIMBING, ENVY, MINUTES_PER_DAY, NEED_PER_HOUR, PLAY_RELIEF, WARMTH, WEIGHT } from "../src/sim/config";
 import { fallIll, hasDisease, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { advance, newGame } from "../src/sim/game";
-import { COOL_TILE, objectById, WINDOWS } from "../src/sim/home";
+import { COOL_TILE, hiddenTile, isFixedSolid, MAP, objectById, OBJECTS, ROLL_TILE, ROOMS, roomAt, SLOTS, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -207,6 +207,26 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     expect(sleepSpots({ warmth: 2 }, "heat")["tile"]).toBeGreaterThan(10);
   });
 
+  it("плитка — вільна клітинка ванної: не перед душем, пральною машиною чи умивальником, не на лотку, не під рулоном і не в проході (рішення автора 2026-10-26)", () => {
+    const tile = COOL_TILE;
+    expect(roomAt({ x: tile.x + 0.5, y: tile.y + 0.5 })).toBe("bathroom");
+    expect(isFixedSolid(tile.x, tile.y)).toBe(false);
+    // Її не закриває передня стіна: кота на ній видно.
+    expect(hiddenTile(tile.x, tile.y)).toBe(false);
+    // Місце дії персонажа — клітинка просто перед річчю, з якою він щось робить.
+    for (const o of OBJECTS.filter((o) => o.interactive)) {
+      const front = tile.y === o.y + o.h && tile.x >= o.x && tile.x < o.x + o.w;
+      expect(front, o.id).toBe(false);
+    }
+    expect(SLOTS.some((s) => s.x === tile.x && s.y === tile.y)).toBe(false);
+    expect(tile).not.toEqual(ROLL_TILE);
+    // Прохід від дверей ванної — стовпчики, де в нижній стіні кімнати отвір.
+    const bath = ROOMS.find((r) => r.id === "bathroom")!;
+    const doorway = [...(MAP[bath.y + bath.h] ?? "")].flatMap((cell, x) => (cell === "." && x >= bath.x && x < bath.x + bath.w ? [x] : []));
+    expect(doorway.length).toBeGreaterThan(0);
+    expect(doorway).not.toContain(tile.x);
+  });
+
   it("плитка одна: поки на ній спить кіт чи вже йде туди, інший її не обирає навіть у «Спеку» (перевірка етапу 2026-10-26)", () => {
     for (const goal of [null, { ...COOL_TILE }]) {
       let tile = 0;
@@ -328,14 +348,14 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     for (const [day, expected] of [[null, 1], ["heat", 0]] as const) {
       const save = game();
       save.current.modifiers.day = day;
-      const cat = withCat(save, { warmth: -1 }, { x: 9.5, y: 3.5 });
-      Object.assign(save.current.character.body, { x: 10.5, y: 3.5 });
+      const cat = withCat(save, { warmth: -1 }, { x: 10.5, y: 3.5 });
+      Object.assign(save.current.character.body, { x: 10.5, y: 4.3 });
       cat.act = { kind: "sleep", target: "tile", goal: { ...COOL_TILE }, minutes: 480, elapsed: 0 };
       // Що знемагає від спеки, видно й так (нижче); тут — лише сон на плитці.
       cat.weatherAt = save.current.day * MINUTES_PER_DAY + save.current.minute;
       arrive(save, cat);
       expect(Math.floor(cat.x)).toBe(COOL_TILE.x);
-      // Прийшов справа, але лягає головою до кімнати: ліворуч — стіна ванної (перевірка етапу 2026-10-26).
+      // Прийшов справа, але лягає, як завжди, головою праворуч (перевірка етапу 2026-10-26).
       expect(cat.facing).toBe(1);
       expect(seen(cat, "warmth")).toBe(expected);
     }
