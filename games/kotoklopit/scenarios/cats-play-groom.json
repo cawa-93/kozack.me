@@ -1,0 +1,216 @@
+{
+ "name": "Гра й вилизування",
+ "description": "Субота другого тижня, 17:30, вітальня (§9.4, «Гру й вилизування видно», рішення автора 2026-10-26, блок 3). Мурчик підбігає до Сніжки гратися: гра триває 6–8 хвилин (4,5–6 с) і йде фазами — засідка (Мурчик припав до підлоги, Сніжка підтюпцем відходить і сідає), погоня кімнатою швидкістю зумі (ролі міняються), ігрова боротьба (той, кого наздогнали, на спині дриґає лапами, другий над ним із піднятою лапою), пауза — і знову; без баблів. Тихон іде вилизувати Бусю: 4–6 хвилин тягнеться головою до її щоки, а вона сидить і мружиться, над нею — думка-сердечко; з шансом 40% Буся потім хвилину вилизує його у відповідь. Пухнастик і Ластик сплять купкою біля дивана: Пухнастик скоро прокинеться й з шансом 50% вилизує Ластика. Уповільнити час — панель розробника.",
+ "game": {
+  "sex": "female",
+  "difficulty": "normal",
+  "seed": 8
+ },
+ "state": {
+  "day": 12,
+  "minute": 1050,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 600,
+   "body": {
+    "x": 9.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 70,
+    "hygiene": 70,
+    "sanity": 70
+   }
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Мурчик",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 5.5,
+   "y": 8.5,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 95,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "wrestle",
+    "target": "cat:105",
+    "goal": {
+     "x": 7,
+     "y": 8
+    },
+    "minutes": 8,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Сніжка",
+   "sex": "female",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 7.5,
+   "y": 8.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 90,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "wrestle",
+    "target": "cat:104",
+    "goal": null,
+    "minutes": 10,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 4,
+   "name": "Тихон",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 10.5,
+   "y": 8.5,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "groom",
+    "target": "cat:107",
+    "goal": {
+     "x": 12,
+     "y": 8
+    },
+    "minutes": 5,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Буся",
+   "sex": "female",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 12.5,
+   "y": 8.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 10
+   },
+   "act": {
+    "kind": "idle",
+    "target": null,
+    "goal": null,
+    "minutes": 30,
+    "elapsed": 0
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Пухнастик",
+   "sex": "male",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 15.5,
+   "y": 9.5,
+   "facing": 1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 6
+   },
+   "act": {
+    "kind": "sleep",
+    "target": null,
+    "goal": null,
+    "minutes": 300,
+    "elapsed": 120
+   },
+   "traits": []
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Ластик",
+   "sex": "female",
+   "sterilized": true,
+   "arrivedDay": -10,
+   "x": 15.9,
+   "y": 9.5,
+   "facing": -1,
+   "needs": {
+    "hunger": 10,
+    "thirst": 10,
+    "toilet": 10,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 60
+   },
+   "act": {
+    "kind": "sleep",
+    "target": "pile:108",
+    "goal": null,
+    "minutes": 300,
+    "elapsed": 120
+   },
+   "traits": []
+  }
+ ],
+ "relations": [
+  [
+   0,
+   1,
+   70
+  ],
+  [
+   2,
+   3,
+   60
+  ],
+  [
+   4,
+   5,
+   85
+  ]
+ ]
+}

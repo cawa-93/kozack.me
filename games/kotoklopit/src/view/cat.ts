@@ -1,5 +1,6 @@
 // Кіт-заглушка (§11.3): простий силует із забарвленням за генами (§9.10), що вже показує пози —
-// іде, сидить, їсть, спить клубочком, ховається, вигинає спину перед ворогом, клубком б'ється (§9.4, «Пози стосунків»).
+// іде, сидить, їсть, спить клубочком, ховається, вигинає спину перед ворогом, клубком б'ється, вилизує друга, бореться
+// з ним у грі (§9.4, «Пози стосунків»).
 // Згодом його замінить конструктор із частин (крок 16). Яка поза за дією — `pose.ts`.
 
 import Phaser from "phaser";
@@ -14,7 +15,7 @@ import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
 import { COLORS, depthOf, toScreen } from "./geometry";
-import { brawlFoe, brawlInFront, poseOf } from "./pose";
+import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "./pose";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,
@@ -36,6 +37,10 @@ const BOWL_BEHIND = 9;
 const HISS_OPEN = 0.8;
 /** Відкритий рот, що шипить. */
 const MOUTH = 0x5a2232;
+/** Язичок того, хто вилизує друга (§9.4, «Вилизує іншого»). */
+const TONGUE = 0xe58b9a;
+/** Наскільки прикриті очі того, хто вилизує друга: напівзаплющені (§9.4, «Вилизує іншого»). */
+const LICK_LID = 0.55;
 
 const shade = (color: number, k: number): number => {
   const c = Phaser.Display.Color.IntegerToColor(color);
@@ -100,6 +105,8 @@ export class CatView {
   private threat = false;
   /** Кіт саме шипить на ворога: рот відкритий. */
   private hissing = false;
+  /** Вилизує друга (§9.4, «Вилизує іншого»): очі напівзаплющені, видно язичок. */
+  private licking = false;
 
   constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, cat: Cat) {
     this.g = scene.add.graphics().addToDisplayList(layer);
@@ -124,9 +131,11 @@ export class CatView {
     time: number,
     carriedAt: { x: number; y: number; depth: number } | null,
     interaction: "pet" | "play" | null = null,
-    feeling: CatFeeling | null = null,
+    given: CatFeeling | null = null,
     look: CatMoodLook | null = null,
   ): void {
+    // Кота вилизує друг — мружиться, як під пестощами (§9.4, «Гру й вилизування видно», В1).
+    const feeling = given ?? (isLicked(cat) ? "content" : null);
     this.shape = cat.shape;
     // «Пастка на животику» й під рукою лежить животом догори — у цьому й пастка (§9.12).
     // Хто ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»), — лежить там клубочком, а не визирає з-під низу.
@@ -134,9 +143,12 @@ export class CatView {
     const base = look?.belly === true && carriedAt === null ? "belly" : interaction ? "sit" : poseOf(cat, carriedAt !== null);
     const pose = onHigh && base === "hide" ? "sleep" : base;
     this.feeling = feeling;
-    // Перед ворогом і в бійці кіту не до персонажа: ні смутку, ні моргання, ні «дметься спиною» (§9.4, «Пози стосунків»).
-    this.look = pose === "arch" || pose === "brawl" ? null : look;
+    // Перед ворогом і в бійці, у грі з другом і поки вилизує чи його вилизують, кіту не до персонажа: ні смутку, ні моргання, ні
+    // «дметься спиною» (§9.4, «Пози стосунків»).
+    const busy = pose === "arch" || pose === "brawl" || withFriend(cat);
+    this.look = busy ? null : look;
     this.threat = pose === "arch";
+    this.licking = pose === "lick";
     this.hissing = pose === "arch" && cat.hissedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.hissedAt < HISS_OPEN;
     const toy = cat.act.kind === "carry" && cat.act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === cat.act.target) : undefined;
     this.mouthToy = toy?.kind === "toy" ? toy.quality : "cheap";
@@ -144,7 +156,23 @@ export class CatView {
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
-      pose === "walk" || pose === "arch" || pose === "brawl" || pose === "roll" || pose === "bury" || pose === "groom" || pose === "mark" || pose === "cough" || pose === "scratch" || pose === "stretch" || pose === "crouch" || interaction || feeling || blinking
+      pose === "walk" ||
+      pose === "arch" ||
+      pose === "brawl" ||
+      pose === "lick" ||
+      pose === "paw" ||
+      pose === "kick" ||
+      pose === "roll" ||
+      pose === "bury" ||
+      pose === "groom" ||
+      pose === "mark" ||
+      pose === "cough" ||
+      pose === "scratch" ||
+      pose === "stretch" ||
+      pose === "crouch" ||
+      interaction ||
+      feeling ||
+      blinking
         ? null
         : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}|${Math.round(girthOf(cat) * 20)}`;
     if (key !== null && key === this.drawn) return;
@@ -171,17 +199,21 @@ export class CatView {
     }
     g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
     const scale = this.scaleOf(cat);
-    // Відданий кіт дивиться на персонажа, коли моргає до нього; перед ворогом і в бійці — лише на ворога.
-    const foeFacing = pose === "arch" || pose === "brawl";
+    // Відданий кіт дивиться на персонажа, коли моргає до нього; перед ворогом і в бійці — лише на ворога, з другом — на друга.
+    const foeFacing = busy;
     const dir = (foeFacing ? null : look?.face) ?? (cat.facing >= 0 ? 1 : -1);
     const sad = look?.sad === true && !foeFacing;
-    const pace = cat.act.kind === "zoomies" ? 35 : cat.act.kind === "toy" ? 50 : 70;
+    // Погоня в грі двох котів — швидкістю зумі (§9.4, Г3).
+    const pace = cat.act.kind === "zoomies" || cat.act.game?.phase === "chase" ? 35 : cat.act.kind === "toy" ? 50 : 70;
     const bob = pose === "walk" ? -Math.abs(Math.sin(time / pace + cat.id)) * (cat.act.kind === "toy" ? 5 : 2) : 0;
     // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
     const jump = interaction === "play" ? -Math.abs(Math.sin(time / 130)) * 12 * scale : 0;
     // Задоволений погойдується повільно, невдоволений — смикається, а той, хто пручається, вертиться.
     const sway = feeling === "content" ? Math.sin(time / 280) * 1.5 : feeling === "reluctant" ? Math.sin(time / 90) * 1.2 : feeling === "struggling" ? Math.sin(time / 35) * 3.5 : 0;
-    const x = feet.x + sway;
+    // Вилизує друга чи друг вилизує його (§9.4, «Вилизує іншого»): за 0,4 клітинки обидва трохи відхилені назад, щоб голова того,
+    // хто вилизує, діставала до щоки друга, а не закривала його морду.
+    const lean = pose === "lick" ? -dir * 7 * scale : pose === "sit" && isLicked(cat) ? -dir * 5 * scale : 0;
+    const x = feet.x + sway + lean;
     const y = feet.y + bob + jump;
     const body = this.coat.pointed ? POINT_BODY : PIGMENT[this.coat.base];
     const point = PIGMENT[this.coat.base];
@@ -359,6 +391,57 @@ export class CatView {
         this.back = { x: mx, y: cy };
         return;
       }
+      case "paw": {
+        // Ігрова боротьба, зверху (§9.4, «Пози стосунків», 4; заглушка до кроку 16): стоїть над другом, що лежить на спині, —
+        // тіло відсунуте назад, голова піднята, передня лапа піднята й легенько б'є згори вниз по голові й грудях друга; очі
+        // круглі, вуха вперед, хвіст угору й мотається. Поверх того, хто знизу.
+        g.setDepth(feet.depth + 0.01);
+        const bx = x - dir * 10 * s;
+        const limb = this.coat.pointed ? point : body;
+        const pawColor = this.coat.white >= 1 ? WHITE : limb;
+        this.tail(g, bx - dir * 14 * s + Math.sin(time / 210 + cat.id) * 2 * s, y - 15 * s, s, dir, "up");
+        g.fillStyle(limb);
+        for (const lx of [-9, -3, 7]) g.fillRoundedRect(bx + dir * lx * s - 2, y - 9 * s, 4 * s, 10 * s, 2);
+        g.fillStyle(body).fillEllipse(bx, y - 16 * s, 30 * s * fw, 15 * s * fh);
+        this.patches(g, bx, y - 16 * s, 30 * s * fw, 15 * s * fh);
+        if (this.coat.tabby) this.stripes(g, bx, y - 16 * s, 24 * s, stripe, true);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(bx, y - 16 * s, 30 * s * fw, 15 * s * fh);
+        this.headAt(g, bx + dir * 14 * s, y - 29 * s, s, dir, body, point);
+        // Піднята лапа б'є згори вниз.
+        const bat = Math.abs(Math.sin(time / 170 + cat.id)) * 8 * s;
+        const [sx, sy, px, py] = [bx + dir * 10 * s, y - 19 * s, bx + dir * 22 * s, y - 13 * s - bat];
+        g.lineStyle(4.5 * s + 2.5, COLORS.ink).lineBetween(sx, sy, px, py);
+        g.lineStyle(4.5 * s, limb).lineBetween(sx, sy, px, py);
+        g.fillStyle(pawColor).fillEllipse(px, py, 6 * s, 5 * s);
+        g.lineStyle(1.5, COLORS.ink).strokeEllipse(px, py, 6 * s, 5 * s);
+        this.back = { x: bx, y: y - 22 * s };
+        return;
+      }
+      case "kick": {
+        // Ігрова боротьба, знизу (§9.4, «Пози стосунків», 4; заглушка до кроку 16): на спині, світлий живіт, чотири лапи догори
+        // дриґають — повільніше, ніж у «клубку бійки», голова до другого (тіло відсунуте від нього, щоб морду було видно під його
+        // лапою), хвіст мотається.
+        const bx = x - dir * 10 * s;
+        const kick = (phase: number): number => Math.sin(time / 160 + phase + cat.id) * 3.5 * s;
+        const rock = Math.sin(time / 330 + cat.id) * 2 * s;
+        const limb = this.coat.pointed ? point : body;
+        const pawColor = this.coat.white >= 1 ? WHITE : limb;
+        this.tail(g, bx - dir * 15 * s, y - 5 * s, s, dir, "rest");
+        for (const [i, lx] of [-10, -4, 4, 10].entries()) {
+          const lx2 = bx + rock + lx * s;
+          const top = y - 22 * s + kick(i * 1.7);
+          g.lineStyle(4 * s + 2.5, COLORS.ink).lineBetween(lx2, y - 12 * s, lx2, top);
+          g.lineStyle(4 * s, limb).lineBetween(lx2, y - 12 * s, lx2, top);
+          g.fillStyle(pawColor).fillEllipse(lx2, top, 5 * s, 4 * s);
+          g.lineStyle(1.2, COLORS.ink).strokeEllipse(lx2, top, 5 * s, 4 * s);
+        }
+        g.fillStyle(body).fillEllipse(bx + rock * 0.6, y - 9 * s, 32 * s * fw, 14 * s * fh);
+        g.fillStyle(WHITE, 0.6).fillEllipse(bx + rock * 0.6, y - 11 * s, 20 * s, 7 * s);
+        g.lineStyle(2.5, COLORS.ink).strokeEllipse(bx + rock * 0.6, y - 9 * s, 32 * s * fw, 14 * s * fh);
+        this.headAt(g, bx + dir * 17 * s + rock * 0.3, y - 9 * s, s, dir, body, point);
+        this.back = { x: bx - dir * 2 * s, y: y - 14 * s };
+        return;
+      }
       case "belly": {
         // На спині: світлий живіт, чотири лапки догори, голова збоку — так і хочеться погладити (§9.12).
         this.tail(g, x - dir * 15 * s, y - 6 * s, s, dir, "rest");
@@ -515,14 +598,29 @@ export class CatView {
       case "eat":
       case "bury":
       case "groom":
+      case "lick":
       case "cough": {
         // Кахикає: витягає шию вперед і смикається.
         const jerk = pose === "cough" ? Math.abs(Math.sin(time / 90)) * 3 * s : 0;
-        const hx = x + dir * (3 + (pose === "cough" ? 5 : 0)) * s + dir * jerk;
+        // Вилизує друга (§9.4, «Вилизує іншого»): голова тягнеться вперед, до щоки й шиї друга, і погойдується в ритмі лизання;
+        // поверх друга.
+        const lick = pose === "lick" ? Math.max(0, Math.sin(time / 150 + cat.id)) : 0;
+        if (pose === "lick") g.setDepth(feet.depth + 0.01);
+        const hx = x + dir * (3 + (pose === "cough" ? 5 : pose === "lick" ? 11 + 2 * lick : 0)) * s + dir * jerk;
         // Сумний кіт опускає голову; той, хто їсть чи гребе лапою (корм біля миски, наповнювач у лотку), — до самої підлоги;
         // хто вмивається — хитає головою.
         const headY =
-          pose === "eat" ? y - 8 * s : pose === "bury" ? y - 12 * s : pose === "cough" ? y - 18 * s : pose === "groom" ? y - 30 * s + Math.sin(time / 160) * 1.5 * s : y - (sad ? 29 : 33) * s;
+          pose === "eat"
+            ? y - 8 * s
+            : pose === "bury"
+              ? y - 12 * s
+              : pose === "cough"
+                ? y - 18 * s
+                : pose === "groom"
+                  ? y - 30 * s + Math.sin(time / 160) * 1.5 * s
+                  : pose === "lick"
+                    ? y - (28 + 2 * lick) * s
+                    : y - (sad ? 29 : 33) * s;
         this.tail(g, x - dir * 10 * s, y - 4 * s, s, dir, "rest");
         g.fillStyle(body).fillEllipse(x, y - 13 * s, 22 * s * fw, 26 * s * fh);
         this.patches(g, x, y - 13 * s, 22 * s * fw, 26 * s * fh);
@@ -622,8 +720,9 @@ export class CatView {
       g.lineStyle(1.2, COLORS.ink).strokeCircle(ex - 2.8 * s, y - 1 * s, 2.8 * s).strokeCircle(ex + 2.8 * s, y - 1 * s, 2.8 * s);
       g.fillStyle(COLORS.ink).fillCircle(ex - 2.8 * s, y - 1 * s, 0.9 * s).fillCircle(ex + 2.8 * s, y - 1 * s, 0.9 * s);
     } else {
-      // Повіки (§11.4): сумний кіт дивиться з-під напівзаплющених, відданий повільно моргає до персонажа.
-      const lid = Math.max(this.look?.sad ? SAD_LID : 0, this.look?.blink ?? 0);
+      // Повіки (§11.4): сумний кіт дивиться з-під напівзаплющених, відданий повільно моргає до персонажа; той, хто вилизує
+      // друга, — з напівзаплющеними очима (§9.4).
+      const lid = Math.max(this.look?.sad ? SAD_LID : 0, this.look?.blink ?? 0, this.licking ? LICK_LID : 0);
       const er = 2.2 * s;
       if (lid > 0) {
         // Видно нижню частину ока, а над нею — рівна повіка; заплющене око — повіка внизу ока.
@@ -647,6 +746,11 @@ export class CatView {
       }
     }
     g.fillStyle(0xd88a8a).fillTriangle(ex - 1.4 * s, y + 2.5 * s, ex + 1.4 * s, y + 2.5 * s, ex, y + 4 * s);
+    // Язичок того, хто вилизує друга (§9.4): висовується з-під носа вперед.
+    if (this.licking) {
+      g.fillStyle(TONGUE).fillEllipse(ex + dir * 2.2 * s, y + 5.2 * s, 3 * s, 2.2 * s);
+      g.lineStyle(1, COLORS.ink, 0.7).strokeEllipse(ex + dir * 2.2 * s, y + 5.2 * s, 3 * s, 2.2 * s);
+    }
     this.head = { x, y: y - r - 8 * s };
   }
 

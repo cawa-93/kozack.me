@@ -12,7 +12,8 @@ import { loudNoise } from "../src/sim/noise";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
-import type { Cat, CatAct, Save, TraitLevel } from "../src/sim/types";
+import type { Cat, CatAct, PlayPhase, Save, TraitLevel } from "../src/sim/types";
+import { isLicked, poseOf, withFriend } from "../src/view/pose";
 import { eventBubbles } from "../src/view/symbols";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -501,5 +502,59 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     expect(count(events, "cats-played")).toBe(1);
     expect(a.needs.play).toBeLessThan(80);
     expect(relation(save.current, a, b)).toBe(72);
+  });
+});
+
+describe("пози гри й вилизування (§9.4, «Пози стосунків», 3–5; заглушки до кроку 16)", () => {
+  const act = (fields: Partial<CatAct>): CatAct => ({ kind: "idle", target: null, goal: null, minutes: 5, elapsed: 0, ...fields });
+
+  it("вилизує друга чи кошеня — «вилизує іншого»; той, кого вилизують, сидить і мружиться", () => {
+    const save = game();
+    const a = withCat(save);
+    const b = withCat(save);
+    a.act = act({ kind: "groom", target: `cat:${b.id}` });
+    expect(poseOf(a, false)).toBe("lick");
+    a.act = act({ kind: "groom", target: `kitten:${b.id}` });
+    expect(poseOf(a, false)).toBe("lick");
+    // Іде вилизувати — іде; вмивається сам — лапкою.
+    a.act = act({ kind: "groom", target: `cat:${b.id}`, goal: { x: 3, y: 8 } });
+    expect(poseOf(a, false)).toBe("walk");
+    a.act = act({ kind: "groom", target: "nervous" });
+    expect(poseOf(a, false)).toBe("groom");
+    b.act = act({ target: `licked:${a.id}` });
+    expect(poseOf(b, false)).toBe("sit");
+    expect(isLicked(b)).toBe(true);
+    expect(withFriend(b)).toBe(true);
+    b.act = act({});
+    expect(isLicked(b)).toBe(false);
+    expect(withFriend(b)).toBe(false);
+  });
+
+  it("гра: засідка — мисливець припав, той відходить і сідає; погоня — біжать; боротьба — знизу на спині, зверху з лапою; пауза — сидять", () => {
+    const save = game();
+    const a = withCat(save);
+    const b = withCat(save);
+    const play = (cat: Cat, phase: PlayPhase, run = false): CatAct =>
+      act({ kind: "wrestle", target: `cat:${cat === a ? b.id : a.id}`, paired: true, game: { phase, left: 1, chaser: a.id, swap: 1 }, ...(run ? { run: { x: 5, y: 8 } } : {}) });
+    const pose = (cat: Cat, phase: PlayPhase, run = false): string => {
+      cat.act = play(cat, phase, run);
+      return poseOf(cat, false);
+    };
+    expect(pose(a, "ambush")).toBe("crouch");
+    expect(pose(b, "ambush", true)).toBe("walk");
+    expect(pose(b, "ambush")).toBe("sit");
+    expect(pose(a, "chase")).toBe("walk");
+    expect(pose(b, "chase", true)).toBe("walk");
+    expect(pose(a, "tussle", true)).toBe("walk");
+    expect(pose(a, "tussle")).toBe("paw");
+    expect(pose(b, "tussle")).toBe("kick");
+    expect(pose(a, "pause")).toBe("sit");
+    expect(pose(b, "pause")).toBe("sit");
+    expect(withFriend(a)).toBe(true);
+    // Біжить до друга — іде; друг чекає — сидить.
+    a.act = act({ kind: "wrestle", target: `cat:${b.id}`, goal: { x: 3, y: 8 } });
+    expect(poseOf(a, false)).toBe("walk");
+    b.act = act({ kind: "wrestle", target: `cat:${a.id}` });
+    expect(poseOf(b, false)).toBe("sit");
   });
 });

@@ -22,7 +22,10 @@ export type CatPose =
   | "blanket"
   | "sprawl"
   | "arch"
-  | "brawl";
+  | "brawl"
+  | "lick"
+  | "paw"
+  | "kick";
 
 /** Поза за дією кота. */
 export function poseOf(cat: Cat, carried: boolean): CatPose {
@@ -35,7 +38,9 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   // дугою»; зійшлися в бійці — «клубок бійки». Заглушки до кроку 16 (графіка).
   if (act.goal === null && act.kind === "standoff") return "arch";
   if (act.goal === null && act.kind === "fight") return act.paired === true ? "brawl" : "arch";
-  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "wrestle" || act.kind === "fight") return "walk";
+  // Гра з другом фазами (§9.4, «Гру й вилизування видно», рішення автора 2026-10-26, Г3).
+  if (act.kind === "wrestle") return playPose(cat);
+  if (act.goal !== null || act.kind === "toy" || act.kind === "zoomies" || act.kind === "fight") return "walk";
   // Спить у переносці (§9.12, «Переноска»): крізь дверцята видно клубочок шерсті.
   if (act.kind === "sleep" && act.target === "carrier") return "carrier";
   // Теплолюб під ковдрою, «Не мерзне» розпластався на прохолодній плитці (§9.12, «Теплолюбність»).
@@ -64,8 +69,43 @@ export function poseOf(cat: Cat, carried: boolean): CatPose {
   if (act.kind === "unroll") return "scratch";
   // Вмивається сам — нервово чи після їди (§9.12): лапка біля рота.
   if (act.kind === "groom" && !act.target?.startsWith("cat:") && !act.target?.startsWith("kitten:")) return "groom";
+  // Вилизує друга чи кошеня (§9.4, «Пози стосунків», 3): голова тягнеться до друга й погойдується.
+  if (act.kind === "groom") return "lick";
   return "sit";
 }
+
+/**
+ * Поза в грі з другом (§9.4, «Пози стосунків», 4–5; заглушки до кроку 16): хто біжить до друга — іде, друг чекає — сидить; у засідці
+ * мисливець припав до підлоги, а той, на кого чатують, відходить і сідає; у погоні обидва біжать; у боротьбі той, кого наздогнали,
+ * на спині дриґає лапами («kick»), а мисливець, підбігши, стоїть над ним із піднятою лапою («paw»); у паузі обидва сидять.
+ */
+function playPose(cat: Cat): CatPose {
+  const act = cat.act;
+  if (act.goal !== null) return "walk";
+  const game = act.game;
+  if (act.paired !== true || game === undefined) return "sit";
+  const hunting = game.chaser === cat.id;
+  switch (game.phase) {
+    case "ambush":
+      return hunting ? "crouch" : act.run ? "walk" : "sit";
+    case "chase":
+      return "walk";
+    case "tussle":
+      return !hunting ? "kick" : act.run ? "walk" : "paw";
+    case "pause":
+      return "sit";
+  }
+}
+
+/** Кота саме вилизує друг (§9.4, «Гру й вилизування видно», В1): сидить і мружиться, як під пестощами. */
+export const isLicked = (cat: Cat): boolean => cat.act.kind === "idle" && cat.act.target?.startsWith("licked:") === true;
+
+/**
+ * Кіт зайнятий іншим котом — грається, вилизує чи його вилизують (§9.4): дивиться на друга, а не на персонажа, без сумної пози й
+ * моргання до персонажа, як і перед ворогом.
+ */
+export const withFriend = (cat: Cat): boolean =>
+  cat.act.kind === "wrestle" || (cat.act.kind === "groom" && (cat.act.target?.startsWith("cat:") === true || cat.act.target?.startsWith("kitten:") === true)) || isLicked(cat);
 
 /** Суперник у «клубку бійки» (§9.4): обидва вже зійшлися й б'ються саме одне з одним; інакше null. */
 export function brawlFoe(state: GameState, cat: Cat): Cat | null {
