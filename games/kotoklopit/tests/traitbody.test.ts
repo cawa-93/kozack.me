@@ -449,6 +449,23 @@ describe("«Схильність до повноти» (§9.12, рішення �
     expect(meal(false, true)).toBeCloseTo(WEIGHT.portion);
   });
 
+  it("британська короткошерста (схильність «ожиріння») гладшає ×1,25, напівкровка — ×1,125, інші породи — як безпородні (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const gained = (breed: [string, string], traits: Record<string, TraitLevel> = {}): number => {
+      const cat = withCat(save, traits);
+      cat.breed = breed;
+      gainWeight(save.current, cat, 2);
+      return weightOf(cat) - WEIGHT.norm;
+    };
+    const british = "brytanska-korotkoshersta";
+    expect(gained([british, british])).toBeCloseTo(2.5);
+    expect(gained([british, "siamska"])).toBeCloseTo(2.25);
+    expect(gained(["siamska", "siamska"])).toBeCloseTo(2);
+    expect(gained(["mixed", "mixed"])).toBeCloseTo(2);
+    // «Не товстіє» не гладшає й британцем.
+    expect(gained([british, british], { chubby: -2 })).toBe(0);
+  });
+
   it("порція не з голоду, ласощі й крадена їжа — гладшає; порція з голоду — ні", () => {
     const meal = (hunger: number): number => {
       const save = game();

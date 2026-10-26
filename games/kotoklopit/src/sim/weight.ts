@@ -2,6 +2,7 @@
 // норма — 50. Кіт гладшає від їжі понад голод, ласощів і краденого, худне до норми від гри й з часом; від 75 — ожиріння (§9.5,
 // `DISEASES.md`). Видно з малюнка: кіт ширшає поступово.
 
+import { riskHalves } from "./breeds";
 import { traitLevel, weightOf } from "./cat";
 import { MINUTES_PER_DAY, MINUTES_PER_HOUR, WEIGHT } from "./config";
 import { observe } from "./knowledge";
@@ -9,14 +10,16 @@ import type { Cat, GameState } from "./types";
 
 /**
  * Кіт з'їв більше, ніж треба (§9.12): порцію, коли не був голодний, ласощі чи крадене. Набір × max(0, 1 + 0,5 × «Схильність до
- * повноти»), у стерилізованого ще × 1,3, крім порції корму для стерилізованих (`sterileFood`, рішення автора 2026-10-26). «Не товстіє» (−2) не гладшає зовсім. «−», що помітно переїв (зайвого до множників
+ * повноти»), у стерилізованого ще × 1,3, крім порції корму для стерилізованих (`sterileFood`, рішення автора 2026-10-26), у
+ * британської короткошерстої (схильність «ожиріння») ще × 1,25, у напівкровки — × 1,125 (рішення автора 2026-10-26). «Не товстіє» (−2) не гладшає зовсім. «−», що помітно переїв (зайвого до множників
  * щонайменше `WEIGHT.overate`: порція при голоді 60 і нижче, ласощі чи крадене), а вага нижче 55, — прояв «−»: не гладшає, хоч
  * скільки їсть (раз на день). Трапеза трохи раніше звичайного — не «переїв»: її не відрізнити від звичайної (перевірка етапу
  * 2026-10-26).
  */
 export function gainWeight(state: GameState, cat: Cat, amount: number, sterileFood = false): void {
   const level = traitLevel(cat, "chubby");
-  const gain = amount * Math.max(0, 1 + WEIGHT.traitStep * level) * (cat.sterilized && !sterileFood ? WEIGHT.sterilized : 1);
+  const breed = 1 + WEIGHT.breedStep * riskHalves(cat.breed, "ожиріння");
+  const gain = amount * Math.max(0, 1 + WEIGHT.traitStep * level) * (cat.sterilized && !sterileFood ? WEIGHT.sterilized : 1) * breed;
   cat.weight = Math.min(WEIGHT.max, weightOf(cat) + gain);
   if (level < 0 && amount >= WEIGHT.overate && weightOf(cat) < WEIGHT.slim) observe(state, cat, "chubby", -1, false, MINUTES_PER_DAY);
 }

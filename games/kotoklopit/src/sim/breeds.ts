@@ -101,6 +101,14 @@ export function breedLevel(breed: readonly [string, string], group: string): num
   return direction(a) + direction(b);
 }
 
+/**
+ * Скільки половин породи кота схильні до хвороби (`risks`, §9.11, `BREEDS.md`): 0–2, чистокровний — 2. Безпородний схильностей
+ * не має.
+ */
+export function riskHalves(breed: readonly [string, string], risk: string): number {
+  return breed.filter((id) => breedById(id).risks.includes(risk)).length;
+}
+
 /** Чистокровний: дві однакові справжні породи (§9.11). */
 export function isPurebred(breed: readonly [string, string]): boolean {
   return breed[0] === breed[1] && breed[0] !== MIXED;
