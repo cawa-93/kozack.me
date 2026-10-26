@@ -1,7 +1,7 @@
 // Стосунки між котами (§9.4): прихована шкала пари −100…+100, друзі й вороги.
 // Поведінку друзів і ворогів (ігри, вилизування, бійки) веде `catai.ts`.
 
-import { isKitten, traitLevel } from "./cat";
+import { daysAtHome, isKitten, traitLevel } from "./cat";
 import { NURTURING, RELATIONS } from "./config";
 import type { Cat, GameState } from "./types";
 
@@ -24,11 +24,22 @@ export const isFriend = (state: GameState, a: Cat, b: Cat): boolean => relation(
 export const isPal = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) >= RELATIONS.pal;
 export const isEnemy = (state: GameState, a: Cat, b: Cat): boolean => relation(state, a, b) <= RELATIONS.enemy;
 
+/**
+ * Новий дорослий кіт (§9.4 «Хто з ким грається», рішення автора 2026-10-26, Б5 а): прийшов ззовні (не народився вдома) не
+ * кошеням і живе тут менше 2 днів. Кіт, якого сценарій чи тест додає «давнім» (день появи в минулому), — не новий.
+ */
+export function isNewcomer(state: GameState, cat: Cat): boolean {
+  return cat.source !== "born" && !isKitten(cat) && daysAtHome(state, cat) < RELATIONS.newcomer.days;
+}
+
 /** Початкові стосунки нового кота з кожним, хто вже живе вдома (§9.4). */
 export function initRelations(state: GameState, cat: Cat): void {
+  const newcomer = isNewcomer(state, cat);
   for (const other of state.cats) {
     if (other.id === cat.id) continue;
-    let value = (traitLevel(cat, "sociability") + traitLevel(other, "sociability")) * RELATIONS.sociabilityStep;
+    const sociability = traitLevel(cat, "sociability") + traitLevel(other, "sociability");
+    // Новий дорослий кіт — з легкої ворожості, −30…−10 (рішення автора 2026-10-26, Б5 а).
+    let value = newcomer ? RELATIONS.newcomer.start + RELATIONS.newcomer.sociabilityStep * sociability : sociability * RELATIONS.sociabilityStep;
     // З кошеням дорослі ладнають легше, а «Турбота про кошенят» дорослого — ще й ±10 за одиницю (§9.12).
     if (isKitten(cat) !== isKitten(other)) value += RELATIONS.kittenBonus + NURTURING.relationStep * traitLevel(isKitten(cat) ? other : cat, "nurturing");
     const mother = cat.parents.mother === other.id || other.parents.mother === cat.id;

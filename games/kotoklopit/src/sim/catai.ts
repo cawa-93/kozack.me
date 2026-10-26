@@ -118,7 +118,7 @@ import { inView, observe, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
-import { changeRelation, isEnemy, isFriend, isPal } from "./relations";
+import { changeRelation, isEnemy, isFriend, isNewcomer, isPal } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
 import { stateRng, type Rng } from "./rng";
@@ -2933,6 +2933,9 @@ function tickRelations(state: GameState, minutes: number, rng: Rng): void {
       // Кошеня лізе до «Сам ще кошеня» — той шипить і б'є лапою (§9.12, «Турбота про кошенят»).
       swatKitten(state, a, b, rng);
       swatKitten(state, b, a, rng);
+      // Новий дорослий кіт проходить повз — перші 2 дні на нього шиплять (§9.4, рішення автора 2026-10-26, Б5 а).
+      hissAtNewcomer(state, a, b, rng);
+      hissAtNewcomer(state, b, a, rng);
       // Не-друг проходить повз — «Конфліктний» може зашипіти (§9.12, «Товариськість»).
       snubPasser(state, a, b, rng);
       snubPasser(state, b, a, rng);
@@ -3981,6 +3984,23 @@ function snubPasser(state: GameState, cat: Cat, other: Cat, rng: Rng): void {
   if (!hissed) return;
   changeRelation(state, cat, other, SOCIABILITY.passRelation);
   observe(state, cat, "sociability", -1);
+}
+
+/**
+ * Новий дорослий кіт проходить повз ближче 2 клітинок (§9.4 «Хто з ким грається», рішення автора 2026-10-26, Б5 а): перші 2 дні
+ * дорослий кіт, що живе тут давно, не спить і нічим важливим не зайнятий, шипить на нього — раз за зустріч, з шансом 30% × (1 −
+ * 0,25 × «Товариськість»); стосунки −1, без бійок.
+ */
+function hissAtNewcomer(state: GameState, cat: Cat, other: Cat, rng: Rng): void {
+  const n = RELATIONS.newcomer;
+  if (!isNewcomer(state, other) || isNewcomer(state, cat) || isKitten(cat) || asleep(cat) || !SNUB_FROM.has(cat.act.kind)) return;
+  if (other.act.goal === null || distance(cat, other) >= n.distance) return;
+  const now = absoluteMinute(state.day, state.minute);
+  const next = cat.snubAt?.[other.id];
+  if (next !== undefined && now < next) return;
+  const hissed = rng.chance(n.hiss * Math.max(0, 1 - n.hissStep * traitLevel(cat, "sociability"))) && hiss(state, cat, other);
+  (cat.snubAt ??= {})[other.id] = now + SOCIABILITY.passEvery;
+  if (hissed) changeRelation(state, cat, other, n.relation);
 }
 
 /**

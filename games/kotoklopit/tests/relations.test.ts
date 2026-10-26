@@ -13,8 +13,8 @@ import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
-function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 5 }));
+function game(seed = 5): Save {
+  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
   save.current.minute = 19 * 60;
   return save;
 }
@@ -322,6 +322,71 @@ describe("друзі (§9.4)", () => {
       if (a.act.kind === "wrestle") chosen++;
     }
     expect(chosen).toBe(0);
+  });
+});
+
+describe("новий дорослий кіт (§9.4, рішення автора 2026-10-26, Б5 а)", () => {
+  /** Кіт щойно прийшов у дім: день появи — сьогодні. */
+  function newcomer(save: Save, traits: Record<string, TraitLevel> = {}, at = { x: 7.5, y: 7.5 }, ageWeeks = 3): Cat {
+    const cat = createCat(save.current, createRng(save.current.cats.length + 7), { source: "shelter", ageWeeks, at });
+    cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
+    cat.arrivedDay = save.current.day;
+    calm(cat);
+    addCat(save.current, cat);
+    return cat;
+  }
+
+  it("починає з −10…−30: −20 і ±2,5 за одиницю «Товариськості» обох; з кошеням — ще +20, як і завжди", () => {
+    const save = game();
+    const plain = withCat(save, {}, { x: 5.5, y: 8.5 });
+    const social = withCat(save, { sociability: 2 }, { x: 6.5, y: 8.5 });
+    const grumpy = withCat(save, { sociability: -2 }, { x: 7.5, y: 8.5 });
+    const kitten = withCat(save, {}, { x: 8.5, y: 8.5 }, 1);
+    const fresh = newcomer(save);
+    expect(relation(save.current, fresh, plain)).toBe(-20);
+    expect(relation(save.current, fresh, social)).toBe(-15);
+    expect(relation(save.current, fresh, grumpy)).toBe(-25);
+    expect(relation(save.current, fresh, kitten)).toBe(0);
+    expect(relation(save.current, newcomer(save, { sociability: 2 }), social)).toBe(-10);
+    expect(relation(save.current, newcomer(save, { sociability: -2 }), grumpy)).toBe(-30);
+    // Кошеня з притулку — як і раніше: +20 з дорослим.
+    expect(relation(save.current, newcomer(save, {}, { x: 9.5, y: 9.5 }, 1), plain)).toBe(20);
+  });
+
+  it("перші 2 дні на нього шиплять, коли проходить ближче 2 клітинок: 30% × (1 − 0,25 × «Товариськість»), стосунки −1, без бійок", () => {
+    const hisses = (traits: Record<string, TraitLevel>, opts: { daysAgo?: number; kitten?: boolean } = {}): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 120; seed++) {
+        const save = game(seed);
+        const resident = withCat(save, traits, { x: 9.5, y: 8.5 }, opts.kitten === true ? 1 : 3);
+        resident.act = idleAct(60);
+        const fresh = newcomer(save);
+        fresh.arrivedDay = save.current.day - (opts.daysAgo ?? 0);
+        const start = relation(save.current, resident, fresh);
+        // Новий кіт іде повз — через клітинку від того, хто живе тут давно.
+        fresh.act = { kind: "wander", target: null, goal: { x: 12, y: 7 }, minutes: 8, elapsed: 0 };
+        const { events, stop } = recordEvents();
+        for (let t = 0; t < 2; t += 0.25) {
+          save.current.minute += 0.25;
+          tickCats(save.current, 0.25, { present: false });
+        }
+        stop();
+        const hissed = events.filter((e) => e.type === "hissed" && e.cat === resident.id && e.at === fresh.id).length;
+        expect(hissed, "раз за зустріч").toBeLessThanOrEqual(1);
+        expect(events.some((e) => e.type === "standoff" || e.type === "cat-fight")).toBe(false);
+        expect(relation(save.current, resident, fresh)).toBe(start - hissed);
+        count += hissed;
+      }
+      return count;
+    };
+    const plain = hisses({});
+    expect(plain).toBeGreaterThan(20);
+    expect(plain).toBeLessThan(55);
+    expect(hisses({ sociability: 2 })).toBeLessThan(plain);
+    expect(hisses({ sociability: -2 })).toBeGreaterThan(plain);
+    // Минуло 2 дні — уже не новий; кошеня на новенького не шипить.
+    expect(hisses({}, { daysAgo: 2 })).toBe(0);
+    expect(hisses({}, { kitten: true })).toBe(0);
   });
 });
 

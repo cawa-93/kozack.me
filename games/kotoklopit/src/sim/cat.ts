@@ -171,7 +171,7 @@ export function adaptsLonger(state: GameState, cat: Cat): boolean {
 }
 
 /** Скільки днів кіт удома: від ранку дня появи разом із часом доби. */
-function daysAtHome(state: GameState, cat: Cat): number {
+export function daysAtHome(state: GameState, cat: Cat): number {
   return state.day + state.minute / MINUTES_PER_DAY - cat.arrivedDay;
 }
 
