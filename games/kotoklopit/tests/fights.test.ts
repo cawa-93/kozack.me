@@ -454,6 +454,30 @@ describe("бійку видно й чути (§9.4, рішення автора 
     expect(right.facing).toBe(-1);
   });
 
+  it("м'ята: на кошеня й друга нападник лише шипить, задирається — з дорослим, що не друг (§9.4, Б7)", () => {
+    for (const who of ["kitten", "friend", "adult"] as const) {
+      const save = game();
+      const s = save.current;
+      const cat = withCat(save, { catnip: -2 }, { x: 9.5, y: 7.5 });
+      addSupply(s, "catnip", "cheap", 5);
+      pickUpCat(s, cat);
+      const other = withCat(save, {}, { x: 11.5, y: 8.5 });
+      if (who === "kitten") other.ageWeeks = 1;
+      if (who === "friend") s.relations[cat.id < other.id ? `${cat.id}-${other.id}` : `${other.id}-${cat.id}`] = 70;
+      other.act = idle(60);
+      giveCatnip(s, "cheap", createRng(1));
+      expect(cat.act.kind).toBe("zoomies");
+      Object.assign(cat, { x: 9.6, y: 8.4 });
+      cat.act.minutes = 0.1;
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 20 && cat.act.kind === "zoomies"; i++) tickCats(s, 0.05, { present: false });
+      stop();
+      expect(events.some((e) => e.type === "hissed" && e.cat === cat.id && e.at === other.id)).toBe(true);
+      expect(cat.act.kind === "fight").toBe(who === "adult");
+      expect(other.act.kind === "fight").toBe(who === "adult");
+    }
+  });
+
   it("м'ята: нападник задирається лише з котом, до якого можна підійти, — за котом на холодильнику не лізе", () => {
     // Перевірка блоку 1 (2026-10-26): нападник підбігає до другого, і «Не лазить» вилазив за ним на холодильник.
     const save = game();
