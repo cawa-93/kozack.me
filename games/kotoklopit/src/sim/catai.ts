@@ -93,6 +93,7 @@ import {
   STRESS_EFFECTS,
   SURPRISE_CHANCE,
   TALKATIVE,
+  TERRITORY,
   THIEF,
   TIRED_FATIGUE,
   TOUCHY,
@@ -292,7 +293,8 @@ const catById = (state: GameState, target: string | null): Cat | null =>
 function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean): void {
   if (enough) return;
   const r = RELATIONS.resource;
-  if (!rng.chance(r.chance + r.territorialStep * Math.max(0, traitLevel(cat, "territorial")))) return;
+  // Дзеркально (§9.12, «Територіальність»): «Ділиться» свариться рідше, «Комунар» — ніколи.
+  if (!rng.chance(Math.max(0, r.chance + r.territorialStep * traitLevel(cat, "territorial")))) return;
   const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && distance(c, cat) <= r.distance);
   const other = others[rng.int(0, others.length - 1)];
   if (!other || !hiss(state, cat, other)) return;
@@ -634,8 +636,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   }
   const hungry = n.hunger >= hungerThreshold(cat);
   if (hungry) {
-    const bowls = itemsOf(state, "bowl");
-    const full = nearest(cat, avoidNew(state, cat, bowls.filter((b) => b.food > 0)));
+    const bowls = avoidNew(state, cat, itemsOf(state, "bowl").filter((b) => b.food > 0));
+    // Кіт без риси й «+» обирають миску, з якої ніхто не їсть, якщо така є; «Ділиться» їсть і разом (§9.12, «Територіальність»).
+    const shares = traitLevel(cat, "territorial") < 0;
+    const full = nearest(cat, shares ? bowls : bowls.filter((b) => !bowlTaken(state, cat, b))) ?? nearest(cat, bowls);
     if (full) return start(cat, "eat", itemTile(full), eatMinutes(cat), `item:${full.id}`);
   }
   // Спрага — раніше за прохання їсти: голодний кіт без корму все одно п'є.
@@ -1535,7 +1539,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       if (begging < 0) {
         start(cat, "groom", null, BEGGING.washMinutes, "wash");
         observe(state, cat, "begging", -1, false, MINUTES_PER_HOUR);
+        return;
       }
+      // «Господар території» після їди ще вартує біля миски (§9.12, «Територіальність»).
+      if (traitLevel(cat, "territorial") >= TERRITORY.guardLevel && bowl.food > 0) start(cat, "idle", null, TERRITORY.guardMinutes, `guard:${act.target ?? ""}`);
       return;
     }
     case "beg": {
@@ -1993,6 +2000,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         act.nibble = appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite));
         // Кіт сів їсти — злодій поруч може піти відтіснити його (§9.12, «Злодійство»).
         bowlThief(state, cat, rng);
+        // «Ділиться» їсть з однієї миски з іншим котом, хоч є й вільна, — прояв «Територіальності −» (§9.12).
+        shareBowl(state, cat);
       }
       return;
     case "mark": {
@@ -2355,6 +2364,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   }
   lurk(state, cat, rng, context);
   onHigh(state, cat, context);
+  approachGuarded(state, cat, rng);
   carryAlong(state, cat, context);
   paperSeen(state, cat);
   carrySeen(state, cat);
@@ -3237,4 +3247,62 @@ function refusesGrooming(state: GameState, cat: Cat, by: Cat, rng: Rng): boolean
   backAway(state, cat, by);
   observe(state, cat, "grooming", -1);
   return true;
+}
+
+/** З цієї миски вже їсть інший кіт чи її вартує «Господар території» (§9.12, «Територіальність»). */
+function bowlTaken(state: GameState, cat: Cat, bowl: BowlItem): boolean {
+  const target = `item:${bowl.id}`;
+  return state.cats.some((o) => o.id !== cat.id && o.away === null && ((o.act.kind === "eat" && o.act.target === target) || o.act.target === `guard:${target}`));
+}
+
+/**
+ * «Ділиться» сів їсти з миски, з якої вже їсть інший кіт, хоч є й вільна з кормом (§9.12, «Територіальність»): кіт без риси обрав
+ * би вільну — прояв «−», не частіше ніж раз на пів години.
+ */
+function shareBowl(state: GameState, cat: Cat): void {
+  const bowl = itemById<BowlItem>(state, cat.act.target);
+  if (traitLevel(cat, "territorial") >= 0 || bowl?.kind !== "bowl" || !bowlTaken(state, cat, bowl)) return;
+  if (!itemsOf(state, "bowl").some((b) => b.id !== bowl.id && b.food > 0 && !bowlTaken(state, cat, b))) return;
+  observe(state, cat, "territorial", -1, false, TERRITORY.shareEvery);
+}
+
+/** До чого кіт іде, коли це може бути чиясь зайнята річ (§9.12, «Територіальність»): миска (їсти), лоток, підвіконня. */
+function guardableTarget(cat: Cat): string | null {
+  const act = cat.act;
+  if (act.goal === null) return null;
+  if ((act.kind === "eat" || act.kind === "toilet") && act.target?.startsWith("item:") === true) return act.target;
+  return act.kind === "window" ? act.target : null;
+}
+
+/**
+ * Кіт іде до миски, лотка чи підвіконня, де вже «Охоронець» (§9.12, «Територіальність», рішення автора 2026-10-25): той, щойно кіт
+ * підійшов ближче 2 клітинок, з шансом 30% × рівень шипить, і кіт відходить — потреба лишається, стосунки −3. Відігнаний від лотка з
+ * терміновою потребою може не дотерпіти (30%). Прояв «+».
+ */
+function approachGuarded(state: GameState, cat: Cat, rng: Rng): void {
+  const target = guardableTarget(cat);
+  if (target === null || cat.act.guarded === true) return;
+  const guard = state.cats.find(
+    (g) =>
+      g.id !== cat.id &&
+      home(state, g) &&
+      !asleep(g) &&
+      traitLevel(g, "territorial") > 0 &&
+      g.act.goal === null &&
+      (g.act.target === target || g.act.target === `guard:${target}`) &&
+      distance(g, cat) <= TERRITORY.guardReach,
+  );
+  if (!guard) return;
+  cat.act.guarded = true;
+  const now = absoluteMinute(state.day, state.minute);
+  if (guard.guardedAt !== undefined && now - guard.guardedAt < TERRITORY.guardPause) return;
+  if (!rng.chance(TERRITORY.guardStep * traitLevel(guard, "territorial")) || !hiss(state, guard, cat)) return;
+  guard.guardedAt = now;
+  changeRelation(state, guard, cat, TERRITORY.guardRelation);
+  observe(state, guard, "territorial");
+  if (cat.act.kind === "toilet" && cat.needs.toilet >= TERRITORY.surpriseNeed && rng.chance(TERRITORY.surpriseChance)) {
+    addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
+    cat.needs.toilet = 0;
+  }
+  backAway(state, cat, guard);
 }

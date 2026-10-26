@@ -7,15 +7,15 @@ import { pickUpCat, playDrain } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, forbiddenZoneAt, jealousy, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
-import { CATNIP, GIFTS, GROOMING, JEALOUSY, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, WINDOW } from "../src/sim/config";
-import { addSupply, supplyCount } from "../src/sim/economy";
+import { CATNIP, GIFTS, GROOMING, JEALOUSY, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, TERRITORY, WINDOW } from "../src/sim/config";
+import { addSupply, place, supplyCount } from "../src/sim/economy";
 import { advance, deserialize, newGame, serialize } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { isEnemy, nightlyRelations, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import { GOODS } from "../src/sim/shop";
-import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
+import type { BowlItem, Cat, LitterItem, Save, ToyItem, TraitLevel } from "../src/sim/types";
 import { startWork } from "../src/sim/work";
 import { careCard } from "../src/ui/cards";
 import { traitAbout, traitHint } from "../src/ui/traits";
@@ -738,5 +738,115 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     pickUpCat(save.current, lucky);
     stop();
     expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
+  });
+});
+
+/** Миска котячого кутка з кормом. */
+function fullBowl(save: Save): BowlItem {
+  const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");
+  if (!bowl) throw new Error("немає миски");
+  Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+  return bowl;
+}
+
+/** Кіт уже їсть із миски. */
+function eating(cat: Cat, bowl: BowlItem): void {
+  const tile = itemTile(bowl);
+  Object.assign(cat, { x: tile.x + 0.5, y: tile.y + 0.5 });
+  cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 3, elapsed: 0.5, nibble: false };
+}
+
+describe("«Територіальність» (§9.4, §9.12, рішення автора 2026-10-25)", () => {
+  it("«Охоронець миски» відганяє кота, що йде до його миски: шипить, той відходить голодний — прояв «+»", () => {
+    let guarded = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      Object.assign(save.current.character.body, { x: 15.5, y: 3.5 });
+      const bowl = fullBowl(save);
+      const guard = withCat(save, { territorial: 2 });
+      eating(guard, bowl);
+      guard.act.minutes = 10;
+      const hungry = withCat(save, {}, { x: 13.5, y: 4.5 });
+      hungry.needs.hunger = 90;
+      const before = relation(save.current, guard, hungry);
+      decide(save.current, hungry, createRng(seed), { present: true });
+      expect(hungry.act.kind).toBe("eat");
+      const { events, stop } = recordEvents();
+      for (let i = 0; i < 8 && hungry.act.kind === "eat" && hungry.act.goal !== null; i++) {
+        save.current.minute += 0.25;
+        tickCats(save.current, 0.25, { present: true });
+      }
+      stop();
+      const hisses = events.filter((e) => e.type === "hissed" && e.cat === guard.id && e.at === hungry.id);
+      expect(hisses.length).toBeLessThanOrEqual(1);
+      if (hisses.length === 0) continue;
+      guarded += 1;
+      expect(hungry.act.kind).toBe("wander");
+      expect(hungry.needs.hunger).toBeGreaterThanOrEqual(90);
+      expect(relation(save.current, guard, hungry)).toBe(before + TERRITORY.guardRelation);
+      expect(seen(guard, "territorial")).toBe(1);
+    }
+    expect(guarded).toBeGreaterThan(8);
+    expect(guarded).toBeLessThan(28);
+  });
+
+  it("«Господар території» після їди ще 10 хвилин вартує біля миски", () => {
+    const save = game();
+    const bowl = fullBowl(save);
+    const guard = withCat(save, { territorial: 2 });
+    eating(guard, bowl);
+    guard.act.minutes = 0.1;
+    guard.needs.hunger = 90;
+    live(save, 0.25);
+    expect(guard.act.kind).toBe("idle");
+    expect(guard.act.target).toBe(`guard:item:${bowl.id}`);
+    expect(guard.act.minutes).toBeGreaterThan(TERRITORY.guardMinutes - 1);
+  });
+
+  it("кіт без риси обирає вільну миску, «Ділиться» їсть разом з іншим — прояв «−»", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 16.5, y: 4.5 });
+    const first = fullBowl(save);
+    const second = place(save.current, "bowl", "cheap") as BowlItem;
+    Object.assign(second, { food: 2, foodQuality: "cheap" });
+    save.current.home.items.push(second);
+    const eater = withCat(save);
+    eating(eater, first);
+    eater.act.minutes = 10;
+    const plain = withCat(save, {}, { x: 17.5, y: 4.5 });
+    plain.needs.hunger = 90;
+    // Кіт без риси стоїть ближче до зайнятої миски, а йде до вільної.
+    Object.assign(plain, { x: itemTile(first).x + 0.5, y: itemTile(first).y + 1.5 });
+    decide(save.current, plain, createRng(1), { present: true });
+    expect(plain.act.target).toBe(`item:${second.id}`);
+    // Друга миска знову вільна: кіт без риси пішов гуляти.
+    plain.act = idleAct(30);
+    plain.needs.hunger = 0;
+    const sharer = withCat(save, { territorial: -1 }, { x: itemTile(first).x + 0.5, y: itemTile(first).y + 1.5 });
+    sharer.needs.hunger = 90;
+    decide(save.current, sharer, createRng(1), { present: true });
+    expect(sharer.act.target).toBe(`item:${first.id}`);
+    for (let i = 0; i < 12 && sharer.act.nibble === undefined; i++) {
+      save.current.minute += 0.25;
+      tickCats(save.current, 0.25, { present: true });
+    }
+    expect(seen(sharer, "territorial")).toBe(1);
+  });
+
+  it("сварка за лоток дзеркальна: «Комунар» не свариться ніколи", () => {
+    const save = game();
+    const litter = save.current.home.items.find((i): i is LitterItem => i.kind === "litter")!;
+    const calm = withCat(save, { territorial: -2 });
+    const other = withCat(save);
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 40; i++) {
+      Object.assign(other, { x: itemTile(litter).x + 1.5, y: itemTile(litter).y + 0.5, act: idleAct(30) });
+      calm.needs.toilet = 100;
+      decide(save.current, calm, createRng(i), { present: false });
+      for (let t = 0; t < 20 && calm.act.kind === "toilet"; t++) tickCats(save.current, 1, { present: false });
+      litter.uses = 0;
+    }
+    stop();
+    expect(events.some((e) => e.type === "hissed" && e.cat === calm.id)).toBe(false);
   });
 });

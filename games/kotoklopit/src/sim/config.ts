@@ -767,6 +767,16 @@ export const GROOMING = { refuseStep: 0.4, refuseRelation: -1, pileStep: 0.25, r
  * Прийти — не частіше ніж раз на `pauseMinutes`.
  */
 export const JEALOUSY = { near: 2, leave: 0.5, lapLevel: 2, comeStep: 0.25, confrontMinutes: 0.25, cuddleStep: 0.2, cuddleMinutes: 5, cuddleRelation: 1, pauseMinutes: 30 } as const;
+/**
+ * «Територіальність» (§9.4, §9.12 «Гра й стосунки котів», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26):
+ * сварка за миску чи лоток, коли їх бракує, — дзеркально, 15% + 10% × рівень (`RELATIONS.resource`; «Комунар» не свариться).
+ * «+» охороняє зайняту річ — миску, з якої їсть (від `guardLevel` — ще `guardMinutes` хвилин після їди вартує біля неї), лоток,
+ * у якому сидить, підвіконня: інший кіт підходить ближче `guardReach` клітинок — з шансом `guardStep` × рівень «+» шипить, і
+ * той відходить (потреба лишається), стосунки `guardRelation`; відганяти — не частіше ніж раз на `guardPause` хвилин. Відігнаний
+ * від лотка з потребою від `surpriseNeed` з шансом `surpriseChance` не дотерпить. Кіт без риси й «+» обирають миску, з якої
+ * ніхто не їсть, якщо така є з кормом; «−» їсть і разом — прояв «−», не частіше ніж раз на `shareEvery` хвилин.
+ */
+export const TERRITORY = { guardStep: 0.3, guardReach: 2, guardRelation: -3, guardPause: 30, guardLevel: 2, guardMinutes: 10, surpriseNeed: 95, surpriseChance: 0.3, shareEvery: 30 } as const;
 export const PLAYFUL = { lengthStep: 0.25, boredLevel: 2, ignore: 0.3, inviteStep: 0.3, inviteMinutes: 10 } as const;
 /** Ваги варіантів, коли кіт хоче гратися; риса додає 50% за одиницю. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
