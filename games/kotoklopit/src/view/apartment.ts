@@ -92,6 +92,7 @@ export function drawApartment(scene: Phaser.Scene, layer: Phaser.GameObjects.Lay
   drawFloor(scene, layer);
   drawWalls(scene, layer);
   drawWindows(scene, layer);
+  drawWire(scene, layer);
   const views = new Map<string, ObjectView>();
   for (const object of OBJECTS) views.set(object.id, drawObject(scene, layer, object));
   return views;
@@ -146,6 +147,36 @@ function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
 
 function isWall(x: number, y: number): boolean {
   return MAP[y]?.[x] === "#";
+}
+
+/**
+ * Дріт комп'ютера (§9.12, «Гризіння»; заглушка, рішення автора 2026-10-26): з правого боку комп'ютерного стола по підлозі, з
+ * прогином, до розетки на задній стіні — там, де кіт його гризе (`WIRE_TILE`), щоб було видно, що гризе він саме дріт.
+ */
+function drawWire(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+  const desk = OBJECTS.find((o) => o.kind === "computer");
+  if (!desk) return;
+  const right = desk.x + desk.w;
+  const socketX = right + 0.75;
+  // По підлозі: від стола квадратичною кривою з прогином до підніжжя стіни під розеткою.
+  const from = toScreen({ x: right, y: desk.y + 0.45 });
+  const bend = toScreen({ x: right + 0.25, y: desk.y + 0.8 });
+  const to = toScreen({ x: socketX, y: desk.y + 0.08 });
+  const points: Phaser.Math.Vector2[] = [];
+  for (let i = 0; i <= 12; i++) {
+    const t = i / 12;
+    const u = 1 - t;
+    points.push(new Phaser.Math.Vector2(u * u * from.x + 2 * u * t * bend.x + t * t * to.x, u * u * from.y + 2 * u * t * bend.y + t * t * to.y));
+  }
+  const floor = scene.add.graphics().setDepth(-0.5).addToDisplayList(layer);
+  floor.lineStyle(3, COLORS.ink, 0.9).strokePoints(points);
+  // Розетка на лицьовій грані задньої стіни, над підлогою, і дріт угору до неї — поверх стіни.
+  const base = toScreen({ x: socketX, y: desk.y });
+  const wall = scene.add.graphics().setDepth(depthOf(base.y) + 0.02).addToDisplayList(layer);
+  wall.lineStyle(3, COLORS.ink, 0.9).lineBetween(to.x, to.y, base.x, base.y - 9);
+  wall.fillStyle(COLORS.paper).fillRoundedRect(base.x - 7, base.y - 20, 14, 12, 2);
+  wall.lineStyle(1.5, COLORS.ink, 0.9).strokeRoundedRect(base.x - 7, base.y - 20, 14, 12, 2);
+  wall.fillStyle(COLORS.ink).fillCircle(base.x - 3, base.y - 14, 1.3).fillCircle(base.x + 3, base.y - 14, 1.3);
 }
 
 /** Скло вікна: світле, з відблиском неба. */
