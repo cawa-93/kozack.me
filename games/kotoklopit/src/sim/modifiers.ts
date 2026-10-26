@@ -152,6 +152,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.vaccinated = false;
   today.officeDone = false;
   today.earlyWake = 0;
+  delete today.mom;
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
   switch (state.modifiers.day) {
     case "reprimand":
@@ -169,10 +170,8 @@ export function startModifiers(state: GameState, rng: Rng): void {
       today.callAt = MODIFIERS.call.from + Math.floor(rng.next() * (MODIFIERS.call.to - MODIFIERS.call.from));
       break;
     case "mom-food":
-      for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
-      // Мама дзвонить і заходить з гостинцями (§9.12 «Двері й гості»): двері відчиняються.
-      ringBell(state);
-      openDoor(state);
+      // Мама заходить з гостинцями вдень, а не зранку (§4.1, рішення автора 2026-10-26) — `tickMom`.
+      today.mom = { at: MODIFIERS.mom.from + Math.floor(rng.next() * (MODIFIERS.mom.to - MODIFIERS.mom.from)) };
       break;
     case "recalculation":
       today.utilitiesDiscount = MODIFIERS.recalculation;
@@ -280,6 +279,50 @@ export function catIllnessFactor(state: GameState): number {
 
 const crossed = (from: number, minutes: number, at: number): boolean => from % 1440 < at && (from % 1440) + minutes >= at;
 
+/**
+ * Мама з гостинцями (§4.1, рішення автора 2026-10-26): удень дзвонить у двері (коти реагують за «Гостями», §9.12), за
+ * `GUESTS.ringLead` хвилин заходить — двері відчинено, страви на кухні. Персонажа немає вдома — приходить, щойно він
+ * повернувся, якщо до `MODIFIERS.mom.until`; інакше (чи він пішов між дзвінком і візитом) лишає гостинці під дверима, без
+ * дзвінка: на кухні вони з'являються, коли персонаж повернувся.
+ */
+function tickMom(state: GameState, from: number, minutes: number): void {
+  const mom = state.today.mom;
+  if (!mom) return;
+  const end = from + minutes;
+  const home = state.trip === null;
+  if (mom.porch) {
+    if (!home) return;
+    delete state.today.mom;
+    return momGifts(state, false);
+  }
+  if (end < mom.at) return;
+  if (!home) {
+    if (mom.rang || end >= MODIFIERS.mom.until) state.today.mom = { at: mom.at, porch: true };
+    return;
+  }
+  if (!mom.rang) {
+    if (from >= MODIFIERS.mom.until) {
+      state.today.mom = { at: mom.at, porch: true };
+      return;
+    }
+    // Персонаж удома (чи щойно повернувся) — мама дзвонить.
+    mom.at = Math.max(mom.at, from);
+    mom.rang = true;
+    ringBell(state);
+    return;
+  }
+  if (end < mom.at + GUESTS.ringLead) return;
+  delete state.today.mom;
+  openDoor(state);
+  momGifts(state, true);
+}
+
+/** Гостинці мами — дві готові страви на вільних кухонних поверхнях (§4.1). */
+function momGifts(state: GameState, visited: boolean): void {
+  for (const id of ["counter-left", "counter-right"]) if (!state.home.surfaces[id]) state.home.surfaces[id] = { kind: "meal", quality: "cheap" };
+  emit(state, { type: "modifier", kind: "mom-food", value: visited ? 1 : 0 });
+}
+
 /** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, друг, відпускні. */
 export function tickModifiers(state: GameState, from: number, minutes: number, working: boolean): void {
   const today = state.today;
@@ -328,6 +371,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "renovation") {
     for (const cat of state.cats) if (cat.away === null && cat.act.kind !== "sleep") changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
   }
+  if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за 2 хвилини до того, як зайти; заходять — двері відчинено (§9.12 «Двері й гості»).
   if ((day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) || (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead))) ringBell(state);
   if (day === "inspection" && crossed(from, minutes, m.inspection.minute)) {

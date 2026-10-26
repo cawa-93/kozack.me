@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, POSITION_TITLES, VET_MANNER } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, MOM_FOOD_TEXTS, POSITION_TITLES, VET_MANNER } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1140,6 +1140,11 @@ export class DayScene extends Phaser.Scene {
       case "guests":
         this.notice("Прийшли гості", guestsText(guests));
         return;
+      case "mom-food": {
+        const text = value > 0 ? MOM_FOOD_TEXTS.visit : MOM_FOOD_TEXTS.porch;
+        this.notice(text.title, text.text);
+        return;
+      }
       case "office-missed":
         this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися.");
         return;

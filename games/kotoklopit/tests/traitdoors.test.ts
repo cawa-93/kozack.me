@@ -226,6 +226,9 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
       if (save.current.modifiers.day === "mom-food") break;
     }
     expect(save.current.modifiers.day).toBe("mom-food");
+    // Мама дзвонить удень (рішення автора 2026-10-26).
+    const at = save.current.today.mom?.at ?? -1;
+    tickModifiers(save.current, at - 0.5, 1, false);
     expect(host.act.target).toBe("guest");
     // Знайду відносять у притулок — двері однаково відчиняють: «Домосід» біля них відходить.
     const homebody = withCat(save, { escape: -1 });

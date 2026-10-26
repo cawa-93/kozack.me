@@ -3,12 +3,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
+import { GUESTS, MODIFIERS } from "../src/sim/config";
 import { goToSleep, newGame } from "../src/sim/game";
 import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
 import { isWorkday } from "../src/sim/work";
+import { hours, recordEvents } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
 
@@ -109,16 +111,68 @@ describe("ефекти (§4.1)", () => {
     expect(save.current.cats).toHaveLength(2);
   });
 
-  it("мама привезла гостинців — дві готові страви", () => {
-    const save = game();
+  /** День «Мама привезла гостинців» з порожніми кухонними поверхнями; повертає, коли мама подзвонить. */
+  function momDay(save: Save): number {
     save.current.day = 3;
     for (let seed = 0; seed < 2000; seed++) {
       save.current.modifiers.day = null;
       save.current.home.surfaces["counter-left"] = null;
+      save.current.home.surfaces["counter-right"] = null;
       startModifiers(save.current, createRng(seed));
       if (save.current.modifiers.day === "mom-food") break;
     }
     expect(save.current.modifiers.day).toBe("mom-food");
-    expect(save.current.home.surfaces["counter-left"]).toEqual({ kind: "meal", quality: "cheap" });
+    return save.current.today.mom?.at ?? -1;
+  }
+  const meal = { kind: "meal", quality: "cheap" };
+  const away = (save: Save): void => {
+    save.current.trip = { destination: "shop" } as unknown as NonNullable<Save["current"]["trip"]>;
+  };
+
+  it("мама привезла гостинців — удень дзвонить у двері, за 2 хвилини заходить, і дві страви вже на кухні (рішення автора 2026-10-26)", () => {
+    const save = game();
+    const at = momDay(save);
+    // Зранку ще нічого: мама приїде вдень.
+    expect(at).toBeGreaterThanOrEqual(MODIFIERS.mom.from);
+    expect(at).toBeLessThan(MODIFIERS.mom.to);
+    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    const { events, stop } = recordEvents();
+    tickModifiers(save.current, at - 0.5, 1, false);
+    expect(events.some((e) => e.type === "doorbell")).toBe(true);
+    expect(save.current.home.surfaces["counter-left"]).toBeNull();
+    tickModifiers(save.current, at + 0.5, GUESTS.ringLead, false);
+    stop();
+    expect(save.current.home.surfaces["counter-left"]).toEqual(meal);
+    expect(save.current.home.surfaces["counter-right"]).toEqual(meal);
+    expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);
+    expect(save.current.today.mom).toBeUndefined();
+  });
+
+  it("персонажа немає — мама приходить, щойно він повернувся (до 20:00), а пізніше лишає гостинці під дверима без дзвінка", () => {
+    const back = game();
+    const at = momDay(back);
+    away(back);
+    const { events, stop } = recordEvents();
+    tickModifiers(back.current, at - 0.5, 1, false);
+    expect(events.some((e) => e.type === "doorbell")).toBe(false);
+    back.current.trip = null;
+    tickModifiers(back.current, hours(19), 0.5, false);
+    expect(events.some((e) => e.type === "doorbell")).toBe(true);
+    tickModifiers(back.current, hours(19) + 0.5, GUESTS.ringLead, false);
+    expect(back.current.home.surfaces["counter-left"]).toEqual(meal);
+    events.length = 0;
+
+    const late = game();
+    momDay(late);
+    away(late);
+    tickModifiers(late.current, MODIFIERS.mom.until - 0.5, 1, false);
+    expect(late.current.today.mom?.porch).toBe(true);
+    expect(late.current.home.surfaces["counter-left"]).toBeNull();
+    late.current.trip = null;
+    tickModifiers(late.current, hours(21), 0.5, false);
+    stop();
+    expect(late.current.home.surfaces["counter-left"]).toEqual(meal);
+    expect(events.some((e) => e.type === "doorbell")).toBe(false);
+    expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 0)).toBe(true);
   });
 });

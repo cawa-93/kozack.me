@@ -25,7 +25,9 @@ export type ModifierEvent =
   | "guests"
   | "office-missed"
   | "vacation-pay"
-  | "mom-call";
+  | "mom-call"
+  /** Мама занесла гостинці (`value` 1) чи лишила під дверима, а персонаж їх заніс (0) (§4.1). */
+  | "mom-food";
 
 /** Де кіт точить кігті (§9.12, «Дряпання»). */
 export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes";

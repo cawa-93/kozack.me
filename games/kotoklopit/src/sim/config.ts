@@ -1194,6 +1194,11 @@ export const MODIFIERS = {
   noisyWake: { min: 60, max: 120 },
   vigor: 1.15,
   call: { from: 10 * 60, to: 20 * 60, minutes: 30, ignored: -5 },
+  /**
+   * «Мама привезла гостинців» (§4.1, рішення автора 2026-10-26): дзвонить у двері у випадкову хвилину `from`–`to`; персонажа
+   * немає — приходить, щойно він повернувся, якщо до `until`, інакше лишає гостинці під дверима.
+   */
+  mom: { from: 11 * 60, to: 18 * 60, until: 20 * 60 },
   traffic: { traffic: 1.5, "empty-roads": 0.6 } as Record<string, number>,
   catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
   show: { fee: 20, mood: -5, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
