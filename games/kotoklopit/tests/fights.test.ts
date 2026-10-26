@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, tap } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat } from "../src/sim/cat";
-import { decide, tickCats } from "../src/sim/catai";
+import { decide, tickCats, upHigh } from "../src/sim/catai";
 import { addSupply } from "../src/sim/economy";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
+import { objectAt, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
@@ -392,6 +393,37 @@ describe("бійку видно й чути (§9.4, рішення автора 
     const [left, right] = cat.x < other.x ? [cat, other] : [other, cat];
     expect(left.facing).toBe(1);
     expect(right.facing).toBe(-1);
+  });
+
+  it("м'ята: нападник задирається лише з котом, до якого можна підійти, — за котом на холодильнику не лізе", () => {
+    // Перевірка блоку 1 (2026-10-26): нападник підбігає до другого, і «Не лазить» вилазив за ним на холодильник.
+    const save = game();
+    const s = save.current;
+    const fridge = objectById("fridge");
+    const below = { x: fridge.x + 0.5, y: fridge.y + 2.5 };
+    const cat = withCat(save, { catnip: -2, climbing: -2 }, below);
+    addSupply(s, "catnip", "cheap", 5);
+    pickUpCat(s, cat);
+    // Нагорі ближче (2 клітинки), на підлозі — далі (2,2).
+    const high = withCat(save, {}, { x: fridge.x + 0.5, y: fridge.y + 0.5 });
+    Object.assign(high, { x: fridge.x + 0.5, y: fridge.y + 0.5 });
+    high.act = idle(60);
+    const floor = withCat(save, {}, { x: fridge.x + 2.7, y: fridge.y + 2.5 });
+    Object.assign(floor, { x: fridge.x + 2.7, y: fridge.y + 2.5 });
+    floor.act = idle(60);
+    expect(upHigh(s, high)).toBe(true);
+    expect(objectAt(s, Math.floor(floor.x), Math.floor(floor.y))).toBeNull();
+    giveCatnip(s, "cheap", createRng(1));
+    expect(cat.act.kind).toBe("zoomies");
+    // Догасав просто під холодильником.
+    Object.assign(cat, below);
+    cat.act.minutes = 0.001;
+    tickCats(s, 0.001, { present: false });
+    expect(cat.act.kind).toBe("fight");
+    expect(cat.act.target).toBe(`cat:${floor.id}`);
+    expect(high.act.kind).toBe("idle");
+    for (let i = 0; i < 200 && cat.act.kind === "fight"; i++) tickCats(s, 0.05, { present: false });
+    expect(Math.floor(cat.y)).toBeGreaterThan(fridge.y);
   });
 
   it("бійка — гучний звук для котів: сплячий кіт у тій самій кімнаті може прокинутися, в іншій кімнаті — ні", () => {

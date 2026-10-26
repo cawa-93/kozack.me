@@ -3701,9 +3701,12 @@ export function catnipReaction(state: GameState, cat: Cat, quality: Quality, rng
   return reaction;
 }
 
-/** Нагасався від м'яти (§9.12, «Котяча м'ята»): шипить на найближчого кота, що не спить, і задирається з ним. */
+/**
+ * Нагасався від м'яти (§9.12, «Котяча м'ята»): шипить на найближчого кота, що не спить, і задирається з ним — лише з тим, до
+ * кого можна підійти (перевірка блоку 1 «Бійки» 2026-10-26: нападник підбігає до другого й вилазив за ним на холодильник).
+ */
 function catnipFight(state: GameState, cat: Cat, rng: Rng): void {
-  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= CATNIP.fightReach);
+  const others = state.cats.filter((c) => c.id !== cat.id && approachable(state, c) && !asleep(c) && !isNewborn(c) && c.act.kind !== "fight" && distance(c, cat) <= CATNIP.fightReach);
   others.sort((a, b) => distance(a, cat) - distance(b, cat));
   const other = others[0];
   if (other && hiss(state, cat, other)) startFight(state, cat, other, rng);
