@@ -1502,12 +1502,44 @@ function playmate(state: GameState, cat: Cat): Cat | null {
   return nearestCat(state, cat, (other) => free(other) && approachable(state, other) && isFriend(state, cat, other));
 }
 
-/** Боротьба й погоня з другом (§9.4): друг чекає, поки кіт підбіжить. */
+/**
+ * Боротьба й погоня з другом (§9.4): друг чекає, поки кіт підбіжить (не довше `wait`), а хвилини гри йдуть обом від зустрічі
+ * (`metMate`; перевірка стосунків 2026-10-26: друг чекав 3 хвилини плюс відстань по прямій, тож із сусідньої кімнати кіт
+ * приходив до порожнього місця).
+ */
 function startWrestle(state: GameState, cat: Cat, mate: Cat): void {
   observe(state, cat, "sociability");
-  const minutes = RELATIONS.wrestle.minutes;
-  start(cat, "wrestle", tileOf(mate), minutes, `cat:${mate.id}`);
-  start(mate, "wrestle", null, minutes + distance(cat, mate) / CAT_WALK_TILES_PER_MINUTE, `cat:${cat.id}`);
+  const w = RELATIONS.wrestle;
+  start(cat, "wrestle", tileOf(mate), w.minutes, `cat:${mate.id}`);
+  start(mate, "wrestle", null, w.wait, `cat:${cat.id}`);
+}
+
+/** Кіт зараз грається саме з цим другом (§9.4). */
+const wrestlesWith = (cat: Cat, mate: Cat): boolean => cat.act.kind === "wrestle" && cat.act.target === `cat:${mate.id}`;
+
+/** Кіт підбіг до друга гратися (§9.4): друг дочекався — хвилини гри йдуть обом від цієї миті; ні — гри немає. */
+function metMate(state: GameState, cat: Cat): void {
+  const act = cat.act;
+  const mate = catById(state, act.target);
+  const w = RELATIONS.wrestle;
+  if (!mate || !home(state, mate) || !wrestlesWith(mate, cat) || distance(cat, mate) > w.reach) {
+    act.refused = true;
+    act.minutes = 0;
+    return;
+  }
+  act.paired = true;
+  act.minutes = w.minutes;
+  mate.act.paired = true;
+  mate.act.minutes = w.minutes;
+}
+
+/** Гра з другом зарахована (§9.4): потреба гри, рух, настрій і стосунки. */
+function wrestled(state: GameState, cat: Cat, mate: Cat): void {
+  const w = RELATIONS.wrestle;
+  cat.needs.play = Math.max(0, cat.needs.play - w.play);
+  exercise(cat);
+  changeMood(state, cat, w.mood);
+  changeRelation(state, cat, mate, w.relation);
 }
 
 /**
@@ -1865,12 +1897,17 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     }
     case "wrestle": {
-      const w = RELATIONS.wrestle;
-      cat.needs.play = Math.max(0, cat.needs.play - w.play);
-      exercise(cat);
-      changeMood(state, cat, w.mood);
+      // Догралися разом (§9.4): наслідки обом дає той, хто закінчив першим. Друг не дочекався, пара розпалася чи гру вже
+      // зараховано — нічого (перевірка стосунків 2026-10-26: раніше нагороду отримував кожен, навіть сам).
+      if (act.refused === true || act.paired !== true || act.done === true) return;
       const mate = catById(state, act.target);
-      if (mate) changeRelation(state, cat, mate, w.relation);
+      if (!mate) return;
+      wrestled(state, cat, mate);
+      if (wrestlesWith(mate, cat)) {
+        wrestled(state, mate, cat);
+        mate.act.done = true;
+        mate.act.minutes = 0;
+      }
       return;
     }
     case "groom": {
@@ -2235,6 +2272,15 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
         if (cat.act === act && act.minutes > 0 && context.present) showOffKnock(state, cat, rng);
       }
       return;
+    case "wrestle": {
+      // Пара розпалася — друг пішов, його взяли на руки, ініціатора перебили: гра скінчилася для обох без наслідків (§9.4).
+      const mate = catById(state, act.target);
+      if (!mate || !home(state, mate) || !wrestlesWith(mate, cat) || (act.paired === true && distance(cat, mate) > RELATIONS.wrestle.reach)) {
+        act.refused = true;
+        act.minutes = 0;
+      }
+      return;
+    }
     case "groom": {
       // Друг прийшов вилизати «Не терпить дотиків» — той може відсторонитися (§9.12, «Вилизування друзів»).
       if (act.refused === undefined && act.target?.startsWith("cat:") === true) {
@@ -2624,6 +2670,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       if (cat.act.goal) break;
       climbed(state, cat, rng);
       defied(state, cat);
+      if (cat.act.kind === "wrestle") metMate(state, cat);
       if (cat.act.kind === "sleep") {
         fellAsleep(state, cat);
         sleptBeside(state, cat);

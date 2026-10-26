@@ -75,6 +75,56 @@ describe("друзі (§9.4)", () => {
     expect(a.needs.play).toBeLessThan(100);
   });
 
+  it("друг з іншої кімнати дочікується: хвилини гри йдуть обом від зустрічі (перевірка стосунків 2026-10-26)", () => {
+    let sessions = 0;
+    for (let seed = 0; seed < 60 && sessions < 5; seed++) {
+      const save = game();
+      // Кухня — спальня: шлях через вітальню довший за відстань по прямій.
+      const a = withCat(save, {}, { x: 15.5, y: 3.5 });
+      const b = withCat(save, {}, { x: 3.5, y: 3.5 });
+      setRelation(save, a, b, 80);
+      a.needs.play = 100;
+      b.needs.play = 100;
+      b.act = idleAct(30);
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind !== "wrestle") continue;
+      sessions++;
+      let together = 0;
+      for (let t = 0; t < 300 && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) {
+        if (a.act.kind === "wrestle" && a.act.goal === null && b.act.kind === "wrestle") together += 0.1;
+        tickCats(save.current, 0.1, { present: false });
+      }
+      expect(together).toBeGreaterThan(2.5);
+      expect(a.needs.play).toBeLessThan(70);
+      expect(b.needs.play).toBeLessThan(70);
+    }
+    expect(sessions).toBe(5);
+  });
+
+  it("друг пішов посеред гри — гри немає нікому", () => {
+    const save = game();
+    const a = withCat(save, {}, { x: 8.5, y: 8.5 });
+    const b = withCat(save, {}, { x: 9.5, y: 8.5 });
+    setRelation(save, a, b, 80);
+    let seed = 0;
+    for (; seed < 300; seed++) {
+      a.needs.play = 100;
+      b.needs.play = 100;
+      b.act = idleAct(30);
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind === "wrestle") break;
+    }
+    expect(a.act.kind).toBe("wrestle");
+    for (let t = 0; t < 20 && a.act.goal !== null; t++) tickCats(save.current, 0.1, { present: false });
+    tickCats(save.current, 0.5, { present: false });
+    expect(b.act.kind).toBe("wrestle");
+    // Друга покликали (корм, руки персонажа) — він пішов.
+    b.act = idleAct(30);
+    for (let t = 0; t < 10; t++) tickCats(save.current, 0.5, { present: false });
+    expect(a.needs.play).toBeGreaterThan(90);
+    expect(relation(save.current, a, b)).toBe(80);
+  });
+
   it("за другом нагору не лізуть ні гратися, ні вилизувати (перевірка стосунків 2026-10-26: кошеня застрягало на шафі)", () => {
     const wardrobe = objectById("wardrobe");
     let chosen = 0;
