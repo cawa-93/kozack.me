@@ -134,6 +134,16 @@ describe("поїздки й робота (§8.6)", () => {
     trip.log = { exam: { health: 90, mood: 70, weight: 50, manner: null }, done: ["office"] };
     expect(deserialize(serialize(save)).current.trip?.log).toEqual(trip.log);
   });
+
+  it("після зборів офіс більше не пропонується: друга поїздка забрала б години й нічого не дала (перевірка циклу гри 2026-10-27)", () => {
+    const save = game(8 * 60 + 50);
+    save.current.day = 1;
+    save.current.modifiers.day = "office";
+    expect(tripBlocker(save.current, "office")).toBeNull();
+    save.current.today.officeDone = true;
+    expect(tripBlocker(save.current, "office")).toBe("office");
+    expect(startTrip(save.current, "office")).toBe(false);
+  });
 });
 
 describe("пункти призначення (§8.5)", () => {

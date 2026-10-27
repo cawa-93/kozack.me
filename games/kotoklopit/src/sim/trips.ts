@@ -50,7 +50,8 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
   // До притулку кота можна взяти, щоб віддати (§9.8).
   if (cat && destination === "shelter") return state.home.carrier === null ? "carrier" : null;
   if (cat) return "no-cat";
-  if (destination === "office" && state.modifiers.day !== "office") return "office";
+  // Офіс — лише в день зборів і лише раз: після зборів туди нема чого їхати (перевірка циклу гри 2026-10-27).
+  if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone)) return "office";
   return null;
 }
 
