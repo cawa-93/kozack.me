@@ -5,7 +5,7 @@
 import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
@@ -13,12 +13,12 @@ import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goToSleep, interact, returnHome, rewindAccident } from "../src/sim/game";
-import { tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
-import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Vec } from "../src/sim/types";
+import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
 import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
@@ -27,6 +27,8 @@ const WALK_STEP = 0.1;
 const HOLD_STEP = 0.5;
 /** Нижче цього здорового глузду бот рятується: пестить будь-якого кота й працює лише від «Х». */
 const CRISIS_SANITY = 30;
+/** Нижче цього здорового глузду бот не працює зовсім (і роботи не шукає): ще година — і кінець гри. */
+const STOP_SANITY = 15;
 /**
  * За скільки годин до пробудження бот іде спати: дорога до ліжка забирає кілька хвилин, а сон коротший за 8 годин не
  * відновлює (§8.8) і не лікує виснаження (§6.5). Хворий лягає раніше: так він висипається й після нічних побудок
@@ -43,6 +45,8 @@ const VET_TRIP_HOURS = { from: 8, to: 15 };
  * вріжеться; з розгоном за крок — ~×0,4–0,45.
  */
 const SAFE_SPEED = 0.4;
+/** Коли бот вирушає до притулку: поїздка ~5 годин (обережна гонка ~3 год, §8.5) має закінчитися до вечора. */
+const SHELTER_TRIP_HOURS = { from: 7, to: 15 };
 /** Запас понад два тижні комунальних, нижче якого бот вважає, що грошей бракує, і працює більше. */
 const POOR_MONEY = 100;
 /** Скільки хвилин не підходити до кота, до якого бот не дійшов. */
@@ -143,6 +147,8 @@ export class Bot {
     // Те, що вдома не вилікувати (травма, сечокам'яна, дерматит), — до ветеринара (рішення автора 2026-10-27).
     const vetCase = this.vetCase();
     if (vetCase) return named("vet", () => this.vetTrip(vetCase));
+    // Котів не лишилося — до притулку по нового (§6.2: «Відсутність котів — не пастка»).
+    if (this.wantsShelter()) return named("shelter", () => this.shelterTrip());
     // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
     if (needsHumanMeds(s) && supplyCount(s, "humanMeds") > 0 && !this.skipped("sink")) return named("meds", () => this.use("sink"));
     // Бійку розбороняє, а протистояння розводить — торкнувшись кота (§9.4).
@@ -220,6 +226,8 @@ export class Bot {
   private wantsWork(): boolean {
     const s = this.state;
     // Безробітний шукає роботу щодня в робочі години, як і працював би (§8.6).
+    // Здоровий глузд майже на нулі — не працювати зовсім: краще «Х» і пониження, ніж кінець гри (§6.1).
+    if (s.character.stats.sanity < STOP_SANITY) return false;
     if (s.job.unemployed) {
       const minute = s.minute % 1440;
       return minute >= WORK_START_MINUTE && minute < WORK_END_MINUTE && this.workedToday < SEARCH_HOURS_PER_DAY;
@@ -462,6 +470,18 @@ export class Bot {
     interact(this.save);
     if (this.state.character.held?.kind !== "cat") return;
     if (!this.goTo("door") || !startTrip(this.state, "vet")) return;
+    const trip = this.driveThere();
+    if (!trip) return;
+    vetExam(this.state);
+    const rng = stateRng(this.state, "behavior");
+    for (const d of [...(tripCat(this.state)?.diseases ?? [])]) {
+      if (d.known && DISEASES[d.id].cure.kind !== "weight") vetTreat(this.state, d.id, "premium", rng);
+    }
+    returnHome(this.save, trip.visit, TRIPS.vet.road);
+  }
+
+  /** Гонка обережно (§8.5): повільніше за інші машини. Повертає поїздку на місці або null (аварія, ніч). */
+  private driveThere(): Trip | null {
     for (let i = 0; i < 100_000 && this.state.trip?.phase === "drive"; i++) {
       const speed = this.state.trip.race.speed;
       drive(this.save, 0.1, { steer: 0, throttle: speed < SAFE_SPEED ? 1 : 0 });
@@ -469,15 +489,28 @@ export class Bot {
     const trip = this.state.trip;
     if (trip?.phase === "accident") {
       rewindAccident(this.save);
-      return;
+      return null;
     }
-    if (trip?.phase !== "visit") return;
-    vetExam(this.state);
-    const rng = stateRng(this.state, "behavior");
-    for (const d of [...(tripCat(this.state)?.diseases ?? [])]) {
-      if (d.known && DISEASES[d.id].cure.kind !== "weight") vetTreat(this.state, d.id, "premium", rng);
-    }
-    returnHome(this.save, trip.visit, TRIPS.vet.road);
+    return trip?.phase === "visit" ? trip : null;
+  }
+
+  /** До притулку: котів удома немає, є гроші на кота, і поїздка (~5 год) закінчиться до вечора. Раз на день. */
+  private wantsShelter(): boolean {
+    const s = this.state;
+    if (s.cats.length > 0 || this.skipped("shelter") || !canLeave(s)) return false;
+    if (s.minute < SHELTER_TRIP_HOURS.from * 60 || s.minute > SHELTER_TRIP_HOURS.to * 60) return false;
+    return s.character.money >= SHELTER.price;
+  }
+
+  /** Поїздка до притулку (§8.5): наймолодший із котів тижня — проживе довше. */
+  private shelterTrip(): void {
+    this.skip.set("shelter", MINUTES_PER_DAY);
+    if (!this.goTo("door") || !startTrip(this.state, "shelter")) return;
+    const trip = this.driveThere();
+    if (!trip) return;
+    const youngest = [...shelterCats(this.state)].sort((a, b) => a.ageWeeks - b.ageWeeks)[0];
+    if (youngest) adopt(this.state, youngest.id);
+    returnHome(this.save, trip.visit, TRIPS.shelter.road);
   }
 
   private treat(cat: Cat, medicine: Medicine): void {
