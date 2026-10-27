@@ -42,9 +42,14 @@ export function positionOf(state: GameState): (typeof POSITIONS)[number] {
   return position;
 }
 
+/** Персонаж на лікарняному цього дня (§6.5). */
+export function onSickLeave(state: GameState, day = state.day): boolean {
+  return day >= (state.job.sickLeaveFrom ?? -Infinity) && day <= state.job.sickLeaveUntil;
+}
+
 export function isWorkday(state: GameState): boolean {
   // Безробітний і на лікарняному — без робочих днів: керівництво нічого не чекає (§6.5, §8.6).
-  if (state.job.unemployed || state.day <= state.job.sickLeaveUntil) return false;
+  if (state.job.unemployed || onSickLeave(state)) return false;
   // Робоча субота, аврал, вихідний посеред тижня, відпустка (§4.1).
   return workdayOverride(state) ?? weekdayOf(state.day) < WORKDAYS_PER_WEEK;
 }

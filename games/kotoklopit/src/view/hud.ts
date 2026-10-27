@@ -7,6 +7,7 @@ import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
 import { LOW_STAT } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
+import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
@@ -222,7 +223,7 @@ export class Hud {
     // Знесилення й голод видно з самих шкал: вони блимають (§11.4), тож слово не повторює їх.
     const job = state.job;
     if (job.unemployed) effects.push("Пошук роботи");
-    if (state.day <= job.sickLeaveUntil) effects.push("Лікарняний");
+    if (onSickLeave(state)) effects.push("Лікарняний");
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
     const phase = cyclePhase(state);
     if (phase) effects.push(phase === "period" ? "Менструація" : "Приплив енергії");

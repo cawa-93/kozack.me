@@ -82,6 +82,8 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(doctorExam(save.current)).toBe(true);
     expect(doctorTreat(save.current, "cold", "premium", always())).toBe("cured");
     expect(isIll(save.current, "cold")).toBe(false);
+    // Сьогодні ще робочий день: лікарняний — від завтра (перевірка поїздок 2026-10-28).
+    expect(isWorkday(save.current)).toBe(true);
     save.current.day = 2;
     expect(isWorkday(save.current)).toBe(false);
   });

@@ -4,6 +4,7 @@ import { changeStat, spend } from "./character";
 import { DOCTOR, DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
+import { onSickLeave } from "./work";
 import type { Rng } from "./rng";
 import type { GameState, IllnessId } from "./types";
 
@@ -98,6 +99,9 @@ export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | 
   if (quality === "cheap" && !rng.chance(DOCTOR_TREAT.cheapWorks)) return "failed";
   curePerson(state, id);
   changeStat(state, "health", DOCTOR_TREAT.health);
+  // Лікарняний — від завтра (§6.5): сьогодні ще робочий день, і дорога додому в робочий час — поїздка зі штрафом (перевірка
+  // поїздок 2026-10-28; раніше лікарняний діяв уже сьогодні). Хто вже на лікарняному, тому він подовжується.
+  if (!onSickLeave(state)) state.job.sickLeaveFrom = state.day + 1;
   state.job.sickLeaveUntil = Math.max(state.job.sickLeaveUntil, state.day + ILLNESSES[id].sickLeave);
   return "cured";
 }
