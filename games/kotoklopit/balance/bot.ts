@@ -10,7 +10,7 @@ import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
-import { boxCount, canUnpack, freeSlots, supplyCount } from "../src/sim/economy";
+import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goToSleep, interact, returnHome, rewindAccident } from "../src/sim/game";
 import { tripCat, vetExam, vetTreat } from "../src/sim/destinations";
@@ -43,12 +43,18 @@ const VET_TRIP_HOURS = { from: 8, to: 15 };
  * вріжеться; з розгоном за крок — ~×0,4–0,45.
  */
 const SAFE_SPEED = 0.4;
+/** Запас понад два тижні комунальних, нижче якого бот вважає, що грошей бракує, і працює більше. */
+const POOR_MONEY = 100;
+/** Скільки хвилин не підходити до кота, до якого бот не дійшов. */
+const UNREACHABLE_CAT_MINUTES = 30;
 /** Скільки грошей лишити після необов'язкової покупки (дорогий корм-дієта, ветеринар): на корм і комунальні. */
 const SPARE_MONEY = 300;
 
 export interface BotPolicy {
   /** У скільки разів більше працювати, ніж вимагає посада (частка присутності × 9 годин). */
   work: number;
+  /** Те саме, коли грошей бракує: менше, ніж на два тижні комунальних, борг і `POOR_MONEY`. */
+  poorWork: number;
   /** Нижче цього здорового глузду бот іде пестити котів. */
   sanityTarget: number;
   /** Від якої потреби уваги й гри бот іде до кота й без потреби в здоровому глузді. */
@@ -56,7 +62,7 @@ export interface BotPolicy {
   carePlay: number;
 }
 
-export const DEFAULT_POLICY: BotPolicy = { work: 1.3, sanityTarget: 65, careAttention: 60, carePlay: 70 };
+export const DEFAULT_POLICY: BotPolicy = { work: 1.3, poorWork: 2, sanityTarget: 65, careAttention: 60, carePlay: 70 };
 
 /** Що бот робив: години за категоріями (для звіту). */
 export interface BotLog {
@@ -203,9 +209,12 @@ export class Bot {
 
   /** Скільки годин сьогодні працювати: вимога посади з запасом (§8.6). */
   private workTarget(): number {
-    const position = positionOf(this.state);
+    const s = this.state;
+    const position = positionOf(s);
     const share = position.patienceDecay / (position.patienceDecay + position.patienceRecovery);
-    return share * 9 * this.policy.work;
+    // Грошей менше, ніж на комунальні з запасом, — розважливий гравець працює більше (перевірка економіки 2026-10-27).
+    const poor = s.character.money < utilitiesDue(s) * 2 + s.home.utilitiesDebt + POOR_MONEY;
+    return share * 9 * (poor ? this.policy.poorWork : this.policy.work);
   }
 
   private wantsWork(): boolean {
@@ -229,7 +238,7 @@ export class Bot {
     let best: Cat | null = null;
     let bestScore = -Infinity;
     for (const cat of s.cats) {
-      if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "hide") continue;
+      if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "hide" || this.skipped(`cat:${cat.id}`)) continue;
       const need = want === "attention" ? cat.needs.attention : cat.needs.play;
       if (need < min) continue;
       if (want === "play" && !this.hasToy()) continue;
@@ -524,8 +533,17 @@ export class Bot {
     );
   }
 
+  /**
+   * До кота не дійти (сидить біля шафки, за іншим котом): пів години його не чіпати. Інакше бот пробував би знову щокроку й
+   * не працював цілий день (перевірка економіки 2026-10-27: так бота звільняли й виселяли на «Реалістичному»).
+   */
+  private unreachable(cat: Cat): void {
+    this.skip.set(`cat:${cat.id}`, this.state.minute + UNREACHABLE_CAT_MINUTES);
+    this.wait(3);
+  }
+
   private pet(cat: Cat): void {
-    if (!this.goTo(`cat:${cat.id}`)) return this.wait(3);
+    if (!this.goTo(`cat:${cat.id}`)) return this.unreachable(cat);
     // Поки йшов, кіт заснув: не будити (пестощі сплячого — мінус настрій).
     if (cat.act.kind === "sleep") return;
     // Гладити трохи менше, ніж кіт терпить.
@@ -541,7 +559,8 @@ export class Bot {
       if (!toy || !this.goTo(`item:${toy.id}`)) return this.wait(3);
       interact(this.save);
     }
-    if (!this.goTo(`cat:${cat.id}`) || cat.act.kind === "sleep") return this.wait(3);
+    if (!this.goTo(`cat:${cat.id}`)) return this.unreachable(cat);
+    if (cat.act.kind === "sleep") return this.wait(3);
     const before = this.state.minute;
     this.holdFor(6);
     this.log.played += (this.state.minute - before) / 60;
