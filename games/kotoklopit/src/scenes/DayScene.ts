@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, MOM_FOOD_TEXTS, POSITION_TITLES, VET_MANNER } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1142,12 +1142,11 @@ export class DayScene extends Phaser.Scene {
         this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
         return;
       case "home-vet": {
-        const cat = this.state.cats.find((c) => c.id === value);
-        const known = cat?.diseases.map((d) => diseaseTitle(d.id)) ?? [];
-        // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»).
-        const manner = cat ? vetManner(cat) : null;
-        const behaved = cat && manner ? ` ${fill(VET_MANNER.home[manner], cat.sex, { кіт: cat.name })}` : "";
-        this.notice("Заходила ветеринарка", `${cat?.name ?? "Кіт"}: ${known.length > 0 ? `знайшла — ${known.join(", ")}` : "хвороб не знайшла"}.${behaved}`);
+        // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12).
+        const cats = this.state.cats
+          .filter((c) => c.away === null)
+          .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => diseaseTitle(d.id)), manner: vetManner(c) }));
+        this.notice("Заходила ветеринарка", homeVetText(cats));
         return;
       }
       case "inspection":

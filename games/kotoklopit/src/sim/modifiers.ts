@@ -364,8 +364,10 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     }
   }
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute)) {
-    const cat = state.cats.find((c) => c.away === null);
-    if (cat) {
+    // Ветеринари оглядають усіх доступних котів (рішення автора 2026-10-27, Х7): ветеринарка — всіх, хто вдома.
+    const cats = state.cats.filter((c) => c.away === null);
+    const rng = stateRng(state, "behavior");
+    for (const cat of cats) {
       for (const d of cat.diseases) d.known = true;
       if (cat.pregnancy) cat.pregnancy.known = true;
       cat.breedKnown = [true, true];
@@ -374,11 +376,11 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       const manner = vetManner(cat);
       if (manner !== null && state.trip === null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
       if (manner === "hid") {
-        const spot = hideSpot(state, stateRng(state, "behavior"), cat);
+        const spot = hideSpot(state, rng, cat);
         startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
       }
-      emit(state, { type: "modifier", kind: "home-vet", value: cat.id });
     }
+    if (cats.length > 0) emit(state, { type: "modifier", kind: "home-vet", value: cats.length });
   }
   // Феєрверки — гучний звук на всю квартиру (§9.12): несміливі ховаються й засмучуються.
   if (day === "festival" && crossed(from, minutes, m.festival.minute)) {

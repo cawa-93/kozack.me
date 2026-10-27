@@ -450,6 +450,26 @@ export function guestsText(visit: GuestsVisit | undefined): string {
 }
 
 /**
+ * Повідомлення «Заходила ветеринарка» (§4.1, рішення автора 2026-10-27, Х7): вона оглядає всіх котів, що вдома, — хвороби
+ * кожного (назвами) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`).
+ */
+export function homeVetText(cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[]): string {
+  const [only] = cats;
+  const found = cats.length === 1 && only
+    ? `${only.name}: ${only.diseases.length > 0 ? `знайшла — ${only.diseases.join(", ").toLowerCase()}` : "хвороб не знайшла"}.`
+    : homeVetFound(cats);
+  const behaved = cats.flatMap((c) => (c.manner ? [fill(VET_MANNER.home[c.manner], c.sex, { кіт: c.name })] : []));
+  return [found, ...behaved].join(" ");
+}
+
+function homeVetFound(cats: readonly { name: string; diseases: readonly string[] }[]): string {
+  const sick = cats.filter((c) => c.diseases.length > 0);
+  if (sick.length === 0) return `Оглянула всіх котів (${cats.length}): хвороб не знайшла.`;
+  const list = sick.map((c) => `${c.name} — ${c.diseases.join(", ").toLowerCase()}`).join("; ");
+  return sick.length === cats.length ? `Оглянула всіх котів. Знайшла: ${list}.` : `Оглянула всіх котів. Знайшла: ${list}. Решта здорові.`;
+}
+
+/**
  * Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): у ветеринара, у грумера й коли заходила ветеринарка. Рядок
  * у картці — прояв «Ветеринара».
  */

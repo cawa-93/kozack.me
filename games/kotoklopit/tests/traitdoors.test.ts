@@ -7,6 +7,7 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
 import { CARRIER_HOME, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
 import { groom, vetExam, vetManner } from "../src/sim/destinations";
+import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
 import { dispatch } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
@@ -16,7 +17,7 @@ import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
 import type { GuestsVisit } from "../src/sim/events";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { guestsText } from "../src/texts";
+import { guestsText, homeVetText } from "../src/texts";
 import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -392,6 +393,31 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     };
     expect(groomed({ vet: -2 })).toEqual({ extra: VET.hideMinutes, seen: 1 });
     expect(groomed({ vet: 1 })).toEqual({ extra: 0, seen: 1 });
+  });
+
+  it("ветеринарка вдома оглядає всіх котів, що вдома, — і повідомлення про кожного (рішення автора 2026-10-27, Х7)", () => {
+    const save = game();
+    save.current.modifiers.day = "home-vet";
+    const healthy = withCat(save, { vet: 1 }, { x: 5.5, y: 8.5 });
+    const sick = withCat(save, {}, { x: 6.5, y: 8.5 });
+    const away = withCat(save, {}, { x: 7.5, y: 8.5 });
+    fallIll(save.current, sick, "cold");
+    fallIll(save.current, away, "fleas");
+    away.away = "stairs";
+    const { events, stop } = recordEvents();
+    tickModifiers(save.current, MODIFIERS.homeVetMinute - 1, 2, false);
+    stop();
+    expect(sick.diseases[0]?.known).toBe(true);
+    expect(away.diseases[0]?.known).toBe(false);
+    expect(healthy.breedKnown).toEqual([true, true]);
+    expect(events).toContainEqual({ type: "modifier", kind: "home-vet", value: 2 });
+    const text = homeVetText([
+      { name: healthy.name, sex: healthy.sex, diseases: [], manner: vetManner(healthy) },
+      { name: sick.name, sex: sick.sex, diseases: ["Застуда"], manner: null },
+    ]);
+    expect(text).toContain(`${sick.name} — застуда`);
+    expect(text).toContain("Решта здорові.");
+    expect(text).toContain(healthy.name);
   });
 
   it("ветеринарка вдома: «Жах клініки» потім ховається, а прояв видно, якщо персонаж удома", () => {
