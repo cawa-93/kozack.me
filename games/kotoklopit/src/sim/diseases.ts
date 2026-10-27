@@ -1,9 +1,10 @@
 // Хвороби котів (§9.5, `DISEASES.md`): як кіт захворює, «безпечний» термін і шкода, симптоми,
-// лікування вдома, заразність. Ветеринара додасть крок 11 плану.
+// лікування вдома, заразність, схильності порід. Ветеринар — у `destinations.ts`.
 
+import { riskHalves } from "./breeds";
 import { changeHealth, changeMood, isAdapting, isOld, lifeMood, offend, traitLevel, weightOf } from "./cat";
 import { unpleasantTask } from "./character";
-import { DISEASES, ILLNESS, MEDICINE, SYMPTOMS, WEIGHT } from "./config";
+import { BREED_RISK, DISEASES, ILLNESS, MEDICINE, SYMPTOMS, WEIGHT } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import { catIllnessFactor } from "./modifiers";
@@ -14,10 +15,12 @@ import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
 
 export const hasDisease = (cat: Cat, id: DiseaseId): boolean => cat.diseases.some((d) => d.id === id);
 
-/** Шанс з урахуванням «Витривалості» й складності (§9.5). */
-export function illnessChance(state: GameState, cat: Cat, base: number): number {
+/** Шанс з урахуванням «Витривалості», складності й схильності породи (§9.5). */
+export function illnessChance(state: GameState, cat: Cat, id: DiseaseId, base: number): number {
   const hardiness = Math.max(0, 1 - ILLNESS.hardinessStep * traitLevel(cat, "hardiness"));
-  return Math.min(1, base * hardiness * ILLNESS.difficulty[state.difficulty] * catIllnessFactor(state));
+  const risk = BREED_RISK.diseases[id];
+  const breed = risk === undefined ? 1 : 1 + BREED_RISK.step * riskHalves(cat.breed, risk);
+  return Math.min(1, base * hardiness * breed * ILLNESS.difficulty[state.difficulty] * catIllnessFactor(state));
 }
 
 /** Кіт захворів (якщо ще не хворіє цим). */
@@ -40,7 +43,7 @@ export const isHurting = (state: GameState, cat: Cat): boolean => cat.diseases.s
 
 /** Спробувати заразити з шансом (з «Витривалістю» й складністю). */
 export function maybeFallIll(state: GameState, cat: Cat, id: DiseaseId, base: number, rng: Rng): boolean {
-  return !hasDisease(cat, id) && rng.chance(illnessChance(state, cat, base)) && fallIll(state, cat, id);
+  return !hasDisease(cat, id) && rng.chance(illnessChance(state, cat, id, base)) && fallIll(state, cat, id);
 }
 
 /** Хвороба минула. Після застуди — раз кон'юнктивіт з шансом 30% (рішення автора 2026-10-27, Х2). */

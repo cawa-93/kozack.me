@@ -7,11 +7,11 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
 import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE } from "../src/sim/config";
-import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
+import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
+import type { BowlItem, Cat, DiseaseId, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -261,6 +261,23 @@ describe("ліки вдома (§9.5)", () => {
     save.current.day += 3;
     nightlyDiseases(save.current, quietRng());
     expect(cat.health).toBe(health);
+  });
+});
+
+describe("схильності порід (§9.5, рішення автора 2026-10-27, Х10)", () => {
+  it("«очі» — кон'юнктивіт, «шкіра» — дерматит: чистокровному ×2, напівкровці ×1,5; інші хвороби — як у всіх", () => {
+    const save = game();
+    const cat = withCat(save);
+    const chance = (breed: [string, string], id: DiseaseId): number => {
+      cat.breed = breed;
+      return illnessChance(save.current, cat, id, 0.1);
+    };
+    // Бірманська — без схильностей і без «Витривалості» породи.
+    const plain = chance(["birmanska", "birmanska"], "conjunctivitis");
+    expect(chance(["perska", "perska"], "conjunctivitis") / plain).toBeCloseTo(2);
+    expect(chance(["perska", "birmanska"], "conjunctivitis") / plain).toBeCloseTo(1.5);
+    expect(chance(["sfinks", "sfinks"], "dermatitis") / chance(["birmanska", "birmanska"], "dermatitis")).toBeCloseTo(2);
+    expect(chance(["perska", "perska"], "cold")).toBeCloseTo(chance(["birmanska", "birmanska"], "cold"));
   });
 });
 

@@ -974,6 +974,12 @@ export const DISEASES: Record<
   // Ожиріння (§9.5, §9.12 «Тіло й тепло», 2026-10-26): оборотне — минає, щойно вага повернеться до норми (`WEIGHT.cured`).
   obesity: { safe: 7, damage: 1, recovers: null, cure: { kind: "weight" }, contagious: null },
 };
+/**
+ * Схильність породи (§9.5, `BREEDS.md`): шанс хвороби × (1 + `step` × половин породи зі схильністю) — чистокровному ×2,
+ * напівкровці ×1,5. Діють лише схильності, для яких хвороба вже є (рішення автора 2026-10-27, `DISEASES_REVIEW.md`, Х10);
+ * «ожиріння» — через вагу (`WEIGHT.breedStep`).
+ */
+export const BREED_RISK = { step: 0.5, diseases: { conjunctivitis: "очі", dermatitis: "шкіра" } as Partial<Record<DiseaseId, string>> } as const;
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {
   cold: 1 / 60,
