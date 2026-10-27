@@ -72,10 +72,12 @@ export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
 
 /**
  * Кіт нездужає (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5): будь-яка хвороба, зокрема травма, — крім старості й
- * ожиріння (з ними кіт не хворий, а старий чи повний). Такий гратися не погоджується й шипить на того, хто кличе, і сам гратися
- * не кличе (рішення автора 2026-10-26 після блоку 4).
+ * ожиріння (з ними кіт не хворий, а старий чи повний) і бліх та глистів (з ними кіт почувається нормально, рішення автора
+ * 2026-10-27, Х11). Такий гратися не погоджується й шипить на того, хто кличе, і сам гратися не кличе (рішення автора 2026-10-26
+ * після блоку 4).
  */
-export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => d.id !== "senior" && d.id !== "obesity");
+const FEELS_FINE: readonly DiseaseId[] = ["senior", "obesity", "fleas", "worms"];
+export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => !FEELS_FINE.includes(d.id));
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
   (hasDisease(cat, "stomach") || hasDisease(cat, "cystitis")) && rng.chance(SYMPTOMS.outsideLitter);

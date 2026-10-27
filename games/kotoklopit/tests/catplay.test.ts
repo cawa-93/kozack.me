@@ -788,9 +788,11 @@ describe("друг може відмовитися (§9.4 «Згода, охор
         expect(choices(false, present)).toEqual(alone);
         a.diseases = [];
       }
-      // Старість і ожиріння — не хвороба (Г5): такий кличе, як і раніше.
+      // Старість і ожиріння — не хвороба (Г5): такий кличе, як і раніше; блохи й глисти — теж (рішення автора 2026-10-27, Х11).
       fallIll(save.current, a, "senior");
       fallIll(save.current, a, "obesity");
+      fallIll(save.current, a, "fleas");
+      fallIll(save.current, a, "worms");
       expect(calls(choices(true, present))).toBeGreaterThan(10);
       a.diseases = [];
     }
