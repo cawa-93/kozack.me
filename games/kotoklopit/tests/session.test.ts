@@ -23,13 +23,14 @@ describe("збереження в браузері", () => {
   it("читається збережена гра", () => {
     const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
     fakeStorage({ "kotoklopit:save": serialize(save) });
-    expect(loadSave()?.current.seed).toBe(3);
+    expect(loadSave()).toMatchObject({ save: { current: { seed: 3 } }, unreadable: null });
   });
 
   it("нечитабельне збереження (інша версія чи пошкоджене) відкладається окремо, щоб нова гра його не перезаписала", () => {
     const items: Record<string, string> = { "kotoklopit:save": '{"version":1,"current":{}}' };
     fakeStorage(items);
-    expect(loadSave()).toBeNull();
+    // Сцена отримує його текст, щоб запропонувати зберегти файлом (Ц3).
+    expect(loadSave()).toEqual({ save: null, unreadable: '{"version":1,"current":{}}' });
     expect(items["kotoklopit:save-unreadable"]).toBe('{"version":1,"current":{}}');
   });
 });

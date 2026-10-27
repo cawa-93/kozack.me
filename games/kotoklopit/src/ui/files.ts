@@ -5,12 +5,20 @@ import type { Save } from "../sim/types";
 
 /** Завантажити поточну гру файлом JSON. */
 export function exportSave(save: Save): void {
-  const blob = new Blob([serialize(save)], { type: "application/json" });
+  downloadJson(serialize(save), `kotoklopit-${save.current.character.name}-день-${save.current.day + 1}.json`);
+}
+
+/** Завантажити збереження, яке не вдалося відкрити, як є (§4.2, Ц3): щоб не загубилося. */
+export function exportUnreadable(json: string): void {
+  downloadJson(json, "kotoklopit-нечитабельне-збереження.json");
+}
+
+function downloadJson(json: string, fileName: string): void {
+  const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  const { day } = save.current;
   link.href = url;
-  link.download = `kotoklopit-${save.current.character.name}-день-${day + 1}.json`;
+  link.download = fileName;
   document.body.append(link);
   link.click();
   link.remove();

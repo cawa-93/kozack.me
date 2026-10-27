@@ -18,6 +18,11 @@ export class Session {
   persistent = true;
   /** Режим розробки: приховані числа над котами (§11.5). */
   showHidden = false;
+  /**
+   * Збереження, яке не вдалося відкрити на старті (§4.2, Ц3): сцена пропонує зберегти його файлом, перш ніж почати нову гру.
+   * Після цього — null.
+   */
+  unreadable: string | null = null;
   private readonly resetListeners = new Set<() => void>();
 
   constructor(save: Save) {
@@ -26,7 +31,9 @@ export class Session {
 
   /** Продовжити збережену гру або почати нову. */
   static restore(defaults: NewGameOptions): Session {
-    const session = new Session(loadSave() ?? newGame(defaults));
+    const loaded = loadSave();
+    const session = new Session(loaded.save ?? newGame(defaults));
+    session.unreadable = loaded.unreadable;
     onEvent((event) => {
       if (event.type === "night" || event.type === "game-over") session.persist();
     });
@@ -59,19 +66,25 @@ export class Session {
   }
 }
 
-export function loadSave(): Save | null {
+/** Що знайшлося в браузері: гра, яку вдалося відкрити, чи текст збереження, яке не вдалося. */
+export interface Loaded {
+  save: Save | null;
+  unreadable: string | null;
+}
+
+export function loadSave(): Loaded {
   let json: string | null = null;
   try {
     json = localStorage.getItem(SAVE_KEY);
-    return json === null ? null : deserialize(json);
+    return { save: json === null ? null : deserialize(json), unreadable: null };
   } catch {
     // Збереження старої версії чи пошкоджене — починаємо нову гру, але старе відкладаємо: інакше перше ж автозбереження
-    // перезаписало б його назавжди (перевірка циклу гри 2026-10-27).
+    // перезаписало б його назавжди (перевірка циклу гри 2026-10-27); сцена ще й запропонує зберегти його файлом (Ц3).
     try {
       if (json !== null) localStorage.setItem(BACKUP_KEY, json);
     } catch {
       // Сховище недоступне чи повне — нічого не вдієш.
     }
-    return null;
+    return { save: null, unreadable: json };
   }
 }

@@ -13,7 +13,7 @@ import { doctorExam, doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
-import { exportSave, importSave } from "../ui/files";
+import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -187,8 +187,14 @@ export class DayScene extends Phaser.Scene {
     const state = this.state;
     if (this.session.persistent && state.end === null) {
       // Зовсім нова гра — одразу вибір персонажа (§5.1); збережена — меню.
-      if (state.day === 0 && state.minute === state.dayStartMinute) this.chooseNewGame();
-      else this.overlay.show(titleCard(state, () => this.restart(), () => this.chooseNewGame()));
+      const start = (): void => {
+        if (state.day === 0 && state.minute === state.dayStartMinute) this.chooseNewGame();
+        else this.overlay.show(titleCard(state, () => this.restart(), () => this.chooseNewGame()));
+      };
+      // Збереження не вдалося відкрити — спершу запропонувати зберегти його файлом (§4.2, Ц3).
+      const unreadable = this.session.unreadable;
+      if (unreadable === null) start();
+      else this.showUnreadableSave(unreadable, start);
     }
   }
 
@@ -1234,6 +1240,30 @@ export class DayScene extends Phaser.Scene {
         { label: "Повернутися", onSelect: back },
       ],
       onDismiss: back,
+    });
+  }
+
+  /** Збереження не вдалося відкрити (§4.2, рішення автора 2026-10-27, Ц3): зберегти його файлом чи одразу нова гра. */
+  private showUnreadableSave(json: string, next: () => void): void {
+    const done = (): void => {
+      this.session.unreadable = null;
+      next();
+    };
+    this.overlay.show({
+      kicker: UNREADABLE_SAVE.kicker,
+      title: UNREADABLE_SAVE.title,
+      body: [UNREADABLE_SAVE.body],
+      actions: [
+        {
+          label: UNREADABLE_SAVE.save,
+          primary: true,
+          onSelect: () => {
+            exportUnreadable(json);
+            done();
+          },
+        },
+        { label: UNREADABLE_SAVE.fresh, onSelect: done },
+      ],
     });
   }
 
