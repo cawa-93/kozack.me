@@ -944,6 +944,8 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   // Біля персонажа вже стоїть ворог — по увагу не йде (§9.4, рішення автора 2026-10-26: 76–79% бійок були біля ніг персонажа).
   if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat) && !enemyAtPerson(state, cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
+  // З другом хочеться гратися раніше, ніж самому (§9.4, рішення автора 2026-10-27, Г1): гра наодинці й бешкет — від порога вище.
+  if (callsCompany(state, cat, rng)) return;
   // «Нянька» вилизує кошеня поруч (§9.12, «Турбота про кошенят»).
   const nurturing = traitLevel(cat, "nurturing");
   if (nurturing > 0 && !isKitten(cat)) {
@@ -1256,8 +1258,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   // Як часто кличе гратися іншого кота — за віком і «Ігривістю» (§9.4, рішення автора 2026-10-26, Г7). Хворий не кличе, як і не
   // погоджується (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26 після блоку 4): решта забав — як у здорового.
   const mate = isUnwell(cat) ? null : playmate(state, cat);
-  const wrestle = RELATIONS.wrestle;
-  const often = (isOld(cat) ? wrestle.old : 1) * traitFactor(cat, "playful", wrestle.playfulStep);
+  const often = playOften(cat);
   if (mate && often > 0) options.push({ weight: mate.weight * often, value: active(() => startWrestle(state, cat, mate.cat)) });
   // Гризун гризе й заради гри (§9.12, «Гризіння»).
   const chewing = traitLevel(cat, "chewing");
@@ -1616,12 +1617,34 @@ function nightMischief(state: GameState, cat: Cat): void {
 }
 
 /**
+ * Кіт кличе вільного друга гратися ще до порога забав (§9.4 «З другом хочеться гратися раніше», рішення автора 2026-10-27, Г1):
+ * потреба гри від `social.from` (кошеня — від `kittenFrom`), шанс × вік і «Ігривість», як і вага в забавах; хворий не кличе.
+ * Приятеля — ні: його кличуть лише серед забав. Повертає, чи покликав.
+ */
+function callsCompany(state: GameState, cat: Cat, rng: Rng): boolean {
+  const social = RELATIONS.wrestle.social;
+  if (cat.needs.play < (isKitten(cat) ? social.kittenFrom : social.from) || isUnwell(cat)) return false;
+  const mate = playmate(state, cat, false);
+  if (!mate || !rng.chance(social.chance * playOften(cat))) return false;
+  observe(state, cat, "energy");
+  nightMischief(state, cat);
+  startWrestle(state, cat, mate.cat);
+  return true;
+}
+
+/** Як часто кіт сам кличе гратися іншого кота (§9.4, Г7): старий удвічі рідше, «Ігривість» ±50% за одиницю, не менше нуля. */
+function playOften(cat: Cat): number {
+  const wrestle = RELATIONS.wrestle;
+  return (isOld(cat) ? wrestle.old : 1) * traitFactor(cat, "playful", wrestle.playfulStep);
+}
+
+/**
  * З ким погратися й з якою вагою (§9.4): удома, не спить, нічим не зайнятий і до нього можна підійти (`approachable`). Найближчий
  * друг, а нема — найближчий приятель з удвічі меншою вагою (рішення автора 2026-10-26, Г1). Кошеня кличе й будь-кого, хто не
  * ворог, — і всіх з вагою друга × 2,5 (Г2). Дорослий з «Турботою про кошенят» «−» і кошеня, що не друзі, разом не граються: він
  * таких кошенят відганяє (`shoos`; перевірка блоку 2).
  */
-function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | null {
+function playmate(state: GameState, cat: Cat, pals = true): { cat: Cat; weight: number } | null {
   const w = RELATIONS.wrestle;
   const kitten = isKitten(cat);
   const now = absoluteMinute(state.day, state.minute);
@@ -1639,6 +1662,7 @@ function playmate(state: GameState, cat: Cat): { cat: Cat; weight: number } | nu
     const anyone = nearestCat(state, cat, (other) => free(other) && !isEnemy(state, cat, other));
     return anyone ? { cat: anyone, weight: w.weight * w.kitten } : null;
   }
+  if (!pals) return null;
   const pal = nearestCat(state, cat, (other) => free(other) && isPal(state, cat, other));
   return pal ? { cat: pal, weight: w.palWeight } : null;
 }

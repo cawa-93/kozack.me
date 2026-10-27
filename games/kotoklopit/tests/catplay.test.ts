@@ -590,7 +590,9 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     for (let seed = 1; seed <= 20; seed++) {
       const { save, a, b } = friendsPlay(seed);
       const { events, stop } = recordEvents();
-      for (let t = 0; t < 20 && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) tickCats(save.current, 1, { present: false });
+      // Лише перша гра: догравши, кіт може одразу покликати друга знову (§9.4 «З другом хочеться гратися раніше», 2026-10-27).
+      const over = (): boolean => count(events, "cats-played") + count(events, "play-declined") > 0;
+      for (let t = 0; t < 20 && !over() && (a.act.kind === "wrestle" || b.act.kind === "wrestle"); t++) tickCats(save.current, 1, { present: false });
       stop();
       played += count(events, "cats-played");
       declined += count(events, "play-declined");
@@ -845,6 +847,44 @@ describe("друг може відмовитися (§9.4 «Згода, охор
     expect(invites()).toBe(0);
     b.playDeclinedAt = now - RELATIONS.wrestle.decline.pause;
     expect(invites()).toBeGreaterThan(10);
+  });
+});
+
+describe("з другом хочеться гратися раніше (§9.4, рішення автора 2026-10-27, Г1)", () => {
+  /** Скільки з 200 рішень кіт `a` іде кликати `b`, коли потреба гри `play`, а `b` поруч вільний. */
+  function calls(play: number, options: { kitten?: boolean; relation?: number; traits?: Record<string, TraitLevel>; unwell?: boolean } = {}): number {
+    const save = game();
+    const a = withCat(save, options.traits ?? {}, { x: 8.5, y: 8.5 }, options.kitten ? 1 : 3);
+    const b = withCat(save, {}, { x: 10.5, y: 8.5 }, options.kitten ? 1 : 3);
+    setRelation(save, a, b, options.relation ?? 70);
+    if (options.unwell) fallIll(save.current, a, "cold");
+    let n = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      a.needs.play = play;
+      a.act = idleAct();
+      b.act = idleAct(30);
+      decide(save.current, a, createRng(seed), { present: false });
+      if (a.act.kind === "wrestle" && a.act.target === `cat:${b.id}`) n++;
+    }
+    return n;
+  }
+
+  it("від 40 потреби гри — кличе вільного друга з шансом 50%; нижче — ні, як і без друга", () => {
+    const share = calls(50) / 200;
+    expect(share).toBeGreaterThan(0.4);
+    expect(share).toBeLessThan(0.6);
+    expect(calls(35)).toBe(0);
+  });
+
+  it("кошеня — уже від 20, і кличе будь-кого, хто не ворог; дорослий приятеля до порога забав не кличе", () => {
+    expect(calls(25, { kitten: true, relation: 0 })).toBeGreaterThan(70);
+    expect(calls(25)).toBe(0);
+    expect(calls(50, { relation: 30 })).toBe(0);
+  });
+
+  it("«Нудьгар» і хворий не кличуть", () => {
+    expect(calls(50, { traits: { playful: -2 } })).toBe(0);
+    expect(calls(50, { unwell: true })).toBe(0);
   });
 });
 
