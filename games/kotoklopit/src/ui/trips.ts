@@ -1,11 +1,11 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, shelterCats, tripCat, vetExam, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, shelterCats, tripCat, vetManner } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
-import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality } from "../sim/types";
+import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
 import { diseaseTitle, fill, ILLNESS_TITLES, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
@@ -94,11 +94,6 @@ export interface VisitHandlers {
   home: () => void;
 }
 
-/** Що вже зробили на місці: огляд, лікування, кафе. */
-export interface VisitLog {
-  exam: ReturnType<typeof vetExam>;
-  done: string[];
-}
 
 const describe = (value: number, words: [string, string, string, string]): string => words[value >= 75 ? 0 : value >= 50 ? 1 : value >= 25 ? 2 : 3];
 

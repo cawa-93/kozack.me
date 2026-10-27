@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { TRIPS } from "../src/sim/config";
-import { adopt, buyAtShop, cafe, shelterCats, shopPrice, vetExam, vetTreat } from "../src/sim/destinations";
+import { adopt, buyAtShop, cafe, officeMeeting, shelterCats, shopPrice, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
-import { advance, drive, newGame, returnHome, rewindAccident } from "../src/sim/game";
+import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
@@ -114,6 +114,25 @@ describe("поїздки й робота (§8.6)", () => {
     stop();
     expect(events).toContainEqual(expect.objectContaining({ type: "standup", attended: true }));
     expect(save.current.job.tripDays).toEqual([]);
+  });
+
+  it("збори в офісі зараховуються раз, і журнал візиту зберігається з грою (перевірка циклу гри 2026-10-27)", () => {
+    const save = game(8 * 60 + 50);
+    save.current.day = 1;
+    save.current.modifiers.day = "office";
+    expect(startTrip(save.current, "office")).toBe(true);
+    driveSafely(save);
+    officeMeeting(save.current);
+    const money = save.current.character.money;
+    const reputation = save.current.job.reputation;
+    // Сторінку перезавантажили посеред зборів — сцена кличе їх знову.
+    officeMeeting(save.current);
+    expect(save.current.character.money).toBe(money);
+    expect(save.current.job.reputation).toBe(reputation);
+    const trip = save.current.trip;
+    if (!trip) throw new Error("немає поїздки");
+    trip.log = { exam: { health: 90, mood: 70, weight: 50, manner: null }, done: ["office"] };
+    expect(deserialize(serialize(save)).current.trip?.log).toEqual(trip.log);
   });
 });
 

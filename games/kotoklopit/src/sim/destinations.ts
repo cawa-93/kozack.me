@@ -211,7 +211,8 @@ export function enterShow(state: GameState, rng: Rng): number | null {
 /** Збори в офісі (§8.5): 3 години рахуються як робота. */
 export function officeMeeting(state: GameState): void {
   const trip = state.trip;
-  if (trip?.destination !== "office") return;
+  // Збори зараховуються раз на день: і після перезавантаження сторінки посеред них (перевірка циклу гри 2026-10-27).
+  if (trip?.destination !== "office" || state.today.officeDone) return;
   state.today.officeDone = true;
   const position = POSITIONS[state.job.position];
   if (!position) return;

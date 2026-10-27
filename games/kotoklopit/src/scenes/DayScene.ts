@@ -14,7 +14,7 @@ import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMee
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise } from "../sim/farewell";
 import { exportSave, importSave } from "../ui/files";
-import { accidentCard, destinationCard, visitCard, type VisitLog } from "../ui/trips";
+import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
@@ -294,7 +294,7 @@ export class DayScene extends Phaser.Scene {
           this.state,
           (destination) => {
             this.overlay.close();
-            if (startTrip(this.state, destination)) this.visitLog = { exam: null, done: [] };
+            startTrip(this.state, destination);
           },
           () => this.overlay.close(),
         ),
@@ -389,7 +389,6 @@ export class DayScene extends Phaser.Scene {
   }
 
   /** Що вже зробили в пункті призначення цієї поїздки. */
-  private visitLog: VisitLog = { exam: null, done: [] };
 
   /** Поїздка (§8.5): гонку веде своя сцена, подію на місці й аварію — картки. */
   private updateTrip(): boolean {
@@ -420,7 +419,8 @@ export class DayScene extends Phaser.Scene {
     const state = this.state;
     const trip = state.trip;
     if (!trip) return;
-    const log = this.visitLog;
+    // Журнал візиту — у стані поїздки: переживає перезавантаження сторінки (перевірка циклу гри 2026-10-27).
+    const log = (trip.log ??= { exam: null, done: [] });
     if (trip.destination === "office" && !log.done.includes("office")) {
       officeMeeting(state);
       log.done.push("office");
