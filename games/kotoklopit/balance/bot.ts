@@ -4,6 +4,7 @@
 
 import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
+import { traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
@@ -24,6 +25,8 @@ import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config
 
 /** Скільки ігрових хвилин один крок ходьби. */
 const WALK_STEP = 0.1;
+/** Скільки кроків поспіль без наближення до клітинки — і бот вважає, що дорогу заступлено. */
+const WALK_STUCK_STEPS = 10;
 const HOLD_STEP = 0.5;
 /** Нижче цього здорового глузду бот рятується: пестить будь-якого кота й працює лише від «Х». */
 const CRISIS_SANITY = 30;
@@ -49,6 +52,10 @@ const SAFE_SPEED = 0.4;
 const SHELTER_TRIP_HOURS = { from: 7, to: 15 };
 /** Запас понад два тижні комунальних, нижче якого бот вважає, що грошей бракує, і працює більше. */
 const POOR_MONEY = 100;
+/** Скільки хвилин чекати, поки кіт, якому час ліків, прокинеться й захоче уваги, — далі брати й так. */
+const PATIENCE_MINUTES = 12 * 60;
+/** Кіт піде на руки без образи (§9.12): не спить і хоче уваги чи любить руки — як `unwilling` у грі, навпаки. */
+const willingToHold = (cat: Cat): boolean => cat.act.kind !== "sleep" && (cat.needs.attention >= 40 || traitLevel(cat, "lap") > 0);
 /** Скільки хвилин не підходити до кота, до якого бот не дійшов. */
 const UNREACHABLE_CAT_MINUTES = 30;
 /** Скільки грошей лишити після необов'язкової покупки (дорогий корм-дієта, ветеринар): на корм і комунальні. */
@@ -86,6 +93,8 @@ export class Bot {
   private workedToday = 0;
   /** Коли кожному коту востаннє давали ліки: хвилина від початку гри. */
   private readonly dosed = new Map<number, number>();
+  /** З якої хвилини кіт чекає ліків: бот чекає, поки кіт захоче на руки, але не довше за `PATIENCE_MINUTES`. */
+  private readonly overdue = new Map<number, number>();
   /** Цілі, до яких не вдалося дійти: до якої хвилини дня їх пропускати. */
   private readonly skip = new Map<string, number>();
 
@@ -440,7 +449,12 @@ export class Bot {
       for (const d of cat.diseases) {
         const cure = DISEASES[d.id].cure;
         const medicine = cure.kind === "pills" || cure.kind === "drops" ? cure.kind : cure.kind === "control" ? cure.medicine : null;
-        if (medicine && supplyCount(s, medicine) > 0) return { cat, medicine };
+        if (!medicine || supplyCount(s, medicine) === 0) continue;
+        // Уважний гравець дає ліки, коли кіт не спить і сам іде по увагу: так він не пручається й рідше кусає. Такої миті
+        // немає півдня — однаково (перевірка персонажа 2026-10-27: бот брав сплячих котів, і 2 з 3 укусів були від ліків).
+        const since = this.overdue.get(cat.id) ?? now;
+        this.overdue.set(cat.id, since);
+        if (willingToHold(cat) || now - since >= PATIENCE_MINUTES) return { cat, medicine };
       }
     }
     return null;
@@ -494,10 +508,13 @@ export class Bot {
     return trip?.phase === "visit" ? trip : null;
   }
 
-  /** До притулку: котів удома немає, є гроші на кота, і поїздка (~5 год) закінчиться до вечора. Раз на день. */
+  /**
+   * До притулку: коти були, але не лишилося жодного (на початку гри перше кошеня приходить само, §8.3), є гроші на кота, і
+   * поїздка (~5 год) закінчиться до вечора. Раз на день.
+   */
   private wantsShelter(): boolean {
     const s = this.state;
-    if (s.cats.length > 0 || this.skipped("shelter") || !canLeave(s)) return false;
+    if (s.cats.length > 0 || s.album.length === 0 || this.skipped("shelter") || !canLeave(s)) return false;
     if (s.minute < SHELTER_TRIP_HOURS.from * 60 || s.minute > SHELTER_TRIP_HOURS.to * 60) return false;
     return s.character.money >= SHELTER.price;
   }
@@ -520,7 +537,10 @@ export class Bot {
     interact(this.save);
     if (s.character.held?.kind !== "cat") return;
     // Відлік до наступної дози — від того, як кіт проковтнув: дорога до кота й аптечки буває різна.
-    if (this.goTo("cat-kit") && giveMedicine(s, medicine, stateRng(s, "behavior"))) this.dosed.set(cat.id, s.day * 1440 + s.minute);
+    if (this.goTo("cat-kit") && giveMedicine(s, medicine, stateRng(s, "behavior"))) {
+      this.dosed.set(cat.id, s.day * 1440 + s.minute);
+      this.overdue.delete(cat.id);
+    }
     interact(this.save);
   }
 
@@ -771,6 +791,8 @@ export class Bot {
 
   private walkToTile(tile: Vec): void {
     const goal = { x: tile.x + 0.5, y: tile.y + 0.5 };
+    let best = Infinity;
+    let stuck = 0;
     for (let i = 0; i < 80; i++) {
       const body = this.state.character.body;
       if (this.state.end !== null) return;
@@ -778,6 +800,12 @@ export class Bot {
       const dy = goal.y - body.y;
       const distance = Math.hypot(dx, dy);
       if (distance < 0.08) return;
+      // Персонаж не наближається (щось заступає дорогу) — не тупцювати на місці: інакше бот міг годинами «йти» до безладу,
+      // і голод доводив до кінця гри (перевірка персонажа 2026-10-27).
+      if (distance < best - 0.01) {
+        best = distance;
+        stuck = 0;
+      } else if (++stuck >= WALK_STUCK_STEPS) return;
       const before = this.state.minute;
       // Оглушений персонаж просто чекає.
       if (body.stun > 0) {
