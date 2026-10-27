@@ -144,6 +144,43 @@ describe("поїздки й робота (§8.6)", () => {
     expect(tripBlocker(save.current, "office")).toBe("office");
     expect(startTrip(save.current, "office")).toBe(false);
   });
+
+  it("збори: виїхав до 18:00 — у дорозі штрафу немає; аварія дорогою — летучку не зараховано, а збори пропущено (перевірка поїздок 2026-10-28)", () => {
+    const save = game(17 * 60 + 30);
+    save.current.day = 1;
+    save.current.modifiers.day = "office";
+    const late = recordEvents();
+    expect(startTrip(save.current, "office")).toBe(true);
+    driveSafely(save);
+    late.stop();
+    expect(save.current.minute).toBeGreaterThan(18 * 60);
+    expect(late.events).not.toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
+
+    const crashed = game(9 * 60 + 30);
+    crashed.current.day = 1;
+    crashed.current.modifiers.day = "office";
+    startTrip(crashed.current, "office");
+    crashed.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
+    drive(crashed, 0.1, NO_RACE_INPUT);
+    expect(crashed.current.trip?.phase).toBe("accident");
+    const rewind = recordEvents();
+    rewindAccident(crashed);
+    rewind.stop();
+    expect(rewind.events).toContainEqual(expect.objectContaining({ type: "standup", attended: false }));
+    expect(rewind.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
+  });
+
+  it("офіс не пропонується з котом на руках у звичайний день і безробітному (перевірка поїздок 2026-10-28)", () => {
+    const save = game(9 * 60);
+    save.current.day = 1;
+    const cat = withCat(save);
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(tripBlocker(save.current, "office")).toBe("office");
+    save.current.character.held = null;
+    save.current.modifiers.day = "office";
+    save.current.job.unemployed = true;
+    expect(tripBlocker(save.current, "office")).toBe("office");
+  });
 });
 
 describe("пункти призначення (§8.5)", () => {

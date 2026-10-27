@@ -264,6 +264,9 @@ export const warmthBonus = (state: GameState): number => (active(state, "cold") 
 /** «Холод» і «Спека» (§4.1) — дня чи тижня: від них залежить «Теплолюбність» (§9.12). */
 export const isCold = (state: GameState): boolean => active(state, "cold");
 export const isHot = (state: GameState): boolean => active(state, "heat");
+/** Персонаж у поїздці на збори в офіс і не потрапив дорогою в аварію: він уже на роботі (§8.5). */
+export const toOffice = (state: GameState): boolean => state.trip?.destination === "office" && state.trip.phase !== "accident";
+
 export const trafficFactor = (state: GameState): number => MODIFIERS.traffic[state.modifiers.day ?? ""] ?? 1;
 export function priceFactor(state: GameState, product: string): number {
   return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
@@ -422,7 +425,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     changeStat(state, "sanity", total);
     emit(state, { type: "modifier", kind: "guests", value: total, guests: { mess: shame < 0, hissed: hissing < 0, delighted: delight > 0 } });
   }
-  if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && isWorkday(state)) {
+  // Хто до 18:00 уже їде на збори, той поїхав (§4.1): раніше штраф наздоганяв його в дорозі (перевірка поїздок 2026-10-28).
+  if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);
     changeReputation(state, delta);
     emit(state, { type: "modifier", kind: "office-missed", value: delta });

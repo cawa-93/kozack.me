@@ -42,6 +42,9 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
   const cat = heldCat(state);
   // Виставка — лише в її день (§4.1).
   if (destination === "show" && state.modifiers.day !== "show") return "show";
+  // Офіс — лише в день зборів, раз і поки є робота: після зборів туди нема чого їхати (перевірка циклу гри 2026-10-27), а
+  // з котом на руках у списку не з'являється (перевірка поїздок 2026-10-28).
+  if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || state.job.unemployed)) return "office";
   if (TRIPS[destination].cat) {
     if (!cat) return "cat";
     if (state.home.carrier === null) return "carrier";
@@ -50,8 +53,6 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
   // До притулку кота можна взяти, щоб віддати (§9.8).
   if (cat && destination === "shelter") return state.home.carrier === null ? "carrier" : null;
   if (cat) return "no-cat";
-  // Офіс — лише в день зборів і лише раз: після зборів туди нема чого їхати (перевірка циклу гри 2026-10-27).
-  if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone)) return "office";
   return null;
 }
 

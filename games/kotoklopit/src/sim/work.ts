@@ -26,7 +26,7 @@ import {
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
 import { beardImpression } from "./grooming";
-import { patienceDecayFactor, payFactor, reputationFactor, workdayOverride } from "./modifiers";
+import { patienceDecayFactor, payFactor, reputationFactor, toOffice, workdayOverride } from "./modifiers";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -172,8 +172,8 @@ function tickStandup(state: GameState, from: number, to: number): void {
   const start = STANDUP_MINUTE;
   const end = STANDUP_MINUTE + STANDUP_MINUTES;
   if (from < start && to >= start) emit(state, { type: "standup-started" });
-  // На зборах в офісі персонаж і так на роботі: летучка — там (§8.5).
-  const present = isWorking(state) || state.trip?.destination === "office";
+  // На зборах в офісі персонаж і так на роботі: летучка — там (§8.5); з аварії дорогою туди — ні (перевірка поїздок 2026-10-28).
+  const present = isWorking(state) || toOffice(state);
   if (present) state.job.standupMinutes += Math.max(0, Math.min(to, end) - Math.max(from, start));
   noticeCallLook(state, from, to, start);
   if (from < end && to >= end) resolveStandup(state);

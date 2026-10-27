@@ -212,7 +212,7 @@ export function enterShow(state: GameState, rng: Rng): number | null {
 export function officeMeeting(state: GameState): void {
   const trip = state.trip;
   // Збори зараховуються раз на день: і після перезавантаження сторінки посеред них (перевірка циклу гри 2026-10-27).
-  if (trip?.destination !== "office" || state.today.officeDone) return;
+  if (trip?.destination !== "office" || state.today.officeDone || state.job.unemployed) return;
   state.today.officeDone = true;
   const position = POSITIONS[state.job.position];
   if (!position) return;
