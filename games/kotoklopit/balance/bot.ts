@@ -5,14 +5,16 @@
 import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { DISEASES, ILLNESSES, PRODUCTS, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
-import { advance, goToSleep, interact } from "../src/sim/game";
+import { advance, drive, goToSleep, interact, returnHome, rewindAccident } from "../src/sim/game";
+import { tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { canLeave, startTrip } from "../src/sim/trips";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
@@ -34,6 +36,15 @@ const BEDTIME_HOURS = 8.4;
 const BEDTIME_ILL_HOURS = 9.5;
 /** Скільки годин на день бот шукає роботу після звільнення (§8.6). */
 const SEARCH_HOURS_PER_DAY = 6;
+/** Коли бот вирушає до ветеринара: поїздка з лікуванням ~5 годин (обережна гонка ~2,4 год, §8.5) і має закінчитися до вечора. */
+const VET_TRIP_HOURS = { from: 8, to: 15 };
+/**
+ * Швидкість у гонці, вище якої бот не тисне газ: машини їдуть ×0,5 (`RACE.carSpeed`), тож повільніший їх не наздожене й не
+ * вріжеться; з розгоном за крок — ~×0,4–0,45.
+ */
+const SAFE_SPEED = 0.4;
+/** Скільки грошей лишити після ветеринара: на корм і комунальні. */
+const VET_TRIP_RESERVE = 100;
 
 export interface BotPolicy {
   /** У скільки разів більше працювати, ніж вимагає посада (частка присутності × 9 годин). */
@@ -123,6 +134,9 @@ export class Bot {
     if (canUnpack(s) && !this.skipped("boxes")) return named("unpack", () => this.use("boxes"));
     const patient = this.patient();
     if (patient) return named("treat", () => this.treat(patient.cat, patient.medicine));
+    // Те, що вдома не вилікувати (травма, сечокам'яна, дерматит), — до ветеринара (рішення автора 2026-10-27).
+    const vetCase = this.vetCase();
+    if (vetCase) return named("vet", () => this.vetTrip(vetCase));
     // Хворий персонаж п'є ліки біля умивальника (§6.5): хвороба забирає здоров'я щоночі.
     if (needsHumanMeds(s) && supplyCount(s, "humanMeds") > 0 && !this.skipped("sink")) return named("meds", () => this.use("sink"));
     // Бійку розбороняє, а протистояння розводить — торкнувшись кота (§9.4).
@@ -278,6 +292,12 @@ export class Bot {
       if (sick("pills")) need("pills", 2);
       if (sick("drops")) need("drops", 1);
       need("catFood", cats * 4);
+      // Кіт блює й ходить повз лоток (розлад шлунка) — уважний гравець бере дорогий корм: це дієта (§9.5).
+      const premium = s.home.supplies.catFood.premium + [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === "catFood" && d.quality === "premium").length;
+      if (premium === 0 && s.cats.some((c) => c.diseases.some((d) => d.id === "stomach"))) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });
+      // Переноска — щойно є з чим їхати до ветеринара.
+      const carrier = [...s.home.deliveries, ...s.home.porch].some((d) => "thing" in d && d.thing === "carrier");
+      if (s.home.carrier === null && !carrier && s.cats.some((c) => this.needsVet(c))) cart.push({ goods: { thing: "carrier" }, quality: "cheap", count: 1 });
       need("litter", Math.max(2, cats));
     }
     // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
@@ -394,7 +414,8 @@ export class Bot {
     const s = this.state;
     const now = s.day * 1440 + s.minute;
     for (const cat of s.cats) {
-      if (cat.away !== null || now - (this.dosed.get(cat.id) ?? -Infinity) < 6 * 60) continue;
+      // Та сама доза раніше ніж за 6 годин — кіт випльовує (рішення автора 2026-10-27).
+      if (cat.away !== null || now - (this.dosed.get(cat.id) ?? -Infinity) < MEDICINE.doseMinutes) continue;
       for (const d of cat.diseases) {
         const cure = DISEASES[d.id].cure;
         const medicine = cure.kind === "pills" || cure.kind === "drops" ? cure.kind : cure.kind === "control" ? cure.medicine : null;
@@ -404,13 +425,56 @@ export class Bot {
     return null;
   }
 
+  /** Хвороба, яку вдома не вилікувати: лише ветеринар (§9.5). Бот бачить хвороби напряму, як уважний гравець — симптоми. */
+  private needsVet(cat: Cat): boolean {
+    return cat.diseases.some((d) => DISEASES[d.id].cure.kind === "vet");
+  }
+
+  /**
+   * Кого везти до ветеринара: удома, є переноска й гроші на огляд і дороге лікування, не робочий час, і поїздка (~4 год)
+   * закінчиться до вечора. Раз на день.
+   */
+  private vetCase(): Cat | null {
+    const s = this.state;
+    if (s.home.carrier === null || this.skipped("vet") || isWorkTime(s) || !canLeave(s)) return null;
+    if (s.minute < VET_TRIP_HOURS.from * 60 || s.minute > VET_TRIP_HOURS.to * 60) return null;
+    if (s.character.money < VET.exam + VET.premium + VET_TRIP_RESERVE) return null;
+    return s.cats.find((c) => c.away === null && this.needsVet(c)) ?? null;
+  }
+
+  /** Поїздка до ветеринара (§8.5): кота на руки, до дверей, гонка обережно, огляд і дороге лікування всього знайденого. */
+  private vetTrip(cat: Cat): void {
+    this.skip.set("vet", MINUTES_PER_DAY);
+    if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
+    interact(this.save);
+    if (this.state.character.held?.kind !== "cat") return;
+    if (!this.goTo("door") || !startTrip(this.state, "vet")) return;
+    for (let i = 0; i < 100_000 && this.state.trip?.phase === "drive"; i++) {
+      const speed = this.state.trip.race.speed;
+      drive(this.save, 0.1, { steer: 0, throttle: speed < SAFE_SPEED ? 1 : 0 });
+    }
+    const trip = this.state.trip;
+    if (trip?.phase === "accident") {
+      rewindAccident(this.save);
+      return;
+    }
+    if (trip?.phase !== "visit") return;
+    vetExam(this.state);
+    const rng = stateRng(this.state, "behavior");
+    for (const d of [...(tripCat(this.state)?.diseases ?? [])]) {
+      if (d.known && DISEASES[d.id].cure.kind !== "weight") vetTreat(this.state, d.id, "premium", rng);
+    }
+    returnHome(this.save, trip.visit, TRIPS.vet.road);
+  }
+
   private treat(cat: Cat, medicine: Medicine): void {
     const s = this.state;
     this.dosed.set(cat.id, s.day * 1440 + s.minute);
     if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
     interact(this.save);
     if (s.character.held?.kind !== "cat") return;
-    if (this.goTo("cat-kit")) giveMedicine(s, medicine, stateRng(s, "behavior"));
+    // Відлік до наступної дози — від того, як кіт проковтнув: дорога до кота й аптечки буває різна.
+    if (this.goTo("cat-kit") && giveMedicine(s, medicine, stateRng(s, "behavior"))) this.dosed.set(cat.id, s.day * 1440 + s.minute);
     interact(this.save);
   }
 
