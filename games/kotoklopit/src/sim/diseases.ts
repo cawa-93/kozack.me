@@ -32,15 +32,17 @@ export function maybeFallIll(state: GameState, cat: Cat, id: DiseaseId, base: nu
   return !hasDisease(cat, id) && rng.chance(illnessChance(state, cat, base)) && fallIll(state, cat, id);
 }
 
-function cure(state: GameState, cat: Cat, disease: CatDisease): void {
+/** Хвороба минула. Після застуди — раз кон'юнктивіт з шансом 30% (рішення автора 2026-10-27, Х2). */
+function cure(state: GameState, cat: Cat, disease: CatDisease, rng: Rng): void {
   cat.diseases = cat.diseases.filter((d) => d !== disease);
   emit(state, { type: "cat-cured", cat: cat.id, disease: disease.id });
+  if (disease.id === "cold") maybeFallIll(state, cat, "conjunctivitis", ILLNESS.afterCold, rng);
 }
 
 /** Вилікувати хворобу, якщо кіт нею хворіє (ветеринар, дорогий шампунь). */
-export function cureDisease(state: GameState, cat: Cat, id: DiseaseId): boolean {
+export function cureDisease(state: GameState, cat: Cat, id: DiseaseId, rng: Rng): boolean {
   const disease = cat.diseases.find((d) => d.id === id);
-  if (disease) cure(state, cat, disease);
+  if (disease) cure(state, cat, disease, rng);
   return disease !== undefined;
 }
 
@@ -81,7 +83,7 @@ export function afterMeal(state: GameState, cat: Cat, premium: boolean, rng: Rng
   const diet = DISEASES.stomach.cure;
   if (stomach && premium && diet.kind === "diet") {
     stomach.diet += 1;
-    if (stomach.diet >= diet.portions) cure(state, cat, stomach);
+    if (stomach.diet >= diet.portions) cure(state, cat, stomach, rng);
   }
   if (!premium) maybeFallIll(state, cat, "stomach", ILLNESS.cheapFoodStomach, rng);
 }
@@ -109,27 +111,26 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
       if (rule.cure.kind === "calm") {
         disease.calm = today >= ILLNESS.calmMood ? disease.calm + 1 : 0;
         if (disease.calm >= rule.cure.days) {
-          cure(state, cat, disease);
+          cure(state, cat, disease, rng);
           continue;
         }
       }
       // Ожиріння минає, щойно вага повернулася майже до норми (§9.12, «Схильність до повноти»).
       if (rule.cure.kind === "weight" && weightOf(cat) < WEIGHT.cured) {
-        cure(state, cat, disease);
+        cure(state, cat, disease, rng);
         continue;
       }
       const controlled = rule.cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
       const days = state.day - disease.day;
       if (!controlled && days >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
       // Гострі минають самі (рішення автора 2026-10-27, Х1): остання ніч ще шкодить.
-      if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease);
+      if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease, rng);
     }
     if (cat.diseases.length > 0) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
     // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.
     if (weightOf(cat) >= WEIGHT.obese) fallIll(state, cat, "obesity");
-    const hadCold = hasDisease(cat, "cold");
     maybeFallIll(state, cat, "cold", ILLNESS.cold, rng);
-    maybeFallIll(state, cat, "conjunctivitis", hadCold ? ILLNESS.afterCold : ILLNESS.conjunctivitis, rng);
+    maybeFallIll(state, cat, "conjunctivitis", ILLNESS.conjunctivitis, rng);
     // Новий кіт у перші дні сумує від переїзду: це ще не стрес, що доводить до циститу.
     if (today < ILLNESS.cystitisMood && !isAdapting(state, cat)) maybeFallIll(state, cat, "cystitis", ILLNESS.cystitis, rng);
   }
@@ -191,7 +192,7 @@ export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): bo
     if (rule.kind !== medicine) continue;
     if (quality === "cheap" && !rng.chance(MEDICINE.cheapWorks)) continue;
     disease.doses += 1;
-    if (disease.doses >= rule.doses) cure(state, cat, disease);
+    if (disease.doses >= rule.doses) cure(state, cat, disease, rng);
   }
   emit(state, { type: "medicine", cat: cat.id, medicine, quality });
   return true;

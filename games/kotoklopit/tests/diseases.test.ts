@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, DISEASES } from "../src/sim/config";
+import { BATH, DISEASES, ILLNESS } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -75,6 +75,32 @@ describe("перебіг хвороби (§9.5)", () => {
       nightlyDiseases(save.current, quietRng());
     }
     expect(hasDisease(fleas, "fleas")).toBe(true);
+  });
+
+  it("кон'юнктивіт після застуди — один кидок, коли вона минає (рішення автора 2026-10-27, Х2)", () => {
+    // Кидки з шансом понад 10% вдаються, менші — ні: лишається лише «після застуди» (30%, з «Витривалістю» безпородного — 27%).
+    const afterColdRng = () => ({ ...createRng(1), chance: (p: number) => p > ILLNESS.afterCold / 3 });
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "cold");
+    const start = save.current.day;
+    const days = DISEASES.cold.recovers ?? 0;
+    for (let night = 0; night < days - 1; night++) {
+      save.current.day = start + night;
+      nightlyDiseases(save.current, afterColdRng());
+    }
+    expect(hasDisease(cat, "conjunctivitis")).toBe(false);
+    save.current.day = start + days - 1;
+    nightlyDiseases(save.current, afterColdRng());
+    expect(hasDisease(cat, "cold")).toBe(false);
+    expect(hasDisease(cat, "conjunctivitis")).toBe(true);
+    // Вилікували таблетками — так само.
+    const other = withCat(save);
+    fallIll(save.current, other, "cold");
+    hold(save, other);
+    for (let i = 0; i < 4; i++) giveMedicine(save.current, "pills", afterColdRng());
+    expect(hasDisease(other, "cold")).toBe(false);
+    expect(hasDisease(other, "conjunctivitis")).toBe(true);
   });
 
   it("поки кіт хворіє, настрій щоночі −3", () => {

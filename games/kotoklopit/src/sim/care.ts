@@ -144,7 +144,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
   if (scratched) fallIllPerson(state, "injury");
   cat.bathedDay = state.day;
-  if (quality === "premium") cureDisease(state, cat, "dermatitis");
+  if (quality === "premium") cureDisease(state, cat, "dermatitis", rng);
   emit(state, { type: "bathed", cat: cat.id });
   if (water <= -2) {
     // Вирвався з рук і тікає ховатися.

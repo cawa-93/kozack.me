@@ -141,7 +141,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
     return "controlled";
   }
   if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return "failed";
-  cureDisease(state, cat, disease);
+  cureDisease(state, cat, disease, rng);
   return "cured";
 }
 

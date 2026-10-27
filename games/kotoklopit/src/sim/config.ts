@@ -976,6 +976,7 @@ export const DISEASES: Record<
 export const ILLNESS = {
   cold: 1 / 60,
   conjunctivitis: 1 / 100,
+  /** Застуда минула — раз кон'юнктивіт (рішення автора 2026-10-27, Х2). */
   afterCold: 0.3,
   shelterFleas: 0.2,
   escapeFleas: 0.3,
