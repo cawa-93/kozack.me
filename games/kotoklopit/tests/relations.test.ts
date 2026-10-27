@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, tickActivity } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, enoughFor, jealousy, tickCats } from "../src/sim/catai";
-import { newGame } from "../src/sim/game";
+import { goToSleep, newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
@@ -440,34 +440,20 @@ describe("новий дорослий кіт (§9.4, рішення автора
     expect(hisses({}, { kitten: true })).toBe(0);
   });
 
-  it("кошеня, що подорослішало в перші 2 дні, — не новий дорослий кіт: на нього не шиплять (перевірка блоку 2)", () => {
-    // Неділя (день 13): кіт приходить у дім; у ніч на понеділок йому +1 тиждень. Понеділок, 10:00 — він іде повз.
-    const hisses = (arrivedAge: number): number => {
-      let count = 0;
-      for (let seed = 1; seed <= 60; seed++) {
-        const save = game(seed);
-        save.current.day = 13;
-        const resident = withCat(save, {}, { x: 9.5, y: 8.5 });
-        const fresh = newcomer(save, {}, { x: 7.5, y: 7.5 }, arrivedAge);
-        save.current.day = 14;
-        save.current.minute = 10 * 60;
-        fresh.ageWeeks = arrivedAge + 1;
-        expect(isNewcomer(save.current, fresh)).toBe(arrivedAge > 2);
-        resident.act = idleAct(60);
-        fresh.act = { kind: "wander", target: null, goal: { x: 12, y: 7 }, minutes: 8, elapsed: 0 };
-        const { events, stop } = recordEvents();
-        for (let t = 0; t < 2; t += 0.25) {
-          save.current.minute += 0.25;
-          tickCats(save.current, 0.25, { present: false });
-        }
-        stop();
-        count += events.filter((e) => e.type === "hissed" && e.cat === resident.id && e.at === fresh.id).length;
-      }
-      return count;
-    };
-    // Кошеня 2 тижнів (як від заводчика) — ні; дорослий 3 тижнів — так.
-    expect(hisses(2)).toBe(0);
-    expect(hisses(3)).toBeGreaterThan(0);
+  it("за перші 2 дні кіт не старшає: кошеня, взяте в неділю, у понеділок — ще кошеня, а не новий дорослий кіт (§9.1, рішення автора 2026-10-27)", () => {
+    // До 2026-10-27 вік ріс у ніч на понеділок, і кошеня від заводчика, взяте в неділю, з понеділка вважалося новим дорослим.
+    for (const arrivedAge of [2, 3]) {
+      const save = game(1);
+      save.current.day = 13;
+      save.current.modifiers.day = null;
+      const fresh = newcomer(save, {}, { x: 7.5, y: 7.5 }, arrivedAge);
+      save.current.minute = 22 * 60;
+      goToSleep(save);
+      const cat = save.current.cats.find((c) => c.id === fresh.id);
+      expect(save.current.day).toBe(14);
+      expect(cat?.ageWeeks).toBe(arrivedAge);
+      expect(cat && isNewcomer(save.current, cat)).toBe(arrivedAge > 2);
+    }
   });
 });
 

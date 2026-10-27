@@ -8,7 +8,8 @@ import { applyMorningSanity } from "../src/sim/night";
 import type { Difficulty, NightStep } from "../src/sim/types";
 import { hours } from "./helpers";
 
-const WEEKDAY_NIGHT: NightStep[] = ["sleep", "cat-health", "cat-death", "kitten-check", "morning", "new-day"];
+// Вік і межа віку — щоночі, для котів, яким минає ще тиждень від дня появи (§9.1, рішення автора 2026-10-27).
+const WEEKDAY_NIGHT: NightStep[] = ["sleep", "cat-health", "cat-death", "cat-age", "age-limit", "kitten-check", "morning", "new-day"];
 const SUNDAY_NIGHT: NightStep[] = [
   "sleep",
   "cat-health",
@@ -84,16 +85,28 @@ describe("кошеня з притулку (§6.2)", () => {
     expect(save.current.character.stats.sanity).toBe(51);
   });
 
-  it("кошеня в ніч на понеділок має вік 1 тиждень, а старші коти дорослішають", () => {
+  it("кіт старшає раз на 7 днів від дня появи — у будь-який день тижня, не в ніч на понеділок (§9.1, рішення автора 2026-10-27)", () => {
     const save = game();
-    save.current.day = 6;
-    const older = createCat(save.current, createRng(1), { source: "shelter-forced", ageWeeks: 1 });
-    save.current.cats.push(older);
-    save.current.character.stats.sanity = 25;
-    save.current.minute = hours(22);
-    goToSleep(save);
-    const kitten = save.current.cats.find((cat) => cat.id !== older.id);
-    expect(save.current.cats.find((cat) => cat.id === older.id)?.ageWeeks).toBe(2);
+    save.current.modifiers.day = null;
+    // Кіт з'явився в середу (день 2) з віком 1 тиждень.
+    save.current.day = 2;
+    const cat = createCat(save.current, createRng(1), { source: "shelter-forced", ageWeeks: 1 });
+    save.current.cats.push(cat);
+    const ages: number[] = [];
+    for (let night = 0; night < 8; night++) {
+      save.current.character.stats.sanity = 80;
+      save.current.minute = hours(22);
+      goToSleep(save);
+      ages.push(save.current.cats.find((c) => c.id === cat.id)?.ageWeeks ?? -1);
+    }
+    // Ранки днів 3…10: у понеділок (день 7) ще 1 тиждень, у наступну середу (день 9) — 2, з новою рисою.
+    expect(ages).toEqual([1, 1, 1, 1, 1, 1, 2, 2]);
+    expect(save.current.cats.find((c) => c.id === cat.id)?.traits).toHaveLength(2);
+  });
+
+  it("примусове кошеня — 1 тиждень і 1 риса", () => {
+    const { save } = sleepOn(6, 25);
+    const kitten = save.current.cats[0];
     expect(kitten?.ageWeeks).toBe(1);
     expect(kitten?.traits).toHaveLength(1);
   });

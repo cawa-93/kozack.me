@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { lifeLevel, oldAgeChance, removeCat, zeroHealthCause, zeroHealthDeaths } from "../src/sim/farewell";
+import { lifeLevel, oldAgeChance, oldAgeDeaths, removeCat, zeroHealthCause, zeroHealthDeaths } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -77,6 +77,18 @@ describe("старість (§9.2)", () => {
     expect(oldAgeChance(withCat(save, 8))).toBeCloseTo(0.45);
     expect(oldAgeChance(withCat(save, 6, { longevity: 2 }))).toBeCloseTo(0.15);
     expect(oldAgeChance(withCat(save, 14))).toBe(1);
+  });
+
+  it("перевірка — у ніч, коли кіт старшає, тож і посеред тижня (§9.1, рішення автора 2026-10-27)", () => {
+    const save = game();
+    const old = withCat(save, 14);
+    // З'явився в четвер (день 3): старшає в ночі на четвер — 9, 16…
+    old.arrivedDay = 3;
+    const always = { ...createRng(1), chance: () => true };
+    save.current.day = 6;
+    expect(oldAgeDeaths(save.current, always)).toEqual([]);
+    save.current.day = 9;
+    expect(oldAgeDeaths(save.current, always).map((e) => e.id)).toEqual([old.id]);
   });
 });
 

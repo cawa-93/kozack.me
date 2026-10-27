@@ -4,7 +4,7 @@ import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
 import { knownBreedHalves } from "./breeds";
 import { observe } from "./knowledge";
-import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
+import { ageCat, ageDue, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, closeLedger, passSleepTime } from "./character";
 import {
@@ -26,7 +26,7 @@ import {
 } from "./config";
 import { addSupply, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
-import { isHurting, maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
+import { agingDiseases, isHurting, maybeFallIll, nightlyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
 import { nightlyCare } from "./care";
 import { nightlyHousehold, tickHousehold } from "./household";
@@ -61,9 +61,10 @@ const STEPS: readonly Step[] = [
   { id: "cat-health", run: catHealth },
   // 2. Смерть від нульового здоров'я (§9.5).
   { id: "cat-death", run: catDeath },
-  // 3. Ніч із неділі на понеділок.
-  { id: "cat-age", weekly: true, run: ageCats },
-  { id: "age-limit", weekly: true, run: ageLimit }, // §9.2
+  // 3. Коти, яким минає ще тиждень відтоді, як з'явилися вдома (§9.1, рішення автора 2026-10-27): вік і межа віку.
+  { id: "cat-age", run: ageCats },
+  { id: "age-limit", run: ageLimit }, // §9.2
+  // 4. Ніч із неділі на понеділок.
   { id: "births", weekly: true, run: births }, // §9.8
   { id: "pregnancies", weekly: true, run: pregnancies }, // §9.8
   { id: "utilities", weekly: true, run: utilities },
@@ -307,9 +308,13 @@ function weekModifier({ state }: Night): void {
   state.modifiers.week = chooseWeekModifier(state, weekOf(state.day + 1));
 }
 
+/** Коти старшають у свою ніч — раз на 7 днів від дня появи (§9.1): вік, нова риса, старечі болячки. */
 function ageCats({ state, rng }: Night): void {
-  for (const cat of state.cats) ageCat(state, cat, rng);
-  weeklyDiseases(state, rng);
+  for (const cat of state.cats) {
+    if (!ageDue(state, cat)) continue;
+    ageCat(state, cat, rng);
+    agingDiseases(state, cat, rng);
+  }
 }
 
 function utilities({ state, report }: Night): void {

@@ -363,7 +363,16 @@ function parentTraits(state: GameState, cat: Cat): Trait[] {
   return ids.flatMap((id) => state.cats.find((c) => c.id === id)?.traits ?? state.album.find((e) => e.id === id)?.traits ?? []);
 }
 
-/** Ніч на понеділок (§4, §9.1): вік +1 і нова риса, знак — за середнім настроєм тижня. */
+/**
+ * Цієї ночі кіт старшає (§9.1, рішення автора 2026-10-27): минає ще 7 днів відтоді, як він з'явився вдома, — кошеня, що
+ * народилося в середу, старшає в ніч на наступну середу. Раніше всі коти старшали в ніч на понеділок.
+ */
+export function ageDue(state: GameState, cat: Cat): boolean {
+  const days = state.day + 1 - cat.arrivedDay;
+  return days > 0 && days % WEEK_DAYS === 0;
+}
+
+/** Ніч, коли кіт старшає (§4, §9.1): вік +1 і нова риса, знак — за середнім настроєм тижня. */
 export function ageCat(state: GameState, cat: Cat, rng: Rng): void {
   cat.ageWeeks += 1;
   if (cat.traits.length >= Math.min(cat.ageWeeks, maxTraits(cat))) return;

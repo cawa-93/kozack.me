@@ -1,6 +1,6 @@
 // Прощання (§9.7): смерть кота від нульового здоров'я чи старості, причина смерті й «Альбом пам'яті».
 
-import { lifeMood, traitLevel } from "./cat";
+import { ageDue, lifeMood, traitLevel } from "./cat";
 import { changeStat } from "./character";
 import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, SANITY_FLOOR } from "./config";
 import { emit } from "./events";
@@ -101,11 +101,11 @@ export function oldAgeChance(cat: Cat): number {
   return Math.min(1, Math.max(0, chance));
 }
 
-/** Ніч на понеділок (§9.2): старість. */
+/** Старість (§9.2): перевірка на початку власного тижня кота — у ніч, коли він постаршав (§9.1). */
 export function oldAgeDeaths(state: GameState, rng: Rng): AlbumEntry[] {
   const gone: AlbumEntry[] = [];
   for (const cat of [...state.cats]) {
-    if (rng.chance(oldAgeChance(cat))) gone.push(removeCat(state, cat, { kind: "old" }, state.day));
+    if (ageDue(state, cat) && rng.chance(oldAgeChance(cat))) gone.push(removeCat(state, cat, { kind: "old" }, state.day));
   }
   return gone;
 }

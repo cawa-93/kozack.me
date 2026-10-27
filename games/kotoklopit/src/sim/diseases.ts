@@ -177,9 +177,9 @@ function spread(state: GameState, rng: Rng): void {
   }
 }
 
-/** Ніч на понеділок (§9.5): старечі болячки в котів понад межу віку. */
-export function weeklyDiseases(state: GameState, rng: Rng): void {
-  for (const cat of state.cats) if (isOld(cat)) maybeFallIll(state, cat, "senior", ILLNESS.seniorPerWeek, rng);
+/** Кіт постаршав (§9.5, §9.1): старечі болячки понад межу віку — шанс раз на його тиждень. */
+export function agingDiseases(state: GameState, cat: Cat, rng: Rng): void {
+  if (isOld(cat)) maybeFallIll(state, cat, "senior", ILLNESS.seniorPerWeek, rng);
 }
 
 // --- Ліки вдома -----------------------------------------------------------------------------
