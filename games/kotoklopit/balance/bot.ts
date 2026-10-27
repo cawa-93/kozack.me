@@ -43,8 +43,8 @@ const VET_TRIP_HOURS = { from: 8, to: 15 };
  * вріжеться; з розгоном за крок — ~×0,4–0,45.
  */
 const SAFE_SPEED = 0.4;
-/** Скільки грошей лишити після ветеринара: на корм і комунальні. */
-const VET_TRIP_RESERVE = 100;
+/** Скільки грошей лишити після необов'язкової покупки (дорогий корм-дієта, ветеринар): на корм і комунальні. */
+const SPARE_MONEY = 300;
 
 export interface BotPolicy {
   /** У скільки разів більше працювати, ніж вимагає посада (частка присутності × 9 годин). */
@@ -292,12 +292,16 @@ export class Bot {
       if (sick("pills")) need("pills", 2);
       if (sick("drops")) need("drops", 1);
       need("catFood", cats * 4);
-      // Кіт блює й ходить повз лоток (розлад шлунка) — уважний гравець бере дорогий корм: це дієта (§9.5).
+      // Кіт блює й ходить повз лоток (розлад шлунка) — дорогий корм як дієта (§9.5), коли грошей удосталь: розлад і так
+      // минає за 4 дні, а пакунок коштує 200 (баланс 2026-10-27: без запасу грошей — виселення на «Реалістичному»).
       const premium = s.home.supplies.catFood.premium + [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === "catFood" && d.quality === "premium").length;
-      if (premium === 0 && s.cats.some((c) => c.diseases.some((d) => d.id === "stomach"))) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });
+      const stomach = s.cats.some((c) => c.diseases.some((d) => d.id === "stomach"));
+      if (premium === 0 && stomach && s.character.money > PRODUCTS.catFood.price.premium + SPARE_MONEY) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });
       // Переноска — щойно є з чим їхати до ветеринара.
       const carrier = [...s.home.deliveries, ...s.home.porch].some((d) => "thing" in d && d.thing === "carrier");
-      if (s.home.carrier === null && !carrier && s.cats.some((c) => this.needsVet(c))) cart.push({ goods: { thing: "carrier" }, quality: "cheap", count: 1 });
+      if (s.home.carrier === null && !carrier && s.character.money > VET.exam + VET.premium + SPARE_MONEY && s.cats.some((c) => this.needsVet(c))) {
+        cart.push({ goods: { thing: "carrier" }, quality: "cheap", count: 1 });
+      }
       need("litter", Math.max(2, cats));
     }
     // Речі за правилом «лотків на один більше» (§9.4), коли є запас грошей.
@@ -438,7 +442,7 @@ export class Bot {
     const s = this.state;
     if (s.home.carrier === null || this.skipped("vet") || isWorkTime(s) || !canLeave(s)) return null;
     if (s.minute < VET_TRIP_HOURS.from * 60 || s.minute > VET_TRIP_HOURS.to * 60) return null;
-    if (s.character.money < VET.exam + VET.premium + VET_TRIP_RESERVE) return null;
+    if (s.character.money < VET.exam + VET.premium + SPARE_MONEY) return null;
     return s.cats.find((c) => c.away === null && this.needsVet(c)) ?? null;
   }
 
