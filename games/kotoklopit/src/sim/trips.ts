@@ -40,8 +40,8 @@ export function canLeave(state: GameState): boolean {
 /** Чому сюди зараз не поїхати; null — можна. */
 export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "office" | "show" | null {
   const cat = heldCat(state);
-  // Виставка — лише в її день (§4.1).
-  if (destination === "show" && state.modifiers.day !== "show") return "show";
+  // Виставка — лише в її день і раз (§4.1): раніше можна було їздити знову й знову по призи (перевірка поїздок 2026-10-28).
+  if (destination === "show" && (state.modifiers.day !== "show" || state.today.showDone === true)) return "show";
   // Офіс — лише в день зборів, раз і поки є робота: після зборів туди нема чого їхати (перевірка циклу гри 2026-10-27), а
   // з котом на руках у списку не з'являється (перевірка поїздок 2026-10-28).
   if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || state.job.unemployed)) return "office";

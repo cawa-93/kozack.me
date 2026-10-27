@@ -195,7 +195,8 @@ export function cafe(state: GameState, hours: number): boolean {
 export function enterShow(state: GameState, rng: Rng): number | null {
   const cat = tripCat(state);
   const show = MODIFIERS.show;
-  if (!cat || state.trip?.destination !== "show" || !spend(state, show.fee, "other")) return null;
+  if (!cat || state.trip?.destination !== "show" || state.today.showDone === true || !spend(state, show.fee, "other")) return null;
+  state.today.showDone = true;
   const [a, b] = cat.breed;
   const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
   // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).

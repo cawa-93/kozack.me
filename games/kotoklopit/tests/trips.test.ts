@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { TRIPS } from "../src/sim/config";
-import { adopt, buyAtShop, cafe, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { adopt, buyAtShop, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -168,6 +168,23 @@ describe("поїздки й робота (§8.6)", () => {
     rewind.stop();
     expect(rewind.events).toContainEqual(expect.objectContaining({ type: "standup", attended: false }));
     expect(rewind.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
+  });
+
+  it("виставка — раз на день: після участі її немає в списку, і приз удруге не дають (перевірка поїздок 2026-10-28)", () => {
+    const save = game(9 * 60);
+    save.current.day = 6;
+    save.current.modifiers.day = "show";
+    const cat = withCat(save);
+    save.current.home.carrier = "cheap";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(startTrip(save.current, "show")).toBe(true);
+    driveSafely(save);
+    expect(enterShow(save.current, createRng(1))).not.toBeNull();
+    expect(enterShow(save.current, createRng(1))).toBeNull();
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.show.road);
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    standAt(save, "door");
+    expect(tripBlocker(save.current, "show")).toBe("show");
   });
 
   it("офіс не пропонується з котом на руках у звичайний день і безробітному (перевірка поїздок 2026-10-28)", () => {

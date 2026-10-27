@@ -151,6 +151,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.meetingMinutes = 0;
   today.vaccinated = false;
   today.officeDone = false;
+  delete today.showDone;
   today.earlyWake = 0;
   delete today.mom;
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;

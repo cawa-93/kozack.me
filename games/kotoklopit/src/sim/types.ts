@@ -989,6 +989,8 @@ export interface ModifierDay {
   vaccineMissedUntil: number;
   /** Сьогодні вже були в офісі. */
   officeDone: boolean;
+  /** Сьогодні вже брали участь у виставці котів (у старих збереженнях — немає). */
+  showDone?: boolean;
   /** Під дверима знайда, рішення ще не ухвалено. */
   foundling: boolean;
   /** Коли востаннє була знайда. */
