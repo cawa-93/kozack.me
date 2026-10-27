@@ -6,7 +6,7 @@ import { knownBreedHalves } from "./breeds";
 import { observe } from "./knowledge";
 import { ageCat, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
-import { changeStat, passSleepTime } from "./character";
+import { changeStat, closeLedger, passSleepTime } from "./character";
 import {
   BREEDING,
   DIFFICULTY,
@@ -91,6 +91,7 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
     givenCats: [],
     newCats: [],
     utilities: null,
+    ledger: null,
     sanityEvening: sanity,
     sanityMorning: sanity,
   };
@@ -313,6 +314,8 @@ function ageCats({ state, rng }: Night): void {
 
 function utilities({ state, report }: Night): void {
   report.utilities = payUtilities(state);
+  // Гроші тижня разом із платежем комунальних — у звіт ночі; новий тиждень рахується з нуля (§6.4, «Куди йдуть гроші»).
+  report.ledger = closeLedger(state);
 }
 
 /**

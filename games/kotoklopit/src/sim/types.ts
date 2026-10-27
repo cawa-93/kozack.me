@@ -939,8 +939,22 @@ export interface NightReport {
   givenCats: number[];
   newCats: number[];
   utilities: UtilitiesReport | null;
+  /** Гроші тижня, що закінчився (§6.4, «Куди йдуть гроші»): лише в ніч на понеділок. */
+  ledger: Ledger | null;
   sanityEvening: number;
   sanityMorning: number;
+}
+
+/**
+ * На що пішли гроші (§6.4, «Куди йдуть гроші», рішення автора 2026-10-27): корм і запаси, речі, доставка, комунальні,
+ * ветеринар і лікар, решта.
+ */
+export type Spending = "supplies" | "things" | "delivery" | "utilities" | "health" | "other";
+
+/** Гроші за тиждень (§6.4): скільки заробили й скільки витратили на кожну категорію. */
+export interface Ledger {
+  earned: number;
+  spent: Partial<Record<Spending, number>>;
 }
 
 /** Статистика гри (§4.2). */
@@ -1015,6 +1029,8 @@ export interface GameState {
    * `relations`. Уночі від цього залежить зближення, і список починається заново. У старих збереженнях немає.
    */
   strife?: Record<string, { quarrel?: true; fight?: true }>;
+  /** Гроші цього тижня (§6.4, «Куди йдуть гроші»): у ніч на понеділок ідуть у звіт ночі й рахуються наново. У старих збереженнях немає. */
+  ledger?: Ledger;
   /** Наступний id для котів, речей, безладу й пакунків. */
   nextId: number;
   rng: Record<RngStream, number>;

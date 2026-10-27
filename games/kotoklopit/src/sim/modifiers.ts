@@ -398,7 +398,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     openDoor(state);
     const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
     const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (state.home.fur >= 50 ? m.inspection.fur : 0);
-    spend(state, Math.min(fine, state.character.money));
+    spend(state, Math.min(fine, state.character.money), "other");
     emit(state, { type: "modifier", kind: "inspection", value: fine });
   }
   if (day === "guests" && crossed(from, minutes, m.guests.minute)) {

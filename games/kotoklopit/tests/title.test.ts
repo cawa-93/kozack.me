@@ -34,4 +34,25 @@ describe("титулка дня (§4)", () => {
     expect(lines.filter((l) => l === "Мурчик не давав спати вночі.")).toHaveLength(1);
     expect(lines).toContain("Мурка вимагала сніданку о 05:00.");
   });
+
+  it("у понеділок — гроші за тиждень: заробили, витратили й категорії від найбільшої, без порожніх (рішення автора 2026-10-27, Е4)", () => {
+    const { current: state } = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    state.day = 7;
+    const night = {
+      wakeUps: [],
+      newCats: [],
+      givenCats: [],
+      lostCats: [],
+      utilities: { outcome: "paid", paid: 40, nextDue: 0 },
+      ledger: { earned: 245.4, spent: { supplies: 210, delivery: 97, utilities: 40, health: 0 } },
+    } as unknown as NightReport;
+    const lines = dayTitle(state, night).flatMap((s) => s.blocks.flat());
+    const at = lines.indexOf("Гроші за тиждень");
+    expect(lines[at - 1]).toBe("Комунальні: −40 ₴.");
+    expect(lines[at + 1]).toBe("Заробили 245 ₴, витратили 347 ₴.");
+    expect(lines[at + 2]).toBe("Корм і запаси — 210 ₴; доставка — 97 ₴; комунальні — 40 ₴.");
+    // У будні підсумку немає.
+    const weekday = dayTitle(state, { ...night, utilities: null, ledger: null }).flatMap((s) => s.blocks.flat());
+    expect(weekday).not.toContain("Гроші за тиждень");
+  });
 });

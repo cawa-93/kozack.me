@@ -145,6 +145,17 @@ describe("комунальні в ніч на понеділок (§6.4)", () =>
     expect(save.current.character.money).toBe(60);
   });
 
+  it("гроші тижня разом із комунальними — у звіт ночі на понеділок, у будні звіту немає (рішення автора 2026-10-27, Е4)", () => {
+    const save = game();
+    expect(order(save.current, "food", "cheap")).not.toBeNull();
+    save.current.minute = hours(22);
+    expect(goToSleep(save)?.ledger).toBeNull();
+    // 40 за їжу, 4 — 10% бази й 10 — надбавка за окреме замовлення.
+    const report = sundayNight(save, 100);
+    expect(report?.ledger).toEqual({ earned: 0, spent: { supplies: 40, delivery: 14, utilities: 40 } });
+    expect(save.current.ledger).toEqual({ earned: 0, spent: {} });
+  });
+
   it("у будні комунальні не списуються", () => {
     const save = game();
     save.current.minute = hours(22);

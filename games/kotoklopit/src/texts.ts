@@ -3,7 +3,7 @@
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { GuestsVisit } from "./sim/events";
-import type { AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Sex, UtilitiesReport } from "./sim/types";
+import type { AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
 
 /** Підставити значення й обрати форми за статтю того, про кого йдеться. */
 export function fill(template: string, sex: Sex, values: Record<string, string | number> = {}): string {
@@ -42,6 +42,30 @@ export const UTILITIES_MESSAGES: Record<Exclude<UtilitiesReport["outcome"], "evi
   partial: "Комунальні: −{сума} ₴, але попередження лишається: у понеділок — {борг} ₴.",
   cleared: "Борг за комунальні погашено: −{сума} ₴. ОСББ зняло попередження.",
 };
+
+/** Гроші за тиждень на титулці понеділка (§6.4, «Куди йдуть гроші», рішення автора 2026-10-27, Е4) і борг у телефоні. */
+export const LEDGER_TEXTS = {
+  heading: "Гроші за тиждень",
+  total: "Заробили {заробили} ₴, витратили {витратили} ₴.",
+  debt: "Борг за комунальні: {борг} ₴. У понеділок — {платіж} ₴.",
+} as const;
+export const SPENDING_TITLES: Record<Spending, string> = {
+  supplies: "корм і запаси",
+  things: "речі",
+  delivery: "доставка",
+  utilities: "комунальні",
+  health: "ветеринар і лікар",
+  other: "решта",
+};
+
+/** Підсумок тижня (§6.4): заробили й витратили, далі категорії від найбільшої, без порожніх. */
+export function ledgerLines(ledger: Ledger): string[] {
+  const spent = (Object.entries(ledger.spent) as [Spending, number][]).map(([on, sum]) => [on, Math.round(sum)] as const).filter(([, sum]) => sum > 0);
+  const total = spent.reduce((a, [, sum]) => a + sum, 0);
+  const lines = [fill(LEDGER_TEXTS.total, "male", { заробили: Math.round(ledger.earned), витратили: total })];
+  if (spent.length > 0) lines.push(`${[...spent].sort((a, b) => b[1] - a[1]).map(([on, sum]) => `${SPENDING_TITLES[on]} — ${sum} ₴`).join("; ")}.`.replace(/^./, (c) => c.toUpperCase()));
+  return lines;
+}
 
 /** Модифікатори дня на титулці: назва й ситуація, без пояснення ефекту — його гравець відчує сам (§4.1, §11.3а). */
 export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: string }> = {

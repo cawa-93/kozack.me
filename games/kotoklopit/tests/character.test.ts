@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { changeStat, earn, spend } from "../src/sim/character";
+import { changeStat, closeLedger, earn, spend } from "../src/sim/character";
 import { FIRST_WEEK_PROTECTION, START_MONEY, START_STATS } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -133,17 +133,28 @@ describe("захист першого тижня (§8.3)", () => {
 describe("гроші (§6.4)", () => {
   it("піти в мінус не можна", () => {
     const { current } = game();
-    expect(spend(current, START_MONEY + 1)).toBe(false);
+    expect(spend(current, START_MONEY + 1, "other")).toBe(false);
     expect(current.character.money).toBe(START_MONEY);
-    expect(spend(current, 40)).toBe(true);
+    expect(spend(current, 40, "supplies")).toBe(true);
     expect(current.character.money).toBe(START_MONEY - 40);
     earn(current, 10);
     expect(current.character.money).toBe(START_MONEY - 30);
   });
 
+  it("гроші тижня: заробіток і витрати за категоріями, у ніч на понеділок — у звіт і з нуля (рішення автора 2026-10-27, Е4)", () => {
+    const { current } = game();
+    earn(current, 25);
+    spend(current, 40, "supplies");
+    spend(current, 12, "delivery");
+    spend(current, 8, "supplies");
+    expect(current.ledger).toEqual({ earned: 25, spent: { supplies: 48, delivery: 12 } });
+    expect(closeLedger(current)).toEqual({ earned: 25, spent: { supplies: 48, delivery: 12 } });
+    expect(current.ledger).toEqual({ earned: 0, spent: {} });
+  });
+
   it("нуль грошей не закінчує гру", () => {
     const { current } = game();
-    expect(spend(current, START_MONEY)).toBe(true);
+    expect(spend(current, START_MONEY, "other")).toBe(true);
     expect(current.character.money).toBe(0);
     expect(current.end).toBeNull();
   });

@@ -25,7 +25,7 @@ import {
   STAT_MAX,
 } from "./config";
 import { endGame } from "./events";
-import type { GameState, StatName } from "./types";
+import type { GameState, Ledger, Spending, StatName } from "./types";
 
 export const STAT_NAMES: readonly StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
@@ -71,13 +71,26 @@ export function changeStat(state: GameState, stat: StatName, delta: number, floo
 
 export function earn(state: GameState, amount: number): void {
   state.character.money += amount;
+  ledgerOf(state).earned += amount;
 }
 
-/** Заплатити, якщо вистачає грошей: піти в мінус не можна (§6.4). */
-export function spend(state: GameState, amount: number): boolean {
+/** Заплатити, якщо вистачає грошей: піти в мінус не можна (§6.4). Витрата — у гроші тижня за категорією. */
+export function spend(state: GameState, amount: number, on: Spending): boolean {
   if (state.character.money < amount) return false;
   state.character.money -= amount;
+  const spent = ledgerOf(state).spent;
+  spent[on] = (spent[on] ?? 0) + amount;
   return true;
+}
+
+/** Гроші цього тижня (§6.4, «Куди йдуть гроші»); у старому збереженні — з нуля. */
+const ledgerOf = (state: GameState): Ledger => (state.ledger ??= { earned: 0, spent: {} });
+
+/** Ніч на понеділок: гроші тижня — у звіт, новий тиждень рахується з нуля (§6.4). */
+export function closeLedger(state: GameState): Ledger {
+  const week = ledgerOf(state);
+  state.ledger = { earned: 0, spent: {} };
+  return week;
 }
 
 /** Хронотип (§5.1): множник втрат здорового глузду від неприємних завдань у цю хвилину. */

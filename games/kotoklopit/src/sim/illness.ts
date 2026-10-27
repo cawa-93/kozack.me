@@ -88,13 +88,13 @@ export function takeHumanMeds(state: GameState, rng: Rng): boolean {
 
 /** Огляд у лікаря (§6.5): діагноз; без хвороб — лише «здорові» (правка автора 2026-10-22). */
 export function doctorExam(state: GameState): boolean {
-  return state.trip?.destination === "doctor" && spend(state, DOCTOR.exam);
+  return state.trip?.destination === "doctor" && spend(state, DOCTOR.exam, "health");
 }
 
 /** Лікування в лікаря (§6.5): хвороба минає, здоров'я +10, лікарняний з завтра. */
 export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | "premium", rng: Rng): "cured" | "failed" | null {
   const trip = state.trip;
-  if (trip?.destination !== "doctor" || !isIll(state, id) || !spend(state, DOCTOR_TREAT[quality])) return null;
+  if (trip?.destination !== "doctor" || !isIll(state, id) || !spend(state, DOCTOR_TREAT[quality], "health")) return null;
   if (quality === "cheap" && !rng.chance(DOCTOR_TREAT.cheapWorks)) return "failed";
   curePerson(state, id);
   changeStat(state, "health", DOCTOR_TREAT.health);

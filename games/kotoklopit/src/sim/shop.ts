@@ -82,7 +82,7 @@ export function canCheckout(state: GameState, cart: readonly CartLine[], mode: S
  */
 export function checkout(state: GameState, cart: readonly CartLine[], mode: ShopMode): boolean {
   if (!canCheckout(state, cart, mode)) return false;
-  if (mode === "delivery" && !spend(state, cartDelivery(state, cart.filter((l) => l.count > 0), mode))) return false;
+  if (mode === "delivery" && !spend(state, cartDelivery(state, cart.filter((l) => l.count > 0), mode), "delivery")) return false;
   for (const line of cart) {
     for (let i = 0; i < line.count; i++) {
       // Кошик уже перевірено: кілька упаковок одного запасу — усі в ящики.

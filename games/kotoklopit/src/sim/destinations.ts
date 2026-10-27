@@ -24,7 +24,7 @@ import {
 } from "./config";
 import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS } from "./breeds";
 import { cureDisease } from "./diseases";
-import { canOrderProduct, freeSlots, place, stash } from "./economy";
+import { canOrderProduct, freeSlots, place, spendingOf, stash } from "./economy";
 import { giveAway } from "./farewell";
 import { emit } from "./events";
 import { observe } from "./knowledge";
@@ -80,7 +80,7 @@ export function buyAtShop(state: GameState, goods: Goods, quality: Quality): boo
 export function purchase(state: GameState, goods: Goods, quality: Quality): boolean {
   if (state.trip?.destination !== "shop") return false;
   if ("thing" in goods && freeSlots(state, goods.thing) <= 0) return false;
-  if (!spend(state, shopPrice(state, goods, quality))) return false;
+  if (!spend(state, shopPrice(state, goods, quality), spendingOf(goods))) return false;
   // Запаси з магазину, як і доставка, — у ящики біля входу (§6.4).
   if ("product" in goods) stash(state, goods.product, quality, PRODUCTS[goods.product].units[quality]);
   else {
@@ -108,7 +108,7 @@ export function vetManner(cat: Cat): VetManner | null {
 export function vetExam(state: GameState): { health: number; mood: number; weight: number; manner: VetManner | null } | null {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam)) return null;
+  if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam, "health")) return null;
   for (const disease of cat.diseases) disease.known = true;
   // Щеплення (§4.1): кота довезли до ветеринара.
   state.today.vaccinated = true;
@@ -134,7 +134,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   const trip = state.trip;
   const found = cat?.diseases.find((d) => d.id === disease && d.known);
   // Ожиріння грошима не лікують: минає від дієти й ігор (§9.12, «Схильність до повноти»).
-  if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap)) return null;
+  if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
   trip.visit += VET.treatMinutes;
   if (DISEASES[disease].cure.kind === "control") {
     found.controlled = state.day + VET.controlDays[quality];
@@ -149,7 +149,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
 export function vetSterilize(state: GameState): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || !trip || trip.destination !== "vet" || cat.sterilized || !spend(state, STERILIZATION.price)) return false;
+  if (!cat || !trip || trip.destination !== "vet" || cat.sterilized || !spend(state, STERILIZATION.price, "health")) return false;
   trip.visit += STERILIZATION.minutes;
   cat.sterilized = true;
   cat.sterilizedKnown = true;
@@ -167,7 +167,7 @@ export function vetSterilize(state: GameState): boolean {
 export function groom(state: GameState, quality: Quality): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality])) return false;
+  if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality], "other")) return false;
   cat.groomedUntil = state.day + GROOMER.days[quality];
   changeMood(state, cat, GROOMER.mood[quality], "грумер");
   // Як і на огляді, «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
@@ -180,7 +180,7 @@ export function groom(state: GameState, quality: Quality): boolean {
 /** Котокафе (§8.5): здоровий глузд слабшає з кожною годиною; ревниві коти вдома ображаються. */
 export function cafe(state: GameState, hours: number): boolean {
   const trip = state.trip;
-  if (trip?.destination !== "cafe" || hours < 1 || !spend(state, CAFE.pricePerHour * hours)) return false;
+  if (trip?.destination !== "cafe" || hours < 1 || !spend(state, CAFE.pricePerHour * hours, "other")) return false;
   trip.visit = hours * MINUTES_PER_HOUR;
   const factor = DIFFICULTY[state.difficulty].catSanity;
   for (let h = 0; h < Math.min(hours, CAFE.sanity.length); h++) changeStat(state, "sanity", (CAFE.sanity[h] ?? 0) * factor);
@@ -195,7 +195,7 @@ export function cafe(state: GameState, hours: number): boolean {
 export function enterShow(state: GameState, rng: Rng): number | null {
   const cat = tripCat(state);
   const show = MODIFIERS.show;
-  if (!cat || state.trip?.destination !== "show" || !spend(state, show.fee)) return null;
+  if (!cat || state.trip?.destination !== "show" || !spend(state, show.fee, "other")) return null;
   const [a, b] = cat.breed;
   const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
   // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).
@@ -276,7 +276,7 @@ export function breederCatPrice(state: GameState): number {
 export function buyFromBreeder(state: GameState, catId: number): Cat | null {
   if (state.trip?.destination !== "breeder" || !state.breeder) return null;
   const cat = state.breeder.cats.find((c) => c.id === catId);
-  if (!cat || !spend(state, breederCatPrice(state))) return null;
+  if (!cat || !spend(state, breederCatPrice(state), "other")) return null;
   state.breeder.cats = state.breeder.cats.filter((c) => c !== cat);
   welcome(state, cat);
   return cat;
@@ -308,7 +308,7 @@ function welcome(state: GameState, cat: Cat): void {
 export function adopt(state: GameState, catId: number): Cat | null {
   if (state.trip?.destination !== "shelter" || !state.shelter) return null;
   const cat = state.shelter.cats.find((c) => c.id === catId);
-  if (!cat || !spend(state, SHELTER.price)) return null;
+  if (!cat || !spend(state, SHELTER.price, "other")) return null;
   state.shelter.cats = state.shelter.cats.filter((c) => c !== cat);
   welcome(state, cat);
   return cat;

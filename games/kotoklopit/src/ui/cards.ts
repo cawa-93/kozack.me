@@ -23,6 +23,8 @@ import {
   CYCLE_TEXTS,
   BIRTH_MESSAGE,
   KITTEN_MESSAGE,
+  LEDGER_TEXTS,
+  ledgerLines,
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
@@ -104,6 +106,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   if (utilities && utilities.outcome !== "evicted") {
     events.push([fill(UTILITIES_MESSAGES[utilities.outcome], sex, { сума: utilities.paid, борг: utilities.nextDue })]);
   }
+  // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
+  if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
   if (night === null && state.day === 0) {
     events.push(["Керування", isTouch() ? CONTROLS_TOUCH : CONTROLS_KEYBOARD]);
   }
@@ -215,7 +219,13 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const body: (string | HTMLElement)[] = [];
   // Що вже їде, видно в рядку кожного товару (§6.4).
   if (tab === "shop") body.push(shopCatalog(state, "delivery", handlers.checkout));
-  if (tab === "mine") body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`, myThings(state, handlers));
+  if (tab === "mine") {
+    body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`);
+    // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
+    const debt = state.home.utilitiesDebt;
+    if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.sex, { борг: debt, платіж: debt + utilitiesDue(state) }));
+    body.push(myThings(state, handlers));
+  }
   if (tab === "cats") body.push(...catCards(state, handlers));
   if (tab === "album") body.push(...albumCards(state));
   if (tab === "game") body.push(...gameMenu(state, handlers));

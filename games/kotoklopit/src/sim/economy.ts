@@ -20,7 +20,7 @@ import { emit, endGame } from "./events";
 import { SLOTS, SURFACE_IDS } from "./home";
 import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
-import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, ThingKind, UtilitiesReport } from "./types";
+import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, Spending, ThingKind, UtilitiesReport } from "./types";
 
 /** Із запасів спершу береться дороге. */
 const TAKE_ORDER: readonly Quality[] = ["premium", "cheap"];
@@ -228,13 +228,20 @@ export function deliveryCost(state: GameState, base: number): number {
 export function order(state: GameState, product: Product, quality: Quality): Delivery | null {
   if (!canOrderProduct(state, product)) return null;
   const base = productPrice(state, product, quality);
-  return dispatch(state, { product }, quality, base + deliveryCost(state, base));
+  return dispatch(state, { product }, quality, base, deliveryCost(state, base));
 }
 
-/** Відправити пакунок за вказану ціну: гроші списано, пакунок прибуде через 6 годин (§6.4). */
-export function dispatch(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number): Delivery | null {
-  if (state.end !== null) return null;
-  if (!spend(state, price)) return null;
+/** Куди йде покупка в грошах тижня (§6.4, «Куди йдуть гроші»): запаси — «корм і запаси», решта — «речі». */
+export const spendingOf = (goods: { product: Product } | { thing: ThingKind }): Spending => ("product" in goods ? "supplies" : "things");
+
+/**
+ * Відправити пакунок за вказану ціну й доставку окремим замовленням: гроші списано, пакунок прибуде через 6 годин (§6.4).
+ * Доставку кошика списує кошик (`checkout`), тож тут вона 0.
+ */
+export function dispatch(state: GameState, goods: { product: Product } | { thing: ThingKind }, quality: Quality, price: number, shipping = 0): Delivery | null {
+  if (state.end !== null || state.character.money < price + shipping) return null;
+  spend(state, price, spendingOf(goods));
+  spend(state, shipping, "delivery");
   const delivery: Delivery = {
     id: state.nextId++,
     ...goods,
@@ -242,7 +249,7 @@ export function dispatch(state: GameState, goods: { product: Product } | { thing
     at: absoluteMinute(state.day, state.minute) + DELIVERY_HOURS * MINUTES_PER_HOUR,
   };
   state.home.deliveries.push(delivery);
-  emit(state, { type: "ordered", delivery, price });
+  emit(state, { type: "ordered", delivery, price: price + shipping });
   return delivery;
 }
 
@@ -414,15 +421,15 @@ export function payUtilities(state: GameState): UtilitiesReport {
   home.repairs = 0;
   const debt = home.utilitiesDebt;
   if (debt === 0) {
-    if (spend(state, due)) return { outcome: "paid", paid: due, nextDue: 0 };
+    if (spend(state, due, "utilities")) return { outcome: "paid", paid: due, nextDue: 0 };
     home.utilitiesDebt = due;
     return { outcome: "warning", paid: 0, nextDue: due + utilitiesDue(state) };
   }
-  if (spend(state, debt + due)) {
+  if (spend(state, debt + due, "utilities")) {
     home.utilitiesDebt = 0;
     return { outcome: "cleared", paid: debt + due, nextDue: 0 };
   }
-  if (spend(state, debt)) {
+  if (spend(state, debt, "utilities")) {
     home.utilitiesDebt = due;
     return { outcome: "partial", paid: debt, nextDue: due + utilitiesDue(state) };
   }
