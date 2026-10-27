@@ -1008,8 +1008,11 @@ export const SYMPTOMS = {
   /** Скільки разів на годину видно чхання, свербіж, тертя очей. */
   showPerHour: 2,
 } as const;
-/** Ліки вдома (§9.5): дешева доза діє з шансом 70%; дати ліки — неприємне завдання, любов −1. */
-export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1 } as const;
+/**
+ * Ліки вдома (§9.5): дешева доза діє з шансом 70%; дати ліки — неприємне завдання, любов −1. Доза того самого виду — не частіше
+ * ніж раз на `doseMinutes`, раніше кіт випльовує (рішення автора 2026-10-27, Х3).
+ */
+export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1, doseMinutes: 360 } as const;
 /** Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. */
 export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean }> = {
   breeder: { road: 120, visit: 60, cat: false },

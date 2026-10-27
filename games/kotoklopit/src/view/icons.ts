@@ -39,6 +39,8 @@ export type IconName =
   | "sneeze"
   | "itch"
   | "eyes"
+  | "spit-pill"
+  | "spit-drops"
   | "kibble-sterile"
   | "litter"
   | "shampoo"
@@ -284,6 +286,19 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
     g.fillStyle(INK).fillCircle(20, 18, 4);
     g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
+  },
+  "spit-pill": (g: Phaser.GameObjects.Graphics) => {
+    // Кіт випльовує таблетку (§9.5, Х3): таблетка вилітає праворуч, позаду рисочки руху й бризки слини.
+    g.fillStyle(0xffffff).fillCircle(27, 20, 8);
+    g.lineStyle(2.5, INK).strokeCircle(27, 20, 8).lineBetween(21.5, 20, 32.5, 20);
+    g.lineStyle(2.5, INK).lineBetween(5, 14, 14, 15).lineBetween(3, 20, 14, 20).lineBetween(5, 26, 14, 25);
+    g.fillStyle(0x6fb3d6).fillCircle(18, 32, 2).fillCircle(24, 34, 1.6).fillCircle(12, 33, 1.4);
+  },
+  "spit-drops": (g: Phaser.GameObjects.Graphics) => {
+    // Кіт струшує краплі (§9.5, Х3): краплі розлітаються дугою, позаду рисочки руху.
+    g.fillStyle(0x6fb3d6);
+    for (const [x, y] of [[22, 10], [30, 17], [32, 27], [24, 32]] as const) g.fillCircle(x, y, 3.5).fillTriangle(x - 3.2, y - 1, x + 3.2, y - 1, x - 5, y - 7);
+    g.lineStyle(2.5, INK).lineBetween(5, 14, 13, 16).lineBetween(3, 21, 13, 21).lineBetween(5, 28, 13, 26);
   },
   fur: (g: Phaser.GameObjects.Graphics) => {
     // Жмут шерсті на долоні (§9.12): долоня, а над нею пухнастий клубок з волосинками, що розлітаються.

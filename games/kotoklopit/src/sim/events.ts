@@ -160,6 +160,8 @@ export type GameEvent =
   | { type: "cat-cured"; cat: number; disease: DiseaseId }
   | { type: "symptom"; cat: number; symptom: "sneeze" | "itch" | "eyes" }
   | { type: "medicine"; cat: number; medicine: Medicine; quality: Quality }
+  /** Ліки дали раніше ніж за 6 годин після попередньої дози — кіт випльовує (§9.5, Х3). */
+  | { type: "medicine-spat"; cat: number; medicine: Medicine }
   | { type: "cat-ate"; cat: number; quality: Quality }
   | { type: "cat-refused-food"; cat: number }
   /** Вибагливий понюхав брудний лоток і йде шукати інше місце (§9.12, «Вибагливість до лотка»). */

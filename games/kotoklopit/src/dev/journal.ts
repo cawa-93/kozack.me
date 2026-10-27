@@ -99,6 +99,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: симптом ${event.symptom}`;
     case "medicine":
       return `${catName(state, event.cat)}: ліки ${event.medicine} (${quality(event.quality)})`;
+    case "medicine-spat":
+      return `${catName(state, event.cat)} випльовує ліки ${event.medicine}: доза раніше ніж за 6 годин`;
     case "trait-noticed":
       return `${catName(state, event.cat)}: риса ${event.group} — рівень видимості ${event.stage}`;
     case "trip-started":

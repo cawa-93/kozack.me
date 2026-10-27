@@ -179,6 +179,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "symptom":
       // Чхання чути, а свербіж і очі кіт відчуває.
       return [event.symptom === "sneeze" ? { kind: "say", at: cat(event.cat), icon: "sneeze" } : { kind: "think", at: cat(event.cat), icon: event.symptom }];
+    case "medicine-spat":
+      // Кіт випльовує таблетку чи струшує краплі (§9.5, Х3): це видно й чути — уголос над котом.
+      return [{ kind: "say", at: cat(event.cat), icon: event.medicine === "pills" ? "spit-pill" : "spit-drops" }];
     case "meow":
       // «Тихоня» нявкає беззвучно (§9.12): рот відкрито, як для нявкання, тож це мовна хмаринка, але без звуку.
       return [{ kind: "say", at: cat(event.cat), icon: event.silent === true ? "meow-silent" : "meow" }];

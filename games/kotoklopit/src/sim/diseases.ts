@@ -9,6 +9,7 @@ import { emit } from "./events";
 import { catIllnessFactor } from "./modifiers";
 import { isFriend } from "./relations";
 import type { Rng } from "./rng";
+import { absoluteMinute } from "./time";
 import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
 
 export const hasDisease = (cat: Cat, id: DiseaseId): boolean => cat.diseases.some((d) => d.id === id);
@@ -175,7 +176,8 @@ export function medicineCat(state: GameState): Cat | null {
 
 /**
  * Дати ліки коту на руках (§9.5): неприємне завдання, любов −1. Таблетка діє на кожну хворобу, яку
- * лікують таблетками (і контролює хронічну), краплі — так само. Повертає, чи були ліки.
+ * лікують таблетками (і контролює хронічну), краплі — так само; та сама доза раніше ніж за 6 годин —
+ * кіт випльовує. Повертає, чи були ліки.
  */
 export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): boolean {
   const cat = medicineCat(state);
@@ -185,6 +187,14 @@ export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): bo
   unpleasantTask(state, MEDICINE.sanity);
   offend(state, cat, MEDICINE.love, "дали ліки");
   cat.interacted = true;
+  // Та сама доза раніше ніж за 6 годин — кіт випльовує: ліки витрачено, але не діють (рішення автора 2026-10-27, Х3).
+  const now = absoluteMinute(state.day, state.minute);
+  const last = cat.lastDose?.[medicine];
+  if (last !== undefined && now - last < MEDICINE.doseMinutes) {
+    emit(state, { type: "medicine-spat", cat: cat.id, medicine });
+    return true;
+  }
+  (cat.lastDose ??= {})[medicine] = now;
   for (const disease of [...cat.diseases]) {
     const rule = DISEASES[disease.id].cure;
     // Таблетка контролює сьогодні, але не скорочує тиждень контролю від ветеринара.

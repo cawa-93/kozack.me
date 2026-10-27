@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, DISEASES, ILLNESS } from "../src/sim/config";
+import { BATH, DISEASES, ILLNESS, MEDICINE } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -32,6 +32,11 @@ function withCat(save: Save): Cat {
 
 const hold = (save: Save, cat: Cat): void => {
   save.current.character.held = { kind: "cat", cat: cat.id };
+};
+
+/** Минуло 6 годин — наступна доза ліків подіє (рішення автора 2026-10-27, Х3). Лише годинник: інше не рухається. */
+const nextDose = (save: Save): void => {
+  save.current.minute += MEDICINE.doseMinutes;
 };
 
 /** Ніч без нових хвороб: шанси нульові для цього rng. */
@@ -98,7 +103,10 @@ describe("перебіг хвороби (§9.5)", () => {
     const other = withCat(save);
     fallIll(save.current, other, "cold");
     hold(save, other);
-    for (let i = 0; i < 4; i++) giveMedicine(save.current, "pills", afterColdRng());
+    for (let i = 0; i < 4; i++) {
+      giveMedicine(save.current, "pills", afterColdRng());
+      nextDose(save);
+    }
     expect(hasDisease(other, "cold")).toBe(false);
     expect(hasDisease(other, "conjunctivitis")).toBe(true);
   });
@@ -121,13 +129,44 @@ describe("ліки вдома (§9.5)", () => {
     hold(save, cat);
     const sanity = save.current.character.stats.sanity;
     const love = cat.love;
-    for (let i = 0; i < 3; i++) giveMedicine(save.current, "pills", createRng(i));
+    for (let i = 0; i < 3; i++) {
+      giveMedicine(save.current, "pills", createRng(i));
+      nextDose(save);
+    }
     expect(hasDisease(cat, "cold")).toBe(true);
     giveMedicine(save.current, "pills", createRng(9));
     expect(hasDisease(cat, "cold")).toBe(false);
     expect(save.current.character.stats.sanity).toBeLessThan(sanity);
     expect(cat.love).toBe(love - 4);
     expect(save.current.home.supplies.pills.premium).toBe(16);
+  });
+
+  it("та сама доза раніше ніж за 6 годин — кіт випльовує: ліки витрачено, неприємно, але не діє (рішення автора 2026-10-27, Х3)", () => {
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "conjunctivitis");
+    hold(save, cat);
+    giveMedicine(save.current, "drops", createRng(1));
+    const sanity = save.current.character.stats.sanity;
+    const love = cat.love;
+    save.current.minute += MEDICINE.doseMinutes - 1;
+    const log = recordEvents();
+    expect(giveMedicine(save.current, "drops", createRng(1))).toBe(true);
+    log.stop();
+    expect(log.events).toContainEqual({ type: "medicine-spat", cat: cat.id, medicine: "drops" });
+    expect(save.current.home.supplies.drops.premium).toBe(8);
+    expect(save.current.character.stats.sanity).toBeLessThan(sanity);
+    expect(cat.love).toBe(love - 1);
+    expect(hasDisease(cat, "conjunctivitis")).toBe(true);
+    // Таблетки — інший вид ліків: їх можна одразу.
+    const pills = recordEvents();
+    giveMedicine(save.current, "pills", createRng(1));
+    pills.stop();
+    expect(pills.events.some((e) => e.type === "medicine-spat")).toBe(false);
+    // Минуло 6 годин від першої дози — друга крапля діє, кон'юнктивіт минає.
+    save.current.minute += 1;
+    giveMedicine(save.current, "drops", createRng(1));
+    expect(hasDisease(cat, "conjunctivitis")).toBe(false);
   });
 
   it("таблетки не лікують бліх, а краплі — лікують", () => {
