@@ -170,6 +170,33 @@ describe("поїздки й робота (§8.6)", () => {
     expect(rewind.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
   });
 
+  it("гості й ОСББ, поки персонаж у поїздці, не заходять: сором гостей після аварії не закінчує гру (перевірка поїздок 2026-10-28)", () => {
+    const save = game(12 * 60);
+    save.current.day = 5;
+    save.current.modifiers.day = "guests";
+    save.current.character.stats.sanity = 12;
+    for (let i = 0; i < 6; i++) save.current.home.messes.push({ id: 100 + i, kind: "vomit", x: 5.5 + i * 0.5, y: 8.5, cat: null });
+    startTrip(save.current, "shop");
+    save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
+    drive(save, 0.1, NO_RACE_INPUT);
+    expect(save.current.trip?.phase).toBe("accident");
+    const { events, stop } = recordEvents();
+    rewindAccident(save);
+    stop();
+    expect(save.current.end).toBeNull();
+    expect(events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "guests-away" }));
+    expect(events).not.toContainEqual(expect.objectContaining({ type: "modifier", kind: "guests" }));
+
+    const inspected = game(14 * 60 + 30);
+    inspected.current.day = 2;
+    inspected.current.modifiers.day = "inspection";
+    inspected.current.home.messes.push({ id: 100, kind: "vomit", x: 5.5, y: 8.5, cat: null });
+    const money = inspected.current.character.money;
+    startTrip(inspected.current, "shop");
+    driveSafely(inspected);
+    expect(inspected.current.character.money).toBe(money);
+  });
+
   it("виставка — раз на день: після участі її немає в списку, і приз удруге не дають (перевірка поїздок 2026-10-28)", () => {
     const save = game(9 * 60);
     save.current.day = 6;

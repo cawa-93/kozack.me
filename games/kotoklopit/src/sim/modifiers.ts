@@ -398,14 +398,19 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за 2 хвилини до того, як зайти; заходять — двері відчинено (§9.12 «Двері й гості»).
   if ((day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) || (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead))) ringBell(state);
-  if (day === "inspection" && crossed(from, minutes, m.inspection.minute)) {
+  // Персонажа немає вдома (поїздка, зокрема аварія) — подзвонили й пішли: двері ніхто не відчинив (перевірка поїздок 2026-10-28;
+  // раніше гості «заходили» в порожню квартиру, а їхній сором під час перемотування після аварії міг закінчити гру).
+  const away = state.trip !== null;
+  if (away && day === "inspection" && crossed(from, minutes, m.inspection.minute)) emit(state, { type: "modifier", kind: "inspection-away", value: 0 });
+  if (away && day === "guests" && crossed(from, minutes, m.guests.minute)) emit(state, { type: "modifier", kind: "guests-away", value: 0 });
+  if (!away && day === "inspection" && crossed(from, minutes, m.inspection.minute)) {
     openDoor(state);
     const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
     const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (state.home.fur >= 50 ? m.inspection.fur : 0);
     spend(state, Math.min(fine, state.character.money), "other");
     emit(state, { type: "modifier", kind: "inspection", value: fine });
   }
-  if (day === "guests" && crossed(from, minutes, m.guests.minute)) {
+  if (!away && day === "guests" && crossed(from, minutes, m.guests.minute)) {
     openDoor(state);
     const shame = Math.max(m.guests.max, state.home.messes.length * m.guests.mess);
     // «Душа компанії» тішить гостей, «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»).
