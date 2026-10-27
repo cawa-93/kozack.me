@@ -172,13 +172,19 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         break;
       }
       const ill = state.character.illnesses;
-      if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного.");
+      // Що дало лікування цієї поїздки, як і у ветеринара: інакше вилікуване зникало, і картка казала «нічого серйозного»,
+      // а після невдалого дешевого не змінювалася зовсім (перевірка поїздок 2026-10-28).
+      const results = log.done.filter((x) => x.startsWith("self:")).map((x) => x.split(":") as [string, IllnessId, string]);
+      const cured = results.filter(([, , result]) => result === "cured").map(([, id]) => ILLNESS_TITLES[id].toLowerCase());
+      if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
+      else if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного.");
       const list = element("div", "shop");
       for (const i of ill) {
+        const failed = results.filter(([, id]) => id === i.id).at(-1)?.[2] === "failed";
         list.append(
           row(
             ILLNESS_TITLES[i.id],
-            "",
+            failed ? "не допомогло" : "",
             button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
             button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
           ),

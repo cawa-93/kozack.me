@@ -453,7 +453,8 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       treatSelf: (illness, quality) => {
-        doctorTreat(state, illness, quality, rng);
+        const result = doctorTreat(state, illness, quality, rng);
+        if (result) log.done.push(`self:${illness}:${result}`);
         again();
       },
       adopt: (id) => {
