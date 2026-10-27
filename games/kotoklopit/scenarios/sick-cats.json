@@ -1,0 +1,72 @@
+{
+ "name": "Хворі коти",
+ "description": "Субота другого тижня, 10:00 (§9.5, перевірка хвороб котів 2026-10-27). Шестеро котів хворіють по-різному — так гравець бачить хвороби без ветеринара. Чхун застуджений — чхає (бабл уголос); Блоха з блохами — думка «свербить»; Слізка з кон'юнктивітом — думка «очі»; Кульгас після бійки (травма) іде вітальнею на 40% повільніше; Бурчик із розладом шлунка їсть дешевий корм і після їжі з шансом 30% блює; Дідусь (7 тижнів) зі старечими болячками лише більше спить. Симптом видно в середньому двічі на ігрову годину (≈ раз на 22 с), поки кіт не спить. Ліки — в котячій аптечці: кота на руки й до аптечки (таблетки лікують застуду, краплі — бліх і кон'юнктивіт); у двері — поїздка до ветеринара (переноска є).",
+ "game": {
+  "sex": "female",
+  "difficulty": "normal",
+  "seed": 7
+ },
+ "state": {
+  "day": 12,
+  "minute": 600,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 500,
+   "body": {
+    "x": 9.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 70
+   }
+  },
+  "home": {
+   "carrier": "cheap",
+   "supplies": {
+    "catFood": { "cheap": 10, "premium": 10 },
+    "litter": { "cheap": 6, "premium": 0 },
+    "pills": { "cheap": 5, "premium": 0 },
+    "drops": { "cheap": 3, "premium": 0 }
+   },
+   "items": [
+    { "id": 90, "kind": "bowl", "quality": "cheap", "slot": "bowl-1", "food": 2, "foodQuality": "cheap", "sterile": false },
+    { "id": 91, "kind": "bowl", "quality": "cheap", "slot": "bowl-2", "food": 0, "foodQuality": null, "sterile": false },
+    { "id": 92, "kind": "water", "quality": "cheap", "slot": "water-1", "water": 8 },
+    { "id": 93, "kind": "litter", "quality": "cheap", "slot": "litter-1", "litter": "cheap", "uses": 0 },
+    { "id": 94, "kind": "litter", "quality": "cheap", "slot": "litter-2", "litter": "cheap", "uses": 0 },
+    { "id": 95, "kind": "toy", "quality": "cheap", "x": 5.5, "y": 9.5, "uses": 0 }
+   ]
+  }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 3, "name": "Чхун", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 6.5, "y": 9.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "cold", "day": 10, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 3, "name": "Блоха", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 8.5, "y": 8.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "fleas", "day": 10, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Слізка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 4.5, "y": 9.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "conjunctivitis", "day": 10, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Кульгас", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 10.5, "y": 8.5, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "injury", "day": 11, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "wander", "target": null, "goal": { "x": 2, "y": 8 }, "minutes": 10, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Бурчик", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 17.5, "y": 3.5, "facing": -1,
+    "needs": { "hunger": 80, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "stomach", "day": 11, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "eat", "target": "item:90", "goal": null, "minutes": 10, "elapsed": 0.5, "nibble": false }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 7, "name": "Дідусь", "sex": "male", "sterilized": true, "arrivedDay": -30, "x": 3.5, "y": 7.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 90 },
+    "diseases": [{ "id": "senior", "day": 7, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 5, "elapsed": 0 }, "traits": [] }
+ ]
+}
