@@ -5,6 +5,8 @@ import { deserialize, newGame, serialize, type NewGameOptions } from "./sim/game
 import type { Save } from "./sim/types";
 
 const SAVE_KEY = "kotoklopit:save";
+/** Сюди відкладається збереження, яке не вдалося прочитати: нова гра його не перезапише. */
+const BACKUP_KEY = "kotoklopit:save-unreadable";
 const AUTOSAVE_MS = 30_000;
 
 export class Session {
@@ -57,12 +59,19 @@ export class Session {
   }
 }
 
-function loadSave(): Save | null {
+export function loadSave(): Save | null {
+  let json: string | null = null;
   try {
-    const json = localStorage.getItem(SAVE_KEY);
+    json = localStorage.getItem(SAVE_KEY);
     return json === null ? null : deserialize(json);
   } catch {
-    // Збереження старої версії чи пошкоджене — починаємо нову гру.
+    // Збереження старої версії чи пошкоджене — починаємо нову гру, але старе відкладаємо: інакше перше ж автозбереження
+    // перезаписало б його назавжди (перевірка циклу гри 2026-10-27).
+    try {
+      if (json !== null) localStorage.setItem(BACKUP_KEY, json);
+    } catch {
+      // Сховище недоступне чи повне — нічого не вдієш.
+    }
     return null;
   }
 }
