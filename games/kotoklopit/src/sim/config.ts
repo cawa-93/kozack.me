@@ -1077,7 +1077,18 @@ export const TRIP_REPUTATION_DIVIDER = 3;
  * Пункти призначення (§8.5). «Жах клініки» (−2) виривається й ховається під шафу: огляд чи грумінг довші на `hideMinutes`, а
  * вдома після ветеринарки він ховається `homeHideMinutes` (§9.12 «Переноска й ветеринар», 2026-10-25).
  */
-export const VET = { exam: 40, cheap: 30, premium: 80, cheapWorks: 0.7, treatMinutes: 60, controlDays: 7, love: -3, hideMinutes: 15, homeHideMinutes: 30 } as const;
+export const VET = {
+  exam: 40,
+  cheap: 30,
+  premium: 80,
+  cheapWorks: 0.7,
+  treatMinutes: 60,
+  /** Хронічну бере під контроль: дешеве лікування — на 7 днів, дороге — на 14 (рішення автора 2026-10-27, Х8). */
+  controlDays: { cheap: 7, premium: 14 } as Record<Quality, number>,
+  love: -3,
+  hideMinutes: 15,
+  homeHideMinutes: 30,
+} as const;
 /** Побут (§8.7): шерсть, пилосос, прання, техніка, поломки. */
 export const START_CLOTHES = 5;
 export const HOUSEHOLD = {

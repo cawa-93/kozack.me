@@ -128,7 +128,7 @@ export function vetExam(state: GameState): { health: number; mood: number; weigh
   return { health: cat.health, mood: cat.mood, weight: weightOf(cat), manner };
 }
 
-/** Лікування знайденої хвороби (§8.5): дешеве допомагає з шансом 70%, дороге — завжди; хронічну контролює 7 днів. */
+/** Лікування знайденої хвороби (§8.5): дешеве допомагає з шансом 70%, дороге — завжди; хронічну контролює 7 чи 14 днів. */
 export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality, rng: Rng): "cured" | "failed" | "controlled" | null {
   const cat = tripCat(state);
   const trip = state.trip;
@@ -137,7 +137,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap)) return null;
   trip.visit += VET.treatMinutes;
   if (DISEASES[disease].cure.kind === "control") {
-    found.controlled = state.day + VET.controlDays;
+    found.controlled = state.day + VET.controlDays[quality];
     return "controlled";
   }
   if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return "failed";

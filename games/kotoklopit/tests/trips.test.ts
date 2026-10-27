@@ -176,6 +176,23 @@ describe("пункти призначення (§8.5)", () => {
     expect(cat.away).toBeNull();
   });
 
+  it("ветеринар: хронічну дешеве лікування бере під контроль на 7 днів, дороге — на 14 (рішення автора 2026-10-27, Х8)", () => {
+    const controlled = (quality: "cheap" | "premium"): number => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      const cat = withCat(save);
+      fallIll(save.current, cat, "senior");
+      save.current.home.carrier = "premium";
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      arrive(save, "vet");
+      vetExam(save.current);
+      expect(vetTreat(save.current, "senior", quality, createRng(1))).toBe("controlled");
+      return (cat.diseases[0]?.controlled ?? 0) - save.current.day;
+    };
+    expect(controlled("cheap")).toBe(7);
+    expect(controlled("premium")).toBe(14);
+  });
+
   it("ветеринар: ожиріння бачить і каже про зайву вагу, але грошима не лікує — лише дієта й ігри (§9.12)", () => {
     const save = game(9 * 60);
     save.current.day = 5;
