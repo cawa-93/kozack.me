@@ -50,7 +50,8 @@ export const START_STATS: Record<StatName, number> = {
   hygiene: 80,
   sanity: 40,
 };
-export const START_MONEY = 150;
+/** Стартові гроші (§6.3; рішення автора 2026-10-27, Е3: було 150). */
+export const START_MONEY = 300;
 /** Ситість за годину неспання. */
 export const SATIETY_PER_HOUR = -4;
 /** Чоловічий персонаж: ситість спадає на 10% швидше (§5.1). */

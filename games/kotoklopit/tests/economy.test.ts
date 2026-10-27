@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { START_MONEY } from "../src/sim/config";
 import { deliveryCost, order, productPrice, seePhoneHints, supplyCount, unpack, useSupply } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
@@ -76,7 +77,7 @@ describe("доставка (§6.4)", () => {
     const delivery = order(save.current, "food", "premium");
     expect(delivery?.at).toBe(absoluteMinute(0, hours(12)));
     // Окреме замовлення: 80 за товар, 8 — 10% бази й 10 — надбавка.
-    expect(save.current.character.money).toBe(150 - 98);
+    expect(save.current.character.money).toBe(START_MONEY - 98);
     advance(save, hours(6) - 1);
     expect(save.current.home.porch).toEqual([]);
     advance(save, 1);
@@ -148,7 +149,7 @@ describe("комунальні в ніч на понеділок (§6.4)", () =>
     const save = game();
     save.current.minute = hours(22);
     expect(goToSleep(save)?.utilities).toBeNull();
-    expect(save.current.character.money).toBe(150);
+    expect(save.current.character.money).toBe(START_MONEY);
   });
 
   it("не вистачило — попередження, наступного тижня треба сплатити за два", () => {
