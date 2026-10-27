@@ -31,7 +31,7 @@ describe("статистика (§4.2)", () => {
 });
 
 describe("фінал (§4.2)", () => {
-  it("вісь котів — за середнім настроєм усіх котів, і з альбому; без котів — звичайне життя", () => {
+  it("вісь котів — за середнім настроєм усіх котів, і з альбому; без котів — звичайне життя; щасливі від 85%, страждали нижче 70% (Ц2)", () => {
     const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
     expect(catsAxis(save.current)).toBe("ordinary");
     const cat = createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 3 });
@@ -39,12 +39,22 @@ describe("фінал (§4.2)", () => {
     cat.moodHistory = [90, 80];
     removeCat(save.current, cat, { kind: "old" }, 0);
     expect(catsAxis(save.current)).toBe("happy");
+    // Ще кіт із 70%: середнє 77,5 — звичайне життя; з 50% — 67,5, страждали.
+    const second = createCat(save.current, createRng(2), { source: "shelter", ageWeeks: 3 });
+    addCat(save.current, second);
+    second.moodHistory = [70];
+    expect(catsAxis(save.current)).toBe("ordinary");
+    second.moodHistory = [50];
+    expect(catsAxis(save.current)).toBe("suffered");
   });
 
-  it("безробітний на пенсії — низька кар'єра", () => {
+  it("кар'єра: 1–5 — низька, 6–9 — середня, лише директор — висока; безробітний — низька (Ц1)", () => {
     const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
-    save.current.job.position = 8;
-    expect(careerAxis(save.current)).toBe("high");
+    const at = (position: number): string => {
+      save.current.job.position = position - 1;
+      return careerAxis(save.current);
+    };
+    expect([1, 5, 6, 9, 10].map(at)).toEqual(["low", "low", "middle", "middle", "high"]);
     save.current.job.unemployed = true;
     expect(careerAxis(save.current)).toBe("low");
   });
