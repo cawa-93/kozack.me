@@ -167,6 +167,15 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     expect(seen(host, "guests")).toBe(1);
   });
 
+  it("поки персонаж у поїздці, дзвінок у двері котів не показує: прояв «Гостей» не зараховано (перевірка поїздок 2026-10-28)", () => {
+    const save = game();
+    const shy = withCat(save, { guests: -1 }, { x: 7.5, y: 8.5 });
+    save.current.trip = { destination: "shop", phase: "visit", cat: null } as unknown as NonNullable<Save["current"]["trip"]>;
+    ringBell(save.current);
+    expect(shy.act.kind).toBe("hide");
+    expect(seen(shy, "guests")).toBe(0);
+  });
+
   it("кур'єр привіз пакунок — дзвінок, і «Душа компанії» біжить зустрічати", () => {
     const save = game();
     const host = withCat(save, { guests: 1 }, { x: 8.5, y: 8.5 });

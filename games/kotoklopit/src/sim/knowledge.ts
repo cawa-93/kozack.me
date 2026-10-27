@@ -28,7 +28,9 @@ export function witnesses(state: GameState, cat: Cat): boolean {
   const held = state.character.held;
   if (held?.kind === "cat" && held.cat === cat.id) return true;
   if (cat.away === "trip") return state.trip !== null;
-  if (cat.away !== null) return false;
+  // Поки персонаж у поїздці, котів удома він не бачить (§8.5): дзвінок кур'єра чи гостей вони чують без нього (перевірка
+  // поїздок 2026-10-28; раніше прояви «Гостей» і «Втеч» зараховувалися від тіла, що лишилося біля дверей).
+  if (cat.away !== null || state.trip !== null) return false;
   return inView(state, cat);
 }
 
