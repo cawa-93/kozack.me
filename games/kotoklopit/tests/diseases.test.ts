@@ -3,7 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { createCat } from "../src/sim/cat";
+import { createCat, idleAct } from "../src/sim/cat";
+import { tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
 import { BATH } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
@@ -161,6 +162,24 @@ describe("дерматит безшерстих (§8.7)", () => {
     log.stop();
     expect(hasDisease(cat, "dermatitis")).toBe(false);
     expect(log.events).toContainEqual({ type: "cat-cured", cat: cat.id, disease: "dermatitis" });
+  });
+});
+
+describe("симптоми (§9.5)", () => {
+  it("свербіж видно, поки кіт не спить; уві сні — ні", () => {
+    const itches = (sleeping: boolean): number => {
+      const save = game();
+      const cat = withCat(save);
+      fallIll(save.current, cat, "fleas");
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: sleeping ? 100 : 0, attention: 0, play: 0 };
+      cat.act = sleeping ? { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0 } : idleAct(600);
+      const log = recordEvents();
+      for (let i = 0; i < 180; i++) tickCats(save.current, 1, { present: true });
+      log.stop();
+      return log.events.filter((e) => e.type === "symptom").length;
+    };
+    expect(itches(true)).toBe(0);
+    expect(itches(false)).toBeGreaterThan(0);
   });
 });
 

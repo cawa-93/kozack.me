@@ -3020,7 +3020,8 @@ function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number
 function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context: CatContext): void {
   grow(state, cat, minutes, rng);
   needsMood(state, cat, minutes, context);
-  if (cat.away === null && cat.diseases.length > 0) showSymptoms(state, cat, minutes, rng);
+  // Симптоми видно, поки кіт не спить: уві сні він не чхає й не чухається, а думка над сплячим була б дивною (§11.4).
+  if (cat.away === null && cat.diseases.length > 0 && !asleep(cat)) showSymptoms(state, cat, minutes, rng);
   recordMood(cat, minutes);
   if (cat.away !== null) {
     if (cat.away === "stairs" && state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
