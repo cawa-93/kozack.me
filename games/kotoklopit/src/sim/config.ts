@@ -530,6 +530,8 @@ export const DIRTY_LITTER = { love: -1, pickyStep: 0.5, earlyLevel: 2 } as const
  * брали й опускали раз у раз, «Коліна» відкривали за кілька хвилин).
  */
 export const CARRY = { mood: 0.5, attention: 5, struggleMood: -0.5, bite: 0.1, biteStep: 0.1, escape: 0.25, seenContent: 1, seenStruggle: 0.5, observeEvery: 60 } as const;
+/** Кіт без любові до рук (рівень ≤ 0), чия потреба уваги нижче цього, бере на руки проти волі — як і сплячий (§9.12). */
+export const UNWILLING_ATTENTION = 40;
 /** Чистюлі («Вибагливість до лотка» від +1) не йдуть на руки в брудному одязі й відходять на кілька клітинок (§9.12). */
 export const DIRTY_CLOTHES_CATS = { picky: 1, backAway: 3 } as const;
 /**

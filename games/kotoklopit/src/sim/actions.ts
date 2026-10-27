@@ -49,6 +49,7 @@ import {
   SHEDDING,
   SHOO,
   STRESS_EFFECTS,
+  UNWILLING_ATTENTION,
   WATER_CAPACITY,
 } from "./config";
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
@@ -431,7 +432,7 @@ export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
 function unwilling(cat: Cat): boolean {
   // Застряглий нагорі радий, що його знімають (§9.12, «Лазіння»).
   if (cat.stuck === true) return false;
-  return cat.act.kind === "sleep" || (cat.needs.attention < 40 && traitLevel(cat, "lap") <= 0);
+  return cat.act.kind === "sleep" || (cat.needs.attention < UNWILLING_ATTENTION && traitLevel(cat, "lap") <= 0);
 }
 
 /** Кіт займає місце: клавіатуру, комп'ютер чи коліна (§9.12). */
