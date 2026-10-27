@@ -325,9 +325,10 @@ export interface CatDay {
 
 /**
  * Підсумок дня (§9.6, §7): середній настрій — в історію; день без взаємодії — любов −1;
- * дрейф настрою від любові; здоров'я від середнього настрою.
+ * дрейф настрою від любові; здоров'я від середнього настрою. `heals` — чи може здоров'я відновитися: поки хвороба шкодить,
+ * гарний настрій не лікує (§9.5, рішення автора 2026-10-27, Х5).
  */
-export function closeCatDay(state: GameState, cat: Cat): CatDay {
+export function closeCatDay(state: GameState, cat: Cat, heals = true): CatDay {
   const { sum, minutes } = cat.moodToday;
   const average = minutes > 0 ? sum / minutes : cat.mood;
   cat.moodHistory.push(average);
@@ -339,7 +340,7 @@ export function closeCatDay(state: GameState, cat: Cat): CatDay {
   cat.mood = clamp(cat.mood + moodDelta(cat, (cat.love - 50) * LOVE.driftPerPoint));
   const healthBefore = cat.health;
   const change = moodHealth(average);
-  changeHealth(state, cat, change > 0 ? change * recoveryMultiplier(cat) : change, "mood");
+  if (change < 0 || heals) changeHealth(state, cat, change > 0 ? change * recoveryMultiplier(cat) : change, "mood");
   const day: CatDay = { cat: cat.id, mood: average, health: cat.health - healthBefore, love: cat.love - loveBefore };
   emit(state, { type: "cat-day", ...day });
   return day;

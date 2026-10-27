@@ -9,7 +9,7 @@ import { bathe, nightlyCare } from "../src/sim/care";
 import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
-import { addCat } from "../src/sim/night";
+import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -109,6 +109,29 @@ describe("перебіг хвороби (§9.5)", () => {
     }
     expect(hasDisease(other, "cold")).toBe(false);
     expect(hasDisease(other, "conjunctivitis")).toBe(true);
+  });
+
+  it("поки хвороба шкодить, гарний настрій здоров'я не відновлює; у «безпечні» дні й під контролем — відновлює (рішення автора 2026-10-27, Х5)", () => {
+    const gain = (setup: (save: Save, cat: Cat) => void): number => {
+      const save = game();
+      const cat = withCat(save);
+      save.current.day = 10;
+      cat.health = 50;
+      // Гарний настрій і вдень, і вночі.
+      cat.mood = 100;
+      cat.moodToday = { sum: 100 * 600, minutes: 600 };
+      setup(save, cat);
+      runNight(save.current, false);
+      return cat.health - 50;
+    };
+    const healthy = gain(() => {});
+    expect(healthy).toBeGreaterThan(0);
+    // Застуда третій день — уже шкодить: −2 і без відновлення.
+    expect(gain((save, cat) => fallIll(save.current, cat, "cold") && void (cat.diseases[0]!.day = save.current.day - 3))).toBe(-DISEASES.cold.damage);
+    // Ще «безпечний» день — відновлення, як у здорового.
+    expect(gain((save, cat) => fallIll(save.current, cat, "cold") && void (cat.diseases[0]!.day = save.current.day - 1))).toBe(healthy);
+    // Старечі болячки під контролем — не шкодять, відновлення є (старий — ×0,5, тут кіт молодий).
+    expect(gain((save, cat) => fallIll(save.current, cat, "senior") && void (cat.diseases[0]!.controlled = save.current.day))).toBe(healthy);
   });
 
   it("поки кіт хворіє, настрій щоночі −3", () => {

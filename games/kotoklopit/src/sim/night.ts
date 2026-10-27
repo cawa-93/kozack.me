@@ -26,7 +26,7 @@ import {
 } from "./config";
 import { addSupply, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
-import { maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
+import { isHurting, maybeFallIll, nightlyDiseases, weeklyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
 import { nightlyCare } from "./care";
 import { nightlyHousehold, tickHousehold } from "./household";
@@ -273,7 +273,8 @@ function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
 function catHealth({ state, rng }: Night): void {
-  for (const cat of state.cats) closeCatDay(state, cat);
+  // Поки хвороба шкодить, гарний настрій здоров'я не відновлює (§9.5, Х5).
+  for (const cat of state.cats) closeCatDay(state, cat, !isHurting(state, cat));
   // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).
   nightlyDiseases(state, rng);
   nightlyStates(state, rng);

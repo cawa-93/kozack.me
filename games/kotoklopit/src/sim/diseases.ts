@@ -28,6 +28,16 @@ export function fallIll(state: GameState, cat: Cat, id: DiseaseId): boolean {
   return true;
 }
 
+/** Хронічну сьогодні контролюють ліки чи ветеринар (§9.5). */
+export const isControlled = (state: GameState, disease: CatDisease): boolean =>
+  DISEASES[disease.id].cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
+
+/** Хвороба шкодить: «безпечні» дні минули, і її не контролюють (§9.5). */
+const harms = (state: GameState, disease: CatDisease): boolean => !isControlled(state, disease) && state.day - disease.day >= DISEASES[disease.id].safe;
+
+/** Хоч одна хвороба кота сьогодні шкодить — гарний настрій здоров'я не відновлює (§9.5, рішення автора 2026-10-27, Х5). */
+export const isHurting = (state: GameState, cat: Cat): boolean => cat.diseases.some((d) => harms(state, d));
+
 /** Спробувати заразити з шансом (з «Витривалістю» й складністю). */
 export function maybeFallIll(state: GameState, cat: Cat, id: DiseaseId, base: number, rng: Rng): boolean {
   return !hasDisease(cat, id) && rng.chance(illnessChance(state, cat, base)) && fallIll(state, cat, id);
@@ -121,9 +131,8 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
         cure(state, cat, disease, rng);
         continue;
       }
-      const controlled = rule.cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
       const days = state.day - disease.day;
-      if (!controlled && days >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
+      if (harms(state, disease)) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
       // Гострі минають самі (рішення автора 2026-10-27, Х1): остання ніч ще шкодить.
       if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease, rng);
     }
