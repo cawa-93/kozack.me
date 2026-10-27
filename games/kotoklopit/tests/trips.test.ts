@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { TRIPS } from "../src/sim/config";
-import { adopt, buyAtShop, cafe, officeMeeting, shelterCats, shopPrice, vetExam, vetTreat } from "../src/sim/destinations";
+import { adopt, buyAtShop, cafe, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -256,6 +256,29 @@ describe("пункти призначення (§8.5)", () => {
     expect(save.current.home.supplies.catFood.cheap).toBe(8);
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shelter.road);
     expect(save.current.cats[0]?.away).toBeNull();
+  });
+
+  it("притулок: узяті коти їдуть додому разом із персонажем, а «Віддати» — лише кіт, з яким приїхали (перевірка поїздок 2026-10-28)", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const own = withCat(save);
+    save.current.home.carrier = "cheap";
+    save.current.character.held = { kind: "cat", cat: own.id };
+    arrive(save, "shelter");
+    const [a, b] = shelterCats(save.current);
+    if (!a || !b) throw new Error("немає котів");
+    adopt(save.current, a.id);
+    adopt(save.current, b.id);
+    // Раніше другий кіт опинявся вдома одразу, а перший займав переноску — і картка пропонувала віддати його назад.
+    expect([a.away, b.away]).toEqual(["trip", "trip"]);
+    expect(tripCat(save.current)).toBe(own);
+    expect(giveToShelter(save.current)).toBe(true);
+    expect(tripCat(save.current)).toBeNull();
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shelter.road);
+    expect(save.current.cats.map((c) => [c.id, c.away])).toEqual([
+      [a.id, null],
+      [b.id, null],
+    ]);
   });
 
   it("котокафе: здоровий глузд слабшає з кожною годиною, ревниві коти ображаються", () => {

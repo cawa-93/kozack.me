@@ -209,7 +209,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       }
       if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
       body.push(list);
-      if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
+      // Новонароджених не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
+      if (cat && cat.ageWeeks < 1) body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
+      else if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
       break;
     }
     case "breeder": {

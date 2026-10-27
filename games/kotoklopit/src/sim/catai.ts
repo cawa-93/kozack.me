@@ -1092,11 +1092,11 @@ const GREET_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow
  * Кіт, що їздив разом із персонажем, не зустрічає. Біля дверей він нявкає й треться об ноги («Балакучість», «Тертя об
  * ноги»), а кіт біля дверей може втекти, коли їх відчинять наступного разу («Втечі»).
  */
-export function greetAtDoor(state: GameState, except: number | null): void {
+export function greetAtDoor(state: GameState, except: readonly number[]): void {
   const rng = stateRng(state, "behavior");
   const d = DEVOTION;
   for (const cat of state.cats) {
-    if (cat.id === except || !home(state, cat) || asleep(cat) || !GREET_FROM.has(cat.act.kind) || isAdapting(state, cat) || avoiding(state, cat)) continue;
+    if (except.includes(cat.id) || !home(state, cat) || asleep(cat) || !GREET_FROM.has(cat.act.kind) || isAdapting(state, cat) || avoiding(state, cat)) continue;
     const chance = clamp(d.greetBase + d.greetStep * traitLevel(cat, "devotion") + (d.greetLove * (cat.love - 50)) / 50, 0, d.greetMax);
     if (rng.chance(chance)) start(cat, "follow", tileOf(state.character.body), d.greetMinutes, "door");
   }

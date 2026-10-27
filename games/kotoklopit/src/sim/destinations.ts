@@ -293,16 +293,17 @@ export function giveToShelter(state: GameState): boolean {
   return true;
 }
 
-/** Новий кіт їде додому разом із персонажем: стартовий пакет і бонус до здорового глузду (§6.2). */
+/**
+ * Новий кіт їде додому разом із персонажем: стартовий пакет і бонус до здорового глузду (§6.2). У поїздці кіт — той, з яким
+ * приїхали (`trip.cat`): новий у переноску не йде, інакше картка пропонувала б одразу віддати його назад, а другий узятий
+ * кіт опинявся вдома ще до повернення персонажа (перевірка поїздок 2026-10-28).
+ */
 function welcome(state: GameState, cat: Cat): void {
   cat.arrivedDay = state.day;
   cat.away = "trip";
   addCat(state, cat);
   giveStarterPack(state);
   applyMorningSanity(state, 0, 1);
-  const trip = state.trip;
-  if (trip && trip.cat === null) trip.cat = cat.id;
-  else cat.away = null;
 }
 
 /** Взяти кота з притулку (§8.5, §6.2): стартовий пакет і бонус до здорового глузду. */

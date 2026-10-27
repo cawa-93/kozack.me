@@ -145,7 +145,7 @@ export function accidentBedtime(state: GameState): number {
   return wakeMinute(state) + MINUTES_PER_DAY - SLEEP_NEED_HOURS * MINUTES_PER_HOUR;
 }
 
-/** Персонаж удома: біля дверей, кіт із переноски виходить поруч. Повертає поїздку, що скінчилася. */
+/** Персонаж удома: біля дверей, коти з поїздки (з переноски й щойно взяті) виходять поруч. Повертає поїздку, що скінчилася. */
 export function endTrip(state: GameState): Trip | null {
   const trip = state.trip;
   if (!trip) return null;
@@ -154,8 +154,8 @@ export function endTrip(state: GameState): Trip | null {
   body.x = HOME_DOOR.x;
   body.y = HOME_DOOR.y;
   body.facing = { x: 0, y: -1 };
-  const cat = state.cats.find((c) => c.id === trip.cat);
-  if (cat && cat.away === "trip") {
+  for (const cat of state.cats) {
+    if (cat.away !== "trip") continue;
     cat.away = null;
     cat.x = HOME_DOOR.x - 0.6;
     cat.y = HOME_DOOR.y - 0.3;

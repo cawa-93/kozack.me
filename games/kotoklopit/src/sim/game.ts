@@ -192,12 +192,13 @@ export function returnHome(save: Save, visitMinutes: number, roadMinutes: number
   const search = save.current.trip?.search ?? 0;
   const night = advance(save, visitMinutes + search) ?? advance(save, roadMinutes);
   if (night || save.current.end !== null) return night;
-  const trip = endTrip(save.current);
-  if (trip) {
-    // Персонаж відчинив двері (§9.12 «Двері й гості»): кіт біля них може вибігти — крім того, що заходить у переносці.
-    openDoor(save.current, trip.cat);
+  // Коти, що заходять разом із персонажем: з переноски й щойно взяті в притулку чи розпліднику.
+  const arrived = save.current.cats.filter((c) => c.away === "trip").map((c) => c.id);
+  if (endTrip(save.current)) {
+    // Персонаж відчинив двері (§9.12 «Двері й гості»): кіт біля них може вибігти — крім тих, що заходять із ним.
+    openDoor(save.current, arrived);
     // Персонаж повернувся вдень — коти можуть вийти зустрічати до дверей (§9.12, «Відданість»).
-    greetAtDoor(save.current, trip.cat);
+    greetAtDoor(save.current, arrived);
   }
   return null;
 }

@@ -717,7 +717,7 @@ describe("«Відданість» (рішення автора 2026-10-25)", ()
     const rider = withCat(save, { devotion: 2 }, { x: 7.5, y: 8.5 });
     rider.love = 100;
     Object.assign(save.current.character.body, HOME_DOOR);
-    for (let i = 0; i < 10; i++) greetAtDoor(save.current, rider.id);
+    for (let i = 0; i < 10; i++) greetAtDoor(save.current, [rider.id]);
     for (const cat of [sleeper, hurt, rider]) expect(cat.act.target).not.toBe("door");
   });
 

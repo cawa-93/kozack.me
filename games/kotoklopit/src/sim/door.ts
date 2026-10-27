@@ -32,12 +32,12 @@ const BELL_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow"
 /**
  * Двері відчинили (§9.12): кіт ближче 4 клітинок вибігає на сходи з шансом 10% + 25% × «Втечі» (+25% нестерилізованим і
  * кішкам у тічці); «Домосід» нюхає поріг і відходить, «Боїться дверей» тікає з передпокою (до 6 клітинок). Хто спить, у
- * дверях не кидається, як і новонароджений; кота на руках (і `except` — того, хто саме заходить у переносці) не чіпає.
+ * дверях не кидається, як і новонароджений; кота на руках (і `except` — тих, хто саме заходить разом із персонажем) не чіпає.
  */
-export function openDoor(state: GameState, except: number | null = null): void {
+export function openDoor(state: GameState, except: readonly number[] = []): void {
   const rng = stateRng(state, "behavior");
   for (const cat of state.cats) {
-    if (cat.id === except || cat.away !== null || isCarried(state, cat) || asleep(cat) || isNewborn(cat)) continue;
+    if (except.includes(cat.id) || cat.away !== null || isCarried(state, cat) || asleep(cat) || isNewborn(cat)) continue;
     const level = traitLevel(cat, "escape");
     if (level < 0) {
       // Хто ховається, їсть чи в лотку, на двері не зважає (перевірка етапу 2026-10-26: кіт, що сховався під диван від
