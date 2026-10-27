@@ -394,14 +394,13 @@ export class DayScene extends Phaser.Scene {
     return { move: { x, y }, hold };
   }
 
-  /** Що вже зробили в пункті призначення цієї поїздки. */
-
   /** Поїздка (§8.5): гонку веде своя сцена, подію на місці й аварію — картки. */
   private updateTrip(): boolean {
     const trip = this.state.trip;
     if (trip === null || this.state.end !== null) return false;
     if (trip.phase === "drive") {
-      if (!this.scene.isActive("race")) {
+      // Поки відкрита картка (меню після перезавантаження сторінки посеред гонки), гонка не йде: перевірка поїздок 2026-10-28.
+      if (!this.overlay.isOpen && !this.scene.isActive("race")) {
         this.scene.launch("race");
         this.scene.sleep();
       }
@@ -427,73 +426,76 @@ export class DayScene extends Phaser.Scene {
     if (!trip) return;
     // Журнал візиту — у стані поїздки: переживає перезавантаження сторінки (перевірка циклу гри 2026-10-27).
     const log = (trip.log ??= { exam: null, done: [] });
+    // Перший показ візиту, а не оновлення картки після дії на місці.
+    const arrived = !this.overlay.isOpen;
     if (trip.destination === "office" && !log.done.includes("office")) {
       officeMeeting(state);
       log.done.push("office");
     }
     const again = (): void => this.showVisit();
     const rng = stateRng(state, "behavior");
-    this.overlay.show(
-      visitCard(state, log, {
-        checkout: (cart) => {
-          checkout(state, cart, "store");
-          again();
-        },
-        exam: () => {
-          log.exam = vetExam(state);
-          again();
-        },
-        treat: (disease, quality) => {
-          const result = vetTreat(state, disease, quality, rng);
-          if (result) log.done.push(`${disease}:${result}`);
-          again();
-        },
-        doctor: () => {
-          if (doctorExam(state)) log.done.push("doctor");
-          again();
-        },
-        treatSelf: (illness, quality) => {
-          doctorTreat(state, illness, quality, rng);
-          again();
-        },
-        adopt: (id) => {
-          const cat = adopt(state, id);
-          if (cat) log.done.push(cat.name);
-          again();
-        },
-        sterilize: () => {
-          vetSterilize(state);
-          again();
-        },
-        giveAway: () => {
-          giveToShelter(state);
-          again();
-        },
-        buyKitten: (id) => {
-          const cat = buyFromBreeder(state, id);
-          if (cat) log.done.push(cat.name);
-          again();
-        },
-        groom: (quality) => {
-          if (groom(state, quality)) log.done.push("groom");
-          again();
-        },
-        cafe: (hours) => {
-          if (cafe(state, hours)) log.done.push("cafe");
-          again();
-        },
-        show: () => {
-          const prize = enterShow(state, rng);
-          if (prize !== null) log.done.push(`show:${prize}`);
-          again();
-        },
-        home: () => {
-          this.overlay.close();
-          returnHome(this.session.save, trip.visit, TRIPS[trip.destination].road);
-          this.viewport.jump();
-        },
-      }),
-    );
+    const card = visitCard(state, log, {
+      checkout: (cart) => {
+        checkout(state, cart, "store");
+        again();
+      },
+      exam: () => {
+        log.exam = vetExam(state);
+        again();
+      },
+      treat: (disease, quality) => {
+        const result = vetTreat(state, disease, quality, rng);
+        if (result) log.done.push(`${disease}:${result}`);
+        again();
+      },
+      doctor: () => {
+        if (doctorExam(state)) log.done.push("doctor");
+        again();
+      },
+      treatSelf: (illness, quality) => {
+        doctorTreat(state, illness, quality, rng);
+        again();
+      },
+      adopt: (id) => {
+        const cat = adopt(state, id);
+        if (cat) log.done.push(cat.name);
+        again();
+      },
+      sterilize: () => {
+        vetSterilize(state);
+        again();
+      },
+      giveAway: () => {
+        giveToShelter(state);
+        again();
+      },
+      buyKitten: (id) => {
+        const cat = buyFromBreeder(state, id);
+        if (cat) log.done.push(cat.name);
+        again();
+      },
+      groom: (quality) => {
+        if (groom(state, quality)) log.done.push("groom");
+        again();
+      },
+      cafe: (hours) => {
+        if (cafe(state, hours)) log.done.push("cafe");
+        again();
+      },
+      show: () => {
+        const prize = enterShow(state, rng);
+        if (prize !== null) log.done.push(`show:${prize}`);
+        again();
+      },
+      home: () => {
+        this.overlay.close();
+        returnHome(this.session.save, trip.visit, TRIPS[trip.destination].road);
+        this.viewport.jump();
+      },
+    });
+    // На зборах підвищили — спершу картка кар'єри, а візит після неї (раніше візит її затирав).
+    if (arrived && this.overlay.isOpen) this.queued.unshift(card);
+    else this.overlay.show(card);
   }
 
   /** Відпустили швидко — взяти кота на руки; тримають довше — це пестощі, їх веде симуляція (§8.2). */
@@ -511,9 +513,13 @@ export class DayScene extends Phaser.Scene {
    * нова картка заміняла відкриту — і титулка ранку, картка знайди чи телефон зникали.
    */
   private readonly queued: Card[] = [];
+  /** Картки, що мають сенс лише свого дня (дзвінок мами): уночі пропущені, вони не чекають ранку. */
+  private readonly todayOnly = new WeakSet<Card>();
 
   private queueCard(card: Card): void {
-    if (this.overlay.isOpen) this.queued.push(card);
+    // Гонку картки не перебивають (§8.5): чекають, доки персонаж доїде чи потрапить в аварію. Раніше картка вискакувала
+    // поверх дороги, а машина без керування врізалася (перевірка поїздок 2026-10-28).
+    if (this.overlay.isOpen || this.state.trip?.phase === "drive") this.queued.push(card);
     else this.overlay.show(card);
   }
 
@@ -1121,26 +1127,31 @@ export class DayScene extends Phaser.Scene {
     // Зміни настрою за ніч гравець не бачив: сердечками їх не показують. Думки вранці — з нуля.
     this.hearts.clear();
     this.thoughts = new ThoughtClock();
+    // Подія, що сталася тієї ж ночі чи перемотаного дня (гості після аварії), чекає титулки, а не зникає під нею.
+    const open = this.overlay.shown;
+    if (open) this.queued.unshift(open);
+    for (let i = this.queued.length - 1; i >= 0; i--) if (this.todayOnly.has(this.queued[i] as Card)) this.queued.splice(i, 1);
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 
   private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
-      case "mom-call":
-        this.queueCard(
-          callCard(
-            () => {
-              this.overlay.close();
-              advance(this.session.save, MODIFIERS.call.minutes);
-            },
-            () => {
-              ignoreCall(this.state);
-              this.overlay.close();
-            },
-          ),
+      case "mom-call": {
+        const card = callCard(
+          () => {
+            this.overlay.close();
+            advance(this.session.save, MODIFIERS.call.minutes);
+          },
+          () => {
+            ignoreCall(this.state);
+            this.overlay.close();
+          },
         );
+        this.todayOnly.add(card);
+        this.queueCard(card);
         return;
+      }
       case "meeting-start":
         // Бабл камери над комп'ютером — `eventBubbles`.
         return;
