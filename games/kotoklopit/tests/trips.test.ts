@@ -303,6 +303,22 @@ describe("пункти призначення (§8.5)", () => {
     expect(controlled("premium")).toBe(14);
   });
 
+  it("ветеринар: дешеве лікування не скорочує контролю, уже купленого дорогим (перевірка поїздок 2026-10-28)", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    fallIll(save.current, cat, "senior");
+    const disease = cat.diseases[0];
+    if (!disease) throw new Error("немає хвороби");
+    disease.controlled = save.current.day + 10;
+    save.current.home.carrier = "premium";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    arrive(save, "vet");
+    vetExam(save.current);
+    expect(vetTreat(save.current, "senior", "cheap", createRng(1))).toBe("controlled");
+    expect(disease.controlled).toBe(save.current.day + 10);
+  });
+
   it("ветеринар: ожиріння бачить і каже про зайву вагу, але грошима не лікує — лише дієта й ігри (§9.12)", () => {
     const save = game(9 * 60);
     save.current.day = 5;

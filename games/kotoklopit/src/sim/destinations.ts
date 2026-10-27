@@ -137,7 +137,8 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
   trip.visit += VET.treatMinutes;
   if (DISEASES[disease].cure.kind === "control") {
-    found.controlled = state.day + VET.controlDays[quality];
+    // Дешеве в наступній поїздці не скорочує контролю, уже купленого дорогим (перевірка поїздок 2026-10-28), як і таблетка.
+    found.controlled = Math.max(found.controlled ?? state.day, state.day + VET.controlDays[quality]);
     return "controlled";
   }
   if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return "failed";
