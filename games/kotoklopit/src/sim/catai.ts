@@ -41,6 +41,7 @@ import {
   GIFTS,
   GULPING,
   HAIRBALL,
+  HIDING_CAT_HEALTH,
   HISS_PAUSE_MINUTES,
   HOUSE_SLEEP,
   HUNGRY_THEFT,
@@ -919,7 +920,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
-    const spot = cat.health < 25 || isAdapting(state, cat) ? hideSpot(state, rng, cat) : sleepSpot(state, cat, rng);
+    const spot = cat.health < HIDING_CAT_HEALTH || isAdapting(state, cat) ? hideSpot(state, rng, cat) : sleepSpot(state, cat, rng);
     return start(cat, "sleep", spot.at, 8 * MINUTES_PER_HOUR, spot.target);
   }
   if (isAdapting(state, cat)) {

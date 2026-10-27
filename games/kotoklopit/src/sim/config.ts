@@ -338,6 +338,8 @@ export const MIN_CAT_NAP_MINUTES = 30;
 /** Втома росте швидше понад межу віку чи зі здоров'ям нижче 50 (§9.12). */
 export const TIRED_FATIGUE = 1.3;
 export const LOW_CAT_HEALTH = 50;
+/** Зі здоров'ям нижче 25 кіт спить у схованці (§9.5). */
+export const HIDING_CAT_HEALTH = 25;
 /** Гра: кошенята 1–2 тижні гіперактивні, старі коти грають менше (§9.3, §9.12). */
 export const KITTEN_PLAY = 1.5;
 export const OLD_PLAY = 0.6;
