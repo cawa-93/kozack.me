@@ -37,6 +37,13 @@ function cure(state: GameState, cat: Cat, disease: CatDisease): void {
   emit(state, { type: "cat-cured", cat: cat.id, disease: disease.id });
 }
 
+/** Вилікувати хворобу, якщо кіт нею хворіє (ветеринар, дорогий шампунь). */
+export function cureDisease(state: GameState, cat: Cat, id: DiseaseId): boolean {
+  const disease = cat.diseases.find((d) => d.id === id);
+  if (disease) cure(state, cat, disease);
+  return disease !== undefined;
+}
+
 // --- Симптоми -------------------------------------------------------------------------------
 
 /** Множник втоми: застуда й старечі болячки — кіт більше спить. */

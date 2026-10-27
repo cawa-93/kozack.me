@@ -5,7 +5,7 @@ import { unpleasantTask } from "./character";
 import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WEIGHT } from "./config";
 import { catnipReaction, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
-import { fallIll, maybeFallIll } from "./diseases";
+import { cureDisease, maybeFallIll } from "./diseases";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
@@ -144,7 +144,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
   if (scratched) fallIllPerson(state, "injury");
   cat.bathedDay = state.day;
-  if (quality === "premium") cat.diseases = cat.diseases.filter((d) => d.id !== "dermatitis");
+  if (quality === "premium") cureDisease(state, cat, "dermatitis");
   emit(state, { type: "bathed", cat: cat.id });
   if (water <= -2) {
     // Вирвався з рук і тікає ховатися.
@@ -183,6 +183,7 @@ export function nightlyCare(state: GameState, rng: Rng): void {
         emit(state, { type: "collar-lost", cat: cat.id });
       }
     }
-    if (cat.shape.coat === "hairless" && state.day - cat.bathedDay >= BATH.hairlessDays && rng.chance(BATH.dermatitis)) fallIll(state, cat, "dermatitis");
+    // Як і всі шанси хвороб, з «Витривалістю» й складністю (§9.5).
+    if (cat.shape.coat === "hairless" && state.day - cat.bathedDay >= BATH.hairlessDays) maybeFallIll(state, cat, "dermatitis", BATH.dermatitis, rng);
   }
 }

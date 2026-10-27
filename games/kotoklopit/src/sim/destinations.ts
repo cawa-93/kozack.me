@@ -23,6 +23,7 @@ import {
   VET,
 } from "./config";
 import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS } from "./breeds";
+import { cureDisease } from "./diseases";
 import { canOrderProduct, freeSlots, place, stash } from "./economy";
 import { giveAway } from "./farewell";
 import { emit } from "./events";
@@ -140,8 +141,7 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
     return "controlled";
   }
   if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return "failed";
-  cat.diseases = cat.diseases.filter((d) => d !== found);
-  emit(state, { type: "cat-cured", cat: cat.id, disease });
+  cureDisease(state, cat, disease);
   return "cured";
 }
 

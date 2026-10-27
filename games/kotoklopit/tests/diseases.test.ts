@@ -4,11 +4,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
+import { bathe, nightlyCare } from "../src/sim/care";
+import { BATH } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save } from "../src/sim/types";
+import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import { recordEvents } from "./helpers";
 
 function game(): Save {
   const save = newGame({ sex: "female", difficulty: "normal", seed: 9 });
@@ -130,6 +133,34 @@ describe("ліки вдома (§9.5)", () => {
     save.current.day += 3;
     nightlyDiseases(save.current, quietRng());
     expect(cat.health).toBe(health);
+  });
+});
+
+describe("дерматит безшерстих (§8.7)", () => {
+  it("без купання тиждень — дерматит, і «Витривалість» його рідшає; дорогий шампунь лікує", () => {
+    const sick = (hardiness: TraitLevel | 0, seed: number): Cat => {
+      const save = game();
+      const cat = withCat(save);
+      cat.shape.coat = "hairless";
+      if (hardiness !== 0) cat.traits = [{ group: "hardiness", level: hardiness, seen: 0, known: false }];
+      cat.bathedDay = save.current.day - BATH.hairlessDays;
+      nightlyCare(save.current, createRng(seed));
+      return cat;
+    };
+    const count = (hardiness: TraitLevel | 0): number => Array.from({ length: 400 }, (_, seed) => sick(hardiness, seed)).filter((c) => hasDisease(c, "dermatitis")).length;
+    // Шанс 30% за ніч; «Витривалість» +2 — ×0,8 (§9.5).
+    expect(count(0) / 400).toBeCloseTo(BATH.dermatitis, 1);
+    expect(count(2)).toBeLessThan(count(0) * 0.9);
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "dermatitis");
+    save.current.home.supplies.shampoo = { cheap: 0, premium: 1 };
+    hold(save, cat);
+    const log = recordEvents();
+    bathe(save.current, createRng(1));
+    log.stop();
+    expect(hasDisease(cat, "dermatitis")).toBe(false);
+    expect(log.events).toContainEqual({ type: "cat-cured", cat: cat.id, disease: "dermatitis" });
   });
 });
 
