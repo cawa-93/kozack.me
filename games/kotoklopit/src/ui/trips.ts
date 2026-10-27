@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, tripCat, vetManner } from "../sim/destinations";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -58,11 +58,17 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
 }
 
 const LOSS_TEXTS: Record<AccidentLoss, string> = {
-  repair: "Ремонт машини: −60 ₴.",
+  repair: `Ремонт машини: −${ACCIDENT.repair} ₴.`,
   health: "Легкі забої.",
   sanity: "Нерви на межі.",
   cat: "Кіт у переносці страшенно перелякався.",
 };
+
+/** Ремонт: скільки справді заплатили — грошей могло бути менше (перевірка поїздок 2026-10-28: картка завжди казала «−60 ₴»). */
+function repairText(paid: number = ACCIDENT.repair): string {
+  if (paid >= ACCIDENT.repair) return LOSS_TEXTS.repair;
+  return paid > 0 ? `Ремонт машини: −${Math.floor(paid)} ₴ — усе, що було.` : "Ремонт машини: грошей на нього не було.";
+}
 
 export function accidentCard(state: GameState, onClose: () => void): Card {
   const losses = state.trip?.losses ?? [];
@@ -71,7 +77,7 @@ export function accidentCard(state: GameState, onClose: () => void): Card {
     title: "Бам!",
     body: [
       "Сталася аварія. Решту дня довелося оформлювати документи, і додому вдалося потрапити лише ввечері.",
-      ...(losses.length > 0 ? losses.map((l) => LOSS_TEXTS[l]) : ["На щастя, без інших втрат."]),
+      ...(losses.length > 0 ? losses.map((l) => (l === "repair" ? repairText(state.trip?.repaired) : LOSS_TEXTS[l])) : ["На щастя, без інших втрат."]),
     ],
     actions: [{ label: "Додому", primary: true, onSelect: onClose }],
   };
@@ -153,7 +159,18 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         const chronic = DISEASES[d.id].cure.kind === "control";
         // Що дало лікування цієї поїздки: без цього рядок не змінювався, і хотілося платити знову.
         const result = log.done.filter((x) => x.startsWith(`${d.id}:`)).at(-1)?.split(":")[1];
-        const note = result === "failed" ? "не допомогло" : result === "controlled" ? "✓ під контролем" : chronic ? "хронічна" : "🕐 1 год";
+        // Скільки ще діє контроль, куплений раніше: інакше гравець платив знову, не знаючи, що хвороба вже під контролем.
+        const left = chronic && d.controlled !== null ? d.controlled - state.day + 1 : 0;
+        const note =
+          result === "failed"
+            ? "не допомогло"
+            : result === "controlled"
+              ? "✓ під контролем"
+              : left > 0
+                ? `під контролем ще ${left} ${plural(left, "день", "дні", "днів")}`
+                : chronic
+                  ? "хронічна"
+                  : "🕐 1 год";
         list.append(
           row(
             diseaseTitle(d.id),

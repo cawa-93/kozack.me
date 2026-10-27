@@ -81,6 +81,25 @@ describe("гонка (§8.5)", () => {
     expect(night?.sleptHours).toBeCloseTo(8, 0);
   });
 
+  it("аварія: ремонт, коли грошей менше 60, — усе, що було, і поїздка пам'ятає скільки (перевірка поїздок 2026-10-28)", () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const save = game(12 * 60);
+      save.current.day = 5;
+      save.current.character.money = 25;
+      startTrip(save.current, "shop");
+      const trip = save.current.trip;
+      if (!trip) throw new Error("немає поїздки");
+      save.current.rng.behavior = seed;
+      trip.race.cars.push({ lane: 1, start: 0.05 });
+      drive(save, 0.1, NO_RACE_INPUT);
+      if (!trip.losses.includes("repair")) continue;
+      expect(trip.repaired).toBe(25);
+      expect(save.current.character.money).toBe(0);
+      return;
+    }
+    throw new Error("ремонт не випав");
+  });
+
   it("поїздка в робочий час — штраф до репутації, а терпіння не падає", () => {
     const save = game(11 * 60);
     save.current.day = 1;

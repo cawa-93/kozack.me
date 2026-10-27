@@ -125,7 +125,10 @@ function crash(state: GameState, rng: Rng): void {
   let losses = candidates.filter(() => rng.chance(ACCIDENT.chance[state.difficulty]));
   while (losses.length > ACCIDENT.max[state.difficulty]) losses.splice(rng.int(0, losses.length - 1), 1);
   for (const loss of losses) {
-    if (loss === "repair") spend(state, Math.min(ACCIDENT.repair, state.character.money), "other");
+    if (loss === "repair") {
+      trip.repaired = Math.min(ACCIDENT.repair, Math.max(0, state.character.money));
+      spend(state, trip.repaired, "other");
+    }
     if (loss === "health") {
       changeStat(state, "health", ACCIDENT.health, ACCIDENT.floor);
       fallIllPerson(state, "injury");
