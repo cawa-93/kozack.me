@@ -142,6 +142,20 @@ describe("перебіг хвороби (§9.5)", () => {
     nightlyDiseases(save.current, quietRng());
     expect(cat.mood).toBe(mood - 3);
   });
+
+  it("хронічна під контролем настрою не псує (рішення автора 2026-10-27, Х9)", () => {
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "senior");
+    hold(save, cat);
+    giveMedicine(save.current, "pills", createRng(1));
+    const mood = cat.mood;
+    nightlyDiseases(save.current, quietRng());
+    expect(cat.mood).toBe(mood);
+    save.current.day += 1;
+    nightlyDiseases(save.current, quietRng());
+    expect(cat.mood).toBeLessThan(mood);
+  });
 });
 
 describe("ліки вдома (§9.5)", () => {

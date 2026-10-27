@@ -136,7 +136,8 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
       // Гострі минають самі (рішення автора 2026-10-27, Х1): остання ніч ще шкодить.
       if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease, rng);
     }
-    if (cat.diseases.length > 0) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
+    // Хронічна під контролем настрою не псує (рішення автора 2026-10-27, Х9).
+    if (cat.diseases.some((d) => !isControlled(state, d))) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
     // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.
     if (weightOf(cat) >= WEIGHT.obese) fallIll(state, cat, "obesity");
     maybeFallIll(state, cat, "cold", ILLNESS.cold, rng);
