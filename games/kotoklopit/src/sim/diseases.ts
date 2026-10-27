@@ -176,7 +176,8 @@ export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): bo
   cat.interacted = true;
   for (const disease of [...cat.diseases]) {
     const rule = DISEASES[disease.id].cure;
-    if (rule.kind === "control" && rule.medicine === medicine) disease.controlled = state.day;
+    // Таблетка контролює сьогодні, але не скорочує тиждень контролю від ветеринара.
+    if (rule.kind === "control" && rule.medicine === medicine) disease.controlled = Math.max(disease.controlled ?? state.day, state.day);
     if (rule.kind !== medicine) continue;
     if (quality === "cheap" && !rng.chance(MEDICINE.cheapWorks)) continue;
     disease.doses += 1;

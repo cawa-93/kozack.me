@@ -115,6 +115,22 @@ describe("ліки вдома (§9.5)", () => {
     nightlyDiseases(save.current, quietRng());
     expect(cat.health).toBe(health - 1);
   });
+
+  it("таблетка вдома не скорочує тиждень контролю від ветеринара", () => {
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "senior");
+    const senior = cat.diseases[0];
+    if (!senior) throw new Error("немає хвороби");
+    senior.controlled = save.current.day + 7;
+    hold(save, cat);
+    giveMedicine(save.current, "pills", createRng(1));
+    expect(senior.controlled).toBe(save.current.day + 7);
+    const health = cat.health;
+    save.current.day += 3;
+    nightlyDiseases(save.current, quietRng());
+    expect(cat.health).toBe(health);
+  });
 });
 
 describe("дієта, спокій і травма (§9.5)", () => {
