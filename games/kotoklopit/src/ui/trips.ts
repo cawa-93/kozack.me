@@ -140,7 +140,10 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       // Як кіт поводився на огляді (§9.12): спокійний, шипів чи вирвався.
       if (log.exam.manner) body.push(fill(VET_MANNER.vet[log.exam.manner], cat.sex, { кіт: cat.name }));
       const known = cat.diseases.filter((d) => d.known);
-      if (known.length === 0) body.push("Хвороб не знайдено.");
+      // Вилікуване цієї поїздки зникає зі списку: без рядка картка казала б «хвороб не знайдено», ніби їх і не було.
+      const cured = log.done.filter((x) => x.endsWith(":cured")).map((x) => diseaseTitle(x.split(":")[0] ?? "").toLowerCase());
+      if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
+      else if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
       if (!cat.sterilized)
