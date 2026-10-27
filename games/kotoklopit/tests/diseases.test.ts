@@ -4,15 +4,15 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
+import { decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, DISEASES, ILLNESS, MEDICINE } from "../src/sim/config";
+import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { recordEvents } from "./helpers";
+import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
+import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = newGame({ sex: "female", difficulty: "normal", seed: 9 });
@@ -270,6 +270,47 @@ describe("симптоми (§9.5)", () => {
     };
     expect(itches(true)).toBe(0);
     expect(itches(false)).toBeGreaterThan(0);
+  });
+});
+
+describe("низьке здоров'я видно з поведінки (§9.5, рішення автора 2026-10-27, Х4)", () => {
+  it("нижче 50 — гра ×0,7, нижче 25 — ×0,3", () => {
+    const playGain = (health: number): number => {
+      const save = game();
+      const cat = withCat(save);
+      cat.health = health;
+      cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+      cat.act = idleAct(600);
+      tickCats(save.current, 60, { present: true });
+      return cat.needs.play;
+    };
+    const full = playGain(100);
+    expect(full).toBeGreaterThan(0);
+    expect(playGain(LOW_HEALTH.low - 1) / full).toBeCloseTo(LOW_HEALTH.lowPlay, 2);
+    expect(playGain(LOW_HEALTH.weak - 1) / full).toBeCloseTo(LOW_HEALTH.weakPlay, 2);
+  });
+
+  it("нижче 25 — коли нічого не треба, сидить у схованці; з миски — пів порції без прояву «Апетиту»", () => {
+    const save = withCatCorner(game());
+    const cat = withCat(save);
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 80, play: 90 };
+    cat.health = LOW_HEALTH.weak;
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.kind).not.toBe("hide");
+    cat.health = LOW_HEALTH.weak - 1;
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.kind).toBe("hide");
+    const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");
+    if (!bowl) throw new Error("немає миски");
+    bowl.food = 2;
+    bowl.foodQuality = "cheap";
+    cat.traits = [{ group: "appetite", level: -1, seen: 0, known: false }];
+    cat.needs.hunger = 90;
+    cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0 };
+    for (let i = 0; i < 40 && cat.act.kind === "eat"; i++) tickCats(save.current, 0.5, { present: true });
+    expect(bowl.half).toBe(true);
+    expect(bowl.food).toBe(2);
+    expect(cat.traits[0]?.seen).toBe(0);
   });
 });
 

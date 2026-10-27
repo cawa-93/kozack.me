@@ -41,7 +41,6 @@ import {
   GIFTS,
   GULPING,
   HAIRBALL,
-  HIDING_CAT_HEALTH,
   HISS_PAUSE_MINUTES,
   HOUSE_SLEEP,
   HUNGRY_THEFT,
@@ -53,7 +52,7 @@ import {
   LEGS,
   LITTER_CAPACITY,
   LOVE_BEHAVIOR,
-  LOW_CAT_HEALTH,
+  LOW_HEALTH,
   MARKING,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
@@ -159,6 +158,12 @@ const traitFactor = (cat: Cat, group: string, step: number): number => Math.max(
 
 // --- Потреби --------------------------------------------------------------------------------
 
+/** Здоров'я нижче 25 (§9.5, рішення автора 2026-10-27, Х4): кіт ховається, майже не грається й менше їсть. */
+export const isWeak = (cat: Cat): boolean => cat.health < LOW_HEALTH.weak;
+
+/** Потреба гри від здоров'я (§9.5, Х4): нижче 50 — ×0,7, нижче 25 — ×0,3. */
+const healthPlay = (cat: Cat): number => (isWeak(cat) ? LOW_HEALTH.weakPlay : cat.health < LOW_HEALTH.low ? LOW_HEALTH.lowPlay : 1);
+
 function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const hours = minutes / MINUTES_PER_HOUR;
   const n = cat.needs;
@@ -170,7 +175,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   if (sleeping) {
     n.fatigue = clamp(n.fatigue - SLEEP_RECOVERY_PER_HOUR * hours * sleepFactor(cat) * Math.max(0.1, 1 - SLEEP_TRAIT_STEP * traitLevel(cat, "sleep")));
   } else {
-    const tired = isOld(cat) || cat.health < LOW_CAT_HEALTH ? TIRED_FATIGUE : 1;
+    const tired = isOld(cat) || cat.health < LOW_HEALTH.low ? TIRED_FATIGUE : 1;
     const recovering = state.day <= cat.recoveryUntil ? STERILIZATION.recoveryFatigue : 1;
     n.fatigue = clamp(n.fatigue + NEED_PER_HOUR.fatigue * hours * tired * fatigueFactor(cat) * recovering * catFatigueFactor(state));
   }
@@ -178,9 +183,9 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const attention = Math.max(0, 1 + TRAIT_NEED_STEP * traitLevel(cat, "affection"));
   n.attention = clamp(n.attention + NEED_PER_HOUR.attention * hours * attention);
   const age = isKitten(cat) ? KITTEN_PLAY : isOld(cat) ? OLD_PLAY : 1;
-  // З ожирінням кіт менше грається (§9.12, «Схильність до повноти»).
+  // З ожирінням кіт менше грається (§9.12, «Схильність до повноти»), з низьким здоров'ям — теж (§9.5, Х4).
   const heavy = isObese(cat) ? WEIGHT.obesePlay : 1;
-  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state) * heavy);
+  n.play = clamp(n.play + NEED_PER_HOUR.play * hours * activityAt(cat, state.minute) * traitFactor(cat, "energy", TRAIT_NEED_STEP) * age * playFactor(state) * heavy * healthPlay(cat));
   // Зайва вага потроху йде (§9.12).
   settleWeight(cat, minutes);
   // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
@@ -919,15 +924,17 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && !enemyAtPerson(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
   }
+  // Новий кіт, що звикає, і дуже слабкий (§9.5, Х4) сплять і, коли нічого не треба, сидять у схованці.
+  const adapting = isAdapting(state, cat);
   if (n.fatigue >= sleepThreshold(cat, state.minute)) {
-    const spot = cat.health < HIDING_CAT_HEALTH || isAdapting(state, cat) ? hideSpot(state, rng, cat) : sleepSpot(state, cat, rng);
+    const spot = isWeak(cat) || adapting ? hideSpot(state, rng, cat) : sleepSpot(state, cat, rng);
     return start(cat, "sleep", spot.at, 8 * MINUTES_PER_HOUR, spot.target);
   }
-  if (isAdapting(state, cat)) {
+  if (adapting || isWeak(cat)) {
     const spot = hideSpot(state, rng, cat);
     start(cat, "hide", spot.at, CAT_ACT_MINUTES.hide, spot.target);
     // Полохливий звикає довше: ховається й тоді, коли кіт без риси вже звик би (§9.6, §9.12), — прояв раз на день.
-    if (adaptsLonger(state, cat)) observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
+    if (adapting && adaptsLonger(state, cat)) observe(state, cat, "bravery", -1, false, MINUTES_PER_DAY);
     return;
   }
   if (startSnack(state, cat, rng)) return;
@@ -2067,8 +2074,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
-      // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9).
-      if (nibble) observe(state, cat, "appetite", -1);
+      // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9); слабкий клює через здоров'я, не через рису.
+      if (nibble && !isWeak(cat)) observe(state, cat, "appetite", -1);
       // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
       // він уже після другої.
       const appetite = traitLevel(cat, "appetite");
@@ -2610,8 +2617,9 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           act.minutes = Math.min(act.minutes, SNIFF_MINUTES);
           return;
         }
+        // Дуже слабкий кіт (§9.5, Х4) теж з'їдає лише пів порції.
         const appetite = traitLevel(cat, "appetite");
-        act.nibble = appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite));
+        act.nibble = isWeak(cat) || (appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite)));
         // Кіт сів їсти — злодій поруч може піти відтіснити його (§9.12, «Злодійство»).
         bowlThief(state, cat, rng);
         // «Ділиться» їсть з однієї миски з іншим котом, хоч є й вільна, — прояв «Територіальності −» (§9.12).

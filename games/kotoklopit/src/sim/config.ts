@@ -335,11 +335,13 @@ export const SLEEP_START = { base: 40, activity: 40 } as const;
 export const ENERGY = { sleepStep: 0.2, maxThreshold: 95, activeHour: 1, bored: 1.5 } as const;
 export const SLEEP_END = 10;
 export const MIN_CAT_NAP_MINUTES = 30;
-/** Втома росте швидше понад межу віку чи зі здоров'ям нижче 50 (§9.12). */
+/** Втома росте швидше понад межу віку чи зі здоров'ям нижче `LOW_HEALTH.low` (§9.12). */
 export const TIRED_FATIGUE = 1.3;
-export const LOW_CAT_HEALTH = 50;
-/** Зі здоров'ям нижче 25 кіт спить у схованці (§9.5). */
-export const HIDING_CAT_HEALTH = 25;
+/**
+ * Низьке здоров'я видно з поведінки (§9.5, рішення автора 2026-10-27, Х4): нижче `low` — втома ×`TIRED_FATIGUE` і потреба гри
+ * ×`lowPlay`; нижче `weak` — гра ×`weakPlay`, з миски — пів порції, а коли нічого не треба, кіт сидить у схованці й спить там.
+ */
+export const LOW_HEALTH = { low: 50, lowPlay: 0.7, weak: 25, weakPlay: 0.3 } as const;
 /** Гра: кошенята 1–2 тижні гіперактивні, старі коти грають менше (§9.3, §9.12). */
 export const KITTEN_PLAY = 1.5;
 export const OLD_PLAY = 0.6;
