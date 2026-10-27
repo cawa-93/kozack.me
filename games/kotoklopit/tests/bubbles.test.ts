@@ -47,6 +47,7 @@ const EVENTS: GameEvent[] = [
   { type: "symptom", cat: 1, symptom: "sneeze" },
   { type: "symptom", cat: 1, symptom: "itch" },
   { type: "symptom", cat: 1, symptom: "eyes" },
+  { type: "symptom", cat: 1, symptom: "pain" },
   { type: "medicine-spat", cat: 1, medicine: "pills" },
   { type: "medicine-spat", cat: 1, medicine: "drops" },
   { type: "meow", cat: 1 },
@@ -117,8 +118,9 @@ describe("бабли вголос і думки (§11.4, правка автор
     expect(only({ type: "meow", cat: 7 })).toMatchObject({ kind: "say", at: "cat:7" });
   });
 
-  it("чхання чути, а свербіж і очі кіт відчуває", () => {
+  it("чхання й крик болю чути, а свербіж і очі кіт відчуває", () => {
     expect(only({ type: "symptom", cat: 2, symptom: "sneeze" }).kind).toBe("say");
+    expect(only({ type: "symptom", cat: 2, symptom: "pain" })).toMatchObject({ kind: "say", at: "cat:2", icon: "pain" });
     expect(only({ type: "symptom", cat: 2, symptom: "itch" })).toMatchObject({ kind: "think", at: "cat:2" });
     expect(only({ type: "symptom", cat: 2, symptom: "eyes" })).toMatchObject({ kind: "think", at: "cat:2" });
   });

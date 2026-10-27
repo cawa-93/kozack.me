@@ -4,13 +4,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
-import { decide, eatMinutes, tickCats } from "../src/sim/catai";
+import { climbWeight, decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
 import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import type { GameEvent } from "../src/sim/events";
 import type { BowlItem, Cat, DiseaseId, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -365,6 +366,47 @@ describe("низьке здоров'я видно з поведінки (§9.5, 
     expect(bowl.half).toBe(true);
     expect(bowl.food).toBe(2);
     expect(cat.traits[0]?.seen).toBe(0);
+  });
+});
+
+describe("помітніші симптоми (§9.5, рішення автора 2026-10-27, Х6)", () => {
+  it("з травмою нагору не лізе, як і з ожирінням", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.traits = [{ group: "climbing", level: 2, seen: 0, known: false }];
+    expect(climbWeight(cat)).toBeGreaterThan(0);
+    fallIll(save.current, cat, "injury");
+    expect(climbWeight(cat)).toBe(0);
+  });
+
+  it("дерматит свербить, як блохи", () => {
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "dermatitis");
+    cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+    cat.act = idleAct(600);
+    const log = recordEvents();
+    for (let i = 0; i < 180; i++) tickCats(save.current, 1, { present: true });
+    log.stop();
+    expect(log.events.filter((e) => e.type === "symptom" && e.symptom === "itch").length).toBeGreaterThan(0);
+  });
+
+  it("сечокам'яна — кричить у лотку щоразу, як сходив", () => {
+    const save = withCatCorner(game());
+    const cat = withCat(save);
+    const box = save.current.home.items.find((i) => i.kind === "litter");
+    if (!box) throw new Error("немає лотка");
+    const visit = (): GameEvent[] => {
+      cat.needs.toilet = 90;
+      cat.act = { kind: "toilet", target: `item:${box.id}`, goal: null, minutes: 0.05, elapsed: 0 };
+      const log = recordEvents();
+      tickCats(save.current, 0.1, { present: true });
+      log.stop();
+      return log.events.filter((e) => e.type === "symptom");
+    };
+    expect(visit()).toEqual([]);
+    fallIll(save.current, cat, "urolithiasis");
+    expect(visit()).toEqual([{ type: "symptom", cat: cat.id, symptom: "pain" }]);
   });
 });
 

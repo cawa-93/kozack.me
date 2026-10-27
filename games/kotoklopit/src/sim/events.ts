@@ -158,7 +158,7 @@ export type GameEvent =
   | { type: "cat-gone"; entry: AlbumEntry }
   | { type: "cat-ill"; cat: number; disease: DiseaseId }
   | { type: "cat-cured"; cat: number; disease: DiseaseId }
-  | { type: "symptom"; cat: number; symptom: "sneeze" | "itch" | "eyes" }
+  | { type: "symptom"; cat: number; symptom: "sneeze" | "itch" | "eyes" | "pain" }
   | { type: "medicine"; cat: number; medicine: Medicine; quality: Quality }
   /** Ліки дали раніше ніж за 6 годин після попередньої дози — кіт випльовує (§9.5, Х3). */
   | { type: "medicine-spat"; cat: number; medicine: Medicine }

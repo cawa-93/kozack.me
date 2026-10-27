@@ -39,6 +39,7 @@ export type IconName =
   | "sneeze"
   | "itch"
   | "eyes"
+  | "pain"
   | "spit-pill"
   | "spit-drops"
   | "kibble-sterile"
@@ -286,6 +287,18 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9455f, 0.5).fillEllipse(20, 18, 24, 12);
     g.fillStyle(INK).fillCircle(20, 18, 4);
     g.fillStyle(0x6fb3d6).fillTriangle(14, 26, 18, 26, 16, 34);
+  },
+  pain: (g: Phaser.GameObjects.Graphics) => {
+    // Біль (§9.5, Х6): кіт із сечокам'яною кричить у лотку — червоний зубчастий спалах зі знаком оклику.
+    const points: Phaser.Math.Vector2[] = [];
+    for (let i = 0; i < 16; i++) {
+      const r = i % 2 === 0 ? 17 : 9;
+      const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
+      points.push(new Phaser.Math.Vector2(20 + r * Math.cos(a), 20 + r * Math.sin(a)));
+    }
+    g.fillStyle(COLORS.danger).fillPoints(points, true);
+    g.lineStyle(2, INK).strokePoints(points, true, true);
+    g.fillStyle(0xffffff).fillRoundedRect(18, 10, 4, 12, 1.5).fillCircle(20, 26.5, 2.3);
   },
   "spit-pill": (g: Phaser.GameObjects.Graphics) => {
     // Кіт випльовує таблетку (§9.5, Х3): таблетка вилітає праворуч, позаду рисочки руху й бризки слини.

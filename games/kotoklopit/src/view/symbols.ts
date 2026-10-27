@@ -177,8 +177,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Чистюля не йде на руки в брудному одязі — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "laundry" }];
     case "symptom":
-      // Чхання чути, а свербіж і очі кіт відчуває.
-      return [event.symptom === "sneeze" ? { kind: "say", at: cat(event.cat), icon: "sneeze" } : { kind: "think", at: cat(event.cat), icon: event.symptom }];
+      // Чхання й крик болю чути, а свербіж і очі кіт відчуває.
+      return [event.symptom === "sneeze" || event.symptom === "pain" ? { kind: "say", at: cat(event.cat), icon: event.symptom } : { kind: "think", at: cat(event.cat), icon: event.symptom }];
     case "medicine-spat":
       // Кіт випльовує таблетку чи струшує краплі (§9.5, Х3): це видно й чути — уголос над котом.
       return [{ kind: "say", at: cat(event.cat), icon: event.medicine === "pills" ? "spit-pill" : "spit-drops" }];

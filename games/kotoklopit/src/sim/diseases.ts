@@ -72,6 +72,8 @@ export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") |
 export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1);
 /** Ожиріння (§9.5, §9.12): менше грається й не лізе нагору. */
 export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
+/** Нагору не стрибне: з ожирінням (§9.12) чи травмою (§9.5, рішення автора 2026-10-27, Х6). */
+export const cannotJump = (cat: Cat): boolean => isObese(cat) || hasDisease(cat, "injury");
 
 /**
  * Кіт нездужає (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5): будь-яка хвороба, зокрема травма, — крім старості й
@@ -85,11 +87,11 @@ export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => !FEELS_F
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
   (hasDisease(cat, "stomach") || hasDisease(cat, "cystitis")) && rng.chance(SYMPTOMS.outsideLitter);
 
-/** Видимі симптоми щохвилини: чхання, свербіж, тертя очей (§9.5). */
+/** Видимі симптоми щохвилини: чхання, свербіж (блохи, дерматит — рішення автора 2026-10-27, Х6), тертя очей (§9.5). */
 export function showSymptoms(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const chance = (SYMPTOMS.showPerHour * minutes) / 60;
   if (hasDisease(cat, "cold") && rng.chance(chance)) emit(state, { type: "symptom", cat: cat.id, symptom: "sneeze" });
-  if (hasDisease(cat, "fleas") && rng.chance(chance)) emit(state, { type: "symptom", cat: cat.id, symptom: "itch" });
+  if ((hasDisease(cat, "fleas") || hasDisease(cat, "dermatitis")) && rng.chance(chance)) emit(state, { type: "symptom", cat: cat.id, symptom: "itch" });
   if (hasDisease(cat, "conjunctivitis") && rng.chance(chance)) emit(state, { type: "symptom", cat: cat.id, symptom: "eyes" });
 }
 

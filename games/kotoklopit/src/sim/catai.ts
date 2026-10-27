@@ -110,7 +110,7 @@ import {
   WORK_CAT,
   ZOOMIES,
 } from "./config";
-import { afterMeal, afterTheft, fallIll, fatigueFactor, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { afterMeal, afterTheft, cannotJump, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -528,8 +528,8 @@ export function upHigh(state: GameState, cat: Cat): boolean {
 /** Вага високого місця для сну (§9.12, «Лазіння»): 1,5 × рівень, кіт без риси — 0,3, «−» — ніколи. */
 export function climbWeight(cat: Cat): number {
   const level = traitLevel(cat, "climbing");
-  // З ожирінням нагору не стрибнути (§9.12, «Схильність до повноти»).
-  if (level < 0 || isObese(cat)) return 0;
+  // З ожирінням (§9.12, «Схильність до повноти») чи травмою (§9.5, Х6) нагору не стрибнути.
+  if (level < 0 || cannotJump(cat)) return 0;
   return level === 0 ? CLIMBING.base : CLIMBING.step * level;
 }
 
@@ -837,7 +837,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
 
 /** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
 export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
-  if (cat && traitLevel(cat, "climbing") > 0 && !isObese(cat)) {
+  if (cat && traitLevel(cat, "climbing") > 0 && !cannotJump(cat)) {
     const high = objectById(HIGH_PLACES[rng.int(0, HIGH_PLACES.length - 1)] ?? "fridge");
     return { at: { x: high.x, y: high.y }, target: null };
   }
@@ -2217,6 +2217,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         addMess(state, "surprise", visibleFloorNear(state, cat), cat.id);
         return;
       }
+      // Сечокам'яна: кіт кричить у лотку від болю (§9.5, рішення автора 2026-10-27, Х6).
+      if (hasDisease(cat, "urolithiasis")) emit(state, { type: "symptom", cat: cat.id, symptom: "pain" });
       if (dirty) {
         changeLove(state, cat, DIRTY_LITTER.love * factor, "брудний лоток");
         // Спокійно сходив і в повний лоток — прояв «Спартанця» (§9.9).
