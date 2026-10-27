@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { loadSave } from "../src/session";
+import { loadSave, Session } from "../src/session";
 import { newGame, serialize } from "../src/sim/game";
 
 /** Сховище браузера для тесту: у Node його немає. */
@@ -32,5 +32,18 @@ describe("збереження в браузері", () => {
     // Сцена отримує його текст, щоб запропонувати зберегти файлом (Ц3).
     expect(loadSave()).toEqual({ save: null, unreadable: '{"version":1,"current":{}}' });
     expect(items["kotoklopit:save-unreadable"]).toBe('{"version":1,"current":{}}');
+  });
+
+  it("доки картка про нечитабельне збереження без відповіді, автозбереження його не перезаписує", () => {
+    const items: Record<string, string> = { "kotoklopit:save": '{"version":1,"current":{}}' };
+    fakeStorage(items);
+    const session = new Session(newGame({ sex: "female", difficulty: "normal", seed: 3 }));
+    session.unreadable = loadSave().unreadable;
+    session.persist();
+    expect(items["kotoklopit:save"]).toBe('{"version":1,"current":{}}');
+    // Відповів — далі зберігається нова гра.
+    session.unreadable = null;
+    session.persist();
+    expect(loadSave()).toMatchObject({ save: { current: { seed: 3 } }, unreadable: null });
   });
 });

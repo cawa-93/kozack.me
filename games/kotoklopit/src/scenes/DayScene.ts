@@ -1264,6 +1264,8 @@ export class DayScene extends Phaser.Scene {
         },
         { label: UNREADABLE_SAVE.fresh, onSelect: done },
       ],
+      // Гра ще не почалася: квартиру й панель заглушки нової гри за карткою не видно, як і в картках вибору персонажа.
+      solid: true,
     });
   }
 

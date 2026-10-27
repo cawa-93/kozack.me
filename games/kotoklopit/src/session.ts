@@ -57,7 +57,9 @@ export class Session {
   }
 
   persist(): void {
-    if (!this.persistent) return;
+    // Доки гравець не відповів на картку про нечитабельне збереження, заглушка нової гри не лягає на його місце:
+    // інакше після перезавантаження картки вже не було б (перевірка циклу гри 2026-10-27).
+    if (!this.persistent || this.unreadable !== null) return;
     try {
       localStorage.setItem(SAVE_KEY, serialize(this.save));
     } catch {
