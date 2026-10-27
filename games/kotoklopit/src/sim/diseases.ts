@@ -98,8 +98,8 @@ export function afterTheft(state: GameState, cat: Cat, rng: Rng): void {
 // --- Ніч ------------------------------------------------------------------------------------
 
 /**
- * Ніч (§9.5): перебіг кожної хвороби — після «безпечного» терміну щоденна шкода, поки не вилікують
- * чи не візьмуть під контроль; хворий кіт сумує; нові хвороби й зараження.
+ * Ніч (§9.5): перебіг кожної хвороби — після «безпечного» терміну щоденна шкода, поки не вилікують, не візьмуть під
+ * контроль чи гостра не мине сама; хворий кіт сумує; нові хвороби й зараження.
  */
 export function nightlyDiseases(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
@@ -119,7 +119,10 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
         continue;
       }
       const controlled = rule.cure.kind === "control" && disease.controlled !== null && disease.controlled >= state.day;
-      if (!controlled && state.day - disease.day >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
+      const days = state.day - disease.day;
+      if (!controlled && days >= rule.safe) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
+      // Гострі минають самі (рішення автора 2026-10-27, Х1): остання ніч ще шкодить.
+      if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease);
     }
     if (cat.diseases.length > 0) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
     // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.

@@ -945,28 +945,32 @@ export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMin
  * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
  */
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
-/** Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. */
+/**
+ * Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. `recovers` — за скільки днів гостра
+ * минає сама, остання ніч ще шкодить (рішення автора 2026-10-27, `DISEASES_REVIEW.md`, Х1); null — лише від лікування.
+ */
 export const DISEASES: Record<
   DiseaseId,
   {
     safe: number;
     damage: number;
+    recovers: number | null;
     cure: { kind: Medicine; doses: number } | { kind: "diet"; portions: number } | { kind: "calm"; days: number } | { kind: "vet" } | { kind: "control"; medicine: Medicine } | { kind: "weight" };
     contagious: "friends" | "litter" | null;
   }
 > = {
-  cold: { safe: 3, damage: 2, cure: { kind: "pills", doses: 4 }, contagious: "friends" },
-  fleas: { safe: 5, damage: 1, cure: { kind: "drops", doses: 1 }, contagious: "friends" },
-  worms: { safe: 5, damage: 2, cure: { kind: "pills", doses: 1 }, contagious: "litter" },
-  stomach: { safe: 2, damage: 2, cure: { kind: "diet", portions: 4 }, contagious: null },
-  injury: { safe: 3, damage: 1, cure: { kind: "vet" }, contagious: null },
-  cystitis: { safe: 3, damage: 2, cure: { kind: "calm", days: 2 }, contagious: null },
-  conjunctivitis: { safe: 4, damage: 1, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
-  senior: { safe: 0, damage: 1, cure: { kind: "control", medicine: "pills" }, contagious: null },
-  urolithiasis: { safe: 1, damage: 6, cure: { kind: "vet" }, contagious: null },
-  dermatitis: { safe: 5, damage: 1, cure: { kind: "vet" }, contagious: null },
+  cold: { safe: 3, damage: 2, recovers: 10, cure: { kind: "pills", doses: 4 }, contagious: "friends" },
+  fleas: { safe: 5, damage: 1, recovers: null, cure: { kind: "drops", doses: 1 }, contagious: "friends" },
+  worms: { safe: 5, damage: 2, recovers: null, cure: { kind: "pills", doses: 1 }, contagious: "litter" },
+  stomach: { safe: 2, damage: 2, recovers: 4, cure: { kind: "diet", portions: 4 }, contagious: null },
+  injury: { safe: 3, damage: 1, recovers: 14, cure: { kind: "vet" }, contagious: null },
+  cystitis: { safe: 3, damage: 2, recovers: null, cure: { kind: "calm", days: 2 }, contagious: null },
+  conjunctivitis: { safe: 4, damage: 1, recovers: 10, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
+  senior: { safe: 0, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  urolithiasis: { safe: 1, damage: 6, recovers: null, cure: { kind: "vet" }, contagious: null },
+  dermatitis: { safe: 5, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
   // Ожиріння (§9.5, §9.12 «Тіло й тепло», 2026-10-26): оборотне — минає, щойно вага повернеться до норми (`WEIGHT.cured`).
-  obesity: { safe: 7, damage: 1, cure: { kind: "weight" }, contagious: null },
+  obesity: { safe: 7, damage: 1, recovers: null, cure: { kind: "weight" }, contagious: null },
 };
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {

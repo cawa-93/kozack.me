@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH } from "../src/sim/config";
+import { BATH, DISEASES } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -50,6 +50,31 @@ describe("перебіг хвороби (§9.5)", () => {
     nightlyDiseases(save.current, quietRng());
     expect(cat.health).toBe(health - 2);
     expect(cat.healthLog.at(-1)?.source).toBe("disease:cold");
+  });
+
+  it("гострі минають самі, остання ніч ще шкодить; блохи без лікування — ні (рішення автора 2026-10-27, Х1)", () => {
+    const save = game();
+    const cold = withCat(save);
+    const fleas = withCat(save);
+    fallIll(save.current, cold, "cold");
+    fallIll(save.current, fleas, "fleas");
+    const start = save.current.day;
+    const days = DISEASES.cold.recovers ?? 0;
+    for (let night = 0; night < days - 1; night++) {
+      save.current.day = start + night;
+      nightlyDiseases(save.current, quietRng());
+    }
+    expect(hasDisease(cold, "cold")).toBe(true);
+    const health = cold.health;
+    save.current.day = start + days - 1;
+    nightlyDiseases(save.current, quietRng());
+    expect(hasDisease(cold, "cold")).toBe(false);
+    expect(cold.health).toBe(health - DISEASES.cold.damage);
+    for (let night = days; night < 40; night++) {
+      save.current.day = start + night;
+      nightlyDiseases(save.current, quietRng());
+    }
+    expect(hasDisease(fleas, "fleas")).toBe(true);
   });
 
   it("поки кіт хворіє, настрій щоночі −3", () => {
