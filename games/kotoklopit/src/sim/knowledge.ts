@@ -23,10 +23,11 @@ export function setWitnessing(value: boolean): void {
  */
 export function witnesses(state: GameState, cat: Cat): boolean {
   if (!witnessing || state.end !== null) return false;
-  const activity = state.character.activity;
-  if (activity?.kind === "use" && activity.inside === true) return false;
+  // Кота на руках видно завжди — і купаючи його в кабіні (перевірка купання 2026-10-28); з кабіни інших не видно.
   const held = state.character.held;
   if (held?.kind === "cat" && held.cat === cat.id) return true;
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.inside === true) return false;
   if (cat.away === "trip") return state.trip !== null;
   // Поки персонаж у поїздці, котів удома він не бачить (§8.5): дзвінок кур'єра чи гостей вони чують без нього (перевірка
   // поїздок 2026-10-28; раніше прояви «Гостей» і «Втеч» зараховувалися від тіла, що лишилося біля дверей).

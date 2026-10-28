@@ -550,6 +550,11 @@ export type CatFeeling = "content" | "reluctant" | "struggling";
 
 export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   const { held, activity } = state.character;
+  // Під час купання вигляд кота — від «Любові до води», а не від рук (перевірка купання 2026-10-28).
+  if (held?.kind === "cat" && held.cat === cat.id && activity?.kind === "use" && activity.bath === true) {
+    const water = traitLevel(cat, "water");
+    return water > 0 ? "content" : water === 0 ? "reluctant" : "struggling";
+  }
   if (held?.kind === "cat" && held.cat === cat.id) return carryFeeling(state, cat);
   if (activity?.kind === "pet" && activity.cat === cat.id && !petOver(activity)) {
     const tolerance = petTolerance(cat);
@@ -569,7 +574,8 @@ export function useProgress(state: GameState): number | null {
   const activity = state.character.activity;
   if (activity?.kind !== "use") return null;
   const target = targetById(state, activity.target);
-  return target ? Math.min(1, activity.progress / useMinutes(target)) : null;
+  // Купання «Водобоязні» — довше за душ: смуга від його тривалості (перевірка купання 2026-10-28).
+  return target ? Math.min(1, activity.progress / (activity.bath === true ? bathMinutes(state) : useMinutes(target))) : null;
 }
 
 /**

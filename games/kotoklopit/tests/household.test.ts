@@ -6,7 +6,7 @@ import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { addSupply, discardAppliance, freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
-import { bathMinutes } from "../src/sim/actions";
+import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
 import { stun } from "../src/sim/body";
@@ -86,6 +86,26 @@ describe("купання (§8.7)", () => {
     const love = other.love;
     bathe(save.current, never());
     expect(other.love).toBeLessThan(love);
+  });
+
+  it("кіт, що пручається, посеред купання не виривається — купання завершується; смуга від тривалості купання; час — на котів (перевірка купання 2026-10-28)", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+      held(save, { lap: -2, water: -1 });
+      standAt(save, "shower");
+      const cats = save.current.stats.minutes.cats;
+      const { events, stop } = recordEvents();
+      interact(save);
+      advance(save, 10);
+      expect(useProgress(save.current)).toBeCloseTo(10 / 15, 1);
+      for (let i = 0; i < 40 && save.current.character.activity !== null; i++) advance(save, 0.5);
+      stop();
+      expect(events).toContainEqual(expect.objectContaining({ type: "bathed" }));
+      expect(save.current.home.supplies.shampoo.cheap).toBe(4);
+      expect(save.current.stats.minutes.cats - cats).toBeGreaterThanOrEqual(14);
+    }
   });
 
   it("купання триває 10 хвилин, «Водобоязнь» — удвічі довше; без шампуню не почати (рішення автора 2026-10-28)", () => {

@@ -3001,6 +3001,10 @@ export function carryBiteChance(cat: Cat): number {
  * настрій падає, кіт може вкусити, а після укусу — вирватися й утекти ховатися.
  */
 function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
+  // Купання (§8.7): що відчув кіт — подряпини, втеча з рук, настрій — вирішує саме купання наприкінці (`bathe`), а не «на руках»
+  // (перевірка купання 2026-10-28: кіт вирвався посеред купання, і воно мовчки зривалося, а «любитель рук» із «Водобоязню» виходив задоволений).
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.bath === true) return;
   const lap = traitLevel(cat, "lap");
   const feeling = carryFeeling(state, cat);
   const held = state.character.held;

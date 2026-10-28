@@ -132,7 +132,8 @@ function timeCategory(state: GameState, input: Input): keyof GameState["stats"][
   const activity = state.character.activity;
   if (activity?.kind === "work") return "work";
   if (activity?.kind === "pet" || activity?.kind === "play") return "cats";
-  if (activity?.kind === "use") return CAT_USES.test(activity.target) ? "cats" : "self";
+  // Купання кота — час на котів (§4.2; перевірка купання 2026-10-28: ішло в «собі»).
+  if (activity?.kind === "use") return activity.bath === true || CAT_USES.test(activity.target) ? "cats" : "self";
   return isMoving(input.move) ? "bustle" : null;
 }
 
