@@ -5,6 +5,7 @@ import { changeStat } from "./character";
 import { CAT_AGE_LIMIT, DEATH, DIFFICULTY, GIVE_AWAY_GRACE_DAYS, SANITY_FLOOR } from "./config";
 import { emit } from "./events";
 import { forgetRelations } from "./relations";
+import { isNewborn } from "./reproduction";
 import type { Rng } from "./rng";
 import type { AlbumEntry, Cat, FarewellCause, GameState } from "./types";
 
@@ -52,24 +53,41 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
   return entry;
 }
 
+/** Чому кота зараз не віддати (§9.8): новонароджений чи мати, що годує новонароджених; null — можна. */
+export function giveAwayBlocker(state: GameState, cat: Cat): "newborn" | "nursing" | null {
+  if (cat.ageWeeks < 1) return "newborn";
+  // Новонароджені лишаються з матір'ю — тож і її не віддають, поки вони вдома (перевірка розмноження 2026-10-28).
+  if (state.cats.some((k) => isNewborn(k) && k.parents.mother === cat.id)) return "nursing";
+  return null;
+}
+
+/** Скільки здорового глузду забере віддати кота дня `day`: протягом 7 днів після появи — весь бонус (§9.8). */
+export function giveAwayLoss(state: GameState, cat: Cat, day: number): number {
+  const { givenCatSanity, newCatSanity } = DIFFICULTY[state.difficulty];
+  return day - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? -newCatSanity : givenCatSanity;
+}
+
 /**
- * Віддати кота в добрі руки (§9.8): −15 здорового глузду (не нижче 10%), а протягом 7 днів після
- * появи — весь отриманий за нього бонус. Новонароджених не віддають.
+ * Віддати кота в добрі руки (§9.8) дня `day`: −15 здорового глузду (не нижче 10%), а протягом 7 днів після
+ * появи — весь отриманий за нього бонус. Новонароджених і їхню матір не віддають.
  */
 export function giveAway(state: GameState, cat: Cat, day: number): AlbumEntry | null {
-  if (cat.ageWeeks < 1) return null;
-  const { givenCatSanity, newCatSanity } = DIFFICULTY[state.difficulty];
-  const loss = state.day - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? -newCatSanity : givenCatSanity;
-  changeStat(state, "sanity", loss, SANITY_FLOOR);
+  if (giveAwayBlocker(state, cat) !== null) return null;
+  changeStat(state, "sanity", giveAwayLoss(state, cat, day), SANITY_FLOOR);
   state.ads = state.ads.filter((id) => id !== cat.id);
   return removeCat(state, cat, { kind: "given" }, day);
 }
 
 /** Дати оголошення (§9.8): нові господарі заберуть кота завтра вранці. */
 export function advertise(state: GameState, cat: Cat): boolean {
-  if (cat.ageWeeks < 1 || state.ads.includes(cat.id)) return false;
+  if (giveAwayBlocker(state, cat) !== null || state.ads.includes(cat.id)) return false;
   state.ads.push(cat.id);
   return true;
+}
+
+/** Зняти оголошення (перевірка розмноження 2026-10-28: раніше один дотик без підтвердження віддавав кота назавжди). */
+export function cancelAd(state: GameState, cat: Cat): void {
+  state.ads = state.ads.filter((id) => id !== cat.id);
 }
 
 /** Ранок: нові господарі забирають котів за оголошеннями. */
@@ -77,7 +95,8 @@ export function collectAds(state: GameState): AlbumEntry[] {
   const given: AlbumEntry[] = [];
   for (const id of [...state.ads]) {
     const cat = state.cats.find((c) => c.id === id);
-    const entry = cat ? giveAway(state, cat, state.day) : null;
+    // Забирають уранці нового дня: і дата в альбомі, і «7 днів після появи» — від нього (раніше від учорашнього).
+    const entry = cat ? giveAway(state, cat, state.day + 1) : null;
     if (entry) given.push(entry);
   }
   state.ads = [];

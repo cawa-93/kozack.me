@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
@@ -12,7 +12,7 @@ import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
-import { advertise } from "../sim/farewell";
+import { advertise, cancelAd, giveAwayLoss } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
@@ -1333,8 +1333,29 @@ export class DayScene extends Phaser.Scene {
             discard(this.state, item.id);
             show(tab);
           },
-          advertise: (cat) => {
-            advertise(this.state, cat);
+          // Віддати — назавжди: спершу картка з ціною (перевірка розмноження 2026-10-28: був один дотик без підтвердження).
+          advertise: (cat) =>
+            this.overlay.show({
+              kicker: "Віддати в добрі руки",
+              title: `Віддати ${cat.name}?`,
+              body: [
+                `Завтра вранці ${cat.name} поїде до нових господарів. Здоровий глузд ${Math.round(giveAwayLoss(this.state, cat, this.state.day + 1))}${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? " — увесь бонус за нового кота: минуло менше тижня" : ""}.`,
+              ],
+              actions: [
+                {
+                  label: "Дати оголошення",
+                  primary: true,
+                  onSelect: () => {
+                    advertise(this.state, cat);
+                    show(tab);
+                  },
+                },
+                { label: "Повернутися", onSelect: () => show(tab) },
+              ],
+              onDismiss: () => show(tab),
+            }),
+          cancelAd: (cat) => {
+            cancelAd(this.state, cat);
             show(tab);
           },
           newGame: () => this.confirmNewGame(() => show(tab)),

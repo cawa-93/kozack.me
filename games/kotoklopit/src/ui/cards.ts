@@ -4,6 +4,7 @@ import { MODIFIERS, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
+import { giveAwayBlocker } from "../sim/farewell";
 import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
@@ -84,7 +85,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const born = newCats.filter((c) => c.source === "born");
   for (const motherId of new Set(born.map((c) => c.parents.mother))) {
     const kittens = born.filter((c) => c.parents.mother === motherId);
-    const mother = state.cats.find((c) => c.id === motherId);
+    const mother = state.cats.find((c) => c.id === motherId) ?? state.album.find((e) => e.id === motherId);
     const values = { кішка: mother?.name ?? "кішка", кількість: kittens.length, кошенята: kittens.map((c) => c.name).join(", ") };
     // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
     events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values)]);
@@ -202,6 +203,7 @@ export interface PhoneHandlers {
   checkout: (cart: CartLine[]) => void;
   discard: (item: HomeItem) => void;
   advertise: (cat: Cat) => void;
+  cancelAd: (cat: Cat) => void;
   newGame: () => void;
   exportSave: () => void;
   importSave: (file: File) => void;
@@ -310,7 +312,16 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     const title = card.firstElementChild;
     if (title instanceof HTMLElement) title.style.fontWeight = "600";
     if (known.length > 0) card.append(traitChips(known, cat.sex));
-    if (cat.ageWeeks >= 1 && !state.ads.includes(cat.id)) {
+    // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні.
+    const blocker = giveAwayBlocker(state, cat);
+    if (state.ads.includes(cat.id)) {
+      card.append(note(`Оголошення: завтра вранці ${cat.name} поїде до нових господарів.`));
+      const cancel = element("button", "button", "Зняти оголошення");
+      cancel.style.marginTop = "8px";
+      cancel.addEventListener("click", () => handlers.cancelAd(cat));
+      card.append(cancel);
+    } else if (blocker === "nursing") card.append(note("Годує новонароджених — поки що лишається вдома."));
+    else if (blocker === null) {
       const ad = element("button", "button", "Віддати в добрі руки");
       ad.style.marginTop = "8px";
       ad.addEventListener("click", () => handlers.advertise(cat));

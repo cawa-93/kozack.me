@@ -2,6 +2,7 @@
 
 import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, tripCat, vetManner } from "../sim/destinations";
+import { giveAwayBlocker } from "../sim/farewell";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
@@ -227,8 +228,10 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       }
       if (log.done.length > 0) body.push(`Їдуть додому з вами: ${log.done.join(", ")}.`);
       body.push(list);
-      // Новонароджених не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
-      if (cat && cat.ageWeeks < 1) body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
+      // Новонароджених і їхню матір не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
+      const blocker = cat ? giveAwayBlocker(state, cat) : null;
+      if (cat && blocker === "newborn") body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
+      else if (cat && blocker === "nursing") body.push(row(`${cat.name} → притулок`, "годує новонароджених — поки що лишається вдома"));
       else if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
       break;
     }

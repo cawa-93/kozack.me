@@ -370,9 +370,9 @@ export function giveStarterPack(state: GameState): void {
 /** Ранок: здоровий глузд від нічних подій; без котів і нижче 35% — «Пригніченість» (§6.2). */
 function morning({ state, report, rng }: Night): void {
   nightlyHousehold(state, rng);
-  applyMorningSanity(state, report.lostCats.length, report.newCats.length);
-  // Нові господарі приїжджають по котів за оголошеннями (§9.8).
+  // Нові господарі приїжджають по котів за оголошеннями (§9.8) — це втрата, тож раніше за бонус нових котів (§4: спершу втрати).
   for (const entry of collectAds(state)) report.givenCats.push(entry.id);
+  applyMorningSanity(state, report.lostCats.length, report.newCats.length);
   const character = state.character;
   character.depressed = character.stats.sanity < KITTEN_SANITY_THRESHOLD && state.cats.length === 0;
   report.sanityMorning = character.stats.sanity;

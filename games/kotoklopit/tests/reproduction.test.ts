@@ -8,7 +8,7 @@ import { breedById, isPurebred, MIXED } from "../src/sim/breeds";
 import { addTrait, createCat } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { breederCats, shelterCats } from "../src/sim/destinations";
-import { advertise, collectAds, giveAway } from "../src/sim/farewell";
+import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { coatOf, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
@@ -177,6 +177,29 @@ describe("віддати кота (§9.8)", () => {
     const baby = createCat(save.current, createRng(1), { source: "born", ageWeeks: 0 });
     addCat(save.current, baby);
     expect(advertise(save.current, baby)).toBe(false);
+  });
+
+  it("матір новонароджених не віддають; оголошення можна зняти; «тиждень після появи» — від ранку, коли забирають (перевірка розмноження 2026-10-28)", () => {
+    const save = game();
+    const mother = withCat(save, "female");
+    const baby = createCat(save.current, createRng(1), { source: "born", ageWeeks: 0 });
+    baby.parents = { mother: mother.id, father: null };
+    addCat(save.current, baby);
+    expect(advertise(save.current, mother)).toBe(false);
+    expect(giveAway(save.current, mother, save.current.day)).toBeNull();
+
+    const other = game();
+    other.current.character.stats.sanity = 80;
+    const cat = withCat(other, "male");
+    cat.arrivedDay = 0;
+    other.current.day = 6;
+    expect(advertise(other.current, cat)).toBe(true);
+    cancelAd(other.current, cat);
+    expect(other.current.ads).toEqual([]);
+    advertise(other.current, cat);
+    // Забирають уранці дня 7: минув тиждень — −15, а не весь бонус.
+    collectAds(other.current);
+    expect(other.current.character.stats.sanity).toBe(65);
   });
 });
 
