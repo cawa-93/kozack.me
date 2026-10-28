@@ -2082,6 +2082,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       }
       // «Малоїжка» поклювала пів порції й лишила половину в мисці; половинку, що лишилася, доїдає наступний (§9.12).
       const nibble = act.nibble === true && bowl.half !== true;
+      // Клює через здоров'я, а не через рису; рахується до трапези: дієта наприкінці може вилікувати шлунок (крок 17, перевірка 2026-10-28).
+      const sick = isWeak(cat) || eatsLess(cat);
       const portion = nibble || bowl.half === true ? 0.5 : 1;
       // Їв, не бувши голодним, — гладшає (§9.12, «Схильність до повноти»): що менший голод, то більше зайвого — друга порція
       // «Ненаситного», миска, до якої збіглися на звук корму, частіші трапези «Ласуна».
@@ -2114,12 +2116,12 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       afterMeal(state, cat, quality === "premium", rng);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
-      // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9); слабкий клює через здоров'я, не через рису.
-      if (nibble && !isWeak(cat) && !eatsLess(cat)) observe(state, cat, "appetite", -1);
+      // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9); слабкий чи хворий клює через здоров'я, не через рису.
+      if (nibble && !sick) observe(state, cat, "appetite", -1);
       // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
-      // він уже після другої.
+      // він уже після другої. Слабкий чи хворий другої не їсть: з миски йому лише пів порції (крок 17, перевірка 2026-10-28).
       const appetite = traitLevel(cat, "appetite");
-      if (act.second !== true && act.snack !== true && appetite > 0 && bowl.food > 0 && bowl.half !== true && rng.chance(Math.min(APPETITE.secondMax, APPETITE.secondStep * appetite))) {
+      if (!sick && act.second !== true && act.snack !== true && appetite > 0 && bowl.food > 0 && bowl.half !== true && rng.chance(Math.min(APPETITE.secondMax, APPETITE.secondStep * appetite))) {
         start(cat, "eat", null, eatMinutes(cat), act.target);
         cat.act.nibble = false;
         cat.act.second = true;

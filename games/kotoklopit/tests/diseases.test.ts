@@ -477,22 +477,53 @@ describe("дієта, спокій і травма (§9.5)", () => {
     expect(hasDisease(cat, "cystitis")).toBe(true);
   });
 
-  it("старечі болячки — кіт повільніший; застуда — з миски пів порції без прояву «Апетиту»", () => {
-    const save = withCatCorner(game());
+  it("старечі болячки — кіт повільніший", () => {
+    const save = game();
     const cat = withCat(save);
     fallIll(save.current, cat, "senior");
     expect(walkFactor(cat)).toBeCloseTo(SYMPTOMS.seniorWalk);
-    fallIll(save.current, cat, "cold");
+  });
+
+  /** Кіт «Малоїжка» (чи «Ненаситний») їсть з миски на очах персонажа: скільки лишилося й чи відкрилася риса. */
+  function meal(disease: DiseaseId | null, opts: { appetite: TraitLevel; quality?: "cheap" | "premium"; half?: boolean; nibble?: boolean; diet?: number; seed?: number }): { cat: Cat; bowl: BowlItem } {
+    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: opts.seed ?? 9 }));
+    const cat = withCat(save);
+    if (disease) fallIll(save.current, cat, disease);
+    const ill = cat.diseases[0];
+    if (ill && opts.diet !== undefined) ill.diet = opts.diet;
+    save.current.character.body.x = 9.5;
+    save.current.character.body.y = 9.5;
     const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");
     if (!bowl) throw new Error("немає миски");
     bowl.food = 2;
-    bowl.foodQuality = "cheap";
-    cat.traits = [{ group: "appetite", level: -1, seen: 0, known: false }];
+    bowl.foodQuality = opts.quality ?? "cheap";
+    if (opts.half) bowl.half = true;
+    cat.traits = [{ group: "appetite", level: opts.appetite, seen: 0, known: false }];
     cat.needs = { hunger: 90, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
-    cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0 };
-    for (let i = 0; i < 40 && cat.act.kind === "eat"; i++) tickCats(save.current, 0.5, { present: true });
-    expect(bowl.half).toBe(true);
-    expect(cat.traits[0]?.seen).toBe(0);
+    cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0, ...(opts.nibble ? { nibble: true } : {}) };
+    for (let i = 0; i < 80 && cat.act.kind === "eat"; i++) tickCats(save.current, 0.5, { present: true });
+    return { cat, bowl };
+  }
+
+  it("застуда й розлад шлунка — з миски пів порції без прояву «Апетиту», навіть коли дієта щойно вилікувала шлунок", () => {
+    // Контроль: «Малоїжка» поклювала на очах персонажа — риса відкривається.
+    expect(meal(null, { appetite: -1, nibble: true }).cat.traits[0]?.seen).toBeGreaterThan(0);
+    const cold = meal("cold", { appetite: -1 });
+    expect(cold.bowl.half).toBe(true);
+    expect(cold.cat.traits[0]?.seen).toBe(0);
+    // Остання порція дієти лікує шлунок наприкінці трапези — а клював кіт однаково через хворобу.
+    const diet = DISEASES.stomach.cure.kind === "diet" ? DISEASES.stomach.cure.portions : 0;
+    const sick = meal("stomach", { appetite: -1, quality: "premium", diet: diet - 1 });
+    expect(hasDisease(sick.cat, "stomach")).toBe(false);
+    expect(sick.bowl.half).toBe(true);
+    expect(sick.cat.traits[0]?.seen).toBe(0);
+  });
+
+  it("хворий «Ненаситний» не їсть другої порції", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const { bowl } = meal("cold", { appetite: 2, half: true, seed });
+      expect(bowl.food).toBe(1);
+    }
   });
 
   it("травма — кіт кульгає; глисти — їсть більше", () => {
