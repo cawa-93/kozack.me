@@ -65,7 +65,7 @@ export type Refusal =
   | { reason: "washing" }
   /** На комп'ютері кіт (§9.12). */
   | { reason: "cat-on-computer" }
-  /** Вимкнули світло (§4.1). */
+  /** Планове відключення (§4.1). */
   | { reason: "no-power" }
   /** Під дверима пакунків немає. */
   | { reason: "no-packages" }

@@ -267,7 +267,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (catOnComputer(state)) return refuse(state, target.id, "cat-on-computer");
       // Кіт перегриз дріт — спершу полагодити: утримати дію біля комп'ютера (§9.12, «Гризіння»).
       if (state.home.wireChewed === true) return refuse(state, target.id, "wire-chewed");
-      // Вимкнули світло (§4.1): комп'ютер не працює.
+      // Планове відключення (§4.1): комп'ютер не працює.
       if (powerOut(state)) return refuse(state, target.id, "no-power");
       startWork(state);
       return null;

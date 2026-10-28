@@ -45,7 +45,7 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("vaccination", "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),
   pair("renovation", "neighbors-away", "home", "any"),
-  // «Вимкнули світло» лишається й безробітному: зупиняє й пошук роботи (§8.6; перевірка модифікаторів 2026-10-28).
+  // «Планове відключення» лишається й безробітному: зупиняє й пошук роботи (§8.6; перевірка модифікаторів 2026-10-28).
   pair("outage", "fast-internet", "home", "weekday", "workday"),
   pair("inspection", "recalculation", "home", "any"),
   // Друг приходить допомогти з котами — лише коли вони є (перевірка модифікаторів 2026-10-28).
@@ -285,7 +285,7 @@ export function workdayOverride(state: GameState): boolean | null {
   return null;
 }
 
-/** Вимкнули світло (§4.1): комп'ютер не працює. */
+/** Планове відключення (§4.1): комп'ютер не працює. */
 export function powerOut(state: GameState): boolean {
   const minute = state.minute % 1440;
   return active(state, "outage") && minute >= MODIFIERS.outage.from && minute < MODIFIERS.outage.to;

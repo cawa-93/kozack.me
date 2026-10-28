@@ -163,7 +163,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
     situation: "У під'їзді незвична тиша.",
   },
   "outage": {
-    title: "Вимкнули світло",
+    title: "Планове відключення",
     situation: "З 11:00 до 15:00 у районі планово вимкнуть світло.",
   },
   "fast-internet": {
@@ -207,7 +207,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
     situation: "Мама обіцяла подзвонити. Колись сьогодні.",
   },
   "mom-food": {
-    title: "Мама привезла гостинців",
+    title: "Мамині гостинці",
     situation: "Мама обіцяла заскочити вдень із повними судочками.",
   },
   "traffic": {
@@ -469,7 +469,7 @@ export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };
 
 /**
- * Повідомлення дня «Мама привезла гостинців» (§4.1, рішення автора 2026-10-26): мама заходила й поставила судочки в холодильник
+ * Повідомлення дня «Мамині гостинці» (§4.1, рішення автора 2026-10-26): мама заходила й поставила судочки в холодильник
  * чи лишила пакет під дверима — він у ящиках біля входу.
  */
 export const MOM_FOOD_TEXTS = {
