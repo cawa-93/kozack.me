@@ -7,7 +7,7 @@ import { isMoving } from "../src/sim/body";
 import { traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
-import { giveMedicine } from "../src/sim/diseases";
+import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
@@ -448,6 +448,9 @@ export class Bot {
       if (cat.away !== null || now - (this.dosed.get(cat.id) ?? -Infinity) < MEDICINE.doseMinutes) continue;
       for (const d of cat.diseases) {
         const cure = DISEASES[d.id].cure;
+        // Хронічна вже під контролем (таблетка сьогодні чи ветеринар): уважний гравець не дає зайвих доз (перевірка 2026-10-28:
+        // бот давав таблетку кожні 6 годин, і з новими хронічними хворобами це занижувало здоровий глузд у звіті).
+        if (isControlled(s, d)) continue;
         const medicine = cure.kind === "pills" || cure.kind === "drops" ? cure.kind : cure.kind === "control" ? cure.medicine : null;
         if (!medicine || supplyCount(s, medicine) === 0) continue;
         // Уважний гравець дає ліки, коли кіт не спить і сам іде по увагу: так він не пручається й рідше кусає. Такої миті
