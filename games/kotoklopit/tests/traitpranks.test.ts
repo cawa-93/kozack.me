@@ -686,6 +686,21 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
   });
 });
 
+describe("застрягле кошеня зістрибнуло саме (рішення автора 2026-10-28, Д2)", () => {
+  it("може травмуватися", () => {
+    for (const lucky of [false, true]) {
+      const save = withCatCorner(game());
+      const cat = withCat(save, {}, { x: 9.5, y: 7.5 }, 1);
+      climbFridge(save, cat);
+      cat.stuck = true;
+      cat.needs.toilet = CLIMBING.jumpNeed;
+      decide(save.current, cat, { ...createRng(1), chance: () => !lucky }, { present: true });
+      expect(cat.stuck).toBeUndefined();
+      expect(cat.diseases.some((d) => d.id === "injury")).toBe(!lucky);
+    }
+  });
+});
+
 /** Кіт на холодильнику чи шафі. */
 function highPlaceOfCat(save: Save, cat: Cat): boolean {
   return HIGH_PLACES.some((id) => {

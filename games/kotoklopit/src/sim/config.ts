@@ -931,7 +931,7 @@ export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight
  * чи прокинувшись; застряглий кричить, доки не знімуть (неприємне — `rescueSanity`), а від потреби `jumpNeed` зістрибує сам
  * (настрій `jumpMood`).
  */
-export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, strong: 0.05, strongLevel: 2, lureReach: 2.5, rescueSanity: -1, jumpNeed: 95, jumpMood: -3 } as const;
+export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, strong: 0.05, strongLevel: 2, lureReach: 2.5, rescueSanity: -1, jumpNeed: 95, jumpMood: -3, jumpInjury: 0.2 } as const;
 /**
  * «Гризіння» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт гризе з шансом
  * `decideStep` × рівень за кожне спокійне рішення, кошеня без риси — `kitten` (міняються зуби), а коли хоче гратися — з вагою
@@ -990,6 +990,13 @@ export const ILLNESS = {
   /** Застуда минула — раз кон'юнктивіт (рішення автора 2026-10-27, Х2). */
   afterCold: 0.3,
   shelterFleas: 0.2,
+  /** «Холод» і «Похолодання» (§4.1): застуда котів частіша (рішення автора 2026-10-28, Д2). */
+  coldWeather: 1.5,
+  /** Кіт із блохами ковтає їх, вилизуючись: глисти з `fleasWormsDays`-го дня, дерматит — з `fleasDermatitisDays`-го (рішення автора 2026-10-28, Д2). */
+  fleasWorms: 0.05,
+  fleasWormsDays: 3,
+  fleasDermatitis: 0.1,
+  fleasDermatitisDays: 5,
   escapeFleas: 0.3,
   stolenWorms: 0.1,
   stolenStomach: 0.25,

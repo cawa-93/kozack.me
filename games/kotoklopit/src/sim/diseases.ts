@@ -7,7 +7,7 @@ import { unpleasantTask } from "./character";
 import { BREED_RISK, DISEASES, ILLNESS, MEDICINE, SYMPTOMS, WEIGHT } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
-import { catIllnessFactor } from "./modifiers";
+import { catIllnessFactor, isCold } from "./modifiers";
 import { isFriend } from "./relations";
 import { isNewborn } from "./reproduction";
 import type { Rng } from "./rng";
@@ -151,7 +151,12 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
     if (cat.diseases.some((d) => !isControlled(state, d))) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
     // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.
     if (weightOf(cat) >= WEIGHT.obese) fallIll(state, cat, "obesity");
-    maybeFallIll(state, cat, "cold", ILLNESS.cold, rng);
+    // У «Холод» і «Похолодання» застуда частіша (рішення автора 2026-10-28, Д2).
+    maybeFallIll(state, cat, "cold", ILLNESS.cold * (isCold(state) ? ILLNESS.coldWeather : 1), rng);
+    // Блохи кілька днів: кіт ковтає їх, вилизуючись, — глисти; шкіра роздерта — дерматит (рішення автора 2026-10-28, Д2).
+    const fleas = cat.diseases.find((d) => d.id === "fleas");
+    if (fleas && state.day - fleas.day >= ILLNESS.fleasWormsDays) maybeFallIll(state, cat, "worms", ILLNESS.fleasWorms, rng);
+    if (fleas && state.day - fleas.day >= ILLNESS.fleasDermatitisDays) maybeFallIll(state, cat, "dermatitis", ILLNESS.fleasDermatitis, rng);
     maybeFallIll(state, cat, "conjunctivitis", ILLNESS.conjunctivitis, rng);
     // Новий кіт у перші дні сумує від переїзду: це ще не стрес, що доводить до циститу.
     if (today < ILLNESS.cystitisMood && !isAdapting(state, cat)) maybeFallIll(state, cat, "cystitis", ILLNESS.cystitis, rng);

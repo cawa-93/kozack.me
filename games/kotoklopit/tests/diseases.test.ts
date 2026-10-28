@@ -43,6 +43,45 @@ const nextDose = (save: Save): void => {
 /** Ніч без нових хвороб: шанси нульові для цього rng. */
 const quietRng = () => ({ ...createRng(1), chance: () => false });
 
+describe("тригери хвороб (рішення автора 2026-10-28, Д2)", () => {
+  /** Шанси, які ніч кидала для кота: перший — застуда. */
+  function nightChances(save: Save): number[] {
+    const chances: number[] = [];
+    nightlyDiseases(save.current, { ...createRng(1), chance: (p: number) => (chances.push(p), false) });
+    return chances;
+  }
+
+  it("у «Холод» і «Похолодання» застуда котів частіша ×1,5", () => {
+    const save = game();
+    withCat(save);
+    save.current.modifiers.day = null;
+    save.current.modifiers.week = null;
+    const warm = nightChances(save)[0] ?? 0;
+    save.current.modifiers.day = "cold";
+    expect((nightChances(save)[0] ?? 0) / warm).toBeCloseTo(ILLNESS.coldWeather);
+    save.current.modifiers.day = null;
+    save.current.modifiers.week = "cold-snap";
+    expect((nightChances(save)[0] ?? 0) / warm).toBeCloseTo(ILLNESS.coldWeather);
+  });
+
+  it("блохи кілька днів — глисти (з 3-го дня) і дерматит (з 5-го)", () => {
+    const sure = () => ({ ...createRng(1), chance: () => true });
+    const withFleas = (days: number): Cat => {
+      const save = game();
+      const cat = withCat(save);
+      fallIll(save.current, cat, "fleas");
+      const fleas = cat.diseases[0];
+      if (fleas) fleas.day = save.current.day - days;
+      nightlyDiseases(save.current, sure());
+      return cat;
+    };
+    expect(hasDisease(withFleas(ILLNESS.fleasWormsDays - 1), "worms")).toBe(false);
+    expect(hasDisease(withFleas(ILLNESS.fleasWormsDays), "worms")).toBe(true);
+    expect(hasDisease(withFleas(ILLNESS.fleasDermatitisDays - 1), "dermatitis")).toBe(false);
+    expect(hasDisease(withFleas(ILLNESS.fleasDermatitisDays), "dermatitis")).toBe(true);
+  });
+});
+
 describe("зараження через лоток (перевірка розмноження 2026-10-28)", () => {
   it("новонароджені в лоток не ходять: їх не рахують у нестачу лотків і через лоток вони не заражаються", () => {
     const save = game();
