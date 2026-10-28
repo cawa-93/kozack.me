@@ -1202,7 +1202,8 @@ export const SHELTER = {
   breed: 0.1,
 } as const;
 /** Розплідник (§9.11): 3 чистокровні кошенята однієї породи тижня, вік 2 тижні. */
-export const BREEDER = { cats: 3, age: 2 } as const;
+/** Розплідник (§9.11): кошенята тижня й ціна за рідкісністю породи (крок 17, звірка з довідниками 2026-10-28). */
+export const BREEDER = { cats: 3, age: 2, price: { wild: 800, unusual: 700, colorpoint: 600, large: 550, common: 450 } } as const;
 export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
 export const CAFE = { pricePerHour: 20, sanity: [12, 6, 3], jealousyMood: -5 } as const;
 /** Скільки однакових іграшок можна взяти в кошик за раз (§6.4): місця їм не треба. */

@@ -4,7 +4,8 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { breedById, isPurebred, knownBreedHalves, MIXED } from "../src/sim/breeds";
+import { breedById, breederPrice, isPurebred, knownBreedHalves, MIXED } from "../src/sim/breeds";
+import { BREEDER } from "../src/sim/config";
 import { addTrait, createCat } from "../src/sim/cat";
 import { highPlaceOf, tickCats } from "../src/sim/catai";
 import { breederCats, canSterilize, shelterCats, sterilizeBlocker } from "../src/sim/destinations";
@@ -317,6 +318,13 @@ describe("віддати кота (§9.8)", () => {
 });
 
 describe("притулок і розплідник (§8.5, §9.11)", () => {
+  it("ціна в розпліднику — за рідкісністю: бобтейл як незвичний хвіст, маленький корат — як звичайні (крок 17)", () => {
+    expect(breederPrice(breedById("iaponskyi-bobteil"))).toBe(BREEDER.price.unusual);
+    expect(breederPrice(breedById("korat"))).toBe(BREEDER.price.common);
+    expect(breederPrice(breedById("meinkun"))).toBe(BREEDER.price.large);
+    expect(breederPrice(breedById("savanna"))).toBe(BREEDER.price.wild);
+  });
+
   it("у притулку дорослі коти бувають стерилізовані, і про це відомо", () => {
     let sterilized = 0;
     let adults = 0;

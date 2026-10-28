@@ -1,5 +1,6 @@
 // Породи котів (§9.11, `BREEDS.md`): риси породи, схильності до хвороб і особливості зовнішності.
 
+import { BREEDER } from "./config";
 import type { Rng } from "./rng";
 import type { GameState, Genes, Shape } from "./types";
 
@@ -80,15 +81,16 @@ export function shelterBreed(rng: Rng, chance: number): [string, string] {
 export const PUREBREEDS: readonly Breed[] = BREEDS.filter((b) => b.id !== MIXED);
 
 /**
- * Ціна кошеняти в розпліднику (§8.5, §9.11): від 400 до 800 за рідкісністю — звичайні 500,
- * колорпойнт і незвичні форми дорожчі, гібриди найдорожчі (чернетка).
+ * Ціна кошеняти в розпліднику (§8.5, §9.11): за рідкісністю — гібриди, незвичні форми (зокрема бобтейли), колорпойнт,
+ * великі, решта (`BREEDER.price`).
  */
 export function breederPrice(breed: Breed): number {
-  if (breed.id === "benhalska" || breed.id === "savanna") return 800;
+  const price = BREEDER.price;
+  if (breed.id === "benhalska" || breed.id === "savanna") return price.wild;
   const shape = breed.shape ?? {};
-  if (shape.coat || shape.legs === "short" || shape.tail === "none" || shape.ears === "folded" || shape.ears === "curled") return 700;
-  if (breed.genes?.full?.[0] === false) return 600;
-  return breed.traits["size"] ? 550 : 450;
+  if (shape.coat || shape.legs === "short" || shape.tail === "none" || shape.tail === "bobtail" || shape.ears === "folded" || shape.ears === "curled") return price.unusual;
+  if (breed.genes?.full?.[0] === false) return price.colorpoint;
+  return (breed.traits["size"] ?? 0) > 0 ? price.large : price.common;
 }
 
 const BY_ID = new Map(BREEDS.map((b) => [b.id, b]));
