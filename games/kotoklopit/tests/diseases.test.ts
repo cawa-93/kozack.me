@@ -43,6 +43,23 @@ const nextDose = (save: Save): void => {
 /** Ніч без нових хвороб: шанси нульові для цього rng. */
 const quietRng = () => ({ ...createRng(1), chance: () => false });
 
+describe("зараження через лоток (перевірка розмноження 2026-10-28)", () => {
+  it("новонароджені в лоток не ходять: їх не рахують у нестачу лотків і через лоток вони не заражаються", () => {
+    const save = game();
+    const mother = withCat(save);
+    fallIll(save.current, mother, "worms");
+    const kittens = [withCat(save), withCat(save)];
+    for (const kitten of kittens) {
+      kitten.source = "born";
+      kitten.ageWeeks = 0;
+    }
+    // Лоток один, але вдома лише одна доросла кішка — лотків досить, а новонароджених не заражає й нестача.
+    const always = { ...createRng(1), chance: () => true };
+    nightlyDiseases(save.current, always);
+    expect(kittens.every((k) => !hasDisease(k, "worms"))).toBe(true);
+  });
+});
+
 describe("перебіг хвороби (§9.5)", () => {
   it("«безпечні» дні без шкоди, потім щоночі шкода з джерелом-хворобою", () => {
     const save = game();

@@ -9,6 +9,7 @@ import { useSupply } from "./economy";
 import { emit } from "./events";
 import { catIllnessFactor } from "./modifiers";
 import { isFriend } from "./relations";
+import { isNewborn } from "./reproduction";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
@@ -158,15 +159,19 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
 /** Заразні хвороби (§9.5): друзям легше, через лоток — коли лотків замало. */
 function spread(state: GameState, rng: Rng): void {
   const litters = state.home.items.filter((i) => i.kind === "litter").length;
+  // Новонароджені в лоток не ходять (§9.8): лотків «замало» рахують без них, і через лоток вони не заражаються (перевірка
+  // розмноження 2026-10-28).
+  const users = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
   const sick = state.cats.flatMap((cat) => cat.diseases.map((d) => ({ cat, id: d.id })));
   for (const { cat, id } of sick) {
     const way = DISEASES[id].contagious;
     if (way === null) continue;
     for (const other of state.cats) {
       if (other.id === cat.id || other.away !== null) continue;
+      if (way === "litter" && isNewborn(other)) continue;
       const chance =
         way === "litter"
-          ? litters < state.cats.length + 1
+          ? litters < users + 1
             ? ILLNESS.litterContagion
             : 0
           : isFriend(state, cat, other)

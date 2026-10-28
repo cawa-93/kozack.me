@@ -12,10 +12,10 @@ import { advertise, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
-import { conceive } from "../src/sim/reproduction";
+import { conceive, giveBirth } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, Sex } from "../src/sim/types";
-import { withCatCorner } from "./helpers";
+import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
   return withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 12 }));
@@ -92,6 +92,41 @@ describe("вагітність і пологи (§9.8)", () => {
     const kitten = kittens[0];
     expect(kitten && Math.hypot(kitten.x - murka.x, kitten.y - murka.y)).toBeLessThan(0.5);
     expect(kitten?.needs.hunger).toBe(0);
+  });
+});
+
+describe("вагітність і пологи: перевірка розмноження 2026-10-28", () => {
+  it("відпочинок після пологів — 2 тижні: у ніч на третій понеділок кішка вже може завагітніти", () => {
+    const save = game();
+    const she = withCat(save, "female");
+    withCat(save, "male");
+    // Пологи в ніч із дня 6 на день 7: restUntil = 6 + 1 + 14.
+    she.restUntil = 21;
+    const always = { next: () => 0, chance: () => true, int: (a: number) => a } as unknown as Parameters<typeof conceive>[1];
+    save.current.day = 13;
+    conceive(save.current, always);
+    expect(she.pregnancy).toBeNull();
+    save.current.day = 20;
+    conceive(save.current, always);
+    expect(she.pregnancy).not.toBeNull();
+  });
+
+  it("дві матері тієї ж ночі: кожна подія «birth» рахує лише своїх кошенят; порода кошенят — за складністю", () => {
+    const save = game();
+    save.current.difficulty = "hard";
+    const a = withCat(save, "female");
+    const b = withCat(save, "female");
+    const father = withCat(save, "male");
+    a.breedKnown = [true, true];
+    father.breedKnown = [true, true];
+    for (const mother of [a, b]) mother.pregnancy = { father: father.id, due: save.current.day + 1, known: false };
+    const { events, stop } = recordEvents();
+    const born = giveBirth(save.current, createRng(3));
+    stop();
+    const counts = events.filter((e) => e.type === "birth").map((e) => (e.type === "birth" ? e.kittens : 0));
+    expect(counts.reduce((x, y) => x + y, 0)).toBe(born.length);
+    // Важка складність: породи кошенят не видно, хоч у батьків вона відома.
+    expect(born.every((k) => !k.breedKnown[0] && !k.breedKnown[1])).toBe(true);
   });
 });
 

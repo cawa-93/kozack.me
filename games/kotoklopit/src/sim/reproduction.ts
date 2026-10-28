@@ -3,6 +3,7 @@
 import { changeMood, createCat } from "./cat";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
+import { knownBreedHalves } from "./breeds";
 import { inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
 import { isEnemy, isFriend } from "./relations";
@@ -58,7 +59,9 @@ export function nightlyStates(state: GameState, rng: Rng): void {
 /** Ніч на понеділок (§9.8): кожна придатна кішка вагітніє з шансом 30% від кота, що їй не ворог. */
 export function conceive(state: GameState, rng: Rng): void {
   for (const mother of state.cats) {
-    if (mother.sex !== "female" || !fertile(mother) || mother.pregnancy || state.day < mother.restUntil) continue;
+    // Відпочинок після пологів — до ранку дня `restUntil`, як і пологи рахуються днем, у який входимо: 2 тижні, а не 3
+    // (перевірка розмноження 2026-10-28).
+    if (mother.sex !== "female" || !fertile(mother) || mother.pregnancy || state.day + 1 < mother.restUntil) continue;
     const fathers = state.cats.filter((c) => c.sex === "male" && fertile(c) && !isEnemy(state, mother, c));
     const week = state.modifiers.week;
     const chance = week === "cat-march" ? MODIFIERS.week.catMarch.pregnancy : week === "calm-season" ? MODIFIERS.week.calmPregnancy : BREEDING.pregnancy;
@@ -104,6 +107,7 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
     if (!pregnancy || state.day + 1 < pregnancy.due) continue;
     const father = state.cats.find((c) => c.id === pregnancy.father) ?? state.album.find((e) => e.id === pregnancy.father) ?? mother;
     const size = litterSize(rng, mother.litters === 0);
+    const before = born.length;
     for (let i = 0; i < size; i++) {
       const sex = rng.chance(0.5) ? "female" : "male";
       const kitten = createCat(state, rng, {
@@ -116,7 +120,8 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
       kitten.genes = inheritGenes(rng, sex, mother.genes, father.genes);
       kitten.shape = inheritShape(rng, mother.shape, father.shape);
       kitten.breed = inheritBreed(rng, mother.breed, father.breed);
-      kitten.breedKnown = [mother.breedKnown.some(Boolean), "breedKnown" in father && father.breedKnown.some(Boolean)];
+      // Що видно про породу — за складністю, як у притулку (§9.11): раніше кошеня показувало приховану половину матері.
+      kitten.breedKnown = knownBreedHalves(state, kitten.breed, rng);
       kitten.parents = { mother: mother.id, father: pregnancy.father };
       kitten.arrivedDay = state.day + 1;
       kitten.act = { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0 };
@@ -125,7 +130,7 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
     mother.pregnancy = null;
     mother.litters += 1;
     mother.restUntil = state.day + 1 + BREEDING.restDays;
-    emit(state, { type: "birth", cat: mother.id, kittens: born.length });
+    emit(state, { type: "birth", cat: mother.id, kittens: born.length - before });
   }
   return born;
 }
