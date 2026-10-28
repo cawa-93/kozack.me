@@ -25,6 +25,7 @@ export type ModifierEvent =
   | "inspection-away"
   | "guests"
   | "guests-away"
+  | "home-vet-away"
   | "office-missed"
   | "vacation-pay"
   | "mom-call"

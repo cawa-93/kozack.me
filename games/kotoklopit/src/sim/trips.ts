@@ -13,7 +13,7 @@ import { deriveSeed, type Rng } from "./rng";
 import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
 import type { AccidentLoss, Cat, Destination, GameState, Trip } from "./types";
-import { stopWork } from "./work";
+import { isWorkday, stopWork } from "./work";
 import { catOnStairs, openDoor } from "./door";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
@@ -42,9 +42,10 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
   const cat = heldCat(state);
   // Виставка — лише в її день і раз (§4.1): раніше можна було їздити знову й знову по призи (перевірка поїздок 2026-10-28).
   if (destination === "show" && (state.modifiers.day !== "show" || state.today.showDone === true)) return "show";
-  // Офіс — лише в день зборів, раз і поки є робота: після зборів туди нема чого їхати (перевірка циклу гри 2026-10-27), а
-  // з котом на руках у списку не з'являється (перевірка поїздок 2026-10-28).
-  if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || state.job.unemployed)) return "office";
+  // Офіс — лише в день зборів, раз і в робочий день: після зборів (і пропущених о 18:00) туди нема чого їхати (перевірка циклу
+  // гри 2026-10-27), а безробітному, на лікарняному й у відпустці — теж; з котом на руках у списку не з'являється (перевірка
+  // поїздок 2026-10-28).
+  if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || !isWorkday(state))) return "office";
   if (TRIPS[destination].cat) {
     if (!cat) return "cat";
     if (state.home.carrier === null) return "carrier";

@@ -214,6 +214,19 @@ describe("поїздки й робота (§8.6)", () => {
     startTrip(inspected.current, "shop");
     driveSafely(inspected);
     expect(inspected.current.character.money).toBe(money);
+
+    // Ветеринарка вдома теж не заходить: хвороби котів лишаються невідомими.
+    const vet = game(10 * 60 + 30);
+    vet.current.day = 2;
+    vet.current.modifiers.day = "home-vet";
+    const cat = withCat(vet);
+    fallIll(vet.current, cat, "senior");
+    const visit = recordEvents();
+    startTrip(vet.current, "shop");
+    driveSafely(vet);
+    visit.stop();
+    expect(cat.diseases[0]?.known).toBe(false);
+    expect(visit.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "home-vet-away" }));
   });
 
   it("виставка — раз на день: після участі її немає в списку, і приз удруге не дають (перевірка поїздок 2026-10-28)", () => {
@@ -231,6 +244,33 @@ describe("поїздки й робота (§8.6)", () => {
     save.current.character.held = { kind: "cat", cat: cat.id };
     standAt(save, "door");
     expect(tripBlocker(save.current, "show")).toBe("show");
+  });
+
+  it("після пропущених о 18:00 зборів офісу немає в списку; на лікарняному — теж; звільнили дорогою — зборів немає (перевірка поїздок 2026-10-28)", () => {
+    const missed = game(17 * 60 + 50);
+    missed.current.day = 1;
+    missed.current.modifiers.day = "office";
+    advance(missed, 20);
+    expect(missed.current.today.officeDone).toBe(true);
+    expect(tripBlocker(missed.current, "office")).toBe("office");
+
+    const sick = game(9 * 60);
+    sick.current.day = 1;
+    sick.current.modifiers.day = "office";
+    sick.current.job.sickLeaveFrom = 1;
+    sick.current.job.sickLeaveUntil = 1;
+    expect(tripBlocker(sick.current, "office")).toBe("office");
+
+    const fired = game(9 * 60);
+    fired.current.day = 1;
+    fired.current.modifiers.day = "office";
+    expect(startTrip(fired.current, "office")).toBe(true);
+    driveSafely(fired);
+    fired.current.job.unemployed = true;
+    const money = fired.current.character.money;
+    officeMeeting(fired.current);
+    expect(fired.current.character.money).toBe(money);
+    expect(fired.current.trip?.visit).toBe(0);
   });
 
   it("офіс не пропонується з котом на руках у звичайний день і безробітному (перевірка поїздок 2026-10-28)", () => {
@@ -322,7 +362,7 @@ describe("пункти призначення (§8.5)", () => {
     expect(controlled("premium")).toBe(14);
   });
 
-  it("ветеринар: дешеве лікування не скорочує контролю, уже купленого дорогим (перевірка поїздок 2026-10-28)", () => {
+  it("ветеринар: лікування, що не подовжить контролю, не продається — дешеве не скорочує купленого дорогим (перевірка поїздок 2026-10-28)", () => {
     const save = game(9 * 60);
     save.current.day = 5;
     const cat = withCat(save);
@@ -334,8 +374,14 @@ describe("пункти призначення (§8.5)", () => {
     save.current.character.held = { kind: "cat", cat: cat.id };
     arrive(save, "vet");
     vetExam(save.current);
-    expect(vetTreat(save.current, "senior", "cheap", createRng(1))).toBe("controlled");
+    const money = save.current.character.money;
+    const visit = save.current.trip?.visit;
+    expect(vetTreat(save.current, "senior", "cheap", createRng(1))).toBeNull();
     expect(disease.controlled).toBe(save.current.day + 10);
+    expect(save.current.character.money).toBe(money);
+    expect(save.current.trip?.visit).toBe(visit);
+    expect(vetTreat(save.current, "senior", "premium", createRng(1))).toBe("controlled");
+    expect(disease.controlled).toBe(save.current.day + 14);
   });
 
   it("ветеринар: ожиріння бачить і каже про зайву вагу, але грошима не лікує — лише дієта й ігри (§9.12)", () => {

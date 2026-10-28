@@ -67,7 +67,8 @@ const LOSS_TEXTS: Record<AccidentLoss, string> = {
 /** Ремонт: скільки справді заплатили — грошей могло бути менше (перевірка поїздок 2026-10-28: картка завжди казала «−60 ₴»). */
 function repairText(paid: number = ACCIDENT.repair): string {
   if (paid >= ACCIDENT.repair) return LOSS_TEXTS.repair;
-  return paid > 0 ? `Ремонт машини: −${Math.floor(paid)} ₴ — усе, що було.` : "Ремонт машини: грошей на нього не було.";
+  const shown = Math.floor(paid);
+  return shown > 0 ? `Ремонт машини: −${shown} ₴ — усе, що було.` : "Ремонт машини: грошей на нього не було.";
 }
 
 export function accidentCard(state: GameState, onClose: () => void): Card {
@@ -175,8 +176,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             diseaseTitle(d.id),
             note,
-            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled"),
-            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled"),
+            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || left > VET.controlDays.cheap),
+            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || left > VET.controlDays.premium),
           ),
         );
       }
@@ -224,7 +225,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
       }
-      if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
+      if (log.done.length > 0) body.push(`Їдуть додому з вами: ${log.done.join(", ")}.`);
       body.push(list);
       // Новонароджених не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
       if (cat && cat.ageWeeks < 1) body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
@@ -242,7 +243,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
       }
-      if (log.done.length > 0) body.push(`Тепер удома: ${log.done.join(", ")}.`);
+      if (log.done.length > 0) body.push(`Їдуть додому з вами: ${log.done.join(", ")}.`);
       body.push(list);
       break;
     }
@@ -278,7 +279,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
     }
     case "office":
-      body.push("Збори в офісі тривали три години. Керівництво бачило вас особисто.");
+      // Звільнили дорогою — зборів немає, і персонаж одразу їде назад (`officeMeeting`).
+      body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : "Збори в офісі тривали три години. Керівництво бачило вас особисто.");
       break;
   }
   return { kicker: "Поїздка", title: DESTINATION_TITLES[destination], body, actions };

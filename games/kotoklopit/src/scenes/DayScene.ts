@@ -1179,6 +1179,9 @@ export class DayScene extends Phaser.Scene {
       case "guests-away":
         this.notice("Гості не застали", "Гості дзвонили в двері, але вдома нікого не було, і вони пішли.");
         return;
+      case "home-vet-away":
+        this.notice("Ветеринарка не застала", "Ветеринарка дзвонила в двері, але вдома нікого не було.");
+        return;
       case "mom-food": {
         const visit = value > 0;
         const text = visit ? MOM_FOOD_TEXTS.visit : MOM_FOOD_TEXTS.porch;

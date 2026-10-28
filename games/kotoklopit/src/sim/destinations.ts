@@ -33,7 +33,7 @@ import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, type Rng } from "./rng";
 import { weekOf } from "./time";
 import type { Cat, DiseaseId, GameState, Product, Quality, ThingKind } from "./types";
-import { changeReputation } from "./work";
+import { changeReputation, isWorkday } from "./work";
 
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
 export type Goods = { product: Product } | { thing: ThingKind };
@@ -134,7 +134,10 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   const trip = state.trip;
   const found = cat?.diseases.find((d) => d.id === disease && d.known);
   // Ожиріння грошима не лікують: минає від дієти й ігор (§9.12, «Схильність до повноти»).
-  if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight" || !spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
+  if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight") return null;
+  // Контроль діє довше, ніж дасть це лікування, — платити нема за що (перевірка поїздок 2026-10-28).
+  if (DISEASES[disease].cure.kind === "control" && (found.controlled ?? -1) >= state.day + VET.controlDays[quality]) return null;
+  if (!spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
   trip.visit += VET.treatMinutes;
   if (DISEASES[disease].cure.kind === "control") {
     // Дешеве в наступній поїздці не скорочує контролю, уже купленого дорогим (перевірка поїздок 2026-10-28), як і таблетка.
@@ -214,10 +217,14 @@ export function enterShow(state: GameState, rng: Rng): number | null {
 export function officeMeeting(state: GameState): void {
   const trip = state.trip;
   // Збори зараховуються раз на день: і після перезавантаження сторінки посеред них (перевірка циклу гри 2026-10-27).
-  if (trip?.destination !== "office" || state.today.officeDone || state.job.unemployed) return;
+  if (trip?.destination !== "office" || state.today.officeDone) return;
   state.today.officeDone = true;
   const position = POSITIONS[state.job.position];
-  if (!position) return;
+  // Звільнили дорогою (летучка) — зборів для персонажа вже немає: він розвертається додому (перевірка поїздок 2026-10-28).
+  if (!position || !isWorkday(state)) {
+    trip.visit = 0;
+    return;
+  }
   const hours = trip.visit / MINUTES_PER_HOUR;
   earn(state, position.pay * DIFFICULTY[state.difficulty].earnings * hours);
   changeReputation(state, position.reputation * hours);

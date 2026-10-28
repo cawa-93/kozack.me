@@ -18,7 +18,7 @@ import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
 import { loudNoise } from "./noise";
-import { callImpression, changeReputation, isWorkday, noticeCallLook } from "./work";
+import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -55,9 +55,9 @@ export const DAY_PAIRS: readonly Pair[] = [
 ];
 
 /** Особливі модифікатори дня, без пари (`DAY_MODIFIERS.md`). */
-const SPECIAL: readonly { id: string; when: When }[] = [
-  { id: "show", when: "weekend-cat" },
-  { id: "office", when: "workday" },
+const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [
+  { id: "show", when: "weekend-cat", group: "cats" },
+  { id: "office", when: "workday", group: "work" },
 ];
 
 export const WEEK_PAIRS: readonly [string, string][] = [
@@ -132,7 +132,12 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
     const easy = fits(state, day, p.whenEasy) && !contradicts(week, p.easy, p.group) && p.easy !== previous ? p.easy : null;
     if (hard || easy) options.push({ hard, easy });
   }
-  for (const s of SPECIAL) if (fits(state, day, s.when) && s.id !== previous) options.push({ hard: s.id, easy: s.id });
+  // Збори в офісі — не у відпустку й не на лікарняному (перевірка поїздок 2026-10-28: випадали, і поїздка туди платила зарплату).
+  for (const s of SPECIAL) {
+    if (!fits(state, day, s.when) || contradicts(week, s.id, s.group) || s.id === previous) continue;
+    if (s.group === "work" && onSickLeave(state, day)) continue;
+    options.push({ hard: s.id, easy: s.id });
+  }
   if (options.length === 0 || rng.chance(MODIFIERS.noneShare)) return null;
   const chosen = options[rng.int(0, options.length - 1)];
   if (!chosen) return null;
@@ -367,7 +372,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       emit(state, { type: "modifier", kind: attended ? "meeting-attended" : "meeting-missed", value: delta });
     }
   }
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute)) {
+  // Як гості й ОСББ (нижче): поки персонаж у поїздці, ветеринарці ніхто не відчинить (перевірка поїздок 2026-10-28).
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip !== null) emit(state, { type: "modifier", kind: "home-vet-away", value: 0 });
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) {
     // Ветеринари оглядають усіх доступних котів (рішення автора 2026-10-27, Х7): ветеринарка — всіх, хто вдома.
     const cats = state.cats.filter((c) => c.away === null);
     const rng = stateRng(state, "behavior");
@@ -378,7 +385,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
       // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.
       const manner = vetManner(cat);
-      if (manner !== null && state.trip === null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
+      if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
       if (manner === "hid") {
         const spot = hideSpot(state, rng, cat);
         startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
@@ -435,6 +442,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);
     changeReputation(state, delta);
+    // Збори минули: поїхати після 18:00 уже нема на що (перевірка поїздок 2026-10-28: офіс лишався в списку й платив за збори).
+    today.officeDone = true;
     emit(state, { type: "modifier", kind: "office-missed", value: delta });
   }
   if (state.modifiers.week === "vacation" && crossed(from, minutes, m.week.vacationMinute) && !state.job.unemployed) {

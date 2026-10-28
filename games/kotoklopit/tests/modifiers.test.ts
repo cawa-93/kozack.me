@@ -52,8 +52,13 @@ describe("вибір модифікаторів (§4.1)", () => {
     for (let seed = 0; seed < 300; seed++) {
       save.current.modifiers.day = null;
       const id = chooseDayModifier(save.current, 2, createRng(seed));
-      expect(["deadline", "lull", "meeting", "lunch", "bonus", "pay-delay", "reprimand", "praise"]).not.toContain(id);
+      // «Збори в офісі» — теж (перевірка поїздок 2026-10-28), і на лікарняному.
+      expect(["deadline", "lull", "meeting", "lunch", "bonus", "pay-delay", "reprimand", "praise", "office"]).not.toContain(id);
     }
+    save.current.modifiers.week = null;
+    save.current.job.sickLeaveFrom = 2;
+    save.current.job.sickLeaveUntil = 2;
+    for (let seed = 0; seed < 300; seed++) expect(chooseDayModifier(save.current, 2, createRng(seed))).not.toBe("office");
   });
 
   it("щоночі обирається модифікатор нового дня", () => {
