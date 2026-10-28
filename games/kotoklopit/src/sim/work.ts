@@ -121,7 +121,8 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
     // Збори в офісі — це робота, а не відсутність (§8.5).
     const trip = state.trip;
-    if (workTime && trip.destination !== "office") {
+    // В обідню перерву й без світла керівництво нічого не чекає — і поїздка тоді не штрафується (перевірка модифікаторів 2026-10-28).
+    if (workTime && trip.destination !== "office" && patienceDecayFactor(state) > 0) {
       // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00.
       if (trip.workTrip !== true) {
         trip.workTrip = true;

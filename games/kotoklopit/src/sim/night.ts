@@ -33,6 +33,7 @@ import { nightlyHousehold, tickHousehold } from "./household";
 import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { objectById, roomAt } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
+import { loudNoise } from "./noise";
 import { conceive, giveBirth, inHeat, isNewborn, nightlyStates } from "./reproduction";
 import { chooseWeekModifier, startModifiers } from "./modifiers";
 import { createRng, deriveSeed, seedDay, stateRng, streamSeed, type Rng } from "./rng";
@@ -136,11 +137,14 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
   const wakes: PlannedWake[] = [];
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
-    if (cat.away !== null) continue;
+    // Новонароджені нікого не будять: вони й феєрверків не чують (перевірка модифікаторів 2026-10-28).
+    if (cat.away !== null || isNewborn(cat)) continue;
     // Тиха ніч: коти не будять (§4.1).
     if (state.modifiers.day === "quiet-night" || state.modifiers.day === "quiet-evening") continue;
     // Після феєрверків коти неспокійні.
-    if (state.modifiers.day === "festival" && rng.chance(MODIFIERS.festival.wake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
+    // Неспокій — після феєрверків о 21:00, а не раніше (перевірка модифікаторів 2026-10-28).
+    const fireworks = Math.max(from, MODIFIERS.festival.minute);
+    if (state.modifiers.day === "festival" && fireworks < to && rng.chance(MODIFIERS.festival.wake)) wakes.push({ cat, minute: fireworks + Math.floor(rng.next() * (to - fireworks)), reason: "night" });
     const nocturnal = traitLevel(cat, "nocturnal");
     // Кішка в тічці кричить уночі (§9.8).
     if (inHeat(state, cat) && rng.chance(BREEDING.heatWake)) wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
@@ -183,6 +187,8 @@ function sleep({ state, report, rng }: Night): void {
     while (minute < until) {
       const step = Math.min(1, until - minute);
       tickHousehold(state, minute, step);
+      // Феєрверки о 21:00 гримлять і тоді, коли персонаж уже спить (перевірка модифікаторів 2026-10-28: жайворонок, що ліг до 21:00, їх оминав).
+      if (state.modifiers.day === "festival" && minute < MODIFIERS.festival.minute && minute + step >= MODIFIERS.festival.minute) loudNoise(state, "fireworks", null);
       const since = state.nextId;
       tickCats(state, step, { present: false });
       lost += coughWakes(state, report, rng, since);
@@ -238,6 +244,8 @@ function sleep({ state, report, rng }: Night): void {
  */
 export function coughWakes(state: GameState, report: NightReport, rng: Rng, since: number): number {
   let lost = 0;
+  // «Тиха ніч» і «Тихий вечір»: коти не будять — і кахиканням перед грудкою теж (перевірка модифікаторів 2026-10-28).
+  if (state.modifiers.day === "quiet-night" || state.modifiers.day === "quiet-evening") return 0;
   for (const mess of state.home.messes) {
     if (mess.kind !== "hairball" || mess.id < since || mess.cat === null || report.wakeUps.length >= WAKE_UP.maxPerNight) continue;
     const cat = state.cats.find((c) => c.id === mess.cat);

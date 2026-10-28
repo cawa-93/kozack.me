@@ -5,7 +5,8 @@ import { knownBreedHalves } from "./breeds";
 import { changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
-import { hideSpot, isDirty, startAct } from "./catai";
+import { hideSpot, isCarried, isDirty, startAct } from "./catai";
+import { isNewborn } from "./reproduction";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
@@ -18,7 +19,7 @@ import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
 import { loudNoise } from "./noise";
-import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave } from "./work";
+import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -239,6 +240,12 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng = foun
   return cat;
 }
 
+/** Відповісти мамі (§4.1): пів години розмови — не робота: персонаж відходить від комп'ютера (перевірка модифікаторів 2026-10-28: за комп'ютером дзвінок нічого не коштував). */
+export function answerCall(state: GameState): void {
+  stopWork(state);
+  if (state.character.activity?.kind !== "use" || state.character.activity.inside !== true) state.character.activity = null;
+}
+
 /** Не відповісти мамі (§4.1): здоровий глузд падає. */
 export function ignoreCall(state: GameState): void {
   changeStat(state, "sanity", MODIFIERS.call.ignored);
@@ -402,6 +409,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       emit(state, { type: "modifier", kind: attended ? "meeting-attended" : "meeting-missed", value: delta });
     }
   }
+  // Ветеринарка — візит, як гості й ОСББ: дзвонить за 2 хвилини, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей).
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state);
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) openDoor(state);
   // Як гості й ОСББ (нижче): поки персонаж у поїздці, ветеринарці ніхто не відчинить (перевірка поїздок 2026-10-28).
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip !== null) emit(state, { type: "modifier", kind: "home-vet-away", value: 0 });
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) {
@@ -444,8 +454,10 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     openDoor(state);
     const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
     const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (state.home.fur >= 50 ? m.inspection.fur : 0);
-    spend(state, Math.min(fine, state.character.money), "other");
-    emit(state, { type: "modifier", kind: "inspection", value: fine });
+    const paid = Math.min(fine, Math.max(0, state.character.money));
+    spend(state, paid, "other");
+    // Скільки справді заплатили — картка каже й це (перевірка модифікаторів 2026-10-28: писала повний штраф, хоча знято лише те, що було).
+    emit(state, { type: "modifier", kind: "inspection", value: fine, paid });
   }
   if (!away && day === "guests" && crossed(from, minutes, m.guests.minute)) {
     openDoor(state);
@@ -453,12 +465,20 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     // «Душа компанії» тішить гостей, «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»).
     let delight = 0;
     let hissing = 0;
+    const rng = stateRng(state, "behavior");
     for (const cat of state.cats) {
       if (cat.away !== null) continue;
       const level = traitLevel(cat, "guests");
       if (level > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
       if (level >= 0) continue;
-      cat.act = { kind: "hide", target: null, goal: { x: 1, y: 2 }, minutes: m.guests.hideMinutes, elapsed: 0 };
+      // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
+      // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
+      if ((cat.act.kind === "sleep" && cat.act.goal === null) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
+      if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, cat.act.elapsed + m.guests.hideMinutes);
+      else {
+        const spot = hideSpot(state, rng, cat);
+        startAct(cat, "hide", spot.at, m.guests.hideMinutes, spot.target);
+      }
       if (level <= -2) {
         hissing += GUESTS.hissSanity;
         emit(state, { type: "hissed-guests", cat: cat.id });
@@ -492,7 +512,10 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
 function friendHelps(state: GameState, from: number, minutes: number): void {
   const m = MODIFIERS.friend;
   const minute = from % 1440;
-  if (minute < m.from || minute >= m.to || Math.floor(minute / 60) === Math.floor((minute + minutes) / 60)) return;
+  // Година, яку щойно перетнули: 10:00, 11:00 … 15:00 (перевірка модифікаторів 2026-10-28: перша допомога була об 11:00, хоча титулка каже «з 10:00»).
+  if (Math.floor(minute / 60) === Math.floor((minute + minutes) / 60)) return;
+  const hour = Math.floor((minute + minutes) / 60) * 60;
+  if (hour < m.from || hour >= m.to) return;
   for (const item of state.home.items) {
     if (item.kind === "bowl") stockBowl(state, item);
     if (item.kind === "water") item.water = WATER_CAPACITY;

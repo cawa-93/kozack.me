@@ -23,7 +23,7 @@ import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Sex } 
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
-import { decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
+import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
@@ -903,7 +903,8 @@ export class DayScene extends Phaser.Scene {
     const standup = isWorkday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
     const day = state.minute % 1440;
-    const meeting = state.modifiers.day === "meeting" && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
+    // Нарада — лише в робочий день: звільненого чи на лікарняному камера не чекає (перевірка модифікаторів 2026-10-28).
+    const meeting = state.modifiers.day === "meeting" && isWorkday(state) && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
     // Дріт перегризено (§9.12, «Гризіння»): над комп'ютером — перегризений дріт, доки його не полагодять.
     if (state.home.wireChewed === true) computer = "wire";
     else if (!working && (standup || meeting)) computer = "camera";
@@ -1102,7 +1103,7 @@ export class DayScene extends Phaser.Scene {
         }
         break;
       case "modifier":
-        this.onModifier(event.kind, event.value, event.guests);
+        this.onModifier(event.kind, event.value, event.guests, event.paid);
         break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
@@ -1137,13 +1138,14 @@ export class DayScene extends Phaser.Scene {
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 
-  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit): void {
+  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
       case "mom-call": {
         const card = callCard(
           () => {
             this.overlay.close();
+            answerCall(this.state);
             advance(this.session.save, MODIFIERS.call.minutes);
           },
           () => {
@@ -1169,9 +1171,12 @@ export class DayScene extends Phaser.Scene {
         this.notice("Заходила ветеринарка", homeVetText(cats));
         return;
       }
-      case "inspection":
-        this.notice("Перевірка від ОСББ", money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.` : "Представник ОСББ не знайшов, до чого причепитися.");
+      case "inspection": {
+        const paid = Math.floor(paidNow ?? value);
+        const fine = money > 0 ? `Представник ОСББ поморщився й виписав штраф: ${money} ₴.${paid < money ? ` Заплатили ${paid} ₴ — усе, що було.` : ""}` : "Представник ОСББ не знайшов, до чого причепитися.";
+        this.notice("Перевірка від ОСББ", fine);
         return;
+      }
       case "guests":
         this.notice("Прийшли гості", guestsText(guests));
         return;

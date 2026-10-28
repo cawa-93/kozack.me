@@ -32,7 +32,10 @@ export function scheduleOf(state: GameState): string[] {
     if (minute < STANDUP_MINUTE + STANDUP_MINUTES) timed.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летучка`]);
   }
   const event = DAY_EVENTS[state.modifiers.day ?? ""];
-  if (event && minute < event[0]) timed.push(event);
+  // Робочі події — лише в робочий день, офіс — поки зборів не було (перевірка модифікаторів 2026-10-28: розклад обіцяв нараду на лікарняному й офіс після зборів).
+  const work = state.modifiers.day === "meeting" || state.modifiers.day === "lunch" || state.modifiers.day === "office";
+  const done = state.modifiers.day === "office" && state.today.officeDone;
+  if (event && minute < event[0] && (!work || isWorkday(state)) && !done) timed.push(event);
   if (state.modifiers.day === "vaccination" && !state.today.vaccinated) now.push("щеплення");
   if (state.home.porch.length > 0) now.push("пакунок під дверима");
   const today = absoluteMinute(state.day, 0);

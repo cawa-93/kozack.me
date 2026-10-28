@@ -7,14 +7,17 @@ import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { unpack } from "../src/sim/economy";
 import { advance, carryFoundling, goToSleep, interact, newGame } from "../src/sim/game";
-import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { coughWakes } from "../src/sim/night";
+import { nightlyStates } from "../src/sim/reproduction";
+import { scheduleOf } from "../src/view/schedule";
 import { fallIll } from "../src/sim/diseases";
-import { addCat } from "../src/sim/night";
+import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
-import { isWorkday } from "../src/sim/work";
+import { isWorkday, startWork, tickWork } from "../src/sim/work";
 import { hours, recordEvents, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
@@ -83,6 +86,119 @@ describe("вибір модифікаторів: перевірка модифі
       if (recalc.current.modifiers.day !== "recalculation") recalc.current.today.utilitiesDiscount = 10;
     }
     expect(recalc.current.today.utilitiesDiscount).toBe(20);
+  });
+});
+
+describe("події модифікаторів: перевірка модифікаторів 2026-10-28", () => {
+  const withCat = (save: Save, traits: Record<string, -2 | -1 | 1 | 2> = {}, sex: "male" | "female" = "female") => {
+    const cat = createCat(save.current, createRng(save.current.cats.length + 3), { source: "shelter", ageWeeks: 4, sex, at: { x: 5.5, y: 8.5 } });
+    cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
+    cat.arrivedDay = -10;
+    addCat(save.current, cat);
+    return cat;
+  };
+
+  it("«Котячий березень» — частіші тічки вже в сам тиждень; «Спокійний сезон» обриває тічку", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.sterilized = false;
+    save.current.day = 10;
+    save.current.modifiers.week = "cat-march";
+    // Остання тічка почалася в ніч на 4-й день, наступна за звичайним розкладом — аж на 17-й.
+    cat.heatUntil = 6;
+    cat.nextHeat = 17;
+    nightlyStates(save.current, createRng(1));
+    expect(cat.heatUntil).toBe(13);
+    save.current.modifiers.week = "calm-season";
+    nightlyStates(save.current, createRng(1));
+    expect(cat.heatUntil).toBeLessThanOrEqual(save.current.day);
+  });
+
+  it("«Тиха ніч» — і кахикання не будить; новонароджені не будять; феєрверки гримлять і тоді, коли персонаж уже спить", () => {
+    const quiet = game();
+    quiet.current.modifiers.day = "quiet-night";
+    const report = { wakeUps: [] } as unknown as Parameters<typeof coughWakes>[1];
+    expect(coughWakes(quiet.current, report, { ...createRng(1), chance: () => true }, 0)).toBe(0);
+
+    for (let seed = 0; seed < 10; seed++) {
+      const fest = newGame({ sex: "female", difficulty: "normal", seed: seed + 50 });
+      fest.current.modifiers.day = "festival";
+      fest.current.day = 2;
+      fest.current.minute = 20 * 60 + 30;
+      const kitten = createCat(fest.current, createRng(seed), { source: "born", ageWeeks: 0 });
+      addCat(fest.current, kitten);
+      const shy = withCat(fest, { bravery: -2 });
+      shy.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
+      const { events, stop } = recordEvents();
+      goToSleep(fest);
+      stop();
+      expect(fest.current.lastNight?.wakeUps.some((w) => w.cat === kitten.id)).toBe(false);
+      expect(events).toContainEqual(expect.objectContaining({ type: "scared", cat: shy.id }));
+    }
+  });
+
+  it("гості: сплячого «−» кота не чіпають; друг допомагає вже о 10:00; ОСББ каже, скільки заплатили; ветеринарка дзвонить", () => {
+    const save = game();
+    save.current.modifiers.day = "guests";
+    const sleeper = withCat(save, { guests: -2 });
+    sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0 };
+    const sanity = save.current.character.stats.sanity;
+    tickModifiers(save.current, 19 * 60 - 1, 2, false);
+    expect(sleeper.act.kind).toBe("sleep");
+    expect(save.current.character.stats.sanity).toBe(sanity);
+
+    const friend = game();
+    withCat(friend);
+    friend.current.modifiers.day = "friend-help";
+    giveStarterPack(friend.current);
+    const water = friend.current.home.items.find((i) => i.kind === "water");
+    if (water?.kind !== "water") throw new Error("немає поїлки");
+    water.water = 0;
+    tickModifiers(friend.current, 10 * 60 - 1, 2, false);
+    expect(water.water).toBeGreaterThan(0);
+
+    const osbb = game();
+    osbb.current.modifiers.day = "inspection";
+    osbb.current.character.money = 4;
+    osbb.current.home.messes.push({ id: 900, kind: "vomit", x: 5, y: 8, cat: null }, { id: 901, kind: "vomit", x: 6, y: 8, cat: null });
+    const fine = recordEvents();
+    tickModifiers(osbb.current, 15 * 60 - 1, 2, false);
+    fine.stop();
+    expect(fine.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "inspection", value: 10, paid: 4 }));
+
+    const vet = game();
+    withCat(vet);
+    vet.current.modifiers.day = "home-vet";
+    const bell = recordEvents();
+    tickModifiers(vet.current, 11 * 60 - 3, 4, false);
+    bell.stop();
+    expect(bell.events.some((e) => e.type === "doorbell")).toBe(true);
+  });
+
+  it("відповісти мамі за комп'ютером — не робота; поїздка в обідню перерву не штрафується; офісу в розкладі після зборів немає", () => {
+    const save = game();
+    save.current.day = 1;
+    save.current.minute = 11 * 60;
+    startWork(save.current);
+    answerCall(save.current);
+    expect(save.current.character.activity).toBeNull();
+
+    const lunch = game();
+    lunch.current.day = 1;
+    lunch.current.modifiers.day = "lunch";
+    lunch.current.minute = 12 * 60 + 30;
+    lunch.current.trip = { destination: "shop", phase: "visit", cat: null } as unknown as NonNullable<Save["current"]["trip"]>;
+    const reputation = lunch.current.job.reputation;
+    tickWork(lunch.current, 12 * 60 + 30, 30);
+    expect(lunch.current.job.reputation).toBe(reputation);
+    expect(lunch.current.job.tripDays).toEqual([]);
+
+    const office = game();
+    office.current.day = 1;
+    office.current.modifiers.day = "office";
+    office.current.minute = 15 * 60;
+    office.current.today.officeDone = true;
+    expect(scheduleOf(office.current).some((line) => line.includes("офіс"))).toBe(false);
   });
 });
 

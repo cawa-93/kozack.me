@@ -127,7 +127,7 @@ export type GameEvent =
    * Подія дня (§4.1). `guests` — що сталося з гостями (§9.12 «Двері й гості»): безлад, шипіння з-під дивана, захват від котів;
    * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26).
    */
-  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit }
+  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   /** Пошук роботи: вакансія закінчилася відмовою, далі — нова (§8.6). */

@@ -58,7 +58,9 @@ const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 export function dayTitle(state: GameState, night: NightReport | null): TitleSection[] {
   const { name, sex } = state.character;
   const weekBlocks: string[][] = [];
-  const week = state.modifiers.week ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
+  // Робочий модифікатор тижня безробітному не показують: звільнили посеред тижня — «Аврал» уже не про нього (перевірка модифікаторів 2026-10-28).
+  const workWeek = ["deadline-week", "quiet-week", "crunch", "vacation"].includes(state.modifiers.week ?? "");
+  const week = state.modifiers.week && !(workWeek && state.job.unemployed) ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
   if (week) weekBlocks.push([week.title, week.situation]);
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;

@@ -108,11 +108,11 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
   },
   "reprimand": {
     title: "Догана",
-    situation: "Учорашню роботу розкритикували в загальному чаті.",
+    situation: "Вашу роботу розкритикували в загальному чаті.",
   },
   "praise": {
     title: "Похвала",
-    situation: "Учорашню роботу поставили всім за приклад.",
+    situation: "Вашу роботу поставили всім за приклад.",
   },
   "work-saturday": {
     title: "Робоча субота",
@@ -284,7 +284,7 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation: str
   },
   "human-flu": {
     title: "Людський грип",
-    situation: "Половина колег на лікарняному.",
+    situation: "Місто кашляє: половина знайомих на лікарняному.",
   },
   "human-prevention": {
     title: "Тиждень профілактики",

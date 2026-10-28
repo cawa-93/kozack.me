@@ -7,7 +7,9 @@ import { emit } from "./events";
 import { knownBreedHalves } from "./breeds";
 import { inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
+import { chooseWeekModifier } from "./modifiers";
 import { isEnemy, isFriend } from "./relations";
+import { weekdayOf, weekOf } from "./time";
 import type { Rng } from "./rng";
 import type { Cat, GameState } from "./types";
 
@@ -41,17 +43,29 @@ export const fightFactor = (cat: Cat): number => (fertile(cat) && cat.sex === "m
 /** Новонароджений (вік 0) лежить біля матері (§9.8). */
 export const isNewborn = (cat: Cat): boolean => cat.source === "born" && cat.ageWeeks === 0;
 
+/** Модифікатор тижня дня, у який входимо: у ніч на понеділок — уже нового тижня (перевірка модифікаторів 2026-10-28: діяв на тиждень пізніше). */
+function weekAhead(state: GameState): string | null {
+  return weekdayOf(state.day + 1) === 0 ? chooseWeekModifier(state, weekOf(state.day + 1)) : state.modifiers.week;
+}
+
 /** Ніч: відновлення після операції й розклад тічки. */
 export function nightlyStates(state: GameState, rng: Rng): void {
+  const week = weekAhead(state);
   for (const cat of state.cats) {
     if (state.day <= cat.recoveryUntil) changeMood(state, cat, STERILIZATION.recoveryMoodPerDay, "відновлення після операції");
     if (cat.sex !== "female" || !fertile(cat) || cat.pregnancy || isNursing(state, cat)) continue;
     if (cat.nextHeat < 0) cat.nextHeat = state.day + rng.int(0, 6);
-    // Спокійний сезон — без тічок, котячий березень — частіше (§4.1).
-    if (state.modifiers.week === "calm-season") continue;
+    // Спокійний сезон — без тічок: і нова не починається, і почата минає (§4.1; перевірка модифікаторів 2026-10-28).
+    if (week === "calm-season") {
+      cat.heatUntil = Math.min(cat.heatUntil, state.day);
+      continue;
+    }
+    // Котячий березень — частіше: від початку останньої тічки тиждень, а не два, — і вже в сам березень (перевірка модифікаторів 2026-10-28: раніше
+    // коротшав лише інтервал після тічки, що почалася цього тижня, і частіші тічки приходили наступного).
+    if (week === "cat-march" && cat.heatUntil >= 0) cat.nextHeat = Math.min(cat.nextHeat, cat.heatUntil - BREEDING.heatDays + MODIFIERS.week.catMarch.heatEvery);
     if (state.day + 1 >= cat.nextHeat) {
       cat.heatUntil = state.day + BREEDING.heatDays;
-      cat.nextHeat = state.day + (state.modifiers.week === "cat-march" ? MODIFIERS.week.catMarch.heatEvery : BREEDING.heatEvery);
+      cat.nextHeat = state.day + (week === "cat-march" ? MODIFIERS.week.catMarch.heatEvery : BREEDING.heatEvery);
       emit(state, { type: "heat", cat: cat.id });
     }
   }
@@ -64,7 +78,7 @@ export function conceive(state: GameState, rng: Rng): void {
     // (перевірка розмноження 2026-10-28).
     if (mother.sex !== "female" || !fertile(mother) || mother.pregnancy || state.day + 1 < mother.restUntil) continue;
     const fathers = state.cats.filter((c) => c.sex === "male" && fertile(c) && !isEnemy(state, mother, c));
-    const week = state.modifiers.week;
+    const week = weekAhead(state);
     const chance = week === "cat-march" ? MODIFIERS.week.catMarch.pregnancy : week === "calm-season" ? MODIFIERS.week.calmPregnancy : BREEDING.pregnancy;
     if (fathers.length === 0 || !rng.chance(chance)) continue;
     const weights = fathers.map((f) => (isFriend(state, mother, f) ? BREEDING.friendWeight : 1));
