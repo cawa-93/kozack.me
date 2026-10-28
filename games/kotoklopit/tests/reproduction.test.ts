@@ -6,8 +6,10 @@ import { describe, expect, it } from "vitest";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { breedById, isPurebred, MIXED } from "../src/sim/breeds";
 import { addTrait, createCat } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
-import { breederCats, shelterCats } from "../src/sim/destinations";
+import { highPlaceOf, tickCats } from "../src/sim/catai";
+import { breederCats, canSterilize, shelterCats } from "../src/sim/destinations";
+import { objectById } from "../src/sim/home";
+import { tripBlocker } from "../src/sim/trips";
 import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { coatOf, inheritGenes } from "../src/sim/genetics";
@@ -151,6 +153,27 @@ describe("вагітність і пологи: перевірка розмно�
     expect(counts.reduce((x, y) => x + y, 0)).toBe(born.length);
     // Важка складність: породи кошенят не видно, хоч у батьків вона відома.
     expect(born.every((k) => !k.breedKnown[0] && !k.breedKnown[1])).toBe(true);
+  });
+});
+
+describe("новонароджені: перевірка розмноження 2026-10-28", () => {
+  it("мати спить на холодильнику — кошенята лежать біля неї на підлозі; новонароджене не в переноску, а оперують з 2 тижнів", () => {
+    const save = game();
+    const mother = withCat(save, "female");
+    const baby = createCat(save.current, createRng(1), { source: "born", ageWeeks: 0 });
+    baby.parents = { mother: mother.id, father: null };
+    addCat(save.current, baby);
+    const fridge = objectById("fridge");
+    if (!fridge) throw new Error("немає холодильника");
+    mother.x = fridge.x + 0.5;
+    mother.y = fridge.y + 0.5;
+    mother.act = { kind: "sleep", target: "high", goal: null, minutes: 300, elapsed: 0 };
+    tickCats(save.current, 1, { present: true });
+    expect(highPlaceOf(save.current, baby)).toBeNull();
+    save.current.character.held = { kind: "cat", cat: baby.id };
+    expect(tripBlocker(save.current, "vet")).toBe("newborn");
+    expect(canSterilize(baby)).toBe(false);
+    expect(canSterilize(mother)).toBe(true);
   });
 });
 

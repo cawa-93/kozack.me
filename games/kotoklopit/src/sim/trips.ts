@@ -13,6 +13,7 @@ import { deriveSeed, type Rng } from "./rng";
 import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
 import type { AccidentLoss, Cat, Destination, GameState, Trip } from "./types";
+import { isNewborn } from "./reproduction";
 import { isWorkday, stopWork } from "./work";
 import { catOnStairs, openDoor } from "./door";
 
@@ -38,8 +39,10 @@ export function canLeave(state: GameState): boolean {
 }
 
 /** Чому сюди зараз не поїхати; null — можна. */
-export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "office" | "show" | null {
+export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "newborn" | "office" | "show" | null {
   const cat = heldCat(state);
+  // Новонароджене лежить біля матері (§9.8): у переноску його не саджають (перевірка розмноження 2026-10-28).
+  if (cat && isNewborn(cat)) return "newborn";
   // Виставка — лише в її день і раз (§4.1): раніше можна було їздити знову й знову по призи (перевірка поїздок 2026-10-28).
   if (destination === "show" && (state.modifiers.day !== "show" || state.today.showDone === true)) return "show";
   // Офіс — лише в день зборів, раз і в робочий день: після зборів (і пропущених о 18:00) туди нема чого їхати (перевірка циклу

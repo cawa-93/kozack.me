@@ -5,6 +5,7 @@ import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
+  BREEDING,
   CAFE,
   DIFFICULTY,
   DISEASES,
@@ -149,11 +150,14 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   return "cured";
 }
 
+/** Оперують з 2 тижнів — з віку, коли кіт стає дорослим для розмноження (§9.8; перевірка розмноження 2026-10-28: оперували й новонароджених). */
+export const canSterilize = (cat: Cat): boolean => cat.ageWeeks >= BREEDING.minAge;
+
 /** Стерилізація чи кастрація (§9.8): кіт більше не матиме кошенят; 3 дні відновлення. */
 export function vetSterilize(state: GameState): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || !trip || trip.destination !== "vet" || cat.sterilized || !spend(state, STERILIZATION.price, "health")) return false;
+  if (!cat || !trip || trip.destination !== "vet" || cat.sterilized || !canSterilize(cat) || !spend(state, STERILIZATION.price, "health")) return false;
   trip.visit += STERILIZATION.minutes;
   cat.sterilized = true;
   cat.sterilizedKnown = true;

@@ -1,7 +1,7 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, shelterCats, tripCat, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, canSterilize, shelterCats, tripCat, vetManner } from "../sim/destinations";
 import { giveAwayBlocker } from "../sim/farewell";
 import { breedById } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -22,6 +22,7 @@ const BLOCKERS = {
   cat: "Візьміть кота на руки й підійдіть із ним до дверей.",
   carrier: "Потрібна переноска: її можна замовити з телефона.",
   "no-cat": "Спершу опустіть кота.",
+  newborn: "Новонароджене — лише біля мами.",
   office: "Їхати в офіс треба лише в день зборів.",
   show: "Виставка — лише в її день.",
 } as const;
@@ -30,7 +31,8 @@ const BLOCKERS = {
 export function destinationCard(state: GameState, onPick: (d: Destination) => void, onCancel: () => void): Card {
   const list = element("div", "shop");
   // Причину, через яку не можна їхати нікуди, кажуть один раз, а не в кожному рядку.
-  const everywhere = state.character.held?.kind === "cat" && tripBlocker(state, "shop") === "no-cat";
+  const held = state.character.held?.kind === "cat" ? tripBlocker(state, "shop") : null;
+  const everywhere = held === "no-cat" || held === "newborn" ? held : null;
   for (const destination of Object.keys(TRIPS) as Destination[]) {
     const blocker = tripBlocker(state, destination);
     if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
@@ -39,7 +41,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
-    const note = blocker === null || (everywhere && blocker === "no-cat") ? `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
+    const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
     name.append(element("span", "shop-stock", note));
     row.append(name);
     const button = element("button", "button", "Їхати");
@@ -51,7 +53,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   return {
     kicker: "Поїздка",
     title: "Куди поїхати?",
-    body: [...(everywhere ? ["З котом на руках — лише туди, де потрібен кіт."] : []), list],
+    body: [...(everywhere === "no-cat" ? ["З котом на руках — лише туди, де потрібен кіт."] : everywhere === "newborn" ? [BLOCKERS.newborn] : []), list],
     actions: [],
     onDismiss: onCancel,
     closable: true,
@@ -149,7 +151,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       else if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
-      if (!cat.sterilized)
+      if (!cat.sterilized && !canSterilize(cat)) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "замалий: оперують з 2 тижнів"));
+      else if (!cat.sterilized)
         body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {

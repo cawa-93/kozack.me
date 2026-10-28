@@ -3278,8 +3278,11 @@ function nurse(state: GameState, kitten: Cat): void {
   kitten.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
   const mother = motherOf(state, kitten);
   if (mother && mother.away === null && !isCarried(state, mother) && asleep(mother)) {
-    kitten.x = mother.x + ((kitten.id % 3) - 1) * 0.25;
-    kitten.y = mother.y + 0.15;
+    // Лягають біля неї на підлозі: мати, що спить на холодильнику, шафі чи комп'ютері, лишала там кошенят, і їх не було як
+    // зняти (перевірка розмноження 2026-10-28).
+    const spot = visibleFloorNear(state, { x: mother.x + ((kitten.id % 3) - 1) * 0.25, y: mother.y + 0.15 });
+    kitten.x = spot.x;
+    kitten.y = spot.y;
   }
   if (kitten.act.kind !== "sleep") start(kitten, "sleep", null, 600);
 }
