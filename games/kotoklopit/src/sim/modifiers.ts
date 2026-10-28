@@ -243,7 +243,9 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng = foun
 /** Відповісти мамі (§4.1): пів години розмови — не робота: персонаж відходить від комп'ютера (перевірка модифікаторів 2026-10-28: за комп'ютером дзвінок нічого не коштував). */
 export function answerCall(state: GameState): void {
   stopWork(state);
-  if (state.character.activity?.kind !== "use" || state.character.activity.inside !== true) state.character.activity = null;
+  // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки (повторна перевірка модифікаторів 2026-10-28).
+  const kind = state.character.activity?.kind;
+  if (kind === "pet" || kind === "play") state.character.activity = null;
 }
 
 /** Не відповісти мамі (§4.1): здоровий глузд падає. */

@@ -3,7 +3,7 @@
 import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
 import { knownBreedHalves } from "./breeds";
-import { observe } from "./knowledge";
+import { observe, setWitnessing } from "./knowledge";
 import { ageCat, ageDue, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, closeLedger, passSleepTime } from "./character";
@@ -188,7 +188,12 @@ function sleep({ state, report, rng }: Night): void {
       const step = Math.min(1, until - minute);
       tickHousehold(state, minute, step);
       // Феєрверки о 21:00 гримлять і тоді, коли персонаж уже спить (перевірка модифікаторів 2026-10-28: жайворонок, що ліг до 21:00, їх оминав).
-      if (state.modifiers.day === "festival" && minute < MODIFIERS.festival.minute && minute + step >= MODIFIERS.festival.minute) loudNoise(state, "fireworks", null);
+      if (state.modifiers.day === "festival" && minute < MODIFIERS.festival.minute && minute + step >= MODIFIERS.festival.minute) {
+        // Персонаж спить — проявів не бачить (§9.9; повторна перевірка модифікаторів 2026-10-28: феєрверки вночі зараховували «Сміливість» і «Тривалість сну»).
+        setWitnessing(false);
+        loudNoise(state, "fireworks", null);
+        setWitnessing(true);
+      }
       const since = state.nextId;
       tickCats(state, step, { present: false });
       lost += coughWakes(state, report, rng, since);

@@ -11,6 +11,7 @@ import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundl
 import { coughWakes } from "../src/sim/night";
 import { nightlyStates } from "../src/sim/reproduction";
 import { scheduleOf } from "../src/view/schedule";
+import { objectById } from "../src/sim/home";
 import { fallIll } from "../src/sim/diseases";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -135,6 +136,21 @@ describe("події модифікаторів: перевірка модифі
       expect(fest.current.lastNight?.wakeUps.some((w) => w.cat === kitten.id)).toBe(false);
       expect(events).toContainEqual(expect.objectContaining({ type: "scared", cat: shy.id }));
     }
+  });
+
+  it("феєрверки вночі: персонаж спить і проявів «Сміливості» не бачить (повторна перевірка 2026-10-28)", () => {
+    const save = game();
+    save.current.modifiers.day = "festival";
+    save.current.day = 2;
+    save.current.minute = 20 * 60 + 30;
+    const shy = withCat(save, { bravery: -2 });
+    const bed = objectById("bed");
+    if (!bed) throw new Error("немає ліжка");
+    shy.x = bed.x + 2.5;
+    shy.y = bed.y + 0.5;
+    shy.act = { kind: "idle", target: null, goal: null, minutes: 600, elapsed: 0 };
+    goToSleep(save);
+    expect(shy.traits[0]?.seen).toBe(0);
   });
 
   it("гості: сплячого «−» кота не чіпають; друг допомагає вже о 10:00; ОСББ каже, скільки заплатили; ветеринарка дзвонить", () => {

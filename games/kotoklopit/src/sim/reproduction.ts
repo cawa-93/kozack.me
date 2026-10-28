@@ -78,7 +78,10 @@ export function conceive(state: GameState, rng: Rng): void {
     // (перевірка розмноження 2026-10-28).
     if (mother.sex !== "female" || !fertile(mother) || mother.pregnancy || state.day + 1 < mother.restUntil) continue;
     const fathers = state.cats.filter((c) => c.sex === "male" && fertile(c) && !isEnemy(state, mother, c));
-    const week = weekAhead(state);
+    // Зачаття в ніч на понеділок — наприкінці тижня, за модифікатором тижня, що минає: «Котячий березень» оголошено в понеділок,
+    // і гравець має тиждень, щоб зреагувати (стерилізувати, розвести котів) (повторна перевірка модифікаторів 2026-10-28: кидалося на початку березня, без шансу
+    // зреагувати). Тічка ж починається вже в новому тижні — `weekAhead`.
+    const week = state.modifiers.week;
     const chance = week === "cat-march" ? MODIFIERS.week.catMarch.pregnancy : week === "calm-season" ? MODIFIERS.week.calmPregnancy : BREEDING.pregnancy;
     if (fathers.length === 0 || !rng.chance(chance)) continue;
     const weights = fathers.map((f) => (isFriend(state, mother, f) ? BREEDING.friendWeight : 1));
