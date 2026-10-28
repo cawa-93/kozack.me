@@ -140,6 +140,12 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     r.append(name, ...buttons);
     return r;
   };
+  // Порада ветеринара до знайденої хвороби — одне речення без чисел під її назвою (рішення автора 2026-10-28, Д2).
+  const advised = (r: HTMLElement, id: string): HTMLElement => {
+    const advice = VET_ADVICE[id];
+    if (advice) r.querySelector(".shop-name")?.append(element("span", "shop-stock", advice));
+    return r;
+  };
   const cat = tripCat(state);
   switch (destination) {
     case "shop":
@@ -173,7 +179,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       for (const d of known) {
         // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).
         if (DISEASES[d.id].cure.kind === "weight") {
-          list.append(row(diseaseTitle(d.id), "дієта й ігри"));
+          list.append(advised(row(diseaseTitle(d.id), "дієта й ігри"), d.id));
           continue;
         }
         const chronic = DISEASES[d.id].cure.kind === "control";
@@ -192,20 +198,15 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
                   ? "хронічна"
                   : "🕐 1 год";
         list.append(
-          row(
+          advised(row(
             diseaseTitle(d.id),
             note,
             button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || left > VET.controlDays.cheap),
             button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || left > VET.controlDays.premium),
-          ),
+          ), d.id),
         );
       }
       if (known.length > 0) body.push(list);
-      // Порада ветеринара до кожної знайденої хвороби — одне речення без чисел (рішення автора 2026-10-28, Д2).
-      for (const d of known) {
-        const advice = VET_ADVICE[d.id];
-        if (advice) body.push(`${diseaseTitle(d.id)}: ${advice.replace(/^./, (c) => c.toLowerCase())}`);
-      }
       break;
     }
     case "doctor": {
