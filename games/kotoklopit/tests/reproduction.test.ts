@@ -7,7 +7,7 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { breedById, isPurebred, MIXED } from "../src/sim/breeds";
 import { addTrait, createCat } from "../src/sim/cat";
 import { highPlaceOf, tickCats } from "../src/sim/catai";
-import { breederCats, canSterilize, shelterCats } from "../src/sim/destinations";
+import { breederCats, canSterilize, shelterCats, sterilizeBlocker } from "../src/sim/destinations";
 import { objectById } from "../src/sim/home";
 import { tripBlocker } from "../src/sim/trips";
 import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
@@ -225,6 +225,19 @@ describe("повторна перевірка розмноження 2026-10-28"
     const report = goToSleep(save);
     expect(report?.keptCats).toEqual([murka.id]);
     expect(save.current.cats).toContain(murka);
+  });
+});
+
+describe("стерилізація вагітної (рішення автора 2026-10-28, Р1)", () => {
+  it("вагітну й матір, що годує, ветеринар не стерилізує", () => {
+    const save = game();
+    const she = withCat(save, "female");
+    expect(sterilizeBlocker(save.current, she)).toBeNull();
+    she.pregnancy = { father: null, due: save.current.day + 3, known: true };
+    expect(sterilizeBlocker(save.current, she)).toBe("pregnant");
+    she.pregnancy = null;
+    she.restUntil = save.current.day + 14;
+    expect(sterilizeBlocker(save.current, she)).toBe("nursing");
   });
 });
 
