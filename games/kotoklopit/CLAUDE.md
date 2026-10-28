@@ -15,7 +15,7 @@
 
 - Перед кожним комітом — швидкі: `npm run typecheck -w games/kotoklopit` і `npm test -w games/kotoklopit` (кілька секунд; локально перед першим прогоном після нових файлів у `scenarios/` — `npx vitest --clearCache`).
 - Раз наприкінці блоку: `npm run build -w games/kotoklopit`, якщо зачеплено сцени, графіку чи конфіг; короткий баланс `BALANCE_WEEKS=2 BALANCE_SEEDS=1 npm run balance -w games/kotoklopit`, якщо змінилася поведінка (`balance/REPORT.md` після короткого прогону не комітити — `git checkout`).
-- Повний баланс (`npm run balance -w games/kotoklopit`, 50 тижнів × 3 seed) — наприкінці великої механіки, з комітом `balance/REPORT.md`.
+- Повний баланс (`BALANCE_WEEKS=50 npm run balance -w games/kotoklopit`, 50 тижнів × 3 seed; без `BALANCE_WEEKS` — лише 6 тижнів) — наприкінці великої механіки, з комітом `balance/REPORT.md`.
 - Не комітити `.idea/` і згенероване (`balance/TRACE.txt`, `public/games/`).
 
 **Перевірка в браузері:** локально — `npm run dev -w games/kotoklopit` і скриншоти (playwright-core з кореня, браузер Edge: `channel: "msedge"`), коли зачеплено графіку. Сценарій — `?scenario=<назва файлу з scenarios/>`. Кожен пуш у `new-game` збирає прев'ю Netlify для PR #213 з увімкненим режимом розробки (посилання — у PR): там автор може подивитися гру й з телефона. Коли зміну варто перевірити очима, наприкінці відповіді коротко сказати, що саме й у якому сценарії подивитися.
