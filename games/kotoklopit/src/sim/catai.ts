@@ -110,7 +110,7 @@ import {
   WORK_CAT,
   ZOOMIES,
 } from "./config";
-import { afterMeal, afterTheft, cannotJump, eatsLess, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { afterMeal, afterTheft, cannotJump, eatFactor, eatsLess, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -654,7 +654,8 @@ function refusesLitter(state: GameState, cat: Cat, rng: Rng): boolean {
 
 /** Скільки хвилин кіт їсть порцію (§9.12, «Швидкість їжі»): 3 × 0,7^рівень, від 1,5 до 6. */
 export function eatMinutes(cat: Cat): number {
-  return clamp(CAT_ACT_MINUTES.eat * GULPING.factor ** traitLevel(cat, "gulping"), GULPING.min, GULPING.max);
+  // Гінгівіт — жує одним боком, довше (рішення автора 2026-10-28, Д1).
+  return clamp(CAT_ACT_MINUTES.eat * GULPING.factor ** traitLevel(cat, "gulping"), GULPING.min, GULPING.max) * eatFactor(cat);
 }
 
 /**

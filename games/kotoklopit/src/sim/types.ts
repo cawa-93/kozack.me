@@ -708,7 +708,9 @@ export interface CatAct {
 }
 
 /** Хвороби прототипу (§9.5, `DISEASES.md`). */
-export type DiseaseId = "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis" | "obesity";
+export type DiseaseId =
+  | "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis" | "obesity"
+  | "heart" | "joints" | "spine" | "breathing" | "gingivitis";
 
 /** Хвороба кота: коли почалася й скільки лікування вже було. */
 export interface CatDisease {

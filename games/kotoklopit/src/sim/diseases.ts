@@ -2,12 +2,12 @@
 // лікування вдома, заразність, схильності порід. Ветеринар — у `destinations.ts`.
 
 import { riskHalves } from "./breeds";
-import { changeHealth, changeMood, isAdapting, isOld, lifeMood, offend, traitLevel, weightOf } from "./cat";
+import { changeHealth, changeMood, isAdapting, isKitten, isOld, lifeMood, offend, traitLevel, weightOf } from "./cat";
 import { unpleasantTask } from "./character";
 import { BREED_RISK, DISEASES, ILLNESS, MEDICINE, SYMPTOMS, WEIGHT } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
-import { catIllnessFactor, isCold } from "./modifiers";
+import { catIllnessFactor, isCold, isHot } from "./modifiers";
 import { isFriend } from "./relations";
 import { isNewborn } from "./reproduction";
 import type { Rng } from "./rng";
@@ -63,21 +63,28 @@ export function cureDisease(state: GameState, cat: Cat, id: DiseaseId, rng: Rng)
 
 // --- Симптоми -------------------------------------------------------------------------------
 
-/** Множник втоми: застуда й старечі болячки — кіт більше спить. */
-export const fatigueFactor = (cat: Cat): number => (hasDisease(cat, "cold") || hasDisease(cat, "senior") ? SYMPTOMS.tired : 1);
+/** Множник втоми: застуда, старечі болячки, серце й дихання (рішення автора 2026-10-28, Д1) — кіт швидко втомлюється й більше спить. */
+export const fatigueFactor = (cat: Cat): number =>
+  hasDisease(cat, "cold") || hasDisease(cat, "senior") || hasDisease(cat, "heart") || hasDisease(cat, "breathing") ? SYMPTOMS.tired : 1;
 /** Множник відновлення сну: блохи заважають спати. */
 export const sleepFactor = (cat: Cat): number => (hasDisease(cat, "fleas") ? SYMPTOMS.fleasSleep : 1);
 export const hungerFactor = (cat: Cat): number => (hasDisease(cat, "worms") ? SYMPTOMS.wormsHunger : 1);
 export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") || hasDisease(cat, "urolithiasis") ? SYMPTOMS.cystitisToilet : 1);
 /** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»); старечі болячки — повільніший. */
 export const walkFactor = (cat: Cat): number =>
-  (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1) * (hasDisease(cat, "senior") ? SYMPTOMS.seniorWalk : 1);
+  (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) *
+  (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1) *
+  (hasDisease(cat, "senior") ? SYMPTOMS.seniorWalk : 1) *
+  (hasDisease(cat, "joints") ? SYMPTOMS.jointsWalk : 1) *
+  (hasDisease(cat, "spine") ? SYMPTOMS.spineWalk : 1);
+/** Гінгівіт: жує одним боком — їсть довше. */
+export const eatFactor = (cat: Cat): number => (hasDisease(cat, "gingivitis") ? SYMPTOMS.gingivitisEat : 1);
 /** Застуда й розлад шлунка: кіт менше їсть — з миски пів порції, як слабкий (§9.5; крок 17, звірка з довідниками 2026-10-28). */
 export const eatsLess = (cat: Cat): boolean => hasDisease(cat, "cold") || hasDisease(cat, "stomach");
 /** Ожиріння (§9.5, §9.12): менше грається й не лізе нагору. */
 export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
-/** Нагору не стрибне: з ожирінням (§9.12) чи травмою (§9.5, рішення автора 2026-10-27, Х6). */
-export const cannotJump = (cat: Cat): boolean => isObese(cat) || hasDisease(cat, "injury");
+/** Нагору не стрибне: з ожирінням (§9.12), травмою (§9.5, рішення автора 2026-10-27, Х6) чи хворими суглобами (рішення автора 2026-10-28, Д1). */
+export const cannotJump = (cat: Cat): boolean => isObese(cat) || hasDisease(cat, "injury") || hasDisease(cat, "joints");
 
 /**
  * Кіт нездужає (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Г5): будь-яка хвороба, зокрема травма, — крім старості й
@@ -85,7 +92,8 @@ export const cannotJump = (cat: Cat): boolean => isObese(cat) || hasDisease(cat,
  * 2026-10-27, Х11). Такий гратися не погоджується й шипить на того, хто кличе, і сам гратися не кличе (рішення автора 2026-10-26
  * після блоку 4).
  */
-const FEELS_FINE: readonly DiseaseId[] = ["senior", "obesity", "fleas", "worms"];
+// Нові хронічні й гінгівіт (рішення автора 2026-10-28, Д1) — як старечі болячки: шкодять здоров'ю, а не грі.
+const FEELS_FINE: readonly DiseaseId[] = ["senior", "obesity", "fleas", "worms", "heart", "joints", "spine", "breathing", "gingivitis"];
 export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => !FEELS_FINE.includes(d.id));
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
@@ -143,7 +151,9 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
         continue;
       }
       const days = state.day - disease.day;
-      if (harms(state, disease)) changeHealth(state, cat, -rule.damage, `disease:${disease.id}`);
+      // Дихання в «Спеку» й «Хвилю спеки» шкодить удвічі (рішення автора 2026-10-28, Д1).
+      const heat = disease.id === "breathing" && isHot(state) ? ILLNESS.breathingHeat : 1;
+      if (harms(state, disease)) changeHealth(state, cat, -rule.damage * heat, `disease:${disease.id}`);
       // Гострі минають самі (рішення автора 2026-10-27, Х1): остання ніч ще шкодить.
       if (rule.recovers !== null && days + 1 >= rule.recovers) cure(state, cat, disease, rng);
     }
@@ -151,6 +161,8 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
     if (cat.diseases.some((d) => !isControlled(state, d))) changeMood(state, cat, ILLNESS.moodPerDay, "хворіє");
     // Нові хвороби. Ожиріння — не випадок, а вага (§9.12): «Витривалість» і складність на нього не діють.
     if (weightOf(cat) >= WEIGHT.obese) fallIll(state, cat, "obesity");
+    // Зайва вага тисне на суглоби (рішення автора 2026-10-28, Д1).
+    if (isObese(cat)) maybeFallIll(state, cat, "joints", ILLNESS.jointsObese, rng);
     // У «Холод» і «Похолодання» застуда частіша (рішення автора 2026-10-28, Д2).
     maybeFallIll(state, cat, "cold", ILLNESS.cold * (isCold(state) ? ILLNESS.coldWeather : 1), rng);
     // Блохи кілька днів: кіт ковтає їх, вилизуючись, — глисти; шкіра роздерта — дерматит (рішення автора 2026-10-28, Д2).
@@ -190,9 +202,24 @@ function spread(state: GameState, rng: Rng): void {
   }
 }
 
-/** Кіт постаршав (§9.5, §9.1): старечі болячки понад межу віку — шанс раз на його тиждень. */
+/** Хвороби, що бувають лише від породи (хребет, дихання; рішення автора 2026-10-28, Д1). */
+const BREED_ONLY: readonly DiseaseId[] = ["spine", "breathing"];
+
+/**
+ * Кіт постаршав (§9.5, §9.1): старечі болячки понад межу віку — шанс раз на його тиждень; дорослому — серце, суглоби (понад
+ * межу віку), гінгівіт і породні хребет та дихання (рішення автора 2026-10-28, Д1).
+ */
 export function agingDiseases(state: GameState, cat: Cat, rng: Rng): void {
-  if (isOld(cat)) maybeFallIll(state, cat, "senior", ILLNESS.seniorPerWeek, rng);
+  const old = isOld(cat);
+  if (old) maybeFallIll(state, cat, "senior", ILLNESS.seniorPerWeek, rng);
+  if (isKitten(cat)) return;
+  maybeFallIll(state, cat, "heart", ILLNESS.heartPerWeek * (old ? ILLNESS.heartOld : 1), rng);
+  if (old) maybeFallIll(state, cat, "joints", ILLNESS.jointsOldPerWeek, rng);
+  maybeFallIll(state, cat, "gingivitis", ILLNESS.gingivitisPerWeek, rng);
+  for (const id of BREED_ONLY) {
+    const risk = BREED_RISK.diseases[id];
+    if (risk !== undefined && riskHalves(cat.breed, risk) > 0) maybeFallIll(state, cat, id, ILLNESS.breedOnlyPerWeek, rng);
+  }
 }
 
 // --- Ліки вдома -----------------------------------------------------------------------------

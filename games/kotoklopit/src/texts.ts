@@ -461,6 +461,11 @@ export const DISEASE_TITLES: Record<string, string> = {
   urolithiasis: "Сечокам'яна хвороба",
   dermatitis: "Дерматит",
   obesity: "Ожиріння",
+  heart: "Хвороба серця",
+  joints: "Хвороба суглобів",
+  spine: "Хвороба хребта",
+  breathing: "Проблеми з диханням",
+  gingivitis: "Гінгівіт",
 };
 
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;

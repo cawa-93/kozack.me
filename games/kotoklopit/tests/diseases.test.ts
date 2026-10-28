@@ -6,8 +6,9 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { climbWeight, decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE, SYMPTOMS } from "../src/sim/config";
-import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
+import { BATH, BREED_RISK, CAT_AGE_LIMIT, DISEASES, ILLNESS, KITTEN_MAX_AGE, LOW_HEALTH, MEDICINE, SYMPTOMS, WEIGHT } from "../src/sim/config";
+import { afterMeal, agingDiseases, fallIll, fatigueFactor, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
+import { MIXED } from "../src/sim/breeds";
 import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -42,6 +43,89 @@ const nextDose = (save: Save): void => {
 
 /** Ніч без нових хвороб: шанси нульові для цього rng. */
 const quietRng = () => ({ ...createRng(1), chance: () => false });
+
+describe("ще п'ять хвороб (рішення автора 2026-10-28, Д1)", () => {
+  /** Тижневі шанси, які кинула ніч, коли кіт постаршав. */
+  function agingChances(save: Save, cat: Cat): number[] {
+    const chances: number[] = [];
+    agingDiseases(save.current, cat, { ...createRng(1), chance: (p: number) => (chances.push(p), false) });
+    return chances;
+  }
+
+  it("кошеня не хворіє ними; дорослому — серце й гінгівіт, старому ще суглоби; хребет і дихання — лише від породи", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.breed = [MIXED, MIXED];
+    cat.ageWeeks = KITTEN_MAX_AGE;
+    expect(agingChances(save, cat)).toHaveLength(0);
+    cat.ageWeeks = KITTEN_MAX_AGE + 1;
+    const adult = agingChances(save, cat);
+    expect(adult).toHaveLength(2);
+    cat.ageWeeks = CAT_AGE_LIMIT + 1;
+    expect(agingChances(save, cat)).toHaveLength(4); // старечі, серце, суглоби, гінгівіт
+    cat.ageWeeks = KITTEN_MAX_AGE + 1;
+    cat.breed = ["menks", "menks"];
+    expect(agingChances(save, cat)).toHaveLength(3); // + хребет
+    cat.breed = ["perska", MIXED];
+    expect(agingChances(save, cat)).toHaveLength(3); // + дихання
+  });
+
+  it("схильність породи множить шанс: мейнкун частіше хворіє серцем", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.ageWeeks = KITTEN_MAX_AGE + 1;
+    cat.breed = ["shartrez", "shartrez"];
+    const plain = agingChances(save, cat)[0] ?? 0;
+    cat.breed = ["meinkun", "meinkun"];
+    expect((agingChances(save, cat)[0] ?? 0) / plain).toBeCloseTo(1 + 2 * BREED_RISK.step);
+  });
+
+  it("симптоми: серце — втомлюється, суглоби — не лізе нагору й повільніший, хребет — повільніший, гінгівіт — їсть довше", () => {
+    const save = game();
+    const cat = withCat(save);
+    const eat = eatMinutes(cat);
+    fallIll(save.current, cat, "heart");
+    expect(fatigueFactor(cat)).toBe(SYMPTOMS.tired);
+    fallIll(save.current, cat, "joints");
+    expect(climbWeight(cat)).toBe(0);
+    expect(walkFactor(cat)).toBeCloseTo(SYMPTOMS.jointsWalk);
+    fallIll(save.current, cat, "spine");
+    expect(walkFactor(cat)).toBeCloseTo(SYMPTOMS.jointsWalk * SYMPTOMS.spineWalk);
+    fallIll(save.current, cat, "gingivitis");
+    expect(eatMinutes(cat)).toBeCloseTo(eat * SYMPTOMS.gingivitisEat);
+  });
+
+  it("дихання в спеку шкодить удвічі; таблетка того дня рятує", () => {
+    const save = game();
+    const cat = withCat(save);
+    fallIll(save.current, cat, "breathing");
+    const ill = cat.diseases[0];
+    if (ill) ill.day = save.current.day - DISEASES.breathing.safe;
+    save.current.modifiers.day = null;
+    save.current.modifiers.week = null;
+    let health = cat.health;
+    nightlyDiseases(save.current, quietRng());
+    expect(health - cat.health).toBe(DISEASES.breathing.damage);
+    save.current.modifiers.day = "heat";
+    health = cat.health;
+    nightlyDiseases(save.current, quietRng());
+    expect(health - cat.health).toBe(DISEASES.breathing.damage * ILLNESS.breathingHeat);
+    hold(save, cat);
+    giveMedicine(save.current, "pills", createRng(1));
+    health = cat.health;
+    nightlyDiseases(save.current, quietRng());
+    expect(cat.health).toBe(health);
+  });
+
+  it("із зайвою вагою хворіють суглоби", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.weight = WEIGHT.obese;
+    fallIll(save.current, cat, "obesity");
+    nightlyDiseases(save.current, { ...createRng(1), chance: () => true });
+    expect(hasDisease(cat, "joints")).toBe(true);
+  });
+});
 
 describe("тригери хвороб (рішення автора 2026-10-28, Д2)", () => {
   /** Шанси, які ніч кидала для кота: перший — застуда. */

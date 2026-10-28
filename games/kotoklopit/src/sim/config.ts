@@ -976,13 +976,22 @@ export const DISEASES: Record<
   dermatitis: { safe: 5, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
   // Ожиріння (§9.5, §9.12 «Тіло й тепло», 2026-10-26): оборотне — минає, щойно вага повернеться до норми (`WEIGHT.cured`).
   obesity: { safe: 7, damage: 1, recovers: null, cure: { kind: "weight" }, contagious: null },
+  // Ще п'ять із `DISEASES.md` (рішення автора 2026-10-28, Д1): хронічні — під контролем таблеток чи ветеринара, гінгівіт — лише ветеринар.
+  heart: { safe: 3, damage: 2, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  joints: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  spine: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  breathing: { safe: 3, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
+  gingivitis: { safe: 7, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
 };
 /**
  * Схильність породи (§9.5, `BREEDS.md`): шанс хвороби × (1 + `step` × половин породи зі схильністю) — чистокровному ×2,
  * напівкровці ×1,5. Діють лише схильності, для яких хвороба вже є (рішення автора 2026-10-27, `DISEASES_REVIEW.md`, Х10);
  * «ожиріння» — через вагу (`WEIGHT.breedStep`).
  */
-export const BREED_RISK = { step: 0.5, diseases: { conjunctivitis: "очі", dermatitis: "шкіра" } as Partial<Record<DiseaseId, string>> } as const;
+export const BREED_RISK = {
+  step: 0.5,
+  diseases: { conjunctivitis: "очі", dermatitis: "шкіра", heart: "серце", joints: "суглоби", spine: "хребет", breathing: "дихання", gingivitis: "зуби" } as Partial<Record<DiseaseId, string>>,
+} as const;
 /** Шанси захворіти (§9.5): за ніч, за подію чи за тиждень. */
 export const ILLNESS = {
   cold: 1 / 60,
@@ -1007,6 +1016,18 @@ export const ILLNESS = {
   cystitis: 0.15,
   calmMood: 40,
   seniorPerWeek: 0.5,
+  /**
+   * Нові хвороби (рішення автора 2026-10-28, Д1): тижневі шанси — у ніч, коли дорослий кіт старшає. Серце — `heartPerWeek`, понад межу віку × `heartOld`;
+   * суглоби — понад межу віку `jointsOldPerWeek`, з ожирінням — `jointsObese` щоночі; хребет і дихання — лише в порід зі
+   * схильністю, `breedOnlyPerWeek`; гінгівіт — `gingivitisPerWeek`. Дихання в спеку шкодить × `breathingHeat`.
+   */
+  heartPerWeek: 0.03,
+  heartOld: 2,
+  jointsOldPerWeek: 0.1,
+  jointsObese: 0.02,
+  breedOnlyPerWeek: 0.06,
+  gingivitisPerWeek: 0.04,
+  breathingHeat: 2,
   friendContagion: 0.2,
   otherContagion: 0.05,
   litterContagion: 0.1,
@@ -1023,6 +1044,10 @@ export const SYMPTOMS = {
   limp: 0.6,
   /** Старечі болячки: кіт повільніший (`DISEASES.md`; крок 17, звірка з довідниками 2026-10-28). */
   seniorWalk: 0.9,
+  /** Нові хвороби (рішення автора 2026-10-28, Д1): суглоби й хребет — хода, гінгівіт — жує одним боком, їсть довше. */
+  jointsWalk: 0.85,
+  spineWalk: 0.9,
+  gingivitisEat: 1.5,
   stomachVomit: 0.3,
   outsideLitter: 0.3,
   /** Скільки разів на годину видно чхання, свербіж, тертя очей. */
