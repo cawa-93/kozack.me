@@ -480,7 +480,11 @@ export class Bot {
     return s.cats.find((c) => c.away === null && this.needsVet(c)) ?? null;
   }
 
-  /** Поїздка до ветеринара (§8.5): кота на руки, до дверей, гонка обережно, огляд і дороге лікування всього знайденого. */
+  /**
+   * Поїздка до ветеринара (§8.5): кота на руки, до дверей, гонка обережно, огляд і дороге лікування того, що лікує лише
+   * ветеринар; решту бот лікує вдома (перевірка 2026-10-28: лікування всього знайденого, по годині на хворобу, з новими
+   * хронічними тягнулося до вечора, і голодний бот помирав від голоду).
+   */
   private vetTrip(cat: Cat): void {
     this.skip.set("vet", MINUTES_PER_DAY);
     if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
@@ -492,7 +496,7 @@ export class Bot {
     vetExam(this.state);
     const rng = stateRng(this.state, "behavior");
     for (const d of [...(tripCat(this.state)?.diseases ?? [])]) {
-      if (d.known && DISEASES[d.id].cure.kind !== "weight") vetTreat(this.state, d.id, "premium", rng);
+      if (d.known && DISEASES[d.id].cure.kind === "vet") vetTreat(this.state, d.id, "premium", rng);
     }
     returnHome(this.save, trip.visit, TRIPS.vet.road);
   }
