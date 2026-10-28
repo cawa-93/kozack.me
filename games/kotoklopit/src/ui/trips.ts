@@ -8,7 +8,7 @@ import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { diseaseTitle, farewellText, fill, ILLNESS_TITLES, SHELTER_GIVEN, VET_MANNER } from "../texts";
+import { BREED_ABOUT, diseaseTitle, farewellText, fill, ILLNESS_TITLES, SHELTER_GIVEN, VET_ADVICE, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -201,6 +201,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         );
       }
       if (known.length > 0) body.push(list);
+      // Порада ветеринара до кожної знайденої хвороби — одне речення без чисел (рішення автора 2026-10-28, Д2).
+      for (const d of known) {
+        const advice = VET_ADVICE[d.id];
+        if (advice) body.push(`${diseaseTitle(d.id)}: ${advice.replace(/^./, (c) => c.toLowerCase())}`);
+      }
       break;
     }
     case "doctor": {
@@ -265,6 +270,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const { breed, cats } = breederCats(state);
       const price = breederCatPrice(state);
       body.push(`Порода — ${breedById(breed).name.toLowerCase()}, з родоводом.`);
+      // Яка порода — одним реченням без чисел (рішення автора 2026-10-28, Д4).
+      const about = BREED_ABOUT[breed];
+      if (about) body.push(about);
       const list = element("div", "shop");
       for (const c of cats) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3);

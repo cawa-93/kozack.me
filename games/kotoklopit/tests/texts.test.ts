@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
 import { TRAIT_GROUPS } from "../src/sim/traits";
-import { endingText, fill, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT } from "../src/texts";
+import { BREEDS } from "../src/sim/breeds";
+import { DISEASES } from "../src/sim/config";
+import { BREED_ABOUT, endingText, fill, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -51,6 +53,21 @@ describe("опис рис для картки кота (§9.9)", () => {
     for (const group of TRAIT_GROUPS) {
       const texts: (string | null)[] = [...(TRAIT_ABOUT[group.id] ?? []), ...(group.signs ?? [])];
       for (const text of texts) if (text !== null) expect(fill(text, "female"), group.id).not.toMatch(masculine);
+    }
+  });
+});
+
+describe("опис порід і поради ветеринара (рішення автора 2026-10-28, Д4, Д2)", () => {
+  it("у кожної породи є опис, у кожної хвороби — порада; без чисел і незаповнених місць", () => {
+    for (const breed of BREEDS) {
+      const about = BREED_ABOUT[breed.id];
+      expect(about, breed.id).toBeTruthy();
+      expect(about).not.toMatch(/[{}[\]|\d]/);
+    }
+    for (const id of Object.keys(DISEASES)) {
+      const advice = VET_ADVICE[id];
+      expect(advice, id).toBeTruthy();
+      expect(advice).not.toMatch(/[{}[\]|\d]/);
     }
   });
 });

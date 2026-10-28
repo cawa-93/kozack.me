@@ -11,6 +11,7 @@ import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
+  BREED_ABOUT,
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
@@ -306,6 +307,12 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     const lines = [`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`];
     const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
     if (breed !== null) lines.push(breed);
+    // Опис відомої породи (рішення автора 2026-10-28, Д4): кожної відомої половини, без повторів; «безпородний» — лише в безпородного.
+    const halves = new Set(cat.breed.filter((id, i) => cat.breedKnown[i] && (id !== MIXED || cat.breed[0] === cat.breed[1])));
+    for (const id of halves) {
+      const about = BREED_ABOUT[id];
+      if (about) lines.push(about);
+    }
     const states: string[] = [];
     if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
     if (cat.pregnancy?.known) states.push("вагітна");
