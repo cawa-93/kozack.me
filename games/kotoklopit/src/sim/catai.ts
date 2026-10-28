@@ -1274,11 +1274,12 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   if (chewing > 0 && chewTarget(state) !== null) options.push({ weight: CHEWING.playWeight * (1 + chewing), value: active(() => startChew(state, cat, rng)) });
   // Кмітливий перекидає смітник, а «Зломник» лізе в шафку з кормом і ситим (§9.12, «Кмітливість у бешкеті»).
   const cunning = traitLevel(cat, "cunning");
-  if (cunning > 0 && !trashTipped(state)) options.push({ weight: CUNNING.trashStep * cunning * bored, value: active(() => startRaid(state, cat, "trash")) });
+  // Нудьга енергійного (×1,5) — лише скидання й дряпання, як ухвалив автор 2026-10-25 (крок 17, звірка з довідниками 2026-10-28: діяла й на смітник і папір).
+  if (cunning > 0 && !trashTipped(state)) options.push({ weight: CUNNING.trashStep * cunning, value: active(() => startRaid(state, cat, "trash")) });
   if (cunning >= CUNNING.fullLevel && cabinetFood(state)) options.push({ weight: CUNNING.fullWeight, value: active(() => startRaid(state, cat, "cabinet")) });
   // Рулон туалетного паперу у ванній (§9.12, «Мисливський інстинкт»): полювання лапою на річ, що рухається.
   const roll = rollWeight(state, cat);
-  if (roll > 0) options.push({ weight: roll * bored, value: active(() => start(cat, "unroll", { ...ROLL_TILE }, HUNTING.pawMinutes, "roll")) });
+  if (roll > 0) options.push({ weight: roll, value: active(() => start(cat, "unroll", { ...ROLL_TILE }, HUNTING.pawMinutes, "roll")) });
   // Засідка на персонажа (§9.12, «Засідки»): лише коли є на кого чатувати.
   const ambush = ambushWeight(cat);
   if (ambush > 0 && context.present) options.push({ weight: ambush, value: active(() => startAmbush(cat, rng)) });
@@ -2133,7 +2134,8 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       const begging = traitLevel(cat, "begging");
       const asks = TRAIT_EFFECTS.beggingChance * Math.max(0, begging) + (begging <= -2 ? 0 : (cat.begHabit ?? 0));
       if (asks > 0 && rng.chance(asks)) {
-        if (begging > 0) observe(state, cat, "begging");
+        // Раз на годину, спільно з проханням ласощів (§9.12 «Жебракування»; крок 17, звірка з довідниками 2026-10-28).
+        if (begging > 0) observe(state, cat, "begging", 1, false, MINUTES_PER_HOUR);
         return start(cat, "beg", itemTile(bowl), CAT_ACT_MINUTES.beg, act.target);
       }
       // «Знає міру» поїв, умивається й іде відпочивати — прояв «−», раз на годину (рішення автора 2026-10-25).
@@ -2525,13 +2527,14 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
   const victim = state.cats.find((c) => c.id === act.victim);
   const eating = victim && home(state, victim) && victim.act.kind === "eat" && victim.act.goal === null && victim.act.target === act.target;
   if (victim && eating) {
-    hiss(state, thief, victim, "bowl");
+    // Стосунки падають, лише коли злодій справді зашипів (спільна пауза шипіння, §9.12; крок 17, звірка з довідниками 2026-10-28).
+    const hissed = hiss(state, thief, victim, "bowl");
     observe(state, thief, "thief");
     const guard = traitLevel(victim, "territorial");
     // З тим, з ким пара ще не відійшла від бійки, «Охоронець» не б'ється (§9.4, «Пауза пари»).
     if (guard > 0 && !truced(state, thief, victim) && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim, rng);
     changeMood(state, victim, THIEF.victimMood, "відігнали від миски");
-    changeRelation(state, victim, thief, THIEF.relation);
+    if (hissed) changeRelation(state, victim, thief, THIEF.relation);
     backAway(state, victim, thief);
   }
   start(thief, "eat", null, eatMinutes(thief), act.target);
@@ -4580,7 +4583,8 @@ function groomedKitten(state: GameState, cat: Cat): void {
   changeMood(state, kitten, NURTURING.groomMood);
   changeRelation(state, cat, kitten, NURTURING.groomRelation);
   emit(state, { type: "groomed", cat: cat.id, friend: kitten.id });
-  observe(state, cat, "nurturing");
+  // Раз на годину, як і сон з кошеням (§9.12 «Турбота про кошенят»; крок 17, звірка з довідниками 2026-10-28).
+  observe(state, cat, "nurturing", 1, false, NURTURING.observeEvery);
 }
 
 /** Поки «Нянька» спить, обійнявши кошеня, малому тепло (§9.12, «Турбота про кошенят»): настрій +0,5 за годину. */

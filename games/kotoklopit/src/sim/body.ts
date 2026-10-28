@@ -16,6 +16,7 @@ import {
   LEGS,
   LOW_STAT_SPEED,
   MINUTES_PER_DAY,
+  MINUTES_PER_HOUR,
   SLIP_CHANCE,
   STUN_MINUTES,
   STUN_PAUSE_MINUTES,
@@ -159,7 +160,8 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
     const chance = LEGS.tripBase + LEGS.tripStep * traitLevel(rubbing, "legs");
     if (rng.chance(1 - (1 - chance) ** minutes) && stun(state)) {
       emit(state, { type: "tripped", cat: rubbing.id });
-      observe(state, rubbing, "legs");
+      // Раз на годину, спільно з «вісімкою» (§9.12 «Тертя об ноги»; крок 17, звірка з довідниками 2026-10-28).
+      observe(state, rubbing, "legs", 1, false, MINUTES_PER_HOUR);
       return;
     }
   }

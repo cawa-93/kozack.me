@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WEIGHT } from "./config";
+import { BATH, BATH_FEEL, BEGGING, COLLAR, ILLNESS_EFFECTS, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
 import { catnipReaction, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { cureDisease, maybeFallIll } from "./diseases";
@@ -139,9 +139,10 @@ export function bathe(state: GameState, rng: Rng): boolean {
   else if (feel.love < 0) offend(state, cat, feel.love, "купання");
   if (water > 0) {
     emit(state, { type: "purr", cat: cat.id, enjoyed: true });
-    observe(state, cat, "water");
+    observe(state, cat, "water", 1, false, WATER_PLAY.observeEvery);
   }
-  const scratched = feel.scratch > 0 && rng.chance(feel.scratch);
+  // Подряпина — травма персонажа, тож і за складністю, як інші травми (§6.5; крок 17, звірка з довідниками 2026-10-28).
+  const scratched = feel.scratch > 0 && rng.chance(feel.scratch * ILLNESS_EFFECTS.difficulty[state.difficulty]);
   if (scratched) fallIllPerson(state, "injury");
   cat.bathedDay = state.day;
   if (quality === "premium") cureDisease(state, cat, "dermatitis", rng);
@@ -156,7 +157,8 @@ export function bathe(state: GameState, rng: Rng): boolean {
     startAct(cat, "hide", spot.at, BATH.hideMinutes, spot.target);
     emit(state, { type: "cat-broke-free", cat: cat.id });
   }
-  if (scratched || water <= -2) observe(state, cat, "water", -1);
+  // Раз на годину, як і втеча з ванної (§9.12 «Любов до води»; крок 17, звірка з довідниками 2026-10-28).
+  if (scratched || water <= -2) observe(state, cat, "water", -1, false, WATER_PLAY.observeEvery);
   return true;
 }
 

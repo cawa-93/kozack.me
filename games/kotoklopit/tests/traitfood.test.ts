@@ -422,6 +422,19 @@ describe("«Жебракування» (рішення автора 2026-10-25)"
   });
 });
 
+describe("прояви — не частіше ніж раз на годину (крок 17, звірка з довідниками 2026-10-28)", () => {
+  it("«Водобоязнь» двічі поспіль на купанні — прояв зараховано раз", () => {
+    const save = game();
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    const cat = withCat(save, { water: -2 });
+    for (let i = 0; i < 2; i++) {
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      bathe(save.current, createRng(i + 1));
+    }
+    expect(seen(cat, "water")).toBe(1);
+  });
+});
+
 describe("«Злодійство» (рішення автора 2026-10-25)", () => {
   it("«Злодюжка» відтісняє іншого кота від миски: шипить, той відходить голодний, стосунки псуються", () => {
     for (let seed = 0; seed < 30; seed++) {
