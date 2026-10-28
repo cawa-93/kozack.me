@@ -69,8 +69,11 @@ export const fatigueFactor = (cat: Cat): number => (hasDisease(cat, "cold") || h
 export const sleepFactor = (cat: Cat): number => (hasDisease(cat, "fleas") ? SYMPTOMS.fleasSleep : 1);
 export const hungerFactor = (cat: Cat): number => (hasDisease(cat, "worms") ? SYMPTOMS.wormsHunger : 1);
 export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") || hasDisease(cat, "urolithiasis") ? SYMPTOMS.cystitisToilet : 1);
-/** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»). */
-export const walkFactor = (cat: Cat): number => (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1);
+/** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»); старечі болячки — повільніший. */
+export const walkFactor = (cat: Cat): number =>
+  (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) * (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1) * (hasDisease(cat, "senior") ? SYMPTOMS.seniorWalk : 1);
+/** Застуда й розлад шлунка: кіт менше їсть — з миски пів порції, як слабкий (§9.5; крок 17, звірка з довідниками 2026-10-28). */
+export const eatsLess = (cat: Cat): boolean => hasDisease(cat, "cold") || hasDisease(cat, "stomach");
 /** Ожиріння (§9.5, §9.12): менше грається й не лізе нагору. */
 export const isObese = (cat: Cat): boolean => hasDisease(cat, "obesity");
 /** Нагору не стрибне: з ожирінням (§9.12) чи травмою (§9.5, рішення автора 2026-10-27, Х6). */

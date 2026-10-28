@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { climbWeight, decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE } from "../src/sim/config";
+import { BATH, DISEASES, ILLNESS, LOW_HEALTH, MEDICINE, SYMPTOMS } from "../src/sim/config";
 import { afterMeal, fallIll, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
@@ -475,6 +475,24 @@ describe("дієта, спокій і травма (§9.5)", () => {
     cat.arrivedDay = -10;
     nightlyDiseases(save.current, sure());
     expect(hasDisease(cat, "cystitis")).toBe(true);
+  });
+
+  it("старечі болячки — кіт повільніший; застуда — з миски пів порції без прояву «Апетиту»", () => {
+    const save = withCatCorner(game());
+    const cat = withCat(save);
+    fallIll(save.current, cat, "senior");
+    expect(walkFactor(cat)).toBeCloseTo(SYMPTOMS.seniorWalk);
+    fallIll(save.current, cat, "cold");
+    const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl");
+    if (!bowl) throw new Error("немає миски");
+    bowl.food = 2;
+    bowl.foodQuality = "cheap";
+    cat.traits = [{ group: "appetite", level: -1, seen: 0, known: false }];
+    cat.needs = { hunger: 90, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+    cat.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(cat), elapsed: 0 };
+    for (let i = 0; i < 40 && cat.act.kind === "eat"; i++) tickCats(save.current, 0.5, { present: true });
+    expect(bowl.half).toBe(true);
+    expect(cat.traits[0]?.seen).toBe(0);
   });
 
   it("травма — кіт кульгає; глисти — їсть більше", () => {

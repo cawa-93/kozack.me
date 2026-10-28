@@ -110,7 +110,7 @@ import {
   WORK_CAT,
   ZOOMIES,
 } from "./config";
-import { afterMeal, afterTheft, cannotJump, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { afterMeal, afterTheft, cannotJump, eatsLess, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
 import { takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -2115,7 +2115,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
       // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9); слабкий клює через здоров'я, не через рису.
-      if (nibble && !isWeak(cat)) observe(state, cat, "appetite", -1);
+      if (nibble && !isWeak(cat) && !eatsLess(cat)) observe(state, cat, "appetite", -1);
       // «Ненаситний» доїдає все: у мисці ще є ціла порція — з'їдає й її (рішення автора 2026-10-25). Зригує й просить ще
       // він уже після другої.
       const appetite = traitLevel(cat, "appetite");
@@ -2667,9 +2667,9 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           act.minutes = Math.min(act.minutes, SNIFF_MINUTES);
           return;
         }
-        // Дуже слабкий кіт (§9.5, Х4) теж з'їдає лише пів порції.
+        // Дуже слабкий кіт (§9.5, Х4) і хворий на застуду чи розлад шлунка теж з'їдають лише пів порції.
         const appetite = traitLevel(cat, "appetite");
-        act.nibble = isWeak(cat) || (appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite)));
+        act.nibble = isWeak(cat) || eatsLess(cat) || (appetite < 0 && rng.chance(Math.min(APPETITE.halfMax, APPETITE.halfStep * -appetite)));
         // Кіт сів їсти — злодій поруч може піти відтіснити його (§9.12, «Злодійство»).
         bowlThief(state, cat, rng);
         // «Ділиться» їсть з однієї миски з іншим котом, хоч є й вільна, — прояв «Територіальності −» (§9.12).

@@ -1014,6 +1014,8 @@ export const SYMPTOMS = {
   wormsHunger: 1.3,
   cystitisToilet: 2,
   limp: 0.6,
+  /** Старечі болячки: кіт повільніший (`DISEASES.md`; крок 17, звірка з довідниками 2026-10-28). */
+  seniorWalk: 0.9,
   stomachVomit: 0.3,
   outsideLitter: 0.3,
   /** Скільки разів на годину видно чхання, свербіж, тертя очей. */
