@@ -953,6 +953,8 @@ export interface NightReport {
   lostCats: number[];
   /** Коти, яких забрали нові господарі (§9.8). */
   givenCats: number[];
+  /** Оголошення, зняті вночі: кішка народила й годує кошенят (у старих звітах — немає). */
+  keptCats?: number[];
   newCats: number[];
   utilities: UtilitiesReport | null;
   /** Гроші тижня, що закінчився (§6.4, «Куди йдуть гроші»): лише в ніч на понеділок. */

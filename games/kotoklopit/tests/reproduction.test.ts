@@ -192,6 +192,42 @@ describe("імена й тексти: перевірка розмноження 
   });
 });
 
+describe("повторна перевірка розмноження 2026-10-28", () => {
+  it("кошенята біля матері нагорі — поруч одне з одним, а не в одній точці; з новонародженим на руках офісу в звичайний день немає", () => {
+    const save = game();
+    const mother = withCat(save, "female");
+    const kittens = [0, 1, 2].map((i) => {
+      const k = createCat(save.current, createRng(i + 1), { source: "born", ageWeeks: 0 });
+      k.parents = { mother: mother.id, father: null };
+      addCat(save.current, k);
+      return k;
+    });
+    const fridge = objectById("fridge");
+    if (!fridge) throw new Error("немає холодильника");
+    mother.x = fridge.x + 0.5;
+    mother.y = fridge.y + 0.5;
+    mother.act = { kind: "sleep", target: "high", goal: null, minutes: 300, elapsed: 0 };
+    tickCats(save.current, 1, { present: true });
+    expect(new Set(kittens.map((k) => k.x.toFixed(2))).size).toBeGreaterThan(1);
+    save.current.character.held = { kind: "cat", cat: kittens[0]?.id ?? 0 };
+    save.current.modifiers.day = null;
+    expect(tripBlocker(save.current, "office")).toBe("office");
+    expect(tripBlocker(save.current, "vet")).toBe("newborn");
+  });
+
+  it("оголошення на кішку, що народила цієї ночі, знято — і звіт ночі це каже", () => {
+    const scenario = FILE_SCENARIOS["birth-tomorrow"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const murka = save.current.cats[0];
+    if (!murka) throw new Error("немає кішки");
+    expect(advertise(save.current, murka)).toBe(true);
+    const report = goToSleep(save);
+    expect(report?.keptCats).toEqual([murka.id]);
+    expect(save.current.cats).toContain(murka);
+  });
+});
+
 describe("віддати кота (§9.8)", () => {
   it("за 7 днів після появи — весь бонус, пізніше — −15", () => {
     const save = game();

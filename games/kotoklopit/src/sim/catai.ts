@@ -3081,7 +3081,12 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (isNewborn(cat)) return nurse(state, cat);
   if (cat.act.target === "robot") ride(state, cat);
   // Ішов спати в барабан, а машину тим часом запустили — туди вже не лягає (перевірка побуту 2026-10-28: спав у машині, що пере).
-  if (cat.act.kind === "sleep" && cat.act.target === "washer" && state.home.washer.state !== "idle") cat.act = idleAct(2);
+  if (cat.act.kind === "sleep" && cat.act.target === "washer" && state.home.washer.state !== "idle") {
+    cat.act = idleAct(2);
+    // Уже ступив у барабан — виходить (повторна перевірка розмноження й побуту 2026-10-28: лишався в машині, що пере).
+    const washer = objectById("washer");
+    if (Math.floor(cat.x) === washer.x && Math.floor(cat.y) === washer.y) cat.y += 1;
+  }
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
   doorCall(state, cat, minutes, rng);
@@ -3294,7 +3299,9 @@ function nurse(state: GameState, kitten: Cat): void {
   if (mother && mother.away === null && !isCarried(state, mother) && asleep(mother)) {
     // Лягають біля неї на підлозі: мати, що спить на холодильнику, шафі чи комп'ютері, лишала там кошенят, і їх не було як
     // зняти (перевірка розмноження 2026-10-28).
-    const spot = visibleFloorNear(state, { x: mother.x + ((kitten.id % 3) - 1) * 0.25, y: mother.y + 0.15 });
+    // Спершу підлога біля матері, потім зсув кошеняти в межах тієї клітинки (повторна перевірка розмноження й побуту 2026-10-28: усі стояли в одній точці).
+    const base = visibleFloorNear(state, { x: mother.x, y: mother.y + 0.15 });
+    const spot = visibleFloorNear(state, { x: base.x + ((kitten.id % 3) - 1) * 0.25, y: base.y });
     kitten.x = spot.x;
     kitten.y = spot.y;
   }

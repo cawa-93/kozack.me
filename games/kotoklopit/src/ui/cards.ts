@@ -92,6 +92,10 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
     // `[одне|кілька]`: «чоловіча» форма — одне кошеня.
     events.push([fill(BIRTH_MESSAGE, kittens.length === 1 ? "male" : "female", values)]);
   }
+  for (const id of night?.keptCats ?? []) {
+    const cat = state.cats.find((c) => c.id === id);
+    if (cat) events.push([`Оголошення про ${cat.name} знято: годує кошенят, поки що лишається вдома.`]);
+  }
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;

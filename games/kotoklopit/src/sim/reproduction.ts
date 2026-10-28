@@ -131,7 +131,10 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
         sex,
         name: pickCatName(rng, sex, [...state.cats, ...born].map((c) => c.name)),
         // Гніздо — на підлозі біля матері (перевірка розмноження 2026-10-28: кошенята з'являлися там, де вона була, — і нагорі).
-        at: visibleFloorNear(state, { x: mother.x + (rng.next() - 0.5) * 0.6, y: mother.y + 0.2 }),
+        at: (() => {
+          const base = visibleFloorNear(state, { x: mother.x, y: mother.y + 0.2 });
+          return visibleFloorNear(state, { x: base.x + (rng.next() - 0.5) * 0.6, y: base.y });
+        })(),
       });
       kitten.genes = inheritGenes(rng, sex, mother.genes, father.genes);
       kitten.shape = inheritShape(rng, mother.shape, father.shape);

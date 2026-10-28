@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { ACCIDENT, BREEDING, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, canSterilize, shelterCats, tripCat, vetManner } from "../sim/destinations";
 import { giveAwayBlocker } from "../sim/farewell";
 import { breedById } from "../sim/breeds";
@@ -151,7 +151,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       else if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(`Порода: ${breedText(cat.breed, cat.breedKnown)}.`);
-      if (!cat.sterilized && !canSterilize(cat)) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "замалий: оперують з 2 тижнів"));
+      if (!cat.sterilized && !canSterilize(cat)) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", `замале: оперують з ${BREEDING.minAge} тижнів`));
       else if (!cat.sterilized)
         body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
@@ -234,7 +234,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       // Новонароджених і їхню матір не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
       const blocker = cat ? giveAwayBlocker(state, cat) : null;
       if (cat && blocker === "newborn") body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
-      else if (cat && blocker === "nursing") body.push(row(`${cat.name} → притулок`, "годує новонароджених — поки що лишається вдома"));
+      else if (cat && blocker === "nursing") body.push(row(`${cat.name} → притулок`, "годує новонароджених — поки не віддати"));
       else if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
       break;
     }

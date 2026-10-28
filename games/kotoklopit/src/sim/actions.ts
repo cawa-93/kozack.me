@@ -348,7 +348,7 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
       if (held !== null) return refuse(state, id, "hands-full");
       // Порожній лоток без наповнювача в запасі нічим наповнити (перевірка побуту 2026-10-28: «чистка» забирала −3 і
       // лишала лоток порожнім, і так без кінця).
-      if (item.litter === null && supplyCount(state, "litter") === 0) return refuse(state, id, { reason: "empty", product: "litter" });
+      if (item.litter === null && item.uses === 0 && supplyCount(state, "litter") === 0) return refuse(state, id, { reason: "empty", product: "litter" });
       return canUse(state, { type: "item", id, item }) ? null : refuse(state, id, "clean");
     case "toy":
       if (held !== null) return refuse(state, id, "hands-full");
@@ -617,6 +617,8 @@ function holdTick(state: GameState, minutes: number): boolean {
     // почалися б за мить натискання, зсадили б його з умивальника, і натискання брало б кота на руки (перевірка етапу
     // 2026-10-25).
     else if (target.type === "cat" && catOnSink(state) === target.cat) return false;
+    // Кота в барабані не гладять: натискання виганяє його (`tap`), а пестощі за мить натискання будили б його (повторна перевірка розмноження й побуту 2026-10-28).
+    else if (target.type === "cat" && catInWasher(state) === target.cat) return false;
     else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
     else {
       character.activity = { kind: "use", target: target.id, progress: 0 };

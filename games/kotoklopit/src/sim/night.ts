@@ -24,13 +24,13 @@ import {
   NOCTURNAL,
   CAT_ACT_MINUTES,
 } from "./config";
-import { addSupply, payUtilities, place, postponeDeliveries } from "./economy";
+import { addSupply, freeSlots, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { agingDiseases, isHurting, maybeFallIll, nightlyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
 import { nightlyCare } from "./care";
 import { nightlyHousehold, tickHousehold } from "./household";
-import { collectAds, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
+import { collectAds, giveAwayBlocker, oldAgeDeaths, zeroHealthDeaths } from "./farewell";
 import { objectById, roomAt } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
 import { loudNoise } from "./noise";
@@ -370,8 +370,9 @@ export function giveStarterPack(state: GameState): void {
   // Без мисок і лотка кіт не проживе й ночі: притулок дає найпростіші, якщо вдома їх немає.
   for (const thing of ["bowl", "water", "litter"] as const) {
     if (state.home.items.some((i) => i.kind === thing)) continue;
-    // Така річ уже їде: притулок свою не дає, інакше вона займала б місце, і оплачена мовчки пропадала (перевірка побуту 2026-10-28).
-    if ([...state.home.deliveries, ...state.home.porch].some((d) => "thing" in d && d.thing === thing)) continue;
+    // Місця не лишилося після речей, що вже їдуть: притулок свою не дає, інакше оплачена мовчки пропала б (перевірка побуту
+    // 2026-10-28); місце є — дає, щоб новий кіт не чекав доставки (повторна перевірка розмноження й побуту 2026-10-28).
+    if (freeSlots(state, thing) <= 0) continue;
     const item = place(state, thing, "cheap");
     if (item) state.home.items.push(item);
   }
@@ -381,6 +382,11 @@ export function giveStarterPack(state: GameState): void {
 function morning({ state, report, rng }: Night): void {
   nightlyHousehold(state, rng);
   // Нові господарі приїжджають по котів за оголошеннями (§9.8) — це втрата, тож раніше за бонус нових котів (§4: спершу втрати).
+  // Кішка народила цієї ночі й годує — її не віддають, і титулка скаже, що оголошення знято (повторна перевірка розмноження й побуту 2026-10-28: зникало мовчки).
+  report.keptCats = state.ads.filter((id) => {
+    const cat = state.cats.find((c) => c.id === id);
+    return cat !== undefined && giveAwayBlocker(state, cat) !== null;
+  });
   for (const entry of collectAds(state)) report.givenCats.push(entry.id);
   applyMorningSanity(state, report.lostCats.length, report.newCats.length);
   const character = state.character;

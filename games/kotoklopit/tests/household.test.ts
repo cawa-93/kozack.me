@@ -136,6 +136,32 @@ describe("перевірка побуту 2026-10-28", () => {
     expect(save.current.character.holdSpent).toBe(true);
   });
 
+  it("кота в барабані не гладять утриманням за мить натискання; брудний лоток без наповнювача чистять без відмови (повторна перевірка 2026-10-28)", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.character.held = null;
+    cat.x = 10.5;
+    cat.y = 1.5;
+    cat.act = { kind: "sleep", target: "washer", goal: null, minutes: 300, elapsed: 0 };
+    standAt(save, "washer");
+    const { events, stop } = recordEvents();
+    advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(events.some((e) => e.type === "cat-mood")).toBe(false);
+    expect(save.current.character.activity).toBeNull();
+
+    const box = save.current.home.items.find((i): i is LitterItem => i.kind === "litter");
+    if (!box) throw new Error("немає лотка");
+    box.litter = null;
+    box.uses = 1;
+    save.current.home.supplies.litter = { cheap: 0, premium: 0 };
+    walkTo(save, `item:${box.id}`);
+    const refusals = recordEvents();
+    interact(save);
+    refusals.stop();
+    expect(refusals.events.some((e) => e.type === "refused")).toBe(false);
+  });
+
   it("кіт, що йшов спати в барабан, туди не лягає, коли машину запустили", () => {
     const save = game();
     const cat = held(save);
@@ -174,12 +200,17 @@ describe("перевірка побуту 2026-10-28", () => {
     expect([cat.act.kind, cat.act.target]).toEqual(["beg", "bowl"]);
   });
 
-  it("стартовий пакет притулку не ставить поїлку, що вже їде; кіт, чий лоток зник дорогою, іде до іншого", () => {
+  it("стартовий пакет притулку не займає місця, на яке вже їдуть поїлки; є місце — дає свою; кіт, чий лоток зник дорогою, іде до іншого", () => {
     const save = game();
     save.current.home.items = save.current.home.items.filter((i) => i.kind !== "water");
-    save.current.home.deliveries.push({ id: 900, quality: "cheap", at: 99999, thing: "water" });
+    const slots = freeSlots(save.current, "water");
+    for (let i = 0; i < slots; i++) save.current.home.deliveries.push({ id: 900 + i, quality: "cheap", at: 99999, thing: "water" });
     giveStarterPack(save.current);
     expect(save.current.home.items.some((i) => i.kind === "water")).toBe(false);
+    // Їде лише одна — місце є, і новий кіт не чекає доставки (повторна перевірка 2026-10-28).
+    save.current.home.deliveries = [{ id: 900, quality: "cheap", at: 99999, thing: "water" }];
+    giveStarterPack(save.current);
+    expect(save.current.home.items.some((i) => i.kind === "water")).toBe(true);
 
     const cat = held(save);
     save.current.character.held = null;

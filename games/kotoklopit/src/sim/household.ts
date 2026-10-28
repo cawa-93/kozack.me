@@ -63,8 +63,8 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   }
   const cat = catInWasher(state);
   if (cat) {
-    // Застали кота в барабані — прояв «Допитливості» (§9.9).
-    observe(state, cat, "curiosity");
+    // Застали кота в барабані — прояв «Допитливості» (§9.9), якщо сон у барабані ще не помітили (повторна перевірка розмноження й побуту 2026-10-28: зараховувався двічі).
+    if (cat.act.kind !== "sleep" || cat.act.seen !== true) observe(state, cat, "curiosity");
     cat.y += 1;
     cat.act = { kind: "idle", target: null, goal: null, minutes: 2, elapsed: 0 };
     emit(state, { type: "laundry", stage: "cat", cat: cat.id });

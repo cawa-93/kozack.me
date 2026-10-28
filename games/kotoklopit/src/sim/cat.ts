@@ -76,7 +76,8 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
   const at = options.at ?? { x: 10.5, y: 10.5 };
   const cat: Cat = {
     id: state.nextId++,
-    name: options.name ?? pickCatName(rng, sex, [...state.cats.map((c) => c.name), ...(options.taken ?? [])]),
+    // Не повторювати й імен котів притулку та розплідника цього тижня: їх ще можуть узяти (повторна перевірка 2026-10-28).
+    name: options.name ?? pickCatName(rng, sex, [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])].map((c) => c.name).concat(options.taken ?? [])),
     sex,
     source: options.source,
     ageWeeks: options.ageWeeks,

@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, THINGS } from "../sim/config";
 import { discard, discardAppliance, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
@@ -19,7 +19,7 @@ import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/ho
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes } from "../sim/time";
-import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Sex } from "../sim/types";
+import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
@@ -1225,6 +1225,7 @@ export class DayScene extends Phaser.Scene {
           decideFoundling(this.state, false);
           this.overlay.close();
           carryFoundling(this.session.save);
+          this.viewport.jump();
         },
       ),
     );
@@ -1329,11 +1330,11 @@ export class DayScene extends Phaser.Scene {
     if (this.blocked()) return;
     // Підказку телефоном побачено (§6.4).
     seePhoneHints(this.state);
-    const confirmDiscard = (name: string, done: () => void): void =>
+    const confirmDiscard = (kind: ThingKind, done: () => void): void =>
       this.overlay.show({
         kicker: "Речі",
-        title: `Викинути: ${name.toLowerCase()}?`,
-        body: ["Повернути її не можна. Комунальні зменшаться з наступного тижня."],
+        title: `Викинути: ${THING_TITLES[kind].toLowerCase()}?`,
+        body: [`Повернути не можна.${THINGS[kind].utilities > 0 ? " Комунальні зменшаться з наступного тижня." : ""}`],
         actions: [
           {
             label: "Викинути",
@@ -1355,18 +1356,18 @@ export class DayScene extends Phaser.Scene {
             show(tab);
           },
           // Викинути — назавжди: спершу картка-підтвердження (перевірка побуту 2026-10-28: подвійний дотик викидав другу річ).
-          discard: (item: HomeItem) => confirmDiscard(THING_TITLES[item.kind], () => discard(this.state, item.id)),
+          discard: (item: HomeItem) => confirmDiscard(item.kind, () => discard(this.state, item.id)),
           discardThing: (thing) =>
             "appliance" in thing
-              ? confirmDiscard(THING_TITLES[thing.appliance], () => discardAppliance(this.state, thing.appliance))
-              : confirmDiscard(THING_TITLES.feeder, () => discardFeeder(this.state, thing.feeder)),
+              ? confirmDiscard(thing.appliance, () => discardAppliance(this.state, thing.appliance))
+              : confirmDiscard("feeder", () => discardFeeder(this.state, thing.feeder)),
           // Віддати — назавжди: спершу картка з ціною (перевірка розмноження 2026-10-28: був один дотик без підтвердження).
           advertise: (cat) =>
             this.overlay.show({
               kicker: "Віддати в добрі руки",
-              title: `Віддати ${cat.name}?`,
+              title: "Віддати в добрі руки?",
               body: [
-                `Завтра вранці ${cat.name} поїде до нових господарів. Здоровий глузд ${Math.round(giveAwayLoss(this.state, cat, this.state.day + 1))}${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? " — увесь бонус за нового кота: минуло менше тижня" : ""}.`,
+                `${cat.name} завтра вранці поїде до нових господарів. Здоровий глузд −${Math.round(-giveAwayLoss(this.state, cat, this.state.day + 1))}${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? " — увесь бонус за нового кота: минуло менше тижня" : ""}.`,
               ],
               actions: [
                 {

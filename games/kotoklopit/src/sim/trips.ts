@@ -41,14 +41,15 @@ export function canLeave(state: GameState): boolean {
 /** Чому сюди зараз не поїхати; null — можна. */
 export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "newborn" | "office" | "show" | null {
   const cat = heldCat(state);
-  // Новонароджене лежить біля матері (§9.8): у переноску його не саджають (перевірка розмноження 2026-10-28).
-  if (cat && isNewborn(cat)) return "newborn";
   // Виставка — лише в її день і раз (§4.1): раніше можна було їздити знову й знову по призи (перевірка поїздок 2026-10-28).
   if (destination === "show" && (state.modifiers.day !== "show" || state.today.showDone === true)) return "show";
   // Офіс — лише в день зборів, раз і в робочий день: після зборів (і пропущених о 18:00) туди нема чого їхати (перевірка циклу
   // гри 2026-10-27), а безробітному, на лікарняному й у відпустці — теж; з котом на руках у списку не з'являється (перевірка
   // поїздок 2026-10-28).
   if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || !isWorkday(state))) return "office";
+  // Новонароджене лежить біля матері (§9.8): у переноску його не саджають (перевірка розмноження 2026-10-28) — після офісу й
+  // виставки, щоб їх, як завжди, не було в списку в інші дні (повторна перевірка розмноження й побуту 2026-10-28).
+  if (cat && isNewborn(cat)) return "newborn";
   if (TRIPS[destination].cat) {
     if (!cat) return "cat";
     if (state.home.carrier === null) return "carrier";
