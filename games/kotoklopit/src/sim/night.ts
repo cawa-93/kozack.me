@@ -35,7 +35,7 @@ import { objectById, roomAt } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
 import { conceive, giveBirth, inHeat, isNewborn, nightlyStates } from "./reproduction";
 import { chooseWeekModifier, startModifiers } from "./modifiers";
-import { createRng, seedDay, stateRng, streamSeed, type Rng } from "./rng";
+import { createRng, deriveSeed, seedDay, stateRng, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
 import { isSunday, weekOf } from "./time";
 import type { Cat, GameState, NightReport, NightStep } from "./types";
@@ -96,9 +96,13 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
     sanityEvening: sanity,
     sanityMorning: sanity,
   };
-  const night: Night = { state, report, rng: createRng(streamSeed(state.seed, "night", state.day)) };
-  for (const step of STEPS) {
+  const base = streamSeed(state.seed, "night", state.day);
+  const night: Night = { state, report, rng: createRng(base) };
+  for (const [index, step] of STEPS.entries()) {
     if (step.weekly && !report.weekly) continue;
+    // Кожен крок — своє зерно від дня: скільки чисел узяли сон і хвороби, залежить від поведінки за день, і раніше це
+    // перекидало на переграванні смерть кота, виводок, зачаття й примусове кошеня (§6.1; перевірка розмноження 2026-10-28).
+    night.rng = createRng(deriveSeed(base, index + 1));
     step.run(night);
     report.steps.push(step.id);
     // Виселення закінчує гру: решта ночі вже не обробляється (§6.4).

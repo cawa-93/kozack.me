@@ -6,8 +6,9 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { unpack } from "../src/sim/economy";
-import { advance, goToSleep, interact, newGame } from "../src/sim/game";
+import { advance, carryFoundling, goToSleep, interact, newGame } from "../src/sim/game";
 import { active, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { fallIll } from "../src/sim/diseases";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
@@ -118,6 +119,45 @@ describe("ефекти (§4.1)", () => {
     const kitten = decideFoundling(save.current, true, createRng(2));
     expect(kitten?.source).toBe("foundling");
     expect(save.current.cats).toHaveLength(2);
+  });
+
+  it("знайда — умова дня: на переграванні те саме кошеня; віднести в притулок — дві години поза домом (перевірка розмноження 2026-10-28)", () => {
+    // Перегравання: поведінка котів інша (інше зерно behavior), а знайда та сама.
+    const take = (behavior: number): string => {
+      const save = game();
+      save.current.today.foundling = true;
+      save.current.rng.behavior = behavior;
+      const kitten = decideFoundling(save.current, true);
+      return `${kitten?.name} ${kitten?.sex} ${kitten?.traits.map((t) => t.group + t.level).join()}`;
+    };
+    expect(take(111)).toBe(take(222));
+    const save = game();
+    save.current.today.foundling = true;
+    save.current.minute = 7 * 60;
+    decideFoundling(save.current, false);
+    const { events, stop } = recordEvents();
+    carryFoundling(save);
+    stop();
+    expect(save.current.minute).toBe(9 * 60);
+    expect(save.current.trip).toBeNull();
+    expect(events).toContainEqual(expect.objectContaining({ type: "trip-ended", destination: "shelter" }));
+  });
+
+  it("нічні кидки кроку не залежать від того, скільки чисел узяли раніші кроки: примусове кошеня те саме (перевірка розмноження 2026-10-28)", () => {
+    const kitten = (sick: boolean): string => {
+      const save = game();
+      save.current.day = 2;
+      save.current.minute = 22 * 60;
+      save.current.character.stats.sanity = 20;
+      const cat = createCat(save.current, createRng(7), { source: "shelter", ageWeeks: 3 });
+      cat.arrivedDay = -10;
+      addCat(save.current, cat);
+      if (sick) fallIll(save.current, cat, "cold");
+      goToSleep(save);
+      const forced = save.current.cats.find((c) => c.source === "shelter-forced");
+      return `${forced?.name} ${forced?.sex} ${forced?.traits.map((t) => t.group + t.level).join()}`;
+    };
+    expect(kitten(true)).toBe(kitten(false));
   });
 
   /** День «Мама привезла гостинців» з порожніми кухонними поверхнями; повертає, коли мама подзвонить. */

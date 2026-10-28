@@ -7,13 +7,13 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, PRODUCTS, START_MONEY, START_STATS } from "./config";
+import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
 import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
-import type { RaceInput } from "./race";
+import { newRace, type RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
@@ -184,6 +184,17 @@ export function rewindAccident(save: Save): NightReport | null {
   }
   endTrip(state);
   return sleep(save, false);
+}
+
+/**
+ * Віднести знайду в притулок (§4.1): дві години персонаж поза домом — як поїздка без гонки й без картки на місці; повертаючись,
+ * відчиняє двері (перевірка розмноження 2026-10-28: раніше ці дві години гра рахувала так, ніби він удома).
+ */
+export function carryFoundling(save: Save): NightReport | null {
+  const state = save.current;
+  if (state.trip !== null || state.end !== null) return null;
+  state.trip = { destination: "shelter", phase: "visit", cat: null, race: newRace(0, 0), losses: [], visit: 0, seed: 0 };
+  return returnHome(save, MODIFIERS.foundlingShelterMinutes, 0);
 }
 
 /** Подія на місці забрала хвилини, потім персонаж їде додому без гонки (§8.5). */

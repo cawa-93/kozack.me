@@ -7,7 +7,7 @@ import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MI
 import { discard, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
-import { advance, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
+import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
@@ -1211,13 +1211,13 @@ export class DayScene extends Phaser.Scene {
     this.overlay.show(
       foundlingCard(
         () => {
-          decideFoundling(this.state, true, stateRng(this.state, "behavior"));
+          decideFoundling(this.state, true);
           this.overlay.close();
         },
         () => {
-          decideFoundling(this.state, false, stateRng(this.state, "behavior"));
+          decideFoundling(this.state, false);
           this.overlay.close();
-          advance(this.session.save, MODIFIERS.foundlingShelterMinutes);
+          carryFoundling(this.session.save);
         },
       ),
     );

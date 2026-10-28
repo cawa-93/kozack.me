@@ -13,7 +13,7 @@ import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WATER_CAPACITY
 import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
-import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
+import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
 import { weekdayOf, weekOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
@@ -195,7 +195,12 @@ export function startModifiers(state: GameState, rng: Rng): void {
 }
 
 /** Знайда (§8.5): взяти кошеня (бонус за нового кота) чи віднести в притулок. */
-export function decideFoundling(state: GameState, take: boolean, rng: Rng): Cat | null {
+/** Кидки знайди — від дня, як і умови дня (§6.1): на переграванні те саме кошеня (перевірка розмноження 2026-10-28). */
+export const foundlingRng = (state: GameState): Rng => createRng(deriveSeed(streamSeed(state.seed, "conditions", state.day), FOUNDLING_SALT));
+/** Сіль зерна знайди: відрізняє її кидки від інших кидків умов дня. */
+const FOUNDLING_SALT = 13;
+
+export function decideFoundling(state: GameState, take: boolean, rng: Rng = foundlingRng(state)): Cat | null {
   if (!state.today.foundling) return null;
   state.today.foundling = false;
   // Персонаж відчиняє двері знайді (§9.12 «Двері й гості»): і коли бере її, і коли відносить у притулок.
