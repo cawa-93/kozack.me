@@ -687,7 +687,7 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
 });
 
 describe("застрягле кошеня зістрибнуло саме (рішення автора 2026-10-28, Д2)", () => {
-  it("може травмуватися", () => {
+  it("може травмуватися; дорослий — ні", () => {
     for (const lucky of [false, true]) {
       const save = withCatCorner(game());
       const cat = withCat(save, {}, { x: 9.5, y: 7.5 }, 1);
@@ -698,6 +698,14 @@ describe("застрягле кошеня зістрибнуло саме (рі�
       expect(cat.stuck).toBeUndefined();
       expect(cat.diseases.some((d) => d.id === "injury")).toBe(!lucky);
     }
+    // Дорослий «Альпініст», що застряг, зістрибує без травми: рішення — про кошеня.
+    const save = withCatCorner(game());
+    const adult = withCat(save, { climbing: 2 }, { x: 9.5, y: 7.5 }, 4);
+    climbFridge(save, adult);
+    adult.stuck = true;
+    adult.needs.toilet = CLIMBING.jumpNeed;
+    decide(save.current, adult, { ...createRng(1), chance: () => true }, { present: true });
+    expect(adult.diseases.some((d) => d.id === "injury")).toBe(false);
   });
 });
 

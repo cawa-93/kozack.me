@@ -869,7 +869,7 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     }
     changeMood(state, cat, CLIMBING.jumpMood, "зістрибнув сам");
     // Може й травмуватися, як у бійці — без «Витривалості» й складності (рішення автора 2026-10-28, Д2): привід зняти вчасно.
-    if (rng.chance(CLIMBING.jumpInjury)) fallIll(state, cat, "injury");
+    if (isKitten(cat) && rng.chance(CLIMBING.jumpInjury)) fallIll(state, cat, "injury");
   }
   delete cat.stuck;
   if (n.toilet >= NEED_THRESHOLD.toilet) {
