@@ -1181,6 +1181,8 @@ export const BREEDING = {
 } as const;
 /** «Природа й виховання» (§9.8): шанс, що нова риса кошеняти — від батьків. */
 export const INHERIT_TRAIT_CHANCE = 0.5;
+/** Кіт із двома X (§9.10): лише він буває черепаховим чи калико — «легендарна рідкість» (перевірка розмноження 2026-10-28). */
+export const XXY_MALE = 1 / 3000;
 /** Стерилізація (§9.8): ціна, операція, відновлення. */
 export const STERILIZATION = { price: 120, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5 } as const;
 export const DOCTOR = { exam: 40 } as const;

@@ -1,6 +1,7 @@
 // Зовнішність кота (§9.10): спрощена генетика забарвлення й форми частин тіла.
 // Вигляд виводиться з генів, тож палітра реалістична, а плями лягають в анатомічному порядку.
 
+import { XXY_MALE } from "./config";
 import type { Rng } from "./rng";
 import type { Genes, Sex, Shape } from "./types";
 
@@ -32,7 +33,7 @@ const pair = <T>(make: () => T): [T, T] => [make(), make()];
 /** Випадкові гени безпородного кота (§9.10). */
 export function randomGenes(rng: Rng, sex: Sex): Genes {
   return {
-    orange: Array.from({ length: sex === "female" ? 2 : 1 }, () => rng.chance(ALLELE.orange)),
+    orange: Array.from({ length: sex === "female" || rng.chance(XXY_MALE) ? 2 : 1 }, () => rng.chance(ALLELE.orange)),
     black: pair(() => !rng.chance(ALLELE.chocolate)),
     dense: pair(() => !rng.chance(ALLELE.dilute)),
     agouti: pair(() => !rng.chance(ALLELE.solid)),
@@ -121,7 +122,8 @@ export function inheritGenes(rng: Rng, sex: Sex, mother: Genes, father: Genes): 
   const fromMother = mother.orange[rng.int(0, mother.orange.length - 1)] ?? false;
   const fromFather = father.orange[0] ?? false;
   return {
-    orange: sex === "female" ? [fromMother, fromFather] : [fromMother],
+    // Кіт отримує X лише від матері; зрідка — і від батька (XXY): тоді й він може бути черепаховим (§9.10).
+    orange: sex === "female" || rng.chance(XXY_MALE) ? [fromMother, fromFather] : [fromMother],
     black: inheritPair(rng, mother.black, father.black),
     dense: inheritPair(rng, mother.dense, father.dense),
     agouti: inheritPair(rng, mother.agouti, father.agouti),

@@ -10,7 +10,7 @@ import { tickCats } from "../src/sim/catai";
 import { breederCats, shelterCats } from "../src/sim/destinations";
 import { advertise, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
-import { inheritGenes } from "../src/sim/genetics";
+import { coatOf, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
 import { conceive, giveBirth } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
@@ -36,7 +36,9 @@ describe("генетика (§9.10)", () => {
     mother.genes.orange = [true, true];
     father.genes.orange = [false];
     for (let seed = 0; seed < 20; seed++) {
-      expect(inheritGenes(createRng(seed), "male", mother.genes, father.genes).orange).toEqual([true]);
+      // Кіт — від матері (зрідка, 1 на 3000, ще й X від батька: кіт-калико).
+      expect(inheritGenes(createRng(seed), "male", mother.genes, father.genes).orange).toEqual(expect.arrayContaining([true]));
+      expect(inheritGenes(createRng(seed), "male", mother.genes, father.genes).orange[0]).toBe(true);
       expect(inheritGenes(createRng(seed), "female", mother.genes, father.genes).orange).toEqual([true, false]);
     }
   });
@@ -50,6 +52,28 @@ describe("генетика (§9.10)", () => {
     }
     expect(inherited / 200).toBeGreaterThan(0.4);
     expect(inherited / 200).toBeLessThan(0.65);
+  });
+});
+
+describe("породи й зовнішність: перевірка розмноження 2026-10-28", () => {
+  it("абіссинська без білого й не блакитноока; британська — короткошерста, суцільна, з мідними очима; безшерстий не зригує грудок", () => {
+    for (let seed = 0; seed < 60; seed++) {
+      const save = game();
+      const aby = createCat(save.current, createRng(seed), { source: "breeder", ageWeeks: 2, breed: ["abissynska", "abissynska"] });
+      expect(coatOf(aby.genes, aby.shape).white).toBe(0);
+      expect(coatOf(aby.genes, aby.shape).eyes).not.toBe("blue");
+      const brit = createCat(save.current, createRng(seed + 100), { source: "breeder", ageWeeks: 2, breed: ["brytanska-korotkoshersta", "brytanska-korotkoshersta"] });
+      const coat = coatOf(brit.genes, brit.shape);
+      expect([coat.long, coat.white, coat.eyes]).toEqual([false, 0, "copper"]);
+      const sphynx = createCat(save.current, createRng(seed + 200), { source: "breeder", ageWeeks: 10, breed: ["sfinks", "sfinks"] });
+      expect(sphynx.traits.some((t) => t.group === "hairballs")).toBe(false);
+    }
+  });
+
+  it("кіт-калико можливий: зрідка кіт отримує X і від батька", () => {
+    const always = { ...createRng(1), chance: () => true };
+    const genes = inheritGenes(always, "male", { ...createCat(game().current, createRng(1), { source: "born", ageWeeks: 0, sex: "female" }).genes, orange: [true, false] }, { ...createCat(game().current, createRng(2), { source: "born", ageWeeks: 0, sex: "male" }).genes, orange: [false] });
+    expect(genes.orange).toHaveLength(2);
   });
 });
 

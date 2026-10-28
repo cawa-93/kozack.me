@@ -192,8 +192,11 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const hour = hourOf(state.minute);
   const night = hour >= 23 || hour < 5;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
+  // Безшерстий шерсті не ковтає — і грудок не зригує (перевірка розмноження 2026-10-28).
   const rate =
-    HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step) * traitFactor(cat, "shedding", HAIRBALL.sheddingStep);
+    cat.shape.coat === "hairless"
+      ? 0
+      : HAIRBALL.perHour * (night ? HAIRBALL.night : 1) * (long ? HAIRBALL.longHair : 1) * traitFactor(cat, "hairballs", HAIRBALL.step) * traitFactor(cat, "shedding", HAIRBALL.sheddingStep);
   // Мітить (§9.8): некастрований кіт; схильний до міток — і стерилізований, і кішка, від тригерів частіше; «Ніколи не
   // мітить» — ніколи (рішення автора 2026-10-25).
   const marking = traitLevel(cat, "marking");
