@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { breedById, isPurebred, MIXED } from "../src/sim/breeds";
+import { breedById, isPurebred, knownBreedHalves, MIXED } from "../src/sim/breeds";
 import { addTrait, createCat } from "../src/sim/cat";
 import { highPlaceOf, tickCats } from "../src/sim/catai";
 import { breederCats, canSterilize, shelterCats, sterilizeBlocker } from "../src/sim/destinations";
@@ -12,7 +12,7 @@ import { objectById } from "../src/sim/home";
 import { tripBlocker } from "../src/sim/trips";
 import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
-import { coatOf, inheritGenes } from "../src/sim/genetics";
+import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
 import { conceive, giveBirth } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
@@ -71,6 +71,32 @@ describe("породи й зовнішність: перевірка розмн�
       expect([coat.long, coat.white, coat.eyes]).toEqual([false, 0, "copper"]);
       const sphynx = createCat(save.current, createRng(seed + 200), { source: "breeder", ageWeeks: 10, breed: ["sfinks", "sfinks"] });
       expect(sphynx.traits.some((t) => t.group === "hairballs")).toBe(false);
+    }
+  });
+
+  it("крок 17: «суцільні» не колорпойнт, дикий малюнок без білого; у напівкровки очі породи — не завжди; видно саму породу; породні форми лише з породою", () => {
+    const save = game();
+    let britishEyes = 0;
+    for (let seed = 0; seed < 80; seed++) {
+      const bomb = createCat(save.current, createRng(seed), { source: "breeder", ageWeeks: 2, breed: ["bombeiska", "bombeiska"] });
+      expect(coatOf(bomb.genes, bomb.shape).pointed).toBe(false);
+      const mau = createCat(save.current, createRng(seed + 300), { source: "breeder", ageWeeks: 2, breed: ["iehypetska-mau", "iehypetska-mau"] });
+      expect(coatOf(mau.genes, mau.shape).white).toBe(0);
+      const half = createCat(save.current, createRng(seed + 600), { source: "shelter", ageWeeks: 2, breed: ["brytanska-korotkoshersta", MIXED] });
+      if (half.genes.eyes === 2) britishEyes += 1;
+    }
+    expect(britishEyes).toBeGreaterThan(40);
+    expect(britishEyes).toBeLessThan(80);
+    expect(knownBreedHalves(save.current, ["siamska", MIXED], createRng(1))).toEqual([true, false]);
+    // Безпородне кошеня від напівсфінкса не безшерсте; чистокровний сфінкс — безшерстий завжди.
+    for (let seed = 0; seed < 40; seed++) {
+      const shape = { muzzle: "normal", ears: "large", tail: "long", build: "stocky", legs: "normal", coat: "hairless" } as const;
+      const mixed = { ...shape };
+      fitBreedForms(createRng(seed), mixed, [], false);
+      expect(mixed.coat).toBeNull();
+      const pure = { ...shape, coat: null };
+      fitBreedForms(createRng(seed), pure, [breedById("sfinks")], true);
+      expect(pure.coat).toBe("hairless");
     }
   });
 

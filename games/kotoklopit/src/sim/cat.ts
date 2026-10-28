@@ -119,7 +119,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
   // Зовнішність породи поверх випадкових генів (§9.11).
   const [a, b] = cat.breed;
   const pure = a === b && a !== MIXED;
-  for (const half of pure ? [a] : [a, b]) if (half !== MIXED) applyBreedLook(rng, cat.genes, cat.shape, breedById(half), pure);
+  for (const [i, half] of (pure ? [a] : [a, b]).entries()) if (half !== MIXED) applyBreedLook(rng, cat.genes, cat.shape, breedById(half), pure, i === 0 ? 0 : 1);
   for (let i = 0; i < options.ageWeeks; i++) addTrait(cat, rng, 0.5);
   const known = Math.min(options.knownTraits ?? 0, cat.traits.length);
   for (const trait of cat.traits.slice(0, known)) trait.known = true;

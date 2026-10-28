@@ -4,8 +4,8 @@ import { changeMood, createCat } from "./cat";
 import { visibleFloorNear } from "./catmove";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
-import { knownBreedHalves } from "./breeds";
-import { inheritBreed, inheritGenes, inheritShape } from "./genetics";
+import { breedById, knownBreedHalves, MIXED } from "./breeds";
+import { fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
 import { chooseWeekModifier } from "./modifiers";
 import { isEnemy, isFriend } from "./relations";
@@ -142,6 +142,8 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
       kitten.genes = inheritGenes(rng, sex, mother.genes, father.genes);
       kitten.shape = inheritShape(rng, mother.shape, father.shape);
       kitten.breed = inheritBreed(rng, mother.breed, father.breed);
+      const [ka, kb] = kitten.breed;
+      fitBreedForms(rng, kitten.shape, [ka, kb].filter((id) => id !== MIXED).map(breedById), ka === kb && ka !== MIXED);
       // Що видно про породу — за складністю, як у притулку (§9.11): раніше кошеня показувало приховану половину матері.
       kitten.breedKnown = knownBreedHalves(state, kitten.breed, rng);
       kitten.parents = { mother: mother.id, father: pregnancy.father };

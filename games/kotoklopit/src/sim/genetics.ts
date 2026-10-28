@@ -145,6 +145,22 @@ export function inheritShape(rng: Rng, mother: Shape, father: Shape): Shape {
   return { muzzle: pick("muzzle"), ears: pick("ears"), tail: pick("tail"), build: pick("build"), legs: pick("legs"), coat: pick("coat") };
 }
 
+/** Форми, які бувають лише від породи (§9.10, «Розширення моделі»): кошеня має їх, лише якщо має й саму породу (крок 17, звірка з довідниками 2026-10-28). */
+const BREED_FORMS: { [K in keyof Shape]?: readonly Shape[K][] } = { ears: ["tufted", "folded", "curled"], tail: ["none", "bobtail"], legs: ["short"], coat: ["hairless", "curly"] };
+
+/**
+ * Породні форми кошеняти за його породою: форму, якої немає в жодної з його порід, замінює звичайна; чистокровне має форми
+ * своєї породи напевно, як і в притулку (раніше безпородне кошеня від напівсфінкса бувало безшерстим, а чистокровне — ні).
+ */
+export function fitBreedForms(rng: Rng, shape: Shape, looks: readonly BreedLook[], pure: boolean): void {
+  const plain = randomShape(rng);
+  const s = shape as unknown as Record<string, unknown>;
+  for (const [key, forms] of Object.entries(BREED_FORMS) as [keyof Shape, readonly unknown[]][]) {
+    if (forms.includes(s[key]) && !looks.some((l) => l.shape?.[key] === s[key])) s[key] = plain[key];
+  }
+  if (pure) for (const look of looks) for (const [key, value] of Object.entries(look.shape ?? {})) s[key] = value;
+}
+
 /** Порода кошеняти (§9.11): по одній породі від кожного з батьків. */
 export function inheritBreed(rng: Rng, mother: readonly [string, string], father: readonly [string, string]): [string, string] {
   return [mother[rng.int(0, 1)] ?? mother[0], father[rng.int(0, 1)] ?? father[0]];
@@ -160,11 +176,14 @@ export interface BreedLook {
  * Зовнішність породи поверх випадкових генів (§9.11): чистокровний має гени й форми породи напевно,
  * напівкровка — по одному алелю й кожну форму з імовірністю 50%.
  */
-export function applyBreedLook(rng: Rng, genes: Genes, shape: Shape, look: BreedLook, pure: boolean): void {
+export function applyBreedLook(rng: Rng, genes: Genes, shape: Shape, look: BreedLook, pure: boolean, half: 0 | 1 = 0): void {
   const g = genes as unknown as Record<string, unknown>;
   for (const [key, pair] of Object.entries(look.genes ?? {})) {
-    if (Array.isArray(pair)) g[key] = pure ? [...pair] : [pair[0], (g[key] as unknown[])[1]];
-    else g[key] = pair;
+    // Напівкровка: алель — у половину своєї породи (дві породи не затирають одна одну), очі — з імовірністю 50% (крок 17, звірка з довідниками 2026-10-28).
+    if (Array.isArray(pair)) {
+      const current = g[key] as unknown[];
+      g[key] = pure ? [...pair] : half === 0 ? [pair[0], current[1]] : [current[0], pair[0]];
+    } else if (pure || rng.chance(0.5)) g[key] = pair;
   }
   if (look.noOrange && pure) genes.orange = genes.orange.map(() => false);
   const s = shape as unknown as Record<string, unknown>;

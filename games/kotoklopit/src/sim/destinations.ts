@@ -23,7 +23,7 @@ import {
   UNSOLD,
   VET,
 } from "./config";
-import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS } from "./breeds";
+import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS, shelterBreed } from "./breeds";
 import { cureDisease } from "./diseases";
 import { isNursing } from "./reproduction";
 import { canOrderProduct, freeSlots, place, spendingOf, stash } from "./economy";
@@ -255,11 +255,7 @@ export function shelterCats(state: GameState): Cat[] {
     for (let i = 0; i < SHELTER.cats; i++) {
       const ageWeeks = rng.int(SHELTER.minAge, SHELTER.maxAge);
       // Здебільшого безпородні; зрідка — порода, навпіл чистокровна й напівкровка (§8.5).
-      let breed: [string, string] = [MIXED, MIXED];
-      if (rng.chance(SHELTER.breed)) {
-        const real = PUREBREEDS[rng.int(0, PUREBREEDS.length - 1)]?.id ?? MIXED;
-        breed = rng.chance(0.5) ? [real, real] : [real, MIXED];
-      }
+      const breed = shelterBreed(rng, SHELTER.breed);
       const cat = createCat(state, rng, { source: "shelter", ageWeeks, breed, knownTraits: SHELTER.visibleTraits[state.difficulty], taken: cats.map((c) => c.name) });
       cat.breedKnown = knownBreedHalves(state, breed, rng);
       // Притулок каже, чи кіт стерилізований (§9.8).

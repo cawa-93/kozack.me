@@ -2,7 +2,7 @@
 
 import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
-import { knownBreedHalves } from "./breeds";
+import { knownBreedHalves, shelterBreed } from "./breeds";
 import { observe, setWitnessing } from "./knowledge";
 import { ageCat, ageDue, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
@@ -14,6 +14,7 @@ import {
   MODIFIERS,
   ILLNESS,
   KITTEN_AGE_WEEKS,
+  SHELTER,
   KITTEN_SANITY_THRESHOLD,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
@@ -348,7 +349,8 @@ function kittenCheck({ state, report, rng }: Night): void {
   // «Пригніченість» тримає здоровий глузд не вище порогу — рівно 35 (котокафе) не мало забирати кошеня й захист без кота
   // (перевірка розмноження 2026-10-28): пригнічений без кота забирає кошеня й тоді.
   if (report.sanityEvening >= KITTEN_SANITY_THRESHOLD && !state.character.depressed) return;
-  const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS });
+  // Порода — за правилом притулку, як і в котів, яких беруть самі (крок 17, звірка з довідниками 2026-10-28: примусове кошеня було завжди безпородне).
+  const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS, breed: shelterBreed(rng, SHELTER.breed) });
   // Що видно про породу — як у притулку (§9.11; пошук багів 2026-10-25: було невідомо навіть на легкій).
   cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   cat.arrivedDay = state.day + 1;
