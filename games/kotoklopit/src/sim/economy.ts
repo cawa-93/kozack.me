@@ -358,6 +358,16 @@ export function discard(state: GameState, itemId: number): boolean {
   return true;
 }
 
+/**
+ * Викинути техніку (§8.7): комунальні зменшуються, а викинуту можна купити знову — зокрема дорожчу (перевірка побуту
+ * 2026-10-28: техніку не можна було викинути, тож її комунальні лишалися назавжди, а дешеву не замінити дорогою).
+ */
+export function discardAppliance(state: GameState, appliance: Appliance): boolean {
+  if (state.home.appliances[appliance] === null) return false;
+  state.home.appliances[appliance] = null;
+  return true;
+}
+
 /** Пакунки, час яких настав, кур'єр лишає під дверима й дзвонить. Повертає, скільки пакунків привіз. */
 export function tickDeliveries(state: GameState): number {
   const now = absoluteMinute(state.day, state.minute);

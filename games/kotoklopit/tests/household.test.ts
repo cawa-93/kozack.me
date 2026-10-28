@@ -4,9 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
-import { addSupply, freeSlots, place, utilitiesDue } from "../src/sim/economy";
+import { addSupply, discardAppliance, freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
-import { annoyingMesses, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { annoyingMesses, discardFeeder, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
 import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
@@ -191,6 +191,22 @@ describe("перевірка побуту 2026-10-28", () => {
     tickCats(save.current, 1, { present: false });
     expect(save.current.home.messes.length).toBe(messes);
     expect(cat.act.target).toBe(`item:${box.id}`);
+  });
+
+  it("техніку й автогодівницю можна викинути: комунальні зменшуються, корм із бункера — у сховище, а купити можна знову", () => {
+    const save = game();
+    save.current.home.appliances.robot = "cheap";
+    const withRobot = utilitiesDue(save.current);
+    expect(freeSlots(save.current, "robot")).toBe(0);
+    expect(discardAppliance(save.current, "robot")).toBe(true);
+    expect(utilitiesDue(save.current)).toBeLessThan(withRobot);
+    expect(freeSlots(save.current, "robot")).toBe(1);
+    const bowl = firstBowl(save);
+    save.current.home.feeders = [{ slot: bowl.slot, quality: "cheap", food: 5, foodQuality: "premium", sterile: false }];
+    const before = save.current.home.supplies.catFood.premium;
+    expect(discardFeeder(save.current, bowl.slot)).toBe(true);
+    expect(save.current.home.feeders).toEqual([]);
+    expect(save.current.home.supplies.catFood.premium).toBe(before + 5);
   });
 
   it("лише надкльована половинка під автогодівницею — спорожнити нічого, і миску не чіпають", () => {

@@ -4,7 +4,7 @@ import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actio
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, seePhoneHints, supplyCount } from "../sim/economy";
+import { discard, discardAppliance, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
@@ -45,6 +45,8 @@ import { type BubbleKind, createIconTextures, type IconName } from "../view/icon
 import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
 import { blinkAmount, catLook, ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
+import { discardFeeder } from "../sim/household";
+import { THING_TITLES } from "../ui/titles";
 import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
@@ -925,7 +927,7 @@ export class DayScene extends Phaser.Scene {
     set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? "washer" : washer === "done" ? "alert" : null);
+    set("washer", washer === "washing" ? "washer" : washer === "done" ? "washed" : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
@@ -1322,6 +1324,24 @@ export class DayScene extends Phaser.Scene {
     if (this.blocked()) return;
     // Підказку телефоном побачено (§6.4).
     seePhoneHints(this.state);
+    const confirmDiscard = (name: string, done: () => void): void =>
+      this.overlay.show({
+        kicker: "Речі",
+        title: `Викинути: ${name.toLowerCase()}?`,
+        body: ["Повернути її не можна. Комунальні зменшаться з наступного тижня."],
+        actions: [
+          {
+            label: "Викинути",
+            primary: true,
+            onSelect: () => {
+              done();
+              show("mine");
+            },
+          },
+          { label: "Повернутися", onSelect: () => show("mine") },
+        ],
+        onDismiss: () => show("mine"),
+      });
     const show = (tab: PhoneTab): void =>
       this.overlay.show(
         phoneCard(this.state, tab, {
@@ -1329,10 +1349,12 @@ export class DayScene extends Phaser.Scene {
             checkout(this.state, cart, "delivery");
             show(tab);
           },
-          discard: (item: HomeItem) => {
-            discard(this.state, item.id);
-            show(tab);
-          },
+          // Викинути — назавжди: спершу картка-підтвердження (перевірка побуту 2026-10-28: подвійний дотик викидав другу річ).
+          discard: (item: HomeItem) => confirmDiscard(THING_TITLES[item.kind], () => discard(this.state, item.id)),
+          discardThing: (thing) =>
+            "appliance" in thing
+              ? confirmDiscard(THING_TITLES[thing.appliance], () => discardAppliance(this.state, thing.appliance))
+              : confirmDiscard(THING_TITLES.feeder, () => discardFeeder(this.state, thing.feeder)),
           // Віддати — назавжди: спершу картка з ціною (перевірка розмноження 2026-10-28: був один дотик без підтвердження).
           advertise: (cat) =>
             this.overlay.show({

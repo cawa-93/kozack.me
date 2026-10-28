@@ -236,6 +236,16 @@ export function emptyFeeder(state: GameState, bowl: BowlItem, feeder: Feeder): P
   return products;
 }
 
+/** Викинути автогодівницю (§8.7): корм із бункера — назад у сховище, як «спорожнити»; миска під нею лишається. */
+export function discardFeeder(state: GameState, slot: string): boolean {
+  const feeders = state.home.feeders ?? [];
+  const feeder = feeders.find((f) => f.slot === slot);
+  if (!feeder) return false;
+  if (feeder.food > 0 && feeder.foodQuality !== null) addSupply(state, feeder.sterile ? "sterileFood" : "catFood", feeder.foodQuality, feeder.food);
+  state.home.feeders = feeders.filter((f) => f !== feeder);
+  return true;
+}
+
 /** Корм у мисці й у годівниці однаковий: корми не змішують (§6.4, §9.12). */
 export function sameFood(a: { food: number; foodQuality: Quality | null; sterile: boolean }, quality: Quality, sterile: boolean): boolean {
   return a.food === 0 || (a.foodQuality === quality && a.sterile === sterile);

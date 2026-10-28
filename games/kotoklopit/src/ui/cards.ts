@@ -9,7 +9,7 @@ import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex } from "../sim/types";
+import type { Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
@@ -202,6 +202,8 @@ export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
   checkout: (cart: CartLine[]) => void;
   discard: (item: HomeItem) => void;
+  /** Викинути техніку чи автогодівницю (над місцем миски `slot`). */
+  discardThing: (thing: { appliance: Appliance } | { feeder: string }) => void;
   advertise: (cat: Cat) => void;
   cancelAd: (cat: Cat) => void;
   newGame: () => void;
@@ -356,6 +358,24 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
     row.append(name);
     const button = element("button", "button", "Викинути");
     button.addEventListener("click", () => handlers.discard(item));
+    row.append(button);
+    shop.append(row);
+  }
+  // Техніка й автогодівниці теж (§8.7): раніше їх тут не було, тож викинути їх не можна було зовсім (перевірка побуту 2026-10-28).
+  const extra: { kind: ThingKind; quality: Quality; thing: { appliance: Appliance } | { feeder: string } }[] = [
+    ...(["fountain", "robot"] as const).flatMap((a) => {
+      const quality = state.home.appliances[a];
+      return quality === null ? [] : [{ kind: a, quality, thing: { appliance: a } }];
+    }),
+    ...(state.home.feeders ?? []).map((f) => ({ kind: "feeder" as const, quality: f.quality, thing: { feeder: f.slot } })),
+  ];
+  for (const { kind, quality, thing } of extra) {
+    const row = element("div", "shop-row");
+    const name = element("span", "shop-name", THING_TITLES[kind]);
+    name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${kind}`]?.[quality] ?? ""));
+    row.append(name);
+    const button = element("button", "button", "Викинути");
+    button.addEventListener("click", () => handlers.discardThing(thing));
     row.append(button);
     shop.append(row);
   }

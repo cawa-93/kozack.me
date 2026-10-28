@@ -53,6 +53,7 @@ export type IconName =
   | "collar"
   | "mind"
   | "laundry"
+  | "washed"
   | "cat"
   | "cat-laptop"
   | "no-power"
@@ -394,6 +395,15 @@ Object.assign(ICONS, {
     g.fillStyle(0x8a7a5a).fillCircle(17, 25, 2).fillCircle(23, 29, 1.6);
     g.lineStyle(2, 0x7a8a3a);
     for (const x of [14, 20, 26]) g.beginPath().arc(x, 6, 2.5, Math.PI * 0.5, Math.PI * 1.5).strokePath();
+  },
+  // Випране чекає, щоб його розвісили (§8.7): чиста блакитна сорочка з краплями — не «!» терпіння (перевірка побуту 2026-10-28).
+  washed: (g: Phaser.GameObjects.Graphics) => {
+    const v = (points: [number, number][]) => points.map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    const shirt = v([[12, 9], [16, 6], [24, 6], [28, 9], [33, 13], [29, 17], [27, 15], [27, 27], [13, 27], [13, 15], [11, 17], [7, 13]]);
+    g.fillStyle(0xa9d3f0).fillPoints(shirt, true);
+    g.lineStyle(2.5, INK).strokePoints(shirt, true);
+    g.fillStyle(0x4f8fd0);
+    for (const [x, y] of [[15, 32], [20, 35], [25, 32]] as const) g.fillCircle(x, y, 2.2).fillTriangle(x - 2.1, y - 0.6, x + 2.1, y - 0.6, x, y - 4.5);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

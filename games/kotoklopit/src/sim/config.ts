@@ -1133,7 +1133,7 @@ export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number
 /** Нашийник (§9.10): настрій за день, шанс загубити дешевий, дзвіночок дратує чутливих. */
 export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05, bellMood: -1 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
-export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;
+export const BATH = { catchSanity: -3, bathSanity: -3, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;
 /**
  * Купання за «Любов'ю до води» (рішення автора 2026-10-25, `TRAITS_REVIEW.md`, §8.7, §9.12 «Їжа й гігієна») — дзеркально:
  * настрій, любов і шанс подряпати персонажа за рівнем (порода й характер разом, від −2 до +2). «Водобоязнь» (−2) після
