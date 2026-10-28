@@ -6,6 +6,7 @@ import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { addSupply, discardAppliance, freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { bathMinutes } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
 import { stun } from "../src/sim/body";
@@ -74,6 +75,10 @@ describe("купання (§8.7)", () => {
     const mood = lover.mood;
     const sanity = save.current.character.stats.sanity;
     interact(save);
+    // Купання займає час (рішення автора 2026-10-28): спершу кабіна, ефекти — наприкінці.
+    expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true, bath: true });
+    expect(save.current.home.supplies.shampoo.cheap).toBe(5);
+    for (let i = 0; i < 60 && save.current.character.activity !== null; i++) advance(save, 0.5);
     expect(lover.mood).toBeGreaterThan(mood);
     expect(save.current.character.stats.sanity).toBeLessThan(sanity);
     expect(save.current.home.supplies.shampoo.cheap).toBe(4);
@@ -81,6 +86,27 @@ describe("купання (§8.7)", () => {
     const love = other.love;
     bathe(save.current, never());
     expect(other.love).toBeLessThan(love);
+  });
+
+  it("купання триває 10 хвилин, «Водобоязнь» — удвічі довше; без шампуню не почати (рішення автора 2026-10-28)", () => {
+    const save = game();
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    held(save);
+    expect(bathMinutes(save.current)).toBe(10);
+    held(save, { water: -2 });
+    expect(bathMinutes(save.current)).toBe(20);
+    standAt(save, "shower");
+    const start = save.current.minute;
+    interact(save);
+    for (let i = 0; i < 100 && save.current.character.activity !== null; i++) advance(save, 0.5);
+    expect(save.current.minute - start).toBeGreaterThanOrEqual(19.5);
+    save.current.home.supplies.shampoo = { cheap: 0, premium: 0 };
+    held(save);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused" }));
+    expect(save.current.character.activity).toBeNull();
   });
 });
 

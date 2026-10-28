@@ -44,7 +44,7 @@ export function catThought(state: GameState, cat: Cat): IconName | null {
 export function personThought(state: GameState): IconName | null {
   const character = state.character;
   const activity = character.activity;
-  if (state.trip !== null || (activity?.kind === "use" && activity.inside === true)) return null;
+  if (state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true)) return null;
   let lowest: { value: number; icon: IconName } | null = null;
   for (const [stat, icon] of PERSON_STATS) {
     const value = character.stats[stat];

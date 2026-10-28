@@ -619,7 +619,8 @@ export class DayScene extends Phaser.Scene {
     this.drawBoxes();
     // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
     const activity = state.character.activity;
-    const inside = activity?.kind === "use" && activity.inside === true;
+    // У душі персонажа не видно; купаючи кота, він стоїть біля душу з котом на руках (рішення автора 2026-10-28).
+    const inside = activity?.kind === "use" && activity.inside === true && activity.bath !== true;
     this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null, state.home.clothes <= 0, this.sleepiness(time));
     this.drawCats(time);
     drawCatCorner(this.corner, state);

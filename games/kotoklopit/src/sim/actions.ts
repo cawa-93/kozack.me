@@ -16,6 +16,7 @@ import { powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
+  BATH,
   BOWL_CAPACITY,
   HOUSEHOLD,
   ILLNESS,
@@ -288,7 +289,13 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
     }
     case "shower":
       // Кіт на руках біля душу — купання (§8.7); інакше персонаж заходить у кабіну й лишається там до кінця душу.
-      if (held?.kind === "cat") return bathe(state, stateRng(state, "behavior")) ? null : refuse(state, target.id, { reason: "empty", product: "shampoo" });
+      // Купання займає час (рішення автора 2026-10-28): персонаж із котом у кабіні, а що відчув кіт — наприкінці (`finishUse`).
+      if (held?.kind === "cat") {
+        if (supplyCount(state, "shampoo") === 0) return refuse(state, target.id, { reason: "empty", product: "shampoo" });
+        waterFright(state);
+        character.activity = { kind: "use", target: target.id, progress: 0, inside: true, bath: true };
+        return null;
+      }
       if (held !== null) return refuse(state, target.id, "hands-full");
       // Увімкнули воду: «Водобоязнь» тікає з ванної — персонаж ще бачить це, заходячи в кабіну (§9.12).
       waterFright(state);
@@ -498,6 +505,14 @@ export function putDownCat(state: GameState, catId: number): void {
   }
 }
 
+/** Скільки триває купання кота на руках (§8.7, рішення автора 2026-10-28): «Боїться води» й «Водобоязнь» — довше. */
+export function bathMinutes(state: GameState): number {
+  const held = state.character.held;
+  const cat = held?.kind === "cat" ? state.cats.find((c) => c.id === held.cat) : undefined;
+  const fear = cat ? Math.max(0, -traitLevel(cat, "water")) : 0;
+  return BATH.minutes * (1 + BATH.fearStep * Math.min(2, fear));
+}
+
 /** Тривалість тривалої дії з ціллю, без урахування швидкості. */
 function useMinutes(target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
@@ -572,9 +587,10 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
       return;
     }
     activity.progress += minutes * actionSpeed(state);
-    if (activity.progress >= useMinutes(target)) {
+    if (activity.progress >= (activity.bath === true ? bathMinutes(state) : useMinutes(target))) {
       character.activity = null;
-      finishUse(state, target);
+      if (activity.bath === true) bathe(state, stateRng(state, "behavior"));
+      else finishUse(state, target);
       // Тримали кнопку весь душ — нова дія не почнеться, поки не відпустили (§10; перевірка побуту 2026-10-28).
       if (input.hold) character.holdSpent = true;
     }
