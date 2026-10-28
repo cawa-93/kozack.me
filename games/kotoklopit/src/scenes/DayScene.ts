@@ -3,16 +3,16 @@ import Phaser from "phaser";
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, THINGS } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, tripCat, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
-import { advertise, cancelAd, giveAwayLoss } from "../sim/farewell";
+import { advertise, cancelAd } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
@@ -469,7 +469,8 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       giveAway: () => {
-        giveToShelter(state);
+        const cat = tripCat(state);
+        if (cat && giveToShelter(state)) log.done.push(`given:${cat.id}`);
         again();
       },
       buyKitten: (id) => {
@@ -1335,7 +1336,8 @@ export class DayScene extends Phaser.Scene {
       this.overlay.show({
         kicker: "Речі",
         title: `Викинути: ${THING_TITLES[kind].toLowerCase()}?`,
-        body: [`Повернути не можна.${THINGS[kind].utilities > 0 ? " Комунальні зменшаться з наступного тижня." : ""}`],
+        // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
+        body: ["Повернути не можна."],
         actions: [
           {
             label: "Викинути",
@@ -1362,13 +1364,14 @@ export class DayScene extends Phaser.Scene {
             "appliance" in thing
               ? confirmDiscard(thing.appliance, () => discardAppliance(this.state, thing.appliance))
               : confirmDiscard("feeder", () => discardFeeder(this.state, thing.feeder)),
-          // Віддати — назавжди: спершу картка з ціною (перевірка розмноження 2026-10-28: був один дотик без підтвердження).
+          // Віддати — назавжди: спершу картка-підтвердження (перевірка розмноження 2026-10-28: був один дотик без підтвердження);
+          // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).
           advertise: (cat) =>
             this.overlay.show({
               kicker: "Віддати в добрі руки",
               title: "Віддати в добрі руки?",
               body: [
-                `${cat.name} завтра вранці поїде до нових господарів. Здоровий глузд −${Math.round(-giveAwayLoss(this.state, cat, this.state.day + 1))}${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? " — увесь бонус за нового кота: минуло менше тижня" : ""}.`,
+                `${cat.name} завтра вранці поїде до нових господарів. ${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? "Ви ж тільки-но звикли одне до одного." : "Розлучатися буде важко."}`,
               ],
               actions: [
                 {

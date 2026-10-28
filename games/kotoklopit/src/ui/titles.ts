@@ -21,7 +21,8 @@ export const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) =
   pills: { name: "Таблетки для котів", unit: (n) => `${n} ${plural(n, "таблетка", "таблетки", "таблеток")}`, place: "в аптечці" },
   drops: { name: "Краплі для котів", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "в аптечці" },
   humanMeds: { name: "Ліки для себе", unit: (n) => `${n} ${plural(n, "доза", "дози", "доз")}`, place: "біля умивальника" },
-  treats: { name: "Ласощі для котів", unit: (n) => `${n} ${plural(n, "ласощі", "ласощі", "ласощів")}`, place: "в аптечці" },
+  // «Ласощі» не мають однини: «1 ласощі» — помилка (крок 17, вичитка 2026-10-28).
+  treats: { name: "Ласощі для котів", unit: portions, place: "в аптечці" },
   collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
   bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
   shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },

@@ -94,20 +94,20 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   for (const id of night?.keptCats ?? []) {
     const cat = state.cats.find((c) => c.id === id);
-    if (cat) events.push([`Оголошення про ${cat.name} знято: годує кошенят, поки що лишається вдома.`]);
+    if (cat) events.push([`Оголошення знято: ${cat.name} годує кошенят і поки що лишається вдома.`]);
   }
   for (const id of night?.givenCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    events.push([`${entry.name} — у нових руках`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    events.push([fill("{кіт} [поїхав|поїхала] до нових господарів", entry.sex, { кіт: entry.name }), text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
     const text = farewellText(entry, diseaseTitle);
-    // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику.
-    events.push([`Прощавай, ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
+    // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
+    events.push([`Прощання: ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {
@@ -278,13 +278,25 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
 
 const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
 
-/** Порода, як її знає персонаж (§9.11): «Мейнкун × ?», «невідома». */
-export function breedText(breed: readonly [string, string], known: readonly [boolean, boolean]): string {
+/**
+ * Порода, як її знає персонаж (§9.11): «мейнкун × ?», «[безпородний|безпородна]», «мейнкун, [чистокровний|чистокровна]»; null — невідома.
+ * Назви порід посеред речення — з малої, рід — за статтю кота (крок 17, вичитка 2026-10-28: «Порода: безпородний» для кішки).
+ */
+export function breedText(breed: readonly [string, string], known: readonly [boolean, boolean], sex: Sex): string | null {
   const [a, b] = breed;
-  if (a === MIXED && b === MIXED) return known[0] || known[1] ? "безпородний" : "невідома";
-  if (a === b) return known[0] || known[1] ? `${breedById(a).name}, чистокровна` : "невідома";
-  const half = (id: string, k: boolean): string => (k ? (id === MIXED ? "безпородний" : breedById(id).name) : "?");
-  return known[0] || known[1] ? `${half(a, known[0])} × ${half(b, known[1])}` : "невідома";
+  if (!known[0] && !known[1]) return null;
+  const name = (id: string): string => breedById(id).name.toLowerCase();
+  if (a === MIXED && b === MIXED) return fill("[безпородний|безпородна]", sex);
+  if (a === b) return `${name(a)}, ${fill("[чистокровний|чистокровна]", sex)}`;
+  const half = (id: string, k: boolean): string => (k ? (id === MIXED ? "безпородний" : name(id)) : "?");
+  return `${half(a, known[0])} × ${half(b, known[1])}`;
+}
+
+/** Рядок картки про породу: «Безпородна.», «Порода: мейнкун × ?.»; null — порода невідома. */
+export function breedLine(breed: readonly [string, string], known: readonly [boolean, boolean], sex: Sex): string | null {
+  const text = breedText(breed, known, sex);
+  if (text === null) return null;
+  return breed[0] === MIXED && breed[1] === MIXED ? `${text.replace(/^./, (c) => c.toUpperCase())}.` : `Порода: ${text}.`;
 }
 
 /** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
@@ -292,8 +304,8 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
     const lines = [`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`];
-    const breed = breedText(cat.breed, cat.breedKnown);
-    if (breed !== "невідома") lines.push(`Порода: ${breed}.`);
+    const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
+    if (breed !== null) lines.push(breed);
     const states: string[] = [];
     if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
     if (cat.pregnancy?.known) states.push("вагітна");
@@ -301,10 +313,10 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     if (inHeat(state, cat)) states.push("у тічці");
     if (isNursing(state, cat)) states.push("годує кошенят");
     if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
-    if (state.ads.includes(cat.id)) states.push("завтра заберуть нові господарі");
     if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
     const found = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
-    if (found.length > 0) lines.push(`Ветеринар знайшов: ${found.join(", ")}.`);
+    // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-28).
+    if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
     // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
     const known = cat.traits.filter((t) => visibility(state, t) === 3);
     for (const trait of cat.traits) {
@@ -446,7 +458,7 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
   return {
     kicker: "Телефон",
     title: "Дзвонить мама",
-    body: ["Мама питає, як справи, чи ви їсте, і чи не забагато в домі котів."],
+    body: ["Мама питає, як справи, чи ви їсте і чи не забагато в домі котів."],
     actions: [
       { label: `Відповісти · 🕐 ${MODIFIERS.call.minutes} хв`, primary: true, onSelect: onAnswer },
       { label: "Не відповідати", onSelect: onIgnore },
