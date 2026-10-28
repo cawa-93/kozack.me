@@ -17,6 +17,8 @@ import { addCat } from "../src/sim/night";
 import { conceive, giveBirth } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, Sex } from "../src/sim/types";
+import { CAT_NAMES, pickCatName } from "../src/sim/names";
+import { BIRTH_MESSAGE, fill } from "../src/texts";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -174,6 +176,19 @@ describe("новонароджені: перевірка розмноження 
     expect(tripBlocker(save.current, "vet")).toBe("newborn");
     expect(canSterilize(baby)).toBe(false);
     expect(canSterilize(mother)).toBe(true);
+  });
+});
+
+describe("імена й тексти: перевірка розмноження 2026-10-28", () => {
+  it("у списку притулку імена не повторюються; коли імена скінчилися — з номером; одне кошеня — однина", () => {
+    for (let week = 1; week <= 40; week++) {
+      const save = game();
+      save.current.day = week * 7;
+      const names = shelterCats(save.current).map((c) => c.name);
+      expect(new Set(names).size).toBe(names.length);
+    }
+    expect(pickCatName(createRng(1), "female", [...CAT_NAMES.female, "Мурка 2"])).toMatch(/ [2-9]$/);
+    expect(fill(BIRTH_MESSAGE, "male", { кішка: "Мурка", кількість: 1, кошенята: "Пушок" })).toContain("воно лише пищить");
   });
 });
 

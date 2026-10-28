@@ -251,7 +251,7 @@ export function shelterCats(state: GameState): Cat[] {
         const real = PUREBREEDS[rng.int(0, PUREBREEDS.length - 1)]?.id ?? MIXED;
         breed = rng.chance(0.5) ? [real, real] : [real, MIXED];
       }
-      const cat = createCat(state, rng, { source: "shelter", ageWeeks, breed, knownTraits: SHELTER.visibleTraits[state.difficulty] });
+      const cat = createCat(state, rng, { source: "shelter", ageWeeks, breed, knownTraits: SHELTER.visibleTraits[state.difficulty], taken: cats.map((c) => c.name) });
       cat.breedKnown = knownBreedHalves(state, breed, rng);
       // Притулок каже, чи кіт стерилізований (§9.8).
       if (ageWeeks >= SHELTER.sterilizedFromAge && rng.chance(SHELTER.sterilized)) cat.sterilized = true;
@@ -271,7 +271,7 @@ export function breederCats(state: GameState): { breed: string; cats: Cat[] } {
     const breed = PUREBREEDS[rng.int(0, PUREBREEDS.length - 1)]?.id ?? MIXED;
     const cats: Cat[] = [];
     for (let i = 0; i < BREEDER.cats; i++) {
-      const cat = createCat(state, rng, { source: "breeder", ageWeeks: BREEDER.age, breed: [breed, breed], knownTraits: SHELTER.visibleTraits[state.difficulty] });
+      const cat = createCat(state, rng, { source: "breeder", ageWeeks: BREEDER.age, breed: [breed, breed], knownTraits: SHELTER.visibleTraits[state.difficulty], taken: cats.map((c) => c.name) });
       cat.breedKnown = [true, true];
       cat.sterilizedKnown = true;
       cats.push(cat);

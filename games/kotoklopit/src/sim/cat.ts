@@ -61,6 +61,8 @@ export interface CatOptions {
   knownTraits?: number;
   /** Де кіт з'являється. */
   at?: { x: number; y: number };
+  /** Імена, яких уникати, крім котів удома: інші коти того самого списку притулку чи розплідника. */
+  taken?: readonly string[];
 }
 
 /**
@@ -74,7 +76,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
   const at = options.at ?? { x: 10.5, y: 10.5 };
   const cat: Cat = {
     id: state.nextId++,
-    name: options.name ?? pickCatName(rng, sex, state.cats.map((c) => c.name)),
+    name: options.name ?? pickCatName(rng, sex, [...state.cats.map((c) => c.name), ...(options.taken ?? [])]),
     sex,
     source: options.source,
     ageWeeks: options.ageWeeks,
