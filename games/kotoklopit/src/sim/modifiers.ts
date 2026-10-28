@@ -9,7 +9,7 @@ import { hideSpot, isDirty, startAct } from "./catai";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, GUESTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WATER_CAPACITY } from "./config";
+import { DIFFICULTY, GUESTS, ILLNESS_EFFECTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WATER_CAPACITY } from "./config";
 import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
@@ -44,9 +44,11 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("vaccination", "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),
   pair("renovation", "neighbors-away", "home", "any"),
-  pair("outage", "fast-internet", "home", "workday"),
+  // «Вимкнули світло» лишається й безробітному: зупиняє й пошук роботи (§8.6; перевірка модифікаторів 2026-10-28).
+  pair("outage", "fast-internet", "home", "weekday", "workday"),
   pair("inspection", "recalculation", "home", "any"),
-  pair("guests", "friend-help", "home", "any"),
+  // Друг приходить допомогти з котами — лише коли вони є (перевірка модифікаторів 2026-10-28).
+  pair("guests", "friend-help", "home", "any", "cat"),
   pair("noisy-neighbors", "quiet-night", "personal", "any"),
   pair("sick", "vigor", "personal", "any"),
   pair("mom-call", "mom-food", "personal", "any"),
@@ -79,6 +81,11 @@ export function active(state: GameState, id: string): boolean {
 /** Модифікатор дня, що суперечить модифікатору тижня, не випадає (§4.1). */
 function contradicts(week: string | null, id: string, group: Pair["group"]): boolean {
   if (week === "vacation" && group === "work") return true;
+  // Аврал: вихідних не буде — ні робочої суботи (вона й так робоча), ні вихідного посеред тижня; тиждень дедлайнів — не
+  // «Затишшя», тихий тиждень — не «Дедлайн» (DAY_MODIFIERS.md; перевірка модифікаторів 2026-10-28).
+  if (week === "crunch" && (id === "work-saturday" || id === "midweek-off")) return true;
+  if (week === "deadline-week" && id === "lull") return true;
+  if (week === "quiet-week" && id === "deadline") return true;
   if (week === "human-prevention" && id === "sick") return true;
   if ((week === "heat-wave" || week === "cold-snap") && (id === "heat" || id === "cold")) return true;
   return false;
@@ -112,10 +119,12 @@ function fits(state: GameState, day: number, when: When): boolean {
 export function chooseWeekModifier(state: GameState, week: number): string | null {
   const rng = createRng(deriveSeed(state.seed, 4, week));
   if (!rng.chance(MODIFIERS.weekShare)) return null;
-  const chosen = WEEK_PAIRS[rng.int(0, WEEK_PAIRS.length - 1)];
+  // Безробітному — з пар, що йому підходять (раніше робоча пара давала порожній тиждень: модифікатор був у третині тижнів, а не в
+  // половині; перевірка модифікаторів 2026-10-28).
+  const pairs = state.job.unemployed ? WEEK_PAIRS.filter(([hard]) => hard !== "crunch" && hard !== "deadline-week") : WEEK_PAIRS;
+  const chosen = pairs[rng.int(0, pairs.length - 1)];
   if (!chosen) return null;
   const [hard, easy] = chosen;
-  if (state.job.unemployed && (hard === "crunch" || hard === "deadline-week")) return null;
   return rng.chance(MODIFIERS.hardShare[state.difficulty]) ? hard : easy;
 }
 
@@ -127,7 +136,11 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   const previous = state.modifiers.day;
   const week = state.modifiers.week;
   const options: { hard: string | null; easy: string | null }[] = [];
+  // Робочі модифікатори — не на лікарняному: керівництво нічого не чекає (перевірка модифікаторів 2026-10-28: «Догана» знімала
+  // репутацію, а нарада й обідня перерва були на титулці, хоч і не діяли).
+  const sick = onSickLeave(state, day);
   for (const p of DAY_PAIRS) {
+    if (p.group === "work" && sick) continue;
     const hard = fits(state, day, p.whenHard) && !contradicts(week, p.hard, p.group) && p.hard !== previous ? p.hard : null;
     const easy = fits(state, day, p.whenEasy) && !contradicts(week, p.easy, p.group) && p.easy !== previous ? p.easy : null;
     if (hard || easy) options.push({ hard, easy });
@@ -139,9 +152,13 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
     options.push({ hard: s.id, easy: s.id });
   }
   if (options.length === 0 || rng.chance(MODIFIERS.noneShare)) return null;
-  const chosen = options[rng.int(0, options.length - 1)];
-  if (!chosen) return null;
+  // Спершу бік за складністю, потім пара, у якої цей бік сьогодні можливий: інакше пара з одним можливим боком («Робоча субота»
+  // лише в суботу) брала його за будь-якої складності, і частка важких була нижчою за 40/50/60% (перевірка модифікаторів 2026-10-28).
   const wantHard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
+  const fitting = options.filter((o) => (wantHard ? o.hard : o.easy) !== null);
+  const pool = fitting.length > 0 ? fitting : options;
+  const chosen = pool[rng.int(0, pool.length - 1)];
+  if (!chosen) return null;
   return (wantHard ? (chosen.hard ?? chosen.easy) : (chosen.easy ?? chosen.hard)) ?? null;
 }
 
@@ -150,7 +167,8 @@ export function startModifiers(state: GameState, rng: Rng): void {
   if (weekdayOf(state.day) === 0) state.modifiers.week = chooseWeekModifier(state, weekOf(state.day));
   const today = state.today;
   // Пропущене вчора щеплення: тиждень коти хворіють частіше.
-  if (state.modifiers.day === "vaccination" && !today.vaccinated) today.vaccineMissedUntil = state.day + MODIFIERS.vaccineDays;
+  // Ночі нового дня й наступних — разом 7 (перевірка модифікаторів 2026-10-28: було 8).
+  if (state.modifiers.day === "vaccination" && !today.vaccinated) today.vaccineMissedUntil = state.day - 1 + MODIFIERS.vaccineDays;
   state.modifiers.day = chooseDayModifier(state, state.day, rng);
   today.callAt = null;
   today.meetingMinutes = 0;
@@ -180,25 +198,32 @@ export function startModifiers(state: GameState, rng: Rng): void {
       today.mom = { at: MODIFIERS.mom.from + Math.floor(rng.next() * (MODIFIERS.mom.to - MODIFIERS.mom.from)) };
       break;
     case "recalculation":
-      today.utilitiesDiscount = MODIFIERS.recalculation;
+      // Два перерахунки за тиждень — дві знижки (перевірка модифікаторів 2026-10-28: друга нічого не давала).
+      today.utilitiesDiscount += MODIFIERS.recalculation;
       break;
     case "noisy-neighbors":
       today.earlyWake = MODIFIERS.noisyWake.min + Math.floor(rng.next() * (MODIFIERS.noisyWake.max - MODIFIERS.noisyWake.min));
       break;
   }
-  if (state.modifiers.week === "human-flu" && rng.chance(MODIFIERS.week.humanFlu)) fallIllPerson(state, "cold");
+  // Кидки грипу й знайди — зі свого зерна дня: скільки чисел узяв вибір модифікатора, залежить від стану (коти, робота), і на
+  // переграванні тижня вони зсувалися (§6.1). Грип — за складністю, як і інші хвороби персонажа (§6.5; перевірка модифікаторів
+  // 2026-10-28).
+  const rolls = createRng(deriveSeed(streamSeed(state.seed, "conditions", state.day), ROLLS_SALT));
+  if (state.modifiers.week === "human-flu" && rolls.chance(MODIFIERS.week.humanFlu * ILLNESS_EFFECTS.difficulty[state.difficulty])) fallIllPerson(state, "cold");
   // Знайда — рідко, у будь-який день (§8.5).
-  if (state.day - today.lastFoundling >= MODIFIERS.foundlingGapDays && state.day > 0 && rng.chance(MODIFIERS.foundling)) {
+  if (state.day - today.lastFoundling >= MODIFIERS.foundlingGapDays && state.day > 0 && rolls.chance(MODIFIERS.foundling)) {
     today.foundling = true;
     today.lastFoundling = state.day;
   }
 }
 
-/** Знайда (§8.5): взяти кошеня (бонус за нового кота) чи віднести в притулок. */
 /** Кидки знайди — від дня, як і умови дня (§6.1): на переграванні те саме кошеня (перевірка розмноження 2026-10-28). */
 export const foundlingRng = (state: GameState): Rng => createRng(deriveSeed(streamSeed(state.seed, "conditions", state.day), FOUNDLING_SALT));
-/** Сіль зерна знайди: відрізняє її кидки від інших кидків умов дня. */
+/** Солі зерен: відрізняють кидки знайди й ранкові кидки (грип, поява знайди) від інших кидків умов дня. */
 const FOUNDLING_SALT = 13;
+const ROLLS_SALT = 17;
+
+/** Знайда (§8.5): взяти кошеня (бонус за нового кота) чи віднести в притулок. */
 
 export function decideFoundling(state: GameState, take: boolean, rng: Rng = foundlingRng(state)): Cat | null {
   if (!state.today.foundling) return null;

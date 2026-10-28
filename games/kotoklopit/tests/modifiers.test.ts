@@ -19,6 +19,73 @@ import { hours, recordEvents, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
 
+describe("вибір модифікаторів: перевірка модифікаторів 2026-10-28", () => {
+  const seen = (setup: (save: Save) => void, day = 2, n = 1500): Set<string | null> => {
+    const save = game();
+    setup(save);
+    const out = new Set<string | null>();
+    for (let seed = 0; seed < n; seed++) {
+      save.current.modifiers.day = null;
+      out.add(chooseDayModifier(save.current, day, createRng(seed)));
+    }
+    return out;
+  };
+
+  it("безробітному «Вимкнули світло» буває, «Швидкий інтернет» — ні; на лікарняному робочих немає; суперечливі з тижнем не випадають", () => {
+    const jobless = seen((save) => (save.current.job.unemployed = true));
+    expect(jobless.has("outage")).toBe(true);
+    expect(jobless.has("fast-internet")).toBe(false);
+    const sick = seen((save) => {
+      save.current.job.sickLeaveFrom = 2;
+      save.current.job.sickLeaveUntil = 2;
+    });
+    for (const id of ["reprimand", "praise", "meeting", "lunch", "deadline", "lull", "bonus", "pay-delay", "midweek-off"]) expect(sick.has(id)).toBe(false);
+    expect(seen((save) => (save.current.modifiers.week = "crunch"), 5).has("work-saturday")).toBe(false);
+    expect(seen((save) => (save.current.modifiers.week = "deadline-week")).has("lull")).toBe(false);
+    expect(seen((save) => (save.current.modifiers.week = "quiet-week")).has("deadline")).toBe(false);
+    // Без котів друг не приходить допомагати з котами.
+    expect(seen((save) => (save.current.cats = [])).has("friend-help")).toBe(false);
+  });
+
+  it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
+    const save = newGame({ sex: "female", difficulty: "hard", seed: 14 });
+    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "vaccination", "heat"]);
+    let hardCount = 0;
+    let total = 0;
+    for (let seed = 0; seed < 3000; seed++) {
+      save.current.modifiers.day = null;
+      const id = chooseDayModifier(save.current, 5, createRng(seed));
+      if (id === null || id === "office" || id === "show") continue;
+      total += 1;
+      if (hard.has(id)) hardCount += 1;
+    }
+    expect(hardCount / total).toBeGreaterThan(0.56);
+    expect(hardCount / total).toBeLessThan(0.64);
+  });
+
+  it("безробітному модифікатор тижня — приблизно в половині тижнів; щеплення — 7 днів; перерахунки додаються", () => {
+    const save = game();
+    save.current.job.unemployed = true;
+    let some = 0;
+    for (let week = 1; week <= 400; week++) if (chooseWeekModifier(save.current, week)) some += 1;
+    expect(some / 400).toBeGreaterThan(0.4);
+    const vaccine = game();
+    vaccine.current.day = 2;
+    vaccine.current.modifiers.day = "vaccination";
+    startModifiers(vaccine.current, createRng(1));
+    expect(vaccine.current.today.vaccineMissedUntil).toBe(8);
+    const recalc = game();
+    recalc.current.today.utilitiesDiscount = 10;
+    recalc.current.day = 3;
+    for (let seed = 0; seed < 5000 && recalc.current.today.utilitiesDiscount === 10; seed++) {
+      recalc.current.modifiers.day = null;
+      startModifiers(recalc.current, createRng(seed));
+      if (recalc.current.modifiers.day !== "recalculation") recalc.current.today.utilitiesDiscount = 10;
+    }
+    expect(recalc.current.today.utilitiesDiscount).toBe(20);
+  });
+});
+
 describe("вибір модифікаторів (§4.1)", () => {
   it("приблизно третина днів без модифікатора; котячі — лише коли є кіт", () => {
     const save = game();
