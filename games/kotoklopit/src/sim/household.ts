@@ -55,7 +55,8 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
   const washer = state.home.washer;
   if (washer.state === "washing") return "busy";
   if (washer.state === "done") {
-    state.home.clothes = HOUSEHOLD.clothesDays[washer.quality];
+    // Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу (перевірка побуту 2026-10-28).
+    state.home.clothes = Math.max(state.home.clothes, HOUSEHOLD.clothesDays[washer.quality]);
     washer.state = "idle";
     emit(state, { type: "laundry", stage: "hung" });
     return "hung";
@@ -214,6 +215,9 @@ export function robotAt(state: GameState): Vec {
  */
 export function emptyFeeder(state: GameState, bowl: BowlItem, feeder: Feeder): Product[] {
   const products: Product[] = [];
+  // Повертати нічого, лише надкльована половинка в мисці — миску не чіпають (перевірка побуту 2026-10-28: половинка зникала, а
+  // персонаж бачив відмову, ніби нічого не сталося).
+  if (feeder.food <= 0 && bowl.food - (bowl.half === true ? 1 : 0) <= 0) return products;
   // Надкльовану половинку порції (§9.12, «Апетит») назад у сховище не кладуть — її викидають.
   const nibbled = bowl.half === true ? 1 : 0;
   delete bowl.half;

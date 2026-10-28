@@ -9,7 +9,7 @@ import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
-import { emptyFeeder, furPerHour, sameFood, tapWasher, vacuumed } from "./household";
+import { catInWasher, emptyFeeder, furPerHour, sameFood, tapWasher, vacuumed } from "./household";
 import { observe } from "./knowledge";
 import { loudNoise } from "./noise";
 import { powerOut } from "./modifiers";
@@ -131,6 +131,12 @@ export function tap(state: GameState): TapResult {
       // Кота в протистоянні торкаються — коти розходяться (§9.4, рішення автора 2026-10-26); рук для цього не треба.
       if (touchStandoff(state, target.cat)) return null;
       if (held !== null) return refuse(state, target.id, "hands-full");
+      // Кіт спить у барабані — натискання виганяє його, як і дія біля машини (§8.7; перевірка побуту 2026-10-28: брало сплячого
+      // на руки — «розбудили» й «проти волі»).
+      if (catInWasher(state) === target.cat) {
+        tapWasher(state);
+        return null;
+      }
       // Кіт сидить на умивальнику й просить води — натискання відкриває йому кран, а не бере на руки (§9.12, «Пиття»).
       if (catOnSink(state) === target.cat) {
         openTap(state, target.cat);
@@ -340,6 +346,9 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     case "litter":
       // Лоток чистять утриманням дії; чистий — нічого чистити.
       if (held !== null) return refuse(state, id, "hands-full");
+      // Порожній лоток без наповнювача в запасі нічим наповнити (перевірка побуту 2026-10-28: «чистка» забирала −3 і
+      // лишала лоток порожнім, і так без кінця).
+      if (item.litter === null && supplyCount(state, "litter") === 0) return refuse(state, id, { reason: "empty", product: "litter" });
       return canUse(state, { type: "item", id, item }) ? null : refuse(state, id, "clean");
     case "toy":
       if (held !== null) return refuse(state, id, "hands-full");
@@ -509,7 +518,7 @@ export function canUse(state: GameState, target: Target): boolean {
       if (target.object.kind === "table") return state.home.surfaces[target.object.id]?.kind === "meal";
       return false;
     case "item":
-      return target.item.kind === "litter" && (target.item.uses > 0 || target.item.litter === null);
+      return target.item.kind === "litter" && (target.item.uses > 0 || (target.item.litter === null && supplyCount(state, "litter") > 0));
     case "mess":
     case "cat":
       return true;
@@ -566,6 +575,8 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     if (activity.progress >= useMinutes(target)) {
       character.activity = null;
       finishUse(state, target);
+      // Тримали кнопку весь душ — нова дія не почнеться, поки не відпустили (§10; перевірка побуту 2026-10-28).
+      if (input.hold) character.holdSpent = true;
     }
     return;
   }

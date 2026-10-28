@@ -3,17 +3,19 @@
 import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
-import { changeLove, createCat } from "../src/sim/cat";
+import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { addSupply, freeSlots, place, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
-import { annoyingMesses, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { annoyingMesses, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { tickCats } from "../src/sim/catai";
+import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
-import { addCat } from "../src/sim/night";
+import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { FEEDER_CAPACITY } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
 import { unavailable } from "../src/sim/shop";
-import type { BowlItem, Cat, Feeder, Quality, Save, TraitLevel } from "../src/sim/types";
+import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
@@ -99,6 +101,107 @@ describe("прання (§8.7)", () => {
     expect(hygieneFactor(save.current)).toBeGreaterThan(1);
     expect(tapWasher(save.current)).toBe("hung");
     expect(save.current.home.clothes).toBe(7);
+  });
+});
+
+describe("перевірка побуту 2026-10-28", () => {
+  it("кіт у барабані: натискання виганяє його, а не бере на руки; розвісити не зменшує чистого одягу", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.character.held = null;
+    cat.x = 10.5;
+    cat.y = 1.5;
+    cat.act = { kind: "sleep", target: "washer", goal: null, minutes: 300, elapsed: 0 };
+    standAt(save, "washer");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(save.current.character.held).toBeNull();
+    expect(events).toContainEqual(expect.objectContaining({ type: "laundry", stage: "cat" }));
+    // Повна шафа: розвішене не зменшує запасу.
+    save.current.home.clothes = 8;
+    save.current.home.washer = { state: "done", minutes: 0, quality: "cheap" };
+    tapWasher(save.current);
+    expect(save.current.home.clothes).toBe(8);
+  });
+
+  it("душ: у кабіні персонажа не збити з ніг; тримали кнопку весь душ — нова дія не почнеться, поки не відпустили", () => {
+    const save = game();
+    standAt(save, "shower");
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
+    expect(stun(save.current)).toBe(false);
+    for (let i = 0; i < 40 && save.current.character.activity !== null; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    expect(save.current.character.activity).toBeNull();
+    expect(save.current.character.holdSpent).toBe(true);
+  });
+
+  it("кіт, що йшов спати в барабан, туди не лягає, коли машину запустили", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.character.held = null;
+    cat.act = { kind: "sleep", target: "washer", goal: { x: 10, y: 1 }, minutes: 300, elapsed: 0 };
+    save.current.home.washer = { state: "washing", minutes: 60, quality: "cheap" };
+    tickCats(save.current, 1, { present: true });
+    expect(cat.act.target).not.toBe("washer");
+  });
+
+  it("лоток порожній, а наповнювача в запасі немає — відмова, без −3 здорового глузду", () => {
+    const save = game();
+    const box = save.current.home.items.find((i): i is LitterItem => i.kind === "litter");
+    if (!box) throw new Error("немає лотка");
+    box.litter = null;
+    box.uses = 0;
+    save.current.home.supplies.litter = { cheap: 0, premium: 0 };
+    const sanity = save.current.character.stats.sanity;
+    walkTo(save, `item:${box.id}`);
+    const { events, stop } = recordEvents();
+    interact(save);
+    holdUntilDone(save, 10);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused" }));
+    expect(save.current.character.stats.sanity).toBeGreaterThanOrEqual(sanity - 0.5);
+  });
+
+  it("голодний кіт без жодної миски просить їсти там, де вона стояла", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.character.held = null;
+    save.current.home.items = save.current.home.items.filter((i) => i.kind !== "bowl");
+    cat.needs.hunger = 90;
+    cat.act = idleAct(0);
+    tickCats(save.current, 1, { present: false });
+    expect([cat.act.kind, cat.act.target]).toEqual(["beg", "bowl"]);
+  });
+
+  it("стартовий пакет притулку не ставить поїлку, що вже їде; кіт, чий лоток зник дорогою, іде до іншого", () => {
+    const save = game();
+    save.current.home.items = save.current.home.items.filter((i) => i.kind !== "water");
+    save.current.home.deliveries.push({ id: 900, quality: "cheap", at: 99999, thing: "water" });
+    giveStarterPack(save.current);
+    expect(save.current.home.items.some((i) => i.kind === "water")).toBe(false);
+
+    const cat = held(save);
+    save.current.character.held = null;
+    const box = save.current.home.items.find((i) => i.kind === "litter");
+    if (!box) throw new Error("немає лотка");
+    cat.needs.toilet = 90;
+    cat.act = { kind: "toilet", target: "item:9999", goal: null, minutes: 1, elapsed: 1 };
+    const messes = save.current.home.messes.length;
+    tickCats(save.current, 1, { present: false });
+    expect(save.current.home.messes.length).toBe(messes);
+    expect(cat.act.target).toBe(`item:${box.id}`);
+  });
+
+  it("лише надкльована половинка під автогодівницею — спорожнити нічого, і миску не чіпають", () => {
+    const save = game();
+    const bowl = firstBowl(save);
+    bowl.food = 1;
+    bowl.half = true;
+    bowl.foodQuality = "cheap";
+    const feeder: Feeder = { quality: "cheap", bowl: bowl.id, food: 0, foodQuality: null, sterile: false } as unknown as Feeder;
+    expect(emptyFeeder(save.current, bowl, feeder)).toEqual([]);
+    expect([bowl.food, bowl.half]).toEqual([1, true]);
   });
 });
 

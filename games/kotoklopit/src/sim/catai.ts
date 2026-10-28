@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { adaptsLonger, avoiding, changeLove, changeMood, forgive, grudgeAt, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
+import { adaptsLonger, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
 import { lastTileWithin, randomFloor, stepTo, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -820,9 +820,11 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });
   // Відчинена пральна машина — затишний барабан для допитливих (§8.7).
-  if (state.home.washer.state === "idle") {
+  // Один кіт на барабан (перевірка побуту 2026-10-28: двоє лягали в одну точку, як колись на плитці).
+  const drumTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "washer");
+  if (state.home.washer.state === "idle" && !drumTaken) {
     const washer = objectById("washer");
-    options.push({ weight: 0.5 + Math.max(0, traitLevel(cat, "curiosity")), value: at({ x: washer.x, y: washer.y }) });
+    options.push({ weight: 0.5 + Math.max(0, traitLevel(cat, "curiosity")), value: { at: { x: washer.x, y: washer.y }, target: "washer" } });
   }
   // Пам'ятає «ні» про комп'ютер — там не спить (§9.12, «Слухняність»).
   if (!isWorking(state) && !catOnComputer(state) && noGo(state, cat, "desk") === "go") {
@@ -926,6 +928,10 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
     // Біля персонажа ворог — до нього не йде (§9.4, рішення автора 2026-10-26).
     if (context.present && !aloof(cat) && !avoiding(state, cat) && traitLevel(cat, "begging") > -2 && !enemyAtPerson(state, cat) && rng.chance(0.5)) return startAttention(state, cat, true);
     if (empty) return start(cat, "beg", itemTile(empty), CAT_ACT_MINUTES.beg, `item:${empty.id}`);
+    // Мисок немає зовсім (розбилася чи викинули): кіт просить їсти там, де вона стояла, як і з водою (перевірка побуту
+    // 2026-10-28: раніше голодний кіт щохвилини перебирав справи).
+    const slot = SLOTS.find((s) => s.kind === "bowl");
+    if (slot) return start(cat, "beg", { x: slot.x, y: slot.y }, CAT_ACT_MINUTES.beg, "bowl");
   }
   // Новий кіт, що звикає, і дуже слабкий (§9.5, Х4) сплять і, коли нічого не треба, сидять у схованці.
   const adapting = isAdapting(state, cat);
@@ -2222,6 +2228,10 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return;
     case "toilet": {
       const box = itemById<LitterItem>(state, act.target);
+      // Лоток, до якого йшов, тим часом викинули чи зламав інший кіт — іде до іншого, а не лишає «сюрприз» (перевірка побуту
+      // 2026-10-28).
+      const other = box === null && act.target?.startsWith("item:") === true ? nearest(cat, itemsOf(state, "litter")) : null;
+      if (other) return start(cat, "toilet", itemTile(other), CAT_ACT_MINUTES.toilet, `item:${other.id}`);
       const dirty = box !== null && dirtyFor(cat, box);
       const picky = traitLevel(cat, "litterPicky");
       // Грязнулі ображаються менше (−2 — зовсім ні) й від брудного лотка не відмовляються; чистюлі — навпаки (§9.12).
@@ -2340,9 +2350,11 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       return settleStandoff(state, cat, foe, rng);
     }
     case "scratch": {
+      const post = itemById(state, act.target);
+      // Кігтеточку, до якої йшов, тим часом викинули чи зламали — не «дере диван» (хибний прояв), а просто відходить.
+      if (post === null && act.target?.startsWith("item:") === true) return;
       cat.needs.play = Math.max(0, cat.needs.play - SCRATCH.relief);
       changeMood(state, cat, SCRATCH.mood);
-      const post = itemById(state, act.target);
       if (post) {
         itemMood(state, cat, post);
         wearOut(state, post, rng);
@@ -3068,6 +3080,8 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   if (isCarried(state, cat)) return carried(state, cat, minutes, rng);
   if (isNewborn(cat)) return nurse(state, cat);
   if (cat.act.target === "robot") ride(state, cat);
+  // Ішов спати в барабан, а машину тим часом запустили — туди вже не лягає (перевірка побуту 2026-10-28: спав у машині, що пере).
+  if (cat.act.kind === "sleep" && cat.act.target === "washer" && state.home.washer.state !== "idle") cat.act = idleAct(2);
   nervous(state, cat, rng);
   revenge(state, cat, minutes, rng);
   doorCall(state, cat, minutes, rng);

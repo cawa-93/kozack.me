@@ -362,6 +362,8 @@ export function giveStarterPack(state: GameState): void {
   // Без мисок і лотка кіт не проживе й ночі: притулок дає найпростіші, якщо вдома їх немає.
   for (const thing of ["bowl", "water", "litter"] as const) {
     if (state.home.items.some((i) => i.kind === thing)) continue;
+    // Така річ уже їде: притулок свою не дає, інакше вона займала б місце, і оплачена мовчки пропадала (перевірка побуту 2026-10-28).
+    if ([...state.home.deliveries, ...state.home.porch].some((d) => "thing" in d && d.thing === thing)) continue;
     const item = place(state, thing, "cheap");
     if (item) state.home.items.push(item);
   }

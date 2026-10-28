@@ -103,6 +103,9 @@ export function rubbingCat(state: GameState): Cat | null {
  * попереднього оглушення минуло менше 5 хвилин — не валить з ніг (false), і той, хто кличе, нічого не показує.
  */
 export function stun(state: GameState): boolean {
+  // У душовій кабіні персонажа не збити з ніг: його там і не видно (перевірка побуту 2026-10-28: збивав кіт у «зумі»).
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.inside === true) return false;
   const body = state.character.body;
   const now = absoluteMinute(state.day, state.minute);
   if (body.stunAt !== undefined && now - body.stunAt < STUN_PAUSE_MINUTES) return false;
