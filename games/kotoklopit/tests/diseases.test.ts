@@ -250,6 +250,21 @@ describe("ліки вдома (§9.5)", () => {
     expect(worked / 200).toBeLessThan(0.8);
   });
 
+  it("дешева таблетка бере хронічну під контроль лише з шансом 70%", () => {
+    let worked = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const save = game();
+      save.current.home.supplies.pills = { cheap: 1, premium: 0 };
+      const cat = withCat(save);
+      fallIll(save.current, cat, "senior");
+      hold(save, cat);
+      giveMedicine(save.current, "pills", createRng(seed));
+      if (cat.diseases[0]?.controlled === save.current.day) worked += 1;
+    }
+    expect(worked / 200).toBeGreaterThan(MEDICINE.cheapWorks - 0.1);
+    expect(worked / 200).toBeLessThan(MEDICINE.cheapWorks + 0.1);
+  });
+
   it("старечі болячки — хронічні: таблетка того дня рятує від шкоди", () => {
     const save = game();
     const cat = withCat(save);

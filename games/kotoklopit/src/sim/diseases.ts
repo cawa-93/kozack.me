@@ -219,10 +219,15 @@ export function giveMedicine(state: GameState, medicine: Medicine, rng: Rng): bo
   (cat.lastDose ??= {})[medicine] = now;
   for (const disease of [...cat.diseases]) {
     const rule = DISEASES[disease.id].cure;
-    // Таблетка контролює сьогодні, але не скорочує тиждень контролю від ветеринара.
-    if (rule.kind === "control" && rule.medicine === medicine) disease.controlled = Math.max(disease.controlled ?? state.day, state.day);
-    if (rule.kind !== medicine) continue;
+    const control = rule.kind === "control" && rule.medicine === medicine;
+    if (!control && rule.kind !== medicine) continue;
+    // Дешева доза діє з шансом 70% — і для хронічної теж (§9.5; крок 17, звірка з довідниками 2026-10-28: контролювала завжди).
     if (quality === "cheap" && !rng.chance(MEDICINE.cheapWorks)) continue;
+    // Таблетка контролює сьогодні, але не скорочує тиждень контролю від ветеринара.
+    if (rule.kind === "control") {
+      disease.controlled = Math.max(disease.controlled ?? state.day, state.day);
+      continue;
+    }
     disease.doses += 1;
     if (disease.doses >= rule.doses) cure(state, cat, disease, rng);
   }
