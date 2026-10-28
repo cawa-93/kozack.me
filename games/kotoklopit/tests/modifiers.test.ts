@@ -191,12 +191,12 @@ describe("події модифікаторів: перевірка модифі
     expect(bell.events.some((e) => e.type === "doorbell")).toBe(true);
   });
 
-  it("кіт у кадрі (на колінах) псує враження на відеодзвінку (§8.6)", () => {
+  it("кіт у кадрі (на колінах) враження на відеодзвінку не псує (рішення автора 2026-10-28)", () => {
     const save = game();
     const before = callImpression(save.current);
     const cat = withCat(save);
     cat.act = { kind: "lap", target: null, goal: null, minutes: 30, elapsed: 0 };
-    expect(callImpression(save.current)).toBeLessThan(before);
+    expect(callImpression(save.current)).toBe(before);
   });
 
   it("відповісти мамі за комп'ютером — не робота; поїздка в обідню перерву не штрафується; офісу в розкладі після зборів немає", () => {

@@ -3,7 +3,6 @@
 import { earn, unpleasantTask } from "./character";
 import {
   ABSENCE_REPUTATION,
-  CALL_CAT_REPUTATION,
   CALL_DIRTY_CLOTHES,
   CALL_HYGIENE_REPUTATION,
   DIFFICULTY,
@@ -25,7 +24,6 @@ import {
   TRIP_REPUTATION_DIVIDER,
   WORKDAYS_PER_WEEK,
 } from "./config";
-import { catOnComputer } from "./catai";
 import { emit, type PatienceLevel } from "./events";
 import { beardImpression } from "./grooming";
 import { patienceDecayFactor, payFactor, reputationFactor, toOffice, workdayOverride } from "./modifiers";
@@ -198,17 +196,14 @@ function resolveStandup(state: GameState): void {
 
 /**
  * Враження на відеодзвінку в «годинах роботи» посади (§8.6): низька гігієна — штраф,
- * висока — дзеркальний бонус; борода (§5.1), брудний одяг (§8.7) і кіт у кадрі.
+ * висока — дзеркальний бонус; борода (§5.1) і брудний одяг (§8.7). Кіт у кадрі не штрафує (рішення автора 2026-10-28).
  */
 export function callImpression(state: GameState): number {
   const hygiene = state.character.stats.hygiene;
   const clean = hygiene < LOW_STAT ? -CALL_HYGIENE_REPUTATION : hygiene >= HIGH_HYGIENE ? CALL_HYGIENE_REPUTATION : 0;
   // Борода (§5.1): доглянута — бонус, неохайна — штраф; брудний одяг — штраф (§8.7).
   const clothes = state.home.clothes <= 0 ? -CALL_DIRTY_CLOTHES.reputation : 0;
-  // Кіт у кадрі (§8.6, [Ухвалено]): на колінах чи на комп'ютері, коли дзвінок закінчується (перевірка модифікаторів 2026-10-28:
-  // правило було в документі, а в коді — ні).
-  const inFrame = state.cats.some((c) => c.away === null && c.act.kind === "lap" && c.act.goal === null) || catOnComputer(state) !== null;
-  return clean + beardImpression(state) + clothes - (inFrame ? CALL_CAT_REPUTATION : 0);
+  return clean + beardImpression(state) + clothes;
 }
 
 /** На відеодзвінку колеги помічають брудний одяг (§5.1): бабл над комп'ютером. */
