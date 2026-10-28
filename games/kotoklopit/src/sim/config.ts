@@ -254,6 +254,8 @@ export const STANDUP_MISSED_REPUTATION = -1;
 export const CALL_HYGIENE_REPUTATION = 0.5;
 /** Брудний одяг на відеодзвінку (§5.1, §8.7): штраф у «годинах роботи»; на якій хвилині колеги це помічають. */
 export const CALL_DIRTY_CLOTHES = { reputation: 0.5, noticeMinute: 5 } as const;
+/** Кіт у кадрі на відеодзвінку (§8.6) — штраф у «годинах роботи», як брудний одяг (перевірка модифікаторів 2026-10-28). */
+export const CALL_CAT_REPUTATION = 0.5;
 export const HIGH_HYGIENE = 75;
 /**
  * Пошук роботи після звільнення (§8.6, правка автора 2026-10-23): години за комп'ютером за складністю

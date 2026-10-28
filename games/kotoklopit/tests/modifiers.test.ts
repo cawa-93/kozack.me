@@ -17,7 +17,7 @@ import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
-import { isWorkday, startWork, tickWork } from "../src/sim/work";
+import { callImpression, isWorkday, startWork, tickWork } from "../src/sim/work";
 import { hours, recordEvents, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
@@ -173,6 +173,14 @@ describe("події модифікаторів: перевірка модифі
     tickModifiers(vet.current, 11 * 60 - 3, 4, false);
     bell.stop();
     expect(bell.events.some((e) => e.type === "doorbell")).toBe(true);
+  });
+
+  it("кіт у кадрі (на колінах) псує враження на відеодзвінку (§8.6)", () => {
+    const save = game();
+    const before = callImpression(save.current);
+    const cat = withCat(save);
+    cat.act = { kind: "lap", target: null, goal: null, minutes: 30, elapsed: 0 };
+    expect(callImpression(save.current)).toBeLessThan(before);
   });
 
   it("відповісти мамі за комп'ютером — не робота; поїздка в обідню перерву не штрафується; офісу в розкладі після зборів немає", () => {
