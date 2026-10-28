@@ -11,6 +11,7 @@ import {
   DISEASES,
   GROOMER,
   GUESTS,
+  ILLNESS,
   MINUTES_PER_HOUR,
   MODIFIERS,
   POSITIONS,
@@ -24,7 +25,7 @@ import {
   VET,
 } from "./config";
 import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS, shelterBreed } from "./breeds";
-import { cureDisease } from "./diseases";
+import { cureDisease, maybeFallIll } from "./diseases";
 import { isNursing } from "./reproduction";
 import { canOrderProduct, freeSlots, place, spendingOf, stash } from "./economy";
 import { giveAway } from "./farewell";
@@ -32,7 +33,7 @@ import { emit } from "./events";
 import { observe } from "./knowledge";
 import { priceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
-import { createRng, deriveSeed, type Rng } from "./rng";
+import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekOf } from "./time";
 import type { Cat, DiseaseId, GameState, Product, Quality, ThingKind } from "./types";
 import { changeReputation, isWorkday } from "./work";
@@ -331,5 +332,7 @@ export function adopt(state: GameState, catId: number): Cat | null {
   if (!cat || !spend(state, SHELTER.price, "other")) return null;
   state.shelter.cats = state.shelter.cats.filter((c) => c !== cat);
   welcome(state, cat);
+  // З притулку — можливо, з блохами, як і примусове кошеня (§9.5; крок 17: кіт, якого брали самі, бліх не мав ніколи).
+  maybeFallIll(state, cat, "fleas", ILLNESS.shelterFleas, stateRng(state, "behavior"));
   return cat;
 }

@@ -1346,6 +1346,10 @@ function chewDone(state: GameState, cat: Cat, rng: Rng): void {
     // для стерилізованих і з пакета — без множника стерилізованого (рішення автора 2026-10-26).
     gainWeight(state, cat, bag.product === "treats" ? WEIGHT.treat : WEIGHT.stolen, bag.product === "sterileFood");
     changeMood(state, cat, 1);
+    // Корм із пакета — ті самі ризики, що й із миски: дешевий — розлад шлунка, звичайний стерилізованому — сечокам'яна (§9.5, §9.8;
+    // крок 17, звірка з довідниками 2026-10-28: з пакета кіт не ризикував нічим).
+    if (bag.product !== "treats") afterMeal(state, cat, bag.quality === "premium", rng);
+    if (bag.product === "catFood" && cat.sterilized) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
   }
 }
 
@@ -1419,6 +1423,8 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
   gainWeight(state, cat, WEIGHT.stolen);
   changeMood(state, cat, quality === "premium" ? MOOD.premiumFood : MOOD.cheapFood, "корм із шафки");
   emit(state, { type: "cat-ate", cat: cat.id, quality });
+  // Корм із шафки — і ризик розладу від дешевого, як із миски (§9.5; крок 17, звірка з довідниками 2026-10-28).
+  afterMeal(state, cat, quality === "premium", rng);
   // Стерилізованому — лише корм для стерилізованих (§9.8): у шафці — звичайний.
   if (cat.sterilized) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
   if (full && rng.chance(CUNNING.fullVomit)) addMess(state, "vomit", visibleFloorNear(state, { x: cat.x, y: cat.y + 0.6 }), cat.id);

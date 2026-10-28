@@ -443,6 +443,22 @@ describe("пункти призначення (§8.5)", () => {
     ]);
   });
 
+  it("кіт, якого взяли в притулку, буває з блохами, як і примусове кошеня (крок 17)", () => {
+    let fleas = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      save.current.rng.behavior = seed;
+      arrive(save, "shelter");
+      const cat = shelterCats(save.current)[0];
+      if (!cat) throw new Error("немає котів");
+      adopt(save.current, cat.id);
+      if (cat.diseases.some((d) => d.id === "fleas")) fleas += 1;
+    }
+    expect(fleas).toBeGreaterThan(3);
+    expect(fleas).toBeLessThan(25);
+  });
+
   it("котокафе: здоровий глузд слабшає з кожною годиною, ревниві коти ображаються", () => {
     const save = game(9 * 60);
     save.current.day = 5;
