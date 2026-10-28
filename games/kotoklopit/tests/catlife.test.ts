@@ -655,6 +655,17 @@ describe("кошеня й «Пригніченість» (§6.2)", () => {
     withCat(save);
     expect(state.character.depressed).toBe(false);
   });
+
+  it("пригнічений без кота забирає кошеня й тоді, коли здоровий глузд дійшов рівно до 35 (перевірка розмноження 2026-10-28)", () => {
+    const save = game();
+    const state = save.current;
+    state.cats = [];
+    state.character.depressed = true;
+    state.character.stats.sanity = 35;
+    state.minute = 22 * 60;
+    goToSleep(save);
+    expect(state.cats.map((c) => c.source)).toEqual(["shelter-forced"]);
+  });
 });
 
 describe("кіт чує корм (§9.12)", () => {

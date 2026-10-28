@@ -332,7 +332,9 @@ function utilities({ state, report }: Night): void {
  * Кошеня випадкове: 1 тиждень, 1 риса, жодної відомої; приходить зі стартовим пакетом (§9.12).
  */
 function kittenCheck({ state, report, rng }: Night): void {
-  if (report.sanityEvening >= KITTEN_SANITY_THRESHOLD) return;
+  // «Пригніченість» тримає здоровий глузд не вище порогу — рівно 35 (котокафе) не мало забирати кошеня й захист без кота
+  // (перевірка розмноження 2026-10-28): пригнічений без кота забирає кошеня й тоді.
+  if (report.sanityEvening >= KITTEN_SANITY_THRESHOLD && !state.character.depressed) return;
   const cat = createCat(state, rng, { source: "shelter-forced", ageWeeks: KITTEN_AGE_WEEKS });
   // Що видно про породу — як у притулку (§9.11; пошук багів 2026-10-25: було невідомо навіть на легкій).
   cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
