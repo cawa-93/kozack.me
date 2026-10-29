@@ -7,6 +7,7 @@ import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
 import type { Cat } from "../src/sim/types";
 import { breedAbout } from "../src/ui/cards";
+import { traitAbout } from "../src/ui/traits";
 import { DISEASES } from "../src/sim/config";
 import { BREED_ABOUT, BREED_HALF, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
@@ -69,6 +70,15 @@ describe("опис рис для картки кота (§9.9)", () => {
         }
       }
     }
+  });
+
+  it("загальна ревізія 2026-10-29: «Стрункий» і «Не мерзне» (−1) мають свій опис, без «ніколи» рівня −2", () => {
+    const about = (group: string, level: -1 | -2): string => traitAbout({ group, level }, "female");
+    expect(about("chubby", -2)).toBe("Тримає форму, хоч скільки їсть.");
+    expect(about("chubby", -1)).not.toBe(about("chubby", -2));
+    expect(about("chubby", -1)).toContain("набирає вагу");
+    expect(about("warmth", -2)).toContain("не шукає зовсім");
+    expect(about("warmth", -1)).toContain("шукає рідко");
   });
 
   it("опис і підказки про кішку — у жіночому роді: без «сам» і «голодним» (перевірка 2026-10-25: «Образливість +» казала «сам не приходить», «Злодійство −» — «навіть голодним»)", () => {
