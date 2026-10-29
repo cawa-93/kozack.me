@@ -385,7 +385,7 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     }
   });
 
-  it("теплолюб у «Холод» мерзне — думка-сніжинка, настрій падає, прояв «+»; під ковдрою — ні; кіт без риси — ні", () => {
+  it("теплолюб у «Холод» мерзне — думка-сніжинка й прояв «+», але настрою не втрачає (рішення автора 2026-10-29, А16); уві сні — ні; кіт без риси — ні", () => {
     const run = (traits: Record<string, TraitLevel>, blanket = false): { mood: number; felt: number; seen: number } => {
       const save = game();
       save.current.modifiers.day = "cold";
@@ -403,14 +403,33 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     // Раз на 3 години — і щоразу це видно.
     expect(warm.felt).toBe(2);
     expect(warm.seen).toBe(2);
-    expect(warm.mood).toBeLessThan(60);
     const plain = run({});
     expect(plain.felt).toBe(0);
     const covered = run({ warmth: 2 }, true);
     expect(covered.felt).toBe(0);
     expect(covered.mood).toBeGreaterThanOrEqual(60);
-    // −1 за одиницю на добу: за 6 годин без тепла «+2» втрачає на пів одиниці настрою більше, ніж кіт без риси.
-    expect(plain.mood - warm.mood).toBeCloseTo((-WARMTH.weatherMood * 2 * (6 * 60)) / MINUTES_PER_DAY, 1);
+    // Раніше −1 за одиницю на добу: за 6 годин без тепла «+2» втрачав на пів одиниці настрою більше, ніж кіт без риси.
+    expect(warm.mood).toBeCloseTo(plain.mood, 6);
+  });
+
+  it("«Не мерзне» у «Спеку» знемагає, але настрою від спеки не втрачає (рішення автора 2026-10-29, А16)", () => {
+    const run = (traits: Record<string, TraitLevel>): { mood: number; felt: number } => {
+      const save = game();
+      save.current.modifiers.day = "heat";
+      const cat = withCat(save, traits, { x: 9.5, y: 7.5 });
+      cat.mood = 60;
+      cat.act = idleAct(600);
+      cat.needs.fatigue = 0;
+      const { events, stop } = recordEvents();
+      live(save, 60);
+      stop();
+      return { mood: cat.mood, felt: events.filter((e) => e.type === "weather-felt" && e.cat === cat.id).length };
+    };
+    const hot = run({ warmth: -2 });
+    expect(hot.felt).toBe(1);
+    // Раніше за годину без прохолоди «−2» втрачав 2 / 24 настрою.
+    expect(hot.mood).toBe(60);
+    expect(run({}).mood).toBe(60);
   });
 
   it("«Не мерзне» у «Спеку» знемагає й п'є більше", () => {

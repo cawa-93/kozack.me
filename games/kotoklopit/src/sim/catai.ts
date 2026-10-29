@@ -266,7 +266,7 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
     const demanding = Math.max(0, 1 + TRAIT_EFFECTS.demandingIgnoredStep * traitLevel(cat, "demanding"));
     changeMood(state, cat, MOOD.ignoredPerHour * hours * demanding);
   }
-  weatherFeel(state, cat, minutes);
+  weatherFeel(state, cat);
 }
 
 /** «Не мерзне» в «Спеку» п'є більше (§9.12, «Теплолюбність»; сюди злито «Чутливість до погоди»). */
@@ -276,31 +276,17 @@ function heatThirst(state: GameState, cat: Cat): number {
 }
 
 /**
- * Кіт гріється (§9.12, «Теплолюбність»): спить під ковдрою, на комп'ютері, на холодильнику, над батареєю на підвіконні, у будиночку,
- * у сонячній плямі чи купкою з іншим котом, лежить на колінах чи сидить на руках.
- */
-function warming(state: GameState, cat: Cat): boolean {
-  if (isCarried(state, cat) || cat.act.kind === "lap") return true;
-  if (!asleep(cat)) return false;
-  if (cat.act.blanket === true || cat.act.target?.startsWith("pile:") === true || cat.act.target?.startsWith("item:") === true) return true;
-  const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
-  if (o?.kind === "computer" || o?.kind === "fridge" || o?.kind === "windowsill") return true;
-  const sun = sunSpot(state.minute);
-  return sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
-}
-
-/**
  * Погода (§9.12, «Теплолюбність»; сюди злито «Чутливість до погоди», рішення автора 2026-10-25): «+» у «Холод» мерзне, «−» у «Спеку»
- * знемагає — поки не гріється (не лежить на прохолодній плитці), втрачає 1 настрою за одиницю на добу, а не сплячи, раз на 3 години
- * показує це (думка — сніжинка чи сонце). Кіт без риси спеки й холоду так не відчуває — це прояв.
+ * знемагає — не сплячи, раз на 3 години показує це (думка — сніжинка чи сонце); теплолюб на колінах чи на руках не мерзне. Кіт без
+ * риси спеки й холоду так не відчуває — це прояв. Настрою погода не забирає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А16:
+ * було −1 за одиницю на добу, поки кіт не гріється, — менше за хвилину пестощів, і гравець цього не відчував); тепло теплолюб шукає,
+ * як і раніше (`sleepSpot`).
  */
-function weatherFeel(state: GameState, cat: Cat, minutes: number): void {
+function weatherFeel(state: GameState, cat: Cat): void {
   const level = traitLevel(cat, "warmth");
   const feel = level > 0 && isCold(state) ? "cold" : level < 0 && isHot(state) ? "hot" : null;
-  if (feel === null || cat.away !== null || isNewborn(cat)) return;
-  if (feel === "cold" ? warming(state, cat) : asleep(cat) && cat.act.target === "tile") return;
-  changeMood(state, cat, (WARMTH.weatherMood * Math.abs(level) * minutes) / MINUTES_PER_DAY);
-  if (asleep(cat) || !home(state, cat)) return;
+  // На руках кіт не «вдома» (`home`), а на колінах — гріється.
+  if (feel === null || isNewborn(cat) || asleep(cat) || !home(state, cat) || (feel === "cold" && cat.act.kind === "lap")) return;
   const now = absoluteMinute(state.day, state.minute);
   if (cat.weatherAt !== undefined && now - cat.weatherAt < WARMTH.feelEvery) return;
   cat.weatherAt = now;
