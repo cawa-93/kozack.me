@@ -1,7 +1,7 @@
 // Хід гри: нова гра, плин часу, сон, знімки на початок дня й тижня, перегравання
 // і збереження в JSON (§6.1).
 
-import { IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
+import { catchEscaped, IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { isMoving, moveBody, newBody, unstickBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
@@ -190,11 +190,13 @@ export function rewindAccident(save: Save): NightReport | null {
 
 /**
  * Віднести знайду в притулок (§4.1): дві години персонаж поза домом — як поїздка без гонки й без картки на місці; повертаючись,
- * відчиняє двері (перевірка розмноження 2026-10-28: раніше ці дві години гра рахувала так, ніби він удома).
+ * відчиняє двері (перевірка розмноження 2026-10-28: раніше ці дві години гра рахувала так, ніби він удома). Кота, що вибіг на
+ * сходи, коли двері відчинили знайді, персонаж спершу ловить, як перед поїздкою (§9.12 «Втечі», загальна ревізія 2026-10-29).
  */
 export function carryFoundling(save: Save): NightReport | null {
   const state = save.current;
   if (state.trip !== null || state.end !== null) return null;
+  catchEscaped(state);
   state.trip = { destination: "shelter", phase: "visit", cat: null, race: newRace(0, 0), losses: [], visit: 0, seed: 0, foundling: true };
   return returnHome(save, MODIFIERS.foundlingShelterMinutes, 0);
 }

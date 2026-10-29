@@ -10,7 +10,7 @@ import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
 import { dispatch } from "../src/sim/economy";
-import { advance, interact, newGame } from "../src/sim/game";
+import { advance, carryFoundling, interact, newGame } from "../src/sim/game";
 import { decideFoundling, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -104,6 +104,32 @@ describe("«Втечі»: відчинені двері (§9.12, рішення 
       expect(cat.away).toBeNull();
       cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
       expect(startTrip(save.current, "shop")).toBe(true);
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it("знайду відносять у притулок: кота, що вибіг на сходи, персонаж спершу ловить, а вже тоді йде (загальна ревізія 2026-10-29)", () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 30; seed++) {
+      const save = game(seed);
+      save.current.day = 5; // субота: без поїздки в робочий час
+      save.current.minute = hours(8);
+      const cat = withCat(save, { escape: 2 }, { x: 10.5, y: 9.5 });
+      save.current.today.foundling = true;
+      decideFoundling(save.current, false, createRng(1));
+      if (cat.away !== "stairs") continue;
+      checked += 1;
+      const sanity = save.current.character.stats.sanity;
+      const { events, stop } = recordEvents();
+      carryFoundling(save);
+      stop();
+      const caught = events.findIndex((e) => e.type === "cat-returned" && e.caught);
+      const back = events.findIndex((e) => e.type === "trip-ended");
+      // Упіймав до того, як піти, і за дві години кіт на сходи не вибігав: двері відчинилися знову лише після повернення.
+      expect(caught).toBeGreaterThanOrEqual(0);
+      expect(caught).toBeLessThan(back);
+      expect(events.slice(caught, back).some((e) => e.type === "escaped")).toBe(false);
+      expect(save.current.character.stats.sanity).toBeLessThan(sanity + ESCAPE.catchSanity / 2);
     }
     expect(checked).toBeGreaterThan(0);
   });

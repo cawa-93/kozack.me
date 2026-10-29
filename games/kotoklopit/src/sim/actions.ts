@@ -422,6 +422,11 @@ function dropToy(state: GameState): void {
   state.character.held = null;
 }
 
+/** Впіймати всіх котів, що вибігли на сходи (§9.12): так персонаж робить, перш ніж віднести знайду в притулок (§4.1). */
+export function catchEscaped(state: GameState): void {
+  for (const cat of state.cats) if (cat.away === "stairs") catchCat(state, cat);
+}
+
 /** Повернути кота зі сходів (§9.12): ловити кота — неприємне завдання. */
 function catchCat(state: GameState, cat: Cat): void {
   cat.away = null;
