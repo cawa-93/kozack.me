@@ -37,20 +37,23 @@ describe("тексти (TEXTS.md)", () => {
     expect(endingText(state, "retirement").title).toBe("Кар'єрист");
   });
 
-  it("загальна ревізія 2026-10-29: без котів текст кінця гри котів не згадує, з котом — звичайний текст", () => {
+  it("загальна ревізія 2026-10-29: без котів текст кінця гри котів не згадує, з котом — звичайний текст; заголовок «Поповнення в зграї» без котів — свій", () => {
     const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
     expect(state.cats).toHaveLength(0);
     const ends = ["health", "satiety", "hygiene", "sanity", "eviction"] as const;
     const lonely = ends.map((end) => endingText(state, end));
-    for (const [i, { text }] of lonely.entries()) {
+    for (const [i, { title, text }] of lonely.entries()) {
       expect(text, ends[i]).not.toMatch(/кот|кіт/iu);
+      expect(title, ends[i]).not.toMatch(/кот|зграї/iu);
       expect(text, ends[i]).not.toMatch(/[{}[\]|]/);
     }
     expect(lonely[1]?.text).toContain("забула нагодувати себе");
     state.cats.push(createCat(state, createRng(1), { source: "shelter", ageWeeks: 3 }));
     for (const [i, end] of ends.entries()) {
       const { title, text } = endingText(state, end);
-      expect(title).toBe(lonely[i]?.title);
+      // Заголовок той самий, крім «Поповнення в зграї»: без котів «зграї» немає (загальна ревізія 2026-10-29).
+      if (end === "sanity") expect([lonely[i]?.title, title]).toEqual(["Нявкіт без відповіді", "Поповнення в зграї"]);
+      else expect(title).toBe(lonely[i]?.title);
       expect(text, end).toMatch(/кот/iu);
     }
     expect(endingText(state, "eviction").text).toContain("Котів забрали до притулку");

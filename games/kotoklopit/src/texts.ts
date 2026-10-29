@@ -325,9 +325,9 @@ type DeathEnd = Exclude<GameEnd, "retirement">;
 /**
  * Кінець гри (§4.2): заголовок, текст і `noCats` — текст, коли котів удома немає (новачок до першого кота, усіх віддали чи
  * попрощалися): інакше голодний новачок читав «Котячі миски повні», а виселений без котів — «Котів забрали до притулку»
- * (загальна ревізія 2026-10-29).
+ * (загальна ревізія 2026-10-29). `noCatsTitle` — заголовок без котів, де звичайний жартує з котів («зграя»).
  */
-export const GAME_OVER: Record<DeathEnd, { title: string; text: string; noCats: string }> = {
+export const GAME_OVER: Record<DeathEnd, { title: string; text: string; noCats: string; noCatsTitle?: string }> = {
   health: {
     title: "Ви не робот",
     text: "{персонаж} [звалився|звалилася] з ніг просто посеред кухні. Лікар сказав: «Ви не робот». Коти стояли довкола з виразом «а хто нас тепер годуватиме?»",
@@ -345,6 +345,7 @@ export const GAME_OVER: Record<DeathEnd, { title: string; text: string; noCats: 
   },
   sanity: {
     title: "Поповнення в зграї",
+    noCatsTitle: "Нявкіт без відповіді",
     text: "Одного ранку {персонаж} [сів|сіла] на підлогу й [почав|почала] нявкати у відповідь. Коти перезирнулися: схоже, у зграї поповнення. Час на довгу відпустку в дуже тихому місці.",
     noCats: "Одного ранку {персонаж} [сів|сіла] на підлогу й [почав|почала] нявкати. Просто так, у порожній квартирі. Час на довгу відпустку в дуже тихому місці.",
   },
@@ -409,7 +410,8 @@ export function endingText(state: GameState, end: GameEnd): { title: string; tex
   }
   // Котів удома немає — текст без них (загальна ревізія 2026-10-29). Фінали пенсії рахують і котів з альбому (§4.2), тож їх не чіпаємо.
   const entry = GAME_OVER[end];
-  return { title: fill(entry.title, sex), text: fill(state.cats.length === 0 ? entry.noCats : entry.text, sex, { персонаж: name }) };
+  const lonely = state.cats.length === 0;
+  return { title: fill(lonely ? (entry.noCatsTitle ?? entry.title) : entry.title, sex), text: fill(lonely ? entry.noCats : entry.text, sex, { персонаж: name }) };
 }
 
 /** Зміна посади (§8.6): `{персонаж}`, `{посада}`. */
