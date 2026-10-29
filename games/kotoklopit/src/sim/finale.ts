@@ -7,7 +7,7 @@ import type { GameState } from "./types";
 export type CatsAxis = "happy" | "ordinary" | "suffered";
 export type CareerAxis = "low" | "middle" | "high";
 
-/** Посада на момент пенсії: 1–5 — низька, 6–9 — середня, 10 (директор) — висока; безробітний — низька (§4.2, Ц1). */
+/** Посада на момент пенсії: 1–8 — низька, 9–14 — середня, 15 (директор) — висока; безробітний — низька (§4.2, Ц1, А10). */
 export function careerAxis(state: GameState): CareerAxis {
   if (state.job.unemployed) return "low";
   const position = state.job.position + 1;

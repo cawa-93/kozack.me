@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
+import { CAREER_AXIS, POSITIONS } from "../src/sim/config";
 import { removeCat } from "../src/sim/farewell";
 import { careerAxis, catsAxis, catsMood } from "../src/sim/finale";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
@@ -103,13 +104,17 @@ describe("фінал (§4.2)", () => {
     expect(loaded.current.album.map((e) => e.days)).toEqual([10, 9]);
   });
 
-  it("кар'єра: 1–5 — низька, 6–9 — середня, лише директор — висока; безробітний — низька (Ц1)", () => {
+  it("кар'єра: 1–8 — низька, 9–14 — середня, лише директор (15) — висока; безробітний — низька (Ц1; драбина з 15 посад — А10)", () => {
     const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
     const at = (position: number): string => {
       save.current.job.position = position - 1;
       return careerAxis(save.current);
     };
-    expect([1, 5, 6, 9, 10].map(at)).toEqual(["low", "low", "middle", "middle", "high"]);
+    expect(POSITIONS).toHaveLength(15);
+    expect([1, 8, 9, 14, 15].map(at)).toEqual(["low", "low", "middle", "middle", "high"]);
+    // Межі пропорційні колишнім (1–5, 6–9 і 10 з 10 посад): середня починається на тій самій частці драбини (~56%).
+    expect((CAREER_AXIS.middle - 1) / (POSITIONS.length - 1)).toBeCloseTo((6 - 1) / (10 - 1), 1);
+    expect(CAREER_AXIS.high).toBe(POSITIONS.length);
     save.current.job.unemployed = true;
     expect(careerAxis(save.current)).toBe("low");
   });
