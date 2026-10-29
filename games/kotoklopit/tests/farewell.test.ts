@@ -8,7 +8,7 @@ import { giveAwayLoss, lifeLevel, oldAgeChance, oldAgeDeaths, recentlyArrived, r
 import { goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
+import type { AlbumEntry, Cat, Save, TraitLevel } from "../src/sim/types";
 import { diseaseTitle, farewellText, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, SHELTER_GIVEN } from "../src/texts";
 import { albumCause } from "../src/ui/cards";
 
@@ -126,6 +126,71 @@ describe("прощання (§9.7)", () => {
     expect(albumCause(entry)).toBe("хвороба серця");
     expect(albumCause({ ...entry, cause: { kind: "disease", disease: "cold" } })).toBe("застуда");
     expect(albumCause({ ...entry, cause: { kind: "old" } })).toBe("старість");
+  });
+
+  describe("рішення автора 2026-10-29 (GENERAL_REVIEW.md, А18): варіанти найчастіших прощань — за котом", () => {
+    /** Кіт, що пішов від старості з «Котячим раєм» (настрій 85), — із заданим номером. */
+    function paradise(sex: "male" | "female" = "male"): (id: number) => AlbumEntry {
+      const save = game();
+      const cat = withCat(save);
+      cat.sex = sex;
+      cat.moodHistory = [85, 85];
+      const entry = removeCat(save.current, cat, { kind: "old" }, 0);
+      return (id) => ({ ...entry, id });
+    }
+    const ids = Array.from({ length: 9 }, (_, i) => 30 + i);
+
+    it("старість і «Котячий рай» мають по кілька варіантів: кошенята одного виводку (номери поспіль) дістають різні, а причина й опис поєднуються по-різному", () => {
+      const entryOf = paradise();
+      const texts = ids.map((id) => farewellText(entryOf(id), diseaseTitle));
+      for (const text of texts) expect(text.title).toBe("Котячий рай");
+      // Троє з виводку — три різні причини й три різні описи.
+      expect(new Set(texts.slice(0, 3).map((t) => t.cause)).size).toBe(3);
+      expect(new Set(texts.slice(0, 3).map((t) => t.life)).size).toBe(3);
+      // Дев'ять котів поспіль — дев'ять різних пар, а не лише «другий варіант із другим».
+      expect(new Set(texts.map((t) => `${t.cause}|${t.life}`)).size).toBe(9);
+    });
+
+    it("той самий кіт — той самий текст: на прощанні, в альбомі після збереження й на переграванні", () => {
+      const entryOf = paradise("female");
+      for (const id of ids) {
+        const entry = entryOf(id);
+        const first = farewellText(entry, diseaseTitle);
+        expect(farewellText(entry, diseaseTitle)).toEqual(first);
+        // Збереження (JSON) і перегравання повертають той самий запис — з тим самим номером.
+        expect(farewellText(JSON.parse(JSON.stringify(entry)) as AlbumEntry, diseaseTitle)).toEqual(first);
+        // Варіант не залежить від ночі смерті: на переграванні кіт може піти іншого дня.
+        expect(farewellText({ ...entry, day: entry.day + 7 }, diseaseTitle)).toEqual(first);
+      }
+    });
+
+    it("усі варіанти заповнені в обох родах і починаються з імені (називний відмінок, TEXTS.md)", () => {
+      for (const sex of ["male", "female"] as const) {
+        const entryOf = paradise(sex);
+        for (const id of ids) {
+          const entry = entryOf(id);
+          const { cause, life } = farewellText(entry, diseaseTitle);
+          for (const text of [cause, life]) {
+            expect(text).not.toMatch(/[{}[\]|]/);
+            expect(text.startsWith(entry.name)).toBe(true);
+          }
+        }
+      }
+    });
+
+    it("решта причин і рівнів, як і опис відданого кота, — по одному тексту", () => {
+      const entryOf = paradise();
+      const count = (make: (id: number) => AlbumEntry, part: "cause" | "life"): number => new Set(ids.map((id) => farewellText(make(id), diseaseTitle)[part])).size;
+      // Причини, крім старості: опис «Котячого раю» й тут має варіанти, а причина — одна.
+      expect(count((id) => ({ ...entryOf(id), cause: { kind: "sorrow" } }), "cause")).toBe(1);
+      expect(count((id) => ({ ...entryOf(id), cause: { kind: "disease", disease: "cold" } }), "cause")).toBe(1);
+      // Відданий кіт: і причина, і опис «жив у вас» — по одному.
+      expect(count((id) => ({ ...entryOf(id), cause: { kind: "given" } }), "cause")).toBe(1);
+      expect(count((id) => ({ ...entryOf(id), cause: { kind: "given" } }), "life")).toBe(1);
+      // Інші рівні: «Щасливе життя» (75) і «Легенда» (95) — один опис.
+      expect(count((id) => ({ ...entryOf(id), lifeMood: 75 }), "life")).toBe(1);
+      expect(count((id) => ({ ...entryOf(id), lifeMood: 95 }), "life")).toBe(1);
+    });
   });
 });
 
