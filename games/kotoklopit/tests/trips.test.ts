@@ -17,6 +17,7 @@ import {
   officeMeeting,
   shelterCats,
   shopPrice,
+  sterilizeMinutes,
   sterilizePrice,
   tripCat,
   vetExam,
@@ -713,6 +714,22 @@ describe("пункти призначення (§8.5)", () => {
       // Друге натискання вже нічого не коштує.
       expect(vetSterilize(state)).toBe(false);
       expect(state.character.money).toBe(money - VET.exam);
+    });
+
+    it("час операції в підписі — увесь час, що мине на місці: до огляду — з годиною огляду, після окремого огляду — без неї (рецензія реалізації А6)", () => {
+      const first = femaleAtVet().state;
+      const before = sterilizeMinutes(first);
+      expect(before).toBe(STERILIZATION.minutes + TRIPS.vet.visit);
+      expect(vetSterilize(first)).toBe(true);
+      expect(first.trip?.visit).toBe(before);
+
+      const second = femaleAtVet().state;
+      expect(vetExam(second)).not.toBeNull();
+      const visit = second.trip?.visit ?? 0;
+      const after = sterilizeMinutes(second);
+      expect(after).toBe(STERILIZATION.minutes);
+      expect(vetSterilize(second)).toBe(true);
+      expect((second.trip?.visit ?? 0) - visit).toBe(after);
     });
 
     it("огляд окремо — 40, потім операція — ще 80", () => {

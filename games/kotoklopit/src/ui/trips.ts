@@ -1,7 +1,7 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { ACCIDENT, DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { roadMinutes, tripBlocker } from "../sim/trips";
@@ -177,7 +177,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     const blocker = knownSterilizeBlocker(state, cat);
     if (blocker !== null) return row(title, why[blocker]);
     const price = sterilizePrice(state);
-    return row(title, `🕐 ${minutesText(STERILIZATION.minutes)}${log.exam ? "" : " · огляд у ціні"}`, button(`${price} ₴`, price, h.sterilize));
+    // До огляду операція забирає й годину огляду (рецензія реалізації А6): «🕐 3 год · огляд у ціні», після окремого огляду — «🕐 2 год».
+    return row(title, `🕐 ${minutesText(sterilizeMinutes(state))}${log.exam ? "" : " · огляд у ціні"}`, button(`${price} ₴`, price, h.sterilize));
   };
   switch (destination) {
     case "shop":
