@@ -1319,14 +1319,16 @@ export class DayScene extends Phaser.Scene {
     // Що гравець уже обрав: повернувшись «Назад», він бачить свій вибір.
     let entered: string | null = null;
     let addressed: Address | null = null;
+    let chronotyped: Chronotype | null = null;
     const pickLook = (look: Look): void => this.overlay.show(lookCard(look, pickAddress, () => randomLook(looks)));
     const pickAddress = (look: Look): void =>
       this.overlay.show(addressCard(look, addressed, (address) => pickChronotype(look, address), () => pickLook(look)));
     const pickChronotype = (look: Look, address: Address): void => {
       addressed = address;
-      this.overlay.show(chronotypeCard((chronotype) => pickName(look, address, chronotype), () => pickAddress(look)));
+      this.overlay.show(chronotypeCard(chronotyped, (chronotype) => pickName(look, address, chronotype), () => pickAddress(look)));
     };
-    const pickName = (look: Look, address: Address, chronotype: Chronotype): void =>
+    const pickName = (look: Look, address: Address, chronotype: Chronotype): void => {
+      chronotyped = chronotype;
       this.overlay.show(
         nameCard(
           address,
@@ -1343,6 +1345,7 @@ export class DayScene extends Phaser.Scene {
           () => pickChronotype(look, address),
         ),
       );
+    };
     pickLook(randomLook(looks));
   }
 

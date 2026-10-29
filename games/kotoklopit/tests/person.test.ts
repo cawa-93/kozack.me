@@ -100,8 +100,19 @@ describe("бороди немає (рішення автора 2026-10-29, А4)"
 
 describe("хронотип — лише час пробудження (рішення автора 2026-10-29, А4)", () => {
   it("картка хронотипу називає час пробудження й не обіцяє бадьорості в якісь години", () => {
-    const card = chronotypeCard(() => undefined, () => undefined);
+    const card = chronotypeCard(null, () => undefined, () => undefined);
     expect(card.body).toEqual(["Жайворонок прокидається о 06:00.", "Сова прокидається о 08:00."]);
+  });
+
+  it("повернувшись «Назад» з кроку «Ім'я», гравець бачить обраний хронотип: головна кнопка — його, а спершу — жайворонок", () => {
+    const primary = (chosen: "lark" | "owl" | null): string[] =>
+      chronotypeCard(chosen, () => undefined, () => undefined)
+        .actions.filter((a) => a.primary)
+        .map((a) => a.label);
+    expect(primary(null)).toEqual(["Жайворонок"]);
+    expect(primary("lark")).toEqual(["Жайворонок"]);
+    // Інакше Enter після «Назад» тихо міняв би сову на жайворонка.
+    expect(primary("owl")).toEqual(["Сова"]);
   });
 });
 

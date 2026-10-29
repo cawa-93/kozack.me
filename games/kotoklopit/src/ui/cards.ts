@@ -629,8 +629,13 @@ export function addressCard(look: Look, chosen: Address | null, onPick: (address
   };
 }
 
-/** Крок 3: сова чи жайворонок (§5.1) — незалежно від звертання. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4). */
-export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
+/**
+ * Крок 3: сова чи жайворонок (§5.1) — незалежно від звертання. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4).
+ * Головна кнопка — обраний раніше хронотип (повернулися «Назад» з кроку «Ім'я»), а спершу — жайворонок, як і без вибору: інакше Enter
+ * після «Назад» тихо міняв би сову на жайворонка, а хронотип у грі вже не змінити.
+ */
+export function chronotypeCard(chosen: Chronotype | null, onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
+  const primary = chosen ?? "lark";
   return {
     kicker: "Нова гра · 3 з 5",
     solid: true,
@@ -640,8 +645,8 @@ export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack:
       `Сова прокидається о ${formatClock(WAKE_MINUTE.owl)}.`,
     ],
     actions: [
-      { label: "Жайворонок", primary: true, onSelect: () => onPick("lark") },
-      { label: "Сова", onSelect: () => onPick("owl") },
+      { label: "Жайворонок", primary: primary === "lark", onSelect: () => onPick("lark") },
+      { label: "Сова", primary: primary === "owl", onSelect: () => onPick("owl") },
       { label: "Назад", onSelect: onBack },
     ],
     onDismiss: onBack,
