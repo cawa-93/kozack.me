@@ -187,7 +187,7 @@ describe("події модифікаторів: перевірка модифі
     withCat(vet);
     vet.current.modifiers.day = "home-vet";
     const bell = recordEvents();
-    tickModifiers(vet.current, 11 * 60 - 3, 4, false);
+    tickModifiers(vet.current, 11 * 60 - GUESTS.ringLead - 1, GUESTS.ringLead + 2, false);
     bell.stop();
     expect(bell.events.some((e) => e.type === "doorbell")).toBe(true);
   });
@@ -541,7 +541,7 @@ describe("ефекти (§4.1)", () => {
     save.current.trip = { destination: "shop" } as unknown as NonNullable<Save["current"]["trip"]>;
   };
 
-  it("«Мамині гостинці» — удень дзвонить у двері, за 2 хвилини заходить і ставить два судочки в холодильник (рішення автора 2026-10-26)", () => {
+  it("«Мамині гостинці» — удень дзвонить у двері, за `ringLead` хвилин заходить і ставить два судочки в холодильник (рішення автора 2026-10-26; 2026-10-29, А5 — за 6 хвилин)", () => {
     const save = game();
     const at = momDay(save);
     // Зранку ще нічого: мама приїде вдень.
@@ -552,7 +552,10 @@ describe("ефекти (§4.1)", () => {
     tickModifiers(save.current, at - 0.5, 1, false);
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
     expect(inFridge(save)).toBe(0);
-    tickModifiers(save.current, at + 0.5, GUESTS.ringLead, false);
+    // За хвилину до візиту мама ще під дверима.
+    tickModifiers(save.current, at + 0.5, GUESTS.ringLead - 1.5, false);
+    expect(inFridge(save)).toBe(0);
+    tickModifiers(save.current, at + GUESTS.ringLead - 1, 1.5, false);
     stop();
     expect(inFridge(save)).toBe(PRODUCTS.momMeal.units.cheap);
     expect(inFridge(save)).toBe(2);
@@ -637,7 +640,7 @@ describe("ефекти (§4.1)", () => {
     }
   });
 
-  it("сценарій «Мама з гостинцями»: о 12:03 дзвінок — «Душа компанії» біжить до дверей, сором'язлива ховається; за 2 хвилини судочки в холодильнику", () => {
+  it("сценарій «Мама з гостинцями»: о 12:03 дзвінок — «Душа компанії» біжить до дверей і чекає, сором'язлива ховається; за 6 хвилин судочки в холодильнику", () => {
     const scenario = FILE_SCENARIOS["mom-visit"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
@@ -649,7 +652,10 @@ describe("ефекти (§4.1)", () => {
     expect(host?.act.target).toBe("guest");
     expect(shy?.act.kind).toBe("hide");
     expect(inFridge(save)).toBe(0);
-    advance(save, GUESTS.ringLead);
+    advance(save, GUESTS.ringLead - 2);
+    expect(inFridge(save)).toBe(0);
+    expect(host?.act.target).toBe("guest");
+    advance(save, 2);
     stop();
     expect(inFridge(save)).toBe(2);
     expect(events.some((e) => e.type === "modifier" && e.kind === "mom-food" && e.value === 1)).toBe(true);

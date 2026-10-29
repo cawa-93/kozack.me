@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
-import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
+import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MINUTES_PER_HOUR, MODIFIERS, REAL_SECONDS_PER_GAME_HOUR, VET } from "../src/sim/config";
 import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
@@ -288,7 +288,7 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     expect(homebody.act.kind).toBe("wander");
   });
 
-  it("гості дзвонять за 2 хвилини, а заходять — двері відчинено: «Душа компанії» біля дверей може й вибігти", () => {
+  it("гості дзвонять заздалегідь, а заходять — двері відчинено: «Душа компанії» біля дверей може й вибігти", () => {
     let escaped = 0;
     for (let seed = 1; seed <= 30; seed++) {
       const save = game(seed);
@@ -303,6 +303,53 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
       if (host.away === "stairs") escaped += 1;
     }
     expect(escaped).toBeGreaterThan(3);
+  });
+
+  it("ті, хто заходить сам, дзвонять за 6 хвилин: гравець встигає взяти «Душу компанії» на руки, і вона не вибігає (рішення автора 2026-10-29, А5)", () => {
+    // Між дзвінком і відчиненими дверима — не менше 4 реальних секунд (було 2 ігрові хвилини — півтори секунди).
+    expect((GUESTS.ringLead * REAL_SECONDS_PER_GAME_HOUR) / MINUTES_PER_HOUR).toBeGreaterThanOrEqual(4);
+    for (let seed = 1; seed <= 10; seed++) {
+      const save = game(seed);
+      save.current.modifiers.day = "guests";
+      const host = withCat(save, { guests: 2, escape: 2 }, { x: 9.5, y: 9.5 });
+      host.sterilized = false;
+      const minute = MODIFIERS.guests.minute;
+      const { events, stop } = recordEvents();
+      tickModifiers(save.current, minute - GUESTS.ringLead - 0.5, 1, false);
+      expect(events.some((e) => e.type === "doorbell")).toBe(true);
+      // Почув дзвінок і за 3 ігрові хвилини дійшов до кота: гості ще не зайшли.
+      save.current.minute = minute - GUESTS.ringLead + 0.5;
+      for (let i = 0; i < 12; i++) tickCats(save.current, 0.25, { present: true });
+      tickModifiers(save.current, minute - GUESTS.ringLead + 0.5, 2.5, false);
+      expect(events.some((e) => e.type === "modifier" && e.kind === "guests"), `seed ${seed}`).toBe(false);
+      expect(host.act.target).toBe("guest");
+      save.current.character.held = { kind: "cat", cat: host.id };
+      const sanity = save.current.character.stats.sanity;
+      tickModifiers(save.current, minute - 0.5, 1, false);
+      stop();
+      expect(events.some((e) => e.type === "modifier" && e.kind === "guests")).toBe(true);
+      expect(host.away, `seed ${seed}`).toBeNull();
+      expect(save.current.character.stats.sanity).toBeCloseTo(sanity + GUESTS.delight);
+    }
+  });
+
+  it("«Душа компанії» чекає під дверима, поки зайдуть, а не йде за 5 хвилин; на кур'єрський дзвінок — сидить 5 хвилин, як і раніше (рішення автора 2026-10-29, А5)", () => {
+    for (const day of ["guests", "inspection", "home-vet"] as const) {
+      const save = game();
+      save.current.modifiers.day = day;
+      // Поруч із дверима: дійде за мить, а сидіти лише 5 хвилин пішов би до приходу.
+      const host = withCat(save, { guests: 1 }, { x: 9.5, y: 9.5 });
+      const minute = day === "guests" ? MODIFIERS.guests.minute : day === "inspection" ? MODIFIERS.inspection.minute : MODIFIERS.homeVetMinute;
+      tickModifiers(save.current, minute - GUESTS.ringLead - 0.5, 1, false);
+      expect(host.act.target, day).toBe("guest");
+      for (let i = 0; i < GUESTS.ringLead * 4; i++) tickCats(save.current, 0.25, { present: true });
+      expect(host.act, day).toMatchObject({ kind: "idle", target: "guest", goal: null });
+      expect(Math.hypot(host.x - DOOR_TILE.x, host.y - DOOR_TILE.y), day).toBeLessThan(1);
+    }
+    const save = game();
+    const host = withCat(save, { guests: 1 }, { x: 9.5, y: 9.5 });
+    ringBell(save.current, false);
+    expect(host.act.minutes).toBe(GUESTS.greetMinutes);
   });
 });
 

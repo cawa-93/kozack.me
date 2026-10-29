@@ -445,7 +445,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       emit(state, { type: "modifier", kind: attended ? "meeting-attended" : "meeting-missed", value: delta });
     }
   }
-  // Ветеринарка — візит, як гості й ОСББ: дзвонить за 2 хвилини, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей).
+  // Ветеринарка — візит, як гості й ОСББ: дзвонить за `GUESTS.ringLead` хвилин, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей; рішення автора 2026-10-29, А5: дзвінок — за 6 хвилин, щоб гравець встиг узяти кота на руки).
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state);
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) openDoor(state);
   // Як гості й ОСББ (нижче): поки персонаж у поїздці, ветеринарці ніхто не відчинить (перевірка поїздок 2026-10-28).
@@ -492,7 +492,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     for (const cat of state.cats) if (cat.away === null && !asleep(cat)) changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
   }
   if (day === "mom-food") tickMom(state, from, minutes);
-  // Дзвонять за 2 хвилини до того, як зайти; заходять — двері відчинено (§9.12 «Двері й гості»).
+  // Дзвонять за `GUESTS.ringLead` хвилин до оголошеного часу, коли заходять, — двері відчинено (§9.12 «Двері й гості»; рішення автора 2026-10-29, А5).
   if ((day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) || (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead))) ringBell(state);
   // Персонажа немає вдома (поїздка, зокрема аварія) — подзвонили й пішли: двері ніхто не відчинив (перевірка поїздок 2026-10-28;
   // раніше гості «заходили» в порожню квартиру, а їхній сором під час перемотування після аварії міг закінчити гру).

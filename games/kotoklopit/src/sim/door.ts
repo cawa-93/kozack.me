@@ -66,20 +66,22 @@ export function openDoor(state: GameState, except: readonly number[] = []): void
 export const catOnStairs = (state: GameState): boolean => state.cats.some((c) => c.away === "stairs");
 
 /**
- * Дзвінок у двері (§9.12 «Двері й гості»): кур'єр, гості, ОСББ, мама. Кіт, що не спить, звик до дому й нічим важливим не
- * зайнятий, реагує за «Гостями»: «+» біжить до дверей і 5 хвилин сидить там (прояв — `guestSeen` у `catai.ts`), «−»
- * ховається на 30 × |рівень| хвилин, а «Шипить на гостей» ще й шипить з-під дивана. `ring` — дзвінок чути (бабл над
- * дверима); кур'єрський дзвінок показує сама доставка.
+ * Дзвінок у двері (§9.12 «Двері й гості»): кур'єр, гості, ОСББ, мама, ветеринарка. Кіт, що не спить, звик до дому й нічим
+ * важливим не зайнятий, реагує за «Гостями»: «+» біжить до дверей і 5 хвилин сидить там (прояв — `doorSeen` у `catai.ts`), «−»
+ * ховається на 30 × |рівень| хвилин, а «Шипить на гостей» ще й шипить з-під дивана. `visitor` — дзвонить той, хто зайде сам
+ * за `GUESTS.ringLead` хвилин: дзвінок чути (бабл над дверима), а «+» чекає під дверима, поки зайдуть, і ще 5 хвилин —
+ * гравець встигає взяти його на руки (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5). Кур'єр лише лишає пакунок: його
+ * дзвінок показує сама доставка, а двері відчиняє гравець.
  */
-export function ringBell(state: GameState, ring = true): void {
-  if (ring) emit(state, { type: "doorbell" });
+export function ringBell(state: GameState, visitor = true): void {
+  if (visitor) emit(state, { type: "doorbell" });
   const rng = stateRng(state, "behavior");
   for (const cat of state.cats) {
     const level = traitLevel(cat, "guests");
     if (level === 0 || cat.away !== null || isCarried(state, cat) || asleep(cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
     if (!BELL_FROM.has(cat.act.kind)) continue;
     if (level > 0) {
-      startAct(cat, "idle", { ...DOOR_TILE }, GUESTS.greetMinutes, "guest");
+      startAct(cat, "idle", { ...DOOR_TILE }, GUESTS.greetMinutes + (visitor ? GUESTS.ringLead : 0), "guest");
       continue;
     }
     const spot = hideSpot(state, rng, cat);
