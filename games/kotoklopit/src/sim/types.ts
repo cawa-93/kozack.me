@@ -1078,4 +1078,10 @@ export interface Save {
   current: GameState;
   dayStart: GameState;
   weekStart: GameState;
+  /**
+   * Ранок поточного дня, якщо він настав після аварії й тому не став знімком перегравання (§6.1, §8.5; рішення автора
+   * 2026-10-29, `GENERAL_REVIEW.md`, А1); `null` — ранок поточного дня і є `dayStart`. Наступна ніч після ще однієї аварії
+   * зробить його знімком дня.
+   */
+  morning: GameState | null;
 }

@@ -24,6 +24,7 @@ import { morningJob } from "../sim/work";
 export function rebase(save: Save): void {
   save.dayStart = structuredClone(save.current);
   save.weekStart = structuredClone(save.current);
+  save.morning = null;
 }
 
 /**

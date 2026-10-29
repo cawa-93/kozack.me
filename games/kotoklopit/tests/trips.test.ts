@@ -195,11 +195,14 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     liveDay(save);
   };
 
-  /** Прожити дні до `day`, о 12:00 цього дня потрапити в аварію й перемотати день; повертає й ранок дня аварії. */
-  const crashOn = (day: number): { save: Save; morning: GameState } => {
-    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
-    while (save.current.day < day) live(save);
+  /** З ранку поточного дня о 12:00 потрапити в аварію й перемотати день; повертає ранок дня аварії. */
+  const crash = (save: Save): GameState => {
     const morning = structuredClone(save.current);
+    const day = save.current.day;
+    // До полудня без їжі й душу: ранок після аварії голодний (§8.5), а тут перевіряють лише знімки.
+    const stats = save.current.character.stats;
+    stats.satiety = Math.max(stats.satiety, 60);
+    stats.hygiene = Math.max(stats.hygiene, 60);
     advance(save, 12 * 60 - save.current.minute);
     standAt(save, "door");
     expect(startTrip(save.current, "shop")).toBe(true);
@@ -209,7 +212,14 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     rewindAccident(save);
     expect(save.current.end).toBeNull();
     expect(save.current.day).toBe(day + 1);
-    return { save, morning };
+    return morning;
+  };
+
+  /** Прожити дні до `day`, о 12:00 цього дня потрапити в аварію й перемотати день; повертає й ранок дня аварії. */
+  const crashOn = (day: number): { save: Save; morning: GameState } => {
+    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
+    while (save.current.day < day) live(save);
+    return { save, morning: crash(save) };
   };
 
   it("аварія в неділю: «Переграти день» — ранок неділі, «Переграти тиждень» — понеділок того тижня; раніше обидва знімки ставали понеділком після аварії", () => {
@@ -233,20 +243,77 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     expect(save.current.character).toEqual(morning.character);
   });
 
-  it("наступна звичайна ніч оновлює знімки як завжди: день — щоранку, тиждень — у ніч на понеділок", () => {
+  it("наступна звичайна ніч оновлює знімки: день — щоранку, тиждень — у ніч на понеділок", () => {
     const weekday = crashOn(2).save;
     live(weekday);
     expect(weekday.dayStart.day).toBe(4);
     expect(weekday.weekStart.day).toBe(0);
+    expect(weekday.morning).toBeNull();
 
-    // Після аварії в неділю знімок тижня лишається понеділком тижня аварії до наступної ночі на понеділок.
     const sunday = crashOn(6).save;
-    live(sunday);
-    expect(sunday.dayStart.day).toBe(8);
-    expect(sunday.weekStart.day).toBe(0);
     while (sunday.current.day < 14) live(sunday);
     expect(sunday.weekStart.day).toBe(14);
     expect(sunday.dayStart.day).toBe(14);
+  });
+
+  it("після аварії в неділю перша звичайна ніч робить знімком тижня понеділок після аварії: «Переграти тиждень» — з понеділка тижня, на якому гра закінчилась (рецензія реалізації А1)", () => {
+    const { save } = crashOn(6);
+    const monday = structuredClone(save.current);
+    live(save);
+    expect(save.dayStart.day).toBe(8);
+    // Раніше знімок тижня лишався днем 0 до ночі на 14-й день: «Переграти тиждень» відкидав на тиждень назад.
+    expect(save.weekStart.day).toBe(7);
+    replayWeek(save);
+    expect(save.current.day).toBe(7);
+    expect(save.current.minute).toBe(monday.minute);
+    expect(save.current.character).toEqual(monday.character);
+  });
+
+  it("аварії кілька днів поспіль: «Переграти день» — ранок дня останньої аварії, а не першої (рецензія реалізації А1)", () => {
+    const { save } = crashOn(2);
+    crash(save);
+    const morning = crash(save);
+    expect(save.current.day).toBe(5);
+    // Раніше знімок дня «застрягав» на дні 2.
+    expect(save.dayStart.day).toBe(4);
+    expect(save.weekStart.day).toBe(0);
+    // Ранок дня після аварії переживає й збереження.
+    const loaded = deserialize(serialize(save));
+    expect(loaded.morning?.day).toBe(5);
+    replayDay(loaded);
+    expect(loaded.current.day).toBe(4);
+    expect(loaded.current.minute).toBe(morning.minute);
+    expect(loaded.current.character).toEqual(morning.character);
+    expect(loaded.morning).toBeNull();
+  });
+
+  it("аварії в неділю і в понеділок після неї: обидва знімки — понеділок після першої аварії (рецензія реалізації А1)", () => {
+    const { save } = crashOn(6);
+    const monday = crash(save);
+    expect(save.dayStart.day).toBe(7);
+    expect(save.weekStart.day).toBe(7);
+    replayWeek(save);
+    expect(save.current.day).toBe(7);
+    expect(save.current.character).toEqual(monday.character);
+  });
+
+  it("аварії в неділю два тижні поспіль: «Переграти тиждень» — понеділок тижня останньої аварії (рецензія реалізації А1)", () => {
+    const { save } = crashOn(6);
+    while (save.current.day < 13) live(save);
+    crash(save);
+    expect(save.dayStart.day).toBe(13);
+    // Раніше знімок тижня «застрягав» на дні 0: понеділка 7-го дня гра не запам'ятала.
+    expect(save.weekStart.day).toBe(7);
+    replayWeek(save);
+    expect(save.current.day).toBe(7);
+  });
+
+  it("збереження без окремого ранку (старіша версія) завантажується: ранок — знімок дня", () => {
+    const { save } = crashOn(2);
+    const { morning: _, ...old } = save;
+    const loaded = deserialize(JSON.stringify(old));
+    expect(loaded.morning).toBeNull();
+    expect(loaded.dayStart.day).toBe(2);
   });
 });
 

@@ -95,7 +95,7 @@ export function newGame(options: NewGameOptions): Save {
   state.minute = wakeMinute(state);
   state.dayStartMinute = state.minute;
   seedDay(state);
-  return { version: SAVE_VERSION, current: state, dayStart: clone(state), weekStart: clone(state) };
+  return { version: SAVE_VERSION, current: state, dayStart: clone(state), weekStart: clone(state), morning: null };
 }
 
 /**
@@ -244,23 +244,43 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
     return null;
   }
   const report = runNight(state, collapsed);
-  // Якщо гра закінчилася вночі, знімки не оновлюються: переграти можна день, що минув (§6.4). Так само й ніч після аварії:
-  // «Переграти день» повертає на ранок дня аварії, «Переграти тиждень» — на понеділок її тижня, навіть коли аварія сталася
-  // в неділю (§6.1; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А1).
-  if (state.end === null && !afterAccident) {
-    save.dayStart = clone(state);
-    if (weekdayOf(state.day) === 0) save.weekStart = clone(state);
-  }
+  // Якщо гра закінчилася вночі, знімки не оновлюються: переграти можна день, що минув (§6.4).
+  if (state.end === null) updateSnapshots(save, afterAccident);
   emit(state, { type: "night", report });
   return report;
 }
 
-/** Переграти день зі стану, з яким гравець у нього увійшов (§6.1). */
+/**
+ * Знімки перегравання після ночі, у якій гра не закінчилася (§6.1). Звичайна ніч робить ними ранок нового дня й понеділок його
+ * тижня. Ніч після аварії — ранок дня аварії й понеділок її тижня, навіть коли вона сталася в неділю, а ранок нового дня гра
+ * пам'ятає окремо, у `morning` (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А1). Тож коли аварії йдуть поспіль, «Переграти
+ * день» повертає на ранок останньої з них, а не першої; а перша звичайна ніч після аварії в неділю робить знімком тижня понеділок
+ * після неї — цей день гравець уже прожив (рецензія реалізації А1, 2026-10-29: раніше обидва знімки «застрягали» на першій
+ * аварії ланцюжка, а «Переграти тиждень» увесь тиждень після аварії в неділю відкидав на тиждень назад).
+ */
+function updateSnapshots(save: Save, afterAccident: boolean): void {
+  // Ранок дня, що минув, і понеділок його тижня: знімок тижня — завжди понеділок тижня знімка дня, тож він відстає від
+  // поточного тижня, лише коли той почався з ночі після аварії, — і тоді понеділок поточного тижня й є `morning`.
+  const morning = save.morning ?? save.dayStart;
+  const monday = weekdayOf(morning.day) === 0 ? morning : save.weekStart;
+  const state = clone(save.current);
+  if (afterAccident) {
+    save.dayStart = clone(morning);
+    save.weekStart = clone(monday);
+    save.morning = state;
+  } else {
+    save.dayStart = state;
+    save.weekStart = clone(weekdayOf(state.day) === 0 ? state : monday);
+    save.morning = null;
+  }
+}
+
+/** Переграти день зі стану, з яким гравець у нього увійшов (§6.1); після аварії — з ранку дня аварії (А1). */
 export function replayDay(save: Save): void {
   restore(save, save.dayStart);
 }
 
-/** Переграти тиждень з понеділка (§6.1). */
+/** Переграти тиждень з понеділка (§6.1); після аварії — з понеділка тижня аварії (А1). */
 export function replayWeek(save: Save): void {
   save.dayStart = clone(save.weekStart);
   restore(save, save.weekStart);
@@ -270,6 +290,8 @@ export function replayWeek(save: Save): void {
 function restore(save: Save, snapshot: GameState): void {
   const replays = save.current.replays + 1;
   save.current = clone(snapshot);
+  // Поточний ранок — знову сам знімок дня.
+  save.morning = null;
   save.current.replays = replays;
   // Умови дня — зі знімка (модифікатор уже обрано з них), поведінка — нова.
   save.current.rng.behavior = streamSeed(save.current.seed, "behavior", save.current.day, replays);
@@ -284,7 +306,9 @@ export function deserialize(json: string): Save {
   const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
   if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
   const save = data as Save;
-  for (const state of [save.current, save.dayStart, save.weekStart]) upgradeState(state);
+  // Ранку після аварії окремо від знімків старіші збереження не пам'ятають (рецензія реалізації А1, 2026-10-29).
+  save.morning ??= null;
+  for (const state of [save.current, save.dayStart, save.weekStart, save.morning]) if (state !== null) upgradeState(state);
   return save;
 }
 
