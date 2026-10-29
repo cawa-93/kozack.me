@@ -508,7 +508,6 @@ export class DayScene extends Phaser.Scene {
     const elapsed = this.time.now - this.catPress;
     if (hold && elapsed < CAT_TAP_MS) return;
     this.catPress = null;
-    // Пестощі, що встигли початися за мить натискання, симуляція вже зупинила: руки вільні.
     if (!hold && elapsed < CAT_TAP_MS) interact(this.session.save);
   }
 
@@ -538,15 +537,20 @@ export class DayScene extends Phaser.Scene {
     this.tickAsleep(time);
     if (!this.blocked()) {
       const input = this.readInput();
+      // Натискання біля кота ще не вирішене (до CAT_TAP_MS): це може бути «узяти на руки», тож симуляція кнопки поки не бачить —
+      // пестощі почнуться, лише коли її тримають довше (§9.12; загальна ревізія 2026-10-29: за мить натискання кота встигали
+      // погладити — сплячого будили пестощами й брали на руки без образи, а «Відлюдник» устигав піти з-під руки).
+      const pending = this.catPress !== null && this.time.now - this.catPress < CAT_TAP_MS;
+      const simInput: Input = pending ? { ...input, hold: false } : input;
       this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
       const minutes = gameMinutes(seconds) * this.session.speed;
       // Пора падати без сил (§8.8): зупинитися перед межею й засинати анімацією, а не миттєво.
       const untilCollapse = collapseMinute(this.state) - this.state.minute - FALL_ASLEEP.lead;
       if (minutes >= untilCollapse) {
-        const night = advance(this.session.save, Math.max(0, untilCollapse), input);
+        const night = advance(this.session.save, Math.max(0, untilCollapse), simInput);
         if (night === null && this.state.end === null) this.fallAsleep(true);
       } else {
-        advance(this.session.save, minutes, input);
+        advance(this.session.save, minutes, simInput);
       }
       this.resolveCatPress(input.hold);
       // Стан думками (§11.4): час думок іде лише разом із грою.
