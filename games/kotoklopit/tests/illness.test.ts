@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { canDash } from "../src/sim/body";
 import { DOCTOR_TREAT } from "../src/sim/config";
-import { newGame } from "../src/sim/game";
+import { deserialize, newGame, serialize } from "../src/sim/game";
 import { doctorTreat, fallIllPerson, illnessSpeed, isIll, nightlyIllness, takeHumanMeds } from "../src/sim/illness";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
@@ -169,5 +169,43 @@ describe("хвороби персонажа (§6.5)", () => {
     // Здоровому лікувати нічого — і грошей не беруть.
     expect(doctorTreat(save.current, "injury", "premium", always())).toBeNull();
     expect(save.current.character.money).toBe(money - DOCTOR_TREAT.cheap);
+  });
+});
+
+describe("старі збереження з порогом короткої ночі в 7 годин (§6.5; рецензія реалізації дрібних питань, 2026-10-29)", () => {
+  type Snapshot = "current" | "dayStart" | "weekStart" | "morning";
+  const snapshots: Snapshot[] = ["current", "dayStart", "weekStart", "morning"];
+
+  /** Гра, збережена до рішення: дві ночі по 6,5 години рахувалися короткими, а позначки порогу немає ні в грі, ні в знімках. */
+  const oldSave = (): Save => {
+    const save = game();
+    save.morning = structuredClone(save.current);
+    for (const snapshot of snapshots) save[snapshot]!.character.shortNights = 2;
+    const json = JSON.parse(serialize(save)) as Record<Snapshot, { character: Record<string, unknown> }>;
+    for (const snapshot of snapshots) delete json[snapshot].character["shortSleepHours"];
+    return deserialize(JSON.stringify(json));
+  };
+
+  it("накопичені короткі ночі починаються заново: одна ніч по 5,5 години ще не виснаження, три поспіль — уже так", () => {
+    const save = oldSave();
+    for (const snapshot of snapshots) expect(save[snapshot]?.character.shortNights, snapshot).toBe(0);
+    nightlyIllness(save.current, 5.5);
+    expect(isIll(save.current, "exhaustion")).toBe(false);
+    nightlyIllness(save.current, 5.5);
+    nightlyIllness(save.current, 5.5);
+    expect(isIll(save.current, "exhaustion")).toBe(true);
+  });
+
+  it("гра, збережена вже з порогом 6 годин, лічильника не втрачає — і після повторного завантаження", () => {
+    const save = game();
+    save.current.character.shortNights = 2;
+    const loaded = deserialize(serialize(deserialize(serialize(save))));
+    expect(loaded.current.character.shortNights).toBe(2);
+    nightlyIllness(loaded.current, 5.5);
+    expect(isIll(loaded.current, "exhaustion")).toBe(true);
+    // Збереження, яке вже перевели, другий раз не скидається.
+    const migrated = oldSave();
+    migrated.current.character.shortNights = 2;
+    expect(deserialize(serialize(migrated)).current.character.shortNights).toBe(2);
   });
 });

@@ -8,7 +8,7 @@ import { breedById, isPurebred } from "./breeds";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { FIRST_DAY_MODIFIER, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
+import { FIRST_DAY_MODIFIER, ILLNESS_EFFECTS, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -81,6 +81,7 @@ export function newGame(options: NewGameOptions): Save {
       illnesses: [],
       shortNights: 0,
       restedNights: 0,
+      shortSleepHours: ILLNESS_EFFECTS.shortSleepHours,
     },
     job: newJob(),
     home: newHome(),
@@ -346,6 +347,20 @@ export function upgradeState(state: GameState): void {
   upgradeTrip(state);
   upgradeLadder(state);
   upgradeBreedLook(state);
+  upgradeShortNights(state);
+}
+
+/**
+ * Поріг короткої ночі — 6 годин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Поріг виснаження»; §6.5): у
+ * збереженні з іншим порогом (до рішення — 7 годин, поля `shortSleepHours` немає) короткими рахувалися й ночі по 6–7 годин, а з
+ * яких ночей склався рахунок, невідомо, — він починається заново (рецензія реалізації дрібних питань, 2026-10-29, рішення
+ * виконавця). Інакше дві ночі по 6,5 години й одна нова коротка давали б «Виснаження». Сценарій режиму розробки зливається з
+ * новою грою, де поріг уже записано, тож його рахунок лишається, як задано.
+ */
+export function upgradeShortNights(state: GameState): void {
+  const character = state.character;
+  if (character.shortSleepHours !== ILLNESS_EFFECTS.shortSleepHours) character.shortNights = 0;
+  character.shortSleepHours = ILLNESS_EFFECTS.shortSleepHours;
 }
 
 /**
