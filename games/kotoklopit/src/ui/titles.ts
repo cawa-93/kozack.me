@@ -82,6 +82,7 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
 export const SERVICE_TITLES = {
   treat: { cheap: "Звичайне лікування", premium: "Ретельне лікування" },
   groom: { cheap: "Вичісування", premium: "Повний догляд" },
-  // Безшерстого грумер миє, а не вичісує (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15).
-  wash: { cheap: "Купання", premium: "Повний догляд" },
+  // Безшерстого грумер миє, а не вичісує (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15). Дороге купання — делікатне,
+  // як делікатний шампунь, що від дерматиту радить ветеринар: воно його й лікує (рецензія реалізації А15, рішення самостійно).
+  wash: { cheap: "Купання", premium: "Делікатне купання" },
 } as const satisfies Record<string, Record<Quality, string>>;

@@ -312,6 +312,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const washes = groomerWashes(cat);
       if (log.done.includes("groom")) {
         body.push(fill(GROOMED[washes ? "hairless" : "coat"], cat.sex, { кіт: cat.name }));
+        // Дорогий грумер вилікував дерматит, про який знали з огляду (§8.5; рецензія реалізації А15) — як у ветеринара.
+        if (log.done.includes("dermatitis:cured")) body.push(`Вилікувано: ${diseaseTitle("dermatitis").toLowerCase()}.`);
         const manner = vetManner(cat);
         if (manner) body.push(fill(VET_MANNER[washes ? "wash" : "groomer"][manner], cat.sex, { кіт: cat.name }));
         break;

@@ -532,7 +532,7 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
       expect(startTrip(save.current, "groomer")).toBe(true);
       driveSafely(save);
       const visit = save.current.trip?.visit ?? 0;
-      expect(groom(save.current, "cheap")).toBe(true);
+      expect(groom(save.current, "cheap", createRng(1))).toBe(true);
       // Понад час самого грумінгу (А6: його додає грумінг).
       return { extra: (save.current.trip?.visit ?? 0) - visit - TRIPS.groomer.visit, seen: seen(cat, "vet") };
     };

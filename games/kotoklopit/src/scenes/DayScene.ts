@@ -461,7 +461,7 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       groom: (quality) => {
-        groom(state, quality);
+        groom(state, quality, rng);
         again();
       },
       show: () => {

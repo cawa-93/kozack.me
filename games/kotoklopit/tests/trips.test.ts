@@ -905,7 +905,7 @@ describe("пункти призначення (§8.5)", () => {
       for (const quality of ["cheap", "premium"] as const) {
         const { save, cat } = atGroomer("hairless");
         expect(groomerWashes(cat)).toBe(true);
-        expect(groom(save.current, quality)).toBe(true);
+        expect(groom(save.current, quality, createRng(1))).toBe(true);
         expect(cat.bathedDay, quality).toBe(20);
         returnHome(save, save.current.trip?.visit ?? 0, TRIPS.groomer.road);
         const always = { ...createRng(1), chance: () => true };
@@ -917,10 +917,38 @@ describe("пункти призначення (§8.5)", () => {
       }
     });
 
+    it("дорогий грумер, як і дорогий шампунь удома, ще й лікує дерматит безшерстого, а дешевий — ні (рецензія реалізації А15)", () => {
+      for (const quality of ["cheap", "premium"] as const) {
+        const { save, cat } = atGroomer("hairless");
+        fallIll(save.current, cat, "dermatitis");
+        expect(groom(save.current, quality, createRng(1))).toBe(true);
+        expect(hasDisease(cat, "dermatitis"), quality).toBe(quality === "cheap");
+      }
+    });
+
+    it("вилікуваний дерматит картка називає, лише якщо про нього знали з огляду, як у ветеринара", () => {
+      for (const known of [false, true]) {
+        const { save, cat } = atGroomer("hairless");
+        fallIll(save.current, cat, "dermatitis");
+        const disease = cat.diseases.find((d) => d.id === "dermatitis");
+        if (disease) disease.known = known;
+        expect(groom(save.current, "premium", createRng(1))).toBe(true);
+        expect(hasDisease(cat, "dermatitis")).toBe(false);
+        expect(save.current.trip?.log?.done.includes("dermatitis:cured"), String(known)).toBe(known);
+      }
+    });
+
+    it("кота з шерстю грумер не миє — і дорогий грумер дерматиту не лікує", () => {
+      const { save, cat } = atGroomer(null);
+      fallIll(save.current, cat, "dermatitis");
+      expect(groom(save.current, "premium", createRng(1))).toBe(true);
+      expect(hasDisease(cat, "dermatitis")).toBe(true);
+    });
+
     it("кота з шерстю грумер вичісує: відлік купання не змінюється", () => {
       const { save, cat } = atGroomer(null);
       expect(groomerWashes(cat)).toBe(false);
-      expect(groom(save.current, "cheap")).toBe(true);
+      expect(groom(save.current, "cheap", createRng(1))).toBe(true);
       expect(cat.bathedDay).toBe(0);
     });
 
@@ -996,7 +1024,7 @@ describe("час на місці — лише за отриману послуг
 
     const poor = withCatAtDoor().save;
     poor.current.character.money = GROOMER.price.cheap - 1;
-    expect(onSite(poor, "groomer", (state) => expect(groom(state, "cheap")).toBe(false))).toBeCloseTo(TRIP_IDLE_MINUTES);
+    expect(onSite(poor, "groomer", (state) => expect(groom(state, "cheap", createRng(1))).toBe(false))).toBeCloseTo(TRIP_IDLE_MINUTES);
 
     // Виставка без внеску: раніше 3 години на місці, разом із дорогою — близько 6 годин без результату (знахідка 43).
     const show = withCatAtDoor().save;
@@ -1019,7 +1047,7 @@ describe("час на місці — лише за отриману послуг
 
   it("з послугою — її час: огляд 1 год, грумінг 1,5, участь у виставці 3, прийом у лікаря 1 год на всі хвороби", () => {
     expect(onSite(withCatAtDoor().save, "vet", (state) => expect(vetExam(state)).not.toBeNull())).toBeCloseTo(TRIPS.vet.visit);
-    expect(onSite(withCatAtDoor().save, "groomer", (state) => expect(groom(state, "cheap")).toBe(true))).toBeCloseTo(TRIPS.groomer.visit);
+    expect(onSite(withCatAtDoor().save, "groomer", (state) => expect(groom(state, "cheap", createRng(1))).toBe(true))).toBeCloseTo(TRIPS.groomer.visit);
 
     const show = withCatAtDoor().save;
     show.current.day = 6;

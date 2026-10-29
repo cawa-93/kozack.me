@@ -232,20 +232,26 @@ export const groomerWashes = (cat: Cat): boolean => cat.shape.coat === "hairless
 /**
  * Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. Безшерстого грумер миє (рішення автора
  * 2026-10-29, `GENERAL_REVIEW.md`, А15): як і купання вдома, це починає відлік до дерматиту знову (§8.7). Решта — рішення
- * самостійно (§8.5): миє і дешевий грумер, і дорогий, настрій — як у грумінгу, без «Любові до води», а дерматиту, що вже
- * почався, грумер не лікує — це ветеринар чи купання вдома дорогим шампунем.
+ * самостійно (§8.5): миє і дешевий грумер, і дорогий, настрій — як у грумінгу, без «Любові до води», а дорогий, як і дорогий
+ * шампунь удома, ще й лікує дерматит (рецензія реалізації А15: раніше не лікував, і дорогий безшерстому давав лише +2 настрою).
  */
-export function groom(state: GameState, quality: Quality): boolean {
+export function groom(state: GameState, quality: Quality, rng: Rng): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
   if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality], "other")) return false;
   cat.groomedUntil = state.day + GROOMER.days[quality];
-  if (groomerWashes(cat)) cat.bathedDay = state.day;
-  changeMood(state, cat, GROOMER.mood[quality], "грумер");
   // Час грумінгу минає лише за грумінг (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). Як і на огляді,
   // «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
   trip.visit += TRIPS.groomer.visit;
-  (trip.log ??= { exam: null, done: [] }).done.push("groom");
+  const log = (trip.log ??= { exam: null, done: [] });
+  log.done.push("groom");
+  if (groomerWashes(cat)) {
+    cat.bathedDay = state.day;
+    // Вилікуване, про яке знали з огляду, картка називає, як у ветеринара; невідоме минає мовчки, як після шампуню вдома.
+    const known = cat.diseases.some((d) => d.id === "dermatitis" && d.known);
+    if (quality === "premium" && cureDisease(state, cat, "dermatitis", rng) && known) log.done.push("dermatitis:cured");
+  }
+  changeMood(state, cat, GROOMER.mood[quality], "грумер");
   const manner = vetManner(cat);
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1);
