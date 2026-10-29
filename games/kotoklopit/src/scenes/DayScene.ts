@@ -18,8 +18,8 @@ import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
-import { gameMinutes } from "../sim/time";
-import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Sex, ThingKind } from "../sim/types";
+import { gameMinutes, weekOf } from "../sim/time";
+import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1298,6 +1298,29 @@ export class DayScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Завантажити гру з файлу (§4.2): спершу підтвердження, як і для нової гри, — поточну гру буде втрачено. Картка каже, що у
+   * файлі, щоб гравець помітив, якщо обрав не той (загальна ревізія 2026-10-29: раніше файл одразу замінював гру).
+   */
+  private confirmImport(save: Save, back: () => void): void {
+    const loaded = save.current;
+    const file = fill(IMPORT_SAVE.file, loaded.character.sex, {
+      "ім'я": loaded.character.name,
+      тиждень: weekOf(loaded.day),
+      складність: DIFFICULTY_TITLES[loaded.difficulty],
+    });
+    this.overlay.show({
+      kicker: IMPORT_SAVE.kicker,
+      title: IMPORT_SAVE.title,
+      body: [file, IMPORT_SAVE.body],
+      actions: [
+        { label: IMPORT_SAVE.load, primary: true, onSelect: () => this.session.replace(save) },
+        { label: IMPORT_SAVE.back, onSelect: back },
+      ],
+      onDismiss: back,
+    });
+  }
+
   /** Збереження не вдалося відкрити (§4.2, рішення автора 2026-10-27, Ц3): зберегти його файлом чи одразу нова гра. */
   private showUnreadableSave(json: string, next: () => void): void {
     const done = (): void => {
@@ -1418,8 +1441,9 @@ export class DayScene extends Phaser.Scene {
           newGame: () => this.confirmNewGame(() => show(tab)),
           exportSave: () => exportSave(this.session.save),
           importSave: (file) => {
+            // Поганий файл — одразу «Не вдалося завантажити», без зайвого питання; добрий — спершу підтвердження.
             void importSave(file).then(
-              (save) => this.session.replace(save),
+              (save) => this.confirmImport(save, () => show(tab)),
               () => {
                 this.overlay.close();
                 this.notice("Не вдалося завантажити", "Цей файл не схожий на збереження Котоклопіту або збережений старою версією гри.", "Гра");
