@@ -13,7 +13,7 @@ import { trinketTile } from "../src/sim/home";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
-import { relation } from "../src/sim/relations";
+import { nightlyRelations, relation } from "../src/sim/relations";
 import { emptyFeeder, furPerHour } from "../src/sim/household";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -469,6 +469,33 @@ describe("«Злодійство» (рішення автора 2026-10-25)", ()
       // Причину видно: значок миски поруч зі злістю (§9.4 «Згода, охорона й сварки», Р2; перевірка блоку 4: це не перевіряв жоден тест).
       expect(events.find((e) => e.type === "hissed" && e.cat === thief.id && e.at === eater.id)).toMatchObject({ why: "bowl" });
       expect(seen(thief, "thief")).toBe(1);
+      return;
+    }
+    throw new Error("злодій так і не пішов до миски");
+  });
+
+  it("відтіснення злодієм — сварка за миску: уночі пара не отримує +3 від життя разом, як після охорони миски (§9.4, А12, рішення самостійно)", () => {
+    for (let seed = 0; seed < 30; seed++) {
+      const save = game();
+      save.current.rng.behavior = seed;
+      const eater = withCat(save, { gulping: -2 });
+      const thief = withCat(save, { thief: 2 }, { x: 14.5, y: 2.5 });
+      thief.needs.hunger = 50;
+      const bowl = bowlOf(save);
+      Object.assign(bowl, { food: 2, foodQuality: "cheap" });
+      eater.needs.hunger = 90;
+      eater.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: eatMinutes(eater), elapsed: 0 };
+      tickCats(save.current, 0.1, { present: true });
+      if (thief.act.kind !== "steal") continue;
+      for (let i = 0; i < 40 && thief.act.kind === "steal"; i++) {
+        thief.act.minutes = Math.max(thief.act.minutes, 0.05);
+        tickCats(save.current, 0.1, { present: true });
+      }
+      expect(thief.act).toMatchObject({ kind: "eat", target: `item:${bowl.id}` });
+      const before = relation(save.current, eater, thief);
+      nightlyRelations(save.current);
+      // Раніше ніч повертала +3, і день зі злодієм стосункам не коштував нічого (−3 + 3).
+      expect(relation(save.current, eater, thief)).toBe(before);
       return;
     }
     throw new Error("злодій так і не пішов до миски");

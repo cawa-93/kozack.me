@@ -2500,7 +2500,7 @@ function bowlThief(state: GameState, eater: Cat, rng: Rng): void {
 
 /**
  * Злодій дійшов до миски (§9.12): той ще їсть — злодій шипить і займає миску, а той відходить голодний (настрій −2,
- * стосунки −3); «Охоронець миски» може побитися. Це прояв «Злодійства +». Той уже поїв — злодій просто доїдає, що лишилося.
+ * стосунки −3, і це сварка за миску — уночі пара не зближується); «Охоронець миски» може побитися. Це прояв «Злодійства +». Той уже поїв — злодій просто доїдає, що лишилося.
  */
 function pushAway(state: GameState, thief: Cat, rng: Rng): void {
   const act = thief.act;
@@ -2516,7 +2516,12 @@ function pushAway(state: GameState, thief: Cat, rng: Rng): void {
     // З тим, з ким пара ще не відійшла від бійки, «Охоронець» не б'ється (§9.4, «Пауза пари»).
     if (guard > 0 && !truced(state, thief, victim) && rng.chance(THIEF.guardFight * guard)) return startFight(state, thief, victim, rng);
     changeMood(state, victim, THIEF.victimMood, "відігнали від миски");
-    if (hissed) changeRelation(state, victim, thief, THIEF.relation);
+    if (hissed) {
+      changeRelation(state, victim, thief, THIEF.relation);
+      // Шипіння за миску — сварка, як охорона миски: уночі пара не зближується (§9.4 «Бійка забирає нічне зближення»; перевірка
+      // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А12, рішення самостійно: раніше день зі злодієм коштував −3 + 3 = 0).
+      noteStrife(state, thief, victim, "quarrel");
+    }
     backAway(state, victim, thief);
   }
   start(thief, "eat", null, eatMinutes(thief), act.target);
