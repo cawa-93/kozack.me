@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import { bowlEaten, carriedToy, isDirty } from "../sim/catai";
-import { ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
+import { furTufts, ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter, STASHES } from "../sim/home";
 import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../sim/types";
@@ -148,17 +148,10 @@ export function drawTrinket(g: Phaser.GameObjects.Graphics, kind: TrinketKind, x
   }
 }
 
-/** Де лежать клапті шерсті, коли її багато (§8.7): сталі місця по квартирі. */
-const FUR_SPOTS: readonly { x: number; y: number }[] = [
-  { x: 2.3, y: 7.4 }, { x: 5.2, y: 9.1 }, { x: 8.7, y: 7.8 }, { x: 12.4, y: 8.6 }, { x: 15.6, y: 7.2 }, { x: 17.4, y: 9.3 },
-  { x: 4.1, y: 2.6 }, { x: 14.6, y: 2.4 }, { x: 9.6, y: 3.6 }, { x: 6.8, y: 8.9 }, { x: 11.2, y: 7.1 }, { x: 3.4, y: 9.6 },
-];
-
 export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
   g.clear();
-  // Шерсть: що більше, то більше клаптів.
-  const tufts = Math.floor((state.home.fur / 100) * FUR_SPOTS.length);
-  for (const spot of FUR_SPOTS.slice(0, tufts)) {
+  // Шерсть: видно лише від межі, коли вона вже шкодить і дратує (§8.7, рішення автора 2026-10-29, А17); що більше, то більше жмутів.
+  for (const spot of furTufts(state)) {
     const { x, y } = toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
   }

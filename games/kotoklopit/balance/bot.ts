@@ -10,6 +10,7 @@ import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHEL
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
+import { furVisible } from "../src/sim/household";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
@@ -204,7 +205,8 @@ export class Bot {
     if (washer === "done" || (washer === "idle" && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {
       return named("laundry", () => this.use("washer"));
     }
-    if (s.home.fur >= 60 && !this.skipped("vacuum")) return named("vacuum", () => this.hold("vacuum"));
+    // Шерсть стало видно — вона дратує, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17): пилососити одразу, а не з 60.
+    if (furVisible(s) && !this.skipped("vacuum")) return named("vacuum", () => this.hold("vacuum"));
     if (s.cats.length > 0) {
       // Уважний гравець відповідає котові, який просить уваги чи гри (§9.12), і пестить для здорового глузду.
       const low = ch.stats.sanity < this.policy.sanityTarget;

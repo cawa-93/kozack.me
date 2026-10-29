@@ -14,20 +14,44 @@ import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
 import type { BowlItem, Cat, Feeder, GameState, HomeItem, Product, Quality, Vec } from "./types";
 
+/** Шерсті багато — її видно (§8.7): від `HOUSEHOLD.dirtyFur`. */
+export const furVisible = (state: GameState): boolean => state.home.fur >= HOUSEHOLD.dirtyFur;
+
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
   const home = state.home;
-  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (home.fur >= HOUSEHOLD.dirtyFur ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state) * hygieneFactorMod(state);
+  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state) * hygieneFactorMod(state);
+}
+
+/**
+ * Де лежать жмути шерсті (§8.7): сталі місця по квартирі; що більше шерсті, то більше їх видно — спершу у вітальні, потім у
+ * спальні, на кухні й у ванній, а далі знову у вітальні.
+ */
+export const FUR_SPOTS: readonly Vec[] = [
+  { x: 2.3, y: 7.4 }, { x: 5.2, y: 9.1 }, { x: 8.7, y: 7.8 }, { x: 12.4, y: 8.6 }, { x: 15.6, y: 7.2 }, { x: 17.4, y: 9.3 },
+  { x: 4.1, y: 2.6 }, { x: 14.6, y: 2.4 }, { x: 9.6, y: 3.6 }, { x: 6.8, y: 8.9 }, { x: 11.2, y: 7.1 }, { x: 3.4, y: 9.6 },
+];
+
+/**
+ * Видимі жмути шерсті (§8.7): шерсть видно лише від `HOUSEHOLD.dirtyFur` — тоді ж вона прискорює падіння гігієни, тягне на штраф
+ * ОСББ і дратує, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17). Від межі (50) — 6 жмутів у вітальні, на 100 —
+ * усі 12. Раніше жмути з'являлися вже з ~8 шерсті й ні на що не впливали.
+ */
+export function furTufts(state: GameState): readonly Vec[] {
+  if (!furVisible(state)) return [];
+  return FUR_SPOTS.slice(0, Math.floor((state.home.fur / 100) * FUR_SPOTS.length));
 }
 
 /**
  * Безлад дратує (§9.12, правка автора 2026-10-23): кожен, що в полі зору персонажа, — здоровий
  * глузд за годину, разом не більше межі. З душової кабіни безладу не видно. Лише вдень, удома.
+ * Видимі жмути шерсті — ще один безлад, скільки б їх не було на очах (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
  */
 export function annoyingMesses(state: GameState, minutes: number): void {
   const activity = state.character.activity;
   if (state.trip !== null || (activity?.kind === "use" && activity.inside)) return;
-  const seen = state.home.messes.filter((m) => inView(state, m)).length;
+  const fur = furTufts(state).some((p) => inView(state, p)) ? 1 : 0;
+  const seen = state.home.messes.filter((m) => inView(state, m)).length + fur;
   if (seen === 0) return;
   const perHour = Math.max(MESS_ANNOYANCE.max, seen * MESS_ANNOYANCE.perHour);
   changeStat(state, "sanity", perHour * (minutes / MINUTES_PER_HOUR));

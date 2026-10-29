@@ -7,13 +7,13 @@ import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { addSupply, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
-import { annoyingMesses, discardFeeder, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
 import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { FEEDER_CAPACITY } from "../src/sim/config";
+import { FEEDER_CAPACITY, HOUSEHOLD } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
 import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
@@ -496,6 +496,48 @@ describe("безлад дратує (§9.12, правка 2026-10-23)", () => {
 
   it("безлад в іншій кімнаті не дратує", () => {
     expect(annoyed(2, { x: 15.5, y: 2.5 })).toBe(0);
+  });
+});
+
+describe("видима шерсть дратує, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+  const annoyed = (fur: number, at: { x: number; y: number }, messes = 0): number => {
+    const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const state = save.current;
+    state.day = 8;
+    state.character.body.x = at.x;
+    state.character.body.y = at.y;
+    state.home.fur = fur;
+    for (let i = 0; i < messes; i++) state.home.messes.push({ id: 100 + i, kind: "vomit", x: 4.5 + i * 0.5, y: 8.5, cat: null });
+    const before = state.character.stats.sanity;
+    annoyingMesses(state, 60);
+    return state.character.stats.sanity - before;
+  };
+  const living = { x: 9.5, y: 8.5 };
+
+  it("шерсть видно лише від 50 — тоді ж і гігієна падає швидше", () => {
+    const state = newGame({ sex: "female", difficulty: "normal", seed: 3 }).current;
+    state.home.fur = HOUSEHOLD.dirtyFur - 1;
+    expect(furTufts(state)).toEqual([]);
+    const clean = hygieneFactor(state);
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    expect(furTufts(state).length).toBeGreaterThan(0);
+    expect(hygieneFactor(state)).toBeCloseTo(clean * HOUSEHOLD.furHygiene);
+    state.home.fur = 100;
+    expect(furTufts(state)).toEqual(FUR_SPOTS);
+  });
+
+  it("видимі жмути на очах — ще один безлад: −1 за годину, скільки б їх не було, у спільній межі −4", () => {
+    expect(annoyed(HOUSEHOLD.dirtyFur - 1, living)).toBe(0);
+    expect(annoyed(HOUSEHOLD.dirtyFur, living)).toBeCloseTo(-1);
+    expect(annoyed(100, living)).toBeCloseTo(-1);
+    expect(annoyed(100, living, 2)).toBeCloseTo(-3);
+    expect(annoyed(100, living, 4)).toBeCloseTo(-4);
+  });
+
+  it("жмутів у кімнаті немає — шерсть не дратує: на 50 вони лише у вітальні, на 100 — і в ванній", () => {
+    const bathroom = { x: 9.5, y: 2.5 };
+    expect(annoyed(HOUSEHOLD.dirtyFur, bathroom)).toBe(0);
+    expect(annoyed(100, bathroom)).toBeCloseTo(-1);
   });
 });
 

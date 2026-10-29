@@ -19,7 +19,7 @@ import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
 import { weekdayOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { stockBowl } from "./household";
+import { furVisible, stockBowl } from "./household";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 
@@ -526,7 +526,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (!away && day === "inspection" && crossed(from, minutes, m.inspection.minute)) {
     openDoor(state);
     const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
-    const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (state.home.fur >= 50 ? m.inspection.fur : 0);
+    const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (furVisible(state) ? m.inspection.fur : 0);
     const paid = Math.min(fine, Math.max(0, state.character.money));
     spend(state, paid, "other");
     // Скільки справді заплатили — картка каже й це (перевірка модифікаторів 2026-10-28: писала повний штраф, хоча знято лише те, що було).
