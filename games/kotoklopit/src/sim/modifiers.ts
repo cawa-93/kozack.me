@@ -131,38 +131,47 @@ export function chooseWeekModifier(state: GameState, week: number): string | nul
   return rng.chance(MODIFIERS.hardShare[state.difficulty]) ? hard : easy;
 }
 
+/** Повний каталог модифікаторів дня в сталому порядку: пари, потім особливі (у них обидва боки — той самий модифікатор). */
+const DAY_CATALOG: readonly Pair[] = [...DAY_PAIRS, ...SPECIAL.map((s) => pair(s.id, s.id, s.group, s.when))];
+
 /**
  * Модифікатор дня (§4.1): третина днів без нього; інакше випадкова пара, що підходить дню, і її бік.
  * Той самий модифікатор не повторюється два дні поспіль.
+ *
+ * Кидків завжди однаково — «без модифікатора», бік і перестановка всього каталогу, — а від стану залежить лише, який запис
+ * перестановки взяти: перший, у якого бажаний бік сьогодні можливий (немає такого — перший із будь-яким можливим боком). Тож на
+ * переграванні модифікатор дня той самий, якщо досі можливий (§6.1, загальна ревізія 2026-10-29: раніше лікарняний, звільнення
+ * чи інша кількість котів зсували вибір, і з вівторка модифікатори були інші). Перший придатний у випадковій перестановці
+ * рівноймовірний серед придатних, тож частки й частоти ті самі, що й за вибору зі списку можливих.
  */
 export function chooseDayModifier(state: GameState, day: number, rng: Rng): string | null {
-  const previous = state.modifiers.day;
-  const week = state.modifiers.week;
-  const options: { hard: string | null; easy: string | null }[] = [];
-  // Робочі модифікатори — не на лікарняному: керівництво нічого не чекає (перевірка модифікаторів 2026-10-28: «Догана» знімала
-  // репутацію, а нарада й обідня перерва були на титулці, хоч і не діяли).
-  const sick = onSickLeave(state, day);
-  for (const p of DAY_PAIRS) {
-    if (p.group === "work" && sick) continue;
-    const hard = fits(state, day, p.whenHard) && !contradicts(week, p.hard, p.group) && p.hard !== previous ? p.hard : null;
-    const easy = fits(state, day, p.whenEasy) && !contradicts(week, p.easy, p.group) && p.easy !== previous ? p.easy : null;
-    if (hard || easy) options.push({ hard, easy });
-  }
-  // Збори в офісі — не у відпустку й не на лікарняному (перевірка поїздок 2026-10-28: випадали, і поїздка туди платила зарплату).
-  for (const s of SPECIAL) {
-    if (!fits(state, day, s.when) || contradicts(week, s.id, s.group) || s.id === previous) continue;
-    if (s.group === "work" && onSickLeave(state, day)) continue;
-    options.push({ hard: s.id, easy: s.id });
-  }
-  if (options.length === 0 || rng.chance(MODIFIERS.noneShare)) return null;
+  const none = rng.chance(MODIFIERS.noneShare);
   // Спершу бік за складністю, потім пара, у якої цей бік сьогодні можливий: інакше пара з одним можливим боком («Робоча субота»
   // лише в суботу) брала його за будь-якої складності, і частка важких була нижчою за 40/50/60% (перевірка модифікаторів 2026-10-28).
   const wantHard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
-  const fitting = options.filter((o) => (wantHard ? o.hard : o.easy) !== null);
-  const pool = fitting.length > 0 ? fitting : options;
-  const chosen = pool[rng.int(0, pool.length - 1)];
-  if (!chosen) return null;
-  return (wantHard ? (chosen.hard ?? chosen.easy) : (chosen.easy ?? chosen.hard)) ?? null;
+  // Перестановка Фішера–Єйтса: кількість кидків залежить лише від розміру каталогу.
+  const order = DAY_CATALOG.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  if (none) return null;
+  const previous = state.modifiers.day;
+  const week = state.modifiers.week;
+  // Робочі модифікатори — не на лікарняному: керівництво нічого не чекає (перевірка модифікаторів 2026-10-28: «Догана» знімала
+  // репутацію, а нарада й обідня перерва були на титулці, хоч і не діяли). Збори в офісі — теж ні, і не у відпустку (перевірка
+  // поїздок 2026-10-28: випадали, і поїздка туди платила зарплату).
+  const sick = onSickLeave(state, day);
+  const possible = (id: string, when: When, group: Pair["group"]): boolean =>
+    !(group === "work" && sick) && fits(state, day, when) && !contradicts(week, id, group) && id !== previous;
+  const sides = order.map((i) => {
+    const p = DAY_CATALOG[i]!;
+    return { hard: possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy: possible(p.easy, p.whenEasy, p.group) ? p.easy : null };
+  });
+  const wanted = sides.find((s) => (wantHard ? s.hard : s.easy) !== null);
+  if (wanted) return wantHard ? wanted.hard : wanted.easy;
+  const any = sides.find((s) => s.hard !== null || s.easy !== null);
+  return any ? (any.hard ?? any.easy) : null;
 }
 
 /** Ранок нового дня (§4.1): вибір модифікаторів і їхні ранкові ефекти. */

@@ -285,6 +285,38 @@ describe("вибір модифікаторів (§4.1)", () => {
     for (let seed = 0; seed < 300; seed++) expect(chooseDayModifier(save.current, 2, createRng(seed))).not.toBe("office");
   });
 
+  it("на переграванні модифікатор дня той самий, якщо досі можливий: лікарняний, звільнення й учорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
+    const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
+    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "vaccination", "home-vet", "heat", "cold", "friend-help", "food-price-up", "pet-sale", "show"]);
+    /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
+    const pick = (seed: number, setup: (save: Save) => void = () => {}): string | null => {
+      const save = game();
+      addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
+      setup(save);
+      return chooseDayModifier(save.current, 2, createRng(seed));
+    };
+    let checked = 0;
+    for (let seed = 0; seed < 600; seed++) {
+      const base = pick(seed, (save) => (save.current.modifiers.day = null));
+      if (base === null || work.has(base)) continue;
+      checked += 1;
+      const sick = pick(seed, (save) => {
+        save.current.modifiers.day = null;
+        save.current.job.sickLeaveFrom = 2;
+        save.current.job.sickLeaveUntil = 2;
+      });
+      expect(sick).toBe(base);
+      // Учора був інший модифікатор — сьогоднішній не змінюється.
+      const other = base === "rain" ? "renovation" : "rain";
+      expect(pick(seed, (save) => (save.current.modifiers.day = other))).toBe(base);
+      // Безробітному «Швидкий інтернет» неможливий (лише в робочий день) — решта та сама.
+      if (base !== "fast-internet") expect(pick(seed, (save) => ((save.current.modifiers.day = null), (save.current.job.unemployed = true)))).toBe(base);
+      // Котів не стало — не котячий модифікатор той самий.
+      if (!catOnly.has(base)) expect(pick(seed, (save) => ((save.current.modifiers.day = null), (save.current.cats = [])))).toBe(base);
+    }
+    expect(checked).toBeGreaterThan(200);
+  });
+
   it("щоночі обирається модифікатор нового дня", () => {
     const save = game();
     save.current.minute = 22 * 60;
