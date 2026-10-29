@@ -158,7 +158,7 @@ describe("кіт і робота (§9.12)", () => {
       return { save, cat };
     };
 
-    // Пестощі: кіт муркоче там само, і його час на клавіатурі під рукою не спливає.
+    // Пестощі: кіт муркоче там само, і, поки його гладять, не йде, хоч його час на клавіатурі вже минув.
     const petted = setup();
     petted.cat.act.minutes = 0.5;
     const love = petted.cat.love;
@@ -193,6 +193,24 @@ describe("кіт і робота (§9.12)", () => {
     expect(games.events.some((e) => e.type === "played")).toBe(true);
     advance(played.save, 0.5);
     expect(catOnComputer(played.save.current)?.id).toBe(played.cat.id);
+  });
+
+  it("час кота на клавіатурі йде й під рукою: відпустили — сидить, скільки лишилося, а не ще стільки ж (рецензія реалізації А8)", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 7.5, y: 7.5, facing: { x: 0, y: -1 } });
+    const cat = withCat(save, {}, { x: 7.5, y: 6.5 });
+    cat.needs.attention = 90;
+    cat.act = { kind: "keyboard", target: "computer", goal: null, minutes: 12, elapsed: 0 };
+    for (let i = 0; i < 60; i++) advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
+    expect(cat.act).toMatchObject({ kind: "keyboard", goal: null });
+    expect(cat.act.minutes).toBeCloseTo(9, 1);
+    // Відпустили — сидить решту свого часу й іде сам.
+    advance(save, 0.05);
+    advance(save, 8.5);
+    expect(catOnComputer(save.current)?.id).toBe(cat.id);
+    advance(save, 1);
+    expect(catOnComputer(save.current)).toBeNull();
   });
 
   it("кіт на колінах відновлює здоровий глузд, поки персонаж працює", () => {
