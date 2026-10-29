@@ -2,11 +2,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { JOB_SEARCH } from "../src/sim/config";
+import { FIRST_WEEK_PROTECTION, JOB_SEARCH } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
-import { hours, recordEvents, standAt } from "./helpers";
+import { hours, liveDay, recordEvents, standAt } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 2 });
 
@@ -18,8 +18,9 @@ describe("посади (§8.6)", () => {
     expect(save.current.job.reputation).toBe(50);
   });
 
-  it("на 0 — пониження, а стажера звільняють", () => {
+  it("на 0 — пониження, а стажера звільняють (з восьмого дня: до того — захист першого тижня, А2)", () => {
     const save = game();
+    save.current.day = FIRST_WEEK_PROTECTION.days;
     save.current.job.position = 2;
     changeReputation(save.current, -60);
     expect(save.current.job.position).toBe(1);
@@ -47,6 +48,40 @@ describe("посади (§8.6)", () => {
     expect(save.current.job.unemployed).toBe(false);
     expect(save.current.job.position).toBe(0);
     expect(save.current.character.money).toBeLessThanOrEqual(money + 15);
+  });
+});
+
+describe("захист першого тижня для репутації (§8.3, §8.6; рішення автора 2026-10-29, А2)", () => {
+  it("стажера, що весь перший тиждень не підходить до комп'ютера, до восьмого дня не звільняють, а з нього — як завжди", () => {
+    const save = game();
+    const { events, stop } = recordEvents();
+    for (let day = 0; day < FIRST_WEEK_PROTECTION.days; day++) {
+      liveDay(save);
+      expect(save.current.job.unemployed).toBe(false);
+      expect(save.current.job.reputation).toBeGreaterThanOrEqual(FIRST_WEEK_PROTECTION.reputation);
+    }
+    stop();
+    // Штрафи (пропущені летучки, «Х») були, але репутація вперлася в межу: ні звільнення, ні іншої зміни посади.
+    expect(events.some((e) => e.type === "standup" && !e.attended)).toBe(true);
+    expect(events.some((e) => e.type === "career")).toBe(false);
+    expect(save.current.job.reputation).toBe(FIRST_WEEK_PROTECTION.reputation);
+    expect(save.current.day).toBe(FIRST_WEEK_PROTECTION.days);
+    // Восьмий день — захисту немає: перший же штраф звільняє.
+    liveDay(save);
+    expect(save.current.job.unemployed).toBe(true);
+  });
+
+  it("перші 7 днів і посаду не понижують, хоч би що було з котами; підвищення — як завжди", () => {
+    const save = game();
+    save.current.day = FIRST_WEEK_PROTECTION.days - 1;
+    save.current.stats.raised.shelter = 1;
+    save.current.job.position = 2;
+    changeReputation(save.current, -60);
+    expect(save.current.job.position).toBe(2);
+    expect(save.current.job.reputation).toBe(FIRST_WEEK_PROTECTION.reputation);
+    changeReputation(save.current, 99);
+    expect(save.current.job.position).toBe(3);
+    expect(save.current.job.reputation).toBe(50);
   });
 });
 

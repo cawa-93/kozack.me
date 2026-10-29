@@ -6,6 +6,7 @@ import {
   CALL_DIRTY_CLOTHES,
   CALL_HYGIENE_REPUTATION,
   DIFFICULTY,
+  FIRST_WEEK_PROTECTION,
   HIGH_HYGIENE,
   LOW_STAT,
   MINUTES_PER_HOUR,
@@ -70,11 +71,21 @@ export function patienceLevel(state: GameState): PatienceLevel {
   return patience < PATIENCE_WARNING ? "warning" : "ok";
 }
 
+/**
+ * Нижче цієї межі репутація зараз не падає: перші 7 днів — 1, хоч би що було з котами, тож стажера не звільняють і посаду
+ * не понижують (захист першого тижня, §8.3, §8.6; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А2).
+ */
+function reputationFloor(state: GameState): number {
+  return state.day < FIRST_WEEK_PROTECTION.days ? FIRST_WEEK_PROTECTION.reputation : 0;
+}
+
 /** Репутація (§8.6): на 100 — підвищення, на 0 — пониження чи звільнення; після зміни посади — знову 50. */
 export function changeReputation(state: GameState, delta: number): void {
   const job = state.job;
   if (job.unemployed) return;
-  job.reputation = Math.min(REPUTATION_MAX, Math.max(0, job.reputation + delta));
+  // Межа лише обмежує падіння й не піднімає репутацію, що вже нижча за неї (як statFloor для показників, §6.2).
+  const lowest = Math.min(job.reputation, reputationFloor(state));
+  job.reputation = Math.min(REPUTATION_MAX, Math.max(0, lowest, job.reputation + delta));
   if (job.reputation >= REPUTATION_MAX && job.position < POSITIONS.length - 1) {
     job.position += 1;
     job.reputation = START_REPUTATION;
