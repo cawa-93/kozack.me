@@ -105,6 +105,26 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     expect(weeks(1)).toBeGreaterThan(50);
   });
 
+  it("за 50 тижнів (250 робочих днів) хто працює рівно за вимогою, доходить до 14-ї посади, а хто лише денний мінімум без «Х» — до 12-ї (§8.6, [Розрахунок]; рецензія реалізації А10)", () => {
+    /** Посада (від 1) після `days` робочих днів, якщо щодня працювати `hoursOf(посада)` годин, без бонусів летучки. */
+    const positionAfter = (days: number, hoursOf: (p: Position) => number): number => {
+      let elapsed = 0;
+      for (let i = 0; i < POSITIONS.length - 1; i++) {
+        const p = POSITIONS[i]!;
+        elapsed += (REPUTATION_MAX - START_REPUTATION) / (p.reputation * hoursOf(p));
+        if (elapsed > days) return i + 1;
+      }
+      return POSITIONS.length;
+    };
+    /** Денний мінімум без «Х»: з повного ранкового терпіння до 18:00 не дійти до нуля (§8.6, \*\*\*). */
+    const dailyMinimum = (p: Position): number => (9 * p.patienceDecay - 100) / (p.patienceRecovery + p.patienceDecay);
+    const workdays = 50 * WORKDAYS_PER_WEEK;
+    expect(positionAfter(workdays, (p) => share(p) * 9)).toBe(14);
+    expect(positionAfter(workdays, dailyMinimum)).toBe(12);
+    expect(POSITION_TITLES[13]).toBe("[Заступник|Заступниця] директора");
+    expect(POSITION_TITLES[11]).toBe("[Керівник|Керівниця] департаменту");
+  });
+
   it("гроші обмежують довше: за мінімальної старанності директор заробляє за тиждень у ~11 разів більше за стажера (було майже в 19)", () => {
     const weekly = (p: Position): number => p.pay * share(p) * 9 * WORKDAYS_PER_WEEK;
     expect(weekly(director!) / weekly(first!)).toBeLessThan(12);
