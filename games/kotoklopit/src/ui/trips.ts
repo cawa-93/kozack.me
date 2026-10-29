@@ -61,9 +61,12 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   };
 }
 
+const CARRIER_TILL_NIGHT = "{кіт} до ночі [просидів|просиділа] в переносці.";
+
 const LOSS_TEXTS: Record<AccidentLoss, string> = {
   repair: `Ремонт машини: −${ACCIDENT.repair} ₴.`,
-  health: "Легкі забої.",
+  // Втрата здоров'я — це ще й хвороба «Травма» (§6.5), а не лише забої (загальна ревізія 2026-10-29: картка казала «Легкі забої»).
+  health: "Травма. Варто показатися лікарю.",
   sanity: "Нерви на межі.",
   cat: "{кіт} у переносці страшенно [перелякався|перелякалася].",
 };
@@ -84,12 +87,15 @@ function lossText(state: GameState, loss: AccidentLoss): string {
 
 export function accidentCard(state: GameState, onClose: () => void): Card {
   const losses = state.trip?.losses ?? [];
+  // Кіт у переносці їде з персонажем до ночі, хоч би що він утратив (загальна ревізія 2026-10-29: картка про це мовчала).
+  const cat = state.cats.find((c) => c.id === state.trip?.cat);
   return {
     kicker: "Аварія",
     title: "Бам!",
     body: [
       "Сталася аварія. Решту дня довелося оформлювати документи, і додому вдалося потрапити лише під ніч.",
       ...(losses.length > 0 ? losses.map((l) => lossText(state, l)) : ["На щастя, без інших втрат."]),
+      ...(cat ? [fill(CARRIER_TILL_NIGHT, cat.sex, { кіт: cat.name })] : []),
     ],
     actions: [{ label: "Додому", primary: true, onSelect: onClose }],
   };
