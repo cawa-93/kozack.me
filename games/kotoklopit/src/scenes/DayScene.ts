@@ -456,8 +456,9 @@ export class DayScene extends Phaser.Scene {
         checkout(state, cart, "store");
         again();
       },
+      // Знімок огляду симуляція сама кладе в журнал поїздки: огляд входить і в операцію (рішення автора 2026-10-29, А3).
       exam: () => {
-        log.exam = vetExam(state);
+        vetExam(state);
         again();
       },
       treat: (disease, quality) => {
@@ -480,7 +481,7 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       sterilize: () => {
-        vetSterilize(state);
+        if (vetSterilize(state)) log.done.push("sterilize");
         again();
       },
       giveAway: () => {

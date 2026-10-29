@@ -34,7 +34,7 @@ import { priceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekOf } from "./time";
-import type { Cat, DiseaseId, GameState, Product, Quality, ThingKind } from "./types";
+import type { Cat, DiseaseId, GameState, Product, Quality, ThingKind, VisitLog } from "./types";
 import { changeReputation, isWorkday } from "./work";
 
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
@@ -106,8 +106,11 @@ export function vetManner(cat: Cat): VetManner | null {
   return level <= -2 ? "hid" : "hiss";
 }
 
-/** Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я, настрій і вага — знімок; як кіт поводився (§9.12). */
-export function vetExam(state: GameState): { health: number; mood: number; weight: number; manner: VetManner | null } | null {
+/**
+ * Огляд (§8.5, §9.9): усі хвороби кота стають відомі; здоров'я, настрій і вага — знімок; як кіт поводився (§9.12). Знімок лягає
+ * в журнал поїздки: картка показує його, а операція знає, що огляд уже оплачено (§9.8; рішення автора 2026-10-29, А3).
+ */
+export function vetExam(state: GameState): VisitLog["exam"] {
   const cat = tripCat(state);
   const trip = state.trip;
   if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam, "health")) return null;
@@ -127,7 +130,9 @@ export function vetExam(state: GameState): { health: number; mood: number; weigh
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });
-  return { health: cat.health, mood: cat.mood, weight: weightOf(cat), manner };
+  const exam = { health: cat.health, mood: cat.mood, weight: weightOf(cat), manner };
+  (trip.log ??= { exam: null, done: [] }).exam = exam;
+  return exam;
 }
 
 /** Лікування знайденої хвороби (§8.5): дешеве допомагає з шансом 70%, дороге — завжди; хронічну контролює 7 чи 14 днів. */
@@ -166,11 +171,36 @@ export function sterilizeBlocker(state: GameState, cat: Cat): "young" | "pregnan
   return null;
 }
 
-/** Стерилізація чи кастрація (§9.8): кіт більше не матиме кошенят; 3 дні відновлення. */
+/**
+ * Що заважає операції з того, що гравець і так знає (§9.8, §9.9; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А3): уже
+ * стерилізований (відомо з притулку чи огляду), замалий (вік), відома вагітність, годує (кошенят видно). Прихованої вагітності
+ * чи стерилізації картка до огляду не розкриває: їх покаже огляд, що входить в операцію.
+ */
+export function knownSterilizeBlocker(state: GameState, cat: Cat): "sterilized" | "young" | "pregnant" | "nursing" | null {
+  if (cat.sterilized && cat.sterilizedKnown) return "sterilized";
+  if (!canSterilize(cat)) return "young";
+  if (cat.pregnancy?.known) return "pregnant";
+  if (isNursing(state, cat)) return "nursing";
+  return null;
+}
+
+/** Скільки зараз коштує операція (§9.8, А3): огляд у ціні, тож якщо огляд цієї поїздки вже оплачено окремо — без нього. */
+export function sterilizePrice(state: GameState): number {
+  return state.trip?.log?.exam ? STERILIZATION.price - VET.exam : STERILIZATION.price;
+}
+
+/**
+ * Стерилізація чи кастрація (§9.8): кіт більше не матиме кошенят; 3 дні відновлення. Огляд у ціні (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А3): без огляду цієї поїздки ветеринар спершу оглядає кота, як `vetExam`; якщо огляд показав, що кіт
+ * уже стерилізований чи кішка вагітна, операції немає — заплачено лише за огляд. Грошей не вистачає на ціну операції — нічого.
+ */
 export function vetSterilize(state: GameState): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
-  if (!cat || !trip || trip.destination !== "vet" || cat.sterilized || sterilizeBlocker(state, cat) !== null || !spend(state, STERILIZATION.price, "health")) return false;
+  if (!cat || !trip || trip.destination !== "vet" || knownSterilizeBlocker(state, cat) !== null) return false;
+  if (state.character.money < sterilizePrice(state)) return false;
+  if (!trip.log?.exam && vetExam(state) === null) return false;
+  if (cat.sterilized || sterilizeBlocker(state, cat) !== null || !spend(state, STERILIZATION.price - VET.exam, "health")) return false;
   trip.visit += STERILIZATION.minutes;
   cat.sterilized = true;
   cat.sterilizedKnown = true;

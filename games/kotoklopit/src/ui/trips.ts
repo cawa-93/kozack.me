@@ -1,7 +1,7 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, shelterCats, sterilizeBlocker, tripCat, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { giveAwayBlocker, recentlyArrived } from "../sim/farewell";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -154,6 +154,24 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     return r;
   };
   const cat = tripCat(state);
+  // Стерилізація чи кастрація (§9.8): огляд у ціні, тож рядок видно й до огляду (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А3).
+  // До огляду — лише те, що гравець і так знає: прихована вагітність чи стерилізація розкривається оглядом після натискання.
+  const sterilizeRow = (): HTMLElement | null => {
+    if (!cat) return null;
+    const title = cat.sex === "male" ? "Кастрація" : "Стерилізація";
+    const done = cat.sex === "male" ? "кастрований" : "стерилізована";
+    const age = STERILIZATION.minAge;
+    const why = {
+      sterilized: log.done.includes("sterilize") ? `✓ ${done}` : `уже ${done}`,
+      young: `замале: оперують з ${age} ${plural(age, "тижня", "тижнів", "тижнів")}`,
+      pregnant: "вагітна: стерилізувати можна після пологів",
+      nursing: "годує кошенят: після тижня годування",
+    };
+    const blocker = knownSterilizeBlocker(state, cat);
+    if (blocker !== null) return row(title, why[blocker]);
+    const price = sterilizePrice(state);
+    return row(title, `🕐 ${minutesText(STERILIZATION.minutes)}${log.exam ? "" : " · огляд у ціні"}`, button(`${price} ₴`, price, h.sterilize));
+  };
   switch (destination) {
     case "shop":
       body.push(shopCatalog(state, "store", h.checkout));
@@ -163,6 +181,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (!log.exam) {
         body.push(`${cat.name} у переносці.`);
         body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam} ₴`, VET.exam, h.exam)));
+        const sterilize = sterilizeRow();
+        if (sterilize) body.push(sterilize);
         break;
       }
       body.push(
@@ -177,12 +197,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       else if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(breedLine(cat.breed, cat.breedKnown, cat.sex) ?? "Порода: невідома.");
-      const blocker = sterilizeBlocker(state, cat);
-      const age = STERILIZATION.minAge;
-      const why = { young: `замале: оперують з ${age} ${plural(age, "тижня", "тижнів", "тижнів")}`, pregnant: "вагітна: стерилізувати можна після пологів", nursing: "годує кошенят: після тижня годування" };
-      if (!cat.sterilized && blocker !== null) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", why[blocker]));
-      else if (!cat.sterilized)
-        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", `🕐 ${minutesText(STERILIZATION.minutes)}`, button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
+      const sterilize = sterilizeRow();
+      if (sterilize) body.push(sterilize);
       const list = element("div", "shop");
       for (const d of known) {
         // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).

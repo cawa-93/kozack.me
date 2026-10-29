@@ -4,8 +4,25 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { ACCIDENT, BATH, START_CLOTHES, TRIPS } from "../src/sim/config";
-import { adopt, breederCats, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { ACCIDENT, BATH, START_CLOTHES, STERILIZATION, TRIPS, VET } from "../src/sim/config";
+import {
+  adopt,
+  breederCats,
+  buyAtShop,
+  buyFromBreeder,
+  cafe,
+  enterShow,
+  giveToShelter,
+  knownSterilizeBlocker,
+  officeMeeting,
+  shelterCats,
+  shopPrice,
+  sterilizePrice,
+  tripCat,
+  vetExam,
+  vetSterilize,
+  vetTreat,
+} from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { advance, deserialize, drive, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -521,6 +538,100 @@ describe("пункти призначення (§8.5)", () => {
     expect(vetTreat(save.current, "obesity", "premium", createRng(1))).toBeNull();
     expect(cat.diseases).toHaveLength(1);
     expect(save.current.character.money).toBe(money);
+  });
+
+  describe("огляд у ціні операції (§9.8; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А3)", () => {
+    /** Доросла нестерилізована кішка вже у ветеринара, огляду ще не було. */
+    function femaleAtVet(): { save: Save; state: GameState; cat: Cat } {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      const cat = createCat(save.current, createRng(5), { source: "shelter", ageWeeks: 3, sex: "female", at: { x: 5.5, y: 8.5 } });
+      cat.traits = [];
+      cat.arrivedDay = -10;
+      addCat(save.current, cat);
+      save.current.home.carrier = "premium";
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      arrive(save, "vet");
+      return { save, state: save.current, cat };
+    }
+
+    it("без огляду — одна дія: ветеринар оглядає й оперує, разом 120; хвороби, порода й щеплення — як на огляді", () => {
+      const { state, cat } = femaleAtVet();
+      fallIll(state, cat, "cold");
+      expect(cat.diseases[0]?.known).toBe(false);
+      expect(knownSterilizeBlocker(state, cat)).toBeNull();
+      expect(sterilizePrice(state)).toBe(STERILIZATION.price);
+      const money = state.character.money;
+      expect(vetSterilize(state)).toBe(true);
+      expect(cat.sterilized).toBe(true);
+      expect(state.character.money).toBe(money - STERILIZATION.price);
+      expect(cat.diseases[0]?.known).toBe(true);
+      expect(cat.breedKnown).toEqual([true, true]);
+      expect(state.today.vaccinated).toBe(true);
+      // Картка показує результати огляду: знімок — у журналі поїздки.
+      expect(state.trip?.log?.exam).toBeTruthy();
+      expect(state.trip?.visit).toBe(TRIPS.vet.visit + STERILIZATION.minutes);
+    });
+
+    it("прихована вагітність: картка її не розкриває, а натискання — лише огляд за 40, без операції", () => {
+      const { state, cat } = femaleAtVet();
+      cat.pregnancy = { father: null, due: state.day + 3, known: false };
+      expect(knownSterilizeBlocker(state, cat)).toBeNull();
+      const money = state.character.money;
+      expect(vetSterilize(state)).toBe(false);
+      expect(cat.sterilized).toBe(false);
+      expect(cat.pregnancy?.known).toBe(true);
+      expect(state.character.money).toBe(money - VET.exam);
+      expect(knownSterilizeBlocker(state, cat)).toBe("pregnant");
+      expect(state.trip?.log?.exam).toBeTruthy();
+      expect(state.trip?.visit).toBe(TRIPS.vet.visit);
+      // Друге натискання вже нічого не коштує.
+      expect(vetSterilize(state)).toBe(false);
+      expect(state.character.money).toBe(money - VET.exam);
+    });
+
+    it("огляд окремо — 40, потім операція — ще 80", () => {
+      const { state, cat } = femaleAtVet();
+      const money = state.character.money;
+      expect(vetExam(state)).not.toBeNull();
+      expect(state.character.money).toBe(money - VET.exam);
+      expect(sterilizePrice(state)).toBe(STERILIZATION.price - VET.exam);
+      expect(vetSterilize(state)).toBe(true);
+      expect(cat.sterilized).toBe(true);
+      expect(state.character.money).toBe(money - STERILIZATION.price);
+    });
+
+    it("уже стерилізована, про що не знали: 40 за огляд, без операції, тепер відомо", () => {
+      const { state, cat } = femaleAtVet();
+      cat.sterilized = true;
+      cat.sterilizedKnown = false;
+      expect(knownSterilizeBlocker(state, cat)).toBeNull();
+      const money = state.character.money;
+      const mood = cat.mood;
+      expect(vetSterilize(state)).toBe(false);
+      expect(state.character.money).toBe(money - VET.exam);
+      expect(cat.sterilizedKnown).toBe(true);
+      expect(knownSterilizeBlocker(state, cat)).toBe("sterilized");
+      expect(cat.mood).toBe(mood);
+      expect(state.trip?.visit).toBe(TRIPS.vet.visit);
+    });
+
+    it("відома перешкода чи брак грошей на операцію — нічого не відбувається, і огляду теж", () => {
+      const { state, cat } = femaleAtVet();
+      cat.pregnancy = { father: null, due: state.day + 3, known: true };
+      const money = state.character.money;
+      expect(vetSterilize(state)).toBe(false);
+      expect(state.character.money).toBe(money);
+      cat.pregnancy = null;
+      state.character.money = STERILIZATION.price - 1;
+      expect(vetSterilize(state)).toBe(false);
+      expect(state.character.money).toBe(STERILIZATION.price - 1);
+      expect(state.trip?.log?.exam ?? null).toBeNull();
+      expect(cat.breedKnown).toEqual([false, false]);
+      state.character.money = STERILIZATION.price;
+      expect(vetSterilize(state)).toBe(true);
+      expect(state.character.money).toBe(0);
+    });
   });
 
   it("притулок: три коти на тиждень; новий кіт — зі стартовим пакетом і бонусом", () => {
