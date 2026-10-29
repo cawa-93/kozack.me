@@ -1685,6 +1685,7 @@ export const ESCAPE = {
 /**
  * Дзвінок у двері (§9.12 «Двері й гості», рішення автора 2026-10-25): «+» `greetMinutes` хвилин сидить біля дверей, «−»
  * ховається на `hideStep` × |рівень| хвилин. Гості дзвонять за `ringLead` хвилини до того, як зайти; у день «Гості» кожен «+»
- * дає здоровий глузд `delight` (разом не більше `delightMax`), кожен −2 — `hissSanity`. На виставці бал + `showStep` × рівень.
+ * дає здоровий глузд `delight` (разом не більше `delightMax`, потім множник «Здоровий глузд від котів», §5.2), кожен −2 —
+ * `hissSanity`. На виставці бал + `showStep` × рівень.
  */
 export const GUESTS = { greetMinutes: 5, hideStep: 30, ringLead: 2, delight: 3, delightMax: 6, hissSanity: -2, showStep: 0.05 } as const;

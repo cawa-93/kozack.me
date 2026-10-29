@@ -232,6 +232,21 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     expect(sanityAfter([{ guests: -2 }])).toBe(50 + GUESTS.hissSanity);
   });
 
+  it("захват гостей — з множником «Здоровий глузд від котів»: +7,5 / +4,8 на легкій / важкій, сором і шипіння без множника (загальна ревізія 2026-10-29)", () => {
+    const sanityAfter = (difficulty: "easy" | "hard", traits: Record<string, TraitLevel>[]): number => {
+      const save = game();
+      save.current.difficulty = difficulty;
+      save.current.modifiers.day = "guests";
+      traits.forEach((t, i) => withCat(save, t, { x: 3.5 + i, y: 8.5 }));
+      save.current.character.stats.sanity = 50;
+      tickModifiers(save.current, MODIFIERS.guests.minute - 1, 2, false);
+      return save.current.character.stats.sanity;
+    };
+    expect(sanityAfter("easy", [{ guests: 2 }, { guests: 1 }])).toBeCloseTo(50 + 7.5);
+    expect(sanityAfter("hard", [{ guests: 2 }, { guests: 1 }])).toBeCloseTo(50 + 4.8);
+    expect(sanityAfter("hard", [{ guests: -2 }])).toBeCloseTo(50 + GUESTS.hissSanity);
+  });
+
   it("повідомлення дня каже, що бачили гості: шипіння в чистій квартирі — не «безлад» (перевірка етапу 2026-10-26)", () => {
     const visit = (traits: Record<string, TraitLevel>[], messes = 0): GuestsVisit | undefined => {
       const save = game();
