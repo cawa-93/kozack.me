@@ -49,10 +49,10 @@ describe("розклад дня (§8.4)", () => {
     expect(panel(meeting)).toEqual(["14:00 нарада", "≈12:00 кур'єр"]);
     // Перевірка ОСББ у робочий день о 09:30 — летучка й перевірка, а не «робота».
     expect(panel(day(9.5, "inspection"))).toEqual(["10:00 летучка", "15:00 перевірка ОСББ"]);
-    // Щеплення з пакунком під дверима — щеплення й летучка; пакунок і так видно над дверима.
-    const vaccination = day(9.5, "vaccination");
-    vaccination.home.porch.push({ id: 9, product: "food", quality: "cheap", at: 0 });
-    expect(panel(vaccination)).toEqual(["щеплення", "10:00 летучка"]);
+    // Ветеринарка з пакунком під дверима — летучка й ветеринарка; пакунок і так видно над дверима.
+    const homeVet = day(9.5, "home-vet");
+    homeVet.home.porch.push({ id: 9, product: "food", quality: "cheap", at: 0 });
+    expect(panel(homeVet)).toEqual(["10:00 летучка", "11:00 ветеринарка"]);
     // Збори в офісі з кур'єром уранці — «до 18:00 офіс» на панелі.
     const office = day(8, "office");
     courier(office, 9);

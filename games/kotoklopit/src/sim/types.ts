@@ -1024,10 +1024,6 @@ export interface ModifierDay {
   callPending?: boolean;
   /** Хвилини за комп'ютером на важливій нараді. */
   meetingMinutes: number;
-  /** Сьогодні вже возили кота до ветеринара (щеплення). */
-  vaccinated: boolean;
-  /** До якого дня коти хворіють частіше: щеплення пропущено. */
-  vaccineMissedUntil: number;
   /** Сьогодні вже були в офісі. */
   officeDone: boolean;
   /** Сьогодні вже брали участь у виставці котів (у старих збереженнях — немає). */

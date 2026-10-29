@@ -681,7 +681,7 @@ describe("пункти призначення (§8.5)", () => {
       return { save, state: save.current, cat };
     }
 
-    it("без огляду — одна дія: ветеринар оглядає й оперує, разом 120; хвороби, порода й щеплення — як на огляді", () => {
+    it("без огляду — одна дія: ветеринар оглядає й оперує, разом 120; хвороби й порода — як на огляді", () => {
       const { state, cat } = femaleAtVet();
       fallIll(state, cat, "cold");
       expect(cat.diseases[0]?.known).toBe(false);
@@ -693,7 +693,6 @@ describe("пункти призначення (§8.5)", () => {
       expect(state.character.money).toBe(money - STERILIZATION.price);
       expect(cat.diseases[0]?.known).toBe(true);
       expect(cat.breedKnown).toEqual([true, true]);
-      expect(state.today.vaccinated).toBe(true);
       // Картка показує результати огляду: знімок — у журналі поїздки.
       expect(state.trip?.log?.exam).toBeTruthy();
       expect(state.trip?.visit).toBe(TRIPS.vet.visit + STERILIZATION.minutes);

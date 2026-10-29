@@ -151,10 +151,6 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
     title: "Тихий вечір",
     situation: "Місто затихло рано.",
   },
-  "vaccination": {
-    title: "Щеплення",
-    situation: "Ветклініка нагадує: сьогодні день щеплень для котів.",
-  },
   "home-vet": {
     title: "Ветеринар удома",
     situation: "Знайома ветеринарка обіцяла зайти на каву об 11:00.",

@@ -79,7 +79,7 @@ export function newGame(options: NewGameOptions): Save {
     job: newJob(),
     home: newHome(),
     modifiers: { day: FIRST_DAY_MODIFIER, week: null },
-    today: { callAt: null, meetingMinutes: 0, vaccinated: false, vaccineMissedUntil: -1, officeDone: false, foundling: false, lastFoundling: -100, utilitiesDiscount: 0, earlyWake: 0 },
+    today: { callAt: null, meetingMinutes: 0, officeDone: false, foundling: false, lastFoundling: -100, utilitiesDiscount: 0, earlyWake: 0 },
     cats: [],
     relations: {},
     trip: null,
@@ -329,6 +329,7 @@ export function deserialize(json: string): Save {
  * автогодівниця в сценарії не працювала, а комунальні за неї нараховувалися).
  */
 export function upgradeState(state: GameState): void {
+  upgradeModifiers(state);
   upgradeFeeder(state);
   upgradeTraits(state);
   upgradeWardrobe(state);
@@ -336,6 +337,16 @@ export function upgradeState(state: GameState): void {
   upgradeAlbumDays(state);
   upgradeDiseases(state);
   upgradeTrip(state);
+}
+
+/**
+ * «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14): день, збережений з ним, — день без модифікатора, а
+ * пропущене щеплення більше нічого не важить — поля про нього зникають.
+ */
+export function upgradeModifiers(state: GameState): void {
+  if (state.modifiers.day === "vaccination") state.modifiers.day = null;
+  Reflect.deleteProperty(state.today, "vaccinated");
+  Reflect.deleteProperty(state.today, "vaccineMissedUntil");
 }
 
 /**

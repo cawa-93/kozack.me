@@ -116,8 +116,6 @@ export function vetExam(state: GameState): VisitLog["exam"] {
   const trip = state.trip;
   if (!cat || trip?.destination !== "vet" || !spend(state, VET.exam, "health")) return null;
   for (const disease of cat.diseases) disease.known = true;
-  // Щеплення (§4.1): кота довезли до ветеринара.
-  state.today.vaccinated = true;
   // Ветеринар бачить і фізіологічні стани, і породу (§9.9, §9.11).
   if (cat.pregnancy) cat.pregnancy.known = true;
   cat.sterilizedKnown = true;

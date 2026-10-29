@@ -1323,8 +1323,6 @@ export const MODIFIERS = {
   rainFatigue: 1.3,
   festival: { minute: 21 * 60, hideMinutes: 60, mood: -5, wake: 0.3 },
   quietEvening: { minute: 20 * 60, mood: 2 },
-  vaccineDays: 7,
-  vaccineIllness: 1.5,
   homeVetMinute: 11 * 60,
   heat: { thirst: 1.5, fatigue: 1.2, hygiene: 1.2 },
   coldWarmth: 3,

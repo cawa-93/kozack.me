@@ -26,14 +26,15 @@ import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeav
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
 interface Pair {
-  hard: string;
+  /** Важкий бік; null — модифікатор без пари, лише легкий бік (§11.1). */
+  hard: string | null;
   easy: string;
   whenHard: When;
   whenEasy: When;
   group: "work" | "cats" | "home" | "personal" | "city";
 }
 
-const pair = (hard: string, easy: string, group: Pair["group"], whenHard: When, whenEasy: When = whenHard): Pair => ({ hard, easy, group, whenHard, whenEasy });
+const pair = (hard: string | null, easy: string, group: Pair["group"], whenHard: When, whenEasy: When = whenHard): Pair => ({ hard, easy, group, whenHard, whenEasy });
 
 /** Пари модифікаторів дня (`DAY_MODIFIERS.md`). */
 export const DAY_PAIRS: readonly Pair[] = [
@@ -44,7 +45,9 @@ export const DAY_PAIRS: readonly Pair[] = [
   pair("work-saturday", "midweek-off", "work", "saturday", "workday"),
   pair("full-moon", "rain", "cats", "cat"),
   pair("festival", "quiet-evening", "cats", "cat"),
-  pair("vaccination", "home-vet", "cats", "cat"),
+  // «Ветеринар удома» — без пари: «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14; §11.1 це дозволяє).
+  // Він, як і раніше, лише легкий бік: випадає, коли випав легкий.
+  pair(null, "home-vet", "cats", "cat"),
   pair("heat", "cold", "cats", "cat"),
   pair("renovation", "neighbors-away", "home", "any"),
   // «Планове відключення» лишається й безробітному: зупиняє й пошук роботи (§8.6; перевірка модифікаторів 2026-10-28).
@@ -189,7 +192,7 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
     // Тиждень профілактики: з пари «Застуда ↔ Бадьорість» лишається тільки «Бадьорість» — і коли випав важкий бік (рішення автора
     // 2026-10-29, `GENERAL_REVIEW.md`, А14). Раніше «Застуда» просто не випадала, і замість неї приходив інший важкий день.
     if (week === "human-prevention" && p.hard === "sick") return { hard: easy, easy };
-    return { hard: possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy };
+    return { hard: p.hard !== null && possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy };
   });
   const wanted = sides.find((s) => (wantHard ? s.hard : s.easy) !== null);
   if (wanted) return wantHard ? wanted.hard : wanted.easy;
@@ -201,15 +204,11 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
 export function startModifiers(state: GameState, rng: Rng): void {
   // Модифікатор тижня ніч на понеділок уже обрала — за станом на вечір неділі (`runNight`; рішення автора 2026-10-29, А14).
   const today = state.today;
-  // Пропущене вчора щеплення: тиждень коти хворіють частіше.
-  // Ночі нового дня й наступних — разом 7 (перевірка модифікаторів 2026-10-28: було 8).
-  if (state.modifiers.day === "vaccination" && !today.vaccinated) today.vaccineMissedUntil = state.day - 1 + MODIFIERS.vaccineDays;
   state.modifiers.day = chooseDayModifier(state, state.day, rng);
   today.callAt = null;
   // Дзвінок, на який до ночі так і не відповіли, минає без штрафу, як і картка, що не встигла показатися (§4.1).
   delete today.callPending;
   today.meetingMinutes = 0;
-  today.vaccinated = false;
   today.officeDone = false;
   delete today.showDone;
   today.earlyWake = 0;
@@ -377,10 +376,9 @@ export function priceFactor(state: GameState, product: string): number {
   return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
 }
 
-/** Шанс хвороб котів (§9.5): пропущене щеплення, котячий грип чи профілактика. */
+/** Шанс хвороб котів (§9.5): котячий грип чи профілактика (щеплення прибрано — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14). */
 export function catIllnessFactor(state: GameState): number {
-  const vaccine = state.day <= state.today.vaccineMissedUntil ? MODIFIERS.vaccineIllness : 1;
-  return vaccine * (MODIFIERS.week.catIllness[state.modifiers.week ?? ""] ?? 1);
+  return MODIFIERS.week.catIllness[state.modifiers.week ?? ""] ?? 1;
 }
 
 // --- Події за часом -------------------------------------------------------------------------

@@ -12,6 +12,7 @@ import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundl
 import { coughWakes } from "../src/sim/night";
 import { nightlyStates } from "../src/sim/reproduction";
 import { scheduleOf } from "../src/view/schedule";
+import { DAY_MODIFIER_TEXTS } from "../src/texts";
 import { objectById } from "../src/sim/home";
 import { fallIll } from "../src/sim/diseases";
 import { addCat, giveStarterPack } from "../src/sim/night";
@@ -61,9 +62,37 @@ describe("вибір модифікаторів: перевірка модифі
     expect(withCat.has("quiet-night")).toBe(true);
   });
 
+  it("«Щеплення» немає, а «Ветеринар удома» лишився без пари — легким боком; старе збереження з днем щеплення — день без модифікатора (рішення автора 2026-10-29, А14)", () => {
+    const withCat = seen((save) => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } })), 2, 3000);
+    expect(withCat.has("vaccination")).toBe(false);
+    expect(withCat.has("home-vet")).toBe(true);
+    expect(DAY_MODIFIER_TEXTS.vaccination).toBeUndefined();
+    // «Ветеринар удома» — лише легкий бік: випадає, лише коли кидок боку (другий кидок вибору, після «без модифікатора») дав легкий.
+    const hard = newGame({ sex: "female", difficulty: "hard", seed: 14 });
+    addCat(hard.current, createCat(hard.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
+    let homeVet = 0;
+    for (let seed = 0; seed < 4000; seed++) {
+      hard.current.modifiers.day = null;
+      if (chooseDayModifier(hard.current, 2, createRng(seed)) !== "home-vet") continue;
+      homeVet += 1;
+      const rolls = createRng(seed);
+      rolls.chance(MODIFIERS.noneShare);
+      expect(rolls.chance(MODIFIERS.hardShare.hard)).toBe(false);
+    }
+    expect(homeVet).toBeGreaterThan(20);
+    // Збереження з днем «Щеплення»: день без модифікатора, полів про щеплення немає.
+    const old = game();
+    old.current.modifiers.day = "vaccination";
+    Object.assign(old.current.today, { vaccinated: false, vaccineMissedUntil: 8 });
+    const copy = deserialize(serialize(old));
+    expect(copy.current.modifiers.day).toBeNull();
+    expect("vaccinated" in copy.current.today).toBe(false);
+    expect("vaccineMissedUntil" in copy.current.today).toBe(false);
+  });
+
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
     const save = newGame({ sex: "female", difficulty: "hard", seed: 14 });
-    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "vaccination", "heat"]);
+    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat"]);
     let hardCount = 0;
     let total = 0;
     for (let seed = 0; seed < 3000; seed++) {
@@ -77,17 +106,12 @@ describe("вибір модифікаторів: перевірка модифі
     expect(hardCount / total).toBeLessThan(0.64);
   });
 
-  it("безробітному модифікатор тижня — приблизно в половині тижнів; щеплення — 7 днів; перерахунки додаються", () => {
+  it("безробітному модифікатор тижня — приблизно в половині тижнів; перерахунки додаються", () => {
     const save = game();
     save.current.job.unemployed = true;
     let some = 0;
     for (let week = 1; week <= 400; week++) if (chooseWeekModifier(save.current, week)) some += 1;
     expect(some / 400).toBeGreaterThan(0.4);
-    const vaccine = game();
-    vaccine.current.day = 2;
-    vaccine.current.modifiers.day = "vaccination";
-    startModifiers(vaccine.current, createRng(1));
-    expect(vaccine.current.today.vaccineMissedUntil).toBe(8);
     const recalc = game();
     recalc.current.today.utilitiesDiscount = 10;
     recalc.current.day = 3;
@@ -430,7 +454,7 @@ describe("вибір модифікаторів (§4.1)", () => {
 
   it("на переграванні модифікатор дня той самий, якщо стан лише відсіяв інші варіанти: лікарняний, звільнення, менше котів і вчорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
     const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
-    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "vaccination", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show"]);
+    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show"]);
     /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
     const pick = (seed: number, setup: (save: Save) => void = () => {}): string | null => {
       const save = game();

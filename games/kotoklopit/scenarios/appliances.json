@@ -263,8 +263,6 @@
   "today": {
    "callAt": null,
    "meetingMinutes": 0,
-   "vaccinated": false,
-   "vaccineMissedUntil": -1,
    "officeDone": false,
    "foundling": false,
    "lastFoundling": -100,
