@@ -145,6 +145,56 @@ describe("кіт і робота (§9.12)", () => {
     expect(stopped).toBe(true);
   });
 
+  it("пестощі й вудка кота з клавіатури не знімають: муркоче, а робота стоїть, доки його не заберуть на руки (рішення автора 2026-10-29, А8)", () => {
+    const HOLD = { move: { x: 0, y: 0 }, hold: true };
+    /** Персонаж за комп'ютером, а кіт, що хоче уваги й гри, сидить на клавіатурі. */
+    const setup = (): { save: Save; cat: Cat } => {
+      const save = game();
+      Object.assign(save.current.character.body, { x: 7.5, y: 7.5, facing: { x: 0, y: -1 } });
+      const cat = withCat(save, {}, { x: 7.5, y: 6.5 });
+      cat.needs.attention = 90;
+      cat.needs.play = 80;
+      cat.act = { kind: "keyboard", target: "computer", goal: null, minutes: 15, elapsed: 0 };
+      return { save, cat };
+    };
+
+    // Пестощі: кіт муркоче там само, і його час на клавіатурі під рукою не спливає.
+    const petted = setup();
+    petted.cat.act.minutes = 0.5;
+    const love = petted.cat.love;
+    const purr = recordEvents();
+    for (let i = 0; i < 60; i++) advance(petted.save, 0.05, HOLD);
+    purr.stop();
+    expect(petted.save.current.character.activity).toMatchObject({ kind: "pet", cat: petted.cat.id });
+    expect(purr.events.some((e) => e.type === "purr")).toBe(true);
+    expect(petted.cat.love).toBeGreaterThan(love);
+    expect(catOnComputer(petted.save.current)?.id).toBe(petted.cat.id);
+    // Відпустили — кіт і далі на клавіатурі; забрати його можна лише на руки: «прогнати з місця».
+    advance(petted.save, 0.05);
+    expect(catOnComputer(petted.save.current)?.id).toBe(petted.cat.id);
+    interact(petted.save);
+    expect(petted.save.current.character.held).toMatchObject({ kind: "cat", cat: petted.cat.id, offended: true });
+    expect(catOnComputer(petted.save.current)).toBeNull();
+
+    // Вудка: кіт грається на клавіатурі, а награвшись, лишається на ній — і «Ігривість −» не йде геть.
+    const played = setup();
+    played.cat.traits = [{ group: "playful", level: -1, seen: 0, known: false }];
+    const items = played.save.current.home.items;
+    const toy = items.find((i): i is ToyItem => i.kind === "toy");
+    if (!toy) throw new Error("немає іграшки");
+    items.splice(items.indexOf(toy), 1);
+    played.save.current.character.held = { kind: "toy", toy };
+    const games = recordEvents();
+    for (let i = 0; i < 200 && !games.events.some((e) => e.type === "played"); i++) {
+      advance(played.save, 0.05, HOLD);
+      expect(catOnComputer(played.save.current)?.id).toBe(played.cat.id);
+    }
+    games.stop();
+    expect(games.events.some((e) => e.type === "played")).toBe(true);
+    advance(played.save, 0.5);
+    expect(catOnComputer(played.save.current)?.id).toBe(played.cat.id);
+  });
+
   it("кіт на колінах відновлює здоровий глузд, поки персонаж працює", () => {
     const save = game();
     save.current.minute = hours(19);

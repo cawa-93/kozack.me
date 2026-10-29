@@ -839,8 +839,10 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   activity.minutes += minutes;
   cat.interacted = true;
   shedOnHands(state, cat, activity, minutes);
-  // Кіт лишається на місці, поки його гладять.
-  if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
+  // Кіт лишається на місці, поки його гладять. Кіт на клавіатурі з неї не йде: муркоче, а робота стоїть, доки його не заберуть, і
+  // час на клавіатурі під рукою не спливає (§9.12 «Кіт і робота», рішення автора 2026-10-29, А8: раніше пестощі за мить
+  // зсаджували його з клавіатури — вибір «прогнати й отримати „ні“» обходили одним дотиком).
+  if (!onKeyboard(cat) && (cat.act.kind !== "idle" || cat.act.goal !== null)) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
   const catSanity = DIFFICULTY[state.difficulty].catSanity;
   const tolerance = petTolerance(cat);
@@ -946,7 +948,9 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили грою");
   // Погратися вудкою з котом, що б'ється, — так само розборонити (§9.4).
   separateFight(state, cat);
-  if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);
+  // Вудка, як і пестощі, кота з клавіатури не знімає (§9.12 «Кіт і робота», А8): він грається там само.
+  const keyboard = onKeyboard(cat);
+  if (!keyboard && (cat.act.kind !== "idle" || cat.act.goal !== null)) cat.act = idleAct(1);
   cat.act.minutes = Math.max(cat.act.minutes, 1);
   const joy = Math.max(0, 1 + PLAY.playfulStep * playful);
   changeStat(state, "sanity", PLAY.sanity * joy * DIFFICULTY[state.difficulty].catSanity * minutes);
@@ -958,12 +962,13 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
   if (cat.needs.play < PLAY.bored) {
     activity.done = true;
-    cat.act = idleAct(0);
+    // Награвшись на клавіатурі, кіт лишається на ній до кінця свого часу (А8).
+    if (!keyboard) cat.act = idleAct(0);
     emit(state, { type: "played", cat: cat.id, minutes: activity.minutes });
     // Гра тривала довше чи коротше, ніж із котом без риси з тією самою потребою гри, — прояв «Ігривості» (§9.9); «−»,
-    // награвшись, ліниво йде геть (рішення автора 2026-10-25).
+    // награвшись, ліниво йде геть (рішення автора 2026-10-25), але не з клавіатури.
     if (playful !== 0) observe(state, cat, "playful", playful > 0 ? 1 : -1);
-    if (playful < 0) backAway(state, cat, character.body);
+    if (playful < 0 && !keyboard) backAway(state, cat, character.body);
   }
 }
 
