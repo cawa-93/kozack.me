@@ -1090,17 +1090,23 @@ export const SYMPTOMS = {
  * ніж раз на `doseMinutes`, раніше кіт випльовує (рішення автора 2026-10-27, Х3).
  */
 export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1, doseMinutes: 360 } as const;
-/** Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. */
-export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean }> = {
-  breeder: { road: 120, visit: 60, cat: false },
-  shop: { road: 45, visit: 30, cat: false },
-  vet: { road: 60, visit: 60, cat: true },
-  doctor: { road: 60, visit: 60, cat: false },
-  shelter: { road: 75, visit: 60, cat: false },
-  groomer: { road: 45, visit: 90, cat: true },
-  office: { road: 60, visit: 180, cat: false },
-  show: { road: 90, visit: 180, cat: true },
+/**
+ * Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. У пунктах із послугами
+ * (`service`: ветеринар, лікар, грумер, виставка) `visit` — час самої послуги (огляд, прийом лікаря, грумінг, участь), і минає
+ * він лише за отриману послугу; без жодної на місці минає `TRIP_IDLE_MINUTES` (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+ */
+export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean; service: boolean }> = {
+  breeder: { road: 120, visit: 60, cat: false, service: false },
+  shop: { road: 45, visit: 30, cat: false, service: false },
+  vet: { road: 60, visit: 60, cat: true, service: true },
+  doctor: { road: 60, visit: 60, cat: false, service: true },
+  shelter: { road: 75, visit: 60, cat: false, service: false },
+  groomer: { road: 45, visit: 90, cat: true, service: true },
+  office: { road: 60, visit: 180, cat: false, service: false },
+  show: { road: 90, visit: 180, cat: true, service: true },
 };
+/** «Приїхав і поїхав» (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): на місці з послугами гравець не отримав жодної. */
+export const TRIP_IDLE_MINUTES = 15;
 /** Гонка (§8.5): швидкість, газ і гальмо, смуги, інші машини. */
 export const RACE = {
   minSpeed: 0,

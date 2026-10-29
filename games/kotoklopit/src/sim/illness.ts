@@ -1,7 +1,7 @@
 // Хвороби персонажа (§6.5): застуда, травма, виснаження; ліки з магазину й лікар з лікарняним.
 
 import { changeStat, spend } from "./character";
-import { DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR } from "./config";
+import { DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR, TRIPS } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import { onSickLeave } from "./work";
@@ -97,7 +97,13 @@ export function takeHumanMeds(state: GameState, rng: Rng): boolean {
 export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | "premium", rng: Rng): "cured" | "failed" | null {
   const trip = state.trip;
   if (trip?.destination !== "doctor" || !isIll(state, id) || !spend(state, DOCTOR_TREAT[quality], "health")) return null;
-  if (quality === "cheap" && !rng.chance(DOCTOR_TREAT.cheapWorks)) return "failed";
+  // Прийом — година, скільки б хвороб лікар не лікував; без лікування на місці минає 15 хвилин
+  // (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+  trip.visit = Math.max(trip.visit, TRIPS.doctor.visit);
+  const result = quality === "cheap" && !rng.chance(DOCTOR_TREAT.cheapWorks) ? "failed" : "cured";
+  // Що дало лікування — у журнал візиту: картка показує це в рядку хвороби.
+  (trip.log ??= { exam: null, done: [] }).done.push(`self:${id}:${result}`);
+  if (result === "failed") return "failed";
   curePerson(state, id);
   changeStat(state, "health", DOCTOR_TREAT.health);
   // Лікарняний — від завтра (§6.5): сьогодні ще робочий день, і дорога додому в робочий час — поїздка зі штрафом (перевірка

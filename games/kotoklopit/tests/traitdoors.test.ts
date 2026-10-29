@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
-import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MINUTES_PER_HOUR, MODIFIERS, REAL_SECONDS_PER_GAME_HOUR, VET } from "../src/sim/config";
+import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MINUTES_PER_HOUR, MODIFIERS, REAL_SECONDS_PER_GAME_HOUR, TRIPS, VET } from "../src/sim/config";
 import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
@@ -515,7 +515,8 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
       const visit = save.current.trip?.visit ?? 0;
       const result = vetExam(save.current);
       expect(seen(cat, "vet")).toBe(1);
-      return { manner: result?.manner ?? null, extra: (save.current.trip?.visit ?? 0) - visit };
+      // Понад годину самого огляду (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6: час огляду додає огляд).
+      return { manner: result?.manner ?? null, extra: (save.current.trip?.visit ?? 0) - visit - TRIPS.vet.visit };
     };
     expect(exam(1)).toEqual({ manner: "calm", extra: 0 });
     expect(exam(-1)).toEqual({ manner: "hiss", extra: 0 });
@@ -532,7 +533,8 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
       driveSafely(save);
       const visit = save.current.trip?.visit ?? 0;
       expect(groom(save.current, "cheap")).toBe(true);
-      return { extra: (save.current.trip?.visit ?? 0) - visit, seen: seen(cat, "vet") };
+      // Понад час самого грумінгу (А6: його додає грумінг).
+      return { extra: (save.current.trip?.visit ?? 0) - visit - TRIPS.groomer.visit, seen: seen(cat, "vet") };
     };
     expect(groomed({ vet: -2 })).toEqual({ extra: VET.hideMinutes, seen: 1 });
     expect(groomed({ vet: 1 })).toEqual({ extra: 0, seen: 1 });

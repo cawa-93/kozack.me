@@ -1,5 +1,7 @@
 // Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, розплідник, грумер,
-// виставка, офіс. Кожна подія додає свій час до поїздки; додому персонаж їде вже без гонки.
+// виставка, офіс. Кожна послуга додає свій час до поїздки, а без послуги на місці минає 15 хвилин (`visitMinutes`;
+// рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6); додому персонаж їде вже без гонки. Що зроблено на місці, послуга сама пише
+// в журнал візиту (`trip.log`).
 
 import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
@@ -19,6 +21,7 @@ import {
   STERILIZATION,
   THINGS,
   TRAIT_EFFECTS,
+  TRIPS,
   UNSOLD,
   VET,
 } from "./config";
@@ -123,8 +126,10 @@ export function vetExam(state: GameState): VisitLog["exam"] {
   const vet = traitLevel(cat, "vet");
   offend(state, cat, VET.love * Math.max(0, 1 - TRAIT_EFFECTS.vetStep * vet), "ветеринар");
   // Спокійний чи наляканий на огляді — персонаж поруч і бачить, а картка каже це рядком (§9.9, §9.12). «Жах клініки»
-  // виривається й забивається під шафу: огляд довший.
+  // виривається й забивається під шафу: огляд довший. Час огляду минає лише тоді, коли огляд був
+  // (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
   const manner = vetManner(cat);
+  trip.visit += TRIPS.vet.visit;
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (vet !== 0) observe(state, cat, "vet", vet > 0 ? 1 : -1);
   emit(state, { type: "vet-exam", cat: cat.id });
@@ -144,14 +149,19 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   if (DISEASES[disease].cure.kind === "control" && (found.controlled ?? -1) >= state.day + VET.controlDays[quality]) return null;
   if (!spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
   trip.visit += VET.treatMinutes;
+  // Що дало лікування — у журнал візиту: картка показує це в рядку хвороби.
+  const logged = <R extends string>(result: R): R => {
+    (trip.log ??= { exam: null, done: [] }).done.push(`${disease}:${result}`);
+    return result;
+  };
   if (DISEASES[disease].cure.kind === "control") {
     // Дешеве в наступній поїздці не скорочує контролю, уже купленого дорогим (перевірка поїздок 2026-10-28), як і таблетка.
     found.controlled = Math.max(found.controlled ?? state.day, state.day + VET.controlDays[quality]);
-    return "controlled";
+    return logged("controlled");
   }
-  if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return "failed";
+  if (quality === "cheap" && !rng.chance(VET.cheapWorks)) return logged("failed");
   cureDisease(state, cat, disease, rng);
-  return "cured";
+  return logged("cured");
 }
 
 /**
@@ -200,6 +210,7 @@ export function vetSterilize(state: GameState): boolean {
   if (!trip.log?.exam && vetExam(state) === null) return false;
   if (cat.sterilized || sterilizeBlocker(state, cat) !== null || !spend(state, STERILIZATION.price - VET.exam, "health")) return false;
   trip.visit += STERILIZATION.minutes;
+  (trip.log ??= { exam: null, done: [] }).done.push("sterilize");
   cat.sterilized = true;
   cat.sterilizedKnown = true;
   cat.pregnancy = null;
@@ -230,7 +241,10 @@ export function groom(state: GameState, quality: Quality): boolean {
   cat.groomedUntil = state.day + GROOMER.days[quality];
   if (groomerWashes(cat)) cat.bathedDay = state.day;
   changeMood(state, cat, GROOMER.mood[quality], "грумер");
-  // Як і на огляді, «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
+  // Час грумінгу минає лише за грумінг (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). Як і на огляді,
+  // «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
+  trip.visit += TRIPS.groomer.visit;
+  (trip.log ??= { exam: null, done: [] }).done.push("groom");
   const manner = vetManner(cat);
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1);
@@ -240,15 +254,19 @@ export function groom(state: GameState, quality: Quality): boolean {
 /** Виставка котів (§4.1): бал за настроєм і породою; приз — гроші й здоровий глузд; кіт хвилюється. */
 export function enterShow(state: GameState, rng: Rng): number | null {
   const cat = tripCat(state);
+  const trip = state.trip;
   const show = MODIFIERS.show;
-  if (!cat || state.trip?.destination !== "show" || state.today.showDone === true || !spend(state, show.fee, "other")) return null;
+  if (!cat || trip?.destination !== "show" || state.today.showDone === true || !spend(state, show.fee, "other")) return null;
   state.today.showDone = true;
+  // Три години на виставці — лише з участю (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+  trip.visit += TRIPS.show.visit;
   const [a, b] = cat.breed;
   const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
   // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).
   const score = cat.mood / 100 + pedigree + rng.next() * 0.3 + GUESTS.showStep * traitLevel(cat, "guests");
   changeMood(state, cat, show.mood, "виставка");
   const prize = show.prizes.find((p) => score >= p.score);
+  (trip.log ??= { exam: null, done: [] }).done.push(`show:${prize?.money ?? 0}`);
   if (!prize) return 0;
   // Гроші призу сталі, а здоровий глузд — з множником «Здоровий глузд від котів», як пестощі (§4.1, §6.2;
   // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Приз виставки»).

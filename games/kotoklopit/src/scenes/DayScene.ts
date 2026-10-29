@@ -7,8 +7,7 @@ import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MI
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
-import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
-import { TRIPS } from "../sim/config";
+import { advance, carryFoundling, DEFAULT_LOOK, goHome, interact, newGame, replayDay, replayWeek, rewindAccident } from "../sim/game";
 import { doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
@@ -461,14 +460,13 @@ export class DayScene extends Phaser.Scene {
         vetExam(state);
         again();
       },
+      // Що дали послуги, симуляція сама пише в журнал поїздки (§8.5): картка показує це в рядках.
       treat: (disease, quality) => {
-        const result = vetTreat(state, disease, quality, rng);
-        if (result) log.done.push(`${disease}:${result}`);
+        vetTreat(state, disease, quality, rng);
         again();
       },
       treatSelf: (illness, quality) => {
-        const result = doctorTreat(state, illness, quality, rng);
-        if (result) log.done.push(`self:${illness}:${result}`);
+        doctorTreat(state, illness, quality, rng);
         again();
       },
       adopt: (id) => {
@@ -477,7 +475,7 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       sterilize: () => {
-        if (vetSterilize(state)) log.done.push("sterilize");
+        vetSterilize(state);
         again();
       },
       buyKitten: (id) => {
@@ -486,17 +484,17 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       groom: (quality) => {
-        if (groom(state, quality)) log.done.push("groom");
+        groom(state, quality);
         again();
       },
       show: () => {
-        const prize = enterShow(state, rng);
-        if (prize !== null) log.done.push(`show:${prize}`);
+        enterShow(state, rng);
         again();
       },
+      // Час на місці — лише за отримані послуги, без жодної — 15 хвилин (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
       home: () => {
         this.overlay.close();
-        returnHome(this.session.save, trip.visit, TRIPS[trip.destination].road);
+        goHome(this.session.save);
         this.viewport.jump();
       },
     });

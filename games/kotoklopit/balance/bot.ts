@@ -6,14 +6,14 @@ import { petOver, petResting, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
-import { advance, drive, goToSleep, interact, returnHome, rewindAccident } from "../src/sim/game";
+import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
 import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
@@ -503,7 +503,7 @@ export class Bot {
     for (const d of [...(tripCat(this.state)?.diseases ?? [])]) {
       if (d.known && DISEASES[d.id].cure.kind === "vet") vetTreat(this.state, d.id, "premium", rng);
     }
-    returnHome(this.save, trip.visit, TRIPS.vet.road);
+    goHome(this.save);
   }
 
   /** Гонка обережно (§8.5): повільніше за інші машини. Повертає поїздку на місці або null (аварія, ніч). */
@@ -539,7 +539,7 @@ export class Bot {
     if (!trip) return;
     const youngest = [...shelterCats(this.state)].sort((a, b) => a.ageWeeks - b.ageWeeks)[0];
     if (youngest) adopt(this.state, youngest.id);
-    returnHome(this.save, trip.visit, TRIPS.shelter.road);
+    goHome(this.save);
   }
 
   private treat(cat: Cat, medicine: Medicine): void {

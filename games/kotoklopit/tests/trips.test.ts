@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { ACCIDENT, BATH, START_CLOTHES, STERILIZATION, TRIPS, VET } from "../src/sim/config";
+import { ACCIDENT, BATH, DOCTOR_TREAT, GROOMER, MINUTES_PER_DAY, MODIFIERS, START_CLOTHES, STERILIZATION, TRIP_IDLE_MINUTES, TRIPS, VET } from "../src/sim/config";
 import {
   adopt,
   breederCats,
@@ -24,7 +24,9 @@ import {
   vetTreat,
 } from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
-import { advance, deserialize, drive, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
+import { MIXED } from "../src/sim/breeds";
+import { advance, deserialize, drive, goHome, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
+import { doctorTreat, fallIllPerson } from "../src/sim/illness";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
@@ -937,5 +939,114 @@ describe("пункти призначення (§8.5)", () => {
       expect(save.current.trip).toBeNull();
       expect(save.current.day).toBe(6);
     });
+  });
+});
+
+describe("час на місці — лише за отриману послугу (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6)", () => {
+  /** Субота, 9:00: кіт без рис і без породи (без «Жаху клініки») на руках біля дверей, переноска є. */
+  function withCatAtDoor(): { save: Save; cat: Cat } {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    cat.breed = [MIXED, MIXED];
+    save.current.home.carrier = "cheap";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    return { save, cat };
+  }
+
+  /** Доїхати й повернутися кнопкою «Додому»; між ними — що зробили на місці. Повертає хвилини від приїзду до дому без дороги. */
+  function onSite(save: Save, destination: Parameters<typeof startTrip>[1], act: (state: GameState) => void = () => undefined): number {
+    expect(startTrip(save.current, destination)).toBe(true);
+    driveSafely(save);
+    expect(save.current.trip?.phase).toBe("visit");
+    act(save.current);
+    const at = save.current.day * MINUTES_PER_DAY + save.current.minute;
+    goHome(save);
+    expect(save.current.trip).toBeNull();
+    return save.current.day * MINUTES_PER_DAY + save.current.minute - at - TRIPS[destination].road;
+  }
+
+  it("без жодної послуги — 15 хвилин: ветеринар без огляду, грумер і виставка без грошей, лікар здоровому", () => {
+    expect(onSite(withCatAtDoor().save, "vet")).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    const poor = withCatAtDoor().save;
+    poor.current.character.money = GROOMER.price.cheap - 1;
+    expect(onSite(poor, "groomer", (state) => expect(groom(state, "cheap")).toBe(false))).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    // Виставка без внеску: раніше 3 години на місці, разом із дорогою — близько 6 годин без результату (знахідка 43).
+    const show = withCatAtDoor().save;
+    show.current.day = 6;
+    show.current.modifiers.day = "show";
+    show.current.character.money = MODIFIERS.show.fee - 1;
+    expect(onSite(show, "show", (state) => expect(enterShow(state, createRng(1))).toBeNull())).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    const healthy = game(9 * 60);
+    healthy.current.day = 5;
+    expect(onSite(healthy, "doctor")).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    // Хворий, але на лікування не вистачило грошей, — теж нічого не отримав.
+    const broke = game(9 * 60);
+    broke.current.day = 5;
+    broke.current.character.money = DOCTOR_TREAT.cheap - 1;
+    fallIllPerson(broke.current, "cold");
+    expect(onSite(broke, "doctor", (state) => expect(doctorTreat(state, "cold", "cheap", createRng(1))).toBeNull())).toBeCloseTo(TRIP_IDLE_MINUTES);
+  });
+
+  it("з послугою — її час: огляд 1 год, грумінг 1,5, участь у виставці 3, прийом у лікаря 1 год на всі хвороби", () => {
+    expect(onSite(withCatAtDoor().save, "vet", (state) => expect(vetExam(state)).not.toBeNull())).toBeCloseTo(TRIPS.vet.visit);
+    expect(onSite(withCatAtDoor().save, "groomer", (state) => expect(groom(state, "cheap")).toBe(true))).toBeCloseTo(TRIPS.groomer.visit);
+
+    const show = withCatAtDoor().save;
+    show.current.day = 6;
+    show.current.modifiers.day = "show";
+    expect(onSite(show, "show", (state) => expect(enterShow(state, createRng(1))).not.toBeNull())).toBeCloseTo(TRIPS.show.visit);
+
+    // Дві хвороби — один прийом.
+    const sick = game(9 * 60);
+    sick.current.day = 5;
+    fallIllPerson(sick.current, "cold");
+    fallIllPerson(sick.current, "injury");
+    const treatBoth = (state: GameState): void => {
+      expect(doctorTreat(state, "cold", "premium", createRng(1))).toBe("cured");
+      expect(doctorTreat(state, "injury", "premium", createRng(1))).toBe("cured");
+    };
+    expect(onSite(sick, "doctor", treatBoth)).toBeCloseTo(TRIPS.doctor.visit);
+
+    // Невдале лікування — теж послуга: заплатили, і година минула.
+    const unlucky = game(9 * 60);
+    unlucky.current.day = 5;
+    fallIllPerson(unlucky.current, "cold");
+    const never = { ...createRng(1), chance: () => false };
+    expect(onSite(unlucky, "doctor", (state) => expect(doctorTreat(state, "cold", "cheap", never)).toBe("failed"))).toBeCloseTo(TRIPS.doctor.visit);
+  });
+
+  it("у магазині, притулку й розпліднику час вибору минає й без покупки", () => {
+    for (const destination of ["shop", "shelter", "breeder"] as const) {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      expect(onSite(save, destination), destination).toBeCloseTo(TRIPS[destination].visit);
+    }
+  });
+
+  it("стара гра посеред візиту: без отриманої послуги — 15 хвилин, отримане рахується, як і раніше", () => {
+    // Так стара гра зберігала візит до грумера, де грумінгу ще не було: повний час послуги — від старту поїздки.
+    const idle = withCatAtDoor().save;
+    expect(startTrip(idle.current, "groomer")).toBe(true);
+    driveSafely(idle);
+    const trip = idle.current.trip;
+    if (!trip) throw new Error("немає поїздки");
+    trip.visit = TRIPS.groomer.visit;
+    const loaded = deserialize(serialize(idle));
+    expect(loaded.current.trip?.visit).toBe(0);
+    const at = loaded.current.minute;
+    goHome(loaded);
+    expect(loaded.current.minute - at).toBeCloseTo(TRIP_IDLE_MINUTES + TRIPS.groomer.road);
+
+    // Огляд у старій грі вже був: його година на місці лишається.
+    const examined = withCatAtDoor().save;
+    expect(startTrip(examined.current, "vet")).toBe(true);
+    driveSafely(examined);
+    expect(vetExam(examined.current)).not.toBeNull();
+    expect(deserialize(serialize(examined)).current.trip?.visit).toBe(TRIPS.vet.visit);
   });
 });

@@ -244,12 +244,15 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
       else if (ill.length === 0) body.push("Лікар вислухав вас: нічого серйозного.");
       const list = element("div", "shop");
+      // Прийом — година на всі хвороби (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): коли лікар цієї поїздки вже
+      // лікував, часу в рядках не пишуть.
+      const time = trip?.visit ? "" : `🕐 ${minutesText(TRIPS.doctor.visit)}`;
       for (const i of ill) {
         const failed = results.filter(([, id]) => id === i.id).at(-1)?.[2] === "failed";
         list.append(
           row(
             ILLNESS_TITLES[i.id],
-            failed ? "не допомогло" : "",
+            failed ? "не допомогло" : time,
             button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
             button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
           ),

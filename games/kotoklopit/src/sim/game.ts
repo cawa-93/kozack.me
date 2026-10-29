@@ -7,7 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS } from "./config";
+import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -15,7 +15,7 @@ import { upgradeAlbumDays } from "./farewell";
 import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
-import { accidentBedtime, driveTrip, endTrip } from "./trips";
+import { accidentBedtime, driveTrip, endTrip, visitMinutes } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
@@ -201,6 +201,16 @@ export function carryFoundling(save: Save): NightReport | null {
   return returnHome(save, MODIFIERS.foundlingShelterMinutes, 0);
 }
 
+/**
+ * «Додому» з місця (§8.5): час на місці — у ветеринара, лікаря, грумера й на виставці лише за отримані послуги, а без жодної —
+ * 15 хвилин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6), — і дорога додому.
+ */
+export function goHome(save: Save): NightReport | null {
+  const trip = save.current.trip;
+  if (trip?.phase !== "visit") return null;
+  return returnHome(save, visitMinutes(trip), TRIPS[trip.destination].road);
+}
+
 /** Подія на місці забрала хвилини, потім персонаж їде додому без гонки (§8.5). */
 export function returnHome(save: Save, visitMinutes: number, roadMinutes: number): NightReport | null {
   // Час, поки шукали шкарпетку перед виїздом (§9.12, «Подарунки й схованки»), — теж час поїздки.
@@ -339,9 +349,16 @@ export function upgradeTrip(state: GameState): void {
   const trip = state.trip;
   if (trip === null) return;
   if (trip.log) trip.log.done = trip.log.done.filter((done) => !done.startsWith("given:"));
-  if ((trip.destination as string) !== "cafe") return;
-  if (trip.phase === "accident") trip.destination = "shop";
-  else endTrip(state);
+  if ((trip.destination as string) === "cafe") {
+    if (trip.phase === "accident") trip.destination = "shop";
+    else endTrip(state);
+    return;
+  }
+  // Час на місці — лише за отримані послуги (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): у старій грі поїздка
+  // до ветеринара, лікаря, грумера чи на виставку вже на старті мала повний час послуги. Якщо на місці ще нічого не отримали
+  // (журнал візиту порожній), цього часу немає — «Додому» забере 15 хвилин; отримане вже рахується, як і раніше.
+  const served = trip.log !== undefined && (trip.log.exam !== null || trip.log.done.length > 0);
+  if (TRIPS[trip.destination].service && !served) trip.visit = 0;
 }
 
 /**

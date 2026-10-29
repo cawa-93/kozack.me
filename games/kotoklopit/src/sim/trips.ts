@@ -3,7 +3,7 @@
 
 import { changeMood, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
-import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIPS } from "./config";
+import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIP_IDLE_MINUTES, TRIPS } from "./config";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { trafficFactor } from "./modifiers";
@@ -86,7 +86,10 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   }
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);
-  state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(TRIPS[destination].road, seed), losses: [], visit: TRIPS[destination].visit, seed };
+  // Час послуги додає сама послуга (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): на старті поїздки
+  // до ветеринара, лікаря, грумера чи на виставку часу на місці ще немає.
+  const visit = TRIPS[destination].service ? 0 : TRIPS[destination].visit;
+  state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(TRIPS[destination].road, seed), losses: [], visit, seed };
   // Шкарпетку кіт заніс у схованку (§9.12, «Подарунки й схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
   if (state.home.sock === true) {
     delete state.home.sock;
@@ -95,6 +98,15 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   }
   emit(state, { type: "trip-started", destination });
   return true;
+}
+
+/**
+ * Скільки хвилин минуло на місці (§8.5): у ветеринара, лікаря, грумера й на виставці — лише за отримані послуги, а без жодної —
+ * 15 хвилин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6); у магазині, притулку, розпліднику й офісі — час самого вибору
+ * чи зборів.
+ */
+export function visitMinutes(trip: Trip): number {
+  return TRIPS[trip.destination].service && trip.visit === 0 ? TRIP_IDLE_MINUTES : trip.visit;
 }
 
 export interface TripClock {
