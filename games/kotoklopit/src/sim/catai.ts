@@ -18,6 +18,7 @@ import {
   BREEDING,
   CUNNING,
   CARRIER_HOME,
+  CLAW,
   CARRY,
   CATNIP,
   CAT_ACT_MINUTES,
@@ -3050,6 +3051,15 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
 }
 
 /**
+ * Кіт подряпав персонажа — одне правило для всіх подряпин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5): біля переноски
+ * (§9.12) і у ванні (§8.7) разово здоров'я −3 (`CLAW`) і бабл «кігті», без хвороби «Травма».
+ */
+export function claw(state: GameState, cat: Cat, at: "carrier" | "bath"): void {
+  changeStat(state, "health", CLAW.health);
+  emit(state, { type: "clawed", cat: cat.id, at });
+}
+
+/**
  * «−» на руках біля дверей бачить переноску (§9.12, «Переноска», рішення автора 2026-10-25): пручається — прояв «−», не
  * частіше ніж раз на годину, — і щохвилини з шансом 10% × |рівень| дряпає персонажа (здоров'я −3); після подряпини з шансом
  * 25% виривається з рук і ховається.
@@ -3058,8 +3068,7 @@ function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number
   changeMood(state, cat, CARRY.struggleMood * dread * minutes);
   observe(state, cat, "carrier", -1, false, CARRY.observeEvery);
   if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread) ** minutes)) return;
-  changeStat(state, "health", CARRIER_HOME.health);
-  emit(state, { type: "clawed", cat: cat.id });
+  claw(state, cat, "carrier");
   if (!rng.chance(CARRIER_HOME.escape)) return;
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);

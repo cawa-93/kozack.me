@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
-import { CARRIER_HOME, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
+import { CLAW, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
 import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
@@ -389,7 +389,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
       expect(seen(cat, "carrier")).toBe(1);
       const scratches = events.filter((e) => e.type === "clawed").length;
       clawed += scratches;
-      expect(save.current.character.stats.health).toBeCloseTo(health + scratches * CARRIER_HOME.health);
+      expect(save.current.character.stats.health).toBeCloseTo(health + scratches * CLAW.health);
       if (save.current.character.held === null) {
         freed += 1;
         expect(cat.act.kind).toBe("hide");

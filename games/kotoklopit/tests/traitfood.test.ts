@@ -8,7 +8,7 @@ import { pickUpCat } from "../src/sim/actions";
 import { addTrait, createCat, idleAct, weightOf } from "../src/sim/cat";
 import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
 import { bowlEaten, decide, dirtyFor, eatMinutes, envy, forbiddenZoneAt, markTriggered, sayNo, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BATH, BEGGING, CAT_ACT_MINUTES, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP, WEIGHT } from "../src/sim/config";
+import { APPETITE, BATH, BATH_FEEL, BEGGING, CAT_ACT_MINUTES, CLAW, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP, WEIGHT } from "../src/sim/config";
 import { trinketTile } from "../src/sim/home";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
@@ -1036,13 +1036,43 @@ describe("«Любов до води» (рішення автора 2026-10-25)"
   it("«Боїться води» без подряпини нічим не видно: прояв лише з подряпиною", () => {
     let scratched = 0;
     for (let seed = 0; seed < 60; seed++) {
-      const { save, cat } = bath(-1, seed);
-      const hurt = save.current.character.illnesses.some((i) => i.id === "injury");
+      const { cat, events } = bath(-1, seed);
+      const hurt = events.some((e) => e.type === "clawed");
       if (hurt) scratched += 1;
       expect(seen(cat, "water"), `seed ${seed}`).toBe(hurt ? 1 : 0);
     }
     expect(scratched).toBeGreaterThan(2);
     expect(scratched).toBeLessThan(20);
+  });
+
+  it("подряпина у ванні — як біля переноски: здоров'я −3 і бабл «кігті», без хвороби «Травма» й без множника складності (рішення автора 2026-10-29, А5)", () => {
+    for (const difficulty of ["easy", "normal", "hard"] as const) {
+      let scratched = 0;
+      const runs = 400;
+      for (let seed = 0; seed < runs; seed++) {
+        const save = game();
+        save.current.difficulty = difficulty;
+        standAt(save, "shower");
+        const cat = withCat(save, { water: -2 }, { x: 8.5, y: 2.5 });
+        save.current.character.held = { kind: "cat", cat: cat.id };
+        save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+        save.current.character.stats.health = 80;
+        const { events, stop } = recordEvents();
+        bathe(save.current, createRng(seed));
+        stop();
+        expect(save.current.character.illnesses, `${difficulty} seed ${seed}`).toEqual([]);
+        const claws = events.filter((e) => e.type === "clawed");
+        if (claws.length === 0) {
+          expect(save.current.character.stats.health).toBe(80);
+          continue;
+        }
+        scratched += 1;
+        expect(claws).toEqual([{ type: "clawed", cat: cat.id, at: "bath" }]);
+        expect(save.current.character.stats.health).toBe(80 + CLAW.health);
+      }
+      // 30% у «Водобоязні» на будь-якій складності.
+      expect(Math.abs(scratched / runs - BATH_FEEL[-2].scratch), difficulty).toBeLessThan(0.07);
+    }
   });
 
   it("після душу «Водолаз» приходить у мокру кабіну ловити краплі, а «Водобоязнь» тікає, щойно ввімкнули воду", () => {
