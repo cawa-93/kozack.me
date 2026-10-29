@@ -6,7 +6,7 @@ import { BREEDS, MIXED } from "../src/sim/breeds";
 import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
 import type { Cat } from "../src/sim/types";
-import { breedAbout } from "../src/ui/cards";
+import { breedAbout, breedText } from "../src/ui/cards";
 import { traitAbout } from "../src/ui/traits";
 import { DISEASES } from "../src/sim/config";
 import { BREED_ABOUT, BREED_HALF, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
@@ -107,6 +107,14 @@ describe("опис порід і поради ветеринара (рішенн
     expect(breedAbout(cat(["sfinks", "sfinks"], [true, true]))).toEqual([BREED_ABOUT["sfinks"]]);
     expect(breedAbout(cat([MIXED, MIXED], [true, true]))).toEqual([BREED_ABOUT[MIXED]]);
     expect(BREED_HALF).not.toMatch(/\d/);
+  });
+
+  it("загальна ревізія 2026-10-29: безпородна половина в рядку породи — за статтю кота, як і решта рядка", () => {
+    const half: [string, string] = ["brytanska-korotkoshersta", MIXED];
+    expect(breedText(half, [true, true], "female")).toBe("британська короткошерста × безпородна");
+    expect(breedText(half, [true, true], "male")).toBe("британська короткошерста × безпородний");
+    expect(breedText([MIXED, "perska"], [true, false], "female")).toBe("безпородна × ?");
+    expect(breedText(["perska", "perska"], [true, true], "female")).toBe("перська, чистокровна");
   });
 
   it("у кожної породи є опис, у кожної хвороби — порада; без чисел і незаповнених місць", () => {

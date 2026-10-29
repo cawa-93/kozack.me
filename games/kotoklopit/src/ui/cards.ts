@@ -298,7 +298,8 @@ export function breedText(breed: readonly [string, string], known: readonly [boo
   const name = (id: string): string => breedById(id).name.toLowerCase();
   if (a === MIXED && b === MIXED) return fill("[безпородний|безпородна]", sex);
   if (a === b) return `${name(a)}, ${fill("[чистокровний|чистокровна]", sex)}`;
-  const half = (id: string, k: boolean): string => (k ? (id === MIXED ? "безпородний" : name(id)) : "?");
+  // Безпородна половина — теж за статтю кота: «британська короткошерста × безпородна» (загальна ревізія 2026-10-29).
+  const half = (id: string, k: boolean): string => (k ? (id === MIXED ? fill("[безпородний|безпородна]", sex) : name(id)) : "?");
   return `${half(a, known[0])} × ${half(b, known[1])}`;
 }
 
