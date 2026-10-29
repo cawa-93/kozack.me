@@ -462,6 +462,19 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(robotProgress(save.current)).toBeNull();
   });
 
+  it("у робота жмути зникають по одному, поки їх більше шести, а шість останніх — разом, щойно шерсті менше 50 (§8.7)", () => {
+    const save = game();
+    save.current.home.appliances.robot = "cheap";
+    save.current.home.fur = 70;
+    const seen: number[] = [];
+    for (let minute = 12 * 60; minute < 13 * 60; minute++) {
+      tickHousehold(save.current, minute, 1);
+      const tufts = furTufts(save.current).length;
+      if (seen.at(-1) !== tufts) seen.push(tufts);
+    }
+    expect(seen).toEqual([8, 7, 6, 0]);
+  });
+
   it("дешева річ може зламатися від використання, дорога — ні", () => {
     const save = game();
     const bowl = save.current.home.items.find((i) => i.kind === "bowl");

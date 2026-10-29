@@ -150,7 +150,7 @@ export function drawTrinket(g: Phaser.GameObjects.Graphics, kind: TrinketKind, x
 
 export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
   g.clear();
-  // Шерсть: видно лише від межі, коли вона вже шкодить і дратує (§8.7, рішення автора 2026-10-29, А17); що більше, то більше жмутів.
+  // Шерсть: видно лише від межі, коли вона вже шкодить і дратує (§8.7, реалізація рішення автора А17); що більше, то більше жмутів.
   for (const spot of furTufts(state)) {
     const { x, y } = toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
