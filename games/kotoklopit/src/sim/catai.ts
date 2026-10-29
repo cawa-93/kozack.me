@@ -256,7 +256,9 @@ function needsMood(state: GameState, cat: Cat, minutes: number, context: CatCont
   const hours = minutes / MINUTES_PER_HOUR;
   if (cat.needs.hunger >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
   if (cat.needs.thirst >= 100) changeMood(state, cat, MOOD.starvingPerHour * hours);
-  if (context.present && !asleep(cat) && cat.needs.attention >= 100) {
+  // Схований кіт, як і сплячий, нічого не просить (загальна ревізія 2026-10-29, рішення самостійно): слабкий (Х4), новий, що
+  // звикає, чи переляканий сам по ласку не йде, і без цього штраф щогодини добивав саме тих, хто й так ховається.
+  if (context.present && !asleep(cat) && cat.act.kind !== "hide" && cat.needs.attention >= 100) {
     const demanding = Math.max(0, 1 + TRAIT_EFFECTS.demandingIgnoredStep * traitLevel(cat, "demanding"));
     changeMood(state, cat, MOOD.ignoredPerHour * hours * demanding);
   }

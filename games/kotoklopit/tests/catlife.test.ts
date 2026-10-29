@@ -223,6 +223,25 @@ describe("сон і увага (§9.12)", () => {
     expect(cat.needs.fatigue).toBeLessThan(40);
   });
 
+  it("схований кіт, як і сплячий, увагу не просить: штрафу «увагу не дають» немає; поза схованкою — −1 за годину (загальна ревізія 2026-10-29)", () => {
+    const moodAfter = (hidden: boolean): number => {
+      const save = game();
+      const cat = withCat(save, { x: 1.5, y: 9.5 });
+      save.current.minute = hours(12);
+      // Слабкий кіт (Х4) з увагою на 100, персонаж удома.
+      cat.health = 20;
+      cat.mood = 50;
+      for (let t = 0; t < 2 * 60; t += 0.25) {
+        cat.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 100, play: 0 };
+        cat.act = { kind: hidden ? "hide" : "idle", target: null, goal: null, minutes: 60, elapsed: 0 };
+        tickCats(save.current, 0.25, { present: true });
+      }
+      return cat.mood;
+    };
+    expect(moodAfter(true)).toBeCloseTo(50, 5);
+    expect(moodAfter(false)).toBeCloseTo(48, 5);
+  });
+
   it("коли бракує уваги, кіт іде до персонажа", () => {
     const save = game();
     const cat = withCat(save, { x: 16.5, y: 8.5 });
