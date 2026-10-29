@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
-import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
+import { inStandoff, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -21,9 +21,8 @@ import { gameMinutes, weekOf } from "../sim/time";
 import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, Sex, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, type PhoneTab } from "../ui/cards";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
-import { beardLook, groomBeard } from "../sim/grooming";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
@@ -285,28 +284,6 @@ export class DayScene extends Phaser.Scene {
     if (held === null && activity === null && target?.type === "cat" && !inStandoff(target.cat)) {
       this.catPress = this.time.now;
       return;
-    }
-    // Умивальник для чоловічого персонажа: борода (§5.1) і ліки. Кіт на умивальнику чекає крана — натискання одразу
-    // відкриває йому воду, без картки (§9.12, «Пиття»). Робити тут нічого — картки немає: умивальник відповідає відмовою,
-    // як жіночому персонажу («не треба», «дозу вже випито», «ліки скінчилися»; загальна ревізія 2026-10-29).
-    if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink" && catOnSink(this.state) === null) {
-      const card = sinkCard(
-        this.state,
-        (choice) => {
-          this.overlay.close();
-          if (choice === "meds") {
-            interact(this.session.save);
-            return;
-          }
-          const minutes = groomBeard(this.state, choice);
-          if (minutes !== null) advance(this.session.save, minutes);
-        },
-        () => this.overlay.close(),
-      );
-      if (card.actions.length > 0) {
-        this.overlay.show(card);
-        return;
-      }
     }
     // Біля дверей нічого не чекає: поїздка (§8.5).
     if (canLeave(this.state)) {
@@ -626,7 +603,7 @@ export class DayScene extends Phaser.Scene {
     const activity = state.character.activity;
     // У душі персонажа не видно; купаючи кота, він стоїть біля душу з котом на руках (рішення автора 2026-10-28).
     const inside = activity?.kind === "use" && activity.inside === true && activity.bath !== true;
-    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.character.sex === "male" ? beardLook(state) : null, state.home.clothes <= 0, this.sleepiness(time));
+    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.home.clothes <= 0, this.sleepiness(time));
     this.drawCats(time);
     drawCatCorner(this.corner, state);
     this.drawInteraction(time);

@@ -62,11 +62,7 @@
     }
    ],
    "shortNights": 0,
-   "restedNights": 3,
-   "beard": {
-    "shaved": 0,
-    "trimmed": -100
-   }
+   "restedNights": 3
   },
   "job": {
    "position": 1,

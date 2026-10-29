@@ -3,7 +3,6 @@
 import Phaser from "phaser";
 
 import type { Character } from "../sim/types";
-import type { BeardLook } from "../sim/grooming";
 import { drawItem } from "./apartment";
 import { COLORS, depthOf, toScreen } from "./geometry";
 
@@ -37,7 +36,7 @@ export class PersonView {
   /** Намалювати персонажа; під час руху він трохи підстрибує на кроках. */
   /** `dirty` — чистого одягу немає (§8.7): плями на одязі й хвилі запаху над персонажем. */
   /** `sleep` — засинання 0–1 (§8.8): очі поступово заплющуються, голова хилиться. */
-  draw(character: Character, moving: boolean, time: number, away = false, beard: BeardLook | null = null, dirty = false, sleep = 0): void {
+  draw(character: Character, moving: boolean, time: number, away = false, dirty = false, sleep = 0): void {
     // У поїздці персонажа вдома не видно (§8.5).
     this.g.setVisible(!away);
     if (away) return;
@@ -111,13 +110,6 @@ export class PersonView {
       }
     }
     if (style === 1 && !back) g.fillStyle(hair).fillRoundedRect(hx - face.w / 2 - 1, hy - 6, 6, 20, 3).fillRoundedRect(hx + face.w / 2 - 5, hy - 6, 6, 20, 3);
-    // Борода (§5.1): щетина — крапки, охайна — акуратна, неохайна — кошлата.
-    if (!back && beard === "stubble") {
-      g.fillStyle(hair, 0.7);
-      for (const [dx, dy] of [[-6, 5], [-3, 8], [0, 9], [3, 8], [6, 5], [-1, 6], [2, 6]] as const) g.fillCircle(hx + dx, hy + dy, 1);
-    }
-    if (!back && beard === "neat") g.fillStyle(hair).fillEllipse(hx, hy + 7, 16, 9);
-    if (!back && beard === "unkempt") g.fillStyle(hair).fillEllipse(hx, hy + 9, 22, 15).fillTriangle(hx - 9, hy + 10, hx - 13, hy + 18, hx - 5, hy + 14).fillTriangle(hx + 9, hy + 10, hx + 13, hy + 19, hx + 4, hy + 14);
     if (held) drawItem(g, held, x + body.facing.x * 10, y - 22, 0.9);
     if (dirty) {
       // Хвилі запаху підіймаються над персонажем.

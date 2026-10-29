@@ -184,8 +184,6 @@ export interface Character {
   /** Скільки ночей поспіль персонаж недоспав, і скільки — добре виспався (§6.5). */
   shortNights: number;
   restedNights: number;
-  /** Борода (§5.1): день останнього гоління й підрівнювання. */
-  beard: { shaved: number; trimmed: number };
 }
 
 /** Хвороби персонажа (§6.5). */

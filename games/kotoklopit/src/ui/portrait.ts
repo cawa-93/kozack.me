@@ -1,7 +1,7 @@
 // Портрет персонажа в картках створення (§5.1): ті самі фігура й палітри, що й у грі, на весь зріст,
 // лише більші. Canvas 2D, без Phaser.
 
-import type { Look, Sex } from "../sim/types";
+import type { Look } from "../sim/types";
 import { PALETTE } from "../view/palette";
 
 const INK = "#1f1a24";
@@ -21,7 +21,7 @@ export function portraitCanvas(width: number, height: number): HTMLCanvasElement
 }
 
 /** Намалювати персонажа анфас: фігура з гри (`view/person.ts`), збільшена під полотно. */
-export function drawPortrait(canvas: HTMLCanvasElement, look: Look, sex: Sex): void {
+export function drawPortrait(canvas: HTMLCanvasElement, look: Look): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -83,15 +83,10 @@ export function drawPortrait(canvas: HTMLCanvasElement, look: Look, sex: Sex): v
   const eyes = css(pick(PALETTE.eyes, look.eyes));
   ellipse(-4, hy + 1, 3.6, 3.6, eyes);
   ellipse(4, hy + 1, 3.6, 3.6, eyes);
-  // Усмішка; чоловік — з легкою щетиною: борода відросте в грі (§5.1).
+  // Усмішка. Бороди немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
   ctx.beginPath();
   ctx.arc(0, hy + 5, 3.5, 0.15 * Math.PI, 0.85 * Math.PI);
   ctx.lineWidth = 1.4;
   ctx.strokeStyle = INK;
   ctx.stroke();
-  if (sex === "male") {
-    ctx.globalAlpha = 0.6;
-    for (const [dx, dy] of [[-6, 5], [-3, 8], [0, 9.5], [3, 8], [6, 5]] as const) ellipse(dx, hy + dy, 2, 2, hair);
-    ctx.globalAlpha = 1;
-  }
 }

@@ -26,7 +26,6 @@ import {
   WORKDAYS_PER_WEEK,
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
-import { beardImpression } from "./grooming";
 import { patienceDecayFactor, payFactor, reputationFactor, toOffice, workdayOverride } from "./modifiers";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
@@ -211,15 +210,15 @@ function resolveStandup(state: GameState): void {
 }
 
 /**
- * Враження на відеодзвінку в «годинах роботи» посади (§8.6): низька гігієна — штраф,
- * висока — дзеркальний бонус; борода (§5.1) і брудний одяг (§8.7). Кіт у кадрі не штрафує (рішення автора 2026-10-28).
+ * Враження на відеодзвінку в «годинах роботи» посади (§8.6): низька гігієна — штраф, висока — дзеркальний бонус; брудний одяг
+ * (§8.7) — штраф. Кіт у кадрі не штрафує (рішення автора 2026-10-28), а бороди немає (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А4) — враження однакове для всіх.
  */
 export function callImpression(state: GameState): number {
   const hygiene = state.character.stats.hygiene;
   const clean = hygiene < LOW_STAT ? -CALL_HYGIENE_REPUTATION : hygiene >= HIGH_HYGIENE ? CALL_HYGIENE_REPUTATION : 0;
-  // Борода (§5.1): доглянута — бонус, неохайна — штраф; брудний одяг — штраф (§8.7).
   const clothes = state.home.clothes <= 0 ? -CALL_DIRTY_CLOTHES.reputation : 0;
-  return clean + beardImpression(state) + clothes;
+  return clean + clothes;
 }
 
 /** На відеодзвінку колеги помічають брудний одяг (§5.1): бабл над комп'ютером. */

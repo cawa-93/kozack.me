@@ -1,11 +1,9 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { BEARD, MODIFIERS, WAKE_UP } from "../sim/config";
+import { MODIFIERS, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
-import { beardLook, canGroomBeard } from "../sim/grooming";
 import { giveAwayBlocker } from "../sim/farewell";
-import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -25,7 +23,6 @@ import {
   endingText,
   farewellText,
   fill,
-  BEARD_TEXTS,
   BIRTH_MESSAGE,
   JOB_SEEKING,
   KITTEN_MESSAGE,
@@ -70,8 +67,6 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) dayBlocks.push([modifier.title, modifier.situation]);
-  const beard = sex === "male" ? beardLook(state) : null;
-  if (beard === "stubble" || beard === "unkempt") dayBlocks.push([BEARD_TEXTS[beard]]);
 
   const events: (string | HTMLElement)[][] = [];
   // Хто будив уночі (§8.8): по рядку на кота, без пояснень.
@@ -520,29 +515,6 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
   };
 }
 
-/** Умивальник для чоловічого персонажа (§5.1, §6.5): ліки, підрівнювання бороди, гоління. */
-export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "meds") => void, onCancel: () => void): Card {
-  const look = beardLook(state);
-  const actions: CardAction[] = [];
-  // Прийшов по ліки — вони першим рядком і головною дією: раніше головним було гоління, і пробіл-пробіл голив замість ліків.
-  // Поголитися чи підрівняти вдруге за день не пропонується; без жодної дії картку не відкривають (загальна ревізія 2026-10-29).
-  const meds = supplyCount(state, "humanMeds");
-  if (meds > 0 && needsHumanMeds(state)) actions.push({ label: `Ліки для себе ×${meds}`, onSelect: () => onPick("meds") });
-  if (canGroomBeard(state, "trim")) actions.push({ label: `Підрівняти бороду · 🕐 ${BEARD.trimMinutes} хв`, onSelect: () => onPick("trim") });
-  if (canGroomBeard(state, "shave")) actions.push({ label: `Поголитися · 🕐 ${BEARD.shaveMinutes} хв`, onSelect: () => onPick("shave") });
-  const first = actions[0];
-  if (first) first.primary = true;
-  const words = { clean: "Обличчя гладеньке.", stubble: "Щетина вже помітна.", neat: "Борода охайна.", unkempt: "Борода стирчить у різні боки." };
-  return {
-    kicker: "Ванна",
-    title: "Умивальник",
-    body: [words[look]],
-    actions,
-    onDismiss: onCancel,
-    closable: true,
-  };
-}
-
 /** Меню на старті (§4.2): продовжити збережену гру чи почати нову. */
 export function titleCard(state: GameState, onContinue: () => void, onNew: () => void): Card {
   const { name } = state.character;
@@ -564,7 +536,7 @@ export function sexCard(looks: Record<Sex, Look>, onPick: (sex: Sex) => void, on
   for (const sex of ["female", "male"] as const) {
     const button = element("button", "portrait-button");
     const canvas = portraitCanvas(110, 160);
-    drawPortrait(canvas, looks[sex], sex);
+    drawPortrait(canvas, looks[sex]);
     button.append(canvas, element("span", "portrait-label", sex === "female" ? "Жінка" : "Чоловік"));
     button.addEventListener("click", () => onPick(sex));
     choice.append(button);
@@ -596,7 +568,7 @@ export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, on
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
   const canvas = portraitCanvas(130, 220);
-  const redraw = (): void => drawPortrait(canvas, look, sex);
+  const redraw = (): void => drawPortrait(canvas, look);
   redraw();
   const sliders = element("div", "look-sliders");
   for (const { key, label, options } of LOOK_OPTIONS) {

@@ -72,7 +72,6 @@ export function newGame(options: NewGameOptions): Save {
       illnesses: [],
       shortNights: 0,
       restedNights: 0,
-      beard: { shaved: 0, trimmed: -100 },
     },
     job: newJob(),
     home: newHome(),
@@ -339,11 +338,12 @@ export function upgradeState(state: GameState): void {
 }
 
 /**
- * Персонаж без статевих механік (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): жіночого циклу немає — день його початку
- * (`cycleStart`) зі старого збереження зникає.
+ * Персонаж без статевих механік (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): ні жіночого циклу, ні бороди — день
+ * початку циклу (`cycleStart`) і дні гоління й підрівнювання (`beard`) зі старого збереження зникають.
  */
 export function upgradeCharacter(state: GameState): void {
   Reflect.deleteProperty(state.character, "cycleStart");
+  Reflect.deleteProperty(state.character, "beard");
 }
 
 /**

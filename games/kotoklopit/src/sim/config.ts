@@ -1219,8 +1219,6 @@ export const HOUSEHOLD = {
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
-/** Борода (§5.1): гоління — охайно 2 дні, борода відростає за 4; підрівнювання тримає вигляд 3 дні. */
-export const BEARD = { neatAfterShave: 2, grows: 4, neatAfterTrim: 3, shaveMinutes: 10, trimMinutes: 5, impression: 0.5 } as const;
 /** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
