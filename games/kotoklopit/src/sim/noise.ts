@@ -3,7 +3,7 @@
 // Персонажа гучний звук не будить. Чи ховатися — вирішує «Сміливість», як довго —
 // «Стресостійкість», чи прокинутися — «Тривалість сну». Кроки персонажа будять лише чуйних.
 
-import { changeMood, traitLevel, upset } from "./cat";
+import { asleep, changeMood, traitLevel, upset } from "./cat";
 import { hideSpot, isCarried, startAct } from "./catai";
 import { tileOf, visibleFloorNear } from "./catmove";
 import { HOUSEHOLD, MODIFIERS, NOISE, STEPS_WAKE } from "./config";
@@ -20,7 +20,7 @@ export type NoiseKind = "vacuum" | "robot" | "fireworks" | "spin" | "broken" | "
 const BIG: Partial<Record<NoiseKind, number>> = NOISE.big;
 
 /** Кіт спить на місці; сон, що саме скінчився (`finish`, напр. тріснув будиночок), — уже не сон. */
-const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal === null && cat.act.minutes > 1e-9;
+const sleepsOn = (cat: Cat): boolean => asleep(cat) && cat.act.minutes > 1e-9;
 
 
 /** Звідки сміливий кіт іде дивитися на пилосос: з дій, які не шкода кинути. */
@@ -49,7 +49,7 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, onl
     if (at !== null && !hears(cat, at)) continue;
     if (only && !only(cat)) continue;
     heard.push(cat.id);
-    if (asleep(cat)) {
+    if (sleepsOn(cat)) {
       if (!rng.chance(NOISE.wake * (1 - NOISE.wakeStep * traitLevel(cat, "sleep")))) {
         // Поруч гуркоче, а кіт спить далі — прояв «Тривалості сну +». Прояви від звуку й кроків — не частіше ніж раз на
         // годину (перевірка 2026-10-25): інакше пилосос, увімкнений кілька разів поспіль, відкривав риси за хвилину.
@@ -117,7 +117,7 @@ function watch(state: GameState, cat: Cat): void {
 export function hearSteps(state: GameState, from: Vec): void {
   const body = state.character.body;
   for (const cat of state.cats) {
-    if (cat.away !== null || !asleep(cat) || isNewborn(cat)) continue;
+    if (cat.away !== null || !sleepsOn(cat) || isNewborn(cat)) continue;
     const level = traitLevel(cat, "sleep");
     if (level >= 0) continue;
     const near = (p: Vec): boolean => Math.hypot(cat.x - p.x, cat.y - p.y) <= STEPS_WAKE.distance;

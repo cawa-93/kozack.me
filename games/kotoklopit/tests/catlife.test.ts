@@ -472,6 +472,33 @@ describe("догляд персонажа (§9.12)", () => {
     expect(save.current.character.held).toBeNull();
   });
 
+  it("кіт, що лише йде спати, ще не спить: на руки чи пестощі — не «розбудили» й не проти волі (загальна ревізія 2026-10-29)", () => {
+    const setup = (): { save: Save; cat: Cat } => {
+      const save = game();
+      const cat = withCat(save, { x: 4.5, y: 7.6 });
+      cat.needs.attention = 60;
+      cat.act = { kind: "sleep", target: null, goal: { x: 1, y: 7 }, minutes: 100, elapsed: 0 };
+      Object.assign(save.current.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+      return { save, cat };
+    };
+    const woken = (events: readonly { type: string; reason?: string }[]): boolean => events.some((e) => e.type === "cat-mood" && e.reason?.startsWith("розбудили") === true);
+    const carried = setup();
+    const love = carried.cat.love;
+    const taken = recordEvents();
+    interact(carried.save);
+    taken.stop();
+    expect(carried.save.current.character.held).toEqual({ kind: "cat", cat: carried.cat.id });
+    expect(woken(taken.events)).toBe(false);
+    expect(carried.cat.love).toBeGreaterThanOrEqual(love);
+
+    const petted = setup();
+    const stroked = recordEvents();
+    advance(petted.save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    stroked.stop();
+    expect(petted.save.current.character.activity).toMatchObject({ kind: "pet", cat: petted.cat.id });
+    expect(woken(stroked.events)).toBe(false);
+  });
+
   it("на руках: «Коліночний» радіє, без риси — терпить, «Не чіпай мене» пручається", () => {
     const moodAfter = (lap: TraitLevel | 0): { mood: number; attention: number; feeling: string | null } => {
       const save = game();

@@ -2,7 +2,7 @@
 // на руки; утримання — тривала дія: душ, їжа, прибирання, пестощі. Плита готує своїм часом.
 
 import { actionSpeed, isMoving } from "./body";
-import { changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
+import { asleep, changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
 import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, touchStandoff, trashTipped, turnAway, upHigh, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
@@ -454,7 +454,7 @@ export function avoidsDirtyClothes(state: GameState, cat: Cat): boolean {
 function unwilling(cat: Cat): boolean {
   // Застряглий нагорі радий, що його знімають (§9.12, «Лазіння»).
   if (cat.stuck === true) return false;
-  return cat.act.kind === "sleep" || (cat.needs.attention < UNWILLING_ATTENTION && traitLevel(cat, "lap") <= 0);
+  return asleep(cat) || (cat.needs.attention < UNWILLING_ATTENTION && traitLevel(cat, "lap") <= 0);
 }
 
 /** Кіт займає місце: клавіатуру, комп'ютер чи коліна (§9.12). */
@@ -474,11 +474,11 @@ export function pickUpCat(state: GameState, cat: Cat): void {
     changeMood(state, cat, SHOO.mood, "прогнали з місця");
     offend(state, cat, SHOO.love, "прогнали з місця");
   } else {
-    if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили");
+    if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили");
     if (offended) offend(state, cat, PET.unwantedLove, "узяли на руки проти волі");
   }
   // Розбудили чи прогнали — спокійний, коли опустять, може заснути знову (§9.12).
-  const disturbed = shooed || cat.act.kind === "sleep";
+  const disturbed = shooed || asleep(cat);
   // Узяли, коли кіт саме просив їсти: ласощі зараз привчать його жебракувати (§7).
   const begging = beggingFood(state, cat);
   cat.interacted = true;
@@ -761,7 +761,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     separateFight(state, cat);
     cat.act = idleAct(1);
   }
-  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили пестощами");
+  if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили пестощами");
   // «Образливий», що дметься, гладити себе не дає: одразу йде з-під руки й сідає спиною (§9.12, перевірка етапу
   // 2026-10-25: пестощі щокадру зупиняли кота, і той, що дметься, муркотів під рукою).
   if (sulking(state, cat)) {
@@ -871,7 +871,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   // «Нудьгар» і того, що хоче гратися, з шансом 30% на вудку не зважає — відвертається (§9.12, «Ігривість»): відмова зі
   // своєю іконкою й прояв «−».
   const playful = traitLevel(cat, "playful");
-  if (activity.minutes === 0 && playful <= -PLAYFUL.boredLevel && cat.act.kind !== "sleep" && stateRng(state, "behavior").chance(PLAYFUL.ignore)) {
+  if (activity.minutes === 0 && playful <= -PLAYFUL.boredLevel && !asleep(cat) && stateRng(state, "behavior").chance(PLAYFUL.ignore)) {
     activity.done = true;
     cat.facing = character.body.x >= cat.x ? -1 : 1;
     refuse(state, `cat:${cat.id}`, "cat-bored");
@@ -894,7 +894,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   cat.interacted = true;
   // З ким сьогодні гралися вудкою, той рідше сидить у засідці (§9.12, «Засідки»).
   cat.playedToday = (cat.playedToday ?? 0) + minutes;
-  if (cat.act.kind === "sleep") changeMood(state, cat, MOOD.woken, "розбудили грою");
+  if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили грою");
   // Погратися вудкою з котом, що б'ється, — так само розборонити (§9.4).
   separateFight(state, cat);
   if (cat.act.kind !== "idle" || cat.act.goal !== null) cat.act = idleAct(1);

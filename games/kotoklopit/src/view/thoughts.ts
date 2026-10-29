@@ -1,7 +1,7 @@
 // Стан думками й настрій з поведінки (§11.4, правка автора 2026-10-25): про що час від часу думають кіт
 // і персонаж, як часто, і коли кіт повільно моргає чи сумує. Без Phaser — щоб тести могли перевірити.
 
-import { sulking } from "../sim/cat";
+import { asleep, sulking } from "../sim/cat";
 import { bellyUp, headNudges, hungerThreshold, slowBlinks } from "../sim/catai";
 import { MOOD_LOOK, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
@@ -66,7 +66,7 @@ export type CatLook = "blink" | "sad" | "belly" | "nudge" | "sulk";
  * персонажем, сидячи.
  */
 export function catLook(state: GameState, cat: Cat): CatLook | null {
-  if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "lap") return null;
+  if (cat.away !== null || asleep(cat) || cat.act.kind === "lap") return null;
   if (cat.mood < THOUGHTS.sad) return "sad";
   if (isHeld(state, cat)) return null;
   const act = cat.act;

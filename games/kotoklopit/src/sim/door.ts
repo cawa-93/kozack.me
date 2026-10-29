@@ -2,7 +2,7 @@
 // них вибігають на сходи чи відходять подалі («Втечі»); на дзвінок «Душа компанії» біжить зустрічати, а сором'язливий
 // ховається («Гості»). Хто й коли відчиняє двері — пакунки, поїздки, гості, ОСББ, мама, знайда — вирішують інші модулі.
 
-import { isAdapting, traitLevel } from "./cat";
+import { asleep, isAdapting, traitLevel } from "./cat";
 import { backAway, hideSpot, isCarried, startAct } from "./catai";
 import { tileOf, visibleFloorNear } from "./catmove";
 import { CAT_ACT_MINUTES, ESCAPE, GUESTS } from "./config";
@@ -22,7 +22,6 @@ export const DOOR_TILE: Vec = { x: 10, y: 9 };
 /** Куди тікає від відчинених дверей «Боїться дверей»: углиб вітальні, подалі від передпокою. */
 const AWAY_FROM_DOOR: Vec = { x: 4.5, y: 7.5 };
 
-const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal === null;
 const nearDoor = (cat: Cat, reach: number): boolean => Math.hypot(cat.x - DOOR.x, cat.y - DOOR.y) <= reach;
 const clamp = (value: number): number => Math.min(1, Math.max(0, value));
 

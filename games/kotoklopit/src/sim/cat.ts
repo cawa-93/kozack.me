@@ -51,6 +51,14 @@ export function idleAct(minutes = 0): CatAct {
   return { kind: "idle", target: null, goal: null, minutes, elapsed: 0 };
 }
 
+/**
+ * Кіт спить (§9.12): дія сну, і він уже на місці. Сон починається ще дорогою до місця (`goal` ≠ null) — такий кіт іде, а не
+ * спить: руки, пестощі й вудка його не «будять» (загальна ревізія 2026-10-29).
+ */
+export function asleep(cat: Pick<Cat, "act">): boolean {
+  return cat.act.kind === "sleep" && cat.act.goal === null;
+}
+
 export interface CatOptions {
   source: CatSource;
   ageWeeks: number;
@@ -204,7 +212,7 @@ export function changeMood(state: GameState, cat: Cat, delta: number, reason?: s
   // Нервовий кіт сильно засмутився, не спить і не на руках — щойно звільниться, може нервово вилизатися (§9.12).
   const held = state.character.held;
   const carried = held?.kind === "cat" && held.cat === cat.id;
-  const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
+  const sleeping = asleep(cat);
   if (scaled <= -STRESS_EFFECTS.shaken && !sleeping && !carried && traitLevel(cat, "stress") < 0) cat.shaken = absoluteMinute(state.day, state.minute);
   // Сцена показує кожну зміну сердечками (§9.12), навіть якщо настрій уже на межі: сердечка кажуть, що
   // котові сподобалося, тож приємне — повністю, хоч щасливому настрій і росте менше (§9.6).

@@ -4,7 +4,7 @@ import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
 import { knownBreedHalves, shelterBreed } from "./breeds";
 import { observe, setWitnessing } from "./knowledge";
-import { ageCat, ageDue, closeCatDay, createCat, traitLevel } from "./cat";
+import { ageCat, ageDue, asleep, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, closeLedger, passSleepTime } from "./character";
 import {
@@ -272,7 +272,7 @@ export function coughWakes(state: GameState, report: NightReport, rng: Rng, sinc
 
 /** Кіт спить на ліжку персонажа (§9.12). */
 function sleepsOnBed(cat: Cat, bed: { x: number; y: number; w: number; h: number }): boolean {
-  return cat.away === null && cat.act.kind === "sleep" && cat.act.goal === null && cat.x >= bed.x && cat.x < bed.x + bed.w && cat.y >= bed.y && cat.y < bed.y + bed.h;
+  return cat.away === null && asleep(cat) && cat.x >= bed.x && cat.x < bed.x + bed.w && cat.y >= bed.y && cat.y < bed.y + bed.h;
 }
 
 /**

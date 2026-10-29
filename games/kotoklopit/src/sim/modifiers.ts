@@ -2,7 +2,7 @@
 // Числові ефекти інші модулі беруть через функції-множники звідси.
 
 import { knownBreedHalves } from "./breeds";
-import { changeMood, createCat, isAdapting, traitLevel } from "./cat";
+import { asleep, changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat } from "./actions";
@@ -452,7 +452,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   }
   if (day === "quiet-evening" && crossed(from, minutes, m.quietEvening.minute)) for (const cat of state.cats) changeMood(state, cat, m.quietEvening.mood);
   if (day === "renovation") {
-    for (const cat of state.cats) if (cat.away === null && cat.act.kind !== "sleep") changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
+    for (const cat of state.cats) if (cat.away === null && !asleep(cat)) changeMood(state, cat, (m.renovation.catMoodPerHour * minutes) / 60);
   }
   if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за 2 хвилини до того, як зайти; заходять — двері відчинено (§9.12 «Двері й гості»).
@@ -485,7 +485,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       if (level >= 0) continue;
       // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
       // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
-      if ((cat.act.kind === "sleep" && cat.act.goal === null) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
+      if (asleep(cat) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
       if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, cat.act.elapsed + m.guests.hideMinutes);
       else {
         const spot = hideSpot(state, rng, cat);

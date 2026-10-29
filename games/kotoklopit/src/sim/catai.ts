@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { adaptsLonger, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
+import { adaptsLonger, asleep, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
 import { lastTileWithin, randomFloor, stepTo, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -167,7 +167,7 @@ const healthPlay = (cat: Cat): number => (isWeak(cat) ? LOW_HEALTH.weakPlay : ca
 function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   const hours = minutes / MINUTES_PER_HOUR;
   const n = cat.needs;
-  const sleeping = cat.act.kind === "sleep" && cat.act.goal === null;
+  const sleeping = asleep(cat);
   const appetite = traitFactor(cat, "appetite", APPETITE_STEP);
   n.hunger = clamp(n.hunger + NEED_PER_HOUR.hunger * hours * appetite * hungerFactor(cat) * breedingHunger(state, cat) * (isAdapting(state, cat) ? ADAPTATION_HUNGER : 1));
   n.thirst = clamp(n.thirst + NEED_PER_HOUR.thirst * hours * thirstFactor(state) * heatThirst(state, cat));
@@ -339,8 +339,6 @@ const devoted = (cat: Cat): boolean => cat.love >= LOVE_BEHAVIOR.devoted;
 function home(state: GameState, cat: Cat): boolean {
   return cat.away === null && !isCarried(state, cat);
 }
-
-const asleep = (cat: Cat): boolean => cat.act.kind === "sleep" && cat.act.goal === null;
 
 const catById = (state: GameState, target: string | null): Cat | null =>
   target?.startsWith("cat:") ? (state.cats.find((c) => `cat:${c.id}` === target) ?? null) : null;
@@ -3358,7 +3356,7 @@ export function watchCats(state: GameState, minutes: number): void {
   if (activity?.kind === "use" && activity.inside) return;
   const rates = state.cats
     .filter((cat) => cat.act.kind !== "hide" && witnesses(state, cat))
-    .map((cat) => (cat.act.kind === "sleep" ? WATCH_SANITY.asleep : WATCH_SANITY.awake))
+    .map((cat) => (asleep(cat) ? WATCH_SANITY.asleep : WATCH_SANITY.awake))
     .sort((a, b) => b - a);
   const perHour = rates.reduce((sum, rate, i) => sum + rate / (i + 1), 0);
   if (perHour > 0) changeStat(state, "sanity", perHour * DIFFICULTY[state.difficulty].catSanity * (minutes / MINUTES_PER_HOUR));
@@ -3928,7 +3926,7 @@ function newThings(state: GameState, rng: Rng): void {
 
 /** Кіт спить у ящиках біля входу (§9.12, «Допитливість»): розпакувати їх не можна, поки його не забрали. */
 export function catInBox(state: GameState): Cat | null {
-  return state.cats.find((c) => home(state, c) && c.act.target === "boxes" && c.act.goal === null && c.act.kind === "sleep") ?? null;
+  return state.cats.find((c) => home(state, c) && asleep(c) && c.act.target === "boxes") ?? null;
 }
 
 /**
@@ -3938,7 +3936,7 @@ export function catInBox(state: GameState): Cat | null {
  */
 function boxSeen(state: GameState, cat: Cat): void {
   const act = cat.act;
-  if (act.kind !== "sleep" || act.goal !== null || act.seen === true || !witnesses(state, cat)) return;
+  if (!asleep(cat) || act.seen === true || !witnesses(state, cat)) return;
   const washer = objectById("washer");
   const drum = state.home.washer.state === "idle" && Math.floor(cat.x) === washer.x && Math.floor(cat.y) === washer.y;
   if (act.target !== "boxes" && act.target !== "carrier" && !drum) return;
