@@ -2789,7 +2789,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       cat.facing = 1;
       return;
     case "carry":
-      // Приніс іграшку до ніг персонажа (§9.12, «Подарунки й схованки»): кладе її й чекає поруч.
+      // «Ігривість +» приніс іграшку до ніг персонажа й кличе гратися (§9.12, «Ігривість»; «Подарунки й схованки» до ніг не
+      // носять з 2026-10-29, А16): кладе її й чекає поруч.
       if (act.picked === true && act.dest === "feet" && act.dropped !== true) dropGift(state, cat);
       return;
     case "drink":
