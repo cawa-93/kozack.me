@@ -2,9 +2,9 @@
 // справжнім рухом квартирою й тими самими діями, що й людина. Пріоритети — нагальне (кіт на
 // клавіатурі, безлад, порожні миски) раніше за своє (їжа, душ) і роботу.
 
-import { petOver, petResting, petTolerance } from "../src/sim/actions";
+import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
-import { traitLevel } from "../src/sim/cat";
+import { petResting, traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";

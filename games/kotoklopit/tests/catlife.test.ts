@@ -3,8 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { catFeeling, petOver, petResting, petTolerance, pickUpCat } from "../src/sim/actions";
-import { changeMood, closeCatDay, createCat, idleAct, offend } from "../src/sim/cat";
+import { catFeeling, petOver, petTolerance, pickUpCat } from "../src/sim/actions";
+import { changeMood, closeCatDay, createCat, idleAct, offend, petResting } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
@@ -14,6 +14,7 @@ import { advance, deserialize, goToSleep, interact, newGame, serialize } from ".
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
+import { absoluteMinute } from "../src/sim/time";
 import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
@@ -852,6 +853,37 @@ describe("після попередження чи укусу кіт чверт�
     expect(events.some((e) => e.type === "refused")).toBe(false);
     expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
     expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 0.5);
+  });
+
+  it("поки не дається гладити, сам по ласку не приходить, а після паузи — приходить; голодний просить їсти й тоді (рецензія реалізації А8)", () => {
+    const { save, cat } = petting();
+    cat.needs.attention = 95;
+    hold(save, petTolerance(cat) - PETTING.warnMinutes + 0.25);
+    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    advance(save, 0.05);
+    // Уваги кіт ще хоче (поріг — 60), але чверть години по неї не йде: не ходить слідом і не нявчить.
+    expect(cat.needs.attention).toBeGreaterThan(70);
+    expect(petResting(save.current, cat)).toBe(true);
+    for (let t = 0; t < PETTING.restMinutes - 1; t += 0.25) {
+      advance(save, 0.25);
+      expect(cat.act.kind).not.toBe("attention");
+    }
+    // Пауза минула — кіт, що хоче уваги, знову приходить по ласку.
+    advance(save, 1.5);
+    expect(petResting(save.current, cat)).toBe(false);
+    cat.needs.attention = 95;
+    decide(save.current, cat, createRng(1), { present: true });
+    expect(cat.act.kind).toBe("attention");
+    // Голодний, коли миски порожні, приходить просити їсти й під час паузи.
+    cat.petWarnedAt = absoluteMinute(save.current.day, save.current.minute);
+    cat.needs.hunger = 95;
+    let forFood = false;
+    for (let seed = 0; seed < 20 && !forFood; seed++) {
+      cat.act = idleAct(1);
+      decide(save.current, cat, createRng(seed), { present: true });
+      forFood = cat.act.kind === "attention" && cat.act.forFood === true;
+    }
+    expect(forFood).toBe(true);
   });
 
   it("стара гра без поля паузи — кіт дається гладити", () => {

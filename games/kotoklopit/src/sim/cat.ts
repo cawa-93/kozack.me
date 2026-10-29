@@ -20,6 +20,7 @@ import {
   STRESS_EFFECTS,
   STRESS_STEP,
   MOOD_SATURATION,
+  PETTING,
   TOUCHY,
   STRONG_TRAIT_CHANCE,
   WEIGHT,
@@ -307,6 +308,14 @@ export function sinceOffense(state: GameState, cat: Cat): number | null {
 export function avoiding(state: GameState, cat: Cat): boolean {
   const since = sinceOffense(state, cat);
   return since !== null && since < sulkMinutes(cat);
+}
+
+/**
+ * Кіт щойно попереджав під рукою чи вкусив (§9.12 «Здоровий глузд від котів», рішення автора 2026-10-29, А8): ще чверть години
+ * гладити себе не дає і сам по ласку не приходить.
+ */
+export function petResting(state: GameState, cat: Cat): boolean {
+  return cat.petWarnedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.petWarnedAt < PETTING.restMinutes;
 }
 
 /** «Образливий» дметься: сам не приходить і відходить від персонажа (§9.12). */

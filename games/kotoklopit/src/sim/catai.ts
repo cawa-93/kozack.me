@@ -3,7 +3,7 @@
 // не навантажують кадр (§8.5).
 
 import { stun } from "./body";
-import { adaptsLonger, asleep, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
+import { adaptsLonger, asleep, avoiding, changeLove, changeMood, forgive, grudgeAt, idleAct, isAdapting, isKitten, isOld, petResting, recordMood, sinceOffense, stress, sulking, traitLevel, upset } from "./cat";
 import { lastTileWithin, randomFloor, stepTo, tileAtDistance, tileOf, visibleFloorNear, walk } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import {
@@ -925,9 +925,11 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (startSnack(state, cat, rng)) return;
   // До того, хто працює, кіт іде раніше — посидіти на колінах (§9.12).
   const seek = isWorking(state) ? WORK_CAT.seekAttention : NEED_THRESHOLD.attention;
-  // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»).
+  // Після неприємного від персонажа кіт якийсь час сам не приходить (§9.12, «Образливість»), а щойно попередивши під рукою чи
+  // вкусивши, — чверть години, поки гладити себе не дає (рецензія реалізації А8, 2026-10-29: раніше за хвилину по ласку приходив
+  // знову, а на відповідь гравця відмовляв).
   // Біля персонажа вже стоїть ворог — по увагу не йде (§9.4, рішення автора 2026-10-26: 76–79% бійок були біля ніг персонажа).
-  if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat) && !enemyAtPerson(state, cat)) return startAttention(state, cat);
+  if (context.present && n.attention >= seek && !aloof(cat) && !avoiding(state, cat) && !petResting(state, cat) && !enemyAtPerson(state, cat)) return startAttention(state, cat);
   if (n.play >= NEED_THRESHOLD.play) return choosePlay(state, cat, rng, context);
   // З другом хочеться гратися раніше, ніж самому (§9.4, рішення автора 2026-10-27, Г1): гра наодинці й бешкет — від порога вище.
   if (callsCompany(state, cat, rng)) return;

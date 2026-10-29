@@ -2,7 +2,7 @@
 // на руки; утримання — тривала дія: душ, їжа, прибирання, пестощі. Плита готує своїм часом.
 
 import { actionSpeed, isMoving } from "./body";
-import { asleep, changeLove, changeMood, idleAct, offend, sulking, traitLevel } from "./cat";
+import { asleep, changeLove, changeMood, idleAct, offend, petResting, sulking, traitLevel } from "./cat";
 import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, touchStandoff, trashTipped, turnAway, upHigh, waterFright } from "./catai";
 import { openDoor } from "./door";
 import { visibleFloorNear } from "./catmove";
@@ -770,14 +770,6 @@ export function petTolerance(cat: Cat, level = traitLevel(cat, "petting")): numb
 /** Пестощі закінчилися, але кнопку ще тримають (§10): кіт вкусив чи пішов з-під руки. */
 export function petOver(activity: PetActivity): boolean {
   return activity.bitten === true || activity.left === true;
-}
-
-/**
- * Кіт щойно попереджав під рукою чи вкусив (§9.12 «Здоровий глузд від котів», рішення автора 2026-10-29, А8): ще чверть години
- * гладити себе не дає.
- */
-export function petResting(state: GameState, cat: Cat): boolean {
-  return cat.petWarnedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.petWarnedAt < PETTING.restMinutes;
 }
 
 /** Кіт сидить на клавіатурі (§9.12, «Кіт і робота»). */
