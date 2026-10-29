@@ -4,7 +4,7 @@ import { ACCIDENT, DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZ
 import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
-import { tripBlocker } from "../sim/trips";
+import { roadMinutes, tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
 import { BREED_ABOUT, diseaseTitle, fill, GROOMED, ILLNESS_TITLES, VET_ADVICE, VET_MANNER } from "../texts";
@@ -44,7 +44,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
-    const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(trip.road)} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
+    const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(roadMinutes(state, destination))} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
     name.append(element("span", "shop-stock", note));
     row.append(name);
     const button = element("button", "button", "Їхати");

@@ -371,6 +371,8 @@ export const isHot = (state: GameState): boolean => active(state, "heat");
 export const toOffice = (state: GameState): boolean => state.trip?.destination === "office" && state.trip.phase !== "accident";
 
 export const trafficFactor = (state: GameState): number => MODIFIERS.traffic[state.modifiers.day ?? ""] ?? 1;
+/** Довжина дороги (§8.5): «Пробки» подовжують, «Порожні дороги» скорочують (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14). */
+export const roadFactor = (state: GameState): number => MODIFIERS.road[state.modifiers.day ?? ""] ?? 1;
 export function priceFactor(state: GameState, product: string): number {
   return product === "catFood" || product === "sterileFood" ? (MODIFIERS.catFoodPrice[state.modifiers.day ?? ""] ?? 1) : 1;
 }

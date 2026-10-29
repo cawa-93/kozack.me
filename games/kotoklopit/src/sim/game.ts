@@ -15,7 +15,7 @@ import { upgradeAlbumDays } from "./farewell";
 import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
-import { accidentBedtime, driveTrip, endTrip, visitMinutes } from "./trips";
+import { accidentBedtime, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
@@ -208,7 +208,7 @@ export function carryFoundling(save: Save): NightReport | null {
 export function goHome(save: Save): NightReport | null {
   const trip = save.current.trip;
   if (trip?.phase !== "visit") return null;
-  return returnHome(save, visitMinutes(trip), TRIPS[trip.destination].road);
+  return returnHome(save, visitMinutes(trip), roadMinutes(save.current, trip.destination));
 }
 
 /** Подія на місці забрала хвилини, потім персонаж їде додому без гонки (§8.5). */

@@ -87,6 +87,31 @@ describe("гонка (§8.5)", () => {
     expect(save.current.minute - from).toBeGreaterThan(TRIPS.shop.road * 2 - 3);
   });
 
+  it("«Пробки» подовжують дорогу (×1,3), «Порожні дороги» скорочують (×0,8): і гонку туди, і повернення без гонки (рішення автора 2026-10-29, А14)", () => {
+    const trip = (modifier: string | null): { race: number; back: number } => {
+      const save = game(10 * 60);
+      save.current.day = 5; // субота: без штрафу роботи
+      save.current.modifiers.day = modifier;
+      startTrip(save.current, "shop");
+      const race = save.current.trip?.race.road ?? -1;
+      driveSafely(save);
+      expect(save.current.trip?.phase).toBe("visit");
+      const from = save.current.minute;
+      goHome(save);
+      expect(save.current.trip).toBeNull();
+      return { race, back: save.current.minute - from - TRIPS.shop.visit };
+    };
+    expect(trip(null)).toEqual({ race: TRIPS.shop.road, back: TRIPS.shop.road });
+    const jam = Math.round(TRIPS.shop.road * MODIFIERS.road.traffic!);
+    expect(jam).toBeGreaterThan(TRIPS.shop.road);
+    expect(trip("traffic").race).toBe(jam);
+    expect(trip("traffic").back).toBeCloseTo(jam);
+    const empty = Math.round(TRIPS.shop.road * MODIFIERS.road["empty-roads"]!);
+    expect(empty).toBeLessThan(TRIPS.shop.road);
+    expect(trip("empty-roads").race).toBe(empty);
+    expect(trip("empty-roads").back).toBeCloseTo(empty);
+  });
+
   it("аварія: втрати не більше 3, решта дня минає, персонаж засинає вдома", () => {
     const save = game(12 * 60);
     save.current.day = 5;

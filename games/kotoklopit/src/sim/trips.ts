@@ -6,7 +6,7 @@ import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIP_IDLE_MINUTES, TRIPS } from "./config";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
-import { trafficFactor } from "./modifiers";
+import { roadFactor, trafficFactor } from "./modifiers";
 import { observe } from "./knowledge";
 import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
@@ -19,6 +19,14 @@ import { catOnStairs, openDoor } from "./door";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
 export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
+
+/**
+ * Дорога до пункту за звичайної швидкості, у хвилинах (§8.5): і гонка туди, і повернення без гонки. «Пробки» її подовжують,
+ * «Порожні дороги» — скорочують (§4.1; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14).
+ */
+export function roadMinutes(state: GameState, destination: Destination): number {
+  return Math.round(TRIPS[destination].road * roadFactor(state));
+}
 
 /** Кіт на руках, якого можна взяти в поїздку. */
 function heldCat(state: GameState): Cat | null {
@@ -89,7 +97,7 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   // Час послуги додає сама послуга (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): на старті поїздки
   // до ветеринара, лікаря, грумера чи на виставку часу на місці ще немає.
   const visit = TRIPS[destination].service ? 0 : TRIPS[destination].visit;
-  state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(TRIPS[destination].road, seed), losses: [], visit, seed };
+  state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(roadMinutes(state, destination), seed), losses: [], visit, seed };
   // Шкарпетку кіт заніс у схованку (§9.12, «Подарунки й схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
   if (state.home.sock === true) {
     delete state.home.sock;
