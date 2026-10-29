@@ -25,6 +25,7 @@ import {
 } from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { MIXED } from "../src/sim/breeds";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { advance, deserialize, drive, goHome, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { doctorTreat, fallIllPerson, isIll } from "../src/sim/illness";
 import { addCat } from "../src/sim/night";
@@ -1105,5 +1106,20 @@ describe("невдале дешеве лікування не повторюют
     expect(startTrip(save.current, "doctor")).toBe(true);
     driveSafely(save);
     expect(doctorTreat(save.current, "cold", "premium", createRng(1))).toBe("cured");
+  });
+});
+
+describe("сценарій «До лікаря» (`scenarios/doctor-trip.json`, рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6)", () => {
+  it("персонажка з застудою й травмою біля дверей: до лікаря можна, а «Додому» без лікування — 15 хвилин на місці", () => {
+    const scenario = FILE_SCENARIOS["doctor-trip"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(save.current.character.illnesses.map((i) => i.id)).toEqual(["cold", "injury"]);
+    expect(canLeave(save.current)).toBe(true);
+    expect(startTrip(save.current, "doctor")).toBe(true);
+    driveSafely(save);
+    const at = save.current.minute;
+    goHome(save);
+    expect(save.current.minute - at).toBeCloseTo(TRIP_IDLE_MINUTES + TRIPS.doctor.road);
   });
 });
