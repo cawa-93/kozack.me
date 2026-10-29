@@ -2,11 +2,11 @@
 // справжнім рухом квартирою й тими самими діями, що й людина. Пріоритети — нагальне (кіт на
 // клавіатурі, безлад, порожні миски) раніше за своє (їжа, душ) і роботу.
 
-import { petOver, petTolerance } from "../src/sim/actions";
+import { petOver, petResting, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
+import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, TRIPS, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { beardLook, groomBeard } from "../src/sim/grooming";
 import { needsHumanMeds } from "../src/sim/illness";
@@ -261,6 +261,8 @@ export class Bot {
       if (cat.away !== null || cat.act.kind === "sleep" || cat.act.kind === "hide" || this.skipped(`cat:${cat.id}`)) continue;
       const need = want === "attention" ? cat.needs.attention : cat.needs.play;
       if (need < min) continue;
+      // Кіт, що щойно попереджав чи вкусив, гладити себе не дає (А8): до нього не йти.
+      if (want === "attention" && petResting(s, cat)) continue;
       if (want === "play" && !this.hasToy()) continue;
       const score = need - Math.hypot(cat.x - body.x, cat.y - body.y) * 3;
       if (score > bestScore) {
@@ -609,8 +611,9 @@ export class Bot {
     if (!this.goTo(`cat:${cat.id}`)) return this.unreachable(cat);
     // Поки йшов, кіт заснув: не будити (пестощі сплячого — мінус настрій).
     if (cat.act.kind === "sleep") return;
-    // Гладити трохи менше, ніж кіт терпить.
-    const tolerance = Math.max(0.5, petTolerance(cat) - 0.5);
+    // Гладити, доки кіт не попередив (б'є хвостом): після попередження він чверть години не дається гладити (§9.12, рішення
+    // автора 2026-10-29, А8). Уважний гравець відпускає раніше — з запасом на крок утримання.
+    const tolerance = Math.max(HOLD_STEP, petTolerance(cat) - PETTING.warnMinutes - HOLD_STEP);
     const before = this.state.minute;
     this.holdFor(tolerance);
     this.log.petted += (this.state.minute - before) / 60;

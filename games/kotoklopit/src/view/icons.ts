@@ -97,7 +97,8 @@ export type IconName =
   | "thermometer"
   | "battery-low"
   | "folded"
-  | "nest";
+  | "nest"
+  | "cat-annoyed";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -717,6 +718,23 @@ Object.assign(ICONS, {
     g.fillStyle(0xc49a62).fillEllipse(20, 30, 34, 13);
     g.lineStyle(2.5, INK).strokeEllipse(20, 30, 34, 13);
     g.lineStyle(1.5, 0x8a6e48).lineBetween(7, 29, 15, 33).lineBetween(17, 28, 25, 33).lineBetween(26, 29, 33, 31);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
+ * Кіт щойно попереджав чи вкусив під рукою — чверть години не дається гладити (§9.12, рішення автора 2026-10-29, А8): те саме
+ * попередження, що й на коті, — вуха притиснуті в боки, очі примружені, а хвіст б'є.
+ */
+Object.assign(ICONS, {
+  "cat-annoyed": (g: Phaser.GameObjects.Graphics) => {
+    // Хвіст праворуч — зигзагом, і дві рисочки руху біля кінчика.
+    g.lineStyle(4, 0x6b5d6e).strokePoints([[25, 33], [32, 31], [36, 24], [32, 17], [35, 9]].map(([x, y]) => new Phaser.Math.Vector2(x, y)));
+    g.lineStyle(2, INK).lineBetween(37, 4, 39, 8).lineBetween(31, 4, 31, 8);
+    // Голова й вуха, притиснуті в боки «літачком».
+    g.fillStyle(0x6b5d6e).fillCircle(16, 23, 11).fillTriangle(8, 17, 12, 13.5, 1, 14).fillTriangle(20, 13.5, 24, 17, 31, 14);
+    // Очі-щілинки, скошені до носа, і рожевий ніс.
+    g.lineStyle(2.4, 0xffffff).lineBetween(9, 20, 14, 22.5).lineBetween(23, 20, 18, 22.5);
+    g.fillStyle(0xd9708a).fillTriangle(14.2, 26, 17.8, 26, 16, 28.5);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

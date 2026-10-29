@@ -766,6 +766,19 @@ export function petOver(activity: PetActivity): boolean {
 }
 
 /**
+ * Кіт щойно попереджав під рукою чи вкусив (§9.12 «Здоровий глузд від котів», рішення автора 2026-10-29, А8): ще чверть години
+ * гладити себе не дає.
+ */
+export function petResting(state: GameState, cat: Cat): boolean {
+  return cat.petWarnedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.petWarnedAt < PETTING.restMinutes;
+}
+
+/** Кіт сидить на клавіатурі (§9.12, «Кіт і робота»). */
+function onKeyboard(cat: Cat): boolean {
+  return cat.act.kind === "keyboard" && cat.act.goal === null;
+}
+
+/**
  * Пестощі (§8.2, §9.12): поки кіт хоче уваги — здоровий глузд, настрій і любов; коли не хоче —
  * менше здорового глузду, а настрій кота падає; довше, ніж кіт терпить, — настрій падає, і кіт може вкусити.
  */
@@ -791,6 +804,15 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   if (sulking(state, cat)) {
     activity.left = true;
     turnAway(state, cat);
+    return;
+  }
+  // Щойно попереджав чи вкусив — чверть години гладити себе не дає: на спробу погладити одразу йде з-під руки, а над персонажем —
+  // відмова (§9.12, рішення автора 2026-10-29, А8: раніше досить було на мить відпустити кнопку, і терпіння починалося з нуля —
+  // кіт не кусав ніколи). Кіт на клавіатурі з неї не йде: дотик кота з клавіатури не знімає («Кіт і робота»).
+  if (activity.minutes === 0 && petResting(state, cat)) {
+    activity.left = true;
+    if (!onKeyboard(cat)) backAway(state, cat, character.body);
+    refuse(state, `cat:${cat.id}`, "cat-annoyed");
     return;
   }
   // «Незалежний» не терпить пестощів, коли уваги не хоче: «Незалежний» іде з-під руки за хвилину, «Відлюдник» — одразу.
@@ -822,6 +844,9 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
   cat.act.minutes = Math.max(cat.act.minutes, 1);
   const catSanity = DIFFICULTY[state.difficulty].catSanity;
   const tolerance = petTolerance(cat);
+  // Кіт попереджає (б'є хвостом) чи вже терпить через силу — і запам'ятовує це: чверть години від останньої такої миті гладити
+  // себе не дасть (А8). Укус — теж така мить: після нього пестощі закінчено.
+  if (activity.minutes > tolerance - PETTING.warnMinutes) cat.petWarnedAt = absoluteMinute(state.day, state.minute);
   if (activity.minutes <= tolerance) {
     const wants = cat.needs.attention >= PET.wantsAttention;
     changeStat(state, "sanity", (wants ? PET.sanity : PET.unwantedSanity) * catSanity * minutes);

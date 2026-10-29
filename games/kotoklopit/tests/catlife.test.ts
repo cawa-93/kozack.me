@@ -3,12 +3,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
-import { changeMood, closeCatDay, createCat, offend } from "../src/sim/cat";
+import { catFeeling, petOver, petResting, petTolerance, pickUpCat } from "../src/sim/actions";
+import { changeMood, closeCatDay, createCat, idleAct, offend } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
-import { COLLAR, LOVE_BEHAVIOR, PET } from "../src/sim/config";
+import { COLLAR, LOVE_BEHAVIOR, PET, PETTING } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -734,6 +734,99 @@ describe("нічні побудки й «Галасливі сусіди» (§8.
       expect(save.current.minute).toBeGreaterThanOrEqual(0);
     }
     expect(early).toBeGreaterThan(0);
+  });
+});
+
+describe("після попередження чи укусу кіт чверть години не дається гладити (§9.12, рішення автора 2026-10-29, А8)", () => {
+  const HOLD = { move: { x: 0, y: 0 }, hold: true };
+
+  /** Кіт, що хоче уваги, просто перед персонажем. */
+  function petting(): { save: Save; cat: Cat } {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    cat.needs.attention = 90;
+    Object.assign(save.current.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+    return { save, cat };
+  }
+
+  /** Кіт знову під рукою й нікуди не йде. */
+  function backUnderHand(cat: Cat): void {
+    Object.assign(cat, { x: 4.5, y: 7.6, act: idleAct(30) });
+  }
+
+  /** Утримувати дію `minutes` хвилин дрібними кроками. */
+  function hold(save: Save, minutes: number): void {
+    for (let spent = 0; spent < minutes - 1e-9; spent += 0.05) advance(save, 0.05, HOLD);
+  }
+
+  it("відпустити кнопку на попередженні й натиснути знову — кіт іде з-під руки: одна відмова на утримання, без здорового глузду й укусу", () => {
+    const { save, cat } = petting();
+    // Гладити, доки кіт не попередив: б'є хвостом і притискає вуха.
+    hold(save, petTolerance(cat) - PETTING.warnMinutes + 0.25);
+    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    // Відпустили на мить — і тримають знову дві хвилини.
+    advance(save, 0.05);
+    expect(save.current.character.activity).toBeNull();
+    backUnderHand(cat);
+    const sanity = save.current.character.stats.sanity;
+    const mood = cat.mood;
+    const { events, stop } = recordEvents();
+    hold(save, 2);
+    stop();
+    expect(events.filter((e) => e.type === "refused")).toEqual([{ type: "refused", object: `cat:${cat.id}`, reason: "cat-annoyed" }]);
+    expect(events.some((e) => e.type === "purr" || e.type === "bite")).toBe(false);
+    // Пестощі за дві хвилини дали б +3,6; лишається хіба «кіт у полі зору».
+    expect(save.current.character.stats.sanity).toBeLessThan(sanity + 0.5);
+    expect(cat.mood).toBeLessThanOrEqual(mood);
+    expect(cat.act.kind).toBe("wander");
+    // Утримання — одна дія: нові пестощі не почнуться, поки кнопку не відпустили.
+    const activity = save.current.character.activity;
+    expect(activity === null ? save.current.character.holdSpent : activity.kind === "pet" && petOver(activity)).toBe(true);
+  });
+
+  it("після укусу — те саме; а через 15 хвилин кіт знову дається гладити", () => {
+    const { save, cat } = petting();
+    cat.traits.push({ group: "petting", level: -2, seen: 0, known: false });
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 200 && !events.some((e) => e.type === "bite"); i++) advance(save, 0.05, HOLD);
+    expect(events.some((e) => e.type === "bite")).toBe(true);
+    advance(save, 0.05);
+    backUnderHand(cat);
+    hold(save, 0.5);
+    expect(events.filter((e) => e.type === "refused" && e.reason === "cat-annoyed")).toHaveLength(1);
+    // Відпустили й чекають чверть години.
+    advance(save, 0.05);
+    advance(save, PETTING.restMinutes);
+    backUnderHand(cat);
+    const sanity = save.current.character.stats.sanity;
+    hold(save, 1);
+    stop();
+    expect(events.filter((e) => e.type === "refused")).toHaveLength(1);
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
+    expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 1);
+  });
+
+  it("відпустили ще до попередження — паузи немає: кіт одразу дається гладити знову", () => {
+    const { save, cat } = petting();
+    hold(save, petTolerance(cat) - PETTING.warnMinutes - 0.5);
+    expect(catFeeling(save.current, cat)).toBe("content");
+    advance(save, 0.05);
+    backUnderHand(cat);
+    const sanity = save.current.character.stats.sanity;
+    const { events, stop } = recordEvents();
+    hold(save, 0.5);
+    stop();
+    expect(events.some((e) => e.type === "refused")).toBe(false);
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
+    expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 0.5);
+  });
+
+  it("стара гра без поля паузи — кіт дається гладити", () => {
+    const { save, cat } = petting();
+    delete cat.petWarnedAt;
+    const restored = deserialize(serialize(save));
+    const again = restored.current.cats.find((c) => c.id === cat.id)!;
+    expect(petResting(restored.current, again)).toBe(false);
   });
 });
 
