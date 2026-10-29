@@ -165,9 +165,9 @@ describe("події модифікаторів: перевірка модифі
     expect(save.current.character.stats.sanity).toBe(sanity);
 
     const friend = game();
-    withCat(friend);
+    const pal = withCat(friend);
     friend.current.modifiers.day = "friend-help";
-    giveStarterPack(friend.current);
+    giveStarterPack(friend.current, pal);
     const water = friend.current.home.items.find((i) => i.kind === "water");
     if (water?.kind !== "water") throw new Error("немає поїлки");
     water.water = 0;

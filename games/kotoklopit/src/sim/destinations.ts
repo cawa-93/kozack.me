@@ -324,7 +324,7 @@ function welcome(state: GameState, cat: Cat): void {
   cat.bathedDay = state.day;
   cat.away = "trip";
   addCat(state, cat);
-  giveStarterPack(state);
+  giveStarterPack(state, cat);
   applyMorningSanity(state, 0, 1);
 }
 

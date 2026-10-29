@@ -364,7 +364,7 @@ function kittenCheck({ state, report, rng }: Night): void {
   addCat(state, cat);
   // Притулок: блохи (§9.5).
   maybeFallIll(state, cat, "fleas", ILLNESS.shelterFleas, rng);
-  giveStarterPack(state);
+  giveStarterPack(state, cat);
   report.newCats.push(cat.id);
 }
 
@@ -378,8 +378,9 @@ export function addCat(state: GameState, cat: Cat): void {
 }
 
 /** Стартовий пакет кота з притулку: корм, наповнювач і, якщо вдома немає, дешеві миска, вода й лоток (§9.12). */
-export function giveStarterPack(state: GameState): void {
-  addSupply(state, "catFood", "cheap", SHELTER_STARTER_PACK.catFood);
+export function giveStarterPack(state: GameState, cat: Cat): void {
+  // Стерилізованому — корм для стерилізованих: звичайний йому шкодить (§9.8), а наперед його не купити (загальна ревізія 2026-10-29).
+  addSupply(state, cat.sterilized ? "sterileFood" : "catFood", "cheap", SHELTER_STARTER_PACK.catFood);
   addSupply(state, "litter", "cheap", SHELTER_STARTER_PACK.litter);
   // Без мисок і лотка кіт не проживе й ночі: притулок дає найпростіші, якщо вдома їх немає.
   for (const thing of ["bowl", "water", "litter"] as const) {

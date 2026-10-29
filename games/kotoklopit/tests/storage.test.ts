@@ -12,7 +12,9 @@ import { advance } from "../src/sim/game";
 import { hasBoxes } from "../src/sim/home";
 import { boxesIndicator, boxesShown } from "../src/sim/storage";
 import { buyAtShop } from "../src/sim/destinations";
+import { createCat } from "../src/sim/cat";
 import { giveStarterPack } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import { STORAGES, storageIndicator } from "../src/sim/storage";
 import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
@@ -98,7 +100,7 @@ describe("сховища (§6.4)", () => {
     expect(order(state, "food", "cheap")).not.toBeNull();
     // Корм: 110 у шафці, з пакета притулку зайве лягає в ящики.
     addSupply(state, "catFood", "cheap", 108);
-    giveStarterPack(state);
+    giveStarterPack(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 3 }));
     expect(state.home.supplies.catFood.cheap).toBe(110);
     expect(boxCount(state, "catFood")).toBe(6);
   });
@@ -191,10 +193,11 @@ describe("ящики біля входу (§6.4, правка 2026-10-23)", () =
   it("на старті котячих речей немає; кошеня з притулку приносить найпростіші", () => {
     const state = game().current;
     expect(state.home.items).toEqual([]);
-    giveStarterPack(state);
+    const kitten = createCat(state, createRng(1), { source: "shelter-forced", ageWeeks: 1 });
+    giveStarterPack(state, kitten);
     expect(state.home.items.map((i) => i.kind).sort()).toEqual(["bowl", "litter", "water"]);
     // Другий пакет нових речей не додає: вони вже є.
-    giveStarterPack(state);
+    giveStarterPack(state, kitten);
     expect(state.home.items).toHaveLength(3);
   });
 

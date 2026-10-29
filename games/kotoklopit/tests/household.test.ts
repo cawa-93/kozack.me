@@ -278,11 +278,12 @@ describe("перевірка побуту 2026-10-28", () => {
     save.current.home.items = save.current.home.items.filter((i) => i.kind !== "water");
     const slots = freeSlots(save.current, "water");
     for (let i = 0; i < slots; i++) save.current.home.deliveries.push({ id: 900 + i, quality: "cheap", at: 99999, thing: "water" });
-    giveStarterPack(save.current);
+    const newcomer = createCat(save.current, createRng(4), { source: "shelter", ageWeeks: 3 });
+    giveStarterPack(save.current, newcomer);
     expect(save.current.home.items.some((i) => i.kind === "water")).toBe(false);
     // Їде лише одна — місце є, і новий кіт не чекає доставки (повторна перевірка 2026-10-28).
     save.current.home.deliveries = [{ id: 900, quality: "cheap", at: 99999, thing: "water" }];
-    giveStarterPack(save.current);
+    giveStarterPack(save.current, newcomer);
     expect(save.current.home.items.some((i) => i.kind === "water")).toBe(true);
 
     const cat = held(save);

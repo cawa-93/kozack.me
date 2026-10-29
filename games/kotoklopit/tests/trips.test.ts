@@ -436,9 +436,25 @@ describe("пункти призначення (§8.5)", () => {
     expect(adopt(save.current, chosen.id)).not.toBeNull();
     expect(save.current.cats).toHaveLength(1);
     expect(save.current.character.stats.sanity).toBe(90);
-    expect(save.current.home.supplies.catFood.cheap).toBe(8);
+    expect(save.current.home.supplies[chosen.sterilized ? "sterileFood" : "catFood"].cheap).toBe(8);
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shelter.road);
     expect(save.current.cats[0]?.away).toBeNull();
+  });
+
+  it("загальна ревізія 2026-10-29: стерилізований кіт з притулку приходить із кормом для стерилізованих, а не зі звичайним", () => {
+    const pack = (sterilized: boolean): { catFood: number; sterileFood: number } => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      arrive(save, "shelter");
+      const chosen = shelterCats(save.current)[0];
+      if (!chosen) throw new Error("немає котів");
+      chosen.sterilized = sterilized;
+      expect(adopt(save.current, chosen.id)).not.toBeNull();
+      const supplies = save.current.home.supplies;
+      return { catFood: supplies.catFood.cheap, sterileFood: supplies.sterileFood.cheap };
+    };
+    expect(pack(true)).toEqual({ catFood: 0, sterileFood: 8 });
+    expect(pack(false)).toEqual({ catFood: 8, sterileFood: 0 });
   });
 
   it("притулок: узяті коти їдуть додому разом із персонажем, а «Віддати» — лише кіт, з яким приїхали (перевірка поїздок 2026-10-28)", () => {
