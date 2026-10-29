@@ -28,13 +28,13 @@ export const SAVE_VERSION = 13;
 
 const EPSILON = 1e-6;
 
-/** Імена за замовчуванням за звертанням; власне ім'я задасть конструктор персонажа (§5.1). */
+/** Імена за замовчуванням за звертанням (ім'я в текстах узгоджується з ним); власне ім'я задасть гравець (§5.1). */
 export const DEFAULT_NAME: Record<Address, string> = { she: "Марта", he: "Тарас" };
-/** Зовнішність за замовчуванням: такою вона була до конструктора (§5.1). */
-export const DEFAULT_LOOK: Record<Address, Look> = {
-  she: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
-  he: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
-};
+/**
+ * Зовнішність без редактора — сценарій, нова гра в режимі розробки, тести (§5.1): одна для всіх, хоч би яке звертання (рішення
+ * автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Це та, що раніше була за замовчуванням у жіночого персонажа.
+ */
+export const DEFAULT_LOOK: Readonly<Look> = { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 };
 
 export interface NewGameOptions {
   /** Звертання в текстах (§5.1): лише граматика, на гру не впливає. */
@@ -47,9 +47,14 @@ export interface NewGameOptions {
   seed?: number;
 }
 
+/** Seed нової гри (§6.1): єдина випадковість поза `rng.ts`. Редактор персонажа бере його наперед — для зовнішності (§5.1). */
+export function newSeed(): number {
+  return Math.floor(Math.random() * 2 ** 32) >>> 0;
+}
+
 export function newGame(options: NewGameOptions): Save {
   const { address, difficulty } = options;
-  const seed = (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0;
+  const seed = (options.seed ?? newSeed()) >>> 0;
   const state: GameState = {
     seed,
     replays: 0,
@@ -59,7 +64,8 @@ export function newGame(options: NewGameOptions): Save {
     dayStartMinute: 0,
     character: {
       name: options.name?.trim() || DEFAULT_NAME[address],
-      look: options.look ?? DEFAULT_LOOK[address],
+      // Копія: зовнішність за замовчуванням спільна, а стан гри — свій.
+      look: { ...(options.look ?? DEFAULT_LOOK) },
       address,
       // Хронотип обирає гравець (§5.1); режим розробки може змінити його окремо (§11.5).
       chronotype: options.chronotype ?? "lark",

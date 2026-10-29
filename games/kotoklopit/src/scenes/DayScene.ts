@@ -7,7 +7,7 @@ import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MI
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
-import { advance, carryFoundling, DEFAULT_LOOK, DEFAULT_NAME, goHome, interact, newGame, replayDay, replayWeek, rewindAccident } from "../sim/game";
+import { advance, carryFoundling, goHome, interact, newGame, newSeed, replayDay, replayWeek, rewindAccident } from "../sim/game";
 import { doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
@@ -21,7 +21,8 @@ import { gameMinutes, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type PhoneTab } from "../ui/cards";
+import { lookRng, randomLook } from "../ui/look";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
@@ -1308,32 +1309,42 @@ export class DayScene extends Phaser.Scene {
     });
   }
 
-  /** Нова гра (§5.1): звертання й зовнішність для початку, зовнішність, хронотип, ім'я, потім складність. Кожен крок — з «Назад». */
+  /**
+   * Нова гра (§5.1): зовнішність (з випадкової), звертання «він / вона», хронотип, ім'я, потім складність. Кожен крок, крім першого, —
+   * з «Назад»; повернувшись, гравець бачить свій вибір. Статі немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+   */
   private chooseNewGame(): void {
-    const names: Record<Address, string> = { ...DEFAULT_NAME };
-    const pickAddress = (): void => this.overlay.show(addressCard(DEFAULT_LOOK, (address) => pickLook(address, DEFAULT_LOOK[address])));
-    const pickLook = (address: Address, look: Look): void =>
-      this.overlay.show(lookCard(address, look, (chosen) => pickChronotype(address, chosen), pickAddress));
-    const pickChronotype = (address: Address, look: Look): void =>
-      this.overlay.show(chronotypeCard((chronotype) => pickName(address, look, chronotype), () => pickLook(address, look)));
-    const pickName = (address: Address, look: Look, chronotype: Chronotype): void =>
+    // Seed нової гри — наперед: з нього й випадкова зовнішність редактора.
+    const seed = newSeed();
+    const looks = lookRng(seed);
+    // Що гравець уже обрав: повернувшись «Назад», він бачить свій вибір.
+    let entered: string | null = null;
+    let addressed: Address | null = null;
+    const pickLook = (look: Look): void => this.overlay.show(lookCard(look, pickAddress, () => randomLook(looks)));
+    const pickAddress = (look: Look): void =>
+      this.overlay.show(addressCard(look, addressed, (address) => pickChronotype(look, address), () => pickLook(look)));
+    const pickChronotype = (look: Look, address: Address): void => {
+      addressed = address;
+      this.overlay.show(chronotypeCard((chronotype) => pickName(look, address, chronotype), () => pickAddress(look)));
+    };
+    const pickName = (look: Look, address: Address, chronotype: Chronotype): void =>
       this.overlay.show(
         nameCard(
           address,
-          names[address],
+          startName(address, entered),
           (name) => {
-            names[address] = name;
+            entered = name;
             this.overlay.show(
               difficultyCard(
-                (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype })),
-                () => pickName(address, look, chronotype),
+                (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed })),
+                () => pickName(look, address, chronotype),
               ),
             );
           },
-          () => pickChronotype(address, look),
+          () => pickChronotype(look, address),
         ),
       );
-    pickAddress();
+    pickLook(randomLook(looks));
   }
 
   private openPhone(): void {

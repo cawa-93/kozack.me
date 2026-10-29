@@ -8,7 +8,7 @@ import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, GameState, Product, Quality, Save } from "../sim/types";
+import type { Cat, CatSource, GameState, Look, Product, Quality, Save } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
@@ -29,13 +29,24 @@ export interface Scenario {
 const DEFAULT_GAME: NewGameOptions = { address: "she", difficulty: "normal", seed: 1 };
 
 /**
+ * Зовнішність чоловічого персонажа за замовчуванням до рішення автора 2026-10-29 (`GENERAL_REVIEW.md`, А4): тепер без редактора
+ * вона одна для всіх (`DEFAULT_LOOK`), а старий сценарій зі статтю «чоловік» виглядає, як тоді.
+ */
+const LEGACY_MALE_LOOK: Look = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
+
+/**
  * Параметри нової гри зі сценарію. У сценаріях, збережених до рішення автора 2026-10-29 (`GENERAL_REVIEW.md`, А4), замість
- * звертання — стать персонажа, а хронотип без вибору йшов зі статі (чоловік — сова): так і лишається.
+ * звертання — стать персонажа, а хронотип і зовнішність без вибору йшли зі статі (чоловік — сова, коротка стрижка й синій верх):
+ * так і лишається.
  */
 function gameOptions(game: Scenario["game"]): NewGameOptions {
   const { sex, ...rest } = (game ?? {}) as Partial<NewGameOptions> & { sex?: unknown };
   const legacy: Partial<NewGameOptions> =
-    sex === undefined || rest.address !== undefined ? {} : sex === "male" ? { address: "he", chronotype: "owl" } : { address: "she" };
+    sex === undefined || rest.address !== undefined
+      ? {}
+      : sex === "male"
+        ? { address: "he", chronotype: "owl", look: LEGACY_MALE_LOOK }
+        : { address: "she" };
   return { ...DEFAULT_GAME, ...legacy, ...rest };
 }
 

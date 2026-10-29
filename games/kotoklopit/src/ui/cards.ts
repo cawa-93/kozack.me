@@ -6,6 +6,7 @@ import { breedById, MIXED } from "../sim/breeds";
 import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
+import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
@@ -37,6 +38,7 @@ import type { CartLine } from "../sim/shop";
 import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 export { plural };
+import { LOOK_OPTIONS } from "./look";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { traitChips, traitHint } from "./traits";
 
@@ -531,62 +533,37 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
 }
 
 /**
- * Створення персонажа (§5.1), крок 1: натиснути на портрет. Обирає лише звертання в текстах і зовнішність для початку — статі в
- * персонажа немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4); єдиний редактор без цього кроку — наступна зміна.
+ * Створення персонажа (§5.1), крок 1: зовнішність — портрет на весь зріст і повзунки; портрет змінюється одразу. Редактор один для
+ * всіх: будь-які частини в будь-якому поєднанні, без статі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). «Випадково» —
+ * нова випадкова зовнішність (`shuffle`); з такої редактор і починає.
  */
-export function addressCard(looks: Record<Address, Look>, onPick: (address: Address) => void, onCancel?: () => void): Card {
-  const choice = element("div", "portrait-choice");
-  for (const address of ["she", "he"] as const) {
-    const button = element("button", "portrait-button");
-    const canvas = portraitCanvas(110, 160);
-    drawPortrait(canvas, looks[address]);
-    button.append(canvas, element("span", "portrait-label", address === "she" ? "Жінка" : "Чоловік"));
-    button.addEventListener("click", () => onPick(address));
-    choice.append(button);
-  }
-  return {
-    kicker: "Нова гра · 1 з 5",
-    solid: true,
-    title: "Хто ви?",
-    body: [choice],
-    actions: [],
-    ...(onCancel ? { onDismiss: onCancel, closable: true } : {}),
-  };
-}
-
-const LOOK_OPTIONS: { key: keyof Look; label: string; options: readonly string[] }[] = [
-  { key: "face", label: "Обличчя", options: ["кругле", "овальне", "широке"] },
-  { key: "skin", label: "Шкіра", options: ["світла", "бежева", "смаглява", "темна", "дуже темна"] },
-  { key: "hair", label: "Зачіска", options: ["коротка", "довга", "хвостик", "кучері"] },
-  { key: "hairColor", label: "Волосся", options: ["чорне", "каштанове", "русяве", "біляве", "руде", "сиве"] },
-  { key: "eyes", label: "Очі", options: ["темні", "блакитні", "зелені", "карі"] },
-  { key: "build", label: "Статура", options: ["струнка", "звичайна", "кремезна"] },
-  { key: "top", label: "Верх", options: ["червоний", "синій", "зелений", "жовтий", "вишневий", "графітовий", "білий"] },
-  { key: "bottom", label: "Низ", options: ["графітовий", "білий", "червоний", "синій", "зелений", "жовтий", "вишневий"] },
-  { key: "shoes", label: "Взуття", options: ["графітове", "біле", "червоне", "синє", "зелене", "жовте", "вишневе"] },
-];
-
-/** Крок 2: зовнішність — портрет на весь зріст і повзунки; портрет змінюється одразу (§5.1). */
-export function lookCard(address: Address, start: Look, onDone: (look: Look) => void, onBack: () => void): Card {
+export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () => Look): Card {
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
   const canvas = portraitCanvas(130, 220);
   const redraw = (): void => drawPortrait(canvas, look);
   redraw();
   const sliders = element("div", "look-sliders");
+  // Показати на повзунках поточну зовнішність: після «Випадково» змінюються всі одразу.
+  const sync: (() => void)[] = [];
   for (const { key, label, options } of LOOK_OPTIONS) {
     const row = element("label", "look-row");
-    const value = element("span", "look-value", options[look[key]] ?? "");
+    const value = element("span", "look-value");
     const slider = element("input");
     slider.type = "range";
     slider.min = "0";
     slider.max = String(options.length - 1);
     slider.step = "1";
-    slider.value = String(look[key]);
     slider.className = "look-slider";
+    const show = (): void => {
+      slider.value = String(look[key]);
+      value.textContent = options[look[key]] ?? "";
+    };
+    show();
+    sync.push(show);
     slider.addEventListener("input", () => {
       look[key] = Number(slider.value);
-      value.textContent = options[look[key]] ?? "";
+      show();
       redraw();
     });
     const head = element("span", "look-head");
@@ -596,19 +573,57 @@ export function lookCard(address: Address, start: Look, onDone: (look: Look) => 
   }
   editor.append(canvas, sliders);
   return {
-    kicker: "Нова гра · 2 з 5",
+    kicker: "Нова гра · 1 з 5",
     solid: true,
-    title: address === "she" ? "Яка вона?" : "Який він?",
+    title: "Як ви виглядаєте?",
     body: [editor],
     actions: [
-      { label: "Далі", primary: true, onSelect: () => onDone(look) },
+      { label: "Далі", primary: true, onSelect: () => onDone({ ...look }) },
+      {
+        label: "Випадково",
+        onSelect: () => {
+          Object.assign(look, shuffle());
+          for (const show of sync) show();
+          redraw();
+        },
+      },
+    ],
+  };
+}
+
+/** Тексти кроку «Звертання» (§5.1, `TEXTS.md`, «Нова гра»). */
+export const ADDRESS_TEXTS = {
+  title: "Як звертатися?",
+  text: "«Він» чи «вона» — лише в текстах гри: «прокинувся» чи «прокинулася».",
+  options: { he: "Він", she: "Вона" },
+} as const;
+
+/**
+ * Крок 2: звертання «він / вона» (§5.1) — лише граматика текстів, на гру не впливає (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А4). Над вибором — портрет щойно складеної зовнішності; обране раніше (повернулися «Назад») — головна кнопка.
+ */
+export function addressCard(look: Look, chosen: Address | null, onPick: (address: Address) => void, onBack: () => void): Card {
+  const canvas = portraitCanvas(90, 150);
+  canvas.classList.add("address-portrait");
+  drawPortrait(canvas, look);
+  return {
+    kicker: "Нова гра · 2 з 5",
+    solid: true,
+    title: ADDRESS_TEXTS.title,
+    body: [canvas, ADDRESS_TEXTS.text],
+    actions: [
+      ...(["he", "she"] as const).map((address) => ({
+        label: ADDRESS_TEXTS.options[address],
+        primary: address === chosen,
+        onSelect: () => onPick(address),
+      })),
       { label: "Назад", onSelect: onBack },
     ],
     onDismiss: onBack,
   };
 }
 
-/** Крок 3: сова чи жайворонок (§5.1) — незалежно від статі. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4). */
+/** Крок 3: сова чи жайворонок (§5.1) — незалежно від звертання. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4). */
 export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
   return {
     kicker: "Нова гра · 3 з 5",
@@ -627,7 +642,16 @@ export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack:
   };
 }
 
-/** Крок 4: ім'я героя. */
+/**
+ * Ім'я, з яким відкривається крок «Ім'я»: власне ім'я гравця лишається, хоч би яке звертання він потім обрав, а ім'я за
+ * замовчуванням («Тарас», «Марта») — за звертанням, щоб узгоджувалося з текстами (§5.1).
+ */
+export function startName(address: Address, entered: string | null): string {
+  const own = entered?.trim() ?? "";
+  return own !== "" && !Object.values(DEFAULT_NAME).includes(own) ? own : DEFAULT_NAME[address];
+}
+
+/** Крок 4: ім'я героя; заголовок — за звертанням. */
 export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: () => void): Card {
   const input = element("input");
   input.type = "text";

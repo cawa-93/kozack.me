@@ -14,9 +14,11 @@ import { hoursUntilWake } from "../src/sim/sleep";
 import { createRng } from "../src/sim/rng";
 import { fallIllPerson } from "../src/sim/illness";
 import { fill } from "../src/texts";
-import type { GameState, Save } from "../src/sim/types";
+import type { GameState, Look, Save } from "../src/sim/types";
 import { callImpression } from "../src/sim/work";
-import { chronotypeCard } from "../src/ui/cards";
+import { chronotypeCard, startName } from "../src/ui/cards";
+import { LOOK_OPTIONS, lookRng, randomLook } from "../src/ui/look";
+import { BUILDS, FACES, HAIR_STYLES, PALETTE } from "../src/view/palette";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 /** Що відповів умивальник на дію: причина відмови чи undefined. */
@@ -111,7 +113,7 @@ describe("звертання «він / вона» — лише граматик
 
   it("з тим самим seed і вибором чотири дні гри з котом однакові для «він» і «вона» — відрізняється лише звертання", () => {
     const week = (address: "he" | "she"): GameState => {
-      const save = withCatCorner(newGame({ address, difficulty: "normal", seed: 21, name: "Саша", look: DEFAULT_LOOK.she, chronotype: "owl" }));
+      const save = withCatCorner(newGame({ address, difficulty: "normal", seed: 21, name: "Саша", look: DEFAULT_LOOK, chronotype: "owl" }));
       addCat(save.current, createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 3 }));
       // Як liveDay, але й здоровий глузд підтримано: кіт без догляду лишає безлад, а гра не має закінчитися. Довше — скінчиться
       // чистий одяг, і гігієна обвалиться.
@@ -145,5 +147,86 @@ describe("звертання «він / вона» — лише граматик
       expect(loaded).not.toHaveProperty("sex");
       expect(loaded.chronotype).toBe("owl");
     }
+  });
+});
+
+describe("редактор персонажа один для всіх (рішення автора 2026-10-29, А4)", () => {
+  /** Зовнішності за замовчуванням, які були до рішення: жіноча й чоловіча. */
+  const OLD_LOOKS: Record<"female" | "male", Look> = {
+    female: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
+    male: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
+  };
+
+  it("редактор пропонує кожну частину зовнішності й усі її варіанти, які вміє намалювати графіка", () => {
+    expect(LOOK_OPTIONS.map((o) => o.key).sort()).toEqual(Object.keys(DEFAULT_LOOK).sort());
+    const drawn: Record<keyof Look, number> = {
+      face: FACES.length,
+      skin: PALETTE.skin.length,
+      hair: HAIR_STYLES.length,
+      hairColor: PALETTE.hairColor.length,
+      eyes: PALETTE.eyes.length,
+      build: BUILDS.length,
+      top: PALETTE.clothes.length,
+      bottom: PALETTE.clothes.length,
+      shoes: PALETTE.clothes.length,
+    };
+    for (const { key, options } of LOOK_OPTIONS) expect(options.length, key).toBe(drawn[key]);
+  });
+
+  it("випадкова зовнішність поєднує частини як завгодно: кожна зачіска з кожною статурою й кожним обличчям", () => {
+    const combos = new Set<string>();
+    for (let seed = 1; seed <= 600; seed++) {
+      const look = randomLook(lookRng(seed));
+      for (const { key, options } of LOOK_OPTIONS) {
+        expect(Number.isInteger(look[key]), key).toBe(true);
+        expect(look[key], key).toBeGreaterThanOrEqual(0);
+        expect(look[key], key).toBeLessThan(options.length);
+      }
+      combos.add(`${look.hair}-${look.build}-${look.face}`);
+    }
+    expect(combos.size).toBe(HAIR_STYLES.length * BUILDS.length * FACES.length);
+  });
+
+  it("та сама нова гра починає редактор з тієї самої зовнішності: генератор — із seed гри", () => {
+    expect(randomLook(lookRng(5))).toEqual(randomLook(lookRng(5)));
+    const looks = new Set(Array.from({ length: 10 }, (_, seed) => JSON.stringify(randomLook(lookRng(seed)))));
+    expect(looks.size).toBeGreaterThan(1);
+  });
+
+  it("без редактора зовнішність одна для всіх: «він» і «вона» з тим самим seed виглядають однаково", () => {
+    const he = newGame({ address: "he", difficulty: "normal", seed: 3 }).current.character.look;
+    const she = newGame({ address: "she", difficulty: "normal", seed: 3 }).current.character.look;
+    expect(he).toEqual(DEFAULT_LOOK);
+    expect(she).toEqual(DEFAULT_LOOK);
+    // Своя копія в кожній грі: змінити її — не змінити зовнішності за замовчуванням.
+    he.hair = 3;
+    expect(DEFAULT_LOOK.hair).toBe(1);
+  });
+
+  it("стара гра: зовнішність лишається тією самою — частини конструктора й раніше були спільні", () => {
+    for (const sex of ["female", "male"] as const) {
+      const look = { ...OLD_LOOKS[sex], hair: 3, build: 2 };
+      const save = newGame({ address: "she", difficulty: "normal", seed: 1, look });
+      const old = save.current.character as unknown as Record<string, unknown>;
+      delete old["address"];
+      old["sex"] = sex;
+      expect(deserialize(serialize(save)).current.character.look).toEqual(look);
+    }
+  });
+
+  it("малюнок персонажа не знає ні статі, ні звертання: портрет і персонаж у квартирі беруть лише зовнішність", () => {
+    const sources = import.meta.glob<string>(["../src/ui/portrait.ts", "../src/view/person.ts"], { query: "?raw", import: "default", eager: true });
+    expect(Object.keys(sources)).toHaveLength(2);
+    for (const [file, source] of Object.entries(sources)) expect(source, file).not.toMatch(/\b(sex|Sex|address|Address)\b/);
+  });
+
+  it("ім'я на кроці «Ім'я»: власне лишається за будь-якого звертання, а за замовчуванням — за звертанням", () => {
+    expect(startName("he", null)).toBe("Тарас");
+    expect(startName("she", null)).toBe("Марта");
+    // Гравець прийняв ім'я за замовчуванням, а потім повернувся й обрав інше звертання.
+    expect(startName("she", "Тарас")).toBe("Марта");
+    expect(startName("he", " ")).toBe("Тарас");
+    expect(startName("he", "Саша")).toBe("Саша");
+    expect(startName("she", "Саша")).toBe("Саша");
   });
 });

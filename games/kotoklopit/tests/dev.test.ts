@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { courierNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
 import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId, type Scenario } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
-import { interact, newGame } from "../src/sim/game";
+import { DEFAULT_LOOK, interact, newGame } from "../src/sim/game";
 import { weekdayOf, weekOf } from "../src/sim/time";
 import { createCat, idleAct } from "../src/sim/cat";
 import { dispatch, utilitiesDue } from "../src/sim/economy";
@@ -11,6 +11,9 @@ import { THINGS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hours, recordEvents } from "./helpers";
+
+/** Зовнішність чоловічого персонажа за замовчуванням до рішення автора А4 (2026-10-29). */
+const OLD_MALE_LOOK = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
 
 describe("сценарії (§11.5)", () => {
   it("зміни накладаються поверх нової гри: об'єкти зливаються, масиви й числа замінюються", () => {
@@ -94,10 +97,20 @@ describe("сценарії (§11.5)", () => {
     const he = applyScenario(legacy("male")).current.character;
     expect([he.address, he.chronotype]).toEqual(["he", "owl"]);
     expect(he).not.toHaveProperty("sex");
+    // Зовнішність — та, що тоді була за замовчуванням у чоловіка, а не спільна тепер.
+    expect(he.look).toEqual(OLD_MALE_LOOK);
     const she = applyScenario(legacy("female")).current.character;
     expect([she.address, she.chronotype]).toEqual(["she", "lark"]);
+    expect(she.look).toEqual(DEFAULT_LOOK);
     // Хронотип, записаний у сценарії, важить більше.
     expect(applyScenario(legacy("male", { chronotype: "lark" })).current.character.chronotype).toBe("lark");
+  });
+
+  it("«Вечірній хаос» — «він» і сова з тією самою зовнішністю, що й до рішення автора А4", () => {
+    const scenario = FILE_SCENARIOS["chaos-evening"];
+    if (!scenario) throw new Error("немає сценарію");
+    const { address, chronotype, look } = applyScenario(scenario).current.character;
+    expect([address, chronotype, look]).toEqual(["he", "owl", OLD_MALE_LOOK]);
   });
 
   it("id сценарію — латиницею з назви", () => {

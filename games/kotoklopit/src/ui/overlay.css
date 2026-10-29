@@ -278,37 +278,15 @@
   }
 }
 
-/* Створення персонажа (§5.1): портрети статі, редактор зовнішності з повзунками, ім'я. */
+/* Створення персонажа (§5.1): редактор зовнішності з повзунками, портрет над вибором звертання, ім'я. */
 .portrait {
   display: block;
   border-radius: 12px;
   background: radial-gradient(circle at 50% 40%, #fffaf2, #e6d8c5);
 }
 
-.portrait-choice {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin: 4px 0 12px;
-}
-
-.portrait-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px;
-  border: 3px solid #1f1a24;
-  border-radius: 16px;
-  background: #fffaf2;
-  font: 700 17px/1.2 system-ui, sans-serif;
-  color: #2b2530;
-  cursor: pointer;
-}
-
-.portrait-button:hover,
-.portrait-button:focus-visible {
-  background: #ffe9c4;
+.address-portrait {
+  margin: 4px auto 8px;
 }
 
 .look-editor {

@@ -1,7 +1,8 @@
 {
   "name": "Вечірній хаос",
   "description": "Четвер першого тижня, 18:30. Два коти з бешкетними рисами: зумі, скидання речей, злодюжка, тертя об ноги. На столі вечеря.",
-  "game": { "address": "he", "chronotype": "owl", "difficulty": "normal", "seed": 8 },
+  "game": { "address": "he", "chronotype": "owl", "difficulty": "normal", "seed": 8,
+    "look": { "face": 0, "skin": 1, "hair": 0, "hairColor": 0, "eyes": 0, "build": 1, "top": 1, "bottom": 0, "shoes": 0 } },
   "state": {
     "day": 3,
     "minute": 1110,
