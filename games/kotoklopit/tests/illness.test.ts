@@ -26,6 +26,14 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(isIll(save.current, "exhaustion")).toBe(false);
   });
 
+  it("коротка ніч — сну менше 6 годин: три ночі по 6 чи 6,5 годин — не виснаження, по 5,9 — виснаження (рішення автора 2026-10-29, дрібні питання)", () => {
+    for (const [hours, ill] of [[6.5, false], [6, false], [5.9, true]] as const) {
+      const save = game();
+      for (let night = 0; night < 3; night++) nightlyIllness(save.current, hours);
+      expect(isIll(save.current, "exhaustion"), `${hours} год`).toBe(ill);
+    }
+  });
+
   it("уві сні хвороба не опускає здоров'я нижче 5 і не закінчує гру (§8.8)", () => {
     const save = game();
     fallIllPerson(save.current, "cold");
@@ -130,7 +138,7 @@ describe("хвороби персонажа (§6.5)", () => {
     state.day = 1;
     state.minute = 19 * 60;
     state.character.money = 500;
-    for (let night = 0; night < 3; night++) nightlyIllness(state, 6);
+    for (let night = 0; night < 3; night++) nightlyIllness(state, 5.5);
     expect(isIll(state, "exhaustion")).toBe(true);
     standAt(save, "door");
     expect(startTrip(state, "doctor")).toBe(true);
@@ -138,12 +146,12 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(doctorExam(state)).toBe(true);
     expect(doctorTreat(state, "exhaustion", "premium", always())).toBe("cured");
     // Одна коротка ніч після лікаря — ще не виснаження.
-    nightlyIllness(state, 6.5);
+    nightlyIllness(state, 5.5);
     expect(isIll(state, "exhaustion")).toBe(false);
-    nightlyIllness(state, 6.5);
+    nightlyIllness(state, 5.5);
     expect(isIll(state, "exhaustion")).toBe(false);
     // Третя коротка ніч поспіль — знову хворий.
-    nightlyIllness(state, 6.5);
+    nightlyIllness(state, 5.5);
     expect(isIll(state, "exhaustion")).toBe(true);
   });
 

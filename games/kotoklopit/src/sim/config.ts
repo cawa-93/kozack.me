@@ -1389,7 +1389,9 @@ export const ILLNESS_EFFECTS = {
   /** Правка автора 2026-10-22: було 10% — бот травмувався більшу частину часу. */
   injuryOnStun: 0.05,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
-  shortSleepHours: 7,
+  // Коротка ніч — сну менше 6 годин; три такі поспіль — виснаження (§6.5, §8.8; рішення автора 2026-10-29, `GENERAL_REVIEW.md`,
+  // дрібні питання — «Поріг виснаження»; було менше 7: одна нічна побудка після 7–8 годин планованого сну вже наближала хворобу).
+  shortSleepHours: 6,
   shortNights: 3,
   restHours: 8,
   restNights: 2,
