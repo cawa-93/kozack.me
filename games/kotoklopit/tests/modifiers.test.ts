@@ -53,6 +53,14 @@ describe("вибір модифікаторів: перевірка модифі
     expect(seen((save) => (save.current.cats = [])).has("friend-help")).toBe(false);
   });
 
+  it("«Тиха ніч» — лише коли є кіт: без котів її немає, а «Галасливі сусіди» бувають (рішення автора 2026-10-29, А14)", () => {
+    const empty = seen((save) => (save.current.cats = []));
+    expect(empty.has("quiet-night")).toBe(false);
+    expect(empty.has("noisy-neighbors")).toBe(true);
+    const withCat = seen((save) => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } })));
+    expect(withCat.has("quiet-night")).toBe(true);
+  });
+
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
     const save = newGame({ sex: "female", difficulty: "hard", seed: 14 });
     const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "vaccination", "heat"]);
@@ -346,7 +354,7 @@ describe("вибір модифікаторів (§4.1)", () => {
 
   it("на переграванні модифікатор дня той самий, якщо стан лише відсіяв інші варіанти: лікарняний, звільнення, менше котів і вчорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
     const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
-    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "vaccination", "home-vet", "heat", "cold", "friend-help", "food-price-up", "pet-sale", "show"]);
+    const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "vaccination", "home-vet", "heat", "cold", "friend-help", "quiet-night", "food-price-up", "pet-sale", "show"]);
     /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
     const pick = (seed: number, setup: (save: Save) => void = () => {}): string | null => {
       const save = game();
