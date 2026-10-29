@@ -509,6 +509,18 @@ describe("друг досипає миски (§4.1, правка 2026-10-24)", 
     expect(bowl.food).toBe(1);
     expect(supplies.cheap).toBe(5);
   });
+
+  it("вдома лише корм для стерилізованих, а стерилізованого кота немає — досипає ним (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    Object.assign(save.current.home.supplies.catFood, { cheap: 0, premium: 0 });
+    Object.assign(save.current.home.supplies.sterileFood, { cheap: 5, premium: 0 });
+    const bowl = save.current.home.items.find((i): i is BowlItem => i.kind === "bowl")!;
+    Object.assign(bowl, { food: 0, foodQuality: null, sterile: false });
+    friendVisit(save);
+    expect(bowl.food).toBe(2);
+    expect(bowl.sterile).toBe(true);
+    expect(save.current.home.supplies.sterileFood.cheap).toBe(3);
+  });
 });
 
 describe("автогодівниці (§9.12, правка автора 2026-10-23)", () => {

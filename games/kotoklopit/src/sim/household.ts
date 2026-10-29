@@ -286,7 +286,11 @@ function bowlFoodKind(state: GameState): { quality: Quality; sterile: boolean } 
     if (quality !== null) return { quality, sterile: true };
   }
   const quality = topQuality(state, "catFood");
-  return quality === null ? null : { quality, sterile: false };
+  if (quality !== null) return { quality, sterile: false };
+  // Звичайного корму немає — корм для стерилізованих: він нікому не шкодить (загальна ревізія 2026-10-29: друг лишав миски
+  // порожніми, коли вдома був лише він, а стерилізованого кота вдома не було).
+  const sterile = topQuality(state, "sterileFood");
+  return sterile === null ? null : { quality: sterile, sterile: true };
 }
 
 /**
