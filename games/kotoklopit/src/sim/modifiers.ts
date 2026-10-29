@@ -183,7 +183,12 @@ export function startModifiers(state: GameState, rng: Rng): void {
     case "reprimand":
     case "praise":
     {
-      const delta = (state.modifiers.day === "praise" ? MODIFIERS.praise : MODIFIERS.reprimand) * perHour;
+      const full = (state.modifiers.day === "praise" ? MODIFIERS.praise : MODIFIERS.reprimand) * perHour;
+      // Посаду ранкова зміна сама не змінює (§4.1, загальна ревізія 2026-10-29): «Догана» не опускає репутацію нижче межі, а
+      // «Похвала» не піднімає вище, щоб звільнення, пониження чи підвищення не приходило ще до першої дії гравця.
+      const rep = state.job.reputation;
+      const keep = MODIFIERS.reputationKeep;
+      const delta = full < 0 ? Math.min(0, Math.max(full, keep.min - rep)) : Math.max(0, Math.min(full, keep.max - rep));
       changeReputation(state, delta);
       emit(state, { type: "modifier", kind: "reputation", value: delta });
     }

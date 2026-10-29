@@ -287,6 +287,37 @@ describe("ефекти (§4.1)", () => {
     expect(patienceDecayFactor(save.current)).toBe(0);
   });
 
+  it("«Догана» й «Похвала» посади самі не змінюють: репутація лишається в межах 1–99 (загальна ревізія 2026-10-29)", () => {
+    /** Ранок робочого дня з потрібним модифікатором і заданою репутацією стажера. */
+    const morning = (kind: "reprimand" | "praise", reputation: number) => {
+      const save = game();
+      save.current.day = 2;
+      for (let seed = 0; seed < 5000 && save.current.modifiers.day !== kind; seed++) {
+        save.current.modifiers.day = null;
+        save.current.job.position = 0;
+        save.current.job.reputation = reputation;
+        const { events, stop } = recordEvents();
+        startModifiers(save.current, createRng(seed));
+        stop();
+        if (save.current.modifiers.day === kind) return { save, events };
+      }
+      throw new Error(`немає дня «${kind}»`);
+    };
+    const reprimand = morning("reprimand", 8);
+    expect(reprimand.save.current.job.unemployed).toBe(false);
+    expect(reprimand.save.current.job.reputation).toBeCloseTo(MODIFIERS.reputationKeep.min);
+    expect(reprimand.events.some((e) => e.type === "career")).toBe(false);
+    expect(reprimand.events.find((e) => e.type === "modifier" && e.kind === "reputation")).toMatchObject({ value: -7 });
+    const praise = morning("praise", 95);
+    expect(praise.save.current.job.position).toBe(0);
+    expect(praise.save.current.job.reputation).toBeCloseTo(MODIFIERS.reputationKeep.max);
+    expect(praise.events.some((e) => e.type === "career")).toBe(false);
+    // Далеко від меж — повні ∓3 години репутації.
+    expect(morning("reprimand", 50).save.current.job.reputation).toBeCloseTo(50 - 3 * 3.09);
+    // Уже біля межі — «Догана» не піднімає репутацію.
+    expect(morning("reprimand", 0.5).save.current.job.reputation).toBeCloseTo(0.5);
+  });
+
   it("робоча субота й вихідний посеред тижня змінюють робочий день", () => {
     const save = game();
     save.current.day = 5;

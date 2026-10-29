@@ -1266,6 +1266,11 @@ export const MODIFIERS = {
   pay: { "pay-delay": 0.5, bonus: 1.5, "fast-internet": 1.25 } as Record<string, number>,
   reprimand: -3,
   praise: 3,
+  /**
+   * «Догана» й «Похвала» посади самі не змінюють (§4.1, загальна ревізія 2026-10-29): репутація після них — не нижче `min` і
+   * не вище `max` зі 100. Раніше «Догана» могла звільнити стажера ще до першої дії, а «Похвала» — так само миттєво підвищити.
+   */
+  reputationKeep: { min: 1, max: 99 },
   fullMoonPlay: 1.5,
   rainFatigue: 1.3,
   festival: { minute: 21 * 60, hideMinutes: 60, mood: -5, wake: 0.3 },
