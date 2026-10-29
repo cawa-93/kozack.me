@@ -349,8 +349,9 @@ export function closeCatDay(state: GameState, cat: Cat, heals = true): CatDay {
   cat.moodToday = { sum: 0, minutes: 0 };
   const loveBefore = cat.love;
   // Новонародженого не гладять, а на руки — розбудити: безпечної взаємодії з ним немає, тож і день без неї любові не забирає
-  // (§7; загальна ревізія 2026-10-29, рішення самостійно).
-  if (!cat.interacted && !isNewborn(cat)) changeLove(state, cat, LOVE.noInteractionPerDay);
+  // (§7; загальна ревізія 2026-10-29, рішення самостійно). Так само дні адаптації: новий кіт за задумом ховається (§9.6), і
+  // кіт ззовні з любов'ю рівно 25 уже першої ночі опинявся б нижче межі «не любить» і сам по ласку не приходив.
+  if (!cat.interacted && !isNewborn(cat) && !isAdapting(state, cat)) changeLove(state, cat, LOVE.noInteractionPerDay);
   cat.interacted = false;
   // Дрейф від любові — як і будь-яка зміна настрою: втрати зі «Стресостійкістю», приріст — що вище, то менший.
   cat.mood = clamp(cat.mood + moodDelta(cat, (cat.love - 50) * LOVE.driftPerPoint));
