@@ -61,6 +61,30 @@ describe("«Заздрісність»: видимі реакції (§9.12, р�
     expect(seen(envious, "envy")).toBe(1);
   });
 
+  it("крізь стіну не заздрять: заздрісник у ванній не дметься, не свариться й не шипить; у тій самій кімнаті — заздрить (загальна ревізія 2026-10-29)", () => {
+    for (const at of [{ x: 9.5, y: 4.5 }, { x: 9.5, y: 2.5 }]) {
+      const save = game();
+      // Нашийник одягнули у вітальні під стіною, заздрісник за стіною у ванній — за 2 і 4 клітинки.
+      const lucky = withCat(save, {}, { x: 9.5, y: 6.5 });
+      const envious = withCat(save, { envy: 2 }, at);
+      const mood = envious.mood;
+      const before = relation(save.current, envious, lucky);
+      const { events, stop } = recordEvents();
+      envy(save.current, lucky, "collar");
+      stop();
+      expect(envious.mood).toBe(mood);
+      expect(relation(save.current, envious, lucky)).toBe(before);
+      expect(envious.act.kind).not.toBe("jealous");
+      expect(events.some((e) => e.type === "hissed")).toBe(false);
+    }
+    const save = game();
+    const lucky = withCat(save, {}, { x: 9.5, y: 6.5 });
+    const envious = withCat(save, { envy: 2 }, { x: 11.5, y: 6.5 });
+    const before = relation(save.current, envious, lucky);
+    envy(save.current, lucky, "collar");
+    expect(relation(save.current, envious, lucky)).toBe(before + 2 * ENVY.relation);
+  });
+
   it("заздрісник здалеку підходить і шипить зблизька; не встиг зашипіти — заздрить мовчки, без прояву", () => {
     const save = game();
     const lucky = withCat(save, {}, { x: 9.5, y: 7.5 });

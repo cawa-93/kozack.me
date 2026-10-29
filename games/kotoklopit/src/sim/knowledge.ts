@@ -40,12 +40,20 @@ export function witnesses(state: GameState, cat: Cat): boolean {
  * коли хтось стоїть у проході між кімнатами.
  */
 export function inView(state: GameState, p: Vec): boolean {
-  const body = state.character.body;
-  const room = roomAt(body);
-  const other = roomAt(p);
+  return sees(state.character.body, p);
+}
+
+/**
+ * З точки `from` видно точку `to` (§9.9): та сама кімната; крізь стіну — ні; поруч (до `WITNESS_DISTANCE`) — лише коли
+ * хтось із двох стоїть у проході між кімнатами. Так бачить і персонаж (`inView`), і кіт кота — ревнощі, заздрість і
+ * сварка за ресурс (§9.4, загальна ревізія 2026-10-29: раніше коти «бачили» одне одного крізь стіни).
+ */
+export function sees(from: Vec, to: Vec): boolean {
+  const room = roomAt(from);
+  const other = roomAt(to);
   if (room !== null && room === other) return true;
   if (room !== null && other !== null) return false;
-  return Math.hypot(body.x - p.x, body.y - p.y) <= WITNESS_DISTANCE;
+  return Math.hypot(from.x - to.x, from.y - to.y) <= WITNESS_DISTANCE;
 }
 
 /** Рівень видимості риси (§9.9): 0 — нічого, 1 — «❓ Помічено щось дивне», 2 — підказка, 3 — відкрито. */

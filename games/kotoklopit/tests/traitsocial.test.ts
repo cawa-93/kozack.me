@@ -1004,6 +1004,38 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     expect(events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id)).toBe(true);
   });
 
+  it("крізь стіну не ревнують: ревнивець у ванній не шипить, не зганяє й не сердиться; у тій самій кімнаті — як і раніше (загальна ревізія 2026-10-29)", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      for (const at of [{ x: 9.5, y: 4.5 }, { x: 9.5, y: 2.5 }]) {
+        const save = game(seed);
+        Object.assign(save.current.character.body, { x: 9.5, y: 7.1 });
+        // Щасливця гладять у вітальні під стіною, ревнивець за стіною у ванній — за 2 і 4 клітинки.
+        const lucky = withCat(save, {}, { x: 9.5, y: 6.5 });
+        const rival = withCat(save, { jealousy: 2 }, at);
+        petting(save, lucky);
+        const before = relation(save.current, rival, lucky);
+        const { events, stop } = recordEvents();
+        jealousy(save.current, lucky, "pet");
+        jealousy(save.current, lucky, "lap");
+        stop();
+        expect(events.some((e) => e.type === "hissed" && e.cat === rival.id)).toBe(false);
+        expect(relation(save.current, rival, lucky)).toBe(before);
+        expect(rival.act.kind).not.toBe("jealous");
+        const activity = save.current.character.activity;
+        expect(activity?.kind === "pet" && activity.left === true).toBe(false);
+      }
+    }
+    // Та сама відстань, але в тій самій кімнаті — ревнує.
+    const save = game();
+    Object.assign(save.current.character.body, { x: 9.5, y: 7.1 });
+    const lucky = withCat(save, {}, { x: 9.5, y: 6.5 });
+    const rival = withCat(save, { jealousy: 2 }, { x: 11.5, y: 6.5 });
+    petting(save, lucky);
+    const before = relation(save.current, rival, lucky);
+    jealousy(save.current, lucky, "pet");
+    expect(relation(save.current, rival, lucky)).toBe(before + 2 * RELATIONS.jealousy);
+  });
+
   it("ревнують і тоді, коли іншого кота беруть на руки", () => {
     const save = game();
     const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });

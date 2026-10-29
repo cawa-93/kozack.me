@@ -587,6 +587,35 @@ describe("ресурси й ревнощі (§9.4)", () => {
     expect(hisses(true)).toBe(0);
   });
 
+  it("сварка за миску — не крізь стіну: на кота у вітальні за 3 клітинки від миски на кухні не шипить (загальна ревізія 2026-10-29)", () => {
+    const hisses = (other: { x: number; y: number }): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 120; seed++) {
+        const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+        save.current.minute = 12 * 60;
+        const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
+        save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);
+        const bowl = bowls[0];
+        if (bowl?.kind !== "bowl") throw new Error("немає миски");
+        Object.assign(bowl, { food: 3, foodQuality: "cheap" });
+        const tile = itemTile(bowl);
+        const a = withCat(save, {}, tile);
+        const b = withCat(save, {}, { x: tile.x + other.x, y: tile.y + other.y });
+        a.needs.hunger = 80;
+        a.act = { kind: "eat", target: `item:${bowl.id}`, goal: null, minutes: 0.01, elapsed: 0 };
+        b.act = idleAct(300);
+        const { events, stop } = recordEvents();
+        tickCats(save.current, 0.05, { present: false });
+        stop();
+        if (events.some((e) => e.type === "hissed" && e.cat === a.id && e.at === b.id)) count++;
+      }
+      return count;
+    };
+    // Миска на кухні (17;3): за стіною у вітальні (17;6) — 3 клітинки, на кухні (14;3) — теж 3.
+    expect(hisses({ x: 0, y: 3 })).toBe(0);
+    expect(hisses({ x: -3, y: 0 })).toBeGreaterThan(0);
+  });
+
   it("сварка за миску — стосунки −5, і того дня пара сварилася (§9.4, Б6 (3): було −3)", () => {
     let quarrels = 0;
     for (let seed = 1; seed <= 120; seed++) {

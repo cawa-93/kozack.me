@@ -114,7 +114,7 @@ import { afterMeal, afterTheft, cannotJump, eatFactor, eatsLess, fallIll, fatigu
 import { takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
-import { inView, observe, setWitnessing, witnesses } from "./knowledge";
+import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
@@ -329,6 +329,11 @@ export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): 
   state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
 
 const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+/**
+ * Кіт бачить кота (чи точку) не далі `max` клітинок (§9.4): та сама кімната, з проходу — поруч, крізь стіну — ні (`sees`,
+ * загальна ревізія 2026-10-29: раніше ревнивці, заздрісники й сварки за ресурс «бачили» крізь стіни).
+ */
+const seesWithin = (from: Vec, to: Vec, max: number): boolean => distance(from, to) <= max && sees(from, to);
 
 /** Кіт не любить персонажа (§9.12, правка автора 2026-10-25): сам по увагу не йде, на руках пручається сильніше. */
 const aloof = (cat: Cat): boolean => cat.love < LOVE_BEHAVIOR.aloof;
@@ -443,7 +448,8 @@ export function groomGain(value: number): number {
 }
 
 /**
- * Сварка за миску чи лоток (§9.4): лише з котом поруч, що не спить, — кіт шипить на нього, і це видно. На сплячого й
+ * Сварка за миску чи лоток (§9.4): лише з котом поруч, що не спить і в тій самій кімнаті (крізь стіну не свариться — загальна
+ * ревізія 2026-10-29), — кіт шипить на нього, і це видно. На сплячого й
  * новонародженого не шипить (перевірка стосунків 2026-10-26: раніше шипів на сусіда, що спав біля миски, — стосунки −3).
  */
 function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean, why: "bowl" | "litter"): void {
@@ -451,7 +457,7 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean,
   const r = RELATIONS.resource;
   // Дзеркально (§9.12, «Територіальність»): «Ділиться» свариться рідше, «Комунар» — ніколи.
   if (!rng.chance(Math.max(0, r.chance + r.territorialStep * traitLevel(cat, "territorial")))) return;
-  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && distance(c, cat) <= r.distance);
+  const others = state.cats.filter((c) => c.id !== cat.id && home(state, c) && !asleep(c) && !isNewborn(c) && seesWithin(c, cat, r.distance));
   const other = others[rng.int(0, others.length - 1)];
   if (!other || !hiss(state, cat, other, why)) return;
   changeRelation(state, cat, other, r.relation);
@@ -3689,7 +3695,7 @@ function premiumAtHome(state: GameState): boolean {
 export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar" | "premium"): void {
   const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
-    if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || distance(other, whereIs(state, lucky)) > ENVY.sight) continue;
+    if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || !seesWithin(other, whereIs(state, lucky), ENVY.sight)) continue;
     if (traitLevel(other, "envy") === 0) continue;
     if (gift === "premium" && (premiumAtHome(state) || (other.premiumAt !== undefined && now - other.premiumAt <= ENVY.premiumMinutes))) continue;
     if (gift === "collar" && other.collar !== null) continue;
@@ -3719,12 +3725,13 @@ function feelEnvy(state: GameState, other: Cat, lucky: Cat): void {
   if (level > 0) {
     changeMood(state, other, ENVY.mood * level, "заздрить");
     changeRelation(state, other, lucky, ENVY.relation * level);
-    if (distance(other, where) > ENVY.near && free && !isCarried(state, lucky)) {
+    if (!seesWithin(other, where, ENVY.near) && free && !isCarried(state, lucky)) {
       start(other, "jealous", tileOf(lucky), JEALOUSY.confrontMinutes, `cat:${lucky.id}`);
       other.act.envy = true;
       return;
     }
-    if (hiss(state, other, lucky)) observe(state, other, "envy");
+    // Крізь стіну не шипить (за 2 хвилини очікування ласощів щасливця могли віднести в іншу кімнату).
+    if (sees(other, where) && hiss(state, other, lucky)) observe(state, other, "envy");
     return;
   }
   changeMood(state, other, ENVY.glad * -level, "радіє за іншого");
@@ -3737,7 +3744,7 @@ function feelEnvy(state: GameState, other: Cat, lucky: Cat): void {
 /** Заздрісник дійшов до того, кому перепало (§9.12, «Заздрісність»): той ще поруч — шипить зблизька, прояв «+». */
 function enviousArrived(state: GameState, cat: Cat): void {
   const lucky = catById(state, cat.act.target);
-  if (lucky && home(state, lucky) && distance(cat, whereIs(state, lucky)) <= ENVY.near && hiss(state, cat, lucky)) observe(state, cat, "envy");
+  if (lucky && home(state, lucky) && seesWithin(cat, whereIs(state, lucky), ENVY.near) && hiss(state, cat, lucky)) observe(state, cat, "envy");
 }
 
 /**
@@ -4053,14 +4060,14 @@ const JEALOUS_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "foll
 
 /**
  * Персонаж приділяє увагу коту — гладить, грається, кіт у нього на колінах чи на руках (§9.4, §9.12 «Ревнивість», рішення автора
- * 2026-10-25). Ревнивець, що бачить: поруч — шипить і може зігнати щасливця; здалеку — з шансом 25% × рівень приходить шипіти
+ * 2026-10-25). Ревнивець, що бачить (та сама кімната, `seesWithin`): поруч — шипить і може зігнати щасливця; здалеку — з шансом 25% × рівень приходить шипіти
  * зблизька, інакше шипить звідти. «Щедра душа» (−), коли ви гладите іншого, з шансом 20% × |рівень| приходить і лягає поруч.
  */
 export function jealousy(state: GameState, lucky: Cat, why: "pet" | "play" | "lap" | "hands" = "pet"): void {
   const rng = stateRng(state, "behavior");
   const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
-    if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || distance(other, lucky) > RELATIONS.jealousySight) continue;
+    if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || !seesWithin(other, lucky, RELATIONS.jealousySight)) continue;
     const level = traitLevel(other, "jealousy");
     if (level === 0) continue;
     const free = JEALOUS_FROM.has(other.act.kind) && (other.jealousAt === undefined || now - other.jealousAt >= JEALOUSY.pauseMinutes);
@@ -4102,7 +4109,7 @@ function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
   if (!hiss(state, cat, lucky, "hand")) return;
   const level = traitLevel(cat, "jealousy");
   observe(state, cat, "jealousy");
-  if (distance(cat, lucky) > JEALOUSY.near || !getsAttention(state, lucky) || isCarried(state, lucky) || !rng.chance(JEALOUSY.leave)) return;
+  if (!seesWithin(cat, lucky, JEALOUSY.near) || !getsAttention(state, lucky) || isCarried(state, lucky) || !rng.chance(JEALOUSY.leave)) return;
   const activity = state.character.activity;
   const lap = lucky.act.kind === "lap";
   if (activity?.kind === "pet" && activity.cat === lucky.id) activity.left = true;
@@ -4114,7 +4121,7 @@ function confront(state: GameState, cat: Cat, lucky: Cat, rng: Rng): void {
 /** Ревнивець дійшов до кота, якого пестять (§9.12, «Ревнивість»): той ще під увагою — шипить зблизька. */
 function jealousArrived(state: GameState, cat: Cat, rng: Rng): void {
   const lucky = catById(state, cat.act.target);
-  if (lucky && home(state, lucky) && distance(cat, lucky) <= JEALOUSY.near && getsAttention(state, lucky)) confront(state, cat, lucky, rng);
+  if (lucky && home(state, lucky) && seesWithin(cat, lucky, JEALOUSY.near) && getsAttention(state, lucky)) confront(state, cat, lucky, rng);
 }
 
 /**
@@ -4127,7 +4134,7 @@ function cuddleSeen(state: GameState, cat: Cat): void {
     act.done = true;
     const lucky = state.cats.find((c) => `cuddle:${c.id}` === act.target);
     // Того, до кого йшов, уже немає поруч — лягати й муркотіти нема до кого, і бачити нічого.
-    if (!lucky || !home(state, lucky) || distance(cat, whereIs(state, lucky)) > JEALOUSY.near) {
+    if (!lucky || !home(state, lucky) || !seesWithin(cat, whereIs(state, lucky), JEALOUSY.near)) {
       act.seen = true;
       return;
     }
