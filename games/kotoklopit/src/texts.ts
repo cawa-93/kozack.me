@@ -310,6 +310,16 @@ export const DIFFICULTY_TITLES = {
   hard: "Реалістичний",
 } as const;
 
+/**
+ * Крок «Звертання» нової гри (§5.1, `TEXTS.md`, «Нова гра»): «він» чи «вона» — лише граматика текстів (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А4).
+ */
+export const ADDRESS_TEXTS = {
+  title: "Як звертатися?",
+  text: "«Він» чи «вона» — лише в текстах гри: «прокинувся» чи «прокинулася».",
+  options: { he: "Він", she: "Вона" },
+} as const;
+
 type DeathEnd = Exclude<GameEnd, "retirement">;
 
 /**

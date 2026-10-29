@@ -11,6 +11,7 @@ import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
+  ADDRESS_TEXTS,
   BREED_ABOUT,
   BREED_HALF,
   CONTROLS_KEYBOARD,
@@ -602,13 +603,6 @@ export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () 
     ],
   };
 }
-
-/** Тексти кроку «Звертання» (§5.1, `TEXTS.md`, «Нова гра»). */
-export const ADDRESS_TEXTS = {
-  title: "Як звертатися?",
-  text: "«Він» чи «вона» — лише в текстах гри: «прокинувся» чи «прокинулася».",
-  options: { he: "Він", she: "Вона" },
-} as const;
 
 /**
  * Крок 2: звертання «він / вона» (§5.1) — лише граматика текстів, на гру не впливає (рішення автора 2026-10-29,
