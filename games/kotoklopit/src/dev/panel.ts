@@ -2,7 +2,7 @@
 // «Сценарії», приховані числа й журнал.
 
 import { actionSpeed, glitchChance } from "../sim/body";
-import { newGame } from "../sim/game";
+import { DEFAULT_NAME, newGame } from "../sim/game";
 import { isDrowsy } from "../sim/sleep";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, Product, Quality, Save, StatName } from "../sim/types";
@@ -243,13 +243,13 @@ export class DevPanel {
     });
     const address = this.select<Address>("Звертання", [["she", "вона"], ["he", "він"]], () => ch().address, (v) => {
       ch().address = v;
-      this.changed(`стать — ${v}`, false);
+      this.changed(`звертання — ${v === "he" ? "він" : "вона"}`, false);
     });
     const chronotype = this.select<Chronotype>("Хронотип", [["lark", "жайворонок"], ["owl", "сова"]], () => ch().chronotype, (v) => {
       ch().chronotype = v;
       this.changed(`хронотип — ${v}`, false);
     });
-    const positions = POSITION_TITLES.map((title, i) => [String(i), fill(title, "male")] as [string, string]);
+    const positions = POSITION_TITLES.map((title, i) => [String(i), fill(title, "he")] as [string, string]);
     return this.section(
       "Персонаж",
       el("div", { class: "dev-grid" }, el("label", { class: "dev-field" }, el("span", {}, "Ім'я"), name), address, chronotype),
@@ -374,7 +374,7 @@ export class DevPanel {
       el(
         "div",
         { class: "dev-grid" },
-        this.select<Address>("Нова гра: звертання", [["she", "Марта"], ["he", "Тарас"]], () => address, (v) => (address = v)),
+        this.select<Address>("Нова гра: звертання", [["she", `вона (${DEFAULT_NAME.she})`], ["he", `він (${DEFAULT_NAME.he})`]], () => address, (v) => (address = v)),
         this.select("Складність", (Object.keys(DIFFICULTY_TITLES) as Difficulty[]).map((d) => [d, DIFFICULTY_TITLES[d]] as [Difficulty, string]), () => difficulty, (v) => (difficulty = v)),
       ),
       el(
