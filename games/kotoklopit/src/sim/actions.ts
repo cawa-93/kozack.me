@@ -51,6 +51,7 @@ import {
   STRESS_EFFECTS,
   UNWILLING_ATTENTION,
   WATER_CAPACITY,
+  WORK_CAT,
 } from "./config";
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
@@ -778,6 +779,16 @@ function onKeyboard(cat: Cat): boolean {
 }
 
 /**
+ * Сплячого на комп'ютері пестощі чи вудка будять, але з комп'ютера не знімають (§9.12 «Сон на комп'ютері», рецензія реалізації
+ * А8, 2026-10-29): розбуджений, він сідає на клавіатуру на найменший її час, і далі — як кіт на клавіатурі. Раніше дотик
+ * підміняв сон на idle, і комп'ютер одразу ставав вільним — «прогнати з місця» й «ні» обходили так само, як із клавіатури.
+ */
+function wakeOnComputer(state: GameState, cat: Cat): void {
+  if (!asleep(cat) || catOnComputer(state) !== cat) return;
+  cat.act = { kind: "keyboard", target: "computer", goal: null, minutes: WORK_CAT.keyboardMinMinutes, elapsed: 0 };
+}
+
+/**
  * Пестощі (§8.2, §9.12): поки кіт хоче уваги — здоровий глузд, настрій і любов; коли не хоче —
  * менше здорового глузду, а настрій кота падає; довше, ніж кіт терпить, — настрій падає, і кіт може вкусити.
  */
@@ -798,6 +809,7 @@ function pet(state: GameState, activity: PetActivity, minutes: number): void {
     cat.act = idleAct(1);
   }
   if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили пестощами");
+  wakeOnComputer(state, cat);
   // «Образливий», що дметься, гладити себе не дає: одразу йде з-під руки й сідає спиною (§9.12, перевірка етапу
   // 2026-10-25: пестощі щокадру зупиняли кота, і той, що дметься, муркотів під рукою).
   if (sulking(state, cat)) {
@@ -946,6 +958,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   // З ким сьогодні гралися вудкою, той рідше сидить у засідці (§9.12, «Засідки»).
   cat.playedToday = (cat.playedToday ?? 0) + minutes;
   if (asleep(cat)) changeMood(state, cat, MOOD.woken, "розбудили грою");
+  wakeOnComputer(state, cat);
   // Погратися вудкою з котом, що б'ється, — так само розборонити (§9.4).
   separateFight(state, cat);
   // Вудка, як і пестощі, кота з клавіатури не знімає (§9.12 «Кіт і робота», А8): він грається там само.
