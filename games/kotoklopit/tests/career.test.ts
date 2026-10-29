@@ -2,8 +2,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { FIRST_WEEK_PROTECTION, JOB_SEARCH } from "../src/sim/config";
+import { FIRST_WEEK_PROTECTION, JOB_SEARCH, START_REPUTATION } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
+import { weekdayOf } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
 import { playerLine } from "../src/ui/cards";
@@ -49,6 +50,31 @@ describe("посади (§8.6)", () => {
     expect(save.current.job.unemployed).toBe(false);
     expect(save.current.job.position).toBe(0);
     expect(save.current.character.money).toBeLessThanOrEqual(money + 15);
+  });
+});
+
+describe("пониження на вершині повільне — дзеркало підвищення (§8.6, [Наслідок]; рішення автора 2026-10-29, А7)", () => {
+  it("робочий день повного нехтування коштує стажеру −49 репутації, а директору −2,2: його понижують лише на 23-й такий день", () => {
+    /** Скільки репутації забирає будень без жодної години за комп'ютером: «Х» до 18:00 і пропущена летучка. */
+    const neglectedDay = (position: number): number => {
+      const save = game();
+      const state = save.current;
+      state.day = FIRST_WEEK_PROTECTION.days;
+      state.minute = hours(8);
+      state.modifiers.day = null;
+      state.modifiers.week = null;
+      state.job.position = position;
+      expect(weekdayOf(state.day)).toBeLessThan(5);
+      advance(save, hours(10.5));
+      expect(state.job.position).toBe(position);
+      return START_REPUTATION - state.job.reputation;
+    };
+    const daysToDemotion = (position: number): number => Math.ceil(START_REPUTATION / neglectedDay(position));
+    expect(neglectedDay(0)).toBeCloseTo(49.4, 1);
+    expect(daysToDemotion(0)).toBe(2);
+    expect(daysToDemotion(5)).toBe(8);
+    expect(neglectedDay(9)).toBeCloseTo(2.2, 1);
+    expect(daysToDemotion(9)).toBe(23);
   });
 });
 
