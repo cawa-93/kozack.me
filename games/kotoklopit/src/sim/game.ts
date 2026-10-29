@@ -366,12 +366,14 @@ export function upgradeWardrobe(state: GameState): void {
 
 /**
  * Злиті групи рис (2026-10-25): у котів удома, у притулку, у розпліднику й в альбомі пам'яті. Ще й для сценаріїв
- * режиму розробки, збережених зі старої гри.
+ * режиму розробки, збережених зі старої гри. Заздрість до дорогого корму прибрано (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А16) — разом із полем `premiumAt`, коли кіт востаннє їв такий корм.
  */
 export function upgradeTraits(state: GameState): void {
   const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
   for (const cat of cats) cat.traits = migrateTraits(cat.traits);
   for (const entry of state.album) entry.traits = migrateTraits(entry.traits);
+  for (const cat of state.cats) Reflect.deleteProperty(cat, "premiumAt");
 }
 
 function clone<T>(value: T): T {

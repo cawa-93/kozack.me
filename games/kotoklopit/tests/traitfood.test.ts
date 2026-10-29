@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat } from "../src/sim/actions";
 import { addTrait, createCat, idleAct, weightOf } from "../src/sim/cat";
 import { bathe, giveTreat, nightlyCare } from "../src/sim/care";
-import { bowlEaten, decide, dirtyFor, eatMinutes, envy, forbiddenZoneAt, markTriggered, sayNo, stonesFactor, tickCats } from "../src/sim/catai";
-import { APPETITE, BATH, BATH_FEEL, BEGGING, CAT_ACT_MINUTES, CLAW, DRINKING, ENVY, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP, WEIGHT } from "../src/sim/config";
+import { bowlEaten, decide, dirtyFor, eatMinutes, forbiddenZoneAt, markTriggered, sayNo, stonesFactor, tickCats } from "../src/sim/catai";
+import { APPETITE, BATH, BATH_FEEL, BEGGING, CAT_ACT_MINUTES, CLAW, DRINKING, GULPING, HAIRBALL, SHEDDING, SNIFF_MINUTES, THIEF, WAKE_UP, WEIGHT } from "../src/sim/config";
 import { trinketTile } from "../src/sim/home";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
@@ -50,10 +50,10 @@ const bowlOf = (save: Save): BowlItem => {
 const seen = (cat: Cat, group: string): number => cat.traits.find((t) => t.group === group)?.seen ?? 0;
 
 /** Кіт сідає до миски (дві порції дешевого корму) й їсть, поки не скінчить трапезу. */
-function meal(save: Save, cat: Cat, food = 2): BowlItem {
+function meal(save: Save, cat: Cat, food = 2, quality: "cheap" | "premium" = "cheap"): BowlItem {
   const bowl = bowlOf(save);
   bowl.food = food;
-  bowl.foodQuality = "cheap";
+  bowl.foodQuality = quality;
   cat.needs.hunger = 90;
   cat.x = 17.5;
   cat.y = 3.5;
@@ -502,19 +502,21 @@ describe("«Заздрісність»: тригер (рішення автор�
     return { lucky, envious };
   }
 
-  it("дорогому корму не заздрить, коли він є в домі чи заздрісник сам їв його за останні 6 годин", () => {
-    const save = game();
-    const { lucky, envious } = pair(save);
-    save.current.home.supplies.catFood.premium = 3;
-    envy(save.current, lucky, "premium");
-    expect(envious.mood).toBe(60);
-    save.current.home.supplies.catFood.premium = 0;
-    envious.premiumAt = (save.current.day * 24 + 10) * 60;
-    envy(save.current, lucky, "premium");
-    expect(envious.mood).toBe(60);
-    envious.premiumAt = (save.current.day * 24 + 12) * 60 - ENVY.premiumMinutes - 1;
-    envy(save.current, lucky, "premium");
-    expect(envious.mood).toBeLessThan(60);
+  it("дорогому корму не заздрить зовсім — навіть коли інший на очах доїв останню порцію в домі (рішення автора 2026-10-29, А16)", () => {
+    for (const level of [2, -2] as const) {
+      const save = game();
+      const lucky = withCat(save);
+      const other = withCat(save, { envy: level }, { x: 16.5, y: 3.5 });
+      other.mood = 60;
+      save.current.home.supplies.catFood.premium = 0;
+      save.current.home.supplies.sterileFood.premium = 0;
+      const before = relation(save.current, other, lucky);
+      const bowl = meal(save, lucky, 1, "premium");
+      expect(bowl.food).toBe(0);
+      // Раніше на останній порції заздрісник втрачав 2 настрою й 4 стосунків за одиницю, а «Щиросердий» радів.
+      expect(other.mood, `рівень ${level}`).toBe(60);
+      expect(relation(save.current, other, lucky), `рівень ${level}`).toBe(before);
+    }
   });
 
   it("ласощі всім котам поруч протягом 2 хвилин заздрощів не викликають", () => {

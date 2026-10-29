@@ -196,6 +196,15 @@ describe("збереження в JSON (§6.1)", () => {
     expect(loaded.current.album.map((e) => e.cause)).toEqual([{ kind: "old" }, { kind: "disease", disease: "heart" }]);
   });
 
+  it("зі старого збереження прибрано час дорогого корму (`premiumAt`) — заздрості до нього більше немає (рішення автора 2026-10-29, А16)", () => {
+    const save = game();
+    const cat = createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 5 });
+    Object.assign(cat, { premiumAt: 600 });
+    save.current.cats.push(cat);
+    const loaded = deserialize(serialize(save));
+    expect(loaded.current.cats.find((c) => c.id === cat.id)).not.toHaveProperty("premiumAt");
+  });
+
   it("збереження іншої версії не завантажується", () => {
     const save = game();
     expect(() => deserialize(JSON.stringify({ ...save, version: SAVE_VERSION + 1 }))).toThrow();

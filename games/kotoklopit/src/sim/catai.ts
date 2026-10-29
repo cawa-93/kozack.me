@@ -2083,10 +2083,6 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
         observe(state, cat, "picky", -1, false, MINUTES_PER_HOUR);
       }
       itemMood(state, cat, bowl);
-      if (quality === "premium") {
-        cat.premiumAt = absoluteMinute(state.day, state.minute);
-        envy(state, cat, "premium");
-      }
       emit(state, { type: "cat-ate", cat: cat.id, quality });
       resourceConflict(state, cat, rng, enoughFor(state, "bowl"), "bowl");
       afterMeal(state, cat, quality === "premium", rng);
@@ -3667,27 +3663,19 @@ export function separateFight(state: GameState, cat: Cat): boolean {
   return true;
 }
 
-/** Дорогий корм є в домі: у сховищі, у мисці чи в годівниці (§9.12, «Заздрісність»). */
-function premiumAtHome(state: GameState): boolean {
-  const home = state.home;
-  if (home.supplies.catFood.premium + home.supplies.sterileFood.premium > 0) return true;
-  if (itemsOf(state, "bowl").some((b) => b.food > 0 && b.foodQuality === "premium")) return true;
-  return (home.feeders ?? []).some((f) => f.food > 0 && f.foodQuality === "premium");
-}
-
 /**
- * Іншому котові щось перепало — ласощі, нашийник, вишуканий корм (§9.12): заздрісні коти, що це бачать, дмуться й
- * сваряться з ним; ті, хто «радіє за інших», навпаки, тішаться. Тригер (рішення автора 2026-10-25): дорогому корму не
- * заздрять, коли він є в домі чи заздрісник сам їв його за останні 6 годин; ласощам — коли й сам отримав ласощі протягом
- * 2 хвилин (тож заздрість до ласощів чекає 2 хвилини, `settleEnvy`); нашийнику — коли сам у нашийнику. Винятки — випадки, коли
- * іншому нічого особливого не перепало, тож у них не радіють і «Не заздрить» та «Щиросердий» (загальна ревізія 2026-10-29).
+ * Іншому котові щось перепало — ласощі чи нашийник (§9.12): заздрісні коти, що це бачать, дмуться й сваряться з ним; ті, хто
+ * «радіє за інших», навпаки, тішаться. Тригер (рішення автора 2026-10-25): ласощам не заздрять, коли й сам отримав ласощі
+ * протягом 2 хвилин (тож заздрість до ласощів чекає 2 хвилини, `settleEnvy`); нашийнику — коли сам у нашийнику. Винятки —
+ * випадки, коли іншому нічого особливого не перепало, тож у них не радіють і «Не заздрить» та «Щиросердий» (загальна ревізія
+ * 2026-10-29). Дорогому корму не заздрять зовсім (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А16): поки корм був удома,
+ * тригер мовчав, і спрацьовував лише на останній порції мішка, коли шипіння здавалося безпричинним.
  */
-export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar" | "premium"): void {
+export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar"): void {
   const now = absoluteMinute(state.day, state.minute);
   for (const other of state.cats) {
     if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || !seesWithin(other, whereIs(state, lucky), ENVY.sight)) continue;
     if (traitLevel(other, "envy") === 0) continue;
-    if (gift === "premium" && (premiumAtHome(state) || (other.premiumAt !== undefined && now - other.premiumAt <= ENVY.premiumMinutes))) continue;
     if (gift === "collar" && other.collar !== null) continue;
     if (gift === "treat") {
       if (other.treatAt !== undefined && now - other.treatAt <= ENVY.graceMinutes) continue;
