@@ -3679,15 +3679,16 @@ export function backAway(state: GameState, cat: Cat, from: Vec): void {
 /**
  * Персонаж узяв на руки, погладив чи погрався вудкою з котом, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно.
  * Нападник ще біжить, і коти не зчепилися (`paired`), — бійки ще немає: напад скасовується без «розборонити» (загальна ревізія
- * 2026-10-29, рішення самостійно).
+ * 2026-10-29, рішення самостійно). true — кіт був у бійці (і в розбігу до неї): його перехопили силоміць.
  */
-export function separateFight(state: GameState, cat: Cat): void {
-  if (cat.act.kind !== "fight") return;
+export function separateFight(state: GameState, cat: Cat): boolean {
+  if (cat.act.kind !== "fight") return false;
   const other = catById(state, cat.act.target);
   if (other?.act.kind === "fight") start(other, "idle", null, 2);
-  if (cat.act.paired !== true) return;
+  if (cat.act.paired !== true) return true;
   unpleasantTask(state, RELATIONS.fight.separateSanity);
   emit(state, { type: "fight-stopped", cat: cat.id });
+  return true;
 }
 
 /** Дорогий корм є в домі: у сховищі, у мисці чи в годівниці (§9.12, «Заздрісність»). */

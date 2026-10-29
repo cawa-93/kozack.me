@@ -1036,9 +1036,11 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     expect(relation(save.current, rival, lucky)).toBe(before + 2 * RELATIONS.jealousy);
   });
 
-  it("ревнують і тоді, коли іншого кота беруть на руки", () => {
+  it("ревнують і тоді, коли іншого кота, що хоче уваги, беруть на руки", () => {
     const save = game();
     const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+    // Кіт хоче уваги: узяти його — ласка, а не примус (загальна ревізія 2026-10-29).
+    lucky.needs.attention = 80;
     const rival = withCat(save, { jealousy: 1 }, { x: 8.5, y: 8.5 });
     Object.assign(save.current.character.body, { x: 9.5, y: 9.1 });
     const { events, stop } = recordEvents();
@@ -1049,6 +1051,7 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
     for (let seed = 1; seed <= 20; seed++) {
       const s = game(seed);
       const held = withCat(s, {}, { x: 9.5, y: 8.5 });
+      held.needs.attention = 80;
       const far = withCat(s, { jealousy: 2 }, { x: 5.5, y: 8.5 });
       Object.assign(s.current.character.body, { x: 9.5, y: 9.1 });
       const log = recordEvents();
@@ -1056,6 +1059,40 @@ describe("«Ревнивість» (§9.4, §9.12, рішення автора 2
       log.stop();
       expect(far.act.kind).not.toBe("jealous");
       expect(log.events.some((e) => e.type === "hissed" && e.cat === far.id && e.at === held.id)).toBe(true);
+    }
+  });
+
+  it("узяти на руки силоміць — розборонити, зігнати з місця, проти волі, сонного, зняти застряглого — ревнощами не рахується (загальна ревізія 2026-10-29)", () => {
+    const cases = ["fight", "lap", "unwilling", "asleep", "stuck", "wants"] as const;
+    for (const how of cases) {
+      const save = game();
+      const s = save.current;
+      const lucky = withCat(save, {}, { x: 9.5, y: 8.5 });
+      lucky.needs.attention = 80;
+      const rival = withCat(save, { jealousy: 2 }, { x: 8.5, y: 8.5 });
+      Object.assign(s.character.body, { x: 9.5, y: 9.1 });
+      if (how === "fight") {
+        // Щасливець б'ється з третім котом — його беруть на руки, щоб розборонити.
+        const foe = withCat(save, {}, { x: 10.1, y: 8.5 });
+        lucky.act = { kind: "fight", target: `cat:${foe.id}`, goal: null, minutes: 2, elapsed: 0.5, paired: true };
+        foe.act = { kind: "fight", target: `cat:${lucky.id}`, goal: null, minutes: 2, elapsed: 0.5, paired: true };
+      }
+      if (how === "lap") lucky.act = { kind: "lap", target: "character", goal: null, minutes: 240, elapsed: 0 };
+      if (how === "unwilling") lucky.needs.attention = 10;
+      if (how === "asleep") lucky.act = { kind: "sleep", target: null, goal: null, minutes: 120, elapsed: 0 };
+      if (how === "stuck") lucky.stuck = true;
+      const before = relation(s, rival, lucky);
+      const { events, stop } = recordEvents();
+      pickUpCat(s, lucky);
+      stop();
+      const hissed = events.some((e) => e.type === "hissed" && e.cat === rival.id && e.at === lucky.id);
+      if (how === "wants") {
+        expect(relation(s, rival, lucky)).toBe(before + 2 * RELATIONS.jealousy);
+        expect(hissed).toBe(true);
+        continue;
+      }
+      expect(relation(s, rival, lucky), how).toBe(before);
+      expect(hissed, how).toBe(false);
     }
   });
 });

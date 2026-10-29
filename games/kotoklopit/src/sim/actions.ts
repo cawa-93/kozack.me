@@ -465,7 +465,7 @@ function occupying(state: GameState, cat: Cat): boolean {
 
 /** Узяти кота на руки (§9.12): прогнаного з місця (зокрема з забороненого — «ні»), сонного чи небажаючого це ображає. */
 export function pickUpCat(state: GameState, cat: Cat): void {
-  separateFight(state, cat);
+  const fought = separateFight(state, cat);
   // «Ні» (§9.12, «Слухняність»): зняти кота з комп'ютера чи кухонного столу — так само прогнати з місця, і кіт це запам'ятає.
   const zone = forbiddenZoneAt(state, cat);
   if (zone !== null) sayNo(state, cat, zone, stateRng(state, "behavior"));
@@ -486,8 +486,10 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   cat.act = idleAct();
   state.character.held = { kind: "cat", cat: cat.id, ...(offended ? { offended: true } : {}), ...(disturbed ? { disturbed: true } : {}), ...(begging ? { begging: true } : {}) };
   emit(state, { type: "picked-up", cat: cat.id, offended });
-  // Іншого кота взяли на руки — ревнивці це бачать (§9.12, «Ревнивість»).
-  jealousy(state, cat, "hands");
+  // Іншого кота взяли на руки — ревнивці це бачать (§9.12, «Ревнивість»). Ревнощі — про ласку, а не про примус: узяти
+  // силоміць — розборонити, зігнати з місця («ні»), проти волі чи сонного, зняти застряглого — не рахується (загальна ревізія
+  // 2026-10-29, рішення самостійно: інакше ревнивець сердився й на догляд, якого не уникнути).
+  if (!fought && !offended && cat.stuck !== true) jealousy(state, cat, "hands");
 }
 
 /** Опустити кота з рук поруч із персонажем. */
