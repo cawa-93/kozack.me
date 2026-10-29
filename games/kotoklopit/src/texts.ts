@@ -576,23 +576,27 @@ export function guestsText(visit: GuestsVisit | undefined): string {
 }
 
 /**
- * Повідомлення «Заходила ветеринарка» (§4.1, рішення автора 2026-10-27, Х7): вона оглядає всіх котів, що вдома, — хвороби
- * кожного (назвами) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`).
+ * Повідомлення «Заходила ветеринарка» (§4.1, рішення автора 2026-10-27, Х7): вона оглядає котів, що вдома, — хвороби
+ * кожного (назвами, `diseases` — id хвороб), порада до кожної знайденої хвороби (`VET_ADVICE`, Д2; однакова хвороба в кількох
+ * котів — одна порада, загальна ревізія 2026-10-29) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`).
  */
 export function homeVetText(cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[]): string {
   const [only] = cats;
+  const titles = (c: { diseases: readonly string[] }): string => c.diseases.map(diseaseTitle).join(", ").toLowerCase();
   const found = cats.length === 1 && only
-    ? `${only.name}: ${only.diseases.length > 0 ? `знайшла — ${only.diseases.join(", ").toLowerCase()}` : "хвороб не знайшла"}.`
-    : homeVetFound(cats);
+    ? `${only.name}: ${only.diseases.length > 0 ? `знайшла — ${titles(only)}` : "хвороб не знайшла"}.`
+    : homeVetFound(cats, titles);
+  const advice = [...new Set(cats.flatMap((c) => c.diseases))].flatMap((id) => VET_ADVICE[id] ?? []);
   const behaved = cats.flatMap((c) => (c.manner ? [fill(VET_MANNER.home[c.manner], c.sex, { кіт: c.name })] : []));
-  return [found, ...behaved].join(" ");
+  return [found, ...advice, ...behaved].join(" ");
 }
 
-function homeVetFound(cats: readonly { name: string; diseases: readonly string[] }[]): string {
+// «Оглянула котів», а не «всіх котів»: кота на сходах вона не оглядає (загальна ревізія 2026-10-29).
+function homeVetFound(cats: readonly { name: string; diseases: readonly string[] }[], titles: (c: { diseases: readonly string[] }) => string): string {
   const sick = cats.filter((c) => c.diseases.length > 0);
-  if (sick.length === 0) return `Оглянула всіх котів (${cats.length}): хвороб не знайшла.`;
-  const list = sick.map((c) => `${c.name} — ${c.diseases.join(", ").toLowerCase()}`).join("; ");
-  return sick.length === cats.length ? `Оглянула всіх котів. Знайшла: ${list}.` : `Оглянула всіх котів. Знайшла: ${list}. Решта здорові.`;
+  if (sick.length === 0) return `Оглянула котів (${cats.length}): хвороб не знайшла.`;
+  const list = sick.map((c) => `${c.name} — ${titles(c)}`).join("; ");
+  return sick.length === cats.length ? `Оглянула котів. Знайшла: ${list}.` : `Оглянула котів. Знайшла: ${list}. Решта здорові.`;
 }
 
 /**

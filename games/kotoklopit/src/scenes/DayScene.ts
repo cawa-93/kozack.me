@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1170,10 +1170,11 @@ export class DayScene extends Phaser.Scene {
         this.notice("Нараду пропущено", "Керівництво чекало на дзвінку, а вас не було.");
         return;
       case "home-vet": {
-        // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12).
+        // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12); хвороби — id:
+        // назви й поради до них дає `homeVetText`.
         const cats = this.state.cats
           .filter((c) => c.away === null)
-          .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => diseaseTitle(d.id)), manner: vetManner(c) }));
+          .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => d.id), manner: vetManner(c) }));
         this.notice("Заходила ветеринарка", homeVetText(cats));
         return;
       }

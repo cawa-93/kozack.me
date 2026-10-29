@@ -448,7 +448,7 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     expect(events).toContainEqual({ type: "modifier", kind: "home-vet", value: 2 });
     const text = homeVetText([
       { name: healthy.name, sex: healthy.sex, diseases: [], manner: vetManner(healthy) },
-      { name: sick.name, sex: sick.sex, diseases: ["Застуда"], manner: null },
+      { name: sick.name, sex: sick.sex, diseases: ["cold"], manner: null },
     ]);
     expect(text).toContain(`${sick.name} — застуда`);
     expect(text).toContain("Решта здорові.");

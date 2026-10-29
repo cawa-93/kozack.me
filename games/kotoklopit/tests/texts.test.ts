@@ -4,7 +4,7 @@ import { newGame } from "../src/sim/game";
 import { TRAIT_GROUPS } from "../src/sim/traits";
 import { BREEDS } from "../src/sim/breeds";
 import { DISEASES } from "../src/sim/config";
-import { BREED_ABOUT, endingText, fill, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
+import { BREED_ABOUT, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -69,5 +69,21 @@ describe("опис порід і поради ветеринара (рішенн
       expect(advice, id).toBeTruthy();
       expect(advice).not.toMatch(/[{}[\]|\d]/);
     }
+  });
+
+  it("«Заходила ветеринарка»: порада до кожної знайденої хвороби, однакова — один раз; «оглянула котів», а не «всіх» (загальна ревізія 2026-10-29)", () => {
+    const text = homeVetText([
+      { name: "Мурчик", sex: "male", diseases: ["heart", "gingivitis"], manner: null },
+      { name: "Ромашка", sex: "female", diseases: ["heart"], manner: null },
+      { name: "Пушок", sex: "male", diseases: [], manner: null },
+    ]);
+    expect(text).toContain("Мурчик — хвороба серця, гінгівіт; Ромашка — хвороба серця. Решта здорові.");
+    expect(text.split(VET_ADVICE["heart"] ?? "?").length - 1).toBe(1);
+    expect(text).toContain(VET_ADVICE["gingivitis"]);
+    expect(text).not.toContain("всіх");
+    const one = homeVetText([{ name: "Мурчик", sex: "male", diseases: ["joints"], manner: null }]);
+    expect(one).toBe(`Мурчик: знайшла — хвороба суглобів. ${VET_ADVICE["joints"]}`);
+    const healthy = [{ name: "Мурчик", sex: "male", diseases: [], manner: null }, { name: "Пушок", sex: "male", diseases: [], manner: null }] as const;
+    expect(homeVetText(healthy)).toBe("Оглянула котів (2): хвороб не знайшла.");
   });
 });
