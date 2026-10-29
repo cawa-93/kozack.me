@@ -343,7 +343,7 @@ describe("вибір модифікаторів (§4.1)", () => {
     for (let seed = 0; seed < 300; seed++) expect(chooseDayModifier(save.current, 2, createRng(seed))).not.toBe("office");
   });
 
-  it("на переграванні модифікатор дня той самий, якщо досі можливий: лікарняний, звільнення й учорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
+  it("на переграванні модифікатор дня той самий, якщо стан лише відсіяв інші варіанти: лікарняний, звільнення, менше котів і вчорашній не зсувають вибору (§6.1, загальна ревізія 2026-10-29)", () => {
     const work = new Set(["deadline", "lull", "meeting", "lunch", "pay-delay", "bonus", "reprimand", "praise", "work-saturday", "midweek-off", "office"]);
     const catOnly = new Set(["full-moon", "rain", "festival", "quiet-evening", "vaccination", "home-vet", "heat", "cold", "friend-help", "food-price-up", "pet-sale", "show"]);
     /** Гра з котом (усі модифікатори можливі), потім зміна стану. */
