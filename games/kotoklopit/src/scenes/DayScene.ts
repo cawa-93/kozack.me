@@ -264,6 +264,8 @@ export class DayScene extends Phaser.Scene {
       const night = state.lastNight?.day === state.day - 1 ? state.lastNight : null;
       this.showMorning(night);
     }
+    // Мама подзвонила, а гравець ще не вирішив (оновив сторінку чи телефон вивантажив вкладку) — картка знову (§4.1).
+    if (state.today.callPending === true) this.showCall();
   }
 
   private act(): void {
@@ -1144,25 +1146,29 @@ export class DayScene extends Phaser.Scene {
     this.overlay.title(dayTitle(this.state, night), () => this.afterMorning());
   }
 
+  /** Картка дзвінка мами (§4.1): коли мама подзвонила, і знову після перезавантаження, поки гравець не вирішив. */
+  private showCall(): void {
+    const card = callCard(
+      () => {
+        this.overlay.close();
+        // Дзвінок уже вирішено (подвійне натискання) — розмова не повторюється.
+        if (answerCall(this.state)) advance(this.session.save, MODIFIERS.call.minutes);
+      },
+      () => {
+        ignoreCall(this.state);
+        this.overlay.close();
+      },
+    );
+    this.todayOnly.add(card);
+    this.queueCard(card);
+  }
+
   private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
-      case "mom-call": {
-        const card = callCard(
-          () => {
-            this.overlay.close();
-            answerCall(this.state);
-            advance(this.session.save, MODIFIERS.call.minutes);
-          },
-          () => {
-            ignoreCall(this.state);
-            this.overlay.close();
-          },
-        );
-        this.todayOnly.add(card);
-        this.queueCard(card);
+      case "mom-call":
+        this.showCall();
         return;
-      }
       case "meeting-start":
         // Бабл камери над комп'ютером — `eventBubbles`.
         return;

@@ -183,6 +183,8 @@ export function startModifiers(state: GameState, rng: Rng): void {
   if (state.modifiers.day === "vaccination" && !today.vaccinated) today.vaccineMissedUntil = state.day - 1 + MODIFIERS.vaccineDays;
   state.modifiers.day = chooseDayModifier(state, state.day, rng);
   today.callAt = null;
+  // Дзвінок, на який до ночі так і не відповіли, минає без штрафу, як і картка, що не встигла показатися (§4.1).
+  delete today.callPending;
   today.meetingMinutes = 0;
   today.vaccinated = false;
   today.officeDone = false;
@@ -256,8 +258,13 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng = foun
   return cat;
 }
 
-/** Відповісти мамі (§4.1): пів години розмови — не робота: персонаж відходить від комп'ютера (перевірка модифікаторів 2026-10-28: за комп'ютером дзвінок нічого не коштував). */
-export function answerCall(state: GameState): void {
+/**
+ * Відповісти мамі (§4.1): пів години розмови — не робота: персонаж відходить від комп'ютера (перевірка модифікаторів 2026-10-28:
+ * за комп'ютером дзвінок нічого не коштував). Лише на дзвінок, що чекає відповіді; false — його немає (уже вирішено).
+ */
+export function answerCall(state: GameState): boolean {
+  if (state.today.callPending !== true) return false;
+  delete state.today.callPending;
   stopWork(state);
   // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки (повторна перевірка модифікаторів 2026-10-28).
   const kind = state.character.activity?.kind;
@@ -266,11 +273,15 @@ export function answerCall(state: GameState): void {
   // руках і кусав, а опустити його гравець не міг). Інше з рук не змінюється з часом — лишається.
   const held = state.character.held;
   if (held?.kind === "cat") putDownCat(state, held.cat);
+  return true;
 }
 
-/** Не відповісти мамі (§4.1): здоровий глузд падає. */
-export function ignoreCall(state: GameState): void {
+/** Не відповісти мамі (§4.1): здоровий глузд падає — раз, лише на дзвінок, що чекає відповіді. */
+export function ignoreCall(state: GameState): boolean {
+  if (state.today.callPending !== true) return false;
+  delete state.today.callPending;
   changeStat(state, "sanity", MODIFIERS.call.ignored);
+  return true;
 }
 
 // --- Множники для інших модулів ---------------------------------------------------------------
@@ -537,6 +548,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   if (day === "friend-help") friendHelps(state, from, minutes);
   if (today.callAt !== null && crossed(from, minutes, today.callAt)) {
     today.callAt = null;
+    // Дзвінок чекає, поки гравець вирішить: картка живе лише в сцені, і після перезавантаження сторінки дзвінок зникав без
+    // жодної ціни (загальна ревізія 2026-10-29).
+    today.callPending = true;
     emit(state, { type: "modifier", kind: "mom-call", value: 0 });
   }
 }

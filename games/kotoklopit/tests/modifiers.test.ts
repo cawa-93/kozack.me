@@ -7,8 +7,8 @@ import { pickUpCat } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { unpack } from "../src/sim/economy";
-import { advance, carryFoundling, goToSleep, interact, newGame } from "../src/sim/game";
-import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
+import { advance, carryFoundling, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
+import { active, answerCall, chooseDayModifier, chooseWeekModifier, decideFoundling, ignoreCall, patienceDecayFactor, startModifiers, tickModifiers } from "../src/sim/modifiers";
 import { coughWakes } from "../src/sim/night";
 import { nightlyStates } from "../src/sim/reproduction";
 import { scheduleOf } from "../src/view/schedule";
@@ -205,7 +205,8 @@ describe("події модифікаторів: перевірка модифі
     save.current.day = 1;
     save.current.minute = 11 * 60;
     startWork(save.current);
-    answerCall(save.current);
+    save.current.today.callPending = true;
+    expect(answerCall(save.current)).toBe(true);
     expect(save.current.character.activity).toBeNull();
 
     const lunch = game();
@@ -234,11 +235,48 @@ describe("події модифікаторів: перевірка модифі
     pickUpCat(save.current, cat);
     expect(save.current.character.held).toMatchObject({ kind: "cat", cat: cat.id });
     const { events, stop } = recordEvents();
+    save.current.today.callPending = true;
     answerCall(save.current);
     advance(save, MODIFIERS.call.minutes);
     stop();
     expect(save.current.character.held).toBeNull();
     expect(events.some((e) => (e.type === "bite" || e.type === "clawed") && e.cat === cat.id)).toBe(false);
+  });
+
+  it("дзвінок мами чекає відповіді й після перезавантаження: «не відповідати» — −5 раз, відповісти після цього не можна, ніч скидає без штрафу (загальна ревізія 2026-10-29)", () => {
+    /** День «Мама дзвонить»: дзвінок пролунав, гру збережено й відкрито знову. */
+    const rang = (): Save => {
+      const save = game();
+      save.current.modifiers.day = "mom-call";
+      save.current.minute = 11 * 60;
+      save.current.today.callAt = 11 * 60 + 5;
+      save.current.character.stats.sanity = 50;
+      advance(save, 10);
+      expect(save.current.today.callAt).toBeNull();
+      return deserialize(serialize(save));
+    };
+    const ignored = rang();
+    expect(ignored.current.today.callPending).toBe(true);
+    const sanity = ignored.current.character.stats.sanity;
+    expect(ignoreCall(ignored.current)).toBe(true);
+    expect(ignored.current.character.stats.sanity).toBeCloseTo(sanity + MODIFIERS.call.ignored);
+    expect(ignored.current.today.callPending).toBeUndefined();
+    // Друге натискання нічого не знімає, і відповісти вже не можна.
+    expect(ignoreCall(ignored.current)).toBe(false);
+    expect(answerCall(ignored.current)).toBe(false);
+    expect(ignored.current.character.stats.sanity).toBeCloseTo(sanity + MODIFIERS.call.ignored);
+    // Не відповіли до ночі — уранці дзвінок минув без штрафу.
+    const night = rang();
+    const before = night.current.character.stats.sanity;
+    startModifiers(night.current, createRng(1));
+    expect(night.current.today.callPending).toBeUndefined();
+    expect(ignoreCall(night.current)).toBe(false);
+    expect(night.current.character.stats.sanity).toBe(before);
+    // Старе збереження без поля: дзвінок не чекає.
+    const old = rang();
+    delete old.current.today.callPending;
+    const copy = deserialize(serialize(old));
+    expect(answerCall(copy.current)).toBe(false);
   });
 });
 
