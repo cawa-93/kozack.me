@@ -15,13 +15,19 @@ export const CAT_NAMES: Record<Sex, readonly string[]> = {
   ],
 };
 
-/** Ім'я, якого ще немає серед `taken`; якщо всі зайняті — з номером («Мурка 2»), щоб двох котів не звали однаково. */
-export function pickCatName(rng: Rng, sex: Sex, taken: readonly string[]): string {
+/**
+ * Ім'я, якого ще немає серед `taken` (коти, що є зараз), щоб двох котів не звали однаково. Спершу — і не з `avoid` (коти, яких
+ * уже немає, — альбом), щоб в альбомі не було двох «Ромашок»; коли таких немає — ім'я кота, якого вже немає, можна повторити;
+ * з номером («Мурка 2») — лише коли всі імена зайняті (загальна ревізія 2026-10-29, §9.7). Кидок rng — один, як і раніше.
+ */
+export function pickCatName(rng: Rng, sex: Sex, taken: readonly string[], avoid: readonly string[] = []): string {
   const names = CAT_NAMES[sex];
   const free = names.filter((name) => !taken.includes(name));
+  const fresh = free.filter((name) => !avoid.includes(name));
+  if (fresh.length > 0) return fresh[rng.int(0, fresh.length - 1)] ?? names[0] ?? "Кіт";
   if (free.length > 0) return free[rng.int(0, free.length - 1)] ?? names[0] ?? "Кіт";
   const base = names[rng.int(0, names.length - 1)] ?? "Кіт";
   let n = 2;
-  while (taken.includes(`${base} ${n}`)) n += 1;
+  while (taken.includes(`${base} ${n}`) || avoid.includes(`${base} ${n}`)) n += 1;
   return `${base} ${n}`;
 }

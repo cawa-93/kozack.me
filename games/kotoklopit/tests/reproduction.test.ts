@@ -17,7 +17,7 @@ import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
 import { conceive, giveBirth } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
-import type { Cat, Save, Sex } from "../src/sim/types";
+import type { AlbumEntry, Cat, Save, Sex } from "../src/sim/types";
 import { CAT_NAMES, pickCatName } from "../src/sim/names";
 import { BIRTH_MESSAGE, fill } from "../src/texts";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -239,6 +239,38 @@ describe("імена й тексти: перевірка розмноження 
     }
     expect(pickCatName(createRng(1), "female", [...CAT_NAMES.female, "Мурка 2"])).toMatch(/ [2-9]$/);
     expect(fill(BIRTH_MESSAGE, "male", { кішка: "Мурка", кількість: 1, кошенята: "Пушок" })).toContain("воно лише пищить");
+  });
+
+  it("загальна ревізія 2026-10-29: кошеня не бере імені кота з тижневого списку притулку чи розплідника; альбом — лише коли інших вільних немає", () => {
+    const female = CAT_NAMES.female;
+    const male = CAT_NAMES.male;
+    for (let seed = 0; seed < 20; seed++) {
+      const save = game();
+      const s = save.current;
+      const mother = withCat(save, "female");
+      const father = withCat(save, "male");
+      mother.name = female[0]!;
+      father.name = male[0]!;
+      // Притулок — імена 1–10, розплідник — 11–12, альбом — 13–15; вільні — 16–23.
+      const listed = (names: readonly string[]): Cat[] => names.map((name) => createCat(s, createRng(seed), { source: "shelter", ageWeeks: 3, name }));
+      s.shelter = { week: 0, cats: listed([...female.slice(1, 11), ...male.slice(1, 11)]) };
+      s.breeder = { week: 0, breed: "korat", cats: listed([...female.slice(11, 13), ...male.slice(11, 13)]) };
+      for (const name of [...female.slice(13, 16), ...male.slice(13, 16)]) s.album.push({ ...(s.album[0] ?? ({} as AlbumEntry)), name });
+      mother.pregnancy = { father: father.id, due: s.day + 1, known: true };
+      const kittens = giveBirth(s, createRng(seed));
+      expect(kittens.length).toBeGreaterThan(0);
+      const fresh = [...female.slice(16), ...male.slice(16)];
+      for (const kitten of kittens) expect(fresh).toContain(kitten.name);
+      expect(new Set(kittens.map((k) => k.name)).size).toBe(kittens.length);
+    }
+    // Новий кіт: з альбомом на 23 імені — єдине вільне; альбом на всі 24 — повтор без номера; номер — лише коли всі 24 у котів, що є.
+    const save = game();
+    for (const name of female.slice(0, 23)) save.current.album.push({ ...({} as AlbumEntry), name });
+    expect(createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 3, sex: "female" }).name).toBe(female[23]);
+    save.current.album.push({ ...({} as AlbumEntry), name: female[23]! });
+    expect(female).toContain(createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 3, sex: "female" }).name);
+    expect(female).toContain(pickCatName(createRng(5), "female", female.slice(0, 20), female));
+    expect(pickCatName(createRng(5), "female", female, [])).toMatch(/ 2$/);
   });
 });
 

@@ -1,6 +1,6 @@
 // Розмноження (§9.8): тічка, мітки, вагітність, пологи й новонароджені; спадковість (§9.10, §9.11).
 
-import { changeMood, createCat } from "./cat";
+import { changeMood, createCat, pastCatNames, takenCatNames } from "./cat";
 import { visibleFloorNear } from "./catmove";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
@@ -132,7 +132,9 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
         source: "born",
         ageWeeks: 0,
         sex,
-        name: pickCatName(rng, sex, [...state.cats, ...born].map((c) => c.name)),
+        // Ім'я — тут, а не в createCat: там його кидок ішов би після кидка «at» і зсунув би порядок випадковості. Зайняті — і коти
+        // тижневих списків притулку та розплідника, і брати-сестри; альбом — уникати (загальна ревізія 2026-10-29).
+        name: pickCatName(rng, sex, takenCatNames(state).concat(born.map((c) => c.name)), pastCatNames(state)),
         // Гніздо — на підлозі біля матері (перевірка розмноження 2026-10-28: кошенята з'являлися там, де вона була, — і нагорі).
         at: (() => {
           const base = visibleFloorNear(state, { x: mother.x, y: mother.y + 0.2 });

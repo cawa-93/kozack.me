@@ -75,6 +75,19 @@ export interface CatOptions {
 }
 
 /**
+ * Імена, зайняті котами, що є зараз: удома й у тижневих списках притулку та розплідника — їх ще можуть узяти (повторна перевірка
+ * 2026-10-28; для новонароджених — загальна ревізія 2026-10-29: кошеня діставало ім'я кота зі списку притулку).
+ */
+export function takenCatNames(state: GameState): string[] {
+  return [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])].map((c) => c.name);
+}
+
+/** Імена котів, яких уже немає (альбом, §9.7): їх нове ім'я повторює, лише коли інших вільних немає (загальна ревізія 2026-10-29). */
+export function pastCatNames(state: GameState): string[] {
+  return state.album.map((e) => e.name);
+}
+
+/**
  * Новий кіт (§9.1): рис стільки, скільки тижнів, знак кожної — 50 на 50 (§9.1);
  * настрій і любов — за тим, звідки кіт (§9.6, §7).
  */
@@ -85,8 +98,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
   const at = options.at ?? { x: 10.5, y: 10.5 };
   const cat: Cat = {
     id: state.nextId++,
-    // Не повторювати й імен котів притулку та розплідника цього тижня: їх ще можуть узяти (повторна перевірка 2026-10-28).
-    name: options.name ?? pickCatName(rng, sex, [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])].map((c) => c.name).concat(options.taken ?? [])),
+    name: options.name ?? pickCatName(rng, sex, takenCatNames(state).concat(options.taken ?? []), pastCatNames(state)),
     sex,
     source: options.source,
     ageWeeks: options.ageWeeks,
