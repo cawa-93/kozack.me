@@ -687,12 +687,12 @@ describe("друг може відмовитися (§9.4 «Згода, охор
     expect(playAcceptance(old)).toBeCloseTo(0.5);
   });
 
-  it("хворий чи травмований не погоджується зовсім; старість і ожиріння — не хвороба", () => {
+  it("хворий чи травмований не погоджується зовсім; ожиріння й хронічні (серце) — не нездужання", () => {
     const save = game();
     const cat = withCat(save);
     cat.needs.play = 100;
     fallIll(save.current, cat, "obesity");
-    fallIll(save.current, cat, "senior");
+    fallIll(save.current, cat, "heart");
     expect(playAcceptance(cat)).toBeCloseTo(0.95);
     fallIll(save.current, cat, "injury");
     expect(playAcceptance(cat)).toBe(0);
@@ -790,8 +790,9 @@ describe("друг може відмовитися (§9.4 «Згода, охор
         expect(choices(false, present)).toEqual(alone);
         a.diseases = [];
       }
-      // Старість і ожиріння — не хвороба (Г5): такий кличе, як і раніше; блохи й глисти — теж (рішення автора 2026-10-27, Х11).
-      fallIll(save.current, a, "senior");
+      // Ожиріння — не хвороба (Г5): такий кличе, як і раніше; хронічні (рішення автора 2026-10-28, Д1), блохи й глисти — теж
+      // (рішення автора 2026-10-27, Х11).
+      fallIll(save.current, a, "heart");
       fallIll(save.current, a, "obesity");
       fallIll(save.current, a, "fleas");
       fallIll(save.current, a, "worms");

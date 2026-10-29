@@ -712,9 +712,12 @@ export interface CatAct {
   paired?: true;
 }
 
-/** Хвороби прототипу (§9.5, `DISEASES.md`). */
+/**
+ * Хвороби прототипу (§9.5, `DISEASES.md`). «Старечих болячок» (`senior`) немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`,
+ * А13): зі старих збережень їх знімає `upgradeDiseases` (`game.ts`).
+ */
 export type DiseaseId =
-  | "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "senior" | "urolithiasis" | "dermatitis" | "obesity"
+  | "cold" | "fleas" | "worms" | "stomach" | "injury" | "cystitis" | "conjunctivitis" | "urolithiasis" | "dermatitis" | "obesity"
   | "heart" | "joints" | "spine" | "breathing" | "gingivitis";
 
 /** Хвороба кота: коли почалася й скільки лікування вже було. */

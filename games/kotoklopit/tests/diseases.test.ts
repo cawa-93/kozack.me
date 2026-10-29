@@ -63,7 +63,8 @@ describe("ще п'ять хвороб (рішення автора 2026-10-28, �
     const adult = agingChances(save, cat);
     expect(adult).toHaveLength(2);
     cat.ageWeeks = CAT_AGE_LIMIT + 1;
-    expect(agingChances(save, cat)).toHaveLength(4); // старечі, серце, суглоби, гінгівіт
+    // Серце, суглоби, гінгівіт; «старечих болячок» немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13).
+    expect(agingChances(save, cat)).toHaveLength(3);
     cat.ageWeeks = KITTEN_MAX_AGE + 1;
     cat.breed = ["menks", "menks"];
     expect(agingChances(save, cat)).toHaveLength(3); // + хребет
@@ -311,8 +312,12 @@ describe("перебіг хвороби (§9.5)", () => {
     expect(gain((save, cat) => fallIll(save.current, cat, "cold") && void (cat.diseases[0]!.day = save.current.day - 3))).toBe(-DISEASES.cold.damage);
     // Ще «безпечний» день — відновлення, як у здорового.
     expect(gain((save, cat) => fallIll(save.current, cat, "cold") && void (cat.diseases[0]!.day = save.current.day - 1))).toBe(healthy);
-    // Старечі болячки під контролем — не шкодять, відновлення є (старий — ×0,5, тут кіт молодий).
-    expect(gain((save, cat) => fallIll(save.current, cat, "senior") && void (cat.diseases[0]!.controlled = save.current.day))).toBe(healthy);
+    // Хронічна (суглоби) після «безпечних» днів, але під контролем — не шкодить, відновлення є (старий — ×0,5, тут кіт молодий).
+    const controlled = (save: Save, cat: Cat): void => {
+      fallIll(save.current, cat, "joints");
+      Object.assign(cat.diseases[0]!, { day: save.current.day - DISEASES.joints.safe, controlled: save.current.day });
+    };
+    expect(gain(controlled)).toBe(healthy);
   });
 
   it("поки кіт хворіє, настрій щоночі −3", () => {
@@ -327,7 +332,7 @@ describe("перебіг хвороби (§9.5)", () => {
   it("хронічна під контролем настрою не псує (рішення автора 2026-10-27, Х9)", () => {
     const save = game();
     const cat = withCat(save);
-    fallIll(save.current, cat, "senior");
+    fallIll(save.current, cat, "joints");
     hold(save, cat);
     giveMedicine(save.current, "pills", createRng(1));
     const mood = cat.mood;
@@ -419,7 +424,7 @@ describe("ліки вдома (§9.5)", () => {
       const save = game();
       save.current.home.supplies.pills = { cheap: 1, premium: 0 };
       const cat = withCat(save);
-      fallIll(save.current, cat, "senior");
+      fallIll(save.current, cat, "joints");
       hold(save, cat);
       giveMedicine(save.current, "pills", createRng(seed));
       if (cat.diseases[0]?.controlled === save.current.day) worked += 1;
@@ -428,31 +433,32 @@ describe("ліки вдома (§9.5)", () => {
     expect(worked / 200).toBeLessThan(MEDICINE.cheapWorks + 0.1);
   });
 
-  it("старечі болячки — хронічні: таблетка того дня рятує від шкоди", () => {
+  it("хронічна (суглоби): таблетка того дня рятує від шкоди", () => {
     const save = game();
     const cat = withCat(save);
-    fallIll(save.current, cat, "senior");
+    fallIll(save.current, cat, "joints");
+    cat.diseases[0]!.day = save.current.day - DISEASES.joints.safe;
     hold(save, cat);
     giveMedicine(save.current, "pills", createRng(1));
     const health = cat.health;
     nightlyDiseases(save.current, quietRng());
     expect(cat.health).toBe(health);
-    expect(hasDisease(cat, "senior")).toBe(true);
+    expect(hasDisease(cat, "joints")).toBe(true);
     save.current.day += 1;
     nightlyDiseases(save.current, quietRng());
-    expect(cat.health).toBe(health - 1);
+    expect(cat.health).toBe(health - DISEASES.joints.damage);
   });
 
   it("таблетка вдома не скорочує тиждень контролю від ветеринара", () => {
     const save = game();
     const cat = withCat(save);
-    fallIll(save.current, cat, "senior");
-    const senior = cat.diseases[0];
-    if (!senior) throw new Error("немає хвороби");
-    senior.controlled = save.current.day + 7;
+    fallIll(save.current, cat, "joints");
+    const joints = cat.diseases[0];
+    if (!joints) throw new Error("немає хвороби");
+    joints.controlled = save.current.day + 7;
     hold(save, cat);
     giveMedicine(save.current, "pills", createRng(1));
-    expect(senior.controlled).toBe(save.current.day + 7);
+    expect(joints.controlled).toBe(save.current.day + 7);
     const health = cat.health;
     save.current.day += 3;
     nightlyDiseases(save.current, quietRng());
@@ -640,11 +646,15 @@ describe("дієта, спокій і травма (§9.5)", () => {
     expect(hasDisease(cat, "cystitis")).toBe(true);
   });
 
-  it("старечі болячки — кіт повільніший", () => {
+  it("«старечих болячок» немає: старий кіт від старості не повільніший і не втомлюється вдруге, а хворіє лише серцем, суглобами й гінгівітом (рішення автора 2026-10-29, А13)", () => {
     const save = game();
     const cat = withCat(save);
-    fallIll(save.current, cat, "senior");
-    expect(walkFactor(cat)).toBeCloseTo(SYMPTOMS.seniorWalk);
+    cat.ageWeeks = CAT_AGE_LIMIT + 1;
+    expect(walkFactor(cat)).toBe(1);
+    expect(fatigueFactor(cat)).toBe(1);
+    agingDiseases(save.current, cat, { ...createRng(1), chance: () => true });
+    expect(cat.diseases.map((d) => d.id).sort()).toEqual(["gingivitis", "heart", "joints"]);
+    expect(Object.keys(DISEASES)).not.toContain("senior");
   });
 
   /** Кіт «Малоїжка» (чи «Ненаситний») їсть з миски на очах персонажа: скільки лишилося й чи відкрилася риса. */

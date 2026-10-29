@@ -989,7 +989,6 @@ export const DISEASES: Record<
   injury: { safe: 3, damage: 1, recovers: 14, cure: { kind: "vet" }, contagious: null },
   cystitis: { safe: 3, damage: 2, recovers: null, cure: { kind: "calm", days: 2 }, contagious: null },
   conjunctivitis: { safe: 4, damage: 1, recovers: 10, cure: { kind: "drops", doses: 2 }, contagious: "friends" },
-  senior: { safe: 0, damage: 1, recovers: null, cure: { kind: "control", medicine: "pills" }, contagious: null },
   urolithiasis: { safe: 1, damage: 6, recovers: null, cure: { kind: "vet" }, contagious: null },
   dermatitis: { safe: 5, damage: 1, recovers: null, cure: { kind: "vet" }, contagious: null },
   // Ожиріння (§9.5, §9.12 «Тіло й тепло», 2026-10-26): оборотне — минає, щойно вага повернеться до норми (`WEIGHT.cured`).
@@ -1033,9 +1032,10 @@ export const ILLNESS = {
   cystitisMood: 25,
   cystitis: 0.15,
   calmMood: 40,
-  seniorPerWeek: 0.5,
   /**
-   * Нові хвороби (рішення автора 2026-10-28, Д1): тижневі шанси — у ніч, коли дорослий кіт старшає. Серце — `heartPerWeek`, понад межу віку × `heartOld`;
+   * Нові хвороби (рішення автора 2026-10-28, Д1): тижневі шанси — у ніч, коли дорослий кіт старшає. «Старечих болячок» (50% на
+   * тиждень понад межу віку) немає: старі коти хворіють цими (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13).
+   * Серце — `heartPerWeek`, понад межу віку × `heartOld`;
    * суглоби — понад межу віку `jointsOldPerWeek`, з ожирінням — `jointsObese` щоночі; хребет і дихання — лише в порід зі
    * схильністю, `breedOnlyPerWeek`; гінгівіт — `gingivitisPerWeek`. Дихання в спеку шкодить × `breathingHeat`.
    */
@@ -1063,8 +1063,6 @@ export const SYMPTOMS = {
   wormsHunger: 1.3,
   cystitisToilet: 2,
   limp: 0.6,
-  /** Старечі болячки: кіт повільніший (`DISEASES.md`; крок 17, звірка з довідниками 2026-10-28). */
-  seniorWalk: 0.9,
   /** Нові хвороби (рішення автора 2026-10-28, Д1): суглоби й хребет — хода, гінгівіт — жує одним боком, їсть довше. */
   jointsWalk: 0.85,
   spineWalk: 0.9,

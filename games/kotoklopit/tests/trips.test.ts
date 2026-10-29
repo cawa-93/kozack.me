@@ -425,7 +425,7 @@ describe("поїздки й робота (§8.6)", () => {
     vet.current.day = 2;
     vet.current.modifiers.day = "home-vet";
     const cat = withCat(vet);
-    fallIll(vet.current, cat, "senior");
+    fallIll(vet.current, cat, "heart");
     const visit = recordEvents();
     startTrip(vet.current, "shop");
     driveSafely(vet);
@@ -555,12 +555,12 @@ describe("пункти призначення (§8.5)", () => {
       const save = game(9 * 60);
       save.current.day = 5;
       const cat = withCat(save);
-      fallIll(save.current, cat, "senior");
+      fallIll(save.current, cat, "heart");
       save.current.home.carrier = "premium";
       save.current.character.held = { kind: "cat", cat: cat.id };
       arrive(save, "vet");
       vetExam(save.current);
-      expect(vetTreat(save.current, "senior", quality, createRng(1))).toBe("controlled");
+      expect(vetTreat(save.current, "heart", quality, createRng(1))).toBe("controlled");
       return (cat.diseases[0]?.controlled ?? 0) - save.current.day;
     };
     expect(controlled("cheap")).toBe(7);
@@ -571,7 +571,7 @@ describe("пункти призначення (§8.5)", () => {
     const save = game(9 * 60);
     save.current.day = 5;
     const cat = withCat(save);
-    fallIll(save.current, cat, "senior");
+    fallIll(save.current, cat, "heart");
     const disease = cat.diseases[0];
     if (!disease) throw new Error("немає хвороби");
     disease.controlled = save.current.day + 10;
@@ -581,11 +581,11 @@ describe("пункти призначення (§8.5)", () => {
     vetExam(save.current);
     const money = save.current.character.money;
     const visit = save.current.trip?.visit;
-    expect(vetTreat(save.current, "senior", "cheap", createRng(1))).toBeNull();
+    expect(vetTreat(save.current, "heart", "cheap", createRng(1))).toBeNull();
     expect(disease.controlled).toBe(save.current.day + 10);
     expect(save.current.character.money).toBe(money);
     expect(save.current.trip?.visit).toBe(visit);
-    expect(vetTreat(save.current, "senior", "premium", createRng(1))).toBe("controlled");
+    expect(vetTreat(save.current, "heart", "premium", createRng(1))).toBe("controlled");
     expect(disease.controlled).toBe(save.current.day + 14);
   });
 

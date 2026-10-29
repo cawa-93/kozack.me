@@ -15,7 +15,7 @@ import { createCat } from "../src/sim/cat";
 import { createRng, stateRng } from "../src/sim/rng";
 import { TRAIT_GROUPS, traitGroup } from "../src/sim/traits";
 import { weekdayOf, weekOf } from "../src/sim/time";
-import type { AlbumEntry, NightReport, Save, Sex, Trait } from "../src/sim/types";
+import type { AlbumEntry, CatDisease, NightReport, Save, Sex, Trait } from "../src/sim/types";
 import { hours, liveDay } from "./helpers";
 
 const game = (sex: Sex = "female", seed = 1) => newGame({ sex, difficulty: "normal", seed });
@@ -170,6 +170,30 @@ describe("збереження в JSON (§6.1)", () => {
     expect(loaded.current.album.at(-1)?.traits).toEqual([trait("hunting", -1)]);
     for (const t of loadedCat?.traits ?? []) expect(() => traitGroup(t.group)).not.toThrow();
     for (const id of ["toiletPaper", "toyHiding", "weather"]) expect(TRAIT_GROUPS.some((g) => g.id === id)).toBe(false);
+  });
+
+  it("«старечих болячок» немає: зі старого збереження їх знято з котів і журналу здоров'я, а смерть від них в альбомі — старість (рішення автора 2026-10-29, А13)", () => {
+    const save = game();
+    const senior = { id: "senior", day: 0, doses: 0, diet: 0, calm: 0, controlled: null, known: true } as unknown as CatDisease;
+    const cold: CatDisease = { id: "cold", day: 0, doses: 0, diet: 0, calm: 0, controlled: null, known: false };
+    const cat = createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 9 });
+    cat.diseases = [senior, cold];
+    cat.healthLog = [
+      { day: 0, source: "disease:senior", amount: 1 },
+      { day: 0, source: "disease:cold", amount: 2 },
+    ];
+    save.current.cats.push(cat);
+    const shelterCat = createCat(save.current, createRng(2), { source: "shelter", ageWeeks: 9 });
+    shelterCat.diseases = [senior];
+    save.current.shelter = { week: 0, cats: [shelterCat] };
+    save.current.album.push({ id: 98, traits: [], cause: { kind: "disease", disease: "senior" } } as unknown as AlbumEntry);
+    save.current.album.push({ id: 99, traits: [], cause: { kind: "disease", disease: "heart" } } as unknown as AlbumEntry);
+    const loaded = deserialize(serialize(save));
+    const loadedCat = loaded.current.cats.find((c) => c.id === cat.id);
+    expect(loadedCat?.diseases).toEqual([cold]);
+    expect(loadedCat?.healthLog).toEqual([{ day: 0, source: "disease:cold", amount: 2 }]);
+    expect(loaded.current.shelter?.cats[0]?.diseases).toEqual([]);
+    expect(loaded.current.album.map((e) => e.cause)).toEqual([{ kind: "old" }, { kind: "disease", disease: "heart" }]);
   });
 
   it("збереження іншої версії не завантажується", () => {

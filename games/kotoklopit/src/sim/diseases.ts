@@ -64,18 +64,16 @@ export function cureDisease(state: GameState, cat: Cat, id: DiseaseId, rng: Rng)
 
 // --- Симптоми -------------------------------------------------------------------------------
 
-/** Множник втоми: застуда, старечі болячки, серце й дихання (рішення автора 2026-10-28, Д1) — кіт швидко втомлюється й більше спить. */
-export const fatigueFactor = (cat: Cat): number =>
-  hasDisease(cat, "cold") || hasDisease(cat, "senior") || hasDisease(cat, "heart") || hasDisease(cat, "breathing") ? SYMPTOMS.tired : 1;
+/** Множник втоми: застуда, серце й дихання (рішення автора 2026-10-28, Д1) — кіт швидко втомлюється й більше спить. */
+export const fatigueFactor = (cat: Cat): number => (hasDisease(cat, "cold") || hasDisease(cat, "heart") || hasDisease(cat, "breathing") ? SYMPTOMS.tired : 1);
 /** Множник відновлення сну: блохи заважають спати. */
 export const sleepFactor = (cat: Cat): number => (hasDisease(cat, "fleas") ? SYMPTOMS.fleasSleep : 1);
 export const hungerFactor = (cat: Cat): number => (hasDisease(cat, "worms") ? SYMPTOMS.wormsHunger : 1);
 export const toiletFactor = (cat: Cat): number => (hasDisease(cat, "cystitis") || hasDisease(cat, "urolithiasis") ? SYMPTOMS.cystitisToilet : 1);
-/** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»); старечі болячки — повільніший. */
+/** Травма: кіт кульгає; з ожирінням ходить важко (§9.12, «Схильність до повноти»); суглоби й хребет — повільніший. */
 export const walkFactor = (cat: Cat): number =>
   (hasDisease(cat, "injury") ? SYMPTOMS.limp : 1) *
   (hasDisease(cat, "obesity") ? WEIGHT.obeseWalk : 1) *
-  (hasDisease(cat, "senior") ? SYMPTOMS.seniorWalk : 1) *
   (hasDisease(cat, "joints") ? SYMPTOMS.jointsWalk : 1) *
   (hasDisease(cat, "spine") ? SYMPTOMS.spineWalk : 1);
 /** Гінгівіт: жує одним боком — їсть довше. */
@@ -93,8 +91,8 @@ export const cannotJump = (cat: Cat): boolean => isObese(cat) || hasDisease(cat,
  * 2026-10-27, Х11). Такий гратися не погоджується й шипить на того, хто кличе, і сам гратися не кличе (рішення автора 2026-10-26
  * після блоку 4).
  */
-// Нові хронічні й гінгівіт (рішення автора 2026-10-28, Д1) — як старечі болячки: шкодять здоров'ю, а не грі.
-const FEELS_FINE: readonly DiseaseId[] = ["senior", "obesity", "fleas", "worms", "heart", "joints", "spine", "breathing", "gingivitis"];
+// Нові хронічні й гінгівіт (рішення автора 2026-10-28, Д1) — як колись старечі болячки: шкодять здоров'ю, а не грі.
+const FEELS_FINE: readonly DiseaseId[] = ["obesity", "fleas", "worms", "heart", "joints", "spine", "breathing", "gingivitis"];
 export const isUnwell = (cat: Cat): boolean => cat.diseases.some((d) => !FEELS_FINE.includes(d.id));
 /** «Сюрприз» повз лоток від розладу шлунка чи циститу. */
 export const missesLitter = (cat: Cat, rng: Rng): boolean =>
@@ -204,13 +202,13 @@ function spread(state: GameState, rng: Rng): void {
 const BREED_ONLY: readonly DiseaseId[] = ["spine", "breathing"];
 
 /**
- * Кіт постаршав (§9.5, §9.1): старечі болячки понад межу віку — шанс раз на його тиждень; дорослому — серце, суглоби (понад
- * межу віку), гінгівіт і породні хребет та дихання (рішення автора 2026-10-28, Д1).
+ * Кіт постаршав (§9.5, §9.1): дорослому — шанс раз на його тиждень на серце, суглоби (понад межу віку), гінгівіт і породні
+ * хребет та дихання (рішення автора 2026-10-28, Д1). «Старечих болячок» понад межу віку немає (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А13): старість — не хвороба, а старі коти хворіють серцем і суглобами.
  */
 export function agingDiseases(state: GameState, cat: Cat, rng: Rng): void {
-  const old = isOld(cat);
-  if (old) maybeFallIll(state, cat, "senior", ILLNESS.seniorPerWeek, rng);
   if (isKitten(cat)) return;
+  const old = isOld(cat);
   maybeFallIll(state, cat, "heart", ILLNESS.heartPerWeek * (old ? ILLNESS.heartOld : 1), rng);
   if (old) maybeFallIll(state, cat, "joints", ILLNESS.jointsOldPerWeek, rng);
   maybeFallIll(state, cat, "gingivitis", ILLNESS.gingivitisPerWeek, rng);

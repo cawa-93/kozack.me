@@ -337,7 +337,7 @@ function weekModifier({ state }: Night): void {
   state.modifiers.week = chooseWeekModifier(state, weekOf(state.day + 1));
 }
 
-/** Коти старшають у свою ніч — раз на 7 днів від дня появи (§9.1): вік, нова риса, старечі болячки. */
+/** Коти старшають у свою ніч — раз на 7 днів від дня появи (§9.1): вік, нова риса, хвороби віку (§9.5). */
 function ageCats({ state, rng }: Night): void {
   for (const cat of state.cats) {
     if (!ageDue(state, cat)) continue;

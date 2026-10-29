@@ -324,6 +324,22 @@ export function upgradeState(state: GameState): void {
   upgradeWardrobe(state);
   upgradeSupplies(state);
   upgradeAlbumDays(state);
+  upgradeDiseases(state);
+}
+
+/**
+ * «Старечих болячок» немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13): у старих збереженнях їх знімають з котів удома,
+ * у притулку й у розпліднику разом зі шкодою від них у журналі здоров'я, а кіт, що помер від них, в альбомі пам'яті пішов від
+ * старості.
+ */
+export function upgradeDiseases(state: GameState): void {
+  const removed = (id: string): boolean => id === "senior";
+  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
+  for (const cat of cats) {
+    cat.diseases = cat.diseases.filter((d) => !removed(d.id));
+    cat.healthLog = cat.healthLog.filter((entry) => entry.source !== "disease:senior");
+  }
+  for (const entry of state.album) if (entry.cause?.kind === "disease" && removed(entry.cause.disease)) entry.cause = { kind: "old" };
 }
 
 /** Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. */
