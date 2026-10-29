@@ -653,17 +653,25 @@ export function chronotypeCard(chosen: Chronotype | null, onPick: (chronotype: C
   };
 }
 
-/**
- * Ім'я, з яким відкривається крок «Ім'я»: власне ім'я гравця лишається, хоч би яке звертання він потім обрав, а ім'я за
- * замовчуванням («Тарас», «Марта») — за звертанням, щоб узгоджувалося з текстами (§5.1).
- */
-export function startName(address: Address, entered: string | null): string {
-  const own = entered?.trim() ?? "";
-  return own !== "" && !Object.values(DEFAULT_NAME).includes(own) ? own : DEFAULT_NAME[address];
+/** Що гравець лишив у полі кроку «Ім'я» («Далі» чи «Назад») і з яким звертанням. */
+export interface EnteredName {
+  readonly name: string;
+  readonly address: Address;
 }
 
-/** Крок 4: ім'я героя; заголовок — за звертанням. */
-export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: () => void): Card {
+/**
+ * Ім'я, з яким відкривається крок «Ім'я»: власне ім'я гравця лишається, хоч би яке звертання він потім обрав, а ім'я за
+ * замовчуванням («Тарас», «Марта») — за звертанням, щоб узгоджувалося з текстами (§5.1). За замовчуванням — лише те, що гравець
+ * лишив незмінним за свого звертання: «Марта», яку він сам увів для «він», — теж власне ім'я.
+ */
+export function startName(address: Address, entered: EnteredName | null): string {
+  if (entered === null) return DEFAULT_NAME[address];
+  const own = entered.name.trim();
+  return own !== "" && own !== DEFAULT_NAME[entered.address] ? own : DEFAULT_NAME[address];
+}
+
+/** Крок 4: ім'я героя; заголовок — за звертанням. «Назад» віддає введене, щоб, повернувшись, гравець побачив його знову. */
+export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: (name: string) => void): Card {
   const input = element("input");
   input.type = "text";
   input.value = start;
@@ -677,9 +685,9 @@ export function nameCard(address: Address, start: string, onDone: (name: string)
     body: [input],
     actions: [
       { label: "Далі", primary: true, onSelect: () => onDone(input.value) },
-      { label: "Назад", onSelect: onBack },
+      { label: "Назад", onSelect: () => onBack(input.value) },
     ],
-    onDismiss: onBack,
+    onDismiss: () => onBack(input.value),
   };
 }
 

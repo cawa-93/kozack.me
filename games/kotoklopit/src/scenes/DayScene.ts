@@ -21,7 +21,7 @@ import { gameMinutes, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
@@ -1317,7 +1317,7 @@ export class DayScene extends Phaser.Scene {
     const seed = newSeed();
     const looks = lookRng(seed);
     // Що гравець уже обрав: повернувшись «Назад», він бачить свій вибір.
-    let entered: string | null = null;
+    let entered: EnteredName | null = null;
     let addressed: Address | null = null;
     let chronotyped: Chronotype | null = null;
     const pickLook = (look: Look): void => this.overlay.show(lookCard(look, pickAddress, () => randomLook(looks)));
@@ -1334,7 +1334,7 @@ export class DayScene extends Phaser.Scene {
           address,
           startName(address, entered),
           (name) => {
-            entered = name;
+            entered = { name, address };
             this.overlay.show(
               difficultyCard(
                 (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype, seed })),
@@ -1342,7 +1342,10 @@ export class DayScene extends Phaser.Scene {
               ),
             );
           },
-          () => pickChronotype(look, address),
+          (name) => {
+            entered = { name, address };
+            pickChronotype(look, address);
+          },
         ),
       );
     };

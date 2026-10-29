@@ -235,9 +235,18 @@ describe("редактор персонажа один для всіх (ріше
     expect(startName("he", null)).toBe("Тарас");
     expect(startName("she", null)).toBe("Марта");
     // Гравець прийняв ім'я за замовчуванням, а потім повернувся й обрав інше звертання.
-    expect(startName("she", "Тарас")).toBe("Марта");
-    expect(startName("he", " ")).toBe("Тарас");
-    expect(startName("he", "Саша")).toBe("Саша");
-    expect(startName("she", "Саша")).toBe("Саша");
+    expect(startName("she", { name: "Тарас", address: "he" })).toBe("Марта");
+    expect(startName("he", { name: "Марта", address: "she" })).toBe("Тарас");
+    expect(startName("he", { name: " ", address: "he" })).toBe("Тарас");
+    expect(startName("he", { name: "Саша", address: "he" })).toBe("Саша");
+    expect(startName("she", { name: "Саша", address: "he" })).toBe("Саша");
+  });
+
+  it("ім'я, що збігається з ім'ям за замовчуванням іншого звертання, — теж власне: «Марта» для «він» лишається «Мартою»", () => {
+    // «Далі» → «Складність» → «Назад»: звертання те саме, а ім'я раніше підмінялося на «Тарас».
+    expect(startName("he", { name: "Марта", address: "he" })).toBe("Марта");
+    // І коли потім обрали «вона».
+    expect(startName("she", { name: "Марта", address: "he" })).toBe("Марта");
+    expect(startName("she", { name: "Тарас", address: "she" })).toBe("Тарас");
   });
 });
