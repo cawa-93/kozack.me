@@ -104,6 +104,12 @@ export const DIFFICULTY: Record<
   normal: { earnings: 1, catSanity: 1, newCatSanity: 50, lostCatSanity: -25, givenCatSanity: -15 },
   hard: { earnings: 0.8, catSanity: 0.8, newCatSanity: 40, lostCatSanity: -31, givenCatSanity: -19 },
 };
+/**
+ * Друга й наступні смерті котів тієї самої ночі коштують таку частку `lostCatSanity` (§6.2, §4; рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А3): народжені вдома коти старшають і помирають понад межу віку в ніч на понеділок усі разом (§9.1),
+ * і старий виводок відходив хвилями — по кілька повних втрат за ранок. Віддані за оголошеннями — без змін.
+ */
+export const LOST_CAT_REPEAT = 0.5;
 /** Віддати кота протягом 7 днів після появи — втратити весь бонус за нього (§9.8). */
 export const GIVE_AWAY_GRACE_DAYS = 7;
 

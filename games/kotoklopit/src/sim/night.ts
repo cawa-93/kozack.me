@@ -14,6 +14,7 @@ import {
   MODIFIERS,
   ILLNESS,
   KITTEN_AGE_WEEKS,
+  LOST_CAT_REPEAT,
   SHELTER,
   KITTEN_SANITY_THRESHOLD,
   MINUTES_PER_DAY,
@@ -116,11 +117,12 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
 
 /**
  * Уранці здоровий глузд змінюється спершу за втрачених котів (не нижче 10%),
- * потім за нових (не вище 100) (§4, §6.2).
+ * потім за нових (не вище 100) (§4, §6.2). Перша смерть ночі — повна втрата, друга й наступні — половина
+ * (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А3).
  */
 export function applyMorningSanity(state: GameState, lost: number, gained: number): void {
   const { lostCatSanity, newCatSanity } = DIFFICULTY[state.difficulty];
-  for (let i = 0; i < lost; i++) changeStat(state, "sanity", lostCatSanity, SANITY_FLOOR);
+  for (let i = 0; i < lost; i++) changeStat(state, "sanity", lostCatSanity * (i === 0 ? 1 : LOST_CAT_REPEAT), SANITY_FLOOR);
   for (let i = 0; i < gained; i++) changeStat(state, "sanity", newCatSanity);
 }
 

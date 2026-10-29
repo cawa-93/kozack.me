@@ -4,7 +4,7 @@ import { createCat } from "../src/sim/cat";
 import { createRng } from "../src/sim/rng";
 
 import { goToSleep, newGame } from "../src/sim/game";
-import { applyMorningSanity } from "../src/sim/night";
+import { addCat, applyMorningSanity } from "../src/sim/night";
 import type { Difficulty, NightStep } from "../src/sim/types";
 import { hours } from "./helpers";
 
@@ -138,5 +138,39 @@ describe("ранкові зміни здорового глузду (§4, §6.2)
     current.character.stats.sanity = 80;
     applyMorningSanity(current, 0, 1);
     expect(current.character.stats.sanity).toBe(100);
+  });
+
+  it("рішення автора 2026-10-29, А3: друга й наступні смерті тієї самої ночі — половина втрати (−25, −12,5, −12,5); одна — як і раніше", () => {
+    const { current } = game();
+    current.modifiers.day = null;
+    current.character.stats.sanity = 90;
+    applyMorningSanity(current, 1, 0);
+    expect(current.character.stats.sanity).toBe(65);
+    current.character.stats.sanity = 90;
+    applyMorningSanity(current, 3, 0);
+    expect(current.character.stats.sanity).toBe(40);
+    // Межа 10% — як і раніше.
+    current.character.stats.sanity = 40;
+    applyMorningSanity(current, 3, 0);
+    expect(current.character.stats.sanity).toBe(10);
+  });
+
+  it("рішення автора 2026-10-29, А3: ніч, у якій від старості померло троє котів, — −25, −12,5, −12,5", () => {
+    const save = game();
+    const state = save.current;
+    state.day = 2;
+    state.modifiers.day = null;
+    state.minute = hours(22);
+    const cats = [0, 1, 2].map((i) => {
+      // Цієї ночі кожному минає ще тиждень (§9.1), а в 15 тижнів шанс смерті понад межу віку — 100% (§9.2).
+      const cat = createCat(state, createRng(10 + i), { source: "born", ageWeeks: 14 });
+      cat.arrivedDay = state.day + 1 - 7;
+      addCat(state, cat);
+      return cat;
+    });
+    state.character.stats.sanity = 90;
+    const report = goToSleep(save);
+    expect(report?.lostCats).toEqual(cats.map((c) => c.id));
+    expect(report?.sanityMorning).toBe(40);
   });
 });
