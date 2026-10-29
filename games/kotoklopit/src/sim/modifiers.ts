@@ -7,6 +7,7 @@ import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
+import { visibleFloorNear } from "./catmove";
 import { isNewborn } from "./reproduction";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
@@ -439,6 +440,15 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       const manner = vetManner(cat);
       if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
       if (manner === "hid") {
+        // Кіт на руках персонажа справді виривається з рук і стає на підлогу поруч, як «cat-broke-free» у catai: інакше
+        // повідомлення казало «вирвався з рук і сховався», а кіт лишався на руках (загальна ревізія 2026-10-29).
+        if (isCarried(state, cat)) {
+          state.character.held = null;
+          const at = visibleFloorNear(state, state.character.body);
+          cat.x = at.x;
+          cat.y = at.y;
+          emit(state, { type: "cat-broke-free", cat: cat.id });
+        }
         const spot = hideSpot(state, rng, cat);
         startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
       }

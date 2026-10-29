@@ -463,4 +463,18 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     expect(cat.act.kind).toBe("hide");
     expect(seen(cat, "vet")).toBe(1);
   });
+
+  it("ветеринарка вдома: «Жах клініки» на руках справді виривається з рук і ховається (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    save.current.modifiers.day = "home-vet";
+    const cat = withCat(save, { vet: -2 }, { x: 5.5, y: 8.5 });
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    const { events, stop } = recordEvents();
+    tickModifiers(save.current, MODIFIERS.homeVetMinute - 1, 2, false);
+    stop();
+    expect(save.current.character.held).toBeNull();
+    expect(cat.act.kind).toBe("hide");
+    expect(events).toContainEqual({ type: "cat-broke-free", cat: cat.id });
+    expect(seen(cat, "vet")).toBe(1);
+  });
 });
