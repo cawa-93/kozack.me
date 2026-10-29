@@ -164,9 +164,10 @@ describe("магазин відкривається поступово (§11.3а
     for (const key of ["catFood", "litter", "pills", "drops", "treats", "collar", "shampoo", "catnip", "thing:bowl", "thing:litter", "thing:carrier", "thing:lock", "thing:robot"]) {
       expect(withCat, key).toContain(key);
     }
-    // Корм для стерилізованих і дзвіночок — як і раніше, лише коли є для кого.
+    // Корм для стерилізованих — як і раніше, лише коли є для кого.
     expect(withCat).not.toContain("sterileFood");
-    expect(withCat).not.toContain("bell");
+    // Дзвіночка в магазині немає зовсім (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
+    expect(GOODS.map(goodsKey)).not.toContain("bell");
     // Кота віддали — та в домі він уже бував: котяче з магазину не зникає.
     state.cats = [];
     expect(shown(state)).toEqual(withCat);

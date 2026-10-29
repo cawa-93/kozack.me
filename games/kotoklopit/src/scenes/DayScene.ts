@@ -24,7 +24,7 @@ import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
-import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
+import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
@@ -331,8 +331,7 @@ export class DayScene extends Phaser.Scene {
           cat,
           (choice) => {
             const rng = stateRng(this.state, "behavior");
-            if (choice === "bell") addBell(this.state);
-            else if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
+            if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
             else if ("treat" in choice) giveTreat(this.state, choice.treat, rng);
             else if ("catnip" in choice) giveCatnip(this.state, choice.catnip, rng);
             else putCollar(this.state, choice.collar);
@@ -769,7 +768,7 @@ export class DayScene extends Phaser.Scene {
         .addToDisplayList(this.viewport.world);
       this.collarLabels.set(cat.id, label);
     }
-    label.setVisible(true).setPosition(view.head.x, view.head.y - 6).setText(cat.collar.bell ? `${cat.name} 🔔` : cat.name);
+    label.setVisible(true).setPosition(view.head.x, view.head.y - 6).setText(cat.name);
   }
 
   /** Речі на плиті й поверхнях. */
@@ -943,14 +942,13 @@ export class DayScene extends Phaser.Scene {
       if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
       else if (thing.kind === "litter") set(id, isDirty(thing) ? "dirty" : null);
     }
-    // Кіт просить їсти (на умивальнику — пити з крана, §9.12 «Пиття»), б'ється чи дзеленчить дзвіночком — це чути.
+    // Кіт просить їсти (на умивальнику — пити з крана, §9.12 «Пиття») чи б'ється — це чути. Дзвіночка, що видавав схованого кота,
+    // більше немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
     for (const cat of state.cats) {
       // Застряглий нагорі (§9.12, «Лазіння») кричить баблами нявкання: сталий бабл над ним, притиснутий під панель, закривав би
       // самого кота (перевірка скриншотом 2026-10-26).
       const asking = cat.act.kind === "beg" && cat.act.goal === null && cat.act.target !== "high";
       const fighting = cat.act.kind === "fight";
-      // Дзвіночок видає кота, що ховається (§9.10).
-      const ringing = cat.act.kind === "hide" && cat.collar?.bell === true;
       // Пити просить і біля порожньої миски для води, і там, де вона стояла, коли мисок немає (перевірка стосунків 2026-10-26:
       // біля порожньої миски для води над котом був корм).
       const thirsty = cat.act.target === "sink" || cat.act.target === "water" || state.home.items.some((i) => i.kind === "water" && `item:${i.id}` === cat.act.target);
@@ -965,7 +963,7 @@ export class DayScene extends Phaser.Scene {
         continue;
       }
       // Бабл «бійка» над клубком — один на двох (§9.4, «Пози стосунків»).
-      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : asking ? ask : ringing ? "bell" : null);
+      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : asking ? ask : null);
     }
     // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
     for (const storage of STORAGES) {

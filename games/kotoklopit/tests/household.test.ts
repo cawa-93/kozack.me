@@ -77,7 +77,7 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     expect(card().actions.some((a) => a.primary)).toBe(false);
     // У дешевому нашийнику, а в запасі лише дешевий — варіанта немає; з'явився дорогий — є.
     save.current.home.supplies = { ...save.current.home.supplies, pills: { cheap: 0, premium: 0 }, treats: { cheap: 0, premium: 0 }, collar: { cheap: 1, premium: 0 } };
-    cat.collar = { quality: "cheap", bell: false };
+    cat.collar = { quality: "cheap" };
     expect(card().actions).toEqual([]);
     expect(hasCareSupplies(save.current, cat)).toBe(false);
     expect(putCollar(save.current, "cheap")).toBe(false);

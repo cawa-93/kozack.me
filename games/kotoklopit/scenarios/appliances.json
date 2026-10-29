@@ -124,10 +124,6 @@
      "cheap": 1,
      "premium": 3
     },
-    "bell": {
-     "cheap": 0,
-     "premium": 0
-    },
     "shampoo": {
      "cheap": 5,
      "premium": 5
@@ -144,7 +140,6 @@
     "catFood",
     "litter",
     "treats",
-    "bell",
     "humanMeds",
     "shampoo",
     "detergent",
@@ -458,8 +453,7 @@
      true
     ],
     "collar": {
-     "quality": "cheap",
-     "bell": true
+     "quality": "cheap"
     },
     "treatsToday": 0,
     "hurt": {
@@ -659,8 +653,7 @@
      false
     ],
     "collar": {
-     "quality": "cheap",
-     "bell": true
+     "quality": "cheap"
     },
     "treatsToday": 0,
     "hurt": {

@@ -17,7 +17,6 @@ export const PRODUCT_ICONS: Record<Product, IconName> = {
   humanMeds: "human-meds",
   treats: "treats",
   collar: "collar",
-  bell: "bell",
   shampoo: "shampoo",
   detergent: "detergent",
   catnip: "catnip",

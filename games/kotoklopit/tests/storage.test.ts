@@ -21,7 +21,7 @@ import { targetOf } from "../src/sim/targets";
 import type { Product, Save } from "../src/sim/types";
 import { walkTo } from "./helpers";
 
-const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "bell", "shampoo", "detergent", "catnip", "momMeal"];
+const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "shampoo", "detergent", "catnip", "momMeal"];
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 3 });
 const storage = (object: string) => STORAGES.find((s) => s.object === object)!;

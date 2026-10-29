@@ -387,9 +387,23 @@ export function upgradeDiseases(state: GameState): void {
   for (const entry of state.album) if (entry.cause?.kind === "disease" && removed(entry.cause.disease)) entry.cause = { kind: "old" };
 }
 
-/** Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. */
+/**
+ * Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. Дзвіночка більше немає (рішення автора
+ * 2026-10-29, `GENERAL_REVIEW.md`, А17): його запас в аптечці, у ящиках біля входу й у пакунках, що їдуть чи чекають під дверима,
+ * зникає (5 ₴ за пакунок не повертають — дрібниця), а з нашийників котів — сам дзвіночок.
+ */
 export function upgradeSupplies(state: GameState): void {
-  for (const product of Object.keys(PRODUCTS) as Product[]) state.home.supplies[product] ??= { cheap: 0, premium: 0 };
+  const home = state.home;
+  const gone = (product: string): boolean => product === "bell";
+  for (const product of Object.keys(home.supplies)) if (gone(product)) Reflect.deleteProperty(home.supplies, product);
+  for (const product of Object.keys(home.boxes ?? {})) if (gone(product)) Reflect.deleteProperty(home.boxes ?? {}, product);
+  home.acquired = home.acquired.filter((p) => !gone(p));
+  if (home.ranOut) home.ranOut = home.ranOut.filter((p) => !gone(p));
+  if (home.phoneHints) home.phoneHints = home.phoneHints.filter((p) => !gone(p));
+  home.deliveries = home.deliveries.filter((d) => !("product" in d && gone(d.product)));
+  home.porch = home.porch.filter((d) => !("product" in d && gone(d.product)));
+  for (const cat of state.cats) if (cat.collar) Reflect.deleteProperty(cat.collar, "bell");
+  for (const product of Object.keys(PRODUCTS) as Product[]) home.supplies[product] ??= { cheap: 0, premium: 0 };
 }
 
 /**

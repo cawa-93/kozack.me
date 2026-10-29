@@ -98,26 +98,11 @@ export function putCollar(state: GameState, quality: Quality): boolean {
   // Такий самий нашийник не надягають: старий пропав би, нічого не змінивши (§9.10; загальна ревізія 2026-10-29).
   if (!cat || supply[quality] <= 0 || cat.collar?.quality === quality) return false;
   useSupply(state, "collar", quality);
-  cat.collar = { quality, bell: cat.collar?.bell ?? false };
+  cat.collar = { quality };
   envy(state, cat, "collar");
   emit(state, { type: "collar", cat: cat.id });
   return true;
 }
-
-export function addBell(state: GameState): boolean {
-  const cat = catInHands(state);
-  const supply = state.home.supplies.bell;
-  if (!cat?.collar || cat.collar.bell || supply.cheap + supply.premium <= 0) return false;
-  useSupply(state, "bell", supply.cheap > 0 ? "cheap" : "premium");
-  cat.collar.bell = true;
-  return true;
-}
-
-/**
- * Чи дратує кота дзвіночок (§9.10): полохливий чи нестресостійкий. До злиття груп (2026-10-25) — ще й «Чутливий
- * до погоди», якої більше немає.
- */
-const bellAnnoys = (cat: Cat): boolean => traitLevel(cat, "bravery") <= -1 || traitLevel(cat, "stress") <= -1;
 
 /**
  * Купання (§8.7): кота на руках — до душу; потрібен шампунь. Дорогий шампунь лікує дерматит. «Любов до води» — дзеркально
@@ -163,7 +148,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Ніч (§8.7, §9.10, §9.12): нашийник і дзвіночок, ласощі й гра вудкою за день, дерматит безшерстих без купання, мати й новонароджені. */
+/** Ніч (§8.7, §9.10, §9.12): нашийник, ласощі й гра вудкою за день, дерматит безшерстих без купання, мати й новонароджені. */
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
@@ -180,7 +165,6 @@ export function nightlyCare(state: GameState, rng: Rng): void {
     }
     if (cat.collar) {
       changeMood(state, cat, COLLAR.mood[cat.collar.quality]);
-      if (cat.collar.bell && bellAnnoys(cat)) changeMood(state, cat, COLLAR.bellMood, "дзвіночок");
       if (cat.collar.quality === "cheap" && rng.chance(COLLAR.lose)) {
         cat.collar = null;
         emit(state, { type: "collar-lost", cat: cat.id });

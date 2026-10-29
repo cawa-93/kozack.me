@@ -335,19 +335,39 @@ describe("поведінка котів: пошук багів 2026-10-25 (§9.1
 });
 
 describe("догляд персонажа (§9.12)", () => {
-  it("дзвіночок дратує полохливого й нестресостійкого кота, а сміливого — ні (злиття груп 2026-10-25)", () => {
+  it("дзвіночка немає: полохливий і нестресостійкий кіт у нашийнику вночі не сумнішає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
     const lost = (traits: Record<string, TraitLevel>): number => {
       const save = game();
       const cat = withCat(save);
       cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
-      cat.collar = { quality: "premium", bell: true };
+      cat.collar = { quality: "premium" };
       cat.mood = 50;
       nightlyCare(save.current, createRng(1));
       return 50 + COLLAR.mood.premium - cat.mood;
     };
-    expect(lost({ bravery: -1 })).toBeGreaterThan(0);
-    expect(lost({ stress: -1 })).toBeGreaterThan(0);
+    // Раніше дзвіночок щоночі забирав 1 настрою в полохливого й нестресостійкого — мовчки й без змоги його зняти.
+    expect(lost({ bravery: -1 })).toBeCloseTo(0);
+    expect(lost({ stress: -1 })).toBeCloseTo(0);
     expect(lost({ bravery: 1 })).toBeCloseTo(0);
+  });
+
+  it("старе збереження: дзвіночок зникає з нашийника, з аптечки, з ящиків і з пакунків (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+    const save = game();
+    const cat = withCat(save);
+    const home = save.current.home as unknown as Record<string, unknown> & typeof save.current.home;
+    cat.collar = { quality: "cheap", bell: true } as unknown as Cat["collar"];
+    (home.supplies as Record<string, unknown>)["bell"] = { cheap: 2, premium: 1 };
+    home.boxes = { food: { cheap: 3, premium: 0 }, ...({ bell: { cheap: 1, premium: 0 } } as object) };
+    home.acquired.push("bell" as never);
+    home.porch.push({ id: 90, quality: "cheap", at: 0, product: "bell" as never }, { id: 91, quality: "cheap", at: 0, product: "food" });
+    home.deliveries.push({ id: 92, quality: "premium", at: 10_000, product: "bell" as never });
+    const loaded = deserialize(serialize(save)).current;
+    expect(loaded.cats[0]?.collar).toEqual({ quality: "cheap" });
+    expect(loaded.home.supplies).not.toHaveProperty("bell");
+    expect(loaded.home.boxes).toEqual({ food: { cheap: 3, premium: 0 } });
+    expect(loaded.home.acquired).not.toContain("bell");
+    expect(loaded.home.porch.map((d) => d.id)).toEqual([91]);
+    expect(loaded.home.deliveries.map((d) => d.id)).not.toContain(92);
   });
 
   it("корм із шафки — у миску одразу доверху, вода доливається одним натисканням", () => {

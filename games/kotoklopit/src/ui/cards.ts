@@ -442,13 +442,12 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
 }
 
 
-export type CareChoice = { medicine: Medicine } | { treat: Quality } | { catnip: Quality } | { collar: Quality } | "bell";
+export type CareChoice = { medicine: Medicine } | { treat: Quality } | { catnip: Quality } | { collar: Quality };
 
-/** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
+/** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, котяча м'ята, нашийник. */
 export function hasCareSupplies(state: GameState, cat: Cat): boolean {
-  // Дзвіночок — лише на нашийник без дзвіночка, нашийник — лише іншої якості, ніж на коті: інакше картка відкрилася б порожньою.
-  const bell = cat.collar !== null && !cat.collar.bell && supplyCount(state, "bell") > 0;
-  return bell || collarChoices(state, cat).length > 0 || (["pills", "drops", "treats", "catnip"] as const).some((p) => supplyCount(state, p) > 0);
+  // Нашийник — лише іншої якості, ніж на коті: інакше картка відкрилася б порожньою.
+  return collarChoices(state, cat).length > 0 || (["pills", "drops", "treats", "catnip"] as const).some((p) => supplyCount(state, p) > 0);
 }
 
 /**
@@ -474,7 +473,6 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     if (supply.catnip[q] > 0) actions.push({ label: `${VARIANT_TITLES["catnip"]?.[q] ?? ""} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
   }
   for (const q of collarChoices(state, cat)) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
-  if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: `Дзвіночок ×${supplyCount(state, "bell")}`, onSelect: () => onPick("bell") });
   // Це меню вибору, як «Куди поїхати?»: головної дії немає, тож пробіл чи Enter нічого не обирають за гравця. Раніше головною
   // була перша дія (таблетки): другий пробіл, що брав кота, давав ліки здоровому коту (загальна ревізія 2026-10-29).
   return {

@@ -24,7 +24,6 @@ export const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) =
   // «Ласощі» не мають однини: «1 ласощі» — помилка (крок 17, вичитка 2026-10-28).
   treats: { name: "Ласощі для котів", unit: portions, place: "в аптечці" },
   collar: { name: "Нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
-  bell: { name: "Дзвіночок на нашийник", unit: (n) => `${n} шт.`, place: "в аптечці" },
   shampoo: { name: "Шампунь для котів", unit: (n) => `${n} ${plural(n, "купання", "купання", "купань")}`, place: "у ванній" },
   detergent: { name: "Пральний засіб", unit: (n) => `${n} ${plural(n, "прання", "прання", "прань")}`, place: "у пральній машині" },
   catnip: { name: "Котяча м'ята", unit: (n) => `${n} ${plural(n, "раз", "рази", "разів")}`, place: "в аптечці" },
@@ -62,7 +61,6 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   humanMeds: { cheap: "Аптечні ліки", premium: "Надійні ліки" },
   treats: { cheap: "Смаколики", premium: "Делікатеси" },
   collar: { cheap: "Простий нашийник", premium: "Шкіряний нашийник" },
-  bell: { cheap: "Мідний дзвіночок", premium: "Срібний дзвіночок" },
   shampoo: { cheap: "Простий шампунь", premium: "Делікатний шампунь" },
   detergent: { cheap: "Пральний порошок", premium: "Пральний концентрат" },
   catnip: { cheap: "Сушена м'ята", premium: "Мататабі" },

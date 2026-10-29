@@ -163,7 +163,6 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
   treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 35 } },
   collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 10, premium: 25 } },
-  bell: { units: { cheap: 1, premium: 1 }, price: { cheap: 5, premium: 5 } },
   shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
   detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 30 } },
   // Котяча м'ята й мататабі (§9.12, «Котяча м'ята», 2026-10-26): по 5 разів.
@@ -190,7 +189,6 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   humanMeds: { cheap: 0, premium: 0 },
   treats: { cheap: 0, premium: 0 },
   collar: { cheap: 0, premium: 0 },
-  bell: { cheap: 0, premium: 0 },
   shampoo: { cheap: 0, premium: 0 },
   detergent: { cheap: 0, premium: 0 },
   catnip: { cheap: 0, premium: 0 },
@@ -210,7 +208,6 @@ export const STORAGE_LIMITS: Record<Product, number> = {
   humanMeds: 10,
   treats: 40,
   collar: 10,
-  bell: 10,
   shampoo: 10,
   detergent: 10,
   catnip: 10,
@@ -1223,8 +1220,11 @@ export const CYCLE = {
 export const BEARD = { neatAfterShave: 2, grows: 4, neatAfterTrim: 3, shaveMinutes: 10, trimMinutes: 5, impression: 0.5 } as const;
 /** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
-/** Нашийник (§9.10): настрій за день, шанс загубити дешевий, дзвіночок дратує чутливих. */
-export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05, bellMood: -1 } as const;
+/**
+ * Нашийник (§9.10): настрій за день, шанс загубити дешевий. Дзвіночка, що дратував чутливих (`bellMood` −1 за ніч), більше
+ * немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
+ */
+export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
 /** Купання (§8.7): `minutes` — скільки триває, «Боїться води» — ×(1 + `fearStep`), «Водобоязнь» — ×(1 + 2 × `fearStep`) (рішення автора 2026-10-28). */
 export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, fearStep: 0.5, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;

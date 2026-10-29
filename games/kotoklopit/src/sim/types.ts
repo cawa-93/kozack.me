@@ -11,7 +11,7 @@ export type Quality = "cheap" | "premium";
  * Запаси, що поповнюються упаковками (§6.4): людська їжа, засоби гігієни, котячий корм, наповнювач. Мамині судочки (`momMeal`,
  * §4.1, рішення автора 2026-10-26) — лише від мами, у магазині їх немає.
  */
-export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "bell" | "shampoo" | "detergent" | "catnip" | "momMeal";
+export type Product = "food" | "hygiene" | "catFood" | "sterileFood" | "litter" | "pills" | "drops" | "humanMeds" | "treats" | "collar" | "shampoo" | "detergent" | "catnip" | "momMeal";
 /** Ліки вдома (§9.5). */
 export type Medicine = "pills" | "drops";
 
@@ -789,8 +789,11 @@ export interface Cat {
   restUntil: number;
   /** Які половини породи знає персонаж (§9.11). */
   breedKnown: [boolean, boolean];
-  /** Нашийник (§9.10): якість і дзвіночок; null — без нашийника. */
-  collar: { quality: Quality; bell: boolean } | null;
+  /**
+   * Нашийник (§9.10): якість; null — без нашийника. Дзвіночка більше немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17):
+   * у старих збереженнях поле `bell` знімає `upgradeSupplies`.
+   */
+  collar: { quality: Quality } | null;
   /** Ласощі за сьогодні (§7). */
   treatsToday: number;
   /** Скільки хвилин сьогодні з котом гралися вудкою (§9.12, «Засідки»): гра зменшує засідки. У старих збереженнях немає. */
