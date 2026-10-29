@@ -5,6 +5,7 @@ import { knownBreedHalves } from "./breeds";
 import { changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
+import { putDownCat } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
 import { isNewborn } from "./reproduction";
 import { vetManner } from "./destinations";
@@ -251,6 +252,10 @@ export function answerCall(state: GameState): void {
   // Пестощі й гра закінчуються; почата тривала дія (прибирання, їжа) лише чекає, як і без кнопки (повторна перевірка модифікаторів 2026-10-28).
   const kind = state.character.activity?.kind;
   if (kind === "pet" || kind === "play") state.character.activity = null;
+  // Кота з рук опускають поруч, як і засинаючи (загальна ревізія 2026-10-29: кіт, що пручається, усі 30 хвилин лишався на
+  // руках і кусав, а опустити його гравець не міг). Інше з рук не змінюється з часом — лишається.
+  const held = state.character.held;
+  if (held?.kind === "cat") putDownCat(state, held.cat);
 }
 
 /** Не відповісти мамі (§4.1): здоровий глузд падає. */

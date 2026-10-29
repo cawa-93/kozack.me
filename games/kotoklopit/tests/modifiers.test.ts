@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
+import { pickUpCat } from "../src/sim/actions";
 import { createCat } from "../src/sim/cat";
 import { GUESTS, MODIFIERS, PRODUCTS, STORAGE_LIMITS } from "../src/sim/config";
 import { unpack } from "../src/sim/economy";
@@ -223,6 +224,21 @@ describe("події модифікаторів: перевірка модифі
     office.current.minute = 15 * 60;
     office.current.today.officeDone = true;
     expect(scheduleOf(office.current).some((line) => line.includes("офіс"))).toBe(false);
+  });
+
+  it("відповідаючи мамі, кота з рук опускають поруч: пів години розмови він не пручається й не кусає (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    save.current.minute = 11 * 60;
+    const cat = withCat(save, { lap: -1 });
+    Object.assign(save.current.character.body, { x: cat.x + 0.5, y: cat.y });
+    pickUpCat(save.current, cat);
+    expect(save.current.character.held).toMatchObject({ kind: "cat", cat: cat.id });
+    const { events, stop } = recordEvents();
+    answerCall(save.current);
+    advance(save, MODIFIERS.call.minutes);
+    stop();
+    expect(save.current.character.held).toBeNull();
+    expect(events.some((e) => (e.type === "bite" || e.type === "clawed") && e.cat === cat.id)).toBe(false);
   });
 });
 
