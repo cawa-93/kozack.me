@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { useProgress } from "../src/sim/actions";
+import { createCat } from "../src/sim/cat";
+import { onEvent } from "../src/sim/events";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { dash } from "../src/sim/body";
 import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
@@ -108,6 +112,41 @@ describe("плита (§8.7)", () => {
     standAt(save, "bed");
     interact(save);
     expect(save.current.home.stove.item?.kind).toBe("burnt");
+  });
+
+  it("уночі плита готує й підгорає своїм часом: свіжу страву голодний «Злодюжка» краде лише до того, як вона підгоріла (загальна ревізія 2026-10-29)", () => {
+    /** Ніч із 22:00: на плиті готова страва чи сира порція, злодюжка з заданим голодом, миски порожні. */
+    const night = (seed: number, item: "meal" | "raw", hunger: number) => {
+      const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+      const cat = createCat(save.current, createRng(seed), { source: "shelter", ageWeeks: 10, at: { x: 5.5, y: 8.5 } });
+      cat.traits = [{ group: "thief", level: 2, seen: 0, known: false }];
+      cat.arrivedDay = -10;
+      cat.needs.hunger = hunger;
+      addCat(save.current, cat);
+      for (const i of save.current.home.items) if (i.kind === "bowl") i.food = 0;
+      save.current.home.stove = { item: { kind: item, quality: "cheap" }, minutes: item === "meal" ? COOK_MINUTES : 0 };
+      save.current.minute = hours(22);
+      const start = save.current.minute;
+      let stoleAt: number | null = null;
+      const stop = onEvent((e, state) => {
+        if (e.type === "stole" && e.object === "stove") stoleAt = state.minute - start;
+      });
+      standAt(save, "bed");
+      interact(save);
+      stop();
+      return { kind: save.current.home.stove.item?.kind ?? null, stoleAt: stoleAt as number | null };
+    };
+    let burnt = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      // Кіт ще не голодний: поки зголодніє, страва вже підгоріла (раніше її крали посеред ночі).
+      if (night(seed, "meal", 40).kind === "burnt") burnt += 1;
+      // Дуже голодний краде — але лише поки страва не підгоріла, як і вдень.
+      const { kind, stoleAt } = night(seed, "meal", 90);
+      if (kind !== "burnt") expect(stoleAt ?? Infinity).toBeLessThanOrEqual(BURN_MINUTES.normal - COOK_MINUTES);
+      // Сира порція за ніч стає стравою, а потім підгорає.
+      expect(night(seed, "raw", 40).kind).toBe("burnt");
+    }
+    expect(burnt).toBeGreaterThan(15);
   });
 });
 

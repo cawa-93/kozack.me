@@ -187,6 +187,10 @@ function sleep({ state, report, rng }: Night): void {
     // Коти живуть ніч похвилинно: безлад, порожні миски, брудний лоток (§4).
     while (minute < until) {
       const step = Math.min(1, until - minute);
+      // Плита вночі не вимикається: страва готується й підгорає своїм часом (§8.7), похвилинно, як і вдень (плита, побут, коти):
+      // раніше плиту прокручували одним кроком після ночі, і всю ніч на ній лежала свіжа страва — «Злодюжка» мав на крадіжку цілу
+      // ніч замість 15–45 хвилин, як удень (загальна ревізія 2026-10-29).
+      tickStove(state, step);
       tickHousehold(state, minute, step);
       // Феєрверки о 21:00 гримлять і тоді, коли персонаж уже спить (перевірка модифікаторів 2026-10-28: жайворонок, що ліг до 21:00, їх оминав).
       if (state.modifiers.day === "festival" && minute < MODIFIERS.festival.minute && minute + step >= MODIFIERS.festival.minute) {
@@ -242,8 +246,6 @@ function sleep({ state, report, rng }: Night): void {
   report.sleptHours = slept;
   wakingSight(state, bed, onBed, nightMinutes);
   report.wokeMinute = woke - MINUTES_PER_DAY;
-  // Плита вночі не вимикається: страва, що лишилася на ній, підгорає (§8.7).
-  tickStove(state, woke - start);
   postponeDeliveries(state);
   passSleepTime(state, slept);
   state.character.sleepSpeed = sleepSpeedAfter(slept);
