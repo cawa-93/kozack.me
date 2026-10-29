@@ -454,6 +454,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     for (const cat of cats) {
       for (const d of cat.diseases) d.known = true;
       if (cat.pregnancy) cat.pregnancy.known = true;
+      // Що бачить ветеринар, — як у клініці (vetExam, §9.9). Любові огляд удома не коштує: без переноски й дороги (§4.1).
+      cat.sterilizedKnown = true;
       cat.breedKnown = [true, true];
       // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
       // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.

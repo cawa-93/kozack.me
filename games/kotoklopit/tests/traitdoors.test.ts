@@ -474,9 +474,13 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     const save = game();
     save.current.modifiers.day = "home-vet";
     const cat = withCat(save, { vet: -2 }, { x: 5.5, y: 8.5 });
+    cat.sterilizedKnown = false;
     tickModifiers(save.current, MODIFIERS.homeVetMinute - 1, 2, false);
     expect(cat.act.kind).toBe("hide");
     expect(seen(cat, "vet")).toBe(1);
+    // Огляд удома любові не коштує (у клініці «Жах клініки» втратив би 6), а стерилізацію видно, як у клініці (загальна ревізія 2026-10-29).
+    expect(cat.love).toBe(50);
+    expect(cat.sterilizedKnown).toBe(true);
   });
 
   it("ветеринарка вдома: «Жах клініки» на руках справді виривається з рук і ховається (загальна ревізія 2026-10-29)", () => {
