@@ -71,11 +71,11 @@ const STEPS: readonly Step[] = [
   { id: "pregnancies", weekly: true, run: pregnancies }, // §9.8
   { id: "utilities", weekly: true, run: utilities },
   { id: "week-modifier", weekly: true, run: weekModifier }, // §4.1
-  // 4. Поріг 35% за здоровим глуздом увечері.
+  // 5. Поріг 35% за здоровим глуздом увечері.
   { id: "kitten-check", run: kittenCheck },
-  // 5. Ранок: персонаж бачить, що сталося вночі.
+  // 6. Ранок: персонаж бачить, що сталося вночі.
   { id: "morning", run: morning },
-  // 6. Новий день.
+  // 7. Новий день.
   { id: "new-day", run: newDay },
 ];
 
