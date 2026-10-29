@@ -7,9 +7,7 @@ import { emit } from "./events";
 import { breedById, knownBreedHalves, MIXED } from "./breeds";
 import { applyBreedLook, fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
-import { chooseWeekModifier } from "./modifiers";
 import { isEnemy, isFriend } from "./relations";
-import { weekdayOf, weekOf } from "./time";
 import type { Rng } from "./rng";
 import type { Cat, GameState } from "./types";
 
@@ -43,14 +41,11 @@ export const fightFactor = (cat: Cat): number => (fertile(cat) && cat.sex === "m
 /** Новонароджений (вік 0) лежить біля матері (§9.8). */
 export const isNewborn = (cat: Cat): boolean => cat.source === "born" && cat.ageWeeks === 0;
 
-/** Модифікатор тижня дня, у який входимо: у ніч на понеділок — уже нового тижня (перевірка модифікаторів 2026-10-28: діяв на тиждень пізніше). */
-function weekAhead(state: GameState): string | null {
-  return weekdayOf(state.day + 1) === 0 ? chooseWeekModifier(state, weekOf(state.day + 1)) : state.modifiers.week;
-}
-
-/** Ніч: відновлення після операції й розклад тічки. */
-export function nightlyStates(state: GameState, rng: Rng): void {
-  const week = weekAhead(state);
+/**
+ * Ніч: відновлення після операції й розклад тічки. `week` — модифікатор тижня дня, у який входимо: у ніч на понеділок — уже
+ * нового тижня (перевірка модифікаторів 2026-10-28: діяв на тиждень пізніше), обраний на початку ночі (`runNight`).
+ */
+export function nightlyStates(state: GameState, rng: Rng, week: string | null = state.modifiers.week): void {
   for (const cat of state.cats) {
     // 3 ночі — дня операції й двох наступних (загальна ревізія 2026-10-29: було 4). Втома ×1,5 (catai) — до кінця дня `recoveryUntil`.
     if (state.day < cat.recoveryUntil) changeMood(state, cat, STERILIZATION.recoveryMoodPerDay, "відновлення після операції");
@@ -81,7 +76,7 @@ export function conceive(state: GameState, rng: Rng): void {
     const fathers = state.cats.filter((c) => c.sex === "male" && fertile(c) && !isEnemy(state, mother, c));
     // Зачаття в ніч на понеділок — наприкінці тижня, за модифікатором тижня, що минає: «Котячий березень» оголошено в понеділок,
     // і гравець має тиждень, щоб зреагувати (стерилізувати, розвести котів) (повторна перевірка модифікаторів 2026-10-28: кидалося на початку березня, без шансу
-    // зреагувати). Тічка ж починається вже в новому тижні — `weekAhead`.
+    // зреагувати). Тічка ж починається вже в новому тижні — `nightlyStates`.
     const week = state.modifiers.week;
     const chance = week === "cat-march" ? MODIFIERS.week.catMarch.pregnancy : week === "calm-season" ? MODIFIERS.week.calmPregnancy : BREEDING.pregnancy;
     if (fathers.length === 0 || !rng.chance(chance)) continue;

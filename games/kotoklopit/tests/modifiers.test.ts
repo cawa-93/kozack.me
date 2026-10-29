@@ -333,6 +333,55 @@ describe("вибір модифікаторів (§4.1)", () => {
     }
   });
 
+  describe("котячі модифікатори тижня — лише коли є кіт (рішення автора 2026-10-29, А14)", () => {
+    const CAT_WEEKS = ["cat-march", "calm-season", "heat-wave", "cold-snap", "cat-flu", "cat-prevention"];
+    const withCat = (save: Save): void => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
+    const weeks = (save: Save): (string | null)[] => Array.from({ length: 400 }, (_, i) => chooseWeekModifier(save.current, i + 1));
+
+    it("без котів їх немає, а модифікатор тижня — так само в половині тижнів; з котом — бувають; не котячий тиждень від котів не залежить (§6.1)", () => {
+      const empty = game();
+      const without = weeks(empty);
+      expect(without.some((id) => id !== null && CAT_WEEKS.includes(id))).toBe(false);
+      const share = without.filter((id) => id !== null).length / without.length;
+      expect(share).toBeGreaterThan(0.4);
+      expect(share).toBeLessThan(0.6);
+      const cat = game();
+      withCat(cat);
+      const withCats = weeks(cat);
+      for (const id of CAT_WEEKS) expect(withCats).toContain(id);
+      // Котів не стало — не котячий модифікатор тижня той самий: стан лише відсіює записи перестановки.
+      withCats.forEach((id, i) => {
+        if (id === null || !CAT_WEEKS.includes(id)) expect(without[i]).toBe(id);
+      });
+      // Безробітному без котів — лише «Людський грип ↔ Тиждень профілактики».
+      const jobless = game();
+      jobless.current.job.unemployed = true;
+      expect(new Set(weeks(jobless).filter((id) => id !== null))).toEqual(new Set(["human-flu", "human-prevention"]));
+    });
+
+    it("ніч на понеділок обирає тиждень за станом на вечір неділі: кошеня з притулку, що прийшло вночі, котячого тижня не дає", () => {
+      for (let seed = 1; seed < 300; seed++) {
+        const save = newGame({ sex: "female", difficulty: "normal", seed });
+        const probe = newGame({ sex: "female", difficulty: "normal", seed });
+        withCat(probe);
+        // Тиждень 2 починається з дня 7: ніч на нього — неділя, день 6.
+        const catWeek = chooseWeekModifier(probe.current, 2);
+        if (catWeek === null || !CAT_WEEKS.includes(catWeek)) continue;
+        // Вечір неділі без котів і з низьким здоровим глуздом: уночі персонаж забере кошеня з притулку (§6.2).
+        const evening = chooseWeekModifier(save.current, 2);
+        save.current.day = 6;
+        save.current.minute = 22 * 60;
+        save.current.character.stats.sanity = 20;
+        goToSleep(save);
+        expect(save.current.cats.some((c) => c.source === "shelter-forced")).toBe(true);
+        expect(save.current.modifiers.week).toBe(evening);
+        expect(CAT_WEEKS).not.toContain(save.current.modifiers.week);
+        return;
+      }
+      throw new Error("немає зерна з котячим тижнем");
+    });
+  });
+
   it("модифікатор тижня — приблизно в половині тижнів; у відпустку робочих модифікаторів немає", () => {
     const save = game();
     let some = 0;

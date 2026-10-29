@@ -17,7 +17,7 @@ import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
-import { weekdayOf, weekOf } from "./time";
+import { weekdayOf } from "./time";
 import type { Cat, GameState } from "./types";
 import { stockBowl } from "./household";
 import { loudNoise } from "./noise";
@@ -66,13 +66,18 @@ const SPECIAL: readonly { id: string; when: When; group: Pair["group"] }[] = [
   { id: "office", when: "workday", group: "work" },
 ];
 
-export const WEEK_PAIRS: readonly [string, string][] = [
-  ["deadline-week", "quiet-week"],
-  ["crunch", "vacation"],
-  ["cat-march", "calm-season"],
-  ["heat-wave", "cold-snap"],
-  ["cat-flu", "cat-prevention"],
-  ["human-flu", "human-prevention"],
+/**
+ * Пари модифікаторів тижня (`DAY_MODIFIERS.md`) і коли вони можливі: робочі — з роботою; котячі — коли є кіт (рішення автора
+ * 2026-10-29, `GENERAL_REVIEW.md`, А14: без котів тиждень із ними був порожнім). «Хвиля спеки ↔ Похолодання» — тижневі «Спека» й
+ * «Холод», а ті бувають лише з котом.
+ */
+export const WEEK_PAIRS: readonly { hard: string; easy: string; when: "any" | "work" | "cat" }[] = [
+  { hard: "deadline-week", easy: "quiet-week", when: "work" },
+  { hard: "crunch", easy: "vacation", when: "work" },
+  { hard: "cat-march", easy: "calm-season", when: "cat" },
+  { hard: "heat-wave", easy: "cold-snap", when: "cat" },
+  { hard: "cat-flu", easy: "cat-prevention", when: "cat" },
+  { hard: "human-flu", easy: "human-prevention", when: "any" },
 ];
 
 /** Чи діє модифікатор: дня чи тижня (тижневі «Спека» й «Холод» — цілий тиждень). */
@@ -119,17 +124,34 @@ function fits(state: GameState, day: number, when: When): boolean {
   }
 }
 
-/** Модифікатор тижня (§4.1): у половині тижнів; важкий бік — із часткою за складністю. */
+/** Перестановка Фішера–Єйтса номерів 0…n−1: кількість кидків залежить лише від n (§6.1). */
+function shuffled(rng: Rng, n: number): number[] {
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  return order;
+}
+
+/**
+ * Модифікатор тижня (§4.1): у половині тижнів; бік — із часткою за складністю; пара — перша в перестановці каталогу, що тижню
+ * підходить: безробітному — неробоча (раніше робоча пара давала порожній тиждень; перевірка модифікаторів 2026-10-28), котяча —
+ * лише коли є кіт (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14). Як і в модифікатора дня, кидків завжди однаково, а стан
+ * лише вирішує, який запис перестановки взяти (§6.1): котів не стало — не котячий модифікатор той самий.
+ *
+ * Стан — вечір неділі: ніч обирає модифікатор нового тижня раз, ще до своїх кроків (`runNight`), бо за нього вже рахується
+ * тічка (§9.8), а коти за ніч можуть померти, народитися чи прийти з притулку.
+ */
 export function chooseWeekModifier(state: GameState, week: number): string | null {
   const rng = createRng(deriveSeed(state.seed, 4, week));
   if (!rng.chance(MODIFIERS.weekShare)) return null;
-  // Безробітному — з пар, що йому підходять (раніше робоча пара давала порожній тиждень: модифікатор був у третині тижнів, а не в
-  // половині; перевірка модифікаторів 2026-10-28).
-  const pairs = state.job.unemployed ? WEEK_PAIRS.filter(([hard]) => hard !== "crunch" && hard !== "deadline-week") : WEEK_PAIRS;
-  const chosen = pairs[rng.int(0, pairs.length - 1)];
+  const hard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
+  const order = shuffled(rng, WEEK_PAIRS.length);
+  const fits = (when: (typeof WEEK_PAIRS)[number]["when"]): boolean => (when === "work" ? !state.job.unemployed : when === "cat" ? state.cats.length > 0 : true);
+  const chosen = order.map((i) => WEEK_PAIRS[i]!).find((p) => fits(p.when));
   if (!chosen) return null;
-  const [hard, easy] = chosen;
-  return rng.chance(MODIFIERS.hardShare[state.difficulty]) ? hard : easy;
+  return hard ? chosen.hard : chosen.easy;
 }
 
 /** Повний каталог модифікаторів дня в сталому порядку: пари, потім особливі (у них обидва боки — той самий модифікатор). */
@@ -152,12 +174,7 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
   // Спершу бік за складністю, потім пара, у якої цей бік сьогодні можливий: інакше пара з одним можливим боком («Робоча субота»
   // лише в суботу) брала його за будь-якої складності, і частка важких була нижчою за 40/50/60% (перевірка модифікаторів 2026-10-28).
   const wantHard = rng.chance(MODIFIERS.hardShare[state.difficulty]);
-  // Перестановка Фішера–Єйтса: кількість кидків залежить лише від розміру каталогу.
-  const order = DAY_CATALOG.map((_, i) => i);
-  for (let i = order.length - 1; i > 0; i--) {
-    const j = rng.int(0, i);
-    [order[i], order[j]] = [order[j]!, order[i]!];
-  }
+  const order = shuffled(rng, DAY_CATALOG.length);
   if (none) return null;
   const previous = state.modifiers.day;
   const week = state.modifiers.week;
@@ -179,7 +196,7 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
 
 /** Ранок нового дня (§4.1): вибір модифікаторів і їхні ранкові ефекти. */
 export function startModifiers(state: GameState, rng: Rng): void {
-  if (weekdayOf(state.day) === 0) state.modifiers.week = chooseWeekModifier(state, weekOf(state.day));
+  // Модифікатор тижня ніч на понеділок уже обрала — за станом на вечір неділі (`runNight`; рішення автора 2026-10-29, А14).
   const today = state.today;
   // Пропущене вчора щеплення: тиждень коти хворіють частіше.
   // Ночі нового дня й наступних — разом 7 (перевірка модифікаторів 2026-10-28: було 8).

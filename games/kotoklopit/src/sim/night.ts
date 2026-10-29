@@ -49,6 +49,12 @@ interface Night {
   report: NightReport;
   /** Нічні кидки: на переграванні ті самі (§6.1). */
   rng: Rng;
+  /**
+   * Модифікатор тижня дня, у який входимо (§4.1): у ніч на понеділок — нового тижня, обраний раз, за станом на вечір неділі.
+   * Тічка рахується за ним уже на першому кроці, а смерть, пологи й кошеня з притулку ще змінять котів — і раніше модифікатор
+   * обирали ще двічі, на кроці тижня й уранці, з іншими котами (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14).
+   */
+  week: string | null;
 }
 
 interface Step {
@@ -100,7 +106,8 @@ export function runNight(state: GameState, collapsed: boolean): NightReport {
     sanityMorning: sanity,
   };
   const base = streamSeed(state.seed, "night", state.day);
-  const night: Night = { state, report, rng: createRng(base) };
+  const week = report.weekly ? chooseWeekModifier(state, weekOf(state.day + 1)) : state.modifiers.week;
+  const night: Night = { state, report, rng: createRng(base), week };
   for (const [index, step] of STEPS.entries()) {
     if (step.weekly && !report.weekly) continue;
     // Кожен крок — своє зерно від дня: скільки чисел узяли сон і хвороби, залежить від поведінки за день, і раніше це
@@ -303,12 +310,12 @@ function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h
 }
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
-function catHealth({ state, rng }: Night): void {
+function catHealth({ state, rng, week }: Night): void {
   // Поки хвороба шкодить, гарний настрій здоров'я не відновлює (§9.5, Х5).
   for (const cat of state.cats) closeCatDay(state, cat, !isHurting(state, cat));
   // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).
   nightlyDiseases(state, rng);
-  nightlyStates(state, rng);
+  nightlyStates(state, rng, week);
   nightlyCare(state, rng);
   // Підсумок дня для пар: життя разом зближує (§9.4).
   nightlyRelations(state);
@@ -333,8 +340,8 @@ function pregnancies({ state, rng }: Night): void {
   conceive(state, rng);
 }
 
-function weekModifier({ state }: Night): void {
-  state.modifiers.week = chooseWeekModifier(state, weekOf(state.day + 1));
+function weekModifier({ state, week }: Night): void {
+  state.modifiers.week = week;
 }
 
 /** Коти старшають у свою ніч — раз на 7 днів від дня появи (§9.1): вік, нова риса, хвороби віку (§9.5). */
