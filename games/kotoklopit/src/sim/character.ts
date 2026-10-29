@@ -42,8 +42,12 @@ export function statFloor(state: GameState, stat: StatName): number {
 
 /** Перший тиждень гри, і в домі ще жодного разу не було кота (§8.3). */
 export function firstWeekProtected(state: GameState): boolean {
-  if (state.day >= FIRST_WEEK_PROTECTION.days || state.cats.length > 0) return false;
-  return Object.values(state.stats.raised).every((count) => count === 0);
+  return state.day < FIRST_WEEK_PROTECTION.days && !hadCat(state);
+}
+
+/** У домі вже бував кіт — є зараз чи був колись (стійка ознака: кота віддали чи втратили — однаково «бував»). */
+export function hadCat(state: GameState): boolean {
+  return state.cats.length > 0 || Object.values(state.stats.raised).some((count) => count > 0);
 }
 
 /**

@@ -1,13 +1,30 @@
 // Універсальний магазин (§6.4): один каталог запасів і речей, кошик із кількістю, оплата цілком.
 // Той самий кошик — доставкою з телефона чи на місці в поїздці.
 
-import { spend } from "./character";
-import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
+import { hadCat, spend } from "./character";
+import { SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, THINGS } from "./config";
 import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
-import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
+import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice, supplyCount } from "./economy";
 import type { GameState, Quality, ThingKind } from "./types";
 
 export { GOODS, goodsKey, type Goods };
+
+/**
+ * Чи показує магазин товар (§11.3а, гра відкривається поступово). Поки в домі ще жодного разу не було кота, — лише запаси для себе
+ * (`SELF_PRODUCTS`): котячих запасів і речей не видно (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Котячі
+ * товари»; раніше до першого кота ховалися лише м'ята, дзвіночок і корм для стерилізованих). Далі ховається лише марне без умови:
+ * корм для стерилізованих — доки немає стерилізованого кота, дзвіночок — доки немає нашийника (на коті чи в запасі). Запас, що вже
+ * бував удома, лишається в магазині назавжди.
+ */
+export function offered(state: GameState, goods: Goods): boolean {
+  if (!("product" in goods)) return hadCat(state);
+  const { product } = goods;
+  if (state.home.acquired.includes(product) || SELF_PRODUCTS.includes(product)) return true;
+  if (!hadCat(state)) return false;
+  if (product === "sterileFood") return state.cats.some((c) => c.sterilized);
+  if (product === "bell") return supplyCount(state, "collar") > 0 || state.cats.some((c) => c.collar !== null);
+  return true;
+}
 
 /** Доставка з телефона чи покупка на місці. */
 export type ShopMode = "delivery" | "store";

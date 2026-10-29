@@ -3,8 +3,8 @@
 
 import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
-import { incoming, supplyCount } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { incoming } from "../sim/economy";
+import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, offered, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
@@ -13,20 +13,6 @@ import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 function goodsName(goods: Goods): string {
   return "product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing];
-}
-
-/**
- * Магазин відкривається поступово (§11.3а): корм для стерилізованих — коли є стерилізований кіт
- * чи такий корм уже бував удома, дзвіночок — коли є нашийник (на коті чи в запасі), котяча м'ята — коли вдома є кіт.
- */
-function offered(state: GameState, goods: Goods): boolean {
-  if (!("product" in goods)) return true;
-  const acquired = state.home.acquired.includes(goods.product);
-  if (goods.product === "sterileFood") return acquired || state.cats.some((c) => c.sterilized);
-  if (goods.product === "bell") return acquired || supplyCount(state, "collar") > 0 || state.cats.some((c) => c.collar !== null);
-  // Котяча м'ята — коли вдома вже є кіт (§9.12).
-  if (goods.product === "catnip") return acquired || state.cats.length > 0;
-  return true;
 }
 
 /** Чому товар не взяти — коротким підписом у рядку (§6.4). */
@@ -93,6 +79,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
   };
 
   const section = (title: string, goods: readonly Goods[]): void => {
+    // До першого кота речей у магазині немає (§11.3а) — і заголовка без рядків теж.
+    if (goods.length === 0) return;
     box.append(element("p", "shop-section", title));
     for (const g of goods) {
       const row = element("div", "shop-item");

@@ -2,11 +2,14 @@
 
 import { describe, expect, it } from "vitest";
 
+import { createCat } from "../src/sim/cat";
 import { newGame } from "../src/sim/game";
 import { SHOP_WINDOW } from "../src/sim/config";
 import { shopModifier } from "../src/sim/destinations";
-import { deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
-import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
+import { addSupply, deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
+import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
@@ -147,6 +150,33 @@ describe("універсальний магазин (§6.4)", () => {
     // Кілька упаковок одного запасу — усі в ящики біля входу (§6.4).
     expect(checkout(state, [line({ product: "food" }, "cheap", 2)], "store")).toBe(true);
     expect(state.home.boxes?.food?.cheap).toBe(42);
+  });
+});
+
+describe("магазин відкривається поступово (§11.3а)", () => {
+  const shown = (state: Save["current"]): string[] => GOODS.filter((g) => offered(state, g)).map(goodsKey).sort();
+
+  it("до першого кота — лише запаси для себе; з першим котом — котячі запаси й речі, і вже назавжди (рішення автора 2026-10-29, дрібні питання)", () => {
+    const state = game().current;
+    expect(shown(state)).toEqual(["detergent", "food", "humanMeds", "hygiene"]);
+    addCat(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 5.5, y: 8.5 } }));
+    const withCat = shown(state);
+    for (const key of ["catFood", "litter", "pills", "drops", "treats", "collar", "shampoo", "catnip", "thing:bowl", "thing:litter", "thing:carrier", "thing:lock", "thing:robot"]) {
+      expect(withCat, key).toContain(key);
+    }
+    // Корм для стерилізованих і дзвіночок — як і раніше, лише коли є для кого.
+    expect(withCat).not.toContain("sterileFood");
+    expect(withCat).not.toContain("bell");
+    // Кота віддали — та в домі він уже бував: котяче з магазину не зникає.
+    state.cats = [];
+    expect(shown(state)).toEqual(withCat);
+  });
+
+  it("запас, що вже бував удома, лишається в магазині й до першого кота", () => {
+    const state = game().current;
+    addSupply(state, "catFood", "cheap", 1);
+    expect(shown(state)).toContain("catFood");
+    expect(shown(state)).not.toContain("thing:bowl");
   });
 });
 

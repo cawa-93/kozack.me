@@ -167,6 +167,11 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
 };
 /** Запаси, яких немає в магазині (§6.4): мамині судочки — лише від мами (§4.1, рішення автора 2026-10-26). */
 export const UNSOLD: readonly Product[] = ["momMeal"];
+/**
+ * Запаси для себе (§11.3а): лише їх магазин показує, поки в домі ще жодного разу не було кота. Решта запасів і всі речі —
+ * котячі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Котячі товари»).
+ */
+export const SELF_PRODUCTS: readonly Product[] = ["food", "hygiene", "humanMeds", "detergent"];
 /** На старті вдома лише їжа й трохи засобів гігієни, без ліків (§6.4, правило автора 2026-10-20). */
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
   food: { cheap: 6, premium: 0 },
