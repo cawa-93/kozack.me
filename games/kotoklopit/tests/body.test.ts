@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { actionSpeed, canDash, dash, glitchChance } from "../src/sim/body";
 import { targetOf } from "../src/sim/targets";
-import { BODY_RADIUS } from "../src/sim/config";
+import { createCat } from "../src/sim/cat";
+import { BODY_RADIUS, FIRST_WEEK_PROTECTION } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
 import { fallIllPerson } from "../src/sim/illness";
 import { OBJECTS } from "../src/sim/home";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import type { Save, Vec } from "../src/sim/types";
 import { hours, recordEvents, walkTo } from "./helpers";
 
@@ -130,8 +133,15 @@ describe("рух (§8.4)", () => {
 });
 
 describe("збої керування від низького здорового глузду (§6.3)", () => {
-  it("шанс росте від 0 при 25 до 40% при 0", () => {
+  /** Гра без захисту першого тижня (§8.3): восьмий день — збої діють. */
+  const unprotected = (): Save => {
     const save = game();
+    save.current.day = FIRST_WEEK_PROTECTION.days;
+    return save;
+  };
+
+  it("шанс росте від 0 при 25 до 40% при 0", () => {
+    const save = unprotected();
     const stats = save.current.character.stats;
     for (const [sanity, chance] of [[40, 0], [25, 0], [12.5, 0.2], [0, 0.4]] as const) {
       stats.sanity = sanity;
@@ -140,7 +150,7 @@ describe("збої керування від низького здорового
   });
 
   it("з низьким здоровим глуздом напрямок руху іноді зсувається", () => {
-    const save = game();
+    const save = unprotected();
     save.current.modifiers.day = null;
     save.current.character.stats.sanity = 1;
     place(save, 9.5, 8.5);
@@ -163,6 +173,35 @@ describe("збої керування від низького здорового
     for (let i = 0; i < 500; i++) walk(save, { x: i % 200 < 100 ? 1 : -1, y: 0 }, 0.02);
     stop();
     expect(events.some((e) => e.type === "glitch")).toBe(false);
+  });
+
+  it("поки діє захист першого тижня, збоїв немає навіть при здоровому глузді 1; кіт чи восьмий день знімає захист (§8.3, рішення автора 2026-10-29, А2)", () => {
+    const save = game();
+    save.current.modifiers.day = null;
+    save.current.character.stats.sanity = 1;
+    expect(glitchChance(save.current)).toBe(0);
+    place(save, 9.5, 8.5);
+    const { events, stop } = recordEvents();
+    // Дві години руху туди й назад: напрямок ні разу не зсунувся.
+    let swerved = false;
+    for (let i = 0; i < 6000; i++) {
+      walk(save, { x: i % 400 < 200 ? 1 : -1, y: 0 }, 0.02);
+      if (Math.abs(save.current.character.body.facing.y) > 0.5) swerved = true;
+    }
+    stop();
+    expect(events.some((e) => e.type === "glitch")).toBe(false);
+    expect(swerved).toBe(false);
+
+    // Той самий стан, але в домі вже є кіт.
+    const withCat = game();
+    withCat.current.character.stats.sanity = 1;
+    addCat(withCat.current, createCat(withCat.current, createRng(4), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } }));
+    expect(glitchChance(withCat.current)).toBeGreaterThan(0);
+
+    // Той самий стан на восьмий день, без котів.
+    const later = unprotected();
+    later.current.character.stats.sanity = 1;
+    expect(glitchChance(later.current)).toBeGreaterThan(0);
   });
 });
 

@@ -23,7 +23,7 @@ import {
   WALK_TILES_PER_MINUTE,
 } from "./config";
 import { traitLevel } from "./cat";
-import { dashHunger } from "./character";
+import { dashHunger, firstWeekProtected } from "./character";
 import { emit } from "./events";
 import { cycleDash, cycleMove } from "./grooming";
 import { moveFactor } from "./modifiers";
@@ -104,10 +104,14 @@ export function dash(state: GameState): boolean {
   return true;
 }
 
-/** Шанс збою керування за ігрову хвилину руху: від 0 при 25 до 40% при 0 (§6.3). */
+/**
+ * Шанс збою керування за ігрову хвилину руху: від 0 при 25 до 40% при 0 (§6.3). Поки діє захист першого тижня (котів ще
+ * не було), збоїв немає: відновити глузд ще нічим, і це виглядало б як зламане керування (§8.3; рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А2).
+ */
 export function glitchChance(state: GameState): number {
   const sanity = state.character.stats.sanity;
-  if (sanity >= LOW_STAT) return 0;
+  if (sanity >= LOW_STAT || firstWeekProtected(state)) return 0;
   return (GLITCH_MAX_CHANCE_PER_MINUTE * (LOW_STAT - sanity)) / LOW_STAT;
 }
 
