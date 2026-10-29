@@ -1336,6 +1336,10 @@ export const MODIFIERS = {
   mom: { from: 11 * 60, to: 18 * 60, until: 20 * 60 },
   traffic: { traffic: 1.5, "empty-roads": 0.6 } as Record<string, number>,
   catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
+  /**
+   * Виставка котів (§4.1): участь, настрій кота й призи за балом. Здоровий глузд призу множиться на «Здоровий глузд від
+   * котів» (`DIFFICULTY.catSanity`, §6.2), гроші — ні (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання).
+   */
   show: { fee: 20, mood: -5, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
   officeAbsent: -5,
   week: {

@@ -29,7 +29,7 @@ import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { accidentBedtime, canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
-import type { Cat, GameState, Save, TraitLevel } from "../src/sim/types";
+import type { Cat, Difficulty, GameState, Save, TraitLevel } from "../src/sim/types";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
@@ -449,6 +449,36 @@ describe("поїздки й робота (§8.6)", () => {
     save.current.character.held = { kind: "cat", cat: cat.id };
     standAt(save, "door");
     expect(tripBlocker(save.current, "show")).toBe("show");
+  });
+
+  it("здоровий глузд призу виставки — з множником «Здоровий глузд від котів», а гроші — сталі (рішення автора 2026-10-29, дрібні питання)", () => {
+    const prize = (difficulty: Difficulty): { sanity: number; money: number } => {
+      const save = withCatCorner(newGame({ sex: "female", difficulty, seed: 6 }));
+      save.current.modifiers.day = "show";
+      save.current.day = 6;
+      save.current.minute = 9 * 60;
+      save.current.character.money = 1000;
+      // Захисту першого тижня вже немає (кіт удома), а глузд далеко від меж 0 і 100.
+      save.current.character.stats.sanity = 50;
+      standAt(save, "door");
+      const cat = withCat(save);
+      // Головний приз: настрій 100 і чистокровний — бал понад 1 за будь-якого випадку.
+      cat.mood = 100;
+      cat.breed = ["perska", "perska"];
+      save.current.home.carrier = "cheap";
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      expect(startTrip(save.current, "show")).toBe(true);
+      driveSafely(save);
+      const sanity = save.current.character.stats.sanity;
+      const money = save.current.character.money;
+      expect(enterShow(save.current, createRng(1))).toBe(300);
+      return { sanity: save.current.character.stats.sanity - sanity, money: save.current.character.money - money };
+    };
+    expect(prize("normal").sanity).toBeCloseTo(10);
+    expect(prize("easy").sanity).toBeCloseTo(12.5);
+    expect(prize("hard").sanity).toBeCloseTo(8);
+    // Гроші — сталі: 300 мінус участь 20 на будь-якій складності.
+    for (const difficulty of ["easy", "normal", "hard"] as const) expect(prize(difficulty).money).toBe(280);
   });
 
   it("після пропущених о 18:00 зборів офісу немає в списку; на лікарняному — теж; звільнили дорогою — зборів немає (перевірка поїздок 2026-10-28)", () => {

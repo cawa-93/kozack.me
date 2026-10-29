@@ -255,8 +255,10 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   changeMood(state, cat, show.mood, "виставка");
   const prize = show.prizes.find((p) => score >= p.score);
   if (!prize) return 0;
+  // Гроші призу сталі, а здоровий глузд — з множником «Здоровий глузд від котів», як пестощі й котокафе (§4.1, §6.2;
+  // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Приз виставки»).
   earn(state, prize.money);
-  changeStat(state, "sanity", prize.sanity);
+  changeStat(state, "sanity", prize.sanity * DIFFICULTY[state.difficulty].catSanity);
   return prize.money;
 }
 
