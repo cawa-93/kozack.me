@@ -10,6 +10,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { diseaseTitle, farewellText, GIVE_AWAY_LATER, GIVE_AWAY_RECENT } from "../src/texts";
+import { albumCause } from "../src/ui/cards";
 
 function game(): Save {
   return newGame({ sex: "female", difficulty: "normal", seed: 7 });
@@ -109,9 +110,22 @@ describe("прощання (§9.7)", () => {
     const entry = removeCat(save.current, cat, { kind: "disease", disease: "cold" }, 0);
     const text = farewellText(entry, diseaseTitle);
     expect(text.title).toBe("Легенда");
-    expect(text.cause).toContain("Застуда");
+    expect(text.cause).toContain("недугу — застуда");
     expect(text.cause).toContain("здолала");
     expect(text.life).toContain("богиня");
+  });
+
+  it("загальна ревізія 2026-10-29: хвороба на прощанні й в альбомі — назва з малої, без «хворобу «Хвороба серця»»", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.sex = "male";
+    const entry = removeCat(save.current, cat, { kind: "disease", disease: "heart" }, 0);
+    const { cause } = farewellText(entry, diseaseTitle);
+    expect(cause).toBe(`${entry.name} не здолав недугу — хвороба серця. Цього разу дев'ятого життя не вистачило.`);
+    expect(cause).not.toMatch(/хворобу «|«Хвороба/);
+    expect(albumCause(entry)).toBe("хвороба серця");
+    expect(albumCause({ ...entry, cause: { kind: "disease", disease: "cold" } })).toBe("застуда");
+    expect(albumCause({ ...entry, cause: { kind: "old" } })).toBe("старість");
   });
 });
 

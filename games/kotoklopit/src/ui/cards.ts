@@ -9,7 +9,7 @@ import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
+import type { AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   BREED_ABOUT,
   BREED_HALF,
@@ -383,13 +383,20 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
 /** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
 const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", given: "живе в нових руках" };
 
+/**
+ * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
+ * «хвороба «Хвороба серця»»).
+ */
+export function albumCause(entry: AlbumEntry): string {
+  return entry.cause.kind === "disease" ? diseaseTitle(entry.cause.disease).toLowerCase() : (CAUSE_TITLES[entry.cause.kind] ?? "");
+}
+
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
   if (state.album.length === 0) return ["Альбом поки порожній."];
   return [...state.album].reverse().map((entry) => {
-    const cause = entry.cause.kind === "disease" ? `хвороба «${diseaseTitle(entry.cause.disease)}»` : CAUSE_TITLES[entry.cause.kind] ?? "";
     const text = farewellText(entry, diseaseTitle);
-    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${cause}`, `«${text.title}». ${text.life}`);
+    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry)}`, `«${text.title}». ${text.life}`);
     card.append(entry.traits.length > 0 ? traitChips(entry.traits, entry.sex) : element("p", "trait-about", "Без помітних рис."));
     return card;
   });

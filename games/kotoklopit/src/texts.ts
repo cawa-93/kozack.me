@@ -434,10 +434,13 @@ export const POSITION_TITLES: readonly string[] = [
   "[Директор|Директорка]",
 ];
 
-/** Прощання з котом (§9.7): причина. `{кіт}`, `{хвороба}`; форми — за статтю кота. */
+/**
+ * Прощання з котом (§9.7): причина. `{кіт}`, `{хвороба}` — назва з малої; форми — за статтю кота. Хвороба — без рамки «хворобу «…»»:
+ * назви на зразок «Хвороба серця» давали «не здолав хворобу «Хвороба серця»» (загальна ревізія 2026-10-29).
+ */
 export const FAREWELL_CAUSES: Record<FarewellCause["kind"], string> = {
   old: "{кіт} [пішов|пішла] уві сні, у своєму улюбленому місці. Старість приходить до всіх — навіть до котів із дев'ятьма життями.",
-  disease: "{кіт} не [здолав|здолала] хворобу «{хвороба}». Цього разу дев'ятого життя не вистачило.",
+  disease: "{кіт} не [здолав|здолала] недугу — {хвороба}. Цього разу дев'ятого життя не вистачило.",
   sorrow: "{кіт} [згас|згасла] від туги. Котам теж потрібно, щоб їх любили.",
   given: "{кіт} тепер живе в нових руках. Сподіваємося, [йому|їй] там добре.",
 };
@@ -483,7 +486,7 @@ export const SHELTER_GIVEN = "{кіт} лишається в притулку. �
 /** Прощальне повідомлення: причина й опис життя. */
 export function farewellText(entry: AlbumEntry, diseaseTitle: (id: string) => string): { title: string; cause: string; life: string } {
   const level = lifeLevel(entry.lifeMood);
-  const values = { кіт: entry.name, хвороба: entry.cause.kind === "disease" ? diseaseTitle(entry.cause.disease) : "" };
+  const values = { кіт: entry.name, хвороба: entry.cause.kind === "disease" ? diseaseTitle(entry.cause.disease).toLowerCase() : "" };
   const life = (entry.cause.kind === "given" ? LIFE_LEVELS_GIVEN[level] : undefined) ?? LIFE_LEVELS[level]?.text ?? "";
   return { title: LIFE_LEVELS[level]?.title ?? "", cause: fill(FAREWELL_CAUSES[entry.cause.kind], entry.sex, values), life: fill(life, entry.sex, values) };
 }
