@@ -177,7 +177,7 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
   },
   "outage": {
     title: "Планове відключення",
-    situation: "З 11:00 до 15:00 у районі планово вимкнуть світло.",
+    situation: "З 11:00 до 15:00 у районі планово відключать інтернет.",
   },
   "fast-internet": {
     title: "Швидкий інтернет",

@@ -56,7 +56,7 @@ export type IconName =
   | "washed"
   | "cat"
   | "cat-laptop"
-  | "no-power"
+  | "no-internet"
   | "washer"
   | "mix"
   | "no-room"
@@ -517,12 +517,12 @@ Object.assign(ICONS, {
     g.fillStyle(0xe8d9b0).fillRect(17, 21, 6, 15);
     g.lineStyle(2.5, INK).strokeRect(5, 21, 30, 15);
   },
-  "no-power": (g: Phaser.GameObjects.Graphics) => {
-    // Блискавка, перекреслена: світла немає (§4.1).
-    const v = (points: [number, number][]) => points.map(([x, y]) => new Phaser.Math.Vector2(x, y));
-    const bolt = v([[23, 3], [10, 22], [19, 22], [15, 37], [30, 16], [21, 16], [26, 3]]);
-    g.fillStyle(0xe8b93a).fillPoints(bolt, true);
-    g.lineStyle(2, INK).strokePoints(bolt, true);
+  "no-internet": (g: Phaser.GameObjects.Graphics) => {
+    // Wi-Fi, перекреслений: інтернет відключили («Планове відключення», §4.1; рішення автора 2026-10-29, А14 — була
+    // перекреслена блискавка, «світла немає», а світло тоді є). Три дуги й крапка, як на значку мережі.
+    g.lineStyle(3.5, INK);
+    for (const radius of [8, 15, 22]) g.beginPath().arc(20, 34, radius, -Math.PI * 0.75, -Math.PI * 0.25).strokePath();
+    g.fillStyle(INK).fillCircle(20, 34, 3);
     g.lineStyle(4, COLORS.danger).lineBetween(6, 34, 34, 6);
   },
   loud: (g: Phaser.GameObjects.Graphics) => {

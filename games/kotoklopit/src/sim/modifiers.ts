@@ -297,7 +297,7 @@ export function patienceDecayFactor(state: GameState): number {
   factor *= MODIFIERS.week.decay[state.modifiers.week ?? ""] ?? 1;
   const minute = state.minute % 1440;
   if (active(state, "lunch") && minute >= MODIFIERS.lunch.from && minute < MODIFIERS.lunch.to) return 0;
-  if (powerOut(state)) return 0;
+  if (internetOut(state)) return 0;
   return factor;
 }
 
@@ -319,8 +319,11 @@ export function workdayOverride(state: GameState): boolean | null {
   return null;
 }
 
-/** Планове відключення (§4.1): комп'ютер не працює. */
-export function powerOut(state: GameState): boolean {
+/**
+ * Планове відключення (§4.1): провайдер відключив інтернет — комп'ютер не працює. Решта техніки працює: світло є (рішення автора
+ * 2026-10-29, `GENERAL_REVIEW.md`, А14; раніше титулка обіцяла, що вимкнуть світло).
+ */
+export function internetOut(state: GameState): boolean {
   const minute = state.minute % 1440;
   return active(state, "outage") && minute >= MODIFIERS.outage.from && minute < MODIFIERS.outage.to;
 }

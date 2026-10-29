@@ -90,8 +90,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "washer" };
     case "cat-on-computer":
       return { icon: "cat-laptop" };
-    case "no-power":
-      return { icon: "no-power" };
+    case "no-internet":
+      return { icon: "no-internet" };
     case "no-packages":
       return { icon: "box", count: 0 };
     case "healthy":

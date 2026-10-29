@@ -22,7 +22,7 @@ import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
 import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
-import { momAtNight, powerOut, tickModifiers } from "./modifiers";
+import { internetOut, momAtNight, tickModifiers } from "./modifiers";
 
 export const SAVE_VERSION = 13;
 
@@ -149,7 +149,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
     tickActivity(state, input, minutes);
     moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
   }
-  if (powerOut(state) && isWorking(state)) stopWork(state);
+  if (internetOut(state) && isWorking(state)) stopWork(state);
   tickWork(state, from, minutes);
   tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);

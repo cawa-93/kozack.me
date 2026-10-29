@@ -11,7 +11,7 @@ const at = (minute: number, what: string): [number, string] => [minute, `${forma
 const DAY_EVENTS: Record<string, [number, string]> = {
   meeting: at(MODIFIERS.meeting.from, "нарада"),
   lunch: at(MODIFIERS.lunch.from, "обідня перерва"),
-  outage: [MODIFIERS.outage.from, `${formatClock(MODIFIERS.outage.from)}–${formatClock(MODIFIERS.outage.to)} без світла`],
+  outage: [MODIFIERS.outage.from, `${formatClock(MODIFIERS.outage.from)}–${formatClock(MODIFIERS.outage.to)} без інтернету`],
   inspection: at(MODIFIERS.inspection.minute, "перевірка ОСББ"),
   guests: at(MODIFIERS.guests.minute, "гості"),
   festival: at(MODIFIERS.festival.minute, "феєрверки"),

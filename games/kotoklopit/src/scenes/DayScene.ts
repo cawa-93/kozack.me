@@ -22,7 +22,7 @@ import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, 
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, sinkCard, type PhoneTab } from "../ui/cards";
-import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
+import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { beardLook, groomBeard } from "../sim/grooming";
 import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
@@ -915,7 +915,7 @@ export class DayScene extends Phaser.Scene {
     // Дріт перегризено (§9.12, «Гризіння»): над комп'ютером — перегризений дріт, доки його не полагодять.
     if (state.home.wireChewed === true) computer = "wire";
     else if (!working && (standup || meeting)) computer = "camera";
-    else if (powerOut(state)) computer = "no-power";
+    else if (internetOut(state)) computer = "no-internet";
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
       computer = level === "out" ? "cross" : level === "warning" ? "alert" : null;

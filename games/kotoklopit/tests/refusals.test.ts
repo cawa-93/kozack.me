@@ -37,7 +37,7 @@ const ALL: Refusal[] = [
   { reason: "too-early" },
   { reason: "washing" },
   { reason: "cat-on-computer" },
-  { reason: "no-power" },
+  { reason: "no-internet" },
   { reason: "no-packages" },
   { reason: "healthy" },
   { reason: "dose-taken" },

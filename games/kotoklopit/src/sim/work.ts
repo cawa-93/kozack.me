@@ -132,7 +132,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
     // Збори в офісі — це робота, а не відсутність (§8.5).
     const trip = state.trip;
-    // В обідню перерву й без світла керівництво нічого не чекає — і поїздка тоді не штрафується (перевірка модифікаторів 2026-10-28).
+    // В обідню перерву й без інтернету («Планове відключення») керівництво нічого не чекає — і поїздка тоді не штрафується (перевірка модифікаторів 2026-10-28).
     if (workTime && trip.destination !== "office" && patienceDecayFactor(state) > 0) {
       // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00. Знайду, яку відносять у притулок, гравець не
       // обирав і не може відкласти: вона штрафується як перша поїздка тижня й до лічильника не додається (§8.6, загальна ревізія
@@ -174,7 +174,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     job.patience = Math.min(PATIENCE_MAX, job.patience + position.patienceRecovery * hours);
   } else if (workTime) {
     // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини — але не в обідню
-    // перерву й не без світла: тоді й терпіння не падає (§4.1).
+    // перерву й не без інтернету: тоді й терпіння не падає (§4.1).
     if (levelBefore === "out" && patienceDecayFactor(state) > 0) changeReputation(state, ABSENCE_REPUTATION * position.reputation * hours);
     const patience = job.patience - position.patienceDecay * patienceDecayFactor(state) * hours;
     // Похибка дробових кроків не повинна відкладати «Х» на хвилину.

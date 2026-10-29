@@ -17,9 +17,10 @@ import { fallIll } from "../src/sim/diseases";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
+import { tickHousehold } from "../src/sim/household";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
-import { callImpression, isWorkday, startWork, tickWork } from "../src/sim/work";
+import { callImpression, isWorkday, isWorking, startWork, tickWork } from "../src/sim/work";
 import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
@@ -442,6 +443,26 @@ describe("ефекти (§4.1)", () => {
     const reputation = save.current.job.reputation;
     tickModifiers(save.current, 14 * 60 - 1, 62, false);
     expect(save.current.job.reputation).toBeLessThan(reputation);
+  });
+
+  it("«Планове відключення» — без інтернету: комп'ютер відмовляє своєю причиною, а робот-пилосос, як щодня, їде о 12:00 (рішення автора 2026-10-29, А14)", () => {
+    const save = game();
+    save.current.day = 1;
+    save.current.modifiers.day = "outage";
+    save.current.minute = 10 * 60 + 30;
+    expect(scheduleOf(save.current)).toContain("11:00–15:00 без інтернету");
+    save.current.minute = 11 * 60 + 50;
+    walkTo(save, "computer");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events.find((e) => e.type === "refused")).toMatchObject({ reason: "no-internet" });
+    expect(isWorking(save.current)).toBe(false);
+    // Світло є: робот-пилосос прибирає посеред відключення.
+    save.current.home.appliances.robot = "cheap";
+    save.current.home.fur = 60;
+    tickHousehold(save.current, 11 * 60 + 50, 80);
+    expect(save.current.home.fur).toBe(0);
   });
 
   it("гості: безлад — сором", () => {
