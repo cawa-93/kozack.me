@@ -15,7 +15,8 @@ import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
-import { conceive, giveBirth, nightlyStates } from "../src/sim/reproduction";
+import { conceive, giveBirth, nightlyStates, showsPregnancy } from "../src/sim/reproduction";
+import { weekdayOf } from "../src/sim/time";
 import { createRng } from "../src/sim/rng";
 import type { Breed } from "../src/sim/breeds";
 import type { AlbumEntry, Cat, Genes, Save, Sex } from "../src/sim/types";
@@ -250,6 +251,21 @@ describe("вагітність і пологи (§9.8)", () => {
     const kitten = kittens[0];
     expect(kitten && Math.hypot(kitten.x - murka.x, kitten.y - murka.y)).toBeLessThan(0.5);
     expect(kitten?.needs.hunger).toBe(0);
+  });
+
+  it("рішення автора 2026-10-29 (GENERAL_REVIEW.md, А18): здогадку «здається, вагітна» картка показує із середи — третього дня вагітності, а раніше вагітність без ветеринара невидима (§9.9)", () => {
+    const save = game();
+    const she = withCat(save, "female");
+    // Зачаття — у ніч на понеділок (неділя, день 6), пологи — у ніч на наступний понеділок.
+    she.pregnancy = { father: null, due: 6 + 7, known: false };
+    const guessed = (day: number): boolean => {
+      save.current.day = day;
+      return showsPregnancy(save.current, she);
+    };
+    // Понеділок і вівторок — ще не видно; із середи (день 9) — до самих пологів.
+    expect([7, 8].map(guessed)).toEqual([false, false]);
+    expect(weekdayOf(9)).toBe(2);
+    expect([9, 10, 11, 12].map(guessed)).toEqual([true, true, true, true]);
   });
 });
 
