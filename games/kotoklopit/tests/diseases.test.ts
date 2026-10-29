@@ -6,11 +6,12 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { climbWeight, decide, eatMinutes, tickCats } from "../src/sim/catai";
 import { bathe, nightlyCare } from "../src/sim/care";
-import { BATH, BREED_RISK, CAT_AGE_LIMIT, DISEASES, ILLNESS, KITTEN_MAX_AGE, LOW_HEALTH, MEDICINE, SYMPTOMS, WEIGHT } from "../src/sim/config";
+import { BATH, BREED_RISK, CAT_AGE_LIMIT, DISEASES, ILLNESS, KITTEN_MAX_AGE, LOW_HEALTH, MEDICINE, RELATIONS, SYMPTOMS, WEIGHT } from "../src/sim/config";
 import { afterMeal, agingDiseases, fallIll, fatigueFactor, giveMedicine, hasDisease, hungerFactor, illnessChance, nightlyDiseases, walkFactor } from "../src/sim/diseases";
 import { MIXED } from "../src/sim/breeds";
 import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
+import { changeRelation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { GameEvent } from "../src/sim/events";
 import type { BowlItem, Cat, DiseaseId, LitterItem, Save, TraitLevel } from "../src/sim/types";
@@ -163,6 +164,27 @@ describe("тригери хвороб (рішення автора 2026-10-28, �
     expect(hasDisease(withFleas(ILLNESS.fleasWormsDays), "worms")).toBe(true);
     expect(hasDisease(withFleas(ILLNESS.fleasDermatitisDays - 1), "dermatitis")).toBe(false);
     expect(hasDisease(withFleas(ILLNESS.fleasDermatitisDays), "dermatitis")).toBe(true);
+  });
+});
+
+describe("зараження лише між друзями (§9.5, рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13)", () => {
+  it("друзям — застуда, кон'юнктивіт і блохи, іншим котам — нічого, хоч скільки їх удома; глисти — через лоток", () => {
+    const friendly = (Object.keys(DISEASES) as DiseaseId[]).filter((id) => DISEASES[id].contagious === "friends");
+    expect(friendly.sort()).toEqual(["cold", "conjunctivitis", "fleas"]);
+    expect((Object.keys(DISEASES) as DiseaseId[]).filter((id) => DISEASES[id].contagious === "litter")).toEqual(["worms"]);
+    const save = game();
+    const s = save.current;
+    const [sick, friend, ...others] = Array.from({ length: 6 }, () => withCat(save));
+    // Блохи самі вночі не з'являються — нових бліх дає лише зараження.
+    fallIll(s, sick!, "fleas");
+    // Усі нейтральні, лише одна пара — друзі.
+    s.relations = {};
+    changeRelation(s, sick!, friend!, RELATIONS.friend);
+    const always = { ...createRng(1), chance: () => true };
+    nightlyDiseases(s, always);
+    expect(hasDisease(friend!, "fleas")).toBe(true);
+    // Хворий друг заражає далі лише своїх друзів: решта нейтральні до обох.
+    expect(others.filter((c) => hasDisease(c, "fleas")).map((c) => c.name)).toEqual([]);
   });
 });
 

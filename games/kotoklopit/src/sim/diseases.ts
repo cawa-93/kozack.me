@@ -177,7 +177,10 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
   spread(state, rng);
 }
 
-/** Заразні хвороби (§9.5): друзям легше, через лоток — коли лотків замало. */
+/**
+ * Заразні хвороби (§9.5): застуда, кон'юнктивіт і блохи — лише друзям (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13: раніше
+ * ще 5% будь-якому коту вдома, і у великій родині спалах не згасав), глисти — через лоток, коли лотків замало.
+ */
 function spread(state: GameState, rng: Rng): void {
   // Лотків замало — як для сварок (Р3, Р4): чистих менше, ніж котів + 1, але не більше, ніж є місць; брудний не рахується
   // (загальна ревізія 2026-10-29: раніше рахували всі лотки без межі місць, і від 6 котів глисти йшли через лоток завжди).
@@ -191,15 +194,8 @@ function spread(state: GameState, rng: Rng): void {
     for (const other of state.cats) {
       if (other.id === cat.id || other.away !== null) continue;
       if (way === "litter" && isNewborn(other)) continue;
-      const chance =
-        way === "litter"
-          ? littersShort
-            ? ILLNESS.litterContagion
-            : 0
-          : isFriend(state, cat, other)
-            ? ILLNESS.friendContagion
-            : ILLNESS.otherContagion;
-      if (chance > 0) maybeFallIll(state, other, id, chance, rng);
+      if (way === "litter" ? littersShort : isFriend(state, cat, other))
+        maybeFallIll(state, other, id, way === "litter" ? ILLNESS.litterContagion : ILLNESS.friendContagion, rng);
     }
   }
 }

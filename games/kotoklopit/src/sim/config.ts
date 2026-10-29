@@ -1046,8 +1046,11 @@ export const ILLNESS = {
   breedOnlyPerWeek: 0.06,
   gingivitisPerWeek: 0.04,
   breathingHeat: 2,
+  /**
+   * Заразні хвороби переходять щоночі лише на друга (`friendContagion`), іншим котам — ні (рішення автора 2026-10-29,
+   * `GENERAL_REVIEW.md`, А13; раніше ще 5% будь-кому); глисти — через лоток, коли лотків бракує (`litterContagion`).
+   */
   friendContagion: 0.2,
-  otherContagion: 0.05,
   litterContagion: 0.1,
   hardinessStep: 0.1,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
