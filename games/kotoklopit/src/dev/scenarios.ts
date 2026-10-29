@@ -76,6 +76,17 @@ export function addCatCorner(state: GameState): void {
   );
 }
 
+/**
+ * Посаду сценарію записано за колишньою драбиною з 10 посад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10; §8.6, §11.5):
+ * сценарій задає посаду без поля `ladder`. Так виглядають сценарії, збережені з гри до рішення, тож їхню посаду переводять на нову
+ * драбину, як у збереженні. Тому новий сценарій задає посаду разом із `"ladder": 15` — інакше її теж переведуть (рецензія
+ * реалізації А10: `"position": 9` без драбини — «Заступник керівника відділу» — ставав директором), а режим розробки пише про
+ * переведення в журнал.
+ */
+export function hasLegacyPosition(scenario: Scenario): boolean {
+  return scenario.state?.job?.position !== undefined && scenario.state.job.ladder === undefined;
+}
+
 /** Нова гра в стані сценарію. Знімки перегравання починаються з нього. */
 export function applyScenario(scenario: Scenario): Save {
   const save = newGame(gameOptions(scenario.game));
@@ -105,9 +116,9 @@ export function applyScenario(scenario: Scenario): Save {
     if (a && b) changeRelation(state, a, b, value - relation(state, a, b));
   }
   // Сценарій, збережений старішою версією гри, оновлюється, як і збереження: риси в нових групах (2026-10-25), автогодівниця
-  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси. Посаду без драбини записано ще за драбиною з 10 посад
-  // (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10): її переводять, як у збереженні, хоч нова гра під сценарієм уже з новою.
-  if (scenario.state?.job?.position !== undefined && scenario.state.job.ladder === undefined) Reflect.deleteProperty(state.job, "ladder");
+  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси. Посаду без драбини переводять, як у збереженні
+  // (`hasLegacyPosition`), хоч нова гра під сценарієм уже з новою драбиною.
+  if (hasLegacyPosition(scenario)) Reflect.deleteProperty(state.job, "ladder");
   upgradeState(state);
   save.current = state;
   rebase(save);

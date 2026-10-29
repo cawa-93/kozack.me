@@ -16,6 +16,7 @@ import {
   applyScenario,
   deleteLocalScenario,
   FILE_SCENARIOS,
+  hasLegacyPosition,
   localScenarios,
   saveLocalScenario,
   scenarioFromSave,
@@ -422,6 +423,11 @@ export class DevPanel {
     this.session.persistent = false;
     this.session.replace(applyScenario(scenario));
     this.journal.add(`Режим розробки: сценарій «${scenario.name}»`);
+    if (hasLegacyPosition(scenario)) {
+      const { job, character } = this.save.current;
+      const title = fill(POSITION_TITLES[job.position] ?? "", character.address);
+      this.journal.add(`Режим розробки: посаду сценарію без "ladder" прочитано за драбиною з 10 посад і переведено — тепер «${title}», ${job.position + 1} з ${POSITION_TITLES.length} (§8.6)`);
+    }
   }
 
   private journalSection(): HTMLElement {

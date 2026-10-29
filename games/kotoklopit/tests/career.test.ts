@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { applyScenario } from "../src/dev/scenarios";
+import { applyScenario, FILE_SCENARIOS, hasLegacyPosition } from "../src/dev/scenarios";
 import { FIRST_WEEK_PROTECTION, JOB_SEARCH, LEGACY_POSITION_PAY, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { weekdayOf } from "../src/sim/time";
@@ -175,6 +175,16 @@ describe("старі збереження на драбині з 15 посад (
     expect(applyScenario({ name: "стара посада", state: { job: { position: 5 } } }).current.job.position).toBe(12);
     expect(applyScenario({ name: "нова посада", state: { job: { position: 5, ladder: POSITIONS.length } } }).current.job.position).toBe(5);
     expect(applyScenario({ name: "без посади", state: { day: 3 } }).current.job.position).toBe(0);
+  });
+
+  it("кожен сценарій із файлу, що задає посаду, задає й драбину — інакше посаду прочитають за колишньою (§11.5; рецензія реалізації А10)", () => {
+    // `"position": 9` без драбини — «Заступник керівника відділу» нової — став би директором.
+    expect(hasLegacyPosition({ name: "без драбини", state: { job: { position: 9 } } })).toBe(true);
+    expect(hasLegacyPosition({ name: "з драбиною", state: { job: { position: 9, ladder: POSITIONS.length } } })).toBe(false);
+    expect(hasLegacyPosition({ name: "без посади", state: { job: { reputation: 80 } } })).toBe(false);
+    const withPosition = Object.entries(FILE_SCENARIOS).filter(([, scenario]) => scenario.state?.job?.position !== undefined);
+    expect(withPosition.length).toBeGreaterThan(0);
+    for (const [id, scenario] of withPosition) expect(hasLegacyPosition(scenario), id).toBe(false);
   });
 });
 
