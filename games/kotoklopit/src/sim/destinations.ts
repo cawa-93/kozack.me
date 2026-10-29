@@ -147,6 +147,8 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   if (!cat || !trip || !found || DISEASES[disease].cure.kind === "weight") return null;
   // Контроль діє довше, ніж дасть це лікування, — платити нема за що (перевірка поїздок 2026-10-28).
   if (DISEASES[disease].cure.kind === "control" && (found.controlled ?? -1) >= state.day + VET.controlDays[quality]) return null;
+  // Дешеве цієї поїздки не допомогло — цю хворобу вже не лікують, ні дешевим, ні дорогим (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+  if (trip.log?.done.includes(`${disease}:failed`)) return null;
   if (!spend(state, quality === "premium" ? VET.premium : VET.cheap, "health")) return null;
   trip.visit += VET.treatMinutes;
   // Що дало лікування — у журнал візиту: картка показує це в рядку хвороби.

@@ -96,7 +96,9 @@ export function takeHumanMeds(state: GameState, rng: Rng): boolean {
  */
 export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | "premium", rng: Rng): "cured" | "failed" | null {
   const trip = state.trip;
-  if (trip?.destination !== "doctor" || !isIll(state, id) || !spend(state, DOCTOR_TREAT[quality], "health")) return null;
+  if (trip?.destination !== "doctor" || !isIll(state, id)) return null;
+  // Дешеве цієї поїздки не допомогло — цю хворобу вже не лікують, ні дешевим, ні дорогим (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+  if (trip.log?.done.includes(`self:${id}:failed`) || !spend(state, DOCTOR_TREAT[quality], "health")) return null;
   // Прийом — година, скільки б хвороб лікар не лікував; без лікування на місці минає 15 хвилин
   // (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
   trip.visit = Math.max(trip.visit, TRIPS.doctor.visit);

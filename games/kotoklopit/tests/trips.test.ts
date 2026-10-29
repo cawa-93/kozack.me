@@ -26,7 +26,7 @@ import {
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { MIXED } from "../src/sim/breeds";
 import { advance, deserialize, drive, goHome, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
-import { doctorTreat, fallIllPerson } from "../src/sim/illness";
+import { doctorTreat, fallIllPerson, isIll } from "../src/sim/illness";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
@@ -1048,5 +1048,62 @@ describe("час на місці — лише за отриману послуг
     driveSafely(examined);
     expect(vetExam(examined.current)).not.toBeNull();
     expect(deserialize(serialize(examined)).current.trip?.visit).toBe(TRIPS.vet.visit);
+  });
+});
+
+describe("невдале дешеве лікування не повторюють у ту саму поїздку (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6)", () => {
+  const never = (): ReturnType<typeof createRng> => ({ ...createRng(1), chance: () => false });
+
+  it("у ветеринара: хворобу, якій дешеве не допомогло, цієї поїздки вже не лікують — ні дешевим, ні дорогим; іншу — лікують", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    const cat = withCat(save);
+    fallIll(save.current, cat, "injury");
+    fallIll(save.current, cat, "fleas");
+    save.current.home.carrier = "cheap";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(startTrip(save.current, "vet")).toBe(true);
+    driveSafely(save);
+    vetExam(save.current);
+    expect(vetTreat(save.current, "injury", "cheap", never())).toBe("failed");
+    const money = save.current.character.money;
+    const visit = save.current.trip?.visit;
+    expect(vetTreat(save.current, "injury", "cheap", createRng(1))).toBeNull();
+    expect(vetTreat(save.current, "injury", "premium", createRng(1))).toBeNull();
+    expect(save.current.character.money).toBe(money);
+    expect(save.current.trip?.visit).toBe(visit);
+    expect(hasDisease(cat, "injury")).toBe(true);
+    expect(vetTreat(save.current, "fleas", "premium", createRng(1))).toBe("cured");
+
+    // Наступна поїздка — знову можна.
+    goHome(save);
+    standAt(save, "door");
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(startTrip(save.current, "vet")).toBe(true);
+    driveSafely(save);
+    vetExam(save.current);
+    expect(vetTreat(save.current, "injury", "premium", createRng(1))).toBe("cured");
+  });
+
+  it("у лікаря так само: після невдалого дешевого цю хворобу не лікують, а гроші не беруть; наступного разу — лікують", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    fallIllPerson(save.current, "cold");
+    fallIllPerson(save.current, "injury");
+    expect(startTrip(save.current, "doctor")).toBe(true);
+    driveSafely(save);
+    expect(doctorTreat(save.current, "cold", "cheap", never())).toBe("failed");
+    const money = save.current.character.money;
+    expect(doctorTreat(save.current, "cold", "cheap", createRng(1))).toBeNull();
+    expect(doctorTreat(save.current, "cold", "premium", createRng(1))).toBeNull();
+    expect(save.current.character.money).toBe(money);
+    expect(isIll(save.current, "cold")).toBe(true);
+    expect(doctorTreat(save.current, "injury", "premium", createRng(1))).toBe("cured");
+
+    goHome(save);
+    standAt(save, "door");
+    expect(startTrip(save.current, "doctor")).toBe(true);
+    driveSafely(save);
+    expect(doctorTreat(save.current, "cold", "premium", createRng(1))).toBe("cured");
   });
 });

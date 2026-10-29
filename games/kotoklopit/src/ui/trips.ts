@@ -15,6 +15,9 @@ import { element, type Card } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
 import { traitChips } from "./traits";
 
+/** Невдале дешеве лікування цієї поїздки не повторюють — ні у ветеринара, ні в лікаря (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). */
+const NO_RETRY = "не допомогло — повторно лише наступного разу";
+
 /** Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». */
 const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} год${m % 60 ? ` ${m % 60} хв` : ""}` : `${m} хв`);
 
@@ -213,7 +216,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         const left = chronic && d.controlled !== null ? d.controlled - state.day + 1 : 0;
         const note =
           result === "failed"
-            ? "не допомогло"
+            ? NO_RETRY
             : result === "controlled"
               ? "✓ під контролем"
               : left > 0
@@ -225,8 +228,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           advised(row(
             diseaseTitle(d.id),
             note,
-            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || left > VET.controlDays.cheap),
-            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || left > VET.controlDays.premium),
+            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
+            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
           ), d.id),
         );
       }
@@ -252,9 +255,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         list.append(
           row(
             ILLNESS_TITLES[i.id],
-            failed ? "не допомогло" : time,
-            button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap")),
-            button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium")),
+            failed ? NO_RETRY : time,
+            button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap"), failed),
+            button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium"), failed),
           ),
         );
       }
