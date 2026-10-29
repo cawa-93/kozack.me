@@ -208,7 +208,10 @@ export const DELIVERY = { share: 0.1, fee: { easy: 8, normal: 10, hard: 12 } as 
 export const DELIVERY_HOURS = 6;
 /** Якщо персонаж спатиме, коли прибуде пакунок, його привезуть о 09:00 наступного дня. */
 export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
-/** Комунальні за тиждень: базова сума без внеску речей; стартовий куток додає 6 (§6.4). */
+/**
+ * Комунальні за тиждень: базова сума без внеску речей (§6.4). На старті речей немає; дешеві миска, вода й лоток зі стартового
+ * пакета першого кошеняти додають 6 — зазвичай 40.
+ */
 export const UTILITIES_BASE = 34;
 /** Речі для котів (§6.4): ціна в магазині й внесок у комунальні за тиждень. */
 export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utilities: number }> = {
