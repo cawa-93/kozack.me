@@ -100,7 +100,8 @@ describe("фінал (§4.2)", () => {
     const json = JSON.parse(serialize(save)) as { current: { album: Record<string, unknown>[] } };
     for (const entry of json.current.album) delete entry["days"];
     const loaded = deserialize(JSON.stringify(json));
-    // Підсумок дня пишеться щоночі до прощання: дні 3–12 — 10 днів; відданого забрали вранці 12-го — 9.
+    // Підсумок дня пишеться щоночі до прощання: дні 3–12 — 10 днів; відданого забрали вранці 12-го — 9 (оголошення до 2026-10-28
+    // писали в альбом учорашній день — тоді насправді 10, але з альбому цього не розрізнити).
     expect(loaded.current.album.map((e) => e.days)).toEqual([10, 9]);
   });
 
