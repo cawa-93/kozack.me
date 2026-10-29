@@ -319,6 +319,12 @@ export const POSITIONS: readonly {
   { pay: 45, patienceDecay: 52, patienceRecovery: 17, reputation: 0.16, sanity: -10.5 },
 ];
 
+/**
+ * Погодинна оплата колишньої драбини з 10 посад (§8.6, до рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10): за нею посада зі
+ * старого збереження стає посадою нової драбини з найближчою оплатою.
+ */
+export const LEGACY_POSITION_PAY: readonly number[] = [10, 13, 17, 22, 28, 35, 43, 52, 62, 75];
+
 // Коти (§9.1–9.6, §9.12; чернетка).
 /** Межа віку кота в тижнях (§9.2). */
 export const CAT_AGE_LIMIT = 5;

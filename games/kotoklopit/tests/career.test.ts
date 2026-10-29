@@ -2,8 +2,9 @@
 
 import { describe, expect, it } from "vitest";
 
-import { FIRST_WEEK_PROTECTION, JOB_SEARCH, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
-import { advance, interact, newGame } from "../src/sim/game";
+import { applyScenario } from "../src/dev/scenarios";
+import { FIRST_WEEK_PROTECTION, JOB_SEARCH, LEGACY_POSITION_PAY, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
+import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { weekdayOf } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
@@ -108,6 +109,52 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     const weekly = (p: Position): number => p.pay * share(p) * 9 * WORKDAYS_PER_WEEK;
     expect(weekly(director!) / weekly(first!)).toBeLessThan(12);
     expect(weekly(director!) / weekly(first!)).toBeGreaterThan(10);
+  });
+});
+
+describe("старі збереження на драбині з 15 посад (§8.6; рішення автора 2026-10-29, GENERAL_REVIEW.md, А10)", () => {
+  /** Гра, збережена з колишньою драбиною з 10 посад: посада — індекс у ній, поля `ladder` немає ні в грі, ні в знімках. */
+  const oldSave = (position: number): Save => {
+    const save = game();
+    save.current.job.position = position;
+    save.current.job.reputation = 73;
+    save.dayStart.job.position = position;
+    save.weekStart.job.position = position;
+    const json = JSON.parse(serialize(save)) as Record<"current" | "dayStart" | "weekStart", { job: Record<string, unknown> }>;
+    for (const snapshot of [json.current, json.dayStart, json.weekStart]) delete snapshot.job["ladder"];
+    return deserialize(JSON.stringify(json));
+  };
+
+  it("посада стає посадою з найближчою оплатою — зарплата майже та сама; директором лишається лише директор; репутація та сама", () => {
+    const mapped = LEGACY_POSITION_PAY.map((_, old) => oldSave(old).current.job.position);
+    // Стажер, молодший спеціаліст (13 ₴), 17 ₴, 22 ₴, 28 → 29, 35 → 33; 43–62 ₴ — «Заступник директора» (38), директор — директор.
+    expect(mapped).toEqual([0, 1, 4, 8, 11, 12, 13, 13, 13, 14]);
+    for (const [old, pay] of LEGACY_POSITION_PAY.slice(0, 6).entries()) {
+      expect(Math.abs((POSITIONS[mapped[old] ?? 0]?.pay ?? 0) - pay), `колишня посада ${old + 1}`).toBeLessThanOrEqual(2);
+    }
+    expect(mapped.filter((position) => position === POSITIONS.length - 1)).toHaveLength(1);
+    for (let old = 1; old < mapped.length; old++) expect(mapped[old]).toBeGreaterThanOrEqual(mapped[old - 1] ?? 0);
+    const loaded = oldSave(5);
+    expect(loaded.current.job.reputation).toBe(73);
+    expect(loaded.current.job.ladder).toBe(POSITIONS.length);
+    // Знімки для «Переграти день» і «Переграти тиждень» — так само.
+    expect(loaded.dayStart.job.position).toBe(12);
+    expect(loaded.weekStart.job.position).toBe(12);
+  });
+
+  it("гра з новою драбиною не переводиться вдруге: збереження відкривається з тією самою посадою", () => {
+    const save = game();
+    expect(save.current.job.ladder).toBe(POSITIONS.length);
+    save.current.job.position = 9;
+    const once = deserialize(serialize(save));
+    expect(once.current.job.position).toBe(9);
+    expect(deserialize(serialize(once)).current.job.position).toBe(9);
+  });
+
+  it("сценарій із посадою без драбини (записаний до рішення) — посаду переводять, як у збереженні; з драбиною — як є", () => {
+    expect(applyScenario({ name: "стара посада", state: { job: { position: 5 } } }).current.job.position).toBe(12);
+    expect(applyScenario({ name: "нова посада", state: { job: { position: 5, ladder: POSITIONS.length } } }).current.job.position).toBe(5);
+    expect(applyScenario({ name: "без посади", state: { day: 3 } }).current.job.position).toBe(0);
   });
 });
 

@@ -105,7 +105,9 @@ export function applyScenario(scenario: Scenario): Save {
     if (a && b) changeRelation(state, a, b, value - relation(state, a, b));
   }
   // Сценарій, збережений старішою версією гри, оновлюється, як і збереження: риси в нових групах (2026-10-25), автогодівниця
-  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси.
+  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси. Посаду без драбини записано ще за драбиною з 10 посад
+  // (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10): її переводять, як у збереженні, хоч нова гра під сценарієм уже з новою.
+  if (scenario.state?.job?.position !== undefined && scenario.state.job.ladder === undefined) Reflect.deleteProperty(state.job, "ladder");
   upgradeState(state);
   save.current = state;
   rebase(save);

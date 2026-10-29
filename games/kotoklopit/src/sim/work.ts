@@ -33,7 +33,17 @@ import type { GameState, Job } from "./types";
 const PATIENCE_EPSILON = 1e-9;
 
 export function newJob(): Job {
-  return { position: 0, reputation: START_REPUTATION, patience: PATIENCE_MAX, standupMinutes: 0, tripDays: [], unemployed: false, searchHours: 0, sickLeaveUntil: -1 };
+  return {
+    position: 0,
+    ladder: POSITIONS.length,
+    reputation: START_REPUTATION,
+    patience: PATIENCE_MAX,
+    standupMinutes: 0,
+    tripDays: [],
+    unemployed: false,
+    searchHours: 0,
+    sickLeaveUntil: -1,
+  };
 }
 
 export function positionOf(state: GameState): (typeof POSITIONS)[number] {

@@ -209,6 +209,11 @@ export interface Illness {
 export interface Job {
   /** Посада: індекс у POSITIONS, 0 — стажер. */
   position: number;
+  /**
+   * Скільки посад у драбині, за якою записано `position` (§8.6). У збереженнях до драбини з 15 посад (рішення автора 2026-10-29,
+   * `GENERAL_REVIEW.md`, А10) поля немає: там посада — індекс у колишній драбині з 10 посад, і `upgradeState` її переводить.
+   */
+  ladder?: number;
   reputation: number;
   /** Приховане терпіння керівництва. */
   patience: number;

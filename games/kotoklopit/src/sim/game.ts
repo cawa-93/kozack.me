@@ -7,7 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
+import { FIRST_DAY_MODIFIER, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -342,6 +342,31 @@ export function upgradeState(state: GameState): void {
   upgradeAlbumDays(state);
   upgradeDiseases(state);
   upgradeTrip(state);
+  upgradeLadder(state);
+}
+
+/**
+ * Драбина з 15 посад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10; §8.6): у збереженні з колишньою драбиною з 10 посад
+ * (поля `ladder` немає) посада стає посадою нової драбини з найближчою погодинною оплатою — зарплата майже та сама, — але
+ * директором лишається лише директор: колишні 43–62 ₴ («Керівник групи», «Керівник відділу», «Директор напряму») стають
+ * «Заступником директора». Репутація лишається.
+ */
+export function upgradeLadder(state: GameState): void {
+  const job = state.job;
+  if (job.ladder === undefined) job.position = legacyPosition(job.position);
+  job.ladder = POSITIONS.length;
+}
+
+/** Посада нової драбини для посади колишньої (`upgradeLadder`). */
+export function legacyPosition(old: number): number {
+  const director = POSITIONS.length - 1;
+  if (old >= LEGACY_POSITION_PAY.length - 1) return director;
+  const pay = LEGACY_POSITION_PAY[Math.max(0, old)] ?? 0;
+  let best = 0;
+  for (let i = 1; i < director; i++) {
+    if (Math.abs((POSITIONS[i]?.pay ?? 0) - pay) < Math.abs((POSITIONS[best]?.pay ?? 0) - pay)) best = i;
+  }
+  return best;
 }
 
 /**
