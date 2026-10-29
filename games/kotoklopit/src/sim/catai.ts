@@ -3676,7 +3676,7 @@ export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar"): vo
   for (const other of state.cats) {
     if (other.id === lucky.id || !home(state, other) || asleep(other) || isNewborn(other) || !seesWithin(other, whereIs(state, lucky), ENVY.sight)) continue;
     if (traitLevel(other, "envy") === 0) continue;
-    if (gift === "collar" && other.collar !== null) continue;
+    if (gift === "collar" && other.collar) continue;
     if (gift === "treat") {
       if (other.treatAt !== undefined && now - other.treatAt <= ENVY.graceMinutes) continue;
       other.envyOf = { cat: lucky.id, at: now };

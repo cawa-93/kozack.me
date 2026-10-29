@@ -2,7 +2,7 @@
 
 import { changeLove, changeMood, forgive, grudgeAt, offend, traitLevel } from "./cat";
 import { unpleasantTask } from "./character";
-import { BATH, BATH_FEEL, BEGGING, COLLAR, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
+import { BATH, BATH_FEEL, BEGGING, MINUTES_PER_HOUR, NURTURING, REVENGE, TREATS, WATER_PLAY, WEIGHT } from "./config";
 import { catnipReaction, claw, envy, hideSpot, snatchTreat, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { cureDisease, maybeFallIll } from "./diseases";
@@ -91,14 +91,14 @@ export function giveCatnip(state: GameState, quality: Quality, rng: Rng): boolea
   return true;
 }
 
-/** Надягти нашийник (§9.10): старий іншої якості, якщо був, замінюється. */
-export function putCollar(state: GameState, quality: Quality): boolean {
+/**
+ * Надягти нашийник із табличкою (§9.10): один, без якостей, і не губиться (рішення автора 2026-10-29, `GENERAL_REVIEW.md`,
+ * А17). Котові, що вже в нашийнику, другий не надягають: старий пропав би, нічого не змінивши.
+ */
+export function putCollar(state: GameState): boolean {
   const cat = catInHands(state);
-  const supply = state.home.supplies.collar;
-  // Такий самий нашийник не надягають: старий пропав би, нічого не змінивши (§9.10; загальна ревізія 2026-10-29).
-  if (!cat || supply[quality] <= 0 || cat.collar?.quality === quality) return false;
-  useSupply(state, "collar", quality);
-  cat.collar = { quality };
+  if (!cat || cat.collar || useSupply(state, "collar") === null) return false;
+  cat.collar = true;
   envy(state, cat, "collar");
   emit(state, { type: "collar", cat: cat.id });
   return true;
@@ -148,7 +148,7 @@ export function bathe(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Ніч (§8.7, §9.10, §9.12): нашийник, ласощі й гра вудкою за день, дерматит безшерстих без купання, мати й новонароджені. */
+/** Ніч (§8.7, §9.12): ласощі й гра вудкою за день, дерматит безшерстих без купання, мати й новонароджені. */
 export function nightlyCare(state: GameState, rng: Rng): void {
   for (const cat of state.cats) {
     cat.treatsToday = 0;
@@ -163,13 +163,8 @@ export function nightlyCare(state: GameState, rng: Rng): void {
       cat.begHabit = Math.max(0, cat.begHabit - BEGGING.habitDecay);
       if (cat.begHabit <= 0) delete cat.begHabit;
     }
-    if (cat.collar) {
-      changeMood(state, cat, COLLAR.mood[cat.collar.quality]);
-      if (cat.collar.quality === "cheap" && rng.chance(COLLAR.lose)) {
-        cat.collar = null;
-        emit(state, { type: "collar-lost", cat: cat.id });
-      }
-    }
+    // Нашийник настрою не змінює й не губиться (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17; раніше дешевий давав −0,5
+    // за ніч і губився з шансом 5%, дорогий — +0,5).
     // Як і всі шанси хвороб, з «Витривалістю» й складністю (§9.5).
     if (cat.shape.coat === "hairless" && state.day - cat.bathedDay >= BATH.hairlessDays) maybeFallIll(state, cat, "dermatitis", BATH.dermatitis, rng);
   }

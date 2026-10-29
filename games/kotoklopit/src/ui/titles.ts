@@ -60,7 +60,8 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   drops: { cheap: "Аптечні краплі", premium: "Ветеринарні краплі" },
   humanMeds: { cheap: "Аптечні ліки", premium: "Надійні ліки" },
   treats: { cheap: "Смаколики", premium: "Делікатеси" },
-  collar: { cheap: "Простий нашийник", premium: "Шкіряний нашийник" },
+  // Один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17): було «Простий» і «Шкіряний».
+  collar: { cheap: "Нашийник з іменем", premium: "Нашийник з іменем" },
   shampoo: { cheap: "Простий шампунь", premium: "Делікатний шампунь" },
   detergent: { cheap: "Пральний порошок", premium: "Пральний концентрат" },
   catnip: { cheap: "Сушена м'ята", premium: "Мататабі" },

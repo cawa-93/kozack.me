@@ -56,14 +56,16 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     expect(cat.love).toBeCloseTo(after + 2 + 2);
   });
 
-  it("нашийник: дешевий іноді губиться", () => {
+  it("нашийник один і не губиться (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
     const save = game();
     const cat = held(save);
     save.current.home.supplies.collar = { cheap: 1, premium: 0 };
-    expect(putCollar(save.current, "cheap")).toBe(true);
-    expect(cat.collar?.quality).toBe("cheap");
-    nightlyCare(save.current, always());
-    expect(cat.collar).toBeNull();
+    expect(putCollar(save.current)).toBe(true);
+    expect(cat.collar).toBe(true);
+    expect(save.current.home.supplies.collar.cheap).toBe(0);
+    // Раніше дешевий губився з шансом 5% за ніч — разом із табличкою з ім'ям.
+    for (let night = 0; night < 30; night++) nightlyCare(save.current, always());
+    expect(cat.collar).toBe(true);
   });
 
   it("картка догляду — меню без головної дії, а такий самий нашийник не пропонується (загальна ревізія 2026-10-29)", () => {
@@ -75,20 +77,19 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     // Пробіл чи Enter нічого не обирають за гравця: раніше таблетки були головною дією, і другий пробіл давав ліки здоровому коту.
     expect(card().actions.length).toBeGreaterThan(0);
     expect(card().actions.some((a) => a.primary)).toBe(false);
-    // У дешевому нашийнику, а в запасі лише дешевий — варіанта немає; з'явився дорогий — є.
+    // Кіт уже в нашийнику — другого не пропонують: нашийник один, без якостей (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
     save.current.home.supplies = { ...save.current.home.supplies, pills: { cheap: 0, premium: 0 }, treats: { cheap: 0, premium: 0 }, collar: { cheap: 1, premium: 0 } };
-    cat.collar = { quality: "cheap" };
+    cat.collar = true;
     expect(card().actions).toEqual([]);
     expect(hasCareSupplies(save.current, cat)).toBe(false);
-    expect(putCollar(save.current, "cheap")).toBe(false);
+    expect(putCollar(save.current)).toBe(false);
     expect(save.current.home.supplies.collar.cheap).toBe(1);
-    save.current.home.supplies.collar.premium = 1;
+    // Без нашийника — одна кнопка «Нашийник ×1».
+    cat.collar = false;
     expect(hasCareSupplies(save.current, cat)).toBe(true);
-    expect(card().actions.map((a) => a.label)).toHaveLength(1);
-    expect(putCollar(save.current, "premium")).toBe(true);
-    expect(cat.collar?.quality).toBe("premium");
-    // Тепер у дорогому — дешевий знову можна надягти (заміна за §9.10).
-    expect(card().actions).toHaveLength(1);
+    expect(card().actions.map((a) => a.label)).toEqual(["Нашийник ×1"]);
+    expect(putCollar(save.current)).toBe(true);
+    expect(card().actions).toEqual([]);
   });
 });
 

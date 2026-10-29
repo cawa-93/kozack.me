@@ -9,7 +9,7 @@ import { shopModifier } from "../src/sim/destinations";
 import { addSupply, deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
+import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
@@ -30,6 +30,18 @@ describe("універсальний магазин (§6.4)", () => {
     // Миски: скільки вільних місць.
     expect(room(state, [], { thing: "bowl" }, "cheap")).toBeGreaterThan(1);
     expect(room(state, [line({ thing: "carrier" }, "premium", 1)], { thing: "carrier" }, "cheap")).toBe(0);
+  });
+
+  it("нашийник — один варіант, без якостей; решта товарів — два (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+    const state = game().current;
+    state.character.money = 1000;
+    expect(variants({ product: "collar" })).toEqual(["cheap"]);
+    expect(variants({ product: "food" })).toEqual(["cheap", "premium"]);
+    expect(variants({ thing: "bowl" })).toEqual(["cheap", "premium"]);
+    expect(room(state, [], { product: "collar" }, "premium")).toBe(0);
+    expect(canCheckout(state, [line({ product: "collar" }, "premium", 1)], "delivery")).toBe(false);
+    expect(room(state, [], { product: "collar" }, "cheap")).toBe(Infinity);
+    expect(checkout(state, [line({ product: "collar" }, "cheap", 2)], "delivery")).toBe(true);
   });
 
   it("доставка: кошик оплачується цілком, кожна штука — окремий пакунок", () => {

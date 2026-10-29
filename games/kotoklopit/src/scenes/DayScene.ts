@@ -331,10 +331,10 @@ export class DayScene extends Phaser.Scene {
           cat,
           (choice) => {
             const rng = stateRng(this.state, "behavior");
-            if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
+            if (choice === "collar") putCollar(this.state);
+            else if ("medicine" in choice) giveMedicine(this.state, choice.medicine, rng);
             else if ("treat" in choice) giveTreat(this.state, choice.treat, rng);
-            else if ("catnip" in choice) giveCatnip(this.state, choice.catnip, rng);
-            else putCollar(this.state, choice.collar);
+            else giveCatnip(this.state, choice.catnip, rng);
             this.overlay.close();
           },
           () => this.overlay.close(),

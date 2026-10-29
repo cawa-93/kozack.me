@@ -126,7 +126,7 @@ export function createCat(state: GameState, rng: Rng, options: CatOptions): Cat 
     litters: 0,
     restUntil: -1,
     breedKnown: [false, false],
-    collar: null,
+    collar: false,
     treatsToday: 0,
     hurt: null,
     bathedDay: state.day,

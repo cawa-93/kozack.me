@@ -7,7 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS, TRIPS } from "./config";
+import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -20,7 +20,7 @@ import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
-import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Save, Sex } from "./types";
+import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save, Sex } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { internetOut, momAtNight, tickModifiers } from "./modifiers";
 
@@ -390,7 +390,8 @@ export function upgradeDiseases(state: GameState): void {
 /**
  * Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. Дзвіночка більше немає (рішення автора
  * 2026-10-29, `GENERAL_REVIEW.md`, А17): його запас в аптечці, у ящиках біля входу й у пакунках, що їдуть чи чекають під дверима,
- * зникає (5 ₴ за пакунок не повертають — дрібниця), а з нашийників котів — сам дзвіночок.
+ * зникає (5 ₴ за пакунок не повертають — дрібниця). Нашийник тепер один, без якостей (там само): нашийник будь-якої якості на
+ * коті — просто нашийник, а дорогі в аптечці, у ящиках і в пакунках стають такими самими, як дешеві.
  */
 export function upgradeSupplies(state: GameState): void {
   const home = state.home;
@@ -402,7 +403,18 @@ export function upgradeSupplies(state: GameState): void {
   if (home.phoneHints) home.phoneHints = home.phoneHints.filter((p) => !gone(p));
   home.deliveries = home.deliveries.filter((d) => !("product" in d && gone(d.product)));
   home.porch = home.porch.filter((d) => !("product" in d && gone(d.product)));
-  for (const cat of state.cats) if (cat.collar) Reflect.deleteProperty(cat.collar, "bell");
+  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
+  for (const cat of cats) cat.collar = Boolean(cat.collar);
+  const single = (stock: Record<Quality, number> | undefined): void => {
+    if (!stock) return;
+    stock.cheap += stock.premium;
+    stock.premium = 0;
+  };
+  for (const product of SINGLE_VARIANT) {
+    single(home.supplies[product]);
+    single(home.boxes?.[product]);
+  }
+  for (const d of [...home.deliveries, ...home.porch]) if ("product" in d && SINGLE_VARIANT.includes(d.product)) d.quality = "cheap";
   for (const product of Object.keys(PRODUCTS) as Product[]) home.supplies[product] ??= { cheap: 0, premium: 0 };
 }
 

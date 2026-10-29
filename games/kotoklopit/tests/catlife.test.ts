@@ -8,7 +8,7 @@ import { changeMood, closeCatDay, createCat, idleAct, offend } from "../src/sim/
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
-import { COLLAR, LOVE_BEHAVIOR, PET, PETTING } from "../src/sim/config";
+import { LOVE_BEHAVIOR, PET, PETTING } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -186,6 +186,12 @@ describe("заздрісність і мстивість (§9.12)", () => {
     const calm = envious.mood;
     envy(save.current, lucky, "collar");
     expect(envious.mood).toBeGreaterThan(calm);
+    // Хто сам у нашийнику, тому обнова іншого байдужа (нашийник один, без якостей — рішення автора 2026-10-29, А17).
+    envious.traits = [{ group: "envy", level: 2, seen: 0, known: false }];
+    envious.collar = true;
+    const own = envious.mood;
+    envy(save.current, lucky, "collar");
+    expect(envious.mood).toBe(own);
   });
 
   it("мстивий кіт після образи залишає «сюрприз» біля ліжка, і образа минає", () => {
@@ -335,38 +341,45 @@ describe("поведінка котів: пошук багів 2026-10-25 (§9.1
 });
 
 describe("догляд персонажа (§9.12)", () => {
-  it("дзвіночка немає: полохливий і нестресостійкий кіт у нашийнику вночі не сумнішає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+  it("нашийник уночі настрою не змінює, а дзвіночка немає: полохливий і нестресостійкий не сумнішають (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
     const lost = (traits: Record<string, TraitLevel>): number => {
       const save = game();
       const cat = withCat(save);
       cat.traits = Object.entries(traits).map(([group, level]) => ({ group, level, seen: 0, known: false }));
-      cat.collar = { quality: "premium" };
+      cat.collar = true;
       cat.mood = 50;
       nightlyCare(save.current, createRng(1));
-      return 50 + COLLAR.mood.premium - cat.mood;
+      return 50 - cat.mood;
     };
-    // Раніше дзвіночок щоночі забирав 1 настрою в полохливого й нестресостійкого — мовчки й без змоги його зняти.
+    // Раніше дзвіночок щоночі забирав 1 настрою в полохливого й нестресостійкого — мовчки й без змоги його зняти, а якість
+    // нашийника давала ±0,5 за ніч.
     expect(lost({ bravery: -1 })).toBeCloseTo(0);
     expect(lost({ stress: -1 })).toBeCloseTo(0);
     expect(lost({ bravery: 1 })).toBeCloseTo(0);
   });
 
-  it("старе збереження: дзвіночок зникає з нашийника, з аптечки, з ящиків і з пакунків (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+  it("старе збереження: дзвіночок зникає з нашийника, з аптечки, з ящиків і з пакунків, а нашийник будь-якої якості — один (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
     const save = game();
     const cat = withCat(save);
+    const other = withCat(save);
     const home = save.current.home as unknown as Record<string, unknown> & typeof save.current.home;
-    cat.collar = { quality: "cheap", bell: true } as unknown as Cat["collar"];
+    cat.collar = { quality: "premium", bell: true } as unknown as Cat["collar"];
+    other.collar = null as unknown as Cat["collar"];
+    home.supplies.collar = { cheap: 1, premium: 2 };
+    home.porch.push({ id: 93, quality: "premium", at: 0, product: "collar" });
     (home.supplies as Record<string, unknown>)["bell"] = { cheap: 2, premium: 1 };
     home.boxes = { food: { cheap: 3, premium: 0 }, ...({ bell: { cheap: 1, premium: 0 } } as object) };
     home.acquired.push("bell" as never);
     home.porch.push({ id: 90, quality: "cheap", at: 0, product: "bell" as never }, { id: 91, quality: "cheap", at: 0, product: "food" });
     home.deliveries.push({ id: 92, quality: "premium", at: 10_000, product: "bell" as never });
     const loaded = deserialize(serialize(save)).current;
-    expect(loaded.cats[0]?.collar).toEqual({ quality: "cheap" });
+    expect(loaded.cats.map((c) => c.collar)).toEqual([true, false]);
+    expect(loaded.home.supplies.collar).toEqual({ cheap: 3, premium: 0 });
+    expect(loaded.home.porch.find((d) => d.id === 93)?.quality).toBe("cheap");
     expect(loaded.home.supplies).not.toHaveProperty("bell");
     expect(loaded.home.boxes).toEqual({ food: { cheap: 3, premium: 0 } });
     expect(loaded.home.acquired).not.toContain("bell");
-    expect(loaded.home.porch.map((d) => d.id)).toEqual([91]);
+    expect(loaded.home.porch.map((d) => d.id).sort()).toEqual([91, 93]);
     expect(loaded.home.deliveries.map((d) => d.id)).not.toContain(92);
   });
 

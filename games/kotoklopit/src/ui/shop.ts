@@ -4,7 +4,7 @@
 import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
 import { incoming } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, offered, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, offered, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
@@ -97,7 +97,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
         stock.style.display = text === "" ? "none" : "";
       });
       row.append(name);
-      for (const quality of ["cheap", "premium"] as const) {
+      // Нашийник — один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), решта — два.
+      for (const quality of variants(g)) {
         const line: CartLine = { goods: g, quality, count: 0 };
         cart.push(line);
         const price = unitPrice(state, g, quality, mode);

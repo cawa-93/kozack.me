@@ -127,7 +127,6 @@ export type GameEvent =
   | { type: "person-meds"; quality: Quality }
   | { type: "treat"; cat: number; quality: Quality }
   | { type: "collar"; cat: number }
-  | { type: "collar-lost"; cat: number }
   | { type: "bathed"; cat: number }
   /** Прання (§8.7): віджим — гучний звук (§9.12). */
   | { type: "laundry"; stage: "cat" | "started" | "spin" | "done" | "hung"; cat?: number }

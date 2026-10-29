@@ -162,7 +162,9 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 50 } },
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
   treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 35 } },
-  collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 10, premium: 25 } },
+  // Нашийник один, без якостей (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17): продається лише «дешевий» варіант
+  // (`SINGLE_VARIANT`); було 10 / 25.
+  collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 15, premium: 15 } },
   shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
   detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 30 } },
   // Котяча м'ята й мататабі (§9.12, «Котяча м'ята», 2026-10-26): по 5 разів.
@@ -172,6 +174,11 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
 };
 /** Запаси, яких немає в магазині (§6.4): мамині судочки — лише від мами (§4.1, рішення автора 2026-10-26). */
 export const UNSOLD: readonly Product[] = ["momMeal"];
+/**
+ * Запаси з одним варіантом (§6.4, §9.10): нашийник — без якостей (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
+ * Магазин продає лише «дешевий» варіант, тож у запасі він і лежить.
+ */
+export const SINGLE_VARIANT: readonly Product[] = ["collar"];
 /**
  * Запаси для себе (§11.3а): лише їх магазин показує, поки в домі ще жодного разу не було кота. Решта запасів і всі речі —
  * котячі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Котячі товари»).
@@ -1220,11 +1227,6 @@ export const CYCLE = {
 export const BEARD = { neatAfterShave: 2, grows: 4, neatAfterTrim: 3, shaveMinutes: 10, trimMinutes: 5, impression: 0.5 } as const;
 /** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
-/**
- * Нашийник (§9.10): настрій за день, шанс загубити дешевий. Дзвіночка, що дратував чутливих (`bellMood` −1 за ніч), більше
- * немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
- */
-export const COLLAR = { mood: { cheap: -0.5, premium: 0.5 } as Record<Quality, number>, lose: 0.05 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */
 /** Купання (§8.7): `minutes` — скільки триває, «Боїться води» — ×(1 + `fearStep`), «Водобоязнь» — ×(1 + 2 × `fearStep`) (рішення автора 2026-10-28). */
 export const BATH = { catchSanity: -3, bathSanity: -3, minutes: 10, fearStep: 0.5, hairlessDays: 7, dermatitis: 0.3, hideMinutes: 30 } as const;

@@ -2,7 +2,7 @@
 // Той самий кошик — доставкою з телефона чи на місці в поїздці.
 
 import { hadCat, spend } from "./character";
-import { SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, THINGS } from "./config";
+import { SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, THINGS } from "./config";
 import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
 import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
 import type { GameState, Quality, ThingKind } from "./types";
@@ -23,6 +23,14 @@ export function offered(state: GameState, goods: Goods): boolean {
   if (!hadCat(state)) return false;
   if (product === "sterileFood") return state.cats.some((c) => c.sterilized);
   return true;
+}
+
+/**
+ * Варіанти товару (§6.4): здебільшого два — дешевий і дорогий; нашийник один, без якостей (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А17) — у магазині лише «дешевий».
+ */
+export function variants(goods: Goods): readonly Quality[] {
+  return "product" in goods && SINGLE_VARIANT.includes(goods.product) ? ["cheap"] : ["cheap", "premium"];
 }
 
 /** Доставка з телефона чи покупка на місці. */
@@ -54,9 +62,10 @@ function thingRoom(state: GameState, cart: readonly CartLine[], thing: ThingKind
 /**
  * Скільки ще штук цього товару й якості можна взяти, з урахуванням решти кошика (§6.4): запасів —
  * скільки завгодно (зайве чекає в ящиках біля входу), але не того, що ще лежить у ящиках; речей —
- * не більше вільних місць (автогодівниць — і над мисками з цього кошика, §9.12).
+ * не більше вільних місць (автогодівниць — і над мисками з цього кошика, §9.12). Якості, якої товар не має, — жодної.
  */
 export function room(state: GameState, cart: readonly CartLine[], goods: Goods, quality: Quality): number {
+  if (!variants(goods).includes(quality)) return 0;
   const others = cart.filter((l) => same(l.goods, goods) && l.quality !== quality);
   if ("product" in goods) return canOrderProduct(state, goods.product) ? Infinity : 0;
   const used = others.reduce((sum, l) => sum + l.count, 0);

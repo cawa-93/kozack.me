@@ -135,8 +135,6 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: ласощі (${quality(event.quality)})`;
     case "collar":
       return `${catName(state, event.cat)}: новий нашийник`;
-    case "collar-lost":
-      return `${catName(state, event.cat)} загубив нашийник`;
     case "bathed":
       return `${catName(state, event.cat)}: купання`;
     case "laundry":

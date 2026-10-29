@@ -121,8 +121,8 @@
      "premium": 19
     },
     "collar": {
-     "cheap": 1,
-     "premium": 3
+     "cheap": 4,
+     "premium": 0
     },
     "shampoo": {
      "cheap": 5,
@@ -452,9 +452,7 @@
      true,
      true
     ],
-    "collar": {
-     "quality": "cheap"
-    },
+    "collar": true,
     "treatsToday": 0,
     "hurt": {
      "at": 16697.921706666624,
@@ -652,9 +650,7 @@
      false,
      false
     ],
-    "collar": {
-     "quality": "cheap"
-    },
+    "collar": true,
     "treatsToday": 0,
     "hurt": {
      "at": 17678.615235555375,
@@ -802,7 +798,7 @@
      false,
      false
     ],
-    "collar": null,
+    "collar": false,
     "treatsToday": 0,
     "hurt": {
      "at": 17693.615235555375,
@@ -952,7 +948,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 3,
@@ -1071,7 +1067,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 3,
@@ -1209,7 +1205,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 3,
@@ -1335,7 +1331,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 2,
@@ -1455,7 +1451,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 2,
@@ -1574,7 +1570,7 @@
       true,
       true
      ],
-     "collar": null,
+     "collar": false,
      "treatsToday": 0,
      "hurt": null,
      "bathedDay": 2,
