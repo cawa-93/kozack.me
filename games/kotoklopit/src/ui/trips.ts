@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { ACCIDENT, BREEDING, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, sterilizeBlocker, tripCat, vetManner } from "../sim/destinations";
 import { giveAwayBlocker, recentlyArrived } from "../sim/farewell";
 import { breedById, MIXED } from "../sim/breeds";
@@ -171,7 +171,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
       body.push(breedLine(cat.breed, cat.breedKnown, cat.sex) ?? "Порода: невідома.");
       const blocker = sterilizeBlocker(state, cat);
-      const why = { young: `замале: оперують з ${BREEDING.minAge} тижнів`, pregnant: "вагітна: стерилізувати можна після пологів", nursing: "годує кошенят: після тижня годування" };
+      const age = STERILIZATION.minAge;
+      const why = { young: `замале: оперують з ${age} ${plural(age, "тижня", "тижнів", "тижнів")}`, pregnant: "вагітна: стерилізувати можна після пологів", nursing: "годує кошенят: після тижня годування" };
       if (!cat.sterilized && blocker !== null) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", why[blocker]));
       else if (!cat.sterilized)
         body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));

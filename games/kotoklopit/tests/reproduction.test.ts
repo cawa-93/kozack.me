@@ -209,7 +209,7 @@ describe("вагітність і пологи: перевірка розмно�
 });
 
 describe("новонароджені: перевірка розмноження 2026-10-28", () => {
-  it("мати спить на холодильнику — кошенята лежать біля неї на підлозі; новонароджене не в переноску, а оперують з 2 тижнів", () => {
+  it("мати спить на холодильнику — кошенята лежать біля неї на підлозі; новонароджене не в переноску й не оперують", () => {
     const save = game();
     const mother = withCat(save, "female");
     const baby = createCat(save.current, createRng(1), { source: "born", ageWeeks: 0 });
@@ -226,6 +226,21 @@ describe("новонароджені: перевірка розмноження 
     expect(tripBlocker(save.current, "vet")).toBe("newborn");
     expect(canSterilize(baby)).toBe(false);
     expect(canSterilize(mother)).toBe(true);
+  });
+
+  it("загальна ревізія 2026-10-29: кошеня, народжене вдома, оперують з 1 тижня — до ночі, коли воно стане дорослим і може завагітніти", () => {
+    const save = game();
+    const s = save.current;
+    const mother = withCat(save, "female");
+    const baby = createCat(s, createRng(1), { source: "born", ageWeeks: 0, sex: "female" });
+    baby.parents = { mother: mother.id, father: null };
+    addCat(s, baby);
+    expect(sterilizeBlocker(s, baby)).toBe("young");
+    baby.ageWeeks = 1;
+    expect(sterilizeBlocker(s, baby)).toBeNull();
+    s.character.held = { kind: "cat", cat: baby.id };
+    s.home.carrier = "cheap";
+    expect(tripBlocker(s, "vet")).toBeNull();
   });
 });
 

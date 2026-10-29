@@ -5,7 +5,6 @@ import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
-  BREEDING,
   CAFE,
   DIFFICULTY,
   DISEASES,
@@ -152,8 +151,12 @@ export function vetTreat(state: GameState, disease: DiseaseId, quality: Quality,
   return "cured";
 }
 
-/** Оперують з 2 тижнів — з віку, коли кіт стає дорослим для розмноження (§9.8; перевірка розмноження 2026-10-28: оперували й новонароджених). */
-export const canSterilize = (cat: Cat): boolean => cat.ageWeeks >= BREEDING.minAge;
+/**
+ * Оперують з 1 тижня — за тиждень до того, як кіт стає дорослим для розмноження (§9.8; перевірка розмноження 2026-10-28: оперували
+ * й новонароджених; загальна ревізія 2026-10-29: було з 2 тижнів — кошеня, народжене вдома, дорослішає в ніч на понеділок, саме тоді,
+ * коли кидається зачаття, і вікна для операції не мало).
+ */
+export const canSterilize = (cat: Cat): boolean => cat.ageWeeks >= STERILIZATION.minAge;
 
 /** Чому ветеринар зараз не оперує (§9.8): замалий, вагітна (рішення автора 2026-10-28, Р1: операція мовчки переривала вагітність) чи годує. */
 export function sterilizeBlocker(state: GameState, cat: Cat): "young" | "pregnant" | "nursing" | null {
