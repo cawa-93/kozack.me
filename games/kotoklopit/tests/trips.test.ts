@@ -10,7 +10,6 @@ import {
   breederCats,
   buyAtShop,
   buyFromBreeder,
-  cafe,
   enterShow,
   giveToShelter,
   knownSterilizeBlocker,
@@ -827,16 +826,38 @@ describe("пункти призначення (§8.5)", () => {
     expect(hasDisease(kitten, "dermatitis")).toBe(true);
   });
 
-  it("котокафе: здоровий глузд слабшає з кожною годиною, ревниві коти ображаються", () => {
-    const save = game(9 * 60);
-    save.current.day = 5;
-    const cat = withCat(save);
-    cat.traits = [{ group: "jealousy", level: 1, seen: 0, known: false }];
-    const mood = cat.mood;
-    save.current.character.stats.sanity = 40;
-    arrive(save, "cafe");
-    expect(cafe(save.current, 3)).toBe(true);
-    expect(save.current.character.stats.sanity).toBe(61);
-    expect(cat.mood).toBeLessThan(mood);
+  describe("котокафе прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
+    /** Збереження старої гри, у якому персонаж їде в котокафе чи вже там. */
+    function oldCafeTrip(phase: "drive" | "visit" | "accident"): Save {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      expect(startTrip(save.current, "shop")).toBe(true);
+      const old = JSON.parse(serialize(save)) as { current: { trip: { destination: string; phase: string }; character: { body: { x: number; y: number } } } };
+      old.current.trip.destination = "cafe";
+      old.current.trip.phase = phase;
+      old.current.character.body.x = 3.5;
+      old.current.character.body.y = 3.5;
+      return deserialize(JSON.stringify(old));
+    }
+
+    it("у списку поїздок котокафе немає", () => {
+      expect(Object.keys(TRIPS)).not.toContain("cafe");
+    });
+
+    it("поїздка в котокафе зі старого збереження — дорогою чи на місці — завершується: персонаж удома біля дверей", () => {
+      for (const phase of ["drive", "visit"] as const) {
+        const loaded = oldCafeTrip(phase).current;
+        expect(loaded.trip, phase).toBeNull();
+        expect(loaded.character.body, phase).toMatchObject({ x: HOME_DOOR.x, y: HOME_DOOR.y });
+      }
+    });
+
+    it("аварія дорогою в котокафе зі старого збереження лишається аварією: день перемотується до сну, як і раніше", () => {
+      const save = oldCafeTrip("accident");
+      expect(save.current.trip).toMatchObject({ destination: "shop", phase: "accident" });
+      rewindAccident(save);
+      expect(save.current.trip).toBeNull();
+      expect(save.current.day).toBe(6);
+    });
   });
 });

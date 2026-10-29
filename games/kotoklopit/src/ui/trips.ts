@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { ACCIDENT, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { ACCIDENT, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { giveAwayBlocker, recentlyArrived } from "../sim/farewell";
 import { breedById, MIXED } from "../sim/breeds";
@@ -119,7 +119,6 @@ export interface VisitHandlers {
   giveAway: () => void;
   buyKitten: (cat: number) => void;
   groom: (quality: Quality) => void;
-  cafe: (hours: number) => void;
   show: () => void;
   home: () => void;
 }
@@ -321,13 +320,6 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         body.push(
           `${cat.name} у переносці.`,
           row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
-        );
-      break;
-    case "cafe":
-      if (log.done.includes("cafe")) body.push("Чужі коти — теж коти. Трохи полегшало.");
-      else
-        body.push(
-          row("Посидіти з котами", "", ...[1, 2, 3].map((n) => button(`🕐 ${n} год · ${CAFE.pricePerHour * n} ₴`, CAFE.pricePerHour * n, () => h.cafe(n)))),
         );
       break;
     case "show": {

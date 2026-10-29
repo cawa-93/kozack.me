@@ -1,11 +1,10 @@
-// Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, грумер,
-// котокафе, офіс. Кожна подія додає свій час до поїздки; додому персонаж їде вже без гонки.
+// Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, розплідник, грумер,
+// виставка, офіс. Кожна подія додає свій час до поїздки; додому персонаж їде вже без гонки.
 
 import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
-  CAFE,
   DIFFICULTY,
   DISEASES,
   GROOMER,
@@ -212,7 +211,7 @@ export function vetSterilize(state: GameState): boolean {
   return true;
 }
 
-// --- Лікар, грумер, котокафе, офіс ----------------------------------------------------------
+// --- Грумер, виставка, офіс -----------------------------------------------------------------
 
 /** Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. */
 export function groom(state: GameState, quality: Quality): boolean {
@@ -225,20 +224,6 @@ export function groom(state: GameState, quality: Quality): boolean {
   const manner = vetManner(cat);
   if (manner === "hid") trip.visit += VET.hideMinutes;
   if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1);
-  return true;
-}
-
-/** Котокафе (§8.5): здоровий глузд слабшає з кожною годиною; ревниві коти вдома ображаються. */
-export function cafe(state: GameState, hours: number): boolean {
-  const trip = state.trip;
-  if (trip?.destination !== "cafe" || hours < 1 || !spend(state, CAFE.pricePerHour * hours, "other")) return false;
-  trip.visit = hours * MINUTES_PER_HOUR;
-  const factor = DIFFICULTY[state.difficulty].catSanity;
-  for (let h = 0; h < Math.min(hours, CAFE.sanity.length); h++) changeStat(state, "sanity", (CAFE.sanity[h] ?? 0) * factor);
-  for (const cat of state.cats) {
-    const jealousy = traitLevel(cat, "jealousy");
-    if (jealousy > 0) changeMood(state, cat, CAFE.jealousyMood * jealousy, "пахне чужими котами");
-  }
   return true;
 }
 
@@ -255,7 +240,7 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   changeMood(state, cat, show.mood, "виставка");
   const prize = show.prizes.find((p) => score >= p.score);
   if (!prize) return 0;
-  // Гроші призу сталі, а здоровий глузд — з множником «Здоровий глузд від котів», як пестощі й котокафе (§4.1, §6.2;
+  // Гроші призу сталі, а здоровий глузд — з множником «Здоровий глузд від котів», як пестощі (§4.1, §6.2;
   // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Приз виставки»).
   earn(state, prize.money);
   changeStat(state, "sanity", prize.sanity * DIFFICULTY[state.difficulty].catSanity);

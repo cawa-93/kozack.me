@@ -536,7 +536,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
         emit(state, { type: "hissed-guests", cat: cat.id });
       }
     }
-    // Захват гостей — здоровий глузд від котів: множник складності, як на пестощі й котокафе (§5.2, §9.12; загальна ревізія
+    // Захват гостей — здоровий глузд від котів: множник складності, як на пестощі (§5.2, §9.12; загальна ревізія
     // 2026-10-29), межа — до множника. Сором і шипіння — втрати, їх множник не стосується.
     const total = shame + Math.min(GUESTS.delightMax, delight) * DIFFICULTY[state.difficulty].catSanity + hissing;
     changeStat(state, "sanity", total);

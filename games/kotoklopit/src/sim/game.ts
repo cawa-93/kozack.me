@@ -325,6 +325,19 @@ export function upgradeState(state: GameState): void {
   upgradeSupplies(state);
   upgradeAlbumDays(state);
   upgradeDiseases(state);
+  upgradeTrip(state);
+}
+
+/**
+ * Котокафе прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15). Поїздку туди, на якій гру збережено, гра завершує:
+ * дорогою чи на місці персонаж уже вдома біля дверей (оплачене в кафе своє вже дало). Після аварії день, як і раніше, перемотується
+ * до сну: поїздку лише записано на магазин — так само «собі» й без кота, а картка аварії пункту не називає.
+ */
+export function upgradeTrip(state: GameState): void {
+  const trip = state.trip;
+  if (trip === null || (trip.destination as string) !== "cafe") return;
+  if (trip.phase === "accident") trip.destination = "shop";
+  else endTrip(state);
 }
 
 /**

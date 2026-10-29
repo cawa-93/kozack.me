@@ -26,7 +26,6 @@ export const DESTINATION_TITLES: Record<Destination, string> = {
   shelter: "Притулок",
   breeder: "Розплідник",
   groomer: "Грумер",
-  cafe: "Котокафе",
   office: "Офіс",
   show: "Виставка котів",
 };

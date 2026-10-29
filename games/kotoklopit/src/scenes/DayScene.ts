@@ -10,7 +10,7 @@ import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from ".
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, tripCat, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, enterShow, giveToShelter, groom, officeMeeting, tripCat, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
@@ -496,10 +496,6 @@ export class DayScene extends Phaser.Scene {
       },
       groom: (quality) => {
         if (groom(state, quality)) log.done.push("groom");
-        again();
-      },
-      cafe: (hours) => {
-        if (cafe(state, hours)) log.done.push("cafe");
         again();
       },
       show: () => {
