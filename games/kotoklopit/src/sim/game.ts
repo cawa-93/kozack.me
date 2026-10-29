@@ -7,7 +7,7 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { ACCIDENT, CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS } from "./config";
+import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -155,8 +155,8 @@ function tick(state: GameState, minutes: number, input: Input): void {
   tickHousehold(state, from, minutes);
   tickCats(state, minutes, { present: !away });
   if (!away) annoyingMesses(state, minutes);
-  // Поки день перемотується після аварії, показники не нижче 5 (§8.5).
-  passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident" ? ACCIDENT.floor : 0);
+  // Поки день перемотується після аварії, показники не нижче 5, ситість — не нижче 25, а голод не забирає здоров'я (§8.5, А1).
+  passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident");
   state.minute += minutes;
   // Кур'єр дзвонить у двері (§9.12 «Двері й гості»): коти реагують на дзвінок.
   if (tickDeliveries(state) > 0) ringBell(state, false);

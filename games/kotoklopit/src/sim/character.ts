@@ -3,6 +3,7 @@
 import { hygieneFactor } from "./household";
 import { unpleasantFactor } from "./modifiers";
 import {
+  ACCIDENT,
   CHRONOTYPE_WINDOWS,
   DASH_SATIETY,
   DEPRESSION_CEILING,
@@ -118,12 +119,16 @@ export function dashHunger(state: GameState): void {
   changeStat(state, "satiety", DASH_SATIETY * metabolism(state));
 }
 
-/** Минув час, поки персонаж не спить. */
-export function passAwakeTime(state: GameState, hours: number, floor = 0): void {
-  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours, floor);
-  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * hours, floor);
-  if (state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
-    changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours, floor);
+/**
+ * Минув час, поки персонаж не спить. Поки день перемотується після аварії (`rewind`, §8.5), гігієна не опускається нижче 5,
+ * ситість — нижче 25, а голод не забирає здоров'я, навіть якщо ситість нижче 25 була ще до аварії (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А1; раніше ситість падала до 5, і без їжі вдома голод добивав персонажа вранці за години).
+ */
+export function passAwakeTime(state: GameState, hours: number, rewind = false): void {
+  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours, rewind ? ACCIDENT.satietyFloor : 0);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * hours, rewind ? ACCIDENT.floor : 0);
+  if (!rewind && state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
+    changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours);
   }
 }
 

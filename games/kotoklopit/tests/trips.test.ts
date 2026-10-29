@@ -4,16 +4,16 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { BATH, TRIPS } from "../src/sim/config";
+import { ACCIDENT, BATH, TRIPS } from "../src/sim/config";
 import { adopt, breederCats, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
-import { canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
+import { accidentBedtime, canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { driveSafely, recordEvents, standAt, withCatCorner } from "./helpers";
+import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
@@ -80,6 +80,44 @@ describe("гонка (§8.5)", () => {
     expect(night).not.toBeNull();
     expect(save.current.trip).toBeNull();
     expect(night?.sleptHours).toBeCloseTo(8, 0);
+  });
+
+  it("аварія: поки день перемотується, ситість не нижче 25 і голод не забирає здоров'я — уранці є час поїсти (рішення автора 2026-10-29, А1)", () => {
+    // Порожній холодильник, аварія опівдні; втрати аварії випадкові, тож показники задано вже після неї.
+    const crashed = (satiety: number): Save => {
+      const save = game(12 * 60);
+      save.current.day = 5;
+      save.current.home.supplies.food = { cheap: 0, premium: 0 };
+      save.current.home.supplies.momMeal = { cheap: 0, premium: 0 };
+      startTrip(save.current, "shop");
+      save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
+      drive(save, 0.1, NO_RACE_INPUT);
+      expect(save.current.trip?.phase).toBe("accident");
+      save.current.character.stats.satiety = satiety;
+      save.current.character.stats.health = 10;
+      save.current.character.illnesses = [];
+      return save;
+    };
+
+    // Ситий: ситість спиняється на 25, здоров'я не падає; раніше вона падала до 5, а голод з'їдав здоров'я до 5.
+    const fed = crashed(50);
+    advance(fed, accidentBedtime(fed.current) - fed.current.minute - 1);
+    expect(fed.current.character.stats.satiety).toBe(ACCIDENT.satietyFloor);
+    expect(fed.current.character.stats.health).toBe(10);
+    rewindAccident(fed);
+    expect(fed.current.end).toBeNull();
+    expect(fed.current.trip).toBeNull();
+    // Уночі все як завжди: уранці персонаж голодний, але не виснажений.
+    expect(fed.current.character.stats.satiety).toBeGreaterThanOrEqual(12);
+    expect(fed.current.character.stats.satiety).toBeLessThan(ACCIDENT.satietyFloor);
+    advance(fed, hours(2));
+    expect(fed.current.end).toBeNull();
+
+    // Ситість нижче 25 ще до аварії: далі не падає, а голод здоров'я не забирає.
+    const hungry = crashed(15);
+    advance(hungry, accidentBedtime(hungry.current) - hungry.current.minute - 1);
+    expect(hungry.current.character.stats.satiety).toBe(15);
+    expect(hungry.current.character.stats.health).toBe(10);
   });
 
   it("аварія: час перемотування до сну не рахується в статистику фіналу, гонка — за пунктом призначення (загальна ревізія 2026-10-29)", () => {
