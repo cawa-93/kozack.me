@@ -7,7 +7,7 @@ import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
 import { pickUpCat } from "../src/sim/actions";
 import { ambushWeight, chewChance, climbWeight, decide, giftWeight, hideSpot, rollWeight, startAmbush, startCarry, startChew, tickCats, trashTipped, upHigh } from "../src/sim/catai";
-import { AMBUSH, CHEWING, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { AMBUSH, CHEWING, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, PLAYFUL, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
 import { startWork } from "../src/sim/work";
 import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
@@ -244,12 +244,30 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(giftWeight(withCat(save, { gifts: 1 }))).toBeCloseTo(2 * GIFTS.weight);
   });
 
-  it("приносить іграшку до ніг і нявкає; пограєтеся з ним протягом 10 хвилин — любов +1", () => {
+  it("до ніг іграшку не приносить — лише заганяє під диван чи холодильник (рішення автора 2026-10-29, А16: до ніг кличе гратися «Ігривість +»)", () => {
+    const dests = new Set<string>();
+    let invites = 0;
+    for (let seed = 1; seed <= 80; seed++) {
+      const save = game(seed);
+      // Шкарпеток у кошику немає — нести можна лише іграшку.
+      save.current.home.clothes = START_CLOTHES;
+      const cat = withCat(save, { gifts: 2 });
+      cat.needs.play = 90;
+      decide(save.current, cat, createRng(seed), { present: true });
+      if (cat.act.kind !== "carry" || cat.act.carry !== "toy") continue;
+      if (cat.act.invite === true) invites += 1;
+      dests.add(cat.act.dest ?? "");
+    }
+    expect(invites).toBe(0);
+    expect([...dests].sort()).toEqual(["fridge", "sofa"]);
+  });
+
+  it("«Ігривість +» приносить іграшку до ніг і нявкає; пограєтеся з ним протягом 10 хвилин — любов +1", () => {
     const save = game();
     const toy = toyOf(save);
     Object.assign(toy, { x: 6.5, y: 8.5 });
-    const cat = withCat(save, { gifts: 1 }, { x: 5.5, y: 8.5 });
-    cat.act = { kind: "carry", target: `item:${toy.id}`, goal: itemTile(toy), minutes: GIFTS.pickMinutes, elapsed: 0, carry: "toy", dest: "feet" };
+    const cat = withCat(save, { playful: 1 }, { x: 5.5, y: 8.5 });
+    cat.act = { kind: "carry", target: `item:${toy.id}`, goal: itemTile(toy), minutes: GIFTS.pickMinutes, elapsed: 0, carry: "toy", dest: "feet", invite: true };
     const { events, stop } = recordEvents();
     for (let i = 0; i < 80 && cat.act.dropped !== true; i++) tickCats(save.current, 0.25, { present: true });
     stop();
@@ -258,8 +276,8 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(Math.hypot(toy.x - body.x, toy.y - body.y)).toBeLessThan(1.5);
     expect(events.some((e) => e.type === "meow" && e.cat === cat.id)).toBe(true);
     expect(cat.gift).toBeDefined();
-    // Кіт із іграшкою в зубах на очах персонажа — прояв «+», раз за річ.
-    expect(seen(cat, "gifts")).toBe(1);
+    // Поклав іграшку й кличе гратися — прояв «Ігривості +».
+    expect(seen(cat, "playful")).toBe(1);
     // Узяти вудку й пограти з котом поруч.
     cat.needs.play = 90;
     cat.act = idleAct(5);
@@ -268,7 +286,7 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     Object.assign(body, { x: cat.x - 0.5, y: cat.y, facing: { x: 1, y: 0 } });
     const love = cat.love;
     advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
-    expect(cat.love).toBeGreaterThanOrEqual(love + GIFTS.thanksLove);
+    expect(cat.love).toBeGreaterThanOrEqual(love + PLAYFUL.thanksLove);
     expect(cat.gift).toBeUndefined();
   });
 
@@ -284,7 +302,7 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(toy.x).toBeCloseTo(STASHES.fridge.at.x);
     // Іграшка під холодильником, а шкарпеток у кошику немає — нести нічого.
     cat.act = idleAct(1);
-    startCarry(save.current, cat, createRng(2), true);
+    startCarry(save.current, cat, createRng(2));
     expect(cat.act.kind).toBe("idle");
     // Кіт відійшов: з іграшкою в руках біля кота натискання нічого не робить (пір'їнка тепер збоку, біля кота).
     Object.assign(cat, { x: 9.5, y: 7.5 });
@@ -319,7 +337,7 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     save.current.home.clothes = 2;
     const cat = withCat(save, { gifts: 1 }, { x: 9.5, y: 2.5 });
     save.current.home.items = save.current.home.items.filter((i) => i.kind !== "toy");
-    startCarry(save.current, cat, createRng(2), true);
+    startCarry(save.current, cat, createRng(2));
     expect(cat.act.carry).toBe("sock");
     carryOut(save, cat, false);
     expect(save.current.home.sock).toBe(true);

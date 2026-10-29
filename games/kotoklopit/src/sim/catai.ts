@@ -1231,9 +1231,9 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Подарунки й схованки»).
   const toy = nearest(cat, looseToys(state));
   if (toy) options.push({ weight: MISCHIEF.toy, value: active(() => start(cat, "toy", itemTile(toy), TOY.aloneMinutes, `item:${toy.id}`)) });
-  // Понести річ — до ніг персонажа чи в схованку (§9.12, «Подарунки й схованки»).
+  // Понести річ у схованку (§9.12, «Подарунки й схованки»).
   const gift = giftWeight(cat);
-  if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng, context.present)) });
+  if (gift > 0 && (toy !== null || sockFree(state, cat))) options.push({ weight: gift, value: active(() => startCarry(state, cat, rng)) });
   // «Ігривість +» кличе гратися: несе іграшку до ніг того, хто вдома й не працює (§9.12, «Гра й стосунки котів»).
   const playful = traitLevel(cat, "playful");
   if (playful > 0 && toy !== null && context.present && !isWorking(state)) options.push({ weight: PLAYFUL.inviteStep * playful, value: active(() => startInvite(cat, toy)) });
@@ -1435,10 +1435,11 @@ function sockFree(state: GameState, cat: Cat): boolean {
 
 /**
  * Кіт іде по річ (§9.12, «Подарунки й схованки»): іграшку з підлоги чи вашу шкарпетку з кошика білизни — навпіл, коли є і те,
- * і те. Іграшку з шансом 50% несе до ваших ніг (коли ви вдома), інакше заганяє під диван чи холодильник; шкарпетку — у схованку
- * під диваном.
+ * і те. Іграшку заганяє під диван чи холодильник, шкарпетку — у схованку під диваном. До ваших ніг іграшку приносить лише
+ * «Ігривість +» (`startInvite`; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А16: раніше й «Подарунки» з шансом 50%, і на екрані
+ * це було те саме).
  */
-export function startCarry(state: GameState, cat: Cat, rng: Rng, present: boolean): void {
+export function startCarry(state: GameState, cat: Cat, rng: Rng): void {
   const toy = nearest(cat, looseToys(state));
   const sock = sockFree(state, cat);
   if (sock && (toy === null || rng.chance(0.5))) {
@@ -1450,12 +1451,12 @@ export function startCarry(state: GameState, cat: Cat, rng: Rng, present: boolea
   if (!toy) return;
   start(cat, "carry", itemTile(toy), GIFTS.pickMinutes, `item:${toy.id}`);
   cat.act.carry = "toy";
-  cat.act.dest = present && rng.chance(GIFTS.feet) ? "feet" : rng.chance(GIFTS.fridge) ? "fridge" : "sofa";
+  cat.act.dest = rng.chance(GIFTS.fridge) ? "fridge" : "sofa";
 }
 
 /**
- * «Ігривість +» кличе гратися (§9.12, «Гра й стосунки котів»): іде по іграшку й несе її до ніг персонажа — як подарунок, але
- * чекає поруч довше (`PLAYFUL.inviteMinutes`).
+ * «Ігривість +» кличе гратися (§9.12, «Гра й стосунки котів»): іде по іграшку, несе її до ніг персонажа й до
+ * `PLAYFUL.inviteMinutes` хвилин чекає поруч.
  */
 function startInvite(cat: Cat, toy: ToyItem): void {
   start(cat, "carry", itemTile(toy), GIFTS.pickMinutes, `item:${toy.id}`);
@@ -1483,8 +1484,7 @@ function carryDone(state: GameState, cat: Cat): void {
   const dest = act.dest ?? "sofa";
   if (act.picked !== true) {
     const goal = dest === "feet" ? tileOf(state.character.body) : { ...STASHES[dest].tile };
-    const wait = act.invite === true ? PLAYFUL.inviteMinutes : GIFTS.waitMinutes;
-    start(cat, "carry", goal, dest === "feet" ? wait : GIFTS.pickMinutes, act.target);
+    start(cat, "carry", goal, dest === "feet" ? PLAYFUL.inviteMinutes : GIFTS.pickMinutes, act.target);
     Object.assign(cat.act, { carry: act.carry, dest, picked: true, ...(act.invite === true ? { invite: true } : {}) });
     return;
   }
@@ -1494,8 +1494,8 @@ function carryDone(state: GameState, cat: Cat): void {
 }
 
 /**
- * Кіт приніс іграшку до ніг персонажа (§9.12): кладе її, дивиться на нього й нявкає. Пограєтеся з ним вудкою протягом 10 хвилин —
- * любов +1 (`play` у `actions.ts`).
+ * Кіт приніс іграшку до ніг персонажа й кличе гратися (§9.12, «Ігривість»): кладе її, дивиться на нього й нявкає. Пограєтеся з ним
+ * вудкою протягом 10 хвилин — любов +1 (`play` у `actions.ts`).
  */
 function dropGift(state: GameState, cat: Cat): void {
   const act = cat.act;

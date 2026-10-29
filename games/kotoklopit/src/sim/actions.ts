@@ -31,7 +31,6 @@ import {
   EAT_MINUTES,
   FEEDER_CAPACITY,
   ESCAPE,
-  GIFTS,
   LITTER_SANITY,
   MEAL_SATIETY,
   MESS_SANITY,
@@ -935,9 +934,9 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     jealousy(state, cat, "play");
     if (activity.done) return;
   }
-  // Кіт щойно приніс іграшку до ніг, і з ним пограли — він тішиться: любов (§9.12, «Подарунки й схованки»).
+  // Кіт щойно приніс іграшку до ніг і кликав гратися, і з ним пограли — він тішиться: любов (§9.12, «Ігривість»).
   if (activity.minutes === 0 && cat.gift !== undefined) {
-    if (absoluteMinute(state.day, state.minute) - cat.gift <= GIFTS.thanksMinutes) changeLove(state, cat, GIFTS.thanksLove, "пограли з подарунком");
+    if (absoluteMinute(state.day, state.minute) - cat.gift <= PLAYFUL.thanksMinutes) changeLove(state, cat, PLAYFUL.thanksLove, "пограли з принесеною іграшкою");
     delete cat.gift;
   }
   const before = activity.minutes;
