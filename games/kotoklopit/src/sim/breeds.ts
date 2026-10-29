@@ -25,7 +25,8 @@ export const BREEDS: readonly Breed[] = [
   { id: MIXED, name: "Безпородний", traits: { hardiness: 1, longevity: 1 }, risks: [] },
   // Згенеровано з `BREEDS.md`: зовнішність — гени й форми §9.10. Короткошерсті й «суцільні» задають `short` і `white: [0, 0]`, щоб
   // чистокровний кіт не виходив довгошерстим чи з білими плямами (перевірка розмноження 2026-10-28); «суцільні» — ще й не колорпойнт, дикий
-  // малюнок і колорпойнт без білого — без білих плям (крок 17, звірка з довідниками 2026-10-28).
+  // малюнок і колорпойнт без білого — без білих плям (крок 17, звірка з довідниками 2026-10-28); дикий малюнок — ще й не колорпойнт
+  // (загальна ревізія 2026-10-29: інакше зрідка виходила блакитноока мау). Орієнтальна — будь-якої масті, зокрема з білим (§9.11).
   { id: "meinkun", name: "Мейнкун", traits: { size: 1, sociability: 1, longevity: -1 }, risks: ["серце", "суглоби"], genes: { short: [false, false], full: [true, true] }, shape: { ears: "tufted", tail: "fluffy", build: "stocky" } },
   { id: "norvezka-lisova", name: "Норвезька лісова", traits: { size: 1, climbing: 1, affection: -1 }, risks: [], genes: { short: [false, false] }, shape: { ears: "tufted", tail: "fluffy", build: "stocky" } },
   { id: "perska", name: "Перська", traits: { energy: -1, shedding: 1, affection: 1 }, risks: ["дихання", "нирки", "очі"], genes: { short: [false, false] }, shape: { muzzle: "flat", build: "stocky" } },
@@ -33,7 +34,7 @@ export const BREEDS: readonly Breed[] = [
   { id: "rahdol", name: "Рагдол", traits: { size: 1, affection: 1, energy: -1 }, risks: ["серце"], genes: { short: [false, false], full: [false, false], white: [1, 0] }, shape: { build: "stocky" } },
   { id: "birmanska", name: "Бірманська", traits: { affection: 1, sociability: 1, talkative: -1 }, risks: [], genes: { short: [false, false], full: [false, false], white: [1, 0] } },
   { id: "balineziiska", name: "Балінезійська", traits: { talkative: 1, affection: 1, energy: 1 }, risks: ["зуби"], genes: { white: [0, 0], short: [false, false], full: [false, false] }, shape: { muzzle: "long", ears: "large", build: "slim" } },
-  { id: "somali", name: "Сомалі", traits: { energy: 1, climbing: 1, curiosity: 1 }, risks: ["нирки", "зуби"], genes: { short: [false, false], tabby: [3, 3], agouti: [true, true], white: [0, 0] }, shape: { ears: "large", tail: "fluffy" } },
+  { id: "somali", name: "Сомалі", traits: { energy: 1, climbing: 1, curiosity: 1 }, risks: ["нирки", "зуби"], genes: { short: [false, false], tabby: [3, 3], agouti: [true, true], full: [true, true], white: [0, 0] }, shape: { ears: "large", tail: "fluffy" } },
   { id: "turetska-anhora", name: "Турецька ангора", traits: { energy: 1, curiosity: 1, sociability: 1 }, risks: [], genes: { short: [false, false], white: [2, 2] }, shape: { ears: "large", tail: "fluffy", build: "slim" } },
   { id: "turetskyi-van", name: "Турецький ван", traits: { water: 1, energy: 1, affection: -1 }, risks: [], genes: { short: [false, false], white: [2, 2] }, shape: { build: "stocky" } },
   { id: "nebelunh", name: "Небелунг", traits: { bravery: -1, affection: 1, talkative: -1 }, risks: [], genes: { full: [true, true], white: [0, 0], short: [false, false], agouti: [false, false], dense: [false, false], black: [true, true], eyes: 0 }, noOrange: true },
@@ -47,11 +48,11 @@ export const BREEDS: readonly Breed[] = [
   { id: "tonkinska", name: "Тонкінська", traits: { energy: 1, sociability: 1, talkative: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], full: [false, false] } },
   { id: "amerykanska-korotkoshersta", name: "Американська короткошерста", traits: { longevity: 1, appetite: 1, bravery: 1 }, risks: [], genes: { short: [true, true], tabby: [0, 0] }, shape: { build: "stocky" } },
   { id: "ievropeiska-korotkoshersta", name: "Європейська короткошерста", traits: { bravery: 1, affection: -1, hardiness: 1 }, risks: [], genes: { short: [true, true] }, shape: { build: "normal" } },
-  { id: "abissynska", name: "Абіссинська", traits: { energy: 1, climbing: 1, affection: -1 }, risks: ["нирки", "зуби"], genes: { short: [true, true], tabby: [3, 3], agouti: [true, true], white: [0, 0] }, shape: { ears: "large", build: "slim" } },
-  { id: "sinhapura", name: "Сінгапура", traits: { size: -1, curiosity: 1, affection: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [3, 3], agouti: [true, true] }, shape: { ears: "large" } },
-  { id: "iehypetska-mau", name: "Єгипетська мау", traits: { energy: 1, bravery: -1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true], eyes: 0 }, shape: { build: "slim" } },
-  { id: "otsyket", name: "Оцикет", traits: { energy: 1, sociability: 1, curiosity: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true] }, shape: { build: "stocky" } },
-  { id: "toiher", name: "Тойгер", traits: { energy: 1, affection: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [1, 1], agouti: [true, true] }, shape: { build: "stocky" } },
+  { id: "abissynska", name: "Абіссинська", traits: { energy: 1, climbing: 1, affection: -1 }, risks: ["нирки", "зуби"], genes: { short: [true, true], tabby: [3, 3], agouti: [true, true], full: [true, true], white: [0, 0] }, shape: { ears: "large", build: "slim" } },
+  { id: "sinhapura", name: "Сінгапура", traits: { size: -1, curiosity: 1, affection: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [3, 3], agouti: [true, true], full: [true, true] }, shape: { ears: "large" } },
+  { id: "iehypetska-mau", name: "Єгипетська мау", traits: { energy: 1, bravery: -1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true], full: [true, true], eyes: 0 }, shape: { build: "slim" } },
+  { id: "otsyket", name: "Оцикет", traits: { energy: 1, sociability: 1, curiosity: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true], full: [true, true] }, shape: { build: "stocky" } },
+  { id: "toiher", name: "Тойгер", traits: { energy: 1, affection: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [1, 1], agouti: [true, true], full: [true, true] }, shape: { build: "stocky" } },
   { id: "snou-shu", name: "Сноу-шу", traits: { talkative: 1, affection: 1, water: 1 }, risks: [], genes: { short: [true, true], full: [false, false], white: [1, 0] } },
   { id: "siamska", name: "Сіамська", traits: { talkative: 1, affection: 1, longevity: 1 }, risks: ["зуби", "дихання"], genes: { white: [0, 0], short: [true, true], full: [false, false] }, shape: { muzzle: "long", ears: "large", build: "slim" } },
   { id: "oriientalna-korotkoshersta", name: "Орієнтальна короткошерста", traits: { talkative: 1, energy: 1, affection: 1 }, risks: ["зуби"], genes: { short: [true, true], full: [true, true], eyes: 0 }, shape: { muzzle: "long", ears: "large", build: "slim" } },
@@ -66,8 +67,8 @@ export const BREEDS: readonly Breed[] = [
   { id: "iaponskyi-bobteil", name: "Японський бобтейл", traits: { energy: 1, talkative: 1, water: 1 }, risks: [], genes: { white: [1, 1] }, shape: { tail: "bobtail", build: "slim" } },
   { id: "amerykanskyi-bobteil", name: "Американський бобтейл", traits: { sociability: 1, bravery: 1 }, risks: [], shape: { tail: "bobtail", build: "stocky" } },
   { id: "manchkin", name: "Манчкін", traits: { climbing: -1, energy: 1, curiosity: 1 }, risks: ["хребет", "суглоби"], shape: { legs: "short" } },
-  { id: "benhalska", name: "Бенгальська", traits: { energy: 1, water: 1, climbing: 1 }, risks: ["серце"], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true] }, shape: { build: "stocky" } },
-  { id: "savanna", name: "Саванна", traits: { size: 1, energy: 1, climbing: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true] }, shape: { ears: "large", build: "slim" } },
+  { id: "benhalska", name: "Бенгальська", traits: { energy: 1, water: 1, climbing: 1 }, risks: ["серце"], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true], full: [true, true] }, shape: { build: "stocky" } },
+  { id: "savanna", name: "Саванна", traits: { size: 1, energy: 1, climbing: 1 }, risks: [], genes: { white: [0, 0], short: [true, true], tabby: [2, 2], agouti: [true, true], full: [true, true] }, shape: { ears: "large", build: "slim" } },
 ];
 
 /** Порода кота з притулку (§8.5): здебільшого безпородний; зрідка — порода, навпіл чистокровна й напівкровка. */

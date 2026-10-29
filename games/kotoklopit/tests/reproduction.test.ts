@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { breedById, breederPrice, isPurebred, knownBreedHalves, MIXED } from "../src/sim/breeds";
+import { breedById, breederPrice, isPurebred, knownBreedHalves, MIXED, PUREBREEDS } from "../src/sim/breeds";
 import { BREEDER } from "../src/sim/config";
 import { addTrait, createCat } from "../src/sim/cat";
 import { highPlaceOf, tickCats } from "../src/sim/catai";
@@ -98,6 +98,29 @@ describe("породи й зовнішність: перевірка розмн�
       const pure = { ...shape, coat: null };
       fitBreedForms(createRng(seed), pure, [breedById("sfinks")], true);
       expect(pure.coat).toBe("hairless");
+    }
+  });
+
+  it("загальна ревізія 2026-10-29: дикий малюнок — не колорпойнт; породи з кольором очей і без білого — очі породи; орієнтальна блакитноока лише майже біла", () => {
+    const save = game();
+    const eyeColors = ["green", "yellow", "copper"] as const;
+    const wild = PUREBREEDS.filter((b) => b.genes?.tabby && b.genes.agouti?.[0]);
+    expect(wild.map((b) => b.id)).toEqual(expect.arrayContaining(["iehypetska-mau", "abissynska", "somali", "sinhapura", "otsyket", "toiher", "benhalska", "savanna"]));
+    const eyed = PUREBREEDS.filter((b) => b.genes?.eyes !== undefined && b.genes.white?.[0] === 0 && b.genes.white[1] === 0);
+    // У кожного кота свій seed: без «full» колорпойнт виходив у ~0,6% чистокровних, тож на ~1500 котах хоч один напевно.
+    let seed = 0;
+    for (let round = 0; round < 200; round++) {
+      for (const breed of wild) {
+        const cat = createCat(save.current, createRng(++seed), { source: "breeder", ageWeeks: 2, breed: [breed.id, breed.id] });
+        expect(coatOf(cat.genes, cat.shape).pointed).toBe(false);
+      }
+      for (const breed of eyed) {
+        const cat = createCat(save.current, createRng(++seed), { source: "breeder", ageWeeks: 2, breed: [breed.id, breed.id] });
+        expect(coatOf(cat.genes, cat.shape).eyes).toBe(eyeColors[breed.genes?.eyes ?? 0]);
+      }
+      const oriental = createCat(save.current, createRng(++seed), { source: "breeder", ageWeeks: 2, breed: ["oriientalna-korotkoshersta", "oriientalna-korotkoshersta"] });
+      const coat = coatOf(oriental.genes, oriental.shape);
+      expect(coat.eyes).toBe(coat.white >= 3 ? "blue" : "green");
     }
   });
 
