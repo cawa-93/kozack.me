@@ -3469,7 +3469,8 @@ function faceOff(cat: Cat, foe: Cat, gap: number): void {
 
 /**
  * Кіт підійшов до ворога (§9.4): той ще чекає — обидва стають за 0,6 клітинки обличчям одне до одного, а хвилини протистояння
- * (2–4, щохвилини шипіння) чи бійки йдуть обом від цієї миті; не дочекався — нічого немає.
+ * (4–8, щохвилини шипіння) чи бійки йдуть обом від цієї миті, і з цієї ж миті — наслідки бійки (`engage`); не дочекався —
+ * нічого немає.
  */
 function metFoe(state: GameState, cat: Cat, rng: Rng): void {
   const act = cat.act;
@@ -3488,12 +3489,8 @@ function metFoe(state: GameState, cat: Cat, rng: Rng): void {
     c.act.minutes = minutes;
     c.act.elapsed = 0;
   }
-  // Бійка — стрес для обох: друг поруч може потім прийти вилизати (§9.4, «Гру й вилизування видно», В2).
-  if (act.kind === "fight") {
-    upset(state, cat, foe.id);
-    upset(state, foe, cat.id);
-  }
-  if (act.kind !== "standoff") return;
+  // Нападник добіг (котяча м'ята, «Охоронець»): коти зчепилися — лише тепер наслідки бійки (§9.4, Б4).
+  if (act.kind === "fight") return engage(state, cat, foe, rng);
   standoffHiss(state, cat, foe);
   standoffHiss(state, foe, cat);
 }
@@ -3618,26 +3615,34 @@ export function touchStandoff(state: GameState, cat: Cat): boolean {
   return true;
 }
 
-/** Бійка ворогів (§9.4): обидва зупиняються, летить шерсть. */
+/**
+ * Бійка ворогів (§9.4): обидва зупиняються. Коти зчіплюються за 0,6 клітинки обличчям одне до одного (Б4): з протистояння вони
+ * вже поруч — одразу, а нападник (котяча м'ята, «Охоронець») спершу підбігає до другого, і той чекає (`metFoe`). Наслідки бійки —
+ * коли зчепилися (`engage`): нападник не добіг — бійки немає (загальна ревізія 2026-10-29: раніше шерсть, звук, скинута страва,
+ * настрій і стосунки були вже на старті розбігу, і бійка, якої не було, лишала всі наслідки).
+ */
 function startFight(state: GameState, a: Cat, b: Cat, rng: Rng): void {
   const fight = RELATIONS.fight;
-  stress(state, a);
-  stress(state, b);
-  // Коти зчіплюються за 0,6 клітинки обличчям одне до одного (§9.4, Б4): з протистояння вони вже поруч, а нападник (котяча м'ята,
-  // «Охоронець») підбігає до другого, і той чекає (`metFoe`).
   const near = distance(a, b) <= fight.gap + 0.05;
   start(a, "fight", near ? null : tileOf(b), fight.minutes, `cat:${b.id}`);
   start(b, "fight", null, near ? fight.minutes : fight.minutes + RELATIONS.standoff.wait, `cat:${a.id}`);
-  if (near) {
-    faceOff(a, b, fight.gap);
-    a.act.paired = true;
-    b.act.paired = true;
-    // Зчепилися одразу (з протистояння) — стрес для обох, як і в `metFoe` (§9.4, В2; перевірка блоку 3, 2026-10-26: бійка з
-    // протистояння, тобто майже кожна бійка ворогів, стресом не була, і друга після неї не втішали).
-    upset(state, a, b.id);
-    upset(state, b, a.id);
-  }
-  const at = near ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : { x: b.x, y: b.y };
+  if (!near) return;
+  faceOff(a, b, fight.gap);
+  a.act.paired = true;
+  b.act.paired = true;
+  engage(state, a, b, rng);
+}
+
+/** Коти зчепилися в бійці (§9.4): летить шерсть, настрій і стосунки падають, бійку чути; хто програє, ясно одразу. */
+function engage(state: GameState, a: Cat, b: Cat, rng: Rng): void {
+  const fight = RELATIONS.fight;
+  stress(state, a);
+  stress(state, b);
+  // Бійка — стрес для обох: друг поруч може потім прийти вилизати (§9.4, «Гру й вилизування видно», В2; перевірка блоку 3,
+  // 2026-10-26: бійка з протистояння, тобто майже кожна бійка ворогів, стресом не була, і друга після неї не втішали).
+  upset(state, a, b.id);
+  upset(state, b, a.id);
+  const at = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   changeMood(state, a, fight.mood, "бійка");
   changeMood(state, b, fight.mood, "бійка");
   changeRelation(state, a, b, fight.relation);
@@ -3669,11 +3674,16 @@ export function backAway(state: GameState, cat: Cat, from: Vec): void {
   start(cat, "wander", { x: Math.floor(spot.x), y: Math.floor(spot.y) }, CAT_ACT_MINUTES.wander);
 }
 
-/** Персонаж узяв на руки кота, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно. */
+/**
+ * Персонаж узяв на руки, погладив чи погрався вудкою з котом, що б'ється (§9.4): бійка закінчується, а розбороняти неприємно.
+ * Нападник ще біжить, і коти не зчепилися (`paired`), — бійки ще немає: напад скасовується без «розборонити» (загальна ревізія
+ * 2026-10-29, рішення самостійно).
+ */
 export function separateFight(state: GameState, cat: Cat): void {
   if (cat.act.kind !== "fight") return;
   const other = catById(state, cat.act.target);
   if (other?.act.kind === "fight") start(other, "idle", null, 2);
+  if (cat.act.paired !== true) return;
   unpleasantTask(state, RELATIONS.fight.separateSanity);
   emit(state, { type: "fight-stopped", cat: cat.id });
 }

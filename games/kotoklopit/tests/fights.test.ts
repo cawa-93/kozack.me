@@ -6,6 +6,7 @@ import { pickUpCat, tap } from "../src/sim/actions";
 import { giveCatnip } from "../src/sim/care";
 import { createCat } from "../src/sim/cat";
 import { decide, tickCats, upHigh } from "../src/sim/catai";
+import { RELATIONS } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
@@ -349,6 +350,8 @@ describe("після бійки (§9.4, рішення автора 2026-10-26)"
       cat.act.minutes = 0.001;
       const { events, stop } = recordEvents();
       tickCats(s, 0.001, { present: false });
+      // Нападник підбігає до другого: бійка — коли зчепилися (загальна ревізія 2026-10-29).
+      for (let i = 0; i < 100 && cat.act.kind === "fight" && cat.act.paired !== true; i++) tickCats(s, 0.05, { present: false });
       stop();
       expect(events.some((e) => e.type === "hissed" && e.cat === cat.id && e.at === other.id)).toBe(true);
       expect(count(events, "cat-fight")).toBe(paused ? 0 : 1);
@@ -378,7 +381,8 @@ describe("після бійки (§9.4, рішення автора 2026-10-26)"
           tickCats(s, 0.1, { present: false });
         }
         stop();
-        if (count(events, "cat-fight") > 0) fights[paused ? "paused" : "free"]++;
+        // Злодій кинувся в бійку (зчепляться, коли він добіжить, — загальна ревізія 2026-10-29); у паузу — лише шипить.
+        if (thief.act.kind === "fight" || count(events, "cat-fight") > 0) fights[paused ? "paused" : "free"]++;
       }
     }
     expect(fights.free).toBeGreaterThan(3);
@@ -454,6 +458,58 @@ describe("бійку видно й чути (§9.4, рішення автора 
     expect(right.facing).toBe(-1);
   });
 
+  it("нападник ще біжить — бійки немає: жертву взяли на руки до зустрічі — ні наслідків, ні «розборонити»; добіг — наслідки один раз (загальна ревізія 2026-10-29)", () => {
+    for (const caught of [true, false]) {
+      const save = game();
+      const s = save.current;
+      const cat = withCat(save, { catnip: -2 }, { x: 9.5, y: 7.5 });
+      addSupply(s, "catnip", "cheap", 5);
+      pickUpCat(s, cat);
+      const other = withCat(save, {}, { x: 11.5, y: 8.5 });
+      other.act = idle(60);
+      giveCatnip(s, "cheap", createRng(1));
+      // Догасав за 1,9 клітинки від іншого кота — і кидається на нього.
+      Object.assign(cat, { x: 9.6, y: 8.4 });
+      cat.act.minutes = 0.1;
+      for (let i = 0; i < 20 && cat.act.kind !== "fight"; i++) tickCats(s, 0.05, { present: false });
+      expect(cat.act.kind).toBe("fight");
+      expect(cat.act.goal).not.toBeNull();
+      const pair = cat.id < other.id ? `${cat.id}-${other.id}` : `${other.id}-${cat.id}`;
+      const relation = s.relations[pair] ?? 0;
+      const mood = cat.mood;
+      const sanity = s.character.stats.sanity;
+      const fur = (): number => s.home.messes.filter((m) => m.kind === "fur").length;
+      expect(fur()).toBe(0);
+      expect(s.strife?.[pair]).toBeUndefined();
+      expect(cat.truce?.[other.id]).toBeUndefined();
+      const { events, stop } = recordEvents();
+      if (caught) {
+        Object.assign(s.character.body, { x: other.x, y: other.y + 0.65 });
+        pickUpCat(s, other);
+      }
+      for (let i = 0; i < 60; i++) tickCats(s, 0.05, { present: false });
+      stop();
+      if (caught) {
+        expect(cat.act.kind).not.toBe("fight");
+        expect(count(events, "cat-fight")).toBe(0);
+        expect(count(events, "fight-stopped")).toBe(0);
+        expect(s.character.stats.sanity).toBe(sanity);
+        expect(fur()).toBe(0);
+        expect(s.relations[pair] ?? 0).toBe(relation);
+        expect(cat.mood).toBeGreaterThan(mood - 1);
+        expect(s.strife?.[pair]).toBeUndefined();
+        expect(cat.truce?.[other.id]).toBeUndefined();
+        continue;
+      }
+      expect(count(events, "cat-fight")).toBe(1);
+      expect(fur()).toBe(1);
+      expect(s.relations[pair]).toBe(relation + RELATIONS.fight.relation);
+      expect(cat.mood).toBeLessThan(mood - 2);
+      expect(s.strife?.[pair]).toEqual({ fight: true });
+      expect(cat.truce?.[other.id]).toBeDefined();
+    }
+  });
+
   it("м'ята: на кошеня й друга нападник лише шипить, задирається — з дорослим, що не друг (§9.4, Б7)", () => {
     for (const who of ["kitten", "friend", "adult"] as const) {
       const save = game();
@@ -476,7 +532,9 @@ describe("бійку видно й чути (§9.4, рішення автора 
       expect(cat.act.kind === "fight").toBe(who === "adult");
       expect(other.act.kind === "fight").toBe(who === "adult");
       // Бійка — і пара того дня билася: уночі ворогам без надбавки за мир (§9.4, Б6 (1); перевірка блоку 4: це не перевіряв жоден тест).
+      // Билася — коли зчепилися: поки нападник біжить, бійки ще немає (загальна ревізія 2026-10-29).
       const pair = cat.id < other.id ? `${cat.id}-${other.id}` : `${other.id}-${cat.id}`;
+      for (let i = 0; i < 100 && cat.act.kind === "fight" && cat.act.paired !== true; i++) tickCats(s, 0.05, { present: false });
       expect(s.strife?.[pair]).toEqual(who === "adult" ? { fight: true } : undefined);
     }
   });
