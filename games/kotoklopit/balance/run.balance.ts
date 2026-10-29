@@ -6,7 +6,8 @@ import { writeFileSync } from "node:fs";
 
 import { it } from "vitest";
 
-import { lifeMood, weightOf } from "../src/sim/cat";
+import { weightOf } from "../src/sim/cat";
+import { allLives, catsMood } from "../src/sim/finale";
 import { newGame } from "../src/sim/game";
 import type { Difficulty, GameState, Sex } from "../src/sim/types";
 import { DIFFICULTY_TITLES } from "../src/texts";
@@ -28,7 +29,11 @@ interface Run {
   health: number[];
   kittens: number;
   cats: number;
-  catMood: number[];
+  /**
+   * Вісь котів фіналу пенсії (§4.2): середній настрій усіх котів, і живих, і з альбому, зважений днями вдома (рішення автора
+   * 2026-10-29, `GENERAL_REVIEW.md`, А11) — та сама формула, що й у фіналі; NaN — котів не було.
+   */
+  catsMood: number;
   /** Середній настрій за життя всіх котів: і живих, і з альбому пам'яті (§9.7). */
   lives: number[];
   deaths: number;
@@ -65,7 +70,7 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
     health: [],
     kittens: 0,
     cats: 0,
-    catMood: [],
+    catsMood: NaN,
     lives: [],
     deaths: 0,
     catHealth: [],
@@ -101,8 +106,8 @@ function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
   const state: GameState = save.current;
   run.money = state.character.money;
   run.cats = state.cats.length;
-  run.catMood = state.cats.map(lifeMood);
-  run.lives = [...run.catMood, ...state.album.map((e) => e.lifeMood)];
+  run.catsMood = catsMood(state) ?? NaN;
+  run.lives = allLives(state).map((life) => life.mood);
   run.deaths = state.album.length;
   run.catHealth = state.cats.map((c) => c.health);
   run.catWeight = state.cats.map(weightOf);
@@ -126,7 +131,7 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (фінал) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
   lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
@@ -153,7 +158,7 @@ function report(runs: Run[]): string {
         `${fmt(avg(allHealth))} (${fmt(Math.min(...allHealth))})`,
         fmt(avg(group.map((r) => r.kittens))),
         `${fmt(avg(group.map((r) => r.cats)))} (${fmt(avg(group.map((r) => r.deaths)))})`,
-        fmt(avg(group.flatMap((r) => r.catMood))),
+        fmt(avg(group.map((r) => r.catsMood).filter(Number.isFinite))),
         fmt(avg(group.flatMap((r) => r.catHealth))),
         `${fmt(avg(group.flatMap((r) => r.catWeight)))} (${fmt(avg(group.map((r) => r.obese)))})`,
         fmt(avg(group.map((r) => r.position + 1))),
