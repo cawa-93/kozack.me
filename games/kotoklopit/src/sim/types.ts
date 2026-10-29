@@ -913,6 +913,11 @@ export interface AlbumEntry {
   cause: FarewellCause;
   /** Середній настрій за все життя (§9.7). */
   lifeMood: number;
+  /**
+   * Скільки днів кіт прожив удома — днів в історії настрою, з яких узято `lifeMood`: вага його життя в осі котів фіналу
+   * (§4.2; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А11).
+   */
+  days: number;
   arrivedDay: number;
   /** Ніч, коли кота не стало: день, що закінчився. */
   day: number;

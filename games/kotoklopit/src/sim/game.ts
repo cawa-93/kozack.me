@@ -11,6 +11,7 @@ import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, START
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
+import { upgradeAlbumDays } from "./farewell";
 import { runNight } from "./night";
 import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
@@ -322,6 +323,7 @@ export function upgradeState(state: GameState): void {
   upgradeTraits(state);
   upgradeWardrobe(state);
   upgradeSupplies(state);
+  upgradeAlbumDays(state);
 }
 
 /** Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. */

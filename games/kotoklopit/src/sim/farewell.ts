@@ -45,12 +45,26 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
     shape: structuredClone(cat.shape),
     cause,
     lifeMood: lifeMood(cat),
+    days: cat.moodHistory.length,
     arrivedDay: cat.arrivedDay,
     day,
   };
   state.album.push(entry);
   emit(state, { type: "cat-gone", entry });
   return entry;
+}
+
+/**
+ * Скільки днів кіт з альбому прожив удома (§4.2; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А11): старі збереження цього
+ * не пам'ятали — рахуємо з дат. Підсумок дня записується щоночі до прощання, тож це дні від появи до ночі прощання включно; кота,
+ * якого віддали, забирають уранці чи вдень, і його останній записаний день — напередодні.
+ */
+export function upgradeAlbumDays(state: GameState): void {
+  for (const entry of state.album as (Omit<AlbumEntry, "days"> & { days?: number })[]) {
+    if (entry.days !== undefined) continue;
+    const days = entry.day - entry.arrivedDay + (entry.cause?.kind === "given" ? 0 : 1);
+    entry.days = Number.isFinite(days) ? Math.max(0, days) : 0;
+  }
 }
 
 /** Чому кота зараз не віддати (§9.8): новонароджений чи мати, що годує новонароджених; null — можна. */
