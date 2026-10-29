@@ -381,6 +381,23 @@ describe("ефекти (§4.1)", () => {
     expect(events).toContainEqual(expect.objectContaining({ type: "trip-ended", destination: "shelter" }));
   });
 
+  it("сова відносить знайду о 08:00 у будній день: штраф як за першу поїздку тижня, до лічильника поїздок не додається (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    save.current.day = 2;
+    save.current.modifiers.day = null;
+    save.current.minute = 8 * 60;
+    // Учора вже була поїздка в робочий час: звичайна поїздка сьогодні штрафувалася б удвічі.
+    save.current.job.tripDays = [1];
+    save.current.job.reputation = 50;
+    save.current.today.foundling = true;
+    decideFoundling(save.current, false);
+    carryFoundling(save);
+    expect(save.current.minute).toBe(10 * 60);
+    expect(save.current.job.tripDays).toEqual([1]);
+    // Година в робочий час (09:00–10:00) — як перша поїздка тижня: репутація за годину стажера / 3.
+    expect(save.current.job.reputation).toBeCloseTo(50 - 3.09 / 3);
+  });
+
   it("нічні кидки кроку не залежать від того, скільки чисел узяли раніші кроки: примусове кошеня те саме (перевірка розмноження 2026-10-28)", () => {
     const kitten = (sick: boolean): string => {
       const save = game();

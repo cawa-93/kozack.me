@@ -194,7 +194,7 @@ export function rewindAccident(save: Save): NightReport | null {
 export function carryFoundling(save: Save): NightReport | null {
   const state = save.current;
   if (state.trip !== null || state.end !== null) return null;
-  state.trip = { destination: "shelter", phase: "visit", cat: null, race: newRace(0, 0), losses: [], visit: 0, seed: 0 };
+  state.trip = { destination: "shelter", phase: "visit", cat: null, race: newRace(0, 0), losses: [], visit: 0, seed: 0, foundling: true };
   return returnHome(save, MODIFIERS.foundlingShelterMinutes, 0);
 }
 

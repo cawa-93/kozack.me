@@ -123,12 +123,15 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     const trip = state.trip;
     // В обідню перерву й без світла керівництво нічого не чекає — і поїздка тоді не штрафується (перевірка модифікаторів 2026-10-28).
     if (workTime && trip.destination !== "office" && patienceDecayFactor(state) > 0) {
-      // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00.
-      if (trip.workTrip !== true) {
+      // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00. Знайду, яку відносять у притулок, гравець не
+      // обирав і не може відкласти: вона штрафується як перша поїздка тижня й до лічильника не додається (§8.6, загальна ревізія
+      // 2026-10-29).
+      if (trip.workTrip !== true && trip.foundling !== true) {
         trip.workTrip = true;
         job.tripDays.push(state.day);
       }
-      changeReputation(state, -recentWorkTrips(state) * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
+      const trips = trip.foundling === true ? 1 : recentWorkTrips(state);
+      changeReputation(state, -trips * (position.reputation / TRIP_REPUTATION_DIVIDER) * hours);
     }
   } else if (activity?.kind === "work" && job.unemployed) {
     // Пошук роботи (§8.6): години за комп'ютером за складністю, без зарплати; удвічі легше за роботу стажера.
