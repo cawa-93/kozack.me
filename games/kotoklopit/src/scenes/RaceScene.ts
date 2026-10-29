@@ -9,7 +9,7 @@ import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
 import type { Destination, GameState } from "../sim/types";
 import type { Session } from "../session";
-import { safeArea } from "../screen";
+import { isRotateNoticeShown, onRotateNotice, safeArea } from "../screen";
 import { COLORS } from "../view/geometry";
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -64,6 +64,11 @@ export class RaceScene extends Phaser.Scene {
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => this.moveStick(p));
     this.input.on("pointerup", (p: Phaser.Input.Pointer) => this.up(p));
     this.input.on("pointerupoutside", (p: Phaser.Input.Pointer) => this.up(p));
+    // Телефон повернули вертикально — гонка на паузі (§10), а джойстик скидається, щоб після повороту машина не газувала сама.
+    const stop = onRotateNotice((shown) => {
+      if (shown) this.stick = null;
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
   }
 
   /** Джойстик з'являється під пальцем будь-де на екрані. */
@@ -108,7 +113,8 @@ export class RaceScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     const state = this.state;
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish();
-    if (!this.session.paused) {
+    // Пауза розробника чи заглушка «Поверніть телефон» (§10): дорога стоїть.
+    if (!this.session.paused && !isRotateNoticeShown()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
       const { result, night } = drive(this.session.save, gameMinutes(seconds) * this.session.speed, this.input_());
       if (result !== null || night !== null) return this.finish();

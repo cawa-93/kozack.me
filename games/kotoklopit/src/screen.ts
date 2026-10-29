@@ -1,5 +1,5 @@
-// Екран браузера (§10): повноекранний режим, горизонтальна орієнтація й безпечна зона,
-// під яку не варто класти інтерфейс.
+// Екран браузера (§10): повноекранний режим, горизонтальна орієнтація (і пауза, поки телефон тримають
+// вертикально) й безпечна зона, під яку не варто класти інтерфейс.
 
 /** Чи дає браузер сторінці повноекранний режим: на iPhone — ні. */
 export function canFullscreen(): boolean {
@@ -54,6 +54,32 @@ export function fullscreenOnFirstAction(): void {
     });
   }
   for (const type of events) window.addEventListener(type, attempt, true);
+}
+
+/** Коли гра просить повернути телефон: той самий запит, що показує заглушку `.rotate` у style.css. */
+const ROTATE_QUERY = "(orientation: portrait) and (pointer: coarse)";
+
+let rotateMedia: MediaQueryList | null = null;
+
+function rotateQuery(): MediaQueryList {
+  rotateMedia ??= window.matchMedia(ROTATE_QUERY);
+  return rotateMedia;
+}
+
+/**
+ * Чи закриває гру заглушка «Поверніть телефон» (§10). Поки вона на екрані, гра стоїть на паузі, як під
+ * карткою: гравець не бачить квартири й дороги (загальна ревізія 2026-10-29).
+ */
+export function isRotateNoticeShown(): boolean {
+  return rotateQuery().matches;
+}
+
+/** Підписатися на появу й зникнення заглушки «Поверніть телефон»; повертає відписку. */
+export function onRotateNotice(listener: (shown: boolean) => void): () => void {
+  const query = rotateQuery();
+  const handler = (event: MediaQueryListEvent): void => listener(event.matches);
+  query.addEventListener("change", handler);
+  return () => query.removeEventListener("change", handler);
 }
 
 export interface Insets {

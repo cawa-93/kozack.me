@@ -51,6 +51,7 @@ import { PALETTE } from "../view/palette";
 import { PersonView } from "../view/person";
 import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
+import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
@@ -183,6 +184,15 @@ export class DayScene extends Phaser.Scene {
 
     this.cleanup.push(onEvent((event) => this.onGameEvent(event)));
     this.cleanup.push(this.session.onReset(() => this.restart()));
+    // Телефон повернули вертикально — гра на паузі (§10), а утримання дії й джойстик скидаються: інакше після повороту
+    // дія тривала б сама, бо палець відпустили вже під заглушкою.
+    this.cleanup.push(
+      onRotateNotice((shown) => {
+        if (!shown) return;
+        this.touch.reset();
+        this.catPress = null;
+      }),
+    );
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup.forEach((stop) => stop()));
     this.restart();
     // Меню на старті (§4.2): лише для справжньої збереженої гри, не для сценаріїв режиму розробки.
@@ -372,8 +382,9 @@ export class DayScene extends Phaser.Scene {
     dash(this.state);
   }
 
+  /** Гра стоїть: картка, пауза розробника, кінець гри, засинання чи заглушка «Поверніть телефон» (§10). */
   private blocked(): boolean {
-    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null;
+    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null || isRotateNoticeShown();
   }
 
   private readInput(): Input {
