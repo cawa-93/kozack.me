@@ -146,7 +146,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
   } else if (activity?.kind === "work" && job.unemployed) {
     // Пошук роботи (§8.6): години за комп'ютером за складністю, без зарплати; удвічі легше за роботу стажера.
     const sanity = (POSITIONS[0]?.sanity ?? 0) * JOB_SEARCH.sanityShare;
-    activity.sanity += unpleasantTask(state, sanity * hours, from);
+    activity.sanity += unpleasantTask(state, sanity * hours);
     activity.minutes += minutes;
     const vacancy = searchProgress(state).vacancy;
     job.searchHours += hours;
@@ -168,7 +168,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     const reputationBefore = job.reputation;
     earn(state, money);
     changeReputation(state, position.reputation * reputationFactor(state) * hours);
-    activity.sanity += unpleasantTask(state, position.sanity * hours, from);
+    activity.sanity += unpleasantTask(state, position.sanity * hours);
     activity.minutes += minutes;
     activity.money += money;
     activity.reputation += job.reputation - reputationBefore;

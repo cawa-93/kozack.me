@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Chronotype, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -307,21 +307,6 @@ export const POSITIONS: readonly {
   { pay: 62, patienceDecay: 49, patienceRecovery: 21, reputation: 0.14, sanity: -10 },
   { pay: 75, patienceDecay: 52, patienceRecovery: 17, reputation: 0.1, sanity: -10.5 },
 ];
-
-/**
- * Хронотип (§5.1): у ці години неприємні завдання забирають на 10% менше
- * (множник 0,9) чи більше (1,1) здорового глузду. Години — від 00:00.
- */
-export const CHRONOTYPE_WINDOWS: Record<Chronotype, readonly { from: number; to: number; factor: number }[]> = {
-  lark: [
-    { from: 7, to: 12, factor: 0.9 },
-    { from: 15, to: 19, factor: 1.1 },
-  ],
-  owl: [
-    { from: 7, to: 12, factor: 1.1 },
-    { from: 15, to: 20, factor: 0.9 },
-  ],
-};
 
 // Коти (§9.1–9.6, §9.12; чернетка).
 /** Межа віку кота в тижнях (§9.2). */

@@ -1,6 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { MODIFIERS, WAKE_UP } from "../sim/config";
+import { MODIFIERS, WAKE_MINUTE, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { giveAwayBlocker } from "../sim/farewell";
@@ -605,15 +605,15 @@ export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, on
   };
 }
 
-/** Крок 3: сова чи жайворонок (§5.1) — незалежно від статі. */
+/** Крок 3: сова чи жайворонок (§5.1) — незалежно від статі. Хронотип — лише час пробудження (рішення автора 2026-10-29, А4). */
 export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack: () => void): Card {
   return {
     kicker: "Нова гра · 3 з 5",
     solid: true,
     title: "Сова чи жайворонок?",
     body: [
-      "Жайворонок прокидається рано й найбадьоріший зранку.",
-      "Сова прокидається пізніше й оживає ближче до вечора.",
+      `Жайворонок прокидається о ${formatClock(WAKE_MINUTE.lark)}.`,
+      `Сова прокидається о ${formatClock(WAKE_MINUTE.owl)}.`,
     ],
     actions: [
       { label: "Жайворонок", primary: true, onSelect: () => onPick("lark") },

@@ -10,6 +10,7 @@ import { hygieneFactor } from "../src/sim/household";
 import { fallIllPerson } from "../src/sim/illness";
 import type { Save } from "../src/sim/types";
 import { callImpression } from "../src/sim/work";
+import { chronotypeCard } from "../src/ui/cards";
 import { recordEvents, standAt } from "./helpers";
 
 /** Що відповів умивальник на дію: причина відмови чи undefined. */
@@ -86,5 +87,12 @@ describe("бороди немає (рішення автора 2026-10-29, А4)"
     Object.assign(save.current.character, { beard: { shaved: 0, trimmed: -100 } });
     const loaded = deserialize(serialize(save));
     expect(loaded.current.character).not.toHaveProperty("beard");
+  });
+});
+
+describe("хронотип — лише час пробудження (рішення автора 2026-10-29, А4)", () => {
+  it("картка хронотипу називає час пробудження й не обіцяє бадьорості в якісь години", () => {
+    const card = chronotypeCard(() => undefined, () => undefined);
+    expect(card.body).toEqual(["Жайворонок прокидається о 06:00.", "Сова прокидається о 08:00."]);
   });
 });

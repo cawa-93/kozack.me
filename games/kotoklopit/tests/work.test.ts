@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { advance, interact, newGame } from "../src/sim/game";
-import type { Difficulty, Save, Sex } from "../src/sim/types";
+import { unpleasantTask } from "../src/sim/character";
+import type { Chronotype, Difficulty, Save, Sex } from "../src/sim/types";
 import { callImpression, patienceLevel, startWork, stopWork } from "../src/sim/work";
 import { hours, recordEvents, standAt, waitUntil } from "./helpers";
 
@@ -47,7 +48,7 @@ describe("робота за комп'ютером (§8.6)", () => {
     }
   });
 
-  it("година роботи: +3,09 репутації і −6 здорового глузду (12:00–15:00 без хронотипу)", () => {
+  it("година роботи: +3,09 репутації і −6 здорового глузду", () => {
     const save = game();
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
@@ -63,20 +64,31 @@ describe("робота за комп'ютером (§8.6)", () => {
     expect(save.current.character.stats.sanity).toBeCloseTo(40 - 10.5);
   });
 
-  it("хронотип: зранку жайворонку легше, сові важче, а по обіді навпаки (§5.1)", () => {
-    const loss = (sex: Sex, from: number): number => {
-      const save = game(sex);
+  it("хронотип не змінює втрат здорового глузду: година роботи будь-коли забирає 6 і жайворонку, і сові (рішення автора 2026-10-29, А4)", () => {
+    const loss = (chronotype: Chronotype, from: number): number => {
+      const save = newGame({ sex: "female", difficulty: "normal", seed: 1, chronotype });
+      save.current.modifiers.day = null;
       waitUntil(save, from);
       const before = save.current.character.stats.sanity;
       work(save, from, hours(1));
       return before - save.current.character.stats.sanity;
     };
-    expect(loss("female", hours(9))).toBeCloseTo(5.4);
-    expect(loss("male", hours(9))).toBeCloseTo(6.6);
-    expect(loss("female", hours(16))).toBeCloseTo(6.6);
-    expect(loss("male", hours(16))).toBeCloseTo(5.4);
-    expect(loss("male", hours(19))).toBeCloseTo(5.4);
-    expect(loss("female", hours(19))).toBeCloseTo(6);
+    for (const chronotype of ["lark", "owl"] as const) {
+      for (const from of [hours(8), hours(9), hours(11), hours(16), hours(18), hours(19)]) expect(loss(chronotype, from)).toBeCloseTo(6);
+    }
+  });
+
+  it("і будь-яке неприємне завдання — однаково в будь-яку годину для обох хронотипів (рішення автора 2026-10-29, А4)", () => {
+    for (const chronotype of ["lark", "owl"] as const) {
+      const save = newGame({ sex: "female", difficulty: "normal", seed: 1, chronotype });
+      const state = save.current;
+      state.modifiers.day = null;
+      for (const hour of [7, 8, 10, 13, 15, 18, 19, 21]) {
+        state.minute = hours(hour);
+        state.character.stats.sanity = 50;
+        expect(unpleasantTask(state, -10)).toBeCloseTo(-10);
+      }
+    }
   });
 
   it("у перший тиждень без котів здоровий глузд не падає нижче 1% (§8.3)", () => {

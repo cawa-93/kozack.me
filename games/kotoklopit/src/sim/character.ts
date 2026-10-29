@@ -4,7 +4,6 @@ import { hygieneFactor } from "./household";
 import { unpleasantFactor } from "./modifiers";
 import {
   ACCIDENT,
-  CHRONOTYPE_WINDOWS,
   DASH_SATIETY,
   DEPRESSION_CEILING,
   FIRST_WEEK_PROTECTION,
@@ -12,8 +11,6 @@ import {
   HUNGER_HEALTH_THRESHOLD,
   HOUSEHOLD,
   HYGIENE_PER_HOUR,
-  MINUTES_PER_DAY,
-  MINUTES_PER_HOUR,
   SANITY_FLOOR,
   SATIETY_PER_HOUR,
   LOW_STAT,
@@ -97,18 +94,14 @@ export function closeLedger(state: GameState): Ledger {
   return week;
 }
 
-/** Хронотип (§5.1): множник втрат здорового глузду від неприємних завдань у цю хвилину. */
-export function chronotypeFactor(state: GameState, minute: number): number {
-  const hour = (minute % MINUTES_PER_DAY) / MINUTES_PER_HOUR;
-  const slot = CHRONOTYPE_WINDOWS[state.character.chronotype].find((w) => hour >= w.from && hour < w.to);
-  return slot?.factor ?? 1;
-}
-
-/** Неприємне завдання (§8.1) забирає здоровий глузд з урахуванням хронотипу. Повертає зміну. */
-export function unpleasantTask(state: GameState, sanityLoss: number, minute = state.minute): number {
+/**
+ * Неприємне завдання (§8.1) забирає здоровий глузд — у будь-яку годину однаково: вікон хронотипу немає, хронотип змінює лише
+ * час пробудження (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Повертає зміну.
+ */
+export function unpleasantTask(state: GameState, sanityLoss: number): number {
   const stats = state.character.stats;
   const before = stats.sanity;
-  changeStat(state, "sanity", sanityLoss * chronotypeFactor(state, minute) * unpleasantFactor(state));
+  changeStat(state, "sanity", sanityLoss * unpleasantFactor(state));
   return stats.sanity - before;
 }
 
