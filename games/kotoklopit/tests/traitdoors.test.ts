@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
-import { CLAW, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
+import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MODIFIERS, VET } from "../src/sim/config";
 import { groom, vetExam, vetManner } from "../src/sim/destinations";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, openDoor, ringBell } from "../src/sim/door";
@@ -403,6 +403,32 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
     atDoorWith(save, cat);
     save.current.home.carrier = null;
     expect(carrierDread(save.current, cat)).toBe(0);
+  });
+
+  it("з дорогою переноскою «−» удвічі рідше дряпається й удвічі рідше виривається після подряпини (рішення автора 2026-10-29, А5)", () => {
+    const tally = (carrier: "cheap" | "premium"): { clawed: number; freed: number } => {
+      let clawed = 0;
+      let freed = 0;
+      for (let seed = 1; seed <= 600; seed++) {
+        const save = game(seed);
+        const cat = withCat(save, { carrier: -2 }, { x: 5.5, y: 8.5 });
+        atDoorWith(save, cat);
+        save.current.home.carrier = carrier;
+        const { events, stop } = recordEvents();
+        tickCats(save.current, 1, { present: true });
+        stop();
+        if (events.some((e) => e.type === "clawed")) clawed += 1;
+        if (events.some((e) => e.type === "cat-broke-free")) freed += 1;
+      }
+      return { clawed, freed };
+    };
+    const cheap = tally("cheap");
+    const premium = tally("premium");
+    // −2 з дешевою — 20% за хвилину, з дорогою — 10%; вирватися після подряпини — 25% і 12,5%.
+    expect(cheap.clawed / 600).toBeCloseTo(2 * CARRIER_HOME.scratchStep, 1);
+    expect(premium.clawed / 600).toBeCloseTo(2 * CARRIER_HOME.scratchStep * CARRIER_HOME.premium, 1);
+    expect(premium.clawed).toBeLessThan(cheap.clawed * 0.7);
+    expect(premium.freed).toBeLessThan(cheap.freed * 0.5);
   });
 });
 

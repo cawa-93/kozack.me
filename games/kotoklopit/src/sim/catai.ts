@@ -3062,14 +3062,15 @@ export function claw(state: GameState, cat: Cat, at: "carrier" | "bath"): void {
 /**
  * «−» на руках біля дверей бачить переноску (§9.12, «Переноска», рішення автора 2026-10-25): пручається — прояв «−», не
  * частіше ніж раз на годину, — і щохвилини з шансом 10% × |рівень| дряпає персонажа (здоров'я −3); після подряпини з шансом
- * 25% виривається з рук і ховається.
+ * 25% виривається з рук і ховається. У дорогій переносці обидва шанси вдвічі менші (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5).
  */
 function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number, rng: Rng): void {
   changeMood(state, cat, CARRY.struggleMood * dread * minutes);
   observe(state, cat, "carrier", -1, false, CARRY.observeEvery);
-  if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread) ** minutes)) return;
+  const calmer = state.home.carrier === "premium" ? CARRIER_HOME.premium : 1;
+  if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread * calmer) ** minutes)) return;
   claw(state, cat, "carrier");
-  if (!rng.chance(CARRIER_HOME.escape)) return;
+  if (!rng.chance(CARRIER_HOME.escape * calmer)) return;
   state.character.held = null;
   const at = visibleFloorNear(state, state.character.body);
   cat.x = at.x;

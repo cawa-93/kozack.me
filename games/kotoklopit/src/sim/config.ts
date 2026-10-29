@@ -1143,9 +1143,10 @@ export const CLAW = { health: -3 } as const;
 /**
  * Переноска вдома (§9.12 «Переноска й ветеринар», рішення автора 2026-10-25): «+» спить у ній з вагою `sleepStep` × рівень;
  * «−» на руках ближче `reach` клітинок до дверей, коли переноска є, щохвилини з шансом `scratchStep` × |рівень| дряпає
- * персонажа (`CLAW`), а після подряпини з шансом `escape` виривається й ховається.
+ * персонажа (`CLAW`), а після подряпини з шансом `escape` виривається й ховається. З дорогою переноскою обидва шанси ×
+ * `premium` (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5: «кота легше посадити», §6.4).
  */
-export const CARRIER_HOME = { sleepStep: 1.5, reach: 2, scratchStep: 0.1, escape: 0.25 } as const;
+export const CARRIER_HOME = { sleepStep: 1.5, reach: 2, scratchStep: 0.1, escape: 0.25, premium: 0.5 } as const;
 /** Штраф за годину поїздки в робочий час (§8.6): кількість поїздок за 7 днів × репутація за годину / 3. */
 export const TRIP_REPUTATION_DIVIDER = 3;
 /**
