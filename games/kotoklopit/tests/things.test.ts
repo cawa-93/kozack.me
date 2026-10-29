@@ -113,6 +113,28 @@ describe("кігтеточка й диван (§9.12)", () => {
   });
 });
 
+describe("якість речей і настрій (§6.4, §9.12)", () => {
+  it("напився з дорогої поїлки — настрій +0,25, з дешевої — −0,25 (рішення автора 2026-10-29, дрібні питання; було ±0,5)", () => {
+    const drink = (quality: "cheap" | "premium"): number => {
+      const save = game();
+      const cat = withCat(save);
+      const water = save.current.home.items.find((i) => i.kind === "water");
+      if (water?.kind !== "water") throw new Error("немає поїлки");
+      water.quality = quality;
+      water.water = 8;
+      // Нижче 50: приріст не меншає (§9.6).
+      cat.mood = 40;
+      cat.needs.thirst = 70;
+      cat.act = { kind: "drink", target: `item:${water.id}`, goal: null, minutes: 0.1, elapsed: 0 };
+      tickCats(save.current, 0.2, { present: false });
+      expect(water.water).toBe(7);
+      return cat.mood - 40;
+    };
+    expect(drink("premium")).toBeCloseTo(0.25);
+    expect(drink("cheap")).toBeCloseTo(-0.25);
+  });
+});
+
 describe("будиночок (§9.12)", () => {
   it("кіт спить у будиночку", () => {
     const save = game();
