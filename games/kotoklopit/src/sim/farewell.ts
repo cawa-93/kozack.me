@@ -61,10 +61,15 @@ export function giveAwayBlocker(state: GameState, cat: Cat): "newborn" | "nursin
   return null;
 }
 
+/** Кіт з'явився менше 7 днів тому дня `day` (§9.8): віддати його — втратити весь бонус, а картки кажуть «тільки-но звикли». */
+export function recentlyArrived(cat: Cat, day: number): boolean {
+  return day - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS;
+}
+
 /** Скільки здорового глузду забере віддати кота дня `day`: протягом 7 днів після появи — весь бонус (§9.8). */
 export function giveAwayLoss(state: GameState, cat: Cat, day: number): number {
   const { givenCatSanity, newCatSanity } = DIFFICULTY[state.difficulty];
-  return day - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? -newCatSanity : givenCatSanity;
+  return recentlyArrived(cat, day) ? -newCatSanity : givenCatSanity;
 }
 
 /**

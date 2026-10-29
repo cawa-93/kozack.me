@@ -2,13 +2,13 @@
 
 import { ACCIDENT, BREEDING, CAFE, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, shelterCats, sterilizeBlocker, tripCat, vetManner } from "../sim/destinations";
-import { giveAwayBlocker } from "../sim/farewell";
+import { giveAwayBlocker, recentlyArrived } from "../sim/farewell";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { BREED_ABOUT, diseaseTitle, farewellText, fill, ILLNESS_TITLES, SHELTER_GIVEN, VET_ADVICE, VET_MANNER } from "../texts";
+import { BREED_ABOUT, diseaseTitle, farewellText, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, ILLNESS_TITLES, SHELTER_GIVEN, VET_ADVICE, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -264,7 +264,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const blocker = cat ? giveAwayBlocker(state, cat) : null;
       if (cat && blocker === "newborn") body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
       else if (cat && blocker === "nursing") body.push(row(`${cat.name} → притулок`, "годує новонароджених — поки що лишається вдома"));
-      else if (cat) body.push(row(`${cat.name} → притулок`, "", button("Віддати", 0, h.giveAway)));
+      // Без підтвердження (поїздка з котом — уже вибір), але з тим самим підписом без чисел, що й картка оголошення (§9.8,
+      // загальна ревізія 2026-10-29).
+      else if (cat) body.push(row(`${cat.name} → притулок`, recentlyArrived(cat, state.day) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER, button("Віддати", 0, h.giveAway)));
       break;
     }
     case "breeder": {

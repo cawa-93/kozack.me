@@ -3,7 +3,7 @@ import Phaser from "phaser";
 import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
@@ -12,7 +12,7 @@ import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, cafe, enterShow, giveToShelter, groom, officeMeeting, tripCat, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
-import { advertise, cancelAd } from "../sim/farewell";
+import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
@@ -29,7 +29,7 @@ import { addBell, giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, diseaseTitle, fill, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, diseaseTitle, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -1372,7 +1372,7 @@ export class DayScene extends Phaser.Scene {
               kicker: "Віддати в добрі руки",
               title: "Віддати в добрі руки?",
               body: [
-                `${cat.name} завтра вранці поїде до нових господарів. ${this.state.day + 1 - cat.arrivedDay < GIVE_AWAY_GRACE_DAYS ? "Ви ж тільки-но звикли одне до одного." : "Розлучатися буде важко."}`,
+                `${cat.name} завтра вранці поїде до нових господарів. ${recentlyArrived(cat, this.state.day + 1) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER}`,
               ],
               actions: [
                 {

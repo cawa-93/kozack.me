@@ -3,12 +3,13 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { lifeLevel, oldAgeChance, oldAgeDeaths, removeCat, zeroHealthCause, zeroHealthDeaths } from "../src/sim/farewell";
+import { DIFFICULTY } from "../src/sim/config";
+import { giveAwayLoss, lifeLevel, oldAgeChance, oldAgeDeaths, recentlyArrived, removeCat, zeroHealthCause, zeroHealthDeaths } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { diseaseTitle, farewellText } from "../src/texts";
+import { diseaseTitle, farewellText, GIVE_AWAY_LATER, GIVE_AWAY_RECENT } from "../src/texts";
 
 function game(): Save {
   return newGame({ sex: "female", difficulty: "normal", seed: 7 });
@@ -111,5 +112,21 @@ describe("прощання (§9.7)", () => {
     expect(text.cause).toContain("Застуда");
     expect(text.cause).toContain("здолала");
     expect(text.life).toContain("богиня");
+  });
+});
+
+describe("віддати кота (§9.8)", () => {
+  it("«щойно взятий» — перші 7 днів після появи: тоді й весь бонус, і підпис «тільки-но звикли» в оголошенні й притулку (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.arrivedDay = 10;
+    for (let day = 10; day <= 16; day++) {
+      expect(recentlyArrived(cat, day)).toBe(true);
+      expect(giveAwayLoss(save.current, cat, day)).toBe(-DIFFICULTY.normal.newCatSanity);
+    }
+    expect(recentlyArrived(cat, 17)).toBe(false);
+    expect(giveAwayLoss(save.current, cat, 17)).toBe(DIFFICULTY.normal.givenCatSanity);
+    // Підписи без чисел (§11.3а).
+    for (const text of [GIVE_AWAY_RECENT, GIVE_AWAY_LATER]) expect(text).not.toMatch(/\d/);
   });
 });
