@@ -175,6 +175,22 @@ describe("прання (§8.7)", () => {
     expect(tapWasher(save.current)).toBe("hung");
     expect(save.current.home.clothes).toBe(7);
   });
+
+  it("дорогий засіб тримає одяг чистим 12 днів, дешевий — 7 (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
+    const washed = (quality: Quality): number => {
+      const save = game();
+      save.current.home.clothes = 0;
+      save.current.home.supplies.detergent = { cheap: 0, premium: 0 };
+      save.current.home.supplies.detergent[quality] = 1;
+      expect(tapWasher(save.current)).toBe("started");
+      tickHousehold(save.current, 600, 61);
+      expect(tapWasher(save.current)).toBe("hung");
+      return save.current.home.clothes;
+    };
+    expect(washed("cheap")).toBe(7);
+    // Раніше — 8: за 2,5 ціни лише на день довше.
+    expect(washed("premium")).toBe(12);
+  });
 });
 
 describe("прання з повною шафою (§8.7, загальна ревізія 2026-10-29)", () => {
@@ -189,14 +205,18 @@ describe("прання з повною шафою (§8.7, загальна ре�
     expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "clothes-clean" }));
     expect(save.current.home.supplies.detergent).toEqual({ cheap: 2, premium: 0 });
     expect(save.current.home.washer.state).toBe("idle");
-    // Дорогий засіб береться першим і дає 8 днів: при 7 прання ще корисне.
+    // Дорогий засіб береться першим і дає 12 днів (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17): при 7 прання ще корисне.
     save.current.home.supplies.detergent.premium = 1;
     expect(tapWasher(save.current)).toBe("started");
     expect(save.current.home.supplies.detergent).toEqual({ cheap: 2, premium: 0 });
-    // З дорогим засобом відмова — від 8 днів.
+    // З дорогим засобом відмова — від 12 днів.
     save.current.home.washer = { state: "idle", minutes: 0, quality: "cheap" };
     save.current.home.supplies.detergent.premium = 1;
-    save.current.home.clothes = 8;
+    save.current.home.clothes = 11;
+    expect(tapWasher(save.current)).toBe("started");
+    save.current.home.washer = { state: "idle", minutes: 0, quality: "cheap" };
+    save.current.home.supplies.detergent.premium = 1;
+    save.current.home.clothes = 12;
     expect(tapWasher(save.current)).toBe("clean");
     // Без засобу — як і раніше, «засобу немає».
     save.current.home.supplies.detergent = { cheap: 0, premium: 0 };

@@ -1209,7 +1209,11 @@ export const HOUSEHOLD = {
   vacuumMinutes: 10,
   vacuumSanity: -2,
   washMinutes: 60,
-  clothesDays: { cheap: 7, premium: 8 } as Record<Quality, number>,
+  /**
+   * Чистого одягу після прання, днів (§8.7): дорогий засіб — 12 (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17; було 8 —
+   * за 2,5 ціни лише на день довше, і різниці не було видно).
+   */
+  clothesDays: { cheap: 7, premium: 12 } as Record<Quality, number>,
   robotMinute: 12 * 60,
   /** Скільки хвилин робот-пилосос їздить квартирою: усі кімнати за годину. */
   robotMinutes: 60,
