@@ -124,6 +124,29 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(isIll(save.current, "exhaustion")).toBe(true);
   });
 
+  it("лікар знімає виснаження разом із накопиченим недосипом: рахунок трьох ночей починається заново", () => {
+    const save = game();
+    const state = save.current;
+    state.day = 1;
+    state.minute = 19 * 60;
+    state.character.money = 500;
+    for (let night = 0; night < 3; night++) nightlyIllness(state, 6);
+    expect(isIll(state, "exhaustion")).toBe(true);
+    standAt(save, "door");
+    expect(startTrip(state, "doctor")).toBe(true);
+    driveSafely(save);
+    expect(doctorExam(state)).toBe(true);
+    expect(doctorTreat(state, "exhaustion", "premium", always())).toBe("cured");
+    // Одна коротка ніч після лікаря — ще не виснаження.
+    nightlyIllness(state, 6.5);
+    expect(isIll(state, "exhaustion")).toBe(false);
+    nightlyIllness(state, 6.5);
+    expect(isIll(state, "exhaustion")).toBe(false);
+    // Третя коротка ніч поспіль — знову хворий.
+    nightlyIllness(state, 6.5);
+    expect(isIll(state, "exhaustion")).toBe(true);
+  });
+
   it("огляд без хвороб не додає здоров'я", () => {
     const save = game();
     save.current.day = 1;

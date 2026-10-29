@@ -21,6 +21,9 @@ export function fallIllPerson(state: GameState, id: IllnessId): boolean {
 
 function curePerson(state: GameState, id: IllnessId): void {
   state.character.illnesses = state.character.illnesses.filter((i) => i.id !== id);
+  // Вилікуване виснаження знімає й накопичений недосип: рахунок трьох коротких ночей починається заново (§6.5, загальна
+  // ревізія 2026-10-29). Інакше після лікаря одна коротка ніч одразу повертала хворобу. Після доброго сну лічильник і так 0.
+  if (id === "exhaustion") state.character.shortNights = 0;
   emit(state, { type: "person-cured", illness: id });
 }
 
