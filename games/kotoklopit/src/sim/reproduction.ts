@@ -5,7 +5,7 @@ import { visibleFloorNear } from "./catmove";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
 import { breedById, knownBreedHalves, MIXED } from "./breeds";
-import { applyBreedLook, fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
+import { applyPureBreedLook, fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
 import { isEnemy, isFriend } from "./relations";
 import type { Rng } from "./rng";
@@ -145,9 +145,9 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
       const pure = ka === kb && ka !== MIXED;
       fitBreedForms(rng, kitten.shape, [ka, kb].filter((id) => id !== MIXED).map(breedById), pure);
       // Чистокровне — ще й гени породи напевно, як кіт із притулку чи розплідника: «чистокровний» всюди означає одне (рішення автора
-      // 2026-10-29, `GENERAL_REVIEW.md`, А9; раніше лише форми, і «чистокровна сіамська» здебільшого не була колорпойнтом). Для
-      // чистокровного applyBreedLook нічого не кидає, тож порядок випадковості той самий.
-      if (pure) applyBreedLook(rng, kitten.genes, kitten.shape, breedById(ka), true);
+      // 2026-10-29, `GENERAL_REVIEW.md`, А9; раніше лише форми, і «чистокровна сіамська» здебільшого не була колорпойнтом). Без
+      // випадковості, тож потоки §6.1 не зсуваються.
+      if (pure) applyPureBreedLook(kitten.genes, kitten.shape, breedById(ka));
       // Що видно про породу — за складністю, як у притулку (§9.11): раніше кошеня показувало приховану половину матері.
       kitten.breedKnown = knownBreedHalves(state, kitten.breed, rng);
       kitten.parents = { mother: mother.id, father: pregnancy.father };

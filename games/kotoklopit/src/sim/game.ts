@@ -4,6 +4,7 @@
 import { catchEscaped, IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
 import { isMoving, moveBody, newBody, unstickBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
+import { breedById, isPurebred } from "./breeds";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
@@ -12,6 +13,7 @@ import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
 import { upgradeAlbumDays } from "./farewell";
+import { applyPureBreedLook } from "./genetics";
 import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
@@ -343,6 +345,18 @@ export function upgradeState(state: GameState): void {
   upgradeDiseases(state);
   upgradeTrip(state);
   upgradeLadder(state);
+  upgradeBreedLook(state);
+}
+
+/**
+ * Чистокровний — і гени породи (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А9; §9.11): чистокровний кіт, народжений удома
+ * в грі, збереженій раніше, мав від породи лише форми, — тепер він отримує й гени породи, як отримав би кошеням, щоб картка не
+ * писала про породу того, чого в кота немає (рецензія реалізації А9, 2026-10-29, рішення виконавця). Без випадковості, тож
+ * повторне завантаження нічого не змінює. Коти з притулку, розплідника й знайди мали гени породи й раніше, а альбом пам'яті
+ * лишається, яким був.
+ */
+export function upgradeBreedLook(state: GameState): void {
+  for (const cat of state.cats) if (cat.source === "born" && isPurebred(cat.breed)) applyPureBreedLook(cat.genes, cat.shape, breedById(cat.breed[0]));
 }
 
 /**

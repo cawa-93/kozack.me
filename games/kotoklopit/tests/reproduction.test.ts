@@ -12,7 +12,7 @@ import { breederCats, canSterilize, shelterCats, sterilizeBlocker, vetSterilize 
 import { objectById } from "../src/sim/home";
 import { startTrip, tripBlocker } from "../src/sim/trips";
 import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
-import { goToSleep, newGame } from "../src/sim/game";
+import { deserialize, goToSleep, newGame, serialize } from "../src/sim/game";
 import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
 import { conceive, giveBirth, nightlyStates, showsPregnancy } from "../src/sim/reproduction";
@@ -209,6 +209,52 @@ describe("рішення автора А9 (§9.11): чистокровне ко�
     // Напівкровок порода не перефарбовує: серед них колорпойнт — меншість.
     expect(half).toBeGreaterThan(40);
     expect(halfPointed / half).toBeLessThan(0.5);
+  });
+
+  it("старе збереження: чистокровний кіт, народжений удома до рішення, отримує гени породи — і в поточному дні, і в знімках перегравання", () => {
+    // Рецензія реалізації А9 (2026-10-29): раніше такий кіт лишався «чистокровною сіамською» без колорпойнту й після оновлення гри.
+    const save = game();
+    const s = save.current;
+    /** Кіт зі збереження до рішення: гени від батьків — не колорпойнт, з білим, довгошерстий, зеленоокий. */
+    const make = (seed: number, source: Cat["source"], breed: [string, string]): Cat => {
+      const cat = createCat(s, createRng(seed), { source, ageWeeks: 3, sex: "female", breed: [MIXED, MIXED], at: { x: 9.5, y: 8.5 } });
+      cat.breed = breed;
+      cat.genes = { ...cat.genes, full: [true, true], white: [1, 1], short: [false, false], eyes: 0 };
+      addCat(s, cat);
+      return cat;
+    };
+    const siamese = make(1, "born", ["siamska", "siamska"]);
+    siamese.shape.tail = "fluffy";
+    const british = make(2, "born", ["brytanska-korotkoshersta", "brytanska-korotkoshersta"]);
+    british.genes = { ...british.genes, orange: [true, false], black: [false, false], dense: [true, true], agouti: [true, true], tabby: [1, 1] };
+    // Напівкровку й кота не з дому (у сценарії гени можна задати будь-які) оновлення не чіпає.
+    const half = make(3, "born", ["siamska", MIXED]);
+    const shelter = make(4, "shelter", ["siamska", "siamska"]);
+    const untouched = structuredClone([half.genes, shelter.genes]);
+    // В альбомі пам'яті кіт лишається таким, яким його запам'ятали.
+    const remembered: AlbumEntry = {
+      id: s.nextId++, name: "Мурка", sex: "female", source: "born", ageWeeks: 20, traits: [], breed: ["siamska", "siamska"],
+      genes: structuredClone(siamese.genes), shape: structuredClone(siamese.shape), cause: { kind: "old" }, lifeMood: 60, days: 10, arrivedDay: 0, day: s.day,
+    };
+    s.album.push(remembered);
+    save.dayStart = structuredClone(s);
+    save.weekStart = structuredClone(s);
+
+    const loaded = deserialize(serialize(save));
+    for (const state of [loaded.current, loaded.dayStart, loaded.weekStart]) {
+      const cat = (id: number): Cat => state.cats.find((c) => c.id === id) as Cat;
+      const siameseCoat = coatOf(cat(siamese.id).genes, cat(siamese.id).shape);
+      expect([siameseCoat.pointed, siameseCoat.white, siameseCoat.eyes, siameseCoat.long]).toEqual([true, 0, "blue", false]);
+      expect(offBreed(cat(siamese.id).genes, breedById("siamska"))).toEqual([]);
+      // Форми породи — теж, а яких порода не задає, лишаються.
+      expect(cat(siamese.id).shape).toMatchObject({ muzzle: "long", ears: "large", build: "slim", tail: "fluffy" });
+      const britishCoat = coatOf(cat(british.id).genes, cat(british.id).shape);
+      expect([britishCoat.base, britishCoat.second, britishCoat.tabby, britishCoat.white, britishCoat.eyes, britishCoat.long]).toEqual(["blue", null, null, 0, "copper", false]);
+      expect([cat(half.id).genes, cat(shelter.id).genes]).toEqual(untouched);
+      expect(state.album.find((entry) => entry.id === remembered.id)?.genes).toEqual(remembered.genes);
+    }
+    // Без випадковості: повторне завантаження нічого не змінює.
+    expect(deserialize(serialize(loaded)).current.cats).toEqual(loaded.current.cats);
   });
 });
 

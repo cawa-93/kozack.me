@@ -173,19 +173,34 @@ export interface BreedLook {
 }
 
 /**
- * Зовнішність породи поверх випадкових генів (§9.11): чистокровний має гени й форми породи напевно,
+ * Зовнішність породи поверх випадкових генів (§9.11): чистокровний має гени й форми породи напевно (`applyPureBreedLook`),
  * напівкровка — по одному алелю й кожну форму з імовірністю 50%.
  */
 export function applyBreedLook(rng: Rng, genes: Genes, shape: Shape, look: BreedLook, pure: boolean, half: 0 | 1 = 0): void {
+  if (pure) {
+    applyPureBreedLook(genes, shape, look);
+    return;
+  }
   const g = genes as unknown as Record<string, unknown>;
   for (const [key, pair] of Object.entries(look.genes ?? {})) {
     // Напівкровка: алель — у половину своєї породи (дві породи не затирають одна одну), очі — з імовірністю 50% (крок 17, звірка з довідниками 2026-10-28).
     if (Array.isArray(pair)) {
       const current = g[key] as unknown[];
-      g[key] = pure ? [...pair] : half === 0 ? [pair[0], current[1]] : [current[0], pair[0]];
-    } else if (pure || rng.chance(0.5)) g[key] = pair;
+      g[key] = half === 0 ? [pair[0], current[1]] : [current[0], pair[0]];
+    } else if (rng.chance(0.5)) g[key] = pair;
   }
-  if (look.noOrange && pure) genes.orange = genes.orange.map(() => false);
   const s = shape as unknown as Record<string, unknown>;
-  for (const [key, value] of Object.entries(look.shape ?? {})) if (pure || rng.chance(0.5)) s[key] = value;
+  for (const [key, value] of Object.entries(look.shape ?? {})) if (rng.chance(0.5)) s[key] = value;
+}
+
+/**
+ * Зовнішність чистокровного (§9.11): гени й форми, які задає порода, напевно. Без випадковості — тож ні кошеня (`giveBirth`), ні
+ * оновлення старого збереження (`upgradeBreedLook`) не зсувають потоків §6.1, а повторно вона нічого не змінює.
+ */
+export function applyPureBreedLook(genes: Genes, shape: Shape, look: BreedLook): void {
+  const g = genes as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(look.genes ?? {})) g[key] = Array.isArray(value) ? [...value] : value;
+  if (look.noOrange) genes.orange = genes.orange.map(() => false);
+  const s = shape as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(look.shape ?? {})) s[key] = value;
 }
