@@ -333,6 +333,26 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     }
   });
 
+  it("«Душа компанії», що зустріла гостей і вибігла на сходи, однаково їх тішить: +3 і «захват» (рішення автора 2026-10-29, А5)", () => {
+    let escaped = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const save = game(seed);
+      save.current.modifiers.day = "guests";
+      const host = withCat(save, { guests: 2, escape: 2 }, { x: 10.5, y: 9.5 });
+      host.sterilized = false;
+      const sanity = save.current.character.stats.sanity;
+      const { events, stop } = recordEvents();
+      tickModifiers(save.current, MODIFIERS.guests.minute - 0.5, 1, false);
+      stop();
+      if (host.away !== "stairs") continue;
+      escaped += 1;
+      expect(save.current.character.stats.sanity, `seed ${seed}`).toBeCloseTo(sanity + GUESTS.delight);
+      const visit = events.find((e) => e.type === "modifier" && e.kind === "guests");
+      expect(visit?.type === "modifier" ? visit.guests?.delighted : undefined).toBe(true);
+    }
+    expect(escaped).toBeGreaterThan(5);
+  });
+
   it("«Душа компанії» чекає під дверима, поки зайдуть, а не йде за 5 хвилин; на кур'єрський дзвінок — сидить 5 хвилин, як і раніше (рішення автора 2026-10-29, А5)", () => {
     for (const day of ["guests", "inspection", "home-vet"] as const) {
       const save = game();

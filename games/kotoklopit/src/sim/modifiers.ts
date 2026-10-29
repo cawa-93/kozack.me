@@ -509,16 +509,19 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     emit(state, { type: "modifier", kind: "inspection", value: fine, paid });
   }
   if (!away && day === "guests" && crossed(from, minutes, m.guests.minute)) {
+    // «Душа компанії» тішить гостей (§9.12, «Гості») — рахується, поки двері ще не відчинено: та, що зустріла гостей під дверима
+    // й вибігла на сходи, щойно їх відчинили, теж їх потішила (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5; раніше двері
+    // відчинялися раніше за підрахунок, і втеча забирала захват — саме в того кота, що через рису біг зустрічати).
+    let delight = 0;
+    for (const cat of state.cats) if (cat.away === null && traitLevel(cat, "guests") > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
     openDoor(state);
     const shame = Math.max(m.guests.max, state.home.messes.length * m.guests.mess);
-    // «Душа компанії» тішить гостей, «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»).
-    let delight = 0;
+    // «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»); хто вибіг на сходи, той не вдома.
     let hissing = 0;
     const rng = stateRng(state, "behavior");
     for (const cat of state.cats) {
       if (cat.away !== null) continue;
       const level = traitLevel(cat, "guests");
-      if (level > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
       if (level >= 0) continue;
       // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
       // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
