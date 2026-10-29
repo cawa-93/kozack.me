@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { useProgress } from "../src/sim/actions";
 import { targetOf } from "../src/sim/targets";
-import { BURN_MINUTES, COOK_MINUTES, HOUSEHOLD, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
+import { dash } from "../src/sim/body";
+import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
@@ -145,6 +146,27 @@ describe("їжа за столом (§8.7)", () => {
     expect(useProgress(save.current)).toBeCloseTo(0.4);
     advance(save, 0.1, { move: { x: 1, y: 0 }, hold: true });
     expect(save.current.character.activity).toBeNull();
+  });
+
+  it("ривок перериває їжу, як рух, і нова дія не почнеться, поки кнопку не відпустили (§10, загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    serveMeal(save);
+    holdFor(save, 3);
+    expect(save.current.character.activity?.kind).toBe("use");
+    // Спиною до столу: ривок несе геть від страви.
+    const body = save.current.character.body;
+    body.facing = { x: -body.facing.x, y: -body.facing.y };
+    const { events, stop } = recordEvents();
+    expect(dash(save.current)).toBe(true);
+    expect(save.current.character.activity).toBeNull();
+    holdFor(save, EAT_MINUTES + 1);
+    stop();
+    expect(save.current.character.activity).toBeNull();
+    expect(events.some((e) => e.type === "ate")).toBe(false);
+    expect(save.current.home.surfaces["table"]?.kind).toBe("meal");
+    // Відпустили кнопку — і знову можна діяти.
+    advance(save, 0.1);
+    expect(save.current.character.holdSpent).toBe(false);
   });
 });
 

@@ -88,9 +88,17 @@ export function dash(state: GameState): boolean {
     if (reason !== null) emit(state, { type: "refused", object: "dash", reason });
     return false;
   }
-  const body = state.character.body;
+  const character = state.character;
+  const body = character.body;
   body.dash = DASH_MINUTES;
   body.dashCooldown = DASH_COOLDOWN_MINUTES * cycleDash(state);
+  // Ривок — теж рух: тривалу дію (їжу, прибирання, пестощі, гру) він перериває, як джойстик (§10; загальна ревізія 2026-10-29 —
+  // раніше дія добігала кінця за кілька клітинок від цілі). Роботу й душову кабіну відсікає canDash. Нова дія не почнеться, поки
+  // кнопку не відпустили: holdSpent скидає tickActivity, щойно її відпустили.
+  if (character.activity !== null) {
+    character.activity = null;
+    character.holdSpent = true;
+  }
   dashHunger(state);
   emit(state, { type: "dash" });
   return true;
