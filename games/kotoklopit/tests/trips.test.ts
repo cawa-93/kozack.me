@@ -1090,12 +1090,65 @@ describe("час на місці — лише за отриману послуг
     expect(onSite(unlucky, "doctor", (state) => expect(doctorTreat(state, "cold", "cheap", never)).toBe("failed"))).toBeCloseTo(TRIPS.doctor.visit);
   });
 
-  it("у магазині, притулку й розпліднику час вибору минає й без покупки", () => {
-    for (const destination of ["shop", "shelter", "breeder"] as const) {
-      const save = game(9 * 60);
-      save.current.day = 5;
-      expect(onSite(save, destination), destination).toBeCloseTo(TRIPS[destination].visit);
-    }
+  it("у магазині час покупок минає й без покупки", () => {
+    const save = game(9 * 60);
+    save.current.day = 5;
+    expect(onSite(save, "shop")).toBeCloseTo(TRIPS.shop.visit);
+  });
+
+  it("притулок і розплідник — теж пункти з послугою: без кота — 15 хвилин, з котом — година, скільки б котів не взяли (рецензія реалізації А6)", () => {
+    // Ціну кошеняти розплідника видно лише на місці: не вистачило — не 4 години дороги й ще година, а дорога й 15 хвилин.
+    const poor = game(9 * 60);
+    poor.current.day = 5;
+    poor.current.character.money = 300;
+    const noKitten = (state: GameState): void => {
+      const [kitten] = breederCats(state).cats;
+      if (!kitten) throw new Error("немає кошенят");
+      expect(buyFromBreeder(state, kitten.id)).toBeNull();
+    };
+    expect(onSite(poor, "breeder", noKitten)).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    const broke = game(9 * 60);
+    broke.current.day = 5;
+    broke.current.character.money = 0;
+    const noCat = (state: GameState): void => {
+      const [cat] = shelterCats(state);
+      if (!cat) throw new Error("немає котів");
+      expect(adopt(state, cat.id)).toBeNull();
+    };
+    expect(onSite(broke, "shelter", noCat)).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    // Просто подивилися на котів тижня й поїхали — так само.
+    const looked = game(9 * 60);
+    looked.current.day = 5;
+    expect(onSite(looked, "shelter", (state) => void shelterCats(state))).toBeCloseTo(TRIP_IDLE_MINUTES);
+
+    // Двоє котів — одна година; узятих картка бачить у журналі візиту.
+    const two = game(9 * 60);
+    two.current.day = 5;
+    two.current.character.money = 1000;
+    let names: string[] = [];
+    const adoptTwo = (state: GameState): void => {
+      const [a, b] = shelterCats(state);
+      if (!a || !b) throw new Error("немає котів");
+      expect(adopt(state, a.id)).not.toBeNull();
+      expect(adopt(state, b.id)).not.toBeNull();
+      names = [a.name, b.name];
+      expect(state.trip?.log?.done).toEqual(names);
+    };
+    expect(onSite(two, "shelter", adoptTwo)).toBeCloseTo(TRIPS.shelter.visit);
+    expect(names).toHaveLength(2);
+
+    const rich = game(9 * 60);
+    rich.current.day = 5;
+    rich.current.character.money = 1000;
+    const buyOne = (state: GameState): void => {
+      const [kitten] = breederCats(state).cats;
+      if (!kitten) throw new Error("немає кошенят");
+      expect(buyFromBreeder(state, kitten.id)).not.toBeNull();
+      expect(state.trip?.log?.done).toEqual([kitten.name]);
+    };
+    expect(onSite(rich, "breeder", buyOne)).toBeCloseTo(TRIPS.breeder.visit);
   });
 
   it("стара гра посеред візиту: без отриманої послуги — 15 хвилин, отримане рахується, як і раніше", () => {
@@ -1118,6 +1171,27 @@ describe("час на місці — лише за отриману послуг
     driveSafely(examined);
     expect(vetExam(examined.current)).not.toBeNull();
     expect(deserialize(serialize(examined)).current.trip?.visit).toBe(TRIPS.vet.visit);
+  });
+
+  it("стара гра посеред візиту до притулку: без кота — 15 хвилин, а взятий чи відданий кіт лишає годину (рецензія реалізації А6)", () => {
+    /** Так стара гра зберігала візит до притулку: година на місці — від старту поїздки, журнал — що там зробили. */
+    const oldVisit = (done: string[]): Save => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      expect(startTrip(save.current, "shelter")).toBe(true);
+      driveSafely(save);
+      const trip = save.current.trip;
+      if (!trip) throw new Error("немає поїздки");
+      trip.visit = TRIPS.shelter.visit;
+      if (done.length > 0) trip.log = { exam: null, done };
+      return deserialize(serialize(save));
+    };
+    expect(oldVisit([]).current.trip?.visit).toBe(0);
+    expect(oldVisit(["Мурка"]).current.trip?.visit).toBe(TRIPS.shelter.visit);
+    // Віддавали кота в притулку — і це була послуга, хоч запис про неї з журналу зникає (рішення автора А15).
+    const given = oldVisit(["given:999"]);
+    expect(given.current.trip?.log?.done).toEqual([]);
+    expect(given.current.trip?.visit).toBe(TRIPS.shelter.visit);
   });
 });
 

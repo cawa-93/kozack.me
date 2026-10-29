@@ -209,8 +209,8 @@ export function carryFoundling(save: Save): NightReport | null {
 }
 
 /**
- * «Додому» з місця (§8.5): час на місці — у ветеринара, лікаря, грумера й на виставці лише за отримані послуги, а без жодної —
- * 15 хвилин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6), — і дорога додому.
+ * «Додому» з місця (§8.5): час на місці — у ветеринара, лікаря, грумера, на виставці, у притулку й розпліднику лише за отримані
+ * послуги, а без жодної — 15 хвилин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6), — і дорога додому.
  */
 export function goHome(save: Save): NightReport | null {
   const trip = save.current.trip;
@@ -435,6 +435,8 @@ export function upgradeModifiers(state: GameState): void {
 export function upgradeTrip(state: GameState): void {
   const trip = state.trip;
   if (trip === null) return;
+  // Віддали кота в притулку старої гри — теж послуга (рецензія реалізації А6), хоч запис про це з журналу й зникає.
+  const served = trip.log !== undefined && (trip.log.exam !== null || trip.log.done.length > 0);
   if (trip.log) trip.log.done = trip.log.done.filter((done) => !done.startsWith("given:"));
   if ((trip.destination as string) === "cafe") {
     if (trip.phase === "accident") trip.destination = "shop";
@@ -442,9 +444,9 @@ export function upgradeTrip(state: GameState): void {
     return;
   }
   // Час на місці — лише за отримані послуги (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): у старій грі поїздка
-  // до ветеринара, лікаря, грумера чи на виставку вже на старті мала повний час послуги. Якщо на місці ще нічого не отримали
-  // (журнал візиту порожній), цього часу немає — «Додому» забере 15 хвилин; отримане вже рахується, як і раніше.
-  const served = trip.log !== undefined && (trip.log.exam !== null || trip.log.done.length > 0);
+  // до ветеринара, лікаря, грумера, на виставку, у притулок чи розплідник (рецензія реалізації А6) вже на старті мала повний час
+  // послуги. Якщо на місці ще нічого не отримали (журнал візиту порожній: узятого кота сцена записує туди на ім'я), цього часу
+  // немає — «Додому» забере 15 хвилин; отримане вже рахується, як і раніше.
   if (TRIPS[trip.destination].service && !served) trip.visit = 0;
 }
 

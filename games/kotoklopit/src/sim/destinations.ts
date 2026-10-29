@@ -1,6 +1,6 @@
 // Події в пунктах призначення поїздок (§8.5): магазин, ветеринар, лікар, притулок, розплідник, грумер,
-// виставка, офіс. Кожна послуга додає свій час до поїздки, а без послуги на місці минає 15 хвилин (`visitMinutes`;
-// рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6); додому персонаж їде вже без гонки. Що зроблено на місці, послуга сама пише
+// виставка, офіс. Кожна послуга (і взяти кота в притулку чи розпліднику) додає свій час до поїздки, а без послуги на місці
+// минає 15 хвилин (`visitMinutes`; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6); додому персонаж їде вже без гонки. Що зроблено на місці, послуга сама пише
 // в журнал візиту (`trip.log`).
 
 import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
@@ -357,11 +357,18 @@ export function breederCatPrice(state: GameState): number {
   return breederPrice(breedById(breederCats(state).breed));
 }
 
-/** Купити кошеня в розпліднику (§9.11): як будь-який новий кіт, дає бонус до здорового глузду. */
+/**
+ * Купити кошеня в розпліднику (§9.11): як будь-який новий кіт, дає бонус до здорового глузду. Година на місці минає лише з
+ * покупкою, одна на всіх кошенят (§8.5; рецензія реалізації А6): поїхали без кошеняти — 15 хвилин.
+ */
 export function buyFromBreeder(state: GameState, catId: number): Cat | null {
-  if (state.trip?.destination !== "breeder" || !state.breeder) return null;
+  const trip = state.trip;
+  if (trip?.destination !== "breeder" || !state.breeder) return null;
   const cat = state.breeder.cats.find((c) => c.id === catId);
   if (!cat || !spend(state, breederCatPrice(state), "other")) return null;
+  trip.visit = Math.max(trip.visit, TRIPS.breeder.visit);
+  // Хто їде додому з персонажем, картка бере з журналу візиту; він же каже, що послугу отримали (`upgradeTrip`).
+  (trip.log ??= { exam: null, done: [] }).done.push(cat.name);
   state.breeder.cats = state.breeder.cats.filter((c) => c !== cat);
   welcome(state, cat);
   return cat;
@@ -383,11 +390,18 @@ function welcome(state: GameState, cat: Cat): void {
   applyMorningSanity(state, 0, 1);
 }
 
-/** Взяти кота з притулку (§8.5, §6.2): стартовий пакет і бонус до здорового глузду. */
+/**
+ * Взяти кота з притулку (§8.5, §6.2): стартовий пакет і бонус до здорового глузду. Година на місці минає лише тоді, коли кота
+ * взяли, одна на всіх узятих (§8.5; рецензія реалізації А6): поїхали без кота — 15 хвилин.
+ */
 export function adopt(state: GameState, catId: number): Cat | null {
-  if (state.trip?.destination !== "shelter" || !state.shelter) return null;
+  const trip = state.trip;
+  if (trip?.destination !== "shelter" || !state.shelter) return null;
   const cat = state.shelter.cats.find((c) => c.id === catId);
   if (!cat || !spend(state, SHELTER.price, "other")) return null;
+  trip.visit = Math.max(trip.visit, TRIPS.shelter.visit);
+  // Хто їде додому з персонажем, картка бере з журналу візиту; він же каже, що послугу отримали (`upgradeTrip`).
+  (trip.log ??= { exam: null, done: [] }).done.push(cat.name);
   state.shelter.cats = state.shelter.cats.filter((c) => c !== cat);
   welcome(state, cat);
   // З притулку — можливо, з блохами, як і примусове кошеня (§9.5; крок 17: кіт, якого брали самі, бліх не мав ніколи).

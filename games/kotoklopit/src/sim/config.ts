@@ -1106,15 +1106,16 @@ export const SYMPTOMS = {
 export const MEDICINE = { cheapWorks: 0.7, sanity: -2, love: -1, doseMinutes: 360 } as const;
 /**
  * Поїздки (§8.5): дорога за звичайної швидкості й подія на місці, у хвилинах; котові — переноска. У пунктах із послугами
- * (`service`: ветеринар, лікар, грумер, виставка) `visit` — час самої послуги (огляд, прийом лікаря, грумінг, участь), і минає
- * він лише за отриману послугу; без жодної на місці минає `TRIP_IDLE_MINUTES` (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+ * (`service`: ветеринар, лікар, грумер, виставка, притулок, розплідник) `visit` — час самої послуги (огляд, прийом лікаря, грумінг,
+ * участь, узяти кота), і минає він лише за отриману послугу; без жодної на місці минає `TRIP_IDLE_MINUTES` (рішення автора
+ * 2026-10-29, `GENERAL_REVIEW.md`, А6; притулок і розплідник — рецензія реалізації А6). У магазині час — самі покупки.
  */
 export const TRIPS: Record<Destination, { road: number; visit: number; cat: boolean; service: boolean }> = {
-  breeder: { road: 120, visit: 60, cat: false, service: false },
+  breeder: { road: 120, visit: 60, cat: false, service: true },
   shop: { road: 45, visit: 30, cat: false, service: false },
   vet: { road: 60, visit: 60, cat: true, service: true },
   doctor: { road: 60, visit: 60, cat: false, service: true },
-  shelter: { road: 75, visit: 60, cat: false, service: false },
+  shelter: { road: 75, visit: 60, cat: false, service: true },
   groomer: { road: 45, visit: 90, cat: true, service: true },
   office: { road: 60, visit: 180, cat: false, service: false },
   show: { road: 90, visit: 180, cat: true, service: true },

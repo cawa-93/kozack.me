@@ -446,9 +446,9 @@ export class DayScene extends Phaser.Scene {
         doctorTreat(state, illness, quality, rng);
         again();
       },
+      // Узятого кота симуляція сама пише в журнал візиту: картка каже, хто їде додому (рецензія реалізації А6).
       adopt: (id) => {
-        const cat = adopt(state, id);
-        if (cat) log.done.push(cat.name);
+        adopt(state, id);
         again();
       },
       sterilize: () => {
@@ -456,8 +456,7 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       buyKitten: (id) => {
-        const cat = buyFromBreeder(state, id);
-        if (cat) log.done.push(cat.name);
+        buyFromBreeder(state, id);
         again();
       },
       groom: (quality) => {
