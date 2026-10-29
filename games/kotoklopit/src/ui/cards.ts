@@ -19,6 +19,7 @@ import {
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
+  POSITION_TITLES,
   WEEK_MODIFIER_TEXTS,
   diseaseTitle,
   endingText,
@@ -27,6 +28,7 @@ import {
   BEARD_TEXTS,
   CYCLE_TEXTS,
   BIRTH_MESSAGE,
+  JOB_SEEKING,
   KITTEN_MESSAGE,
   LEDGER_TEXTS,
   ledgerLines,
@@ -275,15 +277,25 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   const load = element("button", "button", "Завантажити з файлу");
   load.addEventListener("click", () => input.click());
   box.append(fresh, save, load, input);
-  const { name } = state.character;
   const touch = isTouch();
   return [
-    `${name} · ${DIFFICULTY_TITLES[state.difficulty]}`,
+    playerLine(state),
     "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.",
     box,
     `Керування: ${touch ? CONTROLS_TOUCH : CONTROLS_KEYBOARD}`,
     touch ? CONTROLS_RACE_TOUCH : CONTROLS_RACE_KEYBOARD,
   ];
+}
+
+/**
+ * Перший рядок вкладки «Гра»: «ім'я · посада · складність», безробітному — «шукає роботу» замість посади. Посаду більше ніде
+ * не видно, а картка її зміни може загубитися після перезавантаження сторінки; репутації тут немає — вона невидима (§8.6;
+ * рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А7).
+ */
+export function playerLine(state: GameState): string {
+  const { name, sex } = state.character;
+  const job = state.job.unemployed ? JOB_SEEKING : fill(POSITION_TITLES[state.job.position] ?? "", sex);
+  return `${name} · ${job} · ${DIFFICULTY_TITLES[state.difficulty]}`;
 }
 
 const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;

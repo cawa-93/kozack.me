@@ -6,6 +6,7 @@ import { FIRST_WEEK_PROTECTION, JOB_SEARCH } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
+import { playerLine } from "../src/ui/cards";
 import { hours, liveDay, recordEvents, standAt } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 2 });
@@ -127,5 +128,30 @@ describe("пошук роботи як процес найму (§8.6, прав�
     expect(events.filter((e) => e.type === "job-rejected").map((e) => (e as { vacancy: number }).vacancy)).toEqual([1, 2, 3]);
     expect(events.some((e) => e.type === "career" && e.change === "hired")).toBe(true);
     expect(state.job.unemployed).toBe(false);
+  });
+});
+
+describe("посада у вкладці «Гра» телефона (§8.6; рішення автора 2026-10-29, А7)", () => {
+  it("рядок «ім'я · посада · складність» іде за посадою й статтю; безробітному — «шукає роботу»; репутації в ньому немає", () => {
+    const save = newGame({ sex: "female", difficulty: "hard", seed: 2 });
+    const state = save.current;
+    const { name } = state.character;
+    expect(playerLine(state)).toBe(`${name} · Стажерка · Реалістичний`);
+    // Підвищення — рядок одразу з новою посадою, хоч би картка про нього й загубилася.
+    changeReputation(state, 60);
+    expect(playerLine(state)).toBe(`${name} · Молодша спеціалістка · Реалістичний`);
+    state.job.position = 9;
+    state.character.sex = "male";
+    expect(playerLine(state)).toBe(`${name} · Директор · Реалістичний`);
+    state.job.unemployed = true;
+    expect(playerLine(state)).toBe(`${name} · шукає роботу · Реалістичний`);
+    // Репутація невидима: рядок той самий за будь-якої.
+    state.job.unemployed = false;
+    state.job.position = 3;
+    state.job.reputation = 5;
+    const low = playerLine(state);
+    state.job.reputation = 95;
+    expect(playerLine(state)).toBe(low);
+    expect(low).not.toMatch(/\d/);
   });
 });
