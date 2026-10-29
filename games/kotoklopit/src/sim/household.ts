@@ -6,7 +6,6 @@ import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHED
 import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
-import { cycleHygiene } from "./grooming";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
 import { itemPoint, objectById, slotCenter } from "./home";
@@ -20,7 +19,7 @@ export const furVisible = (state: GameState): boolean => state.home.fur >= HOUSE
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
 export function hygieneFactor(state: GameState): number {
   const home = state.home;
-  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * cycleHygiene(state) * hygieneFactorMod(state);
+  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
 }
 
 /**

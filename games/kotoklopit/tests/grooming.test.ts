@@ -1,11 +1,11 @@
-// Особливості персонажів (§5.1, §4.1): борода й цикл.
+// Борода чоловічого персонажа (§5.1).
 
 import { describe, expect, it } from "vitest";
 
 import { BEARD } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
 import { interact, newGame } from "../src/sim/game";
-import { beardImpression, beardLook, cycleDay, cycleHygiene, cycleMove, cyclePhase, groomBeard } from "../src/sim/grooming";
+import { beardImpression, beardLook, groomBeard } from "../src/sim/grooming";
 import { fallIllPerson } from "../src/sim/illness";
 import type { Save } from "../src/sim/types";
 import { callImpression } from "../src/sim/work";
@@ -96,30 +96,5 @@ describe("борода (§5.1)", () => {
     const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
     expect(beardImpression(save.current)).toBe(0);
     expect(groomBeard(save.current, "shave")).toBeNull();
-  });
-});
-
-describe("цикл (§4.1)", () => {
-  it("28 днів: менструація 1–5 — повільніше й гігієна швидше, приплив 10–14 — швидше", () => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
-    const state = save.current;
-    state.character.cycleStart = 0;
-    state.day = 0;
-    expect(cycleDay(state)).toBe(1);
-    expect(cyclePhase(state)).toBe("period");
-    expect(cycleMove(state)).toBeLessThan(1);
-    expect(cycleHygiene(state)).toBeGreaterThan(1);
-    state.day = 10;
-    expect(cyclePhase(state)).toBe("energy");
-    expect(cycleMove(state)).toBeGreaterThan(1);
-    state.day = 20;
-    expect(cyclePhase(state)).toBeNull();
-    state.day = 28;
-    expect(cycleDay(state)).toBe(1);
-  });
-
-  it("у чоловічого персонажа циклу немає", () => {
-    const save = newGame({ sex: "male", difficulty: "normal", seed: 1 });
-    expect(cyclePhase(save.current)).toBeNull();
   });
 });

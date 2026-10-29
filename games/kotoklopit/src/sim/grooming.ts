@@ -1,40 +1,8 @@
-// Особливості персонажів (§5.1, §4.1): жіночий цикл і борода чоловічого персонажа.
+// Борода чоловічого персонажа (§5.1). Жіночого циклу немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
 
-import { BEARD, CYCLE } from "./config";
+import { BEARD } from "./config";
 import { emit } from "./events";
 import type { GameState } from "./types";
-
-/** День циклу 1–28 (§4.1). */
-export function cycleDay(state: GameState): number {
-  const days = CYCLE.days;
-  return ((((state.day - state.character.cycleStart) % days) + days) % days) + 1;
-}
-
-export type CyclePhase = "period" | "energy" | null;
-
-/** Фаза циклу: менструація, приплив енергії чи без ефектів; лише жіночий персонаж. */
-export function cyclePhase(state: GameState): CyclePhase {
-  if (state.character.sex !== "female") return null;
-  const day = cycleDay(state);
-  if (day >= CYCLE.period.from && day <= CYCLE.period.to) return "period";
-  if (day >= CYCLE.energy.from && day <= CYCLE.energy.to) return "energy";
-  return null;
-}
-
-/** Множник руху від циклу (§4.1). */
-export function cycleMove(state: GameState): number {
-  const phase = cyclePhase(state);
-  return phase === null ? 1 : CYCLE[phase].move;
-}
-
-/** Множник «ціни» ривка — перезарядки (§4.1). */
-export function cycleDash(state: GameState): number {
-  const phase = cyclePhase(state);
-  return phase === null ? 1 : CYCLE[phase].dash;
-}
-
-/** Множник падіння гігієни (§4.1): під час менструації — швидше. */
-export const cycleHygiene = (state: GameState): number => (cyclePhase(state) === "period" ? CYCLE.period.hygiene : 1);
 
 export type BeardLook = "clean" | "neat" | "stubble" | "unkempt";
 

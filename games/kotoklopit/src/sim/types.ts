@@ -184,8 +184,6 @@ export interface Character {
   /** Скільки ночей поспіль персонаж недоспав, і скільки — добре виспався (§6.5). */
   shortNights: number;
   restedNights: number;
-  /** Жіночий цикл (§4.1): з якого дня гри почався поточний 28-денний цикл. */
-  cycleStart: number;
   /** Борода (§5.1): день останнього гоління й підрівнювання. */
   beard: { shaved: number; trimmed: number };
 }

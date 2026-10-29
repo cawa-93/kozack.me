@@ -7,13 +7,13 @@ import { greetAtDoor, tickCats } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { CYCLE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
+import { FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
 import { upgradeAlbumDays } from "./farewell";
 import { runNight } from "./night";
-import { createRng, deriveSeed, stateRng, seedDay, streamSeed } from "./rng";
+import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
 import { accidentBedtime, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
@@ -72,8 +72,6 @@ export function newGame(options: NewGameOptions): Save {
       illnesses: [],
       shortNights: 0,
       restedNights: 0,
-      // День початку циклу на старті випадковий (§4.1, `DAY_MODIFIERS.md`).
-      cycleStart: -Math.floor(createRng(deriveSeed(seed, 28)).next() * CYCLE.days),
       beard: { shaved: 0, trimmed: -100 },
     },
     job: newJob(),
@@ -329,6 +327,7 @@ export function deserialize(json: string): Save {
  * автогодівниця в сценарії не працювала, а комунальні за неї нараховувалися).
  */
 export function upgradeState(state: GameState): void {
+  upgradeCharacter(state);
   upgradeModifiers(state);
   upgradeFeeder(state);
   upgradeTraits(state);
@@ -337,6 +336,14 @@ export function upgradeState(state: GameState): void {
   upgradeAlbumDays(state);
   upgradeDiseases(state);
   upgradeTrip(state);
+}
+
+/**
+ * Персонаж без статевих механік (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): жіночого циклу немає — день його початку
+ * (`cycleStart`) зі старого збереження зникає.
+ */
+export function upgradeCharacter(state: GameState): void {
+  Reflect.deleteProperty(state.character, "cycleStart");
 }
 
 /**

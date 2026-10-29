@@ -3,7 +3,7 @@
 import { BEARD, MODIFIERS, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
-import { beardLook, canGroomBeard, cycleDay, cyclePhase } from "../sim/grooming";
+import { beardLook, canGroomBeard } from "../sim/grooming";
 import { giveAwayBlocker } from "../sim/farewell";
 import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
@@ -26,7 +26,6 @@ import {
   farewellText,
   fill,
   BEARD_TEXTS,
-  CYCLE_TEXTS,
   BIRTH_MESSAGE,
   JOB_SEEKING,
   KITTEN_MESSAGE,
@@ -71,8 +70,6 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
   if (modifier) dayBlocks.push([modifier.title, modifier.situation]);
-  const phase = cyclePhase(state);
-  if (phase) dayBlocks.push([fill(CYCLE_TEXTS[phase], sex, { день: cycleDay(state) })]);
   const beard = sex === "male" ? beardLook(state) : null;
   if (beard === "stubble" || beard === "unkempt") dayBlocks.push([BEARD_TEXTS[beard]]);
 

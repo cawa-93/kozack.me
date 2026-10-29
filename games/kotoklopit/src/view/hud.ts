@@ -11,7 +11,7 @@ import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
-import { beardLook, cyclePhase } from "../sim/grooming";
+import { beardLook } from "../sim/grooming";
 import { BASE_WIDTH, COLORS } from "./geometry";
 import type { IconName } from "./icons";
 import { scheduleOf } from "./schedule";
@@ -225,8 +225,6 @@ export class Hud {
     if (job.unemployed) effects.push("Пошук роботи");
     if (onSickLeave(state)) effects.push("Лікарняний");
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
-    const phase = cyclePhase(state);
-    if (phase) effects.push(phase === "period" ? "Менструація" : "Приплив енергії");
     if (state.character.sex === "male") {
       const look = beardLook(state);
       if (look === "stubble") effects.push("Щетина");

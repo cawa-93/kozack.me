@@ -25,7 +25,6 @@ import {
 import { traitLevel } from "./cat";
 import { dashHunger, firstWeekProtected } from "./character";
 import { emit } from "./events";
-import { cycleDash, cycleMove } from "./grooming";
 import { moveFactor } from "./modifiers";
 import { canDashWhenIll, illnessSpeed, isIll, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
@@ -93,7 +92,7 @@ export function dash(state: GameState): boolean {
   const character = state.character;
   const body = character.body;
   body.dash = DASH_MINUTES;
-  body.dashCooldown = DASH_COOLDOWN_MINUTES * cycleDash(state);
+  body.dashCooldown = DASH_COOLDOWN_MINUTES;
   // Ривок — теж рух: тривалу дію (їжу, прибирання, пестощі, гру) він перериває, як джойстик (§10; загальна ревізія 2026-10-29 —
   // раніше дія добігала кінця за кілька клітинок від цілі). Роботу й душову кабіну відсікає canDash. Нова дія не почнеться, поки
   // кнопку не відпустили: holdSpent скидає tickActivity, щойно її відпустили.
@@ -181,7 +180,7 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
   }
   // Кіт під ногами сповільнює й може змусити спіткнутися (§9.12).
   const rubbing = rubbingCat(state);
-  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * cycleMove(state) * moveFactor(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
+  const speed = WALK_TILES_PER_MINUTE * actionSpeed(state) * illnessSpeed(state) * moveFactor(state) * magnitude * (dashing ? DASH_SPEED : 1) * (rubbing ? LEGS.slow : 1);
   const from = { x: body.x, y: body.y };
   slide(state, body, dir.x * speed * minutes, dir.y * speed * minutes);
   // Кроки поруч будять чуйних котів (§9.12).
