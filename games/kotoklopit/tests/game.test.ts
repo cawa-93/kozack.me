@@ -12,6 +12,7 @@ import {
   serialize,
 } from "../src/sim/game";
 import { createCat } from "../src/sim/cat";
+import { OLD_AGE_SOURCE, zeroHealthCause } from "../src/sim/farewell";
 import { createRng, stateRng } from "../src/sim/rng";
 import { TRAIT_GROUPS, traitGroup } from "../src/sim/traits";
 import { weekdayOf, weekOf } from "../src/sim/time";
@@ -172,7 +173,7 @@ describe("збереження в JSON (§6.1)", () => {
     for (const id of ["toiletPaper", "toyHiding", "weather"]) expect(TRAIT_GROUPS.some((g) => g.id === id)).toBe(false);
   });
 
-  it("«старечих болячок» немає: зі старого збереження їх знято з котів і журналу здоров'я, а смерть від них в альбомі — старість (рішення автора 2026-10-29, А13)", () => {
+  it("«старечих болячок» немає: зі старого збереження їх знято з котів, шкода від них у журналі здоров'я й смерть від них в альбомі — старість (рішення автора 2026-10-29, А13)", () => {
     const save = game();
     const senior = { id: "senior", day: 0, doses: 0, diet: 0, calm: 0, controlled: null, known: true } as unknown as CatDisease;
     const cold: CatDisease = { id: "cold", day: 0, doses: 0, diet: 0, calm: 0, controlled: null, known: false };
@@ -191,9 +192,32 @@ describe("збереження в JSON (§6.1)", () => {
     const loaded = deserialize(serialize(save));
     const loadedCat = loaded.current.cats.find((c) => c.id === cat.id);
     expect(loadedCat?.diseases).toEqual([cold]);
-    expect(loadedCat?.healthLog).toEqual([{ day: 0, source: "disease:cold", amount: 2 }]);
+    expect(loadedCat?.healthLog).toEqual([
+      { day: 0, source: OLD_AGE_SOURCE, amount: 1 },
+      { day: 0, source: "disease:cold", amount: 2 },
+    ]);
     expect(loaded.current.shelter?.cats[0]?.diseases).toEqual([]);
     expect(loaded.current.album.map((e) => e.cause)).toEqual([{ kind: "old" }, { kind: "disease", disease: "heart" }]);
+  });
+
+  it("кіт, якого «старечі болячки» зі старого збереження довели до нуля здоров'я, помирає від старості, а не від туги (рішення автора 2026-10-29, А13; рецензія реалізації)", () => {
+    const save = game();
+    const senior = { id: "senior", day: 0, doses: 0, diet: 0, calm: 0, controlled: null, known: true } as unknown as CatDisease;
+    const cat = createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 30 });
+    cat.health = 0;
+    cat.diseases = [senior];
+    cat.healthLog = [
+      { day: 0, source: "disease:senior", amount: 5 },
+      { day: 0, source: "mood", amount: 2 },
+    ];
+    save.current.cats.push(cat);
+    const loaded = deserialize(serialize(save));
+    const loadedCat = loaded.current.cats.find((c) => c.id === cat.id);
+    expect(loadedCat?.health).toBe(0);
+    expect(loadedCat && zeroHealthCause(loadedCat)).toEqual({ kind: "old" });
+    // Повторне завантаження нічого не змінює.
+    const again = deserialize(serialize(loaded)).current.cats.find((c) => c.id === cat.id);
+    expect(again && zeroHealthCause(again)).toEqual({ kind: "old" });
   });
 
   it("зі старого збереження прибрано час дорогого корму (`premiumAt`) — заздрості до нього більше немає (рішення автора 2026-10-29, А16)", () => {

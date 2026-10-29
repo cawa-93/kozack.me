@@ -12,7 +12,7 @@ import { FIRST_DAY_MODIFIER, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, P
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
-import { upgradeAlbumDays } from "./farewell";
+import { OLD_AGE_SOURCE, upgradeAlbumDays } from "./farewell";
 import { applyPureBreedLook } from "./genetics";
 import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
@@ -433,15 +433,16 @@ export function upgradeTrip(state: GameState): void {
 
 /**
  * «Старечих болячок» немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13): у старих збереженнях їх знімають з котів удома,
- * у притулку й у розпліднику разом зі шкодою від них у журналі здоров'я, а кіт, що помер від них, в альбомі пам'яті пішов від
- * старості.
+ * у притулку й у розпліднику, а кіт, що помер від них, в альбомі пам'яті пішов від старості. Шкода від них у журналі здоров'я
+ * лишається шкодою від старості (§9.7): кіт, якого вони довели до нуля здоров'я, якщо помре, піде від старості, а не від туги
+ * (рецензія реалізації А13, 2026-10-29: раніше цю шкоду викидали з журналу, і причиною ставав поганий настрій).
  */
 export function upgradeDiseases(state: GameState): void {
   const removed = (id: string): boolean => id === "senior";
   const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
   for (const cat of cats) {
     cat.diseases = cat.diseases.filter((d) => !removed(d.id));
-    cat.healthLog = cat.healthLog.filter((entry) => entry.source !== "disease:senior");
+    for (const entry of cat.healthLog) if (entry.source === "disease:senior") entry.source = OLD_AGE_SOURCE;
   }
   for (const entry of state.album) if (entry.cause?.kind === "disease" && removed(entry.cause.disease)) entry.cause = { kind: "old" };
 }

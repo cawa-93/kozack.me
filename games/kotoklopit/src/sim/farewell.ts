@@ -10,8 +10,14 @@ import type { Rng } from "./rng";
 import type { AlbumEntry, Cat, FarewellCause, GameState } from "./types";
 
 /**
+ * Джерело шкоди в журналі здоров'я «старість» (§9.7): лише шкода від колишніх «старечих болячок» зі старого збереження
+ * (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13, §9.5; `upgradeDiseases`). Сама гра так шкоду не записує.
+ */
+export const OLD_AGE_SOURCE = "old";
+
+/**
  * Причина смерті від нульового здоров'я (§9.7): джерело, що завдало найбільше шкоди за останній
- * тиждень, — хвороба чи туга (поганий настрій).
+ * тиждень, — хвороба чи туга (поганий настрій); шкода від колишніх «старечих болячок» — старість.
  */
 export function zeroHealthCause(cat: Cat): FarewellCause {
   const bySource = new Map<string, number>();
@@ -24,6 +30,7 @@ export function zeroHealthCause(cat: Cat): FarewellCause {
       most = amount;
     }
   }
+  if (top === OLD_AGE_SOURCE) return { kind: "old" };
   return top.startsWith("disease:") ? { kind: "disease", disease: top.slice("disease:".length) } : { kind: "sorrow" };
 }
 
