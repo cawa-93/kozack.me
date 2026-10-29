@@ -48,6 +48,9 @@ const ALL: Refusal[] = [
   { reason: "cat-up-high" },
   { reason: "wire-chewed" },
   { reason: "cat-bored" },
+  // Ривка немає (загальна ревізія 2026-10-29).
+  { reason: "cold" },
+  { reason: "weak" },
 ];
 
 function game(): Save {

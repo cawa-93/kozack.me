@@ -68,8 +68,26 @@ export function canDash(state: GameState): boolean {
   return body.dashCooldown <= 0 && stats.health >= LOW_STAT && activity?.kind !== "work" && !inside && canDashWhenIll(state);
 }
 
+/**
+ * Чому ривка немає надовго (§11.4, загальна ревізія 2026-10-29): застуда (§6.5) чи здоров'я нижче 25 (§6.3) — гравець бачить
+ * причину, а не мовчазну кнопку. Перезарядка, робота за комп'ютером і душова кабіна — без відмови: ривок от-от повернеться, а
+ * персонаж за комп'ютером чи в кабіні і так не рухається.
+ */
+function dashRefusal(state: GameState): "cold" | "weak" | null {
+  const { stats, activity } = state.character;
+  if (activity?.kind === "work" || (activity?.kind === "use" && activity.inside === true)) return null;
+  if (!canDashWhenIll(state)) return "cold";
+  if (stats.health < LOW_STAT) return "weak";
+  return null;
+}
+
 export function dash(state: GameState): boolean {
-  if (state.end !== null || !canDash(state)) return false;
+  if (state.end !== null) return false;
+  if (!canDash(state)) {
+    const reason = dashRefusal(state);
+    if (reason !== null) emit(state, { type: "refused", object: "dash", reason });
+    return false;
+  }
   const body = state.character.body;
   body.dash = DASH_MINUTES;
   body.dashCooldown = DASH_COOLDOWN_MINUTES * cycleDash(state);

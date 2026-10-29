@@ -112,6 +112,11 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "wire" };
     case "cat-bored":
       return { icon: "bored" };
+    // Ривка немає (загальна ревізія 2026-10-29): застуджений — градусник, без сил — розряджена батарейка.
+    case "cold":
+      return { icon: "thermometer" };
+    case "weak":
+      return { icon: "battery-low" };
   }
 }
 

@@ -93,7 +93,9 @@ export type IconName =
   | "hiss-litter"
   | "hiss-window"
   | "hiss-hand"
-  | "hiss-kitten";
+  | "hiss-kitten"
+  | "thermometer"
+  | "battery-low";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -670,6 +672,24 @@ Object.assign(ICONS, {
 /** Мамині судочки (§4.1, §6.4, рішення автора 2026-10-26). */
 Object.assign(ICONS, {
   "mom-meal": (g: Phaser.GameObjects.Graphics) => drawMomMeal(g, 20, 34, 1.25),
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Чому ривка немає (§11.4, загальна ревізія 2026-10-29): застуда й слабкість. */
+Object.assign(ICONS, {
+  thermometer: (g: Phaser.GameObjects.Graphics) => {
+    // Градусник зі стовпчиком під самий верх (§6.5): персонаж застуджений.
+    g.fillStyle(INK).fillRoundedRect(14.5, 3, 11, 28, 5.5).fillCircle(20, 31, 7.5);
+    g.fillStyle(0xffffff).fillRoundedRect(17, 5.5, 6, 24, 3);
+    g.fillStyle(COLORS.danger).fillRect(18.5, 8, 3, 22).fillCircle(20, 31, 5);
+    g.lineStyle(2, INK).lineBetween(28, 9, 32, 9).lineBetween(28, 14, 32, 14).lineBetween(28, 19, 32, 19);
+  },
+  "battery-low": (g: Phaser.GameObjects.Graphics) => {
+    // Розряджена батарейка (§6.3): здоров'я нижче 25 — сил на ривок немає.
+    g.fillStyle(0xffffff).fillRoundedRect(5, 12, 27, 16, 3);
+    g.lineStyle(3, INK).strokeRoundedRect(5, 12, 27, 16, 3);
+    g.fillStyle(INK).fillRect(32, 16.5, 4, 7);
+    g.fillStyle(COLORS.danger).fillRect(8.5, 15.5, 5, 9);
+  },
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**

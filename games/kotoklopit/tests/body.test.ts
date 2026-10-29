@@ -4,6 +4,7 @@ import { actionSpeed, canDash, dash, glitchChance } from "../src/sim/body";
 import { targetOf } from "../src/sim/targets";
 import { BODY_RADIUS } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
+import { fallIllPerson } from "../src/sim/illness";
 import { OBJECTS } from "../src/sim/home";
 import type { Save, Vec } from "../src/sim/types";
 import { hours, recordEvents, walkTo } from "./helpers";
@@ -89,6 +90,34 @@ describe("рух (§8.4)", () => {
     stats.satiety = 25;
     expect(canDash(save.current)).toBe(true);
     expect(actionSpeed(save.current)).toBe(1);
+  });
+
+  it("ривка немає через застуду чи слабкість — відмова з причиною; на перезарядці, за роботою й у кабіні — тиша (§11.4)", () => {
+    const refusals = (save: Save): unknown[] => {
+      const { events, stop } = recordEvents();
+      expect(dash(save.current)).toBe(false);
+      stop();
+      return events.filter((e) => e.type === "refused").map((e) => (e.type === "refused" ? e.reason : null));
+    };
+    const cold = game();
+    fallIllPerson(cold.current, "cold");
+    expect(refusals(cold)).toEqual(["cold"]);
+    const weak = game();
+    weak.current.character.stats.health = 24;
+    expect(refusals(weak)).toEqual(["weak"]);
+    // Перезарядка — ривок от-от повернеться: без відмови, щоб бабл не спамив.
+    const cooldown = game();
+    expect(dash(cooldown.current)).toBe(true);
+    expect(refusals(cooldown)).toEqual([]);
+    // За комп'ютером і в душовій кабіні персонаж і так не рухається.
+    const work = game();
+    work.current.character.stats.health = 24;
+    work.current.character.activity = { kind: "work", minutes: 0, money: 0, reputation: 0, sanity: 0 };
+    expect(refusals(work)).toEqual([]);
+    const shower = game();
+    fallIllPerson(shower.current, "cold");
+    shower.current.character.activity = { kind: "use", target: "shower", progress: 0, inside: true };
+    expect(refusals(shower)).toEqual([]);
   });
 
   it("«Сонливість» уповільнює ходьбу (§8.8)", () => {
