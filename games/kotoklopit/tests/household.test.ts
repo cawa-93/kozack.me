@@ -150,6 +150,33 @@ describe("прання (§8.7)", () => {
   });
 });
 
+describe("прання з повною шафою (§8.7, загальна ревізія 2026-10-29)", () => {
+  it("чистого одягу не менше, ніж дасть засіб, що береться першим, — відмова, засіб лишається, машина не запускається", () => {
+    const save = game();
+    save.current.home.clothes = 7;
+    save.current.home.supplies.detergent = { cheap: 2, premium: 0 };
+    standAt(save, "washer");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "refused", reason: "clothes-clean" }));
+    expect(save.current.home.supplies.detergent).toEqual({ cheap: 2, premium: 0 });
+    expect(save.current.home.washer.state).toBe("idle");
+    // Дорогий засіб береться першим і дає 8 днів: при 7 прання ще корисне.
+    save.current.home.supplies.detergent.premium = 1;
+    expect(tapWasher(save.current)).toBe("started");
+    expect(save.current.home.supplies.detergent).toEqual({ cheap: 2, premium: 0 });
+    // З дорогим засобом відмова — від 8 днів.
+    save.current.home.washer = { state: "idle", minutes: 0, quality: "cheap" };
+    save.current.home.supplies.detergent.premium = 1;
+    save.current.home.clothes = 8;
+    expect(tapWasher(save.current)).toBe("clean");
+    // Без засобу — як і раніше, «засобу немає».
+    save.current.home.supplies.detergent = { cheap: 0, premium: 0 };
+    expect(tapWasher(save.current)).toBe("empty");
+  });
+});
+
 describe("перевірка побуту 2026-10-28", () => {
   it("кіт у барабані: натискання виганяє його, а не бере на руки; розвісити не зменшує чистого одягу", () => {
     const save = game();

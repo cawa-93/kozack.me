@@ -51,7 +51,7 @@ export function catInWasher(state: GameState): Cat | null {
  * Дія біля пральної машини (§8.7): спершу вигнати кота з барабана, потім запустити прання з пральним
  * засобом, а випране — розвісити. Повертає, що сталося, або причину відмови.
  */
-export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty" | "busy" {
+export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty" | "busy" | "clean" {
   const washer = state.home.washer;
   if (washer.state === "washing") return "busy";
   if (washer.state === "done") {
@@ -70,6 +70,11 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
     emit(state, { type: "laundry", stage: "cat", cat: cat.id });
     return "cat";
   }
+  // Чистого одягу вже не менше, ніж дасть засіб, що візьметься першим (спершу дорожчий): прання нічого не додасть — машина не
+  // запускається, засіб лишається, як і в душі на межі (§8.7; загальна ревізія 2026-10-29: засіб витрачався, а гучний віджим
+  // даремно лякав і будив котів).
+  const top = topQuality(state, "detergent");
+  if (top !== null && state.home.clothes >= HOUSEHOLD.clothesDays[top]) return "clean";
   const quality = useSupply(state, "detergent");
   if (quality === null) return "empty";
   state.home.washer = { state: "washing", minutes: HOUSEHOLD.washMinutes, quality };

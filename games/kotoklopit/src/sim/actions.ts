@@ -322,6 +322,7 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const result = tapWasher(state);
       if (result === "empty") return refuse(state, target.id, { reason: "empty", product: "detergent" });
       if (result === "busy") return refuse(state, target.id, "washing");
+      if (result === "clean") return refuse(state, target.id, "clothes-clean");
       return null;
     }
     case "vacuum":

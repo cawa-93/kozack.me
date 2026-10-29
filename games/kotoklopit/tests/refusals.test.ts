@@ -51,6 +51,8 @@ const ALL: Refusal[] = [
   // Ривка немає (загальна ревізія 2026-10-29).
   { reason: "cold" },
   { reason: "weak" },
+  // Чистого одягу досить — прати нічого (загальна ревізія 2026-10-29).
+  { reason: "clothes-clean" },
 ];
 
 function game(): Save {

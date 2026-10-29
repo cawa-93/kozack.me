@@ -95,7 +95,8 @@ export type IconName =
   | "hiss-hand"
   | "hiss-kitten"
   | "thermometer"
-  | "battery-low";
+  | "battery-low"
+  | "folded";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -689,6 +690,20 @@ Object.assign(ICONS, {
     g.lineStyle(3, INK).strokeRoundedRect(5, 12, 27, 16, 3);
     g.fillStyle(INK).fillRect(32, 16.5, 4, 7);
     g.fillStyle(COLORS.danger).fillRect(8.5, 15.5, 5, 9);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Чистого одягу досить (§8.7, загальна ревізія 2026-10-29): стос складених чистих сорочок — прати ще не треба. */
+Object.assign(ICONS, {
+  folded: (g: Phaser.GameObjects.Graphics) => {
+    // Нижня — блакитна, верхня — світла з комірцем і ґудзиком; праворуч угорі лишається місце для галочки.
+    g.fillStyle(0xa9d3f0).fillRoundedRect(4, 26, 28, 10, 3);
+    g.lineStyle(2.5, INK).strokeRoundedRect(4, 26, 28, 10, 3);
+    g.fillStyle(0xf4efe4).fillRoundedRect(6, 15, 26, 12, 3);
+    g.lineStyle(2.5, INK).strokeRoundedRect(6, 15, 26, 12, 3);
+    g.fillStyle(0xffffff).fillTriangle(14, 15, 24, 15, 19, 21);
+    g.lineStyle(2, INK).strokeTriangle(14, 15, 24, 15, 19, 21);
+    g.fillStyle(INK).fillCircle(19, 24, 1.3);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

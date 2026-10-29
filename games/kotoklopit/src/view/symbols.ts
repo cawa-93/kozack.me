@@ -117,6 +117,10 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "thermometer" };
     case "weak":
       return { icon: "battery-low" };
+    // Чистого одягу досить (§8.7, загальна ревізія 2026-10-29): стос складених сорочок із галочкою — не брудна сорочка
+    // («Чистюля»), не мокра (прання готове) і не «повне сховище».
+    case "clothes-clean":
+      return { icon: "folded", mark: "ok" };
   }
 }
 
