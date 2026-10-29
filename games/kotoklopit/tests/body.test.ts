@@ -167,11 +167,16 @@ describe("збої керування від низького здорового
   });
 
   it("зі здоровим глуздом від 25 збоїв немає", () => {
-    const save = game();
+    // Без захисту першого тижня: на дні 0 без котів збоїв немає за будь-якого здорового глузду (А2), і тест не бачив би порогу.
+    const save = unprotected();
+    save.current.modifiers.day = null;
+    save.current.character.stats.sanity = 25;
     place(save, 9.5, 8.5);
     const { events, stop } = recordEvents();
-    for (let i = 0; i < 500; i++) walk(save, { x: i % 200 < 100 ? 1 : -1, y: 0 }, 0.02);
+    // Година руху туди й назад: поріг навіть трохи вищий за 25 тут уже дав би збій.
+    for (let i = 0; i < 3000; i++) walk(save, { x: i % 200 < 100 ? 1 : -1, y: 0 }, 0.02);
     stop();
+    expect(save.current.character.stats.sanity).toBeGreaterThanOrEqual(25);
     expect(events.some((e) => e.type === "glitch")).toBe(false);
   });
 
