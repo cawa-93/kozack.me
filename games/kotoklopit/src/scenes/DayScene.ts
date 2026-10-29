@@ -9,7 +9,7 @@ import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
-import { doctorExam, doctorTreat } from "../sim/illness";
+import { doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
@@ -464,10 +464,6 @@ export class DayScene extends Phaser.Scene {
       treat: (disease, quality) => {
         const result = vetTreat(state, disease, quality, rng);
         if (result) log.done.push(`${disease}:${result}`);
-        again();
-      },
-      doctor: () => {
-        if (doctorExam(state)) log.done.push("doctor");
         again();
       },
       treatSelf: (illness, quality) => {

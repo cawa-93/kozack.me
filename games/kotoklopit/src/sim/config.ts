@@ -1268,7 +1268,6 @@ export const XXY_MALE = 1 / 3000;
  * для розмноження (загальна ревізія 2026-10-29: було з 2 тижнів, і кошеня, народжене вдома, могло завагітніти раніше, ніж його можна прооперувати).
  */
 export const STERILIZATION = { price: 120, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5, minAge: 1 } as const;
-export const DOCTOR = { exam: 40 } as const;
 export const SHELTER = {
   price: 50,
   cats: 3,
@@ -1395,7 +1394,7 @@ export const ILLNESS_EFFECTS = {
   restNights: 2,
   medsWork: 0.7,
 } as const;
-/** Лікар (§6.5): лікування дешеве чи дороге, здоров'я після лікування. */
+/** Лікар (§6.5): лікування дешеве чи дороге, здоров'я після лікування. Огляду немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): хвороби видно на панелі. */
 export const DOCTOR_TREAT = { cheap: 30, premium: 80, cheapWorks: 0.7, health: 10 } as const;
 /** Смерть кота (§9.2, §9.5): нульове здоров'я ввечері — 60%; понад межу віку — 20% + 10% за тиждень − 5% за «Довголіття». */
 export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;

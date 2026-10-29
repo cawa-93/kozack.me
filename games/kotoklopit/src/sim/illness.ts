@@ -1,7 +1,7 @@
 // Хвороби персонажа (§6.5): застуда, травма, виснаження; ліки з магазину й лікар з лікарняним.
 
 import { changeStat, spend } from "./character";
-import { DOCTOR, DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR } from "./config";
+import { DOCTOR_TREAT, ILLNESS_EFFECTS, ILLNESSES, SLEEP_STAT_FLOOR } from "./config";
 import { useSupply } from "./economy";
 import { emit } from "./events";
 import { onSickLeave } from "./work";
@@ -90,12 +90,10 @@ export function takeHumanMeds(state: GameState, rng: Rng): boolean {
   return true;
 }
 
-/** Огляд у лікаря (§6.5): діагноз; без хвороб — лише «здорові» (правка автора 2026-10-22). */
-export function doctorExam(state: GameState): boolean {
-  return state.trip?.destination === "doctor" && spend(state, DOCTOR.exam, "health");
-}
-
-/** Лікування в лікаря (§6.5): хвороба минає, здоров'я +10, лікарняний з завтра. */
+/**
+ * Лікування в лікаря (§6.5): хвороба минає, здоров'я +10, лікарняний з завтра. Огляду перед ним немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6):
+ * лікар лікує те, що видно на панелі, і гроші бере лише за лікування.
+ */
 export function doctorTreat(state: GameState, id: IllnessId, quality: "cheap" | "premium", rng: Rng): "cured" | "failed" | null {
   const trip = state.trip;
   if (trip?.destination !== "doctor" || !isIll(state, id) || !spend(state, DOCTOR_TREAT[quality], "health")) return null;

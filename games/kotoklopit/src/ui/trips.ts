@@ -1,6 +1,6 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { ACCIDENT, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { ACCIDENT, DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
@@ -115,7 +115,6 @@ export interface VisitHandlers {
   checkout: (cart: CartLine[]) => void;
   exam: () => void;
   treat: (disease: DiseaseId, quality: Quality) => void;
-  doctor: () => void;
   treatSelf: (illness: IllnessId, quality: Quality) => void;
   adopt: (cat: number) => void;
   sterilize: () => void;
@@ -235,17 +234,15 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
     }
     case "doctor": {
-      if (!log.done.includes("doctor")) {
-        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.doctor.visit)}`, button(`${DOCTOR.exam} ₴`, DOCTOR.exam, h.doctor)));
-        break;
-      }
+      // Огляду немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): хвороби персонажа й так видно на панелі, тож картка одразу
+      // показує їх із цінами лікування.
       const ill = state.character.illnesses;
       // Що дало лікування цієї поїздки, як і у ветеринара: інакше вилікуване зникало, і картка казала «нічого серйозного»,
       // а після невдалого дешевого не змінювалася зовсім (перевірка поїздок 2026-10-28).
       const results = log.done.filter((x) => x.startsWith("self:")).map((x) => x.split(":") as [string, IllnessId, string]);
       const cured = results.filter(([, , result]) => result === "cured").map(([, id]) => ILLNESS_TITLES[id].toLowerCase());
       if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
-      else if (ill.length === 0) body.push("Лікар оглянув вас: нічого серйозного.");
+      else if (ill.length === 0) body.push("Лікар вислухав вас: нічого серйозного.");
       const list = element("div", "shop");
       for (const i of ill) {
         const failed = results.filter(([, id]) => id === i.id).at(-1)?.[2] === "failed";
@@ -258,7 +255,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           ),
         );
       }
-      if (ill.length > 0) body.push("Лікар знайшов:", list);
+      if (ill.length > 0) body.push("Скарги:", list);
       break;
     }
     case "shelter": {

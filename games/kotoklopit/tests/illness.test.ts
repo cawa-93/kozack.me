@@ -3,8 +3,9 @@
 import { describe, expect, it } from "vitest";
 
 import { canDash } from "../src/sim/body";
+import { DOCTOR_TREAT } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
-import { doctorExam, doctorTreat, fallIllPerson, illnessSpeed, isIll, nightlyIllness, takeHumanMeds } from "../src/sim/illness";
+import { doctorTreat, fallIllPerson, illnessSpeed, isIll, nightlyIllness, takeHumanMeds } from "../src/sim/illness";
 import { createRng } from "../src/sim/rng";
 import { startTrip } from "../src/sim/trips";
 import type { Save } from "../src/sim/types";
@@ -87,7 +88,6 @@ describe("хвороби персонажа (§6.5)", () => {
     standAt(save, "door");
     expect(startTrip(save.current, "doctor")).toBe(true);
     driveSafely(save);
-    expect(doctorExam(save.current)).toBe(true);
     expect(doctorTreat(save.current, "cold", "premium", always())).toBe("cured");
     expect(isIll(save.current, "cold")).toBe(false);
     // Сьогодні ще робочий день: лікарняний — від завтра (перевірка поїздок 2026-10-28).
@@ -143,7 +143,6 @@ describe("хвороби персонажа (§6.5)", () => {
     standAt(save, "door");
     expect(startTrip(state, "doctor")).toBe(true);
     driveSafely(save);
-    expect(doctorExam(state)).toBe(true);
     expect(doctorTreat(state, "exhaustion", "premium", always())).toBe("cured");
     // Одна коротка ніч після лікаря — ще не виснаження.
     nightlyIllness(state, 5.5);
@@ -155,16 +154,20 @@ describe("хвороби персонажа (§6.5)", () => {
     expect(isIll(state, "exhaustion")).toBe(true);
   });
 
-  it("огляд без хвороб не додає здоров'я", () => {
+  it("огляду в лікаря немає: лікує одразу, а платять лише за лікування (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6)", () => {
     const save = game();
     save.current.day = 1;
     save.current.minute = 19 * 60;
-    save.current.character.stats.health = 50;
+    save.current.character.money = 500;
+    fallIllPerson(save.current, "injury");
     standAt(save, "door");
     expect(startTrip(save.current, "doctor")).toBe(true);
     driveSafely(save);
-    const health = save.current.character.stats.health;
-    expect(doctorExam(save.current)).toBe(true);
-    expect(save.current.character.stats.health).toBe(health);
+    const money = save.current.character.money;
+    expect(doctorTreat(save.current, "injury", "cheap", always())).toBe("cured");
+    expect(save.current.character.money).toBe(money - DOCTOR_TREAT.cheap);
+    // Здоровому лікувати нічого — і грошей не беруть.
+    expect(doctorTreat(save.current, "injury", "premium", always())).toBeNull();
+    expect(save.current.character.money).toBe(money - DOCTOR_TREAT.cheap);
   });
 });
