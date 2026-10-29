@@ -35,6 +35,25 @@ describe("тексти (TEXTS.md)", () => {
     state.job.position = 9;
     expect(endingText(state, "retirement").title).toBe("Кар'єрист");
   });
+
+  it("загальна ревізія 2026-10-29: без котів текст кінця гри котів не згадує, з котом — звичайний текст", () => {
+    const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
+    expect(state.cats).toHaveLength(0);
+    const ends = ["health", "satiety", "hygiene", "sanity", "eviction"] as const;
+    const lonely = ends.map((end) => endingText(state, end));
+    for (const [i, { text }] of lonely.entries()) {
+      expect(text, ends[i]).not.toMatch(/кот|кіт/iu);
+      expect(text, ends[i]).not.toMatch(/[{}[\]|]/);
+    }
+    expect(lonely[1]?.text).toContain("забула нагодувати себе");
+    state.cats.push(createCat(state, createRng(1), { source: "shelter", ageWeeks: 3 }));
+    for (const [i, end] of ends.entries()) {
+      const { title, text } = endingText(state, end);
+      expect(title).toBe(lonely[i]?.title);
+      expect(text, end).toMatch(/кот/iu);
+    }
+    expect(endingText(state, "eviction").text).toContain("Котів забрали до притулку");
+  });
 });
 
 describe("опис рис для картки кота (§9.9)", () => {
