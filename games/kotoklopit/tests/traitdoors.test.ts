@@ -21,7 +21,7 @@ import { guestsText, homeVetText } from "../src/texts";
 import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.modifiers.day = null;
   save.current.minute = hours(12);
   // Персонаж у вітальні біля входу: бачить двері.

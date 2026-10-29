@@ -5,7 +5,7 @@ import { actionSpeed, glitchChance } from "../sim/body";
 import { newGame } from "../sim/game";
 import { isDrowsy } from "../sim/sleep";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Chronotype, Difficulty, Product, Quality, Save, Sex, StatName } from "../sim/types";
+import type { Address, Chronotype, Difficulty, Product, Quality, Save, StatName } from "../sim/types";
 import { patienceLevel, positionOf } from "../sim/work";
 import type { Session } from "../session";
 import { DIFFICULTY_TITLES, fill, POSITION_TITLES } from "../texts";
@@ -241,8 +241,8 @@ export class DevPanel {
     this.refreshers.push(() => {
       if (document.activeElement !== name) name.value = ch().name;
     });
-    const sex = this.select<Sex>("Стать", [["female", "жіноча"], ["male", "чоловіча"]], () => ch().sex, (v) => {
-      ch().sex = v;
+    const address = this.select<Address>("Звертання", [["she", "вона"], ["he", "він"]], () => ch().address, (v) => {
+      ch().address = v;
       this.changed(`стать — ${v}`, false);
     });
     const chronotype = this.select<Chronotype>("Хронотип", [["lark", "жайворонок"], ["owl", "сова"]], () => ch().chronotype, (v) => {
@@ -252,7 +252,7 @@ export class DevPanel {
     const positions = POSITION_TITLES.map((title, i) => [String(i), fill(title, "male")] as [string, string]);
     return this.section(
       "Персонаж",
-      el("div", { class: "dev-grid" }, el("label", { class: "dev-field" }, el("span", {}, "Ім'я"), name), sex, chronotype),
+      el("div", { class: "dev-grid" }, el("label", { class: "dev-field" }, el("span", {}, "Ім'я"), name), address, chronotype),
       el(
         "div",
         { class: "dev-grid" },
@@ -352,7 +352,7 @@ export class DevPanel {
 
   private scenarioSection(): HTMLElement {
     const name = el("input", { type: "text", placeholder: "Назва сценарію" });
-    let sex: Sex = "female";
+    let address: Address = "she";
     let difficulty: Difficulty = "normal";
     return this.section(
       "Сценарії",
@@ -374,7 +374,7 @@ export class DevPanel {
       el(
         "div",
         { class: "dev-grid" },
-        this.select<Sex>("Нова гра: стать", [["female", "Марта"], ["male", "Тарас"]], () => sex, (v) => (sex = v)),
+        this.select<Address>("Нова гра: звертання", [["she", "Марта"], ["he", "Тарас"]], () => address, (v) => (address = v)),
         this.select("Складність", (Object.keys(DIFFICULTY_TITLES) as Difficulty[]).map((d) => [d, DIFFICULTY_TITLES[d]] as [Difficulty, string]), () => difficulty, (v) => (difficulty = v)),
       ),
       el(
@@ -383,7 +383,7 @@ export class DevPanel {
         this.button("Нова гра", () => {
           setScenarioParam(null);
           this.session.persistent = true;
-          this.session.replace(newGame({ sex, difficulty }));
+          this.session.replace(newGame({ address, difficulty }));
           this.journal.add("Режим розробки: нова гра");
         }),
       ),

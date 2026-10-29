@@ -37,7 +37,7 @@ import { fill, GROOMED, VET_MANNER } from "../src/texts";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 6 }));
   save.current.modifiers.day = null;
   save.current.minute = minute;
   save.current.character.money = 1000;
@@ -246,7 +246,7 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
 
   /** Прожити дні до `day`, о 12:00 цього дня потрапити в аварію й перемотати день; повертає й ранок дня аварії. */
   const crashOn = (day: number): { save: Save; morning: GameState } => {
-    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
+    const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 6 }));
     while (save.current.day < day) live(save);
     return { save, morning: crash(save) };
   };
@@ -482,7 +482,7 @@ describe("поїздки й робота (§8.6)", () => {
 
   it("здоровий глузд призу виставки — з множником «Здоровий глузд від котів», а гроші — сталі (рішення автора 2026-10-29, дрібні питання)", () => {
     const prize = (difficulty: Difficulty): { sanity: number; money: number } => {
-      const save = withCatCorner(newGame({ sex: "female", difficulty, seed: 6 }));
+      const save = withCatCorner(newGame({ address: "she", difficulty, seed: 6 }));
       save.current.modifiers.day = "show";
       save.current.day = 6;
       save.current.minute = 9 * 60;

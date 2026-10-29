@@ -7,7 +7,7 @@ import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MI
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
-import { advance, carryFoundling, DEFAULT_LOOK, goHome, interact, newGame, replayDay, replayWeek, rewindAccident } from "../sim/game";
+import { advance, carryFoundling, DEFAULT_LOOK, DEFAULT_NAME, goHome, interact, newGame, replayDay, replayWeek, rewindAccident } from "../sim/game";
 import { doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
@@ -18,10 +18,10 @@ import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/ho
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes, weekOf } from "../sim/time";
-import type { Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, Sex, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, sexCard, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, type PhoneTab } from "../ui/cards";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
@@ -1089,13 +1089,13 @@ export class DayScene extends Phaser.Scene {
         break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
-        const { name, sex } = this.state.character;
-        const title = fill(POSITION_TITLES[event.position] ?? "", sex);
+        const { name, address } = this.state.character;
+        const title = fill(POSITION_TITLES[event.position] ?? "", address);
         const position = event.change === "demoted" ? title : title.toLowerCase();
         this.queueCard({
           kicker: "Робота",
           title: message.title,
-          body: [fill(message.text, sex, { персонаж: name, посада: position })],
+          body: [fill(message.text, address, { персонаж: name, посада: position })],
           actions: [{ label: "Зрозуміло", primary: true, onSelect: () => this.overlay.close() }],
           onDismiss: () => this.overlay.close(),
         });
@@ -1265,7 +1265,7 @@ export class DayScene extends Phaser.Scene {
    */
   private confirmImport(save: Save, back: () => void): void {
     const loaded = save.current;
-    const file = fill(IMPORT_SAVE.file, loaded.character.sex, {
+    const file = fill(IMPORT_SAVE.file, loaded.character.address, {
       "ім'я": loaded.character.name,
       тиждень: weekOf(loaded.day),
       складність: DIFFICULTY_TITLES[loaded.difficulty],
@@ -1308,32 +1308,32 @@ export class DayScene extends Phaser.Scene {
     });
   }
 
-  /** Нова гра (§5.1): стать, зовнішність, хронотип, ім'я, потім складність. Кожен крок — з «Назад». */
+  /** Нова гра (§5.1): звертання й зовнішність для початку, зовнішність, хронотип, ім'я, потім складність. Кожен крок — з «Назад». */
   private chooseNewGame(): void {
-    const names: Record<Sex, string> = { female: "Марта", male: "Тарас" };
-    const pickSex = (): void => this.overlay.show(sexCard(DEFAULT_LOOK, (sex) => pickLook(sex, DEFAULT_LOOK[sex])));
-    const pickLook = (sex: Sex, look: Look): void =>
-      this.overlay.show(lookCard(sex, look, (chosen) => pickChronotype(sex, chosen), pickSex));
-    const pickChronotype = (sex: Sex, look: Look): void =>
-      this.overlay.show(chronotypeCard((chronotype) => pickName(sex, look, chronotype), () => pickLook(sex, look)));
-    const pickName = (sex: Sex, look: Look, chronotype: Chronotype): void =>
+    const names: Record<Address, string> = { ...DEFAULT_NAME };
+    const pickAddress = (): void => this.overlay.show(addressCard(DEFAULT_LOOK, (address) => pickLook(address, DEFAULT_LOOK[address])));
+    const pickLook = (address: Address, look: Look): void =>
+      this.overlay.show(lookCard(address, look, (chosen) => pickChronotype(address, chosen), pickAddress));
+    const pickChronotype = (address: Address, look: Look): void =>
+      this.overlay.show(chronotypeCard((chronotype) => pickName(address, look, chronotype), () => pickLook(address, look)));
+    const pickName = (address: Address, look: Look, chronotype: Chronotype): void =>
       this.overlay.show(
         nameCard(
-          sex,
-          names[sex],
+          address,
+          names[address],
           (name) => {
-            names[sex] = name;
+            names[address] = name;
             this.overlay.show(
               difficultyCard(
-                (difficulty: Difficulty) => this.session.replace(newGame({ sex, difficulty, name, look, chronotype })),
-                () => pickName(sex, look, chronotype),
+                (difficulty: Difficulty) => this.session.replace(newGame({ address, difficulty, name, look, chronotype })),
+                () => pickName(address, look, chronotype),
               ),
             );
           },
-          () => pickChronotype(sex, look),
+          () => pickChronotype(address, look),
         ),
       );
-    pickSex();
+    pickAddress();
   }
 
   private openPhone(): void {

@@ -14,7 +14,7 @@ import type { GameState, Product, Quality, Save } from "../src/sim/types";
 import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../src/view/symbols";
 import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 5 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 5 });
 const meals = (save: Save): number => save.current.home.supplies.momMeal.cheap;
 const SUDOCHOK = { kind: "meal", quality: "cheap", mom: true } as const;
 const fridge = STORAGES.find((s) => s.object === "fridge")!;

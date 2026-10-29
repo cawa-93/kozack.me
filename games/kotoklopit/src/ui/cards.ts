@@ -7,7 +7,7 @@ import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
+import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   BREED_ABOUT,
   BREED_HALF,
@@ -58,7 +58,7 @@ const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 /** Титулка дня (§4): тиждень, день, модифікатор і що сталося вночі. */
 /** Титулка дня (§4): тиждень і його ефекти, день і його ефекти, події ночі. Показує `Overlay.title`. */
 export function dayTitle(state: GameState, night: NightReport | null): TitleSection[] {
-  const { name, sex } = state.character;
+  const { name, address } = state.character;
   const weekBlocks: string[][] = [];
   // Робочий модифікатор тижня безробітному не показують: звільнили посеред тижня — «Аврал» уже не про нього (перевірка модифікаторів 2026-10-28).
   const workWeek = ["deadline-week", "quiet-week", "crunch", "vacation"].includes(state.modifiers.week ?? "");
@@ -79,7 +79,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   const newCats = (night?.newCats ?? []).map((id) => state.cats.find((c) => c.id === id)).filter((c) => c !== undefined);
   for (const cat of newCats.filter((c) => c.source !== "born")) {
-    events.push([fill(KITTEN_MESSAGE, sex, { персонаж: name, кошеня: cat.name })]);
+    events.push([fill(KITTEN_MESSAGE, address, { персонаж: name, кошеня: cat.name })]);
   }
   // Пологи (§9.8): одне повідомлення на кожну матір.
   const born = newCats.filter((c) => c.source === "born");
@@ -109,7 +109,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   }
   const utilities = night?.utilities;
   if (utilities && utilities.outcome !== "evicted") {
-    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], sex, { сума: utilities.paid, борг: utilities.nextDue })]);
+    events.push([fill(UTILITIES_MESSAGES[utilities.outcome], address, { сума: utilities.paid, борг: utilities.nextDue })]);
   }
   // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
   if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
@@ -234,7 +234,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
     body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`);
     // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
     const debt = state.home.utilitiesDebt;
-    if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.sex, { борг: debt, платіж: debt + utilitiesDue(state) }));
+    if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.address, { борг: debt, платіж: debt + utilitiesDue(state) }));
     body.push(myThings(state, handlers));
   }
   if (tab === "cats") body.push(...catCards(state, handlers));
@@ -285,8 +285,8 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
  * рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А7).
  */
 export function playerLine(state: GameState): string {
-  const { name, sex } = state.character;
-  const job = state.job.unemployed ? JOB_SEEKING : fill(POSITION_TITLES[state.job.position] ?? "", sex);
+  const { name, address } = state.character;
+  const job = state.job.unemployed ? JOB_SEEKING : fill(POSITION_TITLES[state.job.position] ?? "", address);
   return `${name} · ${job} · ${DIFFICULTY_TITLES[state.difficulty]}`;
 }
 
@@ -530,15 +530,18 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
   };
 }
 
-/** Створення персонажа (§5.1), крок 1: стать — натиснути на портрет. */
-export function sexCard(looks: Record<Sex, Look>, onPick: (sex: Sex) => void, onCancel?: () => void): Card {
+/**
+ * Створення персонажа (§5.1), крок 1: натиснути на портрет. Обирає лише звертання в текстах і зовнішність для початку — статі в
+ * персонажа немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4); єдиний редактор без цього кроку — наступна зміна.
+ */
+export function addressCard(looks: Record<Address, Look>, onPick: (address: Address) => void, onCancel?: () => void): Card {
   const choice = element("div", "portrait-choice");
-  for (const sex of ["female", "male"] as const) {
+  for (const address of ["she", "he"] as const) {
     const button = element("button", "portrait-button");
     const canvas = portraitCanvas(110, 160);
-    drawPortrait(canvas, looks[sex]);
-    button.append(canvas, element("span", "portrait-label", sex === "female" ? "Жінка" : "Чоловік"));
-    button.addEventListener("click", () => onPick(sex));
+    drawPortrait(canvas, looks[address]);
+    button.append(canvas, element("span", "portrait-label", address === "she" ? "Жінка" : "Чоловік"));
+    button.addEventListener("click", () => onPick(address));
     choice.append(button);
   }
   return {
@@ -564,7 +567,7 @@ const LOOK_OPTIONS: { key: keyof Look; label: string; options: readonly string[]
 ];
 
 /** Крок 2: зовнішність — портрет на весь зріст і повзунки; портрет змінюється одразу (§5.1). */
-export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, onBack: () => void): Card {
+export function lookCard(address: Address, start: Look, onDone: (look: Look) => void, onBack: () => void): Card {
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
   const canvas = portraitCanvas(130, 220);
@@ -595,7 +598,7 @@ export function lookCard(sex: Sex, start: Look, onDone: (look: Look) => void, on
   return {
     kicker: "Нова гра · 2 з 5",
     solid: true,
-    title: sex === "female" ? "Яка вона?" : "Який він?",
+    title: address === "she" ? "Яка вона?" : "Який він?",
     body: [editor],
     actions: [
       { label: "Далі", primary: true, onSelect: () => onDone(look) },
@@ -625,7 +628,7 @@ export function chronotypeCard(onPick: (chronotype: Chronotype) => void, onBack:
 }
 
 /** Крок 4: ім'я героя. */
-export function nameCard(sex: Sex, start: string, onDone: (name: string) => void, onBack: () => void): Card {
+export function nameCard(address: Address, start: string, onDone: (name: string) => void, onBack: () => void): Card {
   const input = element("input");
   input.type = "text";
   input.value = start;
@@ -635,7 +638,7 @@ export function nameCard(sex: Sex, start: string, onDone: (name: string) => void
   return {
     kicker: "Нова гра · 4 з 5",
     solid: true,
-    title: sex === "female" ? "Як її звати?" : "Як його звати?",
+    title: address === "she" ? "Як її звати?" : "Як його звати?",
     body: [input],
     actions: [
       { label: "Далі", primary: true, onSelect: () => onDone(input.value) },

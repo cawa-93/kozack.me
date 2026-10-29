@@ -24,7 +24,7 @@ import { weekdayOf } from "../src/sim/time";
 import { callImpression, isWorkday, isWorking, startWork, tickWork } from "../src/sim/work";
 import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 14 });
 
 describe("вибір модифікаторів: перевірка модифікаторів 2026-10-28", () => {
   const seen = (setup: (save: Save) => void, day = 2, n = 1500): Set<string | null> => {
@@ -72,7 +72,7 @@ describe("вибір модифікаторів: перевірка модифі
     expect(withCat.has("home-vet")).toBe(true);
     expect(DAY_MODIFIER_TEXTS.vaccination).toBeUndefined();
     // «Ветеринар удома» — лише легкий бік: випадає, лише коли кидок боку (другий кидок вибору, після «без модифікатора») дав легкий.
-    const hard = newGame({ sex: "female", difficulty: "hard", seed: 14 });
+    const hard = newGame({ address: "she", difficulty: "hard", seed: 14 });
     addCat(hard.current, createCat(hard.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
     let homeVet = 0;
     for (let seed = 0; seed < 4000; seed++) {
@@ -95,7 +95,7 @@ describe("вибір модифікаторів: перевірка модифі
   });
 
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
-    const save = newGame({ sex: "female", difficulty: "hard", seed: 14 });
+    const save = newGame({ address: "she", difficulty: "hard", seed: 14 });
     const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat"]);
     let hardCount = 0;
     let total = 0;
@@ -160,7 +160,7 @@ describe("події модифікаторів: перевірка модифі
     expect(coughWakes(quiet.current, report, { ...createRng(1), chance: () => true }, 0)).toBe(0);
 
     for (let seed = 0; seed < 10; seed++) {
-      const fest = newGame({ sex: "female", difficulty: "normal", seed: seed + 50 });
+      const fest = newGame({ address: "she", difficulty: "normal", seed: seed + 50 });
       fest.current.modifiers.day = "festival";
       fest.current.day = 2;
       fest.current.minute = 20 * 60 + 30;
@@ -416,8 +416,8 @@ describe("вибір модифікаторів (§4.1)", () => {
 
     it("ніч на понеділок обирає тиждень за станом на вечір неділі: кошеня з притулку, що прийшло вночі, котячого тижня не дає", () => {
       for (let seed = 1; seed < 300; seed++) {
-        const save = newGame({ sex: "female", difficulty: "normal", seed });
-        const probe = newGame({ sex: "female", difficulty: "normal", seed });
+        const save = newGame({ address: "she", difficulty: "normal", seed });
+        const probe = newGame({ address: "she", difficulty: "normal", seed });
         withCat(probe);
         // Тиждень 2 починається з дня 7: ніч на нього — неділя, день 6.
         const catWeek = chooseWeekModifier(probe.current, 2);

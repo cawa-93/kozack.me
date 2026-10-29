@@ -12,7 +12,7 @@ import type { Save } from "../src/sim/types";
 import { isWorkday } from "../src/sim/work";
 import { driveSafely, standAt } from "./helpers";
 
-const game = (): Save => newGame({ sex: "male", difficulty: "normal", seed: 3 });
+const game = (): Save => newGame({ address: "he", difficulty: "normal", seed: 3 });
 const always = () => ({ ...createRng(1), chance: () => true });
 
 describe("хвороби персонажа (§6.5)", () => {

@@ -218,7 +218,7 @@ export class Hud {
     const effects: string[] = [];
     if (isDrowsy(state)) effects.push("Сонливість");
     if (sleepSpeed < 0) effects.push("Недосип");
-    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? "Добре [виспався|виспалася]" : "[Виспався|Виспалася]", state.character.sex));
+    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? "Добре [виспався|виспалася]" : "[Виспався|Виспалася]", state.character.address));
     // Знесилення й голод видно з самих шкал: вони блимають (§11.4), тож слово не повторює їх.
     const job = state.job;
     if (job.unemployed) effects.push("Пошук роботи");

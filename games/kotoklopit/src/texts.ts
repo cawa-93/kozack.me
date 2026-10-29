@@ -1,14 +1,18 @@
-// Тексти гри з TEXTS.md. `{назва}` — підстановка, `[чоловіча|жіноча]` — форма за статтю.
+// Тексти гри з TEXTS.md. `{назва}` — підстановка, `[чоловіча|жіноча]` — форма за статтю кота чи звертанням до персонажа.
 
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { GuestsVisit } from "./sim/events";
-import type { AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
+import type { Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
 
-/** Підставити значення й обрати форми за статтю того, про кого йдеться. */
-export function fill(template: string, sex: Sex, values: Record<string, string | number> = {}): string {
+/**
+ * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча;
+ * рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+ */
+export function fill(template: string, form: Sex | Address, values: Record<string, string | number> = {}): string {
+  const masculine = form === "male" || form === "he";
   return template
-    .replace(/\[([^\]|]*)\|([^\]]*)\]/g, (_, male: string, female: string) => (sex === "male" ? male : female))
+    .replace(/\[([^\]|]*)\|([^\]]*)\]/g, (_, male: string, female: string) => (masculine ? male : female))
     .replace(/\{([^}]+)\}/g, (match, key: string) => (key in values ? String(values[key]) : match));
 }
 
@@ -389,15 +393,15 @@ const FINALES: Record<CatsAxis, Record<CareerAxis, { title: string; text: string
 
 /** Заголовок і текст екрана кінця гри. */
 export function endingText(state: GameState, end: GameEnd): { title: string; text: string } {
-  const { name, sex } = state.character;
+  const { name, address } = state.character;
   if (end === "retirement") {
     const finale = FINALES[catsAxis(state)][careerAxis(state)];
-    return { title: fill(finale.title, sex), text: fill(finale.text, sex, { персонаж: name }) };
+    return { title: fill(finale.title, address), text: fill(finale.text, address, { персонаж: name }) };
   }
   // Котів удома немає — текст без них (загальна ревізія 2026-10-29). Фінали пенсії рахують і котів з альбому (§4.2), тож їх не чіпаємо.
   const entry = GAME_OVER[end];
   const lonely = state.cats.length === 0;
-  return { title: fill(lonely ? (entry.noCatsTitle ?? entry.title) : entry.title, sex), text: fill(lonely ? entry.noCats : entry.text, sex, { персонаж: name }) };
+  return { title: fill(lonely ? (entry.noCatsTitle ?? entry.title) : entry.title, address), text: fill(lonely ? entry.noCats : entry.text, address, { персонаж: name }) };
 }
 
 /** Зміна посади (§8.6): `{персонаж}`, `{посада}`. */
@@ -408,7 +412,7 @@ export const CAREER_MESSAGES = {
   hired: { title: "Нова робота", text: "{персонаж} знову при роботі — поки що {посада}, зате з чистого аркуша." },
 } as const;
 
-/** Посади (§8.6): назви загальні, без прив'язки до професії; форма — за статтю персонажа. */
+/** Посади (§8.6): назви загальні, без прив'язки до професії; форма — за звертанням до персонажа («він» чи «вона», §5.1). */
 export const POSITION_TITLES: readonly string[] = [
   "[Стажер|Стажерка]",
   "[Молодший спеціаліст|Молодша спеціалістка]",

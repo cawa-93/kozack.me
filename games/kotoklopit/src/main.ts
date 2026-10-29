@@ -7,7 +7,7 @@ import { Session } from "./session";
 import "./style.css";
 import { BASE_HEIGHT, BASE_WIDTH } from "./view/geometry";
 
-const session = Session.restore({ sex: "female", difficulty: "normal" });
+const session = Session.restore({ address: "she", difficulty: "normal" });
 
 // Режим розробки (§11.5): у `npm run dev` і на прев'ю Netlify; у продакшн-збірку не потрапляє.
 if (__DEV_TOOLS__) {

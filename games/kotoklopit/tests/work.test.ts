@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { advance, interact, newGame } from "../src/sim/game";
 import { unpleasantTask } from "../src/sim/character";
-import type { Chronotype, Difficulty, Save, Sex } from "../src/sim/types";
+import type { Address, Chronotype, Difficulty, Save } from "../src/sim/types";
 import { callImpression, patienceLevel, startWork, stopWork } from "../src/sim/work";
 import { hours, recordEvents, standAt, waitUntil } from "./helpers";
 
-const game = (sex: Sex = "female", difficulty: Difficulty = "normal"): Save => {
-  const save = newGame({ sex, difficulty, seed: 1 });
+const game = (address: Address = "she", difficulty: Difficulty = "normal"): Save => {
+  const save = newGame({ address, difficulty, seed: 1 });
   // Без захисту першого дня, щоб бачити повні втрати здорового глузду.
   save.current.modifiers.day = null;
   return save;
@@ -41,7 +41,7 @@ describe("робота за комп'ютером (§8.6)", () => {
 
   it("стажер заробляє 10 за годину на середній складності, 12,5 на легкій і 8 на важкій", () => {
     for (const [difficulty, pay] of [["easy", 12.5], ["normal", 10], ["hard", 8]] as const) {
-      const save = game("female", difficulty);
+      const save = game("she", difficulty);
       const money = save.current.character.money;
       work(save, hours(12), hours(2));
       expect(save.current.character.money - money).toBeCloseTo(2 * pay);
@@ -66,7 +66,7 @@ describe("робота за комп'ютером (§8.6)", () => {
 
   it("хронотип не змінює втрат здорового глузду: година роботи будь-коли забирає 6 і жайворонку, і сові (рішення автора 2026-10-29, А4)", () => {
     const loss = (chronotype: Chronotype, from: number): number => {
-      const save = newGame({ sex: "female", difficulty: "normal", seed: 1, chronotype });
+      const save = newGame({ address: "she", difficulty: "normal", seed: 1, chronotype });
       save.current.modifiers.day = null;
       waitUntil(save, from);
       const before = save.current.character.stats.sanity;
@@ -80,7 +80,7 @@ describe("робота за комп'ютером (§8.6)", () => {
 
   it("і будь-яке неприємне завдання — однаково в будь-яку годину для обох хронотипів (рішення автора 2026-10-29, А4)", () => {
     for (const chronotype of ["lark", "owl"] as const) {
-      const save = newGame({ sex: "female", difficulty: "normal", seed: 1, chronotype });
+      const save = newGame({ address: "she", difficulty: "normal", seed: 1, chronotype });
       const state = save.current;
       state.modifiers.day = null;
       for (const hour of [7, 8, 10, 13, 15, 18, 19, 21]) {
@@ -92,7 +92,7 @@ describe("робота за комп'ютером (§8.6)", () => {
   });
 
   it("у перший тиждень без котів здоровий глузд не падає нижче 1% (§8.3)", () => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 1 });
     work(save, hours(9), hours(9));
     expect(save.current.character.stats.sanity).toBe(1);
   });

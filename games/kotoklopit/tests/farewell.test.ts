@@ -13,7 +13,7 @@ import { diseaseTitle, farewellText, GIVE_AWAY_LATER, GIVE_AWAY_RECENT } from ".
 import { albumCause } from "../src/ui/cards";
 
 function game(): Save {
-  return newGame({ sex: "female", difficulty: "normal", seed: 7 });
+  return newGame({ address: "she", difficulty: "normal", seed: 7 });
 }
 
 function withCat(save: Save, ageWeeks = 3, traits: Record<string, TraitLevel> = {}): Cat {
@@ -52,7 +52,7 @@ describe("смерть від нульового здоров'я (§9.5)", () =>
 
   it("уночі кіт помирає, іде в альбом пам'яті, а здоровий глузд уранці падає", () => {
     for (let seed = 1; seed < 40; seed++) {
-      const save = newGame({ sex: "female", difficulty: "normal", seed });
+      const save = newGame({ address: "she", difficulty: "normal", seed });
       const cat = withCat(save);
       cat.health = 0;
       cat.healthLog = [{ day: 0, source: "mood", amount: 50 }];

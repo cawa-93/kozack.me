@@ -26,7 +26,18 @@ export interface Scenario {
   relations?: [number, number, number][];
 }
 
-const DEFAULT_GAME: NewGameOptions = { sex: "female", difficulty: "normal", seed: 1 };
+const DEFAULT_GAME: NewGameOptions = { address: "she", difficulty: "normal", seed: 1 };
+
+/**
+ * Параметри нової гри зі сценарію. У сценаріях, збережених до рішення автора 2026-10-29 (`GENERAL_REVIEW.md`, А4), замість
+ * звертання — стать персонажа, а хронотип без вибору йшов зі статі (чоловік — сова): так і лишається.
+ */
+function gameOptions(game: Scenario["game"]): NewGameOptions {
+  const { sex, ...rest } = (game ?? {}) as Partial<NewGameOptions> & { sex?: unknown };
+  const legacy: Partial<NewGameOptions> =
+    sex === undefined || rest.address !== undefined ? {} : sex === "male" ? { address: "he", chronotype: "owl" } : { address: "she" };
+  return { ...DEFAULT_GAME, ...legacy, ...rest };
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -56,7 +67,7 @@ export function addCatCorner(state: GameState): void {
 
 /** Нова гра в стані сценарію. Знімки перегравання починаються з нього. */
 export function applyScenario(scenario: Scenario): Save {
-  const save = newGame({ ...DEFAULT_GAME, ...scenario.game });
+  const save = newGame(gameOptions(scenario.game));
   const state = deepMerge(save.current, structuredClone(scenario.state ?? {}));
   // День змінився — засіяти потоки для нього, якщо сценарій не задав їх сам.
   if (!scenario.state?.rng) seedDay(state);
@@ -96,7 +107,7 @@ export function scenarioFromSave(save: Save, name: string): Scenario {
   return {
     name,
     description: `Збережено з гри: тиждень ${weekOf(save.current.day)}, ${WEEKDAY_NAMES[weekdayOf(save.current.day)]}, ${formatClock(save.current.minute)}.`,
-    game: { sex: character.sex, difficulty, seed, name: character.name },
+    game: { address: character.address, difficulty, seed, name: character.name, chronotype: character.chronotype },
     state: structuredClone(save.current),
   };
 }

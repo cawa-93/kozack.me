@@ -13,7 +13,7 @@ import type { Cat, Save } from "../src/sim/types";
 import { withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 3 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 3 }));
   save.current.character.money = 2000;
   return save;
 }

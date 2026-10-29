@@ -57,7 +57,7 @@ const level = (mood: number): number => Math.min(9, Math.max(0, Math.floor(mood 
 
 function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number): Run {
   const started = performance.now();
-  const save = newGame({ sex: "female", difficulty, seed, chronotype });
+  const save = newGame({ address: "she", difficulty, seed, chronotype });
   const bot = new Bot(save);
   const run: Run = {
     chronotype,

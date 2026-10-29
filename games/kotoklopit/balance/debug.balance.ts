@@ -12,7 +12,7 @@ import { Bot } from "./bot";
 
 it.runIf(process.env["BALANCE_DEBUG"])("трасування бота", () => {
   const save = newGame({
-    sex: "female",
+    address: "she",
     chronotype: (process.env["BALANCE_CHRONOTYPE"] ?? "lark") as Chronotype,
     difficulty: (process.env["BALANCE_DIFFICULTY"] ?? "normal") as Difficulty,
     seed: Number(process.env["BALANCE_SEED"] ?? 101),

@@ -7,7 +7,7 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
 import { hours, recordEvents, standAt, waitUntil, withCatCorner } from "./helpers";
 
-const game = (): Save => withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 1 }));
+const game = (): Save => withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 1 }));
 
 describe("стартові запаси (§6.4)", () => {
   it("6 порцій дешевої їжі й 3 душі засобів гігієни, без ліків", () => {
@@ -62,7 +62,7 @@ describe("підказка телефоном (§6.4)", () => {
 describe("доставка (§6.4)", () => {
   it("ціна — базова, доставка окремо: 10% бази й надбавка за складністю (правка 2026-10-23)", () => {
     for (const [difficulty, fee] of [["easy", 8], ["normal", 10], ["hard", 12]] as const) {
-      const state = newGame({ sex: "female", difficulty, seed: 1 }).current;
+      const state = newGame({ address: "she", difficulty, seed: 1 }).current;
       expect(productPrice(state, "food", "cheap")).toBe(40);
       expect(productPrice(state, "hygiene", "premium")).toBe(35);
       expect(deliveryCost(state, 40)).toBe(4 + fee);

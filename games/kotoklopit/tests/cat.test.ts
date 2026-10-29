@@ -8,7 +8,7 @@ import { createRng } from "../src/sim/rng";
 import { isPositive, TRAIT_GROUPS, traitName } from "../src/sim/traits";
 import type { Cat, GameState, TraitLevel } from "../src/sim/types";
 
-const state = (): GameState => newGame({ sex: "female", difficulty: "normal", seed: 3 }).current;
+const state = (): GameState => newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
 
 function cat(s: GameState, ageWeeks = 3, source: Cat["source"] = "shelter"): Cat {
   return createCat(s, createRng(ageWeeks * 7 + 1), { source, ageWeeks });

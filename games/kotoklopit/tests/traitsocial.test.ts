@@ -24,7 +24,7 @@ import { traitAbout, traitHint } from "../src/ui/traits";
 import { hours, recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.modifiers.day = null;
   save.current.minute = hours(12);
   Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });

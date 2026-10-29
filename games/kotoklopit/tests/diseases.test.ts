@@ -18,7 +18,7 @@ import type { BowlItem, Cat, DiseaseId, LitterItem, Save, TraitLevel } from "../
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = newGame({ sex: "female", difficulty: "normal", seed: 9 });
+  const save = newGame({ address: "she", difficulty: "normal", seed: 9 });
   save.current.home.supplies.pills = { cheap: 0, premium: 20 };
   save.current.home.supplies.drops = { cheap: 0, premium: 10 };
   return save;
@@ -659,7 +659,7 @@ describe("дієта, спокій і травма (§9.5)", () => {
 
   /** Кіт «Малоїжка» (чи «Ненаситний») їсть з миски на очах персонажа: скільки лишилося й чи відкрилася риса. */
   function meal(disease: DiseaseId | null, opts: { appetite: TraitLevel; quality?: "cheap" | "premium"; half?: boolean; nibble?: boolean; diet?: number; seed?: number }): { cat: Cat; bowl: BowlItem } {
-    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: opts.seed ?? 9 }));
+    const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: opts.seed ?? 9 }));
     const cat = withCat(save);
     if (disease) fallIll(save.current, cat, disease);
     const ill = cat.diseases[0];

@@ -13,7 +13,7 @@ import type { Cat, Save } from "../src/sim/types";
 import { standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 11 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 11 }));
   save.current.modifiers.day = null;
   save.current.day = 8;
   save.current.minute = 14 * 60;

@@ -18,7 +18,7 @@ import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 11 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 11 }));
   save.current.modifiers.day = null;
   return save;
 }
@@ -691,7 +691,7 @@ describe("ніч із котами (§4, §8.8, §9.12)", () => {
   it("ритуальна побудка «Живого будильника» з повною мискою — пів години сну, сова встає о 08:00 (загальна ревізія 2026-10-29)", () => {
     let rituals = 0;
     for (let seed = 0; seed < 30; seed++) {
-      const save = withCatCorner(newGame({ sex: "male", difficulty: "normal", seed: 11 }));
+      const save = withCatCorner(newGame({ address: "he", difficulty: "normal", seed: 11, chronotype: "owl" }));
       save.current.modifiers.day = null;
       const cat = withCat(save);
       cat.traits.push({ group: "morning", level: 2, seen: 0, known: false });
@@ -714,7 +714,7 @@ describe("ніч із котами (§4, §8.8, §9.12)", () => {
   it("голодний «Живий будильник» з порожньою мискою будить сову о 05:00, як і раніше", () => {
     let woke = false;
     for (let seed = 0; seed < 10 && !woke; seed++) {
-      const save = withCatCorner(newGame({ sex: "male", difficulty: "normal", seed: 11 }));
+      const save = withCatCorner(newGame({ address: "he", difficulty: "normal", seed: 11, chronotype: "owl" }));
       save.current.modifiers.day = null;
       const cat = withCat(save);
       cat.traits.push({ group: "morning", level: 2, seen: 0, known: false });

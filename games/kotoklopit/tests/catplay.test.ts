@@ -22,7 +22,7 @@ import { eventBubbles } from "../src/view/symbols";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.minute = 19 * 60;
   return save;
 }

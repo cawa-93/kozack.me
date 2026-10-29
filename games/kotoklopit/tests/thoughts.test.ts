@@ -13,7 +13,7 @@ import { blinkAmount, catLook, catThought, personThought, ThoughtClock } from ".
 import { withCatCorner } from "./helpers";
 
 function game(difficulty: Difficulty = "normal"): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty, seed: 11 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty, seed: 11 }));
   save.current.modifiers.day = null;
   save.current.day = 8;
   save.current.minute = 14 * 60;

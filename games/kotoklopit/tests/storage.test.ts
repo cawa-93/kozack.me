@@ -23,7 +23,7 @@ import { walkTo } from "./helpers";
 
 const ALL: Product[] = ["food", "hygiene", "catFood", "sterileFood", "litter", "pills", "drops", "humanMeds", "treats", "collar", "shampoo", "detergent", "catnip", "momMeal"];
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 3 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 3 });
 const storage = (object: string) => STORAGES.find((s) => s.object === object)!;
 
 describe("сховища (§6.4)", () => {

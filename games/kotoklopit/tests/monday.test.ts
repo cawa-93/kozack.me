@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { order } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import { canGoToSleep } from "../src/sim/sleep";
-import type { Save, Sex } from "../src/sim/types";
+import type { Address, Chronotype, Save } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, waitUntil, walkTo } from "./helpers";
 
 const cook = (save: Save): void => {
@@ -33,9 +33,9 @@ const workUntil = (save: Save, minute: number): void => {
 };
 
 describe("понеділок без котів (§8.3)", () => {
-  for (const sex of ["female", "male"] as const satisfies readonly Sex[]) {
-    it(`${sex === "female" ? "жайворонок" : "сова"} проживає понеділок, і ввечері приходить перше кошеня`, () => {
-      const save = newGame({ sex, difficulty: "normal", seed: 7 });
+  for (const [address, chronotype] of [["she", "lark"], ["he", "owl"]] as const satisfies readonly (readonly [Address, Chronotype])[]) {
+    it(`${chronotype === "lark" ? "жайворонок" : "сова"} проживає понеділок, і ввечері приходить перше кошеня`, () => {
+      const save = newGame({ address, difficulty: "normal", seed: 7, chronotype });
       const { events, stop } = recordEvents();
 
       cook(save);

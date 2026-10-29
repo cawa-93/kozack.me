@@ -62,7 +62,7 @@ const ALL: Refusal[] = [
 ];
 
 function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 5 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 5 }));
   save.current.modifiers.day = null;
   return save;
 }

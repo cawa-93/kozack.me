@@ -21,7 +21,7 @@ afterEach(() => {
 
 describe("збереження в браузері", () => {
   it("читається збережена гра", () => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
     fakeStorage({ "kotoklopit:save": serialize(save) });
     expect(loadSave()).toMatchObject({ save: { current: { seed: 3 } }, unreadable: null });
   });
@@ -37,7 +37,7 @@ describe("збереження в браузері", () => {
   it("доки картка про нечитабельне збереження без відповіді, автозбереження його не перезаписує", () => {
     const items: Record<string, string> = { "kotoklopit:save": '{"version":1,"current":{}}' };
     fakeStorage(items);
-    const session = new Session(newGame({ sex: "female", difficulty: "normal", seed: 3 }));
+    const session = new Session(newGame({ address: "she", difficulty: "normal", seed: 3 }));
     session.unreadable = loadSave().unreadable;
     session.persist();
     expect(items["kotoklopit:save"]).toBe('{"version":1,"current":{}}');

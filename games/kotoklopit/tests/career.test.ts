@@ -10,7 +10,7 @@ import { changeReputation, searchProgress } from "../src/sim/work";
 import { playerLine } from "../src/ui/cards";
 import { hours, liveDay, recordEvents, standAt } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 2 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 2 });
 
 describe("посади (§8.6)", () => {
   it("на 100 репутації — підвищення, і репутація знову 50", () => {
@@ -118,7 +118,7 @@ describe("пошук роботи як процес найму (§8.6, прав�
   });
 
   it("кожна наступна вакансія доходить на етап далі: відмови після 1, 2, 3 етапів, четверта — найм", () => {
-    const { current: state } = newGame({ sex: "female", difficulty: "hard", seed: 1 });
+    const { current: state } = newGame({ address: "she", difficulty: "hard", seed: 1 });
     const at = (h: number) => {
       state.job.searchHours = h;
       return searchProgress(state);
@@ -158,8 +158,8 @@ describe("пошук роботи як процес найму (§8.6, прав�
 });
 
 describe("посада у вкладці «Гра» телефона (§8.6; рішення автора 2026-10-29, А7)", () => {
-  it("рядок «ім'я · посада · складність» іде за посадою й статтю; безробітному — «шукає роботу»; репутації в ньому немає", () => {
-    const save = newGame({ sex: "female", difficulty: "hard", seed: 2 });
+  it("рядок «ім'я · посада · складність» іде за посадою й звертанням; безробітному — «шукає роботу»; репутації в ньому немає", () => {
+    const save = newGame({ address: "she", difficulty: "hard", seed: 2 });
     const state = save.current;
     const { name } = state.character;
     expect(playerLine(state)).toBe(`${name} · Стажерка · Реалістичний`);
@@ -167,7 +167,7 @@ describe("посада у вкладці «Гра» телефона (§8.6; р�
     changeReputation(state, 60);
     expect(playerLine(state)).toBe(`${name} · Молодша спеціалістка · Реалістичний`);
     state.job.position = 9;
-    state.character.sex = "male";
+    state.character.address = "he";
     expect(playerLine(state)).toBe(`${name} · Директор · Реалістичний`);
     state.job.unemployed = true;
     expect(playerLine(state)).toBe(`${name} · шукає роботу · Реалістичний`);

@@ -22,7 +22,7 @@ import { targetOf } from "../src/sim/targets";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.modifiers.day = null;
   save.current.minute = hours(12);
   Object.assign(save.current.character.body, { x: 9.5, y: 8.5 });
@@ -53,7 +53,7 @@ function lurking(cat: Cat, spot = AMBUSH_SPOTS[0]!): void {
 describe("«Засідки» (§9.12, рішення автора 2026-10-25)", () => {
   it("місця засідки видно, і кіт може там сидіти", () => {
     for (const spot of AMBUSH_SPOTS) {
-      expect(isSolid(newGame({ sex: "female", difficulty: "normal", seed: 1 }).current, spot.x, spot.y), `${spot.x},${spot.y}`).toBe(false);
+      expect(isSolid(newGame({ address: "she", difficulty: "normal", seed: 1 }).current, spot.x, spot.y), `${spot.x},${spot.y}`).toBe(false);
       expect(hiddenTile(spot.x, spot.y), `${spot.x},${spot.y}`).toBe(false);
     }
   });
@@ -547,7 +547,7 @@ function climbFridge(save: Save, cat: Cat): void {
 
 describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", () => {
   it("шафа в спальні не заступає дороги: кожну клітинку підлоги видно досяжною від ліжка", () => {
-    const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
+    const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const start = { x: Math.floor(SPAWN.x), y: Math.floor(SPAWN.y) };
     const seen = new Set([`${start.x},${start.y}`]);
     const queue = [start];

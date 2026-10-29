@@ -58,7 +58,7 @@ describe("сценарії (§11.5)", () => {
   });
 
   it("поточний стан, збережений як сценарій, відтворюється", () => {
-    const save = newGame({ sex: "male", difficulty: "hard", seed: 5 });
+    const save = newGame({ address: "he", difficulty: "hard", seed: 5 });
     save.current.character.money = 333;
     const restored = applyScenario(JSON.parse(JSON.stringify(scenarioFromSave(save, "Тест"))));
     expect(restored.current).toEqual(save.current);
@@ -89,6 +89,17 @@ describe("сценарії (§11.5)", () => {
     expect(utilitiesDue(save.current)).toBe(utilitiesDue(applyScenario(scenario(false)).current) + THINGS.feeder.utilities);
   });
 
+  it("сценарій, збережений до рішення автора А4 (2026-10-29), зі статтю персонажа: чоловік — «він» і сова, як тоді, жінка — «вона» й жайворонок", () => {
+    const legacy = (sex: string, extra = {}): Scenario => ({ name: "Старий", game: { sex, ...extra } }) as unknown as Scenario;
+    const he = applyScenario(legacy("male")).current.character;
+    expect([he.address, he.chronotype]).toEqual(["he", "owl"]);
+    expect(he).not.toHaveProperty("sex");
+    const she = applyScenario(legacy("female")).current.character;
+    expect([she.address, she.chronotype]).toEqual(["she", "lark"]);
+    // Хронотип, записаний у сценарії, важить більше.
+    expect(applyScenario(legacy("male", { chronotype: "lark" })).current.character.chronotype).toBe("lark");
+  });
+
   it("id сценарію — латиницею з назви", () => {
     expect(scenarioId("Вечір неділі")).toBe("vechir-nedili");
     expect(scenarioId("Здоровий глузд 29")).toBe("zdorovyi-hluzd-29");
@@ -97,7 +108,7 @@ describe("сценарії (§11.5)", () => {
 
 describe("команди режиму розробки", () => {
   it("встановити день і годину; година до пробудження — ніч після цього дня", () => {
-    const save = newGame({ sex: "male", difficulty: "normal", seed: 1 });
+    const save = newGame({ address: "he", difficulty: "normal", seed: 1 });
     setTime(save, 9, 1);
     expect(save.current.day).toBe(9);
     expect(save.current.minute).toBe(hours(25));
@@ -106,7 +117,7 @@ describe("команди режиму розробки", () => {
   });
 
   it("ранок, вечір, ніч; лягти спати зараз; пропустити день і тиждень", () => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 1 });
     jumpTo(save, "evening");
     expect(save.current.minute).toBe(hours(18));
     jumpTo(save, "night");
@@ -121,7 +132,7 @@ describe("команди режиму розробки", () => {
   });
 
   it("кур'єр зараз дзвонить, як справжній: «Душа компанії» біжить до дверей (перевірка етапу 2026-10-26)", () => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 1 });
     save.current.minute = hours(12);
     const host = createCat(save.current, createRng(4), { source: "shelter", ageWeeks: 10, at: { x: 5.5, y: 8.5 } });
     host.traits = [{ group: "guests", level: 2, seen: 0, known: false }];
@@ -142,7 +153,7 @@ describe("команди режиму розробки", () => {
 
 describe("журнал", () => {
   it("описує приховані зміни й кидки", () => {
-    const { current } = newGame({ sex: "female", difficulty: "normal", seed: 1 });
+    const { current } = newGame({ address: "she", difficulty: "normal", seed: 1 });
     expect(describeEvent({ type: "patience", level: "out" }, current)).toContain("«Х»");
     expect(describeEvent({ type: "glitch", chance: 0.32, angle: 112.4 }, current)).toContain("32%");
     expect(describeEvent({ type: "dash" }, current)).toBeNull();

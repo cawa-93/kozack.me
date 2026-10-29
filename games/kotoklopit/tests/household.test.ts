@@ -24,7 +24,7 @@ const always = () => ({ ...createRng(1), chance: () => true });
 const never = () => ({ ...createRng(1), chance: () => false });
 
 function game(): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 8 }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 8 }));
   save.current.modifiers.day = null;
   return save;
 }
@@ -477,7 +477,7 @@ describe("шерсть і техніка (§8.7)", () => {
 
 describe("безлад дратує (§9.12, правка 2026-10-23)", () => {
   const annoyed = (count: number, at: { x: number; y: number }): number => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
     const state = save.current;
     state.day = 8;
     state.character.body.x = 9.5;
@@ -501,7 +501,7 @@ describe("безлад дратує (§9.12, правка 2026-10-23)", () => {
 
 describe("видима шерсть дратує, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
   const annoyed = (fur: number, at: { x: number; y: number }, messes = 0): number => {
-    const save = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
     const state = save.current;
     state.day = 8;
     state.character.body.x = at.x;
@@ -515,7 +515,7 @@ describe("видима шерсть дратує, як безлад (рішен�
   const living = { x: 9.5, y: 8.5 };
 
   it("шерсть видно лише від 50 — тоді ж і гігієна падає швидше", () => {
-    const state = newGame({ sex: "female", difficulty: "normal", seed: 3 }).current;
+    const state = newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
     state.home.fur = HOUSEHOLD.dirtyFur - 1;
     expect(furTufts(state)).toEqual([]);
     const clean = hygieneFactor(state);

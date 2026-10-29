@@ -19,7 +19,7 @@ import { exercise, gainWeight, girthOf, settleWeight } from "../src/sim/weight";
 import { recordEvents, withCatCorner, hours } from "./helpers";
 
 function game(seed = 11): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.modifiers.day = null;
   save.current.modifiers.week = null;
   save.current.minute = hours(12);

@@ -25,7 +25,7 @@ import { BIRTH_MESSAGE, fill } from "../src/texts";
 import { driveSafely, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
-  return withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 12 }));
+  return withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 12 }));
 }
 
 function withCat(save: Save, sex: Sex, ageWeeks = 3): Cat {
@@ -525,7 +525,7 @@ describe("притулок і розплідник (§8.5, §9.11)", () => {
     let sterilized = 0;
     let adults = 0;
     for (let seed = 0; seed < 60; seed++) {
-      const save = newGame({ sex: "female", difficulty: "normal", seed });
+      const save = newGame({ address: "she", difficulty: "normal", seed });
       for (const cat of shelterCats(save.current)) {
         expect(cat.sterilizedKnown).toBe(true);
         if (cat.ageWeeks >= 3) adults += 1;

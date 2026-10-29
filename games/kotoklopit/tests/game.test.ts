@@ -15,10 +15,10 @@ import { createCat } from "../src/sim/cat";
 import { createRng, stateRng } from "../src/sim/rng";
 import { TRAIT_GROUPS, traitGroup } from "../src/sim/traits";
 import { weekdayOf, weekOf } from "../src/sim/time";
-import type { AlbumEntry, CatDisease, NightReport, Save, Sex, Trait } from "../src/sim/types";
+import type { Address, AlbumEntry, CatDisease, NightReport, Save, Trait } from "../src/sim/types";
 import { hours, liveDay } from "./helpers";
 
-const game = (sex: Sex = "female", seed = 1) => newGame({ sex, difficulty: "normal", seed });
+const game = (address: Address = "she", seed = 1) => newGame({ address, difficulty: "normal", seed });
 
 const draws = (save: Save, stream: "conditions" | "behavior", count = 5): number[] => {
   const rng = stateRng(save.current, stream);
@@ -40,12 +40,12 @@ describe("нова гра", () => {
     expect(save.weekStart).toEqual(state);
   });
 
-  it("хронотип обирає гравець, незалежно від статі; без вибору — як раніше (§5.1)", () => {
-    expect(game("female").current.character.chronotype).toBe("lark");
-    expect(game("male").current.character.chronotype).toBe("owl");
-    const owl = newGame({ sex: "female", difficulty: "normal", chronotype: "owl", seed: 1 }).current;
+  it("хронотип обирає гравець, незалежно від звертання; без вибору — жайворонок (§5.1; рішення автора 2026-10-29, А4)", () => {
+    expect(game("she").current.character.chronotype).toBe("lark");
+    expect(game("he").current.character.chronotype).toBe("lark");
+    const owl = newGame({ address: "she", difficulty: "normal", chronotype: "owl", seed: 1 }).current;
     expect(owl.character.chronotype).toBe("owl");
-    const lark = newGame({ sex: "male", difficulty: "normal", chronotype: "lark", seed: 1 }).current;
+    const lark = newGame({ address: "he", difficulty: "normal", chronotype: "lark", seed: 1 }).current;
     expect(lark.character.chronotype).toBe("lark");
     // Жайворонок прокидається о 06:00, сова — о 08:00 (§8.8).
     expect(lark.minute).toBe(6 * 60);
@@ -54,9 +54,9 @@ describe("нова гра", () => {
 });
 
 describe("тиждень гри без графіки", () => {
-  for (const sex of ["female", "male"] as const) {
-    it(`${sex === "female" ? "жіночий" : "чоловічий"} персонаж проживає тиждень`, () => {
-      const save = game(sex);
+  for (const [address, chronotype] of [["she", "lark"], ["he", "owl"]] as const) {
+    it(`${chronotype === "lark" ? "жайворонок" : "сова"} («${address === "she" ? "вона" : "він"}») проживає тиждень`, () => {
+      const save = newGame({ address, difficulty: "normal", seed: 1, chronotype });
       const nights: NightReport[] = [];
       for (let day = 0; day < 7; day++) {
         const report = liveDay(save);
@@ -81,7 +81,7 @@ describe("тиждень гри без графіки", () => {
 
   it("та сама гра з тим самим seed відтворюється до біта", () => {
     const play = (): string => {
-      const save = game("male", 123);
+      const save = game("he", 123);
       for (let day = 0; day < 7; day++) liveDay(save);
       draws(save, "behavior");
       return serialize(save);

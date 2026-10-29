@@ -6,15 +6,15 @@ import { FIRST_WEEK_PROTECTION, START_MONEY, START_STATS } from "../src/sim/conf
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Sex, StatName } from "../src/sim/types";
+import type { Address, StatName } from "../src/sim/types";
 import { hours } from "./helpers";
 
-const game = (sex: Sex = "female") => newGame({ sex, difficulty: "normal", seed: 1 });
+const game = (address: Address = "she") => newGame({ address, difficulty: "normal", seed: 1 });
 
 describe("показники персонажа (§6, §6.3)", () => {
   it("стартові значення однакові для обох персонажів", () => {
-    for (const sex of ["female", "male"] as const) {
-      const { character } = game(sex).current;
+    for (const address of ["she", "he"] as const) {
+      const { character } = game(address).current;
       expect(character.stats).toEqual(START_STATS);
       expect(character.stats.sanity).toBe(40);
       expect(character.money).toBe(START_MONEY);
@@ -22,7 +22,7 @@ describe("показники персонажа (§6, §6.3)", () => {
   });
 
   it("за годину неспання ситість −4, гігієна −3", () => {
-    const save = game("female");
+    const save = game("she");
     advance(save, hours(1));
     const { stats } = save.current.character;
     expect(stats.satiety).toBeCloseTo(START_STATS.satiety - 4);
@@ -32,8 +32,8 @@ describe("показники персонажа (§6, §6.3)", () => {
   });
 
   it("обидва персонажі голоднішають однаково: чоловічого обміну немає (рішення автора 2026-10-29, А4)", () => {
-    for (const sex of ["female", "male"] as const) {
-      const save = game(sex);
+    for (const address of ["she", "he"] as const) {
+      const save = game(address);
       advance(save, hours(1));
       expect(save.current.character.stats.satiety).toBeCloseTo(START_STATS.satiety - 4);
     }
@@ -67,7 +67,7 @@ describe("кінець гри (§6.1)", () => {
   }
 
   it("без їжі персонаж падає з голоду о потрібній хвилині, і час зупиняється", () => {
-    const save = game("female");
+    const save = game("she");
     save.current.character.stats.satiety = 2;
     advance(save, hours(5));
     expect(save.current.end).toBe("satiety");

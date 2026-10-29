@@ -9,7 +9,7 @@ import { scheduleOf } from "../src/view/schedule";
 
 /** Робочий день (вівторок), без модифікатора, о `hour`. */
 function day(hour: number, modifier: string | null = null): GameState {
-  const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
+  const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
   state.modifiers.day = modifier;
   state.day = 1;
   state.minute = hour * 60;

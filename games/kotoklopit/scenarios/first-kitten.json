@@ -1,7 +1,7 @@
 {
   "name": "Перше кошеня",
   "description": "Вівторок першого тижня, ранок. Учора ввечері здоровий глузд упав нижче 30%, і тепер удома кошеня з притулку зі стартовим пакетом корму й наповнювача.",
-  "game": { "sex": "female", "difficulty": "normal", "seed": 2 },
+  "game": { "address": "she", "difficulty": "normal", "seed": 2 },
   "state": {
     "day": 1,
     "modifiers": { "day": null },

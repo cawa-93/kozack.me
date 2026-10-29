@@ -11,7 +11,7 @@ import { dayTitle } from "../src/ui/cards";
 
 describe("титулка дня (§4)", () => {
   it("хто будив уночі — по рядку на кота, у роді кота", () => {
-    const { current: state } = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const { current: state } = newGame({ address: "she", difficulty: "normal", seed: 3 });
     const tom = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
     const queen = createCat(state, createRng(2), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } });
     Object.assign(tom, { name: "Мурчик", sex: "male" });
@@ -36,7 +36,7 @@ describe("титулка дня (§4)", () => {
   });
 
   it("у понеділок — гроші за тиждень: заробили, витратили й категорії від найбільшої, без порожніх (рішення автора 2026-10-27, Е4)", () => {
-    const { current: state } = newGame({ sex: "female", difficulty: "normal", seed: 3 });
+    const { current: state } = newGame({ address: "she", difficulty: "normal", seed: 3 });
     state.day = 7;
     const night = {
       wakeUps: [],

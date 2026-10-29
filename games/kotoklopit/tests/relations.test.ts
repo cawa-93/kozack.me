@@ -15,7 +15,7 @@ import type { Cat, LitterItem, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
-  const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
   save.current.minute = 19 * 60;
   return save;
 }
@@ -564,7 +564,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
     const hisses = (sleeping: boolean): number => {
       let count = 0;
       for (let seed = 1; seed <= 120; seed++) {
-        const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+        const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
         save.current.minute = 12 * 60;
         const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
         save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);
@@ -592,7 +592,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
     const hisses = (other: { x: number; y: number }): number => {
       let count = 0;
       for (let seed = 1; seed <= 120; seed++) {
-        const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+        const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
         save.current.minute = 12 * 60;
         const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
         save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);
@@ -620,7 +620,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
   it("сварка за миску — стосунки −5, і того дня пара сварилася (§9.4, Б6 (3): було −3)", () => {
     let quarrels = 0;
     for (let seed = 1; seed <= 120; seed++) {
-      const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+      const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
       save.current.minute = 12 * 60;
       const bowls = save.current.home.items.filter((it) => it.kind === "bowl");
       save.current.home.items = save.current.home.items.filter((it) => it.kind !== "bowl" || it === bowls[0]);

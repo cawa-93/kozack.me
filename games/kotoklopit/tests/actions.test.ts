@@ -13,7 +13,7 @@ import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
-const game = (): Save => withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 1 }));
+const game = (): Save => withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 1 }));
 
 const holdFor = (save: Save, minutes: number): void => {
   advance(save, minutes, { move: { x: 0, y: 0 }, hold: true });
@@ -60,7 +60,7 @@ describe("холодильник (§6.4, §8.7)", () => {
 describe("плита (§8.7)", () => {
   it("підгорає за складністю: 45 / 30 / 15 хвилин після готовності", () => {
     for (const [difficulty, after] of [["easy", 45], ["normal", 30], ["hard", 15]] as const) {
-      const save = newGame({ sex: "female", difficulty, seed: 1 });
+      const save = newGame({ address: "she", difficulty, seed: 1 });
       const stove = save.current.home.stove;
       stove.item = { kind: "meal", quality: "cheap" };
       stove.minutes = COOK_MINUTES;
@@ -117,7 +117,7 @@ describe("плита (§8.7)", () => {
   it("уночі плита готує й підгорає своїм часом: свіжу страву голодний «Злодюжка» краде лише до того, як вона підгоріла (загальна ревізія 2026-10-29)", () => {
     /** Ніч із 22:00: на плиті готова страва чи сира порція, злодюжка з заданим голодом, миски порожні. */
     const night = (seed: number, item: "meal" | "raw", hunger: number) => {
-      const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed }));
+      const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
       const cat = createCat(save.current, createRng(seed), { source: "shelter", ageWeeks: 10, at: { x: 5.5, y: 8.5 } });
       cat.traits = [{ group: "thief", level: 2, seen: 0, known: false }];
       cat.arrivedDay = -10;

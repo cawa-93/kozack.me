@@ -26,7 +26,7 @@ describe("тексти (TEXTS.md)", () => {
   });
 
   it("екран кінця гри для кожної причини; пенсія стажера без котів — «Тихе життя» (§4.2)", () => {
-    const state = newGame({ sex: "male", difficulty: "normal", seed: 1 }).current;
+    const state = newGame({ address: "he", difficulty: "normal", seed: 1 }).current;
     for (const end of ["health", "satiety", "hygiene", "sanity", "eviction"] as const) {
       const { title, text } = endingText(state, end);
       expect(title).toBeTruthy();
@@ -38,7 +38,7 @@ describe("тексти (TEXTS.md)", () => {
   });
 
   it("загальна ревізія 2026-10-29: без котів текст кінця гри котів не згадує, з котом — звичайний текст; заголовок «Поповнення в зграї» без котів — свій", () => {
-    const state = newGame({ sex: "female", difficulty: "normal", seed: 1 }).current;
+    const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     expect(state.cats).toHaveLength(0);
     const ends = ["health", "satiety", "hygiene", "sanity", "eviction"] as const;
     const lonely = ends.map((end) => endingText(state, end));
@@ -95,7 +95,7 @@ describe("опис рис для картки кота (§9.9)", () => {
 
 describe("опис порід і поради ветеринара (рішення автора 2026-10-28, Д4, Д2)", () => {
   it("загальна ревізія 2026-10-29: у напівкровки перед описом кожної відомої половини — рамка «Наполовину…», у чистокровного й безпородного — ні", () => {
-    const state = newGame({ sex: "female", difficulty: "easy", seed: 1 }).current;
+    const state = newGame({ address: "she", difficulty: "easy", seed: 1 }).current;
     const cat = (breed: [string, string], known: [boolean, boolean]): Cat => {
       const c = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, breed });
       c.breedKnown = known;

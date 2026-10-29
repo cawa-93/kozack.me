@@ -20,7 +20,7 @@ import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
-import type { Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save, Sex } from "./types";
+import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { internetOut, momAtNight, tickModifiers } from "./modifiers";
 
@@ -28,26 +28,27 @@ export const SAVE_VERSION = 13;
 
 const EPSILON = 1e-6;
 
-/** Імена за замовчуванням; власне ім'я задасть конструктор персонажа (§5.1). */
-const DEFAULT_NAME: Record<Sex, string> = { female: "Марта", male: "Тарас" };
+/** Імена за замовчуванням за звертанням; власне ім'я задасть конструктор персонажа (§5.1). */
+export const DEFAULT_NAME: Record<Address, string> = { she: "Марта", he: "Тарас" };
 /** Зовнішність за замовчуванням: такою вона була до конструктора (§5.1). */
-export const DEFAULT_LOOK: Record<Sex, Look> = {
-  female: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
-  male: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
+export const DEFAULT_LOOK: Record<Address, Look> = {
+  she: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
+  he: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
 };
 
 export interface NewGameOptions {
-  sex: Sex;
+  /** Звертання в текстах (§5.1): лише граматика, на гру не впливає. */
+  address: Address;
   difficulty: Difficulty;
   name?: string;
   look?: Look;
-  /** Хронотип обирає гравець (§5.1); без нього — як було: жінка — жайворонок, чоловік — сова. */
+  /** Хронотип обирає гравець (§5.1); без нього — жайворонок, хоч би яке звертання. */
   chronotype?: Chronotype;
   seed?: number;
 }
 
 export function newGame(options: NewGameOptions): Save {
-  const { sex, difficulty } = options;
+  const { address, difficulty } = options;
   const seed = (options.seed ?? Math.floor(Math.random() * 2 ** 32)) >>> 0;
   const state: GameState = {
     seed,
@@ -57,11 +58,11 @@ export function newGame(options: NewGameOptions): Save {
     minute: 0,
     dayStartMinute: 0,
     character: {
-      name: options.name?.trim() || DEFAULT_NAME[sex],
-      look: options.look ?? DEFAULT_LOOK[sex],
-      sex,
+      name: options.name?.trim() || DEFAULT_NAME[address],
+      look: options.look ?? DEFAULT_LOOK[address],
+      address,
       // Хронотип обирає гравець (§5.1); режим розробки може змінити його окремо (§11.5).
-      chronotype: options.chronotype ?? (sex === "female" ? "lark" : "owl"),
+      chronotype: options.chronotype ?? "lark",
       stats: { ...START_STATS },
       money: START_MONEY,
       sleepSpeed: 0,
@@ -338,12 +339,18 @@ export function upgradeState(state: GameState): void {
 }
 
 /**
- * Персонаж без статевих механік (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): ні жіночого циклу, ні бороди — день
- * початку циклу (`cycleStart`) і дні гоління й підрівнювання (`beard`) зі старого збереження зникають.
+ * Персонаж без статі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): стать зі старого збереження стає звертанням у текстах
+ * (чоловіча — «він», жіноча — «вона»), а дні жіночого циклу (`cycleStart`) і гоління й підрівнювання (`beard`) зникають. Хронотип
+ * у збереженні вже записаний — його не чіпають.
  */
 export function upgradeCharacter(state: GameState): void {
-  Reflect.deleteProperty(state.character, "cycleStart");
-  Reflect.deleteProperty(state.character, "beard");
+  const character = state.character as GameState["character"] & { sex?: unknown };
+  if (character.sex !== undefined) {
+    character.address ??= character.sex === "male" ? "he" : "she";
+    Reflect.deleteProperty(character, "sex");
+  }
+  Reflect.deleteProperty(character, "cycleStart");
+  Reflect.deleteProperty(character, "beard");
 }
 
 /**

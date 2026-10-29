@@ -1,7 +1,13 @@
 // Стан гри — звичайні дані без класів і посилань на графіку (§2.1):
 // його можна зберегти в JSON, змінити й завантажити (§6.1, §11.5).
 
+/** Стать котів (§9.1): на ній тримається розмноження (§9.8). */
 export type Sex = "female" | "male";
+/**
+ * Як тексти звертаються до персонажа: «він» чи «вона» (§5.1). Лише граматика текстів — на гру не впливає: статі в персонажа немає
+ * (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+ */
+export type Address = "he" | "she";
 export type Chronotype = "lark" | "owl";
 export type Difficulty = "easy" | "normal" | "hard";
 
@@ -158,7 +164,8 @@ export interface Look {
 export interface Character {
   name: string;
   look: Look;
-  sex: Sex;
+  /** Звертання в текстах (§5.1): лише граматика. */
+  address: Address;
   chronotype: Chronotype;
   stats: Record<StatName, number>;
   money: number;

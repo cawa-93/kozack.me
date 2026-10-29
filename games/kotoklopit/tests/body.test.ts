@@ -12,7 +12,7 @@ import { createRng } from "../src/sim/rng";
 import type { Save, Vec } from "../src/sim/types";
 import { hours, recordEvents, walkTo } from "./helpers";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 1 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 1 });
 
 const place = (save: Save, x: number, y: number, facing: Vec = { x: 0, y: 1 }): void => {
   Object.assign(save.current.character.body, { x, y, facing });
@@ -69,8 +69,9 @@ describe("рух (§8.4)", () => {
   });
 
   it("ривок — «біганина»: ситість −0,25, однаково для обох персонажів (§6.3; рішення автора 2026-10-29, А4)", () => {
-    for (const [sex, cost] of [["female", 0.25], ["male", 0.25]] as const) {
-      const save = newGame({ sex, difficulty: "normal", seed: 1 });
+    for (const address of ["she", "he"] as const) {
+      const cost = 0.25;
+      const save = newGame({ address, difficulty: "normal", seed: 1 });
       const stats = save.current.character.stats;
       const before = stats.satiety;
       expect(dash(save.current)).toBe(true);

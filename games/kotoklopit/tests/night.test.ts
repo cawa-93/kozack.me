@@ -25,7 +25,7 @@ const SUNDAY_NIGHT: NightStep[] = [
   "new-day",
 ];
 
-const game = (difficulty: Difficulty = "normal") => newGame({ sex: "female", difficulty, seed: 1 });
+const game = (difficulty: Difficulty = "normal") => newGame({ address: "she", difficulty, seed: 1 });
 
 /** Лягти спати у вказаний день зі вказаним здоровим глуздом. */
 function sleepOn(day: number, sanity: number, difficulty: Difficulty = "normal") {

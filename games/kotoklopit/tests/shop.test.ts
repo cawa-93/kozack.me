@@ -12,7 +12,7 @@ import { createRng } from "../src/sim/rng";
 import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
-const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
+const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 4 });
 const line = (goods: CartLine["goods"], quality: CartLine["quality"], count: number): CartLine => ({ goods, quality, count });
 
 describe("універсальний магазин (§6.4)", () => {

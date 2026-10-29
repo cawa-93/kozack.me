@@ -21,7 +21,7 @@ import { changeRelation, nightlyRelations, relation } from "../src/sim/relations
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(difficulty: "easy" | "normal" | "hard" = "normal"): Save {
-  const save = newGame({ sex: "female", difficulty, seed: 4 });
+  const save = newGame({ address: "she", difficulty, seed: 4 });
   save.current.character.body.x = 9.5;
   save.current.character.body.y = 8.5;
   return save;
