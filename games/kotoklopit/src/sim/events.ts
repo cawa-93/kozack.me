@@ -206,7 +206,7 @@ export type GameEvent =
   | { type: "bite"; cat: number }
   /**
    * Кіт подряпав персонажа (`CLAW`): пручаючись біля переноски (§9.12, «Переноска») чи у ванні (§8.7; рішення автора 2026-10-29,
-   * `GENERAL_REVIEW.md`, А5 — одне правило для всіх подряпин).
+   * `GENERAL_REVIEW.md`, А5 — одне правило для обох подряпин; «Ніндзя» в засідці дряпає без цієї події, §9.12 «Засідки»).
    */
   | { type: "clawed"; cat: number; at: "carrier" | "bath" }
   | { type: "played"; cat: number; minutes: number }
