@@ -8,6 +8,7 @@ import { writeFileSync } from "node:fs";
 import { it } from "vitest";
 
 import { weightOf } from "../src/sim/cat";
+import { POSITIONS } from "../src/sim/config";
 import { allLives, catsMood } from "../src/sim/finale";
 import { newGame } from "../src/sim/game";
 import type { Chronotype, Difficulty, GameState } from "../src/sim/types";
@@ -43,6 +44,13 @@ interface Run {
   catWeight: number[];
   obese: number;
   position: number;
+  /**
+   * Наприкінці кожного тижня — гроші й посада (від 1; 0 — безробітний): як швидко гроші перестають важити й коли бот стає
+   * директором (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10, §6.4, §8.6).
+   */
+  weeks: { money: number; position: number }[];
+  /** Тиждень, коли бот уперше став директором (§8.6); null — не став. */
+  directorWeek: number | null;
   reputation: number;
   worked: number;
   petted: number;
@@ -78,6 +86,8 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
     catWeight: [],
     obese: 0,
     position: 0,
+    weeks: [],
+    directorWeek: null,
     reputation: 0,
     worked: 0,
     petted: 0,
@@ -99,6 +109,9 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
     run.health.push(save.current.character.stats.health);
     run.days = d + 1;
     run.minMoney = Math.min(run.minMoney, save.current.character.money);
+    const job = save.current.job;
+    if (run.directorWeek === null && !job.unemployed && job.position === POSITIONS.length - 1) run.directorWeek = Math.floor(d / 7) + 1;
+    if (d % 7 === 6) run.weeks.push({ money: save.current.character.money, position: job.unemployed ? 0 : job.position + 1 });
     if (save.current.end !== null) {
       run.end = save.current.end;
       break;
@@ -169,6 +182,8 @@ function report(runs: Run[]): string {
       ].join(" | ").replace(/^/, "| ").concat(" |"),
     );
   }
+  lines.push("");
+  lines.push(...careerTable(combos));
   const levels = new Array<number>(10).fill(0);
   for (const mood of runs.flatMap((r) => r.lives)) levels[level(mood)] = (levels[level(mood)] ?? 0) + 1;
   lines.push("");
@@ -176,6 +191,37 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`Час прогону: ${fmt(runs.reduce((s, r) => s + r.seconds, 0), 0)} с.`);
   return lines.join("\n");
+}
+
+/** Тижні, на яких звіт показує гроші й посаду (§6.4, §8.6; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10). */
+const CHECKPOINTS = [5, 10, 15, 20, 30, 40, 50];
+
+/**
+ * Гроші й посада наприкінці тижня: середнє серед тих, хто дожив до нього (у дужках — скільки їх, коли не всі), і тиждень, коли бот
+ * став директором. Так видно, чи гроші ще обмежують на 15–20-му тижні й чи сумлінний бот стає директором ближче до кінця гри.
+ */
+function careerTable(combos: Map<string, Run[]>): string[] {
+  const weeks = CHECKPOINTS.filter((w) => w <= WEEKS);
+  const lines = [
+    "Гроші й посада наприкінці тижня (середнє серед тих, хто дожив), і коли бот став директором (§6.4, §8.6):",
+    "",
+    `| Хронотип | Складність | ${weeks.map((w) => `Тиждень ${w}`).join(" | ")} | Директор (тиждень) |`,
+    `|---|---|${weeks.map(() => "---|").join("")}---|`,
+  ];
+  for (const group of combos.values()) {
+    const first = group[0];
+    if (!first) continue;
+    const cells = weeks.map((w) => {
+      const alive = group.map((r) => r.weeks[w - 1]).filter((x) => x !== undefined);
+      if (alive.length === 0) return "—";
+      const count = alive.length < group.length ? ` (${alive.length})` : "";
+      return `${fmt(avg(alive.map((x) => x.money)), 0)} ₴ · ${fmt(avg(alive.map((x) => x.position)))}${count}`;
+    });
+    const directors = group.map((r) => r.directorWeek).filter((w) => w !== null);
+    const director = directors.length > 0 ? `${fmt(avg(directors))} (${directors.length}/${group.length})` : "—";
+    lines.push(`| ${first.chronotype === "lark" ? "жайворонок" : "сова"} | ${DIFFICULTY_TITLES[first.difficulty]} | ${cells.join(" | ")} | ${director} |`);
+  }
+  return lines;
 }
 
 it("баланс: 6 комбінацій хронотипу й складності (§11.2)", () => {
