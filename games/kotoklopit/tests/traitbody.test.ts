@@ -489,7 +489,10 @@ describe("«Схильність до повноти» (§9.12, рішення �
     };
     expect(meal(true, false)).toBeCloseTo(WEIGHT.portion * WEIGHT.sterilized);
     expect(meal(true, true)).toBeCloseTo(WEIGHT.portion);
+    // Корм для стерилізованих нікому не шкодить: нестерилізованому — те саме, що звичайний (§9.8, рішення автора 2026-10-29,
+    // `GENERAL_REVIEW.md`, А17).
     expect(meal(false, true)).toBeCloseTo(WEIGHT.portion);
+    expect(meal(false, false)).toBeCloseTo(WEIGHT.portion);
   });
 
   it("британська короткошерста (схильність «ожиріння») гладшає ×1,25, напівкровка — ×1,125, інші породи — як безпородні (рішення автора 2026-10-26)", () => {
