@@ -319,6 +319,9 @@ export function giveToShelter(state: GameState): boolean {
  */
 function welcome(state: GameState, cat: Cat): void {
   cat.arrivedDay = state.day;
+  // Купання — відлік від дня, коли кіт з'явився (§9.12 «Купання»): список тижня створено в день першого візиту, і безшерстий,
+  // куплений пізніше, «пам'ятав» купання з того дня — дерматит міг початися вже на другу ніч удома (загальна ревізія 2026-10-29).
+  cat.bathedDay = state.day;
   cat.away = "trip";
   addCat(state, cat);
   giveStarterPack(state);

@@ -3,9 +3,10 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { TRIPS } from "../src/sim/config";
-import { adopt, buyAtShop, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
-import { fallIll } from "../src/sim/diseases";
+import { nightlyCare } from "../src/sim/care";
+import { BATH, TRIPS } from "../src/sim/config";
+import { adopt, breederCats, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
+import { fallIll, hasDisease } from "../src/sim/diseases";
 import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
@@ -477,6 +478,29 @@ describe("пункти призначення (§8.5)", () => {
     }
     expect(fleas).toBeGreaterThan(3);
     expect(fleas).toBeLessThan(25);
+  });
+
+  it("купання — відлік від дня, коли кота взяли, а не від першого візиту тижня: безшерстий із розплідника не хворіє на дерматит раніше за 7 днів (загальна ревізія 2026-10-29)", () => {
+    const save = game(9 * 60);
+    save.current.day = 0;
+    // Перший візит тижня — у понеділок: список розплідника створено цього дня.
+    const kitten = breederCats(save.current).cats[0];
+    if (!kitten) throw new Error("немає кошенят");
+    kitten.shape.coat = "hairless";
+    save.current.day = 6;
+    arrive(save, "breeder");
+    expect(buyFromBreeder(save.current, kitten.id)).toBe(kitten);
+    expect(kitten.bathedDay).toBe(6);
+    returnHome(save, save.current.trip?.visit ?? 0, TRIPS.breeder.road);
+    const always = { ...createRng(1), chance: () => true };
+    for (let day = 6; day < 6 + BATH.hairlessDays; day++) {
+      save.current.day = day;
+      nightlyCare(save.current, always);
+      expect(hasDisease(kitten, "dermatitis"), `день ${day}`).toBe(false);
+    }
+    save.current.day = 6 + BATH.hairlessDays;
+    nightlyCare(save.current, always);
+    expect(hasDisease(kitten, "dermatitis")).toBe(true);
   });
 
   it("котокафе: здоровий глузд слабшає з кожною годиною, ревниві коти ображаються", () => {
