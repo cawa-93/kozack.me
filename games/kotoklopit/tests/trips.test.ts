@@ -4,16 +4,16 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { ACCIDENT, BATH, TRIPS } from "../src/sim/config";
+import { ACCIDENT, BATH, START_CLOTHES, TRIPS } from "../src/sim/config";
 import { adopt, breederCats, buyAtShop, buyFromBreeder, cafe, enterShow, giveToShelter, officeMeeting, shelterCats, shopPrice, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { fallIll, hasDisease } from "../src/sim/diseases";
-import { advance, deserialize, drive, newGame, returnHome, rewindAccident, serialize } from "../src/sim/game";
+import { advance, deserialize, drive, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { accidentBedtime, canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
-import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { driveSafely, hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import type { Cat, GameState, Save, TraitLevel } from "../src/sim/types";
+import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
   const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
@@ -168,6 +168,68 @@ describe("гонка (§8.5)", () => {
     driveSafely(save);
     expect(save.current.job.patience).toBe(patience);
     expect(save.current.job.reputation).toBeLessThan(reputation);
+  });
+});
+
+describe("знімки після аварії (§6.1, §8.5; рішення автора 2026-10-29, А1)", () => {
+  /** Прожити день найпростішим гравцем; він не пере, тож чистий одяг — щоранку, інакше гігієна закінчує гру. */
+  const live = (save: Save): void => {
+    save.current.home.clothes = START_CLOTHES;
+    liveDay(save);
+  };
+
+  /** Прожити дні до `day`, о 12:00 цього дня потрапити в аварію й перемотати день; повертає й ранок дня аварії. */
+  const crashOn = (day: number): { save: Save; morning: GameState } => {
+    const save = withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 6 }));
+    while (save.current.day < day) live(save);
+    const morning = structuredClone(save.current);
+    advance(save, 12 * 60 - save.current.minute);
+    standAt(save, "door");
+    expect(startTrip(save.current, "shop")).toBe(true);
+    save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
+    drive(save, 0.1, NO_RACE_INPUT);
+    expect(save.current.trip?.phase).toBe("accident");
+    rewindAccident(save);
+    expect(save.current.end).toBeNull();
+    expect(save.current.day).toBe(day + 1);
+    return { save, morning };
+  };
+
+  it("аварія в неділю: «Переграти день» — ранок неділі, «Переграти тиждень» — понеділок того тижня; раніше обидва знімки ставали понеділком після аварії", () => {
+    const { save, morning } = crashOn(6);
+    expect(save.dayStart.day).toBe(6);
+    expect(save.weekStart.day).toBe(0);
+    replayDay(save);
+    expect(save.current.day).toBe(6);
+    expect(save.current.minute).toBe(morning.minute);
+    expect(save.current.character).toEqual(morning.character);
+    replayWeek(save);
+    expect(save.current.day).toBe(0);
+  });
+
+  it("аварія в будень: «Переграти день» — ранок дня аварії", () => {
+    const { save, morning } = crashOn(2);
+    expect(save.dayStart.day).toBe(2);
+    replayDay(save);
+    expect(save.current.day).toBe(2);
+    expect(save.current.minute).toBe(morning.minute);
+    expect(save.current.character).toEqual(morning.character);
+  });
+
+  it("наступна звичайна ніч оновлює знімки як завжди: день — щоранку, тиждень — у ніч на понеділок", () => {
+    const weekday = crashOn(2).save;
+    live(weekday);
+    expect(weekday.dayStart.day).toBe(4);
+    expect(weekday.weekStart.day).toBe(0);
+
+    // Після аварії в неділю знімок тижня лишається понеділком тижня аварії до наступної ночі на понеділок.
+    const sunday = crashOn(6).save;
+    live(sunday);
+    expect(sunday.dayStart.day).toBe(8);
+    expect(sunday.weekStart.day).toBe(0);
+    while (sunday.current.day < 14) live(sunday);
+    expect(sunday.weekStart.day).toBe(14);
+    expect(sunday.dayStart.day).toBe(14);
   });
 });
 

@@ -175,7 +175,7 @@ export function drive(save: Save, minutes: number, input: RaceInput): { result: 
 
 /**
  * Після аварії (§8.5): решта дня проходить без персонажа до оптимального часу сну, потім він удома
- * й засинає. Якщо аварія сталася пізніше, засинає одразу.
+ * й засинає (додому його повертає `sleep`, і ця ніч знімків не оновлює, §6.1). Якщо аварія сталася пізніше, засинає одразу.
  */
 export function rewindAccident(save: Save): NightReport | null {
   const state = save.current;
@@ -184,7 +184,6 @@ export function rewindAccident(save: Save): NightReport | null {
     const night = advance(save, left);
     if (night || state.end !== null) return night;
   }
-  endTrip(state);
   return sleep(save, false);
 }
 
@@ -233,6 +232,8 @@ export function goToSleep(save: Save): NightReport | null {
 
 function sleep(save: Save, collapsed: boolean): NightReport | null {
   const state = save.current;
+  // Ніч, що настала через аварію (кінець перемотування, §8.5), — з поїздки, яка ще в аварії: її треба розпізнати до `endTrip`.
+  const afterAccident = state.trip?.phase === "accident";
   // Персонаж засинає вдома, навіть якщо ніч застала його в поїздці.
   endTrip(state);
   // Гостинці мами, що чекали під дверима чи щойно приїхали з нею, — пакет судочків у ящиках біля входу (§4.1, §6.4).
@@ -243,8 +244,10 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
     return null;
   }
   const report = runNight(state, collapsed);
-  // Якщо гра закінчилася вночі, знімки не оновлюються: переграти можна день, що минув (§6.4).
-  if (state.end === null) {
+  // Якщо гра закінчилася вночі, знімки не оновлюються: переграти можна день, що минув (§6.4). Так само й ніч після аварії:
+  // «Переграти день» повертає на ранок дня аварії, «Переграти тиждень» — на понеділок її тижня, навіть коли аварія сталася
+  // в неділю (§6.1; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А1).
+  if (state.end === null && !afterAccident) {
     save.dayStart = clone(state);
     if (weekdayOf(state.day) === 0) save.weekStart = clone(state);
   }
