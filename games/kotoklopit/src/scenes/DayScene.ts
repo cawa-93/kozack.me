@@ -10,7 +10,7 @@ import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from ".
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
 import { TRIPS } from "../sim/config";
 import { doctorExam, doctorTreat } from "../sim/illness";
-import { adopt, buyFromBreeder, enterShow, giveToShelter, groom, officeMeeting, tripCat, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
@@ -482,11 +482,6 @@ export class DayScene extends Phaser.Scene {
       },
       sterilize: () => {
         if (vetSterilize(state)) log.done.push("sterilize");
-        again();
-      },
-      giveAway: () => {
-        const cat = tripCat(state);
-        if (cat && giveToShelter(state)) log.done.push(`given:${cat.id}`);
         again();
       },
       buyKitten: (id) => {

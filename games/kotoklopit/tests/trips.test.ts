@@ -11,7 +11,6 @@ import {
   buyAtShop,
   buyFromBreeder,
   enterShow,
-  giveToShelter,
   knownSterilizeBlocker,
   officeMeeting,
   shelterCats,
@@ -764,27 +763,59 @@ describe("пункти призначення (§8.5)", () => {
     expect(pack(false)).toEqual({ catFood: 8, sterileFood: 0 });
   });
 
-  it("притулок: узяті коти їдуть додому разом із персонажем, а «Віддати» — лише кіт, з яким приїхали (перевірка поїздок 2026-10-28)", () => {
+  it("притулок: узяті коти їдуть додому разом із персонажем, а не опиняються вдома раніше за нього (перевірка поїздок 2026-10-28)", () => {
     const save = game(9 * 60);
     save.current.day = 5;
-    const own = withCat(save);
-    save.current.home.carrier = "cheap";
-    save.current.character.held = { kind: "cat", cat: own.id };
     arrive(save, "shelter");
     const [a, b] = shelterCats(save.current);
     if (!a || !b) throw new Error("немає котів");
     adopt(save.current, a.id);
     adopt(save.current, b.id);
-    // Раніше другий кіт опинявся вдома одразу, а перший займав переноску — і картка пропонувала віддати його назад.
+    // Раніше другий кіт опинявся вдома одразу, а перший займав переноску.
     expect([a.away, b.away]).toEqual(["trip", "trip"]);
-    expect(tripCat(save.current)).toBe(own);
-    expect(giveToShelter(save.current)).toBe(true);
     expect(tripCat(save.current)).toBeNull();
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shelter.road);
     expect(save.current.cats.map((c) => [c.id, c.away])).toEqual([
       [a.id, null],
       [b.id, null],
     ]);
+  });
+
+  describe("притулок лише дає котів, віддають через оголошення (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
+    it("з котом на руках у притулок не їдуть — як і в магазин, навіть із переноскою", () => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      const own = withCat(save);
+      save.current.home.carrier = "cheap";
+      save.current.character.held = { kind: "cat", cat: own.id };
+      expect(tripBlocker(save.current, "shelter")).toBe("no-cat");
+      expect(startTrip(save.current, "shelter")).toBe(false);
+      save.current.character.held = null;
+      expect(tripBlocker(save.current, "shelter")).toBeNull();
+    });
+
+    it("стара гра посеред візиту до притулку: запис про відданого кота зникає з журналу, а кіт із переноски повертається додому", () => {
+      const save = game(9 * 60);
+      save.current.day = 5;
+      const own = withCat(save);
+      arrive(save, "shelter");
+      const [a] = shelterCats(save.current);
+      if (!a) throw new Error("немає котів");
+      adopt(save.current, a.id);
+      const trip = save.current.trip;
+      if (!trip) throw new Error("немає поїздки");
+      // Так стара гра зберігала візит, де одного кота вже віддали, а другий приїхав у переносці.
+      trip.log = { exam: null, done: [a.name, "given:999"] };
+      trip.cat = own.id;
+      own.away = "trip";
+      const loaded = deserialize(serialize(save));
+      expect(loaded.current.trip?.log?.done).toEqual([a.name]);
+      returnHome(loaded, loaded.current.trip?.visit ?? 0, TRIPS.shelter.road);
+      expect(loaded.current.cats.map((c) => [c.id, c.away])).toEqual([
+        [own.id, null],
+        [a.id, null],
+      ]);
+    });
   });
 
   it("кіт, якого взяли в притулку, буває з блохами, як і примусове кошеня (крок 17)", () => {

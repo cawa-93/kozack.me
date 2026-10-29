@@ -26,7 +26,6 @@ import { breedById, breederPrice, knownBreedHalves, MIXED, PUREBREEDS, shelterBr
 import { cureDisease, maybeFallIll } from "./diseases";
 import { isNursing } from "./reproduction";
 import { canOrderProduct, freeSlots, place, spendingOf, stash } from "./economy";
-import { giveAway } from "./farewell";
 import { emit } from "./events";
 import { observe } from "./knowledge";
 import { priceFactor } from "./modifiers";
@@ -320,16 +319,6 @@ export function buyFromBreeder(state: GameState, catId: number): Cat | null {
   state.breeder.cats = state.breeder.cats.filter((c) => c !== cat);
   welcome(state, cat);
   return cat;
-}
-
-/** Віддати кота з переноски притулку (§9.8): приймають одразу й безкоштовно. */
-export function giveToShelter(state: GameState): boolean {
-  const cat = tripCat(state);
-  const trip = state.trip;
-  if (!cat || !trip || trip.destination !== "shelter") return false;
-  if (!giveAway(state, cat, state.day)) return false;
-  trip.cat = null;
-  return true;
 }
 
 /**

@@ -55,8 +55,8 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
     if (state.home.carrier === null) return "carrier";
     return null;
   }
-  // До притулку кота можна взяти, щоб віддати (§9.8).
-  if (cat && destination === "shelter") return state.home.carrier === null ? "carrier" : null;
+  // Притулок котів не приймає — туди їздять лише взяти кота, а віддають через оголошення (§9.8; рішення автора 2026-10-29,
+  // `GENERAL_REVIEW.md`, А15): з котом на руках туди, як і в магазин, не їдуть.
   if (cat) return "no-cat";
   return null;
 }

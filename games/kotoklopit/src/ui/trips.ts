@@ -2,13 +2,12 @@
 
 import { ACCIDENT, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
-import { giveAwayBlocker, recentlyArrived } from "../sim/farewell";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { BREED_ABOUT, diseaseTitle, farewellText, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, ILLNESS_TITLES, SHELTER_GIVEN, VET_ADVICE, VET_MANNER } from "../texts";
+import { BREED_ABOUT, diseaseTitle, fill, ILLNESS_TITLES, VET_ADVICE, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -101,9 +100,13 @@ export function accidentCard(state: GameState, onClose: () => void): Card {
   };
 }
 
-/** Узяті коти, що їдуть додому (притулок, розплідник): дієслово — за числом (крок 17, вичитка 2026-10-28). */
+/**
+ * Узяті коти, що їдуть додому (притулок, розплідник): дієслово — за числом (крок 17, вичитка 2026-10-28). У журналі цих поїздок
+ * лише імена взятих: віддавати в притулку нічого (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15), а записи «віддали» зі
+ * старих збережень прибирає `upgradeTrip`.
+ */
 function goingHome(body: (string | HTMLElement)[], log: VisitLog): void {
-  const names = log.done.filter((x) => !x.startsWith("given:"));
+  const names = log.done;
   if (names.length > 0) body.push(`${names.length === 1 ? "Їде" : "Їдуть"} додому з вами: ${names.join(", ")}.`);
 }
 
@@ -116,7 +119,6 @@ export interface VisitHandlers {
   treatSelf: (illness: IllnessId, quality: Quality) => void;
   adopt: (cat: number) => void;
   sterilize: () => void;
-  giveAway: () => void;
   buyKitten: (cat: number) => void;
   groom: (quality: Quality) => void;
   show: () => void;
@@ -275,21 +277,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         list.append(r);
       }
       goingHome(body, log);
-      // Відданий у притулок кіт: без рядка він просто зникав з картки (крок 17, вичитка 2026-10-28).
-      for (const id of log.done.filter((x) => x.startsWith("given:")).map((x) => Number(x.slice(6)))) {
-        const entry = state.album.find((e) => e.id === id);
-        if (!entry) continue;
-        const text = farewellText(entry, diseaseTitle);
-        body.push(fill(SHELTER_GIVEN, entry.sex, { кіт: entry.name }), `«${text.title}». ${text.life}`);
-      }
+      // Лише взяти кота: віддають через оголошення в телефоні (§9.8; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15).
       body.push(list);
-      // Новонароджених і їхню матір не віддають (§9.8): без підпису кнопка мовчки нічого не робила (перевірка поїздок 2026-10-28).
-      const blocker = cat ? giveAwayBlocker(state, cat) : null;
-      if (cat && blocker === "newborn") body.push(row(`${cat.name} → притулок`, "замале: притулок бере котів від тижня"));
-      else if (cat && blocker === "nursing") body.push(row(`${cat.name} → притулок`, "годує новонароджених — поки що лишається вдома"));
-      // Без підтвердження (поїздка з котом — уже вибір), але з тим самим підписом без чисел, що й картка оголошення (§9.8,
-      // загальна ревізія 2026-10-29).
-      else if (cat) body.push(row(`${cat.name} → притулок`, recentlyArrived(cat, state.day) ? GIVE_AWAY_RECENT : GIVE_AWAY_LATER, button("Віддати", 0, h.giveAway)));
       break;
     }
     case "breeder": {
