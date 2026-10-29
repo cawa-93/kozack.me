@@ -17,7 +17,8 @@ import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
 import { conceive, giveBirth, nightlyStates } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
-import type { AlbumEntry, Cat, Save, Sex } from "../src/sim/types";
+import type { Breed } from "../src/sim/breeds";
+import type { AlbumEntry, Cat, Genes, Save, Sex } from "../src/sim/types";
 import { CAT_NAMES, pickCatName } from "../src/sim/names";
 import { BIRTH_MESSAGE, fill } from "../src/texts";
 import { driveSafely, recordEvents, standAt, withCatCorner } from "./helpers";
@@ -128,6 +129,85 @@ describe("породи й зовнішність: перевірка розмн�
     const always = { ...createRng(1), chance: () => true };
     const genes = inheritGenes(always, "male", { ...createCat(game().current, createRng(1), { source: "born", ageWeeks: 0, sex: "female" }).genes, orange: [true, false] }, { ...createCat(game().current, createRng(2), { source: "born", ageWeeks: 0, sex: "male" }).genes, orange: [false] });
     expect(genes.orange).toHaveLength(2);
+  });
+});
+
+describe("рішення автора А9 (§9.11): чистокровне кошеня має й гени породи, як кіт із розплідника", () => {
+  /** Чим гени кота відходять від породи (`BREEDS.md`): пари алелів, колір очей, рудий у «нерудих» порід. */
+  function offBreed(genes: Genes, breed: Breed): string[] {
+    const g = genes as unknown as Record<string, unknown>;
+    const off = Object.entries(breed.genes ?? {}).filter(([key, value]) => JSON.stringify(g[key]) !== JSON.stringify(value)).map(([key]) => key);
+    if (breed.noOrange && genes.orange.some(Boolean)) off.push("orange");
+    return off;
+  }
+
+  /** Кошенята пари; батьки — коти з притулку заданої породи (порода, порода — чистокровні). */
+  function litter(seed: number, mother: [string, string], father: [string, string]): Cat[] {
+    const save = game();
+    const s = save.current;
+    const make = (sex: Sex, breed: [string, string], at: number): Cat => {
+      const cat = createCat(s, createRng(seed * 7 + at), { source: "shelter", ageWeeks: 3, sex, breed, at: { x: 9.5, y: 8.5 } });
+      addCat(s, cat);
+      return cat;
+    };
+    const she = make("female", mother, 1);
+    const he = make("male", father, 2);
+    she.pregnancy = { father: he.id, due: s.day + 1, known: true };
+    return giveBirth(s, createRng(seed + 1000));
+  }
+
+  it("кошенята двох чистокровних батьків однієї породи завжди мають масть, білі плями, шерсть і очі породи", () => {
+    const eyeColors = ["green", "yellow", "copper"] as const;
+    for (const breed of PUREBREEDS) {
+      let kittens = 0;
+      for (let seed = 0; kittens < 40; seed++) {
+        for (const kitten of litter(seed, [breed.id, breed.id], [breed.id, breed.id])) {
+          kittens += 1;
+          expect(kitten.breed).toEqual([breed.id, breed.id]);
+          expect({ breed: breed.id, off: offBreed(kitten.genes, breed) }).toEqual({ breed: breed.id, off: [] });
+          const coat = coatOf(kitten.genes, kitten.shape);
+          const eyes = breed.genes?.eyes;
+          if (eyes !== undefined && !coat.pointed && coat.white < 3) expect(coat.eyes).toBe(eyeColors[eyes]);
+        }
+      }
+    }
+    // Знахідка g8: у бірманської, сноу-шу й рагдола білі «рукавички» — завжди, без кошенят без білого й біколор.
+    for (const id of ["birmanska", "snou-shu", "rahdol"]) {
+      for (let seed = 0; seed < 40; seed++) {
+        for (const kitten of litter(seed, [id, id], [id, id])) {
+          const coat = coatOf(kitten.genes, kitten.shape);
+          expect([id, coat.white, coat.pointed, coat.eyes]).toEqual([id, 1, true, "blue"]);
+        }
+      }
+    }
+  });
+
+  it("чистокровне кошеня двох напівкровок — теж з забарвленням породи: сіамське колорпойнт, британське сіре; напівкровне — за генетикою", () => {
+    let siamese = 0;
+    let british = 0;
+    let halfPointed = 0;
+    let half = 0;
+    for (let seed = 0; siamese < 40 || british < 40; seed++) {
+      for (const kitten of litter(seed, ["siamska", MIXED], ["siamska", MIXED])) {
+        const coat = coatOf(kitten.genes, kitten.shape);
+        if (kitten.breed[0] === "siamska" && kitten.breed[1] === "siamska") {
+          siamese += 1;
+          expect([coat.pointed, coat.white, coat.eyes, coat.long]).toEqual([true, 0, "blue", false]);
+        } else {
+          half += 1;
+          if (coat.pointed) halfPointed += 1;
+        }
+      }
+      for (const kitten of litter(seed + 5000, ["brytanska-korotkoshersta", MIXED], [MIXED, "brytanska-korotkoshersta"])) {
+        if (kitten.breed[0] !== kitten.breed[1] || kitten.breed[0] === MIXED) continue;
+        british += 1;
+        const coat = coatOf(kitten.genes, kitten.shape);
+        expect([coat.base, coat.second, coat.tabby, coat.white, coat.eyes, coat.long]).toEqual(["blue", null, null, 0, "copper", false]);
+      }
+    }
+    // Напівкровок порода не перефарбовує: серед них колорпойнт — меншість.
+    expect(half).toBeGreaterThan(40);
+    expect(halfPointed / half).toBeLessThan(0.5);
   });
 });
 

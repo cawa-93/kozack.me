@@ -5,7 +5,7 @@ import { visibleFloorNear } from "./catmove";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
 import { breedById, knownBreedHalves, MIXED } from "./breeds";
-import { fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
+import { applyBreedLook, fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
 import { pickCatName } from "./names";
 import { chooseWeekModifier } from "./modifiers";
 import { isEnemy, isFriend } from "./relations";
@@ -117,7 +117,8 @@ function litterSize(rng: Rng, first: boolean): number {
 
 /**
  * Пологи (§9.8): уночі, уранці персонаж бачить кошенят. Кошеня успадковує гени, форми й породу
- * батьків; характеру ще немає — перша риса з'явиться у віці 1 тиждень.
+ * батьків, а чистокровне ще й має гени й форми своєї породи напевно (§9.11); характеру ще немає — перша риса
+ * з'явиться у віці 1 тиждень.
  */
 export function giveBirth(state: GameState, rng: Rng): Cat[] {
   const born: Cat[] = [];
@@ -146,7 +147,12 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
       kitten.shape = inheritShape(rng, mother.shape, father.shape);
       kitten.breed = inheritBreed(rng, mother.breed, father.breed);
       const [ka, kb] = kitten.breed;
-      fitBreedForms(rng, kitten.shape, [ka, kb].filter((id) => id !== MIXED).map(breedById), ka === kb && ka !== MIXED);
+      const pure = ka === kb && ka !== MIXED;
+      fitBreedForms(rng, kitten.shape, [ka, kb].filter((id) => id !== MIXED).map(breedById), pure);
+      // Чистокровне — ще й гени породи напевно, як кіт із притулку чи розплідника: «чистокровний» всюди означає одне (рішення автора
+      // 2026-10-29, `GENERAL_REVIEW.md`, А9; раніше лише форми, і «чистокровна сіамська» здебільшого не була колорпойнтом). Для
+      // чистокровного applyBreedLook нічого не кидає, тож порядок випадковості той самий.
+      if (pure) applyBreedLook(rng, kitten.genes, kitten.shape, breedById(ka), true);
       // Що видно про породу — за складністю, як у притулку (§9.11): раніше кошеня показувало приховану половину матері.
       kitten.breedKnown = knownBreedHalves(state, kitten.breed, rng);
       kitten.parents = { mother: mother.id, father: pregnancy.father };
