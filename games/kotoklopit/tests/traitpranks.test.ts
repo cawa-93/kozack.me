@@ -587,7 +587,7 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
     expect(upHigh(save.current, cat)).toBe(false);
   });
 
-  it("кота нагорі не погладити: утримання дії пестощів не починає й сплячого не будить (загальна ревізія 2026-10-29)", () => {
+  it("кота нагорі не погладити: утримання дії пестощів не починає, сплячого не будить і дає одну відмову «не дотягтися» (загальна ревізія 2026-10-29)", () => {
     const save = game();
     const cat = withCat(save, { climbing: 1 });
     const wardrobe = objectById("wardrobe");
@@ -606,6 +606,8 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
     }
     stop();
     expect(events.some((e) => e.type === "purr")).toBe(false);
+    // Утримання — одна відмова «не дотягтися», а не тиша і не відмова щокадру (загальна ревізія 2026-10-29).
+    expect(events.filter((e) => e.type === "refused")).toEqual([expect.objectContaining({ reason: "cat-up-high" })]);
     expect(cat.act.kind).toBe("sleep");
     expect(save.current.character.stats.sanity).toBeCloseTo(idle.current.character.stats.sanity, 6);
     expect(cat.mood).toBeCloseTo(idle.current.cats.find((c) => c.id === cat.id)!.mood, 6);
