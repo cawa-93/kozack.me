@@ -149,7 +149,7 @@ describe("універсальний магазин (§6.4)", () => {
     expect(state.home.items.filter((i) => i.kind === "toy")).toHaveLength(2);
     // Кілька упаковок одного запасу — усі в ящики біля входу (§6.4).
     expect(checkout(state, [line({ product: "food" }, "cheap", 2)], "store")).toBe(true);
-    expect(state.home.boxes?.food?.cheap).toBe(42);
+    expect(state.home.boxes?.food?.cheap).toBe(40);
   });
 });
 

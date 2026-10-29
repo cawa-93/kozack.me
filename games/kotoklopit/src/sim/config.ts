@@ -143,23 +143,29 @@ export const MEAL_SATIETY: Record<Quality, number> = { cheap: 40, premium: 55 };
 export const SHOWER_HYGIENE: Record<Quality | "none", number> = { none: 8, cheap: 60, premium: 80 };
 
 // Економіка (§6.4, чернетка).
-/** Запаси: скільки порцій чи душів в упаковці й скільки вона коштує в магазині. */
-// Котячий корм — порції (мішок на 56, §6.4); наповнювач — чистки лотка (§9.12): дешевий пакет на 7 чисток,
-// дорогий на 4, обидва — приблизно на кота на тиждень.
+/**
+ * Запаси: скільки порцій чи душів в упаковці й скільки вона коштує в магазині. Ліміт сховища (`STORAGE_LIMITS`) ділиться на
+ * упаковку без остачі — найчастіше дві упаковки й є повне сховище, тож закупівля «до повного» не лишає в ящиках 1–2 одиниці
+ * (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17, §6.4). Тоді ж упаковки змінилися: їжа 21 → 20, засоби гігієни
+ * 14 → 15, корм і корм для стерилізованих 56 → 55 (ціни ті самі); дешевий наповнювач 7 → 10 чисток (8 → 11 ₴), краплі 3 → 5
+ * доз (12 / 30 → 20 / 50 ₴), пральний засіб 4 → 5 прань (10 / 25 → 12 / 30 ₴) — ціна за одиницю майже та сама.
+ */
+// Котячий корм — порції (мішок на 55, §6.4); наповнювач — чистки лотка (§9.12): дешевий пакет на 10 чисток (~1,5 тижня на
+// кота), дорогий на 4 (~тиждень).
 export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: Record<Quality, number> }> = {
-  food: { units: { cheap: 21, premium: 21 }, price: { cheap: 40, premium: 80 } },
-  hygiene: { units: { cheap: 14, premium: 14 }, price: { cheap: 15, premium: 35 } },
-  catFood: { units: { cheap: 56, premium: 56 }, price: { cheap: 100, premium: 200 } },
-  sterileFood: { units: { cheap: 56, premium: 56 }, price: { cheap: 120, premium: 220 } },
-  litter: { units: { cheap: 7, premium: 4 }, price: { cheap: 8, premium: 15 } },
+  food: { units: { cheap: 20, premium: 20 }, price: { cheap: 40, premium: 80 } },
+  hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 15, premium: 35 } },
+  catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 100, premium: 200 } },
+  sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 120, premium: 220 } },
+  litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 11, premium: 15 } },
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
-  drops: { units: { cheap: 3, premium: 3 }, price: { cheap: 12, premium: 30 } },
+  drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 50 } },
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
   treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 35 } },
   collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 10, premium: 25 } },
   bell: { units: { cheap: 1, premium: 1 }, price: { cheap: 5, premium: 5 } },
   shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
-  detergent: { units: { cheap: 4, premium: 4 }, price: { cheap: 10, premium: 25 } },
+  detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 30 } },
   // Котяча м'ята й мататабі (§9.12, «Котяча м'ята», 2026-10-26): по 5 разів.
   catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 30 } },
   // Мамині судочки (§4.1, §6.4, рішення автора 2026-10-26): пакет від мами — 2 судочки; не продаються (`UNSOLD`), ціни немає.
@@ -192,7 +198,7 @@ export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
 };
 /** Наповнення сховища (§6.4): межі часток для станів «мало», «половина», «багато»; порожньо — 0, ущерть — 1. */
 export const FILL_STAGES = [0.45, 0.75, 1] as const;
-/** Скільки кожного запасу вміщує його сховище (§6.4): кратно десяти, щонайменше 10. */
+/** Скільки кожного запасу вміщує його сховище (§6.4): кратно десяти, щонайменше 10, і ділиться на упаковку (`PRODUCTS`) без остачі. */
 export const STORAGE_LIMITS: Record<Product, number> = {
   food: 40,
   hygiene: 30,
@@ -211,8 +217,11 @@ export const STORAGE_LIMITS: Record<Product, number> = {
   // Мамині судочки в холодильнику (§6.4, рішення автора 2026-10-26).
   momMeal: 10,
 };
-/** Стартовий пакет кота з притулку (§9.12): порції дешевого корму (стерилізованому — для стерилізованих) й чистки дешевого наповнювача. */
-export const SHELTER_STARTER_PACK = { catFood: 8, litter: 7 };
+/**
+ * Стартовий пакет кота з притулку (§9.12): порції дешевого корму (стерилізованому — для стерилізованих) і пакет дешевого
+ * наповнювача — стільки чисток, скільки в упаковці магазину (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17: 7 → 10).
+ */
+export const SHELTER_STARTER_PACK = { catFood: 8, litter: PRODUCTS.litter.units.cheap };
 /**
  * Доставка (§6.4, правка автора 2026-10-23): ціни в каталозі базові, доставка — окремо: 10% бази
  * кожного товару й надбавка за замовлення, що залежить лише від складності.

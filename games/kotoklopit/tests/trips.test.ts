@@ -568,7 +568,7 @@ describe("пункти призначення (§8.5)", () => {
     buyAtShop(save.current, { product: "litter" }, "cheap");
     buyAtShop(save.current, { thing: "litter" }, "cheap");
     // Запас — у ящиках біля входу, річ — одразу на місці (§6.4).
-    expect(save.current.home.boxes?.litter?.cheap).toBe(7);
+    expect(save.current.home.boxes?.litter?.cheap).toBe(10);
     expect(save.current.home.items.filter((i) => i.kind === "litter")).toHaveLength(2);
     returnHome(save, save.current.trip?.visit ?? 0, TRIPS.shop.road);
     expect(save.current.trip).toBeNull();

@@ -880,7 +880,7 @@ describe("кошеня й «Пригніченість» (§6.2)", () => {
     goToSleep(save);
     expect(save.current.cats).toHaveLength(1);
     expect(save.current.home.supplies.catFood.cheap).toBe(8);
-    expect(save.current.home.supplies.litter.cheap).toBe(7);
+    expect(save.current.home.supplies.litter.cheap).toBe(10);
   });
 
   it("без котів і нижче 35% уранці — «Пригніченість»: здоровий глузд між 10 і 35", () => {

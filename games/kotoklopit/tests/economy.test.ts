@@ -89,9 +89,9 @@ describe("доставка (§6.4)", () => {
     stop();
     expect(save.current.home.porch).toEqual([]);
     // Пакунки — у ящиках біля входу; розпакувати — і запаси в холодильнику (§6.4).
-    expect(save.current.home.boxes?.food).toEqual({ cheap: 0, premium: 21 });
+    expect(save.current.home.boxes?.food).toEqual({ cheap: 0, premium: 20 });
     unpack(save.current);
-    expect(save.current.home.supplies.food).toEqual({ cheap: 6, premium: 21 });
+    expect(save.current.home.supplies.food).toEqual({ cheap: 6, premium: 20 });
     expect(events.some((e) => e.type === "received")).toBe(true);
   });
 
@@ -104,8 +104,8 @@ describe("доставка (§6.4)", () => {
     standAt(save, "door");
     interact(save);
     unpack(save.current);
-    expect(supplyCount(save.current, "food")).toBe(6 + 21);
-    expect(supplyCount(save.current, "hygiene")).toBe(3 + 14);
+    expect(supplyCount(save.current, "food")).toBe(6 + 20);
+    expect(supplyCount(save.current, "hygiene")).toBe(3 + 15);
   });
 
   it("без грошей замовити не можна", () => {

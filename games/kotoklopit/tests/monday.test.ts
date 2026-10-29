@@ -76,7 +76,7 @@ describe("понеділок без котів (§8.3)", () => {
       expect(events.filter((e) => e.type === "ate")).toHaveLength(3);
       expect(events.some((e) => e.type === "showered")).toBe(true);
       expect(events.some((e) => e.type === "received")).toBe(true);
-      expect(save.current.home.supplies.food.cheap).toBe(6 - 3 + 21);
+      expect(save.current.home.supplies.food.cheap).toBe(6 - 3 + 20);
       // Працював досить, щоб керівництво не дійшло до «Х», і встиг на летучку.
       expect(events).not.toContainEqual({ type: "patience", level: "out" });
       expect(events.some((e) => e.type === "standup" && e.attended)).toBe(true);
