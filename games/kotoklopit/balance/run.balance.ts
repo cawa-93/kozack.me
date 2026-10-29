@@ -12,7 +12,7 @@ import { POSITIONS } from "../src/sim/config";
 import { allLives, catsMood } from "../src/sim/finale";
 import { newGame } from "../src/sim/game";
 import type { Chronotype, Difficulty, GameState } from "../src/sim/types";
-import { DIFFICULTY_TITLES } from "../src/texts";
+import { DIFFICULTY_TITLES, endingText } from "../src/texts";
 import { Bot } from "./bot";
 
 const WEEKS = Number(process.env["BALANCE_WEEKS"] ?? 6);
@@ -36,6 +36,8 @@ interface Run {
    * 2026-10-29, `GENERAL_REVIEW.md`, А11) — та сама формула, що й у фіналі; NaN — котів не було.
    */
   catsMood: number;
+  /** Фінал пенсії (§4.2), коли бот до неї дожив: назва з екрана кінця гри; null — пенсії не було. */
+  finale: string | null;
   /** Середній настрій за життя всіх котів: і живих, і з альбому пам'яті (§9.7). */
   lives: number[];
   deaths: number;
@@ -80,6 +82,7 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
     kittens: 0,
     cats: 0,
     catsMood: NaN,
+    finale: null,
     lives: [],
     deaths: 0,
     catHealth: [],
@@ -121,6 +124,7 @@ function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number):
   run.money = state.character.money;
   run.cats = state.cats.length;
   run.catsMood = catsMood(state) ?? NaN;
+  if (state.end === "retirement") run.finale = endingText(state, "retirement").title;
   run.lives = allLives(state).map((life) => life.mood);
   run.deaths = state.album.length;
   run.catHealth = state.cats.map((c) => c.health);
@@ -145,7 +149,7 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Хронотип | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (фінал) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("| Хронотип | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (вісь фіналу) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
   lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
@@ -172,7 +176,7 @@ function report(runs: Run[]): string {
         `${fmt(avg(allHealth))} (${fmt(Math.min(...allHealth))})`,
         fmt(avg(group.map((r) => r.kittens))),
         `${fmt(avg(group.map((r) => r.cats)))} (${fmt(avg(group.map((r) => r.deaths)))})`,
-        fmt(avg(group.map((r) => r.catsMood).filter(Number.isFinite))),
+        catsCell(group.filter((r) => !lost(r)), group.length),
         fmt(avg(group.flatMap((r) => r.catHealth))),
         `${fmt(avg(group.flatMap((r) => r.catWeight)))} (${fmt(avg(group.map((r) => r.obese)))})`,
         fmt(avg(group.map((r) => r.position + 1))),
@@ -183,6 +187,10 @@ function report(runs: Run[]): string {
     );
   }
   lines.push("");
+  lines.push("«Настрій котів (вісь фіналу)» — середній настрій усіх котів, зважений днями вдома (§4.2), серед тих, хто дожив (у дужках — скільки їх, коли не всі): програні прогони фіналу пенсії не мають.");
+  lines.push("");
+  lines.push(finalesLine(runs));
+  lines.push("");
   lines.push(...careerTable(combos));
   const levels = new Array<number>(10).fill(0);
   for (const mood of runs.flatMap((r) => r.lives)) levels[level(mood)] = (levels[level(mood)] ?? 0) + 1;
@@ -191,6 +199,25 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`Час прогону: ${fmt(runs.reduce((s, r) => s + r.seconds, 0), 0)} с.`);
   return lines.join("\n");
+}
+
+/**
+ * Вісь котів фіналу (§4.2; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А11) серед прогонів, що дожили, з `total` прогонів
+ * комбінації (у дужках — скільки їх, коли не всі): у програних фіналу пенсії немає, а настрій котів — на день програшу, тож за ним
+ * не видно, з якою віссю котів бот іде на пенсію. Хто дожив без котів, у середнє не входить.
+ */
+function catsCell(survived: readonly Run[], total: number): string {
+  const moods = survived.map((r) => r.catsMood).filter(Number.isFinite);
+  if (moods.length === 0) return "—";
+  return `${fmt(avg(moods))}${moods.length < total ? ` (${moods.length})` : ""}`;
+}
+
+/** Скільки разів бот отримав кожен фінал пенсії (§4.2): чи «Ідеальний баланс» — нагорода, а не норма. */
+function finalesLine(runs: readonly Run[]): string {
+  const counts = new Map<string, number>();
+  for (const run of runs) if (run.finale !== null) counts.set(run.finale, (counts.get(run.finale) ?? 0) + 1);
+  const list = [...counts].sort((a, b) => b[1] - a[1]).map(([title, n]) => `«${title}» ${n}`);
+  return `Фінали пенсії (§4.2): ${list.length > 0 ? list.join(" · ") : "—"}.`;
 }
 
 /** Тижні, на яких звіт показує гроші й посаду (§6.4, §8.6; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10). */
