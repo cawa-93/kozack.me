@@ -573,6 +573,19 @@ describe("ефекти (§4.1)", () => {
     expect(save.current.home.fur).toBe(0);
   });
 
+  it("сценарій «Без інтернету» (`scenarios/internet-outage.json`): біля комп'ютера у відключення — відмова «немає інтернету», о 12:00 їде робот-пилосос (рішення автора 2026-10-29, А14)", () => {
+    const scenario = FILE_SCENARIOS["internet-outage"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(save.current.modifiers.day).toBe("outage");
+    const { events, stop } = recordEvents();
+    interact(save);
+    expect(events.find((e) => e.type === "refused")).toMatchObject({ object: "computer", reason: "no-internet" });
+    for (let i = 0; i < 80; i++) advance(save, 1);
+    stop();
+    expect(save.current.home.fur).toBe(0);
+  });
+
   it("гості: безлад — сором", () => {
     const save = game();
     save.current.modifiers.day = "guests";
