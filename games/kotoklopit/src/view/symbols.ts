@@ -117,6 +117,9 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "thermometer" };
     case "weak":
       return { icon: "battery-low" };
+    // Травмований (§6.5; рішення автора 2026-10-29, дрібні питання) — пластир навхрест, не градусник застуди.
+    case "injured":
+      return { icon: "bandage" };
     // Чистого одягу досить (§8.7, загальна ревізія 2026-10-29): стос складених сорочок із галочкою — не брудна сорочка
     // («Чистюля»), не мокра (прання готове) і не «повне сховище».
     case "clothes-clean":

@@ -40,8 +40,8 @@ export function illnessSpeed(state: GameState): number {
   return speed;
 }
 
-/** Застуда — без ривка (§6.5). */
-export const canDashWhenIll = (state: GameState): boolean => !isIll(state, "cold");
+/** Застуда й травма — без ривка (§6.5; травма — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Травма й ривок»). */
+export const canDashWhenIll = (state: GameState): boolean => !isIll(state, "cold") && !isIll(state, "injury");
 
 /**
  * Ніч (§6.5): виснаження від недосипу кілька ночей поспіль і одужання від доброго сну; щоденна шкода здоров'ю —

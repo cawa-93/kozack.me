@@ -123,6 +123,23 @@ describe("рух (§8.4)", () => {
     expect(refusals(shower)).toEqual([]);
   });
 
+  it("травма — без ривка, як застуда: відмова з пластирем, ситість не витрачається; одужав — ривок є (рішення автора 2026-10-29, дрібні питання)", () => {
+    const save = game();
+    const stats = save.current.character.stats;
+    fallIllPerson(save.current, "injury");
+    expect(canDash(save.current)).toBe(false);
+    const satiety = stats.satiety;
+    const { events, stop } = recordEvents();
+    expect(dash(save.current)).toBe(false);
+    stop();
+    expect(events.filter((e) => e.type === "refused")).toEqual([expect.objectContaining({ object: "dash", reason: "injured" })]);
+    expect(events.some((e) => e.type === "dash")).toBe(false);
+    expect(stats.satiety).toBe(satiety);
+    // Травма минула — ривок знову є.
+    save.current.character.illnesses = [];
+    expect(dash(save.current)).toBe(true);
+  });
+
   it("«Сонливість» уповільнює ходьбу (§8.8)", () => {
     const save = game();
     save.current.minute = hours(23);

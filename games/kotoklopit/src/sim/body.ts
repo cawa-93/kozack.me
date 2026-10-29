@@ -27,7 +27,7 @@ import { dashHunger, firstWeekProtected } from "./character";
 import { emit } from "./events";
 import { cycleDash, cycleMove } from "./grooming";
 import { moveFactor } from "./modifiers";
-import { canDashWhenIll, illnessSpeed, maybeInjure } from "./illness";
+import { canDashWhenIll, illnessSpeed, isIll, maybeInjure } from "./illness";
 import { observe } from "./knowledge";
 import { visibleFloorNear } from "./catmove";
 import { isSolid, SPAWN } from "./home";
@@ -69,14 +69,16 @@ export function canDash(state: GameState): boolean {
 }
 
 /**
- * Чому ривка немає надовго (§11.4, загальна ревізія 2026-10-29): застуда (§6.5) чи здоров'я нижче 25 (§6.3) — гравець бачить
- * причину, а не мовчазну кнопку. Перезарядка, робота за комп'ютером і душова кабіна — без відмови: ривок от-от повернеться, а
+ * Чому ривка немає надовго (§11.4, загальна ревізія 2026-10-29): застуда чи травма (§6.5) чи здоров'я нижче 25 (§6.3) — гравець
+ * бачить причину, а не мовчазну кнопку. Перезарядка, робота за комп'ютером і душова кабіна — без відмови: ривок от-от повернеться, а
  * персонаж за комп'ютером чи в кабіні і так не рухається.
  */
-function dashRefusal(state: GameState): "cold" | "weak" | null {
+function dashRefusal(state: GameState): "cold" | "injured" | "weak" | null {
   const { stats, activity } = state.character;
   if (activity?.kind === "work" || (activity?.kind === "use" && activity.inside === true)) return null;
-  if (!canDashWhenIll(state)) return "cold";
+  if (isIll(state, "cold")) return "cold";
+  // Травма — без ривка, як застуда (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Травма й ривок»).
+  if (isIll(state, "injury")) return "injured";
   if (stats.health < LOW_STAT) return "weak";
   return null;
 }

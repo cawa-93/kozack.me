@@ -96,6 +96,7 @@ export type IconName =
   | "hiss-kitten"
   | "thermometer"
   | "battery-low"
+  | "bandage"
   | "folded"
   | "nest"
   | "cat-annoyed";
@@ -692,6 +693,18 @@ Object.assign(ICONS, {
     g.lineStyle(3, INK).strokeRoundedRect(5, 12, 27, 16, 3);
     g.fillStyle(INK).fillRect(32, 16.5, 4, 7);
     g.fillStyle(COLORS.danger).fillRect(8.5, 15.5, 5, 9);
+  },
+  bandage: (g: Phaser.GameObjects.Graphics) => {
+    // Два пластирі навхрест (§6.5; рішення автора 2026-10-29, дрібні питання): персонаж травмований — ривка немає.
+    for (const angle of [Math.PI / 4, -Math.PI / 4]) {
+      g.save().translateCanvas(20, 20).rotateCanvas(angle);
+      g.fillStyle(0xe8b98a).fillRoundedRect(-17, -6, 34, 12, 5);
+      g.lineStyle(2.5, INK).strokeRoundedRect(-17, -6, 34, 12, 5);
+      g.fillStyle(0xf7ecdc).fillRect(-5, -4, 10, 8);
+      g.fillStyle(0xb7865b);
+      for (const x of [-12, -9, 9, 12]) g.fillCircle(x, 0, 1);
+      g.restore();
+    }
   },
 } satisfies Partial<Record<IconName, Draw>>);
 
