@@ -68,8 +68,8 @@ describe("рух (§8.4)", () => {
     expect(save.current.character.body.x).toBeCloseTo(2.5 + 9 * 0.25);
   });
 
-  it("ривок — «біганина»: ситість −0,25, у чоловічого персонажа ×1,1 (§6.3)", () => {
-    for (const [sex, cost] of [["female", 0.25], ["male", 0.275]] as const) {
+  it("ривок — «біганина»: ситість −0,25, однаково для обох персонажів (§6.3; рішення автора 2026-10-29, А4)", () => {
+    for (const [sex, cost] of [["female", 0.25], ["male", 0.25]] as const) {
       const save = newGame({ sex, difficulty: "normal", seed: 1 });
       const stats = save.current.character.stats;
       const before = stats.satiety;

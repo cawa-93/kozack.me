@@ -54,8 +54,6 @@ export const START_STATS: Record<StatName, number> = {
 export const START_MONEY = 300;
 /** Ситість за годину неспання. */
 export const SATIETY_PER_HOUR = -4;
-/** Чоловічий персонаж: ситість спадає на 10% швидше (§5.1). */
-export const MALE_METABOLISM = 1.1;
 /** Гігієна за годину неспання. */
 export const HYGIENE_PER_HOUR = -3;
 /** Ситість за один ривок — «біганина» (§6.3, правка автора 2026-10-22). */

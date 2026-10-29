@@ -12,7 +12,6 @@ import {
   HUNGER_HEALTH_THRESHOLD,
   HOUSEHOLD,
   HYGIENE_PER_HOUR,
-  MALE_METABOLISM,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
   SANITY_FLOOR,
@@ -113,14 +112,9 @@ export function unpleasantTask(state: GameState, sanityLoss: number, minute = st
   return stats.sanity - before;
 }
 
-/** Чоловічий персонаж має трохи вищий обмін речовин (§5.1). */
-function metabolism(state: GameState): number {
-  return state.character.sex === "male" ? MALE_METABOLISM : 1;
-}
-
-/** Ривок — «біганина» (§6.3): трохи ситості, з тим самим обміном речовин. */
+/** Ривок — «біганина» (§6.3): трохи ситості, однаково для всіх (обміну за статтю немає — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). */
 export function dashHunger(state: GameState): void {
-  changeStat(state, "satiety", DASH_SATIETY * metabolism(state));
+  changeStat(state, "satiety", DASH_SATIETY);
 }
 
 /**
@@ -129,7 +123,7 @@ export function dashHunger(state: GameState): void {
  * `GENERAL_REVIEW.md`, А1; раніше ситість падала до 5, і без їжі вдома голод добивав персонажа вранці за години).
  */
 export function passAwakeTime(state: GameState, hours: number, rewind = false): void {
-  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * hours, rewind ? ACCIDENT.satietyFloor : 0);
+  changeStat(state, "satiety", SATIETY_PER_HOUR * hours, rewind ? ACCIDENT.satietyFloor : 0);
   changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * hours, rewind ? ACCIDENT.floor : 0);
   if (!rewind && state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
     changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours);
@@ -145,13 +139,13 @@ export function sleepHeals(state: GameState): boolean {
 /**
  * Минув час сну (§8.8): голод і гігієна падають учетверо повільніше, здоров'я відновлюється
  * ситому й здоровому, а недосип його забирає; здоровий глузд не змінюється, показники не нижче 5.
- * Множники ситості й гігієни — ті самі, що вдень: обмін, цикл, брудний одяг, шерсть, «Спека» (загальна ревізія 2026-10-29;
- * раніше вночі діяв лише обмін).
+ * Множники гігієни — ті самі, що вдень: цикл, брудний одяг, шерсть, «Спека» (загальна ревізія 2026-10-29; раніше вночі діяв лише
+ * чоловічий обмін на ситість, а його прибрано — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
  */
 export function passSleepTime(state: GameState, hours: number): void {
   const heals = sleepHeals(state);
   const decay = hours / SLEEP_DECAY_DIVIDER;
-  changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * decay, SLEEP_STAT_FLOOR);
+  changeStat(state, "satiety", SATIETY_PER_HOUR * decay, SLEEP_STAT_FLOOR);
   changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * decay, SLEEP_STAT_FLOOR);
   if (heals) changeStat(state, "health", SLEEP_HEALTH_PER_HOUR * hours);
   const debt = Math.max(0, SLEEP_NEED_HOURS - hours);

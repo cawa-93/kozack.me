@@ -31,10 +31,12 @@ describe("показники персонажа (§6, §6.3)", () => {
     expect(save.current.minute).toBe(hours(7));
   });
 
-  it("чоловічий персонаж голоднішає на 10% швидше (§5.1)", () => {
-    const save = game("male");
-    advance(save, hours(1));
-    expect(save.current.character.stats.satiety).toBeCloseTo(START_STATS.satiety - 4.4);
+  it("обидва персонажі голоднішають однаково: чоловічого обміну немає (рішення автора 2026-10-29, А4)", () => {
+    for (const sex of ["female", "male"] as const) {
+      const save = game(sex);
+      advance(save, hours(1));
+      expect(save.current.character.stats.satiety).toBeCloseTo(START_STATS.satiety - 4);
+    }
   });
 
   it("коли ситість нижче 25, здоров'я падає на 2 за годину", () => {

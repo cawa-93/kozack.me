@@ -163,13 +163,13 @@ describe("показники уві сні (§8.8)", () => {
     expect(stats.health).toBeCloseTo(52);
   });
 
-  it("чоловічий персонаж голоднішає на 10% швидше й уві сні", () => {
+  it("уві сні чоловічий персонаж голоднішає так само, як жіночий: обміну за статтю немає (рішення автора 2026-10-29, А4)", () => {
     const save = game("male");
     const { stats } = save.current.character;
     stats.satiety = 50;
     save.current.minute = hours(24);
     goToSleep(save);
-    expect(stats.satiety).toBeCloseTo(50 - (4 * 1.1 * 8) / 4);
+    expect(stats.satiety).toBeCloseTo(50 - (4 * 8) / 4);
   });
 
   it("показники не опускаються нижче 5 і межа їх не піднімає", () => {
