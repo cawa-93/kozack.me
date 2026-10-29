@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { START_MONEY } from "../src/sim/config";
-import { deliveryCost, order, productPrice, seePhoneHints, supplyCount, unpack, useSupply } from "../src/sim/economy";
+import { deliveryCost, order, payUtilities, productPrice, seePhoneHints, supplyCount, unpack, useSupply, utilitiesDue } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -182,6 +182,29 @@ describe("комунальні в ніч на понеділок (§6.4)", () =>
     expect(partial?.utilities).toEqual({ outcome: "partial", paid: 40, nextDue: 80 });
     expect(save.current.character.money).toBe(10);
     expect(save.current.home.utilitiesDebt).toBe(40);
+  });
+
+  it("борг більший за поточний тиждень: оплачується більший тиждень, на який вистачає грошей (загальна ревізія 2026-10-29)", () => {
+    // Минулого тижня до комунальних додався ремонт дивана: борг 49, а цей тиждень — 40.
+    const debtor = (money: number): Save => {
+      const save = game();
+      save.current.home.utilitiesDebt = 49;
+      expect(utilitiesDue(save.current)).toBe(40);
+      save.current.character.money = money;
+      return save;
+    };
+    // На борг не вистачає, а на поточний тиждень — так: його й оплачено, борг лишається, гравця не виселено.
+    const short = debtor(45).current;
+    expect(payUtilities(short)).toEqual({ outcome: "partial", paid: 40, nextDue: 89 });
+    expect([short.character.money, short.home.utilitiesDebt, short.end]).toEqual([5, 49, null]);
+    // Вистачає на більший — оплачується борг, боргом лишається поточний тиждень.
+    const enough = debtor(60).current;
+    expect(payUtilities(enough)).toEqual({ outcome: "partial", paid: 49, nextDue: 80 });
+    expect([enough.character.money, enough.home.utilitiesDebt]).toEqual([11, 40]);
+    // Не вистачає на жоден тиждень — виселення.
+    const broke = debtor(39).current;
+    expect(payUtilities(broke).outcome).toBe("evicted");
+    expect(broke.end).toBe("eviction");
   });
 
   it("з попередженням не вистачило на жоден тиждень — виселення, решта ночі не обробляється", () => {

@@ -440,7 +440,7 @@ export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "
 
 /**
  * Сплатити комунальні в ніч на понеділок (§6.4). Неоплачений тиждень — попередження;
- * з попередженням треба сплатити два тижні, хоча б один, інакше — виселення.
+ * з попередженням треба сплатити два тижні, хоча б один (більший, на який вистачає грошей), інакше — виселення.
  */
 export function payUtilities(state: GameState): UtilitiesReport {
   const home = state.home;
@@ -459,9 +459,13 @@ export function payUtilities(state: GameState): UtilitiesReport {
     home.utilitiesDebt = 0;
     return { outcome: "cleared", paid: debt + due, nextDue: 0 };
   }
-  if (spend(state, debt, "utilities")) {
-    home.utilitiesDebt = due;
-    return { outcome: "partial", paid: debt, nextDue: due + utilitiesDue(state) };
+  // На два тижні не вистачає — оплачується один (§6.4 п. 3): більший, на який вистачає грошей, щоб борг поменшав найбільше;
+  // неоплачений лишається боргом. Загальна ревізія 2026-10-29: раніше — лише борг, і коли він був більший за поточний
+  // тиждень (ремонт, викинуті речі, «Перерахунок»), гравця виселяли, хоча на поточний тиждень грошей вистачало.
+  for (const week of [Math.max(debt, due), Math.min(debt, due)]) {
+    if (!spend(state, week, "utilities")) continue;
+    home.utilitiesDebt = debt + due - week;
+    return { outcome: "partial", paid: week, nextDue: home.utilitiesDebt + utilitiesDue(state) };
   }
   endGame(state, "eviction");
   return { outcome: "evicted", paid: 0, nextDue: 0 };
