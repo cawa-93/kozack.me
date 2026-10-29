@@ -92,11 +92,12 @@ export function giveCatnip(state: GameState, quality: Quality, rng: Rng): boolea
   return true;
 }
 
-/** Надягти нашийник (§9.10): старий, якщо був, замінюється. */
+/** Надягти нашийник (§9.10): старий іншої якості, якщо був, замінюється. */
 export function putCollar(state: GameState, quality: Quality): boolean {
   const cat = catInHands(state);
   const supply = state.home.supplies.collar;
-  if (!cat || supply[quality] <= 0) return false;
+  // Такий самий нашийник не надягають: старий пропав би, нічого не змінивши (§9.10; загальна ревізія 2026-10-29).
+  if (!cat || supply[quality] <= 0 || cat.collar?.quality === quality) return false;
   useSupply(state, "collar", quality);
   cat.collar = { quality, bell: cat.collar?.bell ?? false };
   envy(state, cat, "collar");

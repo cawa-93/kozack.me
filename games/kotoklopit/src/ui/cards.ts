@@ -433,15 +433,23 @@ export type CareChoice = { medicine: Medicine } | { treat: Quality } | { catnip:
 
 /** Чи є чим доглянути кота біля аптечки (§8.7): ліки, ласощі, нашийник, дзвіночок. */
 export function hasCareSupplies(state: GameState, cat: Cat): boolean {
-  // Дзвіночок — лише на нашийник без дзвіночка: інакше картка відкрилася б порожньою.
+  // Дзвіночок — лише на нашийник без дзвіночка, нашийник — лише іншої якості, ніж на коті: інакше картка відкрилася б порожньою.
   const bell = cat.collar !== null && !cat.collar.bell && supplyCount(state, "bell") > 0;
-  return bell || (["pills", "drops", "treats", "catnip", "collar"] as const).some((p) => supplyCount(state, p) > 0);
+  return bell || collarChoices(state, cat).length > 0 || (["pills", "drops", "treats", "catnip"] as const).some((p) => supplyCount(state, p) > 0);
+}
+
+/**
+ * Нашийники, які можна надягти котові (§9.10): з запасу, крім такого самого, як на ньому. Інший замінює старий; такий самий
+ * старий мовчки викидав би, нічого не змінивши (загальна ревізія 2026-10-29).
+ */
+function collarChoices(state: GameState, cat: Cat): Quality[] {
+  return (["premium", "cheap"] as const).filter((q) => state.home.supplies.collar[q] > 0 && cat.collar?.quality !== q);
 }
 
 /** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10, §9.12): ліки, ласощі, котяча м'ята, нашийник. */
 export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice) => void, onCancel: () => void): Card {
   const supply = state.home.supplies;
-  const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
+  const actions: CardAction[] = [];
   for (const m of ["pills", "drops"] as const) {
     if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} ×${supplyCount(state, m)}`, onSelect: () => onPick({ medicine: m }) });
   }
@@ -452,12 +460,10 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
   for (const q of ["premium", "cheap"] as const) {
     if (supply.catnip[q] > 0) actions.push({ label: `${VARIANT_TITLES["catnip"]?.[q] ?? ""} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
   }
-  for (const q of ["premium", "cheap"] as const) {
-    if (supply.collar[q] > 0) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
-  }
+  for (const q of collarChoices(state, cat)) actions.push({ label: VARIANT_TITLES["collar"]?.[q] ?? "", onSelect: () => onPick({ collar: q }) });
   if (cat.collar && !cat.collar.bell && supplyCount(state, "bell") > 0) actions.push({ label: `Дзвіночок ×${supplyCount(state, "bell")}`, onSelect: () => onPick("bell") });
-  const first = actions[0];
-  if (first) first.primary = true;
+  // Це меню вибору, як «Куди поїхати?»: головної дії немає, тож пробіл чи Enter нічого не обирають за гравця. Раніше головною
+  // була перша дія (таблетки): другий пробіл, що брав кота, давав ліки здоровому коту (загальна ревізія 2026-10-29).
   return {
     kicker: "Догляд",
     title: `${cat.name} на руках`,

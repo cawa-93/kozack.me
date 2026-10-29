@@ -17,6 +17,7 @@ import { FEEDER_CAPACITY } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
 import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
+import { careCard, hasCareSupplies } from "../src/ui/cards";
 import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
@@ -63,6 +64,31 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     expect(cat.collar?.quality).toBe("cheap");
     nightlyCare(save.current, always());
     expect(cat.collar).toBeNull();
+  });
+
+  it("картка догляду — меню без головної дії, а такий самий нашийник не пропонується (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const cat = held(save);
+    save.current.home.supplies.pills = { cheap: 2, premium: 0 };
+    save.current.home.supplies.treats = { cheap: 3, premium: 0 };
+    const card = (): ReturnType<typeof careCard> => careCard(save.current, cat, () => undefined, () => undefined);
+    // Пробіл чи Enter нічого не обирають за гравця: раніше таблетки були головною дією, і другий пробіл давав ліки здоровому коту.
+    expect(card().actions.length).toBeGreaterThan(0);
+    expect(card().actions.some((a) => a.primary)).toBe(false);
+    // У дешевому нашийнику, а в запасі лише дешевий — варіанта немає; з'явився дорогий — є.
+    save.current.home.supplies = { ...save.current.home.supplies, pills: { cheap: 0, premium: 0 }, treats: { cheap: 0, premium: 0 }, collar: { cheap: 1, premium: 0 } };
+    cat.collar = { quality: "cheap", bell: false };
+    expect(card().actions).toEqual([]);
+    expect(hasCareSupplies(save.current, cat)).toBe(false);
+    expect(putCollar(save.current, "cheap")).toBe(false);
+    expect(save.current.home.supplies.collar.cheap).toBe(1);
+    save.current.home.supplies.collar.premium = 1;
+    expect(hasCareSupplies(save.current, cat)).toBe(true);
+    expect(card().actions.map((a) => a.label)).toHaveLength(1);
+    expect(putCollar(save.current, "premium")).toBe(true);
+    expect(cat.collar?.quality).toBe("premium");
+    // Тепер у дорогому — дешевий знову можна надягти (заміна за §9.10).
+    expect(card().actions).toHaveLength(1);
   });
 });
 
