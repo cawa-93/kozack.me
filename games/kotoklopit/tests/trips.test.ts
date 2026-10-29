@@ -81,6 +81,26 @@ describe("гонка (§8.5)", () => {
     expect(night?.sleptHours).toBeCloseTo(8, 0);
   });
 
+  it("аварія: час перемотування до сну не рахується в статистику фіналу, гонка — за пунктом призначення (загальна ревізія 2026-10-29)", () => {
+    const save = game(8 * 60 + 30);
+    save.current.day = 1;
+    save.current.modifiers.day = "office";
+    const before = { ...save.current.stats.minutes };
+    startTrip(save.current, "office");
+    save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
+    drive(save, 0.1, NO_RACE_INPUT);
+    expect(save.current.trip?.phase).toBe("accident");
+    const raced = save.current.stats.minutes.work - before.work;
+    expect(raced).toBeGreaterThan(0);
+    rewindAccident(save);
+    const after = save.current.stats.minutes;
+    // Раніше сюди потрапляли ~13,5 години до сну жайворонка.
+    expect(after.work - before.work).toBeCloseTo(raced);
+    expect(after.cats).toBe(before.cats);
+    expect(after.self).toBe(before.self);
+    expect(after.bustle).toBe(before.bustle);
+  });
+
   it("аварія: ремонт, коли грошей менше 60, — усе, що було, і поїздка пам'ятає скільки (перевірка поїздок 2026-10-28)", () => {
     for (let seed = 1; seed < 40; seed++) {
       const save = game(12 * 60);

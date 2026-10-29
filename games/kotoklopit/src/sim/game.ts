@@ -128,7 +128,8 @@ const CAT_USES = /^(item|mess):|^vacuum$/;
 /** На що йде час (§4.2): робота, коти, собі чи «метушня» — ходіння між справами. */
 function timeCategory(state: GameState, input: Input): keyof GameState["stats"]["minutes"] | null {
   const trip = state.trip;
-  if (trip) return trip.destination === "office" ? "work" : CAT_TRIPS.has(trip.destination) ? "cats" : "self";
+  // Поки день перемотується після аварії, персонаж нічого не робить: цей час не рахується (§4.2, загальна ревізія 2026-10-29).
+  if (trip) return trip.phase === "accident" ? null : trip.destination === "office" ? "work" : CAT_TRIPS.has(trip.destination) ? "cats" : "self";
   const activity = state.character.activity;
   if (activity?.kind === "work") return "work";
   if (activity?.kind === "pet" || activity?.kind === "play") return "cats";
