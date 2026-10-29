@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { courierNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
-import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId } from "../src/dev/scenarios";
+import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId, type Scenario } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
 import { interact, newGame } from "../src/sim/game";
 import { weekdayOf, weekOf } from "../src/sim/time";
 import { createCat, idleAct } from "../src/sim/cat";
-import { dispatch } from "../src/sim/economy";
+import { dispatch, utilitiesDue } from "../src/sim/economy";
+import { THINGS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hours, recordEvents } from "./helpers";
@@ -72,6 +73,20 @@ describe("сценарії (§11.5)", () => {
       { group: "warmth", level: 2, seen: 1, known: false },
       { group: "hunting", level: -1, seen: 0, known: false },
     ]);
+  });
+
+  it("сценарій, збережений до автогодівниць над мисками (2026-10-23), оновлюється, як збереження: годівниця над миской, комунальні — за одну (загальна ревізія 2026-10-29)", () => {
+    // У старому стані годівниця — одна на дім, у `appliances.feeder`; нинішній тип такого ключа не знає.
+    const scenario = (feeder: boolean): Scenario => ({
+      name: "Стара годівниця",
+      cats: [{ ageWeeks: 10 }],
+      ...(feeder ? { state: { home: { appliances: { feeder: "cheap" } } } as unknown as NonNullable<Scenario["state"]> } : {}),
+    });
+    const save = applyScenario(scenario(true));
+    const home = save.current.home;
+    expect("feeder" in home.appliances).toBe(false);
+    expect(home.feeders).toHaveLength(1);
+    expect(utilitiesDue(save.current)).toBe(utilitiesDue(applyScenario(scenario(false)).current) + THINGS.feeder.utilities);
   });
 
   it("id сценарію — латиницею з назви", () => {

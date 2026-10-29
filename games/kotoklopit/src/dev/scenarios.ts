@@ -3,7 +3,7 @@
 
 import { WATER_CAPACITY } from "../sim/config";
 import { createCat } from "../sim/cat";
-import { newGame, upgradeTraits, type NewGameOptions } from "../sim/game";
+import { newGame, upgradeState, type NewGameOptions } from "../sim/game";
 import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
@@ -82,8 +82,9 @@ export function applyScenario(scenario: Scenario): Save {
     const b = added[j];
     if (a && b) changeRelation(state, a, b, value - relation(state, a, b));
   }
-  // Сценарій, збережений до злиття груп рис (2026-10-25), — риси в нових групах.
-  upgradeTraits(state);
+  // Сценарій, збережений старішою версією гри, оновлюється, як і збереження: риси в нових групах (2026-10-25), автогодівниця
+  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси.
+  upgradeState(state);
   save.current = state;
   rebase(save);
   return save;

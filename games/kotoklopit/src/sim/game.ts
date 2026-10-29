@@ -281,13 +281,20 @@ export function deserialize(json: string): Save {
   const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
   if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
   const save = data as Save;
-  for (const state of [save.current, save.dayStart, save.weekStart]) {
-    upgradeFeeder(state);
-    upgradeTraits(state);
-    upgradeWardrobe(state);
-    upgradeSupplies(state);
-  }
+  for (const state of [save.current, save.dayStart, save.weekStart]) upgradeState(state);
   return save;
+}
+
+/**
+ * Усі оновлення стану, збереженого старішою версією гри: і для збережень (`deserialize`), і для сценаріїв режиму розробки
+ * (`applyScenario`), щоб нова міграція одразу діяла для обох (загальна ревізія 2026-10-29: сценарії мігрували лише риси, і стара
+ * автогодівниця в сценарії не працювала, а комунальні за неї нараховувалися).
+ */
+export function upgradeState(state: GameState): void {
+  upgradeFeeder(state);
+  upgradeTraits(state);
+  upgradeWardrobe(state);
+  upgradeSupplies(state);
 }
 
 /** Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. */
