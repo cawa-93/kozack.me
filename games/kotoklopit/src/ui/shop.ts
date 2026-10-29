@@ -46,7 +46,7 @@ function stockText(state: GameState, goods: Goods, cart: readonly CartLine[]): s
   return parts.join(" · ");
 }
 
-/** Розмір упаковки для запасу («7 чисток лотка»), а для автогодівниці — скільки корму вміщує (§9.12). */
+/** Розмір упаковки для запасу («10 чисток лотка»), а для автогодівниці — скільки корму вміщує (§9.12). */
 function packText(goods: Goods, quality: Quality): string {
   if ("thing" in goods && goods.thing === "feeder") return ` · ${PRODUCT_TITLES.catFood.unit(FEEDER_CAPACITY[quality])}`;
   if (!("product" in goods)) return "";
