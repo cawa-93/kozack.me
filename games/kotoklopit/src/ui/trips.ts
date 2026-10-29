@@ -1,13 +1,13 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { ACCIDENT, DISEASES, DOCTOR, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { tripBlocker } from "../sim/trips";
 import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { BREED_ABOUT, diseaseTitle, fill, ILLNESS_TITLES, VET_ADVICE, VET_MANNER } from "../texts";
+import { BREED_ABOUT, diseaseTitle, fill, GROOMED, ILLNESS_TITLES, VET_ADVICE, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -299,18 +299,23 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(list);
       break;
     }
-    case "groomer":
+    case "groomer": {
       if (!cat) break;
+      // Безшерстого грумер миє, а не вичісує — і картка каже про це чесно (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15).
+      const washes = groomerWashes(cat);
       if (log.done.includes("groom")) {
-        body.push(fill("{кіт} [вичесаний|вичесана] й [пухнастий|пухнаста], хоч і трохи [ображений|ображена].", cat.sex, { кіт: cat.name }));
+        body.push(fill(GROOMED[washes ? "hairless" : "coat"], cat.sex, { кіт: cat.name }));
         const manner = vetManner(cat);
-        if (manner) body.push(fill(VET_MANNER.groomer[manner], cat.sex, { кіт: cat.name }));
-      } else
-        body.push(
-          `${cat.name} у переносці.`,
-          row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
-        );
+        if (manner) body.push(fill(VET_MANNER[washes ? "wash" : "groomer"][manner], cat.sex, { кіт: cat.name }));
+        break;
+      }
+      const titles = SERVICE_TITLES[washes ? "wash" : "groom"];
+      body.push(
+        `${cat.name} у переносці.`,
+        row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(`${titles.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${titles.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
+      );
       break;
+    }
     case "show": {
       if (!cat) break;
       const result = log.done.find((d) => d.startsWith("show:"));

@@ -212,12 +212,23 @@ export function vetSterilize(state: GameState): boolean {
 
 // --- Грумер, виставка, офіс -----------------------------------------------------------------
 
-/** Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. */
+/**
+ * Чи грумер кота миє, а не вичісує: безшерстого вичісувати нічого (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15).
+ * Картка грумера каже за цим «вимитий», а не «вичесаний і пухнастий».
+ */
+export const groomerWashes = (cat: Cat): boolean => cat.shape.coat === "hairless";
+
+/**
+ * Грумер (§8.5): кіт не зригує шерстяних грудок 7 чи 14 днів, настрій трохи гірший. Безшерстого грумер миє (рішення автора
+ * 2026-10-29, `GENERAL_REVIEW.md`, А15): як і купання вдома, це починає відлік до дерматиту знову (§8.7). Дерматиту, що вже
+ * почався, грумер не лікує — це ветеринар чи купання вдома дорогим шампунем.
+ */
 export function groom(state: GameState, quality: Quality): boolean {
   const cat = tripCat(state);
   const trip = state.trip;
   if (!cat || trip?.destination !== "groomer" || !spend(state, GROOMER.price[quality], "other")) return false;
   cat.groomedUntil = state.day + GROOMER.days[quality];
+  if (groomerWashes(cat)) cat.bathedDay = state.day;
   changeMood(state, cat, GROOMER.mood[quality], "грумер");
   // Як і на огляді, «Ветеринар» видно в картці грумера (§9.12): «Жах клініки» затягує грумінг.
   const manner = vetManner(cat);

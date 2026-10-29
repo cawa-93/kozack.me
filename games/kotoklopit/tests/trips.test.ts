@@ -11,6 +11,8 @@ import {
   buyAtShop,
   buyFromBreeder,
   enterShow,
+  groom,
+  groomerWashes,
   knownSterilizeBlocker,
   officeMeeting,
   shelterCats,
@@ -28,6 +30,7 @@ import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { accidentBedtime, canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Difficulty, GameState, Save, TraitLevel } from "../src/sim/types";
+import { fill, GROOMED, VET_MANNER } from "../src/texts";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
@@ -855,6 +858,50 @@ describe("пункти призначення (§8.5)", () => {
     save.current.day = 6 + BATH.hairlessDays;
     nightlyCare(save.current, always);
     expect(hasDisease(kitten, "dermatitis")).toBe(true);
+  });
+
+  describe("безшерстого грумер миє (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
+    /** Кіт, якого давно не купали, у грумера. */
+    function atGroomer(coat: Cat["shape"]["coat"]): { save: Save; cat: Cat } {
+      const save = game(9 * 60);
+      save.current.day = 20;
+      const cat = withCat(save);
+      cat.shape.coat = coat;
+      cat.bathedDay = 0;
+      save.current.home.carrier = "cheap";
+      save.current.character.held = { kind: "cat", cat: cat.id };
+      arrive(save, "groomer");
+      return { save, cat };
+    }
+
+    it("як купання вдома: відлік до дерматиту — з дня грумера, тож 7 ночей безшерстий не хворіє", () => {
+      for (const quality of ["cheap", "premium"] as const) {
+        const { save, cat } = atGroomer("hairless");
+        expect(groomerWashes(cat)).toBe(true);
+        expect(groom(save.current, quality)).toBe(true);
+        expect(cat.bathedDay, quality).toBe(20);
+        returnHome(save, save.current.trip?.visit ?? 0, TRIPS.groomer.road);
+        const always = { ...createRng(1), chance: () => true };
+        for (let day = 20; day < 20 + BATH.hairlessDays; day++) {
+          save.current.day = day;
+          nightlyCare(save.current, always);
+          expect(hasDisease(cat, "dermatitis"), `${quality}, день ${day}`).toBe(false);
+        }
+      }
+    });
+
+    it("кота з шерстю грумер вичісує: відлік купання не змінюється", () => {
+      const { save, cat } = atGroomer(null);
+      expect(groomerWashes(cat)).toBe(false);
+      expect(groom(save.current, "cheap")).toBe(true);
+      expect(cat.bathedDay).toBe(0);
+    });
+
+    it("картка каже «вимитий», а не «вичесаний і пухнастий»", () => {
+      expect(fill(GROOMED.hairless, "female", { кіт: "Мурка" })).toBe("Мурка вимита, хоч і трохи ображена.");
+      expect(fill(GROOMED.hairless, "male", { кіт: "Барсик" })).toBe("Барсик вимитий, хоч і трохи ображений.");
+      for (const text of [GROOMED.hairless, ...Object.values(VET_MANNER.wash)]) expect(text).not.toMatch(/вичес|вичіс|пухнаст|грумінг/);
+    });
   });
 
   describe("котокафе прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
