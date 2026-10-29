@@ -123,7 +123,9 @@ export class Overlay {
 
   /**
    * Екран кінця гри (§4.2): як титулка дня — на чорному екрані по черзі проявляються частини, а
-   * кнопки — останніми. Натискання до кінця показу відкриває все одразу.
+   * кнопки — останніми. Натискання до кінця показу — клік, дотик, пробіл чи Enter — відкриває все одразу, а дія кнопки —
+   * лише після цього (загальна ревізія 2026-10-29: раніше пробіл ще до появи кнопок одразу переграв день, а дотик туди, де
+   * кнопка ще невидима, натискав її).
    */
   ending(parts: HTMLElement[], actions: CardAction[]): void {
     const screen = element("div", "title-screen ending-screen");
@@ -133,8 +135,18 @@ export class Overlay {
       screen.append(part);
       delay += part.classList.contains("title-heading") ? TITLE_TIMING.heading : TITLE_TIMING.line * 2;
     }
+    const shownAt = performance.now() + delay * 1000;
+    const revealed = (): boolean => performance.now() >= shownAt || screen.classList.contains("all");
+    // Кнопки ще проявляються — натискання лише відкриває все, як на титулці.
+    const gated = actions.map((action) => ({
+      ...action,
+      onSelect: () => {
+        if (revealed()) action.onSelect();
+        else screen.classList.add("all");
+      },
+    }));
     const buttons = element("div", "card-actions ending-actions");
-    for (const action of actions) {
+    for (const action of gated) {
       const button = element("button", action.primary ? "button primary" : "button", action.label);
       button.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -146,7 +158,7 @@ export class Overlay {
     screen.append(buttons);
     screen.addEventListener("click", () => screen.classList.add("all"));
     drawGlyphs(screen);
-    this.card = { title: "", body: [], actions };
+    this.card = { title: "", body: [], actions: gated };
     this.root.classList.remove("dawn");
     this.root.classList.add("cinematic");
     this.root.replaceChildren(screen);
@@ -214,6 +226,16 @@ export class Overlay {
   private key(event: KeyboardEvent): void {
     const card = this.card;
     if (!card) return;
+    const active = document.activeElement;
+    const typing = active instanceof HTMLInputElement || active instanceof HTMLSelectElement || active instanceof HTMLTextAreaElement;
+    // Автоповтор затиснутого пробілу чи Enter — не нове натискання (загальна ревізія 2026-10-29). Затиснутий пробіл (пестощі)
+    // не гортає титулку й екран кінця гри, а preventDefault не дає кнопці в фокусі стати натиснутою: інакше, відпустивши
+    // пробіл, гравець «відповідав» мамі чи брав знайду, сам того не обравши. Пробіл у полі вводу друкується, як і раніше.
+    if (event.repeat && (event.key === "Enter" || (event.key === " " && !typing))) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     // Клавіші картки не доходять до гри: інакше пробіл, що закрив титулку, ще й натиснув би дію.
     if (event.key === "Escape" && card.onDismiss) {
       event.preventDefault();
@@ -222,8 +244,6 @@ export class Overlay {
       return;
     }
     // Пробіл і Enter на кнопці в фокусі натискають її самі; у полі вводу — друкують.
-    const active = document.activeElement;
-    const typing = active instanceof HTMLInputElement || active instanceof HTMLSelectElement || active instanceof HTMLTextAreaElement;
     if ((event.key === "Enter" || event.key === " ") && !(active instanceof HTMLButtonElement) && !(typing && event.key === " ")) {
       const primary = card.actions.find((a) => a.primary && !a.disabled);
       if (primary) {
