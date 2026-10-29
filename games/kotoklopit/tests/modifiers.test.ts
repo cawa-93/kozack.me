@@ -20,7 +20,7 @@ import { boxesShown } from "../src/sim/storage";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
 import { callImpression, isWorkday, startWork, tickWork } from "../src/sim/work";
-import { hours, recordEvents, walkTo } from "./helpers";
+import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 14 });
 
@@ -241,6 +241,26 @@ describe("події модифікаторів: перевірка модифі
     stop();
     expect(save.current.character.held).toBeNull();
     expect(events.some((e) => (e.type === "bite" || e.type === "clawed") && e.cat === cat.id)).toBe(false);
+  });
+
+  it("мама дзвонить посеред купання: кота опускають, купання перервано — шампунь цілий, персонаж не стоїть у кабіні вхолосту (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    save.current.minute = 11 * 60;
+    const cat = withCat(save);
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    standAt(save, "shower");
+    interact(save);
+    expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true, bath: true });
+    const { events, stop } = recordEvents();
+    save.current.today.callPending = true;
+    expect(answerCall(save.current)).toBe(true);
+    expect(save.current.character.activity).toBeNull();
+    advance(save, MODIFIERS.call.minutes);
+    stop();
+    expect(save.current.character.held).toBeNull();
+    expect(events.some((e) => e.type === "bathed")).toBe(false);
+    expect(save.current.home.supplies.shampoo.cheap).toBe(5);
   });
 
   it("дзвінок мами чекає відповіді й після перезавантаження: «не відповідати» — −5 раз, відповісти після цього не можна, ніч скидає без штрафу (загальна ревізія 2026-10-29)", () => {

@@ -5,7 +5,7 @@ import { knownBreedHalves } from "./breeds";
 import { asleep, changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
-import { putDownCat } from "./actions";
+import { putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
 import { visibleFloorNear } from "./catmove";
 import { isNewborn } from "./reproduction";
@@ -270,7 +270,8 @@ export function answerCall(state: GameState): boolean {
   const kind = state.character.activity?.kind;
   if (kind === "pet" || kind === "play") state.character.activity = null;
   // Кота з рук опускають поруч, як і засинаючи (загальна ревізія 2026-10-29: кіт, що пручається, усі 30 хвилин лишався на
-  // руках і кусав, а опустити його гравець не міг). Інше з рук не змінюється з часом — лишається.
+  // руках і кусав, а опустити його гравець не міг). Інше з рук не змінюється з часом — лишається. Купання кота, якого опустили,
+  // перервано (§8.7, `stopBath` у putDownCat).
   const held = state.character.held;
   if (held?.kind === "cat") putDownCat(state, held.cat);
   return true;
@@ -465,6 +466,8 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
         // Кіт на руках персонажа справді виривається з рук і стає на підлогу поруч, як «cat-broke-free» у catai: інакше
         // повідомлення казало «вирвався з рук і сховався», а кіт лишався на руках (загальна ревізія 2026-10-29).
         if (isCarried(state, cat)) {
+          // Вирвався посеред купання — купання перервано (§8.7).
+          stopBath(state);
           state.character.held = null;
           const at = visibleFloorNear(state, state.character.body);
           cat.x = at.x;

@@ -496,4 +496,17 @@ describe("«Ветеринар»: рядок у картці огляду (§9.1
     expect(events).toContainEqual({ type: "cat-broke-free", cat: cat.id });
     expect(seen(cat, "vet")).toBe(1);
   });
+
+  it("ветеринарка вдома посеред купання: «Жах клініки» вирвався — купання перервано, шампунь цілий (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    save.current.modifiers.day = "home-vet";
+    const cat = withCat(save, { vet: -2 }, { x: 5.5, y: 8.5 });
+    save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    save.current.character.activity = { kind: "use", target: "shower", progress: 0, inside: true, bath: true };
+    tickModifiers(save.current, MODIFIERS.homeVetMinute - 1, 2, false);
+    expect(save.current.character.held).toBeNull();
+    expect(save.current.character.activity).toBeNull();
+    expect(save.current.home.supplies.shampoo.cheap).toBe(5);
+  });
 });

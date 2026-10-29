@@ -492,10 +492,20 @@ export function pickUpCat(state: GameState, cat: Cat): void {
   if (!fought && !offended && cat.stuck !== true) jealousy(state, cat, "hands");
 }
 
+/**
+ * Кіт залишив руки посеред купання (§8.7): купання без кота не триває — його перервано, шампунь не витрачено, персонаж виходить
+ * із кабіни (загальна ревізія 2026-10-29: раніше дія йшла далі вхолосту й наприкінці мовчки нічого не робила).
+ */
+export function stopBath(state: GameState): void {
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.bath === true) state.character.activity = null;
+}
+
 /** Опустити кота з рук поруч із персонажем. */
 export function putDownCat(state: GameState, catId: number): void {
   const character = state.character;
   const held = character.held;
+  stopBath(state);
   character.held = null;
   const cat = state.cats.find((c) => c.id === catId);
   if (!cat) return;
