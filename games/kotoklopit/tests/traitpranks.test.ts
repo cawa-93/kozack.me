@@ -587,6 +587,30 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
     expect(upHigh(save.current, cat)).toBe(false);
   });
 
+  it("кота нагорі не погладити: утримання дії пестощів не починає й сплячого не будить (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const cat = withCat(save, { climbing: 1 });
+    const wardrobe = objectById("wardrobe");
+    Object.assign(cat, { x: wardrobe.x + 0.5, y: wardrobe.y + 0.5 });
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 120, elapsed: 0 };
+    Object.assign(save.current.character.body, { x: wardrobe.x + 0.5, y: wardrobe.y + 1.4, facing: { x: 0, y: -1 } });
+    expect(upHigh(save.current, cat)).toBe(true);
+    expect(targetOf(save.current)).toMatchObject({ type: "cat" });
+    // Те саме без утримання — для порівняння здорового глузду й настрою.
+    const idle = deserialize(serialize(save));
+    for (let i = 0; i < 60; i++) advance(idle, 0.05);
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 60; i++) {
+      advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+      expect(save.current.character.activity).toBeNull();
+    }
+    stop();
+    expect(events.some((e) => e.type === "purr")).toBe(false);
+    expect(cat.act.kind).toBe("sleep");
+    expect(save.current.character.stats.sanity).toBeCloseTo(idle.current.character.stats.sanity, 6);
+    expect(cat.mood).toBeCloseTo(idle.current.cats.find((c) => c.id === cat.id)!.mood, 6);
+  });
+
   it("кіт, що спить на холодильнику, не заступає самого холодильника: продукти взяти можна (перевірка етапу 2026-10-26)", () => {
     const save = game();
     addSupply(save.current, "food", "cheap", 2);

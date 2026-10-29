@@ -647,6 +647,9 @@ function holdTick(state: GameState, minutes: number): boolean {
     else if (target.type === "cat" && catOnSink(state) === target.cat) return false;
     // Кота в барабані не гладять: натискання виганяє його (`tap`), а пестощі за мить натискання будили б його (повторна перевірка розмноження й побуту 2026-10-28).
     else if (target.type === "cat" && catInWasher(state) === target.cat) return false;
+    // Кота нагорі не дотягтися — і не погладити (§9.12, «Лазіння»): відмову «не дотягтися» дає натискання, застрягле кошеня
+    // знімають натисканням (загальна ревізія 2026-10-29: утримання гладило кота на шафі й будило сплячого).
+    else if (target.type === "cat" && upHigh(state, target.cat)) return false;
     else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
     else {
       character.activity = { kind: "use", target: target.id, progress: 0 };
