@@ -262,12 +262,29 @@ export function freeSlots(state: GameState, thing: ThingKind): number {
     const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === thing);
     return !ownsThing(state, thing) && !ordered ? 1 : 0;
   }
-  const coming = [...home.deliveries, ...home.porch].filter((d) => "thing" in d && d.thing === thing).length;
-  // Автогодівниця — одна на миску (§9.12): місце є над кожною миской без годівниці.
-  if (thing === "feeder") return bowlsWithoutFeeder(state).length - coming;
+  if (thing === "feeder") return feederRoom(state);
+  const coming = packagesOf(state, thing);
   const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
   const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
   return free - coming;
+}
+
+/** Скільки речей цього типу їде доставкою чи чекає під дверима. */
+function packagesOf(state: GameState, thing: ThingKind): number {
+  return [...state.home.deliveries, ...state.home.porch].filter((d) => "thing" in d && d.thing === thing).length;
+}
+
+/**
+ * Скільки ще автогодівниць уміститься (§9.12): одна на миску — над кожною миской без годівниці, і тими, що вдома, і тими,
+ * що вже їдуть, а в магазині ще й над мисками з того самого кошика (`cartBowls`). Нова миска стає спершу під годівницю, що
+ * чекає миску над порожнім місцем, — тоді місця для ще однієї вона не дає. Мінус годівниці, що вже їдуть. Загальна ревізія
+ * 2026-10-29: раніше рахувалися лише миски, що вже стоять, тож миску й годівницю доводилося замовляти двома замовленнями.
+ */
+export function feederRoom(state: GameState, cartBowls = 0): number {
+  const home = state.home;
+  const waiting = (home.feeders ?? []).filter((f) => !home.items.some((i) => i.kind === "bowl" && i.slot === f.slot)).length;
+  const newBowls = Math.max(0, packagesOf(state, "bowl") + cartBowls - waiting);
+  return Math.max(0, bowlsWithoutFeeder(state).length + newBowls - packagesOf(state, "feeder"));
 }
 
 /** Річ без місця вже є вдома: переноска, замок на шафці чи техніка (§6.4). */

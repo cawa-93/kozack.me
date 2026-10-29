@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { newGame } from "../src/sim/game";
 import { SHOP_WINDOW } from "../src/sim/config";
 import { shopModifier } from "../src/sim/destinations";
-import { deliveryCost } from "../src/sim/economy";
-import { canCheckout, cartDelivery, cartTotal, checkout, GOODS, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
+import { deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
+import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, room, unavailable, unitPrice, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ sex: "female", difficulty: "normal", seed: 4 });
@@ -76,6 +76,53 @@ describe("універсальний магазин (§6.4)", () => {
     checkout(state, [line({ thing: "house" }, "cheap", 3)], "delivery");
     expect(unavailable(state, { thing: "house" })).toBe("no-room");
     expect(unavailable(state, { thing: "toy" })).toBeNull();
+  });
+
+  it("автогодівниця — і над миской з того самого кошика чи тією, що вже їде (§9.12, загальна ревізія 2026-10-29)", () => {
+    const state = game().current;
+    state.character.money = 10_000;
+    const feeder = { thing: "feeder" } as const;
+    const bowl = { thing: "bowl" } as const;
+    expect(state.home.items.some((i) => i.kind === "bowl")).toBe(false);
+    expect(room(state, [], feeder, "cheap")).toBe(0);
+    expect(unavailable(state, feeder)).toBe("no-bowl");
+    // Миска в кошику дає місце одній годівниці.
+    const cart = [line(bowl, "cheap", 1), line(feeder, "premium", 1)];
+    expect(room(state, cart, feeder, "premium")).toBe(1);
+    expect(unavailable(state, feeder, cart)).toBeNull();
+    expect(canCheckout(state, [line(bowl, "cheap", 1), line(feeder, "cheap", 2)], "delivery")).toBe(false);
+    // Забрали миску з кошика — годівниця теж виходить.
+    const fewer = [line(bowl, "cheap", 0), line(feeder, "cheap", 1)];
+    fitCart(state, fewer);
+    expect(fewer[1]?.count).toBe(0);
+    // Одне замовлення доставкою: годівниця стає над новою миской.
+    expect(checkout(state, cart, "delivery")).toBe(true);
+    expect(freeSlots(state, "feeder")).toBe(0);
+    for (const d of state.home.deliveries) d.at = 0;
+    tickDeliveries(state);
+    receivePackages(state);
+    const placed = state.home.items.find((i) => i.kind === "bowl");
+    expect(state.home.feeders?.map((f) => [f.slot, f.quality])).toEqual([[placed && "slot" in placed ? placed.slot : "", "premium"]]);
+    // Миска, що вже їде, теж дає місце.
+    checkout(state, [line(bowl, "cheap", 1)], "delivery");
+    expect(freeSlots(state, "feeder")).toBe(1);
+  });
+
+  it("автогодівниця, що чекає миску, забирає собі миску з кошика: місця для ще однієї немає (§9.12)", () => {
+    const state = game().current;
+    state.character.money = 10_000;
+    state.home.feeders = [{ slot: "bowl-1", quality: "cheap", food: 0, foodQuality: null, sterile: false }];
+    expect(room(state, [line({ thing: "bowl" }, "cheap", 1)], { thing: "feeder" }, "cheap")).toBe(0);
+    expect(room(state, [line({ thing: "bowl" }, "cheap", 2)], { thing: "feeder" }, "cheap")).toBe(1);
+  });
+
+  it("на місці годівниця з кошика стає над миской з цього ж кошика, хоч би в якому порядку рядки (§9.12)", () => {
+    const state = game().current;
+    state.character.money = 10_000;
+    state.trip = { destination: "shop", seed: 1 } as Save["current"]["trip"];
+    expect(checkout(state, [line({ thing: "feeder" }, "cheap", 1), line({ thing: "bowl" }, "premium", 1)], "store")).toBe(true);
+    const placed = state.home.items.find((i) => i.kind === "bowl");
+    expect(placed && "slot" in placed && state.home.feeders?.[0]?.slot === placed.slot).toBe(true);
   });
 
   it("не вистачає грошей чи місця — нічого не купується", () => {

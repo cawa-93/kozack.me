@@ -4,8 +4,8 @@
 import { spend } from "./character";
 import { SHOP_TOYS_PER_ORDER, THINGS } from "./config";
 import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
-import { canOrderProduct, deliveryCost, dispatch, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
-import type { GameState, Quality } from "./types";
+import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
+import type { GameState, Quality, ThingKind } from "./types";
 
 export { GOODS, goodsKey, type Goods };
 
@@ -26,17 +26,33 @@ export function unitPrice(state: GameState, goods: Goods, quality: Quality, mode
 
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
 
+/** Скільки мисок (будь-якої якості) у кошику. */
+const cartBowls = (cart: readonly CartLine[]): number => cart.reduce((sum, l) => sum + ("thing" in l.goods && l.goods.thing === "bowl" ? l.count : 0), 0);
+
+/** Скільки речей цього типу вміститься разом із кошиком: автогодівниць — ще й над мисками з кошика (§9.12). */
+function thingRoom(state: GameState, cart: readonly CartLine[], thing: ThingKind): number {
+  if (thing === "toy") return SHOP_TOYS_PER_ORDER;
+  return thing === "feeder" ? feederRoom(state, cartBowls(cart)) : freeSlots(state, thing);
+}
+
 /**
  * Скільки ще штук цього товару й якості можна взяти, з урахуванням решти кошика (§6.4): запасів —
  * скільки завгодно (зайве чекає в ящиках біля входу), але не того, що ще лежить у ящиках; речей —
- * не більше вільних місць.
+ * не більше вільних місць (автогодівниць — і над мисками з цього кошика, §9.12).
  */
 export function room(state: GameState, cart: readonly CartLine[], goods: Goods, quality: Quality): number {
   const others = cart.filter((l) => same(l.goods, goods) && l.quality !== quality);
   if ("product" in goods) return canOrderProduct(state, goods.product) ? Infinity : 0;
   const used = others.reduce((sum, l) => sum + l.count, 0);
-  const free = goods.thing === "toy" ? SHOP_TOYS_PER_ORDER : freeSlots(state, goods.thing);
-  return Math.max(0, free - used);
+  return Math.max(0, thingRoom(state, cart, goods.thing) - used);
+}
+
+/**
+ * Кошик після зміни: штук, на які вже немає місця, менше (§6.4) — забрали з кошика миску, і автогодівниця над нею теж
+ * виходить з кошика, а не лишає його неоплатним без пояснення (§9.12).
+ */
+export function fitCart(state: GameState, cart: CartLine[]): void {
+  for (const line of cart) line.count = Math.min(line.count, room(state, cart, line.goods, line.quality));
 }
 
 /** Скільки коштують товари кошика, без доставки. */
@@ -53,10 +69,11 @@ export function cartDelivery(state: GameState, cart: readonly CartLine[], mode: 
 /** Чому товар зараз не взяти (§6.4): запас ще в ящиках, немає місця, річ уже є чи вже їде; null — можна. */
 export type Unavailable = "boxes" | "no-room" | "no-bowl" | "owned" | "ordered";
 
-export function unavailable(state: GameState, goods: Goods): Unavailable | null {
+export function unavailable(state: GameState, goods: Goods, cart: readonly CartLine[] = []): Unavailable | null {
   if ("product" in goods) return canOrderProduct(state, goods.product) ? null : "boxes";
   const { thing } = goods;
-  if (freeSlots(state, thing) > 0) return null;
+  // Автогодівниці — з урахуванням мисок у кошику (§9.12).
+  if (thingRoom(state, cart, thing) > 0) return null;
   if (thing === "carrier" || thing === "lock" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
   // Автогодівниця — одна на миску (§9.12).
   return thing === "feeder" ? "no-bowl" : "no-room";
@@ -83,7 +100,9 @@ export function canCheckout(state: GameState, cart: readonly CartLine[], mode: S
 export function checkout(state: GameState, cart: readonly CartLine[], mode: ShopMode): boolean {
   if (!canCheckout(state, cart, mode)) return false;
   if (mode === "delivery" && !spend(state, cartDelivery(state, cart.filter((l) => l.count > 0), mode), "delivery")) return false;
-  for (const line of cart) {
+  // Автогодівниці — після мисок: на місці годівниця стає над миской з цього ж кошика (§9.12).
+  const feederLast = (l: CartLine): number => Number("thing" in l.goods && l.goods.thing === "feeder");
+  for (const line of [...cart].sort((a, b) => feederLast(a) - feederLast(b))) {
     for (let i = 0; i < line.count; i++) {
       // Кошик уже перевірено: кілька упаковок одного запасу — усі в ящики.
       if (mode === "store") purchase(state, line.goods, line.quality);

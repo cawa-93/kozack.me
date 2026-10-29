@@ -4,7 +4,7 @@
 import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
 import { shopModifier } from "../sim/destinations";
 import { incoming, supplyCount } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, GOODS, goodsKey, goodsTotal, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, room, unavailable, unitPrice, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import { drawGlyphs } from "./glyphs";
 import { element } from "./overlay";
@@ -40,9 +40,10 @@ const UNAVAILABLE: Record<Unavailable, string> = {
 
 /**
  * Під назвою товару (§6.4, правка автора 2026-10-23): скільки його вже їде (з тим, що чекає під
- * дверима), і чому його не взяти. Скільки вдома — не показуємо: це видно зі сховищ.
+ * дверима), і чому його не взяти — з урахуванням кошика (миска в кошику дає місце автогодівниці, §9.12).
+ * Скільки вдома — не показуємо: це видно зі сховищ.
  */
-function stockText(state: GameState, goods: Goods): string {
+function stockText(state: GameState, goods: Goods, cart: readonly CartLine[]): string {
   const parts: string[] = [];
   const home = state.home;
   const packages = [...home.deliveries, ...home.porch];
@@ -53,7 +54,7 @@ function stockText(state: GameState, goods: Goods): string {
     const coming = packages.filter((d) => "thing" in d && d.thing === goods.thing).length;
     if (coming > 0) parts.push(`🚗 ×${coming}`);
   }
-  const reason = unavailable(state, goods);
+  const reason = unavailable(state, goods, cart);
   // «Уже їде» дублював би 🚗.
   if (reason !== null && reason !== "ordered") parts.push(UNAVAILABLE[reason]);
   return parts.join(" · ");
@@ -96,14 +97,17 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
     for (const g of goods) {
       const row = element("div", "shop-item");
       const name = element("span", "shop-name", goodsName(g));
-      const stock = [stockText(state, g)];
-      if (mode === "store") {
-        // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
-        const mod = shopModifier(state, g);
-        if (Math.abs(mod) >= 0.005) stock.push(mod < 0 ? "₴↓" : "₴↑");
-      }
-      const text = stock.filter((s) => s !== "").join(" · ");
-      if (text !== "") name.append(element("span", "shop-stock", text));
+      // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
+      const mod = mode === "store" ? shopModifier(state, g) : 0;
+      const arrow = Math.abs(mod) >= 0.005 ? (mod < 0 ? "₴↓" : "₴↑") : "";
+      // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
+      const stock = element("span", "shop-stock");
+      name.append(stock);
+      updaters.push(() => {
+        const text = [stockText(state, g, cart), arrow].filter((s) => s !== "").join(" · ");
+        stock.textContent = text;
+        stock.style.display = text === "" ? "none" : "";
+      });
       row.append(name);
       for (const quality of ["cheap", "premium"] as const) {
         const line: CartLine = { goods: g, quality, count: 0 };
@@ -115,6 +119,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
         const plus = element("button", "button step", "+");
         minus.addEventListener("click", () => {
           line.count = Math.max(0, line.count - 1);
+          // Забрали миску — автогодівниця, якій вона давала місце, теж виходить з кошика (§9.12).
+          fitCart(state, cart);
           update();
         });
         plus.addEventListener("click", () => {
