@@ -1,5 +1,6 @@
 // Запаси, доставка й комунальні (§6.4).
 
+import { idleAct } from "./cat";
 import { spend } from "./character";
 import {
   DELIVERY,
@@ -365,6 +366,25 @@ export function discard(state: GameState, itemId: number): boolean {
 export function discardAppliance(state: GameState, appliance: Appliance): boolean {
   if (state.home.appliances[appliance] === null) return false;
   state.home.appliances[appliance] = null;
+  return true;
+}
+
+/**
+ * Викинути переноску (§8.7), як техніку: потім можна купити знову, зокрема дорожчу (загальна ревізія 2026-10-29: переноски
+ * не було в «Моїх речах», тож дешеву не замінити дорогою). Переноску, в якій кіт у поїздці, не викинути; кіт, що спав у ній,
+ * вилазить — як перед поїздкою (§9.12 «Переноска»).
+ */
+export function discardCarrier(state: GameState): boolean {
+  if (state.home.carrier === null || (state.trip?.cat ?? null) !== null) return false;
+  state.home.carrier = null;
+  for (const cat of state.cats) if (cat.act.kind === "sleep" && cat.act.target === "carrier") cat.act = idleAct();
+  return true;
+}
+
+/** Викинути замок із шафки з кормом (§8.7), як техніку: потім можна купити знову, зокрема надійний (загальна ревізія 2026-10-29). */
+export function discardLock(state: GameState): boolean {
+  if (state.home.lock === undefined) return false;
+  delete state.home.lock;
   return true;
 }
 

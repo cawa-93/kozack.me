@@ -4,7 +4,7 @@ import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actio
 import { canDash, dash, isMoving } from "../sim/body";
 import { catOnSink, inStandoff, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, GIVE_AWAY_GRACE_DAYS, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, discardAppliance, seePhoneHints, supplyCount } from "../sim/economy";
+import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, DEFAULT_LOOK, interact, newGame, replayDay, replayWeek, returnHome, rewindAccident } from "../sim/game";
@@ -1360,10 +1360,11 @@ export class DayScene extends Phaser.Scene {
           },
           // Викинути — назавжди: спершу картка-підтвердження (перевірка побуту 2026-10-28: подвійний дотик викидав другу річ).
           discard: (item: HomeItem) => confirmDiscard(item.kind, () => discard(this.state, item.id)),
-          discardThing: (thing) =>
-            "appliance" in thing
-              ? confirmDiscard(thing.appliance, () => discardAppliance(this.state, thing.appliance))
-              : confirmDiscard("feeder", () => discardFeeder(this.state, thing.feeder)),
+          discardThing: (thing) => {
+            if ("appliance" in thing) confirmDiscard(thing.appliance, () => discardAppliance(this.state, thing.appliance));
+            else if ("feeder" in thing) confirmDiscard("feeder", () => discardFeeder(this.state, thing.feeder));
+            else confirmDiscard(thing.owned, () => (thing.owned === "carrier" ? discardCarrier(this.state) : discardLock(this.state)));
+          },
           // Віддати — назавжди: спершу картка-підтвердження (перевірка розмноження 2026-10-28: був один дотик без підтвердження);
           // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).
           advertise: (cat) =>

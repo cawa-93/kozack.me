@@ -205,12 +205,15 @@ function catChips(state: GameState): HTMLElement | null {
 
 export type PhoneTab = "shop" | "mine" | "cats" | "album" | "game";
 
+/** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
+export type DiscardThing = { appliance: Appliance } | { feeder: string } | { owned: "carrier" | "lock" };
+
 export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
   checkout: (cart: CartLine[]) => void;
   discard: (item: HomeItem) => void;
-  /** Викинути техніку чи автогодівницю (над місцем миски `slot`). */
-  discardThing: (thing: { appliance: Appliance } | { feeder: string }) => void;
+  /** Викинути техніку, автогодівницю (над місцем миски `slot`), переноску чи замок на шафку. */
+  discardThing: (thing: DiscardThing) => void;
   advertise: (cat: Cat) => void;
   cancelAd: (cat: Cat) => void;
   newGame: () => void;
@@ -386,8 +389,12 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
     row.append(button);
     shop.append(row);
   }
-  // Техніка й автогодівниці теж (§8.7): раніше їх тут не було, тож викинути їх не можна було зовсім (перевірка побуту 2026-10-28).
-  const extra: { kind: ThingKind; quality: Quality; thing: { appliance: Appliance } | { feeder: string } }[] = [
+  // Техніка й автогодівниці теж (§8.7): раніше їх тут не було, тож викинути їх не можна було зовсім (перевірка побуту 2026-10-28);
+  // переноска й замок на шафку — так само (загальна ревізія 2026-10-29), щоб дешеві можна було замінити дорожчими.
+  const { carrier, lock } = state.home;
+  const extra: { kind: ThingKind; quality: Quality; thing: DiscardThing }[] = [
+    ...(carrier === null ? [] : [{ kind: "carrier" as const, quality: carrier, thing: { owned: "carrier" as const } }]),
+    ...(lock === undefined ? [] : [{ kind: "lock" as const, quality: lock, thing: { owned: "lock" as const } }]),
     ...(["fountain", "robot"] as const).flatMap((a) => {
       const quality = state.home.appliances[a];
       return quality === null ? [] : [{ kind: a, quality, thing: { appliance: a } }];

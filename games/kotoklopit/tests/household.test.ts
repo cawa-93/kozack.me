@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
-import { addSupply, discardAppliance, freeSlots, place, utilitiesDue } from "../src/sim/economy";
+import { addSupply, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
@@ -15,7 +15,7 @@ import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { FEEDER_CAPACITY } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
-import { unavailable } from "../src/sim/shop";
+import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
@@ -284,6 +284,42 @@ describe("перевірка побуту 2026-10-28", () => {
     expect(discardFeeder(save.current, bowl.slot)).toBe(true);
     expect(save.current.home.feeders).toEqual([]);
     expect(save.current.home.supplies.catFood.premium).toBe(before + 5);
+  });
+
+  it("переноску й замок можна викинути й купити дорожчі; кіт, що спав у переносці, вилазить (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const state = save.current;
+    state.character.money = 1000;
+    state.home.carrier = "cheap";
+    state.home.lock = "cheap";
+    expect(unavailable(state, { thing: "carrier" })).toBe("owned");
+    expect(unavailable(state, { thing: "lock" })).toBe("owned");
+    const cat = held(save);
+    state.character.held = null;
+    cat.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 0 };
+    // Переноску, в якій інший кіт у поїздці, не викинути.
+    state.trip = { destination: "vet", cat: 999 } as Save["current"]["trip"];
+    expect(discardCarrier(state)).toBe(false);
+    expect(state.home.carrier).toBe("cheap");
+    state.trip = null;
+    expect(discardCarrier(state)).toBe(true);
+    expect(state.home.carrier).toBeNull();
+    expect(cat.act.kind).toBe("idle");
+    expect(discardLock(state)).toBe(true);
+    expect(state.home.lock).toBeUndefined();
+    expect(discardLock(state)).toBe(false);
+    // Тепер магазин пропонує обидві якості, і дорожча стає на місце дешевої.
+    for (const thing of ["carrier", "lock"] as const) {
+      expect(unavailable(state, { thing })).toBeNull();
+      expect(room(state, [], { thing }, "premium")).toBe(1);
+    }
+    const cart = (["carrier", "lock"] as const).map((thing) => ({ goods: { thing }, quality: "premium" as const, count: 1 }));
+    expect(checkout(state, cart, "delivery")).toBe(true);
+    for (const d of state.home.deliveries) d.at = 0;
+    tickDeliveries(state);
+    receivePackages(state);
+    expect(state.home.carrier).toBe("premium");
+    expect(state.home.lock).toBe("premium");
   });
 
   it("лише надкльована половинка під автогодівницею — спорожнити нічого, і миску не чіпають", () => {
