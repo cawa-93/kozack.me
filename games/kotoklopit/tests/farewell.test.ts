@@ -9,7 +9,7 @@ import { goToSleep, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
-import { diseaseTitle, farewellText, GIVE_AWAY_LATER, GIVE_AWAY_RECENT } from "../src/texts";
+import { diseaseTitle, farewellText, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, SHELTER_GIVEN } from "../src/texts";
 import { albumCause } from "../src/ui/cards";
 
 function game(): Save {
@@ -142,5 +142,11 @@ describe("віддати кота (§9.8)", () => {
     expect(giveAwayLoss(save.current, cat, 17)).toBe(DIFFICULTY.normal.givenCatSanity);
     // Підписи без чисел (§11.3а).
     for (const text of [GIVE_AWAY_RECENT, GIVE_AWAY_LATER]) expect(text).not.toMatch(/\d/);
+  });
+
+  it("загальна ревізія 2026-10-29: рядок притулку про відданого кота веде до мітки альбому «живе в нових руках», а не «лишається в притулку»", () => {
+    expect(fill(SHELTER_GIVEN, "female", { кіт: "Мурка" })).toBe("Мурка тепер у притулку: тут їй швидко знайдуть нових господарів.");
+    expect(fill(SHELTER_GIVEN, "male", { кіт: "Барсик" })).toBe("Барсик тепер у притулку: тут йому швидко знайдуть нових господарів.");
+    expect(SHELTER_GIVEN).not.toContain("лишається");
   });
 });
