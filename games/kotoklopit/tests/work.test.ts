@@ -243,6 +243,41 @@ describe("справедливість роботи (ревізія 2026-10-22)"
     expect(save.current.job.reputation).toBe(before);
   });
 
+  it("на лікарняному працювати можна: година оплачується, як у вихідні, — зарплата й репутація посади; керівництво нічого не чекає (§6.5; рішення автора 2026-10-29, А7)", () => {
+    const hour = (setup: (save: Save) => void): { money: number; reputation: number } => {
+      const save = game();
+      save.current.job.position = 3;
+      save.current.modifiers.week = null;
+      setup(save);
+      const money = save.current.character.money;
+      const reputation = save.current.job.reputation;
+      work(save, hours(12), hours(1));
+      return { money: save.current.character.money - money, reputation: save.current.job.reputation - reputation };
+    };
+    const sickLeave = (save: Save): void => {
+      save.current.day = 1;
+      save.current.job.sickLeaveFrom = 1;
+      save.current.job.sickLeaveUntil = 1;
+    };
+    const saturday = hour((save) => (save.current.day = 5));
+    const sick = hour(sickLeave);
+    // Старший спеціаліст: 22 ₴ і +0,65 репутації за годину — як у суботу.
+    expect(sick.money).toBeCloseTo(22);
+    expect(sick.money).toBeCloseTo(saturday.money);
+    expect(sick.reputation).toBeCloseTo(0.65);
+    expect(sick.reputation).toBeCloseTo(saturday.reputation);
+    // Без роботи цілий будень лікарняного — ні летучки, ні «!» і «Х», репутація не падає.
+    const save = game();
+    sickLeave(save);
+    const before = save.current.job.reputation;
+    const { events, stop } = recordEvents();
+    waitUntil(save, hours(18));
+    stop();
+    expect(events.some((e) => e.type === "standup" || e.type === "patience")).toBe(false);
+    expect(save.current.job.patience).toBe(100);
+    expect(save.current.job.reputation).toBe(before);
+  });
+
   it("нарада на лікарняному не штрафує", () => {
     const save = game();
     save.current.day = 1;

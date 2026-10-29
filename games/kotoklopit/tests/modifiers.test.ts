@@ -47,6 +47,10 @@ describe("вибір модифікаторів: перевірка модифі
       save.current.job.sickLeaveUntil = 2;
     });
     for (const id of ["reprimand", "praise", "meeting", "lunch", "deadline", "lull", "bonus", "pay-delay", "midweek-off"]) expect(sick.has(id)).toBe(false);
+    // Модифікатори дому в будень лікарняного бувають, як і в будь-який будень: тоді й оплата роботи інша, ніж у вихідні (§6.5;
+    // рішення автора 2026-10-29, А7).
+    expect(sick.has("fast-internet")).toBe(true);
+    expect(sick.has("outage")).toBe(true);
     expect(seen((save) => (save.current.modifiers.week = "crunch"), 5).has("work-saturday")).toBe(false);
     expect(seen((save) => (save.current.modifiers.week = "deadline-week")).has("lull")).toBe(false);
     expect(seen((save) => (save.current.modifiers.week = "quiet-week")).has("deadline")).toBe(false);

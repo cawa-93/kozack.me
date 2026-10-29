@@ -163,6 +163,8 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
       emit(state, { type: "career", change: "hired", position: 0 });
     }
   } else if (activity?.kind === "work") {
+    // Робота оплачується й поза робочим часом: увечері, у вихідні й на лікарняному — так само, як у робочий час (§8.6, §6.5;
+    // рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А7).
     const money = position.pay * DIFFICULTY[state.difficulty].earnings * payFactor(state) * hours;
     const reputationBefore = job.reputation;
     earn(state, money);
