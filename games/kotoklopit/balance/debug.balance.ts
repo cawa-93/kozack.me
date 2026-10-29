@@ -1,5 +1,5 @@
 // Трасування днів бота: що він робить і де застрягає. Запуск: BALANCE_DEBUG=<днів> npm run balance;
-// персонаж, складність і seed — BALANCE_SEX, BALANCE_DIFFICULTY, BALANCE_SEED.
+// хронотип (lark чи owl), складність і seed — BALANCE_CHRONOTYPE, BALANCE_DIFFICULTY, BALANCE_SEED.
 
 import { writeFileSync } from "node:fs";
 
@@ -7,12 +7,13 @@ import { it } from "vitest";
 
 import { newGame } from "../src/sim/game";
 import { formatClock } from "../src/sim/time";
-import type { Difficulty, Sex } from "../src/sim/types";
+import type { Chronotype, Difficulty } from "../src/sim/types";
 import { Bot } from "./bot";
 
 it.runIf(process.env["BALANCE_DEBUG"])("трасування бота", () => {
   const save = newGame({
-    sex: (process.env["BALANCE_SEX"] ?? "female") as Sex,
+    sex: "female",
+    chronotype: (process.env["BALANCE_CHRONOTYPE"] ?? "lark") as Chronotype,
     difficulty: (process.env["BALANCE_DIFFICULTY"] ?? "normal") as Difficulty,
     seed: Number(process.env["BALANCE_SEED"] ?? 101),
   });

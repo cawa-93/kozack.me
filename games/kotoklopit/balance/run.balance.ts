@@ -1,5 +1,6 @@
-// Симуляція балансу (§11.2, крок 8 плану): бот-гравець проживає тижні гри для всіх 6 комбінацій
-// персонажа й складності на кількох seed. Звіт — у консоль і `balance/REPORT.md`.
+// Симуляція балансу (§11.2, крок 8 плану): бот-гравець проживає тижні гри для всіх 6 комбінацій хронотипу
+// й складності на кількох seed. Стать персонажа ні на що не впливає, тож її не перебирають: звертання — лише граматика текстів
+// (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Звіт — у консоль і `balance/REPORT.md`.
 // Запуск: `npm run balance -w games/kotoklopit`; тижні й seed — змінні BALANCE_WEEKS, BALANCE_SEEDS.
 
 import { writeFileSync } from "node:fs";
@@ -9,7 +10,7 @@ import { it } from "vitest";
 import { weightOf } from "../src/sim/cat";
 import { allLives, catsMood } from "../src/sim/finale";
 import { newGame } from "../src/sim/game";
-import type { Difficulty, GameState, Sex } from "../src/sim/types";
+import type { Chronotype, Difficulty, GameState } from "../src/sim/types";
 import { DIFFICULTY_TITLES } from "../src/texts";
 import { Bot } from "./bot";
 
@@ -17,7 +18,7 @@ const WEEKS = Number(process.env["BALANCE_WEEKS"] ?? 6);
 const SEEDS = Number(process.env["BALANCE_SEEDS"] ?? 3);
 
 interface Run {
-  sex: Sex;
+  chronotype: Chronotype;
   difficulty: Difficulty;
   seed: number;
   days: number;
@@ -54,12 +55,12 @@ interface Run {
 /** Рівень опису життя за середнім настроєм (§9.7): 0 — Агонія, 9 — Легенда. */
 const level = (mood: number): number => Math.min(9, Math.max(0, Math.floor(mood / 10)));
 
-function simulate(sex: Sex, difficulty: Difficulty, seed: number): Run {
+function simulate(chronotype: Chronotype, difficulty: Difficulty, seed: number): Run {
   const started = performance.now();
-  const save = newGame({ sex, difficulty, seed });
+  const save = newGame({ sex: "female", difficulty, seed, chronotype });
   const bot = new Bot(save);
   const run: Run = {
-    sex,
+    chronotype,
     difficulty,
     seed,
     days: 0,
@@ -131,11 +132,11 @@ function report(runs: Run[]): string {
   lines.push("");
   lines.push(`${WEEKS} тижнів, ${SEEDS} seed на комбінацію. Бот — \`balance/bot.ts\`. Згенеровано ${new Date().toISOString().slice(0, 10)}.`);
   lines.push("");
-  lines.push("| Персонаж | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (фінал) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
+  lines.push("| Хронотип | Складність | Дожили | Кінець | Гроші (мін) | Здоровий глузд ввечері (мін) | Здоров'я (мін) | Кошенят | Котів (померло) | Настрій котів (фінал) | Здоров'я котів | Вага котів (ожиріння) | Посада | Робота, год/день | Коти, год/день | Попереджень ОСББ |");
   lines.push("|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|");
   const combos = new Map<string, Run[]>();
   for (const run of runs) {
-    const key = `${run.sex}/${run.difficulty}`;
+    const key = `${run.chronotype}/${run.difficulty}`;
     combos.set(key, [...(combos.get(key) ?? []), run]);
   }
   for (const group of combos.values()) {
@@ -149,7 +150,7 @@ function report(runs: Run[]): string {
     const allHealth = group.flatMap((r) => r.health);
     lines.push(
       [
-        first.sex === "female" ? "жайворонок" : "сова",
+        first.chronotype === "lark" ? "жайворонок" : "сова",
         DIFFICULTY_TITLES[first.difficulty],
         `${survived}/${group.length}`,
         ends,
@@ -177,11 +178,11 @@ function report(runs: Run[]): string {
   return lines.join("\n");
 }
 
-it("баланс: 6 комбінацій персонажа й складності (§11.2)", () => {
+it("баланс: 6 комбінацій хронотипу й складності (§11.2)", () => {
   const runs: Run[] = [];
-  for (const sex of ["female", "male"] as const) {
+  for (const chronotype of ["lark", "owl"] as const) {
     for (const difficulty of ["easy", "normal", "hard"] as const) {
-      for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate(sex, difficulty, seed * 101));
+      for (let seed = 1; seed <= SEEDS; seed++) runs.push(simulate(chronotype, difficulty, seed * 101));
     }
   }
   const text = report(runs);
