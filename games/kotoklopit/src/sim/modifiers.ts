@@ -95,7 +95,6 @@ function contradicts(week: string | null, id: string, group: Pair["group"]): boo
   if (week === "crunch" && (id === "work-saturday" || id === "midweek-off")) return true;
   if (week === "deadline-week" && id === "lull") return true;
   if (week === "quiet-week" && id === "deadline") return true;
-  if (week === "human-prevention" && id === "sick") return true;
   if ((week === "heat-wave" || week === "cold-snap") && (id === "heat" || id === "cold")) return true;
   return false;
 }
@@ -186,7 +185,11 @@ export function chooseDayModifier(state: GameState, day: number, rng: Rng): stri
     !(group === "work" && sick) && fits(state, day, when) && !contradicts(week, id, group) && id !== previous;
   const sides = order.map((i) => {
     const p = DAY_CATALOG[i]!;
-    return { hard: possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy: possible(p.easy, p.whenEasy, p.group) ? p.easy : null };
+    const easy = possible(p.easy, p.whenEasy, p.group) ? p.easy : null;
+    // Тиждень профілактики: з пари «Застуда ↔ Бадьорість» лишається тільки «Бадьорість» — і коли випав важкий бік (рішення автора
+    // 2026-10-29, `GENERAL_REVIEW.md`, А14). Раніше «Застуда» просто не випадала, і замість неї приходив інший важкий день.
+    if (week === "human-prevention" && p.hard === "sick") return { hard: easy, easy };
+    return { hard: possible(p.hard, p.whenHard, p.group) ? p.hard : null, easy };
   });
   const wanted = sides.find((s) => (wantHard ? s.hard : s.easy) !== null);
   if (wanted) return wantHard ? wanted.hard : wanted.easy;

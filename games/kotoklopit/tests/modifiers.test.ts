@@ -333,6 +333,33 @@ describe("вибір модифікаторів (§4.1)", () => {
     }
   });
 
+  it("«Тиждень профілактики»: з пари «Застуда ↔ Бадьорість» лишається тільки «Бадьорість» — день, що мав стати «Застудою», стає «Бадьорістю», решта та сама (рішення автора 2026-10-29, А14)", () => {
+    const pick = (seed: number, week: string | null): string | null => {
+      const save = game();
+      save.current.modifiers.day = null;
+      save.current.modifiers.week = week;
+      return chooseDayModifier(save.current, 2, createRng(seed));
+    };
+    let replaced = 0;
+    for (let seed = 0; seed < 3000; seed++) {
+      const usual = pick(seed, null);
+      const prevention = pick(seed, "human-prevention");
+      expect(prevention).not.toBe("sick");
+      if (usual === "sick") {
+        replaced += 1;
+        expect(prevention).toBe("vigor");
+      } else expect(prevention).toBe(usual);
+    }
+    expect(replaced).toBeGreaterThan(20);
+    // Учора була «Бадьорість» — сьогодні з цієї пари нічого: модифікатор не повторюється два дні поспіль.
+    const save = game();
+    save.current.modifiers.week = "human-prevention";
+    for (let seed = 0; seed < 600; seed++) {
+      save.current.modifiers.day = "vigor";
+      expect(["sick", "vigor"]).not.toContain(chooseDayModifier(save.current, 2, createRng(seed)));
+    }
+  });
+
   describe("котячі модифікатори тижня — лише коли є кіт (рішення автора 2026-10-29, А14)", () => {
     const CAT_WEEKS = ["cat-march", "calm-season", "heat-wave", "cold-snap", "cat-flu", "cat-prevention"];
     const withCat = (save: Save): void => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
