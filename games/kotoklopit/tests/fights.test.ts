@@ -289,8 +289,7 @@ describe("після бійки (§9.4, рішення автора 2026-10-26)"
     expect(injuries.intact).toBeGreaterThanOrEqual(15);
     expect(injuries.intact).toBeLessThanOrEqual(50);
     expect(injuries.intact).toBeGreaterThan(injuries.plain);
-    // 300 бійок до кінця: окремо ~1,5 с, але в повному прогоні з паралельними файлами впирався в типові 5 с.
-  }, 20_000);
+  });
 
   it("після бійки пара 90–120 хвилин не б'ється: протистояння закінчується відступом", () => {
     let checked = false;
