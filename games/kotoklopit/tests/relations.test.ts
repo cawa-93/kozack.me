@@ -8,7 +8,7 @@ import { decide, enoughFor, jealousy, tickCats } from "../src/sim/catai";
 import { goToSleep, newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
-import { isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
+import { isEnemy, isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, LitterItem, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -665,7 +665,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
     expect(relation(save.current, a, b)).toBe(39);
   });
 
-  it("вороги, що за день ані билися, ані сварилися, уночі зближуються ще на 2 (§9.4, Б6 (1))", () => {
+  it("вороги, що за день ані билися, ані сварилися, уночі зближуються ще на 3,5 (§9.4, Б6 (1); рішення автора 2026-10-29, А12: було 2)", () => {
     const save = game();
     const a = withCat(save);
     const b = withCat(save);
@@ -678,11 +678,29 @@ describe("ресурси й ревнощі (§9.4)", () => {
     noteStrife(save.current, c, d, "fight");
     noteStrife(save.current, b, c, "quarrel");
     nightlyRelations(save.current);
-    expect(relation(save.current, a, b)).toBe(-75);
+    expect(relation(save.current, a, b)).toBe(-73.5);
     expect(relation(save.current, c, d)).toBe(-77);
     expect(relation(save.current, b, c)).toBe(-80);
     // Не вороги — без надбавки.
     expect(relation(save.current, a, c)).toBe(3);
+  });
+
+  it("двоє «Задирак»-ворогів після спокійного дня зближуються на 0,5 і повільно доходять до межі ворожнечі (§9.4, рішення автора 2026-10-29, А12 (1))", () => {
+    const save = game();
+    const a = withCat(save, { sociability: -2 });
+    const b = withCat(save, { sociability: -2 });
+    setRelation(save, a, b, -60);
+    // 3 − 1,5 × 4 + 3,5 = +0,5, як рахували в Б6. З надбавкою +2 було −1: пара віддалялася до −100 навіть без бійок.
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(-59.5);
+    for (let night = 2; night <= 20; night++) nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(-50);
+    expect(isEnemy(save.current, a, b)).toBe(true);
+    nightlyRelations(save.current);
+    expect(isEnemy(save.current, a, b)).toBe(false);
+    // Уже не вороги — надбавки немає, і ночі знову віддаляють їх на 3: пара тримається біля межі.
+    nightlyRelations(save.current);
+    expect(relation(save.current, a, b)).toBe(-52.5);
   });
 
   it("охорона миски — теж сварка за ресурс (§9.4, Б6)", () => {
