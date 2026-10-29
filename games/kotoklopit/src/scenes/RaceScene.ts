@@ -10,6 +10,7 @@ import { formatClock, gameMinutes } from "../sim/time";
 import type { Destination, GameState } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea } from "../screen";
+import { RACE_START_HINT } from "../texts";
 import { COLORS } from "../view/geometry";
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -35,6 +36,10 @@ const CAR_COLORS = [0x4f7fb3, 0x8e4a6a, 0x6fae6a, 0xe8b93a, 0x9aa3ab];
 export class RaceScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private label!: Phaser.GameObjects.Text;
+  /** «W ↑» на дорозі, поки машина стоїть, а гравець ще нічого не натискав (на клавіатурі). */
+  private hint!: Phaser.GameObjects.Text;
+  /** Гравець уже торкнувся екрана чи натиснув газ, гальмо чи смугу в цій гонці: підказка старту більше не потрібна. */
+  private touched = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
   private steer: -1 | 0 | 1 = 0;
   /** Плаваючий джойстик, як удома: вперед — газ, назад — гальмо, убік — перестроїтися. */
@@ -51,6 +56,11 @@ export class RaceScene extends Phaser.Scene {
   create(): void {
     this.g = this.add.graphics();
     this.label = this.add.text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "22px", color: "#f3e9dc", fontStyle: "bold", resolution: 2 });
+    this.hint = this.add
+      .text(0, 0, RACE_START_HINT, { fontFamily: "system-ui, sans-serif", fontSize: "26px", color: "#f3e9dc", fontStyle: "bold", resolution: 2 })
+      .setOrigin(0.5, 1)
+      .setVisible(false);
+    this.touched = false;
     const keyboard = this.input.keyboard;
     if (keyboard) {
       const K = Phaser.Input.Keyboard.KeyCodes;
@@ -73,6 +83,7 @@ export class RaceScene extends Phaser.Scene {
 
   /** Джойстик з'являється під пальцем будь-де на екрані. */
   private down(p: Phaser.Input.Pointer): void {
+    this.touched = true;
     if (this.stick !== null) return;
     this.stick = { id: p.id, origin: { x: p.x, y: p.y }, x: 0, y: 0, steered: false };
   }
@@ -107,6 +118,7 @@ export class RaceScene extends Phaser.Scene {
     if (Math.abs(forward) > STICK_DEAD) throttle += (forward - Math.sign(forward) * STICK_DEAD) / (1 - STICK_DEAD);
     const steer = this.steer;
     this.steer = 0;
+    if (throttle !== 0 || steer !== 0) this.touched = true;
     return { steer, throttle: Math.max(-1, Math.min(1, throttle)) };
   }
 
@@ -171,9 +183,36 @@ export class RaceScene extends Phaser.Scene {
       g.lineStyle(3, 0xffffff, 0.35).strokeCircle(stick.origin.x, stick.origin.y, STICK_RADIUS);
       g.fillStyle(0xffffff, 0.35).fillCircle(stick.origin.x + stick.x * STICK_RADIUS, stick.origin.y + stick.y * STICK_RADIUS, 30);
     }
+    this.drawStartHint(g, race.speed === 0 && !this.touched, { x: Math.max(safe.left + STICK_RADIUS + 12, left / 2), y: height * 0.62 }, { x: left + (race.lane + 0.5) * laneW, y: playerY - carH * 0.6 });
     this.label
       .setPosition(safe.left + 20, safe.top + 16)
       .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · ×${race.speed.toFixed(1).replace(".", ",")}`);
+  }
+
+  /**
+   * Підказка без слів на старті (§8.5, §11.3а «показуй, а не розказуй»; загальна ревізія 2026-10-29): машина стоїть, а гравець
+   * ще нічого не натискав — на сенсорному екрані ліворуч від дороги ледь помітно пульсує тінь джойстика, що тягнеться вгору,
+   * а з клавіатурою над машиною — «W ↑». Від першого дотику чи натискання підказка зникає до кінця гонки.
+   */
+  private drawStartHint(g: Phaser.GameObjects.Graphics, shown: boolean, stickAt: { x: number; y: number }, carTop: { x: number; y: number }): void {
+    const touch = window.matchMedia("(pointer: coarse)").matches;
+    const pulse = 0.5 + 0.5 * Math.sin(this.time.now / 300);
+    this.hint.setVisible(shown && !touch);
+    if (!shown) return;
+    if (!touch) {
+      this.hint.setPosition(carTop.x, carTop.y).setAlpha(0.35 + 0.4 * pulse);
+      return;
+    }
+    const { x, y } = stickAt;
+    // Палець тягне ручку вгору й відпускає — раз на секунду.
+    const reach = ((this.time.now / 1100) % 1) * STICK_RADIUS * 0.7;
+    const alpha = 0.1 + 0.15 * pulse;
+    g.fillStyle(0xffffff, alpha * 0.6).fillCircle(x, y, STICK_RADIUS);
+    g.lineStyle(3, 0xffffff, alpha * 1.6).strokeCircle(x, y, STICK_RADIUS);
+    g.fillStyle(0xffffff, alpha * 1.8).fillCircle(x, y - reach, 30);
+    // Стрілка вгору над тінню.
+    const tip = y - STICK_RADIUS - 34;
+    g.fillStyle(0xffffff, alpha * 2).fillTriangle(x, tip, x - 16, tip + 20, x + 16, tip + 20);
   }
 
   private car(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, color: number): void {

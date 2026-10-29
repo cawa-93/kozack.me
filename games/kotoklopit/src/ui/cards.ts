@@ -14,6 +14,8 @@ import {
   BREED_ABOUT,
   BREED_HALF,
   CONTROLS_KEYBOARD,
+  CONTROLS_RACE_KEYBOARD,
+  CONTROLS_RACE_TOUCH,
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
@@ -255,7 +257,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   };
 }
 
-/** Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження. */
+/** Меню гри (§4.2, §5): нова гра, експорт і імпорт збереження; керування — щоб перечитати підказку першого дня (§11.3а). */
 function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   const box = element("div", "shop");
   const fresh = element("button", "button", "Нова гра");
@@ -274,10 +276,13 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   load.addEventListener("click", () => input.click());
   box.append(fresh, save, load, input);
   const { name } = state.character;
+  const touch = isTouch();
   return [
     `${name} · ${DIFFICULTY_TITLES[state.difficulty]}`,
     "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.",
     box,
+    `Керування: ${touch ? CONTROLS_TOUCH : CONTROLS_KEYBOARD}`,
+    touch ? CONTROLS_RACE_TOUCH : CONTROLS_RACE_KEYBOARD,
   ];
 }
 
