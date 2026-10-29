@@ -39,6 +39,10 @@ describe("сховища (§6.4)", () => {
     expect(storage("fridge").products).toEqual(["food", "momMeal"]);
   });
 
+  it("аптечка: малюнок бере запаси за місцем — ласощі, нашийник, м'ята (дзвіночка немає, рішення автора 2026-10-29, А17)", () => {
+    expect(storage("cat-kit").products).toEqual(["pills", "drops", "treats", "collar", "catnip"]);
+  });
+
   it("видно лише придбане й лише в фокусі; поза фокусом — нічого, навіть нулів", () => {
     const save = game();
     const state = save.current;
