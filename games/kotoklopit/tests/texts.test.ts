@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { newGame } from "../src/sim/game";
 import { TRAIT_GROUPS } from "../src/sim/traits";
-import { BREEDS } from "../src/sim/breeds";
+import { BREEDS, MIXED } from "../src/sim/breeds";
+import { createCat } from "../src/sim/cat";
+import { createRng } from "../src/sim/rng";
+import type { Cat } from "../src/sim/types";
+import { breedAbout } from "../src/ui/cards";
 import { DISEASES } from "../src/sim/config";
-import { BREED_ABOUT, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
+import { BREED_ABOUT, BREED_HALF, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -58,6 +62,24 @@ describe("опис рис для картки кота (§9.9)", () => {
 });
 
 describe("опис порід і поради ветеринара (рішення автора 2026-10-28, Д4, Д2)", () => {
+  it("загальна ревізія 2026-10-29: у напівкровки перед описом кожної відомої половини — рамка «Наполовину…», у чистокровного й безпородного — ні", () => {
+    const state = newGame({ sex: "female", difficulty: "easy", seed: 1 }).current;
+    const cat = (breed: [string, string], known: [boolean, boolean]): Cat => {
+      const c = createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, breed });
+      c.breedKnown = known;
+      return c;
+    };
+    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))).toEqual([fill(BREED_HALF, "female", { порода: "сфінкс" }), BREED_ABOUT["sfinks"]]);
+    expect(breedAbout(cat(["sfinks", MIXED], [true, true]))[0]).toMatch(/^Наполовину сфінкс:/);
+    const two = breedAbout(cat(["siamska", "perska"], [true, true]));
+    expect(two).toHaveLength(4);
+    expect(two.filter((line) => line.startsWith("Наполовину"))).toHaveLength(2);
+    expect(breedAbout(cat(["siamska", "perska"], [false, true]))).toEqual([fill(BREED_HALF, "female", { порода: "перська" }), BREED_ABOUT["perska"]]);
+    expect(breedAbout(cat(["sfinks", "sfinks"], [true, true]))).toEqual([BREED_ABOUT["sfinks"]]);
+    expect(breedAbout(cat([MIXED, MIXED], [true, true]))).toEqual([BREED_ABOUT[MIXED]]);
+    expect(BREED_HALF).not.toMatch(/\d/);
+  });
+
   it("у кожної породи є опис, у кожної хвороби — порада; без чисел і незаповнених місць", () => {
     for (const breed of BREEDS) {
       const about = BREED_ABOUT[breed.id];

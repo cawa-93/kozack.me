@@ -12,6 +12,7 @@ import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   BREED_ABOUT,
+  BREED_HALF,
   CONTROLS_KEYBOARD,
   CONTROLS_TOUCH,
   DAY_MODIFIER_TEXTS,
@@ -303,6 +304,24 @@ export function breedLine(breed: readonly [string, string], known: readonly [boo
   return breed[0] === MIXED && breed[1] === MIXED ? `${text.replace(/^./, (c) => c.toUpperCase())}.` : `Порода: ${text}.`;
 }
 
+/**
+ * Опис відомої породи в картці кота (рішення автора 2026-10-28, Д4): кожної відомої половини, без повторів; «безпородний» — лише
+ * в безпородного. У напівкровки перед описом половини — рамка: опис написано для чистокровних (загальна ревізія 2026-10-29,
+ * рішення самостійно, `TEXTS.md`, «Опис породи»).
+ */
+export function breedAbout(cat: Cat): string[] {
+  const halfBreed = cat.breed[0] !== cat.breed[1];
+  const halves = new Set(cat.breed.filter((id, i) => cat.breedKnown[i] && (id !== MIXED || !halfBreed)));
+  const lines: string[] = [];
+  for (const id of halves) {
+    const about = BREED_ABOUT[id];
+    if (!about) continue;
+    if (halfBreed) lines.push(fill(BREED_HALF, cat.sex, { порода: breedById(id).name.toLowerCase() }));
+    lines.push(about);
+  }
+  return lines;
+}
+
 /** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   if (state.cats.length === 0) return ["Котів поки немає."];
@@ -310,12 +329,7 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     const lines = [`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`];
     const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
     if (breed !== null) lines.push(breed);
-    // Опис відомої породи (рішення автора 2026-10-28, Д4): кожної відомої половини, без повторів; «безпородний» — лише в безпородного.
-    const halves = new Set(cat.breed.filter((id, i) => cat.breedKnown[i] && (id !== MIXED || cat.breed[0] === cat.breed[1])));
-    for (const id of halves) {
-      const about = BREED_ABOUT[id];
-      if (about) lines.push(about);
-    }
+    lines.push(...breedAbout(cat));
     const states: string[] = [];
     if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
     if (cat.pregnancy?.known) states.push("вагітна");
