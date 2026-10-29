@@ -56,6 +56,7 @@ import {
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
+import { isNewborn } from "./reproduction";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
@@ -637,6 +638,12 @@ function holdTick(state: GameState, minutes: number): boolean {
     // Кота в протистоянні не гладять і з ним не граються — утримання торкається його раз (§9.4): коти розходяться, а
     // пестощі не почнуться, доки кнопку не відпустили.
     if (target.type === "cat" && touchStandoff(state, target.cat)) return true;
+    // Новонародженого не гладять і з ним не граються (§9.8): він спить біля мами, і пестощі «будили» б його щокадру — настрій
+    // падав до нуля за секунду (загальна ревізія 2026-10-29). Утримання — одна відмова; натискання бере його на руки.
+    if (target.type === "cat" && isNewborn(target.cat)) {
+      refuse(state, target.id, "newborn");
+      return true;
+    }
     if (canPlay(state, target) && target.type === "cat") character.activity = { kind: "play", cat: target.cat.id, minutes: 0 };
     else if (!canUse(state, target)) return false;
     // У душ заходять натисканням, а не утриманням.

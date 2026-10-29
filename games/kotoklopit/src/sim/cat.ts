@@ -27,6 +27,7 @@ import {
 import { emit } from "./events";
 import { applyBreedLook, randomGenes, randomShape } from "./genetics";
 import { pickCatName } from "./names";
+import { isNewborn } from "./reproduction";
 import { absoluteMinute } from "./time";
 import type { Rng } from "./rng";
 import { characterLevel, isPositive, levelOf, TRAIT_GROUPS, traitGroup } from "./traits";
@@ -347,7 +348,9 @@ export function closeCatDay(state: GameState, cat: Cat, heals = true): CatDay {
   cat.moodHistory.push(average);
   cat.moodToday = { sum: 0, minutes: 0 };
   const loveBefore = cat.love;
-  if (!cat.interacted) changeLove(state, cat, LOVE.noInteractionPerDay);
+  // Новонародженого не гладять, а на руки — розбудити: безпечної взаємодії з ним немає, тож і день без неї любові не забирає
+  // (§7; загальна ревізія 2026-10-29, рішення самостійно).
+  if (!cat.interacted && !isNewborn(cat)) changeLove(state, cat, LOVE.noInteractionPerDay);
   cat.interacted = false;
   // Дрейф від любові — як і будь-яка зміна настрою: втрати зі «Стресостійкістю», приріст — що вище, то менший.
   cat.mood = clamp(cat.mood + moodDelta(cat, (cat.love - 50) * LOVE.driftPerPoint));

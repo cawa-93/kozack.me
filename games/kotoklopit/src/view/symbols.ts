@@ -121,6 +121,9 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
     // («Чистюля»), не мокра (прання готове) і не «повне сховище».
     case "clothes-clean":
       return { icon: "folded", mark: "ok" };
+    // Новонароджене (§9.8, загальна ревізія 2026-10-29): кошеня клубочком у гнізді — не кіт нагорі й не кіт у коробці.
+    case "newborn":
+      return { icon: "nest" };
   }
 }
 

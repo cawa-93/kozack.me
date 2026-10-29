@@ -4,13 +4,13 @@
 import { describe, expect, it } from "vitest";
 
 import { catFeeling, petTolerance, pickUpCat } from "../src/sim/actions";
-import { changeMood, createCat, offend } from "../src/sim/cat";
+import { changeMood, closeCatDay, createCat, offend } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
 import { activityAt, beggingFood, carryBiteChance, decide, envy, isDirty, lapChance, tickCats } from "../src/sim/catai";
 import { changeStat } from "../src/sim/character";
 import { COLLAR, LOVE_BEHAVIOR, PET } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
-import { advance, goToSleep, interact, newGame } from "../src/sim/game";
+import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
@@ -715,6 +715,48 @@ describe("нічні побудки й «Галасливі сусіди» (§8.
       expect(save.current.minute).toBeGreaterThanOrEqual(0);
     }
     expect(early).toBeGreaterThan(0);
+  });
+});
+
+describe("новонароджене кошеня (§7, §9.8; загальна ревізія 2026-10-29)", () => {
+  /** Новонароджене спить на підлозі перед персонажем. */
+  function newborn(save: Save): Cat {
+    const baby = createCat(save.current, createRng(7), { source: "born", ageWeeks: 0, at: { x: 4.5, y: 7.6 } });
+    addCat(save.current, baby);
+    tickCats(save.current, 0.01, { present: true });
+    Object.assign(save.current.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+    return baby;
+  }
+
+  it("утримання біля новонародженого — одна відмова зі своєю іконкою: не гладять і настрій не падає; натискання бере на руки", () => {
+    const save = game();
+    const baby = newborn(save);
+    expect(baby.act.kind).toBe("sleep");
+    const idle = deserialize(serialize(save));
+    for (let i = 0; i < 60; i++) advance(idle, 0.05);
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 60; i++) {
+      advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+      expect(save.current.character.activity).toBeNull();
+    }
+    stop();
+    expect(events.filter((e) => e.type === "refused")).toEqual([{ type: "refused", object: `cat:${baby.id}`, reason: "newborn" }]);
+    expect(baby.mood).toBeCloseTo(idle.current.cats.find((c) => c.id === baby.id)!.mood, 6);
+    expect(baby.act.kind).toBe("sleep");
+    // Відпустили — і натиснули: кошеня на руках, як сонний кіт.
+    advance(save, 0.05);
+    interact(save);
+    expect(save.current.character.held).toMatchObject({ kind: "cat", cat: baby.id, disturbed: true });
+  });
+
+  it("тиждень без взаємодії любові новонародженого не забирає; дорослому — забирає", () => {
+    const save = game();
+    const baby = newborn(save);
+    const adult = withCat(save, { x: 6.5, y: 8.5 });
+    const love = { baby: baby.love, adult: adult.love };
+    for (let day = 0; day < 7; day++) for (const cat of [baby, adult]) closeCatDay(save.current, cat);
+    expect(baby.love).toBe(love.baby);
+    expect(adult.love).toBeLessThan(love.adult);
   });
 });
 

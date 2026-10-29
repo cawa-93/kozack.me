@@ -96,7 +96,8 @@ export type IconName =
   | "hiss-kitten"
   | "thermometer"
   | "battery-low"
-  | "folded";
+  | "folded"
+  | "nest";
 
 /**
  * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
@@ -704,6 +705,18 @@ Object.assign(ICONS, {
     g.fillStyle(0xffffff).fillTriangle(14, 15, 24, 15, 19, 21);
     g.lineStyle(2, INK).strokeTriangle(14, 15, 24, 15, 19, 21);
     g.fillStyle(INK).fillCircle(19, 24, 1.3);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/** Новонароджене кошеня (§9.8, загальна ревізія 2026-10-29): спить клубочком у гнізді — його не гладять. */
+Object.assign(ICONS, {
+  nest: (g: Phaser.GameObjects.Graphics) => {
+    // Кошеня клубочком із заплющеними очима, а спереду — кругле гніздо з гілочок, що ховає його низ.
+    g.fillStyle(0x6b5d6e).fillEllipse(22, 22, 20, 12).fillCircle(14, 19, 6.5).fillTriangle(8.5, 16, 9.5, 9, 13, 13.5).fillTriangle(19.5, 16, 18.5, 9, 15, 13.5);
+    g.lineStyle(1.6, 0xffffff).lineBetween(10.5, 19.5, 13, 19.5).lineBetween(15, 19.5, 17.5, 19.5);
+    g.fillStyle(0xc49a62).fillEllipse(20, 30, 34, 13);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 30, 34, 13);
+    g.lineStyle(1.5, 0x8a6e48).lineBetween(7, 29, 15, 33).lineBetween(17, 28, 25, 33).lineBetween(26, 29, 33, 31);
   },
 } satisfies Partial<Record<IconName, Draw>>);
 

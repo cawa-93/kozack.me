@@ -53,6 +53,8 @@ const ALL: Refusal[] = [
   { reason: "weak" },
   // Чистого одягу досить — прати нічого (загальна ревізія 2026-10-29).
   { reason: "clothes-clean" },
+  // Новонародженого не гладять (загальна ревізія 2026-10-29).
+  { reason: "newborn" },
 ];
 
 function game(): Save {
