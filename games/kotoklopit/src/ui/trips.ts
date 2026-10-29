@@ -16,6 +16,7 @@ import { element, type Card } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
 import { traitChips } from "./traits";
 
+/** Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». */
 const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} год${m % 60 ? ` ${m % 60} хв` : ""}` : `${m} хв`);
 
 const BLOCKERS = {
@@ -155,7 +156,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (!cat) break;
       if (!log.exam) {
         body.push(`${cat.name} у переносці.`);
-        body.push(row("Огляд", "🕐 1 год", button(`${VET.exam} ₴`, VET.exam, h.exam)));
+        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam} ₴`, VET.exam, h.exam)));
         break;
       }
       body.push(
@@ -175,7 +176,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const why = { young: `замале: оперують з ${age} ${plural(age, "тижня", "тижнів", "тижнів")}`, pregnant: "вагітна: стерилізувати можна після пологів", nursing: "годує кошенят: після тижня годування" };
       if (!cat.sterilized && blocker !== null) body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", why[blocker]));
       else if (!cat.sterilized)
-        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", "🕐 2 год", button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
+        body.push(row(cat.sex === "male" ? "Кастрація" : "Стерилізація", `🕐 ${minutesText(STERILIZATION.minutes)}`, button(`${STERILIZATION.price} ₴`, STERILIZATION.price, h.sterilize)));
       const list = element("div", "shop");
       for (const d of known) {
         // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).
@@ -197,7 +198,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
                 ? `під контролем ще ${left} ${plural(left, "день", "дні", "днів")}`
                 : chronic
                   ? "хронічна"
-                  : "🕐 1 год";
+                  : `🕐 ${minutesText(VET.treatMinutes)}`;
         list.append(
           advised(row(
             diseaseTitle(d.id),
@@ -212,7 +213,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     }
     case "doctor": {
       if (!log.done.includes("doctor")) {
-        body.push(row("Огляд", "🕐 1 год", button(`${DOCTOR.exam} ₴`, DOCTOR.exam, h.doctor)));
+        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.doctor.visit)}`, button(`${DOCTOR.exam} ₴`, DOCTOR.exam, h.doctor)));
         break;
       }
       const ill = state.character.illnesses;
@@ -297,7 +298,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       } else
         body.push(
           `${cat.name} у переносці.`,
-          row("Грумінг", "🕐 1,5 год", button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
+          row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(`${SERVICE_TITLES.groom.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${SERVICE_TITLES.groom.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
         );
       break;
     case "cafe":
@@ -312,7 +313,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
         body.push(`${cat.name} у переносці.`);
-        body.push(row("Участь", "🕐 3 год", button(`${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
+        body.push(row("Участь", `🕐 ${minutesText(TRIPS.show.visit)}`, button(`${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
       const prize = Number(result.slice(5));

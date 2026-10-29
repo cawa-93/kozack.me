@@ -288,24 +288,26 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     // Умивальник для чоловічого персонажа: борода (§5.1) і ліки. Кіт на умивальнику чекає крана — натискання одразу
-    // відкриває йому воду, без картки (§9.12, «Пиття»).
+    // відкриває йому воду, без картки (§9.12, «Пиття»). Робити тут нічого — картки немає: умивальник відповідає відмовою,
+    // як жіночому персонажу («не треба», «дозу вже випито», «ліки скінчилися»; загальна ревізія 2026-10-29).
     if (this.state.character.sex === "male" && this.state.character.held === null && targetOf(this.state)?.id === "sink" && catOnSink(this.state) === null) {
-      this.overlay.show(
-        sinkCard(
-          this.state,
-          (choice) => {
-            this.overlay.close();
-            if (choice === "meds") {
-              interact(this.session.save);
-              return;
-            }
-            const minutes = groomBeard(this.state, choice);
-            if (minutes !== null) advance(this.session.save, minutes);
-          },
-          () => this.overlay.close(),
-        ),
+      const card = sinkCard(
+        this.state,
+        (choice) => {
+          this.overlay.close();
+          if (choice === "meds") {
+            interact(this.session.save);
+            return;
+          }
+          const minutes = groomBeard(this.state, choice);
+          if (minutes !== null) advance(this.session.save, minutes);
+        },
+        () => this.overlay.close(),
       );
-      return;
+      if (card.actions.length > 0) {
+        this.overlay.show(card);
+        return;
+      }
     }
     // Біля дверей нічого не чекає: поїздка (§8.5).
     if (canLeave(this.state)) {

@@ -1,9 +1,9 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
-import { MODIFIERS, WAKE_UP } from "../sim/config";
+import { BEARD, MODIFIERS, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
-import { beardLook, cycleDay, cyclePhase } from "../sim/grooming";
+import { beardLook, canGroomBeard, cycleDay, cyclePhase } from "../sim/grooming";
 import { giveAwayBlocker } from "../sim/farewell";
 import { needsHumanMeds } from "../sim/illness";
 import { visibility } from "../sim/knowledge";
@@ -494,13 +494,18 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
   };
 }
 
-/** Умивальник для чоловічого персонажа (§5.1, §6.5): гоління, підрівнювання бороди, ліки. */
+/** Умивальник для чоловічого персонажа (§5.1, §6.5): ліки, підрівнювання бороди, гоління. */
 export function sinkCard(state: GameState, onPick: (choice: "shave" | "trim" | "meds") => void, onCancel: () => void): Card {
   const look = beardLook(state);
-  const actions: { label: string; primary?: boolean; onSelect: () => void }[] = [];
-  if (look === "neat" || look === "unkempt") actions.push({ label: "Підрівняти бороду · 🕐 5 хв", primary: true, onSelect: () => onPick("trim") });
-  actions.push({ label: "Поголитися · 🕐 10 хв", primary: actions.length === 0, onSelect: () => onPick("shave") });
-  if (supplyCount(state, "humanMeds") > 0 && needsHumanMeds(state)) actions.push({ label: `Ліки для себе ×${supplyCount(state, "humanMeds")}`, onSelect: () => onPick("meds") });
+  const actions: CardAction[] = [];
+  // Прийшов по ліки — вони першим рядком і головною дією: раніше головним було гоління, і пробіл-пробіл голив замість ліків.
+  // Поголитися чи підрівняти вдруге за день не пропонується; без жодної дії картку не відкривають (загальна ревізія 2026-10-29).
+  const meds = supplyCount(state, "humanMeds");
+  if (meds > 0 && needsHumanMeds(state)) actions.push({ label: `Ліки для себе ×${meds}`, onSelect: () => onPick("meds") });
+  if (canGroomBeard(state, "trim")) actions.push({ label: `Підрівняти бороду · 🕐 ${BEARD.trimMinutes} хв`, onSelect: () => onPick("trim") });
+  if (canGroomBeard(state, "shave")) actions.push({ label: `Поголитися · 🕐 ${BEARD.shaveMinutes} хв`, onSelect: () => onPick("shave") });
+  const first = actions[0];
+  if (first) first.primary = true;
   const words = { clean: "Обличчя гладеньке.", stubble: "Щетина вже помітна.", neat: "Борода охайна.", unkempt: "Борода стирчить у різні боки." };
   return {
     kicker: "Ванна",

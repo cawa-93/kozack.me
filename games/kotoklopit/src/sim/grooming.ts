@@ -57,14 +57,23 @@ export function beardImpression(state: GameState): number {
   return look === "clean" || look === "neat" ? BEARD.impression : -BEARD.impression;
 }
 
-/** Поголитися (будь-коли) чи підрівняти відрослу бороду (§5.1). Повертає хвилини дії або null. */
+/**
+ * Поголитися (будь-коли, але раз на день) чи підрівняти відрослу бороду (§5.1). Повертає хвилини дії або null. Удруге того самого
+ * дня — null: вигляд від цього не змінюється, а час ішов би даремно (загальна ревізія 2026-10-29).
+ */
 export function groomBeard(state: GameState, kind: "shave" | "trim"): number | null {
-  if (state.character.sex !== "male") return null;
+  if (!canGroomBeard(state, kind)) return null;
   const beard = state.character.beard;
-  if (kind === "trim") {
-    if (state.day - beard.shaved < BEARD.grows) return null;
-    beard.trimmed = state.day;
-  } else beard.shaved = state.day;
+  if (kind === "trim") beard.trimmed = state.day;
+  else beard.shaved = state.day;
   emit(state, { type: "beard", kind });
   return kind === "trim" ? BEARD.trimMinutes : BEARD.shaveMinutes;
+}
+
+/** Чи має сенс поголитися чи підрівняти бороду зараз (§5.1): підрівнюють відрослу, і те, й те — не вдруге за день. */
+export function canGroomBeard(state: GameState, kind: "shave" | "trim"): boolean {
+  if (state.character.sex !== "male") return false;
+  const { shaved, trimmed } = state.character.beard;
+  if (kind === "shave") return shaved !== state.day;
+  return state.day - shaved >= BEARD.grows && trimmed !== state.day;
 }
