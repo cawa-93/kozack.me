@@ -10,6 +10,7 @@ import { emit } from "./events";
 import { catIllnessFactor, isCold, isHot } from "./modifiers";
 import { isFriend } from "./relations";
 import { isNewborn } from "./reproduction";
+import { enoughFor } from "./resources";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
@@ -178,10 +179,11 @@ export function nightlyDiseases(state: GameState, rng: Rng): void {
 
 /** Заразні хвороби (§9.5): друзям легше, через лоток — коли лотків замало. */
 function spread(state: GameState, rng: Rng): void {
-  const litters = state.home.items.filter((i) => i.kind === "litter").length;
-  // Новонароджені в лоток не ходять (§9.8): лотків «замало» рахують без них, і через лоток вони не заражаються (перевірка
-  // розмноження 2026-10-28).
-  const users = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
+  // Лотків замало — як для сварок (Р3, Р4): чистих менше, ніж котів + 1, але не більше, ніж є місць; брудний не рахується
+  // (загальна ревізія 2026-10-29: раніше рахували всі лотки без межі місць, і від 6 котів глисти йшли через лоток завжди).
+  // Новонароджені в лоток не ходять (§9.8): лотків «замало» рахують без них (`enoughFor`), і через лоток вони не заражаються
+  // (перевірка розмноження 2026-10-28).
+  const littersShort = !enoughFor(state, "litter");
   const sick = state.cats.flatMap((cat) => cat.diseases.map((d) => ({ cat, id: d.id })));
   for (const { cat, id } of sick) {
     const way = DISEASES[id].contagious;
@@ -191,7 +193,7 @@ function spread(state: GameState, rng: Rng): void {
       if (way === "litter" && isNewborn(other)) continue;
       const chance =
         way === "litter"
-          ? litters < users + 1
+          ? littersShort
             ? ILLNESS.litterContagion
             : 0
           : isFriend(state, cat, other)

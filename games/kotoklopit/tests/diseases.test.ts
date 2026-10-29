@@ -13,7 +13,7 @@ import { newGame } from "../src/sim/game";
 import { addCat, runNight } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { GameEvent } from "../src/sim/events";
-import type { BowlItem, Cat, DiseaseId, Save, TraitLevel } from "../src/sim/types";
+import type { BowlItem, Cat, DiseaseId, LitterItem, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -180,6 +180,24 @@ describe("зараження через лоток (перевірка розм�
     const always = { ...createRng(1), chance: () => true };
     nightlyDiseases(save.current, always);
     expect(kittens.every((k) => !hasDisease(k, "worms"))).toBe(true);
+  });
+
+  it("лотків бракує — як для сварок (Р3, Р4): від 7 котів шести чистих лотків досить, а брудний лоток — нестача (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const s = save.current;
+    const cats = Array.from({ length: 7 }, () => withCat(save));
+    fallIll(s, cats[0]!, "worms");
+    s.home.items = s.home.items.filter((it) => it.kind !== "litter");
+    const boxes = Array.from({ length: 6 }, (_, i): LitterItem => ({ id: 900 + i, kind: "litter", quality: "cheap", slot: `litter-${i + 1}`, litter: "cheap", uses: 0 }));
+    s.home.items.push(...boxes);
+    const always = { ...createRng(1), chance: () => true };
+    // Усі шість місць зайняті чистими лотками — більше купити не можна, і через лоток ніхто не заражається.
+    nightlyDiseases(s, always);
+    expect(cats.slice(1).some((c) => hasDisease(c, "worms"))).toBe(false);
+    // Один лоток брудний — лотків бракує, і глисти йдуть далі.
+    boxes[0]!.uses = 99;
+    nightlyDiseases(s, always);
+    expect(cats.slice(1).every((c) => hasDisease(c, "worms"))).toBe(true);
   });
 });
 

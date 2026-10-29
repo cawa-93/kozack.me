@@ -50,7 +50,6 @@ import {
   KITTEN_PLAY,
   KNOCKING,
   LEGS,
-  LITTER_CAPACITY,
   LOVE_BEHAVIOR,
   LOW_HEALTH,
   MARKING,
@@ -121,11 +120,15 @@ import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TIL
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
+import { enoughFor, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
+
+// Ресурси квартири винесено в `resources.ts` (загальна ревізія 2026-10-29); решта модулів і далі бере їх звідси.
+export { enoughFor, isDirty, itemsOf };
 
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
 export interface CatContext {
@@ -327,9 +330,6 @@ function nearest<T extends HomeItem>(cat: Cat, items: readonly T[]): T | null {
   return best;
 }
 
-export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
-  state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
-
 const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
 /**
  * Кіт бачить кота (чи точку) не далі `max` клітинок (§9.4): та сама кімната, з проходу — поруч, крізь стіну — ні (`sees`,
@@ -468,18 +468,6 @@ function resourceConflict(state: GameState, cat: Cat, rng: Rng, enough: boolean,
 }
 
 /**
- * Чи вистачає мисок чи лотків (§9.4 «Ресурси»; «Згода, охорона й сварки», рішення автора 2026-10-26, Р3 і Р4): котів рахують лише
- * тих, що вдома, без новонароджених; брудний лоток не рахується; лотків — на один більше, ніж котів, мисок — скільки котів, але
- * не більше, ніж є місць (для мисок — поширення виконавця, ухвалено — рішення автора 2026-10-26 після блоку 4). Раніше рахували всіх котів і всі лотки, і з 6 котами лотків не вистачало ніколи.
- */
-export function enoughFor(state: GameState, kind: "bowl" | "litter"): boolean {
-  const cats = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
-  const places = SLOTS.filter((s) => s.kind === kind).length;
-  if (kind === "bowl") return itemsOf(state, "bowl").length >= Math.min(cats, places);
-  return itemsOf(state, "litter").filter((box) => !isDirty(box)).length >= Math.min(cats + 1, places);
-}
-
-/**
  * Кіт шипить на іншого (§9.4) — це видно й чути; причину (`why`) видно значком поруч зі злістю (§9.4 «Згода, охорона й сварки»,
  * рішення автора 2026-10-26, Р2). Спільна пауза шипіння (§9.12): після попереднього минуло менше 20 хвилин — кіт мовчить, і
  * сварки теж немає (false).
@@ -490,14 +478,6 @@ export function hiss(state: GameState, cat: Cat, at: Cat, why?: HissCause): bool
   cat.hissedAt = now;
   emit(state, { type: "hissed", cat: cat.id, at: at.id, ...(why ? { why } : {}) });
   return true;
-}
-
-export function litterCapacity(box: LitterItem): number {
-  return LITTER_CAPACITY[box.litter ?? "none"];
-}
-
-export function isDirty(box: LitterItem): boolean {
-  return box.uses >= litterCapacity(box);
 }
 
 /** Лоток брудний для цього кота (§9.12): «Принц на горошині» вважає його брудним на одне відвідування раніше. */
