@@ -591,6 +591,48 @@ describe("ніч із котами (§4, §8.8, §9.12)", () => {
     }
     expect(woke).toBe(true);
   });
+
+  it("ритуальна побудка «Живого будильника» з повною мискою — пів години сну, сова встає о 08:00 (загальна ревізія 2026-10-29)", () => {
+    let rituals = 0;
+    for (let seed = 0; seed < 30; seed++) {
+      const save = withCatCorner(newGame({ sex: "male", difficulty: "normal", seed: 11 }));
+      save.current.modifiers.day = null;
+      const cat = withCat(save);
+      cat.traits.push({ group: "morning", level: 2, seen: 0, known: false });
+      // Ситий кіт і повна миска: голодної побудки не буде, лише ритуал.
+      cat.needs.hunger = 0;
+      for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 2;
+      save.current.seed = seed;
+      save.current.minute = hours(22);
+      const report = goToSleep(save);
+      if (!report?.wakeUps.some((w) => w.reason === "morning")) continue;
+      rituals += 1;
+      const nights = report.wakeUps.filter((w) => w.reason === "night").length;
+      expect(report.wokeMinute).toBe(hours(8));
+      expect(save.current.minute).toBe(hours(8));
+      expect(report.sleptHours).toBeCloseTo(10 - 0.5 - nights);
+    }
+    expect(rituals).toBeGreaterThan(0);
+  });
+
+  it("голодний «Живий будильник» з порожньою мискою будить сову о 05:00, як і раніше", () => {
+    let woke = false;
+    for (let seed = 0; seed < 10 && !woke; seed++) {
+      const save = withCatCorner(newGame({ sex: "male", difficulty: "normal", seed: 11 }));
+      save.current.modifiers.day = null;
+      const cat = withCat(save);
+      cat.traits.push({ group: "morning", level: 2, seen: 0, known: false });
+      cat.needs.hunger = 70;
+      for (const bowl of save.current.home.items) if (bowl.kind === "bowl") bowl.food = 0;
+      save.current.seed = seed;
+      save.current.minute = hours(22);
+      const report = goToSleep(save);
+      if (!report?.wakeUps.some((w) => w.reason === "morning")) continue;
+      woke = true;
+      expect(report.wokeMinute).toBe(hours(5));
+    }
+    expect(woke).toBe(true);
+  });
 });
 
 describe("нічні побудки й «Галасливі сусіди» (§8.8)", () => {
