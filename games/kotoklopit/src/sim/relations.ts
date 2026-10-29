@@ -65,7 +65,7 @@ export function forgetRelations(state: GameState, cat: Cat): void {
 
 /**
  * Пара сьогодні сварилася за ресурс (сварка за миску чи лоток, охорона) чи билася (§9.4 «Згода, охорона й сварки», рішення автора
- * 2026-10-26, Б6): уночі від цього залежить зближення.
+ * 2026-10-26, Б6): уночі від цього залежить зближення: і сварка, і бійка однаково забирають нічні +3 (А12 (2)).
  */
 export function noteStrife(state: GameState, a: Cat, b: Cat, kind: "quarrel" | "fight"): void {
   if (a.id === b.id) return;
@@ -73,8 +73,8 @@ export function noteStrife(state: GameState, a: Cat, b: Cat, kind: "quarrel" | "
 }
 
 /**
- * Ніч: життя разом потроху зближує (§9.4) — пару, що того дня не сварилася; вороги, що ані билися, ані сварилися, зближуються
- * ще (Б6). Потім день сварок починається заново.
+ * Ніч: життя разом потроху зближує (§9.4) — пару, що того дня ані сварилася, ані билася; такі вороги зближуються ще (Б6, А12).
+ * Потім день сварок починається заново.
  */
 export function nightlyRelations(state: GameState): void {
   for (const k of Object.keys(state.relations)) {
@@ -83,9 +83,11 @@ export function nightlyRelations(state: GameState): void {
     // «Товариськість» діє щодня, а не лише в мить знайомства (рішення автора 2026-10-25).
     const sociability = cats.reduce((sum, c) => sum + traitLevel(c, "sociability"), 0) * RELATIONS.sociabilityNightly;
     const value = state.relations[k] ?? 0;
-    const strife = state.strife?.[k];
-    const together = strife?.quarrel === true ? 0 : RELATIONS.nightly;
-    const calm = value <= RELATIONS.enemy && strife === undefined ? RELATIONS.enemyCalm : 0;
+    // Сварка (Б6 (3)) і бійка (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А12 (2): раніше бійка лишала нічні +3, і для
+    // стосунків була дешевша за шипіння біля миски) однаково забирають життя разом, а ворогам — і надбавку за спокійний день.
+    const peaceful = state.strife?.[k] === undefined;
+    const together = peaceful ? RELATIONS.nightly : 0;
+    const calm = peaceful && value <= RELATIONS.enemy ? RELATIONS.enemyCalm : 0;
     state.relations[k] = clamp(value + together + sociability + calm);
   }
   delete state.strife;

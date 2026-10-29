@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 import { pickUpCat, tickActivity } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, enoughFor, jealousy, tickCats } from "../src/sim/catai";
+import { RELATIONS } from "../src/sim/config";
 import { goToSleep, newGame } from "../src/sim/game";
 import { itemTile, objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
-import { isEnemy, isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
+import { changeRelation, isEnemy, isNewcomer, nightlyRelations, noteStrife, relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { Cat, LitterItem, Save, TraitLevel } from "../src/sim/types";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -645,7 +646,7 @@ describe("ресурси й ревнощі (§9.4)", () => {
     expect(quarrels).toBeGreaterThan(5);
   });
 
-  it("пара, що того дня сварилася, уночі не зближується (+3), а «Товариськість» діє; день сварок — заново (§9.4, Б6 (3))", () => {
+  it("пара, що того дня сварилася чи билася, уночі не зближується (+3), а «Товариськість» діє; день сварок — заново (§9.4, Б6 (3), А12 (2))", () => {
     const save = game();
     const a = withCat(save, { sociability: 1 });
     const b = withCat(save, { sociability: 1 });
@@ -656,9 +657,10 @@ describe("ресурси й ревнощі (§9.4)", () => {
     noteStrife(save.current, a, b, "quarrel");
     noteStrife(save.current, b, c, "fight");
     nightlyRelations(save.current);
-    // a і b посварилися: лише «Товариськість» (+1,5 × 2); b і c лише билися — життя разом діє.
+    // a і b посварилися, b і c билися: лише «Товариськість» (+1,5 за одиницю; рішення автора 2026-10-29, А12 (2): бійка, як і
+    // сварка, забирає життя разом, раніше b і c отримали б ще +3); a і c — життя разом діє.
     expect(relation(save.current, a, b)).toBe(33);
-    expect(relation(save.current, b, c)).toBeCloseTo(14.5);
+    expect(relation(save.current, b, c)).toBeCloseTo(11.5);
     expect(relation(save.current, a, c)).toBeCloseTo(14.5);
     expect(save.current.strife).toBeUndefined();
     nightlyRelations(save.current);
@@ -679,7 +681,8 @@ describe("ресурси й ревнощі (§9.4)", () => {
     noteStrife(save.current, b, c, "quarrel");
     nightlyRelations(save.current);
     expect(relation(save.current, a, b)).toBe(-73.5);
-    expect(relation(save.current, c, d)).toBe(-77);
+    // Билися — ні надбавки, ні життя разом (А12 (2)).
+    expect(relation(save.current, c, d)).toBe(-80);
     expect(relation(save.current, b, c)).toBe(-80);
     // Не вороги — без надбавки.
     expect(relation(save.current, a, c)).toBe(3);
@@ -701,6 +704,24 @@ describe("ресурси й ревнощі (§9.4)", () => {
     // Уже не вороги — надбавки немає, і ночі знову віддаляють їх на 3: пара тримається біля межі.
     nightlyRelations(save.current);
     expect(relation(save.current, a, b)).toBe(-52.5);
+  });
+
+  it("день з бійкою коштує стосункам стільки ж, скільки день зі сваркою за миску: −5 і без нічних +3 (§9.4, рішення автора 2026-10-29, А12 (2))", () => {
+    const save = game();
+    const a = withCat(save);
+    const b = withCat(save);
+    const c = withCat(save);
+    for (const [x, y] of [[a, b], [a, c], [b, c]] as const) setRelation(save, x, y, 0);
+    // a і b билися, b і c посварилися за миску — як це записують бійка й сварка в catai.ts.
+    changeRelation(save.current, a, b, RELATIONS.fight.relation);
+    noteStrife(save.current, a, b, "fight");
+    changeRelation(save.current, b, c, RELATIONS.resource.relation);
+    noteStrife(save.current, b, c, "quarrel");
+    nightlyRelations(save.current);
+    // Раніше бійка лишала нічні +3: −5 + 3 = −2, тобто бійка була дешевша за шипіння біля миски.
+    expect(relation(save.current, a, b)).toBe(-5);
+    expect(relation(save.current, b, c)).toBe(-5);
+    expect(relation(save.current, a, c)).toBe(RELATIONS.nightly);
   });
 
   it("охорона миски — теж сварка за ресурс (§9.4, Б6)", () => {
