@@ -153,7 +153,7 @@ export function tap(state: GameState): TapResult {
       }
       if (avoidsDirtyClothes(state, target.cat)) {
         backAway(state, target.cat, state.character.body);
-        observe(state, target.cat, "litterPicky");
+        observe(state, target.cat, "litterPicky", 1, false, DIRTY_CLOTHES_CATS.observeEvery);
         emit(state, { type: "cat-dodged", cat: target.cat.id, issue: "clothes" });
         return null;
       }
@@ -875,7 +875,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     activity.done = true;
     cat.facing = character.body.x >= cat.x ? -1 : 1;
     refuse(state, `cat:${cat.id}`, "cat-bored");
-    observe(state, cat, "playful", -1);
+    observe(state, cat, "playful", -1, false, PLAYFUL.observeEvery);
     return;
   }
   // Гра справді почалася — ревнивці це бачать (§9.12, «Ревнивість»; перевірка етапу 2026-10-26: раніше шипіли й на кота, що

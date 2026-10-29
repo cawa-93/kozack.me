@@ -563,6 +563,23 @@ describe("догляд персонажа (§9.12)", () => {
     expect(events.some((e) => e.type === "cat-felt" && e.delta < 0)).toBe(true);
   });
 
+  it("чистюля, від якого раз у раз тягнуться руки в брудному одязі, — один прояв за годину (загальна ревізія 2026-10-29)", () => {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    cat.traits.push({ group: "litterPicky", level: 1, seen: 0, known: false });
+    save.current.home.clothes = 0;
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 10; i++) {
+      Object.assign(cat, { x: 4.5, y: 7.6, act: { kind: "idle", target: null, goal: null, minutes: 100, elapsed: 0 } });
+      Object.assign(save.current.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+      interact(save);
+      advance(save, 0.5);
+    }
+    stop();
+    expect(events.filter((e) => e.type === "cat-dodged" && e.cat === cat.id)).toHaveLength(10);
+    expect(cat.traits.find((t) => t.group === "litterPicky")?.seen).toBe(1);
+  });
+
   it("чистюля не йде на руки в брудному одязі й відходить", () => {
     const save = game();
     const cat = withCat(save, { x: 4.5, y: 7.6 });

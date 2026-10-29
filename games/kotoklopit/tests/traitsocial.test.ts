@@ -121,6 +121,23 @@ describe("«Ігривість» (§9.12, рішення автора 2026-10-25
     expect(ignored).toBeLessThan(20);
   });
 
+  it("«Нудьгар», що раз у раз відвертається від вудки, — один прояв за годину, а не на кожне утримання (загальна ревізія 2026-10-29)", () => {
+    const save = game(5);
+    const cat = withCat(save, { playful: -2 });
+    cat.needs.play = 90;
+    toyInHands(save, cat);
+    const body = save.current.character.body;
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 30; i++) {
+      Object.assign(body, { x: cat.x - 0.5, y: cat.y, facing: { x: 1, y: 0 } });
+      advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+      advance(save, 0.05);
+    }
+    stop();
+    expect(events.filter((e) => e.type === "refused" && e.reason === "cat-bored").length).toBeGreaterThan(2);
+    expect(seen(cat, "playful")).toBe(1);
+  });
+
   it("«+» кличе гратися: несе іграшку до ніг того, хто вдома й не працює; кіт без риси так не кличе", () => {
     const invites = (traits: Record<string, TraitLevel>, working = false): number => {
       let count = 0;
