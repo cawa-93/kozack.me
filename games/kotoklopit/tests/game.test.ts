@@ -205,6 +205,28 @@ describe("збереження в JSON (§6.1)", () => {
     expect(loaded.current.cats.find((c) => c.id === cat.id)).not.toHaveProperty("premiumAt");
   });
 
+  it("«Одужання» злито з «Витривалістю»: риса переходить туди з рівнем і проявами, а коли там уже є — лишається сильніша (рішення автора 2026-10-29, А16)", () => {
+    const save = game();
+    const trait = (group: string, level: Trait["level"], seen = 0): Trait => ({ group, level, seen, known: false });
+    const lone = createCat(save.current, createRng(1), { source: "shelter", ageWeeks: 5 });
+    lone.traits = [trait("energy", 1), trait("recovery", -2, 1)];
+    const weaker = createCat(save.current, createRng(2), { source: "shelter", ageWeeks: 5 });
+    weaker.traits = [trait("hardiness", -1), trait("recovery", 2)];
+    const tie = createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 5 });
+    tie.traits = [trait("recovery", -1), trait("hardiness", 1)];
+    save.current.cats.push(lone, weaker, tie);
+    save.current.album.push({ id: 98, traits: [trait("recovery", 1)] } as unknown as AlbumEntry);
+    const loaded = deserialize(serialize(save)).current;
+    const traitsOf = (id: number): Trait[] | undefined => loaded.cats.find((c) => c.id === id)?.traits;
+    expect(traitsOf(lone.id)).toEqual([trait("energy", 1), trait("hardiness", -2, 1)]);
+    expect(traitsOf(weaker.id)).toEqual([trait("hardiness", 2)]);
+    // За рівності сили лишається та, що вже була у «Витривалості».
+    expect(traitsOf(tie.id)).toEqual([trait("hardiness", 1)]);
+    expect(loaded.album.at(-1)?.traits).toEqual([trait("hardiness", 1)]);
+    expect(TRAIT_GROUPS.some((g) => g.id === "recovery")).toBe(false);
+    expect(TRAIT_GROUPS).toHaveLength(57);
+  });
+
   it("збереження іншої версії не завантажується", () => {
     const save = game();
     expect(() => deserialize(JSON.stringify({ ...save, version: SAVE_VERSION + 1 }))).toThrow();

@@ -327,10 +327,13 @@ export function moodHealth(average: number): number {
   return 0;
 }
 
-/** Множник відновлення здоров'я: вік і «Одужання» (§9.5). */
+/**
+ * Множник відновлення здоров'я: вік і «Витривалість» (§9.5; сюди злито «Одужання» — рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А16).
+ */
 export function recoveryMultiplier(cat: Cat): number {
   const age = cat.ageWeeks <= KITTEN_MAX_AGE ? RECOVERY_BY_AGE.young : isOld(cat) ? RECOVERY_BY_AGE.old : RECOVERY_BY_AGE.adult;
-  return age * Math.max(0, 1 + RECOVERY_TRAIT_STEP * traitLevel(cat, "recovery"));
+  return age * Math.max(0, 1 + RECOVERY_TRAIT_STEP * traitLevel(cat, "hardiness"));
 }
 
 /** Змінити здоров'я; втрати записуються з джерелом для причини смерті (§9.7). */

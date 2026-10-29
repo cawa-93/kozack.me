@@ -699,7 +699,10 @@ export const MOOD_HEALTH_RECOVERY: readonly { atLeast: number; health: number }[
   { atLeast: 80, health: 2 },
   { atLeast: 75, health: 1 },
 ];
-/** Множники відновлення здоров'я (§9.5): вік і «Одужання» ±20% за одиницю. */
+/**
+ * Множники відновлення здоров'я (§9.5): вік і «Витривалість» ±20% за одиницю (сюди злито «Одужання», рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А16).
+ */
 export const RECOVERY_BY_AGE = { young: 1.5, adult: 1, old: 0.5 } as const;
 export const RECOVERY_TRAIT_STEP = 0.2;
 

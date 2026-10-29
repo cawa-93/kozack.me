@@ -6,7 +6,7 @@ import { ageCat, changeLove, changeMood, closeCatDay, createCat, moodHealth, rec
 import { newGame } from "../src/sim/game";
 import { createRng } from "../src/sim/rng";
 import { isPositive, TRAIT_GROUPS, traitName } from "../src/sim/traits";
-import type { Cat, GameState } from "../src/sim/types";
+import type { Cat, GameState, TraitLevel } from "../src/sim/types";
 
 const state = (): GameState => newGame({ sex: "female", difficulty: "normal", seed: 3 }).current;
 
@@ -86,6 +86,7 @@ describe("підсумок дня (§9.6, §7)", () => {
   it("середній настрій — за часом; без взаємодії любов −1; дрейф від любові", () => {
     const s = state();
     const c = cat(s, 3);
+    c.traits = [];
     // Кіт уже звик: у дні адаптації день без взаємодії любові не забирає (загальна ревізія 2026-10-29).
     c.arrivedDay = -10;
     c.mood = 20;
@@ -138,15 +139,34 @@ describe("підсумок дня (§9.6, §7)", () => {
   it("відновлення здоров'я множиться на вік, шкода — ні (§9.5)", () => {
     const s = state();
     const kitten = cat(s, 1);
+    kitten.traits = [];
     kitten.health = 50;
     kitten.mood = 100;
     closeCatDay(s, kitten);
-    expect(kitten.health).toBeCloseTo(50 + 10 * 1.5);
+    // Безпородний — «Витривалість» +1 від породи, а вона з 2026-10-29 множить і відновлення: ×1,2 (А16).
+    expect(kitten.health).toBeCloseTo(50 + 10 * 1.5 * 1.2);
     const sad = cat(s, 1);
     sad.mood = 0;
     closeCatDay(s, sad);
     expect(sad.health).toBe(90);
     expect(sad.healthLog).toEqual([{ day: 0, source: "mood", amount: 10 }]);
+  });
+
+  it("«Витривалість» множить і відновлення здоров'я — ±20% за одиницю, разом із породою (сюди злито «Одужання», рішення автора 2026-10-29, А16)", () => {
+    const s = state();
+    const recovered = (level: TraitLevel | 0): number => {
+      const c = cat(s, 3);
+      c.traits = level === 0 ? [] : [{ group: "hardiness", level, seen: 0, known: false }];
+      // Безпородний: «Витривалість» +1 від породи.
+      c.breed = ["mixed", "mixed"];
+      c.health = 50;
+      c.mood = 100;
+      closeCatDay(s, c);
+      return c.health - 50;
+    };
+    expect(recovered(0)).toBeCloseTo(10 * 1.2);
+    expect(recovered(2)).toBeCloseTo(10 * 1.6);
+    expect(recovered(-2)).toBeCloseTo(10 * 0.8);
   });
 });
 
