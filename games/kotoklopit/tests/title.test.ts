@@ -55,4 +55,28 @@ describe("титулка дня (§4)", () => {
     const weekday = dayTitle(state, { ...night, utilities: null, ledger: null }).flatMap((s) => s.blocks.flat());
     expect(weekday).not.toContain("Гроші за тиждень");
   });
+
+  it("котячого тижня без котів титулка не показує, погоду — показує; кіт з'явився — котячий тиждень знову видно (§4.1, рецензія реалізації А14)", () => {
+    const { current: state } = newGame({ address: "she", difficulty: "normal", seed: 3 });
+    state.day = 8;
+    state.modifiers.day = null;
+    const night = { wakeUps: [], newCats: [], givenCats: [], lostCats: [], utilities: null, ledger: null } as unknown as NightReport;
+    const lines = (week: string): string[] => {
+      state.modifiers.week = week;
+      return dayTitle(state, night).flatMap((s) => s.blocks.flat()).filter((l) => typeof l === "string");
+    };
+    expect(state.cats).toHaveLength(0);
+    for (const [week, title] of [["cat-march", "Котячий березень"], ["calm-season", "Спокійний сезон"], ["cat-flu", "Котячий грип"], ["cat-prevention", "Тиждень котячої профілактики"]]) {
+      expect(lines(week!)).not.toContain(title);
+    }
+    expect(lines("heat-wave")).toContain("Хвиля спеки");
+    expect(lines("cold-snap")).toContain("Похолодання");
+    expect(lines("human-flu")).toContain("Людський грип");
+    addCat(state, createCat(state, createRng(1), { source: "shelter", ageWeeks: 3, at: { x: 4.5, y: 8.5 } }));
+    expect(lines("cat-flu")).toContain("Котячий грип");
+    // Робочого тижня безробітному титулка, як і раніше, не показує.
+    expect(lines("crunch")).toContain("Аврал");
+    state.job.unemployed = true;
+    expect(lines("crunch")).not.toContain("Аврал");
+  });
 });

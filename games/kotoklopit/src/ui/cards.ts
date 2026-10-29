@@ -5,6 +5,7 @@ import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { giveAwayBlocker } from "../sim/farewell";
 import { visibility } from "../sim/knowledge";
+import { WEEK_PAIRS } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -57,14 +58,25 @@ function note(...lines: string[]): HTMLElement {
 
 const isTouch = (): boolean => window.matchMedia("(pointer: coarse)").matches;
 
+/**
+ * Чи показує титулка модифікатор тижня (§4.1): того, що вже не про персонажа, — ні. Робочого — безробітному (звільнили посеред
+ * тижня — «Аврал» уже не про нього; перевірка модифікаторів 2026-10-28), котячого — коли котів немає: останній помер чи пішов
+ * у ніч на понеділок, коли тиждень уже обрано за вечором неділі, чи посеред тижня (рецензія реалізації А14). Погода — «Хвиля
+ * спеки» й «Похолодання» — лишається: спека й без котів знижує гігієну персонажа.
+ */
+function weekShown(state: GameState, id: string): boolean {
+  const pair = WEEK_PAIRS.find((p) => p.hard === id || p.easy === id);
+  if (pair?.when === "work") return !state.job.unemployed;
+  if (pair?.when === "cat") return state.cats.length > 0 || id === "heat-wave" || id === "cold-snap";
+  return true;
+}
+
 /** Титулка дня (§4): тиждень, день, модифікатор і що сталося вночі. */
 /** Титулка дня (§4): тиждень і його ефекти, день і його ефекти, події ночі. Показує `Overlay.title`. */
 export function dayTitle(state: GameState, night: NightReport | null): TitleSection[] {
   const { name, address } = state.character;
   const weekBlocks: string[][] = [];
-  // Робочий модифікатор тижня безробітному не показують: звільнили посеред тижня — «Аврал» уже не про нього (перевірка модифікаторів 2026-10-28).
-  const workWeek = ["deadline-week", "quiet-week", "crunch", "vacation"].includes(state.modifiers.week ?? "");
-  const week = state.modifiers.week && !(workWeek && state.job.unemployed) ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
+  const week = state.modifiers.week && weekShown(state, state.modifiers.week) ? WEEK_MODIFIER_TEXTS[state.modifiers.week] : undefined;
   if (week) weekBlocks.push([week.title, week.situation]);
   const dayBlocks: string[][] = [];
   const modifier = state.modifiers.day ? DAY_MODIFIER_TEXTS[state.modifiers.day] : undefined;
