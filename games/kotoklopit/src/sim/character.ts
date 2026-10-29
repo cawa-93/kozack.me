@@ -136,12 +136,14 @@ export function sleepHeals(state: GameState): boolean {
 /**
  * Минув час сну (§8.8): голод і гігієна падають учетверо повільніше, здоров'я відновлюється
  * ситому й здоровому, а недосип його забирає; здоровий глузд не змінюється, показники не нижче 5.
+ * Множники ситості й гігієни — ті самі, що вдень: обмін, цикл, брудний одяг, шерсть, «Спека» (загальна ревізія 2026-10-29;
+ * раніше вночі діяв лише обмін).
  */
 export function passSleepTime(state: GameState, hours: number): void {
   const heals = sleepHeals(state);
   const decay = hours / SLEEP_DECAY_DIVIDER;
   changeStat(state, "satiety", SATIETY_PER_HOUR * metabolism(state) * decay, SLEEP_STAT_FLOOR);
-  changeStat(state, "hygiene", HYGIENE_PER_HOUR * decay, SLEEP_STAT_FLOOR);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * decay, SLEEP_STAT_FLOOR);
   if (heals) changeStat(state, "health", SLEEP_HEALTH_PER_HOUR * hours);
   const debt = Math.max(0, SLEEP_NEED_HOURS - hours);
   if (debt > 0) changeStat(state, "health", SLEEP_DEBT_HEALTH_PER_HOUR * debt, SLEEP_STAT_FLOOR);

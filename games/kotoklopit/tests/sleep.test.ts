@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { actionSpeed } from "../src/sim/body";
+import { HOUSEHOLD } from "../src/sim/config";
 import { advance, goToSleep, newGame } from "../src/sim/game";
 import { fallIllPerson } from "../src/sim/illness";
 import {
@@ -127,6 +128,16 @@ describe("показники уві сні (§8.8)", () => {
     expect(stats.hygiene).toBeCloseTo(50 - (3 * 8) / 4);
     expect(stats.health).toBeCloseTo(58);
     expect(stats.sanity).toBe(50);
+  });
+
+  it("множники гігієни діють і вночі: без чистого одягу гігієна за ніч падає вдвічі більше (загальна ревізія 2026-10-29)", () => {
+    const save = game("female");
+    const { stats } = save.current.character;
+    stats.hygiene = 50;
+    save.current.home.clothes = 0;
+    save.current.minute = hours(22);
+    goToSleep(save);
+    expect(stats.hygiene).toBeCloseTo(50 - (3 * 8 * HOUSEHOLD.noClothesHygiene) / 4);
   });
 
   it("сон відновлює здоров'я, лише якщо персонаж ліг ситим і не хворий", () => {
