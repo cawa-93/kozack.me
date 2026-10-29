@@ -16,6 +16,7 @@ import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, Save, TraitLevel } from "../src/sim/types";
 import { exercise, gainWeight, girthOf, settleWeight } from "../src/sim/weight";
+import { startWork } from "../src/sim/work";
 import { recordEvents, withCatCorner, hours } from "./helpers";
 
 function game(seed = 11): Save {
@@ -430,6 +431,26 @@ describe("«Теплолюбність» (§9.12, рішення автора 20
     // Раніше за годину без прохолоди «−2» втрачав 2 / 24 настрою.
     expect(hot.mood).toBe(60);
     expect(run({}).mood).toBe(60);
+  });
+
+  it("на колінах теплолюб у «Холод» гріється й не мерзне, а «Не мерзне» у «Спеку» знемагає й там (рецензія реалізації А16)", () => {
+    const felt = (traits: Record<string, TraitLevel>, day: string): number => {
+      const save = game();
+      save.current.modifiers.day = day;
+      Object.assign(save.current.character.body, { x: 7.5, y: 7.5, facing: { x: 0, y: -1 } });
+      startWork(save.current);
+      const cat = withCat(save, traits, { x: 7.5, y: 7.55 });
+      cat.act = { kind: "lap", target: "character", goal: null, minutes: 240, elapsed: 0 };
+      cat.needs.attention = 100;
+      cat.needs.fatigue = 0;
+      const { events, stop } = recordEvents();
+      live(save, 10);
+      stop();
+      expect(cat.act.kind).toBe("lap");
+      return events.filter((e) => e.type === "weather-felt" && e.cat === cat.id).length;
+    };
+    expect(felt({ warmth: 2 }, "cold")).toBe(0);
+    expect(felt({ warmth: -2 }, "heat")).toBe(1);
   });
 
   it("«Не мерзне» у «Спеку» знемагає й п'є більше", () => {
