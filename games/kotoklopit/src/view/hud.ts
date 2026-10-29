@@ -241,7 +241,7 @@ export class Hud {
       this.hintIcon.setTexture(`icon-${PRODUCT_ICONS[product]}`).setDisplaySize(22, 22);
       this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
     } else this.phone.setScale(1);
-    // Два найближчі пункти: на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
+    // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
     this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
   }
 
