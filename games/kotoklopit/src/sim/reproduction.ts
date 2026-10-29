@@ -52,7 +52,8 @@ function weekAhead(state: GameState): string | null {
 export function nightlyStates(state: GameState, rng: Rng): void {
   const week = weekAhead(state);
   for (const cat of state.cats) {
-    if (state.day <= cat.recoveryUntil) changeMood(state, cat, STERILIZATION.recoveryMoodPerDay, "відновлення після операції");
+    // 3 ночі — дня операції й двох наступних (загальна ревізія 2026-10-29: було 4). Втома ×1,5 (catai) — до кінця дня `recoveryUntil`.
+    if (state.day < cat.recoveryUntil) changeMood(state, cat, STERILIZATION.recoveryMoodPerDay, "відновлення після операції");
     if (cat.sex !== "female" || !fertile(cat) || cat.pregnancy || isNursing(state, cat)) continue;
     if (cat.nextHeat < 0) cat.nextHeat = state.day + rng.int(0, 6);
     // Спокійний сезон — без тічок: і нова не починається, і почата минає (§4.1; перевірка модифікаторів 2026-10-28).

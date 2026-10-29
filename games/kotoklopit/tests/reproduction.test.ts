@@ -8,19 +8,19 @@ import { breedById, breederPrice, isPurebred, knownBreedHalves, MIXED, PUREBREED
 import { BREEDER } from "../src/sim/config";
 import { addTrait, createCat } from "../src/sim/cat";
 import { highPlaceOf, tickCats } from "../src/sim/catai";
-import { breederCats, canSterilize, shelterCats, sterilizeBlocker } from "../src/sim/destinations";
+import { breederCats, canSterilize, shelterCats, sterilizeBlocker, vetSterilize } from "../src/sim/destinations";
 import { objectById } from "../src/sim/home";
-import { tripBlocker } from "../src/sim/trips";
+import { startTrip, tripBlocker } from "../src/sim/trips";
 import { advertise, cancelAd, collectAds, giveAway } from "../src/sim/farewell";
 import { goToSleep, newGame } from "../src/sim/game";
 import { coatOf, fitBreedForms, inheritGenes } from "../src/sim/genetics";
 import { addCat } from "../src/sim/night";
-import { conceive, giveBirth } from "../src/sim/reproduction";
+import { conceive, giveBirth, nightlyStates } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
 import type { AlbumEntry, Cat, Save, Sex } from "../src/sim/types";
 import { CAT_NAMES, pickCatName } from "../src/sim/names";
 import { BIRTH_MESSAGE, fill } from "../src/texts";
-import { recordEvents, withCatCorner } from "./helpers";
+import { driveSafely, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
   return withCatCorner(newGame({ sex: "female", difficulty: "normal", seed: 12 }));
@@ -320,6 +320,36 @@ describe("стерилізація вагітної (рішення автора
     she.pregnancy = null;
     she.restUntil = save.current.day + 14;
     expect(sterilizeBlocker(save.current, she)).toBe("nursing");
+  });
+
+  it("загальна ревізія 2026-10-29: операція — настрій −10 одразу, далі 3 ночі по −2 (дня операції й двох наступних), а не 4", () => {
+    const save = game();
+    const s = save.current;
+    s.day = 2;
+    s.minute = 9 * 60;
+    s.modifiers.day = null;
+    s.character.money = 1000;
+    s.home.carrier = "cheap";
+    const tom = withCat(save, "male");
+    tom.traits = [];
+    tom.mood = 60;
+    standAt(save, "door");
+    s.character.held = { kind: "cat", cat: tom.id };
+    expect(startTrip(s, "vet")).toBe(true);
+    driveSafely(save);
+    const before = tom.mood;
+    expect(vetSterilize(s)).toBe(true);
+    expect(tom.mood).toBe(before - 10);
+    const operated = s.day;
+    const penalties: number[] = [];
+    for (let night = 0; night < 5; night++) {
+      s.day = operated + night;
+      const { events, stop } = recordEvents();
+      nightlyStates(s, createRng(night));
+      stop();
+      penalties.push(events.filter((e) => e.type === "cat-mood" && e.reason === "відновлення після операції").length);
+    }
+    expect(penalties).toEqual([1, 1, 1, 0, 0]);
   });
 });
 
