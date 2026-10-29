@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { POSITIONS } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { unpleasantTask } from "../src/sim/character";
 import type { Address, Chronotype, Difficulty, Save } from "../src/sim/types";
@@ -58,7 +59,7 @@ describe("робота за комп'ютером (§8.6)", () => {
 
   it("що вища посада, то більше робота забирає здорового глузду: директору −10,5 за годину", () => {
     const save = game();
-    save.current.job.position = 9;
+    save.current.job.position = POSITIONS.length - 1;
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
     expect(save.current.character.stats.sanity).toBeCloseTo(40 - 10.5);
@@ -273,10 +274,10 @@ describe("справедливість роботи (ревізія 2026-10-22)"
     };
     const saturday = hour((save) => (save.current.day = 5));
     const sick = hour(sickLeave);
-    // Старший спеціаліст: 22 ₴ і +0,65 репутації за годину — як у суботу.
-    expect(sick.money).toBeCloseTo(22);
+    // Старший спеціаліст: 16 ₴ і +1,37 репутації за годину — як у суботу (драбина з 15 посад, рішення автора 2026-10-29, А10).
+    expect(sick.money).toBeCloseTo(16);
     expect(sick.money).toBeCloseTo(saturday.money);
-    expect(sick.reputation).toBeCloseTo(0.65);
+    expect(sick.reputation).toBeCloseTo(1.37);
     expect(sick.reputation).toBeCloseTo(saturday.reputation);
     // Без роботи цілий будень лікарняного — ні летучки, ні «!» і «Х», репутація не падає.
     const save = game();

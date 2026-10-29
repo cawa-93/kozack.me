@@ -288,7 +288,13 @@ export const HIGH_HYGIENE = 75;
  */
 export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
 
-/** Посади від стажера до директора (§8.6, чернетка). Терпіння й здоровий глузд (робота — неприємне, §8.1) — за годину. */
+/**
+ * Посади від стажера до директора (§8.6). Терпіння й здоровий глузд (робота — неприємне, §8.1) — за годину. Рішення автора
+ * 2026-10-29 (`GENERAL_REVIEW.md`, А10): 15 посад замість 10, кожна — менша сходинка. Стажер той самий; зарплата росте пологіше,
+ * особливо в першій половині (було до 75 ₴), щоб гроші обмежували й у середині гри; частка присутності (спад / відновлення
+ * терпіння), репутація за годину й здоровий глузд за годину — плавно між стажером і директором, а репутацію підібрано так, щоб
+ * сумлінний гравець ставав директором ближче до кінця гри.
+ */
 export const POSITIONS: readonly {
   pay: number;
   patienceDecay: number;
@@ -297,15 +303,20 @@ export const POSITIONS: readonly {
   sanity: number;
 }[] = [
   { pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 },
-  { pay: 13, patienceDecay: 28, patienceRecovery: 52, reputation: 1.59, sanity: -6.5 },
-  { pay: 17, patienceDecay: 31, patienceRecovery: 46, reputation: 0.99, sanity: -7 },
-  { pay: 22, patienceDecay: 34, patienceRecovery: 42, reputation: 0.65, sanity: -7.5 },
-  { pay: 28, patienceDecay: 37, patienceRecovery: 37, reputation: 0.46, sanity: -8 },
-  { pay: 35, patienceDecay: 40, patienceRecovery: 33, reputation: 0.34, sanity: -8.5 },
-  { pay: 43, patienceDecay: 43, patienceRecovery: 29, reputation: 0.25, sanity: -9 },
-  { pay: 52, patienceDecay: 46, patienceRecovery: 25, reputation: 0.19, sanity: -9.5 },
-  { pay: 62, patienceDecay: 49, patienceRecovery: 21, reputation: 0.14, sanity: -10 },
-  { pay: 75, patienceDecay: 52, patienceRecovery: 17, reputation: 0.1, sanity: -10.5 },
+  { pay: 13, patienceDecay: 27, patienceRecovery: 54, reputation: 2.36, sanity: -6.3 },
+  { pay: 15, patienceDecay: 29, patienceRecovery: 51, reputation: 1.79, sanity: -6.6 },
+  { pay: 16, patienceDecay: 31, patienceRecovery: 47, reputation: 1.37, sanity: -7 },
+  { pay: 17, patienceDecay: 33, patienceRecovery: 44, reputation: 1.08, sanity: -7.3 },
+  { pay: 18, patienceDecay: 35, patienceRecovery: 41, reputation: 0.85, sanity: -7.6 },
+  { pay: 19, patienceDecay: 37, patienceRecovery: 38, reputation: 0.68, sanity: -7.9 },
+  { pay: 20, patienceDecay: 38, patienceRecovery: 34, reputation: 0.55, sanity: -8.2 },
+  { pay: 22, patienceDecay: 40, patienceRecovery: 32, reputation: 0.45, sanity: -8.6 },
+  { pay: 24, patienceDecay: 42, patienceRecovery: 29, reputation: 0.37, sanity: -8.9 },
+  { pay: 26, patienceDecay: 44, patienceRecovery: 27, reputation: 0.31, sanity: -9.2 },
+  { pay: 29, patienceDecay: 46, patienceRecovery: 24, reputation: 0.26, sanity: -9.5 },
+  { pay: 33, patienceDecay: 48, patienceRecovery: 22, reputation: 0.22, sanity: -9.9 },
+  { pay: 38, patienceDecay: 50, patienceRecovery: 20, reputation: 0.19, sanity: -10.2 },
+  { pay: 45, patienceDecay: 52, patienceRecovery: 17, reputation: 0.16, sanity: -10.5 },
 ];
 
 // Коти (§9.1–9.6, §9.12; чернетка).

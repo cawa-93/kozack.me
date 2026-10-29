@@ -2,11 +2,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { FIRST_WEEK_PROTECTION, JOB_SEARCH, START_REPUTATION } from "../src/sim/config";
+import { FIRST_WEEK_PROTECTION, JOB_SEARCH, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { weekdayOf } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
 import { changeReputation, searchProgress } from "../src/sim/work";
+import { POSITION_TITLES } from "../src/texts";
 import { playerLine } from "../src/ui/cards";
 import { hours, liveDay, recordEvents, standAt } from "./helpers";
 
@@ -53,8 +54,65 @@ describe("посади (§8.6)", () => {
   });
 });
 
+describe("драбина з 15 посад (§8.6; рішення автора 2026-10-29, GENERAL_REVIEW.md, А10)", () => {
+  type Position = (typeof POSITIONS)[number];
+  /** Частка присутності: спад / (відновлення + спад) (§8.6). */
+  const share = (p: Position): number => p.patienceDecay / (p.patienceDecay + p.patienceRecovery);
+  /** Робочих днів до підвищення, якщо щодня працювати частку присутності × 9 годин, ще й помножену на `effort` (§8.6). */
+  const daysToPromotion = (p: Position, effort = 1): number => (REPUTATION_MAX - START_REPUTATION) / (p.reputation * share(p) * 9 * effort);
+  const daysToDirector = (effort: number): number => POSITIONS.slice(0, -1).reduce((sum, p) => sum + daysToPromotion(p, effort), 0);
+  const first = POSITIONS[0];
+  const director = POSITIONS[POSITIONS.length - 1];
+
+  it("15 посад і стільки ж назв; стажер той самий: 10 ₴ і +3,09 репутації за годину, 30% присутності, −6 здорового глузду, підвищення за 6 днів", () => {
+    expect(POSITIONS).toHaveLength(15);
+    expect(POSITION_TITLES).toHaveLength(POSITIONS.length);
+    expect(first).toEqual({ pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 });
+    expect(Math.round(daysToPromotion(first!))).toBe(6);
+    expect(director).toMatchObject({ pay: 45, patienceDecay: 52, patienceRecovery: 17, sanity: -10.5 });
+  });
+
+  it("що вища посада, то більше грошей, присутності й утрати здорового глузду й то менше репутації за годину — і кожне підвищення довше за попереднє", () => {
+    for (let i = 1; i < POSITIONS.length; i++) {
+      const [lower, higher] = [POSITIONS[i - 1]!, POSITIONS[i]!];
+      expect(higher.pay, `посада ${i + 1}`).toBeGreaterThan(lower.pay);
+      expect(share(higher), `посада ${i + 1}`).toBeGreaterThan(share(lower));
+      expect(higher.sanity, `посада ${i + 1}`).toBeLessThan(lower.sanity);
+      expect(higher.reputation, `посада ${i + 1}`).toBeLessThan(lower.reputation);
+      if (i < POSITIONS.length - 1) expect(daysToPromotion(higher), `посада ${i + 1}`).toBeGreaterThan(daysToPromotion(lower));
+    }
+    // Плавно між стажером і директором: частка присутності — щоразу на ~3% (2,5–4%, бо швидкості терпіння цілі), здоровий
+    // глузд — на ~0,3 (0,2–0,4).
+    for (let i = 1; i < POSITIONS.length; i++) {
+      expect(share(POSITIONS[i]!) - share(POSITIONS[i - 1]!)).toBeGreaterThan(0.025);
+      expect(share(POSITIONS[i]!) - share(POSITIONS[i - 1]!)).toBeLessThan(0.04);
+      expect(POSITIONS[i - 1]!.sanity - POSITIONS[i]!.sanity).toBeGreaterThanOrEqual(0.2);
+      expect(POSITIONS[i - 1]!.sanity - POSITIONS[i]!.sanity).toBeLessThanOrEqual(0.4 + 1e-9);
+    }
+  });
+
+  it("кожна посада — менша сходинка: після першого підвищення зарплата росте щонайбільше на 20%, а в першій половині драбини — повільніше, ніж у другій", () => {
+    for (let i = 2; i < POSITIONS.length; i++) expect(POSITIONS[i]!.pay / POSITIONS[i - 1]!.pay, `посада ${i + 1}`).toBeLessThanOrEqual(1.2);
+    const middle = POSITIONS[7]!;
+    expect(middle.pay - first!.pay).toBeLessThan(director!.pay - middle.pay);
+  });
+
+  it("сумлінний гравець (на 30% більше за вимогу посади) стає директором ближче до кінця гри, а хто працює рівно за вимогою, за 50 тижнів директором не стає", () => {
+    const weeks = (effort: number): number => daysToDirector(effort) / WORKDAYS_PER_WEEK;
+    expect(weeks(1.3)).toBeGreaterThan(40);
+    expect(weeks(1.3)).toBeLessThan(47);
+    expect(weeks(1)).toBeGreaterThan(50);
+  });
+
+  it("гроші обмежують довше: за мінімальної старанності директор заробляє за тиждень у ~11 разів більше за стажера (було майже в 19)", () => {
+    const weekly = (p: Position): number => p.pay * share(p) * 9 * WORKDAYS_PER_WEEK;
+    expect(weekly(director!) / weekly(first!)).toBeLessThan(12);
+    expect(weekly(director!) / weekly(first!)).toBeGreaterThan(10);
+  });
+});
+
 describe("пониження на вершині повільне — дзеркало підвищення (§8.6, [Наслідок]; рішення автора 2026-10-29, А7)", () => {
-  it("робочий день повного нехтування коштує стажеру −49 репутації, а директору −2,2: його понижують лише на 23-й такий день", () => {
+  it("робочий день повного нехтування коштує стажеру −49 репутації, а директору −3,6: його понижують лише на 15-й такий день (драбина з 15 посад, А10)", () => {
     /** Скільки репутації забирає будень без жодної години за комп'ютером: «Х» до 18:00 і пропущена летучка. */
     const neglectedDay = (position: number): number => {
       const save = game();
@@ -70,11 +128,19 @@ describe("пониження на вершині повільне — дзерк
       return START_REPUTATION - state.job.reputation;
     };
     const daysToDemotion = (position: number): number => Math.ceil(START_REPUTATION / neglectedDay(position));
+    const director = POSITIONS.length - 1;
     expect(neglectedDay(0)).toBeCloseTo(49.4, 1);
     expect(daysToDemotion(0)).toBe(2);
-    expect(daysToDemotion(5)).toBe(8);
-    expect(neglectedDay(9)).toBeCloseTo(2.2, 1);
-    expect(daysToDemotion(9)).toBe(23);
+    // Експерт — 7-ма посада (індекс 6).
+    expect(daysToDemotion(6)).toBe(4);
+    expect(neglectedDay(director)).toBeCloseTo(3.6, 1);
+    expect(daysToDemotion(director)).toBe(15);
+    // Падіння з вершини до стажера за повного нехтування — ~90 робочих днів, як і з драбиною з 10 посад (87): посад більше,
+    // але кожне пониження — на меншу сходинку (А10).
+    let fall = 0;
+    for (let position = director; position > 0; position--) fall += daysToDemotion(position);
+    expect(fall).toBeGreaterThanOrEqual(85);
+    expect(fall).toBeLessThanOrEqual(95);
   });
 });
 
@@ -166,7 +232,7 @@ describe("посада у вкладці «Гра» телефона (§8.6; р�
     // Підвищення — рядок одразу з новою посадою, хоч би картка про нього й загубилася.
     changeReputation(state, 60);
     expect(playerLine(state)).toBe(`${name} · Молодша спеціалістка · Реалістичний`);
-    state.job.position = 9;
+    state.job.position = POSITIONS.length - 1;
     state.character.address = "he";
     expect(playerLine(state)).toBe(`${name} · Директор · Реалістичний`);
     state.job.unemployed = true;

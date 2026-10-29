@@ -8,7 +8,7 @@ import { createRng } from "../src/sim/rng";
 import type { Cat } from "../src/sim/types";
 import { breedAbout, breedText } from "../src/ui/cards";
 import { traitAbout } from "../src/ui/traits";
-import { DISEASES } from "../src/sim/config";
+import { DISEASES, POSITIONS } from "../src/sim/config";
 import { BREED_ABOUT, BREED_HALF, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
@@ -33,7 +33,7 @@ describe("тексти (TEXTS.md)", () => {
       expect(text).not.toMatch(/[{}[\]|]/);
     }
     expect(endingText(state, "retirement").title).toBe("Тихе життя");
-    state.job.position = 9;
+    state.job.position = POSITIONS.length - 1;
     expect(endingText(state, "retirement").title).toBe("Кар'єрист");
   });
 
