@@ -146,9 +146,7 @@ export function tap(state: GameState): TapResult {
       // Кіт нагорі не дотягтися: злізе сам — на корм, на вудку чи прокинувшись; застряглого знімають (§9.12, «Лазіння»).
       if (upHigh(state, target.cat)) {
         if (target.cat.stuck !== true) return refuse(state, target.id, "cat-up-high");
-        unpleasantTask(state, CLIMBING.rescueSanity);
-        pickUpCat(state, target.cat);
-        delete target.cat.stuck;
+        rescueStuck(state, target.cat);
         return null;
       }
       if (avoidsDirtyClothes(state, target.cat)) {
@@ -667,10 +665,12 @@ function holdTick(state: GameState, minutes: number): boolean {
     else if (target.type === "cat" && catInWasher(state) === target.cat) return false;
     // Кота нагорі не дотягтися — і не погладити (§9.12, «Лазіння»; загальна ревізія 2026-10-29: утримання гладило кота на шафі й
     // будило сплячого). Утримання — одна відмова «не дотягтися», як і натискання: коротке натискання сцена не передає, коли
-    // кнопку тримають довше, і інакше гравець не бачив нічого. Застрягле кошеня знімають натисканням.
+    // кнопку тримають довше, і інакше гравець не бачив нічого. Застрягле кошеня утримання знімає, як і натискання, — раз за
+    // утримання: кошеня вже на руках, а нова дія чекає, поки кнопку відпустять (holdSpent; рішення автора 2026-10-29,
+    // `GENERAL_REVIEW.md`, дрібні питання — «Застрягле кошеня»; раніше утримання біля нього не робило нічого).
     else if (target.type === "cat" && upHigh(state, target.cat)) {
-      if (target.cat.stuck === true) return false;
-      refuse(state, target.id, "cat-up-high");
+      if (target.cat.stuck === true) rescueStuck(state, target.cat);
+      else refuse(state, target.id, "cat-up-high");
       return true;
     }
     else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
@@ -701,6 +701,14 @@ function holdTick(state: GameState, minutes: number): boolean {
     finishUse(state, target);
   }
   return true;
+}
+
+/** Зняти застрягле нагорі кошеня (§9.12, «Лазіння»): неприємне, кошеня — на руки, і воно вже не застрягле. */
+function rescueStuck(state: GameState, cat: Cat): void {
+  unpleasantTask(state, CLIMBING.rescueSanity);
+  // Спершу на руки, потім знімаємо позначку: застряглий радий рукам — без образи й ревнощів (pickUpCat дивиться на stuck).
+  pickUpCat(state, cat);
+  delete cat.stuck;
 }
 
 function finishUse(state: GameState, target: Target): void {

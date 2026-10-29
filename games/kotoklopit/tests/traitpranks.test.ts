@@ -730,6 +730,38 @@ describe("«Лазіння» (§9.12, рішення автора 2026-10-25)", 
   });
 });
 
+describe("застрягле кошеня знімають і утриманням (рішення автора 2026-10-29, дрібні питання)", () => {
+  it("тримати кнопку довше — кошеня знято один раз: на руках, неприємне — раз, без повторів і відмов", () => {
+    const save = game();
+    Object.assign(save.current.character.body, { x: 14.5, y: 3.5 });
+    const cat = withCat(save, {}, { x: 13.5, y: 2.5 }, 1);
+    climbFridge(save, cat);
+    cat.stuck = true;
+    cat.act = { kind: "beg", target: "high", goal: null, minutes: 30, elapsed: 0 };
+    Object.assign(save.current.character.body, { x: 13.5, y: 2.4, facing: { x: 0, y: -1 } });
+    expect(upHigh(save.current, cat)).toBe(true);
+    expect(targetOf(save.current)).toMatchObject({ type: "cat" });
+    // Те саме без утримання — для порівняння здорового глузду.
+    const idle = deserialize(serialize(save));
+    for (let i = 0; i < 60; i++) advance(idle, 0.05);
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 60; i++) advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(save.current.character.held).toMatchObject({ kind: "cat", cat: cat.id });
+    expect(save.current.character.held?.kind === "cat" && save.current.character.held.offended).toBeFalsy();
+    expect(cat.stuck).toBeUndefined();
+    expect(save.current.character.activity).toBeNull();
+    expect(events.filter((e) => e.type === "picked-up")).toHaveLength(1);
+    expect(events.some((e) => e.type === "refused")).toBe(false);
+    // Неприємне — рівно одне зняття (−1), а не щокадру.
+    expect(save.current.character.stats.sanity).toBeCloseTo(idle.current.character.stats.sanity + CLIMBING.rescueSanity, 0);
+    // Відпустили й натиснули — кошеня опускають на підлогу, як і після зняття натисканням.
+    advance(save, 0.05, { move: { x: 0, y: 0 }, hold: false });
+    interact(save);
+    expect(save.current.character.held).toBeNull();
+  });
+});
+
 describe("застрягле кошеня зістрибнуло саме (рішення автора 2026-10-28, Д2)", () => {
   it("може травмуватися; дорослий — ні", () => {
     for (const lucky of [false, true]) {
