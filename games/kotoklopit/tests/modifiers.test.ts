@@ -633,6 +633,18 @@ describe("ефекти (§4.1)", () => {
     expect(events).toContainEqual(expect.objectContaining({ type: "trip-ended", destination: "shelter" }));
   });
 
+  it("знайда в «Пробки» й «Порожні дороги» — ті самі дві години: це не дорога пункту (§4.1, рецензія реалізації А14)", () => {
+    for (const day of ["traffic", "empty-roads", null]) {
+      const save = game();
+      save.current.modifiers.day = day;
+      save.current.today.foundling = true;
+      save.current.minute = 7 * 60;
+      decideFoundling(save.current, false);
+      carryFoundling(save);
+      expect(save.current.minute).toBe(7 * 60 + MODIFIERS.foundlingShelterMinutes);
+    }
+  });
+
   it("сова відносить знайду о 08:00 у будній день: штраф як за першу поїздку тижня, до лічильника поїздок не додається (загальна ревізія 2026-10-29)", () => {
     const save = game();
     save.current.day = 2;
