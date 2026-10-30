@@ -1,0 +1,229 @@
+/* Галерея арту (крок 16): смуга керування згори, бічна панель вкладки зліва, область перегляду (Phaser) праворуч. */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #2b2530;
+}
+
+.g-app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-areas:
+    "bar bar"
+    "side stage";
+  grid-template-columns: min(300px, 38vw) 1fr;
+  grid-template-rows: auto 1fr;
+  color: #f3e9dc;
+  font: 12px/1.35 system-ui, "Segoe UI", sans-serif;
+}
+
+.g-app.g-side-closed {
+  grid-template-columns: 0 1fr;
+}
+
+.g-app.g-side-closed .g-side {
+  display: none;
+}
+
+/* Смуга керування — один рядок; на вузькому екрані (телефон) вона прокручується вбік, а не забирає висоту. */
+.g-bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 8px;
+  background: #1f1a24;
+  border-bottom: 1px solid #3a3140;
+  scrollbar-width: thin;
+}
+
+.g-tabs,
+.g-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (max-width: 900px) {
+  .g-label > span,
+  .g-zoom {
+    display: none;
+  }
+}
+
+.g-button,
+.g-select,
+.g-side select,
+.g-side input[type="search"] {
+  box-sizing: border-box;
+  min-height: 26px;
+  padding: 2px 8px;
+  border: 1px solid #4a4050;
+  border-radius: 6px;
+  background: #2b2530;
+  color: inherit;
+  font: inherit;
+}
+
+.g-button {
+  cursor: pointer;
+}
+
+.g-button:hover {
+  border-color: #8a7b8e;
+}
+
+.g-tab.g-active {
+  border-color: #ffd36b;
+  color: #ffd36b;
+}
+
+.g-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b9adbb;
+}
+
+.g-slider {
+  width: clamp(80px, 16vw, 220px);
+}
+
+.g-time,
+.g-zoom {
+  min-width: 6ch;
+  color: #b9adbb;
+  font-variant-numeric: tabular-nums;
+}
+
+.g-side {
+  grid-area: side;
+  overflow-y: auto;
+  padding: 8px 10px 16px;
+  background: #241e29;
+  border-right: 1px solid #3a3140;
+  user-select: text;
+}
+
+.g-stage {
+  grid-area: stage;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+}
+
+.g-stage:active {
+  cursor: grabbing;
+}
+
+.g-stage canvas {
+  display: block;
+}
+
+.g-status {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgb(31 26 36 / 0.75);
+  color: #f3e9dc;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.g-error {
+  color: #ff8a7a;
+}
+
+/* Вкладка «Кадри» */
+
+.g-frames p {
+  margin: 0 0 6px;
+}
+
+.g-note {
+  color: #b9adbb;
+}
+
+.g-legend {
+  line-height: 1.8;
+}
+
+.g-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 2px;
+  border: 1px solid #f3e9dc;
+  vertical-align: -1px;
+}
+
+.g-swatch-stub {
+  background: repeating-linear-gradient(-45deg, #ff00ff 0 2px, rgb(255 0 255 / 0.45) 2px 5px);
+}
+
+.g-swatch-pivot {
+  background: #1f1a24;
+}
+
+.g-swatch-point {
+  background: #168a45;
+}
+
+.g-swatch-box {
+  background: #3d6fd6;
+}
+
+.g-stats {
+  width: 100%;
+  margin: 4px 0 10px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.g-stats th,
+.g-stats td {
+  padding: 2px 4px;
+  border-bottom: 1px solid #3a3140;
+  text-align: right;
+}
+
+.g-stats th:first-child,
+.g-stats td:first-child {
+  text-align: left;
+}
+
+.g-stats tr:last-child td {
+  font-weight: 600;
+}
+
+.g-stats tr:not(:first-child) {
+  cursor: pointer;
+}
+
+.g-stats tr:not(:first-child):hover,
+.g-stats tr.g-active {
+  background: #3a3140;
+}
+
+.g-field {
+  display: grid;
+  grid-template-columns: 7em 1fr;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.g-check {
+  display: block;
+  margin: 4px 0;
+}

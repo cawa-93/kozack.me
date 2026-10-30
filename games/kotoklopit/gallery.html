@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Галерея арту (крок 16): лише в `npm run dev` і на прев'ю Netlify, у продакшн-збірку не потрапляє (vite.config.ts). -->
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#1f1a24" />
+    <!-- Без значка: інакше браузер просить /favicon.ico, і в консолі зайва помилка 404. -->
+    <link rel="icon" href="data:," />
+    <title>Котоклопіт — галерея арту</title>
+  </head>
+  <body>
+    <div id="gallery"></div>
+    <script type="module" src="/src/dev/gallery/main.ts"></script>
+  </body>
+</html>
