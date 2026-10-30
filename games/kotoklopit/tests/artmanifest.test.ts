@@ -1,8 +1,9 @@
 // Маніфест арту (крок 16, «Шов хвилі 1»): записи з `src/view/art/manifest/*.ts` перевірено — id унікальні й за форматом,
-// кадри різні, стани й ракурси правильні; пошук за id; шви арту без Phaser і DOM.
+// кадри різні, стани й ракурси правильні; пошук за id; палітра-каркас; шви арту без Phaser і DOM.
 
 import { describe, expect, it } from "vitest";
 
+import { ALLOWED_COLORS, LINE, PALETTE } from "../art/palette";
 import { ART_CATEGORIES, artEntries, artEntry, DEFAULT_RES, indexEntries, manifestProblems } from "../src/view/art/manifest";
 import type { ArtCategory, ArtEntry } from "../src/view/art/types";
 
@@ -82,18 +83,43 @@ describe("маніфест арту", () => {
   });
 });
 
-const pure = import.meta.glob<string>(["../src/view/art/manifest.ts", "../src/view/art/placement.ts"], {
+describe("палітра арту (каркас)", () => {
+  it("кольори — #rrggbb, дозволені — усі з палітри нижнім регістром і білий", () => {
+    for (const [token, color] of Object.entries(PALETTE)) expect(color, token).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(PALETTE.fill).toBe("#ffffff");
+    expect(PALETTE).toHaveProperty("ink");
+    expect(PALETTE).toHaveProperty("paper");
+    expect([...ALLOWED_COLORS].sort()).toEqual([...new Set([...Object.values(PALETTE).map((c) => c.toLowerCase()), "#ffffff"])].sort());
+    for (const color of ALLOWED_COLORS) expect(color).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("товщини контуру в межах", () => {
+    expect(LINE.min).toBeLessThanOrEqual(LINE.inner);
+    expect(LINE.inner).toBeLessThan(LINE.outer);
+    expect(LINE.outer).toBeLessThanOrEqual(LINE.max);
+  });
+});
+
+const pure = import.meta.glob<string>(["../src/view/art/manifest.ts", "../src/view/art/placement.ts", "../art/palette.ts"], {
   query: "?raw",
   import: "default",
   eager: true,
 });
+const gallery = import.meta.glob<string>("../src/dev/gallery/tab.ts", { query: "?raw", import: "default", eager: true });
 
 describe("шви арту", () => {
-  it("маніфест і розміщення кадрів — без Phaser і DOM", () => {
-    expect(Object.keys(pure)).toHaveLength(2);
+  it("маніфест, розміщення кадрів і палітра — без Phaser і DOM", () => {
+    expect(Object.keys(pure)).toHaveLength(3);
     for (const [file, source] of Object.entries(pure)) {
       expect(source, file).not.toMatch(/from\s+["']phaser["']/);
       expect(source, file).not.toMatch(/\b(window|document|localStorage)\s*[.[]/);
     }
+  });
+
+  it("інтерфейс вкладки галереї імпортує лише типи", () => {
+    const source = Object.values(gallery)[0] ?? "";
+    expect(source).not.toBe("");
+    const imports = source.match(/^import .*$/gm) ?? [];
+    expect(imports).toEqual(['import type Phaser from "phaser";']);
   });
 });

@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "tests", "balance", "vite.config.ts", "vitest.balance.config.ts"]
+  "include": ["src", "tests", "balance", "art", "vite.config.ts", "vitest.balance.config.ts"]
 }
