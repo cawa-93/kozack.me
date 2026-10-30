@@ -59,12 +59,19 @@ function windowOver(sill: string): ArtEntry {
   return { id: `env/window/${roomAt(objectById(sill)) ?? "living"}`, size: WINDOW.size, pivot };
 }
 
-/** Підвіконня: верх дошки на висоті 70; `seat` — де сидить кіт (`WINDOWS[].seat`). */
+/**
+ * Підвіконня: верх дошки на висоті 70; `seat` — де сидить кіт: посередині дошки на 0,12 від стіни з вікном, в обох
+ * кімнатах однаково (ізометричне дзеркало; так його садовить `isoCatPerch` у `world/objects.ts`). У симуляції
+ * (`WINDOWS[].seat`) кіт у вітальні сидить на 0,3 від стіни — на самому краї дошки 0,28 завглибшки.
+ */
 const SILL_TOP = 70;
+const SILL_SEAT = 0.12;
 function sill(id: string): ArtEntry {
   const object = objectById(id);
   const geometry = box(object, { top: SILL_TOP, tall: SILL_TOP + 6 });
-  const seat = WINDOWS.find((v) => v.sill === id)?.seat ?? { x: object.x + 0.5, y: object.y + 0.5 };
+  const wall = WINDOWS.find((v) => v.sill === id)?.wall;
+  // Стіна з вікном — ряд y = 0 (дошка вздовж x) чи стовпець x = 0 (дошка вздовж y).
+  const seat = wall?.y === 0 ? { x: object.x + object.w / 2, y: object.y + SILL_SEAT } : { x: object.x + SILL_SEAT, y: object.y + object.h / 2 };
   const { fx, fy } = fractionIn(object, seat);
   return { id: `env/${id}`, ...geometry, points: { seat: pointsOn(object, geometry)(fx, fy, SILL_TOP) } };
 }
@@ -121,11 +128,11 @@ export const MANIFEST: readonly ArtEntry[] = [
   // полотно має запас угору й праворуч. Килимок перед дверима — у підлозі вітальні.
   { id: "env/door", ...box(objectById("door"), { top: 40, pad: { top: 72, right: 64 } }), states: ["closed", "open"] },
   // Підвіконня з батареєю в спальні (§9.12, «Вікно»): вузька біла дошка вздовж задньої стіни y = 0, під нею — батарея з
-  // ребрами; решта клітинки — підлога. Кіт сидить на дошці (на ній — складений плед). Дошка 0,34 завглибшки (слід у
-  // `objects.ts` — 0,3).
+  // ребрами; решта клітинки — підлога. Кіт сидить на дошці, на м'якому пледі зі звислим кутом. Дошка 0,28 завглибшки
+  // (слід у `objects.ts` — 0,3).
   sill("sill-bedroom"),
   // Те саме біля лівої задньої стіни x = 0 у вітальні — дзеркальне до спальні за ізометрією (світло те саме), зі своєю
-  // «історією» — кактусом на ближньому кінці дошки. Кіт сидить на 0,3 від стіни (`WINDOWS`), тож дошка 0,34 завглибшки.
+  // «історією» — кактусом на ближньому кінці дошки. Кіт сидить там само, на 0,12 від стіни (`seat`, див. `sill`).
   sill("sill-living"),
   // Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): тримач на висоті ≈ 70 (`holder`);
   // `unrolled` — порожня втулка й хвостик (`home.rollDown`; стрічка на підлозі — `mess/paper`). Pivot — основа стіни під

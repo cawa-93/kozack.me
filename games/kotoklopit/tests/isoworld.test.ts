@@ -137,12 +137,13 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
       if (height === null) throw new Error(id);
       expect(pointsOn(objectById(id), entry)(fx, fy, height), `${id}.${point}`).toEqual(entry.points?.[point]);
     }
-    // Підвіконня: кіт сидить на дошці на висоті верху.
+    // Підвіконня: кіт сидить на дошці на висоті верху — там, куди його садовить ізометричний вигляд.
     for (const pane of WINDOWS) {
       const object = objectById(pane.sill);
       const entry = artEntry(`env/${pane.sill}`);
       if (!entry) throw new Error(pane.sill);
-      const at = pointsOn(object, entry)((pane.seat.x - object.x) / object.w, (pane.seat.y - object.y) / object.h, isoObjectLook(pane.sill).perch ?? 0);
+      const perch = isoCatPerch(pane.sill, pane.seat, false);
+      const at = pointsOn(object, entry)((perch.at.x - object.x) / object.w, (perch.at.y - object.y) / object.h, perch.lift);
       expect(at, pane.sill).toEqual(entry.points?.["seat"]);
     }
   });
@@ -153,6 +154,10 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
     expect(isoCatPerch("sofa", { x: 14.5, y: 10.5 }, false).lift).toBe(34);
     expect(isoCatPerch("boxes", { x: 12.5, y: 9.5 }, false).lift).toBe(48);
     expect(isoCatPerch("shower", { x: 8.2, y: 1.3 }, false)).toEqual({ at: { x: 8.5, y: 1.85 }, lift: 6 });
+    // Підвіконня — дзеркальні: в обох кімнатах кіт посередині дошки на 0,12 від стіни з вікном, хоч у симуляції у вітальні
+    // він на 0,3 від стіни (`WINDOWS`), на самому краї дошки.
+    expect(isoCatPerch("sill-bedroom", { x: 4.5, y: 1.12 }, false)).toEqual({ at: { x: 4.5, y: 1.12 }, lift: 70 });
+    expect(isoCatPerch("sill-living", { x: 1.3, y: 8.5 }, false)).toEqual({ at: { x: 1.12, y: 8.5 }, lift: 70 });
     // Під ліжком (1 × 2): ближчий до камери край — правий (x = 2) для кота біля нього, нижній (y = 3) — для кота в ногах.
     expect(isoCatPerch("bed", { x: 1.8, y: 1.5 }, true)).toEqual({ at: { x: 2, y: 1.5 }, lift: 0 });
     expect(isoCatPerch("bed", { x: 1.3, y: 2.8 }, true)).toEqual({ at: { x: 1.3, y: 3 }, lift: 0 });

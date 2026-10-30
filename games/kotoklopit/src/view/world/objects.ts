@@ -95,6 +95,8 @@ const COUNTER = 62;
 const DESK = 54;
 const TABLE = 54;
 const SILL = 70;
+/** Де на дошці підвіконня сидить кіт: відстань від стіни з вікном, клітинки (дошка 0,28 завглибшки, `env/sill-*`). */
+const SILL_SEAT = 0.12;
 
 /** Персонаж стоїть перед річчю під задньою стіною (лицьова грань — до кімнати, y + h) і дивиться на неї. */
 const front = (x: number, y: number, pose: IsoUse["pose"] = "stand"): IsoUse => ({ at: { x, y }, pose, facing: { x: 0, y: -1 } });
@@ -171,8 +173,8 @@ export interface IsoPerch {
 
 /**
  * Де стоїть кіт, що виліз на річ `id` (§9.12, «Лазіння»), чи ховається під нею: дані для T1 і для старого кота на ізометричній
- * підлозі. На речі — над своєю точкою на висоті `perch`; у душовій кабіні — на мокрому піддоні біля входу; під річчю —
- * визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на підлозі.
+ * підлозі. На речі — над своєю точкою на висоті `perch`; у душовій кабіні — на мокрому піддоні біля входу; на підвіконні —
+ * посередині дошки біля вікна; під річчю — визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на підлозі.
  */
 export function isoCatPerch(id: string, cat: Vec, hiding: boolean): IsoPerch {
   const look = isoObjectLook(id);
@@ -183,6 +185,12 @@ export function isoCatPerch(id: string, cat: Vec, hiding: boolean): IsoPerch {
     return { at: toRight <= toLeft ? { x: f.x1, y: cat.y } : { x: cat.x, y: f.y1 }, lift: 0 };
   }
   if (id === "shower") return { at: { x: (f.x0 + f.x1) / 2, y: f.y0 + (f.y1 - f.y0) * 0.85 }, lift: look.perch ?? 0 };
+  // На підвіконні — посередині дошки на `SILL_SEAT` від стіни з вікном, в обох кімнатах однаково (ізометричне дзеркало;
+  // точка `seat` запису `env/sill-*`): у симуляції кіт у вітальні сидить на 0,3 від стіни — на самому краї дошки.
+  if (id === "sill-bedroom" || id === "sill-living") {
+    const alongY = f.x1 - f.x0 < f.y1 - f.y0;
+    return { at: alongY ? { x: f.x0 + SILL_SEAT, y: (f.y0 + f.y1) / 2 } : { x: (f.x0 + f.x1) / 2, y: f.y0 + SILL_SEAT }, lift: look.perch ?? 0 };
+  }
   return { at: { x: cat.x, y: cat.y }, lift: look.perch ?? 0 };
 }
 
