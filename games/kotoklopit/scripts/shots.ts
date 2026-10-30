@@ -101,9 +101,13 @@ interface ShotResult {
 
 class UsageError extends Error {}
 
-/** Шлях із параметра: відносно теки, з якої запустили npm чи node. */
+/**
+ * Шлях із параметра: відносно теки, з якої запустили node чи npm (`npm run shots -w games/kotoklopit` переходить у теку гри,
+ * а початкову теку зберігає в INIT_CWD; поза npm-скриптом INIT_CWD може лишитися в оточенні від когось іншого).
+ */
 function resolveUserPath(value: string): string {
-  return path.resolve(process.env["INIT_CWD"] ?? process.cwd(), value);
+  const npmCwd = process.env["npm_lifecycle_event"] === undefined ? undefined : process.env["INIT_CWD"];
+  return path.resolve(npmCwd ?? process.cwd(), value);
 }
 
 function parseSizes(value: string): Size[] {
