@@ -8,7 +8,7 @@ back — порожні шари: скелет ховає рот ззаду.
 <defs>
 <path id="cat-mouth-front-jaw" d="M5.2 6.6C4.4 7.1 4.8 9.4 5.2 10.6C5.6 11.8 6.5 13.1 7.4 13.8C8.3 14.5 9.6 14.8 10.6 14.6C11.6 14.4 12.9 13.8 13.6 12.8C14.3 11.8 14.6 9.7 14.6 8.6C14.6 7.5 14.4 6.4 13.6 6.2C12.8 6 11.4 7.5 10 7.6C8.6 7.7 6 6.1 5.2 6.6Z"/>
 <clipPath id="cat-mouth-front-clip"><use href="#cat-mouth-front-jaw" class="st-meow"/></clipPath>
-<clipPath id="cat-mouth-front-mask"><path d="M3.9 5.5L15.1 5.5L15.1 15.3L3.9 15.3Z"/></clipPath>
+<clipPath id="cat-mouth-front-mask"><path d="M4 5.5L15.1 5.5L15.1 15.3L4 15.3Z"/></clipPath>
 </defs>
 <g id="fill">
 <use href="#cat-mouth-front-jaw" fill="#ffffff" class="st-meow"/>

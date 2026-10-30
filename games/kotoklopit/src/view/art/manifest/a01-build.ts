@@ -29,7 +29,7 @@ const wall = (id: RoomId): Geometry & { res: number } => ({ ...slab(backWallCell
  */
 const KITCHEN = {
   floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } },
-  wall: { size: { w: 536, h: 472 }, pivot: { x: 76, y: 272 } },
+  wall: { size: { w: 536, h: 474 }, pivot: { x: 76, y: 272 } },
 } as const satisfies Record<string, Geometry>;
 
 /**

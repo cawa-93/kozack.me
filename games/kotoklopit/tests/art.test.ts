@@ -65,6 +65,33 @@ describe("арт гри (art/) і маніфест", () => {
     expect(problems).toEqual([]);
   });
 
+  it("поле: усе намальоване (усі стани й шари разом, з контуром і тінню) — щонайменше за 4 одиниці від краю полотна (art/STYLE.md §2)", async () => {
+    /** Пікселів на одиницю: на межі 4,0 одиниці растр ще прозорий, а 3,75 вже видно. */
+    const scale = 4;
+    const problems: string[] = [];
+    for (const svg of svgs) {
+      const text = readFileSync(path.join(ART_DIR, svg), "utf8");
+      const { data, info } = await sharp(Buffer.from(text), { density: 72 * scale }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -1;
+      let y1 = -1;
+      for (let y = 0; y < info.height; y++) {
+        for (let x = 0; x < info.width; x++) {
+          if ((data[(y * info.width + x) * 4 + 3] ?? 0) <= 8) continue;
+          x0 = Math.min(x0, x);
+          x1 = Math.max(x1, x);
+          y0 = Math.min(y0, y);
+          y1 = Math.max(y1, y);
+        }
+      }
+      if (x1 < 0) continue; // порожній кадр (невидиме в ракурсі)
+      const margin = Math.min(x0, y0, info.width - 1 - x1, info.height - 1 - y1) / scale;
+      if (margin < 4) problems.push(`art/${svg}: поле ${margin} (ліво ${x0 / scale}, верх ${y0 / scale}, право ${(info.width - 1 - x1) / scale}, низ ${(info.height - 1 - y1) / scale})`);
+    }
+    expect(problems).toEqual([]);
+  }, 60_000);
+
   it("запис намальовано цілком: усі ракурси або жоден (з KOTOKLOPIT_REQUIRE_ALL_ART — усі)", () => {
     const requireAll = requireAllFromEnv();
     expect(entries.flatMap((entry) => drawnProblems(entry, has, requireAll))).toEqual([]);

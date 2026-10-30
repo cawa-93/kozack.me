@@ -7,7 +7,7 @@ back — порожні шари: скелет ховає морду ззаду.
 <defs>
 <path id="cat-muzzle-normal-front-shape" d="M10.4 8.2C10.5 7.4 10.8 6.5 11.6 6C12.4 5.5 13.8 5.3 15 5.2C16.2 5.1 17.4 5.1 18.6 5.2C19.8 5.3 21.2 5.5 22 6C22.8 6.5 23.3 7.4 23.4 8.2C23.5 9 23.2 10.2 22.6 10.8C22 11.4 20.9 11.7 20 11.8C19.1 11.9 18 11.2 17 11.2C16 11.2 14.8 11.9 13.8 11.8C12.8 11.7 11.8 11.4 11.2 10.8C10.6 10.2 10.3 9 10.4 8.2Z"/>
 <clipPath id="cat-muzzle-normal-front-clip"><use href="#cat-muzzle-normal-front-shape"/></clipPath>
-<clipPath id="cat-muzzle-normal-front-mask"><path d="M9.8 4.6L24 4.6L24 12.4L9.8 12.4Z"/></clipPath>
+<clipPath id="cat-muzzle-normal-front-mask"><path d="M9.8 4.6L24 4.6L24 12L9.8 12Z"/></clipPath>
 </defs>
 <g id="fill">
 <use href="#cat-muzzle-normal-front-shape" fill="#ffffff"/>
