@@ -126,7 +126,7 @@ export const ISO_ORIGIN: Vec = { x: MAP_HEIGHT * HALF_W + ISO_MARGIN, y: ISO_WAL
  * Глибина точки підлоги між точками з тим самим x + y (на тій самій висоті екрана) — за x, як в `isoOrder`: на стільки
  * далі з кожною клітинкою x. Набагато менше за зсуви, якими старі частини кладуть свої шматки одне над одним (0,5–2).
  */
-const ISO_DEPTH_TIE = 1e-4;
+export const ISO_DEPTH_TIE = 1e-4;
 
 function isoToScreen(p: Vec): Vec {
   return { x: ISO_ORIGIN.x + (p.x - p.y) * HALF_W, y: ISO_ORIGIN.y + (p.x + p.y) * HALF_H };
