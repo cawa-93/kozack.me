@@ -609,6 +609,41 @@ describe("облік запечених кадрів", () => {
     expect(cache.ownerKeys("cat:1")).toEqual(["body@dull"]);
   });
 
+  it("ближні й дальні частини (farRecipe) — один рід рецепта: скелет, що повертається front ↔ back, не перезапікає кадрів", () => {
+    const base: TintRecipe = { key: "cat:ginger", steps: [] };
+    const far = farRecipe(base);
+    expect(far.key).not.toBe(base.key);
+    expect(far.family).toBe(base.key);
+    // Як `bake.ts`: рід — `family ?? key`; кадри — за ключем рецепта. Слоти кота по черзі: хвіст, дальні лапи, тулуб…, дальнє
+    // вухо, ближнє.
+    const { use, destroyed, made, cache } = setup({ framesPerOwner: 32, pixelsPerOwner: 100_000, pixelsTotal: 1_000_000 });
+    const slots: [string, TintRecipe][] = [
+      ["tail", base],
+      ["leg-back-far", far],
+      ["leg-front-far", far],
+      ["body", base],
+      ["ear-far", far],
+      ["ear-near", base],
+    ];
+    const shown = new Map<string, string>();
+    for (const view of ["front", "back", "front", "back"]) {
+      for (const [slot, recipe] of slots) {
+        const key = `${slot}/${view}@${recipe.key}`;
+        use("cat:1", key, recipe.family ?? recipe.key);
+        cache.retain(key);
+        const prev = shown.get(slot);
+        if (prev !== undefined) cache.release(prev);
+        shown.set(slot, key);
+      }
+    }
+    expect(made()).toBe(slots.length * 2);
+    expect(destroyed).toEqual([]);
+    expect(cache.ownerKeys("cat:1")).toHaveLength(slots.length * 2);
+    // Інший рід (тьмяна шерсть) — і тепер кадри старого звільняються.
+    use("cat:1", "body/back@cat:dull", "cat:dull");
+    expect(destroyed.length).toBeGreaterThan(0);
+  });
+
   it("забутий кадр запікається знову", () => {
     const { use, cache, made } = setup();
     use("cat:1", "a");

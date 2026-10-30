@@ -148,7 +148,8 @@ function bake(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, opts: Bak
   const owner = opts.owner ?? SHARED_OWNER;
   // Текстуру могли прибрати повз кеш (`textures.remove`): тоді запекти знову.
   if (baker.cache.peek(key) && !scene.textures.exists(key)) baker.cache.forgetKey(key);
-  return baker.cache.use(owner, key, recipe.key, () => {
+  // Вигляд власника — рід рецепта: ближні й дальні (`farRecipe`) частини того самого кота — один вигляд.
+  return baker.cache.use(owner, key, recipe.family ?? recipe.key, () => {
     const baked = make(scene, frame, recipe, key, opts.fallback);
     return { value: baked, pixels: baked.px.w * baked.px.h };
   });

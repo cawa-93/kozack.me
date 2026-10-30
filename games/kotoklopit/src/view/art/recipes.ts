@@ -361,7 +361,7 @@ export function farRecipe(recipe: TintRecipe, tint = FAR_TINT): TintRecipe {
   const dim: TintStep[] = FAR_FILLS.map((layer) => ({ layer, color: tint, put: "multiply" }));
   const ink = recipe.steps.findIndex((step) => step.layer === "ink");
   const at = ink < 0 ? recipe.steps.length : ink;
-  return { key: `${recipe.key}/far`, steps: [...recipe.steps.slice(0, at), ...dim, ...recipe.steps.slice(at)] };
+  return { key: `${recipe.key}/far`, family: recipe.family ?? recipe.key, steps: [...recipe.steps.slice(0, at), ...dim, ...recipe.steps.slice(at)] };
 }
 
 // --- Кольори: обчислення -------------------------------------------------------------------------
