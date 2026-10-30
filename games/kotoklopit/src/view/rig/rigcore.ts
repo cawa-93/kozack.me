@@ -204,6 +204,17 @@ export function rigProblems(def: LooseRig): string[] {
     if (art !== null && !(art.split("/").length >= 2 && art.split("/").every((s) => ART_SEGMENT.test(s)))) problems.push(`${where}: обвіс «${id}» — не id арту: «${art}»`);
   }
 
+  // Кут кожної кістки у вихідній позі ракурсу від кореня (сума `rot` по ланцюжку): для перевірки нерівномірного масштабу.
+  const setupAngles = (view: ArtView): Map<string, number> => {
+    const over = (def.views as Partial<LooseRig["views"]>)[view]?.bones ?? {};
+    const angles = new Map<string, number>();
+    for (const bone of def.bones) {
+      const own = over[bone.id]?.rot ?? bone.rot;
+      angles.set(bone.id, (bone.parent === null ? 0 : (angles.get(bone.parent) ?? 0)) + own);
+    }
+    return angles;
+  };
+  const angles = ART_VIEWS.map((view) => [view, setupAngles(view)] as const);
   for (const [name, tweak] of Object.entries(def.proportions ?? {})) {
     for (const [id, bone] of Object.entries(tweak)) {
       const at = `${where}, пропорції «${name}», кістка «${id}»`;
@@ -211,6 +222,16 @@ export function rigProblems(def: LooseRig): string[] {
       if (!bone) continue;
       if ([bone.x, bone.y, bone.rot].some((v) => v !== undefined && !finite(v))) problems.push(`${at}: x, y і rot мають бути числами`);
       if (bone.scale && !(finite(bone.scale.x) && finite(bone.scale.y) && bone.scale.x !== 0 && bone.scale.y !== 0)) problems.push(`${at}: scale — ненульові числа`);
+      // Нерівномірний масштаб — уздовж і впоперек кістки. Кадр слота Phaser лише повертає й масштабує вздовж осей кореня, тож
+      // `place` відкидає перекіс: під кутом, не кратним 90°, такий масштаб стає поворотом, а не вкороченням (хвіст кошеняти
+      // під −140°). Тож нерівномірний — лише на кістці під кутом, кратним 90°, в обох ракурсах.
+      if (bone.scale && bone.scale.x !== bone.scale.y && boneAt.has(id)) {
+        for (const [view, map] of angles) {
+          const angle = map.get(id) ?? 0;
+          const off = Math.abs(angle / 90 - Math.round(angle / 90));
+          if (off > 1e-6) problems.push(`${at}: нерівномірний scale на кістці під ${angle}° (ракурс «${view}») — перекіс відкидається; лише рівномірний або кістка під кутом, кратним 90°`);
+        }
+      }
     }
   }
   return problems;

@@ -164,6 +164,16 @@ describe("визначення скелетів", () => {
     expect(problems).toMatch(/кістки «leg» немає/);
     expect(problems).toMatch(/обвіс не має слота «badge»/);
     expect(problems).toMatch(/пропорції «big», кістка «tail»: кістки немає/);
+    // Нерівномірний масштаб на кістці під кутом, не кратним 90° (хвіст кошеняти під −140°), — перекіс, якого кадр слота не вміє.
+    const slanted: LooseRig = {
+      ...base,
+      bones: [...base.bones, { id: "tail", parent: "body", x: 0, y: 0, rot: -50, len: 8 }],
+      proportions: { short: { tail: { scale: { x: 0.75, y: 1 } }, arm: { scale: { x: 0.5, y: 1 } } }, even: { tail: { scale: { x: 0.8, y: 0.8 } } } },
+    };
+    const slant = rigProblems(slanted).join("\n");
+    expect(slant).toMatch(/пропорції «short», кістка «tail»: нерівномірний scale на кістці під -140° \(ракурс «front»\)/);
+    expect(slant).not.toMatch(/кістка «arm»/);
+    expect(slant).not.toMatch(/пропорції «even»/);
     const noBack = { ...base, views: { front: {} } } as unknown as LooseRig;
     expect(rigProblems(noBack).join("\n")).toMatch(/ракурс «back»: немає вихідної пози/);
     expect(() => new Rig(broken)).toThrow(/Скелет/);
