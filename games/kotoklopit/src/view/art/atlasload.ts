@@ -1,7 +1,8 @@
 // Завантаження атласу арту в Phaser (крок 16, GRAPHICS_PLAN.md: «Шов хвилі 1», контракт кадрів у `atlas.ts`): `index.json`
 // → сторінки → одна текстура `ART_TEXTURE`, у якій кожна сторінка — джерело з тим самим номером, а кожен шар кожного кадру —
 // кадр `layerFrameName(frameId, шар)` з обрізкою до полотна `size · res`. Так атлас вантажать галерея (`src/dev/gallery`) і
-// PreloadScene гри — однаково.
+// PreloadScene гри — однаково, одним кодом (DOM-портрет бере ті самі файли через `sources.ts` і ті самі адреси й перевірку
+// `index.json` з `atlasindex.ts`).
 //
 // Кликати з `create()` сцени, а не з `preload()`: завантажувач іде двома проходами (спершу `index.json`, потім сторінки,
 // яких до нього не знати), і кожен запускає сам (`load.start()`), тож він не чекає кадрів гри — і скрипт знімків, у якого
@@ -56,9 +57,24 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
   return new Promise((resolve) => {
     const loader = scene.load;
     const none = (): void => resolve({ state: "none", index: null });
+    /**
+     * Обробник події завантажувача: виняток у ньому (зламаний кадр, текстура не склалася) — «none», а не вічне очікування
+     * (обіцянка інакше так і не скінчилася б, і гра лишилася б на смузі завантаження).
+     */
+    const guarded =
+      (step: () => void): (() => void) =>
+      () => {
+        try {
+          step();
+        } catch (error) {
+          console.warn("Атлас арту не склався, малюю заглушки:", error);
+          if (scene.textures.exists(ART_TEXTURE)) scene.textures.remove(ART_TEXTURE);
+          none();
+        }
+      };
     scene.cache.text.remove(INDEX_KEY);
     loader.text(INDEX_KEY, artIndexUrl(base));
-    loader.once(Phaser.Loader.Events.COMPLETE, () => {
+    loader.once(Phaser.Loader.Events.COMPLETE, guarded(() => {
       const text: unknown = scene.cache.text.get(INDEX_KEY);
       scene.cache.text.remove(INDEX_KEY);
       const problems: string[] = [];
@@ -72,7 +88,7 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
       index.pages.forEach((page, i) => {
         loader.addFile(new PageFile(loader, `${PAGE_KEY}${i}`, artPageUrl(base, page.file), (image) => (images[i] = image)));
       });
-      loader.once(Phaser.Loader.Events.COMPLETE, () => {
+      loader.once(Phaser.Loader.Events.COMPLETE, guarded(() => {
         const missing = index.pages.filter((_, i) => images[i] === undefined).map((page) => page.file);
         if (missing.length > 0) {
           console.warn(`Атлас арту: не завантажилися сторінки ${missing.join(", ")}, малюю заглушки`);
@@ -84,9 +100,9 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
           return;
         }
         resolve({ state: "ready", index });
-      });
+      }));
       loader.start();
-    });
+    }));
     loader.start();
   });
 }

@@ -1,18 +1,17 @@
 // Сторінки атласу для DOM (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): `index.json` і ті сторінки, на яких лежать
 // потрібні кадри, — без Phaser, для портрета в редакторі (`composePortrait`). Phaser вантажить ті самі файли сам
-// (PreloadScene), а браузер бере їх із кешу: назви сторінок мають хеш вмісту.
+// (PreloadScene, `atlasload.ts`), а браузер бере їх із кешу: назви сторінок мають хеш вмісту. Адреси й перевірка
+// `index.json` — спільні (`atlasindex.ts`).
 //
 // Поза браузером (тести в Node) нічого не вантажиться: атласу «немає», і портрет малює запасний малюнок. Під час імпорту
 // модуль нічого не робить — лише коли попросять.
 
+import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
 import type { LayerImage, LayerSource } from "./compose";
-import { ART_DIR, ART_INDEX_FILE, ART_INDEX_VERSION, type ArtIndex, type ArtLayer, type FrameId, type IndexFrame } from "./types";
+import type { ArtIndex, ArtLayer, FrameId, IndexFrame } from "./types";
 
-/** Адреса каталогу атласу: від `BASE_URL` збірки (у грі на сайті — `/games/kotoklopit/art/`). */
-export function artBaseUrl(): string {
-  const base: string = import.meta.env.BASE_URL;
-  return `${base.endsWith("/") ? base : `${base}/`}${ART_DIR}/`;
-}
+/** Базова адреса гри (`BASE_URL` збірки: у грі на сайті — `/games/kotoklopit/`); адреси атласу — `atlasindex.ts`. */
+const base = (): string => import.meta.env.BASE_URL;
 
 /** Чи є браузер, з якого можна вантажити атлас. */
 function hasBrowser(): boolean {
@@ -31,11 +30,10 @@ export function loadArtIndex(): Promise<ArtIndex | null> {
   indexLoad = (async (): Promise<ArtIndex | null> => {
     if (!hasBrowser()) return null;
     try {
-      const response = await fetch(`${artBaseUrl()}${ART_INDEX_FILE}`);
+      const response = await fetch(artIndexUrl(base()));
       if (!response.ok) return null;
-      const data = (await response.json()) as Partial<ArtIndex> | null;
-      if (!data || data.version !== ART_INDEX_VERSION || !Array.isArray(data.pages) || typeof data.frames !== "object") return null;
-      return data as ArtIndex;
+      // Та сама перевірка, що в завантажувача Phaser (`atlasload.ts`); про помилки формату вже сказав він.
+      return parseArtIndex(await response.text());
     } catch {
       return null;
     }
@@ -92,7 +90,7 @@ function loadPage(loaded: ArtIndex, page: number): Promise<CanvasImageSource | n
   const have = pageLoads.get(page);
   if (have) return have;
   const file = loaded.pages[page]?.file;
-  const load = file ? loadImage(`${artBaseUrl()}${file}`) : Promise.resolve(null);
+  const load = file ? loadImage(artPageUrl(base(), file)) : Promise.resolve(null);
   const done = load.then((image) => {
     if (image) pages.set(page, image);
     else pageLoads.delete(page);
