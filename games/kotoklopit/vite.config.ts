@@ -32,7 +32,7 @@ export default defineConfig(({ command }) => ({
     // Phaser сам по собі важить близько 1,4 МБ.
     chunkSizeWarningLimit: 1600,
     // Галерея арту — лише разом із режимом розробки: у продакшн-збірці її немає.
-    rolldownOptions: { input: { main: page("index.html"), ...(devTools(command) ? { gallery: page("gallery.html") } : {}) } },
+    rolldownOptions: { input: { index: page("index.html"), ...(devTools(command) ? { gallery: page("gallery.html") } : {}) } },
   },
   test: {
     include: ["tests/**/*.test.ts"],

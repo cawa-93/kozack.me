@@ -71,9 +71,9 @@ describe("галерея арту (крок 16)", () => {
         else process.env["CONTEXT"] = saved;
       }
     };
-    expect(build(undefined)).toEqual({ input: ["main"], dev: "false" });
-    expect(build("production")).toEqual({ input: ["main"], dev: "false" });
-    expect(build("deploy-preview")).toEqual({ input: ["main", "gallery"], dev: "true" });
-    expect(build("branch-deploy")).toEqual({ input: ["main", "gallery"], dev: "true" });
+    expect(build(undefined)).toEqual({ input: ["index"], dev: "false" });
+    expect(build("production")).toEqual({ input: ["index"], dev: "false" });
+    expect(build("deploy-preview")).toEqual({ input: ["index", "gallery"], dev: "true" });
+    expect(build("branch-deploy")).toEqual({ input: ["index", "gallery"], dev: "true" });
   });
 });
