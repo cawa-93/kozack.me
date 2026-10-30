@@ -76,6 +76,18 @@ function sill(id: string): ArtEntry {
   return { id: `env/${id}`, ...geometry, points: { seat: pointsOn(object, geometry)(fx, fy, SILL_TOP) } };
 }
 
+/**
+ * Сегмент внутрішньої стіни чи переднього плінтуса (пакет A1b, `art/env/wall/<вид>/<сегмент>.svg`): полотно `slab` його
+ * клітинок, ширше на `WALL_MARGIN` з кожного боку — важкий низ (8,5) на кутах сліду з полем `PAD` 8 стояв би за 3,75 від
+ * краю, а треба щонайменше 4 (`tests/art.test.ts`); грань і кришка ще й заходять на 0,03 клітинки під сусідній сегмент,
+ * що лягає пізніше. Pivot — та сама верхня вершина першої клітинки.
+ */
+const WALL_MARGIN = 2;
+function wallSegment(s: (typeof WALL_SEGMENTS)[number]): ArtEntry {
+  const { size, pivot } = slab(rectCells(s.rect), s.rect, s.kind === "inner" ? WALL_HEIGHT.inner : WALL_HEIGHT.front);
+  return { id: s.id, size: { w: size.w + 2 * WALL_MARGIN, h: size.h + 2 * WALL_MARGIN }, pivot: { x: pivot.x + WALL_MARGIN, y: pivot.y + WALL_MARGIN } };
+}
+
 export const MANIFEST: readonly ArtEntry[] = [
   // --- Плити кімнат (§8.4 [Змінено пізніше]: готові статичні кадри, без RenderTexture). Підлога й стіни кожної кімнати
   // ставляться в одну точку toScreen(room.x, room.y) і лежать під усім.
@@ -119,7 +131,7 @@ export const MANIFEST: readonly ArtEntry[] = [
   // клітинок: front/row11-x0, row11-x4, row11-x7 (ліворуч від дверей), row11-x12, row11-x16 (праворуч), col19-y0, col19-y4,
   // col19-y8 (права стіна) — шматки стикуються без шва. На грані row5-x5 до вітальні над (8,75; 6) — розетка дроту
   // комп'ютера.
-  ...WALL_SEGMENTS.map((s): ArtEntry => ({ id: s.id, ...slab(rectCells(s.rect), s.rect, s.kind === "inner" ? WALL_HEIGHT.inner : WALL_HEIGHT.front) })),
+  ...WALL_SEGMENTS.map(wallSegment),
 
   // --- Двері й речі будови
 
