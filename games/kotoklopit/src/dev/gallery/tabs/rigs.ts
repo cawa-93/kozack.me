@@ -1,40 +1,81 @@
 // Вкладка галереї «Скелети» (крок 16, GRAPHICS_PLAN.md: хвиля 1, F4): скелет кота чи персонажа в будь-якому ракурсі,
 // напрямі й анімації, з часом із повзунка шелла; перемикачі обвісу (варіанти частин з маніфесту й контракту id) і
 // пропорцій; накладка кісток, якорів і гнізд; пробний об'єкт у гнізді (кіт на руках — сам скелет кота в гнізді `arms`).
+// За замовчуванням частини запечені компонувальником (`bake.ts`, рецепт рудого кота й типової зовнішності), як у грі;
+// перемикач «Частини» показує окремий шар атласу (без компонувальника).
+//
+// Адреса: `rig=cat|person`, `view=front|back`, `flip=1`, `anim=<група>/<назва>`, `layer=baked|all|ink|…`, `scale=auto|1…4`,
+// `marks=0` (без накладки) — для посилань і знімків.
 //
 // Анімації — усі групи `src/view/rig/anims/<скелет>/<група>.ts` (`defineAnims`): їх знаходить `import.meta.glob`, тож
 // нові файли анімацій з'являються тут самі.
 
 import Phaser from "phaser";
 
+import { DEFAULT_LOOK } from "../../../sim/game";
+import { coatOf } from "../../../sim/genetics";
 import { addArt } from "../../../view/art/atlas";
+import { releaseBaked } from "../../../view/art/bake";
 import { artEntries } from "../../../view/art/manifest";
-import type { ArtId, ArtView, FrameLayer } from "../../../view/art/types";
-import { CAT_FIT, CAT_RIG, CAT_VARIANTS } from "../../../view/rig/defs/cat";
-import { PERSON_FIT, PERSON_RIG, PERSON_VARIANTS } from "../../../view/rig/defs/person";
+import { catRecipe, farRecipe, personRecipe } from "../../../view/art/recipes";
+import type { ArtId, ArtView, FrameLayer, TintRecipe } from "../../../view/art/types";
+import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS } from "../../../view/rig/defs/cat";
+import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, PERSON_VARIANTS } from "../../../view/rig/defs/person";
 import type { RigFit } from "../../../view/rig/rigcore";
-import { RigSprite, type Attachable } from "../../../view/rig/rigsprite";
+import { RigSprite, type Attachable, type RigBaked } from "../../../view/rig/rigsprite";
 import type { RigAnim, RigDef, SocketCargo } from "../../../view/rig/types";
 import { galleryView, onGalleryView } from "../kit";
+import { replaceParams } from "../params";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 type LooseRig = RigDef<string, string, string>;
 type LooseAnim = RigAnim<string, string>;
 type LooseSprite = RigSprite<string, string, string>;
 
-/** Скелети вкладки: визначення, точки арту, варіанти частин і приблизна висота (для масштабу «авто»). */
+/**
+ * Скелети вкладки: визначення, точки арту, варіанти частин, приблизна висота (для масштабу «авто»), рецепт запікання
+ * (рудий класичний табі; типова зовнішність гри) і дальні частини, які рецепт затінює (`farRecipe`, пропозиція F1b).
+ */
 interface RigChoice {
   title: string;
   def: LooseRig;
   fit: RigFit<string, string, string>;
   variants: Readonly<Record<string, readonly (ArtId | null)[]>>;
   height: number;
+  recipe: TintRecipe;
+  far: readonly string[];
 }
 
+const GINGER = catRecipe({
+  coat: coatOf(
+    { orange: [true], black: [true, true], dense: [true, true], agouti: [true, true], tabby: [0, 0], white: [0, 0], full: [true, true], short: [true, true], eyes: 2 },
+    { coat: null },
+  ),
+  fur: null,
+  seed: 1,
+});
+
 const RIGS: Readonly<Record<"cat" | "person", RigChoice>> = {
-  cat: { title: "Кіт", def: CAT_RIG as unknown as LooseRig, fit: CAT_FIT, variants: CAT_VARIANTS, height: 64 },
-  person: { title: "Персонаж", def: PERSON_RIG as unknown as LooseRig, fit: PERSON_FIT, variants: PERSON_VARIANTS, height: 152 },
+  cat: { title: "Кіт", def: CAT_RIG as unknown as LooseRig, fit: CAT_FIT, variants: CAT_VARIANTS, height: 64, recipe: GINGER, far: CAT_FAR_SLOTS },
+  person: {
+    title: "Персонаж",
+    def: PERSON_RIG as unknown as LooseRig,
+    fit: PERSON_FIT,
+    variants: PERSON_VARIANTS,
+    height: 152,
+    recipe: personRecipe(DEFAULT_LOOK),
+    far: PERSON_FAR_SLOTS,
+  },
 };
+
+/** Власник запечених кадрів вкладки (бюджет `bake.ts`): звільняється, коли вкладку закривають. */
+const OWNER = "gallery:rigs";
+
+/** Запечені кадри скелета: рецепт істоти, дальні частини — затінені. */
+function bakedOf(choice: RigChoice): RigBaked<string> {
+  const far = farRecipe(choice.recipe);
+  return { recipe: (slot) => (choice.far.includes(slot) ? far : choice.recipe), owner: OWNER };
+}
 type RigName = keyof typeof RIGS;
 
 /** Групи анімацій: шлях модуля → його експорти (групи `defineAnims`). */
@@ -92,7 +133,12 @@ const CARGO_LOOK: Readonly<Record<Exclude<SocketCargo, "cat">, { id: ArtId; stat
   sock: { id: "mess/sock", state: "carried" },
 };
 
-const LAYERS: readonly (FrameLayer | "all")[] = ["all", "ink", "fill", "shade", "detail"];
+/** Що показують частини: запечене компонувальником (як у грі) чи шар атласу (`all` — увесь кадр; у шарованих — заглушка). */
+type Show = FrameLayer | "baked";
+const LAYERS: readonly Show[] = ["baked", "all", "ink", "fill", "shade", "detail"];
+const LAYER_TITLES: Readonly<Partial<Record<Show, string>>> = { baked: "запечено (як у грі)", all: "увесь кадр (атлас)" };
+/** Параметри адреси цієї вкладки: прибираються, коли вкладку закривають. */
+const PARAMS = ["rig", "view", "flip", "anim", "layer", "scale", "marks"] as const;
 const SCALES = ["auto", "1", "2", "3", "4"] as const;
 const COLORS = { bone: 0xffd166, joint: 0xef476f, anchor: 0x06d6a0, socket: 0x4cc9f0, floor: 0x8a8296 } as const;
 
@@ -103,7 +149,7 @@ interface State {
   anim: string;
   blend: boolean;
   scale: (typeof SCALES)[number];
-  layer: FrameLayer | "all";
+  layer: Show;
   skins: Record<RigName, Record<string, ArtId | null>>;
   proportions: Record<RigName, Set<string>>;
   kitten: number;
@@ -115,22 +161,39 @@ interface State {
 
 function mount(ctx: GalleryContext): GalleryView {
   const { scene } = ctx;
+  const params = new URLSearchParams(window.location.search);
+  const pick = <T extends string>(name: string, options: readonly T[], fallback: T): T => options.find((o) => o === params.get(name)) ?? fallback;
+  const marks = params.get("marks") !== "0";
+  const rigName = pick("rig", Object.keys(RIGS) as RigName[], "cat");
   const state: State = {
-    rig: "cat",
-    view: "front",
-    flip: false,
-    anim: "",
+    rig: rigName,
+    view: pick("view", ["front", "back"] as const, "front"),
+    flip: params.get("flip") === "1",
+    anim: pick("anim", [...animsOf(rigName).keys()], ""),
     blend: true,
-    scale: "auto",
-    layer: "all",
+    scale: pick("scale", SCALES, "auto"),
+    layer: pick("layer", LAYERS, "baked"),
     skins: { cat: { ...RIGS.cat.def.skin }, person: { ...RIGS.person.def.skin } },
     proportions: { cat: new Set(), person: new Set() },
     kitten: 1,
-    bones: true,
-    anchors: true,
-    sockets: true,
+    bones: marks,
+    anchors: marks,
+    sockets: marks,
     cargo: "",
   };
+  /** Записати вибір в адресу (за замовчуванням — без параметра). */
+  const saveParams = (): void => {
+    replaceParams({
+      rig: state.rig === "cat" ? null : state.rig,
+      view: state.view === "front" ? null : state.view,
+      flip: state.flip ? "1" : null,
+      anim: state.anim || null,
+      layer: state.layer === "baked" ? null : state.layer,
+      scale: state.scale === "auto" ? null : state.scale,
+    });
+  };
+  /** Шар атласу для скелета (без компонувальника); `baked` і `all` — увесь кадр. */
+  const atlasLayer = (): FrameLayer | undefined => (state.layer === "all" || state.layer === "baked" ? undefined : state.layer);
   let size = { w: scene.scale.width, h: scene.scale.height };
 
   const floor = scene.add.graphics();
@@ -177,7 +240,8 @@ function mount(ctx: GalleryContext): GalleryView {
       skin: state.skins[state.rig],
       facing: { view: state.view, flip: state.flip },
       proportions: proportionsNow(),
-      layer: state.layer === "all" ? undefined : state.layer,
+      layer: atlasLayer(),
+      baked: state.layer === "baked" ? bakedOf(choice) : null,
     });
     ctx.layer.add(sprite);
     overlay = scene.add.graphics();
@@ -223,11 +287,16 @@ function mount(ctx: GalleryContext): GalleryView {
     const kind = socket?.cargo[0];
     if (!kind) return;
     if (kind === "cat") {
-      cargoRig = new RigSprite(scene, RIGS.cat.def, { fit: RIGS.cat.fit, skin: state.skins.cat, layer: state.layer === "all" ? undefined : state.layer });
+      cargoRig = new RigSprite(scene, RIGS.cat.def, {
+        fit: RIGS.cat.fit,
+        skin: state.skins.cat,
+        layer: atlasLayer(),
+        baked: state.layer === "baked" ? bakedOf(RIGS.cat) : null,
+      });
       cargo = cargoRig;
     } else {
       const look = CARGO_LOOK[kind];
-      const layer = look.layered && state.layer !== "all" ? state.layer : undefined;
+      const layer = look.layered ? atlasLayer() : undefined;
       cargo = addArt(scene, null, look.id, { state: look.state, view: look.layered ? state.view : undefined, layer });
     }
     sprite.attach(state.cargo, cargo);
@@ -318,31 +387,37 @@ function mount(ctx: GalleryContext): GalleryView {
       state.anim = animsOf(v).has(state.anim) ? state.anim : "";
       state.cargo = "";
       rebuild();
+      saveParams();
     });
     select(main, "Ракурс:", [["front", "¾ спереду"], ["back", "¾ ззаду"]] as const, state.view, (v) => {
       state.view = v;
       sprite?.setFacing({ view: v });
       cargoRig?.setFacing({ view: v });
+      saveParams();
     });
     select(main, "Напрям:", [["right", "праворуч"], ["left", "ліворуч"]] as const, state.flip ? "left" : "right", (v) => {
       state.flip = v === "left";
       sprite?.setFacing({ flip: state.flip });
+      saveParams();
     });
     const anims = [...animsOf(state.rig).keys()];
     select(main, "Анімація:", [["", "вихідна поза"], ...anims.map((a) => [a, a] as const)], state.anim, (v) => {
       state.anim = v;
       const anim = animNow();
       sprite?.play(anim, { from: ctx.time(), blend: state.blend && running ? undefined : 0 });
+      saveParams();
     });
     check(main, "змішувати пози при зміні анімації (≈ 120 мс)", state.blend, (v) => (state.blend = v));
     select(main, "Масштаб:", SCALES.map((s) => [s, s === "auto" ? "авто" : `${s}×`] as const), state.scale, (v) => {
       state.scale = v;
       place();
+      saveParams();
     });
-    select(main, "Шар (до компонувальника):", LAYERS.map((l) => [l, l === "all" ? "увесь кадр" : l] as const), state.layer, (v) => {
+    select(main, "Частини:", LAYERS.map((l) => [l, LAYER_TITLES[l] ?? `шар ${l}`] as const), state.layer, (v) => {
       state.layer = v;
-      sprite?.setLayer(v === "all" ? undefined : v);
-      cargoRig?.setLayer(v === "all" ? undefined : v);
+      sprite?.setLayer(atlasLayer()).setBaked(v === "baked" ? bakedOf(RIGS[state.rig]) : null);
+      cargoRig?.setLayer(atlasLayer()).setBaked(v === "baked" ? bakedOf(RIGS.cat) : null);
+      saveParams();
     });
     main.append(status);
 
@@ -434,6 +509,8 @@ function mount(ctx: GalleryContext): GalleryView {
       sprite = null;
       floor.destroy();
       root.remove();
+      releaseBaked(scene, OWNER);
+      replaceParams(Object.fromEntries(PARAMS.map((name) => [name, null])));
     },
   };
 }

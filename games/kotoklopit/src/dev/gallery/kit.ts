@@ -35,6 +35,22 @@ export function setGalleryView(changes: Partial<GalleryViewState>): void {
   for (const listener of [...listeners]) listener(state);
 }
 
+/** Як шелл змінює масштаб на прохання вкладки (камера, адреса, перемикач); до відкриття шелла — нічого. */
+let zoomHandler: ((zoom: number) => void) | null = null;
+
+/** Для шелла: чим виконувати `requestGalleryZoom`. */
+export function onZoomRequest(handler: ((zoom: number) => void) | null): void {
+  zoomHandler = handler;
+}
+
+/**
+ * Попросити шелл змінити масштаб (CSS px на одиницю арту) так само, як перемикач «Масштаб»: кнопка «як у грі на телефоні»
+ * у вкладці. Після зміни шелл повідомляє підписників `onGalleryView`.
+ */
+export function requestGalleryZoom(zoom: number): void {
+  zoomHandler?.(zoom);
+}
+
 /** Одиниць арту на CSS px: відступ у `n` CSS px — це `n · unit()` одиниць. */
 export function unit(): number {
   return 1 / state.zoom;

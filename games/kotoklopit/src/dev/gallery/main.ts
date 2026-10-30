@@ -15,7 +15,7 @@ import { markArtReady } from "../../view/art/atlas";
 import { loadArtAtlas, type ArtAtlasResult } from "../../view/art/atlasload";
 import { COLORS } from "../../view/colors";
 import "./gallery.css";
-import { galleryView, setGalleryView, viewRect } from "./kit";
+import { galleryView, onZoomRequest, setGalleryView, viewRect } from "./kit";
 import {
   BG_TITLES,
   clampZoom,
@@ -227,6 +227,9 @@ function setZoom(next: number, anchor?: { x: number; y: number }): void {
   showZoom();
   replaceParams({ zoom: Math.abs(zoom - 1) < 1e-9 ? null : formatZoom(zoom) });
 }
+
+// Вкладка може попросити інший масштаб (кнопка «як у грі на телефоні»).
+onZoomRequest((zoom) => setZoom(zoom));
 
 function showZoom(): void {
   const zoom = galleryView().zoom;
@@ -457,6 +460,12 @@ const game = new Phaser.Game({
   parent: stage,
   ...stageSize(),
   transparent: true,
+  // Одна текстура на пакет малювання. Шейдер Phaser 4 вибирає текстуру пакета точним порівнянням інтерпольованого номера
+  // (`outTexDatum == float(INDEX)`, GetTexture.glsl), і на повернутих зображеннях програмний WebGL знімків (SwiftShader)
+  // часом промахується: шматки частин скелета зникають чи беруть чужу текстуру (запечені частини — кожна своя текстура).
+  // З одною текстурою номер завжди 0 — точно. Галерея — для оцінки арту, тож тут надійність важливіша за кількість викликів
+  // малювання; для гри це рішення T1/T2 (GRAPHICS_PLAN.md).
+  render: { maxTextures: 1 },
   banner: false,
   scale: { mode: Phaser.Scale.NONE, zoom: 1 / dpr },
   input: { activePointers: 2 },
