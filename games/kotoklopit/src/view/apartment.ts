@@ -8,6 +8,7 @@ import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
 import { drawMomMeal } from "./icons";
 import { SHAPED_STORAGES } from "./storagelook";
+import { objectHeight } from "./world/objects";
 import { COLORS } from "./colors";
 import { depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
 
@@ -21,30 +22,6 @@ const FLOORS = {
   kitchen: 0x9a8c74,
   living: 0x86725f,
 } as const;
-
-/** Видима висота речі на екрані. */
-const HEIGHT: Record<ObjectKind, number> = {
-  bed: 22,
-  shower: 52,
-  sink: 30,
-  fridge: 72,
-  stove: 32,
-  counter: 32,
-  table: 26,
-  trash: 30,
-  computer: 30,
-  sofa: 30,
-  door: WALL_RISE,
-  catCabinet: 46,
-  washer: 48,
-  vacuum: 60,
-  litterBag: 42,
-  sterileBin: 36,
-  catKit: 40,
-  boxes: 40,
-  wardrobe: 64,
-  windowsill: 22,
-};
 
 const FILL: Record<ObjectKind, number> = {
   bed: 0x6f4e37,
@@ -68,11 +45,6 @@ const FILL: Record<ObjectKind, number> = {
   wardrobe: 0x8a6e48,
   windowsill: 0xeeeae2,
 };
-
-/** Видима висота речі: на неї вилазить кіт. */
-export function objectHeight(kind: ObjectKind): number {
-  return HEIGHT[kind];
-}
 
 /** Де на екрані верх речі: над ним висять бабли, на ньому лежать речі. */
 export interface ObjectView {
@@ -229,7 +201,7 @@ function drawWindows(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void
 
 function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object: HomeObject): ObjectView {
   const r = rectToScreen(object);
-  const height = HEIGHT[object.kind];
+  const height = objectHeight(object.kind);
   const bottom = r.y + r.h;
   const depth = depthOf(bottom);
   const g = scene.add.graphics().setDepth(depth).addToDisplayList(layer);

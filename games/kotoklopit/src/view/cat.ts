@@ -12,11 +12,11 @@ import { absoluteMinute } from "../sim/time";
 import { girthOf } from "../sim/weight";
 import type { Cat, GameState, Quality } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
-import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
 import { COLORS } from "./colors";
 import { depthOf, toScreen } from "./geometry";
 import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "./pose";
+import { objectHeight } from "./world/objects";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,

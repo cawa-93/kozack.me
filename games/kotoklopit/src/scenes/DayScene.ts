@@ -30,7 +30,7 @@ import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
-import { drawApartment, drawBoxPile, drawItem, objectHeight, type ObjectView } from "../view/apartment";
+import { drawApartment, drawBoxPile, drawItem, type ObjectView } from "../view/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
@@ -55,6 +55,7 @@ import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
+import { objectHeight } from "../view/world/objects";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
