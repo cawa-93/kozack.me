@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import type { Vec } from "../sim/types";
-import { COLORS } from "./geometry";
+import { COLORS } from "./colors";
 import type { Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 

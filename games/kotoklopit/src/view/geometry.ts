@@ -4,10 +4,6 @@
 import { MAP_HEIGHT, MAP_WIDTH, type Rect } from "../sim/home";
 import type { Vec } from "../sim/types";
 
-/** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
-export const BASE_WIDTH = 1280;
-export const BASE_HEIGHT = 720;
-
 export const TILE_W = 60;
 export const TILE_H = 50;
 /** Висота стіни на екрані. */
@@ -37,22 +33,3 @@ export function rectToScreen(r: Rect): { x: number; y: number; w: number; h: num
 export function depthOf(screenY: number): number {
   return screenY;
 }
-
-export const COLORS = {
-  background: 0x2b2530,
-  ink: 0x1f1a24,
-  inkSoft: 0x3a3140,
-  paper: 0xf3e9dc,
-  wallTop: 0x3b3340,
-  wallFace: 0x6b5d6e,
-  floors: {
-    bedroom: 0x8f7a66,
-    bathroom: 0x7f8f94,
-    kitchen: 0x9a8c74,
-    living: 0x86725f,
-  },
-  highlight: 0xffd36b,
-  danger: 0xd8483b,
-  warning: 0xe8a33a,
-  good: 0x6fae6a,
-} as const;

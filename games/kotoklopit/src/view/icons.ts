@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./catcorner";
-import { COLORS } from "./geometry";
+import { COLORS } from "./colors";
 import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 
 export const ICON_SIZE = 40;

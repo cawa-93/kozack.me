@@ -11,7 +11,7 @@ import type { Destination, GameState } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea } from "../screen";
 import { RACE_START_HINT } from "../texts";
-import { COLORS } from "../view/geometry";
+import { COLORS } from "../view/colors";
 
 const MAX_FRAME_SECONDS = 0.1;
 /** Джойстик гонки: радіус, мертва зона й наскільки відхилити вбік, щоб перестроїтися. */

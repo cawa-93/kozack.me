@@ -11,11 +11,11 @@ import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
-import { BASE_WIDTH, COLORS } from "./geometry";
+import { COLORS } from "./colors";
 import { iconTexture, type IconName } from "./iconnames";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS } from "./symbols";
-import { HUD_HEIGHT, type Frame } from "./viewport";
+import { BASE_WIDTH, HUD_HEIGHT, type Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
 const FONT = "system-ui, sans-serif";

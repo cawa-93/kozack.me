@@ -6,7 +6,11 @@ import Phaser from "phaser";
 
 import { safeArea, type Insets } from "../screen";
 import type { Vec } from "../sim/types";
-import { BASE_HEIGHT, BASE_WIDTH, TILE_H, WORLD } from "./geometry";
+import { TILE_H, WORLD } from "./geometry";
+
+/** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
+export const BASE_WIDTH = 1280;
+export const BASE_HEIGHT = 720;
 
 /** Висота смуги інтерфейсу вгорі, без безпечної зони. */
 export const HUD_HEIGHT = 76;

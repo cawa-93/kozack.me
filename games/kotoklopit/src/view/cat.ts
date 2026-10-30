@@ -14,7 +14,8 @@ import type { Cat, GameState, Quality } from "../sim/types";
 import type { CatFeeling } from "../sim/actions";
 import { objectHeight } from "./apartment";
 import { drawSock, drawToy } from "./catcorner";
-import { COLORS, depthOf, toScreen } from "./geometry";
+import { COLORS } from "./colors";
+import { depthOf, toScreen } from "./geometry";
 import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "./pose";
 
 const PIGMENT: Record<Pigment, number> = {

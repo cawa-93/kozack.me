@@ -4,7 +4,8 @@ import Phaser from "phaser";
 
 import type { Character } from "../sim/types";
 import { drawItem } from "./apartment";
-import { COLORS, depthOf, toScreen } from "./geometry";
+import { COLORS } from "./colors";
+import { depthOf, toScreen } from "./geometry";
 
 import { PALETTE } from "./palette";
 

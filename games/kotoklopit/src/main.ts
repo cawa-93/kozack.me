@@ -5,7 +5,7 @@ import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
-import { BASE_HEIGHT, BASE_WIDTH } from "./view/geometry";
+import { BASE_HEIGHT, BASE_WIDTH } from "./view/viewport";
 
 const session = Session.restore({ address: "she", difficulty: "normal" });
 

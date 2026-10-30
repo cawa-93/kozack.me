@@ -8,7 +8,19 @@ import type { Item } from "../sim/types";
 import { drawToy } from "./catcorner";
 import { drawMomMeal } from "./icons";
 import { SHAPED_STORAGES } from "./storagelook";
-import { COLORS, depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
+import { COLORS } from "./colors";
+import { depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
+
+/** Стіни: верхня грань і лицьова. */
+const WALL_TOP = 0x3b3340;
+const WALL_FACE = 0x6b5d6e;
+/** Підлога кімнат. */
+const FLOORS = {
+  bedroom: 0x8f7a66,
+  bathroom: 0x7f8f94,
+  kitchen: 0x9a8c74,
+  living: 0x86725f,
+} as const;
 
 /** Видима висота речі на екрані. */
 const HEIGHT: Record<ObjectKind, number> = {
@@ -105,7 +117,7 @@ function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== ".") continue;
       const room = ROOMS.find((r) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
-      const base = COLORS.floors[room?.id ?? "living"];
+      const base = FLOORS[room?.id ?? "living"];
       // Легка шахівниця, щоб було видно клітинки й відстані.
       const color = (x + y) % 2 === 0 ? base : shade(base, -0.05);
       const p = toScreen({ x, y });
@@ -127,10 +139,10 @@ function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== "#") continue;
       const p = toScreen({ x, y });
-      g.fillStyle(COLORS.wallTop).fillRect(p.x, p.y - WALL_RISE, TILE_W, TILE_H);
+      g.fillStyle(WALL_TOP).fillRect(p.x, p.y - WALL_RISE, TILE_W, TILE_H);
       const below = y + 1 < MAP_HEIGHT && MAP[y + 1]?.[x] === ".";
       if (below) {
-        g.fillStyle(COLORS.wallFace).fillRect(p.x, p.y + TILE_H - WALL_RISE, TILE_W, WALL_RISE);
+        g.fillStyle(WALL_FACE).fillRect(p.x, p.y + TILE_H - WALL_RISE, TILE_W, WALL_RISE);
         g.lineStyle(2, COLORS.ink, 0.6).lineBetween(p.x, p.y + TILE_H - WALL_RISE, p.x + TILE_W, p.y + TILE_H - WALL_RISE);
       }
     }

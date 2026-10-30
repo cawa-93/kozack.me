@@ -5,7 +5,7 @@
 
 import Phaser from "phaser";
 
-import { COLORS } from "./geometry";
+import { COLORS } from "./colors";
 import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import { BUBBLE_ICON_Y } from "./icons";
 import type { EventBubble, Thinker } from "./symbols";

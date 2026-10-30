@@ -8,7 +8,8 @@ import { furTufts, ROBOT_DOCK, robotAt, robotProgress } from "../sim/household";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../sim/config";
 import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter, STASHES } from "../sim/home";
 import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../sim/types";
-import { COLORS, TILE_H, TILE_W, toScreen } from "./geometry";
+import { COLORS } from "./colors";
+import { TILE_H, TILE_W, toScreen } from "./geometry";
 
 const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
 const KIBBLE = { cheap: 0x8a5a33, premium: 0x6e2f22 } as const;

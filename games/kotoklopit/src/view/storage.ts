@@ -4,7 +4,7 @@
 import Phaser from "phaser";
 
 import type { StorageLine } from "../sim/storage";
-import { COLORS } from "./geometry";
+import { COLORS } from "./colors";
 import { iconTexture } from "./iconnames";
 import { PRODUCT_ICONS } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
