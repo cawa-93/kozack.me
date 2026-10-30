@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/empty — порожньо: відкрита картонна коробка з широко розкинутими клапанами, всередині нічого — лише темне дно. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Відкрита й порожня — не заклеєний пакунок (icon/box), не коробка, з якої все пре (icon/no-room), і не коробка з котом (icon/cat-box). Без перекреслення: «ні» — позначка icon/mark/no. У коді назва поки ніде не показується.
+-->
+<defs><clipPath id="icon-empty-front"><path d="M18 37Q32 36.4 46 37Q46.8 46 46 54.8Q32 55.4 18 54.8Q17.2 46 18 37Z"/></clipPath><clipPath id="icon-empty-mouth"><path d="M21 25.6Q32 25 43 25.6L46 37Q32 36.4 18 37Z"/></clipPath></defs>
+<g id="p-flap-back">
+<path d="M21 25.6Q32 25 43 25.6L41.4 14.6Q32 14 22.6 14.6Z" fill="#c39a66"/>
+<path d="M21 25.6Q32 25 43 25.6L41.4 14.6Q32 14 22.6 14.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M21 25.6Q32 25 43 25.6L41.4 14.6Q32 14 22.6 14.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-mouth">
+<path d="M21 25.6Q32 25 43 25.6L46 37Q32 36.4 18 37Z" fill="#a07a4c"/>
+<path d="M21 25.6Q32 25 43 25.6L46 37Q32 36.4 18 37Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M4 29.6Q32 28.8 60 29.6L60 40L4 40Z" fill="#3f2541" fill-opacity="0.5" clip-path="url(#icon-empty-mouth)"/>
+<path d="M21 25.6Q32 25 43 25.6L46 37Q32 36.4 18 37Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-flaps">
+<path d="M21 25.6L18 37Q12.6 37.4 7.6 38.8Q8.4 31.2 10.4 24.2Q15.8 24.6 21 25.6Z" fill="#d8b783"/>
+<path d="M21 25.6L18 37Q12.6 37.4 7.6 38.8Q8.4 31.2 10.4 24.2Q15.8 24.6 21 25.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43 25.6L46 37Q51.4 37.4 56.4 38.8Q55.6 31.2 53.6 24.2Q48.2 24.6 43 25.6Z" fill="#d8b783"/>
+<path d="M43 25.6L46 37Q51.4 37.4 56.4 38.8Q55.6 31.2 53.6 24.2Q48.2 24.6 43 25.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-front">
+<path d="M18 37Q32 36.4 46 37Q46.8 46 46 54.8Q32 55.4 18 54.8Q17.2 46 18 37Z" fill="#c39a66"/>
+<path d="M4 37L60 37L60 40.6Q32 42.2 4 40.6Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-empty-front)"/>
+<path d="M4 50.2Q32 52.8 60 50.2L60 60L4 60Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-empty-front)"/>
+<path d="M18 37Q32 36.4 46 37Q46.8 46 46 54.8Q32 55.4 18 54.8Q17.2 46 18 37Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 54.8Q32 55.4 46 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/box — пакунок: картонна коробка, заклеєна скотчем, з наліпкою адреси. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Отримано, під дверима; «0» — пакунків немає. Закрита й заклеєна — не порожня відкрита коробка (icon/empty).
+-->
+<defs><clipPath id="icon-box-box"><path d="M13 16.6Q32 15.6 51 16.6L56 27.6Q56.6 41 55.6 54.8Q32 55.6 8.4 54.8Q7.4 41 8 27.6Z"/></clipPath></defs>
+<g id="p-box">
+<path d="M13 16.6Q32 15.6 51 16.6L56 27.6Q56.6 41 55.6 54.8Q32 55.6 8.4 54.8Q7.4 41 8 27.6Z" fill="#c39a66"/>
+<path d="M13 16.6Q32 15.6 51 16.6L56 27.6Q32 26.6 8 27.6Z" fill="#d8b783"/>
+<path d="M28.8 16L35.2 16.1L36.4 27.2L36.2 38.6L34 37.2L31.8 39.2L29.4 37.6L27.8 38.4L27.6 27.2Z" fill="#a07a4c"/>
+<path d="M4 47.6Q20 49.6 32 48.4Q44 47.2 60 49L60 60L4 60Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-box-box)"/>
+<path d="M39.4 41.2L51.4 40.6L51.8 50.6L39.6 51.2Z" fill="#f2e7d0"/>
+<path d="M41.8 44.2L49 43.8M41.8 47.8L46.6 47.6" fill="none" stroke="#6b5263" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.4 41.2L51.4 40.6L51.8 50.6L39.6 51.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 27.6Q32 26.6 55 27.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13 16.6Q32 15.6 51 16.6L56 27.6Q56.6 41 55.6 54.8Q32 55.6 8.4 54.8Q7.4 41 8 27.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.4 54.8Q32 55.6 55.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

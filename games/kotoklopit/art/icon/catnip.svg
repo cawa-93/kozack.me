@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/catnip — котяча м'ята: гілочка з парами листочків. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Лише зелень, без миски й корму — не корм для стерилізованих (icon/kibble-sterile, зелені гранули в баку).
+-->
+<defs><clipPath id="icon-catnip-top"><path d="M31.8 19.6C38.55 15.42 35.77 10.19 29.8 7.8C24.16 12.16 23.26 18.01 31.8 19.6Z"/></clipPath><clipPath id="icon-catnip-l2"><path d="M31.4 31.6C30.47 21.97 20.85 19.57 13 22.4C14.74 31.81 22.42 38.07 31.4 31.6Z"/></clipPath><clipPath id="icon-catnip-r2"><path d="M32.6 30C41.99 35.84 49.16 29.09 50.2 19.6C42.2 17.31 32.83 20.34 32.6 30Z"/></clipPath><clipPath id="icon-catnip-l1"><path d="M31.2 46.4C28.14 35.66 16.83 35.08 8.6 40C12.48 50.43 22.42 55.86 31.2 46.4Z"/></clipPath><clipPath id="icon-catnip-r1"><path d="M33 44.6C42.14 53.76 52 47.97 55.6 37.4C47.15 32.77 35.77 33.75 33 44.6Z"/></clipPath></defs>
+<g id="p-stem">
+<path d="M32.4 55.6Q30.6 44 32 33Q33.2 22 31.6 12.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.4 55.6Q30.6 44 32 33Q33.2 22 31.6 12.4" fill="none" stroke="#7e9662" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-leaf-top">
+<path d="M31.8 19.6C38.55 15.42 35.77 10.19 29.8 7.8C24.16 12.16 23.26 18.01 31.8 19.6Z" fill="#a2b584"/>
+<path d="M30.6 19.6L30 11.4L30 40.2L30.6 48.2Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-catnip-top)"/>
+<path d="M30.6 18.2Q31.5 14.11 30 10.2Q29.1 14.29 30.6 18.2Z" fill="#7e9662"/>
+<path d="M31.8 19.6C38.55 15.42 35.77 10.19 29.8 7.8C24.16 12.16 23.26 18.01 31.8 19.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-leaf-l2">
+<path d="M31.4 31.6C30.47 21.97 20.85 19.57 13 22.4C14.74 31.81 22.42 38.07 31.4 31.6Z" fill="#a2b584"/>
+<path d="M29.4 31.4L16 24.8L16 53.6L29.4 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-catnip-l2)"/>
+<path d="M29.4 30Q23.22 25.72 16 23.6Q22.18 27.88 29.4 30Z" fill="#7e9662"/>
+<path d="M31.4 31.6C30.47 21.97 20.85 19.57 13 22.4C14.74 31.81 22.42 38.07 31.4 31.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-leaf-r2">
+<path d="M32.6 30C41.99 35.84 49.16 29.09 50.2 19.6C42.2 17.31 32.83 20.34 32.6 30Z" fill="#a2b584"/>
+<path d="M34.8 30L47.4 22.4L47.4 51.2L34.8 58.6Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-catnip-r2)"/>
+<path d="M34.8 28.6Q41.71 25.93 47.4 21.2Q40.49 23.87 34.8 28.6Z" fill="#7e9662"/>
+<path d="M32.6 30C41.99 35.84 49.16 29.09 50.2 19.6C42.2 17.31 32.83 20.34 32.6 30Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-leaf-l1">
+<path d="M31.2 46.4C28.14 35.66 16.83 35.08 8.6 40C12.48 50.43 22.42 55.86 31.2 46.4Z" fill="#a2b584"/>
+<path d="M29 46.4L12 42L12 70.8L29 75Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-catnip-l1)"/>
+<path d="M29 45Q20.79 41.74 12 40.8Q20.21 44.06 29 45Z" fill="#7e9662"/>
+<path d="M31.2 46.4C28.14 35.66 16.83 35.08 8.6 40C12.48 50.43 22.42 55.86 31.2 46.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-leaf-r1">
+<path d="M33 44.6C42.14 53.76 52 47.97 55.6 37.4C47.15 32.77 35.77 33.75 33 44.6Z" fill="#a2b584"/>
+<path d="M35.4 45L52.4 39.4L52.4 68.2L35.4 73.6Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-catnip-r1)"/>
+<path d="M35.4 43.6Q44.26 42.04 52.4 38.2Q43.54 39.76 35.4 43.6Z" fill="#7e9662"/>
+<path d="M33 44.6C42.14 53.76 52 47.97 55.6 37.4C47.15 32.77 35.77 33.75 33 44.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

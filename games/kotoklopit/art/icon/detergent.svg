@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/detergent — пральний засіб: помаранчева каністра з ручкою, на етикетці сорочка. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Каністра з ручкою — силует, якого немає в інших засобів (мило — брусок, шампунь — пляшечка).
+-->
+<defs><clipPath id="icon-detergent-jug"><path d="M11 54.6Q9.4 41 9.2 27Q8.8 16.4 15 15.6Q28 14.4 40 16.2Q50.6 17.4 53.6 24.6Q55.4 39 53 54.6Q32 55.8 11 54.6ZM16.4 21.2Q21.4 20.2 26.4 21.2Q27.4 26.8 26.4 32.4Q21.4 33.4 16.4 32.4Q15.4 26.8 16.4 21.2Z" clip-rule="evenodd"/></clipPath></defs>
+<g id="p-cap">
+<path d="M37.6 17.6Q37 11 39 9.6Q43 8.6 47 9.6Q49 11 48.6 18.6Z" fill="#6c84a3"/>
+<path d="M39 9.6Q43 8.6 47 9.6Q48.6 10.8 48.7 13Q43 12 37.4 13Q37.6 10.8 39 9.6Z" fill="#94a8c0"/>
+<path d="M41 14Q41.2 16.4 41 18.2M44.8 14Q45 16.4 44.8 18.2" fill="none" stroke="#52677f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M37.6 17.6Q37 11 39 9.6Q43 8.6 47 9.6Q49 11 48.6 18.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-jug">
+<path d="M11 54.6Q9.4 41 9.2 27Q8.8 16.4 15 15.6Q28 14.4 40 16.2Q50.6 17.4 53.6 24.6Q55.4 39 53 54.6Q32 55.8 11 54.6ZM16.4 21.2Q21.4 20.2 26.4 21.2Q27.4 26.8 26.4 32.4Q21.4 33.4 16.4 32.4Q15.4 26.8 16.4 21.2Z" fill="#d9843f" fill-rule="evenodd"/>
+<path d="M9.2 27Q8.8 16.4 15 15.6Q28 14.4 40 16.2Q50.6 17.4 53.6 24.6Q54.1 26.2 54.3 28.2Q32 24.6 9.2 28.2ZM16.4 21.2Q21.4 20.2 26.4 21.2Q27.4 26.8 26.4 32.4Q21.4 33.4 16.4 32.4Q15.4 26.8 16.4 21.2Z" fill="#eaa967" fill-rule="evenodd"/>
+<path d="M26.6 31.2Q38.4 30.2 50.2 31.2Q51 40.2 50.2 49.2Q38.4 50.2 26.6 49.2Q25.8 40.2 26.6 31.2Z" fill="#f2e7d0"/>
+<path d="M33.4 34.6L36.2 33.6Q38.4 35.4 40.6 33.6L43.4 34.6L46.4 37.8L43.8 40L42.8 38.8L42.8 46.6L34 46.6L34 38.8L33 40L30.4 37.8Z" fill="#6c84a3"/>
+<path d="M4 47.6Q18 50.2 32 49Q46 47.8 60 49.4L60 60L4 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-detergent-jug)"/>
+<path d="M26.6 31.2Q38.4 30.2 50.2 31.2Q51 40.2 50.2 49.2Q38.4 50.2 26.6 49.2Q25.8 40.2 26.6 31.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.4 21.2Q21.4 20.2 26.4 21.2Q27.4 26.8 26.4 32.4Q21.4 33.4 16.4 32.4Q15.4 26.8 16.4 21.2Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 54.6Q9.4 41 9.2 27Q8.8 16.4 15 15.6Q28 14.4 40 16.2Q50.6 17.4 53.6 24.6Q55.4 39 53 54.6Q32 55.8 11 54.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 54.6Q32 55.8 53 54.6" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

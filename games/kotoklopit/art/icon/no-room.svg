@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/no-room — немає місця: стелаж, напханий впритул різними речами, боки роздуло, мішок вилазить за край, зверху ще коробка. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Стелаж із речами впритул — сховище, у яке більше не влізе; не пакет продуктів (icon/food), не пакунок (icon/box) і не порожня коробка (icon/empty). Без «!» (терпіння — icon/alert) і без кількості.
+-->
+<defs><clipPath id="icon-no-room-cab"><path d="M11 19.4Q32 18 53 19.4Q57.6 37 55.6 54.8Q32 55.6 8.4 54.8Q6.4 37 11 19.4Z"/></clipPath><clipPath id="icon-no-room-inner"><path d="M15.6 25Q32 24.2 48.4 25Q50.8 38 49.2 50.4Q32 51.2 14.8 50.4Q13 38 15.6 25Z"/></clipPath></defs>
+<g id="p-cabinet">
+<path d="M11 19.4Q32 18 53 19.4Q57.6 37 55.6 54.8Q32 55.6 8.4 54.8Q6.4 37 11 19.4Z" fill="#9a6a47"/>
+<path d="M15.6 25Q32 24.2 48.4 25Q50.8 38 49.2 50.4Q32 51.2 14.8 50.4Q13 38 15.6 25Z" fill="#6d4a35"/>
+<path d="M15.6 25Q32 24.2 48.4 25Q50.8 38 49.2 50.4Q32 51.2 14.8 50.4Q13 38 15.6 25Z" fill="#3f2541" fill-opacity="0.5"/>
+<g clip-path="url(#icon-no-room-inner)"><path d="M14.6 26.6Q15 23.6 18.4 23.6L22.6 23.6Q26 23.6 26.2 26.6L26.2 35.6L14.2 35.6Z" fill="#6c84a3"/><path d="M14.2 23.6L26.2 23.6L26.2 27.4L14.2 27.4Z" fill="#94a8c0"/><path d="M27.6 35.6L27.6 28.6Q27.8 25.6 30.6 25.2L30.8 23.4L34.6 23.4L34.8 25.2Q37.6 25.6 37.8 28.6L37.8 35.6Z" fill="#d99a93"/><path d="M38.4 23.4L50.6 23.6Q51.2 29.6 50.8 35.6L38.4 35.6Z" fill="#d4a54c"/><path d="M13 38.6L31.4 38.6Q32.4 44.8 31.4 51.4L13.4 51.4Q12.4 44.8 13 38.6Z" fill="#8bb3aa"/><path d="M13.4 42.8Q22 42.2 31.6 42.8M13.4 47.2Q22 46.6 31.6 47.2" fill="none" stroke="#5f9089" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+<path d="M14.6 26.6Q15 23.6 18.4 23.6L22.6 23.6Q26 23.6 26.2 26.6L26.2 35.6L14.2 35.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.6 35.6L27.6 28.6Q27.8 25.6 30.6 25.2L30.8 23.4L34.6 23.4L34.8 25.2Q37.6 25.6 37.8 28.6L37.8 35.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.4 23.4L50.6 23.6Q51.2 29.6 50.8 35.6L38.4 35.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13 38.6L31.4 38.6Q32.4 44.8 31.4 51.4L13.4 51.4Q12.4 44.8 13 38.6Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 35.4Q32 34.6 56 35.4L56 38.6Q32 37.8 8 38.6Z" fill="#b98b60" clip-path="url(#icon-no-room-cab)"/>
+<path d="M8.4 38.6Q32 37.8 55.8 38.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 19.4Q32 18 53 19.4Q57.6 37 55.6 54.8Q32 55.6 8.4 54.8Q6.4 37 11 19.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.4 54.8Q32 55.6 55.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-sack">
+<path d="M31.8 51.4Q30.6 44 33.4 39.4Q38.4 37.6 44.6 38.4Q52 38.8 56 42.6Q57.8 47.6 56 51.4Q46 52.6 31.8 51.4Z" fill="#c9a872"/>
+<path d="M33.4 39.4Q38.4 37.6 44.6 38.4Q52 38.8 56 42.6Q46 41.4 33 42.6Z" fill="#ddc391"/>
+<path d="M31.8 51.4Q30.6 44 33.4 39.4Q38.4 37.6 44.6 38.4Q52 38.8 56 42.6Q57.8 47.6 56 51.4Q46 52.6 31.8 51.4Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-parcel">
+<path d="M14.4 20L16.8 9.6L35.8 12L34.2 20.6Z" fill="#c39a66"/>
+<path d="M16.8 9.6L35.8 12L35.2 15.2L16.1 12.8Z" fill="#d8b783"/>
+<path d="M24.4 10.6L27.8 11L26.2 19.6L22.8 19.4Z" fill="#a07a4c"/>
+<path d="M14.4 20L16.8 9.6L35.8 12L34.2 20.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
