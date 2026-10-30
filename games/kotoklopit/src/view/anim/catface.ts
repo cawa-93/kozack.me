@@ -67,6 +67,8 @@ function baseFace(state: GameState, cat: Cat, time: number, pose: CatAnimId): Ca
   if (interactionWith(state, cat) === "play") return face("round");
   if (feeling === "content") return face("arc");
   if (feeling === "reluctant") return face("squint", "closed", "flat");
+  // Попереджає (§10, рішення автора 2026-10-30, п. 4): вуха притиснуті «літачком», як перед ворогом, очі сердито звужені.
+  if (feeling === "warning") return face("squint", "closed", "back");
   if (feeling === "struggling") return face("round", "closed", "flat");
   switch (pose) {
     case "lick":

@@ -39,9 +39,11 @@ export const CAT_ANIM_GROUPS = {
    * N3 «Кіт — хвороби й почуття» → `rig/anims/cat/feelings.ts`: кашель (перед шерстяною грудкою), чхання (застуда), чухання
    * задньою лапою (блохи, дерматит), тре очі лапою (кон'юнктивіт), кульгає (травма), блює (і зригує грудку), задишка (накладка;
    * дихання й серце після гри), хропе уві сні (дихання), незграбна хода (хребет), «подобається / терпить / пручається» (накладки
-   * під рукою й на руках), сумна хода, повільне кліпання (накладка: голова трохи хилиться, очі — з `catFace`).
+   * під рукою й на руках), «попереджає» (накладка за хвилину до кінця терпіння: хвіст б'є сильно й широко, частіше, ніж у
+   * того, хто терпить; вуха «літачком» і сердиті очі — з `catFace`; рішення автора 2026-10-30, §10), сумна хода, повільне
+   * кліпання (накладка: голова трохи хилиться, очі — з `catFace`).
    */
-  feelings: ["cough", "sneeze", "itch", "rubEyes", "limp", "vomit", "pant", "snore", "clumsy", "content", "reluctant", "struggle", "sadWalk", "slowBlink"],
+  feelings: ["cough", "sneeze", "itch", "rubEyes", "limp", "vomit", "pant", "snore", "clumsy", "content", "reluctant", "warn", "struggle", "sadWalk", "slowBlink"],
 } as const;
 
 export type CatAnimGroup = keyof typeof CAT_ANIM_GROUPS;
@@ -71,7 +73,7 @@ export const CAT_ONE_SHOT_MS = {
 export type CatOneShotId = keyof typeof CAT_ONE_SHOT_MS;
 
 /** Накладки кота: рухають лише свої кістки поверх основної анімації. */
-export const CAT_OVERLAYS: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["hiss", "sneeze", "pant", "content", "reluctant", "struggle", "slowBlink"]);
+export const CAT_OVERLAYS: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["hiss", "sneeze", "pant", "content", "reluctant", "warn", "struggle", "slowBlink"]);
 
 // --- Персонаж ----------------------------------------------------------------------------------
 

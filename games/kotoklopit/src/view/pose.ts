@@ -7,7 +7,7 @@
 // дивиться — `anim/catfacing.ts`, обличчя — `anim/catface.ts`, разові анімації від подій — `anim/catevents.ts`, пари —
 // `anim/pairs.ts`.
 
-import { catFeeling, petOver } from "../sim/actions";
+import { catFeeling, type CatFeeling, petOver } from "../sim/actions";
 import { hasDisease, walkFactor } from "../sim/diseases";
 import { HIGH_PLACES, objectAt } from "../sim/home";
 import type { Cat, GameState } from "../sim/types";
@@ -329,13 +329,16 @@ export function catPose(state: GameState, cat: Cat): CatAnimId {
 export interface CatAnimChoice {
   anim: CatAnimId;
   /**
-   * Накладка (`CAT_OVERLAYS`): «подобається» (мружиться й погойдується), «терпить» (б'є хвостом), «пручається»
-   * (вертиться), повільне кліпання до персонажа; null — без накладки.
+   * Накладка (`CAT_OVERLAYS`): «подобається» (мружиться й погойдується), «терпить» (б'є хвостом), «попереджає» (б'є
+   * хвостом сильно й широко, §10), «пручається» (вертиться), повільне кліпання до персонажа; null — без накладки.
    */
   overlay: CatAnimId | null;
   /** Швидкість відтворення: хода — за швидкістю кота (травма, ожиріння, суглоби, хребет; §9.5), щоб лапи не ковзали. */
   speed: number;
 }
+
+/** Накладка за тим, що кіт відчуває під рукою чи на руках (`catFeeling`, §10). */
+const FEELING_OVERLAYS: Readonly<Record<CatFeeling, CatAnimId>> = { content: "content", reluctant: "reluctant", warning: "warn", struggling: "struggle" };
 
 /** Хода, швидкість якої — за швидкістю кота. */
 const GAITS: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["walk", "limp", "clumsy", "sadWalk", "carry"]);
@@ -349,7 +352,6 @@ export function catAnim(state: GameState, cat: Cat): CatAnimChoice {
   const anim = catPose(state, cat);
   const feeling = catFeeling(state, cat) ?? (isLicked(cat) ? "content" : null);
   const busy = anim === "arch" || anim === "brawl" || withFriend(cat);
-  const overlay: CatAnimId | null =
-    feeling === "content" ? "content" : feeling === "reluctant" ? "reluctant" : feeling === "struggling" ? "struggle" : !busy && catLook(state, cat) === "blink" ? "slowBlink" : null;
+  const overlay: CatAnimId | null = feeling !== null ? FEELING_OVERLAYS[feeling] : !busy && catLook(state, cat) === "blink" ? "slowBlink" : null;
   return { anim, overlay, speed: GAITS.has(anim) ? walkFactor(cat) : 1 };
 }

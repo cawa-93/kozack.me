@@ -4,7 +4,9 @@
 
 import { describe, expect, it } from "vitest";
 
+import { petTolerance } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
+import { PETTING } from "../src/sim/config";
 import { fallIll } from "../src/sim/diseases";
 import type { GameEvent } from "../src/sim/events";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
@@ -256,6 +258,10 @@ describe("накладки кота (`catAnim`)", () => {
     expect(catAnim(save.current, cat)).toMatchObject({ anim: "sit", overlay: "content" });
     cat.needs.attention = 0;
     expect(catAnim(save.current, cat).overlay).toBe("reluctant");
+    // За хвилину до кінця терпіння — «попереджає», свій вигляд (§10, рішення автора 2026-10-30, п. 4), і в того, хто хоче уваги.
+    cat.needs.attention = 90;
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: petTolerance(cat) - PETTING.warnMinutes + 0.25 };
+    expect(catAnim(save.current, cat)).toMatchObject({ anim: "sit", overlay: "warn" });
     save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 999 };
     expect(catAnim(save.current, cat).overlay).toBe("struggle");
     save.current.character.activity = null;
@@ -297,6 +303,9 @@ describe("обличчя кота (`catFace`)", () => {
     expect(catFace(save.current, cat, 0)).toEqual({ eyes: "arc", mouth: "closed", ears: "up" });
     cat.needs.attention = 0;
     expect(catFace(save.current, cat, 0)).toEqual({ eyes: "squint", mouth: "closed", ears: "flat" });
+    // Попереджає: вуха «літачком», як перед ворогом, — не так, як у того, хто терпить (§10, п. 4).
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: petTolerance(cat) - PETTING.warnMinutes + 0.25 };
+    expect(catFace(save.current, cat, 0)).toEqual({ eyes: "squint", mouth: "closed", ears: "back" });
     save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 999 };
     expect(catFace(save.current, cat, 0)).toEqual({ eyes: "round", mouth: "closed", ears: "flat" });
   });
