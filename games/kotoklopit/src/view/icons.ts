@@ -673,6 +673,23 @@ Object.assign(ICONS, {
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**
+ * Спрага кота (§11.4; рішення автора 2026-10-30, `GENERAL_REVIEW.md`, «Відкрите після рішень», п. 7): миска з питною водою, як
+ * корм для голоду, і крапля над нею — одна іконка на думку й на прохання вголос. Не крапля душу чи крана й не перекреслена крапля
+ * порожньої миски для води.
+ */
+Object.assign(ICONS, {
+  drink: (g: Phaser.GameObjects.Graphics) => {
+    g.fillStyle(0x9aa3ab).fillEllipse(20, 29, 30, 11);
+    // Вода в мисці й брижі на ній.
+    g.fillStyle(0x6fb3d6).fillEllipse(20, 26, 24, 6.5);
+    g.lineStyle(1.5, 0xffffff).strokeEllipse(17, 26, 9, 2.4);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 29, 30, 11);
+    // Крапля, що падає в миску, — та сама, що в іконці води, лише менша.
+    g.fillStyle(0x6fb3d6).fillTriangle(20, 2, 15.6, 11.5, 24.4, 11.5).fillCircle(20, 13.5, 4.6);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
  * Шипіння з причиною (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Р2; §11.4): злість ліворуч угорі, а праворуч
  * унизу — значок причини: миска, лоток, вікно, рука чи кошеня.
  */

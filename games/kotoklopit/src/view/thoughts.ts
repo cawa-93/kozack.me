@@ -33,7 +33,8 @@ export function catThought(state: GameState, cat: Cat): IconName | null {
   if (cat.away !== null || !THINKING_ACTS.has(cat.act.kind) || playing(cat) || isHeld(state, cat)) return null;
   const needs = cat.needs;
   if (needs.hunger >= hungerThreshold(cat) - THOUGHTS.hungerLead) return "kibble";
-  if (needs.thirst >= THOUGHTS.thirst) return "drop";
+  // Спрага — та сама іконка, що й у проханні пити вголос (`catAsk`); крапля — вода в душі й з крана (§11.4, правило автора 2026-10-30).
+  if (needs.thirst >= THOUGHTS.thirst) return "drink";
   if (cat.mood < THOUGHTS.sad) return "sad";
   if (needs.play >= THOUGHTS.play) return "toy";
   if (needs.attention >= THOUGHTS.attention) return "heart";

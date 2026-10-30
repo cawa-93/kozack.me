@@ -37,7 +37,7 @@ import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
-import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
+import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
@@ -623,21 +623,18 @@ export class DayScene extends Phaser.Scene {
       // самого кота (перевірка скриншотом 2026-10-26).
       const asking = cat.act.kind === "beg" && cat.act.goal === null && cat.act.target !== "high";
       const fighting = cat.act.kind === "fight";
-      // Пити просить і біля порожньої миски для води, і там, де вона стояла, коли мисок немає (перевірка стосунків 2026-10-26:
-      // біля порожньої миски для води над котом був корм).
-      const thirsty = cat.act.target === "sink" || cat.act.target === "water" || state.home.items.some((i) => i.kind === "water" && `item:${i.id}` === cat.act.target);
-      // «Втікач» під дверима просить на сходи — кричить (§9.12 «Двері й гості»).
-      const ask: IconName = thirsty ? "thirst" : cat.act.target === "door" ? "meow" : "kibble";
-      // «Терплячий зранку» біля ліжка чекає мовчки (§9.12, рішення автора 2026-10-26): хоче їсти — думка, а не нявкання.
+      // Що просить: пити (і там, де миска стояла, коли мисок немає — перевірка стосунків 2026-10-26), на сходи чи їсти; «Терплячий
+      // зранку» біля ліжка чекає мовчки — думкою (`catAsk`, §9.12).
+      const ask = asking ? catAsk(state, cat) : null;
       const key = `cat:${cat.id}` as const;
-      if (cat.away === null && !fighting && asking && cat.act.target === "bed") {
+      if (cat.away === null && !fighting && ask?.kind === "think") {
         const anchor = this.belowHud(this.world.anchor(key), "think");
-        if (anchor) this.bubbles.setState(key, "think", "kibble", anchor.x, anchor.y);
+        if (anchor) this.bubbles.setState(key, "think", ask.icon, anchor.x, anchor.y);
         else this.bubbles.setState(key, "think", null, 0, 0);
         continue;
       }
       // Бабл «бійка» над клубком — один на двох (§9.4, «Пози стосунків»).
-      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : asking ? ask : null);
+      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : (ask?.icon ?? null));
     }
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)

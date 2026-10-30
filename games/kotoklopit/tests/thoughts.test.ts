@@ -9,6 +9,7 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, CatActKind, Difficulty, Save, Vec } from "../src/sim/types";
+import { catAsk } from "../src/view/symbols";
 import { blinkAmount, catLook, catThought, personThought, ThoughtClock } from "../src/view/thoughts";
 import { withCatCorner } from "./helpers";
 
@@ -57,9 +58,36 @@ describe("про що думає кіт (§11.4)", () => {
     cat.mood = THOUGHTS.sad - 1;
     expect(catThought(save.current, cat)).toBe("sad");
     cat.needs.thirst = THOUGHTS.thirst;
-    expect(catThought(save.current, cat)).toBe("drop");
+    expect(catThought(save.current, cat)).toBe("drink");
     cat.needs.hunger = NEED_THRESHOLD.hunger - THOUGHTS.hungerLead;
     expect(catThought(save.current, cat)).toBe("kibble");
+  });
+
+  it("спрага й голод думкою — ті самі іконки, що й у проханні вголос: той самий випадок (правило автора 2026-10-30, §11.4)", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.needs.thirst = THOUGHTS.thirst;
+    const thirst = catThought(save.current, cat);
+    const water = save.current.home.items.find((i) => i.kind === "water");
+    if (!water) throw new Error("немає миски для води");
+    // Кіт просить пити біля миски для води, на умивальнику й там, де миска стояла.
+    for (const target of [`item:${water.id}`, "sink", "water"]) {
+      cat.act = { ...act("beg"), target };
+      expect(catAsk(save.current, cat), target).toEqual({ kind: "say", icon: thirst });
+    }
+    // Не крапля (вода в душі й з крана) і не перекреслена крапля (порожня миска для води) — інші випадки.
+    expect(thirst).toBe("drink");
+    cat.needs.thirst = 0;
+    cat.needs.hunger = NEED_THRESHOLD.hunger;
+    cat.act = act("idle");
+    const hunger = catThought(save.current, cat);
+    const bowl = save.current.home.items.find((i) => i.kind === "bowl");
+    if (!bowl) throw new Error("немає миски");
+    cat.act = { ...act("beg"), target: `item:${bowl.id}` };
+    expect(catAsk(save.current, cat)).toEqual({ kind: "say", icon: hunger });
+    // «Терплячий зранку» біля ліжка чекає сніданку мовчки — думкою, тим самим кормом.
+    cat.act = { ...act("beg"), target: "bed" };
+    expect(catAsk(save.current, cat)).toEqual({ kind: "think", icon: hunger });
   });
 
   it("думку видно раніше, ніж кіт сам піде пити, їсти чи по увагу — навіть на важкій", () => {
