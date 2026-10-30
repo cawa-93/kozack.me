@@ -42,21 +42,15 @@ import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
 import { THING_TITLES } from "../ui/titles";
-import { LegacyApartmentView } from "../view/legacy/apartmentview";
-import { LegacyCatsView } from "../view/legacy/catsview";
-import { LegacyFloorView } from "../view/legacy/floorview";
-import { LegacyMarksView } from "../view/legacy/marksview";
-import { LegacyPen } from "../view/legacy/pen";
-import { LegacyPersonView } from "../view/legacy/personview";
 import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
-import { OBLIQUE } from "../view/world/projection";
-import type { PartContext } from "../view/world/context";
+import { currentGfx } from "../view/gfx";
+import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import type { WorldFrame } from "../view/world/part";
-import { World } from "../view/world/world";
+import type { World } from "../view/world/world";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -94,8 +88,6 @@ export class DayScene extends Phaser.Scene {
   /** Коти, яких світ малював минулого кадру: зниклому з дому прибрати бабл стану. */
   private readonly catsShown = new Set<number>();
   private viewport!: Viewport;
-  /** Як квартира лягає на екран (§8.4). */
-  private readonly projection = OBLIQUE;
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
   private dark!: Phaser.GameObjects.Rectangle;
@@ -129,18 +121,11 @@ export class DayScene extends Phaser.Scene {
 
   create(): void {
     createIconTextures(this);
-    this.viewport = new Viewport(this, this.projection);
+    // Графіка світу за прапорцем (крок 16): старий вигляд чи ізометрія; камері потрібна її проєкція.
+    const builders = WORLD_BUILDERS[currentGfx()];
+    this.viewport = new Viewport(this, builders.projection);
     const { world: layer, ui } = this.viewport;
-    this.world = new World(this.projection);
-    const ctx: PartContext = { scene: this, layer, projection: this.projection, state: () => this.state, world: this.world };
-    // Порядок створення — порядок у списку відображення: персонаж — після квартири, щоб на тій самій глибині бути поверх меблів.
-    const pen = new LegacyPen(this, layer);
-    const apartment = new LegacyApartmentView(ctx, pen);
-    const floor = new LegacyFloorView(ctx, pen);
-    const marks = new LegacyMarksView(ctx, pen);
-    const person = new LegacyPersonView(ctx);
-    const cats = new LegacyCatsView(ctx, pen);
-    this.world.attach({ apartment, floor, marks, person, cats });
+    this.world = createWorld(this, layer, builders, () => this.state);
     this.bubbles = new Bubbles(this, layer);
     this.hearts = new MoodHearts(this, layer, (cat) => this.world.anchor(`cat:${cat}`));
     this.storage = new StorageIndicators(this, layer);
@@ -656,7 +641,8 @@ export class DayScene extends Phaser.Scene {
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
     // чи над самим сховищем бабл події, індикатор схований: бабл і так каже, скільки лишилося.
-    const highest = this.projection.toScreen({ x: 0, y: 1 }).y - this.projection.wallRise + 40;
+    const projection = this.world.projection;
+    const highest = projection.toScreen({ x: 0, y: 1 }).y - projection.wallRise + 40;
     const personBusy = this.bubbles.busy("person");
     for (const storage of STORAGES) {
       const anchor = this.world.anchor(storage.object);
