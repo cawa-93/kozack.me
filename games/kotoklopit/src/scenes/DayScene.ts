@@ -1,9 +1,9 @@
 import Phaser from "phaser";
 
-import { useProgress, IDLE, type Input } from "../sim/actions";
+import { IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { inStandoff, isDirty } from "../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
+import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
@@ -16,10 +16,10 @@ import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
-import { targetOf, type Target } from "../sim/targets";
+import { targetOf } from "../sim/targets";
 import { gameMinutes, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
-import { isWorking, isWorkday, isWorkTime, patienceLevel, searchProgress } from "../sim/work";
+import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
@@ -34,7 +34,6 @@ import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
-import { COLORS } from "../view/colors";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
@@ -46,6 +45,7 @@ import { THING_TITLES } from "../ui/titles";
 import { LegacyApartmentView } from "../view/legacy/apartmentview";
 import { LegacyCatsView } from "../view/legacy/catsview";
 import { LegacyFloorView } from "../view/legacy/floorview";
+import { LegacyMarksView } from "../view/legacy/marksview";
 import { LegacyPen } from "../view/legacy/pen";
 import { LegacyPersonView } from "../view/legacy/personview";
 import { MoodHearts } from "../view/moodhearts";
@@ -55,7 +55,8 @@ import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
 import { OBLIQUE } from "../view/world/projection";
 import type { PartContext } from "../view/world/context";
-import type { WorldFrame, WorldQuery } from "../view/world/part";
+import type { WorldFrame } from "../view/world/part";
+import { World } from "../view/world/world";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -88,25 +89,18 @@ const BUBBLE_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
 
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
-  private apartment!: LegacyApartmentView;
-  private cats!: LegacyCatsView;
+  /** Квартира, котячий куточок, коти, персонаж і позначки (крок 16): сцена лише кличе їх щокадру й питає, де що. */
+  private world!: World;
   /** Коти, яких світ малював минулого кадру: зниклому з дому прибрати бабл стану. */
   private readonly catsShown = new Set<number>();
-  /** Що частини світу питають одна в одної, поки сцена ще малює частину світу сама. */
-  private query!: WorldQuery;
   private viewport!: Viewport;
   /** Як квартира лягає на екран (§8.4). */
   private readonly projection = OBLIQUE;
-  private floor!: LegacyFloorView;
-  private pen!: LegacyPen;
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
   private dark!: Phaser.GameObjects.Rectangle;
-  /** Остання відмова в пошуку роботи (§8.6): коли (мс) і на якому місці смужки. */
-  private rejection: { at: number; end: number } | null = null;
   /** Персонаж засинає (§8.8): коли почав (мс) і чи падає без сил. */
   private asleep: { started: number; collapsed: boolean } | null = null;
-  private person!: LegacyPersonView;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
@@ -136,26 +130,20 @@ export class DayScene extends Phaser.Scene {
   create(): void {
     createIconTextures(this);
     this.viewport = new Viewport(this, this.projection);
-    const { world, ui } = this.viewport;
-    this.pen = new LegacyPen(this, world);
-    const scene = this;
-    this.query = {
-      anchor: (id) => this.anchorOf(id),
-      objectAnchor: (id) => this.apartment.objectAnchor(id),
-      highlight: (target, alpha) => this.highlight(target, alpha),
-      get person() {
-        return scene.person;
-      },
-      cat: (id) => this.cats.points(id),
-    };
-    const ctx: PartContext = { scene: this, layer: world, projection: this.projection, state: () => this.state, world: this.query };
-    this.apartment = new LegacyApartmentView(ctx, this.pen);
-    this.floor = new LegacyFloorView(ctx, this.pen);
-    this.person = new LegacyPersonView(ctx);
-    this.cats = new LegacyCatsView(ctx, this.pen);
-    this.bubbles = new Bubbles(this, world);
-    this.hearts = new MoodHearts(this, world, (cat) => this.anchorOf(`cat:${cat}`));
-    this.storage = new StorageIndicators(this, world);
+    const { world: layer, ui } = this.viewport;
+    this.world = new World(this.projection);
+    const ctx: PartContext = { scene: this, layer, projection: this.projection, state: () => this.state, world: this.world };
+    // Порядок створення — порядок у списку відображення: персонаж — після квартири, щоб на тій самій глибині бути поверх меблів.
+    const pen = new LegacyPen(this, layer);
+    const apartment = new LegacyApartmentView(ctx, pen);
+    const floor = new LegacyFloorView(ctx, pen);
+    const marks = new LegacyMarksView(ctx, pen);
+    const person = new LegacyPersonView(ctx);
+    const cats = new LegacyCatsView(ctx, pen);
+    this.world.attach({ apartment, floor, marks, person, cats });
+    this.bubbles = new Bubbles(this, layer);
+    this.hearts = new MoodHearts(this, layer, (cat) => this.world.anchor(`cat:${cat}`));
+    this.storage = new StorageIndicators(this, layer);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -185,6 +173,7 @@ export class DayScene extends Phaser.Scene {
         this.catPress = null;
       }),
     );
+    this.cleanup.push(() => this.world.destroy());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup.forEach((stop) => stop()));
     this.restart();
     // Меню на старті (§4.2): лише для справжньої збереженої гри, не для сценаріїв режиму розробки.
@@ -250,7 +239,7 @@ export class DayScene extends Phaser.Scene {
     this.touch.reset();
     this.viewport.jump();
     // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
-    this.cats.reset();
+    this.world.reset();
     this.catsShown.clear();
     const state = this.state;
     if (state.end !== null) {
@@ -556,17 +545,12 @@ export class DayScene extends Phaser.Scene {
       const news = this.news.shift();
       if (news) this.hud.say(news.title, news.text, time);
     }
-    this.person.update(state, frame);
-    this.cats.update(state, frame);
+    this.world.update(state, frame);
     this.forgetGoneCats(state);
-    this.floor.update(state, frame);
-    this.person.lateUpdate(state, frame);
     this.showEarnings(time);
     this.bubbles.update();
     this.hearts.update();
-    this.viewport.follow(this.person.head, seconds);
-    this.apartment.update(state, frame);
-    this.drawMarks(time, frame);
+    this.viewport.follow(this.world.person.head, seconds);
     this.updateStateBubbles();
     this.touch.draw(canDash(state));
     this.drawFallingAsleep(time);
@@ -601,63 +585,11 @@ export class DayScene extends Phaser.Scene {
     for (const id of alive) this.catsShown.add(id);
   }
 
-  /** Де на екрані ціль дії: для підсвітки й баблів. */
-  private anchorOf(id: string): { x: number; y: number } | null {
-    if (!id.includes(":")) return this.apartment.anchor(id);
-    const kind = id.split(":")[0];
-    if (kind === "item" || kind === "mess") return this.floor.anchor(id);
-    if (kind === "cat") return this.cats.anchor(id);
-    return null;
-  }
-
-  /** Підсвітка цілі, смуги прогресу, екран комп'ютера. */
-  private drawMarks(time: number, frame: WorldFrame): void {
-    const state = this.state;
-    const g = this.pen.begin(frame);
-    const working = isWorking(state);
-
-    const computer = this.apartment.view("computer");
-    const screen = { x: computer.top.x + computer.top.w / 2 - 19, y: computer.top.y - 23, w: 38, h: 22 };
-    g.fillStyle(working ? 0x79a6c2 : 0x2b2a33).fillRect(screen.x, screen.y, screen.w, screen.h);
-    if (working && Math.floor(time / 300) % 2 === 0) g.fillStyle(0xffffff, 0.8).fillRect(screen.x + 5, screen.y + 6, 18, 3);
-
-    const target = state.character.activity === null ? targetOf(state) : null;
-    if (target && !this.blocked()) this.highlight(target, 0.55 + 0.35 * Math.sin(time / 180));
-
-    const progress = useProgress(state);
-    const activity = state.character.activity;
-    if (progress !== null && activity?.kind === "use") {
-      const anchor = this.anchorOf(activity.target);
-      if (anchor) bar(g, anchor.x, anchor.y - 10, progress, COLORS.good);
-    }
-    const stove = state.home.stove;
-    if (stove.item && stove.item.kind !== "burnt") {
-      const view = this.apartment.view("stove");
-      const cooking = stove.item.kind === "raw";
-      const value = cooking ? stove.minutes / COOK_MINUTES : (stove.minutes - COOK_MINUTES) / (BURN_MINUTES[state.difficulty] - COOK_MINUTES);
-      // Смуга на лицьовій грані плити: зелена — готується, червона — скоро підгорить.
-      bar(g, view.anchor.x, view.top.y + view.top.h + 10, value, cooking ? COLORS.good : COLORS.danger);
-    }
-    // Пошук роботи (§8.6): над монітором — етапи поточної вакансії (персонаж за столом не закриває); на відмові смужка червона.
-    if (state.job.unemployed) {
-      const view = this.apartment.view("computer");
-      const rejected = this.rejection !== null && time - this.rejection.at < REJECTION_MS;
-      const value = rejected && this.rejection ? this.rejection.end : searchProgress(state).progress;
-      searchBar(g, view.anchor.x, view.anchor.y - 40, value, JOB_SEARCH.stages, rejected);
-    }
-  }
-
-  private highlight(target: Target, alpha: number): boolean {
-    if (target.type === "cat") return this.cats.highlight(target, alpha);
-    if (target.type !== "object") return this.floor.highlight(target, alpha);
-    return this.apartment.highlight(target, alpha);
-  }
-
   /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
   private updateStateBubbles(): void {
     const state = this.state;
     const set = (id: string, icon: IconName | null): void => {
-      const anchor = this.belowHud(this.anchorOf(id), "say");
+      const anchor = this.belowHud(this.world.anchor(id), "say");
       if (anchor) this.bubbles.setState(id, "say", icon, anchor.x, anchor.y);
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
@@ -713,7 +645,7 @@ export class DayScene extends Phaser.Scene {
       // «Терплячий зранку» біля ліжка чекає мовчки (§9.12, рішення автора 2026-10-26): хоче їсти — думка, а не нявкання.
       const key = `cat:${cat.id}` as const;
       if (cat.away === null && !fighting && asking && cat.act.target === "bed") {
-        const anchor = this.belowHud(this.anchorOf(key), "think");
+        const anchor = this.belowHud(this.world.anchor(key), "think");
         if (anchor) this.bubbles.setState(key, "think", "kibble", anchor.x, anchor.y);
         else this.bubbles.setState(key, "think", null, 0, 0);
         continue;
@@ -727,17 +659,17 @@ export class DayScene extends Phaser.Scene {
     const highest = this.projection.toScreen({ x: 0, y: 1 }).y - this.projection.wallRise + 40;
     const personBusy = this.bubbles.busy("person");
     for (const storage of STORAGES) {
-      const anchor = this.anchorOf(storage.object);
+      const anchor = this.world.anchor(storage.object);
       if (!anchor) continue;
       const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
       const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage);
       this.storage.set(storage.object, lines, anchor.x, Math.max(highest, anchor.y - lift));
     }
     // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
-    const boxes = this.anchorOf("boxes");
+    const boxes = this.world.anchor("boxes");
     this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
     // Сонливість — думка персонажа.
-    const head = this.belowHud(this.person.head, "think") ?? this.person.head;
+    const head = this.belowHud(this.world.person.head, "think") ?? this.world.person.head;
     this.bubbles.setState("person", "think", isDrowsy(state) ? "zz" : null, head.x, head.y);
   }
 
@@ -764,14 +696,14 @@ export class DayScene extends Phaser.Scene {
   }
 
   /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
-  private readonly personAnchor = (): { x: number; y: number } => ({ x: this.person.head.x, y: this.person.head.y });
+  private readonly personAnchor = (): { x: number; y: number } => ({ x: this.world.person.head.x, y: this.world.person.head.y });
 
   /**
    * Де бабл події: над персонажем, котом чи річчю — і летить за ним. Не вище видимого краю квартири: інакше
    * над котом на шафі чи над верхнім рядом бабл ховається під панеллю.
    */
   private anchorFn(id: string, kind: BubbleKind): Anchor {
-    return () => this.belowHud(id === "person" ? this.personAnchor() : this.anchorOf(id), kind);
+    return () => this.belowHud(id === "person" ? this.personAnchor() : this.world.anchor(id), kind);
   }
 
   /** Точка бабла, опущена так, щоб увесь бабл лишався під панеллю (§11.4). */
@@ -782,6 +714,8 @@ export class DayScene extends Phaser.Scene {
 
   /** Бабли подій (вголос чи думка — `eventBubbles`, §11.4) і картки. */
   private onGameEvent(event: GameEvent): void {
+    // Частини світу дізнаються про подію першими: червона смужка відмови, разові анімації.
+    this.world.onEvent(event, this.time.now);
     for (const bubble of eventBubbles(event)) this.bubbles.show(bubble, this.anchorFn(bubble.at, bubble.kind));
     // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
     const landed = (storage: string, product: Product): void => {
@@ -790,10 +724,11 @@ export class DayScene extends Phaser.Scene {
     switch (event.type) {
       case "unpacked": {
         // Запаси розлітаються з ящиків по своїх сховищах (§6.4).
-        const from = this.apartment.view("boxes").anchor;
+        const from = this.world.objectAnchor("boxes");
+        if (!from) break;
         event.moved.forEach((moved, i) => {
           const storage = STORAGES.find((s) => s.products.includes(moved.product));
-          const to = storage ? this.anchorOf(storage.object) : null;
+          const to = storage ? this.world.anchor(storage.object) : null;
           if (!storage || !to) return;
           this.flyIcon(PRODUCT_ICONS[moved.product], from, to, i * 140, () => landed(storage.object, moved.product));
         });
@@ -801,20 +736,16 @@ export class DayScene extends Phaser.Scene {
       }
       case "feeder-emptied": {
         // Корм із годівниці летить назад у своє сховище (§9.12).
-        const from = this.anchorOf(`item:${event.item}`);
+        const from = this.world.anchor(`item:${event.item}`);
         if (!from) break;
         event.products.forEach((product, i) => {
           const storage = STORAGES.find((s) => s.products.includes(product));
-          const to = storage ? this.anchorOf(storage.object) : null;
+          const to = storage ? this.world.anchor(storage.object) : null;
           if (!storage || !to) return;
           this.flyIcon(PRODUCT_ICONS[product], from, to, i * 140, () => landed(storage.object, product));
         });
         break;
       }
-      case "job-rejected":
-        // Вакансія — відмова (§8.6): хрестик і червона смужка, далі нова вакансія з нуля.
-        this.rejection = { at: this.time.now, end: event.vacancy / JOB_SEARCH.stages };
-        break;
       case "glitch":
         this.cameras.main.shake(180, 0.004);
         break;
@@ -1195,32 +1126,4 @@ export class DayScene extends Phaser.Scene {
       );
     show("shop");
   }
-}
-
-/** Скільки триває червона смужка відмови в пошуку роботи (§8.6), мс. */
-const REJECTION_MS = 1500;
-
-/**
- * Смужка пошуку роботи (§8.6): одна вакансія — етапи з позначками-кружечками на межах; пройдений
- * етап — світлий кружечок, на відмові — червона смужка й червоний кружечок, де все скінчилося.
- */
-function searchBar(g: Phaser.GameObjects.Graphics, cx: number, y: number, value: number, stages: number, rejected: boolean): void {
-  const width = 96;
-  const x = cx - width / 2;
-  g.fillStyle(COLORS.ink).fillRoundedRect(x - 2, y - 2, width + 4, 10, 4);
-  g.fillStyle(rejected ? COLORS.danger : COLORS.good).fillRoundedRect(x, y, Math.max(0, Math.min(1, value)) * width, 6, 3);
-  for (let i = 1; i <= stages; i++) {
-    const mark = i / stages;
-    const passed = value >= mark - 1e-6;
-    const failedHere = rejected && Math.abs(value - mark) < 1e-6;
-    g.fillStyle(failedHere ? COLORS.danger : passed ? COLORS.paper : 0x3a3340).fillCircle(x + width * mark, y + 3, 5);
-    g.lineStyle(2, COLORS.ink).strokeCircle(x + width * mark, y + 3, 5);
-  }
-}
-
-function bar(g: Phaser.GameObjects.Graphics, cx: number, y: number, value: number, color: number): void {
-  const width = 46;
-  const x = cx - width / 2;
-  g.fillStyle(COLORS.ink).fillRoundedRect(x - 2, y - 2, width + 4, 10, 4);
-  g.fillStyle(color).fillRoundedRect(x, y, Math.max(0, Math.min(1, value)) * width, 6, 3);
 }
