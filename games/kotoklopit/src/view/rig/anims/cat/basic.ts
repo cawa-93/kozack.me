@@ -20,6 +20,7 @@
 
 import type { AnimOf, BoneOf, BoneTracks, Ease, Key, SlotOf, SlotTracks, Vec2 } from "../../types";
 import { defineAnims } from "../../types";
+import type { CatAnimId } from "../../../anim/ids";
 import { CAT_ONE_SHOT_MS } from "../../../anim/ids";
 import { CAT_RIG } from "../../defs/cat";
 
@@ -166,17 +167,63 @@ const DEG = Math.PI / 180;
 /**
  * Корінь хвоста в кадрі — товстий «корінець» довкола pivot, зсунутий від нього на стільки (одиниці арту, еталон
  * `cat/tail/long`): у вихідній позі його ховає тулуб, а поворот навколо pivot виносить корінець за силует круп'я (видно
- * світлу «гулю» без контуру). Тож хвіст повертаємо навколо корінця: `tail(кут)` додає зсув, що лишає корінець на місці.
+ * світлу «гулю» без контуру). Тож хвіст повертаємо навколо корінця: `catTail(кут)` додає зсув, що лишає корінець на місці.
+ * Якщо pivot кадру хвоста колись перенесуть на сам корінець (A7), тут має стати { x: 0, y: 0 }.
  */
 const TAIL_ROOT: Vec2 = { x: 3.5, y: 0.5 };
 
-/** Хвіст повернутий на `rot` градусів (і рівномірно масштабований на `scale`) навколо корінця. */
-function tail(rot: number, scale = 1): Tweak {
+/**
+ * Хвіст повернутий на `rot` градусів (і рівномірно масштабований на `scale`) навколо корінця: поворот і зсув кістки `tail`
+ * для пози. Для N2 і N3 теж: накладка, що б'є хвостом (`warn`, `reluctant`), додає лише поворот навколо pivot, тож корінець
+ * у неї трохи ходить — компенсувати це лінійно не можна (зсув залежить від кута основної пози); на розмаху ±30–40° це ≈ 2
+ * одиниці арту, і круп їх здебільшого ховає.
+ */
+export function catTail(rot: number, scale = 1): { rot: number; x: number; y: number; sx?: number; sy?: number } {
   const c = Math.cos(rot * DEG);
   const s = Math.sin(rot * DEG);
   const x = TAIL_ROOT.x - scale * (TAIL_ROOT.x * c - TAIL_ROOT.y * s);
   const y = TAIL_ROOT.y - scale * (TAIL_ROOT.x * s + TAIL_ROOT.y * c);
   return scale === 1 ? { rot, x, y } : { rot, x, y, sx: scale, sy: scale };
+}
+const tail = catTail;
+
+function boneDef(id: CatBone): { x: number; y: number; rot: number } {
+  const bone = CAT_RIG.bones.find((b) => b.id === id);
+  if (!bone) throw new Error(`Скелет кота: кістки «${id}» немає`);
+  return bone;
+}
+const PELVIS_AT = boneDef("pelvis");
+const NECK_AT = boneDef("neck");
+const HEAD_AT = boneDef("head");
+/** Кінець шиї (pivot голови) у системі тулуба, вихідна поза ¾ спереду. */
+const NECK_END: Vec2 = { x: NECK_AT.x + HEAD_AT.x * Math.cos(NECK_AT.rot * DEG), y: NECK_AT.y + HEAD_AT.x * Math.sin(NECK_AT.rot * DEG) };
+
+/**
+ * Голова там, де треба, і рівно — для поз, де тулуб лежить: зсув шиї, що ставить pivot голови (шию) у точку `at` системи
+ * кореня (за тазом `pelvis` і масштабом тулуба `body`; тулуб без повороту), і поворот голови, за якого вона у світі нахилена
+ * на `tilt` градусів (від'ємний — носом угору). Масштаб тулуба голова не успадковує: її масштаб обернений до тулубового —
+ * тож коли таз віддзеркалено згори донизу (кіт на спині, `sy` < 0), голова рівна, а не догори дриґом, і над вухами лишається
+ * якір бульбашок (перекіс, що лишається від повороту під масштабом, компонувальник відкидає).
+ */
+function headAt(pelvis: Tweak, body: Tweak, at: Vec2, tilt: number): Pose {
+  const kx = body.sx ?? 1;
+  const ky = (pelvis.sy ?? 1) * (body.sy ?? 1);
+  const p = (pelvis.rot ?? 0) * DEG;
+  const dx = at.x - (PELVIS_AT.x + (pelvis.x ?? 0));
+  const dy = at.y - (PELVIS_AT.y + (pelvis.y ?? 0));
+  // Точка в системі тулуба: R(−p) · (at − таз), поділене на масштаб.
+  const bx = (dx * Math.cos(p) + dy * Math.sin(p)) / kx;
+  const by = (-dx * Math.sin(p) + dy * Math.cos(p)) / ky;
+  // Поворот голови h: S(kx, ky) · R(h) має дивитися під кутом tilt − p; масштаб — щоб перший стовпець був одиничним, а
+  // визначник — 1.
+  const w = tilt * DEG - p;
+  const h = Math.atan2((kx * Math.sin(w)) / ky, Math.cos(w));
+  const sx = 1 / Math.hypot(kx * Math.cos(h), ky * Math.sin(h));
+  const sy = 1 / (kx * ky * sx);
+  const head: Tweak = { rot: h / DEG };
+  if (Math.abs(sx - 1) > 1e-3) head.sx = sx;
+  if (Math.abs(sy - 1) > 1e-3) head.sy = sy;
+  return { neck: { x: bx - NECK_END.x, y: by - NECK_END.y }, head };
 }
 
 // --- Пози -----------------------------------------------------------------------------------------
@@ -332,18 +379,30 @@ const SPRAWL: Pose = {
 
 /**
  * На спині, лапки догори («Пастка на животику», §9.12). У профіль кіт, що перевернувся навколо хребта, — дзеркало згори
- * донизу: таз має масштаб −1 упоперек, тож спина лягає на підлогу (вона якраз на висоті таза), лапи дивляться вгору, а
- * голова лишається з того самого боку, що й у кота, який стоїть (`catFacing`: головою від персонажа), — догори дриґом,
- * тім'ям на підлозі. Під дзеркалом додатний поворот лапи — так само назад (до хвоста).
+ * донизу: таз має масштаб −1 упоперек, тож спина лягає на підлогу (вона якраз на висоті таза), а живіт і лапи — догори. Лапи
+ * стирчать над животом майже прямовисно (суглоби зсунуті до живота, лапи майже на повну довжину): передні трохи вперед і
+ * зігнуті, задні трохи назад — чотири подушечки над силуетом читаються й на телефоні. Під дзеркалом поворот лапи 0 — прямо
+ * вгору, додатний — назад (до хвоста). Голова — з того самого боку, що й у кота, який стоїть (`catFacing`: головою від
+ * персонажа), але рівна, не догори дриґом (`headAt`), трохи закинута носом угору й лежить потилицею на підлозі: над вухами —
+ * якір бульбашок, а вираз «попереджає» (вуха літачком, сердиті очі) видно. Руку, що гладить, вигляд кладе на живіт
+ * (`catPetPoint`), а не на спинку.
  */
+const BELLY_PELVIS: Tweak = { sy: -1, x: 4, y: 3 };
+/**
+ * Голова того, хто лежить на спині: де pivot голови (одиниці арту від кореня) і нахил (від'ємний — носом угору). Голова — на
+ * самому передньому краю грудей, щоб не ховала передні лапи.
+ */
+const BELLY_HEAD_AT: Vec2 = { x: 24, y: -8 };
+const BELLY_TILT = -25;
+/** На скільки суглоби лап зсунуті до живота (у системі тулуба; у дзеркалі — угору). */
+const BELLY_LIFT = 5;
 const BELLY: Pose = {
-  pelvis: { sy: -1, x: 4, y: 3 },
-  "leg-back-near": { rot: 28, sx: 0.85 },
-  "leg-back-far": { rot: 12, sx: 0.8 },
-  "leg-front-near": { rot: -20, sx: 0.8 },
-  "leg-front-far": { rot: -5, sx: 0.75 },
-  neck: { x: 2, y: 26 },
-  head: { rot: -10 },
+  pelvis: BELLY_PELVIS,
+  "leg-front-near": { rot: 12, y: BELLY_LIFT, sx: 0.88 },
+  "leg-front-far": { rot: 0, y: BELLY_LIFT, sx: 0.82 },
+  "leg-back-near": { rot: 16, y: BELLY_LIFT, sx: 0.96 },
+  "leg-back-far": { rot: 32, y: BELLY_LIFT, sx: 0.9 },
+  ...headAt(BELLY_PELVIS, {}, BELLY_HEAD_AT, BELLY_TILT),
   // Хвіст — дугою по підлозі від крупа (у дзеркалі гачок кадру загинається донизу, до підлоги).
   tail: tail(-75),
 };
@@ -786,16 +845,16 @@ const squat: CatAnim = {
 
 // --- На спині --------------------------------------------------------------------------------------
 
-/** На спині чекає: лапки ліниво перебирають повітря, хвіст мете по підлозі — пастка. */
+/** На спині чекає: лапки ліниво перебирають повітря, хвіст мете по підлозі, голова ледь гойдається — пастка. */
 const BELLY_MS = 2400;
 const belly: CatAnim = {
   duration: BELLY_MS,
   loop: true,
   bones: merge(still(BELLY), {
     body: breathe(BELLY_MS, BELLY, 0.03, 2),
-    "leg-front-near": rotAround(BELLY_MS, BELLY, "leg-front-near", [0, -10]),
-    "leg-front-far": rotAround(BELLY_MS, BELLY, "leg-front-far", [-8, 0]),
-    "leg-back-near": rotAround(BELLY_MS, BELLY, "leg-back-near", [0, 6]),
+    "leg-front-near": rotAround(BELLY_MS, BELLY, "leg-front-near", [0, -12]),
+    "leg-front-far": rotAround(BELLY_MS, BELLY, "leg-front-far", [-10, 0]),
+    "leg-back-near": rotAround(BELLY_MS, BELLY, "leg-back-near", [0, 8]),
     tail: { ...still({ tail: BELLY.tail ?? {} }).tail, ...rotAround(BELLY_MS, BELLY, "tail", [0, 10, 0, -6]) },
     head: rotAround(BELLY_MS, BELLY, "head", [0, 5]),
   }),
@@ -803,35 +862,39 @@ const belly: CatAnim = {
 
 /**
  * Качається на котячій м'яті: на спині звивається з боку на бік — перекочується навколо хребта (у профіль — масштаб таза
- * впоперек: −1 — на спині, ближче до нуля — на боці; голова тим часом лишається круглою), лапами б'є повітря, голова
- * треться тім'ям об підлогу, хвіст мете.
+ * впоперек: −1 — на спині, ближче до нуля — на боці; голова тим часом лишається рівною й круглою, `headAt`), лапами б'є
+ * повітря, голова треться потилицею об підлогу, хвіст мете.
  */
 const ROLL_MS = 2000;
 /** Наскільки кіт перекочується на бік: масштаб таза впоперек на боці. */
 const ROLL_SIDE = 0.68;
-const rollSide = (lean: 1 | -1): Pose => ({
-  ...BELLY,
+const rollSide = (lean: 1 | -1): Pose => {
   // Спина лишається на підлозі: таз опускається на стільки, на скільки сплющився кіт.
-  pelvis: { sy: -ROLL_SIDE, x: 4, y: 3 + 20 * (1 - ROLL_SIDE), rot: 6 * lean },
-  "leg-front-near": { rot: -20 - 30 * lean, sx: 0.85 },
-  "leg-front-far": { rot: -5 + 20 * lean, sx: 0.8 },
-  "leg-back-near": { rot: 28 + 18 * lean, sx: 0.9 },
-  "leg-back-far": { rot: 12 - 22 * lean, sx: 0.85 },
-  // Голова — на тій самій висоті, що й на спині (шия в системі сплющеного тулуба — довша), і кругла.
-  neck: { x: 2, y: 40 },
-  head: { rot: -10 + 16 * lean, sy: 1 / ROLL_SIDE },
-  tail: tail(-75 + 18 * lean),
-});
-const rollBack = (lean: 1 | -1): Pose => ({
-  ...BELLY,
-  pelvis: { sy: -1, x: 4, y: 3, rot: -10 * lean },
-  "leg-front-near": { rot: -20 + 25 * lean, sx: 0.85 },
-  "leg-front-far": { rot: -5 - 25 * lean, sx: 0.8 },
-  "leg-back-near": { rot: 28 - 20 * lean, sx: 0.85 },
-  "leg-back-far": { rot: 12 + 25 * lean, sx: 0.8 },
-  head: { rot: -10 - 14 * lean, sy: 1 },
-  tail: tail(-75 - 15 * lean),
-});
+  const pelvis: Tweak = { sy: -ROLL_SIDE, x: 4, y: 3 + 20 * (1 - ROLL_SIDE), rot: 6 * lean };
+  return {
+    ...BELLY,
+    pelvis,
+    "leg-front-near": { rot: 12 - 26 * lean, y: BELLY_LIFT, sx: 0.88 },
+    "leg-front-far": { rot: 20 * lean, y: BELLY_LIFT, sx: 0.82 },
+    "leg-back-near": { rot: 16 + 18 * lean, y: BELLY_LIFT, sx: 0.96 },
+    "leg-back-far": { rot: 32 - 22 * lean, y: BELLY_LIFT, sx: 0.9 },
+    ...headAt(pelvis, {}, BELLY_HEAD_AT, BELLY_TILT + 8 * lean),
+    tail: tail(-75 + 18 * lean),
+  };
+};
+const rollBack = (lean: 1 | -1): Pose => {
+  const pelvis: Tweak = { ...BELLY_PELVIS, rot: -10 * lean };
+  return {
+    ...BELLY,
+    pelvis,
+    "leg-front-near": { rot: 12 + 22 * lean, y: BELLY_LIFT, sx: 0.88 },
+    "leg-front-far": { rot: -22 * lean, y: BELLY_LIFT, sx: 0.82 },
+    "leg-back-near": { rot: 16 - 20 * lean, y: BELLY_LIFT, sx: 0.96 },
+    "leg-back-far": { rot: 32 + 25 * lean, y: BELLY_LIFT, sx: 0.9 },
+    ...headAt(pelvis, {}, BELLY_HEAD_AT, BELLY_TILT - 12 * lean),
+    tail: tail(-75 - 15 * lean),
+  };
+};
 const roll: CatAnim = {
   duration: ROLL_MS,
   loop: true,
@@ -843,6 +906,24 @@ const roll: CatAnim = {
     { t: ROLL_MS, pose: rollBack(1) },
   ]),
 };
+
+/**
+ * Анімації, у яких кіт лежить на спині (таз віддзеркалено згори донизу): спинка, а з нею гніздо `pet`, там — на підлозі,
+ * під котом.
+ */
+const BELLY_UP: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["belly", "roll"]);
+/** Точка на животі в системі кістки `body` (одиниці арту, як `CAT_RIG.sockets.pet`). */
+const BELLY_PET: Vec2 = { x: 13, y: 11 };
+
+/**
+ * Де рука гладить кота, що грає анімацію `anim`: для тих, хто лежить на спині (§9.12 — «Пастка на животику» підставляє
+ * живіт), — точка на животі в системі кістки `body` (одиниці арту); null — як завжди, у гнізді `pet` (спинка). Для T1 і T2:
+ * рука тут — поверх кота, як і в гнізді, без віддзеркалення. (Модулі груп анімацій експортують лише групи, числа й функції:
+ * галерея й тести вважають кожен експортований об'єкт групою анімацій.)
+ */
+export function catPetPoint(anim: CatAnimId): Vec2 | null {
+  return BELLY_UP.has(anim) ? { ...BELLY_PET } : null;
+}
 
 export const CAT_BASIC = defineAnims(CAT_RIG, {
   walk,
