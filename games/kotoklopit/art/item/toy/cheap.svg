@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<!-- item/toy/cheap — дешева вудочка: дерев'яна паличка, мотузка з вузликом (колись рвалася), зелене пір'я.
+size 128×128; pivot (64, 72); points: feather (106, 98) — середина пучка пір'я, коли вудочку тримає рука (стан hand): туди стрибає кіт.
+Стани (полотно спільне, pivot для кожного свій за змістом):
+st-floor — лежить на підлозі, pivot — точка під серединою (паличка навскіс, пір'я сплющене, тінь);
+st-hidden — загнана під диван чи холодильник: видно лише пір'я, основою до pivot, віялом до глядача (решта — під меблями);
+st-teeth — у зубах кота: pivot — рот (гніздо teeth), пір'я стирчить уперед, паличка навскіс до підлоги позаду (скорочена: йде вглиб);
+st-hand — у руці персонажа: pivot — хват (гніздо rod), паличка вперед і вгору, з кінчика звисає мотузка з пір'ям.
+LINE_SMALL (тонка річ; головне — пучок пір'я ≈ 20). Без шарів.
+-->
+<g id="p-floor" class="st-floor">
+<path d="M26 86Q55.6 81.2 82 67Q52.4 71.8 26 86Z" fill="#3f2541" fill-opacity="0.3"/>
+<ellipse cx="103" cy="78" rx="13" ry="5" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M80 63C81.3 62.5 85.7 59.8 88 60C90.3 60.2 93.3 62.3 94 64C94.7 65.7 91.7 68.2 92 70C92.3 71.8 95.3 74.2 96 75" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="91.5" cy="62.4" rx="1.9" ry="1.7" fill="#2e1f29"/>
+<path d="M26 82Q53.6 73.1 80 63" fill="none" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26 82Q53.6 73.1 80 63" fill="none" stroke="#9a6a47" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.2 79.1Q52.1 73.3 71.1 65.4Q51.3 71.2 32.2 79.1Z" fill="#b98b60"/>
+<path d="M97.8 74.6Q106.7 77.3 113.5 70.9Q103.9 65.1 97.8 74.6Z" fill="#a2b584"/>
+<path d="M99 74.1Q104.7 72.2 110.3 71.2" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M105.6 68.8L105.3 71.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.8 74.6Q106.7 77.3 113.5 70.9Q103.9 65.1 97.8 74.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.9 75.3Q104.9 85.3 114.4 77.6Q107 70.7 97.9 75.3Z" fill="#7e9662"/>
+<path d="M99.2 75.7Q105.2 77.1 111 77.6" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M106.5 80.4L105.9 78.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.9 75.3Q104.9 85.3 114.4 77.6Q107 70.7 97.9 75.3Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.2 75.9Q98.6 85.2 107.8 83.2Q108.3 71.2 97.2 75.9Z" fill="#a2b584"/>
+<path d="M98.2 76.3Q102.4 78.5 106 81.3" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M105.3 76.7L103.5 78.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M97.2 75.9Q98.6 85.2 107.8 83.2Q108.3 71.2 97.2 75.9Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="96.0" cy="75.0" rx="3" ry="2.6" fill="#c9a872"/>
+<ellipse cx="96.0" cy="75.0" rx="3" ry="2.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-hidden" class="st-hidden">
+<ellipse cx="70" cy="78" rx="13" ry="5.5" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M66 66C65.8 66.4 65.5 67.7 65 68.5C64.5 69.3 63.3 70.6 63 71" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65 71.2Q72.2 76.8 80.6 73.1Q73.8 64.4 65 71.2Z" fill="#a2b584"/>
+<path d="M66.2 71.2Q72.1 71.3 77.6 72.3" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74.1 68.4L73 70.5" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65 71.2Q72.2 76.8 80.6 73.1Q73.8 64.4 65 71.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M64.2 72Q63 82.8 73.5 79.8Q72.5 71.4 64.2 72Z" fill="#7e9662"/>
+<path d="M64.8 72.8Q67.8 76.1 71.3 78.6" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M66.8 79.3L67.7 77.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M64.2 72Q63 82.8 73.5 79.8Q72.5 71.4 64.2 72Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M62.7 72.2Q55 75.5 60.7 81.7Q71.6 79.1 62.7 72.2Z" fill="#a2b584"/>
+<path d="M62.8 73Q62.6 76.6 61.6 79.9" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65.4 78.3L63.4 77.3" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M62.7 72.2Q55 75.5 60.7 81.7Q71.6 79.1 62.7 72.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="63.0" cy="71.0" rx="3" ry="2.6" fill="#c9a872"/>
+<ellipse cx="63.0" cy="71.0" rx="3" ry="2.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-teeth" class="st-teeth">
+<path d="M64 72C63 73.7 60.3 79 58 82C55.7 85 52.3 87.8 50 90C47.7 92.2 45 94.2 44 95" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10 106Q27.6 101.1 44 95" fill="none" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10 106Q27.6 101.1 44 95" fill="none" stroke="#9a6a47" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.9 104Q26.4 101.1 38.3 96.1Q25.8 99 13.9 104Z" fill="#b98b60"/>
+<path d="M66 71.8Q74.4 75.7 81.9 70.2Q73.2 63.2 66 71.8Z" fill="#a2b584"/>
+<path d="M67.2 71.4Q73.1 70.3 78.7 70" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74.4 67L73.8 69.3" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M66 71.8Q74.4 75.7 81.9 70.2Q73.2 63.2 66 71.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65.8 73Q68.5 84.7 79.8 80.6Q75.6 71.7 65.8 73Z" fill="#7e9662"/>
+<path d="M66.8 73.8Q71.7 77.1 76.7 79.5" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M71.6 80.6L72 78.3" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M65.8 73Q68.5 84.7 79.8 80.6Q75.6 71.7 65.8 73Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M64.9 73.8Q62.4 84 72.2 88Q77.5 76.3 64.9 73.8Z" fill="#a2b584"/>
+<path d="M65.7 74.8Q68.9 79.8 71.2 85" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M72.4 79.9L70 80.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M64.9 73.8Q62.4 84 72.2 88Q77.5 76.3 64.9 73.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="64.0" cy="72.0" rx="3" ry="2.6" fill="#c9a872"/>
+<ellipse cx="64.0" cy="72.0" rx="3" ry="2.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-hand" class="st-hand">
+<path d="M108 32C108.5 34.7 111 42.3 111 48C111 53.7 108.8 59.3 108 66C107.2 72.7 106.3 84.3 106 88" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56 79Q82.6 56.1 108 32" fill="none" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56 79Q82.6 56.1 108 32" fill="none" stroke="#9a6a47" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M61.8 72.8Q81.2 56.7 99.2 39Q79.8 55.1 61.8 72.8Z" fill="#b98b60"/>
+<ellipse cx="109.3" cy="60" rx="1.9" ry="1.7" fill="#2e1f29"/>
+<path d="M107 89.7Q107.2 99 115.4 103.3Q118 92.4 107 89.7Z" fill="#a2b584"/>
+<path d="M107.9 90.7Q111.5 95.4 114.2 100.3" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M115 95.2L112.7 95.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M107 89.7Q107.2 99 115.4 103.3Q118 92.4 107 89.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M106 90Q97 98 106 106Q111.8 98 106 90Z" fill="#7e9662"/>
+<path d="M105.8 91.3Q105.2 97.2 105.5 102.8" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M102.1 98.8L104.3 98" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M106 90Q97 98 106 106Q111.8 98 106 90Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M105 89.7Q94.9 92.9 96.6 103.3Q109.4 101.8 105 89.7Z" fill="#a2b584"/>
+<path d="M104.5 90.9Q101.9 96.3 98.7 100.9" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M103.7 99.2L102.2 97.4" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M105 89.7Q94.9 92.9 96.6 103.3Q109.4 101.8 105 89.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="106.0" cy="88.0" rx="3" ry="2.6" fill="#c9a872"/>
+<ellipse cx="106.0" cy="88.0" rx="3" ry="2.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
