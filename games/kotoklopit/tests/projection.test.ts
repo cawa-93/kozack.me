@@ -171,6 +171,35 @@ describe("ізометрія 2:1 нової графіки (крок 16)", () =>
     }
   });
 
+  it("напрям у клітинках → на екрані (куди дивиться персонаж): обернене до screenToTileDir, довжина та сама", () => {
+    for (const v of [
+      { x: 1, y: 0 },
+      { x: 0, y: -1 },
+      { x: 0.6, y: -0.8 },
+      { x: -0.3, y: 0.05 },
+    ]) {
+      const back = ISO.tileToScreenDir(ISO.screenToTileDir(v));
+      expect(back.x).toBeCloseTo(v.x, 12);
+      expect(back.y).toBeCloseTo(v.y, 12);
+    }
+    // Іде праворуч (D): у клітинках (0,707; −0,707) — на екрані праворуч, а не «від камери».
+    const right = ISO.tileToScreenDir({ x: Math.SQRT1_2, y: -Math.SQRT1_2 });
+    expect(right.x).toBeCloseTo(1, 12);
+    expect(right.y).toBeCloseTo(0, 12);
+    // Вгору й ліворуч (W+A) — від камери: на екрані вгору.
+    const away = ISO.tileToScreenDir(ISO.screenToTileDir({ x: -Math.SQRT1_2, y: -Math.SQRT1_2 }));
+    expect(away.y).toBeLessThan(-0.5);
+    // Точка, зсунута вздовж напряму в клітинках, на екрані йде вздовж напряму на екрані.
+    const d = { x: 0.2, y: 0.8 };
+    const s = ISO.tileToScreenDir(d);
+    const from = ISO.toScreen({ x: 6, y: 6 });
+    const to = ISO.toScreen({ x: 6 + d.x, y: 6 + d.y });
+    expect((to.x - from.x) * s.y - (to.y - from.y) * s.x).toBeCloseTo(0, 9);
+    expect(Math.hypot(s.x, s.y)).toBeCloseTo(Math.hypot(d.x, d.y), 12);
+    expect(ISO.tileToScreenDir({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+    expect(OBLIQUE.tileToScreenDir({ x: 0.6, y: -0.8 })).toEqual({ x: 0.6, y: -0.8 });
+  });
+
   it("методи не залежать від this: їх можна передавати окремо", () => {
     const { toScreen, rectToScreen, depthAt, backWallTop, screenToTileDir } = ISO;
     expect(toScreen({ x: 1, y: 0 })).toEqual({ x: O.x + 64, y: O.y + 32 });

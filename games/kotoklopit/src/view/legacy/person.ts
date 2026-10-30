@@ -63,10 +63,12 @@ export class PersonView {
     const bob = moving ? -Math.abs(Math.sin(time / 85)) * 3 : 0;
     const x = feet.x;
     const y = feet.y + bob;
-    const back = body.facing.y < -0.5;
+    // Куди дивиться — на екрані: `body.facing` — напрям у клітинках (в ізометрії він повернутий на 45°, у косій — той самий).
+    const f = this.proj.tileToScreenDir(body.facing);
+    const back = f.y < -0.5;
 
     g.fillStyle(0x000000, 0.25).fillEllipse(feet.x, feet.y, 30, 10);
-    if (body.dash > 0) g.fillStyle(0xffffff, 0.35).fillEllipse(feet.x - body.facing.x * 18, feet.y - body.facing.y * 10, 22, 8);
+    if (body.dash > 0) g.fillStyle(0xffffff, 0.35).fillEllipse(feet.x - f.x * 18, feet.y - f.y * 10, 22, 8);
     // Ноги й тулуб.
     g.fillStyle(pants).fillRoundedRect(x - 9, y - 16, 7, 16, 3).fillRoundedRect(x + 2, y - 16, 7, 16, 3);
     g.fillStyle(shoes).fillRoundedRect(x - 10, y - 4, 9, 5, 2).fillRoundedRect(x + 1, y - 4, 9, 5, 2);
@@ -84,7 +86,7 @@ export class PersonView {
       stain(pants, x + 5, y - 8, 4, 4);
     }
     // Голова.
-    const hx = x + body.facing.x * 2;
+    const hx = x + f.x * 2;
     const hy = y - 54 + sleep * 3;
     g.fillStyle(skin).fillEllipse(hx, hy, face.w, face.h);
     g.lineStyle(2.5, COLORS.ink).strokeEllipse(hx, hy, face.w, face.h);
@@ -105,10 +107,10 @@ export class PersonView {
     } else {
       g.fillEllipse(hx, hy - 8, face.w + 2, 11);
       if (style === 3) for (const dx of [-10, -4, 4, 10]) g.fillCircle(hx + dx, hy - 11, 5);
-      if (style === 2) g.fillCircle(hx - body.facing.x * 10, hy - 12, 6);
+      if (style === 2) g.fillCircle(hx - f.x * 10, hy - 12, 6);
       // Очі дивляться в бік руху; засинаючи, звужуються й заплющуються (§8.8).
-      const ex = hx + body.facing.x * 4;
-      const ey = hy + 1 + body.facing.y * 2;
+      const ex = hx + f.x * 4;
+      const ey = hy + 1 + f.y * 2;
       const open = 1 - Math.min(1, sleep / 0.85);
       if (open > 0.15) {
         g.fillStyle(pick(PALETTE.eyes, look.eyes))
@@ -119,7 +121,7 @@ export class PersonView {
       }
     }
     if (style === 1 && !back) g.fillStyle(hair).fillRoundedRect(hx - face.w / 2 - 1, hy - 6, 6, 20, 3).fillRoundedRect(hx + face.w / 2 - 5, hy - 6, 6, 20, 3);
-    if (held) drawItem(g, held, x + body.facing.x * 10, y - 22, 0.9);
+    if (held) drawItem(g, held, x + f.x * 10, y - 22, 0.9);
     if (dirty) {
       // Хвилі запаху підіймаються над персонажем.
       g.lineStyle(2, 0x7a8a3a, 0.8);
@@ -129,6 +131,6 @@ export class PersonView {
       }
     }
     this.head = { x: hx, y: hy - 16 };
-    this.hands = { x: x + body.facing.x * 12, y: y - 14, depth: this.proj.depthOf(feet.y) + (body.facing.y < -0.5 ? -1 : 1) };
+    this.hands = { x: x + f.x * 12, y: y - 14, depth: this.proj.depthOf(feet.y) + (f.y < -0.5 ? -1 : 1) };
   }
 }

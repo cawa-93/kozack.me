@@ -132,7 +132,8 @@ export class CatView {
    * `interaction` — персонаж саме гладить кота чи грається з ним (§8.2); `feeling` — що кіт відчуває
    * (§9.12): мружиться й погойдується, терпить з очима-щілинками чи пручається, смикаючись із
    * притиснутими вухами. `look` — настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
-   * Показуй, а не розказуй (§11.3а).
+   * Показуй, а не розказуй (§11.3а). `side` — куди кіт дивиться на екрані (1 — праворуч, −1 — ліворуч), якщо не за `facing`
+   * сима: в ізометрії (`?gfx=iso`) вісь x клітинок — діагональ екрана, і `facing` ±1 за x — не бік на екрані.
    */
   draw(
     state: GameState,
@@ -142,6 +143,7 @@ export class CatView {
     interaction: "pet" | "play" | null = null,
     given: CatFeeling | null = null,
     look: CatMoodLook | null = null,
+    side: number | null = null,
   ): void {
     // Кота вилизує друг — мружиться, як під пестощами (§9.4, «Гру й вилизування видно», В1).
     const feeling = given ?? (isLicked(cat) ? "content" : null);
@@ -184,7 +186,7 @@ export class CatView {
       feeling ||
       blinking
         ? null
-        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}|${Math.round(girthOf(cat) * 20)}`;
+        : `${pose}|${cat.x}|${cat.y}|${cat.facing}|${cat.away}|${carriedAt?.x}|${carriedAt?.y}|${Math.floor(time / 900)}|${cat.ageWeeks}|${look?.sad}|${look?.face}|${look?.belly}|${look?.back}|${Math.round(girthOf(cat) * 20)}|${side}`;
     if (key !== null && key === this.drawn) return;
     this.drawn = key;
     const g = this.g.clear();
@@ -219,7 +221,7 @@ export class CatView {
     const scale = this.scaleOf(cat);
     // Відданий кіт дивиться на персонажа, коли моргає до нього; перед ворогом і в бійці — лише на ворога, з другом — на друга.
     const foeFacing = busy;
-    const dir = (foeFacing ? null : look?.face) ?? (cat.facing >= 0 ? 1 : -1);
+    const dir = (foeFacing ? null : look?.face) ?? side ?? (cat.facing >= 0 ? 1 : -1);
     const sad = look?.sad === true && !foeFacing;
     // Погоня в грі двох котів — швидкістю зумі (§9.4, Г3).
     const pace = cat.act.kind === "zoomies" || cat.act.game?.phase === "chase" ? 35 : cat.act.kind === "toy" ? 50 : 70;

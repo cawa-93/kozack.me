@@ -46,6 +46,12 @@ export interface Projection {
    * «вгору» на екрані — вгору для гравця. Довжина та сама: це сила відхилення джойстика. У косій вектор не змінюється.
    */
   screenToTileDir(v: Vec): Vec;
+  /**
+   * Напрям у клітинках (куди дивиться персонаж — `body.facing`) → напрям на екрані тієї самої довжини (обернене до
+   * `screenToTileDir`): «вгору» на екрані — `y < 0`. Старі персонаж і коти малюють за ним, куди дивляться. У косій вектор
+   * не змінюється.
+   */
+  tileToScreenDir(v: Vec): Vec;
 }
 
 /** Коса проєкція старого вигляду: її малюнки квартири й котячого кутка (`legacy/*`) інших не вміють. */
@@ -89,6 +95,7 @@ export const OBLIQUE: ObliqueProjection = {
   backWallTop: () => ORIGIN.y + TILE_H - WALL_RISE,
   // Клітинки лежать на екрані без повороту: осі ті самі.
   screenToTileDir: (v) => ({ x: v.x, y: v.y }),
+  tileToScreenDir: (v) => ({ x: v.x, y: v.y }),
 };
 
 // --- Ізометрія 2:1 ----------------------------------------------------------------------------------
@@ -173,6 +180,16 @@ export const ISO: IsoProjection = {
     if (length === 0) return { x: 0, y: 0 };
     const x = v.y + v.x / 2;
     const y = v.y - v.x / 2;
+    const k = length / Math.hypot(x, y);
+    return { x: x * k, y: y * k };
+  },
+  // Пряма лінійна частина проєкції: (x, y) → ((x − y)·64, (x + y)·32) ∝ (x − y, (x + y) / 2); довжина — як у вектора в
+  // клітинках. «Праворуч» у клітинках (1, 0) — униз і праворуч на екрані.
+  tileToScreenDir(v) {
+    const length = Math.hypot(v.x, v.y);
+    if (length === 0) return { x: 0, y: 0 };
+    const x = v.x - v.y;
+    const y = (v.x + v.y) / 2;
     const k = length / Math.hypot(x, y);
     return { x: x * k, y: y * k };
   },

@@ -6,9 +6,13 @@ import Phaser from "phaser";
 import { catFeeling, petOver } from "../../sim/actions";
 import { objectById, WINDOWS } from "../../sim/home";
 import type { Target } from "../../sim/targets";
-import type { Cat, GameState } from "../../sim/types";
+import type { Cat, GameState, Vec } from "../../sim/types";
+import { catFacing, personFacing } from "../anim/catfacing";
+import { isoScreenDir } from "../anim/iso";
+import { catPairs, type PairPlacement } from "../anim/pairs";
 import { COLORS } from "../colors";
 import { boxDepthLookup } from "../iso/transition";
+import type { RigFacing } from "../rig/types";
 import { blinkAmount, catLook } from "../thoughts";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
@@ -25,6 +29,8 @@ export class LegacyCatsView implements CatsPart {
   private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
   /** Імена над котами в нашийниках (§9.10). */
   private readonly collarLabels = new Map<number, Phaser.GameObjects.Text>();
+  /** Ізометрія: де кіт був минулого кадру й куди дивився (`isoSide`). */
+  private readonly facings = new Map<number, { pos: Vec; facing: RigFacing }>();
 
   constructor(
     private readonly ctx: PartContext,
@@ -37,6 +43,8 @@ export class LegacyCatsView implements CatsPart {
     const time = frame.time;
     const held = state.character.held;
     const alive = new Set<number>();
+    const iso = this.ctx.projection.kind === "iso";
+    const pairs = iso ? catPairs(state) : null;
     for (const cat of state.cats) {
       alive.add(cat.id);
       let view = this.views.get(cat.id);
@@ -53,7 +61,9 @@ export class LegacyCatsView implements CatsPart {
       const interaction = (petting || playing) && activity?.cat === cat.id ? activity.kind : null;
       // Настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
       const look = catLook(state, cat);
-      const toward = state.character.body.x >= cat.x ? 1 : -1;
+      // Персонаж праворуч чи ліворуч на екрані: у косій — за x клітинок, в ізометрії — за горизонталлю екрана (x − y).
+      const person = state.character.body;
+      const toward = (iso ? isoScreenDir({ x: person.x - cat.x, y: person.y - cat.y }).x >= 0 : person.x >= cat.x) ? 1 : -1;
       // На підвіконні під вікном у задній стіні кіт дивиться у вікно — спиною до нас (§9.12, «Вікно»; перевірка етапу 2026-10-26).
       const pane = cat.act.kind === "window" && cat.act.goal === null ? WINDOWS.find((w) => w.sill === cat.act.target) : undefined;
       const toWindow = pane !== undefined && pane.wall.y < objectById(pane.sill).y;
@@ -72,7 +82,8 @@ export class LegacyCatsView implements CatsPart {
                   : look === "sulk"
                     ? { sad: false, blink: 0, face: -toward, back: true }
                     : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
-      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
+      const side = pairs ? this.isoSide(state, cat, pairs, withPerson) : null;
+      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood, side);
       this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love, frame.showHidden);
       this.drawCollar(cat, view);
     }
@@ -84,7 +95,21 @@ export class LegacyCatsView implements CatsPart {
       this.hiddenLabels.delete(id);
       this.collarLabels.get(id)?.destroy();
       this.collarLabels.delete(id);
+      this.facings.delete(id);
     }
+  }
+
+  /**
+   * Перехідний вигляд кроку 16 (`?gfx=iso`): куди кіт дивиться на екрані (1 — праворуч, −1 — ліворуч). Сим знає лише
+   * `facing` ±1 за x клітинок, а в ізометрії вісь x — діагональ екрана, тож бік — з `catFacing` (рух, пара, ціль дії). Кіт на
+   * руках і на колінах — туди ж, куди персонаж у світі (`personFacing`): старий кіт не в гнізді скелета, його ніхто не дзеркалить.
+   */
+  private isoSide(state: GameState, cat: Cat, pairs: ReadonlyMap<number, PairPlacement>, withPerson: boolean): number {
+    const last = this.facings.get(cat.id) ?? null;
+    const prev = last?.facing ?? null;
+    const facing = withPerson ? personFacing(state, prev) : catFacing(state, cat, last?.pos ?? null, { prev, pair: pairs.get(cat.id) ?? null });
+    this.facings.set(cat.id, { pos: { x: cat.x, y: cat.y }, facing });
+    return facing.flip ? -1 : 1;
   }
 
   /** Режим розробки: настрій, здоров'я й любов над котом (§11.5). */
@@ -131,6 +156,7 @@ export class LegacyCatsView implements CatsPart {
     this.hiddenLabels.clear();
     for (const label of this.collarLabels.values()) label.destroy();
     this.collarLabels.clear();
+    this.facings.clear();
   }
 
   destroy(): void {
