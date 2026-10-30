@@ -187,7 +187,8 @@ for (const [product, extra] of Object.entries(ALSO)) {
   }
 }
 Object.assign(SAME, {
-  страва: { why: "готова страва на плиті, на столі й та, яку вкрав і хрумтить кіт, — одна річ", ids: ["stove:meal", "table:meal", "event:stole:object=stove:item=meal"] },
+  страва: { why: "готова страва на плиті й на столі — одна річ", ids: ["stove:meal", "table:meal"] },
+  крадіжка: { why: "кіт вкрав і хрумтить вашу їжу — хоч готову страву з плити, хоч сиру порцію зі столу: та сама втрата", ids: ["event:stole:object=stove:item=meal", "event:stole:object=table:item=raw"] },
   підгоріле: { why: "підгоріла страва на плиті й на столі — одна річ", ids: ["stove:burnt", "table:burnt"] },
   "здоров'я": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:health", "thought:person:health"] },
   "здоровий глузд": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:sanity", "thought:person:sanity"] },

@@ -109,6 +109,7 @@ export const EVENTS: GameEvent[] = [
   { type: "meow", cat: 1, silent: true },
   { type: "knocked", cat: 1, object: "table", item: { kind: "meal", quality: "cheap" } },
   { type: "stole", cat: 1, object: "stove", item: { kind: "meal", quality: "cheap" } },
+  { type: "stole", cat: 1, object: "table", item: { kind: "raw", quality: "cheap" } },
   { type: "trinket-fell", cat: 1, trinket: "mug", object: "table", broken: true },
   { type: "trinket-fell", cat: 1, trinket: "pen", object: "computer", broken: false },
   { type: "trinket-sniffed", cat: 1, trinket: "phone" },

@@ -806,6 +806,19 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9708a).fillCircle(35, 10.5, 1.3);
     g.lineStyle(2, 0x7a8a3a).beginPath().arc(30, 25, 3, Math.PI * 0.6, Math.PI * 1.6).strokePath();
   },
+  stolen: (g: Phaser.GameObjects.Graphics) => {
+    // Кіт вкрав страву (§9.12, «Злодійство»): котяча лапа згори праворуч хапає й тягне шматок із тарілки, а за ним — рисочки руху.
+    // Не страва на плиті чи столі (там вона просто готова) і не продукти — це втрата.
+    g.fillStyle(0xffffff).fillEllipse(14, 32, 26, 8);
+    g.lineStyle(2.5, INK).strokeEllipse(14, 32, 26, 8);
+    g.fillStyle(0xe0893a).fillEllipse(20, 22, 17, 11);
+    g.lineStyle(1.5, INK).strokeEllipse(20, 22, 17, 11);
+    // Лапа: передпліччя з-за краю, долонька, три пальчики на шматку й рожева подушечка.
+    g.lineStyle(6, 0x6b5d6e).lineBetween(40, 3, 32, 11);
+    g.fillStyle(0x6b5d6e).fillCircle(30.5, 13.5, 5.5).fillCircle(25, 13, 2.4).fillCircle(25.5, 18, 2.4).fillCircle(29.5, 20.5, 2.4);
+    g.fillStyle(0xd9708a).fillCircle(31, 14.5, 2);
+    g.lineStyle(2, INK).lineBetween(2, 17, 8, 15).lineBetween(2, 23, 9, 21);
+  },
   "kibble-pour": (g: Phaser.GameObjects.Graphics) => {
     // Автогодівниця досипала (§8.7): миска з кормом, а згори в неї сиплються гранули з рисочками падіння. Не корм голодного кота.
     g.fillStyle(0x8a5a33).fillEllipse(20, 25, 20, 8);

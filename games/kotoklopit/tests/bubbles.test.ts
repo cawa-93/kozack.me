@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { GameEvent } from "../src/sim/events";
-import { eventBubbles, type EventBubble } from "../src/view/symbols";
+import { eventBubbles, stoveIcon, type EventBubble } from "../src/view/symbols";
 import { EVENTS } from "./bubblecases";
 
 const only = (event: GameEvent): EventBubble => {
@@ -76,10 +76,13 @@ describe("бабли вголос і думки (§11.4, правка автор
     expect(only({ type: "scared", cat: 3 })).toEqual({ kind: "think", at: "cat:3", icon: "fright" });
   });
 
-  it("скинута страва — гуркіт над столом, вкрадена — її іконка над котом, кіт на клавіатурі — кіт на ноутбуці (правило автора 2026-10-30, §11.4)", () => {
+  it("скинута страва — гуркіт над столом, вкрадена — своя іконка крадіжки над котом, кіт на клавіатурі — кіт на ноутбуці (правило автора 2026-10-30, §11.4)", () => {
     const meal = { kind: "meal", quality: "cheap" } as const;
     expect(only({ type: "knocked", cat: 1, object: "table", item: meal })).toEqual({ kind: "say", at: "table", icon: "loud" });
-    expect(only({ type: "stole", cat: 1, object: "stove", item: meal })).toEqual({ kind: "say", at: "cat:1", icon: "meal" });
+    // Вкрадена — не іконка страви (готова на плиті чи столі) і не продукти (запас і ситість), хоч би що кіт украв (рецензія 2026-10-30).
+    expect(only({ type: "stole", cat: 1, object: "stove", item: meal })).toEqual({ kind: "say", at: "cat:1", icon: "stolen" });
+    expect(only({ type: "stole", cat: 1, object: "table", item: { kind: "raw", quality: "cheap" } }).icon).toBe("stolen");
+    expect(only({ type: "stole", cat: 1, object: "stove", item: meal }).icon).not.toBe(stoveIcon(meal));
     expect(only({ type: "keyboard", cat: 1 })).toEqual({ kind: "say", at: "computer", icon: "cat-laptop" });
     expect(only({ type: "keyboard", cat: 1 }).icon).toBe(only({ type: "refused", object: "computer", reason: "cat-on-computer" }).icon);
   });
