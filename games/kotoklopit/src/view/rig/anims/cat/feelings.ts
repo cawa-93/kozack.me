@@ -299,12 +299,12 @@ function limpAnim(): CatAnim {
       // Хвора лапа: тримає вперед підібраною, посередині своєї опори ледь торкається підлоги й одразу знову піднімається.
       "leg-front-near": {
         rot: keys([
-          [0, -34],
-          [H * 0.4, -10],
+          [0, -42],
+          [H * 0.4, -12],
           [H * 0.55, -2],
           [H * 0.7, 2],
-          [H, -22],
-          [T, -34],
+          [H, -28],
+          [T, -42],
         ]),
         scale: keysV([
           [0, 0.6, 1],
@@ -396,11 +396,11 @@ function clumsyAnim(): CatAnim {
   };
   const wobble = posed([
     { t: 0, pose: sag(0, 4) },
-    { t: H * 0.7, pose: sag(2.5, 5) },
-    { t: S, pose: sag(0, 4) },
-    { t: S + H * 0.5, pose: sag(4, 6), ease: "in" },
-    { t: S + H * 0.85, pose: sag(8, 8), ease: "out" },
-    { t: S + H * 1.5, pose: sag(3, 5) },
+    { t: H * 0.7, pose: sag(3, 6) },
+    { t: S, pose: sag(0, 3) },
+    { t: S + H * 0.5, pose: sag(5, 6), ease: "in" },
+    { t: S + H * 0.85, pose: sag(11, 10), ease: "out" },
+    { t: S + H * 1.5, pose: sag(4, 5) },
     { t: T, pose: sag(0, 4) },
   ]);
   return {
@@ -409,10 +409,10 @@ function clumsyAnim(): CatAnim {
     bones: merge(layer(T, trot, wobble), {
       tail: tailKeys(
         [
-          [0, -55],
-          [S * 0.55, -28],
-          [S * 1.3, -72],
-          [T, -55],
+          [0, -72],
+          [S * 0.55, -48],
+          [S * 1.3, -88],
+          [T, -72],
         ],
         0,
       ),
@@ -552,18 +552,18 @@ function sneezeAnim(): CatAnim {
   return {
     duration: T,
     loop: false,
+    // Кивок «чхи!» неглибокий (голова кота, що спить клубком чи їсть, і так біля підлоги), а різкий — від високого «а-а».
     bones: posed([
       { t: 0, pose: {} },
-      { t: 300, pose: { neck: { rot: -6 }, head: { rot: -12 } }, ease: "in" },
-      { t: 370, pose: { neck: { rot: 10, x: 1 }, head: { rot: 18 } }, ease: "out" },
-      { t: 470, pose: { neck: { rot: 2 }, head: { rot: 4 } } },
-      { t: 560, pose: { neck: { rot: 5 }, head: { rot: 8 } } },
+      { t: 300, pose: { neck: { rot: -8 }, head: { rot: -15 } }, ease: "in" },
+      { t: 365, pose: { neck: { rot: 3, x: 1.5 }, head: { rot: 7 } }, ease: "out" },
+      { t: 460, pose: { neck: { rot: -2 }, head: { rot: -3 } } },
+      { t: 550, pose: { neck: { rot: 1 }, head: { rot: 3 } } },
       { t: T, pose: {} },
     ]),
     slots: {
       eyes: frames([
-        [0, "open"],
-        [130, "half"],
+        [0, "half"],
         [250, "closed"],
         [620, "half"],
       ]),
@@ -689,14 +689,14 @@ function pantAnim(): CatAnim {
   const T = CAT_ONE_SHOT_MS.pant;
   const body: Key<Vec2>[] = [{ t: 0, v: { x: 1, y: 1 }, ease: "inOut" }];
   const neck: Key<number>[] = [{ t: 0, v: 0, ease: "inOut" }];
-  // Подихи: від 260 мс і 7 % до 560 мс і 2 %.
+  // Подихи: від 260 мс і 9 % до 560 мс і 2 %.
   let t = 120;
   neck.push({ t, v: -5, ease: "inOut" });
   body.push({ t, v: { x: 1, y: 1 }, ease: "inOut" });
   while (t < T - 700) {
     const u = t / T;
     const period = 260 + 300 * u * u;
-    const depth = 0.07 - 0.05 * u;
+    const depth = 0.09 - 0.07 * u;
     const lift = -5 * (1 - u);
     body.push({ t: Math.round(t + period * 0.4), v: { x: 1, y: 1 + depth }, ease: "inOut" });
     neck.push({ t: Math.round(t + period * 0.4), v: lift - 1.5 * (1 - u), ease: "inOut" });
@@ -831,12 +831,12 @@ function reluctantAnim(): CatAnim {
       tail: tailKeys([
         [0, 0],
         [200, 0],
-        [280, 13],
-        [380, 1],
-        [450, 11],
+        [270, 17],
+        [370, 2],
+        [440, 14],
         [560, 0],
         [1300, 0],
-        [1380, 12],
+        [1370, 16],
         [1500, 0],
         [T, 0],
       ]),
