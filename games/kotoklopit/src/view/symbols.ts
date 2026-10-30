@@ -224,8 +224,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Віджим (§9.12): пральна машина гуркоче — звук речі, вголос.
       return event.stage === "spin" ? [{ kind: "say", at: "washer", icon: "loud" }] : [];
     case "scared":
-      // Кіт злякався гучного звуку й біжить ховатися (§9.12) — його переляк.
-      return [{ kind: "think", at: cat(event.cat), icon: "alert" }];
+      // Кіт злякався гучного звуку, дзвінка чи гостей і біжить ховатися (§9.12) — його переляк. Своя іконка, не «!»: «!» — попередження
+      // терпіння над комп'ютером (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
+      return [{ kind: "think", at: cat(event.cat), icon: "fright" }];
     case "cat-woke":
       // Кота розбудили шум чи кроки (§9.12): поспати не дали.
       return [{ kind: "think", at: cat(event.cat), icon: "zz", mark: "no" }];

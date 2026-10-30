@@ -152,6 +152,10 @@ describe("бабли вголос і думки (§11.4, правка автор
     expect(new Set([...icons, plain]).size).toBe(causes.length + 1);
   });
 
+  it("переляк кота — своя думка, не «!» терпіння над комп'ютером (правило автора 2026-10-30, §11.4)", () => {
+    expect(only({ type: "scared", cat: 3 })).toEqual({ kind: "think", at: "cat:3", icon: "fright" });
+  });
+
   it("пропущеної летучки немає — бабла немає", () => {
     expect(eventBubbles({ type: "standup", attended: true, reputation: 2 })).toEqual([]);
     expect(eventBubbles({ type: "modifier", kind: "reputation", value: 3 })).toEqual([]);

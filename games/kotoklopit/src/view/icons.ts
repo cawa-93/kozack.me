@@ -646,6 +646,33 @@ Object.assign(ICONS, {
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**
+ * Переляк кота (§9.12 «Гучний звук», «Гості й дзвінок»; рішення автора 2026-10-30, `GENERAL_REVIEW.md`, «Відкрите після рішень»,
+ * п. 7): своя іконка, не «!» терпіння — шерсть на голові настовбурчена, вуха в боки, очі круглі з крихітними зіницями, рот «о», а
+ * з боків — рисочки тремтіння.
+ */
+Object.assign(ICONS, {
+  fright: (g: Phaser.GameObjects.Graphics) => {
+    // Настовбурчена шерсть — зубчастий край голови.
+    const fur: Phaser.Math.Vector2[] = [];
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2;
+      const r = i % 2 === 0 ? 13 : 10.5;
+      fur.push(new Phaser.Math.Vector2(20 + r * Math.cos(a), 23 + r * Math.sin(a)));
+    }
+    // Вуха притиснуті в боки «літачком».
+    g.fillStyle(0x6b5d6e).fillTriangle(10, 17, 15, 12, 2, 10).fillTriangle(25, 12, 30, 17, 38, 10);
+    g.fillStyle(0x6b5d6e).fillPoints(fur, true);
+    g.lineStyle(2, INK).strokePoints(fur, true, true);
+    // Круглі очі з крихітними зіницями й рот «о».
+    g.fillStyle(0xffffff).fillCircle(15, 21, 4.2).fillCircle(25, 21, 4.2);
+    g.lineStyle(1.5, INK).strokeCircle(15, 21, 4.2).strokeCircle(25, 21, 4.2);
+    g.fillStyle(INK).fillCircle(15, 21, 1.3).fillCircle(25, 21, 1.3).fillEllipse(20, 29.5, 4, 5);
+    // Тремтить.
+    g.lineStyle(2, INK).lineBetween(2, 21, 4, 25).lineBetween(2, 29, 4, 33).lineBetween(38, 21, 36, 25).lineBetween(38, 29, 36, 33);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
  * Шипіння з причиною (§9.4 «Згода, охорона й сварки», рішення автора 2026-10-26, Р2; §11.4): злість ліворуч угорі, а праворуч
  * унизу — значок причини: миска, лоток, вікно, рука чи кошеня.
  */

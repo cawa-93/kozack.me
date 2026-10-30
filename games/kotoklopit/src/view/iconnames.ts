@@ -97,6 +97,7 @@ export const ICON_NAMES = [
   "folded",
   "nest",
   "cat-annoyed",
+  "fright",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
