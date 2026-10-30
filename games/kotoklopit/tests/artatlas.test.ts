@@ -4,10 +4,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ART_STUB_PREFIX,
   artGeometry,
   artPlacement,
   DEFAULT_GEOMETRY,
   frameNameFor,
+  isStubFrame,
   stubHatch,
   stubPixels,
   stubSvg,
@@ -96,6 +98,18 @@ describe("заглушка", () => {
     expect(lines).toHaveLength(14);
     for (const line of lines) expect(line.x0 - line.x1).toBe(40);
     expect(Math.max(...lines.map((line) => line.x1))).toBeGreaterThan(100 - 10);
+  });
+
+  it("заглушка — і текстура рантайму, і кадр атласу, який конвеєр намалював заглушкою (customData.stub)", () => {
+    // Заглушка рантайму: кадру в атласі немає.
+    expect(isStubFrame(`${ART_STUB_PREFIX}128x128@64,64`, {})).toBe(true);
+    // Кадр атласу, позначений конвеєром (`atlasload.ts`: customData.stub з index.json) — теж заглушка: наповнення холодильника.
+    expect(isStubFrame("art", { pivot: { x: 70, y: 228 }, points: {}, stub: true })).toBe(true);
+    // Намальований кадр атласу.
+    expect(isStubFrame("art", { pivot: { x: 70, y: 228 }, points: {}, stub: false })).toBe(false);
+    expect(isStubFrame("art", {})).toBe(false);
+    expect(isStubFrame("art", undefined)).toBe(false);
+    expect(isStubFrame("art", null)).toBe(false);
   });
 
   it("SVG заглушки — розмір запису, маджента, без тексту", () => {

@@ -99,6 +99,20 @@ export function artPlacement(geometry: ArtGeometry, framePx: ArtSize): ArtPlacem
 
 // --- Заглушка ---------------------------------------------------------------------------------
 
+/** Початок ключа текстур-заглушок рантайму: за ним галерея відрізняє заглушку від намальованого. */
+export const ART_STUB_PREFIX = "art-stub:";
+
+/**
+ * Чи кадр — заглушка: текстура-заглушка рантайму (ключ `ART_STUB_PREFIX…`, кадру в атласі немає) чи кадр атласу, який
+ * конвеєр намалював заглушкою, бо SVG ще немає (`customData.stub` кадру, `stub: true` в `index.json`). Атлас є завжди (dev,
+ * прев'ю, продакшн), тож заглушки конвеєра — звичайні кадри `ART_TEXTURE`, і за самим ключем текстури їх не відрізнити.
+ */
+export function isStubFrame(textureKey: string, customData: unknown): boolean {
+  if (textureKey.startsWith(ART_STUB_PREFIX)) return true;
+  return typeof customData === "object" && customData !== null && (customData as { stub?: unknown }).stub === true;
+}
+
+
 /** Пікселів текстури заглушки на одиницю арту — не більше за це. */
 export const STUB_RES = 2;
 /**

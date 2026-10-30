@@ -17,9 +17,11 @@ import Phaser from "phaser";
 
 import { artEntry, DEFAULT_RES } from "./manifest";
 import {
+  ART_STUB_PREFIX,
   artGeometry,
   artPlacement,
   frameNameFor,
+  isStubFrame,
   stubHatch,
   stubPixels,
   STUB_LOOK,
@@ -40,8 +42,7 @@ export interface AddArtOptions extends ArtFrameOptions {
   fallback?: ArtFallback | undefined;
 }
 
-/** Початок ключа текстур-заглушок: за ним галерея відрізняє заглушку від намальованого. */
-export const ART_STUB_PREFIX = "art-stub:";
+export { ART_STUB_PREFIX } from "./placement";
 
 /** Атрибут `<html data-art>`: «ready» — атлас завантажено, «none» — атласу немає (самі заглушки). */
 export const ART_READY_ATTR = "art";
@@ -94,9 +95,12 @@ export function setArt(image: Phaser.GameObjects.Image, id: ArtId, opts: AddArtO
   return image;
 }
 
-/** Чи зображення показує заглушку, а не кадр атласу. */
+/**
+ * Чи зображення показує заглушку, а не намальований кадр: заглушку рантайму (кадру в атласі немає) чи заглушку конвеєра (кадр
+ * атласу з `customData.stub` — SVG ще немає).
+ */
 export function isArtStub(image: Phaser.GameObjects.Image): boolean {
-  return image.texture.key.startsWith(ART_STUB_PREFIX);
+  return isStubFrame(image.texture.key, image.frame?.customData);
 }
 
 /**
