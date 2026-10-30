@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 70" width="64" height="70">
+<!-- person/hair-back/2/front — хвостик, задня частина: об'єм за потилицею й хвіст на гумці, що звисає ззаду ліворуч, ракурс front (¾ спереду). A10, рукою еталонів F1b (art/STYLE.md).
+size 64×70; pivot (32, 46) — шия, як у person/head/*; points: top (32.5, 4.5).
+Шари: fill-hair, shade, ink.
+Об'єм — у тіні base (за головою), хвіст — soft з затіненим заднім боком; гумка — смужка `ink` біля кореня хвоста.
+-->
+<defs>
+<path id="person-hair-back-2-front-shape0" d="M24 13C22.3 12.3 19.1 14.7 17.2 16.2C15.3 17.7 13.7 19.9 12.8 22.2C11.9 24.5 11.8 27.5 11.8 30C11.8 32.5 12.2 35.1 12.8 37C13.4 38.9 14.4 40.4 15.6 41.4C16.8 42.4 18.7 43 20 42.8C21.3 42.6 22.7 41.8 23.6 40C24.5 38.2 24.9 35.3 25.6 32C26.3 28.7 27.9 23.6 27.6 20.4C27.3 17.2 25.7 13.7 24 13Z"/>
+<path id="person-hair-back-2-front-shape1" d="M13.8 17.2C13.2 16.3 10.9 17.5 9.8 18.6C8.7 19.7 7.5 21.6 7 23.6C6.5 25.6 6.5 28.3 6.6 30.6C6.7 32.9 7 35.3 7.4 37.4C7.8 39.5 8.3 41.3 9 43C9.7 44.7 11.6 47.8 11.6 47.8C11.6 47.8 12.4 44.1 12.4 42.2C12.4 40.3 11.9 38.3 11.8 36.2C11.7 34.1 11.7 31.6 12 29.6C12.3 27.6 13.3 26.1 13.6 24C13.9 21.9 14.4 18.1 13.8 17.2Z"/>
+<clipPath id="person-hair-back-2-front-clip"><use href="#person-hair-back-2-front-shape0"/><use href="#person-hair-back-2-front-shape1"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-2-front-shape0" fill="#ffffff"/>
+<use href="#person-hair-back-2-front-shape1" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-back-2-front-clip)">
+<path d="M24 13C22.3 12.3 19.1 14.7 17.2 16.2C15.3 17.7 13.7 19.9 12.8 22.2C11.9 24.5 11.8 27.5 11.8 30C11.8 32.5 12.2 35.1 12.8 37C13.4 38.9 14.4 40.4 15.6 41.4C16.8 42.4 18.7 43 20 42.8C21.3 42.6 22.7 41.8 23.6 40C24.5 38.2 24.9 35.3 25.6 32C26.3 28.7 27.9 23.6 27.6 20.4C27.3 17.2 25.7 13.7 24 13Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M4 20C4.8 14.9 7.8 17.9 8.6 19.6C9.4 21.3 8.7 26.6 9 30C9.3 33.4 9.8 36.7 10.4 40C11 43.3 13.5 48.3 12.4 50C11.3 51.7 5.4 55 4 50C2.6 45 3.2 25.1 4 20Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-2-front-shape0" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<use href="#person-hair-back-2-front-shape1" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.4 21.5C13.2 23.7 11.5 25 10.5 24.5C9.6 24 9.7 21.8 10.8 19.7C12 17.5 13.7 16.2 14.7 16.7C15.6 17.2 15.5 19.4 14.4 21.5Z" fill="#2e1f29"/>
+<path d="M10 25L9.7 25.6L9.4 26.4L9 27.3L8.7 28.3L8.4 29.5L8.3 30.7L8.2 31.9L8.2 33L8.3 34.2L8.4 35.5L8.6 36.8L9 38.1L9.4 39.3L9.8 40.4L10.1 41.3L10.4 42L10.5 41.3L10.5 40.3L10.5 39.1L10.5 37.9L10.5 36.6L10.4 35.3L10.3 34.1L10.2 33L10.2 31.9L10.3 30.8L10.4 29.7L10.4 28.5L10.3 27.5L10.2 26.5L10.1 25.6L10 25Z" fill="#2e1f29"/>
+</g>
+</svg>
