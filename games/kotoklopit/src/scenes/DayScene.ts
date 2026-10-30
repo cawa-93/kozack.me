@@ -36,7 +36,7 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/legacy/storagelook";
 import { showsFightBubble } from "../view/pose";
-import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, drawTrinket, itemScreen } from "../view/legacy/catcorner";
+import { drawCabinetExtras, drawTippedTrash, drawToiletRoll, drawTrinket } from "../view/legacy/catcorner";
 import { COLORS } from "../view/colors";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
@@ -47,6 +47,7 @@ import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
 import { THING_TITLES } from "../ui/titles";
 import { LegacyCatsView } from "../view/legacy/catsview";
+import { LegacyFloorView } from "../view/legacy/floorview";
 import { LegacyPen } from "../view/legacy/pen";
 import { LegacyPersonView } from "../view/legacy/personview";
 import { MoodHearts } from "../view/moodhearts";
@@ -108,7 +109,7 @@ export class DayScene extends Phaser.Scene {
   private viewport!: Viewport;
   /** Як квартира лягає на екран (§8.4). */
   private readonly projection = OBLIQUE;
-  private corner!: Phaser.GameObjects.Graphics;
+  private floor!: LegacyFloorView;
   private pen!: LegacyPen;
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
@@ -151,8 +152,6 @@ export class DayScene extends Phaser.Scene {
     this.viewport = new Viewport(this, this.projection);
     const { world, ui } = this.viewport;
     this.views = drawApartment(this, world, this.projection);
-    // Миски, лотки й безлад лежать на підлозі: під меблями, котами й персонажем.
-    this.corner = this.add.graphics().setDepth(0).addToDisplayList(world);
     for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
       this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1).addToDisplayList(world));
     }
@@ -174,6 +173,7 @@ export class DayScene extends Phaser.Scene {
       cat: (id) => this.cats.points(id),
     };
     const ctx: PartContext = { scene: this, layer: world, projection: this.projection, state: () => this.state, world: this.query };
+    this.floor = new LegacyFloorView(ctx, this.pen);
     this.person = new LegacyPersonView(ctx);
     this.cats = new LegacyCatsView(ctx, this.pen);
     this.bubbles = new Bubbles(this, world);
@@ -585,7 +585,7 @@ export class DayScene extends Phaser.Scene {
     this.person.update(state, frame);
     this.cats.update(state, frame);
     this.forgetGoneCats(state);
-    drawCatCorner(this.corner, this.projection, state);
+    this.floor.update(state, frame);
     this.person.lateUpdate(state, frame);
     this.showEarnings(time);
     this.bubbles.update();
@@ -682,20 +682,8 @@ export class DayScene extends Phaser.Scene {
       const view = this.view(id);
       return isPresent(this.state, view.object) ? view.anchor : null;
     }
-    const [kind, raw] = id.split(":");
-    const number = Number(raw);
-    if (kind === "item") {
-      const item = this.state.home.items.find((i) => i.id === number);
-      if (!item) return null;
-      const p = itemScreen(this.projection, item);
-      return { x: p.x, y: p.y - 14 };
-    }
-    if (kind === "mess") {
-      const mess = this.state.home.messes.find((m) => m.id === number);
-      if (!mess) return null;
-      const p = this.projection.toScreen(mess);
-      return { x: p.x, y: p.y - 12 };
-    }
+    const kind = id.split(":")[0];
+    if (kind === "item" || kind === "mess") return this.floor.anchor(id);
     if (kind === "cat") return this.cats.anchor(id);
     return null;
   }
@@ -739,20 +727,11 @@ export class DayScene extends Phaser.Scene {
 
   private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): boolean {
     if (target.type === "cat") return this.cats.highlight(target, alpha);
+    if (target.type !== "object") return this.floor.highlight(target, alpha);
     g.lineStyle(4, COLORS.highlight, alpha);
-    if (target.type === "object") {
-      const view = this.view(target.id);
-      const box = view.outline ?? view.top;
-      g.strokeRect(box.x - 2, box.y - 2, box.w + 4, box.h + 4);
-      return true;
-    }
-    if (target.type === "item") {
-      const p = itemScreen(this.projection, target.item);
-      g.strokeEllipse(p.x, p.y, target.item.kind === "litter" ? 56 : 40, target.item.kind === "litter" ? 40 : 22);
-      return true;
-    }
-    const p = this.projection.toScreen(target.mess);
-    g.strokeEllipse(p.x, p.y, 34, 18);
+    const view = this.view(target.id);
+    const box = view.outline ?? view.top;
+    g.strokeRect(box.x - 2, box.y - 2, box.w + 4, box.h + 4);
     return true;
   }
 
