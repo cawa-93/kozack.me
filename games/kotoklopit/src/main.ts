@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 
 import { DayScene } from "./scenes/DayScene";
+import { PreloadScene } from "./scenes/PreloadScene";
 import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
@@ -29,5 +30,6 @@ new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   input: { activePointers: 3 },
-  scene: [new DayScene(session), new RaceScene(session)],
+  // Спершу атлас арту (крок 16), потім день; гонку запускає DayScene.
+  scene: [new PreloadScene("day"), new DayScene(session), new RaceScene(session)],
 });
