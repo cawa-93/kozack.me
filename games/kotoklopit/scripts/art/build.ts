@@ -409,8 +409,14 @@ export function isAtlasFile(name: string): boolean {
   return name === ART_INDEX_FILE || /^page-\d+\.[0-9a-f]+\.webp$/.test(name);
 }
 
-/** Що змінилося у файлі гри для конвеєра: SVG арту, маніфест (його модулі й типи) чи ні те, ні те. */
-export function artChange(gameDir: string, file: string): "svg" | "manifest" | null {
+/**
+ * Що змінилося у файлі гри для конвеєра: SVG арту, маніфест чи ні те, ні те. Маніфест — його модулі й типи, а також
+ * будь-який файл із `dependencies` останнього збирання (`LoadedManifest`): записи беруть розміри й pivot із мапи гри
+ * (`src/sim/home.ts`), і без перезбирання атлас лишився б від старого маніфесту — кадри розтягнуто до нового розміру.
+ */
+export function artChange(gameDir: string, file: string, dependencies: readonly string[] = []): "svg" | "manifest" | null {
+  const absolute = path.resolve(file);
+  if (dependencies.some((dependency) => path.relative(path.resolve(dependency), absolute) === "")) return "manifest";
   const rel = path.relative(gameDir, file).split(path.sep).join("/");
   if (rel.startsWith("../") || path.isAbsolute(rel)) return null;
   if (rel.startsWith(`${ART_DIR}/`) && rel.toLowerCase().endsWith(".svg")) return "svg";

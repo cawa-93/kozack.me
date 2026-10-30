@@ -11,7 +11,7 @@ import sharp from "sharp";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { ALLOWED_COLORS, LINE } from "../art/palette";
-import { artChange, buildArt, isAtlasFile, listFiles, requireAllFromEnv, stubRes, STUB_ATLAS_RES } from "../scripts/art/build";
+import { artChange, buildArt, isAtlasFile, listFiles, loadManifest, requireAllFromEnv, stubRes, STUB_ATLAS_RES } from "../scripts/art/build";
 import { ArtCache } from "../scripts/art/cache";
 import { composePage, pack, pow2, type PackItem } from "../scripts/art/pack";
 import { rasterFrame, unionBounds, type Rgba } from "../scripts/art/raster";
@@ -602,6 +602,18 @@ describe("для плагіна", () => {
     expect(artChange(GAME_DIR, at("src", "view", "art", "atlas.ts"))).toBeNull();
     expect(artChange(GAME_DIR, at("tests", "fixtures", "art", "item", "ball.svg"))).toBeNull();
     expect(artChange(GAME_DIR, path.join(GAME_DIR, "..", "other", "art", "x.svg"))).toBeNull();
+  });
+
+  it("перезбирає й на зміни того, що імпортує маніфест (мапа гри src/sim/home.ts): файли з dependencies останнього збирання", async () => {
+    const at = (...parts: string[]) => path.join(GAME_DIR, ...parts);
+    const home = at("src", "sim", "home.ts");
+    expect(artChange(GAME_DIR, home)).toBeNull();
+    // Шлях залежності — як його дає Vite (через «/»), подія — як її дає спостерігач (через «\» на Windows).
+    expect(artChange(GAME_DIR, home, [home.split(path.sep).join("/")])).toBe("manifest");
+    expect(artChange(GAME_DIR, at("src", "sim", "cat.ts"), [home])).toBeNull();
+    // Справжній маніфест справді імпортує мапу гри.
+    const manifest = await loadManifest(GAME_DIR);
+    expect(manifest.dependencies.some((file) => artChange(GAME_DIR, home, [file]) === "manifest")).toBe(true);
   });
 
   it("віддає з пам'яті лише згенероване: index.json і сторінки з хешем", () => {

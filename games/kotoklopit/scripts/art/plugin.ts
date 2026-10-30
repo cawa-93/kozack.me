@@ -71,14 +71,17 @@ export function artPlugin(options: ArtPluginOptions = {}): Plugin {
 }
 
 /**
- * Dev: атлас збирається при старті сервера й після кожної зміни SVG чи маніфесту; запити `${base}art/…` чекають
- * поточного збирання, тож сторінка, яку перезавантажили після зміни, бачить уже новий атлас. Зміна SVG перезавантажує
- * сторінку, якщо атлас справді змінився (зміну модулів маніфесту Vite перезавантажує сам).
+ * Dev: атлас збирається при старті сервера й після кожної зміни SVG чи маніфесту (з усім, що він імпортує, — мапою гри
+ * `src/sim/home.ts` тощо: `dependencies` останнього збирання); запити `${base}art/…` чекають поточного збирання, тож
+ * сторінка, яку перезавантажили після зміни, бачить уже новий атлас. Зміна SVG перезавантажує сторінку, якщо атлас
+ * справді змінився (зміну модулів маніфесту й того, що вони імпортують, Vite перезавантажує сам).
  */
 function serveArt(server: ViteDevServer, art: Art, gameDir: string): void {
   const logger = server.config.logger;
   const prefix = `${server.config.base}${art.ART_DIR}/`;
   let current: ArtBuild | null = null;
+  /** Файли, з яких зібрано маніфест останнього вдалого збирання: їхня зміна — зміна маніфесту. */
+  let dependencies: readonly string[] = [];
   let running: Promise<void> | null = null;
   let dirty = false;
   let svgChanged = false;
@@ -107,6 +110,7 @@ function serveArt(server: ViteDevServer, art: Art, gameDir: string): void {
         const before = fingerprint(current);
         try {
           current = await art.buildGameArt({ gameDir });
+          dependencies = current.manifest.dependencies;
           report(current);
         } catch (error) {
           // Маніфест не завантажився (помилка в записах чи синтаксис) — лишається попередній атлас.
@@ -125,7 +129,7 @@ function serveArt(server: ViteDevServer, art: Art, gameDir: string): void {
   };
 
   server.watcher.on("all", (_event, file) => {
-    const change = art.artChange(gameDir, file);
+    const change = art.artChange(gameDir, file, dependencies);
     if (change === null) return;
     if (change === "svg") svgChanged = true;
     kick();
