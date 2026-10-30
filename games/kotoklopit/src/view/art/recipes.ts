@@ -165,6 +165,24 @@ export function catRecipe(cat: Pick<Cat, "id" | "genes" | "shape" | "diseases" |
   return buildCatRecipe(normalizeAppearance(look), state);
 }
 
+/** Рецепти котів сима: рецепт і стани, з якими його складено. */
+const recipeMemo = new WeakMap<object, { states: string; recipe: TintRecipe }>();
+
+/**
+ * Рецепт кота сима, якого можна просити щокадру для кожного слота: складається знову, лише коли змінилися видимі стани
+ * (глисти, дерматит, нашийник), тож ні сміття, ні зайвих `coatOf`. Гени й форми того самого об'єкта кота вважаються
+ * незмінними (вони й не змінюються: кошеня отримує їх при народженні; новий об'єкт після завантаження — новий рецепт).
+ */
+export function catRecipeOf(cat: Pick<Cat, "id" | "genes" | "shape" | "diseases" | "collar">): TintRecipe {
+  const opts = catRecipeOptions(cat);
+  const states = `${opts.dull ? 1 : 0}${opts.bald ? 1 : 0}${opts.collar ? 1 : 0}`;
+  const have = recipeMemo.get(cat);
+  if (have && have.states === states) return have.recipe;
+  const recipe = buildCatRecipe(normalizeAppearance(catAppearance(cat)), opts);
+  recipeMemo.set(cat, { states, recipe });
+  return recipe;
+}
+
 /** Вигляд, у якому однакове на малюнку записано однаково: довга шерсть лише без породної, варіант плям — лише в черепахових. */
 interface CatLookKey {
   coat: Coat;

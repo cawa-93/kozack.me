@@ -12,6 +12,7 @@ import { composeFrame, composePortrait, cssColor, portraitHead, stubLayers, type
 import {
   CAT_RECIPE_LAYERS,
   catRecipe,
+  catRecipeOf,
   dullColor,
   EYE_COLORS,
   PERSON_RECIPE_LAYERS,
@@ -244,6 +245,30 @@ describe("рецепт кота", () => {
     expect(recipe.key).toMatch(/\/dull\/bald\/collar$/);
     expect(catRecipe(cat, { dull: false }).key).not.toMatch(/dull/);
     expect(catRecipe({ ...cat, diseases: [], collar: false }).key).toBe("cat:black/mackerel/w0/green");
+  });
+
+  it("рецепт кота сима складається знову лише тоді, коли змінилися видимі стани", () => {
+    const genes: Genes = {
+      orange: [true, false],
+      black: [true, true],
+      dense: [false, false],
+      agouti: [true, false],
+      tabby: [0, 2],
+      white: [1, 0],
+      full: [true, true],
+      short: [false, true],
+      eyes: 2,
+    };
+    const shape: Shape = { muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal", coat: null };
+    const cat = { id: 11, genes, shape, diseases: [] as CatDisease[], collar: false };
+    const first = catRecipeOf(cat);
+    expect(first).toEqual(catRecipe(cat));
+    expect(catRecipeOf(cat)).toBe(first);
+    cat.collar = true;
+    const collared = catRecipeOf(cat);
+    expect(collared).not.toBe(first);
+    expect(collared).toEqual(catRecipe(cat));
+    expect(catRecipeOf(cat)).toBe(collared);
   });
 });
 
