@@ -71,7 +71,10 @@ export interface CatFacingOptions {
 
 /**
  * Куди дивиться кіт (крок 16): `prevPos` — де кіт був минулого кадру (null — перший кадр).
- * - На руках і на колінах — туди ж, куди персонаж.
+ * - На руках і на колінах — туди ж, куди персонаж, але `flip` — відносно персонажа, тобто завжди false: такого кота
+ *   прикріплено в гніздо скелета персонажа (`arms`, `lap`; `RigSprite.attach`), а вміст гнізда дзеркалить сам контейнер
+ *   персонажа — `flip` коту поверх нього дзеркалив би вдруге, і кіт дивився б у протилежний бік. Ракурс — персонажа. Куди
+ *   кіт дивиться у світі — `personFacing`.
  * - У парі (протистояння, бійка, вилизування, гра, сон поруч) — обличчям до пари вздовж горизонталі екрана (`pairs.ts`).
  * - Іде — за рухом (різниця позицій; кадр без руху — як минулого кадру, а без нього — до `goal`).
  * - Стоїть: на підвіконні під вікном у задній стіні — спиною до нас, у вікно (сумний — до нас, щоб було видно смуток, як і в
@@ -85,7 +88,7 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
   const simSide = cat.facing < 0;
   const fallback: RigFacing = { view: "front", flip: simSide };
   const held = state.character.held;
-  if ((held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap") return personFacing(state, prev);
+  if ((held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap") return { view: personFacing(state, prev).view, flip: false };
   const pair = options.pair === undefined ? pairOf(state, cat) : options.pair;
   if (pair?.facing) return pair.facing;
   const act = cat.act;

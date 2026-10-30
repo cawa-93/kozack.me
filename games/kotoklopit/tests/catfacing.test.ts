@@ -213,15 +213,27 @@ describe("куди дивиться кіт (`catFacing`)", () => {
     expect(catFacing(save.current, touchy, null)).toEqual(BACK_LEFT);
   });
 
-  it("на руках — туди ж, куди персонаж", () => {
+  it("на руках і на колінах — туди ж, куди персонаж: ракурс персонажа, а flip — відносно нього (гніздо дзеркалить контейнер)", () => {
     const save = game();
     const cat = withCat(save);
     save.current.character.held = { kind: "cat", cat: cat.id };
     save.current.character.body.facing = { x: 0, y: -1 };
     expect(catFacing(save.current, cat, null)).toEqual(BACK);
     expect(personFacing(save.current)).toEqual(BACK);
+    // Персонаж дивиться ліворуч: його контейнер має scaleX −1, і кіт у гнізді `arms` дзеркалиться разом із ним. Свого flip
+    // кіт не має — інакше −1 · −1 = +1, і кіт на руках дивився б праворуч.
     save.current.character.body.facing = { x: 0, y: 1 };
-    expect(catFacing(save.current, cat, null)).toEqual(FRONT_LEFT);
+    expect(personFacing(save.current)).toEqual(FRONT_LEFT);
+    expect(catFacing(save.current, cat, null)).toEqual(FRONT);
+    const world = (own: RigFacing, owner: RigFacing): boolean => own.flip !== owner.flip;
+    expect(world(catFacing(save.current, cat, null), personFacing(save.current))).toBe(true);
+    // На колінах (гніздо `lap`) — так само.
+    save.current.character.held = null;
+    cat.act = act("lap");
+    expect(catFacing(save.current, cat, null, { prev: FRONT_LEFT })).toEqual(FRONT);
+    save.current.character.body.facing = { x: -1, y: 0 };
+    expect(personFacing(save.current)).toEqual(BACK_LEFT);
+    expect(catFacing(save.current, cat, null)).toEqual(BACK);
   });
 });
 
