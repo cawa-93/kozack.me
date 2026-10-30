@@ -8,6 +8,7 @@ import type { GameState } from "../../sim/types";
 import type { GfxMode } from "../gfx";
 import { IsoApartmentView } from "../iso/apartment";
 import { IsoFloorView } from "../iso/floor";
+import { IsoPersonView } from "../iso/person";
 import { LegacyApartmentView } from "../legacy/apartmentview";
 import { LegacyCatsView } from "../legacy/catsview";
 import { LegacyFloorView } from "../legacy/floorview";
@@ -57,6 +58,8 @@ const ISO: WorldBuilders = {
   // F3b: ізометрична квартира й котячий куточок на кадрах маніфесту (`src/view/iso/*`).
   apartment: (ctx) => new IsoApartmentView(ctx),
   floor: (ctx) => new IsoFloorView(ctx),
+  // T2: персонаж на скелеті з запеченими частинами, тінню й гніздами (`src/view/iso/person.ts`).
+  person: (ctx) => new IsoPersonView(ctx),
 };
 
 export const WORLD_BUILDERS: Record<GfxMode, WorldBuilders> = { legacy: LEGACY, iso: ISO };
