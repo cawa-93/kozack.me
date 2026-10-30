@@ -171,6 +171,15 @@ describe("журнал", () => {
     expect(describeEvent({ type: "glitch", chance: 0.32, angle: 112.4 }, current)).toContain("32%");
     expect(describeEvent({ type: "dash" }, current)).toBeNull();
   });
+
+  it("каже, де кіт подряпав: біля переноски, у ванні чи із засідки «Ніндзя»", () => {
+    const { current } = newGame({ address: "she", difficulty: "normal", seed: 1 });
+    expect(describeEvent({ type: "clawed", cat: 1, at: "carrier" }, current)).toContain("біля переноски");
+    expect(describeEvent({ type: "clawed", cat: 1, at: "bath" }, current)).toContain("у ванні");
+    const ambush = describeEvent({ type: "clawed", cat: 1, at: "ambush" }, current);
+    expect(ambush).toContain("із засідки");
+    expect(ambush).not.toContain("переноск");
+  });
 });
 
 describe("сценарій «10 котів» (§8.5, §9.4)", () => {

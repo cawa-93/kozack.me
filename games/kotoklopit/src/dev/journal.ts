@@ -230,7 +230,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "bite":
       return `${catName(state, event.cat)} вкусив: здоров'я ${signed(PET.biteHealth)}`;
     case "clawed":
-      return `${catName(state, event.cat)} подряпав ${event.at === "bath" ? "у ванні" : "біля переноски"}: здоров'я ${signed(CLAW.health)}`;
+      return `${catName(state, event.cat)} подряпав ${event.at === "bath" ? "у ванні" : event.at === "ambush" ? "із засідки" : "біля переноски"}: здоров'я ${signed(CLAW.health)}`;
     case "catnip":
       return `${catName(state, event.cat)}: котяча м'ята — ${event.reaction === "roll" ? "катається" : event.reaction === "frenzy" ? "шаленіє" : "понюхав і пішов"}`;
     case "cat-cuddled":
