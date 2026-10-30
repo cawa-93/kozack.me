@@ -7,6 +7,7 @@ import type Phaser from "phaser";
 import type { GameState } from "../../sim/types";
 import type { GfxMode } from "../gfx";
 import { IsoApartmentView } from "../iso/apartment";
+import { IsoCatsView } from "../iso/cats";
 import { IsoFloorView } from "../iso/floor";
 import { IsoPersonView } from "../iso/person";
 import { LegacyApartmentView } from "../legacy/apartmentview";
@@ -60,6 +61,8 @@ const ISO: WorldBuilders = {
   floor: (ctx) => new IsoFloorView(ctx),
   // T2: персонаж на скелеті з запеченими частинами, тінню й гніздами (`src/view/iso/person.ts`).
   person: (ctx) => new IsoPersonView(ctx),
+  // T1: коти на скелетах із запеченою шерстю (`src/view/iso/cats.ts`).
+  cats: (ctx) => new IsoCatsView(ctx),
 };
 
 export const WORLD_BUILDERS: Record<GfxMode, WorldBuilders> = { legacy: LEGACY, iso: ISO };
