@@ -179,7 +179,7 @@ describe("«Терпимість до гладження» (рішення ав�
     advance(save, tolerance - PETTING.warnMinutes - 0.2, HOLD);
     expect(catFeeling(save.current, cat)).toBe("content");
     advance(save, 0.4, HOLD);
-    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    expect(catFeeling(save.current, cat)).toBe("warning");
   });
 
   it("«Терплячий» муркоче довше, ніж витерпів би кіт без риси, — прояв «+», раз за пестощі", () => {

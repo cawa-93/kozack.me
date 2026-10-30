@@ -97,6 +97,8 @@ export class CatView {
   back = { x: 0, y: 0 };
   /** Хвіст смикається, коли котові не до вподоби: −1…1. */
   private lash = 0;
+  /** Наскільки широко б'є хвіст: той, хто попереджає, — удвічі ширше (§10, рішення автора 2026-10-30, п. 4). */
+  private lashSpan = 5;
   /** Що намальовано зараз: якщо нічого не змінилося, кадр не перемальовує кота. */
   private drawn: string | null = null;
 
@@ -192,7 +194,9 @@ export class CatView {
     this.hissing = pose === "arch" && cat.hissedAt !== undefined && absoluteMinute(state.day, state.minute) - cat.hissedAt < HISS_OPEN;
     const toy = cat.act.kind === "carry" && cat.act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === cat.act.target) : undefined;
     this.mouthToy = toy?.kind === "toy" ? toy.quality : "cheap";
-    this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "struggling" ? Math.sin(time / 40) : 0;
+    // Попереджає — б'є хвостом сильніше й ширше, ніж той, хто терпить (§10, рішення автора 2026-10-30, п. 4).
+    this.lash = feeling === "reluctant" ? Math.sin(time / 70) : feeling === "warning" ? Math.sin(time / 45) : feeling === "struggling" ? Math.sin(time / 40) : 0;
+    this.lashSpan = feeling === "warning" ? 10 : 5;
     // Нерухомого кота не перемальовувати щокадру (§8.5): з десятками котів це головна робота кадру.
     const blinking = (look?.blink ?? 0) > 0 || look?.nudge === true;
     const key =
@@ -270,7 +274,7 @@ export class CatView {
     // Гра — стрибки за пір'їнкою; пестощі — муркотливе погойдування.
     const jump = interaction === "play" ? -Math.abs(Math.sin(time / 130)) * 12 * scale : 0;
     // Задоволений погойдується повільно, невдоволений — смикається, а той, хто пручається, вертиться.
-    const sway = feeling === "content" ? Math.sin(time / 280) * 1.5 : feeling === "reluctant" ? Math.sin(time / 90) * 1.2 : feeling === "struggling" ? Math.sin(time / 35) * 3.5 : 0;
+    const sway = feeling === "content" ? Math.sin(time / 280) * 1.5 : feeling === "reluctant" || feeling === "warning" ? Math.sin(time / 90) * 1.2 : feeling === "struggling" ? Math.sin(time / 35) * 3.5 : 0;
     // Вилизує друга чи друг вилизує його (§9.4, «Вилизує іншого»): за 0,4 клітинки обидва трохи відхилені назад, щоб голова того,
     // хто вилизує, діставала до щоки друга, а не закривала його морду.
     const lean = pose === "lick" ? -dir * 7 * scale : pose === "sit" && isLicked(cat) ? -dir * 5 * scale : 0;
@@ -782,8 +786,9 @@ export class CatView {
       // Задоволений кіт мружиться: очі — дужки.
       g.lineStyle(1.6, COLORS.ink);
       for (const ox of [-2.6, 2.6]) g.beginPath().arc(ex + ox * s, y - 0.5 * s, 2 * s, Math.PI * 1.1, Math.PI * 1.9).strokePath();
-    } else if (feeling === "reluctant") {
-      // Терпить: сердито примружений — видно колір очей, а повіки навскіс, до носа нижче.
+    } else if (feeling === "reluctant" || feeling === "warning") {
+      // Терпить чи попереджає: сердито примружений — видно колір очей, а повіки навскіс, до носа нижче. Попередження відрізняють вуха
+      // й хвіст (`ears`, `tail`).
       for (const side of [-1, 1]) {
         const cx = ex + side * 2.6 * s;
         g.fillStyle(EYES[this.coat.eyes]).fillEllipse(cx, y - 0.4 * s, 4.4 * s, 2.6 * s);
@@ -834,11 +839,14 @@ export class CatView {
     const shape = this.shape.ears;
     const big = shape === "large" || shape === "tufted" ? 1.3 : 1;
     // Невдоволений чи переляканий кіт притискає вуха (§9.12).
-    const folded = shape === "folded" || this.feeling === "struggling" || this.feeling === "reluctant";
+    // Попереджає (§10, рішення автора 2026-10-30, п. 4) — вуха притиснуті до голови «літачком», як перед ворогом: інакше, ніж у того,
+    // хто лише терпить, і це видно й у вислоухого.
+    const warning = this.feeling === "warning";
+    const folded = !warning && (shape === "folded" || this.feeling === "struggling" || this.feeling === "reluctant");
     // Сумний кіт опускає вуха вбік (§11.4).
-    const droop = !folded && !this.threat && this.look?.sad === true;
+    const droop = !folded && !warning && !this.threat && this.look?.sad === true;
     // Перед ворогом (§9.4, «Спина дугою») вуха притиснуті вбік і назад: з-за голови стирчать лише кінчики.
-    const flat = !folded && this.threat;
+    const flat = !folded && (this.threat || warning);
     g.fillStyle(color);
     for (const side of [-1, 1]) {
       const bx = x + side * 5 * s + dir;
@@ -890,7 +898,7 @@ export class CatView {
     const color = this.coat.pointed ? PIGMENT[this.coat.base] : PIGMENT[this.coat.second ?? this.coat.base];
     g.lineStyle(width, color);
     const tx = x - dir * 12 * s * length;
-    const ty = pose === "up" ? y - 16 * s * length : pose === "down" ? y + 8 * s * length : y + 2 - (this.lash + 1) * 5 * s * length;
+    const ty = pose === "up" ? y - 16 * s * length : pose === "down" ? y + 8 * s * length : y + 2 - (this.lash + 1) * this.lashSpan * s * length;
     g.beginPath().moveTo(x, y).lineTo((x + tx) / 2 - dir * 2 * s, (y + ty) / 2).lineTo(tx, ty).strokePath();
   }
 

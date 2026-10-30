@@ -562,8 +562,12 @@ function canPlay(state: GameState, target: Target): boolean {
   return target.type === "cat" && state.character.held?.kind === "toy";
 }
 
-/** Що відчуває кіт, якого гладять чи тримають на руках (§9.12): це видно з нього самого. */
-export type CatFeeling = "content" | "reluctant" | "struggling";
+/**
+ * Що відчуває кіт, якого гладять чи тримають на руках (§9.12, §10): це видно з нього самого. «warning» — попереджає під рукою за
+ * хвилину до кінця терпіння: з цієї миті кіт 15 хвилин не дається гладити (рішення автора 2026-10-30, `GENERAL_REVIEW.md`,
+ * «Відкрите після рішень», п. 4: окремий вигляд, бо в кота, що уваги не хоче й терпить від першої хвилини, попередження не було видно).
+ */
+export type CatFeeling = "content" | "reluctant" | "warning" | "struggling";
 
 export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   const { held, activity } = state.character;
@@ -576,8 +580,9 @@ export function catFeeling(state: GameState, cat: Cat): CatFeeling | null {
   if (activity?.kind === "pet" && activity.cat === cat.id && !petOver(activity)) {
     const tolerance = petTolerance(cat);
     if (activity.minutes > tolerance) return "struggling";
-    // За хвилину до кінця терпіння кожен кіт попереджає: б'є хвостом і притискає вуха (§9.12, рішення автора 2026-10-25).
-    if (activity.minutes > tolerance - PETTING.warnMinutes) return "reluctant";
+    // За хвилину до кінця терпіння кожен кіт попереджає: б'є хвостом і притискає вуха (§9.12, рішення автора 2026-10-25) — свій
+    // вигляд, не «терпить» (п. 4, 2026-10-30). Та сама мить, з якої `tickPet` запам'ятовує `petWarnedAt`.
+    if (activity.minutes > tolerance - PETTING.warnMinutes) return "warning";
     return cat.needs.attention >= PET.wantsAttention ? "content" : "reluctant";
   }
   if (activity?.kind === "play" && activity.cat === cat.id && !activity.done) return "content";

@@ -797,7 +797,7 @@ describe("після попередження чи укусу кіт чверт�
     const { save, cat } = petting();
     // Гладити, доки кіт не попередив: б'є хвостом і притискає вуха.
     hold(save, petTolerance(cat) - PETTING.warnMinutes + 0.25);
-    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    expect(catFeeling(save.current, cat)).toBe("warning");
     // Відпустили на мить — і тримають знову дві хвилини.
     advance(save, 0.05);
     expect(save.current.character.activity).toBeNull();
@@ -840,6 +840,31 @@ describe("після попередження чи укусу кіт чверт�
     expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 1);
   });
 
+  it("попередження видно й у кота, що уваги не хоче: «терпить» до попередження, «попереджає» — з тієї самої миті, з якої пауза (рішення автора 2026-10-30, п. 4)", () => {
+    const { save, cat } = petting();
+    cat.needs.attention = 10;
+    const tolerance = petTolerance(cat);
+    hold(save, 1);
+    // Уваги не хоче — терпить без охоти від першої хвилини, але ще не попереджає й паузи ще немає.
+    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    expect(cat.petWarnedAt).toBeUndefined();
+    hold(save, tolerance - PETTING.warnMinutes - 1 - 0.1);
+    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    expect(cat.petWarnedAt).toBeUndefined();
+    // Попереджає — і саме з цієї миті кіт пам'ятає, що його перегладили.
+    hold(save, 0.25);
+    expect(catFeeling(save.current, cat)).toBe("warning");
+    expect(cat.petWarnedAt).toBeCloseTo(absoluteMinute(save.current.day, save.current.minute), 0);
+    // Відпустили — пауза та сама: 15 хвилин від останньої миті попередження, потім кіт знову дається гладити.
+    advance(save, 0.05);
+    expect(PETTING.restMinutes).toBe(15);
+    expect(petResting(save.current, cat)).toBe(true);
+    advance(save, PETTING.restMinutes - 0.5);
+    expect(petResting(save.current, cat)).toBe(true);
+    advance(save, 0.5);
+    expect(petResting(save.current, cat)).toBe(false);
+  });
+
   it("відпустили ще до попередження — паузи немає: кіт одразу дається гладити знову", () => {
     const { save, cat } = petting();
     hold(save, petTolerance(cat) - PETTING.warnMinutes - 0.5);
@@ -859,7 +884,7 @@ describe("після попередження чи укусу кіт чверт�
     const { save, cat } = petting();
     cat.needs.attention = 95;
     hold(save, petTolerance(cat) - PETTING.warnMinutes + 0.25);
-    expect(catFeeling(save.current, cat)).toBe("reluctant");
+    expect(catFeeling(save.current, cat)).toBe("warning");
     advance(save, 0.05);
     // Уваги кіт ще хоче (поріг — 60), але чверть години по неї не йде: не ходить слідом і не нявчить.
     expect(cat.needs.attention).toBeGreaterThan(70);
