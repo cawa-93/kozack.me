@@ -160,7 +160,6 @@ interface Walker {
   index: number;
   /** Зсув фази ходи, мс: щоб не крокували в ногу. */
   phase: number;
-  shadow: Phaser.GameObjects.Ellipse;
 }
 
 interface State {
@@ -238,9 +237,8 @@ function mount(ctx: GalleryContext): GalleryView {
     sprite.setPosition(x, y);
     parent.add(sprite);
     const foot = SHADOW[kind];
-    const shadow = new Phaser.GameObjects.Ellipse(scene, x, y, foot.w, foot.h, hex(ART.shade), SHADOW.alpha);
-    shadows.add(shadow);
-    const w: Walker = { sprite, kind, index, phase: (walkers.length * 173) % 640, shadow };
+    shadows.add(new Phaser.GameObjects.Ellipse(scene, x, y, foot.w, foot.h, hex(ART.shade), SHADOW.alpha));
+    const w: Walker = { sprite, kind, index, phase: (walkers.length * 173) % 640 };
     walkers.push(w);
     return w;
   };
