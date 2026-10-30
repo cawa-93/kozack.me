@@ -12,7 +12,7 @@ import Phaser from "phaser";
 
 import { PALETTE } from "../../../art/palette";
 import { markArtReady } from "../../view/art/atlas";
-import { loadArtAtlas } from "../../view/art/atlasload";
+import { loadArtAtlas, type ArtAtlasResult } from "../../view/art/atlasload";
 import { COLORS } from "../../view/colors";
 import "./gallery.css";
 import { galleryView, setGalleryView, viewRect } from "./kit";
@@ -159,8 +159,9 @@ const spanSelect = select(
 );
 if (!SPANS.includes(span)) spanSelect.prepend(Object.assign(el("option", undefined, `0–${span / 1000} с`), { value: String(span) }));
 spanSelect.value = String(span);
+const speedTitle = (value: number): string => `×${String(value).replace(".", ",")}`;
 const speedSelect = select(
-  SPEEDS.map((value) => ({ value: String(value), title: `×${String(value).replace(".", ",")}` })),
+  [...new Set([...SPEEDS, speed])].sort((a, b) => a - b).map((value) => ({ value: String(value), title: speedTitle(value) })),
   String(speed),
   (value) => {
     speed = Number(value);
@@ -347,14 +348,20 @@ class GalleryScene extends Phaser.Scene {
     camera.setScroll(0, 0);
     setupInput(this);
     status.textContent = "Атлас вантажиться…";
-    void loadArtAtlas(this).then((result) => {
-      setGalleryView({ index: result.index });
-      markArtReady(result.state);
-      showStatus();
-      const tab = TABS.find((item) => item.id === params.tab) ?? TABS[0];
-      if (params.tab !== null && tab?.id !== params.tab) console.warn(`Галерея: вкладки «${params.tab}» немає`);
-      if (tab) openTab(tab);
-    });
+    void loadArtAtlas(this)
+      .catch((error: unknown): ArtAtlasResult => {
+        // Атлас не склався — галерея однаково відкривається, на заглушках.
+        console.error("Галерея: атлас не завантажився", error);
+        return { state: "none", index: null };
+      })
+      .then((result) => {
+        setGalleryView({ index: result.index });
+        markArtReady(result.state);
+        showStatus();
+        const tab = TABS.find((item) => item.id === params.tab) ?? TABS[0];
+        if (params.tab !== null && tab?.id !== params.tab) console.warn(`Галерея: вкладки «${params.tab}» немає`);
+        if (tab) openTab(tab);
+      });
   }
 
   override update(_time: number, delta: number): void {
