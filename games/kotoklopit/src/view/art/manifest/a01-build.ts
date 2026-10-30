@@ -8,8 +8,8 @@
 // верхні грані (кришки стін) найсвітліші, обидві бокові грані затінені однаково.
 //
 // Роздільність: плити кімнат — великі пласкі площини, тож беруть меншу за `DEFAULT_RES` 2: підлоги й задні стіни — 1,5
-// (на телефоні з 3 px на CSS px це ледь м'якше за решту, на десктопі — з запасом), а підлога вітальні (1488 × 752
-// одиниць) при 2 була б ширша за сторінку атласу 2048², тож 1,25 (≈ 1860 × 940 px). Решта — за замовчуванням.
+// (на телефоні з 3 px на CSS px це ледь м'якше за решту, на десктопі — з запасом), а підлога вітальні (1504 × 760
+// одиниць) при 2 була б ширша за сторінку атласу 2048², тож 1,25 (1880 × 950 px). Решта — за замовчуванням.
 
 import { objectById, ROOMS, roomAt, WINDOWS, type RoomId } from "../../../sim/home";
 import type { ArtEntry } from "../types";
@@ -18,14 +18,25 @@ import { backWallCells, box, floorCells, fractionIn, pointsOn, rectCells, slab, 
 const room = (id: RoomId): (typeof ROOMS)[number] => ROOMS.find((r) => r.id === id) ?? ROOMS[0]!;
 /** Роздільність плит кімнат (див. вище). */
 const SLAB_RES = 1.5;
+/**
+ * Плити спальні, ванної й вітальні — як намальовано (пакет A1a, `art/env/room/<кімната>/*.svg`, за еталонами кухні): той
+ * самий pivot (верхня вершина (room.x, room.y)), а полотно ширше за `slab`, бо підлога заходить під стіни на 0,06
+ * клітинки й має стояти щонайменше за 4 одиниці від краю (`tests/art.test.ts`). Плити спальні й кухні однакові (обидві
+ * кімнати 6 × 4 з проходом 2), тож і полотна підлоги — теж. Стіни — поки за `slab`.
+ */
+const DRAWN: Partial<Record<RoomId, { floor: Geometry; wall?: Geometry }>> = {
+  bedroom: { floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } } },
+  bathroom: { floor: { size: { w: 544, h: 310 }, pivot: { x: 272, y: 12 } } },
+  living: { floor: { size: { w: 1504, h: 760 }, pivot: { x: 336, y: 12 } } },
+};
 /** Підлога кімнати з проходами ряду 5 під нею (`floorCells`); pivot — верхня вершина ромба (room.x, room.y). */
-const floor = (id: RoomId): Geometry & { res: number } => ({ ...slab(floorCells(room(id)), room(id), 0), res: SLAB_RES });
+const floor = (id: RoomId): Geometry & { res: number } => ({ ...slab(floorCells(room(id)), room(id), 0), ...DRAWN[id]?.floor, res: SLAB_RES });
 /** Задні стіни кімнати (контракт: ряд y = 0 над нею і/або стовпець x = 0 ліворуч, з кутом); той самий pivot, що в підлоги. */
-const wall = (id: RoomId): Geometry & { res: number } => ({ ...slab(backWallCells(room(id)), room(id), WALL_HEIGHT.back), res: SLAB_RES });
+const wall = (id: RoomId): Geometry & { res: number } => ({ ...slab(backWallCells(room(id)), room(id), WALL_HEIGHT.back), ...DRAWN[id]?.wall, res: SLAB_RES });
 
 /**
  * Плити кухні — еталони F1a (`art/env/room/kitchen/*.svg`): той самий pivot (верхня вершина (13, 1)), а поле полотна трохи
- * більше за `PAD` (нерівні краї підлоги під стінами, торець стіни на x = 19). Решта кімнат — поки за `slab`.
+ * більше за `PAD` (нерівні краї підлоги під стінами, торець стіни на x = 19).
  */
 const KITCHEN = {
   floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } },
