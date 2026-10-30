@@ -14,7 +14,7 @@ import { LegacyPen } from "../legacy/pen";
 import { LegacyPersonView } from "../legacy/personview";
 import type { PartContext } from "./context";
 import type { ApartmentPart, CatsPart, PersonPart, WorldPart } from "./part";
-import { OBLIQUE, type Projection } from "./projection";
+import { ISO as ISO_PROJECTION, OBLIQUE, type Projection } from "./projection";
 import { World } from "./world";
 
 /** Спільне для частин старого вигляду: пензель позначок (створюється, коли він потрібен першій такій частині). */
@@ -48,7 +48,12 @@ const LEGACY: WorldBuilders = {
  * частини тут, кожен — свій рядок: F3 — `projection` (ізометрична), `apartment` і `floor` (`src/view/iso/*`); T1 — `cats`;
  * T2 — `person`; T4 — `marks`. Що ще не підключили, лишається старим і стає на ізометричну підлогу за проєкцією.
  */
-const ISO: WorldBuilders = { ...LEGACY };
+const ISO: WorldBuilders = {
+  ...LEGACY,
+  // F3a: ізометрична проєкція. Квартира й куточок поки старі (малюють себе косою проєкцією), а кіт, персонаж і позначки
+  // стають на ізометричну підлогу — перехідний вигляд до F3b.
+  projection: ISO_PROJECTION,
+};
 
 export const WORLD_BUILDERS: Record<GfxMode, WorldBuilders> = { legacy: LEGACY, iso: ISO };
 
