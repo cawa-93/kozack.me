@@ -1,10 +1,15 @@
 // Керування на телефоні (§10): плаваючий джойстик під лівий палець, кнопки дії й ривка
 // під правий. З'являється після першого дотику.
+// У новому вигляді (крок 16, `?gfx=iso`) джойстик і кнопки — кадри атласу `ui/touch/*` (A13): кнопка дії має стан `held`,
+// ривок — `cooldown`; розміри й місця ті самі, тож пальцям нічого не змінюється. Прозорість задає сам арт.
 
 import Phaser from "phaser";
 
 import type { Vec } from "../sim/types";
+import { addArt, setArt } from "./art/atlas";
 import { COLORS } from "./colors";
+import { currentGfx } from "./gfx";
+import { HUD_STATES, TOUCH_ART } from "./iso/hudlook";
 import type { Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
@@ -26,25 +31,36 @@ export class TouchControls {
   private stickZone = 0;
   private action = { x: 0, y: 0 };
   private dashButton = { x: 0, y: 0 };
-  private readonly base: Phaser.GameObjects.Arc;
-  private readonly knob: Phaser.GameObjects.Arc;
-  private readonly buttons: Phaser.GameObjects.Graphics;
+  private readonly base: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
+  private readonly knob: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
+  /** Кнопки старого вигляду — малюнок кодом; у новому — кадри атласу (`art`). */
+  private readonly buttons: Phaser.GameObjects.Graphics | null = null;
+  private readonly art: { action: Phaser.GameObjects.Image; dash: Phaser.GameObjects.Image } | null = null;
 
   constructor(
     scene: Phaser.Scene,
     layer: Phaser.GameObjects.Layer,
     private readonly onAction: () => void,
     private readonly onDash: () => void,
+    gfx = currentGfx(),
   ) {
     scene.input.addPointer(2);
-    this.base = scene.add
-      .circle(0, 0, JOYSTICK_RADIUS, 0xffffff, 0.12)
-      .setStrokeStyle(3, 0xffffff, 0.35)
-      .setDepth(DEPTH)
-      .setVisible(false)
-      .addToDisplayList(layer);
-    this.knob = scene.add.circle(0, 0, 30, 0xffffff, 0.35).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
-    this.buttons = scene.add.graphics().setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
+    if (gfx === "iso") {
+      const image = (id: (typeof TOUCH_ART)[keyof typeof TOUCH_ART], state?: string): Phaser.GameObjects.Image =>
+        addArt(scene, layer, id, state === undefined ? {} : { state }).setDepth(DEPTH).setVisible(false);
+      this.base = image(TOUCH_ART.base);
+      this.knob = image(TOUCH_ART.knob);
+      this.art = { action: image(TOUCH_ART.action, HUD_STATES.action.idle), dash: image(TOUCH_ART.dash, HUD_STATES.dash.ready) };
+    } else {
+      this.base = scene.add
+        .circle(0, 0, JOYSTICK_RADIUS, 0xffffff, 0.12)
+        .setStrokeStyle(3, 0xffffff, 0.35)
+        .setDepth(DEPTH)
+        .setVisible(false)
+        .addToDisplayList(layer);
+      this.knob = scene.add.circle(0, 0, 30, 0xffffff, 0.35).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
+      this.buttons = scene.add.graphics().setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
+    }
 
     scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.down(pointer));
     scene.input.on("pointermove", (pointer: Phaser.Input.Pointer) => this.moveStick(pointer));
@@ -59,12 +75,16 @@ export class TouchControls {
     this.stickZone = width / 2;
     this.action = { x: right - 110, y: bottom - 110 };
     this.dashButton = { x: right - 250, y: bottom - 70 };
+    this.art?.action.setPosition(this.action.x, this.action.y);
+    this.art?.dash.setPosition(this.dashButton.x, this.dashButton.y);
   }
 
   private down(pointer: Phaser.Input.Pointer): void {
     if (!pointer.wasTouch) return;
     this.visible = true;
-    this.buttons.setVisible(true);
+    this.buttons?.setVisible(true);
+    this.art?.action.setVisible(true);
+    this.art?.dash.setVisible(true);
     if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this.action.x, this.action.y) <= ACTION_R + 12) {
       this.actionPointer = pointer.id;
       this.holding = true;
@@ -111,6 +131,13 @@ export class TouchControls {
   /** Перемалювати кнопки: ривок тьмяніє, поки перезаряджається. */
   draw(canDash: boolean): void {
     if (!this.visible) return;
+    if (this.art) {
+      const states = HUD_STATES;
+      setArt(this.art.action, TOUCH_ART.action, { state: this.holding ? states.action.held : states.action.idle });
+      setArt(this.art.dash, TOUCH_ART.dash, { state: canDash ? states.dash.ready : states.dash.cooldown });
+      return;
+    }
+    if (!this.buttons) return;
     const g = this.buttons.clear();
     const action = this.action;
     const dash = this.dashButton;
