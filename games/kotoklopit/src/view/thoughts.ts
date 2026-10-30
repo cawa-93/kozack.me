@@ -6,7 +6,7 @@ import { bellyUp, headNudges, hungerThreshold, slowBlinks } from "../sim/catai";
 import { MOOD_LOOK, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
-import type { IconName } from "./icons";
+import type { IconName } from "./iconnames";
 import type { EventBubble } from "./symbols";
 
 /** Кіт думає, лише коли сидить, блукає чи йде по увагу — не за їжею, грою, сном чи в бійці. */

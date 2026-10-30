@@ -5,6 +5,7 @@ import Phaser from "phaser";
 
 import type { StorageLine } from "../sim/storage";
 import { COLORS } from "./geometry";
+import { iconTexture } from "./iconnames";
 import { PRODUCT_ICONS } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 
@@ -57,7 +58,7 @@ export class StorageIndicators {
     const parts: Phaser.GameObjects.GameObject[] = [bg];
     lines.forEach((line, i) => {
       const left = -width / 2 + PAD + i * chip;
-      parts.push(this.scene.add.image(left + ICON / 2, -height / 2, `icon-${PRODUCT_ICONS[line.product]}`).setDisplaySize(ICON, ICON));
+      parts.push(this.scene.add.image(left + ICON / 2, -height / 2, iconTexture(PRODUCT_ICONS[line.product])).setDisplaySize(ICON, ICON));
       parts.push(
         this.scene.add
           .text(left + ICON + 2, -height / 2, line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`, {

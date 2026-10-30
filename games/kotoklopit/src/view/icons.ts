@@ -5,113 +5,7 @@ import Phaser from "phaser";
 
 import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./catcorner";
 import { COLORS } from "./geometry";
-
-export type IconName =
-  | "mood-up"
-  | "mood-down"
-  | "alert"
-  | "cross"
-  | "camera"
-  | "camera-missed"
-  | "pot"
-  | "meal"
-  | "smoke"
-  | "empty"
-  | "food"
-  | "soap"
-  | "bell"
-  | "box"
-  | "moon"
-  | "hands"
-  | "drop"
-  | "zz"
-  | "dizzy"
-  | "meow"
-  | "meow-silent"
-  | "sulk"
-  | "heart"
-  | "angry"
-  | "dirty"
-  | "thirst"
-  | "bite"
-  | "kibble"
-  | "fight"
-  | "sneeze"
-  | "itch"
-  | "eyes"
-  | "pain"
-  | "spit-pill"
-  | "spit-drops"
-  | "kibble-sterile"
-  | "litter"
-  | "shampoo"
-  | "detergent"
-  | "human-meds"
-  | "pills"
-  | "drops"
-  | "treats"
-  | "collar"
-  | "mind"
-  | "laundry"
-  | "washed"
-  | "cat"
-  | "cat-laptop"
-  | "no-internet"
-  | "washer"
-  | "mix"
-  | "no-room"
-  | "kit"
-  | "palms"
-  | "toy"
-  | "taken"
-  | "sad"
-  | "loud"
-  | "lick"
-  | "cough"
-  | "fur"
-  | "mug"
-  | "phone"
-  | "pen"
-  | "cat-box"
-  | "claws"
-  | "sock"
-  | "bin-tipped"
-  | "cabinet-open"
-  | "lock"
-  | "cat-high"
-  | "wire"
-  | "chew-wire"
-  | "chew-bag"
-  | "bored"
-  | "catnip"
-  | "bird"
-  | "table"
-  | "chilly"
-  | "hot"
-  | "mom-meal"
-  | "hiss-bowl"
-  | "hiss-litter"
-  | "hiss-window"
-  | "hiss-hand"
-  | "hiss-kitten"
-  | "thermometer"
-  | "battery-low"
-  | "bandage"
-  | "folded"
-  | "nest"
-  | "cat-annoyed";
-
-/**
- * Позначка поверх іконки (§11.4, правило автора 2026-10-25): «no» — перекреслено (сюди не можна,
- * не потрібно), «ask» — знак питання (потрібно це), «ok» — галочка (це вже є).
- */
-export type Mark = "no" | "ask" | "ok";
-
-/**
- * Вид бабла (§11.4, правка автора 2026-10-25): «say» — вголос (нявкання, дзвінок, річ «каже» про свій стан),
- * «think» — думка персонажа чи кота (що відчуває, хоче чи усвідомлює). Думка — лише над головою того, хто думає.
- */
-export type BubbleKind = "say" | "think";
+import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -888,24 +782,24 @@ function drawThought(g: Phaser.GameObjects.Graphics): void {
 
 /** Намалювати текстури іконок і тла баблів один раз на старті. */
 export function createIconTextures(scene: Phaser.Scene): void {
-  if (scene.textures.exists("bubble-say")) return;
+  if (scene.textures.exists(bubbleTexture("say"))) return;
   const g = scene.make.graphics({}, false);
   for (const [name, draw] of Object.entries(ICONS)) {
     g.clear();
     draw(g);
-    g.generateTexture(`icon-${name}`, ICON_SIZE, ICON_SIZE);
+    g.generateTexture(iconTexture(name as IconName), ICON_SIZE, ICON_SIZE);
   }
   for (const [name, draw] of Object.entries(MARKS)) {
     g.clear();
     draw(g);
-    g.generateTexture(`mark-${name}`, ICON_SIZE, ICON_SIZE);
+    g.generateTexture(markTexture(name as Mark), ICON_SIZE, ICON_SIZE);
   }
   // Тло баблів: вголос і думка (§11.4).
   g.clear();
   drawSpeech(g);
-  g.generateTexture("bubble-say", BUBBLE_WIDTH, BUBBLE_HEIGHT);
+  g.generateTexture(bubbleTexture("say"), BUBBLE_WIDTH, BUBBLE_HEIGHT);
   g.clear();
   drawThought(g);
-  g.generateTexture("bubble-think", THOUGHT_WIDTH, THOUGHT_HEIGHT);
+  g.generateTexture(bubbleTexture("think"), THOUGHT_WIDTH, THOUGHT_HEIGHT);
   g.destroy();
 }

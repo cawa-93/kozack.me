@@ -6,7 +6,8 @@
 import Phaser from "phaser";
 
 import { COLORS } from "./geometry";
-import { BUBBLE_ICON_Y, type BubbleKind, type IconName, type Mark } from "./icons";
+import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
+import { BUBBLE_ICON_Y } from "./icons";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 
@@ -52,10 +53,10 @@ export class Bubbles {
   private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
     const iconY = BUBBLE_ICON_Y[kind];
     const scale = kind === "think" ? THOUGHT_ICON_SCALE : 1;
-    const bg = this.scene.add.image(0, 0, `bubble-${kind}`).setOrigin(0.5, 1);
-    const image = this.scene.add.image(0, iconY, `icon-${icon}`).setScale(scale);
+    const bg = this.scene.add.image(0, 0, bubbleTexture(kind)).setOrigin(0.5, 1);
+    const image = this.scene.add.image(0, iconY, iconTexture(icon)).setScale(scale);
     const container = this.scene.add.container(x, y, [bg, image]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
-    if (mark !== undefined) container.add(this.scene.add.image(0, iconY, `mark-${mark}`).setScale(scale));
+    if (mark !== undefined) container.add(this.scene.add.image(0, iconY, markTexture(mark)).setScale(scale));
     if (count !== undefined) {
       // Кількість — темна заокруглена плашка з білою обвідкою: видно і на світлій підлозі, і на темній стіні.
       // Довге число (120) росте назовні, праворуч, а не на іконку.

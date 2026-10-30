@@ -3,7 +3,7 @@
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import type { Dish, Item, Product } from "../sim/types";
-import type { IconName, Mark } from "./icons";
+import type { IconName, Mark } from "./iconnames";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
 export const PRODUCT_ICONS: Record<Product, IconName> = {

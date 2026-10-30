@@ -12,7 +12,7 @@ import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { BASE_WIDTH, COLORS } from "./geometry";
-import type { IconName } from "./icons";
+import { iconTexture, type IconName } from "./iconnames";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS } from "./symbols";
 import { HUD_HEIGHT, type Frame } from "./viewport";
@@ -97,7 +97,7 @@ export class Hud {
       const y = BAR_Y + BAR_HEIGHT / 2;
       return [
         scene.add.circle(x, y, ICON_SIZE / 2 + 2, COLORS.paper).setStrokeStyle(2, COLORS.ink),
-        scene.add.image(x, y, `icon-${stat.icon}`).setDisplaySize(ICON_SIZE - 2, ICON_SIZE - 2),
+        scene.add.image(x, y, iconTexture(stat.icon)).setDisplaySize(ICON_SIZE - 2, ICON_SIZE - 2),
       ];
     });
     this.bars = scene.add.graphics();
@@ -114,7 +114,7 @@ export class Hud {
     g.fillStyle(0x4a3f52).fillCircle(0, 0, 26).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 26);
     g.fillStyle(0x222026).fillRoundedRect(-9, -15, 18, 30, 4);
     g.fillStyle(0x79a6c2).fillRect(-6, -11, 12, 19);
-    this.hintIcon = scene.add.image(19, 19, "icon-food").setDisplaySize(22, 22);
+    this.hintIcon = scene.add.image(19, 19, iconTexture("food")).setDisplaySize(22, 22);
     this.hint = scene.add.container(0, 0, [scene.add.circle(19, 19, 15, COLORS.paper).setStrokeStyle(2, COLORS.ink), this.hintIcon]).setVisible(false);
     this.phone = scene.add.container(0, 0, [g, this.hint]).setSize(56, 56).setDepth(DEPTH).addToDisplayList(layer);
     this.phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
@@ -231,7 +231,7 @@ export class Hud {
     const product = hints[hints.length - 1];
     this.hint.setVisible(product !== undefined);
     if (product !== undefined) {
-      this.hintIcon.setTexture(`icon-${PRODUCT_ICONS[product]}`).setDisplaySize(22, 22);
+      this.hintIcon.setTexture(iconTexture(PRODUCT_ICONS[product])).setDisplaySize(22, 22);
       this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
     } else this.phone.setScale(1);
     // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
