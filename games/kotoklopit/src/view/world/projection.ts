@@ -120,7 +120,7 @@ const HALF_H = ISO_TILE.height / 2;
  * Де на екрані верхня вершина ромба клітинки (0, 0) — кут задніх стін на підлозі. Ліворуч від неї лягає стовпець x=0 (на
  * 12 клітинок — до x = −12·64), праворуч — ряд y=0 (до 20·64), над нею — задня стіна заввишки 200.
  */
-export const ISO_ORIGIN: Vec = { x: MAP_HEIGHT * HALF_W + ISO_MARGIN, y: ISO_WALLS.back + ISO_MARGIN };
+export const ISO_ORIGIN: Readonly<Vec> = { x: MAP_HEIGHT * HALF_W + ISO_MARGIN, y: ISO_WALLS.back + ISO_MARGIN };
 
 /**
  * Глибина точки підлоги між точками з тим самим x + y (на тій самій висоті екрана) — за x, як в `isoOrder`: на стільки
@@ -132,7 +132,7 @@ function isoToScreen(p: Vec): Vec {
   return { x: ISO_ORIGIN.x + (p.x - p.y) * HALF_W, y: ISO_ORIGIN.y + (p.x + p.y) * HALF_H };
 }
 
-/** Стовпець задньої стіни: x − y лицьової грані від −11 (низ стовпця x=0) до 0 (кут), ряду — від 0 до 19 (правий край). */
+/** Де по горизонталі екрана (x − y) лицьові грані задніх стін: стовпця x=0 — від −11 (його низ) до 0 (кут), ряду y=0 — до 19. */
 const BACK_FACE_MIN = -(MAP_HEIGHT - 1);
 const BACK_FACE_MAX = MAP_WIDTH - 1;
 
