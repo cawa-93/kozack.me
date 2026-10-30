@@ -29,7 +29,7 @@ const TOP_CURLS: ArtPoint = { x: 32.5, y: 2.5 };
 /** Де очі на кожному обличчі (`FACES`): кругле — еталон; овальне й широке — там, куди їх зсунула зміна щік; `top` — маківка. */
 const FACE_POINTS = [
   { eyes: { x: 37.3, y: 32.1 }, top: TOP },
-  { eyes: { x: 37.1, y: 32.2 }, top: TOP },
+  { eyes: { x: 36.9, y: 32.2 }, top: TOP },
   { eyes: { x: 37.9, y: 32.1 }, top: TOP },
 ] as const satisfies readonly { eyes: ArtPoint; top: ArtPoint }[];
 
@@ -107,7 +107,7 @@ export const MANIFEST: readonly ArtEntry[] = [
   // Кругле обличчя (`FACES[0]`): голова з вухами й носом, шкіра — `fill-skin`, ніс, рот і рум'янець — `detail`; у `back` —
   // потилиця й вуха. Pivot — шия; `eyes` — куди скелет ставить очі, `top` — маківка.
   { id: "person/head/0", ...HEAD, points: FACE_POINTS[0], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
-  // Овальне обличчя (`FACES[1]`): видовжене (підборіддя нижче), вужче донизу, з гострішим підборіддям.
+  // Овальне обличчя (`FACES[1]`): нижче скронь вужче (≈ ×0,9), звужується до нижчого (≈ на 2) й гострішого підборіддя.
   { id: "person/head/1", ...HEAD, points: FACE_POINTS[1], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
   // Широке обличчя (`FACES[2]`): ширші щоки й квадратна щелепа.
   { id: "person/head/2", ...HEAD, points: FACE_POINTS[2], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
