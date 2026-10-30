@@ -5,7 +5,8 @@
 //
 // Як тут влаштовано:
 // - Ліктів і колін у скелета немає: рука й нога — по одному кадру. «Присісти» — ноги коротші вздовж кістки (у ракурсі ¾
-//   стегна йдуть до камери), а взуття на кінці ноги масштабується назад, щоб не плющилося.
+//   стегна йдуть до камери) і без повороту (інакше нерівний масштаб ноги перекосив би взуття), а взуття масштабується
+//   назад, щоб не плющилося; «таз назад» — нахилом тулуба.
 // - Хода (`walk`, `dash`, `limp`, `trudge`, `dizzy`) рахується з кроку (`gaitTracks`): нога на підлозі йде назад рівно
 //   (кісточка в системі кореня — з постійною швидкістю), таз опускається рівно настільки, щоб опорна стопа стояла на
 //   підлозі, а нога в переносі коротшає, щоб не черкала підлогу. Скільки одиниць арту хода проходить за цикл —
@@ -16,17 +17,20 @@
 //   (`ILLNESS_EFFECTS.slow`), тож «плететься» й «кульгає» — не дрібніші кроки, а важкі (`personGait`: темп не вищий, ніж у
 //   ходьби за тієї самої швидкості сима).
 // - Кисті (`hand-*`) кадрів не мають — лише гнізда (`held`, `rod`) і якір `hands`. У ході й стоянні кисть повертається назад
-//   на кут руки й тулуба, тож річ у руках лишається рівною, хоч рука й гойдається.
-// - Накладки рук (`carry`, `holdCat`, `PERSON_OVERLAYS`) додаються до основної (`idle`, `walk`, `dash` …): rot і pos
-//   додаються, тож вони рухають лише руки й кисті.
-// - Ззаду ближня рука — з боку обличчя, дальня — з боку спини: де руки йдуть «у боки» (відмова, посковзнувся, вкусили,
-//   паморочиться, кульгає), ракурс `back` має ті самі кути з протилежним знаком (`sidewaysArms`), інакше рука йшла б через спину.
-// - Разові закінчуються у вихідній позі: з неї м'яко повертається основна. Під час `pickUp` кіт уже в руках, тож руки тримає
-//   накладка `holdCat` (якщо вигляд її додає), а сама разова лише присідає й випростується; у `putDown` кота й накладки вже
-//   немає, тож руки від пози `holdCat` опускаються самі.
+//   на кут руки й тулуба, тож річ у руках лишається рівною.
+// - Накладки рук (`carry`, `holdCat`, `PERSON_OVERLAYS`) — не додаються до основної, а ЗАМІНЮЮТЬ її доріжки рук і кистей:
+//   інакше розмах рук ходи й ривка підкидав би річ і кота. Основну з накладкою дає `personWithArms` (одна анімація, той
+//   самий об'єкт для тієї самої пари). Несе річ — руки тримають свій кут у світі (тулуб нахиляється — руки ні), річ рівно;
+//   тримає кота — руки разом із тулубом (кіт у гнізді `arms` на тулубі), кисті під котом. Анімації, які самі ведуть руки
+//   (`PERSON_OWN_ARMS`: вудочка, бере й опускає кота), накладки не беруть.
+// - Ззаду ближня рука — з боку обличчя, дальня — з боку спини: де руки йдуть «у боки» (відмова, посковзнувся, паморочиться,
+//   кульгає), ракурс `back` має ті самі кути з протилежним знаком (`sidewaysArms`), інакше рука йшла б через спину.
+// - Разові закінчуються у вихідній позі: з неї м'яко повертається основна. Виняток — `pickUp`: закінчується позою «тримає
+//   кота» (`holdCat`), з якої далі йде основна з накладкою. Оглушення в симі — ≈ 0,4 с, тож у «спіткнувся» й «посковзнувся»
+//   головне (ноги й таз) — у перші ≈ 0,4 с, далі лише руки ловлять рівновагу.
 
 import { ILLNESS_EFFECTS, MINUTES_PER_HOUR, REAL_SECONDS_PER_GAME_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
-import { PERSON_ONE_SHOT_MS } from "../../../anim/ids";
+import { PERSON_ONE_SHOT_MS, type PersonAnimId } from "../../../anim/ids";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
 import { defineAnims, type AnimOf, type BoneOf, type BoneTracks, type Ease, type Key, type Vec2 } from "../../types";
@@ -111,7 +115,7 @@ function stand(px: number, s = 1, widen = 1): Stand {
 }
 
 /** Доріжки ніг і таза з ключів поз `stand` (обидві ноги однаково). */
-function standTracks(keys: readonly { t: number; v: Stand; ease?: Ease }[]): Tracks {
+function standTracks(keys: readonly Key<Stand>[]): Tracks {
   const map = <V>(pick: (s: Stand) => V): Key<V>[] => keys.map((key) => k(key.t, pick(key.v), key.ease));
   const leg: BoneTracks = { rot: map((s) => s.leg), scale: map((s) => s.legScale) };
   const foot: BoneTracks = { rot: map((s) => s.foot), scale: map((s) => s.footScale) };
@@ -407,9 +411,9 @@ export function personGaitSpeed(gait: PersonGait, vx: number, vy: number): numbe
   return (along * info.ms) / (1000 * info.stride);
 }
 
-// --- Накладки рук -------------------------------------------------------------------------------
+// --- Руки з річчю й котом -----------------------------------------------------------------------
 
-/** Поза рук накладки: кути рук (відносно вихідної) і наскільки рука коротша (зігнута до камери). */
+/** Поза рук: кути рук (відносно вихідної) і наскільки рука коротша (зігнута до камери). */
 interface Arms {
   near: number;
   far: number;
@@ -418,11 +422,11 @@ interface Arms {
 }
 
 /**
- * Тримає кота перед собою: ближня рука навскіс під котом, дальня зігнута під ним з того боку. Ззаду ближня рука — з боку
- * обличчя, тож коротша й нижче: кіт за тулубом.
+ * Тримає кота перед собою: ближня рука навскіс під котом, дальня зігнута під ним з того боку. Ззаду кіт за тулубом (гніздо
+ * `arms` визирає з-за плеча), тож ближня рука коротка (зігнута до камери) і кисть — під грудьми кота.
  */
 const HOLD: Arms = { near: -62, far: -50, farScale: 0.78 };
-const HOLD_BACK: Arms = { near: -42, far: -40, nearScale: 0.8, farScale: 0.85 };
+const HOLD_BACK: Arms = { near: -16, far: -40, nearScale: 0.55, farScale: 0.85 };
 /**
  * Несе річ: ближня рука вперед (річ на долоні — гніздо `held`), дальня підтримує знизу. Ближню руку не вкорочено: у кисті
  * гніздо, а нерівний масштаб руки перекосив би річ.
@@ -430,27 +434,89 @@ const HOLD_BACK: Arms = { near: -42, far: -40, nearScale: 0.8, farScale: 0.85 };
 const CARRY: Arms = { near: -52, far: -44, farScale: 0.85 };
 const CARRY_BACK: Arms = { near: -36, far: -36, farScale: 0.85 };
 
-/** Доріжки накладки рук: кисть — противагою, щоб річ (кіт) була рівно; руки ледь гойдаються (`sway`, градуси). */
-function armsTracks(ms: number, arms: Arms, sway: number): Tracks {
-  const near = (u: number): number => arms.near + sway * wave(u);
-  const far = (u: number): number => arms.far + sway * wave(u, 1, 0.08);
-  const scale = (by: number | undefined): { scale?: Key<Vec2>[] } => (by === undefined ? {} : { scale: [k(0, { x: by, y: 1 })] });
+/** Накладки рук: поза спереду й ззаду; `level` — руки тримають свій кут у світі (річ рівно), інакше — разом із тулубом. */
+const ARMS_OVERLAYS = {
+  carry: { front: CARRY, back: CARRY_BACK, level: true },
+  holdCat: { front: HOLD, back: HOLD_BACK, level: false },
+} as const satisfies Partial<Record<PersonAnimId, { front: Arms; back: Arms; level: boolean }>>;
+
+/** Накладка рук персонажа. */
+export type PersonArmsOverlay = keyof typeof ARMS_OVERLAYS;
+
+/**
+ * Доріжки рук і кистей у позі `arms` над тулубом, що повертається за ключами `torso`: `level` — руки тримають кут у світі
+ * (противага тулуба з тими самими часами й переходами — точна в кожен момент), а кисть — рівно у світі (річ рівно);
+ * інакше руки й кисті нерухомі відносно тулуба — разом із котом у гнізді `arms`. Кисть в обох випадках — назад на кут
+ * пози руки.
+ */
+function armsTracks(arms: Arms, torso: readonly Key<number>[] | undefined, level: boolean): Tracks {
+  const keys = level && torso && torso.length > 0 ? torso : [k(0, 0)];
+  const arm = (a: number): Key<number>[] => keys.map((key) => k(key.t, round(a - key.v), key.ease));
+  const hand = (a: number): Key<number>[] => [k(0, round(-a))];
+  const scale = (by: number | undefined): Key<Vec2>[] => [k(0, { x: by ?? 1, y: 1 })];
+  const still: Key<Vec2>[] = [k(0, { x: 0, y: 0 })];
   return {
-    "arm-near": { rot: loopKeys(ms, 8, near), ...scale(arms.nearScale) },
-    "hand-near": { rot: loopKeys(ms, 8, (u) => -near(u)) },
-    "arm-far": { rot: loopKeys(ms, 8, far), ...scale(arms.farScale) },
-    "hand-far": { rot: loopKeys(ms, 8, (u) => -far(u)) },
+    "arm-near": { rot: arm(arms.near), pos: still, scale: scale(arms.nearScale) },
+    "hand-near": { rot: hand(arms.near), pos: still, scale: scale(undefined) },
+    "arm-far": { rot: arm(arms.far), pos: still, scale: scale(arms.farScale) },
+    "hand-far": { rot: hand(arms.far), pos: still, scale: scale(undefined) },
   };
 }
 
-// --- Присідання ---------------------------------------------------------------------------------
+/** Накладка рук як анімація (для реєстру й галереї): поза рук над вихідним тулубом. */
+function armsOverlay(id: PersonArmsOverlay): PersonAnim {
+  const spec = ARMS_OVERLAYS[id];
+  return {
+    duration: 2400,
+    loop: true,
+    bones: armsTracks(spec.front, undefined, spec.level),
+    views: { back: { bones: armsTracks(spec.back, undefined, spec.level) } },
+  };
+}
 
-/** Присів біля кота: ноги коротші (стегна до камери), таз трохи назад. */
-const SQUAT = stand(-5, 0.54, 1.1);
+/** Кістки рук і кистей — їх замінює накладка. */
+const ARM_BONES: ReadonlySet<string> = new Set<PersonBone>(["arm-near", "arm-far", "hand-near", "hand-far"]);
+
+function withoutArms(bones: Readonly<Tracks> | undefined): Tracks {
+  const out: Tracks = {};
+  for (const [id, track] of Object.entries(bones ?? {}) as [PersonBone, BoneTracks][]) if (!ARM_BONES.has(id)) out[id] = track;
+  return out;
+}
+
+// --- Присідання й пози всього тіла --------------------------------------------------------------
+
+/** Присів біля кота: ноги коротші (стегна до камери) й без повороту — взуття рівно; «таз назад» — нахилом тулуба. */
+const SQUAT = stand(0, 0.54, 1.1);
 /** Ззаду кіт вище на екрані (далі від камери) — присідає менше. */
-const SQUAT_BACK = stand(-3, 0.8, 1.05);
-/** Присідає взяти чи поставити кота. */
-const CROUCH = stand(-4, 0.62, 1.08);
+const SQUAT_BACK = stand(0, 0.8, 1.05);
+
+/** Поза всього тіла в ключі разової: ноги, тулуб, голова, руки. */
+interface BodyPose {
+  t: number;
+  legs: Stand;
+  torso: number;
+  head: number;
+  arms: Arms;
+  ease?: Ease;
+}
+
+/** Доріжки з поз `BodyPose`: кисті — противагою тулуба й руки (кіт у руках і кисті рівно). */
+function bodyTracks(poses: readonly BodyPose[]): Tracks {
+  const map = <V>(pick: (p: BodyPose) => V): Key<V>[] => poses.map((p) => k(p.t, pick(p), p.ease));
+  const scale = (by: number | undefined): Vec2 => ({ x: by ?? 1, y: 1 });
+  return {
+    ...standTracks(map((p) => p.legs)),
+    torso: { rot: map((p) => p.torso) },
+    head: { rot: map((p) => p.head) },
+    "arm-near": { rot: map((p) => p.arms.near), scale: map((p) => scale(p.arms.nearScale)) },
+    "hand-near": { rot: map((p) => round(-(p.torso + p.arms.near))) },
+    "arm-far": { rot: map((p) => p.arms.far), scale: map((p) => scale(p.arms.farScale)) },
+    "hand-far": { rot: map((p) => round(-(p.torso + p.arms.far))) },
+  };
+}
+
+const STAND = stand(0);
+const REST: Arms = { near: 0, far: 0 };
 
 // --- Разові -------------------------------------------------------------------------------------
 
@@ -464,7 +530,7 @@ function sidewaysArms(anim: PersonAnim): PersonAnim {
   const back: Tracks = {};
   for (const id of ["arm-near", "arm-far"] as const) {
     const track = anim.bones?.[id];
-    if (track?.rot) back[id] = { ...track, rot: track.rot.map((key) => ({ ...key, v: -key.v })) };
+    if (track?.rot) back[id] = { ...track, rot: track.rot.map((key) => ({ ...key, v: -key.v + 0 })) };
   }
   return { ...anim, views: { ...anim.views, back: { ...anim.views?.back, bones: { ...anim.views?.back?.bones, ...back } } } };
 }
@@ -493,8 +559,24 @@ const sickShrug = (u: number): number => 2 + 2 * sniff(u, 0.62) + 1.2 * sniff(u,
 
 /** Вкусили: відсахнувся назад над стопами. */
 const BITTEN_BACK = stand(-3);
+/** Вкусили: ближню руку смикає назад і трусить (часи й кути). */
+const BITTEN_JERK: readonly (readonly [number, number])[] = [
+  [0, 0],
+  [90, 58],
+  [170, 40],
+  [240, 56],
+  [320, 42],
+  [420, 30],
+  [ONE.bitten, 0],
+];
 /** Спіткнувся: таз над стопами — пірнає вперед і повертається. */
 const TRIP = [stand(0), stand(7), stand(9), stand(2)] as const;
+
+/** Бере й опускає кота: присів, тулуб нахилено, обидві руки внизу біля підлоги (як у `pet`, кисті — до кота). */
+const REACH: Arms = { near: -65, far: -55 };
+const REACH_BACK: Arms = { near: -45, far: -38, nearScale: 0.85 };
+const REACH_TORSO = 45;
+const REACH_TORSO_BACK = 28;
 
 export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   /**
@@ -553,11 +635,14 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     },
   },
 
-  /** Несе річ (накладка): руки перед собою, річ на долоні — рівно. */
-  carry: { duration: 2400, loop: true, bones: armsTracks(2400, CARRY, 1), views: { back: { bones: armsTracks(2400, CARRY_BACK, 1) } } },
+  /**
+   * Несе річ (накладка рук, `personWithArms`): руки перед собою, річ на долоні — рівно. Тут — поза над вихідним тулубом;
+   * з основною руки ще й тримають свій кут у світі, коли тулуб нахиляється.
+   */
+  carry: armsOverlay("carry"),
 
-  /** Тримає кота перед собою (накладка): руки під котом, ледь колише. */
-  holdCat: { duration: 2400, loop: true, bones: armsTracks(2400, HOLD, 1.5), views: { back: { bones: armsTracks(2400, HOLD_BACK, 1.5) } } },
+  /** Тримає кота перед собою (накладка рук, `personWithArms`): руки під котом, нерухомо відносно тулуба. */
+  holdCat: armsOverlay("holdCat"),
 
   /**
    * Гладить кота на підлозі: присів, нахилився, ближня рука вперед і вниз — на спинці кота (якір `hands`; точку спинки під
@@ -595,7 +680,8 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
 
   /**
    * Грається вудочкою: ближня рука витягнута вперед, кисть малими колами водить паличкою (пір'їнка кружляє над котом), тулуб
-   * трохи вперед, голова дивиться вниз на кота, тіло ледь пружинить у такт.
+   * трохи вперед, голова дивиться вниз на кота, тіло ледь пружинить у такт. Руки веде сама (`PERSON_OWN_ARMS`): іграшку
+   * вигляд чіпляє в гніздо `rod`, накладки рук немає.
    */
   rod: {
     duration: 1200,
@@ -635,14 +721,15 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
 
   /**
    * Вкусили чи подряпали (600 мс): ближню руку смикає назад і трусить, тулуб і голова відсахуються, мить на носках; очі
-   * заплющені. Закінчується вихідною позою.
+   * заплющені. Ззаду кіт перед персонажем (вище на екрані), тож ближню руку (з боку обличчя) не дзеркалимо, а притискаємо до
+   * грудей — коротша й трохи назад, з тим самим трусінням; дальня — дзеркально. Закінчується вихідною позою.
    */
-  bitten: sidewaysArms({
+  bitten: {
     duration: ONE.bitten,
     loop: false,
     bones: {
       // Відсахнувся: таз назад над стопами, що стоять, і мить на носках (підскок).
-      ...standTracks([k(0, stand(0), "out"), k(90, BITTEN_BACK, "inOut"), k(260, stand(-1), "inOut"), k(ONE.bitten, stand(0))]),
+      ...standTracks([k(0, STAND, "out"), k(90, BITTEN_BACK, "inOut"), k(260, stand(-1), "inOut"), k(ONE.bitten, STAND)]),
       pelvis: {
         pos: [
           k(0, { x: 0, y: 0 }, "out"),
@@ -653,21 +740,22 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
       },
       torso: { rot: [k(0, 0, "out"), k(90, -9, "inOut"), k(320, -3, "inOut"), k(ONE.bitten, 0)] },
       head: { rot: [k(0, 0, "out"), k(80, -10, "inOut"), k(300, -2, "inOut"), k(ONE.bitten, 0)] },
-      "arm-near": {
-        rot: [
-          k(0, 0, "out"),
-          k(90, 58, "inOut"),
-          k(170, 40, "inOut"),
-          k(240, 56, "inOut"),
-          k(320, 42, "inOut"),
-          k(420, 30, "inOut"),
-          k(ONE.bitten, 0),
-        ],
-      },
+      "arm-near": { rot: BITTEN_JERK.map(([t, v], i) => k(t, v, i === 0 ? "out" : "inOut")) },
       "arm-far": { rot: [k(0, 0, "out"), k(100, -16, "inOut"), k(350, -6, "inOut"), k(ONE.bitten, 0)] },
     },
+    views: {
+      back: {
+        bones: {
+          "arm-near": {
+            rot: BITTEN_JERK.map(([t, v], i) => k(t, round(v * 0.45), i === 0 ? "out" : "inOut")),
+            scale: BITTEN_JERK.map(([t, v], i) => k(t, { x: round(1 - (0.25 * v) / 58), y: 1 }, i === 0 ? "out" : "inOut")),
+          },
+          "arm-far": { rot: [k(0, 0, "out"), k(100, 16, "inOut"), k(350, 6, "inOut"), k(ONE.bitten, 0)] },
+        },
+      },
+    },
     slots: { eyes: { frame: [k(0, "open"), k(40, "closed"), k(300, "open")] } },
-  }),
+  },
 
   /**
    * Застуда: ссутулився, обхопив себе руками; тремтить хвилями, шмигає носом: ближня рука витирає ніс рукавом (коротша —
@@ -776,7 +864,10 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     },
   }),
 
-  /** Спіткнувся (900 мс): нога зачепилася позаду, тіло пірнає вперед, руки махають; ступає вперед, ловить рівновагу. */
+  /**
+   * Спіткнувся (900 мс): нога зачепилася позаду, тіло пірнає вперед, руки махають; ступає вперед і стає рівно — усе за
+   * ≈ 0,4 с (оглушення); далі руки ще ловлять рівновагу.
+   */
   trip: {
     duration: ONE.trip,
     loop: false,
@@ -785,112 +876,160 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
       pelvis: {
         pos: [
           k(0, { x: 0, y: 0 }, "out"),
-          k(110, TRIP[1].pelvis, "inOut"),
-          k(330, TRIP[2].pelvis, "inOut"),
-          k(600, TRIP[3].pelvis, "inOut"),
-          k(ONE.trip, { x: 0, y: 0 }),
+          k(80, TRIP[1].pelvis, "inOut"),
+          k(210, TRIP[2].pelvis, "inOut"),
+          k(330, TRIP[3].pelvis, "inOut"),
+          k(420, { x: 0, y: 0 }),
         ],
       },
-      torso: { rot: [k(0, 0, "out"), k(110, 26, "inOut"), k(330, 22, "inOut"), k(600, -4, "inOut"), k(ONE.trip, 0)] },
-      head: { rot: [k(0, 0, "out"), k(110, -14, "inOut"), k(330, -8, "inOut"), k(600, 3, "inOut"), k(ONE.trip, 0)] },
+      torso: { rot: [k(0, 0, "out"), k(80, 26, "inOut"), k(210, 20, "inOut"), k(330, -4, "inOut"), k(480, 1.5, "inOut"), k(640, 0)] },
+      head: { rot: [k(0, 0, "out"), k(80, -14, "inOut"), k(210, -8, "inOut"), k(330, 3, "inOut"), k(520, -1, "inOut"), k(680, 0)] },
       "leg-near": {
-        rot: [k(0, 0, "out"), k(110, 38, "inOut"), k(330, TRIP[2].leg, "inOut"), k(600, TRIP[3].leg, "inOut"), k(ONE.trip, 0)],
-        scale: [k(0, { x: 1, y: 1 }, "out"), k(110, { x: 0.94, y: 1 }, "inOut"), k(330, { x: 1, y: 1 })],
+        rot: [k(0, 0, "out"), k(80, 38, "inOut"), k(210, TRIP[2].leg, "inOut"), k(330, TRIP[3].leg, "inOut"), k(420, 0)],
+        scale: [k(0, { x: 1, y: 1 }, "out"), k(80, { x: 0.94, y: 1 }, "inOut"), k(210, { x: 1, y: 1 })],
       },
-      "leg-far": { rot: [k(0, 0, "out"), k(110, TRIP[1].leg, "inOut"), k(330, TRIP[2].leg, "inOut"), k(600, TRIP[3].leg, "inOut"), k(ONE.trip, 0)] },
-      "foot-near": { rot: [k(0, 0, "out"), k(110, -24, "inOut"), k(330, TRIP[2].foot, "inOut"), k(600, TRIP[3].foot, "inOut"), k(ONE.trip, 0)] },
-      "foot-far": { rot: [k(0, 0, "out"), k(110, TRIP[1].foot, "inOut"), k(330, TRIP[2].foot, "inOut"), k(600, TRIP[3].foot, "inOut"), k(ONE.trip, 0)] },
-      "arm-near": { rot: [k(0, 0, "out"), k(110, -85, "inOut"), k(220, -40, "inOut"), k(330, -75, "inOut"), k(600, -10, "inOut"), k(ONE.trip, 0)] },
-      "arm-far": { rot: [k(0, 0, "out"), k(110, -115, "inOut"), k(220, -70, "inOut"), k(330, -30, "inOut"), k(600, -6, "inOut"), k(ONE.trip, 0)] },
+      "leg-far": { rot: [k(0, 0, "out"), k(80, TRIP[1].leg, "inOut"), k(210, TRIP[2].leg, "inOut"), k(330, TRIP[3].leg, "inOut"), k(420, 0)] },
+      "foot-near": { rot: [k(0, 0, "out"), k(80, -24, "inOut"), k(210, TRIP[2].foot, "inOut"), k(330, TRIP[3].foot, "inOut"), k(420, 0)] },
+      "foot-far": { rot: [k(0, 0, "out"), k(80, TRIP[1].foot, "inOut"), k(210, TRIP[2].foot, "inOut"), k(330, TRIP[3].foot, "inOut"), k(420, 0)] },
+      "arm-near": {
+        rot: [k(0, 0, "out"), k(80, -85, "inOut"), k(160, -40, "inOut"), k(240, -75, "inOut"), k(360, -18, "inOut"), k(520, 8, "inOut"), k(700, -3, "inOut"), k(ONE.trip, 0)],
+      },
+      "arm-far": {
+        rot: [k(0, 0, "out"), k(80, -115, "inOut"), k(160, -70, "inOut"), k(240, -30, "inOut"), k(360, -10, "inOut"), k(520, 5, "inOut"), k(700, -2, "inOut"), k(ONE.trip, 0)],
+      },
     },
-    slots: { eyes: { frame: [k(0, "open"), k(90, "closed"), k(300, "open")] } },
+    slots: { eyes: { frame: [k(0, "open"), k(70, "closed"), k(260, "open")] } },
   },
 
   /**
    * Посковзнувся (900 мс): ближня нога виїжджає вперед, тіло валиться назад, руки злітають угору в боки (ближня — назад
-   * через верх, дальня — уперед, обличчя не закривають) і махають; ловить рівновагу.
+   * через верх, дальня — уперед, обличчя не закривають) і махають; ноги й таз стають рівно за ≈ 0,45 с (оглушення), а руки
+   * ще ловлять рівновагу.
    */
   slip: sidewaysArms({
     duration: ONE.slip,
     loop: false,
     bones: {
       pelvis: {
-        pos: [
-          k(0, { x: 0, y: 0 }, "out"),
-          k(130, { x: -6, y: 5 }, "inOut"),
-          k(330, { x: -5, y: 4 }, "inOut"),
-          k(620, { x: 1, y: 0 }, "inOut"),
-          k(ONE.slip, { x: 0, y: 0 }),
-        ],
+        pos: [k(0, { x: 0, y: 0 }, "out"), k(110, { x: -6, y: 5 }, "inOut"), k(250, { x: -5, y: 4 }, "inOut"), k(370, { x: 1, y: 0 }, "inOut"), k(450, { x: 0, y: 0 })],
       },
-      torso: { rot: [k(0, 0, "out"), k(130, -24, "inOut"), k(330, -16, "inOut"), k(620, 5, "inOut"), k(ONE.slip, 0)] },
-      head: { rot: [k(0, 0, "out"), k(130, 12, "inOut"), k(330, 6, "inOut"), k(620, -2, "inOut"), k(ONE.slip, 0)] },
-      "leg-near": { rot: [k(0, 0, "out"), k(130, -58, "inOut"), k(330, -34, "inOut"), k(620, -4, "inOut"), k(ONE.slip, 0)] },
+      torso: { rot: [k(0, 0, "out"), k(110, -24, "inOut"), k(250, -16, "inOut"), k(370, 5, "inOut"), k(520, -1.5, "inOut"), k(680, 0)] },
+      head: { rot: [k(0, 0, "out"), k(110, 12, "inOut"), k(250, 6, "inOut"), k(370, -2, "inOut"), k(520, 1, "inOut"), k(680, 0)] },
+      "leg-near": { rot: [k(0, 0, "out"), k(110, -58, "inOut"), k(250, -34, "inOut"), k(370, -4, "inOut"), k(450, 0)] },
       "leg-far": {
-        rot: [k(0, 0, "out"), k(130, -8, "inOut"), k(330, -6, "inOut"), k(620, 1, "inOut"), k(ONE.slip, 0)],
-        scale: [k(0, { x: 1, y: 1 }, "out"), k(130, { x: 0.9, y: 1 }, "inOut"), k(330, { x: 0.92, y: 1 }, "inOut"), k(620, { x: 1, y: 1 })],
+        rot: [k(0, 0, "out"), k(110, -8, "inOut"), k(250, -6, "inOut"), k(370, 1, "inOut"), k(450, 0)],
+        scale: [k(0, { x: 1, y: 1 }, "out"), k(110, { x: 0.9, y: 1 }, "inOut"), k(250, { x: 0.92, y: 1 }, "inOut"), k(370, { x: 1, y: 1 })],
       },
-      "foot-near": { rot: [k(0, 0, "out"), k(130, 30, "inOut"), k(330, 20, "inOut"), k(620, 3, "inOut"), k(ONE.slip, 0)] },
+      "foot-near": { rot: [k(0, 0, "out"), k(110, 30, "inOut"), k(250, 20, "inOut"), k(370, 3, "inOut"), k(450, 0)] },
       "foot-far": {
-        rot: [k(0, 0, "out"), k(130, 8, "inOut"), k(330, 6, "inOut"), k(620, -1, "inOut"), k(ONE.slip, 0)],
-        scale: [k(0, { x: 1, y: 1 }, "out"), k(130, { x: 1, y: 1.11 }, "inOut"), k(330, { x: 1, y: 1.09 }, "inOut"), k(620, { x: 1, y: 1 })],
+        rot: [k(0, 0, "out"), k(110, 8, "inOut"), k(250, 6, "inOut"), k(370, -1, "inOut"), k(450, 0)],
+        scale: [k(0, { x: 1, y: 1 }, "out"), k(110, { x: 1, y: 1.11 }, "inOut"), k(250, { x: 1, y: 1.09 }, "inOut"), k(370, { x: 1, y: 1 })],
       },
-      "arm-near": { rot: [k(0, 0, "out"), k(130, 150, "inOut"), k(250, 115, "inOut"), k(400, 145, "inOut"), k(620, 20, "inOut"), k(ONE.slip, 0)] },
-      "arm-far": { rot: [k(0, 0, "out"), k(130, -120, "inOut"), k(250, -150, "inOut"), k(400, -110, "inOut"), k(620, -15, "inOut"), k(ONE.slip, 0)] },
+      "arm-near": {
+        rot: [k(0, 0, "out"), k(110, 150, "inOut"), k(200, 115, "inOut"), k(300, 145, "inOut"), k(430, 50, "inOut"), k(560, 12, "inOut"), k(720, -5, "inOut"), k(ONE.slip, 0)],
+      },
+      "arm-far": {
+        rot: [k(0, 0, "out"), k(110, -120, "inOut"), k(200, -150, "inOut"), k(300, -110, "inOut"), k(430, -45, "inOut"), k(560, -10, "inOut"), k(720, 4, "inOut"), k(ONE.slip, 0)],
+      },
     },
-    slots: { eyes: { frame: [k(0, "open"), k(100, "closed"), k(420, "open")] } },
+    slots: { eyes: { frame: [k(0, "open"), k(90, "closed"), k(360, "open")] } },
   }),
 
   /**
-   * Бере кота на руки (400 мс): присідає й нахиляється до кота, руки — ще нижче, і випростується; кіт у руках (накладка
-   * `holdCat` тримає руки).
+   * Бере кота на руки (400 мс): присідає й нахиляється, обидві руки до кота на підлозі (як у `pet`), мить — підхопив, і
+   * випростується, піднімаючи руки в позу «тримає кота» (`holdCat`) — нею й закінчується, далі основна з накладкою. Руки веде
+   * сама (`PERSON_OWN_ARMS`). Кота вигляд кладе в гніздо `arms` з ≈ 150 мс (до того — на підлозі під кистями).
    */
   pickUp: {
     duration: ONE.pickUp,
     loop: false,
-    bones: {
-      ...standTracks([k(0, stand(0), "out"), k(150, CROUCH, "inOut"), k(ONE.pickUp, stand(0))]),
-      torso: { rot: [k(0, 0, "out"), k(150, 36, "inOut"), k(ONE.pickUp, 0)] },
-      head: { rot: [k(0, 0, "out"), k(150, -16, "inOut"), k(ONE.pickUp, 0)] },
-      "arm-near": { rot: [k(0, 0, "out"), k(150, -14, "inOut"), k(ONE.pickUp, 0)] },
-      "arm-far": { rot: [k(0, 0, "out"), k(150, -10, "inOut"), k(ONE.pickUp, 0)] },
+    bones: bodyTracks([
+      { t: 0, legs: STAND, torso: 0, head: 0, arms: REST, ease: "inOut" },
+      { t: 150, legs: SQUAT, torso: REACH_TORSO, head: -18, arms: REACH, ease: "inOut" },
+      { t: 210, legs: SQUAT, torso: REACH_TORSO - 4, head: -16, arms: { near: -67, far: -57 }, ease: "inOut" },
+      { t: ONE.pickUp, legs: STAND, torso: 0, head: 0, arms: HOLD },
+    ]),
+    views: {
+      back: {
+        bones: bodyTracks([
+          { t: 0, legs: STAND, torso: 0, head: 0, arms: REST, ease: "inOut" },
+          { t: 150, legs: SQUAT_BACK, torso: REACH_TORSO_BACK, head: -6, arms: REACH_BACK, ease: "inOut" },
+          { t: 210, legs: SQUAT_BACK, torso: REACH_TORSO_BACK - 3, head: -5, arms: { ...REACH_BACK, near: REACH_BACK.near - 2 }, ease: "inOut" },
+          { t: ONE.pickUp, legs: STAND, torso: 0, head: 0, arms: HOLD_BACK },
+        ]),
+      },
     },
   },
 
-  /** Опускає кота (400 мс): руки від пози «тримає кота» опускаються разом із присіданням, відпускають, і він випростується. */
+  /**
+   * Опускає кота (400 мс): з пози «тримає кота» присідає й опускає руки до підлоги, відпускає (кіт на підлозі з ≈ 180 мс), руки
+   * йдуть угору від кота, і він випростується. Руки веде сама (`PERSON_OWN_ARMS`).
+   */
   putDown: {
     duration: ONE.putDown,
     loop: false,
-    bones: {
-      ...standTracks([k(0, stand(0), "inOut"), k(180, CROUCH, "inOut"), k(ONE.putDown, stand(0))]),
-      torso: { rot: [k(0, 0, "inOut"), k(180, 36, "inOut"), k(ONE.putDown, 0)] },
-      head: { rot: [k(0, 0, "inOut"), k(180, -16, "inOut"), k(ONE.putDown, 0)] },
-      "arm-near": { rot: [k(0, HOLD.near, "inOut"), k(180, -50, "inOut"), k(260, -44, "inOut"), k(ONE.putDown, 0)] },
-      "hand-near": { rot: [k(0, -HOLD.near, "inOut"), k(180, 30, "inOut"), k(ONE.putDown, 0)] },
-      "arm-far": {
-        rot: [k(0, HOLD.far, "inOut"), k(180, -40, "inOut"), k(260, -32, "inOut"), k(ONE.putDown, 0)],
-        scale: [k(0, { x: HOLD.farScale ?? 1, y: 1 }, "inOut"), k(260, { x: 1, y: 1 })],
-      },
-      "hand-far": { rot: [k(0, -HOLD.far, "inOut"), k(180, 20, "inOut"), k(ONE.putDown, 0)] },
-    },
+    bones: bodyTracks([
+      { t: 0, legs: STAND, torso: 0, head: 0, arms: HOLD, ease: "inOut" },
+      { t: 180, legs: SQUAT, torso: REACH_TORSO - 4, head: -16, arms: REACH, ease: "inOut" },
+      { t: 260, legs: SQUAT, torso: REACH_TORSO - 12, head: -14, arms: { near: -50, far: -40 }, ease: "inOut" },
+      { t: ONE.putDown, legs: STAND, torso: 0, head: 0, arms: REST },
+    ]),
     views: {
       back: {
-        bones: {
-          "arm-near": {
-            rot: [k(0, HOLD_BACK.near, "inOut"), k(180, -30, "inOut"), k(260, -26, "inOut"), k(ONE.putDown, 0)],
-            scale: [k(0, { x: HOLD_BACK.nearScale ?? 1, y: 1 }, "inOut"), k(260, { x: 1, y: 1 })],
-          },
-          "hand-near": { rot: [k(0, -HOLD_BACK.near, "inOut"), k(180, 20, "inOut"), k(ONE.putDown, 0)] },
-          "arm-far": {
-            rot: [k(0, HOLD_BACK.far, "inOut"), k(180, -30, "inOut"), k(260, -24, "inOut"), k(ONE.putDown, 0)],
-            scale: [k(0, { x: HOLD_BACK.farScale ?? 1, y: 1 }, "inOut"), k(260, { x: 1, y: 1 })],
-          },
-          "hand-far": { rot: [k(0, -HOLD_BACK.far, "inOut"), k(180, 16, "inOut"), k(ONE.putDown, 0)] },
-        },
+        bones: bodyTracks([
+          { t: 0, legs: STAND, torso: 0, head: 0, arms: HOLD_BACK, ease: "inOut" },
+          { t: 180, legs: SQUAT_BACK, torso: REACH_TORSO_BACK - 3, head: -5, arms: REACH_BACK, ease: "inOut" },
+          { t: 260, legs: SQUAT_BACK, torso: REACH_TORSO_BACK - 8, head: -4, arms: { near: -30, far: -26 }, ease: "inOut" },
+          { t: ONE.putDown, legs: STAND, torso: 0, head: 0, arms: REST },
+        ]),
       },
     },
   },
 });
+
+type PersonMoveId = keyof typeof PERSON_MOVE;
+
+// --- Основна з накладкою рук -------------------------------------------------------------------
+
+/**
+ * Анімації, які самі ведуть руки, — накладки рук не беруть: вудочка (іграшку в руці веде `rod`), бере кота (закінчується
+ * позою `holdCat`) і опускає (кота в руках уже немає).
+ */
+export const PERSON_OWN_ARMS: ReadonlySet<PersonMoveId> = new Set<PersonMoveId>(["rod", "pickUp", "putDown"]);
+const OWN_ARMS: ReadonlySet<PersonAnim> = new Set([...PERSON_OWN_ARMS].map((id) => PERSON_MOVE[id]));
+
+const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay, PersonAnim>>();
+
+/**
+ * Основна анімація з накладкою рук (`PersonAnimChoice.overlay`): доріжки рук і кистей основної ЗАМІНЕНО позою накладки
+ * (розмах ходи й ривка не підкидає ні річ, ні кота), решта — від основної. Несе річ (`carry`) — руки тримають свій кут у
+ * світі проти нахилу тулуба, а кисть — річ рівно (кут гнізда `held` у світі — 0); тримає кота (`holdCat`) — руки разом із
+ * тулубом, кисті під котом у гнізді `arms`. Анімації `PERSON_OWN_ARMS` і накладка null — основна як є. Для тієї самої пари —
+ * той самий об'єкт (`Rig.play` не починає її знову). Разові (вкусили, відмова, спіткнувся, посковзнувся) з річчю чи котом у
+ * руках — так само: тіло реагує, руки тримають.
+ */
+export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null): PersonAnim {
+  if (overlay === null || !(overlay in ARMS_OVERLAYS) || OWN_ARMS.has(base)) return base;
+  const id = overlay as PersonArmsOverlay;
+  let cache = WITH_ARMS.get(base);
+  if (!cache) {
+    cache = new Map();
+    WITH_ARMS.set(base, cache);
+  }
+  const known = cache.get(id);
+  if (known) return known;
+  const spec = ARMS_OVERLAYS[id];
+  const torsoFront = base.bones?.torso?.rot;
+  const torsoBack = base.views?.back?.bones?.torso?.rot ?? torsoFront;
+  const back = base.views?.back;
+  const made: PersonAnim = {
+    ...base,
+    bones: { ...withoutArms(base.bones), ...armsTracks(spec.front, torsoFront, spec.level) },
+    views: { ...base.views, back: { ...back, bones: { ...withoutArms(back?.bones), ...armsTracks(spec.back, torsoBack, spec.level) } } },
+  };
+  cache.set(id, made);
+  return made;
+}
 
 // --- Допоміжні криві (оголошені функціями — їх видно й вище) --------------------------------------
 
