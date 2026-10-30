@@ -180,7 +180,7 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "bite":
       return [{ kind: "say", at: "person", icon: "bite" }];
     case "clawed":
-      // Кіт подряпав персонажа біля переноски (§9.12) чи у ванні (§8.7): кігті — персонаж скрикує вголос (§11.4).
+      // Кіт подряпав персонажа біля переноски (§9.12), у ванні (§8.7) чи «Ніндзя» в засідці: кігті — персонаж скрикує вголос (§11.4).
       return [{ kind: "say", at: "person", icon: "claws" }];
     case "picked-up":
       // Ображений кіт на руках шипить.

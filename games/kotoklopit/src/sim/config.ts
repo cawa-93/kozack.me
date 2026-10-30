@@ -991,10 +991,11 @@ export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMin
  * гратися, сідає в засідку з вагою `step` × рівень (кіт без риси — `base`, кошеня — щонайменше `kitten`; «−» — ніколи),
  * ×`bored`, якщо сьогодні з ним ще не гралися вудкою `playedMinutes` хвилин, і ×`played`, якщо гралися. Чекає до `minutes`
  * хвилин у місці з `AMBUSH_SPOTS`; персонаж ближче `reach` клітинки — стрибок на ноги: оглушення (спільна пауза), від
- * `strongLevel` ще й подряпина (здоров'я `health`); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
+ * `strongLevel` ще й подряпина — за спільним правилом `CLAW` (рішення автора 2026-10-30, `GENERAL_REVIEW.md`, «Відкрите після
+ * рішень», п. 6; було здоров'я −1 без бабла «кігті»); тоді кіт `dashMinutes` мчить геть. Засідка без стрибка знімає `waitRelief`
  * від гри наодинці (`PLAY_RELIEF`), стрибок — цілу.
  */
-export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, health: -1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
+export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /**
  * Хвороби прототипу (§9.5): безпечний термін, шкода за день, лікування, заразність. `recovers` — за скільки днів гостра
  * минає сама, остання ніч ще шкодить (рішення автора 2026-10-27, `DISEASES_REVIEW.md`, Х1); null — лише від лікування.
@@ -1169,7 +1170,8 @@ export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
 /**
  * Подряпина кота — одне правило для подряпин біля переноски (§9.12 «Посадка й дорога») і у ванні (§8.7; рішення автора
  * 2026-10-29, `GENERAL_REVIEW.md`, А5): разово здоров'я персонажа `health` і бабл «кігті», без хвороби «Травма» (раніше
- * подряпина у ванні була «Травмою» на 10 днів). «Ніндзя» в засідці дряпає інакше — `AMBUSH.health`, разом з оглушенням.
+ * подряпина у ванні була «Травмою» на 10 днів). З рішення автора 2026-10-30 (`GENERAL_REVIEW.md`, «Відкрите після рішень», п. 6)
+ * за цим правилом дряпає й «Ніндзя» в засідці — разом з оглушенням (раніше — здоров'я −1 без бабла).
  */
 export const CLAW = { health: -3 } as const;
 /**

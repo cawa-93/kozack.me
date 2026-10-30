@@ -41,6 +41,7 @@ const EVENTS: GameEvent[] = [
   { type: "bite", cat: 1 },
   { type: "clawed", cat: 1, at: "carrier" },
   { type: "clawed", cat: 1, at: "bath" },
+  { type: "clawed", cat: 1, at: "ambush" },
   { type: "picked-up", cat: 1, offended: true },
   { type: "cat-dodged", cat: 1, issue: "clothes" },
   { type: "cat-left", cat: 1 },
@@ -119,6 +120,8 @@ describe("бабли вголос і думки (§11.4, правка автор
     // Подряпина у ванні — той самий бабл «кігті», що й біля переноски (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5).
     expect(only({ type: "clawed", cat: 7, at: "bath" })).toEqual(only({ type: "clawed", cat: 7, at: "carrier" }));
     expect(only({ type: "clawed", cat: 7, at: "bath" })).toMatchObject({ kind: "say", at: "person", icon: "claws" });
+    // І в засідці «Ніндзя» — той самий бабл (рішення автора 2026-10-30, «Відкрите після рішень», п. 6).
+    expect(only({ type: "clawed", cat: 7, at: "ambush" })).toEqual(only({ type: "clawed", cat: 7, at: "carrier" }));
     expect(only({ type: "meow", cat: 7 })).toMatchObject({ kind: "say", at: "cat:7" });
   });
 

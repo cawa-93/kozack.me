@@ -1572,7 +1572,8 @@ export function startAmbush(cat: Cat, rng: Rng): void {
 
 /**
  * Персонаж пройшов повз кота в засідці (§9.12, «Засідки»): кіт кидається на ноги — пів хвилини оглушення (спільна пауза:
- * щойно оглушеного не валить знову), «Ніндзя» ще й дряпає, — і мчить геть. Прояв «+» — раз за засідку.
+ * щойно оглушеного не валить знову), «Ніндзя» ще й дряпає за спільним правилом подряпини (`claw`; рішення автора 2026-10-30,
+ * `GENERAL_REVIEW.md`, «Відкрите після рішень», п. 6), — і мчить геть. Прояв «+» — раз за засідку.
  */
 function pounce(state: GameState, cat: Cat, rng: Rng): void {
   const seen = cat.act.seen === true;
@@ -1583,7 +1584,8 @@ function pounce(state: GameState, cat: Cat, rng: Rng): void {
   if (!seen) observe(state, cat, "ambush");
   if (!stun(state)) return;
   emit(state, { type: "ambushed", cat: cat.id });
-  if (traitLevel(cat, "ambush") >= AMBUSH.strongLevel) changeStat(state, "health", AMBUSH.health);
+  // Одна подряпина за стрибок, і лише коли кіт справді збив з ніг: того, кого лише зачепив, не дряпає.
+  if (traitLevel(cat, "ambush") >= AMBUSH.strongLevel) claw(state, cat, "ambush");
 }
 
 /**
@@ -3041,11 +3043,11 @@ function carried(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
 }
 
 /**
- * Кіт подряпав персонажа біля переноски (§9.12) чи у ванні (§8.7) — одне правило для обох (рішення автора 2026-10-29,
- * `GENERAL_REVIEW.md`, А5): разово здоров'я −3 (`CLAW`) і бабл «кігті», без хвороби «Травма». Подряпина «Ніндзя» в засідці —
- * частина стрибка (`pounce`), не це правило.
+ * Кіт подряпав персонажа біля переноски (§9.12), у ванні (§8.7) чи «Ніндзя» в засідці (`pounce`) — одне правило для всіх (рішення
+ * автора 2026-10-29, `GENERAL_REVIEW.md`, А5; засідка — з рішення автора 2026-10-30, «Відкрите після рішень», п. 6): разово
+ * здоров'я −3 (`CLAW`) і бабл «кігті», без хвороби «Травма».
  */
-export function claw(state: GameState, cat: Cat, at: "carrier" | "bath"): void {
+export function claw(state: GameState, cat: Cat, at: "carrier" | "bath" | "ambush"): void {
   changeStat(state, "health", CLAW.health);
   emit(state, { type: "clawed", cat: cat.id, at });
 }

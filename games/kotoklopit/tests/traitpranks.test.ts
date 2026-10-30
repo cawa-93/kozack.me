@@ -7,7 +7,7 @@ import { nightlyCare } from "../src/sim/care";
 import { createCat, idleAct } from "../src/sim/cat";
 import { pickUpCat } from "../src/sim/actions";
 import { ambushWeight, chewChance, climbWeight, decide, giftWeight, hideSpot, rollWeight, startAmbush, startCarry, startChew, tickCats, trashTipped, upHigh } from "../src/sim/catai";
-import { AMBUSH, CHEWING, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, PLAYFUL, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
+import { AMBUSH, CHEWING, CLAW, CLIMBING, CUNNING, GIFTS, HUNTING, PLAY_RELIEF, PLAYFUL, START_CLOTHES, STUN_PAUSE_MINUTES, TRIPS } from "../src/sim/config";
 import { startWork } from "../src/sim/work";
 import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
@@ -19,6 +19,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
 import { targetOf } from "../src/sim/targets";
+import { absoluteMinute } from "../src/sim/time";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -98,9 +99,10 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
     expect(events.some((e) => e.type === "ambushed")).toBe(true);
     expect(save.current.character.body.stun).toBeGreaterThan(0);
     expect(cat.act.kind).toBe("zoomies");
-    // Прояв — раз за засідку, а «Засідник» (+1) не дряпає.
+    // Прояв — раз за засідку, а «Засідник» (+1) не дряпає: ні здоров'я, ні бабла «кігті».
     expect(seen(cat, "ambush")).toBe(1);
     expect(save.current.character.stats.health).toBe(health);
+    expect(events.some((e) => e.type === "clawed")).toBe(false);
   });
 
   it("стрибок із засідки знімає потребу гри раз — як гра наодинці (перевірка етапу 2026-10-26)", () => {
@@ -119,14 +121,36 @@ describe("«Засідки» (§9.12, рішення автора 2026-10-25)", 
     expect(before).toBeGreaterThan(cat.needs.play);
   });
 
-  it("«Ніндзя» (+2) ще й дряпає: здоров'я −1", () => {
+  it("«Ніндзя» (+2) ще й дряпає за спільним правилом подряпини: здоров'я −3 і «кігті», разом з оглушенням, раз за стрибок (рішення автора 2026-10-30, п. 6)", () => {
     const save = game();
     const cat = withCat(save, { ambush: 2 });
     lurking(cat);
     const health = save.current.character.stats.health;
+    const { events, stop } = recordEvents();
+    Object.assign(save.current.character.body, { x: cat.x - 0.6, y: cat.y });
+    for (let i = 0; i < 5; i++) tickCats(save.current, 0.1, { present: true });
+    stop();
+    expect(CLAW.health).toBe(-3);
+    expect(save.current.character.stats.health).toBe(health + CLAW.health);
+    expect(events.filter((e) => e.type === "clawed")).toEqual([{ type: "clawed", cat: cat.id, at: "ambush" }]);
+    expect(events.some((e) => e.type === "ambushed")).toBe(true);
+    expect(save.current.character.body.stun).toBeGreaterThan(0);
+  });
+
+  it("«Ніндзя», що лише зачепив щойно оглушеного, не дряпає (спільна пауза між оглушеннями)", () => {
+    const save = game();
+    const cat = withCat(save, { ambush: 2 });
+    lurking(cat);
+    // Персонажа щойно збив інший кіт.
+    save.current.character.body.stunAt = absoluteMinute(save.current.day, save.current.minute);
+    const health = save.current.character.stats.health;
+    const { events, stop } = recordEvents();
     Object.assign(save.current.character.body, { x: cat.x - 0.6, y: cat.y });
     tickCats(save.current, 0.1, { present: true });
-    expect(save.current.character.stats.health).toBe(health + AMBUSH.health);
+    stop();
+    expect(cat.act.kind).toBe("zoomies");
+    expect(events.some((e) => e.type === "clawed")).toBe(false);
+    expect(save.current.character.stats.health).toBe(health);
   });
 
   it("спільна пауза між оглушеннями: щойно оглушеного кіт не валить знову — лише відскакує", () => {

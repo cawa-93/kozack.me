@@ -19,6 +19,11 @@ export const THOUGHT_HOLD_MS = 1900;
 const FONT = "system-ui, sans-serif";
 /** У хмаринці-думці іконка трохи менша: край хвилястий, і кути іконки інакше лягали б на контур. */
 const THOUGHT_ICON_SCALE = 0.85;
+/**
+ * Наскільки зсунуто вбік другий бабл події над тим самим (§11.4): половина ширшої думки й половина мовної хмаринки — щоб вони
+ * стояли поруч, а не один на одному.
+ */
+const BESIDE_STEP = 58;
 /** Де кількість відносно центру іконки: у правому верхньому куті мовної хмаринки й на правому горбику думки. */
 const COUNT_AT: Record<BubbleKind, { x: number; y: number }> = { say: { x: 16, y: -16 }, think: { x: 18, y: -12 } };
 
@@ -37,6 +42,9 @@ interface Floater {
   rise: number;
   /** Над ким бабл (ключ, як у `setState`): поки він видно, бабл стану там схований. */
   owner: string | undefined;
+  /** Зсув убік, коли над тим самим уже висить інший бабл події. */
+  dx: number;
+  icon: IconName | undefined;
 }
 
 const place = (at: Anchor): { x: number; y: number } | null => (typeof at === "function" ? at() : at);
@@ -119,10 +127,11 @@ export class Bubbles {
   show(bubble: EventBubble, at: Anchor, hold = EVENT_HOLD_MS): void {
     const start = place(at);
     if (!start) return;
-    const container = this.make(bubble.kind, bubble.icon, start.x, start.y - 8, bubble.count, bubble.mark);
+    const dx = this.beside(bubble.at, bubble.icon);
+    const container = this.make(bubble.kind, bubble.icon, start.x + dx, start.y - 8, bubble.count, bubble.mark);
     container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, hold, bubble.at);
+    this.float(container, at, hold, bubble.at, dx, bubble.icon);
     this.states.get(bubble.at)?.container.setVisible(false);
   }
 
@@ -138,9 +147,27 @@ export class Bubbles {
     this.float(container, at, 700);
   }
 
+  /**
+   * Два різні бабли події, що виринули над тим самим разом (засідка «Ніндзя»: думка-запаморочення й «кігті» вголос, §11.4;
+   * рішення автора 2026-10-30, «Відкрите після рішень», п. 6), стоять поруч: кожен наступний — то праворуч, то ліворуч. Той самий
+   * бабл (відмова, натиснута кілька разів поспіль) виринає на тому самому місці, як і раніше.
+   */
+  private beside(owner: string, icon: IconName): number {
+    const taken = new Set<number>();
+    for (const f of this.floaters) {
+      if (f.owner !== owner) continue;
+      if (f.icon === icon) return f.dx;
+      taken.add(f.dx);
+    }
+    for (let i = 0; ; i++) {
+      const dx = (i % 2 === 1 ? 1 : -1) * Math.ceil(i / 2) * BESIDE_STEP;
+      if (!taken.has(dx)) return dx;
+    }
+  }
+
   /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
-  private float(container: Phaser.GameObjects.Container, at: Anchor, delay: number, owner?: string): void {
-    const floater: Floater = { container, at, rise: 0, owner };
+  private float(container: Phaser.GameObjects.Container, at: Anchor, delay: number, owner?: string, dx = 0, icon?: IconName): void {
+    const floater: Floater = { container, at, rise: 0, owner, dx, icon };
     this.floaters.add(floater);
     this.scene.tweens.add({ targets: floater, rise: -34, delay, duration: 500 });
     this.scene.tweens.add({
@@ -159,7 +186,7 @@ export class Bubbles {
   update(): void {
     for (const f of this.floaters) {
       const p = place(f.at);
-      if (p) f.container.setPosition(p.x, p.y - 8 + f.rise);
+      if (p) f.container.setPosition(p.x + f.dx, p.y - 8 + f.rise);
     }
     for (const [anchor, state] of this.states) state.container.setVisible(!this.busy(anchor));
   }
