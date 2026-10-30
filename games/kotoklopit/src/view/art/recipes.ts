@@ -35,8 +35,9 @@ export interface PigmentLook {
 }
 
 export const PIGMENT_LOOK: Readonly<Record<Pigment, PigmentLook>> = {
-  // Чорний — не чорнильний: контур (#1f1a24) мусить читатися й на чорному коті.
-  black: { solid: 0x3a3437, ground: 0x8f7458, stripe: 0x3a3437, pointBody: 0xece0cb, point: 0x54433a, skin: 0x8e8389 },
+  // Чорний — не чорнильний: контур (#1f1a24) мусить читатися й на чорному коті, і на темному тлі — #463a40 (рішення автора
+  // 2026-10-30, `art/STYLE.md`, «Чорна шерсть»).
+  black: { solid: 0x463a40, ground: 0x8f7458, stripe: 0x463a40, pointBody: 0xece0cb, point: 0x54433a, skin: 0x8e8389 },
   chocolate: { solid: 0x6a4532, ground: 0xa88566, stripe: 0x5e3b2a, pointBody: 0xf1e6d4, point: 0x7d5a45, skin: 0xa58779 },
   blue: { solid: 0x7f8b97, ground: 0xb3b5b4, stripe: 0x6f7a87, pointBody: 0xe8e6e2, point: 0x828b98, skin: 0xa59fa8 },
   lilac: { solid: 0xb7a7b0, ground: 0xd4c7c4, stripe: 0xa29299, pointBody: 0xf1ebe7, point: 0xb6a7ad, skin: 0xc8b6ba },
