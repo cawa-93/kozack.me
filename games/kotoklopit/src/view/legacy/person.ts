@@ -33,6 +33,10 @@ export class PersonView {
     this.g = scene.add.graphics().addToDisplayList(layer);
   }
 
+  destroy(): void {
+    this.g.destroy();
+  }
+
   /** Точка над головою для баблів. */
   head = { x: 0, y: 0 };
   /** Де персонаж тримає кота: біля грудей, трохи попереду (§9.12). */

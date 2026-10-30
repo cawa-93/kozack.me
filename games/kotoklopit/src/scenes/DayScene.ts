@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 
-import { catFeeling, petOver, useProgress, IDLE, type Input } from "../sim/actions";
+import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { inStandoff, isDirty, trashTipped } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
@@ -14,7 +14,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
-import { isPresent, objectById, TOILET_ROLL, TRINKETS, WINDOWS } from "../sim/home";
+import { isPresent, objectById, TOILET_ROLL, TRINKETS } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes, weekOf } from "../sim/time";
@@ -35,7 +35,6 @@ import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
 import { drawStorage } from "../view/legacy/storagelook";
-import { CatView } from "../view/legacy/cat";
 import { showsFightBubble } from "../view/pose";
 import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, drawTrinket, itemScreen } from "../view/legacy/catcorner";
 import { COLORS } from "../view/colors";
@@ -43,12 +42,13 @@ import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
 import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
-import { blinkAmount, catLook, ThoughtClock } from "../view/thoughts";
+import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
 import { THING_TITLES } from "../ui/titles";
-import { PALETTE } from "../view/palette";
-import { PersonView } from "../view/legacy/person";
+import { LegacyCatsView } from "../view/legacy/catsview";
+import { LegacyPen } from "../view/legacy/pen";
+import { LegacyPersonView } from "../view/legacy/personview";
 import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
@@ -56,6 +56,8 @@ import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
 import { objectHeight } from "../view/world/objects";
 import { OBLIQUE } from "../view/world/projection";
+import type { PartContext } from "../view/world/context";
+import type { WorldFrame, WorldQuery } from "../view/world/part";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -85,8 +87,6 @@ function isTyping(): boolean {
 const EARNINGS_POP_MS = 3000;
 /** Скільки місця над точкою бабла займає сам бабл разом із виринанням, px: мовна хмаринка й думка (§11.4). */
 const BUBBLE_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
-/** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4). */
-const CARRIED_BUBBLE_SHIFT = 34;
 
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
@@ -100,16 +100,16 @@ export class DayScene extends Phaser.Scene {
   /** Шафка з кормом відчинена котом, замок на ній; перекинутий смітник (§9.12, «Кмітливість у бешкеті»). */
   private cabinetLook!: Phaser.GameObjects.Graphics;
   private trashLook!: Phaser.GameObjects.Graphics;
-  private readonly catViews = new Map<number, CatView>();
-  /** Приховані числа над котами в режимі розробки (§11.5). */
-  private readonly hiddenLabels = new Map<number, Phaser.GameObjects.Text>();
-  /** Імена над котами в нашийниках (§9.10). */
-  private readonly collarLabels = new Map<number, Phaser.GameObjects.Text>();
+  private cats!: LegacyCatsView;
+  /** Коти, яких світ малював минулого кадру: зниклому з дому прибрати бабл стану. */
+  private readonly catsShown = new Set<number>();
+  /** Що частини світу питають одна в одної, поки сцена ще малює частину світу сама. */
+  private query!: WorldQuery;
   private viewport!: Viewport;
   /** Як квартира лягає на екран (§8.4). */
   private readonly projection = OBLIQUE;
   private corner!: Phaser.GameObjects.Graphics;
-  private marks!: Phaser.GameObjects.Graphics;
+  private pen!: LegacyPen;
   private gloom!: Phaser.GameObjects.Rectangle;
   /** Темрява засинання — над усім, і над інтерфейсом. */
   private dark!: Phaser.GameObjects.Rectangle;
@@ -117,7 +117,7 @@ export class DayScene extends Phaser.Scene {
   private rejection: { at: number; end: number } | null = null;
   /** Персонаж засинає (§8.8): коли почав (мс) і чи падає без сил. */
   private asleep: { started: number; collapsed: boolean } | null = null;
-  private person!: PersonView;
+  private person!: LegacyPersonView;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
@@ -127,7 +127,6 @@ export class DayScene extends Phaser.Scene {
   private storage!: StorageIndicators;
   /** Малюнки наповнення сховищ і що на них намальовано. */
   private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
-  private interaction!: Phaser.GameObjects.Graphics;
   private hud!: Hud;
   private touch!: TouchControls;
   private keys!: Keys;
@@ -163,12 +162,23 @@ export class DayScene extends Phaser.Scene {
     this.toiletRoll = this.add.graphics().setDepth(this.projection.depthOf(this.projection.toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
     this.cabinetLook = this.add.graphics().setDepth(this.view("cat-cabinet").depth + 0.6).addToDisplayList(world);
     this.trashLook = this.add.graphics().setDepth(this.view("trash").depth).addToDisplayList(world);
-    this.marks = this.add.graphics().setDepth(WORLD_LAYERS.marks).addToDisplayList(world);
-    this.person = new PersonView(this, world, this.projection);
+    this.pen = new LegacyPen(this, world);
+    const scene = this;
+    this.query = {
+      anchor: (id) => this.anchorOf(id),
+      objectAnchor: (id) => this.views.get(id)?.anchor ?? null,
+      highlight: (target, alpha) => this.highlight(this.pen.g, target, alpha),
+      get person() {
+        return scene.person;
+      },
+      cat: (id) => this.cats.points(id),
+    };
+    const ctx: PartContext = { scene: this, layer: world, projection: this.projection, state: () => this.state, world: this.query };
+    this.person = new LegacyPersonView(ctx);
+    this.cats = new LegacyCatsView(ctx, this.pen);
     this.bubbles = new Bubbles(this, world);
     this.hearts = new MoodHearts(this, world, (cat) => this.anchorOf(`cat:${cat}`));
     this.storage = new StorageIndicators(this, world);
-    this.interaction = this.add.graphics().setDepth(WORLD_LAYERS.interaction).addToDisplayList(world);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -263,12 +273,8 @@ export class DayScene extends Phaser.Scene {
     this.touch.reset();
     this.viewport.jump();
     // Коти нового стану — нові об'єкти, навіть якщо id ті самі.
-    for (const view of this.catViews.values()) view.destroy();
-    this.catViews.clear();
-    for (const label of this.hiddenLabels.values()) label.destroy();
-    this.hiddenLabels.clear();
-    for (const label of this.collarLabels.values()) label.destroy();
-    this.collarLabels.clear();
+    this.cats.reset();
+    this.catsShown.clear();
     const state = this.state;
     if (state.end !== null) {
       this.showEnd();
@@ -547,36 +553,6 @@ export class DayScene extends Phaser.Scene {
     this.render(time, seconds);
   }
 
-  /**
-   * Пестощі й гра (§8.2): рука персонажа гладить кота; у грі від руки тягнеться волосінь вудки, а
-   * пір'їнка кружляє над котом.
-   */
-  private drawInteraction(time: number): void {
-    const g = this.interaction.clear();
-    const activity = this.state.character.activity;
-    if ((activity?.kind !== "pet" || petOver(activity)) && (activity?.kind !== "play" || activity.done)) return;
-    const cat = this.catViews.get(activity.cat);
-    if (!cat) return;
-    const hand = this.person.hands;
-    if (activity.kind === "play") {
-      const fx = cat.head.x + Math.cos(time / 220) * 16;
-      const fy = cat.head.y - 14 + Math.sin(time / 160) * 8;
-      const tip = { x: hand.x + (fx - hand.x) * 0.45, y: hand.y - 34 };
-      g.lineStyle(3, 0x8b5e3c).lineBetween(hand.x, hand.y, tip.x, tip.y);
-      g.lineStyle(1.2, COLORS.ink, 0.8).lineBetween(tip.x, tip.y, fx, fy);
-      g.fillStyle(0xd9455f).fillEllipse(fx, fy + 4, 6, 12).fillStyle(0x5fa8d3).fillEllipse(fx - 4, fy + 6, 5, 10).fillStyle(0xe8b93a).fillEllipse(fx + 4, fy + 6, 5, 10);
-      return;
-    }
-    // Рука ходить по спинці кота туди-сюди, не закриваючи морди.
-    const skins = PALETTE.skin;
-    const skin = skins[((this.state.character.look.skin % skins.length) + skins.length) % skins.length] ?? skins[0];
-    const px = cat.back.x + Math.sin(time / 260) * 5;
-    const py = cat.back.y;
-    g.lineStyle(6, skin).lineBetween(hand.x, hand.y, px, py);
-    g.fillStyle(skin).fillEllipse(px, py, 11, 8);
-    g.lineStyle(1.5, COLORS.ink).strokeEllipse(px, py, 11, 8);
-  }
-
   /** Скільки грошей бачила сцена: приріст показується над персонажем (§11.4). */
   private moneySeen: number | null = null;
   private earned = 0;
@@ -597,6 +573,7 @@ export class DayScene extends Phaser.Scene {
 
   private render(time: number, seconds: number): void {
     const state = this.state;
+    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: this.session.showHidden };
     this.hud.update(state, time);
     if (!this.overlay.isOpen && !this.hud.saying) {
       const news = this.news.shift();
@@ -605,20 +582,17 @@ export class DayScene extends Phaser.Scene {
     // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
     for (const view of this.views.values()) if (view.object.requires || view.object.kind === "boxes") view.graphics.setVisible(isPresent(state, view.object));
     this.drawBoxes();
-    // У поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7).
-    const activity = state.character.activity;
-    // У душі персонажа не видно; купаючи кота, він стоїть біля душу з котом на руках (рішення автора 2026-10-28).
-    const inside = activity?.kind === "use" && activity.inside === true && activity.bath !== true;
-    this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.home.clothes <= 0, this.sleepiness(time));
-    this.drawCats(time);
+    this.person.update(state, frame);
+    this.cats.update(state, frame);
+    this.forgetGoneCats(state);
     drawCatCorner(this.corner, this.projection, state);
-    this.drawInteraction(time);
+    this.person.lateUpdate(state, frame);
     this.showEarnings(time);
     this.bubbles.update();
     this.hearts.update();
     this.viewport.follow(this.person.head, seconds);
     this.drawItems();
-    this.drawMarks(time);
+    this.drawMarks(time, frame);
     this.updateStateBubbles();
     this.touch.draw(canDash(state));
     this.drawFallingAsleep(time);
@@ -662,96 +636,12 @@ export class DayScene extends Phaser.Scene {
     return view;
   }
 
-  /** Коти: вигляд для кожного кота в домі; кота на руках малюємо біля грудей персонажа. */
-  private drawCats(time: number): void {
-    const state = this.state;
-    const held = state.character.held;
-    const alive = new Set<number>();
-    for (const cat of state.cats) {
-      alive.add(cat.id);
-      let view = this.catViews.get(cat.id);
-      if (!view) {
-        view = new CatView(this, this.viewport.world, cat, this.projection);
-        this.catViews.set(cat.id, view);
-      }
-      // Кіт на руках чи на колінах — біля персонажа.
-      const withPerson = (held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap";
-      const carried = withPerson ? this.person.hands : null;
-      const activity = state.character.activity;
-      const petting = activity?.kind === "pet" && !petOver(activity);
-      const playing = activity?.kind === "play" && !activity.done;
-      const interaction = (petting || playing) && activity?.cat === cat.id ? activity.kind : null;
-      // Настрій з поведінки (§11.4): сумна поза чи повільне моргання до персонажа.
-      const look = catLook(state, cat);
-      const toward = state.character.body.x >= cat.x ? 1 : -1;
-      // На підвіконні під вікном у задній стіні кіт дивиться у вікно — спиною до нас (§9.12, «Вікно»; перевірка етапу 2026-10-26).
-      const pane = cat.act.kind === "window" && cat.act.goal === null ? WINDOWS.find((w) => w.sill === cat.act.target) : undefined;
-      const toWindow = pane !== undefined && pane.wall.y < objectById(pane.sill).y;
-      const mood =
-        toWindow && look !== "sad"
-          ? { sad: false, blink: 0, face: null, back: true }
-          : look === null
-            ? null
-            : look === "sad"
-              ? { sad: true, blink: 0, face: null }
-              : look === "belly"
-                ? // Головою від персонажа: рука гладить живіт і не закриває морду (§9.12, перевірка етапу 2026-10-25).
-                  { sad: false, blink: 0, face: -toward, belly: true }
-                : look === "nudge"
-                  ? { sad: false, blink: 0, face: toward, nudge: true }
-                  : look === "sulk"
-                    ? { sad: false, blink: 0, face: -toward, back: true }
-                    : { sad: false, blink: blinkAmount(time, cat.id), face: toward };
-      view.draw(state, cat, time, carried, interaction, catFeeling(state, cat), mood);
-      this.drawHidden(cat.id, view, cat.mood, cat.health, cat.love);
-      this.drawCollar(cat, view);
-    }
-    for (const [id, view] of this.catViews) {
-      if (alive.has(id)) continue;
-      view.destroy();
-      this.catViews.delete(id);
-      this.bubbles.setState(`cat:${id}`, "say", null, 0, 0);
-      this.hiddenLabels.get(id)?.destroy();
-      this.hiddenLabels.delete(id);
-      this.collarLabels.get(id)?.destroy();
-      this.collarLabels.delete(id);
-    }
-  }
-
-  /** Режим розробки: настрій, здоров'я й любов над котом (§11.5). */
-  private drawHidden(id: number, view: CatView, mood: number, health: number, love: number): void {
-    let label = this.hiddenLabels.get(id);
-    if (!this.session.showHidden) {
-      label?.setVisible(false);
-      return;
-    }
-    if (!label) {
-      label = this.add
-        .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#ffffff", backgroundColor: "#1f1a24", padding: { x: 3, y: 1 }, resolution: 2 })
-        .setOrigin(0.5, 1)
-        .setDepth(WORLD_LAYERS.hidden)
-        .addToDisplayList(this.viewport.world);
-      this.hiddenLabels.set(id, label);
-    }
-    label.setVisible(true).setPosition(view.head.x, view.head.y - 30).setText(`н${Math.round(mood)} з${Math.round(health)} л${Math.round(love)}`);
-  }
-
-  /** Ім'я над котом у нашийнику (§9.10). */
-  private drawCollar(cat: GameState["cats"][number], view: CatView): void {
-    let label = this.collarLabels.get(cat.id);
-    if (!cat.collar || cat.away !== null) {
-      label?.setVisible(false);
-      return;
-    }
-    if (!label) {
-      label = this.add
-        .text(0, 0, cat.name, { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#1f1a24", backgroundColor: "#f3e9dc", padding: { x: 4, y: 1 }, resolution: 2 })
-        .setOrigin(0.5, 1)
-        .setDepth(WORLD_LAYERS.collars)
-        .addToDisplayList(this.viewport.world);
-      this.collarLabels.set(cat.id, label);
-    }
-    label.setVisible(true).setPosition(view.head.x, view.head.y - 6).setText(cat.name);
+  /** Кіт зник із дому (віддали, помер): його бабла стану більше немає. */
+  private forgetGoneCats(state: GameState): void {
+    const alive = new Set(state.cats.map((cat) => cat.id));
+    for (const id of this.catsShown) if (!alive.has(id)) this.bubbles.setState(`cat:${id}`, "say", null, 0, 0);
+    this.catsShown.clear();
+    for (const id of alive) this.catsShown.add(id);
   }
 
   /** Речі на плиті й поверхнях. */
@@ -806,25 +696,14 @@ export class DayScene extends Phaser.Scene {
       const p = this.projection.toScreen(mess);
       return { x: p.x, y: p.y - 12 };
     }
-    if (kind === "cat") {
-      const head = this.catViews.get(number)?.head;
-      if (!head) return null;
-      // Кіт на руках — на рівні грудей персонажа: бабл над ним зсунутий убік, інакше накриває голову персонажа
-      // й здається, що це каже персонаж (§11.4).
-      const held = this.state.character.held;
-      if (held?.kind === "cat" && held.cat === number) {
-        const side = head.x >= this.person.head.x ? 1 : -1;
-        return { x: this.person.head.x + side * CARRIED_BUBBLE_SHIFT, y: head.y };
-      }
-      return head;
-    }
+    if (kind === "cat") return this.cats.anchor(id);
     return null;
   }
 
   /** Підсвітка цілі, смуги прогресу, екран комп'ютера. */
-  private drawMarks(time: number): void {
+  private drawMarks(time: number, frame: WorldFrame): void {
     const state = this.state;
-    const g = this.marks.clear();
+    const g = this.pen.begin(frame);
     const working = isWorking(state);
 
     const computer = this.view("computer");
@@ -858,26 +737,23 @@ export class DayScene extends Phaser.Scene {
     }
   }
 
-  private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): void {
+  private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): boolean {
+    if (target.type === "cat") return this.cats.highlight(target, alpha);
     g.lineStyle(4, COLORS.highlight, alpha);
     if (target.type === "object") {
       const view = this.view(target.id);
       const box = view.outline ?? view.top;
       g.strokeRect(box.x - 2, box.y - 2, box.w + 4, box.h + 4);
-      return;
+      return true;
     }
     if (target.type === "item") {
       const p = itemScreen(this.projection, target.item);
       g.strokeEllipse(p.x, p.y, target.item.kind === "litter" ? 56 : 40, target.item.kind === "litter" ? 40 : 22);
-      return;
+      return true;
     }
-    if (target.type === "mess") {
-      const p = this.projection.toScreen(target.mess);
-      g.strokeEllipse(p.x, p.y, 34, 18);
-      return;
-    }
-    const view = this.catViews.get(target.cat.id);
-    if (view) g.strokeEllipse(view.head.x, view.head.y + 30, 46, 46);
+    const p = this.projection.toScreen(target.mess);
+    g.strokeEllipse(p.x, p.y, 34, 18);
+    return true;
   }
 
   /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
