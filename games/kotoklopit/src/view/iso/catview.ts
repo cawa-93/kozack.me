@@ -41,6 +41,9 @@ const GAP_SHADOW = { scale: 1.1, alpha: 1 } as const;
 /** Очі з-під меблів і з будиночка — на такій висоті над підлогою (одиниці арту), кінчик хвоста — збоку від очей. */
 const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9, earSpread: 7, earTilt: 18 } as const;
 
+/** Над котом, якого не рахували (за краєм камери), одиниці арту: верх вух дорослого ≈ 56 і запас, як у якоря `head`. */
+const CULLED_HEAD = 64;
+
 /** Що зараз показує кіт: анімація (основна й накладка — до складання з обличчям) і звідки рахується її час. */
 interface Playing {
   base: CatRigAnim;
@@ -77,6 +80,8 @@ export interface CatFrame {
   shadow: boolean;
   /** Річ у зубах: іграшка якості, шкарпетка; null — нічого. */
   teeth: { kind: "toy"; quality: Quality } | { kind: "sock" } | null;
+  /** Кіт далеко за краєм камери: скелет не рахувати й не малювати (місце, глибина й точки — як завжди). */
+  culled: boolean;
   /** Час сцени, мс. */
   time: number;
 }
@@ -156,25 +161,26 @@ export class IsoCatView {
     this.root.y = f.root.y;
     this.scale = f.scale;
 
-    const visible = f.show === "rig";
+    const visible = f.show === "rig" && !f.culled;
     this.sprite.setVisible(visible);
     this.sprite.setScale(f.scale);
     this.sprite.setPosition(f.root.x, f.root.y);
     this.sprite.setFacing(f.facing);
     this.lastFacing = f.facing;
     this.play(f);
-    this.sprite.update(this.clock);
+    // Невидимий скелет (видно лише очі чи вушка) не рахувати: з десятками котів це головна робота кадру.
+    if (visible) this.sprite.update(this.clock);
     this.updateTeeth(f.teeth, visible);
 
     // Тінь: під лапами, ширша в повного; під меблями — темна щілина, з якої визирають очі.
-    const gap = f.under;
+    const gap = f.under && !f.culled;
     this.shadow.setVisible((f.shadow && visible) || gap);
     if (this.shadow.visible) {
       const k = f.scale * (gap ? GAP_SHADOW.scale : 1);
       this.shadow.setPosition(f.root.x, f.root.y).setScale(this.shadowBase.x * k * f.girth, this.shadowBase.y * k);
     }
     this.drawPeek(f);
-    this.updatePoints(f);
+    this.updatePoints(f, visible);
     this.lastShow = f.show;
   }
 
@@ -291,8 +297,8 @@ export class IsoCatView {
    * ковдри — вушка й кінчик хвоста. Частини запечені тим самим рецептом, що й кіт.
    */
   private drawPeek(f: CatFrame): void {
-    const eyes = f.show === "eyes";
-    const ears = f.show === "ears";
+    const eyes = f.show === "eyes" && !f.culled;
+    const ears = f.show === "ears" && !f.culled;
     const owner = catOwner(this.cat.id);
     const view: ArtView = "front";
     const s = f.scale;
@@ -375,8 +381,8 @@ export class IsoCatView {
   }
 
   /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима чи вушками). */
-  private updatePoints(f: CatFrame): void {
-    if (f.show === "rig") {
+  private updatePoints(f: CatFrame, evaluated: boolean): void {
+    if (f.show === "rig" && evaluated) {
       const head = this.sprite.anchor("head");
       const back = this.sprite.socket("pet");
       if (head) {
@@ -390,7 +396,8 @@ export class IsoCatView {
       return;
     }
     this.head.x = f.root.x;
-    this.head.y = f.root.y - (PEEK.eyes + 22) * f.scale;
+    // Скелет не рахували (кіт за краєм камери) — над ним, як над дорослим котом заввишки ≈ 56.
+    this.head.y = f.root.y - (f.show === "rig" ? CULLED_HEAD : PEEK.eyes + 22) * f.scale;
     this.back.x = f.root.x;
     this.back.y = f.root.y - PEEK.eyes * f.scale;
   }

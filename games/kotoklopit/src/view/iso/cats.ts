@@ -43,6 +43,12 @@ const BRAWL_FRAMES = ["a", "b", "c"] as const;
 /** Хмара — над обома котами клубка: над вищою з їхніх глибин, вище за половину проміжку точки. */
 const CLOUD_ABOVE = ISO_DEPTH_SLOT * 0.6;
 
+/**
+ * Кіт далі за це від краю видимого світу (одиниці арту) — скелет не рахується й не малюється: на телефоні камера показує
+ * частину квартири, а котів буває два десятки. Запас — більший за кота з баблом над ним, щоб на краю нічого не вискакувало.
+ */
+const CULL_MARGIN = 160;
+
 /** Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`); без WebGL — кільце на підлозі. */
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
@@ -91,6 +97,8 @@ export class IsoCatsView implements CatsPart {
   private glowing: { target: Phaser.GameObjects.Container; glow: Phaser.Filters.Glow } | null = null;
   private ring: Phaser.GameObjects.Graphics | null = null;
   private readonly webgl: boolean;
+  /** Видимий світ із запасом (`CULL_MARGIN`): коти поза ним не рахуються. */
+  private readonly visible = new Phaser.Geom.Rectangle();
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -104,6 +112,8 @@ export class IsoCatsView implements CatsPart {
     for (const cat of state.cats) sizes.set(cat.id, catSize(cat));
     const pairs = catPairs(state, (c) => sizes.get(c.id)?.relative ?? 1);
     const alive = new Set<number>();
+    const seen = this.ctx.scene.cameras.main.worldView;
+    this.visible.setTo(seen.x - CULL_MARGIN, seen.y - CULL_MARGIN, seen.width + CULL_MARGIN * 2, seen.height + CULL_MARGIN * 2);
     for (const cat of state.cats) {
       alive.add(cat.id);
       const size = sizes.get(cat.id) ?? catSize(cat);
@@ -228,6 +238,8 @@ export class IsoCatsView implements CatsPart {
       show: spot.show,
       under: spot.kind === "under",
       shadow: spot.shadow,
+      // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.
+      culled: this.visible.width > CULL_MARGIN * 2 && !this.visible.contains(root.x, root.y),
       teeth: !carrying ? null : act.carry === "sock" ? { kind: "sock" } : { kind: "toy", quality: toy?.quality ?? "cheap" },
       time,
     };
