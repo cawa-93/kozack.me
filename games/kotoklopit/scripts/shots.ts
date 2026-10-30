@@ -1,7 +1,8 @@
-// Знімки гри для перевірки графіки (крок 16, GRAPHICS_PLAN.md): сценарії режиму розробки в кількох розмірах екрана
-// і попіксельне порівняння двох наборів знімків.
+// Знімки гри для перевірки графіки (крок 16, GRAPHICS_PLAN.md): сценарії режиму розробки в кількох розмірах екрана, вкладки
+// галереї арту (`gallery.html`) і попіксельне порівняння двох наборів знімків.
 //
 //   node games/kotoklopit/scripts/shots.ts [--scenario a,b] [--size 844x390,1280x720] [--gfx iso] [--out тека] [--dpr 1]
+//   node games/kotoklopit/scripts/shots.ts --page gallery [--tab frames,rigs] [--bg light,dark,floor] [--zoom 1,phone]
 //   node games/kotoklopit/scripts/shots.ts --compare <тека A> <тека B> [--diff тека] [--tolerance 0] [--channel-delta 0]
 //
 // Скрипт сам запускає Vite гри (тієї копії репозиторію, з якої його запущено, або теки з --game) на вільному порту з
@@ -11,9 +12,14 @@
 // (годинник Playwright, на паузі від початку): сторінка завантажується, а потім гра йде рівно `--ms` мілісекунд кадрами
 // по 16 мс. `performance.now` починається з нуля, `Math.random` — стала послідовність, анімації CSS на знімку вимкнено,
 // WebGL малює програмний SwiftShader (той самий результат на будь-якому залізі; `--gpu` — відеокарта).
+//
+// Атлас арту: якщо в грі є PreloadScene (`src/scenes/PreloadScene.ts`) — і завжди в галереї, — скрипт перед ходом часу
+// чекає `<html data-art>` («ready» чи «none», ставить `markArtReady` з `src/view/art/atlas.ts`), а в галереї ще й
+// `<html data-gallery="<вкладка>">` — вкладку відкрито.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -39,16 +45,27 @@ const RANDOM_SEED = 0x6b6f746f;
 const PHONE_MAX_SIDE = 500;
 const READY_TIMEOUT_MS = 60_000;
 const BROWSER_CLOSE_MS = 5_000;
+/** Тло галереї (`?bg=`, `src/dev/gallery/params.ts`). */
+const GALLERY_BGS = ["light", "dark", "floor"];
+/** Сцена завантаження атласу: якщо вона є, гра ставить `<html data-art>`, і знімок чекає його. */
+const PRELOAD_SCENE = "src/scenes/PreloadScene.ts";
+/** Вкладки галереї — файли цієї теки (id — назва файлу). */
+const GALLERY_TABS_DIR = "src/dev/gallery/tabs";
 
 const USAGE = `Знімки сценаріїв гри та їх порівняння.
 
   node games/kotoklopit/scripts/shots.ts [параметри]
     --game <тека>        тека гри, яку знімати (напр. games/kotoklopit іншого worktree); за замовчуванням —
                          та, поруч із якою лежить скрипт
+    --page game|gallery  що знімати: гру в сценаріях (за замовчуванням) чи вкладки галереї арту (gallery.html)
     --scenario a,b       сценарії (назви файлів scenarios/*.json без .json); за замовчуванням усі
+    --tab a,b            вкладки галереї (назви файлів src/dev/gallery/tabs/*.ts); за замовчуванням усі
+    --bg light,dark,...  тло галереї (light, dark, floor); за замовчуванням — як у галереї (light)
+    --zoom 1,phone,...   масштаб галереї, CSS px на одиницю арту (phone — кіт ≈ 40 px); за замовчуванням 1
+    --params a=1&b=2     додати параметри до адреси (напр. фільтр вкладки: file=kitchen&show=stub)
     --size WxH,...       розміри вікна в CSS px; за замовчуванням ${DEFAULT_SIZES}
                          (менша сторона ≤ ${PHONE_MAX_SIDE} — телефон: дотик і мобільний перегляд)
-    --gfx <значення>     додати ?gfx=<значення> до адреси
+    --gfx <значення>     додати ?gfx=<значення> до адреси гри
     --out <тека>         куди класти PNG і shots.json; за замовчуванням тимчасова тека з комітом
     --dpr <n>            щільність пікселів (deviceScaleFactor), за замовчуванням 1
     --ms <n>             скільки мілісекунд гра йде до знімка, за замовчуванням ${DEFAULT_MS}
@@ -71,12 +88,27 @@ interface Size {
   height: number;
 }
 
+/** Що знімати: сценарій гри чи вкладку галереї. */
+interface Target {
+  /** Початок назви файлу: сценарій чи `gallery-<вкладка>[.<тло>][.z<масштаб>]`. */
+  name: string;
+  page: "game" | "gallery";
+  scenario: string | null;
+  tab: string | null;
+  bg: string | null;
+  zoom: string | null;
+}
+
 interface ShotOptions {
   /** Тека гри, яку знімати: її Vite, конфіг і сценарії. */
   gameDir: string;
-  scenarios: string[];
+  targets: Target[];
   sizes: Size[];
   gfx: string | null;
+  /** Додаткові параметри адреси (`--params`). */
+  params: string | null;
+  /** Чекати `<html data-art>` у грі: у ній є PreloadScene. */
+  preloadScene: boolean;
   out: string;
   dpr: number;
   ms: number;
@@ -88,9 +120,15 @@ interface ShotOptions {
 
 interface ShotResult {
   file: string;
-  scenario: string;
+  page: Target["page"];
+  scenario: string | null;
+  tab: string | null;
+  bg: string | null;
+  zoom: string | null;
   width: number;
   height: number;
+  /** `<html data-art>` на знімку: атлас завантажено («ready»), його немає («none»), не чекали (null). */
+  art: string | null;
   /** Ігровий час на знімку: так видно, що гра справді йшла однаково. */
   day: number | null;
   minute: number | null;
@@ -135,7 +173,36 @@ function parseFraction(value: string | undefined): number {
 }
 
 const sizeName = (size: Size): string => `${size.width}x${size.height}`;
-const shotFile = (scenario: string, size: Size): string => `${scenario}.${sizeName(size)}.png`;
+const shotFile = (name: string, size: Size): string => `${name}.${sizeName(size)}.png`;
+
+/** Список через кому без порожніх. */
+const list = (value: string): string[] =>
+  value
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "");
+
+/** Вкладки галереї: файли `src/dev/gallery/tabs/*.ts` без `.ts` (поки теки немає — жодної). */
+async function allTabs(gameDir: string): Promise<string[]> {
+  const files = await readdir(path.join(gameDir, GALLERY_TABS_DIR)).catch(() => [] as string[]);
+  return files
+    .filter((file) => file.endsWith(".ts"))
+    .map((file) => file.slice(0, -".ts".length))
+    .sort();
+}
+
+/** Масштаб галереї з параметра: `phone` чи додатне число. */
+function parseZoomName(value: string): string {
+  if (value === "phone") return value;
+  const zoom = Number(value);
+  if (!Number.isFinite(zoom) || zoom <= 0) throw new UsageError(`--zoom: «${value}» — треба додатне число чи phone`);
+  return String(zoom);
+}
+
+function galleryTarget(tab: string, bg: string | null, zoom: string | null): Target {
+  const name = [`gallery-${tab}`, bg, zoom === null ? null : `z${zoom}`].filter((part) => part !== null).join(".");
+  return { name, page: "gallery", scenario: null, tab, bg, zoom };
+}
 
 async function allScenarios(gameDir: string): Promise<string[]> {
   const files = await readdir(path.join(gameDir, "scenarios"));
@@ -239,18 +306,23 @@ function pageInit(seed: number): void {
 }
 
 /** Чекати, доки умова в сторінці справдиться: опитуванням із Node, бо таймери сторінки стоять на паузі. */
-async function waitInPage(page: Page, what: string, check: () => boolean, timeout = READY_TIMEOUT_MS): Promise<void> {
+async function waitInPage(page: Page, what: string, check: (arg: string | null) => boolean, arg: string | null, timeout = READY_TIMEOUT_MS): Promise<void> {
   const until = Date.now() + timeout;
-  while (!(await page.evaluate(check))) {
+  while (!(await page.evaluate(check, arg))) {
     if (Date.now() > until) throw new Error(`не дочекалися: ${what}`);
     await sleep(50);
   }
 }
 
-function scenarioUrl(base: string, scenario: string, gfx: string | null): string {
-  const url = new URL(base);
-  url.searchParams.set("scenario", scenario);
+/** Адреса знімка: гра зі `?scenario=` чи `gallery.html` з вкладкою, тлом і масштабом; далі — `--gfx` і `--params`. */
+function targetUrl(base: string, target: Target, gfx: string | null, params: string | null): string {
+  const url = target.page === "gallery" ? new URL("gallery.html", base) : new URL(base);
+  if (target.scenario !== null) url.searchParams.set("scenario", target.scenario);
+  if (target.tab !== null) url.searchParams.set("tab", target.tab);
+  if (target.bg !== null) url.searchParams.set("bg", target.bg);
+  if (target.zoom !== null) url.searchParams.set("zoom", target.zoom);
   if (gfx !== null) url.searchParams.set("gfx", gfx);
+  for (const [name, value] of new URLSearchParams(params ?? "")) url.searchParams.set(name, value);
   return url.href;
 }
 
@@ -258,7 +330,7 @@ function scenarioUrl(base: string, scenario: string, gfx: string | null): string
  * Перше відкриття гри в реальному часі: Vite перетворює модулі й може доупакувати залежності, а після цього —
  * перезавантажити сторінку. Знімки починаються, коли сторінка відкривається без перезавантажень.
  */
-async function warmUp(browser: Browser, base: string, scenario: string): Promise<void> {
+async function warmUp(browser: Browser, url: string): Promise<void> {
   const context = await browser.newContext({ viewport: { width: 640, height: 360 } });
   try {
     const page = await context.newPage();
@@ -266,7 +338,7 @@ async function warmUp(browser: Browser, base: string, scenario: string): Promise
     page.on("load", () => loads++);
     for (let attempt = 0; attempt < 3; attempt++) {
       loads = 0;
-      await page.goto(scenarioUrl(base, scenario, null), { waitUntil: "load" });
+      await page.goto(url, { waitUntil: "load" });
       await page.waitForLoadState("networkidle");
       await sleep(1000);
       if (loads <= 1) return;
@@ -276,9 +348,10 @@ async function warmUp(browser: Browser, base: string, scenario: string): Promise
   }
 }
 
-async function shoot(browser: Browser, base: string, options: ShotOptions, scenario: string, size: Size): Promise<ShotResult> {
-  const file = shotFile(scenario, size);
-  const result: ShotResult = { file, scenario, ...size, day: null, minute: null, errors: [], warnings: [], ok: false };
+async function shoot(browser: Browser, base: string, options: ShotOptions, target: Target, size: Size): Promise<ShotResult> {
+  const file = shotFile(target.name, size);
+  const { page: kind, scenario, tab, bg, zoom } = target;
+  const result: ShotResult = { file, page: kind, scenario, tab, bg, zoom, ...size, art: null, day: null, minute: null, errors: [], warnings: [], ok: false };
   const phone = Math.min(size.width, size.height) <= PHONE_MAX_SIDE;
   const step = (text: string): void => {
     if (options.verbose) console.log(`    ${file}: ${text}`);
@@ -307,14 +380,27 @@ async function shoot(browser: Browser, base: string, options: ShotOptions, scena
       if (message.type() === "error") result.warnings.push(`console.error: ${message.text()}`);
     });
     step("відкриваю сторінку");
-    await page.goto(scenarioUrl(base, scenario, options.gfx), { waitUntil: "load" });
+    await page.goto(targetUrl(base, target, options.gfx, options.params), { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     step("сторінка завантажилася");
     const probeError = await page.evaluate(() => (window as unknown as { __shots?: ShotsProbe }).__shots?.error ?? "немає скрипта знімків");
     if (probeError) throw new Error(probeError);
     // Phaser запустив цикл кадрів (а до того створив сцену), режим розробки відкрив сценарій.
-    await waitInPage(page, "цикл кадрів Phaser", () => (window as unknown as { __shots: ShotsProbe }).__shots.raf > 0 && document.querySelector("canvas") !== null);
-    await waitInPage(page, "сценарій", () => (window as unknown as { kotoklopit?: { persistent: boolean } }).kotoklopit?.persistent === false);
+    const started = (): boolean => (window as unknown as { __shots: ShotsProbe }).__shots.raf > 0 && document.querySelector("canvas") !== null;
+    await waitInPage(page, "цикл кадрів Phaser", started, null);
+    if (kind === "game") {
+      const opened = (): boolean => (window as unknown as { kotoklopit?: { persistent: boolean } }).kotoklopit?.persistent === false;
+      await waitInPage(page, "сценарій", opened, null);
+    }
+    // Атлас вантажиться подіями мережі, а не кадрами (`loadArtAtlas`), тож дочекатися його можна й на паузі.
+    if (kind === "gallery" || options.preloadScene) {
+      await waitInPage(page, "атлас (<html data-art>)", () => document.documentElement.dataset["art"] !== undefined, null);
+      result.art = await page.evaluate(() => document.documentElement.dataset["art"] ?? null);
+    }
+    if (kind === "gallery") {
+      const mounted = (id: string | null): boolean => document.documentElement.dataset["gallery"] === id;
+      await waitInPage(page, `вкладка «${tab}» (<html data-gallery>)`, mounted, tab);
+    }
     // Події, що приходять самі (фокус, зміна розміру), — поки час стоїть, щоб гра отримала їх в одну й ту саму мить.
     await page.waitForLoadState("networkidle");
     await sleep(200);
@@ -351,14 +437,14 @@ async function runShots(options: ShotOptions): Promise<number> {
   const browser = await chromium.launch({ channel: "msedge", args: [...args, "--force-color-profile=srgb"] });
   const results: ShotResult[] = [];
   try {
-    const first = options.scenarios[0];
-    if (first !== undefined) await warmUp(browser, base, first);
+    const first = options.targets[0];
+    if (first !== undefined) await warmUp(browser, targetUrl(base, first, null, null));
     log("Гра відкривається без перезавантажень");
-    const queue = options.scenarios.flatMap((scenario) => options.sizes.map((size) => ({ scenario, size })));
+    const queue = options.targets.flatMap((target) => options.sizes.map((size) => ({ target, size })));
     const total = queue.length;
     const worker = async (): Promise<void> => {
       for (let job = queue.shift(); job; job = queue.shift()) {
-        const result = await shoot(browser, base, options, job.scenario, job.size);
+        const result = await shoot(browser, base, options, job.target, job.size);
         results.push(result);
         const time = result.minute === null ? "" : ` (день ${result.day}, ${Math.floor(result.minute / 60)}:${String(Math.floor(result.minute % 60)).padStart(2, "0")})`;
         console.log(`[${results.length}/${total}] ${result.ok ? "✓" : "✗"} ${result.file}${time}`);
@@ -381,6 +467,7 @@ async function runShots(options: ShotOptions): Promise<number> {
     gameDir: options.gameDir,
     url: options.url,
     gfx: options.gfx,
+    params: options.params,
     dpr: options.dpr,
     ms: options.ms,
     gpu: options.gpu,
@@ -514,7 +601,12 @@ async function runCompare(a: string, b: string, options: CompareOptions): Promis
 const OPTIONS = {
   help: { type: "boolean", short: "h" },
   game: { type: "string" },
+  page: { type: "string" },
   scenario: { type: "string" },
+  tab: { type: "string" },
+  bg: { type: "string" },
+  zoom: { type: "string" },
+  params: { type: "string" },
   size: { type: "string" },
   gfx: { type: "string" },
   out: { type: "string" },
@@ -561,15 +653,38 @@ async function main(): Promise<number> {
   const gameDir = values.game === undefined ? SCRIPT_GAME_DIR : resolveUserPath(values.game);
   const config = await stat(path.join(gameDir, "vite.config.ts")).catch(() => null);
   if (!config?.isFile()) throw new UsageError(`--game: у «${gameDir}» немає vite.config.ts — це не тека гри`);
-  const known = await allScenarios(gameDir);
-  const scenarios = values.scenario === undefined ? known : values.scenario.split(",").map((name) => name.trim().replace(/\.json$/, ""));
-  const unknown = scenarios.filter((name) => !known.includes(name));
-  if (unknown.length > 0 && values.url === undefined) throw new UsageError(`Немає сценаріїв: ${unknown.join(", ")} (є: ${known.join(", ")})`);
+  const page = values.page ?? "game";
+  if (page !== "game" && page !== "gallery") throw new UsageError(`--page: «${page}» — треба game чи gallery`);
+  let targets: Target[];
+  if (page === "game") {
+    for (const name of ["tab", "bg", "zoom"] as const) {
+      if (values[name] !== undefined) throw new UsageError(`--${name} — лише для --page gallery`);
+    }
+    const known = await allScenarios(gameDir);
+    const scenarios = values.scenario === undefined ? known : list(values.scenario).map((name) => name.replace(/\.json$/, ""));
+    const unknown = scenarios.filter((name) => !known.includes(name));
+    if (unknown.length > 0 && values.url === undefined) throw new UsageError(`Немає сценаріїв: ${unknown.join(", ")} (є: ${known.join(", ")})`);
+    targets = scenarios.map((scenario) => ({ name: scenario, page, scenario, tab: null, bg: null, zoom: null }));
+  } else {
+    if (values.scenario !== undefined) throw new UsageError("--scenario — лише для --page game");
+    const known = await allTabs(gameDir);
+    const tabs = values.tab === undefined ? known : list(values.tab).map((name) => name.replace(/\.ts$/, ""));
+    const unknown = tabs.filter((name) => !known.includes(name));
+    if (unknown.length > 0 && values.url === undefined) throw new UsageError(`Немає вкладок галереї: ${unknown.join(", ")} (є: ${known.join(", ")})`);
+    if (tabs.length === 0) throw new UsageError(`Немає вкладок галереї (${GALLERY_TABS_DIR}/*.ts)`);
+    const bgs = values.bg === undefined ? [null] : list(values.bg);
+    const wrong = bgs.filter((bg) => bg !== null && !GALLERY_BGS.includes(bg));
+    if (wrong.length > 0) throw new UsageError(`--bg: ${wrong.join(", ")} — треба ${GALLERY_BGS.join(", ")}`);
+    const zooms = values.zoom === undefined ? [null] : list(values.zoom).map(parseZoomName);
+    targets = tabs.flatMap((tab) => bgs.flatMap((bg) => zooms.map((zoom) => galleryTarget(tab, bg, zoom))));
+  }
   const options: ShotOptions = {
     gameDir,
-    scenarios,
+    targets,
     sizes: parseSizes(values.size ?? DEFAULT_SIZES),
     gfx: values.gfx ?? null,
+    params: values.params ?? null,
+    preloadScene: existsSync(path.join(gameDir, PRELOAD_SCENE)),
     out: values.out === undefined ? path.join(tmpdir(), "kotoklopit-shots", commitLabel(gameDir)) : resolveUserPath(values.out),
     dpr: parseNumber("dpr", values.dpr, 1, 0.5),
     ms: Math.round(parseNumber("ms", values.ms, DEFAULT_MS, 0)),
