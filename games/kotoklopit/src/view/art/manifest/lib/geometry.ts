@@ -115,8 +115,19 @@ export function centered(w: number, h = w): Geometry {
   return { size: { w, h }, pivot: { x: w / 2, y: h / 2 } };
 }
 
-/** Полотно іконки (`icon/*`, позначки): 48 × 48 з pivot у центрі (старі іконки — 40 × 40, тут із полем під контур). */
-export const ICON: Geometry = centered(48);
+/**
+ * Полотно іконки (`icon/*`, позначки): 64 × 64 з pivot у центрі, вміст — у полі 4…60 (`art/STYLE.md`, еталони F1a
+ * `icon/kibble`, `icon/heart`). Розмір на екрані задає код (бульбашка, HUD), а не полотно.
+ */
+export const ICON: Geometry = centered(64);
+
+/**
+ * Записи, намальовані з іншим полем, ніж дає `PAD` (еталони F1): та сама річ — те саме полотно й pivot, що в SVG, а точки
+ * на ній — від цього полотна (`pointsOn`).
+ */
+export function drawn(footprint: { w: number; h: number }, geometry: Geometry): Furniture {
+  return { geometry, at: pointsOn(footprint, geometry) };
+}
 
 // --- Плити кімнат і стіни ----------------------------------------------------------------------
 
@@ -296,6 +307,15 @@ export const CAT_COAT: readonly ArtLayer[] = [
 
 /** Довга шерсть (контракт): пасма й їхній контур — там, де вони є: тулуб, хвіст, голова. */
 export const CAT_FLUFF: readonly ArtLayer[] = ["fluff", "fluff-ink"];
+
+/**
+ * Шерсть із деталями в готових кольорах (`detail`: ніс, подушечки лап, рожеве у вусі, язик) — як в еталонах F1b вух,
+ * морди, рота й лап (`art/cat/…`); `detail` іде перед тінню й контуром.
+ */
+export const CAT_COAT_DETAIL: readonly ArtLayer[] = [...CAT_COAT.slice(0, -2), "detail", ...CAT_COAT.slice(-2)];
+
+/** Очі кота (еталон F1b `art/cat/eyes`): райдужка, білки й відблиски (`detail`), тінь, контур — без шерсті й масок. */
+export const CAT_EYE_LAYERS: readonly ArtLayer[] = ["fill-iris", "detail", "shade", "ink"];
 
 /**
  * Накладки на шерсть у готових кольорах (§9.10, §9.5, `DISEASES.md`), окремими записами `cat/<частина>-extra/…` у тому ж

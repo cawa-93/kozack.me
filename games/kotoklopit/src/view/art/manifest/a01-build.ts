@@ -23,11 +23,28 @@ const floor = (id: RoomId): Geometry & { res: number } => ({ ...slab(floorCells(
 /** Задні стіни кімнати (контракт: ряд y = 0 над нею і/або стовпець x = 0 ліворуч, з кутом); той самий pivot, що в підлоги. */
 const wall = (id: RoomId): Geometry & { res: number } => ({ ...slab(backWallCells(room(id)), room(id), WALL_HEIGHT.back), res: SLAB_RES });
 
-/** Вікно: увесь блок задньої стіни заввишки 200 над підвіконням `sill`; pivot — верхня вершина ромба клітинки стіни. */
+/**
+ * Плити кухні — еталони F1a (`art/env/room/kitchen/*.svg`): той самий pivot (верхня вершина (13, 1)), а поле полотна трохи
+ * більше за `PAD` (нерівні краї підлоги під стінами, торець стіни на x = 19). Решта кімнат — поки за `slab`.
+ */
+const KITCHEN = {
+  floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } },
+  wall: { size: { w: 536, h: 472 }, pivot: { x: 76, y: 272 } },
+} as const satisfies Record<string, Geometry>;
+
+/**
+ * Вікно — еталон F1a `env/window/bedroom`: рама з укосами, склом, кватиркою й фіранками на лицьовій грані стіни y = 0, без
+ * решти блоку стіни (її малює плита кімнати); pivot — верхня вершина ромба клітинки стіни. Вікно в стіні x = 0 —
+ * дзеркальне (лицьова грань — праворуч від тієї самої вершини): полотно те саме, pivot віддзеркалено.
+ */
+const WINDOW: Geometry = { size: { w: 128, h: 204 }, pivot: { x: 100, y: 178 } };
+
+/** Вікно над підвіконням `sill` (`WINDOWS[].wall` — клітинка стіни). */
 function windowOver(sill: string): ArtEntry {
   const w = WINDOWS.find((v) => v.sill === sill);
   if (!w) throw new Error(`Немає вікна над «${sill}»`);
-  return { id: `env/window/${roomAt(objectById(sill)) ?? "living"}`, ...slab([w.wall], w.wall, WALL_HEIGHT.back) };
+  const pivot = w.wall.y === 0 ? WINDOW.pivot : { x: WINDOW.size.w - WINDOW.pivot.x, y: WINDOW.pivot.y };
+  return { id: `env/window/${roomAt(objectById(sill)) ?? "living"}`, size: WINDOW.size, pivot };
 }
 
 /** Підвіконня: верх дошки на висоті 70; `seat` — де сидить кіт (`WINDOWS[].seat`). */
@@ -55,10 +72,10 @@ export const MANIFEST: readonly ArtEntry[] = [
   // папір (`env/toilet-roll`) між душем і пральною машиною.
   { id: "env/room/bathroom/wall", ...wall("bathroom") },
   // Кухня: підлога — плитка чи лінолеум (інша, ніж у ванній).
-  { id: "env/room/kitchen/floor", ...floor("kitchen") },
+  { id: "env/room/kitchen/floor", ...floor("kitchen"), ...KITCHEN.floor },
   // Кухня: задня стіна — ряд y = 0 над кімнатою з кутом (12, 0); кутова (19, 0) — уже передній плінтус, тож стіна
   // праворуч обривається зрізом.
-  { id: "env/room/kitchen/wall", ...wall("kitchen") },
+  { id: "env/room/kitchen/wall", ...wall("kitchen"), ...KITCHEN.wall },
   // Вітальня: підлога — дошки з килимом (`RUG`, клітинки 9–12 × 7–9; на ньому потягується «Любить кігтеточку», §9.12) і
   // килимком перед вхідними дверима ((10, 10)–(11, 10)); разом із проходами ряду 5 зі спальні, ванної й кухні.
   { id: "env/room/living/floor", ...floor("living"), res: 1.25 },
@@ -66,7 +83,7 @@ export const MANIFEST: readonly ArtEntry[] = [
   // (0, 8) — `env/window/living`; кутова (0, 11) — уже передній плінтус.
   { id: "env/room/living/wall", ...wall("living") },
 
-  // --- Вікна (§9.12, «Вікно»): рама й скло в товщі задньої стіни, на грані до кімнати. Полотно — увесь блок стіни.
+  // --- Вікна (§9.12, «Вікно»): рама й скло в товщі задньої стіни, на грані до кімнати (накладка поверх плити стін).
   // Світла, ночі й виду за вікном немає («Поза обсягом»).
 
   // Вікно спальні в задній стіні y = 0, клітинка (4, 0), над `env/sill-bedroom`.

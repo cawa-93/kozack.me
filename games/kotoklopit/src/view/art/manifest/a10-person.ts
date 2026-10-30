@@ -9,66 +9,94 @@
 //
 // Персонаж ≈ 140 одиниць до маківки (контракт хвилі 1), кремезний, дивиться праворуч (ліворуч — віддзеркалення). Голова,
 // обидві зачіски й обличчя лежать в одному полотні з тим самим pivot (шия) — тож шари голови збігаються без зсувів.
+//
+// Полотна, pivot, точки й шари — з еталонів F1b (`art/person/…`, `art/STYLE.md`, розділ 13): голова 0, обидві зачіски 0,
+// очі, торс 1, рука, нога, взуття. Решта варіантів — від еталонів: голови й зачіски — те саме полотно 54 × 50 з pivot у
+// шиї (як радить F1b для A10), струнка й кремезна статури — торс 1, звужений і розширений від таза. A10 уточнює їх разом із
+// SVG. Точка `<назва>-back` — те саме місце в ракурсі back (ближній бік ¾ спереду — ліворуч, ¾ ззаду — праворуч).
 
 import type { ArtEntry, ArtPoint } from "../types";
 import { PART_VIEWS } from "./lib/geometry";
 
-/** Полотно голови й усього, що на ній (зачіски), 72 × 88: pivot — шия; довге волосся звисає нижче шиї. */
-const HEAD = { size: { w: 72, h: 88 }, pivot: { x: 36, y: 68 } } as const;
-/** Де очі й рот на кожному обличчі (`FACES`). */
+/** Полотно голови й усього, що на ній (зачіски), 54 × 50 (еталон F1b): pivot — шия під підборіддям. */
+const HEAD = { size: { w: 54, h: 50 }, pivot: { x: 27, y: 42 } } as const;
+/** Маківка — над нею бульбашки (`top`, якір `head` скелета). */
+const TOP: ArtPoint = { x: 27.5, y: 0.5 };
+/** Де очі на кожному обличчі (`FACES`): кругле — еталон, решта поки та сама точка; `top` — маківка. */
 const FACE_POINTS = [
-  { eyes: { x: 44, y: 44 }, mouth: { x: 46, y: 56 } },
-  { eyes: { x: 44, y: 42 }, mouth: { x: 46, y: 58 } },
-  { eyes: { x: 45, y: 45 }, mouth: { x: 47, y: 57 } },
-] as const satisfies readonly { eyes: ArtPoint; mouth: ArtPoint }[];
+  { eyes: { x: 32.3, y: 28.1 }, top: TOP },
+  { eyes: { x: 32.3, y: 28.1 }, top: TOP },
+  { eyes: { x: 32.3, y: 28.1 }, top: TOP },
+] as const satisfies readonly { eyes: ArtPoint; top: ArtPoint }[];
 
-/** Торс 80 × 84 (усі статури), pivot — таз; плечі й стегна — від статури (`BUILDS`). */
-const torso = (shoulder: number, hip: number) => ({
-  size: { w: 80, h: 84 },
-  pivot: { x: 40, y: 76 },
+const round1 = (v: number): number => Math.round(v * 10) / 10;
+
+/** Торс звичайної статури (еталон F1b `art/person/torso/1`): pivot — таз; шия, плечі, стегна й `arms` (де кіт на руках). */
+const TORSO_NORMAL = {
+  size: { w: 58, h: 75 },
+  pivot: { x: 29, y: 54 },
   points: {
-    neck: { x: 43, y: 16 },
-    "shoulder-far": { x: 40 - shoulder, y: 22 },
-    "shoulder-near": { x: 40 + shoulder, y: 24 },
-    "hip-far": { x: 44 - hip, y: 72 },
-    "hip-near": { x: 36 + hip, y: 74 },
+    neck: { x: 30.5, y: 8.5 },
+    "neck-back": { x: 28.5, y: 8.5 },
+    "neck-base": { x: 29.5, y: 14 },
+    "neck-base-back": { x: 28.5, y: 14 },
+    "shoulder-far": { x: 44, y: 15.6 },
+    "shoulder-far-back": { x: 14, y: 15.6 },
+    "shoulder-near": { x: 12, y: 17.6 },
+    "shoulder-near-back": { x: 46, y: 17.6 },
+    "hip-far": { x: 35, y: 56.6 },
+    "hip-far-back": { x: 23, y: 56.6 },
+    "hip-near": { x: 22.5, y: 59 },
+    "hip-near-back": { x: 35.5, y: 59 },
+    arms: { x: 38, y: 34 },
+    "arms-back": { x: 39, y: 33 },
   },
-});
-const TORSO = [torso(14, 11), torso(17, 13), torso(21, 17)] as const;
-/** Нога від стегна до кісточки, pivot — стегно. */
-const LEG = { size: { w: 32, h: 60 }, pivot: { x: 16, y: 8 }, points: { ankle: { x: 16, y: 54 } } } as const;
+} as const;
+
+/** Торс статури: еталон, ширший чи вужчий від таза в `k` разів (орієнтовно, до A10). */
+function torso(k: number): { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> } {
+  const half = Math.ceil(TORSO_NORMAL.pivot.x * k);
+  const points = Object.fromEntries(
+    Object.entries(TORSO_NORMAL.points).map(([name, p]) => [name, { x: round1(half + (p.x - TORSO_NORMAL.pivot.x) * k), y: p.y }]),
+  );
+  return { size: { w: 2 * half, h: TORSO_NORMAL.size.h }, pivot: { x: half, y: TORSO_NORMAL.pivot.y }, points };
+}
+const TORSO = [torso(0.85), TORSO_NORMAL, torso(1.2)] as const;
+/** Нога від стегна до кісточки (еталон F1b): pivot — стегно, `foot` — кісточка, куди стає pivot взуття. */
+const LEG = { size: { w: 33, h: 74 }, pivot: { x: 16, y: 18 }, points: { foot: { x: 16.6, y: 67.2 } } } as const;
 
 export const MANIFEST: readonly ArtEntry[] = [
-  // Кругле обличчя (`FACES[0]`): голова з вухами й носом, шкіра — `fill-skin`; у `back` — потилиця й вуха. Pivot — шия;
-  // `eyes` і `mouth` — куди скелет ставить очі (і де рот для анімацій їжі).
-  { id: "person/head/0", ...HEAD, points: FACE_POINTS[0], layers: ["fill-skin", "shade", "ink"], views: PART_VIEWS },
+  // Кругле обличчя (`FACES[0]`): голова з вухами й носом, шкіра — `fill-skin`, ніс, рот і рум'янець — `detail`; у `back` —
+  // потилиця й вуха. Pivot — шия; `eyes` — куди скелет ставить очі, `top` — маківка.
+  { id: "person/head/0", ...HEAD, points: FACE_POINTS[0], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
   // Овальне обличчя (`FACES[1]`): видовжене, з гострішим підборіддям.
-  { id: "person/head/1", ...HEAD, points: FACE_POINTS[1], layers: ["fill-skin", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/head/1", ...HEAD, points: FACE_POINTS[1], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
   // Широке обличчя (`FACES[2]`): кремезне, з широкими вилицями.
-  { id: "person/head/2", ...HEAD, points: FACE_POINTS[2], layers: ["fill-skin", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/head/2", ...HEAD, points: FACE_POINTS[2], layers: ["fill-skin", "detail", "shade", "ink"], views: PART_VIEWS },
   // Коротка зачіска, задня частина (`HAIR_STYLES[0]`): шапочка волосся за головою; у `back` — уся потилиця.
-  { id: "person/hair-back/0", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-back/0", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Довга зачіска, задня частина (`HAIR_STYLES[1]`): пасма до плечей, нижче шиї.
-  { id: "person/hair-back/1", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-back/1", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Хвостик, задня частина (`HAIR_STYLES[2]`): гумка й хвіст на потилиці.
-  { id: "person/hair-back/2", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-back/2", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Кучері, задня частина (`HAIR_STYLES[3]`): кучерики довкола голови.
-  { id: "person/hair-back/3", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-back/3", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Коротка зачіска, передня частина: чубчик над лобом (поверх голови й очей).
-  { id: "person/hair-front/0", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-front/0", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Довга зачіска, передня частина: пасма обабіч обличчя.
-  { id: "person/hair-front/1", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-front/1", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Хвостик, передня частина: гладко зачесане з проділом.
-  { id: "person/hair-front/2", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  { id: "person/hair-front/2", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
   // Кучері, передня частина: кучерики над лобом.
-  { id: "person/hair-front/3", ...HEAD, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
-  // Очі (§8.8: засинаючи, звужуються й заплющуються): `open`, `half`, `closed`. Райдужка — `fill-iris`, повіки — `fill-skin`
-  // поверх неї, вії й контур — `ink`. Pivot — посередині (точка `eyes` голови); у `back` слот прихований.
+  { id: "person/hair-front/3", ...HEAD, points: { top: TOP }, layers: ["fill-hair", "shade", "ink"], views: PART_VIEWS },
+  // Очі (§8.8: засинаючи, звужуються й заплющуються): `open`, `half`, `closed`. Райдужка — `fill-iris`, білки й відблиски —
+  // `detail`, вії й контур — `ink`; повік-шкіри немає (еталон F1b): де ока не намальовано, видно голову. Pivot — між очима
+  // (точка `eyes` голови); у `back` слот прихований.
   {
     id: "person/eyes",
-    size: { w: 24, h: 12 },
-    pivot: { x: 12, y: 6 },
-    layers: ["fill-iris", "fill-skin", "ink"],
+    size: { w: 26, h: 20 },
+    pivot: { x: 13, y: 12 },
+    layers: ["fill-iris", "detail", "ink"],
     views: PART_VIEWS,
     states: ["open", "half", "closed"],
   },
@@ -79,20 +107,20 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "person/torso/1", ...TORSO[1], layers: ["fill-top", "fill-bottom", "fill-skin", "shade", "ink"], views: PART_VIEWS },
   // Кремезна статура (`BUILDS[2]`): ширші плечі й живіт.
   { id: "person/torso/2", ...TORSO[2], layers: ["fill-top", "fill-bottom", "fill-skin", "shade", "ink"], views: PART_VIEWS },
-  // Рука (слоти `arm-far`, `arm-near`): рукав (`fill-top`) і долоня (`fill-skin`); pivot — плече, `hand` — долоня (гнізда
-  // `held`, `rod`, `hand` — рука, що гладить кота, тримає вудку, тарілку, кота).
+  // Рука (слоти `arm-far`, `arm-near`): рукав (`fill-top`) і долоня (`fill-skin`); pivot — плече, `hand` — зап'ясток (кістка
+  // кисті, гнізда `held` і `rod`), `grip` — середина долоні (рука, що гладить кота, тримає вудку, тарілку, кота).
   {
     id: "person/arm",
-    size: { w: 28, h: 64 },
-    pivot: { x: 14, y: 8 },
-    points: { hand: { x: 14, y: 56 } },
+    size: { w: 27, h: 73 },
+    pivot: { x: 13, y: 14 },
+    points: { hand: { x: 14, y: 54.6 }, grip: { x: 14.2, y: 61 } },
     layers: ["fill-top", "fill-skin", "shade", "ink"],
     views: PART_VIEWS,
   },
-  // Нога (слоти `leg-far`, `leg-near`): штанина (`fill-bottom`); pivot — стегно, `ankle` — куди кріпиться взуття.
+  // Нога (слоти `leg-far`, `leg-near`): штанина (`fill-bottom`); pivot — стегно, `foot` — кісточка, куди кріпиться взуття.
   { id: "person/leg", ...LEG, layers: ["fill-bottom", "shade", "ink"], views: PART_VIEWS },
-  // Взуття (слоти `shoe-far`, `shoe-near`): носком уперед; pivot — кісточка.
-  { id: "person/shoe", size: { w: 36, h: 22 }, pivot: { x: 14, y: 7 }, layers: ["fill-shoes", "shade", "ink"], views: PART_VIEWS },
+  // Взуття (слоти `shoe-far`, `shoe-near`): носком уперед, підошва й шнурки — `detail`; pivot — кісточка.
+  { id: "person/shoe", size: { w: 39, h: 25 }, pivot: { x: 16, y: 8 }, layers: ["fill-shoes", "detail", "shade", "ink"], views: PART_VIEWS },
 
   // --- Плями на одязі (§8.7): чистого одягу немає — плями, контрастні до кольору тканини (темний бруд на світлому, світлий
   // пил на темному), у готових кольорах. Накладки в полотні торса й ноги; запах над персонажем — `fx/smell`.

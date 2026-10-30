@@ -143,6 +143,9 @@ export const PERSON_FIT = defineFit(PERSON_RIG, {
     "hand-near": { slot: "arm-near", point: "hand" },
     "leg-far": { slot: "torso", point: "hip-far" },
     "leg-near": { slot: "torso", point: "hip-near" },
+    // Стопа (взуття) — у кісточці ноги: точка `foot` еталона F1b `person/leg`.
+    "foot-far": { slot: "leg-far", point: "foot" },
+    "foot-near": { slot: "leg-near", point: "foot" },
   },
   slots: {
     eyes: { slot: "head", point: "eyes" },

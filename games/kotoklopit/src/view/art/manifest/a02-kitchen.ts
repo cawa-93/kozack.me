@@ -12,7 +12,7 @@
 
 import { objectById, TRINKETS } from "../../../sim/home";
 import type { ArtEntry } from "../types";
-import { furniture } from "./lib/geometry";
+import { drawn, furniture } from "./lib/geometry";
 
 /** Стани наповнення сховища (`FillStage` 0–4). */
 const FULL = ["full-0", "full-1", "full-2", "full-3", "full-4"] as const;
@@ -29,7 +29,8 @@ const cabinet = objectById("cat-cabinet");
 const COUNTER = 62;
 const TABLE = 54;
 
-const FRIDGE = furniture(fridge, { top: 150, pad: { left: 72, bottom: 40 } });
+/** Холодильник — еталон F1a (`art/env/fridge.svg`): полотно під відчинені дверцята, pivot — підлога під центром сліду. */
+const FRIDGE = drawn(fridge, { size: { w: 192, h: 224 }, pivot: { x: 124, y: 188 } });
 const COUNTER_LEFT = furniture(counterLeft, { top: COUNTER });
 const STOVE = furniture(stove, { top: COUNTER, tall: 84 });
 const COUNTER_RIGHT = furniture(counterRight, { top: COUNTER });

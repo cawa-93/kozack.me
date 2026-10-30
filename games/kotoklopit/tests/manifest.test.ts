@@ -49,11 +49,13 @@ describe("маніфест: правила записів", () => {
     expect(manifestProblems(ENTRIES)).toEqual([]);
   });
 
-  it("pivot і точки — у межах полотна", () => {
+  it("pivot — у межах полотна, точки — біля нього", () => {
+    // Точка може вийти за полотно недалеко: `top` голови кота — над вухами, а вуха — окремі частини (еталон F1b).
+    const NEAR = 16;
     for (const e of ENTRIES) {
       expect(e.pivot.x >= 0 && e.pivot.x <= e.size.w && e.pivot.y >= 0 && e.pivot.y <= e.size.h, `${e.id}: pivot`).toBe(true);
       for (const [name, p] of Object.entries(e.points ?? {})) {
-        expect(p.x >= 0 && p.x <= e.size.w && p.y >= 0 && p.y <= e.size.h, `${e.id}: точка ${name}`).toBe(true);
+        expect(p.x >= -NEAR && p.x <= e.size.w + NEAR && p.y >= -NEAR && p.y <= e.size.h + NEAR, `${e.id}: точка ${name}`).toBe(true);
       }
     }
   });
@@ -73,12 +75,13 @@ describe("маніфест: правила записів", () => {
   });
 
   it("шари — лише дозволені для категорії", () => {
-    // Кіт — шерсть, пасма й райдужка; персонаж — його заливки; решта — готові кольори або білий кузов, що фарбує код.
+    // Кіт — шерсть, пасма, райдужка й деталі в готових кольорах; персонаж — його заливки й деталі; решта — готові кольори
+    // або білий кузов, що фарбує код.
     const allowed = (id: string): readonly ArtLayer[] =>
       id.startsWith("cat/")
-        ? [...CAT_COAT, ...CAT_FLUFF, "fill-iris"]
+        ? [...CAT_COAT, ...CAT_FLUFF, "fill-iris", "detail"]
         : id.startsWith("person/")
-          ? ["fill-skin", "fill-hair", "fill-iris", "fill-top", "fill-bottom", "fill-shoes", "shade", "ink"]
+          ? ["fill-skin", "fill-hair", "fill-iris", "fill-top", "fill-bottom", "fill-shoes", "detail", "shade", "ink"]
           : ["fill", "detail", "shade", "ink"];
     for (const e of ENTRIES) {
       for (const layer of e.layers ?? []) if (!layer.startsWith("extra-")) expect(allowed(e.id), `${e.id}: ${layer}`).toContain(layer);
@@ -113,7 +116,7 @@ describe("маніфест: правила записів", () => {
 
   it("сумарне полотно атласу в межах оцінки бюджету", () => {
     // Площа всіх шарів усіх кадрів до обрізки, пікселі атласу: верхня межа того, що піде на сторінки. Оцінка на хвилю 1 —
-    // ≈ 38 Мпкс (`art/INVENTORY.md`); межа з запасом на те, що додасть хвиля 2. Перевищення — сигнал переглянути `res`.
+    // ≈ 34 Мпкс (`art/INVENTORY.md`); межа з запасом на те, що додасть хвиля 2. Перевищення — сигнал переглянути `res`.
     let area = 0;
     for (const e of ENTRIES) {
       const res = e.res ?? DEFAULT_RES;
@@ -319,7 +322,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
 
 describe("маніфест: кіт", () => {
   const cats = ENTRIES.filter((e) => e.id.startsWith("cat/"));
-  const base = cats.filter((e) => !/^cat\/[a-z]+-extra\//.test(e.id));
+  // Частини з шерстю: без накладок і без очей (у очей — райдужка, а не шерсть).
+  const base = cats.filter((e) => !/^cat\/[a-z]+-extra\//.test(e.id) && e.id !== "cat/eyes");
   const tabby: Record<TabbyPattern, true> = { classic: true, mackerel: true, spotted: true, ticked: true };
   const tortie: Record<TortieLayer, true> = { "tortie-a": true, "tortie-b": true, "tortie-c": true };
   const white: Record<WhiteLayer, true> = { "white-1": true, "white-2": true, "white-3": true };
@@ -359,9 +363,9 @@ describe("маніфест: кіт", () => {
     }
   });
 
-  it("очі й рот — стани виразів за контрактом, очі — з райдужкою", () => {
+  it("очі й рот — стани виразів за контрактом, очі — райдужка без шерсті (еталон F1b)", () => {
     expect(states("cat/eyes")).toEqual(["open", "half", "closed", "arc", "squint", "round", "sick"]);
-    expect(entry("cat/eyes").layers).toContain("fill-iris");
+    expect(entry("cat/eyes").layers).toEqual(["fill-iris", "detail", "shade", "ink"]);
     expect(states("cat/mouth")).toEqual(["closed", "meow", "hiss", "yawn", "eat", "tongue"]);
   });
 

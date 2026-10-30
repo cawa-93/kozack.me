@@ -106,8 +106,10 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
       if (object.id === "door") continue;
       const entry = artEntry(`env/${object.id}`);
       if (!entry) throw new Error(object.id);
-      // pivot.y = запас 8 + найвища точка + чверть висоти ромба сліду (`lib/geometry.ts`, `box`).
-      expect(entry.pivot.y - 8 - ((object.w + object.h) * 64) / 4, object.id).toBe(isoObjectLook(object.id).tall);
+      // pivot.y = поле полотна + найвища точка + чверть висоти ромба сліду (`lib/geometry.ts`, `box`); поле — `PAD` 8, а в
+      // еталонах F1 — не менше 4 (`art/STYLE.md`: «поле полотна»).
+      const margin = entry.pivot.y - ((object.w + object.h) * 64) / 4 - isoObjectLook(object.id).tall;
+      expect(margin >= 4 && margin <= 8, `${object.id}: поле над найвищою точкою — ${margin}`).toBe(true);
     }
   });
 

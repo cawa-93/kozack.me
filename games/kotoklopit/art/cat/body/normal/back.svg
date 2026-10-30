@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 61 39" width="61" height="39">
 <!-- cat/body/normal/back — тулуб звичайної статури, ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
 size 61×39; pivot (20, 24) — центр таза (суглоб із тазом, над задніми лапами); points: neck (44, 15), neck-back (47, 12), neck-base (40, 17), neck-base-back (43, 14), shoulder-far (50, 22), shoulder-far-back (44.5, 22), shoulder-near (44.5, 25.5), shoulder-near-back (50, 25.5), hip-far (23.5, 22), hip-far-back (18, 22), hip-near (18, 25.5), hip-near-back (23.5, 25.5), tail (12, 16), tail-back (13, 15), back (32, 12), back-back (30, 10).
-Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink.
+Шари: fill, fluff, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink, fluff-ink.
 Корінь скелета (точка підлоги під серединою кота) — pivot + (14, 20). Маски — у координатах тулуба; обтинає компонувальник.
 -->
 <defs>
@@ -12,6 +12,7 @@ size 61×39; pivot (20, 24) — центр таза (суглоб із тазо�
 <g id="fill">
 <use href="#cat-body-normal-back-shape" fill="#ffffff"/>
 </g>
+<g id="fluff"/>
 <g id="point"/>
 <g id="tortie-a" clip-path="url(#cat-body-normal-back-mask)">
 <path d="M23.3 16.7C23.8 17.3 25.6 18.4 25.6 19.3C25.6 20.1 23.9 20.8 23.2 21.8C22.6 22.7 22.5 24.4 21.7 24.9C20.9 25.4 19.3 24.3 18.4 24.7C17.5 25.1 17.2 27.1 16.3 27.2C15.5 27.4 14.5 26 13.5 25.7C12.4 25.5 10.6 26.3 9.9 25.7C9.1 25 9.8 22.9 9.1 22.1C8.5 21.2 6.3 21.1 6.1 20.4C5.9 19.6 7.6 18.6 7.8 17.6C7.9 16.5 6.6 14.9 7 14.1C7.3 13.2 9.2 13.3 9.9 12.5C10.5 11.7 10.3 9.5 11.1 9.1C11.8 8.8 13.3 10.6 14.4 10.5C15.4 10.4 16.5 8.3 17.4 8.5C18.2 8.7 18.5 11.1 19.5 11.7C20.4 12.3 22.3 11.5 22.8 12.2C23.4 12.8 22.9 14.8 22.9 15.5C23 16.3 22.9 16 23.3 16.7Z" fill="#ffffff"/>
@@ -112,4 +113,5 @@ size 61×39; pivot (20, 24) — центр таза (суглоб із тазо�
 <path d="M48 29.8C46.2 30.8 43.5 31.1 41 31.4C38.5 31.7 35.8 31.8 33 31.8C30.2 31.8 26.8 31.7 24 31.4C21.2 31.1 18.3 30.9 16 30.2C13.7 29.5 11.6 28.5 10 27" fill="none" stroke="#2e1f29" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M13.2 14.4Q20.6 17.6 19.4 25.4Q19 27.2 18.2 28.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
+<g id="fluff-ink"/>
 </svg>

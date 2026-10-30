@@ -204,7 +204,8 @@ const ITEM_LOOKS: Readonly<Record<IsoFloorKind, Readonly<Record<Quality, IsoItem
   litter: { cheap: { height: 28, half: 44 }, premium: { height: 56, half: 44 } },
   toy: same({ height: 16, half: 40 }),
   house: same({ height: 90, half: 48 }),
-  scratcher: { cheap: { height: 72, half: 38 }, premium: { height: 100, half: 38 } },
+  // Дешева — еталон F1a (заввишки 89, підставка й помпон ширші за стовпчик).
+  scratcher: { cheap: { height: 89, half: 54 }, premium: { height: 100, half: 38 } },
   feeder: { cheap: { height: 56, half: 24 }, premium: { height: 56, half: 28 } },
   robot: same({ height: 20, half: 32 }),
   carrier: same({ height: 70, half: 48 }),
