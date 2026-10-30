@@ -2,14 +2,14 @@
 
 import Phaser from "phaser";
 
-import type { Character } from "../sim/types";
+import type { Character } from "../../sim/types";
 import { drawItem } from "./apartment";
-import { COLORS } from "./colors";
-import { depthOf, toScreen } from "./geometry";
+import { COLORS } from "../colors";
+import { depthOf, toScreen } from "../geometry";
 
-import { PALETTE } from "./palette";
+import { PALETTE } from "../palette";
 
-export { BUILDS, FACES, HAIR_STYLES, PALETTE } from "./palette";
+export { BUILDS, FACES, HAIR_STYLES, PALETTE } from "../palette";
 
 /** Колір плями для тканини: на світлій — темний бруд, на темній — світлий пил (§8.7). */
 function stainOn(cloth: number): number {

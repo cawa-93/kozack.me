@@ -5,18 +5,18 @@
 
 import Phaser from "phaser";
 
-import { isKitten, traitLevel } from "../sim/cat";
-import { coatOf, type Coat, type Pigment } from "../sim/genetics";
-import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../sim/home";
-import { absoluteMinute } from "../sim/time";
-import { girthOf } from "../sim/weight";
-import type { Cat, GameState, Quality } from "../sim/types";
-import type { CatFeeling } from "../sim/actions";
+import { isKitten, traitLevel } from "../../sim/cat";
+import { coatOf, type Coat, type Pigment } from "../../sim/genetics";
+import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../../sim/home";
+import { absoluteMinute } from "../../sim/time";
+import { girthOf } from "../../sim/weight";
+import type { Cat, GameState, Quality } from "../../sim/types";
+import type { CatFeeling } from "../../sim/actions";
 import { drawSock, drawToy } from "./catcorner";
-import { COLORS } from "./colors";
-import { depthOf, toScreen } from "./geometry";
-import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "./pose";
-import { objectHeight } from "./world/objects";
+import { COLORS } from "../colors";
+import { depthOf, toScreen } from "../geometry";
+import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "../pose";
+import { objectHeight } from "../world/objects";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,

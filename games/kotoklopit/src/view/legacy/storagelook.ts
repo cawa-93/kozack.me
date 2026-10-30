@@ -3,10 +3,10 @@
 
 import Phaser from "phaser";
 
-import type { ObjectKind } from "../sim/home";
-import type { FillStage } from "../sim/storage";
-import { COLORS } from "./colors";
-import { drawMomMeal } from "./icons";
+import type { ObjectKind } from "../../sim/home";
+import type { FillStage } from "../../sim/storage";
+import { COLORS } from "../colors";
+import { drawMomMeal } from "../icons";
 
 const INK = COLORS.ink;
 type G = Phaser.GameObjects.Graphics;

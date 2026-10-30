@@ -3,7 +3,7 @@
 
 import Phaser from "phaser";
 
-import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./catcorner";
+import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./legacy/catcorner";
 import { COLORS } from "./colors";
 import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 

@@ -3,14 +3,14 @@
 
 import Phaser from "phaser";
 
-import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, WINDOWS, type HomeObject, type ObjectKind } from "../sim/home";
-import type { Item } from "../sim/types";
+import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, RUG, WINDOWS, type HomeObject, type ObjectKind } from "../../sim/home";
+import type { Item } from "../../sim/types";
 import { drawToy } from "./catcorner";
-import { drawMomMeal } from "./icons";
+import { drawMomMeal } from "../icons";
 import { SHAPED_STORAGES } from "./storagelook";
-import { objectHeight } from "./world/objects";
-import { COLORS } from "./colors";
-import { depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "./geometry";
+import { objectHeight } from "../world/objects";
+import { COLORS } from "../colors";
+import { depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "../geometry";
 
 /** Стіни: верхня грань і лицьова. */
 const WALL_TOP = 0x3b3340;

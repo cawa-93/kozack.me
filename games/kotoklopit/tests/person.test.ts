@@ -226,7 +226,7 @@ describe("редактор персонажа один для всіх (ріше
   });
 
   it("малюнок персонажа не знає ні статі, ні звертання: портрет і персонаж у квартирі беруть лише зовнішність", () => {
-    const sources = import.meta.glob<string>(["../src/ui/portrait.ts", "../src/view/person.ts"], { query: "?raw", import: "default", eager: true });
+    const sources = import.meta.glob<string>(["../src/ui/portrait.ts", "../src/view/legacy/person.ts"], { query: "?raw", import: "default", eager: true });
     expect(Object.keys(sources)).toHaveLength(2);
     for (const [file, source] of Object.entries(sources)) expect(source, file).not.toMatch(/\b(sex|Sex|address|Address)\b/);
   });
