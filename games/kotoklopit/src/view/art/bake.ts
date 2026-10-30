@@ -16,7 +16,7 @@ import { hasArtFrame, type ArtParent } from "./atlas";
 import { BakeCache, BAKE_BUDGET, SHARED_OWNER, type BakeStats } from "./bakecache";
 import { composeFrame, stubLayers, type LayerImage, type LayerSource } from "./compose";
 import { artEntry, DEFAULT_RES } from "./manifest";
-import { artGeometry, artPlacement, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
+import { artGeometry, artPlacement, extraFrameOf, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
 import { ART_TEXTURE, framesOf, layerFrameName, type ArtEntry, type ArtId, type ArtLayer, type ArtSize, type ArtView, type FrameId, type TintRecipe } from "./types";
 
 export { BAKE_BUDGET, SHARED_OWNER, type BakeBudget, type BakeStats } from "./bakecache";
@@ -184,14 +184,16 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
 
 /**
  * Шари кадру з атласу (`ART_TEXTURE`, кадри `<кадр>#<шар>` з обрізкою, див. `atlas.ts`): кожен крок рецепта — свій кадр
- * текстури. Жодного шару немає — null (заглушка). Кадр, позначений конвеєром як заглушка (`customData.stub`), — теж.
+ * текстури; накладки `extra-*` — з кадру накладок частини (`extraFrameOf`: те саме полотно, інший запис). Жодного шару
+ * немає — null (заглушка). Кадр, позначений конвеєром як заглушка (`customData.stub`), — теж.
  */
 function atlasLayers(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe): { source: LayerSource; px: ArtSize } | null {
   const found = new Map<ArtLayer, LayerImage>();
+  const extras = extraFrameOf(frame) as FrameId | null;
   let px: ArtSize | null = null;
   for (const { layer } of recipe.steps) {
     if (found.has(layer)) continue;
-    const name = layerFrameName(frame, layer);
+    const name = layerFrameName(layer.startsWith("extra-") && extras ? extras : frame, layer);
     if (!hasArtFrame(scene, name)) continue;
     const f = scene.textures.getFrame(ART_TEXTURE, name);
     const image = f.source.image as CanvasImageSource | null;

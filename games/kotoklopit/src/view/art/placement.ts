@@ -61,6 +61,20 @@ export function artGeometry(
 }
 
 /** Origin і масштаб зображення Phaser: origin — частки розміру, масштаб — одиниць арту (px світу) на піксель текстури. */
+/**
+ * Кадр накладок частини кота чи персонажа (F5: `cat/<частина>-extra/…`, `person/<частина>-extra…`): той самий кадр, лише
+ * другий сегмент id — з «-extra» (`cat/body/normal/front` → `cat/body-extra/normal/front`, `person/leg/back` →
+ * `person/leg-extra/back`). Шари `extra-*` (залисини, тьмяна шерсть, складки, завитки, нашийник, плями на одязі) лежать
+ * там — у тому самому полотні й з тим самим pivot, що частина. null — це не частина кота чи персонажа.
+ */
+export function extraFrameOf(frame: string): string | null {
+  const parts = frame.split("/");
+  const part = parts[1];
+  if ((parts[0] !== "cat" && parts[0] !== "person") || part === undefined || part.endsWith("-extra")) return null;
+  parts[1] = `${part}-extra`;
+  return parts.join("/");
+}
+
 export interface ArtPlacement {
   originX: number;
   originY: number;

@@ -128,6 +128,9 @@ describe("рецепт кота", () => {
         if (recipe.steps.find((s) => s.layer === "fill-iris")?.color !== EYE_COLORS[coat.eyes]) fail("колір очей");
         if (layers.includes("extra-bald") !== (opts.bald === true)) fail("залисини");
         if (layers.includes("extra-collar") !== (opts.collar === true)) fail("нашийник");
+        if (layers.includes("extra-dull") !== (opts.dull === true)) fail("тьмяна шерсть");
+        if (layers.includes("extra-wrinkles") !== (fur === "hairless")) fail("складки — лише в безшерстих");
+        if (layers.includes("extra-curls") !== (fur === "curly")) fail("завитки — лише в кучерявих");
         const shade = recipe.steps.find((s) => s.layer === "shade");
         if (shade?.put !== "multiply" || shade.tint !== "multiply") fail("тінь — множенням");
         const ink = recipe.steps.find((s) => s.layer === "ink");

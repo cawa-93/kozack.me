@@ -93,6 +93,9 @@ export const CAT_RECIPE_LAYERS: readonly ArtLayer[] = [
   "white-3",
   "fill-iris",
   "detail",
+  "extra-wrinkles",
+  "extra-curls",
+  "extra-dull",
   "extra-bald",
   "extra-collar",
   "shade",
@@ -152,7 +155,9 @@ export function tortieVariant(seed: number): TortieLayer {
  * - `tortie-<a|b|c>` — плями другого кольору (рудий чи кремовий), варіант — за хешем id;
  * - `white-1…N` — білі плями в анатомічному порядку;
  * - `fill-iris` — очі; після масок, щоб білі плями й смуги морди не лягали на райдужку;
- * - `detail`, `extra-bald` (залисини), `extra-collar` (нашийник) — у своїх кольорах;
+ * - `detail`, `extra-wrinkles` (складки безшерстих), `extra-curls` (завитки кучерявих), `extra-dull` (скуйовджена тьмяна
+ *   шерсть), `extra-bald` (залисини), `extra-collar` (нашийник) — у своїх кольорах; накладки `extra-*` лежать у кадрі
+ *   `cat/<частина>-extra/…` (F5), і запікання бере їх звідти (`extraFrameOf`);
  * - `shade` — множенням, теплим; `ink` — контур; `fluff-ink` — контур пасом довгої шерсті.
  * Маски кладуться `source-atop` чи множенням — компонувальник обтинає їх по вже намальованому силуету.
  */
@@ -242,6 +247,9 @@ function buildCatRecipe(look: CatLookKey, state: Required<CatRecipeOptions>): Ti
   for (let i = 1; i <= coat.white; i++) paint(`white-${i}` as WhiteLayer, furColor(hairless ? HAIRLESS_WHITE : COAT_WHITE), "source-atop");
   paint("fill-iris", EYE_COLORS[coat.eyes], "source-over");
   asIs("detail", "source-over");
+  if (hairless) asIs("extra-wrinkles", "source-atop");
+  if (fur === "curly") asIs("extra-curls", "source-over");
+  if (state.dull) asIs("extra-dull", "source-atop");
   if (state.bald) asIs("extra-bald", "source-atop");
   if (state.collar) asIs("extra-collar", "source-over");
   steps.push({ layer: "shade", color: SHADE_TINT, tint: "multiply", put: "multiply" });
