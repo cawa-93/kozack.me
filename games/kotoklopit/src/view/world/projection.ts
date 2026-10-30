@@ -3,7 +3,7 @@
 // проєкції, а не з чисел, — тож нова графіка кроку 16 лише додає свою проєкцію. Без Phaser.
 //
 // Реалізації: стара коса «три чверті» (OBLIQUE) — підлога трохи стиснута по вертикалі, стіни й речі мають видиму
-// висоту; ізометрія 2:1 (крок 16, `GRAPHICS_PLAN.md`) ляже поруч.
+// висоту; ізометрія 2:1 (ISO, крок 16, `GRAPHICS_PLAN.md`) — клітинка стає ромбом 128 × 64 одиниці арту.
 
 import { MAP_HEIGHT, MAP_WIDTH, type Rect } from "../../sim/home";
 import type { Vec } from "../../sim/types";
@@ -89,4 +89,91 @@ export const OBLIQUE: ObliqueProjection = {
   backWallTop: () => ORIGIN.y + TILE_H - WALL_RISE,
   // Клітинки лежать на екрані без повороту: осі ті самі.
   screenToTileDir: (v) => ({ x: v.x, y: v.y }),
+};
+
+// --- Ізометрія 2:1 ----------------------------------------------------------------------------------
+
+/**
+ * Ізометрія 2:1 нової графіки (крок 16): квартиру повернуто на 45°, клітинка — ромб. Одиниця арту = 1 px світу (зум камери
+ * масштабує все).
+ */
+export interface IsoProjection extends Projection {
+  readonly kind: "iso";
+}
+
+/** Плитка підлоги в одиницях арту (`GRAPHICS_PLAN.md`, «Контракти»): ромб 128 × 64. */
+export const ISO_TILE = { width: 128, height: 64 } as const;
+
+/**
+ * Висоти стін в одиницях арту (спільна геометрія хвилі 1): задні (ряд y=0 і стовпець x=0) — на повну висоту, внутрішні
+ * (між кімнатами) — приблизно третина з верхньою кришкою, передні (ряд y=11 і стовпець x=19) — лише плінтус.
+ */
+export const ISO_WALLS = { back: 200, inner: 66, plinth: 14 } as const;
+
+/** Поле довкола квартири, одиниці арту: щоб стіни й ноги біля плінтуса не впиралися в край екрана. */
+export const ISO_MARGIN = 16;
+
+const HALF_W = ISO_TILE.width / 2;
+const HALF_H = ISO_TILE.height / 2;
+
+/**
+ * Де на екрані верхня вершина ромба клітинки (0, 0) — кут задніх стін на підлозі. Ліворуч від неї лягає стовпець x=0 (на
+ * 12 клітинок — до x = −12·64), праворуч — ряд y=0 (до 20·64), над нею — задня стіна заввишки 200.
+ */
+export const ISO_ORIGIN: Vec = { x: MAP_HEIGHT * HALF_W + ISO_MARGIN, y: ISO_WALLS.back + ISO_MARGIN };
+
+/**
+ * Глибина точки підлоги між точками з тим самим x + y (на тій самій висоті екрана) — за x, як в `isoOrder`: на стільки
+ * далі з кожною клітинкою x. Набагато менше за зсуви, якими старі частини кладуть свої шматки одне над одним (0,5–2).
+ */
+const ISO_DEPTH_TIE = 1e-4;
+
+function isoToScreen(p: Vec): Vec {
+  return { x: ISO_ORIGIN.x + (p.x - p.y) * HALF_W, y: ISO_ORIGIN.y + (p.x + p.y) * HALF_H };
+}
+
+/** Стовпець задньої стіни: x − y лицьової грані від −11 (низ стовпця x=0) до 0 (кут), ряду — від 0 до 19 (правий край). */
+const BACK_FACE_MIN = -(MAP_HEIGHT - 1);
+const BACK_FACE_MAX = MAP_WIDTH - 1;
+
+export const ISO: IsoProjection = {
+  kind: "iso",
+  toScreen: isoToScreen,
+  // Прямокутник клітинок на екрані — ромб (паралелограм): ліва вершина — кут (x, y + h), права — (x + w, y), верхня —
+  // (x, y), нижня — (x + w, y + h).
+  rectToScreen(r) {
+    return {
+      x: ISO_ORIGIN.x + (r.x - r.y - r.h) * HALF_W,
+      y: ISO_ORIGIN.y + (r.x + r.y) * HALF_H,
+      w: (r.w + r.h) * HALF_W,
+      h: (r.w + r.h) * HALF_H,
+    };
+  },
+  // Для старих частин на ізометричній підлозі (кіт і персонаж старого вигляду в `?gfx=iso`): що нижче на екрані, те ближче.
+  // Між точками це й є порядок `isoOrder` (x + y), а реєстр глибини (`iso/depth.ts`) роздає ізометричним частинам глибини
+  // в тих самих одиницях — екранний y їхньої середини, — тож старі частини стають між ними приблизно правильно.
+  depthOf: screenDepth,
+  depthAt: (p) => screenDepth(isoToScreen(p).y) + p.x * ISO_DEPTH_TIE,
+  world: {
+    width: (MAP_WIDTH + MAP_HEIGHT) * HALF_W + ISO_MARGIN * 2,
+    height: ISO_WALLS.back + (MAP_WIDTH + MAP_HEIGHT) * HALF_H + ISO_MARGIN * 2,
+  },
+  tile: ISO_TILE,
+  wallRise: ISO_WALLS.back,
+  // Лицьові грані задніх стін — площини x = 1 (стовпець x=0) і y = 1 (ряд y=0), що сходяться в куті (1, 1); верхній край —
+  // на висоту стіни над їхнім низом. Ламана: найвища над кутом, донизу в обидва боки, за краями стін — як на краю.
+  backWallTop(screenX) {
+    const u = Math.min(BACK_FACE_MAX, Math.max(BACK_FACE_MIN, (screenX - ISO_ORIGIN.x) / HALF_W));
+    return ISO_ORIGIN.y - ISO_WALLS.back + (2 + Math.abs(u)) * HALF_H;
+  },
+  // Обернення лінійної частини проєкції: екран (sx, sy) = ((x − y)·64, (x + y)·32), тож x − y ∝ sx / 2, x + y ∝ sy. «Вгору»
+  // на екрані — до клітинки (−1, −1), «праворуч» — до (1, −1). Довжина — як у вектора на екрані (сила відхилення джойстика).
+  screenToTileDir(v) {
+    const length = Math.hypot(v.x, v.y);
+    if (length === 0) return { x: 0, y: 0 };
+    const x = v.y + v.x / 2;
+    const y = v.y - v.x / 2;
+    const k = length / Math.hypot(x, y);
+    return { x: x * k, y: y * k };
+  },
 };
