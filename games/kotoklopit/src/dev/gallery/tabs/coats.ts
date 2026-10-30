@@ -95,7 +95,8 @@ const personColumns = (look: Look): Column[] => {
 
 /** Сітка у px світу: підпис ліворуч, далі клітинки. */
 const GRID = { left: 230, cell: 150, row: 120, top: 40, zoom: 1.4 } as const;
-const TEXT_STYLE = { fontFamily: "system-ui, sans-serif", fontSize: "14px", color: "#f3e9dc" } as const;
+/** Підписи — світлі на темній підкладці: читаються на будь-якому тлі галереї (світле, темне, підлога). */
+const TEXT_STYLE = { fontFamily: "system-ui, sans-serif", fontSize: "14px", color: "#f3e9dc", backgroundColor: "#2b2530", padding: { x: 4, y: 2 } } as const;
 
 interface Placed {
   image: Phaser.GameObjects.Image;

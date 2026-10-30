@@ -15,6 +15,7 @@ import { PERSON_FIT, PERSON_RIG, PERSON_VARIANTS } from "../../../view/rig/defs/
 import type { RigFit } from "../../../view/rig/rigcore";
 import { RigSprite, type Attachable } from "../../../view/rig/rigsprite";
 import type { RigAnim, RigDef, SocketCargo } from "../../../view/rig/types";
+import { galleryView, onGalleryView } from "../kit";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
 
 type LooseRig = RigDef<string, string, string>;
@@ -151,9 +152,18 @@ function mount(ctx: GalleryContext): GalleryView {
   /** Поточна анімація. */
   const animNow = (): LooseAnim | null => animsOf(state.rig).get(state.anim) ?? null;
 
+  /**
+   * Видима частина світу, одиниці арту: шелл ставить світ (0, 0) у лівий верхній кут області, а камера має масштаб галереї
+   * (`zoom` CSS px на одиницю), тож область у `size` CSS px — це `size / zoom` одиниць.
+   */
+  const view = (): { w: number; h: number } => {
+    const { zoom } = galleryView();
+    return { w: size.w / zoom, h: size.h / zoom };
+  };
+
   const scaleNow = (): number => {
     if (state.scale !== "auto") return Number(state.scale);
-    const fit = (size.h * 0.62) / RIGS[state.rig].height;
+    const fit = (view().h * 0.62) / RIGS[state.rig].height;
     return Math.max(1, Math.min(4, Math.floor(fit * 2) / 2));
   };
 
@@ -187,8 +197,8 @@ function mount(ctx: GalleryContext): GalleryView {
 
   const place = (): void => {
     const k = scaleNow();
-    const x = size.w / 2;
-    const y = size.h * 0.78;
+    const x = view().w / 2;
+    const y = view().h * 0.78;
     sprite?.setPosition(x, y).setScale(k);
     floor.clear();
     floor.setPosition(x, y).setScale(k);
@@ -399,6 +409,8 @@ function mount(ctx: GalleryContext): GalleryView {
     size = { w, h };
     place();
   });
+  // Масштаб галереї змінився — скелет знову посередині видимого.
+  const unsubscribeView = onGalleryView(() => place());
 
   rebuild();
 
@@ -416,6 +428,7 @@ function mount(ctx: GalleryContext): GalleryView {
     },
     destroy(): void {
       unsubscribe?.();
+      unsubscribeView();
       clearCargo();
       sprite?.destroy();
       sprite = null;
