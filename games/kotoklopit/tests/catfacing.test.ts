@@ -306,6 +306,41 @@ describe("розведення пар (`catPairs`)", () => {
     expect(pairOf(save.current, a)).toBeNull();
   });
 
+  it("гра з другом у русі (засідка, погоня, мисливець наздоганяє): не пара, і кожен дивиться туди, куди біжить, а не на другого", () => {
+    const save = game();
+    const hunter = withCat(save, { x: 9.5, y: 8.5 });
+    const prey = withCat(save, { x: 10.5, y: 8.5 });
+    const play = (phase: "ambush" | "chase" | "tussle" | "pause") => ({ phase, left: 2, chaser: hunter.id, swap: 2 });
+    // Погоня: утікач біжить до (14, 8), мисливець — за ним на клітинку позаду; обидва зсуваються на +0,1 по x (униз-праворуч).
+    hunter.act = act("wrestle", { target: `cat:${prey.id}`, paired: true, game: play("chase") });
+    prey.act = act("wrestle", { target: `cat:${hunter.id}`, paired: true, game: play("chase"), run: { x: 14, y: 8 } });
+    const from = { prey: { x: prey.x, y: prey.y }, hunter: { x: hunter.x, y: hunter.y } };
+    prey.x += 0.1;
+    hunter.x += 0.1;
+    expect(catPairs(save.current).size).toBe(0);
+    expect(catFacing(save.current, prey, from.prey)).toEqual(FRONT);
+    expect(catFacing(save.current, hunter, from.hunter)).toEqual(FRONT);
+    // Утікач далеко попереду й тікає від мисливця — теж за рухом, а не спиною до руху на мисливця.
+    prey.x = 13.4;
+    expect(catFacing(save.current, prey, { x: 13.3, y: prey.y })).toEqual(FRONT);
+    // Першого кадру (руху ще не видно) — до клітинки, куди біжить.
+    expect(catFacing(save.current, prey, null)).toEqual(FRONT);
+    // Засідка: мисливець припав до підлоги обличчям до утікача, а той підтюпцем відходить ліворуч-униз (+y).
+    prey.x = 10.5;
+    hunter.act = act("wrestle", { target: `cat:${prey.id}`, paired: true, game: play("ambush") });
+    prey.act = act("wrestle", { target: `cat:${hunter.id}`, paired: true, game: play("ambush"), run: { x: 10, y: 11 } });
+    expect(catPairs(save.current).size).toBe(0);
+    expect(catFacing(save.current, prey, { x: prey.x, y: prey.y - 0.05 })).toEqual(FRONT_LEFT);
+    expect(catFacing(save.current, hunter, { x: hunter.x, y: hunter.y })).toEqual(FRONT);
+    // Боротьба: мисливець ще наздоганяє (`run`) — не пара; добіг і стоїть поруч — пара.
+    prey.x = 10.4;
+    hunter.act = act("wrestle", { target: `cat:${prey.id}`, paired: true, game: play("tussle"), run: { x: 10, y: 8 } });
+    prey.act = act("wrestle", { target: `cat:${hunter.id}`, paired: true, game: play("tussle") });
+    expect(pairOf(save.current, prey)).toBeNull();
+    delete hunter.act.run;
+    expect(pairOf(save.current, prey)?.kind).toBe("wrestle");
+  });
+
   it("«Щедра душа» підсувається до того, кого гладять, а той лишається під рукою", () => {
     const save = game();
     const lucky = withCat(save, { x: 9.5, y: 8.5 });

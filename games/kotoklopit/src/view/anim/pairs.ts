@@ -80,6 +80,11 @@ function byTarget(state: GameState, target: string | null, prefixes: readonly st
 }
 
 const standing = (cat: Cat): boolean => cat.act.goal === null;
+/**
+ * Гра з другом на місці: ніхто не біжить. Сим рухає котів у грі без `goal` — утікача до `act.run` (засідка, погоня), мисливця
+ * за ним (погоня) чи до нього (боротьба, `run`), — і тоді двоє не пара: кожен дивиться туди, куди біжить.
+ */
+const playingStill = (cat: Cat): boolean => standing(cat) && cat.act.run === undefined && cat.act.game?.phase !== "chase";
 const eyeing = (cat: Cat, other: Cat): boolean => cat.act.target === `cat:${other.id}`;
 
 /** Пара для кота `a` за його дією: з ким і яка; null — кіт не в парі. Мати й кошенята — окремо (`nursing`). */
@@ -91,9 +96,9 @@ function partnerOf(state: GameState, a: Cat): { b: Cat; kind: Exclude<PairKind, 
     const b = byTarget(state, act.target, ["cat"]);
     if (b && (b.act.kind === "standoff" || b.act.kind === "fight") && standing(b) && eyeing(b, a)) return { b, kind: "faceoff" };
   }
-  if (act.kind === "wrestle" && act.paired === true && standing(a)) {
+  if (act.kind === "wrestle" && act.paired === true && playingStill(a)) {
     const b = byTarget(state, act.target, ["cat"]);
-    if (b && b.act.kind === "wrestle" && b.act.paired === true && standing(b) && distance(a, b) <= NEAR) return { b, kind: "wrestle" };
+    if (b && b.act.kind === "wrestle" && b.act.paired === true && playingStill(b) && distance(a, b) <= NEAR) return { b, kind: "wrestle" };
   }
   if (act.kind === "groom" && standing(a)) {
     const b = byTarget(state, act.target, ["cat", "kitten"]);

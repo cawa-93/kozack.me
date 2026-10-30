@@ -61,6 +61,15 @@ export function personFacing(state: GameState, prev: RigFacing | null = null): R
   return facingFromTiles(state.character.body.facing, prev) ?? prev ?? { view: "front", flip: false };
 }
 
+/**
+ * Кіт кудись іде: до клітинки `goal`, у грі з другом — до `act.run` (утікач у засідці й погоні, мисливець, що наздоганяє в
+ * боротьбі) чи за утікачем (мисливець у погоні: сим веде його за утікачем без `goal` і `run`).
+ */
+export function catMoving(cat: Cat): boolean {
+  const act = cat.act;
+  return act.goal !== null || act.run !== undefined || (act.kind === "wrestle" && act.game?.phase === "chase");
+}
+
 /** Що ще знає `catFacing`, крім стану. */
 export interface CatFacingOptions {
   /** Ракурс цього кота минулого кадру: гістерезис. */
@@ -76,7 +85,8 @@ export interface CatFacingOptions {
  *   персонажа — `flip` коту поверх нього дзеркалив би вдруге, і кіт дивився б у протилежний бік. Ракурс — персонажа. Куди
  *   кіт дивиться у світі — `personFacing`.
  * - У парі (протистояння, бійка, вилизування, гра, сон поруч) — обличчям до пари вздовж горизонталі екрана (`pairs.ts`).
- * - Іде — за рухом (різниця позицій; кадр без руху — як минулого кадру, а без нього — до `goal`).
+ * - Іде — за рухом (різниця позицій; кадр без руху — як минулого кадру, а без нього — до `goal` чи `run`). Іде й той, у кого
+ *   немає `goal`: у грі з другом утікач біжить до `act.run` (засідка, погоня), мисливець — до нього (погоня, боротьба).
  * - Стоїть: на підвіконні під вікном у задній стіні — спиною до нас, у вікно (сумний — до нас, щоб було видно смуток, як і в
  *   старому вигляді); «Образливий» дметься — спиною, від персонажа; «Пастка на животику» — головою від персонажа; відданий,
  *   що кліпає, і ласкавий, що бодається, — до персонажа; ті два — завжди лицем до нас, бо це про морду. Хто просить, іде по
@@ -92,12 +102,14 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
   const pair = options.pair === undefined ? pairOf(state, cat) : options.pair;
   if (pair?.facing) return pair.facing;
   const act = cat.act;
-  if (act.goal !== null) {
+  if (catMoving(cat)) {
     const step = prevPos === null ? null : { x: cat.x - prevPos.x, y: cat.y - prevPos.y };
     const length = step === null ? 0 : Math.hypot(step.x, step.y);
     if (step !== null && length >= MIN_STEP && length <= MAX_STEP) return facingFromTiles(step, prev) ?? fallback;
     if (prev !== null) return prev;
-    return facingFromTiles({ x: act.goal.x + 0.5 - cat.x, y: act.goal.y + 0.5 - cat.y }, null) ?? fallback;
+    const heading = act.goal ?? act.run;
+    // Мисливець у погоні без руху цього кадру — далі, до цілі дії (утікача).
+    if (heading) return facingFromTiles({ x: heading.x + 0.5 - cat.x, y: heading.y + 0.5 - cat.y }, null) ?? fallback;
   }
   const person = state.character.body;
   const look = catLook(state, cat);
