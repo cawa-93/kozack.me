@@ -9,10 +9,12 @@
 // `mouth`, `top`), `<назва>-back` — те саме місце в ракурсі back. Кошеня — ті самі кадри з поправками пропорцій скелета
 // (`RigDef.proportions.kitten`), окремих кадрів немає.
 //
-// Звичайні частини (тулуб `normal`, голова, вуха й морда `normal`, очі, рот, лапи `normal`, довгий хвіст) — полотна
-// еталонів F1b (`art/cat/…`, `art/STYLE.md`, розділ 13): арт головний, а `tests/art.test.ts` звіряє viewBox із записом.
-// Решта варіантів поки орієнтовні: полотно еталона, розтягнуте від pivot у пропорціях форми (`scaled`), — пакет, що їх
-// малює (A7, A8), уточнює числа разом із SVG.
+// Частини основи (A7: тулуби трьох статур, голова, очі, рот, довгий хвіст; вуха, морда й лапи `normal` — еталони F1b
+// `art/cat/…`, `art/STYLE.md`, розділ 13) — полотна намальованих SVG: арт головний, а `tests/art.test.ts` звіряє viewBox
+// із записом. Полотна тулуба, голови й довгого хвоста A7 розширив під пасма довгої шерсті (`fluff`), тулуба — ще й донизу
+// під живіт вагітної (`cat/belly/*`, A8): точки відносно pivot ті самі, що в еталона, тож скелет стоїть так само. Решта
+// варіантів поки орієнтовні: полотно еталона, розтягнуте від pivot у пропорціях форми (`scaled`), — пакет, що їх малює
+// (A8), уточнює числа разом із SVG.
 
 import type { Shape } from "../../../../sim/types";
 import type { ArtPoint } from "../../types";
@@ -43,55 +45,101 @@ function scaled(part: Part, k: { x: number; y: number }): Part {
   return { ...result, points };
 }
 
-/** Тулуб звичайної статури — еталон F1b (`art/cat/body/normal/*.svg`); pivot — центр таза. */
-const BODY_NORMAL: Part = {
-  size: { w: 61, h: 39 },
-  pivot: { x: 20, y: 24 },
-  points: {
-    neck: { x: 44, y: 15 },
-    "neck-back": { x: 47, y: 12 },
-    "neck-base": { x: 40, y: 17 },
-    "neck-base-back": { x: 43, y: 14 },
-    "shoulder-far": { x: 50, y: 22 },
-    "shoulder-far-back": { x: 44.5, y: 22 },
-    "shoulder-near": { x: 44.5, y: 25.5 },
-    "shoulder-near-back": { x: 50, y: 25.5 },
-    "hip-far": { x: 23.5, y: 22 },
-    "hip-far-back": { x: 18, y: 22 },
-    "hip-near": { x: 18, y: 25.5 },
-    "hip-near-back": { x: 23.5, y: 25.5 },
-    tail: { x: 12, y: 16 },
-    "tail-back": { x: 13, y: 15 },
-    back: { x: 32, y: 12 },
-    "back-back": { x: 30, y: 10 },
+/**
+ * Тулуби статур (§9.10) — A7: звичайна — еталон F1b з полотном під пасма й живіт вагітної; струнка — довша й тонша, з
+ * підтягнутим животом; кремезна — коротша й глибша, з широкими грудьми. Pivot — центр таза; суглоби лап на тій самій
+ * висоті відносно таза (лапи ті самі й стоять на підлозі), уздовж тіла — свої; шия й корінь хвоста — свої.
+ */
+const BODIES: Record<Shape["build"], Part> = {
+  slim: {
+    size: { w: 70, h: 42 },
+    pivot: { x: 23, y: 22 },
+    points: {
+      neck: { x: 48.1, y: 14.3 },
+      "neck-back": { x: 51.4, y: 12 },
+      "neck-base": { x: 43.7, y: 15.9 },
+      "neck-base-back": { x: 47, y: 13.5 },
+      "shoulder-far": { x: 54.6, y: 20 },
+      "shoulder-far-back": { x: 48.6, y: 20 },
+      "shoulder-near": { x: 48.6, y: 23.5 },
+      "shoulder-near-back": { x: 54.6, y: 23.5 },
+      "hip-far": { x: 25.8, y: 20 },
+      "hip-far-back": { x: 19.8, y: 20 },
+      "hip-near": { x: 19.8, y: 23.5 },
+      "hip-near-back": { x: 25.8, y: 23.5 },
+      tail: { x: 13.2, y: 15.1 },
+      "tail-back": { x: 14.3, y: 14.3 },
+      back: { x: 35, y: 12 },
+      "back-back": { x: 32.8, y: 10.4 },
+    },
+  },
+  normal: {
+    size: { w: 69, h: 44 },
+    pivot: { x: 23, y: 24 },
+    points: {
+      neck: { x: 47, y: 15 },
+      "neck-back": { x: 50, y: 12 },
+      "neck-base": { x: 43, y: 17 },
+      "neck-base-back": { x: 46, y: 14 },
+      "shoulder-far": { x: 53, y: 22 },
+      "shoulder-far-back": { x: 47.5, y: 22 },
+      "shoulder-near": { x: 47.5, y: 25.5 },
+      "shoulder-near-back": { x: 53, y: 25.5 },
+      "hip-far": { x: 26.5, y: 22 },
+      "hip-far-back": { x: 21, y: 22 },
+      "hip-near": { x: 21, y: 25.5 },
+      "hip-near-back": { x: 26.5, y: 25.5 },
+      tail: { x: 15, y: 16 },
+      "tail-back": { x: 16, y: 15 },
+      back: { x: 35, y: 12 },
+      "back-back": { x: 33, y: 10 },
+    },
+  },
+  stocky: {
+    size: { w: 68, h: 48 },
+    pivot: { x: 21, y: 26 },
+    points: {
+      neck: { x: 44.1, y: 15.7 },
+      "neck-back": { x: 46.9, y: 12.1 },
+      "neck-base": { x: 40.4, y: 18.1 },
+      "neck-base-back": { x: 43.2, y: 14.5 },
+      "shoulder-far": { x: 49.7, y: 24 },
+      "shoulder-far-back": { x: 44.6, y: 24 },
+      "shoulder-near": { x: 44.6, y: 27.5 },
+      "shoulder-near-back": { x: 49.7, y: 27.5 },
+      "hip-far": { x: 25.1, y: 24 },
+      "hip-far-back": { x: 20, y: 24 },
+      "hip-near": { x: 20, y: 27.5 },
+      "hip-near-back": { x: 25.1, y: 27.5 },
+      tail: { x: 14.4, y: 16.9 },
+      "tail-back": { x: 15.3, y: 15.7 },
+      back: { x: 33, y: 12.1 },
+      "back-back": { x: 31.1, y: 9.7 },
+    },
   },
 };
 
-/** Довжина й висота тулуба статури відносно звичайної (§9.10): струнка довша й тонша, кремезна коротша й глибша. */
-const BUILD: Record<Shape["build"], { x: number; y: number }> = {
-  slim: { x: 30 / 32, y: 13 / 15 },
-  normal: { x: 1, y: 1 },
-  stocky: { x: 34 / 32, y: 18 / 15 },
-};
-
-/** Тулуб статури: звичайна — еталон, решта — він же в пропорціях статури (орієнтовно, до A7). */
+/** Тулуб статури. */
 export function catBody(build: Shape["build"]): Part {
-  return build === "normal" ? BODY_NORMAL : scaled(BODY_NORMAL, BUILD[build]);
+  return BODIES[build];
 }
 
-/** Голова — еталон F1b: pivot — шия; `top` — над вухами (вуха — окремі частини), тож навмисно поза полотном. */
+/**
+ * Голова — еталон F1b, полотно A7 — із запасом під «комір» довгої шерсті; pivot — шия; `top` — над вухами (вуха — окремі
+ * частини), тож навмисно поза полотном.
+ */
 export const CAT_HEAD: Part = {
-  size: { w: 47, h: 38 },
-  pivot: { x: 15, y: 27 },
+  size: { w: 52, h: 43 },
+  pivot: { x: 20, y: 27 },
   points: {
-    "ear-far": { x: 29.5, y: 10 },
-    "ear-far-back": { x: 14.5, y: 11 },
-    "ear-near": { x: 14.5, y: 11.5 },
-    "ear-near-back": { x: 29, y: 10.5 },
-    eyes: { x: 26, y: 18.6 },
-    muzzle: { x: 27.8, y: 24.4 },
-    mouth: { x: 27.8, y: 25.8 },
-    top: { x: 22, y: -6 },
+    "ear-far": { x: 34.5, y: 10 },
+    "ear-far-back": { x: 19.5, y: 11 },
+    "ear-near": { x: 19.5, y: 11.5 },
+    "ear-near-back": { x: 34, y: 10.5 },
+    eyes: { x: 31, y: 18.6 },
+    muzzle: { x: 32.8, y: 24.4 },
+    mouth: { x: 32.8, y: 25.8 },
+    top: { x: 27, y: -6 },
   },
 };
 
@@ -149,7 +197,10 @@ export const CAT_BACK_LEGS: Record<Shape["legs"], Part> = {
   short: { size: { w: 28, h: 42 - SHORT_LEGS }, pivot: { x: 13, y: 15 }, points: { paw: { x: 14, y: 35.5 - SHORT_LEGS } } },
 };
 
-/** Довгий хвіст — еталон F1b: у вихідній позі дугою вгору від кореня (pivot), `tip` — кінчик. */
+/**
+ * Полотно довгого хвоста еталона F1b (до пасом) — лише основа орієнтовних полотен інших хвостів (`scaled` нижче), щоб
+ * розширення під пасма (A7) їх не зсунуло.
+ */
 const TAIL_LONG: Part = {
   size: { w: 40, h: 49 },
   pivot: { x: 24, y: 37 },
@@ -157,11 +208,21 @@ const TAIL_LONG: Part = {
 };
 
 /**
+ * Довгий хвіст — еталон F1b, полотно A7 — із запасом під «пір'їну» довгої шерсті: у вихідній позі дугою вгору від кореня
+ * (pivot), `tip` — кінчик.
+ */
+const TAIL_LONG_DRAWN: Part = {
+  size: { w: 48, h: 53 },
+  pivot: { x: 30, y: 41 },
+  points: { tip: { x: 25.6, y: 14.6 }, "tip-back": { x: 35.8, y: 16.4 } },
+};
+
+/**
  * Хвости (§9.10; «none» — слот порожній): довгий, короткий, пухнастий, бобтейл-помпон; pivot — корінь. Варіанти — полотна
  * SVG пакета A8a (з пасмами довгої шерсті `fluff` за краєм), `tip` / `tip-back` — кінчик (у помпона — його верх).
  */
 export const CAT_TAILS: Record<Exclude<Shape["tail"], "none">, Part> = {
-  long: TAIL_LONG,
+  long: TAIL_LONG_DRAWN,
   short: { size: { w: 37, h: 42 }, pivot: { x: 23, y: 30 }, points: { tip: { x: 13.2, y: 15.2 }, "tip-back": { x: 24.2, y: 13.4 } } },
   fluffy: { size: { w: 55, h: 58 }, pivot: { x: 32, y: 45 }, points: { tip: { x: 28.6, y: 16.2 }, "tip-back": { x: 38.4, y: 17.6 } } },
   bobtail: { size: { w: 37, h: 34 }, pivot: { x: 22, y: 22 }, points: { tip: { x: 18.4, y: 10.8 }, "tip-back": { x: 21, y: 10.2 } } },
