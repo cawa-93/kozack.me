@@ -434,7 +434,7 @@ async function comparePair(a: string, b: string, file: string, diffDir: string |
         else {
           // Незмінене — блідою сірою тінню знімка A, щоб було видно, де різниця.
           const gray = 0.299 * imageA.data[i]! + 0.587 * imageA.data[i + 1]! + 0.114 * imageA.data[i + 2]!;
-          const light = Math.round(190 + gray / 4);
+          const light = Math.round(150 + gray * 0.35);
           diff.set([light, light, light, 255], i);
         }
       }
