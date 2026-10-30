@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { EXTRUDE, GAP, pack, PAGE_MAX } from "../scripts/art/pack";
 import { BOWL_CAPACITY, THINGS } from "../src/sim/config";
 import type { TabbyPattern } from "../src/sim/genetics";
 import { FUR_SPOTS, ROBOT_DOCK } from "../src/sim/household";
@@ -60,11 +61,18 @@ describe("маніфест: правила записів", () => {
     }
   });
 
-  it("кожен кадр уміщується на сторінку атласу 2048²", () => {
+  it("кожен кадр уміщується на сторінку атласу 2048² — разом із продубльованим краєм і відступом пакувальника", () => {
+    // Пакувальник (`pack.ts`) кладе навколо растра край `EXTRUDE` з обох боків і відступ `GAP`: растр, що доходить до краю
+    // полотна (плита підлоги, стіна), — округлене `size · res` пікселів, і з краєм він мусить влізти в `PAGE_MAX`.
+    const limit = PAGE_MAX - 2 * EXTRUDE - GAP;
+    expect(limit).toBe(2042);
     for (const e of ENTRIES) {
       const res = e.res ?? DEFAULT_RES;
-      expect(Math.max(e.size.w, e.size.h) * res, e.id).toBeLessThanOrEqual(2048);
+      expect(Math.round(Math.max(e.size.w, e.size.h) * res), e.id).toBeLessThanOrEqual(limit);
     }
+    // Межа — справді та, на якій пакувальник ще кладе растр.
+    expect(() => pack([{ key: "a", w: limit, h: 10 }])).not.toThrow();
+    expect(() => pack([{ key: "a", w: limit + 1, h: 10 }])).toThrow(/не влазить/);
   });
 
   it("ракурси — лише в частин скелета кота й персонажа, і там обидва", () => {
