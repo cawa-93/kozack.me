@@ -2728,7 +2728,8 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
           act.minutes = 0;
           return;
         }
-        // Друг, що не спить, сидить на місці й мружиться, а над ним — думка-сердечко (§9.4, рішення автора 2026-10-26, В1).
+        // Друг, що не спить, сидить на місці й мружиться, а над ним — думка «приємно», два сердечка (§9.4, рішення автора 2026-10-26, В1;
+        // §11.4, рішення автора 2026-10-30: одне сердечко — здоров'я персонажа).
         if (!isLickedBy(other, cat)) holdStill(other, cat, act.minutes);
         emit(state, { type: "groom-started", cat: cat.id, friend: other.id });
       }

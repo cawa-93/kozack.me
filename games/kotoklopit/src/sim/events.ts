@@ -240,7 +240,7 @@ export type GameEvent =
   | { type: "discarded"; item: HomeItem }
   /** Кіт поточив кігті (§9.12, «Дряпання»): де саме — кігтеточка, диван, одвірок, килимок чи коробки. */
   | { type: "scratched"; cat: number; where: ScratchSpot }
-  /** Кіт почав вилизувати друга чи кошеня, і той мружиться (§9.4, рішення автора 2026-10-26, В1): над тим, кого вилизують, — сердечко. */
+  /** Кіт почав вилизувати друга чи кошеня, і той мружиться (§9.4, рішення автора 2026-10-26, В1): над тим, кого вилизують, — думка «приємно» (два сердечка, §11.4). */
   | { type: "groom-started"; cat: number; friend: number }
   | { type: "groomed"; cat: number; friend: number }
   | { type: "cat-fight"; cats: [number, number] }
