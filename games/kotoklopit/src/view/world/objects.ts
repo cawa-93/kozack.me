@@ -197,13 +197,16 @@ export interface IsoItemLook {
   readonly half: number;
 }
 
-/** Висоти — як полотна маніфесту (`a05-catstuff.ts`, `a03-bath.ts`) над pivot без запасу під контур. */
+/**
+ * Висоти — як полотна маніфесту (`a05-catstuff.ts`, `a03-bath.ts`) над pivot без запасу `PAD` 8; півширина — половина
+ * полотна. Розміри мисок, лотків і будиночків — з `art/STYLE.md` (§8, «Речі котів»).
+ */
 const ITEM_LOOKS: Readonly<Record<IsoFloorKind, Readonly<Record<Quality, IsoItemLook>>>> = {
-  bowl: same({ height: 14, half: 24 }),
-  water: same({ height: 14, half: 24 }),
-  litter: { cheap: { height: 28, half: 44 }, premium: { height: 56, half: 44 } },
+  bowl: same({ height: 24, half: 28 }),
+  water: same({ height: 24, half: 28 }),
+  litter: { cheap: { height: 48, half: 60 }, premium: { height: 76, half: 60 } },
   toy: same({ height: 16, half: 40 }),
-  house: same({ height: 90, half: 48 }),
+  house: same({ height: 92, half: 66 }),
   // Дешева — еталон F1a (заввишки 89, підставка й помпон ширші за стовпчик).
   scratcher: { cheap: { height: 89, half: 54 }, premium: { height: 100, half: 38 } },
   feeder: { cheap: { height: 56, half: 24 }, premium: { height: 56, half: 28 } },
