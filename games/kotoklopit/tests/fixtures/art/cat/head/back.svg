@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 60">
+  <defs>
+    <path id="nape" d="M14 34 C14 18 22 10 32 10 C42 10 50 18 50 34 C50 44 42 50 32 50 C22 50 14 44 14 34 Z"/>
+  </defs>
+  <g id="fill"><use href="#nape" fill="#ffffff"/></g>
+  <g id="shade"><path d="M18 40 C24 48 40 48 46 40" fill="none" stroke="#bdb3c2" stroke-width="4"/></g>
+  <g id="ink"><use href="#nape" fill="none" stroke="#1f1a24" stroke-width="6"/></g>
+</svg>
