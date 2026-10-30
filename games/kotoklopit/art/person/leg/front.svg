@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 74" width="33" height="74">
+<!-- person/leg/front — нога: штанина (слоти leg-far і leg-near), ракурс front (¾ спереду). Еталон F1b, art/STYLE.md.
+size 33×74; pivot (16, 18) — кульшовий суглоб; верх ховається під стегна торса; points: foot (16.6, 67.2).
+Шари: fill-bottom, shade, ink.
+Від суглоба до кісточки (точка foot) — 49,2; низ штанини ховається у взуття.
+-->
+<defs>
+<path id="person-leg-front-shape" d="M6.8 14.1C6.5 17.6 7.3 23.8 7.6 28.1C7.9 32.5 8.2 36.3 8.4 40.1C8.6 43.9 8.7 47.7 8.8 51C8.9 54.4 9.1 57.3 9.1 60.1C9.1 62.9 6.3 66.5 8.8 67.7C11.4 68.9 21.9 68.8 24.4 67.5C26.9 66.2 24 62.7 23.9 59.9C23.8 57.2 23.9 54.3 24 51C24.1 47.6 24.3 43.8 24.4 39.9C24.5 36.1 24.7 32.2 24.8 27.9C24.9 23.5 25.6 17.3 25.2 13.9C24.8 10.4 24.1 8.8 22.5 7.3C21 5.8 18.1 4.8 15.9 4.8C13.7 4.8 10.8 5.9 9.3 7.5C7.8 9 7.1 10.7 6.8 14.1Z"/>
+<clipPath id="person-leg-front-clip"><use href="#person-leg-front-shape"/></clipPath>
+</defs>
+<g id="fill-bottom">
+<use href="#person-leg-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-leg-front-clip)">
+<path d="M5 20C8.7 18.2 23.3 18.3 27 20C30.7 21.7 28.8 28.9 27 30.4C25.2 31.9 19.7 29 16 29C12.3 29 6.8 32.1 5 30.6C3.2 29.1 1.3 21.8 5 20Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M6.8 14.1C6.5 17.6 7.3 23.8 7.6 28.1C7.9 32.5 8.2 36.3 8.4 40.1C8.6 43.9 8.7 47.7 8.8 51C8.9 54.4 9.1 57.3 9.1 60.1C9.1 62.9 6.3 66.5 8.8 67.7" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.4 67.5C26.9 66.2 24 62.7 23.9 59.9C23.8 57.2 23.9 54.3 24 51C24.1 47.6 24.3 43.8 24.4 39.9C24.5 36.1 24.7 32.2 24.8 27.9C24.9 23.5 25.6 17.3 25.2 13.9" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.6 43.4Q17 43.8 18.4 45.8Q16.4 44.8 14.6 43.4Z" fill="#2e1f29"/>
+</g>
+</svg>
