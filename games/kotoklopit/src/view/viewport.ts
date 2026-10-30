@@ -6,7 +6,7 @@ import Phaser from "phaser";
 
 import { safeArea, type Insets } from "../screen";
 import type { Vec } from "../sim/types";
-import { TILE_H, WORLD } from "./geometry";
+import type { Projection } from "./world/projection";
 
 /** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
 export const BASE_WIDTH = 1280;
@@ -35,14 +35,19 @@ export class Viewport {
   private readonly camera: Phaser.Cameras.Scene2D.Camera;
   private readonly uiCamera: Phaser.Cameras.Scene2D.Camera;
   private readonly listeners: ((frame: Frame) => void)[] = [];
-  private center: Vec = { x: WORLD.width / 2, y: WORLD.height / 2 };
+  private center: Vec;
   /** Наступного кадру камера стає на місце одразу, без наїзду. */
   private snap = true;
   /** Масштаб, за якого квартира вміщується й читається, і наїзд поверх нього. */
   private zoomBase = 1;
   private zoomFocus = 1;
 
-  constructor(private readonly scene: Phaser.Scene) {
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly projection: Projection,
+  ) {
+    const bounds = projection.world;
+    this.center = { x: bounds.width / 2, y: bounds.height / 2 };
     this.world = scene.add.layer();
     this.ui = scene.add.layer();
     this.camera = scene.cameras.main;
@@ -83,8 +88,9 @@ export class Viewport {
   /** Камера йде за персонажем, але не заглядає за межі квартири; якщо та вміщується — стоїть посередині. */
   follow(target: Vec, seconds: number): void {
     const camera = this.camera;
-    const x = centerOn(target.x, camera.width / camera.zoom, WORLD.width);
-    const y = centerOn(target.y, camera.height / camera.zoom, WORLD.height);
+    const bounds = this.projection.world;
+    const x = centerOn(target.x, camera.width / camera.zoom, bounds.width);
+    const y = centerOn(target.y, camera.height / camera.zoom, bounds.height);
     const k = this.snap ? 1 : 1 - Math.exp(-FOLLOW_RATE * seconds);
     this.snap = false;
     this.center = { x: this.center.x + (x - this.center.x) * k, y: this.center.y + (y - this.center.y) * k };
@@ -104,8 +110,9 @@ export class Viewport {
     const top = safe.top + HUD_HEIGHT;
     this.uiCamera.setSize(width, height);
     this.camera.setViewport(0, top, width, height - top);
-    const fit = Math.min(width / WORLD.width, (height - top) / WORLD.height);
-    const readable = (MIN_TILE_CSS * k.y) / TILE_H;
+    const bounds = this.projection.world;
+    const fit = Math.min(width / bounds.width, (height - top) / bounds.height);
+    const readable = (MIN_TILE_CSS * k.y) / this.projection.tile.height;
     this.zoomBase = Math.max(fit, readable);
     this.camera.setZoom(this.zoomBase * this.zoomFocus);
     this.snap = true;

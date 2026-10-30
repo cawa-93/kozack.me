@@ -39,7 +39,6 @@ import { CatView } from "../view/legacy/cat";
 import { showsFightBubble } from "../view/pose";
 import { drawCabinetExtras, drawCatCorner, drawTippedTrash, drawToiletRoll, drawTrinket, itemScreen } from "../view/legacy/catcorner";
 import { COLORS } from "../view/colors";
-import { depthOf, toScreen, WALL_RISE } from "../view/geometry";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
@@ -56,6 +55,7 @@ import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
 import { objectHeight } from "../view/world/objects";
+import { OBLIQUE } from "../view/world/projection";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -106,6 +106,8 @@ export class DayScene extends Phaser.Scene {
   /** Імена над котами в нашийниках (§9.10). */
   private readonly collarLabels = new Map<number, Phaser.GameObjects.Text>();
   private viewport!: Viewport;
+  /** Як квартира лягає на екран (§8.4). */
+  private readonly projection = OBLIQUE;
   private corner!: Phaser.GameObjects.Graphics;
   private marks!: Phaser.GameObjects.Graphics;
   private gloom!: Phaser.GameObjects.Rectangle;
@@ -147,9 +149,9 @@ export class DayScene extends Phaser.Scene {
 
   create(): void {
     createIconTextures(this);
-    this.viewport = new Viewport(this);
+    this.viewport = new Viewport(this, this.projection);
     const { world, ui } = this.viewport;
-    this.views = drawApartment(this, world);
+    this.views = drawApartment(this, world, this.projection);
     // Миски, лотки й безлад лежать на підлозі: під меблями, котами й персонажем.
     this.corner = this.add.graphics().setDepth(0).addToDisplayList(world);
     for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
@@ -158,11 +160,11 @@ export class DayScene extends Phaser.Scene {
     for (const trinket of TRINKETS) {
       this.trinkets.set(trinket.kind, this.add.graphics().setDepth(this.view(trinket.object).depth + 1).addToDisplayList(world));
     }
-    this.toiletRoll = this.add.graphics().setDepth(depthOf(toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
+    this.toiletRoll = this.add.graphics().setDepth(this.projection.depthOf(this.projection.toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
     this.cabinetLook = this.add.graphics().setDepth(this.view("cat-cabinet").depth + 0.6).addToDisplayList(world);
     this.trashLook = this.add.graphics().setDepth(this.view("trash").depth).addToDisplayList(world);
     this.marks = this.add.graphics().setDepth(WORLD_LAYERS.marks).addToDisplayList(world);
-    this.person = new PersonView(this, world);
+    this.person = new PersonView(this, world, this.projection);
     this.bubbles = new Bubbles(this, world);
     this.hearts = new MoodHearts(this, world, (cat) => this.anchorOf(`cat:${cat}`));
     this.storage = new StorageIndicators(this, world);
@@ -609,7 +611,7 @@ export class DayScene extends Phaser.Scene {
     const inside = activity?.kind === "use" && activity.inside === true && activity.bath !== true;
     this.person.draw(state.character, this.moving, time, state.trip !== null || inside, state.home.clothes <= 0, this.sleepiness(time));
     this.drawCats(time);
-    drawCatCorner(this.corner, state);
+    drawCatCorner(this.corner, this.projection, state);
     this.drawInteraction(time);
     this.showEarnings(time);
     this.bubbles.update();
@@ -669,7 +671,7 @@ export class DayScene extends Phaser.Scene {
       alive.add(cat.id);
       let view = this.catViews.get(cat.id);
       if (!view) {
-        view = new CatView(this, this.viewport.world, cat);
+        view = new CatView(this, this.viewport.world, cat, this.projection);
         this.catViews.set(cat.id, view);
       }
       // Кіт на руках чи на колінах — біля персонажа.
@@ -762,7 +764,7 @@ export class DayScene extends Phaser.Scene {
       const view = this.view(id);
       drawItem(g, item, view.top.x + view.top.w / 2, view.top.y + view.top.h / 2 + 6);
     }
-    const roll = toScreen(TOILET_ROLL);
+    const roll = this.projection.toScreen(TOILET_ROLL);
     drawToiletRoll(this.toiletRoll.clear(), roll.x, roll.y, home.rollDown === true);
     // Шафка з кормом: відчинена котом і з замком (§9.12, «Кмітливість у бешкеті»); смітник лежить, поки сміття не прибрали.
     const cabinet = this.view("cat-cabinet");
@@ -795,13 +797,13 @@ export class DayScene extends Phaser.Scene {
     if (kind === "item") {
       const item = this.state.home.items.find((i) => i.id === number);
       if (!item) return null;
-      const p = itemScreen(item);
+      const p = itemScreen(this.projection, item);
       return { x: p.x, y: p.y - 14 };
     }
     if (kind === "mess") {
       const mess = this.state.home.messes.find((m) => m.id === number);
       if (!mess) return null;
-      const p = toScreen(mess);
+      const p = this.projection.toScreen(mess);
       return { x: p.x, y: p.y - 12 };
     }
     if (kind === "cat") {
@@ -865,12 +867,12 @@ export class DayScene extends Phaser.Scene {
       return;
     }
     if (target.type === "item") {
-      const p = itemScreen(target.item);
+      const p = itemScreen(this.projection, target.item);
       g.strokeEllipse(p.x, p.y, target.item.kind === "litter" ? 56 : 40, target.item.kind === "litter" ? 40 : 22);
       return;
     }
     if (target.type === "mess") {
-      const p = toScreen(target.mess);
+      const p = this.projection.toScreen(target.mess);
       g.strokeEllipse(p.x, p.y, 34, 18);
       return;
     }
@@ -966,7 +968,7 @@ export class DayScene extends Phaser.Scene {
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
     // чи над самим сховищем бабл події, індикатор схований: бабл і так каже, скільки лишилося.
-    const highest = toScreen({ x: 0, y: 1 }).y - WALL_RISE + 40;
+    const highest = this.projection.toScreen({ x: 0, y: 1 }).y - this.projection.wallRise + 40;
     const personBusy = this.bubbles.busy("person");
     for (const storage of STORAGES) {
       const anchor = this.anchorOf(storage.object);

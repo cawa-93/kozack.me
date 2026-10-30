@@ -5,7 +5,7 @@ import Phaser from "phaser";
 import type { Character } from "../../sim/types";
 import { drawItem } from "./apartment";
 import { COLORS } from "../colors";
-import { depthOf, toScreen } from "../geometry";
+import type { Projection } from "../world/projection";
 
 import { PALETTE } from "../palette";
 
@@ -25,7 +25,11 @@ const pick = <T>(list: readonly T[], i: number): T => list[((i % list.length) + 
 export class PersonView {
   private readonly g: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer) {
+  constructor(
+    scene: Phaser.Scene,
+    layer: Phaser.GameObjects.Layer,
+    private readonly proj: Projection,
+  ) {
     this.g = scene.add.graphics().addToDisplayList(layer);
   }
 
@@ -42,8 +46,8 @@ export class PersonView {
     this.g.setVisible(!away);
     if (away) return;
     const { body, held } = character;
-    const feet = toScreen(body);
-    const g = this.g.clear().setDepth(depthOf(feet.y));
+    const feet = this.proj.toScreen(body);
+    const g = this.g.clear().setDepth(this.proj.depthOf(feet.y));
     const look = character.look;
     const skin = pick(PALETTE.skin, look.skin);
     const hair = pick(PALETTE.hairColor, look.hairColor);
@@ -121,6 +125,6 @@ export class PersonView {
       }
     }
     this.head = { x: hx, y: hy - 16 };
-    this.hands = { x: x + body.facing.x * 12, y: y - 14, depth: depthOf(feet.y) + (body.facing.y < -0.5 ? -1 : 1) };
+    this.hands = { x: x + body.facing.x * 12, y: y - 14, depth: this.proj.depthOf(feet.y) + (body.facing.y < -0.5 ? -1 : 1) };
   }
 }

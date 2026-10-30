@@ -10,7 +10,7 @@ import { drawMomMeal } from "../icons";
 import { SHAPED_STORAGES } from "./storagelook";
 import { objectHeight } from "../world/objects";
 import { COLORS } from "../colors";
-import { depthOf, rectToScreen, TILE_H, TILE_W, toScreen, WALL_RISE } from "../geometry";
+import type { ObliqueProjection } from "../world/projection";
 
 /** Стіни: верхня грань і лицьова. */
 const WALL_TOP = 0x3b3340;
@@ -73,17 +73,17 @@ function shade(color: number, amount: number): number {
   );
 }
 
-export function drawApartment(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): Map<string, ObjectView> {
-  drawFloor(scene, layer);
-  drawWalls(scene, layer);
-  drawWindows(scene, layer);
-  drawWire(scene, layer);
+export function drawApartment(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection): Map<string, ObjectView> {
+  drawFloor(scene, layer, proj);
+  drawWalls(scene, layer, proj);
+  drawWindows(scene, layer, proj);
+  drawWire(scene, layer, proj);
   const views = new Map<string, ObjectView>();
-  for (const object of OBJECTS) views.set(object.id, drawObject(scene, layer, object));
+  for (const object of OBJECTS) views.set(object.id, drawObject(scene, layer, proj, object));
   return views;
 }
 
-function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection): void {
   const g = scene.add.graphics().setDepth(-1).addToDisplayList(layer);
   for (let y = 0; y < MAP_HEIGHT; y++) {
     for (let x = 0; x < MAP_WIDTH; x++) {
@@ -92,40 +92,40 @@ function drawFloor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
       const base = FLOORS[room?.id ?? "living"];
       // Легка шахівниця, щоб було видно клітинки й відстані.
       const color = (x + y) % 2 === 0 ? base : shade(base, -0.05);
-      const p = toScreen({ x, y });
-      g.fillStyle(color).fillRect(p.x, p.y, TILE_W, TILE_H);
+      const p = proj.toScreen({ x, y });
+      g.fillStyle(color).fillRect(p.x, p.y, proj.tile.width, proj.tile.height);
     }
   }
   // Килим у вітальні.
-  const rug = rectToScreen(RUG);
+  const rug = proj.rectToScreen(RUG);
   g.fillStyle(0x9a5f55, 0.55).fillRoundedRect(rug.x, rug.y, rug.w, rug.h, 10);
 }
 
 // Стіни малюються рядами: кожен ряд перекриває те, що стоїть за ним.
-function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+function drawWalls(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection): void {
   for (let y = 0; y < MAP_HEIGHT; y++) {
     const g = scene.add
       .graphics()
-      .setDepth(depthOf(toScreen({ x: 0, y: y + 1 }).y))
+      .setDepth(proj.depthOf(proj.toScreen({ x: 0, y: y + 1 }).y))
       .addToDisplayList(layer);
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== "#") continue;
-      const p = toScreen({ x, y });
-      g.fillStyle(WALL_TOP).fillRect(p.x, p.y - WALL_RISE, TILE_W, TILE_H);
+      const p = proj.toScreen({ x, y });
+      g.fillStyle(WALL_TOP).fillRect(p.x, p.y - proj.wallRise, proj.tile.width, proj.tile.height);
       const below = y + 1 < MAP_HEIGHT && MAP[y + 1]?.[x] === ".";
       if (below) {
-        g.fillStyle(WALL_FACE).fillRect(p.x, p.y + TILE_H - WALL_RISE, TILE_W, WALL_RISE);
-        g.lineStyle(2, COLORS.ink, 0.6).lineBetween(p.x, p.y + TILE_H - WALL_RISE, p.x + TILE_W, p.y + TILE_H - WALL_RISE);
+        g.fillStyle(WALL_FACE).fillRect(p.x, p.y + proj.tile.height - proj.wallRise, proj.tile.width, proj.wallRise);
+        g.lineStyle(2, COLORS.ink, 0.6).lineBetween(p.x, p.y + proj.tile.height - proj.wallRise, p.x + proj.tile.width, p.y + proj.tile.height - proj.wallRise);
       }
     }
     // Чорнильний контур верхньої грані стін ряду.
     g.lineStyle(2, COLORS.ink, 0.9);
     for (let x = 0; x < MAP_WIDTH; x++) {
       if (MAP[y]?.[x] !== "#") continue;
-      const p = toScreen({ x, y });
-      if (!isWall(x, y - 1)) g.lineBetween(p.x, p.y - WALL_RISE, p.x + TILE_W, p.y - WALL_RISE);
-      if (!isWall(x - 1, y)) g.lineBetween(p.x, p.y - WALL_RISE, p.x, p.y + TILE_H - (isWall(x, y + 1) ? WALL_RISE : 0));
-      if (!isWall(x + 1, y)) g.lineBetween(p.x + TILE_W, p.y - WALL_RISE, p.x + TILE_W, p.y + TILE_H - (isWall(x, y + 1) ? WALL_RISE : 0));
+      const p = proj.toScreen({ x, y });
+      if (!isWall(x, y - 1)) g.lineBetween(p.x, p.y - proj.wallRise, p.x + proj.tile.width, p.y - proj.wallRise);
+      if (!isWall(x - 1, y)) g.lineBetween(p.x, p.y - proj.wallRise, p.x, p.y + proj.tile.height - (isWall(x, y + 1) ? proj.wallRise : 0));
+      if (!isWall(x + 1, y)) g.lineBetween(p.x + proj.tile.width, p.y - proj.wallRise, p.x + proj.tile.width, p.y + proj.tile.height - (isWall(x, y + 1) ? proj.wallRise : 0));
     }
   }
 }
@@ -138,15 +138,15 @@ function isWall(x: number, y: number): boolean {
  * Дріт комп'ютера (§9.12, «Гризіння»; заглушка, рішення автора 2026-10-26): з правого боку комп'ютерного стола по підлозі, з
  * прогином, до розетки на задній стіні — там, де кіт його гризе (`WIRE_TILE`), щоб було видно, що гризе він саме дріт.
  */
-function drawWire(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+function drawWire(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection): void {
   const desk = OBJECTS.find((o) => o.kind === "computer");
   if (!desk) return;
   const right = desk.x + desk.w;
   const socketX = right + 0.75;
   // По підлозі: від стола квадратичною кривою з прогином до підніжжя стіни під розеткою.
-  const from = toScreen({ x: right, y: desk.y + 0.45 });
-  const bend = toScreen({ x: right + 0.25, y: desk.y + 0.8 });
-  const to = toScreen({ x: socketX, y: desk.y + 0.08 });
+  const from = proj.toScreen({ x: right, y: desk.y + 0.45 });
+  const bend = proj.toScreen({ x: right + 0.25, y: desk.y + 0.8 });
+  const to = proj.toScreen({ x: socketX, y: desk.y + 0.08 });
   const points: Phaser.Math.Vector2[] = [];
   for (let i = 0; i <= 12; i++) {
     const t = i / 12;
@@ -156,8 +156,8 @@ function drawWire(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
   const floor = scene.add.graphics().setDepth(-0.5).addToDisplayList(layer);
   floor.lineStyle(3, COLORS.ink, 0.9).strokePoints(points);
   // Розетка на лицьовій грані задньої стіни, над підлогою, і дріт угору до неї — поверх стіни.
-  const base = toScreen({ x: socketX, y: desk.y });
-  const wall = scene.add.graphics().setDepth(depthOf(base.y) + 0.02).addToDisplayList(layer);
+  const base = proj.toScreen({ x: socketX, y: desk.y });
+  const wall = scene.add.graphics().setDepth(proj.depthOf(base.y) + 0.02).addToDisplayList(layer);
   wall.lineStyle(3, COLORS.ink, 0.9).lineBetween(to.x, to.y, base.x, base.y - 9);
   wall.fillStyle(COLORS.paper).fillRoundedRect(base.x - 7, base.y - 20, 14, 12, 2);
   wall.lineStyle(1.5, COLORS.ink, 0.9).strokeRoundedRect(base.x - 7, base.y - 20, 14, 12, 2);
@@ -171,51 +171,51 @@ const GLASS = 0xbfe0ef;
  * Вікна над підвіконнями (§9.12, «Вікно»): скло в товщі стіни, як на плані квартири, а у вікні задньої стіни — ще й шибка на її
  * лицьовій грані. Світла й ночі вікна поки не змінюють — це прийде разом із днем і ніччю.
  */
-function drawWindows(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer): void {
+function drawWindows(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection): void {
   for (const pane of WINDOWS) {
     const { x, y } = pane.wall;
-    const p = toScreen(pane.wall);
+    const p = proj.toScreen(pane.wall);
     const g = scene.add
       .graphics()
-      .setDepth(depthOf(toScreen({ x: 0, y: y + 1 }).y) + 0.01)
+      .setDepth(proj.depthOf(proj.toScreen({ x: 0, y: y + 1 }).y) + 0.01)
       .addToDisplayList(layer);
-    const top = p.y - WALL_RISE;
-    const cx = p.x + TILE_W / 2;
+    const top = p.y - proj.wallRise;
+    const cx = p.x + proj.tile.width / 2;
     g.lineStyle(2, COLORS.ink, 0.9);
     if (MAP[y + 1]?.[x] === ".") {
       // Задня стіна: скло вздовж неї в товщі стіни й шибка з рамою на лицьовій грані.
-      g.fillStyle(GLASS).fillRect(p.x + 6, top + TILE_H / 2 - 6, TILE_W - 12, 12);
-      g.strokeRect(p.x + 6, top + TILE_H / 2 - 6, TILE_W - 12, 12);
-      const face = p.y + TILE_H - WALL_RISE;
-      g.fillStyle(GLASS).fillRect(p.x + 8, face + 3, TILE_W - 16, WALL_RISE - 6);
+      g.fillStyle(GLASS).fillRect(p.x + 6, top + proj.tile.height / 2 - 6, proj.tile.width - 12, 12);
+      g.strokeRect(p.x + 6, top + proj.tile.height / 2 - 6, proj.tile.width - 12, 12);
+      const face = p.y + proj.tile.height - proj.wallRise;
+      g.fillStyle(GLASS).fillRect(p.x + 8, face + 3, proj.tile.width - 16, proj.wallRise - 6);
       g.fillStyle(0xffffff, 0.6).fillTriangle(p.x + 12, face + 5, p.x + 22, face + 5, p.x + 12, face + 14);
-      g.strokeRect(p.x + 8, face + 3, TILE_W - 16, WALL_RISE - 6).lineBetween(cx, face + 3, cx, face + WALL_RISE - 3);
+      g.strokeRect(p.x + 8, face + 3, proj.tile.width - 16, proj.wallRise - 6).lineBetween(cx, face + 3, cx, face + proj.wallRise - 3);
     } else {
       // Бічна стіна: скло смугою вздовж стіни в її товщі.
-      g.fillStyle(GLASS).fillRect(cx - 6, top + 4, 12, TILE_H - 8);
+      g.fillStyle(GLASS).fillRect(cx - 6, top + 4, 12, proj.tile.height - 8);
       g.fillStyle(0xffffff, 0.6).fillRect(cx - 4, top + 7, 3, 12);
-      g.strokeRect(cx - 6, top + 4, 12, TILE_H - 8).lineBetween(cx - 6, top + TILE_H / 2, cx + 6, top + TILE_H / 2);
+      g.strokeRect(cx - 6, top + 4, 12, proj.tile.height - 8).lineBetween(cx - 6, top + proj.tile.height / 2, cx + 6, top + proj.tile.height / 2);
     }
   }
 }
 
-function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, object: HomeObject): ObjectView {
-  const r = rectToScreen(object);
+function drawObject(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, proj: ObliqueProjection, object: HomeObject): ObjectView {
+  const r = proj.rectToScreen(object);
   const height = objectHeight(object.kind);
   const bottom = r.y + r.h;
-  const depth = depthOf(bottom);
+  const depth = proj.depthOf(bottom);
   const g = scene.add.graphics().setDepth(depth).addToDisplayList(layer);
 
   if (object.kind === "door") {
     // Двері — у стіні: прямокутник на лицьовій грані з ручкою.
-    const top = r.y - WALL_RISE;
-    g.fillStyle(FILL.door).fillRect(r.x + 8, top + 4, r.w - 16, TILE_H + WALL_RISE - 8);
-    g.lineStyle(3, COLORS.ink).strokeRect(r.x + 8, top + 4, r.w - 16, TILE_H + WALL_RISE - 8);
-    g.lineBetween(r.x + r.w / 2, top + 4, r.x + r.w / 2, top + TILE_H + WALL_RISE - 4);
+    const top = r.y - proj.wallRise;
+    g.fillStyle(FILL.door).fillRect(r.x + 8, top + 4, r.w - 16, proj.tile.height + proj.wallRise - 8);
+    g.lineStyle(3, COLORS.ink).strokeRect(r.x + 8, top + 4, r.w - 16, proj.tile.height + proj.wallRise - 8);
+    g.lineBetween(r.x + r.w / 2, top + 4, r.x + r.w / 2, top + proj.tile.height + proj.wallRise - 4);
     g.fillStyle(0xe8b93a).fillCircle(r.x + r.w / 2 - 8, top + 40, 3).fillCircle(r.x + r.w / 2 + 8, top + 40, 3);
     return {
       object,
-      top: { x: r.x + 8, y: top, w: r.w - 16, h: TILE_H + WALL_RISE },
+      top: { x: r.x + 8, y: top, w: r.w - 16, h: proj.tile.height + proj.wallRise },
       anchor: { x: r.x + r.w / 2, y: top - 4 },
       depth: depth + 1,
       graphics: g,

@@ -14,7 +14,7 @@ import type { Cat, GameState, Quality } from "../../sim/types";
 import type { CatFeeling } from "../../sim/actions";
 import { drawSock, drawToy } from "./catcorner";
 import { COLORS } from "../colors";
-import { depthOf, toScreen } from "../geometry";
+import type { Projection } from "../world/projection";
 import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "../pose";
 import { objectHeight } from "../world/objects";
 
@@ -109,7 +109,12 @@ export class CatView {
   /** Вилизує друга (§9.4, «Вилизує іншого»): очі напівзаплющені, видно язичок. */
   private licking = false;
 
-  constructor(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, cat: Cat) {
+  constructor(
+    scene: Phaser.Scene,
+    layer: Phaser.GameObjects.Layer,
+    cat: Cat,
+    private readonly proj: Projection,
+  ) {
     this.g = scene.add.graphics().addToDisplayList(layer);
     this.coat = coatOf(cat.genes, cat.shape);
     this.shape = cat.shape;
@@ -185,12 +190,12 @@ export class CatView {
       return;
     }
     g.setVisible(true);
-    const feet = carriedAt ?? { ...toScreen(cat), depth: depthOf(toScreen(cat).y) + 0.5 };
+    const feet = carriedAt ?? { ...this.proj.toScreen(cat), depth: this.proj.depthOf(this.proj.toScreen(cat).y) + 0.5 };
     // На меблях кіт сидить зверху, а ховається — під ними, визираючи з-під краю.
     const furniture = carriedAt ? null : objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
     if (furniture && furniture.kind !== "door") {
-      const bottom = toScreen({ x: 0, y: furniture.y + furniture.h }).y;
-      feet.depth = depthOf(bottom) + 2;
+      const bottom = this.proj.toScreen({ x: 0, y: furniture.y + furniture.h }).y;
+      feet.depth = this.proj.depthOf(bottom) + 2;
       // У душовій кабіні кіт сидить на мокрому піддоні біля входу, а не на даху кабіни (§9.12, «Любов до води»).
       // У ящиках біля входу кіт лежить у верхній коробці: купа нижча за висоту місця (1–2 коробки, §9.12 «Допитливість»).
       feet.y = pose === "hide" ? bottom - 2 : furniture.kind === "shower" ? bottom - 4 : furniture.kind === "boxes" ? bottom - BOX_TOP : feet.y - objectHeight(furniture.kind) + 6;
@@ -301,7 +306,7 @@ export class CatView {
         // малює свою половину: настовбурчену кулю свого забарвлення, що кружляє довкола середини, з лапами й хвостом, які
         // стирчать і міняються місцями, проблисками вух і очей та клаптями шерсті, що летять навсібіч; позаду — хмара пилу.
         const foe = brawlFoe(state, cat);
-        const mx = foe ? (feet.x + toScreen(foe).x) / 2 : x;
+        const mx = foe ? (feet.x + this.proj.toScreen(foe).x) / 2 : x;
         const cy = y - 15 * s;
         const first = foe === null || cat.id < foe.id;
         const spin = time / 120 + (first ? 0 : Math.PI);
@@ -515,8 +520,8 @@ export class CatView {
       }
       case "carrier": {
         // Спить у переносці (§9.12): крізь віконце дверцят видно клубочок шерсті й вушко, поверх — ґратки.
-        const door = toScreen(CARRIER_SPOT);
-        g.setDepth(depthOf(door.y) + 0.5);
+        const door = this.proj.toScreen(CARRIER_SPOT);
+        g.setDepth(this.proj.depthOf(door.y) + 0.5);
         g.fillStyle(body).fillEllipse(door.x, door.y - 9, 18, 10);
         this.patches(g, door.x, door.y - 9, 18, 10);
         g.fillStyle(this.coat.pointed ? point : body).fillTriangle(door.x + 2, door.y - 13, door.x + 7, door.y - 13, door.x + 5, door.y - 16);

@@ -9,16 +9,16 @@ import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config
 import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter, STASHES } from "../../sim/home";
 import type { FallenTrinket, Feeder, GameState, HomeItem, Mess, TrinketKind, Vec } from "../../sim/types";
 import { COLORS } from "../colors";
-import { TILE_H, TILE_W, toScreen } from "../geometry";
+import type { ObliqueProjection, Projection } from "../world/projection";
 
 const BOWL = { cheap: 0x9aa3ab, premium: 0x4f7fb3 } as const;
 const KIBBLE = { cheap: 0x8a5a33, premium: 0x6e2f22 } as const;
 const LITTER = { cheap: 0xd6c6a2, premium: 0xece4d2 } as const;
 
 /** Центр речі на екрані. */
-export function itemScreen(item: HomeItem): { x: number; y: number } {
+export function itemScreen(proj: Projection, item: HomeItem): { x: number; y: number } {
   const p = itemPoint(item);
-  return toScreen({ x: p.x, y: p.y + (item.kind === "toy" ? 0 : 0.05) });
+  return proj.toScreen({ x: p.x, y: p.y + (item.kind === "toy" ? 0 : 0.05) });
 }
 
 /** Іграшка-вудочка: паличка з пір'ям; дорога — яскравіша. */
@@ -149,26 +149,26 @@ export function drawTrinket(g: Phaser.GameObjects.Graphics, kind: TrinketKind, x
   }
 }
 
-export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState): void {
+export function drawCatCorner(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, state: GameState): void {
   g.clear();
   // Шерсть: видно лише від межі, коли вона вже шкодить і дратує (§8.7, реалізація рішення автора А17); що більше, то більше жмутів.
   for (const spot of furTufts(state)) {
-    const { x, y } = toScreen(spot);
+    const { x, y } = proj.toScreen(spot);
     g.fillStyle(0xcfc6bd, 0.75).fillEllipse(x, y, 10, 5).fillEllipse(x + 5, y - 2, 7, 4);
   }
   for (const item of state.home.items) {
     // Іграшку в зубах малює кіт (§9.12, «Подарунки й схованки»).
     if (item.kind === "toy" && carriedToy(state, item)) continue;
-    drawHomeItem(g, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
+    drawHomeItem(g, proj, item, state.home.appliances.fountain !== null, item.kind === "bowl" ? (bowlEaten(state, item) ?? 0) : 0);
   }
-  for (const mess of state.home.messes) drawMess(g, mess);
+  for (const mess of state.home.messes) drawMess(g, proj, mess);
   // Скинуті дрібнички лежать на підлозі до ранку; розбитий кухоль — уламки, їх малює безлад (§9.12).
   for (const [kind, fallen] of Object.entries(state.home.trinkets ?? {}) as [TrinketKind, FallenTrinket | undefined][]) {
     if (!fallen || fallen.broken === true) continue;
-    const { x, y } = toScreen(fallen);
+    const { x, y } = proj.toScreen(fallen);
     drawTrinket(g, kind, x, y, 1, true);
   }
-  drawAppliances(g, state);
+  drawAppliances(g, proj, state);
 }
 
 /**
@@ -176,9 +176,9 @@ export function drawCatCorner(g: Phaser.GameObjects.Graphics, state: GameState):
  * вогником. У віконці видно, скільки корму лишилося; бункер — у межах клітинки миски, бо позаду неї
  * може стояти ще одна миска.
  */
-function drawFeeder(g: Phaser.GameObjects.Graphics, feeder: Feeder): void {
+function drawFeeder(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, feeder: Feeder): void {
   const c = slotCenter(feeder.slot);
-  const { x, y } = toScreen({ x: c.x, y: c.y + 0.05 });
+  const { x, y } = proj.toScreen({ x: c.x, y: c.y + 0.05 });
   const premium = feeder.quality === "premium";
   const w = premium ? 22 : 16;
   const h = premium ? 21 : 19;
@@ -206,15 +206,15 @@ function drawFeeder(g: Phaser.GameObjects.Graphics, feeder: Feeder): void {
  * Техніка (§8.7) — видно, що вона є й що робить: автогодівниці над мисками, робот-пилосос на базі
  * чи в дорозі. Фонтанчики малює сама миска з водою.
  */
-function drawAppliances(g: Phaser.GameObjects.Graphics, state: GameState): void {
-  drawHousehold(g, state);
+function drawAppliances(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, state: GameState): void {
+  drawHousehold(g, proj, state);
   const appliances = state.home.appliances;
-  for (const feeder of state.home.feeders ?? []) drawFeeder(g, feeder);
+  for (const feeder of state.home.feeders ?? []) drawFeeder(g, proj, feeder);
   if (appliances.robot) {
-    const dock = toScreen(ROBOT_DOCK);
+    const dock = proj.toScreen(ROBOT_DOCK);
     g.fillStyle(0x4a4448).fillRoundedRect(dock.x - 16, dock.y + 4, 32, 8, 3);
     const progress = robotProgress(state);
-    const { x, y } = toScreen(robotAt(state));
+    const { x, y } = proj.toScreen(robotAt(state));
     g.fillStyle(appliances.robot === "premium" ? 0x2f2f36 : 0x8c9aa6).fillEllipse(x, y, 30, 15);
     g.fillStyle(0xd8d4cc).fillEllipse(x, y - 3, 20, 9);
     // Вогник: зелений — їде, синій — заряджається на базі.
@@ -232,10 +232,10 @@ const BASKET_AT: Vec = LAUNDRY_BASKET;
  * кошик брудної білизни наповнюється, поки чистого одягу стає менше, і переповнюється, коли він
  * скінчився (§8.7): так видно, що час прати, ще до плям на одязі.
  */
-function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
+function drawHousehold(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, state: GameState): void {
   const carrier = state.home.carrier;
   if (carrier) {
-    const { x, y } = toScreen(CARRIER_AT);
+    const { x, y } = proj.toScreen(CARRIER_AT);
     g.fillStyle(carrier === "premium" ? 0x8e4a6a : 0x9aa3ab).fillRoundedRect(x - 18, y - 22, 36, 24, 6);
     g.fillStyle(0x2b2530, 0.6).fillRoundedRect(x - 10, y - 16, 20, 12, 3);
     g.lineStyle(1.5, 0xd8d4cc).lineBetween(x - 5, y - 16, x - 5, y - 4).lineBetween(x, y - 16, x, y - 4).lineBetween(x + 5, y - 16, x + 5, y - 4);
@@ -244,10 +244,10 @@ function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
   }
   // Шкарпетка в котячій схованці за диваном (§9.12, «Подарунки й схованки»): видно п'ятку.
   if (state.home.sock === true) {
-    const sock = toScreen(STASHES.sofa.at);
+    const sock = proj.toScreen(STASHES.sofa.at);
     drawSock(g, sock.x - 14, sock.y - 1, 0.9);
   }
-  const { x, y } = toScreen(BASKET_AT);
+  const { x, y } = proj.toScreen(BASKET_AT);
   // Скільки днів одягу вже брудні: від порожнього кошика (5 і більше чистих днів) до гірки.
   const dirty = Math.max(0, Math.min(5, 5 - state.home.clothes));
   const colors = [0xc0675a, 0x5a7fc0, 0xe0c060, 0x6fae6a, 0x8e4a6a];
@@ -263,8 +263,8 @@ function drawHousehold(g: Phaser.GameObjects.Graphics, state: GameState): void {
  * Річ котячого кутка. `eaten` — скільки порції вже з'їв кіт, що зараз їсть із миски (§9.12): корм меншає поступово, і
  * видно, хто ковтає за мить, а хто їсть по зернятку; надкльована половинка — менша купка.
  */
-function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: boolean, eaten: number): void {
-  const { x, y } = itemScreen(item);
+function drawHomeItem(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, item: HomeItem, fountain: boolean, eaten: number): void {
+  const { x, y } = itemScreen(proj, item);
   switch (item.kind) {
     case "bowl": {
       g.fillStyle(BOWL[item.quality]).fillEllipse(x, y, 30, 13);
@@ -303,8 +303,8 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: 
       drawToy(g, item.quality, x, y);
       return;
     case "litter": {
-      const w = TILE_W * 0.78;
-      const h = TILE_H * 0.62;
+      const w = proj.tile.width * 0.78;
+      const h = proj.tile.height * 0.62;
       g.fillStyle(item.quality === "premium" ? 0x6f8f8a : 0x8c9aa6).fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
       g.fillStyle(item.litter ? LITTER[item.litter] : 0x4a4448).fillRoundedRect(x - w / 2 + 4, y - h / 2 + 4, w - 8, h - 8, 4);
       g.lineStyle(2, COLORS.ink).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
@@ -320,8 +320,8 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: 
     }
     case "house": {
       // Будиночок: коробка з дахом і круглим входом; дорогий — м'який і яскравіший.
-      const w = TILE_W * 0.7;
-      const h = TILE_H * 0.55;
+      const w = proj.tile.width * 0.7;
+      const h = proj.tile.height * 0.55;
       const wall = item.quality === "premium" ? 0xc77d9a : 0xb59a72;
       g.fillStyle(wall).fillRect(x - w / 2, y - h, w, h);
       g.fillStyle(item.quality === "premium" ? 0x8e4a6a : 0x8a6e48).fillTriangle(x - w / 2 - 4, y - h, x + w / 2 + 4, y - h, x, y - h - 18);
@@ -342,8 +342,8 @@ function drawHomeItem(g: Phaser.GameObjects.Graphics, item: HomeItem, fountain: 
   }
 }
 
-function drawMess(g: Phaser.GameObjects.Graphics, mess: Mess): void {
-  const { x, y } = toScreen(mess);
+function drawMess(g: Phaser.GameObjects.Graphics, proj: ObliqueProjection, mess: Mess): void {
+  const { x, y } = proj.toScreen(mess);
   switch (mess.kind) {
     case "surprise":
       g.fillStyle(0x6b4a2b).fillEllipse(x, y, 16, 8).fillEllipse(x + 1, y - 4, 11, 6).fillEllipse(x, y - 7, 6, 4);
