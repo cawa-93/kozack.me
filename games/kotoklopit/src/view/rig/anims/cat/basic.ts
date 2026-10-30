@@ -204,7 +204,8 @@ const SIT: Pose = {
 const SIT_BACK: Pose = {
   "leg-back-near": { rot: 16, sx: 1.02 },
   "leg-back-far": { rot: -5 },
-  "leg-front-near": { rot: 32, x: -5.5, y: 9.6, sx: 1.14 },
+  // Глибше в груди й трохи навскіс уперед: верх лапи (без контуру) ховається під грудьми, подушечка — на підлозі.
+  "leg-front-near": { rot: 20, x: -12.5, y: 7.6, sx: 1.08 },
   "leg-front-far": { rot: 32, x: -4, y: 7.5, sx: 1.13 },
 };
 
@@ -238,8 +239,11 @@ const CURL_SLOTS: SlotSet = {
   "leg-front-far": HIDDEN,
   tail: { z: [{ t: 0, v: 5.5 }] },
 };
-/** Ззаду хвіст стоїть, де й був (перед тулубом). */
-const CURL_BACK_SLOTS: SlotSet = { tail: { z: [{ t: 0, v: 8 }] } };
+/**
+ * Клубок ззаду: лапу під підборіддям не видно (вона по той бік тулуба), а хвіст лежить уздовж низу, за тулубом, — видно
+ * лише кінчик біля морди (поверх крупа він читався б як ручка).
+ */
+const CURL_BACK_SLOTS: SlotSet = { "leg-front-near": HIDDEN, tail: { z: [{ t: 0, v: 4.9 }] } };
 
 /** Їсть: присів на задні лапи (таз нижче, задні підібрані), голова в мисці, хвіст низько. */
 const EAT: Pose = {
@@ -344,6 +348,20 @@ const BELLY: Pose = {
   tail: tail(-75),
 };
 
+/**
+ * Ракурс ¾ ззаду: ближня передня лапа там — на самому краю грудей (суглоб `shoulder-near-back`), і її верх (без контуру — за
+ * STYLE він ховається в тулубі) вилазить за силует грудей світлою плямою ≈ 3 одиниці арту — уже у вихідній позі, а коли
+ * тулуб нахилено, то й більше. Тож ззаду ця лапа малюється під тулубом (контур грудей накриває її верх, і лапа виходить з-під
+ * тулуба, як дальні) і трохи всередину від краю (`BACK_NEAR_IN`, у системі тулуба). Пози з нахиленим тулубом (сидить, на
+ * лотку) мають для неї власні числа (`SIT_BACK`, `SQUAT_BACK`). Якщо суглоб у скелеті чи кадрі колись посунуть усередину
+ * (A7), `BACK_NEAR_IN` має стати 0.
+ */
+const BACK_NEAR_IN = -3.5;
+const NEAR_FRONT_UNDER: SlotSet = { "leg-front-near": { z: [{ t: 0, v: 4.9 }] } };
+const NEAR_FRONT_IN: Tracks = { "leg-front-near": { pos: [{ t: 0, v: { x: BACK_NEAR_IN, y: 0 } }] } };
+/** Перевизначення ракурсу ззаду для поз, де ближня передня лапа — у вихідному суглобі. */
+const BACK_NEAR = { bones: NEAR_FRONT_IN, slots: NEAR_FRONT_UNDER };
+
 // --- Ходьба й біг ---------------------------------------------------------------------------------
 
 /** Цикл ходи, мс: рись — діагональні пари лап (ближня передня з дальньою задньою, дальня передня з ближньою задньою). */
@@ -424,7 +442,7 @@ const walk: CatAnim = {
     tail: { rot: osc(WALK_MS, [-2.5, 2.5]) },
   },
   // Ззаду хвіст найближче до камери — хай ходить ширше.
-  views: { back: { bones: { tail: { rot: osc(WALK_MS, [-4, 4]) } } } },
+  views: { back: { bones: { ...NEAR_FRONT_IN, tail: { rot: osc(WALK_MS, [-4, 4]) } }, slots: NEAR_FRONT_UNDER } },
 };
 
 /** Цикл бігу (зумі), мс: галоп — збір (лапи під тулубом) і виліт (передні вперед, задні назад, кіт у повітрі). */
@@ -493,6 +511,7 @@ const run: CatAnim = {
     // Хвіст летить за котом майже горизонтально й хвилюється.
     tail: { rot: osc(RUN_MS, [-48, -38]) },
   },
+  views: { back: BACK_NEAR },
 };
 
 // --- Стрибки ---------------------------------------------------------------------------------------
@@ -517,6 +536,7 @@ const jumpUp: CatAnim = {
     { t: 250, pose: { pelvis: { y: 2.5, rot: 2 }, "leg-front-near": { sx: 0.84 }, "leg-front-far": { sx: 0.84 }, "leg-back-near": { rot: -4, sx: 0.88 }, "leg-back-far": { rot: -4, sx: 0.88 }, head: { rot: -2 }, tail: tail(4) } },
     { t: JUMP_UP_MS, pose: { tail: tail(0) } },
   ]),
+  views: { back: BACK_NEAR },
 };
 
 const jumpDown: CatAnim = {
@@ -531,6 +551,7 @@ const jumpDown: CatAnim = {
     { t: 250, pose: { pelvis: { y: 2.5 }, "leg-front-near": { rot: 2, sx: 0.88 }, "leg-front-far": { rot: 2, sx: 0.88 }, "leg-back-near": { rot: -4, sx: 0.9 }, "leg-back-far": { rot: -4, sx: 0.9 }, head: { rot: 2 }, tail: tail(-4) } },
     { t: JUMP_DOWN_MS, pose: { tail: tail(0) } },
   ]),
+  views: { back: BACK_NEAR },
 };
 
 // --- Спокій -----------------------------------------------------------------------------------------
@@ -545,7 +566,7 @@ const sit: CatAnim = {
     tail: { ...still({ tail: SIT.tail ?? {} }).tail, ...rotAround(SIT_MS, SIT, "tail", [0, 5, 0, -3]) },
     head: rotAround(SIT_MS, SIT, "head", [0, -4]),
   }),
-  views: { back: { bones: still(SIT_BACK) } },
+  views: { back: { bones: still(SIT_BACK), slots: NEAR_FRONT_UNDER } },
 };
 
 const LOAF_MS = 4000;
@@ -597,6 +618,7 @@ const carried: CatAnim = {
     tail: { ...still({ tail: CARRIED.tail ?? {} }).tail, ...rotAround(CARRIED_MS, CARRIED, "tail", [0, 5, 0, -5]) },
     head: rotAround(CARRIED_MS, CARRIED, "head", [0, -3]),
   }),
+  views: { back: BACK_NEAR },
 };
 
 const SPRAWL_MS = 4000;
@@ -667,6 +689,7 @@ const eat: CatAnim = {
     neck: { pos: EAT_TIMES.map((t, i) => key(t, { x: at(EAT, "neck", "x"), y: at(EAT, "neck", "y") + (EAT_NECK[i] ?? 0) }, "inOut")) },
     tail: { ...still({ tail: EAT.tail ?? {} }).tail, ...rotAround(EAT_MS, EAT, "tail", [0, 3]) },
   }),
+  views: { back: BACK_NEAR },
 };
 
 /** П'є: язиком хлебче швидко й дрібно — голова ледь сіпається чотири рази за цикл. */
@@ -677,11 +700,13 @@ const drink: CatAnim = {
   bones: merge(still(DRINK), {
     head: rotAround(DRINK_MS, DRINK, "head", [0, -2.5, 0, -2.5, 0, -2.5, 0, -2.5]),
   }),
+  views: { back: BACK_NEAR },
 };
 
 /**
  * Вмивається: сидить, ближню передню лапу підніс до підборіддя — тричі лизнув (голова кивками до лапи), потім двічі провів
- * лапою по морді аж за вухо, схиливши голову. Лапа в цей час — перед мордою (z вище за голову, лише в ракурсі ¾ спереду).
+ * лапою по морді аж за вухо, схиливши голову. Лапа в цей час — перед мордою (z вище за голову) у ракурсі ¾ спереду; ззаду
+ * морди не видно, тож лапа — за головою й тулубом: видно лише кінчик біля щоки й за вухом.
  */
 const GROOM_MS = 2400;
 const PAW_UP: Pose = { ...SIT, "leg-front-near": { rot: -88, x: -1, y: 3, sx: 0.72 }, head: { rot: 40 } };
@@ -707,7 +732,7 @@ const groom: CatAnim = {
     { body: breathe(GROOM_MS, SIT, 0.02, 2) },
   ),
   slots: { "leg-front-near": { z: [{ t: 0, v: 13.5 }] } },
-  views: { back: { bones: still({ "leg-back-near": SIT_BACK["leg-back-near"] ?? {}, "leg-back-far": SIT_BACK["leg-back-far"] ?? {}, "leg-front-far": SIT_BACK["leg-front-far"] ?? {} }), slots: { "leg-front-near": { z: [{ t: 0, v: 7 }] } } } },
+  views: { back: { bones: still({ "leg-back-near": SIT_BACK["leg-back-near"] ?? {}, "leg-back-far": SIT_BACK["leg-back-far"] ?? {}, "leg-front-far": SIT_BACK["leg-front-far"] ?? {} }), slots: { "leg-front-near": { z: [{ t: 0, v: 2.8 }] } } } },
 };
 
 /** Закопує: стоїть, дивиться вниз і гребе лапою назад — спершу ближньою, потім дальньою. */
@@ -734,6 +759,7 @@ const bury: CatAnim = {
   duration: BURY_MS,
   loop: true,
   bones: posed([...scrape("leg-front-near", 0), ...scrape("leg-front-far", 600), { t: BURY_MS, pose: { ...BURY_STAND, "leg-front-near": { rot: -30, sx: 0.72 } } }]),
+  views: { back: BACK_NEAR },
 };
 
 /** На лотку: присів і завмер; круп ледь тремтить від зусилля, хвіст напружено витягнутий і тремтить. */
@@ -755,7 +781,7 @@ const squat: CatAnim = {
     tail: { ...still({ tail: SQUAT.tail ?? {} }).tail, ...rotAround(SQUAT_MS, SQUAT, "tail", [0, 2, 0, 2, 0, 2, 0, 2]) },
     head: rotAround(SQUAT_MS, SQUAT, "head", [0, -3]),
   }),
-  views: { back: { bones: still(SQUAT_BACK) } },
+  views: { back: { bones: still(SQUAT_BACK), slots: NEAR_FRONT_UNDER } },
 };
 
 // --- На спині --------------------------------------------------------------------------------------
