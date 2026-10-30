@@ -111,6 +111,10 @@ describe("вирази (F4c) і компонувальник (F4b) — у ман
           const e = entry(part.id);
           if (part.state) expect(e.states, part.id).toContain(part.state);
         }
+        // Очі — у точці `eyes` голови (від її pivot у шиї), як у скелета; голова й зачіски — у шиї.
+        const head = entry(`person/head/${face}`);
+        const eyes = portraitHead(look).find((p) => p.id === "person/eyes");
+        expect({ x: eyes?.x, y: eyes?.y }).toEqual({ x: head.points!["eyes"]!.x - head.pivot.x, y: head.points!["eyes"]!.y - head.pivot.y });
       }
     }
   });

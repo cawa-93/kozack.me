@@ -10,6 +10,7 @@
 
 import type { Look } from "../../sim/types";
 import { FACES, HAIR_STYLES } from "../palette";
+import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
 import { personRecipe } from "./recipes";
 import { artFrameState, artLayerSource, loadArtFrames, type FrameLayers } from "./sources";
@@ -528,7 +529,7 @@ export interface PortraitPart {
 
 export interface PortraitOptions {
   /**
-   * Частини знизу догори; за замовчуванням — голова (`portraitHead`), усі частини з pivot у тій самій точці. Для фігури
+   * Частини знизу догори; за замовчуванням — голова (`portraitHead`): pivot у шиї, очі — у точці `eyes` голови. Для фігури
    * на весь зріст (як теперішній портрет) — частини скелета персонажа з місцями слотів його вихідної пози `front`.
    */
   parts?: readonly PortraitPart[];
@@ -545,16 +546,19 @@ export interface PortraitOptions {
   onReady?: () => void;
 }
 
-/** Голова персонажа для портрета: потилиця волосся, обличчя, очі, чубчик — з вигляду `Look`, ракурс `front`. */
+/**
+ * Голова персонажа для портрета: потилиця волосся, обличчя, очі, чубчик — з вигляду `Look`, ракурс `front`. Голова й
+ * зачіски — на одному полотні з pivot у шиї (точка фігури), очі — у точці `eyes` голови, як їх ставить скелет
+ * (`PERSON_FIT`).
+ */
 export function portraitHead(look: Look): PortraitPart[] {
   const face = wrap(look.face, FACES.length);
   const hair = wrap(look.hair, HAIR_STYLES.length);
-  return [
-    { id: `person/hair-back/${hair}` },
-    { id: `person/head/${face}` },
-    { id: "person/eyes", state: "open" },
-    { id: `person/hair-front/${hair}` },
-  ];
+  const head: ArtId = `person/head/${face}`;
+  const entry = artEntry(head);
+  const eyes = entry?.points?.["eyes"];
+  const at = eyes && entry ? { x: eyes.x - entry.pivot.x, y: eyes.y - entry.pivot.y } : {};
+  return [{ id: `person/hair-back/${hair}` }, { id: head }, { id: "person/eyes", state: "open", ...at }, { id: `person/hair-front/${hair}` }];
 }
 
 const portraitWaiters = new WeakMap<object, () => void>();
