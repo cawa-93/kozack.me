@@ -20,6 +20,7 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from "../src/view/iso/catanim";
+import { catPlay, JUMP, liftAt, nextLift, startShot } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { catSpot, SPOT_SCALE } from "../src/view/iso/catspot";
@@ -321,6 +322,42 @@ describe("де кіт (`catSpot`)", () => {
         if (spot.kind === "furniture") expect(spot.lift).toBe(isoObjectLook(spot.box!).perch);
       }
     }
+  });
+});
+
+describe("що грає кіт цього кадру (`catPlay`)", () => {
+  const choice = { anim: "walk", overlay: "content", speed: 0.6 } as const;
+  const face = { eyes: "open", mouth: "closed", ears: "up" } as const;
+
+  it("без разової — поза, накладка й швидкість з `catAnim`, обличчя з `catFace`", () => {
+    expect(catPlay(choice, face, null, 0)).toEqual({ play: { anim: "walk", overlay: "content", speed: 0.6, restart: false, face }, shot: null });
+  });
+
+  it("разова тіла замінює позу (швидкість 1), накладка — накладку; перший кадр — з початку; минула — забута", () => {
+    const itch = startShot("itch", { eyes: "squint" }, CAT_ONE_SHOT_MS.itch, 1000)!;
+    const first = catPlay(choice, face, itch, 1000);
+    expect(first.play).toEqual({ anim: "itch", overlay: "content", speed: 1, restart: true, face: { ...face, eyes: "squint" } });
+    expect(catPlay(choice, face, first.shot, 1500).play.restart).toBe(false);
+    expect(catPlay(choice, face, first.shot, 1000 + CAT_ONE_SHOT_MS.itch)).toEqual({ play: { anim: "walk", overlay: "content", speed: 0.6, restart: false, face }, shot: null });
+    const sneeze = catPlay(choice, face, startShot("sneeze", null, CAT_ONE_SHOT_MS.sneeze, 0), 10).play;
+    expect(sneeze).toMatchObject({ anim: "walk", overlay: "sneeze", speed: 0.6, restart: true });
+    // Лише вираз — поза та сама, нічого не починається заново.
+    const meow = catPlay(choice, face, startShot(null, { mouth: "meow" }, 500, 0), 10).play;
+    expect(meow).toEqual({ anim: "walk", overlay: "content", speed: 0.6, restart: false, face: { ...face, mouth: "meow" } });
+    expect(startShot("hiss", null, 0, 0)).toBeNull();
+  });
+
+  it("стрибок на меблі: висота йде дугою за час стрибка, на руки й у переноску — одразу", () => {
+    let lift = nextLift(null, 0, true, 0);
+    expect(lift.now).toBe(0);
+    lift = nextLift(lift.lift, 62, true, 100);
+    expect(lift.now).toBe(0);
+    const middle = liftAt(lift.lift, 100 + JUMP.ms / 2);
+    expect(middle).toBeGreaterThan(31);
+    expect(middle).toBeLessThanOrEqual(31 + JUMP.arc + 1e-9);
+    expect(liftAt(lift.lift, 100 + JUMP.ms)).toBe(62);
+    expect(nextLift(lift.lift, 62, true, 100 + JUMP.ms).now).toBe(62);
+    expect(nextLift(lift.lift, 0, false, 200).now).toBe(0);
   });
 });
 

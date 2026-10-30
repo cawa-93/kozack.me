@@ -17,7 +17,7 @@ import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, personFacing } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
-import { CAT_ONE_SHOT_MS, CAT_OVERLAYS, type CatAnimId, type CatOneShotId } from "../anim/ids";
+import type { CatOneShotId } from "../anim/ids";
 import { catPairs, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
 import { COLORS } from "../colors";
@@ -26,6 +26,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
+import { catPlay, nextLift, startShot, type CatShot, type Lift } from "./catplay";
 import { catSize, isoCatProportions, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -33,9 +34,6 @@ import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
 const CARRIED_BUBBLE_SHIFT = 34;
-
-/** Стрибок на меблі й з них (`jumpUp`, `jumpDown`): скільки триває підйом чи спуск і наскільки вище дуга, одиниці арту. */
-const JUMP = { ms: CAT_ONE_SHOT_MS.jumpUp, arc: 14 } as const;
 
 /** Хмара бійки (§9.4, «Клубок бійки»): на якій висоті над підлогою її середина, як швидко кипить і летить шерсть. */
 const BRAWL = { height: 26, frameMs: 110, tufts: 3, tuftMs: 700, reach: 46 } as const;
@@ -53,14 +51,6 @@ const CULL_MARGIN = 160;
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
 
-/** Разова анімація чи вираз кота, що зараз грає. */
-interface Shot {
-  anim: CatOneShotId | null;
-  face: Partial<CatFace> | null;
-  until: number;
-  started: boolean;
-}
-
 /** Що частина пам'ятає про кота між кадрами. */
 interface Memory {
   /** Де кіт був минулого кадру й куди дивився (`catFacing`). */
@@ -68,9 +58,9 @@ interface Memory {
   facing: RigFacing | null;
   /** Для стрибків і позіхання (`catTransition`). */
   transition: CatMemory | null;
-  shot: Shot | null;
+  shot: CatShot | null;
   /** Висота над підлогою: до якої йде стрибок, звідки й коли почався. */
-  lift: { from: number; to: number; start: number } | null;
+  lift: Lift | null;
 }
 
 /** Хмара бійки двох котів. */
@@ -174,8 +164,8 @@ export class IsoCatsView implements CatsPart {
   }
 
   private startShot(cat: number, anim: CatOneShotId | null, face: Partial<CatFace> | null, ms: number, time: number): void {
-    if (ms <= 0) return;
-    this.memoryOf(cat).shot = { anim, face, until: time + ms, started: false };
+    const shot = startShot(anim, face, ms, time);
+    if (shot) this.memoryOf(cat).shot = shot;
   }
 
   private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, time: number): void {
@@ -191,27 +181,9 @@ export class IsoCatsView implements CatsPart {
     }
 
     // Що грати: поза й накладка (`catAnim`), поверх — разова, поки триває.
-    const choice = catAnim(state, cat);
-    let anim: CatAnimId = choice.anim;
-    let overlay: CatAnimId | null = choice.overlay;
-    let speed = choice.speed;
-    let restart = false;
-    let face = catFace(state, cat, time);
-    const shot = mem.shot;
-    if (shot && time < shot.until) {
-      if (shot.anim !== null) {
-        if (CAT_OVERLAYS.has(shot.anim)) overlay = shot.anim;
-        else {
-          anim = shot.anim;
-          speed = 1;
-        }
-        if (!shot.started) restart = true;
-      }
-      if (shot.face) face = { ...face, ...shot.face };
-      shot.started = true;
-    } else if (shot) {
-      mem.shot = null;
-    }
+    const { play, shot } = catPlay(catAnim(state, cat), catFace(state, cat, time), mem.shot, time);
+    mem.shot = shot;
+    const { anim, overlay, speed, restart, face } = play;
 
     const spot = catSpot(state, cat, anim, pair);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
@@ -280,17 +252,9 @@ export class IsoCatsView implements CatsPart {
 
   /** Висота над підлогою з плавним стрибком: на меблі й з них — дугою за час стрибка, решта — одразу. */
   private lift(mem: Memory, spot: CatSpot, time: number): number {
-    const target = spot.lift;
-    const jumping = raised(spot.kind) || spot.kind === "floor";
-    if (!jumping || mem.lift === null) {
-      mem.lift = { from: target, to: target, start: time - JUMP.ms };
-      return target;
-    }
-    if (mem.lift.to !== target) {
-      const now = liftAt(mem.lift, time);
-      mem.lift = { from: now, to: target, start: time };
-    }
-    return liftAt(mem.lift, time);
+    const next = nextLift(mem.lift, spot.lift, raised(spot.kind) || spot.kind === "floor", time);
+    mem.lift = next.lift;
+    return next.now;
   }
 
   // --- Хмара бійки -------------------------------------------------------------------------------
@@ -459,12 +423,4 @@ export class IsoCatsView implements CatsPart {
     if (current?.target.active) current.target.filters?.internal.remove(current.glow);
     this.glowing = null;
   }
-}
-
-/** Висота стрибка в момент `time`: від `from` до `to` за `JUMP.ms` з дугою вгору. */
-function liftAt(lift: { from: number; to: number; start: number }, time: number): number {
-  const u = Math.min(1, Math.max(0, (time - lift.start) / JUMP.ms));
-  if (u >= 1 || lift.from === lift.to) return lift.to;
-  const ease = u * u * (3 - 2 * u);
-  return lift.from + (lift.to - lift.from) * ease + Math.sin(u * Math.PI) * JUMP.arc;
 }
