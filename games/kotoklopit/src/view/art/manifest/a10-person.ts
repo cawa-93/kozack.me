@@ -13,8 +13,8 @@
 //
 // Еталони F1b (`art/STYLE.md`, розділ 13): голова 0, обидві зачіски 0, очі, торс 1, рука, нога, взуття. A10 (хвиля 2)
 // переніс голову й зачіски на більше полотно 64 × 70 (у 54 × 50 не вміщалися довге волосся до плечей, хвостик і кучері) —
-// форма еталонів та сама, лише зсунута на (5, 4); намалював обличчя 1–2 і зачіски 1–3; торси 0 і 2 поки
-// орієнтовні — від торса 1, звужений і розширений від таза. Точка `<назва>-back` — те саме місце в ракурсі back (ближній бік ¾ спереду — ліворуч, ¾ ззаду —
+// форма еталонів та сама, лише зсунута на (5, 4); намалював обличчя 1–2, зачіски 1–3 і торси 0 і 2 (від торса 1 з тими самими
+// суглобами). Точка `<назва>-back` — те саме місце в ракурсі back (ближній бік ¾ спереду — ліворуч, ¾ ззаду —
 // праворуч).
 
 import type { ArtEntry, ArtPoint } from "../types";
@@ -33,39 +33,73 @@ const FACE_POINTS = [
   { eyes: { x: 37.9, y: 32.1 }, top: TOP },
 ] as const satisfies readonly { eyes: ArtPoint; top: ArtPoint }[];
 
-const round1 = (v: number): number => Math.round(v * 10) / 10;
-
-/** Торс звичайної статури (еталон F1b `art/person/torso/1`): pivot — таз; шия, плечі, стегна й `arms` (де кіт на руках). */
-const TORSO_NORMAL = {
-  size: { w: 58, h: 75 },
-  pivot: { x: 29, y: 54 },
-  points: {
-    neck: { x: 30.5, y: 8.5 },
-    "neck-back": { x: 28.5, y: 8.5 },
-    "neck-base": { x: 29.5, y: 14 },
-    "neck-base-back": { x: 28.5, y: 14 },
-    "shoulder-far": { x: 44, y: 15.6 },
-    "shoulder-far-back": { x: 14, y: 15.6 },
-    "shoulder-near": { x: 12, y: 17.6 },
-    "shoulder-near-back": { x: 46, y: 17.6 },
-    "hip-far": { x: 35, y: 56.6 },
-    "hip-far-back": { x: 23, y: 56.6 },
-    "hip-near": { x: 22.5, y: 59 },
-    "hip-near-back": { x: 35.5, y: 59 },
-    arms: { x: 38, y: 34 },
-    "arms-back": { x: 39, y: 33 },
+/**
+ * Торси статур (`BUILDS`): pivot — таз; шия, плечі, стегна й `arms` (де кіт на руках). Звичайна — еталон F1b
+ * `art/person/torso/1`; струнка й кремезна — той самий торс, вужчий чи ширший від таза (плечі, талія, стегна — кожне
+ * своїм множником), тож суглоби зсунуто разом із формою.
+ */
+const TORSO = [
+  {
+    size: { w: 54, h: 75 },
+    pivot: { x: 27, y: 54 },
+    points: {
+      neck: { x: 28.4, y: 8.5 },
+      "neck-back": { x: 26.5, y: 8.5 },
+      "neck-base": { x: 27.4, y: 14 },
+      "neck-base-back": { x: 26.6, y: 14 },
+      "shoulder-far": { x: 40.2, y: 15.6 },
+      "shoulder-far-back": { x: 13.8, y: 15.6 },
+      "shoulder-near": { x: 12.1, y: 17.6 },
+      "shoulder-near-back": { x: 41.9, y: 17.6 },
+      "hip-far": { x: 32.1, y: 56.6 },
+      "hip-far-back": { x: 21.9, y: 56.6 },
+      "hip-near": { x: 21.5, y: 59 },
+      "hip-near-back": { x: 32.5, y: 59 },
+      arms: { x: 34.5, y: 34 },
+      "arms-back": { x: 35.4, y: 33 },
+    },
   },
-} as const;
-
-/** Торс статури: еталон, ширший чи вужчий від таза в `k` разів (орієнтовно, до A10). */
-function torso(k: number): { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> } {
-  const half = Math.ceil(TORSO_NORMAL.pivot.x * k);
-  const points = Object.fromEntries(
-    Object.entries(TORSO_NORMAL.points).map(([name, p]) => [name, { x: round1(half + (p.x - TORSO_NORMAL.pivot.x) * k), y: p.y }]),
-  );
-  return { size: { w: 2 * half, h: TORSO_NORMAL.size.h }, pivot: { x: half, y: TORSO_NORMAL.pivot.y }, points };
-}
-const TORSO = [torso(0.85), TORSO_NORMAL, torso(1.2)] as const;
+  {
+    size: { w: 58, h: 75 },
+    pivot: { x: 29, y: 54 },
+    points: {
+      neck: { x: 30.5, y: 8.5 },
+      "neck-back": { x: 28.5, y: 8.5 },
+      "neck-base": { x: 29.5, y: 14 },
+      "neck-base-back": { x: 28.5, y: 14 },
+      "shoulder-far": { x: 44, y: 15.6 },
+      "shoulder-far-back": { x: 14, y: 15.6 },
+      "shoulder-near": { x: 12, y: 17.6 },
+      "shoulder-near-back": { x: 46, y: 17.6 },
+      "hip-far": { x: 35, y: 56.6 },
+      "hip-far-back": { x: 23, y: 56.6 },
+      "hip-near": { x: 22.5, y: 59 },
+      "hip-near-back": { x: 35.5, y: 59 },
+      arms: { x: 38, y: 34 },
+      "arms-back": { x: 39, y: 33 },
+    },
+  },
+  {
+    size: { w: 72, h: 75 },
+    pivot: { x: 36, y: 54 },
+    points: {
+      neck: { x: 37.7, y: 8.5 },
+      "neck-back": { x: 35.4, y: 8.5 },
+      "neck-base": { x: 36.6, y: 14 },
+      "neck-base-back": { x: 35.4, y: 14 },
+      "shoulder-far": { x: 53.1, y: 15.6 },
+      "shoulder-far-back": { x: 18.9, y: 15.6 },
+      "shoulder-near": { x: 16.6, y: 17.6 },
+      "shoulder-near-back": { x: 55.5, y: 17.6 },
+      "hip-far": { x: 43.3, y: 56.6 },
+      "hip-far-back": { x: 28.7, y: 56.6 },
+      "hip-near": { x: 28.2, y: 59 },
+      "hip-near-back": { x: 43.8, y: 59 },
+      arms: { x: 47.4, y: 34 },
+      "arms-back": { x: 48.6, y: 33 },
+    },
+  },
+] as const satisfies readonly { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> }[];
 /** Нога від стегна до кісточки (еталон F1b): pivot — стегно, `foot` — кісточка, куди стає pivot взуття. */
 const LEG = { size: { w: 33, h: 74 }, pivot: { x: 16, y: 18 }, points: { foot: { x: 16.6, y: 67.2 } } } as const;
 
