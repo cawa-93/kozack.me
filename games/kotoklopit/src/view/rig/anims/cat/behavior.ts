@@ -438,7 +438,8 @@ const SIT: Pose = {
   tail: { rot: SIT_TAIL },
   legs: {
     "leg-front-far": { paw: v2(-5.2, 0), x: -5, y: 8.7, back: { paw: v2(-4.2, 0), x: -4, y: 7.5 } },
-    "leg-front-near": { paw: v2(-2.6, 0), x: -4, y: 7, back: { paw: v2(-3.3, 0), x: -5.5, y: 9.6 } },
+    // Ззаду ближня передня кріпиться глибше в груди: верх лапи (без контуру) ховається під грудьми (як `SIT_BACK` у N1).
+    "leg-front-near": { paw: v2(-2.6, 0), x: -4, y: 7, back: { paw: v2(-5.7, 0), x: -12.5, y: 7.6 } },
     "leg-back-far": { paw: v2(5.4, 0), back: { paw: v2(11.6, 0) } },
     "leg-back-near": { paw: v2(12.5, 0), back: { paw: v2(6, 0) } },
   },
