@@ -1,11 +1,14 @@
-// Іконки баблів (§11.4): без тексту, один набір на всю гру. Поки що — прості заглушки,
-// намальовані кодом чорнилом; згодом їх замінить ШІ-графіка (крок 16 плану).
+// Іконки баблів (§11.4): без тексту, один набір на всю гру. У старому вигляді — прості заглушки, намальовані кодом
+// чорнилом (`createIconTextures`); у новому (крок 16, `?gfx=iso`) — кадри атласу `icon/<назва>` з SVG пакетів A11 і A12
+// (`addIcon`), поки SVG немає — заглушка атласу.
 
 import Phaser from "phaser";
 
+import { addArt } from "./art/atlas";
 import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./legacy/catcorner";
 import { COLORS } from "./colors";
-import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
+import { currentGfx } from "./gfx";
+import { bubbleTexture, iconArt, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -952,4 +955,18 @@ export function createIconTextures(scene: Phaser.Scene): void {
   drawThought(g);
   g.generateTexture(bubbleTexture("think"), THOUGHT_WIDTH, THOUGHT_HEIGHT);
   g.destroy();
+}
+
+/** Іконки — кадри атласу (новий вигляд, `?gfx=iso`), а не текстури кодом. Графіка сторінки без перезавантаження не змінюється. */
+let fromArt: boolean | null = null;
+
+/**
+ * Зображення іконки в точці (x, y) сцени, origin — центр: у старому вигляді — текстура `iconTexture` (40 × 40, як і було),
+ * у новому — кадр атласу `icon/<назва>` (64 × 64 одиниці; поки SVG немає — заглушка). Розмір на екрані задає той, хто
+ * кличе (`setDisplaySize`), шар — `addToDisplayList`.
+ */
+export function addIcon(scene: Phaser.Scene, x: number, y: number, name: IconName): Phaser.GameObjects.Image {
+  fromArt ??= currentGfx() === "iso";
+  if (!fromArt) return scene.add.image(x, y, iconTexture(name));
+  return addArt(scene, null, iconArt(name)).setPosition(x, y);
 }

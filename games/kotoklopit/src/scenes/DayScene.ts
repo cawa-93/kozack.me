@@ -35,8 +35,8 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
-import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
-import { createIconTextures } from "../view/icons";
+import type { BubbleKind, IconName } from "../view/iconnames";
+import { addIcon, createIconTextures } from "../view/icons";
 import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
@@ -78,8 +78,6 @@ function isTyping(): boolean {
 // і передає дії гравця в симуляцію; правил гри тут немає.
 /** Як часто виринає «+N ₴» над персонажем, мс. */
 const EARNINGS_POP_MS = 3000;
-/** Скільки місця над точкою бабла займає сам бабл разом із виринанням, px: мовна хмаринка й думка (§11.4). */
-const BUBBLE_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
 
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
@@ -660,7 +658,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
-    const image = this.add.image(from.x, from.y, iconTexture(icon)).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
+    const image = addIcon(this, from.x, from.y, icon).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
     const flight = { t: 0 };
     this.tweens.add({
       targets: flight,
@@ -694,7 +692,7 @@ export class DayScene extends Phaser.Scene {
   /** Точка бабла, опущена так, щоб увесь бабл лишався під панеллю (§11.4). */
   private belowHud(p: { x: number; y: number } | null, kind: BubbleKind): { x: number; y: number } | null {
     if (!p) return null;
-    return { x: p.x, y: Math.max(p.y, this.viewport.worldTop + BUBBLE_ROOM[kind]) };
+    return { x: p.x, y: Math.max(p.y, this.viewport.worldTop + this.bubbles.room(kind)) };
   }
 
   /** Бабли подій (вголос чи думка — `eventBubbles`, §11.4) і картки. */

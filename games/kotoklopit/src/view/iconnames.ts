@@ -1,6 +1,9 @@
 // Назви іконок, позначок і баблів (§11.4) і ключі їхніх текстур. Без Phaser: назви потрібні й симуляційним тестам
-// (`symbols.ts`, `thoughts.ts`), і маніфесту арту (крок 16). Малюнки — в `icons.ts`; щоб іконки стали кадрами атласу,
-// досить змінити ключі тут.
+// (`symbols.ts`, `thoughts.ts`), і маніфесту арту (крок 16). Малюнки старого вигляду — текстури з `icons.ts` (ключі
+// `iconTexture` тощо); у новому (крок 16, `?gfx=iso`) ті самі назви — кадри атласу (`iconArt` тощо), тож `symbols.ts` і
+// `thoughts.ts` не залежать від того, яка графіка.
+
+import type { ArtId } from "./art/types";
 
 /** Усі іконки баблів, панелі й індикаторів: одна назва — один малюнок. */
 export const ICON_NAMES = [
@@ -136,4 +139,19 @@ export function markTexture(mark: Mark): string {
 /** Ключ текстури тла бабла: мовна хмаринка чи думка. */
 export function bubbleTexture(kind: BubbleKind): string {
   return `bubble-${kind}`;
+}
+
+/** Кадр атласу іконки в новому вигляді (крок 16): `icon/<назва>` — та сама назва, що в коді (маніфест A11, A12). */
+export function iconArt(name: IconName): ArtId {
+  return `icon/${name}`;
+}
+
+/** Кадр атласу позначки поверх іконки: `icon/mark/<позначка>` (A12). */
+export function markArt(mark: Mark): ArtId {
+  return `icon/mark/${mark}`;
+}
+
+/** Кадр атласу тла бабла: `ui/bubble/say|think` (A12); pivot — вістря хвостика, точка `icon` — центр іконки. */
+export function bubbleArt(kind: BubbleKind): ArtId {
+  return `ui/bubble/${kind}`;
 }

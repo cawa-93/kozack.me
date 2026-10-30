@@ -2,12 +2,18 @@
 // Над однією річчю — лише один бабл стану, найважливіший.
 // Кожен бабл — вголос (мовна хмаринка) чи думка (хмаринка з кружечками), правка автора 2026-10-25;
 // який саме — вирішує `eventBubbles` (symbols.ts) і сцена для станів.
+// У новому вигляді (крок 16, `?gfx=iso`) фон, іконка й позначка — кадри атласу (`ui/bubble/*`, `icon/*`), а де що лежить —
+// `iso/bubblelook.ts`; поведінка (виринання, згасання, бабли поруч) та сама.
 
 import Phaser from "phaser";
 
+import { addArt } from "./art/atlas";
 import { COLORS } from "./colors";
-import { bubbleTexture, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
+import { currentGfx } from "./gfx";
+import { bubbleArt, bubbleTexture, iconArt, iconTexture, markArt, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import { BUBBLE_ICON_Y } from "./icons";
+import { BUBBLE_COUNT, countPillWidth, isoBubbleLook, type IsoBubbleLook } from "./iso/bubblelook";
+import { UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 
@@ -26,6 +32,8 @@ const THOUGHT_ICON_SCALE = 0.85;
 const BESIDE_STEP = 58;
 /** Де кількість відносно центру іконки: у правому верхньому куті мовної хмаринки й на правому горбику думки. */
 const COUNT_AT: Record<BubbleKind, { x: number; y: number }> = { say: { x: 16, y: -16 }, think: { x: 18, y: -12 } };
+/** Скільки місця над точкою бабла займає сам бабл разом із виринанням, px: мовна хмаринка й думка (§11.4), старий вигляд. */
+const LEGACY_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
 
 interface StateBubble {
   container: Phaser.GameObjects.Container;
@@ -52,13 +60,27 @@ const place = (at: Anchor): { x: number; y: number } | null => (typeof at === "f
 export class Bubbles {
   private readonly states = new Map<string, StateBubble>();
   private readonly floaters = new Set<Floater>();
+  /** Новий вигляд (крок 16): як лежить бабл кожного виду; null — старий вигляд, текстури з `icons.ts`. */
+  private readonly iso: Readonly<Record<BubbleKind, IsoBubbleLook>> | null;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layer: Phaser.GameObjects.Layer,
-  ) {}
+    gfx = currentGfx(),
+  ) {
+    this.iso = gfx === "iso" ? { say: isoBubbleLook("say"), think: isoBubbleLook("think") } : null;
+  }
+
+  /**
+   * Скільки місця над точкою бабла виду `kind` займає він сам разом із виринанням, px світу: вище за верхній край видимої
+   * квартири мінус це бабл не ставлять, щоб його не сховала панель (`DayScene.belowHud`).
+   */
+  room(kind: BubbleKind): number {
+    return this.iso ? this.iso[kind].room : LEGACY_ROOM[kind];
+  }
 
   private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
+    if (this.iso) return this.makeIso(this.iso[kind], kind, icon, x, y, count, mark);
     const iconY = BUBBLE_ICON_Y[kind];
     const scale = kind === "think" ? THOUGHT_ICON_SCALE : 1;
     const bg = this.scene.add.image(0, 0, bubbleTexture(kind)).setOrigin(0.5, 1);
@@ -83,6 +105,39 @@ export class Bubbles {
       container.add([pill, label]);
     }
     return container;
+  }
+
+  /**
+   * Бабл нового вигляду: фон `ui/bubble/<вид>` вістрям у точці, іконка й позначка — кадри атласу в точці `icon` фону,
+   * кількість — плашка в правому верхньому куті іконки. Усе — у вкладеному контейнері зі сталим масштабом
+   * (`ISO_BUBBLE_SCALE`), бо масштаб зовнішнього анімують виринання й `setState`.
+   */
+  private makeIso(look: IsoBubbleLook, kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
+    const scene = this.scene;
+    const body = scene.add.container(0, 0).setScale(look.scale);
+    addArt(scene, body, bubbleArt(kind));
+    const place = (image: Phaser.GameObjects.Image): void => {
+      image.setPosition(look.icon.x, look.icon.y).setDisplaySize(look.iconSize, look.iconSize);
+    };
+    place(addArt(scene, body, iconArt(icon)));
+    if (mark !== undefined) place(addArt(scene, body, markArt(mark)));
+    if (count !== undefined) {
+      // Кількість — чорнильна плашка з паперовою обвідкою й паперовими цифрами: видно і на світлій підлозі, і на темній стіні.
+      const c = BUBBLE_COUNT;
+      const label = scene.add
+        .text(0, 0, String(count), { fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: 2 })
+        .setOrigin(0.5);
+      const h = c.height;
+      const w = countPillWidth(label.width);
+      const cx = look.count.x + (w - h) / 2;
+      const cy = look.count.y;
+      label.setPosition(cx, cy);
+      const pill = scene.add.graphics();
+      pill.fillStyle(UI_FILL.ink).fillRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
+      pill.lineStyle(c.outline, UI_FILL.paper).strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
+      body.add([pill, label]);
+    }
+    return scene.add.container(x, y, [body]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
   }
 
   /**
@@ -139,8 +194,12 @@ export class Bubbles {
   popText(text: string, at: Anchor, color: string): void {
     const start = place(at);
     if (!start) return;
+    // У новому вигляді одиниця світу дрібніша (≈ 0,72 px CSS проти ≈ 0,88), тож напис більший, щоб на екрані був той самий.
+    const style = this.iso
+      ? { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color, stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: 2 }
+      : { fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color, stroke: "#1f1a24", strokeThickness: 3, resolution: 2 };
     const label = this.scene.add
-      .text(0, 0, text, { fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color, stroke: "#1f1a24", strokeThickness: 3, resolution: 2 })
+      .text(0, 0, text, style)
       .setOrigin(0.5, 1)
       .setAlpha(0.75);
     const container = this.scene.add.container(start.x, start.y - 4, [label]).setDepth(BUBBLE_DEPTH + 2).addToDisplayList(this.layer);
