@@ -439,14 +439,38 @@ const BACK_NEAR = { bones: NEAR_FRONT_IN, slots: NEAR_FRONT_UNDER };
 
 /** Цикл ходи, мс: рись — діагональні пари лап (ближня передня з дальньою задньою, дальня передня з ближньою задньою). */
 const WALK_MS = 340;
-/** Розмах лап у ході, градуси від вертикалі: передні — ширше. */
-const WALK_FRONT = 32;
-const WALK_BACK = 28;
-/** Наскільки таз нижчає, коли опорні лапи навскіс (на зміні пар), щоб подушечки лишалися на підлозі. */
-const WALK_BOB = 1.5;
+/**
+ * Розмах лап у ході, градуси від вертикалі. Однаковий спереду й ззаду: тоді обидві лапи пари за опору проходять ту саму
+ * відстань, і жодна не ковзає відносно другої.
+ */
+const WALK_AMP = 34;
 /** Лапа на краях опори трохи витягнута (тягнеться вперед і відштовхується), у переносі — підібрана. */
 const WALK_REACH = 1.08;
 const WALK_LIFT = 0.78;
+/**
+ * Наскільки таз нижчає, коли опорні лапи навскіс (на зміні пар), щоб подушечки лишалися на підлозі: лапа навскіс, хоч і
+ * витягнута, — коротша по вертикалі на (1 − WALK_REACH·cos WALK_AMP) довжини.
+ */
+const WALK_BOB = 2;
+
+/** Цикл ходи, мс, за швидкості відтворення 1. */
+export const CAT_WALK_MS = WALK_MS;
+/**
+ * Крок ходи: на скільки кіт просувається за цикл, у довжинах лапи (від суглоба до подушечки). За цикл кожна пара лап раз
+ * стоїть на підлозі й проходить назад 2·WALK_REACH·sin WALK_AMP довжини — і стільки ж кіт іде вперед.
+ */
+export const CAT_WALK_STRIDE = 2 * 2 * WALK_REACH * Math.sin(WALK_AMP * DEG);
+
+/**
+ * Швидкість відтворення ходи, за якої лапи не ковзають: кіт іде на екрані `speed` одиниць арту за секунду, а його лапа
+ * завдовжки `leg` одиниць арту — з пропорціями й масштабом кореня (дорослий — 20,5; кошеня `kitten` 1 — 20,5 × 0,62 × 0,8;
+ * короткі лапи — довжина кадру `cat/leg-front/short`). Для T1: це замість `walkFactor` (`CatAnimChoice.speed`) — повільніша
+ * хода хворого кота вже у швидкості на екрані. Решту ходів (кульгає, незграбна, сумна, несе в зубах — N2, N3) варто грати
+ * так само, якщо їхній цикл і розмах ті самі.
+ */
+export function catWalkRate(speed: number, leg = 20.5): number {
+  return (speed * WALK_MS) / 1000 / (CAT_WALK_STRIDE * leg);
+}
 
 /**
  * Лапа в ході: опора — з моменту `start` пів циклу (лапа на підлозі йде спереду назад рівномірно), потім перенос (піднята
@@ -506,10 +530,10 @@ const walk: CatAnim = {
   loop: true,
   bones: {
     pelvis: gaitBob(WALK_MS, WALK_BOB),
-    "leg-front-near": gaitLeg(WALK_MS, WALK_FRONT, 0),
-    "leg-back-far": gaitLeg(WALK_MS, WALK_BACK, 0),
-    "leg-front-far": gaitLeg(WALK_MS, WALK_FRONT, 0.5),
-    "leg-back-near": gaitLeg(WALK_MS, WALK_BACK, 0.5),
+    "leg-front-near": gaitLeg(WALK_MS, WALK_AMP, 0),
+    "leg-back-far": gaitLeg(WALK_MS, WALK_AMP, 0),
+    "leg-front-far": gaitLeg(WALK_MS, WALK_AMP, 0.5),
+    "leg-back-near": gaitLeg(WALK_MS, WALK_AMP, 0.5),
     // Голова ледь киває в такт крокам, хвіст піднятий і похитується раз за цикл.
     head: { rot: osc(WALK_MS, [0, -1.5, 0, -1.5]) },
     tail: { rot: osc(WALK_MS, [-2.5, 2.5]) },
