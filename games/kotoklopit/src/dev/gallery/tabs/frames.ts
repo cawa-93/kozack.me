@@ -154,21 +154,21 @@ function materialize(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, item:
   const objects: Phaser.GameObjects.GameObject[] = [];
   const { entry } = item.source;
   const at = { x: item.box.x + entry.pivot.x, y: item.box.y + entry.pivot.y };
-  for (const layerName of imageLayers(entry, item)) {
-    const image = addArt(scene, layer, entry.id, { state: item.frame.state, view: item.frame.view, layer: layerName });
-    // Стос заглушок — одна заглушка: шари, яких ще немає, однакові.
-    if (objects.length > 0 && isArtStub(image)) {
-      image.destroy();
-      continue;
-    }
-    image.setPosition(at.x, at.y).setDepth(0);
-    objects.push(image);
+  const images = imageLayers(entry, item).map((name) => addArt(scene, layer, entry.id, { state: item.frame.state, view: item.frame.view, layer: name }));
+  // У стосі — лише намальовані шари; нічого ще немає — одна заглушка (шари, яких немає, однакові).
+  const drawn = images.filter((image) => !isArtStub(image));
+  const shown = drawn.length > 0 ? drawn : images.slice(0, 1);
+  for (const image of images) {
+    if (shown.includes(image)) objects.push(image.setPosition(at.x, at.y).setDepth(0));
+    else image.destroy();
   }
+  // Заглушка — кадр не готовий за index.json (stub) чи цього шару в атласі ще немає.
+  const stub = !item.ready || drawn.length === 0;
   if (options.box || options.marks) {
     const g = new Phaser.GameObjects.Graphics(scene);
     layer.add(g);
     g.setDepth(10);
-    if (options.box) drawBox(g, item.box.x, item.box.y, entry.size.w, entry.size.h, item.ready ? MARK_COLORS.box : MARK_COLORS.stub);
+    if (options.box) drawBox(g, item.box.x, item.box.y, entry.size.w, entry.size.h, stub ? MARK_COLORS.stub : MARK_COLORS.box);
     if (options.marks) {
       drawCross(g, at.x, at.y, MARK_COLORS.pivot, 7);
       for (const point of Object.values(entry.points ?? {})) drawCross(g, item.box.x + point.x, item.box.y + point.y, MARK_COLORS.point, 5);
@@ -185,7 +185,7 @@ function materialize(scene: Phaser.Scene, layer: Phaser.GameObjects.Layer, item:
     }
   }
   if (options.captions) {
-    const label = addLabel(scene, layer, item.x, item.y + entry.size.h + 2 * unit(), item.caption, item.ready ? {} : { color: STUB_TEXT });
+    const label = addLabel(scene, layer, item.x, item.y + entry.size.h + 2 * unit(), item.caption, stub ? { color: STUB_TEXT } : {});
     objects.push(label.setDepth(20));
   }
   return objects;
