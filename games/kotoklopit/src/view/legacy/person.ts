@@ -5,6 +5,7 @@ import Phaser from "phaser";
 import type { Character } from "../../sim/types";
 import { drawItem } from "./apartment";
 import { COLORS } from "../colors";
+import type { IsoPointHandle, SetDepth } from "../iso/depth";
 import type { Projection } from "../world/projection";
 
 import { PALETTE } from "../palette";
@@ -24,16 +25,22 @@ const pick = <T>(list: readonly T[], i: number): T => list[((i % list.length) + 
 
 export class PersonView {
   private readonly g: Phaser.GameObjects.Graphics;
+  /** Ізометрія (перехідний вигляд кроку 16): точка в реєстрі глибини світу — глибину дає він, а не екранний y ніг. */
+  private readonly point: IsoPointHandle | null;
 
   constructor(
     scene: Phaser.Scene,
     layer: Phaser.GameObjects.Layer,
     private readonly proj: Projection,
+    /** Ізометрія: точка в реєстрі глибини (`legacyDepthPoint`) з колбеком глибини фігури; null — глибина з екранного y ніг. */
+    depthPoint: ((setDepth: SetDepth) => IsoPointHandle) | null = null,
   ) {
     this.g = scene.add.graphics().addToDisplayList(layer);
+    this.point = depthPoint ? depthPoint((d) => this.g.setDepth(d)) : null;
   }
 
   destroy(): void {
+    this.point?.remove();
     this.g.destroy();
   }
 
@@ -48,10 +55,15 @@ export class PersonView {
   draw(character: Character, moving: boolean, time: number, away = false, dirty = false, sleep = 0): void {
     // У поїздці персонажа вдома не видно (§8.5).
     this.g.setVisible(!away);
-    if (away) return;
+    if (away) {
+      this.point?.hide();
+      return;
+    }
     const { body, held } = character;
     const feet = this.proj.toScreen(body);
-    const g = this.g.clear().setDepth(this.proj.depthOf(feet.y));
+    const g = this.g.clear();
+    if (this.point) this.point.place(body.x, body.y);
+    else g.setDepth(this.proj.depthOf(feet.y));
     const look = character.look;
     const skin = pick(PALETTE.skin, look.skin);
     const hair = pick(PALETTE.hairColor, look.hairColor);
@@ -131,6 +143,6 @@ export class PersonView {
       }
     }
     this.head = { x: hx, y: hy - 16 };
-    this.hands = { x: x + f.x * 12, y: y - 14, depth: this.proj.depthOf(feet.y) + (f.y < -0.5 ? -1 : 1) };
+    this.hands = { x: x + f.x * 12, y: y - 14, depth: this.proj.depthOf(feet.y) + (back ? -1 : 1) };
   }
 }

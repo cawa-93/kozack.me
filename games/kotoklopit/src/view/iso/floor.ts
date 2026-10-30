@@ -25,6 +25,9 @@ import { basketState, carrierOccupied, feederFrame, itemFrame, messFrame, robotF
 /** Що лежить на речі, — у її проміжку глибини, нижче за пів проміжку (`ISO_DEPTH_SLOT` 0,01). */
 const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
 
+/** Ґратки переноски — над нею (у її проміжку): старий кіт, що спить у переносці (`legacy/cat.ts`), — між нею й ґратками. */
+export const CARRIER_GRATE_DEPTH = ON.grate;
+
 /** Автогодівниця стоїть позаду своєї миски на тій самій клітинці: для порядку — на стільки клітинок далі. */
 const FEEDER_BEHIND = 0.3;
 /** Бабл над безладом — на стільки над підлогою (як у старому вигляді: 12 px над плямою). */

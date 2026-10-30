@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import { OBJECTS, objectById } from "../src/sim/home";
 import { ISO_BACKDROP_DEPTH, ISO_DEPTH_MAX, ISO_DEPTH_SLOT, IsoDepth, isoDepth } from "../src/view/iso/depth";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
+import { legacyDepthPoint } from "../src/view/iso/transition";
 import { objectBox } from "../src/view/world/isoorder";
+import { isoObjectLook } from "../src/view/world/objects";
 import { WORLD_LAYERS } from "../src/view/world/layers";
 import type { WorldQuery } from "../src/view/world/part";
 import { ISO } from "../src/view/world/projection";
@@ -145,6 +147,47 @@ describe("реєстр глибини: узгоджено зі старими ч
       expect(legacy(front), id).toBeGreaterThan(box.depth());
       expect(legacy(back), id).toBeLessThan(box.depth());
     }
+  });
+
+  it("у всій квартирі реєстр піднімає коробки вище за їхню середину — тож старі персонаж і кіт у ?gfx=iso стають точками реєстру (legacyDepthPoint)", () => {
+    const ctx = { world: {} as WorldQuery };
+    const registry = isoDepth(ctx);
+    const boxes = new Map<string, () => number>();
+    for (const o of OBJECTS) {
+      const r = recorder();
+      registry.addBox({ ...isoObjectLook(o.id).footprint, id: o.id }, r.set);
+      boxes.set(o.id, r.depth);
+    }
+    for (const segment of WALL_SEGMENTS) {
+      const r = recorder();
+      registry.addBox(objectBox(segment.rect), r.set);
+      boxes.set(segment.id, r.depth);
+    }
+    const person = recorder();
+    const point = legacyDepthPoint(ctx, "person", person.set);
+    const bag = boxes.get("litter-bag")!;
+    const wall = boxes.get("env/wall/inner/row5-x5")!;
+    // Біля мішка наповнювача, там, де ним користуються (перед ним): мішок стоїть у порядку за стіною ряду 5, і реєстр підняв
+    // його вище за ноги персонажа — глибина з екранного y ніг (як рахували старі частини) поклала б персонажа за мішок.
+    point.place(5.5, 7.35);
+    registry.solve();
+    expect(ISO.depthOf(ISO.toScreen({ x: 5.5, y: 7.35 }).y)).toBeLessThan(bag());
+    expect(person.depth()).toBeGreaterThan(bag());
+    // За стіною ряду 5 (у ванній) — за нею.
+    point.place(8.5, 4.6);
+    registry.solve();
+    expect(person.depth()).toBeLessThan(wall());
+    // Перед стіною ряду 5 справа (12,6; 6,35) — перед нею: реєстр підняв і цю стіну.
+    point.place(12.6, 6.35);
+    registry.solve();
+    expect(person.depth()).toBeGreaterThan(boxes.get("env/wall/inner/row5-x12")!());
+    // Кіт на руках — поверх персонажа, у його проміжку.
+    const cat = recorder();
+    legacyDepthPoint(ctx, "cat:1", cat.set).placeAbove("person");
+    registry.solve();
+    expect(cat.depth()).toBeGreaterThan(person.depth());
+    expect(cat.depth()).toBeLessThan(person.depth() + ISO_DEPTH_SLOT);
+    expect(registry.cycles).toBe(0);
   });
 });
 

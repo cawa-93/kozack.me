@@ -11,7 +11,7 @@ import { catFacing, personFacing } from "../anim/catfacing";
 import { isoScreenDir } from "../anim/iso";
 import { catPairs, type PairPlacement } from "../anim/pairs";
 import { COLORS } from "../colors";
-import { boxDepthLookup } from "../iso/transition";
+import { legacyDepthPoint } from "../iso/transition";
 import type { RigFacing } from "../rig/types";
 import { blinkAmount, catLook } from "../thoughts";
 import type { PartContext } from "../world/context";
@@ -49,7 +49,8 @@ export class LegacyCatsView implements CatsPart {
       alive.add(cat.id);
       let view = this.views.get(cat.id);
       if (!view) {
-        view = new CatView(this.ctx.scene, this.ctx.layer, cat, this.ctx.projection, this.ctx.projection.kind === "iso" ? boxDepthLookup(this.ctx) : null);
+        const id = `cat:${cat.id}`;
+        view = new CatView(this.ctx.scene, this.ctx.layer, cat, this.ctx.projection, iso ? (set) => legacyDepthPoint(this.ctx, id, set) : null);
         this.views.set(cat.id, view);
       }
       // Кіт на руках чи на колінах — біля персонажа.

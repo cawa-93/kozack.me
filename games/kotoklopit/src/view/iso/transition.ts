@@ -2,13 +2,14 @@
 // підлозі, треба від ізометричного світу. Коли T1 і T2 замінять старих кота й персонажа, файл видаляється. Без Phaser.
 
 import type { WorldQuery } from "../world/part";
-import { isoDepth } from "./depth";
+import { isoDepth, type IsoPointHandle, type SetDepth } from "./depth";
 
 /**
- * Глибина коробки речі квартири за її id з реєстру глибини світу (`iso/depth.ts`); ще не розв'язано чи такої немає — NaN.
- * Старий кіт, що виліз на річ, стає одразу над її коробкою: лише так він над нею, хоч би як реєстр її підняв.
+ * Точка старого персонажа чи кота (`id` — `person`, `cat:<id>`) у реєстрі глибини світу (`iso/depth.ts`): глибину старій
+ * частині дає реєстр за порядком `isoOrder`, як і ізометричним, а не екранний y ніг. Реєстр піднімає коробки вище за їхню
+ * середину, щоб іти за порядком (мішок наповнювача за стіною ряду 5 — на 32 одиниці), і з глибиною з екранного y персонаж
+ * перед мішком опинявся за ним, а за стіною — поверх неї; так само бруд перед стіною — над ногами того, хто на ньому стоїть.
  */
-export function boxDepthLookup(ctx: { readonly world: WorldQuery }): (id: string) => number {
-  const registry = isoDepth(ctx);
-  return (id) => registry.box(id)?.depth ?? Number.NaN;
+export function legacyDepthPoint(ctx: { readonly world: WorldQuery }, id: string, setDepth: SetDepth): IsoPointHandle {
+  return isoDepth(ctx).addPoint(setDepth, { id });
 }

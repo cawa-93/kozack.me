@@ -7,7 +7,7 @@ import Phaser from "phaser";
 
 import { isKitten, traitLevel } from "../../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../../sim/genetics";
-import { CARRIER_SPOT, centerOf, HIGH_PLACES, objectAt } from "../../sim/home";
+import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../../sim/home";
 import { absoluteMinute } from "../../sim/time";
 import { girthOf } from "../../sim/weight";
 import type { Cat, GameState, Quality } from "../../sim/types";
@@ -16,7 +16,8 @@ import { drawSock, drawToy } from "./catcorner";
 import { COLORS } from "../colors";
 import type { Projection } from "../world/projection";
 import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "../pose";
-import { ISO_DEPTH_SLOT } from "../iso/depth";
+import type { IsoPointHandle, SetDepth } from "../iso/depth";
+import { CARRIER_GRATE_DEPTH } from "../iso/floor";
 import { isoCatPerch, objectHeight } from "../world/objects";
 
 const PIGMENT: Record<Pigment, number> = {
@@ -43,6 +44,11 @@ const MOUTH = 0x5a2232;
 const TONGUE = 0xe58b9a;
 /** Наскільки прикриті очі того, хто вилизує друга: напівзаплющені (§9.4, «Вилизує іншого»). */
 const LICK_LID = 0.55;
+/**
+ * Ізометрія: у якій частці поправка глибини пози (0,01 — поверх друга в бійці, грі, вилизуванні) стає поправкою всередині
+ * проміжку точки реєстру (`ISO_DEPTH_SLOT` 0,01): 0,004 — нижче за пів проміжку, де лежить кіт на руках.
+ */
+const ISO_LIFT = 0.4;
 
 const shade = (color: number, k: number): number => {
   const c = Phaser.Display.Color.IntegerToColor(color);
@@ -115,16 +121,39 @@ export class CatView {
     layer: Phaser.GameObjects.Layer,
     cat: Cat,
     private readonly proj: Projection,
-    /** Ізометрична квартира (перехідний вигляд кроку 16): глибина коробки речі за id, NaN — ще невідома. */
-    private readonly boxDepth: ((id: string) => number) | null = null,
+    /**
+     * Ізометрична квартира (перехідний вигляд кроку 16): точка кота в реєстрі глибини світу (`legacyDepthPoint`) з колбеком
+     * глибини — глибину дає реєстр (на підлозі, на меблях, на руках у персонажа), а не екранний y ніг.
+     */
+    depthPoint: ((setDepth: SetDepth) => IsoPointHandle) | null = null,
   ) {
     this.g = scene.add.graphics().addToDisplayList(layer);
     this.coat = coatOf(cat.genes, cat.shape);
     this.shape = cat.shape;
+    this.point = depthPoint ? depthPoint((d) => this.g.setDepth(d + this.lift)) : null;
   }
 
+  /** Ізометрія: точка в реєстрі глибини. */
+  private readonly point: IsoPointHandle | null;
+  /** Ізометрія: поправка глибини пози над точкою реєстру (поверх друга), у межах її проміжку. */
+  private lift = 0;
+
   destroy(): void {
+    this.point?.remove();
     this.g.destroy();
+  }
+
+  /**
+   * Глибина з поправкою пози `extra` (0,01 — поверх друга): у косій — `base + extra`, в ізометрії — глибина точки реєстру
+   * плюс частка поправки (`ISO_LIFT`), щоб не вийти з її проміжку.
+   */
+  private raise(base: number, extra: number): void {
+    if (!this.point) {
+      this.g.setDepth(base + extra);
+      return;
+    }
+    this.lift = extra * ISO_LIFT;
+    if (!Number.isNaN(this.point.depth)) this.g.setDepth(this.point.depth + this.lift);
   }
 
   /** Намалювати кота: у руках персонажа — біля грудей, інакше — на підлозі. */
@@ -192,20 +221,22 @@ export class CatView {
     const g = this.g.clear();
     if (cat.away !== null) {
       g.setVisible(false);
+      this.point?.hide();
       return;
     }
     g.setVisible(true);
     const feet = carriedAt ?? { ...this.proj.toScreen(cat), depth: this.proj.depthOf(this.proj.toScreen(cat).y) + 0.5 };
     // На меблях кіт сидить зверху, а ховається — під ними, визираючи з-під краю.
     const furniture = carriedAt ? null : objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
+    /** Ізометрія: на якій коробці реєстру кіт (виліз на річ чи ховається під нею) і де на ній. */
+    let onBox: { id: string; at: { x: number; y: number } } | null = null;
     if (furniture && furniture.kind !== "door" && this.proj.kind === "iso") {
       // Перехідний вигляд кроку 16 (`?gfx=iso`, F3b): на ізометричних меблях — на висоті їхнього верху, над їхньою коробкою.
       const perch = isoCatPerch(furniture.id, cat, pose === "hide");
       const at = this.proj.toScreen(perch.at);
-      const box = this.boxDepth?.(furniture.id) ?? Number.NaN;
       feet.x = at.x;
       feet.y = at.y - perch.lift;
-      feet.depth = Number.isNaN(box) ? this.proj.depthAt(centerOf(furniture)) + 2 : box + ISO_DEPTH_SLOT / 2;
+      onBox = { id: furniture.id, at: perch.at };
     } else if (furniture && furniture.kind !== "door") {
       const bottom = this.proj.toScreen({ x: 0, y: furniture.y + furniture.h }).y;
       feet.depth = this.proj.depthOf(bottom) + 2;
@@ -217,7 +248,17 @@ export class CatView {
       // перевірка етапу 2026-10-25 — кіт закривав миску, і корму не було видно). Глибина — та сама, з клітинки кота.
       feet.y -= BOWL_BEHIND;
     }
-    g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
+    if (this.point) {
+      // Ізометрія: на руках і на колінах — поверх персонажа, як і в старому вигляді (у його проміжку глибини); у переносці —
+      // між нею й ґратками; на меблях — над їхньою коробкою; інакше — на підлозі.
+      if (carriedAt) this.point.placeAbove("person");
+      else if (pose === "carrier") this.point.placeAbove("carrier", CARRIER_GRATE_DEPTH / 2);
+      else if (onBox) this.point.place(onBox.at.x, onBox.at.y, onBox.id);
+      else this.point.place(cat.x, cat.y);
+      this.raise(0, 0);
+    } else {
+      g.setDepth(carriedAt ? carriedAt.depth + 1 : feet.depth);
+    }
     const scale = this.scaleOf(cat);
     // Відданий кіт дивиться на персонажа, коли моргає до нього; перед ворогом і в бійці — лише на ворога, з другом — на друга.
     const foeFacing = busy;
@@ -338,7 +379,7 @@ export class CatView {
         };
         const top = Math.min(topOf(cat), foe ? topOf(foe) : Infinity);
         // Хто зараз ближче до нас, той і поверх: клубок крутиться, а не стоїть одним боком.
-        g.setDepth(feet.depth + (front ? 0.01 : 0));
+        this.raise(feet.depth, front ? 0.01 : 0);
         g.fillStyle(0x000000, 0.12).fillEllipse(mx, y, 50 * s, 10 * s);
         if (!front) {
           // Хмара пилу позаду клубка — малює той, хто зараз позаду.
@@ -415,7 +456,7 @@ export class CatView {
         // Ігрова боротьба, зверху (§9.4, «Пози стосунків», 4; заглушка до кроку 16): стоїть над другом, що лежить на спині, —
         // тіло відсунуте назад, голова піднята, передня лапа піднята й легенько б'є згори вниз по голові й грудях друга; очі
         // круглі, вуха вперед, хвіст угору й мотається. Поверх того, хто знизу.
-        g.setDepth(feet.depth + 0.01);
+        this.raise(feet.depth, 0.01);
         const bx = x - dir * 10 * s;
         const limb = this.coat.pointed ? point : body;
         const pawColor = this.coat.white >= 1 ? WHITE : limb;
@@ -534,7 +575,7 @@ export class CatView {
       case "carrier": {
         // Спить у переносці (§9.12): крізь віконце дверцят видно клубочок шерсті й вушко, поверх — ґратки.
         const door = this.proj.toScreen(CARRIER_SPOT);
-        g.setDepth(this.proj.depthOf(door.y) + 0.5);
+        if (!this.point) g.setDepth(this.proj.depthOf(door.y) + 0.5);
         g.fillStyle(body).fillEllipse(door.x, door.y - 9, 18, 10);
         this.patches(g, door.x, door.y - 9, 18, 10);
         g.fillStyle(this.coat.pointed ? point : body).fillTriangle(door.x + 2, door.y - 13, door.x + 7, door.y - 13, door.x + 5, door.y - 16);
@@ -640,7 +681,7 @@ export class CatView {
         // Вилизує друга (§9.4, «Вилизує іншого»): голова тягнеться вперед, до щоки й шиї друга, і погойдується в ритмі лизання;
         // поверх друга.
         const lick = pose === "lick" ? Math.max(0, Math.sin(time / 150 + cat.id)) : 0;
-        if (pose === "lick") g.setDepth(feet.depth + 0.01);
+        if (pose === "lick") this.raise(feet.depth, 0.01);
         const hx = x + dir * (3 + (pose === "cough" ? 5 : pose === "lick" ? 11 + 2 * lick : 0)) * s + dir * jerk;
         // Сумний кіт опускає голову; той, хто їсть чи гребе лапою (корм біля миски, наповнювач у лотку), — до самої підлоги;
         // хто вмивається — хитає головою.

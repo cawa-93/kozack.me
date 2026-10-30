@@ -6,6 +6,7 @@ import Phaser from "phaser";
 import { petOver } from "../../sim/actions";
 import type { GameState } from "../../sim/types";
 import { COLORS } from "../colors";
+import { legacyDepthPoint } from "../iso/transition";
 import { PALETTE } from "../palette";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
@@ -18,7 +19,7 @@ export class LegacyPersonView implements PersonPart {
   private readonly interaction: Phaser.GameObjects.Graphics;
 
   constructor(private readonly ctx: PartContext) {
-    this.figure = new PersonView(ctx.scene, ctx.layer, ctx.projection);
+    this.figure = new PersonView(ctx.scene, ctx.layer, ctx.projection, ctx.projection.kind === "iso" ? (set) => legacyDepthPoint(ctx, "person", set) : null);
     this.interaction = ctx.scene.add.graphics().setDepth(WORLD_LAYERS.interaction).addToDisplayList(ctx.layer);
   }
 
