@@ -7,13 +7,17 @@ import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
 import { currentGfx } from "./view/gfx";
+import { catRenderConfig } from "./view/iso/catrender";
 import { BASE_HEIGHT, BASE_WIDTH } from "./view/viewport";
 
 const session = Session.restore({ address: "she", difficulty: "normal" });
 
 // Яка графіка (крок 16): нове оформлення DOM-інтерфейсу (`overlay.css`) до кінця хвилі 3 діє лише під
 // `:root[data-gfx="iso"]`, щоб старий вигляд лишався як був.
-document.documentElement.dataset.gfx = currentGfx();
+const gfx = currentGfx();
+document.documentElement.dataset.gfx = gfx;
+// Нова графіка на програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`).
+const render = catRenderConfig(gfx);
 
 // Режим розробки (§11.5): у `npm run dev` і на прев'ю Netlify; у продакшн-збірку не потрапляє.
 if (__DEV_TOOLS__) {
@@ -35,6 +39,7 @@ new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   input: { activePointers: 3 },
+  ...(render ? { render } : {}),
   // Спершу атлас арту (крок 16), потім день; гонку запускає DayScene.
   scene: [new PreloadScene("day"), new DayScene(session), new RaceScene(session)],
 });
