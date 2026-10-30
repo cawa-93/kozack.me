@@ -276,8 +276,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       if (event.reaction === "frenzy") return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
       return [{ kind: "think", at: cat(event.cat), icon: "catnip", ...(event.reaction === "sniff" ? { mark: "no" as const } : {}) }];
     case "cat-cuddled":
-      // «Щедра душа» лягла поруч із тим, кого гладять (§9.12, «Ревнивість»): муркоче — тепло на душі, думка.
-      return [{ kind: "think", at: cat(event.cat), icon: "heart" }];
+      // «Щедра душа» лягла поруч із тим, кого гладять (§9.12, «Ревнивість»): муркоче — тепло на душі, думка «приємно» (два сердечка:
+      // одне — здоров'я персонажа, §11.4).
+      return [{ kind: "think", at: cat(event.cat), icon: "pleasant" }];
     case "weather-felt":
       // Теплолюб мерзне, «Не мерзне» знемагає від спеки (§9.12, «Теплолюбність»): що кіт відчуває — думка.
       return [{ kind: "think", at: cat(event.cat), icon: event.feel === "cold" ? "chilly" : "hot" }];
@@ -289,8 +290,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
         { kind: "think", at: cat(event.from), icon: "treats", mark: "no" },
       ];
     case "groom-started":
-      // Кота почав вилизувати друг (§9.4, рішення автора 2026-10-26, В1): йому приємно — думка-сердечко над тим, кого вилизують.
-      return [{ kind: "think", at: cat(event.friend), icon: "heart" }];
+      // Кота почав вилизувати друг (§9.4, рішення автора 2026-10-26, В1): йому приємно — думка «приємно» над тим, кого вилизують.
+      return [{ kind: "think", at: cat(event.friend), icon: "pleasant" }];
     case "groom-refused":
       // Кіт не терпить, щоб його вилизували (§9.12, «Вилизування друзів»): «не треба» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "lick", mark: "no" }];

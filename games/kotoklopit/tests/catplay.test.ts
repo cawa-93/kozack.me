@@ -91,7 +91,7 @@ describe("вилизування видно (§9.4, рішення автора 
     const started = events.find((e) => e.type === "groom-started");
     expect(started).toMatchObject({ cat: a.id, friend: b.id });
     expect(count(events, "groomed")).toBe(1);
-    if (started) expect(eventBubbles(started)).toEqual([{ kind: "think", at: `cat:${b.id}`, icon: "heart" }]);
+    if (started) expect(eventBubbles(started)).toEqual([{ kind: "think", at: `cat:${b.id}`, icon: "pleasant" }]);
     // Вилизування скінчилося — друг уже не сидить, чекаючи.
     tickCats(save.current, 0.1, { present: false });
     expect(b.act.target === `licked:${a.id}`).toBe(false);

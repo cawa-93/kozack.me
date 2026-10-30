@@ -52,7 +52,7 @@ describe("про що думає кіт (§11.4)", () => {
     const cat = withCat(save);
     expect(catThought(save.current, cat)).toBeNull();
     cat.needs.attention = THOUGHTS.attention;
-    expect(catThought(save.current, cat)).toBe("heart");
+    expect(catThought(save.current, cat)).toBe("attention");
     cat.needs.play = THOUGHTS.play;
     expect(catThought(save.current, cat)).toBe("toy");
     cat.mood = THOUGHTS.sad - 1;

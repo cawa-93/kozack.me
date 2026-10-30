@@ -738,6 +738,37 @@ Object.assign(ICONS, {
   "hiss-kitten": hissWith((g) => ICONS.cat(g)),
 } satisfies Partial<Record<IconName, Draw>>);
 
+/** Сердечко з центром угорі між горбиками в (`x`, `y`) і масштабом `s` (у `heart` — 1). */
+function heartAt(g: Phaser.GameObjects.Graphics, x: number, y: number, s: number): void {
+  g.fillCircle(x - 6 * s, y, 7.5 * s).fillCircle(x + 6 * s, y, 7.5 * s).fillTriangle(x - 13 * s, y + 3 * s, x + 13 * s, y + 3 * s, x, y + 19 * s);
+}
+
+/**
+ * Свої іконки «хоче уваги» й «приємно» (§11.4; рішення автора 2026-10-29, А18, — зроблено 2026-10-30 за правилом «Унікальна
+ * іконка на унікальний кейс»): одне червоне сердечко — здоров'я персонажа.
+ */
+Object.assign(ICONS, {
+  attention: (g: Phaser.GameObjects.Graphics) => {
+    // Котяча голова бодається в долоню, що гладить: долоня згори ліворуч, голова знизу праворуч тягнеться до неї, очі задоволено
+    // примружені, а між ними — рисочки поштовху.
+    g.save().translateCanvas(-2, -3).scaleCanvas(0.62, 0.62);
+    palm(g);
+    g.restore();
+    g.fillStyle(0x6b5d6e).fillTriangle(15, 25, 15, 15, 22, 19).fillTriangle(25, 15, 33, 13, 31, 21).fillCircle(26, 26, 10);
+    g.lineStyle(1.8, 0xffffff);
+    for (const x of [22, 29]) g.beginPath().arc(x, 26, 2.2, Math.PI * 1.1, Math.PI * 1.9).strokePath();
+    g.fillStyle(0xd9708a).fillTriangle(24, 29.5, 27, 29.5, 25.5, 31.5);
+    g.lineStyle(2, INK).lineBetween(17, 9, 21, 7).lineBetween(21, 13, 25, 12);
+  },
+  pleasant: (g: Phaser.GameObjects.Graphics) => {
+    // «Приємно» (вилизує друг, «Щедра душа» поруч): два рожеві сердечка, що злітають, — більше й менше.
+    g.fillStyle(0xe8708f);
+    heartAt(g, 16, 18, 0.95);
+    g.fillStyle(0xf2a0b6);
+    heartAt(g, 30, 7, 0.5);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
 /**
  * Мамин судочок (§6.4): прозорий пластиковий контейнер зі стравою й синя кришка із сердечком — щоб не сплутати ні зі
  * звичайною тарілкою, ні з сирими продуктами. `x`, `y` — середина низу, `s` — масштаб; та сама форма в руках і на столі.

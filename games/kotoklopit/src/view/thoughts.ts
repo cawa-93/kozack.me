@@ -37,7 +37,8 @@ export function catThought(state: GameState, cat: Cat): IconName | null {
   if (needs.thirst >= THOUGHTS.thirst) return "drink";
   if (cat.mood < THOUGHTS.sad) return "sad";
   if (needs.play >= THOUGHTS.play) return "toy";
-  if (needs.attention >= THOUGHTS.attention) return "heart";
+  // «Хоче уваги» — своя іконка, не сердечко «приємно» й не здоров'я (рішення автора 2026-10-29, А18; зроблено 2026-10-30, §11.4).
+  if (needs.attention >= THOUGHTS.attention) return "attention";
   return null;
 }
 
