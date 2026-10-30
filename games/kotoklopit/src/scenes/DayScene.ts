@@ -2,7 +2,7 @@ import Phaser from "phaser";
 
 import { useProgress, IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
-import { inStandoff, isDirty, trashTipped } from "../sim/catai";
+import { inStandoff, isDirty } from "../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
@@ -14,7 +14,7 @@ import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
-import { isPresent, objectById, TOILET_ROLL, TRINKETS } from "../sim/home";
+import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf, type Target } from "../sim/targets";
 import { gameMinutes, weekOf } from "../sim/time";
@@ -30,13 +30,10 @@ import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
-import { drawApartment, drawBoxPile, drawItem, type ObjectView } from "../view/legacy/apartment";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
-import { boxesIndicator, boxesShown, STORAGES, storageIndicator, storageStages } from "../sim/storage";
-import { drawStorage } from "../view/legacy/storagelook";
+import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
-import { drawCabinetExtras, drawTippedTrash, drawToiletRoll, drawTrinket } from "../view/legacy/catcorner";
 import { COLORS } from "../view/colors";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
@@ -46,6 +43,7 @@ import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
 import { THING_TITLES } from "../ui/titles";
+import { LegacyApartmentView } from "../view/legacy/apartmentview";
 import { LegacyCatsView } from "../view/legacy/catsview";
 import { LegacyFloorView } from "../view/legacy/floorview";
 import { LegacyPen } from "../view/legacy/pen";
@@ -55,7 +53,6 @@ import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
-import { objectHeight } from "../view/world/objects";
 import { OBLIQUE } from "../view/world/projection";
 import type { PartContext } from "../view/world/context";
 import type { WorldFrame, WorldQuery } from "../view/world/part";
@@ -91,16 +88,7 @@ const BUBBLE_ROOM: Record<BubbleKind, number> = { say: 62, think: 82 };
 
 export class DayScene extends Phaser.Scene {
   private readonly overlay = new Overlay();
-  private views = new Map<string, ObjectView>();
-  /** Речі на плиті й поверхнях: окремий шар для кожного місця, щоб персонаж правильно їх перекривав. */
-  private readonly items = new Map<string, Phaser.GameObjects.Graphics>();
-  /** Дрібнички на столах (§9.12, «Скидання речей»): кожна — над своєю річчю квартири. */
-  private readonly trinkets = new Map<string, Phaser.GameObjects.Graphics>();
-  /** Рулон туалетного паперу на задній стіні ванної (§9.12, «Мисливський інстинкт»): над стіною, під котом. */
-  private toiletRoll!: Phaser.GameObjects.Graphics;
-  /** Шафка з кормом відчинена котом, замок на ній; перекинутий смітник (§9.12, «Кмітливість у бешкеті»). */
-  private cabinetLook!: Phaser.GameObjects.Graphics;
-  private trashLook!: Phaser.GameObjects.Graphics;
+  private apartment!: LegacyApartmentView;
   private cats!: LegacyCatsView;
   /** Коти, яких світ малював минулого кадру: зниклому з дому прибрати бабл стану. */
   private readonly catsShown = new Set<number>();
@@ -126,8 +114,6 @@ export class DayScene extends Phaser.Scene {
   /** Що стало відомо про котів: телефон каже це по черзі, поки не відкрита картка (§9.9). */
   private readonly news: TraitNews[] = [];
   private storage!: StorageIndicators;
-  /** Малюнки наповнення сховищ і що на них намальовано. */
-  private readonly storageLooks = new Map<string, { g: Phaser.GameObjects.Graphics; key: string }>();
   private hud!: Hud;
   private touch!: TouchControls;
   private keys!: Keys;
@@ -151,28 +137,19 @@ export class DayScene extends Phaser.Scene {
     createIconTextures(this);
     this.viewport = new Viewport(this, this.projection);
     const { world, ui } = this.viewport;
-    this.views = drawApartment(this, world, this.projection);
-    for (const id of ["stove", ...Object.keys(this.state.home.surfaces)]) {
-      this.items.set(id, this.add.graphics().setDepth(this.view(id).depth + 1).addToDisplayList(world));
-    }
-    for (const trinket of TRINKETS) {
-      this.trinkets.set(trinket.kind, this.add.graphics().setDepth(this.view(trinket.object).depth + 1).addToDisplayList(world));
-    }
-    this.toiletRoll = this.add.graphics().setDepth(this.projection.depthOf(this.projection.toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
-    this.cabinetLook = this.add.graphics().setDepth(this.view("cat-cabinet").depth + 0.6).addToDisplayList(world);
-    this.trashLook = this.add.graphics().setDepth(this.view("trash").depth).addToDisplayList(world);
     this.pen = new LegacyPen(this, world);
     const scene = this;
     this.query = {
       anchor: (id) => this.anchorOf(id),
-      objectAnchor: (id) => this.views.get(id)?.anchor ?? null,
-      highlight: (target, alpha) => this.highlight(this.pen.g, target, alpha),
+      objectAnchor: (id) => this.apartment.objectAnchor(id),
+      highlight: (target, alpha) => this.highlight(target, alpha),
       get person() {
         return scene.person;
       },
       cat: (id) => this.cats.points(id),
     };
     const ctx: PartContext = { scene: this, layer: world, projection: this.projection, state: () => this.state, world: this.query };
+    this.apartment = new LegacyApartmentView(ctx, this.pen);
     this.floor = new LegacyFloorView(ctx, this.pen);
     this.person = new LegacyPersonView(ctx);
     this.cats = new LegacyCatsView(ctx, this.pen);
@@ -579,9 +556,6 @@ export class DayScene extends Phaser.Scene {
       const news = this.news.shift();
       if (news) this.hud.say(news.title, news.text, time);
     }
-    // Сховища з'являються в квартирі після першого отримання запасу (§6.4).
-    for (const view of this.views.values()) if (view.object.requires || view.object.kind === "boxes") view.graphics.setVisible(isPresent(state, view.object));
-    this.drawBoxes();
     this.person.update(state, frame);
     this.cats.update(state, frame);
     this.forgetGoneCats(state);
@@ -591,7 +565,7 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.update();
     this.hearts.update();
     this.viewport.follow(this.person.head, seconds);
-    this.drawItems();
+    this.apartment.update(state, frame);
     this.drawMarks(time, frame);
     this.updateStateBubbles();
     this.touch.draw(canDash(state));
@@ -599,17 +573,6 @@ export class DayScene extends Phaser.Scene {
     // Низький здоровий глузд — світ трохи пливе (§6.3).
     const sanity = state.character.stats.sanity;
     this.gloom.setFillStyle(0x5b3a7a, sanity < LOW_STAT ? ((LOW_STAT - sanity) / LOW_STAT) * 0.22 : 0);
-  }
-
-  /** Купа ящиків біля входу: 1–4 коробки за вмістом (§6.4); перемальовується, лише коли змінилася. */
-  private boxesDrawn = -1;
-
-  private drawBoxes(): void {
-    const count = boxesShown(this.state);
-    if (count === this.boxesDrawn) return;
-    this.boxesDrawn = count;
-    const view = this.view("boxes");
-    drawBoxPile(view.graphics, view.top, objectHeight("boxes"), count);
   }
 
   /** Наскільки заплющені очі під час засинання: 0–1 (§8.8). */
@@ -630,12 +593,6 @@ export class DayScene extends Phaser.Scene {
     this.dark.setFillStyle(0x000000, dark);
   }
 
-  private view(id: string): ObjectView {
-    const view = this.views.get(id);
-    if (!view) throw new Error(`Немає вигляду для «${id}»`);
-    return view;
-  }
-
   /** Кіт зник із дому (віддали, помер): його бабла стану більше немає. */
   private forgetGoneCats(state: GameState): void {
     const alive = new Set(state.cats.map((cat) => cat.id));
@@ -644,44 +601,9 @@ export class DayScene extends Phaser.Scene {
     for (const id of alive) this.catsShown.add(id);
   }
 
-  /** Речі на плиті й поверхнях. */
-  private drawItems(): void {
-    const { home } = this.state;
-    for (const [id, g] of this.items) {
-      g.clear();
-      const item = id === "stove" ? home.stove.item : home.surfaces[id];
-      if (!item) continue;
-      const view = this.view(id);
-      drawItem(g, item, view.top.x + view.top.w / 2, view.top.y + view.top.h / 2 + 6);
-    }
-    const roll = this.projection.toScreen(TOILET_ROLL);
-    drawToiletRoll(this.toiletRoll.clear(), roll.x, roll.y, home.rollDown === true);
-    // Шафка з кормом: відчинена котом і з замком (§9.12, «Кмітливість у бешкеті»); смітник лежить, поки сміття не прибрали.
-    const cabinet = this.view("cat-cabinet");
-    this.cabinetLook.clear();
-    if (isPresent(this.state, cabinet.object)) drawCabinetExtras(this.cabinetLook, cabinet.top, objectHeight("catCabinet"), home.cabinetOpen === true, home.lock !== undefined);
-    const tipped = trashTipped(this.state);
-    const trash = this.view("trash");
-    trash.graphics.setVisible(!tipped);
-    this.trashLook.clear();
-    if (tipped) drawTippedTrash(this.trashLook, trash.top, objectHeight("trash"));
-    // Дрібнички стоять на своїх місцях, поки їх не скинули (§9.12).
-    for (const trinket of TRINKETS) {
-      const g = this.trinkets.get(trinket.kind);
-      if (!g) continue;
-      g.clear();
-      if (home.trinkets?.[trinket.kind]) continue;
-      const view = this.view(trinket.object);
-      drawTrinket(g, trinket.kind, view.top.x + view.top.w * trinket.at, view.top.y + view.top.h / 2 + 6);
-    }
-  }
-
   /** Де на екрані ціль дії: для підсвітки й баблів. */
   private anchorOf(id: string): { x: number; y: number } | null {
-    if (this.views.has(id)) {
-      const view = this.view(id);
-      return isPresent(this.state, view.object) ? view.anchor : null;
-    }
+    if (!id.includes(":")) return this.apartment.anchor(id);
     const kind = id.split(":")[0];
     if (kind === "item" || kind === "mess") return this.floor.anchor(id);
     if (kind === "cat") return this.cats.anchor(id);
@@ -694,13 +616,13 @@ export class DayScene extends Phaser.Scene {
     const g = this.pen.begin(frame);
     const working = isWorking(state);
 
-    const computer = this.view("computer");
+    const computer = this.apartment.view("computer");
     const screen = { x: computer.top.x + computer.top.w / 2 - 19, y: computer.top.y - 23, w: 38, h: 22 };
     g.fillStyle(working ? 0x79a6c2 : 0x2b2a33).fillRect(screen.x, screen.y, screen.w, screen.h);
     if (working && Math.floor(time / 300) % 2 === 0) g.fillStyle(0xffffff, 0.8).fillRect(screen.x + 5, screen.y + 6, 18, 3);
 
     const target = state.character.activity === null ? targetOf(state) : null;
-    if (target && !this.blocked()) this.highlight(g, target, 0.55 + 0.35 * Math.sin(time / 180));
+    if (target && !this.blocked()) this.highlight(target, 0.55 + 0.35 * Math.sin(time / 180));
 
     const progress = useProgress(state);
     const activity = state.character.activity;
@@ -710,7 +632,7 @@ export class DayScene extends Phaser.Scene {
     }
     const stove = state.home.stove;
     if (stove.item && stove.item.kind !== "burnt") {
-      const view = this.view("stove");
+      const view = this.apartment.view("stove");
       const cooking = stove.item.kind === "raw";
       const value = cooking ? stove.minutes / COOK_MINUTES : (stove.minutes - COOK_MINUTES) / (BURN_MINUTES[state.difficulty] - COOK_MINUTES);
       // Смуга на лицьовій грані плити: зелена — готується, червона — скоро підгорить.
@@ -718,21 +640,17 @@ export class DayScene extends Phaser.Scene {
     }
     // Пошук роботи (§8.6): над монітором — етапи поточної вакансії (персонаж за столом не закриває); на відмові смужка червона.
     if (state.job.unemployed) {
-      const view = this.view("computer");
+      const view = this.apartment.view("computer");
       const rejected = this.rejection !== null && time - this.rejection.at < REJECTION_MS;
       const value = rejected && this.rejection ? this.rejection.end : searchProgress(state).progress;
       searchBar(g, view.anchor.x, view.anchor.y - 40, value, JOB_SEARCH.stages, rejected);
     }
   }
 
-  private highlight(g: Phaser.GameObjects.Graphics, target: Target, alpha: number): boolean {
+  private highlight(target: Target, alpha: number): boolean {
     if (target.type === "cat") return this.cats.highlight(target, alpha);
     if (target.type !== "object") return this.floor.highlight(target, alpha);
-    g.lineStyle(4, COLORS.highlight, alpha);
-    const view = this.view(target.id);
-    const box = view.outline ?? view.top;
-    g.strokeRect(box.x - 2, box.y - 2, box.w + 4, box.h + 4);
-    return true;
+    return this.apartment.highlight(target, alpha);
   }
 
   /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
@@ -803,23 +721,6 @@ export class DayScene extends Phaser.Scene {
       // Бабл «бійка» над клубком — один на двох (§9.4, «Пози стосунків»).
       set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : asking ? ask : null);
     }
-    // Наповнення видно з самого сховища (§6.4): перемальовуємо, лише коли воно змінилося.
-    for (const storage of STORAGES) {
-      const view = this.views.get(storage.object);
-      if (!view) continue;
-      let look = this.storageLooks.get(storage.object);
-      if (!look) {
-        look = { g: this.add.graphics().setDepth(view.depth + 0.5).addToDisplayList(this.viewport.world), key: "" };
-        this.storageLooks.set(storage.object, look);
-      }
-      const present = isPresent(state, view.object);
-      const stages = storageStages(state, storage);
-      const key = `${present}|${stages.join(",")}`;
-      if (key === look.key) continue;
-      look.key = key;
-      look.g.setVisible(present);
-      drawStorage(look.g, view.object.kind, view.top, objectHeight(view.object.kind), stages);
-    }
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
     // чи над самим сховищем бабл події, індикатор схований: бабл і так каже, скільки лишилося.
@@ -889,7 +790,7 @@ export class DayScene extends Phaser.Scene {
     switch (event.type) {
       case "unpacked": {
         // Запаси розлітаються з ящиків по своїх сховищах (§6.4).
-        const from = this.view("boxes").anchor;
+        const from = this.apartment.view("boxes").anchor;
         event.moved.forEach((moved, i) => {
           const storage = STORAGES.find((s) => s.products.includes(moved.product));
           const to = storage ? this.anchorOf(storage.object) : null;
