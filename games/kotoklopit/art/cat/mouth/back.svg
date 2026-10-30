@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20">
+<!-- cat/mouth/back — рот, ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
+size 20×20; pivot (10, 6) — під носом, посередині.
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink. Стани: st-closed, st-meow.
+closed — «ω» без заливки; meow — пащека й язичок (detail), нижня щелепа — шерсть (fill і маски).
+back — порожні шари: скелет ховає рот ззаду.
+-->
+<g id="fill"/>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

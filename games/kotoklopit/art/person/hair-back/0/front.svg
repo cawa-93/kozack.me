@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 50" width="54" height="50">
+<!-- person/hair-back/0/front — коротка зачіска, задня частина (front — об'єм за головою, back — уся потилиця поверх голови), ракурс front (¾ спереду). Еталон F1b, art/STYLE.md.
+size 54×50; pivot (27, 42) — шия, як у person/head/*; points: top (27.5, 0.5).
+Шари: fill-hair, shade, ink.
+-->
+<defs>
+<path id="person-hair-back-0-front-shape" d="M19.1 9C17.1 8.4 14 10.6 12.1 12.2C10.1 13.8 8.5 16.2 7.6 18.6C6.8 20.9 6.8 23.5 6.8 26C6.8 28.5 7 31.5 7.6 33.6C8.2 35.7 9.1 37.5 10.4 38.7C11.6 39.9 13.8 40.9 15.2 40.8C16.7 40.7 18.1 40.3 19.1 38.3C20 36.3 20.4 32.5 21.2 28.8C21.9 25 23.6 19.3 23.3 16C23 12.7 21 9.7 19.1 9Z"/>
+<clipPath id="person-hair-back-0-front-clip"><use href="#person-hair-back-0-front-shape"/></clipPath>
+</defs>
+<g id="fill-hair">
+<use href="#person-hair-back-0-front-shape" fill="#ffffff"/>
+</g>
+<g id="shade" clip-path="url(#person-hair-back-0-front-clip)">
+<path d="M19.1 9C17.1 8.4 14 10.6 12.1 12.2C10.1 13.8 8.5 16.2 7.6 18.6C6.8 20.9 6.8 23.5 6.8 26C6.8 28.5 7 31.5 7.6 33.6C8.2 35.7 9.1 37.5 10.4 38.7C11.6 39.9 13.8 40.9 15.2 40.8C16.7 40.7 18.1 40.3 19.1 38.3C20 36.3 20.4 32.5 21.2 28.8C21.9 25 23.6 19.3 23.3 16C23 12.7 21 9.7 19.1 9Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<use href="#person-hair-back-0-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,14 @@
+{
+  "name": "Вечір неділі",
+  "description": "Неділя першого тижня, 21:00, персонаж біля ліжка. Ляжте спати, щоб побачити перехід тижня й комунальні.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 1 },
+  "state": {
+    "day": 6,
+    "minute": 1260,
+    "modifiers": { "day": null },
+    "character": {
+      "stats": { "satiety": 80, "hygiene": 70, "sanity": 45 },
+      "money": 120
+    }
+  }
+}

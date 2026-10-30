@@ -1,0 +1,28 @@
+{
+  "name": "kotoklopit",
+  "version": "0.1.0",
+  "description": "Котоклопіт — метушлива гра про життя з котами",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "balance": "vitest run --config vitest.balance.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
+    "shots": "node scripts/shots.ts",
+    "art": "node scripts/art/cli.ts"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "sharp": "^0.35.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

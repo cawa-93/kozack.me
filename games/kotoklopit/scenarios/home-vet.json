@@ -1,0 +1,43 @@
+{
+ "name": "Ветеринарка вдома",
+ "description": "Субота другого тижня, 10:53, день «Ветеринар удома» (§4.1, рішення автора 2026-10-27: ветеринари оглядають усіх доступних котів). О 10:54 ветеринарка дзвонить у двері, а об 11:00 заходить (рішення автора 2026-10-29, А5: дзвінок за 6 хвилин) і оглядає всіх котів, що вдома, — повідомлення про кожного: у Мурки знайде застуду, у Барсика — бліх, Сніжка здорова. «Улюблениця ветеринара» Сніжка спокійно дається оглянути й муркоче, «Жах клініки» Барсик вирвався з рук і сховався на пів години (§9.12 «Переноска й ветеринар»). Після огляду хвороби видно в телефоні, у картках котів.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 5
+ },
+ "state": {
+  "day": 12,
+  "minute": 653,
+  "modifiers": {
+   "day": "home-vet"
+  },
+  "character": {
+   "money": 300,
+   "body": {
+    "x": 9.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 70
+   }
+  }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 3, "name": "Мурка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 6.5, "y": 9.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "cold", "day": 11, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Барсик", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 8.5, "y": 8.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "diseases": [{ "id": "fleas", "day": 10, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+    "traits": [{ "group": "vet", "level": -2, "seen": 0, "known": false }] },
+  { "source": "shelter", "ageWeeks": 3, "name": "Сніжка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 4.5, "y": 9.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+    "traits": [{ "group": "vet", "level": 2, "seen": 0, "known": false }] }
+ ]
+}

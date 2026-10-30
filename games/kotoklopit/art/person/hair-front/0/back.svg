@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 50" width="54" height="50">
+<!-- person/hair-front/0/back — коротка зачіска, передня частина: шапочка й чубчик над лобом, ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
+size 54×50; pivot (27, 42) — шия, як у person/head/*; points: top (27.5, 0.5).
+Шари: fill-hair, shade, ink.
+back — порожні шари: скелет ховає передню частину зачіски ззаду.
+-->
+<g id="fill-hair"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

@@ -1,0 +1,71 @@
+{
+ "name": "До ветеринара",
+ "description": "Субота першого тижня, 10:00. Кіт Бублик кульгає після бійки (травма) і вже на руках біля дверей; удома є дешева переноска й 400 грошей. Натисніть дію біля дверей: можна поїхати до ветеринара, а без кота — у магазин, до лікаря, у притулок чи розплідник.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 31
+ },
+ "state": {
+  "day": 5,
+  "minute": 600,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "money": 400,
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 55
+   },
+   "body": {
+    "x": 10.5,
+    "y": 10.45,
+    "facing": {
+     "x": 0,
+     "y": 1
+    }
+   },
+   "held": {
+    "kind": "cat",
+    "cat": 5
+   }
+  },
+  "home": {
+   "carrier": "cheap",
+   "supplies": {
+    "catFood": {
+     "cheap": 20,
+     "premium": 0
+    },
+    "litter": {
+     "cheap": 6,
+     "premium": 0
+    }
+   }
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Бублик",
+   "sex": "male",
+   "arrivedDay": -5,
+   "x": 9.5,
+   "y": 9.2,
+   "diseases": [
+    {
+     "id": "injury",
+     "day": 4,
+     "doses": 0,
+     "diet": 0,
+     "calm": 0,
+     "controlled": null,
+     "known": false
+    }
+   ]
+  }
+ ]
+}

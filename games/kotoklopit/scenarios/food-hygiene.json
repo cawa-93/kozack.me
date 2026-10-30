@@ -1,0 +1,30 @@
+{
+  "name": "Їжа й гігієна",
+  "description": "Середа першого тижня, 12:00. Чотири коти з рисами їжі, лотка й шерсті (етап «Їжа й гігієна»): «Малоїжка» й «Гурман» голодні — насипте простого корму; «Фонтанолюб» спраглий і сяде на умивальник — натисніть на нього; «Кахи» скоро піде в лоток — акуратно загрібає за собою. Прийміть душ — «Водолаз» прийде в мокру кабіну; погладьте його 2 хвилини — жмут шерсті.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 5 },
+  "state": {
+    "day": 2,
+    "minute": 720,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 70, "hygiene": 40, "sanity": 60 } },
+    "home": {
+      "supplies": {
+        "catFood": { "cheap": 20, "premium": 0 },
+        "litter": { "cheap": 6, "premium": 0 },
+        "hygiene": { "cheap": 5, "premium": 0 },
+        "shampoo": { "cheap": 3, "premium": 0 }
+      }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 3, "name": "Крихта", "sex": "female", "arrivedDay": -5, "x": 16.5, "y": 2.5, "needs": { "hunger": 85, "attention": 10 },
+      "traits": [{ "group": "appetite", "level": -2, "seen": 0, "known": true }, { "group": "gulping", "level": -2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 3, "name": "Гурман", "sex": "male", "arrivedDay": -5, "x": 15.5, "y": 2.5, "needs": { "hunger": 85, "attention": 10 },
+      "traits": [{ "group": "picky", "level": 2, "seen": 0, "known": true }, { "group": "begging", "level": -1, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 3, "name": "Фонтан", "sex": "male", "arrivedDay": -5, "x": 10.5, "y": 3.5, "needs": { "thirst": 75, "attention": 70 },
+      "shape": { "coat": null }, "genes": { "short": [false, false] },
+      "traits": [{ "group": "drinking", "level": 2, "seen": 0, "known": true }, { "group": "water", "level": 2, "seen": 0, "known": true }, { "group": "shedding", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 3, "name": "Кахи", "sex": "female", "arrivedDay": -5, "x": 9.5, "y": 3.5, "needs": { "toilet": 75 },
+      "traits": [{ "group": "hairballs", "level": 2, "seen": 0, "known": true }, { "group": "scatter", "level": -2, "seen": 0, "known": true }, { "group": "litterPicky", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

@@ -1,0 +1,146 @@
+// Показники персонажа й гроші (§6, §6.1, §6.3).
+
+import { hygieneFactor } from "./household";
+import { unpleasantFactor } from "./modifiers";
+import {
+  ACCIDENT,
+  DASH_SATIETY,
+  DEPRESSION_CEILING,
+  FIRST_WEEK_PROTECTION,
+  HUNGER_HEALTH_PER_HOUR,
+  HUNGER_HEALTH_THRESHOLD,
+  HOUSEHOLD,
+  HYGIENE_PER_HOUR,
+  SANITY_FLOOR,
+  SATIETY_PER_HOUR,
+  LOW_STAT,
+  SLEEP_DEBT_HEALTH_PER_HOUR,
+  SLEEP_DECAY_DIVIDER,
+  SLEEP_HEALTH_PER_HOUR,
+  SLEEP_NEED_HOURS,
+  SLEEP_STAT_FLOOR,
+  STAT_MAX,
+} from "./config";
+import { endGame } from "./events";
+import type { GameState, Ledger, Spending, StatName } from "./types";
+
+export const STAT_NAMES: readonly StatName[] = ["health", "satiety", "hygiene", "sanity"];
+
+/** Нижче цієї межі показник зараз не падає. */
+export function statFloor(state: GameState, stat: StatName): number {
+  if (stat !== "sanity") return 0;
+  // «Пригніченість» (§6.2): здоровий глузд не опускається нижче 10%.
+  if (state.character.depressed) return SANITY_FLOOR;
+  // Захист першого тижня (§8.3): не нижче 1%, поки в домі не з'явився перший кіт.
+  if (firstWeekProtected(state)) return FIRST_WEEK_PROTECTION.floor;
+  return 0;
+}
+
+/** Перший тиждень гри, і в домі ще жодного разу не було кота (§8.3). */
+export function firstWeekProtected(state: GameState): boolean {
+  return state.day < FIRST_WEEK_PROTECTION.days && !hadCat(state);
+}
+
+/** У домі вже бував кіт — є зараз чи був колись (стійка ознака: кота віддали чи втратили — однаково «бував»). */
+export function hadCat(state: GameState): boolean {
+  return state.cats.length > 0 || Object.values(state.stats.raised).some((count) => count > 0);
+}
+
+/**
+ * Вище цієї межі показник зараз не росте: «Пригніченість» тримає здоровий глузд до 35% (§6.2),
+ * брудний одяг — гігієну до 60 (§8.7).
+ */
+export function statCeiling(state: GameState, stat: StatName): number {
+  if (stat === "sanity" && state.character.depressed) return DEPRESSION_CEILING;
+  if (stat === "hygiene" && state.home.clothes <= 0) return HOUSEHOLD.noClothesHygieneCeiling;
+  return STAT_MAX;
+}
+
+/**
+ * Змінити показник у межах 0–100. Межа лише обмежує падіння й не піднімає
+ * показник, що вже нижчий за неї (§6.2, §8.8). Показник на нулі закінчує гру (§6.1).
+ */
+export function changeStat(state: GameState, stat: StatName, delta: number, floor = 0): void {
+  if (state.end !== null) return;
+  const stats = state.character.stats;
+  const current = stats[stat];
+  let next = Math.min(Math.max(current, statCeiling(state, stat)), current + delta);
+  if (delta < 0) next = Math.max(next, Math.min(current, Math.max(floor, statFloor(state, stat))));
+  stats[stat] = Math.max(next, 0);
+  if (next <= 0) endGame(state, stat);
+}
+
+export function earn(state: GameState, amount: number): void {
+  state.character.money += amount;
+  ledgerOf(state).earned += amount;
+}
+
+/** Заплатити, якщо вистачає грошей: піти в мінус не можна (§6.4). Витрата — у гроші тижня за категорією. */
+export function spend(state: GameState, amount: number, on: Spending): boolean {
+  if (state.character.money < amount) return false;
+  state.character.money -= amount;
+  const spent = ledgerOf(state).spent;
+  spent[on] = (spent[on] ?? 0) + amount;
+  return true;
+}
+
+/** Гроші цього тижня (§6.4, «Куди йдуть гроші»); у старому збереженні — з нуля. */
+const ledgerOf = (state: GameState): Ledger => (state.ledger ??= { earned: 0, spent: {} });
+
+/** Ніч на понеділок: гроші тижня — у звіт, новий тиждень рахується з нуля (§6.4). */
+export function closeLedger(state: GameState): Ledger {
+  const week = ledgerOf(state);
+  state.ledger = { earned: 0, spent: {} };
+  return week;
+}
+
+/**
+ * Неприємне завдання (§8.1) забирає здоровий глузд — у будь-яку годину однаково: вікон хронотипу немає, хронотип змінює лише
+ * час пробудження (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). Повертає зміну.
+ */
+export function unpleasantTask(state: GameState, sanityLoss: number): number {
+  const stats = state.character.stats;
+  const before = stats.sanity;
+  changeStat(state, "sanity", sanityLoss * unpleasantFactor(state));
+  return stats.sanity - before;
+}
+
+/** Ривок — «біганина» (§6.3): трохи ситості, однаково для всіх (обміну за статтю немає — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4). */
+export function dashHunger(state: GameState): void {
+  changeStat(state, "satiety", DASH_SATIETY);
+}
+
+/**
+ * Минув час, поки персонаж не спить. Поки день перемотується після аварії (`rewind`, §8.5), гігієна не опускається нижче 5,
+ * ситість — нижче 25, а голод не забирає здоров'я, навіть якщо ситість нижче 25 була ще до аварії (рішення автора 2026-10-29,
+ * `GENERAL_REVIEW.md`, А1; раніше ситість падала до 5, і без їжі вдома голод добивав персонажа вранці за години).
+ */
+export function passAwakeTime(state: GameState, hours: number, rewind = false): void {
+  changeStat(state, "satiety", SATIETY_PER_HOUR * hours, rewind ? ACCIDENT.satietyFloor : 0);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * hours, rewind ? ACCIDENT.floor : 0);
+  if (!rewind && state.character.stats.satiety < HUNGER_HEALTH_THRESHOLD) {
+    changeStat(state, "health", HUNGER_HEALTH_PER_HOUR * hours);
+  }
+}
+
+/** Сон відновлює здоров'я, лише якщо персонаж ліг ситим і не хворий (§8.8). */
+export function sleepHeals(state: GameState): boolean {
+  const ch = state.character;
+  return ch.stats.satiety >= LOW_STAT && ch.illnesses.length === 0;
+}
+
+/**
+ * Минув час сну (§8.8): голод і гігієна падають учетверо повільніше, здоров'я відновлюється
+ * ситому й здоровому, а недосип його забирає; здоровий глузд не змінюється, показники не нижче 5.
+ * Множники гігієни — ті самі, що вдень: брудний одяг, шерсть, «Спека» (загальна ревізія 2026-10-29; раніше вночі діяв лише
+ * чоловічий обмін на ситість, а його, як і жіночий цикл, прибрано — рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4).
+ */
+export function passSleepTime(state: GameState, hours: number): void {
+  const heals = sleepHeals(state);
+  const decay = hours / SLEEP_DECAY_DIVIDER;
+  changeStat(state, "satiety", SATIETY_PER_HOUR * decay, SLEEP_STAT_FLOOR);
+  changeStat(state, "hygiene", HYGIENE_PER_HOUR * hygieneFactor(state) * decay, SLEEP_STAT_FLOOR);
+  if (heals) changeStat(state, "health", SLEEP_HEALTH_PER_HOUR * hours);
+  const debt = Math.max(0, SLEEP_NEED_HOURS - hours);
+  if (debt > 0) changeStat(state, "health", SLEEP_DEBT_HEALTH_PER_HOUR * debt, SLEEP_STAT_FLOOR);
+}

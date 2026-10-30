@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 16" width="35" height="16">
+<!-- cat/muzzle/normal/back — звичайна морда: подушечки вусів, ніс, вуса, ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
+size 35×16; pivot (17, 8) — центр морди під носом, де вона прилягає до голови; points: mouth (17, 9.4).
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink.
+back — порожні шари: скелет ховає морду ззаду.
+-->
+<g id="fill"/>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail"/>
+<g id="shade"/>
+<g id="ink"/>
+</svg>

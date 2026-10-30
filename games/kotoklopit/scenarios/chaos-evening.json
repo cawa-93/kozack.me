@@ -1,0 +1,19 @@
+{
+  "name": "Вечірній хаос",
+  "description": "Четвер першого тижня, 18:30. Два коти з бешкетними рисами: зумі, скидання речей, злодюжка, тертя об ноги. На столі вечеря.",
+  "game": { "address": "he", "chronotype": "owl", "difficulty": "normal", "seed": 8,
+    "look": { "face": 0, "skin": 1, "hair": 0, "hairColor": 0, "eyes": 0, "build": 1, "top": 1, "bottom": 0, "shoes": 0 } },
+  "state": {
+    "day": 3,
+    "minute": 1110,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 50, "hygiene": 60, "sanity": 50 } },
+    "home": { "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } }, "surfaces": { "table": { "kind": "meal", "quality": "cheap" } } }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 2, "name": "Ракета", "sex": "female", "arrivedDay": -5, "x": 8.5, "y": 8.5, "needs": { "play": 90, "attention": 20 },
+      "traits": [{ "group": "zoomies", "level": 2, "seen": 0, "known": true }, { "group": "knocking", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 3, "name": "Злодюжка", "sex": "male", "arrivedDay": -5, "x": 12.5, "y": 7.5, "needs": { "hunger": 75, "attention": 80 },
+      "traits": [{ "group": "thief", "level": 2, "seen": 0, "known": true }, { "group": "legs", "level": 2, "seen": 0, "known": true }, { "group": "follower", "level": 2, "seen": 0, "known": true }] }
+  ]
+}

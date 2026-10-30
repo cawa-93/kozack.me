@@ -1,0 +1,1640 @@
+{
+ "name": "Техніка",
+ "description": "Субота другого тижня, 11:55: над мисками дорога автогодівниця (майже повна) і дешева (майже порожня) — запас видно у віконцях; фонтанчик і робот-пилосос, шерсті багато (70 — вісім жмутів). О 12:00 робот годину їздить квартирою: жмути зникають по одному, поки їх більше шести, а шість останніх — разом, щойно шерсті менше 50 (~12:17): нижче 50 шерсті не видно (§8.7).",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 2559383108,
+  "name": "Марта"
+ },
+ "state": {
+  "seed": 2559383108,
+  "replays": 6,
+  "difficulty": "normal",
+  "day": 12,
+  "minute": 715,
+  "dayStartMinute": 480,
+  "character": {
+   "name": "Марта",
+   "look": {
+    "face": 1,
+    "skin": 2,
+    "hair": 3,
+    "hairColor": 3,
+    "eyes": 2,
+    "build": 0,
+    "top": 3,
+    "bottom": 4,
+    "shoes": 0
+   },
+   "address": "she",
+   "chronotype": "owl",
+   "stats": {
+    "health": 99,
+    "satiety": 71.66188800004528,
+    "hygiene": 64.32210755547567,
+    "sanity": 74.65059133333318
+   },
+   "money": 3370.778474224756,
+   "sleepSpeed": 0.04448730370385343,
+   "body": {
+    "x": 3.8947130147821847,
+    "y": 10.699999,
+    "facing": {
+     "x": 0.9751652241301971,
+     "y": 0.22147863474182447
+    },
+    "dash": 0,
+    "dashCooldown": 0,
+    "glitch": 0,
+    "glitchAngle": 0,
+    "stun": 0
+   },
+   "held": null,
+   "activity": null,
+   "depressed": false,
+   "illnesses": [
+    {
+     "id": "injury",
+     "day": 1,
+     "doses": 1,
+     "lastDose": 5
+    }
+   ],
+   "shortNights": 0,
+   "restedNights": 3
+  },
+  "job": {
+   "position": 1,
+   "ladder": 15,
+   "reputation": 88.04602232223507,
+   "patience": 100,
+   "standupMinutes": 0,
+   "tripDays": [
+    8,
+    10
+   ],
+   "unemployed": false,
+   "searchHours": 0,
+   "sickLeaveUntil": -1
+  },
+  "home": {
+   "supplies": {
+    "food": {
+     "cheap": 0,
+     "premium": 20
+    },
+    "hygiene": {
+     "cheap": 16,
+     "premium": 0
+    },
+    "catFood": {
+     "cheap": 46,
+     "premium": 44
+    },
+    "sterileFood": {
+     "cheap": 0,
+     "premium": 0
+    },
+    "litter": {
+     "cheap": 9,
+     "premium": 1
+    },
+    "pills": {
+     "cheap": 0,
+     "premium": 5
+    },
+    "drops": {
+     "cheap": 0,
+     "premium": 3
+    },
+    "humanMeds": {
+     "cheap": 4,
+     "premium": 5
+    },
+    "treats": {
+     "cheap": 16,
+     "premium": 19
+    },
+    "collar": {
+     "cheap": 4,
+     "premium": 0
+    },
+    "shampoo": {
+     "cheap": 5,
+     "premium": 5
+    },
+    "detergent": {
+     "cheap": 3,
+     "premium": 4
+    }
+   },
+   "acquired": [
+    "food",
+    "hygiene",
+    "collar",
+    "catFood",
+    "litter",
+    "treats",
+    "humanMeds",
+    "shampoo",
+    "detergent",
+    "pills",
+    "drops"
+   ],
+   "stove": {
+    "item": null,
+    "minutes": 0
+   },
+   "surfaces": {
+    "counter-left": null,
+    "counter-right": null,
+    "table": null
+   },
+   "items": [
+    {
+     "id": 2,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-1",
+     "food": 1,
+     "foodQuality": "premium",
+     "sterile": false
+    },
+    {
+     "id": 3,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-1",
+     "water": 8
+    },
+    {
+     "id": 9,
+     "kind": "house",
+     "quality": "cheap",
+     "slot": "house-1"
+    },
+    {
+     "id": 24,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-2",
+     "food": 1,
+     "foodQuality": "premium",
+     "sterile": false
+    },
+    {
+     "id": 25,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-2",
+     "water": 8
+    },
+    {
+     "id": 51,
+     "kind": "scratcher",
+     "quality": "cheap",
+     "slot": "scratcher-1"
+    },
+    {
+     "id": 105,
+     "kind": "litter",
+     "quality": "premium",
+     "slot": "litter-1",
+     "litter": "premium",
+     "uses": 1
+    },
+    {
+     "id": 106,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "house-2"
+    },
+    {
+     "id": 107,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "house-3"
+    },
+    {
+     "id": 8,
+     "kind": "toy",
+     "quality": "premium",
+     "x": 14.486745007966782,
+     "y": 8.780180980299404,
+     "uses": 4
+    }
+   ],
+   "messes": [],
+   "deliveries": [],
+   "porch": [],
+   "utilitiesDebt": 0,
+   "repairs": 0,
+   "carrier": "cheap",
+   "appliances": {
+    "fountain": "premium",
+    "robot": "premium"
+   },
+   "feeders": [
+    { "slot": "bowl-1", "quality": "premium", "food": 14, "foodQuality": "premium", "sterile": false },
+    { "slot": "bowl-2", "quality": "cheap", "food": 2, "foodQuality": "premium", "sterile": false }
+   ],
+   "fur": 70,
+   "clothes": 2,
+   "washer": {
+    "state": "idle",
+    "minutes": -0.0017199999992584536,
+    "quality": "cheap"
+   }
+  },
+  "modifiers": {
+   "day": null,
+   "week": null
+  },
+  "today": {
+   "callAt": null,
+   "meetingMinutes": 0,
+   "officeDone": false,
+   "foundling": false,
+   "lastFoundling": -100,
+   "utilitiesDiscount": 0,
+   "earlyWake": 0
+  },
+  "cats": [
+   {
+    "id": 1,
+    "name": "Тигрик",
+    "sex": "male",
+    "source": "shelter-forced",
+    "ageWeeks": 2,
+    "arrivedDay": 1,
+    "traits": [
+     {
+      "group": "sleep",
+      "level": 1,
+      "seen": 2,
+      "known": false
+     },
+     {
+      "group": "chubby",
+      "level": 1,
+      "seen": 0,
+      "known": false
+     }
+    ],
+    "breed": [
+     "mixed",
+     "mixed"
+    ],
+    "genes": {
+     "orange": [
+      true
+     ],
+     "black": [
+      true,
+      true
+     ],
+     "dense": [
+      true,
+      false
+     ],
+     "agouti": [
+      false,
+      false
+     ],
+     "tabby": [
+      0,
+      0
+     ],
+     "white": [
+      0,
+      0
+     ],
+     "full": [
+      true,
+      true
+     ],
+     "short": [
+      true,
+      true
+     ],
+     "eyes": 0
+    },
+    "shape": {
+     "muzzle": "normal",
+     "ears": "normal",
+     "tail": "long",
+     "build": "normal",
+     "legs": "normal",
+     "coat": null
+    },
+    "health": 38,
+    "mood": 6.617946799999951,
+    "love": 26.965779999999175,
+    "needs": {
+     "hunger": 33.425404444467596,
+     "thirst": 39.53810666670215,
+     "toilet": 5.704432000000012,
+     "fatigue": 64.49473858151701,
+     "attention": 97.12599822224146,
+     "play": 1.9355820000000088
+    },
+    "moodHistory": [
+     11.564470892702118,
+     1.6345659092144986,
+     0.49824261534714387,
+     11.006198015739388,
+     3.966642107212738,
+     0.5778388064335822,
+     0.08919040399873814,
+     1.0755653602432156,
+     0.9592604787088833,
+     3.2897037633907393,
+     5.4018053034777305
+    ],
+    "moodToday": {
+     "sum": 557.9416428619999,
+     "minutes": 138.30576888889448
+    },
+    "interacted": false,
+    "healthLog": [
+     {
+      "day": 5,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 6,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 6,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 7,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 7,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 8,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 8,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 9,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 9,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 10,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 10,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 11,
+      "source": "mood",
+      "amount": 4
+     },
+     {
+      "day": 11,
+      "source": "disease:cystitis",
+      "amount": 2
+     }
+    ],
+    "diseases": [
+     {
+      "id": "cystitis",
+      "day": 3,
+      "doses": 0,
+      "diet": 0,
+      "calm": 0,
+      "controlled": null,
+      "known": false
+     }
+    ],
+    "groomedUntil": -1,
+    "sterilized": false,
+    "sterilizedKnown": false,
+    "recoveryUntil": -1,
+    "heatUntil": -1,
+    "nextHeat": -1,
+    "pregnancy": null,
+    "litters": 0,
+    "restUntil": -1,
+    "breedKnown": [
+     true,
+     true
+    ],
+    "collar": true,
+    "treatsToday": 0,
+    "hurt": {
+     "at": 16697.921706666624,
+     "amount": 1
+    },
+    "bathedDay": 0,
+    "x": 1.5,
+    "y": 2.5,
+    "facing": -1,
+    "act": {
+     "kind": "sleep",
+     "target": null,
+     "goal": null,
+     "minutes": 471.8404195832619,
+     "elapsed": 8.159580416740633
+    },
+    "away": null,
+    "parents": {
+     "mother": null,
+     "father": null
+    }
+   },
+   {
+    "id": 13,
+    "name": "Пиріжок",
+    "sex": "male",
+    "source": "shelter-forced",
+    "ageWeeks": 2,
+    "arrivedDay": 3,
+    "traits": [
+     {
+      "group": "begging",
+      "level": 2,
+      "seen": 2,
+      "known": false
+     },
+     {
+      "group": "scatter",
+      "level": 1,
+      "seen": 0,
+      "known": false
+     }
+    ],
+    "breed": [
+     "mixed",
+     "mixed"
+    ],
+    "genes": {
+     "orange": [
+      false
+     ],
+     "black": [
+      true,
+      true
+     ],
+     "dense": [
+      false,
+      true
+     ],
+     "agouti": [
+      true,
+      false
+     ],
+     "tabby": [
+      0,
+      0
+     ],
+     "white": [
+      1,
+      0
+     ],
+     "full": [
+      true,
+      true
+     ],
+     "short": [
+      true,
+      true
+     ],
+     "eyes": 1
+    },
+    "shape": {
+     "muzzle": "normal",
+     "ears": "normal",
+     "tail": "long",
+     "build": "normal",
+     "legs": "normal",
+     "coat": null
+    },
+    "health": 62,
+    "mood": 8.204471982222364,
+    "love": 50.41346044444523,
+    "needs": {
+     "hunger": 31.42540444446742,
+     "thirst": 46.5381066667001,
+     "toilet": 87.47621333340211,
+     "fatigue": 57.72111748162486,
+     "attention": 66.90170429630105,
+     "play": 15.406049333333204
+    },
+    "moodHistory": [
+     36.33617790135453,
+     21.84528979618093,
+     3.2182948339179296,
+     0.2519550528870872,
+     15.524718567663635,
+     11.415920429931983,
+     8.205245429247588,
+     2.9907138483141837,
+     3.9851639796892533
+    ],
+    "moodToday": {
+     "sum": 1085.7688712071342,
+     "minutes": 138.30576888889448
+    },
+    "interacted": true,
+    "healthLog": [
+     {
+      "day": 5,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 6,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 7,
+      "source": "mood",
+      "amount": 2
+     },
+     {
+      "day": 8,
+      "source": "mood",
+      "amount": 3
+     },
+     {
+      "day": 8,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 9,
+      "source": "mood",
+      "amount": 4
+     },
+     {
+      "day": 9,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 10,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 10,
+      "source": "disease:cystitis",
+      "amount": 2
+     },
+     {
+      "day": 11,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 11,
+      "source": "disease:cystitis",
+      "amount": 2
+     }
+    ],
+    "diseases": [
+     {
+      "id": "cystitis",
+      "day": 5,
+      "doses": 0,
+      "diet": 0,
+      "calm": 0,
+      "controlled": null,
+      "known": false
+     }
+    ],
+    "groomedUntil": -1,
+    "sterilized": false,
+    "sterilizedKnown": false,
+    "recoveryUntil": -1,
+    "heatUntil": -1,
+    "nextHeat": -1,
+    "pregnancy": null,
+    "litters": 0,
+    "restUntil": -1,
+    "breedKnown": [
+     false,
+     false
+    ],
+    "collar": true,
+    "treatsToday": 0,
+    "hurt": {
+     "at": 17678.615235555375,
+     "amount": 1
+    },
+    "bathedDay": 2,
+    "x": 1.5,
+    "y": 2.5,
+    "facing": -1,
+    "act": {
+     "kind": "sleep",
+     "target": null,
+     "goal": null,
+     "minutes": 393.7463288153806,
+     "elapsed": 86.25367118464342
+    },
+    "away": null,
+    "parents": {
+     "mother": null,
+     "father": null
+    }
+   },
+   {
+    "id": 38,
+    "name": "Персик",
+    "sex": "male",
+    "source": "shelter-forced",
+    "ageWeeks": 1,
+    "arrivedDay": 7,
+    "traits": [
+     {
+      "group": "obedience",
+      "level": -1,
+      "seen": 0,
+      "known": false
+     }
+    ],
+    "breed": [
+     "mixed",
+     "mixed"
+    ],
+    "genes": {
+     "orange": [
+      true
+     ],
+     "black": [
+      true,
+      true
+     ],
+     "dense": [
+      true,
+      true
+     ],
+     "agouti": [
+      false,
+      true
+     ],
+     "tabby": [
+      0,
+      1
+     ],
+     "white": [
+      0,
+      0
+     ],
+     "full": [
+      false,
+      true
+     ],
+     "short": [
+      true,
+      false
+     ],
+     "eyes": 0
+    },
+    "shape": {
+     "muzzle": "normal",
+     "ears": "normal",
+     "tail": "long",
+     "build": "stocky",
+     "legs": "normal",
+     "coat": null
+    },
+    "health": 78,
+    "mood": 5.61443999999999,
+    "love": 30.823999111152773,
+    "needs": {
+     "hunger": 16.14449007407518,
+     "thirst": 45.33810666670055,
+     "toilet": 40.73810666670185,
+     "fatigue": 61.511589481565636,
+     "attention": 45.9102151111373,
+     "play": 13.454015333333313
+    },
+    "moodHistory": [
+     5.580195915343356,
+     0.6884689833967382,
+     8.837794209488829,
+     4.0472946280594595,
+     8.63738766607256
+    ],
+    "moodToday": {
+     "sum": 647.631986272895,
+     "minutes": 138.30576888889448
+    },
+    "interacted": true,
+    "healthLog": [
+     {
+      "day": 7,
+      "source": "mood",
+      "amount": 4
+     },
+     {
+      "day": 8,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 9,
+      "source": "mood",
+      "amount": 4
+     },
+     {
+      "day": 10,
+      "source": "mood",
+      "amount": 5
+     },
+     {
+      "day": 11,
+      "source": "mood",
+      "amount": 4
+     }
+    ],
+    "diseases": [],
+    "groomedUntil": -1,
+    "sterilized": false,
+    "sterilizedKnown": false,
+    "recoveryUntil": -1,
+    "heatUntil": -1,
+    "nextHeat": -1,
+    "pregnancy": null,
+    "litters": 0,
+    "restUntil": -1,
+    "breedKnown": [
+     false,
+     false
+    ],
+    "collar": false,
+    "treatsToday": 0,
+    "hurt": {
+     "at": 17693.615235555375,
+     "amount": 1
+    },
+    "bathedDay": 6,
+    "x": 18.5,
+    "y": 9.5,
+    "facing": 1,
+    "act": {
+     "kind": "sleep",
+     "target": "item:106",
+     "goal": null,
+     "minutes": 438.5501800355346,
+     "elapsed": 41.44981996447507
+    },
+    "away": null,
+    "parents": {
+     "mother": null,
+     "father": null
+    }
+   }
+  ],
+  "relations": {
+   "1-13": -25.5,
+   "1-38": -6.5,
+   "13-38": -3.5
+  },
+  "trip": null,
+  "shelter": {
+   "week": 1,
+   "cats": [
+    {
+     "id": 16,
+     "name": "Персик",
+     "sex": "male",
+     "source": "shelter",
+     "ageWeeks": 5,
+     "arrivedDay": 3,
+     "traits": [
+      {
+       "group": "bravery",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "lap",
+       "level": -2,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "longevity",
+       "level": 1,
+       "seen": 0,
+       "known": false
+      },
+      {
+       "group": "cunning",
+       "level": 2,
+       "seen": 0,
+       "known": false
+      },
+      {
+       "group": "playful",
+       "level": -2,
+       "seen": 0,
+       "known": false
+      }
+     ],
+     "breed": [
+      "mixed",
+      "mixed"
+     ],
+     "genes": {
+      "orange": [
+       false
+      ],
+      "black": [
+       true,
+       true
+      ],
+      "dense": [
+       true,
+       false
+      ],
+      "agouti": [
+       false,
+       false
+      ],
+      "tabby": [
+       3,
+       1
+      ],
+      "white": [
+       0,
+       1
+      ],
+      "full": [
+       true,
+       true
+      ],
+      "short": [
+       false,
+       true
+      ],
+      "eyes": 2
+     },
+     "shape": {
+      "muzzle": "normal",
+      "ears": "normal",
+      "tail": "long",
+      "build": "normal",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": true,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 3,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    },
+    {
+     "id": 17,
+     "name": "Мурчик",
+     "sex": "male",
+     "source": "shelter",
+     "ageWeeks": 2,
+     "arrivedDay": 3,
+     "traits": [
+      {
+       "group": "sociability",
+       "level": -2,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "gulping",
+       "level": 2,
+       "seen": 0,
+       "known": true
+      }
+     ],
+     "breed": [
+      "mixed",
+      "mixed"
+     ],
+     "genes": {
+      "orange": [
+       false
+      ],
+      "black": [
+       false,
+       true
+      ],
+      "dense": [
+       false,
+       true
+      ],
+      "agouti": [
+       false,
+       false
+      ],
+      "tabby": [
+       0,
+       0
+      ],
+      "white": [
+       1,
+       0
+      ],
+      "full": [
+       true,
+       true
+      ],
+      "short": [
+       true,
+       true
+      ],
+      "eyes": 2
+     },
+     "shape": {
+      "muzzle": "normal",
+      "ears": "normal",
+      "tail": "long",
+      "build": "normal",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": false,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 3,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    },
+    {
+     "id": 18,
+     "name": "Маруся",
+     "sex": "female",
+     "source": "shelter",
+     "ageWeeks": 5,
+     "arrivedDay": 3,
+     "traits": [
+      {
+       "group": "obedience",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "chewing",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "catnip",
+       "level": 1,
+       "seen": 0,
+       "known": false
+      },
+      {
+       "group": "carrier",
+       "level": 1,
+       "seen": 0,
+       "known": false
+      },
+      {
+       "group": "petting",
+       "level": -1,
+       "seen": 0,
+       "known": false
+      }
+     ],
+     "breed": [
+      "mixed",
+      "mixed"
+     ],
+     "genes": {
+      "orange": [
+       false,
+       false
+      ],
+      "black": [
+       true,
+       true
+      ],
+      "dense": [
+       true,
+       false
+      ],
+      "agouti": [
+       true,
+       true
+      ],
+      "tabby": [
+       0,
+       2
+      ],
+      "white": [
+       1,
+       1
+      ],
+      "full": [
+       true,
+       false
+      ],
+      "short": [
+       true,
+       false
+      ],
+      "eyes": 1
+     },
+     "shape": {
+      "muzzle": "normal",
+      "ears": "normal",
+      "tail": "long",
+      "build": "normal",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": false,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 3,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    }
+   ]
+  },
+  "breeder": {
+   "week": 1,
+   "breed": "tonkinska",
+   "cats": [
+    {
+     "id": 10,
+     "name": "Квасоля",
+     "sex": "female",
+     "source": "breeder",
+     "ageWeeks": 2,
+     "arrivedDay": 2,
+     "traits": [
+      {
+       "group": "gulping",
+       "level": -2,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "grooming",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      }
+     ],
+     "breed": [
+      "tonkinska",
+      "tonkinska"
+     ],
+     "genes": {
+      "orange": [
+       false,
+       false
+      ],
+      "black": [
+       true,
+       true
+      ],
+      "dense": [
+       true,
+       true
+      ],
+      "agouti": [
+       true,
+       false
+      ],
+      "tabby": [
+       1,
+       0
+      ],
+      "white": [
+       0,
+       1
+      ],
+      "full": [
+       false,
+       false
+      ],
+      "short": [
+       false,
+       true
+      ],
+      "eyes": 2
+     },
+     "shape": {
+      "muzzle": "normal",
+      "ears": "large",
+      "tail": "long",
+      "build": "slim",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": false,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 2,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    },
+    {
+     "id": 11,
+     "name": "Дуся",
+     "sex": "female",
+     "source": "breeder",
+     "ageWeeks": 2,
+     "arrivedDay": 2,
+     "traits": [
+      {
+       "group": "bravery",
+       "level": 2,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "ambush",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      }
+     ],
+     "breed": [
+      "tonkinska",
+      "tonkinska"
+     ],
+     "genes": {
+      "orange": [
+       false,
+       true
+      ],
+      "black": [
+       true,
+       true
+      ],
+      "dense": [
+       true,
+       true
+      ],
+      "agouti": [
+       true,
+       true
+      ],
+      "tabby": [
+       0,
+       1
+      ],
+      "white": [
+       0,
+       0
+      ],
+      "full": [
+       false,
+       false
+      ],
+      "short": [
+       false,
+       false
+      ],
+      "eyes": 2
+     },
+     "shape": {
+      "muzzle": "flat",
+      "ears": "normal",
+      "tail": "long",
+      "build": "slim",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": false,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 2,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    },
+    {
+     "id": 12,
+     "name": "Сирник",
+     "sex": "male",
+     "source": "breeder",
+     "ageWeeks": 2,
+     "arrivedDay": 2,
+     "traits": [
+      {
+       "group": "carrier",
+       "level": 1,
+       "seen": 0,
+       "known": true
+      },
+      {
+       "group": "helper",
+       "level": 2,
+       "seen": 0,
+       "known": true
+      }
+     ],
+     "breed": [
+      "tonkinska",
+      "tonkinska"
+     ],
+     "genes": {
+      "orange": [
+       false
+      ],
+      "black": [
+       true,
+       true
+      ],
+      "dense": [
+       false,
+       true
+      ],
+      "agouti": [
+       false,
+       false
+      ],
+      "tabby": [
+       0,
+       0
+      ],
+      "white": [
+       0,
+       0
+      ],
+      "full": [
+       false,
+       false
+      ],
+      "short": [
+       false,
+       false
+      ],
+      "eyes": 1
+     },
+     "shape": {
+      "muzzle": "long",
+      "ears": "normal",
+      "tail": "short",
+      "build": "normal",
+      "legs": "normal",
+      "coat": null
+     },
+     "health": 100,
+     "mood": 40,
+     "love": 25,
+     "needs": {
+      "hunger": 50,
+      "thirst": 30,
+      "toilet": 30,
+      "fatigue": 30,
+      "attention": 40,
+      "play": 30
+     },
+     "moodHistory": [],
+     "moodToday": {
+      "sum": 0,
+      "minutes": 0
+     },
+     "interacted": false,
+     "healthLog": [],
+     "diseases": [],
+     "groomedUntil": -1,
+     "sterilized": false,
+     "sterilizedKnown": true,
+     "recoveryUntil": -1,
+     "heatUntil": -1,
+     "nextHeat": -1,
+     "pregnancy": null,
+     "litters": 0,
+     "restUntil": -1,
+     "breedKnown": [
+      true,
+      true
+     ],
+     "collar": false,
+     "treatsToday": 0,
+     "hurt": null,
+     "bathedDay": 2,
+     "x": 10.5,
+     "y": 10.5,
+     "facing": 1,
+     "act": {
+      "kind": "idle",
+      "target": null,
+      "goal": null,
+      "minutes": 0,
+      "elapsed": 0
+     },
+     "away": null,
+     "parents": {
+      "mother": null,
+      "father": null
+     }
+    }
+   ]
+  },
+  "ads": [],
+  "album": [],
+  "stats": {
+   "minutes": {
+    "work": 3206.1087066673736,
+    "cats": 1595.444577777817,
+    "self": 2235.452382223223,
+    "bustle": 2620.906297778092
+   },
+   "raised": {
+    "shelter": 0,
+    "shelter-forced": 3,
+    "born": 0,
+    "breeder": 0,
+    "foundling": 0
+   }
+  },
+  "nextId": 122,
+  "rng": {
+   "conditions": 2397684986,
+   "behavior": 2732418588
+  },
+  "lastNight": {
+   "day": 11,
+   "sleptHours": 8.889746074077069,
+   "collapsed": false,
+   "weekly": false,
+   "wakeUps": [],
+   "wokeMinute": 480,
+   "steps": [
+    "sleep",
+    "cat-health",
+    "cat-death",
+    "kitten-check",
+    "morning",
+    "new-day"
+   ],
+   "lostCats": [],
+   "givenCats": [],
+   "newCats": [],
+   "utilities": null,
+   "sanityEvening": 65.46224466666683,
+   "sanityMorning": 65.46224466666683
+  },
+  "end": null,
+  "hints": [
+   "play"
+  ]
+ }
+}

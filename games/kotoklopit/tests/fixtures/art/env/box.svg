@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Фікстура конвеєра: ящик без шарів зі станами closed / half / open (класи st-*). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" width="120" height="100">
+  <rect x="20" y="40" width="80" height="50" fill="#8b5e3c" stroke="#1f1a24" stroke-width="6"/>
+  <rect class="st-closed" x="16" y="30" width="88" height="12" fill="#f3e9dc" stroke="#1f1a24" stroke-width="3"/>
+  <rect class="st-half st-open" x="50" y="56" width="20" height="14" fill="#f3e9dc"/>
+  <path class="st-open" d="M20 40 L12 10 L100 10 L100 40" fill="#f3e9dc" stroke="#1f1a24" stroke-width="3"/>
+</svg>

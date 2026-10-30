@@ -1,0 +1,17 @@
+{
+ "name": "Кішка народить завтра",
+ "description": "Неділя першого тижня, 21:00. Мурка вагітна від Барсика: кошенята з'являться цієї ночі (крок «Пологи»). Ляжте спати — уранці титулка покаже пологи, а біля Мурки лежатимуть новонароджені.",
+ "game": { "address": "she", "difficulty": "normal", "seed": 44 },
+ "state": {
+  "day": 6,
+  "minute": 1260,
+  "modifiers": { "day": null },
+  "character": { "money": 300, "stats": { "satiety": 80, "hygiene": 80, "sanity": 60 } },
+  "home": { "supplies": { "catFood": { "cheap": 30, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } } }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 3, "name": "Мурка", "sex": "female", "arrivedDay": -7, "x": 14.5, "y": 9.5,
+    "pregnancy": { "father": 6, "due": 7, "known": false } },
+  { "source": "shelter", "ageWeeks": 4, "name": "Барсик", "sex": "male", "arrivedDay": -7, "x": 6.5, "y": 8.5 }
+ ]
+}
