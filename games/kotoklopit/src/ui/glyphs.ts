@@ -1,5 +1,12 @@
 // Іконки інтерфейсу карток (§11.4): у тексті стоять символи-позначки (🛒 👛 🏠 🕐 🚗 💻 🐱 ☕ 👣), а на екрані —
 // намальовані іконки в чорнильному стилі гри, однакові на будь-якому телефоні.
+//
+// У новому вигляді (крок 16, `<html data-gfx="iso">`) гліф — `<img>` із SVG пакета A12 `art/ui/glyph/<назва>.svg` (назва —
+// `GLYPH_ART` маніфесту), а не кадр атласу: браузер малює SVG сам, тож гліф чіткий на будь-якій щільності екрана.
+// Файли бере Vite (`?url`); поки SVG немає — малюнок кодом нижче, як у старому вигляді. «❓» (про рису ще нічого не
+// відомо, `cards.ts`) стає гліфом лише в новому вигляді — у старому лишається символом, як був.
+
+import { GLYPH_ART } from "../view/art/manifest/a12-icons";
 
 const INK = "#1f1a24";
 
@@ -25,26 +32,67 @@ const GLYPHS: Record<string, string> = {
   "🚗": `<path d="M3 15v-3l2.5-5h13l2.5 5v3z" fill="#5a7fc0" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M7 8.5h10l1.3 3H5.7z" fill="#cfe3ec"/><circle cx="7.5" cy="16.5" r="2.3" fill="${INK}"/><circle cx="16.5" cy="16.5" r="2.3" fill="${INK}"/>`,
 };
 
+/**
+ * «❓» нового вигляду, поки немає SVG `ui/glyph/question` (A12): знак питання в гірчичному кружечку — як позначка «?»
+ * над іконкою (§11.4). У старому вигляді «❓» не замінюється.
+ */
+const QUESTION = `<circle cx="12" cy="12" r="9.5" fill="#d4a54c" stroke="${INK}" stroke-width="2"/><path d="M9.2 9.6a2.9 2.9 0 1 1 4.1 2.6c-.9.4-1.3 1-1.3 1.9v.6" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.3" fill="${INK}"/>`;
+
+/** SVG гліфів A12 (`art/ui/glyph/<назва>.svg`) → адреса файлу; яких ще немає — тих і в переліку немає. */
+const GLYPH_FILES = import.meta.glob<string>("../../art/ui/glyph/*.svg", { query: "?url", import: "default", eager: true });
+
+/** Як показати символ: файл SVG (`img`), малюнок кодом (`svg`, поле 24 × 24) чи ніяк (null — лишити символом). */
+export type GlyphLook = { img: string } | { svg: string } | null;
+
+/** Символи, які замінює новий вигляд: ті самі й «❓». */
+const ISO_SYMBOLS = [...Object.keys(GLYPHS), "❓"];
+
+/**
+ * Чим замінити символ: у старому вигляді — малюнком кодом (як і було), у новому — файлом SVG `ui/glyph/<назва>`, якщо він
+ * уже є серед `files` (шлях → адреса, як дає `import.meta.glob`), інакше малюнком кодом. Чистий розрахунок без DOM.
+ */
+export function glyphLook(symbol: string, iso: boolean, files: Readonly<Record<string, string>> = GLYPH_FILES): GlyphLook {
+  const drawn = symbol === "❓" ? QUESTION : GLYPHS[symbol];
+  if (!iso) return symbol === "❓" ? null : drawn ? { svg: drawn } : null;
+  const name = GLYPH_ART[symbol];
+  if (name !== undefined) {
+    const file = Object.entries(files).find(([path]) => path.endsWith(`/${name}.svg`));
+    if (file) return { img: file[1] };
+  }
+  return drawn ? { svg: drawn } : null;
+}
+
 const PATTERN = new RegExp(`(${Object.keys(GLYPHS).join("|")})`, "u");
+const ISO_PATTERN = new RegExp(`(${ISO_SYMBOLS.join("|")})`, "u");
 
 /** Замінити символи-позначки в тексті вузла на намальовані іконки. */
 export function drawGlyphs(root: Node): void {
+  const iso = document.documentElement.dataset["gfx"] === "iso";
+  const pattern = iso ? ISO_PATTERN : PATTERN;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes: Text[] = [];
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) if (PATTERN.test(n.nodeValue ?? "")) nodes.push(n as Text);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) if (pattern.test(n.nodeValue ?? "")) nodes.push(n as Text);
   for (const node of nodes) {
-    const parts = (node.nodeValue ?? "").split(PATTERN);
+    const parts = (node.nodeValue ?? "").split(pattern);
     const fragment = document.createDocumentFragment();
     for (const part of parts) {
-      const svg = GLYPHS[part];
-      if (!svg) {
+      const look = part ? glyphLook(part, iso) : null;
+      if (!look) {
         if (part) fragment.append(part);
         continue;
       }
       const span = document.createElement("span");
       span.className = "glyph";
       span.setAttribute("aria-hidden", "true");
-      span.innerHTML = `<svg viewBox="0 0 24 24" width="1.15em" height="1.15em">${svg}</svg>`;
+      if ("img" in look) {
+        // Розмір — як у малюнка кодом: 1,15 em, блоком усередині `.glyph`.
+        const img = document.createElement("img");
+        img.src = look.img;
+        img.alt = "";
+        img.draggable = false;
+        img.style.cssText = "display:block;width:1.15em;height:1.15em";
+        span.append(img);
+      } else span.innerHTML = `<svg viewBox="0 0 24 24" width="1.15em" height="1.15em">${look.svg}</svg>`;
       fragment.append(span);
     }
     node.replaceWith(fragment);
