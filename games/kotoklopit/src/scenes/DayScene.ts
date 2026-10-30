@@ -37,7 +37,7 @@ import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
 import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
-import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../view/symbols";
+import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
@@ -586,21 +586,22 @@ export class DayScene extends Phaser.Scene {
     // Нарада — лише в робочий день: звільненого чи на лікарняному камера не чекає (перевірка модифікаторів 2026-10-28).
     const meeting = state.modifiers.day === "meeting" && isWorkday(state) && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
     // Дріт перегризено (§9.12, «Гризіння»): над комп'ютером — перегризений дріт, доки його не полагодять.
-    if (state.home.wireChewed === true) computer = "wire";
-    else if (!working && (standup || meeting)) computer = "camera";
-    else if (internetOut(state)) computer = "no-internet";
+    const icons = STATE_ICONS.computer;
+    if (state.home.wireChewed === true) computer = icons.wireChewed;
+    else if (!working && (standup || meeting)) computer = icons.call;
+    else if (internetOut(state)) computer = icons.noInternet;
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
-      computer = level === "out" ? "cross" : level === "warning" ? "alert" : null;
+      computer = level === "out" ? icons.patienceOut : level === "warning" ? icons.patienceWarning : null;
     }
     set("computer", computer);
 
     // Персонаж у душовій кабіні — над нею вода.
     const activity = state.character.activity;
-    set("shower", activity?.kind === "use" && activity.inside ? "drop" : null);
+    set("shower", activity?.kind === "use" && activity.inside ? STATE_ICONS.shower : null);
     set("stove", stoveIcon(state.home.stove.item));
     // Кіт на сходах важливіший за пакунок (§9.12).
-    set("door", state.cats.some((c) => c.away === "stairs") ? "meow" : state.home.porch.length > 0 ? "box" : null);
+    set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);
     const table = objectById("table");
     const target = targetOf(state);
     // Страва на столі — її іконкою: мамин судочок — своєю (§6.4).
@@ -608,13 +609,13 @@ export class DayScene extends Phaser.Scene {
     set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? "washer" : washer === "done" ? "washed" : null);
+    set("washer", washer === "washing" ? STATE_ICONS.washer.washing : washer === "done" ? STATE_ICONS.washer.done : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {
       const id = `item:${thing.id}`;
-      if (thing.kind === "water") set(id, thing.water === 0 ? "thirst" : null);
-      else if (thing.kind === "litter") set(id, isDirty(thing) ? "dirty" : null);
+      if (thing.kind === "water") set(id, thing.water === 0 ? STATE_ICONS.waterEmpty : null);
+      else if (thing.kind === "litter") set(id, isDirty(thing) ? STATE_ICONS.litterDirty : null);
     }
     // Кіт просить їсти (на умивальнику — пити з крана, §9.12 «Пиття») чи б'ється — це чути. Дзвіночка, що видавав схованого кота,
     // більше немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17).
@@ -634,7 +635,7 @@ export class DayScene extends Phaser.Scene {
         continue;
       }
       // Бабл «бійка» над клубком — один на двох (§9.4, «Пози стосунків»).
-      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? "fight" : null) : (ask?.icon ?? null));
+      set(key, cat.away !== null ? null : fighting ? (showsFightBubble(state, cat) ? STATE_ICONS.fight : null) : (ask?.icon ?? null));
     }
     // Вміст сховищ (§6.4): над баблом стану, якщо він є, але не вище задньої стіни — над високим
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
@@ -654,7 +655,7 @@ export class DayScene extends Phaser.Scene {
     this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
     // Сонливість — думка персонажа.
     const head = this.belowHud(this.world.person.head, "think") ?? this.world.person.head;
-    this.bubbles.setState("person", "think", isDrowsy(state) ? "zz" : null, head.x, head.y);
+    this.bubbles.setState("person", "think", isDrowsy(state) ? STATE_ICONS.drowsy : null, head.x, head.y);
   }
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */

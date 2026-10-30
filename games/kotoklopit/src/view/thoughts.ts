@@ -7,18 +7,13 @@ import { MOOD_LOOK, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
 import type { IconName } from "./iconnames";
-import type { EventBubble } from "./symbols";
+import { STAT_ICONS, type EventBubble } from "./symbols";
 
 /** Кіт думає, лише коли сидить, блукає чи йде по увагу — не за їжею, грою, сном чи в бійці. */
 const THINKING_ACTS: ReadonlySet<CatActKind> = new Set<CatActKind>(["idle", "wander", "attention"]);
 
-/** Показники персонажа й їхні іконки — ті самі, що на панелі (`hud.ts`). */
-const PERSON_STATS: readonly (readonly [StatName, IconName])[] = [
-  ["health", "heart"],
-  ["satiety", "food"],
-  ["hygiene", "soap"],
-  ["sanity", "mind"],
-];
+/** Показники персонажа й їхні іконки — ті самі, що на панелі (`STAT_ICONS`, §11.4). */
+const PERSON_STATS: readonly (readonly [StatName, IconName])[] = (["health", "satiety", "hygiene", "sanity"] as const).map((stat) => [stat, STAT_ICONS[stat]] as const);
 
 /** Кіт сам грається — гуляє «заради гри» (§9.12): думати «хочу гратися» саме тоді нема чого. */
 const playing = (cat: Cat): boolean => cat.act.kind === "wander" && (cat.act.target === "play" || cat.act.target === "paper");

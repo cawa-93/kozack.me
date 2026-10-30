@@ -2,7 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
-import type { Cat, Dish, GameState, Item, Product } from "../sim/types";
+import type { Cat, Dish, GameState, Item, Product, StatName } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
@@ -22,6 +22,45 @@ export const PRODUCT_ICONS: Record<Product, IconName> = {
   catnip: "catnip",
   momMeal: "mom-meal",
 };
+
+/**
+ * Іконки показників персонажа (§6, §11.4): на панелі й у думці персонажа, коли показник низький, — та сама іконка. Ситість і
+ * гігієна — ті самі, що в запасів, які їх поповнюють (продукти, засоби гігієни): «одна річ — один символ».
+ */
+export const STAT_ICONS: Record<StatName, IconName> = {
+  health: "heart",
+  satiety: "food",
+  hygiene: "soap",
+  sanity: "mind",
+};
+
+/** Сердечка настрою кота (§9.12): не бабли, а зміна настрою — зелене вгору, червоне розбите вниз. */
+export const MOOD_ICONS = { up: "mood-up", down: "mood-down" } as const satisfies Record<string, IconName>;
+
+/**
+ * Бабли стану (§11.4): що висить, поки триває, — над річчю вголос («річ каже про свій стан»), над персонажем — думка. Сцена
+ * вирішує, коли який стан настав (`DayScene.updateStateBubbles`), а іконки — тут, щоб тест бачив усі відповідності «випадок →
+ * іконка» (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс»). Плита й стіл — іконкою страви (`stoveIcon`,
+ * `itemIcon`), кіт, що просить, — `catAsk`.
+ */
+export const STATE_ICONS = {
+  /** Над комп'ютером (§8.6, §4.1, §9.12): перегризений дріт, відеодзвінок по роботі, немає інтернету, «Х» і «!» терпіння. */
+  computer: { wireChewed: "wire", call: "camera", noInternet: "no-internet", patienceOut: "cross", patienceWarning: "alert" },
+  /** Персонаж у душовій кабіні — тече вода. */
+  shower: "drop",
+  /** Під дверима: кіт на сходах нявчить (його не видно) — важливіший за пакунок. */
+  door: { stairs: "meow", porch: "box" },
+  /** Пральна машина пере чи чекає, щоб випране розвісили (§8.7). */
+  washer: { washing: "washer", done: "washed" },
+  /** Порожня миска для води — стан речі, не спрага кота. */
+  waterEmpty: "thirst",
+  /** Брудний лоток. */
+  litterDirty: "dirty",
+  /** Коти б'ються — один бабл над клубком (§9.4). */
+  fight: "fight",
+  /** Персонаж сонний — думка (§8.8). */
+  drowsy: "zz",
+} as const satisfies Record<string, IconName | Record<string, IconName>>;
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
 export function itemIcon(item: Item): IconName {
@@ -278,8 +317,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Чистюля понюхав брудний лоток (§9.12): «брудно» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "dirty" }];
     case "cat-refused-food":
-      // Перебірливий не хоче простого корму (§9.12): «не цей корм» — його думка.
-      return [{ kind: "think", at: cat(event.cat), icon: "kibble", mark: "no" }];
+      // Перебірливий не хоче простого корму (§9.12): «не цей корм» — його думка. Своя іконка, а не перекреслений корм: той — відмова
+      // персонажа «корм сюди не покласти» (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
+      return [{ kind: "think", at: cat(event.cat), icon: "picky" }];
     case "catnip":
       // Котяча м'ята (§9.12): блаженство й «не діє» — думка кота; той, що шаленіє, верещить уголос.
       if (event.reaction === "frenzy") return [{ kind: "say", at: cat(event.cat), icon: "angry" }];

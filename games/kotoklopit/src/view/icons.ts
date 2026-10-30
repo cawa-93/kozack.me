@@ -770,7 +770,7 @@ Object.assign(ICONS, {
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**
- * Ще чотири іконки за правилом «Унікальна іконка на унікальний кейс» (§11.4; рішення автора 2026-10-30, `GENERAL_REVIEW.md`,
+ * Ще іконки за правилом «Унікальна іконка на унікальний кейс» (§11.4; рішення автора 2026-10-30, `GENERAL_REVIEW.md`,
  * «Відкрите після рішень», п. 7): раніше ці випадки ділили іконку з іншим значенням.
  */
 Object.assign(ICONS, {
@@ -794,6 +794,17 @@ Object.assign(ICONS, {
     g.lineStyle(2, 0x8a8a8a).lineBetween(19, 9, 26, 9).lineBetween(19, 13, 26, 13).lineBetween(10, 20, 26, 20).lineBetween(10, 24, 22, 24);
     g.lineStyle(3, COLORS.danger).strokeCircle(27, 28, 8.5);
     g.lineStyle(3, COLORS.danger).lineBetween(23.5, 24.5, 30.5, 31.5).lineBetween(30.5, 24.5, 23.5, 31.5);
+  },
+  picky: (g: Phaser.GameObjects.Graphics) => {
+    // Перебірливий не хоче простого корму (§9.12): миска простого корму, а котяча голова над нею в профіль задирає носа й відвертається.
+    // Не перекреслений корм — це відмова «корм сюди не покласти».
+    g.fillStyle(0x8a5a33).fillEllipse(14, 29, 16, 7);
+    g.fillStyle(0x9aa3ab).fillEllipse(14, 33, 24, 8);
+    g.lineStyle(2.5, INK).strokeEllipse(14, 33, 24, 8);
+    g.fillStyle(0x6b5d6e).fillTriangle(21, 11, 22, 1, 28, 8).fillEllipse(26, 15, 14, 13).fillEllipse(32, 12, 7, 6);
+    g.lineStyle(1.8, 0xffffff).beginPath().arc(28, 12, 2, Math.PI * 1.1, Math.PI * 1.9).strokePath();
+    g.fillStyle(0xd9708a).fillCircle(35, 10.5, 1.3);
+    g.lineStyle(2, 0x7a8a3a).beginPath().arc(30, 25, 3, Math.PI * 0.6, Math.PI * 1.6).strokePath();
   },
   "kibble-pour": (g: Phaser.GameObjects.Graphics) => {
     // Автогодівниця досипала (§8.7): миска з кормом, а згори в неї сиплються гранули з рисочками падіння. Не корм голодного кота.

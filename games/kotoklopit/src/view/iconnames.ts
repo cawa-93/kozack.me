@@ -104,6 +104,7 @@ export const ICON_NAMES = [
   "aloof",
   "cv-rejected",
   "kibble-pour",
+  "picky",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

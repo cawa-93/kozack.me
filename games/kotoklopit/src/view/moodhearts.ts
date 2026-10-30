@@ -4,6 +4,7 @@
 import Phaser from "phaser";
 
 import { iconTexture } from "./iconnames";
+import { MOOD_ICONS } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 
 const DEPTH = WORLD_LAYERS.hearts;
@@ -46,7 +47,7 @@ export class MoodHearts {
   private spawn(at: { x: number; y: number }, good: boolean, index: number): void {
     const x = at.x + (Math.random() - 0.5) * 36;
     const image = this.scene.add
-      .image(x, at.y + 6, iconTexture(good ? "mood-up" : "mood-down"))
+      .image(x, at.y + 6, iconTexture(good ? MOOD_ICONS.up : MOOD_ICONS.down))
       .setDisplaySize(SIZE, SIZE)
       .setAlpha(0)
       .setDepth(DEPTH)

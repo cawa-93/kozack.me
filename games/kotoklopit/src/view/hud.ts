@@ -14,7 +14,7 @@ import { fill, ILLNESS_TITLES } from "../texts";
 import { COLORS } from "./colors";
 import { iconTexture, type IconName } from "./iconnames";
 import { scheduleOf } from "./schedule";
-import { PRODUCT_ICONS } from "./symbols";
+import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
 import { BASE_WIDTH, HUD_HEIGHT, type Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
@@ -24,10 +24,10 @@ const MUTED = "#c9b9a8";
 
 /** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
 const STATS: readonly { name: StatName; icon: IconName; color: number }[] = [
-  { name: "health", icon: "heart", color: 0xd8574a },
-  { name: "satiety", icon: "food", color: 0xe0893a },
-  { name: "hygiene", icon: "soap", color: 0x5fa8d3 },
-  { name: "sanity", icon: "mind", color: 0x9b7fd1 },
+  { name: "health", icon: STAT_ICONS.health, color: 0xd8574a },
+  { name: "satiety", icon: STAT_ICONS.satiety, color: 0xe0893a },
+  { name: "hygiene", icon: STAT_ICONS.hygiene, color: 0x5fa8d3 },
+  { name: "sanity", icon: STAT_ICONS.sanity, color: 0x9b7fd1 },
 ];
 
 const ICON_SIZE = 30;
