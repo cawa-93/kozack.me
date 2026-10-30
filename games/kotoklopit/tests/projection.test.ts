@@ -31,10 +31,25 @@ describe("коса проєкція старого вигляду", () => {
     expect(OBLIQUE.wallRise).toBe(30);
   });
 
+  it("верх задньої стіни — там, де починається її лицьова грань, однаковий на всю ширину (межа індикаторів сховищ)", () => {
+    for (const x of [0, 14, 300, 584, 1228]) {
+      expect(OBLIQUE.backWallTop(x)).toBe(64);
+      expect(OBLIQUE.backWallTop(x)).toBe(OBLIQUE.toScreen({ x: 0, y: 1 }).y - OBLIQUE.wallRise);
+    }
+  });
+
+  it("напрям на екрані — той самий напрям у клітинках (§10)", () => {
+    expect(OBLIQUE.screenToTileDir({ x: 0, y: -1 })).toEqual({ x: 0, y: -1 });
+    expect(OBLIQUE.screenToTileDir({ x: 0.6, y: 0.8 })).toEqual({ x: 0.6, y: 0.8 });
+    expect(OBLIQUE.screenToTileDir({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+  });
+
   it("методи не залежать від this: їх можна передавати окремо", () => {
-    const { toScreen, rectToScreen, depthAt } = OBLIQUE;
+    const { toScreen, rectToScreen, depthAt, backWallTop, screenToTileDir } = OBLIQUE;
     expect(toScreen({ x: 1, y: 0 })).toEqual({ x: 74, y: 44 });
     expect(rectToScreen({ x: 0, y: 0, w: 1, h: 1 })).toEqual({ x: 14, y: 44, w: 60, h: 50 });
     expect(depthAt({ x: 0, y: 1 })).toBe(94);
+    expect(backWallTop(100)).toBe(64);
+    expect(screenToTileDir({ x: -1, y: 0 })).toEqual({ x: -1, y: 0 });
   });
 });

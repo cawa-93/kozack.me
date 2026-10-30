@@ -347,7 +347,8 @@ export class DayScene extends Phaser.Scene {
     x += this.touch.move.x;
     y += this.touch.move.y;
     const hold = (k?.action.isDown ?? false) || (k?.action2.isDown ?? false) || this.touch.holding;
-    return { move: { x, y }, hold };
+    // Напрям на екрані — у напрям у клітинках (§10): в ізометрії «вгору» на екрані — не «вгору» в клітинках.
+    return { move: this.world.projection.screenToTileDir({ x, y }), hold };
   }
 
   /** Поїздка (§8.5): гонку веде своя сцена, подію на місці й аварію — картки. */
@@ -642,13 +643,13 @@ export class DayScene extends Phaser.Scene {
     // холодильником індикатор лягає на його лицьову грань. Поки над персонажем (він стоїть перед сховищем)
     // чи над самим сховищем бабл події, індикатор схований: бабл і так каже, скільки лишилося.
     const projection = this.world.projection;
-    const highest = projection.toScreen({ x: 0, y: 1 }).y - projection.wallRise + 40;
     const personBusy = this.bubbles.busy("person");
     for (const storage of STORAGES) {
       const anchor = this.world.anchor(storage.object);
       if (!anchor) continue;
       const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
       const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage);
+      const highest = projection.backWallTop(anchor.x) + 40;
       this.storage.set(storage.object, lines, anchor.x, Math.max(highest, anchor.y - lift));
     }
     // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
