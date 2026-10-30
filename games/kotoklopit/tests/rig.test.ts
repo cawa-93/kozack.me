@@ -565,5 +565,11 @@ describe("змішування поз", () => {
     rig.play(null, 2000);
     rig.setFacing({ view: "back" });
     expect(rig.evaluate(2000).slot("arm").rot).toBeCloseTo(0, 9);
+    // Час пішов назад (повзунок галереї) — змішування скасовано, одразу нова поза.
+    rig.setFacing({ view: "front" });
+    rig.play(ARM_ANIMS.wave, 3000, { blend: 0, from: 200 });
+    rig.evaluate(3000);
+    rig.play(null, 3000);
+    expect(rig.evaluate(2900).slot("arm").rot).toBeCloseTo(0, 9);
   });
 });

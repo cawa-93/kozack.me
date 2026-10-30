@@ -581,6 +581,9 @@ interface CompiledAnim {
 /** Скомпільовані анімації за скелетом: анімація → [front, back]. */
 const COMPILED = new WeakMap<object, WeakMap<object, CompiledAnim[]>>();
 
+/** Визначення, які вже перевірено, і точки арту, перевірені разом із ними. */
+const VALID = new WeakMap<object, WeakSet<object>>();
+
 function compileAnim(def: LooseRig, anim: LooseAnim, view: ArtView): CompiledAnim {
   const over = anim.views?.[view];
   const bone = (id: string): BoneTracks | undefined => anim.bones?.[id];
@@ -660,9 +663,16 @@ export class Rig<B extends string, S extends string, K extends string> {
 
   constructor(def: RigDef<B, S, K>, opts: RigOptions<B, S, K> = {}) {
     const loose = def as unknown as LooseRig;
-    const problems = rigProblems(loose);
-    if (opts.fit) problems.push(...fitProblems(loose, opts.fit));
-    if (problems.length > 0) throw new Error(`Скелет:\n- ${problems.join("\n- ")}`);
+    // Перевірка — раз на визначення й точки арту: котів у квартирі може бути два десятки.
+    let valid = VALID.get(def);
+    if (!valid || (opts.fit && !valid.has(opts.fit))) {
+      const problems = rigProblems(loose);
+      if (opts.fit) problems.push(...fitProblems(loose, opts.fit));
+      if (problems.length > 0) throw new Error(`Скелет:\n- ${problems.join("\n- ")}`);
+      valid ??= new WeakSet();
+      VALID.set(def, valid);
+      if (opts.fit) valid.add(opts.fit);
+    }
     this.def = def;
     this.fit = opts.fit ?? null;
     this.lookup = opts.lookup;
@@ -837,6 +847,8 @@ export class Rig<B extends string, S extends string, K extends string> {
     const view = this.facingNow.view;
     const anim = this.current ? this.compiled(this.current, view) : null;
     const t = this.time(now);
+    // Час пішов назад (повзунок галереї) — змішування скасовано.
+    if (now < this.blendStart) this.blendStart = -Infinity;
     const w = this.blendMs > 0 ? Math.min(1, Math.max(0, (now - this.blendStart) / this.blendMs)) : 1;
     const e = smooth(w);
     const v = this.tmpV;
