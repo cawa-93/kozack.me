@@ -8,6 +8,7 @@ import { objectById, WINDOWS } from "../../sim/home";
 import type { Target } from "../../sim/targets";
 import type { Cat, GameState } from "../../sim/types";
 import { COLORS } from "../colors";
+import { boxDepthLookup } from "../iso/transition";
 import { blinkAmount, catLook } from "../thoughts";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
@@ -40,7 +41,7 @@ export class LegacyCatsView implements CatsPart {
       alive.add(cat.id);
       let view = this.views.get(cat.id);
       if (!view) {
-        view = new CatView(this.ctx.scene, this.ctx.layer, cat, this.ctx.projection);
+        view = new CatView(this.ctx.scene, this.ctx.layer, cat, this.ctx.projection, this.ctx.projection.kind === "iso" ? boxDepthLookup(this.ctx) : null);
         this.views.set(cat.id, view);
       }
       // Кіт на руках чи на колінах — біля персонажа.

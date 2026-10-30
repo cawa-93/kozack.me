@@ -163,6 +163,29 @@ export function isoObjectLook(id: string): IsoObjectLook {
   return look;
 }
 
+/** Де кіт на речі чи під нею: точка підлоги під лапами (клітинки) і висота над нею, одиниці арту. */
+export interface IsoPerch {
+  readonly at: Vec;
+  readonly lift: number;
+}
+
+/**
+ * Де стоїть кіт, що виліз на річ `id` (§9.12, «Лазіння»), чи ховається під нею: дані для T1 і для старого кота на ізометричній
+ * підлозі. На речі — над своєю точкою на висоті `perch`; у душовій кабіні — на мокрому піддоні біля входу; під річчю —
+ * визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на підлозі.
+ */
+export function isoCatPerch(id: string, cat: Vec, hiding: boolean): IsoPerch {
+  const look = isoObjectLook(id);
+  const f = look.footprint;
+  if (hiding) {
+    const toRight = f.x1 - cat.x;
+    const toLeft = f.y1 - cat.y;
+    return { at: toRight <= toLeft ? { x: f.x1, y: cat.y } : { x: cat.x, y: f.y1 }, lift: 0 };
+  }
+  if (id === "shower") return { at: { x: (f.x0 + f.x1) / 2, y: f.y0 + (f.y1 - f.y0) * 0.85 }, lift: look.perch ?? 0 };
+  return { at: { x: cat.x, y: cat.y }, lift: look.perch ?? 0 };
+}
+
 /** Речі на підлозі (§9.12, §8.5, §8.7): котячий куточок і техніка — для висоти бабла й ширини малюнка. */
 export type IsoFloorKind = HomeItem["kind"] | "feeder" | "robot" | "carrier" | "basket";
 

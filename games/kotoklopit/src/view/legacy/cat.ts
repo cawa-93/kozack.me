@@ -7,7 +7,7 @@ import Phaser from "phaser";
 
 import { isKitten, traitLevel } from "../../sim/cat";
 import { coatOf, type Coat, type Pigment } from "../../sim/genetics";
-import { CARRIER_SPOT, HIGH_PLACES, objectAt } from "../../sim/home";
+import { CARRIER_SPOT, centerOf, HIGH_PLACES, objectAt } from "../../sim/home";
 import { absoluteMinute } from "../../sim/time";
 import { girthOf } from "../../sim/weight";
 import type { Cat, GameState, Quality } from "../../sim/types";
@@ -16,7 +16,8 @@ import { drawSock, drawToy } from "./catcorner";
 import { COLORS } from "../colors";
 import type { Projection } from "../world/projection";
 import { brawlFoe, brawlInFront, isLicked, poseOf, withFriend } from "../pose";
-import { objectHeight } from "../world/objects";
+import { ISO_DEPTH_SLOT } from "../iso/depth";
+import { isoCatPerch, objectHeight } from "../world/objects";
 
 const PIGMENT: Record<Pigment, number> = {
   black: 0x2b2627,
@@ -114,6 +115,8 @@ export class CatView {
     layer: Phaser.GameObjects.Layer,
     cat: Cat,
     private readonly proj: Projection,
+    /** Ізометрична квартира (перехідний вигляд кроку 16): глибина коробки речі за id, NaN — ще невідома. */
+    private readonly boxDepth: ((id: string) => number) | null = null,
   ) {
     this.g = scene.add.graphics().addToDisplayList(layer);
     this.coat = coatOf(cat.genes, cat.shape);
@@ -193,7 +196,15 @@ export class CatView {
     const feet = carriedAt ?? { ...this.proj.toScreen(cat), depth: this.proj.depthOf(this.proj.toScreen(cat).y) + 0.5 };
     // На меблях кіт сидить зверху, а ховається — під ними, визираючи з-під краю.
     const furniture = carriedAt ? null : objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
-    if (furniture && furniture.kind !== "door") {
+    if (furniture && furniture.kind !== "door" && this.proj.kind === "iso") {
+      // Перехідний вигляд кроку 16 (`?gfx=iso`, F3b): на ізометричних меблях — на висоті їхнього верху, над їхньою коробкою.
+      const perch = isoCatPerch(furniture.id, cat, pose === "hide");
+      const at = this.proj.toScreen(perch.at);
+      const box = this.boxDepth?.(furniture.id) ?? Number.NaN;
+      feet.x = at.x;
+      feet.y = at.y - perch.lift;
+      feet.depth = Number.isNaN(box) ? this.proj.depthAt(centerOf(furniture)) + 2 : box + ISO_DEPTH_SLOT / 2;
+    } else if (furniture && furniture.kind !== "door") {
       const bottom = this.proj.toScreen({ x: 0, y: furniture.y + furniture.h }).y;
       feet.depth = this.proj.depthOf(bottom) + 2;
       // У душовій кабіні кіт сидить на мокрому піддоні біля входу, а не на даху кабіни (§9.12, «Любов до води»).

@@ -39,7 +39,7 @@ import {
   waterFrame,
   type IsoFrame,
 } from "../src/view/iso/looks";
-import { isoItemLook, isoObjectLook } from "../src/view/world/objects";
+import { isoCatPerch, isoItemLook, isoObjectLook } from "../src/view/world/objects";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
 
 const QUALITIES: readonly Quality[] = ["cheap", "premium"];
@@ -142,6 +142,22 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
       if (!entry) throw new Error(pane.sill);
       const at = pointsOn(object, entry)((pane.seat.x - object.x) / object.w, (pane.seat.y - object.y) / object.h, isoObjectLook(pane.sill).perch ?? 0);
       expect(at, pane.sill).toEqual(entry.points?.["seat"]);
+    }
+  });
+
+  it("кіт на речі — над своєю точкою на висоті верху; у душі — на піддоні біля входу; під річчю — з-під ближчого краю", () => {
+    expect(isoCatPerch("fridge", { x: 13.5, y: 1.5 }, false)).toEqual({ at: { x: 13.5, y: 1.5 }, lift: 150 });
+    expect(isoCatPerch("wardrobe", { x: 6.4, y: 1.6 }, false)).toEqual({ at: { x: 6.4, y: 1.6 }, lift: 170 });
+    expect(isoCatPerch("sofa", { x: 14.5, y: 10.5 }, false).lift).toBe(34);
+    expect(isoCatPerch("boxes", { x: 12.5, y: 9.5 }, false).lift).toBe(48);
+    expect(isoCatPerch("shower", { x: 8.2, y: 1.3 }, false)).toEqual({ at: { x: 8.5, y: 1.85 }, lift: 6 });
+    // Під ліжком (1 × 2): ближчий до камери край — правий (x = 2) для кота біля нього, нижній (y = 3) — для кота в ногах.
+    expect(isoCatPerch("bed", { x: 1.8, y: 1.5 }, true)).toEqual({ at: { x: 2, y: 1.5 }, lift: 0 });
+    expect(isoCatPerch("bed", { x: 1.3, y: 2.8 }, true)).toEqual({ at: { x: 1.3, y: 3 }, lift: 0 });
+    // На кожну річ, крім дверей, кіт може вилізти, і стоїть не вище за її найвищу точку.
+    for (const object of OBJECTS) {
+      const perch = isoCatPerch(object.id, { x: object.x + 0.5, y: object.y + 0.5 }, false);
+      expect(perch.lift, object.id).toBeLessThanOrEqual(isoObjectLook(object.id).tall);
     }
   });
 
