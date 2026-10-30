@@ -21,13 +21,14 @@ const SLAB_RES = 1.5;
 /**
  * Плити спальні, ванної й вітальні — як намальовано (пакет A1a, `art/env/room/<кімната>/*.svg`, за еталонами кухні): той
  * самий pivot (верхня вершина (room.x, room.y)), а полотно ширше за `slab`, бо підлога заходить під стіни на 0,06
- * клітинки й має стояти щонайменше за 4 одиниці від краю (`tests/art.test.ts`). Плити спальні й кухні однакові (обидві
- * кімнати 6 × 4 з проходом 2), тож і полотна підлоги — теж. Стіни — поки за `slab`.
+ * клітинки, грань і кришка стіни — на 0,03 під сусідню плиту, що лягає пізніше (спальня → ванна → кухня → вітальня), а
+ * контур кришки й важкий низ мають стояти щонайменше за 4 одиниці від краю (`tests/art.test.ts`). Плити спальні й кухні
+ * однакові (обидві кімнати 6 × 4 з проходом 2), тож і полотна підлоги — теж.
  */
-const DRAWN: Partial<Record<RoomId, { floor: Geometry; wall?: Geometry }>> = {
-  bedroom: { floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } } },
-  bathroom: { floor: { size: { w: 544, h: 310 }, pivot: { x: 272, y: 12 } } },
-  living: { floor: { size: { w: 1504, h: 760 }, pivot: { x: 336, y: 12 } } },
+const DRAWN: Partial<Record<RoomId, { floor: Geometry; wall: Geometry }>> = {
+  bedroom: { floor: { size: { w: 672, h: 344 }, pivot: { x: 272, y: 12 } }, wall: { size: { w: 796, h: 482 }, pivot: { x: 334, y: 276 } } },
+  bathroom: { floor: { size: { w: 544, h: 310 }, pivot: { x: 272, y: 12 } }, wall: { size: { w: 411, h: 418 }, pivot: { x: 77, y: 276 } } },
+  living: { floor: { size: { w: 1504, h: 760 }, pivot: { x: 336, y: 12 } }, wall: { size: { w: 474, h: 449 }, pivot: { x: 397, y: 276 } } },
 };
 /** Підлога кімнати з проходами ряду 5 під нею (`floorCells`); pivot — верхня вершина ромба (room.x, room.y). */
 const floor = (id: RoomId): Geometry & { res: number } => ({ ...slab(floorCells(room(id)), room(id), 0), ...DRAWN[id]?.floor, res: SLAB_RES });
