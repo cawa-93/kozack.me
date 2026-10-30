@@ -4,8 +4,8 @@
 //   node games/kotoklopit/scripts/shots.ts [--scenario a,b] [--size 844x390,1280x720] [--gfx iso] [--out тека] [--dpr 1]
 //   node games/kotoklopit/scripts/shots.ts --compare <тека A> <тека B> [--diff тека] [--tolerance 0] [--channel-delta 0]
 //
-// Скрипт сам запускає Vite гри (тієї копії репозиторію, з якої його запущено) на вільному порту з власною текою кешу, тож
-// паралельні копії (git worktree) одна одній не заважають. Браузер — Edge через playwright-core.
+// Скрипт сам запускає Vite гри (тієї копії репозиторію, з якої його запущено, або теки з --game) на вільному порту з
+// власною текою кешу, тож паралельні копії (git worktree) одна одній не заважають. Браузер — Edge через playwright-core.
 //
 // Знімки детерміновані: той самий код дає ті самі пікселі. Гра йде в реальному часі, тож час у сторінці фальшивий
 // (годинник Playwright, на паузі від початку): сторінка завантажується, а потім гра йде рівно `--ms` мілісекунд кадрами
@@ -24,9 +24,8 @@ import { chromium, type Browser, type Page } from "playwright-core";
 import sharp from "sharp";
 import { createServer, type ViteDevServer } from "vite";
 
-/** Тека гри тієї копії репозиторію, з якої запущено скрипт. */
-const GAME_DIR = path.resolve(import.meta.dirname, "..");
-const SCENARIOS_DIR = path.join(GAME_DIR, "scenarios");
+/** Тека гри за замовчуванням — тієї копії репозиторію, з якої запущено скрипт; інша — параметром --game. */
+const SCRIPT_GAME_DIR = path.resolve(import.meta.dirname, "..");
 
 const DEFAULT_SIZES = "844x390,1280x720";
 /** Скільки мілісекунд іде гра від завантаження до знімка. */
@@ -44,6 +43,8 @@ const BROWSER_CLOSE_MS = 5_000;
 const USAGE = `Знімки сценаріїв гри та їх порівняння.
 
   node games/kotoklopit/scripts/shots.ts [параметри]
+    --game <тека>        тека гри, яку знімати (напр. games/kotoklopit іншого worktree); за замовчуванням —
+                         та, поруч із якою лежить скрипт
     --scenario a,b       сценарії (назви файлів scenarios/*.json без .json); за замовчуванням усі
     --size WxH,...       розміри вікна в CSS px; за замовчуванням ${DEFAULT_SIZES}
                          (менша сторона ≤ ${PHONE_MAX_SIDE} — телефон: дотик і мобільний перегляд)
@@ -61,6 +62,7 @@ const USAGE = `Знімки сценаріїв гри та їх порівнян
     --tolerance <x>      допустима частка різних пікселів у парі: 0.001 чи 0.1%; за замовчуванням 0
     --channel-delta <n>  піксель різний, якщо якийсь канал відрізняється більше ніж на n (0–255), за замовчуванням 0
     --json <файл>        куди записати підсумок; за замовчуванням <diff>/compare.json або <B>/compare.json
+    --common             порівнювати лише знімки, що є в обох теках (напр. B — кілька перезнятих сценаріїв)
 
 Код виходу: 0 — усе гаразд; 1 — знімок не вдався чи різниця більша за поріг; 2 — неправильні параметри.`;
 
@@ -70,6 +72,8 @@ interface Size {
 }
 
 interface ShotOptions {
+  /** Тека гри, яку знімати: її Vite, конфіг і сценарії. */
+  gameDir: string;
   scenarios: string[];
   sizes: Size[];
   gfx: string | null;
@@ -129,26 +133,26 @@ function parseFraction(value: string | undefined): number {
 const sizeName = (size: Size): string => `${size.width}x${size.height}`;
 const shotFile = (scenario: string, size: Size): string => `${scenario}.${sizeName(size)}.png`;
 
-async function allScenarios(): Promise<string[]> {
-  const files = await readdir(SCENARIOS_DIR);
+async function allScenarios(gameDir: string): Promise<string[]> {
+  const files = await readdir(path.join(gameDir, "scenarios"));
   return files
     .filter((file) => file.endsWith(".json"))
     .map((file) => file.slice(0, -".json".length))
     .sort();
 }
 
-function git(args: string[]): string {
+function git(gameDir: string, args: string[]): string {
   try {
-    return execFileSync("git", args, { cwd: GAME_DIR, encoding: "utf8" }).trim();
+    return execFileSync("git", args, { cwd: gameDir, encoding: "utf8" }).trim();
   } catch {
     return "";
   }
 }
 
 /** Коротка назва коміту гри: «c2902a7» чи «c2902a7-dirty», якщо в теці гри є незакомічені зміни. */
-function commitLabel(): string {
-  const commit = git(["rev-parse", "--short", "HEAD"]) || "unknown";
-  return git(["status", "--porcelain", "--", "."]) ? `${commit}-dirty` : commit;
+function commitLabel(gameDir: string): string {
+  const commit = git(gameDir, ["rev-parse", "--short", "HEAD"]) || "unknown";
+  return git(gameDir, ["status", "--porcelain", "--", "."]) ? `${commit}-dirty` : commit;
 }
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -170,12 +174,12 @@ function freePort(): Promise<number> {
  * Vite гри на вільному порту. Кеш — поза node_modules і свій для кожної копії репозиторію: у worktree node_modules —
  * посилання на спільну теку, і паралельні сервери, що ділять node_modules/.vite, ламають один одному залежності.
  */
-async function startVite(): Promise<{ server: ViteDevServer; url: string }> {
-  const hash = createHash("sha1").update(GAME_DIR.toLowerCase()).digest("hex").slice(0, 12);
+async function startVite(gameDir: string): Promise<{ server: ViteDevServer; url: string }> {
+  const hash = createHash("sha1").update(gameDir.toLowerCase()).digest("hex").slice(0, 12);
   const cacheDir = path.join(tmpdir(), "kotoklopit-vite", hash);
   const server = await createServer({
-    root: GAME_DIR,
-    configFile: path.join(GAME_DIR, "vite.config.ts"),
+    root: gameDir,
+    configFile: path.join(gameDir, "vite.config.ts"),
     cacheDir,
     logLevel: "warn",
     clearScreen: false,
@@ -336,7 +340,7 @@ async function runShots(options: ShotOptions): Promise<number> {
   const log = (text: string): void => {
     if (options.verbose) console.log(text);
   };
-  const vite = options.url === null ? await startVite() : null;
+  const vite = options.url === null ? await startVite(options.gameDir) : null;
   const base = options.url ?? vite?.url ?? "";
   log(`Гра: ${base}`);
   const args = options.gpu ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
@@ -369,8 +373,8 @@ async function runShots(options: ShotOptions): Promise<number> {
   const failed = results.filter((result) => !result.ok);
   const durationMs = Date.now() - started;
   const manifest = {
-    commit: commitLabel(),
-    gameDir: GAME_DIR,
+    commit: commitLabel(options.gameDir),
+    gameDir: options.gameDir,
     url: options.url,
     gfx: options.gfx,
     dpr: options.dpr,
@@ -449,19 +453,30 @@ async function comparePair(a: string, b: string, file: string, diffDir: string |
   return result;
 }
 
-async function runCompare(a: string, b: string, diffDir: string | null, jsonFile: string, tolerance: number, channelDelta: number): Promise<number> {
+interface CompareOptions {
+  diffDir: string | null;
+  jsonFile: string;
+  tolerance: number;
+  channelDelta: number;
+  /** Знімок лише в одній теці — не помилка, а пропуск. */
+  common: boolean;
+}
+
+async function runCompare(a: string, b: string, options: CompareOptions): Promise<number> {
+  const { diffDir, jsonFile, tolerance, channelDelta, common } = options;
   const [filesA, filesB] = await Promise.all([pngFiles(a), pngFiles(b)]);
   if (diffDir !== null) await mkdir(diffDir, { recursive: true });
   const names = [...new Set([...filesA, ...filesB])].sort();
   const results: PairResult[] = [];
   for (const file of names) {
-    if (!filesA.has(file)) results.push({ file, status: "missing-a", overTolerance: true });
-    else if (!filesB.has(file)) results.push({ file, status: "missing-b", overTolerance: true });
+    if (!filesA.has(file)) results.push({ file, status: "missing-a", overTolerance: !common });
+    else if (!filesB.has(file)) results.push({ file, status: "missing-b", overTolerance: !common });
     else results.push(await comparePair(a, b, file, diffDir, tolerance, channelDelta));
   }
   const percent = (fraction: number): string => `${(fraction * 100).toFixed(4)}%`;
+  const missing = (result: PairResult): boolean => result.status === "missing-a" || result.status === "missing-b";
   for (const result of results) {
-    if (result.status === "same") continue;
+    if (result.status === "same" || (common && missing(result))) continue;
     const mark = result.overTolerance ? "✗" : "≈";
     if (result.status === "missing-a") console.log(`${mark} ${result.file}: немає в A`);
     else if (result.status === "missing-b") console.log(`${mark} ${result.file}: немає в B`);
@@ -469,27 +484,32 @@ async function runCompare(a: string, b: string, diffDir: string | null, jsonFile
     else console.log(`${mark} ${result.file}: ${result.diffPixels} px (${percent(result.fraction ?? 0)}), рамка ${result.box?.join(", ")}`);
   }
   const same = results.filter((result) => result.status === "same").length;
+  const alone = results.filter(missing).length;
   const over = results.filter((result) => result.overTolerance).length;
   const summary = {
     a,
     b,
     tolerance,
     channelDelta,
-    pairs: results.length,
+    common,
+    pairs: results.length - alone,
     same,
-    different: results.length - same,
+    different: results.length - alone - same,
+    missing: alone,
     overTolerance: over,
     results,
   };
   await mkdir(path.dirname(jsonFile), { recursive: true });
   await writeFile(jsonFile, `${JSON.stringify(summary, null, 2)}\n`);
-  console.log(`Пар: ${results.length}, однакових: ${same}, різних: ${results.length - same}, понад поріг ${percent(tolerance)}: ${over} → ${jsonFile}`);
+  const lonely = alone > 0 ? `, лише в одній теці: ${alone}${common ? " (пропущено)" : ""}` : "";
+  console.log(`Пар: ${summary.pairs}, однакових: ${same}, різних: ${summary.different}${lonely}, понад поріг ${percent(tolerance)}: ${over} → ${jsonFile}`);
   return over === 0 ? 0 : 1;
 }
 
 /** Параметри командного рядка. */
 const OPTIONS = {
   help: { type: "boolean", short: "h" },
+  game: { type: "string" },
   scenario: { type: "string" },
   size: { type: "string" },
   gfx: { type: "string" },
@@ -505,6 +525,7 @@ const OPTIONS = {
   tolerance: { type: "string" },
   "channel-delta": { type: "string" },
   json: { type: "string" },
+  common: { type: "boolean" },
 } as const;
 
 function parseCommandLine() {
@@ -530,18 +551,22 @@ async function main(): Promise<number> {
     const diffDir = values.diff === undefined ? null : resolveUserPath(values.diff);
     const jsonFile = values.json === undefined ? path.join(diffDir ?? dirB, "compare.json") : resolveUserPath(values.json);
     const channelDelta = parseNumber("channel-delta", values["channel-delta"], 0, 0);
-    return runCompare(dirA, dirB, diffDir, jsonFile, parseFraction(values.tolerance), channelDelta);
+    return runCompare(dirA, dirB, { diffDir, jsonFile, tolerance: parseFraction(values.tolerance), channelDelta, common: values.common ?? false });
   }
   if (positionals.length > 0) throw new UsageError(`Зайві параметри: ${positionals.join(" ")}`);
-  const known = await allScenarios();
+  const gameDir = values.game === undefined ? SCRIPT_GAME_DIR : resolveUserPath(values.game);
+  const config = await stat(path.join(gameDir, "vite.config.ts")).catch(() => null);
+  if (!config?.isFile()) throw new UsageError(`--game: у «${gameDir}» немає vite.config.ts — це не тека гри`);
+  const known = await allScenarios(gameDir);
   const scenarios = values.scenario === undefined ? known : values.scenario.split(",").map((name) => name.trim().replace(/\.json$/, ""));
   const unknown = scenarios.filter((name) => !known.includes(name));
   if (unknown.length > 0 && values.url === undefined) throw new UsageError(`Немає сценаріїв: ${unknown.join(", ")} (є: ${known.join(", ")})`);
   const options: ShotOptions = {
+    gameDir,
     scenarios,
     sizes: parseSizes(values.size ?? DEFAULT_SIZES),
     gfx: values.gfx ?? null,
-    out: values.out === undefined ? path.join(tmpdir(), "kotoklopit-shots", commitLabel()) : resolveUserPath(values.out),
+    out: values.out === undefined ? path.join(tmpdir(), "kotoklopit-shots", commitLabel(gameDir)) : resolveUserPath(values.out),
     dpr: parseNumber("dpr", values.dpr, 1, 0.5),
     ms: Math.round(parseNumber("ms", values.ms, DEFAULT_MS, 0)),
     jobs: Math.max(1, Math.round(parseNumber("jobs", values.jobs, 2, 1))),
