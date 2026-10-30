@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 33" width="36" height="33">
+<!-- cat/ear/large/front — велике вухо (орієнтальні, сіамські, сфінкси, рекси, абіссинці) (слоти ear-far і ear-near — той самий кадр), ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 36×33; pivot (18, 24) — середина основи вуха, як у звичайного (точки ear-* голови); основа ховається під голову, тож без контуру.
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink.
+Ширше й вище за звичайне (≈ 17 × 17), рожеве всередині в front.
+Маски шерсті — порожні групи (малює A9). back — спинка вуха: без рожевого, тінь біля основи.
+-->
+<defs>
+<path id="cat-ear-large-front-shape" d="M9.4 26.6C6.1 25.4 9.2 23.1 9.6 20.6C10 18.1 10.3 16.6 11.2 14.2C12.1 11.8 13.1 10.3 14.2 8.8C15.3 7.3 15.9 6.8 16.9 6.6C17.9 6.4 18.1 6.3 19.3 7.6C20.5 8.9 21.5 10.8 22.7 13.2C23.9 15.6 24.6 16.9 25.3 19.6C26 22.3 29.3 25.2 26.1 26.6C22.9 28 12.7 27.8 9.4 26.6Z"/>
+<clipPath id="cat-ear-large-front-clip"><use href="#cat-ear-large-front-shape"/></clipPath>
+<clipPath id="cat-ear-large-front-mask"><path d="M5.6 5.8L29.8 5.8L29.8 28.5L5.6 28.5Z"/></clipPath>
+</defs>
+<g id="fill">
+<use href="#cat-ear-large-front-shape" fill="#ffffff"/>
+</g>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail">
+<path d="M12.4 25.2C10.3 23.8 12 20.8 12.5 18.2C13 15.6 13.9 13.7 14.8 12C15.7 10.3 16.1 9.8 17 9.6C17.9 9.4 18.1 9.5 19.1 11.1C20.1 12.7 21.2 14.8 22 17.6C22.8 20.4 25.1 23.7 23.2 25.2C21.3 26.7 14.5 26.6 12.4 25.2Z" fill="#d99a93"/>
+</g>
+<g id="shade" clip-path="url(#cat-ear-large-front-clip)">
+<path d="M19.6 7.4C20.1 7.3 22 11.3 23 13.4C24 15.5 25.2 17.7 25.8 20C26.4 22.3 27.2 26 26.6 27.2C26 28.4 22.7 28.3 22 27.2C21.3 26.1 22.5 22.6 22.2 20.4C21.9 18.2 20.4 16.2 20 14C19.6 11.8 19.1 7.5 19.6 7.4Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M9.4 26.6C6.1 25.4 9.2 23.1 9.6 20.6C10 18.1 10.3 16.6 11.2 14.2C12.1 11.8 13.1 10.3 14.2 8.8C15.3 7.3 15.9 6.8 16.9 6.6C17.9 6.4 18.1 6.3 19.3 7.6C20.5 8.9 21.5 10.8 22.7 13.2C23.9 15.6 24.6 16.9 25.3 19.6C26 22.3 29.3 25.2 26.1 26.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

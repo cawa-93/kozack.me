@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 22" width="40" height="22">
+<!-- cat/muzzle/long/front — видовжена морда клином (сіамська, орієнтальна, корніш-рекс, левкоя), ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 40×22; pivot (17, 10) — під носом звичайної морди, де морда прилягає до голови (точка muzzle голови); points: mouth (25, 13.2).
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink.
+Кінчик з носом виходить за контур щоки — там свій контур outer (без важкого низу). mouth — під носом, на кінці морди.
+Маски — порожні групи (малює A9, у координатах світу, як у голови). back — порожні шари: скелет ховає морду ззаду.
+-->
+<defs>
+<path id="cat-muzzle-long-front-shape" d="M10.6 10C10.7 9.2 11 8.2 11.8 7.6C12.6 7 14 6.8 15.4 6.6C16.8 6.4 18.5 6.4 20 6.4C21.5 6.4 23.1 6.4 24.4 6.6C25.7 6.8 26.9 7.1 27.8 7.6C28.7 8.1 29.5 9 29.8 9.8C30.1 10.6 30.2 11.8 29.8 12.6C29.4 13.4 28.6 14.3 27.6 14.8C26.6 15.3 25 15.7 23.6 15.8C22.2 15.9 20.4 15.4 19 15.2C17.6 15 16.5 14.8 15.4 14.5C14.3 14.2 13.1 14 12.4 13.6C11.7 13.3 11.3 13 11 12.4C10.7 11.8 10.5 10.8 10.6 10Z"/>
+<clipPath id="cat-muzzle-long-front-clip"><use href="#cat-muzzle-long-front-shape"/></clipPath>
+<clipPath id="cat-muzzle-long-front-mask"><path d="M10 5.9L30.7 5.9L30.7 16.4L10 16.4Z"/></clipPath>
+</defs>
+<g id="fill">
+<use href="#cat-muzzle-long-front-shape" fill="#ffffff"/>
+</g>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail">
+<path d="M22.6 8.8C23.2 8 26.8 8.3 27.4 9.2C28 10.1 26.2 12.5 25 12.4C23.8 12.3 22 9.6 22.6 8.8Z" fill="#d99a93"/>
+</g>
+<g id="shade"/>
+<g id="ink">
+<path d="M22.8 12L23 12.2L23.3 12.5L23.6 12.9L24 13.1L24.5 13.4L25 13.4L25.5 13.3L26 13.1L26.4 12.7L26.8 12.4L27 12.1L27.2 11.8L26.9 11.9L26.5 12L26.1 12.2L25.6 12.4L25.3 12.5L25 12.6L24.7 12.5L24.3 12.4L23.9 12.3L23.5 12.1L23.1 12Z" fill="#2e1f29"/>
+<path d="M26.1 6.7L27.3 7.4L27.6 7.5L27.8 7.6L28 7.7L28.2 7.9L28.4 8.1L28.6 8.2L28.8 8.4L29 8.6L29.2 8.8L29.3 9L29.5 9.2L29.6 9.4L29.7 9.6L29.8 9.8L29.9 10L29.9 10.2L30 10.5L30 10.7L30.1 11L30.1 11.2L30.1 11.4L30 11.7L30 11.9L30 12.2L29.9 12.4L29.8 12.6L29.7 12.8L29.6 13L29.4 13.2L29.3 13.4L29.1 13.6L29 13.8L28.8 14L28.5 14.2L28.3 14.3L28.1 14.5L27.9 14.7L27.6 14.8L27.3 14.9L27 15.1L26.7 15.2L26.4 15.3L26.1 15.4L25.8 15.5L25.4 15.6L25 15.6L24.7 15.7L24.3 15.7L24 15.8L23.6 15.8L23.2 15.8L22.9 15.8L22.5 15.8L22.1 15.7L21.7 15.7L21.3 15.6L20.9 15.5L19.5 15.3" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.2 11.4Q32.7 10.6 36 9.4Q33 11.7 29.2 11.4Z" fill="#2e1f29"/>
+<path d="M29 13.2Q32.4 12.8 35.4 14.6Q32.2 13.9 29 13.2Z" fill="#2e1f29"/>
+<path d="M11.2 10.4Q7.6 11 4.6 9Q7.8 9.9 11.2 10.4Z" fill="#2e1f29"/>
+<path d="M11.4 12Q8.3 12.7 5.2 13.4Q8 11.6 11.4 12Z" fill="#2e1f29"/>
+</g>
+</svg>

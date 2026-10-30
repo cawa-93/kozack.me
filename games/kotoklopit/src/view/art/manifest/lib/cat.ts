@@ -98,23 +98,31 @@ export const CAT_HEAD: Part = {
 /** Звичайне вухо — еталон F1b; pivot — середина основи. */
 const EAR_NORMAL: Part = { size: { w: 30, h: 27 }, pivot: { x: 15, y: 18 } };
 
-/** Вуха (§9.10): звичайні, великі (орієнтальні), висловухі (складені вперед), керл (загнуті назад), з китичками. */
+/**
+ * Вуха (§9.10): звичайні, великі (орієнтальні), висловухі (складені вперед), керл (загнуті назад), з китичками. Варіанти —
+ * полотна SVG пакета A8a (`art/cat/ear/<варіант>/*.svg`); pivot — середина основи, як у звичайного, тож вухо будь-якого
+ * варіанта стає в ті самі точки `ear-*` голови.
+ */
 export const CAT_EARS: Record<Shape["ears"], Part> = {
   normal: EAR_NORMAL,
-  large: scaled(EAR_NORMAL, { x: 28 / 24, y: 32 / 26 }),
-  folded: scaled(EAR_NORMAL, { x: 1, y: 18 / 26 }),
-  curled: scaled(EAR_NORMAL, { x: 26 / 24, y: 30 / 26 }),
-  tufted: scaled(EAR_NORMAL, { x: 26 / 24, y: 34 / 26 }),
+  large: { size: { w: 36, h: 33 }, pivot: { x: 18, y: 24 } },
+  folded: { size: { w: 32, h: 28 }, pivot: { x: 16, y: 19 } },
+  curled: { size: { w: 33, h: 33 }, pivot: { x: 18, y: 24 } },
+  tufted: { size: { w: 32, h: 35 }, pivot: { x: 16, y: 26 } },
 };
 
 /** Звичайна морда — еталон F1b; pivot — під носом, `mouth` — куди стає рот. */
 const MUZZLE_NORMAL: Part = { size: { w: 35, h: 16 }, pivot: { x: 17, y: 8 }, points: { mouth: { x: 17, y: 9.4 } } };
 
-/** Морди (§9.10): звичайна, кирпата (перська), видовжена (сіамська). */
+/**
+ * Морди (§9.10): звичайна, кирпата (перська), видовжена (сіамська). Варіанти — полотна SVG пакета A8a: pivot — там само,
+ * що в звичайної (точка `muzzle` голови), а `mouth` — під носом свого варіанта: у кирпатої ніс високо, тож рот вище на 2,8;
+ * у видовженої ніс на кінці морди — рот на 8 правіше й на 1,8 нижче.
+ */
 export const CAT_MUZZLES: Record<Shape["muzzle"], Part> = {
   normal: MUZZLE_NORMAL,
-  flat: scaled(MUZZLE_NORMAL, { x: 22 / 26, y: 18 / 20 }),
-  long: scaled(MUZZLE_NORMAL, { x: 32 / 26, y: 1 }),
+  flat: { size: { w: 36, h: 18 }, pivot: { x: 18, y: 10 }, points: { mouth: { x: 17, y: 8.6 } } },
+  long: { size: { w: 40, h: 22 }, pivot: { x: 17, y: 10 }, points: { mouth: { x: 25, y: 13.2 } } },
 };
 
 /** Очі обидва разом (у ¾ видно обидва) — еталон F1b; pivot — між очима. */
@@ -125,7 +133,10 @@ export const CAT_MOUTH: Part = { size: { w: 20, h: 20 }, pivot: { x: 10, y: 6 } 
 /** Наскільки коротші лапи манчкіна: на стільки ж скелет опускає тіло (`short-legs`, F4a). */
 const SHORT_LEGS = 7;
 
-/** Передні лапи (§9.10): звичайні — еталон F1b, короткі (манчкін) — на `SHORT_LEGS` коротші; pivot — плече, `paw` — подушечка. */
+/**
+ * Передні лапи (§9.10): звичайні — еталон F1b, короткі (манчкін, SVG пакета A8a) — на `SHORT_LEGS` коротші: верх той
+ * самий, нижче живота одразу лапка; pivot — плече, `paw` — подушечка.
+ */
 export const CAT_FRONT_LEGS: Record<Shape["legs"], Part> = {
   normal: { size: { w: 27, h: 41 }, pivot: { x: 12, y: 14 }, points: { paw: { x: 14, y: 34.5 } } },
   short: { size: { w: 27, h: 41 - SHORT_LEGS }, pivot: { x: 12, y: 14 }, points: { paw: { x: 14, y: 34.5 - SHORT_LEGS } } },
@@ -144,10 +155,13 @@ const TAIL_LONG: Part = {
   points: { tip: { x: 19.6, y: 10.6 }, "tip-back": { x: 29.8, y: 12.4 } },
 };
 
-/** Хвости (§9.10; «none» — слот порожній): довгий, короткий, пухнастий, бобтейл-помпон; pivot — корінь. */
+/**
+ * Хвости (§9.10; «none» — слот порожній): довгий, короткий, пухнастий, бобтейл-помпон; pivot — корінь. Варіанти — полотна
+ * SVG пакета A8a (з пасмами довгої шерсті `fluff` за краєм), `tip` / `tip-back` — кінчик (у помпона — його верх).
+ */
 export const CAT_TAILS: Record<Exclude<Shape["tail"], "none">, Part> = {
   long: TAIL_LONG,
-  short: scaled(TAIL_LONG, { x: 0.85, y: 0.6 }),
-  fluffy: scaled(TAIL_LONG, { x: 1.3, y: 1.1 }),
-  bobtail: scaled(TAIL_LONG, { x: 0.55, y: 0.4 }),
+  short: { size: { w: 37, h: 42 }, pivot: { x: 23, y: 30 }, points: { tip: { x: 13.2, y: 15.2 }, "tip-back": { x: 24.2, y: 13.4 } } },
+  fluffy: { size: { w: 55, h: 58 }, pivot: { x: 32, y: 45 }, points: { tip: { x: 28.6, y: 16.2 }, "tip-back": { x: 38.4, y: 17.6 } } },
+  bobtail: { size: { w: 40, h: 37 }, pivot: { x: 22, y: 22 }, points: { tip: { x: 18.4, y: 10.8 }, "tip-back": { x: 21, y: 10.2 } } },
 };

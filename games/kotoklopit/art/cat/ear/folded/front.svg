@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 28" width="32" height="28">
+<!-- cat/ear/folded/front — висловухе вухо (шотландська висловуха, українська левкоя) (слоти ear-far і ear-near — той самий кадр), ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 32×28; pivot (16, 19) — середина основи вуха, як у звичайного (точки ear-* голови); основа ховається під голову, тож без контуру.
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink.
+Низька кругла «шапочка»: кінчик складений уперед і вниз, край складки — лінія inner, під ним тінь.
+Маски шерсті — порожні групи (малює A9). back — спинка вуха: без рожевого, тінь біля основи.
+-->
+<defs>
+<path id="cat-ear-folded-front-shape" d="M9 21.4C6.3 20.2 8.5 17.6 8.6 15.4C8.7 13.2 8.7 12.2 9.3 10.6C9.9 9 10.4 8.3 11.7 7.4C13 6.5 14.1 6.3 15.6 6.2C17.1 6.1 18 6.4 19.4 6.9C20.8 7.4 21.5 8 22.5 8.9C23.5 9.8 24 10.3 24.6 11.2C25.2 12.1 25.5 12.6 25.3 13.2C25.1 13.8 24 13.2 23.4 14C22.8 14.8 22.7 15.5 22.4 17C22.1 18.5 24.7 20.5 22 21.4C19.3 22.3 11.7 22.6 9 21.4Z"/>
+<clipPath id="cat-ear-folded-front-clip"><use href="#cat-ear-folded-front-shape"/></clipPath>
+<clipPath id="cat-ear-folded-front-mask"><path d="M5.8 5.6L26 5.6L26 23.1L5.8 23.1Z"/></clipPath>
+</defs>
+<g id="fill">
+<use href="#cat-ear-folded-front-shape" fill="#ffffff"/>
+</g>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail">
+<path d="M10.8 12.4L11.4 12.8L12.2 13.3L13.1 13.8L14.2 14.2L15.4 14.5L16.5 14.7L17.7 14.7L18.9 14.6L20.2 14.5L21.3 14.2L22.3 13.9L23 13.6L22.3 13.3L21.3 13.1L20.1 12.9L18.9 12.7L17.7 12.6L16.7 12.5L15.7 12.4L14.6 12.3L13.5 12.2L12.4 12.2L11.5 12.3Z" fill="#d99a93"/>
+</g>
+<g id="shade" clip-path="url(#cat-ear-folded-front-clip)">
+<path d="M8 10.8C8.9 10.4 11.8 11.5 13.4 11.7C15 11.9 16.3 12 17.6 12.1C18.9 12.2 20 12.1 21.4 12.3C22.8 12.5 25.1 12.6 25.8 13.2C26.5 13.8 26.6 15.7 25.8 16C25 16.3 22.6 15 21 14.8C19.4 14.6 18.2 14.9 16 14.8C13.8 14.7 9.3 14.7 8 14C6.7 13.3 7.1 11.2 8 10.8Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="ink">
+<path d="M9 21.4C6.3 20.2 8.5 17.6 8.6 15.4C8.7 13.2 8.7 12.2 9.3 10.6C9.9 9 10.4 8.3 11.7 7.4C13 6.5 14.1 6.3 15.6 6.2C17.1 6.1 18 6.4 19.4 6.9C20.8 7.4 21.5 8 22.5 8.9C23.5 9.8 24 10.3 24.6 11.2C25.2 12.1 25.5 12.6 25.3 13.2C25.1 13.8 24 13.2 23.4 14C22.8 14.8 22.7 15.5 22.4 17C22.1 18.5 24.7 20.5 22 21.4" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.6 10.6C10.2 10.7 12.1 11.2 13.4 11.4C14.7 11.6 16.1 11.7 17.4 11.8C18.7 11.9 20 11.8 21.2 12C22.5 12.2 24.3 12.7 24.9 12.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
