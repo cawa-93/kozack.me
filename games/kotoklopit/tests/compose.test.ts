@@ -1,10 +1,12 @@
-// Компонувальник шерсті й зовнішності (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): рецепти кота й персонажа.
+// Компонувальник шерсті й зовнішності (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): рецепти кота й персонажа,
+// порядок шарів і режимів компонувальника на фальшивому контексті й поведінка без браузера.
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { coatOf, type Coat } from "../src/sim/genetics";
 import type { CatDisease, Genes, Look, Shape } from "../src/sim/types";
 import { LOOK_OPTIONS } from "../src/ui/look";
+import { composeFrame, composePortrait, cssColor, portraitHead, stubLayers, type Ctx2D, type LayerImage } from "../src/view/art/compose";
 import {
   CAT_RECIPE_LAYERS,
   catRecipe,
@@ -17,6 +19,7 @@ import {
   type CatAppearance,
   type CatRecipeOptions,
 } from "../src/view/art/recipes";
+import { artFrameState, artLayerSource, loadArtFrames, loadArtIndex, resetArtSources } from "../src/view/art/sources";
 import { layerRank, type ArtLayer, type TintRecipe, type TintStep } from "../src/view/art/types";
 import { PALETTE } from "../src/view/palette";
 
@@ -302,6 +305,173 @@ describe("рецепт персонажа", () => {
       colors.top,
       colors.bottom,
       colors.shoes,
+    ]);
+  });
+});
+
+// --- Компонувальник на фальшивому контексті ------------------------------------------------------
+
+/** Що малюється: назва зображення, режим, непрозорість і колір заливки в мить виклику. */
+interface Op {
+  ctx: string;
+  op: "clear" | "fill" | "draw";
+  what?: string;
+  gco: string;
+  alpha: number;
+  fillStyle?: string;
+  dest?: number[];
+}
+
+/** Фальшивий контекст: записує виклики в спільний журнал; `save` / `restore` — зі стеком стану. */
+function fakeCtx(name: string, log: Op[], w = 64, h = 32): Ctx2D {
+  const canvas = { width: w, height: h, name } as unknown as HTMLCanvasElement;
+  const stack: { gco: GlobalCompositeOperation; alpha: number; fill: string }[] = [];
+  const ctx = {
+    canvas,
+    globalAlpha: 1,
+    globalCompositeOperation: "source-over" as GlobalCompositeOperation,
+    fillStyle: "#000000" as string | CanvasGradient | CanvasPattern,
+    clearRect: () => log.push({ ctx: name, op: "clear", gco: ctx.globalCompositeOperation, alpha: ctx.globalAlpha }),
+    fillRect: () =>
+      log.push({ ctx: name, op: "fill", gco: ctx.globalCompositeOperation, alpha: ctx.globalAlpha, fillStyle: String(ctx.fillStyle) }),
+    drawImage: (image: CanvasImageSource, ...args: number[]) =>
+      log.push({ ctx: name, op: "draw", what: (image as unknown as { name: string }).name, gco: ctx.globalCompositeOperation, alpha: ctx.globalAlpha, dest: args.slice(4) }),
+    save: () => stack.push({ gco: ctx.globalCompositeOperation, alpha: ctx.globalAlpha, fill: String(ctx.fillStyle) }),
+    restore: () => {
+      const top = stack.pop();
+      if (top) {
+        ctx.globalCompositeOperation = top.gco;
+        ctx.globalAlpha = top.alpha;
+        ctx.fillStyle = top.fill;
+      }
+    },
+    setTransform: () => {},
+  };
+  return ctx;
+}
+
+const image = (name: string): CanvasImageSource => ({ name }) as unknown as CanvasImageSource;
+const layerOf =
+  (present: readonly string[], trim = { x: 0, y: 0 }) =>
+  (layer: ArtLayer): LayerImage | null =>
+    present.includes(layer) ? { image: image(layer), sx: 0, sy: 0, sw: 32, sh: 16, dx: trim.x, dy: trim.y } : null;
+
+describe("компонувальник", () => {
+  const recipe: TintRecipe = {
+    key: "test",
+    steps: [
+      { layer: "fill", color: 0xd98a3e, put: "source-over" },
+      { layer: "fluff", color: 0xd98a3e, put: "source-over" },
+      { layer: "tabby-mackerel", color: 0xbd6a2a, put: "source-atop", alpha: 0.55 },
+      { layer: "white-1", color: 0xf4f0e8, put: "source-atop" },
+      { layer: "shade", color: 0xf2dccb, tint: "multiply", put: "multiply" },
+      { layer: "ink", color: null, put: "source-over" },
+    ],
+  };
+
+  it("шари — у порядку рецепта, кожен своїм режимом; маски й тінь — через допоміжне полотно", () => {
+    const log: Op[] = [];
+    const target = fakeCtx("frame", log);
+    const scratch = fakeCtx("scratch", log, 128, 128);
+    composeFrame(target, layerOf(["fill", "tabby-mackerel", "white-1", "shade", "ink"], { x: 5, y: 3 }), recipe, { w: 64, h: 32, scratch: () => scratch });
+    const onFrame = log.filter((o) => o.ctx === "frame" && o.op === "draw").map((o) => `${o.what}@${o.gco}${o.alpha === 1 ? "" : `×${o.alpha}`}`);
+    // fluff у кадрі немає — пропущено.
+    expect(onFrame).toEqual(["fill@source-over", "scratch@source-atop×0.55", "scratch@source-atop", "scratch@multiply", "ink@source-over"]);
+    // Перша заливка фарбується просто на кадрі: шар → колір `source-atop`.
+    const first = log.slice(0, 3);
+    expect(first.map((o) => [o.ctx, o.op, o.gco])).toEqual([
+      ["frame", "clear", "source-over"],
+      ["frame", "draw", "source-over"],
+      ["frame", "fill", "source-atop"],
+    ]);
+    expect(first[2]?.fillStyle).toBe("#d98a3e");
+    // Шар лягає на полотно кадру зі зсувом обрізки.
+    expect(log[1]?.dest).toEqual([5, 3, 32, 16]);
+    // Маска: на допоміжному полотні шар → колір `source-atop`.
+    const tabbyAt = log.findIndex((o) => o.ctx === "scratch" && o.what === "tabby-mackerel");
+    expect(log.slice(tabbyAt - 1, tabbyAt + 2).map((o) => [o.ctx, o.op, o.gco, o.fillStyle ?? ""])).toEqual([
+      ["scratch", "clear", "source-over", ""],
+      ["scratch", "draw", "source-over", ""],
+      ["scratch", "fill", "source-atop", "#bd6a2a"],
+    ]);
+    // Тінь: множення кольором, повернення прозорості шару й обтинання по складеному кадру — потім множенням на кадр.
+    const shadeAt = log.findIndex((o) => o.ctx === "scratch" && o.what === "shade");
+    expect(log.slice(shadeAt, shadeAt + 5).map((o) => [o.op, o.what ?? "", o.gco])).toEqual([
+      ["draw", "shade", "source-over"],
+      ["fill", "", "multiply"],
+      ["draw", "shade", "destination-in"],
+      ["draw", "frame", "destination-in"],
+      ["draw", "scratch", "multiply"],
+    ]);
+  });
+
+  it("на порожньому полотні маски й множення пропускаються; стан контексту повертається", () => {
+    const log: Op[] = [];
+    const target = fakeCtx("frame", log);
+    target.globalAlpha = 0.3;
+    target.globalCompositeOperation = "lighter";
+    composeFrame(target, layerOf(["tabby-mackerel", "shade", "ink"]), recipe, { w: 64, h: 32, scratch: () => fakeCtx("scratch", log) });
+    expect(log.filter((o) => o.op === "draw").map((o) => o.what)).toEqual(["ink"]);
+    expect(target.globalAlpha).toBe(0.3);
+    expect(target.globalCompositeOperation).toBe("lighter");
+  });
+
+  it("крок з нульовою непрозорістю чи без шару нічого не малює; без очищення перша заливка — через допоміжне полотно", () => {
+    const log: Op[] = [];
+    const target = fakeCtx("frame", log);
+    const steps: TintStep[] = [
+      { layer: "fill", color: 0x112233, put: "source-over", alpha: 0 },
+      { layer: "point", color: 0x445566, put: "source-over" },
+      { layer: "fill-iris", color: 0x778899, put: "source-over" },
+    ];
+    composeFrame(target, layerOf(["fill", "fill-iris"]), { key: "t", steps }, { w: 64, h: 32, clear: false, scratch: () => fakeCtx("scratch", log) });
+    expect(log.some((o) => o.op === "clear" && o.ctx === "frame")).toBe(false);
+    expect(log.filter((o) => o.ctx === "frame" && o.op === "draw").map((o) => o.what)).toEqual(["scratch"]);
+    expect(log.find((o) => o.ctx === "scratch" && o.op === "fill")?.fillStyle).toBe("#778899");
+  });
+
+  it("колір у CSS", () => {
+    expect(cssColor(0x0a0b0c)).toBe("#0a0b0c");
+    expect(cssColor(0xffffff)).toBe("#ffffff");
+  });
+});
+
+// --- Без браузера ----------------------------------------------------------------------------------
+
+describe("поза браузером", () => {
+  afterEach(() => resetArtSources());
+
+  it("атласу немає: індекс null, кадри «немає», шарів немає", async () => {
+    expect(await loadArtIndex()).toBeNull();
+    expect(artFrameState(["person/head/0/front"])).toBe("missing");
+    expect(artLayerSource("person/head/0/front")).toBeNull();
+    expect(await loadArtFrames(["person/head/0/front"])).toBe(false);
+  });
+
+  it("портрет повертає false і полотна не чіпає; заглушок немає", async () => {
+    await loadArtIndex();
+    let touched = false;
+    const canvas = {
+      width: 100,
+      height: 100,
+      getContext: () => {
+        touched = true;
+        return null;
+      },
+    } as unknown as HTMLCanvasElement;
+    const look: Look = { face: 1, skin: 0, hair: 2, hairColor: 0, eyes: 0, build: 0, top: 0, bottom: 0, shoes: 0 };
+    expect(composePortrait(canvas, look, { onReady: () => {} })).toBe(false);
+    expect(touched).toBe(false);
+    expect(stubLayers("cat/body/normal", { size: { w: 80, h: 50 }, pivot: { x: 40, y: 45 } })).toBeNull();
+  });
+
+  it("голова портрета — з вигляду, ракурс front, потилиця під обличчям, чубчик зверху", () => {
+    const look: Look = { face: 4, skin: 0, hair: -1, hairColor: 0, eyes: 0, build: 0, top: 0, bottom: 0, shoes: 0 };
+    expect(portraitHead(look).map((p) => [p.id, p.state ?? null])).toEqual([
+      ["person/hair-back/3", null],
+      ["person/head/1", null],
+      ["person/eyes", "open"],
+      ["person/hair-front/3", null],
     ]);
   });
 });
