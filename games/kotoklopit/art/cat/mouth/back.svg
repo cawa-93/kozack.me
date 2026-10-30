@@ -1,8 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="20" height="20">
-<!-- cat/mouth/back — рот, ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
-size 20×20; pivot (10, 6) — під носом, посередині.
-Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink. Стани: st-closed, st-meow.
-closed — «ω» без заливки; meow — пащека й язичок (detail), нижня щелепа — шерсть (fill і маски).
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23 26" width="23" height="26">
+<!-- cat/mouth/back — рот, ракурс back (¾ ззаду). Еталон F1b (closed, meow), art/STYLE.md; hiss, yawn, eat, tongue — A7 (хвиля 2).
+size 23×26; pivot (12, 7) — під носом, посередині.
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink. Стани: st-closed, st-meow, st-hiss, st-yawn, st-eat, st-tongue.
+closed — «ω»; meow — пащека й язичок; hiss — широка пащека з іклами зверху й знизу; yawn — щелепа далеко вниз, великий язик;
+eat — «ω» над маленьким ротом, що жує; tongue — «ω» і язичок донизу (вилизує, п'є). Пащека, язик і ікла — detail;
+нижня щелепа (meow, hiss, yawn, eat) — шерсть: fill і маски голови тими самими фігурами, що на голові.
 back — порожні шари: скелет ховає рот ззаду.
 -->
 <g id="fill"/>
