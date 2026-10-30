@@ -306,11 +306,19 @@ export interface PersonRecipeOptions {
   stained?: boolean;
 }
 
-/** Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` — так само, як у старому вигляді й портреті. */
+/**
+ * Волосся в новому вигляді — палітра редактора (`view/palette.ts`), але чорне й темно-каштанове світліші: чорне #2f2420
+ * майже збігалося з чорнилом контуру, тож пасма, вихор, гумка хвостика й завитки кучерів зникали, а ззаду зачіска ставала
+ * плямою без форми (A10, хвиля 2). Та сама поправка, що й у чорного кота (`PIGMENT_LOOK.black`, рішення автора 2026-10-30):
+ * чорне — #463a40, каштанове — #5e3d2e. Старий вигляд і портрет у картках беруть палітру як є.
+ */
+const HAIR_COLORS: readonly number[] = LOOK_PALETTE.hairColor.map((color, i) => [0x463a40, 0x5e3d2e][i] ?? color);
+
+/** Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` — так само, як у старому вигляді й портреті (волосся — `HAIR_COLORS`). */
 export function personColors(look: Look): { skin: number; hair: number; iris: number; top: number; bottom: number; shoes: number } {
   return {
     skin: pick(LOOK_PALETTE.skin, look.skin),
-    hair: pick(LOOK_PALETTE.hairColor, look.hairColor),
+    hair: pick(HAIR_COLORS, look.hairColor),
     iris: pick(LOOK_PALETTE.eyes, look.eyes),
     top: pick(LOOK_PALETTE.clothes, look.top),
     // Низ і взуття починаються з графітового (`ui/look.ts`): зсув 5 у спільній палітрі одягу, як у `legacy/person.ts`.
