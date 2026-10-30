@@ -219,15 +219,15 @@ describe("реєстр глибини: коли рахує", () => {
   });
 });
 
-const sources = import.meta.glob<string>(["../src/view/iso/depth.ts", "../src/view/world/isoorder.ts"], {
+const sources = import.meta.glob<string>(["../src/view/iso/depth.ts", "../src/view/world/isoorder.ts", "../src/view/zoom.ts"], {
   query: "?raw",
   import: "default",
   eager: true,
 });
 
 describe("шви ізометрії", () => {
-  it("порядок і реєстр глибини — без Phaser і без старого вигляду", () => {
-    expect(Object.keys(sources)).toHaveLength(2);
+  it("порядок, реєстр глибини й зум камери — без Phaser і без старого вигляду", () => {
+    expect(Object.keys(sources)).toHaveLength(3);
     for (const [file, source] of Object.entries(sources)) {
       expect(source, file).not.toMatch(/^import\s+(?!type\b)[^;]*from\s+["']phaser["']/m);
       expect(source, file).not.toMatch(/from\s+["'][^"']*legacy\//);

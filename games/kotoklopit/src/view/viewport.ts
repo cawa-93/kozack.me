@@ -7,15 +7,11 @@ import Phaser from "phaser";
 import { safeArea, type Insets } from "../screen";
 import type { Vec } from "../sim/types";
 import type { Projection } from "./world/projection";
+import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, HUD_HEIGHT } from "./zoom";
 
-/** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
-export const BASE_WIDTH = 1280;
-export const BASE_HEIGHT = 720;
+// Полотно й панель — у чистій частині камери (`zoom.ts`): від них залежить зум.
+export { BASE_HEIGHT, BASE_WIDTH, HUD_HEIGHT };
 
-/** Висота смуги інтерфейсу вгорі, без безпечної зони. */
-export const HUD_HEIGHT = 76;
-/** Найменша клітинка підлоги в пікселях CSS (§8.4, чернетка): дрібніше на телефоні не розгледіти. */
-const MIN_TILE_CSS = 44;
 /** Як щільно камера йде за персонажем: що більше, то менше відстає. */
 const FOLLOW_RATE = 6;
 
@@ -110,10 +106,8 @@ export class Viewport {
     const top = safe.top + HUD_HEIGHT;
     this.uiCamera.setSize(width, height);
     this.camera.setViewport(0, top, width, height - top);
-    const bounds = this.projection.world;
-    const fit = Math.min(width / bounds.width, (height - top) / bounds.height);
-    const readable = (MIN_TILE_CSS * k.y) / this.projection.tile.height;
-    this.zoomBase = Math.max(fit, readable);
+    // Зум — більший із «видно всю квартиру» й «клітинка не дрібніша за мінімум» (§8.4, `zoom.ts`).
+    this.zoomBase = cameraZoom({ width, height: height - top, cssScale: k.y }, this.projection);
     this.camera.setZoom(this.zoomBase * this.zoomFocus);
     this.snap = true;
     for (const listener of this.listeners) listener(this.frame);
