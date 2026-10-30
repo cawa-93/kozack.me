@@ -50,7 +50,7 @@ interface Options {
   captions: boolean;
 }
 
-export const TAB: GalleryTab = { id: "frames", title: "Кадри", order: 0, mount };
+export const TAB: GalleryTab = { id: "frames", title: "Кадри", order: 10, mount };
 
 function mount(ctx: GalleryContext): GalleryView {
   const { scene, layer } = ctx;
