@@ -12,7 +12,7 @@ import type { Look } from "../../sim/types";
 import { FACES, HAIR_STYLES } from "../palette";
 import { artEntry } from "./manifest";
 import { STUB_LOOK, stubHatch, stubPixels } from "./placement";
-import { personRecipe } from "./recipes";
+import { farRecipe, personRecipe } from "./recipes";
 import { artFrameState, artLayerSource, loadArtFrames, type FrameLayers } from "./sources";
 import { frameId, type ArtId, type ArtLayer, type ArtPoint, type ArtSize, type ArtView, type FrameId, type TintRecipe } from "./types";
 
@@ -525,6 +525,8 @@ export interface PortraitPart {
   rot?: number;
   scaleX?: number;
   scaleY?: number;
+  /** Дальня частина (дальні рука, нога, черевик): затінена, як у грі (`farRecipe`). */
+  far?: boolean;
 }
 
 export interface PortraitOptions {
@@ -618,7 +620,7 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
       maxX = Math.max(maxX, x);
       maxY = Math.max(maxY, y);
     }
-    return { source, m };
+    return { source, m, far: part.far === true };
   });
   const W = canvas.width;
   const H = canvas.height;
@@ -630,15 +632,19 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
   const oy = (opts.align === "bottom" ? H - pad - bh * k : (H - bh * k) / 2) - minY * k;
 
   const recipe = personRecipe(look, opts.stained ? { stained: true } : {});
+  const far = farRecipe(recipe);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  for (const { source, m } of drawn) {
+  for (const { source, m, far: dim } of drawn) {
     const part = pooledCtx("portrait-part", source.w, source.h);
     if (!part) continue;
-    composeFrame(part, source.source, recipe, { w: source.w, h: source.h });
+    // Спільне полотно більше за кадр і пам'ятає попередні частини: зі згладжуванням `drawImage` частини бере й пікселі за
+    // її межею — без очищення всього полотна довкола частин видно тонкі смужки сусідніх.
+    part.clearRect(0, 0, part.canvas.width, part.canvas.height);
+    composeFrame(part, source.source, dim ? far : recipe, { w: source.w, h: source.h });
     // Пікселі кадру → одиниці арту (÷ res) → місце частини → полотно портрета.
     const sx = source.frame.size.w / source.w;
     const sy = source.frame.size.h / source.h;

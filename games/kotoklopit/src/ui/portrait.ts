@@ -1,7 +1,13 @@
 // Портрет персонажа в картках створення (§5.1): ті самі фігура й палітри, що й у грі, на весь зріст,
 // лише більші. Canvas 2D, без Phaser.
+//
+// Нова графіка (крок 16, `<html data-gfx="iso">`, T2): фігура з частин скелета, запечених компонувальником тим самим рецептом,
+// що в грі (`composePortrait`, `iso/personportrait.ts`); поки атлас вантажиться чи частин ще немає (лише заглушки) —
+// старий малюнок, а коли атлас готовий — портрет перемальовується сам. Старий вигляд — без змін.
 
 import type { Look } from "../sim/types";
+import { composePortrait } from "../view/art/compose";
+import { personPortraitParts } from "../view/iso/personportrait";
 import { PALETTE } from "../view/palette";
 
 const INK = "#1f1a24";
@@ -20,8 +26,34 @@ export function portraitCanvas(width: number, height: number): HTMLCanvasElement
   return canvas;
 }
 
-/** Намалювати персонажа анфас: фігура з гри (`view/person.ts`), збільшена під полотно. */
+/** Поле довкола фігури нової графіки, частка меншої сторони полотна. */
+const ISO_PADDING = 0.04;
+
+/** Сторінка в новій графіці (`main.ts` ставить `<html data-gfx>`); поза браузером — ні. */
+function isoPage(): boolean {
+  return typeof document !== "undefined" && document.documentElement.dataset["gfx"] === "iso";
+}
+
+/**
+ * Намалювати персонажа анфас на весь зріст. У новій графіці — частинами скелета з гри (`composePortrait`); не вийшло (атлас
+ * вантажиться, частин ще немає) — старим малюнком, а щойно атлас готовий, портрет перемальовується (той самий `look`: картка
+ * змінює його на місці). Старий вигляд — фігура з гри (`view/legacy/person.ts`), збільшена під полотно.
+ */
 export function drawPortrait(canvas: HTMLCanvasElement, look: Look): void {
+  if (isoPage()) {
+    const drawn = composePortrait(canvas, look, {
+      parts: personPortraitParts(look),
+      align: "bottom",
+      padding: ISO_PADDING,
+      onReady: () => drawPortrait(canvas, look),
+    });
+    if (drawn) return;
+  }
+  drawLegacyPortrait(canvas, look);
+}
+
+/** Старий малюнок: фігура з гри старого вигляду (`view/legacy/person.ts`), збільшена під полотно. */
+function drawLegacyPortrait(canvas: HTMLCanvasElement, look: Look): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
