@@ -15,6 +15,8 @@ import {
   catRecipeOf,
   dullColor,
   EYE_COLORS,
+  FAR_TINT,
+  farRecipe,
   PERSON_RECIPE_LAYERS,
   personColors,
   personRecipe,
@@ -336,6 +338,28 @@ describe("рецепт персонажа", () => {
       colors.bottom,
       colors.shoes,
     ]);
+  });
+});
+
+describe("дальні частини", () => {
+  it("затінення — множенням по заливках перед контуром; решта кроків та сама, ключ окремий", () => {
+    const cat = catRecipe({ ...(COATS.find((c) => c.coat.tabby && c.coat.white > 0) ?? COATS[0]!), seed: 1 });
+    const person = personRecipe({ face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 });
+    for (const recipe of [cat, person]) {
+      const far = farRecipe(recipe);
+      expect(far.key).toBe(`${recipe.key}/far`);
+      const ink = far.steps.findIndex((s) => s.layer === "ink");
+      const dim = far.steps.filter((s) => s.color === FAR_TINT);
+      expect(dim.length).toBeGreaterThan(0);
+      for (const step of dim) {
+        expect(step.layer.startsWith("fill")).toBe(true);
+        expect(step.put).toBe("multiply");
+        expect(far.steps.indexOf(step)).toBeLessThan(ink);
+      }
+      expect(far.steps.filter((s) => s.color !== FAR_TINT)).toEqual(recipe.steps);
+      // Затінення кладеться після тіні: силует уже складено.
+      expect(far.steps.findIndex((s) => s.color === FAR_TINT)).toBeGreaterThan(far.steps.findIndex((s) => s.layer === "shade"));
+    }
   });
 });
 

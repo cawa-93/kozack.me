@@ -1,10 +1,12 @@
 // Скелет у Phaser (крок 16, GRAPHICS_PLAN.md: «Скелети й анімації»): контейнер із зображенням на кожен слот, якому позу
 // щокадру рахує `rigcore.ts`. Кадр слота — `frameId(обвіс[слот], стан, ракурс)` з атласу (`addArt` / `setArt` з
-// `art/atlas.ts`; кадру немає — заглушка), або текстура ззовні — запечений компонувальником кадр шерсті чи вигляду
+// `art/atlas.ts`; кадру немає — заглушка); для записів із шарами (кіт, персонаж) — запечений компонувальником кадр за
+// рецептом (`baked`: `setBakedArt` з `art/bake.ts`, як кота й персонажа показуватиме гра); або текстура ззовні
 // (`setSlotTexture`, `setTextureSource`).
 //
 // Як користуватися (вигляд котів і персонажа, галерея):
-//   const cat = new RigSprite(scene, CAT_RIG, { fit: CAT_FIT, skin: catSkin(shape), proportions: catProportions(shape) });
+//   const cat = new RigSprite(scene, CAT_RIG, { fit: CAT_FIT, skin: catSkin(shape), proportions: catProportions(shape),
+//     baked: { recipe: catRecipeOf(model), owner: catOwner(model.id) } });
 //   layer.add(cat);                         // чи scene.add.existing(cat); глибину всього контейнера — setDepth ззовні
 //   cat.play(CAT_TRIAL.walk);               // та сама анімація вже грає — нічого не робить
 //   cat.setFacing({ view: "back", flip: true });
@@ -19,9 +21,10 @@
 import Phaser from "phaser";
 
 import { addArt, setArt } from "../art/atlas";
+import { addBakedArt, setBakedArt } from "../art/bake";
 import { artEntry, DEFAULT_RES } from "../art/manifest";
 import { artGeometry, artPlacement } from "../art/placement";
-import type { ArtEntry, ArtId, ArtView, FrameLayer } from "../art/types";
+import type { ArtEntry, ArtId, ArtView, FrameLayer, TintRecipe } from "../art/types";
 import { Rig, slotFrame, type ArtLookup, type PlayOptions, type ProportionRef, type RigFit, type SlotFrame } from "./rigcore";
 import type { AnyRig, BoneOf, RigAnchor, RigAnim, RigDef, RigFacing, RigSkin, SlotOf, SocketOf, Vec2 } from "./types";
 
@@ -37,6 +40,16 @@ export interface SlotTexture {
  * маніфесту, тож 1 одиниця арту = 1 px світу.
  */
 export type SlotTextureSource<S extends string> = (slot: S, frame: SlotFrame) => SlotTexture | null;
+
+/**
+ * Запечені кадри для записів із шарами (кіт, персонаж): рецепт тонування (`recipes.ts`) — один на істоту чи свій для слота
+ * (дальні частини — `farRecipe`), і власник бюджету запікання (`bake.ts`: кіт — `catOwner(id)`, персонаж — `person`).
+ * Записи без шарів (вміст гнізд, речі) — як і раніше, кадри атласу.
+ */
+export interface RigBaked<S extends string> {
+  recipe: TintRecipe | ((slot: S) => TintRecipe);
+  owner?: string | undefined;
+}
 
 export interface RigSpriteOptions<B extends string, S extends string, K extends string> {
   /** Суглоби з точок кадрів (`CAT_FIT`, `PERSON_FIT`); не задано — лише числа визначення. */
@@ -54,6 +67,8 @@ export interface RigSpriteOptions<B extends string, S extends string, K extends 
   layer?: FrameLayer | undefined;
   /** Текстури слотів ззовні (див. `SlotTextureSource`). */
   textures?: SlotTextureSource<S> | null | undefined;
+  /** Запечені кадри записів із шарами (див. `RigBaked`); не задано — кадри атласу (шар `layer`). */
+  baked?: RigBaked<S> | null | undefined;
 }
 
 /** Гніздо у світі: місце, кут (градуси) і чи віддзеркалено (тоді й вміст варто віддзеркалити). */
@@ -77,8 +92,8 @@ interface SlotView {
   art: ArtId | null;
   state: string | null;
   view: ArtView | null;
-  /** Зображення показує текстуру ззовні, а не кадр атласу. */
-  custom: boolean;
+  /** Що показує зображення: кадр атласу, текстуру ззовні чи запечений кадр (`bake.ts`). */
+  kind: "atlas" | "custom" | "baked";
   /** Текстура, закріплена `setSlotTexture`. */
   pinned: SlotTexture | null;
 }
@@ -92,6 +107,7 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
   private readonly lookup: ArtLookup;
   private layerName: FrameLayer | undefined;
   private source: SlotTextureSource<S> | null;
+  private baked: RigBaked<S> | null;
   private readonly views: SlotView[];
   /** Прикріплене за індексом гнізда (`rig.socketIds`). */
   private readonly cargo: (Attachable | null)[];
@@ -111,8 +127,9 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     this.lookup = opts.lookup ?? artEntry;
     this.layerName = opts.layer;
     this.source = opts.textures ?? null;
+    this.baked = opts.baked ?? null;
     this.rig = new Rig(def, { fit: opts.fit, lookup: this.lookup, skin: opts.skin, facing: opts.facing, proportions: opts.proportions });
-    this.views = this.rig.slots.map(() => ({ image: null, baseX: 1, baseY: 1, art: null, state: null, view: null, custom: false, pinned: null }));
+    this.views = this.rig.slots.map(() => ({ image: null, baseX: 1, baseY: 1, art: null, state: null, view: null, kind: "atlas", pinned: null }));
     this.cargo = this.rig.socketIds.map(() => null);
     this.now = scene.time.now;
     this.update(this.now);
@@ -186,6 +203,15 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
   /** Текстури всіх слотів ззовні за кадром (див. `SlotTextureSource`); null — кадри атласу. */
   setTextureSource(source: SlotTextureSource<S> | null): this {
     this.source = source;
+    return this.refreshTextures();
+  }
+
+  /**
+   * Запечені кадри записів із шарами за рецептом (див. `RigBaked`); null — кадри атласу. Новий рецепт (тьмяна шерсть,
+   * плями на одязі) — кадри перезапікаються в наступному `update`.
+   */
+  setBaked(baked: RigBaked<S> | null): this {
+    this.baked = baked;
     return this.refreshTextures();
   }
 
@@ -340,6 +366,11 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     const custom = slot.pinned ?? this.source?.(this.rig.slots[i]!.id as S, frame) ?? null;
     if (custom) {
       let image = slot.image;
+      if (image && slot.kind === "baked") {
+        // Запечений кадр не перетекстуровувати повз `setBakedArt` — нове зображення.
+        this.remove(image, true);
+        image = null;
+      }
       if (!image) {
         image = new Phaser.GameObjects.Image(this.scene, 0, 0, custom.key, custom.frame);
         this.add(image);
@@ -353,15 +384,33 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
       image.setOrigin(placement.originX, placement.originY);
       slot.baseX = placement.scaleX;
       slot.baseY = placement.scaleY;
-      slot.custom = true;
+      slot.kind = "custom";
       return image;
     }
+    const baked = this.baked;
+    if (baked && entry?.layers) {
+      const recipe = typeof baked.recipe === "function" ? baked.recipe(this.rig.slots[i]!.id as S) : baked.recipe;
+      const opts = { state: frame.state, view: frame.view, owner: baked.owner };
+      if (!slot.image || slot.kind !== "baked") {
+        // Нове зображення: `setBakedArt` веде облік показаних кадрів лише для своїх зображень.
+        if (slot.image) this.remove(slot.image, true);
+        slot.image = addBakedArt(this.scene, this, art, recipe, opts);
+        slot.kind = "baked";
+        this.orderDirty = true;
+      } else {
+        slot.image.setScale(slot.baseX, slot.baseY);
+        setBakedArt(slot.image, art, recipe, opts);
+      }
+      slot.baseX = slot.image.scaleX;
+      slot.baseY = slot.image.scaleY;
+      return slot.image;
+    }
     const opts = { state: frame.state, view: frame.view, layer: this.layerFor(entry) };
-    if (!slot.image || slot.custom) {
-      // Зображення під текстурою ззовні — нове: `setArt` не знає, що текстуру міняли повз нього.
+    if (!slot.image || slot.kind !== "atlas") {
+      // Зображення під текстурою ззовні чи запеченим кадром — нове: `setArt` не знає, що текстуру міняли повз нього.
       if (slot.image) this.remove(slot.image, true);
       slot.image = addArt(this.scene, this, art, opts);
-      slot.custom = false;
+      slot.kind = "atlas";
       this.orderDirty = true;
     } else {
       slot.image.setScale(slot.baseX, slot.baseY);

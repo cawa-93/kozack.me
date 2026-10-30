@@ -341,6 +341,29 @@ export function personRecipe(look: Look, opts: PersonRecipeOptions = {}): TintRe
   return { key, steps };
 }
 
+// --- Дальні частини ----------------------------------------------------------------------------
+
+/**
+ * Затінення дальніх частин (дальні лапи й вухо кота, дальні рука, нога й черевик персонажа; `CAT_FAR_SLOTS`,
+ * `PERSON_FAR_SLOTS`): множник тіні арту `shade` (#3f2541) з непрозорістю `SHADE.base` 0,3 — пропозиція F1b (лист
+ * `sheet-chars`), щоб ближній бік читався першим, а лапи не зливалися в одну пляму.
+ */
+export const FAR_TINT = 0xc5bec6;
+
+/** Заливки, по яких кладеться затінення дальньої частини: увесь силует частини, без контуру. */
+const FAR_FILLS: readonly ArtLayer[] = ["fill", "fill-skin", "fill-top", "fill-bottom", "fill-shoes", "fill-hair"];
+
+/**
+ * Рецепт дальньої частини: той самий, а перед контуром — увесь силует (заливки) множенням на `FAR_TINT`, тож маски, деталі
+ * й тінь темнішають, а контур лишається чорнильним (як на листі F1b). Ключ — з `/far`: дальні кадри запікаються окремо.
+ */
+export function farRecipe(recipe: TintRecipe, tint = FAR_TINT): TintRecipe {
+  const dim: TintStep[] = FAR_FILLS.map((layer) => ({ layer, color: tint, put: "multiply" }));
+  const ink = recipe.steps.findIndex((step) => step.layer === "ink");
+  const at = ink < 0 ? recipe.steps.length : ink;
+  return { key: `${recipe.key}/far`, steps: [...recipe.steps.slice(0, at), ...dim, ...recipe.steps.slice(at)] };
+}
+
 // --- Кольори: обчислення -------------------------------------------------------------------------
 
 const channels = (color: number): [number, number, number] => [(color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff];
