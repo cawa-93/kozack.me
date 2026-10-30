@@ -11,7 +11,8 @@
     "test": "vitest run",
     "balance": "vitest run --config vitest.balance.config.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
-    "shots": "node scripts/shots.ts"
+    "shots": "node scripts/shots.ts",
+    "art": "node scripts/art/cli.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {
