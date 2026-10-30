@@ -200,6 +200,58 @@ describe("перевірка SVG", () => {
     ]);
   });
 
+  it("типова заливка: форма без fill (ні на ній, ні на батьках, ні через <use>, ні в <style>) — чорна #000000, якої немає в палітрі", () => {
+    expect(FIXTURE_COLORS.has("#000000")).toBe(false);
+    const text = svg(
+      [
+        // Лінія контуру без fill="none": хорду кривої заливає чорним.
+        '<path id="curve" stroke="#1f1a24" stroke-width="3" d="M1 9Q5 0 9 9"/>',
+        '<path d="M0 0H9V9Z"/>',
+        // Заливка від батька, через <use>, з <style> за класом — є.
+        '<g fill="#ffffff"><path d="M0 0H9V9Z"/></g>',
+        '<defs><path id="shape" d="M0 0H9V9Z"/><g id="pair"><path d="M0 0H9V9Z"/><path id="bare" d="M0 0H9V9Z"/></g></defs>',
+        '<use href="#shape" fill="#ffffff"/>',
+        '<use href="#shape"/>',
+        '<style>.filled { fill: #ffffff }</style><rect class="filled"/>',
+        // У заготовках (clipPath, mask) заливка не малюється; лінія площі не має.
+        '<clipPath id="c"><path d="M0 0H9V9Z"/><use href="#shape"/></clipPath><mask id="m"><rect/></mask>',
+        '<line stroke="#1f1a24" stroke-width="3"/>',
+        '<rect fill="currentColor"/>',
+        '<g color="#ffffff"><rect fill="currentColor"/></g>',
+      ].join(""),
+    );
+    expect(colorProblems(text, FIXTURE_COLORS)).toEqual([
+      '<path id="curve">: без fill — SVG заливає чорним #000000, якого немає в палітрі (лінії — fill="none")',
+      '<path>: без fill — SVG заливає чорним #000000, якого немає в палітрі (лінії — fill="none")',
+      '<path id="shape">: без fill — SVG заливає чорним #000000, якого немає в палітрі (лінії — fill="none")',
+      '<rect>: fill="currentColor" без color — чорний #000000, якого немає в палітрі',
+    ]);
+    // <use> групи без заливки: кожна її форма — чорна.
+    expect(colorProblems(svg('<defs><g id="pair"><path fill="#ffffff"/><path id="bare"/></g></defs><use href="#pair"/>'), FIXTURE_COLORS)).toEqual([
+      '<path id="bare">: без fill — SVG заливає чорним #000000, якого немає в палітрі (лінії — fill="none")',
+    ]);
+    // Палітра з чорним — типова заливка дозволена.
+    expect(colorProblems(svg('<path d="M0 0H9V9Z"/>'), new Set([...FIXTURE_COLORS, "#000000"]))).toEqual([]);
+  });
+
+  it("типова товщина: stroke без stroke-width (ні на ньому, ні на батьках, ні через <use>, ні в <style>) — 1, менше за LINE.min", () => {
+    const text = svg(
+      [
+        '<path fill="none" stroke="#1f1a24" d="M0 0L9 9"/>',
+        '<g stroke-width="3"><path fill="none" stroke="#1f1a24"/></g>',
+        '<defs><path id="outline" d="M0 0L9 9"/></defs>',
+        '<use href="#outline" fill="none" stroke="#1f1a24" stroke-width="3.6"/>',
+        '<use href="#outline" fill="none" stroke="#1f1a24"/>',
+        '<style>.ink { stroke-width: 4 }</style><path class="ink" fill="none" stroke="#1f1a24"/>',
+        '<path fill="#ffffff" stroke="none"/><path fill="#ffffff"/>',
+      ].join(""),
+    );
+    expect(strokeProblems(text, FIXTURE_LINE)).toEqual([
+      "<path>: stroke без stroke-width — SVG бере 1, поза 2…9",
+      '<path id="outline">: stroke без stroke-width — SVG бере 1, поза 2…9',
+    ]);
+  });
+
   it("товщина контуру: число в межах LINE", () => {
     const text = svg('<path stroke-width="6"/><path stroke-width="1"/><path stroke-width="12px"/><path style="stroke-width:2"/><path stroke-width="5%"/>');
     expect(strokeProblems(text, FIXTURE_LINE)).toEqual([

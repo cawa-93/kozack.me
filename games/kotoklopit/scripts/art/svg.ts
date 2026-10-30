@@ -255,6 +255,10 @@ export function svgProblems(text: string, spec: SvgSpec): string[] {
 
 /** Властивості, значення яких — колір. */
 export const COLOR_PROPS: ReadonlySet<string> = new Set(["fill", "stroke", "stop-color", "flood-color", "lighting-color", "color"]);
+/** Колір, яким SVG заливає форму без `fill` (і `currentColor` без `color`). */
+const DEFAULT_COLOR = "#000000";
+/** Товщина лінії без `stroke-width`. */
+const DEFAULT_STROKE_WIDTH = 1;
 /** Значення кольору, що не є кольором палітри, але дозволені. */
 const COLOR_KEYWORDS: ReadonlySet<string> = new Set(["none", "transparent", "inherit", "currentcolor"]);
 
@@ -291,6 +295,127 @@ function properties(text: string): { prop: string; value: string; where: string 
   return out;
 }
 
+// --- Типові значення SVG: що малюється, коли властивість не задано ----------------------------------
+
+/** Елементи-форми: їх SVG заливає й обводить. `line` заливки не має (у лінії немає площі). */
+const SHAPES: ReadonlySet<string> = new Set(["path", "rect", "circle", "ellipse", "polygon", "polyline", "line"]);
+/**
+ * Елементи-заготовки: їхній вміст сам не малюється — його беруть `<use>` (defs, symbol), обтинання (clipPath — лише
+ * геометрія), маска (чорне в ній — прозорість, а не колір), візерунок і маркер.
+ */
+const TEMPLATES: ReadonlySet<string> = new Set(["defs", "symbol", "clipPath", "mask", "pattern", "marker"]);
+
+/** Правило `<style>`: селектори й декларації. */
+interface StyleRule {
+  selectors: string[];
+  decls: { prop: string; value: string }[];
+}
+
+/** Правила тексту `<style>` (без коментарів і @-правил). */
+function styleRules(css: string): StyleRule[] {
+  const body = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules: StyleRule[] = [];
+  for (const match of body.matchAll(/([^{}]*)\{([^}]*)\}/g)) {
+    const head = (match[1] ?? "").trim();
+    if (head === "" || head.startsWith("@")) continue;
+    rules.push({ selectors: head.split(",").map((s) => s.trim()).filter(Boolean), decls: cssDeclarations(`{${match[2] ?? ""}}`) });
+  }
+  return rules;
+}
+
+/**
+ * Чи селектор може стосуватися елемента: за останньою складовою (тег, #id, .класи). Комбінатори, псевдокласи й атрибути
+ * не розбираються — такий селектор вважається тим, що стосується: перевірка типових значень не має кричати даремно.
+ */
+function selectorMatches(selector: string, node: SvgNode): boolean {
+  const last = selector.split(/[\s>+~]+/).filter(Boolean).pop() ?? "";
+  if (last === "" || /[:[]/.test(last)) return true;
+  const match = /^([A-Za-z_][\w-]*|\*)?((?:[#.][\w-]+)*)$/.exec(last);
+  if (!match) return true;
+  const tag = match[1];
+  if (tag && tag !== "*" && tag !== node.name) return false;
+  const classes = new Set((node.attrs["class"] ?? "").split(/\s+/).filter(Boolean));
+  for (const part of (match[2] ?? "").match(/[#.][\w-]+/g) ?? []) {
+    if (part.startsWith("#") ? node.attrs["id"] !== part.slice(1) : !classes.has(part.slice(1))) return false;
+  }
+  return true;
+}
+
+/** Значення властивості, заданої на самому елементі (атрибут, `style`, правила `<style>`); null — не задано. */
+function ownValue(node: SvgNode, prop: string, rules: readonly StyleRule[]): string | null {
+  const inline = cssDeclarations(node.attrs["style"] ?? "").filter((d) => d.prop === prop).pop();
+  if (inline) return inline.value;
+  let ruled: string | null = null;
+  for (const rule of rules) {
+    if (!rule.selectors.some((s) => selectorMatches(s, node))) continue;
+    for (const d of rule.decls) if (d.prop === prop) ruled = d.value;
+  }
+  if (ruled !== null) return ruled;
+  const attr = Object.entries(node.attrs).find(([name]) => name.toLowerCase() === prop);
+  return attr ? attr[1] : null;
+}
+
+/** Успадковане значення: найближче з ланцюжка (елемент, його батьки, через `<use>` — він і його батьки); null — ніде. */
+function inherited(chain: readonly SvgNode[], prop: string, rules: readonly StyleRule[]): string | null {
+  for (const node of chain) {
+    const value = ownValue(node, prop, rules);
+    if (value !== null && value.trim().toLowerCase() !== "inherit") return value.trim();
+  }
+  return null;
+}
+
+/**
+ * Форми, які справді малюються, з ланцюжком успадкування: від форми вгору до кореня, а для вмісту `<use>` — до елемента,
+ * на який він посилається, далі сам `<use>` і його батьки. Вміст заготовок (defs, clipPath, mask…) — лише через `<use>`
+ * поза ними.
+ */
+function renderedShapes(doc: SvgDoc): { node: SvgNode; chain: SvgNode[] }[] {
+  const byId = new Map<string, SvgNode>();
+  for (const node of doc.nodes) if (node.attrs["id"] !== undefined) byId.set(node.attrs["id"], node);
+  const out: { node: SvgNode; chain: SvgNode[] }[] = [];
+  const walk = (node: SvgNode, outer: readonly SvgNode[], depth: number): void => {
+    if (TEMPLATES.has(node.name) || depth > 16) return;
+    const chain = [node, ...outer];
+    if (SHAPES.has(node.name)) out.push({ node, chain });
+    if (node.name === "use") {
+      const href = node.attrs["href"] ?? node.attrs["xlink:href"] ?? "";
+      const target = href.startsWith("#") ? byId.get(href.slice(1)) : undefined;
+      // Вміст `<use>` успадковує від нього, а не від своїх батьків у defs; заготовка, на яку посилаються, — малюється.
+      if (target) walkUsed(target, chain, depth + 1);
+      return;
+    }
+    for (const child of node.children) walk(child, chain, depth);
+  };
+  const walkUsed = (node: SvgNode, outer: readonly SvgNode[], depth: number): void => {
+    if (node.name === "symbol") {
+      for (const child of node.children) walk(child, [node, ...outer], depth);
+      return;
+    }
+    if (TEMPLATES.has(node.name)) return;
+    walk(node, outer, depth);
+  };
+  if (doc.root) walk(doc.root, [], 0);
+  return out;
+}
+
+/** Як назвати форму в повідомленні. */
+function shapeLabel(node: SvgNode): string {
+  return node.attrs["id"] === undefined ? `<${node.name}>` : `<${node.name} id="${node.attrs["id"]}">`;
+}
+
+/** Типові значення, яких у файлі не видно: заливка форм без `fill` і товщина ліній без `stroke-width`. */
+function defaultPaint(text: string): { node: SvgNode; fill: string | null; color: string | null; stroke: string | null; width: string | null }[] {
+  const doc = parseSvg(text);
+  const rules = doc.nodes.filter((n) => n.name === "style").flatMap((n) => styleRules(n.text));
+  return renderedShapes(doc).map(({ node, chain }) => ({
+    node,
+    fill: inherited(chain, "fill", rules),
+    color: inherited(chain, "color", rules),
+    stroke: inherited(chain, "stroke", rules),
+    width: inherited(chain, "stroke-width", rules),
+  }));
+}
+
 /** Колір у вигляді #rrggbb нижнім регістром; null — це не шістнадцятковий колір без прозорості. */
 export function normalizeHex(value: string): string | null {
   const v = value.trim().toLowerCase();
@@ -304,9 +429,20 @@ export function normalizeHex(value: string): string | null {
  * атрибутах, `style` і `<style>`) — колір з `allowed` (#rrggbb чи #rgb), `none`, `transparent`, `inherit`, `currentColor`
  * або `url(#…)` (із запасним кольором — теж з палітри). Назви кольорів, `rgb()`, `hsl()` і прозорість у кольорі (#rrggbbaa)
  * — ні: прозорість — через `opacity`.
+ *
+ * І типове значення: форма (поза заготовками defs, clipPath, mask…), якій `fill` не задано ні на ній, ні на батьках, ні
+ * через `<use>`, ні в `<style>`, SVG заливає чорним #000000 — так само як `currentColor` без `color`. Найімовірніше це
+ * лінія контуру без `fill="none"`: хорду кривої заливає чорним.
  */
 export function colorProblems(text: string, allowed: ReadonlySet<string>): string[] {
   const problems: string[] = [];
+  if (!allowed.has(DEFAULT_COLOR)) {
+    for (const { node, fill, color } of defaultPaint(text)) {
+      if (node.name === "line") continue;
+      if (fill === null) problems.push(`${shapeLabel(node)}: без fill — SVG заливає чорним ${DEFAULT_COLOR}, якого немає в палітрі (лінії — fill="none")`);
+      else if (fill.toLowerCase() === "currentcolor" && color === null) problems.push(`${shapeLabel(node)}: fill="currentColor" без color — чорний ${DEFAULT_COLOR}, якого немає в палітрі`);
+    }
+  }
   for (const { prop, value, where } of properties(text)) {
     if (!COLOR_PROPS.has(prop)) continue;
     let color = value.trim();
@@ -326,9 +462,18 @@ export function colorProblems(text: string, allowed: ReadonlySet<string>): strin
 /**
  * Товщина ліній не в межах: кожне `stroke-width` (атрибут, `style`, `<style>`) — число без одиниць чи в px від `min` до
  * `max` одиниць арту. Масштаб `transform` не враховується: контур не масштабують — малюють потрібної товщини.
+ *
+ * І типове значення: форма з обведенням (`stroke` не `none`), якій `stroke-width` не задано ні на ній, ні на батьках, ні
+ * через `<use>`, ні в `<style>`, має товщину 1 — менше за `min`, якщо `min` > 1.
  */
 export function strokeProblems(text: string, line: { readonly min: number; readonly max: number }): string[] {
   const problems: string[] = [];
+  if (line.min > DEFAULT_STROKE_WIDTH) {
+    for (const { node, stroke, width } of defaultPaint(text)) {
+      if (stroke === null || stroke.toLowerCase() === "none" || width !== null) continue;
+      problems.push(`${shapeLabel(node)}: stroke без stroke-width — SVG бере ${DEFAULT_STROKE_WIDTH}, поза ${line.min}…${line.max}`);
+    }
+  }
   for (const { prop, value, where } of properties(text)) {
     if (prop !== "stroke-width") continue;
     if (value.trim().toLowerCase() === "inherit") continue;
