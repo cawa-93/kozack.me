@@ -747,6 +747,35 @@ describe("еталони F1b", () => {
   });
 });
 
+describe("змішування поз: ракурс і play того самого кадру", () => {
+  it("setFacing(новий ракурс), а потім play — теж без змішування від пози старого ракурсу (порядок викликів не важить)", () => {
+    const rig = new Rig(ARM);
+    rig.play(ARM_ANIMS.wave, 0, { blend: 0 });
+    expect(rig.evaluate(200).slot("arm").rot).toBeCloseTo(-90, 9);
+    // Кіт розвернувся й сів: у грі щокадру природно `setFacing(catFacing(…)); play(anim)`.
+    rig.setFacing({ view: "back" });
+    rig.play(null, 200);
+    expect(rig.evaluate(200).slot("arm").rot).toBeCloseTo(0, 9);
+    expect(rig.evaluate(200 + BLEND_MS / 2).slot("arm").rot).toBeCloseTo(0, 9);
+  });
+
+  it("лише віддзеркалення чи ракурс туди й назад до evaluate — поза того самого ракурсу: змішування лишається", () => {
+    const rig = new Rig(ARM);
+    rig.play(ARM_ANIMS.wave, 0, { blend: 0 });
+    expect(rig.evaluate(200).slot("arm").rot).toBeCloseTo(-90, 9);
+    rig.setFacing({ flip: true });
+    rig.play(null, 200);
+    expect(rig.evaluate(200).slot("arm").rot).toBeCloseTo(-90, 9);
+    expect(rig.evaluate(200 + BLEND_MS / 2).slot("arm").rot).toBeCloseTo(-45, 6);
+    rig.play(ARM_ANIMS.wave, 1000, { blend: 0, from: 200 });
+    expect(rig.evaluate(1000).slot("arm").rot).toBeCloseTo(-90, 9);
+    rig.setFacing({ view: "back" });
+    rig.setFacing({ view: "front" });
+    rig.play(null, 1000);
+    expect(rig.evaluate(1000 + BLEND_MS / 2).slot("arm").rot).toBeCloseTo(-45, 6);
+  });
+});
+
 describe("змішування поз", () => {
   it("після play поза ≈ BLEND_MS плавно йде від попередньої до нової", () => {
     const rig = new Rig(ARM);

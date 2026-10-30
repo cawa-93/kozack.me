@@ -655,7 +655,12 @@ export class Rig<B extends string, S extends string, K extends string> {
   private start = 0;
   private blendStart = -Infinity;
   private blendMs = 0;
-  private evaluated = false;
+  /**
+   * Ракурс, у якому порахована поза останнього `evaluate` (null — ще не рахували): змішування `play` йде від неї, лише якщо
+   * ракурс той самий. Інакше `setFacing(новий); play(…)` того самого кадру змішувало б від пози старого ракурсу (у `back`
+   * ближні й дальні лапи міняються місцями).
+   */
+  private evaluatedView: RigFacing["view"] | null = null;
 
   private readonly tmpM = affine();
   private readonly tmpV: Vec2 = { x: 0, y: 0 };
@@ -819,7 +824,7 @@ export class Rig<B extends string, S extends string, K extends string> {
     const loop = next ? (opts.loop ?? next.loop) : false;
     if (next === this.current && loop === this.loopNow && !opts.restart) return false;
     this.blendMs = Math.max(0, opts.blend ?? BLEND_MS);
-    if (this.evaluated && this.blendMs > 0) {
+    if (this.evaluatedView === this.facingNow.view && this.blendMs > 0) {
       for (const bone of this.boneRt) Object.assign(bone.from, bone.local);
       this.blendStart = now;
     } else {
@@ -929,7 +934,7 @@ export class Rig<B extends string, S extends string, K extends string> {
     }
 
     if (this.sortItems()) this.orderVersion++;
-    this.evaluated = true;
+    this.evaluatedView = view;
     return this;
   }
 
