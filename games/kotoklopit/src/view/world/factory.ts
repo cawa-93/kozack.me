@@ -6,6 +6,8 @@ import type Phaser from "phaser";
 
 import type { GameState } from "../../sim/types";
 import type { GfxMode } from "../gfx";
+import { IsoApartmentView } from "../iso/apartment";
+import { IsoFloorView } from "../iso/floor";
 import { LegacyApartmentView } from "../legacy/apartmentview";
 import { LegacyCatsView } from "../legacy/catsview";
 import { LegacyFloorView } from "../legacy/floorview";
@@ -50,9 +52,11 @@ const LEGACY: WorldBuilders = {
  */
 const ISO: WorldBuilders = {
   ...LEGACY,
-  // F3a: ізометрична проєкція. Квартира й куточок поки старі (малюють себе косою проєкцією), а кіт, персонаж і позначки
-  // стають на ізометричну підлогу — перехідний вигляд до F3b.
+  // F3a: ізометрична проєкція. Кіт, персонаж і позначки поки старі й стають на ізометричну підлогу (перехідний вигляд).
   projection: ISO_PROJECTION,
+  // F3b: ізометрична квартира й котячий куточок на кадрах маніфесту (`src/view/iso/*`).
+  apartment: (ctx) => new IsoApartmentView(ctx),
+  floor: (ctx) => new IsoFloorView(ctx),
 };
 
 export const WORLD_BUILDERS: Record<GfxMode, WorldBuilders> = { legacy: LEGACY, iso: ISO };
