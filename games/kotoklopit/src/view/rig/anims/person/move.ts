@@ -6,13 +6,15 @@
 // Як тут влаштовано:
 // - Ліктів і колін у скелета немає: рука й нога — по одному кадру. «Присісти» — ноги коротші вздовж кістки (у ракурсі ¾
 //   стегна йдуть до камери), а взуття на кінці ноги масштабується назад, щоб не плющилося.
-// - Хода (`walk`, `dash`, `limp`, `trudge`) рахується з кроку (`gaitTracks`): нога на підлозі йде назад рівно (кісточка в
-//   системі кореня — з постійною швидкістю), таз опускається рівно настільки, щоб опорна стопа стояла на підлозі, а нога в
-//   переносі коротшає, щоб не черкала підлогу. Скільки одиниць арту персонаж проходить за цикл — `PERSON_*_STRIDE`: стопи не
-//   ковзають, коли швидкість відтворення (`PersonAnimParams.speed`) = швидкість на екрані по горизонталі / (крок /
-//   тривалість). За швидкості 1 ходьба — приблизно номінальна швидкість сима (`WALK_TILES_PER_MINUTE`: 4 клітинки за секунду
-//   уздовж осі клітинки, по горизонталі екрана ≈ 240 одиниць/с), кульгає й плететься — ×0,8 від неї (травма, низькі показники,
-//   §6.5). Ривок (×3, ≈ 0,2 с) стопами не встигнути: його поза сильна з першого кадру.
+// - Хода (`walk`, `dash`, `limp`, `trudge`, `dizzy`) рахується з кроку (`gaitTracks`): нога на підлозі йде назад рівно
+//   (кісточка в системі кореня — з постійною швидкістю), таз опускається рівно настільки, щоб опорна стопа стояла на
+//   підлозі, а нога в переносі коротшає, щоб не черкала підлогу. Скільки одиниць арту хода проходить за цикл —
+//   `personGait`; швидкість відтворення, за якої стопи не ковзають, — `personGaitSpeed` (зі швидкості на екрані). За
+//   швидкості 1 кожна хода йде номінальною швидкістю сима свого стану вздовж осі клітинки (`NOMINAL_SPEED`).
+// - Персонаж у симі швидкий (4 клітинки за секунду — ≈ 2,6 свого зросту), тож ходьба — легкий підтюпцем з коротким польотом
+//   і довгим кроком: інакше ноги мелькали б. Виснаження ходу не сповільнює (§6.5), а травма — лише на 0,8
+//   (`ILLNESS_EFFECTS.slow`), тож «плететься» й «кульгає» — не дрібніші кроки, а важкі (`personGait`: темп не вищий, ніж у
+//   ходьби за тієї самої швидкості сима).
 // - Кисті (`hand-*`) кадрів не мають — лише гнізда (`held`, `rod`) і якір `hands`. У ході й стоянні кисть повертається назад
 //   на кут руки й тулуба, тож річ у руках лишається рівною, хоч рука й гойдається.
 // - Накладки рук (`carry`, `holdCat`, `PERSON_OVERLAYS`) додаються до основної (`idle`, `walk`, `dash` …): rot і pos
@@ -23,7 +25,9 @@
 //   накладка `holdCat` (якщо вигляд її додає), а сама разова лише присідає й випростується; у `putDown` кота й накладки вже
 //   немає, тож руки від пози `holdCat` опускаються самі.
 
+import { ILLNESS_EFFECTS, MINUTES_PER_HOUR, REAL_SECONDS_PER_GAME_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
 import { PERSON_ONE_SHOT_MS } from "../../../anim/ids";
+import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
 import { defineAnims, type AnimOf, type BoneOf, type BoneTracks, type Ease, type Key, type Vec2 } from "../../types";
 
@@ -41,7 +45,10 @@ function setupOf(id: PersonBone): { x: number; y: number } {
 /** Довжина ноги — від кульшового суглоба до кісточки (де стопа). */
 const LEG = Math.hypot(setupOf("foot-near").x, setupOf("foot-near").y);
 
-const round = (v: number): number => Math.round(v * 100) / 100;
+const round = (v: number): number => Math.round(v * 100) / 100 + 0;
+
+/** Дробова частина (0…1). */
+const frac = (v: number): number => v - Math.floor(v);
 
 /** Ключ. */
 function k<V>(t: number, v: V, ease?: Ease): Key<V> {
@@ -126,7 +133,7 @@ interface GaitLeg {
   lift: number;
   toe: number;
   push: number;
-  /** Підгинається під вагою посеред опори (кульгає на хвору): нога коротшає на стільки; стопа все одно йде рівно. */
+  /** Підгинається під вагою посеред опори: нога коротшає на стільки; стопа все одно йде рівно. */
   sink?: number;
 }
 
@@ -139,7 +146,7 @@ interface LegState {
 }
 
 function legAt(leg: GaitLeg, u: number): LegState {
-  const d = (((u - leg.on) % 1) + 1) % 1;
+  const d = frac(u - leg.on);
   const front = Math.sin(leg.front * DEG);
   const back = Math.sin(leg.back * DEG);
   if (d <= leg.len) {
@@ -157,11 +164,18 @@ function legAt(leg: GaitLeg, u: number): LegState {
   return { rot, scale: 1 - leg.lift * Math.sin(Math.PI * q), foot: world - rot, stance: false };
 }
 
-/** Хода: ноги, підскок у польоті (`hop`, одиниці; коли обидві ноги в повітрі — ривок). */
+/** Хода: ноги, підскок у польоті (`hop`, одиниці; коли обидві ноги в повітрі). */
 interface Gait {
   near: GaitLeg;
   far: GaitLeg;
   hop?: number;
+}
+
+/** Скільки одиниць арту корінь проходить за цикл ходи: стопа в опорі йде назад на свій розмах за свою частку циклу. */
+function strideOf(gait: Gait): number {
+  const legs = [gait.near, gait.far];
+  const sweep = (leg: GaitLeg): number => LEG * (Math.sin(leg.front * DEG) + Math.sin(leg.back * DEG));
+  return legs.reduce((sum, leg) => sum + sweep(leg), 0) / legs.reduce((sum, leg) => sum + leg.len, 0);
 }
 
 /** Таз над опорною ногою: опускається, щоб стопа стояла на підлозі. */
@@ -190,13 +204,13 @@ function pelvisY(gait: Gait, u: number): number {
 }
 
 /**
- * Доріжки ніг і таза для ходи з `n` ключами за цикл `ms` і крок — скільки одиниць проходить корінь за цикл. Таз ходить
- * уперед-назад відносно кореня, коли опори різної тривалості (кульгає): кісточка на підлозі все одно йде назад рівно.
+ * Доріжки ніг і таза для ходи: `cycles` циклів за `ms`, по `n` ключів на цикл. Таз ходить уперед-назад відносно кореня,
+ * коли опори різної тривалості (кульгає): кісточка на підлозі все одно йде назад рівно.
  */
-function gaitTracks(ms: number, n: number, gait: Gait): { bones: Tracks; stride: number } {
+function gaitTracks(ms: number, n: number, gait: Gait, cycles = 1): Tracks {
   const legs = [gait.near, gait.far];
   const sweep = (leg: GaitLeg): number => LEG * (Math.sin(leg.front * DEG) + Math.sin(leg.back * DEG));
-  const stride = legs.reduce((sum, leg) => sum + sweep(leg), 0) / legs.reduce((sum, leg) => sum + leg.len, 0);
+  const stride = strideOf(gait);
   // Зсув таза: в опорі ноги i — швидкість sweep / len − stride, у польоті — 0.
   const grid = 2000;
   const px: number[] = [0];
@@ -208,30 +222,26 @@ function gaitTracks(ms: number, n: number, gait: Gait): { bones: Tracks; stride:
   }
   const mean = px.reduce((sum, v) => sum + v, 0) / px.length;
   const pxAt = (u: number): number => (px[Math.round(u * grid)] ?? 0) - mean;
-  const near = (u: number): LegState => legAt(gait.near, u);
-  const far = (u: number): LegState => legAt(gait.far, u);
+  const cyc = (u: number): number => frac(u * cycles);
+  const near = (u: number): LegState => legAt(gait.near, cyc(u));
+  const far = (u: number): LegState => legAt(gait.far, cyc(u));
+  const keys = n * cycles;
   const legTracks = (state: (u: number) => LegState): { leg: BoneTracks; foot: BoneTracks } => ({
-    leg: { rot: loopKeys(ms, n, (u) => state(u).rot), scale: loopVecKeys(ms, n, (u) => ({ x: state(u).scale, y: 1 })) },
-    foot: { rot: loopKeys(ms, n, (u) => state(u).foot), scale: loopVecKeys(ms, n, (u) => ({ x: 1, y: 1 / state(u).scale })) },
+    leg: { rot: loopKeys(ms, keys, (u) => state(u).rot), scale: loopVecKeys(ms, keys, (u) => ({ x: state(u).scale, y: 1 })) },
+    foot: { rot: loopKeys(ms, keys, (u) => state(u).foot), scale: loopVecKeys(ms, keys, (u) => ({ x: 1, y: 1 / state(u).scale })) },
   });
   const n1 = legTracks(near);
   const f1 = legTracks(far);
   return {
-    bones: {
-      pelvis: { pos: loopVecKeys(ms, n, (u) => ({ x: pxAt(u), y: pelvisY(gait, u) })) },
-      "leg-near": n1.leg,
-      "foot-near": n1.foot,
-      "leg-far": f1.leg,
-      "foot-far": f1.foot,
-    },
-    stride,
+    pelvis: { pos: loopVecKeys(ms, keys, (u) => ({ x: pxAt(cyc(u)), y: pelvisY(gait, cyc(u)) })) },
+    "leg-near": n1.leg,
+    "foot-near": n1.foot,
+    "leg-far": f1.leg,
+    "foot-far": f1.foot,
   };
 }
 
-/**
- * Верх тіла по колу: тулуб, голова, руки (функції часу 0…1). Кисті тримають річ рівно: повертаються назад на кут тулуба
- * й руки (накладка рук додає й свій поворот, і противагу кисті — річ теж рівна).
- */
+/** Верх тіла по колу: тулуб, голова, руки (функції часу 0…1). Кисті тримають річ рівно: назад на кут тулуба й руки. */
 interface Upper {
   torso?: (u: number) => number;
   head?: (u: number) => number;
@@ -271,45 +281,131 @@ function upperTracks(ms: number, n: number, up: Upper): Tracks {
 
 // --- Хода: числа --------------------------------------------------------------------------------
 
-/** Ходьба: цикл (два кроки), мс; кут ноги від вертикалі на початку й наприкінці опори. */
-const WALK_MS = 360;
-const WALK_SWING = 26;
-const WALK = gaitTracks(WALK_MS, 16, {
-  near: { on: 0, len: 0.5, front: WALK_SWING, back: WALK_SWING, lift: 0.14, toe: 14, push: 22 },
-  far: { on: 0.5, len: 0.5, front: WALK_SWING, back: WALK_SWING, lift: 0.14, toe: 14, push: 22 },
-});
+/**
+ * Номінальна швидкість ходьби в симі по горизонталі екрана, одиниць арту за секунду: `WALK_TILES_PER_MINUTE` клітинок за
+ * ігрову хвилину (0,75 с) уздовж осі клітинки, а вісь клітинки на екрані — півромба вбік на кожну клітинку.
+ */
+const NOMINAL_SPEED = (WALK_TILES_PER_MINUTE / (REAL_SECONDS_PER_GAME_HOUR / MINUTES_PER_HOUR)) * (ISO_TILE.width / 2);
+
+/** Тривалість циклу, мс: щоб за швидкості відтворення 1 хода йшла зі швидкістю `speed`. */
+const cycleMs = (gait: Gait, speed: number): number => Math.round((strideOf(gait) / speed) * 1000);
+
+/** Ходьба — легкий підтюпцем: опора коротша за пів циклу (мить польоту з ледь помітним підскоком), довгий крок. */
+const WALK_GAIT: Gait = {
+  near: { on: 0, len: 0.41, front: 30, back: 30, lift: 0.2, toe: 14, push: 26 },
+  far: { on: 0.5, len: 0.41, front: 30, back: 30, lift: 0.2, toe: 14, push: 26 },
+  hop: 2.5,
+};
+const WALK_MS = cycleMs(WALK_GAIT, NOMINAL_SPEED);
+const WALK_KEYS = 24;
+const WALK = gaitTracks(WALK_MS, WALK_KEYS, WALK_GAIT);
 
 /** Ривок: довгий крок із польотом (обидві ноги в повітрі), сильний нахил. */
-const DASH_MS = 300;
-const DASH_LEAN = 22;
-const DASH = gaitTracks(DASH_MS, 20, {
+const DASH_GAIT: Gait = {
   near: { on: 0, len: 0.3, front: 32, back: 38, lift: 0.28, toe: 10, push: 45 },
   far: { on: 0.5, len: 0.3, front: 32, back: 38, lift: 0.28, toe: 10, push: 45 },
   hop: 6,
-});
+};
+const DASH_MS = 300;
+const DASH_LEAN = 22;
+const DASH = gaitTracks(DASH_MS, 20, DASH_GAIT);
 
 /**
  * Кульгає на ближню ногу: на хвору ступає ненадовго, вона підгинається під вагою, а в переносі ледь відривається й не
- * працює носком; на здорову — довга опора.
+ * працює носком; на здорову — довга опора. Травма сповільнює на `ILLNESS_EFFECTS.slow`, тож крок — не коротший за стільки
+ * від кроку ходьби: темп не вищий, ніж у здорового.
  */
-const LIMP_MS = 370;
-const LIMP = gaitTracks(LIMP_MS, 25, {
-  near: { on: 0, len: 0.36, front: 18, back: 24, lift: 0.03, toe: 2, push: 3, sink: 0.07 },
-  far: { on: 0.36, len: 0.64, front: 24, back: 18, lift: 0.14, toe: 12, push: 18 },
-});
+const LIMP_GAIT: Gait = {
+  near: { on: 0, len: 0.36, front: 27, back: 32, lift: 0.04, toe: 2, push: 3, sink: 0.07 },
+  far: { on: 0.36, len: 0.64, front: 32, back: 27, lift: 0.14, toe: 12, push: 18 },
+};
+const LIMP_MS = cycleMs(LIMP_GAIT, NOMINAL_SPEED * ILLNESS_EFFECTS.slow);
+const LIMP_KEYS = 25;
+const LIMP = gaitTracks(LIMP_MS, LIMP_KEYS, LIMP_GAIT);
 
-/** Плететься: ноги ледь відриваються (човгає) і не працюють носком. */
-const TRUDGE_MS = 350;
-const TRUDGE = gaitTracks(TRUDGE_MS, 16, {
-  near: { on: 0, len: 0.5, front: 20, back: 20, lift: 0.05, toe: 4, push: 8 },
-  far: { on: 0.5, len: 0.5, front: 20, back: 20, lift: 0.05, toe: 4, push: 8 },
-});
+/**
+ * Плететься (виснажений): виснаження ходу не сповільнює (§6.5), тож крок не коротший за крок ходьби, але важкий — без
+ * польоту й підскоку, ноги ледь відриваються (човгає) і не працюють носком, на кожному кроці провисає (`sink`).
+ */
+const TRUDGE_GAIT: Gait = {
+  near: { on: 0, len: 0.47, front: 35, back: 35, lift: 0.06, toe: 3, push: 5, sink: 0.06 },
+  far: { on: 0.5, len: 0.47, front: 35, back: 35, lift: 0.06, toe: 3, push: 5, sink: 0.06 },
+};
+const TRUDGE_MS = cycleMs(TRUDGE_GAIT, NOMINAL_SPEED);
+const TRUDGE_KEYS = 24;
+const TRUDGE = gaitTracks(TRUDGE_MS, TRUDGE_KEYS, TRUDGE_GAIT);
 
-/** Скільки одиниць арту персонаж проходить за цикл ходи: швидкість відтворення = швидкість на екрані / (крок / тривалість). */
-export const PERSON_WALK_STRIDE = round(WALK.stride);
-export const PERSON_DASH_STRIDE = round(DASH.stride);
-export const PERSON_LIMP_STRIDE = round(LIMP.stride);
-export const PERSON_TRUDGE_STRIDE = round(TRUDGE.stride);
+/**
+ * Паморочиться: його видно на ходу (збій керування — §6.5; оглушення завжди накрите разовими «спіткнувся» чи
+ * «посковзнувся»), тож ноги — ходьба без підскоку, з підгинанням, а хитається верх тіла; повний цикл верху — 4 кроки ходи.
+ */
+const DIZZY_GAIT: Gait = {
+  near: { ...WALK_GAIT.near, lift: 0.14, sink: 0.05 },
+  far: { ...WALK_GAIT.far, lift: 0.14, sink: 0.05 },
+};
+const DIZZY_CYCLES = 4;
+const DIZZY_MS = cycleMs(DIZZY_GAIT, NOMINAL_SPEED) * DIZZY_CYCLES;
+const DIZZY = gaitTracks(DIZZY_MS, WALK_KEYS, DIZZY_GAIT, DIZZY_CYCLES);
+
+/** Ходи: ті, де стопи йдуть по підлозі. */
+export type PersonGait = "walk" | "dash" | "limp" | "trudge" | "dizzy";
+
+/** Хода: скільки одиниць арту корінь проходить за анімацію (`stride`) за її тривалість (`ms`) і частки опори кожної ноги. */
+export interface PersonGaitInfo {
+  stride: number;
+  ms: number;
+  /** Циклів ходи за анімацію. */
+  cycles: number;
+  /** Опора ближньої й дальньої ноги в першому циклі: [початок, кінець), частки циклу. */
+  near: readonly [number, number];
+  far: readonly [number, number];
+}
+
+function gaitInfo(gait: Gait, ms: number, cycles = 1): PersonGaitInfo {
+  return {
+    stride: round(strideOf(gait) * cycles),
+    ms,
+    cycles,
+    near: [gait.near.on, gait.near.on + gait.near.len],
+    far: [gait.far.on, gait.far.on + gait.far.len],
+  };
+}
+
+/** Ходи персонажа: крок і тривалість. */
+const GAITS: Readonly<Record<PersonGait, PersonGaitInfo>> = {
+  walk: gaitInfo(WALK_GAIT, WALK_MS),
+  dash: gaitInfo(DASH_GAIT, DASH_MS),
+  limp: gaitInfo(LIMP_GAIT, LIMP_MS),
+  trudge: gaitInfo(TRUDGE_GAIT, TRUDGE_MS),
+  dizzy: gaitInfo(DIZZY_GAIT, DIZZY_MS, DIZZY_CYCLES),
+};
+
+/**
+ * Хода персонажа: крок, тривалість і опори (для `personGaitSpeed`, тестів і звуку кроків). Модуль анімацій експортує
+ * об'єктом лише групу (`PERSON_MOVE`): будь-який інший об'єкт тести й галерея вважали б групою анімацій.
+ */
+export function personGait(gait: PersonGait): PersonGaitInfo {
+  return GAITS[gait];
+}
+
+/**
+ * Найменша частка темпу ходи від «швидкості по підлозі», коли персонаж іде здебільшого вгору чи вниз екрана: тоді стопи
+ * (вони ходять лише вбік) і так ковзають, а темп має лишатися живим.
+ */
+const GAIT_MIN_SHARE = 0.7;
+
+/**
+ * Швидкість відтворення ходи (`PersonAnimParams.speed`) зі швидкості персонажа на екрані (`vx`, `vy` — одиниць арту за
+ * секунду). Стопи ходять лише вбік екрана, тож по горизонталі вони не ковзають: темп — за `|vx|`. А щоб на русі вгору чи
+ * вниз ноги не стояли, темп не нижчий за `GAIT_MIN_SHARE` від швидкості по підлозі (вертикаль ромба стиснута вдвічі —
+ * розтягуємо назад): 4 клітинки за секунду вправо — 362 од./с, уздовж осі клітинки — 256 по горизонталі, угору — 0,7 × 362.
+ */
+export function personGaitSpeed(gait: PersonGait, vx: number, vy: number): number {
+  const ground = Math.hypot(vx, (vy * ISO_TILE.width) / ISO_TILE.height);
+  const along = Math.max(Math.abs(vx), GAIT_MIN_SHARE * ground);
+  const info = GAITS[gait];
+  return (along * info.ms) / (1000 * info.stride);
+}
 
 // --- Накладки рук -------------------------------------------------------------------------------
 
@@ -383,8 +479,8 @@ function armsOnly(tracks: Tracks): Tracks {
   return out;
 }
 
-/** Паморочиться: тулуб ходить колом, руки в боки ловлять рівновагу (ближня — `dizzyArm`, дальня — на 44° уперед від неї). */
-const dizzyTorso = (u: number): number => -9 * wave(u, 1, 0.08) + 2 * wave(u, 2);
+/** Паморочиться: тулуб ходить колом і пружинить на кроках, руки в боки ловлять рівновагу (дальня — на 44° уперед від ближньої). */
+const dizzyTorso = (u: number): number => 4 - 9 * wave(u, 1, 0.08) + 2 * wave(u, 2) + 1.2 * wave(u, DIZZY_CYCLES * 2, 0.25);
 const dizzyArm = (u: number): number => 22 + 14 * wave(u, 1, -0.05);
 /** Кульгає: тулуб западає вперед на хворій нозі, ближня рука — в бік. */
 const limpTorso = (u: number): number => 5 + 12 * bump(u, 0.02, 0.4);
@@ -422,19 +518,19 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   },
 
   /**
-   * Іде: ноги ходою (`WALK`), руки навхрест із ногами, тулуб трохи вперед і пружинить двічі за цикл, голова тримається рівно
-   * з легким запізненням.
+   * Іде (легкий підтюпцем): ноги ходою (`WALK_GAIT`), руки широко навхрест із ногами, тулуб уперед і пружинить двічі за
+   * цикл, голова тримається рівно з легким запізненням.
    */
   walk: {
     duration: WALK_MS,
     loop: true,
     bones: {
-      ...WALK.bones,
-      ...upperTracks(WALK_MS, 16, {
-        torso: (u) => 5 + 1.2 * wave(u, 2, 0.25),
-        head: (u) => -3 + 1.5 * wave(u, 2, 0.1),
-        near: (u) => -4 + 14 * wave(u, 1, 0.22),
-        far: (u) => -4 - 14 * wave(u, 1, 0.22),
+      ...WALK,
+      ...upperTracks(WALK_MS, WALK_KEYS, {
+        torso: (u) => 7.5 + 1.5 * wave(u, 2, 0.25),
+        head: (u) => -4.5 + 1.8 * wave(u, 2, 0.1),
+        near: (u) => -5 + 22 * wave(u, 1, 0.22),
+        far: (u) => -5 - 22 * wave(u, 1, 0.22),
       }),
     },
   },
@@ -447,7 +543,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     duration: DASH_MS,
     loop: true,
     bones: {
-      ...DASH.bones,
+      ...DASH,
       ...upperTracks(DASH_MS, 20, {
         torso: (u) => DASH_LEAN + 2 * wave(u, 2, 0.3),
         head: (u) => -14 + 2 * wave(u, 2, 0.15),
@@ -517,28 +613,24 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   },
 
   /**
-   * Паморочиться: тіло повільно ходить колом над стопами, коліна підгинаються, ноги переступають на місці, голова хилитається
-   * з запізненням, руки в боки — ловить рівновагу.
+   * Паморочиться (збій керування на ходу): ноги йдуть, підгинаючись, тіло повільно ходить колом, голова хилитається з
+   * запізненням, руки в боки — ловить рівновагу. Хода — `personGait("dizzy")` (темп той самий, що в ходьби).
    */
   dizzy: {
-    duration: 1800,
+    duration: DIZZY_MS,
     loop: true,
     bones: {
-      ...standLoop(
-        1800,
-        24,
-        (u) => 5 * wave(u),
-        (u) => 0.96 + 0.04 * wave(u, 2, 0.25),
-        { near: (u) => 0.1 * bump(u, 0.18, 0.36), far: (u) => 0.1 * bump(u, 0.68, 0.86) },
-      ),
-      ...upperTracks(1800, 24, {
+      ...DIZZY,
+      ...upperTracks(DIZZY_MS, WALK_KEYS * DIZZY_CYCLES, {
         torso: dizzyTorso,
         head: (u) => 18 * wave(u, 1, -0.12),
         near: dizzyArm,
         far: (u) => dizzyArm(u) - 44,
       }),
     },
-    views: { back: { bones: armsOnly(upperTracks(1800, 24, { torso: dizzyTorso, near: (u) => -dizzyArm(u), far: (u) => 44 - dizzyArm(u) })) } },
+    views: {
+      back: { bones: armsOnly(upperTracks(DIZZY_MS, WALK_KEYS * DIZZY_CYCLES, { torso: dizzyTorso, near: (u) => -dizzyArm(u), far: (u) => 44 - dizzyArm(u) })) },
+    },
   },
 
   /**
@@ -617,15 +709,15 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     duration: LIMP_MS,
     loop: true,
     bones: {
-      ...LIMP.bones,
-      ...upperTracks(LIMP_MS, 25, {
+      ...LIMP,
+      ...upperTracks(LIMP_MS, LIMP_KEYS, {
         torso: limpTorso,
         head: (u) => -2 + 12 * bump(u, 0.06, 0.44),
         near: limpArm,
         far: limpFar,
       }),
     },
-    views: { back: { bones: armsOnly(upperTracks(LIMP_MS, 25, { torso: limpTorso, near: (u) => -limpArm(u), far: limpFar })) } },
+    views: { back: { bones: armsOnly(upperTracks(LIMP_MS, LIMP_KEYS, { torso: limpTorso, near: (u) => -limpArm(u), far: limpFar })) } },
   },
 
   /**
@@ -647,17 +739,20 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
     },
   },
 
-  /** Плететься: короткі човгаючі кроки, зсутулений, голова звисає й хитається, руки висять і ледь теліпаються. */
+  /**
+   * Плететься: важкі човгаючі кроки (провисає на кожному), зсутулений, голова звисає й кивком падає на кроці, руки висять і
+   * теліпаються із запізненням.
+   */
   trudge: {
     duration: TRUDGE_MS,
     loop: true,
     bones: {
-      ...TRUDGE.bones,
-      ...upperTracks(TRUDGE_MS, 16, {
-        torso: (u) => 14 + 1.5 * wave(u, 2, 0.3),
-        head: (u) => 16 + 3 * wave(u, 2, 0.15),
-        near: (u) => -13 + 5 * wave(u, 1, 0.3),
-        far: (u) => -13 - 5 * wave(u, 1, 0.3),
+      ...TRUDGE,
+      ...upperTracks(TRUDGE_MS, TRUDGE_KEYS, {
+        torso: (u) => 15 + 2 * wave(u, 2, 0.3),
+        head: (u) => 17 + 4 * wave(u, 2, 0.12),
+        near: (u) => -12 + 8 * wave(u, 1, 0.32),
+        far: (u) => -12 - 8 * wave(u, 1, 0.32),
         shrug: () => -1.5,
       }),
     },
@@ -834,36 +929,16 @@ function shiver(u: number): number {
   return 1.1 * bump(u, 0.04, 0.42) * wave(u, 24);
 }
 
-/**
- * Стоїть на місці, а таз ходить уперед-назад (`px`) і ноги коротшають (`s`, підгинаються); `lift` — нога коротшає ще
- * (піднята, переступає): стопи — на своїх місцях, таз — на тій, що стоїть.
- */
-function standLoop(
-  ms: number,
-  n: number,
-  px: (u: number) => number,
-  s: (u: number) => number = () => 1,
-  lift: { near?: (u: number) => number; far?: (u: number) => number } = {},
-): Tracks {
-  const legOf = (u: number, up: number): { rot: number; s: number } => {
-    const scale = s(u) - up;
-    return { rot: plant(px(u), scale).rot, s: scale };
-  };
-  const near = (u: number): { rot: number; s: number } => legOf(u, lift.near?.(u) ?? 0);
-  const far = (u: number): { rot: number; s: number } => legOf(u, lift.far?.(u) ?? 0);
-  const py = (u: number): number => Math.min(...[near(u), far(u)].map((leg) => LEG * (1 - leg.s * Math.cos(leg.rot * DEG))));
-  const legTracks = (leg: (u: number) => { rot: number; s: number }, up: ((u: number) => number) | undefined): { leg: BoneTracks; foot: BoneTracks } => ({
-    leg: { rot: loopKeys(ms, n, (u) => leg(u).rot), scale: loopVecKeys(ms, n, (u) => ({ x: leg(u).s, y: 1 })) },
-    // Піднята нога — носком донизу.
-    foot: { rot: loopKeys(ms, n, (u) => -leg(u).rot + 120 * (up?.(u) ?? 0)), scale: loopVecKeys(ms, n, (u) => ({ x: 1, y: 1 / leg(u).s })) },
-  });
-  const n1 = legTracks(near, lift.near);
-  const f1 = legTracks(far, lift.far);
+/** Стоїть на місці, а таз ходить уперед-назад (`px`) і ноги коротшають (`s`, підгинаються): стопи — на своїх місцях. */
+function standLoop(ms: number, n: number, px: (u: number) => number, s: (u: number) => number = () => 1): Tracks {
+  const leg = (u: number): { rot: number; s: number } => ({ rot: plant(px(u), s(u)).rot, s: s(u) });
+  const legTrack: BoneTracks = { rot: loopKeys(ms, n, (u) => leg(u).rot), scale: loopVecKeys(ms, n, (u) => ({ x: leg(u).s, y: 1 })) };
+  const footTrack: BoneTracks = { rot: loopKeys(ms, n, (u) => -leg(u).rot), scale: loopVecKeys(ms, n, (u) => ({ x: 1, y: 1 / leg(u).s })) };
   return {
-    pelvis: { pos: loopVecKeys(ms, n, (u) => ({ x: px(u), y: py(u) })) },
-    "leg-near": n1.leg,
-    "foot-near": n1.foot,
-    "leg-far": f1.leg,
-    "foot-far": f1.foot,
+    pelvis: { pos: loopVecKeys(ms, n, (u) => ({ x: px(u), y: plant(px(u), s(u)).py })) },
+    "leg-near": legTrack,
+    "foot-near": footTrack,
+    "leg-far": legTrack,
+    "foot-far": footTrack,
   };
 }
