@@ -52,6 +52,7 @@ import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
+import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -157,16 +158,16 @@ export class DayScene extends Phaser.Scene {
     this.toiletRoll = this.add.graphics().setDepth(depthOf(toScreen({ x: 0, y: TOILET_ROLL.y }).y) + 1).addToDisplayList(world);
     this.cabinetLook = this.add.graphics().setDepth(this.view("cat-cabinet").depth + 0.6).addToDisplayList(world);
     this.trashLook = this.add.graphics().setDepth(this.view("trash").depth).addToDisplayList(world);
-    this.marks = this.add.graphics().setDepth(9_000).addToDisplayList(world);
+    this.marks = this.add.graphics().setDepth(WORLD_LAYERS.marks).addToDisplayList(world);
     this.person = new PersonView(this, world);
     this.bubbles = new Bubbles(this, world);
     this.hearts = new MoodHearts(this, world, (cat) => this.anchorOf(`cat:${cat}`));
     this.storage = new StorageIndicators(this, world);
-    this.interaction = this.add.graphics().setDepth(9_500).addToDisplayList(world);
+    this.interaction = this.add.graphics().setDepth(WORLD_LAYERS.interaction).addToDisplayList(world);
     // Серпанок над квартирою, але під інтерфейсом.
-    this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(15_000).addToDisplayList(ui);
+    this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
-    this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(30_000).addToDisplayList(ui);
+    this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(UI_LAYERS.dark).addToDisplayList(ui);
     this.touch = new TouchControls(
       this,
       ui,
@@ -723,7 +724,7 @@ export class DayScene extends Phaser.Scene {
       label = this.add
         .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#ffffff", backgroundColor: "#1f1a24", padding: { x: 3, y: 1 }, resolution: 2 })
         .setOrigin(0.5, 1)
-        .setDepth(12_000)
+        .setDepth(WORLD_LAYERS.hidden)
         .addToDisplayList(this.viewport.world);
       this.hiddenLabels.set(id, label);
     }
@@ -741,7 +742,7 @@ export class DayScene extends Phaser.Scene {
       label = this.add
         .text(0, 0, cat.name, { fontFamily: "system-ui, sans-serif", fontSize: "13px", color: "#1f1a24", backgroundColor: "#f3e9dc", padding: { x: 4, y: 1 }, resolution: 2 })
         .setOrigin(0.5, 1)
-        .setDepth(11_000)
+        .setDepth(WORLD_LAYERS.collars)
         .addToDisplayList(this.viewport.world);
       this.collarLabels.set(cat.id, label);
     }
@@ -981,7 +982,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
-    const image = this.add.image(from.x, from.y, `icon-${icon}`).setDisplaySize(48, 48).setDepth(10_500).setVisible(false).addToDisplayList(this.viewport.world);
+    const image = this.add.image(from.x, from.y, `icon-${icon}`).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
     const flight = { t: 0 };
     this.tweens.add({
       targets: flight,

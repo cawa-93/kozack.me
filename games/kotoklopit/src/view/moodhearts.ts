@@ -3,7 +3,9 @@
 
 import Phaser from "phaser";
 
-const DEPTH = 9_900;
+import { WORLD_LAYERS } from "./world/layers";
+
+const DEPTH = WORLD_LAYERS.hearts;
 /** Одне сердечко — на таку зміну настрою; за раз — не більше трьох. */
 const STEP = 1;
 const MAX_AT_ONCE = 3;

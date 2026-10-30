@@ -8,8 +8,9 @@ import Phaser from "phaser";
 import { COLORS } from "./geometry";
 import { BUBBLE_ICON_Y, type BubbleKind, type IconName, type Mark } from "./icons";
 import type { EventBubble, Thinker } from "./symbols";
+import { WORLD_LAYERS } from "./world/layers";
 
-const BUBBLE_DEPTH = 10_000;
+const BUBBLE_DEPTH = WORLD_LAYERS.bubbles;
 /** Скільки висить бабл події, перш ніж згаснути, мс. */
 const EVENT_HOLD_MS = 1100;
 /** Думка про стан (§11.4) виринає сама, без дії гравця, тож висить довше — щоб уважний встиг помітити. */

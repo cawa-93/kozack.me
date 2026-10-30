@@ -16,6 +16,7 @@ import type { IconName } from "./icons";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS } from "./symbols";
 import { HUD_HEIGHT, type Frame } from "./viewport";
+import { UI_LAYERS } from "./world/layers";
 
 const FONT = "system-ui, sans-serif";
 const TEXT = "#f3e9dc";
@@ -46,7 +47,7 @@ const BUTTONS_INSET = 44;
  * основа й за кожен символ, найдовше, — і як довго згасає, мс.
  */
 const NEWS = { width: 340, pad: 12, baseMs: 2500, perCharMs: 45, maxMs: 8000, fadeMs: 400 } as const;
-const DEPTH = 20_000;
+const DEPTH = UI_LAYERS.hud;
 
 type EventData = Phaser.Types.Input.EventData;
 

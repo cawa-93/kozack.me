@@ -6,8 +6,9 @@ import Phaser from "phaser";
 import type { StorageLine } from "../sim/storage";
 import { COLORS } from "./geometry";
 import { PRODUCT_ICONS } from "./symbols";
+import { WORLD_LAYERS } from "./world/layers";
 
-const DEPTH = 10_000;
+const DEPTH = WORLD_LAYERS.storage;
 const FONT = "system-ui, sans-serif";
 /** Розмір іконки запасу в індикаторі й крок між ними. */
 const ICON = 26;

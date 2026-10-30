@@ -6,11 +6,12 @@ import Phaser from "phaser";
 import type { Vec } from "../sim/types";
 import { COLORS } from "./geometry";
 import type { Frame } from "./viewport";
+import { UI_LAYERS } from "./world/layers";
 
 const JOYSTICK_RADIUS = 70;
 const ACTION_R = 66;
 const DASH_R = 46;
-const DEPTH = 30_000;
+const DEPTH = UI_LAYERS.touch;
 
 export class TouchControls {
   /** Напрямок руху від джойстика, довжина до 1. */
