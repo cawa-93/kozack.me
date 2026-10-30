@@ -134,8 +134,8 @@ describe("бабли вголос і думки (§11.4, правка автор
 
   it("автогодівниця досипала кілька мисок — над кожною вголос", () => {
     expect(eventBubbles({ type: "feeder", bowls: [3, 4] })).toEqual([
-      { kind: "say", at: "item:3", icon: "kibble" },
-      { kind: "say", at: "item:4", icon: "kibble" },
+      { kind: "say", at: "item:3", icon: "kibble-pour" },
+      { kind: "say", at: "item:4", icon: "kibble-pour" },
     ]);
   });
 
@@ -154,6 +154,14 @@ describe("бабли вголос і думки (§11.4, правка автор
 
   it("переляк кота — своя думка, не «!» терпіння над комп'ютером (правило автора 2026-10-30, §11.4)", () => {
     expect(only({ type: "scared", cat: 3 })).toEqual({ kind: "think", at: "cat:3", icon: "fright" });
+  });
+
+  it("скинута страва — гуркіт над столом, вкрадена — її іконка над котом, кіт на клавіатурі — кіт на ноутбуці (правило автора 2026-10-30, §11.4)", () => {
+    const meal = { kind: "meal", quality: "cheap" } as const;
+    expect(only({ type: "knocked", cat: 1, object: "table", item: meal })).toEqual({ kind: "say", at: "table", icon: "loud" });
+    expect(only({ type: "stole", cat: 1, object: "stove", item: meal })).toEqual({ kind: "say", at: "cat:1", icon: "meal" });
+    expect(only({ type: "keyboard", cat: 1 })).toEqual({ kind: "say", at: "computer", icon: "cat-laptop" });
+    expect(only({ type: "keyboard", cat: 1 }).icon).toBe(only({ type: "refused", object: "computer", reason: "cat-on-computer" }).icon);
   });
 
   it("пропущеної летучки немає — бабла немає", () => {

@@ -770,6 +770,43 @@ Object.assign(ICONS, {
 } satisfies Partial<Record<IconName, Draw>>);
 
 /**
+ * Ще чотири іконки за правилом «Унікальна іконка на унікальний кейс» (§11.4; рішення автора 2026-10-30, `GENERAL_REVIEW.md`,
+ * «Відкрите після рішень», п. 7): раніше ці випадки ділили іконку з іншим значенням.
+ */
+Object.assign(ICONS, {
+  aloof: (g: Phaser.GameObjects.Graphics) => {
+    // «Незалежний» іде з-під руки (§9.12 «Ласкавість»): долоня ліворуч повисла в повітрі, а котяча голова праворуч — у профіль,
+    // мордою геть від руки, ніс задертий, око гордо заплющене, — і між ними рисочки руху. Не перекреслена долоня «руки зайняті» й не
+    // «хоче уваги», де голова сама тягнеться до долоні.
+    g.save().translateCanvas(-2, 7).scaleCanvas(0.6, 0.6);
+    palm(g);
+    g.restore();
+    g.fillStyle(0x6b5d6e).fillTriangle(23, 14, 25, 3, 31, 12).fillEllipse(28, 21, 17, 16).fillEllipse(35, 19, 8, 7);
+    g.lineStyle(1.8, 0xffffff).beginPath().arc(30, 17.5, 2.4, Math.PI * 1.1, Math.PI * 1.9).strokePath();
+    g.fillStyle(0xd9708a).fillCircle(38.5, 17.5, 1.4);
+    g.lineStyle(2, INK).lineBetween(14, 14, 18, 14).lineBetween(14, 20, 19, 20).lineBetween(14, 26, 18, 26);
+  },
+  "cv-rejected": (g: Phaser.GameObjects.Graphics) => {
+    // Відмова з вакансії (§8.6): аркуш резюме — фото й рядки, — а поверх нього червоний круглий штамп із хрестиком. Не «Х» терпіння.
+    g.fillStyle(0xffffff).fillRect(7, 4, 22, 30);
+    g.lineStyle(2.5, INK).strokeRect(7, 4, 22, 30);
+    g.fillStyle(0x9fb3c8).fillRect(10, 8, 7, 8);
+    g.lineStyle(2, 0x8a8a8a).lineBetween(19, 9, 26, 9).lineBetween(19, 13, 26, 13).lineBetween(10, 20, 26, 20).lineBetween(10, 24, 22, 24);
+    g.lineStyle(3, COLORS.danger).strokeCircle(27, 28, 8.5);
+    g.lineStyle(3, COLORS.danger).lineBetween(23.5, 24.5, 30.5, 31.5).lineBetween(30.5, 24.5, 23.5, 31.5);
+  },
+  "kibble-pour": (g: Phaser.GameObjects.Graphics) => {
+    // Автогодівниця досипала (§8.7): миска з кормом, а згори в неї сиплються гранули з рисочками падіння. Не корм голодного кота.
+    g.fillStyle(0x8a5a33).fillEllipse(20, 25, 20, 8);
+    g.fillStyle(0x9aa3ab).fillEllipse(20, 30, 30, 10);
+    g.lineStyle(2.5, INK).strokeEllipse(20, 30, 30, 10);
+    g.fillStyle(0x8a5a33);
+    for (const [x, y] of [[15, 9], [22, 4], [25, 13], [18, 17]] as const) g.fillEllipse(x, y, 4.5, 3.5);
+    g.lineStyle(1.5, INK, 0.7).lineBetween(15, 2, 15, 6).lineBetween(25, 6, 25, 10).lineBetween(11, 12, 11, 16);
+  },
+} satisfies Partial<Record<IconName, Draw>>);
+
+/**
  * Мамин судочок (§6.4): прозорий пластиковий контейнер зі стравою й синя кришка із сердечком — щоб не сплутати ні зі
  * звичайною тарілкою, ні з сирими продуктами. `x`, `y` — середина низу, `s` — масштаб; та сама форма в руках і на столі.
  */

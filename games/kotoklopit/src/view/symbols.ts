@@ -202,8 +202,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // «Образливий» дметься (§9.12): його образа — думка.
       return [{ kind: "think", at: cat(event.cat), icon: "sulk" }];
     case "cat-left":
-      // «Незалежний» не хоче пестощів і йде з-під руки (§9.12): «не треба рук» — його думка.
-      return [{ kind: "think", at: cat(event.cat), icon: "hands" }];
+      // «Незалежний» не хоче пестощів і йде з-під руки (§9.12): «не треба рук» — його думка. Своя іконка: перекреслена долоня —
+      // відмова «руки зайняті» (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
+      return [{ kind: "think", at: cat(event.cat), icon: "aloof" }];
     case "cat-dodged":
       // Чистюля не йде на руки в брудному одязі — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "laundry" }];
@@ -220,8 +221,14 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Шипить на іншого кота — уголос; причину видно значком поруч зі злістю (§9.4, Р2).
       return [{ kind: "say", at: cat(event.cat), icon: event.why ? HISS_ICONS[event.why] : "angry" }];
     case "knocked":
+      // Кіт скинув страву (§9.12): тарілка розбилася — гуркіт над столом чи стільницею, як розбитий кухоль. Не злість: кіт не шипить
+      // (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс», §11.4).
+      return [{ kind: "say", at: event.object, icon: "loud" }];
     case "stole":
+      // Кіт вкрав страву (§9.12, «Злодійство»): хрумтить нею вголос — іконка страви над ним, як ласощі «Заздрісника».
+      return [{ kind: "say", at: cat(event.cat), icon: itemIcon(event.item) }];
     case "hissed-guests":
+      // Шипить на гостей з-під дивана (§9.12 «Гості й дзвінок») — злість.
       return [{ kind: "say", at: cat(event.cat), icon: "angry" }];
     case "trinket-fell":
       // Дрібничка впала зі столу (§9.12): стук — звук речі, вголос над столом; кухоль розбився — гуркіт.
@@ -230,7 +237,9 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // «Делікатний» обнюхав дрібничку й обходить її (§9.12): «не чіпати» — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: event.trinket, mark: "no" }];
     case "keyboard":
-      return [{ kind: "say", at: "computer", icon: "meow" }];
+      // Кіт сів на клавіатуру (§9.12 «Кіт і робота»): над комп'ютером — кіт на ноутбуці, як і відмова сісти за комп'ютер (той самий
+      // випадок); нявкання — інший (правило автора 2026-10-30, §11.4).
+      return [{ kind: "say", at: "computer", icon: "cat-laptop" }];
     case "escaped":
       return [{ kind: "say", at: "door", icon: "meow" }];
     case "laundry":
@@ -313,8 +322,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       // Кран відкрили котові (§9.12): тече вода — звук речі, вголос над умивальником.
       return [{ kind: "say", at: "sink", icon: "drop" }];
     case "feeder":
-      // Автогодівниця насипала (§8.7) — чути, як корм стукає в миску.
-      return event.bowls.map((bowl) => ({ kind: "say", at: `item:${bowl}`, icon: "kibble" }));
+      // Автогодівниця насипала (§8.7) — чути, як корм стукає в миску: гранули сиплються, а не корм голодного кота (§11.4).
+      return event.bowls.map((bowl) => ({ kind: "say", at: `item:${bowl}`, icon: "kibble-pour" }));
     case "call-remark":
       // Колеги на дзвінку помітили брудний одяг.
       return [{ kind: "say", at: "computer", icon: "laundry" }];
@@ -323,7 +332,8 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "standup":
       return event.attended ? [] : [{ kind: "say", at: "computer", icon: "camera-missed" }];
     case "job-rejected":
-      return [{ kind: "say", at: "computer", icon: "cross" }];
+      // Відмова з вакансії (§8.6) — резюме з червоним штампом; «Х» — терпіння над комп'ютером (§11.4).
+      return [{ kind: "say", at: "computer", icon: "cv-rejected" }];
     case "modifier":
       return event.kind === "meeting-start" ? [{ kind: "say", at: "computer", icon: "camera" }] : [];
     default:
