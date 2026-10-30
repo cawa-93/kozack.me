@@ -1,11 +1,13 @@
 // Компонувальник шерсті й зовнішності (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): рецепти кота й персонажа,
-// порядок шарів і режимів компонувальника на фальшивому контексті й поведінка без браузера.
+// порядок шарів і режимів компонувальника на фальшивому контексті, облік запечених кадрів (бюджет, LRU) і поведінка без
+// браузера. Сам `bake.ts` імпортує Phaser, тож у Node перевіряються його чисті частини (`bakecache.ts`).
 
 import { afterEach, describe, expect, it } from "vitest";
 
 import { coatOf, type Coat } from "../src/sim/genetics";
 import type { CatDisease, Genes, Look, Shape } from "../src/sim/types";
 import { LOOK_OPTIONS } from "../src/ui/look";
+import { BakeCache, BAKE_BUDGET } from "../src/view/art/bakecache";
 import { composeFrame, composePortrait, cssColor, portraitHead, stubLayers, type Ctx2D, type LayerImage } from "../src/view/art/compose";
 import {
   CAT_RECIPE_LAYERS,
@@ -473,5 +475,100 @@ describe("поза браузером", () => {
       ["person/eyes", "open"],
       ["person/hair-front/3", null],
     ]);
+  });
+});
+
+// --- Облік запечених кадрів ------------------------------------------------------------------------
+
+describe("облік запечених кадрів", () => {
+  function setup(budget = { framesPerOwner: 3, pixelsPerOwner: 1_000, pixelsTotal: 10_000 }) {
+    const destroyed: string[] = [];
+    let made = 0;
+    const cache = new BakeCache<string>((key) => destroyed.push(key), budget);
+    const use = (owner: string, key: string, recipe = "r", pixels = 100): string =>
+      cache.use(owner, key, recipe, () => {
+        made++;
+        return { value: key, pixels };
+      });
+    return { cache, use, destroyed, made: () => made };
+  }
+
+  it("ліниво: кадр запікається раз і ділиться між власниками", () => {
+    const { cache, use, made } = setup();
+    use("cat:1", "a");
+    use("cat:1", "a");
+    use("cat:2", "a");
+    expect(made()).toBe(1);
+    expect(cache.stats()).toEqual({ frames: 1, pixels: 100, owners: 2, shown: 0 });
+  });
+
+  it("понад бюджет кадрів власника — найдавніші; кадр, який показують, — ні", () => {
+    const { cache, use, destroyed } = setup();
+    for (const key of ["a", "b", "c"]) use("cat:1", key);
+    cache.retain("a");
+    use("cat:1", "b");
+    use("cat:1", "d");
+    // «a» найдавніший, але його показують; звільнено «c» — найдавніший з непоказаних.
+    expect(destroyed).toEqual(["c"]);
+    expect(cache.ownerKeys("cat:1")).toEqual(["a", "b", "d"]);
+    use("cat:1", "e");
+    expect(destroyed).toEqual(["c", "b"]);
+    cache.release("a");
+    expect(destroyed).toEqual(["c", "b"]);
+  });
+
+  it("бюджет пікселів власника й загальний", () => {
+    const { use, destroyed, cache } = setup({ framesPerOwner: 100, pixelsPerOwner: 250, pixelsTotal: 400 });
+    use("cat:1", "a");
+    use("cat:1", "b");
+    use("cat:1", "c");
+    expect(destroyed).toEqual(["a"]);
+    use("cat:2", "x");
+    use("cat:2", "y", "r", 150);
+    // Разом 100 + 100 + 100 + 150 = 450 > 400: звільнено найдавніший з усіх — «b».
+    expect(destroyed).toEqual(["a", "b"]);
+    expect(cache.stats().pixels).toBe(350);
+  });
+
+  it("спільний кадр живе, доки він потрібен комусь іще", () => {
+    const { use, destroyed, cache } = setup();
+    use("cat:1", "a");
+    use("cat:2", "a");
+    use("cat:1", "b");
+    cache.dropOwner("cat:1");
+    expect(destroyed).toEqual(["b"]);
+    cache.retain("a");
+    cache.dropOwner("cat:2");
+    expect(destroyed).toEqual(["b"]);
+    cache.release("a");
+    expect(destroyed).toEqual(["b", "a"]);
+    expect(cache.stats()).toEqual({ frames: 0, pixels: 0, owners: 0, shown: 0 });
+  });
+
+  it("новий рецепт власника — кадри старого звільняються, щойно їх не показують", () => {
+    const { use, destroyed, cache } = setup();
+    use("cat:1", "body@healthy", "healthy");
+    use("cat:1", "head@healthy", "healthy");
+    cache.retain("head@healthy");
+    use("cat:1", "body@dull", "dull");
+    expect(destroyed).toEqual(["body@healthy"]);
+    cache.release("head@healthy");
+    expect(destroyed).toEqual(["body@healthy", "head@healthy"]);
+    expect(cache.ownerKeys("cat:1")).toEqual(["body@dull"]);
+  });
+
+  it("забутий кадр запікається знову", () => {
+    const { use, cache, made } = setup();
+    use("cat:1", "a");
+    cache.forgetKey("a");
+    use("cat:1", "a");
+    expect(made()).toBe(2);
+    expect(cache.stats().frames).toBe(1);
+  });
+
+  it("типовий бюджет — із запасом на кота з обома ракурсами й виразами", () => {
+    expect(BAKE_BUDGET.framesPerOwner).toBeGreaterThanOrEqual(24);
+    expect(BAKE_BUDGET.pixelsPerOwner).toBeGreaterThanOrEqual(150_000);
+    expect(BAKE_BUDGET.pixelsTotal).toBeGreaterThanOrEqual(BAKE_BUDGET.pixelsPerOwner * 20);
   });
 });
