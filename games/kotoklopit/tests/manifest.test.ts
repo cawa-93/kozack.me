@@ -155,6 +155,14 @@ describe("маніфест: квартира", () => {
       for (const corner of [iso({ x: 0, y: room.h }), iso({ x: room.w, y: 0 }), iso({ x: room.w, y: room.h })]) {
         expect(inside(floor, corner), `${room.id}: підлога`).toBe(true);
       }
+      // Прохід ряду 5 під кімнатою — на її плиті (до поріжка на y = 6), а не на плиті вітальні (art/STYLE.md, §11).
+      for (let x = room.x; x < room.x + room.w; x++) {
+        const y = room.y + room.h;
+        if (MAP[y]?.[x] !== "." || roomAt({ x, y }) !== null) continue;
+        for (const corner of [iso({ x: x - room.x, y: y + 1 - room.y }), iso({ x: x + 1 - room.x, y: y + 1 - room.y })]) {
+          expect(inside(floor, corner), `${room.id}: прохід (${x}, ${y})`).toBe(true);
+        }
+      }
       const wall = entry(`env/room/${room.id}/wall`);
       const cells = backWallCells(room);
       expect(cells.length, room.id).toBeGreaterThan(0);
