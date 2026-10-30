@@ -13,7 +13,7 @@ import type Phaser from "phaser";
 import { isPresent, objectById, OBJECTS, ROOMS, roomAt, TOILET_ROLL, TRINKETS, WINDOWS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
-import { addArt, setArt } from "../art/atlas";
+import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
 import type { PartContext } from "../world/context";
@@ -184,7 +184,10 @@ export class IsoApartmentView implements ApartmentPart {
     }
     setPiece(piece, frame);
     const shift = point ? (artOffset(`env/${thing.object.id}`, point) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
-    piece.image.setPosition(thing.at.x + shift.x, thing.at.y + shift.y).setVisible(thing.present);
+    // Накладки, якої ще не намальовано, на вже намальованій речі не видно: маджентова заглушка на все полотно речі закрила
+    // б еталон (холодильник F1a під накладкою наповнення A2). Коли накладку намалюють, вона з'явиться сама.
+    const hidden = isArtStub(piece.image) && !isArtStub(thing.body.image);
+    piece.image.setPosition(thing.at.x + shift.x, thing.at.y + shift.y).setVisible(thing.present && !hidden);
   }
 
   update(state: GameState, frame: WorldFrame): void {
