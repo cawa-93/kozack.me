@@ -193,6 +193,16 @@
 | **F4 Скелети й компонувальник** | `rigcore` з тестами, `rigsprite`, `compose.ts` (шерсть і вигляд, CanvasTexture, портрет).<br>Визначення скелетів кота й персонажа з гніздами.<br>Нові пози в `pose.ts`, `catFacing`, `personAnim` з тестами.<br>По одній пробній анімації на заглушках. | Скелети, з якими можна анімувати до появи арту |
 | **F5 Маніфест** | Повний список ассетів за інвентаризацією: усі `id`, розміри, `pivot`, стани, шари й ракурси, розкладені по файлах категорій пакетів хвилі 2. | Готовий перелік робіт: по ньому хвиля 2 відрізняє заглушки від готового |
 
+#### Шов хвилі 1
+
+Спільний код, на який пакети хвилі 1 спираються паралельно (зроблено перед ними, 2026-10-30):
+
+- `src/view/art/manifest.ts` (без Phaser): записи з `./manifest/*.ts` (`import.meta.glob`, у Node — лише через Vite), `artEntries()`, `artEntry(id)`, `DEFAULT_RES = 2`, перевірка `manifestProblems` / `indexEntries`. Тест `tests/artmanifest.test.ts`.
+- `src/view/art/atlas.ts` (Phaser): `artFrameName`, `hasArtFrame`, `addArt`, `setArt`, `isArtStub`, `markArtReady`; чисті розрахунки й вигляд заглушки — `placement.ts` (`tests/artatlas.test.ts`).
+- **Контракт кадрів.** Атлас — одна текстура `ART_TEXTURE` («art»), сторінки — її джерела. Кадр кожного шару названо `layerFrameName(frameId(id, стан, ракурс), шар)` (без шарів — `all`, сама назва кадру) і обрізано через `setTrim`, тож `realWidth × realHeight` — полотно запису `size · res`. Pivot і точки — з маніфесту. `addArt` ставить origin у pivot і масштаб `size / realWidth` (для атласу — `1 / res`), тож 1 одиниця арту = 1 px світу. Кадру немає — маджентова заглушка в рантаймі за розміром запису чи `fallback`, інакше 64 × 64. PreloadScene після завантаження кличе `markArtReady("ready" | "none")` → `<html data-art>`.
+- `src/dev/gallery/tab.ts` — лише типи вкладки галереї (`GalleryTab`, `GalleryContext`, `GalleryView`); вкладки — `src/dev/gallery/tabs/<id>.ts` з `TAB`.
+- `art/palette.ts` — каркас `PALETTE`, `ALLOWED_COLORS`, `LINE`; значення задає F1 в `art/STYLE.md`.
+
 **Контрольна точка (автор).** Після інтеграції хвилі 1 — пуш. Автор дивиться прев'ю з `?gfx=iso` на телефоні й десктопі:
 - квартиру в ізометрії на заглушках;
 - еталонний зріз у галереї.
