@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/heart — сердечко. Еталон іконки F1, art/STYLE.md.
+size 64×64; pivot (32, 32) — центр. Один колір і одна тінь, контур товщає донизу.
+-->
+<g id="p-heart">
+<path d="M31 56C24 50 9 41 7.5 28.5C6.5 19 12 11.5 20 11.5C26 11.5 30 15.5 32 20C34.5 14.5 38.5 10.5 45 10.8C52.5 11.2 57.5 18 56.5 27C55 40 41 49.5 31 56Z" fill="#c4524b"/>
+<path d="M9.5 36C17 38 24 34 32 37C40 40 48 35 54.5 34C51 43 40 50.5 31 56C24 50.5 14 43 9.5 36Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M31 56C24 50 9 41 7.5 28.5C6.5 19 12 11.5 20 11.5C26 11.5 30 15.5 32 20C34.5 14.5 38.5 10.5 45 10.8C52.5 11.2 57.5 18 56.5 27C55 40 41 49.5 31 56Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 41C18 48 25 51.5 31 56C38 51 46 46 51.5 39" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.5 22Q15.6 17.6 20 16.5Q17.8 19.8 14.5 22Z" fill="#dc7c69"/>
+</g>
+</svg>
