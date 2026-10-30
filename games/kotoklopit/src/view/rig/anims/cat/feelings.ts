@@ -213,6 +213,20 @@ const CURL_SLOTS: SlotSet = {
 };
 const CURL_BACK_SLOTS: SlotSet = { tail: { z: [{ t: 0, v: 8 }] } };
 
+/** Від основи таза до плечей уздовж тулуба (одиниці арту) і довжина лапи (`len` кісток лап). */
+const SHOULDER = 28;
+const LEG = 20.5;
+
+/**
+ * У скільки разів подовжити передні лапи, щоб подушечки лишилися на підлозі, коли плечі піднялися на `lift` одиниць, а
+ * тулуб став товщим у `sy` разів. Лапа — дитина тулуба під прямим кутом, тож його масштаб упоперек (дихання, стиснутий
+ * живіт) подовжує чи вкорочує й лапу. `sx` — масштаб лапи в позі, до якої додається зміна.
+ */
+const frontReach = (sx: number, lift: number, sy: number): number => (sx + lift / LEG) / sy / sx;
+
+/** Доріжка масштабу передніх лап, що гасить подовження від дихання тулуба (`body` — його доріжка масштабу). */
+const frontBreath = (body: readonly Key<Vec2>[]): Key<Vec2>[] => body.map((k) => ({ ...k, v: { x: 1 / k.v.y, y: 1 } }));
+
 // --- Хода ---------------------------------------------------------------------------------------------
 //
 // Ті самі ритм і розмах, що в ході групи `basic` (рись: діагональні пари лап, цикл `WALK_MS`): опорна лапа йде назад
@@ -420,10 +434,6 @@ function clumsyAnim(): CatAnim {
   };
 }
 
-/** Від основи таза до плечей уздовж тулуба (одиниці арту) і довжина лапи — для осідання крупа. */
-const SHOULDER = 28;
-const LEG = 20.5;
-
 /** Доріжка кроку `S` мс, повторена двічі (цикл з двох кроків). */
 function twice(list: readonly Key<number>[], S: number): Key<number>[] {
   return [...list.slice(0, -1), ...list.map((k) => ({ ...k, t: k.t + S }))];
@@ -511,15 +521,15 @@ const COUGH: Pose = {
   "leg-back-far": { rot: -10, sx: 0.8 },
   "leg-front-near": { rot: -8, sx: 0.85 },
   "leg-front-far": { rot: -8, sx: 0.85 },
-  neck: { x: 6, y: 6, rot: 20 },
-  head: { rot: -12 },
+  neck: { x: 6, y: 8, rot: 20 },
+  head: { rot: -10 },
   tail: tail(-85),
 };
-/** Поштовх кашлю поверх `COUGH`: живіт стиснутий, плечі донизу, шия й голова вперед. */
+/** Поштовх кашлю поверх `COUGH`: живіт стиснутий, спина горбиться, шия й голова тягнуться вперед і вниз. */
 const HACK: Pose = {
-  body: { y: -1.4, sy: 0.93 },
-  "leg-front-near": { sx: 1.08 },
-  "leg-front-far": { sx: 1.08 },
+  body: { y: -2, sy: 0.93 },
+  "leg-front-near": { sx: frontReach(0.85, 2, 0.93) },
+  "leg-front-far": { sx: frontReach(0.85, 2, 0.93) },
   neck: { x: 3, y: 2.5, rot: 10 },
   head: { rot: 8 },
 };
@@ -635,8 +645,8 @@ function rubEyesAnim(): CatAnim {
       "leg-front-near": {
         z: [
           { t: 0, v: 7 },
-          { t: 120, v: 12.5 },
-          { t: 1260, v: 7 },
+          { t: 60, v: 12.5 },
+          { t: 1330, v: 7 },
         ],
       },
     },
@@ -652,9 +662,13 @@ function rubEyesAnim(): CatAnim {
 function vomitAnim(): CatAnim {
   const T = CAT_ONE_SHOT_MS.vomit;
   const low = over(COUGH, { neck: { y: 3, rot: 4 }, head: { rot: 8 } });
-  const heave = (k: number): Pose =>
-    over(low, { body: { y: -1.2 * k, sy: 1 - 0.06 * k }, "leg-front-near": { sx: 1 + 0.06 * k }, "leg-front-far": { sx: 1 + 0.06 * k }, neck: { x: 1.5 * k, y: 1 * k, rot: 4 * k }, head: { rot: 4 * k } });
-  const expel = over(low, { body: { rot: 3, sy: 0.9 }, "leg-front-near": { sx: 0.94 }, "leg-front-far": { sx: 0.94 }, neck: { x: 2, y: 1, rot: 2 }, head: { rot: 6 } });
+  const heave = (k: number): Pose => {
+    const reach = frontReach(0.85, 1.2 * k, 1 - 0.06 * k);
+    return over(low, { body: { y: -1.2 * k, sy: 1 - 0.06 * k }, "leg-front-near": { sx: reach }, "leg-front-far": { sx: reach }, neck: { x: 1.5 * k, y: 1 * k, rot: 4 * k }, head: { rot: 4 * k } });
+  };
+  // Видих: плечі опускаються (тулуб носом униз на 3°), живіт стиснутий.
+  const expelReach = frontReach(0.85, -SHOULDER * Math.sin(3 * DEG), 0.9);
+  const expel = over(low, { body: { rot: 3, sy: 0.9 }, "leg-front-near": { sx: expelReach }, "leg-front-far": { sx: expelReach }, neck: { x: 2, y: 1, rot: 2 }, head: { rot: 6 } });
   return {
     duration: T,
     loop: false,
@@ -711,6 +725,8 @@ function pantAnim(): CatAnim {
     loop: false,
     bones: {
       body: { scale: body },
+      "leg-front-near": { scale: frontBreath(body) },
+      "leg-front-far": { scale: frontBreath(body) },
       neck: { rot: neck },
       head: {
         rot: keys([
@@ -779,10 +795,13 @@ function snoreAnim(): CatAnim {
  */
 function contentAnim(): CatAnim {
   const T = 2400;
+  /** Муркотіння: тулуб двічі за цикл ледь товщає. */
+  const purr = [1, 1.025, 1, 1.025];
+  // Лапка підібрана (коротша) на своїй чверті циклу; дихання тулуба її не подовжує.
   const knead = (phase: 0 | 1): BoneTracks => {
     const a = phase === 0 ? [0, -9, 0, 0] : [0, 0, 0, -9];
     const s = phase === 0 ? [1, 0.87, 1, 1] : [1, 1, 1, 0.87];
-    return { rot: osc(T, a), scale: osc(T, s).map((k) => ({ ...k, v: { x: k.v, y: 1 } })) };
+    return { rot: osc(T, a), scale: osc(T, s.map((v, i) => v / (purr[i] ?? 1))).map((k) => ({ ...k, v: { x: k.v, y: 1 } })) };
   };
   const sway = (r: number): Tweak => tailFrom(SIT_TAIL, r);
   return {
@@ -791,7 +810,7 @@ function contentAnim(): CatAnim {
     bones: {
       neck: { rot: osc(T, [0, 3, 0, -1]) },
       head: { rot: osc(T, [0, 5, 2, -2]) },
-      body: { scale: osc(T, [1, 1.025, 1, 1.025]).map((k) => ({ ...k, v: { x: 1, y: k.v } })) },
+      body: { scale: osc(T, purr).map((k) => ({ ...k, v: { x: 1, y: k.v } })) },
       "leg-front-near": knead(0),
       "leg-front-far": knead(1),
       tail: {
@@ -852,6 +871,17 @@ function reluctantAnim(): CatAnim {
  */
 function warnAnim(): CatAnim {
   const T = 1000;
+  // Здригання шкіри на спині — щоразу, як хвіст гупає об підлогу.
+  const shiver = keysV([
+    [0, 1, 1],
+    [300, 1, 1],
+    [340, 1, 1.03],
+    [420, 1, 1],
+    [720, 1, 1],
+    [760, 1, 1.03],
+    [840, 1, 1],
+    [T, 1, 1],
+  ]);
   return {
     duration: T,
     loop: true,
@@ -872,18 +902,9 @@ function warnAnim(): CatAnim {
       ]),
       neck: { pos: [{ t: 0, v: { x: -1.2, y: 0.5 } }], rot: osc(T, [5, 6]) },
       head: { rot: osc(T, [6, 4]) },
-      body: {
-        scale: keysV([
-          [0, 1, 1],
-          [300, 1, 1],
-          [340, 1, 1.03],
-          [420, 1, 1],
-          [720, 1, 1],
-          [760, 1, 1.03],
-          [840, 1, 1],
-          [T, 1, 1],
-        ]),
-      },
+      body: { scale: shiver },
+      "leg-front-near": { scale: frontBreath(shiver) },
+      "leg-front-far": { scale: frontBreath(shiver) },
     },
   };
 }
