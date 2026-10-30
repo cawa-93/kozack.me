@@ -15,8 +15,11 @@
 // має точки `neck` (де pivot голови), `shoulder-far`/`-near`, `hip-far`/`-near`, `tail`, голова — `ear-far`/`-near`,
 // `muzzle`, `eyes`, `mouth`. Необов'язкові: тулуб — `neck-base` (основа шиї, навколо якої голова киває) і `back` (спинка
 // під рукою), голова — `top` (над вухами, для бульбашок), морда — `mouth` (якщо рот залежить від морди). Точки одного
-// ракурсу — `<назва>-back` / `<назва>-front` (`rigcore.ts`, `RigFit`). Поки арту немає, діють числа нижче — їх
-// підганяють під еталонні частини.
+// ракурсу — `<назва>-back` / `<назва>-front` (`rigcore.ts`, `RigFit`). Числа нижче — запасні (запису чи точки немає): вони
+// дають ту саму вихідну позу, що й точки еталонів F1b (`art/cat/*`, art/STYLE.md, розділ 13; тест `tests/rig.test.ts`),
+// тож скелет без атласу (тести, вигляд до завантаження) стоїть так само. Довжина лапи — від суглоба до точки `paw`.
+//
+// Дальні частини (`CAT_FAR_SLOTS`) вигляд затінює (`farRecipe`, пропозиція F1b): так ближній бік читається першим.
 
 import type { ArtId } from "../../art/types";
 import type { Shape } from "../../../sim/types";
@@ -29,16 +32,16 @@ export const CAT_RIG = defineRig({
     { id: "root", parent: null, x: 0, y: 0, rot: 0, len: 0 },
     // Таз — над задніми лапами; від нього тулуб іде вперед до плечей.
     { id: "pelvis", parent: "root", x: -14, y: -20, rot: 0, len: 6 },
-    { id: "body", parent: "pelvis", x: 0, y: 0, rot: 0, len: 30 },
-    { id: "tail", parent: "body", x: -6, y: -4, rot: -140, len: 22 },
-    // Шия — від плечей угору-вперед; голова — у точці `neck` тулуба, горизонтально.
-    { id: "neck", parent: "body", x: 24, y: -4, rot: -50, len: 8 },
-    { id: "head", parent: "neck", x: 8, y: 0, rot: 50, len: 16 },
-    // Далекі лапи — трохи вище (далі від камери на підлозі), ближні — нижче.
-    { id: "leg-front-far", parent: "body", x: 30, y: -2, rot: 90, len: 20 },
-    { id: "leg-front-near", parent: "body", x: 26, y: 2, rot: 90, len: 20 },
-    { id: "leg-back-far", parent: "pelvis", x: 2, y: -2, rot: 90, len: 20 },
-    { id: "leg-back-near", parent: "pelvis", x: -2, y: 2, rot: 90, len: 20 },
+    { id: "body", parent: "pelvis", x: 0, y: 0, rot: 0, len: 26 },
+    { id: "tail", parent: "body", x: -8, y: -8, rot: -140, len: 22 },
+    // Шия — від основи (`neck-base`) угору-вперед до точки `neck`, де сидить голова; голова — горизонтально.
+    { id: "neck", parent: "body", x: 20, y: -7, rot: -27, len: 4.5 },
+    { id: "head", parent: "neck", x: 4.5, y: 0, rot: 27, len: 16 },
+    // Далекі лапи — трохи вище (далі від камери на підлозі), ближні — нижче; довжина — від суглоба до точки `paw`.
+    { id: "leg-front-far", parent: "body", x: 30, y: -2, rot: 90, len: 20.5 },
+    { id: "leg-front-near", parent: "body", x: 24.5, y: 1.5, rot: 90, len: 20.5 },
+    { id: "leg-back-far", parent: "pelvis", x: 3.5, y: -2, rot: 90, len: 20.5 },
+    { id: "leg-back-near", parent: "pelvis", x: -2, y: 1.5, rot: 90, len: 20.5 },
   ],
   // Порядок z — ¾ спереду: хвіст і далекі лапи за тулубом, ближні — перед ним, голова поверх усього.
   slots: [
@@ -50,11 +53,11 @@ export const CAT_RIG = defineRig({
     { id: "leg-front-near", bone: "leg-front-near", z: 7, frame: null },
     { id: "head", bone: "head", z: 10, frame: null },
     // Вуха — за контуром голови (основу вуха ховає голова); той самий кадр в обох слотах.
-    { id: "ear-far", bone: "head", z: 8, frame: null, x: 12, y: -14 },
-    { id: "ear-near", bone: "head", z: 9, frame: null, x: 2, y: -15 },
-    { id: "muzzle", bone: "head", z: 11, frame: null, x: 12, y: 0 },
-    { id: "eyes", bone: "head", z: 12, frame: "open", x: 9, y: -6 },
-    { id: "mouth", bone: "head", z: 13, frame: "closed", x: 14, y: 3 },
+    { id: "ear-far", bone: "head", z: 8, frame: null, x: 14.5, y: -17 },
+    { id: "ear-near", bone: "head", z: 9, frame: null, x: -0.5, y: -15.5 },
+    { id: "muzzle", bone: "head", z: 11, frame: null, x: 12.8, y: -2.6 },
+    { id: "eyes", bone: "head", z: 12, frame: "open", x: 11, y: -8.4 },
+    { id: "mouth", bone: "head", z: 13, frame: "closed", x: 12.8, y: -1.2 },
   ],
   views: {
     front: {},
@@ -62,15 +65,18 @@ export const CAT_RIG = defineRig({
     // але на екрані він праворуч, тож ближні й далекі лапи міняються місцями по x.
     back: {
       bones: {
-        "leg-front-far": { x: 26, y: -2 },
-        "leg-front-near": { x: 30, y: 2 },
+        tail: { x: -7, y: -9 },
+        neck: { x: 23, y: -10 },
+        "leg-front-far": { x: 24.5, y: -2 },
+        "leg-front-near": { x: 30, y: 1.5 },
         "leg-back-far": { x: -2, y: -2 },
-        "leg-back-near": { x: 2, y: 2 },
+        "leg-back-near": { x: 3.5, y: 1.5 },
       },
       slots: {
         tail: { z: 8 },
-        "ear-far": { z: 2.5 },
-        "ear-near": { z: 2.7 },
+        // Голова менша й повернута від камери: вуха — інакше, ніж спереду (точки `ear-*-back` еталона).
+        "ear-far": { z: 2.5, x: -0.5, y: -16 },
+        "ear-near": { z: 2.7, x: 14, y: -16.5 },
         head: { z: 3 },
         muzzle: { visible: false },
         eyes: { visible: false },
@@ -81,14 +87,14 @@ export const CAT_RIG = defineRig({
   },
   anchors: {
     // Над вухами — бульбашки й серця настрою.
-    head: { bone: "head", x: 6, y: -24 },
-    mouth: { bone: "head", x: 14, y: 3 },
+    head: { bone: "head", x: 7, y: -33 },
+    mouth: { bone: "head", x: 12.8, y: -1.2 },
   },
   sockets: {
     // Річ у зубах (іграшка, шкарпетка): вміст стоїть pivot-ом у роті й повертається з головою.
-    teeth: { bone: "head", x: 14, y: 4, z: 14, cargo: ["toy", "sock"] },
+    teeth: { bone: "head", x: 12.8, y: -1.2, z: 14, cargo: ["toy", "sock"] },
     // Спинка під рукою, що гладить: рука персонажа малюється поверх кота.
-    pet: { bone: "body", x: 14, y: -12, z: 15, cargo: ["hand"] },
+    pet: { bone: "body", x: 12, y: -12, z: 15, cargo: ["hand"] },
   },
   skin: {
     tail: "cat/tail/long",
@@ -139,6 +145,12 @@ export const CAT_RIG = defineRig({
 
 /** Слот скелета кота. */
 export type CatSlot = SlotOf<typeof CAT_RIG>;
+
+/**
+ * Дальні частини кота — по той бік тулуба від камери: дальні лапи й вухо. Вигляд затінює їх (`farRecipe` у `recipes.ts`;
+ * пропозиція F1b, лист `sheet-chars`), щоб ближній бік читався першим, а лапи не зливалися в одну пляму.
+ */
+export const CAT_FAR_SLOTS: readonly CatSlot[] = ["leg-back-far", "leg-front-far", "ear-far"];
 
 /** Де скелет кота бере суглоби з точок кадрів (див. початок файлу). */
 export const CAT_FIT = defineFit(CAT_RIG, {

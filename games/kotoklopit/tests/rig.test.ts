@@ -4,9 +4,10 @@
 
 import { describe, expect, it } from "vitest";
 
+import { artEntry } from "../src/view/art/manifest";
 import type { ArtEntry, ArtId } from "../src/view/art/types";
-import { CAT_FIT, CAT_RIG, CAT_VARIANTS, catProportions, catSkin } from "../src/view/rig/defs/cat";
-import { PERSON_FIT, PERSON_RIG, PERSON_VARIANTS, personProportions, personSkin } from "../src/view/rig/defs/person";
+import { CAT_FAR_SLOTS, CAT_FIT, CAT_RIG, CAT_VARIANTS, catProportions, catSkin } from "../src/view/rig/defs/cat";
+import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, PERSON_VARIANTS, personProportions, personSkin } from "../src/view/rig/defs/person";
 import {
   animProblems,
   animTime,
@@ -418,17 +419,22 @@ describe("поза", () => {
     expect(manx.slot("tail").art).toBeNull();
   });
 
-  it("висоти: кіт ≈ 56 до вух, персонаж ≈ 140 до маківки, лапи й ступні на підлозі", () => {
+  it("висоти: кіт ≈ 57 до вух, персонаж ≈ 150 до маківки, лапи й ступні на підлозі", () => {
+    // Якір над головою — точка `top` еталонів F1b: у кота над вухами, у персонажа над маківкою.
     const cat = new Rig(CAT_RIG).evaluate(0);
-    expect(cat.anchor("head")?.y).toBeGreaterThan(-62);
-    expect(cat.anchor("head")?.y).toBeLessThan(-50);
+    expect(cat.anchor("head")?.y).toBeGreaterThan(-66);
+    expect(cat.anchor("head")?.y).toBeLessThan(-56);
     const person = new Rig(PERSON_RIG).evaluate(0);
     expect(person.anchor("head")?.y).toBeGreaterThan(-155);
-    expect(person.anchor("head")?.y).toBeLessThan(-138);
+    expect(person.anchor("head")?.y).toBeLessThan(-145);
+    // Кінець лапи — точка `paw` (низ подушечки), кісточка — над підошвою черевика (≈ 13 одиниць).
     for (const leg of ["leg-front-far", "leg-front-near", "leg-back-far", "leg-back-near"]) {
       expect(Math.abs(tip(cat as never, leg).y), leg).toBeLessThanOrEqual(3);
     }
-    for (const foot of ["foot-far", "foot-near"]) expect(Math.abs(person.bone(foot as never).world.ty + 8), foot).toBeLessThanOrEqual(3);
+    for (const foot of ["foot-far", "foot-near"]) {
+      expect(person.bone(foot as never).world.ty, foot).toBeGreaterThan(-15);
+      expect(person.bone(foot as never).world.ty, foot).toBeLessThan(-6);
+    }
   });
 
   it("пробна ходьба: лапи й ступні не провалюються крізь підлогу й не злітають, обидва ракурси", () => {
@@ -542,6 +548,202 @@ describe("точки арту", () => {
     expect(entryPoint(body, "shoulder", "back")).toEqual({ x: 10, y: 12 });
     expect(entryPoint(body, "shoulder", "front")).toEqual({ x: 30, y: 12 });
     expect(entryPoint(body, "hip", "front")).toBeUndefined();
+  });
+});
+
+describe("еталони F1b", () => {
+  type Pose = Readonly<Record<string, readonly [number, number]>>;
+  /**
+   * Вихідна поза з контракту F1b (art/STYLE.md, розділ 13; лист `sheet-chars`): де стоїть pivot кожної частини, корінь —
+   * точка підлоги (0, 0), обличчям праворуч.
+   */
+  const CAT_POSE: Readonly<Record<"front" | "back", Pose>> = {
+    front: {
+      body: [-14, -20],
+      "leg-back-near": [-16, -18.5],
+      "leg-back-far": [-10.5, -22],
+      "leg-front-near": [10.5, -18.5],
+      "leg-front-far": [16, -22],
+      tail: [-22, -28],
+      head: [10, -29],
+      "ear-near": [9.5, -44.5],
+      "ear-far": [24.5, -46],
+      eyes: [21, -37.4],
+      muzzle: [22.8, -31.6],
+      mouth: [22.8, -30.2],
+    },
+    back: {
+      body: [-14, -20],
+      "leg-back-near": [-10.5, -18.5],
+      "leg-back-far": [-16, -22],
+      "leg-front-near": [16, -18.5],
+      "leg-front-far": [10.5, -22],
+      tail: [-21, -29],
+      head: [13, -32],
+      "ear-near": [27, -48.5],
+      "ear-far": [12.5, -48],
+    },
+  };
+  const PERSON_POSE: Readonly<Record<"front" | "back", Pose>> = {
+    front: {
+      torso: [0, -64],
+      "leg-near": [-6.5, -59],
+      "leg-far": [6, -61.4],
+      "shoe-near": [-5.9, -9.8],
+      "shoe-far": [6.6, -12.2],
+      "arm-near": [-17, -100.4],
+      "arm-far": [15, -102.4],
+      head: [1.5, -109.5],
+      "hair-back": [1.5, -109.5],
+      "hair-front": [1.5, -109.5],
+      eyes: [6.8, -123.4],
+    },
+    back: {
+      torso: [0, -64],
+      "leg-near": [6.5, -59],
+      "leg-far": [-6, -61.4],
+      "shoe-near": [7.1, -9.8],
+      "shoe-far": [-5.4, -12.2],
+      "arm-near": [17, -100.4],
+      "arm-far": [-15, -102.4],
+      head: [-0.5, -109.5],
+      "hair-back": [-0.5, -109.5],
+    },
+  };
+  /** Порядок малювання з контракту F1b (знизу догори), лише видимі частини. */
+  const ORDER = {
+    cat: {
+      front: ["tail", "leg-back-far", "leg-front-far", "body", "leg-back-near", "leg-front-near", "ear-far", "ear-near", "head", "muzzle", "eyes", "mouth"],
+      back: ["leg-back-far", "leg-front-far", "ear-far", "ear-near", "head", "body", "leg-back-near", "leg-front-near", "tail"],
+    },
+    person: {
+      front: ["hair-back", "arm-far", "leg-far", "shoe-far", "leg-near", "shoe-near", "torso", "head", "eyes", "hair-front", "arm-near"],
+      back: ["arm-far", "leg-far", "shoe-far", "leg-near", "shoe-near", "torso", "head", "hair-back", "arm-near"],
+    },
+  } as const;
+  const RIGS = [
+    { name: "cat", def: CAT_RIG as unknown as LooseRig, fit: CAT_FIT, pose: CAT_POSE, far: CAT_FAR_SLOTS as readonly string[] },
+    { name: "person", def: PERSON_RIG as unknown as LooseRig, fit: PERSON_FIT, pose: PERSON_POSE, far: PERSON_FAR_SLOTS as readonly string[] },
+  ] as const;
+  const VIEWS = ["front", "back"] as const;
+  const fitted = (rig: (typeof RIGS)[number], view: "front" | "back"): Rig<string, string, string> =>
+    new Rig(rig.def, { fit: rig.fit as never, lookup: artEntry, facing: { view } });
+
+  it("вихідна поза з точок еталонів — як на листі F1b: місця частин і порядок, обидва ракурси", () => {
+    for (const rig of RIGS) {
+      for (const view of VIEWS) {
+        const pose = fitted(rig, view).evaluate(0);
+        for (const [slot, [x, y]] of Object.entries(rig.pose[view])) {
+          const s = pose.slot(slot);
+          expect(s.visible, `${rig.name} ${view} ${slot}`).toBe(true);
+          expect(s.x, `${rig.name} ${view} ${slot} x`).toBeCloseTo(x, 1);
+          expect(s.y, `${rig.name} ${view} ${slot} y`).toBeCloseTo(y, 1);
+          expect(s.rot, `${rig.name} ${view} ${slot}`).toBeCloseTo(0, 6);
+        }
+        const drawn = pose.order.filter((item) => item.kind === "slot" && pose.slots[item.index]?.visible).map((item) => item.id);
+        expect(drawn, `${rig.name} ${view}`).toEqual(ORDER[rig.name][view]);
+      }
+      for (const slot of rig.far) expect(rig.def.slots.some((s) => s.id === slot), `${rig.name}: ${slot}`).toBe(true);
+    }
+  });
+
+  it("запасні числа визначення дають ту саму позу, що й точки еталонів (скелет без атласу стоїть так само)", () => {
+    for (const rig of RIGS) {
+      for (const view of VIEWS) {
+        const art = fitted(rig, view).evaluate(0);
+        const plain = new Rig(rig.def, { facing: { view } }).evaluate(0);
+        art.slots.forEach((s, i) => {
+          const p = plain.slots[i]!;
+          expect(Math.hypot(s.x - p.x, s.y - p.y), `${rig.name} ${view} слот ${s.id}`).toBeLessThan(0.05);
+        });
+        art.bones.forEach((b, i) => {
+          const p = plain.bones[i]!;
+          expect(Math.hypot(b.world.tx - p.world.tx, b.world.ty - p.world.ty), `${rig.name} ${view} кістка ${b.id}`).toBeLessThan(0.05);
+        });
+        for (const name of art.anchorNames()) {
+          const a = art.anchor(name)!;
+          const p = plain.anchor(name)!;
+          expect(Math.hypot(a.x - p.x, a.y - p.y), `${rig.name} ${view} якір ${name}`).toBeLessThan(0.05);
+        }
+        // Гнізда, точки яких різні в ракурсах (спинка кота, руки персонажа): у визначенні — одне число на обидва.
+        for (const id of art.socketIds) {
+          const a = art.socket(id as never)!;
+          const p = plain.socket(id as never)!;
+          expect(Math.hypot(a.x - p.x, a.y - p.y), `${rig.name} ${view} гніздо ${id}`).toBeLessThan(3);
+        }
+      }
+    }
+  });
+
+  /** Частина → де вона кріпиться: слот батьківської частини й точка в його кадрі. */
+  const JOINTS: Readonly<Record<"cat" | "person", readonly (readonly [string, string, string])[]>> = {
+    cat: [
+      ["head", "body", "neck"],
+      ["tail", "body", "tail"],
+      ["leg-front-far", "body", "shoulder-far"],
+      ["leg-front-near", "body", "shoulder-near"],
+      ["leg-back-far", "body", "hip-far"],
+      ["leg-back-near", "body", "hip-near"],
+      ["ear-far", "head", "ear-far"],
+      ["ear-near", "head", "ear-near"],
+      ["muzzle", "head", "muzzle"],
+      ["eyes", "head", "eyes"],
+      ["mouth", "muzzle", "mouth"],
+    ],
+    person: [
+      ["head", "torso", "neck"],
+      ["hair-back", "torso", "neck"],
+      ["arm-far", "torso", "shoulder-far"],
+      ["arm-near", "torso", "shoulder-near"],
+      ["leg-far", "torso", "hip-far"],
+      ["leg-near", "torso", "hip-near"],
+      ["shoe-far", "leg-far", "foot"],
+      ["shoe-near", "leg-near", "foot"],
+      ["eyes", "head", "eyes"],
+    ],
+  };
+
+  it("пробна хода з еталонами: частини не розходяться в суглобах, лапи й ступні лишаються на підлозі", () => {
+    const p = { x: 0, y: 0 };
+    for (const rig of RIGS) {
+      const walk = animsOf(rig.name).find(([name]) => name === "trial.ts/walk")?.[1];
+      expect(walk, rig.name).toBeDefined();
+      if (!walk) continue;
+      for (const view of VIEWS) {
+        const pose = fitted(rig, view);
+        pose.play(walk as never, 0, { blend: 0 });
+        for (let t = 0; t < walk.duration; t += 10) {
+          pose.evaluate(t);
+          for (const [child, parent, point] of JOINTS[rig.name]) {
+            const c = pose.slot(child);
+            const s = pose.slot(parent);
+            if (!c.visible || !s.visible || !s.art) continue;
+            const entry = artEntry(s.art);
+            const at = entryPoint(entry, point, view);
+            expect(entry && at, `${rig.name} ${view}: ${s.art} без точки ${point}`).toBeTruthy();
+            if (!entry || !at) continue;
+            // Точка батьківської частини там, де її кадр стоїть зараз: pivot слота + поворот і масштаб кадру.
+            const dx = (at.x - entry.pivot.x) * s.sx;
+            const dy = (at.y - entry.pivot.y) * s.sy;
+            const r = (s.rot * Math.PI) / 180;
+            p.x = s.x + dx * Math.cos(r) - dy * Math.sin(r);
+            p.y = s.y + dx * Math.sin(r) + dy * Math.cos(r);
+            // Допуск — кивок голови на шиї й нахил тулуба над тазом (задні лапи — на тазі): частки одиниці.
+            expect(Math.hypot(c.x - p.x, c.y - p.y), `${rig.name} ${view} ${child} ↔ ${parent}.${point} t=${t}`).toBeLessThan(1.2);
+          }
+        }
+        // Низ лап (точка `paw`) і кісточки — біля підлоги: опора не провалюється, перенос не злітає.
+        if (rig.name === "cat") {
+          for (const leg of ["leg-front-far", "leg-front-near", "leg-back-far", "leg-back-near"]) {
+            for (let t = 0; t < walk.duration; t += 20) {
+              const y = tip(pose.evaluate(t), leg).y;
+              expect(y, `${view} ${leg} ${t}`).toBeLessThan(4);
+              expect(y, `${view} ${leg} ${t}`).toBeGreaterThan(-8);
+            }
+          }
+        }
+      }
+    }
   });
 });
 

@@ -20,8 +20,10 @@
 // Положення суглобів беруться з точок кадрів (`PERSON_FIT`): pivot кадру — суглоб (голова — підборіддя над шиєю, рука —
 // плече, нога — кульшовий суглоб, взуття — щиколотка, тулуб — середина таза); торс має точки `neck` (де pivot голови),
 // `shoulder-far`/`-near`, `hip-far`/`-near`; необов'язкові: торс — `neck-base`, `arms` (де тримає кота), голова — `eyes`
-// і `top` (над маківкою, для бульбашок), рука — `hand` (зап'ясток). Волосся ззаду й спереду мають той самий pivot, що й
-// голова (малюються на її полотні). Поки арту немає, діють числа нижче — їх підганяють під еталонні частини.
+// і `top` (над маківкою, для бульбашок), рука — `hand` (зап'ясток) і `grip` (кулак: річ і вудочка). Волосся ззаду й
+// спереду мають той самий pivot, що й голова (малюються на її полотні). Числа нижче — запасні (запису чи точки немає): вони
+// дають ту саму вихідну позу, що й точки еталонів F1b (`art/person/*`, art/STYLE.md, розділ 13; тест `tests/rig.test.ts`),
+// тож скелет без атласу стоїть так само.
 
 import type { ArtId } from "../../art/types";
 import type { Look } from "../../../sim/types";
@@ -43,19 +45,22 @@ export const PERSON_RIG = defineRig({
   bones: [
     { id: "root", parent: null, x: 0, y: 0, rot: 0, len: 0 },
     { id: "pelvis", parent: "root", x: 0, y: -64, rot: 0, len: 4 },
-    { id: "torso", parent: "pelvis", x: 0, y: 0, rot: -90, len: 44 },
-    { id: "neck", parent: "torso", x: 40, y: 0, rot: 0, len: 6 },
-    { id: "head", parent: "neck", x: 6, y: 0, rot: 0, len: 30 },
-    // Руки: у системі тулуба x — угору, y — уперед; ¾ спереду далеке плече праворуч (+y), ближнє — ліворуч.
-    { id: "arm-far", parent: "torso", x: 40, y: 8, rot: 180, len: 42 },
-    { id: "hand-far", parent: "arm-far", x: 42, y: 0, rot: 0, len: 8 },
-    { id: "arm-near", parent: "torso", x: 40, y: -9, rot: 180, len: 42 },
-    { id: "hand-near", parent: "arm-near", x: 42, y: 0, rot: 0, len: 8 },
-    // Ноги: далека трохи вище (далі на підлозі), ближня — нижче; стопа дивиться вперед.
-    { id: "leg-far", parent: "pelvis", x: 5, y: -1, rot: 90, len: 56 },
-    { id: "foot-far", parent: "leg-far", x: 56, y: 0, rot: -90, len: 10 },
-    { id: "leg-near", parent: "pelvis", x: -5, y: 1, rot: 90, len: 56 },
-    { id: "foot-near", parent: "leg-near", x: 56, y: 0, rot: -90, len: 10 },
+    { id: "torso", parent: "pelvis", x: 0, y: 0, rot: -90, len: 40 },
+    // Шия — від основи (`neck-base`) до підборіддя (`neck`); голова дивиться вгору.
+    { id: "neck", parent: "torso", x: 40, y: 0.5, rot: 0, len: 5.5 },
+    { id: "head", parent: "neck", x: 5.5, y: 1, rot: 0, len: 30 },
+    // Руки: у системі тулуба x — угору, y — уперед; ¾ спереду далеке плече праворуч (+y), ближнє — ліворуч і нижче.
+    // Довжина — від плеча до зап'ястка (`hand`), кисть — до хвату (`grip`).
+    { id: "arm-far", parent: "torso", x: 38.4, y: 15, rot: 180, len: 40.6 },
+    { id: "hand-far", parent: "arm-far", x: 40.6, y: -1, rot: 0, len: 6.4 },
+    { id: "arm-near", parent: "torso", x: 36.4, y: -17, rot: 180, len: 40.6 },
+    { id: "hand-near", parent: "arm-near", x: 40.6, y: -1, rot: 0, len: 6.4 },
+    // Ноги: далека трохи вище (далі на підлозі), ближня — нижче; довжина — від стегна до кісточки (`foot`); стопа дивиться
+    // вперед.
+    { id: "leg-far", parent: "pelvis", x: 6, y: 2.6, rot: 90, len: 49.2 },
+    { id: "foot-far", parent: "leg-far", x: 49.2, y: -0.6, rot: -90, len: 12 },
+    { id: "leg-near", parent: "pelvis", x: -6.5, y: 5, rot: 90, len: 49.2 },
+    { id: "foot-near", parent: "leg-near", x: 49.2, y: -0.6, rot: -90, len: 12 },
   ],
   slots: [
     { id: "hair-back", bone: "head", z: 0, frame: null },
@@ -67,7 +72,7 @@ export const PERSON_RIG = defineRig({
     { id: "torso", bone: "torso", z: 6, frame: null },
     { id: "head", bone: "head", z: 8, frame: null },
     // Очі на голові: у системі голови x — угору від підборіддя, y — уперед.
-    { id: "eyes", bone: "head", z: 9, frame: "open", x: 15, y: 4 },
+    { id: "eyes", bone: "head", z: 9, frame: "open", x: 13.9, y: 5.3 },
     { id: "hair-front", bone: "head", z: 10, frame: null },
     { id: "arm-near", bone: "arm-near", z: 12, frame: null },
   ],
@@ -77,10 +82,12 @@ export const PERSON_RIG = defineRig({
     // інший бік тулуба; те, що персонаж тримає перед собою, — за тулубом.
     back: {
       bones: {
-        "arm-far": { y: -8 },
-        "arm-near": { y: 9 },
-        "leg-far": { x: -5 },
-        "leg-near": { x: 5 },
+        neck: { y: -0.5 },
+        head: { y: 0 },
+        "arm-far": { y: -15 },
+        "arm-near": { y: 17 },
+        "leg-far": { x: -6 },
+        "leg-near": { x: 6.5 },
       },
       slots: {
         "hair-back": { z: 9 },
@@ -92,21 +99,21 @@ export const PERSON_RIG = defineRig({
   },
   anchors: {
     // Над маківкою — бульбашки.
-    head: { bone: "head", x: 36, y: 0 },
+    head: { bone: "head", x: 41.5, y: 0.5 },
     // Руки — куди летять запаси і звідки йде волосінь.
-    hands: { bone: "hand-near", x: 4, y: 0 },
+    hands: { bone: "hand-near", x: 6.4, y: -0.2 },
     // Коліна: на стегні ближньої ноги (сидячи стегно горизонтальне, «верх» — −y у системі ноги).
     lap: { bone: "leg-near", x: 20, y: -6 },
   },
   sockets: {
     // Кіт на руках: корінь кота (його лапи) — на рівні пояса перед тулубом; руки (ближня) — поверх кота.
-    arms: { bone: "torso", x: 10, y: 8, z: 7, cargo: ["cat"] },
+    arms: { bone: "torso", x: 20, y: 9, z: 7, cargo: ["cat"] },
     // Кіт на колінах.
     lap: { bone: "leg-near", x: 20, y: -6, z: 7, cargo: ["cat"] },
     // Річ у руках (тарілка, судочок, совок, пакунок) — у ближній руці, під кистю.
-    held: { bone: "hand-near", x: 6, y: 0, z: 11, cargo: ["held"] },
+    held: { bone: "hand-near", x: 6.4, y: -0.2, z: 11, cargo: ["held"] },
     // Вудочка — у ближній руці.
-    rod: { bone: "hand-near", x: 4, y: 0, z: 11, cargo: ["rod"] },
+    rod: { bone: "hand-near", x: 6.4, y: -0.2, z: 11, cargo: ["rod"] },
   },
   skin: {
     "hair-back": "person/hair-back/0",
@@ -132,6 +139,12 @@ export const PERSON_RIG = defineRig({
 /** Слот скелета персонажа. */
 export type PersonSlot = SlotOf<typeof PERSON_RIG>;
 
+/**
+ * Дальні частини персонажа — по той бік тулуба від камери: дальні рука, нога й черевик. Вигляд затінює їх (`farRecipe` у
+ * `recipes.ts`; пропозиція F1b, лист `sheet-chars`).
+ */
+export const PERSON_FAR_SLOTS: readonly PersonSlot[] = ["arm-far", "leg-far", "shoe-far"];
+
 /** Де скелет персонажа бере суглоби з точок кадрів (див. початок файлу). */
 export const PERSON_FIT = defineFit(PERSON_RIG, {
   bones: {
@@ -155,9 +168,13 @@ export const PERSON_FIT = defineFit(PERSON_RIG, {
       { slot: "hair-front", point: "top" },
       { slot: "head", point: "top" },
     ],
+    hands: { slot: "arm-near", point: "grip" },
   },
   sockets: {
     arms: { slot: "torso", point: "arms" },
+    // Річ і вудочка — у кулаці ближньої руки: точка `grip` еталона F1b `person/arm`.
+    held: { slot: "arm-near", point: "grip" },
+    rod: { slot: "arm-near", point: "grip" },
   },
 });
 
