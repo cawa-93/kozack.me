@@ -78,13 +78,17 @@ function slotOptions(choice: RigChoice, slot: string): (ArtId | null)[] {
   return [...options];
 }
 
-/** Пробні речі для гнізд (поки арту немає — заглушки з цим розміром і pivot). */
-const CARGO_LOOK: Readonly<Record<Exclude<SocketCargo, "cat">, { id: ArtId; w: number; h: number; px: number; py: number }>> = {
-  hand: { id: "person/hand", w: 16, h: 12, px: 8, py: 10 },
-  rod: { id: "item/rod/hand", w: 64, h: 8, px: 4, py: 4 },
-  held: { id: "item/plate/ready", w: 30, h: 12, px: 15, py: 10 },
-  toy: { id: "item/toy/cheap", w: 20, h: 14, px: 4, py: 7 },
-  sock: { id: "mess/sock", w: 18, h: 10, px: 3, py: 5 },
+/**
+ * Пробні речі для гнізд — кадри маніфесту (F5), у тому стані, в якому їх тримають: вудочка — іграшка в руці, у зубах —
+ * іграшка й шкарпетка, у руках — тарілка зі стравою; рука, що гладить кота, — рука персонажа (у неї шари, тож вона
+ * показує вибраний шар).
+ */
+const CARGO_LOOK: Readonly<Record<Exclude<SocketCargo, "cat">, { id: ArtId; state?: string; layered?: true }>> = {
+  hand: { id: "person/arm", layered: true },
+  rod: { id: "item/toy/cheap", state: "hand" },
+  held: { id: "item/dish/meal", state: "cheap" },
+  toy: { id: "item/toy/cheap", state: "teeth" },
+  sock: { id: "mess/sock", state: "carried" },
 };
 
 const LAYERS: readonly (FrameLayer | "all")[] = ["all", "ink", "fill", "shade", "detail"];
@@ -213,7 +217,8 @@ function mount(ctx: GalleryContext): GalleryView {
       cargo = cargoRig;
     } else {
       const look = CARGO_LOOK[kind];
-      cargo = addArt(scene, null, look.id, { fallback: { size: { w: look.w, h: look.h }, pivot: { x: look.px, y: look.py } } });
+      const layer = look.layered && state.layer !== "all" ? state.layer : undefined;
+      cargo = addArt(scene, null, look.id, { state: look.state, view: look.layered ? state.view : undefined, layer });
     }
     sprite.attach(state.cargo, cargo);
   };

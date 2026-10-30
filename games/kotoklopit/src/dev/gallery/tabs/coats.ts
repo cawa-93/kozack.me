@@ -13,7 +13,6 @@ import { drawPortrait, portraitCanvas } from "../../../ui/portrait";
 import { addBakedArt, bakedFrame, bakeStats, releaseBaked, setBakedArt } from "../../../view/art/bake";
 import { composePortrait } from "../../../view/art/compose";
 import { catRecipe, personRecipe, type CatAppearance, type CatRecipeOptions } from "../../../view/art/recipes";
-import type { ArtFallback } from "../../../view/art/placement";
 import type { ArtId, ArtView, TintRecipe } from "../../../view/art/types";
 import { BUILDS, FACES } from "../../../view/palette";
 import type { GalleryContext, GalleryTab, GalleryView } from "../tab";
@@ -66,15 +65,6 @@ const LOOK_SAMPLES: readonly LookSample[] = [
   { label: "Дуже темна, сиві кучері", look: { face: 2, skin: 4, hair: 3, hairColor: 5, eyes: 2, build: 2, top: 6, bottom: 3, shoes: 3 } },
   { label: "Руде, плями на одязі", look: { face: 1, skin: 2, hair: 2, hairColor: 4, eyes: 0, build: 1, top: 2, bottom: 1, shoes: 2 }, stained: true },
 ];
-
-/** Розмір і pivot частин, поки маніфест (F5) їх не дав: заглушки потрібного масштабу. */
-const FALLBACK: Readonly<Record<string, ArtFallback>> = {
-  "cat/body": { size: { w: 96, h: 60 }, pivot: { x: 48, y: 36 } },
-  "cat/head": { size: { w: 64, h: 60 }, pivot: { x: 30, y: 50 } },
-  "person/head": { size: { w: 60, h: 66 }, pivot: { x: 30, y: 62 } },
-  "person/torso": { size: { w: 64, h: 74 }, pivot: { x: 32, y: 68 } },
-};
-const fallbackOf = (id: ArtId): ArtFallback | undefined => FALLBACK[id.split("/").slice(0, 2).join("/")];
 
 /** Стовпці: частина й ракурс. */
 interface Column {
@@ -141,7 +131,7 @@ function mount(ctx: GalleryContext): GalleryView {
   });
   const place = (row: number, col: number, column: Column, owner: string, recipe: () => TintRecipe): void => {
     const { cx, cy } = cellCenter(row, col);
-    const image = addBakedArt(scene, root, column.id, recipe(), { view: column.view, owner, fallback: fallbackOf(column.id) });
+    const image = addBakedArt(scene, root, column.id, recipe(), { view: column.view, owner });
     const item: Placed = { image, id: column.id, view: column.view, owner, cx, cy };
     image.setScale(image.scaleX * GRID.zoom, image.scaleY * GRID.zoom);
     center(item);
@@ -188,7 +178,7 @@ function mount(ctx: GalleryContext): GalleryView {
     for (const item of placed) {
       const recipe = recipes.get(item.owner);
       if (!recipe) continue;
-      setBakedArt(item.image, item.id, recipe(), { view: item.view, owner: item.owner, fallback: fallbackOf(item.id) });
+      setBakedArt(item.image, item.id, recipe(), { view: item.view, owner: item.owner });
       center(item);
     }
   };
