@@ -193,7 +193,7 @@ Object.assign(SAME, {
   "здоров'я": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:health", "thought:person:health"] },
   "здоровий глузд": { why: "показник на панелі й думка персонажа, коли він низький", ids: ["stat:sanity", "thought:person:sanity"] },
   спрага: { why: "кіт хоче пити: думка й прохання вголос біля миски для води, на умивальнику й там, де миска стояла", ids: ["thought:cat:thirst", "ask:water-bowl", "ask:sink", "ask:water"] },
-  нявкання: { why: "кіт нявчить; за дверима (утік чи просить на сходи) його не видно — те саме нявкання над дверима", ids: ["event:meow", "event:escaped", "state:door.stairs", "ask:door"] },
+  нявкання: { why: "кіт нявчить; кіт, що втік на сходи, за дверима, і його не видно — те саме нявкання над дверима", ids: ["event:meow", "event:escaped", "state:door.stairs"] },
   злість: { why: "кіт шипить (ображений на руках, на кота без причини, на гостей) чи верещить від м'яти", ids: ["event:hissed", "event:picked-up:offended=true", "event:hissed-guests", "event:catnip:reaction=frenzy"] },
   приємно: { why: "котові приємно: його почав вилизувати друг чи поруч лягла «Щедра душа»", ids: ["event:groom-started", "event:cat-cuddled"] },
   гуркіт: { why: "щось розбилося (дрібничка, скинута страва) чи гуркоче віджим — гучний звук", ids: ["event:trinket-fell:trinket=mug:object=table:broken=true", "event:laundry:stage=spin", "event:knocked:object=table:item=meal"] },
@@ -261,5 +261,8 @@ describe("унікальна іконка на унікальний кейс (§
     expect(icon("thought:cat:thirst")).toBe(icon("ask:water-bowl"));
     expect(icon("thought:cat:thirst")).not.toBe(icon("state:shower"));
     expect(icon("ask:water-bowl")).not.toBe(icon("state:waterEmpty"));
+    // «Втікач» у квартирі проситься на сходи — не нявкання кота, що вже втік і чекає за дверима (рецензія 2026-10-30).
+    expect(icon("ask:door")).not.toBe(icon("state:door.stairs"));
+    expect(icon("ask:door")).not.toBe(icon("event:meow"));
   });
 });

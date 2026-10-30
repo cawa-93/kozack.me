@@ -92,7 +92,8 @@ export function stoveIcon(item: Dish | null): IconName | null {
 
 /**
  * Що просить кіт, який просить (§11.4, §9.12; `beg`): пити — біля порожньої миски для води, на умивальнику (кран) чи там, де
- * миска стояла, коли мисок немає; на сходи — нявкає під дверима; інакше — їсти. Це чути — вголос; лише «Терплячий зранку» біля
+ * миска стояла, коли мисок немає; на сходи — «Втікач» під дверима, своя іконка (кіт тягне лапу до дверей; не нявкання над дверима
+ * кота, що вже втік, — рецензія 2026-10-30); інакше — їсти. Це чути — вголос; лише «Терплячий зранку» біля
  * ліжка чекає сніданку мовчки — думкою (рішення автора 2026-10-26). Спрага й голод — ті самі іконки, що й у думках про стан
  * (`thoughts.ts`): той самий випадок (правило автора 2026-10-30 «Унікальна іконка на унікальний кейс»).
  */
@@ -100,7 +101,7 @@ export function catAsk(state: GameState, cat: Cat): { kind: "say" | "think"; ico
   const target = cat.act.target;
   if (target === "bed") return { kind: "think", icon: "kibble" };
   const thirsty = target === "sink" || target === "water" || state.home.items.some((i) => i.kind === "water" && `item:${i.id}` === target);
-  return { kind: "say", icon: thirsty ? "drink" : target === "door" ? "meow" : "kibble" };
+  return { kind: "say", icon: thirsty ? "drink" : target === "door" ? "door-ask" : "kibble" };
 }
 
 /** Що треба мати (§11.4): іконка зі знаком питання. */

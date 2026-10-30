@@ -106,6 +106,7 @@ export const ICON_NAMES = [
   "kibble-pour",
   "picky",
   "stolen",
+  "door-ask",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

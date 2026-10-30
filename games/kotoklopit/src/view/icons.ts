@@ -819,6 +819,16 @@ Object.assign(ICONS, {
     g.fillStyle(0xd9708a).fillCircle(31, 14.5, 2);
     g.lineStyle(2, INK).lineBetween(2, 17, 8, 15).lineBetween(2, 23, 9, 21);
   },
+  "door-ask": (g: Phaser.GameObjects.Graphics) => {
+    // «Втікач» проситься на сходи (§9.12 «Втечі»): вхідні двері, а перед ними сидить кіт і тягне до них лапу. Не нявкання над
+    // дверима — це кіт, що вже втік на сходи, і його треба впустити.
+    g.fillStyle(INK).fillRect(2, 3, 20, 34);
+    g.fillStyle(0x9a6a40).fillRect(4, 5, 16, 32);
+    g.fillStyle(0xe6c35a).fillCircle(16.5, 21, 1.8);
+    g.lineStyle(4, 0x6b5d6e).beginPath().arc(33, 30, 4, Math.PI * 0.5, Math.PI * 1.5, true).strokePath();
+    g.fillStyle(0x6b5d6e).fillEllipse(29, 31, 12, 12).fillCircle(28, 20, 6).fillTriangle(23, 18, 24, 11, 27.5, 15).fillTriangle(33, 18, 32, 11, 28.5, 15);
+    g.lineStyle(3.5, 0x6b5d6e).lineBetween(26, 26, 20, 22);
+  },
   "kibble-pour": (g: Phaser.GameObjects.Graphics) => {
     // Автогодівниця досипала (§8.7): миска з кормом, а згори в неї сиплються гранули з рисочками падіння. Не корм голодного кота.
     g.fillStyle(0x8a5a33).fillEllipse(20, 25, 20, 8);
