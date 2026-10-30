@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 49" width="40" height="49">
+<!-- cat/tail-extra/long/back — накладки хвоста long: тьмяна шерсть, завитки кучерявих, ракурс back (¾ ззаду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 40×49; pivot (24, 37) — корінь хвоста, як у частини (те саме полотно).
+Шари: extra-dull, extra-curls.
+Готові кольори: extra-dull — скуйовджені пасма inkSoft (обтято силуетом хвоста), extra-curls — завитки inkSoft і гачки ink за краєм.
+-->
+<defs>
+<clipPath id="cat-tail-extra-long-back-tail"><path d="M29.8 36.3C29.2 34.9 27.6 33.4 26.8 31.9C26 30.4 25.4 28.7 25 27.2C24.7 25.6 24.5 24 24.6 22.6C24.8 21.2 25.4 19.8 26 18.8C26.5 17.8 27.4 17 28.1 16.6C28.9 16.2 29.6 16.7 30.5 16.3C31.3 16 32.6 15.5 33.1 14.8C33.7 14 33.9 12.7 33.7 11.7C33.6 10.8 32.9 9.6 32.2 9.1C31.4 8.5 30.5 8.4 29.1 8.5C27.8 8.5 26 8.5 24.3 9.4C22.5 10.3 20.3 12 18.8 14C17.4 15.9 16.3 18.6 15.8 21C15.3 23.5 15.4 26.3 15.8 28.8C16.1 31.3 17 34 18 36.1C18.9 38.2 20.3 40.4 21.4 41.7C22.5 43 23.4 43.7 24.5 44C25.7 44.2 27.3 43.9 28.3 43.2C29.3 42.6 30.3 41.2 30.6 40.1C30.8 38.9 30.4 37.7 29.8 36.3Z"/></clipPath>
+</defs>
+<g id="extra-dull">
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M19.9 34.5Q19.9 35.9 19 37Q18.3 35.4 19.9 34.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M21.1 34.8Q20 36.2 18.3 36Q19.3 34.6 21.1 34.8Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M22.3 34.8Q20.3 35.3 19.3 33.5Q21 33.8 22.3 34.8Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M20.3 22.3Q21.4 21.1 23 20.6Q22.3 22.5 20.3 22.3Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M21.5 21.8Q23 21.3 24 22.5Q22.6 23 21.5 21.8Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M22.7 22Q24.6 22.4 24.4 24.3Q23.2 23.4 22.7 22Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M24.4 11.7Q23 11.6 21.9 10.7Q23.7 10 24.4 11.7Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M25.6 11.8Q24.2 11.1 24.3 9.5Q25.7 10.2 25.6 11.8Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M26.8 12.1Q26.2 10.1 27.9 9Q27.8 10.7 26.8 12.1Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M25.6 14Q27 13.8 28.1 14.6Q26.6 15.5 25.6 14Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M26.8 14.3Q28.3 14.9 28.5 16.6Q26.9 15.9 26.8 14.3Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-long-back-tail)" d="M28 14.2Q28.9 15.9 27.4 17.2Q27.2 15.6 28 14.2Z" fill="#6b5263"/>
+</g>
+<g id="extra-curls">
+<path d="M25.6 33.9L25.4 33.9L25.1 34.1L24.8 34.3L24.4 34.4L24.2 34.5L24 34.5L23.9 34.4L23.7 34.3L23.5 34.1L23.3 34L23.2 33.8L23.1 33.7L23.1 33.6L23.1 33.4L23.1 33.1L23.2 32.9L23.2 32.6L23.3 32.5L23.4 32.4L23.6 32.2L23.9 32.1L24.2 32L24.5 31.9L24.6 31.8L24.4 31.7L24.1 31.7L23.8 31.7L23.4 31.7L23.1 31.8L22.7 31.9L22.5 32.2L22.3 32.5L22.1 32.9L22 33.3L22 33.7L22.1 34.1L22.3 34.4L22.6 34.7L22.9 35L23.3 35.1L23.6 35.2L24 35.3L24.4 35.1L24.7 34.9L25 34.6L25.3 34.3L25.5 34.1Z" fill="#6b5263"/>
+<path d="M26.3 32.1Q28.4 31.8 28.2 33.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.4 35.9Q16.5 36.2 16.7 34.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.1 20.5L19.9 20.4L19.7 20.2L19.3 20L19 19.8L18.6 19.6L18.2 19.6L17.8 19.7L17.5 19.9L17.2 20.2L16.9 20.5L16.7 20.8L16.7 21.2L16.7 21.6L16.8 22L17 22.4L17.2 22.7L17.5 22.9L17.8 23.1L18.2 23.2L18.6 23.2L18.9 23.1L19.3 23L19.5 22.9L19.7 22.8L19.5 22.7L19.2 22.7L18.9 22.7L18.6 22.6L18.3 22.6L18.2 22.5L18.1 22.3L18 22.1L17.9 21.9L17.8 21.6L17.8 21.4L17.7 21.3L17.8 21.2L17.9 21L18 20.8L18.1 20.6L18.3 20.5L18.4 20.4L18.5 20.3L18.8 20.3L19.2 20.4L19.5 20.4L19.9 20.5Z" fill="#6b5263"/>
+<path d="M24.1 22.5Q26 23.3 25.1 24.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.3 21.1Q14.5 20.3 15.4 19.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.4 16L26.3 15.8L26.1 15.5L25.9 15.1L25.8 14.8L25.7 14.5L25.7 14.4L25.7 14.2L25.8 14L26 13.8L26.2 13.7L26.3 13.5L26.4 13.5L26.5 13.4L26.7 13.4L27 13.4L27.2 13.4L27.5 13.5L27.6 13.5L27.8 13.6L27.9 13.8L28 14.1L28.2 14.4L28.3 14.7L28.4 14.9L28.4 14.7L28.5 14.4L28.5 14L28.4 13.7L28.3 13.3L28.1 13L27.9 12.7L27.5 12.5L27.1 12.4L26.7 12.4L26.3 12.4L26 12.5L25.6 12.7L25.3 13L25.1 13.3L25 13.7L24.9 14L24.9 14.4L25.1 14.8L25.3 15.1L25.6 15.4L25.9 15.7L26.2 15.8Z" fill="#6b5263"/>
+<path d="M27.9 16.1Q28.4 18.1 27 18.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.5 9.8Q24.1 8 25.3 8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.2 12.2L27.2 12L27.2 11.7L27.2 11.3L27.1 10.9L27 10.5L26.8 10.2L26.4 10L26.1 9.8L25.7 9.7L25.3 9.7L24.9 9.8L24.5 10L24.2 10.3L24 10.6L23.8 10.9L23.7 11.3L23.7 11.7L23.7 12.1L23.9 12.4L24.2 12.7L24.5 12.9L24.7 13.1L25 13.3L25.2 13.3L25.1 13.2L24.9 12.9L24.8 12.6L24.6 12.4L24.5 12.1L24.5 12L24.6 11.8L24.6 11.6L24.8 11.4L24.9 11.1L25 11L25.1 10.9L25.2 10.9L25.4 10.8L25.7 10.8L25.9 10.8L26.1 10.8L26.3 10.8L26.4 10.9L26.6 11.1L26.8 11.4L26.9 11.8L27.1 12.1Z" fill="#6b5263"/>
+<path d="M27.9 16.1Q28.4 18.1 27 18.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.5 9.8Q24.1 8 25.3 8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

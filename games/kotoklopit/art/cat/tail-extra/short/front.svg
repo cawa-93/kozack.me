@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 42" width="37" height="42">
+<!-- cat/tail-extra/short/front — накладки хвоста short: тьмяна шерсть, завитки кучерявих, ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 37×42; pivot (23, 30) — корінь хвоста, як у частини (те саме полотно).
+Шари: extra-dull, extra-curls.
+Готові кольори: extra-dull — скуйовджені пасма inkSoft (обтято силуетом хвоста), extra-curls — завитки inkSoft і гачки ink за краєм.
+-->
+<defs>
+<clipPath id="cat-tail-extra-short-front-tail"><path d="M26.7 25.9C25.4 25.3 23.1 25.2 21.8 24.6C20.5 24.1 19.7 23.3 19 22.5C18.3 21.6 17.7 20.7 17.5 19.5C17.3 18.3 17.8 16.6 17.6 15.4C17.4 14.1 17.2 12.9 16.5 12.2C15.8 11.4 14.4 10.8 13.4 10.8C12.3 10.8 10.9 11.2 10.2 11.9C9.4 12.6 9.1 13.5 8.8 15C8.5 16.6 8.1 19.1 8.5 21.3C8.9 23.5 9.9 26.3 11.4 28.3C12.9 30.3 15.3 32.2 17.4 33.4C19.5 34.5 22.3 35.1 24.1 35.3C25.8 35.6 26.9 35.5 27.9 34.9C28.9 34.4 29.8 33 30.1 31.9C30.4 30.8 30.3 29.1 29.7 28.1C29.2 27.1 28 26.5 26.7 25.9Z"/></clipPath>
+</defs>
+<g id="extra-dull">
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M17.7 30.2Q18.6 31.3 18.6 32.7Q17 31.8 17.7 30.2Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M18.9 30.5Q18.9 32.2 17.5 33.1Q17.5 31.4 18.9 30.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M20.1 30.5Q18.8 32.1 17 31.3Q18.4 30.5 20.1 30.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M15.2 24.8Q15 23.2 15.7 21.7Q16.7 23.5 15.2 24.8Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M16.3 24.3Q16.9 22.9 18.5 22.9Q17.9 24.3 16.3 24.3Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M17.5 24.5Q19.1 23.4 20.4 24.8Q18.9 25.1 17.5 24.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M10.5 20.5Q9.9 21.8 8.7 22.5Q8.6 20.7 10.5 20.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M11.6 20.5Q10.6 21.6 9.1 21.1Q10.2 20 11.6 20.5Z" fill="#6b5263"/>
+<path clip-path="url(#cat-tail-extra-short-front-tail)" d="M12.8 20.9Q10.8 20.9 10.2 18.9Q11.8 19.5 12.8 20.9Z" fill="#6b5263"/>
+</g>
+<g id="extra-curls">
+<path d="M22.1 26.9L21.9 27.1L21.8 27.4L21.6 27.7L21.5 28.1L21.3 28.3L21.2 28.4L21 28.4L20.8 28.4L20.5 28.4L20.3 28.4L20.1 28.4L20 28.3L19.9 28.2L19.8 28.1L19.6 27.9L19.5 27.6L19.4 27.4L19.4 27.3L19.4 27.1L19.4 26.9L19.6 26.6L19.8 26.3L19.9 26.1L20 25.9L19.8 26L19.6 26.1L19.3 26.3L19 26.5L18.8 26.8L18.6 27.2L18.5 27.6L18.6 27.9L18.7 28.3L18.9 28.7L19.1 29L19.4 29.3L19.8 29.4L20.2 29.5L20.6 29.5L21 29.4L21.3 29.2L21.7 29L21.9 28.7L22 28.3L22 27.9L22.1 27.5L22.1 27.2Z" fill="#6b5263"/>
+<path d="M21.6 25.1Q23 23.6 23.7 24.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.6 32.9Q16.3 34.3 15.6 33.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.1 24.7L13.9 24.7L13.5 24.8L13.2 24.9L12.8 25L12.4 25.2L12.1 25.4L12 25.8L11.9 26.2L11.9 26.6L11.9 27L12.1 27.3L12.3 27.7L12.6 27.9L13 28.1L13.3 28.2L13.7 28.3L14.1 28.2L14.5 28.1L14.8 27.9L15 27.6L15.2 27.3L15.3 27L15.4 26.7L15.5 26.5L15.3 26.6L15.1 26.8L14.9 27L14.6 27.2L14.4 27.4L14.2 27.4L14.1 27.4L13.9 27.3L13.6 27.2L13.4 27.1L13.2 27L13.1 26.9L13 26.9L13 26.7L12.9 26.4L12.8 26.2L12.8 26L12.8 25.8L12.9 25.7L13.1 25.5L13.4 25.2L13.7 25L13.9 24.8Z" fill="#6b5263"/>
+<path d="M18.6 22.8Q20.5 22 20.6 23.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.8 28Q10 28.7 9.9 27.5" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.1 21.1L15.8 21.1L15.5 21.2L15.1 21.3L14.8 21.3L14.5 21.3L14.3 21.3L14.2 21.2L14.1 21L13.9 20.8L13.8 20.6L13.7 20.4L13.7 20.3L13.7 20.2L13.7 20L13.8 19.8L13.9 19.5L14 19.3L14.1 19.2L14.2 19.1L14.5 19L14.8 18.9L15.1 18.9L15.4 18.9L15.6 18.8L15.4 18.7L15.2 18.6L14.8 18.5L14.5 18.4L14.1 18.4L13.7 18.5L13.4 18.7L13.1 19L12.9 19.3L12.7 19.7L12.6 20L12.6 20.4L12.7 20.8L12.9 21.2L13.1 21.5L13.4 21.7L13.8 21.9L14.2 22L14.6 22L14.9 21.8L15.3 21.6L15.6 21.4L15.9 21.2Z" fill="#6b5263"/>
+<path d="M17 19.6Q19 19.8 18.5 21.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9 21.2Q7.1 21 7.5 19.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
