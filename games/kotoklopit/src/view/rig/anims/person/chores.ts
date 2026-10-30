@@ -79,7 +79,17 @@ const r3 = (n: number): number => Math.round(n * 1000) / 1000;
 function bonesOf(beats: readonly Beat[]): NonNullable<Tracks["bones"]> {
   const out: Partial<Record<Bone, BoneTracks>> = {};
   for (const id of BONES) {
-    const rot = beats.map(([t, pose, ease]) => key(t, r1(pose[id]?.rot ?? 0), ease ?? "inOut"));
+    // Кут між сусідніми ключами — коротшим шляхом: −175 і +179 — це 6° різниці, а не оберт руки через спину.
+    let prev = 0;
+    const rot = beats.map(([t, pose, ease], i) => {
+      let v = pose[id]?.rot ?? 0;
+      if (i > 0) {
+        while (v - prev > 180) v -= 360;
+        while (v - prev < -180) v += 360;
+      }
+      prev = v;
+      return key(t, r1(v), ease ?? "inOut");
+    });
     const pos = beats.map(([t, pose, ease]) => key(t, { x: r1(pose[id]?.pos?.x ?? 0), y: r1(pose[id]?.pos?.y ?? 0) }, ease ?? "inOut"));
     const scale = beats.map(([t, pose, ease]) => key(t, { x: r3(pose[id]?.scale?.x ?? 1), y: r3(pose[id]?.scale?.y ?? 1) }, ease ?? "inOut"));
     const track: BoneTracks = {
@@ -282,13 +292,17 @@ const lean = (deg: number, x = 0, y = 0): Body => ({ hip: { x, y }, lean: deg })
 export const PERSON_SEAT = 34;
 /** На скільки таз сидячи нижче, ніж стоячи: низ таза (≈ 12 під його центром) — на сидінні. */
 const SIT_DROP = -PELVIS_Y - 12 - PERSON_SEAT;
-/** Ступні сидячи — попереду стегон, під краєм стола (уперед по підлозі). */
-const SIT_FEET = 30;
+/**
+ * Ступні сидячи — попереду стегон (уперед по підлозі). У ¾ ззаду — під краєм стола; у ¾ спереду коліна йдуть до камери, тож
+ * ступні ближче до тіла, а ноги коротші й круті (довга нога навскіс донизу читалася як «стоїть, відхилившись»).
+ */
+const SIT_FEET: Readonly<Record<ArtView, number>> = { back: 30, front: 14 };
 
 /** Сидить, нахилений на `deg`: поза ніг і тіло (для рук). */
 function seated(s: Space, deg: number): { pose: Pose; body: Body } {
   const b = lean(deg, -2, SIT_DROP);
-  return { pose: body(b, s.step(SIT_FEET), s.step(SIT_FEET - 4)), body: b };
+  const feet = SIT_FEET[s.view];
+  return { pose: body(b, s.step(feet), s.step(feet - 4)), body: b };
 }
 
 /** Стіл і клавіатура: стільниця 54 (`env/computer`, `env/table`), клавіатура й тарілка — за ≈ 40 перед тим, хто сидить. */
@@ -381,7 +395,7 @@ function eat(s: Space): readonly Beat[] {
   const far = front ? s.reach("far", b, 24, DESK - 4, -10) : s.reach("far", b, 34, DESK + 3, -12);
   // Рот: перед обличчям, трохи нижче середини голови (голова нахилена назустріч ложці).
   const chin = PELVIS_Y + SIT_DROP - 46;
-  const mouth: Vec2 = front ? { x: 12, y: chin - 4 } : { x: 16, y: chin - 2 };
+  const mouth: Vec2 = front ? { x: 12, y: chin - 4 } : { x: 25, y: chin + 2 };
   const at = (hand: Part, tilt: number, head: number, w: number): Pose => add(sit, { torso: { rot: tilt } }, { "arm-near": hand, "arm-far": far }, wrist("near", w), nod(head));
   // У ¾ спереду ближня рука до тарілки перетинала б груди навскіс — там вона коротка, коло себе.
   const plate = (df: number, dh: number, tilt = 0): Part =>
@@ -406,7 +420,8 @@ function eat(s: Space): readonly Beat[] {
 
 /** Ліки: підносить таблетку до рота, закидає голову, ковтає (коту — та сама рука до рота кота на руках). */
 function meds(s: Space): readonly Beat[] {
-  const mouth: Vec2 = s.view === "front" ? { x: 8, y: PELVIS_Y - 54 } : { x: 14, y: PELVIS_Y - 52 };
+  // У ¾ ззаду обличчя праворуч від потилиці: кулак — перед ним, біля краю голови.
+  const mouth: Vec2 = s.view === "front" ? { x: 8, y: PELVIS_Y - 54 } : { x: 27, y: PELVIS_Y - 46 };
   const swallowed: Vec2 = { x: mouth.x - 2, y: mouth.y - 4 };
   return [
     [0, REST],
