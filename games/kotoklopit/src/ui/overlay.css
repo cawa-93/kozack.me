@@ -638,3 +638,539 @@
 .glyph svg {
   display: block;
 }
+
+/* =============================================================================================================
+   Нове оформлення карток (крок 16, пакет A13, GRAPHICS_PLAN.md): папір, чорнильні рамки, кнопки-«клавіші», рукописні
+   заголовки. До кінця хвилі 3 діє лише під `:root[data-gfx="iso"]` (атрибут ставить main.ts за `currentGfx()`), тож старий
+   вигляд вище лишається як був; у хвилі 3 префікс приберуть, а старі правила замінять цими.
+
+   Картинки — SVG з art/ui/ напряму (Vite видає файл з хешем; вектор чіткий на будь-якій щільності), записи маніфесту
+   `src/view/art/manifest/a13-ui.ts`. Рамки, кнопки, вкладки, чипи, поля й смуга — «дев'ять частин» (border-image): зріз —
+   `points.slice` запису, а поле полотна 4,6 одиниці виносить за межі елемента `border-image-outset: 4px` (1 одиниця = 1 px).
+   Кольори — токени art/palette.ts.
+   ============================================================================================================= */
+
+/* Рукописний шрифт заголовків, кнопок і вкладок: Pangolin (Kevin Burke, The Pangolin Project Authors; SIL Open Font
+   License 1.1 — src/ui/fonts/OFL.txt), woff2 з @fontsource/pangolin 5.3.0, лише підмножини cyrillic і latin (є і, ї, є,
+   ґ). Файли браузер вантажить, лише коли шрифт ужито, тобто лише в новому вигляді. */
+@font-face {
+  font-family: "Pangolin";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/pangolin-cyrillic-400-normal.woff2") format("woff2");
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+@font-face {
+  font-family: "Pangolin";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/pangolin-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root[data-gfx="iso"] {
+  /* Токени палітри (art/palette.ts). */
+  --ink: #2e1f29;
+  --ink-soft: #6b5263;
+  --paper: #f2e7d0;
+  --enamel: #e0d4b9;
+  --grey: #a69f9b;
+  --grey-hi: #cdc6be;
+  --grey-lo: #716869;
+  --orange: #d9843f;
+  --red-lo: #963b3a;
+  /* Тінь shade з непрозорістю base 0,3 і soft 0,16; затемнення тла під карткою — чорнилом. */
+  --shade-base: rgb(63 37 65 / 0.3);
+  --shade-soft: rgb(63 37 65 / 0.16);
+  --dim: rgb(46 31 41 / 0.55);
+  --dim-solid: rgb(46 31 41 / 0.95);
+  --hand: "Pangolin", system-ui, sans-serif;
+  --paper-tile: url("../../art/ui/paper.svg");
+}
+
+/* Титулка й кінець гри (cinematic) лишаються на чорному екрані старого вигляду. */
+:root[data-gfx="iso"] .overlay:not(.cinematic) {
+  background: var(--dim);
+}
+
+:root[data-gfx="iso"] .overlay {
+  color: var(--ink);
+}
+
+:root[data-gfx="iso"] .overlay.solid:not(.cinematic) {
+  background: var(--dim-solid);
+}
+
+/* Картка: папір із волокнами під чорнильною рамкою. Рамка — смуга 20 px (border), у ній кути й ребра рамки; тло обрізане
+   заокругленням, щоб не визирало за чорнило в кутах (правий нижній — під «вушко»). Тінь — shade 0,3 під усім силуетом.
+   Відступи разом із рамкою — ті самі, що в старому вигляді (25/27/23 від краю). */
+:root[data-gfx="iso"] .card {
+  padding: 5px 7px 3px;
+  border: 20px solid transparent;
+  border-image: url("../../art/ui/frame/card.svg") 24 / 24px / 4px stretch;
+  border-radius: 16px 16px 40px 16px;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+  box-shadow: none;
+  filter: drop-shadow(0 6px 0 var(--shade-base));
+  scrollbar-color: var(--ink-soft) transparent;
+  scrollbar-width: thin;
+}
+
+:root[data-gfx="iso"] .card-kicker {
+  color: var(--ink-soft);
+  font: 400 16px/1.2 var(--hand);
+  letter-spacing: 0.03em;
+}
+
+:root[data-gfx="iso"] .card-title {
+  margin-bottom: 8px;
+  font: 400 31px/1.15 var(--hand);
+}
+
+:root[data-gfx="iso"] .card-note {
+  background: var(--enamel);
+}
+
+/* Кнопки внизу липнуть до низу картки поверх того самого паперу. */
+:root[data-gfx="iso"] .card-actions {
+  bottom: -3px;
+  gap: 10px 12px;
+  margin: 14px -7px -3px;
+  padding: 10px 7px 3px;
+  background: var(--paper) var(--paper-tile) 0 0 / 256px 256px;
+}
+
+/* Кнопка — «клавіша»: верх і губа знизу; натиснута опускається на висоту губи (текст теж). */
+:root[data-gfx="iso"] .button {
+  min-height: 46px;
+  padding: 6px 18px 14px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/button/normal.svg") 16 fill / 16px / 4px stretch;
+  /* Заокруглення не видно (тла немає), але по ньому йде рамка фокусу. */
+  border-radius: 12px;
+  background: none;
+  color: var(--ink);
+  font: 400 19px/1.15 var(--hand);
+  font-synthesis: none;
+}
+
+:root[data-gfx="iso"] .button.primary {
+  border-image-source: url("../../art/ui/button/primary.svg");
+  color: var(--ink);
+}
+
+:root[data-gfx="iso"] .button:active:not(:disabled) {
+  padding: 10px 18px 10px;
+  border-image-source: url("../../art/ui/button/pressed.svg");
+}
+
+:root[data-gfx="iso"] .button.primary:active:not(:disabled) {
+  border-image-source: url("../../art/ui/button/primary-pressed.svg");
+}
+
+:root[data-gfx="iso"] .button:disabled {
+  padding: 8px 18px 12px;
+  border-image-source: url("../../art/ui/button/disabled.svg");
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
+:root[data-gfx="iso"] .button:focus-visible,
+:root[data-gfx="iso"] .card-close:focus-visible,
+:root[data-gfx="iso"] .card-tab:focus-visible,
+:root[data-gfx="iso"] .trait:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+
+/* Хрестик — кругла паперова кнопка; «×» лишається текстом для читача екрана, але його не видно. */
+:root[data-gfx="iso"] .card-close {
+  top: -3px;
+  margin: -3px -7px 0 8px;
+  border: 0;
+  border-radius: 50%;
+  background: url("../../art/ui/close.svg") 0 0 / 40px 40px no-repeat;
+  color: transparent;
+  font-size: 0;
+}
+
+:root[data-gfx="iso"] .card-close:active {
+  transform: translateY(2px);
+}
+
+/* Вкладки телефону: місце довкола — під поле полотна (4 px), бо рядок прокручується вбік і обтинає. */
+:root[data-gfx="iso"] .card-tabs {
+  gap: 4px;
+  margin: -4px 44px 8px -4px;
+  padding: 4px;
+}
+
+:root[data-gfx="iso"] .card-tab {
+  min-height: 38px;
+  padding: 5px 14px 7px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/tab/normal.svg") 14 fill / 14px / 4px stretch;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: 400 18px/1.2 var(--hand);
+}
+
+:root[data-gfx="iso"] .card-tab.active {
+  padding: 4px 14px 8px;
+  border-image-source: url("../../art/ui/tab/active.svg");
+}
+
+/* Магазин, доставка, поїздки, речі. */
+:root[data-gfx="iso"] .shop-row,
+:root[data-gfx="iso"] .shop-item {
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
+}
+
+:root[data-gfx="iso"] .shop-stock,
+:root[data-gfx="iso"] .look-value {
+  color: var(--ink-soft);
+}
+
+:root[data-gfx="iso"] .shop-section {
+  color: var(--ink-soft);
+  font: 400 17px/1.2 var(--hand);
+  letter-spacing: 0.05em;
+}
+
+:root[data-gfx="iso"] .shop-option.muted {
+  color: var(--grey-lo);
+}
+
+/* Підсумок і оплата: заглиблена панель (та сама рамка, що й поле імені); липне до верху. */
+:root[data-gfx="iso"] .shop-footer {
+  top: -5px;
+  padding: 8px 10px 9px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/input.svg") 16 fill / 16px / 4px stretch;
+  border-radius: 0;
+  background: none;
+}
+
+/* Хрестик картки липне до верху праворуч — підсумок, що липне туди ж, лишає йому місце. */
+:root[data-gfx="iso"] .card:has(> .card-close) .shop-footer {
+  margin-right: 46px;
+}
+
+:root[data-gfx="iso"] .shop-total.short {
+  color: var(--red-lo);
+}
+
+/* Степер «−» / «+»: ціла картинка зі знаком; знак-текст лишається для читача екрана. Перша кнопка рядка — «−». */
+:root[data-gfx="iso"] .button.step,
+:root[data-gfx="iso"] .button.step:active:not(:disabled),
+:root[data-gfx="iso"] .button.step:disabled {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  background: url("../../art/ui/button-step/plus.svg") 0 0 / 40px 40px no-repeat;
+  color: transparent;
+  font-size: 0;
+}
+
+:root[data-gfx="iso"] .shop-line > .button.step:first-of-type {
+  background-image: url("../../art/ui/button-step/minus.svg");
+}
+
+:root[data-gfx="iso"] .button.step:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+:root[data-gfx="iso"] .button.step:disabled {
+  opacity: 0.4;
+}
+
+/* Риси кота: чипи-ярлички; на чорній титулці — ті самі паперові. */
+:root[data-gfx="iso"] .trait {
+  padding: 2px 11px 5px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/chip/normal.svg") 12 fill / 12px / 4px stretch;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+  font: 400 17px/1.25 var(--hand);
+}
+
+:root[data-gfx="iso"] .trait.active {
+  border-image-source: url("../../art/ui/chip/active.svg");
+  background: none;
+  color: var(--ink);
+}
+
+:root[data-gfx="iso"] .trait-row {
+  gap: 6px 8px;
+}
+
+:root[data-gfx="iso"] .trait-about {
+  color: var(--ink-soft);
+}
+
+:root[data-gfx="iso"] .title-screen .trait-about {
+  color: var(--grey-hi);
+}
+
+/* Редактор зовнішності: портрет у заглибленому віконці, повзунки — жолоб і «лапка». */
+:root[data-gfx="iso"] .portrait {
+  border: 6px solid transparent;
+  border-image: url("../../art/ui/input.svg") 16 fill / 16px / 4px stretch;
+  border-radius: 0;
+  background: none;
+}
+
+:root[data-gfx="iso"] .look-label {
+  font: 400 17px/1.2 var(--hand);
+}
+
+:root[data-gfx="iso"] .look-slider {
+  height: 32px;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+:root[data-gfx="iso"] .look-slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/slider/track.svg") 10 fill / 10px / 4px stretch;
+  background: none;
+}
+
+:root[data-gfx="iso"] .look-slider::-moz-range-track {
+  height: 12px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/slider/track.svg") 10 fill / 10px / 4px stretch;
+  background: none;
+}
+
+:root[data-gfx="iso"] .look-slider::-webkit-slider-thumb {
+  width: 32px;
+  height: 32px;
+  margin-top: -10px;
+  border: 0;
+  background: url("../../art/ui/slider/thumb.svg") 0 0 / 32px 32px no-repeat;
+  appearance: none;
+}
+
+:root[data-gfx="iso"] .look-slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: url("../../art/ui/slider/thumb.svg") 0 0 / 32px 32px no-repeat;
+}
+
+:root[data-gfx="iso"] .look-slider:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Поле імені — заглиблене поле з лінійкою, ім'я пишеться рукописним шрифтом. Клас `button` у нього від старого вигляду:
+   натискання його не «опускає». */
+:root[data-gfx="iso"] .button.name-input,
+:root[data-gfx="iso"] .button.name-input:active {
+  min-height: 52px;
+  padding: 7px 16px 11px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/input.svg") 16 fill / 16px / 4px stretch;
+  color: var(--ink);
+  font: 400 26px/1.2 var(--hand);
+}
+
+:root[data-gfx="iso"] .button.name-input:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 4px;
+}
+
+/* Титулка дня й кінець гри: чорний екран лишається, заголовок рукописний, кольори тексту — з палітри. */
+:root[data-gfx="iso"] .title-screen {
+  color: var(--paper);
+}
+
+:root[data-gfx="iso"] .title-heading {
+  font: 400 clamp(32px, 10vh, 68px) / 1.1 var(--hand);
+}
+
+:root[data-gfx="iso"] .title-line {
+  color: var(--grey-hi);
+}
+
+:root[data-gfx="iso"] .title-line.main {
+  color: var(--paper);
+}
+
+:root[data-gfx="iso"] .title-prompt,
+:root[data-gfx="iso"] .ending-who {
+  color: var(--grey);
+  font-family: var(--hand);
+  font-size: 16px;
+}
+
+:root[data-gfx="iso"] .ending-text {
+  color: var(--grey-hi);
+}
+
+/* Фінальна смуга часу: паперовий обідок із чорнилом; відрізки — усередині, у вмісті елемента. */
+:root[data-gfx="iso"] .ending-bar {
+  height: 12px;
+  border: 6px solid transparent;
+  border-image: url("../../art/ui/ending-bar.svg") 10 / 10px / 4px stretch;
+  border-radius: 0;
+  background: var(--ink);
+  background-clip: padding-box;
+}
+
+:root[data-gfx="iso"] .ending-legend {
+  margin-top: 10px;
+  color: var(--grey-hi);
+}
+
+:root[data-gfx="iso"] .ending-cat {
+  padding: 2px 11px 5px;
+  border: 0 solid transparent;
+  border-image: url("../../art/ui/chip/normal.svg") 12 fill / 12px / 4px stretch;
+  border-radius: 0;
+  color: var(--ink);
+  font: 400 17px/1.25 var(--hand);
+}
+
+:root[data-gfx="iso"] .ending-cat small {
+  color: var(--ink-soft);
+  font-family: system-ui, sans-serif;
+}
+
+/* Відрізки смуги й кружечки легенди — кольорами палітри (cards.ts задає їх у style за порядком TIME_PARTS: робота, коти,
+   собі, метушня), тож тут — !important поверх style. */
+:root[data-gfx="iso"] .ending-bar > :nth-child(1) {
+  background: #6c84a3 !important;
+}
+
+:root[data-gfx="iso"] .ending-bar > :nth-child(2) {
+  background: #d9843f !important;
+}
+
+:root[data-gfx="iso"] .ending-bar > :nth-child(3) {
+  background: #7e9662 !important;
+}
+
+:root[data-gfx="iso"] .ending-bar > :nth-child(4) {
+  background: #a69f9b !important;
+}
+
+:root[data-gfx="iso"] .ending-legend > :nth-child(1) {
+  --part: #94a8c0 !important;
+}
+
+:root[data-gfx="iso"] .ending-legend > :nth-child(2) {
+  --part: #eaa967 !important;
+}
+
+:root[data-gfx="iso"] .ending-legend > :nth-child(3) {
+  --part: #a2b584 !important;
+}
+
+:root[data-gfx="iso"] .ending-legend > :nth-child(4) {
+  --part: #cdc6be !important;
+}
+
+/* Кнопки кінця гри — ті самі паперові «клавіші», що й у картках, просто на чорному (без смуги паперу). */
+:root[data-gfx="iso"] .card-actions.ending-actions {
+  margin: 2vh 0 0;
+  padding: 0;
+  background: none;
+}
+
+:root[data-gfx="iso"] .ending-actions .button,
+:root[data-gfx="iso"] .ending-actions .button.primary {
+  border-color: transparent;
+  background: none;
+  color: var(--ink);
+}
+
+/* Низький екран (телефон набік): тонша рамка й менші відступи — разом як у старому вигляді (15/21/17 від краю). */
+@media (max-height: 420px) {
+  :root[data-gfx="iso"] .card {
+    padding: 0 6px 2px;
+    border-width: 15px;
+    border-image-width: 18px;
+    border-image-outset: 3px;
+    border-radius: 12px 12px 30px 12px;
+  }
+
+  :root[data-gfx="iso"] .card-title {
+    margin-bottom: 4px;
+    font-size: 24px;
+  }
+
+  :root[data-gfx="iso"] .card-close {
+    top: 0;
+    margin: 0 -6px 0 8px;
+  }
+
+  :root[data-gfx="iso"] .card-actions {
+    bottom: -2px;
+    margin: 8px -6px -2px;
+    padding: 8px 6px 2px;
+  }
+
+  :root[data-gfx="iso"] .shop-footer {
+    top: 0;
+  }
+
+  :root[data-gfx="iso"] .button {
+    min-height: 42px;
+    padding: 5px 16px 12px;
+    font-size: 18px;
+  }
+
+  :root[data-gfx="iso"] .button:active:not(:disabled) {
+    padding: 9px 16px 8px;
+  }
+
+  :root[data-gfx="iso"] .button:disabled {
+    padding: 7px 16px 10px;
+  }
+
+  /* Поле імені не «опускається» (правило вище для кнопок інакше перемогло б його). */
+  :root[data-gfx="iso"] .button.name-input:active {
+    padding: 7px 16px 11px;
+  }
+}
+
+/* Екран «поверніть телефон» (index.html, §10): малюнок над підписом, підпис рукописний. Сам екран — у style.css, а тут лише
+   новий вигляд, бо цей файл уже вантажиться з грою. */
+.rotate-art {
+  display: none;
+}
+
+:root[data-gfx="iso"] .rotate {
+  flex-direction: column;
+  gap: 14px;
+  color: var(--paper);
+  font: 400 25px/1.3 var(--hand);
+}
+
+:root[data-gfx="iso"] .rotate p {
+  max-width: 300px;
+  margin: 0;
+}
+
+:root[data-gfx="iso"] .rotate-art {
+  display: block;
+  width: 192px;
+  height: 144px;
+  background: url("../../art/ui/rotate.svg") 0 0 / 100% 100% no-repeat;
+}
