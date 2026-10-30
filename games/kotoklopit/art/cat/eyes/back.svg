@@ -1,7 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 21" width="30" height="21">
-<!-- cat/eyes/back — очі (обидва: ближнє ліворуч більше, дальнє вужче), ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
-size 30×21; pivot (15, 10) — середина між очима.
-Шари: fill-iris, detail, shade, ink. Стани: st-open, st-half, st-closed, st-arc.
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 25" width="31" height="25">
+<!-- cat/eyes/back — очі (обидва: ближнє ліворуч більше, дальнє вужче), ракурс back (¾ ззаду). Еталон F1b (open, half, closed, arc), art/STYLE.md; squint, round, sick — A7 (хвиля 2).
+size 31×25; pivot (16, 11) — середина між очима.
+Шари: fill-iris, detail, shade, ink. Стани: st-open, st-half, st-closed, st-arc, st-squint, st-round, st-sick.
+open — розплющені; half — напівзаплющені (сум, вилизує, кліпання); closed — заплющені (сон); arc — дужки (подобається);
+squint — сердито примружені навскіс, внутрішні куточки нижче (терпить, попереджає); round — круглі, зіниця-цятка (пручається,
+перед ворогом, азарт); sick — опухлі, сумно опущені, червоні нижні повіки й сльоза (кон'юнктивіт, застуда).
 Повік-шерсті немає: де ока не намальовано, видно голову (і її маски). Зіниці й відблиски — detail, зіниці дивляться праворуч.
 back — порожні шари: скелет ховає очі ззаду.
 -->

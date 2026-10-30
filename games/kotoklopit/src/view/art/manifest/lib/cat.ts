@@ -126,8 +126,8 @@ export const CAT_MUZZLES: Record<Shape["muzzle"], Part> = {
   long: { size: { w: 35, h: 24 }, pivot: { x: 11, y: 10 }, points: { mouth: { x: 19.3, y: 11.8 } } },
 };
 
-/** Очі обидва разом (у ¾ видно обидва) — еталон F1b; pivot — між очима. */
-export const CAT_EYES: Part = { size: { w: 30, h: 21 }, pivot: { x: 15, y: 10 } };
+/** Очі обидва разом (у ¾ видно обидва) — еталон F1b, стани A7; pivot — між очима; полотно вміщує круглі очі й сльози. */
+export const CAT_EYES: Part = { size: { w: 31, h: 25 }, pivot: { x: 16, y: 11 } };
 /** Рот — еталон F1b; pivot — під носом, полотно вміщує нявкання (і позіх, коли його намалюють). */
 export const CAT_MOUTH: Part = { size: { w: 20, h: 20 }, pivot: { x: 10, y: 6 } };
 
