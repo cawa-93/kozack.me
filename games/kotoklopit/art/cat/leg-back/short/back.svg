@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 35" width="28" height="35">
+<!-- cat/leg-back/short/back — задня коротка лапа манчкіна (слоти leg-back-far і leg-back-near), ракурс back (¾ ззаду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 28×35; pivot (13, 15) — кульшовий суглоб; верх лапи — як у звичайної, без контуру; points: paw (14, 28.5).
+Шари: fill, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, detail, shade, ink.
+Від суглоба до підошви — 13,6 (звичайна — 20,6): скелет опускає тіло на 7 (`short-legs`). Маски — порожні групи (малює A9).
+-->
+<defs>
+<path id="cat-leg-back-short-back-shape" d="M13 5C14.4 5.1 16.5 5.1 17.6 6C18.7 6.9 19.1 8.8 19.4 10.5C19.7 12.2 19.3 14.7 19.2 16.2C19.1 17.7 18.8 18.7 18.7 19.6C18.6 20.5 18.5 21 18.7 21.6C18.9 22.2 19.6 22.7 20.1 23.2C20.6 23.7 21.2 24.1 21.5 24.6C21.8 25.1 22.1 25.8 21.9 26.4C21.8 27 21.8 27.8 20.6 28.2C19.5 28.6 16.9 28.6 15 28.6C13.1 28.6 10.7 28.7 9.4 28.3C8.1 27.9 7.6 27.3 7.1 26.4C6.6 25.6 6.7 24.3 6.5 23.2C6.3 22.1 6.1 21.5 6 20C6 18.5 6 15.8 6.2 14C6.4 12.2 6.5 10.4 7 9C7.5 7.6 8 6.3 9 5.6C10 4.9 11.6 4.9 13 5Z"/>
+<clipPath id="cat-leg-back-short-back-clip"><use href="#cat-leg-back-short-back-shape"/></clipPath>
+<clipPath id="cat-leg-back-short-back-mask"><path d="M5.5 4.4L22.6 4.4L22.6 29.2L5.5 29.2Z"/></clipPath>
+</defs>
+<g id="fill">
+<use href="#cat-leg-back-short-back-shape" fill="#ffffff"/>
+</g>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="detail">
+<path d="M12.6 26.6C12.6 26.8 12.4 27.1 12.1 27.3C11.8 27.5 11.2 27.6 10.8 27.6C10.4 27.6 9.8 27.5 9.5 27.3C9.2 27.1 9 26.8 9 26.6C9 26.4 9.2 26.1 9.5 25.9C9.8 25.7 10.4 25.6 10.8 25.6C11.2 25.6 11.8 25.7 12.1 25.9C12.4 26.1 12.6 26.4 12.6 26.6Z" fill="#d99a93"/>
+</g>
+<g id="shade" clip-path="url(#cat-leg-back-short-back-clip)">
+<path d="M4.6 13C5.4 10.5 8.7 13.3 9.6 15C10.5 16.7 10 20.5 10 23C10 25.5 10.7 28.8 9.8 30C8.9 31.2 5.5 32.8 4.6 30C3.7 27.2 3.8 15.5 4.6 13Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M19.2 16.2C19.1 17.7 18.8 18.7 18.7 19.6C18.6 20.5 18.5 21 18.7 21.6C18.9 22.2 19.6 22.7 20.1 23.2C20.6 23.7 21.2 24.1 21.5 24.6C21.8 25.1 22.1 25.8 21.9 26.4C21.8 27 21.8 27.8 20.6 28.2C19.5 28.6 16.9 28.6 15 28.6C13.1 28.6 10.7 28.7 9.4 28.3C8.1 27.9 7.6 27.3 7.1 26.4C6.6 25.6 6.7 24.3 6.5 23.2C6.3 22.1 6.1 21.5 6 20" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
