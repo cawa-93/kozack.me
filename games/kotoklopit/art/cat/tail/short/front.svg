@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 42" width="37" height="42">
+<!-- cat/tail/short/front — короткий хвіст, у вихідній позі — гачком угору, ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
+size 37×42; pivot (23, 30) — корінь хвоста на крупі; points: tip (13.2, 15.2), tip-back (24.2, 13.4).
+Шари: fill, fluff, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink, fluff-ink.
+Половина довгого; та сама товщина.
+front — за тулубом, back — перед крупом. Маски — порожні групи (малює A9).
+-->
+<defs>
+<path id="cat-tail-short-front-shape" d="M26.7 25.9C25.4 25.3 23.1 25.2 21.8 24.6C20.5 24.1 19.7 23.3 19 22.5C18.3 21.6 17.7 20.7 17.5 19.5C17.3 18.3 17.8 16.6 17.6 15.4C17.4 14.1 17.2 12.9 16.5 12.2C15.8 11.4 14.4 10.8 13.4 10.8C12.3 10.8 10.9 11.2 10.2 11.9C9.4 12.6 9.1 13.5 8.8 15C8.5 16.6 8.1 19.1 8.5 21.3C8.9 23.5 9.9 26.3 11.4 28.3C12.9 30.3 15.3 32.2 17.4 33.4C19.5 34.5 22.3 35.1 24.1 35.3C25.8 35.6 26.9 35.5 27.9 34.9C28.9 34.4 29.8 33 30.1 31.9C30.4 30.8 30.3 29.1 29.7 28.1C29.2 27.1 28 26.5 26.7 25.9Z"/>
+<clipPath id="cat-tail-short-front-clip"><use href="#cat-tail-short-front-shape"/></clipPath>
+<clipPath id="cat-tail-short-front-mask"><path d="M4.6 6.7L30.9 6.7L30.9 37.4L4.6 37.4Z"/></clipPath>
+</defs>
+<g id="fill">
+<use href="#cat-tail-short-front-shape" fill="#ffffff"/>
+</g>
+<g id="fluff" clip-path="url(#cat-tail-short-front-mask)">
+<path d="M21.8 24.6Q21.6 22.3 19.9 20.7Q18.8 20.7 18 21Q21.4 18.9 21.3 16.6Q19.3 15.8 17.6 15.7Q21.6 13.1 18.1 8.2Q16.1 9.6 15.2 11.3Q15.8 9.6 15.6 7.2Q10.1 7.3 10.1 11.9Q9.1 11.1 7.2 10.8Q5.7 14.8 8.5 17Q7.1 16.9 5.2 17.4Q5.1 21.2 8.7 22.3Q7.1 22.8 5.4 24.1Q6.4 27.5 10.7 27.3Q9.4 28.2 8.2 29.9Q10.6 32.9 14.3 31.3Q13.5 32.5 12.9 34.4Q15.9 36.5 18.9 34Q18.7 34.8 19.1 36Q22.2 36.9 24.1 35.3C25.8 35.6 26.9 35.5 27.9 34.9C28.9 34.4 29.8 33 30.1 31.9C30.4 30.8 30.3 29.1 29.7 28.1C29.2 27.1 28 26.5 26.7 25.9C25.4 25.3 23.1 25.2 21.8 24.6Z" fill="#ffffff"/>
+</g>
+<g id="point"/>
+<g id="tortie-a"/>
+<g id="tortie-b"/>
+<g id="tortie-c"/>
+<g id="tabby-classic"/>
+<g id="tabby-mackerel"/>
+<g id="tabby-spotted"/>
+<g id="tabby-ticked"/>
+<g id="white-1"/>
+<g id="white-2"/>
+<g id="white-3"/>
+<g id="shade" clip-path="url(#cat-tail-short-front-clip)">
+<path d="M25.4 30.7C24.1 30.2 21.3 30 19.6 29.1C17.9 28.2 16.3 26.9 15.1 25.5C14 24 13.2 22.1 12.9 20.4C12.6 18.7 13.2 16.4 13.1 15.2C13 14 12.9 13.7 12.5 13.3C12 12.8 11.2 12.5 10.6 12.5C10 12.4 9.1 12.7 8.7 13.1C8.2 13.5 8 13.6 7.8 15C7.6 16.4 7 19.2 7.5 21.5C7.9 23.8 9 26.8 10.5 28.9C12.1 31.1 14.6 33.1 16.8 34.3C19 35.5 22.2 36 23.8 36.4C25.3 36.7 25.4 36.5 26 36.1C26.7 35.8 27.2 35 27.4 34.3C27.6 33.7 27.5 32.7 27.2 32.1C26.9 31.5 26.7 31.2 25.4 30.7Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<path d="M21.8 24.6C20.5 24.1 19.7 23.3 19 22.5C18.3 21.6 17.7 20.7 17.5 19.5C17.3 18.3 17.8 16.6 17.6 15.4C17.4 14.1 17.2 12.9 16.5 12.2C15.8 11.4 14.4 10.8 13.4 10.8C12.3 10.8 10.9 11.2 10.2 11.9C9.4 12.6 9.1 13.5 8.8 15C8.5 16.6 8.1 19.1 8.5 21.3C8.9 23.5 9.9 26.3 11.4 28.3C12.9 30.3 15.3 32.2 17.4 33.4C19.5 34.5 22.3 35.1 24.1 35.3" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="fluff-ink">
+<path d="M21.7 24Q21.3 22.1 19.9 20.7Q19 20.7 18.3 20.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.9 20.4Q21.4 18.6 21.3 16.6Q19.7 16 18.3 15.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.6 14.9Q21.1 12.4 18.1 8.2Q16.5 9.3 15.6 10.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.4 10.6Q15.8 9.1 15.6 7.2Q10.8 7.3 10.2 10.7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.7 11.6Q8.7 11 7.2 10.8Q5.9 14.3 7.8 16.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.9 17Q6.7 17 5.2 17.4Q5.1 20.7 7.8 22" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.1 22.5Q6.8 23.1 5.4 24.1Q6.3 27 9.6 27.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10.2 27.7Q9.2 28.5 8.2 29.9Q10.2 32.5 13.3 31.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 31.8Q13.4 32.9 12.9 34.4Q15.4 36.2 18 34.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.8 34.4Q18.8 35.1 19.1 36Q21.7 36.7 23.5 35.7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
