@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 136" width="144" height="136">
+<!-- env/cat-kit/catnip — накладка котячої аптечки: гілочка котячої м'яти з-під кришки (§9.12). Пакет A4, art/STYLE.md.
+size 144×136; pivot (72, 96) — те саме полотно й pivot, що env/cat-kit (накладка кладеться в pivot аптечки); points: —.
+Без станів і шарів; показується, поки цей запас є (стани аптечки 1–4: кришка зачинена чи відхилена).
+-->
+<g id="p-catnip">
+<path d="M103.4 67.2Q109.7 56.9 112.4 45.2" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M103.4 67.2Q109.7 56.9 112.4 45.2" fill="none" stroke="#5e7449" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M106.5 59.5Q110.5 56.7 114.5 59.5Q110.5 63.9 106.5 59.5Z" fill="#a2b584"/>
+<path d="M107.3 59.5Q109.9 59 112.5 59.5Q109.9 60.8 107.3 59.5Z" fill="#7e9662"/>
+<path d="M106.5 59.5Q110.5 56.7 114.5 59.5Q110.5 63.9 106.5 59.5Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M108.3 55.1Q102.6 56.9 101.3 51.1Q106.2 50.6 108.3 55.1Z" fill="#a2b584"/>
+<path d="M107.6 54.7Q104.7 54.5 103.1 52.1Q105.6 52.9 107.6 54.7Z" fill="#7e9662"/>
+<path d="M108.3 55.1Q102.6 56.9 101.3 51.1Q106.2 50.6 108.3 55.1Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M110.6 49.6Q113.1 44.7 118.6 44.6Q116.9 50.8 110.6 49.6Z" fill="#a2b584"/>
+<path d="M111.4 49.1Q113.7 47 116.6 45.8Q114.6 48.5 111.4 49.1Z" fill="#7e9662"/>
+<path d="M110.6 49.6Q113.1 44.7 118.6 44.6Q116.9 50.8 110.6 49.6Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M112.4 45.2Q109.1 40.1 114.4 37.2Q116.1 41.8 112.4 45.2Z" fill="#a2b584"/>
+<path d="M112.6 44.4Q111.9 41.4 113.9 39.2Q113.7 41.9 112.6 44.4Z" fill="#7e9662"/>
+<path d="M112.4 45.2Q109.1 40.1 114.4 37.2Q116.1 41.8 112.4 45.2Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
