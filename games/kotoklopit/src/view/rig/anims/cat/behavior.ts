@@ -307,6 +307,10 @@ function breathe(duration: number, period: number, amp: number): Key<Vec2>[] {
 
 // --- Спільні пози ------------------------------------------------------------------------------
 
+/** Хвіст того, хто сидить, лежить на підлозі позаду й загинається вперед; того, хто лежить буханцем, — пласко позаду. */
+const SIT_TAIL = -75;
+const LOAF_TAIL = -95;
+
 /**
  * Сидить: зад опущено до підлоги, тулуб піднято мордою вгору, передні лапи прямі від грудей до підлоги, задні складено
  * вздовж підлоги вперед (ступня лежить, як у кота, що сидить), голова рівно над грудьми; хвіст лежить на підлозі позаду.
@@ -316,7 +320,7 @@ const SIT: Pose = {
   body: { rot: -32 },
   neck: { rot: 18 },
   head: { rot: 14 },
-  tail: { rot: -75 },
+  tail: { rot: SIT_TAIL },
   legs: {
     "leg-front-far": at(2, 0, { y: 3 }),
     "leg-front-near": at(1, 0, { y: 3 }),
@@ -336,7 +340,7 @@ const LOAF: Pose = {
   pelvis: { y: 12 },
   neck: { rot: -6 },
   head: { rot: 6 },
-  tail: { rot: -95 },
+  tail: { rot: LOAF_TAIL },
   legs: {
     "leg-front-far": { rot: -82, sx: 0.5, y: -1 },
     "leg-front-near": { rot: -82, sx: 0.5, y: -1 },
@@ -452,24 +456,25 @@ function brawl(): CatAnim {
     root: { y: hop },
     pelvis: spin(rot, middle),
     body: { sx: 1.06, sy: 1.06 },
-    neck: { rot: 34 },
-    head: { rot: -22 },
+    neck: { rot: 40 },
+    head: { rot: -24 },
     tail: { rot: tail, sx: 1.12, sy: 1.12 },
     legs: {
-      "leg-front-far": { rot: ff },
-      "leg-front-near": { rot: fn },
-      "leg-back-far": { rot: bf, sx: 0.9 },
-      "leg-back-near": { rot: bn, sx: 0.9 },
+      "leg-front-far": { rot: ff, sx: 1.08 },
+      "leg-front-near": { rot: fn, sx: 1.08 },
+      "leg-back-far": { rot: bf, sx: 1.04 },
+      "leg-back-near": { rot: bn, sx: 1.04 },
     },
   });
-  const A = ball(-15, 0, -100, -50, -40, 20, -70);
+  // Передні лапи дряпають уперед і вгору, задні буцають то вперед (під себе), то назад — лапи стирчать з кулі навсібіч.
+  const A = ball(-20, 0, -140, -70, 70, -50, -60);
   return build(D, true, [
     { t: 0, pose: A, ease: "out" },
-    { t: 130, pose: ball(20, -4, -40, -120, 30, -50, 10), ease: "inOut" },
-    { t: 250, pose: ball(-35, -1, -130, -70, -60, 40, -110), ease: "out" },
-    { t: 420, pose: ball(30, -5, -70, -140, 40, -20, 30), ease: "inOut" },
-    { t: 540, pose: ball(-5, 0, -120, -30, -30, 60, -60), ease: "out" },
-    { t: 720, pose: ball(40, -3, -60, -110, 20, -40, -10), ease: "inOut" },
+    { t: 130, pose: ball(25, -5, -60, -150, -40, 90, 20), ease: "inOut" },
+    { t: 250, pose: ball(-45, -1, -150, -90, 100, 20, -120), ease: "out" },
+    { t: 420, pose: ball(35, -6, -80, -140, -60, 70, 40), ease: "inOut" },
+    { t: 540, pose: ball(-5, 0, -120, -40, 60, -40, -70), ease: "out" },
+    { t: 720, pose: ball(45, -3, -50, -120, 20, 100, -10), ease: "inOut" },
     { t: D, pose: A },
   ]);
 }
@@ -484,14 +489,19 @@ function lick(): CatAnim {
   const reach = (up: number): Pose => sitWith({ body: { rot: -16 }, neck: { rot: 40 - up * 0.3, x: 3, y: 5 - up * 0.3 }, head: { rot: -26 - up } });
   const down = reach(0);
   const up = reach(14);
-  return build(D, true, [
-    { t: 0, pose: down, ease: "in" },
-    { t: 160, pose: up, ease: "inOut" },
-    { t: 400, pose: down, ease: "in" },
-    { t: 560, pose: up, ease: "inOut" },
-    { t: 800, pose: down },
-    { t: D, pose: down },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: down, ease: "in" },
+      { t: 160, pose: up, ease: "inOut" },
+      { t: 400, pose: down, ease: "in" },
+      { t: 560, pose: up, ease: "inOut" },
+      { t: 800, pose: down },
+      { t: D, pose: down },
+    ],
+    { bones: { tail: { rot: sine(D, D, SIT_TAIL, 4) } } },
+  );
 }
 
 /**
@@ -542,14 +552,14 @@ function kick(): CatAnim {
     head: { rot: -12, sy: -1 },
     tail: { rot: -20, sy: -1 },
     legs: {
-      "leg-front-far": { rot: ff },
-      "leg-front-near": { rot: fn },
-      "leg-back-far": { rot: bf, sx: 0.95 },
-      "leg-back-near": { rot: bn, sx: 0.95 },
+      "leg-front-far": { rot: ff, sx: 1.12 },
+      "leg-front-near": { rot: fn, sx: 1.12 },
+      "leg-back-far": { rot: bf, sx: 1.08 },
+      "leg-back-near": { rot: bn, sx: 1.08 },
     },
   });
-  const A = pose(-45, 5, -10, 35, -3);
-  const B = pose(5, -45, 35, -10, 3);
+  const A = pose(-55, 10, -25, 45, -3);
+  const B = pose(10, -55, 45, -25, 3);
   return build(
     D,
     true,
@@ -616,13 +626,18 @@ function scratch(): CatAnim {
   });
   const A = up(-66, -34);
   const B = up(-34, -66);
-  return build(D, true, [
-    { t: 0, pose: A, ease: "in" },
-    { t: 420, pose: B, ease: "inOut" },
-    { t: 550, pose: B, ease: "in" },
-    { t: 970, pose: A, ease: "inOut" },
-    { t: D, pose: A },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A, ease: "in" },
+      { t: 420, pose: B, ease: "inOut" },
+      { t: 550, pose: B, ease: "in" },
+      { t: 970, pose: A, ease: "inOut" },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: { rot: sine(D, D, -55, 8, 1) } } },
+  );
 }
 
 /**
@@ -644,14 +659,19 @@ function stretch(): CatAnim {
     },
   });
   const A = bow(0, 0);
-  return build(D, true, [
-    { t: 0, pose: A },
-    { t: 350, pose: bow(-8, 0), ease: "in" },
-    { t: 700, pose: A },
-    { t: 1050, pose: bow(0, -8), ease: "in" },
-    { t: 1400, pose: A },
-    { t: D, pose: A },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 350, pose: bow(-8, 0), ease: "in" },
+      { t: 700, pose: A },
+      { t: 1050, pose: bow(0, -8), ease: "in" },
+      { t: 1400, pose: A },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: { rot: sine(D, D / 2, 22, 5, 1) } } },
+  );
 }
 
 /**
@@ -692,15 +712,20 @@ function knock(): CatAnim {
   const pose = (rot: number, lean: number): Pose =>
     sitWith({ body: { rot: -32 + lean }, neck: { rot: 24 - lean }, head: { rot: 8 }, legs: { "leg-front-near": { rot, y: 2 } } });
   const rest = pose(15, 0);
-  return build(D, true, [
-    { t: 0, pose: rest },
-    { t: 260, pose: pose(-70, 6) },
-    { t: 400, pose: pose(-100, 8), ease: "out" },
-    { t: 540, pose: pose(-70, 6) },
-    { t: 680, pose: pose(-100, 8), ease: "out" },
-    { t: 920, pose: rest },
-    { t: D, pose: rest },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: rest },
+      { t: 260, pose: pose(-70, 6) },
+      { t: 400, pose: pose(-100, 8), ease: "out" },
+      { t: 540, pose: pose(-70, 6) },
+      { t: 680, pose: pose(-100, 8), ease: "out" },
+      { t: 920, pose: rest },
+      { t: D, pose: rest },
+    ],
+    { bones: { tail: { rot: sine(D, D / 2, SIT_TAIL, 5, 1) } } },
+  );
 }
 
 /**
@@ -763,18 +788,23 @@ function keyboard(): CatAnim {
   const pose = (ff: number, fn: number, look: number): Pose =>
     sitWith({ head: { rot: 14 + look }, legs: { "leg-front-far": at(2, ff, { y: 3 }), "leg-front-near": at(1, fn, { y: 3 }) } });
   const A = pose(0, 0, 0);
-  return build(D, true, [
-    { t: 0, pose: A },
-    { t: 250, pose: pose(0, -7, -3) },
-    { t: 500, pose: pose(-7, 0, -6) },
-    { t: 750, pose: pose(0, -7, -8) },
-    { t: 1000, pose: pose(0, 0, -8) },
-    { t: 1700, pose: pose(0, 0, 8) },
-    { t: 1950, pose: pose(-7, 0, 8) },
-    { t: 2200, pose: pose(0, -7, 5) },
-    { t: 2450, pose: pose(0, 0, 3) },
-    { t: D, pose: A },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 250, pose: pose(0, -7, -3) },
+      { t: 500, pose: pose(-7, 0, -6) },
+      { t: 750, pose: pose(0, -7, -8) },
+      { t: 1000, pose: pose(0, 0, -8) },
+      { t: 1700, pose: pose(0, 0, 8) },
+      { t: 1950, pose: pose(-7, 0, 8) },
+      { t: 2200, pose: pose(0, -7, 5) },
+      { t: 2450, pose: pose(0, 0, 3) },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: { rot: sine(D, D / 2, SIT_TAIL, 6, 1) } } },
+  );
 }
 
 /**
@@ -800,7 +830,9 @@ function watchWindow(): CatAnim {
     {
       bones: {
         body: { scale: breathe(D, 2000, 0.02) },
-        tail: { rot: track([0, -75], [1600, -75], [1700, -66], [1800, -76], [1900, -67], [2000, -75], [D, -75]) },
+        tail: {
+          rot: track([0, SIT_TAIL], [1600, SIT_TAIL], [1700, SIT_TAIL + 9], [1800, SIT_TAIL - 1], [1900, SIT_TAIL + 8], [2000, SIT_TAIL], [D, SIT_TAIL]),
+        },
       },
     },
   );
@@ -925,13 +957,18 @@ function chew(): CatAnim {
   const D = 900;
   const pose = (tilt: number, dip: number): Pose => loafWith({ pelvis: { y: 11 }, body: { rot: 5 }, neck: { rot: 26 + dip, x: 2 }, head: { rot: tilt } });
   const A = pose(10, 0);
-  return build(D, true, [
-    { t: 0, pose: A },
-    { t: 200, pose: pose(-10, 4) },
-    { t: 450, pose: A },
-    { t: 650, pose: pose(-10, 4) },
-    { t: D, pose: A },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 200, pose: pose(-10, 4) },
+      { t: 450, pose: A },
+      { t: 650, pose: pose(-10, 4) },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: { rot: sine(D, D, LOAF_TAIL, 5, 1) } } },
+  );
 }
 
 /**
@@ -978,7 +1015,9 @@ function decline(): CatAnim {
     {
       bones: {
         body: { scale: breathe(D, 1500, 0.03) },
-        tail: { rot: track([0, -95], [140, -76, "out"], [300, -98], [440, -76, "out"], [600, -98], [D, -95]) },
+        tail: {
+          rot: track([0, LOAF_TAIL], [140, LOAF_TAIL + 19, "out"], [300, LOAF_TAIL - 3], [440, LOAF_TAIL + 19, "out"], [600, LOAF_TAIL - 3], [D, LOAF_TAIL]),
+        },
       },
     },
   );
@@ -991,16 +1030,21 @@ function sniff(): CatAnim {
     standWith({ pelvis: { y: 1 }, body: { rot: 8 }, neck: { rot: 34 + dip, x: reach }, head: { rot: -6 }, tail: { rot: -10 } });
   const A = pose(0, 0);
   const B = pose(3, 1);
-  return build(D, true, [
-    { t: 0, pose: A },
-    { t: 120, pose: B },
-    { t: 240, pose: A },
-    { t: 360, pose: B },
-    { t: 480, pose: A },
-    { t: 1000, pose: pose(-6, -1) },
-    { t: 1400, pose: A },
-    { t: D, pose: A },
-  ]);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 120, pose: B },
+      { t: 240, pose: A },
+      { t: 360, pose: B },
+      { t: 480, pose: A },
+      { t: 1000, pose: pose(-6, -1) },
+      { t: 1400, pose: A },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: { rot: sine(D, D, -10, 7, 1) } } },
+  );
 }
 
 /** Анімації групи «behavior» (`CAT_ANIM_GROUPS.behavior`). */
