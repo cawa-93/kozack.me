@@ -22,8 +22,8 @@
 // усіма) не рахується. Буфери — у `IsoWork`, що живе між кадрами, тож щокадру нових не виділяється. Коробки квартири (~30) і
 // 40 точок — ~10 мкс на кадр. Цикли на квартирі з точками поза слідами меблів — рідкість (~0,4 % кадрів із 40 точками).
 
-import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, type Rect } from "../../sim/home";
-import { ISO_TILE, ISO_WALLS } from "./projection";
+import type { Rect } from "../../sim/home";
+import { ISO_TILE } from "./projection";
 
 /** Коробка на підлозі: слід [x0, x1) × [y0, y1) у клітинках; `h` — висота в одиницях арту, для довідки (порядку не міняє). */
 export interface IsoBox {
@@ -402,65 +402,4 @@ export function isoOrder(boxes: readonly IsoBox[], points: readonly IsoPoint[], 
 /** Слід речі квартири (`OBJECTS`, §8.4) коробкою. */
 export function objectBox(r: Rect, h?: number): IsoBox {
   return { x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h, ...(h === undefined ? {} : { h }) };
-}
-
-/** Сегмент стіни для порядку: внутрішня (між кімнатами, з кришкою) чи передня (плінтус). */
-export interface WallBox extends IsoBox {
-  readonly kind: "inner" | "front";
-  readonly h: number;
-}
-
-/**
- * Стіни квартири, що можуть щось закрити, — коробками за мапою (`MAP`): внутрішні (стовпці x=7 і x=12 у рядах 1–4, ряд
- * y=5 з проходами) і передні (ряд y=11 і стовпець x=19; кут (19, 11) — у ряду). Задніх (ряд y=0 і стовпець x=0) немає: вони
- * запечені в плити кімнат. Клітинки вхідних дверей — не стіна: двері — своя річ (`OBJECTS`). Сусідні клітинки одного ряду
- * зливаються в сегмент; що лишилося поодинці — у вертикальні сегменти.
- */
-export function wallBoxes(): WallBox[] {
-  const door = OBJECTS.filter((o) => o.kind === "door");
-  const kindAt = (x: number, y: number): WallBox["kind"] | null => {
-    if (x <= 0 || y <= 0 || MAP[y]?.[x] !== "#") return null;
-    if (door.some((d) => x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + d.h)) return null;
-    return y === MAP_HEIGHT - 1 || x === MAP_WIDTH - 1 ? "front" : "inner";
-  };
-  const wall = (kind: WallBox["kind"], x0: number, y0: number, x1: number, y1: number): WallBox => ({
-    kind,
-    x0,
-    y0,
-    x1,
-    y1,
-    h: kind === "front" ? ISO_WALLS.plinth : ISO_WALLS.inner,
-  });
-  const result: WallBox[] = [];
-  const single: boolean[][] = MAP.map(() => []);
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    let x = 0;
-    while (x < MAP_WIDTH) {
-      const kind = kindAt(x, y);
-      if (!kind) {
-        x++;
-        continue;
-      }
-      let end = x + 1;
-      while (end < MAP_WIDTH && kindAt(end, y) === kind) end++;
-      if (end - x >= 2) result.push(wall(kind, x, y, end, y + 1));
-      else single[y]![x] = true;
-      x = end;
-    }
-  }
-  for (let x = 0; x < MAP_WIDTH; x++) {
-    let y = 0;
-    while (y < MAP_HEIGHT) {
-      const kind = single[y]![x] ? kindAt(x, y) : null;
-      if (!kind) {
-        y++;
-        continue;
-      }
-      let end = y + 1;
-      while (end < MAP_HEIGHT && single[end]![x] && kindAt(x, end) === kind) end++;
-      result.push(wall(kind, x, y, x + 1, end));
-      y = end;
-    }
-  }
-  return result;
 }

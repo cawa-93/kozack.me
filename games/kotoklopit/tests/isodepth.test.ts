@@ -6,7 +6,8 @@ import { describe, expect, it } from "vitest";
 
 import { OBJECTS, objectById } from "../src/sim/home";
 import { ISO_BACKDROP_DEPTH, ISO_DEPTH_MAX, ISO_DEPTH_SLOT, IsoDepth, isoDepth } from "../src/view/iso/depth";
-import { objectBox, wallBoxes } from "../src/view/world/isoorder";
+import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
+import { objectBox } from "../src/view/world/isoorder";
 import { WORLD_LAYERS } from "../src/view/world/layers";
 import type { WorldQuery } from "../src/view/world/part";
 import { ISO } from "../src/view/world/projection";
@@ -99,9 +100,9 @@ describe("реєстр глибини: порядок", () => {
       registry.addBox({ ...objectBox(o), id: o.id }, r.set);
       depths.set(o.id, r.depth);
     }
-    wallBoxes().forEach((w, i) => {
+    WALL_SEGMENTS.forEach((w, i) => {
       const r = recorder();
-      registry.addBox(w, r.set);
+      registry.addBox(objectBox(w.rect), r.set);
       depths.set(`wall:${i}`, r.depth);
     });
     for (let i = 0; i < 30; i++) {

@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 
 import { isFixedSolid, MAP_HEIGHT, MAP_WIDTH, OBJECTS, objectById } from "../src/sim/home";
-import { FLAT_REACH, ISO_POINT_HALF, IsoWork, isoOrder, objectBox, wallBoxes, type IsoBox, type IsoPoint } from "../src/view/world/isoorder";
+import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
+import { FLAT_REACH, ISO_POINT_HALF, IsoWork, isoOrder, objectBox, type IsoBox, type IsoPoint } from "../src/view/world/isoorder";
 
 /** Місце кожного елемента в порядку (0 — найдальший). */
 function ranks(order: Int32Array): number[] {
@@ -171,7 +172,7 @@ describe("isoOrder: коробки", () => {
 });
 
 describe("isoOrder: стіни й кошеня", () => {
-  it("стіни для порядку — внутрішні й передні сегменти за мапою; задніх і дверей немає", () => {
+  it("стіни для порядку — сегменти WALL_SEGMENTS: внутрішні й передні плінтуси шматками; задніх і дверей немає", () => {
     const walls = wallBoxes().map((w) => `${w.kind} ${w.x0},${w.y0}–${w.x1},${w.y1} h${w.h}`);
     expect(walls.sort()).toEqual(
       [
@@ -181,9 +182,14 @@ describe("isoOrder: стіни й кошеня", () => {
         "inner 17,5–19,6 h66",
         "inner 7,1–8,5 h66",
         "inner 12,1–13,5 h66",
-        "front 1,11–10,12 h14",
-        "front 12,11–20,12 h14",
-        "front 19,1–20,11 h14",
+        "front 0,11–4,12 h14",
+        "front 4,11–7,12 h14",
+        "front 7,11–10,12 h14",
+        "front 12,11–16,12 h14",
+        "front 16,11–20,12 h14",
+        "front 19,0–20,4 h14",
+        "front 19,4–20,8 h14",
+        "front 19,8–20,11 h14",
       ].sort(),
     );
   });
@@ -211,6 +217,11 @@ describe("isoOrder: стіни й кошеня", () => {
     expect(rank[point(4)]).toBeGreaterThan(rank[left]!);
   });
 });
+
+/** Сегменти стін квартири коробками — ті самі, що реєструє ізометрична квартира (`WALL_SEGMENTS`). */
+function wallBoxes(): (IsoBox & { kind: "inner" | "front" })[] {
+  return WALL_SEGMENTS.map((s) => ({ ...objectBox(s.rect, WALL_HEIGHT[s.kind]), kind: s.kind }));
+}
 
 /** Елемент для перевірки правил незалежно від розв'язувача: коробка чи точка (на коробці — з її індексом). */
 type Item = { box: IsoBox } | { point: IsoPoint };
