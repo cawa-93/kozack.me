@@ -381,80 +381,151 @@ function gaitBob(T: number, bob: number, y0 = 0): BoneTracks {
 }
 
 /**
- * Кульгає (травма, §9.5): ближня передня болить — підібрана й лише ледь торкається підлоги посередині свого кроку; голова
- * злітає вгору, коли хвора лапа ступає (кіт знімає з неї вагу), і падає, коли ступає здорова, — нерівний кивок, який видно
- * й на телефоні. Решта лап — рись, як у звичайній ході.
+ * Кульгає (травма, §9.5): ближня передня болить — її кіт тримає підібраною попереду й лише ледь торкається нею підлоги
+ * посередині свого кроку; здорова передня стоїть довше (`LIMP_STANCE` циклу замість половини) і швидко «підскоком»
+ * переноситься вперед. Плечі й голова злітають, коли ступає хвора (кіт знімає з неї вагу), і падають, коли вага на здоровій,
+ * — нерівний кивок, який видно й на телефоні. Задні — рись, як у звичайній ході. Передні лапи на підлозі рахує `legTo`:
+ * подушечка стоїть на лінії підлоги й іде назад з тією самою швидкістю, що в ході (`WALK_SPEED`), — не ковзає й не пірнає,
+ * хоч плечі й хиляться.
  */
+/** Частка циклу, яку здорова передня стоїть на підлозі (у ході — половина). */
+const LIMP_STANCE = 0.58;
+/** Частка циклу, яку хвора лапа торкається підлоги (посередині своєї опори). */
+const LIMP_TOUCH = 0.18;
+/** Хвора лапа в повітрі: тримає вперед і підібрана (поворот, масштаб уздовж). */
+const LIMP_HELD = { rot: -42, sx: 0.6 };
+/** Здорова лапа посередині переносу: наскільки підібрана. */
+const LIMP_HOP = 0.74;
+/** Наскільки кіт іде за мілісекунду ходи, одиниці арту: за цикл `WALK_MS` — крок `CAT_WALK_STRIDE` довжин лапи. */
+const WALK_SPEED = (4 * WALK_REACH * Math.sin(WALK_AMP * DEG) * LEG) / WALK_MS;
+
+/** М'який перехід 0 → 1. */
+const smooth = (u: number): number => u * u * (3 - 2 * u);
+
+/**
+ * Передні лапи кульгання в ракурсі `view` за рештою ходи `core` (плечі, таз; `extra` — перевизначення ракурсу): щільні ключі
+ * (кожні 10 мс) повороту й масштабу.
+ */
+function limpFront(core: Tracks, view: ArtView, extra: Tracks): Tracks {
+  const T = WALK_MS;
+  const STEP = 10;
+  const rig = new Rig(CAT_RIG, { facing: { view } }) as unknown as CatRig;
+  rig.evaluate(0);
+  const floor = { "leg-front-near": pawOf(rig, "leg-front-near").y, "leg-front-far": pawOf(rig, "leg-front-far").y };
+  rig.play({ duration: T, loop: true, bones: merge(core, extra) }, 0, { blend: 0 });
+  const at = (t: number): CatRig => {
+    rig.evaluate(((t % T) + T) % T);
+    return rig;
+  };
+  /**
+   * Лапа на підлозі в опорі [from, to] (мс, `to` може бути за кінцем циклу): посередині — під плечем, далі йде назад з
+   * швидкістю ходи. `t` — у межах опори (розгорнутий час).
+   */
+  const planted = (leg: "leg-front-near" | "leg-front-far", from: number, to: number) => {
+    const mid = (from + to) / 2;
+    const x0 = at(mid).bone(leg).world.tx;
+    return (t: number): { rot: number; sx: number } => legTo(at(t), leg, { x: x0 - WALK_SPEED * (t - mid), y: floor[leg] });
+  };
+  // Здорова (дальня) передня: опора навколо 3/4 циклу, як у рисі, але довша; перенос — швидкий підскок.
+  const farFrom = 0.75 * T - (LIMP_STANCE * T) / 2;
+  const farTo = 0.75 * T + (LIMP_STANCE * T) / 2;
+  const far = planted("leg-front-far", farFrom, farTo);
+  const farLift = far(farTo);
+  const farLand = far(farFrom);
+  const farAt = (t: number): { rot: number; sx: number } => {
+    const u = t < farFrom ? t + T : t;
+    if (u <= farTo) return far(u);
+    const k = (u - farTo) / (farFrom + T - farTo);
+    const sx = farLift.sx + (farLand.sx - farLift.sx) * k;
+    return { rot: farLift.rot + (farLand.rot - farLift.rot) * smooth(k), sx: sx - (sx - LIMP_HOP) * Math.sin(Math.PI * k) };
+  };
+  // Хвора (ближня) передня: торкається посередині своєї опори (1/4 циклу), решту часу — підібрана попереду.
+  const nearFrom = 0.25 * T - (LIMP_TOUCH * T) / 2;
+  const nearTo = 0.25 * T + (LIMP_TOUCH * T) / 2;
+  const near = planted("leg-front-near", nearFrom, nearTo);
+  const nearUp = near(nearTo);
+  const nearDown = near(nearFrom);
+  const held = 0.75 * T;
+  const nearAt = (t: number): { rot: number; sx: number } => {
+    const u = t < nearFrom ? t + T : t;
+    if (u <= nearTo) return near(u);
+    // Відриваючись, лапа спершу підбирається (масштаб випереджає поворот), а опускаючись — спершу виноситься вперед і лише
+    // тоді випрямляється до підлоги: так подушечка не черкає підлогу, коли лапа проходить під плечем.
+    const lifting = u < held;
+    const [a, b, k] = lifting ? [nearUp, LIMP_HELD, (u - nearTo) / (held - nearTo)] : [LIMP_HELD, nearDown, (u - held) / (nearFrom + T - held)];
+    const fast = 1 - (1 - k) * (1 - k);
+    const slow = k * k;
+    return { rot: a.rot + (b.rot - a.rot) * (lifting ? slow : fast), sx: a.sx + (b.sx - a.sx) * (lifting ? fast : slow) };
+  };
+  const out: Tracks = {};
+  for (const [leg, f] of [
+    ["leg-front-far", farAt],
+    ["leg-front-near", nearAt],
+  ] as const) {
+    const rot: Key<number>[] = [];
+    const scale: Key<Vec2>[] = [];
+    for (let t = 0; t <= T; t += STEP) {
+      const { rot: r, sx } = f(t === T ? 0 : t);
+      rot.push({ t, v: r });
+      scale.push({ t, v: { x: sx, y: 1 } });
+    }
+    out[leg] = { ...extra[leg], rot, scale };
+  }
+  return out;
+}
+
 function limpAnim(): CatAnim {
   const T = WALK_MS;
   const H = T / 2;
+  const Q = T / 4;
+  const core: Tracks = {
+    pelvis: gaitBob(T, WALK_BOB),
+    "leg-back-far": gaitLeg(T, WALK_AMP, 0),
+    "leg-back-near": gaitLeg(T, WALK_AMP, 0.5),
+    // Плечі: угору, коли ступає хвора, униз, коли вага на здоровій (від'ємний поворот тулуба — плечі вище).
+    body: {
+      rot: keys([
+        [0, 0],
+        [Q, -2],
+        [H, 0.5],
+        [H + Q, 2.5],
+        [T, 0],
+      ]),
+    },
+    // Кивок: угору, поки хвора лапа на підлозі, униз — коли вага на здоровій.
+    neck: {
+      rot: keys([
+        [0, 0],
+        [H * 0.5, -9],
+        [H, 0],
+        [H * 1.5, 9],
+        [T, 0],
+      ]),
+    },
+    head: {
+      rot: keys([
+        [0, 0],
+        [H * 0.5, -3],
+        [H, 0],
+        [H * 1.5, 5],
+        [T, 0],
+      ]),
+    },
+    // Хвіст нижче, ніж у звичайній ході, похитується для рівноваги.
+    tail: {
+      rot: osc(T, [-62, -54]),
+      pos: [
+        { t: 0, v: tailShift(-62), ease: "inOut" },
+        { t: H, v: tailShift(-54), ease: "inOut" },
+        { t: T, v: tailShift(-62) },
+      ],
+    },
+  };
   return {
     duration: T,
     loop: true,
-    bones: {
-      pelvis: gaitBob(T, WALK_BOB),
-      "leg-back-far": gaitLeg(T, WALK_AMP, 0),
-      "leg-front-far": gaitLeg(T, WALK_AMP, 0.5),
-      "leg-back-near": gaitLeg(T, WALK_AMP, 0.5),
-      // Хвора лапа: тримає вперед підібраною, посередині своєї опори ледь торкається підлоги й одразу знову піднімається.
-      "leg-front-near": {
-        rot: keys([
-          [0, -42],
-          [H * 0.4, -12],
-          [H * 0.55, -2],
-          [H * 0.7, 2],
-          [H, -28],
-          [T, -42],
-        ]),
-        scale: keysV([
-          [0, 0.6, 1],
-          [H * 0.4, 0.86, 1],
-          [H * 0.55, 0.96, 1],
-          [H * 0.7, 0.95, 1],
-          [H, 0.62, 1],
-          [T, 0.6, 1],
-        ]),
-      },
-      // Кивок: угору, поки хвора лапа на підлозі, униз — коли вага на здоровій.
-      neck: {
-        rot: keys([
-          [0, 0],
-          [H * 0.5, -9],
-          [H, 0],
-          [H * 1.5, 9],
-          [T, 0],
-        ]),
-      },
-      head: {
-        rot: keys([
-          [0, 0],
-          [H * 0.5, -3],
-          [H, 0],
-          [H * 1.5, 5],
-          [T, 0],
-        ]),
-      },
-      // Тулуб ледь хилиться за кивком (передні плечі вниз, коли ступає здорова).
-      body: {
-        rot: keys([
-          [0, 0],
-          [H * 0.5, -1.5],
-          [H, 0],
-          [H * 1.5, 1.5],
-          [T, 0],
-        ]),
-      },
-      // Хвіст нижче, ніж у звичайній ході, похитується для рівноваги.
-      tail: {
-        rot: osc(T, [-62, -54]),
-        pos: [
-          { t: 0, v: tailShift(-62), ease: "inOut" },
-          { t: H, v: tailShift(-54), ease: "inOut" },
-          { t: T, v: tailShift(-62) },
-        ],
-      },
-    },
-    views: { back: BACK_NEAR },
+    bones: { ...core, ...limpFront(core, "front", {}) },
+    views: { back: { bones: limpFront(core, "back", NEAR_FRONT_IN), slots: NEAR_FRONT_UNDER } },
   };
 }
 

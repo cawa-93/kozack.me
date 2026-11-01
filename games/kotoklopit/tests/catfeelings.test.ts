@@ -281,3 +281,43 @@ describe("catOverlayOn: накладка, підігнана під основу
   });
 });
 
+describe("хода, разові й обличчя «хвороб»", () => {
+  /** Подушечка лапи в момент `t` анімації (ракурс `view`). */
+  function paw(anim: CatAnim, view: View, leg: (typeof BONES)[number], t: number): Vec2 {
+    const rig = new Rig(CAT_RIG, { facing: { view } });
+    rig.play(anim, 0, { blend: 0, from: t });
+    rig.evaluate(0);
+    const bone = rig.bone(leg);
+    return { x: bone.world.a * bone.len + bone.world.tx, y: bone.world.b * bone.len + bone.world.ty };
+  }
+
+  it("кульгання: передні лапи на підлозі не ковзають (ідуть назад зі швидкістю ходи) і не пірнають; здорова стоїть довше за половину циклу, хвора торкається", () => {
+    const anim = CAT_FEELINGS.limp;
+    // Швидкість ходи групи `basic`: за цикл кіт ступає 4 · 1,08 · sin 34° довжин лапи (20,5).
+    const speed = (4 * 1.08 * Math.sin(34 * DEG) * 20.5) / anim.duration;
+    for (const view of VIEWS) {
+      for (const [leg, share] of [
+        ["leg-front-far", 0.52],
+        ["leg-front-near", 0.12],
+      ] as const) {
+        const rest = new Rig(CAT_RIG, { facing: { view } }).evaluate(0).bone(leg);
+        const floor = rest.world.b * rest.len + rest.world.ty;
+        let down = 0;
+        let deepest = -Infinity;
+        const dt = 2;
+        let prev = paw(anim, view, leg, 0);
+        for (let t = dt; t <= anim.duration; t += dt) {
+          const now = paw(anim, view, leg, t);
+          deepest = Math.max(deepest, now.y - floor);
+          if (Math.abs(now.y - floor) < 0.02 && Math.abs(prev.y - floor) < 0.02) {
+            down += dt;
+            expect({ view, leg, t, slide: Math.abs((prev.x - now.x) / dt - speed) < 0.01 }).toEqual({ view, leg, t, slide: true });
+          }
+          prev = now;
+        }
+        expect({ view, leg, sinks: deepest > 0.05 }).toEqual({ view, leg, sinks: false });
+        expect(down / anim.duration).toBeGreaterThanOrEqual(share);
+      }
+    }
+  });
+});
