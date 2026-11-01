@@ -49,7 +49,8 @@ export const MANIFEST: readonly ArtEntry[] = [
   // `fill-iris` (4 кольори очей `coatOf`); повік-шерсті немає (еталон F1b): де ока не намальовано, видно голову.
   { id: "cat/eyes", ...CAT_EYES, layers: CAT_EYE_LAYERS, views: PART_VIEWS, states: ["open", "half", "closed", "arc", "squint", "round", "sick"] },
   // Рот (§9.4, §9.12): `closed` — закритий; `meow` — нявкає; `hiss` — шипить, з іклами (дуга, протистояння); `yawn` —
-  // позіхає; `eat` — жує; `tongue` — висунутий язичок (вилизує себе чи друга, п'є).
+  // позіхає; `eat` — жує одним боком (рот навскіс, рожевий язик); `tongue` — висунутий язичок (вилизує себе чи друга, п'є).
+  // Нижня щелепа — шерсть, ширша за пащеку, з контуром-лінзою «U» (не кільцем — «борідка»); полотно — під позіх і шипіння.
   { id: "cat/mouth", ...CAT_MOUTH, layers: CAT_COAT_DETAIL, views: PART_VIEWS, states: ["closed", "meow", "hiss", "yawn", "eat", "tongue"] },
   // Передня лапа звичайної довжини (слоти `leg-front-far`, `leg-front-near`): pivot — плече, `paw` — подушечка.
   { id: "cat/leg-front/normal", ...CAT_FRONT_LEGS.normal, layers: CAT_COAT_DETAIL, views: PART_VIEWS },

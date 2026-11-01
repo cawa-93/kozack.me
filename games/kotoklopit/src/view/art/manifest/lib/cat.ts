@@ -177,7 +177,7 @@ export const CAT_MUZZLES: Record<Shape["muzzle"], Part> = {
 /** Очі обидва разом (у ¾ видно обидва) — еталон F1b, стани A7; pivot — між очима; полотно вміщує круглі очі й сльози. */
 export const CAT_EYES: Part = { size: { w: 31, h: 25 }, pivot: { x: 16, y: 11 } };
 /** Рот — еталон F1b, стани A7; pivot — під носом, полотно вміщує позіх (щелепа найнижче) і шипіння (найширше). */
-export const CAT_MOUTH: Part = { size: { w: 23, h: 26 }, pivot: { x: 12, y: 7 } };
+export const CAT_MOUTH: Part = { size: { w: 26, h: 27 }, pivot: { x: 14, y: 7 } };
 
 /** Наскільки коротші лапи манчкіна: на стільки ж скелет опускає тіло (`short-legs`, F4a). */
 const SHORT_LEGS = 7;
