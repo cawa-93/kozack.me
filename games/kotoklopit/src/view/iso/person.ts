@@ -95,11 +95,12 @@ interface OneShot extends Shot {
   start: number;
 }
 
-/** Річ у гнізді: зображення, прикріплене раз назавжди, кадр, що зараз показано, і масштаб відносно базового кадру. */
+/** Річ у гнізді: зображення, прикріплене раз назавжди, кадр, що зараз показано, масштаб відносно базового кадру й зсув. */
 interface Cargo {
   image: Phaser.GameObjects.Image;
   key: string;
   scale: number;
+  shift: { readonly x: number; readonly y: number } | null;
 }
 
 /** Обтинання кадру (`setCrop`): за яким кадром текстури його пораховано (новий кадр — інша роздільність, рахувати знову). */
@@ -201,7 +202,7 @@ export class IsoPersonView implements PersonPart {
   private socketImage(socket: "held" | "rod", frame: IsoFrame): Cargo {
     const image = addArt(this.ctx.scene, this.sprite, frame.id, { state: frame.state }).setVisible(false);
     this.sprite.attach(socket, image);
-    return { image, key: frameKey(frame), scale: 1 };
+    return { image, key: frameKey(frame), scale: 1, shift: null };
   }
 
   /** Запечені частини: ближні — рецептом вигляду, дальні — затіненим (`farRecipe`). */
@@ -362,9 +363,14 @@ export class IsoPersonView implements PersonPart {
       cargo.image.setVisible(frame !== null);
       if (!frame || !want) continue;
       const key = frameKey(frame);
-      if (cargo.key !== key) {
+      const shift = want.shift ?? null;
+      if (cargo.key !== key || cargo.shift !== shift) {
         cargo.key = key;
+        cargo.shift = shift;
+        // `setArt` ставить origin у pivot кадру; зсув — інша точка кадру в гнізді (телефон визирає з-під кулака).
         setArt(cargo.image, frame.id, { state: frame.state });
+        const entry = artEntry(frame.id);
+        if (entry) cargo.image.setOrigin((entry.pivot.x + (shift?.x ?? 0)) / entry.size.w, (entry.pivot.y + (shift?.y ?? 0)) / entry.size.h);
       }
       if (cargo.scale !== want.scale) {
         // `setArt` зберігає масштаб відносно базового кадру — множимо саме його.

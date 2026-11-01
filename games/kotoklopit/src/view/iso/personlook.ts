@@ -140,15 +140,20 @@ export function catSocket(anim: PersonAnimId): "lap" | "arms" {
 /**
  * Телефон біля вуха (`phone`, N4b: дзвонить мама, руки порожні): кадр телефона з кухонної стільниці (A6
  * `mess/trinket/phone`), у стані `fallen` — навскіс і зі світним екраном, тож у руці його видно як телефон, а не як темну
- * плитку; удвічі менший (на стільниці його намальовано більшим, ніж у руці, щоб читався з кімнати).
+ * плитку; менший (на стільниці його намальовано більшим, ніж у руці, щоб читався з кімнати). Кулак біля вуха закрив би його
+ * цілком, тож телефон зсунуто від кулака до щоки й униз, нижче ока (`shift`, одиниці кадру від pivot: у цій анімації кисть
+ * повернута догори дриґом, тож +x кадру — до обличчя, +y — до підборіддя): він визирає з-під руки на щоці. Ззаду (гніздо за
+ * головою) телефона, як і належить, не видно.
  */
-export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.5 } as const;
+export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.62, shift: { x: 9, y: 8 } } as const;
 
-/** Що в гнізді рук: гніздо, кадр і масштаб відносно звичайного (1 — як намальовано). */
+/** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
 export interface HeldFrame {
   socket: "held" | "rod";
   frame: IsoFrame;
   scale: number;
+  /** Точка кадру (одиниці від pivot), що лягає в гніздо; немає — pivot. */
+  shift?: { readonly x: number; readonly y: number };
 }
 
 /**
@@ -158,7 +163,7 @@ export interface HeldFrame {
  * котів (у точці `hands`).
  */
 export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): HeldFrame | null {
-  if (item === null) return anim === "phone" ? { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale } : null;
+  if (item === null) return anim === "phone" ? { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift } : null;
   if (heldThing(item) === "cat") return null;
   switch (item.kind) {
     case "toy":
