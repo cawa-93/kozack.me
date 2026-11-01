@@ -19,9 +19,10 @@ import { girthOf } from "../../sim/weight";
 import type { Cat, Shape } from "../../sim/types";
 import type { CatEars } from "../anim/catface";
 import { ART_VIEWS, type ArtId, type ArtView } from "../art/types";
+import { catBrawlTop } from "../rig/anims/cat/behavior";
 import { CAT_FIT, CAT_RIG, catProportions, catSkin, type CatSlot } from "../rig/defs/cat";
-import type { ProportionRef, RigFit } from "../rig/rigcore";
-import type { BoneDef, BoneOf, RigDef, RigSkin, RigViewSetup, SlotDef, SocketOf } from "../rig/types";
+import type { Affine, ProportionRef, RigFit } from "../rig/rigcore";
+import type { BoneDef, BoneOf, RigDef, RigSkin, RigViewSetup, SlotDef, SocketOf, Vec2 } from "../rig/types";
 
 type CatBone = BoneOf<typeof CAT_RIG>;
 /** Кістки кота в грі: скелета `CAT_RIG` плюс вуха й обхват тулуба. */
@@ -214,6 +215,34 @@ export const EAR_POSES: Readonly<Record<CatEars, Readonly<Record<ArtView, Readon
   side: { front: { "ear-far": ear(30, 0.95), "ear-near": ear(-30, 0.95) }, back: { "ear-far": ear(-30, 0.95), "ear-near": ear(30, 0.95) } },
   back: { front: { "ear-far": ear(42, 0.75), "ear-near": ear(-58, 0.75) }, back: { "ear-far": ear(-58, 0.75), "ear-near": ear(42, 0.75) } },
 };
+
+// --- Точки на кістках -------------------------------------------------------------------------
+
+/**
+ * Точка `local` у системі кістки `bone` (поза з останнього `evaluate`) — у системі кореня скелета (обличчям праворуч), у
+ * `out`: рука на животі того, хто лежить на спині (`catPetPoint`, кістка `body`).
+ */
+export function bonePoint(rig: { bone(id: IsoCatBone): { readonly world: Readonly<Affine> } }, bone: IsoCatBone, local: Vec2, out: Vec2): Vec2 {
+  const w = rig.bone(bone).world;
+  const x = w.a * local.x + w.c * local.y + w.tx;
+  out.y = w.b * local.x + w.d * local.y + w.ty;
+  out.x = x;
+  return out;
+}
+
+/** Над клубком бійки (N2, `catBrawlTop`), у системі кореня дорослого кота. */
+const BRAWL_TOP: Vec2 = catBrawlTop();
+
+/**
+ * Точка бабла «бійка» над клубком (N2, `catBrawlTop`) у системі кореня скелета, у `out`: під масштабом кореня кошеняти (вага
+ * пропорцій `kitten`), але без підскоку кулі (доріжки кореня анімації) — бабл не стрибає разом із клубком.
+ */
+export function brawlTop(kitten: number, out: Vec2): Vec2 {
+  const k = 1 + (KITTEN_ROOT - 1) * Math.min(1, Math.max(0, kitten));
+  out.x = BRAWL_TOP.x * k;
+  out.y = BRAWL_TOP.y * k;
+  return out;
+}
 
 /** Що з дальніх частин затінює вигляд (`CAT_FAR_SLOTS`): дальні лапи й вухо — ті самі слоти в цьому скелеті. */
 export { CAT_FAR_SLOTS } from "../rig/defs/cat";

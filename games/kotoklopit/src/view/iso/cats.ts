@@ -18,6 +18,7 @@ import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, personFacing } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
 import type { CatOneShotId } from "../anim/ids";
+import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
 import { catPairs, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
 import { COLORS } from "../colors";
@@ -118,6 +119,7 @@ export class IsoCatsView implements CatsPart {
     overlay: null,
     restart: false,
     speed: 1,
+    phase: 0,
     face: { eyes: "open", mouth: "closed", ears: "up" },
     facing: { view: "front", flip: false },
     root: { x: 0, y: 0 },
@@ -270,6 +272,8 @@ export class IsoCatsView implements CatsPart {
     f.anim = anim;
     f.overlay = overlay;
     f.restart = restart;
+    // Клубок бійки: обидва грають ту саму анімацію дзеркально — другий (з більшим номером) зі зсунутою фазою (N2).
+    f.phase = anim === "brawl" && pair?.kind === "brawl" && cat.id > pair.with ? CAT_BRAWL_PHASE_MS : 0;
     f.face = face;
     f.facing = facing;
     f.scale = size.scale * spot.scale;

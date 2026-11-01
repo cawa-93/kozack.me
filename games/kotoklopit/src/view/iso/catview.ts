@@ -18,11 +18,12 @@ import { artEntry } from "../art/manifest";
 import { catRecipeOf, farRecipe } from "../art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../art/types";
 import { CAT_ANIMS } from "../rig/anims";
+import { catPetPoint } from "../rig/anims/cat/basic";
 import { RigSprite, type RigBaked, type SocketWorld } from "../rig/rigsprite";
 import type { RigAnim, RigFacing, Vec2 } from "../rig/types";
 import type { Point } from "../world/part";
 import { composeCatAnim, playBlend } from "./catanim";
-import { CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
+import { bonePoint, brawlTop, CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
 import { CAT_PIECE, type CatShow } from "./catspot";
 import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 
@@ -51,6 +52,17 @@ const FILTER_BOX = { w: 180, h: 200 } as const;
 /** Як часто перевіряти, чи не змінилася шерсть (глисти, дерматит, нашийник), мс: щокадру це зайве — хвороби тривають дні. */
 const RECIPE_CHECK_MS = 500;
 
+/** Де рука гладить того, хто лежить на спині (N1, `catPetPoint`; null — у гнізді `pet` на спинці): за анімацією, раз на назву. */
+const PET_POINTS = new Map<CatAnimId, Vec2 | null>();
+function petPointOf(anim: CatAnimId): Vec2 | null {
+  let point = PET_POINTS.get(anim);
+  if (point === undefined) {
+    point = catPetPoint(anim);
+    PET_POINTS.set(anim, point);
+  }
+  return point;
+}
+
 /** Що зараз показує кіт: анімація (основна й накладка — до складання з обличчям) і звідки рахується її час. */
 interface Playing {
   base: CatRigAnim;
@@ -72,6 +84,11 @@ export interface CatFrame {
   restart: boolean;
   /** Швидкість анімації: хода й біг — у такт тому, як кіт іде на екрані (`gaitRate`), решта — 1. */
   speed: number;
+  /**
+   * На скільки мс зсунути фазу основної, коли вона починається: другий кіт клубка бійки (N2, `CAT_BRAWL_PHASE_MS`) — інакше
+   * обидва, граючи ту саму анімацію дзеркально, були б точним дзеркалом одне одного.
+   */
+  phase: number;
   face: CatFace;
   facing: RigFacing;
   /** Корінь скелета на екрані (точка підлоги під котом, піднята на висоту меблів і дуги стрибка), px світу. */
@@ -134,6 +151,7 @@ export class IsoCatView {
   private lastShow: CatShow = "rig";
   private lastFacing: RigFacing = { view: "front", flip: false };
   private readonly backSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
+  private readonly tmpPoint: Vec2 = { x: 0, y: 0 };
 
   /** Над головою (бабли, пір'їнка вудки) і спинка (рука, що гладить), px світу. */
   readonly head: Point = { x: 0, y: 0 };
@@ -309,7 +327,7 @@ export class IsoCatView {
     if (prev && !f.restart && prev.base === base && prev.overlay === overlay && prev.eyes === face.eyes && prev.mouth === face.mouth && prev.ears === face.ears) return;
     const anim = composeCatAnim(base, overlay, face) as CatRigAnim;
     const sameBase = prev !== null && !f.restart && prev.base === base;
-    const start = sameBase ? prev.start : this.clock;
+    const start = sameBase ? prev.start : this.clock - f.phase;
     const elapsed = this.clock - start;
     const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
     const sameMotion = sameBase && prev.overlay === overlay;
@@ -438,10 +456,17 @@ export class IsoCatView {
 
   /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима чи вушками). */
   private updatePoints(f: CatFrame, evaluated: boolean): void {
-    // Якір і гніздо пишуть просто в точки (немає — точка лишається, як була).
+    // Якір і гніздо пишуть просто в точки (немає — точка лишається, як була). У клубку бійки бабл — над кулею (`catBrawlTop`),
+    // а тому, хто лежить на спині, рука лягає на живіт (`catPetPoint`), а не на спинку, що на підлозі.
     if (f.show === "rig" && evaluated) {
-      this.sprite.anchor("head", this.head);
+      if (f.anim === "brawl") this.toWorld(brawlTop(f.kitten, this.tmpPoint), this.head);
+      else this.sprite.anchor("head", this.head);
       this.sprite.anchor("mouth", this.mouth);
+      const belly = petPointOf(f.anim);
+      if (belly) {
+        this.rigPoint("body", belly, this.back);
+        return;
+      }
       const back = this.sprite.socket("pet", this.backSocket);
       if (back) {
         this.back.x = back.x;
@@ -456,6 +481,20 @@ export class IsoCatView {
     this.back.y = f.root.y - PEEK.eyes * f.scale;
     this.mouth.x = this.back.x;
     this.mouth.y = this.back.y;
+  }
+
+  /**
+   * Точка `local` у системі кістки `bone` (поза з останнього `update`) — у світі, в `out`: кістка — у системі кореня кота
+   * обличчям праворуч, а спрайт ставить корінь у свою точку з масштабом кота (від'ємний по x — віддзеркалено).
+   */
+  private rigPoint(bone: IsoCatBone, local: Vec2, out: Point): void {
+    this.toWorld(bonePoint(this.sprite.rig, bone, local, this.tmpPoint), out);
+  }
+
+  /** Точка в системі кореня кота (обличчям праворуч) — у світі, в `out`. */
+  private toWorld(p: Vec2, out: Point): void {
+    out.x = this.sprite.x + p.x * this.sprite.scaleX;
+    out.y = this.sprite.y + p.y * this.sprite.scaleY;
   }
 
   /** Ракурс, у якому кота показано зараз. */

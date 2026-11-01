@@ -22,9 +22,10 @@ import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/vi
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withFace } from "../src/view/iso/catanim";
 import { catPlay, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
-import { catJumpLift, catLegLength, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
+import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
+import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
-import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
+import { bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { isoOrder } from "../src/view/world/isoorder";
@@ -641,6 +642,62 @@ describe("темп лап ходи й бігу (`gaitRate`)", () => {
     // А з темпом за `walkFactor` (1 — за будь-якої швидкості кота) лапа їхала б.
     const fixed = gaitRate("walk", walk * 0.8, 0, false, 1);
     expect(Math.abs(fixed - 1)).toBeGreaterThan(0.1);
+  });
+});
+
+describe("точки кота для інших частин (`bonePoint`)", () => {
+  it("точка на кістці — у системі кореня: та сама, що якір скелета на тій кістці", () => {
+    for (const view of ART_VIEWS) {
+      const rig = new Rig(ISO_CAT_RIG, { facing: { view } });
+      rig.play(CAT_ANIMS.walk as never, 0, { blend: 0 });
+      rig.evaluate(120);
+      const anchor = ISO_CAT_RIG.anchors.head!;
+      const p = bonePoint(rig, anchor.bone, { x: anchor.x, y: anchor.y }, { x: 0, y: 0 });
+      const a = rig.anchor("head", { x: 0, y: 0 }, false)!;
+      expect(p.x).toBeCloseTo(a.x, 9);
+      expect(p.y).toBeCloseTo(a.y, 9);
+    }
+  });
+
+  it("на спині (`belly`, `roll`) рука лягає на живіт (`catPetPoint`, N1) — над котом, а не на спинку, що на підлозі", () => {
+    for (const anim of ["belly", "roll"] as const) {
+      const point = catPetPoint(anim)!;
+      expect(point).not.toBeNull();
+      for (const view of ART_VIEWS) {
+        for (let t = 0; t < CAT_ANIMS[anim].duration; t += 100) {
+          const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, facing: { view } });
+          rig.play(CAT_ANIMS[anim] as never, 0, { blend: 0 });
+          rig.evaluate(t);
+          const belly = bonePoint(rig, "body", point, { x: 0, y: 0 });
+          const back = rig.socket("pet", undefined, false)!;
+          expect(belly.y, `${anim} ${view} ${t}`).toBeLessThan(back.y - 8);
+          expect(belly.y, `${anim} ${view} ${t}`).toBeLessThan(-8);
+        }
+      }
+    }
+    expect(catPetPoint("sit")).toBeNull();
+  });
+
+  it("бабл над клубком бійки (`catBrawlTop`, N2) — над кулею весь цикл, у кошеняти нижче (масштаб кореня), без підскоку", () => {
+    expect(brawlTop(0, { x: 0, y: 0 })).toEqual(catBrawlTop());
+    const kid = brawlTop(1, { x: 0, y: 0 });
+    expect(kid.y).toBeCloseTo(catBrawlTop().y * (CAT_RIG.proportions?.kitten?.root?.scale?.y ?? 1), 9);
+    for (const [kitten, proportions] of [
+      [0, []],
+      [1, [{ name: "kitten", weight: 1 }]],
+    ] as const) {
+      const top = brawlTop(kitten, { x: 0, y: 0 });
+      for (const view of ART_VIEWS) {
+        const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, facing: { view }, proportions: [...proportions] });
+        rig.play(CAT_ANIMS.brawl as never, 0, { blend: 0 });
+        for (let t = 0; t < CAT_ANIMS.brawl.duration; t += 50) {
+          rig.evaluate(t);
+          // Тулуб-куля (pivot кадру) і схована голова — нижче за бабл.
+          expect(rig.slot("body").y, `${kitten} ${view} ${t}`).toBeGreaterThan(top.y + 20 * (kitten ? 0.62 : 1));
+          expect(rig.anchor("head", { x: 0, y: 0 }, false)!.y).toBeGreaterThan(top.y);
+        }
+      }
+    }
   });
 });
 
