@@ -23,7 +23,7 @@ import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
-import { artOffset, boxCovers, DOOR_BOXES, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
+import { artOffset, BOXES_FRONT, boxCovers, DOOR_BOXES, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import {
   bedState,
@@ -121,6 +121,8 @@ export class IsoApartmentView implements ApartmentPart {
   /** Ефекти над речами й котами (пара, дим, іскри, хропіння, задишка, чхання): квартира оновлюється після котів. */
   private readonly fx: IsoFxView;
   private readonly door: OpenDoor;
+  /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
+  private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -162,6 +164,9 @@ export class IsoApartmentView implements ApartmentPart {
 
     for (const object of OBJECTS) this.things.set(object.id, this.thing(object));
     this.door = this.openDoor(this.get("door"));
+    const boxes = this.get("boxes");
+    const front = this.art("env/boxes/front", boxes.at, 0).setVisible(false);
+    this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: this.depth.addPoint((d) => front.setDepth(d), { half: BOXES_FRONT.half }) };
   }
 
   /** Шматки відчинених дверей (`OpenDoor`): поки двері зачинені, їхніх коробок у порядку немає. */
@@ -311,9 +316,19 @@ export class IsoApartmentView implements ApartmentPart {
     this.show(kit, box.body);
     box.extras.forEach((extra, i) => this.put(kit, KIT_EXTRAS[i]!, extra, ON.overlay + i * ON.step));
 
-    // Купа ящиків біля входу: 1–4 коробки; без покупок її немає (річ невидима — `isPresent`).
+    // Купа ящиків біля входу: 1–4 коробки; без покупок її немає (річ невидима — `isPresent`). Передні стінки верхньої
+    // відкритої коробки — окремим кадром поверх кота, що в ній лежить (`BOXES_FRONT`).
     const pile = boxesState(state);
     if (pile) this.show(this.get("boxes"), { id: "env/boxes", state: pile });
+    const front = this.boxesFront;
+    if (pile) {
+      setPiece(front.piece, { id: "env/boxes/front", state: pile });
+      front.piece.image.setVisible(true);
+      front.point.place(BOXES_FRONT.x, BOXES_FRONT.y, "boxes");
+    } else {
+      front.piece.image.setVisible(false);
+      front.point.hide();
+    }
   }
 
   /** Страви на поверхнях (плита показує свою сковороду сама) і дрібнички на своїх місцях (§8.7, §9.12). */
@@ -380,6 +395,8 @@ export class IsoApartmentView implements ApartmentPart {
     for (const box of [this.door.body, this.door.leafBox, this.door.postBox]) box.remove();
     this.door.leaf.destroy();
     this.door.post.destroy();
+    this.boxesFront.point.remove();
+    this.boxesFront.piece.image.destroy();
     this.wirePoint.remove();
     this.wire.image.destroy();
     for (const image of this.backdrop) image.destroy();

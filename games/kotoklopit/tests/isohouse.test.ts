@@ -8,7 +8,8 @@ import type { GameEvent } from "../src/sim/events";
 import { objectById } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
-import { DOOR_BOXES } from "../src/view/iso/geometry";
+import { IsoDepth } from "../src/view/iso/depth";
+import { BOXES_FRONT, DOOR_BOXES } from "../src/view/iso/geometry";
 import { DOOR_OPEN_MS, doorState, opensDoor } from "../src/view/iso/looks";
 import { isoOrder, type IsoBox, type IsoPoint } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -118,5 +119,40 @@ describe("вхідні двері відчиняються (§9.12, «Двері
     ];
     const r = ranks([closed], points);
     for (let i = 1; i <= points.length; i++) expect(r[i]!).toBeLessThan(r[0]!);
+  });
+});
+
+describe("кіт у верхній коробці купи ящиків (§9.12, «Допитливість»)", () => {
+  it("передні стінки — кадр на кожну купу, те саме полотно, що в купи", () => {
+    const pile = artEntry("env/boxes");
+    const front = artEntry("env/boxes/front");
+    expect(front?.states).toEqual(pile?.states);
+    expect(front?.size).toEqual(pile?.size);
+    expect(front?.pivot).toEqual(pile?.pivot);
+    // Кіт лежить нижче за борт верхньої коробки (≈ 58): точка `top` — на 48 над підлогою.
+    expect(pile!.pivot.y - pile!.points!.top!.y).toBe(48);
+  });
+
+  it("стінки — над котом у коробці (де б у клітинці він не лежав), а персонаж перед купою — над ними", () => {
+    const depth = new IsoDepth();
+    const boxes = objectById("boxes");
+    const got: Record<string, number> = {};
+    depth.addBox({ x0: boxes.x, y0: boxes.y, x1: boxes.x + boxes.w, y1: boxes.y + boxes.h, id: "boxes" }, (d) => (got.boxes = d));
+    const front = depth.addPoint((d) => (got.front = d), { half: BOXES_FRONT.half });
+    const cat = depth.addPoint((d) => (got.cat = d), { id: "cat:1" });
+    const person = depth.addPoint((d) => (got.person = d), { id: "person" });
+    front.place(BOXES_FRONT.x, BOXES_FRONT.y, "boxes");
+    person.place(boxes.x + 1.2, boxes.y + 0.6);
+    for (const [x, y] of [
+      [12.5, 9.5],
+      [12.95, 9.95],
+      [12.05, 9.9],
+    ] as const) {
+      cat.place(x, y, "boxes");
+      depth.solve();
+      expect(got.cat!).toBeGreaterThan(got.boxes!);
+      expect(got.front!).toBeGreaterThan(got.cat!);
+      expect(got.person!).toBeGreaterThan(got.front!);
+    }
   });
 });
