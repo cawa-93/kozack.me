@@ -318,12 +318,27 @@ export interface PersonRecipeOptions {
  */
 const HAIR_COLORS: readonly number[] = LOOK_PALETTE.hairColor.map((color, i) => [0x463a40, 0x5e3d2e, 0x8f8566][i] ?? color);
 
-/** Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` (волосся — `HAIR_COLORS`); їх бере й портрет. */
+/**
+ * Карі очі на темній і дуже темній шкірі (`Look.skin` 3, 4) — темно-карі #341808, а не карі редактора #7a5230: у ока немає
+ * обведення знизу (`art/person/eyes`: лише заливка райдужки, повіка — згори), і карі на темній шкірі мали ΔE2000 10,1 і
+ * 5,9 — на телефоні від очей лишалися дві цятки відблиску. Світлішими від темної шкіри карі не відвести (стають
+ * бурштиновими й зливаються зі смаглявою), а темно-карі й у житті — звичайні очі темношкірих: від шкіри 3 і 4 вони
+ * відрізняються на ≥ 15, від темних очей — на 16. На світлішій шкірі карі лишаються як у редакторі.
+ */
+const DARK_BROWN_IRIS = 0x341808;
+/** Карі очі (`LOOK_OPTIONS`: темні, блакитні, зелені, карі) і темна шкіра, від якої вони темнішають. */
+const BROWN_EYES = 3;
+const DARK_SKIN_FROM = 3;
+
+/**
+ * Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` (волосся — `HAIR_COLORS`, карі очі на темній шкірі —
+ * `DARK_BROWN_IRIS`); їх бере й портрет.
+ */
 export function personColors(look: Look): { skin: number; hair: number; iris: number; top: number; bottom: number; shoes: number } {
   return {
     skin: pick(LOOK_PALETTE.skin, look.skin),
     hair: pick(HAIR_COLORS, look.hairColor),
-    iris: pick(LOOK_PALETTE.eyes, look.eyes),
+    iris: look.eyes === BROWN_EYES && look.skin >= DARK_SKIN_FROM ? DARK_BROWN_IRIS : pick(LOOK_PALETTE.eyes, look.eyes),
     top: pick(LOOK_PALETTE.clothes, look.top),
     // Низ і взуття починаються з графітового (`ui/look.ts`): зсув 5 у спільній палітрі одягу.
     bottom: pick(LOOK_PALETTE.clothes, look.bottom + 5),

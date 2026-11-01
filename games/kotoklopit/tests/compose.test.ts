@@ -311,6 +311,24 @@ describe("рецепт персонажа", () => {
     expect(l).toBeLessThan(lab(hairs[3]!)[0]);
   });
 
+  it("кожна райдужка відрізняється від тону шкіри (ΔE2000 ≥ 15): очі на обличчі видно; карі на темній шкірі — темно-карі", () => {
+    const n = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)!.options.length;
+    for (let skin = 0; skin < n("skin"); skin++)
+      for (let eyes = 0; eyes < n("eyes"); eyes++) {
+        const colors = personColors({ ...base, skin, eyes });
+        expect(deltaE2000(colors.iris, colors.skin), `шкіра ${skin}, очі ${eyes} #${colors.iris.toString(16)}`).toBeGreaterThanOrEqual(15);
+      }
+    // На світлій шкірі карі — як у редакторі; на темній — темніші, але й далі не темні (окремий варіант) і карі (теплі).
+    const brown = 3;
+    expect(personColors({ ...base, eyes: brown }).iris).toBe(PALETTE.eyes[brown]);
+    const dark = personColors({ ...base, skin: 4, eyes: brown }).iris;
+    expect(dark).not.toBe(PALETTE.eyes[brown]);
+    expect(deltaE2000(dark, PALETTE.eyes[0]!)).toBeGreaterThanOrEqual(15);
+    const [, a, b] = lab(dark);
+    expect(a).toBeGreaterThan(5);
+    expect(b).toBeGreaterThan(5);
+  });
+
   it("усі комбінації кольорів Look: дозволені шари, різні ключі; форма, зачіска й статура рецепта не змінюють", () => {
     const n = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)!.options.length;
     const keys = new Set<string>();
