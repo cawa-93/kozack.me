@@ -15,7 +15,7 @@
 
 import path from "node:path";
 
-import { runnerImport, type Plugin, type ResolvedConfig, type ViteDevServer } from "vite";
+import { runnerImport, type HtmlTagDescriptor, type Plugin, type ResolvedConfig, type ViteDevServer } from "vite";
 
 type Art = typeof import("./build.ts");
 type ArtBuild = Awaited<ReturnType<Art["buildGameArt"]>>;
@@ -61,6 +61,18 @@ export function artPlugin(options: ArtPluginOptions = {}): Plugin {
       building = art.buildGameArt({ gameDir: gameDir() });
       // Помилку покаже generateBundle; тут — лише щоб не було «необробленої відмови», поки збирається код.
       building.catch(() => undefined);
+    },
+
+    // Збірка: index.json атласу вантажиться разом із кодом гри, а не після нього (на повільному зв'язку — мінус один раунд
+    // запиту, коли код уже прийшов): `<link rel=preload>` з `as="fetch"` і `crossorigin`, бо Phaser бере його XHR (той самий
+    // режим запиту — браузер віддає йому вже завантажене). Сторінок атласу наперед не вантажимо: перевірка на «Fast 3G»
+    // показала, що Phaser просить їх уже після події `load` і браузер вантажить їх удруге, а разом вони ще й забирали смугу
+    // в коду гри (DOMContentLoaded 36 с замість 15). Лише сторінка гри (галерея вантажить атлас сама).
+    transformIndexHtml(_html, context) {
+      if (config?.command !== "build" || !art || path.basename(context.filename) !== "index.html") return;
+      const href = `${config.base}${art.ART_DIR}/${art.ART_INDEX_FILE}`;
+      const tags: HtmlTagDescriptor[] = [{ tag: "link", attrs: { rel: "preload", href, as: "fetch", crossorigin: true }, injectTo: "head" }];
+      return tags;
     },
 
     async generateBundle() {
