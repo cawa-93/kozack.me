@@ -200,10 +200,52 @@ describe("складання анімації кота (`catanim.ts`)", () => {
   const overlay: LooseAnim = { duration: 400, loop: true, bones: { tail: { rot: [{ t: 0, v: 0 }, { t: 200, v: 20 }, { t: 400, v: 0 }] }, body: { pos: [{ t: 0, v: { x: 0, y: 0 } }, { t: 400, v: { x: 0, y: -2 } }] } } };
 
   it("період: обидві по колу — спільне кратне (не довше за межу); разова накладка — її час", () => {
-    expect(layeredTiming(base, overlay)).toEqual({ duration: 1200, loop: true });
-    expect(layeredTiming(base, { duration: 700, loop: false })).toEqual({ duration: 700, loop: false });
-    expect(layeredTiming({ duration: 380, loop: false }, overlay)).toEqual({ duration: 380, loop: false });
+    expect(layeredTiming(base, overlay)).toEqual({ duration: 1200, loop: true, stretch: 1 });
+    expect(layeredTiming(base, { duration: 700, loop: false })).toEqual({ duration: 700, loop: false, stretch: 1 });
+    expect(layeredTiming({ duration: 380, loop: false }, overlay)).toEqual({ duration: 380, loop: false, stretch: 1 });
     expect(layeredTiming({ duration: 997, loop: true }, { duration: 1009, loop: true }).duration).toBeLessThanOrEqual(MAX_PERIOD);
+  });
+
+  it("спільне кратне задовге — основна в своєму темпі, а накладка трохи швидша чи повільніша: ціле число її циклів у періоді", () => {
+    // «Пручається» (900 мс) на позі, що сидить (3200): спільне кратне — 28 800, а так — чотири ривки по 800 мс за цикл пози.
+    const sit = layeredTiming({ duration: 3200, loop: true }, { duration: 900, loop: true });
+    expect(sit.duration % 3200).toBe(0);
+    expect(sit.duration).toBeLessThanOrEqual(MAX_PERIOD);
+    const copies = sit.duration / (900 * sit.stretch);
+    expect(Math.abs(copies - Math.round(copies))).toBeLessThan(1e-9);
+    expect(Math.abs(sit.stretch - 1)).toBeLessThan(0.12);
+    // Основна довша за межу — період дорівнює їй; основна коротка (хода) — кілька її циклів.
+    expect(layeredTiming({ duration: 7000, loop: true }, { duration: 900, loop: true }).duration).toBe(7000);
+    const walk = layeredTiming({ duration: 340, loop: true }, { duration: 2950, loop: true });
+    expect(walk.duration % 340).toBe(0);
+    expect(Math.abs(walk.stretch - 1)).toBeLessThan(0.05);
+    // Спільне кратне в межі — без змін темпу.
+    expect(layeredTiming({ duration: 3000, loop: true }, { duration: 1500, loop: true })).toEqual({ duration: 3000, loop: true, stretch: 1 });
+  });
+
+  it("складена анімація по колу — без стику: кінець періоду — та сама поза, що початок (кожна основа з кожною накладкою, обидва ракурси)", () => {
+    const loops = CAT_ANIM_IDS.filter((id) => CAT_ANIMS[id].loop && !CAT_OVERLAYS.has(id));
+    const overlays = [...CAT_OVERLAYS].filter((id) => CAT_ANIMS[id].loop);
+    const face = { eyes: "open", mouth: "closed", ears: "up" } as const;
+    for (const id of loops) {
+      for (const over of overlays) {
+        const anim = composeCatAnim(CAT_ANIMS[id], CAT_ANIMS[over], face);
+        for (const view of ART_VIEWS) {
+          const rig = new Rig(ISO_CAT_RIG, { facing: { view } });
+          rig.play(anim as never, 0, { blend: 0 });
+          rig.evaluate(0);
+          const start = rig.slots.map((slot) => ({ x: slot.x, y: slot.y, rot: slot.rot }));
+          rig.evaluate(anim.duration - 0.01);
+          rig.slots.forEach((slot, i) => {
+            const a = start[i]!;
+            const where = `${id}+${over} ${view} ${slot.id}`;
+            expect(Math.abs(slot.x - a.x), where).toBeLessThan(0.3);
+            expect(Math.abs(slot.y - a.y), where).toBeLessThan(0.3);
+            expect(Math.abs(((slot.rot - a.rot + 540) % 360) - 180), where).toBeLessThan(1.5);
+          });
+        }
+      }
+    }
   });
 
   it("накладка додається: спільна доріжка — сума, решта — ключі повторено на весь період", () => {

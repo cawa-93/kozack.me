@@ -27,28 +27,70 @@ type LooseTracks = RigTracks<string, string>;
 /** Крок вибірки суми двох доріжок, мс: 30 разів на секунду — між ключами лінійно, на око не відрізнити. */
 export const SAMPLE_MS = 1000 / 30;
 /**
- * Найдовший спільний період основної й накладки по колу, мс. Довший (тривалості майже взаємно прості) — період дорівнює
- * довшій із двох, і коротша наприкінці періоду перестрибує на початок: це раз на кілька секунд і в накладці, що ледь рухає
- * хвостом, не видно, а доріжки лишаються короткими (`Rig` шукає ключ перебором).
+ * Найдовший спільний період основної й накладки по колу, мс: довші доріжки — довший перебір ключів (`Rig` шукає ключ
+ * перебором). Коли спільне кратне тривалостей довше (вони майже взаємно прості: «пручається» 900 мс на позі 3200), накладку
+ * трохи пришвидшено чи сповільнено (`layeredTiming`, `stretch`), щоб ціла кількість її циклів лягла рівно в період, — інакше
+ * на стику періоду вона перестрибувала б із середини циклу на початок.
  */
 export const MAX_PERIOD = 6000;
 
-/** Скільки триває анімація з накладкою і чи по колу. */
-export function layeredTiming(base: Pick<Loose, "duration" | "loop">, overlay: Pick<Loose, "duration" | "loop">): { duration: number; loop: boolean } {
+/**
+ * Скільки триває анімація з накладкою, чи по колу і в скільки разів розтягнуто час накладки (`stretch`; 1 — як є). Основна
+ * завжди грає у своєму темпі (хода — у такт кроку): період — ціле число її циклів, не довше за `MAX_PERIOD` (якщо вона сама
+ * не довша), а накладка — ціле число своїх циклів у ньому, з найменшою зміною темпу.
+ */
+export function layeredTiming(base: Pick<Loose, "duration" | "loop">, overlay: Pick<Loose, "duration" | "loop">): { duration: number; loop: boolean; stretch: number } {
   // Разова накладка (шипіння, чхання, задишка) — на свій час поверх основної; далі вигляд повертається до основної.
-  if (!overlay.loop) return { duration: base.loop ? overlay.duration : Math.max(base.duration, overlay.duration), loop: false };
-  if (!base.loop) return { duration: base.duration, loop: false };
+  if (!overlay.loop) return { duration: base.loop ? overlay.duration : Math.max(base.duration, overlay.duration), loop: false, stretch: 1 };
+  if (!base.loop) return { duration: base.duration, loop: false, stretch: 1 };
   const period = lcm(Math.round(base.duration), Math.round(overlay.duration));
-  return { duration: period <= MAX_PERIOD ? period : Math.max(base.duration, overlay.duration), loop: true };
+  if (period <= MAX_PERIOD) return { duration: period, loop: true, stretch: 1 };
+  let best = { duration: base.duration, stretch: 1, error: Infinity };
+  for (let cycles = 1; cycles === 1 || cycles * base.duration <= MAX_PERIOD; cycles++) {
+    const duration = cycles * base.duration;
+    const copies = Math.max(1, Math.round(duration / overlay.duration));
+    const stretch = duration / (copies * overlay.duration);
+    const error = Math.abs(Math.log(stretch));
+    if (error < best.error - 1e-9) best = { duration, stretch, error };
+  }
+  return { duration: best.duration, loop: true, stretch: best.stretch };
 }
 
 /** Основна анімація з накладкою поверх (див. початок файлу); без накладки — сама основна. */
 export function layerAnims(base: Loose, overlay: Loose | null): Loose {
   if (!overlay) return base;
   const timing = layeredTiming(base, overlay);
+  const over = timing.stretch === 1 ? overlay : stretched(overlay, timing.stretch);
   const views: Partial<Record<ArtView, LooseTracks>> = {};
-  for (const view of ART_VIEWS) views[view] = layerTracks(effective(base, view), base, effective(overlay, view), overlay, timing.duration);
+  for (const view of ART_VIEWS) views[view] = layerTracks(effective(base, view), base, effective(over, view), over, timing.duration);
   return { duration: timing.duration, loop: timing.loop, views };
+}
+
+/** Анімація з часом, розтягнутим у `k` разів (усі ключі й тривалість). */
+function stretched(anim: Loose, k: number): Loose {
+  const keys = <K extends { t: number }>(list: readonly K[] | undefined): K[] | undefined => list?.map((key) => ({ ...key, t: key.t * k }));
+  const tracks = (set: LooseTracks | undefined): LooseTracks => {
+    const bones: Record<string, BoneTracks> = {};
+    for (const [id, t] of Object.entries(set?.bones ?? {})) {
+      if (!t) continue;
+      const rot = keys(t.rot);
+      const pos = keys(t.pos);
+      const scale = keys(t.scale);
+      bones[id] = { ...(rot ? { rot } : {}), ...(pos ? { pos } : {}), ...(scale ? { scale } : {}) };
+    }
+    const slots: Record<string, SlotTracks> = {};
+    for (const [id, t] of Object.entries(set?.slots ?? {})) {
+      if (!t) continue;
+      const frame = keys(t.frame);
+      const visible = keys(t.visible);
+      const z = keys(t.z);
+      slots[id] = { ...(frame ? { frame } : {}), ...(visible ? { visible } : {}), ...(z ? { z } : {}) };
+    }
+    return { bones, slots };
+  };
+  const views: Partial<Record<ArtView, LooseTracks>> = {};
+  for (const view of ART_VIEWS) if (anim.views?.[view]) views[view] = tracks(anim.views[view]);
+  return { duration: anim.duration * k, loop: anim.loop, ...tracks({ bones: anim.bones ?? {}, slots: anim.slots ?? {} }), views };
 }
 
 /**
