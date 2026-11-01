@@ -1,7 +1,7 @@
 // Знімки гри для перевірки графіки (крок 16, GRAPHICS_PLAN.md): сценарії режиму розробки в кількох розмірах екрана, вкладки
 // галереї арту (`gallery.html`) і попіксельне порівняння двох наборів знімків.
 //
-//   node games/kotoklopit/scripts/shots.ts [--scenario a,b] [--size 844x390,1280x720] [--gfx iso] [--out тека] [--dpr 1]
+//   node games/kotoklopit/scripts/shots.ts [--scenario a,b] [--size 844x390,1280x720] [--out тека] [--dpr 1]
 //   node games/kotoklopit/scripts/shots.ts --page gallery [--tab frames,rigs] [--bg light,dark,floor] [--zoom 1,phone]
 //   node games/kotoklopit/scripts/shots.ts --compare <тека A> <тека B> [--diff тека] [--tolerance 0] [--channel-delta 0]
 //
@@ -65,7 +65,6 @@ const USAGE = `Знімки сценаріїв гри та їх порівнян
     --params a=1&b=2     додати параметри до адреси (напр. фільтр вкладки: file=kitchen&show=stub)
     --size WxH,...       розміри вікна в CSS px; за замовчуванням ${DEFAULT_SIZES}
                          (менша сторона ≤ ${PHONE_MAX_SIDE} — телефон: дотик і мобільний перегляд)
-    --gfx <значення>     додати ?gfx=<значення> до адреси гри
     --out <тека>         куди класти PNG і shots.json; за замовчуванням тимчасова тека з комітом
     --dpr <n>            щільність пікселів (deviceScaleFactor), за замовчуванням 1
     --ms <n>             скільки мілісекунд гра йде до знімка, за замовчуванням ${DEFAULT_MS}
@@ -106,7 +105,6 @@ interface ShotOptions {
   gameDir: string;
   targets: Target[];
   sizes: Size[];
-  gfx: string | null;
   /** Додаткові параметри адреси (`--params`). */
   params: string | null;
   /** Чекати `<html data-art>` у грі: у ній є PreloadScene. */
@@ -322,14 +320,13 @@ async function waitInPage(page: Page, what: string, check: (arg: string | null) 
   }
 }
 
-/** Адреса знімка: гра зі `?scenario=` чи `gallery.html` з вкладкою, тлом і масштабом; далі — `--gfx` і `--params`. */
-function targetUrl(base: string, target: Target, gfx: string | null, params: string | null): string {
+/** Адреса знімка: гра зі `?scenario=` чи `gallery.html` з вкладкою, тлом і масштабом; далі — `--params`. */
+function targetUrl(base: string, target: Target, params: string | null): string {
   const url = target.page === "gallery" ? new URL("gallery.html", base) : new URL(base);
   if (target.scenario !== null) url.searchParams.set("scenario", target.scenario);
   if (target.tab !== null) url.searchParams.set("tab", target.tab);
   if (target.bg !== null) url.searchParams.set("bg", target.bg);
   if (target.zoom !== null) url.searchParams.set("zoom", target.zoom);
-  if (gfx !== null) url.searchParams.set("gfx", gfx);
   for (const [name, value] of new URLSearchParams(params ?? "")) url.searchParams.set(name, value);
   return url.href;
 }
@@ -388,7 +385,7 @@ async function shoot(browser: Browser, base: string, options: ShotOptions, targe
       if (message.type() === "error") result.warnings.push(`console.error: ${message.text()}`);
     });
     step("відкриваю сторінку");
-    await page.goto(targetUrl(base, target, options.gfx, options.params), { waitUntil: "load" });
+    await page.goto(targetUrl(base, target, options.params), { waitUntil: "load" });
     await page.waitForLoadState("networkidle");
     step("сторінка завантажилася");
     const probeError = await page.evaluate(() => (window as unknown as { __shots?: ShotsProbe }).__shots?.error ?? "немає скрипта знімків");
@@ -446,7 +443,7 @@ async function runShots(options: ShotOptions): Promise<number> {
   const results: ShotResult[] = [];
   try {
     const first = options.targets[0];
-    if (first !== undefined) await warmUp(browser, targetUrl(base, first, null, null));
+    if (first !== undefined) await warmUp(browser, targetUrl(base, first, null));
     log("Гра відкривається без перезавантажень");
     const queue = options.targets.flatMap((target) => options.sizes.map((size) => ({ target, size })));
     const total = queue.length;
@@ -474,7 +471,6 @@ async function runShots(options: ShotOptions): Promise<number> {
     commit: commitLabel(options.gameDir),
     gameDir: options.gameDir,
     url: options.url,
-    gfx: options.gfx,
     params: options.params,
     dpr: options.dpr,
     ms: options.ms,
@@ -616,7 +612,6 @@ const OPTIONS = {
   zoom: { type: "string" },
   params: { type: "string" },
   size: { type: "string" },
-  gfx: { type: "string" },
   out: { type: "string" },
   dpr: { type: "string" },
   ms: { type: "string" },
@@ -691,7 +686,6 @@ async function main(): Promise<number> {
     gameDir,
     targets,
     sizes: parseSizes(values.size ?? DEFAULT_SIZES),
-    gfx: values.gfx ?? null,
     params: values.params ?? null,
     preloadScene: existsSync(path.join(gameDir, PRELOAD_SCENE)),
     out: values.out === undefined ? path.join(tmpdir(), "kotoklopit-shots", commitLabel(gameDir)) : resolveUserPath(values.out),
