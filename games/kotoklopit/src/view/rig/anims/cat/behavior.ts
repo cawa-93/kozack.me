@@ -1157,57 +1157,75 @@ function pounce(): CatAnim {
 }
 
 /**
- * Цикл ходи, мс, і пів кроку подушечки вздовж підлоги — як у звичайній ході (N1, `basic.ts`: рись 340 мс, передні лапи
- * ±11,7 одиниці, задні ±10,4), щоб кіт, що підхопив шкарпетку, ішов у тому самому темпі й так само не ковзав за
- * швидкістю відтворення. Подушечка в переносі піднімається на `GAIT_LIFT`.
+ * Хода — та сама рись, що `walk` у N1 (`basic.ts`: `WALK_MS`, `WALK_AMP`, `WALK_REACH`, `WALK_LIFT`, `WALK_BOB` — ті самі
+ * числа й ті самі доріжки лап): лапа ходить поворотом від суглоба з розмахом `GAIT_AMP` від вертикалі, однаковим спереду й
+ * ззаду, тож обидві лапи пари за опору проходять ту саму відстань, а крок масштабується з довжиною лапи (кошеня, короткі
+ * лапи). За цикл кіт ступає на `CAT_WALK_STRIDE` = 4·`GAIT_REACH`·sin `GAIT_AMP` ≈ 2,42 довжини лапи — тож T1 грає «несе» з
+ * тією самою швидкістю відтворення, що й ходу (`catWalkRate` N1), лапи не ковзають, а перехід walk ↔ carry не стрибає.
+ * Якщо N1 змінить ходу, ці числа мають змінитися разом із нею.
  */
 const GAIT_MS = 340;
-const GAIT_FRONT = 11.7;
-const GAIT_BACK = 10.4;
-const GAIT_LIFT = 4;
+const GAIT_AMP = 34;
+const GAIT_REACH = 1.08;
+const GAIT_LIFT = 0.78;
+const GAIT_BOB = 2;
 
-/** Подушечка в ході за фазою кроку 0…1: опора (пів циклу) — рівномірно назад по підлозі, перенос — дугою вперед. */
-function gaitPaw(phase: number, step: number): Plant {
-  const p = ((phase % 1) + 1) % 1;
-  if (p < 0.5) return at(round(step - 4 * step * p));
-  const u = (p - 0.5) / 0.5;
-  return at(round(-step + step * (1 - Math.cos(Math.PI * u))), round(-GAIT_LIFT * Math.sin(Math.PI * u)));
+/**
+ * Лапа в ході (як `gaitLeg` у N1): опора — з моменту `start` пів циклу (лапа на підлозі йде спереду назад рівномірно, на
+ * краях опори трохи витягнута), потім перенос (підібрана й м'яко вперед).
+ */
+function gaitLeg(start: 0 | 0.5): BoneTracks {
+  const T = GAIT_MS;
+  const H = T / 2;
+  const Q = T / 4;
+  const reach = v2(GAIT_REACH, 1);
+  if (start === 0) {
+    return {
+      rot: track([0, -GAIT_AMP, "linear"], [H, GAIT_AMP], [T, -GAIT_AMP]),
+      scale: track([0, reach, "out"], [Q, v2(1, 1), "in"], [H, reach], [H + Q, v2(GAIT_LIFT, 1)], [T, reach]),
+    };
+  }
+  return {
+    rot: track([0, GAIT_AMP], [H, -GAIT_AMP, "linear"], [T, GAIT_AMP]),
+    scale: track([0, reach], [Q, v2(GAIT_LIFT, 1)], [H, reach, "out"], [H + Q, v2(1, 1), "in"], [T, reach]),
+  };
+}
+
+/** Таз у ході (як `gaitBob` у N1): найвище посередині опори (лапи прямо), найнижче — на зміні пар (лапи навскіс). */
+function gaitBob(): BoneTracks {
+  const T = GAIT_MS;
+  const Q = T / 4;
+  const low = v2(0, GAIT_BOB);
+  return { pos: track([0, low, "out"], [Q, v2(0, 0), "in"], [2 * Q, low, "out"], [3 * Q, v2(0, 0), "in"], [T, low]) };
 }
 
 /**
- * Несе в зубах (§9.12: шкарпетку, іграшку) — рись з високо піднятою головою і хвостом угору: діагональні пари лап (ближня
- * передня з дальньою задньою), подушечки в опорі стоять на підлозі (`build` рахує лапи), таз ледь гойдається. Темп — за
- * швидкістю кота (`CatAnimChoice.speed`).
+ * Несе в зубах (§9.12: шкарпетку, іграшку) — рись N1 (діагональні пари: ближня передня з дальньою задньою), лише голова
+ * високо піднята (річ не волочиться) і хвіст угору й похитується. Ззаду ближня передня лапа — під тулубом і всередину від
+ * краю грудей, як у ході N1. Темп — як у ходи: `catWalkRate` N1.
  */
 function carry(): CatAnim {
   const T = GAIT_MS;
-  const N = 16;
-  const keys: PoseKey[] = [];
-  for (let i = 0; i <= N; i++) {
-    const phase = i / N;
-    keys.push({
-      t: Math.round((T * i) / N),
-      ease: "linear",
-      pose: {
-        pelvis: { y: round(0.8 * Math.cos(4 * Math.PI * phase)) },
-        neck: { rot: -14 },
-        head: { rot: 6 },
-        tail: { rot: 18 },
-        legs: {
-          "leg-front-near": gaitPaw(phase, GAIT_FRONT),
-          "leg-back-far": gaitPaw(phase, GAIT_BACK),
-          "leg-front-far": gaitPaw(phase + 0.5, GAIT_FRONT),
-          "leg-back-near": gaitPaw(phase + 0.5, GAIT_BACK),
-        },
-      },
-    });
-  }
-  return build(T, true, keys, {
+  return {
+    duration: T,
+    loop: true,
     bones: {
-      head: { rot: sine(T, T / 2, 6, 1, 1) },
+      pelvis: gaitBob(),
+      "leg-front-near": gaitLeg(0),
+      "leg-back-far": gaitLeg(0),
+      "leg-front-far": gaitLeg(0.5),
+      "leg-back-near": gaitLeg(0.5),
+      neck: { rot: [{ t: 0, v: -14 }] },
+      head: { rot: sine(T, T / 2, 6, 1.5, 1) },
       tail: tailWave(sine(T, T, 18, 4)),
     },
-  });
+    views: {
+      back: {
+        bones: { "leg-front-near": { pos: [{ t: 0, v: v2(BACK_NEAR_IN, 0) }] } },
+        slots: { "leg-front-near": { z: [{ t: 0, v: BACK_NEAR_Z }] } },
+      },
+    },
+  };
 }
 
 /** Гризе дріт чи пакет (§9.12, «Гризіння»): лежить буханцем, морда до підлоги, голова повернута набік і ходить у ритмі жування. */
