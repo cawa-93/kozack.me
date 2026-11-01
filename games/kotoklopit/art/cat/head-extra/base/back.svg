@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47 38" width="47" height="38">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 47 43" width="47" height="43">
 <!-- cat/head-extra/base/back — накладки голови: залисини, тьмяна шерсть, складки безшерстих, завитки кучерявих, ракурс back (¾ ззаду). Пакет A8a (варіанти форм), art/STYLE.md.
-size 47×38; pivot (15, 27) — шия, як у голови (те саме полотно).
+size 47×43; pivot (15, 27) — шия, як у голови (те саме полотно).
 Шари: extra-bald, extra-dull, extra-wrinkles, extra-curls.
 Готові кольори; компонувальник кладе потрібний шар поверх запеченої голови: extra-bald (дерматит) — рожева шкіра, extra-dull (глисти) — скуйовджені пасма inkSoft, extra-wrinkles (безшерсті) — складки лоба inkSoft, extra-curls (кучеряві) — завитки inkSoft і гачки ink за краєм.
 bald, dull і wrinkles обтято силуетом голови (кладуться source-atop); curls — source-over, гачки виходять за силует.
