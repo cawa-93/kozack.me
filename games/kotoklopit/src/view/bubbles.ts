@@ -3,24 +3,24 @@
 // Кожен бабл — вголос (мовна хмаринка) чи думка (хмаринка з кружечками), правка автора 2026-10-25;
 // який саме — вирішує `eventBubbles` (symbols.ts) і сцена для станів.
 // Фон, іконка й позначка — кадри атласу (`ui/bubble/*`, `icon/*`, крок 16), а де що лежить — `iso/bubblelook.ts`.
+// Бабли, що налазять один на одного (свої й чужі, подій і стану), щокадру стають у ряд поруч — `layoutBubbles` там само.
 
 import Phaser from "phaser";
 
 import { addArt } from "./art/atlas";
 import { bubbleArt, iconArt, markArt, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import {
-  BESIDE_GAP,
-  besideAllDx,
   BUBBLE_COUNT,
   bubbleSpan,
   countPillCenter,
   countPillWidth,
   countSide,
   isoBubbleLook,
-  nearBubbles,
+  layoutBubbles,
+  type BubbleBounds,
   type BubbleSpan,
   type IsoBubbleLook,
-  type PlacedBubble,
+  type LaidBubble,
 } from "./iso/bubblelook";
 import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
@@ -33,9 +33,31 @@ const EVENT_HOLD_MS = 1100;
 export const THOUGHT_HOLD_MS = 1900;
 /** Напис над кимось («+N ₴») не має власника, тож поруч із ним ніхто не стає: місця він не займає. */
 const NO_SPAN: BubbleSpan = { left: 0, right: 0 };
+/** На скільки вище за точку виринає бабл події (як у старому вигляді). */
+const EVENT_LIFT = 8;
+/**
+ * Як швидко бабл доїжджає до нового місця в ряду, коли поруч виринув чи підійшов інший (`layoutBubbles`), мс: стала
+ * експоненти — за ≈ 0,25 с він на місці. Не стрибком: бабл, що смикнувся вбік, читається як новий.
+ */
+const SLIDE_MS = 80;
+/** Відступ ряду баблів від краю видимої частини світу, одиниці світу (`layoutBubbles`, `bounds`). */
+const EDGE = 4;
 
-interface StateBubble {
+/**
+ * Бабл, що стає в ряд з іншими (`LaidBubble`): `x`, `y` — його точка, `target` — куди стати, `dx` — зсув, з яким він
+ * зараз стоїть (їде до `target`, `SLIDE_MS`).
+ */
+interface Placed extends LaidBubble {
   container: Phaser.GameObjects.Container;
+  dx: number;
+  /** Чи вже стояв: щойно виринулий бабл стає на місце одразу, а не їде з точки. */
+  placed: boolean;
+}
+
+/** Бабл стану. */
+interface StateBubble extends Placed {
+  /** Ключ, як у `setState`. */
+  owner: string;
   kind: BubbleKind;
   name: IconName;
 }
@@ -43,17 +65,13 @@ interface StateBubble {
 /** Де виринає бабл: точка чи той, за ким він летить. */
 export type Anchor = { x: number; y: number } | (() => { x: number; y: number } | null);
 
-interface Floater {
-  container: Phaser.GameObjects.Container;
+/**
+ * Бабл події чи напис: `owner` — над ким бабл (ключ, як у `setState`; поки він видно, бабл стану там схований; у напису
+ * власника немає, і поруч з іншими він не стає).
+ */
+interface Floater extends Placed {
   at: Anchor;
   rise: number;
-  /** Над ким бабл (ключ, як у `setState`): поки він видно, бабл стану там схований. */
-  owner: string | undefined;
-  /** Зсув убік, коли над тим самим уже висить інший бабл події. */
-  dx: number;
-  /** Скільки бабл займає ліворуч і праворуч від точки — щоб наступний став поруч. */
-  span: BubbleSpan;
-  icon: IconName | undefined;
 }
 
 /** Бабл, щойно складений: контейнер і скільки він займає ліворуч і праворуч від точки. */
@@ -69,6 +87,13 @@ export class Bubbles {
   private readonly floaters = new Set<Floater>();
   /** Як лежить бабл кожного виду (з маніфесту). */
   private readonly looks: Readonly<Record<BubbleKind, IsoBubbleLook>> = { say: isoBubbleLook("say"), think: isoBubbleLook("think") };
+  /**
+   * Бабли для розстановки цього кадру (`arrange`, перші `count`): масив той самий, щоб не виділяти пам'ять щокадру. За
+   * `count` до наступного такого ж кадру можуть лишатися посилання на бабли, що вже згасли.
+   */
+  private readonly laid: Placed[] = [];
+  /** Видима частина світу (`arrange`): той самий об'єкт щокадру. */
+  private readonly bounds: BubbleBounds = { left: 0, right: 0 };
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -133,14 +158,21 @@ export class Bubbles {
       return;
     }
     if (current && current.name === icon && current.kind === kind) {
-      current.container.setPosition(x, y).setVisible(!this.busy(anchor));
+      current.visible = !this.busy(anchor);
+      current.x = x;
+      current.y = y;
+      current.container.setPosition(x + current.dx, y).setVisible(current.visible);
       return;
     }
     current?.container.destroy();
-    const container = this.make(kind, icon, x, y).container.setVisible(!this.busy(anchor));
+    const visible = !this.busy(anchor);
+    const container = this.make(kind, icon, x, y).container.setVisible(visible);
     container.setScale(0.6);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 160, ease: "Back.easeOut" });
-    this.states.set(anchor, { container, kind, name: icon });
+    const look = this.looks[kind];
+    this.states.set(anchor, { container, kind, name: icon, owner: anchor, icon, x, y, span: look.span, height: look.room, visible, target: 0, dx: 0, placed: false });
+    // Стає в ряд одразу, ще до кадру.
+    this.arrange(0);
   }
 
   hasState(anchor: string): boolean {
@@ -161,12 +193,17 @@ export class Bubbles {
   show(bubble: EventBubble, at: Anchor, hold = EVENT_HOLD_MS): void {
     const start = place(at);
     if (!start) return;
-    const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - 8, bubble.count, bubble.mark);
-    const dx = this.beside(bubble.at, bubble.icon, span, start.x, start.y - 8, this.looks[bubble.kind].room);
-    container.setX(start.x + dx).setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
+    const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - EVENT_LIFT, bubble.count, bubble.mark);
+    container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, hold, { owner: bubble.at, dx, span, icon: bubble.icon });
-    this.states.get(bubble.at)?.container.setVisible(false);
+    this.float(container, at, hold, { owner: bubble.at, span, icon: bubble.icon, height: this.looks[bubble.kind].room });
+    const state = this.states.get(bubble.at);
+    if (state) {
+      state.visible = false;
+      state.container.setVisible(false);
+    }
+    // Стає поруч з іншими одразу, ще до кадру.
+    this.arrange(0);
   }
 
   /** Короткий напис над кимось (§11.4): «+12 ₴» тощо. Так само виринає й летить за ним. */
@@ -184,42 +221,14 @@ export class Bubbles {
     this.float(container, at, 700);
   }
 
-  /**
-   * Два різні бабли події, що виринули над тим самим разом (засідка «Ніндзя»: думка-запаморочення й «кігті» вголос, §11.4;
-   * рішення автора 2026-10-30, «Відкрите після рішень», п. 6), стоять поруч: кожен наступний — упритул праворуч, потім
-   * ліворуч (`besideDx`, за справжніми межами фонів: думка ширша, і вістря в неї збоку). Той самий бабл
-   * (відмова, натиснута кілька разів поспіль) виринає на тому самому місці, як і раніше.
-   *
-   * Так само новий бабл обходить чужі бабли поруч (видимі бабли подій і стану інших власників, що на тій самій висоті,
-   * `nearBubbles`): коти в протистоянні стоять ніс до носа, і їхні «шипить» лягали один на один (рецензія хвилі 3). Не далі
-   * за ширину двох баблів — у тісноті бабл лишається біля свого власника.
-   */
-  private beside(owner: string, icon: IconName, span: BubbleSpan, x: number, y: number, height: number): number {
-    const taken: Floater[] = [];
-    const others: PlacedBubble[] = [];
-    for (const f of this.floaters) {
-      if (f.owner !== owner) {
-        if (f.owner !== undefined && f.container.visible) others.push({ x: f.container.x, y: f.container.y, span: f.span });
-        continue;
-      }
-      if (f.icon === icon) return f.dx;
-      taken.push(f);
-    }
-    for (const [anchor, state] of this.states) {
-      if (anchor !== owner && state.container.visible) others.push({ x: state.container.x, y: state.container.y, span: this.looks[state.kind].span });
-    }
-    const width = span.left + span.right;
-    return besideAllDx(taken, nearBubbles({ x, y }, others, height), span, BESIDE_GAP, 2 * width);
-  }
-
   /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
   private float(
     container: Phaser.GameObjects.Container,
     at: Anchor,
     delay: number,
-    beside: Pick<Floater, "owner" | "dx" | "span" | "icon"> = { owner: undefined, dx: 0, span: NO_SPAN, icon: undefined },
+    beside: Pick<Floater, "owner" | "span" | "icon" | "height"> = { owner: undefined, span: NO_SPAN, icon: undefined, height: 0 },
   ): void {
-    const floater: Floater = { container, at, rise: 0, ...beside };
+    const floater: Floater = { container, at, rise: 0, x: container.x, y: container.y, visible: true, target: 0, dx: 0, placed: false, ...beside };
     this.floaters.add(floater);
     this.scene.tweens.add({ targets: floater, rise: -34, delay, duration: 500 });
     this.scene.tweens.add({
@@ -234,13 +243,48 @@ export class Bubbles {
     });
   }
 
-  /** Бабли подій летять за тими, над ким виринули; бабли стану під ними сховані. Викликати щокадру. */
+  /** Бабли подій летять за тими, над ким виринули, і стають поруч (`arrange`); бабли стану під ними сховані. Викликати щокадру. */
   update(): void {
+    for (const state of this.states.values()) {
+      state.visible = !this.busy(state.owner);
+      state.container.setVisible(state.visible);
+    }
+    this.arrange(1 - Math.exp(-this.scene.game.loop.delta / SLIDE_MS));
+  }
+
+  /**
+   * Бабли подій — над тими, над ким виринули; бабли, що налазять один на одного (свої й чужі, подій і стану), — в ряд поруч
+   * (`layoutBubbles`, щокадру, бо коти ходять і сходяться), не за краєм екрана. `slide` — яку частку шляху до нового
+   * місця бабл проходить цього кадру; щойно виринулий стає на місце одразу.
+   */
+  private arrange(slide: number): void {
+    const laid = this.laid;
+    let count = 0;
     for (const f of this.floaters) {
       const p = place(f.at);
-      if (p) f.container.setPosition(p.x + f.dx, p.y - 8 + f.rise);
+      if (p) {
+        f.x = p.x;
+        f.y = p.y - EVENT_LIFT + f.rise;
+      }
+      laid[count++] = f;
     }
-    for (const [anchor, state] of this.states) state.container.setVisible(!this.busy(anchor));
+    for (const state of this.states.values()) laid[count++] = state;
+    // Бабли лежать у шарі квартири, а його показує головна камера (`Viewport`).
+    const view = this.scene.cameras.main.worldView;
+    this.bounds.left = view.x + EDGE;
+    this.bounds.right = view.right - EDGE;
+    layoutBubbles(laid, count, view.width > 0 ? this.bounds : undefined);
+    for (let i = 0; i < count; i++) {
+      const b = laid[i]!;
+      if (!b.visible) {
+        // Схований бабл стану, коли знову з'явиться, стане на місце одразу.
+        b.placed = false;
+        continue;
+      }
+      b.dx = b.placed ? b.dx + (b.target - b.dx) * slide : b.target;
+      b.placed = true;
+      b.container.setPosition(b.x + b.dx, b.y);
+    }
   }
 
   clear(): void {
@@ -248,5 +292,6 @@ export class Bubbles {
     this.states.clear();
     for (const f of this.floaters) f.container.destroy();
     this.floaters.clear();
+    this.laid.length = 0;
   }
 }

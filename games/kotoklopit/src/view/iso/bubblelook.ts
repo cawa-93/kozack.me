@@ -1,7 +1,7 @@
 // Бабли в новому вигляді (крок 16, пакет T3, `GRAPHICS_PLAN.md`): де в бабл лягають іконка, позначка й кількість і скільки
 // місця він займає над тим, над ким виринув. Числа — з маніфесту (A12): фон `ui/bubble/say|think` з pivot у вістрі
-// хвостика й точкою `icon` — центром поля іконки 64 × 64 (`art/STYLE.md`, «ui — бульбашки»); і як два бабли над тим самим
-// стають поруч (`besideDx`). Без Phaser.
+// хвостика й точкою `icon` — центром поля іконки 64 × 64 (`art/STYLE.md`, «ui — бульбашки»); і як бабли над тим самим і над
+// сусідами стають поруч (`layoutBubbles`). Без Phaser.
 //
 // Одиниці — одиниці арту світу (1 одиниця = 1 px світу ізометрії, ≈ 0,72 px CSS на телефоні й більшості десктопів). Увесь
 // бабл зменшено в `ISO_BUBBLE_SCALE` разів — так він на екрані такий самий, як старий (мовна хмаринка ≈ 46 px CSS на
@@ -51,7 +51,7 @@ export interface BubbleSpan {
 }
 
 /**
- * Зазор між баблами подій, що стоять поруч (`besideDx`), одиниці світу. Полотна баблів уже мають поле (≥ 4 одиниці арту з
+ * Зазор між баблами подій, що стоять поруч (`layoutBubbles`), одиниці світу. Полотна баблів уже мають поле (≥ 4 одиниці арту з
  * кожного боку, `art/STYLE.md` §2), тож між контурами видно ще й його.
  */
 export const BESIDE_GAP = 2;
@@ -133,49 +133,181 @@ export function bubbleSpan(look: IsoBubbleLook, pill?: number, side: CountSide =
   return { left: Math.max(look.span.left, -(center - half) * look.scale), right: Math.max(look.span.right, (center + half) * look.scale) };
 }
 
-/**
- * Зсув нового бабла події від точки, коли над тим самим уже висять інші (`taken`: зсув і скільки кожен займає): найближче до
- * точки місце, де він не налазить ні на кого, — спершу праворуч, потім ліворуч (§11.4; рішення автора 2026-10-30,
- * «Відкрите після рішень», п. 6: «стоять поруч, а не один на одному»). Місця-кандидати — сама точка й упритул до кожного
- * зайнятого з обох боків із зазором `gap`; крайній праворуч підходить завжди.
- *
- * Однакові бабли (`left` = `right` = половина кроку, `gap` 0) стають у ряд із кроком: 0, +крок, −крок, +2 кроки… — так
- * розставляє старий вигляд.
- */
-export function besideDx(taken: readonly { dx: number; span: BubbleSpan }[], span: BubbleSpan, gap: number): number {
-  const eps = 1e-6;
-  const fits = (dx: number): boolean =>
-    taken.every((t) => dx - span.left >= t.dx + t.span.right + gap - eps || dx + span.right + gap <= t.dx - t.span.left + eps);
-  const candidates = [0, ...taken.flatMap((t) => [t.dx + t.span.right + gap + span.left, t.dx - t.span.left - gap - span.right])];
-  // Ближче до точки — раніше; на однаковій відстані — спершу праворуч.
-  candidates.sort((a, b) => Math.abs(a) - Math.abs(b) || b - a);
-  return candidates.find(fits) ?? 0;
-}
+/** Бабл не відходить від своєї точки далі, ніж на стільки своїх ширин (`layoutBubbles`): у тісноті він лишається біля власника. */
+export const BESIDE_MAX_WIDTHS = 2;
 
-/** Бабл, що вже висить над кимось: де зараз його точка (вістря разом зі зсувом), одиниці світу, і скільки він займає. */
-export interface PlacedBubble {
+/**
+ * Бабл для розстановки (`layoutBubbles`): бабл події чи стану. Розстановка міняє лише `target`; решту бабли переписують
+ * щокадру.
+ */
+export interface LaidBubble {
+  /** Над ким (ключ, як у `Bubbles.setState`); без власника (напис «+N ₴») не стає поруч і нікому не заважає. */
+  owner: string | undefined;
+  icon: string | undefined;
+  /** Точка цього кадру (вістря без зсуву, разом із виринанням), одиниці світу. */
   x: number;
   y: number;
   span: BubbleSpan;
+  /** Скільки бабл займає над точкою (`IsoBubbleLook.room`): бабли, далі один від одного по вертикалі, не налазять. */
+  height: number;
+  /** Схований бабл (стану, поки над тим самим висить бабл події) не стає й не заважає. */
+  visible: boolean;
+  /** Зсув від точки, куди бабл стає (вихід). */
+  target: number;
+}
+
+/** Видима частина світу по горизонталі, одиниці світу: ряд баблів, чиї точки в ній, не виходить за її край. */
+export interface BubbleBounds {
+  left: number;
+  right: number;
+}
+
+const EPS = 1e-6;
+/** Скільки разів за кадр зливати ряди, що налазять (у тісноті — не більше). */
+const MAX_PASSES = 8;
+
+// Робочі масиви розстановки — ті самі щокадру, щоб не виділяти пам'ять (22 коти): ряд (група) кожного бабла
+// (union-find; −1 — не стає), «близнюк» — той самий бабл того самого власника раніше (−1 — немає), зсув і члени ряду.
+const parent: number[] = [];
+const twin: number[] = [];
+const shift: number[] = [];
+const members: number[] = [];
+
+function find(i: number): number {
+  let r = i;
+  while (parent[r] !== r) r = parent[r]!;
+  // Стиснути шлях.
+  while (parent[i] !== r) {
+    const next = parent[i]!;
+    parent[i] = r;
+    i = next;
+  }
+  return r;
+}
+
+const widthOf = (b: LaidBubble): number => b.span.left + b.span.right;
+
+/**
+ * Ставить бабли рядів `a` і `b` (`b` — −1, коли ряд один) в один ряд упритул із зазором `gap`: зліва направо, як їхні точки
+ * (над тим самим — за порядком у списку, тобто хто виринув раніше, той лівіше), а сам ряд — так, щоб сума квадратів зсувів була
+ * найменша (кожен відходить від своєї точки порівну), і не за краєм `bounds`, якщо точки всіх у ньому. Пише зсуви в `shift`;
+ * повертає, чи жоден бабл не відійшов далі за `BESIDE_MAX_WIDTHS` своїх ширин.
+ */
+function layRow(list: readonly LaidBubble[], count: number, a: number, b: number, gap: number, bounds: BubbleBounds | undefined): boolean {
+  let m = 0;
+  for (let i = 0; i < count; i++) {
+    if (parent[i] === -1) continue;
+    const r = find(i);
+    if (r !== a && r !== b) continue;
+    const key = list[i]!.x;
+    let k = m++;
+    while (k > 0 && list[members[k - 1]!]!.x > key + EPS) {
+      members[k] = members[k - 1]!;
+      k--;
+    }
+    members[k] = i;
+  }
+  let p = 0;
+  let sum = 0;
+  let inside = true;
+  for (let k = 0; k < m; k++) {
+    const o = list[members[k]!]!;
+    sum += o.x - o.span.left - p;
+    if (bounds && (o.x < bounds.left || o.x > bounds.right)) inside = false;
+    p += widthOf(o) + gap;
+  }
+  const total = p - gap;
+  let start = sum / m;
+  if (bounds && inside && total <= bounds.right - bounds.left) start = Math.min(Math.max(start, bounds.left), bounds.right - total);
+  let ok = true;
+  p = 0;
+  for (let k = 0; k < m; k++) {
+    const i = members[k]!;
+    const o = list[i]!;
+    const t = start + p - (o.x - o.span.left);
+    shift[i] = t;
+    if (Math.abs(t) > BESIDE_MAX_WIDTHS * widthOf(o) + EPS) ok = false;
+    p += widthOf(o) + gap;
+  }
+  return ok;
+}
+
+/** Чи бабли `i` і `j` (з їхніми зсувами) налазять один на одного: на тій самій висоті й ближче, ніж `gap`, по горизонталі. */
+function overlap(list: readonly LaidBubble[], i: number, j: number, gap: number): boolean {
+  const a = list[i]!;
+  const b = list[j]!;
+  if (Math.abs(a.y - b.y) >= Math.max(a.height, b.height)) return false;
+  const ax = a.x + shift[i]!;
+  const bx = b.x + shift[j]!;
+  return ax + a.span.right + gap > bx - b.span.left + EPS && bx + b.span.right + gap > ax - a.span.left + EPS;
 }
 
 /**
- * Чужі бабли, що заважають новому над точкою `at`, — як зайняті місця для `besideDx` (зсув від `at` і межі): ті, що
- * ближче по вертикалі, ніж `height` (скільки бабл займає над точкою). Хто вище чи нижче, не налазить, хоч би й стояв над тим
- * самим x. Рецензія хвилі 3: в ізометрії коти в протистоянні стоять ніс до носа, і два «шипить» лягали один на один, а
- * зсув убік (`besideDx`) знав лише бабли того самого власника.
+ * Куди стати баблам (`list[0…count)`; бабли подій — у тому порядку, як виринали, далі бабли стану): кожен — якнайближче до
+ * своєї точки, але не на іншому баблі (§11.4; рішення автора 2026-10-30, «Відкрите після рішень», п. 6: «стоять поруч, а
+ * не один на одному»). Рахувати щокадру: міняє лише `target`.
+ *
+ * - Бабли, що налазять один на одного (на тій самій висоті), стають в один ряд упритул із зазором `gap`: зліва направо —
+ *   як їхні точки, тож кожен лишається над своїм боком; ряд стоїть посередині між точками — кожен відходить порівну
+ *   (коти в протистоянні стоять ніс до носа, і їхні «шипить» лягали один на один — рецензія хвилі 3). Ряд, що налазить на
+ *   інший бабл чи ряд, зливається з ним.
+ * - Свої бабли (той самий власник) — завжди в одному ряду: два різні над тим самим стоять поруч по обидва боки точки, хто
+ *   виринув раніше — ліворуч. Той самий бабл того самого власника (відмова, натиснута кілька разів поспіль; «шипить»
+ *   щохвилини) стає туди ж, де попередній такий, а не поруч.
+ * - Ряд не виходить за край видимої частини світу (`bounds`), якщо точки всіх у ньому видно: інакше бабл кота біля краю
+ *   екрана, відійшовши вбік, ховався б за краєм.
+ * - Бабл не відходить далі за `BESIDE_MAX_WIDTHS` своїх ширин: у тісноті (купа котів) ряди не зливаються, і бабл лишається
+ *   біля свого власника.
+ *
+ * Розстановка щокадрова, бо власники ходять, і без пам'яті: зсуви неперервно залежать від точок (ряди зливаються саме тоді,
+ * коли бабли торкаються), тож бабли не перескакують, поки коти переступають.
  */
-export function nearBubbles(at: { x: number; y: number }, placed: readonly PlacedBubble[], height: number): { dx: number; span: BubbleSpan }[] {
-  const out: { dx: number; span: BubbleSpan }[] = [];
-  for (const p of placed) if (Math.abs(p.y - at.y) < height) out.push({ dx: p.x - at.x, span: p.span });
-  return out;
-}
-
-/**
- * Зсув нового бабла з урахуванням чужих (`others`, `nearBubbles`): найближче вільне місце серед своїх і чужих, але не далі
- * за `maxShift` від точки — у тісноті (купа котів) бабл не відлітає від свого власника, а стає так, як без чужих.
- */
-export function besideAllDx(own: readonly { dx: number; span: BubbleSpan }[], others: readonly { dx: number; span: BubbleSpan }[], span: BubbleSpan, gap: number, maxShift: number): number {
-  const withOthers = besideDx([...own, ...others], span, gap);
-  return Math.abs(withOthers) <= maxShift ? withOthers : besideDx(own, span, gap);
+export function layoutBubbles(list: readonly LaidBubble[], count: number, bounds?: BubbleBounds, gap = BESIDE_GAP): void {
+  // Хто стає: видимі бабли з власником; близнюк іде за тим, хто виринув раніше.
+  for (let i = 0; i < count; i++) {
+    const b = list[i]!;
+    parent[i] = -1;
+    twin[i] = -1;
+    shift[i] = 0;
+    if (b.owner === undefined || !b.visible) continue;
+    for (let j = 0; j < i && twin[i] === -1; j++) {
+      const o = list[j]!;
+      if (parent[j] !== -1 && o.owner === b.owner && o.icon === b.icon) twin[i] = j;
+    }
+    if (twin[i] !== -1) continue;
+    parent[i] = i;
+    // Свої — в одному ряду.
+    for (let j = 0; j < i; j++) {
+      if (parent[j] !== -1 && list[j]!.owner === b.owner) {
+        parent[i] = find(j);
+        break;
+      }
+    }
+  }
+  for (let i = 0; i < count; i++) if (parent[i] === i) layRow(list, count, i, -1, gap, bounds);
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    let merged = false;
+    for (let i = 0; i < count; i++) {
+      if (parent[i] === -1) continue;
+      for (let j = i + 1; j < count; j++) {
+        if (parent[j] === -1) continue;
+        const a = find(i);
+        const b = find(j);
+        if (a === b || !overlap(list, i, j, gap)) continue;
+        if (layRow(list, count, a, b, gap, bounds)) {
+          parent[b] = a;
+          merged = true;
+        } else {
+          // Тіснота: кожен ряд — як був.
+          layRow(list, count, a, -1, gap, bounds);
+          layRow(list, count, b, -1, gap, bounds);
+        }
+      }
+    }
+    if (!merged) break;
+  }
+  for (let i = 0; i < count; i++) {
+    const b = list[i]!;
+    b.target = parent[i] !== -1 ? shift[i]! : twin[i] !== -1 ? shift[twin[i]!]! : 0;
+  }
 }
