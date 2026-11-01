@@ -1,6 +1,7 @@
 // Підсвітка цілі дії в ізометричному світі (§8.2, крок 16): сяйво (Glow, фільтр Phaser 4) довкола малюнка цілі — лише на
 // одній цілі за раз. Фільтри Phaser 4 є лише у WebGL; у режимі Canvas (`Phaser.AUTO` без WebGL) — запасний варіант: контур
-// сліду цілі на підлозі й на її висоті (каркас), як рамка старого вигляду.
+// сліду цілі на підлозі й на її висоті (каркас) — смуга кольору підсвітки в чорнильній облямівці (T4), щоб читалася і на
+// світлій підлозі, і на темній стіні. Колір — токен `highlight` палітри арту (`art/STYLE.md`: лише для інтерфейсу).
 //
 // Як ходить: частина в `update` починає кадр (`begin`), позначки кличуть `highlight` частини, а та — `request`; у своєму
 // `lateUpdate` частина кличе `apply`: сяйво переходить на нову ціль, зі старої знімається. Ціль, якої цього кадру не
@@ -8,7 +9,7 @@
 
 import Phaser from "phaser";
 
-import { COLORS } from "../colors";
+import { PALETTE } from "../../../art/palette";
 import { WORLD_LAYERS } from "../world/layers";
 import type { IsoFootprint } from "../world/objects";
 import { footprintCorners } from "./geometry";
@@ -21,6 +22,11 @@ const GLOW_QUALITY = 8;
 const GLOW_DISTANCE = 10;
 /** Контур Canvas: над квартирою, під позначками старого вигляду. */
 const OUTLINE_DEPTH = WORLD_LAYERS.marks - 0.5;
+/** Колір сяйва й контуру — токен `highlight` палітри арту; облямівка контуру — `ink`. */
+const HIGHLIGHT = Number.parseInt(PALETTE.highlight.slice(1), 16);
+const INK = Number.parseInt(PALETTE.ink.slice(1), 16);
+/** Контур Canvas: смуга підсвітки й чорнильна облямівка під нею (одиниці арту). */
+const OUTLINE = { band: 4, ink: 8 } as const;
 
 /** Що підсвітити цього кадру. */
 interface Request {
@@ -74,7 +80,7 @@ export class IsoHighlight {
       if (!image.filters) image.enableFilters();
       const filters = image.filters;
       if (!filters) return;
-      this.glowing = { image, glow: filters.internal.addGlow(COLORS.highlight, GLOW_MIN, 0, 1, false, GLOW_QUALITY, GLOW_DISTANCE) };
+      this.glowing = { image, glow: filters.internal.addGlow(HIGHLIGHT, GLOW_MIN, 0, 1, false, GLOW_QUALITY, GLOW_DISTANCE) };
     }
     this.glowing.glow.outerStrength = GLOW_MIN + GLOW_PULSE * wanted.alpha;
   }
@@ -85,11 +91,17 @@ export class IsoHighlight {
     if (!wanted || !wanted.image.visible) return;
     const floor = footprintCorners(wanted.footprint).map((p) => new Phaser.Math.Vector2(p.x, p.y));
     const top = floor.map((p) => new Phaser.Math.Vector2(p.x, p.y - wanted.height));
-    g.lineStyle(4, COLORS.highlight, wanted.alpha);
-    g.strokePoints(floor, true, true);
-    g.strokePoints(top, true, true);
-    // Видимі ребра: ліве, переднє й праве.
-    for (const i of [1, 2, 3]) g.lineBetween(floor[i]!.x, floor[i]!.y, top[i]!.x, top[i]!.y);
+    // Спершу чорнильна облямівка, поверх — смуга підсвітки: пульс міняє яскравість обох.
+    for (const [width, color] of [
+      [OUTLINE.ink, INK],
+      [OUTLINE.band, HIGHLIGHT],
+    ] as const) {
+      g.lineStyle(width, color, wanted.alpha);
+      g.strokePoints(floor, true, true);
+      g.strokePoints(top, true, true);
+      // Видимі ребра: ліве, переднє й праве.
+      for (const i of [1, 2, 3]) g.lineBetween(floor[i]!.x, floor[i]!.y, top[i]!.x, top[i]!.y);
+    }
   }
 
   destroy(): void {
