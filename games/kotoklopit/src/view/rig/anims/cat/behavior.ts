@@ -15,6 +15,8 @@
 // Кути — градуси за годинниковою стрілкою (кіт дивиться праворуч): додатний поворот тулуба опускає морду, лапи — відводить
 // назад, хвоста — піднімає його вперед-угору. Вісь y — донизу. Кадри обличчя (очі, рот, вуха) задає `catFace`, тож доріжок
 // кадрів цих слотів тут немає (клубок бійки лише ховає голову за тулуб доріжкою z).
+//
+// Ззаду (¾ ззаду) ближня передня лапа — під тулубом і всередину від краю грудей, як у N1 (`BACK_NEAR_IN`, `BACK_NEAR_Z`).
 
 import { CAT_ONE_SHOT_MS } from "../../../anim/ids";
 import type { ArtView } from "../../../art/types";
@@ -252,8 +254,23 @@ function tailMove(tail: TailPose, sb: Vec2 = { x: 1, y: 1 }): Move {
   return { rot: tail.rot, x: TAIL_ROOT.x - now.x, y: TAIL_ROOT.y - now.y, sx: fix.sx, sy };
 }
 
-/** Зміни всіх кісток пози в ракурсі. */
-function solve(pose: Pose, view: ArtView): Partial<Record<CatBone, Move>> {
+/**
+ * Ракурс ¾ ззаду: ближня передня лапа там — на самому краю грудей, і її верх (без контуру — за STYLE він ховається в
+ * тулубі) вилазить за силует грудей світлою плямою й розриває контур. Тож ззаду вона малюється під тулубом (`BACK_NEAR_Z`:
+ * контур грудей накриває її верх, лапа виходить з-під тулуба, як дальні) і кріпиться трохи всередину від краю
+ * (`BACK_NEAR_IN`, у системі тулуба) — ті самі числа, що `BACK_NEAR` у N1 (`basic.ts`), тож перехід із ходи чи сидіння N1
+ * у пози N2 не перебудовує лапу. Сидячі пози мають для неї свої числа (`SIT`, `back`), буханець і «на спині» — як у N1, без
+ * перевизначення (`build`, `nearIn`). Якщо суглоб у скелеті чи кадрі колись посунуть усередину (A7), `BACK_NEAR_IN` має
+ * стати 0.
+ */
+const BACK_NEAR_IN = -3.5;
+const BACK_NEAR_Z = 4.9;
+
+/**
+ * Зміни всіх кісток пози в ракурсі. `nearIn` — у ракурсі `back` ближня передня лапа кріпиться всередину від краю грудей
+ * (`BACK_NEAR_IN`), якщо поза не задає для неї свого суглоба ззаду.
+ */
+function solve(pose: Pose, view: ArtView, nearIn = true): Partial<Record<CatBone, Move>> {
   const cache = new Map<CatBone, Affine>();
   const sb = bodyScale(pose);
   const out: Partial<Record<CatBone, Move>> = {};
@@ -268,13 +285,16 @@ function solve(pose: Pose, view: ArtView): Partial<Record<CatBone, Move>> {
   if (pose.tail) out.tail = tailMove(pose.tail, sb);
   for (const leg of LEGS) {
     const spec = pose.legs?.[leg];
-    if (!spec) continue;
+    const inward = nearIn && view === "back" && leg === "leg-front-near";
+    if (!spec) {
+      if (inward) out[leg] = { x: BACK_NEAR_IN };
+      continue;
+    }
     if (isPlant(spec)) {
-      out[leg] = plantLeg(leg, view, pose, spec, cache);
-    } else if (setupOf(leg, view).parent === "body") {
-      out[leg] = { ...spec, ...onBody(setupOf(leg, view).rot + (spec.rot ?? 0), spec.sx ?? 1, spec.sy ?? 1, sb) };
+      out[leg] = plantLeg(leg, view, pose, inward && !spec.back ? { ...spec, x: (spec.x ?? 0) + BACK_NEAR_IN } : spec, cache);
     } else {
-      out[leg] = spec;
+      const move = inward ? { ...spec, x: (spec.x ?? 0) + BACK_NEAR_IN } : spec;
+      out[leg] = setupOf(leg, view).parent === "body" ? { ...move, ...onBody(setupOf(leg, view).rot + (move.rot ?? 0), move.sx ?? 1, move.sy ?? 1, sb) } : move;
     }
   }
   return out;
@@ -295,8 +315,8 @@ const EPS = 1e-3;
 const round = (v: number): number => Math.round(v * 100) / 100;
 
 /** Доріжки кісток з ключових поз в одному ракурсі; порожні (усюди вихідна поза) — пропущено. */
-function tracksOf(keys: readonly PoseKey[], view: ArtView): Partial<Record<CatBone, BoneTracks>> {
-  const solved = keys.map((k) => solve(k.pose, view));
+function tracksOf(keys: readonly PoseKey[], view: ArtView, nearIn: boolean): Partial<Record<CatBone, BoneTracks>> {
+  const solved = keys.map((k) => solve(k.pose, view, nearIn));
   const out: Partial<Record<CatBone, BoneTracks>> = {};
   for (const bone of CAT_RIG.bones) {
     const id = bone.id;
@@ -332,11 +352,13 @@ interface Over {
 
 /**
  * Анімація з ключових поз: доріжки кісток для `front`, а де `back` інакший (лапи, що стоять) — перевизначення ракурсу. По
- * колу — перший і останній ключі мають бути тією самою позою (без ривка на стику).
+ * колу — перший і останній ключі мають бути тією самою позою (без ривка на стику). `nearIn` — ззаду ближня передня лапа під
+ * тулубом і всередину від краю грудей (`BACK_NEAR_IN`, `BACK_NEAR_Z`); вимкнено лише для поз, де N1 її не переставляє
+ * (буханець, на спині).
  */
-function build(duration: number, loop: boolean, keys: readonly PoseKey[], over: Over = {}): CatAnim {
-  const front = { ...tracksOf(keys, "front") };
-  const backAll = tracksOf(keys, "back");
+function build(duration: number, loop: boolean, keys: readonly PoseKey[], over: Over = {}, nearIn = true): CatAnim {
+  const front = { ...tracksOf(keys, "front", nearIn) };
+  const backAll = tracksOf(keys, "back", nearIn);
   const back: Partial<Record<CatBone, BoneTracks>> = {};
   for (const bone of CAT_RIG.bones) {
     const id = bone.id;
@@ -358,7 +380,8 @@ function build(duration: number, loop: boolean, keys: readonly PoseKey[], over: 
   const views: Partial<Record<ArtView, Tracks>> = {};
   const backTracks: Tracks = {};
   if (Object.keys(back).length > 0) backTracks.bones = back;
-  if (over.back?.slots) backTracks.slots = over.back.slots;
+  const backSlots: Partial<Record<CatSlot, SlotTracks>> = { ...(nearIn ? { "leg-front-near": { z: [{ t: 0, v: BACK_NEAR_Z }] } } : {}), ...over.back?.slots };
+  if (Object.keys(backSlots).length > 0) backTracks.slots = backSlots;
   if (backTracks.bones || backTracks.slots) views.back = backTracks;
   const anim: CatAnim = { duration, loop, bones: front, ...(over.slots ? { slots: over.slots } : {}), ...(views.back ? { views } : {}) };
   return anim;
@@ -790,6 +813,8 @@ function kick(): CatAnim {
         },
       },
     },
+    // На спині — як «belly» у N1: ближня передня лапа ззаду без перевизначення.
+    false,
   );
 }
 
@@ -1201,6 +1226,8 @@ function chew(): CatAnim {
       { t: D, pose: A },
     ],
     { bones: { tail: tailWave(sine(D, D, LOAF_TAIL, 5, 1)) } },
+    // Буханець — як «loaf» у N1: ближня передня лапа ззаду без перевизначення.
+    false,
   );
 }
 
@@ -1249,6 +1276,7 @@ function decline(): CatAnim {
         tail: tailWave(track([0, LOAF_TAIL], [140, LOAF_TAIL + 19, "out"], [300, LOAF_TAIL - 3], [440, LOAF_TAIL + 19, "out"], [600, LOAF_TAIL - 3], [D, LOAF_TAIL])),
       },
     },
+    false,
   );
 }
 
