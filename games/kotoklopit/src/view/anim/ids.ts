@@ -151,7 +151,7 @@ export const PERSON_OVERLAYS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(
  * закінчується позою «несе» (`carry`), а «кладе» й «викидає» з неї починаються — накладка підхоплює й віддає руки без ривка;
  * «миски» починаються з рук коло себе (між вихідною позою й «несе»: совок несуть, а воду й годівницю — з порожніми руками);
  * «доглядає кота» (`tend`) від початку до кінця тримає кота, як `holdCat`; купаючи, ближня рука тримає кота. Основна з
- * накладкою в N4a (`personWithArms`, `move.ts`) має брати цей самий набір (там поки свій, лише з анімаціями N4a).
+ * накладкою в N4a (`personWithArms`, `move.ts`) бере саме цей набір.
  */
 export const PERSON_OWN_ARMS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["rod", "pickUp", "putDown", ...PERSON_ANIM_GROUPS.chores]);
 

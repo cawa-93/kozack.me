@@ -20,11 +20,12 @@
 //   на кут руки й тулуба (`levelHand`, з поправкою на вкорочену руку), тож річ у руках лишається рівною.
 // - НАКЛАДКИ РУК (`carry`, `holdCat`, `PERSON_OVERLAYS`) ДО ОСНОВНОЇ НЕ ДОДАЮТЬСЯ (на відміну від загального правила
 //   `anim/ids.ts` про накладки), а ЗАМІНЮЮТЬ її доріжки рук і кистей: інакше розмах рук ходи й ривка підкидав би річ і кота
-//   на ≈ 15–18 од. Вигляд персонажа грає ОДНУ анімацію — `personWithArms(основна, накладка)` (той самий об'єкт для тієї
+//   на ≈ 15–18 од. Вигляд персонажа грає ОДНУ анімацію — `personWithArms(основна, накладка, назва)` (той самий об'єкт для тієї
 //   самої пари, `Rig.play` її не починає знову), а не основну плюс накладку додаванням доріжок. Несе річ — руки тримають
 //   свій кут у світі (тулуб нахиляється — руки ні), річ рівно; тримає кота — руки разом із тулубом (кіт у гнізді `arms` на
-//   тулубі), кисті під котом. Анімації, які самі ведуть руки (`PERSON_OWN_ARMS`: вудочка, бере й опускає кота), накладки
-//   не беруть. `carry` і `holdCat` у групі — лише поза рук над вихідним тулубом (для реєстру й галереї).
+//   тулубі), кисті під котом. Анімації, які самі ведуть руки (`PERSON_OWN_ARMS` з `anim/ids.ts`: вудочка, бере й опускає
+//   кота, усі справи N4b), накладки не беруть. `carry` і `holdCat` у групі — лише поза рук над вихідним тулубом (для
+//   реєстру й галереї).
 // - Ззаду ближня рука — з боку обличчя, дальня — з боку спини: де руки йдуть «у боки» (відмова, посковзнувся, паморочиться,
 //   кульгає), ракурс `back` має ті самі кути з протилежним знаком (`sidewaysArms`), інакше рука йшла б через спину. Де рука
 //   йде до грудей (вкусили, застуда), ззаду вона йде вперед і коротшає (від камери), а не назад через спину.
@@ -38,7 +39,7 @@
 //   (0 — на підлозі, 1 — у руках); у `putDown` — навпаки, кіт на підлозі з `PERSON_PUTDOWN_RELEASE_MS`.
 
 import { ILLNESS_EFFECTS, MINUTES_PER_HOUR, REAL_SECONDS_PER_GAME_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
-import { PERSON_ONE_SHOT_MS, type PersonAnimId } from "../../../anim/ids";
+import { PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../../../anim/ids";
 import type { ArtView } from "../../../art/types";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
@@ -1120,38 +1121,30 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
   },
 });
 
-type PersonMoveId = keyof typeof PERSON_MOVE;
-
 // --- Основна з накладкою рук -------------------------------------------------------------------
-
-/**
- * Анімації, які самі ведуть руки, — накладки рук не беруть: вудочка (іграшку в руці веде `rod`), бере кота (закінчується
- * позою `holdCat`) і опускає (кота в руках уже немає).
- */
-export const PERSON_OWN_ARMS: ReadonlySet<PersonMoveId> = new Set<PersonMoveId>(["rod", "pickUp", "putDown"]);
-const OWN_ARMS: ReadonlySet<PersonAnim> = new Set([...PERSON_OWN_ARMS].map((id) => PERSON_MOVE[id]));
 
 const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay, PersonAnim>>();
 
 /**
- * Основна анімація з накладкою рук (`PersonAnimChoice.overlay`): доріжки рук і кистей основної ЗАМІНЕНО позою накладки
- * (розмах ходи й ривка не підкидає ні річ, ні кота), решта — від основної. Несе річ (`carry`) — руки тримають свій кут у
- * світі проти нахилу тулуба, а кисть — річ рівно (кут гнізда `held` у світі — 0); тримає кота (`holdCat`) — руки разом із
- * тулубом, кисті під котом у гнізді `arms`. Анімації `PERSON_OWN_ARMS` і накладка null — основна як є. Для тієї самої пари —
- * той самий об'єкт (`Rig.play` не починає її знову). Разові (вкусили, відмова, спіткнувся, посковзнувся) з річчю чи котом у
+ * Основна анімація `base` (її назва — `id`) з накладкою рук (`PersonAnimChoice.overlay`): доріжки рук і кистей основної
+ * ЗАМІНЕНО позою накладки (розмах ходи й ривка не підкидає ні річ, ні кота), решта — від основної. Несе річ (`carry`) — руки
+ * тримають свій кут у світі проти нахилу тулуба (противага), а кисть — річ рівно (кут гнізда `held` у світі — 0); тримає кота
+ * (`holdCat`) — руки разом із тулубом, кисті під котом у гнізді `arms`. Анімації, які самі ведуть руки (`PERSON_OWN_ARMS` з
+ * `anim/ids.ts`: вудочка, бере й опускає кота, усі справи N4b), і накладка null — основна як є. Для тієї самої пари — той
+ * самий об'єкт (`Rig.play` не починає її знову). Разові (вкусили, відмова, спіткнувся, посковзнувся) з річчю чи котом у
  * руках — так само: тіло реагує, руки тримають.
  */
-export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null): PersonAnim {
-  if (overlay === null || !(overlay in ARMS_OVERLAYS) || OWN_ARMS.has(base)) return base;
-  const id = overlay as PersonArmsOverlay;
+export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null, id: PersonAnimId): PersonAnim {
+  if (overlay === null || !(overlay in ARMS_OVERLAYS) || PERSON_OWN_ARMS.has(id)) return base;
+  const arms = overlay as PersonArmsOverlay;
   let cache = WITH_ARMS.get(base);
   if (!cache) {
     cache = new Map();
     WITH_ARMS.set(base, cache);
   }
-  const known = cache.get(id);
+  const known = cache.get(arms);
   if (known) return known;
-  const spec = ARMS_OVERLAYS[id];
+  const spec = ARMS_OVERLAYS[arms];
   const torsoFront = base.bones?.torso?.rot;
   const torsoBack = base.views?.back?.bones?.torso?.rot ?? torsoFront;
   const back = base.views?.back;
@@ -1160,7 +1153,7 @@ export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null): 
     bones: { ...withoutArms(base.bones), ...armsTracks(spec.front, torsoFront, spec.level) },
     views: { ...base.views, back: { ...back, bones: { ...withoutArms(back?.bones), ...armsTracks(spec.back, torsoBack, spec.level) } } },
   };
-  cache.set(id, made);
+  cache.set(arms, made);
   return made;
 }
 

@@ -7,12 +7,12 @@
 import { describe, expect, it } from "vitest";
 
 import { ILLNESS_EFFECTS } from "../src/sim/config";
-import { PERSON_OVERLAYS } from "../src/view/anim/ids";
+import { PERSON_ANIM_GROUPS, PERSON_OVERLAYS, PERSON_OWN_ARMS } from "../src/view/anim/ids";
+import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { CAT_RIG } from "../src/view/rig/defs/cat";
 import { PERSON_RIG } from "../src/view/rig/defs/person";
 import {
   PERSON_MOVE,
-  PERSON_OWN_ARMS,
   PERSON_PICKUP_GRAB_MS,
   PERSON_PUTDOWN_RELEASE_MS,
   personCatGrip,
@@ -315,7 +315,7 @@ describe("рух персонажа: цикли, разові й накладк�
 
   it("несе річ ззаду (рука вкорочена): річ рівно, тулуб нахиляється — рука тримає кут", () => {
     for (const name of ["idle", "walk", "dash", "trudge", "trip", "slip"] as const) {
-      const made = personWithArms(PERSON_MOVE[name], "carry") as LooseAnim;
+      const made = personWithArms(PERSON_MOVE[name], "carry", name) as LooseAnim;
       const rig = rigFor("back");
       rig.play(made, 0, { blend: 0 });
       for (let t = 0; t <= made.duration; t += made.duration / 30) {
@@ -387,18 +387,19 @@ describe("рух персонажа: основна з накладкою рук
   const anim = (name: Name): PersonAnim => PERSON_MOVE[name];
 
   it("та сама пара — той самий об'єкт; без накладки й для анімацій, що самі ведуть руки, — основна як є", () => {
-    expect(personWithArms(anim("walk"), "carry")).toBe(personWithArms(anim("walk"), "carry"));
-    expect(personWithArms(anim("walk"), "carry")).not.toBe(personWithArms(anim("walk"), "holdCat"));
-    expect(personWithArms(anim("walk"), null)).toBe(anim("walk"));
-    expect([...PERSON_OWN_ARMS].sort()).toEqual(["pickUp", "putDown", "rod"]);
-    for (const own of PERSON_OWN_ARMS) for (const overlay of PERSON_OVERLAYS) expect(personWithArms(anim(own), overlay)).toBe(anim(own));
+    expect(personWithArms(anim("walk"), "carry", "walk")).toBe(personWithArms(anim("walk"), "carry", "walk"));
+    expect(personWithArms(anim("walk"), "carry", "walk")).not.toBe(personWithArms(anim("walk"), "holdCat", "walk"));
+    expect(personWithArms(anim("walk"), null, "walk")).toBe(anim("walk"));
+    // Набір — той самий, що в `anim/ids.ts` (локальної копії в move.ts немає): N4a і всі справи N4b.
+    for (const id of ["rod", "pickUp", "putDown", ...PERSON_ANIM_GROUPS.chores] as const) expect(PERSON_OWN_ARMS.has(id), id).toBe(true);
+    for (const own of PERSON_OWN_ARMS) for (const overlay of PERSON_OVERLAYS) expect(personWithArms(PERSON_ANIMS[own], overlay, own)).toBe(PERSON_ANIMS[own]);
   });
 
   it("решта доріжок — від основної, тривалість і повтор — її; доріжки за скелетом", () => {
     for (const name of BASES) {
       for (const overlay of PERSON_OVERLAYS) {
         const base = ANIMS[name];
-        const made = personWithArms(anim(name), overlay) as LooseAnim;
+        const made = personWithArms(anim(name), overlay, name) as LooseAnim;
         expect({ duration: made.duration, loop: made.loop }).toEqual({ duration: base.duration, loop: base.loop });
         for (const [id, track] of Object.entries(base.bones ?? {})) if (!/^(arm|hand)-/.test(id)) expect(made.bones?.[id], `${name} ${id}`).toBe(track);
         expect(made.slots).toBe(base.slots);
@@ -409,7 +410,7 @@ describe("рух персонажа: основна з накладкою рук
 
   it("несе річ: річ у руці рівно (кут гнізда held у світі ≈ 0) за будь-якої основної й ракурсу", () => {
     for (const name of BASES) {
-      const made = personWithArms(anim(name), "carry") as LooseAnim;
+      const made = personWithArms(anim(name), "carry", name) as LooseAnim;
       for (const view of VIEWS) {
         const rig = rigFor(view);
         rig.play(made, 0, { blend: 0 });
@@ -423,7 +424,7 @@ describe("рух персонажа: основна з накладкою рук
 
   it("несе річ: розмах рук ходи й ривка річ не підкидає — кисть нерухома відносно плеча", () => {
     for (const name of BASES) {
-      const made = personWithArms(anim(name), "carry") as LooseAnim;
+      const made = personWithArms(anim(name), "carry", name) as LooseAnim;
       for (const view of VIEWS) {
         const rig = rigFor(view);
         rig.play(made, 0, { blend: 0 });
@@ -443,7 +444,7 @@ describe("рух персонажа: основна з накладкою рук
 
   it("тримає кота: кисті нерухомі відносно кота в гнізді arms (не тицяють і не проходять крізь нього)", () => {
     for (const name of BASES) {
-      const made = personWithArms(anim(name), "holdCat") as LooseAnim;
+      const made = personWithArms(anim(name), "holdCat", name) as LooseAnim;
       for (const view of VIEWS) {
         const rig = rigFor(view);
         rig.play(made, 0, { blend: 0 });

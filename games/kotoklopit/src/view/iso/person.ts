@@ -3,10 +3,12 @@
 // нога й черевик затінені (`farRecipe`, `PERSON_FAR_SLOTS`), тінь під ногами (`fx/shadow/person`) — рішення автора 2026-10-30.
 //
 // Що грає — `personAnim` (основна з `PERSON_ANIMS`, накладка рук, ракурс, поступ засинання) і `personEventAnim` (разові від
-// подій), зведені в одну анімацію `mixAnims` (`personmix.ts`): накладка рук (несе річ, тримає кота) заміняє руки основної й
-// разової, крім анімацій, що ведуть руки самі (`armsOverlay`). Де видно й куди дивиться — `personSpot` (за столом, за
-// комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Гнізда: річ у руках (`held`: страва,
-// судочок, совок), вудочка (`rod`); кіт на руках і на колінах — у точці й на глибині `hands` (його кладе туди частина котів).
+// подій): накладку рук (несе річ, тримає кота) кладе `personWithArms` (N4a) — заміняє руки основної й разової, руки з річчю
+// тримають рівно проти нахилу тулуба, а анімації, що ведуть руки самі (`PERSON_OWN_ARMS`), лишає як є; поправки вигляду
+// (очі засинання, схована рука, голова хилиться) — `mixAnims` (`personmix.ts`). Де видно й куди дивиться — `personSpot`
+// (за столом, за комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Гнізда: річ у руках
+// (`held`: страва, судочок, совок), вудочка (`rod`); кіт на руках і на колінах — у точці й на глибині `hands` (його кладе туди
+// частина котів).
 //
 // Рука, що гладить (§8.2), — ближня рука скелета (той самий запечений кадр `person/arm`), повернута навколо плеча до спинки
 // кота й розтягнута не більше ніж у `REACH_STRETCH` (решту відстані дає присід анімації `pet`); на глибині над персонажем, а
@@ -34,6 +36,7 @@ import { artEntry } from "../art/manifest";
 import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
+import { personWithArms } from "../rig/anims/person/move";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
 import { slotFrame } from "../rig/rigcore";
 import { RigSprite, type RigSpriteOf, type SocketWorld } from "../rig/rigsprite";
@@ -279,9 +282,9 @@ export class IsoPersonView implements PersonPart {
     this.rodCat = shot ? null : reach.rod;
     const id = shot ? shot.anim : choice.anim;
     const main = PERSON_ANIMS[id];
-    const overlay = armsOverlay(id, choice.overlay);
     const droop = !shot && asleep && PERSON_BY_PROGRESS.has(choice.anim) && !movesHead(main);
-    const anim = mixAnims(main, overlay ? PERSON_ANIMS[overlay] : null, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop));
+    const armed = personWithArms(main, armsOverlay(id, choice.overlay), id);
+    const anim = mixAnims(armed, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop));
 
     // Час — годинник анімацій (`clock`), тож `Rig.play` напряму: `RigSprite.play` узяв би час минулого кадру.
     const rig = this.sprite.rig;
