@@ -12,7 +12,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel, Vec } from "../src/sim/types";
-import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, personFacing } from "../src/view/anim/catfacing";
+import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, FACING_SMOOTH, holdFlip, personFacing, smoothHeading } from "../src/view/anim/catfacing";
 import { isoScreenDir, isoTileDir, ISO_TILE } from "../src/view/anim/iso";
 import { catPairs, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf } from "../src/view/anim/pairs";
 import { isoOrder } from "../src/view/world/isoorder";
@@ -153,6 +153,79 @@ describe("куди дивиться кіт (`catFacing`)", () => {
     expect(frames).toBeGreaterThan(100);
     // Кіт змінює напрям на поворотах шляху, а не щокадру.
     expect(changes / frames).toBeLessThan(0.1);
+  });
+
+  it("іде майже прямо вгору шляхом сима з відрізків трохи різного нахилу — не перекидається з боку на бік (рецензія хвилі 3)", () => {
+    // Справжній шлях кота з рецензії (кадри по 50 мс, `rv-walkback`): горизонтальна складова на екрані міняє знак.
+    const path: [number, number][] = [
+      [8.579, 9.365], [8.454, 9.265], [8.329, 9.165], [8.204, 9.064], [8.101, 8.949], [8.039, 8.801], [7.957, 8.669],
+      [7.832, 8.569], [7.666, 8.435], [7.541, 8.335], [7.416, 8.235], [7.291, 8.135], [7.167, 8.035], [7.064, 7.918],
+      [7.005, 7.77], [6.902, 7.652], [6.738, 7.517], [6.614, 7.415], [6.49, 7.314], [6.367, 7.212], [6.243, 7.111],
+      [6.12, 7.009], [5.996, 6.908],
+    ];
+    const save = game();
+    const cat = withCat(save, { x: path[0]![0], y: path[0]![1] });
+    cat.act = act("wander", { goal: { x: 3, y: 6 } });
+    // Кадри по 50 мс, між знімками рецензії — рівномірно.
+    const run = (): number => {
+      const heading = { x: 0, y: 0 };
+      let prev: RigFacing | null = null;
+      let flips = 0;
+      let flipAt = Number.NEGATIVE_INFINITY;
+      for (let i = 1; i < path.length; i++) {
+        const [x0, y0] = path[i - 1]!;
+        const [x1, y1] = path[i]!;
+        cat.x = x1;
+        cat.y = y1;
+        const time = i * 50;
+        smoothHeading(heading, x1 - x0, y1 - y0, 0.05);
+        const facing = holdFlip(catFacing(save.current, cat, { x: x0, y: y0 }, { prev, pair: null, heading }), prev, true, time - flipAt);
+        if (prev && facing.flip !== prev.flip) {
+          flips++;
+          flipAt = time;
+        }
+        // Угору екраном — завжди ззаду.
+        expect(facing.view).toBe("back");
+        prev = facing;
+      }
+      return flips;
+    };
+    // Кадр за кадром з гістерезисом 0,2 кіт віддзеркалювався кожні 0,3–0,5 с; згладжений — ні разу.
+    expect(run()).toBe(0);
+  });
+
+  it("згладжений напрям іде за справжнім поворотом: кіт, що звернув з угору-ліворуч на угору-праворуч, віддзеркалюється", () => {
+    const save = game();
+    const cat = withCat(save, { x: 9.5, y: 8.5 });
+    cat.act = act("wander", { goal: { x: 3, y: 6 } });
+    const heading = { x: 0, y: 0 };
+    let prev: RigFacing | null = null;
+    let flipAt = Number.NEGATIVE_INFINITY;
+    let turnedAt = Number.NaN;
+    const speed = 2;
+    for (let t = 16; t <= 2000; t += 16) {
+      // Угору-ліворуч на екрані — −x; угору-праворуч — −y (ізометрія 2:1).
+      const dir = t < 800 ? { x: -1, y: 0 } : { x: 0, y: -1 };
+      const step = { x: dir.x * speed * 0.016, y: dir.y * speed * 0.016 };
+      const before = { x: cat.x, y: cat.y };
+      cat.x += step.x;
+      cat.y += step.y;
+      smoothHeading(heading, step.x, step.y, 0.016);
+      const facing = holdFlip(catFacing(save.current, cat, before, { prev, pair: null, heading }), prev, true, t - flipAt);
+      if (prev && facing.flip !== prev.flip) {
+        flipAt = t;
+        if (Number.isNaN(turnedAt)) turnedAt = t;
+      }
+      if (t < 800 && t > 100) expect(facing).toEqual(BACK_LEFT);
+      prev = facing;
+    }
+    expect(prev).toEqual(BACK);
+    // Не пізніше, ніж за згладжування й утримання віддзеркалення.
+    expect(turnedAt - 800).toBeLessThan(FACING_SMOOTH.headingMs + FACING_SMOOTH.flipMs);
+    // Переставлений кіт (стрибок на клітинки) напряму не змінює.
+    const kept = { ...heading };
+    smoothHeading(heading, 3, 0, 0.016);
+    expect(heading).toEqual(kept);
   });
 
   it("стоїть — до цілі: до суперника, до миски; без цілі — `facing` сима ліворуч чи праворуч, лицем до нас", () => {

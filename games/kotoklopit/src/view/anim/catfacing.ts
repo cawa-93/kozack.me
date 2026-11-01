@@ -20,6 +20,41 @@ import { actTargetPoint } from "./targets";
  */
 export const FACING_HYSTERESIS = 0.2;
 
+/**
+ * Кіт іде переважно прямовисно на екрані (|ny| > `vertical`, рух уздовж діагоналі сітки): ліво чи право тоді — лише з
+ * невеликого відхилення, а шлях сима йде відрізками трохи різного нахилу, і з гістерезисом 0,2 кіт, що йде майже прямо
+ * вгору, віддзеркалювався кожні 0,3–0,5 с — голова й хвіст стрибали з боку на бік (рецензія хвилі 3). Тож у такому русі
+ * віддзеркалення змінюється, лише коли напрям відійшов від прямовисної на `flip` (синус кута, ≈ 27°).
+ */
+export const FACING_VERTICAL = { vertical: 0.8, flip: 0.45 } as const;
+
+/**
+ * Ракурс кота, що йде (рецензія хвилі 3): напрям руху згладжується за `headingMs` (`smoothHeading`; з кроку одного кадру
+ * ракурс смикався), а віддзеркалення в русі змінюється не частіше ніж раз на `flipMs` (`holdFlip`) — голова й хвіст не
+ * перескакують з боку на бік. Крок, довший за `teleport` клітинок за кадр, — переставляння, а не рух.
+ */
+export const FACING_SMOOTH = { headingMs: 250, flipMs: 400, teleport: 1 } as const;
+
+/**
+ * Згладжена швидкість кота `heading` (клітинок за секунду; пише в той самий об'єкт): експоненційне середнє за
+ * `FACING_SMOOTH.headingMs` з кроку `dx`, `dy` за `seconds`; переставленого кота (`teleport`) і кадр без часу не рахує.
+ */
+export function smoothHeading(heading: Vec, dx: number, dy: number, seconds: number): void {
+  if (!(seconds > 0) || Math.hypot(dx, dy) > FACING_SMOOTH.teleport) return;
+  const k = 1 - Math.exp((-seconds * 1000) / FACING_SMOOTH.headingMs);
+  heading.x += (dx / seconds - heading.x) * k;
+  heading.y += (dy / seconds - heading.y) * k;
+}
+
+/**
+ * Кіт, що йде (`moving`), не віддзеркалюється частіше ніж раз на `FACING_SMOOTH.flipMs`: `sinceFlip` — скільки мс минуло від
+ * минулого віддзеркалення, `was` — ракурс минулого кадру. Інакше — `facing` як є.
+ */
+export function holdFlip(facing: RigFacing, was: RigFacing | null, moving: boolean, sinceFlip: number): RigFacing {
+  if (!moving || !was || facing.flip === was.flip || sinceFlip >= FACING_SMOOTH.flipMs) return facing;
+  return { view: facing.view, flip: was.flip };
+}
+
 /** Під ковдрою — головою праворуч, до подушки (горбик ковдри намальовано так). */
 const BLANKET_FACING: RigFacing = { view: "front", flip: false };
 
@@ -27,6 +62,8 @@ const BLANKET_FACING: RigFacing = { view: "front", flip: false };
 const MIN_STEP = 1e-4;
 /** Довший за це «крок» за кадр — переставляння симом (стали поруч, повернули зі сходів), а не рух. */
 const MAX_STEP = 1;
+/** Повільніший за це згладжений рух (клітинок за секунду) — ще не напрям: кіт рушає чи зупиняється. */
+const MIN_HEADING = 0.05;
 /** Ціль ближча за це (у клітинках) — кіт на ній самій: напрям не з неї. */
 const MIN_TARGET = 0.25;
 /** Персонаж ліворуч чи праворуч, лише якщо по горизонталі екрана далі за це (одиниці арту); інакше — як було. */
@@ -34,22 +71,23 @@ const MIN_SIDE = 6;
 
 /**
  * Ракурс за напрямом на екрані з гістерезисом: `prev` — ракурс минулого кадру (null — без нього, межа без запасу). Нульовий
- * напрям — `prev` чи null.
+ * напрям — `prev` чи null. `steady` — напрям руху: у майже прямовисному віддзеркалення тримається довше (`FACING_VERTICAL`).
  */
-export function facingFromScreen(dir: Vec, prev: RigFacing | null): RigFacing | null {
+export function facingFromScreen(dir: Vec, prev: RigFacing | null, steady = false): RigFacing | null {
   const length = Math.hypot(dir.x, dir.y);
   if (length < 1e-9) return prev;
   const ny = dir.y / length;
   const nx = dir.x / length;
   const h = FACING_HYSTERESIS;
   const view = prev === null ? (ny < 0 ? "back" : "front") : prev.view === "front" ? (ny < -h ? "back" : "front") : ny > h ? "front" : "back";
-  const flip = prev === null ? nx < 0 : prev.flip ? nx < h : nx < -h;
+  const hf = steady && Math.abs(ny) > FACING_VERTICAL.vertical ? FACING_VERTICAL.flip : h;
+  const flip = prev === null ? nx < 0 : prev.flip ? nx < hf : nx < -hf;
   return { view, flip };
 }
 
-/** Ракурс за напрямом у клітинках (з гістерезисом). */
-export function facingFromTiles(dir: Vec, prev: RigFacing | null): RigFacing | null {
-  return facingFromScreen(isoScreenDir(dir), prev);
+/** Ракурс за напрямом у клітинках (з гістерезисом; `steady` — напрям руху, див. `facingFromScreen`). */
+export function facingFromTiles(dir: Vec, prev: RigFacing | null, steady = false): RigFacing | null {
+  return facingFromScreen(isoScreenDir(dir), prev, steady);
 }
 
 /** Ліворуч чи праворуч (`flip`) від точки до точки в клітинках, з мертвою зоною `MIN_SIDE`: зона — `prev` чи `fallback`. */
@@ -79,6 +117,11 @@ export interface CatFacingOptions {
   prev?: RigFacing | null;
   /** Місце в парі (`catPairs`), якщо вже пораховано для всіх котів; без поля — `pairOf`. */
   pair?: PairPlacement | null;
+  /**
+   * Згладжений напрям руху кота в клітинках (за кілька сотень мс, `iso/cats.ts`): з ним ракурс у русі не смикається, коли шлях
+   * сима йде відрізками трохи різного нахилу; без поля (чи нульовий) — крок цього кадру.
+   */
+  heading?: Vec | null;
 }
 
 /**
@@ -89,7 +132,8 @@ export interface CatFacingOptions {
  *   кіт дивиться у світі — `personFacing`.
  * - Під ковдрою — лицем до нас, головою праворуч, до подушки: видно лише вушка й кінчик хвоста над горбиком.
  * - У парі (протистояння, бійка, вилизування, гра, сон поруч) — обличчям до пари вздовж горизонталі екрана (`pairs.ts`).
- * - Іде — за рухом (різниця позицій; кадр без руху — як минулого кадру, а без нього — до `goal` чи `run`). Іде й той, у кого
+ * - Іде — за рухом (згладжений напрям `heading`, без нього — різниця позицій; кадр без руху — як минулого кадру, а без нього
+ *   — до `goal` чи `run`; майже прямовисно — віддзеркалення тримається довше, `FACING_VERTICAL`). Іде й той, у кого
  *   немає `goal`: у грі з другом утікач біжить до `act.run` (засідка, погоня), мисливець — до нього (погоня, боротьба).
  * - Стоїть: на підвіконні під вікном у задній стіні — спиною до нас, у вікно (сумний — до нас, щоб було видно смуток, як і в
  *   старому вигляді); «Образливий» дметься — спиною, від персонажа; «Пастка на животику» — головою від персонажа; відданий,
@@ -110,13 +154,15 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
   if (pair?.facing) return pair.facing;
   const act = cat.act;
   if (catMoving(cat)) {
+    const heading = options.heading;
+    if (heading && Math.hypot(heading.x, heading.y) >= MIN_HEADING) return facingFromTiles(heading, prev, true) ?? fallback;
     const step = prevPos === null ? null : { x: cat.x - prevPos.x, y: cat.y - prevPos.y };
     const length = step === null ? 0 : Math.hypot(step.x, step.y);
-    if (step !== null && length >= MIN_STEP && length <= MAX_STEP) return facingFromTiles(step, prev) ?? fallback;
+    if (step !== null && length >= MIN_STEP && length <= MAX_STEP) return facingFromTiles(step, prev, true) ?? fallback;
     if (prev !== null) return prev;
-    const heading = act.goal ?? act.run;
+    const goal = act.goal ?? act.run;
     // Мисливець у погоні без руху цього кадру — далі, до цілі дії (утікача).
-    if (heading) return facingFromTiles({ x: heading.x + 0.5 - cat.x, y: heading.y + 0.5 - cat.y }, null) ?? fallback;
+    if (goal) return facingFromTiles({ x: goal.x + 0.5 - cat.x, y: goal.y + 0.5 - cat.y }, null) ?? fallback;
   }
   const person = state.character.body;
   const look = catLook(state, cat);

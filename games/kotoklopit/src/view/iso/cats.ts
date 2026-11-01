@@ -16,7 +16,7 @@ import type { Cat, GameState, Quality, Vec } from "../../sim/types";
 import { coatOf } from "../../sim/genetics";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
-import { catFacing, personFacing } from "../anim/catfacing";
+import { catFacing, catMoving, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
 import type { CatOneShotId } from "../anim/ids";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
@@ -82,6 +82,10 @@ interface Memory {
   /** Де кіт був минулого кадру й куди дивився (`catFacing`). */
   pos: Vec | null;
   facing: RigFacing | null;
+  /** Згладжена швидкість кота, клітинок за секунду (`smoothHeading`): напрям руху для ракурсу. */
+  heading: Vec;
+  /** Коли кіт, що йде, востаннє віддзеркалився, мс сцени. */
+  flipAt: number;
   /** Для стрибків і позіхання (`catTransition`). */
   transition: CatMemory | null;
   shot: CatShot | null;
@@ -233,7 +237,20 @@ export class IsoCatsView implements CatsPart {
   private memoryOf(id: number): Memory {
     let mem = this.memory.get(id);
     if (!mem) {
-      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, gait: null, liftFrom: null, size: null, sizeAge: Number.NaN, sizeCat: null };
+      mem = {
+        pos: null,
+        facing: null,
+        heading: { x: 0, y: 0 },
+        flipAt: Number.NEGATIVE_INFINITY,
+        transition: null,
+        shot: null,
+        lift: null,
+        gait: null,
+        liftFrom: null,
+        size: null,
+        sizeAge: Number.NaN,
+        sizeCat: null,
+      };
       this.memory.set(id, mem);
     }
     return mem;
@@ -279,8 +296,13 @@ export class IsoCatsView implements CatsPart {
     const own = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
     this.liftFrom(view, mem, lifting, own);
-    // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
-    const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : faceTo(catFacing(state, cat, mem.pos, { prev: mem.facing, pair }), spot);
+    // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук). Іде — за
+    // згладженим напрямом руху й не віддзеркалюючись надто часто (`smoothHeading`, `holdFlip`).
+    if (mem.pos) smoothHeading(mem.heading, cat.x - mem.pos.x, cat.y - mem.pos.y, seconds);
+    const was = mem.facing;
+    const faced = spot.kind === "hands" ? personFacing(state, was) : faceTo(catFacing(state, cat, mem.pos, { prev: was, pair, heading: mem.heading }), spot);
+    const facing = holdFlip(faced, was, spot.kind !== "hands" && catMoving(cat), time - mem.flipAt);
+    if (was && facing.flip !== was.flip) mem.flipAt = time;
     mem.facing = facing;
     if (mem.pos) {
       mem.pos.x = cat.x;
