@@ -157,7 +157,7 @@ export class IsoFloorView implements WorldPart {
       const at = itemPoint(item);
       this.place(spot, look, at, isoItemLook(item.kind, item.quality).height, item.kind === "toy" ? item.hidden : undefined);
       // Фонтанчик (§8.7) — на кожній мисці з водою; брудний лоток пахне (§9.12).
-      if (item.kind === "water") this.extra(spot, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: null } : null, ON.overlay);
+      if (item.kind === "water") this.extra(spot, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: look.state === "empty" ? "dry" : "on" } : null, ON.overlay);
       if (item.kind === "litter") {
         const smell: IsoFrame = { id: "fx/smell", state: Math.floor(frame.time / SMELL_MS) % 2 === 0 ? "a" : "b" };
         this.extra(spot, "smell", look.state?.endsWith("-dirty") ? smell : null, ON.fx, spot.height * SMELL_LIFT);
