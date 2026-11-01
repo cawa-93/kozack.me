@@ -27,6 +27,7 @@ import { defineAnims } from "../../types";
 import type { CatAnimId } from "../../../anim/ids";
 import { CAT_ONE_SHOT_MS } from "../../../anim/ids";
 import { CAT_RIG } from "../../defs/cat";
+import { BLEND_MS } from "../../rigcore";
 
 type CatBone = BoneOf<typeof CAT_RIG>;
 type CatSlot = SlotOf<typeof CAT_RIG>;
@@ -1020,6 +1021,29 @@ const BELLY_PET: Vec2 = { x: 13, y: 11 };
  */
 export function catPetPoint(anim: CatAnimId): Vec2 | null {
   return BELLY_UP.has(anim) ? { ...BELLY_PET } : null;
+}
+
+/**
+ * Чи кіт в анімації лежить на спині: таз віддзеркалено згори донизу (масштаб таза впоперек у першому ключі від'ємний). Так
+ * розпізнає й такі анімації інших груп, і складені вигляду (основна з накладкою й обличчям).
+ */
+export function catUpsideDown(anim: { readonly bones?: { readonly pelvis?: BoneTracks | undefined } | undefined } | null | undefined): boolean {
+  const first = anim?.bones?.pelvis?.scale?.[0];
+  return first !== undefined && first.v.y < 0;
+}
+
+/**
+ * Змішування поз (мс) на переході між анімаціями `from` і `to` (для T1: замість сталого `BLEND_MS` у `play`). Між тим, хто
+ * лежить на спині (`belly`, `roll` — дзеркало таза), і будь-якою іншою — 0: змішування лінійно веде масштаб таза з 1 до −1
+ * через нуль, і посередині кіт сплющується в смужку й зникає (`BLEND_MS` 120 — на ≈ 60 мс). Без змішування кіт
+ * перевертається одним кадром — як котяче «плюх» на спину.
+ */
+export function catBlendMs(
+  from: Parameters<typeof catUpsideDown>[0],
+  to: Parameters<typeof catUpsideDown>[0],
+  blend: number = BLEND_MS,
+): number {
+  return catUpsideDown(from) !== catUpsideDown(to) ? 0 : blend;
 }
 
 export const CAT_BASIC = defineAnims(CAT_RIG, {
