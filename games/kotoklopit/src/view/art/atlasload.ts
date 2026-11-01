@@ -1,8 +1,7 @@
 // Завантаження атласу арту в Phaser (крок 16, GRAPHICS_PLAN.md: «Шов хвилі 1», контракт кадрів у `atlas.ts`): `index.json`
 // → сторінки → одна текстура `ART_TEXTURE`, у якій кожна сторінка — джерело з тим самим номером, а кожен шар кожного кадру —
 // кадр `layerFrameName(frameId, шар)` з обрізкою до полотна `size · res`. Так атлас вантажать галерея (`src/dev/gallery`) і
-// PreloadScene гри — однаково, одним кодом (DOM-портрет бере ті самі файли через `sources.ts` і ті самі адреси й перевірку
-// `index.json` з `atlasindex.ts`).
+// PreloadScene гри — однаково, одним кодом (DOM-портрет бере ті самі зображення через `sources.ts`, `shareArtAtlas`).
 //
 // Кликати з `create()` сцени, а не з `preload()`: завантажувач іде двома проходами (спершу `index.json`, потім сторінки,
 // яких до нього не знати), і кожен запускає сам (`load.start()`), тож він не чекає кадрів гри — і скрипт знімків, у якого
@@ -11,6 +10,7 @@
 import Phaser from "phaser";
 
 import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
+import { shareArtAtlas } from "./sources";
 import { ART_TEXTURE, layerFrameName, type ArtIndex, type FrameId, type FrameLayer } from "./types";
 
 /** Атлас завантажено («ready») чи його немає й усе малюють заглушки («none») — те, що далі отримує `markArtReady`. */
@@ -99,6 +99,8 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
           none();
           return;
         }
+        // Ті самі сторінки — портретові в редакторі (`sources.ts`): інакше він вантажив би й тримав їх удруге.
+        shareArtAtlas(index, images as HTMLImageElement[]);
         resolve({ state: "ready", index });
       }));
       loader.start();

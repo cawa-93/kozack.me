@@ -25,8 +25,8 @@ import {
   type CatAppearance,
   type CatRecipeOptions,
 } from "../src/view/art/recipes";
-import { artFrameState, artLayerSource, loadArtFrames, loadArtIndex, resetArtSources } from "../src/view/art/sources";
-import { layerRank, type ArtLayer, type TintRecipe, type TintStep } from "../src/view/art/types";
+import { artFrameState, artLayerSource, loadArtFrames, loadArtIndex, resetArtSources, shareArtAtlas } from "../src/view/art/sources";
+import { ART_INDEX_VERSION, layerRank, type ArtIndex, type ArtLayer, type FrameId, type TintRecipe, type TintStep } from "../src/view/art/types";
 import { PALETTE } from "../src/view/palette";
 
 // --- Усі забарвлення, які дає генетика -----------------------------------------------------------
@@ -569,6 +569,33 @@ describe("поза браузером", () => {
     expect(composePortrait(canvas, look, { onReady: () => {} })).toBe(false);
     expect(touched).toBe(false);
     expect(stubLayers("cat/body/normal", { size: { w: 80, h: 50 }, pivot: { x: 40, y: 45 } })).toBeNull();
+  });
+
+  it("атлас, уже завантажений Phaser (`shareArtAtlas`), портрет бере як є — без власного завантаження", async () => {
+    const page = { tag: "сторінка 1" } as unknown as CanvasImageSource;
+    const index: ArtIndex = {
+      version: ART_INDEX_VERSION,
+      pages: [
+        { file: "page-0.webp", w: 2048, h: 2048 },
+        { file: "page-1.webp", w: 2048, h: 2048 },
+      ],
+      frames: {
+        ["person/head/0/front" as FrameId]: {
+          size: { w: 64, h: 70 },
+          res: 2,
+          pivot: { x: 32, y: 46 },
+          trim: { x: 3, y: 4 },
+          layers: { ink: { page: 1, x: 10, y: 20, w: 30, h: 40 } },
+        },
+      },
+    };
+    shareArtAtlas(index, [{ tag: "сторінка 0" } as unknown as CanvasImageSource, page]);
+    expect(await loadArtIndex()).toBe(index);
+    expect(artFrameState(["person/head/0/front" as FrameId])).toBe("ready");
+    expect(await loadArtFrames(["person/head/0/front" as FrameId])).toBe(true);
+    const layers = artLayerSource("person/head/0/front" as FrameId);
+    expect(layers?.w).toBe(128);
+    expect(layers?.source("ink")).toEqual({ image: page, sx: 10, sy: 20, sw: 30, sh: 40, dx: 3, dy: 4 });
   });
 
   it("голова портрета — з вигляду, ракурс front, потилиця під обличчям, чубчик зверху", () => {

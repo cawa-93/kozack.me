@@ -1,7 +1,8 @@
 // Сторінки атласу для DOM (крок 16, GRAPHICS_PLAN.md: «Тонування й запікання»): `index.json` і ті сторінки, на яких лежать
-// потрібні кадри, — без Phaser, для портрета в редакторі (`composePortrait`). Phaser вантажить ті самі файли сам
-// (PreloadScene, `atlasload.ts`), а браузер бере їх із кешу: назви сторінок мають хеш вмісту. Адреси й перевірка
-// `index.json` — спільні (`atlasindex.ts`).
+// потрібні кадри, — без Phaser, для портрета в редакторі (`composePortrait`). У грі їх віддає завантажувач Phaser
+// (`shareArtAtlas` з `atlasload.ts`, коли PreloadScene склала атлас): портрет бере ті самі зображення, без другого раунду
+// запитів і без другої розпакованої копії сторінок у пам'яті (≈ 16 МБ на сторінку 2048²). Власне завантаження — запасне:
+// для галереї, тестів і гри, де атлас Phaser не склався. Адреси й перевірка `index.json` — спільні (`atlasindex.ts`).
 //
 // Поза браузером (тести в Node) нічого не вантажиться: атласу «немає», і портрет малює запасний малюнок. Під час імпорту
 // модуль нічого не робить — лише коли попросять.
@@ -23,6 +24,19 @@ let indexLoad: Promise<ArtIndex | null> | null = null;
 let index: ArtIndex | null | undefined;
 const pages = new Map<number, CanvasImageSource>();
 const pageLoads = new Map<number, Promise<CanvasImageSource | null>>();
+
+/**
+ * Атлас, уже завантажений Phaser (`atlasload.ts`): розібраний `index.json` і сторінки за номером. Далі портрет бере їх, а
+ * не вантажить сам.
+ */
+export function shareArtAtlas(loaded: ArtIndex, images: readonly CanvasImageSource[]): void {
+  index = loaded;
+  indexLoad = Promise.resolve(loaded);
+  images.forEach((image, page) => {
+    pages.set(page, image);
+    pageLoads.set(page, Promise.resolve(image));
+  });
+}
 
 /** Завантажити `index.json` (один раз): null — атласу немає (немає файлу, інша версія формату, поза браузером). */
 export function loadArtIndex(): Promise<ArtIndex | null> {
