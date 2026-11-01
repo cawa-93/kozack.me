@@ -326,20 +326,24 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     const middle = onFace(face, face.length / 2, face.height / 2);
     expect(middle.x).toBeCloseTo(front.x, 9);
     expect(middle.y).toBeCloseTo(front.y - look.top + STOVE_BAR.drop, 9);
-    // З рамкою — не ширша за 0,8 клітинки (на екрані 0,8 × 64): не заходить на сусідні шафки.
-    const left = onFace(face, -BAR.ink, 0);
-    const right = onFace(face, face.length + BAR.ink, 0);
+    // З рамкою й облямівкою — не ширша за 0,8 клітинки (на екрані 0,8 × 64): не заходить на сусідні шафки.
+    const out = STOVE_BAR.ink + STOVE_BAR.rim;
+    const left = onFace(face, -out, 0);
+    const right = onFace(face, face.length + out, 0);
     expect(right.x - left.x).toBeLessThanOrEqual(0.8 * 64 + 1e-9);
     // По висоті — між краєм стільниці й підлогою в кожній точці грані (верх грані паралельний смузі).
-    for (const a of [-BAR.ink, face.length / 2, face.length + BAR.ink]) {
-      const top = onFace(face, a, -BAR.ink);
-      const bottom = onFace(face, a, face.height + BAR.ink);
+    for (const a of [-out, face.length / 2, face.length + out]) {
+      const top = onFace(face, a, -out);
+      const bottom = onFace(face, a, face.height + out);
       const edge = ISO.toScreen({ x: (f.x0 + f.x1) / 2 + (top.x - front.x) / 64, y: f.y1 });
       expect(top.y).toBeGreaterThan(edge.y - look.top);
       expect(bottom.y).toBeLessThan(edge.y);
     }
     // І нижче за якір бабла над плитою: бабл страви смуги не закриває.
-    expect(onFace(face, 0, -BAR.ink).y).toBeGreaterThan(objectAnchorAt(stove).y);
+    expect(onFace(face, 0, -out).y).toBeGreaterThan(objectAnchorAt(stove).y);
+    // Табло, а не риска: заввишки 12–14 (рецензія хвилі 3) — помітно вище за рамку.
+    expect(STOVE_BAR.height).toBeGreaterThanOrEqual(12);
+    expect(STOVE_BAR.height).toBeLessThanOrEqual(14);
   });
 
   it("смуга дії — над її ціллю, скільки зроблено", () => {

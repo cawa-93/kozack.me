@@ -6,7 +6,7 @@
 import type Phaser from "phaser";
 
 import { PALETTE, SHADE, type PaletteToken } from "../../../art/palette";
-import { BAR, BAR_DROP, clamp01, NOTE_CORNER, onFace, SEARCH_BAR, stageMark, type BarBox, type FaceBar, type ScreenQuad, type ScreenShow } from "./markslayout";
+import { BAR, BAR_DROP, clamp01, NOTE_CORNER, onFace, SEARCH_BAR, stageMark, STOVE_BAR, type BarBox, type FaceBar, type ScreenQuad, type ScreenShow } from "./markslayout";
 
 /** Колір палітри арту як число для Phaser. */
 export function tone(token: PaletteToken): number {
@@ -16,6 +16,8 @@ export function tone(token: PaletteToken): number {
 const INK = tone("ink");
 const PAPER = tone("paper");
 const SHADE_TONE = tone("shade");
+/** Порожня доріжка табло на грані речі (`drawFaceBar`): темна, щоб на світлій емалі було видно, скільки лишилося. */
+const FACE_TRACK = tone("dark");
 
 /** Чим заливати смугу: «добре» — зелене, небезпека — червоне (`art/STYLE.md`, «Сенси інтерфейсу»). */
 export type BarTone = "good" | "danger";
@@ -73,13 +75,16 @@ function facePill(g: Phaser.GameObjects.Graphics, face: FaceBar, a0: number, b0:
 }
 
 /**
- * Смуга на грані речі (плита, §8.7): та сама паперова доріжка в чорнильній рамці, але намальована на грані — без падаючої
- * тіні, скошена разом із гранню.
+ * Смуга на грані речі (плита, §8.7) — табло на дверцятах духовки, скошене разом із гранню, без падаючої тіні: тонка паперова
+ * облямівка, чорнильна рамка й темна доріжка (`STOVE_BAR`), заливка кольором сенсу. Паперова доріжка смуг над речами тут
+ * зливалася б із кремовою емаллю, а рамка — з лініями дверцят.
  */
 export function drawFaceBar(g: Phaser.GameObjects.Graphics, face: FaceBar, value: number, kind: BarTone): void {
-  const ink = BAR.ink;
+  const { ink, rim } = STOVE_BAR;
+  const out = ink + rim;
+  facePill(g, face, -out, -out, face.length + out * 2, face.height + out * 2, PAPER);
   facePill(g, face, -ink, -ink, face.length + ink * 2, face.height + ink * 2, INK);
-  facePill(g, face, 0, 0, face.length, face.height, PAPER);
+  facePill(g, face, 0, 0, face.length, face.height, FACE_TRACK);
   facePill(g, face, 0, 0, clamp01(value) * face.length, face.height, BAR_FILL[kind]);
 }
 
