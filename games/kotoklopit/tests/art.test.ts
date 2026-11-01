@@ -92,7 +92,7 @@ describe("арт гри (art/) і маніфест", () => {
     expect(problems).toEqual([]);
   }, 60_000);
 
-  it("запис намальовано цілком: усі ракурси або жоден (з KOTOKLOPIT_REQUIRE_ALL_ART — усі)", () => {
+  it("увесь арт намальовано: SVG є для кожного ракурсу кожного запису (KOTOKLOPIT_REQUIRE_ALL_ART=0 — усі ракурси або жоден)", () => {
     const requireAll = requireAllFromEnv();
     expect(entries.flatMap((entry) => drawnProblems(entry, has, requireAll))).toEqual([]);
   });
@@ -297,14 +297,17 @@ describe("перевірка SVG", () => {
     expect(isPrivateArtPath("cat/old_.svg")).toBe(false);
   });
 
-  it("запис намальовано цілком: половина ракурсів — помилка; без SVG — заглушка, а з REQUIRE_ALL — помилка", () => {
+  it("запис намальовано цілком: половина ракурсів — помилка; без SVG — помилка, а з дозволеними заглушками — заглушка", () => {
     const only = (...present: string[]) => (file: string) => present.includes(file);
     expect(drawnProblems(HEAD, only("cat/head/front.svg", "cat/head/back.svg"), true)).toEqual([]);
     expect(drawnProblems(HEAD, only("cat/head/front.svg"), false)).toEqual(["«cat/head»: є не всі ракурси — немає cat/head/back.svg"]);
     expect(drawnProblems(GHOST, only(), false)).toEqual([]);
     expect(drawnProblems(GHOST, only(), true)).toEqual(["«item/ghost»: немає item/ghost.svg (KOTOKLOPIT_REQUIRE_ALL_ART)"]);
+    // Вимога всього арту — типова (хвиля 3); «0» чи «false» дозволяє заглушки.
+    expect(requireAllFromEnv({})).toBe(true);
     expect(requireAllFromEnv({ KOTOKLOPIT_REQUIRE_ALL_ART: "1" })).toBe(true);
-    expect(requireAllFromEnv({})).toBe(false);
+    expect(requireAllFromEnv({ KOTOKLOPIT_REQUIRE_ALL_ART: "0" })).toBe(false);
+    expect(requireAllFromEnv({ KOTOKLOPIT_REQUIRE_ALL_ART: "false" })).toBe(false);
   });
 });
 
@@ -533,7 +536,7 @@ describe("збирання атласу на фікстурах", () => {
   it("index.json: кадри станів і ракурсів, шари в межах сторінок, заглушка, однакові растри — один раз", async () => {
     const build = await run(FIXTURE_ENTRIES);
     expect(build.errors).toEqual([]);
-    expect(build.warnings).toEqual(["art/item/lost.svg: немає запису в маніфесті — не растеризується"]);
+    expect(build.warnings).toEqual(["art/item/ghost.svg: немає — заглушка («item/ghost»)", "art/item/lost.svg: немає запису в маніфесті — не растеризується"]);
     const index = JSON.parse(build.files.get("index.json")!.toString()) as ArtIndex;
     expect(index).toEqual(build.index);
     expect(Object.keys(index.frames)).toEqual([

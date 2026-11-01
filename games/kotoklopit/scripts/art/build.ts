@@ -46,7 +46,11 @@ export const ART_BUDGET_BYTES = 5 * 1024 * 1024;
  */
 export const WEBP_OPTIONS: WebpOptions = { lossless: true, effort: 4 };
 
-/** Змінна оточення: «1» — запис без SVG (заглушка) ламає збирання (вмикається наприкінці хвилі 3). */
+/**
+ * Змінна оточення вимоги всього арту. Типово (хвиля 3: увесь арт намальовано) запис без SVG — помилка: ламає збирання
+ * (`vite build`, прев'ю Netlify), `npm run art` і тести. «0» чи «false» — дозволити заглушки. Dev-сервер заглушки дозволяє
+ * завжди (`plugin.ts`): так малюють нове.
+ */
 export const REQUIRE_ALL_ENV = "KOTOKLOPIT_REQUIRE_ALL_ART";
 /** Змінна оточення: «0» — без кешу (`node_modules/.cache/kotoklopit-art`). */
 export const CACHE_ENV = "KOTOKLOPIT_ART_CACHE";
@@ -58,7 +62,7 @@ export interface ArtBuildOptions {
   /** Роздільність записів без `res` (`DEFAULT_RES` з маніфесту). */
   defaultRes: number;
   cache: ArtCache;
-  /** Запис без SVG — помилка, а не заглушка. */
+  /** Запис без SVG — помилка, а не заглушка (із попередженням). */
   requireAll: boolean;
   /** Скільки кадрів растеризувати одночасно. */
   concurrency?: number;
@@ -182,6 +186,8 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     return svgText.get(rel) ?? null;
   };
 
+  /** SVG, замість яких заглушка: попередження — одне на файл. */
+  const stubbed = new Set<string>();
   for (const entry of entries) {
     const res = entry.res ?? options.defaultRes;
     errors.push(...drawnProblems(entry, (svg) => readSvg(svg) !== null, options.requireAll));
@@ -189,6 +195,10 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     for (const ref of framesOf(entry)) {
       const text = readSvg(ref.svg);
       if (text === null) {
+        if (!options.requireAll && !stubbed.has(ref.svg)) {
+          stubbed.add(ref.svg);
+          warnings.push(`art/${ref.svg}: немає — заглушка («${entry.id}»)`);
+        }
         jobs.push(async () => ({ frame: ref.frame, entry, res: stubRes(entry, res), raster: await stubRaster(entry, stubRes(entry, res), cache), stub: true }));
         continue;
       }
@@ -377,15 +387,16 @@ export async function loadManifest(gameDir: string): Promise<LoadedManifest> {
 
 export interface GameArtOptions {
   gameDir: string;
-  /** Запис без SVG — помилка; за замовчуванням — зі змінної `KOTOKLOPIT_REQUIRE_ALL_ART`. */
+  /** Запис без SVG — помилка; за замовчуванням — так, якщо змінна `KOTOKLOPIT_REQUIRE_ALL_ART` не вимикає (`requireAllFromEnv`). */
   requireAll?: boolean;
   /** Кеш у `node_modules/.cache/kotoklopit-art`; за замовчуванням — так, якщо `KOTOKLOPIT_ART_CACHE` не «0». */
   cache?: boolean;
 }
 
-/** Чи вимагати весь арт за змінною оточення. */
+/** Чи вимагати весь арт за змінною оточення: так, хіба що вона «0» чи «false». */
 export function requireAllFromEnv(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env[REQUIRE_ALL_ENV] === "1" || env[REQUIRE_ALL_ENV] === "true";
+  const value = env[REQUIRE_ALL_ENV];
+  return value !== "0" && value !== "false";
 }
 
 /** Зібрати атлас гри: маніфест (`loadManifest`), SVG з `<гра>/art`, кеш у `<гра>/node_modules/.cache/kotoklopit-art`. */

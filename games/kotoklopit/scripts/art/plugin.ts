@@ -3,6 +3,10 @@
 // файлами `art/index.json` і `art/page-<n>.<хеш>.webp` у теці збірки. Нічого не пише в теку гри (окрім кешу в
 // `node_modules/.cache/kotoklopit-art`).
 //
+// Запис маніфесту без SVG у збірці (`vite build`, і прев'ю Netlify) — помилка (`KOTOKLOPIT_REQUIRE_ALL_ART`, `build.ts`):
+// увесь арт намальовано. Dev-сервер замість нього малює заглушку з попередженням у лозі — так малюють нове: запис
+// з'являється раніше за SVG, і гра з ним уже працює.
+//
 // Цей файл Node завантажує сам (vite.config.ts імпортує його за адресою): тут лише вбудовані модулі Node і `vite`, а сам
 // конвеєр (`build.ts` і код гри, який він бере, — з імпортами без розширень) завантажує Vite (`runnerImport`). Так
 // збирач конфігу Vite не тягне в конфіг код гри.
@@ -109,7 +113,8 @@ function serveArt(server: ViteDevServer, art: Art, gameDir: string): void {
         svgChanged = false;
         const before = fingerprint(current);
         try {
-          current = await art.buildGameArt({ gameDir });
+          // Заглушки дозволено: запис без SVG — попередження в лозі, а не помилка (див. угорі).
+          current = await art.buildGameArt({ gameDir, requireAll: false });
           dependencies = current.manifest.dependencies;
           report(current);
         } catch (error) {
