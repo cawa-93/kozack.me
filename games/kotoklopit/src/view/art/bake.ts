@@ -7,6 +7,9 @@
 // - Кеш — за (кадр, `recipe.key`): однакові коти ділять текстури, а новий рецепт (тьмяна шерсть, залисини) — нові кадри.
 // - Бюджет пам'яті на власника (кота) й загальний — `bakecache.ts` (`BAKE_BUDGET`); що показує зображення, не звільняється.
 // - Кота не стало — `releaseBaked(scene, owner)`.
+// - Бюджет запікань на кадр гри (`BAKES_PER_FRAME`, `bakesThisFrame`, `isBakedArt`): скелет, якому бракує кадрів понад
+//   нього, ще кадр-другий показує попередню позу (`rigsprite.ts`); інший ракурс запікається наперед у вільний час
+//   (`prebakeArt`), тож поворот кота зазвичай нічого не запікає.
 // - Шарів кадру в атласі немає (конвеєра чи SVG ще немає) — запікається заглушка з синтетичними шарами (`stubLayers`):
 //   маджентова штриховка поверх кольорів і візерунків рецепта.
 
@@ -19,7 +22,7 @@ import { artEntry, DEFAULT_RES } from "./manifest";
 import { artGeometry, artPlacement, extraFrameOf, frameNameFor, type ArtFallback, type ArtGeometry, type ArtPlacement } from "./placement";
 import { ART_TEXTURE, framesOf, layerFrameName, type ArtEntry, type ArtId, type ArtLayer, type ArtSize, type ArtView, type FrameId, type TintRecipe } from "./types";
 
-export { BAKE_BUDGET, SHARED_OWNER, type BakeBudget, type BakeStats } from "./bakecache";
+export { BAKE_BUDGET, BAKES_PER_FRAME, mayBakeNow, SHARED_OWNER, type BakeBudget, type BakeStats } from "./bakecache";
 
 /** Початок ключа запечених текстур: `art-baked:<кадр>@<ключ рецепта>`. */
 export const BAKED_PREFIX = "art-baked:";
@@ -97,8 +100,38 @@ export function setBakedArt(image: Phaser.GameObjects.Image, id: ArtId, recipe: 
 export function releaseBaked(scene: Phaser.Scene, owner?: string): void {
   const baker = bakers.get(scene.game);
   if (!baker) return;
+  // Що ще чекало запікання наперед, — теж: інакше воно запекло б кадри власникові, якого вже немає.
+  for (const [key, job] of baker.queue) if (owner === undefined || job.owner === owner) baker.queue.delete(key);
   if (owner === undefined) baker.cache.dropAll();
   else baker.cache.dropOwner(owner);
+}
+
+/** Скільки кадрів запечено цього кадру гри (`BAKES_PER_FRAME`). */
+export function bakesThisFrame(scene: Phaser.Scene): number {
+  const baker = bakers.get(scene.game);
+  return baker && baker.frame === scene.game.loop.frame ? baker.baked : 0;
+}
+
+/** Чи кадр запису `id` (стан, ракурс) за рецептом уже запечено: показати його нічого не коштує. */
+export function isBakedArt(scene: Phaser.Scene, id: ArtId, recipe: TintRecipe, opts: BakedArtOptions = {}): boolean {
+  const baker = bakers.get(scene.game);
+  if (!baker) return false;
+  const key = bakedKey(bakedFrameId(id, opts), recipe);
+  return baker.cache.peek(key) !== undefined && scene.textures.exists(key);
+}
+
+/**
+ * Запекти кадр наперед, у вільний час між кадрами гри (`requestIdleCallback`): скелет просить так кадри іншого ракурсу
+ * того, що зараз показує, — коли кіт обернеться, вони вже будуть. Уже запечене чи вже в черзі — нічого не робить.
+ */
+export function prebakeArt(scene: Phaser.Scene, id: ArtId, recipe: TintRecipe, opts: BakedArtOptions = {}): void {
+  const baker = bakerOf(scene.game);
+  const frame = bakedFrameId(id, opts);
+  const key = bakedKey(frame, recipe);
+  if (baker.queue.has(key) || baker.cache.peek(key) !== undefined) return;
+  if (baker.queue.size >= PREBAKE_QUEUE) return;
+  baker.queue.set(key, { scene, frame, recipe, owner: opts.owner ?? SHARED_OWNER, fallback: opts.fallback });
+  scheduleIdle(baker);
 }
 
 /** Скільки запечено (галерея, перевірка продуктивності). */
@@ -120,7 +153,31 @@ export function catOwner(catId: number): string {
 
 interface Baker {
   cache: BakeCache<BakedFrame>;
+  /** Кадр гри (`game.loop.frame`), у якому запікали востаннє, і скільки кадрів запекли в ньому. */
+  frame: number;
+  baked: number;
+  /** Черга запікання наперед (`prebakeArt`) за ключем текстури. */
+  queue: Map<string, Prebake>;
+  /** Чи вже попрошено вільного часу для черги. */
+  idle: boolean;
 }
+
+/** Кадр, що чекає запікання наперед. */
+interface Prebake {
+  scene: Phaser.Scene;
+  frame: FrameId;
+  recipe: TintRecipe;
+  owner: string;
+  fallback: ArtFallback | undefined;
+}
+
+/** Найдовша черга запікання наперед: 22 коти × ≈ 10 частин іншого ракурсу — з запасом. */
+const PREBAKE_QUEUE = 512;
+/** Скільки мілісекунд вільного часу лишати браузерові: менше — запікання наперед чекає наступної паузи. */
+const IDLE_SPARE_MS = 3;
+/** Без `requestIdleCallback` (Safari) — по стільки кадрів за раз через `setTimeout`. */
+const TIMEOUT_BATCH = 2;
+const TIMEOUT_MS = 50;
 
 /** Кеш запечених кадрів на гру: текстури належать менеджерові текстур гри, а не сцені. */
 const bakers = new WeakMap<Phaser.Game, Baker>();
@@ -131,28 +188,73 @@ function bakerOf(game: Phaser.Game): Baker {
     const cache = new BakeCache<BakedFrame>((key) => {
       if (game.textures.exists(key)) game.textures.remove(key);
     }, BAKE_BUDGET);
-    baker = { cache };
-    bakers.set(game, baker);
+    const made: Baker = { cache, frame: -1, baked: 0, queue: new Map(), idle: false };
+    baker = made;
+    bakers.set(game, made);
     // Гру знищено — разом із текстурами.
     game.events.once(Phaser.Core.Events.DESTROY, () => {
       cache.forget();
+      made.queue.clear();
       bakers.delete(game);
     });
   }
   return baker;
 }
 
+/** Ключ текстури запеченого кадру. */
+function bakedKey(frame: FrameId, recipe: TintRecipe): string {
+  return `${BAKED_PREFIX}${frame}@${recipe.key}`;
+}
+
 function bake(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, opts: BakeOptions): BakedFrame {
   const baker = bakerOf(scene.game);
-  const key = `${BAKED_PREFIX}${frame}@${recipe.key}`;
+  const key = bakedKey(frame, recipe);
   const owner = opts.owner ?? SHARED_OWNER;
   // Текстуру могли прибрати повз кеш (`textures.remove`): тоді запекти знову.
   if (baker.cache.peek(key) && !scene.textures.exists(key)) baker.cache.forgetKey(key);
   // Вигляд власника — рід рецепта: ближні й дальні (`farRecipe`) частини того самого кота — один вигляд.
   return baker.cache.use(owner, key, recipe.family ?? recipe.key, () => {
+    baker.queue.delete(key);
+    const loop = scene.game.loop.frame;
+    if (baker.frame !== loop) {
+      baker.frame = loop;
+      baker.baked = 0;
+    }
+    baker.baked++;
     const baked = make(scene, frame, recipe, key, opts.fallback);
     return { value: baked, pixels: baked.px.w * baked.px.h };
   });
+}
+
+/** Попросити вільного часу для черги запікання наперед (раз, доки її не розібрано). */
+function scheduleIdle(baker: Baker): void {
+  if (baker.idle || baker.queue.size === 0) return;
+  baker.idle = true;
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback((deadline) => drainQueue(baker, () => deadline.timeRemaining() > IDLE_SPARE_MS));
+  } else {
+    let left = TIMEOUT_BATCH;
+    setTimeout(() => drainQueue(baker, () => left-- > 0), TIMEOUT_MS);
+  }
+}
+
+/**
+ * Запікати з черги, доки є час (`more`). Пропускає те, що вже запечене, сцену, якої вже немає, і власника, чий вигляд
+ * відтоді змінився (кіт захворів, персонажа переодягли): запечене за старим рецептом скинуло б кадри нового.
+ */
+function drainQueue(baker: Baker, more: () => boolean): void {
+  baker.idle = false;
+  for (const [key, job] of baker.queue) {
+    if (!more()) break;
+    baker.queue.delete(key);
+    const scene = job.scene;
+    if (!(scene.sys as Phaser.Scenes.Systems | undefined)?.game || baker.cache.peek(key) !== undefined) continue;
+    const family = job.recipe.family ?? job.recipe.key;
+    const current = baker.cache.ownerRecipe(job.owner);
+    if (current !== null && current !== family) continue;
+    bake(scene, job.frame, job.recipe, { owner: job.owner, fallback: job.fallback });
+  }
+  scheduleIdle(baker);
 }
 
 /** Запекти кадр: шари з атласу, а якщо їх немає — синтетичні шари заглушки. */
@@ -175,10 +277,16 @@ function make(scene: Phaser.Scene, frame: FrameId, recipe: TintRecipe, key: stri
     stub = true;
   }
   if (scene.textures.exists(key)) scene.textures.remove(key);
-  const texture = scene.textures.createCanvas(key, px.w, px.h);
-  if (texture) {
-    composeFrame(texture.getContext(), layers, recipe, { w: px.w, h: px.h });
-    texture.refresh();
+  // Спершу скласти кадр на полотні, а вже готове віддати текстурі: `createCanvas` і `refresh` завантажували його у
+  // відеопам'ять двічі — порожнє полотно й готове. Полотно — у пам'яті процесора (`willReadFrequently`), як і в
+  // `CanvasTexture` Phaser: він читає його пікселі (`getImageData`) одразу, а з відеопам'яті це довго.
+  const canvas = document.createElement("canvas");
+  canvas.width = px.w;
+  canvas.height = px.h;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (context) {
+    composeFrame(context, layers, recipe, { w: px.w, h: px.h });
+    scene.textures.addCanvas(key, canvas);
   }
   return { key, px, geometry, stub };
 }

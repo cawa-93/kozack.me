@@ -35,6 +35,23 @@ export interface BakeBudget {
 
 export const BAKE_BUDGET: BakeBudget = { framesPerOwner: 32, pixelsPerOwner: 250_000, pixelsTotal: 6_000_000 };
 
+/**
+ * Скільки кадрів запікати за кадр гри. Запікання синхронне (≈ 1–2 мс на телефоні, у 4 рази повільнішому — 5–9): коли
+ * кілька котів одночасно міняють позу чи ракурс, за кадр запікалося до 9 кадрів, і кадр тривав 66–106 мс замість 19–29.
+ * Тепер скелет, якому бракує запечених кадрів понад цей бюджет, ще кадр-другий показує попередню позу (`mayBakeNow`), а
+ * другий ракурс дозапікається у вільний час (`prebakeArt`, `bake.ts`).
+ */
+export const BAKES_PER_FRAME = 3;
+
+/**
+ * Чи може скелет цього кадру показати нові кадри, яким треба `needed` запікань, коли за кадр уже запечено `spent`:
+ * нічого не треба — так; цього кадру ще нічого не запікали — так (хоч би й понад бюджет: усі частини скелета міняються
+ * разом, і інакше скелет, якому треба більше за бюджет, не дочекався б ніколи); інакше — якщо вміщується в бюджет.
+ */
+export function mayBakeNow(spent: number, needed: number, budget: number = BAKES_PER_FRAME): boolean {
+  return needed <= 0 || spent <= 0 || spent + needed <= budget;
+}
+
 /** Власник за замовчуванням — для кадрів, які не належать жодній істоті (галерея). */
 export const SHARED_OWNER = "shared";
 
@@ -113,6 +130,11 @@ export class BakeCache<T> {
     if (claimed) this.fitOwner(owner, who, key);
     if (created) this.fitTotal(key);
     return entry.value;
+  }
+
+  /** Рід рецепта, яким власник користувався востаннє; null — такого власника ще (чи вже) немає. */
+  ownerRecipe(owner: string): string | null {
+    return this.owners.get(owner)?.recipe ?? null;
   }
 
   /** Запечений кадр, якщо є (без зміни давності). */

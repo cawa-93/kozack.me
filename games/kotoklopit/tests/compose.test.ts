@@ -8,7 +8,7 @@ import { PALETTE as PALETTE_ART } from "../art/palette";
 import { coatOf, type Coat } from "../src/sim/genetics";
 import type { CatDisease, Genes, Look, Shape } from "../src/sim/types";
 import { LOOK_OPTIONS } from "../src/ui/look";
-import { BakeCache, BAKE_BUDGET } from "../src/view/art/bakecache";
+import { BakeCache, BAKE_BUDGET, BAKES_PER_FRAME, mayBakeNow } from "../src/view/art/bakecache";
 import { composeFrame, composePortrait, cssColor, portraitHead, stubLayers, type Ctx2D, type LayerImage } from "../src/view/art/compose";
 import {
   CAT_RECIPE_LAYERS,
@@ -596,6 +596,27 @@ describe("облік запечених кадрів", () => {
       });
     return { cache, use, destroyed, made: () => made };
   }
+
+  it("бюджет запікань на кадр гри: нічого не треба чи ще нічого не запікали — можна; далі — лише в межах бюджету", () => {
+    expect(mayBakeNow(0, 0)).toBe(true);
+    expect(mayBakeNow(5, 0)).toBe(true);
+    // Першому скелетові кадру — хоч і понад бюджет: частини міняються разом, інакше він не дочекався б ніколи.
+    expect(mayBakeNow(0, BAKES_PER_FRAME + 6)).toBe(true);
+    expect(mayBakeNow(1, BAKES_PER_FRAME - 1)).toBe(true);
+    expect(mayBakeNow(1, BAKES_PER_FRAME)).toBe(false);
+    expect(mayBakeNow(BAKES_PER_FRAME, 1)).toBe(false);
+  });
+
+  it("рід рецепта власника: щоб запікання наперед не скинуло кадрів нового вигляду", () => {
+    const { cache, use } = setup();
+    expect(cache.ownerRecipe("cat:1")).toBeNull();
+    use("cat:1", "a", "здоровий");
+    expect(cache.ownerRecipe("cat:1")).toBe("здоровий");
+    use("cat:1", "b", "тьмяний");
+    expect(cache.ownerRecipe("cat:1")).toBe("тьмяний");
+    cache.dropOwner("cat:1");
+    expect(cache.ownerRecipe("cat:1")).toBeNull();
+  });
 
   it("ліниво: кадр запікається раз і ділиться між власниками", () => {
     const { cache, use, made } = setup();

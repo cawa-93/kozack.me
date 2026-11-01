@@ -19,14 +19,18 @@
 // Тож власний `flip` прикріпленого — відносно власника, а не світу: `catFacing` для кота на руках і на колінах так і дає
 // (`flip: false`, ракурс персонажа); світовий `flip` поверх дзеркала власника дзеркалив би вдруге.
 // Прикріплені скелети оновлює їхній власник (`update` у кожного свій).
+//
+// Запечені кадри — з бюджетом на кадр гри (`BAKES_PER_FRAME`, `bake.ts`): скелет, що вже показаний і якому для нової
+// пози бракує запечених кадрів понад бюджет, цього кадру не міняє зображень (ще кадр-другий видно попередню позу —
+// усі частини разом, без суміші ракурсів); інший ракурс показаних кадрів запікається наперед у вільний час (`prebakeArt`).
 
 import Phaser from "phaser";
 
 import { addArt, setArt } from "../art/atlas";
-import { addBakedArt, setBakedArt } from "../art/bake";
+import { addBakedArt, bakesThisFrame, isBakedArt, mayBakeNow, prebakeArt, setBakedArt } from "../art/bake";
 import { artEntry, DEFAULT_RES } from "../art/manifest";
 import { artGeometry, artPlacement } from "../art/placement";
-import type { ArtEntry, ArtId, ArtView, FrameLayer, TintRecipe } from "../art/types";
+import { ART_VIEWS, type ArtEntry, type ArtId, type ArtView, type FrameLayer, type TintRecipe } from "../art/types";
 import { Rig, slotFrame, type ArtLookup, type PlayOptions, type ProportionRef, type RigFit, type SlotFrame } from "./rigcore";
 import type { AnyRig, BoneOf, RigAnchor, RigAnim, RigDef, RigFacing, RigSkin, SlotOf, SocketOf, Vec2 } from "./types";
 
@@ -115,6 +119,8 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
   private readonly cargo: (Attachable | null)[];
   private appliedOrder = -1;
   private orderDirty = true;
+  /** Скелет уже показано цілим: відтепер нові запечені кадри — у межах бюджету на кадр гри (`mayBakeNow`). */
+  private shown = false;
   /** Час останнього `update`, мс: від нього починається `play`. */
   private now: number;
 
@@ -232,8 +238,11 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     if (!scene) return this;
     this.now = now ?? scene.time.now;
     const rig = this.rig.evaluate(this.now);
-    this.applyFlip();
     const view = rig.facing.view;
+    // Бракує запечених кадрів понад бюджет цього кадру гри — лишити попередню позу (поза скелета вже нова: наступного
+    // кадру її покажуть, коли бюджет звільниться).
+    if (this.shown && this.baked && !mayBakeNow(bakesThisFrame(scene), this.bakesNeeded(rig.slots, view))) return this;
+    this.applyFlip();
     for (let i = 0; i < rig.slots.length; i++) {
       const pose = rig.slots[i]!;
       const slot = this.views[i]!;
@@ -262,6 +271,7 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
       }
     }
     if (this.orderDirty || rig.orderVersion !== this.appliedOrder) this.reorder();
+    this.shown = true;
     return this;
   }
 
@@ -349,6 +359,34 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     return out;
   }
 
+  /**
+   * Скільки нових запечених кадрів треба, щоб показати позу: слоти, чий кадр змінився (запис, стан, ракурс) і чийого
+   * запеченого кадру ще немає. Без нових об'єктів, поки кадри не міняються (так — майже щокадру).
+   */
+  private bakesNeeded(slots: readonly { visible: boolean; art: ArtId | null; state: string | null }[], view: ArtView): number {
+    const baked = this.baked;
+    if (!baked || this.source) return 0;
+    let needed = 0;
+    for (let i = 0; i < slots.length; i++) {
+      const pose = slots[i]!;
+      if (!pose.visible || pose.art === null) continue;
+      const slot = this.views[i]!;
+      if (slot.image && slot.art === pose.art && slot.state === pose.state && slot.view === view) continue;
+      if (slot.pinned) continue;
+      const entry = this.lookup(pose.art);
+      if (!entry?.layers) continue;
+      const frame = slotFrame(pose.art, entry, pose.state, view);
+      if (!isBakedArt(this.scene, pose.art, this.recipeOf(i), { state: frame.state, view: frame.view })) needed++;
+    }
+    return needed;
+  }
+
+  /** Рецепт запеченого кадру слота `i` (`RigBaked.recipe`). */
+  private recipeOf(i: number): TintRecipe {
+    const recipe = this.baked!.recipe;
+    return typeof recipe === "function" ? recipe(this.rig.slots[i]!.id as S) : recipe;
+  }
+
   /** Шар, який показувати в записі (`layer` для записів із шарами; інакше — `all`). */
   private layerFor(entry: ArtEntry | undefined): FrameLayer | undefined {
     const layer = this.layerName;
@@ -391,8 +429,12 @@ export class RigSprite<B extends string, S extends string, K extends string> ext
     }
     const baked = this.baked;
     if (baked && entry?.layers) {
-      const recipe = typeof baked.recipe === "function" ? baked.recipe(this.rig.slots[i]!.id as S) : baked.recipe;
+      const recipe = this.recipeOf(i);
       const opts = { state: frame.state, view: frame.view, owner: baked.owner };
+      // Той самий кадр іншого ракурсу — наперед, у вільний час: коли скелет обернеться, запікати не доведеться.
+      for (const other of ART_VIEWS) {
+        if (other !== frame.view && entry.views?.includes(other)) prebakeArt(this.scene, art, recipe, { state: frame.state, view: other, owner: baked.owner });
+      }
       if (!slot.image || slot.kind !== "baked") {
         // Нове зображення: `setBakedArt` веде облік показаних кадрів лише для своїх зображень.
         if (slot.image) this.remove(slot.image, true);
