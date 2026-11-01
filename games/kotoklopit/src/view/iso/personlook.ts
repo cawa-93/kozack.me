@@ -147,6 +147,13 @@ export function catSocket(anim: PersonAnimId): "lap" | "arms" {
  */
 export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.62, shift: { x: 9, y: 8 } } as const;
 
+/**
+ * Пилосос у руках (`vacuum`, N4b: пилососить, руки порожні): кадр A4 `env/vacuum/cleaner` — pivot у ручці, яку тримає кулак
+ * (гніздо `held`), балон на полозках біля ніг, щітка на підлозі попереду. Шафа тим часом стоїть відчинена й порожня
+ * (`vacuumState`, `iso/looks.ts`): пилосос — у руках.
+ */
+export const VACUUM_HELD = { frame: { id: "env/vacuum/cleaner", state: null } as IsoFrame, scale: 1 } as const;
+
 /** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
 export interface HeldFrame {
   socket: "held" | "rod";
@@ -159,11 +166,15 @@ export interface HeldFrame {
 /**
  * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
  * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»); з порожніми руками в
- * анімації телефону (`anim` — `phone`) — телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина
- * котів (у точці `hands`).
+ * анімації телефону (`anim` — `phone`) — телефон біля вуха (`PHONE_HELD`), у анімації пилососа (`vacuum`) — пилосос
+ * (`VACUUM_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
 export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): HeldFrame | null {
-  if (item === null) return anim === "phone" ? { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift } : null;
+  if (item === null) {
+    if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
+    if (anim === "vacuum") return { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale };
+    return null;
+  }
   if (heldThing(item) === "cat") return null;
   switch (item.kind) {
     case "toy":

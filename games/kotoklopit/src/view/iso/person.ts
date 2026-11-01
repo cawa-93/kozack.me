@@ -353,7 +353,7 @@ export class IsoPersonView implements PersonPart {
 
   /**
    * Річ у руках — у гнізді `held`, вудочка — у `rod` (граючись із котом — лише паличка: пір'я кружляє над котом), телефон
-   * біля вуха (`anim` — `phone`) — у `held`; кота малює частина котів (у точці `hands`).
+   * біля вуха (`anim` — `phone`) і пилосос (`vacuum`) — у `held`; кота малює частина котів (у точці `hands`).
    */
   private updateCargo(item: Item | null, anim: PersonAnimId): void {
     const want = this.hidden ? null : heldFrame(item, anim);

@@ -30,6 +30,7 @@ import {
   shadowScale,
   SHADOW_WIDTH,
   SLEEP_DROOP,
+  VACUUM_HELD,
 } from "../src/view/iso/personlook";
 import { NO_EXTRAS } from "../src/view/iso/personmix";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../src/view/rig/anims/person/move";
@@ -37,6 +38,14 @@ import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { newGame } from "../src/sim/game";
 
 const toy = (quality: "cheap" | "premium"): ToyItem => ({ id: 1, kind: "toy", quality, x: 3, y: 9, uses: 0 });
+
+/** Стан гри: персонаж пилососить (тривала дія біля шафи з пилососом), руки порожні. */
+function vacuuming() {
+  const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+  state.character.held = null;
+  state.character.activity = { kind: "use", target: "vacuum", progress: 0 };
+  return state;
+}
 
 describe("очі засинання (§8.8)", () => {
   it("розплющені, напівзаплющені (сонний увечері, виснажений), заплющені — засинаючи", () => {
@@ -130,6 +139,18 @@ describe("речі в руках (§8.4)", () => {
     expect(heldFrame({ kind: "cat", cat: 3 }, "phone")).toBeNull();
     expect(heldFrame(items[0]!, "phone")?.frame.id).toBe("item/dish/raw");
     for (const item of items) expect(heldFrame(item)?.scale).toBe(1);
+  });
+
+  it("пилососить — пилосос A4 у гнізді рук, лише з порожніми руками в анімації пилососа", () => {
+    const vacuum = heldFrame(null, "vacuum");
+    expect(vacuum?.socket).toBe("held");
+    expect(vacuum?.frame).toEqual(VACUUM_HELD.frame);
+    expect(vacuum?.scale).toBe(1);
+    expect(artEntry(VACUUM_HELD.frame.id)?.points?.["brush"]).toBeDefined();
+    expect(heldFrame({ kind: "cat", cat: 3 }, "vacuum")).toBeNull();
+    expect(heldFrame(items[0]!, "vacuum")?.frame.id).toBe("item/dish/raw");
+    // Анімація пилососа справді грає з річчю в гнізді `held` (N4b: щітка — від точки `brush` цього кадру).
+    expect(personAnim(vacuuming(), { moving: false, sleepiness: 0 }).anim).toBe("vacuum");
   });
 
   it("у разовій справі річ з'являється в руці й лишає її в мить дотику (`PERSON_CONTACT_MS`), а не з першого кадру", () => {
