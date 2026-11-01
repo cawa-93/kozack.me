@@ -6,18 +6,13 @@ import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
-import { currentGfx } from "./view/gfx";
 import { catRenderConfig } from "./view/iso/catrender";
 import { BASE_HEIGHT, BASE_WIDTH } from "./view/viewport";
 
 const session = Session.restore({ address: "she", difficulty: "normal" });
 
-// Яка графіка (крок 16): нове оформлення DOM-інтерфейсу (`overlay.css`) до кінця хвилі 3 діє лише під
-// `:root[data-gfx="iso"]`, щоб старий вигляд лишався як був.
-const gfx = currentGfx();
-document.documentElement.dataset.gfx = gfx;
-// Нова графіка на програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`).
-const render = catRenderConfig(gfx);
+// На програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`, крок 16).
+const render = catRenderConfig();
 
 // Режим розробки (§11.5): у `npm run dev` і на прев'ю Netlify; у продакшн-збірку не потрапляє.
 if (__DEV_TOOLS__) {

@@ -36,10 +36,9 @@ export function isSoftwareRenderer(name: string | null): boolean {
 }
 
 /**
- * Налаштування `render` для `new Phaser.Game` за графікою сторінки: у новій графіці на програмному WebGL — одна текстура на
- * пакет; інакше — нічого (старий вигляд не змінюється до хвилі 3). `renderer` — щоб перевірити без браузера.
+ * Налаштування `render` для `new Phaser.Game`: на програмному WebGL — одна текстура на пакет; інакше — нічого (типові).
+ * `renderer` — щоб перевірити без браузера.
  */
-export function catRenderConfig(gfx: string, renderer: () => string | null = webglRenderer): { maxTextures: number } | null {
-  if (gfx !== "iso") return null;
+export function catRenderConfig(renderer: () => string | null = webglRenderer): { maxTextures: number } | null {
   return isSoftwareRenderer(renderer()) ? { maxTextures: 1 } : null;
 }

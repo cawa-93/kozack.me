@@ -537,21 +537,14 @@ describe("що грає кіт цього кадру (`catPlay`)", () => {
 });
 
 describe("рендерер (`catrender.ts`)", () => {
-  it("одна текстура на пакет — лише в новій графіці на програмному WebGL", () => {
+  it("одна текстура на пакет — лише на програмному WebGL", () => {
     expect(isSoftwareRenderer("ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)")).toBe(true);
     expect(isSoftwareRenderer("llvmpipe (LLVM 15.0.7, 256 bits)")).toBe(true);
     expect(isSoftwareRenderer("ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)")).toBe(false);
     expect(isSoftwareRenderer("Adreno (TM) 640")).toBe(false);
     expect(isSoftwareRenderer(null)).toBe(false);
-    expect(catRenderConfig("iso", () => "SwiftShader")).toEqual({ maxTextures: 1 });
-    expect(catRenderConfig("iso", () => "Apple GPU")).toBeNull();
-    let asked = false;
-    expect(
-      catRenderConfig("legacy", () => {
-        asked = true;
-        return "SwiftShader";
-      }),
-    ).toBeNull();
-    expect(asked).toBe(false);
+    expect(catRenderConfig(() => "SwiftShader")).toEqual({ maxTextures: 1 });
+    expect(catRenderConfig(() => "Apple GPU")).toBeNull();
+    expect(catRenderConfig(() => null)).toBeNull();
   });
 });
