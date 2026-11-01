@@ -49,6 +49,7 @@ import { Viewport } from "../view/viewport";
 import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
 import { currentGfx } from "../view/gfx";
 import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
+import { flyIsoIcon } from "../view/iso/marksflight";
 import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
 
@@ -658,6 +659,8 @@ export class DayScene extends Phaser.Scene {
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
+    // Нова графіка (крок 16, T4): політ у її манері — `src/view/iso/marksflight.ts`.
+    if (this.world.projection.kind === "iso") return flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
     const image = this.add.image(from.x, from.y, iconTexture(icon)).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
     const flight = { t: 0 };
     this.tweens.add({
