@@ -3,11 +3,13 @@
 // `world/objects.ts` (`IsoObjectLook.use`: де персонаж стоїть чи сидить і куди дивиться). За справою з котом, лотком чи
 // безладом — лицем до них. Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Обличчя, коли воно головне
 // (засинає, падає без сил: §8.8 «плавно заплющує очі»), видно: ракурс `back` ховає очі (`showFace`, `SLEEP_TURN`). Кота, якого
-// купають, видно перед персонажем (`BATH_FACE`). Без Phaser.
+// купають, видно перед персонажем (`BATH_FACE`). Разові справи біля речі (узяв із холодильника, насипав корм, запустив
+// пральку, забрав пакунки) — лицем до неї (`shotPlace`, `shotFace`). Без Phaser.
 //
 // Перевіряє `tests/isopersonspot.test.ts`.
 
 import { itemPoint, OBJECTS } from "../../sim/home";
+import type { GameEvent } from "../../sim/events";
 import type { GameState, Vec } from "../../sim/types";
 import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
 import type { RigFacing } from "../rig/types";
@@ -120,4 +122,62 @@ export function glideOffset(offset: Vec, target: Vec, seconds: number, out: Vec 
   out.x = k === 1 ? target.x : offset.x + dx * k;
   out.y = k === 1 ? target.y : offset.y + dy * k;
   return out;
+}
+
+/** Біля чого разова справа: річ квартири (`id` з `OBJECTS`) чи річ на підлозі (`item:<id>`: миска, годівниця). */
+export type ShotPlace = { readonly object: string } | { readonly item: number };
+
+/**
+ * Біля чого разова справа від події (`personEventAnim`): узяв і поклав — річ, з якої взяв чи на яку поклав (холодильник,
+ * плита, стіл, стільниця, шафка з кормом); викинув — смітник; насипав корм, налив води, спорожнив годівницю — миска чи
+ * годівниця; відкрив кран котові й випив ліки — умивальник; пральна машина; розпакував ящики; двері (пакунки, кіт зі сходів,
+ * мамині гостинці). null — подія не біля речі (кіт на руках, вкусили, спіткнувся).
+ */
+export function shotPlace(event: GameEvent): ShotPlace | null {
+  switch (event.type) {
+    case "took":
+    case "put":
+      return { object: event.object };
+    case "trashed":
+      return { object: "trash" };
+    case "fed":
+    case "watered":
+    case "feeder-emptied":
+      return { item: event.item };
+    case "tap-opened":
+    case "person-meds":
+      return { object: "sink" };
+    case "laundry":
+      return event.stage === "started" || event.stage === "hung" || event.stage === "cat" ? { object: "washer" } : null;
+    case "unpacked":
+      return { object: "boxes" };
+    case "received":
+      return { object: "door" };
+    case "cat-returned":
+      return event.caught ? { object: "door" } : null;
+    case "modifier":
+      return event.kind === "mom-food" && event.value === 0 ? { object: "door" } : null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Куди дивиться персонаж, роблячи разову справу біля `place` (напрям у клітинках; null — як каже `personAnim`): до речі
+ * квартири — за `use.facing` (`world/objects.ts`: лицем до холодильника, пральки, дверей), якщо річ перед ним у цьому
+ * напрямі, інакше (обійшов стіл з іншого боку) — до середини її сліду; до миски чи годівниці — до неї.
+ */
+export function shotFace(state: GameState, place: ShotPlace): Vec | null {
+  const body = state.character.body;
+  if ("item" in place) {
+    const item = state.home.items.find((i) => i.id === place.item);
+    return toward(body, item ? itemPoint(item) : null);
+  }
+  if (!OBJECT_IDS.has(place.object)) return null;
+  const look = isoObjectLook(place.object);
+  const box = look.footprint;
+  const center = { x: (box.x0 + box.x1) / 2, y: (box.y0 + box.y1) / 2 };
+  const face = look.use?.facing;
+  if (face && (center.x - body.x) * face.x + (center.y - body.y) * face.y > 0) return face;
+  return toward(body, center);
 }

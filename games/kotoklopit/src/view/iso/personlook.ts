@@ -1,10 +1,11 @@
 // Що показує персонаж нового вигляду (крок 16, T2) — чисті правила без Phaser для `iso/person.ts`: кадр очей за тим, наскільки
-// вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук, чи анімація сама хилить голову, у якому гнізді кіт (на
-// руках чи на колінах), чи брати накладку рук, порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
+// вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук (і коли вона там з'являється чи зникає в разовій справі),
+// телефон біля вуха, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах), чи брати накладку рук,
+// порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
 // `tests/isoperson.test.ts`.
 
 import type { Item } from "../../sim/types";
-import { PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
+import { PERSON_CONTACT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
@@ -134,22 +135,49 @@ export function catSocket(anim: PersonAnimId): "lap" | "arms" {
 }
 
 /**
- * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
- * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»). Кіт і порожні руки — null:
- * кота малює частина котів (у точці `hands`).
+ * Телефон біля вуха (`phone`, N4b: дзвонить мама, руки порожні): кадр телефона з кухонної стільниці (A6
+ * `mess/trinket/phone`), у стані `fallen` — навскіс і зі світним екраном, тож у руці його видно як телефон, а не як темну
+ * плитку; удвічі менший (на стільниці його намальовано більшим, ніж у руці, щоб читався з кімнати).
  */
-export function heldFrame(item: Item | null): { socket: "held" | "rod"; frame: IsoFrame } | null {
-  if (item === null || heldThing(item) === "cat") return null;
+export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.5 } as const;
+
+/** Що в гнізді рук: гніздо, кадр і масштаб відносно звичайного (1 — як намальовано). */
+export interface HeldFrame {
+  socket: "held" | "rod";
+  frame: IsoFrame;
+  scale: number;
+}
+
+/**
+ * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
+ * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»); з порожніми руками в
+ * анімації телефону (`anim` — `phone`) — телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина
+ * котів (у точці `hands`).
+ */
+export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): HeldFrame | null {
+  if (item === null) return anim === "phone" ? { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale } : null;
+  if (heldThing(item) === "cat") return null;
   switch (item.kind) {
     case "toy":
-      return { socket: "rod", frame: { id: `item/toy/${item.toy.quality}`, state: "hand" } };
+      return { socket: "rod", frame: { id: `item/toy/${item.toy.quality}`, state: "hand" }, scale: 1 };
     case "catfood":
-      return { socket: "held", frame: { id: "item/scoop", state: item.sterile ? "sterile" : item.quality } };
+      return { socket: "held", frame: { id: "item/scoop", state: item.sterile ? "sterile" : item.quality }, scale: 1 };
     case "raw":
     case "meal":
     case "burnt":
-      return { socket: "held", frame: dishFrame(item) };
+      return { socket: "held", frame: dishFrame(item), scale: 1 };
     default:
       return null;
   }
+}
+
+/**
+ * Що показати в руках у мить `elapsed` (мс від початку) разової справи `shot`: до миті дотику (`PERSON_CONTACT_MS`: рука
+ * торкається речі — «бере» з полиці, «кладе» на стіл, «викидає», «миски» — висипав корм) — те, що було в руках до події
+ * (`before`), з неї — те, що в руках зараз (`now`). Подія приходить на початку анімації, коли в стані гри річ уже взято чи
+ * покладено: інакше рука тягнеться до полиці вже з річчю, а кладе — порожньою. Без разової з дотиком — `now`.
+ */
+export function shownHeld(before: Item | null, now: Item | null, shot: PersonAnimId | null, elapsed: number): Item | null {
+  if (shot === null || !(shot in PERSON_CONTACT_MS)) return now;
+  return elapsed < PERSON_CONTACT_MS[shot as keyof typeof PERSON_CONTACT_MS] ? before : now;
 }

@@ -47,10 +47,10 @@ import type { Hands, PersonPart, Point, WorldFrame } from "../world/part";
 import { isoDepth, type IsoPointHandle } from "./depth";
 import { ANCHOR_GAP } from "./geometry";
 import type { IsoFrame } from "./looks";
-import { armsOverlay, cargoDepth, catSocket, eyesFrame, heldFrame, movesHead, PERSON_DEPTH, personExtras, reachDepth, shadowScale } from "./personlook";
+import { armsOverlay, cargoDepth, catSocket, eyesFrame, heldFrame, movesHead, PERSON_DEPTH, personExtras, reachDepth, shadowScale, shownHeld } from "./personlook";
 import { mixAnims } from "./personmix";
 import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedPose, ROD_PLAY, type PartPose, type UnitRect } from "./personreach";
-import { glideOffset, personSpot, showFace } from "./personspot";
+import { glideOffset, personSpot, shotFace, shotPlace, showFace, type ShotPlace } from "./personspot";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
@@ -63,17 +63,27 @@ const FEATHER_DEPTH = 0.5;
 /** Як часто хвилі запаху міняють кадр, мс (як над брудним лотком, `iso/floor.ts`). */
 const SMELL_MS = 450;
 
-/** Разова анімація, що зараз грає: що, з якого моменту годинника анімацій і скільки. */
-interface OneShot {
+/**
+ * Разова анімація від події: що, скільки, біля чого (лицем до цього, `shotFace`) і що було в руках до події (до миті дотику
+ * рука ще з ним, `shownHeld`).
+ */
+interface Shot {
   anim: PersonAnimId;
-  start: number;
   ms: number;
+  place: ShotPlace | null;
+  before: Item | null;
 }
 
-/** Річ у гнізді: зображення, прикріплене раз назавжди, і кадр, що зараз показано. */
+/** Разова анімація, що зараз грає: подія й з якого моменту годинника анімацій. */
+interface OneShot extends Shot {
+  start: number;
+}
+
+/** Річ у гнізді: зображення, прикріплене раз назавжди, кадр, що зараз показано, і масштаб відносно базового кадру. */
 interface Cargo {
   image: Phaser.GameObjects.Image;
   key: string;
+  scale: number;
 }
 
 /** Обтинання кадру (`setCrop`): за яким кадром текстури його пораховано (новий кадр — інша роздільність, рахувати знову). */
@@ -121,7 +131,11 @@ export class IsoPersonView implements PersonPart {
   private readonly at: Vec2 = { x: 0, y: 0 };
   private oneShot: OneShot | null = null;
   /** Подія цього кадру, що просить разову анімацію (`onEvent` → наступний `update`). */
-  private pending: { anim: PersonAnimId; ms: number } | null = null;
+  private pending: Shot | null = null;
+  /** Разова почалася цього кадру (з першого кадру — з початку, без змішування з попередньою). */
+  private fresh = false;
+  /** Що було в руках за станом гри минулого кадру: подія, що міняє `held`, приходить уже після зміни. */
+  private lastHeld: Item | null = null;
   /** Основна анімація, яку грали минулого кадру (до зведення): та сама — зведена продовжує її фазу. */
   private main: PersonAnim | null = null;
   private choice: PersonAnimChoice | null = null;
@@ -166,7 +180,7 @@ export class IsoPersonView implements PersonPart {
   private socketImage(socket: "held" | "rod", frame: IsoFrame): Cargo {
     const image = addArt(this.ctx.scene, this.sprite, frame.id, { state: frame.state }).setVisible(false);
     this.sprite.attach(socket, image);
-    return { image, key: frameKey(frame) };
+    return { image, key: frameKey(frame), scale: 1 };
   }
 
   /** Запечені частини: ближні — рецептом вигляду, дальні — затіненим (`farRecipe`). */
@@ -195,7 +209,9 @@ export class IsoPersonView implements PersonPart {
     this.hidden = params.hidden;
     this.syncLook(character.look, params.dirty);
 
-    // Де видно й куди дивиться: за справою — на її місці, лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно).
+    this.advanceShot(params);
+    // Де видно й куди дивиться: за справою — на її місці, лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно);
+    // разова справа біля речі — лицем до неї.
     const spot = personSpot(state, choice.anim, params.progress);
     const body = character.body;
     this.tmpTarget.x = spot.at.x - body.x;
@@ -203,7 +219,8 @@ export class IsoPersonView implements PersonPart {
     glideOffset(this.offset, this.tmpTarget, dt / 1000, this.offset);
     this.at.x = body.x + this.offset.x;
     this.at.y = body.y + this.offset.y;
-    const faced = (spot.face && facingFromTiles(spot.face, this.facing)) || { view: choice.view, flip: choice.flip };
+    const face = (this.oneShot?.place ? shotFace(state, this.oneShot.place) : null) ?? spot.face;
+    const faced = (face && facingFromTiles(face, this.facing)) || { view: choice.view, flip: choice.flip };
     const facing = showFace(choice.anim, faced);
     this.facing = facing;
 
@@ -218,7 +235,10 @@ export class IsoPersonView implements PersonPart {
     // Тінь під ногами (не частина скелета: лишається на підлозі), запах над головою.
     const shadow = shadowScale(this.shadowBase, character.look.build, this.tmpPoint);
     this.shadow.setPosition(feet.x, feet.y).setScale(shadow.x, shadow.y).setVisible(!this.hidden);
-    this.updateCargo(character.held);
+    const shot = this.oneShot;
+    const shown = shownHeld(shot?.before ?? null, character.held, shot?.anim ?? null, shot ? this.clock - shot.start : 0);
+    this.updateCargo(shown, shot ? shot.anim : choice.anim);
+    this.lastHeld = character.held;
     this.updatePoints();
     const smelly = params.dirty && !this.hidden;
     this.smell.setVisible(smelly);
@@ -262,6 +282,21 @@ export class IsoPersonView implements PersonPart {
   }
 
   /**
+   * Разова від події: подія минулого кадру починає її (з годинника анімацій цього кадру), закінчена, схований персонаж і
+   * засинання — скасовують.
+   */
+  private advanceShot(params: PersonAnimChoice["params"]): void {
+    const asleep = params.progress !== null;
+    this.fresh = false;
+    if (this.pending && !params.hidden && !asleep) {
+      this.oneShot = { ...this.pending, start: this.clock };
+      this.fresh = true;
+    }
+    this.pending = null;
+    if (this.oneShot && (params.hidden || asleep || this.clock - this.oneShot.start >= this.oneShot.ms)) this.oneShot = null;
+  }
+
+  /**
    * Анімація кадру: разова від події (поки грає) чи основна; до обох — накладка рук (`armsOverlay`), зверху — очі засинання,
    * схована ближня рука (гладить: її ставить `placeArm`) і голова, що хилиться. За поступом (засинання) — час анімації з
    * поступу, інакше — годинник; та сама основна, лише з іншою накладкою чи очима, продовжує свою фазу.
@@ -269,14 +304,7 @@ export class IsoPersonView implements PersonPart {
   private play(choice: PersonAnimChoice, reach: { pet: number | null; rod: number | null }): void {
     const params = choice.params;
     const asleep = params.progress !== null;
-    let fresh = false;
-    if (this.pending && !params.hidden && !asleep) {
-      this.oneShot = { ...this.pending, start: this.clock };
-      fresh = true;
-    }
-    this.pending = null;
-    if (this.oneShot && (params.hidden || asleep || this.clock - this.oneShot.start >= this.oneShot.ms)) this.oneShot = null;
-
+    const fresh = this.fresh;
     const shot = this.oneShot;
     this.petCat = shot ? null : reach.pet;
     this.rodCat = shot ? null : reach.rod;
@@ -302,20 +330,25 @@ export class IsoPersonView implements PersonPart {
   }
 
   /**
-   * Річ у руках — у гнізді `held`, вудочка — у `rod` (граючись із котом — лише паличка: пір'я кружляє над котом); кота
-   * малює частина котів (у точці `hands`).
+   * Річ у руках — у гнізді `held`, вудочка — у `rod` (граючись із котом — лише паличка: пір'я кружляє над котом), телефон
+   * біля вуха (`anim` — `phone`) — у `held`; кота малює частина котів (у точці `hands`).
    */
-  private updateCargo(item: Item | null): void {
-    const want = this.hidden ? null : heldFrame(item);
+  private updateCargo(item: Item | null, anim: PersonAnimId): void {
+    const want = this.hidden ? null : heldFrame(item, anim);
     for (const socket of ["held", "rod"] as const) {
       const cargo = this.cargo[socket];
       const frame = want?.socket === socket ? want.frame : null;
       cargo.image.setVisible(frame !== null);
-      if (!frame) continue;
+      if (!frame || !want) continue;
       const key = frameKey(frame);
       if (cargo.key !== key) {
         cargo.key = key;
         setArt(cargo.image, frame.id, { state: frame.state });
+      }
+      if (cargo.scale !== want.scale) {
+        // `setArt` зберігає масштаб відносно базового кадру — множимо саме його.
+        cargo.image.setScale((cargo.image.scaleX / cargo.scale) * want.scale, (cargo.image.scaleY / cargo.scale) * want.scale);
+        cargo.scale = want.scale;
       }
       if (socket === "rod") cropTo(cargo.image, frame.id, this.rodCat !== null ? ROD_PLAY.stick : null, this.rodCrop);
     }
@@ -441,13 +474,15 @@ export class IsoPersonView implements PersonPart {
 
   onEvent(event: GameEvent): void {
     const shot = personEventAnim(event);
-    if (shot) this.pending = { anim: shot.anim, ms: shot.ms };
+    if (shot) this.pending = { anim: shot.anim, ms: shot.ms, place: shotPlace(event), before: this.lastHeld };
   }
 
   /** День показують заново: разові, ракурс і перехід до місця справи — з чистого аркуша. */
   reset(): void {
     this.oneShot = null;
     this.pending = null;
+    this.fresh = false;
+    this.lastHeld = null;
     this.facing = null;
     this.offset.x = 0;
     this.offset.y = 0;

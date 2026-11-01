@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item, ToyItem } from "../src/sim/types";
-import { PERSON_ANIM_IDS } from "../src/view/anim/ids";
+import { PERSON_ANIM_IDS, PERSON_CONTACT_MS } from "../src/view/anim/ids";
 import { personAnim } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
@@ -18,6 +18,8 @@ import {
   eyesFrame,
   heldFrame,
   movesHead,
+  PHONE_HELD,
+  shownHeld,
   OWN_ARMS,
   PERSON_DEPTH,
   personExtras,
@@ -111,6 +113,37 @@ describe("речі в руках (§8.4)", () => {
   it("кіт і порожні руки — нічого: кота малює частина котів", () => {
     expect(heldFrame(null)).toBeNull();
     expect(heldFrame({ kind: "cat", cat: 3 })).toBeNull();
+  });
+
+  it("телефон біля вуха — лише з порожніми руками в анімації телефону: кадр стільниці A6 зі світним екраном, менший", () => {
+    const phone = heldFrame(null, "phone");
+    expect(phone?.socket).toBe("held");
+    expect(phone?.frame).toEqual(PHONE_HELD.frame);
+    expect(phone?.scale).toBeLessThan(1);
+    const entry = artEntry(PHONE_HELD.frame.id);
+    expect(entry && framesOf(entry).some((f) => f.state === PHONE_HELD.frame.state)).toBe(true);
+    expect(heldFrame(null, "idle")).toBeNull();
+    expect(heldFrame({ kind: "cat", cat: 3 }, "phone")).toBeNull();
+    expect(heldFrame(items[0]!, "phone")?.frame.id).toBe("item/dish/raw");
+    for (const item of items) expect(heldFrame(item)?.scale).toBe(1);
+  });
+
+  it("у разовій справі річ з'являється в руці й лишає її в мить дотику (`PERSON_CONTACT_MS`), а не з першого кадру", () => {
+    const meal: Item = { kind: "meal", quality: "cheap" };
+    const scoop: Item = { kind: "catfood", quality: "cheap", sterile: false };
+    // Бере: до дотику рука порожня, з нього — з річчю.
+    expect(shownHeld(null, meal, "take", 0)).toBeNull();
+    expect(shownHeld(null, meal, "take", PERSON_CONTACT_MS.take - 1)).toBeNull();
+    expect(shownHeld(null, meal, "take", PERSON_CONTACT_MS.take)).toBe(meal);
+    // Кладе, викидає, насипає: до дотику річ ще в руці.
+    expect(shownHeld(meal, null, "put", PERSON_CONTACT_MS.put - 1)).toBe(meal);
+    expect(shownHeld(meal, null, "put", PERSON_CONTACT_MS.put)).toBeNull();
+    expect(shownHeld(meal, null, "trash", PERSON_CONTACT_MS.trash - 1)).toBe(meal);
+    expect(shownHeld(scoop, null, "bowl", PERSON_CONTACT_MS.bowl - 1)).toBe(scoop);
+    expect(shownHeld(scoop, null, "bowl", PERSON_CONTACT_MS.bowl)).toBeNull();
+    // Без разової чи в разовій без дотику — те, що в руках зараз.
+    expect(shownHeld(meal, null, null, 0)).toBeNull();
+    expect(shownHeld(null, meal, "trip", 0)).toBe(meal);
   });
 
   it("кіт сидячи — на колінах, інакше — на руках", () => {

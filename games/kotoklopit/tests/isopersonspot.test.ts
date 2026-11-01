@@ -11,7 +11,7 @@ import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
 import { facingFromTiles } from "../src/view/anim/catfacing";
 import { EYES, eyesFrame } from "../src/view/iso/personlook";
-import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, showFace, SLEEP_TURN } from "../src/view/iso/personspot";
+import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, shotFace, shotPlace, showFace, SLEEP_TURN } from "../src/view/iso/personspot";
 import { isoObjectLook } from "../src/view/world/objects";
 import { withCatCorner } from "./helpers";
 
@@ -108,6 +108,52 @@ describe("personSpot: де видно персонажа", () => {
     state.home.messes.push({ id: 77, kind: "vomit", x: 9.5, y: 9.5, cat: null });
     state.character.activity = { kind: "use", target: "mess:77", progress: 0 };
     expect(personSpot(state, "clean").face).toEqual({ x: 0, y: 1 });
+  });
+});
+
+describe("разові справи біля речі — лицем до неї", () => {
+  it("події справ кажуть, біля чого вони: річ квартири чи миска; події без речі — ні", () => {
+    const meal = { kind: "meal", quality: "cheap" } as const;
+    expect(shotPlace({ type: "took", object: "fridge", item: meal })).toEqual({ object: "fridge" });
+    expect(shotPlace({ type: "put", object: "table", item: meal })).toEqual({ object: "table" });
+    expect(shotPlace({ type: "trashed", item: meal })).toEqual({ object: "trash" });
+    expect(shotPlace({ type: "fed", item: 4, food: 1 })).toEqual({ item: 4 });
+    expect(shotPlace({ type: "watered", item: 5 })).toEqual({ item: 5 });
+    expect(shotPlace({ type: "tap-opened", cat: 1 })).toEqual({ object: "sink" });
+    expect(shotPlace({ type: "laundry", stage: "started" })).toEqual({ object: "washer" });
+    expect(shotPlace({ type: "laundry", stage: "spin" })).toBeNull();
+    expect(shotPlace({ type: "unpacked", moved: [] })).toEqual({ object: "boxes" });
+    expect(shotPlace({ type: "received", deliveries: [] })).toEqual({ object: "door" });
+    expect(shotPlace({ type: "cat-returned", cat: 1, caught: true })).toEqual({ object: "door" });
+    expect(shotPlace({ type: "picked-up", cat: 1, offended: false })).toBeNull();
+    expect(shotPlace({ type: "bite", cat: 1 } as never)).toBeNull();
+  });
+
+  it("до речі під стіною — за `use.facing` (спиною до нас); обійшов стіл — до середини сліду; до миски — до неї", () => {
+    const state = game().current;
+    for (const id of ["fridge", "stove", "washer", "sink", "trash", "counter-left", "cat-cabinet"]) {
+      const use = isoObjectLook(id).use!;
+      state.character.body = { ...state.character.body, x: use.at.x + 0.3, y: use.at.y + 0.2 };
+      expect(shotFace(state, { object: id }), id).toEqual(use.facing);
+    }
+    // Двері — у передній стіні: лицем до них — до камери.
+    const door = isoObjectLook("door").use!;
+    state.character.body = { ...state.character.body, x: door.at.x, y: door.at.y };
+    expect(shotFace(state, { object: "door" })).toEqual(door.facing);
+    expect(facingFromTiles(door.facing, null)?.view).toBe("front");
+    // Стіл: з боку стільця — як `use.facing`, з протилежного боку — до столу, а не спиною до нього.
+    const table = isoObjectLook("table");
+    state.character.body = { ...state.character.body, x: 14, y: 2.4 };
+    const face = shotFace(state, { object: "table" })!;
+    expect(face.y).toBeGreaterThan(0);
+    expect(table.use?.facing.y).toBeLessThan(0);
+    // Миска: до неї.
+    const bowl = state.home.items.find((i) => i.kind === "bowl")!;
+    const at = itemPoint(bowl);
+    state.character.body = { ...state.character.body, x: at.x + 1, y: at.y };
+    expect(shotFace(state, { item: bowl.id })).toEqual({ x: -1, y: 0 });
+    expect(shotFace(state, { item: 9999 })).toBeNull();
+    expect(shotFace(state, { object: "nothing" })).toBeNull();
   });
 });
 
