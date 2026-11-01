@@ -23,7 +23,7 @@ import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
-import { artOffset, boxCovers, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
+import { artOffset, boxCovers, DOOR_BOXES, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import {
   bedState,
@@ -31,9 +31,11 @@ import {
   cabinetLook,
   computerState,
   dishFrame,
+  doorState,
   fridgeLook,
   KIT_EXTRAS,
   kitLook,
+  opensDoor,
   shapedState,
   showerState,
   sinkState,
@@ -89,6 +91,24 @@ interface Wall {
   alpha: number;
 }
 
+/**
+ * Відчинені вхідні двері (`DOOR_BOXES`): поріг із лівим стояком — тим самим зображенням речі `door`, але вужчою коробкою;
+ * прочинене полотно й правий стояк — своїми зображеннями й коробками. Зачинені — звичайна річ зі своєю коробкою.
+ */
+interface OpenDoor {
+  /** Річ `door`: її зображення — і зачинені двері, і поріг відчинених. */
+  owner: Thing;
+  body: IsoBoxHandle;
+  leaf: Phaser.GameObjects.Image;
+  leafBox: IsoBoxHandle;
+  post: Phaser.GameObjects.Image;
+  postBox: IsoBoxHandle;
+  /** Чи двері зараз відчинені (що показано). */
+  open: boolean;
+  /** Коли двері відчинили востаннє (мс сцени; −∞ — ще не відчиняли). */
+  openedAt: number;
+}
+
 export class IsoApartmentView implements ApartmentPart {
   private readonly depth: IsoDepth;
   private readonly things = new Map<string, Thing>();
@@ -100,6 +120,7 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly glow: IsoHighlight;
   /** Ефекти над речами й котами (пара, дим, іскри, хропіння, задишка, чхання): квартира оновлюється після котів. */
   private readonly fx: IsoFxView;
+  private readonly door: OpenDoor;
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -140,6 +161,41 @@ export class IsoApartmentView implements ApartmentPart {
     this.wirePoint.place(wireAt.x, wireAt.y);
 
     for (const object of OBJECTS) this.things.set(object.id, this.thing(object));
+    this.door = this.openDoor(this.get("door"));
+  }
+
+  /** Шматки відчинених дверей (`OpenDoor`): поки двері зачинені, їхніх коробок у порядку немає. */
+  private openDoor(door: Thing): OpenDoor {
+    const leaf = this.art("env/door/leaf", door.at, 0).setVisible(false);
+    const post = this.art("env/door/post", door.at, 0).setVisible(false);
+    const view: OpenDoor = {
+      owner: door,
+      body: this.depth.addBox(DOOR_BOXES.body, (d) => {
+        door.depth = d;
+        door.body.image.setDepth(d);
+      }),
+      leaf,
+      leafBox: this.depth.addBox(DOOR_BOXES.leaf, (d) => leaf.setDepth(d)),
+      post,
+      postBox: this.depth.addBox(DOOR_BOXES.post, (d) => post.setDepth(d)),
+      open: false,
+      openedAt: Number.NEGATIVE_INFINITY,
+    };
+    for (const box of [view.body, view.leafBox, view.postBox]) box.setActive(false);
+    return view;
+  }
+
+  /** Вхідні двері відчинені чи зачинені (`doorState`): кадр, коробки й шматки відчинених. */
+  private drawDoor(state: GameState, time: number): void {
+    const door = this.get("door");
+    const open = doorState(state, time - this.door.openedAt) === "open";
+    this.show(door, { id: "env/door", state: open ? "open" : "closed" });
+    if (open === this.door.open) return;
+    this.door.open = open;
+    door.box.setActive(!open);
+    for (const box of [this.door.body, this.door.leafBox, this.door.postBox]) box.setActive(open);
+    this.door.leaf.setVisible(open);
+    this.door.post.setVisible(open);
   }
 
   /** Кадр запису в точці `at` на глибині `depth`. */
@@ -202,9 +258,11 @@ export class IsoApartmentView implements ApartmentPart {
       const present = isPresent(state, thing.object);
       thing.present = present;
       thing.body.image.setVisible(present);
-      thing.box.setActive(present);
+      // Коробку дверей вмикає й вимикає `drawDoor`: у відчинених вона інша.
+      if (thing !== this.door.owner) thing.box.setActive(present);
       if (!present) for (const piece of thing.extras.values()) piece.image.setVisible(false);
     }
+    this.drawDoor(state, frame.time);
     this.drawStates(state);
     this.drawSurfaces(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
@@ -215,6 +273,7 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   onEvent(event: GameEvent, time: number): void {
+    if (opensDoor(event)) this.door.openedAt = time;
     this.fx.onEvent(event, time);
   }
 
@@ -300,6 +359,7 @@ export class IsoApartmentView implements ApartmentPart {
 
   reset(): void {
     this.lastTime = null;
+    this.door.openedAt = Number.NEGATIVE_INFINITY;
     this.fx.reset();
   }
 
@@ -317,6 +377,9 @@ export class IsoApartmentView implements ApartmentPart {
       wall.image.destroy();
     }
     this.walls.length = 0;
+    for (const box of [this.door.body, this.door.leafBox, this.door.postBox]) box.remove();
+    this.door.leaf.destroy();
+    this.door.post.destroy();
     this.wirePoint.remove();
     this.wire.image.destroy();
     for (const image of this.backdrop) image.destroy();

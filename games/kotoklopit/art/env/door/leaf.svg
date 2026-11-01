@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 158" width="252" height="158">
+<!-- env/door/leaf — прочинене полотно вхідних дверей (env/door, стан open), §8.4, §8.5, §9.12. Пакет A1b, хвиля 3 — окремим записом.
+size 252×158; pivot (106, 100) — точка підлоги під центром сліду дверей (11; 11,5), як у env/door; points — немає.
+Прочинене в кімнату на 72° на завісах праворуч: видно внутрішню дерев'яну грань із подряпинами кігтів знизу (кіт проситься на сходи, «Втікач»),
+під полотном падаюча тінь. Полотно стоїть у кімнаті в межах x 11,3–11,8, y 9,7–11,4 (на ящики (12, 9) не заходить), тож у грі воно має свою
+коробку глибини: кіт праворуч від полотна — перед ним, персонаж біля дверей (11; 10,5) — за ним; поріг (env/door) — під полотном, правий
+стояк (env/door/post) — над завісами.
+Без шарів.
+-->
+<g id="p-leaf">
+<path d="M169.4 127.4L242.9 55.3L226 50.9L152.4 123.1Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M166.2 122.6L237.7 52.4L237.7 15.4L166.2 85.6Z" fill="#9a6a47"/>
+<path d="M158.1 120.5L166.2 122.6L166.2 85.6L158.1 83.5Z" fill="#9a6a47"/>
+<path d="M166.2 85.6L237.7 15.4L229.6 13.4L158.1 83.5Z" fill="#65505d"/>
+<path d="M171.1 109.8L232.7 49.3L232.7 24.3L171.1 84.8Z" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M207.3 58.3Q206.5 66.8 210.1 74.5Q210.8 66 207.3 58.3ZM210.9 52.6Q210.1 61.6 213.8 69.8Q214.5 60.9 210.9 52.6ZM214.6 50.5Q213.5 58.7 217.1 66.1Q217.8 58 214.6 50.5ZM218.3 49.4Q217 55.9 220 61.8Q221.4 55.3 218.3 49.4Z" fill="#b98b60"/>
+<path d="M227 47.9L231.9 43.1L231.9 28.1L227 32.9Z" fill="#a69f9b"/>
+<path d="M229.4 34.5Q223 37.5 219.6 43.7Q226.6 41.3 229.4 34.5Z" fill="#cdc6be"/>
+<path d="M227 47.9L231.9 43.1L231.9 28.1L227 32.9Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M229.4 34.5Q223 37.5 219.6 43.7Q226.6 41.3 229.4 34.5Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M166.2 122.6L237.7 52.4L237.7 46.4Q216.2 64.5 198.3 85Q180.5 105.1 166.2 115.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M237.7 15.4Q202.2 50.9 166.2 85.6Q162.1 84.7 158.1 83.5" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M166.2 85.6L166.2 122.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M158.1 120.5Q158.4 102 158.1 83.5Q194.5 49.2 229.6 13.4Q233.6 14.5 237.7 15.4Q237.3 33.9 237.7 52.4" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M158.1 120.5Q162.2 121.5 166.2 122.6Q202.2 87.8 237.7 52.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

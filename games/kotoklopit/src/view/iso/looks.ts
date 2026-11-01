@@ -4,6 +4,7 @@
 
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config";
+import type { GameEvent } from "../../sim/events";
 import { objectAt } from "../../sim/home";
 import { robotProgress } from "../../sim/household";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
@@ -116,8 +117,42 @@ export function boxesState(state: GameState): string | null {
   return count > 0 ? `pile-${count}` : null;
 }
 
+/**
+ * Скільки вхідні двері стоять прочинені після того, як їх відчинили, мс сцени: сим відчиняє їх миттю (`openDoor`), а вигляд
+ * показує відчинені, щоб це було видно.
+ */
+export const DOOR_OPEN_MS = 1600;
+
+/**
+ * Подія, з якою відчиняють вхідні двері (§9.12, «Двері й гості»; `openDoor` у `sim/door.ts`): забрали пакунки, кіт вибіг на
+ * сходи чи повернувся з них (упіймали або сам), вирушили в поїздку чи повернулися, зайшли мама, гості, ОСББ чи ветеринарка.
+ */
+export function opensDoor(event: GameEvent): boolean {
+  switch (event.type) {
+    case "received":
+    case "escaped":
+    case "cat-returned":
+    case "trip-started":
+    case "trip-ended":
+      return true;
+    case "modifier":
+      return event.kind === "mom-food" || event.kind === "guests" || event.kind === "inspection" || event.kind === "home-vet";
+    default:
+      return false;
+  }
+}
+
+/**
+ * Вхідні двері (§8.4, §9.12): прочинені, поки кіт на сходах (видно, куди він подівся, — його ловлять біля дверей), і ще
+ * `DOOR_OPEN_MS` після того, як їх відчинили (`sinceOpened` — мс від останньої такої події; від'ємне — подій не було).
+ */
+export function doorState(state: GameState, sinceOpened: number): "closed" | "open" {
+  if (state.cats.some((cat) => cat.away === "stairs")) return "open";
+  return sinceOpened >= 0 && sinceOpened < DOOR_OPEN_MS ? "open" : "closed";
+}
+
 /** Накладки аптечки: ласощі, нашийник і м'ята — у порядку їхніх запасів у `STORAGES` (після таблеток і крапель). */
-export const KIT_EXTRAS: readonly ArtId[] = ["env/cat-kit/treats", "env/cat-kit/collar", "env/cat-kit/catnip"];
+export const KIT_EXTRAS: readonly ArtId[] =["env/cat-kit/treats", "env/cat-kit/collar", "env/cat-kit/catnip"];
 
 /**
  * Котяча аптечка (§6.4, як `storagelook.ts`): стан — середнє наповнення її запасів; накладки `KIT_EXTRAS` — поки ці запаси

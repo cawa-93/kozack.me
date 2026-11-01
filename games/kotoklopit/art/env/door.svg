@@ -7,8 +7,9 @@ size 252×158; pivot (106, 100) — точка підлоги під центр�
 прорізу: паркет із боку кімнати, дерев'яний поріг урівень із підлогою й сіра плитка сходового майданчика назовні; важкий низ продовжує низ
 плінтусів, праворуч підлога на 0,03 клітинки заходить під row11-x12.
 Стани: st-closed — полотно в прорізі, назовні червоний дермантин зі стьобкою й латунними цвяшками (одного бракує), ручка й замок ліворуч;
-st-open — прочинене в кімнату на 72° на завісах праворуч (видно внутрішню дерев'яну грань із подряпинами кігтів знизу — кіт проситься
-на сходи, §9.12 «Втікач»; під полотном падаюча тінь), прохід на сходи вільний. Полотно стоїть у межах x 11,3–11,9: на ящики (12, 9) не заходить.
+st-open — прохід на сходи вільний: лише поріг і лівий стояк. Прочинене полотно (env/door/leaf) і правий стояк (env/door/post) — окремі
+записи на тому самому полотні з тим самим pivot: у грі в кожного своя коробка глибини (iso/apartment.ts), бо полотно стоїть у кімнаті, і
+кіт праворуч від нього — перед ним, а хто ліворуч — за ним; правий стояк у стані st-closed — тут, разом із полотном у прорізі.
 Без шарів.
 -->
 <g id="p-floor">
@@ -46,24 +47,7 @@ st-open — прочинене в кімнату на 72° на завісах �
 <path d="M48.4 70.1Q48 51.6 48.4 33.1Q51.6 31.4 54.8 29.9Q110.7 57.3 166.2 85.6" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M48.4 70.1Q104.2 97.7 159.8 125.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
-<g id="p-leaf-open" class="st-open">
-<path d="M169.4 127.4L242.9 55.3L226 50.9L152.4 123.1Z" fill="#3f2541" fill-opacity="0.3"/>
-<path d="M166.2 122.6L237.7 52.4L237.7 15.4L166.2 85.6Z" fill="#9a6a47"/>
-<path d="M158.1 120.5L166.2 122.6L166.2 85.6L158.1 83.5Z" fill="#9a6a47"/>
-<path d="M166.2 85.6L237.7 15.4L229.6 13.4L158.1 83.5Z" fill="#65505d"/>
-<path d="M171.1 109.8L232.7 49.3L232.7 24.3L171.1 84.8Z" fill="none" stroke="#6d4a35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M207.3 58.3Q206.5 66.8 210.1 74.5Q210.8 66 207.3 58.3ZM210.9 52.6Q210.1 61.6 213.8 69.8Q214.5 60.9 210.9 52.6ZM214.6 50.5Q213.5 58.7 217.1 66.1Q217.8 58 214.6 50.5ZM218.3 49.4Q217 55.9 220 61.8Q221.4 55.3 218.3 49.4Z" fill="#b98b60"/>
-<path d="M227 47.9L231.9 43.1L231.9 28.1L227 32.9Z" fill="#a69f9b"/>
-<path d="M229.4 34.5Q223 37.5 219.6 43.7Q226.6 41.3 229.4 34.5Z" fill="#cdc6be"/>
-<path d="M227 47.9L231.9 43.1L231.9 28.1L227 32.9Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M229.4 34.5Q223 37.5 219.6 43.7Q226.6 41.3 229.4 34.5Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M166.2 122.6L237.7 52.4L237.7 46.4Q216.2 64.5 198.3 85Q180.5 105.1 166.2 115.6Z" fill="#3f2541" fill-opacity="0.16"/>
-<path d="M237.7 15.4Q202.2 50.9 166.2 85.6Q162.1 84.7 158.1 83.5" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M166.2 85.6L166.2 122.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M158.1 120.5Q158.4 102 158.1 83.5Q194.5 49.2 229.6 13.4Q233.6 14.5 237.7 15.4Q237.3 33.9 237.7 52.4" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M158.1 120.5Q162.2 121.5 166.2 122.6Q202.2 87.8 237.7 52.4" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
-</g>
-<g id="p-post-right">
+<g id="p-post-right" class="st-closed">
 <path d="M152.1 132.6L160.4 136.8L160.4 91.8L152.1 87.6Z" fill="#e0d4b9"/>
 <path d="M202 116L160.4 136.8L160.4 91.8L202 71Z" fill="#e0d4b9"/>
 <path d="M193.7 66.8L202 71L160.4 91.8L152.1 87.6Z" fill="#65505d"/>
