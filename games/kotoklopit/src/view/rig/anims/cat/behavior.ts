@@ -714,26 +714,28 @@ function lick(): CatAnim {
 
 /**
  * Ігрова боротьба, зверху (§9.4, поза 4): стоїть над другом, що лежить на спині, — тіло відсунуте назад і трохи піднесене,
- * ближня передня лапа високо піднята над мордою (поверх голови) й легенько б'є згори вниз (двічі й пауза); хвіст угору й
- * мотається.
+ * ближня передня лапа піднята вперед-угору перед мордою (подушечкою на висоті очей, попереду носа; плече подалося вперед,
+ * голова відхилилася назад-угору, щоб лапу було видно окремо від голови) й легенько б'є згори вниз (двічі й пауза); хвіст
+ * угору й мотається. Лапа весь час під головою (z вихідної пози): піднята, вона попереду морди й голову не перетинає.
  */
 function paw(): CatAnim {
   const D = 1400;
-  const base = (rot: number, look: number): Pose =>
+  /** `lift` — 1: лапу піднято, 0: вдарила вниз. */
+  const base = (lift: number, rot: number): Pose =>
     standWith({
-      pelvis: { x: -9, y: -1 },
-      body: { rot: -10 },
-      neck: { rot: 18 - look },
-      head: { rot: -6 },
+      pelvis: { x: -9 - lift, y: -1 },
+      body: { rot: -10 - lift * 4 },
+      neck: { rot: 18 - lift * 34, x: -lift * 6 },
+      head: { rot: -6 + lift * 16 },
       legs: {
-        "leg-front-near": { rot, sx: 0.95, y: -2 },
+        "leg-front-near": { rot, x: lift * 5, y: -2 - lift * 2, sx: 0.95 + lift * 0.04 },
         "leg-front-far": at(-6),
         "leg-back-far": at(-9),
         "leg-back-near": at(-9),
       },
     });
-  const raised = base(-132, 14);
-  const hit = base(-40, 0);
+  const raised = base(1, -114);
+  const hit = base(0, -40);
   return build(
     D,
     true,
@@ -742,25 +744,10 @@ function paw(): CatAnim {
       { t: 140, pose: hit, ease: "out" },
       { t: 380, pose: raised, ease: "in" },
       { t: 520, pose: hit, ease: "out" },
-      { t: 800, pose: base(-110, 10) },
+      { t: 800, pose: base(0.8, -106) },
       { t: D, pose: raised },
     ],
-    {
-      bones: { tail: tailWave(sine(D, 700, 22, 14)) },
-      // Піднята лапа — над мордою, поверх голови; б'ючи вниз, ховається за морду, як і стояла.
-      slots: {
-        "leg-front-near": {
-          z: [
-            { t: 0, v: 10.5 },
-            { t: 100, v: 7 },
-            { t: 260, v: 10.5 },
-            { t: 480, v: 7 },
-            { t: 640, v: 10.5 },
-          ],
-        },
-      },
-      back: { slots: { "leg-front-near": { z: [{ t: 0, v: slotZ("leg-front-near", "back") }] } } },
-    },
+    { bones: { tail: tailWave(sine(D, 700, 22, 14)) } },
   );
 }
 
