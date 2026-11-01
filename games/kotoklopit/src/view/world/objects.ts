@@ -8,6 +8,7 @@
 // `tests/isoworld.test.ts`).
 
 import { OBJECTS } from "../../sim/home";
+import type { FillStage } from "../../sim/storage";
 import type { HomeItem, Quality, Vec } from "../../sim/types";
 
 // --- Ізометрія (крок 16) ------------------------------------------------------------------------
@@ -40,6 +41,11 @@ export interface IsoObjectLook {
    * верхня коробка купи, піддон душу (у кабіні кіт сидить на мокрому піддоні біля входу). null — на річ не вилазять (двері).
    */
   readonly perch: number | null;
+  /**
+   * Сховища-фігури (мішок наповнювача, бак стерильного корму, §6.4): висота, на яку стає кіт, за наповненням `full-0`…`full-4`
+   * — форма речі (кадр стану) росте з запасом; null — висота стала (`perch`).
+   */
+  readonly perchFull: readonly [number, number, number, number, number] | null;
   /** Де персонаж стоїть чи сидить, користуючись річчю (дані для T2); null — річ лише обстановка. */
   readonly use: IsoUse | null;
   /** Зсув бабла від точки над найвищою точкою, одиниці арту (монітор стоїть ближче до стіни, ніж середина стола). */
@@ -51,6 +57,7 @@ interface LookSpec {
   top: number;
   tall?: number;
   perch?: number | null;
+  perchFull?: IsoObjectLook["perchFull"];
   use?: IsoUse | null;
   bubble?: Vec;
   /** Слід, якщо не весь прямокутник речі. */
@@ -101,8 +108,12 @@ const LOOKS: Readonly<Record<string, LookSpec>> = {
   door: { top: 40, perch: null, use: { at: { x: 11, y: 10.5 }, pose: "stand", facing: { x: 0, y: 1 } } },
   // Шафа з пилососом під передньою стіною: дверцята — на видній грані, персонаж стоїть з боку кімнати.
   vacuum: { top: 140, use: { at: { x: 16.5, y: 9.4 }, pose: "stand", facing: { x: 0, y: 1 } } },
-  "litter-bag": { top: 56, use: front(5.5, 7.35) },
-  "sterile-bin": { top: 50, use: { at: { x: 17.4, y: 6.5 }, pose: "stand", facing: { x: 1, y: 0 } } },
+  // Мішок наповнювача (`env/litter-bag`): 0 — зіжмаканий на підлозі, далі — маківка мішка (до 25, 33, 43, 50 над підлогою)
+  // без зав'язки, кіт трохи вминає її лапами. Запас ще не бував — річ невидима.
+  "litter-bag": { top: 56, perchFull: [4, 22, 30, 40, 48], use: front(5.5, 7.35) },
+  // Бак стерильного корму (`env/sterile-bin`): 0 — кришку знято, кіт стоїть на борті (≈ 44); 1–3 — на кришці (50); 4 — на
+  // кришці, що лежить набакир на гірці корму (≈ 58).
+  "sterile-bin": { top: 50, perchFull: [44, 50, 50, 50, 58], use: { at: { x: 17.4, y: 6.5 }, pose: "stand", facing: { x: 1, y: 0 } } },
   // Аптечка: кришка ≈ 40, ручка — до 56.
   "cat-kit": { top: 40, tall: 56, use: front(13.5, 7.35) },
   // Ящики біля входу: купа до 64, а кіт лежить у верхній коробці (≈ 48).
@@ -118,6 +129,7 @@ const ISO_LOOKS: ReadonlyMap<string, IsoObjectLook> = new Map(
       top: spec.top,
       tall: spec.tall ?? spec.top,
       perch: spec.perch === undefined ? spec.top : spec.perch,
+      perchFull: spec.perchFull ?? null,
       use: spec.use ?? null,
       bubble: spec.bubble ?? { x: 0, y: 0 },
     };
@@ -140,10 +152,12 @@ export interface IsoPerch {
 
 /**
  * Де стоїть кіт, що виліз на річ `id` (§9.12, «Лазіння»), чи ховається під нею: дані для T1 і для старого кота на ізометричній
- * підлозі. На речі — над своєю точкою на висоті `perch`; у душовій кабіні — на мокрому піддоні біля входу; на підвіконні —
- * посередині дошки біля вікна; під річчю — визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на підлозі.
+ * підлозі. На речі — над своєю точкою на висоті `perch` (на сховищі-фігурі — за наповненням `stage`, `perchFull`: над
+ * зіжмаканим порожнім мішком кіт не висить на висоті повного); у душовій кабіні — на мокрому піддоні біля входу; на
+ * підвіконні — посередині дошки біля вікна; під річчю — визирає з-під ближчого до камери краю сліду (грань x1 чи y1), на
+ * підлозі.
  */
-export function isoCatPerch(id: string, cat: Vec, hiding: boolean): IsoPerch {
+export function isoCatPerch(id: string, cat: Vec, hiding: boolean, stage: FillStage | null = null): IsoPerch {
   const look = isoObjectLook(id);
   const f = look.footprint;
   if (hiding) {
@@ -158,7 +172,8 @@ export function isoCatPerch(id: string, cat: Vec, hiding: boolean): IsoPerch {
     const alongY = f.x1 - f.x0 < f.y1 - f.y0;
     return { at: alongY ? { x: f.x0 + SILL_SEAT, y: (f.y0 + f.y1) / 2 } : { x: (f.x0 + f.x1) / 2, y: f.y0 + SILL_SEAT }, lift: look.perch ?? 0 };
   }
-  return { at: { x: cat.x, y: cat.y }, lift: look.perch ?? 0 };
+  const lift = stage !== null && look.perchFull ? look.perchFull[stage] : look.perch;
+  return { at: { x: cat.x, y: cat.y }, lift: lift ?? 0 };
 }
 
 /** Речі на підлозі (§9.12, §8.5, §8.7): котячий куточок і техніка — для висоти бабла й ширини малюнка. */

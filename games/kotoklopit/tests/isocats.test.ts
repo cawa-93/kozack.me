@@ -48,6 +48,7 @@ import {
 } from "../src/view/iso/catspot";
 import { isoScreenDir } from "../src/view/anim/iso";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
+import { shapedStage } from "../src/view/iso/looks";
 import { catPose } from "../src/view/pose";
 import { isoOrder } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -671,6 +672,20 @@ describe("де кіт (`catSpot`)", () => {
     expect(besideSide(save.current, right, true, BESIDE.litter.along, BESIDE.litter.front)).toBe(1);
   });
 
+  it("на мішку наповнювача — на висоті його форми: над порожнім зіжмаканим мішком кіт не висить (хвиля 3)", () => {
+    const save = game();
+    const home = save.current.home;
+    if (!home.acquired.includes("litter")) home.acquired.push("litter");
+    const bag = objectById("litter-bag");
+    const cat = withCat(save, { x: bag.x + 0.5, y: bag.y + 0.5 });
+    cat.act = act("sleep");
+    const look = isoObjectLook("litter-bag");
+    home.supplies.litter = { cheap: 0, premium: 0 };
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", box: "litter-bag", lift: look.perchFull![0] });
+    home.supplies.litter = { cheap: 100, premium: 0 };
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", lift: look.perchFull![4] });
+  });
+
   it("на справжньому дні: кожен кіт удома має місце, і на меблях — на висоті їхнього верху", () => {
     const save = game();
     for (let i = 0; i < 6; i++) withCat(save, { x: 3.5 + i * 2, y: 8.5 }, i);
@@ -679,7 +694,11 @@ describe("де кіт (`catSpot`)", () => {
       for (const cat of save.current.cats) {
         const spot = catSpot(save.current, cat, "sit", null, SPOT);
         expect(spot.kind === "away").toBe(cat.away !== null);
-        if (spot.kind === "furniture") expect(spot.lift).toBe(isoObjectLook(spot.box!).perch);
+        if (spot.kind !== "furniture") continue;
+        // На мішку наповнювача й баку стерильного корму — за наповненням (`perchFull`, хвиля 3).
+        const look = isoObjectLook(spot.box!);
+        const stage = shapedStage(save.current, spot.box!);
+        expect(spot.lift).toBe(stage !== null && look.perchFull ? look.perchFull[stage] : look.perch);
       }
     }
   });

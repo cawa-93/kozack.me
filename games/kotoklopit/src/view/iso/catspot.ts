@@ -17,6 +17,7 @@ import { isoCatPerch, isoObjectLook } from "../world/objects";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
+import { shapedStage } from "./looks";
 
 /**
  * Де кіт:
@@ -372,7 +373,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
       const peek = hidePeek(state, object.id, pair ? tile : cat);
       return spot("under", peek.at, { box: object.id, behind: peek.behind, show: "eyes" });
     }
-    const perch = isoCatPerch(object.id, pair ? tile : cat, false);
+    const perch = isoCatPerch(object.id, pair ? tile : cat, false, shapedStage(state, object.id));
     // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
     // вона лягла б на передню стінку.
     return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });

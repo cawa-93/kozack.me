@@ -170,12 +170,21 @@ export function kitLook(state: GameState): { body: IsoFrame; extras: (IsoFrame |
 /** Частка для рівня рідини чи корму, як у `storagelook.ts`. */
 const LEVEL: Record<FillStage, number> = { 0: 0, 1: 0.3, 2: 0.6, 3: 0.9, 4: 1 };
 
+/** Сховища-фігури: їхня форма (і висота, на яку стає кіт, — `perchFull`) — наповнення. */
+const SHAPED = ["litter-bag", "sterile-bin"] as const;
+
 /**
- * Сховища-фігури (мішок наповнювача, бак стерильного корму): їхня форма — наповнення, тож стан `full-N` — у самій речі;
- * запасу ще не бувало — як порожнє (річ однаково невидима, поки її немає вдома).
+ * Наповнення сховища-фігури `object` (мішок наповнювача, бак стерильного корму), від якого залежать його форма й висота;
+ * запасу ще не бувало — як порожнє (річ однаково невидима, поки її немає вдома). Інші речі — null.
  */
-export function shapedState(state: GameState, object: "litter-bag" | "sterile-bin"): string {
-  return fullState(stagesOf(state, object)[0] ?? 0);
+export function shapedStage(state: GameState, object: string): FillStage | null {
+  if (!(SHAPED as readonly string[]).includes(object)) return null;
+  return stagesOf(state, object)[0] ?? 0;
+}
+
+/** Сховища-фігури (мішок наповнювача, бак стерильного корму): їхня форма — наповнення, тож стан `full-N` — у самій речі. */
+export function shapedState(state: GameState, object: (typeof SHAPED)[number]): string {
+  return fullState(shapedStage(state, object) ?? 0);
 }
 
 /** Сховища-меблі з накладками наповнення, накладки — у порядку їхніх запасів у `STORAGES`. */

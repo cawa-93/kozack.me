@@ -168,6 +168,29 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
     }
   });
 
+  it("на мішку наповнювача й баку стерильного корму кіт стоїть на висоті їхньої форми за наповненням (perchFull)", () => {
+    for (const id of ["litter-bag", "sterile-bin"]) {
+      const object = objectById(id);
+      const at = { x: object.x + 0.5, y: object.y + 0.5 };
+      const entry = artEntry(`env/${id}`);
+      if (!entry) throw new Error(id);
+      const lifts = ([0, 1, 2, 3, 4] as const).map((stage) => isoCatPerch(id, at, false, stage).lift);
+      // Що повніше, то вище (мішок росте, на баку кришка лягає на гірку корму), і в межах полотна запису.
+      for (let i = 1; i < lifts.length; i++) expect(lifts[i], `${id} full-${i}`).toBeGreaterThanOrEqual(lifts[i - 1]!);
+      for (const lift of lifts) expect(lift, id).toBeLessThan(entry.pivot.y);
+      // Без наповнення — стала висота `perch`; під річчю — на підлозі за будь-якого наповнення.
+      expect(isoCatPerch(id, at, false).lift).toBe(isoObjectLook(id).perch);
+      expect(isoCatPerch(id, at, true, 4).lift).toBe(0);
+    }
+    // Порожній мішок зіжмаканий на підлозі: кіт на ньому — майже на підлозі, а не на висоті повного (рецензія хвилі 3).
+    const bag = objectById("litter-bag");
+    const on = { x: bag.x + 0.5, y: bag.y + 0.5 };
+    expect(isoCatPerch("litter-bag", on, false, 0).lift).toBeLessThanOrEqual(6);
+    expect(isoCatPerch("litter-bag", on, false, 1).lift).toBeLessThan(isoObjectLook("litter-bag").top / 2);
+    // Інші речі від наповнення не залежать.
+    expect(isoCatPerch("fridge", { x: 13.5, y: 1.5 }, false, 0).lift).toBe(150);
+  });
+
   it("персонаж користується річчю на підлозі квартири, поза слідом самої речі", () => {
     for (const object of OBJECTS) {
       const use = isoObjectLook(object.id).use;
