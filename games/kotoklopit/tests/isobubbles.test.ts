@@ -8,6 +8,7 @@ import type { ArtEntry } from "../src/view/art/types";
 import { bubbleArt, ICON_NAMES, iconArt, markArt, type BubbleKind, type Mark } from "../src/view/iconnames";
 import {
   BESIDE_GAP,
+  besideAllDx,
   besideDx,
   BUBBLE_COUNT,
   bubbleSpan,
@@ -17,6 +18,7 @@ import {
   ICON_ART_SIZE,
   ISO_BUBBLE_SCALE,
   isoBubbleLook,
+  nearBubbles,
   type BubbleSpan,
 } from "../src/view/iso/bubblelook";
 
@@ -163,5 +165,42 @@ describe("два бабли події над тим самим — поруч (
     expect(apart(first, third) && apart(second, third)).toBe(true);
     // Порожньо — над самою точкою.
     expect(besideDx([], think, BESIDE_GAP)).toBe(0);
+  });
+});
+
+describe("бабли різних власників не лягають один на один (nearBubbles, besideAllDx; рецензія хвилі 3)", () => {
+  const say = isoBubbleLook("say");
+  const height = say.room;
+  const width = say.span.left + say.span.right;
+
+  it("чужий бабл на тій самій висоті — зайняте місце зі зсувом від точки; вище чи нижче за висоту бабла — не заважає", () => {
+    const placed = [
+      { x: 110, y: 200, span: say.span },
+      { x: 100, y: 200 - height - 1, span: say.span },
+      { x: 100, y: 200 + height + 1, span: say.span },
+    ];
+    expect(nearBubbles({ x: 100, y: 200 }, placed, height)).toEqual([{ dx: 10, span: say.span }]);
+    expect(nearBubbles({ x: 100, y: 200 }, [], height)).toEqual([]);
+  });
+
+  it("два коти ніс до носа: бабл другого стає поруч, а не на перший; далеко — над своєю точкою", () => {
+    // Перший шипить над точкою 100, другий — над 112: без чужих стали б майже один на одному.
+    const others = nearBubbles({ x: 112, y: 200 }, [{ x: 100, y: 200, span: say.span }], height);
+    const dx = besideAllDx([], others, say.span, BESIDE_GAP, 2 * width);
+    const first = { dx: -12, span: say.span };
+    expect(dx - say.span.left >= first.dx + first.span.right + BESIDE_GAP - 1e-6 || dx + say.span.right + BESIDE_GAP <= first.dx - first.span.left + 1e-6).toBe(true);
+    // Найближче вільне — праворуч від першого (точка другого правіше).
+    expect(dx).toBeGreaterThan(0);
+    // Чужий далеко збоку — не заважає.
+    expect(besideAllDx([], nearBubbles({ x: 112, y: 200 }, [{ x: 112 + 2 * width, y: 200, span: say.span }], height), say.span, BESIDE_GAP, 2 * width)).toBe(0);
+  });
+
+  it("у тісноті не далі за maxShift: тоді — як без чужих, біля свого власника", () => {
+    // Чужі бабли щільно ліворуч і праворуч на 3 ширини — вільне місце лише далеко.
+    const crowd = [-3, -2, -1, 0, 1, 2, 3].map((k) => ({ dx: k * (width + BESIDE_GAP), span: say.span }));
+    expect(besideAllDx([], crowd, say.span, BESIDE_GAP, 2 * width)).toBe(0);
+    // Свої бабли (той самий власник) і далі стоять поруч, хоч би й далеко.
+    const own = [{ dx: 0, span: say.span }];
+    expect(besideAllDx(own, crowd, say.span, BESIDE_GAP, 2 * width)).toBe(besideDx(own, say.span, BESIDE_GAP));
   });
 });

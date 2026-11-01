@@ -151,3 +151,31 @@ export function besideDx(taken: readonly { dx: number; span: BubbleSpan }[], spa
   candidates.sort((a, b) => Math.abs(a) - Math.abs(b) || b - a);
   return candidates.find(fits) ?? 0;
 }
+
+/** Бабл, що вже висить над кимось: де зараз його точка (вістря разом зі зсувом), одиниці світу, і скільки він займає. */
+export interface PlacedBubble {
+  x: number;
+  y: number;
+  span: BubbleSpan;
+}
+
+/**
+ * Чужі бабли, що заважають новому над точкою `at`, — як зайняті місця для `besideDx` (зсув від `at` і межі): ті, що
+ * ближче по вертикалі, ніж `height` (скільки бабл займає над точкою). Хто вище чи нижче, не налазить, хоч би й стояв над тим
+ * самим x. Рецензія хвилі 3: в ізометрії коти в протистоянні стоять ніс до носа, і два «шипить» лягали один на один, а
+ * зсув убік (`besideDx`) знав лише бабли того самого власника.
+ */
+export function nearBubbles(at: { x: number; y: number }, placed: readonly PlacedBubble[], height: number): { dx: number; span: BubbleSpan }[] {
+  const out: { dx: number; span: BubbleSpan }[] = [];
+  for (const p of placed) if (Math.abs(p.y - at.y) < height) out.push({ dx: p.x - at.x, span: p.span });
+  return out;
+}
+
+/**
+ * Зсув нового бабла з урахуванням чужих (`others`, `nearBubbles`): найближче вільне місце серед своїх і чужих, але не далі
+ * за `maxShift` від точки — у тісноті (купа котів) бабл не відлітає від свого власника, а стає так, як без чужих.
+ */
+export function besideAllDx(own: readonly { dx: number; span: BubbleSpan }[], others: readonly { dx: number; span: BubbleSpan }[], span: BubbleSpan, gap: number, maxShift: number): number {
+  const withOthers = besideDx([...own, ...others], span, gap);
+  return Math.abs(withOthers) <= maxShift ? withOthers : besideDx(own, span, gap);
+}

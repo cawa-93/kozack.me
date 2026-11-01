@@ -10,15 +10,17 @@ import { addArt } from "./art/atlas";
 import { bubbleArt, iconArt, markArt, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import {
   BESIDE_GAP,
-  besideDx,
+  besideAllDx,
   BUBBLE_COUNT,
   bubbleSpan,
   countPillCenter,
   countPillWidth,
   countSide,
   isoBubbleLook,
+  nearBubbles,
   type BubbleSpan,
   type IsoBubbleLook,
+  type PlacedBubble,
 } from "./iso/bubblelook";
 import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
@@ -160,7 +162,7 @@ export class Bubbles {
     const start = place(at);
     if (!start) return;
     const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - 8, bubble.count, bubble.mark);
-    const dx = this.beside(bubble.at, bubble.icon, span);
+    const dx = this.beside(bubble.at, bubble.icon, span, start.x, start.y - 8, this.looks[bubble.kind].room);
     container.setX(start.x + dx).setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
     this.float(container, at, hold, { owner: bubble.at, dx, span, icon: bubble.icon });
@@ -187,15 +189,27 @@ export class Bubbles {
    * рішення автора 2026-10-30, «Відкрите після рішень», п. 6), стоять поруч: кожен наступний — упритул праворуч, потім
    * ліворуч (`besideDx`, за справжніми межами фонів: думка ширша, і вістря в неї збоку). Той самий бабл
    * (відмова, натиснута кілька разів поспіль) виринає на тому самому місці, як і раніше.
+   *
+   * Так само новий бабл обходить чужі бабли поруч (видимі бабли подій і стану інших власників, що на тій самій висоті,
+   * `nearBubbles`): коти в протистоянні стоять ніс до носа, і їхні «шипить» лягали один на один (рецензія хвилі 3). Не далі
+   * за ширину двох баблів — у тісноті бабл лишається біля свого власника.
    */
-  private beside(owner: string, icon: IconName, span: BubbleSpan): number {
+  private beside(owner: string, icon: IconName, span: BubbleSpan, x: number, y: number, height: number): number {
     const taken: Floater[] = [];
+    const others: PlacedBubble[] = [];
     for (const f of this.floaters) {
-      if (f.owner !== owner) continue;
+      if (f.owner !== owner) {
+        if (f.owner !== undefined && f.container.visible) others.push({ x: f.container.x, y: f.container.y, span: f.span });
+        continue;
+      }
       if (f.icon === icon) return f.dx;
       taken.push(f);
     }
-    return besideDx(taken, span, BESIDE_GAP);
+    for (const [anchor, state] of this.states) {
+      if (anchor !== owner && state.container.visible) others.push({ x: state.container.x, y: state.container.y, span: this.looks[state.kind].span });
+    }
+    const width = span.left + span.right;
+    return besideAllDx(taken, nearBubbles({ x, y }, others, height), span, BESIDE_GAP, 2 * width);
   }
 
   /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
