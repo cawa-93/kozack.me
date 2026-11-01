@@ -18,8 +18,8 @@
 // Будова скелета (`defs/cat.ts`), яку треба пам'ятати: лапа — одна кістка від плеча чи стегна до подушечки (`len` 20,5), тож
 // лапу «згинає» лише масштаб уздовж кістки (`sx` < 1 — підібрана), а куди вона дивиться — поворот (додатний — назад). Задні
 // лапи — на тазі, передні — на тулубі. Таз — батько всього кота. Хвіст — один кадр-«S»: лише повертати навколо корінця
-// (`tail`). Пози, спільні з групою `basic` (сидить — `SIT`, клубок — `CURL`), повторені тут тими самими числами, щоб чухання
-// починалося з того, як кіт сидить, а хропіння було тим самим клубком, що й сон.
+// (`tail`). Пози, спільні з групою `basic` (сидить — `SIT`, клубок — `CURL`), і ритм ходи повторені тут тими самими числами,
+// щоб чухання починалося з того, як кіт сидить, хропіння було тим самим клубком, що й сон, а кульгання — тією самою ходою.
 
 import type { AnimOf, BoneOf, BoneTracks, Ease, Key, SlotOf, SlotTracks, Vec2 } from "../../types";
 import { defineAnims } from "../../types";
@@ -138,16 +138,19 @@ const DEG = Math.PI / 180;
 
 /**
  * Корінь хвоста в кадрі — товстий «корінець» довкола pivot, зсунутий від нього на стільки (одиниці арту, у системі тулуба;
- * еталон `cat/tail/long`, як у групі `basic`): поворот навколо самого pivot виносить корінець за силует круп'я. Тож хвіст
- * повертаємо навколо корінця: `tail(кут)` додає зсув, що лишає корінець на місці.
+ * еталон `cat/tail/long`, як `TAIL_ROOT` групи `basic`): поворот навколо самого pivot виносить корінець за силует круп'я.
+ * Тож хвіст повертаємо навколо корінця: `tail(кут)` додає зсув, що лишає корінець на місці.
  */
 const TAIL_ROOT: Vec2 = { x: 3.5, y: 0.5 };
 
-/** Зсув, що тримає корінець хвоста на місці, коли хвіст повернуто на `rot` від вихідної пози. */
-function tailShift(rot: number): Vec2 {
+/**
+ * Зсув, що тримає корінець хвоста на місці, коли хвіст повернуто на `rot` від вихідної пози й рівномірно масштабовано на
+ * `scale` (`catTail` групи `basic`).
+ */
+function tailShift(rot: number, scale = 1): Vec2 {
   const c = Math.cos(rot * DEG);
   const s = Math.sin(rot * DEG);
-  return { x: TAIL_ROOT.x - (TAIL_ROOT.x * c - TAIL_ROOT.y * s), y: TAIL_ROOT.y - (TAIL_ROOT.x * s + TAIL_ROOT.y * c) };
+  return { x: TAIL_ROOT.x - scale * (TAIL_ROOT.x * c - TAIL_ROOT.y * s), y: TAIL_ROOT.y - scale * (TAIL_ROOT.x * s + TAIL_ROOT.y * c) };
 }
 
 /** Хвіст повернутий на `rot` градусів навколо корінця (поза). */
@@ -167,10 +170,13 @@ function tailFrom(rest: number, rot: number): Tweak {
 }
 
 // --- Спільні пози (ті самі числа, що в групі `basic`) ------------------------------------------------
+//
+// Копії поз N1 (`basic.ts`): чухання й тертя очей починаються й закінчуються так, як кіт сидить (`sit`), хропіння — той
+// самий клубок, що й сон (`sleep`), разом зі слотами в обох ракурсах. Змінилися пози там — змінити й тут.
 
 /**
  * Сидить (`sit` групи `basic`): таз повернутий носом угору навколо стегон, передні лапи прямо вниз, витягнуті й зсунуті вниз
- * уздовж тулуба, хвіст спадає на підлогу. Чухання й тертя очей починаються й закінчуються в ній.
+ * уздовж тулуба, хвіст спадає на підлогу.
  */
 const SIT: Pose = {
   pelvis: { rot: -32, y: 2 },
@@ -181,11 +187,14 @@ const SIT: Pose = {
   head: { rot: 30 },
   tail: tail(-95),
 };
-/** Лапи того, хто сидить, у ракурсі ¾ ззаду (ближні й дальні там міняються місцями по x). */
+/**
+ * Лапи того, хто сидить, у ракурсі ¾ ззаду (`SIT_BACK` групи `basic`): ближні й дальні там міняються місцями по x, а ближня
+ * передня — глибше в груди й трохи навскіс уперед, під тулубом (`NEAR_FRONT_UNDER`).
+ */
 const SIT_BACK_LEGS: Pose = {
   "leg-back-near": { rot: 16, sx: 1.02 },
   "leg-back-far": { rot: -5 },
-  "leg-front-near": { rot: 32, x: -5.5, y: 9.6, sx: 1.14 },
+  "leg-front-near": { rot: 20, x: -12.5, y: 7.6, sx: 1.08 },
   "leg-front-far": { rot: 32, x: -4, y: 7.5, sx: 1.13 },
 };
 const SIT_BACK: Pose = { ...SIT, ...SIT_BACK_LEGS };
@@ -193,8 +202,21 @@ const SIT_BACK: Pose = { ...SIT, ...SIT_BACK_LEGS };
 const SIT_TAIL = -95;
 
 /**
- * Клубок (`sleep` групи `basic`): тулуб коротший і круглий, лапи сховані під собою, голова лежить носом донизу перед грудьми,
- * хвіст обгорнув кота спереду (у ¾ спереду — поверх тулуба).
+ * Ракурс ¾ ззаду: ближня передня лапа там на самому краю грудей, тож малюється під тулубом (z 4,9) і, де стоїть у вихідному
+ * суглобі, трохи всередину (`BACK_NEAR_IN`) — як `NEAR_FRONT_UNDER`, `NEAR_FRONT_IN` і `BACK_NEAR` групи `basic`. Біля
+ * морди (тре очі) — під головою (z 2,8, як у вмиванні `groom`).
+ */
+const BACK_NEAR_IN = -3.5;
+const NEAR_FRONT_Z = 4.9;
+const NEAR_FRONT_UNDER: SlotSet = { "leg-front-near": { z: [{ t: 0, v: NEAR_FRONT_Z }] } };
+const NEAR_FRONT_IN: Tracks = { "leg-front-near": { pos: [{ t: 0, v: { x: BACK_NEAR_IN, y: 0 } }] } };
+/** Перевизначення ракурсу ззаду для поз, де ближня передня лапа — у вихідному суглобі (стоїть, іде, присів). */
+const BACK_NEAR = { bones: NEAR_FRONT_IN, slots: NEAR_FRONT_UNDER };
+const PAW_AT_FACE_BACK_Z = 2.8;
+
+/**
+ * Клубок (`sleep` групи `basic`): тулуб коротший і круглий, лапи сховані під собою (видно лише ближню передню під
+ * підборіддям), голова лежить носом донизу перед грудьми, хвіст обгорнув кота спереду — у ¾ спереду поверх тулуба.
  */
 const CURL: Pose = {
   pelvis: { y: 11 },
@@ -230,20 +252,24 @@ const frontBreath = (body: readonly Key<Vec2>[]): Key<Vec2>[] => body.map((k) =>
 
 // --- Хода ---------------------------------------------------------------------------------------------
 //
-// Ті самі ритм і розмах, що в ході групи `basic` (рись: діагональні пари лап, цикл `WALK_MS`): опорна лапа йде назад
-// рівномірно, з тією самою швидкістю, тож кульгання, незграбна й сумна хода не ковзають там, де не ковзає звичайна, а
-// вигляд множить швидкість відтворення на `walkFactor` (травма 0,6, хребет 0,9 — `CatAnimChoice.speed`).
+// Ті самі ритм, розмах і крок, що в ході групи `basic` (рись: діагональні пари лап, цикл `WALK_MS`, крок
+// `CAT_WALK_STRIDE`): опорна лапа йде назад рівномірно, з тією самою швидкістю, тож кульгання, незграбну й сумну ходу вигляд
+// грає з тією самою швидкістю відтворення, що й звичайну (`catWalkRate` групи `basic`), — і лапи не ковзають.
 
 /** Цикл ходи, мс. */
 const WALK_MS = 340;
-/** Розмах лап, градуси від вертикалі: передні — ширше. */
-const WALK_FRONT = 32;
-const WALK_BACK = 28;
+/** Розмах лап, градуси від вертикалі: однаковий спереду й ззаду (жодна лапа пари не ковзає відносно другої). */
+const WALK_AMP = 34;
 /** Наскільки таз нижчає на зміні пар (лапи навскіс), щоб подушечки лишалися на підлозі. */
-const WALK_BOB = 1.5;
+const WALK_BOB = 2;
 /** Лапа на краях опори трохи витягнута, у переносі — підібрана. */
 const WALK_REACH = 1.08;
 const WALK_LIFT = 0.78;
+
+/** Розмах лапи, коротшої в `k` разів, за якого крок той самий, що в ході (кіт іде з тією самою швидкістю). */
+const ampFor = (k: number): number => Math.asin(Math.sin(WALK_AMP * DEG) / k) / DEG;
+/** Наскільки таз нижчає на зміні пар для лапи, коротшої в `k` разів, з розмахом `amp`: як `WALK_BOB`, пропорційно. */
+const bobFor = (k: number, amp: number): number => (WALK_BOB * k * (1 - WALK_REACH * Math.cos(amp * DEG))) / (1 - WALK_REACH * Math.cos(WALK_AMP * DEG));
 
 /** Лапа в ході (рись), як у групі `basic`: опора з `start` пів циклу, далі перенос; `lift` — наскільки підібрана в переносі. */
 function gaitLeg(T: number, amp: number, start: 0 | 0.5, lift = WALK_LIFT, reach = WALK_REACH): BoneTracks {
@@ -308,9 +334,9 @@ function limpAnim(): CatAnim {
     loop: true,
     bones: {
       pelvis: gaitBob(T, WALK_BOB),
-      "leg-back-far": gaitLeg(T, WALK_BACK, 0),
-      "leg-front-far": gaitLeg(T, WALK_FRONT, 0.5),
-      "leg-back-near": gaitLeg(T, WALK_BACK, 0.5),
+      "leg-back-far": gaitLeg(T, WALK_AMP, 0),
+      "leg-front-far": gaitLeg(T, WALK_AMP, 0.5),
+      "leg-back-near": gaitLeg(T, WALK_AMP, 0.5),
       // Хвора лапа: тримає вперед підібраною, посередині своєї опори ледь торкається підлоги й одразу знову піднімається.
       "leg-front-near": {
         rot: keys([
@@ -369,6 +395,7 @@ function limpAnim(): CatAnim {
         ],
       },
     },
+    views: { back: BACK_NEAR },
   };
 }
 
@@ -388,11 +415,11 @@ function clumsyAnim(): CatAnim {
   };
   const trot: Tracks = {
     pelvis: { pos: twiceV(gaitBob(S, WALK_BOB).pos ?? [], S) },
-    "leg-front-near": leg(WALK_FRONT, 0),
-    "leg-front-far": leg(WALK_FRONT, 0.5),
-    // Задні — коротший розмах і ледь відриваються від підлоги: тверді, човгають.
-    "leg-back-far": leg(WALK_BACK, 0, 0.9),
-    "leg-back-near": leg(WALK_BACK, 0.5, 0.9),
+    "leg-front-near": leg(WALK_AMP, 0),
+    "leg-front-far": leg(WALK_AMP, 0.5),
+    // Задні ледь відриваються від підлоги: тверді, човгають.
+    "leg-back-far": leg(WALK_AMP, 0, 0.9),
+    "leg-back-near": leg(WALK_AMP, 0.5, 0.9),
   };
   // Осідання крупа на `r` градусів: таз повертається носом угору навколо стегон і опускається так, що плечі лишаються на
   // місці; передні лапи й шия повертаються назад на той самий кут, задні коротшають на стільки, на скільки осіли стегна.
@@ -432,6 +459,7 @@ function clumsyAnim(): CatAnim {
         0,
       ),
     }),
+    views: { back: BACK_NEAR },
   };
 }
 
@@ -481,21 +509,22 @@ function sadWalkAnim(): CatAnim {
   const T = WALK_MS;
   /** Наскільки кіт пригнувся: таз нижче, лапи коротші на стільки ж. */
   const LOW = 1.5;
-  const k = 1 - LOW / 20.5;
-  // Розмах більший на стільки, на скільки лапи коротші: за крок кіт проходить стільки ж, скільки у звичайній ході.
-  const leg = (amp: number, start: 0 | 0.5): BoneTracks => {
-    const tracks = gaitLeg(T, amp / k, start, 0.88, WALK_REACH);
+  const k = 1 - LOW / LEG;
+  // Розмах ширший на стільки, на скільки лапи коротші: за крок кіт проходить стільки ж, скільки у звичайній ході.
+  const amp = ampFor(k);
+  const leg = (start: 0 | 0.5): BoneTracks => {
+    const tracks = gaitLeg(T, amp, start, 0.88, WALK_REACH);
     return { ...tracks, scale: (tracks.scale ?? []).map((key) => ({ ...key, v: { x: key.v.x * k, y: key.v.y } })) };
   };
   return {
     duration: T,
     loop: true,
     bones: {
-      pelvis: gaitBob(T, WALK_BOB * 0.8, LOW),
-      "leg-front-near": leg(WALK_FRONT, 0),
-      "leg-back-far": leg(WALK_BACK, 0),
-      "leg-front-far": leg(WALK_FRONT, 0.5),
-      "leg-back-near": leg(WALK_BACK, 0.5),
+      pelvis: gaitBob(T, bobFor(k, amp), LOW),
+      "leg-front-near": leg(0),
+      "leg-back-far": leg(0),
+      "leg-front-far": leg(0.5),
+      "leg-back-near": leg(0.5),
       neck: { pos: [{ t: 0, v: { x: 2, y: 4 } }], rot: osc(T, [13, 15, 13, 15]) },
       head: { rot: osc(T, [10, 11.5, 10, 11.5]) },
       tail: {
@@ -507,6 +536,7 @@ function sadWalkAnim(): CatAnim {
         ],
       },
     },
+    views: { back: BACK_NEAR },
   };
 }
 
@@ -551,6 +581,7 @@ function coughAnim(): CatAnim {
       { t: 900, pose: breath },
       { t: COUGH_MS, pose: COUGH },
     ]),
+    views: { back: BACK_NEAR },
   };
 }
 
@@ -608,7 +639,7 @@ function itchAnim(): CatAnim {
     duration: CAT_ONE_SHOT_MS.itch,
     loop: false,
     bones: front,
-    views: { back: { bones: legsOf(back) } },
+    views: { back: { bones: legsOf(back), slots: NEAR_FRONT_UNDER } },
   };
 }
 
@@ -651,7 +682,21 @@ function rubEyesAnim(): CatAnim {
         ],
       },
     },
-    views: { back: { bones: legsOf(rubTracks(SIT_BACK, -130)), slots: { "leg-front-near": { z: [{ t: 0, v: 7 }] } } } },
+    // Ззаду лапа біля морди — під головою (морда по той бік), а біля підлоги — під тулубом, як у `sit`.
+    views: {
+      back: {
+        bones: legsOf(rubTracks(SIT_BACK, -130)),
+        slots: {
+          "leg-front-near": {
+            z: [
+              { t: 0, v: NEAR_FRONT_Z },
+              { t: 110, v: PAW_AT_FACE_BACK_Z },
+              { t: 1300, v: NEAR_FRONT_Z },
+            ],
+          },
+        },
+      },
+    },
   };
 }
 
@@ -692,6 +737,7 @@ function vomitAnim(): CatAnim {
         [1260, "closed"],
       ]),
     },
+    views: { back: BACK_NEAR },
   };
 }
 
