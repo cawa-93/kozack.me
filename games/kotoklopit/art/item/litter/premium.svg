@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 116" width="120" height="116">
 <!-- item/litter/premium — дорогий закритий лоток: кремова ванночка, бірюзовий дашок-склепіння над задньою половиною, вхід праворуч (грань +x), наліпка-лапка.
 size 120×116; pivot (60, 84) — точка підлоги під центром сліду 0,8 × 0,6 клітинки (уздовж x — 0,8). Борт 22, наповнювач на 13, дашок до ≈ 48.
-Стани: st-empty — без наповнювача (видно дно в тіні бортів, з рисочками-ребрами); st-empty-dirty — без наповнювача, кіт уже сходив: «ковбаска» на голому дні; st-cheap — глиняний (сіро-бежевий), st-premium — силікагелевий (світлі кристали з блакитними цятками); -used — три нерівні грудки (у силікагелю — пласкі жовтуваті плями), -dirty — шість і прикопана «ковбаска» (хвилі запаху — накладка fx/smell у грі). Під дашком наповнювач у глибокій тіні; грудки — у відкритій передній половині. Без points. LINE (річ від 60). Без шарів.
+Стани: st-empty — без наповнювача (видно дно — бірюзову підкладку в тіні бортів, з рисочками-ребрами: хвиля 3, щоб порожній лоток не плутався з глиняним наповнювачем); st-empty-dirty — без наповнювача, кіт уже сходив: «ковбаска» на голому дні; st-cheap — глиняний (сіро-бежевий), st-premium — силікагелевий (світлі кристали з блакитними цятками); -used — три нерівні грудки (у силікагелю — пласкі жовтуваті плями), -dirty — шість і прикопана «ковбаска» (хвилі запаху — накладка fx/smell у грі). Під дашком наповнювач у глибокій тіні; грудки — у відкритій передній половині. Без points. LINE (річ від 60). Без шарів.
 -->
 <defs>
 <clipPath id="litter-premium-in"><path d="M56.3 44.1Q75.7 54.5 95.7 63.9Q98.4 65.2 95.7 66.5Q82.6 73.6 69.1 79.9Q66.4 81.2 63.7 79.9Q43.8 70.4 24.3 60.1Q21.6 58.8 24.3 57.5Q37.9 51.3 50.9 44.1Q53.6 42.8 56.3 44.1Z"/></clipPath>
@@ -20,14 +20,14 @@ size 120×116; pivot (60, 84) — точка підлоги під центро�
 <g id="p-inner">
 <path d="M56.3 44.1Q75.7 54.5 95.7 63.9Q98.4 65.2 95.7 66.5Q82.6 73.6 69.1 79.9Q66.4 81.2 63.7 79.9Q43.8 70.4 24.3 60.1Q21.6 58.8 24.3 57.5Q37.9 51.3 50.9 44.1Q53.6 42.8 56.3 44.1Z" fill="#e0d4b9"/>
 <g clip-path="url(#litter-premium-in)">
-<path d="M55.4 64.3Q75.4 74.3 95.3 84.3Q97.1 85.2 95.3 86.1Q81.8 92.9 68.2 99.7Q66.4 100.6 64.6 99.7Q44.6 89.7 24.7 79.7Q22.9 78.8 24.7 77.9Q38.2 71.1 51.8 64.3Q53.6 63.4 55.4 64.3Z" fill="#e0d4b9"/>
+<path d="M55.4 64.3Q75.4 74.3 95.3 84.3Q97.1 85.2 95.3 86.1Q81.8 92.9 68.2 99.7Q66.4 100.6 64.6 99.7Q44.6 89.7 24.7 79.7Q22.9 78.8 24.7 77.9Q38.2 71.1 51.8 64.3Q53.6 63.4 55.4 64.3Z" fill="#8bb3aa"/>
 <path d="M55.4 64.3Q75.4 74.3 95.3 84.3Q97.1 85.2 95.3 86.1Q81.8 92.9 68.2 99.7Q66.4 100.6 64.6 99.7Q44.6 89.7 24.7 79.7Q22.9 78.8 24.7 77.9Q38.2 71.1 51.8 64.3Q53.6 63.4 55.4 64.3Z" fill="#3f2541" fill-opacity="0.3"/>
-<path d="M61.3 75Q71.3 80.4 81.8 85.2" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M52.3 76.9Q63 82.7 74.1 87.8" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M43.4 78.8Q54.1 84.6 65.1 89.7" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M34.4 80.7Q44.5 86.2 54.9 91" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M22.9 78.8L53.6 63.4L97.1 85.2" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M53.6 42.8L53.6 63.4" fill="none" stroke="#bfb093" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M61.3 75Q71.3 80.4 81.8 85.2" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M52.3 76.9Q63 82.7 74.1 87.8" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.4 78.8Q54.1 84.6 65.1 89.7" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34.4 80.7Q44.5 86.2 54.9 91" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.9 78.8L53.6 63.4L97.1 85.2" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M53.6 42.8L53.6 63.4" fill="none" stroke="#5f9089" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M20.3 57.2L53.6 40.5L99.7 63.6L94.6 74.1L54.9 54.3L26.7 68.4Z" fill="#3f2541" fill-opacity="0.16"/>
 </g>
 </g>
