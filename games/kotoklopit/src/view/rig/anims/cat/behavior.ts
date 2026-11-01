@@ -1144,11 +1144,15 @@ function watchWindow(): CatAnim {
 
 /**
  * Стрибає за пером вудки (§8.2, §9.12; і б'є свою іграшку): припадає, відсунувшись тазом назад, і виляє задом, вистрибує
- * вгору — тіло витягнуте, передні лапи над головою ловлять перо, — приземляється на передні на ті самі місця й
- * випрямляється. Лапи, поки на підлозі, не ковзають.
+ * вгору — тіло витягнуте, передні лапи над головою ловлять перо, — і падає передніми лапами на 12 одиниць уперед: притискає
+ * здобич (перо, що впало, чи іграшку на підлозі), голова схиляється до лап; потім відпускає й переступає назад на місце.
+ * Висоту стрибка задає таз, а не корінь, тож кошеня стрибає на свій зріст, а не на дорослий. Лапи, поки на підлозі, не
+ * ковзають.
  */
 function pounce(): CatAnim {
-  const D = 1300;
+  const D = 1400;
+  /** Куди падають передні лапи, одиниці арту вперед від того місця, де стояли. */
+  const PIN = 12;
   const ready = (rump: number): Pose =>
     standWith({
       pelvis: { x: -3, y: 7 - rump, rot: rump },
@@ -1156,22 +1160,36 @@ function pounce(): CatAnim {
       neck: { rot: -4 },
     });
   const launch: Pose = {
-    root: { y: -8 },
-    pelvis: { rot: -35 },
+    pelvis: { y: -8, rot: -35 },
     neck: { rot: 12 },
     head: { rot: 4 },
     tail: { rot: -40 },
     legs: { "leg-front-far": { rot: -125 }, "leg-front-near": { rot: -95 }, "leg-back-far": { rot: 30 }, "leg-back-near": { rot: 35 } },
   };
   const top: Pose = {
-    root: { y: -22 },
-    pelvis: { x: 4, rot: -58 },
+    pelvis: { x: 4, y: -20, rot: -58 },
     neck: { rot: 24 },
     head: { rot: 16 },
     tail: { rot: -30 },
     legs: { "leg-front-far": { rot: -150 }, "leg-front-near": { rot: -118 }, "leg-back-far": { rot: 10 }, "leg-back-near": { rot: 20 } },
   };
-  const land: Pose = standWith({ pelvis: { y: 4, rot: 8 }, neck: { rot: -8 }, tail: { rot: -20 } });
+  /** Притиснув: передні лапи на здобичі попереду, груди низько, голова до лап; `press` — дотискає. */
+  const pin = (press: number): Pose =>
+    standWith({
+      pelvis: { x: 5 + press * 0.5, y: 5 + press, rot: 9 },
+      neck: { rot: 24 + press * 4 },
+      head: { rot: -8 },
+      tail: { rot: -25 },
+      legs: { "leg-front-far": at(PIN + 1), "leg-front-near": at(PIN) },
+    });
+  /** Відпускає: передні лапи підняті й переносяться назад на свої місця (задні весь час стоять). */
+  const release = (back: number): Pose =>
+    standWith({
+      pelvis: { x: 3 * (1 - back), y: 2 * (1 - back), rot: 4 * (1 - back) },
+      neck: { rot: 10 * (1 - back) },
+      tail: { rot: -15 * (1 - back) },
+      legs: { "leg-front-far": at(round((PIN - 6) * (1 - back)), -6 + back * 3.5), "leg-front-near": at(round((PIN - 6) * (1 - back)), -6 + back * 3.5) },
+    });
   return build(
     D,
     true,
@@ -1182,18 +1200,22 @@ function pounce(): CatAnim {
       { t: 360, pose: ready(0), ease: "in" },
       { t: 470, pose: launch, ease: "out" },
       { t: 620, pose: top, ease: "in" },
-      { t: 780, pose: land, ease: "out" },
-      { t: 1000, pose: STAND },
+      { t: 760, pose: pin(0), ease: "out" },
+      { t: 880, pose: pin(1) },
+      { t: 1040, pose: pin(0.6) },
+      { t: 1160, pose: release(0) },
+      { t: 1260, pose: release(1) },
+      { t: 1330, pose: STAND },
       { t: D, pose: STAND },
     ],
-    // У стрибку ближня лапа ловить перо перед мордою — поверх голови.
+    // У стрибку ближня лапа ловить перо перед мордою — поверх голови; падаючи на здобич, вона вже під підборіддям.
     {
       slots: {
         "leg-front-near": {
           z: [
             { t: 0, v: 7 },
             { t: 430, v: 10.5 },
-            { t: 760, v: 7 },
+            { t: 700, v: 7 },
           ],
         },
       },
