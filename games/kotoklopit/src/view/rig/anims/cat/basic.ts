@@ -392,7 +392,8 @@ const CARRIED: Pose = {
   "leg-front-near": { rot: -50, sx: 0.62 },
   "leg-front-far": { rot: -58, sx: 0.6 },
   head: { rot: 14 },
-  tail: tail(-165),
+  // Хвіст звисає назад і вниз, окремо від задніх лап (прямовисний хвіст ховався за ближньою лапою чи читався п'ятою лапою).
+  tail: tail(-126, 0.9),
 };
 
 /**
@@ -762,10 +763,10 @@ const carried: CatAnim = {
   loop: true,
   bones: merge(still(CARRIED), {
     body: breathe(CARRIED_MS, CARRIED, 0.025, 2),
-    // Звисле похитується в такт крокам того, хто несе: задні лапи й хвіст — маятником, із запізненням.
+    // Звисле похитується в такт крокам того, хто несе: задні лапи маятником, із запізненням, а хвіст — у протифазі до них.
     "leg-back-near": rotAround(CARRIED_MS, CARRIED, "leg-back-near", [0, 4, 0, -2]),
     "leg-back-far": rotAround(CARRIED_MS, CARRIED, "leg-back-far", [-2, 0, 4, 0]),
-    tail: { ...still({ tail: CARRIED.tail ?? {} }).tail, ...rotAround(CARRIED_MS, CARRIED, "tail", [0, 5, 0, -5]) },
+    tail: { ...still({ tail: CARRIED.tail ?? {} }).tail, ...rotAround(CARRIED_MS, CARRIED, "tail", [0, -6, 0, 4]) },
     head: rotAround(CARRIED_MS, CARRIED, "head", [0, -3]),
   }),
   views: { back: BACK_NEAR },
