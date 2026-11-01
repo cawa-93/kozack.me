@@ -911,9 +911,12 @@ function tailKeys(list: readonly (readonly [number, number])[], rest = SIT_TAIL,
 
 /**
  * «Терпить»: кінчиком хвоста коротко сіпає — двічі поспіль, пауза, ще раз, — голова трохи опущена й з кожним сіпанням
- * коротко струшує дотик (на руках хвіст ховається за котом, тож «терпить» там видно головою; вуха й мружені очі —
- * `catFace`). Сіпання дрібні й рідкі — на відміну від «попереджає».
+ * коротко струшує дотик (вуха й мружені очі — `catFace`). Сіпання дрібні й рідкі — на відміну від «попереджає». На руках
+ * хвіст звисає під тулуб і ховається за стегном — там `catOverlayOn` сіпає ним ширше (`RELUCTANT_HANGING_PEAK`), щоб кінчик
+ * вилітав з-за стегна.
  */
+const RELUCTANT_HANGING_PEAK = 45;
+
 function reluctantAnim(): CatAnim {
   const T = 2200;
   return {
@@ -1138,6 +1141,22 @@ const isLeg = (bone: CatBone): bone is Leg => (LEGS as readonly CatBone[]).inclu
 
 /** Доріжки лап, що в основі не стоять на підлозі: накладка → доріжки (заміняють її власні). */
 const FREE_LEG_TRACKS = new WeakMap<CatAnim, Tracks>();
+/**
+ * Кіт на спині: хвіст основи лежить на підлозі за крупом, а над ним — задні лапи догори й тулуб, і в ¾ спереду хвіст
+ * малюється за ними. Удар, ширший за стільки градусів, заводив би хвіст за силует (на піку удару хвоста не видно), тож на
+ * основі-дзеркалі удари хвостом стискаються до цього розмаху з тим самим ритмом — хвіст гупає по підлозі збоку від кота.
+ */
+const MIRROR_TAIL_PEAK = 40;
+/**
+ * Хвіст основи звисає вперед під тулуб (на руках): кут його кістки у світі — між цими (градуси, 0 — уперед, 90 — донизу). У ¾
+ * спереду такий хвіст ховається за задніми лапами й тулубом.
+ */
+const HANGING_TAIL: readonly [number, number] = [10, 80];
+/**
+ * Накладки, для яких сіпання хвостом — сама суть («терпить»): на хвості, що звисає під тулуб, вони сіпають ним щонайменше на
+ * стільки градусів, щоб кінчик вилітав з-за стегна (накладка → розмах).
+ */
+const HANGING_TAIL_PEAK = new WeakMap<CatAnim, number>();
 /** Підігнані накладки: накладка → основа → підігнана. */
 const FITTED = new WeakMap<CatAnim, WeakMap<CatAnim, CatAnim>>();
 
@@ -1168,6 +1187,16 @@ function freeLegs(base: CatAnim): Set<Leg> {
   return new Set(LEGS.filter((_, i) => Math.abs((now[i] ?? 0) - (rest[i] ?? 0)) > FREE_PAW));
 }
 
+/** Чи хвіст основи на початку звисає вперед під тулуб (`HANGING_TAIL`; ракурс ¾ спереду). */
+function tailHangs(base: CatAnim): boolean {
+  const rig = new Rig(CAT_RIG);
+  rig.play(base, 0, { blend: 0 });
+  rig.evaluate(0);
+  const w = rig.bone("tail").world;
+  const angle = Math.atan2(w.b, w.a) / DEG;
+  return w.a * w.d - w.b * w.c > 0 && angle > HANGING_TAIL[0] && angle < HANGING_TAIL[1];
+}
+
 /** Доріжки, віддзеркалені згори донизу: поворот і зсув упоперек — навпаки. */
 function mirrored(tracks: BoneTracks): BoneTracks {
   return {
@@ -1183,6 +1212,9 @@ function mirrored(tracks: BoneTracks): BoneTracks {
  * - хвіст повертається від кута хвоста основи навколо свого корінця — корінець не ходить, хоч би де лежав хвіст;
  * - на основі-дзеркалі (кіт на спині: масштаб таза впоперек від'ємний) повороти й зсуви впоперек усіх кісток під тазом —
  *   навпаки, тож хвіст б'є над підлогою, а не крізь неї, і голова киває туди ж, куди в того, хто сидить;
+ *   Удари хвостом там не ширші за `MIRROR_TAIL_PEAK`: хвіст лежить за піднятими лапами й тулубом і не має за них заходити;
+ * - на хвості, що звисає під тулуб (на руках), «терпить» сіпає ширше (`HANGING_TAIL_PEAK`) — інакше сіпання за стегном не
+ *   видно;
  * - лапи, що в основі не стоять на підлозі (звисають на руках, стирчать догори в того, хто на спині), брикаються, якщо
  *   накладка це передбачає («пручається»).
  * Доріжки слотів, тривалість і повтор — накладки.
@@ -1197,6 +1229,8 @@ export function catOverlayOn(overlay: CatAnim, base: CatAnim): CatAnim {
   if (known) return known;
   const kicks = FREE_LEG_TRACKS.get(overlay);
   const free = kicks ? freeLegs(base) : new Set<Leg>();
+  const hanging = HANGING_TAIL_PEAK.get(overlay);
+  const hangs = hanging !== undefined && tailHangs(base);
   const v: Vec2 = { x: 0, y: 0 };
   const fit = (view: ArtView): Tracks => {
     const own = bonesIn(overlay, view);
@@ -1211,9 +1245,14 @@ export function catOverlayOn(overlay: CatAnim, base: CatAnim): CatAnim {
     }
     const tail = out.tail;
     if (tail?.rot) {
+      // Розмах ударів: на спині — не ширше за `MIRROR_TAIL_PEAK`; на хвості, що звисає (¾ спереду), — не вужче за свій.
+      const peak = Math.max(...tail.rot.map((k) => Math.abs(k.v)));
+      const gain =
+        peak <= 0 ? 1 : mirror ? Math.min(1, MIRROR_TAIL_PEAK / peak) : hangs && view === "front" ? Math.max(1, (hanging ?? 0) / peak) : 1;
+      const rot = gain === 1 ? tail.rot : tail.rot.map((k) => ({ ...k, v: k.v * gain }));
       const rest = under.tail?.rot ? sampleNumber(under.tail.rot, 0) : 0;
       const scale = under.tail?.scale ? sampleVec(under.tail.scale, 0, v).x : 1;
-      out.tail = { ...tail, pos: tailFollow(tail.rot, rest, scale) };
+      out.tail = { ...tail, rot, pos: tailFollow(rot, rest, scale) };
     }
     return out;
   };
@@ -1231,6 +1270,8 @@ export function catOverlayOn(overlay: CatAnim, base: CatAnim): CatAnim {
 
 const struggle = struggleAnim();
 FREE_LEG_TRACKS.set(struggle, STRUGGLE_KICKS);
+const reluctant = reluctantAnim();
+HANGING_TAIL_PEAK.set(reluctant, RELUCTANT_HANGING_PEAK);
 
 export const CAT_FEELINGS = defineAnims(CAT_RIG, {
   cough: coughAnim(),
@@ -1243,7 +1284,7 @@ export const CAT_FEELINGS = defineAnims(CAT_RIG, {
   snore: snoreAnim(),
   clumsy: clumsyAnim(),
   content: contentAnim(),
-  reluctant: reluctantAnim(),
+  reluctant,
   warn: warnAnim(),
   struggle,
   sadWalk: sadWalkAnim(),

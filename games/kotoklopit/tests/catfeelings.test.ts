@@ -192,14 +192,48 @@ describe("catOverlayOn: накладка, підігнана під основу
   it("на спині (таз віддзеркалено згори донизу) кістки під тазом повертаються навпаки — хвіст б'є над підлогою, а не крізь неї", () => {
     const warn = catOverlayOn(CAT_FEELINGS.warn, ON_BACK);
     const upright = catOverlayOn(CAT_FEELINGS.warn, SITS);
-    for (const bone of ["tail", "neck", "head"] as const) {
+    for (const bone of ["neck", "head"] as const) {
       const a = warn.bones?.[bone]?.rot ?? [];
       const b = upright.bones?.[bone]?.rot ?? [];
       expect(a.length).toBeGreaterThan(0);
       expect(a.map((k) => k.v + 0)).toEqual(b.map((k) => -k.v + 0));
     }
-    // Хвіст б'є від основи вгору у світі: на спині — проти годинникової (від'ємний локальний кут під дзеркалом).
-    expect(Math.min(...(warn.bones?.tail?.rot ?? []).map((k) => k.v))).toBeLessThanOrEqual(-60);
+    // Хвіст — навпаки й стиснутий до розмаху, що не заходить за силует, з тим самим ритмом (ключ у ключ).
+    const a = warn.bones?.tail?.rot ?? [];
+    const b = upright.bones?.tail?.rot ?? [];
+    const peak = Math.max(...b.map((k) => Math.abs(k.v)));
+    const gain = Math.max(...a.map((k) => Math.abs(k.v))) / peak;
+    expect(gain).toBeLessThan(1);
+    expect(gain * peak).toBeGreaterThanOrEqual(35);
+    a.forEach((k, i) => expect(k.v).toBeCloseTo(-(b[i]?.v ?? NaN) * gain, 9));
+  });
+
+  it("на спині хвіст б'є збоку від кота: кінчик не заходить за круп до задніх лап і не пробиває підлогу", () => {
+    for (const [name, overlay] of overlays) {
+      const keys = overlay.bones?.tail?.rot;
+      if (!keys) continue;
+      const fitted = catOverlayOn(overlay, ON_BACK);
+      for (const { t } of keys) {
+        const rig = new Rig(CAT_RIG, { facing: { view: "front" } });
+        rig.play(layered(ON_BACK, fitted, "front", t), 0, { blend: 0 });
+        rig.evaluate(0);
+        const tail = rig.bone("tail");
+        const tip = { x: tail.world.a * tail.len + tail.world.tx, y: tail.world.b * tail.len + tail.world.ty };
+        const hips = Math.min(rig.bone("leg-back-near").world.tx, rig.bone("leg-back-far").world.tx);
+        expect({ name, t, beside: tip.x < hips - 6, above: tip.y < 0 }).toEqual({ name, t, beside: true, above: true });
+      }
+    }
+  });
+
+  it("на руках (хвіст звисає під тулуб) «терпить» сіпає ширше — кінчик вилітає з-за стегна; під рукою й ззаду — як був", () => {
+    const peak = (anim: CatAnim, view: View): number => Math.max(...(tracksOf(anim, view, "tail").rot ?? []).map((k) => Math.abs(k.v)));
+    const own = peak(CAT_FEELINGS.reluctant, "front");
+    const held = catOverlayOn(CAT_FEELINGS.reluctant, HANGS);
+    expect(peak(held, "front")).toBeGreaterThanOrEqual(40);
+    expect(peak(held, "back")).toBeCloseTo(own, 9);
+    expect(peak(catOverlayOn(CAT_FEELINGS.reluctant, SITS), "front")).toBeCloseTo(own, 9);
+    // «Попереджає» й так б'є широко — не змінюється.
+    expect(peak(catOverlayOn(CAT_FEELINGS.warn, HANGS), "front")).toBeCloseTo(peak(CAT_FEELINGS.warn, "front"), 9);
   });
 
   it("«пручається»: лапи, що стоять на підлозі, не брикаються; ті, що звисають на руках, — брикаються", () => {
@@ -213,3 +247,4 @@ describe("catOverlayOn: накладка, підігнана під основу
     }
   });
 });
+
