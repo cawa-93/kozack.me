@@ -4,7 +4,6 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../art/palette";
-import { RACE } from "../sim/config";
 import { drive } from "../sim/game";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
@@ -18,7 +17,6 @@ import { artEntry } from "../view/art/manifest";
 import { RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
-import { currentGfx } from "../view/gfx";
 import {
   barMarkerY,
   barParts,
@@ -55,8 +53,6 @@ export const DESTINATION_TITLES: Record<Destination, string> = {
   show: "Виставка котів",
 };
 
-const CAR_COLORS = [0x4f7fb3, 0x8e4a6a, 0x6fae6a, 0xe8b93a, 0x9aa3ab];
-
 export class RaceScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private label!: Phaser.GameObjects.Text;
@@ -68,7 +64,7 @@ export class RaceScene extends Phaser.Scene {
   private steer: -1 | 0 | 1 = 0;
   /** Плаваючий джойстик, як удома: вперед — газ, назад — гальмо, убік — перестроїтися. */
   private stick: { id: number; origin: { x: number; y: number }; x: number; y: number; steered: boolean } | null = null;
-  /** Нова графіка (крок 16, `?gfx=iso`): дорога, узбіччя, машини й смуга прогресу з атласу; у старому вигляді — null. */
+  /** Дорога, узбіччя, машини й смуга прогресу з атласу (крок 16, A14); створюється з кожною гонкою. */
   private art: RaceArt | null = null;
 
   constructor(private readonly session: Session) {
@@ -80,21 +76,21 @@ export class RaceScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.art = currentGfx() === "iso" ? new RaceArt(this) : null;
-    this.g = this.add.graphics();
-    this.label = this.add.text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "22px", color: "#f3e9dc", fontStyle: "bold", resolution: 2 });
+    const art = new RaceArt(this);
+    this.art = art;
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => art.destroy());
+    // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
+    this.g = this.add.graphics().setDepth(RACE_DEPTH.ui);
+    this.label = this.add
+      .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "22px", color: "#f3e9dc", fontStyle: "bold", resolution: 2 })
+      .setDepth(RACE_DEPTH.ui)
+      .setStroke(PALETTE.ink, 5);
     this.hint = this.add
       .text(0, 0, RACE_START_HINT, { fontFamily: "system-ui, sans-serif", fontSize: "26px", color: "#f3e9dc", fontStyle: "bold", resolution: 2 })
       .setOrigin(0.5, 1)
-      .setVisible(false);
-    if (this.art) {
-      // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
-      this.g.setDepth(RACE_DEPTH.ui);
-      this.label.setDepth(RACE_DEPTH.ui).setStroke(PALETTE.ink, 5);
-      this.hint.setDepth(RACE_DEPTH.ui).setStroke(PALETTE.ink, 5);
-      const art = this.art;
-      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => art.destroy());
-    }
+      .setVisible(false)
+      .setDepth(RACE_DEPTH.ui)
+      .setStroke(PALETTE.ink, 5);
     this.touched = false;
     const keyboard = this.input.keyboard;
     if (keyboard) {
@@ -175,53 +171,14 @@ export class RaceScene extends Phaser.Scene {
     this.scene.stop();
   }
 
+  /**
+   * Кадр гонки (крок 16, A14): поле й дорога плитками, що біжать донизу, машини з атласу, смуга прогресу; поверх — джойстик,
+   * підказка старту й напис.
+   */
   private draw(): void {
     const trip = this.state.trip;
-    if (!trip) return;
-    if (this.art) return this.drawArt(trip, this.art);
-    const race = trip.race;
-    const { width, height } = this.scale;
-    const g = this.g.clear();
-    const safe = safeArea();
-    g.fillStyle(0x55704a).fillRect(0, 0, width, height);
-    const roadW = Math.min(width * 0.7, 420);
-    const laneW = roadW / RACE.lanes;
-    const left = (width - roadW) / 2;
-    g.fillStyle(0x3a3a40).fillRect(left, 0, roadW, height);
-    // Розмітка біжить униз, поки машина їде вгору.
-    const pixelsPerUnit = (height * 0.75) / RACE.view;
-    const dash = 0.25;
-    const offset = ((race.done % (dash * 2)) / (dash * 2)) * dash * 2 * pixelsPerUnit;
-    g.fillStyle(0xf3e9dc, 0.8);
-    for (let lane = 1; lane < RACE.lanes; lane++) {
-      const x = left + lane * laneW - 2;
-      for (let y = -dash * 2 * pixelsPerUnit + offset; y < height; y += dash * 2 * pixelsPerUnit) g.fillRect(x, y, 4, dash * pixelsPerUnit);
-    }
-    const carW = laneW * 0.55;
-    const carH = RACE.carLength * pixelsPerUnit * 1.6;
-    const playerY = height * 0.78;
-    for (const car of race.cars) {
-      const y = playerY - (carAt(race, car) - race.done) * pixelsPerUnit;
-      if (y < -carH || y > height + carH) continue;
-      this.car(g, left + (car.lane + 0.5) * laneW, y, carW, carH, CAR_COLORS[Math.floor(car.start * 7) % CAR_COLORS.length] ?? 0x9aa3ab);
-    }
-    this.car(g, left + (race.lane + 0.5) * laneW, playerY, carW, carH, COLORS.danger);
-    // Стрілка прогресу дороги збоку.
-    const barX = left + roadW + 24;
-    const barTop = safe.top + 90;
-    const barH = height - barTop - safe.bottom - 40;
-    g.fillStyle(COLORS.ink, 0.6).fillRoundedRect(barX, barTop, 12, barH, 6);
-    g.fillStyle(COLORS.good).fillRoundedRect(barX, barTop + barH * (1 - race.done / race.road), 12, barH * (race.done / race.road), 6);
-    this.drawStick(g);
-    this.drawStartHint(g, race.speed === 0 && !this.touched, { x: Math.max(safe.left + STICK_RADIUS + 12, left / 2), y: height * 0.62 }, { x: left + (race.lane + 0.5) * laneW, y: playerY - carH * 0.6 });
-    this.drawLabel(trip, safe);
-  }
-
-  /**
-   * Нова графіка (крок 16, `?gfx=iso`): поле й дорога плитками, що біжать донизу, машини з атласу, смуга прогресу; джойстик,
-   * підказка старту й напис — ті самі, що й у старому вигляді. Відстані дороги переводяться в пікселі так само, як там.
-   */
-  private drawArt(trip: Trip, art: RaceArt): void {
+    const art = this.art;
+    if (!trip || !art) return;
     const race = trip.race;
     const { width, height } = this.scale;
     const g = this.g.clear();
@@ -277,17 +234,11 @@ export class RaceScene extends Phaser.Scene {
     const tip = y - STICK_RADIUS - 34;
     g.fillStyle(0xffffff, alpha * 2).fillTriangle(x, tip, x - 16, tip + 20, x + 16, tip + 20);
   }
-
-  private car(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h: number, color: number): void {
-    g.fillStyle(color).fillRoundedRect(x - w / 2, y - h / 2, w, h, 8);
-    g.fillStyle(0xcfe3ef, 0.9).fillRoundedRect(x - w / 2 + 5, y - h / 2 + h * 0.18, w - 10, h * 0.22, 4);
-    g.lineStyle(2.5, COLORS.ink).strokeRoundedRect(x - w / 2, y - h / 2, w, h, 8);
-  }
 }
 
-// --- Нова графіка (крок 16, A14) ---------------------------------------------------------------------
+// --- Арт гонки (крок 16, A14) ------------------------------------------------------------------------
 
-/** Шари гонки в новій графіці: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис. */
+/** Шари гонки: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис. */
 const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, marker: 5, ui: 10 } as const;
 /** Від середини своєї машини до її переду з контуром, одиниці арту (`race/car/player`): над ним — підказка «W ↑». */
 const RACE_CAR_FRONT = 34;
@@ -393,7 +344,7 @@ class RaceArt {
       .setPosition(laneX(cx, race.lane, k), playerY)
       .setRotation(steerTilt(race.lane, race.targetLane));
 
-    // Смуга прогресу збоку дороги — там само по висоті, що й у старому вигляді.
+    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом.
     const barTop = view.safe.top + 90;
     const barH = height - barTop - view.safe.bottom - 40;
     const barX = cx + RACE_BAR_X * k;
