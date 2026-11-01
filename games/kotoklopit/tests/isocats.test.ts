@@ -12,7 +12,8 @@ import { advance, newGame } from "../src/sim/game";
 import { CARRIER_SPOT, isWall, objectAt, objectById, slotCenter } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, CatAct, Feeder, HomeItem, Save } from "../src/sim/types";
+import { gameMinutes } from "../src/sim/time";
+import type { Cat, CatAct, Feeder, HomeItem, Save, Vec } from "../src/sim/types";
 import { CAT_EARS } from "../src/view/anim/catface";
 import { catFacing } from "../src/view/anim/catfacing";
 import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
@@ -24,7 +25,7 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withBelly, withFace } from "../src/view/iso/catanim";
-import { catPlay, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
 import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
@@ -856,6 +857,69 @@ describe("темп лап ходи й бігу (`gaitRate`)", () => {
     // А з темпом за `walkFactor` (1 — за будь-якої швидкості кота) лапа їхала б.
     const fixed = gaitRate("walk", walk * 0.8, 0, false, 1);
     expect(Math.abs(fixed - 1)).toBeGreaterThan(0.1);
+  });
+});
+
+describe("переставлений кіт доганяє своє місце (`catchUp`)", () => {
+  const FRAME = 1 / 60;
+  /** Кадри по 1/60 с: сим веде кота `sim(i)` (клітинки), зсув пари — `pair(i)`; повертає, де кота намальовано. */
+  function drawn(frames: number, sim: (i: number) => Vec, pair: (i: number) => Vec = () => ({ x: 0, y: 0 })): Vec[] {
+    const lag = { x: 0, y: 0 };
+    const out: Vec[] = [];
+    const step = catStep(gameMinutes(FRAME));
+    for (let i = 0; i < frames; i++) {
+      const now = sim(i);
+      const p = pair(i);
+      if (i > 0) {
+        const was = sim(i - 1);
+        const pw = pair(i - 1);
+        const jump = catJump({ x: now.x - was.x, y: now.y - was.y }, { x: p.x - pw.x, y: p.y - pw.y }, step, { x: 0, y: 0 });
+        catchUp(lag, jump, FRAME);
+      }
+      out.push({ x: now.x + p.x + lag.x, y: now.y + p.y + lag.y });
+    }
+    return out;
+  }
+  const dist = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+  it("мисливець, якого сим одним кроком поставив упритул до утікача (1,45 клітинки), добігає туди, а не перескакує", () => {
+    // Біжить 10 клітинок за секунду (зумі, 7,5 за ігрову хвилину), на 20-му кадрі сим ставить його на 1,45 клітинки далі й зупиняє.
+    const run = CATCH.speed / gameMinutes(1) / 60;
+    const sim = (i: number): Vec => ({ x: 5 + run * Math.min(i, 20) + (i >= 20 ? 1.45 : 0), y: 9.3 });
+    const path = drawn(60, sim);
+    const step = catStep(gameMinutes(FRAME));
+    for (let i = 1; i < path.length; i++) {
+      // За кадр — не далі, ніж найшвидший біг сима чи вигляду: жодного перескоку.
+      expect(dist(path[i]!, path[i - 1]!), `кадр ${i}`).toBeLessThanOrEqual(Math.max(step, CATCH.fast * FRAME) + 1e-9);
+    }
+    // Кадр переставлення: намальований кіт ще далеко позаду.
+    expect(dist(path[20]!, sim(20))).toBeGreaterThan(1);
+    // Доганяє за ≤ 300 мс: далі вже там, де його поставив сим.
+    expect(dist(path[20 + 18]!, sim(20 + 18))).toBeLessThan(0.01);
+    // Біг рівний: без переставлення намальований кіт там само, де кіт сима.
+    for (let i = 0; i < 20; i++) expect(dist(path[i]!, sim(i))).toBeLessThan(1e-12);
+  });
+
+  it("зсув пари (гра-боротьба: ≈ 0,19 клітинки) вмикається плавно, за ≈ 150–250 мс; переставляння далі за 2 клітинки — одразу", () => {
+    const shift = { x: 0.133, y: -0.133 };
+    const path = drawn(30, () => ({ x: 9, y: 9 }), (i) => (i >= 5 ? shift : { x: 0, y: 0 }));
+    const target = { x: 9 + shift.x, y: 9 + shift.y };
+    const full = Math.hypot(shift.x, shift.y);
+    // Кадр, коли пара ввімкнулася: кіт ще майже там, де був.
+    expect(dist(path[5]!, { x: 9, y: 9 })).toBeLessThan(full * 0.2);
+    // За 100 мс — понад половину шляху, за 250 мс — на місці.
+    expect(dist(path[5 + 6]!, target)).toBeLessThan(full * 0.5);
+    expect(dist(path[5 + 15]!, target)).toBeLessThan(1e-9);
+    // З поїздки, з рук (далі за `CATCH.max`) — одразу там.
+    const far = drawn(3, (i) => (i >= 1 ? { x: 12, y: 9 } : { x: 9, y: 9 }));
+    expect(dist(far[1]!, { x: 12, y: 9 })).toBe(0);
+  });
+
+  it("крок кадру — за ігровими хвилинами (і швидкістю гри режиму розробки); без попередньої хвилини — будь-який", () => {
+    expect(catStep(gameMinutes(FRAME))).toBeCloseTo(CATCH.speed * gameMinutes(FRAME) * CATCH.slack + CATCH.eps, 9);
+    expect(catStep(gameMinutes(FRAME) * 4)).toBeGreaterThan(catStep(gameMinutes(FRAME)) * 3);
+    expect(catStep(Number.NaN)).toBe(Number.POSITIVE_INFINITY);
+    expect(catStep(-1)).toBe(Number.POSITIVE_INFINITY);
   });
 });
 

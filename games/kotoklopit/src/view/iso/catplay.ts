@@ -5,6 +5,8 @@
 
 import type { CatFace } from "../anim/catface";
 import { CAT_ONE_SHOT_MS, CAT_OVERLAYS, type CatAnimId, type CatOneShotId } from "../anim/ids";
+import { CAT_WALK_TILES_PER_MINUTE, ZOOMIES } from "../../sim/config";
+import type { Vec } from "../../sim/types";
 import type { CatAnimChoice } from "../pose";
 import { catJumpLift, catLegLength, catRunRate, catWalkRate } from "../rig/anims/cat/basic";
 
@@ -115,6 +117,65 @@ export function gaitRate(anim: CatAnimId, speed: number, kitten: number, shortLe
   if (anim !== "run" && !WALK_GAITS.has(anim)) return 1;
   const leg = catLegLength(kitten, shortLegs) * scale;
   return anim === "run" ? catRunRate(speed, leg) : catWalkRate(speed, leg);
+}
+
+// --- Переставлений кіт доганяє своє місце ----------------------------------------------------------
+
+/**
+ * Кіт, якого сим переставив на підлозі (рецензія хвилі 3): мисливець у грі-боротьбі, добігши до клітинки утікача, за один крок
+ * стає впритул збоку (`standBeside` сима) — до ≈ 1,5 клітинки за кадр, — а пара (`catPairs`) вмикає й знімає свій зсув одразу.
+ * Вигляд не перескакує туди за кадр, а доганяє нове місце. `speed` — найшвидший кіт сима (зумі й погоня, клітинок за ігрову
+ * хвилину): що понад нього (із запасом `slack` і `eps` на нерівні кадри) кіт «пройшов» за кадр, те переставлення. Доганяє не
+ * швидше за `fast` (клітинок за секунду, ≈ біг сима за звичайної швидкості гри), наближаючись на ≈ 63 % за `ms`, і не
+ * повільніше за `slow` — без довгого доповзання. Позаду далі за `run` клітинки — біжить (`run`), а не ковзає в позі; стрибок,
+ * довший за `max` клітинки, — переставляння (з поїздки, з рук): одразу, як і раніше.
+ */
+export const CATCH = { speed: CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed, slack: 1.25, eps: 0.02, fast: 12, ms: 70, slow: 2.5, run: 0.3, max: 2 } as const;
+
+/** Скільки клітинок найшвидший кіт міг пробігти за кадр, що тривав `minutes` ігрових хвилин (немає чи від'ємне — скільки завгодно). */
+export function catStep(minutes: number): number {
+  return minutes >= 0 ? CATCH.speed * minutes * CATCH.slack + CATCH.eps : Number.POSITIVE_INFINITY;
+}
+
+/**
+ * Стрибок місця кота на підлозі за кадр, клітинки (пише в `out`): зміна зсуву пари `pair` і те, на скільки сим переставив кота
+ * (`moved`) понад `step` (`catStep`) — у напрямку переставлення.
+ */
+export function catJump(moved: Vec, pair: Vec, step: number, out: Vec): Vec {
+  out.x = pair.x;
+  out.y = pair.y;
+  const d = Math.hypot(moved.x, moved.y);
+  if (d > step) {
+    const k = 1 - step / d;
+    out.x += moved.x * k;
+    out.y += moved.y * k;
+  }
+  return out;
+}
+
+/**
+ * На скільки намальований кіт позаду свого місця (клітинки, `lag` — переписується): що лишилося з минулих кадрів, ближче на
+ * крок цього кадру за `seconds` (`CATCH`), і мінус стрибок цього кадру `jump` (`catJump`) — намальований кіт лишається, де був.
+ * Стрибок чи відставання, довші за `CATCH.max`, — переставляння: одразу на місці.
+ */
+export function catchUp(lag: Vec, jump: Vec | null, seconds: number): Vec {
+  const left = Math.hypot(lag.x, lag.y);
+  if (left > 0) {
+    const ease = seconds > 0 ? 1 - Math.exp((-seconds * 1000) / CATCH.ms) : 0;
+    const step = seconds > 0 ? Math.max(Math.min(left * ease, CATCH.fast * seconds), CATCH.slow * seconds) : 0;
+    const k = step >= left ? 0 : (left - step) / left;
+    lag.x *= k;
+    lag.y *= k;
+  }
+  if (jump && (jump.x !== 0 || jump.y !== 0)) {
+    lag.x -= jump.x;
+    lag.y -= jump.y;
+    if (Math.hypot(jump.x, jump.y) > CATCH.max || Math.hypot(lag.x, lag.y) > CATCH.max) {
+      lag.x = 0;
+      lag.y = 0;
+    }
+  }
+  return lag;
 }
 
 // --- Стрибок -----------------------------------------------------------------------------------

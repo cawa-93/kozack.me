@@ -13,11 +13,13 @@ import type { GameEvent } from "../../sim/events";
 import { showsPregnancy } from "../../sim/reproduction";
 import type { Target } from "../../sim/targets";
 import type { Cat, GameState, Quality, Vec } from "../../sim/types";
+import { hasDisease } from "../../sim/diseases";
 import { coatOf } from "../../sim/genetics";
 import { isSolid } from "../../sim/home";
+import { absoluteMinute } from "../../sim/time";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
-import { catFacing, catMoving, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
+import { catFacing, catMoving, facingFromTiles, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
 import { PERSON_ONE_SHOT_MS, type CatOneShotId } from "../anim/ids";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/person/move";
@@ -31,7 +33,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { catPlay, gaitRate, groundAt, nextGait, nextLift, startShot, type CatShot, type GaitMemory, type Lift } from "./catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, startShot, WALK_GAITS, type CatShot, type GaitMemory, type Lift } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { CAT_PIECE, catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -108,6 +110,11 @@ interface Memory {
   spot: CatSpot | null;
   /** Зсув кота в юрбі зараз, клітинки: плавно йде до того, що каже `catCrowds` (`CROWD_EASE_MS`). */
   crowd: Vec;
+  /** На скільки намальований кіт ще позаду свого місця на підлозі (клітинки): доганяє його (`CATCH`). */
+  catchUp: Vec;
+  /** Минулого кадру кіт стояв на підлозі (`floor`), і який тоді був зсув пари (клітинки): що змінилося, те стрибок. */
+  floorWas: boolean;
+  pairTile: Vec;
   /** Де кіт щодо рук персонажа минулого кадру: 0 — сам, 1 — на руках чи колінах, 2 — його беруть чи опускають. */
   hands: number;
   /** Корінь кота, що щойно став у руки чи зійшов з них, доходить до нового місця (`LIFT_BLEND.root`): зсув і коли почався. */
@@ -187,6 +194,13 @@ export class IsoCatsView implements CatsPart {
   private readonly crowdShifts = new Map<number, Vec>();
   /** Місця юрби біля персонажа між кадрами (`catCrowds`). */
   private readonly crowdPlaces = crowdMemory();
+  /** Ігрова хвилина минулого кадру й скільки клітинок найшвидший кіт міг пробігти за цей кадр (`catStep`). */
+  private minuteWas: number | null = null;
+  private catStep = Number.POSITIVE_INFINITY;
+  /** Буфери стрибка кота (`catJump`): щокадру не створювати нових. */
+  private readonly moved: Vec = { x: 0, y: 0 };
+  private readonly pairShift: Vec = { x: 0, y: 0 };
+  private readonly jump: Vec = { x: 0, y: 0 };
   /** Спинка кота від кореня (кіт, якого беруть на руки чи опускають). */
   private readonly petOffset: Point = { x: 0, y: 0 };
 
@@ -201,6 +215,11 @@ export class IsoCatsView implements CatsPart {
     const sizes = this.sizes;
     sizes.clear();
     for (const cat of state.cats) sizes.set(cat.id, this.sizeFor(cat));
+    // Скільки клітинок найшвидший кіт міг пробігти за цей кадр — за ігровими хвилинами (швидкість гри режиму розробки теж).
+    const minute = absoluteMinute(state.day, state.minute);
+    const passed = this.minuteWas === null ? Number.NaN : minute - this.minuteWas;
+    this.minuteWas = minute;
+    this.catStep = catStep(passed);
     const pairs = catPairs(state, this.sizeOf);
     const crowd = this.crowd(state, pairs);
     const alive = this.alive;
@@ -278,6 +297,9 @@ export class IsoCatsView implements CatsPart {
         choice: null,
         spot: null,
         crowd: { x: 0, y: 0 },
+        catchUp: { x: 0, y: 0 },
+        floorWas: false,
+        pairTile: { x: 0, y: 0 },
         hands: 0,
         rootFix: null,
         transition: null,
@@ -361,6 +383,7 @@ export class IsoCatsView implements CatsPart {
     if (cat.away !== null) {
       view.hide();
       mem.pos = null;
+      mem.floorWas = false;
       mem.lift = null;
       mem.gait = null;
       return;
@@ -380,18 +403,23 @@ export class IsoCatsView implements CatsPart {
     const floor = base.kind === "floor";
     const still = floor && pair === null && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
     const shift = this.crowdShift(mem, floor ? crowd : null, still, seconds, mem.pos === null);
-    const own = floor && (shift.x !== 0 || shift.y !== 0) ? { ...base, at: { x: base.at.x + shift.x, y: base.at.y + shift.y } } : base;
+    // Сим переставив кота чи пара змінила зсув — доганяє нове місце (`CATCH`); далеко позаду — біжить туди лицем.
+    const lag = this.catchUp(cat, mem, base, pair, seconds);
+    const moved = floor && (shift.x !== 0 || shift.y !== 0 || lag.x !== 0 || lag.y !== 0);
+    const own = moved ? { ...base, at: { x: base.at.x + shift.x + lag.x, y: base.at.y + shift.y + lag.y } } : base;
+    const catching = floor && anim === choice.anim && Math.hypot(lag.x, lag.y) > CATCH.run;
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
     this.liftFrom(view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук). Іде — за
     // згладженим напрямом руху й не віддзеркалюючись надто часто (`smoothHeading`, `holdFlip`).
     if (mem.pos) smoothHeading(mem.heading, cat.x - mem.pos.x, cat.y - mem.pos.y, seconds);
     const was = mem.facing;
+    const toward = catching ? facingFromTiles({ x: -lag.x, y: -lag.y }, was, true) : null;
     const faced =
       spot.kind === "hands"
         ? personFacing(state, was)
-        : faceTo(catFacing(state, cat, mem.pos, { prev: was, pair, heading: mem.heading, at: own.kind === "floor" ? own.at : null }), spot);
-    const facing = holdFlip(faced, was, spot.kind !== "hands" && catMoving(cat), time - mem.flipAt);
+        : (toward ?? faceTo(catFacing(state, cat, mem.pos, { prev: was, pair, heading: mem.heading, at: own.kind === "floor" ? own.at : null }), spot));
+    const facing = holdFlip(faced, was, spot.kind !== "hands" && (catMoving(cat) || catching), time - mem.flipAt);
     if (was && facing.flip !== was.flip) mem.flipAt = time;
     mem.facing = facing;
     if (mem.pos) {
@@ -411,7 +439,9 @@ export class IsoCatsView implements CatsPart {
     // опускаючи (сим уже відпустив) — поза на підлозі з першої миті, і змішується, поки кіт іде до підлоги (`LIFT_BLEND`).
     const sitting = anim === "carried" ? "sit" : anim;
     const held = state.character.held?.kind === "cat" && state.character.held.cat === cat.id;
-    f.anim = lifting ? (held && lifting.w > 0 ? "carried" : sitting) : anim;
+    // Доганяє нове місце — біжить (травмований кульгає), якщо й так не йде.
+    const body = catching && anim !== "run" && !WALK_GAITS.has(anim) ? (hasDisease(cat, "injury") ? "limp" : "run") : anim;
+    f.anim = lifting ? (held && lifting.w > 0 ? "carried" : sitting) : body;
     f.blendMs = lifting ? (held ? LIFT_BLEND.up : LIFT_BLEND.down) : null;
     f.overlay = overlay;
     f.restart = restart;
@@ -422,7 +452,7 @@ export class IsoCatsView implements CatsPart {
     f.scale = size.scale * spot.scale;
     // Хода й біг — у такт тому, як кіт іде на екрані (точка підлоги під ним), з довжиною його лап: лапи не ковзають.
     mem.gait = nextGait(mem.gait, f.ground.x, f.ground.y, seconds);
-    f.speed = gaitRate(anim, mem.gait.speed, size.kitten, cat.shape.legs === "short", f.scale);
+    f.speed = gaitRate(f.anim, mem.gait.speed, size.kitten, cat.shape.legs === "short", f.scale);
     f.kitten = size.kitten;
     f.pregnant = showsPregnancy(state, cat);
     f.girth = girthOf(cat);
@@ -437,6 +467,38 @@ export class IsoCatsView implements CatsPart {
     f.teeth = carrying ? this.teethOf(state, act.carry, act.target) : null;
     f.time = time;
     view.draw(cat, f);
+  }
+
+  /**
+   * Наскільки намальований кіт ще позаду свого місця на підлозі (клітинки, `Memory.catchUp`): сим переставив кота далі, ніж
+   * найшвидший кіт пробіг би за цей кадр (`catStep`), чи пара (`catPairs`) ввімкнула, змінила або зняла свій зсув, — кіт
+   * доганяє нове місце (`CATCH`), а не перескакує за кадр. Не на підлозі (меблі, руки, схованка) — без цього: там свої стрибки.
+   */
+  private catchUp(cat: Cat, mem: Memory, base: CatSpot, pair: PairPlacement | null, seconds: number): Vec {
+    const lag = mem.catchUp;
+    const was = mem.pos;
+    if (base.kind !== "floor" || was === null) {
+      lag.x = 0;
+      lag.y = 0;
+      mem.floorWas = false;
+      return lag;
+    }
+    const pairShift = this.pairShift;
+    pairShift.x = pair?.tile.x ?? 0;
+    pairShift.y = pair?.tile.y ?? 0;
+    let jump: Vec | null = null;
+    if (mem.floorWas) {
+      this.moved.x = cat.x - was.x;
+      this.moved.y = cat.y - was.y;
+      pairShift.x -= mem.pairTile.x;
+      pairShift.y -= mem.pairTile.y;
+      jump = catJump(this.moved, pairShift, this.catStep, this.jump);
+    }
+    catchUp(lag, jump, seconds);
+    mem.floorWas = true;
+    mem.pairTile.x = pair?.tile.x ?? 0;
+    mem.pairTile.y = pair?.tile.y ?? 0;
+    return lag;
   }
 
   /**
@@ -666,6 +728,7 @@ export class IsoCatsView implements CatsPart {
     this.views.clear();
     this.memory.clear();
     this.crowdPlaces.slots.clear();
+    this.minuteWas = null;
     for (const cloud of this.clouds.values()) {
       cloud.image.destroy();
       for (const tuft of cloud.tufts) tuft.destroy();
