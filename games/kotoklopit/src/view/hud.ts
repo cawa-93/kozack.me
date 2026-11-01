@@ -1,8 +1,7 @@
 // Інтерфейс рівня (§8.4): годинник, шкали показників, гроші, стани персонажа й короткий
 // розклад дня. Приховані числа (терпіння, репутація) тут не показуються.
-// У новому вигляді (крок 16, `?gfx=iso`) той самий розклад, але смуга, кружечки показників, рамки шкал, телефон і кнопка
-// повного екрана — кадри атласу `ui/hud/*` (A13), іконки — `icon/*`, а кольори й написи — з палітри арту
-// (`iso/hudlook.ts`, `iso/uilook.ts`); заливку шкал малює код у рамках арту.
+// Смуга, кружечки показників, рамки шкал, телефон і кнопка повного екрана — кадри атласу `ui/hud/*` (крок 16, A13), іконки —
+// `icon/*`, а кольори й написи — з палітри арту (`iso/hudlook.ts`, `iso/uilook.ts`); заливку шкал малює код у рамках арту.
 
 import Phaser from "phaser";
 
@@ -15,27 +14,21 @@ import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, Product, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
-import { COLORS } from "./colors";
-import { currentGfx } from "./gfx";
-import { iconArt, iconTexture, type IconName } from "./iconnames";
+import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
 import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, isoBarRects, STAT_BLINK, STAT_FILL, statDisc } from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
-import { BASE_WIDTH, HUD_HEIGHT, type Frame } from "./viewport";
+import { HUD_HEIGHT, type Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
-const FONT = "system-ui, sans-serif";
-const TEXT = "#f3e9dc";
-const MUTED = "#c9b9a8";
-
 /** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
-const STATS: readonly { name: StatName; icon: IconName; color: number }[] = [
-  { name: "health", icon: STAT_ICONS.health, color: 0xd8574a },
-  { name: "satiety", icon: STAT_ICONS.satiety, color: 0xe0893a },
-  { name: "hygiene", icon: STAT_ICONS.hygiene, color: 0x5fa8d3 },
-  { name: "sanity", icon: STAT_ICONS.sanity, color: 0x9b7fd1 },
+const STATS: readonly { name: StatName; icon: IconName }[] = [
+  { name: "health", icon: STAT_ICONS.health },
+  { name: "satiety", icon: STAT_ICONS.satiety },
+  { name: "hygiene", icon: STAT_ICONS.hygiene },
+  { name: "sanity", icon: STAT_ICONS.sanity },
 ];
 
 const ICON_SIZE = 30;
@@ -45,9 +38,8 @@ const BAR_WIDTH = 116;
 const BAR_HEIGHT = 12;
 const STATS_X = 238;
 const STATS_STEP = 158;
-/** Штрихування частини шкали над межею (§6.3): крок і колір смужок. */
+/** Штрихування частини шкали над межею (§6.3): крок смужок. */
 const HATCH_STEP = 6;
-const HATCH_COLOR = 0x6b5f73;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
 const BUTTONS_INSET = 44;
 /**
@@ -56,11 +48,11 @@ const BUTTONS_INSET = 44;
  */
 const NEWS = { width: 340, pad: 12, baseMs: 2500, perCharMs: 45, maxMs: 8000, fadeMs: 400 } as const;
 const DEPTH = UI_LAYERS.hud;
-/** Підказка на телефоні (§6.4): кружечок під іконкою запасу — центр від центру телефона й радіус старого кружечка. */
+/** Підказка на телефоні (§6.4): кружечок під іконкою запасу — центр від центру телефона й радіус кружечка. */
 const HINT = { x: 19, y: 19, r: 15 } as const;
 /**
- * Кружечки нового вигляду (`statDisc`): чорнильне кільце завбільшки як старий кружечок з контуром 2 — показника
- * (радіус `ICON_SIZE / 2 + 2`) і підказки (`HINT.r`), а іконка менша — так, щоб довкола неї лишався папір.
+ * Кружечки (`statDisc`): чорнильне кільце показника (радіус `ICON_SIZE / 2 + 2` разом із контуром 2) і підказки (`HINT.r`),
+ * а іконка менша — так, щоб довкола неї лишався папір.
  */
 const STAT_DISC = statDisc(2 * (ICON_SIZE / 2 + 2) + 2);
 const HINT_DISC = statDisc(2 * HINT.r + 2);
@@ -75,25 +67,21 @@ interface BarRect {
   h: number;
 }
 
-/** Як малювати шкали: доріжка, колір блимання, штрихування понад межею, контур (null — контур дає рамка арту). */
+/** Як малювати шкали: доріжка, колір блимання, штрихування понад межею; контур дає рамка арту. */
 interface BarLook {
   trough: number;
   blink: number;
   hatch: number;
-  outline: number | null;
   radius: number;
 }
 
-const LEGACY_BAR: BarLook = { trough: 0x1a1520, blink: 0xffffff, hatch: HATCH_COLOR, outline: COLORS.ink, radius: 5 };
-/** Заливка нового вигляду — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
-const ISO_BAR: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch, outline: null };
+/** Заливка — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
+const BAR_LOOK: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch };
 
-/** Шкала показника `i` старого вигляду: 116 × 12 праворуч від іконки. */
-const legacyBarRect = (i: number): BarRect => ({ x: STATS_X + i * STATS_STEP + BAR_X, y: BAR_Y, w: BAR_WIDTH, h: BAR_HEIGHT });
+/** Місце шкали показника `i`: 116 × 12 праворуч від іконки; рамку й заливку в ньому розкладає `isoBarRects`. */
+const barSlot = (i: number): BarRect => ({ x: STATS_X + i * STATS_STEP + BAR_X, y: BAR_Y, w: BAR_WIDTH, h: BAR_HEIGHT });
 
 export class Hud {
-  /** Новий вигляд (крок 16): кадри атласу й палітра арту; інакше — старий, як був. */
-  private readonly iso: boolean;
   /** Смуга панелі: розтягнути на ширину екрана й висоту панелі з безпечною зоною. */
   private readonly band: (width: number, height: number) => void;
   /** Усе, що ліворуч: дата, годинник, шкали, гроші, розклад. */
@@ -108,8 +96,8 @@ export class Hud {
   private readonly effects: Phaser.GameObjects.Text;
   private readonly schedule: Phaser.GameObjects.Text;
   private readonly phone: Phaser.GameObjects.Container;
-  /** Кадр телефона нового вигляду (стан `hint`, коли є підказка); у старому — null. */
-  private readonly phoneArt: Phaser.GameObjects.Image | null = null;
+  /** Кадр телефона (стан `hint`, коли є підказка). */
+  private readonly phoneArt: Phaser.GameObjects.Image;
   /** Підказка на телефоні (§6.4): іконка запасу, що вперше закінчився. */
   private readonly hint: Phaser.GameObjects.Container;
   private readonly hintIcon: Phaser.GameObjects.Image;
@@ -123,8 +111,6 @@ export class Hud {
   private readonly newsBg: Phaser.GameObjects.Graphics;
   private readonly newsTitle: Phaser.GameObjects.Text;
   private readonly newsText: Phaser.GameObjects.Text;
-  /** Кольори бабла телефона: тло, контур. */
-  private readonly newsLook: { fill: number; line: number };
   /** Коли бабл почне згасати (час сцени, мс); null — бабла немає. */
   private newsUntil: number | null = null;
 
@@ -132,92 +118,58 @@ export class Hud {
     private readonly scene: Phaser.Scene,
     layer: Phaser.GameObjects.Layer,
     onPhone: () => void,
-    gfx = currentGfx(),
   ) {
-    const iso = gfx === "iso";
-    this.iso = iso;
-    // Написи нового вигляду — паперовим на темній панелі з чорнильною обвідкою (`iso/uilook.ts`).
-    const text = iso
-      ? (x: number, y: number, size: number, color: string = UI_TEXT.main) =>
-          scene.add.text(x, y, "", { fontFamily: UI_FONT, fontSize: `${size}px`, color, stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3, resolution: 2 })
-      : (x: number, y: number, size: number, color = TEXT) => scene.add.text(x, y, "", { fontFamily: FONT, fontSize: `${size}px`, color, resolution: 2 });
+    // Написи — паперовим на темній панелі з чорнильною обвідкою (`iso/uilook.ts`).
+    const text = (x: number, y: number, size: number, color: string = UI_TEXT.main) =>
+      scene.add.text(x, y, "", { fontFamily: UI_FONT, fontSize: `${size}px`, color, stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3, resolution: 2 });
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
-    if (iso) {
-      // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
-      const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
-      this.band = (width, height) => band.place(bandRect(band.frame, width, height));
-    } else {
-      const band = scene.add
-        .rectangle(0, 0, BASE_WIDTH, HUD_HEIGHT, COLORS.background, 0.92)
-        .setOrigin(0)
-        .setDepth(DEPTH - 1)
-        .addToDisplayList(layer);
-      this.band = (width, height) => band.setSize(width, height);
-    }
-    this.date = text(20, 5, 17, iso ? UI_TEXT.muted : MUTED);
+    // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
+    const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
+    this.band = (width, height) => band.place(bandRect(band.frame, width, height));
+    this.date = text(20, 5, 17, UI_TEXT.muted);
     this.clock = text(20, 26, 36).setFontStyle("bold");
     // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка.
     const labels = STATS.flatMap((stat, i) => {
       const x = STATS_X + i * STATS_STEP + ICON_SIZE / 2;
       const y = BAR_Y + BAR_HEIGHT / 2;
-      if (iso) {
-        const { ring, icon } = STAT_DISC;
-        return [
-          addArt(scene, null, HUD_ART.stat).setPosition(x, y).setDisplaySize(ring, ring),
-          addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(icon, icon),
-        ];
-      }
+      const { ring, icon } = STAT_DISC;
       return [
-        scene.add.circle(x, y, ICON_SIZE / 2 + 2, COLORS.paper).setStrokeStyle(2, COLORS.ink),
-        scene.add.image(x, y, iconTexture(stat.icon)).setDisplaySize(ICON_SIZE - 2, ICON_SIZE - 2),
+        addArt(scene, null, HUD_ART.stat).setPosition(x, y).setDisplaySize(ring, ring),
+        addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(icon, icon),
       ];
     });
     this.bars = scene.add.graphics();
-    const isoBars = iso ? STATS.map((_, i) => isoBarRects(legacyBarRect(i), uiEntry(HUD_ART.bar).size)) : [];
-    this.barLook = iso ? { ...ISO_BAR, radius: (isoBars[0]?.fill.h ?? 0) / 2 } : LEGACY_BAR;
-    this.barRects = STATS.map((_, i) => isoBars[i]?.fill ?? legacyBarRect(i));
-    this.effects = text(STATS_X, 44, 18, iso ? UI_TEXT.warning : "#e8a33a");
+    const bars = STATS.map((_, i) => isoBarRects(barSlot(i), uiEntry(HUD_ART.bar).size));
+    this.barLook = { ...BAR_LOOK, radius: (bars[0]?.fill.h ?? 0) / 2 };
+    this.barRects = bars.map((bar) => bar.fill);
+    this.effects = text(STATS_X, 44, 18, UI_TEXT.warning);
     this.money = text(866, 20, 30).setFontStyle("bold");
-    this.schedule = text(990, 4, 18, iso ? UI_TEXT.muted : MUTED);
+    this.schedule = text(990, 4, 18, UI_TEXT.muted);
     this.left = scene.add
       .container(0, 0, [this.date, this.clock, ...labels, this.bars])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
-    // Рамки шкал нового вигляду — «три частини» над заливкою.
-    for (const bar of isoBars) new StretchArt(scene, this.left, HUD_ART.bar).place(bar.frame);
+    // Рамки шкал — «три частини» над заливкою.
+    for (const bar of bars) new StretchArt(scene, this.left, HUD_ART.bar).place(bar.frame);
     this.left.add([this.effects, this.money, this.schedule]);
 
     // Телефон персонажа: доставка (§6.4).
-    if (iso) {
-      this.phoneArt = addArt(scene, null, HUD_ART.phone, { state: HUD_STATES.phone.idle });
-      const { ring, icon } = HINT_DISC;
-      this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(icon, icon);
-      const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
-      this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
-      const size = uiEntry(HUD_ART.phone).size;
-      this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(size.w, size.h).setDepth(DEPTH).addToDisplayList(layer);
-    } else {
-      const g = scene.add.graphics();
-      g.fillStyle(0x4a3f52).fillCircle(0, 0, 26).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 26);
-      g.fillStyle(0x222026).fillRoundedRect(-9, -15, 18, 30, 4);
-      g.fillStyle(0x79a6c2).fillRect(-6, -11, 12, 19);
-      this.hintIcon = scene.add.image(19, 19, iconTexture("food")).setDisplaySize(22, 22);
-      this.hint = scene.add.container(0, 0, [scene.add.circle(19, 19, 15, COLORS.paper).setStrokeStyle(2, COLORS.ink), this.hintIcon]).setVisible(false);
-      this.phone = scene.add.container(0, 0, [g, this.hint]).setSize(56, 56).setDepth(DEPTH).addToDisplayList(layer);
-    }
+    this.phoneArt = addArt(scene, null, HUD_ART.phone, { state: HUD_STATES.phone.idle });
+    const { ring, icon } = HINT_DISC;
+    this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(icon, icon);
+    const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
+    this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
+    const size = uiEntry(HUD_ART.phone).size;
+    this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(size.w, size.h).setDepth(DEPTH).addToDisplayList(layer);
     this.phone.setInteractive({ useHandCursor: true }).on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
       onPhone();
     });
 
-    // Бабл телефона: мовна хмаринка під панеллю, хвостиком до телефона; натиснути — сховати. У новому вигляді — папір і
-    // чорнило палітри арту.
-    this.newsLook = iso ? { fill: UI_FILL.paper, line: UI_FILL.ink } : { fill: 0xffffff, line: COLORS.ink };
-    const newsFont = iso ? UI_FONT : FONT;
-    const newsColor = iso ? UI_TEXT.onPaper : "#1f1a24";
+    // Бабл телефона: мовна хмаринка під панеллю, хвостиком до телефона; натиснути — сховати. Папір і чорнило палітри арту.
     this.newsBg = scene.add.graphics();
-    this.newsTitle = scene.add.text(0, 0, "", { fontFamily: newsFont, fontSize: "17px", fontStyle: "bold", color: newsColor, resolution: 2 });
-    this.newsText = scene.add.text(0, 0, "", { fontFamily: newsFont, fontSize: "17px", color: newsColor, resolution: 2, wordWrap: { width: NEWS.width } });
+    this.newsTitle = scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", fontStyle: "bold", color: UI_TEXT.onPaper, resolution: 2 });
+    this.newsText = scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", color: UI_TEXT.onPaper, resolution: 2, wordWrap: { width: NEWS.width } });
     this.news = scene.add.container(0, 0, [this.newsBg, this.newsTitle, this.newsText]).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
     this.news.on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
@@ -225,17 +177,10 @@ export class Hud {
     });
 
     if (canFullscreen()) {
-      let icon: Phaser.GameObjects.Graphics | Phaser.GameObjects.Image;
-      let show: (active: boolean) => void;
-      if (iso) {
-        const art = addArt(scene, null, HUD_ART.fullscreen, { state: HUD_STATES.fullscreen.enter });
-        show = (active) => setArt(art, HUD_ART.fullscreen, { state: active ? HUD_STATES.fullscreen.exit : HUD_STATES.fullscreen.enter });
-        icon = art;
-      } else {
-        const g = scene.add.graphics();
-        show = (active) => drawFullscreenIcon(g, active);
-        icon = g;
-      }
+      const icon = addArt(scene, null, HUD_ART.fullscreen, { state: HUD_STATES.fullscreen.enter });
+      const show = (active: boolean): void => {
+        setArt(icon, HUD_ART.fullscreen, { state: active ? HUD_STATES.fullscreen.exit : HUD_STATES.fullscreen.enter });
+      };
       const button = scene.add.container(0, 0, [icon]).setSize(48, 48).setDepth(DEPTH).addToDisplayList(layer);
       button
         .setInteractive({ useHandCursor: true })
@@ -278,12 +223,11 @@ export class Hud {
     this.newsTitle.setPosition(-width + pad, pad);
     this.newsText.setPosition(-width + pad, pad + this.newsTitle.height + 2);
     const g = this.newsBg.clear();
-    const look = this.newsLook;
-    g.fillStyle(look.fill).fillRoundedRect(-width, 0, width, height, 14);
-    g.lineStyle(3, look.line).strokeRoundedRect(-width, 0, width, height, 14);
+    g.fillStyle(UI_FILL.paper).fillRoundedRect(-width, 0, width, height, 14);
+    g.lineStyle(3, UI_FILL.ink).strokeRoundedRect(-width, 0, width, height, 14);
     // Хвостик угору праворуч — до телефона.
-    g.fillStyle(look.fill).fillTriangle(-34, 1.5, -12, 1.5, 4, -14);
-    g.lineStyle(3, look.line).lineBetween(-34, 0, 4, -14).lineBetween(4, -14, -12, 0);
+    g.fillStyle(UI_FILL.paper).fillTriangle(-34, 1.5, -12, 1.5, 4, -14);
+    g.lineStyle(3, UI_FILL.ink).lineBetween(-34, 0, 4, -14).lineBetween(4, -14, -12, 0);
     this.news.setSize(width * 2, height * 2).setInteractive(new Phaser.Geom.Rectangle(-width, 0, width, height), Phaser.Geom.Rectangle.Contains);
     this.news.setVisible(true).setAlpha(1).setScale(0.85);
     this.scene.tweens.add({ targets: this.news, scale: 1, duration: 180, ease: "Back.easeOut" });
@@ -311,13 +255,11 @@ export class Hud {
       if (!bar) return;
       const value = stats[stat.name];
       const blink = value < LOW_STAT && Math.floor(time / 400) % 2 === 0;
-      const color = this.iso ? STAT_FILL[stat.name] : stat.color;
       g.fillStyle(look.trough).fillRoundedRect(bar.x, bar.y, bar.w, bar.h, look.radius);
-      g.fillStyle(blink ? look.blink : color).fillRoundedRect(bar.x, bar.y, Math.max(0, (bar.w * value) / 100), bar.h, look.radius);
+      g.fillStyle(blink ? look.blink : STAT_FILL[stat.name]).fillRoundedRect(bar.x, bar.y, Math.max(0, (bar.w * value) / 100), bar.h, look.radius);
       // Вище межі показник зараз не росте (брудний одяг, «Пригніченість»): цю частину шкали заштриховано.
       const ceiling = Math.max(value, statCeiling(state, stat.name));
       if (ceiling < 100) hatch(g, bar, bar.x + (bar.w * ceiling) / 100, bar.x + bar.w, look.hatch);
-      if (look.outline !== null) g.lineStyle(2, look.outline).strokeRoundedRect(bar.x, bar.y, bar.w, bar.h, look.radius);
     });
     // Гроші — символом гривні (§11.4).
     this.money.setText(`${Math.floor(money)} ₴`);
@@ -346,10 +288,9 @@ export class Hud {
   private showHint(product: Product | undefined): void {
     this.hinted = product;
     this.hint.setVisible(product !== undefined);
-    if (this.phoneArt) setArt(this.phoneArt, HUD_ART.phone, { state: product !== undefined ? HUD_STATES.phone.hint : HUD_STATES.phone.idle });
+    setArt(this.phoneArt, HUD_ART.phone, { state: product !== undefined ? HUD_STATES.phone.hint : HUD_STATES.phone.idle });
     if (product === undefined) return;
-    if (this.iso) setArt(this.hintIcon, iconArt(PRODUCT_ICONS[product]));
-    else this.hintIcon.setTexture(iconTexture(PRODUCT_ICONS[product])).setDisplaySize(22, 22);
+    setArt(this.hintIcon, iconArt(PRODUCT_ICONS[product]));
   }
 
   /** Значок кнопки повного екрана — лише коли режим змінився. */
@@ -362,22 +303,6 @@ export class Hud {
   }
 }
 
-/** Старий вигляд: кутики назовні — увімкнути повний екран, усередину — вийти з нього. */
-function drawFullscreenIcon(icon: Phaser.GameObjects.Graphics, active: boolean): void {
-  const g = icon.clear();
-  g.fillStyle(0x4a3f52, 0.85).fillCircle(0, 0, 22).lineStyle(2, COLORS.ink).strokeCircle(0, 0, 22);
-  g.lineStyle(3, COLORS.paper);
-  // Вершина кутика й напрямок його плечей.
-  const corner = active ? 4 : 11;
-  const arm = active ? 6 : -6;
-  for (const sx of [-1, 1]) {
-    for (const sy of [-1, 1]) {
-      const x = sx * corner;
-      const y = sy * corner;
-      g.lineBetween(x, y, x + sx * arm, y).lineBetween(x, y, x, y + sy * arm);
-    }
-  }
-}
 
 /** Косі смужки між x0 і x1 по висоті шкали; кожна смужка обрізана краями ділянки. */
 function hatch(g: Phaser.GameObjects.Graphics, bar: BarRect, x0: number, x1: number, color: number): void {
