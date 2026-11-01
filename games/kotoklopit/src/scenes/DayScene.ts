@@ -533,7 +533,8 @@ export class DayScene extends Phaser.Scene {
     this.showEarnings(time);
     this.bubbles.update();
     this.hearts.update();
-    this.viewport.follow(this.world.person.head, seconds);
+    // Камера — за ногами персонажа за симуляцією, а не за якорем бабла з пози скелета: не гойдається з кроком (§8.4).
+    this.viewport.follow(state.character.body, seconds);
     this.updateStateBubbles();
     this.touch.draw(canDash(state));
     this.drawFallingAsleep(time);

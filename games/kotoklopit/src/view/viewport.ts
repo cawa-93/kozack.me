@@ -7,7 +7,7 @@ import Phaser from "phaser";
 import { safeArea, type Insets } from "../screen";
 import type { Vec } from "../sim/types";
 import type { Projection } from "./world/projection";
-import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, HUD_HEIGHT } from "./zoom";
+import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, followTarget, HUD_HEIGHT } from "./zoom";
 
 // Полотно й панель — у чистій частині камери (`zoom.ts`): від них залежить зум.
 export { BASE_HEIGHT, BASE_WIDTH, HUD_HEIGHT };
@@ -31,7 +31,9 @@ export class Viewport {
   private readonly camera: Phaser.Cameras.Scene2D.Camera;
   private readonly uiCamera: Phaser.Cameras.Scene2D.Camera;
   private readonly listeners: ((frame: Frame) => void)[] = [];
-  private center: Vec;
+  private readonly center: Vec;
+  /** Куди камера хоче стати (`followTarget`): той самий об'єкт щокадру. */
+  private readonly target: Vec = { x: 0, y: 0 };
   /** Наступного кадру камера стає на місце одразу, без наїзду. */
   private snap = true;
   /** Масштаб, за якого квартира вміщується й читається, і наїзд поверх нього. */
@@ -81,15 +83,20 @@ export class Viewport {
     this.snap = true;
   }
 
-  /** Камера йде за персонажем, але не заглядає за межі квартири; якщо та вміщується — стоїть посередині. */
-  follow(target: Vec, seconds: number): void {
+  /**
+   * Камера йде за персонажем — за його ногами за симуляцією (`body`, клітинки), трохи вище (`followTarget`), — але не
+   * заглядає за межі квартири; якщо та вміщується — стоїть посередині.
+   */
+  follow(body: Vec, seconds: number): void {
     const camera = this.camera;
     const bounds = this.projection.world;
+    const target = followTarget(this.projection, body, this.target);
     const x = centerOn(target.x, camera.width / camera.zoom, bounds.width);
     const y = centerOn(target.y, camera.height / camera.zoom, bounds.height);
     const k = this.snap ? 1 : 1 - Math.exp(-FOLLOW_RATE * seconds);
     this.snap = false;
-    this.center = { x: this.center.x + (x - this.center.x) * k, y: this.center.y + (y - this.center.y) * k };
+    this.center.x += (x - this.center.x) * k;
+    this.center.y += (y - this.center.y) * k;
     camera.centerOn(this.center.x, this.center.y);
   }
 

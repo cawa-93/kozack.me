@@ -3,6 +3,7 @@
 // Зум — більший із двох: той, за якого видно всю квартиру, і той, за якого клітинка підлоги не нижча за мінімум у пікселях
 // CSS (дрібніше на телефоні не розгледіти). Якщо за мінімуму квартира не вміщується, камера стежить за персонажем.
 
+import type { Vec } from "../sim/types";
 import type { Projection } from "./world/projection";
 
 /** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
@@ -40,6 +41,25 @@ export function cameraZoom(view: ZoomView, projection: Pick<Projection, "world" 
   const fit = Math.min(view.width / bounds.width, view.height / bounds.height);
   const readable = (MIN_TILE_CSS * view.cssScale) / projection.tile.height;
   return Math.max(fit, readable);
+}
+
+/**
+ * На скільки одиниць арту над ногами персонажа точка, яку камера тримає посередині (§8.4): середина тулуба (персонаж ≈ 140
+ * заввишки). На телефоні 844 × 390 під ногами тоді ≈ 140 px CSS квартири (кіт біля ніг, меблі попереду), а голова з
+ * баблом лишаються видимими — ≈ 110 px CSS під панеллю. Камера йшла за якорем бабла над головою (з пози скелета): ноги
+ * стояли за 60–80 px від нижнього краю, а квартира гойдалася з кожним кроком і їхала вниз, коли персонаж сідав.
+ */
+export const FOLLOW_LIFT = 50;
+
+/**
+ * Куди дивиться камера: ноги персонажа за симуляцією (`character.body`, без анімації — камера не гойдається з кроком і не
+ * сідає разом з ним) на `FOLLOW_LIFT` вище. Пише в `out` (щокадру — без нових об'єктів) і повертає його.
+ */
+export function followTarget(projection: Pick<Projection, "toScreen">, body: Vec, out: Vec): Vec {
+  const feet = projection.toScreen(body);
+  out.x = feet.x;
+  out.y = feet.y - FOLLOW_LIFT;
+  return out;
 }
 
 /** Квартиру видно цілою (камері немає за ким стежити), а не лише її частину навколо персонажа. */

@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ISO } from "../src/view/world/projection";
-import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, fitsWhole, HUD_HEIGHT, MIN_TILE_CSS, type ZoomView } from "../src/view/zoom";
+import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, fitsWhole, FOLLOW_LIFT, followTarget, HUD_HEIGHT, MIN_TILE_CSS, type ZoomView } from "../src/view/zoom";
 
 /**
  * Область квартири на екрані CSS `cssWidth × cssHeight` так, як її рахує `Viewport.layout`: полотно Phaser в режимі
@@ -84,5 +84,32 @@ describe("зум камери в ізометрії", () => {
       expect(zoom).toBeGreaterThanOrEqual(Math.min(v.width / ISO.world.width, v.height / ISO.world.height) - 1e-12);
       expect(css(ISO.tile.height, zoom, v)).toBeGreaterThanOrEqual(MIN_TILE_CSS - 1e-9);
     }
+  });
+});
+
+describe("за чим іде камера", () => {
+  /** Персонаж до маківки й бабл думки над ним — одиниць арту (`GRAPHICS_PLAN.md`, «Контракти»; `BUBBLE_ROOM`). */
+  const PERSON = 140;
+  const BUBBLE = 78;
+
+  it("точка — ноги за симуляцією на FOLLOW_LIFT вище; пише в той самий об'єкт", () => {
+    const out = { x: 0, y: 0 };
+    const body = { x: 9.5, y: 6.5 };
+    const feet = ISO.toScreen(body);
+    expect(followTarget(ISO, body, out)).toBe(out);
+    expect(out).toEqual({ x: feet.x, y: feet.y - FOLLOW_LIFT });
+  });
+
+  it("телефон 844 × 390: під ногами 120–160 px CSS квартири, а голова з баблом — під панеллю", () => {
+    const v = view(844, 390);
+    const zoom = cameraZoom(v, ISO);
+    const half = v.height / zoom / 2;
+    // Ноги — на FOLLOW_LIFT нижче середини огляду.
+    const belowFeet = css(half - FOLLOW_LIFT, zoom, v);
+    expect(belowFeet).toBeGreaterThan(120);
+    expect(belowFeet).toBeLessThan(160);
+    // Верх бабла над головою — нижче верхнього краю огляду (панелі) щонайменше на 40 px CSS.
+    const aboveBubble = css(half - (PERSON + BUBBLE - FOLLOW_LIFT), zoom, v);
+    expect(aboveBubble).toBeGreaterThan(40);
   });
 });

@@ -111,9 +111,9 @@ export interface ApartmentPart extends WorldPart {
   objectAnchor(id: string): Point | null;
 }
 
-/** Персонаж: його голова й руки потрібні котам, камері й баблам. */
+/** Персонаж: його голова й руки потрібні котам і баблам. */
 export interface PersonPart extends WorldPart {
-  /** Над головою: тут бабли персонажа, за цим іде камера (§8.4). */
+  /** Над головою: тут бабли персонажа (камера йде не за цією точкою, а за ногами за симуляцією — `followTarget`, §8.4). */
   readonly head: Point;
   /** Де персонаж тримає кота (§9.12). */
   readonly hands: Hands;
