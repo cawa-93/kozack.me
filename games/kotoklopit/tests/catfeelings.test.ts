@@ -338,4 +338,10 @@ describe("хода, разові й обличчя «хвороб»", () => {
       }
     }
   });
+
+  it("чхання не розплющує очей (кіт, що спить, чхає з заплющеними)", () => {
+    const eyes = CAT_FEELINGS.sneeze.slots?.eyes?.frame ?? [];
+    expect(eyes.length).toBeGreaterThan(0);
+    expect(new Set(eyes.map((k) => k.v))).toEqual(new Set(["closed"]));
+  });
 });
