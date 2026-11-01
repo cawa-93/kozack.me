@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 69 44" width="69" height="44">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 44" width="70" height="44">
 <!-- cat/body-extra/normal/back — накладки тулуба звичайної статури, ракурс back (¾ ззаду). A8b «Кіт — накладки тулубів і животи» (хвиля 2), рукою еталонів F1b і основи A7, art/STYLE.md.
-size 69×44; pivot (23, 24) — центр таза — те саме полотно й pivot, що cat/body/normal; points: neck (47, 15), neck-back (50, 12), neck-base (43, 17), neck-base-back (46, 14), shoulder-far (53, 22), shoulder-far-back (47.5, 22), shoulder-near (47.5, 25.5), shoulder-near-back (53, 25.5), hip-far (26.5, 22), hip-far-back (21, 22), hip-near (21, 25.5), hip-near-back (26.5, 25.5), tail (15, 16), tail-back (16, 15), back (35, 12), back-back (33, 10).
+size 70×44; pivot (23, 24) — центр таза — те саме полотно й pivot, що cat/body/normal; points: neck (47, 15), neck-back (50, 12), neck-base (43, 17), neck-base-back (46, 14), shoulder-far (53, 22), shoulder-far-back (47.5, 22), shoulder-near (47.5, 25.5), shoulder-near-back (53, 25.5), hip-far (26.5, 22), hip-far-back (21, 22), hip-near (21, 25.5), hip-near-back (26.5, 25.5), tail (15, 16), tail-back (16, 15), back (35, 12), back-back (33, 10).
 Шари: extra-bald, extra-dull, extra-wrinkles, extra-curls, extra-collar.
 Готові кольори; компонувальник кладе потрібні поверх запеченого тулуба (recipes.ts, buildCatRecipe) перед тінню й контуром тулуба:
 extra-wrinkles — складки шкіри безшерстих (сфінкс): лінзи inkSoft із м'якою тінню під кожною — за плечем, на грудях, поперек живота (source-atop);

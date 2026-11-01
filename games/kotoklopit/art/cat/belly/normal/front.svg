@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 69 44" width="69" height="44">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 44" width="70" height="44">
 <!-- cat/belly/normal/front — живіт вагітної звичайної статури, ракурс front (¾ спереду). A8b «Кіт — накладки тулубів і животи» (хвиля 2), маски шерсті — A9a; рукою еталонів F1b і основи A7, art/STYLE.md.
-size 69×44; pivot (23, 24) — центр таза — те саме полотно й pivot, що cat/body/normal; points: neck (47, 15), neck-back (50, 12), neck-base (43, 17), neck-base-back (46, 14), shoulder-far (53, 22), shoulder-far-back (47.5, 22), shoulder-near (47.5, 25.5), shoulder-near-back (53, 25.5), hip-far (26.5, 22), hip-far-back (21, 22), hip-near (21, 25.5), hip-near-back (26.5, 25.5), tail (15, 16), tail-back (16, 15), back (35, 12), back-back (33, 10).
+size 70×44; pivot (23, 24) — центр таза — те саме полотно й pivot, що cat/body/normal; points: neck (47, 15), neck-back (50, 12), neck-base (43, 17), neck-base-back (46, 14), shoulder-far (53, 22), shoulder-far-back (47.5, 22), shoulder-near (47.5, 25.5), shoulder-near-back (53, 25.5), hip-far (26.5, 22), hip-far-back (21, 22), hip-near (21, 25.5), hip-near-back (26.5, 25.5), tail (15, 16), tail-back (16, 15), back (35, 12), back-back (33, 10).
 Шари: fill, fluff, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink, fluff-ink.
 Окрема частина над тулубом (слот на z тулуба + 0,5, під ближніми лапами; та сама кістка й кадр-трансформ, що тулуб): видно лише в помітно вагітної (§9.8).
 Верхній край захований у тулубі по верхній межі смуги тіні тулуба — без контуру; низ — округлий живіт між лапами з важким контуром,

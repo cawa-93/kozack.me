@@ -52,7 +52,7 @@ function scaled(part: Part, k: { x: number; y: number }): Part {
  */
 const BODIES: Record<Shape["build"], Part> = {
   slim: {
-    size: { w: 70, h: 42 },
+    size: { w: 72, h: 42 },
     pivot: { x: 23, y: 22 },
     points: {
       neck: { x: 48.1, y: 14.3 },
@@ -74,7 +74,7 @@ const BODIES: Record<Shape["build"], Part> = {
     },
   },
   normal: {
-    size: { w: 69, h: 44 },
+    size: { w: 70, h: 44 },
     pivot: { x: 23, y: 24 },
     points: {
       neck: { x: 47, y: 15 },
@@ -96,7 +96,7 @@ const BODIES: Record<Shape["build"], Part> = {
     },
   },
   stocky: {
-    size: { w: 68, h: 48 },
+    size: { w: 69, h: 48 },
     pivot: { x: 21, y: 26 },
     points: {
       neck: { x: 44.1, y: 15.7 },
@@ -125,21 +125,22 @@ export function catBody(build: Shape["build"]): Part {
 }
 
 /**
- * Голова — еталон F1b, полотно A7 — із запасом під «комір» довгої шерсті; pivot — шия; `top` — над вухами (вуха — окремі
- * частини), тож навмисно поза полотном.
+ * Голова — еталон F1b, полотно A7 — донизу із запасом під «комір» довгої шерсті (пасма під щелепою); pivot і ширина — як в
+ * еталона (накладки голови лягають без зсуву, лише полотно вище: 43 замість 38). pivot — шия; `top` — над вухами (вуха —
+ * окремі частини), тож навмисно поза полотном.
  */
 export const CAT_HEAD: Part = {
-  size: { w: 52, h: 43 },
-  pivot: { x: 20, y: 27 },
+  size: { w: 47, h: 43 },
+  pivot: { x: 15, y: 27 },
   points: {
-    "ear-far": { x: 34.5, y: 10 },
-    "ear-far-back": { x: 19.5, y: 11 },
-    "ear-near": { x: 19.5, y: 11.5 },
-    "ear-near-back": { x: 34, y: 10.5 },
-    eyes: { x: 31, y: 18.6 },
-    muzzle: { x: 32.8, y: 24.4 },
-    mouth: { x: 32.8, y: 25.8 },
-    top: { x: 27, y: -6 },
+    "ear-far": { x: 29.5, y: 10 },
+    "ear-far-back": { x: 14.5, y: 11 },
+    "ear-near": { x: 14.5, y: 11.5 },
+    "ear-near-back": { x: 29, y: 10.5 },
+    eyes: { x: 26, y: 18.6 },
+    muzzle: { x: 27.8, y: 24.4 },
+    mouth: { x: 27.8, y: 25.8 },
+    top: { x: 22, y: -6 },
   },
 };
 
