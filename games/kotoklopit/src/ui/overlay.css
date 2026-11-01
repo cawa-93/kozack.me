@@ -634,6 +634,14 @@
   background: none;
 }
 
+/* На чорнильному тлі чорнильний контур рамки кнопки зливається з тлом, і «клавіша» ставала пласкою плашкою з рискою губи
+   (рецензія хвилі 3). Паперова облямівка 2 px поза контуром — за обрисом самої картинки рамки (чотири тіні без розмиття), тож
+   кути збігаються з намальованими; губа знову читається низом клавіші. */
+.ending-actions > .button {
+  filter: drop-shadow(2px 0 0 var(--enamel)) drop-shadow(-2px 0 0 var(--enamel)) drop-shadow(0 2px 0 var(--enamel))
+    drop-shadow(0 -2px 0 var(--enamel));
+}
+
 @keyframes title-in {
   from {
     opacity: 0;
