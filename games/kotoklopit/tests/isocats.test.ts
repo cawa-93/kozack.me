@@ -18,9 +18,9 @@ import { ART_VIEWS } from "../src/view/art/types";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { catOverlayOn } from "../src/view/rig/anims/cat/feelings";
 import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
-import { animProblems, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
+import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
-import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from "../src/view/iso/catanim";
+import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withFace } from "../src/view/iso/catanim";
 import { catPlay, groundAt, JUMP, liftAt, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
@@ -282,6 +282,24 @@ describe("складання анімації кота (`catanim.ts`)", () => {
       }
       expect({ view, above: lowest < 0 }).toEqual({ view, above: true });
     }
+  });
+});
+
+describe("змішування поз при зміні анімації (`playBlend`)", () => {
+  const sit = { base: CAT_ANIMS.sit, overlay: null, ears: "up" } as const;
+
+  it("інша основна — зі змішуванням; на спину й зі спини (`catBlendMs`, N1) — одним кадром, бо посередині кіт сплющився б і зник", () => {
+    expect(playBlend(sit, { ...sit, base: CAT_ANIMS.loaf })).toBe(BLEND_MS);
+    expect(playBlend(null, sit)).toBe(BLEND_MS);
+    expect(playBlend(sit, { ...sit, base: CAT_ANIMS.belly })).toBe(0);
+    expect(playBlend({ ...sit, base: CAT_ANIMS.roll }, sit)).toBe(0);
+    expect(playBlend({ ...sit, base: CAT_ANIMS.belly }, { ...sit, base: CAT_ANIMS.roll })).toBe(BLEND_MS);
+  });
+
+  it("та сама основна й накладка: лише вуха — коротке змішування, решта обличчя — без", () => {
+    expect(playBlend(sit, sit)).toBe(0);
+    expect(playBlend(sit, { ...sit, ears: "back" })).toBe(BLEND_MS);
+    expect(playBlend(sit, { ...sit, overlay: CAT_ANIMS.content })).toBe(BLEND_MS);
   });
 });
 

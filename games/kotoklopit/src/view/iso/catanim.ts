@@ -12,8 +12,9 @@
 
 import type { CatEars } from "../anim/catface";
 import { ART_VIEWS, type ArtView } from "../art/types";
+import { catBlendMs } from "../rig/anims/cat/basic";
 import { catOverlayOn } from "../rig/anims/cat/feelings";
-import { animTime, sampleNumber, sampleVec } from "../rig/rigcore";
+import { animTime, BLEND_MS, sampleNumber, sampleVec } from "../rig/rigcore";
 import type { BoneTracks, Key, RigAnim, RigTracks, SlotTracks, StepKey, Vec2 } from "../rig/types";
 import { EAR_BONES, EAR_POSES } from "./catrig";
 
@@ -124,6 +125,24 @@ export function composeCatAnim(base: Loose, overlay: Loose | null, face: FaceFra
     byEyes.set(face.eyes, anim);
   }
   return anim;
+}
+
+/** Що грає кіт — для вибору змішування поз (`playBlend`): основна, накладка (до складання) і вуха. */
+export interface PlayKey {
+  readonly base: Loose;
+  readonly overlay: Loose | null;
+  readonly ears: string;
+}
+
+/**
+ * Змішування поз (мс), коли кіт переходить від `prev` до `next`. Та сама основна й накладка (і не разова заново) — фаза та
+ * сама: без змішування, лише вуха — з коротким (`BLEND_MS`); кліпання міняє очі кілька разів на секунду. Інша — як каже
+ * `catBlendMs` пакета N1: на спину й зі спини (`belly`, `roll` — дзеркало таза) одним кадром, бо змішування вело б масштаб
+ * таза через нуль і посередині кіт сплющився б у смужку й зник; решта — `BLEND_MS`.
+ */
+export function playBlend(prev: PlayKey | null, next: PlayKey, restart = false): number {
+  if (!restart && prev !== null && prev.base === next.base && prev.overlay === next.overlay) return prev.ears !== next.ears ? BLEND_MS : 0;
+  return catBlendMs(prev?.base ?? null, next.base, BLEND_MS);
 }
 
 // --- Усередині ----------------------------------------------------------------------------------

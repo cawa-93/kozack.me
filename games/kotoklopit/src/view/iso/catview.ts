@@ -18,11 +18,10 @@ import { artEntry } from "../art/manifest";
 import { catRecipeOf, farRecipe } from "../art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../art/types";
 import { CAT_ANIMS } from "../rig/anims";
-import { BLEND_MS } from "../rig/rigcore";
 import { RigSprite, type RigBaked, type SocketWorld } from "../rig/rigsprite";
 import type { RigAnim, RigFacing, Vec2 } from "../rig/types";
 import type { Point } from "../world/part";
-import { composeCatAnim } from "./catanim";
+import { composeCatAnim, playBlend } from "./catanim";
 import { CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
 import { CAT_PIECE, type CatShow } from "./catspot";
 import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
@@ -298,7 +297,7 @@ export class IsoCatView {
   /**
    * Грати складену анімацію (основна, накладка, обличчя). Та сама основна й накладка, інше лише обличчя — фаза та сама й
    * без змішування (кліпання міняє очі кілька разів на секунду), лише вуха — з коротким змішуванням; інша основна — від
-   * початку зі змішуванням поз.
+   * початку зі змішуванням поз, а на спину й зі спини — одним кадром (`playBlend`).
    */
   private play(f: CatFrame): void {
     const base = CAT_ANIMS[f.anim] as CatRigAnim;
@@ -312,8 +311,7 @@ export class IsoCatView {
     const elapsed = this.clock - start;
     const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
     const sameMotion = sameBase && prev.overlay === overlay;
-    const earsMoved = prev !== null && prev.ears !== face.ears;
-    const blend = sameMotion ? (earsMoved ? BLEND_MS : 0) : BLEND_MS;
+    const blend = playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
     this.sprite.play(anim, { from, blend, restart: f.restart || !sameMotion });
     if (prev) {
       prev.base = base;
