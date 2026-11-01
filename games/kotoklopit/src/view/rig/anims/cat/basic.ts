@@ -893,8 +893,12 @@ const groom: CatAnim = {
   views: { back: { bones: still({ "leg-back-near": SIT_BACK["leg-back-near"] ?? {}, "leg-back-far": SIT_BACK["leg-back-far"] ?? {}, "leg-front-far": SIT_BACK["leg-front-far"] ?? {} }), slots: { "leg-front-near": { z: [{ t: 0, v: 2.8 }] } } } },
 };
 
-/** Закопує: стоїть, дивиться вниз і гребе лапою назад — спершу ближньою, потім дальньою. */
-const BURY_MS = 1200;
+/**
+ * Закопує: стоїть у лотку, дивиться вниз і гребе передньою лапою — спершу ближньою, потім дальньою. Лоток (борт 20–24)
+ * ховає все нижче ≈ 3–9 над підлогою, тож видно саме гребок: лапа злітає високо вперед (подушечка ≈ 12 над підлогою), різко
+ * б'є вниз і загрібає назад, а плечі й голова за нею нахиляються; потім пауза — кіт принюхується.
+ */
+const BURY_MS = 1400;
 const BURY_STAND: Pose = {
   pelvis: { y: 1.5, rot: 4 },
   "leg-front-near": { sx: 0.85 },
@@ -905,18 +909,50 @@ const BURY_STAND: Pose = {
   head: { rot: 22 },
   tail: tail(-40),
 };
-const scrape = (leg: "leg-front-near" | "leg-front-far", t0: number): Frame[] => [
-  // Лапа піднята вперед…
-  { t: t0, pose: { ...BURY_STAND, [leg]: { rot: -30, sx: 0.72 } } },
-  // …опускається й гребе назад по підлозі…
-  { t: t0 + 260, ease: "in", pose: over({ ...BURY_STAND, [leg]: { rot: 34, sx: 0.98 } }, { pelvis: { y: 0.5 }, head: { rot: 3 } }) },
-  // …і знову вгору вперед.
-  { t: t0 + 420, pose: { ...BURY_STAND, [leg]: { rot: 20, sx: 0.7 } } },
-];
+type FrontLeg = "leg-front-near" | "leg-front-far";
+/**
+ * Гребок лапою `leg` з моменту `t0`: замах, удар, загрібання, лапа на місці й пауза з принюхуванням. Плечі нахиляє таз
+ * (поворот `lean` навколо стегон; задні лапи повернуто назад на стільки ж, щоб подушечки не їхали), а друга передня лапа, на
+ * якій кіт стоїть, коротшає на стільки, на скільки опустилися плечі.
+ */
+function scrape(leg: FrontLeg, other: FrontLeg, t0: number): Frame[] {
+  const lean = (rot: number, paw: Tweak, standSx: number, neckY: number, head: number): Pose =>
+    over(
+      { ...BURY_STAND, [leg]: paw, [other]: { sx: standSx } },
+      { pelvis: { rot }, "leg-back-near": { rot: -rot }, "leg-back-far": { rot: -rot }, neck: { y: neckY }, head: { rot: head } },
+    );
+  return [
+    { t: t0, pose: BURY_STAND },
+    // Замах: лапа високо вперед (підібрана, подушечка ≈ 10–11 над підлогою), плечі вниз, голова — до лапи.
+    { t: t0 + 120, ease: "in", pose: lean(6, { rot: -58, sx: 0.48 }, 0.72, 3, 6) },
+    // Удар униз-уперед — у наповнювач.
+    { t: t0 + 190, ease: "out", pose: lean(7, { rot: -30, sx: 0.88 }, 0.66, 3, 12) },
+    // Різко загрібає назад, під груди.
+    { t: t0 + 290, pose: lean(4, { rot: 28, sx: 0.8 }, 0.74, 2, 8) },
+    // Лапа на місці.
+    { t: t0 + 380, pose: BURY_STAND },
+    // Пауза: принюхується до того, що загріб.
+    { t: t0 + 520, pose: over(BURY_STAND, { neck: { y: 1.5 }, head: { rot: 6 } }) },
+  ];
+}
+/**
+ * Ближня лапа, що гребе, у ракурсі ¾ спереду — поверх голови (голова опущена саме туди, куди лапа злітає, і ховала б її);
+ * ззаду голова за тулубом, і лапа — як завжди під грудьми (`BACK_NEAR`).
+ */
+const BURY_PAW_Z = 10.5;
 const bury: CatAnim = {
   duration: BURY_MS,
   loop: true,
-  bones: posed([...scrape("leg-front-near", 0), ...scrape("leg-front-far", 600), { t: BURY_MS, pose: { ...BURY_STAND, "leg-front-near": { rot: -30, sx: 0.72 } } }]),
+  bones: posed([...scrape("leg-front-near", "leg-front-far", 0), ...scrape("leg-front-far", "leg-front-near", BURY_MS / 2), { t: BURY_MS, pose: BURY_STAND }]),
+  slots: {
+    "leg-front-near": {
+      z: [
+        { t: 0, v: 7 },
+        { t: 40, v: BURY_PAW_Z },
+        { t: 330, v: 7 },
+      ],
+    },
+  },
   views: { back: BACK_NEAR },
 };
 
