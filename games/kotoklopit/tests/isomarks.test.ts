@@ -15,6 +15,11 @@ import { artEntry } from "../src/view/art/manifest";
 import { ANCHOR_GAP, artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
 import {
   actionBar,
+  actionBarAnchor,
+  BUBBLE_HALF,
+  EVENT_RISE,
+  stackTop,
+  SURFACE_CLEAR,
   BAR,
   BAR_RISE,
   barBox,
@@ -251,7 +256,8 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
 
   it("над комп'ютером — стосом над зоною бабла: знизу смужка пошуку, над нею смуга лагодження дроту", () => {
     const anchor = objectAnchorAt(objectById("computer"));
-    const bubble = { top: anchor.y - BUBBLE_ROOM, bottom: anchor.y };
+    // Зона бабла — з запасом на те, куди бабл події підіймається, згасаючи.
+    const bubble = { top: anchor.y - BUBBLE_ROOM - EVENT_RISE, bottom: anchor.y };
     const both = computerStack(anchor, true, true);
     const search = barExtent(both.search!, true);
     const action = barExtent(both.action!, false);
@@ -270,6 +276,41 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     const quad = computerScreen();
     const screenTop = Math.min(onScreen(quad, -1, 1).y, onScreen(quad, 1, 1).y);
     expect(search.bottom).toBeLessThan(screenTop);
+  });
+
+  it("бабл події, згасаючи й підіймаючись (останні 0,4 с), не заходить на смужку пошуку", () => {
+    const anchor = objectAnchorAt(objectById("computer"));
+    const search = barExtent(computerStack(anchor, true, false).search!, true);
+    // Бабл виринає на 8 вище за якір і за 0,5 с згасання підіймається на EVENT_RISE (`Bubbles.float`).
+    const highest = anchor.y - BUBBLE_ROOM - EVENT_RISE;
+    expect(search.bottom).toBeLessThan(highest);
+    expect(EVENT_RISE).toBeGreaterThanOrEqual(34);
+  });
+
+  it("комп'ютер біля верхнього краю видимого світу: стос — ліворуч від бабла й увесь під панеллю", () => {
+    const anchor = objectAnchorAt(objectById("computer"));
+    const above = computerStack(anchor, true, true);
+    // Місця вгорі досить — як і без краю.
+    expect(computerStack(anchor, true, true, stackTop(above) - 10)).toEqual(above);
+    for (const top of [stackTop(above) + 1, anchor.y - BUBBLE_ROOM - 20, anchor.y - 30, anchor.y + 40]) {
+      const stack = computerStack(anchor, true, true, top);
+      expect(stackTop(stack)).toBeGreaterThanOrEqual(top + STACK_GAP - 1e-9);
+      // Ліворуч від бабла (його вістря — в якорі, по центру), не заходить на нього.
+      for (const box of [stack.search!, stack.action!]) expect(box.x + box.w).toBeLessThanOrEqual(anchor.x - BUBBLE_HALF);
+      // Смуга дії — над смужкою пошуку, як і вгорі.
+      expect(barExtent(stack.action!, false).bottom).toBeLessThan(barExtent(stack.search!, true).top);
+    }
+    const alone = computerStack(anchor, false, true, anchor.y);
+    expect(alone.action!.x + alone.action!.w).toBeLessThanOrEqual(anchor.x - BUBBLE_HALF);
+  });
+
+  it("смуга їжі над столом висить вище за страву й кухоль; над іншими речами — у якорі", () => {
+    const table = objectAnchorAt(objectById("table"));
+    expect(actionBarAnchor("table", table)).toEqual({ x: table.x, y: table.y - SURFACE_CLEAR });
+    expect(SURFACE_CLEAR).toBeGreaterThanOrEqual(22);
+    const sink = objectAnchorAt(objectById("sink"));
+    expect(actionBarAnchor("sink", sink)).toBe(sink);
+    expect(actionBarAnchor("item:4", { x: 1, y: 2 })).toEqual({ x: 1, y: 2 });
   });
 
   it("смуга плити — намальована на лицьовій грані плити: у її площині, посередині, не ширша за 0,8 клітинки", () => {

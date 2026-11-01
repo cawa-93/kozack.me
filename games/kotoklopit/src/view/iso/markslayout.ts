@@ -5,7 +5,7 @@
 import { useProgress } from "../../sim/actions";
 import { catOnComputer } from "../../sim/catai";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH } from "../../sim/config";
-import { objectById } from "../../sim/home";
+import { objectById, SURFACE_IDS } from "../../sim/home";
 import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import { isWorking, searchProgress } from "../../sim/work";
@@ -154,6 +154,13 @@ export const REJECTION_MS = 1500;
  * Бабли малюються поверх позначок, тож у цій смузі над якорем позначкам не місце.
  */
 export const BUBBLE_ROOM = 78;
+/**
+ * На стільки бабл події, згасаючи, ще підіймається над своїм місцем (`Bubbles.float` у `bubbles.ts`: −34 за останні 0,5 с):
+ * без цього запасу в останні 0,4 с згасання він заходив на смужку пошуку над комп'ютером (знімки хвилі 3).
+ */
+export const EVENT_RISE = 34;
+/** Півширина бабла над річчю (мовна хмаринка 90 у масштабі 0,75 — 34) із запасом: збоку від неї — стос, що не вліз угору. */
+export const BUBBLE_HALF = 36;
 /** Проміжок між стосом позначок і зоною бабла та між смугами в стосі. */
 export const STACK_GAP = 4;
 /**
@@ -194,6 +201,18 @@ export function barBox(anchor: Point): BarBox {
   return { x: anchor.x - BAR.width / 2, y: anchor.y - BAR_RISE + BAR.ink, w: BAR.width, h: BAR.height };
 }
 
+/**
+ * Над поверхнею (стіл, стільниці кухні) смуга дії висить на стільки вище за якір: якір — одразу над стільницею, а на ній
+ * стоять страва й кухоль (до ≈ 22), і смуга лягала на стіл, як ще одна річ на ньому (персонаж їсть за столом, знімки хвилі 3).
+ * З цим запасом вона й над головою персонажа, що сидить перед столом спиною до камери, — висить над річчю, як над рештою.
+ */
+export const SURFACE_CLEAR = 50;
+
+/** Де смуга дії над річчю `target` (якір `anchor`): над поверхнею — вище за те, що на ній стоїть. */
+export function actionBarAnchor(target: string, anchor: Point): Point {
+  return SURFACE_IDS.includes(target) ? { x: anchor.x, y: anchor.y - SURFACE_CLEAR } : anchor;
+}
+
 /** Позначки над комп'ютером: смужка пошуку роботи й смуга дії (лагодження дроту). */
 export interface ComputerStack {
   search: BarBox | null;
@@ -201,26 +220,50 @@ export interface ComputerStack {
 }
 
 /**
- * Позначки над комп'ютером (§8.6) — стосом над зоною його бабла (`BUBBLE_ROOM`). Бабли комп'ютера висять часто й довго: дріт
- * перегризено (і весь час, поки його лагодять), немає інтернету, дзвінок, терпіння, відмова з вакансії, — а малюються
- * поверх позначок, тож під ними смужка пошуку втратила б саме те, що мала показати: етап, де вакансія зірвалася. Тому знизу
- * стосу — смужка пошуку (стала, поки персонаж шукає роботу), над нею — смуга лагодження дроту; без смужки пошуку — вона на
- * її місці. Монітор, записку на ньому й скло смуги не закривають.
+ * Позначки над комп'ютером (§8.6) — стосом над зоною його бабла (`BUBBLE_ROOM` і ще `EVENT_RISE`, куди підіймається бабл
+ * події, згасаючи). Бабли комп'ютера висять часто й довго: дріт перегризено (і весь час, поки його лагодять), немає
+ * інтернету, дзвінок, терпіння, відмова з вакансії, — а малюються поверх позначок, тож під ними смужка пошуку втратила б
+ * саме те, що мала показати: етап, де вакансія зірвалася. Тому знизу стосу — смужка пошуку (стала, поки персонаж шукає
+ * роботу), над нею — смуга лагодження дроту; без смужки пошуку — вона на її місці. Монітор, записку на ньому й скло смуги не
+ * закривають.
+ *
+ * `top` — верхній край видимого світу (під панеллю, `Viewport.worldTop`). Коли комп'ютер біля нього (телефон: камера стежить
+ * за персонажем за столом), стос угорі сховався б під панель: тоді він стає ліворуч від бабла (його притискає під панель
+ * `DayScene.belowHud`), низом урівень із вістрям бабла, а якщо й так не влазить — опускається, щоб верх був видно.
  */
-export function computerStack(anchor: Point, search: boolean, action: boolean): ComputerStack {
-  let bottom = anchor.y - BUBBLE_ROOM - STACK_GAP;
+export function computerStack(anchor: Point, search: boolean, action: boolean, top = Number.NEGATIVE_INFINITY): ComputerStack {
+  const above = stackFrom(anchor.x, anchor.y - BUBBLE_ROOM - EVENT_RISE - STACK_GAP, search, action);
+  if (stackTop(above) >= top + STACK_GAP) return above;
+  // Ліворуч від бабла: він сам — не вище за `top + BUBBLE_ROOM` (вістря), стос — низом урівень із вістрям.
+  const width = search ? SEARCH_BAR.width : BAR.width;
+  const x = anchor.x - BUBBLE_HALF - STACK_GAP - width / 2;
+  const side = stackFrom(x, Math.max(anchor.y, top + BUBBLE_ROOM), search, action);
+  const short = top + STACK_GAP - stackTop(side);
+  return short > 0 ? stackFrom(x, Math.max(anchor.y, top + BUBBLE_ROOM) + short, search, action) : side;
+}
+
+/** Стос над точкою (`x` — середина, `bottom` — низ стосу): знизу смужка пошуку, над нею смуга дії. */
+function stackFrom(x: number, start: number, search: boolean, action: boolean): ComputerStack {
+  let bottom = start;
   let searchBox: BarBox | null = null;
   if (search) {
     const middle = bottom - SEARCH_REACH;
-    searchBox = { x: anchor.x - SEARCH_BAR.width / 2, y: middle - SEARCH_BAR.height / 2, w: SEARCH_BAR.width, h: SEARCH_BAR.height };
+    searchBox = { x: x - SEARCH_BAR.width / 2, y: middle - SEARCH_BAR.height / 2, w: SEARCH_BAR.width, h: SEARCH_BAR.height };
     bottom = middle - SEARCH_REACH - STACK_GAP;
   }
   let actionBox: BarBox | null = null;
   if (action) {
     const middle = bottom - barReach(BAR).down;
-    actionBox = { x: anchor.x - BAR.width / 2, y: middle - BAR.height / 2, w: BAR.width, h: BAR.height };
+    actionBox = { x: x - BAR.width / 2, y: middle - BAR.height / 2, w: BAR.width, h: BAR.height };
   }
   return { search: searchBox, action: actionBox };
+}
+
+/** Верх стосу (найвища його смуга з рамкою й кружечками); порожній — нескінченно низько. */
+export function stackTop(stack: ComputerStack): number {
+  if (stack.action) return barExtent(stack.action, false).top;
+  if (stack.search) return barExtent(stack.search, true).top;
+  return Number.POSITIVE_INFINITY;
 }
 
 /**

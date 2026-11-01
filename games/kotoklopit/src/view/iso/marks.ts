@@ -3,8 +3,9 @@
 //
 // - Підсвітку малює частина, якій належить ціль (квартира й куточок — сяйвом, `iso/highlight.ts`): позначки щокадру
 //   кажуть світу, що підсвітити й наскільки яскраво (пульс), а самим позначкам цілей не належить.
-// - Смуги дії й пошуку — інтерфейс над світом (`WORLD_LAYERS.marks`), без ізометрії: смуга дії — над ціллю, під баблом;
-//   над комп'ютером — стосом над зоною його бабла (`computerStack`).
+// - Смуги дії й пошуку — інтерфейс над світом (`WORLD_LAYERS.marks`), без ізометрії: смуга дії — над ціллю, під баблом (над
+//   столом — вище за страву й кухоль); над комп'ютером — стосом над зоною його бабла, а біля верхнього краю — збоку від нього
+//   (`computerStack`).
 // - Смуга плити й зміст екрана намальовані на речах: у площині їхньої грані й у проміжку глибини речі (`iso/depth.ts`), тож
 //   їх закриває той, хто стоїть чи сидить перед ними (персонаж біля плити й за столом, кіт на клавіатурі).
 
@@ -20,6 +21,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle } from "./depth";
 import { drawBar, drawFaceBar, drawScreen, drawSearchBar } from "./marksdraw";
 import {
   actionBar,
+  actionBarAnchor,
   barBox,
   computerScreen,
   computerStack,
@@ -90,12 +92,13 @@ export class IsoMarksView implements WorldPart {
     const action = actionBar(state);
     const onComputer = action?.target === "computer";
     const actionAnchor = action && !onComputer ? world.anchor(action.target) : null;
-    if (action && actionAnchor) drawBar(g, barBox(actionAnchor), action.value, "good");
+    if (action && actionAnchor) drawBar(g, barBox(actionBarAnchor(action.target, actionAnchor)), action.value, "good");
     // Пошук роботи (§8.6): етапи поточної вакансії, на відмові смужка червона; над комп'ютером, над зоною його бабла.
     const search = searchBar(state, this.rejection, time);
     const computer = search || onComputer ? world.objectAnchor("computer") : null;
     if (computer) {
-      const stack = computerStack(computer, search !== null, onComputer);
+      // Верхній край видимого світу (під панеллю): стос, що не влазить над баблом, стає збоку від нього.
+      const stack = computerStack(computer, search !== null, onComputer, this.ctx.scene.cameras.main.worldView.y);
       if (search && stack.search) drawSearchBar(g, stack.search, search.value, search.stages, search.rejected);
       if (action && stack.action) drawBar(g, stack.action, action.value, "good");
     }
