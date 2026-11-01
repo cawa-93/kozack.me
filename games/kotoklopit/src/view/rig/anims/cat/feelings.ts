@@ -851,8 +851,11 @@ function rubEyesAnim(): CatAnim {
 /**
  * Блює чи зригує грудку (розлад шлунка, ковтає надто швидко, шерстяна грудка): присідає з витягнутою шиєю (як у кашлі),
  * тричі важко стискається животом — щоразу сильніше, — різко тягнеться головою до підлоги з відкритим ротом і повільно
- * випрямляється, стоячи.
+ * випрямляється, стоячи. Від початку до кінця кіт пригнічений (`QUEASY`): хвіст низько, голова ледь опущена — не здіймає
+ * хвоста «знаком питання», як привітний кіт, що стоїть, і не випинається, перш ніж основа (сидить, їсть) його посадить.
  */
+const QUEASY: Pose = { neck: { rot: 3 }, head: { rot: 5 }, tail: tail(-72) };
+
 function vomitAnim(): CatAnim {
   const T = CAT_ONE_SHOT_MS.vomit;
   const low = over(COUGH, { neck: { y: 3, rot: 4 }, head: { rot: 8 } });
@@ -867,7 +870,7 @@ function vomitAnim(): CatAnim {
     duration: T,
     loop: false,
     bones: posed([
-      { t: 0, pose: {}, ease: "out" },
+      { t: 0, pose: QUEASY, ease: "out" },
       { t: 180, pose: low },
       { t: 300, pose: heave(0.8), ease: "inOut" },
       { t: 420, pose: low },
@@ -876,7 +879,7 @@ function vomitAnim(): CatAnim {
       { t: 900, pose: heave(1.4), ease: "in" },
       { t: 990, pose: expel },
       { t: 1180, pose: expel },
-      { t: T, pose: {} },
+      { t: T, pose: QUEASY },
     ]),
     slots: {
       mouth: frames([

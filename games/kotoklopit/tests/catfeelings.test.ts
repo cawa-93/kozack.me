@@ -339,6 +339,12 @@ describe("хода, разові й обличчя «хвороб»", () => {
     }
   });
 
+  it("блювання починається й закінчується пригніченим: хвіст низько, а не «знаком питання»", () => {
+    const rot = CAT_FEELINGS.vomit.bones?.tail?.rot ?? [];
+    expect(rot.length).toBeGreaterThan(0);
+    for (const t of [0, CAT_FEELINGS.vomit.duration]) expect(sampleNumber(rot, t)).toBeLessThanOrEqual(-60);
+  });
+
   it("чхання не розплющує очей (кіт, що спить, чхає з заплющеними)", () => {
     const eyes = CAT_FEELINGS.sneeze.slots?.eyes?.frame ?? [];
     expect(eyes.length).toBeGreaterThan(0);
