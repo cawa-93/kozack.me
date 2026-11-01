@@ -570,11 +570,30 @@ describe("юрба (`catCrowds`)", () => {
     // Ліві не зрушили; правий, що лишився, став ближче, на `beside`.
     for (const m of three.filter((m) => was.get(m.id)! < 0)) expect(now.get(m.id)!).toBeCloseTo(was.get(m.id)!, 6);
     expect(Math.min(...three.map((m) => now.get(m.id)!).filter((x) => x > 0))).toBeCloseTo(CROWD.beside, 6);
-    // Новий, що прийшов зліва (дивиться праворуч — `from` −1), стає з краю лівого боку: ліві не рухаються.
-    const five = [...three, { ...member(9, at, true), from: -1 }];
-    const next = sides(five, catCrowds(five, person, free, new Map(), memory), person);
+    // Новий (сим привів його в точку персонажа) стає з краю того боку, де менше котів, — праворуч, хоч прийшов і зліва
+    // (`from` −1); решта не рухається.
+    const four2 = [...three, { ...member(9, at, true), from: -1 }];
+    const next = sides(four2, catCrowds(four2, person, free, new Map(), memory), person);
     for (const m of three) expect(next.get(m.id)!).toBeCloseTo(now.get(m.id)!, 6);
-    expect(next.get(9)!).toBeCloseTo(-CROWD.beside - 2 * CROWD.step, 6);
+    expect(next.get(9)!).toBeCloseTo(CROWD.beside + CROWD.step, 6);
+    // Порівну — з того боку, звідки прийшов.
+    const five = [...four2, { ...member(10, at, true), from: -1 }];
+    const last = sides(five, catCrowds(five, person, free, new Map(), memory), person);
+    expect(last.get(10)!).toBeCloseTo(-CROWD.beside - 2 * CROWD.step, 6);
+  });
+
+  it("з одного боку персонажа меблі — нові стають з другого, а не лишаються в його ногах", () => {
+    const person = { x: 4.5, y: 8.7 };
+    const memory = crowdMemory();
+    const at = { x: 4.5, y: 8.7 };
+    // Ліворуч на екрані (x менший, y більший) — ліжко: від клітинки y 9 і далі.
+    const bed = (_x: number, y: number): boolean => y >= 9;
+    const three = [1, 2, 3].map((id) => ({ ...member(id, at, true), from: -1 }));
+    const out = catCrowds(three, person, bed, new Map(), memory);
+    const xs = sides(three, out, person);
+    // Усі троє зсунуті (ніхто не лишився в точці персонажа) і всі праворуч, кожен на своєму місці.
+    expect(out.size).toBe(3);
+    expect([...xs.values()].sort((a, b) => a - b)).toEqual([CROWD.beside, CROWD.beside + CROWD.step, CROWD.beside + 2 * CROWD.step].map((x) => expect.closeTo(x, 6)));
   });
 
   it("кіт під рукою на дальньому місці стає найближчим до персонажа на своєму боці (рука дістає) і там лишається", () => {

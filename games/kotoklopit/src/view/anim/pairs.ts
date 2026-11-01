@@ -301,8 +301,20 @@ export function catCrowds(
     const target = new Map<number, number>();
     // Біля персонажа — трохи ближче до камери за нього (`CROWD.front`).
     const front = atPerson ? CROWD.front * size : 0;
+    /** Зсув кота `i` (клітинки), щоб він став на `x` екрана; null — там стіна чи меблі. */
+    const shiftTo = (i: number, x: number): Vec | null => {
+      const dx = x - screen[i]!.x;
+      // Майже на одній висоті з персонажем — трохи ближче до камери; хто й так помітно перед ним чи за ним, той там і стоїть.
+      const rise = atPerson ? screen[i]!.y - ps.y : 0;
+      const dy = Math.abs(rise) < front ? front - rise : 0;
+      const shift = isoTileDir({ x: dx, y: dy });
+      const at = members[i]!.at;
+      return blocked(Math.floor(at.x + shift.x), Math.floor(at.y + shift.y)) ? null : shift;
+    };
     if (atPerson) {
-      personRow(list, members, screen, ps, memory);
+      // Чи вільне k-те місце (від персонажа) на боці `side` для кота `i`.
+      const fits = (i: number, side: -1 | 1, k: number): boolean => shiftTo(i, ps.x + side * (CROWD.beside * size + k * step)) !== null;
+      personRow(list, members, screen, ps, memory, fits);
       // Обабіч персонажа: на кожному боці — за чергою, перший на `beside` від нього.
       for (const side of SIDES) {
         const row = list.filter((i) => slots.get(members[i]!.id)?.side === side);
@@ -316,14 +328,8 @@ export function catCrowds(
       list.forEach((i, k) => target.set(i, cx + (k - (list.length - 1) / 2) * step));
     }
     for (const i of list) {
-      const dx = target.get(i)! - screen[i]!.x;
-      // Майже на одній висоті з персонажем — трохи ближче до камери; хто й так помітно перед ним чи за ним, той там і стоїть.
-      const rise = atPerson ? screen[i]!.y - ps.y : 0;
-      const dy = Math.abs(rise) < front ? front - rise : 0;
-      if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) continue;
-      const shift = isoTileDir({ x: dx, y: dy });
-      const at = members[i]!.at;
-      if (blocked(Math.floor(at.x + shift.x), Math.floor(at.y + shift.y))) continue;
+      const shift = shiftTo(i, target.get(i)!);
+      if (shift === null || (Math.abs(shift.x) < 1e-9 && Math.abs(shift.y) < 1e-9)) continue;
       out.set(members[i]!.id, shift);
     }
   }
@@ -333,12 +339,20 @@ export function catCrowds(
 const SIDES = [-1, 1] as const;
 
 /**
- * Місця юрби біля персонажа (`CrowdMemory`): хто вже має місце, лишається на ньому; новий стає з краю того боку, де стоїть
- * (чи звідки прийшов, коли стоїть точно в точці персонажа), якщо там не на двох більше, ніж на другому, — інакше з краю
- * другого; той, кого гладять чи з ким грається персонаж, — найближчий до нього на своєму боці (рука має дістати), і там
- * лишається й потім.
+ * Місця юрби біля персонажа (`CrowdMemory`): хто вже має місце, лишається на ньому. Новий стає з краю: якщо вже стоїть
+ * з якогось боку персонажа — того самого (крізь персонажа не перебігає), а коли стоїть точно в його точці (сим веде всіх у
+ * центр клітинки) — того, де менше котів, а порівну — звідки прийшов. Місце в стіні чи меблях (`fits`) — тоді з краю
+ * другого боку. Той, кого гладять чи з ким грається персонаж, — найближчий до нього на своєму боці (рука має дістати), і
+ * там лишається й потім.
  */
-function personRow(list: readonly number[], members: readonly CrowdMember[], screen: readonly Vec[], ps: Vec, memory: CrowdMemory): void {
+function personRow(
+  list: readonly number[],
+  members: readonly CrowdMember[],
+  screen: readonly Vec[],
+  ps: Vec,
+  memory: CrowdMemory,
+  fits: (i: number, side: -1 | 1, k: number) => boolean,
+): void {
   const slots = memory.slots;
   let left = 0;
   let right = 0;
@@ -353,10 +367,12 @@ function personRow(list: readonly number[], members: readonly CrowdMember[], scr
     const m = members[i]!;
     const drawn = m.shift ? isoScreenDir({ x: m.at.x + m.shift.x, y: m.at.y + m.shift.y }).x : screen[i]!.x;
     const dx = drawn - ps.x;
-    const hint = Math.abs(dx) >= 1 ? Math.sign(dx) : Math.sign(m.from ?? 0);
     const fewer = left < right ? -1 : left > right ? 1 : 0;
-    const pick = Math.abs(left - right) >= 2 || hint === 0 ? fewer || hint || 1 : hint;
-    const side: -1 | 1 = pick < 0 ? -1 : 1;
+    const pick = Math.abs(dx) >= 1 ? Math.sign(dx) : fewer || Math.sign(m.from ?? 0) || 1;
+    let side: -1 | 1 = pick < 0 ? -1 : 1;
+    const other: -1 | 1 = side < 0 ? 1 : -1;
+    const count = (s: -1 | 1): number => (s < 0 ? left : right);
+    if (!fits(i, side, count(side)) && fits(i, other, count(other))) side = other;
     slots.set(m.id, { side, order: memory.next++ });
     if (side < 0) left++;
     else right++;
