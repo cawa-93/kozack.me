@@ -20,7 +20,7 @@ import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, hudTextScale, isoBarRects, STA
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
-import { HUD_HEIGHT, type Frame } from "./viewport";
+import { canvasNow, HUD_HEIGHT, type Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
 /** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
@@ -210,7 +210,7 @@ export class Hud {
 
   /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
   layout({ width, safe }: Frame): void {
-    this.scaleSmall(hudTextScale(1 / this.scene.scale.displayScale.y));
+    this.scaleSmall(hudTextScale(1 / canvasNow().unit));
     this.band(width, safe.top + HUD_HEIGHT);
     this.left.setPosition(safe.left, safe.top);
     const x = width - safe.right - BUTTONS_INSET;

@@ -32,7 +32,7 @@ import {
   TOUCH_ART,
 } from "../src/view/iso/hudlook";
 import { isoPopColor, uiEntry } from "../src/view/iso/uilook";
-import { HUD_HEIGHT } from "../src/view/zoom";
+import { canvasFit, HUD_HEIGHT } from "../src/view/zoom";
 
 function entry(id: string): ArtEntry {
   const found = artEntry(id);
@@ -349,6 +349,15 @@ describe("дрібні написи панелі на зменшеному по�
     expect(HUD_SMALL_TEXT * phone * (390 / 720)).toBeCloseTo(HUD_SMALL_TEXT_CSS, 5);
     // Дуже низький екран — не більше межі (смуга панелі тієї самої висоти).
     expect(hudTextScale(0.3)).toBe(HUD_TEXT_MAX);
+  });
+
+  it("щільність полотна (DPR) написів не збільшує: масштаб — за px CSS на одиницю інтерфейсу (`CanvasFit.unit`)", () => {
+    // Десктоп 1280 × 720 за DPR 2: полотно вдвічі щільніше, а інтерфейс не зменшений — написи як були.
+    expect(hudTextScale(1 / canvasFit({ width: 1280, height: 720 }, 2, false).unit)).toBe(1);
+    // Телефон 844 × 390 за DPR 3 — так само, як на програмному WebGL (знімки).
+    const gpu = hudTextScale(1 / canvasFit({ width: 844, height: 390 }, 3, false).unit);
+    expect(gpu).toBe(hudTextScale(1 / canvasFit({ width: 844, height: 390 }, 3, true).unit));
+    expect(gpu).toBeCloseTo(hudTextScale(390 / 720), 9);
   });
 
   it("найбільші написи вміщуються в смугу панелі: дата над годинником і два рядки розкладу", () => {
