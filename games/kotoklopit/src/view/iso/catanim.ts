@@ -76,11 +76,19 @@ export function withFace(anim: Loose, face: FaceFrames): Loose {
   return { duration: anim.duration, loop: anim.loop, views };
 }
 
-const cache = new WeakMap<Loose, Map<Loose | null, Map<string, Loose>>>();
+/** Основна з накладкою (вибірка суми — найдорожче) і її варіанти з обличчями: обличчя → вуха → рот → очі. */
+interface Layered {
+  anim: Loose;
+  faces: Map<string, Map<string, Map<string, Loose>>>;
+}
+
+const cache = new WeakMap<Loose, Map<Loose | null, Layered>>();
 
 /**
  * Що грати котові: основна, накладка (null — без неї) й обличчя — одна анімація, та сама для тих самих трьох (кеш), тож
- * `RigSprite.play` з нею нічого не робить, поки нічого не змінилося.
+ * `RigSprite.play` з нею нічого не робить, поки нічого не змінилося. Основна з накладкою складається раз на пару (вибірка
+ * суми — найдорожче), а нове обличчя (кліпання, рот, вуха) лише кладе сталі доріжки поверх готової. Ключі — самі рядки
+ * станів, без склеювання, тож щокадру нічого не створюється.
  */
 export function composeCatAnim(base: Loose, overlay: Loose | null, face: FaceFrames): Loose {
   let byOverlay = cache.get(base);
@@ -88,17 +96,26 @@ export function composeCatAnim(base: Loose, overlay: Loose | null, face: FaceFra
     byOverlay = new Map();
     cache.set(base, byOverlay);
   }
-  let byFace = byOverlay.get(overlay);
-  if (!byFace) {
-    byFace = new Map();
-    byOverlay.set(overlay, byFace);
+  let layered = byOverlay.get(overlay);
+  if (!layered) {
+    layered = { anim: layerAnims(base, overlay), faces: new Map() };
+    byOverlay.set(overlay, layered);
   }
-  const key = `${face.eyes}|${face.mouth}|${face.ears}`;
-  let anim = byFace.get(key);
+  let byMouth = layered.faces.get(face.ears);
+  if (!byMouth) {
+    byMouth = new Map();
+    layered.faces.set(face.ears, byMouth);
+  }
+  let byEyes = byMouth.get(face.mouth);
+  if (!byEyes) {
+    byEyes = new Map();
+    byMouth.set(face.mouth, byEyes);
+  }
+  let anim = byEyes.get(face.eyes);
   if (!anim) {
     // Обличчя кладеться і на основну, і на накладку разом: так доріжки очей разової накладки (чхання) перекривають його.
-    anim = withFace(layerAnims(base, overlay), face);
-    byFace.set(key, anim);
+    anim = withFace(layered.anim, face);
+    byEyes.set(face.eyes, anim);
   }
   return anim;
 }

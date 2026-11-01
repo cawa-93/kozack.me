@@ -177,15 +177,19 @@ export function fatWeight(girth: number): number {
 
 /** Пропорції кота в грі: короткі лапи, статура, кошеня (`catProportions`) і повнота. */
 export function isoCatProportions(cat: Cat, size: CatSize = catSize(cat)): ProportionRef[] {
-  const list = catProportions(cat.shape, size.kitten);
-  const fat = fatWeight(girthOf(cat));
-  if (fat > 0) list.push({ name: "fat", weight: Math.round(fat * 20) / 20 });
-  return list;
+  return proportionsOf(cat.shape, size.kitten, fatStep(girthOf(cat)));
 }
 
-/** Ключ пропорцій: щоб не перераховувати скелет щокадру. */
-export function proportionsKey(list: readonly ProportionRef[]): string {
-  return list.map((ref) => (typeof ref === "string" ? ref : `${ref.name}:${ref.weight}`)).join(",");
+/** Вага пропорцій `fat` кроками по 0,05 (щоб від дрібної зміни ваги скелет не перераховувався): ціле 0…20. */
+export function fatStep(girth: number): number {
+  return Math.round(fatWeight(girth) * 20);
+}
+
+/** Пропорції з того, від чого вони залежать: форми породи, вага пропорцій кошеняти, крок повноти (`fatStep`). */
+export function proportionsOf(shape: Pick<Shape, "build" | "legs">, kitten: number, fat: number): ProportionRef[] {
+  const list = catProportions(shape, kitten);
+  if (fat > 0) list.push({ name: "fat", weight: fat / 20 });
+  return list;
 }
 
 // --- Вуха ---------------------------------------------------------------------------------------

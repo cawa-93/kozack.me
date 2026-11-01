@@ -2,11 +2,14 @@
 // його шерсті й форм породи, тінь під ним, річ у зубах, а коли кота видно лише частково (під меблями, у будиночку, під
 // ковдрою) — лише очі, вушка й кінчик хвоста. Що грати, куди дивитися й де стояти, вирішує частина котів (`cats.ts`), тут —
 // лише як це показати. Глибина — точка в реєстрі (`iso/depth.ts`).
+//
+// Щокадру тут нічого не створюється: обвіс, пропорції, рецепт шерсті й анімація змінюються, лише коли змінилося те, від чого
+// вони залежать (порівнянням полів, без рядків-ключів), а точки голови й спинки пишуться в ті самі об'єкти.
 
 import Phaser from "phaser";
 
-import type { Cat, Quality } from "../../sim/types";
-import type { CatFace } from "../anim/catface";
+import type { Cat, Quality, Shape } from "../../sim/types";
+import type { CatEars, CatFace } from "../anim/catface";
 import type { CatAnimId } from "../anim/ids";
 import { addArt, setArt } from "../art/atlas";
 import { addBakedArt, bakedFrame, catOwner, releaseBaked, setBakedArt } from "../art/bake";
@@ -15,11 +18,11 @@ import { catRecipeOf, farRecipe } from "../art/recipes";
 import type { ArtId, ArtView, TintRecipe } from "../art/types";
 import { CAT_ANIMS } from "../rig/anims";
 import { BLEND_MS } from "../rig/rigcore";
-import { RigSprite, type RigBaked } from "../rig/rigsprite";
+import { RigSprite, type RigBaked, type SocketWorld } from "../rig/rigsprite";
 import type { RigAnim, RigFacing, Vec2 } from "../rig/types";
 import type { Point } from "../world/part";
 import { composeCatAnim } from "./catanim";
-import { CAT_FAR_SLOTS, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsKey, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
+import { CAT_FAR_SLOTS, fatStep, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsOf, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
 import { CAT_PIECE, type CatShow } from "./catspot";
 import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 
@@ -45,17 +48,22 @@ const CULLED_HEAD = 64;
  */
 const FILTER_BOX = { w: 180, h: 200 } as const;
 
+/** Як часто перевіряти, чи не змінилася шерсть (глисти, дерматит, нашийник), мс: щокадру це зайве — хвороби тривають дні. */
+const RECIPE_CHECK_MS = 500;
+
 /** Що зараз показує кіт: анімація (основна й накладка — до складання з обличчям) і звідки рахується її час. */
 interface Playing {
   base: CatRigAnim;
   overlay: CatRigAnim | null;
-  face: string;
+  eyes: string;
+  mouth: string;
+  ears: CatEars;
   anim: CatRigAnim;
   /** Годинник кота, коли почалася основна: від нього — фаза складеної анімації. */
   start: number;
 }
 
-/** Що кадр каже котові. */
+/** Що кадр каже котові. Частина котів тримає один такий об'єкт і переписує його щокадру. */
 export interface CatFrame {
   /** Основна анімація й накладка (`catAnim` чи разова). */
   anim: CatAnimId;
@@ -72,10 +80,10 @@ export interface CatFrame {
   ground: Point;
   /** Масштаб усього кота (кошеня, порода, клубочок у барабані). */
   scale: number;
-  /** Пропорції скелета (`isoCatProportions`). */
-  proportions: readonly (string | { name: string; weight: number })[];
+  /** Вага пропорцій кошеняти (`CatSize.kitten`). */
+  kitten: number;
   pregnant: boolean;
-  /** Обхват (`girthOf`): тінь ширша. */
+  /** Обхват (`girthOf`): тінь ширша, тулуб — пропорції `fat`. */
   girth: number;
   show: CatShow;
   /** Ховається під меблями: з-під краю визирають очі й кінчик хвоста, під ними — темна щілина (з будиночка — лише очі). */
@@ -88,6 +96,9 @@ export interface CatFrame {
   /** Час сцени, мс. */
   time: number;
 }
+
+/** Форми породи й вагітність, з яких зібрано обвіс (`isoCatSkin`). */
+type SkinInputs = Pick<Shape, "muzzle" | "ears" | "tail" | "build" | "legs"> & { pregnant: boolean };
 
 export class IsoCatView {
   readonly sprite: IsoCatSprite;
@@ -109,16 +120,20 @@ export class IsoCatView {
 
   /** Кіт, якого показує вигляд (той самий id; об'єкт стану може бути новим). */
   private cat: Cat;
+  private readonly owner: string;
   private recipe: TintRecipe;
   private far: TintRecipe;
-  private skinKey = "";
-  private propsKey = "";
+  private recipeCheck = Number.NEGATIVE_INFINITY;
+  private skin: SkinInputs | null = null;
+  /** З чого зібрано пропорції: крок повноти, вага кошеняти, статура й лапи (−1 — ще не збирали). */
+  private props = { fat: -1, kitten: -1, build: "", legs: "" };
   private playing: Playing | null = null;
   /** Власний годинник кота, мс: іде зі швидкістю анімації (хода кульгавого повільніша). */
   private clock = 0;
   private lastTime: number | null = null;
   private lastShow: CatShow = "rig";
   private lastFacing: RigFacing = { view: "front", flip: false };
+  private readonly backSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
 
   /** Над головою (бабли, пір'їнка вудки) і спинка (рука, що гладить), px світу. */
   readonly head: Point = { x: 0, y: 0 };
@@ -134,9 +149,10 @@ export class IsoCatView {
     addPoint: (setDepth: (depth: number) => void) => IsoPointHandle,
   ) {
     this.cat = cat;
+    this.owner = catOwner(cat.id);
     this.recipe = catRecipeOf(cat);
     this.far = farRecipe(this.recipe);
-    const baked: RigBaked<IsoCatSlot> = { recipe: (slot) => ((CAT_FAR_SLOTS as readonly string[]).includes(slot) ? this.far : this.recipe), owner: catOwner(cat.id) };
+    const baked: RigBaked<IsoCatSlot> = { recipe: (slot) => ((CAT_FAR_SLOTS as readonly string[]).includes(slot) ? this.far : this.recipe), owner: this.owner };
     this.sprite = new RigSprite(scene, ISO_CAT_RIG, { fit: ISO_CAT_FIT, skin: isoCatSkin(cat.shape, false), baked });
     // Розмір контейнера — для фільтрів (сяйво підсвітки, `cats.ts`): з ним Phaser 4 малює кота в полотно довкола нього самого.
     // Без розміру фільтр бере всю камеру й зсуває кота вгору на відступ видової області камери під панеллю (`cam.y` × зум).
@@ -152,14 +168,10 @@ export class IsoCatView {
     const dt = this.lastTime === null ? 0 : Math.max(0, f.time - this.lastTime);
     this.lastTime = f.time;
     this.clock += dt * f.speed;
+    this.updateRecipe(cat, f.time);
     this.cat = cat;
-    this.updateRecipe(cat);
-    this.updateSkin(cat, f.pregnant);
-    const props = proportionsKey(f.proportions);
-    if (props !== this.propsKey) {
-      this.propsKey = props;
-      this.sprite.setProportions(f.proportions);
-    }
+    this.updateSkin(cat.shape, f.pregnant);
+    this.updateProportions(cat.shape, f.kitten, f.girth);
     this.root.x = f.root.x;
     this.root.y = f.root.y;
     this.scale = f.scale;
@@ -228,7 +240,7 @@ export class IsoCatView {
     this.peekEyes?.destroy();
     this.peekTail?.destroy();
     for (const ear of this.peekEars) ear.destroy();
-    releaseBaked(this.scene, catOwner(this.cat.id));
+    releaseBaked(this.scene, this.owner);
   }
 
   /** Глибина шматка кота (поки розв'язку ще не було — від нуля). */
@@ -247,8 +259,13 @@ export class IsoCatView {
     for (const ear of this.peekEars) ear.setDepth(depth + CAT_PIECE.peek);
   }
 
-  /** Шерсть змінилася (глисти, дерматит, нашийник): запекти частини заново. */
-  private updateRecipe(cat: Cat): void {
+  /**
+   * Шерсть змінилася (глисти, дерматит, нашийник): запекти частини заново. Перевіряється раз на `RECIPE_CHECK_MS` і коли
+   * об'єкт кота новий (завантаження, сценарій).
+   */
+  private updateRecipe(cat: Cat, time: number): void {
+    if (cat === this.cat && time - this.recipeCheck < RECIPE_CHECK_MS) return;
+    this.recipeCheck = time;
     const recipe = catRecipeOf(cat);
     if (recipe === this.recipe) return;
     const changed = recipe.key !== this.recipe.key;
@@ -258,11 +275,23 @@ export class IsoCatView {
   }
 
   /** Обвіс: форми породи й живіт вагітної. */
-  private updateSkin(cat: Cat, pregnant: boolean): void {
-    const key = `${cat.shape.muzzle}|${cat.shape.ears}|${cat.shape.tail}|${cat.shape.build}|${cat.shape.legs}|${pregnant ? 1 : 0}`;
-    if (key === this.skinKey) return;
-    this.skinKey = key;
-    this.sprite.setSkin(isoCatSkin(cat.shape, pregnant));
+  private updateSkin(shape: Shape, pregnant: boolean): void {
+    const s = this.skin;
+    if (s && s.muzzle === shape.muzzle && s.ears === shape.ears && s.tail === shape.tail && s.build === shape.build && s.legs === shape.legs && s.pregnant === pregnant) return;
+    this.skin = { muzzle: shape.muzzle, ears: shape.ears, tail: shape.tail, build: shape.build, legs: shape.legs, pregnant };
+    this.sprite.setSkin(isoCatSkin(shape, pregnant));
+  }
+
+  /** Пропорції скелета: короткі лапи, статура, кошеня, повнота. */
+  private updateProportions(shape: Shape, kitten: number, girth: number): void {
+    const fat = fatStep(girth);
+    const p = this.props;
+    if (p.fat === fat && p.kitten === kitten && p.build === shape.build && p.legs === shape.legs) return;
+    p.fat = fat;
+    p.kitten = kitten;
+    p.build = shape.build;
+    p.legs = shape.legs;
+    this.sprite.setProportions(proportionsOf(shape, kitten, fat));
   }
 
   /**
@@ -273,19 +302,29 @@ export class IsoCatView {
   private play(f: CatFrame): void {
     const base = CAT_ANIMS[f.anim] as CatRigAnim;
     const overlay = f.overlay ? (CAT_ANIMS[f.overlay] as CatRigAnim) : null;
-    const face = `${f.face.eyes}|${f.face.mouth}|${f.face.ears}`;
+    const face = f.face;
     const prev = this.playing;
-    if (prev && !f.restart && prev.base === base && prev.overlay === overlay && prev.face === face) return;
-    const anim = composeCatAnim(base, overlay, f.face) as CatRigAnim;
+    if (prev && !f.restart && prev.base === base && prev.overlay === overlay && prev.eyes === face.eyes && prev.mouth === face.mouth && prev.ears === face.ears) return;
+    const anim = composeCatAnim(base, overlay, face) as CatRigAnim;
     const sameBase = prev !== null && !f.restart && prev.base === base;
     const start = sameBase ? prev.start : this.clock;
     const elapsed = this.clock - start;
     const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
     const sameMotion = sameBase && prev.overlay === overlay;
-    const earsMoved = prev !== null && prev.face.split("|")[2] !== f.face.ears;
+    const earsMoved = prev !== null && prev.ears !== face.ears;
     const blend = sameMotion ? (earsMoved ? BLEND_MS : 0) : BLEND_MS;
     this.sprite.play(anim, { from, blend, restart: f.restart || !sameMotion });
-    this.playing = { base, overlay, face, anim, start };
+    if (prev) {
+      prev.base = base;
+      prev.overlay = overlay;
+      prev.eyes = face.eyes;
+      prev.mouth = face.mouth;
+      prev.ears = face.ears;
+      prev.anim = anim;
+      prev.start = start;
+    } else {
+      this.playing = { base, overlay, eyes: face.eyes, mouth: face.mouth, ears: face.ears, anim, start };
+    }
   }
 
   /** Іграшка чи шкарпетка в зубах (§9.12, «Подарунки й схованки»): кадр у гнізді `teeth`. */
@@ -296,14 +335,14 @@ export class IsoCatView {
     }
     const id: ArtId = teeth.kind === "sock" ? "mess/sock" : `item/toy/${teeth.quality}`;
     const state = teeth.kind === "sock" ? "carried" : "teeth";
-    const key = `${id}|${state}`;
     if (!this.teethImage) {
       this.teethImage = addArt(this.scene, null, id, { state });
       this.sprite.attach("teeth", this.teethImage);
-    } else if (key !== this.teethKey) {
+      this.teethKey = id;
+    } else if (id !== this.teethKey) {
       setArt(this.teethImage, id, { state });
+      this.teethKey = id;
     }
-    this.teethKey = key;
     this.teethImage.setVisible(visible);
   }
 
@@ -314,7 +353,7 @@ export class IsoCatView {
   private drawPeek(f: CatFrame): void {
     const eyes = f.show === "eyes" && !f.culled;
     const ears = f.show === "ears" && !f.culled;
-    const owner = catOwner(this.cat.id);
+    const owner = this.owner;
     const view: ArtView = "front";
     const s = f.scale;
     if (eyes) {
@@ -358,7 +397,8 @@ export class IsoCatView {
         image.setDepth(this.pieceDepth(CAT_PIECE.peek));
         this.peekEars.push(image);
       }
-      this.peekEars.forEach((image, i) => {
+      for (let i = 0; i < this.peekEars.length; i++) {
+        const image = this.peekEars[i]!;
         setBakedArt(image, earArt, i === 0 ? this.far : this.recipe, { view, owner });
         const side = i === 0 ? 1 : -1;
         const dir = f.facing.flip ? -1 : 1;
@@ -367,7 +407,7 @@ export class IsoCatView {
           .setPosition(f.root.x + side * dir * PEEK.earSpread * s, f.root.y - 2 * s)
           .setAngle(side * dir * PEEK.earTilt)
           .setScale(this.baseScale(image) * s * 0.85, this.baseScale(image, "y") * s * 0.85);
-      });
+      }
     } else {
       for (const image of this.peekEars) image.setVisible(false);
     }
@@ -397,13 +437,10 @@ export class IsoCatView {
 
   /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима чи вушками). */
   private updatePoints(f: CatFrame, evaluated: boolean): void {
+    // Якір і гніздо пишуть просто в точки (немає — точка лишається, як була).
     if (f.show === "rig" && evaluated) {
-      const head = this.sprite.anchor("head");
-      const back = this.sprite.socket("pet");
-      if (head) {
-        this.head.x = head.x;
-        this.head.y = head.y;
-      }
+      this.sprite.anchor("head", this.head);
+      const back = this.sprite.socket("pet", this.backSocket);
       if (back) {
         this.back.x = back.x;
         this.back.y = back.y;

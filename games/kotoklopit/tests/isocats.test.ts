@@ -240,6 +240,14 @@ describe("складання анімації кота (`catanim.ts`)", () => {
     expect(composeCatAnim(CAT_ANIMS.sit, CAT_ANIMS.content, face)).toBe(composeCatAnim(CAT_ANIMS.sit, CAT_ANIMS.content, { ...face }));
     expect(composeCatAnim(CAT_ANIMS.sit, null, face)).not.toBe(composeCatAnim(CAT_ANIMS.sit, null, { ...face, eyes: "half" }));
   });
+
+  it("нове обличчя не складає основну з накладкою заново: доріжки тіла — ті самі масиви", () => {
+    const a = composeCatAnim(base, overlay, { eyes: "open", mouth: "closed", ears: "up" });
+    const b = composeCatAnim(base, overlay, { eyes: "closed", mouth: "meow", ears: "flat" });
+    expect(a).not.toBe(b);
+    expect(b.views?.front?.bones?.tail?.rot).toBe(a.views?.front?.bones?.tail?.rot);
+    expect(b.views?.back?.bones?.body?.pos).toBe(a.views?.back?.bones?.body?.pos);
+  });
 });
 
 describe("де кіт (`catSpot`)", () => {

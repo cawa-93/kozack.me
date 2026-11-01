@@ -12,7 +12,7 @@ import { brawlFoe, catAnim } from "../pose";
 import type { GameEvent } from "../../sim/events";
 import { showsPregnancy } from "../../sim/reproduction";
 import type { Target } from "../../sim/targets";
-import type { Cat, GameState, Vec } from "../../sim/types";
+import type { Cat, GameState, Quality, Vec } from "../../sim/types";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, personFacing } from "../anim/catfacing";
@@ -27,7 +27,7 @@ import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { catPlay, groundAt, nextLift, startShot, type CatShot, type Lift } from "./catplay";
-import { catSize, isoCatHalf, isoCatProportions, type CatSize } from "./catrig";
+import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
@@ -54,6 +54,13 @@ const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 /** Підписи над котами (імена в нашийниках, приховані числа), що налягли б один на одного, — один над одним із таким проміжком, px. */
 const LABEL_GAP = 1;
 
+/** Що кіт несе в зубах (`CatFrame.teeth`): сталі об'єкти, щоб щокадру не створювати нових. */
+const SOCK = { kind: "sock" } as const;
+const TOYS: Readonly<Record<Quality, { kind: "toy"; quality: Quality }>> = {
+  cheap: { kind: "toy", quality: "cheap" },
+  premium: { kind: "toy", quality: "premium" },
+};
+
 /** Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`); без WebGL — кільце на підлозі. */
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
@@ -68,6 +75,10 @@ interface Memory {
   shot: CatShot | null;
   /** Висота над підлогою: до якої йде стрибок, звідки й коли почався. */
   lift: Lift | null;
+  /** Розмір (кошеня, порода) і для якого віку й об'єкта кота його рахували: щокадру не перераховувати. */
+  size: CatSize | null;
+  sizeAge: number;
+  sizeCat: Cat | null;
 }
 
 /** Хмара бійки двох котів. */
@@ -96,7 +107,30 @@ export class IsoCatsView implements CatsPart {
   private readonly webgl: boolean;
   /** Видимий світ із запасом (`CULL_MARGIN`): коти поза ним не рахуються. */
   private readonly visible = new Phaser.Geom.Rectangle();
-  /** Видимі підписи, від нижчого до вищого (`separate`): буфер між кадрами. */
+  /** Буфери кадру — живуть між кадрами, щоб щокадру не створювати нових: розміри котів, живі коти, кадр кота, підписи. */
+  private readonly sizes = new Map<number, CatSize>();
+  private readonly alive = new Set<number>();
+  private readonly sizeOf = (cat: Cat): number => this.sizes.get(cat.id)?.relative ?? 1;
+  private readonly frame: CatFrame = {
+    anim: "sit",
+    overlay: null,
+    restart: false,
+    speed: 1,
+    face: { eyes: "open", mouth: "closed", ears: "up" },
+    facing: { view: "front", flip: false },
+    root: { x: 0, y: 0 },
+    ground: { x: 0, y: 0 },
+    scale: 1,
+    kitten: 0,
+    pregnant: false,
+    girth: 1,
+    show: "rig",
+    under: false,
+    shadow: false,
+    teeth: null,
+    culled: false,
+    time: 0,
+  };
   private readonly labelOrder: Phaser.GameObjects.Text[] = [];
 
   constructor(private readonly ctx: PartContext) {
@@ -107,10 +141,12 @@ export class IsoCatsView implements CatsPart {
   update(state: GameState, frame: WorldFrame): void {
     this.wanted = null;
     const time = frame.time;
-    const sizes = new Map<number, CatSize>();
-    for (const cat of state.cats) sizes.set(cat.id, catSize(cat));
-    const pairs = catPairs(state, (c) => sizes.get(c.id)?.relative ?? 1);
-    const alive = new Set<number>();
+    const sizes = this.sizes;
+    sizes.clear();
+    for (const cat of state.cats) sizes.set(cat.id, this.sizeFor(cat));
+    const pairs = catPairs(state, this.sizeOf);
+    const alive = this.alive;
+    alive.clear();
     const seen = this.ctx.scene.cameras.main.worldView;
     this.visible.setTo(seen.x - CULL_MARGIN, seen.y - CULL_MARGIN, seen.width + CULL_MARGIN * 2, seen.height + CULL_MARGIN * 2);
     for (const cat of state.cats) {
@@ -174,10 +210,21 @@ export class IsoCatsView implements CatsPart {
   private memoryOf(id: number): Memory {
     let mem = this.memory.get(id);
     if (!mem) {
-      mem = { pos: null, facing: null, transition: null, shot: null, lift: null };
+      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, size: null, sizeAge: Number.NaN, sizeCat: null };
       this.memory.set(id, mem);
     }
     return mem;
+  }
+
+  /** Розмір кота (`catSize`): рахується знову, лише коли змінився вік чи об'єкт кота. */
+  private sizeFor(cat: Cat): CatSize {
+    const mem = this.memoryOf(cat.id);
+    if (mem.size === null || mem.sizeAge !== cat.ageWeeks || mem.sizeCat !== cat) {
+      mem.size = catSize(cat);
+      mem.sizeAge = cat.ageWeeks;
+      mem.sizeCat = cat;
+    }
+    return mem.size;
   }
 
   private startShot(cat: number, anim: CatOneShotId | null, face: Partial<CatFace> | null, ms: number, time: number): void {
@@ -206,55 +253,65 @@ export class IsoCatsView implements CatsPart {
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
     const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : catFacing(state, cat, mem.pos, { prev: mem.facing, pair });
     mem.facing = facing;
-    mem.pos = { x: cat.x, y: cat.y };
+    if (mem.pos) {
+      mem.pos.x = cat.x;
+      mem.pos.y = cat.y;
+    } else {
+      mem.pos = { x: cat.x, y: cat.y };
+    }
 
-    const { root, ground } = this.place(view, spot, mem, time);
+    const f = this.frame;
+    this.place(view, spot, mem, time, f);
     const act = cat.act;
     const carrying = act.kind === "carry" && act.picked === true && act.dropped !== true;
-    const toy = carrying && act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === act.target) : undefined;
-    const f: CatFrame = {
-      anim,
-      overlay,
-      restart,
-      speed,
-      face,
-      facing,
-      root,
-      ground,
-      scale: size.scale * spot.scale,
-      proportions: isoCatProportions(cat, size),
-      pregnant: showsPregnancy(state, cat),
-      girth: girthOf(cat),
-      show: spot.show,
-      under: spot.kind === "under",
-      shadow: spot.shadow,
-      // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.
-      culled: this.visible.width > CULL_MARGIN * 2 && !this.visible.contains(root.x, root.y),
-      teeth: !carrying ? null : act.carry === "sock" ? { kind: "sock" } : { kind: "toy", quality: toy?.quality ?? "cheap" },
-      time,
-    };
+    f.anim = anim;
+    f.overlay = overlay;
+    f.restart = restart;
+    f.speed = speed;
+    f.face = face;
+    f.facing = facing;
+    f.scale = size.scale * spot.scale;
+    f.kitten = size.kitten;
+    f.pregnant = showsPregnancy(state, cat);
+    f.girth = girthOf(cat);
+    f.show = spot.show;
+    f.under = spot.kind === "under";
+    f.shadow = spot.shadow;
+    // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.
+    f.culled = this.visible.width > CULL_MARGIN * 2 && !this.visible.contains(f.root.x, f.root.y);
+    f.teeth = carrying ? this.teethOf(state, act.carry, act.target) : null;
+    f.time = time;
     view.draw(cat, f);
   }
 
+  /** Що кіт несе в зубах (§9.12): шкарпетку чи іграшку її якості. */
+  private teethOf(state: GameState, carry: "toy" | "sock" | undefined, target: string | null): CatFrame["teeth"] {
+    if (carry === "sock") return SOCK;
+    const toy = carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === target) : undefined;
+    return TOYS[toy?.quality ?? "cheap"];
+  }
+
   /**
-   * Поставити точку кота в реєстр глибини й повернути, де на екрані корінь його скелета (з дугою стрибка) і поверхня під ним
-   * (без дуги — там тінь).
+   * Поставити точку кота в реєстр глибини й записати в кадр, де на екрані корінь його скелета (з дугою стрибка) і поверхня
+   * під ним (без дуги — там тінь).
    */
-  private place(view: IsoCatView, spot: CatSpot, mem: Memory, time: number): { root: Point; ground: Point } {
+  private place(view: IsoCatView, spot: CatSpot, mem: Memory, time: number, f: CatFrame): void {
     if (spot.kind === "hands") {
       mem.lift = null;
       const hands = this.ctx.world.person.hands;
       this.placeOnPerson(view, hands.depth);
-      return { root: { x: hands.x, y: hands.y }, ground: { x: hands.x, y: hands.y } };
+      f.root.x = f.ground.x = hands.x;
+      f.root.y = f.ground.y = hands.y;
+      return;
     }
     if (spot.above) view.point.placeAbove(spot.above.id, spot.above.offset);
     else if (spot.box) view.point.place(spot.at.x, spot.at.y, spot.box);
     else view.point.place(spot.at.x, spot.at.y);
     const s = ISO.toScreen(spot.at);
     const lift = this.lift(mem, spot, time);
-    const x = s.x + spot.offset.x;
-    const ground = s.y + spot.offset.y - (mem.lift ? groundAt(mem.lift, time) : lift);
-    return { root: { x, y: s.y + spot.offset.y - lift }, ground: { x, y: ground } };
+    f.root.x = f.ground.x = s.x + spot.offset.x;
+    f.root.y = s.y + spot.offset.y - lift;
+    f.ground.y = s.y + spot.offset.y - (mem.lift ? groundAt(mem.lift, time) : lift);
   }
 
   /**
