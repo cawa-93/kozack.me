@@ -7,7 +7,7 @@
 // пропускає. Тож тулуб, голова й очі кота тонуються тим самим рецептом.
 //
 // Кольори шерсті тут, а не в `art/palette.ts`: палітра арту — кольори, якими малюють SVG, а це кольори, якими компонувальник
-// фарбує білі заливки й маски під час гри. Узгоджені зі старим виглядом (`src/view/legacy/cat.ts`) — приглушені, теплі.
+// фарбує білі заливки й маски під час гри. Узгоджені зі старим виглядом (до кроку 16) — приглушені, теплі.
 
 import { coatOf, type Coat, type EyeColor, type Pigment, type TabbyPattern } from "../../sim/genetics";
 import type { Cat, Look, Shape } from "../../sim/types";
@@ -63,7 +63,7 @@ export const SHADE_TINT = 0xf2dccb;
 
 /**
  * Множник смуг табі там, де смуги кладуться множенням (колорпойнт, безшерстий): «темніший відтінок того, що під ними».
- * 0.72 — як у старому вигляді (`legacy/cat.ts`).
+ * 0.72 — як у старому вигляді (до кроку 16).
  */
 const TABBY_DARKEN = 0.72;
 
@@ -310,18 +310,18 @@ export interface PersonRecipeOptions {
  * Волосся в новому вигляді — палітра редактора (`view/palette.ts`), але чорне й темно-каштанове світліші: чорне #2f2420
  * майже збігалося з чорнилом контуру, тож пасма, вихор, гумка хвостика й завитки кучерів зникали, а ззаду зачіска ставала
  * плямою без форми (A10, хвиля 2). Та сама поправка, що й у чорного кота (`PIGMENT_LOOK.black`, рішення автора 2026-10-30):
- * чорне — #463a40, каштанове — #5e3d2e. Старий вигляд і портрет у картках беруть палітру як є.
+ * чорне — #463a40, каштанове — #5e3d2e. Портрет у картках — той самий рецепт (`composePortrait`).
  */
 const HAIR_COLORS: readonly number[] = LOOK_PALETTE.hairColor.map((color, i) => [0x463a40, 0x5e3d2e][i] ?? color);
 
-/** Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` — так само, як у старому вигляді й портреті (волосся — `HAIR_COLORS`). */
+/** Кольори вигляду персонажа з палітр `view/palette.ts` за індексами `Look` (волосся — `HAIR_COLORS`); їх бере й портрет. */
 export function personColors(look: Look): { skin: number; hair: number; iris: number; top: number; bottom: number; shoes: number } {
   return {
     skin: pick(LOOK_PALETTE.skin, look.skin),
     hair: pick(HAIR_COLORS, look.hairColor),
     iris: pick(LOOK_PALETTE.eyes, look.eyes),
     top: pick(LOOK_PALETTE.clothes, look.top),
-    // Низ і взуття починаються з графітового (`ui/look.ts`): зсув 5 у спільній палітрі одягу, як у `legacy/person.ts`.
+    // Низ і взуття починаються з графітового (`ui/look.ts`): зсув 5 у спільній палітрі одягу.
     bottom: pick(LOOK_PALETTE.clothes, look.bottom + 5),
     shoes: pick(LOOK_PALETTE.clothes, look.shoes + 5),
   };

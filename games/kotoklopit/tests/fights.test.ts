@@ -16,7 +16,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel } from "../src/sim/types";
-import { brawlInFront, poseOf, showsFightBubble } from "../src/view/pose";
+import { catPose, showsFightBubble } from "../src/view/pose";
 import { recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 5): Save {
@@ -653,11 +653,11 @@ describe("пози протистояння й бійки (§9.4, «Пози с�
     }
     const [mover, waiter] = a.act.goal !== null ? [a, b] : [b, a];
     expect(mover.act.goal).not.toBeNull();
-    expect(poseOf(mover, false)).toBe("walk");
-    expect(poseOf(waiter, false)).toBe("arch");
+    expect(catPose(s, mover)).toBe("walk");
+    expect(catPose(s, waiter)).toBe("arch");
     untilStandoff(save, a, b);
-    expect(poseOf(a, false)).toBe("arch");
-    expect(poseOf(b, false)).toBe("arch");
+    expect(catPose(s, a)).toBe("arch");
+    expect(catPose(s, b)).toBe("arch");
   });
 
   it("бійка: нападник біжить, другий чекає дугою; зійшлися — обидва «клубок бійки», і бабл «бійка» один на двох", () => {
@@ -673,28 +673,14 @@ describe("пози протистояння й бійки (§9.4, «Пози с�
     cat.act.minutes = 0.1;
     for (let i = 0; i < 20 && cat.act.kind !== "fight"; i++) tickCats(s, 0.05, { present: false });
     expect(cat.act.kind).toBe("fight");
-    expect(poseOf(cat, false)).toBe("walk");
-    expect(poseOf(other, false)).toBe("arch");
+    expect(catPose(s, cat)).toBe("walk");
+    expect(catPose(s, other)).toBe("arch");
     // Поки нападник біжить, бабл «бійка» — над кожним.
     expect(showsFightBubble(s, cat)).toBe(true);
     expect(showsFightBubble(s, other)).toBe(true);
     for (let i = 0; i < 100 && cat.act.paired !== true; i++) tickCats(s, 0.05, { present: false });
-    expect(poseOf(cat, false)).toBe("brawl");
-    expect(poseOf(other, false)).toBe("brawl");
+    expect(catPose(s, cat)).toBe("brawl");
+    expect(catPose(s, other)).toBe("brawl");
     expect([cat, other].filter((c) => showsFightBubble(s, c))).toHaveLength(1);
-  });
-
-  it("«клубок бійки»: помітно менша куля (кошеня проти дорослого) завжди спереду, однакові — по черзі", () => {
-    // Перевірка блоку 1 (2026-10-26): більша куля пів оберту цілком ховала кошеня.
-    const phases = Array.from({ length: 24 }, (_, i) => (i * Math.PI) / 12 + 0.1);
-    for (const phase of phases) {
-      // Кулі двох котів кружляють у протифазі.
-      expect(brawlInFront(11, 22, phase)).toBe(true);
-      expect(brawlInFront(22, 11, phase + Math.PI)).toBe(false);
-      expect(brawlInFront(17, 18, phase)).not.toBe(brawlInFront(18, 17, phase + Math.PI));
-    }
-    expect(new Set(phases.map((phase) => brawlInFront(17, 18, phase))).size).toBe(2);
-    // Суперника не видно — крутиться сам.
-    expect(new Set(phases.map((phase) => brawlInFront(17, null, phase))).size).toBe(2);
   });
 });

@@ -1,5 +1,5 @@
 // Реєстр глибини ізометричного світу (крок 16, `src/view/iso/depth.ts`): частини реєструють коробки й точки з колбеками,
-// розв'язувач роздає глибини за `isoOrder` — нижче за позначки, в одиницях екранного y (як `ISO.depthOf` старих частин).
+// розв'язувач роздає глибини за `isoOrder` — нижче за позначки, в одиницях екранного y.
 // У Node, без Phaser: колбеки — функції.
 
 import { describe, expect, it } from "vitest";
@@ -7,12 +7,11 @@ import { describe, expect, it } from "vitest";
 import { OBJECTS, objectById } from "../src/sim/home";
 import { ISO_BACKDROP_DEPTH, ISO_DEPTH_MAX, ISO_DEPTH_SLOT, IsoDepth, isoDepth } from "../src/view/iso/depth";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
-import { legacyDepthPoint } from "../src/view/iso/transition";
 import { objectBox } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
 import { WORLD_LAYERS } from "../src/view/world/layers";
 import type { WorldQuery } from "../src/view/world/part";
-import { ISO } from "../src/view/world/projection";
+import { ISO, ISO_DEPTH_TIE } from "../src/view/world/projection";
 
 /** Колбек, що пам'ятає останню глибину й скільки разів його кликали. */
 function recorder(): { set: (d: number) => void; depth: () => number; calls: () => number } {
@@ -126,30 +125,39 @@ describe("реєстр глибини: порядок", () => {
   });
 });
 
-describe("реєстр глибини: узгоджено зі старими частинами", () => {
-  it("вільна точка отримує свою ISO.depthAt — ту, яку старий кіт чи персонаж рахує сам", () => {
+/** Глибина вільної точки підлоги: її екранний y, а за однакового y ближче до камери той, у кого більший x. */
+const screenDepth = (p: { x: number; y: number }): number => ISO.toScreen(p).y + p.x * ISO_DEPTH_TIE;
+
+describe("реєстр глибини: точки й коробки по всій квартирі", () => {
+  it("вільна точка отримує свою середину на екрані", () => {
     const registry = new IsoDepth();
     const r = recorder();
     registry.addPoint(r.set).place(6.3, 7.7);
     registry.solve();
-    expect(r.depth()).toBeCloseTo(ISO.depthAt({ x: 6.3, y: 7.7 }), 9);
+    expect(r.depth()).toBeCloseTo(screenDepth({ x: 6.3, y: 7.7 }), 9);
   });
 
-  it("старий персонаж (глибина з ISO.depthOf ніг) стає перед і за меблями-коробками реєстру, як за правилом", () => {
+  it("персонаж стає перед і за меблями-коробками реєстру, як за правилом", () => {
     for (const [id, front, back] of [
       ["fridge", { x: 13.5, y: 2.4 }, { x: 12.6, y: 1.5 }],
       ["sofa", { x: 16.3, y: 10.5 }, { x: 14.5, y: 9.4 }],
       ["table", { x: 14, y: 4.4 }, { x: 14, y: 2.6 }],
     ] as const) {
-      const { registry, box } = withObject(id);
-      registry.solve();
-      const legacy = (p: { x: number; y: number }): number => ISO.depthOf(ISO.toScreen(p).y);
-      expect(legacy(front), id).toBeGreaterThan(box.depth());
-      expect(legacy(back), id).toBeLessThan(box.depth());
+      for (const [p, ahead] of [
+        [front, true],
+        [back, false],
+      ] as const) {
+        const { registry, box } = withObject(id);
+        const person = recorder();
+        registry.addPoint(person.set).place(p.x, p.y);
+        registry.solve();
+        if (ahead) expect(person.depth(), id).toBeGreaterThan(box.depth());
+        else expect(person.depth(), id).toBeLessThan(box.depth());
+      }
     }
   });
 
-  it("у всій квартирі реєстр піднімає коробки вище за їхню середину — тож старі персонаж і кіт у ?gfx=iso стають точками реєстру (legacyDepthPoint)", () => {
+  it("у всій квартирі реєстр піднімає коробки вище за їхню середину, а персонаж і кіт на руках — точки реєстру", () => {
     const ctx = { world: {} as WorldQuery };
     const registry = isoDepth(ctx);
     const boxes = new Map<string, () => number>();
@@ -164,14 +172,14 @@ describe("реєстр глибини: узгоджено зі старими ч
       boxes.set(segment.id, r.depth);
     }
     const person = recorder();
-    const point = legacyDepthPoint(ctx, "person", person.set);
+    const point = registry.addPoint(person.set, { id: "person" });
     const bag = boxes.get("litter-bag")!;
     const wall = boxes.get("env/wall/inner/row5-x5")!;
     // Біля мішка наповнювача, там, де ним користуються (перед ним): мішок стоїть у порядку за стіною ряду 5, і реєстр підняв
-    // його вище за ноги персонажа — глибина з екранного y ніг (як рахували старі частини) поклала б персонажа за мішок.
+    // його вище за ноги персонажа — глибина з екранного y ніг поклала б персонажа за мішок.
     point.place(5.5, 7.35);
     registry.solve();
-    expect(ISO.depthOf(ISO.toScreen({ x: 5.5, y: 7.35 }).y)).toBeLessThan(bag());
+    expect(screenDepth({ x: 5.5, y: 7.35 })).toBeLessThan(bag());
     expect(person.depth()).toBeGreaterThan(bag());
     // За стіною ряду 5 (у ванній) — за нею.
     point.place(8.5, 4.6);
@@ -183,7 +191,7 @@ describe("реєстр глибини: узгоджено зі старими ч
     expect(person.depth()).toBeGreaterThan(boxes.get("env/wall/inner/row5-x12")!());
     // Кіт на руках — поверх персонажа, у його проміжку.
     const cat = recorder();
-    legacyDepthPoint(ctx, "cat:1", cat.set).placeAbove("person");
+    registry.addPoint(cat.set, { id: "cat:1" }).placeAbove("person");
     registry.solve();
     expect(cat.depth()).toBeGreaterThan(person.depth());
     expect(cat.depth()).toBeLessThan(person.depth() + ISO_DEPTH_SLOT);
@@ -228,7 +236,7 @@ describe("реєстр глибини: коли рахує", () => {
     // Стола немає — кіт на підлозі на тому самому місці.
     t.setActive(false);
     registry.solve();
-    expect(cat.depth()).toBeCloseTo(ISO.depthAt({ x: 13.5, y: 3.5 }), 6);
+    expect(cat.depth()).toBeCloseTo(screenDepth({ x: 13.5, y: 3.5 }), 6);
     t.setActive(true);
     c.hide();
     const calls = cat.calls();
@@ -270,11 +278,10 @@ const sources = import.meta.glob<string>(["../src/view/iso/depth.ts", "../src/vi
 });
 
 describe("шви ізометрії", () => {
-  it("порядок, реєстр глибини й зум камери — без Phaser і без старого вигляду", () => {
+  it("порядок, реєстр глибини й зум камери — без Phaser", () => {
     expect(Object.keys(sources)).toHaveLength(3);
     for (const [file, source] of Object.entries(sources)) {
       expect(source, file).not.toMatch(/^import\s+(?!type\b)[^;]*from\s+["']phaser["']/m);
-      expect(source, file).not.toMatch(/from\s+["'][^"']*legacy\//);
     }
   });
 });

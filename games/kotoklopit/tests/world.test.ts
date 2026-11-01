@@ -8,7 +8,7 @@ import { objectById } from "../src/sim/home";
 import type { Target } from "../src/sim/targets";
 import type { Cat } from "../src/sim/types";
 import type { ApartmentPart, CatsPart, PersonPart, Point, WorldFrame, WorldPart } from "../src/view/world/part";
-import { OBLIQUE } from "../src/view/world/projection";
+import { ISO } from "../src/view/world/projection";
 import { UI_LAYERS, WORLD_LAYERS } from "../src/view/world/layers";
 import { World } from "../src/view/world/world";
 
@@ -37,7 +37,7 @@ function world(): { world: World; log: string[] } {
   const apartment: ApartmentPart = { ...fake("apartment", log, (id) => !id.includes(":"), ["object"]), objectAnchor: () => ({ x: -1, y: -1 }) };
   const person: PersonPart = { ...fake("person", log, (id) => id === "person"), head: { x: 7, y: 8 }, hands: { x: 1, y: 2, depth: 3 } };
   const cats: CatsPart = { ...fake("cats", log, (id) => id.startsWith("cat:"), ["cat"]), points: (cat) => (cat === 1 ? { head: { x: 1, y: 1 }, back: { x: 2, y: 2 } } : null) };
-  const result = new World(OBLIQUE);
+  const result = new World(ISO);
   result.attach({ apartment, floor: fake("floor", log, (id) => /^(item|mess):/.test(id), ["item", "mess"]), cats, person, marks: fake("marks", log, () => false) });
   return { world: result, log };
 }

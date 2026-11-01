@@ -1,23 +1,20 @@
 // Індикатор вмісту сховища (§6.4): ряд іконок запасів із кількістю над холодильником, шафкою тощо.
 // Нуль — червоним.
 //
-// Два вигляди (`STORAGE_LOOKS`): старий і нової графіки (крок 16, T4) — паперова плашка в чорнильній рамці з тінню, кольори
-// палітри арту (`art/STYLE.md`), більша на стільки, на скільки дрібніший масштаб камери в ізометрії (≈ 0,72 px CSS на одиницю
-// замість ≈ 0,9–1), — тож на екрані вона така сама завбільшки. У новому вигляді плашка ще й не закриває голову персонажа:
-// він стоїть біля сховища щоразу, коли її видно (вона лише для сховища в фокусі), а в ізометрії низькі сховища (ящики,
-// пралька, шафка з кормом) нижчі за нього.
+// Паперова плашка в чорнильній рамці з тінню, кольори палітри арту (`art/STYLE.md`; крок 16, T4), у масштабі камери
+// ізометрії (≈ 0,72 px CSS на одиницю на телефоні). Плашка не закриває голову персонажа: він стоїть біля сховища щоразу,
+// коли її видно (вона лише для сховища в фокусі), а в ізометрії низькі сховища (ящики, пралька, шафка з кормом) нижчі за
+// нього.
 
 import type Phaser from "phaser";
 
 import { PALETTE, SHADE } from "../../art/palette";
 import type { StorageLine } from "../sim/storage";
-import { COLORS } from "./colors";
 import { iconTexture } from "./iconnames";
 import { ANCHOR_GAP, PERSON_FIGURE } from "./iso/geometry";
 import { BUBBLE_ROOM } from "./iso/markslayout";
 import { PRODUCT_ICONS } from "./symbols";
 import type { Point } from "./world/part";
-import type { Projection } from "./world/projection";
 import { WORLD_LAYERS } from "./world/layers";
 
 const DEPTH = WORLD_LAYERS.storage;
@@ -50,61 +47,36 @@ export interface StorageLook {
   zero: string;
   /** На скільки плашка вище за точку сховища, коли над ним висить бабл стану: місце бабла (`DayScene`). */
   bubbleLift: number;
-  /** Плашка не закриває голову персонажа: коли він стоїть під нею, вона піднімається над його головою. */
-  clearHead: boolean;
 }
 
 /** Колір палітри арту `#rrggbb` як число для Phaser. */
 const hex = (color: string): number => Number.parseInt(color.slice(1), 16);
-/** Ізометрія дрібніша за старий вигляд: стільки одиниць арту на піксель старого індикатора. */
+/** Одиниця світу ізометрії дрібна: стільки одиниць арту на піксель індикатора першої чернетки (іконка 26, шрифт 15). */
 const ISO_SCALE = 1.3;
 
-export const STORAGE_LOOKS: Record<Projection["kind"], StorageLook> = {
-  oblique: {
-    icon: 26,
-    chip: 50,
-    wideChip: 76,
-    pad: 5,
-    radius: 8,
-    fill: 0xffffff,
-    fillAlpha: 0.95,
-    line: 2,
-    lineColor: COLORS.ink,
-    lineAlpha: 0.6,
-    drop: 0,
-    dropColor: 0,
-    dropAlpha: 0,
-    fontSize: 15,
-    gap: 2,
-    text: "#1f1a24",
-    zero: "#d8483b",
-    bubbleLift: 56,
-    clearHead: false,
-  },
-  // Нова графіка: папір, чорнильна рамка `LINE.inner` і тінь `shade` (`art/STYLE.md`, «ui»), нуль — червоний сенсу «ні»
-  // (`red`, а не `redLo`: «…Lo» — лінії матеріалу, на папері вони майже як чорнило). Над баблом стану — на місце бабла
-  // нового вигляду (`BUBBLE_ROOM`, T3).
-  iso: {
-    icon: Math.round(26 * ISO_SCALE),
-    chip: Math.round(50 * ISO_SCALE),
-    wideChip: Math.round(76 * ISO_SCALE),
-    pad: Math.round(5 * ISO_SCALE),
-    radius: 10,
-    fill: hex(PALETTE.paper),
-    fillAlpha: 1,
-    line: 3.5,
-    lineColor: hex(PALETTE.ink),
-    lineAlpha: 1,
-    drop: 4,
-    dropColor: hex(PALETTE.shade),
-    dropAlpha: SHADE.base,
-    fontSize: Math.round(15 * ISO_SCALE),
-    gap: 3,
-    text: PALETTE.ink,
-    zero: PALETTE.red,
-    bubbleLift: BUBBLE_ROOM,
-    clearHead: true,
-  },
+/**
+ * Папір, чорнильна рамка `LINE.inner` і тінь `shade` (`art/STYLE.md`, «ui»), нуль — червоний сенсу «ні» (`red`, а не
+ * `redLo`: «…Lo» — лінії матеріалу, на папері вони майже як чорнило). Над баблом стану — на місце бабла (`BUBBLE_ROOM`, T3).
+ */
+export const STORAGE_LOOK: StorageLook = {
+  icon: Math.round(26 * ISO_SCALE),
+  chip: Math.round(50 * ISO_SCALE),
+  wideChip: Math.round(76 * ISO_SCALE),
+  pad: Math.round(5 * ISO_SCALE),
+  radius: 10,
+  fill: hex(PALETTE.paper),
+  fillAlpha: 1,
+  line: 3.5,
+  lineColor: hex(PALETTE.ink),
+  lineAlpha: 1,
+  drop: 4,
+  dropColor: hex(PALETTE.shade),
+  dropAlpha: SHADE.base,
+  fontSize: Math.round(15 * ISO_SCALE),
+  gap: 3,
+  text: PALETTE.ink,
+  zero: PALETTE.red,
+  bubbleLift: BUBBLE_ROOM,
 };
 
 /** Проміжок між тінню плашки й маківкою персонажа (точкою його бабла), одиниці світу. */
@@ -121,10 +93,9 @@ export interface StoragePlate {
 /**
  * Де низ плашки, щоб вона не закривала голову персонажа (`head` — точка над його головою, як для баблів): коли плашка й
  * персонаж (від маківки до ніг) перекриваються на екрані, плашка разом із тінню стає над його головою; інакше — де була.
- * Старий вигляд не піднімається.
  */
 export function clearOfHead(look: StorageLook, plate: StoragePlate, head: Point | null): number {
-  if (!look.clearHead || !head) return plate.y;
+  if (!head) return plate.y;
   const top = plate.y - plate.height;
   const bottom = plate.y + look.drop;
   const across = Math.abs(plate.x - head.x) < plate.width / 2 + PERSON_FIGURE.half;
@@ -142,13 +113,13 @@ interface Indicator {
 export class StorageIndicators {
   private readonly shown = new Map<string, Indicator>();
 
-  /**
-   * `head` — де зараз точка над головою персонажа (`World.person.head`): плашки нового вигляду її обходять (`clearOfHead`).
-   */
+  /** Як виглядає індикатор: місце бабла стану над сховищем (`bubbleLift`) бере й сцена. */
+  readonly look: StorageLook = STORAGE_LOOK;
+
+  /** `head` — де зараз точка над головою персонажа (`World.person.head`): плашки її обходять (`clearOfHead`). */
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layer: Phaser.GameObjects.Layer,
-    readonly look: StorageLook = STORAGE_LOOKS.oblique,
     private readonly head: () => Point | null = () => null,
   ) {}
 
@@ -177,9 +148,9 @@ export class StorageIndicators {
     return { width: lines.length * chip + look.pad, height: look.icon + look.pad * 2 };
   }
 
-  /** Низ плашки: у точці (x, y), а в новому вигляді — над головою персонажа, якщо він під нею. */
+  /** Низ плашки: у точці (x, y) чи над головою персонажа, якщо він під нею. */
   private lift(x: number, y: number, size: { width: number; height: number }): number {
-    return this.look.clearHead ? clearOfHead(this.look, { x, y, ...size }, this.head()) : y;
+    return clearOfHead(this.look, { x, y, ...size }, this.head());
   }
 
   private make(lines: readonly StorageLine[], x: number, y: number, size: { width: number; height: number }): Phaser.GameObjects.Container {

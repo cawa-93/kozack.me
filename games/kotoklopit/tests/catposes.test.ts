@@ -1,6 +1,6 @@
 // Нові пози кота й вирази для нового вигляду (крок 16, GRAPHICS_PLAN.md, «Вибір анімації»): `catPose` / `catAnim`
 // (`src/view/pose.ts`), обличчя `catFace`, разові анімації від подій і змін (`catEventAnims`, `catTransition`), назви анімацій
-// за групами N1–N3 (`anim/ids.ts`). Старий вигляд (`poseOf`) — без змін (`fights.test.ts`, `catplay.test.ts`).
+// за групами N1–N3 (`anim/ids.ts`). Пози протистояння, бійки, гри й вилизування — `fights.test.ts`, `catplay.test.ts`.
 
 import { describe, expect, it } from "vitest";
 
@@ -18,8 +18,8 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, DiseaseId, Save, TraitLevel } from "../src/sim/types";
 import { catEventAnims, catMemory, catTransition } from "../src/view/anim/catevents";
 import { blinkEyes, catFace, CAT_EARS, CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
-import { CAT_ANIM_GROUPS, CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS, type CatAnimId } from "../src/view/anim/ids";
-import { catAnim, catPose, poseOf } from "../src/view/pose";
+import { CAT_ANIM_GROUPS, CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
+import { catAnim, catPose } from "../src/view/pose";
 import { blinkAmount } from "../src/view/thoughts";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -57,12 +57,6 @@ describe("назви анімацій кота (`anim/ids.ts`)", () => {
     for (const ms of Object.values(CAT_ONE_SHOT_MS)) expect(ms).toBeGreaterThan(0);
   });
 
-  it("усі пози старого вигляду мають відповідник: тих самих назв (крім `lie` → `decline`)", () => {
-    for (const legacy of ["walk", "sit", "eat", "sleep", "hide", "carried", "belly", "roll", "bury", "groom", "mark", "cough", "scratch", "stretch", "carrier", "crouch", "blanket", "sprawl", "arch", "brawl", "lick", "paw", "kick"]) {
-      expect(CAT_ANIM_IDS).toContain(legacy);
-    }
-    expect(CAT_ANIM_IDS).toContain("decline");
-  });
 });
 
 describe("нові пози кота (`catPose`)", () => {
@@ -204,7 +198,6 @@ describe("нові пози кота (`catPose`)", () => {
     expect(catPose(save.current, cat)).toBe("keyboard");
     cat.act = act("idle", { target: "declined:5" });
     expect(catPose(save.current, cat)).toBe("decline");
-    expect(poseOf(cat, false)).toBe("lie");
   });
 
   it("сценарій «Хворі коти» (`scenarios/sick-cats.json`): Кульгас кульгає, Бурчик їсть, утомлений Дідусь (серце) лежить буханцем", () => {
@@ -216,36 +209,6 @@ describe("нові пози кота (`catPose`)", () => {
     expect(catPose(save.current, named("Бурчик"))).toBe("eat");
     const grandpa = named("Дідусь");
     expect(catPose(save.current, grandpa)).toBe(grandpa.needs.fatigue >= 60 ? "loaf" : "sit");
-  });
-
-  it("сценарій «Десять котів» (`scenarios/ten-cats.json`): нова поза лише уточнює стару — тієї самої родини", () => {
-    const scenario = FILE_SCENARIOS["ten-cats"];
-    if (!scenario) throw new Error("немає сценарію");
-    const save = applyScenario(scenario);
-    // Стара поза → які нові можуть її уточнювати (хвороби, смуток, утома, нюхання, буханець, бешкет, прохання…).
-    const family: Partial<Record<ReturnType<typeof poseOf>, readonly CatAnimId[]>> = {
-      walk: ["walk", "run", "carry", "limp", "clumsy", "sadWalk", "pounce"],
-      eat: ["eat", "drink", "chew", "sniff"],
-      sleep: ["sleep", "snore", "loaf"],
-      sit: ["sit", "loaf", "beg", "nudge", "sulk", "knock", "window", "keyboard", "pounce", "squat", "sniff", "hide"],
-      arch: ["arch"],
-      brawl: ["brawl"],
-      lick: ["lick"],
-      groom: ["groom"],
-    };
-    const seen = new Set<string>();
-    for (let t = 0; t < 120; t += 1) {
-      advance(save, 1);
-      for (const cat of save.current.cats) {
-        if (cat.away !== null || save.current.character.held?.kind === "cat") continue;
-        const legacy = poseOf(cat, false);
-        const allowed = family[legacy];
-        if (allowed === undefined) continue;
-        seen.add(legacy);
-        expect(allowed).toContain(catPose(save.current, cat));
-      }
-    }
-    expect(seen.size).toBeGreaterThanOrEqual(3);
   });
 });
 

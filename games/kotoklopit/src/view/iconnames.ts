@@ -1,7 +1,6 @@
-// Назви іконок, позначок і баблів (§11.4) і ключі їхніх текстур. Без Phaser: назви потрібні й симуляційним тестам
-// (`symbols.ts`, `thoughts.ts`), і маніфесту арту (крок 16). Малюнки старого вигляду — текстури з `icons.ts` (ключі
-// `iconTexture` тощо); у новому (крок 16, `?gfx=iso`) ті самі назви — кадри атласу (`iconArt` тощо), тож `symbols.ts` і
-// `thoughts.ts` не залежать від того, яка графіка.
+// Назви іконок, позначок і баблів (§11.4), їхні кадри атласу (`iconArt` тощо, крок 16) і ключ текстури іконки
+// (`iconTexture`, `icons.ts`). Без Phaser: назви потрібні й симуляційним тестам (`symbols.ts`, `thoughts.ts`), і маніфесту
+// арту.
 
 import type { ArtId } from "./art/types";
 
@@ -131,17 +130,7 @@ export function iconTexture(name: IconName): string {
   return `icon-${name}`;
 }
 
-/** Ключ текстури позначки поверх іконки. */
-export function markTexture(mark: Mark): string {
-  return `mark-${mark}`;
-}
-
-/** Ключ текстури тла бабла: мовна хмаринка чи думка. */
-export function bubbleTexture(kind: BubbleKind): string {
-  return `bubble-${kind}`;
-}
-
-/** Кадр атласу іконки в новому вигляді (крок 16): `icon/<назва>` — та сама назва, що в коді (маніфест A11, A12). */
+/** Кадр атласу іконки (крок 16): `icon/<назва>` — та сама назва, що в коді (маніфест A11, A12). */
 export function iconArt(name: IconName): ArtId {
   return `icon/${name}`;
 }

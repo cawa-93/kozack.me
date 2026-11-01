@@ -31,11 +31,11 @@ import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
-import { STORAGE_LOOKS, StorageIndicators } from "../view/storage";
+import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
-import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
+import type { BubbleKind, IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
 import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
@@ -46,8 +46,7 @@ import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
 import { Viewport } from "../view/viewport";
-import { UI_LAYERS, WORLD_LAYERS } from "../view/world/layers";
-import { currentGfx } from "../view/gfx";
+import { UI_LAYERS } from "../view/world/layers";
 import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import type { WorldFrame } from "../view/world/part";
@@ -120,14 +119,13 @@ export class DayScene extends Phaser.Scene {
 
   create(): void {
     createIconTextures(this);
-    // Графіка світу за прапорцем (крок 16): старий вигляд чи ізометрія; камері потрібна її проєкція.
-    const builders = WORLD_BUILDERS[currentGfx()];
-    this.viewport = new Viewport(this, builders.projection);
+    // Світ (крок 16): ізометрія; камері потрібна її проєкція.
+    this.viewport = new Viewport(this, WORLD_BUILDERS.projection);
     const { world: layer, ui } = this.viewport;
-    this.world = createWorld(this, layer, builders, () => this.state);
+    this.world = createWorld(this, layer, WORLD_BUILDERS, () => this.state);
     this.bubbles = new Bubbles(this, layer);
     this.hearts = new MoodHearts(this, layer, (cat) => this.world.anchor(`cat:${cat}`));
-    this.storage = new StorageIndicators(this, layer, STORAGE_LOOKS[builders.projection.kind], () => this.world.person.head);
+    this.storage = new StorageIndicators(this, layer, () => this.world.person.head);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -657,28 +655,12 @@ export class DayScene extends Phaser.Scene {
     this.bubbles.setState("person", "think", isDrowsy(state) ? STATE_ICONS.drowsy : null, head.x, head.y);
   }
 
-  /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
+  /**
+   * Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). Політ у
+   * манері арту — `src/view/iso/marksflight.ts` (крок 16, T4).
+   */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
-    // Нова графіка (крок 16, T4): політ у її манері — `src/view/iso/marksflight.ts`.
-    if (this.world.projection.kind === "iso") return flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
-    const image = this.add.image(from.x, from.y, iconTexture(icon)).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
-    const flight = { t: 0 };
-    this.tweens.add({
-      targets: flight,
-      t: 1,
-      delay,
-      duration: 900,
-      ease: "Sine.easeInOut",
-      onStart: () => image.setVisible(true),
-      onUpdate: () => {
-        const t = flight.t;
-        image.setPosition(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t - Math.sin(Math.PI * t) * 120);
-      },
-      onComplete: () => {
-        image.destroy();
-        onArrive();
-      },
-    });
+    flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
   }
 
   /** Над головою персонажа: бабли подій летять за ним, коли він іде. */

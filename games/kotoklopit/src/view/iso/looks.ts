@@ -1,7 +1,6 @@
 // Який кадр маніфесту показує кожна річ ізометричної квартири й підлоги (крок 16, F3b): стан гри → id запису й стан кадру.
-// Те саме джерело стану, що в старого вигляду (`legacy/apartmentview.ts`, `legacy/storagelook.ts`, `legacy/catcorner.ts`),
-// лише кадрами атласу замість малюнків кодом. Чисті функції без Phaser: їх перевіряє `tests/isoworld.test.ts` (кожен стан —
-// кадр, що є в маніфесті).
+// Те саме джерело стану, що в старого вигляду (малюнків кодом до кроку 16), лише кадрами атласу. Чисті функції без Phaser:
+// їх перевіряє `tests/isoworld.test.ts` (кожен стан — кадр, що є в маніфесті).
 
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config";

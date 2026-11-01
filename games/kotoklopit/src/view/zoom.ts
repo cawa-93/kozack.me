@@ -13,15 +13,14 @@ export const BASE_HEIGHT = 720;
 export const HUD_HEIGHT = 76;
 
 /**
- * Найменша висота клітинки підлоги на екрані, px CSS (§8.4). Коса проєкція старого вигляду — 44 (чернетка §8.4, як і
- * було). В ізометрії клітинка — ромб висотою 64 одиниці арту, а дорослий кіт — ≈ 56 одиниць: за 46 px CSS ромба кіт ≈ 40 px
- * CSS заввишки на телефоні 844 × 390 (§9.4).
+ * Найменша висота клітинки підлоги на екрані, px CSS (§8.4). Клітинка — ромб висотою 64 одиниці арту, а дорослий кіт —
+ * ≈ 56 одиниць: за 46 px CSS ромба кіт ≈ 40 px CSS заввишки на телефоні 844 × 390 (§9.4).
  *
  * За 46 px квартиру на десктопі видно цілою лише за висоти області від ≈ 1000 px CSS, а на 1600 × 900 камера стежить, як на
  * телефоні. Так і задумано (§8.4 [Змінено пізніше], рішення автора 2026-10-30): квартира не мусить уміщуватися цілою й на
  * десктопі — мінімум головніший.
  */
-export const MIN_TILE_CSS: Readonly<Record<Projection["kind"], number>> = { oblique: 44, iso: 46 };
+export const MIN_TILE_CSS = 46;
 
 /** Де камера показує квартиру. */
 export interface ZoomView {
@@ -36,15 +35,15 @@ export interface ZoomView {
 }
 
 /** Масштаб камери: усю квартиру видно, якщо клітинка при цьому не дрібніша за мінімум; інакше — мінімум. */
-export function cameraZoom(view: ZoomView, projection: Pick<Projection, "kind" | "world" | "tile">): number {
+export function cameraZoom(view: ZoomView, projection: Pick<Projection, "world" | "tile">): number {
   const bounds = projection.world;
   const fit = Math.min(view.width / bounds.width, view.height / bounds.height);
-  const readable = (MIN_TILE_CSS[projection.kind] * view.cssScale) / projection.tile.height;
+  const readable = (MIN_TILE_CSS * view.cssScale) / projection.tile.height;
   return Math.max(fit, readable);
 }
 
 /** Квартиру видно цілою (камері немає за ким стежити), а не лише її частину навколо персонажа. */
-export function fitsWhole(view: ZoomView, projection: Pick<Projection, "kind" | "world" | "tile">): boolean {
+export function fitsWhole(view: ZoomView, projection: Pick<Projection, "world" | "tile">): boolean {
   const zoom = cameraZoom(view, projection);
   return projection.world.width * zoom <= view.width + 1e-9 && projection.world.height * zoom <= view.height + 1e-9;
 }
