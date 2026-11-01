@@ -614,6 +614,9 @@ describe("де кіт (`catSpot`)", () => {
     cat.y = premium.y;
     cat.act = act("toilet", { target: "item:812" });
     expect(catSpot(save.current, cat, "squat", null, SPOT)).toMatchObject({ kind: "litter", at: { x: premium.x + LITTER_SEAT.premium, y: premium.y }, above: { id: "item:812" } });
+    // Після туалету сим лишає кота в лотку (кричить від болю, §9.5, чи ще не пішов) — він і далі в лотку, а не за бортом.
+    cat.act = act("idle");
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "litter", above: { id: "item:812" } });
     // Ще йде до лотка — на підлозі.
     cat.act = act("toilet", { target: "item:812", goal: { x: 9, y: 3 } });
     expect(catSpot(save.current, cat, "walk", null, SPOT).kind).toBe("floor");
@@ -644,6 +647,9 @@ describe("де кіт (`catSpot`)", () => {
       const order = isoOrder([], [{ ...post, half: 38 }, { ...spot.at, half: isoCatHalf(cat) }]);
       expect([...order]).toEqual([0, 1]);
     }
+    // Просто стоїть у точці кігтеточки — теж поруч із нею, а не за стовпчиком.
+    cat.act = act("idle");
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "floor", faces: post });
     // Ще йде — далеко від кігтеточки у своїй точці.
     cat.act = act("scratch", { target: "item:821", goal: { x: 11, y: 9 } });
     cat.x = post.x + 1.5;

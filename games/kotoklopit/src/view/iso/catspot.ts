@@ -267,6 +267,22 @@ export function scratcherOf(state: GameState, cat: Cat): ScratcherItem | null {
 }
 
 /**
+ * Ближче за це (клітинки) до точки лотка чи кігтеточки кіт стоїть на ній: сим лишає кота в лотку й після туалету (кричить
+ * від болю, §9.5, чи просто ще не пішов), а на підлозі в точці речі її борт чи стовпчик ховали б його.
+ */
+const ON_ITEM = 0.25;
+
+/** Річ виду `kind`, у точці якої стоїть кіт (`ON_ITEM`). */
+function itemAtCat<K extends "litter" | "scratcher">(state: GameState, cat: Vec, kind: K): Extract<HomeItem, { kind: K }> | null {
+  for (const item of state.home.items) {
+    if (item.kind !== kind) continue;
+    const p = itemPoint(item);
+    if (Math.abs(p.x - cat.x) < ON_ITEM && Math.abs(p.y - cat.y) < ON_ITEM) return item as Extract<HomeItem, { kind: K }>;
+  }
+  return null;
+}
+
+/**
  * Місце збоку зайняте, коли інша річ котячого кутка ближче за це на екрані (одиниці арту: по горизонталі й по вертикалі) —
  * кіт стояв би на ній чи перед нею: лотки й кігтеточки стоять рядком по діагоналі сітки, і сусідня річ на екрані якраз там.
  */
@@ -369,21 +385,23 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     return spot("floor", bowlSeat(cat, itemPoint(bowl), feeder, cat.facing >= 0, act.goal === null), { shadow: true });
   }
   if (!pair) {
-    // У лотку — присідає на наповнювачі (у закритому — у відкритій частині); чистюля, що відмовився, нюхає його збоку.
-    const litter = litterOf(state, cat);
-    if (litter && act.goal === null && act.refused !== true) {
+    // У лотку — присідає на наповнювачі (у закритому — у відкритій частині); чистюля, що відмовився, нюхає його збоку. Хто
+    // стоїть у точці лотка й після туалету — теж у лотку; у точці кігтеточки — поруч із нею.
+    const still = act.goal === null;
+    const sniffing = act.kind === "toilet" && act.refused === true;
+    const litter = litterOf(state, cat) ?? (still && !sniffing ? itemAtCat(state, cat, "litter") : null);
+    if (litter && still && !sniffing) {
       const p = itemPoint(litter);
       const at = litter.quality === "premium" ? { x: p.x + LITTER_SEAT.premium, y: p.y } : p;
       return spot("litter", at, { lift: LITTER_SEAT.lift, above: { id: `item:${litter.id}`, offset: IN_LITTER } });
     }
     // Дере кігтеточку чи нюхає лоток — збоку від речі (з вільного боку), лапами чи носом до неї.
-    const scratcher = scratcherOf(state, cat);
+    const scratcher = scratcherOf(state, cat) ?? (still ? itemAtCat(state, cat, "scratcher") : null);
     const beside = scratcher ? { item: scratcher, ...BESIDE.scratcher } : litter ? { item: litter, ...BESIDE.litter } : null;
     if (beside) {
       const p = itemPoint(beside.item);
       const side = besideSide(state, beside.item, cat.facing >= 0, beside.along, beside.front);
-      const arrived = act.goal === null;
-      return spot("floor", besideSeat(cat, p, side, arrived, beside.along, beside.front), { shadow: true, faces: arrived ? p : null });
+      return spot("floor", besideSeat(cat, p, side, still, beside.along, beside.front), { shadow: true, faces: still ? p : null });
     }
   }
   return spot("floor", tile, { shadow: true });
