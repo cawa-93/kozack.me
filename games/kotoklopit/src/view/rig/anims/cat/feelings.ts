@@ -211,7 +211,8 @@ const CURL_SLOTS: SlotSet = {
   "leg-front-far": HIDDEN,
   tail: { z: [{ t: 0, v: 5.5 }] },
 };
-const CURL_BACK_SLOTS: SlotSet = { tail: { z: [{ t: 0, v: 8 }] } };
+/** Клубок ззаду: лапи під підборіддям не видно, хвіст — за тулубом уздовж низу (поверх крупа читався б як ручка). */
+const CURL_BACK_SLOTS: SlotSet = { "leg-front-near": HIDDEN, tail: { z: [{ t: 0, v: 4.9 }] } };
 
 /** Від основи таза до плечей уздовж тулуба (одиниці арту) і довжина лапи (`len` кісток лап). */
 const SHOULDER = 28;
@@ -749,8 +750,10 @@ function pantAnim(): CatAnim {
 }
 
 /**
- * Хропе уві сні (проблеми з диханням): той самий клубок, що й сон, але подих глибокий і важкий — вдих двома ривками, видих
- * довгий, з тремтінням голови «хр-р-р» наприкінці. Два подихи за цикл.
+ * Хропе уві сні (проблеми з диханням): той самий клубок, що й сон, але дихає важко й гучно — так, що видно й на телефоні:
+ * вдих двома ривками, глибокий (увесь клубок здіймається), на верху вдиху голова сіпається носом угору — «хр!», — а довгий
+ * видих іде з тремтінням тулуба й голови. Два подихи за цикл; сон дихає ледь помітно, тож хропіння від нього відрізняє
+ * розмах і ривок.
  */
 function snoreAnim(): CatAnim {
   const T = 3600;
@@ -758,27 +761,50 @@ function snoreAnim(): CatAnim {
   const sx = CURL.body?.sx ?? 1;
   const sy = CURL.body?.sy ?? 1;
   const head = CURL.head?.rot ?? 0;
-  const bodyKeys: Key<Vec2>[] = [];
-  const headKeys: Key<number>[] = [];
+  const lie = CURL.pelvis?.y ?? 0;
+  /** Найглибший подих: тулуб товщає на стільки (частка). */
+  const DEPTH = 0.18;
+  /**
+   * Від основи таза клубка до підлоги, одиниці арту: тулуб товщає вниз і вгору від неї, тож таз піднімається на стільки,
+   * на скільки тулуб товщає вниз, — клубок здіймається, а не пірнає в підлогу.
+   */
+  const FLOOR = 9;
+  // Подих: [мс від початку, частка глибини, кивок голови (від'ємний — носом угору), перехід].
+  const breath: readonly (readonly [number, number, number, Ease])[] = [
+    [0, 0, 0, "out"],
+    [230, 0.5, -1, "inOut"],
+    [330, 0.45, -1, "inOut"],
+    [620, 1, -2, "in"],
+    [690, 1, -9, "out"],
+    [800, 0.92, -3, "inOut"],
+    // «Р-р-р»: видих із тремтінням тулуба й голови, що згасає.
+    [865, 0.8, -5, "inOut"],
+    [930, 0.84, -2.5, "inOut"],
+    [995, 0.66, -4.5, "inOut"],
+    [1060, 0.7, -2.2, "inOut"],
+    [1125, 0.52, -3.5, "inOut"],
+    [1190, 0.54, -1.8, "inOut"],
+    [1255, 0.4, -2.6, "inOut"],
+    [1500, 0, 0, "inOut"],
+  ];
+  const body: Key<Vec2>[] = [];
+  const pelvis: Key<Vec2>[] = [];
+  const nod: Key<number>[] = [];
   for (let i = 0; i < 2; i++) {
-    const o = i * B;
-    bodyKeys.push(
-      { t: o, v: { x: sx, y: sy }, ease: "out" },
-      { t: o + 260, v: { x: sx, y: sy * 1.04 }, ease: "inOut" },
-      { t: o + 700, v: { x: sx * 1.01, y: sy * 1.08 }, ease: "inOut" },
-      { t: o + 1500, v: { x: sx, y: sy }, ease: "inOut" },
-    );
-    headKeys.push({ t: o, v: head, ease: "inOut" }, { t: o + 700, v: head - 3, ease: "inOut" }, { t: o + 1050, v: head - 1.5, ease: "inOut" });
-    // «Хр-р-р»: голова дрібно тремтить на видиху.
-    for (let k = 0; k < 6; k++) headKeys.push({ t: o + 1080 + k * 60, v: head - 1.2 + (k % 2 === 0 ? 0.9 : -0.9) * (1 - k / 7), ease: "inOut" });
-    headKeys.push({ t: o + 1500, v: head, ease: "inOut" });
+    for (const [dt, f, h, ease] of breath) {
+      const t = i * B + dt;
+      body.push({ t, v: { x: sx, y: sy * (1 + DEPTH * f) }, ease });
+      pelvis.push({ t, v: { x: 0, y: lie - FLOOR * DEPTH * f }, ease });
+      nod.push({ t, v: head + h, ease });
+    }
   }
-  bodyKeys.push({ t: T, v: { x: sx, y: sy } });
-  headKeys.push({ t: T, v: head });
+  body.push({ t: T, v: { x: sx, y: sy } });
+  pelvis.push({ t: T, v: { x: 0, y: lie } });
+  nod.push({ t: T, v: head });
   return {
     duration: T,
     loop: true,
-    bones: merge(still(CURL), { body: { ...still({ body: CURL.body ?? {} }).body, scale: bodyKeys }, head: { rot: headKeys } }),
+    bones: merge(still(CURL), { pelvis: { pos: pelvis }, body: { ...still({ body: CURL.body ?? {} }).body, scale: body }, head: { rot: nod } }),
     slots: CURL_SLOTS,
     views: { back: { slots: CURL_BACK_SLOTS } },
   };
