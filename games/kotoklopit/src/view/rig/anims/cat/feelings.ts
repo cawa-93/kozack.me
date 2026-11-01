@@ -10,7 +10,8 @@
 //   `basic`; блювання — стоячи);
 // - накладки (`CAT_OVERLAYS`): чхання й задишка (разові), «подобається», «терпить», «попереджає», «пручається», повільне
 //   кліпання (по колу). Накладка додається до основної (rot і pos додаються, scale множиться), тож рухає лише свої кістки:
-//   голову, хвіст, тулуб диханням; у кінці разової накладки всі її доріжки — нуль.
+//   голову, хвіст, тулуб диханням; у кінці разової накладки всі її доріжки — нуль. Доріжки накладок — для кота, що сидить
+//   під рукою (`sit`); під іншу основу (на руках, на спині) їх підганяє `catOverlayOn` (див. розділ унизу).
 //
 // Обличчя (очі, рот, вуха) — справа `catFace` і разових подій (`catevents.ts`); доріжки цих слотів тут лише в разових —
 // чханні, блюванні й задишці, де вираз має мінятися за ходом дії (спершу «а-а», потім «чхи»).
@@ -23,10 +24,11 @@
 
 import type { AnimOf, BoneOf, BoneTracks, Ease, Key, SlotOf, SlotTracks, Vec2 } from "../../types";
 import { defineAnims } from "../../types";
+import type { ArtView } from "../../../art/types";
 import { CAT_ONE_SHOT_MS } from "../../../anim/ids";
 import { CAT_RIG } from "../../defs/cat";
 import { MOOD_LOOK } from "../../../../sim/config";
-import { sampleNumber, sampleVec } from "../../rigcore";
+import { Rig, sampleNumber, sampleVec } from "../../rigcore";
 
 type CatBone = BoneOf<typeof CAT_RIG>;
 type CatSlot = SlotOf<typeof CAT_RIG>;
@@ -160,19 +162,25 @@ function tail(rot: number): Tweak {
 }
 
 /**
- * Хвіст накладки: на `rot` від хвоста основної, що лежить під кутом `rest` (кіт сидить під рукою чи висить на руках), —
- * навколо корінця. Накладка додається до основної, тож зсув — різниця між поворотом на `rest + rot` і на `rest`.
+ * Зсув хвоста накладки: на `rot` від хвоста основної, що лежить під кутом `rest` (і масштабований на `scale`), — навколо
+ * корінця. Накладка додається до основної, тож зсув — різниця між поворотом на `rest + rot` і на `rest`.
  */
-function tailFrom(rest: number, rot: number): Tweak {
-  const a = tailShift(rest + rot);
-  const b = tailShift(rest);
-  return { rot, x: a.x - b.x, y: a.y - b.y };
+function tailFrom(rest: number, rot: number, scale = 1): Vec2 {
+  const a = tailShift(rest + rot, scale);
+  const b = tailShift(rest, scale);
+  return { x: a.x - b.x, y: a.y - b.y };
+}
+
+/** Доріжка зсуву хвоста накладки за доріжкою його повороту (ключ у ключ, з тими самими переходами). */
+function tailFollow(rot: readonly Key<number>[], rest: number, scale = 1): Key<Vec2>[] {
+  return rot.map((k) => (k.ease === undefined ? { t: k.t, v: tailFrom(rest, k.v, scale) } : { t: k.t, v: tailFrom(rest, k.v, scale), ease: k.ease }));
 }
 
 // --- Спільні пози (ті самі числа, що в групі `basic`) ------------------------------------------------
 //
 // Копії поз N1 (`basic.ts`): чухання й тертя очей починаються й закінчуються так, як кіт сидить (`sit`), хропіння — той
-// самий клубок, що й сон (`sleep`), разом зі слотами в обох ракурсах. Змінилися пози там — змінити й тут.
+// самий клубок, що й сон (`sleep`), разом зі слотами в обох ракурсах. Збіг перевіряє `tests/catfeelings.test.ts`, щойно
+// група `basic` — не заглушка; змінилися пози там — змінити й тут.
 
 /**
  * Сидить (`sit` групи `basic`): таз повернутий носом угору навколо стегон, передні лапи прямо вниз, витягнуті й зсунуті вниз
@@ -198,7 +206,7 @@ const SIT_BACK_LEGS: Pose = {
   "leg-front-far": { rot: 32, x: -4, y: 7.5, sx: 1.13 },
 };
 const SIT_BACK: Pose = { ...SIT, ...SIT_BACK_LEGS };
-/** Кут хвоста кота, що сидить, — від нього б'є хвостом накладка під рукою. */
+/** Кут хвоста кота, що сидить, — від нього б'є хвостом накладка під рукою (для інших основ — `catOverlayOn`). */
 const SIT_TAIL = -95;
 
 /**
@@ -858,8 +866,10 @@ function snoreAnim(): CatAnim {
 
 // --- Почуття під рукою й на руках (накладки, §9.12, §10) ------------------------------------------------
 //
-// Під рукою кіт сидить (`sit`), на руках — `carried`; хвіст у них лежить чи звисає (`SIT_TAIL`), тож удари хвостом —
-// угору від нього (додатний поворот піднімає хвіст) і назад на підлогу.
+// Під рукою кіт здебільшого сидить (`sit`; «Пастка на животику» — на спині, `belly`), на руках і в душі — `carried`, біля
+// вікна — `window`. Доріжки тут — для того, хто сидить: хвіст лежить на підлозі (`SIT_TAIL`), тож удари хвостом — угору від
+// нього (додатний поворот піднімає хвіст) і назад на підлогу, а передні лапи стоять. Під інші основи їх підганяє
+// `catOverlayOn` (розділ нижче).
 
 /**
  * «Подобається»: мружиться (очі — `catFace`), спокійно погойдується — голова повільно хилиться назустріч руці й назад, хвіст
@@ -875,7 +885,6 @@ function contentAnim(): CatAnim {
     const s = phase === 0 ? [1, 0.87, 1, 1] : [1, 1, 1, 0.87];
     return { rot: osc(T, a), scale: osc(T, s.map((v, i) => v / (purr[i] ?? 1))).map((k) => ({ ...k, v: { x: k.v, y: 1 } })) };
   };
-  const sway = (r: number): Tweak => tailFrom(SIT_TAIL, r);
   return {
     duration: T,
     loop: true,
@@ -885,32 +894,24 @@ function contentAnim(): CatAnim {
       body: { scale: osc(T, purr).map((k) => ({ ...k, v: { x: 1, y: k.v } })) },
       "leg-front-near": knead(0),
       "leg-front-far": knead(1),
-      tail: {
-        rot: osc(T, [0, 10]),
-        pos: [
-          { t: 0, v: { x: sway(0).x ?? 0, y: sway(0).y ?? 0 }, ease: "inOut" },
-          { t: T / 2, v: { x: sway(10).x ?? 0, y: sway(10).y ?? 0 }, ease: "inOut" },
-          { t: T, v: { x: 0, y: 0 } },
-        ],
-      },
+      tail: tailKeys([
+        [0, 0],
+        [T / 2, 10],
+        [T, 0],
+      ]),
     },
   };
 }
 
 /** Хвіст накладки за ключами [t, кут від хвоста основної]: поворот і зсув навколо корінця. */
 function tailKeys(list: readonly (readonly [number, number])[], rest = SIT_TAIL, ease: Ease = "inOut"): BoneTracks {
-  return {
-    rot: keys(list, ease),
-    pos: list.map(([t, r], i) => {
-      const w = tailFrom(rest, r);
-      const v = { x: w.x ?? 0, y: w.y ?? 0 };
-      return i === list.length - 1 ? { t, v } : key(t, v, ease);
-    }),
-  };
+  const rot = keys(list, ease);
+  return { rot, pos: tailFollow(rot, rest) };
 }
 
 /**
- * «Терпить»: кінчиком хвоста коротко сіпає — двічі поспіль, пауза, ще раз, — голова трохи опущена (вуха й мружені очі —
+ * «Терпить»: кінчиком хвоста коротко сіпає — двічі поспіль, пауза, ще раз, — голова трохи опущена й з кожним сіпанням
+ * коротко струшує дотик (на руках хвіст ховається за котом, тож «терпить» там видно головою; вуха й мружені очі —
  * `catFace`). Сіпання дрібні й рідкі — на відміну від «попереджає».
  */
 function reluctantAnim(): CatAnim {
@@ -931,6 +932,20 @@ function reluctantAnim(): CatAnim {
         [1500, 0],
         [T, 0],
       ]),
+      neck: {
+        rot: keys([
+          [0, 0],
+          [240, 0],
+          [290, -3.5],
+          [390, 0.5],
+          [450, -2.5],
+          [580, 0],
+          [1330, 0],
+          [1380, -3.5],
+          [1520, 0],
+          [T, 0],
+        ]),
+      },
       head: { rot: osc(T, [4, 5]) },
     },
   };
@@ -981,133 +996,93 @@ function warnAnim(): CatAnim {
   };
 }
 
+/** «Пручається»: ритм нерівних ривків, мс (щоб не було схоже на механічне коливання). */
+const STRUGGLE_MS = 900;
+const JERKS = [0, 110, 230, 380, 470, 600, 760, STRUGGLE_MS] as const;
+const jerk = (values: readonly number[]): Key<number>[] => keys(JERKS.map((t, i) => [t, values[i] ?? 0] as const));
+const jerkV = (values: readonly (readonly [number, number])[]): Key<Vec2>[] => keysV(JERKS.map((t, i) => [t, values[i]?.[0] ?? 0, values[i]?.[1] ?? 0] as const));
+
 /**
- * «Пручається»: вертиться й вивертається — круп смикається вгору, передні лапи впираються, задні брикаються, голова
- * крутиться туди-сюди, хвіст хльоскає. Ритм нерівний, щоб не було схоже на механічне коливання.
+ * «Пручається»: вертиться й вивертається — кіт совгається туди-сюди, плечі то зіщулюються, то випинаються, голова
+ * крутиться, хвіст хльоскає, а ближньою передньою двічі б'є вперед і вгору — відбивається від руки. Задні лапи й дальня
+ * передня стоять: під рукою кіт сидить, і лапа, що «брикається» в повітрі, відірвалася б від підлоги. Там, де лапи не стоять
+ * на підлозі (на руках, на спині), вони брикаються (`STRUGGLE_KICKS`, `catOverlayOn`).
  */
 function struggleAnim(): CatAnim {
-  const T = 900;
+  const T = STRUGGLE_MS;
+  const squirm = jerkV([
+    [1, 1],
+    [1, 1.06],
+    [1, 0.97],
+    [1, 1.07],
+    [1, 0.98],
+    [1, 1.05],
+    [1, 0.97],
+    [1, 1],
+  ]);
+  const v: Vec2 = { x: 0, y: 0 };
+  // Удар лапою: [мс, поворот, наскільки підібрана] — лапа злітає вперед і вгору й повертається на підлогу.
+  const swat: readonly (readonly [number, number, number])[] = [
+    [0, 0, 1],
+    [110, -12, 0.95],
+    [190, -78, 0.84],
+    [260, -70, 0.86],
+    [350, -6, 1],
+    [470, 0, 1],
+    [560, -74, 0.84],
+    [640, -64, 0.86],
+    [760, 0, 1],
+    [T, 0, 1],
+  ];
   return {
     duration: T,
     loop: true,
     bones: {
       pelvis: {
-        rot: keys([
+        pos: jerkV([
           [0, 0],
-          [110, -7],
-          [230, -2],
-          [380, -9],
-          [470, -3],
-          [600, -6],
-          [760, -1],
-          [T, 0],
-        ]),
-        pos: keysV([
-          [0, 0, 0],
-          [110, 0, -2.2],
-          [230, 0, 0],
-          [380, 0, -1.6],
-          [470, 0, -0.4],
-          [600, 0, -2],
-          [760, 0, 0],
-          [T, 0, 0],
+          [-1.6, 0],
+          [1, 0],
+          [-1.8, 0],
+          [0.6, 0],
+          [-1.2, 0],
+          [1, 0],
+          [0, 0],
         ]),
       },
-      "leg-back-near": {
-        rot: keys([
-          [0, 0],
-          [110, 28],
-          [230, -12],
-          [380, 32],
-          [470, 0],
-          [600, 24],
-          [760, -8],
-          [T, 0],
-        ]),
-        scale: keysV([
-          [0, 1, 1],
-          [110, 1.05, 1],
-          [230, 0.8, 1],
-          [380, 1.06, 1],
-          [470, 0.85, 1],
-          [600, 1.04, 1],
-          [760, 0.9, 1],
-          [T, 1, 1],
-        ]),
-      },
-      "leg-back-far": {
-        rot: keys([
-          [0, 0],
-          [110, -8],
-          [230, 26],
-          [380, -4],
-          [470, 30],
-          [600, 0],
-          [760, 20],
-          [T, 0],
-        ]),
-      },
+      body: { scale: squirm },
+      "leg-front-far": { scale: frontBreath(squirm) },
       "leg-front-near": {
-        rot: keys([
-          [0, 0],
-          [110, -22],
-          [230, 6],
-          [380, -26],
-          [470, 2],
-          [600, -18],
-          [760, 4],
-          [T, 0],
-        ]),
+        rot: keys(swat.map(([t, r]) => [t, r] as const)),
+        // Підібрана в ударі; на підлозі дихання тулуба її не подовжує.
+        scale: keysV(swat.map(([t, , k]) => [t, k / sampleVec(squirm, t, v).y, 1] as const)),
       },
-      "leg-front-far": {
-        rot: keys([
-          [0, 0],
-          [110, 4],
-          [230, -20],
-          [380, 2],
-          [470, -24],
-          [600, 0],
-          [760, -14],
-          [T, 0],
-        ]),
-      },
-      neck: {
-        rot: keys([
-          [0, 0],
-          [110, -8],
-          [230, 7],
-          [380, -10],
-          [470, 4],
-          [600, -6],
-          [760, 6],
-          [T, 0],
-        ]),
-      },
-      head: {
-        rot: keys([
-          [0, 0],
-          [110, -10],
-          [230, 9],
-          [380, -6],
-          [470, 8],
-          [600, -12],
-          [760, 5],
-          [T, 0],
-        ]),
-      },
-      tail: tailKeys([
-        [0, 0],
-        [110, 34],
-        [230, 6],
-        [380, 40],
-        [470, 10],
-        [600, 36],
-        [760, 4],
-        [T, 0],
-      ]),
+      neck: { rot: jerk([0, -8, 7, -10, 4, -6, 6, 0]) },
+      head: { rot: jerk([0, -10, 9, -6, 8, -12, 5, 0]) },
+      tail: tailKeys(JERKS.map((t, i) => [t, [0, 34, 6, 40, 10, 36, 4, 0][i] ?? 0] as const)),
     },
   };
 }
+
+/** Лапи «пручається», що не стоять на підлозі (висять на руках, стирчать догори): брикаються не в такт одна одній. */
+const STRUGGLE_KICKS: Tracks = {
+  "leg-back-near": {
+    rot: jerk([0, 28, -12, 32, 0, 24, -8, 0]),
+    scale: jerkV([
+      [1, 1],
+      [1.05, 1],
+      [0.8, 1],
+      [1.06, 1],
+      [0.85, 1],
+      [1.04, 1],
+      [0.9, 1],
+      [1, 1],
+    ]),
+  },
+  "leg-back-far": { rot: jerk([0, -8, 26, -4, 30, 0, 20, 0]) },
+  "leg-front-near": { rot: jerk([0, -22, 6, -26, 2, -18, 4, 0]) },
+  "leg-front-far": { rot: jerk([0, 4, -20, 2, -24, 0, -14, 0]) },
+};
 
 /**
  * Повільне кліпання до персонажа (§11.4) — накладка: голова трохи хилиться носом донизу й ледь погойдується; на час самого
@@ -1148,6 +1123,115 @@ function slowBlinkAnim(): CatAnim {
   };
 }
 
+// --- Накладка на основу ---------------------------------------------------------------------------------
+//
+// Накладка одна на всі основи, а основи різні: хвіст лежить під своїм кутом (сидить — −95, буханцем — −80, на руках — −165),
+// а кіт на спині (`belly`, `roll` групи `basic`) — дзеркало згори донизу (таз має масштаб −1 упоперек), тож будь-який поворот
+// під тазом там іде у світі навпаки: хвіст, що б'є вгору, пробивав би підлогу. Доріжки накладок вище — для кота, що сидить
+// під рукою; `catOverlayOn` підганяє їх під основу, яку грає вигляд.
+
+/** Подушечка, далі за стільки одиниць арту від свого місця на підлозі, — лапа не стоїть (висить на руках, стирчить догори). */
+const FREE_PAW = 4;
+const LEGS = ["leg-front-near", "leg-front-far", "leg-back-near", "leg-back-far"] as const satisfies readonly CatBone[];
+type Leg = (typeof LEGS)[number];
+const isLeg = (bone: CatBone): bone is Leg => (LEGS as readonly CatBone[]).includes(bone);
+
+/** Доріжки лап, що в основі не стоять на підлозі: накладка → доріжки (заміняють її власні). */
+const FREE_LEG_TRACKS = new WeakMap<CatAnim, Tracks>();
+/** Підігнані накладки: накладка → основа → підігнана. */
+const FITTED = new WeakMap<CatAnim, WeakMap<CatAnim, CatAnim>>();
+
+/** Доріжки кісток анімації в ракурсі: основні з перевизначеннями ракурсу (канал за каналом, як у `rigcore`). */
+function bonesIn(anim: CatAnim, view: ArtView): Tracks {
+  const out: Tracks = {};
+  for (const bone of BONES) {
+    const main = anim.bones?.[bone];
+    const over = anim.views?.[view]?.bones?.[bone];
+    if (main || over) out[bone] = { ...main, ...over };
+  }
+  return out;
+}
+
+/** Лапи, що на початку основи не стоять на підлозі: подушечка далі за `FREE_PAW` від тієї, що у вихідній позі. */
+function freeLegs(base: CatAnim): Set<Leg> {
+  const rig = new Rig(CAT_RIG);
+  const paws = (): number[] =>
+    LEGS.map((leg) => {
+      const bone = rig.bone(leg);
+      return bone.world.b * bone.len + bone.world.ty;
+    });
+  rig.evaluate(0);
+  const rest = paws();
+  rig.play(base, 0, { blend: 0 });
+  rig.evaluate(0);
+  const now = paws();
+  return new Set(LEGS.filter((_, i) => Math.abs((now[i] ?? 0) - (rest[i] ?? 0)) > FREE_PAW));
+}
+
+/** Доріжки, віддзеркалені згори донизу: поворот і зсув упоперек — навпаки. */
+function mirrored(tracks: BoneTracks): BoneTracks {
+  return {
+    ...(tracks.rot ? { rot: tracks.rot.map((k) => ({ ...k, v: -k.v })) } : {}),
+    ...(tracks.pos ? { pos: tracks.pos.map((k) => ({ ...k, v: { x: k.v.x, y: -k.v.y } })) } : {}),
+    ...(tracks.scale ? { scale: tracks.scale } : {}),
+  };
+}
+
+/**
+ * Накладка `overlay` (будь-яка з `CAT_OVERLAYS`), підігнана під основну `base`, яку грає вигляд (T1: замість самої накладки —
+ * `layerAnims(base, catOverlayOn(overlay, base))`; для тієї самої пари — той самий об'єкт, тож кеш вигляду працює):
+ * - хвіст повертається від кута хвоста основи навколо свого корінця — корінець не ходить, хоч би де лежав хвіст;
+ * - на основі-дзеркалі (кіт на спині: масштаб таза впоперек від'ємний) повороти й зсуви впоперек усіх кісток під тазом —
+ *   навпаки, тож хвіст б'є над підлогою, а не крізь неї, і голова киває туди ж, куди в того, хто сидить;
+ * - лапи, що в основі не стоять на підлозі (звисають на руках, стирчать догори в того, хто на спині), брикаються, якщо
+ *   накладка це передбачає («пручається»).
+ * Доріжки слотів, тривалість і повтор — накладки.
+ */
+export function catOverlayOn(overlay: CatAnim, base: CatAnim): CatAnim {
+  let byBase = FITTED.get(overlay);
+  if (!byBase) {
+    byBase = new WeakMap();
+    FITTED.set(overlay, byBase);
+  }
+  const known = byBase.get(base);
+  if (known) return known;
+  const kicks = FREE_LEG_TRACKS.get(overlay);
+  const free = kicks ? freeLegs(base) : new Set<Leg>();
+  const v: Vec2 = { x: 0, y: 0 };
+  const fit = (view: ArtView): Tracks => {
+    const own = bonesIn(overlay, view);
+    const under = bonesIn(base, view);
+    const pelvis = under.pelvis?.scale;
+    const mirror = pelvis !== undefined && sampleVec(pelvis, 0, v).y < 0;
+    const out: Tracks = {};
+    for (const bone of BONES) {
+      const tracks = (isLeg(bone) && free.has(bone) ? kicks?.[bone] : undefined) ?? own[bone];
+      if (!tracks) continue;
+      out[bone] = mirror && bone !== "root" && bone !== "pelvis" ? mirrored(tracks) : tracks;
+    }
+    const tail = out.tail;
+    if (tail?.rot) {
+      const rest = under.tail?.rot ? sampleNumber(under.tail.rot, 0) : 0;
+      const scale = under.tail?.scale ? sampleVec(under.tail.scale, 0, v).x : 1;
+      out.tail = { ...tail, pos: tailFollow(tail.rot, rest, scale) };
+    }
+    return out;
+  };
+  const slots = overlay.views?.back?.slots;
+  const fitted: CatAnim = {
+    duration: overlay.duration,
+    loop: overlay.loop,
+    bones: fit("front"),
+    ...(overlay.slots ? { slots: overlay.slots } : {}),
+    views: { back: { bones: fit("back"), ...(slots ? { slots } : {}) } },
+  };
+  byBase.set(base, fitted);
+  return fitted;
+}
+
+const struggle = struggleAnim();
+FREE_LEG_TRACKS.set(struggle, STRUGGLE_KICKS);
+
 export const CAT_FEELINGS = defineAnims(CAT_RIG, {
   cough: coughAnim(),
   sneeze: sneezeAnim(),
@@ -1161,7 +1245,7 @@ export const CAT_FEELINGS = defineAnims(CAT_RIG, {
   content: contentAnim(),
   reluctant: reluctantAnim(),
   warn: warnAnim(),
-  struggle: struggleAnim(),
+  struggle,
   sadWalk: sadWalkAnim(),
   slowBlink: slowBlinkAnim(),
 });
