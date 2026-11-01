@@ -4,11 +4,12 @@
 
 import { useProgress } from "../../sim/actions";
 import { catOnComputer } from "../../sim/catai";
-import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../../sim/config";
+import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH } from "../../sim/config";
 import { objectById } from "../../sim/home";
 import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
-import { isWorkday, isWorking, searchProgress } from "../../sim/work";
+import { isWorking, searchProgress } from "../../sim/work";
+import { inMeeting } from "../anim/personanim";
 import { isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE } from "../world/projection";
@@ -40,26 +41,30 @@ export function highlightPulse(time: number): number {
 export type ScreenShow = "off" | "work" | "meeting" | "search" | "keyboard";
 
 /**
- * Летучка (10:00, 15 хвилин) чи нарада дня «Нарада» — у робочий день, як над комп'ютером у сцени (бабл дзвінка): звільненого
- * чи на лікарняному камера не чекає.
- */
-export function callNow(state: GameState): boolean {
-  if (!isWorkday(state)) return false;
-  const standup = state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
-  const day = state.minute % 1440;
-  const meeting = state.modifiers.day === "meeting" && day >= MODIFIERS.meeting.from && day < MODIFIERS.meeting.from + MODIFIERS.meeting.minutes;
-  return standup || meeting;
-}
-
-/**
- * Що зараз на екрані. Кіт на клавіатурі — понад усе: він зупиняє роботу (§9.12, «Кіт і робота»), а екран від його лап
- * прокидається й друкує одну літеру. Сплячий на комп'ютері кіт екрана не вмикає.
+ * Що зараз на екрані. З перегризеним дротом комп'ютер мертвий до ремонту (§9.12, «Гризіння») — і кіт на клавіатурі його не
+ * розбудить. Інакше кіт на клавіатурі — понад усе: він зупиняє роботу (§9.12, «Кіт і робота»), а екран від його лап
+ * прокидається й друкує одну літеру. Сплячий на комп'ютері кіт екрана не вмикає. Летучка й нарада дня — те саме правило
+ * «зараз дзвінок», що й поза персонажа (`inMeeting`).
  */
 export function screenShow(state: GameState): ScreenShow {
+  if (state.home.wireChewed === true) return "off";
   if (catOnComputer(state)?.act.kind === "keyboard") return "keyboard";
   if (!isWorking(state)) return "off";
   if (state.job.unemployed) return "search";
-  return callNow(state) ? "meeting" : "work";
+  return inMeeting(state) ? "meeting" : "work";
+}
+
+/**
+ * Крок, з яким змінюється зміст екрана, мс: літера документа й кота (70), кивок мовця (60), гортання вакансій (2,4 с).
+ * Між кроками зміст той самий — його не перемальовують.
+ */
+const SCREEN_STEP: Record<Exclude<ScreenShow, "off">, number> = { work: 70, meeting: 60, search: 2400, keyboard: 70 };
+
+/** Час, за яким малюють зміст екрана: час сцени, округлений до кроку змісту (погашений екран — сталий). */
+export function screenTime(show: ScreenShow, time: number): number {
+  if (show === "off") return 0;
+  const step = SCREEN_STEP[show];
+  return Math.floor(time / step) * step;
 }
 
 /**
@@ -127,11 +132,6 @@ export const NOTE_CORNER = { s: -0.6, t: 0.66 } as const;
 /** Точка на екрані за координатами (−1…1 праворуч, −1…1 угору від середини). */
 export function onScreen(quad: ScreenQuad, s: number, t: number): Point {
   return { x: quad.center.x + quad.u.x * s + quad.v.x * t, y: quad.center.y + quad.u.y * s + quad.v.y * t };
-}
-
-/** Чотирикутник на екрані від (s0, t0) до (s1, t1): лівий верхній, правий верхній, правий нижній, лівий нижній кути. */
-export function screenRect(quad: ScreenQuad, s0: number, t0: number, s1: number, t1: number): Point[] {
-  return [onScreen(quad, s0, t1), onScreen(quad, s1, t1), onScreen(quad, s1, t0), onScreen(quad, s0, t0)];
 }
 
 // --- Смуги (§8.2, §8.6) --------------------------------------------------------------------------------------

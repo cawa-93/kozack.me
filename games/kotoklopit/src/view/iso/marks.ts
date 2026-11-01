@@ -27,6 +27,7 @@ import {
   highlightTarget,
   rejectionAt,
   screenShow,
+  screenTime,
   searchBar,
   searchBarBox,
   stoveBar,
@@ -53,6 +54,8 @@ export class IsoMarksView implements WorldPart {
   private readonly quad: ScreenQuad;
   /** Де смуга плити: плита не рухається. */
   private readonly stoveBox: BarBox;
+  /** Що зараз намальовано на екрані (зміст і його крок): поки те саме, екран не перемальовують. */
+  private screenKey = "";
   /** Остання відмова в пошуку роботи (§8.6). */
   private rejection: Rejection | null = null;
 
@@ -89,9 +92,15 @@ export class IsoMarksView implements WorldPart {
     const computer = search ? world.objectAnchor("computer") : null;
     if (search && computer) drawSearchBar(g, searchBarBox(computer, this.quad), search.value, search.stages, search.rejected);
 
-    // Екран комп'ютера: що на ньому, малюється заново щокадру (рядки пишуться, курсор блимає).
-    this.screen.clear();
-    drawScreen(this.screen, this.quad, screenShow(state), time);
+    // Екран комп'ютера: що на ньому; перемальовується, лише коли зміст зробив крок (рядок дописався, мовець кивнув).
+    const show = screenShow(state);
+    const at = screenTime(show, time);
+    const key = `${show}:${at}`;
+    if (key !== this.screenKey) {
+      this.screenKey = key;
+      this.screen.clear();
+      drawScreen(this.screen, this.quad, show, at);
+    }
   }
 
   lateUpdate(): void {
@@ -105,6 +114,7 @@ export class IsoMarksView implements WorldPart {
 
   reset(): void {
     this.rejection = null;
+    this.screenKey = "";
   }
 
   destroy(): void {

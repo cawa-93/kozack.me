@@ -10,6 +10,7 @@ import { objectById } from "../src/sim/home";
 import { targetOf } from "../src/sim/targets";
 import type { GameState } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
+import { inMeeting } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
 import { artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
 import {
@@ -17,7 +18,6 @@ import {
   BAR,
   BAR_GAP,
   barBox,
-  callNow,
   computerScreen,
   FLIGHT,
   GLASS_INSET,
@@ -33,6 +33,7 @@ import {
   SCREEN_BEZEL,
   SCREEN_HALF,
   screenShow,
+  screenTime,
   SEARCH_BAR,
   searchBar,
   searchBarBox,
@@ -100,7 +101,7 @@ describe("екран комп'ютера (§8.6)", () => {
   it("летучка о 10:00 і нарада дня «Нарада» — відеодзвінок, але лише в робочий день", () => {
     const standup = working(employed(scenario("job-search")));
     standup.minute = STANDUP_MINUTE + 5;
-    expect(callNow(standup)).toBe(true);
+    expect(inMeeting(standup)).toBe(true);
     expect(screenShow(standup)).toBe("meeting");
 
     const meeting = working(employed(scenario("job-search")));
@@ -113,7 +114,7 @@ describe("екран комп'ютера (§8.6)", () => {
     // Безробітний на летучку не ходить: о 10:00 він шукає роботу.
     const jobless = working(scenario("job-search"));
     jobless.minute = STANDUP_MINUTE + 5;
-    expect(callNow(jobless)).toBe(false);
+    expect(inMeeting(jobless)).toBe(false);
     expect(screenShow(jobless)).toBe("search");
   });
 
@@ -129,6 +130,34 @@ describe("екран комп'ютера (§8.6)", () => {
     state.character.activity = null;
     cat.act = { kind: "sleep", target: "computer", goal: null, minutes: 30, elapsed: 0 };
     expect(screenShow(state)).toBe("off");
+  });
+
+  it("з перегризеним дротом комп'ютер мертвий: ні роботи, ні кота на клавіатурі (§9.12, «Гризіння»)", () => {
+    const state = working(employed(scenario("food-hygiene")));
+    state.home.wireChewed = true;
+    expect(screenShow(state)).toBe("off");
+    const cat = state.cats[0]!;
+    cat.x = 7;
+    cat.y = 6.5;
+    cat.act = { kind: "keyboard", target: "computer", goal: null, minutes: 10, elapsed: 0 };
+    expect(screenShow(state)).toBe("off");
+    delete state.home.wireChewed;
+    expect(screenShow(state)).toBe("keyboard");
+  });
+
+  it("зміст екрана міняється кроками — між ними його не перемальовують", () => {
+    expect(screenTime("off", 12_345)).toBe(0);
+    // Літера — кожні 70 мс; у межах кроку час той самий.
+    expect(screenTime("work", 140)).toBe(140);
+    expect(screenTime("work", 209)).toBe(140);
+    expect(screenTime("keyboard", 75)).toBe(70);
+    // Кивок мовця — кожні 60 мс, вакансії гортаються кожні 2,4 с.
+    expect(screenTime("meeting", 179)).toBe(120);
+    expect(screenTime("search", 4799)).toBe(2400);
+    // Крок не більший за 70 мс там, де щось рухається безперервно (рядок дописується, мовець киває).
+    for (const show of ["work", "meeting", "keyboard"] as const) {
+      for (let time = 0; time < 2000; time += 13) expect(time - screenTime(show, time)).toBeLessThan(70);
+    }
   });
 
   it("екран — у площині лицьової грані монітора, між стільницею й верхом монітора, на полотні комп'ютера", () => {

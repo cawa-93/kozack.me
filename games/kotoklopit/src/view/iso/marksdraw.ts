@@ -6,8 +6,7 @@
 import type Phaser from "phaser";
 
 import { PALETTE, SHADE, type PaletteToken } from "../../../art/palette";
-import type { Point } from "../world/part";
-import { BAR, clamp01, NOTE_CORNER, onScreen, screenRect, SEARCH_BAR, stageMark, type BarBox, type ScreenQuad, type ScreenShow } from "./markslayout";
+import { BAR, clamp01, NOTE_CORNER, SEARCH_BAR, stageMark, type BarBox, type ScreenQuad, type ScreenShow } from "./markslayout";
 
 /** Колір палітри арту як число для Phaser. */
 export function tone(token: PaletteToken): number {
@@ -76,30 +75,49 @@ export function drawSearchBar(g: Phaser.GameObjects.Graphics, box: BarBox, value
 
 // --- Екран комп'ютера ---------------------------------------------------------------------------------------
 
-/** Залити многокутник (шляхом: без проміжних `Vector2`). */
-function polygon(g: Phaser.GameObjects.Graphics, points: readonly Point[], color: number, alpha = 1): void {
-  const first = points[0];
-  if (!first) return;
-  g.fillStyle(color, alpha).beginPath();
-  g.moveTo(first.x, first.y);
-  for (let i = 1; i < points.length; i++) g.lineTo(points[i]!.x, points[i]!.y);
+/** Залити многокутник у площині екрана за координатами (s, t) його вершин — шляхом, без проміжних точок. */
+function screenPath(g: Phaser.GameObjects.Graphics, q: ScreenQuad, st: readonly number[], color: number): void {
+  g.fillStyle(color, 1).beginPath();
+  for (let i = 0; i < st.length; i += 2) {
+    const s = st[i]!;
+    const t = st[i + 1]!;
+    const x = q.center.x + q.u.x * s + q.v.x * t;
+    const y = q.center.y + q.u.y * s + q.v.y * t;
+    if (i === 0) g.moveTo(x, y);
+    else g.lineTo(x, y);
+  }
   g.closePath().fillPath();
 }
 
+/** Вершини чотирикутника — щоразу той самий масив: зміст екрана — це сотня чотирикутників. */
+const QUAD_ST = [0, 0, 0, 0, 0, 0, 0, 0];
+
 /** Чотирикутник у площині екрана від (s0, t0) до (s1, t1), координати −1…1 (праворуч, угору). */
-function quad(g: Phaser.GameObjects.Graphics, q: ScreenQuad, s0: number, t0: number, s1: number, t1: number, color: number, alpha = 1): void {
-  polygon(g, screenRect(q, s0, t0, s1, t1), color, alpha);
+function quad(g: Phaser.GameObjects.Graphics, q: ScreenQuad, s0: number, t0: number, s1: number, t1: number, color: number): void {
+  QUAD_ST[0] = s0;
+  QUAD_ST[1] = t1;
+  QUAD_ST[2] = s1;
+  QUAD_ST[3] = t1;
+  QUAD_ST[4] = s1;
+  QUAD_ST[5] = t0;
+  QUAD_ST[6] = s0;
+  QUAD_ST[7] = t0;
+  screenPath(g, q, QUAD_ST, color);
 }
+
+/** Кружечок — 10 вершин, щоразу в тому самому масиві. */
+const DOT_STEPS = 10;
+const DOT_ST = new Array<number>(DOT_STEPS * 2).fill(0);
 
 /** Коло в площині екрана (еліпс, сплющений площиною): `r` — радіус по горизонталі екрана. */
 function dot(g: Phaser.GameObjects.Graphics, q: ScreenQuad, s: number, t: number, r: number, color: number): void {
-  const points: Point[] = [];
   const ry = (r * Math.hypot(q.u.x, q.u.y)) / Math.hypot(q.v.x, q.v.y);
-  for (let k = 0; k < 10; k++) {
-    const a = (k / 10) * Math.PI * 2;
-    points.push(onScreen(q, s + Math.cos(a) * r, t + Math.sin(a) * ry));
+  for (let k = 0; k < DOT_STEPS; k++) {
+    const a = (k / DOT_STEPS) * Math.PI * 2;
+    DOT_ST[k * 2] = s + Math.cos(a) * r;
+    DOT_ST[k * 2 + 1] = t + Math.sin(a) * ry;
   }
-  polygon(g, points, color);
+  screenPath(g, q, DOT_ST, color);
 }
 
 /** Детермінований «шум» для довжин рядків: той самий рядок — та сама довжина. */
@@ -115,8 +133,8 @@ function line(g: Phaser.GameObjects.Graphics, q: ScreenQuad, s0: number, t: numb
 }
 
 /**
- * Зміст екрана: тло світиться, на ньому — що зараз робить персонаж (чи кіт). `time` — час сцени, мс: рядки дописуються,
- * курсор блимає, мовець на дзвінку змінюється.
+ * Зміст екрана: тло світиться, на ньому — що зараз робить персонаж (чи кіт). `time` — час сцени, мс, округлений до кроку
+ * змісту (`screenTime`): рядки дописуються, курсор блимає, мовець на дзвінку змінюється.
  */
 export function drawScreen(g: Phaser.GameObjects.Graphics, q: ScreenQuad, show: ScreenShow, time: number): void {
   switch (show) {
@@ -136,7 +154,7 @@ export function drawScreen(g: Phaser.GameObjects.Graphics, q: ScreenQuad, show: 
 /** Тло екрана: усе скло, крім кутка з запискою (`NOTE_CORNER`). */
 function background(g: Phaser.GameObjects.Graphics, q: ScreenQuad, color: number): void {
   const { s, t } = NOTE_CORNER;
-  polygon(g, [onScreen(q, -1, -1), onScreen(q, 1, -1), onScreen(q, 1, 1), onScreen(q, s, 1), onScreen(q, s, t), onScreen(q, -1, t)], color);
+  screenPath(g, q, [-1, -1, 1, -1, 1, 1, s, 1, s, t, -1, t], color);
 }
 
 /** Смуга заголовка вгорі екрана (праворуч від записки). */
