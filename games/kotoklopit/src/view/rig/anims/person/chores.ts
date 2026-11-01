@@ -440,6 +440,12 @@ function sitLegs(view: ArtView, hip: Vec2): Pose {
 /** Сидячи ближнього черевика не видно: ближня нога — лише стегно. */
 const SIT_SLOTS: Slots = { "shoe-near": { visible: [{ t: 0, v: false }] } };
 
+/**
+ * Ближня рука над річчю в гнізді `held`: гніздо лежить над рукою (`PERSON_RIG`: тарілку, совок і страву несуть на кулаці), а
+ * телефон біля вуха кулак тримає ззовні — з камери телефон визирає з-під руки на щоці, і ручка пилососа — у кулаці.
+ */
+const OVER_HELD: Slots = { "arm-near": { z: [{ t: 0, v: 13 }] } };
+
 /** Сидить, нахилений на `deg`: поза ніг і тіло (для рук). */
 function seated(s: Space, deg: number): { pose: Pose; body: Body } {
   const b = lean(deg, SIT_X, SIT_DROP);
@@ -1108,12 +1114,12 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   meds: anim(MS.meds, false, meds),
   litter: anim(1800, true, litter),
   clean: anim(1600, true, clean),
-  vacuum: anim(1400, true, vacuum),
+  vacuum: anim(1400, true, vacuum, OVER_HELD),
   washer: anim(MS.washer, false, washer),
   bowl: anim(MS.bowl, false, bowl),
   unpack: anim(MS.unpack, false, unpack),
   door: anim(MS.door, false, door),
-  phone: anim(2000, true, phone),
+  phone: anim(2000, true, phone, OVER_HELD),
   fallAsleep: anim(PROGRESS_MS, false, fallAsleep),
   collapse: anim(PROGRESS_MS, false, collapse),
   take: anim(MS.take, false, take),

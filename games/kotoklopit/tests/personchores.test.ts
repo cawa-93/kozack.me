@@ -252,6 +252,22 @@ describe("справи персонажа: річ у руці", () => {
     }
   });
 
+  it("річ у руках спереду — на кулаці, поверх руки; телефон біля вуха й ручку пилососа кулак тримає поверх них", () => {
+    const order = (rig: LooseRig): string[] => rig.order.map((item) => item.id);
+    for (const name of NAMES) {
+      const rig = rigFor("front");
+      rig.play(ANIMS[name], 0, { blend: 0 });
+      const ids = order(rig.evaluate(0));
+      const over = name === "phone" || name === "vacuum";
+      expect(ids.indexOf("arm-near") > ids.indexOf("held"), name).toBe(over);
+    }
+    // Ззаду річ і телефон — за тулубом, як і були.
+    const back = rigFor("back");
+    back.play(ANIMS.phone, 0, { blend: 0 });
+    const ids = order(back.evaluate(0));
+    expect(ids.indexOf("held")).toBeLessThan(ids.indexOf("torso"));
+  });
+
   it("пилосос: нахил ±6°, щітка на підлозі й випереджає кулак (іде далі за нього)", () => {
     const entry = artEntry("env/vacuum/cleaner");
     const point = entry?.points?.brush;

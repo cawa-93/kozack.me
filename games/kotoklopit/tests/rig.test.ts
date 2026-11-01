@@ -411,12 +411,16 @@ describe("поза", () => {
     expect(pf[0]).toBe("hair-back");
     expect(pf.indexOf("arms")).toBeGreaterThan(pf.indexOf("torso"));
     expect(pf.indexOf("arms")).toBeLessThan(pf.indexOf("arm-near"));
-    expect(pf.at(-1)).toBe("arm-near");
+    // Річ у руках спереду — на кулаці, поверх ближньої руки (тарілку видно цілою), вудочка — у кулаці, під нею.
+    expect(pf.at(-1)).toBe("held");
+    expect(pf.indexOf("rod")).toBeLessThan(pf.indexOf("arm-near"));
+    expect(pf.indexOf("held")).toBeGreaterThan(pf.indexOf("arm-near"));
     person.setFacing({ view: "back" });
     person.evaluate(0);
     const pb = order(person as never);
     expect(pb.indexOf("hair-back")).toBeGreaterThan(pb.indexOf("head"));
     expect(pb.indexOf("arms")).toBeLessThan(pb.indexOf("torso"));
+    expect(pb.indexOf("held")).toBeLessThan(pb.indexOf("torso"));
     expect(person.slot("hair-front").visible).toBe(false);
     // Ззаду ближня рука — праворуч від тулуба, спереду — ліворуч.
     expect(person.slot("arm-near").x).toBeGreaterThan(person.slot("arm-far").x);
