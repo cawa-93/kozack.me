@@ -13,8 +13,7 @@
 // `art/cat/…`, `art/STYLE.md`, розділ 13) — полотна намальованих SVG: арт головний, а `tests/art.test.ts` звіряє viewBox
 // із записом. Полотна тулуба, голови й довгого хвоста A7 розширив під пасма довгої шерсті (`fluff`), тулуба — ще й донизу
 // під живіт вагітної (`cat/belly/*`, A8): точки відносно pivot ті самі, що в еталона, тож скелет стоїть так само. Решта
-// варіантів поки орієнтовні: полотно еталона, розтягнуте від pivot у пропорціях форми (`scaled`), — пакет, що їх малює
-// (A8), уточнює числа разом із SVG.
+// варіантів (вуха, морди, лапи, хвости) — полотна SVG пакета A8a.
 
 import type { Shape } from "../../../../sim/types";
 import type { ArtPoint } from "../../types";
@@ -23,26 +22,6 @@ import type { Geometry } from "./geometry";
 /** Частина: полотно, pivot і точки кріплення. */
 export interface Part extends Geometry {
   points?: Readonly<Record<string, ArtPoint>>;
-}
-
-const r = (v: number): number => Math.round(v * 2) / 2;
-
-/**
- * Частина-варіант з еталона: відстані від pivot до країв полотна й до точок помножено на `k` (уздовж x і y), краї — до цілих
- * одиниць назовні, точки — до 0,5.
- */
-function scaled(part: Part, k: { x: number; y: number }): Part {
-  const { pivot, size } = part;
-  const left = Math.ceil(pivot.x * k.x);
-  const top = Math.ceil(pivot.y * k.y);
-  const right = Math.ceil((size.w - pivot.x) * k.x);
-  const bottom = Math.ceil((size.h - pivot.y) * k.y);
-  const result: Part = { size: { w: left + right, h: top + bottom }, pivot: { x: left, y: top } };
-  if (!part.points) return result;
-  const points = Object.fromEntries(
-    Object.entries(part.points).map(([name, p]) => [name, { x: r(left + (p.x - pivot.x) * k.x), y: r(top + (p.y - pivot.y) * k.y) }]),
-  );
-  return { ...result, points };
 }
 
 /**
@@ -196,16 +175,6 @@ export const CAT_FRONT_LEGS: Record<Shape["legs"], Part> = {
 export const CAT_BACK_LEGS: Record<Shape["legs"], Part> = {
   normal: { size: { w: 28, h: 42 }, pivot: { x: 13, y: 15 }, points: { paw: { x: 14, y: 35.5 } } },
   short: { size: { w: 28, h: 42 - SHORT_LEGS }, pivot: { x: 13, y: 15 }, points: { paw: { x: 14, y: 35.5 - SHORT_LEGS } } },
-};
-
-/**
- * Полотно довгого хвоста еталона F1b (до пасом) — лише основа орієнтовних полотен інших хвостів (`scaled` нижче), щоб
- * розширення під пасма (A7) їх не зсунуло.
- */
-const TAIL_LONG: Part = {
-  size: { w: 40, h: 49 },
-  pivot: { x: 24, y: 37 },
-  points: { tip: { x: 19.6, y: 10.6 }, "tip-back": { x: 29.8, y: 12.4 } },
 };
 
 /**
