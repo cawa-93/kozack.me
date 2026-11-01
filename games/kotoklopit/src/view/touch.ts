@@ -34,9 +34,13 @@ export class TouchControls {
   private dashButton = { x: 0, y: 0 };
   private readonly base: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
   private readonly knob: Phaser.GameObjects.Arc | Phaser.GameObjects.Image;
-  /** Кнопки старого вигляду — малюнок кодом; у новому — кадри атласу (`art`). */
+  /** Кнопки старого вигляду — малюнок кодом; у новому — кадри атласу (`art`) і стани, які вони зараз показують. */
   private readonly buttons: Phaser.GameObjects.Graphics | null = null;
-  private readonly art: { action: Phaser.GameObjects.Image; dash: Phaser.GameObjects.Image } | null = null;
+  private readonly art: {
+    action: Phaser.GameObjects.Image;
+    dash: Phaser.GameObjects.Image;
+    shown: { action: keyof typeof HUD_STATES.action; dash: keyof typeof HUD_STATES.dash };
+  } | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -54,6 +58,7 @@ export class TouchControls {
       this.art = {
         action: image(TOUCH_ART.action, TOUCH_ALPHA.action.idle, HUD_STATES.action.idle),
         dash: image(TOUCH_ART.dash, TOUCH_ALPHA.dash.ready, HUD_STATES.dash.ready),
+        shown: { action: "idle", dash: "ready" },
       };
     } else {
       this.base = scene.add
@@ -136,10 +141,17 @@ export class TouchControls {
   draw(canDash: boolean): void {
     if (!this.visible) return;
     if (this.art) {
+      // Кадр і прозорість — лише коли стан змінився: кнопки перемальовують щокадру, а змінюються вони рідко.
       const action = this.holding ? "held" : "idle";
       const dash = canDash ? "ready" : "cooldown";
-      setArt(this.art.action, TOUCH_ART.action, { state: HUD_STATES.action[action] }).setAlpha(TOUCH_ALPHA.action[action]);
-      setArt(this.art.dash, TOUCH_ART.dash, { state: HUD_STATES.dash[dash] }).setAlpha(TOUCH_ALPHA.dash[dash]);
+      if (action !== this.art.shown.action) {
+        this.art.shown.action = action;
+        setArt(this.art.action, TOUCH_ART.action, { state: HUD_STATES.action[action] }).setAlpha(TOUCH_ALPHA.action[action]);
+      }
+      if (dash !== this.art.shown.dash) {
+        this.art.shown.dash = dash;
+        setArt(this.art.dash, TOUCH_ART.dash, { state: HUD_STATES.dash[dash] }).setAlpha(TOUCH_ALPHA.dash[dash]);
+      }
       return;
     }
     if (!this.buttons) return;

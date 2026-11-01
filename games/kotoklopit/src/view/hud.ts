@@ -13,7 +13,7 @@ import { LOW_STAT } from "../sim/config";
 import { isDrowsy } from "../sim/sleep";
 import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { GameState, StatName } from "../sim/types";
+import type { GameState, Product, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
@@ -113,6 +113,8 @@ export class Hud {
   /** Підказка на телефоні (§6.4): іконка запасу, що вперше закінчився. */
   private readonly hint: Phaser.GameObjects.Container;
   private readonly hintIcon: Phaser.GameObjects.Image;
+  /** Запас, який зараз показує підказка (`undefined` — підказки немає, як на початку). */
+  private hinted: Product | undefined = undefined;
   /** Кнопка повного екрана (§10); на iPhone її немає. `show` — намалювати значок: увімкнути чи вийти. */
   private readonly fullscreen: { button: Phaser.GameObjects.Container; show: (active: boolean) => void } | null = null;
   private fullscreenDrawn: boolean | null = null;
@@ -333,15 +335,21 @@ export class Hud {
     // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.
     const hints = state.home.phoneHints ?? [];
     const product = hints[hints.length - 1];
-    this.hint.setVisible(product !== undefined);
-    if (this.phoneArt) setArt(this.phoneArt, HUD_ART.phone, { state: product !== undefined ? HUD_STATES.phone.hint : HUD_STATES.phone.idle });
-    if (product !== undefined) {
-      if (this.iso) setArt(this.hintIcon, iconArt(PRODUCT_ICONS[product]));
-      else this.hintIcon.setTexture(iconTexture(PRODUCT_ICONS[product])).setDisplaySize(22, 22);
-      this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
-    } else this.phone.setScale(1);
+    if (product !== this.hinted) this.showHint(product);
+    if (product !== undefined) this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
+    else this.phone.setScale(1);
     // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
     this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
+  }
+
+  /** Підказка на телефоні — лише коли змінився запас (`undefined` — підказки немає): без перемальовування щокадру. */
+  private showHint(product: Product | undefined): void {
+    this.hinted = product;
+    this.hint.setVisible(product !== undefined);
+    if (this.phoneArt) setArt(this.phoneArt, HUD_ART.phone, { state: product !== undefined ? HUD_STATES.phone.hint : HUD_STATES.phone.idle });
+    if (product === undefined) return;
+    if (this.iso) setArt(this.hintIcon, iconArt(PRODUCT_ICONS[product]));
+    else this.hintIcon.setTexture(iconTexture(PRODUCT_ICONS[product])).setDisplaySize(22, 22);
   }
 
   /** Значок кнопки повного екрана — лише коли режим змінився. */
