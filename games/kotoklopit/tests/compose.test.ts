@@ -296,6 +296,21 @@ describe("рецепт персонажа", () => {
     expect(personColors({ ...base, top: 3 }).top).toBe(PALETTE.clothes[3]);
   });
 
+  it("русяве волосся відрізняється від кожного тону шкіри (ΔE2000 ≥ 15) і від іншого волосся — не зливається з обличчям", () => {
+    const n = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)!.options.length;
+    const hairs = Array.from({ length: n("hairColor") }, (_, i) => personColors({ ...base, hairColor: i }).hair);
+    const skins = Array.from({ length: n("skin") }, (_, i) => personColors({ ...base, skin: i }).skin);
+    // Русяве — третє в редакторі (`LOOK_OPTIONS`: чорне, каштанове, русяве…).
+    const russet = hairs[2]!;
+    for (const skin of skins) expect(deltaE2000(russet, skin), `шкіра #${skin.toString(16)}`).toBeGreaterThanOrEqual(15);
+    for (const hair of hairs) if (hair !== russet) expect(deltaE2000(russet, hair), `волосся #${hair.toString(16)}`).toBeGreaterThanOrEqual(15);
+    // І лишається русявим: жовтувато-буре, світліше за каштанове й темніше за біляве.
+    const [l, , b] = lab(russet);
+    expect(b).toBeGreaterThan(10);
+    expect(l).toBeGreaterThan(lab(hairs[1]!)[0]);
+    expect(l).toBeLessThan(lab(hairs[3]!)[0]);
+  });
+
   it("усі комбінації кольорів Look: дозволені шари, різні ключі; форма, зачіска й статура рецепта не змінюють", () => {
     const n = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)!.options.length;
     const keys = new Set<string>();
@@ -659,3 +674,54 @@ describe("облік запечених кадрів", () => {
     expect(BAKE_BUDGET.pixelsTotal).toBeGreaterThanOrEqual(BAKE_BUDGET.pixelsPerOwner * 20);
   });
 });
+
+// --- Різниця кольорів (CIEDE2000) -----------------------------------------------------------------
+
+/** Колір 0xRRGGBB у CIE L*a*b* (sRGB, D65). */
+function lab(color: number): [number, number, number] {
+  const lin = (c: number): number => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const r = lin(((color >> 16) & 255) / 255);
+  const g = lin(((color >> 8) & 255) / 255);
+  const b = lin((color & 255) / 255);
+  const f = (v: number): number => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
+  const x = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047);
+  const y = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+  const z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/** Різниця кольорів ΔE2000. */
+function deltaE2000(c1: number, c2: number): number {
+  const [l1, a1, b1] = lab(c1);
+  const [l2, a2, b2] = lab(c2);
+  const rad = Math.PI / 180;
+  const cb = (Math.hypot(a1, b1) + Math.hypot(a2, b2)) / 2;
+  const g = 0.5 * (1 - Math.sqrt(cb ** 7 / (cb ** 7 + 25 ** 7)));
+  const a1p = (1 + g) * a1;
+  const a2p = (1 + g) * a2;
+  const c1p = Math.hypot(a1p, b1);
+  const c2p = Math.hypot(a2p, b2);
+  const hue = (b: number, a: number): number => ((Math.atan2(b, a) / rad) % 360 + 360) % 360;
+  const h1 = hue(b1, a1p);
+  const h2 = hue(b2, a2p);
+  let dh = h2 - h1;
+  if (c1p * c2p === 0) dh = 0;
+  else if (dh > 180) dh -= 360;
+  else if (dh < -180) dh += 360;
+  const dH = 2 * Math.sqrt(c1p * c2p) * Math.sin((dh / 2) * rad);
+  const lb = (l1 + l2) / 2;
+  const cbp = (c1p + c2p) / 2;
+  let hb = h1 + h2;
+  if (c1p * c2p !== 0) hb = Math.abs(h1 - h2) <= 180 ? (h1 + h2) / 2 : h1 + h2 < 360 ? (h1 + h2 + 360) / 2 : (h1 + h2 - 360) / 2;
+  const t = 1 - 0.17 * Math.cos((hb - 30) * rad) + 0.24 * Math.cos(2 * hb * rad) + 0.32 * Math.cos((3 * hb + 6) * rad) - 0.2 * Math.cos((4 * hb - 63) * rad);
+  const dTheta = 30 * Math.exp(-(((hb - 275) / 25) ** 2));
+  const rc = 2 * Math.sqrt(cbp ** 7 / (cbp ** 7 + 25 ** 7));
+  const sl = 1 + (0.015 * (lb - 50) ** 2) / Math.sqrt(20 + (lb - 50) ** 2);
+  const sc = 1 + 0.045 * cbp;
+  const sh = 1 + 0.015 * cbp * t;
+  const rt = -Math.sin(2 * dTheta * rad) * rc;
+  const dl = (l2 - l1) / sl;
+  const dc = (c2p - c1p) / sc;
+  const dhh = dH / sh;
+  return Math.sqrt(dl * dl + dc * dc + dhh * dhh + rt * dc * dhh);
+}
