@@ -8,17 +8,17 @@
 import type Phaser from "phaser";
 
 import { carriedToy } from "../../sim/catai";
-import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter, STASHES } from "../../sim/home";
+import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter } from "../../sim/home";
 import { furTufts, ROBOT_DOCK, robotAt } from "../../sim/household";
 import type { Target } from "../../sim/targets";
-import type { GameState, TrinketKind, Vec } from "../../sim/types";
+import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
 import { isoItemLook, type IsoFootprint } from "../world/objects";
 import type { Point, WorldFrame, WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
-import { floorAnchorAt } from "./geometry";
+import { floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import { basketState, carrierOccupied, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 
@@ -154,8 +154,7 @@ export class IsoFloorView implements WorldPart {
         this.hide(spot);
         continue;
       }
-      const at = itemPoint(item);
-      this.place(spot, look, at, isoItemLook(item.kind, item.quality).height, item.kind === "toy" ? item.hidden : undefined);
+      this.place(spot, look, shownAt(item), isoItemLook(item.kind, item.quality).height, item.kind === "toy" ? item.hidden : undefined);
       // Фонтанчик (§8.7) — на кожній мисці з водою; брудний лоток пахне (§9.12).
       if (item.kind === "water") this.extra(spot, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: look.state === "empty" ? "dry" : "on" } : null, ON.overlay);
       if (item.kind === "litter") {
@@ -232,8 +231,8 @@ export class IsoFloorView implements WorldPart {
       id: "basket",
       half: isoItemLook("basket").half,
     });
-    // Шкарпетка в схованці (§9.12, «Подарунки й схованки»): п'ятка визирає з-за дивана — під ним.
-    if (home.sock === true) this.single("sock", { id: "mess/sock", state: "peek" }, STASHES.sofa.at, 8, { half: 20 }, "sofa");
+    // Шкарпетка в схованці (§9.12, «Подарунки й схованки»): п'ятка визирає з-за дивана — під ним (`SOFA_PEEK`).
+    if (home.sock === true) this.single("sock", { id: "mess/sock", state: "peek" }, SOFA_PEEK, 8, { half: 20 }, "sofa");
   }
 
   private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {
@@ -295,7 +294,7 @@ export class IsoFloorView implements WorldPart {
     const home = this.ctx.state().home;
     if (kind === "item") {
       const item = home.items.find((i) => i.id === number);
-      return item ? floorAnchorAt(itemPoint(item), isoItemLook(item.kind, item.quality).height) : null;
+      return item ? floorAnchorAt(shownAt(item), isoItemLook(item.kind, item.quality).height) : null;
     }
     if (kind === "mess") {
       const mess = home.messes.find((m) => m.id === number);
@@ -308,11 +307,16 @@ export class IsoFloorView implements WorldPart {
   highlight(target: Target, alpha: number): boolean {
     if (target.type !== "item" && target.type !== "mess") return false;
     const spot = target.type === "item" ? this.items.get(target.item.id) : this.messes.get(target.mess.id);
-    const at: Vec = target.type === "item" ? itemPoint(target.item) : target.mess;
+    const at: Vec = target.type === "item" ? shownAt(target.item) : target.mess;
     const height = target.type === "item" ? isoItemLook(target.item.kind, target.item.quality).height : MESS_HEIGHT;
     if (spot) this.glow.request(spot.image, around(at), height, alpha);
     return true;
   }
+}
+
+/** Де показано річ котячого кутка: на своєму місці, а загнану під диван — там, де її видно (`stashPoint`). */
+function shownAt(item: HomeItem): Vec {
+  return stashPoint(itemPoint(item), item.kind === "toy" ? item.hidden : undefined);
 }
 
 function frameKey(frame: IsoFrame): string {

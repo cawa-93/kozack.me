@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import type { GameEvent } from "../src/sim/events";
-import { objectById } from "../src/sim/home";
+import { objectById, STASHES } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import { IsoDepth } from "../src/view/iso/depth";
-import { BOXES_FRONT, DOOR_BOXES } from "../src/view/iso/geometry";
+import { BOXES_FRONT, DOOR_BOXES, SOFA_PEEK, stashPoint } from "../src/view/iso/geometry";
 import { DOOR_OPEN_MS, doorState, opensDoor } from "../src/view/iso/looks";
 import { isoOrder, type IsoBox, type IsoPoint } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -154,5 +154,20 @@ describe("кіт у верхній коробці купи ящиків (§9.12,
       expect(got.front!).toBeGreaterThan(got.cat!);
       expect(got.person!).toBeGreaterThan(got.front!);
     }
+  });
+});
+
+describe("схованка під диваном (§9.12, «Подарунки й схованки»)", () => {
+  it("річ під диваном видно ближче до сидіння й лівіше за точку сима — у клітинці схованки, за диваном; під холодильником — як у сима", () => {
+    const sofa = objectById("sofa");
+    expect(stashPoint(STASHES.sofa.at, "sofa")).toEqual(SOFA_PEEK);
+    expect(stashPoint(STASHES.fridge.at, "fridge")).toEqual(STASHES.fridge.at);
+    expect(stashPoint({ x: 3, y: 4 }, undefined)).toEqual({ x: 3, y: 4 });
+    expect(Math.floor(SOFA_PEEK.x)).toBe(STASHES.sofa.tile.x);
+    expect(Math.floor(SOFA_PEEK.y)).toBe(STASHES.sofa.tile.y);
+    // За диваном (дальше від камери) і не під шафою з пилососом праворуч.
+    expect(SOFA_PEEK.y).toBeLessThan(sofa.y);
+    expect(SOFA_PEEK.x).toBeLessThan(STASHES.sofa.at.x);
+    expect(SOFA_PEEK.x).toBeGreaterThanOrEqual(sofa.x);
   });
 });
