@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import type { GameEvent } from "../src/sim/events";
-import { objectById, STASHES } from "../src/sim/home";
+import { LAUNDRY_BASKET, objectById, STASHES } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import { IsoDepth } from "../src/view/iso/depth";
-import { BOXES_FRONT, DOOR_BOXES, SOFA_PEEK, stashPoint } from "../src/view/iso/geometry";
+import { BASKET_AT, BOXES_FRONT, DOOR_BOXES, SOFA_PEEK, stashPoint } from "../src/view/iso/geometry";
 import { DOOR_OPEN_MS, doorState, opensDoor } from "../src/view/iso/looks";
 import { isoOrder, type IsoBox, type IsoPoint } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -169,5 +169,17 @@ describe("схованка під диваном (§9.12, «Подарунки �
     expect(SOFA_PEEK.y).toBeLessThan(sofa.y);
     expect(SOFA_PEEK.x).toBeLessThan(STASHES.sofa.at.x);
     expect(SOFA_PEEK.x).toBeGreaterThanOrEqual(sofa.x);
+  });
+});
+
+describe("кошик білизни між душем і пральною машиною (§8.7)", () => {
+  it("вигляд ставить кошик трохи лівіше за точку сима, у тій самій клітинці, між душем і пральною машиною", () => {
+    const shower = objectById("shower");
+    const washer = objectById("washer");
+    expect(Math.floor(BASKET_AT.x)).toBe(Math.floor(LAUNDRY_BASKET.x));
+    expect(Math.floor(BASKET_AT.y)).toBe(Math.floor(LAUNDRY_BASKET.y));
+    expect(BASKET_AT.x).toBeLessThan(LAUNDRY_BASKET.x);
+    expect(BASKET_AT.x).toBeGreaterThan(shower.x + shower.w);
+    expect(BASKET_AT.x).toBeLessThan(washer.x);
   });
 });

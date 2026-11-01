@@ -8,7 +8,7 @@
 import type Phaser from "phaser";
 
 import { carriedToy } from "../../sim/catai";
-import { CARRIER_SPOT, itemPoint, LAUNDRY_BASKET, slotCenter } from "../../sim/home";
+import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
 import { furTufts, ROBOT_DOCK, robotAt } from "../../sim/household";
 import type { Target } from "../../sim/targets";
 import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
@@ -18,7 +18,7 @@ import { isoItemLook, type IsoFootprint } from "../world/objects";
 import type { Point, WorldFrame, WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
-import { floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
+import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import { basketState, carrierOccupied, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 
@@ -227,7 +227,7 @@ export class IsoFloorView implements WorldPart {
       });
       this.extra(carrier, "grate", carrierOccupied(state) ? { id: `item/carrier/${home.carrier}`, state: "grate" } : null, ON.grate);
     }
-    this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes) }, LAUNDRY_BASKET, isoItemLook("basket").height, {
+    this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes) }, BASKET_AT, isoItemLook("basket").height, {
       id: "basket",
       half: isoItemLook("basket").half,
     });
