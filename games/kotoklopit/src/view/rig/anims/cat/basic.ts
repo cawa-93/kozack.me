@@ -12,15 +12,17 @@
 // всього кота: його зсув і поворот рухають кота цілком (поворот — навколо стегон). Хвіст — один кадр-«S», тож згинати його
 // не можна: лише повертати й рівномірно масштабувати (нерівномірний масштаб кістки під кутом компонувальник відкидає).
 //
-// Лапи на підлозі: у ході за кожну опору лапа йде назад рівномірно (`linear`), а таз опускається, коли лапи навскіс
-// (`WALK_BOB`), і подовжується лапа на краях кроку — подушечка лишається на лінії підлоги. Щоб лапи не ковзали, вигляд
-// грає ходу зі швидкістю за тим, як швидко кіт іде на екрані (`catWalkRate`: сим веде кота ≈ 3,3 клітинки за секунду,
-// ≈ 210 одиниць арту за секунду, а за цикл кіт ступає на `CAT_WALK_STRIDE` довжин лапи).
+// Лапи на підлозі: у ході й бігу за кожну опору лапа йде назад рівномірно (`linear`), а таз опускається, коли лапи навскіс
+// (`WALK_BOB`, `RUN_BOB`), і подовжується лапа на краях кроку — подушечка лишається на лінії підлоги. Щоб лапи не ковзали,
+// вигляд грає ходу й біг зі швидкістю за тим, як швидко кіт іде на екрані (`catWalkRate`, `catRunRate`: сим веде кота
+// ≈ 3,3 клітинки за секунду, ≈ 210 одиниць арту за секунду, на зумі — утричі швидше), і за довжиною його лап
+// (`catLegLength`).
 //
-// Що анімації лишають вигляду (T1, T2) — сталі й функції внизу розділів: швидкість ходи (`catWalkRate`), висота стрибка
-// (`catJumpLift`: стрибок лише показує форму, а з висоти на висоту кота веде вигляд), рука на животі того, хто лежить на
-// спині (`catPetPoint`), і хвіст, повернутий навколо свого корінця (`catTail`, для N2 і N3). Обличчя (очі,
-// рот, вуха) — справа `catFace`, тут його немає.
+// Що анімації лишають вигляду (T1, T2) — сталі й функції внизу розділів: швидкість ходи й бігу (`catWalkRate`,
+// `catRunRate`, `catLegLength`; `speed` — горизонтальна складова швидкості кота на екрані), висота стрибка (`catJumpLift`:
+// стрибок лише показує форму, а з висоти на висоту кота веде вигляд), змішування на переході (`catBlendMs`: на спину й зі
+// спини — без змішування), рука на животі того, хто лежить на спині (`catPetPoint`), і хвіст, повернутий навколо свого
+// корінця (`catTail`, для N2 і N3). Обличчя (очі, рот, вуха) — справа `catFace`, тут його немає.
 
 import type { AnimOf, BoneOf, BoneTracks, Ease, Key, SlotOf, SlotTracks, Vec2 } from "../../types";
 import { defineAnims } from "../../types";
@@ -465,6 +467,9 @@ const BACK_NEAR = { bones: NEAR_FRONT_IN, slots: NEAR_FRONT_UNDER };
 
 // --- Ходьба й біг ---------------------------------------------------------------------------------
 
+/** Довжина лапи (від суглоба до подушечки) у вихідній позі, одиниці арту. */
+const LEG_LEN = CAT_RIG.bones.find((bone) => bone.id === "leg-back-near")?.len ?? 20.5;
+
 /** Цикл ходи, мс: рись — діагональні пари лап (ближня передня з дальньою задньою, дальня передня з ближньою задньою). */
 const WALK_MS = 340;
 /**
@@ -490,14 +495,39 @@ export const CAT_WALK_MS = WALK_MS;
 export const CAT_WALK_STRIDE = 2 * 2 * WALK_REACH * Math.sin(WALK_AMP * DEG);
 
 /**
- * Швидкість відтворення ходи, за якої лапи не ковзають: кіт іде на екрані `speed` одиниць арту за секунду, а його лапа
- * завдовжки `leg` одиниць арту — з пропорціями й масштабом кореня (дорослий — 20,5; кошеня `kitten` 1 — 20,5 × 0,62 × 0,8;
- * короткі лапи — довжина кадру `cat/leg-front/short`). Для T1: це замість `walkFactor` (`CatAnimChoice.speed`) — повільніша
- * хода хворого кота вже у швидкості на екрані. Решту ходів (кульгає, незграбна, сумна, несе в зубах — N2, N3) варто грати
- * так само, якщо їхній цикл і розмах ті самі.
+ * Найбільша швидкість відтворення ходи: швидше цикл коротший за ≈ 9 кадрів (за 60 кадрів на секунду), і лапи мерехтять, а
+ * не ступають. Дорослий кіт до неї не доходить (≈ 1,45), кошеня — ≈ 3: воно трохи ковзає (≈ 30 %), але ступає.
  */
-export function catWalkRate(speed: number, leg = 20.5): number {
-  return (speed * WALK_MS) / 1000 / (CAT_WALK_STRIDE * leg);
+const WALK_MAX_RATE = 2.2;
+
+/**
+ * Швидкість відтворення ходи, за якої лапи не ковзають: кіт іде на екрані `speed` одиниць арту за секунду, а його лапа
+ * завдовжки `leg` одиниць арту (`catLegLength`, помножена на масштаб спрайта кота, якщо він не 1). `speed` — горизонтальна
+ * складова швидкості на екрані: лапи ходять уздовж кота, а кіт на екрані — профілем (праворуч чи ліворуч); якщо кіт іде
+ * майже прямовисно (вглиб чи до камери), горизонтальна складова мала, і тоді краще брати повну швидкість — інакше він пливе
+ * на нерухомих лапах. Для T1: це замість `walkFactor` (`CatAnimChoice.speed`) — повільніша хода хворого кота вже у швидкості
+ * на екрані. Решту ходів (кульгає, незграбна, сумна, несе в зубах — N2, N3) варто грати так само, якщо їхній цикл і розмах
+ * ті самі.
+ */
+export function catWalkRate(speed: number, leg = LEG_LEN): number {
+  return Math.min(WALK_MAX_RATE, (speed * WALK_MS) / 1000 / (CAT_WALK_STRIDE * leg));
+}
+
+/**
+ * Довжина лапи кота (одиниці арту, у системі кореня скелета, без масштабу спрайта) для `catWalkRate` і `catRunRate`, з
+ * пропорціями: кошеня (`kitten` 0…1, як `catProportions`) і короткі лапи. Береться середня між задньою й передньою: у
+ * кошеняти передні коротші (масштаб тулуба впоперек лап), і за довжиною задньої передні ковзали б на ≈ 12 %, а так обидві
+ * пари — на ≈ 6 %. Коротка лапа — на стільки коротша, на скільки опущено таз (`short-legs`).
+ */
+export function catLegLength(kitten = 0, shortLegs = false): number {
+  const k = Math.min(1, Math.max(0, kitten));
+  const props = CAT_RIG.proportions;
+  const grow = (scale: number | undefined): number => 1 + ((scale ?? 1) - 1) * k;
+  const root = grow(props?.kitten?.root?.scale?.x);
+  const leg = grow(props?.kitten?.["leg-back-near"]?.scale?.x);
+  const body = grow(props?.kitten?.body?.scale?.x);
+  const len = shortLegs ? LEG_LEN - (props?.["short-legs"]?.pelvis?.y ?? 0) : LEG_LEN;
+  return (len * root * leg * (1 + body)) / 2;
 }
 
 /**
@@ -570,24 +600,87 @@ const walk: CatAnim = {
   views: { back: { bones: { ...NEAR_FRONT_IN, tail: { rot: osc(WALK_MS, [-4, 4]) } }, slots: NEAR_FRONT_UNDER } },
 };
 
-/** Цикл бігу (зумі), мс: галоп — збір (лапи під тулубом) і виліт (передні вперед, задні назад, кіт у повітрі). */
+/**
+ * Біг (зумі, погоня, іграшка) — галоп. Кожна лапа стоїть на підлозі чверть циклу (`RUN_STANCE`) і за цей час іде назад
+ * рівномірно (`linear`), як у ході, — тож за правильної швидкості відтворення (`catRunRate`) подушечки не їдуть. Спершу
+ * опора задніх (поштовх, тіло носом угору), потім довгий політ витягнувшись (передні тягнуться вперед), опора передніх (тіло
+ * носом униз) і політ зібравшись (передні підібрані під груди, задні летять уперед, під тулуб). Дальні лапи пари — трохи
+ * пізніше (`RUN_LAG`), як у поворотному галопі.
+ */
 const RUN_MS = 300;
-
-/** Ключові пози галопу (ближні лапи); дальні — з невеликим зсувом у часі (`RUN_LAG`), як у поворотному галопі. */
-const RUN_KEYS: readonly Frame[] = [
-  // Збір: передні під грудьми назад, задні під тулубом уперед, спина опущена.
-  { t: 0, pose: { pelvis: { y: 4, rot: 4 }, "leg-front-near": { rot: 38, sx: 0.9 }, "leg-back-near": { rot: -40 }, head: { rot: -4 } } },
-  // Поштовх задніми: тіло злітає носом угору, передні тягнуться вперед.
-  { t: 75, pose: { pelvis: { y: -2, rot: -6 }, "leg-front-near": { rot: -45 }, "leg-back-near": { rot: 30, sx: 1.15 }, head: { rot: 6 } } },
-  // Політ: витягнувся.
-  { t: 150, pose: { pelvis: { y: -7, rot: -2 }, "leg-front-near": { rot: -58, sx: 1.05 }, "leg-back-near": { rot: 48 }, head: { rot: 2 } } },
-  // Передні стали: тіло нахиляється носом униз, задні вже летять уперед.
-  { t: 205, pose: { pelvis: { y: -3, rot: 6 }, "leg-front-near": { rot: -15, sx: 1.05 }, "leg-back-near": { rot: 20, sx: 0.85 }, head: { rot: -6 } } },
-  { t: 255, pose: { pelvis: { y: 0, rot: 8 }, "leg-front-near": { rot: 15, sx: 0.86 }, "leg-back-near": { rot: -20, sx: 0.8 }, head: { rot: -8 } } },
-  { t: RUN_MS, pose: { pelvis: { y: 4, rot: 4 }, "leg-front-near": { rot: 38, sx: 0.9 }, "leg-back-near": { rot: -40 }, head: { rot: -4 } } },
-];
+/** Розмах лап в опорі, градуси від вертикалі, і лапа на краях опори — витягнута. */
+const RUN_AMP = 40;
+const RUN_REACH = 1.1;
+/** Опора кожної лапи, мс; задні — з початку циклу, передні — з `RUN_FRONT`. */
+const RUN_STANCE = 75;
+const RUN_FRONT = 140;
 /** Затримка дальньої лапи пари, мс. */
-const RUN_LAG = 18;
+const RUN_LAG = 12;
+/** У бігу кіт нижчий: на середині опори таз нижче на `RUN_LOW`, а лапа — коротша на стільки ж (`RUN_MID`). */
+const RUN_LOW = 1;
+const RUN_MID = (LEG_LEN - RUN_LOW) / LEG_LEN;
+/** На краях опори лапа навскіс — таз нижчає ще, щоб подушечка лишалася на підлозі. */
+const RUN_BOB = LEG_LEN - RUN_LOW - LEG_LEN * RUN_REACH * Math.cos(RUN_AMP * DEG);
+/** Плечі від стегон уздовж тулуба (одиниці арту): нахил таза на `rot` опускає їх на SHOULDERS · sin rot. */
+const SHOULDERS = 26;
+/** Таз в опорі передніх: плечі на тій самій висоті, що й стегна в опорі задніх, за нахилу таза `rot`. */
+const frontY = (rot: number, bob: number): number => RUN_LOW + bob - SHOULDERS * Math.sin(rot * DEG);
+
+const RUN_HALF = RUN_STANCE / 2;
+/**
+ * Таз: висота й нахил. Опори — як у ході (нижче на краях), польоти — угору; нахил — носом угору з поштовхом задніх і
+ * носом униз, коли стають передні. В опорах нахил змінюється рівномірно (`linear`), як і поворот лап, — лапа на тазі й
+ * тулубі повертається разом з ним, тож поворот лапи в опорі — кут у світі мінус нахил таза (`runLeg`).
+ */
+const RUN_PELVIS_KEYS: readonly { t: number; y: number; rot: number; ease: Ease; rotEase: Ease }[] = [
+  { t: 0, y: RUN_LOW + RUN_BOB, rot: 4, ease: "out", rotEase: "linear" },
+  { t: RUN_HALF, y: RUN_LOW, rot: -2, ease: "in", rotEase: "linear" },
+  { t: RUN_STANCE, y: RUN_LOW + RUN_BOB, rot: -8, ease: "inOut", rotEase: "inOut" },
+  { t: 105, y: -4, rot: -2, ease: "inOut", rotEase: "inOut" },
+  { t: RUN_FRONT, y: frontY(6, RUN_BOB), rot: 6, ease: "out", rotEase: "linear" },
+  { t: RUN_FRONT + RUN_HALF, y: frontY(4, 0), rot: 4, ease: "in", rotEase: "linear" },
+  { t: RUN_FRONT + RUN_STANCE, y: frontY(2, RUN_BOB), rot: 2, ease: "inOut", rotEase: "inOut" },
+  { t: 258, y: -5, rot: 0, ease: "inOut", rotEase: "inOut" },
+  { t: RUN_MS, y: RUN_LOW + RUN_BOB, rot: 4, ease: "inOut", rotEase: "inOut" },
+];
+/** Нахил таза в ключовий момент (лише в моменти з `RUN_PELVIS_KEYS`). */
+const runPelvisRot = (t: number): number => RUN_PELVIS_KEYS.find((k) => k.t === t)?.rot ?? 0;
+
+/**
+ * Лапа в бігу: ключі повороту й довжини (масштабу вздовж) за часом циклу. Ключі опори (`world`) задають кут лапи у світі —
+ * від нього віднімається нахил таза в той самий момент.
+ */
+function runLeg(keys: readonly { t: number; rot: number; sx: number; ease?: Ease; sxEase?: Ease; world?: boolean }[]): BoneTracks {
+  return {
+    rot: keys.map((k) => key(k.t, k.world === true ? k.rot - runPelvisRot(k.t) : k.rot, k.ease)),
+    scale: keys.map((k) => key(k.t, { x: k.sx, y: 1 }, k.sxEase ?? k.ease)),
+  };
+}
+const RUN_HIND = runLeg([
+  // Опора: від лапи під тулубом уперед до лапи, відкинутої назад.
+  { t: 0, rot: -RUN_AMP, sx: RUN_REACH, ease: "linear", sxEase: "out", world: true },
+  { t: RUN_HALF, rot: 0, sx: RUN_MID, ease: "linear", sxEase: "in", world: true },
+  { t: RUN_STANCE, rot: RUN_AMP, sx: RUN_REACH, ease: "out", world: true },
+  // Поштовх: лапа ще далі назад; далі підібрана летить уперед, під тулуб, і зверху опускається на підлогу.
+  { t: 110, rot: RUN_AMP + 16, sx: 1, ease: "inOut" },
+  { t: 200, rot: -8, sx: 0.62, ease: "inOut" },
+  { t: 268, rot: -34, sx: 0.84, ease: "inOut" },
+  { t: RUN_MS, rot: -RUN_AMP - runPelvisRot(0), sx: RUN_REACH },
+]);
+const RUN_FORE = runLeg([
+  // Політ зібравшись: лапа підібрана під груди; в опорі задніх — іде вперед, у польоті витягнувшись — тягнеться далеко
+  // вперед, а тоді зверху опускається на підлогу.
+  { t: 0, rot: 26, sx: 0.6, ease: "inOut" },
+  { t: 60, rot: -28, sx: 0.82, ease: "inOut" },
+  { t: 100, rot: -60, sx: 1.0, ease: "inOut" },
+  // Опора.
+  { t: RUN_FRONT, rot: -RUN_AMP, sx: RUN_REACH, ease: "linear", sxEase: "out", world: true },
+  { t: RUN_FRONT + RUN_HALF, rot: 0, sx: RUN_MID, ease: "linear", sxEase: "in", world: true },
+  { t: RUN_FRONT + RUN_STANCE, rot: RUN_AMP, sx: RUN_REACH, ease: "out", world: true },
+  // Поштовх і знову під груди.
+  { t: 250, rot: RUN_AMP + 12, sx: 0.9, ease: "inOut" },
+  { t: RUN_MS, rot: 26, sx: 0.6 },
+]);
 
 /** Доріжка, зсунута по колу на `dt` мс (дальні лапи галопу). */
 function shifted(keys: readonly Key<number>[] | undefined, T: number, dt: number): Key<number>[] | undefined {
@@ -624,20 +717,46 @@ function lagged(tracks: BoneTracks | undefined, T: number, dt: number): BoneTrac
   return { ...(rot ? { rot } : {}), ...(scale ? { scale } : {}) };
 }
 
-const RUN_TRACKS = posed(RUN_KEYS);
-
 const run: CatAnim = {
   duration: RUN_MS,
   loop: true,
   bones: {
-    ...RUN_TRACKS,
-    "leg-front-far": lagged(RUN_TRACKS["leg-front-near"], RUN_MS, RUN_LAG),
-    "leg-back-far": lagged(RUN_TRACKS["leg-back-near"], RUN_MS, RUN_LAG),
-    // Хвіст летить за котом майже горизонтально й хвилюється.
-    tail: { rot: osc(RUN_MS, [-48, -38]) },
+    pelvis: {
+      pos: RUN_PELVIS_KEYS.map((k) => key(k.t, { x: 0, y: k.y }, k.ease)),
+      rot: RUN_PELVIS_KEYS.map((k) => key(k.t, k.rot, k.rotEase)),
+    },
+    "leg-back-near": RUN_HIND,
+    "leg-back-far": lagged(RUN_HIND, RUN_MS, RUN_LAG),
+    "leg-front-near": RUN_FORE,
+    "leg-front-far": lagged(RUN_FORE, RUN_MS, RUN_LAG),
+    // Голова тримається рівніше за тулуб (проти нахилу таза), хвіст летить за котом майже горизонтально й хвилюється.
+    head: { rot: RUN_PELVIS_KEYS.map((k) => key(k.t, -0.6 * k.rot, k.rotEase)) },
+    tail: posed([
+      { t: 0, pose: { tail: tail(-46) } },
+      { t: RUN_MS / 2, pose: { tail: tail(-34) } },
+      { t: RUN_MS, pose: { tail: tail(-46) } },
+    ]).tail ?? {},
   },
   views: { back: BACK_NEAR },
 };
+
+/** Цикл бігу, мс, за швидкості відтворення 1. */
+export const CAT_RUN_MS = RUN_MS;
+/**
+ * Крок бігу: на скільки кіт просувається за цикл, у довжинах лапи, коли подушечки в опорі стоять на місці (за опору лапа
+ * проходить назад 2·RUN_REACH·sin RUN_AMP довжини, а опора — `RUN_STANCE` з `RUN_MS`).
+ */
+export const CAT_RUN_STRIDE = (2 * RUN_REACH * Math.sin(RUN_AMP * DEG) * RUN_MS) / RUN_STANCE;
+/** Найбільша швидкість відтворення бігу: швидше цикл коротший за ≈ 7 кадрів (за 60 кадрів на секунду) і лапи мерехтять. */
+const RUN_MAX_RATE = 2.5;
+/**
+ * Швидкість відтворення бігу, за якої подушечки в опорі не ковзають: як `catWalkRate`, для бігу. Зумі в симі — утричі
+ * швидше за ходу (≈ 640 одиниць арту за секунду на екрані): дорослому — ≈ 1,7, кошеняті — межа `RUN_MAX_RATE` (воно трохи
+ * ковзає — на зумі метушня доречна).
+ */
+export function catRunRate(speed: number, leg = LEG_LEN): number {
+  return Math.min(RUN_MAX_RATE, (speed * RUN_MS) / 1000 / (CAT_RUN_STRIDE * leg));
+}
 
 // --- Стрибки ---------------------------------------------------------------------------------------
 //
