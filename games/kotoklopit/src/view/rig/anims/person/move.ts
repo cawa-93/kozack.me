@@ -75,7 +75,7 @@ function k<V>(t: number, v: V, ease?: Ease): Key<V> {
  * донизу), а нерівний масштаб руки перекошує осі дитини, тож просто −a тут не годиться: поперечна вісь кисті має стати
  * туди ж, куди у вихідній позі.
  */
-function levelHand(a: number, sx = 1): number {
+export function levelHand(a: number, sx = 1): number {
   return round(Math.atan2(-Math.sin(a * DEG), sx * Math.cos(a * DEG)) / DEG);
 }
 
@@ -466,6 +466,14 @@ const ARMS_OVERLAYS = {
 
 /** Накладка рук персонажа. */
 export type PersonArmsOverlay = keyof typeof ARMS_OVERLAYS;
+
+/**
+ * Поза рук накладки в ракурсі `view`: з нею стикуються справи, що починаються чи закінчуються з річчю або котом у руках
+ * (N4b, `chores.ts`). Функція, а не об'єкт: експортовані об'єкти файлу анімацій — групи анімацій.
+ */
+export function personArmsPose(id: PersonArmsOverlay, view: ArtView): Readonly<Arms> {
+  return ARMS_OVERLAYS[id][view];
+}
 
 /**
  * Доріжки рук і кистей у позі `arms` над тулубом, що повертається за ключами `torso`: `level` — руки тримають кут у світі

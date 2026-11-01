@@ -16,6 +16,7 @@ import { artEntry } from "../src/view/art/manifest";
 import type { ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_CHORES, PERSON_SEAT } from "../src/view/rig/anims/person/chores";
+import { levelHand, personArmsPose } from "../src/view/rig/anims/person/move";
 import { PERSON_RIG } from "../src/view/rig/defs/person";
 import { Rig } from "../src/view/rig/rigcore";
 import type { RigAnim } from "../src/view/rig/types";
@@ -81,9 +82,9 @@ function ends(rig: LooseRig): number[] {
 /** Де купаючи ближня рука намилює кота — точка кота від його кореня (як у `bath`, `chores.ts`). */
 const BATH_SPOT: Readonly<Record<ArtView, { x: number; y: number }>> = { front: { x: 8, y: -14 }, back: { x: 26, y: -24 } };
 
-/** Поза рук накладки (як у `move.ts`, N4a): кути, вкорочення, кисті — назад на кут руки. */
-const CARRY = { front: { near: -52, far: -44, farScale: 0.85 }, back: { near: -36, far: -36, farScale: 0.85 } } as const;
-const HOLD = { front: { near: -62, far: -50, nearScale: 1, farScale: 0.78 }, back: { near: -16, far: -40, nearScale: 0.55, farScale: 0.85 } } as const;
+/** Поза рук накладки (`move.ts`, N4a): кути, вкорочення, кисті — назад на кут руки з поправкою на вкорочення (`levelHand`). */
+const CARRY = { front: personArmsPose("carry", "front"), back: personArmsPose("carry", "back") };
+const HOLD = { front: personArmsPose("holdCat", "front"), back: personArmsPose("holdCat", "back") };
 
 /** Анімація з нерухомою позою рук накладки (з вихідними тулубом і ногами). */
 function armsAnim(a: { near: number; far: number; nearScale?: number; farScale?: number }): LooseAnim {
@@ -94,9 +95,9 @@ function armsAnim(a: { near: number; far: number; nearScale?: number; farScale?:
     loop: false,
     bones: {
       "arm-near": { rot: k(a.near), scale: s(a.nearScale ?? 1) },
-      "hand-near": { rot: k(-a.near) },
+      "hand-near": { rot: k(levelHand(a.near, a.nearScale)) },
       "arm-far": { rot: k(a.far), scale: s(a.farScale ?? 1) },
-      "hand-far": { rot: k(-a.far) },
+      "hand-far": { rot: k(levelHand(a.far, a.farScale)) },
     },
   };
 }
@@ -166,7 +167,7 @@ describe("справи персонажа: стики", () => {
         const hold = snapshot(poseAt(view, overlayPose("holdCat", view), 0));
         // «Миски»: посередині між вихідною позою й «несе» (`halfCarry`) — совок несуть, а воду й годівницю — ні.
         const c = CARRY[view];
-        const half = snapshot(poseAt(view, armsAnim({ near: c.near / 2, far: c.far / 2, farScale: (1 + c.farScale) / 2 }), 0));
+        const half = snapshot(poseAt(view, armsAnim({ near: c.near / 2, far: c.far / 2, nearScale: (1 + (c.nearScale ?? 1)) / 2, farScale: (1 + (c.farScale ?? 1)) / 2 }), 0));
         const start = name === "put" || name === "trash" ? carry : name === "bowl" ? half : name === "tend" ? hold : rest;
         const end = name === "take" ? carry : name === "tend" ? hold : rest;
         expect(gap(first, start), `${view} ${name}: початок`).toBeLessThan(1e-3);

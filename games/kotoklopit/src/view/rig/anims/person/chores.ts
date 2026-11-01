@@ -24,7 +24,7 @@
 // перекидається, пилосос стоїть.
 //
 // Руки справ — власні: накладки рук (`carry`, `holdCat`) справи не беруть (`PERSON_OWN_ARMS`), тож річ і кіт тримаються в
-// гнізді так, як ведуть руки справи. Стики з накладками — у позах накладок (`CARRY`, `HOLD` — ті самі, що в `move.ts`, N4a):
+// гнізді так, як ведуть руки справи. Стики з накладками — у позах накладок (`CARRY`, `HOLD` — з `move.ts`, N4a: `personArmsPose`):
 // «бере» закінчується позою «несе», «кладе» й «викидає» з неї починаються (до події персонаж ніс річ), «миски» — з рук коло
 // себе (`halfCarry`: совок несуть, а воду й годівницю — ні), «доглядає кота» починається й закінчується позою «тримає кота». Решта разових починаються й закінчуються у вихідній позі (з неї м'яко
 // повертається основна), по колу — перший і останній ключі однакові, за поступом (засинання, падіння) — від вихідної пози до
@@ -38,6 +38,7 @@ import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
 import { easeValue } from "../../rigcore";
 import { defineAnims, type BoneOf, type BoneTracks, type Ease, type Key, type RigTracks, type SlotOf, type SlotTracks, type Vec2 } from "../../types";
+import { levelHand, personArmsPose } from "./move";
 
 type Bone = BoneOf<typeof PERSON_RIG>;
 type Slot = SlotOf<typeof PERSON_RIG>;
@@ -355,13 +356,21 @@ interface Arms {
  * тримає кота (`holdCat`) — ближня рука навскіс під котом, дальня зігнута під ним з того боку (ззаду ближня коротка — до
  * камери). Справи, що починаються чи закінчуються з річчю або котом у руках, стикуються з ними саме в цих позах.
  */
-const CARRY: Readonly<Record<ArtView, Arms>> = { front: { near: -52, far: -44, farScale: 0.85 }, back: { near: -36, far: -36, farScale: 0.85 } };
-const HOLD: Readonly<Record<ArtView, Arms>> = { front: { near: -62, far: -50, farScale: 0.78 }, back: { near: -16, far: -40, nearScale: 0.55, farScale: 0.85 } };
+const CARRY: Readonly<Record<ArtView, Arms>> = { front: personArmsPose("carry", "front"), back: personArmsPose("carry", "back") };
+const HOLD: Readonly<Record<ArtView, Arms>> = { front: personArmsPose("holdCat", "front"), back: personArmsPose("holdCat", "back") };
 
-/** Руки в позі `a`, кисті — назад на кут руки (річ рівно, кіт на долонях), як у накладках N4a. */
+/**
+ * Руки в позі `a`, кисті — назад на кут руки з поправкою на вкорочення (`levelHand`: річ рівно, кіт на долонях), як у
+ * накладках N4a.
+ */
 function arms(a: Arms): Pose {
   const part = (rot: number, k: number | undefined): Part => (k !== undefined && k !== 1 ? { rot, scale: { x: k, y: 1 } } : { rot });
-  return { "arm-near": part(a.near, a.nearScale), "hand-near": { rot: -a.near }, "arm-far": part(a.far, a.farScale), "hand-far": { rot: -a.far } };
+  return {
+    "arm-near": part(a.near, a.nearScale),
+    "hand-near": { rot: levelHand(a.near, a.nearScale) },
+    "arm-far": part(a.far, a.farScale),
+    "hand-far": { rot: levelHand(a.far, a.farScale) },
+  };
 }
 
 /** Ближня рука з пози `a` (дальня — як скаже справа). */
@@ -761,7 +770,7 @@ function stoop(deg: number, back: number, drop = 2): Body {
  */
 function halfCarry(view: ArtView): Pose {
   const c = CARRY[view];
-  return arms({ near: c.near / 2, far: c.far / 2, farScale: (1 + (c.farScale ?? 1)) / 2 });
+  return arms({ near: c.near / 2, far: c.far / 2, nearScale: (1 + (c.nearScale ?? 1)) / 2, farScale: (1 + (c.farScale ?? 1)) / 2 });
 }
 
 /**
