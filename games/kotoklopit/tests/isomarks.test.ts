@@ -12,13 +12,16 @@ import type { GameState } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
-import { artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
+import { ANCHOR_GAP, artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
 import {
   actionBar,
   BAR,
-  BAR_GAP,
+  BAR_RISE,
   barBox,
+  barExtent,
+  BUBBLE_ROOM,
   computerScreen,
+  computerStack,
   FLIGHT,
   GLASS_INSET,
   flightArc,
@@ -30,13 +33,12 @@ import {
   onScreen,
   REJECTION_MS,
   rejectionAt,
-  SCREEN_BEZEL,
   SCREEN_HALF,
   screenShow,
   screenTime,
   SEARCH_BAR,
   searchBar,
-  searchBarBox,
+  STACK_GAP,
   stageMark,
   stoveBar,
   stoveBarBox,
@@ -188,7 +190,8 @@ describe("екран комп'ютера (§8.6)", () => {
         expect(p.x).toBeCloseTo(floor.x, 6);
         const height = floor.y - p.y;
         expect(height).toBeGreaterThan(look.top);
-        expect(height).toBeLessThan(look.tall - SCREEN_BEZEL / 2);
+        // Під верхом монітора: рамка над склом — ще ≈ 8.
+        expect(height).toBeLessThan(look.tall - 4);
         expect(p.x).toBeGreaterThan(at.x - entry!.pivot.x);
         expect(p.x).toBeLessThan(at.x - entry!.pivot.x + entry!.size.w);
         expect(p.y).toBeGreaterThan(at.y - entry!.pivot.y);
@@ -219,13 +222,52 @@ describe("екран комп'ютера (§8.6)", () => {
 });
 
 describe("смуги (§8.2, §8.6, §8.7)", () => {
-  it("смуга — по центру під якорем", () => {
+  it("смуга дії — по центру якоря: вістря бабла торкається лише рамки, на річ лягає лише краєм", () => {
     const anchor = { x: 500, y: 300 };
-    const box = barBox(anchor, BAR);
+    const box = barBox(anchor);
+    const extent = barExtent(box, false);
     expect(box.x + box.w / 2).toBe(anchor.x);
-    expect(box.y - BAR.ink).toBe(anchor.y + BAR_GAP);
-    expect(box.w).toBe(BAR.width);
-    expect(box.h).toBe(BAR.height);
+    expect([box.w, box.h]).toEqual([BAR.width, BAR.height]);
+    // Чорнильний верх — на BAR_RISE над якорем, заливка — уже під вістрям хвостика бабла (воно в якорі).
+    expect(extent.top).toBe(anchor.y - BAR_RISE);
+    expect(box.y).toBeGreaterThan(anchor.y - 1);
+    // Верх речі — на ANCHOR_GAP під якорем: смуга з рамкою й тінню заходить на неї не більше ніж на висоту заливки.
+    expect(extent.bottom - (anchor.y + ANCHOR_GAP)).toBeLessThanOrEqual(BAR.height);
+  });
+
+  it("місце бабла над якорем — не менше, ніж займає бабл нового вигляду (A12 у масштабі T3 0,75) і старого (62)", () => {
+    const entry = artEntry("ui/bubble/say");
+    expect(entry).toBeDefined();
+    const icon = entry!.points?.["icon"];
+    expect(icon).toBeDefined();
+    // Плашка кількості — у правому верхньому куті поля іконки 64 (на 6 усередину), заввишки 32 з обвідкою 3.
+    const countTop = entry!.pivot.y - (icon!.y - 26) + 16 + 1.5;
+    const room = Math.ceil(Math.max(entry!.pivot.y, countTop) * 0.75) + 8 + 2;
+    expect(BUBBLE_ROOM).toBeGreaterThanOrEqual(room);
+    expect(BUBBLE_ROOM).toBeGreaterThanOrEqual(62);
+  });
+
+  it("над комп'ютером — стосом над зоною бабла: знизу смужка пошуку, над нею смуга лагодження дроту", () => {
+    const anchor = objectAnchorAt(objectById("computer"));
+    const bubble = { top: anchor.y - BUBBLE_ROOM, bottom: anchor.y };
+    const both = computerStack(anchor, true, true);
+    const search = barExtent(both.search!, true);
+    const action = barExtent(both.action!, false);
+    // Ні смужка, ні смуга не заходять у зону бабла (його вістря — у якорі): бабл відмови не закриває етап, де все скінчилося.
+    expect(search.bottom).toBeCloseTo(bubble.top - STACK_GAP, 9);
+    expect(action.bottom).toBeCloseTo(search.top - STACK_GAP, 9);
+    for (const box of [both.search!, both.action!]) expect(box.x + box.w / 2).toBe(anchor.x);
+    expect([both.search!.w, both.action!.w]).toEqual([SEARCH_BAR.width, BAR.width]);
+    // Смужка пошуку стоїть на тому самому місці, хоч би що було над нею; смуга дії без пошуку — на її місці.
+    expect(computerStack(anchor, true, false).search).toEqual(both.search);
+    expect(computerStack(anchor, true, false).action).toBeNull();
+    const alone = computerStack(anchor, false, true);
+    expect(alone.search).toBeNull();
+    expect(barExtent(alone.action!, false).bottom).toBeCloseTo(bubble.top - STACK_GAP, 9);
+    // І над монітором: екран і записку на ньому не закривають.
+    const quad = computerScreen();
+    const screenTop = Math.min(onScreen(quad, -1, 1).y, onScreen(quad, 1, 1).y);
+    expect(search.bottom).toBeLessThan(screenTop);
   });
 
   it("смуга плити — на її лицьовій грані: під стільницею зі стравою й над підлогою, посередині грані", () => {
@@ -283,16 +325,6 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     expect([1, 2, 3, 4].map((i) => stageMark(0.5, 4, i, true))).toEqual(["passed", "failed", "ahead", "ahead"]);
   });
 
-  it("смужка пошуку — над монітором: не налазить на похилий екран", () => {
-    const quad = computerScreen();
-    const anchor = objectAnchorAt(objectById("computer"));
-    const box = searchBarBox(anchor, quad);
-    expect(box.x + box.w / 2).toBe(anchor.x);
-    const screenTop = Math.min(onScreen(quad, -1, 1).y, onScreen(quad, 1, 1).y);
-    expect(box.y + box.h + SEARCH_BAR.ink).toBeLessThanOrEqual(screenTop - SCREEN_BEZEL);
-    // Не вище, ніж треба: на відступ над рамкою монітора.
-    expect(box.y + box.h + SEARCH_BAR.ink).toBeCloseTo(Math.min(anchor.y + BAR_GAP + SEARCH_BAR.ink * 2 + SEARCH_BAR.height, screenTop - SCREEN_BEZEL - BAR_GAP), 9);
-  });
 });
 
 describe("політ запасів (§6.4)", () => {

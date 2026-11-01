@@ -134,7 +134,7 @@ export function onScreen(quad: ScreenQuad, s: number, t: number): Point {
   return { x: quad.center.x + quad.u.x * s + quad.v.x * t, y: quad.center.y + quad.u.y * s + quad.v.y * t };
 }
 
-// --- Смуги (§8.2, §8.6) --------------------------------------------------------------------------------------
+// --- Смуги (§8.2, §8.6, §8.7) --------------------------------------------------------------------------------
 
 /**
  * Смуга прогресу, одиниці арту: ширина й висота заливки, товщина чорнильної рамки (`LINE.inner`). На масштабі гри ≈ 0,72 px
@@ -143,10 +143,24 @@ export function onScreen(quad: ScreenQuad, s: number, t: number): Point {
 export const BAR = { width: 72, height: 10, ink: 3.5 } as const;
 /** Смужка пошуку роботи: ширша, з кружечками етапів на межах. */
 export const SEARCH_BAR = { width: 132, height: 10, ink: 3.5, stage: 7 } as const;
-/** Відступ смуги від якоря (точки бабла над річчю): смуга висить під ним, над верхом речі, а бабл — над нею. */
-export const BAR_GAP = 4;
+/** Падаюча тінь смуг: на стільки нижче за саму смугу (світло спереду-згори). */
+export const BAR_DROP = 3;
 /** Скільки триває червона смужка відмови в пошуку роботи (§8.6), мс. */
 export const REJECTION_MS = 1500;
+
+/**
+ * Скільки місця над якорем речі займає її бабл нового вигляду, одиниці арту: мовна хмаринка `ui/bubble/say` (A12) у масштабі
+ * бабла 0,75 разом із плашкою кількості, виринанням 8 і запасом 2 — T3 рахує це як `isoBubbleLook("say").room` (≈ 77–78).
+ * Бабли малюються поверх позначок, тож у цій смузі над якорем позначкам не місце.
+ */
+export const BUBBLE_ROOM = 78;
+/** Проміжок між стосом позначок і зоною бабла та між смугами в стосі. */
+export const STACK_GAP = 4;
+/**
+ * На стільки чорнильний верх смуги дії вищий за якір: вістря хвостика бабла стану (воно в якорі) лише торкається рамки, а не
+ * заливки, тож бабл не закриває, скільки зроблено.
+ */
+export const BAR_RISE = 4;
 
 /** Прямокутник смуги на екрані, px світу: x, y — лівий верхній кут заливки. */
 export interface BarBox {
@@ -156,9 +170,57 @@ export interface BarBox {
   h: number;
 }
 
-/** Де смуга під якорем `anchor` (точка бабла над річчю): по центру, під ним. */
-export function barBox(anchor: Point, size: { width: number; height: number; ink: number }): BarBox {
-  return { x: anchor.x - size.width / 2, y: anchor.y + BAR_GAP + size.ink, w: size.width, h: size.height };
+/** Скільки смуги видно над і під серединою заливки (рамка й тінь), одиниці арту. */
+function barReach(size: { height: number; ink: number }): { up: number; down: number } {
+  return { up: size.height / 2 + size.ink, down: size.height / 2 + size.ink + BAR_DROP };
+}
+
+/** Смужка пошуку: кружечок відмови з рамкою (7 + 2 + 3,5) виступає за смугу з рамкою й тінню. */
+const SEARCH_REACH = SEARCH_BAR.stage + 2 + SEARCH_BAR.ink;
+
+/** Скільки смуга займає над і під серединою (для смужки пошуку — з кружечками етапів). */
+export function barExtent(box: BarBox, search: boolean): { top: number; bottom: number } {
+  const middle = box.y + box.h / 2;
+  const reach = search ? { up: SEARCH_REACH, down: SEARCH_REACH } : barReach(BAR);
+  return { top: middle - reach.up, bottom: middle + reach.down };
+}
+
+/**
+ * Смуга дії над річчю (§8.2): по центру якоря, чорнильний верх — на `BAR_RISE` вище за нього. Бабл стану над річчю (вода
+ * над душем, брудний лоток, порожня поїлка, пралька — вони висять і під час дії) — над смугою, а смуга лягає на верх речі
+ * лише краєм: якір на `ANCHOR_GAP` над найвищою точкою.
+ */
+export function barBox(anchor: Point): BarBox {
+  return { x: anchor.x - BAR.width / 2, y: anchor.y - BAR_RISE + BAR.ink, w: BAR.width, h: BAR.height };
+}
+
+/** Позначки над комп'ютером: смужка пошуку роботи й смуга дії (лагодження дроту). */
+export interface ComputerStack {
+  search: BarBox | null;
+  action: BarBox | null;
+}
+
+/**
+ * Позначки над комп'ютером (§8.6) — стосом над зоною його бабла (`BUBBLE_ROOM`). Бабли комп'ютера висять часто й довго: дріт
+ * перегризено (і весь час, поки його лагодять), немає інтернету, дзвінок, терпіння, відмова з вакансії, — а малюються
+ * поверх позначок, тож під ними смужка пошуку втратила б саме те, що мала показати: етап, де вакансія зірвалася. Тому знизу
+ * стосу — смужка пошуку (стала, поки персонаж шукає роботу), над нею — смуга лагодження дроту; без смужки пошуку — вона на
+ * її місці. Монітор, записку на ньому й скло смуги не закривають.
+ */
+export function computerStack(anchor: Point, search: boolean, action: boolean): ComputerStack {
+  let bottom = anchor.y - BUBBLE_ROOM - STACK_GAP;
+  let searchBox: BarBox | null = null;
+  if (search) {
+    const middle = bottom - SEARCH_REACH;
+    searchBox = { x: anchor.x - SEARCH_BAR.width / 2, y: middle - SEARCH_BAR.height / 2, w: SEARCH_BAR.width, h: SEARCH_BAR.height };
+    bottom = middle - SEARCH_REACH - STACK_GAP;
+  }
+  let actionBox: BarBox | null = null;
+  if (action) {
+    const middle = bottom - barReach(BAR).down;
+    actionBox = { x: anchor.x - BAR.width / 2, y: middle - BAR.height / 2, w: BAR.width, h: BAR.height };
+  }
+  return { search: searchBox, action: actionBox };
 }
 
 /** На стільки одиниць арту середина смуги плити нижча за верх її лицьової грані (стільницю). */
@@ -175,20 +237,6 @@ export function stoveBarBox(stove: { id: string }): BarBox {
   const front = ISO.toScreen({ x: (f.x0 + f.x1) / 2, y: f.y1 });
   const middle = front.y - look.top + STOVE_BAR_DROP;
   return { x: front.x - BAR.width / 2, y: middle - BAR.height / 2, w: BAR.width, h: BAR.height };
-}
-
-/** Рамка монітора довкола скла: стільки одиниць арту від верхнього краю екрана до верху монітора. */
-export const SCREEN_BEZEL = 8;
-
-/**
- * Смужка пошуку роботи над монітором (§8.6): під якорем стола, як інші смуги, але не нижче за верх монітора — екран
- * похилий (лівий край вищий), і смуга під якорем налазила б на нього; персонаж за столом її не закриває.
- */
-export function searchBarBox(anchor: Point, quad: ScreenQuad): BarBox {
-  const box = barBox(anchor, SEARCH_BAR);
-  const top = Math.min(onScreen(quad, -1, 1).y, onScreen(quad, 1, 1).y) - SCREEN_BEZEL;
-  const lowest = top - BAR_GAP - SEARCH_BAR.ink - box.h;
-  return { ...box, y: Math.min(box.y, lowest) };
 }
 
 /** Смуга тривалої дії (§8.2): над її ціллю, скільки зроблено (0–1). */

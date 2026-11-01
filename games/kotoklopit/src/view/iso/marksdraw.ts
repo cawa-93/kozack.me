@@ -6,7 +6,7 @@
 import type Phaser from "phaser";
 
 import { PALETTE, SHADE, type PaletteToken } from "../../../art/palette";
-import { BAR, clamp01, NOTE_CORNER, SEARCH_BAR, stageMark, type BarBox, type ScreenQuad, type ScreenShow } from "./markslayout";
+import { BAR, BAR_DROP, clamp01, NOTE_CORNER, SEARCH_BAR, stageMark, type BarBox, type ScreenQuad, type ScreenShow } from "./markslayout";
 
 /** Колір палітри арту як число для Phaser. */
 export function tone(token: PaletteToken): number {
@@ -16,8 +16,6 @@ export function tone(token: PaletteToken): number {
 const INK = tone("ink");
 const PAPER = tone("paper");
 const SHADE_TONE = tone("shade");
-/** Падаюча тінь смуги: на стільки нижче, ніж вона сама (світло спереду-згори). */
-const DROP = 3;
 
 /** Чим заливати смугу: «добре» — зелене, небезпека — червоне (`art/STYLE.md`, «Сенси інтерфейсу»). */
 export type BarTone = "good" | "danger";
@@ -32,7 +30,7 @@ function pill(g: Phaser.GameObjects.Graphics, x: number, y: number, w: number, h
 /** Тінь, чорнильна рамка й паперова доріжка смуги. */
 function track(g: Phaser.GameObjects.Graphics, box: BarBox, ink: number): void {
   g.fillStyle(SHADE_TONE, SHADE.base);
-  pill(g, box.x - ink, box.y - ink + DROP, box.w + ink * 2, box.h + ink * 2);
+  pill(g, box.x - ink, box.y - ink + BAR_DROP, box.w + ink * 2, box.h + ink * 2);
   g.fillStyle(INK, 1);
   pill(g, box.x - ink, box.y - ink, box.w + ink * 2, box.h + ink * 2);
   g.fillStyle(PAPER, 1);

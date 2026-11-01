@@ -4,7 +4,8 @@
 //
 // - Підсвітку малює частина, якій належить ціль (квартира й куточок — сяйвом, `iso/highlight.ts`): позначки щокадру
 //   кажуть світу, що підсвітити й наскільки яскраво (пульс), а самим позначкам цілей не належить.
-// - Смуги — інтерфейс над світом (`WORLD_LAYERS.marks`): висять під якорем речі (бабл — над ними), без ізометрії.
+// - Смуги — інтерфейс над світом (`WORLD_LAYERS.marks`), без ізометрії: смуга дії — над ціллю, під баблом; над комп'ютером —
+//   стосом над зоною його бабла (`computerStack`); смуга плити — на її лицьовій грані.
 // - Зміст екрана — у площині монітора, у проміжку глибини стола з комп'ютером (`iso/depth.ts`): його закриває персонаж, що
 //   сидить за столом, і кіт на клавіатурі, а сам він лежить на кадрі `env/computer`.
 
@@ -20,16 +21,15 @@ import { isoDepth, type IsoDepth, type IsoPointHandle } from "./depth";
 import { drawBar, drawScreen, drawSearchBar } from "./marksdraw";
 import {
   actionBar,
-  BAR,
   barBox,
   computerScreen,
+  computerStack,
   highlightPulse,
   highlightTarget,
   rejectionAt,
   screenShow,
   screenTime,
   searchBar,
-  searchBarBox,
   stoveBar,
   stoveBarBox,
   type BarBox,
@@ -80,17 +80,22 @@ export class IsoMarksView implements WorldPart {
     if (target) world.highlight(target, highlightPulse(time));
 
     const g = this.bars.clear();
-    // Смуга тривалої дії — під якорем цілі.
+    // Смуга тривалої дії — над ціллю, під її баблом; над комп'ютером (лагодження дроту) — у стосі над баблом.
     const action = actionBar(state);
-    const actionAnchor = action ? world.anchor(action.target) : null;
-    if (action && actionAnchor) drawBar(g, barBox(actionAnchor, BAR), action.value, "good");
+    const onComputer = action?.target === "computer";
+    const actionAnchor = action && !onComputer ? world.anchor(action.target) : null;
+    if (action && actionAnchor) drawBar(g, barBox(actionAnchor), action.value, "good");
     // Плита (§8.7): зелена — готується, червона — скоро підгорить; на лицьовій грані плити, щоб не закривати страву.
     const stove = stoveBar(state);
     if (stove) drawBar(g, this.stoveBox, stove.value, stove.danger ? "danger" : "good");
-    // Пошук роботи (§8.6): над монітором — етапи поточної вакансії; на відмові смужка червона.
+    // Пошук роботи (§8.6): етапи поточної вакансії, на відмові смужка червона; над комп'ютером, над зоною його бабла.
     const search = searchBar(state, this.rejection, time);
-    const computer = search ? world.objectAnchor("computer") : null;
-    if (search && computer) drawSearchBar(g, searchBarBox(computer, this.quad), search.value, search.stages, search.rejected);
+    const computer = search || onComputer ? world.objectAnchor("computer") : null;
+    if (computer) {
+      const stack = computerStack(computer, search !== null, onComputer);
+      if (search && stack.search) drawSearchBar(g, stack.search, search.value, search.stages, search.rejected);
+      if (action && stack.action) drawBar(g, stack.action, action.value, "good");
+    }
 
     // Екран комп'ютера: що на ньому; перемальовується, лише коли зміст зробив крок (рядок дописався, мовець кивнув).
     const show = screenShow(state);
