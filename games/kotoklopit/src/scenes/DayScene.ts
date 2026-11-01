@@ -35,8 +35,8 @@ import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
-import type { BubbleKind, IconName } from "../view/iconnames";
-import { addIcon, createIconTextures } from "../view/icons";
+import { iconTexture, type BubbleKind, type IconName } from "../view/iconnames";
+import { createIconTextures } from "../view/icons";
 import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
@@ -658,7 +658,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). */
   private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive: () => void): void {
-    const image = addIcon(this, from.x, from.y, icon).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
+    const image = this.add.image(from.x, from.y, iconTexture(icon)).setDisplaySize(48, 48).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(this.viewport.world);
     const flight = { t: 0 };
     this.tweens.add({
       targets: flight,

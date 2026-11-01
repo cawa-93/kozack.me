@@ -1,14 +1,16 @@
 // Іконки баблів (§11.4): без тексту, один набір на всю гру. У старому вигляді — прості заглушки, намальовані кодом
-// чорнилом (`createIconTextures`); у новому (крок 16, `?gfx=iso`) — кадри атласу `icon/<назва>` з SVG пакетів A11 і A12
-// (`addIcon`), поки SVG немає — заглушка атласу.
+// чорнилом (`createIconTextures`); у новому (крок 16, `?gfx=iso`) під тими самими ключами (`iconTexture`, `markTexture`) —
+// кадри атласу `icon/<назва>` з SVG пакетів A11 і A12 (`iso/iconalias.ts`), поки SVG немає — заглушка атласу.
 
 import Phaser from "phaser";
 
-import { addArt } from "./art/atlas";
+import { artFrameName } from "./art/atlas";
+import type { ArtId } from "./art/types";
 import { drawCatnip, drawPadlock, drawSock, drawTrinket } from "./legacy/catcorner";
 import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
-import { bubbleTexture, iconArt, iconTexture, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
+import { bubbleTexture, iconArt, iconTexture, markArt, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
+import { aliasArtFrame } from "./iso/iconalias";
 
 export const ICON_SIZE = 40;
 export const BUBBLE_WIDTH = 52;
@@ -933,16 +935,24 @@ function drawThought(g: Phaser.GameObjects.Graphics): void {
   g.fillEllipse(cx, cy, 2 * 20, 2 * 12);
 }
 
-/** Намалювати текстури іконок і тла баблів один раз на старті. */
+/**
+ * Намалювати текстури іконок і тла баблів один раз на старті. У новому вигляді іконки й позначки під тими самими ключами —
+ * кадри атласу (`aliasArtFrame`; атласу немає — малюнок кодом, як у старому), тож кожне місце, що бере іконку за ключем,
+ * показує арт; фони баблів нового вигляду — кадри `ui/bubble/*` прямо в `bubbles.ts`.
+ */
 export function createIconTextures(scene: Phaser.Scene): void {
   if (scene.textures.exists(bubbleTexture("say"))) return;
+  const art = currentGfx() === "iso";
+  const fromArt = (key: string, id: ArtId): boolean => art && aliasArtFrame(scene.textures, key, artFrameName(id));
   const g = scene.make.graphics({}, false);
   for (const [name, draw] of Object.entries(ICONS)) {
+    if (fromArt(iconTexture(name as IconName), iconArt(name as IconName))) continue;
     g.clear();
     draw(g);
     g.generateTexture(iconTexture(name as IconName), ICON_SIZE, ICON_SIZE);
   }
   for (const [name, draw] of Object.entries(MARKS)) {
+    if (fromArt(markTexture(name as Mark), markArt(name as Mark))) continue;
     g.clear();
     draw(g);
     g.generateTexture(markTexture(name as Mark), ICON_SIZE, ICON_SIZE);
@@ -955,18 +965,4 @@ export function createIconTextures(scene: Phaser.Scene): void {
   drawThought(g);
   g.generateTexture(bubbleTexture("think"), THOUGHT_WIDTH, THOUGHT_HEIGHT);
   g.destroy();
-}
-
-/** Іконки — кадри атласу (новий вигляд, `?gfx=iso`), а не текстури кодом. Графіка сторінки без перезавантаження не змінюється. */
-let fromArt: boolean | null = null;
-
-/**
- * Зображення іконки в точці (x, y) сцени, origin — центр: у старому вигляді — текстура `iconTexture` (40 × 40, як і було),
- * у новому — кадр атласу `icon/<назва>` (64 × 64 одиниці; поки SVG немає — заглушка). Розмір на екрані задає той, хто
- * кличе (`setDisplaySize`), шар — `addToDisplayList`.
- */
-export function addIcon(scene: Phaser.Scene, x: number, y: number, name: IconName): Phaser.GameObjects.Image {
-  fromArt ??= currentGfx() === "iso";
-  if (!fromArt) return scene.add.image(x, y, iconTexture(name));
-  return addArt(scene, null, iconArt(name)).setPosition(x, y);
 }
