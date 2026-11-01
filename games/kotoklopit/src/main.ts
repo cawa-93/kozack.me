@@ -6,13 +6,16 @@ import { RaceScene } from "./scenes/RaceScene";
 import { fullscreenOnFirstAction } from "./screen";
 import { Session } from "./session";
 import "./style.css";
-import { catRenderConfig } from "./view/iso/catrender";
-import { BASE_HEIGHT, BASE_WIDTH } from "./view/viewport";
+import { catRenderConfig, isSoftwareRenderer, webglRenderer } from "./view/iso/catrender";
+import { fitCanvas, startCanvas } from "./view/viewport";
 
 const session = Session.restore({ address: "she", difficulty: "normal" });
 
-// На програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`, крок 16).
-const render = catRenderConfig();
+// На програмному WebGL — одна текстура на пакет малювання (запечені частини котів; `iso/catrender.ts`, крок 16) і полотно
+// без пікселів пристрою (`canvasFit`): там кожен піксель малює процесор.
+const renderer = webglRenderer();
+const software = isSoftwareRenderer(renderer);
+const render = catRenderConfig(() => renderer);
 
 // Режим розробки (§11.5): у `npm run dev` і на прев'ю Netlify; у продакшн-збірку не потрапляє.
 if (__DEV_TOOLS__) {
@@ -20,21 +23,23 @@ if (__DEV_TOOLS__) {
   installDev(session);
 }
 
-// Гра на весь екран (§10): полотно 16:9 ширшає чи вищає під форму екрана, без порожніх смуг,
-// а що з квартири видно, вирішує камера (§8.4).
+// Гра на весь екран (§10): полотно на все вікно, без порожніх смуг, у пікселях пристрою (`fitCanvas`: розмір веде гра, а
+// не Phaser — `Phaser.Scale.NONE`, CSS-розмір полотна — уся тека, style.css); що з квартири видно, вирішує камера (§8.4).
 fullscreenOnFirstAction();
-new Phaser.Game({
+const canvas = startCanvas(document.getElementById("game"), software);
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: "game",
-  width: BASE_WIDTH,
-  height: BASE_HEIGHT,
+  width: canvas.width,
+  height: canvas.height,
   backgroundColor: "#2b2530",
   scale: {
-    mode: Phaser.Scale.EXPAND,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    mode: Phaser.Scale.NONE,
+    autoCenter: Phaser.Scale.NO_CENTER,
   },
   input: { activePointers: 3 },
   ...(render ? { render } : {}),
   // Спершу атлас арту (крок 16), потім день; гонку запускає DayScene.
   scene: [new PreloadScene("day"), new DayScene(session), new RaceScene(session)],
 });
+fitCanvas(game, software);

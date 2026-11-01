@@ -6,7 +6,11 @@
 import type { Vec } from "../sim/types";
 import type { Projection } from "./world/projection";
 
-/** Полотно для екрана 16:9; на екрані іншої форми воно ширшає чи вищає (Phaser.Scale.EXPAND). */
+/**
+ * Одиниці інтерфейсу: екран 16:9 — 1280 × 720 одиниць, на екрані іншої форми область ширшає чи вищає (як
+ * `Phaser.Scale.EXPAND`). У них розкладено панель, сенсорні кнопки, картки гонки (`Frame`); полотно ж має пікселі
+ * пристрою (`canvasFit`), а камера інтерфейсу масштабує одиниці в них.
+ */
 export const BASE_WIDTH = 1280;
 export const BASE_HEIGHT = 720;
 
@@ -28,11 +32,57 @@ export interface ZoomView {
   /** Ширина й висота області квартири (під панеллю й безпечною зоною), px полотна Phaser. */
   width: number;
   height: number;
-  /**
-   * Скільки пікселів полотна в пікселі CSS по вертикалі (`scale.displayScale.y`). Щільність пікселів екрана (DPR) сюди
-   * не входить: полотно Phaser рахується в пікселях CSS (`Phaser.Scale.EXPAND`).
-   */
+  /** Скільки пікселів полотна в пікселі CSS (`CanvasFit.density`). */
   cssScale: number;
+}
+
+/**
+ * Найбільша щільність полотна, px полотна на px CSS. Телефони мають DPR до 3–3,5, а атлас — 2 пікселі на одиницю арту: за
+ * мінімального зуму (46 px CSS на ромб 64 одиниці) це 0,72 одиниці на px CSS, тож за щільності 2,5 атлас іще не
+ * збільшується (≈ 1,1 текселя на піксель), а полотно на телефоні 844 × 390 — ≈ 2 Мпікс замість 3 за DPR 3.
+ */
+export const MAX_DENSITY = 2.5;
+
+/**
+ * Найбільше пікселів полотна: великий монітор із дробовим DPR (4K за DPR 1,5 — 8,3 Мпікс) малює трохи грубіше за
+ * пікселі пристрою, ніж заливати кожен кадр. 6 Мпікс уміщують 2880 × 1800 (ноутбук 1440 × 900 за DPR 2).
+ */
+export const MAX_CANVAS_PIXELS = 6_000_000;
+
+/** Полотно гри для екрана: розмір, щільність і масштаб інтерфейсу. */
+export interface CanvasFit {
+  /** Розмір гри (полотна), px полотна. */
+  width: number;
+  height: number;
+  /** Скільки px полотна в px CSS. */
+  density: number;
+  /** Скільки одиниць інтерфейсу (`BASE_WIDTH × BASE_HEIGHT`, що ширшає чи вищає) в px CSS. */
+  unit: number;
+  /** Скільки px полотна в одиниці інтерфейсу — зум камер інтерфейсу: `density / unit`. */
+  ui: number;
+}
+
+/**
+ * Полотно гри в пікселях пристрою (DPR, не більше `MAX_DENSITY` і `MAX_CANVAS_PIXELS`), щоб браузер не розтягував його й
+ * контури та текст не розмивалися: раніше полотно завжди мало ≈ 720 px заввишки (`Phaser.Scale.EXPAND`), і на телефоні
+ * 844 × 390 за DPR 3 браузер розтягував його в 1,6 раза, на моніторі 2560 × 1440 — удвічі.
+ *
+ * Не менше за одиниці інтерфейсу: на малому вікні з DPR 1 полотно, як і раніше, більше за екран (браузер зменшує його —
+ * згладжування), а не дрібніше. Програмний WebGL (`software`: SwiftShader знімків, комп'ютери без прискорення) малює
+ * кожен піксель процесором — там полотно саме таке, як було (`ui` = 1), і знімки не змінюються.
+ *
+ * `css` — розмір теки гри в px CSS; нульовий (тека ще не має розміру) — як вікно 1280 × 720.
+ */
+export function canvasFit(css: { width: number; height: number }, dpr: number, software: boolean): CanvasFit {
+  const w = css.width > 0 ? css.width : BASE_WIDTH;
+  const h = css.height > 0 ? css.height : BASE_HEIGHT;
+  const unit = Math.max(BASE_WIDTH / w, BASE_HEIGHT / h);
+  if (software || !(dpr > 0)) return { width: w * unit, height: h * unit, density: unit, unit, ui: 1 };
+  const density = Math.max(unit, Math.min(dpr, MAX_DENSITY, Math.sqrt(MAX_CANVAS_PIXELS / (w * h))));
+  // Ціла кількість пікселів: дробову браузер розтягнув би на частку пікселя, і все полотно трохи розмилося б.
+  const width = Math.round(w * density);
+  const height = Math.round(h * density);
+  return { width, height, density: height / h, unit, ui: height / h / unit };
 }
 
 /** Масштаб камери: усю квартиру видно, якщо клітинка при цьому не дрібніша за мінімум; інакше — мінімум. */

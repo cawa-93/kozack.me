@@ -29,6 +29,10 @@ export class TouchControls {
   private stickZone = 0;
   private action = { x: 0, y: 0 };
   private dashButton = { x: 0, y: 0 };
+  /** Скільки пікселів полотна в одиниці інтерфейсу (`Frame.ui`): точка дотику — у пікселях полотна, кнопки — в одиницях. */
+  private ui = 1;
+  /** Точка дотику в одиницях інтерфейсу: той самий об'єкт щоразу. */
+  private readonly at = { x: 0, y: 0 };
   private readonly base: Phaser.GameObjects.Image;
   private readonly knob: Phaser.GameObjects.Image;
   /** Кнопки — кадри атласу й стани, які вони зараз показують. */
@@ -62,7 +66,8 @@ export class TouchControls {
   }
 
   /** Кнопки — у правому нижньому куті, але не під заокругленим кутом екрана. */
-  layout({ width, height, safe }: Frame): void {
+  layout({ width, height, safe, ui }: Frame): void {
+    this.ui = ui;
     const right = width - safe.right;
     const bottom = height - safe.bottom;
     this.stickZone = width / 2;
@@ -72,33 +77,42 @@ export class TouchControls {
     this.art.dash.setPosition(this.dashButton.x, this.dashButton.y);
   }
 
+  /** Де дотик в одиницях інтерфейсу. */
+  private point(pointer: Phaser.Input.Pointer): { x: number; y: number } {
+    this.at.x = pointer.x / this.ui;
+    this.at.y = pointer.y / this.ui;
+    return this.at;
+  }
+
   private down(pointer: Phaser.Input.Pointer): void {
     if (!pointer.wasTouch) return;
     this.visible = true;
     this.art.action.setVisible(true);
     this.art.dash.setVisible(true);
-    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this.action.x, this.action.y) <= ACTION_R + 12) {
+    const p = this.point(pointer);
+    if (Phaser.Math.Distance.Between(p.x, p.y, this.action.x, this.action.y) <= ACTION_R + 12) {
       this.actionPointer = pointer.id;
       this.holding = true;
       this.onAction();
       return;
     }
-    if (Phaser.Math.Distance.Between(pointer.x, pointer.y, this.dashButton.x, this.dashButton.y) <= DASH_R + 12) {
+    if (Phaser.Math.Distance.Between(p.x, p.y, this.dashButton.x, this.dashButton.y) <= DASH_R + 12) {
       this.onDash();
       return;
     }
-    if (pointer.x < this.stickZone && this.stickPointer === null) {
+    if (p.x < this.stickZone && this.stickPointer === null) {
       this.stickPointer = pointer.id;
-      this.stickOrigin = { x: pointer.x, y: pointer.y };
-      this.base.setPosition(pointer.x, pointer.y).setVisible(true);
-      this.knob.setPosition(pointer.x, pointer.y).setVisible(true);
+      this.stickOrigin = { x: p.x, y: p.y };
+      this.base.setPosition(p.x, p.y).setVisible(true);
+      this.knob.setPosition(p.x, p.y).setVisible(true);
     }
   }
 
   private moveStick(pointer: Phaser.Input.Pointer): void {
     if (pointer.id !== this.stickPointer) return;
-    const dx = pointer.x - this.stickOrigin.x;
-    const dy = pointer.y - this.stickOrigin.y;
+    const p = this.point(pointer);
+    const dx = p.x - this.stickOrigin.x;
+    const dy = p.y - this.stickOrigin.y;
     const length = Math.hypot(dx, dy);
     const clamped = Math.min(length, JOYSTICK_RADIUS);
     const nx = length > 0 ? dx / length : 0;

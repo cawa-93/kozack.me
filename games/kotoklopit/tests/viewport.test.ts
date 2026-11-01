@@ -5,11 +5,12 @@
 import { describe, expect, it } from "vitest";
 
 import { ISO } from "../src/view/world/projection";
-import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, fitsWhole, FOLLOW_LIFT, followTarget, HUD_HEIGHT, MIN_TILE_CSS, type ZoomView } from "../src/view/zoom";
+import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, canvasFit, fitsWhole, FOLLOW_LIFT, followTarget, HUD_HEIGHT, MAX_CANVAS_PIXELS, MAX_DENSITY, MIN_TILE_CSS, type ZoomView } from "../src/view/zoom";
 
 /**
- * Область квартири на екрані CSS `cssWidth × cssHeight` так, як її рахує `Viewport.layout`: полотно Phaser в режимі
- * EXPAND (основа 1280 × 720 ширшає чи вищає під форму екрана), під панеллю й безпечною зоною вгорі.
+ * Область квартири на екрані CSS `cssWidth × cssHeight` так, як її рахує `Viewport.layout` на програмному WebGL (полотно
+ * в одиницях інтерфейсу: основа 1280 × 720 ширшає чи вищає під форму екрана, `canvasFit` з `software`), під панеллю й
+ * безпечною зоною вгорі. З пікселями пристрою зум у px CSS той самий — див. останній блок.
  */
 function view(cssWidth: number, cssHeight: number, safeTopCss = 0): ZoomView {
   const sx = cssWidth / BASE_WIDTH;
@@ -29,7 +30,7 @@ function css(units: number, zoom: number, v: ZoomView): number {
 const CAT = 56;
 
 describe("зум камери в ізометрії", () => {
-  it("телефон 844 × 390 (DPR 3 не входить: полотно — у px CSS): ромб 46 px CSS, кіт ≈ 40 px, камера стежить", () => {
+  it("телефон 844 × 390: ромб 46 px CSS, кіт ≈ 40 px, камера стежить", () => {
     const v = view(844, 390);
     const zoom = cameraZoom(v, ISO);
     expect(css(ISO.tile.height, zoom, v)).toBeCloseTo(MIN_TILE_CSS, 9);
@@ -111,5 +112,62 @@ describe("за чим іде камера", () => {
     // Верх бабла над головою — нижче верхнього краю огляду (панелі) щонайменше на 40 px CSS.
     const aboveBubble = css(half - (PERSON + BUBBLE - FOLLOW_LIFT), zoom, v);
     expect(aboveBubble).toBeGreaterThan(40);
+  });
+});
+
+describe("полотно в пікселях пристрою (canvasFit)", () => {
+  it("програмний WebGL — полотно як раніше (1280 × 720, що ширшає чи вищає), інтерфейс без масштабу", () => {
+    for (const [w, h] of [
+      [844, 390],
+      [1280, 720],
+      [1440, 900],
+      [390, 844],
+    ] as const) {
+      const fit = canvasFit({ width: w, height: h }, 3, true);
+      const old = view(w, h);
+      expect(fit.ui).toBe(1);
+      expect(fit.density).toBeCloseTo(old.cssScale, 9);
+      expect(fit.height).toBeCloseTo(old.height + HUD_HEIGHT, 9);
+      expect(fit.width).toBeCloseTo(w * old.cssScale, 9);
+    }
+  });
+
+  it("телефон 844 × 390 за DPR 3 — щільність 2,5 (не 3), інтерфейс у тих самих одиницях", () => {
+    const fit = canvasFit({ width: 844, height: 390 }, 3, false);
+    expect(fit.density).toBeCloseTo(MAX_DENSITY, 2);
+    expect(fit.width).toBe(2110);
+    expect(fit.height).toBe(975);
+    // Інтерфейс — ті самі 1558 × 720 одиниць, що й раніше.
+    expect(fit.height / fit.ui).toBeCloseTo(BASE_HEIGHT, 9);
+    expect(fit.width / fit.ui).toBeCloseTo(view(844, 390).width, 0);
+  });
+
+  it("десктоп за DPR 1: полотно — пікселі вікна, інтерфейс збільшено", () => {
+    expect(canvasFit({ width: 1920, height: 1080 }, 1, false)).toMatchObject({ width: 1920, height: 1080, ui: 1.5 });
+    expect(canvasFit({ width: 2560, height: 1440 }, 1, false)).toMatchObject({ width: 2560, height: 1440, ui: 2 });
+    const mac = canvasFit({ width: 1440, height: 900 }, 2, false);
+    expect(mac).toMatchObject({ width: 2880, height: 1800 });
+    expect(mac.ui).toBeCloseTo(2.25, 9);
+  });
+
+  it("не більше MAX_CANVAS_PIXELS і не дрібніше за одиниці інтерфейсу", () => {
+    const big = canvasFit({ width: 2560, height: 1440 }, 1.5, false);
+    expect(big.width * big.height).toBeLessThanOrEqual(MAX_CANVAS_PIXELS * 1.001);
+    expect(big.density).toBeGreaterThan(1);
+    // Мале вікно за DPR 1: полотно, як і раніше, більше за вікно (браузер його зменшує), а не дрібніше.
+    const small = canvasFit({ width: 844, height: 390 }, 1, false);
+    expect(small.ui).toBeCloseTo(1, 2);
+    expect(small.height).toBe(BASE_HEIGHT);
+  });
+
+  it("тека без розміру — як вікно 1280 × 720", () => {
+    expect(canvasFit({ width: 0, height: 0 }, 2, false)).toMatchObject({ width: 2560, height: 1440, ui: 2 });
+  });
+
+  it("зум квартири за новою щільністю — та сама клітинка в px CSS, що й раніше", () => {
+    const fit = canvasFit({ width: 844, height: 390 }, 3, false);
+    const area = { width: fit.width, height: fit.height - HUD_HEIGHT * fit.ui, cssScale: fit.density };
+    const zoom = cameraZoom(area, ISO);
+    expect(css(ISO.tile.height, zoom, area)).toBeCloseTo(MIN_TILE_CSS, 6);
   });
 });

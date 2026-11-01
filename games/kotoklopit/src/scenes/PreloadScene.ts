@@ -13,6 +13,7 @@ import Phaser from "phaser";
 
 import { markArtReady } from "../view/art/atlas";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
+import { fitUiCamera } from "../view/viewport";
 
 /** Індикатор: доріжка трохи світліша за тло гри (#2b2530, main.ts), смуга — колір паперу інтерфейсу; без тексту. */
 const BAR = { track: 0x3b3340, fill: 0xf3e9dc, height: 6, maxWidth: 280, share: 0.4 };
@@ -61,7 +62,8 @@ export class PreloadScene extends Phaser.Scene {
   private draw(): void {
     const bar = this.bar;
     if (!bar) return;
-    const { width, height } = this.scale.gameSize;
+    // В одиницях інтерфейсу (1280 × 720, що ширшає чи вищає): полотно — у пікселях пристрою, камера масштабує.
+    const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
     const w = Math.round(Math.min(BAR.maxWidth, width * BAR.share));
     const x = Math.round((width - w) / 2);
     const y = Math.round(height / 2 - BAR.height / 2);

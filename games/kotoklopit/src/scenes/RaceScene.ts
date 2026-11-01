@@ -17,6 +17,7 @@ import { artEntry } from "../view/art/manifest";
 import { RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
+import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
   barMarkerY,
   barParts,
@@ -112,18 +113,20 @@ export class RaceScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
   }
 
-  /** Джойстик з'являється під пальцем будь-де на екрані. */
+  /** Джойстик з'являється під пальцем будь-де на екрані. Точка дотику — у пікселях полотна, гонка — в одиницях інтерфейсу. */
   private down(p: Phaser.Input.Pointer): void {
     this.touched = true;
     if (this.stick !== null) return;
-    this.stick = { id: p.id, origin: { x: p.x, y: p.y }, x: 0, y: 0, steered: false };
+    const ui = canvasNow().ui;
+    this.stick = { id: p.id, origin: { x: p.x / ui, y: p.y / ui }, x: 0, y: 0, steered: false };
   }
 
   private moveStick(p: Phaser.Input.Pointer): void {
     const stick = this.stick;
     if (stick?.id !== p.id) return;
-    const dx = p.x - stick.origin.x;
-    const dy = p.y - stick.origin.y;
+    const ui = canvasNow().ui;
+    const dx = p.x / ui - stick.origin.x;
+    const dy = p.y / ui - stick.origin.y;
     const length = Math.hypot(dx, dy);
     const scale = length > STICK_RADIUS ? STICK_RADIUS / length : 1;
     stick.x = (dx * scale) / STICK_RADIUS;
@@ -180,9 +183,12 @@ export class RaceScene extends Phaser.Scene {
     const art = this.art;
     if (!trip || !art) return;
     const race = trip.race;
-    const { width, height } = this.scale;
+    // Гонка — в одиницях інтерфейсу (1280 × 720, що ширшає чи вищає): полотно — у пікселях пристрою, камера масштабує.
+    const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
     const g = this.g.clear();
-    const safe = safeArea();
+    const css = safeArea();
+    const unit = canvasNow().unit;
+    const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
     const view: RaceView = { width, height, k: raceScale(height), ppu: racePixelsPerUnit(height), cx: width / 2, playerY: height * RACE_PLAYER_Y, safe };
     art.draw(race, view);
     this.drawStick(g);
