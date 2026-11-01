@@ -6,10 +6,17 @@
 // (кисть тримає гнізда рук, стопа — взуття):
 //
 //   root ─ pelvis ─┬─ torso ─┬─ neck ─ head            (волосся ззаду й спереду, очі — слоти на голові)
-//                  │         ├─ arm-far ─ hand-far
-//                  │         └─ arm-near ─ hand-near   (гнізда: вудочка, річ у руках)
+//                  │         ├─ arm-far ─┬─ arm-far-skin   (кадр руки)
+//                  │         │           └─ hand-far
+//                  │         └─ arm-near ─┬─ arm-near-skin (кадр руки)
+//                  │                      └─ hand-near     (гнізда: вудочка, річ у руках)
 //                  ├─ leg-far ─ foot-far               (взуття — на стопі)
 //                  └─ leg-near ─ foot-near
+//
+// Кадр руки висить не на самій кістці руки, а на її «шкірі» (`arm-*-skin`: та сама точка й кут, довжина 0): товщину рук за
+// статурою (`proportions`) дає масштаб шкіри, і кисть його не успадковує. Інакше масштаб упоперек руки, повернутої
+// анімацією, перекошував би осі кисті, і річ у руці стрункої й кремезної статури хилилася б на ±3,5–4° (кисть тримає
+// її рівно за `levelHand`, що про статуру не знає).
 //
 // Кути кісток: 0 — праворуч (уперед), 90 — донизу, −90 — угору. Тулуб і голова дивляться вгору, руки й ноги — донизу,
 // тож додатний поворот руки чи ноги — назад, а тулуба — нахил уперед. Система тулуба: x — угору, y — уперед.
@@ -31,11 +38,11 @@ import { BUILDS, FACES, HAIR_STYLES } from "../../palette";
 import { defineFit, type ProportionRef } from "../rigcore";
 import { defineRig, type SkinOf, type SlotOf } from "../types";
 
-/** Товщина рук і ніг за статурою. */
+/** Товщина рук і ніг за статурою: руки — масштаб «шкіри» (кисть його не успадковує, див. початок файлу). */
 const limbs = (k: number) =>
   ({
-    "arm-far": { scale: { x: 1, y: k } },
-    "arm-near": { scale: { x: 1, y: k } },
+    "arm-far-skin": { scale: { x: 1, y: k } },
+    "arm-near-skin": { scale: { x: 1, y: k } },
     "leg-far": { scale: { x: 1, y: k } },
     "leg-near": { scale: { x: 1, y: k } },
   }) as const;
@@ -52,8 +59,10 @@ export const PERSON_RIG = defineRig({
     // Руки: у системі тулуба x — угору, y — уперед; ¾ спереду далеке плече праворуч (+y), ближнє — ліворуч і нижче.
     // Довжина — від плеча до зап'ястка (`hand`), кисть — до хвату (`grip`).
     { id: "arm-far", parent: "torso", x: 38.4, y: 15, rot: 180, len: 40.6 },
+    { id: "arm-far-skin", parent: "arm-far", x: 0, y: 0, rot: 0, len: 0 },
     { id: "hand-far", parent: "arm-far", x: 40.6, y: -1, rot: 0, len: 6.4 },
     { id: "arm-near", parent: "torso", x: 36.4, y: -17, rot: 180, len: 40.6 },
+    { id: "arm-near-skin", parent: "arm-near", x: 0, y: 0, rot: 0, len: 0 },
     { id: "hand-near", parent: "arm-near", x: 40.6, y: -1, rot: 0, len: 6.4 },
     // Ноги: далека трохи вище (далі на підлозі), ближня — нижче; довжина — від стегна до кісточки (`foot`); стопа дивиться
     // вперед.
@@ -64,7 +73,7 @@ export const PERSON_RIG = defineRig({
   ],
   slots: [
     { id: "hair-back", bone: "head", z: 0, frame: null },
-    { id: "arm-far", bone: "arm-far", z: 1, frame: null },
+    { id: "arm-far", bone: "arm-far-skin", z: 1, frame: null },
     { id: "leg-far", bone: "leg-far", z: 2, frame: null },
     { id: "shoe-far", bone: "foot-far", z: 3, frame: null },
     { id: "leg-near", bone: "leg-near", z: 4, frame: null },
@@ -74,7 +83,7 @@ export const PERSON_RIG = defineRig({
     // Очі на голові: у системі голови x — угору від підборіддя, y — уперед.
     { id: "eyes", bone: "head", z: 9, frame: "open", x: 13.9, y: 5.3 },
     { id: "hair-front", bone: "head", z: 10, frame: null },
-    { id: "arm-near", bone: "arm-near", z: 12, frame: null },
+    { id: "arm-near", bone: "arm-near-skin", z: 12, frame: null },
   ],
   views: {
     front: {},

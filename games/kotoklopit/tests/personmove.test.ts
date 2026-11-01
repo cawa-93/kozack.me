@@ -422,6 +422,22 @@ describe("рух персонажа: основна з накладкою рук
     }
   });
 
+  it("несе річ: річ рівно й у стрункої та кремезної статури — товщину рук дає шкіра руки, кисть її не успадковує", () => {
+    for (const build of ["slim", "stocky"]) {
+      for (const name of BASES) {
+        const made = personWithArms(anim(name), "carry", name) as LooseAnim;
+        for (const view of VIEWS) {
+          const rig = rigFor(view, [build]);
+          rig.play(made, 0, { blend: 0 });
+          for (let t = 0; t <= made.duration; t += made.duration / 20) {
+            rig.evaluate(t);
+            expect(Math.abs(rig.socket("held", undefined, false)?.rot ?? NaN), `${build} ${name} ${view} @${t}`).toBeLessThan(0.5);
+          }
+        }
+      }
+    }
+  });
+
   it("несе річ: розмах рук ходи й ривка річ не підкидає — кисть нерухома відносно плеча", () => {
     for (const name of BASES) {
       const made = personWithArms(anim(name), "carry", name) as LooseAnim;
