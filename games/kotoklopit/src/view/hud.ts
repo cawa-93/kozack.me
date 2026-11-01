@@ -16,7 +16,7 @@ import type { GameState, Product, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
-import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, isoBarRects, STAT_BLINK, STAT_FILL, statDisc } from "./iso/hudlook";
+import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, hudTextScale, isoBarRects, STAT_BLINK, STAT_FILL, statDisc } from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
@@ -50,6 +50,13 @@ const NEWS = { width: 340, pad: 12, baseMs: 2500, perCharMs: 45, maxMs: 8000, fa
 const DEPTH = UI_LAYERS.hud;
 /** Підказка на телефоні (§6.4): кружечок під іконкою запасу — центр від центру телефона й радіус кружечка. */
 const HINT = { x: 19, y: 19, r: 15 } as const;
+/**
+ * Підказка на зменшеному полотні (телефон, `hudTextScale` > 1): кружечок більший — радіус × масштаб написів — і ближче до
+ * середини телефона, щоб не вилазив за смугу панелі.
+ */
+const HINT_BIG = { x: 15, y: 14 } as const;
+/** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`) і де годинник під датою. */
+const SMALL_TEXT = { date: 17, effects: 18, schedule: 18, news: 17, clockY: 26 } as const;
 /**
  * Кружечки (`statDisc`): чорнильне кільце показника (радіус `ICON_SIZE / 2 + 2` разом із контуром 2) і підказки (`HINT.r`),
  * а іконка менша — так, щоб довкола неї лишався папір.
@@ -113,6 +120,10 @@ export class Hud {
   private readonly newsText: Phaser.GameObjects.Text;
   /** Коли бабл почне згасати (час сцени, мс); null — бабла немає. */
   private newsUntil: number | null = null;
+  /** Підкладка під іконкою підказки. */
+  private readonly hintUnder: Phaser.GameObjects.Image;
+  /** У скільки разів зараз збільшені дрібні написи й підказка (`hudTextScale`); 1 — як на десктопі. */
+  private textScale = 1;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -158,6 +169,7 @@ export class Hud {
     const { ring, icon } = HINT_DISC;
     this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(icon, icon);
     const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
+    this.hintUnder = under;
     this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
     const size = uiEntry(HUD_ART.phone).size;
     this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(size.w, size.h).setDepth(DEPTH).addToDisplayList(layer);
@@ -193,6 +205,7 @@ export class Hud {
 
   /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
   layout({ width, safe }: Frame): void {
+    this.scaleSmall(hudTextScale(1 / this.scene.scale.displayScale.y));
     this.band(width, safe.top + HUD_HEIGHT);
     this.left.setPosition(safe.left, safe.top);
     const x = width - safe.right - BUTTONS_INSET;
@@ -201,6 +214,26 @@ export class Hud {
     this.fullscreen?.button.setPosition(x, safe.top + HUD_HEIGHT + 34);
     // Бабл телефона — правим верхнім кутом під телефоном, лівіше кнопки повного екрана.
     this.news.setPosition(x - 30, safe.top + HUD_HEIGHT + 10);
+  }
+
+  /**
+   * Дрібні написи (дата, стани, розклад, бабл телефона) і підказка на телефоні — у `k` разів більші, коли полотно на екрані
+   * зменшене (телефон, `hudTextScale`); лише коли масштаб змінився. Годинник опускається під більшу дату.
+   */
+  private scaleSmall(k: number): void {
+    if (k === this.textScale) return;
+    this.textScale = k;
+    const px = (size: number): number => Math.round(size * k);
+    this.date.setFontSize(px(SMALL_TEXT.date));
+    this.clock.setY(SMALL_TEXT.clockY + px(SMALL_TEXT.date) - SMALL_TEXT.date);
+    this.effects.setFontSize(px(SMALL_TEXT.effects));
+    this.schedule.setFontSize(px(SMALL_TEXT.schedule));
+    this.newsTitle.setFontSize(px(SMALL_TEXT.news));
+    this.newsText.setFontSize(px(SMALL_TEXT.news)).setWordWrapWidth(px(NEWS.width));
+    const at = k > 1 ? HINT_BIG : HINT;
+    const { ring, icon } = statDisc(2 * HINT.r * k + 2);
+    this.hintUnder.setPosition(at.x, at.y).setDisplaySize(ring, ring);
+    this.hintIcon.setPosition(at.x, at.y).setDisplaySize(icon, icon);
   }
 
   /** Чи показує телефон зараз бабл. */

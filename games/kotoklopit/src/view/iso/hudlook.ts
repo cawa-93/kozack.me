@@ -106,6 +106,24 @@ export function statDisc(outer: number): StatDisc {
   return { ring, icon: Math.round((ring * HUD_STAT_ART.paper * HUD_STAT_FILL) / ICON_DRAWN) };
 }
 
+/** Найменший розмір дрібних написів панелі на екрані, px CSS (дата, стани, розклад, бабл телефона). */
+export const HUD_SMALL_TEXT_CSS = 12;
+/** Найдрібніший з цих написів на полотні, px полотна (дата й бабл телефона — 17). */
+export const HUD_SMALL_TEXT = 17;
+/** Більше збільшувати не можна: смуга панелі тієї самої висоти (`HUD_HEIGHT`), і написи вилізли б за неї. */
+export const HUD_TEXT_MAX = 1.35;
+
+/**
+ * У скільки разів збільшити дрібні написи панелі й підказку на телефоні, коли полотно на екрані зменшене (`cssPerCanvas` — px
+ * CSS на піксель полотна): на телефоні 844 × 390 це ≈ 0,54, і написи 17–18 px полотна ставали ≈ 9–10 px CSS, а іконка
+ * підказки ≈ 9 px (рецензія хвилі 3). Дрібний напис — не менше `HUD_SMALL_TEXT_CSS`, але не більше `HUD_TEXT_MAX`; на
+ * десктопі (полотно не зменшене) — 1, як було.
+ */
+export function hudTextScale(cssPerCanvas: number): number {
+  const want = HUD_SMALL_TEXT_CSS / (HUD_SMALL_TEXT * cssPerCanvas);
+  return Math.min(HUD_TEXT_MAX, Math.max(1, want));
+}
+
 /**
  * Сенсорні кнопки: A13 малює їх непрозорими (папір із чорнильним контуром), а прозорість задає код — як у старому вигляді,
  * квартиру під пальцем має бути видно. Кнопка, яку тиснуть чи яка готова, — щільніша; основа джойстика — ледь помітна.

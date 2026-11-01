@@ -19,7 +19,11 @@ import {
   HUD_BAR_ART,
   HUD_STAT_ART,
   HUD_STAT_FILL,
+  HUD_SMALL_TEXT,
+  HUD_SMALL_TEXT_CSS,
   HUD_STATES,
+  HUD_TEXT_MAX,
+  hudTextScale,
   ICON_DRAWN,
   isoBarRects,
   statDisc,
@@ -332,5 +336,25 @@ describe("числа кадрів панелі збігаються з SVG A13",
     expect(widths).toHaveLength(2);
     expect(widths[1]).toBeCloseTo(HUD_STAT_ART.ink * size.w, 0);
     expect(widths[0]).toBeCloseTo(HUD_STAT_ART.paper * size.w, 0);
+  });
+});
+
+describe("дрібні написи панелі на зменшеному полотні (hudTextScale; рецензія хвилі 3)", () => {
+  it("десктоп (полотно не зменшене) — як було; телефон 844 × 390 — дрібний напис ≈ 12 px CSS, але не більше межі", () => {
+    expect(hudTextScale(1)).toBe(1);
+    expect(hudTextScale(0.8)).toBe(1);
+    // 844 × 390: полотно 720 заввишки — 390 px CSS.
+    const phone = hudTextScale(390 / 720);
+    expect(phone).toBeGreaterThan(1);
+    expect(HUD_SMALL_TEXT * phone * (390 / 720)).toBeCloseTo(HUD_SMALL_TEXT_CSS, 5);
+    // Дуже низький екран — не більше межі (смуга панелі тієї самої висоти).
+    expect(hudTextScale(0.3)).toBe(HUD_TEXT_MAX);
+  });
+
+  it("найбільші написи вміщуються в смугу панелі: дата над годинником і два рядки розкладу", () => {
+    // Дата (17 × k) від y 5, годинник 36 опускається на стільки ж; розклад — два рядки 18 × k від y 4 (висота рядка ≈ 1,25).
+    const k = HUD_TEXT_MAX;
+    expect(26 + Math.round(17 * k) - 17 + 36 * 1.2).toBeLessThanOrEqual(HUD_HEIGHT);
+    expect(4 + 2 * Math.round(18 * k) * 1.25).toBeLessThanOrEqual(HUD_HEIGHT);
   });
 });
