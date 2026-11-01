@@ -37,7 +37,8 @@ describe("індикатор сховищ (§6.4)", () => {
     expect(look.lineColor).toBe(hex(PALETTE.ink));
     expect(look.dropColor).toBe(hex(PALETTE.shade));
     expect(Object.values(SHADE)).toContain(look.dropAlpha);
-    expect([PALETTE.ink, PALETTE.redLo]).toEqual([look.text, look.zero]);
+    // Нуль — червоний сенсу «ні» (STYLE §3), а не redLo — колір ліній матеріалу.
+    expect([PALETTE.ink, PALETTE.red]).toEqual([look.text, look.zero]);
     expect(look.icon).toBeGreaterThan(STORAGE_LOOKS.oblique.icon);
     expect(look.fontSize).toBeGreaterThan(STORAGE_LOOKS.oblique.fontSize);
   });

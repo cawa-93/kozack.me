@@ -70,7 +70,8 @@ export const STORAGE_LOOKS: Record<Projection["kind"], StorageLook> = {
     text: "#1f1a24",
     zero: "#d8483b",
   },
-  // Нова графіка: папір, чорнильна рамка `LINE.inner` і тінь `shade` (`art/STYLE.md`, «ui»), нуль — червоний сенсу «ні».
+  // Нова графіка: папір, чорнильна рамка `LINE.inner` і тінь `shade` (`art/STYLE.md`, «ui»), нуль — червоний сенсу «ні»
+  // (`red`, а не `redLo`: «…Lo» — лінії матеріалу, на папері вони майже як чорнило).
   iso: {
     icon: Math.round(26 * ISO_SCALE),
     chip: Math.round(50 * ISO_SCALE),
@@ -88,7 +89,7 @@ export const STORAGE_LOOKS: Record<Projection["kind"], StorageLook> = {
     fontSize: Math.round(15 * ISO_SCALE),
     gap: 3,
     text: PALETTE.ink,
-    zero: PALETTE.redLo,
+    zero: PALETTE.red,
   },
 };
 
