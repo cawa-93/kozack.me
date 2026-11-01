@@ -30,6 +30,7 @@ import {
   flightTilt,
   highlightPulse,
   highlightTarget,
+  onFace,
   onScreen,
   REJECTION_MS,
   rejectionAt,
@@ -40,8 +41,9 @@ import {
   searchBar,
   STACK_GAP,
   stageMark,
+  STOVE_BAR,
   stoveBar,
-  stoveBarBox,
+  stoveFaceBar,
 } from "../src/view/iso/markslayout";
 import { isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
@@ -270,18 +272,33 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     expect(search.bottom).toBeLessThan(screenTop);
   });
 
-  it("смуга плити — на її лицьовій грані: під стільницею зі стравою й над підлогою, посередині грані", () => {
+  it("смуга плити — намальована на лицьовій грані плити: у її площині, посередині, не ширша за 0,8 клітинки", () => {
     const stove = objectById("stove");
     const look = isoObjectLook("stove");
-    const box = stoveBarBox(stove);
-    const front = ISO.toScreen({ x: (look.footprint.x0 + look.footprint.x1) / 2, y: look.footprint.y1 });
-    expect(box.x + box.w / 2).toBeCloseTo(front.x, 9);
-    expect(box.w).toBe(BAR.width);
-    // Верх рамки нижчий за передній край стільниці (страва на конфорці — ще вище), низ — вищий за підлогу.
-    expect(box.y - BAR.ink).toBeGreaterThan(front.y - look.top);
-    expect(box.y + box.h + BAR.ink).toBeLessThan(front.y);
-    // І нижчий за якір бабла над плитою: бабл страви смуги не закриває.
-    expect(box.y - BAR.ink).toBeGreaterThan(objectAnchorAt(stove).y);
+    const face = stoveFaceBar(stove);
+    const f = look.footprint;
+    const front = ISO.toScreen({ x: (f.x0 + f.x1) / 2, y: f.y1 });
+    // Уздовж грані (y = y1 сліду): на екрані 2 : 1, праворуч-униз.
+    expect(face.u.y / face.u.x).toBeCloseTo(0.5, 9);
+    expect(Math.hypot(face.u.x, face.u.y)).toBeCloseTo(1, 9);
+    // Середина — посередині грані: по центру сліду й на STOVE_BAR.drop нижче за край стільниці.
+    const middle = onFace(face, face.length / 2, face.height / 2);
+    expect(middle.x).toBeCloseTo(front.x, 9);
+    expect(middle.y).toBeCloseTo(front.y - look.top + STOVE_BAR.drop, 9);
+    // З рамкою — не ширша за 0,8 клітинки (на екрані 0,8 × 64): не заходить на сусідні шафки.
+    const left = onFace(face, -BAR.ink, 0);
+    const right = onFace(face, face.length + BAR.ink, 0);
+    expect(right.x - left.x).toBeLessThanOrEqual(0.8 * 64 + 1e-9);
+    // По висоті — між краєм стільниці й підлогою в кожній точці грані (верх грані паралельний смузі).
+    for (const a of [-BAR.ink, face.length / 2, face.length + BAR.ink]) {
+      const top = onFace(face, a, -BAR.ink);
+      const bottom = onFace(face, a, face.height + BAR.ink);
+      const edge = ISO.toScreen({ x: (f.x0 + f.x1) / 2 + (top.x - front.x) / 64, y: f.y1 });
+      expect(top.y).toBeGreaterThan(edge.y - look.top);
+      expect(bottom.y).toBeLessThan(edge.y);
+    }
+    // І нижче за якір бабла над плитою: бабл страви смуги не закриває.
+    expect(onFace(face, 0, -BAR.ink).y).toBeGreaterThan(objectAnchorAt(stove).y);
   });
 
   it("смуга дії — над її ціллю, скільки зроблено", () => {

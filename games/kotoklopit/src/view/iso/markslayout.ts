@@ -223,20 +223,50 @@ export function computerStack(anchor: Point, search: boolean, action: boolean): 
   return { search: searchBox, action: actionBox };
 }
 
-/** На стільки одиниць арту середина смуги плити нижча за верх її лицьової грані (стільницю). */
-export const STOVE_BAR_DROP = 18;
+/**
+ * Смуга в площині вертикальної грані речі (смуга плити): заливка — паралелограм, довгі боки йдуть уздовж грані, короткі —
+ * вертикально, кінці — заокруглені в площині грані.
+ */
+export interface FaceBar {
+  /** Лівий верхній кут заливки, px світу. */
+  readonly origin: Point;
+  /** Одиничний вектор уздовж грані (праворуч-униз на екрані). */
+  readonly u: Point;
+  /** Довжина заливки вздовж грані й висота (вертикально), px світу. */
+  readonly length: number;
+  readonly height: number;
+}
 
 /**
- * Смуга плити (§8.7) — на лицьовій грані плити, під стільницею, як у старому вигляді: над плитою висить бабл страви, а сама
- * страва (A2 малює її сирою, готовою й пригорілою) — на конфорці, і смуга під якорем закривала б її. Середина — посередині
- * грані (вона дивиться в кімнату, y = y1 сліду).
+ * Смуга плити: довжина заливки в клітинках уздовж грані (з рамкою — 0,8 клітинки: не заходить на сусідні шафки), висота й
+ * на скільки середина нижча за верх грані — посередині грані заввишки 62 (на склі духовки, як табло таймера).
  */
-export function stoveBarBox(stove: { id: string }): BarBox {
+export const STOVE_BAR = { cells: 0.7, height: 10, drop: 31 } as const;
+
+/**
+ * Смуга плити (§8.7) — намальована на лицьовій грані плити (y = y1 сліду, дивиться в кімнату), у її площині: над плитою
+ * висить бабл страви, а сама страва (A2) — на конфорці, тож над плитою смузі місця немає. Як частина плити, смуга лежить у
+ * проміжку глибини плити: персонаж, що стоїть перед плитою, її закриває (стан страви однаково видно з бабла), а не носить
+ * на грудях, як шкалу здоров'я.
+ */
+export function stoveFaceBar(stove: { id: string }): FaceBar {
   const look = isoObjectLook(stove.id);
   const f = look.footprint;
-  const front = ISO.toScreen({ x: (f.x0 + f.x1) / 2, y: f.y1 });
-  const middle = front.y - look.top + STOVE_BAR_DROP;
-  return { x: front.x - BAR.width / 2, y: middle - BAR.height / 2, w: BAR.width, h: BAR.height };
+  const middle = (f.x0 + f.x1) / 2;
+  const left = ISO.toScreen({ x: middle - STOVE_BAR.cells / 2, y: f.y1 });
+  const right = ISO.toScreen({ x: middle + STOVE_BAR.cells / 2, y: f.y1 });
+  const length = Math.hypot(right.x - left.x, right.y - left.y);
+  return {
+    origin: { x: left.x, y: left.y - look.top + STOVE_BAR.drop - STOVE_BAR.height / 2 },
+    u: { x: (right.x - left.x) / length, y: (right.y - left.y) / length },
+    length,
+    height: STOVE_BAR.height,
+  };
+}
+
+/** Точка смуги на грані: `a` — уздовж грані від лівого кінця заливки, `b` — униз від її верху, px світу. */
+export function onFace(face: FaceBar, a: number, b: number): Point {
+  return { x: face.origin.x + face.u.x * a, y: face.origin.y + face.u.y * a + b };
 }
 
 /** Смуга тривалої дії (§8.2): над її ціллю, скільки зроблено (0–1). */

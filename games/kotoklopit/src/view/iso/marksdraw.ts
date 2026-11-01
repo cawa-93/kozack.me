@@ -1,12 +1,12 @@
 // Як малюються позначки ізометричного світу (крок 16, T4): смуги прогресу, смужка пошуку роботи й зміст екрана комп'ютера —
 // у манері арту (`art/STYLE.md`): пласкі кольори палітри (`art/palette.ts`), густий теплий чорнильний контур і одна тінь
-// `shade`. Смуги — інтерфейс поверх світу, без ізометрії (як `fx` і бульбашки), а зміст екрана лежить у площині монітора
-// (`ScreenQuad`). Де що — рахує `markslayout.ts`.
+// `shade`. Смуги дії й пошуку — інтерфейс поверх світу, без ізометрії (як `fx` і бульбашки); смуга плити намальована на її
+// грані (`FaceBar`), а зміст екрана лежить у площині монітора (`ScreenQuad`). Де що — рахує `markslayout.ts`.
 
 import type Phaser from "phaser";
 
 import { PALETTE, SHADE, type PaletteToken } from "../../../art/palette";
-import { BAR, BAR_DROP, clamp01, NOTE_CORNER, SEARCH_BAR, stageMark, type BarBox, type ScreenQuad, type ScreenShow } from "./markslayout";
+import { BAR, BAR_DROP, clamp01, NOTE_CORNER, onFace, SEARCH_BAR, stageMark, type BarBox, type FaceBar, type ScreenQuad, type ScreenShow } from "./markslayout";
 
 /** Колір палітри арту як число для Phaser. */
 export function tone(token: PaletteToken): number {
@@ -49,6 +49,38 @@ function fill(g: Phaser.GameObjects.Graphics, box: BarBox, value: number, color:
 export function drawBar(g: Phaser.GameObjects.Graphics, box: BarBox, value: number, kind: BarTone): void {
   track(g, box, BAR.ink);
   fill(g, box, value, BAR_FILL[kind]);
+}
+
+/** Заокруглений паралелограм на грані: від `a0` уздовж грані завдовжки `length`, від `b0` униз заввишки `height`. */
+function facePill(g: Phaser.GameObjects.Graphics, face: FaceBar, a0: number, b0: number, length: number, height: number, color: number): void {
+  if (length <= 0 || height <= 0) return;
+  const r = Math.min(length, height) / 2;
+  const steps = 6;
+  g.fillStyle(color, 1).beginPath();
+  // Правий кінець — півколо згори донизу, лівий — знизу догори (у координатах грані; на екрані — скошені разом із нею).
+  for (let k = 0; k <= steps; k++) {
+    const angle = -Math.PI / 2 + (k / steps) * Math.PI;
+    const p = onFace(face, a0 + length - r + Math.cos(angle) * r, b0 + r + Math.sin(angle) * r);
+    if (k === 0) g.moveTo(p.x, p.y);
+    else g.lineTo(p.x, p.y);
+  }
+  for (let k = 0; k <= steps; k++) {
+    const angle = Math.PI / 2 + (k / steps) * Math.PI;
+    const p = onFace(face, a0 + r + Math.cos(angle) * r, b0 + r + Math.sin(angle) * r);
+    g.lineTo(p.x, p.y);
+  }
+  g.closePath().fillPath();
+}
+
+/**
+ * Смуга на грані речі (плита, §8.7): та сама паперова доріжка в чорнильній рамці, але намальована на грані — без падаючої
+ * тіні, скошена разом із гранню.
+ */
+export function drawFaceBar(g: Phaser.GameObjects.Graphics, face: FaceBar, value: number, kind: BarTone): void {
+  const ink = BAR.ink;
+  facePill(g, face, -ink, -ink, face.length + ink * 2, face.height + ink * 2, INK);
+  facePill(g, face, 0, 0, face.length, face.height, PAPER);
+  facePill(g, face, 0, 0, clamp01(value) * face.length, face.height, BAR_FILL[kind]);
 }
 
 /** Кружечок етапу: попереду — порожній папір, пройдений — світло-зелений, де скінчилася відмова — червоний і більший. */
