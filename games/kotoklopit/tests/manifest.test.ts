@@ -112,6 +112,8 @@ describe("маніфест: правила записів", () => {
       "a12-icons": ["icon/", "ui/bubble/", "ui/glyph/"],
       "a13-ui": ["ui/"],
       "a14-race": ["race/"],
+      // Хвиля 3, «Стики персонажа»: стільці до стола з комп'ютером і кухонного стола.
+      "a15-seats": ["env/chair-"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());

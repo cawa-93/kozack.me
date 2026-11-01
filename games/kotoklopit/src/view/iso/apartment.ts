@@ -6,14 +6,15 @@
 // Що показати — зі стану гри (`looks.ts`).
 // Глибина: плити кімнат, вікна й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін — коробки в
 // реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у її
-// проміжку глибини. Внутрішня стіна, що закриває персонажа, напівпрозоро згасає.
+// проміжку глибини. Внутрішня стіна, що закриває персонажа, напівпрозоро згасає. Стільці до стола з комп'ютером і
+// кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що сидить, між ними.
 
 import type Phaser from "phaser";
 
 import { isPresent, objectById, OBJECTS, ROOMS, roomAt, TOILET_ROLL, TRINKETS, WINDOWS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
-import type { GameState } from "../../sim/types";
+import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
@@ -24,6 +25,8 @@ import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
 import { artOffset, BOXES_FRONT, boxCovers, DOOR_BOXES, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
+import { SEATS, seatAt, seatDepthPoint, seatMode, type Seat } from "./personseat";
+import { glideOffset } from "./personspot";
 import { IsoHighlight } from "./highlight";
 import {
   bedState,
@@ -57,6 +60,9 @@ const BACKDROP = { floor: ISO_BACKDROP_DEPTH, wall: ISO_BACKDROP_DEPTH + 1, wind
  */
 const ON = { overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
 
+/** Півширина стільця на екрані, одиниці арту (`IsoPointOptions.half`): з ким його малюнок може перекритися. */
+const CHAIR_HALF = 44;
+
 /** Наскільки прозора згасла стіна, і як швидко вона згасає й повертається (частка шляху за секунду). */
 const FADED_ALPHA = 0.4;
 const FADE_RATE = 8;
@@ -80,6 +86,19 @@ interface Thing {
   box: IsoBoxHandle;
   depth: number;
   present: boolean;
+}
+
+/**
+ * Стілець (`SEATS`): сидіння й спинка — шматки одного кадру на різних глибинах, де він зараз (центр, клітинки) і куди їде
+ * (засувають, висувають, відкочують).
+ */
+interface Chair {
+  seat: Seat;
+  pieces: Record<"seat" | "backrest", { image: Phaser.GameObjects.Image; point: IsoPointHandle }>;
+  center: Vec;
+  target: Vec;
+  /** Центр, у якому кадр поставлено (щоб не переставляти нерухомий стілець щокадру). */
+  placed: Vec;
 }
 
 /** Сегмент внутрішньої стіни чи переднього плінтуса. */
@@ -123,6 +142,8 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly door: OpenDoor;
   /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
   private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
+  private readonly chairs: Chair[] = [];
+  private readonly tmpPoint: Vec = { x: 0, y: 0 };
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -167,6 +188,17 @@ export class IsoApartmentView implements ApartmentPart {
     const boxes = this.get("boxes");
     const front = this.art("env/boxes/front", boxes.at, 0).setVisible(false);
     this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: this.depth.addPoint((d) => front.setDepth(d), { half: BOXES_FRONT.half }) };
+    for (const seat of SEATS) this.chairs.push(this.chair(seat));
+  }
+
+  /** Стілець: два шматки кадру (сидіння, спинка), кожен — точка реєстру глибини; спершу — засунутий до стола. */
+  private chair(seat: Seat): Chair {
+    const piece = (state: "seat" | "backrest"): Chair["pieces"]["seat"] => {
+      const image = addArt(this.ctx.scene, this.ctx.layer, seat.art, { state });
+      return { image, point: this.depth.addPoint((d) => image.setDepth(d), { half: CHAIR_HALF }) };
+    };
+    const center = seatAt(seat, "tucked");
+    return { seat, pieces: { seat: piece("seat"), backrest: piece("backrest") }, center, target: { ...center }, placed: { x: Number.NaN, y: Number.NaN } };
   }
 
   /** Шматки відчинених дверей (`OpenDoor`): поки двері зачинені, їхніх коробок у порядку немає. */
@@ -273,6 +305,8 @@ export class IsoApartmentView implements ApartmentPart {
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
     setPiece(this.wire, { id: "env/wire", state: state.home.wireChewed === true ? "chewed" : "whole" });
+    const dt = this.lastTime === null ? 1 : Math.min(0.25, Math.max(0, (frame.time - this.lastTime) / 1000));
+    this.moveChairs(state, dt);
     this.fadeWalls(state, frame.time);
     this.fx.update(state, frame.time);
   }
@@ -280,6 +314,27 @@ export class IsoApartmentView implements ApartmentPart {
   onEvent(event: GameEvent, time: number): void {
     if (opensDoor(event)) this.door.openedAt = time;
     this.fx.onEvent(event, time);
+  }
+
+  /**
+   * Стільці: засунуті до стола, висунуті під того, хто сідає, чи відкочені (`seatMode`) — їдуть туди плавно, з тією самою
+   * швидкістю, з якою персонаж переходить до місця справи (`glideOffset`), тож таз опускається на сидіння, а не поруч.
+   */
+  private moveChairs(state: GameState, seconds: number): void {
+    for (const chair of this.chairs) {
+      seatAt(chair.seat, seatMode(state, chair.seat), chair.target);
+      glideOffset(chair.center, chair.target, seconds, chair.center);
+      if (chair.center.x === chair.placed.x && chair.center.y === chair.placed.y) continue;
+      chair.placed.x = chair.center.x;
+      chair.placed.y = chair.center.y;
+      const at = ISO.toScreen(chair.center);
+      for (const part of ["seat", "backrest"] as const) {
+        const piece = chair.pieces[part];
+        piece.image.setPosition(at.x, at.y);
+        const point = seatDepthPoint(chair.seat, chair.center, part, this.tmpPoint);
+        piece.point.place(point.x, point.y);
+      }
+    }
   }
 
   /** Стани речей і наповнення сховищ (§6.4, §8.7, §9.12). */
@@ -376,6 +431,11 @@ export class IsoApartmentView implements ApartmentPart {
     this.lastTime = null;
     this.door.openedAt = Number.NEGATIVE_INFINITY;
     this.fx.reset();
+    // День показують заново: стільці — одразу на своїх місцях, без переїзду.
+    for (const chair of this.chairs) {
+      seatAt(chair.seat, "tucked", chair.center);
+      chair.placed.x = Number.NaN;
+    }
   }
 
   destroy(): void {
@@ -399,6 +459,13 @@ export class IsoApartmentView implements ApartmentPart {
     this.boxesFront.piece.image.destroy();
     this.wirePoint.remove();
     this.wire.image.destroy();
+    for (const chair of this.chairs) {
+      for (const piece of Object.values(chair.pieces)) {
+        piece.point.remove();
+        piece.image.destroy();
+      }
+    }
+    this.chairs.length = 0;
     for (const image of this.backdrop) image.destroy();
     this.backdrop.length = 0;
   }
