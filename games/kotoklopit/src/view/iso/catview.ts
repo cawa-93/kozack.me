@@ -95,6 +95,11 @@ export interface CatFrame {
    * обидва, граючи ту саму анімацію дзеркально, були б точним дзеркалом одне одного.
    */
   phase: number;
+  /**
+   * Змішування поз (мс), коли основна змінилася цього кадру, — замість звичайного (`playBlend`): кіт, якого беруть на руки чи
+   * опускають, міняє позу, поки йде з кистями. null — звичайне.
+   */
+  blendMs: number | null;
   face: CatFace;
   facing: RigFacing;
   /** Корінь скелета на екрані (точка підлоги під котом, піднята на висоту меблів і дуги стрибка), px світу. */
@@ -338,7 +343,7 @@ export class IsoCatView {
     const elapsed = this.clock - start;
     const from = anim.loop ? elapsed % anim.duration : Math.min(anim.duration, elapsed);
     const sameMotion = sameBase && prev.overlay === overlay;
-    const blend = playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
+    const blend = f.blendMs !== null && !sameBase ? f.blendMs : playBlend(prev, { base, overlay, ears: face.ears }, f.restart);
     this.sprite.play(anim, { from, blend, restart: f.restart || !sameMotion });
     if (prev) {
       prev.base = base;

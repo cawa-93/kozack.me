@@ -19,7 +19,8 @@ import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, catMoving, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
-import type { CatOneShotId } from "../anim/ids";
+import { PERSON_ONE_SHOT_MS, type CatOneShotId } from "../anim/ids";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/person/move";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
 import { catCrowds, catPairs, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
@@ -65,6 +66,15 @@ const CULL_MARGIN = 160;
 const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 
 /**
+ * Кіт, якого беруть на руки чи опускають (рецензія хвилі 3): поза «на руках» і поза на підлозі змішуються, поки кіт іде з
+ * кистями, а не за 120 мс у мить, коли він на пів дороги, — беручи, з миті, коли кисті підхопили кота (`PERSON_PICKUP_GRAB_MS`),
+ * до кінця `pickUp`; опускаючи — з початку `putDown` до миті, коли кіт на підлозі (`PERSON_PUTDOWN_RELEASE_MS`). `root` — за
+ * скільки мс корінь кота доходить до нового місця, коли він стає в руки чи сходить з них (гніздо рук на межі разових
+ * персонажа, мс): без цього за кадр кіт перескакував.
+ */
+const LIFT_BLEND = { up: PERSON_ONE_SHOT_MS.pickUp - PERSON_PICKUP_GRAB_MS, down: PERSON_PUTDOWN_RELEASE_MS, root: 150 } as const;
+
+/**
  * За скільки мс кіт доходить до свого місця в юрбі (`catCrowds`) на ≈ 63 %: прийшовши до персонажа чи до миски, він відступає
  * вбік кроком, а не перескакує.
  */
@@ -98,6 +108,10 @@ interface Memory {
   spot: CatSpot | null;
   /** Зсув кота в юрбі зараз, клітинки: плавно йде до того, що каже `catCrowds` (`CROWD_EASE_MS`). */
   crowd: Vec;
+  /** Де кіт щодо рук персонажа минулого кадру: 0 — сам, 1 — на руках чи колінах, 2 — його беруть чи опускають. */
+  hands: number;
+  /** Корінь кота, що щойно став у руки чи зійшов з них, доходить до нового місця (`LIFT_BLEND.root`): зсув і коли почався. */
+  rootFix: { x: number; y: number; start: number } | null;
   /** Для стрибків і позіхання (`catTransition`). */
   transition: CatMemory | null;
   shot: CatShot | null;
@@ -150,6 +164,7 @@ export class IsoCatsView implements CatsPart {
     restart: false,
     speed: 1,
     phase: 0,
+    blendMs: null,
     face: { eyes: "open", mouth: "closed", ears: "up" },
     facing: { view: "front", flip: false },
     root: { x: 0, y: 0 },
@@ -261,6 +276,8 @@ export class IsoCatsView implements CatsPart {
         choice: null,
         spot: null,
         crowd: { x: 0, y: 0 },
+        hands: 0,
+        rootFix: null,
         transition: null,
         shot: null,
         lift: null,
@@ -371,10 +388,16 @@ export class IsoCatsView implements CatsPart {
 
     const f = this.frame;
     this.place(view, spot, mem, time, f);
+    this.fixRoot(view, mem, spot.kind === "hands" ? (lifting ? 2 : 1) : 0, time, f);
     const act = cat.act;
     const carrying = act.kind === "carry" && act.picked === true && act.dropped !== true;
     // Беручи на руки й опускаючи: на підлозі — сидить, у руках — «на руках».
-    f.anim = lifting ? (lifting.w >= 0.5 ? "carried" : anim === "carried" ? "sit" : anim) : anim;
+    // Беручи на руки: поза «на руках» — щойно кисті підхопили кота (поки ні — сидить), і змішується з сидінням увесь підйом;
+    // опускаючи (сим уже відпустив) — поза на підлозі з першої миті, і змішується, поки кіт іде до підлоги (`LIFT_BLEND`).
+    const sitting = anim === "carried" ? "sit" : anim;
+    const held = state.character.held?.kind === "cat" && state.character.held.cat === cat.id;
+    f.anim = lifting ? (held && lifting.w > 0 ? "carried" : sitting) : anim;
+    f.blendMs = lifting ? (held ? LIFT_BLEND.up : LIFT_BLEND.down) : null;
     f.overlay = overlay;
     f.restart = restart;
     // Клубок бійки: обидва грають ту саму анімацію дзеркально — другий (з більшим номером) зі зсунутою фазою (N2).
@@ -399,6 +422,25 @@ export class IsoCatsView implements CatsPart {
     f.teeth = carrying ? this.teethOf(state, act.carry, act.target) : null;
     f.time = time;
     view.draw(cat, f);
+  }
+
+  /**
+   * Кіт став у руки чи зійшов з них (`hands` — де він щодо рук цього кадру, див. `Memory.hands`): корінь не перескакує в нове
+   * місце (гніздо рук на межі разових персонажа), а доходить туди за `LIFT_BLEND.root` від того, де його намалювали востаннє.
+   */
+  private fixRoot(view: IsoCatView, mem: Memory, hands: number, time: number, f: CatFrame): void {
+    if (hands !== mem.hands && view.shown) mem.rootFix = { x: view.root.x - f.root.x, y: view.root.y - f.root.y, start: time };
+    mem.hands = hands;
+    const fix = mem.rootFix;
+    if (!fix) return;
+    const e = (time - fix.start) / LIFT_BLEND.root;
+    if (e >= 1) {
+      mem.rootFix = null;
+      return;
+    }
+    const k = 1 - e * e * (3 - 2 * e);
+    f.root.x += fix.x * k;
+    f.root.y += fix.y * k;
   }
 
   /** Що кіт несе в зубах (§9.12): шкарпетку чи іграшку її якості. */
