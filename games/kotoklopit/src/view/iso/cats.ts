@@ -387,13 +387,17 @@ export class IsoCatsView implements CatsPart {
     return view ? { head: view.head, back: view.back } : null;
   }
 
-  /** Над головою кота; кіт на руках — збоку від голови персонажа, щоб бабл не здавався його (§11.4). */
+  /**
+   * Над головою кота; кіт на руках — збоку від голови персонажа, щоб бабл не здавався його (§11.4). Кота не видно (поїздка,
+   * сходи) — null: бабл не висить там, де кіт був.
+   */
   anchor(id: string): Point | null {
     const [kind, raw] = id.split(":");
     if (kind !== "cat") return null;
     const number = Number(raw);
-    const head = this.views.get(number)?.head;
-    if (!head) return null;
+    const view = this.views.get(number);
+    if (!view?.shown) return null;
+    const head = view.head;
     const held = this.ctx.state().character.held;
     if (held?.kind === "cat" && held.cat === number) {
       const person = this.ctx.world.person.head;
