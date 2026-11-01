@@ -315,31 +315,34 @@ const CURL_SLOTS: SlotSet = {
  */
 const CURL_BACK_SLOTS: SlotSet = { "leg-front-near": HIDDEN, tail: { z: [{ t: 0, v: 4.9 }] } };
 
-/** Їсть: присів на задні лапи (таз нижче, задні підібрані), голова в мисці, хвіст низько. */
+/**
+ * Їсть: присів — круп низько, задні підібрані, передні зігнуті, голова круто вниз, у мисці (шия коротка й донизу), хвіст
+ * низько. Силует — грудочка з опущеною головою, що раз у раз підводиться й жує (`eat`).
+ */
 const EAT: Pose = {
-  pelvis: { y: 5, rot: -4 },
-  "leg-back-near": { rot: -14, sx: 0.78 },
-  "leg-back-far": { rot: -10, sx: 0.8 },
-  "leg-front-near": { rot: -8, sx: 0.85 },
-  "leg-front-far": { rot: -8, sx: 0.85 },
-  neck: { x: 4, y: 13 },
-  head: { rot: 40 },
+  pelvis: { y: 6, rot: -4 },
+  "leg-back-near": { rot: -16, sx: 0.74 },
+  "leg-back-far": { rot: -12, sx: 0.76 },
+  "leg-front-near": { rot: -6, sx: 0.8 },
+  "leg-front-far": { rot: -6, sx: 0.8 },
+  neck: { x: 3, y: 14 },
+  head: { rot: 46 },
   tail: tail(-85),
 };
 
 /**
- * П'є: таз як у того, хто їсть, лікті назовні (передні лапи навскіс уперед і коротші), шия витягнута вперед, а рот — на
- * рівні води (≈ 9 над підлогою: обідок миски й поїлки — 12–14, вода трохи нижче), не в стінці миски. Від їжі пиття
- * відрізняє часте хлебтання (`drink`), а не нижча поза.
+ * П'є: інший силует, ніж у того, хто їсть, — круп вище, спина похила до плечей, передні лапи прямі й розставлені навскіс
+ * уперед (лікті назовні), шия далеко витягнута вперед, а голова майже рівна, рот — на рівні води (≈ 9 над підлогою: обідок
+ * миски й поїлки — 12–14, вода трохи нижче). Хлебче часто й помітно (`drink`).
  */
 const DRINK: Pose = {
-  pelvis: { y: 5 },
-  "leg-back-near": { rot: -14, sx: 0.78 },
-  "leg-back-far": { rot: -10, sx: 0.8 },
-  "leg-front-near": { rot: -22, sx: 0.8 },
-  "leg-front-far": { rot: -22, sx: 0.8 },
-  neck: { x: 7, y: 10 },
-  head: { rot: 30 },
+  pelvis: { y: 3, rot: 3 },
+  "leg-back-near": { rot: -10, sx: 0.86 },
+  "leg-back-far": { rot: -8, sx: 0.88 },
+  "leg-front-near": { rot: -28, sx: 0.85 },
+  "leg-front-far": { rot: -28, sx: 0.85 },
+  neck: { x: 9, y: 10 },
+  head: { rot: 18 },
   tail: tail(-85),
 };
 
@@ -829,11 +832,14 @@ const blanket: CatAnim = {
 
 // --- Справи ------------------------------------------------------------------------------------------
 
-/** Їсть: хрумтить — три швидкі вкуси (голова в миску), потім підвів голову й жує. */
-const EAT_MS = 1200;
-const EAT_TIMES = [0, 150, 300, 450, 600, 750, 900, 1050, EAT_MS];
-const EAT_HEAD = [0, -5, 0, -5, 0, -5, -10, -8, 0];
-const EAT_NECK = [0, -1, 0, -1, 0, -1, -2.5, -2, 0];
+/**
+ * Їсть: хрумтить — три швидкі вкуси (голова в миску), потім підвів голову з миски й жує (голова й шия помітно вгору, щоб
+ * це було видно й на телефоні).
+ */
+const EAT_MS = 1400;
+const EAT_TIMES = [0, 150, 300, 450, 600, 750, 900, 1000, 1100, 1200, 1300, EAT_MS];
+const EAT_HEAD = [0, -6, 0, -6, 0, -6, -18, -15, -18, -15, -16, 0];
+const EAT_NECK = [0, -1, 0, -1, 0, -1, -4, -3.5, -4, -3.5, -4, 0];
 const eat: CatAnim = {
   duration: EAT_MS,
   loop: true,
@@ -846,26 +852,27 @@ const eat: CatAnim = {
 };
 
 /**
- * П'є: язиком хлебче швидко й дрібно — голова ледь сіпається чотири рази за цикл (≈ 5 разів за секунду), шия з нею; кінчик
- * хвоста ліниво ворушиться. Їсть — рідше й глибше, з підведеною головою, що жує.
+ * П'є: хлебче часто й помітно — голова з шиєю смикається вгору й назад униз ≈ 6,7 раза за секунду (п'ять разів за цикл).
+ * Їсть — рідше й глибше, з підведеною головою, що жує.
  */
-const DRINK_MS = 800;
+const DRINK_MS = 750;
+const DRINK_LAPS = 5;
+const DRINK_NECK: Vec2 = { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") };
 const drink: CatAnim = {
   duration: DRINK_MS,
   loop: true,
   bones: merge(still(DRINK), {
-    head: rotAround(DRINK_MS, DRINK, "head", [0, -3, 0, -3, 0, -3, 0, -3]),
+    head: rotAround(
+      DRINK_MS,
+      DRINK,
+      "head",
+      Array.from({ length: DRINK_LAPS }, () => [0, -6]).flat(),
+    ),
     neck: {
-      pos: oscV(DRINK_MS, [
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") - 0.6 },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") - 0.6 },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") - 0.6 },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") },
-        { x: at(DRINK, "neck", "x"), y: at(DRINK, "neck", "y") - 0.6 },
-      ]),
+      pos: oscV(
+        DRINK_MS,
+        Array.from({ length: DRINK_LAPS }, () => [DRINK_NECK, { x: DRINK_NECK.x - 0.5, y: DRINK_NECK.y - 1.2 }]).flat(),
+      ),
     },
   }),
   views: { back: BACK_NEAR },
