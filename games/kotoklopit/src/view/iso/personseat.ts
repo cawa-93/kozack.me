@@ -11,10 +11,9 @@
 // стільця (`SEAT_DEPTH`), тож той, хто сидить (точка в `use.at`), між ними, а коти й персонаж поруч — як із будь-якою
 // річчю на підлозі. Без Phaser: перевіряє `tests/isopersonseat.test.ts`.
 
-import { objectById } from "../../sim/home";
 import type { GameState, Vec } from "../../sim/types";
 import type { ArtId } from "../art/types";
-import { isoObjectLook } from "../world/objects";
+import { isoObjectLook, type IsoUse } from "../world/objects";
 
 /** Стілець: id, кадр, стіл, до якого він стоїть, і куди відкочується, коли під столом лагодять дріт. */
 export interface Seat {
@@ -45,11 +44,11 @@ export const SEAT_TUCK = 0.2;
  */
 export const SEAT_DEPTH = { seat: -0.05, backrest: 0.22 } as const;
 
-/** Де сидять за річчю `object`: `use.at` і напрям до стола (`use.facing`). */
-function useOf(object: string): { at: Vec; facing: Vec } {
+/** Де сидять за річчю `object`: `use.at` і напрям до стола (`use.facing`) — дані `world/objects.ts`, без копій. */
+function useOf(object: string): IsoUse {
   const use = isoObjectLook(object).use;
   if (!use) throw new Error(`За «${object}» не сидять: немає use`);
-  return { at: use.at, facing: use.facing };
+  return use;
 }
 
 /**
@@ -72,9 +71,9 @@ export function seatMode(state: GameState, seat: Seat): SeatMode {
 export function seatAt(seat: Seat, mode: SeatMode, out: Vec = { x: 0, y: 0 }): Vec {
   const { at, facing } = useOf(seat.object);
   const tuck = mode === "tucked" ? SEAT_TUCK : 0;
-  const side = mode === "aside" && seat.aside ? seat.aside : { x: 0, y: 0 };
-  out.x = at.x + facing.x * tuck + side.x;
-  out.y = at.y + facing.y * tuck + side.y;
+  const side = mode === "aside" ? seat.aside : null;
+  out.x = at.x + facing.x * tuck + (side?.x ?? 0);
+  out.y = at.y + facing.y * tuck + (side?.y ?? 0);
   return out;
 }
 
@@ -85,10 +84,4 @@ export function seatDepthPoint(seat: Seat, center: Vec, part: keyof typeof SEAT_
   out.x = center.x - facing.x * SEAT_DEPTH[part];
   out.y = center.y - facing.y * SEAT_DEPTH[part];
   return out;
-}
-
-/** Стіл стільця є в квартирі (меблі — завжди): для перевірки, що стільці стоять біля справжніх столів. */
-export function seatTable(seat: Seat): { x: number; y: number; w: number; h: number } {
-  const o = objectById(seat.object);
-  return { x: o.x, y: o.y, w: o.w, h: o.h };
 }
