@@ -14,11 +14,13 @@ import { RACE } from "../src/sim/config";
 import { artEntry } from "../src/view/art/manifest";
 import { RACE_TILES } from "../src/view/art/manifest/a14-race";
 import {
+  barMarkerY,
   barParts,
   laneX,
   racePixelsPerUnit,
   raceScale,
   RACE_ART_HEIGHT,
+  RACE_MARKER_SCALE,
   rowFlipped,
   scrollOffset,
   steerTilt,
@@ -180,6 +182,23 @@ describe("смуга прогресу трьома частинами", () => {
     expect(short.top.scaleY * slice).toBeCloseTo(15);
     expect(short.bottom.y + frameH * short.bottom.scaleY).toBeCloseTo(40);
     expect(short.bottom.y + (frameH - slice) * short.bottom.scaleY).toBeCloseTo(25);
+  });
+
+  it("своя машинка — на межі пройденого, а біля кінців смуги не виходить за заокруглення", () => {
+    expect(barMarkerY(100, 500, 0.5, 1)).toBeCloseTo(350);
+    expect(barMarkerY(100, 500, 0.3, 1)).toBeCloseTo(450);
+    // Старт і фініш: машинка тримається за півмашинки від кінців (і так само для частки поза 0…1).
+    const start = barMarkerY(100, 500, 0, 1);
+    const finish = barMarkerY(100, 500, 1, 1);
+    expect(start).toBeLessThan(600);
+    expect(start).toBeGreaterThan(600 - 58 * RACE_MARKER_SCALE);
+    expect(finish).toBeGreaterThan(100);
+    expect(finish).toBeLessThan(100 + 58 * RACE_MARKER_SCALE);
+    expect(barMarkerY(100, 500, -1, 1)).toBe(start);
+    expect(barMarkerY(100, 500, 2, 1)).toBe(finish);
+    // Чим далі проїхали, тим вище машинка; на дуже короткій смузі — посередині.
+    expect(barMarkerY(100, 500, 0.6, 1)).toBeLessThan(barMarkerY(100, 500, 0.4, 1));
+    expect(barMarkerY(100, 10, 0.9, 2)).toBeCloseTo(105);
   });
 
   it("точка `slice` кадру — межа верхнього краю, і середина кадру однакова по вертикалі", async () => {

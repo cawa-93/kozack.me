@@ -20,9 +20,11 @@ import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
 import { currentGfx } from "../view/gfx";
 import {
+  barMarkerY,
   barParts,
   laneX,
   RACE_BAR_X,
+  RACE_MARKER_SCALE,
   RACE_PLAYER_Y,
   racePixelsPerUnit,
   raceScale,
@@ -286,7 +288,7 @@ export class RaceScene extends Phaser.Scene {
 // --- Нова графіка (крок 16, A14) ---------------------------------------------------------------------
 
 /** Шари гонки в новій графіці: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис. */
-const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, ui: 10 } as const;
+const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, marker: 5, ui: 10 } as const;
 /** Від середини своєї машини до її переду з контуром, одиниці арту (`race/car/player`): над ним — підказка «W ↑». */
 const RACE_CAR_FRONT = 34;
 
@@ -318,7 +320,8 @@ function trafficRecipe(color: number): TintRecipe {
 /**
  * Гонка з атласу (`src/view/art/manifest/a14-race.ts`): узбіччя стовпцями й дорога плитками (`racelook.ts`), машини
  * потоку — запечені кадри свого кольору (власник на колір, `releaseBaked` наприкінці гонки), своя машина нахиляється, поки
- * перестроюється, а смуга прогресу розтягується трьома частинами кадру. Зображення беруться з пулів і ховаються, коли зайві.
+ * перестроюється, а смуга прогресу розтягується трьома частинами кадру, і на ній — своя машинка, зменшена. Зображення беруться
+ * з пулів і ховаються, коли зайві.
  */
 class RaceArt {
   private readonly verge: Phaser.GameObjects.Image[] = [];
@@ -327,6 +330,8 @@ class RaceArt {
   private readonly player: Phaser.GameObjects.Image;
   private readonly track: Phaser.GameObjects.Image[];
   private readonly fill: Phaser.GameObjects.Image[];
+  /** Своя машинка на смузі прогресу — там, де пройдене. */
+  private readonly marker: Phaser.GameObjects.Image;
   /** Вигляд машини потоку — з першої зустрічі (`trafficLook`): машина, яку сим відсуває назад, не перефарбовується. */
   private readonly looks = new WeakMap<RaceCar, TrafficLook>();
   /** Що показує зображення потоку (вид і рецепт). */
@@ -340,6 +345,7 @@ class RaceArt {
     this.player = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.player);
     this.track = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "track" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
     this.fill = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "fill" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
+    this.marker = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.marker);
   }
 
   draw(race: Race, view: RaceView): void {
@@ -396,6 +402,7 @@ class RaceArt {
     const fillH = barH * done;
     if (fillH >= 1) this.placeBar(this.fill, barX, barTop + barH - fillH, fillH, k);
     else hideFrom(this.fill, 0);
+    this.fit(this.marker, RACE_MARKER_SCALE * k, RACE_MARKER_SCALE * k).setPosition(barX, barMarkerY(barTop, barH, done, k));
   }
 
   /** Звільнити запечені кадри потоку (сцена гонки закінчилася). */

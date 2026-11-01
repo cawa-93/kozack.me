@@ -20,6 +20,9 @@ export const RACE_PLAYER_Y = 0.78;
 const VERGE_UNDER_CURB = 6;
 /** Смуга прогресу: середина — стільки одиниць арту від середини дороги (за стовпчиками). */
 export const RACE_BAR_X = 214;
+/** Своя машинка на смузі прогресу: її масштаб відносно арту й наскільки (одиниці арту) вона тримається від кінців смуги. */
+export const RACE_MARKER_SCALE = 0.42;
+const RACE_MARKER_INSET = 15;
 /** Нахил своєї машини, поки вона перестроюється, радіан на смугу різниці (найбільше — на одну смугу). */
 const STEER_TILT = 0.2;
 
@@ -163,4 +166,14 @@ export function barParts(top: number, height: number, k: number, frameH: number,
     middle: middleLength > 0 && middleUnits > 0 ? { y: top + cap - slice * middleScale, scaleY: middleScale, cropY: slice, cropH: middleUnits } : null,
     bottom: { y: top + h - frameH * capScale, scaleY: capScale, cropY: frameH - slice, cropH: slice },
   };
+}
+
+/**
+ * Де на смузі прогресу (верх `top`, висота `height`) стоїть своя машинка, коли пройдено частку `done`: на межі пройденого,
+ * але не ближче за півмашинки до заокруглених кінців смуги.
+ */
+export function barMarkerY(top: number, height: number, done: number, k: number): number {
+  const inset = Math.min(RACE_MARKER_INSET * k, height / 2);
+  const at = top + height * (1 - Math.max(0, Math.min(1, done)));
+  return Math.max(top + inset, Math.min(top + height - inset, at));
 }
