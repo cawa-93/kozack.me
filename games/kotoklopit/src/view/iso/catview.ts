@@ -39,6 +39,12 @@ const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9, earSpread: 7, ea
 /** Над котом, якого не рахували (за краєм камери), одиниці арту: верх вух дорослого ≈ 56 і запас, як у якоря `head`. */
 const CULLED_HEAD = 64;
 
+/**
+ * Полотно фільтрів кота (сяйво підсвітки), одиниці арту скелета, посередині — корінь: дорослий кіт заввишки до ≈ 90 і
+ * завдовжки ≈ 80 уміщається з запасом (масштаб кота множить і полотно).
+ */
+const FILTER_BOX = { w: 180, h: 200 } as const;
+
 /** Що зараз показує кіт: анімація (основна й накладка — до складання з обличчям) і звідки рахується її час. */
 interface Playing {
   base: CatRigAnim;
@@ -132,6 +138,9 @@ export class IsoCatView {
     this.far = farRecipe(this.recipe);
     const baked: RigBaked<IsoCatSlot> = { recipe: (slot) => ((CAT_FAR_SLOTS as readonly string[]).includes(slot) ? this.far : this.recipe), owner: catOwner(cat.id) };
     this.sprite = new RigSprite(scene, ISO_CAT_RIG, { fit: ISO_CAT_FIT, skin: isoCatSkin(cat.shape, false), baked });
+    // Розмір контейнера — для фільтрів (сяйво підсвітки, `cats.ts`): з ним Phaser 4 малює кота в полотно довкола нього самого.
+    // Без розміру фільтр бере всю камеру й зсуває кота вгору на відступ видової області камери під панеллю (`cam.y` × зум).
+    this.sprite.setSize(FILTER_BOX.w, FILTER_BOX.h);
     layer.add(this.sprite);
     this.shadow = addArt(scene, layer, "fx/shadow/cat");
     this.shadowBase = { x: this.shadow.scaleX, y: this.shadow.scaleY };
