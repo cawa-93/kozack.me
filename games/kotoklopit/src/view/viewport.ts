@@ -37,7 +37,7 @@ export function canvasNow(): Readonly<CanvasFit> {
 }
 
 /** Скільки пікселів CSS має тека гри (`#game`, на все вікно — style.css); тека ще без розміру — нулі. */
-export function parentCss(parent: HTMLElement | null): { width: number; height: number } {
+function parentCss(parent: HTMLElement | null): { width: number; height: number } {
   const rect = parent?.getBoundingClientRect();
   return { width: rect?.width ?? 0, height: rect?.height ?? 0 };
 }
