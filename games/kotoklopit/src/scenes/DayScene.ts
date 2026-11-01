@@ -31,7 +31,7 @@ import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
-import { StorageIndicators } from "../view/storage";
+import { STORAGE_LOOKS, StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
 import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
@@ -126,7 +126,7 @@ export class DayScene extends Phaser.Scene {
     this.world = createWorld(this, layer, builders, () => this.state);
     this.bubbles = new Bubbles(this, layer);
     this.hearts = new MoodHearts(this, layer, (cat) => this.world.anchor(`cat:${cat}`));
-    this.storage = new StorageIndicators(this, layer);
+    this.storage = new StorageIndicators(this, layer, STORAGE_LOOKS[builders.projection.kind]);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
