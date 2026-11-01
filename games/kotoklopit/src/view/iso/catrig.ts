@@ -5,9 +5,11 @@
 //   поворотом кістки (`CatEars`, `catface.ts`; маніфест A7: «вуха притискає й опускає поворот кістки вуха»);
 // - кістка `girth` (дитина тулуба в тій самій точці) — на ній кадр тулуба й живота: повний кіт ширшає тулубом
 //   (`girthOf`, §9.12), а голова, лапи й хвіст, що висять на `body`, лишаються тими самими;
-// - слот `belly` над тулубом (z тулуба + 0,5, під ближніми лапами) — живіт вагітної (`cat/belly/<статура>`, §9.8,
+// - слот `belly` над тулубом (z тулуба + `BELLY_ABOVE`, під ближніми лапами) — живіт вагітної (`cat/belly/<статура>`, §9.8,
 //   `showsPregnancy`): те саме полотно й pivot, що в тулуба, тож він стоїть точно на ньому; верхній край живота без
-//   контуру захований у тулубі, а контур тулуба під ним не розтинає живіт (маніфест A8b).
+//   контуру захований у тулубі, а контур тулуба під ним не розтинає живіт (маніфест A8b). Анімації `CAT_ANIMS` про нього не
+//   знають: що вони роблять із тулубом (ховають під ковдрою, міняють z), складена анімація робить і з животом
+//   (`withBelly`, `catanim.ts`).
 //
 // Числа й точки арту — з `CAT_RIG` і `CAT_FIT` (переносяться програмно): пакети, що їх уточнюють, уточнюють і цей скелет.
 // Анімації `CAT_ANIMS` (під `CAT_RIG`) підходять і сюди — нових кісток і слота вони не знають. Розмір кота (кошеня, порода,
@@ -46,6 +48,13 @@ const isEar = (id: string): id is EarBone => (EAR_BONES as readonly string[]).in
  */
 const FAT = { depth: 0.8, length: 0.35 } as const;
 
+/**
+ * На скільки живіт вагітної вище за тулуб у порядку слотів: над тулубом і під ближніми лапами (7, 8), як задумав A8b
+ * («z + 0,5»), але трохи нижче за 0,5 — хвіст клубка й буханця обгортає кота спереду на z 5,5 (`CURL_SLOTS`, `LOAF_SLOTS`
+ * N1), і за рівних z живіт (слот далі в списку) лягав би поверх хвоста.
+ */
+export const BELLY_ABOVE = 0.45;
+
 /** Скелет `CAT_RIG` з кістками вух, обхватом і животом (див. початок файлу). */
 function derive(rig: typeof CAT_RIG): IsoCatRigDef {
   const slotOf = (id: CatSlot): SlotDef<CatBone, CatSlot> => {
@@ -66,7 +75,7 @@ function derive(rig: typeof CAT_RIG): IsoCatRigDef {
     }
   }
   const slots: SlotDef<IsoCatBone, IsoCatSlot>[] = rig.slots.flatMap((slot): SlotDef<IsoCatBone, IsoCatSlot>[] => {
-    if (slot.id === "body") return [{ id: "belly", bone: "girth", z: slot.z + 0.5, frame: null }, { ...slot, bone: "girth" }];
+    if (slot.id === "body") return [{ id: "belly", bone: "girth", z: slot.z + BELLY_ABOVE, frame: null }, { ...slot, bone: "girth" }];
     if (isEar(slot.id)) return [{ id: slot.id, bone: slot.id, z: slot.z, frame: slot.frame }];
     return [slot];
   });

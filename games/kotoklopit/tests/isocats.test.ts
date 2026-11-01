@@ -23,12 +23,12 @@ import { catOverlayOn } from "../src/view/rig/anims/cat/feelings";
 import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
-import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withFace } from "../src/view/iso/catanim";
+import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withBelly, withFace } from "../src/view/iso/catanim";
 import { catPlay, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
 import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
-import { bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
+import { BELLY_ABOVE, bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { BLANKET_EARS, blanketOffset, BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { catPose } from "../src/view/pose";
@@ -801,6 +801,56 @@ describe("кіт під ковдрою (`blanketOffset`, анімація `blank
       cat.act = act("sleep", { target: "bed", blanket: true, minutes: 300 });
       expect(catFacing(save.current, cat, null)).toEqual({ view: "front", flip: false });
     }
+  });
+});
+
+describe("живіт вагітної (слот `belly`, `withBelly`)", () => {
+  const face = { eyes: "closed", mouth: "closed", ears: "up" } as const;
+  const shape = { muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: "normal" } as const;
+  /** Скелет гри вагітної кішки, що грає складену анімацію `id` (без накладки), у момент `t`. */
+  function pregnant(id: keyof typeof CAT_ANIMS, view: (typeof ART_VIEWS)[number], t = 0): Rig<string, string, string> {
+    const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, skin: isoCatSkin(shape, true), facing: { view } }) as unknown as Rig<string, string, string>;
+    rig.play(composeCatAnim(CAT_ANIMS[id], null, face) as never, 0, { blend: 0 });
+    rig.evaluate(t);
+    return rig;
+  }
+
+  it("лежить над тулубом і під ближніми лапами (як задумав A8b), а хвіст клубка й буханця обгортає його спереду", () => {
+    for (const view of ART_VIEWS) {
+      for (const id of ["sit", "walk", "loaf", "sleep", "carried", "belly"] as const) {
+        const rig = pregnant(id, view);
+        const belly = rig.slot("belly");
+        expect(belly.visible, `${id} ${view}`).toBe(true);
+        expect(belly.z, `${id} ${view}`).toBeGreaterThan(rig.slot("body").z);
+        for (const leg of ["leg-front-near", "leg-back-near"]) {
+          const z = rig.slot(leg).z;
+          if (z > rig.slot("body").z) expect(belly.z, `${id} ${view} ${leg}`).toBeLessThan(z);
+        }
+      }
+      // Клубок і буханець: хвіст спереду поверх тулуба — і поверх живота.
+      for (const id of ["sleep", "loaf"] as const) {
+        const rig = pregnant(id, view);
+        if (rig.slot("tail").z > rig.slot("body").z) expect(rig.slot("tail").z, `${id} ${view}`).toBeGreaterThan(rig.slot("belly").z);
+      }
+    }
+  });
+
+  it("анімація ховає тулуб (ковдра) — ховається й живіт; змінює z тулуба — живіт іде за ним; інші анімації — ті самі об'єкти", () => {
+    for (const view of ART_VIEWS) {
+      const rig = pregnant("blanket", view, 1000);
+      expect(rig.slot("body").visible).toBe(false);
+      expect(rig.slot("belly").visible).toBe(false);
+    }
+    const anim: LooseAnim = { duration: 400, loop: true, slots: { body: { z: [{ t: 0, v: 3 }, { t: 200, v: 9 }] } } };
+    const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, skin: isoCatSkin(shape, true) });
+    rig.play(withBelly(anim) as never, 0, { blend: 0 });
+    for (const t of [100, 300]) {
+      rig.evaluate(t);
+      expect(rig.slot("belly").z).toBeCloseTo(rig.slot("body").z + BELLY_ABOVE, 9);
+    }
+    for (const id of ["sit", "walk", "sleep", "brawl"] as const) expect(withBelly(CAT_ANIMS[id] as unknown as LooseAnim)).toBe(CAT_ANIMS[id]);
+    expect(BELLY_ABOVE).toBeGreaterThan(0);
+    expect(BELLY_ABOVE).toBeLessThan(0.5);
   });
 });
 

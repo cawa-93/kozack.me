@@ -7,6 +7,8 @@
 //   сума, вибрана з кроком `SAMPLE_MS`.
 // - Обличчя (`catFace`): стани кадрів очей і рота — сталими доріжками слотів, якщо анімація їх не має (чхання має свої), і
 //   поворот кісток вух (`EAR_POSES`, `catrig.ts`) — сталими доріжками кісток вух у кожному ракурсі.
+// - Живіт вагітної (слот `belly` скелета гри, `catrig.ts`): анімації `CAT_ANIMS` про нього не знають, тож те, що вони роблять
+//   із тулубом (ховають під ковдрою, міняють z), складена анімація повторює для живота (`withBelly`).
 //
 // Складені анімації кешуються (основна → накладка → обличчя), тож щокадру нічого не створюється, а `Rig` компілює кожну раз.
 
@@ -16,7 +18,7 @@ import { catBlendMs } from "../rig/anims/cat/basic";
 import { catOverlayOn } from "../rig/anims/cat/feelings";
 import { animTime, BLEND_MS, sampleNumber, sampleVec } from "../rig/rigcore";
 import type { BoneTracks, Key, RigAnim, RigTracks, SlotTracks, StepKey, Vec2 } from "../rig/types";
-import { EAR_BONES, EAR_POSES } from "./catrig";
+import { BELLY_ABOVE, EAR_BONES, EAR_POSES } from "./catrig";
 
 type Loose = RigAnim<string, string>;
 type CatAnim = Parameters<typeof catOverlayOn>[0];
@@ -47,6 +49,35 @@ export function layerAnims(base: Loose, overlay: Loose | null): Loose {
   const views: Partial<Record<ArtView, LooseTracks>> = {};
   for (const view of ART_VIEWS) views[view] = layerTracks(effective(base, view), base, effective(overlay, view), overlay, timing.duration);
   return { duration: timing.duration, loop: timing.loop, views };
+}
+
+/**
+ * Живіт вагітної за тулубом: доріжка видимості тулуба — і живота (ковдра ховає тулуб — і живіт), доріжка z тулуба — z
+ * живота на `BELLY_ABOVE` вище. Анімація, що тулуба не чіпає, — та сама (той самий об'єкт).
+ */
+export function withBelly(anim: Loose): Loose {
+  if (!ART_VIEWS.some((view) => touchesBody(anim, view))) return anim;
+  const views: Partial<Record<ArtView, LooseTracks>> = {};
+  for (const view of ART_VIEWS) {
+    const own = effective(anim, view);
+    const body = own.slots.body;
+    const slots: Record<string, SlotTracks> = { ...own.slots };
+    if (body?.visible || body?.z) {
+      slots.belly = {
+        ...own.slots.belly,
+        ...(body.visible ? { visible: body.visible } : {}),
+        ...(body.z ? { z: body.z.map((k) => ({ t: k.t, v: k.v + BELLY_ABOVE })) } : {}),
+      };
+    }
+    views[view] = { bones: own.bones, slots };
+  }
+  return { duration: anim.duration, loop: anim.loop, views };
+}
+
+/** Чи анімація в ракурсі має доріжки видимості чи z тулуба. */
+function touchesBody(anim: Loose, view: ArtView): boolean {
+  const body = { ...anim.slots?.body, ...anim.views?.[view]?.slots?.body };
+  return body.visible !== undefined || body.z !== undefined;
 }
 
 /** Кадри обличчя для анімації: стани очей і рота, вуха. */
@@ -105,7 +136,7 @@ export function composeCatAnim(base: Loose, overlay: Loose | null, face: FaceFra
     // Накладку почуттів спершу підганяє під основу пакет N3 (`catOverlayOn`): на спині хвіст б'є над підлогою, на руках
     // «пручається» брикає лапами, що звисають, а «терпить» сіпає ширше; для тієї самої пари — той самий об'єкт.
     const fitted = overlay === null ? null : (catOverlayOn(overlay as CatAnim, base as CatAnim) as Loose);
-    layered = { anim: layerAnims(base, fitted), faces: new Map() };
+    layered = { anim: withBelly(layerAnims(base, fitted)), faces: new Map() };
     byOverlay.set(overlay, layered);
   }
   let byMouth = layered.faces.get(face.ears);
