@@ -12,7 +12,7 @@ import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
 import { IsoDepth } from "../src/view/iso/depth";
-import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE } from "../src/view/iso/geometry";
+import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
 import {
   basketState,
   bedState,
@@ -364,6 +364,94 @@ describe("геометрія ізометричної квартири (iso/geom
     const wall = { x0: col7.rect.x, y0: col7.rect.y, x1: col7.rect.x + col7.rect.w, y1: col7.rect.y + col7.rect.h };
     expect(boxCovers(wall, h, { x: 6.5, y: 3.5 }, PERSON_FIGURE)).toBe(true);
     expect(boxCovers(wall, h, { x: 8.5, y: 3.5 }, PERSON_FIGURE)).toBe(false);
+  });
+});
+
+describe("згасання внутрішніх стін (iso/geometry.ts, wallsToFade)", () => {
+  const inner = WALL_SEGMENTS.filter((s) => s.kind === "inner");
+  const boxes = inner.map((s) => ({ x0: s.rect.x, y0: s.rect.y, x1: s.rect.x + s.rect.w, y1: s.rect.y + s.rect.h }));
+  const h = ISO_WALLS.inner;
+
+  /** Стан без речей котячого кутка й безладу, усі коти сплять у вітальні, персонаж — посеред вітальні. */
+  function quiet(): GameState {
+    const state = applyScenario(FILE_SCENARIOS["food-hygiene"]!).current;
+    state.home.items = [];
+    state.home.messes = [];
+    state.home.trinkets = {};
+    state.cats.forEach((cat, i) => {
+      cat.away = null;
+      cat.x = 2.5 + i * 0.7;
+      cat.y = 9.5;
+      cat.act = { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 5 };
+    });
+    state.character.body.x = 4.5;
+    state.character.body.y = 8.5;
+    state.character.activity = null;
+    state.character.held = null;
+    return state;
+  }
+
+  /** Назви стін, що згасають. */
+  function faded(state: GameState): string[] {
+    const out: boolean[] = [];
+    wallsToFade(state, boxes, h, out);
+    return inner.filter((_, i) => out[i]).map((s) => s.id.replace("env/wall/inner/", ""));
+  }
+
+  const litter = (id: number, slot: string): LitterItem => ({ id, kind: "litter", quality: "cheap", slot, litter: "cheap", uses: 9 });
+
+  it("нічого за стінами — жодна не згасає", () => {
+    expect(faded(quiet())).toEqual([]);
+  });
+
+  it("лотки в слотах litter-3 і litter-4 за стіною x = 12 гасять її; litter-1 і litter-2 видно й так", () => {
+    const state = quiet();
+    state.home.items = [litter(801, "litter-1"), litter(802, "litter-2")];
+    expect(faded(state)).toEqual([]);
+    state.home.items = [litter(803, "litter-3")];
+    expect(faded(state)).toEqual(["col12-y1"]);
+    state.home.items = [litter(804, "litter-4")];
+    expect(faded(state)).toEqual(["col12-y1"]);
+  });
+
+  it("безлад у стовпцях x = 6 і x = 11 гасить стіну перед ним; трохи далі від стіни — ні", () => {
+    const state = quiet();
+    state.home.messes = [{ id: 951, kind: "vomit", x: 6.5, y: 2.6, cat: null }];
+    expect(faded(state)).toEqual(["col7-y1"]);
+    state.home.messes = [{ id: 952, kind: "surprise", x: 11.4, y: 2.5, cat: null }];
+    expect(faded(state)).toEqual(["col12-y1"]);
+    state.home.messes = [{ id: 953, kind: "surprise", x: 5.5, y: 2.5, cat: null }];
+    expect(faded(state)).toEqual([]);
+  });
+
+  it("кіт, що сидить за стіною, гасить її; той, що лише йде повз, на руках чи високо на шафі, — ні", () => {
+    const state = quiet();
+    const cat = state.cats[0]!;
+    cat.x = 11.5;
+    cat.y = 3.5;
+    expect(faded(state)).toEqual(["col12-y1"]);
+    cat.act.goal = { x: 9, y: 3 };
+    expect(faded(state)).toEqual([]);
+    cat.act.goal = null;
+    state.character.held = { kind: "cat", cat: cat.id };
+    expect(faded(state)).toEqual([]);
+    state.character.held = null;
+    // Шафа (6, 1) у стовпці за стіною x = 7: кіт нагорі (170) — над стіною, його видно.
+    cat.x = 6.5;
+    cat.y = 1.5;
+    expect(faded(state)).toEqual([]);
+  });
+
+  it("персонаж за стіною гасить її, як і раніше; у душовій кабіні — ні", () => {
+    const state = quiet();
+    state.character.body.x = 6.5;
+    state.character.body.y = 3.5;
+    expect(faded(state)).toEqual(["col7-y1"]);
+    state.character.body.x = 8.5;
+    state.character.body.y = 4.5;
+    expect(faded(state)).toContain("row5-x5");
+    state.character.activity = { kind: "use", target: "shower", progress: 0, inside: true };
+    expect(faded(state)).toEqual([]);
   });
 });
 

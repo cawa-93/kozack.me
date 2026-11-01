@@ -1,15 +1,17 @@
 // Геометрія ізометричної квартири й підлоги (крок 16, F3b) — чисті розрахунки без Phaser: де стає кадр речі, де на ній
-// точка кріплення з маніфесту, де бабл, чи стіна закриває персонажа (тоді вона згасає) і контур підсвітки. Перевіряє
-// `tests/isoworld.test.ts`.
+// точка кріплення з маніфесту, де бабл, чи стіна закриває персонажа, кота, лоток чи безлад (тоді вона згасає) і контур
+// підсвітки. Перевіряє `tests/isoworld.test.ts`.
 
-import type { Rect } from "../../sim/home";
-import type { Vec } from "../../sim/types";
+import { carriedToy } from "../../sim/catai";
+import { objectAt, slotById, TRINKETS, type Rect } from "../../sim/home";
+import type { Cat, GameState, TrinketKind, Vec } from "../../sim/types";
 import { artEntry } from "../art/manifest";
 import type { ArtId } from "../art/types";
 import type { IsoBox } from "../world/isoorder";
-import { isoObjectLook } from "../world/objects";
+import { isoCatPerch, isoItemLook, isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE } from "../world/projection";
+import { shapedStage } from "./looks";
 
 /** Пів ширини й пів висоти ромба плитки: на стільки зсувається екран з кожною клітинкою x − y і x + y. */
 const HALF_W = ISO_TILE.width / 2;
@@ -62,11 +64,27 @@ export interface Figure {
 export const PERSON_FIGURE: Figure = { height: 140, half: 26 };
 
 /**
+ * Кіт для згасання стін (`wallsToFade`): тулуб без вух і хвоста — його гравець має бачити, а вушка, що визирають над
+ * стіною, кота ще не показують. Півширина — лише середина тулуба.
+ */
+export const CAT_FIGURE: Figure = { height: 36, half: 18 };
+
+/** Безлад і скинута дрібничка (`wallsToFade`): невисока пляма; стіна згасає, коли закриває її середину. */
+export const SPOT_FIGURE: Figure = { height: 10, half: 16 };
+
+/**
+ * Яку частину півширини речі на підлозі (`isoItemLook().half` — пів полотна) має зачепити стіна, щоб згаснути: середину
+ * малюнка, а не край — лоток у слоті `litter-1` (8, 3) краєм полотна торкається верху стіни ряду 5, але його видно.
+ */
+const ITEM_CORE = 0.5;
+
+/**
  * Чи коробка (стіна чи меблі) заввишки `h` закриває на екрані хоч частину фігури, що стоїть у точці `p` (клітинки) за нею
  * (`isoOrder`: точка перед коробкою, якщо p.x ≥ x1 або p.y ≥ y1). Перед коробкою — ніколи. Лише ті, хто за коробкою й
  * близько: верх стіни на екрані — вище за ноги фігури, низ — нижче за її маківку, і вони на одній горизонталі екрана.
+ * `lift` — на скільки фігура над підлогою (кіт на умивальнику чи на шафі), одиниці арту.
  */
-export function boxCovers(box: IsoBox, h: number, p: Vec, figure: Figure): boolean {
+export function boxCovers(box: IsoBox, h: number, p: Vec, figure: Figure, lift = 0): boolean {
   if (p.x >= box.x1 || p.y >= box.y1) return false;
   const u = p.x - p.y;
   const reach = figure.half / HALF_W;
@@ -81,9 +99,85 @@ export function boxCovers(box: IsoBox, h: number, p: Vec, figure: Figure): boole
   const nearestBottom = Math.min(Math.max(bottomCorner, lo), hi);
   const back = box.x0 + box.y0 + Math.abs(nearestTop - topCorner);
   const near = box.x1 + box.y1 - Math.abs(nearestBottom - bottomCorner);
-  const feet = p.x + p.y;
+  const feet = (p.x + p.y) * HALF_H - lift;
   // Ноги нижче за верх стіни (на екрані y росте донизу), маківка — вище за її низ.
-  return feet * HALF_H > back * HALF_H - h && feet * HALF_H - figure.height < near * HALF_H;
+  return feet > back * HALF_H - h && feet - figure.height < near * HALF_H;
+}
+
+/** Точка підлоги й фігура речі котячого кутка для `wallsToFade` — щоразу ті самі (без щокадрових об'єктів на кожну річ). */
+const SPOT: Vec = { x: 0, y: 0 };
+const ITEM: { height: number; half: number } = { height: 0, half: 0 };
+
+/** Види дрібничок (`TRINKETS`): скинуті лежать у `home.trinkets` за видом. */
+const TRINKET_KINDS: readonly TrinketKind[] = [...new Set(TRINKETS.map((t) => t.kind))];
+
+/**
+ * Котрі внутрішні стіни `walls` (заввишки `h`) зараз закривають те, що гравцеві треба бачити, — їх квартира напівпрозоро
+ * гасить (`out[i]` — для `walls[i]`). Стіна заввишки 66 при плитці 128 × 64 закриває цілу клітинку за собою: ряд 4 під
+ * стінами ряду 5 (туди сим безладу не кладе — `hiddenTile`) і стовпці x = 6 і x = 11 за стінами x = 7 і x = 12 (про них сим
+ * не знає: там лотки `litter-3` і `litter-4`, безлад, коти). Тож стіна згасає не лише перед персонажем (як було), а й перед:
+ * - котом, що не йде (`act.goal` null: сидить у лотку, спить, їсть, гризе), — тулуб `CAT_FIGURE`, на меблях — на висоті
+ *   `perch`; хто лише проходить повз, стіну не блимає;
+ * - річчю котячого кутка (лоток, миска, іграшка) — серединою малюнка (`ITEM_CORE`);
+ * - безладом і скинутою дрібничкою (`SPOT_FIGURE`).
+ * Жмути шерсті (`FUR_SPOTS`) лежать там, де стіни їх не закривають. Персонаж у душовій кабіні й у поїздці не рахується.
+ */
+export function wallsToFade(state: GameState, walls: readonly IsoBox[], h: number, out: boolean[]): void {
+  out.length = walls.length;
+  out.fill(false);
+  const { character, home } = state;
+  const activity = character.activity;
+  const inside = state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true);
+  if (!inside) markWalls(walls, h, character.body, PERSON_FIGURE, out);
+
+  const held = character.held?.kind === "cat" ? character.held.cat : null;
+  for (const cat of state.cats) {
+    if (cat.away !== null || cat.act.goal !== null || cat.act.kind === "lap" || cat.id === held) continue;
+    // Висоту меблів, на яких кіт, питаємо лише тоді, коли стіна закриває його на підлозі (це рідко).
+    let lift: number | null = null;
+    for (let i = 0; i < walls.length; i++) {
+      if (out[i] || !boxCovers(walls[i]!, h, cat, CAT_FIGURE)) continue;
+      lift ??= catLift(state, cat);
+      if (lift === 0 || boxCovers(walls[i]!, h, cat, CAT_FIGURE, lift)) out[i] = true;
+    }
+  }
+
+  for (const item of home.items) {
+    if (item.kind === "toy") {
+      // Загнану під диван і ту, що в зубах у кота, малює не підлога.
+      if (item.hidden !== undefined || carriedToy(state, item)) continue;
+      SPOT.x = item.x;
+      SPOT.y = item.y;
+    } else {
+      const slot = slotById(item.slot);
+      SPOT.x = slot.x + 0.5;
+      SPOT.y = slot.y + 0.5;
+    }
+    const look = isoItemLook(item.kind, item.quality);
+    ITEM.height = look.height;
+    ITEM.half = look.half * ITEM_CORE;
+    markWalls(walls, h, SPOT, ITEM, out);
+  }
+  for (const mess of home.messes) markWalls(walls, h, mess, SPOT_FIGURE, out);
+  const fallen = home.trinkets;
+  if (fallen) {
+    for (const kind of TRINKET_KINDS) {
+      const at = fallen[kind];
+      if (at && at.broken !== true) markWalls(walls, h, at, SPOT_FIGURE, out);
+    }
+  }
+}
+
+/** Позначити стіни, що закривають фігуру `figure` у точці `p`. */
+function markWalls(walls: readonly IsoBox[], h: number, p: Vec, figure: Figure, out: boolean[]): void {
+  for (let i = 0; i < walls.length; i++) if (!out[i] && boxCovers(walls[i]!, h, p, figure)) out[i] = true;
+}
+
+/** На якій висоті кіт, що стоїть на клітинці речі квартири (`isoCatPerch`): на підлозі — 0. */
+function catLift(state: GameState, cat: Cat): number {
+  const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
+  if (!object || object.kind === "door") return 0;
+  return isoCatPerch(object.id, cat, false, shapedStage(state, object.id)).lift;
 }
 
 /**

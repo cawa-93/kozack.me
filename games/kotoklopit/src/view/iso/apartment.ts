@@ -6,8 +6,9 @@
 // Що показати — зі стану гри (`looks.ts`).
 // Глибина: плити кімнат, вікна й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін — коробки в
 // реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у її
-// проміжку глибини. Внутрішня стіна, що закриває персонажа, напівпрозоро згасає. Стільці до стола з комп'ютером і
-// кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що сидить, між ними.
+// проміжку глибини. Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола
+// з комп'ютером і кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що
+// сидить, між ними.
 
 import type Phaser from "phaser";
 
@@ -24,7 +25,7 @@ import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
-import { artOffset, BOXES_FRONT, boxCovers, DOOR_BOXES, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
+import { artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
 import { SEATS, seatAt, seatDepthPoint, seatMode, type Seat } from "./personseat";
 import { glideOffset } from "./personspot";
 import { IsoHighlight } from "./highlight";
@@ -132,6 +133,10 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly depth: IsoDepth;
   private readonly things = new Map<string, Thing>();
   private readonly walls: Wall[] = [];
+  /** Внутрішні стіни (лише вони згасають), їхні сліди для `wallsToFade` і що з них зараз щось закриває. */
+  private readonly inner: Wall[] = [];
+  private readonly innerBoxes: IsoFootprint[] = [];
+  private readonly covered: boolean[] = [];
   private readonly backdrop: Phaser.GameObjects.Image[] = [];
   private readonly toiletRoll: Piece;
   private readonly wire: Piece;
@@ -173,7 +178,12 @@ export class IsoApartmentView implements ApartmentPart {
       const image = this.art(segment.id, ISO.toScreen(rect), 0);
       const footprint = { x0: rect.x, y0: rect.y, x1: rect.x + rect.w, y1: rect.y + rect.h };
       const box = this.depth.addBox(footprint, (d) => image.setDepth(d));
-      this.walls.push({ segment, image, box, footprint, alpha: 1 });
+      const wall = { segment, image, box, footprint, alpha: 1 };
+      this.walls.push(wall);
+      if (segment.kind === "inner") {
+        this.inner.push(wall);
+        this.innerBoxes.push(footprint);
+      }
     }
 
     // Дріт комп'ютера: по підлозі від стола до розетки на стіні ряду 5 — пласка річ перед стіною й столом.
@@ -403,19 +413,16 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Внутрішня стіна, що закриває персонажа, напівпрозоро згасає (`GRAPHICS_PLAN.md`, «Контракти»): він за нею й близько, і
-   * вона на тій самій горизонталі екрана. Плінтуси низькі — не згасають.
+   * Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає (`GRAPHICS_PLAN.md`, «Контракти»;
+   * хвиля 3 — `wallsToFade`): воно за нею й близько, на тій самій горизонталі екрана. Плінтуси низькі — не згасають.
    */
   private fadeWalls(state: GameState, time: number): void {
     const dt = this.lastTime === null ? 1 : Math.min(0.25, Math.max(0, (time - this.lastTime) / 1000));
     this.lastTime = time;
-    const activity = state.character.activity;
-    const hidden = state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true);
-    const body = state.character.body;
-    for (const wall of this.walls) {
-      if (wall.segment.kind !== "inner") continue;
-      const covers = !hidden && boxCovers(wall.footprint, WALL_HEIGHT.inner, body, PERSON_FIGURE);
-      const target = covers ? FADED_ALPHA : 1;
+    wallsToFade(state, this.innerBoxes, WALL_HEIGHT.inner, this.covered);
+    for (let i = 0; i < this.inner.length; i++) {
+      const wall = this.inner[i]!;
+      const target = this.covered[i] === true ? FADED_ALPHA : 1;
       wall.alpha += (target - wall.alpha) * Math.min(1, dt * FADE_RATE);
       if (Math.abs(wall.alpha - target) < 0.01) wall.alpha = target;
       wall.image.setAlpha(wall.alpha);
@@ -452,6 +459,8 @@ export class IsoApartmentView implements ApartmentPart {
       wall.image.destroy();
     }
     this.walls.length = 0;
+    this.inner.length = 0;
+    this.innerBoxes.length = 0;
     for (const box of [this.door.body, this.door.leafBox, this.door.postBox]) box.remove();
     this.door.leaf.destroy();
     this.door.post.destroy();
