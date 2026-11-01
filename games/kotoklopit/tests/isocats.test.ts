@@ -62,7 +62,7 @@ describe("скелет кота в грі (`ISO_CAT_RIG`)", () => {
     const slots = ISO_CAT_RIG.slots.map((s) => s.id);
     for (const slot of CAT_RIG.slots) expect(slots).toContain(slot.id);
     expect(slots).toContain("belly");
-    // Вуха — на своїх кістках (діти голови), тулуб і живіт — на обхваті; живіт — під тулубом.
+    // Вуха — на своїх кістках (діти голови), тулуб і живіт — на обхваті; живіт — над тулубом, під ближніми лапами в обох ракурсах.
     for (const ear of EAR_BONES) {
       expect(ISO_CAT_RIG.bones.find((b) => b.id === ear)?.parent).toBe("head");
       expect(ISO_CAT_RIG.slots.find((s) => s.id === ear)?.bone).toBe(ear);
@@ -71,7 +71,16 @@ describe("скелет кота в грі (`ISO_CAT_RIG`)", () => {
     const belly = ISO_CAT_RIG.slots.find((s) => s.id === "belly")!;
     expect(body.bone).toBe("girth");
     expect(belly.bone).toBe("girth");
-    expect(belly.z).toBeLessThan(body.z);
+    expect(belly.z).toBeGreaterThan(body.z);
+    for (const view of ART_VIEWS) {
+      const z = (id: string): number => {
+        const slot = ISO_CAT_RIG.slots.find((s) => s.id === id)!;
+        const over = ISO_CAT_RIG.views[view].slots?.[slot.id] as { z?: number } | undefined;
+        return over?.z ?? slot.z;
+      };
+      for (const leg of ["leg-back-near", "leg-front-near"]) expect(z("belly")).toBeLessThan(z(leg));
+      expect(z("belly")).toBeGreaterThan(z("body"));
+    }
     expect(ISO_CAT_RIG.skin.belly).toBeNull();
   });
 
