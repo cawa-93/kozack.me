@@ -127,7 +127,7 @@ export class DayScene extends Phaser.Scene {
     this.world = createWorld(this, layer, builders, () => this.state);
     this.bubbles = new Bubbles(this, layer);
     this.hearts = new MoodHearts(this, layer, (cat) => this.world.anchor(`cat:${cat}`));
-    this.storage = new StorageIndicators(this, layer, STORAGE_LOOKS[builders.projection.kind]);
+    this.storage = new StorageIndicators(this, layer, STORAGE_LOOKS[builders.projection.kind], () => this.world.person.head);
     // Серпанок над квартирою, але під інтерфейсом.
     this.gloom = this.add.rectangle(0, 0, 1, 1, 0x5b3a7a, 0).setOrigin(0).setDepth(UI_LAYERS.gloom).addToDisplayList(ui);
     this.hud = new Hud(this, ui, () => this.openPhone());
@@ -644,7 +644,7 @@ export class DayScene extends Phaser.Scene {
     for (const storage of STORAGES) {
       const anchor = this.world.anchor(storage.object);
       if (!anchor) continue;
-      const lift = this.bubbles.hasState(storage.object) ? 56 : 0;
+      const lift = this.bubbles.hasState(storage.object) ? this.storage.look.bubbleLift : 0;
       const lines = personBusy || this.bubbles.busy(storage.object) ? [] : storageIndicator(state, storage);
       const highest = projection.backWallTop(anchor.x) + 40;
       this.storage.set(storage.object, lines, anchor.x, Math.max(highest, anchor.y - lift));
