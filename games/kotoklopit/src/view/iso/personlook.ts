@@ -4,7 +4,7 @@
 // `tests/isoperson.test.ts`.
 
 import type { Item } from "../../sim/types";
-import { PERSON_ANIM_GROUPS, type PersonAnimId } from "../anim/ids";
+import { PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
@@ -97,10 +97,9 @@ export function personExtras(eyes: "half" | "closed" | null, hideNearArm: boolea
 /**
  * Анімації, які самі ведуть руки, — накладки рук (`carry`, `holdCat`) не беруть: вудочка (іграшку в руці веде `rod`; з
  * накладкою «несе» рука з вудочкою злітала б над головою), бере й опускає кота (N4a) і всі справи (N4b: «бере» закінчується
- * позою «несе», «кладе» з неї починається, купаючи, кота тримає сама `bath`). Локальна копія `PERSON_OWN_ARMS` пакетів N4a і
- * N4b (`anim/ids.ts` гілки N4b) до злиття з ними.
+ * позою «несе», «кладе» з неї починається, купаючи, кота тримає сама `bath`) — `PERSON_OWN_ARMS` з `anim/ids.ts`.
  */
-export const OWN_ARMS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["rod", "pickUp", "putDown", ...PERSON_ANIM_GROUPS.chores]);
+export const OWN_ARMS: ReadonlySet<PersonAnimId> = PERSON_OWN_ARMS;
 
 /**
  * Накладка рук до анімації `anim` — основної чи разової (відмова, вкусили, спіткнувся з котом чи річчю в руках: тіло реагує,

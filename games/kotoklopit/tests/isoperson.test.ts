@@ -70,7 +70,8 @@ describe("очі засинання (§8.8)", () => {
   });
 
   it("голову хилить вигляд, лише якщо анімація засинання сама її не хилить", () => {
-    expect(movesHead(PERSON_ANIMS.fallAsleep)).toBe(false);
+    // Засинання N4b саме клює головою (`nod`), тож вигляд її не хилить; заглушка шва не хилила.
+    expect(movesHead(PERSON_ANIMS.fallAsleep)).toBe(true);
     expect(movesHead({ duration: 100, loop: false, bones: { neck: { rot: [{ t: 0, v: 0 }, { t: 100, v: 20 }] } } })).toBe(true);
     expect(movesHead({ duration: 100, loop: false, views: { back: { bones: { head: { rot: [{ t: 0, v: 10 }] } } } } })).toBe(true);
     expect(movesHead({ duration: 100, loop: false, bones: { head: { pos: [{ t: 0, v: { x: 1, y: 0 } }] } } })).toBe(false);
