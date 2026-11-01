@@ -58,6 +58,11 @@ const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`) і де годинник під датою. */
 const SMALL_TEXT = { date: 17, effects: 18, schedule: 18, news: 17, clockY: 26 } as const;
 /**
+ * Найширша дата, px полотна: від лівого краю (20) до кружечка першого показника з просвітом. Збільшена на телефоні дата
+ * «Тиждень 12 · п'ятниця» інакше налазила б на нього — тоді вона стискається вшир.
+ */
+const DATE_MAX_WIDTH = STATS_X - 20 - 14;
+/**
  * Кружечки (`statDisc`): чорнильне кільце показника (радіус `ICON_SIZE / 2 + 2` разом із контуром 2) і підказки (`HINT.r`),
  * а іконка менша — так, щоб довкола неї лишався папір.
  */
@@ -279,6 +284,7 @@ export class Hud {
     if (this.newsUntil !== null && time >= this.newsUntil) this.hideNews();
     const { stats, money, sleepSpeed } = state.character;
     this.date.setText(`Тиждень ${weekOf(state.day)} · ${WEEKDAY_NAMES[weekdayOf(state.day)]}`);
+    this.date.setScale(Math.min(1, DATE_MAX_WIDTH / Math.max(1, this.date.width)), 1);
     this.clock.setText(formatClock(state.minute));
 
     const g = this.bars.clear();
