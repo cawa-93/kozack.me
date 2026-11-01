@@ -72,6 +72,8 @@ const USAGE = `Знімки сценаріїв гри та їх порівнян
     --jobs <n>           скільки сторінок знімати одночасно, за замовчуванням 2
     --url <адреса>       не запускати Vite, а знімати вже запущену гру (напр. прев'ю Netlify)
     --gpu                малювати відеокартою, а не програмно (SwiftShader)
+    --cache-key <назва>  свій кеш Vite для цього запуску: кілька паралельних запусків над тією самою копією гри
+                         (напр. рецензенти) з різними ключами не ламають один одному залежності
     --verbose            писати кроки кожного знімка
 
   node games/kotoklopit/scripts/shots.ts --compare <тека A> <тека B> [параметри]
@@ -115,6 +117,8 @@ interface ShotOptions {
   jobs: number;
   url: string | null;
   gpu: boolean;
+  /** Ключ кешу Vite (`--cache-key`): паралельні запуски над тією самою текою гри з різними ключами. */
+  cacheKey: string | null;
   verbose: boolean;
 }
 
@@ -243,10 +247,14 @@ function freePort(): Promise<number> {
 
 /**
  * Vite гри на вільному порту. Кеш — поза node_modules і свій для кожної копії репозиторію: у worktree node_modules —
- * посилання на спільну теку, і паралельні сервери, що ділять node_modules/.vite, ламають один одному залежності.
+ * посилання на спільну теку, і паралельні сервери, що ділять node_modules/.vite, ламають один одному залежності. Кілька
+ * паралельних запусків над тією самою копією — кожен зі своїм `--cache-key`.
  */
-async function startVite(gameDir: string): Promise<{ server: ViteDevServer; url: string }> {
-  const hash = createHash("sha1").update(gameDir.toLowerCase()).digest("hex").slice(0, 12);
+async function startVite(gameDir: string, cacheKey: string | null): Promise<{ server: ViteDevServer; url: string }> {
+  const hash = createHash("sha1")
+    .update(gameDir.toLowerCase() + (cacheKey === null ? "" : `|${cacheKey}`))
+    .digest("hex")
+    .slice(0, 12);
   const cacheDir = path.join(tmpdir(), "kotoklopit-vite", hash);
   const server = await createServer({
     root: gameDir,
@@ -430,7 +438,7 @@ async function runShots(options: ShotOptions): Promise<number> {
   const log = (text: string): void => {
     if (options.verbose) console.log(text);
   };
-  const vite = options.url === null ? await startVite(options.gameDir) : null;
+  const vite = options.url === null ? await startVite(options.gameDir, options.cacheKey) : null;
   const base = options.url ?? vite?.url ?? "";
   log(`Гра: ${base}`);
   const args = options.gpu ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"];
@@ -615,6 +623,7 @@ const OPTIONS = {
   jobs: { type: "string" },
   url: { type: "string" },
   gpu: { type: "boolean" },
+  "cache-key": { type: "string" },
   verbose: { type: "boolean" },
   compare: { type: "boolean" },
   diff: { type: "string" },
@@ -691,6 +700,7 @@ async function main(): Promise<number> {
     jobs: Math.max(1, Math.round(parseNumber("jobs", values.jobs, 2, 1))),
     url: values.url ?? null,
     gpu: values.gpu ?? false,
+    cacheKey: values["cache-key"] ?? null,
     verbose: values.verbose ?? false,
   };
   return runShots(options);
