@@ -144,6 +144,7 @@ export class IsoCatsView implements CatsPart {
     girth: 1,
     show: "rig",
     under: false,
+    doorTail: false,
     shadow: false,
     teeth: null,
     culled: false,
@@ -309,6 +310,8 @@ export class IsoCatsView implements CatsPart {
     f.girth = girthOf(cat);
     f.show = spot.show;
     f.under = spot.kind === "under";
+    // Спить у будиночку: з темного входу видно ще й кінчик хвоста — самі заплющені очі там не видно.
+    f.doorTail = spot.kind === "house" && act.kind === "sleep";
     // У клубку бійки тінь — сама хмара пилу під котами: тінь ближчого лягла б на хмару.
     f.shadow = lifting ? lifting.w < 0.5 : spot.shadow && !(anim === "brawl" && pair?.kind === "brawl");
     // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.

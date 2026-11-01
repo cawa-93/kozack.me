@@ -39,6 +39,12 @@ const GAP_SHADOW = { scale: 1.1, layers: 2 } as const;
 
 /** Очі з-під меблів і з будиночка — на такій висоті над підлогою (одиниці арту), кінчик хвоста — збоку від очей. */
 const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9 } as const;
+/**
+ * Кіт спить у будиночку (рецензія хвилі 3): заплющені очі — темна дужка в темному вході, і будиночок здавався порожнім. Тож з
+ * входу ще й звисає на підлогу кінчик хвоста кольору шерсті: зсув від середини входу (точка `door` на висоті ≈ 26, грань +x) —
+ * униз до порога й трохи вперед, одиниці арту (× масштаб кота).
+ */
+const DOOR_TAIL = { x: 13, y: 31 } as const;
 
 /** Над котом, якого не рахували (за краєм камери), одиниці арту: верх вух дорослого ≈ 56 і запас, як у якоря `head`. */
 const CULLED_HEAD = 64;
@@ -105,6 +111,8 @@ export interface CatFrame {
   show: CatShow;
   /** Ховається під меблями: з-під краю визирають очі й кінчик хвоста, під ними — темна щілина (з будиночка — лише очі). */
   under: boolean;
+  /** Спить у будиночку: з входу на поріг звисає кінчик хвоста (`DOOR_TAIL`). */
+  doorTail: boolean;
   shadow: boolean;
   /** Річ у зубах: іграшка якості, шкарпетка; null — нічого. */
   teeth: { kind: "toy"; quality: Quality } | { kind: "sock" } | null;
@@ -386,9 +394,9 @@ export class IsoCatView {
     } else {
       this.peekEyes?.setVisible(false);
     }
-    // Кінчик хвоста з-під меблів — збоку від очей.
+    // Кінчик хвоста з-під меблів — збоку від очей; зі сплячого в будиночку — на порозі входу.
     const tailArt = this.sprite.rig.skin.tail;
-    const tail = eyes && f.under && this.cat.shape.tail !== "none";
+    const tail = eyes && (f.under || f.doorTail) && this.cat.shape.tail !== "none";
     if (tail && tailArt) {
       if (!this.peekTail) {
         this.peekTail = addBakedArt(this.scene, this.layer, tailArt, this.recipe, { view, owner });
@@ -397,8 +405,8 @@ export class IsoCatView {
         setBakedArt(this.peekTail, tailArt, this.recipe, { view, owner });
       }
       const side = f.facing.flip ? 1 : -1;
-      const x = f.root.x + side * PEEK.tailSide * s;
-      const y = f.root.y - PEEK.tailUp * s;
+      const x = f.doorTail ? f.root.x + DOOR_TAIL.x * s : f.root.x + side * PEEK.tailSide * s;
+      const y = f.doorTail ? f.root.y + DOOR_TAIL.y * s : f.root.y - PEEK.tailUp * s;
       this.cropTailTip(this.peekTail, tailArt);
       this.peekTail.setVisible(true).setPosition(x, y);
       const base = this.baseScale(this.peekTail);
