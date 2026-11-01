@@ -4,6 +4,7 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { PALETTE as PALETTE_ART } from "../art/palette";
 import { coatOf, type Coat } from "../src/sim/genetics";
 import type { CatDisease, Genes, Look, Shape } from "../src/sim/types";
 import { LOOK_OPTIONS } from "../src/ui/look";
@@ -309,6 +310,24 @@ describe("рецепт персонажа", () => {
     expect(b).toBeGreaterThan(10);
     expect(l).toBeGreaterThan(lab(hairs[1]!)[0]);
     expect(l).toBeLessThan(lab(hairs[3]!)[0]);
+  });
+
+  it("кожне волосся відрізняється від кожного тону шкіри (ΔE2000 ≥ 11) і від іншого волосся (≥ 15): зачіска не зливається з обличчям", () => {
+    const n = (key: keyof Look): number => LOOK_OPTIONS.find((o) => o.key === key)!.options.length;
+    const hairs = Array.from({ length: n("hairColor") }, (_, i) => personColors({ ...base, hairColor: i }).hair);
+    const skins = Array.from({ length: n("skin") }, (_, i) => personColors({ ...base, skin: i }).skin);
+    for (const [i, hair] of hairs.entries()) {
+      for (const skin of skins) expect(deltaE2000(hair, skin), `волосся ${i} #${hair.toString(16)}, шкіра #${skin.toString(16)}`).toBeGreaterThanOrEqual(11);
+      for (const other of hairs) if (other !== hair) expect(deltaE2000(hair, other), `волосся ${i} #${hair.toString(16)} і #${other.toString(16)}`).toBeGreaterThanOrEqual(15);
+    }
+    // Каштанове — друге (`LOOK_OPTIONS`): червонясто-буре, темніше за русяве й руде, не темніше за чорне, і пасма чорнилом видно.
+    const chestnut = hairs[1]!;
+    const [l, a, b] = lab(chestnut);
+    expect(a).toBeGreaterThan(10);
+    expect(b).toBeGreaterThan(10);
+    expect(l).toBeLessThan(lab(hairs[2]!)[0]);
+    expect(l).toBeLessThan(lab(hairs[4]!)[0]);
+    expect(deltaE2000(chestnut, Number.parseInt(PALETTE_ART.ink.slice(1), 16))).toBeGreaterThanOrEqual(15);
   });
 
   it("кожна райдужка відрізняється від тону шкіри (ΔE2000 ≥ 15): очі на обличчі видно; карі на темній шкірі — темно-карі", () => {
