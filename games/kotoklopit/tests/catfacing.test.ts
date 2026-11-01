@@ -287,6 +287,20 @@ describe("куди дивиться кіт (`catFacing`)", () => {
     expect(catFacing(save.current, touchy, null)).toEqual(BACK_LEFT);
   });
 
+  it("під рукою — головою від персонажа: рука лягає на спинку з боку крупа, а голова й вуха — на виду (рецензія хвилі 3)", () => {
+    const save = game();
+    const body = save.current.character.body;
+    const cat = withCat(save, { x: 9.5, y: 8.5 });
+    cat.facing = -1;
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 0.5 };
+    // Персонаж ліворуч на екрані (−x) — кіт дивиться праворуч, і навпаки.
+    body.x = 8.9;
+    body.y = 8.5;
+    expect(catFacing(save.current, cat, null)).toEqual(FRONT);
+    body.x = 10.1;
+    expect(catFacing(save.current, cat, null)).toEqual(FRONT_LEFT);
+  });
+
   it("на руках і на колінах — туди ж, куди персонаж: ракурс персонажа, а flip — відносно нього (гніздо дзеркалить контейнер)", () => {
     const save = game();
     const cat = withCat(save);

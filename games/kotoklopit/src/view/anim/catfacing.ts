@@ -8,6 +8,7 @@
 
 import { WINDOWS } from "../../sim/home";
 import type { Cat, GameState, Vec } from "../../sim/types";
+import { interactionWith } from "../pose";
 import { catLook } from "../thoughts";
 import type { RigFacing } from "../rig/types";
 import { isoScreenDir } from "./iso";
@@ -136,10 +137,10 @@ export interface CatFacingOptions {
  *   — до `goal` чи `run`; майже прямовисно — віддзеркалення тримається довше, `FACING_VERTICAL`). Іде й той, у кого
  *   немає `goal`: у грі з другом утікач біжить до `act.run` (засідка, погоня), мисливець — до нього (погоня, боротьба).
  * - Стоїть: на підвіконні під вікном у задній стіні — спиною до нас, у вікно (сумний — до нас, щоб було видно смуток, як і в
- *   старому вигляді); «Образливий» дметься — спиною, від персонажа; «Пастка на животику» — головою від персонажа; відданий,
- *   що кліпає, і ласкавий, що бодається, — до персонажа; ті два — завжди лицем до нас, бо це про морду. Хто просить, іде по
- *   увагу чи слідом — до персонажа; далі — до цілі дії (річ, кіт-суперник, друг); інакше — `facing` сима: праворуч чи
- *   ліворуч, лицем до нас.
+ *   старому вигляді); «Образливий» дметься — спиною, від персонажа; «Пастка на животику» і кіт під рукою — головою від
+ *   персонажа; відданий, що кліпає, і ласкавий, що бодається, — до персонажа; ті два — завжди лицем до нас, бо це про
+ *   морду. Хто просить, іде по увагу чи слідом — до персонажа; далі — до цілі дії (річ, кіт-суперник, друг); інакше —
+ *   `facing` сима: праворуч чи ліворуч, лицем до нас.
  */
 export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, options: CatFacingOptions = {}): RigFacing {
   const prev = options.prev ?? null;
@@ -173,6 +174,9 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
   }
   if (look === "sulk") return { view: "back", flip: !sideTo(cat, person, null, !simSide) };
   if (look === "belly") return { view: "front", flip: !sideTo(cat, person, null, !simSide) };
+  // Під рукою (§10, «Пестощі») — так само головою від персонажа: рука лягає на спинку з боку крупа, а не тягнеться через
+  // голову, і вуха й морду видно — як змінюється вираз, зокрема вуха «літачком», коли кіт попереджає (рецензія хвилі 3).
+  if (interactionWith(state, cat) === "pet") return { view: "front", flip: !sideTo(cat, person, null, !simSide) };
   if (look === "blink" || look === "nudge") return { view: "front", flip: sideTo(cat, person, prev, simSide) };
   if (act.kind === "attention" || act.kind === "follow" || act.target === "character" || act.target === "food" || act.target === "feet") {
     return facingFromTiles({ x: person.x - cat.x, y: person.y - cat.y }, prev) ?? fallback;

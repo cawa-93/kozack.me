@@ -224,7 +224,8 @@ export const EAR_POSES: Readonly<Record<CatEars, Readonly<Record<ArtView, Readon
   up: { front: { "ear-far": ear(0), "ear-near": ear(0) }, back: { "ear-far": ear(0), "ear-near": ear(0) } },
   flat: { front: { "ear-far": ear(-32, 0.8), "ear-near": ear(-38, 0.8) }, back: { "ear-far": ear(-38, 0.8), "ear-near": ear(-32, 0.8) } },
   side: { front: { "ear-far": ear(30, 0.95), "ear-near": ear(-30, 0.95) }, back: { "ear-far": ear(-30, 0.95), "ear-near": ear(30, 0.95) } },
-  back: { front: { "ear-far": ear(42, 0.75), "ear-near": ear(-58, 0.75) }, back: { "ear-far": ear(-58, 0.75), "ear-near": ear(42, 0.75) } },
+  // «Літачком» — помітно нижче й ширше за `flat` (рецензія хвилі 3: на 40 px «попереджає» не відрізнялося від «терпить»).
+  back: { front: { "ear-far": ear(54, 0.62), "ear-near": ear(-68, 0.62) }, back: { "ear-far": ear(-68, 0.62), "ear-near": ear(54, 0.62) } },
 };
 
 // --- Точки на кістках -------------------------------------------------------------------------

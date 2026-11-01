@@ -153,6 +153,9 @@ describe("скелет кота в грі (`ISO_CAT_RIG`)", () => {
       expect(EAR_POSES.side[view][left!].rot).toBeLessThan(0);
       expect(EAR_POSES.side[view][right!].rot).toBeGreaterThan(0);
       expect(EAR_POSES.back[view][left!].rot).toBeLessThan(EAR_POSES.side[view][left!].rot);
+      // «Літачком» (попереджає, дуга) — помітно нижчі за просто притиснуті (терпить) і розведені ширше за «у боки».
+      for (const ear of EAR_BONES) expect(EAR_POSES.back[view][ear].scale).toBeLessThanOrEqual(EAR_POSES.flat[view][ear].scale - 0.15);
+      expect(EAR_POSES.back[view][right!].rot).toBeGreaterThan(EAR_POSES.side[view][right!].rot);
       for (const ear of EAR_BONES) {
         expect(EAR_POSES.up[view][ear]).toEqual({ rot: 0, scale: 1 });
         expect(EAR_POSES.flat[view][ear].rot).toBeLessThan(0);
