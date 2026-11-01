@@ -2,6 +2,8 @@
 // токенами, що й арт (`art/palette.ts`, `art/STYLE.md`), а не старими `COLORS`. Без Phaser.
 
 import { PALETTE } from "../../../art/palette";
+import { artEntry } from "../art/manifest";
+import type { ArtEntry, ArtId } from "../art/types";
 
 /** Колір палітри арту (`#rrggbb`) — числом для Phaser Graphics. */
 export function hex(color: string): number {
@@ -29,6 +31,20 @@ export const UI_TEXT = {
   onPaper: PALETTE.ink,
 } as const;
 
+/**
+ * Написи над світом («+N ₴», `Bubbles.popText`): сцена передає колір старого вигляду, а в новому він стає токеном палітри
+ * арту — так спільна `DayScene` до хвилі 3 лишається як була. Невідомий колір — як є.
+ */
+const ISO_POP_COLORS: Readonly<Record<string, string>> = {
+  /** Зароблені гроші: зелений, приглушений, як уся палітра. */
+  "#8fdc7a": PALETTE.greenHi,
+};
+
+/** Колір напису над світом у новому вигляді. */
+export function isoPopColor(color: string): string {
+  return ISO_POP_COLORS[color.toLowerCase()] ?? color;
+}
+
 /** Кольори Graphics: числом. */
 export const UI_FILL = {
   ink: hex(PALETTE.ink),
@@ -37,3 +53,13 @@ export const UI_FILL = {
   trough: hex(PALETTE.ink),
   hatch: hex(PALETTE.inkSoft),
 } as const;
+
+/**
+ * Запис маніфесту, без якого інтерфейс нового вигляду не складеться (фони баблів, кадри панелі): немає — помилка, а не
+ * запасні числа, які непомітно застаріють. Що всі такі записи є, перевіряють `isobubbles.test.ts` і `isohud.test.ts`.
+ */
+export function uiEntry(id: ArtId): ArtEntry {
+  const entry = artEntry(id);
+  if (!entry) throw new Error(`немає запису маніфесту «${id}»`);
+  return entry;
+}

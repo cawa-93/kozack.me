@@ -12,8 +12,18 @@ import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
 import { bubbleArt, bubbleTexture, iconArt, iconTexture, markArt, markTexture, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import { BUBBLE_ICON_Y } from "./icons";
-import { BUBBLE_COUNT, countPillWidth, isoBubbleLook, type IsoBubbleLook } from "./iso/bubblelook";
-import { UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
+import {
+  BESIDE_GAP,
+  besideDx,
+  BUBBLE_COUNT,
+  bubbleSpan,
+  countPillCenter,
+  countPillWidth,
+  isoBubbleLook,
+  type BubbleSpan,
+  type IsoBubbleLook,
+} from "./iso/bubblelook";
+import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
 
@@ -26,10 +36,12 @@ const FONT = "system-ui, sans-serif";
 /** У хмаринці-думці іконка трохи менша: край хвилястий, і кути іконки інакше лягали б на контур. */
 const THOUGHT_ICON_SCALE = 0.85;
 /**
- * Наскільки зсунуто вбік другий бабл події над тим самим (§11.4): половина ширшої думки й половина мовної хмаринки — щоб вони
- * стояли поруч, а не один на одному.
+ * Наскільки зсунуто вбік другий бабл події над тим самим (§11.4), старий вигляд: половина ширшої думки й половина мовної
+ * хмаринки — щоб вони стояли поруч, а не один на одному. Кожен бабл займає по половині кроку з обох боків від точки, тож
+ * `besideDx` ставить їх у ряд із цим кроком. У новому вигляді — справжні межі фону з маніфесту (`IsoBubbleLook.span`).
  */
 const BESIDE_STEP = 58;
+const LEGACY_SPAN: BubbleSpan = { left: BESIDE_STEP / 2, right: BESIDE_STEP / 2 };
 /** Де кількість відносно центру іконки: у правому верхньому куті мовної хмаринки й на правому горбику думки. */
 const COUNT_AT: Record<BubbleKind, { x: number; y: number }> = { say: { x: 16, y: -16 }, think: { x: 18, y: -12 } };
 /** Скільки місця над точкою бабла займає сам бабл разом із виринанням, px: мовна хмаринка й думка (§11.4), старий вигляд. */
@@ -52,7 +64,15 @@ interface Floater {
   owner: string | undefined;
   /** Зсув убік, коли над тим самим уже висить інший бабл події. */
   dx: number;
+  /** Скільки бабл займає ліворуч і праворуч від точки — щоб наступний став поруч. */
+  span: BubbleSpan;
   icon: IconName | undefined;
+}
+
+/** Бабл, щойно складений: контейнер і скільки він займає ліворуч і праворуч від точки. */
+interface Made {
+  container: Phaser.GameObjects.Container;
+  span: BubbleSpan;
 }
 
 const place = (at: Anchor): { x: number; y: number } | null => (typeof at === "function" ? at() : at);
@@ -79,7 +99,7 @@ export class Bubbles {
     return this.iso ? this.iso[kind].room : LEGACY_ROOM[kind];
   }
 
-  private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
+  private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Made {
     if (this.iso) return this.makeIso(this.iso[kind], kind, icon, x, y, count, mark);
     const iconY = BUBBLE_ICON_Y[kind];
     const scale = kind === "think" ? THOUGHT_ICON_SCALE : 1;
@@ -104,7 +124,7 @@ export class Bubbles {
       pill.lineStyle(2, 0xffffff).strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
       container.add([pill, label]);
     }
-    return container;
+    return { container, span: LEGACY_SPAN };
   }
 
   /**
@@ -112,7 +132,7 @@ export class Bubbles {
    * кількість — плашка в правому верхньому куті іконки. Усе — у вкладеному контейнері зі сталим масштабом
    * (`ISO_BUBBLE_SCALE`), бо масштаб зовнішнього анімують виринання й `setState`.
    */
-  private makeIso(look: IsoBubbleLook, kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Phaser.GameObjects.Container {
+  private makeIso(look: IsoBubbleLook, kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Made {
     const scene = this.scene;
     const body = scene.add.container(0, 0).setScale(look.scale);
     addArt(scene, body, bubbleArt(kind));
@@ -121,6 +141,7 @@ export class Bubbles {
     };
     place(addArt(scene, body, iconArt(icon)));
     if (mark !== undefined) place(addArt(scene, body, markArt(mark)));
+    let pillWidth: number | undefined;
     if (count !== undefined) {
       // Кількість — чорнильна плашка з паперовою обвідкою й паперовими цифрами: видно і на світлій підлозі, і на темній стіні.
       const c = BUBBLE_COUNT;
@@ -129,15 +150,16 @@ export class Bubbles {
         .setOrigin(0.5);
       const h = c.height;
       const w = countPillWidth(label.width);
-      const cx = look.count.x + (w - h) / 2;
-      const cy = look.count.y;
+      pillWidth = w;
+      const { x: cx, y: cy } = countPillCenter(look, w);
       label.setPosition(cx, cy);
       const pill = scene.add.graphics();
       pill.fillStyle(UI_FILL.ink).fillRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
       pill.lineStyle(c.outline, UI_FILL.paper).strokeRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
       body.add([pill, label]);
     }
-    return scene.add.container(x, y, [body]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
+    const container = scene.add.container(x, y, [body]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
+    return { container, span: bubbleSpan(look, pillWidth) };
   }
 
   /**
@@ -158,7 +180,7 @@ export class Bubbles {
       return;
     }
     current?.container.destroy();
-    const container = this.make(kind, icon, x, y).setVisible(!this.busy(anchor));
+    const container = this.make(kind, icon, x, y).container.setVisible(!this.busy(anchor));
     container.setScale(0.6);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 160, ease: "Back.easeOut" });
     this.states.set(anchor, { container, kind, name: icon });
@@ -182,11 +204,11 @@ export class Bubbles {
   show(bubble: EventBubble, at: Anchor, hold = EVENT_HOLD_MS): void {
     const start = place(at);
     if (!start) return;
-    const dx = this.beside(bubble.at, bubble.icon);
-    const container = this.make(bubble.kind, bubble.icon, start.x + dx, start.y - 8, bubble.count, bubble.mark);
-    container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
+    const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - 8, bubble.count, bubble.mark);
+    const dx = this.beside(bubble.at, bubble.icon, span);
+    container.setX(start.x + dx).setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, hold, bubble.at, dx, bubble.icon);
+    this.float(container, at, hold, { owner: bubble.at, dx, span, icon: bubble.icon });
     this.states.get(bubble.at)?.container.setVisible(false);
   }
 
@@ -195,8 +217,9 @@ export class Bubbles {
     const start = place(at);
     if (!start) return;
     // У новому вигляді одиниця світу дрібніша (≈ 0,72 px CSS проти ≈ 0,88), тож напис більший, щоб на екрані був той самий.
+    // Колір у новому вигляді — токеном палітри арту (`isoPopColor`).
     const style = this.iso
-      ? { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color, stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: 2 }
+      ? { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: 2 }
       : { fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color, stroke: "#1f1a24", strokeThickness: 3, resolution: 2 };
     const label = this.scene.add
       .text(0, 0, text, style)
@@ -208,25 +231,28 @@ export class Bubbles {
 
   /**
    * Два різні бабли події, що виринули над тим самим разом (засідка «Ніндзя»: думка-запаморочення й «кігті» вголос, §11.4;
-   * рішення автора 2026-10-30, «Відкрите після рішень», п. 6), стоять поруч: кожен наступний — то праворуч, то ліворуч. Той самий
-   * бабл (відмова, натиснута кілька разів поспіль) виринає на тому самому місці, як і раніше.
+   * рішення автора 2026-10-30, «Відкрите після рішень», п. 6), стоять поруч: кожен наступний — упритул праворуч, потім
+   * ліворуч (`besideDx`; у новому вигляді — за справжніми межами фонів: думка ширша, і вістря в неї збоку). Той самий бабл
+   * (відмова, натиснута кілька разів поспіль) виринає на тому самому місці, як і раніше.
    */
-  private beside(owner: string, icon: IconName): number {
-    const taken = new Set<number>();
+  private beside(owner: string, icon: IconName, span: BubbleSpan): number {
+    const taken: Floater[] = [];
     for (const f of this.floaters) {
       if (f.owner !== owner) continue;
       if (f.icon === icon) return f.dx;
-      taken.add(f.dx);
+      taken.push(f);
     }
-    for (let i = 0; ; i++) {
-      const dx = (i % 2 === 1 ? 1 : -1) * Math.ceil(i / 2) * BESIDE_STEP;
-      if (!taken.has(dx)) return dx;
-    }
+    return besideDx(taken, span, this.iso ? BESIDE_GAP : 0);
   }
 
   /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
-  private float(container: Phaser.GameObjects.Container, at: Anchor, delay: number, owner?: string, dx = 0, icon?: IconName): void {
-    const floater: Floater = { container, at, rise: 0, owner, dx, icon };
+  private float(
+    container: Phaser.GameObjects.Container,
+    at: Anchor,
+    delay: number,
+    beside: Pick<Floater, "owner" | "dx" | "span" | "icon"> = { owner: undefined, dx: 0, span: LEGACY_SPAN, icon: undefined },
+  ): void {
+    const floater: Floater = { container, at, rise: 0, ...beside };
     this.floaters.add(floater);
     this.scene.tweens.add({ targets: floater, rise: -34, delay, duration: 500 });
     this.scene.tweens.add({

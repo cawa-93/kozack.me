@@ -6,7 +6,18 @@ import { describe, expect, it } from "vitest";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtEntry } from "../src/view/art/types";
 import { bubbleArt, ICON_NAMES, iconArt, markArt, type BubbleKind, type Mark } from "../src/view/iconnames";
-import { BUBBLE_COUNT, countPillWidth, ICON_ART_SIZE, ISO_BUBBLE_SCALE, isoBubbleLook } from "../src/view/iso/bubblelook";
+import {
+  BESIDE_GAP,
+  besideDx,
+  BUBBLE_COUNT,
+  bubbleSpan,
+  countPillCenter,
+  countPillWidth,
+  ICON_ART_SIZE,
+  ISO_BUBBLE_SCALE,
+  isoBubbleLook,
+  type BubbleSpan,
+} from "../src/view/iso/bubblelook";
 
 function entry(id: string): ArtEntry {
   const found = artEntry(id);
@@ -59,5 +70,71 @@ describe("бабл нового вигляду", () => {
   it("плашка кількості — кружечок для цифри, ширшає з довгим числом", () => {
     expect(countPillWidth(10)).toBe(BUBBLE_COUNT.height);
     expect(countPillWidth(40)).toBe(40 + BUBBLE_COUNT.pad);
+  });
+});
+
+describe("бабл нового вигляду: межі й кількість", () => {
+  for (const kind of Object.keys(KINDS) as BubbleKind[]) {
+    it(`${kind}: межі — полотно фону від вістря в масштабі; плашка кількості їх лише розширює праворуч`, () => {
+      const bubble = entry(bubbleArt(kind));
+      const look = isoBubbleLook(kind);
+      expect(look.span.left).toBeCloseTo(bubble.pivot.x * look.scale);
+      expect(look.span.right).toBeCloseTo((bubble.size.w - bubble.pivot.x) * look.scale);
+      expect(bubbleSpan(look)).toEqual(look.span);
+      const narrow = bubbleSpan(look, countPillWidth(10));
+      const wide = bubbleSpan(look, countPillWidth(60));
+      expect(narrow.left).toBe(look.span.left);
+      expect(narrow.right).toBeGreaterThanOrEqual(look.span.right);
+      expect(wide.right).toBeGreaterThan(narrow.right);
+    });
+
+    it(`${kind}: довга кількість росте праворуч від кута іконки, а верх плашки — у місці над точкою`, () => {
+      const look = isoBubbleLook(kind);
+      const one = countPillCenter(look, BUBBLE_COUNT.height);
+      expect(one).toEqual(look.count);
+      const long = countPillCenter(look, BUBBLE_COUNT.height + 20);
+      // Лівий край той самий — плашка не лізе на іконку.
+      expect(long.x - (BUBBLE_COUNT.height + 20) / 2).toBeCloseTo(one.x - BUBBLE_COUNT.height / 2);
+      expect(long.y).toBe(one.y);
+      const top = -(look.count.y - BUBBLE_COUNT.height / 2 - BUBBLE_COUNT.outline / 2) * look.scale;
+      expect(look.room).toBeGreaterThanOrEqual(top + 8);
+    });
+  }
+});
+
+describe("два бабли події над тим самим — поруч (besideDx)", () => {
+  const step = 58;
+  const same: BubbleSpan = { left: step / 2, right: step / 2 };
+  const at = (...dxs: number[]): { dx: number; span: BubbleSpan }[] => dxs.map((dx) => ({ dx, span: same }));
+
+  it("однакові бабли старого вигляду — у ряд із кроком: 0, праворуч, ліворуч, далі праворуч", () => {
+    expect(besideDx([], same, 0)).toBe(0);
+    expect(besideDx(at(0), same, 0)).toBe(step);
+    expect(besideDx(at(0, step), same, 0)).toBe(-step);
+    expect(besideDx(at(0, step, -step), same, 0)).toBe(2 * step);
+    expect(besideDx(at(0, step, -step, 2 * step), same, 0)).toBe(-2 * step);
+    // Місце звільнилось — його й займає наступний.
+    expect(besideDx(at(step, -step), same, 0)).toBe(0);
+    expect(besideDx(at(0, -step), same, 0)).toBe(step);
+  });
+
+  it("різні межі нового вигляду: упритул із зазором, ні на кого не налазить", () => {
+    const say = isoBubbleLook("say").span;
+    const think = isoBubbleLook("think").span;
+    const apart = (a: { dx: number; span: BubbleSpan }, b: { dx: number; span: BubbleSpan }): boolean =>
+      a.dx + a.span.right + BESIDE_GAP <= b.dx - b.span.left + 1e-6 || b.dx + b.span.right + BESIDE_GAP <= a.dx - a.span.left + 1e-6;
+    const first = { dx: 0, span: think };
+    const right = think.right + BESIDE_GAP + say.left;
+    const left = -(think.left + BESIDE_GAP + say.right);
+    // Другий — упритул з того боку, де ближче до точки.
+    const second = { dx: besideDx([first], say, BESIDE_GAP), span: say };
+    expect(second.dx).toBeCloseTo(Math.abs(left) < right ? left : right);
+    expect(apart(first, second)).toBe(true);
+    // Третій — з іншого боку, теж упритул.
+    const third = { dx: besideDx([first, second], say, BESIDE_GAP), span: say };
+    expect(third.dx).toBeCloseTo(Math.abs(left) < right ? right : left);
+    expect(apart(first, third) && apart(second, third)).toBe(true);
+    // Порожньо — над самою точкою.
+    expect(besideDx([], think, BESIDE_GAP)).toBe(0);
   });
 });

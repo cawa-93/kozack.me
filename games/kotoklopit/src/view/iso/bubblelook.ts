@@ -1,17 +1,18 @@
 // Бабли в новому вигляді (крок 16, пакет T3, `GRAPHICS_PLAN.md`): де в бабл лягають іконка, позначка й кількість і скільки
 // місця він займає над тим, над ким виринув. Числа — з маніфесту (A12): фон `ui/bubble/say|think` з pivot у вістрі
-// хвостика й точкою `icon` — центром поля іконки 64 × 64 (`art/STYLE.md`, «ui — бульбашки»). Без Phaser.
+// хвостика й точкою `icon` — центром поля іконки 64 × 64 (`art/STYLE.md`, «ui — бульбашки»); і як два бабли над тим самим
+// стають поруч (`besideDx`). Без Phaser.
 //
 // Одиниці — одиниці арту світу (1 одиниця = 1 px світу ізометрії, ≈ 0,72 px CSS на телефоні й більшості десктопів). Увесь
 // бабл зменшено в `ISO_BUBBLE_SCALE` разів — так він на екрані такий самий, як старий (мовна хмаринка ≈ 46 px CSS на
 // телефоні, іконка ≈ 35 px), а не більший за кота: див. коментар до сталої.
 
-import { artEntry } from "../art/manifest";
 import type { ArtPoint } from "../art/types";
 import { bubbleArt, type BubbleKind } from "../iconnames";
+import { uiEntry } from "./uilook";
 
 /**
- * Масштаб бабла в світі. Фон 86 одиниць (думка — 108 × 118) і іконка 64 намальовані з запасом під контур 6; без
+ * Масштаб бабла в світі. Фон ≈ 90 одиниць (думка ≈ 105 × 114) і іконка 64 намальовані з запасом під контур 6; без
  * зменшення мовна хмаринка на телефоні була б ≈ 62 px CSS (старий вигляд — ≈ 46) і більша за дорослого кота (≈ 40 px),
  * а думка займала б чверть висоти екрана 844 × 390. З 0,75 бабли на екрані такі самі, як у старому вигляді, а іконка —
  * 48 одиниць ≈ 35 px CSS (STYLE перевіряє іконки в 24, 32 і 64 px).
@@ -34,14 +35,23 @@ export const BUBBLE_COUNT = {
 
 /** Наскільки вище за вістря бабл події виринає (як у старому вигляді: `y − 8` у `Bubbles.show`). */
 const RISE = 8;
-/** Запас над верхом бабла до панелі, одиниці світу. */
+/**
+ * Запас над верхом бабла до панелі, одиниці світу. Чорнильний край смуги панелі лежить у межах панелі (`HUD_BAND`), тож
+ * камера квартири починається одразу під ним і запасу вистачає невеликого.
+ */
 const MARGIN = 2;
 
-/** Запасні розміри фону, якщо запису в маніфесті немає (A12 їх і задав: pivot — вістря, `icon` — центр поля іконки). */
-const FALLBACK: Record<BubbleKind, { pivot: ArtPoint; icon: ArtPoint }> = {
-  say: { pivot: { x: 43, y: 80 }, icon: { x: 43, y: 35 } },
-  think: { pivot: { x: 51, y: 112 }, icon: { x: 54, y: 40 } },
-};
+/** Скільки бабл займає ліворуч і праворуч від своєї точки (вістря), одиниці світу. */
+export interface BubbleSpan {
+  left: number;
+  right: number;
+}
+
+/**
+ * Зазор між баблами подій, що стоять поруч (`besideDx`), одиниці світу. Полотна баблів уже мають поле (≥ 4 одиниці арту з
+ * кожного боку, `art/STYLE.md` §2), тож між контурами видно ще й його.
+ */
+export const BESIDE_GAP = 2;
 
 /** Як бабл виду `kind` лежить у світі. */
 export interface IsoBubbleLook {
@@ -53,28 +63,68 @@ export interface IsoBubbleLook {
   iconSize: number;
   /** Центр плашки кількості від вістря, одиниці фону (до `scale`); довге число росте праворуч. */
   count: ArtPoint;
-  /** Скільки місця над точкою бабла займає сам бабл разом із виринанням, одиниці світу (для `DayScene.belowHud`). */
+  /** Полотно фону ліворуч і праворуч від вістря, одиниці світу (вістря думки — не посередині: кружечки збоку). */
+  span: BubbleSpan;
+  /**
+   * Скільки місця над точкою бабла займає сам бабл разом із виринанням, одиниці світу (для `DayScene.belowHud`): верх
+   * фону чи плашки кількості, що вища (у мовній хмаринці плашка стирчить над фоном).
+   */
   room: number;
 }
 
 /** Розміщення бабла за записом маніфесту `ui/bubble/<kind>`. */
 export function isoBubbleLook(kind: BubbleKind): IsoBubbleLook {
-  const entry = artEntry(bubbleArt(kind));
-  const pivot = entry?.pivot ?? FALLBACK[kind].pivot;
-  const center = entry?.points?.["icon"] ?? FALLBACK[kind].icon;
+  const { pivot, size, points } = uiEntry(bubbleArt(kind));
+  const center = points?.["icon"];
+  if (!center) throw new Error(`немає точки icon у «${bubbleArt(kind)}»`);
   const icon = { x: center.x - pivot.x, y: center.y - pivot.y };
   // Кількість — у правому верхньому куті поля іконки, на 6 одиниць усередину, як у старому вигляді (16 з 20 від центру).
   const corner = ICON_ART_SIZE / 2 - 6;
+  const count = { x: icon.x + corner, y: icon.y - corner };
+  const scale = ISO_BUBBLE_SCALE;
+  const countTop = -(count.y - BUBBLE_COUNT.height / 2 - BUBBLE_COUNT.outline / 2);
   return {
-    scale: ISO_BUBBLE_SCALE,
+    scale,
     icon,
     iconSize: ICON_ART_SIZE,
-    count: { x: icon.x + corner, y: icon.y - corner },
-    room: Math.ceil(pivot.y * ISO_BUBBLE_SCALE) + RISE + MARGIN,
+    count,
+    span: { left: pivot.x * scale, right: (size.w - pivot.x) * scale },
+    room: Math.ceil(Math.max(pivot.y, countTop) * scale) + RISE + MARGIN,
   };
 }
 
 /** Ширина плашки кількості за шириною тексту, одиниці фону: не вужча за висоту (кружечок для однієї цифри). */
 export function countPillWidth(textWidth: number): number {
   return Math.max(BUBBLE_COUNT.height, textWidth + BUBBLE_COUNT.pad);
+}
+
+/** Центр плашки кількості завширшки `width` (одиниці фону): довге число росте праворуч від кута іконки, а не на неї. */
+export function countPillCenter(look: IsoBubbleLook, width: number): ArtPoint {
+  return { x: look.count.x + (width - BUBBLE_COUNT.height) / 2, y: look.count.y };
+}
+
+/** Скільки займає бабл із плашкою кількості завширшки `pill` (одиниці фону; без кількості — `undefined`), одиниці світу. */
+export function bubbleSpan(look: IsoBubbleLook, pill?: number): BubbleSpan {
+  if (pill === undefined) return look.span;
+  const right = (countPillCenter(look, pill).x + pill / 2 + BUBBLE_COUNT.outline / 2) * look.scale;
+  return { left: look.span.left, right: Math.max(look.span.right, right) };
+}
+
+/**
+ * Зсув нового бабла події від точки, коли над тим самим уже висять інші (`taken`: зсув і скільки кожен займає): найближче до
+ * точки місце, де він не налазить ні на кого, — спершу праворуч, потім ліворуч (§11.4; рішення автора 2026-10-30,
+ * «Відкрите після рішень», п. 6: «стоять поруч, а не один на одному»). Місця-кандидати — сама точка й упритул до кожного
+ * зайнятого з обох боків із зазором `gap`; крайній праворуч підходить завжди.
+ *
+ * Однакові бабли (`left` = `right` = половина кроку, `gap` 0) стають у ряд із кроком: 0, +крок, −крок, +2 кроки… — так
+ * розставляє старий вигляд.
+ */
+export function besideDx(taken: readonly { dx: number; span: BubbleSpan }[], span: BubbleSpan, gap: number): number {
+  const eps = 1e-6;
+  const fits = (dx: number): boolean =>
+    taken.every((t) => dx - span.left >= t.dx + t.span.right + gap - eps || dx + span.right + gap <= t.dx - t.span.left + eps);
+  const candidates = [0, ...taken.flatMap((t) => [t.dx + t.span.right + gap + span.left, t.dx - t.span.left - gap - span.right])];
+  // Ближче до точки — раніше; на однаковій відстані — спершу праворуч.
+  candidates.sort((a, b) => Math.abs(a) - Math.abs(b) || b - a);
+  return candidates.find(fits) ?? 0;
 }
