@@ -192,3 +192,94 @@ function nursing(state: GameState, sizeOf: SizeOf, placed: Map<number, PairPlace
 export function pairOf(state: GameState, cat: Cat, sizeOf: SizeOf = ADULT): PairPlacement | null {
   return catPairs(state, sizeOf).get(cat.id) ?? null;
 }
+
+// --- Юрба ----------------------------------------------------------------------------------------
+
+/**
+ * Юрба (рецензія хвилі 3): сим веде всіх, хто йде по увагу чи просить, у центр клітинки персонажа, а двох біля однієї миски
+ * (охоронець і злодій) — у ту саму точку, і вигляд малював їх точно одне в одному: четверо котів зливалися в одного з
+ * купкою баблів і разом із баблами закривали персонажа. Тож коти, що стоять (не в парі) майже в одній точці на екрані
+ * (ближче за `near`), стають рядком уздовж горизонталі екрана з кроком `step` (≈ пів кота, × розмір) довкола спільної
+ * середини; а ті, хто прийшов до персонажа й стоїть біля його ніг (ближче за `person`), — обабіч нього, перший на
+ * `beside` від його точки, далі з кроком `step`. Одиниці арту (= px світу ізометрії).
+ */
+export const CROWD = { near: { x: 24, y: 14 }, person: { x: 44, y: 30 }, beside: 56, step: 36 } as const;
+
+/** Кіт юрби: де стоїть (точка підлоги з `catSpot`, клітинки), його розмір і чи прийшов до персонажа. */
+export interface CrowdMember {
+  id: number;
+  at: Vec;
+  size: number;
+  toPerson: boolean;
+}
+
+/** Кіт прийшов до персонажа (§9.12): просить, іде по увагу чи слідом, по корм із рук чи до ніг — як у `catFacing`. */
+export function towardPerson(cat: Cat): boolean {
+  const act = cat.act;
+  return act.kind === "attention" || act.kind === "beg" || act.kind === "follow" || act.target === "character" || act.target === "food" || act.target === "feet";
+}
+
+/**
+ * Зсуви котів юрби (`CROWD`) уздовж горизонталі екрана, у клітинках (`isoTileDir`): пише в `out` (очищає) лише тих, кого
+ * треба зсунути. `person` — точка персонажа в клітинках (null — його немає вдома); `blocked` — чи клітинка, куди став би кіт,
+ * зайнята (стіна, меблі): тоді кіт лишається на своєму місці.
+ */
+export function catCrowds(members: readonly CrowdMember[], person: Vec | null, blocked: (x: number, y: number) => boolean, out: Map<number, Vec>): Map<number, Vec> {
+  out.clear();
+  const n = members.length;
+  if (n === 0) return out;
+  const screen = members.map((m) => isoScreenDir(m.at));
+  const ps = person ? isoScreenDir(person) : null;
+  // Групи: хто майже в одній точці (ланцюжком), і окремо — хто біля ніг персонажа.
+  const group = members.map((_, i) => i);
+  const root = (i: number): number => {
+    while (group[i] !== i) i = group[i] = group[group[i]!]!;
+    return i;
+  };
+  const near = (a: Vec, b: Vec, box: { x: number; y: number }): boolean => Math.abs(a.x - b.x) < box.x && Math.abs(a.y - b.y) < box.y;
+  const byPerson = members.map((m, i) => m.toPerson && ps !== null && near(screen[i]!, ps, CROWD.person));
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (byPerson[i] !== byPerson[j]) continue;
+      if (byPerson[i] || near(screen[i]!, screen[j]!, CROWD.near)) group[root(i)] = root(j);
+    }
+  }
+  const groups = new Map<number, number[]>();
+  for (let i = 0; i < n; i++) {
+    const r = root(i);
+    const list = groups.get(r);
+    if (list) list.push(i);
+    else groups.set(r, [i]);
+  }
+  for (const list of groups.values()) {
+    const atPerson = byPerson[list[0]!] === true && ps !== null;
+    if (list.length < 2 && !atPerson) continue;
+    // Зліва направо, як стояли (за однакового x — за номером): ніхто не перебігає крізь іншого.
+    list.sort((a, b) => screen[a]!.x - screen[b]!.x || members[a]!.id - members[b]!.id);
+    const size = list.reduce((sum, i) => sum + members[i]!.size, 0) / list.length;
+    const step = CROWD.step * size;
+    const target = new Map<number, number>();
+    if (atPerson) {
+      // Обабіч персонажа: ліва половина рядка — ліворуч від нього, права — праворуч (непарний — туди, де вже стоїть).
+      const left = list.filter((i) => screen[i]!.x < ps.x).length;
+      const nLeft = Math.min(Math.ceil(list.length / 2), Math.max(Math.floor(list.length / 2), left));
+      list.forEach((i, k) => {
+        const side = k < nLeft ? -1 : 1;
+        const slot = side < 0 ? nLeft - 1 - k : k - nLeft;
+        target.set(i, ps.x + side * (CROWD.beside * size + slot * step));
+      });
+    } else {
+      const cx = list.reduce((sum, i) => sum + screen[i]!.x, 0) / list.length;
+      list.forEach((i, k) => target.set(i, cx + (k - (list.length - 1) / 2) * step));
+    }
+    for (const i of list) {
+      const dx = target.get(i)! - screen[i]!.x;
+      if (Math.abs(dx) < 1e-9) continue;
+      const shift = isoTileDir({ x: dx, y: 0 });
+      const at = members[i]!.at;
+      if (blocked(Math.floor(at.x + shift.x), Math.floor(at.y + shift.y))) continue;
+      out.set(members[i]!.id, shift);
+    }
+  }
+  return out;
+}

@@ -14,7 +14,7 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel, Vec } from "../src/sim/types";
 import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, FACING_SMOOTH, holdFlip, personFacing, smoothHeading } from "../src/view/anim/catfacing";
 import { isoScreenDir, isoTileDir, ISO_TILE } from "../src/view/anim/iso";
-import { catPairs, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf } from "../src/view/anim/pairs";
+import { catCrowds, catPairs, CROWD, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf, type CrowdMember } from "../src/view/anim/pairs";
 import { isoOrder } from "../src/view/world/isoorder";
 import type { RigFacing } from "../src/view/rig/types";
 import { withCatCorner } from "./helpers";
@@ -471,5 +471,65 @@ describe("розведення пар (`catPairs`)", () => {
     // Мати прокинулася — кошенята вже не рядком.
     mother.act = idleAct(10);
     expect(catPairs(save.current).size).toBe(0);
+  });
+});
+
+describe("юрба (`catCrowds`)", () => {
+  const free = (): boolean => false;
+  const member = (id: number, at: Vec, toPerson = false, size = 1): CrowdMember => ({ id, at, size, toPerson });
+  /** Де кіт на екрані після зсуву. */
+  const placed = (m: CrowdMember, out: Map<number, Vec>): Vec => {
+    const shift = out.get(m.id) ?? { x: 0, y: 0 };
+    return isoScreenDir({ x: m.at.x + shift.x, y: m.at.y + shift.y });
+  };
+
+  it("четверо біля ніг персонажа (сим веде всіх у центр його клітинки) — обабіч нього, не на ньому й не одне в одному", () => {
+    const person = { x: 2.5, y: 2.5 };
+    const members = [1, 2, 3, 4].map((id) => member(id, { x: 2.5, y: 2.5 }, true));
+    const out = catCrowds(members, person, free, new Map());
+    const ps = isoScreenDir(person);
+    const xs = members.map((m) => placed(m, out)).map((p) => p.x - ps.x).sort((a, b) => a - b);
+    // Двоє ліворуч, двоє праворуч, перший — на `beside` від персонажа, далі — з кроком `step`.
+    expect(xs).toEqual([-CROWD.beside - CROWD.step, -CROWD.beside, CROWD.beside, CROWD.beside + CROWD.step].map((x) => expect.closeTo(x, 6)));
+    // Лише вздовж горизонталі екрана: вертикаль — та сама.
+    for (const m of members) expect(placed(m, out).y).toBeCloseTo(ps.y, 6);
+  });
+
+  it("один біля ніг персонажа — збоку від нього, з того боку, де стоїть; далеко від нього — на місці", () => {
+    const person = { x: 5.5, y: 5.5 };
+    const left = member(1, { x: 5.45, y: 5.55 }, true);
+    const out = catCrowds([left], person, free, new Map());
+    expect(placed(left, out).x - isoScreenDir(person).x).toBeCloseTo(-CROWD.beside, 6);
+    const far = member(2, { x: 7.5, y: 5.5 }, true);
+    expect(catCrowds([far], person, free, new Map()).size).toBe(0);
+  });
+
+  it("двоє біля однієї миски (охоронець і злодій) — рядком довкола спільної середини; хто стоїть окремо — на місці", () => {
+    const a = member(1, { x: 17.15, y: 3.15 });
+    const b = member(2, { x: 17.15, y: 3.15 });
+    const c = member(3, { x: 14.5, y: 6.5 });
+    const out = catCrowds([a, b, c], null, free, new Map());
+    const pa = placed(a, out);
+    const pb = placed(b, out);
+    expect(Math.abs(pa.x - pb.x)).toBeCloseTo(CROWD.step, 6);
+    expect((pa.x + pb.x) / 2).toBeCloseTo(isoScreenDir(a.at).x, 6);
+    expect(pa.y).toBeCloseTo(pb.y, 6);
+    expect(out.has(3)).toBe(false);
+    // Кошенята — тісніше (крок за розміром).
+    const k1 = member(4, { x: 9.5, y: 8.5 }, false, 0.5);
+    const k2 = member(5, { x: 9.5, y: 8.5 }, false, 0.5);
+    const kids = catCrowds([k1, k2], null, free, new Map());
+    expect(Math.abs(placed(k1, kids).x - placed(k2, kids).x)).toBeCloseTo(CROWD.step * 0.5, 6);
+  });
+
+  it("місце в юрбі в стіні чи в меблях — кіт лишається, де стоїть; щокадру той самий вихідний об'єкт", () => {
+    const a = member(1, { x: 1.05, y: 6.5 });
+    const b = member(2, { x: 1.05, y: 6.5 });
+    const out = new Map<number, Vec>();
+    const result = catCrowds([a, b], null, (x) => x < 1, out);
+    expect(result).toBe(out);
+    // Лівий пішов би в стіну (x < 1) — лишився; правий зсунувся.
+    expect(out.size).toBe(1);
+    expect(catCrowds([], null, free, out).size).toBe(0);
   });
 });

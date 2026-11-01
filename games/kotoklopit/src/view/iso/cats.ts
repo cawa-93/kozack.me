@@ -8,19 +8,20 @@
 
 import Phaser from "phaser";
 
-import { brawlFoe, catAnim } from "../pose";
+import { brawlFoe, catAnim, type CatAnimChoice } from "../pose";
 import type { GameEvent } from "../../sim/events";
 import { showsPregnancy } from "../../sim/reproduction";
 import type { Target } from "../../sim/targets";
 import type { Cat, GameState, Quality, Vec } from "../../sim/types";
 import { coatOf } from "../../sim/genetics";
+import { isSolid } from "../../sim/home";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, catMoving, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
 import type { CatOneShotId } from "../anim/ids";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
-import { catPairs, type PairPlacement } from "../anim/pairs";
+import { catCrowds, catPairs, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
 import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
@@ -63,6 +64,12 @@ const CULL_MARGIN = 160;
 /** Глибини інших частин, які треба знати, щоб поставити кота: ґратки переноски (`floor.ts`). */
 const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 
+/**
+ * За скільки мс кіт доходить до свого місця в юрбі (`catCrowds`) на ≈ 63 %: прийшовши до персонажа чи до миски, він відступає
+ * вбік кроком, а не перескакує.
+ */
+const CROWD_EASE_MS = 140;
+
 /** Підписи над котами (імена в нашийниках, приховані числа), що налягли б один на одного, — один над одним із таким проміжком, px. */
 const LABEL_GAP = 1;
 
@@ -86,6 +93,11 @@ interface Memory {
   heading: Vec;
   /** Коли кіт, що йде, востаннє віддзеркалився, мс сцени. */
   flipAt: number;
+  /** Поза й накладка цього кадру (`catAnim`) і місце кота за нею (`catSpot`; null — не вдома): з першого проходу, для юрби. */
+  choice: CatAnimChoice | null;
+  spot: CatSpot | null;
+  /** Зсув кота в юрбі зараз, клітинки: плавно йде до того, що каже `catCrowds` (`CROWD_EASE_MS`). */
+  crowd: Vec;
   /** Для стрибків і позіхання (`catTransition`). */
   transition: CatMemory | null;
   shot: CatShot | null;
@@ -155,6 +167,9 @@ export class IsoCatsView implements CatsPart {
     time: 0,
   };
   private readonly labelOrder: Phaser.GameObjects.Text[] = [];
+  /** Юрба (`catCrowds`): хто стоїть на підлозі цього кадру й куди кого зсунути. */
+  private readonly crowdMembers: CrowdMember[] = [];
+  private readonly crowdShifts = new Map<number, Vec>();
   /** Спинка кота від кореня (кіт, якого беруть на руки чи опускають). */
   private readonly petOffset: Point = { x: 0, y: 0 };
 
@@ -170,6 +185,7 @@ export class IsoCatsView implements CatsPart {
     sizes.clear();
     for (const cat of state.cats) sizes.set(cat.id, this.sizeFor(cat));
     const pairs = catPairs(state, this.sizeOf);
+    const crowd = this.crowd(state, pairs);
     const alive = this.alive;
     alive.clear();
     const seen = this.ctx.scene.cameras.main.worldView;
@@ -179,7 +195,7 @@ export class IsoCatsView implements CatsPart {
       const size = sizes.get(cat.id) ?? catSize(cat);
       const view = this.viewOf(cat);
       const mem = this.memoryOf(cat.id);
-      this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, time, frame.seconds);
+      this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, crowd.get(cat.id) ?? null, time, frame.seconds);
       this.drawHidden(cat, view, frame.showHidden);
       this.drawCollar(cat, view);
     }
@@ -242,6 +258,9 @@ export class IsoCatsView implements CatsPart {
         facing: null,
         heading: { x: 0, y: 0 },
         flipAt: Number.NEGATIVE_INFINITY,
+        choice: null,
+        spot: null,
+        crowd: { x: 0, y: 0 },
         transition: null,
         shot: null,
         lift: null,
@@ -272,7 +291,42 @@ export class IsoCatsView implements CatsPart {
     if (shot) this.memoryOf(cat).shot = shot;
   }
 
-  private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, time: number, seconds: number): void {
+  /**
+   * Перший прохід кадру: поза (`catAnim`) і місце (`catSpot`) кожного кота — у пам'ять, — і зсуви юрби (`catCrowds`): хто стоїть
+   * на підлозі не в парі майже в одній точці з іншими чи біля ніг персонажа.
+   */
+  private crowd(state: GameState, pairs: ReadonlyMap<number, PairPlacement>): ReadonlyMap<number, Vec> {
+    const members = this.crowdMembers;
+    members.length = 0;
+    for (const cat of state.cats) {
+      const mem = this.memoryOf(cat.id);
+      mem.choice = catAnim(state, cat);
+      mem.spot = null;
+      if (cat.away !== null) continue;
+      const pair = pairs.get(cat.id) ?? null;
+      const spot = catSpot(state, cat, mem.choice.anim, pair, SPOT_DEPTHS);
+      mem.spot = spot;
+      if (pair || spot.kind !== "floor" || catMoving(cat)) continue;
+      members.push({ id: cat.id, at: spot.at, size: this.sizeOf(cat), toPerson: towardPerson(cat) });
+    }
+    return catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts);
+  }
+
+  /** Зсув кота в юрбі цього кадру (`Memory.crowd`): плавно до `target` (null — без зсуву); кадр без часу — як був. */
+  private crowdShift(mem: Memory, target: Vec | null, seconds: number, first: boolean): Vec {
+    const tx = target?.x ?? 0;
+    const ty = target?.y ?? 0;
+    const k = first ? 1 : seconds > 0 ? 1 - Math.exp((-seconds * 1000) / CROWD_EASE_MS) : 0;
+    mem.crowd.x += (tx - mem.crowd.x) * k;
+    mem.crowd.y += (ty - mem.crowd.y) * k;
+    if (Math.abs(mem.crowd.x) < 1e-4 && Math.abs(mem.crowd.y) < 1e-4) {
+      mem.crowd.x = 0;
+      mem.crowd.y = 0;
+    }
+    return mem.crowd;
+  }
+
+  private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, crowd: Vec | null, time: number, seconds: number): void {
     // Стрибок на меблі чи з них, позіхання після сну — разові від зміни між кадрами.
     const transition = catTransition(state, cat, mem.transition);
     if (transition) this.startShot(cat.id, transition.anim, transition.face, transition.ms, time);
@@ -285,15 +339,19 @@ export class IsoCatsView implements CatsPart {
       return;
     }
 
-    // Що грати: поза й накладка (`catAnim`), поверх — разова, поки триває.
-    const { play, shot } = catPlay(catAnim(state, cat), catFace(state, cat, time), mem.shot, time);
+    // Що грати: поза й накладка (`catAnim`, з першого проходу), поверх — разова, поки триває.
+    const choice = mem.choice ?? catAnim(state, cat);
+    const { play, shot } = catPlay(choice, catFace(state, cat, time), mem.shot, time);
     mem.shot = shot;
     const { anim, overlay, restart, face } = play;
 
     // Персонаж бере кота на руки чи опускає (`Hands.lift`, T2): кіт біля рук, хоч сим уже й відпустив його, і йде з кистями.
     const handsLift = this.ctx.world.person.hands.lift;
     const lifting = handsLift && handsLift.cat === cat.id ? handsLift : null;
-    const own = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
+    // Місце — з першого проходу, якщо разова не змінила пози; на підлозі в юрбі — зсунутий уздовж екрана.
+    const base = anim === choice.anim && mem.spot ? mem.spot : catSpot(state, cat, anim, pair, SPOT_DEPTHS);
+    const shift = this.crowdShift(mem, base.kind === "floor" ? crowd : null, seconds, mem.pos === null);
+    const own = base.kind === "floor" && (shift.x !== 0 || shift.y !== 0) ? { ...base, at: { x: base.at.x + shift.x, y: base.at.y + shift.y } } : base;
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
     this.liftFrom(view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук). Іде — за
