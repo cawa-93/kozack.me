@@ -9,6 +9,7 @@ import type { GfxMode } from "../gfx";
 import { IsoApartmentView } from "../iso/apartment";
 import { IsoCatsView } from "../iso/cats";
 import { IsoFloorView } from "../iso/floor";
+import { IsoMarksView } from "../iso/marks";
 import { IsoPersonView } from "../iso/person";
 import { LegacyApartmentView } from "../legacy/apartmentview";
 import { LegacyCatsView } from "../legacy/catsview";
@@ -63,6 +64,8 @@ const ISO: WorldBuilders = {
   person: (ctx) => new IsoPersonView(ctx),
   // T1: коти на скелетах із запеченою шерстю (`src/view/iso/cats.ts`).
   cats: (ctx) => new IsoCatsView(ctx),
+  // T4: позначки — підсвітка цілі, смуги прогресу, пошук роботи й екран комп'ютера в манері арту (`src/view/iso/marks.ts`).
+  marks: (ctx) => new IsoMarksView(ctx),
 };
 
 export const WORLD_BUILDERS: Record<GfxMode, WorldBuilders> = { legacy: LEGACY, iso: ISO };
