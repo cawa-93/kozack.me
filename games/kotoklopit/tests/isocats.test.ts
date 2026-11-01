@@ -16,6 +16,7 @@ import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/id
 import { artEntry } from "../src/view/art/manifest";
 import { ART_VIEWS } from "../src/view/art/types";
 import { CAT_ANIMS } from "../src/view/rig/anims";
+import { catOverlayOn } from "../src/view/rig/anims/cat/feelings";
 import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
@@ -256,6 +257,31 @@ describe("складання анімації кота (`catanim.ts`)", () => {
     expect(a).not.toBe(b);
     expect(b.views?.front?.bones?.tail?.rot).toBe(a.views?.front?.bones?.tail?.rot);
     expect(b.views?.back?.bones?.body?.pos).toBe(a.views?.back?.bones?.body?.pos);
+  });
+
+  it("накладка почуттів — підігнана під основу (`catOverlayOn`, N3): та сама пара — те саме, що шар із підігнаною", () => {
+    const face = { eyes: "open", mouth: "closed", ears: "up" } as const;
+    for (const id of ["belly", "carried", "sit", "loaf"] as const) {
+      for (const over of CAT_OVERLAYS) {
+        const fitted = catOverlayOn(CAT_ANIMS[over], CAT_ANIMS[id]) as unknown as LooseAnim;
+        expect(composeCatAnim(CAT_ANIMS[id], CAT_ANIMS[over], face)).toEqual(withFace(layerAnims(CAT_ANIMS[id], fitted), face));
+      }
+    }
+  });
+
+  it("«попереджає» на спині («Пастка на животику»): хвіст б'є над підлогою, а не крізь неї", () => {
+    const anim = composeCatAnim(CAT_ANIMS.belly, CAT_ANIMS.warn, { eyes: "squint", mouth: "closed", ears: "back" });
+    for (const view of ART_VIEWS) {
+      let lowest = -Infinity;
+      for (let t = 0; t < anim.duration; t += 20) {
+        const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, facing: { view } });
+        rig.play(anim as never, 0, { blend: 0, from: t });
+        rig.evaluate(0);
+        const tail = rig.bone("tail");
+        lowest = Math.max(lowest, tail.world.b * tail.len + tail.world.ty);
+      }
+      expect({ view, above: lowest < 0 }).toEqual({ view, above: true });
+    }
   });
 });
 

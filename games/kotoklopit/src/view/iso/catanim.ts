@@ -1,9 +1,10 @@
 // Що грає скелет кота ізометричного вигляду (крок 16, T1): основна анімація, накладка й обличчя — в одній анімації скелета,
 // бо `Rig` грає одну (`rigcore.ts`). Чисті розрахунки без Phaser (`tests/isocats.test.ts`).
 //
-// - Накладка (`CAT_OVERLAYS`, `anim/ids.ts`) додається до основної: `rot` і `pos` — сумою, `scale` — добутком, доріжки
-//   слотів накладки замінюють доріжки основної. Доріжка, яку має лише одна з двох, переноситься ключ у ключ (по колу — стільки
-//   разів, скільки треба на спільний період); доріжка, яку мають обидві, — сума, вибрана з кроком `SAMPLE_MS`.
+// - Накладка (`CAT_OVERLAYS`, `anim/ids.ts`), спершу підігнана під основу (`catOverlayOn`, N3), додається до основної:
+//   `rot` і `pos` — сумою, `scale` — добутком, доріжки слотів накладки замінюють доріжки основної. Доріжка, яку має лише одна
+//   з двох, переноситься ключ у ключ (по колу — стільки разів, скільки треба на спільний період); доріжка, яку мають обидві, —
+//   сума, вибрана з кроком `SAMPLE_MS`.
 // - Обличчя (`catFace`): стани кадрів очей і рота — сталими доріжками слотів, якщо анімація їх не має (чхання має свої), і
 //   поворот кісток вух (`EAR_POSES`, `catrig.ts`) — сталими доріжками кісток вух у кожному ракурсі.
 //
@@ -11,11 +12,13 @@
 
 import type { CatEars } from "../anim/catface";
 import { ART_VIEWS, type ArtView } from "../art/types";
+import { catOverlayOn } from "../rig/anims/cat/feelings";
 import { animTime, sampleNumber, sampleVec } from "../rig/rigcore";
 import type { BoneTracks, Key, RigAnim, RigTracks, SlotTracks, StepKey, Vec2 } from "../rig/types";
 import { EAR_BONES, EAR_POSES } from "./catrig";
 
 type Loose = RigAnim<string, string>;
+type CatAnim = Parameters<typeof catOverlayOn>[0];
 type LooseTracks = RigTracks<string, string>;
 
 /** Крок вибірки суми двох доріжок, мс: 30 разів на секунду — між ключами лінійно, на око не відрізнити. */
@@ -98,7 +101,10 @@ export function composeCatAnim(base: Loose, overlay: Loose | null, face: FaceFra
   }
   let layered = byOverlay.get(overlay);
   if (!layered) {
-    layered = { anim: layerAnims(base, overlay), faces: new Map() };
+    // Накладку почуттів спершу підганяє під основу пакет N3 (`catOverlayOn`): на спині хвіст б'є над підлогою, на руках
+    // «пручається» брикає лапами, що звисають, а «терпить» сіпає ширше; для тієї самої пари — той самий об'єкт.
+    const fitted = overlay === null ? null : (catOverlayOn(overlay as CatAnim, base as CatAnim) as Loose);
+    layered = { anim: layerAnims(base, fitted), faces: new Map() };
     byOverlay.set(overlay, layered);
   }
   let byMouth = layered.faces.get(face.ears);
