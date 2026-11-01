@@ -19,7 +19,7 @@ import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
 import { iconArt, iconTexture, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
-import { bandRect, HUD_ART, HUD_BAND, HUD_BAR, HUD_STAT_PER_ICON, HUD_STATES, isoBarRects, STAT_BLINK, STAT_FILL } from "./iso/hudlook";
+import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, isoBarRects, STAT_BLINK, STAT_FILL, statDisc } from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
@@ -56,8 +56,14 @@ const BUTTONS_INSET = 44;
  */
 const NEWS = { width: 340, pad: 12, baseMs: 2500, perCharMs: 45, maxMs: 8000, fadeMs: 400 } as const;
 const DEPTH = UI_LAYERS.hud;
-/** Підказка на телефоні (§6.4): кружечок під іконкою запасу — центр від центру телефона, радіус і сторона іконки. */
-const HINT = { x: 19, y: 19, r: 15, icon: 22 } as const;
+/** Підказка на телефоні (§6.4): кружечок під іконкою запасу — центр від центру телефона й радіус старого кружечка. */
+const HINT = { x: 19, y: 19, r: 15 } as const;
+/**
+ * Кружечки нового вигляду (`statDisc`): чорнильне кільце завбільшки як старий кружечок з контуром 2 — показника
+ * (радіус `ICON_SIZE / 2 + 2`) і підказки (`HINT.r`), а іконка менша — так, щоб довкола неї лишався папір.
+ */
+const STAT_DISC = statDisc(2 * (ICON_SIZE / 2 + 2) + 2);
+const HINT_DISC = statDisc(2 * HINT.r + 2);
 
 type EventData = Phaser.Types.Input.EventData;
 
@@ -79,8 +85,8 @@ interface BarLook {
 }
 
 const LEGACY_BAR: BarLook = { trough: 0x1a1520, blink: 0xffffff, hatch: HATCH_COLOR, outline: COLORS.ink, radius: 5 };
-/** Заливка нового вигляду — під рамкою арту, тож її кінці — півкола (`isoBarRects`). */
-const ISO_BAR: BarLook = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch, outline: null, radius: HUD_BAR.height / 2 - HUD_BAR.inset };
+/** Заливка нового вигляду — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
+const ISO_BAR: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch, outline: null };
 
 /** Шкала показника `i` старого вигляду: 116 × 12 праворуч від іконки. */
 const legacyBarRect = (i: number): BarRect => ({ x: STATS_X + i * STATS_STEP + BAR_X, y: BAR_Y, w: BAR_WIDTH, h: BAR_HEIGHT });
@@ -153,8 +159,7 @@ export class Hud {
       const x = STATS_X + i * STATS_STEP + ICON_SIZE / 2;
       const y = BAR_Y + BAR_HEIGHT / 2;
       if (iso) {
-        const icon = ICON_SIZE - 2;
-        const ring = Math.round(icon * HUD_STAT_PER_ICON);
+        const { ring, icon } = STAT_DISC;
         return [
           addArt(scene, null, HUD_ART.stat).setPosition(x, y).setDisplaySize(ring, ring),
           addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(icon, icon),
@@ -166,8 +171,8 @@ export class Hud {
       ];
     });
     this.bars = scene.add.graphics();
-    this.barLook = iso ? ISO_BAR : LEGACY_BAR;
     const isoBars = iso ? STATS.map((_, i) => isoBarRects(legacyBarRect(i), uiEntry(HUD_ART.bar).size)) : [];
+    this.barLook = iso ? { ...ISO_BAR, radius: (isoBars[0]?.fill.h ?? 0) / 2 } : LEGACY_BAR;
     this.barRects = STATS.map((_, i) => isoBars[i]?.fill ?? legacyBarRect(i));
     this.effects = text(STATS_X, 44, 18, iso ? UI_TEXT.warning : "#e8a33a");
     this.money = text(866, 20, 30).setFontStyle("bold");
@@ -183,8 +188,8 @@ export class Hud {
     // Телефон персонажа: доставка (§6.4).
     if (iso) {
       this.phoneArt = addArt(scene, null, HUD_ART.phone, { state: HUD_STATES.phone.idle });
-      this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(HINT.icon, HINT.icon);
-      const ring = Math.round(HINT.icon * HUD_STAT_PER_ICON);
+      const { ring, icon } = HINT_DISC;
+      this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(icon, icon);
       const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
       this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
       const size = uiEntry(HUD_ART.phone).size;
