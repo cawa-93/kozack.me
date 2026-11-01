@@ -8,7 +8,7 @@
 // телефоні, іконка ≈ 35 px), а не більший за кота: див. коментар до сталої.
 
 import type { ArtPoint } from "../art/types";
-import { bubbleArt, type BubbleKind } from "../iconnames";
+import { bubbleArt, type BubbleKind, type Mark } from "../iconnames";
 import { uiEntry } from "./uilook";
 
 /**
@@ -22,7 +22,10 @@ export const ISO_BUBBLE_SCALE = 0.75;
 /** Полотно іконки й позначки в атласі, одиниці арту (`ICON` маніфесту: 64 × 64, pivot — центр). */
 export const ICON_ART_SIZE = 64;
 
-/** Кількість у баблі (`EventBubble.count`): темна заокруглена плашка з паперовою обвідкою — у правому верхньому куті іконки. */
+/**
+ * Кількість у баблі (`EventBubble.count`): темна заокруглена плашка з паперовою обвідкою — у правому верхньому куті іконки
+ * (з позначкою — у лівому, `countSide`).
+ */
 export const BUBBLE_COUNT = {
   /** Висота плашки й відступ тексту з боків, одиниці бабла (до `ISO_BUBBLE_SCALE`). */
   height: 32,
@@ -61,7 +64,7 @@ export interface IsoBubbleLook {
   icon: ArtPoint;
   /** Сторона іконки, одиниці фону (до `scale`). */
   iconSize: number;
-  /** Центр плашки кількості від вістря, одиниці фону (до `scale`); довге число росте праворуч. */
+  /** Центр плашки кількості в правому куті від вістря, одиниці фону (до `scale`); довге число росте праворуч. */
   count: ArtPoint;
   /** Полотно фону ліворуч і праворуч від вістря, одиниці світу (вістря думки — не посередині: кружечки збоку). */
   span: BubbleSpan;
@@ -98,16 +101,36 @@ export function countPillWidth(textWidth: number): number {
   return Math.max(BUBBLE_COUNT.height, textWidth + BUBBLE_COUNT.pad);
 }
 
-/** Центр плашки кількості завширшки `width` (одиниці фону): довге число росте праворуч від кута іконки, а не на неї. */
-export function countPillCenter(look: IsoBubbleLook, width: number): ArtPoint {
-  return { x: look.count.x + (width - BUBBLE_COUNT.height) / 2, y: look.count.y };
+/** Бік іконки, де стоїть плашка кількості: 1 — правий верхній кут, −1 — лівий (дзеркально). */
+export type CountSide = 1 | -1;
+
+/**
+ * Де плашка кількості, коли в баблі є позначка `mark`. Позначки A12 займають правий верхній кут іконки (бейдж «?» і «✓» —
+ * коло r 11,5 з центром (45,5, 18,5) на полотні 64; мазок «ні» туди ж і виходить), тож плашка з позначкою стає в лівий
+ * верхній кут — інакше цифра закрила б позначку. Лівий верхній кут вільний і від мазка «ні»: той іде з лівого нижнього.
+ */
+export function countSide(mark: Mark | undefined): CountSide {
+  return mark === undefined ? 1 : -1;
 }
 
-/** Скільки займає бабл із плашкою кількості завширшки `pill` (одиниці фону; без кількості — `undefined`), одиниці світу. */
-export function bubbleSpan(look: IsoBubbleLook, pill?: number): BubbleSpan {
+/**
+ * Центр плашки кількості завширшки `width` (одиниці фону) з боку `side`: довге число росте назовні від кута іконки, а не на
+ * неї.
+ */
+export function countPillCenter(look: IsoBubbleLook, width: number, side: CountSide = 1): ArtPoint {
+  const corner = look.count.x - look.icon.x;
+  return { x: look.icon.x + side * (corner + (width - BUBBLE_COUNT.height) / 2), y: look.count.y };
+}
+
+/**
+ * Скільки займає бабл із плашкою кількості завширшки `pill` (одиниці фону; без кількості — `undefined`) з боку `side`,
+ * одиниці світу.
+ */
+export function bubbleSpan(look: IsoBubbleLook, pill?: number, side: CountSide = 1): BubbleSpan {
   if (pill === undefined) return look.span;
-  const right = (countPillCenter(look, pill).x + pill / 2 + BUBBLE_COUNT.outline / 2) * look.scale;
-  return { left: look.span.left, right: Math.max(look.span.right, right) };
+  const center = countPillCenter(look, pill, side).x;
+  const half = pill / 2 + BUBBLE_COUNT.outline / 2;
+  return { left: Math.max(look.span.left, -(center - half) * look.scale), right: Math.max(look.span.right, (center + half) * look.scale) };
 }
 
 /**

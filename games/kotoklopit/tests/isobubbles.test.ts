@@ -13,6 +13,7 @@ import {
   bubbleSpan,
   countPillCenter,
   countPillWidth,
+  countSide,
   ICON_ART_SIZE,
   ISO_BUBBLE_SCALE,
   isoBubbleLook,
@@ -98,6 +99,32 @@ describe("бабл нового вигляду: межі й кількість",
       expect(long.y).toBe(one.y);
       const top = -(look.count.y - BUBBLE_COUNT.height / 2 - BUBBLE_COUNT.outline / 2) * look.scale;
       expect(look.room).toBeGreaterThanOrEqual(top + 8);
+    });
+
+    it(`${kind}: з позначкою кількість — у лівому верхньому куті, не на позначці; довге число росте ліворуч`, () => {
+      const look = isoBubbleLook(kind);
+      // Без позначки — праворуч, як і було; з будь-якою позначкою — ліворуч (позначки A12 у правому верхньому куті).
+      expect(countSide(undefined)).toBe(1);
+      for (const mark of Object.keys(MARKS) as Mark[]) expect(countSide(mark), mark).toBe(-1);
+      for (const width of [BUBBLE_COUNT.height, BUBBLE_COUNT.height + 20]) {
+        const right = countPillCenter(look, width, 1);
+        const left = countPillCenter(look, width, -1);
+        // Дзеркально відносно центру іконки, на тій самій висоті.
+        expect(left.x - look.icon.x).toBeCloseTo(look.icon.x - right.x);
+        expect(left.y).toBe(right.y);
+        // Уся плашка — у лівій половині поля іконки й лівіше: правої, де бейджі «?» і «✓» (x ≥ 32,2 з 64), не торкається.
+        expect(left.x + width / 2 + BUBBLE_COUNT.outline / 2).toBeLessThanOrEqual(look.icon.x);
+      }
+      // Правий край плашки на місці — довге число не лізе на іконку.
+      const one = countPillCenter(look, BUBBLE_COUNT.height, -1);
+      const long = countPillCenter(look, BUBBLE_COUNT.height + 20, -1);
+      expect(long.x + (BUBBLE_COUNT.height + 20) / 2).toBeCloseTo(one.x + BUBBLE_COUNT.height / 2);
+      // Межі бабла плашка розширює лише ліворуч.
+      const pill = countPillWidth(60);
+      const span = bubbleSpan(look, pill, -1);
+      expect(span.right).toBe(look.span.right);
+      expect(span.left).toBeGreaterThanOrEqual(look.span.left);
+      expect(span.left).toBeGreaterThanOrEqual(-(countPillCenter(look, pill, -1).x - pill / 2 - BUBBLE_COUNT.outline / 2) * look.scale - 1e-9);
     });
   }
 });

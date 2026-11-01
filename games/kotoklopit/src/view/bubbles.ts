@@ -19,6 +19,7 @@ import {
   bubbleSpan,
   countPillCenter,
   countPillWidth,
+  countSide,
   isoBubbleLook,
   type BubbleSpan,
   type IsoBubbleLook,
@@ -129,8 +130,8 @@ export class Bubbles {
 
   /**
    * Бабл нового вигляду: фон `ui/bubble/<вид>` вістрям у точці, іконка й позначка — кадри атласу в точці `icon` фону,
-   * кількість — плашка в правому верхньому куті іконки. Усе — у вкладеному контейнері зі сталим масштабом
-   * (`ISO_BUBBLE_SCALE`), бо масштаб зовнішнього анімують виринання й `setState`.
+   * кількість — плашка у верхньому куті іконки (правому; з позначкою — лівому, `countSide`). Усе — у вкладеному контейнері
+   * зі сталим масштабом (`ISO_BUBBLE_SCALE`), бо масштаб зовнішнього анімують виринання й `setState`.
    */
   private makeIso(look: IsoBubbleLook, kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Made {
     const scene = this.scene;
@@ -151,7 +152,7 @@ export class Bubbles {
       const h = c.height;
       const w = countPillWidth(label.width);
       pillWidth = w;
-      const { x: cx, y: cy } = countPillCenter(look, w);
+      const { x: cx, y: cy } = countPillCenter(look, w, countSide(mark));
       label.setPosition(cx, cy);
       const pill = scene.add.graphics();
       pill.fillStyle(UI_FILL.ink).fillRoundedRect(cx - w / 2, cy - h / 2, w, h, h / 2);
@@ -159,7 +160,7 @@ export class Bubbles {
       body.add([pill, label]);
     }
     const container = scene.add.container(x, y, [body]).setDepth(BUBBLE_DEPTH).addToDisplayList(this.layer);
-    return { container, span: bubbleSpan(look, pillWidth) };
+    return { container, span: bubbleSpan(look, pillWidth, countSide(mark)) };
   }
 
   /**
