@@ -350,4 +350,12 @@ describe("хода, разові й обличчя «хвороб»", () => {
     expect(eyes.length).toBeGreaterThan(0);
     expect(new Set(eyes.map((k) => k.v))).toEqual(new Set(["closed"]));
   });
+
+  it("повільне кліпання — стала поза з коротким циклом: не залежить від того, з якого моменту її почали, і основа з нею — без стрибка", () => {
+    const anim = CAT_FEELINGS.slowBlink;
+    for (const tracks of Object.values(anim.bones ?? {})) {
+      for (const list of [tracks?.rot, tracks?.pos, tracks?.scale]) if (list) expect(new Set(list.map((k) => JSON.stringify(k.v))).size).toBe(1);
+    }
+    expect(anim.duration).toBeLessThanOrEqual(340);
+  });
 });
