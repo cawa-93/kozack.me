@@ -2,7 +2,7 @@
 // частинами його шерсті й породи (`catview.ts`), що грає анімацію за тим, що кіт робить і відчуває (`catAnim`, `catFace`,
 // разові від подій і стрибки — `catevents.ts`), дивиться в один із чотирьох ізометричних ракурсів (`catFacing`), стоїть
 // там, де він є (`catspot.ts`: підлога, меблі, схованка, будиночок, барабан, переноска, ковдра, робот, руки), у парі —
-// розсунутий уздовж екрана (`catPairs`), у клубку бійки — за хмарою пилу. Як і старий вигляд (до кроку 16):
+// розсунутий уздовж екрана (`catPairs`), у клубку бійки — на тлі хмари пилу. Як і старий вигляд (до кроку 16):
 // імена в нашийниках (§9.10), приховані числа режиму розробки (§11.5), точки для баблів і руки, що гладить, підсвітка
 // кота-цілі (§8.2). Глибина — точки реєстру (`iso/depth.ts`).
 
@@ -13,6 +13,7 @@ import type { GameEvent } from "../../sim/events";
 import { showsPregnancy } from "../../sim/reproduction";
 import type { Target } from "../../sim/targets";
 import type { Cat, GameState, Quality, Vec } from "../../sim/types";
+import { coatOf } from "../../sim/genetics";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, personFacing } from "../anim/catfacing";
@@ -21,6 +22,7 @@ import type { CatOneShotId } from "../anim/ids";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
 import { catPairs, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
+import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
 import type { RigFacing } from "../rig/types";
 import type { PartContext } from "../world/context";
@@ -29,7 +31,7 @@ import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world
 import { ISO } from "../world/projection";
 import { catPlay, gaitRate, groundAt, nextGait, nextLift, startShot, type CatShot, type GaitMemory, type Lift } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
-import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
+import { CAT_PIECE, catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 import { liftedRoot } from "./personlook";
@@ -38,11 +40,19 @@ import { CARRIER_GRATE_DEPTH } from "./floor";
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
 const CARRIED_BUBBLE_SHIFT = 34;
 
-/** Хмара бійки (§9.4, «Клубок бійки»): на якій висоті над підлогою її середина, як швидко кипить і летить шерсть. */
-const BRAWL = { height: 26, frameMs: 110, tufts: 3, tuftMs: 700, reach: 46 } as const;
+/**
+ * Хмара бійки (§9.4, «Клубок бійки»): на якій висоті над підлогою її середина, наскільки вона менша за полотно (`scale`) і
+ * бліда (`alpha`), як швидко кипить і летить шерсть.
+ */
+const BRAWL = { height: 24, scale: 0.78, alpha: 0.8, frameMs: 110, tufts: 4, tuftMs: 700, reach: 46 } as const;
 const BRAWL_FRAMES = ["a", "b", "c"] as const;
-/** Хмара — над обома котами клубка: над вищою з їхніх глибин, вище за половину проміжку точки. */
-const CLOUD_ABOVE = ISO_DEPTH_SLOT * 0.6;
+/**
+ * Хмара — позаду обох котів клубка (§9.4, поза 2: «позаду — бліда хмара пилу, що об'єднує двох в одну фігуру»; рецензія хвилі
+ * 3): у проміжку дальшого з них, над тінню й під тулубом (`CAT_PIECE`), тож кулі обох котів, лапи, хвости й вуха — поверх неї,
+ * і видно обидва забарвлення. Клапті шерсті, що летять, — над обома, вище за половину проміжку ближчого.
+ */
+const CLOUD_BEHIND = (CAT_PIECE.shadow + CAT_PIECE.body) / 2;
+const TUFTS_ABOVE = ISO_DEPTH_SLOT * 0.6;
 
 /**
  * Кіт далі за це від краю видимого світу (одиниці арту) — скелет не рахується й не малюється: на телефоні камера показує
@@ -90,6 +100,7 @@ interface Memory {
 /** Хмара бійки двох котів. */
 interface Cloud {
   image: Phaser.GameObjects.Image;
+  /** Клапті шерсті — по черзі кольорів обох котів (`furColor`). */
   tufts: Phaser.GameObjects.Image[];
   /** Базовий масштаб хмари й клаптя (1 одиниця арту = 1 px світу): на нього множиться розмір котів. */
   base: { cloud: number; tuft: number };
@@ -187,11 +198,13 @@ export class IsoCatsView implements CatsPart {
   lateUpdate(): void {
     this.depth.solve();
     for (const cloud of this.clouds.values()) {
-      const depths = cloud.cats.map((id) => this.views.get(id)?.depth ?? Number.NaN).filter((d) => !Number.isNaN(d));
-      if (depths.length === 0) continue;
-      const d = Math.max(...depths) + CLOUD_ABOVE;
-      cloud.image.setDepth(d);
-      for (const tuft of cloud.tufts) tuft.setDepth(d + 0.0005);
+      const a = this.views.get(cloud.cats[0])?.depth ?? Number.NaN;
+      const b = this.views.get(cloud.cats[1])?.depth ?? Number.NaN;
+      if (Number.isNaN(a) && Number.isNaN(b)) continue;
+      const far = Number.isNaN(a) ? b : Number.isNaN(b) ? a : Math.min(a, b);
+      const near = Number.isNaN(a) ? b : Number.isNaN(b) ? a : Math.max(a, b);
+      cloud.image.setDepth(far + CLOUD_BEHIND);
+      for (const tuft of cloud.tufts) tuft.setDepth(near + TUFTS_ABOVE);
     }
     this.applyHighlight();
   }
@@ -296,7 +309,8 @@ export class IsoCatsView implements CatsPart {
     f.girth = girthOf(cat);
     f.show = spot.show;
     f.under = spot.kind === "under";
-    f.shadow = lifting ? lifting.w < 0.5 : spot.shadow;
+    // У клубку бійки тінь — сама хмара пилу під котами: тінь ближчого лягла б на хмару.
+    f.shadow = lifting ? lifting.w < 0.5 : spot.shadow && !(anim === "brawl" && pair?.kind === "brawl");
     // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.
     f.culled = this.visible.width > CULL_MARGIN * 2 && !this.visible.contains(f.root.x, f.root.y);
     f.teeth = carrying ? this.teethOf(state, act.carry, act.target) : null;
@@ -387,8 +401,9 @@ export class IsoCatsView implements CatsPart {
   // --- Хмара бійки -------------------------------------------------------------------------------
 
   /**
-   * Клубок бійки (§9.4): над двома котами, що зійшлися, — хмара пилу (`fx/brawl-cloud`, кадри кипіння), з якої стирчать їхні
-   * лапи й хвости (анімація `brawl`), і клапті шерсті, що летять навсібіч. Одна на пару — від кота з меншим номером.
+   * Клубок бійки (§9.4): позаду двох котів, що зійшлися, — бліда хмара пилу (`fx/brawl-cloud`, кадри кипіння), менша за полотно,
+   * а поверх неї — кулі обох котів із лапами, хвостами й вухами (анімація `brawl`) і клапті шерсті їхніх кольорів, що летять
+   * навсібіч. Одна на пару — від кота з меншим номером.
    */
   private drawClouds(state: GameState, pairs: ReadonlyMap<number, PairPlacement>, sizes: ReadonlyMap<number, CatSize>, time: number): void {
     for (const cloud of this.clouds.values()) cloud.seen = false;
@@ -402,7 +417,13 @@ export class IsoCatsView implements CatsPart {
       let cloud = this.clouds.get(key);
       if (!cloud) {
         const image = addArt(this.ctx.scene, this.ctx.layer, "fx/brawl-cloud", { state: "a" });
-        const tufts = Array.from({ length: BRAWL.tufts }, () => addArt(this.ctx.scene, this.ctx.layer, "fx/fur-flying"));
+        const colors = [furColor(cat), furColor(foe)];
+        const tufts = Array.from({ length: BRAWL.tufts }, (_, i) => {
+          const tuft = addArt(this.ctx.scene, this.ctx.layer, "fx/fur-flying");
+          // Клапоть сірий (greyHi): множення тону дає колір шерсті кота (без WebGL — лишається сірим).
+          tuft.setTint(colors[i % colors.length] ?? COAT_WHITE);
+          return tuft;
+        });
         cloud = { image, tufts, base: { cloud: image.scaleX, tuft: tufts[0]?.scaleX ?? 1 }, cats: [cat.id, foe.id], seen: true };
         this.clouds.set(key, cloud);
       }
@@ -411,7 +432,7 @@ export class IsoCatsView implements CatsPart {
       const cx = view.root.x;
       const cy = view.root.y - BRAWL.height * k;
       setArt(cloud.image, "fx/brawl-cloud", { state: BRAWL_FRAMES[Math.floor(time / BRAWL.frameMs) % BRAWL_FRAMES.length] });
-      cloud.image.setVisible(true).setPosition(cx, cy).setScale(cloud.base.cloud * k);
+      cloud.image.setVisible(true).setPosition(cx, cy).setScale(cloud.base.cloud * k * BRAWL.scale).setAlpha(BRAWL.alpha);
       cloud.tufts.forEach((tuft, i) => {
         const cycle = time / BRAWL.tuftMs + i / BRAWL.tufts + cat.id * 0.13;
         const p = cycle - Math.floor(cycle);
@@ -580,6 +601,18 @@ export class IsoCatsView implements CatsPart {
     if (current?.target.active) current.target.filters?.internal.remove(current.glow);
     this.glowing = null;
   }
+}
+
+/**
+ * Колір шерсті кота для клаптів, що летять із бійки (§9.4): головний колір його забарвлення (§9.10) — ван білий, колорпойнт
+ * світлий, табі — тло малюнка, решта — суцільний пігмент.
+ */
+function furColor(cat: Cat): number {
+  const coat = coatOf(cat.genes, cat.shape);
+  const look = PIGMENT_LOOK[coat.base];
+  if (coat.white >= 3) return COAT_WHITE;
+  if (coat.pointed) return look.pointBody;
+  return coat.tabby ? look.ground : look.solid;
 }
 
 /** Підписи від нижчого на екрані до вищого (origin — низ посередині). */
