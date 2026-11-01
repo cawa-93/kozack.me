@@ -106,7 +106,7 @@ const EAR_NORMAL: Part = { size: { w: 30, h: 27 }, pivot: { x: 15, y: 18 } };
 export const CAT_EARS: Record<Shape["ears"], Part> = {
   normal: EAR_NORMAL,
   large: { size: { w: 36, h: 33 }, pivot: { x: 18, y: 24 } },
-  folded: { size: { w: 32, h: 28 }, pivot: { x: 16, y: 19 } },
+  folded: { size: { w: 30, h: 25 }, pivot: { x: 15, y: 16 } },
   curled: { size: { w: 33, h: 33 }, pivot: { x: 18, y: 24 } },
   tufted: { size: { w: 32, h: 35 }, pivot: { x: 16, y: 26 } },
 };
