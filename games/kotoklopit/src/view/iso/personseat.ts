@@ -26,9 +26,9 @@ export interface Seat {
 }
 
 export const SEATS: readonly Seat[] = [
-  // Крісло на колесах: лагодячи дріт, персонаж сидить на підлозі під столом — крісло відкочене праворуч (на екрані — униз
-  // праворуч) і трохи назад.
-  { id: "chair-desk", art: "env/chair-desk", object: "computer", aside: { x: 0.62, y: 0.12 } },
+  // Крісло на колесах: лагодячи дріт, персонаж сидить на підлозі під столом — крісло відкочене вздовж стола до лівого краю
+  // (на екрані — угору ліворуч, за персонажем): праворуч чи назад воно стояло б перед ним і закривало його.
+  { id: "chair-desk", art: "env/chair-desk", object: "computer", aside: { x: -0.68, y: 0.08 } },
   { id: "chair-kitchen", art: "env/chair-kitchen", object: "table", aside: null },
 ];
 
