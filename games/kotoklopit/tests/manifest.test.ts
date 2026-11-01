@@ -446,18 +446,16 @@ describe("маніфест: іконки й гліфи", () => {
     for (const kind of keys(bubbles)) expect(entry(`ui/bubble/${kind}`).points?.["icon"], kind).toBeDefined();
   });
 
-  it("кожен гліф DOM (src/ui/glyphs.ts) і «❓» з карток — ui/glyph/<назва>", () => {
+  it("кожен гліф DOM (`GLYPH_ART`, src/ui/glyphs.ts) — запис ui/glyph/<назва>, і кожен трапляється в картках", () => {
     const ui = import.meta.glob<string>("../src/ui/*.ts", { query: "?raw", import: "default", eager: true });
-    const glyphs = Object.entries(ui).find(([file]) => file.endsWith("/glyphs.ts"))?.[1] ?? "";
-    const table = glyphs.slice(glyphs.indexOf("const GLYPHS"), glyphs.indexOf("};", glyphs.indexOf("const GLYPHS")));
-    const symbols = [...table.matchAll(/^\s*"([^"]+)":\s*`/gm)].map((m) => m[1] ?? "");
-    expect(symbols.length).toBeGreaterThan(0);
-    if (Object.values(ui).some((source) => source.includes("❓"))) symbols.push("❓");
-    for (const symbol of symbols) {
-      const name = GLYPH_ART[symbol];
-      expect(name, symbol).toBeDefined();
+    const cards = Object.entries(ui)
+      .filter(([file]) => !file.endsWith("/glyphs.ts"))
+      .map(([, source]) => source)
+      .join("\n");
+    expect(Object.keys(GLYPH_ART)).toContain("❓");
+    for (const [symbol, name] of Object.entries(GLYPH_ART)) {
       entry(`ui/glyph/${name}`);
+      expect(cards.includes(symbol), symbol).toBe(true);
     }
-    expect(Object.keys(GLYPH_ART).sort()).toEqual([...new Set(symbols)].sort());
   });
 });

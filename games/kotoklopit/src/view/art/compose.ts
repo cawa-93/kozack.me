@@ -569,8 +569,7 @@ const portraitWaiters = new WeakMap<object, () => void>();
  * Намалювати портрет персонажа з кадрів атласу (`sources.ts`, без Phaser) на полотно `canvas` (його пікселі — як є, з
  * урахуванням devicePixelRatio того, хто його створив): частини тонуються тим самим рецептом, що й у грі (`personRecipe`),
  * і вписуються в полотно. Повертає false, якщо намалювати не вдалося — атласу немає, у ньому ще немає цих частин (лише
- * заглушки) чи він ще вантажиться (тоді, коли завантажиться, кличе `onReady`), — і тоді полотно не змінюється: той, хто
- * кличе, малює запасний портрет.
+ * заглушки) чи він ще вантажиться (тоді, коли завантажиться, кличе `onReady`), — і тоді полотно не змінюється.
  */
 export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, look: Look, opts: PortraitOptions = {}): boolean {
   const parts = opts.parts ?? portraitHead(look);

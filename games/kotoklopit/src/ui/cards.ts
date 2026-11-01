@@ -1,5 +1,6 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
+import { PALETTE } from "../../art/palette";
 import { MODIFIERS, WAKE_MINUTE, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
@@ -173,12 +174,15 @@ export function endScreen(state: GameState, end: GameEnd, handlers: EndHandlers)
   };
 }
 
-/** На що пішов час (§4.2): смуга з чотирьох частин, під нею — іконка й години кожної. */
+/**
+ * На що пішов час (§4.2): смуга з чотирьох частин, під нею — іконка й години кожної. Кольори — палітра арту: відрізок смуги
+ * основним тоном, кружечок під іконкою в легенді — світлішим («…Hi»), бо він на темному екрані.
+ */
 const TIME_PARTS = [
-  { key: "work", glyph: "💻", color: "#5a7fc0" },
-  { key: "cats", glyph: "🐱", color: "#e8a25a" },
-  { key: "self", glyph: "☕", color: "#6fae6a" },
-  { key: "bustle", glyph: "👣", color: "#7a6a78" },
+  { key: "work", glyph: "💻", bar: PALETTE.blue, legend: PALETTE.blueHi },
+  { key: "cats", glyph: "🐱", bar: PALETTE.orange, legend: PALETTE.orangeHi },
+  { key: "self", glyph: "☕", bar: PALETTE.green, legend: PALETTE.greenHi },
+  { key: "bustle", glyph: "👣", bar: PALETTE.grey, legend: PALETTE.greyHi },
 ] as const;
 
 function timeBar(state: GameState): HTMLElement | null {
@@ -192,10 +196,10 @@ function timeBar(state: GameState): HTMLElement | null {
     const value = minutes[part.key];
     const segment = element("span");
     segment.style.width = `${(value / total) * 100}%`;
-    segment.style.background = part.color;
+    segment.style.background = part.bar;
     bar.append(segment);
     const item = element("span", undefined, `${part.glyph} ${Math.round(value / 60)} год`);
-    item.style.setProperty("--part", part.color);
+    item.style.setProperty("--part", part.legend);
     legend.append(item);
   }
   box.append(bar, legend);
