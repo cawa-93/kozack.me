@@ -680,8 +680,9 @@ const jumpDown: CatAnim = {
   bones: posed([
     // На краю: присів і дивиться вниз.
     { t: 0, pose: { pelvis: { y: 1.5 }, "leg-front-near": { sx: 0.92 }, "leg-front-far": { sx: 0.92 }, "leg-back-near": { sx: 0.93 }, "leg-back-far": { sx: 0.93 }, head: { rot: 16 }, tail: tail(-6) } },
-    // Поштовх (корінь ще нагорі): тіло носом униз, задні відштовхуються від краю назад, передні вже звисають за край.
-    { t: 50, ease: "in", pose: { pelvis: { y: 2, rot: 10 }, "leg-front-near": { rot: -30, sx: 1.04 }, "leg-front-far": { rot: -36, sx: 1.04 }, "leg-back-near": { rot: 20, sx: 1.07 }, "leg-back-far": { rot: 16, sx: 1.04 }, head: { rot: 2 }, tail: tail(18) } },
+    // Поштовх (корінь ще нагорі): тіло ледь носом униз, задні відштовхуються назад, передні тягнуться вперед за край — не
+    // вниз: кіт стоїть посеред меблів (`isoCatPerch`), і подушечки нижче за корінь пройшли б крізь сидіння чи стільницю.
+    { t: 50, ease: "in", pose: { pelvis: { y: 0.5, rot: 6 }, "leg-front-near": { rot: -44, sx: 0.88 }, "leg-front-far": { rot: -50, sx: 0.88 }, "leg-back-near": { rot: 20, sx: 1.05 }, "leg-back-far": { rot: 16, sx: 1.03 }, head: { rot: 4 }, tail: tail(18) } },
     // Падає: передні витягнуті до підлоги, задні підібрані ззаду, хвіст угору для рівноваги.
     { t: 125, pose: { pelvis: { y: -6, rot: 20 }, "leg-front-near": { rot: -40, sx: 1.08 }, "leg-front-far": { rot: -46, sx: 1.08 }, "leg-back-near": { rot: 14, sx: 0.84 }, "leg-back-far": { rot: 8, sx: 0.84 }, head: { rot: -10 }, tail: tail(28) } },
     // Передні торкнулися підлоги (корінь уже внизу), круп ще вгорі.
