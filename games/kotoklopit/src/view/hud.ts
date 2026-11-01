@@ -7,7 +7,6 @@
 import Phaser from "phaser";
 
 import { addArt, setArt } from "./art/atlas";
-import { artEntry } from "./art/manifest";
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
 import { LOW_STAT } from "../sim/config";
@@ -20,8 +19,8 @@ import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
 import { iconArt, iconTexture, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
-import { HUD_ART, HUD_BAR, HUD_STATES, STAT_BLINK, STAT_FILL } from "./iso/hudlook";
-import { UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
+import { bandRect, HUD_ART, HUD_BAND, HUD_BAR, HUD_STAT_PER_ICON, HUD_STATES, isoBarRects, STAT_BLINK, STAT_FILL } from "./iso/hudlook";
+import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
 import { BASE_WIDTH, HUD_HEIGHT, type Frame } from "./viewport";
@@ -80,23 +79,11 @@ interface BarLook {
 }
 
 const LEGACY_BAR: BarLook = { trough: 0x1a1520, blink: 0xffffff, hatch: HATCH_COLOR, outline: COLORS.ink, radius: 5 };
-const ISO_BAR: BarLook = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch, outline: null, radius: HUD_BAR.radius };
+/** Заливка нового вигляду — під рамкою арту, тож її кінці — півкола (`isoBarRects`). */
+const ISO_BAR: BarLook = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch, outline: null, radius: HUD_BAR.height / 2 - HUD_BAR.inset };
 
 /** Шкала показника `i` старого вигляду: 116 × 12 праворуч від іконки. */
 const legacyBarRect = (i: number): BarRect => ({ x: STATS_X + i * STATS_STEP + BAR_X, y: BAR_Y, w: BAR_WIDTH, h: BAR_HEIGHT });
-
-/**
- * Шкала `i` нового вигляду: центр рамки `ui/hud/bar` (по центру старої шкали) і заливка в рамці з відступом
- * `HUD_BAR.inset` від її краю.
- */
-function isoBar(i: number): { center: { x: number; y: number }; fill: BarRect } {
-  const old = legacyBarRect(i);
-  const size = artEntry(HUD_ART.bar)?.size ?? { w: old.w + 4, h: old.h + 8 };
-  const center = { x: old.x + old.w / 2, y: old.y + old.h / 2 };
-  const inset = HUD_BAR.inset;
-  const fill = { x: center.x - size.w / 2 + inset, y: center.y - size.h / 2 + inset, w: size.w - 2 * inset, h: size.h - 2 * inset };
-  return { center, fill };
-}
 
 export class Hud {
   /** Новий вигляд (крок 16): кадри атласу й палітра арту; інакше — старий, як був. */
@@ -148,10 +135,9 @@ export class Hud {
       : (x: number, y: number, size: number, color = TEXT) => scene.add.text(x, y, "", { fontFamily: FONT, fontSize: `${size}px`, color, resolution: 2 });
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
     if (iso) {
-      const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1);
-      // Полотно смуги вище за панель на чорнильний край під нею.
-      const edge = Math.max(0, (artEntry(HUD_ART.band)?.size.h ?? HUD_HEIGHT) - HUD_HEIGHT);
-      this.band = (width, height) => band.place(0, 0, width, height + edge);
+      // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
+      const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
+      this.band = (width, height) => band.place(bandRect(band.frame, width, height));
     } else {
       const band = scene.add
         .rectangle(0, 0, BASE_WIDTH, HUD_HEIGHT, COLORS.background, 0.92)
@@ -167,9 +153,11 @@ export class Hud {
       const x = STATS_X + i * STATS_STEP + ICON_SIZE / 2;
       const y = BAR_Y + BAR_HEIGHT / 2;
       if (iso) {
+        const icon = ICON_SIZE - 2;
+        const ring = Math.round(icon * HUD_STAT_PER_ICON);
         return [
-          addArt(scene, null, HUD_ART.stat).setPosition(x, y),
-          addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(ICON_SIZE - 2, ICON_SIZE - 2),
+          addArt(scene, null, HUD_ART.stat).setPosition(x, y).setDisplaySize(ring, ring),
+          addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(icon, icon),
         ];
       }
       return [
@@ -179,24 +167,27 @@ export class Hud {
     });
     this.bars = scene.add.graphics();
     this.barLook = iso ? ISO_BAR : LEGACY_BAR;
-    this.barRects = STATS.map((_, i) => (iso ? isoBar(i).fill : legacyBarRect(i)));
-    // Рамки шкал нового вигляду — над заливкою.
-    const frames = iso ? STATS.map((_, i) => addArt(scene, null, HUD_ART.bar).setPosition(isoBar(i).center.x, isoBar(i).center.y)) : [];
+    const isoBars = iso ? STATS.map((_, i) => isoBarRects(legacyBarRect(i), uiEntry(HUD_ART.bar).size)) : [];
+    this.barRects = STATS.map((_, i) => isoBars[i]?.fill ?? legacyBarRect(i));
     this.effects = text(STATS_X, 44, 18, iso ? UI_TEXT.warning : "#e8a33a");
     this.money = text(866, 20, 30).setFontStyle("bold");
     this.schedule = text(990, 4, 18, iso ? UI_TEXT.muted : MUTED);
     this.left = scene.add
-      .container(0, 0, [this.date, this.clock, ...labels, this.bars, ...frames, this.effects, this.money, this.schedule])
+      .container(0, 0, [this.date, this.clock, ...labels, this.bars])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
+    // Рамки шкал нового вигляду — «три частини» над заливкою.
+    for (const bar of isoBars) new StretchArt(scene, this.left, HUD_ART.bar).place(bar.frame);
+    this.left.add([this.effects, this.money, this.schedule]);
 
     // Телефон персонажа: доставка (§6.4).
     if (iso) {
       this.phoneArt = addArt(scene, null, HUD_ART.phone, { state: HUD_STATES.phone.idle });
       this.hintIcon = addArt(scene, null, iconArt("food")).setPosition(HINT.x, HINT.y).setDisplaySize(HINT.icon, HINT.icon);
-      const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(HINT.r * 2, HINT.r * 2);
+      const ring = Math.round(HINT.icon * HUD_STAT_PER_ICON);
+      const under = addArt(scene, null, HUD_ART.stat).setPosition(HINT.x, HINT.y).setDisplaySize(ring, ring);
       this.hint = scene.add.container(0, 0, [under, this.hintIcon]).setVisible(false);
-      const size = artEntry(HUD_ART.phone)?.size ?? { w: 56, h: 56 };
+      const size = uiEntry(HUD_ART.phone).size;
       this.phone = scene.add.container(0, 0, [this.phoneArt, this.hint]).setSize(size.w, size.h).setDepth(DEPTH).addToDisplayList(layer);
     } else {
       const g = scene.add.graphics();

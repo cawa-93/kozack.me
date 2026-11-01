@@ -1,7 +1,8 @@
 // Керування на телефоні (§10): плаваючий джойстик під лівий палець, кнопки дії й ривка
 // під правий. З'являється після першого дотику.
 // У новому вигляді (крок 16, `?gfx=iso`) джойстик і кнопки — кадри атласу `ui/touch/*` (A13): кнопка дії має стан `held`,
-// ривок — `cooldown`; розміри й місця ті самі, тож пальцям нічого не змінюється. Прозорість задає сам арт.
+// ривок — `cooldown`; розміри й місця ті самі, тож пальцям нічого не змінюється. A13 малює їх непрозорими, а прозорість
+// задає код (`TOUCH_ALPHA`): квартиру під пальцем має бути видно.
 
 import Phaser from "phaser";
 
@@ -9,7 +10,7 @@ import type { Vec } from "../sim/types";
 import { addArt, setArt } from "./art/atlas";
 import { COLORS } from "./colors";
 import { currentGfx } from "./gfx";
-import { HUD_STATES, TOUCH_ART } from "./iso/hudlook";
+import { HUD_STATES, TOUCH_ALPHA, TOUCH_ART } from "./iso/hudlook";
 import type { Frame } from "./viewport";
 import { UI_LAYERS } from "./world/layers";
 
@@ -46,11 +47,14 @@ export class TouchControls {
   ) {
     scene.input.addPointer(2);
     if (gfx === "iso") {
-      const image = (id: (typeof TOUCH_ART)[keyof typeof TOUCH_ART], state?: string): Phaser.GameObjects.Image =>
-        addArt(scene, layer, id, state === undefined ? {} : { state }).setDepth(DEPTH).setVisible(false);
-      this.base = image(TOUCH_ART.base);
-      this.knob = image(TOUCH_ART.knob);
-      this.art = { action: image(TOUCH_ART.action, HUD_STATES.action.idle), dash: image(TOUCH_ART.dash, HUD_STATES.dash.ready) };
+      const image = (id: (typeof TOUCH_ART)[keyof typeof TOUCH_ART], alpha: number, state?: string): Phaser.GameObjects.Image =>
+        addArt(scene, layer, id, state === undefined ? {} : { state }).setDepth(DEPTH).setAlpha(alpha).setVisible(false);
+      this.base = image(TOUCH_ART.base, TOUCH_ALPHA.base);
+      this.knob = image(TOUCH_ART.knob, TOUCH_ALPHA.knob);
+      this.art = {
+        action: image(TOUCH_ART.action, TOUCH_ALPHA.action.idle, HUD_STATES.action.idle),
+        dash: image(TOUCH_ART.dash, TOUCH_ALPHA.dash.ready, HUD_STATES.dash.ready),
+      };
     } else {
       this.base = scene.add
         .circle(0, 0, JOYSTICK_RADIUS, 0xffffff, 0.12)
@@ -132,9 +136,10 @@ export class TouchControls {
   draw(canDash: boolean): void {
     if (!this.visible) return;
     if (this.art) {
-      const states = HUD_STATES;
-      setArt(this.art.action, TOUCH_ART.action, { state: this.holding ? states.action.held : states.action.idle });
-      setArt(this.art.dash, TOUCH_ART.dash, { state: canDash ? states.dash.ready : states.dash.cooldown });
+      const action = this.holding ? "held" : "idle";
+      const dash = canDash ? "ready" : "cooldown";
+      setArt(this.art.action, TOUCH_ART.action, { state: HUD_STATES.action[action] }).setAlpha(TOUCH_ALPHA.action[action]);
+      setArt(this.art.dash, TOUCH_ART.dash, { state: HUD_STATES.dash[dash] }).setAlpha(TOUCH_ALPHA.dash[dash]);
       return;
     }
     if (!this.buttons) return;
