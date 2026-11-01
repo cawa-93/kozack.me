@@ -320,4 +320,22 @@ describe("хода, разові й обличчя «хвороб»", () => {
       }
     }
   });
+
+  it("чухання: лапа чеше голову за вухом — подушечка на потилиці, і спереду, і ззаду", () => {
+    const anim = CAT_FEELINGS.itch;
+    for (const view of VIEWS) {
+      for (let t = 200; t < 1300; t += 45) {
+        const rig = new Rig(CAT_RIG, { facing: { view } });
+        rig.play(anim, 0, { blend: 0, from: t });
+        rig.evaluate(0);
+        const leg = rig.bone("leg-back-near");
+        const p = { x: leg.world.a * leg.len + leg.world.tx, y: leg.world.b * leg.len + leg.world.ty };
+        const h = rig.bone("head").world;
+        const det = h.a * h.d - h.b * h.c;
+        const local = { x: (h.d * (p.x - h.tx) - h.c * (p.y - h.ty)) / det, y: (-h.b * (p.x - h.tx) + h.a * (p.y - h.ty)) / det };
+        // Потилиця за вухом: позаду pivot голови й вище за нього, нижче за основу вуха (−15,5).
+        expect({ view, t, behindEar: local.x > -9 && local.x < 0 && local.y > -14 && local.y < -3 }).toEqual({ view, t, behindEar: true });
+      }
+    }
+  });
 });

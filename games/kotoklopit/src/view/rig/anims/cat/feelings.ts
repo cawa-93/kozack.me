@@ -749,30 +749,51 @@ function sneezeAnim(): CatAnim {
 }
 
 /**
- * Чухає задньою лапою за вухом (блохи, дерматит): сидячи (як `sit`), ближня задня лапа злітає до шиї за вухом і часто-часто
- * чеше, голова хилиться назустріч і трусится в такт, — і лапа знову на підлозі.
+ * Чухає задньою лапою за вухом (блохи, дерматит): сидячи (як `sit`), кіт втягує голову й пригинає її до лапи (шия нижче й
+ * назад, голова носом донизу), ближня задня лапа злітає — спершу коліном угору, підібрана, тоді випрямляється за вухо — і
+ * часто-часто чеше згори вниз, голова трусится в такт; наприкінці лапа так само підбирається й стає на підлогу. Куди дістає
+ * лапа, рахує `legTo`: подушечка — у точках за вухом (система голови), тож і спереду, і ззаду лапа закінчується на голові,
+ * а не на шиї чи плечі (ззаду вона йде від стегна вгору до потилиці, а не смугою навскіс через бік до плеча).
  */
-function itchTracks(sit: Pose, leg: number, reach: number): Tracks {
+/** Наскільки кіт пригинає голову, коли чухається: зсув шиї (назад і вниз уздовж тулуба) і поворот голови носом донизу. */
+const ITCH_LEAN: Pose = { neck: { x: -8, y: 5 }, head: { rot: 10 } };
+/** Де чеше лапа (система голови: (0, 0) — pivot голови, основа ближнього вуха — над ним, (−0,5; −15,5)): за вухом і нижче. */
+const ITCH_TOP: Vec2 = { x: -4, y: -10 };
+const ITCH_LOW: Vec2 = { x: -6, y: -5.5 };
+/** Лапа на півдорозі (коліном угору): поворот уперед і наскільки підібрана. */
+const ITCH_TUCK: Tweak = { rot: -95, sx: 0.72 };
+
+function itchTracks(sit: Pose, view: ArtView): Tracks {
   const T = CAT_ONE_SHOT_MS.itch;
-  const up: Pose = over(sit, { neck: { x: -1, y: 1.5 }, head: { rot: 6 } });
-  const raised = (d: number, h: number): Pose => ({ ...up, "leg-back-near": { rot: leg + d, sx: reach }, head: { rot: (up.head?.rot ?? 0) + h } });
+  const lean = over(sit, ITCH_LEAN);
+  /** Поза удару: голова трусится на `h`, подушечка — у точці `spot` системи голови. */
+  const raised = (h: number, spot: Vec2): Pose => {
+    const pose = over(lean, { head: { rot: h } });
+    const rig = rigIn(pose, view);
+    return { ...pose, "leg-back-near": legTo(rig, "leg-back-near", toWorld(rig, "head", spot)) };
+  };
+  const tucked: Pose = { ...lean, "leg-back-near": ITCH_TUCK };
   const strokes: Frame[] = [];
-  // Часті удари лапою: туди й назад кожні 45 мс, голова трусится навпаки.
-  for (let t = 200, i = 0; t < 1300; t += 45, i++) strokes.push({ t, pose: raised(i % 2 === 0 ? -7 : 7, i % 2 === 0 ? 1.5 : -1.5) });
-  return posed([{ t: 0, pose: sit }, ...strokes, { t: 1330, pose: raised(0, 0) }, { t: T, pose: sit }]);
+  // Часті удари лапою: згори за вухом униз і назад кожні 45 мс, голова трусится назустріч.
+  for (let t = 200, i = 0; t < 1300; t += 45, i++) strokes.push({ t, pose: i % 2 === 0 ? raised(1.5, ITCH_TOP) : raised(-1.5, ITCH_LOW) });
+  return posed([
+    { t: 0, pose: sit },
+    { t: 110, pose: tucked },
+    ...strokes,
+    { t: 1330, pose: raised(0, ITCH_TOP) },
+    { t: 1440, pose: tucked },
+    { t: T, pose: sit },
+  ]);
 }
 
 function itchAnim(): CatAnim {
-  const front = itchTracks(SIT, -148, 1.26);
-  const back = itchTracks(SIT_BACK, -150, 1.24);
   return {
     duration: CAT_ONE_SHOT_MS.itch,
     loop: false,
-    bones: front,
-    views: { back: { bones: legsOf(back), slots: NEAR_FRONT_UNDER } },
+    bones: itchTracks(SIT, "front"),
+    views: { back: { bones: legsOf(itchTracks(SIT_BACK, "back")), slots: NEAR_FRONT_UNDER } },
   };
 }
-
 /** Доріжки лише лап (для перевизначення ракурсу ¾ ззаду, де лапи інакше сягають підлоги). */
 function legsOf(tracks: Tracks): Tracks {
   const out: Tracks = {};
