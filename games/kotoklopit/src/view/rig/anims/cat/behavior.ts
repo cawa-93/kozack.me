@@ -70,7 +70,11 @@ interface Plant {
   back?: Omit<Plant, "back">;
 }
 
-/** Хвіст у позі: поворот довкола корінця (градуси), масштаб (рівномірний) і чи віддзеркалено кадр уздовж кістки. */
+/**
+ * Хвіст у позі: поворот довкола корінця (градуси), масштаб (рівномірний) і чи віддзеркалено кадр уздовж кістки. Кадр хвоста
+ * намальовано гачком угору вже у вихідній позі (поворот 0 — хвіст угору, гачок уперед); віддзеркалений (гачок назад) стоїть
+ * прямо вгору за повороту ≈ 75 (разом із нахилом таза).
+ */
 interface TailPose {
   rot: number;
   s?: number;
@@ -240,6 +244,12 @@ function plantLeg(leg: Leg, view: ArtView, pose: Pose, plant: Plant, cache: Map<
 const TAIL_ROOT: Vec2 = { x: 3.5, y: 0.5 };
 
 /**
+ * Віддзеркалений кадр хвоста в ракурсі ¾ ззаду (свій кадр `back`) за того самого повороту лягає на ≈ 22° більше назад, ніж
+ * спереду, — тож ззаду його повернуто ще на стільки, щоб хвіст стояв так само (`solve`; доріжки поверх поз — свої для `back`).
+ */
+const TAIL_MIRROR_BACK = 22;
+
+/**
  * Хвіст, повернутий (і масштабований, і віддзеркалений) довкола корінця: зсув лишає корінець там, де він у вихідній позі. Під
  * нерівномірним масштабом тулуба масштаб хвоста — з поправкою (`onBody`), щоб на екрані він був рівно в `s` разів.
  */
@@ -282,7 +292,7 @@ function solve(pose: Pose, view: ArtView, nearIn = true): Partial<Record<CatBone
     const angle = setupOf("neck", view).rot + setupOf("head", view).rot + (pose.neck?.rot ?? 0) + (pose.head.rot ?? 0);
     out.head = { ...pose.head, ...onBody(angle, pose.head.sx ?? 1, pose.head.sy ?? 1, sb) };
   }
-  if (pose.tail) out.tail = tailMove(pose.tail, sb);
+  if (pose.tail) out.tail = tailMove(view === "back" && pose.tail.mirror ? { ...pose.tail, rot: pose.tail.rot + TAIL_MIRROR_BACK } : pose.tail, sb);
   for (const leg of LEGS) {
     const spec = pose.legs?.[leg];
     const inward = nearIn && view === "back" && leg === "leg-front-near";
@@ -410,13 +420,14 @@ function track<V>(...list: readonly (readonly [number, V] | readonly [number, V,
 
 /**
  * Доріжки хвоста, що б'є, поверх ключових поз: кути `keys` — довкола корінця (зсув на кожному ключі — з `tailMove`, між
- * ключами корінець лишається на місці з точністю до частки одиниці). `s` — масштаб хвоста в позах.
+ * ключами корінець лишається на місці з точністю до частки одиниці). `s` — масштаб хвоста в позах, `mirror` — кадр
+ * віддзеркалено вздовж кістки (гачок кінчика назад).
  */
-function tailWave(keys: readonly Key<number>[], s = 1): BoneTracks {
-  const moves = keys.map((k) => tailMove({ rot: k.v, s }));
+function tailWave(keys: readonly Key<number>[], s = 1, mirror = false): BoneTracks {
+  const moves = keys.map((k) => tailMove({ rot: k.v, s, mirror }));
   const pos = keys.map((k, i) => ({ ...k, v: v2(round(moves[i]?.x ?? 0), round(moves[i]?.y ?? 0)) }));
   const tracks: BoneTracks = { rot: keys.map((k) => ({ ...k, v: round(k.v) })), pos };
-  return s === 1 ? tracks : { ...tracks, scale: [{ t: 0, v: v2(round(s), round(s)) }] };
+  return s === 1 && !mirror ? tracks : { ...tracks, scale: [{ t: 0, v: v2(round(s), round(mirror ? -s : s)) }] };
 }
 
 /** Вектор. */
@@ -501,8 +512,9 @@ const standWith = (more: Pose): Pose => ({ ...STAND, ...more, legs: { ...STANDIN
 
 /** «Спина дугою» (§9.4, поза 1): цикл, мс — шерсть повільно настовбурчується й опадає, поверх — дрібне тремтіння. */
 const ARCH_MS = 1200;
-/** Тулуб у дузі: коротший і вищий — горб. */
-const ARCH_BODY = { x: 1, y: 1.4 } as const;
+/** Тулуб у дузі: вищий — горб, і нахилений носом униз (градуси): спина спадає від крупа до голови, плечі нижчі. */
+const ARCH_BODY = { x: 1, y: 1.5 } as const;
+const ARCH_TILT = 6;
 /** Крок ключів тремтіння, мс, і його сила: тулуб (градуси), хвіст (градуси). */
 const ARCH_STEP = 50;
 const ARCH_SHIVER = 1.8;
@@ -519,13 +531,13 @@ const ARCH_JITTER = [1, -0.7, 0.9, -1, 0.6, -0.9, 1, -0.8, 0.7, -1, 0.9, -0.6] a
  */
 function archPose(puff: number, shiver: number, shake: number): Pose {
   return {
-    pelvis: { x: -4, y: -12, rot: 3 },
-    body: { rot: shiver * ARCH_SHIVER, sx: ARCH_BODY.x * puff, sy: ARCH_BODY.y * puff },
-    neck: { x: -4, y: 11 },
+    pelvis: { x: -4, y: -9, rot: 3 },
+    body: { rot: ARCH_TILT + shiver * ARCH_SHIVER, sx: ARCH_BODY.x * puff, sy: ARCH_BODY.y * puff },
+    neck: { x: -4, y: 9 },
     head: { rot: 4, sx: 1.03, sy: 1.03 },
     // Кадр хвоста віддзеркалено вздовж кістки: гачок кінчика загинається назад, від голови, а не вперед знаком питання
     // (так кіт вітається, а не погрожує).
-    tail: { rot: 58 + shake * ARCH_TAIL_SHAKE, s: 1.22 * puff, mirror: true },
+    tail: { rot: 66 + shake * ARCH_TAIL_SHAKE, s: 1.22 * puff, mirror: true },
     legs: {
       "leg-front-far": at(-8, 0, { sy: 0.92 }),
       "leg-front-near": at(-8, 0, { sy: 0.92 }),
@@ -931,33 +943,45 @@ function stretch(): CatAnim {
 }
 
 /**
- * Мітить (§9.12, «Мітки»): стоїть задом до цілі, зад піднято, хвіст задертий трубою вгору й тремтить, задні лапи
- * переступають.
+ * «Мітить»: нахил таза (зад угору, груди нижче), градуси; хвіст — віддзеркалений, прямо вертикально вгору на екрані (≈ 78°
+ * разом із нахилом таза, `TailPose`) і його тремтіння, градуси.
+ */
+const MARK_PELVIS = 16;
+const MARK_TAIL = 78 - MARK_PELVIS;
+const MARK_SHAKE = 7;
+
+/**
+ * Мітить (§9.12, «Мітки»): стоїть задом до цілі — зад високо на прямих задніх лапах, груди нижче, хвіст стирчить прямо
+ * вертикально вгору (не гачком, як у вітанні) й дрібно тремтить, задні лапи весь час по черзі переступають.
  */
 function mark(): CatAnim {
   const D = 1200;
   const stand = (bn: number, bf: number): Pose =>
     standWith({
-      pelvis: { x: -2, y: -4, rot: 14 },
-      neck: { rot: -18 },
-      head: { rot: 8 },
-      tail: { rot: 30, s: 1.05 },
-      legs: { "leg-back-near": at(-3, bn), "leg-back-far": at(-3, bf), "leg-front-far": at(2), "leg-front-near": at(2) },
+      pelvis: { x: -2, y: -5, rot: MARK_PELVIS },
+      neck: { rot: -24 },
+      head: { rot: 4 },
+      // Кадр хвоста віддзеркалено: гачок кінчика — назад, від голови, тож хвіст читається прямою «антеною», а не знаком
+      // питання вітання (як у bodання й ходи).
+      tail: { rot: MARK_TAIL, s: 1.05, mirror: true },
+      legs: { "leg-back-near": at(-2, bn), "leg-back-far": at(-2, bf), "leg-front-far": at(3), "leg-front-near": at(3) },
     });
   const A = stand(0, 0);
-  return build(
-    D,
-    true,
-    [
-      { t: 0, pose: A },
-      { t: 150, pose: stand(-5, 0) },
-      { t: 300, pose: A },
-      { t: 450, pose: stand(0, -5) },
-      { t: 600, pose: A },
-      { t: D, pose: A },
-    ],
-    { bones: { tail: tailWave(sine(D, 60, 30, 3), 1.05) } },
-  );
+  // Переступає весь цикл: ближня задня, дальня, знову ближня…
+  const STEP = 150;
+  const keys: PoseKey[] = [];
+  for (let i = 0; i * STEP < D; i++) {
+    keys.push({ t: i * STEP, pose: A });
+    keys.push({ t: i * STEP + STEP / 2, pose: i % 2 === 0 ? stand(-4, 0) : stand(0, -4) });
+  }
+  keys.push({ t: D, pose: A });
+  // Тремтіння нерівне: розмах щоразу трохи інший, щоб не було рівного «моторчика».
+  const SHAKE_STEP = 50;
+  const JITTER = [1, -0.8, 0.9, -1, 0.7, -0.9] as const;
+  const shake: Key<number>[] = [];
+  for (let t = 0, i = 0; t <= D; t += SHAKE_STEP, i++) shake.push({ t, v: MARK_TAIL + (t === 0 || t === D ? 0 : (JITTER[i % JITTER.length] ?? 0) * MARK_SHAKE) });
+  const shakeBack = shake.map((k) => ({ ...k, v: k.v + TAIL_MIRROR_BACK }));
+  return build(D, true, keys, { bones: { tail: tailWave(shake, 1.05, true) }, back: { bones: { tail: tailWave(shakeBack, 1.05, true) } } });
 }
 
 /** Та сама лапа, зсунута на (`dx`, `dy`) від того місця, де стоїть (в обох ракурсах). */
