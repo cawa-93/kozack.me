@@ -51,6 +51,9 @@ const CULL_MARGIN = 160;
 /** Глибини інших частин, які треба знати, щоб поставити кота: ґратки переноски (`floor.ts`). */
 const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 
+/** Підписи над котами (імена в нашийниках, приховані числа), що налягли б один на одного, — один над одним із таким проміжком, px. */
+const LABEL_GAP = 1;
+
 /** Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`); без WebGL — кільце на підлозі. */
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
@@ -93,6 +96,8 @@ export class IsoCatsView implements CatsPart {
   private readonly webgl: boolean;
   /** Видимий світ із запасом (`CULL_MARGIN`): коти поза ним не рахуються. */
   private readonly visible = new Phaser.Geom.Rectangle();
+  /** Видимі підписи, від нижчого до вищого (`separate`): буфер між кадрами. */
+  private readonly labelOrder: Phaser.GameObjects.Text[] = [];
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -117,6 +122,9 @@ export class IsoCatsView implements CatsPart {
       this.drawHidden(cat, view, frame.showHidden);
       this.drawCollar(cat, view);
     }
+    // Підписи котів поруч (пара, клубок бійки) не налягають: вищий — над нижчим.
+    this.separate(this.collarLabels);
+    this.separate(this.hiddenLabels);
     for (const [id, view] of this.views) {
       if (alive.has(id)) continue;
       view.destroy();
@@ -321,6 +329,32 @@ export class IsoCatsView implements CatsPart {
 
   // --- Підписи ------------------------------------------------------------------------------------
 
+  /**
+   * Підписи над котами, що налягли б один на одного (пара, клубок бійки, коти поруч), — один над одним: від нижчого на екрані
+   * до вищого кожен, що налягає на вже поставлений, піднімається над ним.
+   */
+  private separate(labels: ReadonlyMap<number, Phaser.GameObjects.Text>): void {
+    const order = this.labelOrder;
+    order.length = 0;
+    for (const label of labels.values()) if (label.visible) order.push(label);
+    if (order.length < 2) return;
+    order.sort(byBottom);
+    for (let i = 1; i < order.length; i++) {
+      const label = order[i]!;
+      // Кожне піднімання — над іншим підписом, тож за стільки кроків, скільки підписів нижче, він знайде вільне місце.
+      for (let step = 0; step < i; step++) {
+        let moved = false;
+        for (let j = 0; j < i; j++) {
+          const other = order[j]!;
+          if (!overlap(label, other)) continue;
+          label.setY(other.y - other.displayHeight - LABEL_GAP);
+          moved = true;
+        }
+        if (!moved) break;
+      }
+    }
+  }
+
   /** Режим розробки: настрій, здоров'я й любов над котом (§11.5). */
   private drawHidden(cat: Cat, view: IsoCatView, shown: boolean): void {
     let label = this.hiddenLabels.get(cat.id);
@@ -442,4 +476,13 @@ export class IsoCatsView implements CatsPart {
     if (current?.target.active) current.target.filters?.internal.remove(current.glow);
     this.glowing = null;
   }
+}
+
+/** Підписи від нижчого на екрані до вищого (origin — низ посередині). */
+const byBottom = (a: Phaser.GameObjects.Text, b: Phaser.GameObjects.Text): number => b.y - a.y;
+
+/** Чи два підписи (origin — низ посередині) налягають. */
+function overlap(a: Phaser.GameObjects.Text, b: Phaser.GameObjects.Text): boolean {
+  const dx = Math.abs(a.x - b.x) * 2 < a.displayWidth + b.displayWidth;
+  return dx && a.y > b.y - b.displayHeight && b.y > a.y - a.displayHeight;
 }
