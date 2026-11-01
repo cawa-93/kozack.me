@@ -8,8 +8,20 @@ import { describe, expect, it } from "vitest";
 
 import { ILLNESS_EFFECTS } from "../src/sim/config";
 import { PERSON_OVERLAYS } from "../src/view/anim/ids";
+import { CAT_RIG } from "../src/view/rig/defs/cat";
 import { PERSON_RIG } from "../src/view/rig/defs/person";
-import { PERSON_MOVE, PERSON_OWN_ARMS, personGait, personGaitSpeed, personWithArms, type PersonGait } from "../src/view/rig/anims/person/move";
+import {
+  PERSON_MOVE,
+  PERSON_OWN_ARMS,
+  PERSON_PICKUP_GRAB_MS,
+  PERSON_PUTDOWN_RELEASE_MS,
+  personCatGrip,
+  personCatLift,
+  personGait,
+  personGaitSpeed,
+  personWithArms,
+  type PersonGait,
+} from "../src/view/rig/anims/person/move";
 import { Rig, animProblems, sampleNumber, sampleVec } from "../src/view/rig/rigcore";
 import type { ArtView } from "../src/view/art/types";
 import type { BoneTracks, RigAnim, RigDef } from "../src/view/rig/types";
@@ -43,6 +55,15 @@ function axes(rig: LooseRig, id: string): { rot: number; skew: number } {
 }
 
 const GAITS: readonly PersonGait[] = ["walk", "dash", "limp", "trudge", "dizzy"];
+
+/** Кіт у вихідній позі (кошеня — з вагою `kitten`): скелет і його гніздо `pet` (спинка) у системі кореня кота. */
+function catAt(kitten: number): { rig: LooseRig; pet: { x: number; y: number } } {
+  const rig = new Rig(CAT_RIG, { facing: { view: "front", flip: false }, proportions: kitten > 0 ? [{ name: "kitten", weight: kitten }] : [] }) as unknown as LooseRig;
+  rig.evaluate(0);
+  const pet = rig.socket("pet", undefined, false);
+  return { rig, pet: { x: pet?.x ?? NaN, y: pet?.y ?? NaN } };
+}
+const catPet = (kitten: number): { x: number; y: number } => catAt(kitten).pet;
 
 /** Стоїть на місці: обидві стопи не рухаються. */
 const STANDING: readonly Name[] = ["idle", "pet", "rod", "sick", "exhausted", "refuse", "pickUp", "putDown"];
@@ -235,18 +256,107 @@ describe("рух персонажа: цикли, разові й накладк�
     }
   });
 
-  it("вкусили ззаду: ближню руку не тягне вперед до кота — притиснута до грудей", () => {
-    const rig = rigFor("back");
-    rig.evaluate(0);
-    const shoulder = rig.bone("arm-near").world;
-    const rest = rig.anchor("hands", { x: 0, y: 0 }, false);
-    rig.play(ANIMS.bitten, 0, { blend: 0 });
-    for (let t = 0; t <= ANIMS.bitten.duration; t += 30) {
+  it("вкусили й застуда ззаду: ближня рука не йде через спину (кисть правіше за середину тулуба) і не тягнеться до кота", () => {
+    for (const name of ["bitten", "sick"] as const) {
+      const anim = ANIMS[name];
+      for (const proportions of [[], ["stocky"], ["slim"]]) {
+        const rig = rigFor("back", proportions);
+        rig.evaluate(0);
+        const rest = rig.anchor("hands", { x: 0, y: 0 }, false);
+        rig.play(anim, 0, { blend: 0 });
+        for (let t = 0; t <= anim.duration; t += anim.duration / 40) {
+          rig.evaluate(t);
+          const hand = rig.anchor("hands", { x: 0, y: 0 }, false);
+          const torso = rig.bone("torso").world;
+          const shoulder = rig.bone("arm-near").world;
+          // Середина тулуба — на 20 од. угору вздовж нього від таза.
+          const mid = torso.a * 20 + torso.tx;
+          expect(hand?.x ?? 0, `${name} ${proportions.join()} @${t}`).toBeGreaterThan(mid + 10);
+          // Не далі вперед, ніж на пів руки від вихідної (не тицяє в кота перед собою), і нижче за плече.
+          expect(hand?.x ?? 0, `${name} ${proportions.join()} @${t}`).toBeLessThan((rest?.x ?? 0) + 27);
+          expect(hand?.y ?? 0, `${name} ${proportions.join()} @${t}`).toBeGreaterThan(shoulder.ty);
+        }
+      }
+    }
+  });
+
+  it("застуда спереду: ближня рука навхрест грудей (обхопив себе), а не на животі; витирає ніс — кисть біля обличчя", () => {
+    const rig = rigFor("front");
+    rig.play(ANIMS.sick, 0, { blend: 0 });
+    for (let t = 0; t <= ANIMS.sick.duration; t += 50) {
       rig.evaluate(t);
       const hand = rig.anchor("hands", { x: 0, y: 0 }, false);
-      // Кисть не далі вперед, ніж у вихідній позі (рука висить), і не вище за плече.
-      expect(hand?.x ?? 0, `@${t}`).toBeLessThanOrEqual((rest?.x ?? 0) + 0.5);
-      expect(hand?.y ?? 0, `@${t}`).toBeGreaterThan(shoulder.ty);
+      const torso = rig.bone("torso").world;
+      // Кисть вище за середину тулуба (груди, а не живіт) і по той бік середини від плеча (навхрест).
+      expect(hand?.y ?? 0, `@${t}`).toBeLessThan(torso.b * 20 + torso.ty);
+      expect(hand?.x ?? 0, `@${t}`).toBeGreaterThan(torso.a * 20 + torso.tx + 8);
+    }
+    // Посеред витирання (wipe — 0,6…0,7 циклу) кисть на рівні обличчя: вище за основу шиї.
+    rig.evaluate(0.65 * ANIMS.sick.duration);
+    const neck = rig.bone("neck").world;
+    expect(rig.anchor("hands", { x: 0, y: 0 }, false)?.y ?? 0).toBeLessThan(neck.ty);
+  });
+
+  it("несе річ ззаду: річ перед тулубом на рівні грудей, як спереду (а не збоку на рівні стегна)", () => {
+    const at = (view: ArtView): { x: number; y: number } => {
+      const rig = rigFor(view);
+      rig.play(ANIMS.carry, 0, { blend: 0 });
+      rig.evaluate(0);
+      const held = rig.socket("held", undefined, false);
+      return { x: held?.x ?? NaN, y: held?.y ?? NaN };
+    };
+    const front = at("front");
+    const back = at("back");
+    expect(Math.abs(back.y - front.y)).toBeLessThan(4);
+    // Ззаду — визирає з-за правого краю тулуба (тулуб — ≈ ±18 од.), а не на відстані руки збоку.
+    expect(back.x).toBeGreaterThan(18);
+    expect(back.x).toBeLessThan(36);
+  });
+
+  it("несе річ ззаду (рука вкорочена): річ рівно, тулуб нахиляється — рука тримає кут", () => {
+    for (const name of ["idle", "walk", "dash", "trudge", "trip", "slip"] as const) {
+      const made = personWithArms(PERSON_MOVE[name], "carry") as LooseAnim;
+      const rig = rigFor("back");
+      rig.play(made, 0, { blend: 0 });
+      for (let t = 0; t <= made.duration; t += made.duration / 30) {
+        rig.evaluate(t);
+        expect(Math.abs(rig.socket("held", undefined, false)?.rot ?? NaN), `${name} @${t}`).toBeLessThan(0.5);
+      }
+    }
+  });
+
+  it("паморочиться: характерне — у перших 0,35 с (збій керування короткий): руки розведені з першого кадру, голова хилитається", () => {
+    const anim = ANIMS.dizzy;
+    const near = anim.bones?.["arm-near"]?.rot ?? [];
+    const far = anim.bones?.["arm-far"]?.rot ?? [];
+    expect(sampleNumber(near, 0) - sampleNumber(far, 0)).toBeGreaterThan(40);
+    const head = anim.bones?.head?.rot ?? [];
+    const torso = anim.bones?.torso?.rot ?? [];
+    const world: number[] = [];
+    for (let t = 0; t <= 350; t += 10) world.push(sampleNumber(head, t) + sampleNumber(torso, t));
+    // Голова у світі: униз і знову вгору — щонайменше 15° туди й назад.
+    const low = world.indexOf(Math.max(...world));
+    expect(Math.max(...world) - world[0]!).toBeGreaterThan(15);
+    expect(Math.max(...world) - Math.min(...world.slice(low))).toBeGreaterThan(15);
+  });
+
+  it("гладить: кисть низько — і дорослий кіт, і кошеня під нею стоять на підлозі майже поруч із персонажем, а не висять", () => {
+    for (const view of VIEWS) {
+      const rig = rigFor(view);
+      rig.play(ANIMS.pet, 0, { blend: 0 });
+      for (const kitten of [0, 0.5, 1]) {
+        const pet = catPet(kitten);
+        for (let t = 0; t <= ANIMS.pet.duration; t += 50) {
+          rig.evaluate(t);
+          const hand = rig.anchor("hands", { x: 0, y: 0 }, false);
+          // Корінь кота, чиє гніздо pet — у кисті (контракт `pet`).
+          const root = (hand?.y ?? NaN) - pet.y;
+          if (view === "front") expect(Math.abs(root), `${view} кошеня ${kitten} @${t}`).toBeLessThan(12);
+          // Ззаду кіт перед персонажем — від камери: вище на екрані, але не далі за ≈ 0,35 клітинки.
+          else expect(root, `${view} кошеня ${kitten} @${t}`).toBeGreaterThan(-24);
+          if (view === "back") expect(root, `${view} кошеня ${kitten} @${t}`).toBeLessThan(0);
+        }
+      }
     }
   });
 
@@ -350,6 +460,98 @@ describe("рух персонажа: основна з накладкою рук
           const local = { x: dx * Math.cos(a) - dy * Math.sin(a), y: dx * Math.sin(a) + dy * Math.cos(a) };
           first ??= local;
           expect(Math.hypot(local.x - first.x, local.y - first.y), `${name} ${view} @${t}`).toBeLessThan(0.5);
+        }
+      }
+    }
+  });
+});
+
+describe("рух персонажа: бере й опускає кота — кіт іде в руки, а не стрибає в гніздо (контракт personCatLift)", () => {
+  it("personCatLift: pickUp — 0 до «підхопив», далі плавно до 1; putDown — з 1 плавно до 0 у «відпустив»", () => {
+    let prev = 0;
+    for (let t = 0; t <= ANIMS.pickUp.duration; t += 5) {
+      const w = personCatLift("pickUp", t);
+      if (t <= PERSON_PICKUP_GRAB_MS) expect(w, `pickUp @${t}`).toBe(0);
+      expect(w, `pickUp @${t}`).toBeGreaterThanOrEqual(prev);
+      // Плавно: за 5 мс — не більше ніж на 0,05.
+      expect(w - prev, `pickUp @${t}`).toBeLessThan(0.05);
+      prev = w;
+    }
+    expect(personCatLift("pickUp", ANIMS.pickUp.duration)).toBe(1);
+    prev = 1;
+    for (let t = 0; t <= ANIMS.putDown.duration; t += 5) {
+      const w = personCatLift("putDown", t);
+      if (t >= PERSON_PUTDOWN_RELEASE_MS) expect(w, `putDown @${t}`).toBe(0);
+      expect(w, `putDown @${t}`).toBeLessThanOrEqual(prev);
+      expect(prev - w, `putDown @${t}`).toBeLessThan(0.05);
+      prev = w;
+    }
+    expect(personCatLift("putDown", 0)).toBe(1);
+  });
+
+  it("personCatGrip — якір hands у мить «підхопив»; у putDown «відпустив» — та сама поза", () => {
+    for (const view of VIEWS) {
+      for (const proportions of [[], ["stocky"]]) {
+        const grip = personCatGrip(view, proportions);
+        for (const [name, t] of [["pickUp", PERSON_PICKUP_GRAB_MS], ["putDown", PERSON_PUTDOWN_RELEASE_MS]] as const) {
+          const rig = rigFor(view, proportions);
+          rig.play(ANIMS[name], 0, { blend: 0 });
+          rig.evaluate(t);
+          const hand = rig.anchor("hands", { x: 0, y: 0 }, false);
+          expect(Math.hypot((hand?.x ?? NaN) - grip.x, (hand?.y ?? NaN) - grip.y), `${name} ${view} ${proportions.join()}`).toBeLessThan(0.1);
+        }
+      }
+    }
+  });
+
+  it("кіт за контрактом не стрибає й не висить носом донизу, кисті весь час на ньому; у мить «підхопив» обидві кисті на коті", () => {
+    for (const view of VIEWS) {
+      for (const kitten of [0, 1]) {
+        const cat = catAt(kitten);
+        const body = cat.rig.bone("body");
+        const points = [
+          cat.pet,
+          { x: body.world.tx, y: body.world.ty },
+          { x: body.world.a * body.len + body.world.tx, y: body.world.b * body.len + body.world.ty },
+          { x: 0, y: 0 },
+        ];
+        const grip = personCatGrip(view);
+        // Місце кота на підлозі: гніздо pet — у точці, де кисті підхоплюють.
+        const floor = { x: grip.x - cat.pet.x, y: grip.y - cat.pet.y };
+        for (const name of ["pickUp", "putDown"] as const) {
+          const rig = rigFor(view);
+          rig.play(ANIMS[name], 0, { blend: 0 });
+          let prev: { x: number; y: number } | null = null;
+          for (let t = 0; t <= ANIMS[name].duration; t += 10) {
+            rig.evaluate(t);
+            const w = personCatLift(name, t);
+            const arms = rig.socket("arms", undefined, false);
+            if (!arms) throw new Error("немає гнізда arms");
+            const root = { x: floor.x + (arms.x - floor.x) * w, y: floor.y + (arms.y - floor.y) * w };
+            const rot = w * arms.rot;
+            const label = `${name} ${view} кошеня ${kitten} @${t}`;
+            // Не стрибає: за 10 мс — не більше ніж на 8 од. (≈ 13 од. за кадр), і не висить носом донизу.
+            if (prev) expect(Math.hypot(root.x - prev.x, root.y - prev.y), label).toBeLessThan(8);
+            prev = root;
+            expect(Math.abs(rot), label).toBeLessThan(12);
+            const c = Math.cos((rot * Math.PI) / 180);
+            const s = Math.sin((rot * Math.PI) / 180);
+            const near = (p: { x: number; y: number }): number =>
+              Math.min(...points.map((q) => Math.hypot(p.x - (root.x + q.x * c - q.y * s), p.y - (root.y + q.x * s + q.y * c))));
+            const hand = rig.anchor("hands", { x: 0, y: 0 }, false) ?? { x: NaN, y: NaN };
+            const held = name === "pickUp" ? t >= PERSON_PICKUP_GRAB_MS : t <= PERSON_PUTDOWN_RELEASE_MS;
+            // Поки кіт у руках чи йде в них — ближня кисть на ньому.
+            if (held) expect(near(hand), label).toBeLessThan(18);
+            const grab = name === "pickUp" ? PERSON_PICKUP_GRAB_MS : PERSON_PUTDOWN_RELEASE_MS;
+            if (t === grab) {
+              // «Підхопив» / «відпустив»: кіт ще на підлозі (жодного стрибка), ближня кисть — на спинці, дальня (спереду її
+              // видно) — під грудьми кота.
+              expect(Math.hypot(root.x - floor.x, root.y - floor.y), label).toBeLessThan(0.01);
+              expect(near(hand), label).toBeLessThan(1);
+              const far = rig.bone("hand-far");
+              if (view === "front") expect(near({ x: far.world.a * far.len + far.world.tx, y: far.world.b * far.len + far.world.ty }), label).toBeLessThan(18);
+            }
+          }
         }
       }
     }
