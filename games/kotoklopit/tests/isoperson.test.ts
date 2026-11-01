@@ -16,11 +16,16 @@ import {
   catSocket,
   EYES,
   eyesFrame,
+  GAIT_MIN_RATE,
+  gaitRate,
   heldFrame,
   liftedCat,
   liftedRoot,
   liftWeights,
   movesHead,
+  newPace,
+  nextPace,
+  PACE_TELEPORT,
   PHONE_HELD,
   shownHeld,
   OWN_ARMS,
@@ -33,7 +38,7 @@ import {
   VACUUM_HELD,
 } from "../src/view/iso/personlook";
 import { NO_EXTRAS } from "../src/view/iso/personmix";
-import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../src/view/rig/anims/person/move";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personGaitSpeed } from "../src/view/rig/anims/person/move";
 import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { newGame } from "../src/sim/game";
 
@@ -293,3 +298,61 @@ describe("кіт, якого беруть на руки й опускають, �
   });
 });
 
+
+describe("темп ходи (`gaitRate`, контракт N4a `personGaitSpeed`)", () => {
+  /** Іде рівно `seconds` секунд кадрами по `frame` с зі швидкістю (`vx`, `vy`) одиниць арту за секунду. */
+  function walk(vx: number, vy: number, seconds = 1, frame = 1 / 60) {
+    const pace = newPace();
+    let x = 100;
+    let y = 50;
+    nextPace(pace, x, y, 0);
+    for (let t = 0; t < seconds; t += frame) {
+      x += vx * frame;
+      y += vy * frame;
+      nextPace(pace, x, y, frame);
+    }
+    return pace;
+  }
+
+  it("ходою вбік екрана годинник іде швидше, ніж уздовж осі клітинки, — у такт `personGaitSpeed`; стопи не ковзають", () => {
+    const side = walk(362, 0);
+    const axis = walk(256, 128);
+    expect(side.vx).toBeCloseTo(362, 0);
+    expect(gaitRate("walk", true, side)).toBeCloseTo(personGaitSpeed("walk", 362, 0), 2);
+    expect(gaitRate("walk", true, axis)).toBeCloseTo(personGaitSpeed("walk", 256, 128), 2);
+    expect(gaitRate("walk", true, side) / gaitRate("walk", true, axis)).toBeCloseTo(362 / 256, 2);
+    // Уздовж осі клітинки — номінальна швидкість циклу: темп ≈ 1.
+    expect(gaitRate("walk", true, axis)).toBeGreaterThan(0.9);
+    expect(gaitRate("walk", true, axis)).toBeLessThan(1.1);
+    for (const gait of ["dash", "limp", "trudge", "dizzy"] as const) expect(gaitRate(gait, true, side)).toBeCloseTo(personGaitSpeed(gait, 362, 0), 2);
+  });
+
+  it("стоячи, у справах, оглушений на місці (кнопку руху не натиснуто) — темп 1; уперся в стіну — ноги переступають повільно", () => {
+    const side = walk(362, 0);
+    for (const anim of ["idle", "vacuum", "pet", "carry", "trip"] as const) expect(gaitRate(anim, true, side)).toBe(1);
+    expect(gaitRate("dizzy", false, side)).toBe(1);
+    expect(gaitRate("walk", false, side)).toBe(1);
+    expect(gaitRate("walk", true, walk(0, 0))).toBe(GAIT_MIN_RATE);
+  });
+
+  it("згладжено: нерівні кадри й кроки сима не смикають темп; переставлений персонаж швидкості не змінює", () => {
+    const pace = newPace();
+    nextPace(pace, 0, 0, 0);
+    // Сим крокує нерівно: то два кроки за кадр, то жодного — середня швидкість 300.
+    let x = 0;
+    const rates: number[] = [];
+    for (let i = 0; i < 120; i++) {
+      x += i % 2 === 0 ? 10 : 0;
+      nextPace(pace, x, 0, 1 / 60);
+      if (i > 60) rates.push(gaitRate("walk", true, pace));
+    }
+    expect(Math.max(...rates) / Math.min(...rates)).toBeLessThan(1.25);
+    const before = pace.vx;
+    nextPace(pace, x + PACE_TELEPORT + 1, 0, 1 / 60);
+    expect(pace.vx).toBe(before);
+    // Перший кадр (і після `reset`) — без минулої точки: стоїть.
+    const fresh = newPace();
+    nextPace(fresh, 500, 500, 1 / 60);
+    expect([fresh.vx, fresh.vy]).toEqual([0, 0]);
+  });
+});

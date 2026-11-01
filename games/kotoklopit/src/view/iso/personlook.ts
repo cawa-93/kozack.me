@@ -1,14 +1,14 @@
 // Що показує персонаж нового вигляду (крок 16, T2) — чисті правила без Phaser для `iso/person.ts`: кадр очей за тим, наскільки
 // вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук (і коли вона там з'являється чи зникає в разовій справі),
 // телефон біля вуха, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах), де кіт, якого беруть на руки
-// чи опускають, чи брати накладку рук, порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
-// `tests/isoperson.test.ts`.
+// чи опускають, чи брати накладку рук, порядок шматків персонажа в його проміжку глибини, масштаб тіні й темп ходи (у такт
+// тому, як персонаж іде на екрані). Перевіряє `tests/isoperson.test.ts`.
 
 import type { GameEvent } from "../../sim/events";
 import type { Item } from "../../sim/types";
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
-import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personCatLift } from "../rig/anims/person/move";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personCatLift, personGaitSpeed, type PersonGait } from "../rig/anims/person/move";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
 import type { Point } from "../world/part";
@@ -248,4 +248,70 @@ export function liftedRoot(
   ground.y = own.y + (lift.at.y - pet.y - own.y) * lift.grip;
   root.x = ground.x + (hands.x - ground.x) * lift.w;
   root.y = ground.y + (hands.y - ground.y) * lift.w;
+}
+
+// --- Темп ходи ----------------------------------------------------------------------------------
+//
+// Цикли ходи N4a (`walk`, `dash`, `limp`, `trudge`, `dizzy`) підібрано під номінальну швидкість уздовж осі клітинки (256
+// одиниць арту за секунду по горизонталі). Персонаж, що йде вбік екрана, проходить 362 — і з темпом 1 опорна стопа ковзала б
+// уперед на ≈ 30 % кроку. Тож годинник анімацій на ході йде з темпом `personGaitSpeed` (контракт N4a) зі швидкості ніг на
+// екрані, як у котів (`gaitRate`, `iso/catplay.ts`).
+
+/** Анімації ходи персонажа (N4a): у них стопи йдуть по підлозі. */
+const PERSON_GAITS: ReadonlySet<PersonAnimId> = new Set<PersonGait>(["walk", "dash", "limp", "trudge", "dizzy"]);
+
+/** За скільки мс згладжена швидкість доходить до нової на ≈ 63 %: кадри й кроки сима нерівні, і темп не має смикатися. */
+export const PACE_SMOOTH_MS = 80;
+/**
+ * Далі за це (одиниці арту) за кадр — персонажа переставили (сценарій, новий день), а не він пройшов: такий кадр швидкості не
+ * змінює. Ривок (×3 до ходи, ≈ 860 одиниць за секунду) за найдовший кадр вигляду (250 мс) проходить ≈ 215.
+ */
+export const PACE_TELEPORT = 320;
+/**
+ * Найменший темп ходи, поки персонаж іде (кнопку руху натиснуто): уперся в стіну чи щойно рушив — ноги переступають
+ * повільно, а не завмирають посеред кроку.
+ */
+export const GAIT_MIN_RATE = 0.3;
+
+/** Що вигляд пам'ятає між кадрами для темпу ходи: де були ноги (px світу) і згладжена швидкість на екрані (одиниць за секунду). */
+export interface PersonPace {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  /** Чи є минула точка (перший кадр і після `reset` — немає: стоїть). */
+  known: boolean;
+}
+
+/** Нова пам'ять темпу: стоїть, минулої точки немає. */
+export function newPace(): PersonPace {
+  return { x: 0, y: 0, vx: 0, vy: 0, known: false };
+}
+
+/**
+ * Згладжена швидкість ніг на екрані цього кадру (`PACE_SMOOTH_MS`): ноги тепер у (`x`, `y`) px світу, кадр — `seconds`.
+ * Пише в `pace` (той самий об'єкт — щокадру нічого не створюється); переставленого персонажа (`PACE_TELEPORT`) не рахує.
+ */
+export function nextPace(pace: PersonPace, x: number, y: number, seconds: number): PersonPace {
+  const dx = x - pace.x;
+  const dy = y - pace.y;
+  const known = pace.known;
+  pace.x = x;
+  pace.y = y;
+  pace.known = true;
+  if (!known || !(seconds > 0) || Math.hypot(dx, dy) > PACE_TELEPORT) return pace;
+  const k = 1 - Math.exp((-seconds * 1000) / PACE_SMOOTH_MS);
+  pace.vx += (dx / seconds - pace.vx) * k;
+  pace.vy += (dy / seconds - pace.vy) * k;
+  return pace;
+}
+
+/**
+ * Темп годинника анімацій: хода (`walk`, `dash`, `limp`, `trudge`, `dizzy`), поки персонаж іде (`moving`), — у такт його
+ * швидкості на екрані (`personGaitSpeed` N4a), не нижче `GAIT_MIN_RATE`; решта — 1 (стоїть, справи, разові, паморочиться
+ * оглушений на місці).
+ */
+export function gaitRate(anim: PersonAnimId, moving: boolean, pace: PersonPace): number {
+  if (!moving || !PERSON_GAITS.has(anim)) return 1;
+  return Math.max(GAIT_MIN_RATE, personGaitSpeed(anim as PersonGait, pace.vx, pace.vy));
 }

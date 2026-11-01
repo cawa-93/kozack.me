@@ -6,9 +6,10 @@
 // подій): накладку рук (несе річ, тримає кота) кладе `personWithArms` (N4a) — заміняє руки основної й разової, руки з річчю
 // тримають рівно проти нахилу тулуба, а анімації, що ведуть руки самі (`PERSON_OWN_ARMS`), лишає як є; поправки вигляду
 // (очі засинання, схована рука, голова хилиться) — `mixAnims` (`personmix.ts`). Де видно й куди дивиться — `personSpot`
-// (за столом, за комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Гнізда: річ у руках
-// (`held`: страва, судочок, совок), вудочка (`rod`); кіт на руках і на колінах — у точці й на глибині `hands` (його кладе туди
-// частина котів).
+// (за столом, за комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Хода йде в такт тому, як
+// ноги пересуваються на екрані (`gaitRate`, контракт N4a `personGaitSpeed`), — стопи не ковзають. Гнізда: річ у руках (`held`:
+// страва, судочок, совок, телефон, пилосос), вудочка (`rod`); кіт на руках і на колінах — у точці й на глибині `hands` (його
+// кладе туди частина котів).
 //
 // Рука, що гладить (§8.2), — ближня рука скелета (той самий запечений кадр `person/arm`), повернута навколо плеча до спинки
 // кота й розтягнута не більше ніж у `REACH_STRETCH` (решту відстані дає присід анімації `pet`); на глибині над персонажем, а
@@ -52,10 +53,13 @@ import {
   cargoDepth,
   catSocket,
   eyesFrame,
+  gaitRate,
   heldFrame,
   liftedCat,
   liftWeights,
   movesHead,
+  newPace,
+  nextPace,
   PERSON_DEPTH,
   personExtras,
   reachDepth,
@@ -139,8 +143,10 @@ export class IsoPersonView implements PersonPart {
   private recipeVersion = 0;
   private readonly farSlots: ReadonlySet<string> = new Set<string>(PERSON_FAR_SLOTS);
 
-  /** Годинник анімацій, мс: час сцени × швидкість (`PersonAnimParams.speed`). */
+  /** Годинник анімацій, мс: час сцени × швидкість (`PersonAnimParams.speed`), на ході — ще й × темп ходи (`gaitRate`). */
   private clock = 0;
+  /** Де були ноги минулого кадру й як швидко вони йдуть на екрані: темп ходи (`nextPace`). */
+  private readonly pace = newPace();
   private lastTime: number | null = null;
   private facing: RigFacing | null = null;
   /** Зсув вигляду від точки тіла до місця справи, клітинки (`glideOffset`), і де вигляд стоїть цього кадру. */
@@ -227,13 +233,10 @@ export class IsoPersonView implements PersonPart {
     const choice = personAnim(state, { moving: frame.moving, sleepiness: frame.sleepiness, prev: this.facing });
     this.choice = choice;
     const params = choice.params;
-    this.clock += dt * params.speed;
     this.hidden = params.hidden;
     this.syncLook(character.look, params.dirty);
 
-    this.advanceShot(params);
-    // Де видно й куди дивиться: за справою — на її місці, лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно);
-    // разова справа біля речі — лицем до неї.
+    // Де видно: за справою — на її місці; ноги — точка на екрані, з неї й темп ходи.
     const spot = personSpot(state, choice.anim, params.progress);
     const body = character.body;
     this.tmpTarget.x = spot.at.x - body.x;
@@ -241,6 +244,15 @@ export class IsoPersonView implements PersonPart {
     glideOffset(this.offset, this.tmpTarget, dt / 1000, this.offset);
     this.at.x = body.x + this.offset.x;
     this.at.y = body.y + this.offset.y;
+    const feet = this.ctx.projection.toScreen(this.at);
+    nextPace(this.pace, feet.x, feet.y, dt / 1000);
+    // Хода — у такт тому, як ноги йдуть на екрані (`gaitRate`); разова (і та, що почнеться цього кадру) — своїм часом.
+    const free = this.oneShot === null && this.pending === null;
+    this.clock += dt * params.speed * (free ? gaitRate(choice.anim, frame.moving, this.pace) : 1);
+
+    this.advanceShot(params);
+    // Куди дивиться: за справою — лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно); разова справа біля речі —
+    // лицем до неї.
     const face = (this.oneShot?.place ? shotFace(state, this.oneShot.place) : null) ?? spot.face;
     const faced = (face && facingFromTiles(face, this.facing)) || { view: choice.view, flip: choice.flip };
     const facing = showFace(choice.anim, faced);
@@ -249,7 +261,6 @@ export class IsoPersonView implements PersonPart {
     // Спершу ракурс: новий ракурс — нова вихідна поза, і `play` не змішує з позою старого.
     this.sprite.setFacing(facing);
     this.play(choice, this.reachTargets(state, choice));
-    const feet = this.ctx.projection.toScreen(this.at);
     this.sprite.setPosition(feet.x, feet.y);
     this.sprite.update(this.clock);
     this.sprite.setVisible(!this.hidden);
@@ -539,6 +550,9 @@ export class IsoPersonView implements PersonPart {
     this.offset.y = 0;
     this.lastTime = null;
     this.main = null;
+    this.pace.known = false;
+    this.pace.vx = 0;
+    this.pace.vy = 0;
   }
 
   destroy(): void {
