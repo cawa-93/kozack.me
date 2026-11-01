@@ -7,10 +7,10 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { WEIGHT } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
-import { CARRIER_SPOT, objectById } from "../src/sim/home";
+import { CARRIER_SPOT, objectById, slotCenter } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, CatAct, Save } from "../src/sim/types";
+import type { Cat, CatAct, Feeder, HomeItem, Save } from "../src/sim/types";
 import { CAT_EARS } from "../src/view/anim/catface";
 import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
@@ -23,9 +23,11 @@ import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from 
 import { catPlay, JUMP, liftAt, nextLift, startShot } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
-import { CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
+import { BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
+import { isoOrder } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
+import { ISO } from "../src/view/world/projection";
 import { withCatCorner } from "./helpers";
 
 type LooseRig = RigDef<string, string, string>;
@@ -322,6 +324,61 @@ describe("де кіт (`catSpot`)", () => {
     cat.away = null;
     const pair = { kind: "groom" as const, with: 1, offset: { x: -15, y: 0 }, tile: { x: -0.1171875, y: 0.1171875 }, facing: null };
     expect(catSpot(save.current, cat, "sit", pair, SPOT).at).toEqual({ x: 9.5 + pair.tile.x, y: 8.5 + pair.tile.y });
+  });
+
+  it("їсть чи п'є з миски — сидить за нею: точка раніше за миску, корінь вище; з автогодівницею позаду — збоку; дорогою сідає плавно", () => {
+    const save = game();
+    const home = save.current.home;
+    home.items = home.items.filter((i) => !("slot" in i) || (i.slot !== "bowl-1" && i.slot !== "water-1"));
+    home.items.push({ id: 801, kind: "bowl", quality: "cheap", slot: "bowl-1", food: 3, foodQuality: "cheap" } as HomeItem);
+    home.items.push({ id: 802, kind: "water", quality: "cheap", slot: "water-1" } as HomeItem);
+    const bowl = slotCenter("bowl-1");
+    const cat = withCat(save, bowl);
+    for (const a of [act("eat", { target: "item:801" }), act("bury", { target: "item:801" }), act("steal", { target: "item:801" }), act("idle", { target: "sniff:801" })]) {
+      cat.act = a;
+      const spot = catSpot(save.current, cat, "eat", null, SPOT);
+      expect(spot).toMatchObject({ kind: "floor", shadow: true, show: "rig" });
+      expect(spot.at.x).toBeCloseTo(bowl.x - BOWL_BEHIND, 9);
+      expect(spot.at.y).toBeCloseTo(bowl.y - BOWL_BEHIND, 9);
+      // Порядок — кіт раніше за миску (вона закриває його лапи, а не він — корм); на екрані — вище за її pivot.
+      const order = isoOrder([], [{ x: bowl.x, y: bowl.y, half: 24 }, { ...spot.at, half: isoCatHalf(cat) }]);
+      expect([...order]).toEqual([1, 0]);
+      expect(ISO.toScreen(spot.at).y).toBeLessThan(ISO.toScreen(bowl).y - 15);
+      expect(ISO.toScreen(spot.at).x).toBeCloseTo(ISO.toScreen(bowl).x, 6);
+    }
+    // Вода — так само.
+    const water = slotCenter("water-1");
+    cat.x = water.x;
+    cat.y = water.y;
+    cat.act = act("drink", { target: "item:802" });
+    expect(catSpot(save.current, cat, "drink", null, SPOT).at.y).toBeCloseTo(water.y - BOWL_BEHIND, 9);
+    // Позаду миски автогодівниця — кіт збоку, з того боку, звідки дивиться на миску; у порядку — раніше за миску й пізніше
+    // за годівницю.
+    cat.x = bowl.x;
+    cat.y = bowl.y;
+    cat.act = act("eat", { target: "item:801" });
+    home.feeders = [{ slot: "bowl-1", quality: "cheap" } as unknown as Feeder];
+    for (const facing of [1, -1]) {
+      cat.facing = facing;
+      const side = catSpot(save.current, cat, "eat", null, SPOT).at;
+      const dx = ISO.toScreen(side).x - ISO.toScreen(bowl).x;
+      expect(Math.sign(dx)).toBe(-facing);
+      expect(Math.abs(dx)).toBeGreaterThan(30);
+      expect(side.x + side.y).toBeLessThan(bowl.x + bowl.y);
+      expect(side.x + side.y).toBeGreaterThan(bowl.x + bowl.y - 0.6);
+    }
+    home.feeders = [];
+    // Іде до миски: далеко — у своїй точці, ближче — уже трохи за нею.
+    cat.act = act("eat", { target: "item:801", goal: { x: 17, y: 3 } });
+    cat.x = bowl.x + 1.5;
+    expect(catSpot(save.current, cat, "walk", null, SPOT).at).toEqual({ x: cat.x, y: cat.y });
+    cat.x = bowl.x + BOWL_APPROACH / 2;
+    const near = catSpot(save.current, cat, "walk", null, SPOT).at;
+    expect(near.x).toBeCloseTo(cat.x - BOWL_BEHIND / 2, 9);
+    expect(bowlSeat({ x: 0, y: 0 }, { x: 0, y: 0 }, false, true, true)).toEqual({ x: -BOWL_BEHIND, y: -BOWL_BEHIND });
+    // Інша ціль (лоток, іграшка) — не миска.
+    cat.act = act("toilet", { target: "item:801" });
+    expect(bowlOf(save.current, cat)).toBeNull();
   });
 
   it("у переносці весь кіт — під ґратками: тінь і тулуб нижче за їхню глибину за будь-якої глибини переноски", () => {

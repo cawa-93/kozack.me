@@ -1,10 +1,10 @@
 // Де кіт ізометричного вигляду (крок 16, T1): на підлозі, на меблях (на висоті їхнього верху), під меблями (з-під краю
-// визирають очі), у будиночку, у барабані пральки, на роботі-пилососі, у переносці, під ковдрою, на руках чи колінах
-// персонажа, у поїздці. Чисті розрахунки без Phaser (`tests/isocats.test.ts`): яка точка підлоги, на якій висоті, на якій
-// коробці реєстру глибини чи над якою точкою, з яким зсувом на екрані й що з кота видно.
+// визирають очі), у будиночку, у барабані пральки, на роботі-пилососі, у переносці, під ковдрою, у ящиках, на руках чи
+// колінах персонажа, у поїздці, за мискою. Чисті розрахунки без Phaser (`tests/isocats.test.ts`): яка точка підлоги, на
+// якій висоті, на якій коробці реєстру глибини чи над якою точкою, з яким зсувом на екрані й що з кота видно.
 //
 // Те саме, що показує старий кіт на ізометричній підлозі (`legacy/cat.ts`, перехідний вигляд F3b), і те, що каже маніфест
-// про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота.
+// про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота, `top` ящиків.
 
 import { CARRIER_SPOT, HIGH_PLACES, itemPoint, objectAt, objectById } from "../../sim/home";
 import type { Cat, GameState, HomeItem, Vec } from "../../sim/types";
@@ -19,7 +19,8 @@ import { artOffset, footprintCenter } from "./geometry";
  * Де кіт:
  * - `away` — не вдома (поїздка, сходи): не видно;
  * - `hands` — на руках чи колінах персонажа (`PersonPart.hands`);
- * - `floor` — на підлозі; `furniture` — на меблях, на висоті верху (`isoCatPerch`);
+ * - `floor` — на підлозі (і за мискою, з якої їсть); `furniture` — на меблях, на висоті верху (`isoCatPerch`), у ящиках —
+ *   у верхній коробці, нижче за борт;
  * - `under` — ховається під меблями: з-під ближчого краю видно очі й кінчик хвоста;
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі;
  * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): видно вушка й кінчик хвоста;
@@ -83,6 +84,20 @@ export function underGrate(grate: number): number {
   return grate - CAT_PIECE.body - GRATE_GAP;
 }
 
+/**
+ * Кіт, що їсть чи п'є з миски, сидить за нею, схилившись (§9.12, «Швидкість їжі»; перевірка етапу 2026-10-25 — кіт закривав
+ * миску, і корму не було видно): на стільки клітинок далі по x і по y — на екрані вище, у порядку раніше за миску.
+ */
+export const BOWL_BEHIND = 0.35;
+/**
+ * Позаду миски автогодівниця (`FEEDER_BEHIND` 0,3, `floor.ts`) — за мискою місця немає: кіт сидить збоку від миски, з того
+ * боку, звідки дивиться на неї (`along` — уздовж горизонталі екрана, клітинки x − y), і трохи позаду, щоб у порядку все одно
+ * бути раніше за миску.
+ */
+export const BOWL_SIDE = { along: 0.64, behind: 0.08 } as const;
+/** З такої відстані до миски (клітинки) кіт, що йде до неї, уже сідає за неї — плавно, а не ривком в останню мить. */
+export const BOWL_APPROACH = 0.8;
+
 const ZERO: Vec = { x: 0, y: 0 };
 
 function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot {
@@ -99,6 +114,37 @@ function houseOf(state: GameState, cat: Cat): HomeItem | null {
   const id = Number(act.target.slice(5));
   const item = state.home.items.find((i) => i.id === id);
   return item?.kind === "house" ? item : null;
+}
+
+/**
+ * Миска з кормом чи водою, з якої кіт їсть, п'є, краде, біля якої закопує корм чи яку обнюхує (нова річ): та, що в цілі його
+ * дії. Інша ціль — null.
+ */
+export function bowlOf(state: GameState, cat: Cat): Extract<HomeItem, { kind: "bowl" | "water" }> | null {
+  const { kind, target } = cat.act;
+  if (!target) return null;
+  let id: number | null = null;
+  if ((kind === "eat" || kind === "drink" || kind === "bury" || kind === "steal") && target.startsWith("item:")) id = Number(target.slice(5));
+  else if (kind === "idle" && (target.startsWith("sniff:") || target.startsWith("shun:"))) id = Number(target.slice(target.indexOf(":") + 1));
+  if (id === null) return null;
+  const item = state.home.items.find((i) => i.id === id);
+  return item !== undefined && (item.kind === "bowl" || item.kind === "water") ? item : null;
+}
+
+/**
+ * Де сидить кіт біля миски `bowl` (клітинки): за нею (`BOWL_BEHIND`), а коли позаду автогодівниця (`feeder`), — збоку, з
+ * боку, протилежного тому, куди він дивиться (`facesRight` — праворуч на екрані: тоді ліворуч від миски), тож дивиться на
+ * неї. Кіт, що ще йде до миски, сідає туди поступово з `BOWL_APPROACH` клітинок (`arrived` — дійшов). Зсув — від самого кота:
+ * дійшовши, він у точці миски.
+ */
+export function bowlSeat(cat: Vec, bowl: Vec, feeder: boolean, facesRight: boolean, arrived: boolean): Vec {
+  const k = arrived ? 1 : Math.max(0, 1 - Math.hypot(bowl.x - cat.x, bowl.y - cat.y) / BOWL_APPROACH);
+  if (k === 0) return { x: cat.x, y: cat.y };
+  if (!feeder) return { x: cat.x - BOWL_BEHIND * k, y: cat.y - BOWL_BEHIND * k };
+  // Праворуч на екрані — +x і −y (ізометрія 2:1): зсув `along` по x − y — це половина його на кожну вісь.
+  const side = facesRight ? -1 : 1;
+  const half = BOWL_SIDE.along / 2;
+  return { x: cat.x + (side * half - BOWL_SIDE.behind) * k, y: cat.y + (-side * half - BOWL_SIDE.behind) * k };
 }
 
 /**
@@ -149,6 +195,12 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: true });
   }
   if (anim === "hide") return spot("under", tile, { show: "eyes" });
+  // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.
+  const bowl = pair ? null : bowlOf(state, cat);
+  if (bowl) {
+    const feeder = (state.home.feeders ?? []).some((f) => f.slot === bowl.slot);
+    return spot("floor", bowlSeat(cat, itemPoint(bowl), feeder, cat.facing >= 0, act.goal === null), { shadow: true });
+  }
   return spot("floor", tile, { shadow: true });
 }
 
