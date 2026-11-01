@@ -176,6 +176,57 @@ function tailFollow(rot: readonly Key<number>[], rest: number, scale = 1): Key<V
   return rot.map((k) => (k.ease === undefined ? { t: k.t, v: tailFrom(rest, k.v, scale) } : { t: k.t, v: tailFrom(rest, k.v, scale), ease: k.ease }));
 }
 
+// --- Лапа до точки ------------------------------------------------------------------------------------
+//
+// Лапа — одна кістка, тож поставити подушечку в точку (на підлогу, за вухо) — це знайти поворот і масштаб уздовж кістки:
+// кут і довжину вектора від суглоба до точки в системі батька (тулуба чи таза). Скелет — числа визначення
+// (`new Rig(CAT_RIG)`, без арту): вони дають ту саму вихідну позу, що й точки еталонів (`defs/cat.ts`).
+
+type CatRig = Rig<CatBone, CatSlot, string>;
+
+/** Батько кожної кістки скелета кота. */
+const PARENT = new Map<CatBone, CatBone | null>(CAT_RIG.bones.map((bone) => [bone.id, bone.parent]));
+
+/** Скелет кота, що грає анімацію `anim` (ракурс `view`), у момент `t`. */
+function rigAt(anim: CatAnim, view: ArtView, t = 0): CatRig {
+  const rig = new Rig(CAT_RIG, { facing: { view } }) as unknown as CatRig;
+  rig.play(anim, 0, { blend: 0, from: t });
+  rig.evaluate(0);
+  return rig;
+}
+
+/** Скелет кота в позі `pose` (ракурс `view`). */
+const rigIn = (pose: Pose, view: ArtView): CatRig => rigAt({ duration: 1, loop: true, bones: still(pose) }, view);
+
+/** Точка `p` системи кістки `bone` — у світі (оцінений скелет). */
+function toWorld(rig: CatRig, bone: CatBone, p: Vec2): Vec2 {
+  const w = rig.bone(bone).world;
+  return { x: w.a * p.x + w.c * p.y + w.tx, y: w.b * p.x + w.d * p.y + w.ty };
+}
+
+/** Подушечка лапи (кінець кістки) у світі. */
+function pawOf(rig: CatRig, leg: CatBone): Vec2 {
+  return toWorld(rig, leg, { x: rig.bone(leg).len, y: 0 });
+}
+
+/**
+ * Зміна лапи `leg` від вихідної пози (поворот, градуси; масштаб уздовж кістки), за якої її подушечка — у світовій точці
+ * `paw`, а решта пози — як у `rig` (суглоб лапи не залежить від її власного повороту й масштабу).
+ */
+function legTo(rig: CatRig, leg: CatBone, paw: Vec2): { rot: number; sx: number } {
+  const bone = rig.bone(leg);
+  const parent = PARENT.get(leg);
+  const p = parent ? rig.bone(parent).world : { a: 1, b: 0, c: 0, d: 1 };
+  const dx = paw.x - bone.world.tx;
+  const dy = paw.y - bone.world.ty;
+  const det = p.a * p.d - p.b * p.c;
+  const lx = (p.d * dx - p.c * dy) / det;
+  const ly = (-p.b * dx + p.a * dy) / det;
+  let rot = Math.atan2(ly, lx) / DEG - rig.boneSetup(leg).rot;
+  rot -= 360 * Math.round(rot / 360);
+  return { rot, sx: Math.hypot(lx, ly) / bone.len };
+}
+
 // --- Спільні пози (ті самі числа, що в групі `basic`) ------------------------------------------------
 //
 // Копії поз N1 (`basic.ts`): чухання й тертя очей починаються й закінчуються так, як кіт сидить (`sit`), хропіння — той
@@ -1006,64 +1057,76 @@ const jerk = (values: readonly number[]): Key<number>[] => keys(JERKS.map((t, i)
 const jerkV = (values: readonly (readonly [number, number])[]): Key<Vec2>[] => keysV(JERKS.map((t, i) => [t, values[i]?.[0] ?? 0, values[i]?.[1] ?? 0] as const));
 
 /**
- * «Пручається»: вертиться й вивертається — кіт совгається туди-сюди, плечі то зіщулюються, то випинаються, голова
- * крутиться, хвіст хльоскає, а ближньою передньою двічі б'є вперед і вгору — відбивається від руки. Задні лапи й дальня
- * передня стоять: під рукою кіт сидить, і лапа, що «брикається» в повітрі, відірвалася б від підлоги. Там, де лапи не стоять
- * на підлозі (на руках, на спині), вони брикаються (`STRUGGLE_KICKS`, `catOverlayOn`).
+ * «Пручається»: вертиться й вивертається — плечі то зіщулюються, то випинаються, голова то пірнає й смикається назад з-під
+ * руки, то крутиться, хвіст хльоскає, а ближньою передньою двічі б'є вперед і вгору — відбивається від руки. Задні лапи й
+ * дальня передня стоять на місці: під рукою кіт сидить, тож таз нерухомий (зсув таза тягнув би подушечки по підлозі), а
+ * вивертається кіт плечима, шиєю й головою. Там, де лапи не стоять на підлозі (на руках, на спині), вони брикаються
+ * (`STRUGGLE_KICKS`, `catOverlayOn`).
  */
+/** «Пручається»: плечі то зіщулюються, то випинаються — масштаб тулуба впоперек на кожному ривку. */
+const SQUIRM = [1, 1.06, 0.97, 1.07, 0.98, 1.05, 0.97, 1] as const;
+/** Удар ближньою передньою: [мс, поворот, наскільки підібрана] — лапа злітає вперед і вгору й повертається на підлогу. */
+const SWAT: readonly (readonly [number, number, number])[] = [
+  [0, 0, 1],
+  [110, -12, 0.95],
+  [190, -78, 0.84],
+  [260, -70, 0.86],
+  [350, 0, 1],
+  [380, 0, 1],
+  [470, 0, 1],
+  [560, -74, 0.84],
+  [640, -64, 0.86],
+  [760, 0, 1],
+  [STRUGGLE_MS, 0, 1],
+];
+
+/**
+ * Передні лапи «пручається» того, хто сидить (`sit` — поза `SIT` чи `SIT_BACK` ракурсу `view`): дальня стоїть, хоч тулуб і
+ * зіщулюється (`legTo` тримає подушечку там, де в `sit`), ближня б'є й стає на те саме місце.
+ */
+function struggleFront(sit: Pose, view: ArtView): Tracks {
+  const v: Vec2 = { x: 0, y: 0 };
+  const squirm = jerkV(SQUIRM.map((y) => [1, y] as const));
+  const was = rigIn(sit, view);
+  /** Зміна лапи від `sit`, за якої вона стоїть на своєму місці, коли тулуб масштабовано впоперек на `y`. */
+  const stand = (leg: "leg-front-near" | "leg-front-far", y: number): readonly [number, number] => {
+    const solved = legTo(rigIn(over(sit, { body: { sy: y } }), view), leg, pawOf(was, leg));
+    return [solved.rot - (sit[leg]?.rot ?? 0), solved.sx / (sit[leg]?.sx ?? 1)];
+  };
+  const far = SQUIRM.map((y) => stand("leg-front-far", y));
+  const near = SWAT.map(([t, r, k]) => (r === 0 && k === 1 ? stand("leg-front-near", sampleVec(squirm, t, v).y) : ([r, k / sampleVec(squirm, t, v).y] as const)));
+  return {
+    "leg-front-far": { rot: jerk(far.map(([r]) => r)), scale: jerkV(far.map(([, k]) => [k, 1] as const)) },
+    "leg-front-near": { rot: keys(SWAT.map(([t], i) => [t, near[i]?.[0] ?? 0] as const)), scale: keysV(SWAT.map(([t], i) => [t, near[i]?.[1] ?? 1, 1] as const)) },
+  };
+}
+
 function struggleAnim(): CatAnim {
   const T = STRUGGLE_MS;
-  const squirm = jerkV([
-    [1, 1],
-    [1, 1.06],
-    [1, 0.97],
-    [1, 1.07],
-    [1, 0.98],
-    [1, 1.05],
-    [1, 0.97],
-    [1, 1],
-  ]);
-  const v: Vec2 = { x: 0, y: 0 };
-  // Удар лапою: [мс, поворот, наскільки підібрана] — лапа злітає вперед і вгору й повертається на підлогу.
-  const swat: readonly (readonly [number, number, number])[] = [
-    [0, 0, 1],
-    [110, -12, 0.95],
-    [190, -78, 0.84],
-    [260, -70, 0.86],
-    [350, -6, 1],
-    [470, 0, 1],
-    [560, -74, 0.84],
-    [640, -64, 0.86],
-    [760, 0, 1],
-    [T, 0, 1],
-  ];
   return {
     duration: T,
     loop: true,
     bones: {
-      pelvis: {
+      body: { scale: jerkV(SQUIRM.map((y) => [1, y] as const)) },
+      ...struggleFront(SIT, "front"),
+      // Шия смикає голову назад і вниз з-під руки й знову випинає вперед (основа шиї на тулубі, тож лапи стоять).
+      neck: {
+        rot: jerk([0, -8, 7, -10, 4, -6, 6, 0]),
         pos: jerkV([
           [0, 0],
-          [-1.6, 0],
-          [1, 0],
-          [-1.8, 0],
-          [0.6, 0],
-          [-1.2, 0],
-          [1, 0],
+          [-2.4, 1.6],
+          [1.2, -0.6],
+          [-2.8, 2],
+          [0.8, -0.4],
+          [-2, 1.4],
+          [1, -0.4],
           [0, 0],
         ]),
       },
-      body: { scale: squirm },
-      "leg-front-far": { scale: frontBreath(squirm) },
-      "leg-front-near": {
-        rot: keys(swat.map(([t, r]) => [t, r] as const)),
-        // Підібрана в ударі; на підлозі дихання тулуба її не подовжує.
-        scale: keysV(swat.map(([t, , k]) => [t, k / sampleVec(squirm, t, v).y, 1] as const)),
-      },
-      neck: { rot: jerk([0, -8, 7, -10, 4, -6, 6, 0]) },
       head: { rot: jerk([0, -10, 9, -6, 8, -12, 5, 0]) },
       tail: tailKeys(JERKS.map((t, i) => [t, [0, 34, 6, 40, 10, 36, 4, 0][i] ?? 0] as const)),
     },
+    views: { back: { bones: struggleFront(SIT_BACK, "back") } },
   };
 }
 

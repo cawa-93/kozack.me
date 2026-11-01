@@ -104,7 +104,18 @@ function tailAt(rot: number): BoneTracks {
   return { rot: still(0, rot), pos: [{ t: 0, v: { x: 3.5 - (3.5 * c - 0.5 * s), y: 0.5 - (3.5 * s + 0.5 * c) } }] };
 }
 /** Основи для перевірки `catOverlayOn` (групи `basic` у цьому пакеті ще може не бути): сидить, на спині, звисає на руках. */
-const SITS: CatAnim = { duration: 1000, loop: true, bones: { pelvis: { rot: still(0, -32), pos: [{ t: 0, v: { x: 0, y: 2 } }] }, tail: tailAt(-95) } };
+const SITS: CatAnim = {
+  duration: 1000,
+  loop: true,
+  bones: {
+    pelvis: { rot: still(0, -32), pos: [{ t: 0, v: { x: 0, y: 2 } }] },
+    "leg-back-near": { scale: [{ t: 0, v: { x: 1.05, y: 1 } }] },
+    "leg-back-far": { rot: still(0, 12) },
+    "leg-front-near": { rot: still(0, 32), pos: [{ t: 0, v: { x: -4, y: 7 } }], scale: [{ t: 0, v: { x: 1.12, y: 1 } }] },
+    "leg-front-far": { rot: still(0, 32), pos: [{ t: 0, v: { x: -5, y: 8.7 } }], scale: [{ t: 0, v: { x: 1.12, y: 1 } }] },
+    tail: tailAt(-95),
+  },
+};
 const ON_BACK: CatAnim = { duration: 1000, loop: true, bones: { pelvis: { scale: [{ t: 0, v: { x: 1, y: -1 } }], pos: [{ t: 0, v: { x: 4, y: 3 } }] }, tail: tailAt(-75) } };
 const HANGS: CatAnim = { duration: 1000, loop: true, bones: { pelvis: { rot: still(0, -12), pos: [{ t: 0, v: { x: 0, y: 13 } }] }, tail: tailAt(-165) } };
 const STANDS: CatAnim = { duration: 1000, loop: true };
@@ -234,6 +245,28 @@ describe("catOverlayOn: накладка, підігнана під основу
     expect(peak(catOverlayOn(CAT_FEELINGS.reluctant, SITS), "front")).toBeCloseTo(own, 9);
     // «Попереджає» й так б'є широко — не змінюється.
     expect(peak(catOverlayOn(CAT_FEELINGS.warn, HANGS), "front")).toBeCloseTo(peak(CAT_FEELINGS.warn, "front"), 9);
+  });
+
+  it("«пручається» під рукою: таз стоїть, тож лапи, що стоять на підлозі, не ковзають", () => {
+    const fitted = catOverlayOn(CAT_FEELINGS.struggle, SITS);
+    expect(fitted.bones?.pelvis).toBeUndefined();
+    for (const view of VIEWS) {
+      const paws = (t: number): Vec2[] => {
+        const rig = new Rig(CAT_RIG, { facing: { view } });
+        rig.play(layered(SITS, fitted, view, t), 0, { blend: 0 });
+        rig.evaluate(0);
+        return (["leg-back-near", "leg-back-far", "leg-front-far"] as const).map((leg) => {
+          const bone = rig.bone(leg);
+          return { x: bone.world.a * bone.len + bone.world.tx, y: bone.world.b * bone.len + bone.world.ty };
+        });
+      };
+      const start = paws(0);
+      let worst = 0;
+      for (let t = 0; t <= fitted.duration; t += 10) {
+        paws(t).forEach((p, i) => (worst = Math.max(worst, Math.hypot(p.x - (start[i]?.x ?? NaN), p.y - (start[i]?.y ?? NaN)))));
+      }
+      expect({ view, slide: worst < 0.8 }).toEqual({ view, slide: true });
+    }
   });
 
   it("«пручається»: лапи, що стоять на підлозі, не брикаються; ті, що звисають на руках, — брикаються", () => {
