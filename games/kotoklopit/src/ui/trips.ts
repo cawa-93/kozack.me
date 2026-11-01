@@ -18,8 +18,30 @@ import { traitChips } from "./traits";
 /** Невдале дешеве лікування цієї поїздки не повторюють — ні у ветеринара, ні в лікаря (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). */
 const NO_RETRY = "не допомогло — повторно лише наступного разу";
 
-/** Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». */
-const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)} год${m % 60 ? ` ${m % 60} хв` : ""}` : `${m} хв`);
+/**
+ * Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». Пробіли нерозривні:
+ * «1» і «год» не розходяться по рядках (рецензія хвилі 3: у вузькій колонці назви на телефоні рядок рвався між ними).
+ */
+const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)}\u00a0год${m % 60 ? `\u00a0${m % 60}\u00a0хв` : ""}` : `${m}\u00a0хв`);
+
+/**
+ * Ціна на кнопці: число й «₴» нерозривно, а з назвою послуги — «Звичайне лікування · 30 ₴»: якщо не вміщується, рядок
+ * рветься перед «·», і ціна переходить цілою (рецензія хвилі 3: «30 / ₴» і «·» у кінці рядка).
+ */
+const priced = (title: string, price: number): string => `${title} ·\u00a0${price}\u00a0₴`;
+
+/**
+ * Примітка під назвою рядка (`.shop-stock`): частини через « · », а частина з часом «🕐 1 год» — одним нерозривним шматком.
+ * Гліф 🕐 — рядковий блок (`glyphs.ts`), а біля нього браузер рве рядок навіть через нерозривний пробіл.
+ */
+function stockNote(note: string): HTMLElement {
+  const stock = element("span", "shop-stock");
+  note.split(" · ").forEach((part, i) => {
+    if (i > 0) stock.append(" · ");
+    stock.append(part.includes("🕐") || part.includes("🚗") ? element("span", "nowrap", part) : part);
+  });
+  return stock;
+}
 
 /**
  * Чому туди не можна. «no-cat» і «newborn» бувають лише з котом на руках, і тоді — в усіх рядках, тож їх кажуть один раз над
@@ -49,7 +71,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     const trip = TRIPS[destination];
     const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
     const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(roadMinutes(state, destination))} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
-    name.append(element("span", "shop-stock", note));
+    name.append(blocker === null || (everywhere !== null && blocker === everywhere) ? stockNote(note) : element("span", "shop-stock", note));
     row.append(name);
     const button = element("button", "button", "Їхати");
     button.disabled = blocker !== null;
@@ -150,7 +172,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   const row = (title: string, stock: string, ...buttons: HTMLElement[]): HTMLElement => {
     const r = element("div", "shop-row");
     const name = element("span", "shop-name", title);
-    if (stock) name.append(element("span", "shop-stock", stock));
+    if (stock) name.append(stockNote(stock));
     r.append(name, ...buttons);
     return r;
   };
@@ -178,7 +200,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
     if (blocker !== null) return row(title, why[blocker]);
     const price = sterilizePrice(state);
     // До огляду операція забирає й годину огляду (рецензія реалізації А6): «🕐 3 год · огляд у ціні», після окремого огляду — «🕐 2 год».
-    return row(title, `🕐 ${minutesText(sterilizeMinutes(state))}${log.exam ? "" : " · огляд у ціні"}`, button(`${price} ₴`, price, h.sterilize));
+    return row(title, `🕐 ${minutesText(sterilizeMinutes(state))}${log.exam ? "" : " · огляд у ціні"}`, button(`${price}\u00a0₴`, price, h.sterilize));
   };
   switch (destination) {
     case "shop":
@@ -188,7 +210,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (!cat) break;
       if (!log.exam) {
         body.push(`${cat.name} у переносці.`);
-        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam} ₴`, VET.exam, h.exam)));
+        body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam}\u00a0₴`, VET.exam, h.exam)));
         const sterilize = sterilizeRow();
         if (sterilize) body.push(sterilize);
         break;
@@ -233,8 +255,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           advised(row(
             diseaseTitle(d.id),
             note,
-            button(`${SERVICE_TITLES.treat.cheap} · ${VET.cheap} ₴`, VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
-            button(`${SERVICE_TITLES.treat.premium} · ${VET.premium} ₴`, VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
+            button(priced(SERVICE_TITLES.treat.cheap, VET.cheap), VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
+            button(priced(SERVICE_TITLES.treat.premium, VET.premium), VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
           ), d.id),
         );
       }
@@ -261,8 +283,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
           row(
             ILLNESS_TITLES[i.id],
             failed ? NO_RETRY : time,
-            button(`${SERVICE_TITLES.treat.cheap} · ${DOCTOR_TREAT.cheap} ₴`, DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap"), failed),
-            button(`${SERVICE_TITLES.treat.premium} · ${DOCTOR_TREAT.premium} ₴`, DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium"), failed),
+            button(priced(SERVICE_TITLES.treat.cheap, DOCTOR_TREAT.cheap), DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap"), failed),
+            button(priced(SERVICE_TITLES.treat.premium, DOCTOR_TREAT.premium), DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium"), failed),
           ),
         );
       }
@@ -279,7 +301,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
         const r = row(
           `${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`,
           facts.join(", "),
-          button(`${SHELTER.price} ₴`, SHELTER.price, () => h.adopt(c.id)),
+          button(`${SHELTER.price}\u00a0₴`, SHELTER.price, () => h.adopt(c.id)),
         );
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
@@ -299,7 +321,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const list = element("div", "shop");
       for (const c of cats) {
         const traits = c.traits.filter((t) => visibility(state, t) === 3);
-        const r = row(`${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`, traits.length > 0 ? "" : "Характер: ?", button(`${price} ₴`, price, () => h.buyKitten(c.id)));
+        const r = row(`${c.name} ${c.sex === "male" ? "♂" : "♀"} · ${c.ageWeeks} ${plural(c.ageWeeks, "тиждень", "тижні", "тижнів")}`, traits.length > 0 ? "" : "Характер: ?", button(`${price}\u00a0₴`, price, () => h.buyKitten(c.id)));
         if (traits.length > 0) r.querySelector(".shop-name")?.append(traitChips(traits, c.sex));
         list.append(r);
       }
@@ -322,7 +344,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const titles = SERVICE_TITLES[washes ? "wash" : "groom"];
       body.push(
         `${cat.name} у переносці.`,
-        row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(`${titles.cheap} · ${GROOMER.price.cheap} ₴`, GROOMER.price.cheap, () => h.groom("cheap")), button(`${titles.premium} · ${GROOMER.price.premium} ₴`, GROOMER.price.premium, () => h.groom("premium"))),
+        row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(priced(titles.cheap, GROOMER.price.cheap), GROOMER.price.cheap, () => h.groom("cheap")), button(priced(titles.premium, GROOMER.price.premium), GROOMER.price.premium, () => h.groom("premium"))),
       );
       break;
     }
@@ -331,7 +353,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
         body.push(`${cat.name} у переносці.`);
-        body.push(row("Участь", `🕐 ${minutesText(TRIPS.show.visit)}`, button(`${MODIFIERS.show.fee} ₴`, MODIFIERS.show.fee, h.show)));
+        body.push(row("Участь", `🕐 ${minutesText(TRIPS.show.visit)}`, button(`${MODIFIERS.show.fee}\u00a0₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
       const prize = Number(result.slice(5));
