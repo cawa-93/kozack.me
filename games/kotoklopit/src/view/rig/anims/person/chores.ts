@@ -6,25 +6,38 @@
 // м'який перехід (`inOut`), тож рух розганяється й гальмує, як живий.
 //
 // Скелет персонажа не має ліктів і колін: рука й нога — один кадр. Тому:
-// - сидить — нога пряма від стегна до кісточки, навскіс уперед до підлоги;
+// - сидить — ближнє стегно горизонтально вперед (на ньому коліна — гніздо `lap`), а гомілку до підлоги показує дальня нога,
+//   що висить від коліна (дальню ногу сидячи й так видно за ближньою); ближній черевик схований;
 // - тягнеться до близького — рука вкорочена вздовж себе (рука, що йде вглиб чи до камери, у ракурсі ¾ і так коротшає);
 // - до підлоги — нахиляється в стегнах, а ноги стоять прямо (присісти без колін не можна).
 //
 // Ракурс ¾ має глибину: руки тягнуться до точки «на f попереду, на висоті h, на n убік» (`Space.at`, `Space.reach`), а
 // проєкція ракурсу кладе її на екран — у ¾ ззаду те, що попереду, вище на екрані, у ¾ спереду — нижче. Тому доріжки рук і ніг
 // рахуються для кожного ракурсу окремо: основні — для ¾ спереду, перевизначення — для ¾ ззаду (`views.back`). Більшість справ
-// персонаж робить спиною до камери (комп'ютер, стіл, кухня, ванна), тож їх підганяли передусім за ¾ ззаду; у ¾ спереду
-// ближня рука, що тягнеться вперед, перетинає груди — тому там уперед частіше тягнеться дальня, а ближня — на рівні грудей.
+// персонаж робить спиною до камери (комп'ютер, стіл, кухня, ванна, ліжко), тож їх підганяли передусім за ¾ ззаду; у ¾ спереду
+// ближня рука, що тягнеться вперед, перетинає груди — тому там тіло нахиляється більше, а кулак іде далі вперед і до дальнього
+// боку, за силует тулуба (`forward`), до рота рука підходить лише під підборіддя, а біля дверей (персонаж дивиться до камери)
+// до ручки тягнеться дальня.
 //
 // Ноги стоять: де таз зсувається (нахил, сидіння, падіння), кути ніг рахує `stance` — ступні лишаються на своїх місцях на
 // підлозі, а стопи — рівно. Річ у руках (гніздо `held` на кисті ближньої руки) кисть тримає рівно (`level`): тарілка не
-// перекидається, пилосос стоїть. Разові починаються й закінчуються у вихідній позі (з неї м'яко повертається основна), по
-// колу — перший і останній ключі однакові, за поступом (засинання, падіння) — від вихідної пози до кінцевої.
+// перекидається, пилосос стоїть.
+//
+// Руки справ — власні: накладки рук (`carry`, `holdCat`) справи не беруть (`PERSON_OWN_ARMS`), тож річ і кіт тримаються в
+// гнізді так, як ведуть руки справи. Стики з накладками — у позах накладок (`CARRY`, `HOLD` — ті самі, що в `move.ts`, N4a):
+// «бере» закінчується позою «несе», «кладе» й «викидає» з неї починаються (до події персонаж ніс річ), «миски» — з рук коло
+// себе (`halfCarry`: совок несуть, а воду й годівницю — ні), «доглядає кота» починається й закінчується позою «тримає кота». Решта разових починаються й закінчуються у вихідній позі (з неї м'яко
+// повертається основна), по колу — перший і останній ключі однакові, за поступом (засинання, падіння) — від вихідної пози до
+// кінцевої. Мить, коли річ з'являється в руці чи лишає її, — `PERSON_CONTACT_MS` (вигляд міняє вміст гнізда саме тоді).
 
-import { PERSON_ONE_SHOT_MS } from "../../../anim/ids";
+import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS } from "../../../anim/ids";
+import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
+import { isoObjectLook } from "../../../world/objects";
+import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
-import { defineAnims, type BoneOf, type BoneTracks, type Ease, type Key, type RigTracks, type SlotOf, type Vec2 } from "../../types";
+import { easeValue } from "../../rigcore";
+import { defineAnims, type BoneOf, type BoneTracks, type Ease, type Key, type RigTracks, type SlotOf, type SlotTracks, type Vec2 } from "../../types";
 
 type Bone = BoneOf<typeof PERSON_RIG>;
 type Slot = SlotOf<typeof PERSON_RIG>;
@@ -166,6 +179,12 @@ function armPart(body: Body, dx: number, dy: number): Part {
   return k < 1 ? { rot, scale: { x: k, y: 1 } } : { rot };
 }
 
+/** Точка в системі тулуба (x — угору від таза, y — уперед) на екрані: таз зсунуто на `hip`, тулуб нахилено на `lean`. */
+function torsoPoint(body: Body, x: number, y: number): Vec2 {
+  const torso = (-90 + body.lean) * RAD;
+  return { x: body.hip.x + x * Math.cos(torso) - y * Math.sin(torso), y: PELVIS_Y + body.hip.y + x * Math.sin(torso) + y * Math.cos(torso) };
+}
+
 function space(view: ArtView): Space {
   const back = view === "back";
   const shoulders = { near: setup(view, "arm-near"), far: setup(view, "arm-far") };
@@ -201,32 +220,62 @@ function space(view: ArtView): Space {
     point(side, body, target) {
       // Плече на екрані: таз + поворот тулуба (вихідний кут −90, нахил додається) × точка плеча в системі тулуба.
       const s = shoulders[side];
-      const torso = (-90 + body.lean) * RAD;
-      const sx = body.hip.x + s.x * Math.cos(torso) - s.y * Math.sin(torso);
-      const sy = PELVIS_Y + body.hip.y + s.x * Math.sin(torso) + s.y * Math.cos(torso);
-      return armPart(body, target.x - sx, target.y - sy);
+      const at = torsoPoint(body, s.x, s.y);
+      return armPart(body, target.x - at.x, target.y - at.y);
     },
   };
 }
 
 const SPACES: Readonly<Record<ArtView, Space>> = { front: space("front"), back: space("back") };
 
+/** Кісточка (початок стопи) в системі ноги: на кінці ноги й трохи вбік від її осі. */
+const ANKLE_SIDE = setup("front", "foot-near").y;
+
+/**
+ * Нога від таза, зсунутого на `hip`, до ступні, зсунутої на `foot`: кут, вкорочення й стопа рівно. Ціль — кісточка, а вона
+ * трохи збоку від осі ноги (`ANKLE_SIDE`): нога, що лягає майже горизонтально (сів на підлогу, впав), інакше відносила б
+ * ступню на ≈ 1.
+ */
+function legTo(hip: Vec2, foot: Vec2): { leg: Part; foot: Part } {
+  // Від стегна до кісточки: у вихідній позі нога донизу (90°), кісточка — на `ANKLE_SIDE` убік від осі.
+  const dx = -ANKLE_SIDE + foot.x - hip.x;
+  const dy = LEG + foot.y - hip.y;
+  const along = Math.sqrt(Math.max(0, dx * dx + dy * dy - ANKLE_SIDE * ANKLE_SIDE));
+  const k = Math.min(1, along / LEG);
+  const phi = (Math.atan2(dy, dx) - Math.atan2(ANKLE_SIDE, k * LEG)) / RAD;
+  // Вкорочена нога стискає й стопу (вона — дочірня): стопа впоперек ноги, тож розтягнути її навпаки.
+  return { leg: k < 1 ? { rot: phi - 90, scale: { x: k, y: 1 } } : { rot: phi - 90 }, foot: k < 1 ? { rot: 90 - phi, scale: { x: 1, y: 1 / k } } : { rot: 90 - phi } };
+}
+
 /**
  * Ноги стоять, коли таз зсунуто на `hip`: ступні — на `near` і `far` від вихідних місць. Нога — пряма від стегна до кісточки
  * (довша не стає: не дістає — ступня трохи в повітрі; коротша — вкорочена вздовж себе), стопа — рівно (носок уперед).
  */
 function stance(hip: Vec2, near: Vec2 = { x: 0, y: 0 }, far: Vec2 = near): Pose {
-  const leg = (foot: Vec2): { leg: Part; foot: Part } => {
-    const dx = foot.x - hip.x;
-    const dy = LEG + foot.y - hip.y;
-    const phi = Math.atan2(dy, dx) / RAD;
-    const k = Math.min(1, Math.hypot(dx, dy) / LEG);
-    // Вкорочена нога стискає й стопу (вона — дочірня): стопа впоперек ноги, тож розтягнути її навпаки.
-    return { leg: k < 1 ? { rot: phi - 90, scale: { x: k, y: 1 } } : { rot: phi - 90 }, foot: k < 1 ? { rot: 90 - phi, scale: { x: 1, y: 1 / k } } : { rot: 90 - phi } };
-  };
-  const n = leg(near);
-  const f = leg(far);
+  const n = legTo(hip, near);
+  const f = legTo(hip, far);
   return { pelvis: { pos: hip }, "leg-near": n.leg, "foot-near": n.foot, "leg-far": f.leg, "foot-far": f.foot };
+}
+
+/**
+ * Ключі руху, де таз іде далеко, а ступні стоять (падіння, засинання): між сусідніми зупинками (числові параметри пози) —
+ * проміжні ключі кожні ≈ `step` мс з позою, перерахованою для проміжних параметрів (поступ — за переходом зупинки, між
+ * проміжними — рівно). Інакше на довгому відрізку кути ніг і зсув таза змішувалися б окремо, і ступні ковзали б.
+ */
+function through<P extends readonly number[]>(stops: readonly (readonly [t: number, p: P, ease?: Ease])[], make: (p: P) => Pose, step = 30): Beat[] {
+  const out: Beat[] = [];
+  for (let i = 0; i + 1 < stops.length; i++) {
+    const [t0, a, ease] = stops[i]!;
+    const [t1, b] = stops[i + 1]!;
+    const n = Math.max(1, Math.round((t1 - t0) / step));
+    for (let j = 0; j < n; j++) {
+      const u = easeValue(ease ?? "inOut", j / n);
+      out.push([Math.round(t0 + ((t1 - t0) * j) / n), make(a.map((v, k) => v + ((b[k] ?? v) - v) * u) as unknown as P), "linear"]);
+    }
+  }
+  const last = stops[stops.length - 1];
+  if (last) out.push(last[2] ? [last[0], make(last[1]), last[2]] : [last[0], make(last[1])]);
+  return out;
 }
 
 /** Тіло: таз і нахил тулуба (ноги стоять на місці). */
@@ -255,11 +304,14 @@ function level(pose: Pose, tilt = 0): Pose {
   return { ...pose, "hand-near": { rot: Math.atan2(Math.sin(psi), k * Math.cos(psi)) / RAD } };
 }
 
+/** Доріжки слотів, однакові в обох ракурсах (схований черевик сидячи). */
+type Slots = Readonly<Partial<Record<Slot, SlotTracks>>>;
+
 /**
  * Анімація з поз для кожного ракурсу: основні доріжки — ¾ спереду, а `views.back` — лише ті доріжки ¾ ззаду, що
  * відрізняються.
  */
-function anim(duration: number, loop: boolean, beats: (s: Space) => readonly Beat[]) {
+function anim(duration: number, loop: boolean, beats: (s: Space) => readonly Beat[], slots?: Slots) {
   const front = bonesOf(beats(SPACES.front));
   const back = bonesOf(beats(SPACES.back));
   const diff: Partial<Record<Bone, BoneTracks>> = {};
@@ -275,7 +327,13 @@ function anim(duration: number, loop: boolean, beats: (s: Space) => readonly Bea
     };
     if (track.rot || track.pos || track.scale) diff[id] = track;
   }
-  return { duration, loop, bones: front, ...(Object.keys(diff).length > 0 ? { views: { back: { bones: diff } } } : {}) };
+  return {
+    duration,
+    loop,
+    bones: front,
+    ...(slots ? { slots } : {}),
+    ...(Object.keys(diff).length > 0 ? { views: { back: { bones: diff } } } : {}),
+  };
 }
 
 // --- Спільні пози -------------------------------------------------------------------------------
@@ -284,46 +342,144 @@ const REST: Pose = {};
 /** Тіло, нахилене на `lean`, таз — на `x`, `y`. */
 const lean = (deg: number, x = 0, y = 0): Body => ({ hip: { x, y }, lean: deg });
 
+/** Поза рук: кути відносно вихідної й наскільки рука коротша (зігнута до камери). */
+interface Arms {
+  near: number;
+  far: number;
+  nearScale?: number;
+  farScale?: number;
+}
+
 /**
- * Сидить на стільці: таз опускається на сидіння (`PERSON_SEAT` над підлогою — як диван, `world/objects.ts`), ноги — навскіс
- * уперед до підлоги. Стільця скелет не малює (його дає вигляд біля стола, T2) — поза читається й без нього: таз низько,
- * ступні попереду.
+ * Пози накладок рук (`move.ts`, N4a): несе річ (`carry`) — ближня рука вперед із річчю на долоні, дальня підтримує знизу;
+ * тримає кота (`holdCat`) — ближня рука навскіс під котом, дальня зігнута під ним з того боку (ззаду ближня коротка — до
+ * камери). Справи, що починаються чи закінчуються з річчю або котом у руках, стикуються з ними саме в цих позах.
+ */
+const CARRY: Readonly<Record<ArtView, Arms>> = { front: { near: -52, far: -44, farScale: 0.85 }, back: { near: -36, far: -36, farScale: 0.85 } };
+const HOLD: Readonly<Record<ArtView, Arms>> = { front: { near: -62, far: -50, farScale: 0.78 }, back: { near: -16, far: -40, nearScale: 0.55, farScale: 0.85 } };
+
+/** Руки в позі `a`, кисті — назад на кут руки (річ рівно, кіт на долонях), як у накладках N4a. */
+function arms(a: Arms): Pose {
+  const part = (rot: number, k: number | undefined): Part => (k !== undefined && k !== 1 ? { rot, scale: { x: k, y: 1 } } : { rot });
+  return { "arm-near": part(a.near, a.nearScale), "hand-near": { rot: -a.near }, "arm-far": part(a.far, a.farScale), "hand-far": { rot: -a.far } };
+}
+
+/** Ближня рука з пози `a` (дальня — як скаже справа). */
+function nearOf(a: Arms): Pose {
+  const all = arms(a);
+  return { "arm-near": all["arm-near"] ?? {}, "hand-near": all["hand-near"] ?? {} };
+}
+
+/** Дальня рука з пози `a`. */
+function farOf(a: Arms): Pose {
+  const all = arms(a);
+  return { "arm-far": all["arm-far"] ?? {}, "hand-far": all["hand-far"] ?? {} };
+}
+
+const C = PERSON_CONTACT_MS;
+
+// --- Сидить -------------------------------------------------------------------------------------
+
+/**
+ * Сидить на стільці: таз опускається на сидіння (`PERSON_SEAT` над підлогою — як диван, `world/objects.ts`). Стільця скелет
+ * не малює (його дає вигляд біля стола, T2/A4).
  */
 export const PERSON_SEAT = 34;
 /** На скільки таз сидячи нижче, ніж стоячи: низ таза (≈ 12 під його центром) — на сидінні. */
 const SIT_DROP = -PELVIS_Y - 12 - PERSON_SEAT;
+/** Таз сидячи — трохи назад (сідниці на сидінні, коліна попереду). */
+const SIT_X = -2;
 /**
- * Ступні сидячи — попереду стегон (уперед по підлозі). У ¾ ззаду — під краєм стола; у ¾ спереду коліна йдуть до камери, тож
- * ступні ближче до тіла, а ноги коротші й круті (довга нога навскіс донизу читалася як «стоїть, відхилившись»).
+ * Стегно сидячи — частка ноги (стегно ≈ половина ноги від стегна до кісточки) і де кульшовий суглоб (x у системі кореня: під
+ * серединою тулуба, в обох ракурсах однаково). Гніздо `lap` (на ближній нозі, на 20 від стегна й 6 над нею) тоді — над
+ * серединою стегна, ≈ 13 над сидінням, рівно.
  */
-const SIT_FEET: Readonly<Record<ArtView, number>> = { back: 30, front: 14 };
+const THIGH = 0.52;
+const SIT_HIP_X = 0;
+/** Гомілка — від коліна (на стільки назад від краю стегна) до кісточки, ступня трохи попереду коліна. */
+const KNEE_IN = 4;
+const SHIN_FWD = 3;
+/** Кісточка над підлогою у вихідній позі (ближня нога): там і гомілка сидячи ставить черевик. */
+const ANKLE = -PELVIS_Y - setup("front", "leg-near").y - LEG;
+
+/**
+ * Ноги сидячи, таз зсунуто на `hip`: ближнє стегно горизонтально вперед від суглоба під серединою тулуба (вкорочене до
+ * `THIGH`), а дальня нога висить від коліна до підлоги — гомілка з черевиком на підлозі. Ближній черевик схований
+ * (`SIT_SLOTS`). Стегно лежить рівно, тож гніздо `lap` (кіт на колінах) не нахилене й на висоті колін.
+ */
+function sitLegs(view: ArtView, hip: Vec2): Pose {
+  const near = setup(view, "leg-near");
+  const far = setup(view, "leg-far");
+  const thigh = LEG * THIGH;
+  // Суглоб у системі таза; таз не повертається, тож вісі ті самі, що в кореня.
+  const joint = { x: SIT_HIP_X - hip.x, y: near.y };
+  const knee = { x: joint.x + thigh, y: near.y };
+  const shin = { x: knee.x - KNEE_IN, y: near.y + 1 };
+  // Гомілка: від кореня дальньої ноги (у системі кореня) до кісточки на підлозі.
+  const top = { x: hip.x + shin.x, y: PELVIS_Y + hip.y + shin.y };
+  const ankle = { x: top.x + SHIN_FWD, y: -ANKLE };
+  const phi = Math.atan2(ankle.y - top.y, ankle.x - top.x) / RAD;
+  const k = Math.hypot(ankle.x - top.x, ankle.y - top.y) / LEG;
+  return {
+    pelvis: { pos: hip },
+    "leg-near": { rot: -90, pos: { x: joint.x - near.x, y: 0 }, scale: { x: THIGH, y: 1 } },
+    "leg-far": { rot: phi - 90, pos: { x: shin.x - far.x, y: shin.y - far.y }, scale: { x: k, y: 1 } },
+    "foot-far": { rot: 90 - phi, scale: { x: 1, y: 1 / k } },
+  };
+}
+
+/** Сидячи ближнього черевика не видно: ближня нога — лише стегно. */
+const SIT_SLOTS: Slots = { "shoe-near": { visible: [{ t: 0, v: false }] } };
 
 /** Сидить, нахилений на `deg`: поза ніг і тіло (для рук). */
 function seated(s: Space, deg: number): { pose: Pose; body: Body } {
-  const b = lean(deg, -2, SIT_DROP);
-  const feet = SIT_FEET[s.view];
-  return { pose: body(b, s.step(feet), s.step(feet - 4)), body: b };
+  const b = lean(deg, SIT_X, SIT_DROP);
+  return { pose: add(sitLegs(s.view, b.hip), { torso: { rot: b.lean } }), body: b };
 }
 
-/** Стіл і клавіатура: стільниця 54 (`env/computer`, `env/table`), клавіатура й тарілка — за ≈ 40 перед тим, хто сидить. */
-const DESK = 54;
-const KEYS = 38;
+/**
+ * Речі перед персонажем (`world/objects.ts`: стоїть чи сидить у `use.at`, лицем за `use.facing`): скільки клітинок від нього до
+ * ближньої грані сліду речі й до дальньої. null — біля речі персонаж не стоїть.
+ */
+function depthOf(id: string): { edge: number; far: number } | null {
+  const look = isoObjectLook(id);
+  const use = look.use;
+  if (!use) return null;
+  const box = look.footprint;
+  const f = use.facing;
+  const edge = f.x < 0 ? use.at.x - box.x1 : f.x > 0 ? box.x0 - use.at.x : f.y < 0 ? use.at.y - box.y1 : box.y0 - use.at.y;
+  const far = f.x < 0 ? use.at.x - box.x0 : f.x > 0 ? box.x1 - use.at.x : f.y < 0 ? use.at.y - box.y0 : box.y1 - use.at.y;
+  return { edge, far };
+}
 
-// --- Стіл ---------------------------------------------------------------------------------------
+/** Одиниць простору анімації вперед на клітинку: клітинка вздовж осі плитки — пів ширини плитки праворуч на екрані. */
+const PER_TILE = ISO_TILE.width / 2 / FWD_X;
+
+/**
+ * Стільниця 54 (`env/computer`, `env/table`). Клавіатура (A4: середина стола, 0,6 його глибини) і тарілка — за 0,3 клітинки за
+ * лицьовою гранню стола (≈ 49 уперед): кулаки лягають на стіл, а не на його край. Дістає до них рука, лише коли той, хто
+ * сидить, нахилився до стола.
+ */
+const DESK = 54;
+const KEYS = (depthOf("computer")?.edge ?? 0.35) * PER_TILE + 0.3 * PER_TILE;
+const PLATE = (depthOf("table")?.edge ?? 0.35) * PER_TILE + 0.3 * PER_TILE;
+/** Лицьова грань стола — де лежить передпліччя, що спирається на стіл. */
+const DESK_EDGE = (depthOf("computer")?.edge ?? 0.35) * PER_TILE;
 
 /**
  * Працює за комп'ютером: друкує обома руками, зрідка тягнеться до миші й клацає, голова за екраном. У ¾ спереду (якщо вигляд
  * не розверне персонажа до стола) — ноутбук на колінах: дальня рука на клавішах, ближня — коло себе.
  */
 function work(s: Space): readonly Beat[] {
-  const { pose: sit, body: b } = seated(s, 6);
   const front = s.view === "front";
+  // До клавіатури за стільницею — нахилився до стола; з ноутбуком на колінах — майже рівно.
+  const { pose: sit, body: b } = seated(s, front ? 6 : 16);
   const typing = (a: number): Pose =>
     add(
       sit,
       {
-        "arm-near": front ? s.reach("near", b, 16, 46 + a, 10) : s.reach("near", b, KEYS, DESK + 3 + 2 * a, 2),
-        "arm-far": front ? s.reach("far", b, 30, DESK - 6 - a, -8) : s.reach("far", b, KEYS, DESK + 3 - 2 * a, -8),
+        "arm-near": front ? s.reach("near", b, 16, 52 + a, 10) : s.reach("near", b, KEYS, DESK + 3 + 2 * a, 2),
+        "arm-far": front ? s.reach("far", b, 30, DESK - 2 - a, -8) : s.reach("far", b, KEYS, DESK + 3 - 2 * a, -8),
       },
       wrist("near", 6 * a),
       wrist("far", -6 * a),
@@ -334,8 +490,8 @@ function work(s: Space): readonly Beat[] {
     add(
       sit,
       {
-        "arm-near": front ? s.reach("near", b, 18, 46, 14) : s.reach("near", b, KEYS + 4, DESK + 3 - click, 16),
-        "arm-far": front ? s.reach("far", b, 30, DESK - 6, -8) : s.reach("far", b, KEYS, DESK + 3, -8),
+        "arm-near": front ? s.reach("near", b, 18, 52, 14) : s.reach("near", b, KEYS + 4, DESK + 3 - click, 16),
+        "arm-far": front ? s.reach("far", b, 30, DESK - 2, -8) : s.reach("far", b, KEYS, DESK + 3, -8),
       },
       wrist("near", 8 * click),
       nod(1),
@@ -369,10 +525,11 @@ function work(s: Space): readonly Beat[] {
 function meeting(s: Space): readonly Beat[] {
   const { pose: sit, body: b } = seated(s, -1);
   const front = s.view === "front";
-  const far = front ? s.reach("far", b, 22, 46, -8) : s.reach("far", b, KEYS - 4, DESK + 3, -10);
+  // Дальня рука лежить передпліччям на краю стола (сидить рівно, далі не дістає).
+  const far = front ? s.reach("far", b, 22, 52, -8) : s.reach("far", b, DESK_EDGE + 8, DESK + 3, -10);
   const say = (f: number, h: number, w: number, head: number, tilt: number): Pose =>
     add(sit, { torso: { rot: tilt } }, { "arm-near": s.reach("near", { ...b, lean: b.lean + tilt }, f, h, 6), "arm-far": far }, wrist("near", w), nod(head));
-  const rest = add(sit, { "arm-near": front ? s.reach("near", b, 16, 46, 10) : s.reach("near", b, KEYS - 4, DESK + 3, 4), "arm-far": far });
+  const rest = add(sit, { "arm-near": front ? s.reach("near", b, 16, 52, 10) : s.reach("near", b, DESK_EDGE + 8, DESK + 3, 4), "arm-far": far });
   return [
     [0, rest],
     [300, say(26, 80, -20, -4, -2)],
@@ -390,22 +547,28 @@ function meeting(s: Space): readonly Beat[] {
 
 /** Їсть за столом: набирає ложкою з тарілки, несе до рота (голова — назустріч), жує; дальня рука — на столі. */
 function eat(s: Space): readonly Beat[] {
-  const { pose: sit, body: b } = seated(s, 8);
   const front = s.view === "front";
-  const far = front ? s.reach("far", b, 24, DESK - 4, -10) : s.reach("far", b, 34, DESK + 3, -12);
-  // Рот: перед обличчям, трохи нижче середини голови (голова нахилена назустріч ложці).
+  // До тарілки за стільницею — нахилився до стола (як за комп'ютером); у ¾ спереду тарілка ближче, коло себе.
+  const { pose: sit, body: b } = seated(s, front ? 8 : 14);
+  const far = front ? s.reach("far", b, 24, DESK, -10) : s.reach("far", b, PLATE - 6, DESK + 3, -12);
+  // Рот: у ¾ ззаду — перед обличчям, біля краю голови; у ¾ спереду ложка лише підходить під підборіддя (голова схиляється
+  // назустріч): рука, піднята до самого рота, лягала б рукавом поперек обличчя.
   const chin = PELVIS_Y + SIT_DROP - 46;
-  const mouth: Vec2 = front ? { x: 12, y: chin - 4 } : { x: 25, y: chin + 2 };
+  const mouth: Vec2 = front ? { x: 12, y: chin + 11 } : { x: 25, y: chin + 2 };
+  // Дорогою до рота ложка йде коло грудей: рука вкорочена, кулак близько до тіла (інакше рука проходить пряма вперед).
+  const chest: Vec2 = front ? { x: 6, y: chin + 26 } : { x: 18, y: chin + 22 };
   const at = (hand: Part, tilt: number, head: number, w: number): Pose => add(sit, { torso: { rot: tilt } }, { "arm-near": hand, "arm-far": far }, wrist("near", w), nod(head));
   // У ¾ спереду ближня рука до тарілки перетинала б груди навскіс — там вона коротка, коло себе.
   const plate = (df: number, dh: number, tilt = 0): Part =>
-    front ? s.reach("near", { ...b, lean: b.lean + tilt }, 16 + df, 48 + dh, 10) : s.reach("near", { ...b, lean: b.lean + tilt }, 34 + df, DESK + 4 + dh, 2);
-  const lift = (tilt: number): Part => s.point("near", { ...b, lean: b.lean + tilt }, mouth);
+    front ? s.reach("near", { ...b, lean: b.lean + tilt }, 16 + df, 52 + dh, 10) : s.reach("near", { ...b, lean: b.lean + tilt }, PLATE + df, DESK + 4 + dh, 2);
+  const lift = (tilt: number, to: Vec2 = mouth): Part => s.point("near", { ...b, lean: b.lean + tilt }, to);
+  const tip = front ? 0 : -6;
   return [
     [0, at(plate(0, 0), 0, 6, 0)],
     [220, at(plate(3, -1, 2), 2, 9, 25)],
-    [520, at(lift(6), 6, 10, -10), "out"],
-    [680, at(lift(6), 6, 13, -10)],
+    [380, at(lift(tip + 2, chest), tip + 2, 10, 0)],
+    [540, at(lift(tip), tip, front ? 18 : 10, -10), "out"],
+    [680, at(lift(tip), tip, front ? 20 : 13, -10)],
     [900, at(plate(0, 1), 0, 3, 0)],
     [1100, at(plate(0, 0), 0, 5, 0)],
     [1260, at(plate(0, 0), 0, 1, 0)],
@@ -418,14 +581,25 @@ function eat(s: Space): readonly Beat[] {
 
 // --- Стоячи: швидкі разові ----------------------------------------------------------------------
 
-/** Ліки: підносить таблетку до рота, закидає голову, ковтає (коту — та сама рука до рота кота на руках). */
+/**
+ * Ліки собі (біля умивальника): підносить таблетку до рота, закидає голову, ковтає. У ¾ ззаду кулак — перед обличчям, біля
+ * краю голови; у ¾ спереду — знизу збоку підборіддя, не закриваючи обличчя.
+ */
 function meds(s: Space): readonly Beat[] {
-  // У ¾ ззаду обличчя праворуч від потилиці: кулак — перед ним, біля краю голови.
-  const mouth: Vec2 = s.view === "front" ? { x: 8, y: PELVIS_Y - 54 } : { x: 27, y: PELVIS_Y - 46 };
-  const swallowed: Vec2 = { x: mouth.x - 2, y: mouth.y - 4 };
+  const front = s.view === "front";
+  // У ¾ спереду кулак — під підборіддям (голова схиляється назустріч): піднята до рота рука лягала б рукавом поперек обличчя.
+  const mouth: Vec2 = front ? { x: 13, y: PELVIS_Y - 40 } : { x: 27, y: PELVIS_Y - 46 };
+  const swallowed: Vec2 = front ? { x: mouth.x + 1, y: mouth.y + 2 } : { x: mouth.x - 2, y: mouth.y - 4 };
+  // Дорогою до рота таблетка йде коло грудей: рука вкорочена, кулак близько до тіла (інакше рука на мить пряма вперед, як
+  // «показує пальцем»).
+  const chest: Vec2 = front ? { x: 4, y: PELVIS_Y - 24 } : { x: 18, y: PELVIS_Y - 26 };
+  // Від грудей до рота — угору коло тіла (між ключами кут і вкорочення змішуються окремо, і рука виходила б уперед).
+  const up: Vec2 = front ? { x: 7, y: PELVIS_Y - 33 } : { x: 20, y: PELVIS_Y - 38 };
   return [
     [0, REST],
-    [250, add(body(lean(4)), { "arm-near": s.point("near", lean(4), mouth), "arm-far": { rot: 6 } }, nod(8))],
+    [120, add(body(lean(2)), { "arm-near": s.point("near", lean(2), chest), "arm-far": { rot: 4 } }, nod(5))],
+    [185, add(body(lean(3)), { "arm-near": s.point("near", lean(3), up), "arm-far": { rot: 5 } }, nod(front ? 10 : 7))],
+    [250, add(body(lean(4)), { "arm-near": s.point("near", lean(4), mouth), "arm-far": { rot: 6 } }, nod(front ? 14 : 8))],
     [420, add(body(lean(-6)), { "arm-near": s.point("near", lean(-6), swallowed), "arm-far": { rot: 8 } }, nod(-22)), "out"],
     [560, add(body(lean(-4)), { "arm-near": s.reach("near", lean(-4), 14, 76, 10), "arm-far": { rot: 6 } }, nod(-16))],
     [700, add(body(lean(-1)), { "arm-near": { rot: -10 } }, nod(-3))],
@@ -433,48 +607,81 @@ function meds(s: Space): readonly Beat[] {
   ];
 }
 
-/** Бере: тягнеться вперед на висоті грудей (холодильник, плита, стіл, шафка), хапає й забирає до себе; річ — рівно. */
+/**
+ * Ближня рука тягнеться вперед до речі (полиця, стіл, смітник, кран). У ¾ спереду ближнє плече — по той бік тулуба, і рука до
+ * точки за ¾ ззаду лягала навскіс через груди, а річ у ній — на груди («притискає до себе»). Тому там тіло нахиляється на
+ * `FRONT_LEAN` більше, а кулак іде на `FRONT_F` далі вперед і на `FRONT_N` до дальнього боку — річ виходить за силует тулуба.
+ */
+const FRONT_LEAN = 6;
+const FRONT_F = 8;
+const FRONT_N = 10;
+function forward(s: Space, b: Body, f: number, n: number): { b: Body; f: number; n: number } {
+  return s.view === "front" ? { b: { ...b, lean: b.lean + FRONT_LEAN }, f: f + FRONT_F, n: n - FRONT_N } : { b, f, n };
+}
+
+/** Ближня рука вперед до точки «f, h, n» (`forward`) з річчю рівно; дальня — на `farRot`, голова — на `head`. */
+function reaching(s: Space, b: Body, f: number, h: number, farRot: number, head: number, n = 8): Pose {
+  const r = forward(s, b, f, n);
+  return level(add(body(r.b), { "arm-near": s.reach("near", r.b, r.f, h, r.n), "arm-far": { rot: farRot } }, nod(head)));
+}
+
+/** Ближня рука вперед до точки «f, h, n» (`forward`) без вирівнювання речі; дальня — на `farRot`. */
+function forwardArm(s: Space, b: Body, f: number, h: number, n: number, farRot: number): Pose {
+  const r = forward(s, b, f, n);
+  return add(body(r.b), { "arm-near": s.reach("near", r.b, r.f, h, r.n), "arm-far": { rot: farRot } });
+}
+
+/**
+ * Бере (холодильник, плита, стіл, шафка): тягнеться вперед на висоті грудей, хапає (`PERSON_CONTACT_MS.take` — річ у руці) і
+ * забирає до себе — у позу «несе» (`CARRY`), з якої далі тримає накладка `carry`. Річ — рівно.
+ */
 function take(s: Space): readonly Beat[] {
-  const reach = (b: Body, f: number, h: number, farRot: number, head: number): Pose =>
-    level(add(body(b), { "arm-near": s.reach("near", b, f, h, 8), "arm-far": { rot: farRot } }, nod(head)));
+  const carry = arms(CARRY[s.view]);
   // Проміжні ключі — щоб річ лишалася рівно й між ними (кут кисті з вкороченою рукою не лінійний).
   return [
     [0, REST],
-    [90, reach(lean(6), 24, 74, 5, 4)],
-    [170, reach(lean(12, 1), 40, 92, 10, 8), "out"],
-    [240, reach(lean(12, 1), 38, 90, 10, 8)],
-    [300, reach(lean(7), 28, 86, 7, 5)],
-    [360, reach(lean(3), 18, 80, 4, 3)],
-    [410, reach(lean(1), 10, 66, 2, 1)],
-    [450, REST],
+    [90, reaching(s, lean(6), 24, 74, 5, 4)],
+    [C.take, reaching(s, lean(12, 1), 40, 92, 10, 8), "out"],
+    [240, reaching(s, lean(12, 1), 38, 90, 10, 8)],
+    [310, add(reaching(s, lean(7), 30, 84, 0, 5), farOf(CARRY[s.view]))],
+    [380, add(reaching(s, lean(3), 24, 80, 0, 2), farOf(CARRY[s.view]))],
+    [450, carry],
   ];
 }
 
-/** Кладе: нахиляється, ставить річ уперед і трохи вниз, відпускає й випрямляється. */
+/**
+ * Кладе: з пози «несе» нахиляється, ставить річ уперед і трохи вниз (`PERSON_CONTACT_MS.put` — річ лишила руку), відпускає й
+ * випрямляється.
+ */
 function put(s: Space): readonly Beat[] {
+  const low = lean(18, -2, 1);
   return [
-    [0, REST],
-    [180, add(body(lean(18, -2, 1)), { "arm-near": s.reach("near", lean(18, -2, 1), 38, 72, 8), "arm-far": { rot: 12 } }, wrist("near", 8), nod(10)), "out"],
-    [260, add(body(lean(18, -2, 1)), { "arm-near": s.reach("near", lean(18, -2, 1), 40, 68, 8), "arm-far": { rot: 12 } }, wrist("near", -20), nod(10))],
-    [360, add(body(lean(6)), { "arm-near": s.reach("near", lean(6), 22, 70, 8), "arm-far": { rot: 5 } }, wrist("near", -8), nod(4))],
+    [0, arms(CARRY[s.view])],
+    [180, reaching(s, low, 38, 72, 12, 10), "out"],
+    [C.put, reaching(s, low, 40, 68, 12, 10)],
+    [330, add(forwardArm(s, low, 36, 70, 8, 10), wrist("near", -24), nod(8))],
+    [390, add(forwardArm(s, lean(6), 22, 70, 8, 5), wrist("near", -10), nod(4))],
     [450, REST],
   ];
 }
 
-/** Викидає: замах назад і кидок униз-уперед у смітник (до 46), дальня рука — навстріч для рівноваги. */
+/**
+ * Викидає: з пози «несе» трохи підносить річ і кидає униз-уперед у смітник (до 46; `PERSON_CONTACT_MS.trash` — річ полетіла),
+ * кисть струшує, дальня рука — навстріч для рівноваги.
+ */
 function trash(s: Space): readonly Beat[] {
   return [
-    [0, REST],
-    [150, add(body(lean(-5)), { "arm-near": { rot: 32 }, "arm-far": { rot: -10 } }, wrist("near", 15), nod(2))],
-    [280, add(body(lean(16, 1)), { "arm-near": s.reach("near", lean(16, 1), 44, 52, 6), "arm-far": { rot: 18 } }, wrist("near", -30), nod(12)), "out"],
-    [370, add(body(lean(13)), { "arm-near": s.reach("near", lean(13), 42, 56, 6), "arm-far": { rot: 12 } }, wrist("near", -12), nod(10))],
+    [0, arms(CARRY[s.view])],
+    [150, add(reaching(s, lean(-4), 16, 90, 0, 0), farOf(CARRY[s.view]))],
+    [C.trash, add(forwardArm(s, lean(16, 1), 44, 52, 6, 18), wrist("near", -30), nod(12)), "out"],
+    [370, add(forwardArm(s, lean(13), 42, 56, 6, 12), wrist("near", -12), nod(10))],
     [500, REST],
   ];
 }
 
 /** Кран котові: тягнеться до крана умивальника (≈ 85), повертає його і забирає руку. */
 function tap(s: Space): readonly Beat[] {
-  const at = (w: number): Pose => add(body(lean(16, -1)), { "arm-near": s.reach("near", lean(16, -1), 40, 86, 4), "arm-far": { rot: 8 } }, wrist("near", w), nod(10));
+  const at = (w: number): Pose => add(forwardArm(s, lean(16, -1), 40, 86, 4, 8), wrist("near", w), nod(10));
   return [
     [0, REST],
     [180, at(0), "out"],
@@ -484,20 +691,91 @@ function tap(s: Space): readonly Beat[] {
   ];
 }
 
+/**
+ * Двері: тягнеться до ручки, прочиняє (відхиляється назад), нахиляється по пакунок (чи кота) і випрямляється з ним. Біля
+ * дверей персонаж дивиться до камери (`world/objects.ts`), тож у ¾ спереду до ручки тягнеться дальня рука (ближня
+ * перетинала б груди й закривала тулуб), а ближня — коло себе; у ¾ ззаду — ближня.
+ */
+function door(s: Space): readonly Beat[] {
+  const low = stoop(50, 9, 3);
+  const up = lean(4);
+  const open = lean(10, 1);
+  const pull = lean(-6, -3);
+  const front = s.view === "front";
+  const handle = (b: Body, f: number, h: number, n: number, w: number): Pose =>
+    front
+      ? add({ "arm-far": s.reach("far", b, f, h, -n), "arm-near": s.reach("near", b, 8, 72, 16) }, wrist("far", w))
+      : add({ "arm-near": s.reach("near", b, f, h, n), "arm-far": { rot: 8 } }, wrist("near", w));
+  return [
+    [0, REST],
+    [170, add(body(open), handle(open, 44, 88, 8, 0), nod(4)), "out"],
+    [320, add(body(pull), handle(pull, 22, 88, 10, -15), nod(-3))],
+    [550, add(body(low), { "arm-near": s.reach("near", low, 36, 12, 6), "arm-far": s.reach("far", low, 34, 12, -6) }, nod(-10))],
+    [730, add(body(up), { "arm-near": s.reach("near", up, 20, 80, 6), "arm-far": s.reach("far", up, 18, 78, -6) }, nod(2)), "out"],
+    [900, REST],
+  ];
+}
+
+/**
+ * Доглядає кота на руках (ліки, нашийник): кіт у гнізді `arms`, дальня рука тримає його знизу (поза `holdCat`), ближня — з
+ * пози «тримає кота» підносить таблетку до рота кота (чи застібає нашийник на шиї), натискає двічі й повертається під кота;
+ * голова дивиться на кота, а коли кіт пручається — відхиляється. Починається й закінчується позою «тримає кота».
+ */
+function tend(s: Space): readonly Beat[] {
+  const hold = arms(HOLD[s.view]);
+  // Рот кота: корінь кота — у гнізді `arms` (тулуб, 20 над тазом і 9 уперед), рот у позі «на руках» (N1) — ≈ 21 уперед і
+  // ≈ 23 над коренем; нашийник — трохи нижче. Тулуб відхиляється, тож і кіт — з ним.
+  const mouth = (b: Body, dx = 0, dy = 0): Vec2 => {
+    const root = torsoPoint(b, 20, 9);
+    const t = b.lean * RAD;
+    const mx = 20 + dx;
+    const my = -23 + dy;
+    return { x: root.x + mx * Math.cos(t) - my * Math.sin(t), y: root.y + mx * Math.sin(t) + my * Math.cos(t) };
+  };
+  const at = (b: Body, dx: number, dy: number, w: number, head: number): Pose =>
+    add(body(b), farOf(HOLD[s.view]), { "arm-near": s.point("near", b, mouth(b, dx, dy)) }, wrist("near", w), nod(head));
+  const back = lean(-5, -1);
+  const still = lean(-2);
+  return [
+    [0, hold],
+    [260, at(still, -2, 4, -20, 10), "out"],
+    [380, at(still, 0, 0, 10, 12)],
+    [460, at(back, -1, 2, -10, 4)],
+    [560, at(back, 1, 0, 12, 6)],
+    [700, add(body(lean(-1)), farOf(HOLD[s.view]), nearOf(HOLD[s.view]), nod(3))],
+    [900, hold],
+  ];
+}
+
 // --- Нахилившись до підлоги ---------------------------------------------------------------------
 
 /** Нахилений до підлоги: тулуб уперед у стегнах, таз назад (рівновага) і трохи нижче. */
-const stoop = (deg: number, back: number, drop = 2): Body => lean(deg, -back, drop);
+function stoop(deg: number, back: number, drop = 2): Body {
+  return lean(deg, -back, drop);
+}
 
-/** Миски: нахиляється до миски, висипає совок (кисть перевертається), випрямляється; дальня рука спирається на коліно. */
+/**
+ * Руки напівзігнуті коло себе — посередині між вихідною позою й «несе» (`CARRY`), річ рівно. З неї починаються «миски»: корм
+ * насипають совком із рук (до події персонаж ніс його — накладка `carry`), а воду й годівницю — з порожніми руками (вихідна
+ * поза); з обох поз змішування приходить сюди за половину шляху, без злету порожніх рук у «несе».
+ */
+function halfCarry(view: ArtView): Pose {
+  const c = CARRY[view];
+  return arms({ near: c.near / 2, far: c.far / 2, farScale: (1 + (c.farScale ?? 1)) / 2 });
+}
+
+/**
+ * Миски: руки коло себе (`halfCarry`), нахиляється до миски, висипає совок (`PERSON_CONTACT_MS.bowl` — корм у мисці, кисть
+ * перевертається) чи наливає воду, випрямляється; дальня рука спирається на коліно.
+ */
 function bowl(s: Space): readonly Beat[] {
   const low = stoop(56, 11, 3);
   const knee = s.reach("far", low, 14, 38, -8);
   const at = (f: number, h: number, w: number, head: number): Pose => add(body(low), { "arm-near": s.reach("near", low, f, h, 6), "arm-far": knee }, wrist("near", w), nod(head));
   return [
-    [0, REST],
-    [230, at(36, 14, 0, -10), "out"],
-    [330, at(36, 14, 70, -10)],
+    [0, halfCarry(s.view)],
+    [230, level(at(36, 14, 0, -10)), "out"],
+    [C.bowl, at(36, 14, 70, -10)],
     [450, at(34, 18, 20, -8)],
     [700, REST],
   ];
@@ -517,32 +795,22 @@ function washer(s: Space): readonly Beat[] {
   ];
 }
 
-/** Розпаковує: нахиляється над ящиком, розгортає клапани в боки, дістає річ і підносить до грудей. */
+/**
+ * Розпаковує: нахиляється над ящиком, розгортає клапани в боки — на висоті верху купи (`env/boxes`: ящики заввишки до 64,
+ * персонаж стоїть перед ними й малюється поверх, тож кисті нижче верху лягали б на лицьову грань, а не на клапани), — сягає
+ * всередину трохи нижче верху, дістає річ і підносить до грудей.
+ */
 function unpack(s: Space): readonly Beat[] {
-  const low = stoop(42, 8);
-  const lower = stoop(54, 10, 3);
+  const low = stoop(26, 6);
+  const lower = stoop(38, 8, 2);
   const up = lean(6);
   return [
     [0, REST],
-    [220, add(body(low), { "arm-near": s.reach("near", low, 38, 44, 4), "arm-far": s.reach("far", low, 36, 44, -4) }, nod(-8))],
-    [420, add(body(low), { "arm-near": s.reach("near", low, 34, 50, 26), "arm-far": s.reach("far", low, 34, 50, -26) }, wrist("near", -20), wrist("far", 20), nod(-8))],
-    [620, add(body(lower), { "arm-near": s.reach("near", lower, 36, 30, 4), "arm-far": s.reach("far", lower, 34, 30, -4) }, nod(-12))],
+    [220, add(body(low), { "arm-near": s.reach("near", low, 36, 60, 4), "arm-far": s.reach("far", low, 34, 60, -4) }, nod(-10))],
+    [420, add(body(low), { "arm-near": s.reach("near", low, 32, 64, 24), "arm-far": s.reach("far", low, 32, 64, -24) }, wrist("near", -20), wrist("far", 20), nod(-8))],
+    [620, add(body(lower), { "arm-near": s.reach("near", lower, 36, 48, 4), "arm-far": s.reach("far", lower, 34, 48, -4) }, nod(-14))],
     [850, add(body(up), { "arm-near": s.reach("near", up, 22, 90, 4), "arm-far": s.reach("far", up, 20, 88, -4) }, nod(4)), "out"],
     [1100, REST],
-  ];
-}
-
-/** Двері: тягнеться до ручки, прочиняє (відхиляється назад), нахиляється по пакунок (чи кота) і випрямляється з ним. */
-function door(s: Space): readonly Beat[] {
-  const low = stoop(50, 9, 3);
-  const up = lean(4);
-  return [
-    [0, REST],
-    [170, add(body(lean(10, 1)), { "arm-near": s.reach("near", lean(10, 1), 44, 88, 8), "arm-far": { rot: 8 } }, nod(4)), "out"],
-    [320, add(body(lean(-6, -3)), { "arm-near": s.reach("near", lean(-6, -3), 22, 88, 10), "arm-far": { rot: 10 } }, wrist("near", -15), nod(-3))],
-    [550, add(body(low), { "arm-near": s.reach("near", low, 36, 12, 6), "arm-far": s.reach("far", low, 34, 12, -6) }, nod(-10))],
-    [730, add(body(up), { "arm-near": s.reach("near", up, 20, 80, 6), "arm-far": s.reach("far", up, 18, 78, -6) }, nod(2)), "out"],
-    [900, REST],
   ];
 }
 
@@ -588,23 +856,37 @@ function clean(s: Space): readonly Beat[] {
 }
 
 /**
- * Пилососить: ступні розставлені, ближня рука водить ручкою пилососа (`env/vacuum/cleaner` у гнізді `held`, кулак ≈ 76 над
- * підлогою — щітка на підлозі) вперед-назад, вага переходить з ноги на ногу, пилосос стоїть рівно.
+ * Щітка пилососа відносно кулака (точка `brush` кадру `env/vacuum/cleaner` від його pivot — ручки в гнізді `held`): A4
+ * малює пилосос обличчям праворуч, щітка на підлозі під кулаком на висоті ≈ 76. Поки кадру немає — щітка на 46 попереду.
+ */
+const BRUSH: Vec2 = (() => {
+  const entry = artEntry("env/vacuum/cleaner");
+  const brush = entry?.points?.brush;
+  return entry && brush ? { x: brush.x - entry.pivot.x, y: brush.y - entry.pivot.y } : { x: 46, y: 76 };
+})();
+
+/**
+ * Пилососить: ступні розставлені, ближня рука водить ручкою пилососа (`env/vacuum/cleaner` у гнізді `held`) уперед-назад,
+ * вага переходить з ноги на ногу. Пилосос повертається в руці довкола кулака: уперед — трубка лягає нижче (−6°), і щітка
+ * випереджає кулак, назад — підводиться (+6°); кулак опускається й піднімається рівно настільки, щоб щітка йшла по підлозі.
  */
 function vacuum(s: Space): readonly Beat[] {
-  const near = s.step(16);
-  const far = s.step(-12);
+  const near = s.step(6);
+  const far = s.step(-6);
   // Ближня рука тримає ручку збоку (у ¾ спереду так вона менше перетинає груди), дальня — шланг біля стегна.
   const side = s.view === "front" ? 14 : 8;
-  const at = (shift: number, f: number, tilt: number, head: number, bob = 1): Pose => {
-    const b = lean(6 + shift * 0.8, shift, bob);
-    return level(add(body(b, near, far), { "arm-near": s.reach("near", b, f, 76, side), "arm-far": s.reach("far", b, f - 30, 56, -14) }, nod(head)), tilt);
+  /** Висота кулака, за якої щітка пилососа, нахиленого на `tilt`, — на підлозі. */
+  const grip = (tilt: number): number => BRUSH.x * Math.sin(tilt * RAD) + BRUSH.y * Math.cos(tilt * RAD);
+  // Коліна трохи зігнуті (таз нижче на `bob`): так обидві ступні дістають підлогу, коли вага переходить уперед і назад.
+  const at = (shift: number, f: number, tilt: number, head: number, bob: number): Pose => {
+    const b = lean(5 + shift * 0.6, shift, bob);
+    return level(add(body(b, near, far), { "arm-near": s.reach("near", b, f, grip(tilt), side), "arm-far": s.reach("far", b, f - 26, 56, -14) }, nod(head)), tilt);
   };
   return [
-    [0, at(-5, 22, -8, 6)],
-    [560, at(8, 54, 8, 12, 3), "out"],
-    [800, at(7, 50, 6, 11, 2)],
-    [1400, at(-5, 22, -8, 6)],
+    [0, at(-4, 18, 6, 6, 3.5)],
+    [560, at(6, 40, -6, 11, 4.5), "out"],
+    [800, at(5, 37, -5, 10, 4)],
+    [1400, at(-4, 18, 6, 6, 3.5)],
   ];
 }
 
@@ -632,31 +914,60 @@ function fix(s: Space): readonly Beat[] {
 }
 
 /**
- * Купає кота в душі: нахилився над піддоном (не сильно: кіт у гнізді `arms` нахиляється з тулубом), руки по черзі намилюють;
- * раз за цикл кіт хлюпає — персонаж відсахується, відвернувши голову, і миє далі.
+ * Купає кота в душі: нахилився над піддоном (не сильно: кіт у гнізді `arms` нахиляється з тулубом), кіт на руках — дальня
+ * рука тримає його знизу (поза `holdCat`), а ближня, на виду поверх кота, намилює його кругами по боці й спинці; голова
+ * дивиться на кота. Раз за цикл кіт хлюпає — персонаж відсахується, відвернувши голову, ближня рука прикриває, але кота не
+ * відпускає, і миє далі.
  */
 function bath(s: Space): readonly Beat[] {
-  const at = (a: number): Pose => {
-    const b = lean(16 + 2 * a, -3, 1);
-    return add(body(b), { "arm-near": s.reach("near", b, 30 + 6 * a, 58 - 4 * a, 6), "arm-far": s.reach("far", b, 30 - 6 * a, 58 + 4 * a, -6) }, wrist("near", 15 * a), wrist("far", -15 * a), nod(10));
+  // Де купаючи ближня рука намилює кота — точка кота від його кореня. Не експортується: модуль анімацій експортує лише групу
+  // (галерея й `tests/rig.test.ts` беруть кожен об'єкт-експорт за групу анімацій); тест має свою копію.
+  const BATH_SPOT: Readonly<Record<ArtView, Vec2>> = { front: { x: 8, y: -14 }, back: { x: 26, y: -24 } };
+  // Де ближня рука намилює кота: корінь кота (гніздо `arms`) + точка кота в позі «на руках» (N1): у ¾ спереду — бік (≈ 8
+  // уперед, ≈ 14 над коренем), у ¾ ззаду кіт визирає з-за плеча — груди й шия під мордою (≈ 26 уперед, ≈ 24 над коренем:
+  // ближче до плеча рука вже не вкорочується).
+  const spot = BATH_SPOT[s.view];
+  const flank = (b: Body, dx: number, dy: number): Vec2 => {
+    const root = torsoPoint(b, 20, 9);
+    const t = b.lean * RAD;
+    const mx = spot.x + dx;
+    const my = spot.y + dy;
+    return { x: root.x + mx * Math.cos(t) - my * Math.sin(t), y: root.y + mx * Math.sin(t) + my * Math.cos(t) };
   };
-  const splash = lean(4, -5, 0);
+  const hold = farOf(HOLD[s.view]);
+  /** Намилює: кулак на колі довкола боку кота (кут `a`, градуси), тіло ледь гойдається в такт. */
+  const scrub = (a: number): Pose => {
+    const b = lean(12 + Math.sin(a * RAD), -2, 1);
+    const target = flank(b, 8 * Math.cos(a * RAD), 6 * Math.sin(a * RAD));
+    return add(body(b), hold, { "arm-near": s.point("near", b, target) }, wrist("near", 12 * Math.sin(a * RAD)), nod(12 + Math.cos(a * RAD)));
+  };
+  const flinch = (dx: number, dy: number, head: number): Pose => {
+    const b = lean(2, -5, 0);
+    return add(body(b), hold, { "arm-near": s.point("near", b, flank(b, dx, dy)) }, nod(head), { head: { rot: -6 } });
+  };
   return [
-    [0, at(1)],
-    [350, at(-1)],
-    [700, at(1)],
-    [820, add(body(splash), { "arm-near": s.reach("near", splash, 26, 70, 8), "arm-far": s.reach("far", splash, 24, 72, -8) }, nod(-16)), "out"],
-    [1000, add(body(splash), { "arm-near": s.reach("near", splash, 27, 66, 8), "arm-far": s.reach("far", splash, 25, 68, -8) }, nod(-12))],
-    [1280, at(-1)],
-    [1600, at(1)],
+    [0, scrub(0)],
+    [180, scrub(90)],
+    [360, scrub(180)],
+    [540, scrub(270)],
+    [700, scrub(360)],
+    [820, flinch(-6, -8, -18), "out"],
+    [1000, flinch(-4, -6, -12)],
+    // Повертається до кота й домиває коло (трохи швидше) — до тієї самої фази, з якої цикл починається: стик без ривка.
+    [1150, scrub(90)],
+    [1300, scrub(180)],
+    [1450, scrub(270)],
+    [1600, scrub(360)],
   ];
 }
+
 
 /** Телефон: ближня рука тримає телефон біля вуха, дальня жестикулює, голова киває, вага з ноги на ногу. */
 function phone(s: Space): readonly Beat[] {
   const front = s.view === "front";
-  // Вухо ближнього боку: у ¾ спереду — на потилиці ліворуч від обличчя, ззаду — праворуч.
-  const ear: Vec2 = { x: front ? -12 : 9, y: PELVIS_Y - 57 };
+  // Вухо ближнього боку: у ¾ спереду — ліворуч від обличчя, ззаду — праворуч, трохи попереду. Кулак — біля самого контуру
+  // голови, щоб телефон (у гнізді `held`, T2/A6) визирав з-за неї, а не ховався за потилицею («чухає потилицю»).
+  const ear: Vec2 = { x: front ? -15 : 17, y: PELVIS_Y - 58 };
   const at = (shift: number, f: number, h: number, wf: number, head: number): Pose => {
     const b = lean(-2 + shift * 0.6, shift);
     return add(body(b), { "arm-near": s.point("near", b, { x: ear.x + shift, y: ear.y }), "arm-far": s.reach("far", b, f, h, -10) }, wrist("far", wf), nod(head), { head: { rot: front ? -4 : 4 } });
@@ -678,21 +989,61 @@ function phone(s: Space): readonly Beat[] {
 const PROGRESS_MS = 1000;
 
 /**
- * Засинає в ліжку (§8.8): біля ліжка позіхає й потягується, голова клює, і падає вперед на ліжко, як підкошений (опора —
- * носки). Кінцева поза тримається, поки екран темніє.
+ * Ліжко, на яке падає той, хто засинає (`world/objects.ts`: персонаж стоїть збоку, лицем до ліжка): на скільки одиниць екрана
+ * попереду ближній край (від ступень уздовж осі плитки) і висота матраца. Вісь плитки на екрані — 2 : 1 (`ISO_TILE`).
+ */
+const BED = (() => {
+  const look = isoObjectLook("bed");
+  const use = look.use;
+  const box = look.footprint;
+  const tile = Math.hypot(ISO_TILE.width, ISO_TILE.height) / 2;
+  if (!use) return { edge: 25, far: 97, top: look.top };
+  const f = use.facing;
+  const near = f.x < 0 ? use.at.x - box.x1 : f.x > 0 ? box.x0 - use.at.x : f.y < 0 ? use.at.y - box.y1 : box.y0 - use.at.y;
+  const far = f.x < 0 ? use.at.x - box.x0 : f.x > 0 ? box.x1 - use.at.x : f.y < 0 ? use.at.y - box.y0 : box.y1 - use.at.y;
+  return { edge: near * tile, far: far * tile, top: look.top };
+})();
+/** Нахил осі плитки на екрані: одиниць угору (ззаду) чи вниз (спереду) на одиницю праворуч. */
+const TILE_SLOPE = ISO_TILE.height / ISO_TILE.width;
+
+/**
+ * Засинає в ліжку (§8.8; поступ — плавний, ≈ 1,3 с): позіхає (голова назад, плечі вгору), голова клює раз, персонаж
+ * схоплюється, клює вдруге — і, зламавшись у стегнах, падає вперед на ліжко: таз на краю матраца, тулуб лежить уздовж ліжка
+ * (по осі плитки: у ¾ ззаду — угору праворуч), руки — уздовж тіла, ступні на підлозі. Кінцева поза тримається, поки екран
+ * темніє.
  */
 function fallAsleep(s: Space): readonly Beat[] {
-  // Падіння вперед навколо носків: корінь повертається, а зсув кореня тримає носки на місці.
-  const toe = 12;
-  const tip = (deg: number): Pose => ({ root: { rot: deg, pos: { x: toe - toe * Math.cos(deg * RAD), y: -toe * Math.sin(deg * RAD) } } });
-  const stretch = lean(-6, 0, -1);
+  const back = s.view === "back";
+  const dir = { x: 1 / Math.hypot(1, TILE_SLOPE), y: (back ? -TILE_SLOPE : TILE_SLOPE) / Math.hypot(1, TILE_SLOPE) };
+  // Таз — над самим краєм матраца (трохи не доходячи), на висоті матраца й половини тіла.
+  const lie = { x: dir.x * BED.edge * 0.85, y: dir.y * BED.edge * 0.85 - BED.top - 9 };
+  const hip = { x: lie.x, y: lie.y - PELVIS_Y };
+  // Тулуб уздовж ліжка: кут у світі — кут осі плитки, вихідний — −90.
+  const along = Math.atan2(dir.y, dir.x) / RAD + 90;
+  // Падіння від «клюнув» (u = 0) до «лежить» (u = 1): таз іде до краю ліжка, тулуб лягає, ступні стоять (`through`).
+  const from = { x: hip.x * 0.45 + 1, y: hip.y * 0.4 + 1 };
+  const mix = (a: number, b: number, u: number): number => a + (b - a) * u;
+  const falling = (u: number): Pose =>
+    add(
+      stance({ x: mix(from.x, hip.x, u), y: mix(from.y, hip.y, u) }),
+      { torso: { rot: mix(12 + (along - 12) * 0.5, along, u) } },
+      nod(mix(18, -6, u)),
+      { "arm-near": { rot: mix(-8, -10, u) }, "arm-far": { rot: -6 } },
+    );
   return [
     [0, REST],
-    [230, add(body(stretch), { "arm-near": s.reach("near", stretch, 8, 175, 10), "arm-far": s.reach("far", stretch, 6, 175, -10) }, nod(-20))],
-    [390, add(body(lean(6, 0, 1)), { "arm-near": { rot: 6 }, "arm-far": { rot: 4 } }, nod(22))],
-    [500, add(body(lean(2)), nod(4))],
-    [660, add(body(lean(10, 0, 1)), { "arm-near": { rot: 8 }, "arm-far": { rot: 6 } }, nod(30)), "in"],
-    [1000, add(tip(62), { torso: { rot: 4 } }, { "arm-near": { rot: -150 }, "arm-far": { rot: -160 } }, nod(-10), { "foot-near": { rot: 30 }, "foot-far": { rot: 30 } })],
+    [170, add(body(lean(-5, 1)), nod(-16), { "arm-near": { rot: 7 }, "arm-far": { rot: 5 } }, { "hand-near": { rot: 10 }, "hand-far": { rot: 10 } })],
+    [320, add(body(lean(2)), nod(8))],
+    [450, add(body(lean(6, 0, 1)), nod(30), { "arm-near": { rot: -4 }, "arm-far": { rot: -3 } })],
+    [530, add(body(lean(1)), nod(4)), "out"],
+    [660, add(body(lean(12, 2, 1)), nod(34), { "arm-near": { rot: -6 }, "arm-far": { rot: -5 } }), "in"],
+    ...through(
+      [
+        [850, [0], "out"],
+        [1000, [1]],
+      ],
+      ([u = 1]) => falling(u),
+    ),
   ];
 }
 
@@ -700,23 +1051,40 @@ function fallAsleep(s: Space): readonly Beat[] {
  * Падає від виснаження (§8.8): хитається, ноги підкошуються — сідає на підлогу (ступні на місці, таз їде назад і вниз, руки
  * назад — спертися), і завалюється на спину. Ступні не ковзають: кути ніг рахує `stance`.
  */
-function collapse(_s: Space): readonly Beat[] {
-  // Таз опускається на `drop`: прямі ноги від ступень — назад, щоб таз упав за них.
-  const sink = (drop: number, deg: number, head: number, armsBack: number): Pose => {
+function collapse(s: Space): readonly Beat[] {
+  // Таз опустився на `drop`: прямі ноги від ступень до кісточок — таз назад на стільки, щоб упасти за них.
+  const back = (drop: number): number => {
     const rise = LEG - drop;
-    const back = drop >= LEG ? LEG : Math.sqrt(LEG * LEG - rise * rise);
-    return add(stance({ x: -back, y: drop }), { torso: { rot: deg } }, nod(head), { "arm-near": { rot: armsBack }, "arm-far": { rot: armsBack * 0.8 } });
+    return Math.sqrt(Math.max(0, LEG * LEG + ANKLE_SIDE * ANKLE_SIDE - rise * rise)) + ANKLE_SIDE;
+  };
+  /**
+   * Поза падіння: таз (назад на `x`, нижче на `drop`), нахил тулуба, голова і де кисті — на `hx` від таза вздовж підлоги й на
+   * `hh` над нею. Руки тягнуться до кистей (вкорочуються, як у лікті): спершу звисають, тоді шукають підлогу позаду й
+   * спираються на неї, поки тулуб опускається, а лежачи — вздовж тіла. Кути рук замість точок проводили б кисть крізь підлогу.
+   */
+  type Fall = readonly [x: number, drop: number, deg: number, head: number, hx: number, hh: number];
+  const fall = ([x, drop, deg, head, hx, hh]: Fall): Pose => {
+    const b: Body = { hip: { x, y: drop }, lean: deg };
+    const hand = (side: Side): Part => s.point(side, b, { x: x + hx + (side === "near" ? -3 : 3), y: -hh });
+    return add(stance({ x, y: drop }), { torso: { rot: deg } }, nod(head), { "arm-near": hand("near"), "arm-far": hand("far") });
   };
   const floor = -PELVIS_Y - 9;
   return [
     [0, REST],
     [180, add(body(lean(-6, 2)), nod(-8), { "arm-near": { rot: 8 }, "arm-far": { rot: -6 } })],
-    [340, add(body(lean(10, -2, 1)), nod(24), { "arm-near": { rot: -6 }, "arm-far": { rot: 8 } })],
-    [450, sink(8, 16, 26, 4), "in"],
-    [560, sink(24, 22, 26, 14)],
-    [660, sink(40, 18, 22, 26)],
-    [740, sink(floor, 8, 18, 30), "out"],
-    [1000, add(sink(floor, -80, -8, 0), { "arm-near": { rot: 8 }, "arm-far": { rot: -24 } })],
+    // Ноги підкошуються: таз іде назад і вниз (ступні стоять), руки шукають підлогу позаду; сів — і завалюється на спину: руки
+    // лягають уздовж тіла на підлогу, а не стирчать над ним (`through`: ступні й кисті не ковзають між ключами).
+    ...through(
+      [
+        [340, [-2, 1, 10, 24, 2, 52], "in"],
+        [450, [-back(8), 8, 16, 26, -2, 46], "in"],
+        [560, [-back(24), 24, 22, 26, -10, 24]],
+        [660, [-back(40), 40, 18, 22, -14, 4]],
+        [740, [-back(floor), floor, 8, 18, -12, 2], "out"],
+        [1000, [-back(floor), floor, -80, -8, 4, 3]],
+      ],
+      fall,
+    ),
   ];
 }
 
@@ -725,9 +1093,9 @@ function collapse(_s: Space): readonly Beat[] {
 const MS = PERSON_ONE_SHOT_MS;
 
 export const PERSON_CHORES = defineAnims(PERSON_RIG, {
-  work: anim(2400, true, work),
-  meeting: anim(2800, true, meeting),
-  eat: anim(2000, true, eat),
+  work: anim(2400, true, work, SIT_SLOTS),
+  meeting: anim(2800, true, meeting, SIT_SLOTS),
+  eat: anim(2000, true, eat, SIT_SLOTS),
   meds: anim(MS.meds, false, meds),
   litter: anim(1800, true, litter),
   clean: anim(1600, true, clean),
@@ -745,4 +1113,5 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   fix: anim(1600, true, fix),
   bath: anim(1600, true, bath),
   tap: anim(MS.tap, false, tap),
+  tend: anim(MS.tend, false, tend),
 });

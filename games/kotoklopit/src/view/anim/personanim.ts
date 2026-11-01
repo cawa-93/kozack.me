@@ -13,7 +13,7 @@ import { isWorkday } from "../../sim/work";
 import type { ArtView } from "../art/types";
 import type { RigFacing } from "../rig/types";
 import { personFacing } from "./catfacing";
-import { PERSON_BY_PROGRESS, PERSON_ONE_SHOT_MS, type PersonAnimId, type PersonOneShotId } from "./ids";
+import { PERSON_BY_PROGRESS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId, type PersonOneShotId } from "./ids";
 
 /** Що сцена знає про персонажа, крім стану гри (`WorldFrame`), і що вигляд пам'ятає з минулого кадру. */
 export interface PersonLocal {
@@ -109,8 +109,10 @@ function useAnim(target: string, bath: boolean): PersonAnimId {
 /**
  * Основна анімація персонажа (крок 16): у поїздці й у душі його не видно; засинає в ліжку чи падає без сил (за поступом);
  * оглушений чи зі збоєм керування — паморочиться; справа — робота (нарада), тривала дія, пестощі, вудочка; дзвонить мама —
- * телефон; іде — ривок, кульгає з травмою, плететься виснажений; стоїть — хворий, виснажений чи просто стоїть. Накладка рук —
- * за тим, що в руках (кота купають без накладки: він у `bath`). `local` — що знає сцена (`PersonLocal`).
+ * телефон (з порожніми руками; з річчю чи котом у руках він їх тримає, а дзвінок показує бабл); іде — ривок, кульгає з
+ * травмою, плететься виснажений; стоїть — хворий, виснажений чи просто стоїть. Накладка рук — за тим, що в руках, крім
+ * анімацій, які самі ведуть руки (`PERSON_OWN_ARMS`: справи, вудочка — купаючи, кота тримає сама `bath`). `local` — що знає
+ * сцена (`PersonLocal`).
  */
 export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoice {
   const character = state.character;
@@ -126,10 +128,10 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
     hidden: state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true),
     dirty: state.home.clothes <= 0,
   };
-  const overlay: PersonAnimId | null = held === "cat" ? (activity?.kind === "use" && activity.bath === true ? null : "holdCat") : held !== null ? "carry" : null;
+  const overlay: PersonAnimId | null = held === "cat" ? "holdCat" : held !== null ? "carry" : null;
   const choose = (anim: PersonAnimId, view: ArtView = facing.view, flip = facing.flip): PersonAnimChoice => ({
     anim,
-    overlay,
+    overlay: PERSON_OWN_ARMS.has(anim) ? null : overlay,
     view,
     flip,
     loop: !PERSON_BY_PROGRESS.has(anim) && !(anim in PERSON_ONE_SHOT_MS),
@@ -146,7 +148,8 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
   if (activity?.kind === "use") return choose(useAnim(activity.target, activity.bath === true));
   if (activity?.kind === "pet" && !petOver(activity)) return choose("pet");
   if (activity?.kind === "play" && activity.done !== true) return choose("rod");
-  if (state.today.callPending === true) return choose("phone");
+  // Телефон тримають біля вуха — коли руки вільні; з річчю чи котом у руках накладка тримає їх, а дзвінок видно з бабла.
+  if (state.today.callPending === true && held === null) return choose("phone");
   if (local.moving) {
     if (body.dash > 0) return choose("dash");
     if (isIll(state, "injury")) return choose("limp");
@@ -169,17 +172,16 @@ const once = (anim: PersonOneShotId): PersonOneShot => ({ anim, ms: PERSON_ONE_S
 /**
  * Разова анімація персонажа від події (крок 16), null — подія не про його рух. Узяв і поклав — холодильник, плита, стіл,
  * шафка з кормом, судочки (плита готує сама, §8.7); викинув у смітник; насипав корм, налив води, спорожнив годівницю;
- * відкрив кран котові; ліки собі й котові; пральна машина (запустив, виймає білизну, вигнав кота з барабана); розпакував
- * ящики; двері (пакунки, гостинці мами, кіт зі сходів); узяв кота на руки й опустив; вкусили й подряпали; спіткнувся об кота,
- * збив кіт, вистрибнув із засідки; посковзнувся; відмова.
+ * відкрив кран котові; ліки собі; ліки й нашийник коту на руках (`tend`: кіт лишається на руках); дав котові м'яту (він
+ * зістрибує з рук — «опускає кота»); пральна машина (запустив, виймає білизну, вигнав кота з барабана); розпакував ящики;
+ * двері (пакунки, гостинці мами, кіт зі сходів); узяв кота на руки й опустив; вкусили й подряпали; спіткнувся об кота, збив
+ * кіт, вистрибнув із засідки; посковзнувся; відмова.
  */
 export function personEventAnim(event: GameEvent): PersonOneShot | null {
   switch (event.type) {
     case "took":
       return once("take");
     case "put":
-    case "collar":
-    case "catnip":
       return once("put");
     case "trashed":
       return once("trash");
@@ -190,9 +192,11 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
     case "tap-opened":
       return once("tap");
     case "person-meds":
+      return once("meds");
     case "medicine":
     case "medicine-spat":
-      return once("meds");
+    case "collar":
+      return once("tend");
     case "laundry":
       return event.stage === "started" || event.stage === "hung" || event.stage === "cat" ? once("washer") : null;
     case "unpacked":
@@ -207,6 +211,8 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
     case "picked-up":
       return once("pickUp");
     case "put-down":
+    // Котяча м'ята — котові на руках, і він зістрибує (§9.12): руки з пози «тримає кота» опускаються, як «опускає кота».
+    case "catnip":
       return once("putDown");
     case "bite":
     case "clawed":
