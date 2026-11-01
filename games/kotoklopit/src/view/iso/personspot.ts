@@ -1,13 +1,16 @@
 // Де видно персонажа нового вигляду й куди він дивиться (крок 16, T2): сим знає лише точку тіла (`body`) і напрям руху, а
 // вигляд садить персонажа за стіл і комп'ютер, ставить перед річчю, якою він користується, і кладе біля ліжка — за даними
 // `world/objects.ts` (`IsoObjectLook.use`: де персонаж стоїть чи сидить і куди дивиться). За справою з котом, лотком чи
-// безладом — лицем до них. Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Без Phaser.
+// безладом — лицем до них. Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Обличчя, коли воно головне
+// (засинає, падає без сил: §8.8 «плавно заплющує очі»), видно: ракурс `back` ховає очі (`showFace`, `SLEEP_TURN`). Кота, якого
+// купають, видно перед персонажем (`BATH_FACE`). Без Phaser.
 //
 // Перевіряє `tests/isopersonspot.test.ts`.
 
 import { itemPoint, OBJECTS } from "../../sim/home";
 import type { GameState, Vec } from "../../sim/types";
-import type { PersonAnimId } from "../anim/ids";
+import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
+import type { RigFacing } from "../rig/types";
 import { isoObjectLook, type IsoUse } from "../world/objects";
 
 /** Де видно персонажа: точка підлоги в клітинках і куди дивиться (напрям у клітинках; null — як каже `personAnim`). */
@@ -30,6 +33,19 @@ function useOf(id: string): PersonSpot | null {
   return use ? { at: use.at, face: use.facing, pose: use.pose } : null;
 }
 
+/**
+ * Купає кота (§9.12, «Купання», рішення автора 2026-10-28: «стоїть біля душу з котом на руках»): біля душу боком до нього
+ * (ракурс `front`) — кіт на руках перед персонажем, його видно. Лицем до душу (ракурс `back`) кіт був би за тулубом.
+ */
+export const BATH_FACE: Vec = { x: 1, y: 0 };
+
+/**
+ * Засинаючи в ліжку (§8.8, анімація `fallAsleep` за поступом): до цього поступу персонаж стоїть біля ліжка спиною до нього,
+ * лицем до кімнати — позіхає, клює носом і заплющує очі (`EYES.closed` у `personlook.ts` — раніше), а тоді обертається до
+ * ліжка й падає на нього (анімація падає вперед). Ліжко в куті під стінами, тож лицем до нього — завжди ракурс `back`.
+ */
+export const SLEEP_TURN = 0.6;
+
 /** Лицем до точки `to` з точки тіла. */
 function toward(from: Vec, to: Vec | null): Vec | null {
   if (!to) return null;
@@ -39,19 +55,24 @@ function toward(from: Vec, to: Vec | null): Vec | null {
 }
 
 /**
- * Де видно персонажа, що грає анімацію `anim` (`personAnim`): засинає в ліжку — біля ліжка; працює й лагодить дріт — за
- * комп'ютером; їсть — за столом; купає кота й пилососить — перед душем і шафою з пилососом; чистить лоток, прибирає безлад,
- * гладить чи грається з котом — там, де стоїть, лицем до цілі. Інакше — точка тіла, напрям — за рухом.
+ * Де видно персонажа, що грає анімацію `anim` (`personAnim`; `progress` — поступ засинання): засинає в ліжку — біля ліжка,
+ * спершу лицем до кімнати, з `SLEEP_TURN` — лицем до ліжка; працює й лагодить дріт — за комп'ютером; їсть — за столом; купає
+ * кота — біля душу боком (`BATH_FACE`); пилососить — перед шафою з пилососом; чистить лоток, прибирає безлад, гладить чи
+ * грається з котом — там, де стоїть, лицем до цілі. Інакше — точка тіла, напрям — за рухом.
  */
-export function personSpot(state: GameState, anim: PersonAnimId): PersonSpot {
+export function personSpot(state: GameState, anim: PersonAnimId, progress: number | null = null): PersonSpot {
   const { body, activity } = state.character;
   const here: PersonSpot = { at: { x: body.x, y: body.y }, face: null, pose: null };
-  if (anim === "fallAsleep") return useOf("bed") ?? here;
+  if (anim === "fallAsleep") {
+    const bed = useOf("bed");
+    if (!bed?.face || (progress ?? 0) >= SLEEP_TURN) return bed ?? here;
+    return { ...bed, face: { x: -bed.face.x, y: -bed.face.y } };
+  }
   if (activity?.kind === "work") return useOf("computer") ?? here;
   if (activity?.kind === "use") {
     const target = activity.target;
     const object = useOf(target);
-    if (object) return object;
+    if (object) return anim === "bath" ? { ...object, face: BATH_FACE } : object;
     const [kind, raw] = target.split(":");
     const id = Number(raw);
     if (kind === "item") {
@@ -71,6 +92,16 @@ export function personSpot(state: GameState, anim: PersonAnimId): PersonSpot {
   return here;
 }
 
+/**
+ * Ракурс, у якому видно обличчя, коли воно головне: падаючи без сил (`collapse`, `PERSON_BY_PROGRESS`), персонаж заплющує
+ * очі (§8.8), а камера наближається до нього — у ракурсі `back` очей не видно (`PERSON_RIG`: слот `eyes` схований), тож
+ * тоді `front` з тим самим боком (сідає на підлогу й завалюється на спину — будь-куди). Засинаючи в ліжку, ракурс веде
+ * `personSpot` (лицем до кімнати, а потім до ліжка, `SLEEP_TURN`). Решта — як є.
+ */
+export function showFace(anim: PersonAnimId, facing: RigFacing): RigFacing {
+  return facing.view === "back" && anim !== "fallAsleep" && PERSON_BY_PROGRESS.has(anim) ? { view: "front", flip: facing.flip } : facing;
+}
+
 /** Як швидко вигляд переходить до місця справи й назад: частка відстані за секунду (експонента). */
 export const GLIDE_RATE = 12;
 /** Далі за це (клітинки) — не перехід, а переставляння (сценарій, нова гра): одразу. */
@@ -78,14 +109,15 @@ export const GLIDE_JUMP = 3;
 
 /**
  * Зсув вигляду від точки тіла до місця справи (`offset` → `target`, клітинки) за `seconds`: плавно, експонентою. Зсув, а не
- * точка: без справи він згасає до нуля, тож персонаж, що йде, не відстає від тіла. Повертає новий зсув.
+ * точка: без справи він згасає до нуля, тож персонаж, що йде, не відстає від тіла. Пише новий зсув в `out` (може бути сам
+ * `offset`) і повертає його.
  */
-export function glideOffset(offset: Vec, target: Vec, seconds: number): Vec {
+export function glideOffset(offset: Vec, target: Vec, seconds: number, out: Vec = { x: 0, y: 0 }): Vec {
   const dx = target.x - offset.x;
   const dy = target.y - offset.y;
   const gap = Math.hypot(dx, dy);
-  if (gap > GLIDE_JUMP || seconds >= 1) return { x: target.x, y: target.y };
-  if (gap < 1e-3) return { x: target.x, y: target.y };
-  const k = 1 - Math.exp(-GLIDE_RATE * Math.max(0, seconds));
-  return { x: offset.x + dx * k, y: offset.y + dy * k };
+  const k = gap > GLIDE_JUMP || seconds >= 1 || gap < 1e-3 ? 1 : 1 - Math.exp(-GLIDE_RATE * Math.max(0, seconds));
+  out.x = k === 1 ? target.x : offset.x + dx * k;
+  out.y = k === 1 ? target.y : offset.y + dy * k;
+  return out;
 }

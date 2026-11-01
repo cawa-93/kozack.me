@@ -10,7 +10,8 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
 import { facingFromTiles } from "../src/view/anim/catfacing";
-import { GLIDE_JUMP, glideOffset, personSpot } from "../src/view/iso/personspot";
+import { EYES, eyesFrame } from "../src/view/iso/personlook";
+import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, showFace, SLEEP_TURN } from "../src/view/iso/personspot";
 import { isoObjectLook } from "../src/view/world/objects";
 import { withCatCorner } from "./helpers";
 
@@ -46,9 +47,42 @@ describe("personSpot: де видно персонажа", () => {
     state.character.activity = { kind: "use", target: "vacuum", progress: 0 };
     expect(personSpot(state, "vacuum").at).toEqual(isoObjectLook("vacuum").use?.at);
     state.character.activity = null;
-    expect(personSpot(state, "fallAsleep")).toMatchObject({ at: isoObjectLook("bed").use?.at, face: isoObjectLook("bed").use?.facing });
+    expect(personSpot(state, "fallAsleep", 1)).toMatchObject({ at: isoObjectLook("bed").use?.at, face: isoObjectLook("bed").use?.facing });
     // Падає без сил — там, де стоїть.
     expect(personSpot(state, "collapse").at).toEqual({ x: 9.5, y: 8.5 });
+  });
+
+  it("купаючи кота — боком до душу, у ракурсі `front`: кота на руках видно перед персонажем", () => {
+    const state = game().current;
+    state.character.activity = { kind: "use", target: "shower", progress: 0, inside: true, bath: true };
+    const bath = personSpot(state, "bath");
+    expect(bath.face).toEqual(BATH_FACE);
+    expect(facingFromTiles(bath.face ?? { x: 0, y: 0 }, null)?.view).toBe("front");
+    // Душ — у тому боці, куди персонаж не дивиться: збоку.
+    const shower = isoObjectLook("shower").use?.facing ?? { x: 0, y: 0 };
+    expect(shower.x * BATH_FACE.x + shower.y * BATH_FACE.y).toBe(0);
+  });
+
+  it("засинаючи (§8.8), заплющені очі видно: лицем до кімнати, поки не обернеться до ліжка, падаючи без сил — теж", () => {
+    const state = game().current;
+    const bed = isoObjectLook("bed").use;
+    // Лицем до ліжка — завжди спиною до камери (ліжко в куті).
+    expect(facingFromTiles(bed?.facing ?? { x: 0, y: 0 }, null)?.view).toBe("back");
+    for (let p = 0; p <= 1.0001; p += 0.05) {
+      const spot = personSpot(state, "fallAsleep", p);
+      expect(spot.at).toEqual(bed?.at);
+      const view = facingFromTiles(spot.face ?? { x: 0, y: 0 }, null)?.view;
+      expect(view).toBe(p < SLEEP_TURN ? "front" : "back");
+      // Очі заплющуються зовсім ще лицем до кімнати.
+      if (p >= EYES.closed && p < SLEEP_TURN) expect(eyesFrame(p)).toBe("closed");
+    }
+    expect(EYES.closed).toBeLessThan(SLEEP_TURN - 0.05);
+    // Падає без сил спиною до камери — обертається обличчям, той самий бік.
+    expect(showFace("collapse", { view: "back", flip: true })).toEqual({ view: "front", flip: true });
+    expect(showFace("collapse", { view: "front", flip: false })).toEqual({ view: "front", flip: false });
+    // Ракурс засинання в ліжку веде `personSpot`; решту — не чіпає.
+    expect(showFace("fallAsleep", { view: "back", flip: true })).toEqual({ view: "back", flip: true });
+    expect(showFace("work", { view: "back", flip: false })).toEqual({ view: "back", flip: false });
   });
 
   it("гладить чи грається — лицем до кота; чистить лоток чи прибирає — лицем до них, там, де стоїть", () => {
@@ -89,5 +123,9 @@ describe("glideOffset: перехід до місця справи", () => {
     expect(glideOffset({ x: 0, y: 0 }, { x: GLIDE_JUMP + 1, y: 0 }, 1 / 60)).toEqual({ x: GLIDE_JUMP + 1, y: 0 });
     // Гра стоїть — нічого не рухається.
     expect(glideOffset({ x: 0.2, y: 0 }, { x: 0, y: 0 }, 0)).toEqual({ x: 0.2, y: 0 });
+    // Пише в той самий об'єкт.
+    const same = { x: 0, y: 0 };
+    expect(glideOffset(same, target, 1 / 60, same)).toBe(same);
+    expect(same.x).toBeGreaterThan(0);
   });
 });

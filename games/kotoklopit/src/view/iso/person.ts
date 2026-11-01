@@ -3,16 +3,21 @@
 // нога й черевик затінені (`farRecipe`, `PERSON_FAR_SLOTS`), тінь під ногами (`fx/shadow/person`) — рішення автора 2026-10-30.
 //
 // Що грає — `personAnim` (основна з `PERSON_ANIMS`, накладка рук, ракурс, поступ засинання) і `personEventAnim` (разові від
-// подій), зведені в одну анімацію `mixAnims` (`personmix.ts`); де видно й куди дивиться — `personSpot` (за столом, за
-// комп'ютером, біля ліжка, лицем до кота). Гнізда: річ у руках (`held`: страва, судочок, совок), вудочка (`rod`) з волосінню
-// до пір'їнки над котом під час гри, рука, що гладить, — на спинці кота (`personreach.ts`); кіт на руках і на колінах — у
-// точці й на глибині `hands` (його кладе туди частина котів). Брудний одяг — плями й запах (`fx/smell`). У поїздці й у
-// душовій кабіні персонажа не видно (§8.5, §8.7). Засинаючи (§8.8), заплющує очі (`person/eyes`: `half`, `closed`), а голова
-// хилиться.
+// подій), зведені в одну анімацію `mixAnims` (`personmix.ts`): накладка рук (несе річ, тримає кота) заміняє руки основної й
+// разової, крім анімацій, що ведуть руки самі (`armsOverlay`). Де видно й куди дивиться — `personSpot` (за столом, за
+// комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Гнізда: річ у руках (`held`: страва,
+// судочок, совок), вудочка (`rod`); кіт на руках і на колінах — у точці й на глибині `hands` (його кладе туди частина котів).
+//
+// Рука, що гладить (§8.2), — ближня рука скелета (той самий запечений кадр `person/arm`), повернута навколо плеча до спинки
+// кота й розтягнута не більше ніж у `REACH_STRETCH` (решту відстані дає присід анімації `pet`); на глибині над персонажем, а
+// кіт попереду — над котом (`reachDepth`). Вудочка під час гри — кадр A5 у руці, обтятий до палички, волосінь від її кінчика
+// до пучка пір'я з того самого кадру, що кружляє над котом (`personreach.ts`). Брудний одяг — плями й запах (`fx/smell`). У
+// поїздці й у душовій кабіні персонажа не видно (§8.5, §8.7). Засинаючи (§8.8), заплющує очі (`person/eyes`: `half`,
+// `closed`), а голова хилиться.
 //
 // Глибина — точка «person» у реєстрі (`iso/depth.ts`); у її проміжку знизу догори: тінь, кіт на руках ззаду (ракурс `back`),
-// сам персонаж, кіт на руках спереду, запах. Рука, що гладить, і вудочка — над усім світом (`WORLD_LAYERS.interaction`), як у
-// старому вигляді. Що показує старий вигляд — `legacy/personview.ts`, `legacy/person.ts`.
+// сам персонаж, рука, що гладить, кіт на руках спереду, запах. Волосінь і пір'я над котом — над усім світом
+// (`WORLD_LAYERS.interaction`), як у старому вигляді. Що показує старий вигляд — `legacy/personview.ts`, `legacy/person.ts`.
 
 import Phaser from "phaser";
 
@@ -24,39 +29,36 @@ import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
 import { facingFromTiles } from "../anim/catfacing";
 import { personAnim, personEventAnim, type PersonAnimChoice } from "../anim/personanim";
 import { addArt, setArt } from "../art/atlas";
-import { releaseBaked } from "../art/bake";
-import { farRecipe, personColors, personRecipe } from "../art/recipes";
+import { addBakedArt, releaseBaked, setBakedArt } from "../art/bake";
+import { artEntry } from "../art/manifest";
+import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
-import { RigSprite, type RigSpriteOf } from "../rig/rigsprite";
-import type { AnimOf, RigFacing } from "../rig/types";
+import { slotFrame } from "../rig/rigcore";
+import { RigSprite, type RigSpriteOf, type SocketWorld } from "../rig/rigsprite";
+import type { AnimOf, RigFacing, Vec2 } from "../rig/types";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { Hands, PersonPart, Point, WorldFrame } from "../world/part";
 import { isoDepth, type IsoPointHandle } from "./depth";
-import { ANCHOR_GAP, artOffset } from "./geometry";
+import { ANCHOR_GAP } from "./geometry";
 import type { IsoFrame } from "./looks";
-import { cargoDepth, catSocket, eyesFrame, heldFrame, movesHead, PERSON_DEPTH, SLEEP_DROOP } from "./personlook";
-import { mixAnims, type MixExtras } from "./personmix";
-import { armSegment, featherAt, palmAt, PET_ARM } from "./personreach";
-import { glideOffset, personSpot } from "./personspot";
+import { armsOverlay, cargoDepth, catSocket, eyesFrame, heldFrame, movesHead, PERSON_DEPTH, personExtras, reachDepth, shadowScale } from "./personlook";
+import { mixAnims } from "./personmix";
+import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedPose, ROD_PLAY, type PartPose, type UnitRect } from "./personreach";
+import { glideOffset, personSpot, showFace } from "./personspot";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
 /** Власник запечених кадрів персонажа (бюджет `bake.ts`). */
 export const PERSON_OWNER = "person";
 
-/** Над пір'їнкою волосінь і рука, що гладить: пір'їнка — на стільки вище за них. */
+/** Над волосінню пір'я: на стільки вище за неї. */
 const FEATHER_DEPTH = 0.5;
 
 /** Як часто хвилі запаху міняють кадр, мс (як над брудним лотком, `iso/floor.ts`). */
 const SMELL_MS = 450;
-
-/** Ширина тіні під ногами за статурою (`BUILDS`: струнка, звичайна, кремезна). */
-const SHADOW_WIDTH = [0.9, 1, 1.15] as const;
-/** Товщина рук за статурою — як `personProportions` (`PERSON_RIG.proportions`). */
-const LIMB_WIDTH = [0.88, 1, 1.15] as const;
 
 /** Разова анімація, що зараз грає: що, з якого моменту годинника анімацій і скільки. */
 interface OneShot {
@@ -71,33 +73,49 @@ interface Cargo {
   key: string;
 }
 
+/** Обтинання кадру (`setCrop`): за яким кадром текстури його пораховано (новий кадр — інша роздільність, рахувати знову). */
+interface Crop {
+  frame: Phaser.Textures.Frame | null;
+}
+
 export class IsoPersonView implements PersonPart {
   private readonly sprite: RigSpriteOf<typeof PERSON_RIG>;
   private readonly shadow: Phaser.GameObjects.Image;
+  /** Базовий масштаб кадру тіні (`addArt`: 1 одиниця арту = 1 px світу) — статура його лише множить. */
+  private readonly shadowBase: Vec2;
   private readonly smell: Phaser.GameObjects.Image;
   private readonly cargo: Record<"held" | "rod", Cargo>;
-  /** Рука, що гладить, і волосінь вудочки — над світом. */
-  private readonly reach: Phaser.GameObjects.Graphics;
-  /** Пір'їнка над котом під час гри: кадр вудочки «схована» — видно лише пір'їнку. */
+  /** Паличка вудочки в руці під час гри — обтята (без мотузки й пір'я). */
+  private readonly rodCrop: Crop = { frame: null };
+  /** Волосінь вудочки — над світом. */
+  private readonly line: Phaser.GameObjects.Graphics;
+  /** Пучок пір'я над котом під час гри: той самий кадр вудочки [`hand`], обтятий до пучка. */
   private readonly feather: Phaser.GameObjects.Image;
   private featherKey = "";
+  private readonly featherCrop: Crop = { frame: null };
+  /** Рука, що гладить: запечений кадр ближньої руки, поставлений поза скелетом (з'являється з першими пестощами). */
+  private arm: Phaser.GameObjects.Image | null = null;
+  private armKey = "";
+  private armBase: Vec2 = { x: 1, y: 1 };
   private readonly point: IsoPointHandle;
   /** Глибина точки з останнього розв'язку реєстру. */
   private depth = 0;
 
-  /** Вигляд, за яким складено обвіс і рецепти (копія `Look`), і чи одяг брудний. */
+  /** Вигляд, за яким складено обвіс і рецепти (копія `Look`), і чи одяг брудний; номер рецепта — для руки, що гладить. */
   private look: Look | null = null;
   private stained = false;
   private recipe: TintRecipe;
   private far: TintRecipe;
+  private recipeVersion = 0;
   private readonly farSlots: ReadonlySet<string> = new Set<string>(PERSON_FAR_SLOTS);
 
   /** Годинник анімацій, мс: час сцени × швидкість (`PersonAnimParams.speed`). */
   private clock = 0;
   private lastTime: number | null = null;
   private facing: RigFacing | null = null;
-  /** Зсув вигляду від точки тіла до місця справи, клітинки (`glideOffset`). */
-  private offset = { x: 0, y: 0 };
+  /** Зсув вигляду від точки тіла до місця справи, клітинки (`glideOffset`), і де вигляд стоїть цього кадру. */
+  private readonly offset: Vec2 = { x: 0, y: 0 };
+  private readonly at: Vec2 = { x: 0, y: 0 };
   private oneShot: OneShot | null = null;
   /** Подія цього кадру, що просить разову анімацію (`onEvent` → наступний `update`). */
   private pending: { anim: PersonAnimId; ms: number } | null = null;
@@ -105,11 +123,16 @@ export class IsoPersonView implements PersonPart {
   private main: PersonAnim | null = null;
   private choice: PersonAnimChoice | null = null;
   private hidden = true;
-  /** Гладить: ближню руку скелета сховано, її малює вигляд — до спинки кота (`lateUpdate`). */
-  private reaching = false;
+  /** Кого гладить (ближня рука лягає на спинку) і з ким грається вудочкою цього кадру; null — ні. */
+  private petCat: number | null = null;
+  private rodCat: number | null = null;
 
-  head: Point = { x: 0, y: 0 };
-  hands: Hands = { x: 0, y: 0, depth: 0 };
+  private readonly tmpPoint: Vec2 = { x: 0, y: 0 };
+  private readonly tmpTarget: Vec2 = { x: 0, y: 0 };
+  private readonly tmpSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
+
+  readonly head: Point = { x: 0, y: 0 };
+  readonly hands: Hands = { x: 0, y: 0, depth: 0 };
 
   constructor(private readonly ctx: PartContext) {
     const scene = ctx.scene;
@@ -124,14 +147,15 @@ export class IsoPersonView implements PersonPart {
     });
     this.look = { ...look };
     this.shadow = addArt(scene, ctx.layer, "fx/shadow/person");
+    this.shadowBase = { x: this.shadow.scaleX, y: this.shadow.scaleY };
     ctx.layer.add(this.sprite);
     this.smell = addArt(scene, ctx.layer, "fx/smell", { state: "a" }).setVisible(false);
     this.cargo = {
       held: this.socketImage("held", { id: "item/dish/meal", state: "cheap" }),
       rod: this.socketImage("rod", { id: "item/toy/cheap", state: "hand" }),
     };
-    this.reach = scene.add.graphics().setDepth(WORLD_LAYERS.interaction).addToDisplayList(ctx.layer);
-    this.feather = addArt(scene, ctx.layer, "item/toy/cheap", { state: "hidden" }).setDepth(WORLD_LAYERS.interaction + FEATHER_DEPTH).setVisible(false);
+    this.line = scene.add.graphics().setDepth(WORLD_LAYERS.interaction).addToDisplayList(ctx.layer);
+    this.feather = addArt(scene, ctx.layer, "item/toy/cheap", { state: "hand" }).setDepth(WORLD_LAYERS.interaction + FEATHER_DEPTH).setVisible(false);
     this.point = isoDepth(ctx).addPoint((d) => this.setDepth(d), { id: "person" });
   }
 
@@ -168,25 +192,29 @@ export class IsoPersonView implements PersonPart {
     this.hidden = params.hidden;
     this.syncLook(character.look, params.dirty);
 
-    // Де видно й куди дивиться: за справою — на її місці, лицем до цілі.
-    const spot = personSpot(state, choice.anim);
+    // Де видно й куди дивиться: за справою — на її місці, лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно).
+    const spot = personSpot(state, choice.anim, params.progress);
     const body = character.body;
-    this.offset = glideOffset(this.offset, { x: spot.at.x - body.x, y: spot.at.y - body.y }, dt / 1000);
-    const at = { x: body.x + this.offset.x, y: body.y + this.offset.y };
-    const facing: RigFacing = (spot.face && facingFromTiles(spot.face, this.facing)) || { view: choice.view, flip: choice.flip };
+    this.tmpTarget.x = spot.at.x - body.x;
+    this.tmpTarget.y = spot.at.y - body.y;
+    glideOffset(this.offset, this.tmpTarget, dt / 1000, this.offset);
+    this.at.x = body.x + this.offset.x;
+    this.at.y = body.y + this.offset.y;
+    const faced = (spot.face && facingFromTiles(spot.face, this.facing)) || { view: choice.view, flip: choice.flip };
+    const facing = showFace(choice.anim, faced);
     this.facing = facing;
 
     // Спершу ракурс: новий ракурс — нова вихідна поза, і `play` не змішує з позою старого.
     this.sprite.setFacing(facing);
-    this.play(choice);
-    const feet = this.ctx.projection.toScreen(at);
+    this.play(choice, this.reachTargets(state, choice));
+    const feet = this.ctx.projection.toScreen(this.at);
     this.sprite.setPosition(feet.x, feet.y);
     this.sprite.update(this.clock);
     this.sprite.setVisible(!this.hidden);
 
     // Тінь під ногами (не частина скелета: лишається на підлозі), запах над головою.
-    const build = clampIndex(character.look.build, SHADOW_WIDTH.length);
-    this.shadow.setPosition(feet.x, feet.y).setScale(SHADOW_WIDTH[build] ?? 1, 1).setVisible(!this.hidden);
+    const shadow = shadowScale(this.shadowBase, character.look.build, this.tmpPoint);
+    this.shadow.setPosition(feet.x, feet.y).setScale(shadow.x, shadow.y).setVisible(!this.hidden);
     this.updateCargo(character.held);
     this.updatePoints();
     const smelly = params.dirty && !this.hidden;
@@ -196,7 +224,21 @@ export class IsoPersonView implements PersonPart {
       this.smell.setPosition(this.head.x, this.head.y + ANCHOR_GAP);
     }
     if (this.hidden) this.point.hide();
-    else this.point.place(at.x, at.y);
+    else this.point.place(this.at.x, this.at.y);
+  }
+
+  /**
+   * Кого гладить і з ким грається вудочкою (разові вирішує `play`): анімація `pet` чи `rod`, справа ще триває, кіт є в частині
+   * котів. Кота немає — рука й вудочка такі, як в анімації.
+   */
+  private reachTargets(state: GameState, choice: PersonAnimChoice): { pet: number | null; rod: number | null } {
+    const activity = state.character.activity;
+    if (choice.params.hidden || !activity) return NO_REACH;
+    const world = this.ctx.world;
+    if (choice.anim === "pet" && activity.kind === "pet" && !petOver(activity) && world.cat(activity.cat)) return { pet: activity.cat, rod: null };
+    const toy = state.character.held?.kind === "toy";
+    if (choice.anim === "rod" && activity.kind === "play" && activity.done !== true && toy && world.cat(activity.cat)) return { pet: null, rod: activity.cat };
+    return NO_REACH;
   }
 
   /** Обвіс, пропорції й рецепти за виглядом; плями на одязі — новий рецепт (кадри перезапікаються). */
@@ -212,15 +254,16 @@ export class IsoPersonView implements PersonPart {
     this.stained = dirty;
     this.recipe = personRecipe(look, dirty ? { stained: true } : {});
     this.far = farRecipe(this.recipe);
+    this.recipeVersion++;
     this.sprite.setBaked(this.baked());
   }
 
   /**
-   * Анімація кадру: разова від події (поки грає) чи основна з накладкою рук; зверху — очі засинання, рука, що гладить
-   * (її малює вигляд), і голова, що хилиться. За поступом (засинання) — час анімації з поступу, інакше — годинник; та сама
-   * основна, лише з іншою накладкою чи очима, продовжує свою фазу.
+   * Анімація кадру: разова від події (поки грає) чи основна; до обох — накладка рук (`armsOverlay`), зверху — очі засинання,
+   * схована ближня рука (гладить: її ставить `placeArm`) і голова, що хилиться. За поступом (засинання) — час анімації з
+   * поступу, інакше — годинник; та сама основна, лише з іншою накладкою чи очима, продовжує свою фазу.
    */
-  private play(choice: PersonAnimChoice): void {
+  private play(choice: PersonAnimChoice, reach: { pet: number | null; rod: number | null }): void {
     const params = choice.params;
     const asleep = params.progress !== null;
     let fresh = false;
@@ -232,21 +275,19 @@ export class IsoPersonView implements PersonPart {
     if (this.oneShot && (params.hidden || asleep || this.clock - this.oneShot.start >= this.oneShot.ms)) this.oneShot = null;
 
     const shot = this.oneShot;
-    const main = PERSON_ANIMS[shot ? shot.anim : choice.anim];
-    const overlay = !shot && choice.overlay ? PERSON_ANIMS[choice.overlay] : null;
-    const eyes = eyesFrame(params.eyes);
-    this.reaching = !shot && !params.hidden && choice.anim === "pet";
-    const extras: MixExtras = {
-      ...(eyes ? { frames: { eyes } } : {}),
-      ...(this.reaching ? { hidden: ["arm-near"] } : {}),
-      ...(!shot && asleep && PERSON_BY_PROGRESS.has(choice.anim) && !movesHead(main) ? { ramp: { head: SLEEP_DROOP } } : {}),
-    };
-    const anim = mixAnims(main, overlay, extras);
+    this.petCat = shot ? null : reach.pet;
+    this.rodCat = shot ? null : reach.rod;
+    const id = shot ? shot.anim : choice.anim;
+    const main = PERSON_ANIMS[id];
+    const overlay = armsOverlay(id, choice.overlay);
+    const droop = !shot && asleep && PERSON_BY_PROGRESS.has(choice.anim) && !movesHead(main);
+    const anim = mixAnims(main, overlay ? PERSON_ANIMS[overlay] : null, personExtras(eyesFrame(params.eyes), this.petCat !== null, droop));
 
     // Час — годинник анімацій (`clock`), тож `Rig.play` напряму: `RigSprite.play` узяв би час минулого кадру.
     const rig = this.sprite.rig;
     if (shot) {
-      if (fresh || rig.anim !== anim) rig.play(anim, this.clock, { restart: true });
+      // Разова з іншою накладкою (узяв річ посеред неї) — з тієї самої миті разової, а не з початку.
+      if (fresh || rig.anim !== anim) rig.play(anim, this.clock, { restart: true, from: fresh ? 0 : this.clock - shot.start });
     } else if (asleep) {
       // За поступом: час — частка тривалості; без змішування (поза на початку засинання — та сама, що стоячи).
       rig.play(anim, this.clock, { restart: true, from: (params.progress ?? 0) * anim.duration, blend: 0 });
@@ -257,7 +298,10 @@ export class IsoPersonView implements PersonPart {
     this.main = main;
   }
 
-  /** Річ у руках — у гнізді `held`, вудочка — у `rod`; кота малює частина котів (у точці `hands`). */
+  /**
+   * Річ у руках — у гнізді `held`, вудочка — у `rod` (граючись із котом — лише паличка: пір'я кружляє над котом); кота
+   * малює частина котів (у точці `hands`).
+   */
   private updateCargo(item: Item | null): void {
     const want = this.hidden ? null : heldFrame(item);
     for (const socket of ["held", "rod"] as const) {
@@ -270,73 +314,126 @@ export class IsoPersonView implements PersonPart {
         cargo.key = key;
         setArt(cargo.image, frame.id, { state: frame.state });
       }
+      if (socket === "rod") cropTo(cargo.image, frame.id, this.rodCat !== null ? ROD_PLAY.stick : null, this.rodCrop);
     }
   }
 
-  /** Над головою (бабли, камера) і руки (кіт на руках чи на колінах) — з пози скелета цього кадру. */
+  /** Над головою (бабли, камера) і руки (кіт на руках чи на колінах і куди він дивиться) — з пози скелета цього кадру. */
   private updatePoints(): void {
-    const top = this.sprite.anchor("head");
-    if (top) this.head = { x: top.x, y: top.y - ANCHOR_GAP };
-    const socket = this.sprite.socket(catSocket(this.choice?.anim ?? "idle"));
-    if (socket) this.hands = { x: socket.x, y: socket.y, depth: cargoDepth(this.depth, this.sprite.facing.view === "back") };
+    const top = this.sprite.anchor("head", this.tmpPoint);
+    if (top) {
+      this.head.x = top.x;
+      this.head.y = top.y - ANCHOR_GAP;
+    }
+    const socket = this.sprite.socket(catSocket(this.choice?.anim ?? "idle"), this.tmpSocket);
+    if (socket) {
+      this.hands.x = socket.x;
+      this.hands.y = socket.y;
+    }
+    this.hands.depth = cargoDepth(this.depth, this.sprite.facing.view === "back");
+    this.hands.facing = this.sprite.facing;
   }
 
   /**
-   * Після котів (`World.update`): рука, що гладить, лягає на спинку кота, а пір'їнка вудочки кружляє над ним — там, де кота
-   * намальовано цього кадру. Потім — розв'язок глибини.
+   * Після котів (`World.update`): розв'язок глибини; далі рука, що гладить, лягає на спинку кота, а пір'я вудочки кружляє
+   * над ним — там, де кота намальовано цього кадру, і на глибині, яку кіт отримав у цьому розв'язку.
    */
-  lateUpdate(state: GameState, frame: WorldFrame): void {
-    const g = this.reach.clear();
-    this.feather.setVisible(false);
-    const activity = state.character.activity;
-    const look = state.character.look;
-    if (this.reaching && activity?.kind === "pet" && !petOver(activity)) {
-      const cat = this.ctx.world.cat(activity.cat);
-      if (cat) this.drawPetArm(g, look, palmAt(cat.back, frame.time));
-    } else if (!this.hidden && activity?.kind === "play" && activity.done !== true && this.choice?.anim === "rod") {
-      const cat = this.ctx.world.cat(activity.cat);
-      const toy = state.character.held?.kind === "toy" ? state.character.held.toy.quality : "cheap";
-      if (cat) this.drawRodLine(g, toy, featherAt(cat.head, frame.time));
-    }
-    isoDepth(this.ctx).solve();
+  lateUpdate(_state: GameState, frame: WorldFrame): void {
+    const registry = isoDepth(this.ctx);
+    registry.solve();
     // Розв'язок міг змінити глибину: руки — з новою.
     this.hands.depth = cargoDepth(this.depth, this.sprite.facing.view === "back");
-  }
 
-  /** Рука від плеча (поза скелета цього кадру; ближню руку скелета сховано) до долоні на спинці кота. */
-  private drawPetArm(g: Phaser.GameObjects.Graphics, look: Look, palm: Point): void {
-    const bone = this.sprite.rig.bone("arm-near").world;
-    const flip = this.sprite.facing.flip ? -1 : 1;
-    const shoulder = { x: this.sprite.x + bone.tx * flip, y: this.sprite.y + bone.ty };
-    const colors = personColors(look);
-    const k = LIMB_WIDTH[clampIndex(look.build, LIMB_WIDTH.length)] ?? 1;
-    const sleeve = PET_ARM.sleeve * k;
-    const { from, to } = armSegment(shoulder, palm);
-    const ink = hex(ART.ink);
-    // Рукав-«сосиска»: контур — ширший рукав чорнилом, поверх — рукав кольором верху.
-    thickLine(g, from, to, sleeve + PET_ARM.ink, ink);
-    thickLine(g, from, to, sleeve - PET_ARM.ink, colors.top);
-    // Долоня-«рукавичка».
-    const { rx, ry } = PET_ARM.palm;
-    g.fillStyle(ink).fillEllipse(palm.x, palm.y, (rx + PET_ARM.ink / 2) * 2, (ry + PET_ARM.ink / 2) * 2);
-    g.fillStyle(colors.skin).fillEllipse(palm.x, palm.y, (rx - PET_ARM.ink / 2) * 2, (ry - PET_ARM.ink / 2) * 2);
-  }
-
-  /** Волосінь від кінця вудочки (точка `feather` кадру в руці) до пір'їнки над котом. */
-  private drawRodLine(g: Phaser.GameObjects.Graphics, quality: string, tip: Point): void {
-    const id: ArtId = `item/toy/${quality}`;
-    const socket = this.sprite.socket("rod");
-    const offset = artOffset(id, "feather");
-    if (!socket) return;
-    const from = offset ? socketPoint(socket, offset) : { x: socket.x, y: socket.y };
-    g.lineStyle(PET_ARM.line, hex(ART.ink), 0.85).lineBetween(from.x, from.y, tip.x, tip.y);
-    // Пір'їнка: кадр вудочки «схована» (видно лише пір'їнку), щоб її точка `feather` була там, куди веде волосінь.
-    const key = `${id}|hidden`;
-    if (this.featherKey !== key) {
-      this.featherKey = key;
-      setArt(this.feather, id, { state: "hidden" });
+    if (this.petCat !== null) {
+      const cat = this.ctx.world.cat(this.petCat);
+      const catDepth = registry.point(`cat:${this.petCat}`)?.depth ?? null;
+      this.placeArm(cat ? palmAt(cat.back, frame.time) : null, reachDepth(this.depth, catDepth));
+    } else {
+      this.arm?.setVisible(false);
     }
-    this.feather.setPosition(tip.x - (offset?.x ?? 0), tip.y - (offset?.y ?? 0)).setVisible(true);
+    const g = this.line.clear();
+    this.feather.setVisible(false);
+    if (this.rodCat !== null) {
+      const cat = this.ctx.world.cat(this.rodCat);
+      if (cat) this.drawRod(g, this.rodId(), featherAt(cat.head, frame.time));
+    }
+  }
+
+  /** Запис вудочки в руці (з кадру гнізда `rod`). */
+  private rodId(): ArtId {
+    return this.cargo.rod.key.slice(0, this.cargo.rod.key.indexOf("|")) as ArtId;
+  }
+
+  /**
+   * Ближня рука, що гладить: той самий запечений кадр, що в слоті скелета (там його сховано), у позі анімації `pet`,
+   * повернута навколо плеча так, щоб кисть (`grip`) лягла на `palm` (спинка кота), і розтягнута не більше за
+   * `REACH_STRETCH`. `palm` null — поза анімації як є.
+   */
+  private placeArm(palm: Point | null, depth: number): void {
+    const rig = this.sprite.rig;
+    const slot = rig.slot("arm-near");
+    if (slot.art === null) {
+      this.arm?.setVisible(false);
+      return;
+    }
+    const image = this.armImage(slot.art, slot.state);
+    let pose: PartPose = slot;
+    const sign = this.sprite.facing.flip ? -1 : 1;
+    const hand = palm ? rig.anchor("hands", this.tmpPoint, false) : null;
+    if (palm && hand) {
+      const bone = rig.bone("arm-near").world;
+      const shoulder = { x: bone.tx, y: bone.ty };
+      // Ціль — у системі кореня скелета (обличчям праворуч), як і поза.
+      const target = { x: (palm.x - this.sprite.x) * sign, y: palm.y - this.sprite.y };
+      pose = reachedPose(slot, shoulder, hand, reachArm(shoulder, hand, target));
+    }
+    // Віддзеркалений скелет дзеркалить і руку: місце по x, кут і масштаб по x — зі знаком.
+    image
+      .setPosition(this.sprite.x + sign * pose.x, this.sprite.y + pose.y)
+      .setAngle(sign * pose.rot)
+      .setScale(sign * this.armBase.x * pose.sx, this.armBase.y * pose.sy)
+      .setDepth(depth)
+      .setVisible(true);
+  }
+
+  /** Зображення руки, що гладить, з кадром слота (стан, ракурс) і рецептом вигляду; новий кадр — лише коли щось змінилося. */
+  private armImage(art: ArtId, state: string | null): Phaser.GameObjects.Image {
+    const frame = slotFrame(art, artEntry(art), state, this.sprite.facing.view);
+    const key = `${frame.frame}|${this.recipeVersion}`;
+    let image = this.arm;
+    if (image && this.armKey === key) return image;
+    const opts = { state: frame.state, view: frame.view, owner: PERSON_OWNER };
+    if (!image) {
+      image = addBakedArt(this.ctx.scene, this.ctx.layer, art, this.recipe, opts);
+      this.arm = image;
+    } else {
+      // `setBakedArt` зберігає масштаб відносно базового — спершу базовий.
+      image.setScale(this.armBase.x, this.armBase.y);
+      setBakedArt(image, art, this.recipe, opts);
+    }
+    this.armKey = key;
+    this.armBase = { x: image.scaleX, y: image.scaleY };
+    return image;
+  }
+
+  /**
+   * Вудочка під час гри: волосінь від кінчика палички в руці (`ROD_PLAY.tip`) до пучка пір'я, що кружляє над котом (`at` —
+   * де його точка `feather`); пучок — кадр вудочки [`hand`], обтятий до пір'я.
+   */
+  private drawRod(g: Phaser.GameObjects.Graphics, id: ArtId, at: Point): void {
+    const entry = artEntry(id);
+    const socket = this.sprite.socket("rod", this.tmpSocket);
+    const feather = entry?.points?.["feather"];
+    if (!entry || !socket || !feather) return;
+    const tip = socketPoint(socket, { x: ROD_PLAY.tip.x - entry.pivot.x, y: ROD_PLAY.tip.y - entry.pivot.y });
+    const end = lineEnd(at);
+    g.lineStyle(ROD_PLAY.line, hex(ART.ink), 0.85).lineBetween(tip.x, tip.y, end.x, end.y);
+    if (this.featherKey !== id) {
+      this.featherKey = id;
+      setArt(this.feather, id, { state: "hand" });
+    }
+    cropTo(this.feather, id, featherRect(feather), this.featherCrop);
+    this.feather.setPosition(at.x - (feather.x - entry.pivot.x), at.y - (feather.y - entry.pivot.y)).setVisible(true);
   }
 
   onEvent(event: GameEvent): void {
@@ -349,7 +446,8 @@ export class IsoPersonView implements PersonPart {
     this.oneShot = null;
     this.pending = null;
     this.facing = null;
-    this.offset = { x: 0, y: 0 };
+    this.offset.x = 0;
+    this.offset.y = 0;
     this.lastTime = null;
     this.main = null;
   }
@@ -360,8 +458,9 @@ export class IsoPersonView implements PersonPart {
     for (const cargo of Object.values(this.cargo)) cargo.image.destroy();
     this.shadow.destroy();
     this.smell.destroy();
-    this.reach.destroy();
+    this.line.destroy();
     this.feather.destroy();
+    this.arm?.destroy();
     releaseBaked(this.ctx.scene, PERSON_OWNER);
   }
 
@@ -373,6 +472,27 @@ export class IsoPersonView implements PersonPart {
   highlight(): boolean {
     return false;
   }
+}
+
+const NO_REACH = { pet: null, rod: null } as const;
+
+/**
+ * Обтяти зображення кадру запису `id` до прямокутника `rect` (одиниці арту; null — без обтинання). Рахується знову, лише
+ * коли змінився кадр текстури (інший запис, атлас замість заглушки — інша роздільність).
+ */
+function cropTo(image: Phaser.GameObjects.Image, id: ArtId, rect: UnitRect | null, memo: Crop): void {
+  if (!rect) {
+    if (memo.frame !== null) {
+      image.setCrop();
+      memo.frame = null;
+    }
+    return;
+  }
+  if (memo.frame === image.frame) return;
+  const entry = artEntry(id);
+  const px = cropPixels(rect, image.frame.realWidth, entry?.size.w ?? image.frame.realWidth);
+  image.setCrop(px.x, px.y, px.w, px.h);
+  memo.frame = image.frame;
 }
 
 function frameKey(frame: IsoFrame): string {
@@ -393,10 +513,6 @@ function sameLook(a: Look, b: Look): boolean {
   );
 }
 
-function clampIndex(i: number, n: number): number {
-  return ((Math.trunc(i) % n) + n) % n;
-}
-
 function hex(color: string): number {
   return Number.parseInt(color.slice(1), 16);
 }
@@ -408,10 +524,4 @@ function socketPoint(socket: { x: number; y: number; angle: number; flipped: boo
   // Вісь y кадру: за годинниковою від осі x, а у віддзеркаленому — проти.
   const ay = socket.flipped ? { x: ax.y, y: -ax.x } : { x: -ax.y, y: ax.x };
   return { x: socket.x + offset.x * ax.x + offset.y * ay.x, y: socket.y + offset.x * ax.y + offset.y * ay.y };
-}
-
-/** Товста лінія з круглими кінцями. */
-function thickLine(g: Phaser.GameObjects.Graphics, a: Point, b: Point, width: number, color: number): void {
-  g.lineStyle(width, color).lineBetween(a.x, a.y, b.x, b.y);
-  g.fillStyle(color).fillCircle(a.x, a.y, width / 2).fillCircle(b.x, b.y, width / 2);
 }

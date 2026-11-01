@@ -1,5 +1,5 @@
-// Персонаж нового вигляду (крок 16, T2): правила без Phaser (`src/view/iso/personlook.ts`, `personreach.ts`) — очі засинання,
-// речі в руках і кадри для них у маніфесті, гніздо кота, порядок шматків у проміжку глибини, рука, що гладить, і пір'їнка.
+// Персонаж нового вигляду (крок 16, T2): правила без Phaser (`src/view/iso/personlook.ts`) — очі засинання й поправки вигляду,
+// накладка рук, речі в руках і кадри для них у маніфесті, гніздо кота, порядок шматків у проміжку глибини й тінь.
 
 import { describe, expect, it } from "vitest";
 
@@ -9,8 +9,24 @@ import { personAnim } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
 import { ISO_DEPTH_SLOT } from "../src/view/iso/depth";
-import { cargoDepth, catSocket, EYES, eyesFrame, heldFrame, movesHead, PERSON_DEPTH } from "../src/view/iso/personlook";
-import { armSegment, featherAt, FEATHER, palmAt, STROKE } from "../src/view/iso/personreach";
+import {
+  armsOverlay,
+  CARGO_PIECES,
+  cargoDepth,
+  catSocket,
+  EYES,
+  eyesFrame,
+  heldFrame,
+  movesHead,
+  OWN_ARMS,
+  PERSON_DEPTH,
+  personExtras,
+  reachDepth,
+  shadowScale,
+  SHADOW_WIDTH,
+  SLEEP_DROOP,
+} from "../src/view/iso/personlook";
+import { NO_EXTRAS } from "../src/view/iso/personmix";
 import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { newGame } from "../src/sim/game";
 
@@ -36,6 +52,21 @@ describe("очі засинання (§8.8)", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     expect(eyesFrame(personAnim(state, { moving: false, sleepiness: 0 }).params.eyes)).toBeNull();
     expect(eyesFrame(personAnim(state, { moving: false, sleepiness: 0.9 }).params.eyes)).toBe("closed");
+  });
+
+  it("засинаючи, заплющує зовсім раніше, ніж обертається до ліжка (`SLEEP_TURN`); сонний і виснажений — напівзаплющені", () => {
+    expect(EYES.closed).toBeLessThan(0.6);
+    expect(EYES.closed).toBeGreaterThan(0.35);
+  });
+
+  it("поправки вигляду: ті самі входи — той самий незмінний об'єкт, без поправок — `NO_EXTRAS`", () => {
+    expect(personExtras(null, false, false)).toBe(NO_EXTRAS);
+    const a = personExtras("half", true, false);
+    expect(personExtras("half", true, false)).toBe(a);
+    expect(Object.isFrozen(a)).toBe(true);
+    expect(a).toEqual({ frames: { eyes: "half" }, hidden: ["arm-near"] });
+    expect(personExtras("closed", false, true)).toEqual({ frames: { eyes: "closed" }, ramp: { head: SLEEP_DROOP } });
+    expect(personExtras(null, true, false)).not.toBe(a);
   });
 
   it("голову хилить вигляд, лише якщо анімація засинання сама її не хилить", () => {
@@ -86,9 +117,56 @@ describe("речі в руках (§8.4)", () => {
   });
 });
 
+describe("накладка рук (несе річ, тримає кота)", () => {
+  const cat = (): ReturnType<typeof newGame>["current"] => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    state.character.held = { kind: "cat", cat: 1 };
+    return state;
+  };
+
+  it("вудочка, бере й опускає кота, справи самі ведуть руки — без накладки, хоч у руках іграшка", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    state.character.held = { kind: "toy", toy: toy("cheap") };
+    const choice = personAnim(state, { moving: false, sleepiness: 0 });
+    expect(choice.overlay).toBe("carry");
+    expect(armsOverlay("rod", choice.overlay)).toBeNull();
+    for (const id of OWN_ARMS) expect(armsOverlay(id, "holdCat")).toBeNull();
+    for (const id of ["rod", "pickUp", "putDown", "take", "put", "door", "bath"] as const) expect(OWN_ARMS.has(id)).toBe(true);
+  });
+
+  it("з котом на руках разові (відмова, вкусили, спіткнувся, посковзнувся) і хода — з накладкою «тримає кота»", () => {
+    const overlay = personAnim(cat(), { moving: true, sleepiness: 0 }).overlay;
+    expect(overlay).toBe("holdCat");
+    for (const id of ["refuse", "bitten", "trip", "slip", "walk", "dash", "idle"] as const) expect(armsOverlay(id, overlay)).toBe("holdCat");
+    expect(armsOverlay("walk", null)).toBeNull();
+  });
+});
+
+describe("тінь під ногами", () => {
+  it("базовий масштаб кадру × статура: кадр із роздільністю 2 (базовий 0,5) не стає вдвічі більшим", () => {
+    expect(shadowScale({ x: 1, y: 1 }, 1)).toEqual({ x: 1, y: 1 });
+    expect(shadowScale({ x: 0.5, y: 0.5 }, 1)).toEqual({ x: 0.5, y: 0.5 });
+    expect(shadowScale({ x: 0.5, y: 0.5 }, 2)).toEqual({ x: 0.5 * SHADOW_WIDTH[2], y: 0.5 });
+    expect(shadowScale({ x: 0.5, y: 0.5 }, 0).x).toBeLessThan(0.5);
+    const out = { x: 0, y: 0 };
+    expect(shadowScale({ x: 0.5, y: 0.5 }, 1, out)).toBe(out);
+  });
+});
+
 describe("глибина в проміжку персонажа", () => {
-  it("тінь, кіт ззаду, персонаж, кіт спереду, запах — по черзі й у межах проміжку; кіт через `placeAbove` — перед персонажем", () => {
-    const order = [PERSON_DEPTH.shadow, PERSON_DEPTH.cargoBack, PERSON_DEPTH.body, PERSON_DEPTH.cargoFront, PERSON_DEPTH.smell];
+  it("рука, що гладить: над персонажем, а кіт перед ним — над котом, у верху його проміжку", () => {
+    expect(reachDepth(100, null)).toBe(100 + PERSON_DEPTH.reach);
+    expect(reachDepth(100, Number.NaN)).toBe(100 + PERSON_DEPTH.reach);
+    // Кіт за персонажем — рука в проміжку персонажа.
+    expect(reachDepth(100, 90)).toBe(100 + PERSON_DEPTH.reach);
+    // Кіт перед персонажем — над котом, але нижче за наступний елемент реєстру.
+    const over = reachDepth(100, 120);
+    expect(over).toBeGreaterThan(120);
+    expect(over).toBeLessThan(120 + ISO_DEPTH_SLOT);
+  });
+
+  it("тінь, кіт ззаду, персонаж, рука, кіт спереду, запах — по черзі й у межах проміжку; кіт через `placeAbove` — перед персонажем", () => {
+    const order = [PERSON_DEPTH.shadow, PERSON_DEPTH.cargoBack, PERSON_DEPTH.body, PERSON_DEPTH.reach, PERSON_DEPTH.cargoFront, PERSON_DEPTH.smell];
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(order[0]).toBeGreaterThan(0);
     expect(order.at(-1)).toBeLessThan(ISO_DEPTH_SLOT);
@@ -97,34 +175,10 @@ describe("глибина в проміжку персонажа", () => {
     expect(ISO_DEPTH_SLOT / 2).toBeLessThan(PERSON_DEPTH.smell);
     expect(cargoDepth(100, true)).toBeLessThan(100 + PERSON_DEPTH.body);
     expect(cargoDepth(100, false)).toBeGreaterThan(100 + PERSON_DEPTH.body);
-  });
-});
-
-describe("рука, що гладить, і пір'їнка вудочки (§8.2)", () => {
-  it("пір'їнка кружляє над головою кота, у межах розмаху", () => {
-    const head = { x: 200, y: 300 };
-    for (let t = 0; t < 3000; t += 37) {
-      const f = featherAt(head, t);
-      expect(Math.abs(f.x - head.x)).toBeLessThanOrEqual(FEATHER.swingX + 1e-9);
-      expect(f.y).toBeLessThan(head.y);
-      expect(head.y - FEATHER.lift - f.y).toBeLessThanOrEqual(FEATHER.swingY + 1e-9);
-    }
-    expect(featherAt(head, 0)).not.toEqual(featherAt(head, 400));
-  });
-
-  it("долоня ходить уздовж спинки туди-сюди, рукав закінчується перед нею", () => {
-    const back = { x: 50, y: 80 };
-    const xs = new Set<number>();
-    for (let t = 0; t < 2000; t += 50) {
-      const p = palmAt(back, t);
-      expect(p.y).toBe(back.y);
-      expect(Math.abs(p.x - back.x)).toBeLessThanOrEqual(STROKE.swing);
-      xs.add(Math.round(p.x));
-    }
-    expect(xs.size).toBeGreaterThan(3);
-    const { from, to } = armSegment({ x: 0, y: 0 }, { x: 30, y: 40 });
-    expect(from).toEqual({ x: 0, y: 0 });
-    expect(Math.hypot(to.x, to.y)).toBeLessThan(50);
-    expect(Math.hypot(to.x, to.y)).toBeGreaterThan(40);
+    // Шматки кота над його точкою (T1: до +0,003) не виходять зі свого місця: ззаду — під персонажем, спереду — під запахом.
+    expect(PERSON_DEPTH.cargoBack + CARGO_PIECES).toBeLessThan(PERSON_DEPTH.body);
+    expect(PERSON_DEPTH.cargoFront).toBeGreaterThan(PERSON_DEPTH.reach);
+    expect(PERSON_DEPTH.cargoFront + CARGO_PIECES).toBeLessThan(PERSON_DEPTH.smell);
+    expect(CARGO_PIECES).toBeGreaterThan(0.003);
   });
 });

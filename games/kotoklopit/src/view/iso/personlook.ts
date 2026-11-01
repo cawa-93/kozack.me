@@ -1,30 +1,56 @@
 // Що показує персонаж нового вигляду (крок 16, T2) — чисті правила без Phaser для `iso/person.ts`: кадр очей за тим, наскільки
-// вони заплющені, річ у гнізді рук, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах) і порядок
-// шматків персонажа в його проміжку глибини. Перевіряє `tests/isoperson.test.ts`.
+// вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук, чи анімація сама хилить голову, у якому гнізді кіт (на
+// руках чи на колінах), чи брати накладку рук, порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
+// `tests/isoperson.test.ts`.
 
 import type { Item } from "../../sim/types";
-import type { PersonAnimId } from "../anim/ids";
+import { PERSON_ANIM_GROUPS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
+import { ISO_DEPTH_SLOT } from "./depth";
 import { dishFrame, type IsoFrame } from "./looks";
+import { NO_EXTRAS, type MixExtras } from "./personmix";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
 /**
  * Що в проміжку глибини персонажа (`ISO_DEPTH_SLOT` 0,01) над його точкою, знизу догори: тінь, кіт на руках у ракурсі `back`
- * (за тулубом), сам персонаж, кіт на руках у ракурсі `front` (перед ним), запах. Кіт, якого частина котів кладе через
- * `placeAbove("person")` (пів проміжку), — теж перед персонажем, між ним і запахом.
+ * (за тулубом), сам персонаж, рука, що гладить (коли кіт за персонажем), кіт на руках у ракурсі `front` (перед ним), запах.
+ * Кіт на руках — точка кота в реєстрі над точкою персонажа (`placeAbove("person", hands.depth − глибина персонажа)`), а свої
+ * шматки кіт кладе ще вище за неї, до `CARGO_PIECES` (T1: тінь +0,001, тіло +0,002, очі з-під меблів +0,003), тож проміжки
+ * кота ззаду й спереду — від `cargoBack` і `cargoFront` на `CARGO_PIECES` угору. Старий кіт кладе себе через
+ * `placeAbove("person")` (пів проміжку) — теж перед персонажем.
  */
-export const PERSON_DEPTH = { shadow: 0.0005, cargoBack: 0.002, body: 0.004, cargoFront: 0.006, smell: 0.008 } as const;
+export const PERSON_DEPTH = { shadow: 0.0002, cargoBack: 0.0004, body: 0.004, reach: 0.0045, cargoFront: 0.005, smell: 0.009 } as const;
 
-/** Глибина кота на руках чи на колінах (`PersonPart.hands.depth`): за персонажем у ракурсі `back`, перед ним — у `front`. */
+/** Скільки глибини над своєю точкою займають шматки кота (`PERSON_DEPTH`). */
+export const CARGO_PIECES = 0.0035;
+
+/**
+ * Глибина руки, що гладить (`iso/person.ts`): над персонажем, а кіт перед ним (ближче до камери) — над котом, у верху його
+ * проміжку (`catDepth` — глибина точки кота в реєстрі; NaN чи null — кота в реєстрі немає). Так долоня лежить на спинці
+ * кота, а не ховається під ним, і рука не лягає на меблі, що стоять перед обома.
+ */
+export function reachDepth(personDepth: number, catDepth: number | null): number {
+  const over = catDepth !== null && Number.isFinite(catDepth) ? catDepth + ISO_DEPTH_SLOT * 0.95 : -Infinity;
+  return Math.max(personDepth + PERSON_DEPTH.reach, over);
+}
+
+/**
+ * Глибина точки кота на руках чи на колінах (`PersonPart.hands.depth`): за персонажем у ракурсі `back`, перед ним — у `front`
+ * (шматки кота — до `CARGO_PIECES` над нею).
+ */
 export function cargoDepth(personDepth: number, back: boolean): number {
   return personDepth + (back ? PERSON_DEPTH.cargoBack : PERSON_DEPTH.cargoFront);
 }
 
-/** Наскільки заплющені очі (`PersonAnimParams.eyes`) — напівзаплющені й заплющені (`person/eyes`: `half`, `closed`). */
-export const EYES = { half: 0.2, closed: 0.72 } as const;
+/**
+ * Наскільки заплющені очі (`PersonAnimParams.eyes`) — напівзаплющені й заплющені (`person/eyes`: `half`, `closed`). Засинаючи
+ * (очі — поступ засинання), заплющує зовсім раніше, ніж обертається до ліжка й падає на нього (`SLEEP_TURN` у
+ * `personspot.ts`): заплющені очі видно, поки він ще лицем до кімнати.
+ */
+export const EYES = { half: 0.2, closed: 0.45 } as const;
 
 /**
  * Кадр очей за тим, наскільки вони заплющені (0–1: засинання, сонний увечері, виснажений; §8.8, §6.5); null — як в анімації
@@ -43,6 +69,61 @@ export const SLEEP_DROOP = 18;
 export function movesHead(anim: PersonAnim): boolean {
   const bones = [anim.bones, anim.views?.front?.bones, anim.views?.back?.bones];
   return bones.some((b) => Boolean(b?.head?.rot?.length) || Boolean(b?.neck?.rot?.length));
+}
+
+/** Поправки вигляду за (очі, схована рука, голова хилиться): їх лише дванадцять. */
+const EXTRAS = new Map<string, MixExtras>();
+
+/**
+ * Поправки вигляду поверх анімації (`mixAnims`): кадр очей (`eyesFrame`), схована ближня рука (її показує рука, що гладить) і
+ * голова, що хилиться, засинаючи. Ті самі входи — той самий незмінний об'єкт (ключ кешу `mixAnims` рахується раз на об'єкт),
+ * без поправок — `NO_EXTRAS`.
+ */
+export function personExtras(eyes: "half" | "closed" | null, hideNearArm: boolean, droop: boolean): MixExtras {
+  if (eyes === null && !hideNearArm && !droop) return NO_EXTRAS;
+  const key = `${eyes ?? ""}|${hideNearArm ? 1 : 0}|${droop ? 1 : 0}`;
+  let extras = EXTRAS.get(key);
+  if (!extras) {
+    extras = Object.freeze({
+      ...(eyes ? { frames: Object.freeze({ eyes }) } : {}),
+      ...(hideNearArm ? { hidden: Object.freeze(["arm-near"]) } : {}),
+      ...(droop ? { ramp: Object.freeze({ head: SLEEP_DROOP }) } : {}),
+    });
+    EXTRAS.set(key, extras);
+  }
+  return extras;
+}
+
+/**
+ * Анімації, які самі ведуть руки, — накладки рук (`carry`, `holdCat`) не беруть: вудочка (іграшку в руці веде `rod`; з
+ * накладкою «несе» рука з вудочкою злітала б над головою), бере й опускає кота (N4a) і всі справи (N4b: «бере» закінчується
+ * позою «несе», «кладе» з неї починається, купаючи, кота тримає сама `bath`). Локальна копія `PERSON_OWN_ARMS` пакетів N4a і
+ * N4b (`anim/ids.ts` гілки N4b) до злиття з ними.
+ */
+export const OWN_ARMS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["rod", "pickUp", "putDown", ...PERSON_ANIM_GROUPS.chores]);
+
+/**
+ * Накладка рук до анімації `anim` — основної чи разової (відмова, вкусили, спіткнувся з котом чи річчю в руках: тіло реагує,
+ * руки тримають): та, що дає `personAnim` за тим, що в руках, якщо анімація не веде руки сама (`OWN_ARMS`).
+ */
+export function armsOverlay(anim: PersonAnimId, overlay: PersonAnimId | null): PersonAnimId | null {
+  return overlay !== null && !OWN_ARMS.has(anim) ? overlay : null;
+}
+
+/** Ширина тіні під ногами за статурою (`BUILDS`: струнка, звичайна, кремезна). */
+export const SHADOW_WIDTH = [0.9, 1, 1.15] as const;
+
+/**
+ * Масштаб тіні під ногами (`fx/shadow/person`): базовий масштаб кадру (`addArt`: 1 одиниця арту = 1 px світу за будь-якої
+ * роздільності кадру), ширший чи вужчий за статурою. Саме базовий × статура: кадр із роздільністю 2 має базовий 0,5, і тінь
+ * без нього стала б удвічі більшою. Пише в `out` і повертає його.
+ */
+export function shadowScale(base: { x: number; y: number }, build: number, out = { x: 0, y: 0 }): { x: number; y: number } {
+  const n = SHADOW_WIDTH.length;
+  const k = SHADOW_WIDTH[((Math.trunc(build) % n) + n) % n] ?? 1;
+  out.x = base.x * k;
+  out.y = base.y;
+  return out;
 }
 
 /** Анімації, у яких персонаж сидить (робота, нарада, їжа за столом): кіт тоді — на колінах. */
