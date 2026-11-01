@@ -1,7 +1,15 @@
 // Завантаження атласу арту (крок 16, GRAPHICS_PLAN.md: «Арт, маніфест і атласи»): перша сцена гри. Бере
 // `<BASE_URL>art/index.json` і сторінки атласу тим самим завантажувачем, що й галерея (`loadArtAtlas`, `atlasload.ts`):
 // одна текстура `ART_TEXTURE` з кадрами за контрактом `src/view/art/atlas.ts`. Потім позначає `<html data-art>` і запускає
-// DayScene. Атласу немає (404, порожній, не той формат, сторінка не завантажилася) — гра йде далі на заглушках `atlas.ts`.
+// DayScene.
+//
+// Індикатор — заставка з index.html (`#boot`: назва гри й смуга, видно ще до коду гри): поки коду немає, смуга біжить
+// туди-сюди, а тут вона заповнюється ходом завантаження (`--boot-progress`). Гра готова — заставку прибрано.
+//
+// Атласу немає (404, порожній, не той формат, сторінка не прийшла й після повторів Phaser): у продакшні заставка каже, що
+// гра не завантажилася, і кнопка «Спробувати ще» довантажує лише те, чого бракує (`atlasload.ts` пам'ятає сторінки, що
+// прийшли); гра на маджентових заглушках гравцеві не потрібна. У режимі розробки (`__DEV_TOOLS__`: dev і прев'ю) гра, як і
+// раніше, йде далі на заглушках `atlas.ts` — так видно, чого бракує.
 //
 // `loadArtAtlas` кличеться з `create()` і сам запускає обидва проходи завантажувача (спершу `index.json`, потім сторінки),
 // тож не чекає кадрів гри: скрипт знімків тримає кадри на паузі, доки сторінка не готова. DayScene стартує, щойно атлас
@@ -11,20 +19,31 @@
 
 import Phaser from "phaser";
 
+import { LOAD_FAILED } from "../texts";
 import { markArtReady } from "../view/art/atlas";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
-import { fitUiCamera } from "../view/viewport";
 
-/** Індикатор: доріжка трохи світліша за тло гри (#2b2530, main.ts), смуга — колір паперу інтерфейсу; без тексту. */
-const BAR = { track: 0x3b3340, fill: 0xf3e9dc, height: 6, maxWidth: 280, share: 0.4 };
 /** Яку частку смуги займає перший прохід (`index.json` — маленький файл); решта — сторінки атласу. */
 const INDEX_SHARE = 0.1;
 
-/** Перша сцена: смуга завантаження, атлас, потім `next` (DayScene). */
+/** Заставка з index.html: назва, смуга й місце для повідомлення, що гра не завантажилася. */
+interface Boot {
+  root: HTMLElement;
+  fail: HTMLElement | null;
+}
+
+/** Заставка сторінки, якщо вона є (у галереї й тестах її немає). */
+function bootScreen(): Boot | null {
+  const root = typeof document === "undefined" ? null : document.getElementById("boot");
+  return root ? { root, fail: root.querySelector<HTMLElement>(".boot-fail") } : null;
+}
+
+/** Перша сцена: заставка зі смугою, атлас, потім `next` (DayScene). */
 export class PreloadScene extends Phaser.Scene {
   private readonly next: string;
-  private bar: Phaser.GameObjects.Graphics | null = null;
-  private progress = 0;
+  private boot: Boot | null = null;
+  /** Котрий прохід завантажувача зараз: 0 — `index.json`, далі — сторінки. */
+  private pass = 0;
 
   constructor(next = "day") {
     super("preload");
@@ -32,45 +51,67 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.bar = this.add.graphics();
-    this.draw();
-    const onResize = (): void => this.draw();
-    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+    this.boot = bootScreen();
     // Хід завантаження — події завантажувача сцени: спершу черга з `index.json`, після неї — черга сторінок.
-    let pass = 0;
-    const onProgress = (value: number): void => {
-      this.progress = pass === 0 ? value * INDEX_SHARE : INDEX_SHARE + value * (1 - INDEX_SHARE);
-      this.draw();
-    };
+    const onProgress = (value: number): void => this.progress(this.pass === 0 ? value * INDEX_SHARE : INDEX_SHARE + value * (1 - INDEX_SHARE));
     const onComplete = (): void => {
-      pass++;
+      this.pass++;
     };
     this.load.on(Phaser.Loader.Events.PROGRESS, onProgress);
     this.load.on(Phaser.Loader.Events.COMPLETE, onComplete);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
       this.load.off(Phaser.Loader.Events.PROGRESS, onProgress);
       this.load.off(Phaser.Loader.Events.COMPLETE, onComplete);
     });
+    this.attempt();
+  }
+
+  /** Спроба завантажити атлас (перша чи «Спробувати ще»). */
+  private attempt(): void {
+    this.pass = 0;
+    this.progress(0);
     void loadArtAtlas(this).then(
-      (result) => this.finish(result.state),
-      () => this.finish("none"),
+      (result) => this.loaded(result.state),
+      () => this.loaded("none"),
     );
   }
 
-  /** Смуга посередині екрана: доріжка й заповнена частка. */
-  private draw(): void {
-    const bar = this.bar;
-    if (!bar) return;
-    // В одиницях інтерфейсу (1280 × 720, що ширшає чи вищає): полотно — у пікселях пристрою, камера масштабує.
-    const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
-    const w = Math.round(Math.min(BAR.maxWidth, width * BAR.share));
-    const x = Math.round((width - w) / 2);
-    const y = Math.round(height / 2 - BAR.height / 2);
-    bar.clear();
-    bar.fillStyle(BAR.track, 1).fillRoundedRect(x, y, w, BAR.height, BAR.height / 2);
-    const filled = Math.round(w * Math.min(1, Math.max(0, this.progress)));
-    if (filled > 0) bar.fillStyle(BAR.fill, 1).fillRoundedRect(x, y, Math.max(BAR.height, filled), BAR.height, BAR.height / 2);
+  /** Смуга заставки: частка 0–1. */
+  private progress(value: number): void {
+    const root = this.boot?.root;
+    if (!root) return;
+    root.classList.add("boot-progress");
+    root.style.setProperty("--boot-progress", String(Math.min(1, Math.max(0, value))));
+  }
+
+  private loaded(state: ArtAtlasState): void {
+    if (state === "none" && !__DEV_TOOLS__ && this.boot?.fail) {
+      this.failed(this.boot);
+      return;
+    }
+    this.finish(state);
+  }
+
+  /** Атлас не завантажився: повідомлення й кнопка, що пробує ще раз. */
+  private failed(boot: Boot): void {
+    const fail = boot.fail!;
+    const title = document.createElement("p");
+    title.textContent = LOAD_FAILED.title;
+    title.style.fontWeight = "700";
+    const text = document.createElement("p");
+    text.textContent = LOAD_FAILED.body;
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "button primary";
+    retry.textContent = LOAD_FAILED.retry;
+    retry.addEventListener("click", () => {
+      boot.root.classList.remove("boot-failed");
+      fail.replaceChildren();
+      this.attempt();
+    });
+    fail.replaceChildren(title, text, retry);
+    boot.root.classList.add("boot-failed");
+    retry.focus();
   }
 
   /**
@@ -81,7 +122,8 @@ export class PreloadScene extends Phaser.Scene {
   private finish(state: ArtAtlasState): void {
     const game = this.sys.game;
     if (!game || !this.sys.isActive()) return;
-    this.bar = null;
+    this.boot?.root.remove();
+    this.boot = null;
     try {
       game.scene.stop(this.scene.key);
       game.scene.start(this.next);

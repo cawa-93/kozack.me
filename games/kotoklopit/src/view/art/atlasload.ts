@@ -31,6 +31,11 @@ const REGISTRY_KEY = "art-index";
 
 /** Що вже вантажиться: друга сцена, що попросила атлас, чекає те саме завантаження. */
 const pending = new WeakMap<Phaser.Game, Promise<ArtAtlasResult>>();
+/**
+ * Сторінки, що вже прийшли, за назвою файлу (з хешем вмісту): спроба після невдалої («Спробувати ще», PreloadScene)
+ * довантажує лише решту. Коли атлас склався, вони вже в текстурі — тут їх забуто.
+ */
+const arrived = new WeakMap<Phaser.Game, Map<string, HTMLImageElement>>();
 
 /**
  * Завантажити атлас (якщо його ще немає) і скласти текстуру `ART_TEXTURE`. Атласу немає (файлу немає, він не той, сторінка
@@ -84,9 +89,21 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
         none();
         return;
       }
-      const images: (HTMLImageElement | undefined)[] = index.pages.map(() => undefined);
+      let kept = arrived.get(scene.game);
+      if (!kept) {
+        kept = new Map();
+        arrived.set(scene.game, kept);
+      }
+      const have = kept;
+      const images: (HTMLImageElement | undefined)[] = index.pages.map((page) => have.get(page.file));
       index.pages.forEach((page, i) => {
-        loader.addFile(new PageFile(loader, `${PAGE_KEY}${i}`, artPageUrl(base, page.file), (image) => (images[i] = image)));
+        if (images[i]) return;
+        loader.addFile(
+          new PageFile(loader, `${PAGE_KEY}${i}`, artPageUrl(base, page.file), (image) => {
+            images[i] = image;
+            have.set(page.file, image);
+          }),
+        );
       });
       loader.once(Phaser.Loader.Events.COMPLETE, guarded(() => {
         const missing = index.pages.filter((_, i) => images[i] === undefined).map((page) => page.file);
@@ -101,6 +118,7 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
         }
         // Ті самі сторінки — портретові в редакторі (`sources.ts`): інакше він вантажив би й тримав їх удруге.
         shareArtAtlas(index, images as HTMLImageElement[]);
+        arrived.delete(scene.game);
         resolve({ state: "ready", index });
       }));
       loader.start();
