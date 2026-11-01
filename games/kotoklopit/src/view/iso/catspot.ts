@@ -54,14 +54,34 @@ export interface CatSpot {
   item: string | null;
 }
 
+/** Що частина котів знає про глибини інших частин світу. */
+export interface CatSpotDepths {
+  /** Ґратки переноски над нею (`CARRIER_GRATE_DEPTH`, `floor.ts`): кіт у переносці — увесь під ними. */
+  grate: number;
+}
+
 /** Клубочок у барабані пральки й у переносці — менший, щоб поміститися в отвір. */
 export const SPOT_SCALE = { drum: 0.62, carrier: 0.78 } as const;
+
+/**
+ * Шматки кота в проміжку глибини його точки (`ISO_DEPTH_SLOT` 0,01): тінь, скелет, очі й вушка, що визирають, — нижче за
+ * половину проміжку, де лежить те, що «над» котом (рука, що гладить, — у персонажа; хмара бійки — у частини котів).
+ */
+export const CAT_PIECE = { shadow: 0.001, body: 0.002, peek: 0.003 } as const;
 
 /** Над точкою речі, у її проміжку глибини: кіт у будиночку й на роботі — над ними, нижче за ґратки чи накладки вище. */
 const ABOVE_ITEM = ISO_DEPTH_SLOT * 0.4;
 
-/** Ґратки переноски (`floor.ts`, `CARRIER_GRATE_DEPTH` 0,004): кіт — під ними, над самою переноскою. */
-const UNDER_GRATE = ISO_DEPTH_SLOT * 0.2;
+/**
+ * Наскільки найвищий шматок кота в переносці (тулуб) нижче за ґратки: з таким запасом похибка округлення глибин (~1e-13 на
+ * глибинах у сотні) не поставить його на ґратки чи над ними.
+ */
+const GRATE_GAP = 0.0005;
+
+/** Зсув точки кота над переноскою: тінь і тулуб — над самою переноскою, але нижче за ґратки на глибині `grate`. */
+export function underGrate(grate: number): number {
+  return grate - CAT_PIECE.body - GRATE_GAP;
+}
 
 const ZERO: Vec = { x: 0, y: 0 };
 
@@ -83,9 +103,9 @@ function houseOf(state: GameState, cat: Cat): HomeItem | null {
 
 /**
  * Де кіт (див. `CatSpotKind`): `anim` — що він грає (`catAnim`), `pair` — місце в парі (`catPairs`), `held` — на руках чи
- * колінах.
+ * колінах; `depths` — глибини інших частин світу.
  */
-export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairPlacement | null): CatSpot {
+export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairPlacement | null, depths: CatSpotDepths): CatSpot {
   if (cat.away !== null) return spot("away", { x: cat.x, y: cat.y }, { show: "none" });
   const held = state.character.held;
   if ((held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap") return spot("hands", { x: cat.x, y: cat.y });
@@ -94,7 +114,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   if (act.kind === "sleep" && act.target === "carrier" && act.goal === null && state.home.carrier) {
     return spot("carrier", CARRIER_SPOT, {
       offset: pointOf(`item/carrier/${state.home.carrier}`, "inside"),
-      above: { id: "carrier", offset: UNDER_GRATE },
+      above: { id: "carrier", offset: underGrate(depths.grate) },
       scale: SPOT_SCALE.carrier,
     });
   }

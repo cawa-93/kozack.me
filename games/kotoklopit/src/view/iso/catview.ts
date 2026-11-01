@@ -20,17 +20,11 @@ import type { RigAnim, RigFacing, Vec2 } from "../rig/types";
 import type { Point } from "../world/part";
 import { composeCatAnim } from "./catanim";
 import { CAT_FAR_SLOTS, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin, proportionsKey, type IsoCatBone, type IsoCatSlot, type IsoCatSocket } from "./catrig";
-import type { CatShow } from "./catspot";
+import { CAT_PIECE, type CatShow } from "./catspot";
 import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 
 export type IsoCatSprite = RigSprite<IsoCatBone, IsoCatSlot, IsoCatSocket>;
 type CatRigAnim = RigAnim<IsoCatBone, IsoCatSlot>;
-
-/**
- * Шматки кота в проміжку глибини його точки (`ISO_DEPTH_SLOT` 0,01): тінь, скелет, очі й вушка, що визирають, — нижче за
- * половину проміжку, де лежить те, що «над» котом (рука, що гладить, — у персонажа; хмара бійки — у частини котів).
- */
-const PIECE = { shadow: 0.001, body: 0.002, peek: 0.003 } as const;
 
 /** Півширина кота на екрані, одиниці арту (дорослий ≈ 70 завдовжки): з ким у реєстрі глибини він може перекритися. */
 const HALF_WIDTH = 38;
@@ -225,11 +219,11 @@ export class IsoCatView {
   /** Глибина від реєстру: тінь, скелет, те, що визирає, — у проміжку точки. */
   private applyDepth(depth: number): void {
     this.depth = depth;
-    this.shadow.setDepth(depth + PIECE.shadow);
-    this.sprite.setDepth(depth + PIECE.body);
-    this.peekEyes?.setDepth(depth + PIECE.peek);
-    this.peekTail?.setDepth(depth + PIECE.peek);
-    for (const ear of this.peekEars) ear.setDepth(depth + PIECE.peek);
+    this.shadow.setDepth(depth + CAT_PIECE.shadow);
+    this.sprite.setDepth(depth + CAT_PIECE.body);
+    this.peekEyes?.setDepth(depth + CAT_PIECE.peek);
+    this.peekTail?.setDepth(depth + CAT_PIECE.peek);
+    for (const ear of this.peekEars) ear.setDepth(depth + CAT_PIECE.peek);
   }
 
   /** Шерсть змінилася (глисти, дерматит, нашийник): запекти частини заново. */
@@ -306,7 +300,7 @@ export class IsoCatView {
       const state = f.face.eyes;
       if (!this.peekEyes) {
         this.peekEyes = addBakedArt(this.scene, this.layer, "cat/eyes", this.recipe, { state, view, owner });
-        this.peekEyes.setDepth(this.pieceDepth(PIECE.peek));
+        this.peekEyes.setDepth(this.pieceDepth(CAT_PIECE.peek));
       } else {
         setBakedArt(this.peekEyes, "cat/eyes", this.recipe, { state, view, owner });
       }
@@ -321,7 +315,7 @@ export class IsoCatView {
     if (tail && tailArt) {
       if (!this.peekTail) {
         this.peekTail = addBakedArt(this.scene, this.layer, tailArt, this.recipe, { view, owner });
-        this.peekTail.setDepth(this.pieceDepth(PIECE.peek));
+        this.peekTail.setDepth(this.pieceDepth(CAT_PIECE.peek));
       } else {
         setBakedArt(this.peekTail, tailArt, this.recipe, { view, owner });
       }
@@ -340,7 +334,7 @@ export class IsoCatView {
     if (ears && earArt) {
       while (this.peekEars.length < 2) {
         const image = addBakedArt(this.scene, this.layer, earArt, this.recipe, { view, owner });
-        image.setDepth(this.pieceDepth(PIECE.peek));
+        image.setDepth(this.pieceDepth(CAT_PIECE.peek));
         this.peekEars.push(image);
       }
       this.peekEars.forEach((image, i) => {

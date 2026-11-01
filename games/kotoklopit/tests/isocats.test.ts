@@ -23,7 +23,7 @@ import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from 
 import { catPlay, JUMP, liftAt, nextLift, startShot } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
-import { catSpot, SPOT_SCALE } from "../src/view/iso/catspot";
+import { CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { isoObjectLook } from "../src/view/world/objects";
 import { withCatCorner } from "./helpers";
@@ -46,6 +46,9 @@ function withCat(save: Save, at = { x: 9.5, y: 8.5 }, ageWeeks = 20): Cat {
 }
 
 const act = (kind: CatAct["kind"], extra: Partial<CatAct> = {}): CatAct => ({ kind, target: null, goal: null, minutes: 10, elapsed: 0, ...extra });
+
+/** Ґратки переноски — як у `floor.ts` (`CARRIER_GRATE_DEPTH`; сам `floor.ts` тягне Phaser). */
+const SPOT = { grate: 0.004 } as const;
 
 describe("скелет кота в грі (`ISO_CAT_RIG`)", () => {
   it("правильний: без помилок визначення й точок арту, усі кістки й слоти `CAT_RIG` на місці", () => {
@@ -231,17 +234,17 @@ describe("де кіт (`catSpot`)", () => {
   it("на підлозі — у своїй точці, з тінню; на меблях — на висоті їхнього верху, на їхній коробці", () => {
     const save = game();
     const cat = withCat(save, { x: 9.5, y: 8.5 });
-    expect(catSpot(save.current, cat, "sit", null)).toMatchObject({ kind: "floor", at: { x: 9.5, y: 8.5 }, lift: 0, box: null, shadow: true, show: "rig" });
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "floor", at: { x: 9.5, y: 8.5 }, lift: 0, box: null, shadow: true, show: "rig" });
     const sofa = objectById("sofa");
     cat.x = sofa.x + 0.5;
     cat.y = sofa.y + 0.5;
-    expect(catSpot(save.current, cat, "sleep", null)).toMatchObject({ kind: "furniture", lift: isoObjectLook("sofa").perch, box: "sofa", show: "rig" });
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", lift: isoObjectLook("sofa").perch, box: "sofa", show: "rig" });
     const fridge = objectById("fridge");
     cat.x = fridge.x + 0.5;
     cat.y = fridge.y + 0.5;
     cat.act = act("hide");
     // Нагорі ховаються, лежачи на холодильнику (`catPose` — буханець), а не під ним.
-    expect(catSpot(save.current, cat, "loaf", null)).toMatchObject({ kind: "furniture", lift: 150, box: "fridge" });
+    expect(catSpot(save.current, cat, "loaf", null, SPOT)).toMatchObject({ kind: "furniture", lift: 150, box: "fridge" });
   });
 
   it("під меблями — з-під ближчого краю видно очі й кінчик хвоста; у будиночку — очі у вході", () => {
@@ -249,17 +252,17 @@ describe("де кіт (`catSpot`)", () => {
     const bed = objectById("bed");
     const cat = withCat(save, { x: bed.x + 0.5, y: bed.y + 1.2 });
     cat.act = act("hide", { target: "bed" });
-    const under = catSpot(save.current, cat, "hide", null);
+    const under = catSpot(save.current, cat, "hide", null, SPOT);
     expect(under).toMatchObject({ kind: "under", show: "eyes", lift: 0, box: "bed" });
     expect(under.at.x === bed.x + bed.w || under.at.y === bed.y + bed.h).toBe(true);
     save.current.home.items.push({ id: 900, kind: "house", quality: "premium", slot: "house-1" });
     cat.x = 1.5;
     cat.y = 9.5;
     cat.act = act("sleep", { target: "item:900" });
-    expect(catSpot(save.current, cat, "sleep", null)).toMatchObject({ kind: "house", show: "eyes", above: { id: "item:900" }, offset: artOffset("item/house/premium", "door") });
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "house", show: "eyes", above: { id: "item:900" }, offset: artOffset("item/house/premium", "door") });
     // Ще йде до будиночка — на підлозі.
     cat.act = act("sleep", { target: "item:900", goal: { x: 1, y: 9 } });
-    expect(catSpot(save.current, cat, "walk", null).kind).toBe("floor");
+    expect(catSpot(save.current, cat, "walk", null, SPOT).kind).toBe("floor");
   });
 
   it("переноска, барабан пральки, ковдра, робот — у точках їхніх кадрів, менший клубочок там, де тісно", () => {
@@ -267,7 +270,7 @@ describe("де кіт (`catSpot`)", () => {
     const cat = withCat(save, { x: 8.5, y: 9.5 });
     save.current.home.carrier = "cheap";
     cat.act = act("sleep", { target: "carrier" });
-    expect(catSpot(save.current, cat, "carrier", null)).toMatchObject({
+    expect(catSpot(save.current, cat, "carrier", null, SPOT)).toMatchObject({
       kind: "carrier",
       at: CARRIER_SPOT,
       above: { id: "carrier" },
@@ -279,36 +282,52 @@ describe("де кіт (`catSpot`)", () => {
     cat.x = washer.x + 0.5;
     cat.y = washer.y + 0.5;
     cat.act = act("sleep", { target: "washer" });
-    expect(catSpot(save.current, cat, "sleep", null)).toMatchObject({ kind: "drum", at: footprintCenter(washer), box: "washer", scale: SPOT_SCALE.drum, offset: artOffset("env/washer", "drum") });
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "drum", at: footprintCenter(washer), box: "washer", scale: SPOT_SCALE.drum, offset: artOffset("env/washer", "drum") });
     const bed = objectById("bed");
     cat.x = bed.x + 0.5;
     cat.y = bed.y + 0.5;
     cat.act = act("sleep", { target: "bed", blanket: true });
-    expect(catSpot(save.current, cat, "blanket", null)).toMatchObject({ kind: "blanket", show: "ears", box: "bed", offset: artOffset("env/bed", "blanket") });
+    expect(catSpot(save.current, cat, "blanket", null, SPOT)).toMatchObject({ kind: "blanket", show: "ears", box: "bed", offset: artOffset("env/bed", "blanket") });
     save.current.home.appliances.robot = "premium";
     cat.x = 12.5;
     cat.y = 7.5;
     cat.act = act("idle", { target: "robot", elapsed: 5 });
-    expect(catSpot(save.current, cat, "sit", null)).toMatchObject({ kind: "robot", above: { id: "robot" }, offset: artOffset("item/robot/premium", "top") });
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "robot", above: { id: "robot" }, offset: artOffset("item/robot/premium", "top") });
     // Ще біжить до робота — на підлозі.
     cat.act = act("idle", { target: "robot", elapsed: 0, goal: { x: 13, y: 7 } });
-    expect(catSpot(save.current, cat, "walk", null).kind).toBe("floor");
+    expect(catSpot(save.current, cat, "walk", null, SPOT).kind).toBe("floor");
   });
 
   it("на руках і на колінах — у персонажа; у поїздці — не видно; у парі — зсунутий", () => {
     const save = game();
     const cat = withCat(save, { x: 9.5, y: 8.5 });
     save.current.character.held = { kind: "cat", cat: cat.id };
-    expect(catSpot(save.current, cat, "carried", null).kind).toBe("hands");
+    expect(catSpot(save.current, cat, "carried", null, SPOT).kind).toBe("hands");
     save.current.character.held = null;
     cat.act = act("lap");
-    expect(catSpot(save.current, cat, "sleep", null).kind).toBe("hands");
+    expect(catSpot(save.current, cat, "sleep", null, SPOT).kind).toBe("hands");
     cat.act = idleAct(10);
     cat.away = "trip";
-    expect(catSpot(save.current, cat, "sit", null)).toMatchObject({ kind: "away", show: "none" });
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ kind: "away", show: "none" });
     cat.away = null;
     const pair = { kind: "groom" as const, with: 1, offset: { x: -15, y: 0 }, tile: { x: -0.1171875, y: 0.1171875 }, facing: null };
-    expect(catSpot(save.current, cat, "sit", pair).at).toEqual({ x: 9.5 + pair.tile.x, y: 8.5 + pair.tile.y });
+    expect(catSpot(save.current, cat, "sit", pair, SPOT).at).toEqual({ x: 9.5 + pair.tile.x, y: 8.5 + pair.tile.y });
+  });
+
+  it("у переносці весь кіт — під ґратками: тінь і тулуб нижче за їхню глибину за будь-якої глибини переноски", () => {
+    const save = game();
+    const cat = withCat(save, { x: 8.5, y: 9.5 });
+    save.current.home.carrier = "premium";
+    cat.act = act("sleep", { target: "carrier" });
+    const offset = catSpot(save.current, cat, "carrier", null, SPOT).above!.offset;
+    expect(offset).toBe(underGrate(SPOT.grate));
+    for (let i = 0; i < 2000; i++) {
+      const depth = 1 + i * 0.4123 + (i % 7) * 1e-3;
+      const grate = depth + SPOT.grate;
+      expect(depth + offset + CAT_PIECE.body).toBeLessThan(grate);
+      expect(depth + offset + CAT_PIECE.shadow).toBeLessThan(grate);
+      expect(depth + offset + CAT_PIECE.shadow).toBeGreaterThan(depth);
+    }
   });
 
   it("на справжньому дні: кожен кіт удома має місце, і на меблях — на висоті їхнього верху", () => {
@@ -317,7 +336,7 @@ describe("де кіт (`catSpot`)", () => {
     for (let step = 0; step < 40; step++) {
       advance(save, 6, { move: { x: 0, y: 0 }, hold: false });
       for (const cat of save.current.cats) {
-        const spot = catSpot(save.current, cat, "sit", null);
+        const spot = catSpot(save.current, cat, "sit", null, SPOT);
         expect(spot.kind === "away").toBe(cat.away !== null);
         if (spot.kind === "furniture") expect(spot.lift).toBe(isoObjectLook(spot.box!).perch);
       }

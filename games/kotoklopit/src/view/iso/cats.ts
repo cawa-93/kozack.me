@@ -28,9 +28,10 @@ import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { catPlay, nextLift, startShot, type CatShot, type Lift } from "./catplay";
 import { catSize, isoCatProportions, type CatSize } from "./catrig";
-import { catSpot, raised, type CatSpot } from "./catspot";
+import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
+import { CARRIER_GRATE_DEPTH } from "./floor";
 
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
 const CARRIED_BUBBLE_SHIFT = 34;
@@ -46,6 +47,9 @@ const CLOUD_ABOVE = ISO_DEPTH_SLOT * 0.6;
  * частину квартири, а котів буває два десятки. Запас — більший за кота з баблом над ним, щоб на краю нічого не вискакувало.
  */
 const CULL_MARGIN = 160;
+
+/** Глибини інших частин, які треба знати, щоб поставити кота: ґратки переноски (`floor.ts`). */
+const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 
 /** Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`); без WebGL — кільце на підлозі. */
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
@@ -185,7 +189,7 @@ export class IsoCatsView implements CatsPart {
     mem.shot = shot;
     const { anim, overlay, speed, restart, face } = play;
 
-    const spot = catSpot(state, cat, anim, pair);
+    const spot = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
     const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : catFacing(state, cat, mem.pos, { prev: mem.facing, pair });
     mem.facing = facing;
