@@ -6,6 +6,7 @@
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
+import type { RigFacing } from "../rig/types";
 
 /** Точка світу на екрані, px до масштабу камери. */
 export interface Point {
@@ -16,6 +17,12 @@ export interface Point {
 /** Де персонаж тримає кота: точка біля грудей і глибина, на якій кіт на руках лежить поверх нього (§9.12). */
 export interface Hands extends Point {
   depth: number;
+  /**
+   * Новий вигляд (T2): куди персонаж дивиться на екрані цього кадру — за справою це не завжди напрям руху сима
+   * (`personFacing`): за комп'ютером — спиною, купаючи кота — боком до душу. Кіт на руках і на колінах дивиться туди ж.
+   * Немає — як `personFacing`.
+   */
+  facing?: Readonly<RigFacing>;
 }
 
 /** Точки кота, яких торкається персонаж: над головою (бабли, пір'їнка вудочки) і спинка (рука, що гладить). */
