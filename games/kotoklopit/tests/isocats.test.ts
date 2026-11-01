@@ -22,7 +22,7 @@ import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from "../src/view/iso/catanim";
 import { catPlay, JUMP, liftAt, nextLift, startShot } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
-import { catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
+import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -145,6 +145,16 @@ describe("розмір кота (`catSize`)", () => {
       expect(sizes[i]!.relative).toBeGreaterThan(sizes[i - 1]!.relative);
       expect(sizes[i]!.kitten).toBeLessThan(sizes[i - 1]!.kitten);
     }
+  });
+
+  it("півширина в реєстрі глибини — з запасом на дорослого й найповнішого: кошеня, що виросте й погладшає, не вужче за правду", () => {
+    const plain = { traits: [], breed: ["mixed", "mixed"] } as Pick<Cat, "traits" | "breed">;
+    const half = isoCatHalf(plain);
+    // Новонароджене — та сама півширина, що й дорослий (кіт живе з тим самим виглядом, поки росте).
+    expect(half).toBeCloseTo(CAT_HALF_WIDTH * (1 + WEIGHT.girthStep * 0.35), 9);
+    expect(half).toBeGreaterThanOrEqual(CAT_HALF_WIDTH * catSize({ ageWeeks: 40, ...plain }).scale * 1.2);
+    const big = { traits: [{ group: "size", level: 2, seen: 0, known: true }], breed: ["mixed", "mixed"] } as Pick<Cat, "traits" | "breed">;
+    expect(isoCatHalf(big)).toBeCloseTo(half * 1.12, 9);
   });
 
   it("порода «Розмір +2» — на 12% більша; пропорції: короткі лапи, статура, кошеня й повнота", () => {

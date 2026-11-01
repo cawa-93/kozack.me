@@ -26,9 +26,6 @@ import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 export type IsoCatSprite = RigSprite<IsoCatBone, IsoCatSlot, IsoCatSocket>;
 type CatRigAnim = RigAnim<IsoCatBone, IsoCatSlot>;
 
-/** Півширина кота на екрані, одиниці арту (дорослий ≈ 70 завдовжки): з ким у реєстрі глибини він може перекритися. */
-const HALF_WIDTH = 38;
-
 /** Тінь під котом: на скільки ширша (повнота) і наскільки темніша, коли під меблями видно лише очі (темна щілина). */
 const GAP_SHADOW = { scale: 1.1, alpha: 1 } as const;
 
@@ -131,11 +128,6 @@ export class IsoCatView {
     this.shadow = addArt(scene, layer, "fx/shadow/cat");
     this.shadowBase = { x: this.shadow.scaleX, y: this.shadow.scaleY };
     this.point = addPoint((depth) => this.applyDepth(depth));
-  }
-
-  /** Півширина кота на екрані для реєстру глибини. */
-  static half(scale: number): number {
-    return HALF_WIDTH * scale;
   }
 
   /** Кадр: позу, обличчя, ракурс, місце й те, що видно. */

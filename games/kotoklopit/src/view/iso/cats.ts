@@ -27,7 +27,7 @@ import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { catPlay, nextLift, startShot, type CatShot, type Lift } from "./catplay";
-import { catSize, isoCatProportions, type CatSize } from "./catrig";
+import { catSize, isoCatHalf, isoCatProportions, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
@@ -111,7 +111,7 @@ export class IsoCatsView implements CatsPart {
     for (const cat of state.cats) {
       alive.add(cat.id);
       const size = sizes.get(cat.id) ?? catSize(cat);
-      const view = this.viewOf(cat, size);
+      const view = this.viewOf(cat);
       const mem = this.memoryOf(cat.id);
       this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, time);
       this.drawHidden(cat, view, frame.showHidden);
@@ -149,10 +149,15 @@ export class IsoCatsView implements CatsPart {
 
   // --- Кіт ---------------------------------------------------------------------------------------
 
-  private viewOf(cat: Cat, size: CatSize): IsoCatView {
+  /**
+   * Вигляд кота. Півширина точки в реєстрі — з запасом на дорослого й найповнішого (`isoCatHalf`): вигляд живе, поки живе
+   * кіт, а кошеня за цей час виростає й може погладшати.
+   */
+  private viewOf(cat: Cat): IsoCatView {
     let view = this.views.get(cat.id);
     if (!view) {
-      view = new IsoCatView(this.ctx.scene, this.ctx.layer, cat, (setDepth) => this.depth.addPoint(setDepth, { id: `cat:${cat.id}`, half: IsoCatView.half(size.scale) }));
+      const half = isoCatHalf(cat);
+      view = new IsoCatView(this.ctx.scene, this.ctx.layer, cat, (setDepth) => this.depth.addPoint(setDepth, { id: `cat:${cat.id}`, half }));
       this.views.set(cat.id, view);
     }
     return view;

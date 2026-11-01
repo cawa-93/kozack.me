@@ -156,6 +156,20 @@ export function catSize(cat: Pick<Cat, "ageWeeks" | "traits" | "breed">): CatSiz
   return { kitten: look, scale: (size / root) * breed, relative: size * breed };
 }
 
+/** Півширина дорослого кота звичайної статури на екрані, одиниці арту (≈ 70 завдовжки від носа до кінчика хвоста). */
+export const CAT_HALF_WIDTH = 38;
+
+/**
+ * Півширина малюнка кота для реєстру глибини (`IsoPointOptions.half`): з запасом на те, яким кіт може стати, поки живе його
+ * вигляд, — кошеня виросте дорослим, а кіт погладшає до найбільшого обхвату (тулуб довшає на `FAT.length` приросту). Порода
+ * (риса «Розмір») стала. Ширша за правду точка дає лише зайві порівняння; вужча — пари, що перекриваються, ставала б як
+ * завгодно (`isoorder.ts`).
+ */
+export function isoCatHalf(cat: Pick<Cat, "traits" | "breed">): number {
+  const breed = 1 + BREED_SIZE_STEP * traitLevel(cat, "size");
+  return CAT_HALF_WIDTH * breed * (1 + WEIGHT.girthStep * FAT.length);
+}
+
 /** Вага пропорцій `fat` 0…1 за обхватом кота (`girthOf`). */
 export function fatWeight(girth: number): number {
   return Math.min(1, Math.max(0, (girth - 1) / WEIGHT.girthStep));
