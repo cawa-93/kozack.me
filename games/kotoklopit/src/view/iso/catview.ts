@@ -138,6 +138,8 @@ export class IsoCatView {
   /** Над головою (бабли, пір'їнка вудки) і спинка (рука, що гладить), px світу. */
   readonly head: Point = { x: 0, y: 0 };
   readonly back: Point = { x: 0, y: 0 };
+  /** Рот (якір `mouth` скелета): звідти хропіння, задишка й чхання (`iso/fx.ts`), px світу. */
+  readonly mouth: Point = { x: 0, y: 0 };
   /** Де кіт на екрані зараз (корінь скелета) і його масштаб: для підсвітки й хмари бійки. */
   readonly root: Point = { x: 0, y: 0 };
   scale = 1;
@@ -439,6 +441,7 @@ export class IsoCatView {
     // Якір і гніздо пишуть просто в точки (немає — точка лишається, як була).
     if (f.show === "rig" && evaluated) {
       this.sprite.anchor("head", this.head);
+      this.sprite.anchor("mouth", this.mouth);
       const back = this.sprite.socket("pet", this.backSocket);
       if (back) {
         this.back.x = back.x;
@@ -451,6 +454,8 @@ export class IsoCatView {
     this.head.y = f.root.y - (f.show === "rig" ? CULLED_HEAD : PEEK.eyes + 22) * f.scale;
     this.back.x = f.root.x;
     this.back.y = f.root.y - PEEK.eyes * f.scale;
+    this.mouth.x = this.back.x;
+    this.mouth.y = this.back.y;
   }
 
   /** Ракурс, у якому кота показано зараз. */

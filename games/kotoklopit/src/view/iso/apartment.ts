@@ -11,6 +11,7 @@
 import type Phaser from "phaser";
 
 import { isPresent, objectById, OBJECTS, ROOMS, roomAt, TOILET_ROLL, TRINKETS, WINDOWS, WIRE_TILE, type HomeObject } from "../../sim/home";
+import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
@@ -21,6 +22,7 @@ import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/o
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
+import { IsoFxView } from "./fx";
 import { artOffset, boxCovers, objectAnchorAt, objectScreen, PERSON_FIGURE } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import {
@@ -96,6 +98,8 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly wire: Piece;
   private readonly wirePoint: IsoPointHandle;
   private readonly glow: IsoHighlight;
+  /** Ефекти над речами й котами (пара, дим, іскри, хропіння, задишка, чхання): квартира оновлюється після котів. */
+  private readonly fx: IsoFxView;
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -103,6 +107,7 @@ export class IsoApartmentView implements ApartmentPart {
     const { scene, layer } = ctx;
     this.depth = isoDepth(ctx);
     this.glow = new IsoHighlight(scene, layer);
+    this.fx = new IsoFxView(ctx);
 
     // Плити кімнат: підлога й задні стіни кожної — в одну точку, верхню вершину ромба першої клітинки кімнати.
     for (const room of ROOMS) {
@@ -206,6 +211,11 @@ export class IsoApartmentView implements ApartmentPart {
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
     setPiece(this.wire, { id: "env/wire", state: state.home.wireChewed === true ? "chewed" : "whole" });
     this.fadeWalls(state, frame.time);
+    this.fx.update(state, frame.time);
+  }
+
+  onEvent(event: GameEvent, time: number): void {
+    this.fx.onEvent(event, time);
   }
 
   /** Стани речей і наповнення сховищ (§6.4, §8.7, §9.12). */
@@ -290,10 +300,12 @@ export class IsoApartmentView implements ApartmentPart {
 
   reset(): void {
     this.lastTime = null;
+    this.fx.reset();
   }
 
   destroy(): void {
     this.glow.destroy();
+    this.fx.destroy();
     for (const thing of this.things.values()) {
       thing.box.remove();
       thing.body.image.destroy();

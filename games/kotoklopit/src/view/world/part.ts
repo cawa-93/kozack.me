@@ -29,6 +29,14 @@ export interface Hands extends Point {
 export interface CatPoints {
   head: Point;
   back: Point;
+  /**
+   * Новий вигляд: рот (звідки хропіння, задишка й чхання — `iso/fx.ts`), ракурс, масштаб кота й чи видно сам скелет (а не
+   * лише очі з-під меблів чи вушка з-під ковдри). У старого вигляду їх немає.
+   */
+  mouth?: Point;
+  facing?: Readonly<RigFacing>;
+  scale?: number;
+  rigShown?: boolean;
 }
 
 /** Що кадр каже частинам світу, крім стану гри. */
