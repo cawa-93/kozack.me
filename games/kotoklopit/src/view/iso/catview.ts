@@ -70,7 +70,7 @@ export interface CatFrame {
   overlay: CatAnimId | null;
   /** Почати основну заново (разова щойно почалася). */
   restart: boolean;
-  /** Швидкість анімації (хода — за швидкістю кота). */
+  /** Швидкість анімації: хода й біг — у такт тому, як кіт іде на екрані (`gaitRate`), решта — 1. */
   speed: number;
   face: CatFace;
   facing: RigFacing;

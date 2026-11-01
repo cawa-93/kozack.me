@@ -26,7 +26,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { catPlay, groundAt, nextLift, startShot, type CatShot, type Lift } from "./catplay";
+import { catPlay, gaitRate, groundAt, nextGait, nextLift, startShot, type CatShot, type GaitMemory, type Lift } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -75,6 +75,8 @@ interface Memory {
   shot: CatShot | null;
   /** Висота над підлогою: до якої йде стрибок, звідки й коли почався. */
   lift: Lift | null;
+  /** Де була точка підлоги під котом і як швидко він іде на екрані: темп лап ходи й бігу (`gaitRate`). */
+  gait: GaitMemory | null;
   /** Розмір (кошеня, порода) і для якого віку й об'єкта кота його рахували: щокадру не перераховувати. */
   size: CatSize | null;
   sizeAge: number;
@@ -154,7 +156,7 @@ export class IsoCatsView implements CatsPart {
       const size = sizes.get(cat.id) ?? catSize(cat);
       const view = this.viewOf(cat);
       const mem = this.memoryOf(cat.id);
-      this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, time);
+      this.drawCat(state, cat, view, mem, size, pairs.get(cat.id) ?? null, time, frame.seconds);
       this.drawHidden(cat, view, frame.showHidden);
       this.drawCollar(cat, view);
     }
@@ -210,7 +212,7 @@ export class IsoCatsView implements CatsPart {
   private memoryOf(id: number): Memory {
     let mem = this.memory.get(id);
     if (!mem) {
-      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, size: null, sizeAge: Number.NaN, sizeCat: null };
+      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, gait: null, size: null, sizeAge: Number.NaN, sizeCat: null };
       this.memory.set(id, mem);
     }
     return mem;
@@ -232,7 +234,7 @@ export class IsoCatsView implements CatsPart {
     if (shot) this.memoryOf(cat).shot = shot;
   }
 
-  private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, time: number): void {
+  private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, time: number, seconds: number): void {
     // Стрибок на меблі чи з них, позіхання після сну — разові від зміни між кадрами.
     const transition = catTransition(state, cat, mem.transition);
     if (transition) this.startShot(cat.id, transition.anim, transition.face, transition.ms, time);
@@ -241,13 +243,14 @@ export class IsoCatsView implements CatsPart {
       view.hide();
       mem.pos = null;
       mem.lift = null;
+      mem.gait = null;
       return;
     }
 
     // Що грати: поза й накладка (`catAnim`), поверх — разова, поки триває.
     const { play, shot } = catPlay(catAnim(state, cat), catFace(state, cat, time), mem.shot, time);
     mem.shot = shot;
-    const { anim, overlay, speed, restart, face } = play;
+    const { anim, overlay, restart, face } = play;
 
     const spot = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
@@ -267,10 +270,12 @@ export class IsoCatsView implements CatsPart {
     f.anim = anim;
     f.overlay = overlay;
     f.restart = restart;
-    f.speed = speed;
     f.face = face;
     f.facing = facing;
     f.scale = size.scale * spot.scale;
+    // Хода й біг — у такт тому, як кіт іде на екрані (точка підлоги під ним), з довжиною його лап: лапи не ковзають.
+    mem.gait = nextGait(mem.gait, f.ground.x, f.ground.y, seconds);
+    f.speed = gaitRate(anim, mem.gait.speed, size.kitten, cat.shape.legs === "short", f.scale);
     f.kitten = size.kitten;
     f.pregnant = showsPregnancy(state, cat);
     f.girth = girthOf(cat);

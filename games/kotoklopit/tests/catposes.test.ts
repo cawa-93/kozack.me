@@ -90,17 +90,17 @@ describe("нові пози кота (`catPose`)", () => {
     expect(catPose(save.current, cat)).toBe("limp");
   });
 
-  it("хода повільніша за швидкістю кота (травма), біг — ні", () => {
+  it("травмований іде кульгаючи, зумі — біг; темпу в позі немає — його рахує вигляд за швидкістю на екрані (`gaitRate`)", () => {
     const save = game();
     const cat = withCat(save);
     cat.act = act("wander", { goal: { x: 3, y: 8 } });
-    expect(catAnim(save.current, cat).speed).toBe(1);
+    expect(catAnim(save.current, cat)).toMatchObject({ anim: "walk" });
+    expect(catAnim(save.current, cat)).not.toHaveProperty("speed");
     ill(save, cat, "injury");
     expect(catAnim(save.current, cat)).toMatchObject({ anim: "limp" });
-    expect(catAnim(save.current, cat).speed).toBeLessThan(1);
     const healthy = withCat(save, { x: 12.5, y: 8.5 });
     healthy.act = act("zoomies", { goal: { x: 3, y: 8 } });
-    expect(catAnim(save.current, healthy)).toEqual({ anim: "run", overlay: null, speed: 1 });
+    expect(catAnim(save.current, healthy)).toEqual({ anim: "run", overlay: null });
   });
 
   it("з проблемами з диханням хропе уві сні й на колінах; здоровий спить клубком", () => {

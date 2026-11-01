@@ -21,7 +21,8 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withFace } from "../src/view/iso/catanim";
-import { catPlay, groundAt, JUMP, liftAt, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
+import { catPlay, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
+import { catJumpLift, catLegLength, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
@@ -489,28 +490,28 @@ describe("де кіт (`catSpot`)", () => {
 });
 
 describe("що грає кіт цього кадру (`catPlay`)", () => {
-  const choice = { anim: "walk", overlay: "content", speed: 0.6 } as const;
+  const choice = { anim: "walk", overlay: "content" } as const;
   const face = { eyes: "open", mouth: "closed", ears: "up" } as const;
 
-  it("без разової — поза, накладка й швидкість з `catAnim`, обличчя з `catFace`", () => {
-    expect(catPlay(choice, face, null, 0)).toEqual({ play: { anim: "walk", overlay: "content", speed: 0.6, restart: false, face }, shot: null });
+  it("без разової — поза й накладка з `catAnim`, обличчя з `catFace`", () => {
+    expect(catPlay(choice, face, null, 0)).toEqual({ play: { anim: "walk", overlay: "content", restart: false, face }, shot: null });
   });
 
-  it("разова тіла замінює позу (швидкість 1), накладка — накладку; перший кадр — з початку; минула — забута", () => {
+  it("разова тіла замінює позу, накладка — накладку; перший кадр — з початку; минула — забута", () => {
     const itch = startShot("itch", { eyes: "squint" }, CAT_ONE_SHOT_MS.itch, 1000)!;
     const first = catPlay(choice, face, itch, 1000);
-    expect(first.play).toEqual({ anim: "itch", overlay: "content", speed: 1, restart: true, face: { ...face, eyes: "squint" } });
+    expect(first.play).toEqual({ anim: "itch", overlay: "content", restart: true, face: { ...face, eyes: "squint" } });
     expect(catPlay(choice, face, first.shot, 1500).play.restart).toBe(false);
-    expect(catPlay(choice, face, first.shot, 1000 + CAT_ONE_SHOT_MS.itch)).toEqual({ play: { anim: "walk", overlay: "content", speed: 0.6, restart: false, face }, shot: null });
+    expect(catPlay(choice, face, first.shot, 1000 + CAT_ONE_SHOT_MS.itch)).toEqual({ play: { anim: "walk", overlay: "content", restart: false, face }, shot: null });
     const sneeze = catPlay(choice, face, startShot("sneeze", null, CAT_ONE_SHOT_MS.sneeze, 0), 10).play;
-    expect(sneeze).toMatchObject({ anim: "walk", overlay: "sneeze", speed: 0.6, restart: true });
+    expect(sneeze).toMatchObject({ anim: "walk", overlay: "sneeze", restart: true });
     // Лише вираз — поза та сама, нічого не починається заново.
     const meow = catPlay(choice, face, startShot(null, { mouth: "meow" }, 500, 0), 10).play;
-    expect(meow).toEqual({ anim: "walk", overlay: "content", speed: 0.6, restart: false, face: { ...face, mouth: "meow" } });
+    expect(meow).toEqual({ anim: "walk", overlay: "content", restart: false, face: { ...face, mouth: "meow" } });
     expect(startShot("hiss", null, 0, 0)).toBeNull();
   });
 
-  it("тінь у стрибку не злітає з котом: першу половину — на нижчій поверхні, другу — там, куди стрибає", () => {
+  it("тінь у стрибку не злітає з котом: поки кіт не долетів — на нижчій поверхні, далі — там, куди стрибає", () => {
     const up: Lift = { from: 0, to: 62, start: 1000 };
     expect(groundAt(up, 1000)).toBe(0);
     expect(groundAt(up, 1000 + JUMP.ms * 0.4)).toBe(0);
@@ -522,17 +523,124 @@ describe("що грає кіт цього кадру (`catPlay`)", () => {
     for (let t = 1000; t <= 1000 + JUMP.ms; t += 10) expect(groundAt(up, t)).toBeLessThanOrEqual(liftAt(up, t) + 1e-9);
   });
 
-  it("стрибок на меблі: висота йде дугою за час стрибка, на руки й у переноску — одразу", () => {
+  it("стрибок на меблі й з них — за ходом стрибка N1 (`catJumpLift`): до поштовху на місці, далі між висотами й нагорі", () => {
     let lift = nextLift(null, 0, true, 0);
     expect(lift.now).toBe(0);
     lift = nextLift(lift.lift, 62, true, 100);
     expect(lift.now).toBe(0);
-    const middle = liftAt(lift.lift, 100 + JUMP.ms / 2);
-    expect(middle).toBeGreaterThan(31);
-    expect(middle).toBeLessThanOrEqual(31 + JUMP.arc + 1e-9);
-    expect(liftAt(lift.lift, 100 + JUMP.ms)).toBe(62);
+    for (let t = 0; t <= JUMP.ms; t += 5) {
+      expect(liftAt(lift.lift, 100 + t)).toBeCloseTo(62 * catJumpLift("jumpUp", t), 9);
+      expect(liftAt(lift.lift, 100 + t)).toBeLessThanOrEqual(62 + 1e-9);
+    }
+    // Поки кіт збирається (анімація до поштовху), він ще на підлозі; після приземлення — нагорі.
+    expect(liftAt(lift.lift, 150)).toBe(0);
+    expect(liftAt(lift.lift, 100 + 250)).toBe(62);
     expect(nextLift(lift.lift, 62, true, 100 + JUMP.ms).now).toBe(62);
+    // Униз — за `jumpDown`: повільно відривається від краю й розганяється донизу.
+    const down: Lift = { from: 62, to: 0, start: 0 };
+    for (let t = 0; t <= JUMP.ms; t += 5) expect(liftAt(down, t)).toBeCloseTo(62 * (1 - catJumpLift("jumpDown", t)), 9);
     expect(nextLift(lift.lift, 0, false, 200).now).toBe(0);
+  });
+});
+
+describe("темп лап ходи й бігу (`gaitRate`)", () => {
+  /** Клітинка вздовж осі x на екрані (2:1). */
+  const TILE = { x: ISO.toScreen({ x: 1, y: 0 }).x - ISO.toScreen({ x: 0, y: 0 }).x, y: ISO.toScreen({ x: 1, y: 0 }).y - ISO.toScreen({ x: 0, y: 0 }).y };
+
+  it("швидкість на екрані: уздовж осі клітинок — горизонтальна складова, прямовисно — вертикальна", () => {
+    expect(TILE).toEqual({ x: 64, y: 32 });
+    expect(gaitSpeed(TILE.x, TILE.y, 0.5)).toBe(128);
+    expect(gaitSpeed(-TILE.x, TILE.y, 0.5)).toBe(128);
+    expect(gaitSpeed(0, 64, 0.5)).toBe(128);
+    expect(gaitSpeed(10, 0, 0)).toBe(0);
+  });
+
+  it("згладжена швидкість: перший кадр — стоїть, далі доходить до швидкості кота; переставленого кота не рахує", () => {
+    let mem = nextGait(null, 0, 0, 1 / 60);
+    expect(mem.speed).toBe(0);
+    for (let i = 1; i <= 60; i++) mem = nextGait(mem, (200 * i) / 60, 0, 1 / 60);
+    expect(mem.speed).toBeCloseTo(200, 1);
+    const same = nextGait(mem, mem.x + GAIT_TELEPORT + 1, 0, 1 / 60);
+    expect(same).toBe(mem);
+    expect(same.speed).toBeCloseTo(200, 1);
+    // Пауза (кадр без часу) темпу не міняє.
+    expect(nextGait(mem, mem.x, 0, 0).speed).toBeCloseTo(200, 1);
+  });
+
+  it("ходять у такт усі ходи (кульгає, незграбна, сумна, несе в зубах), біг — своїм темпом; решта — 1", () => {
+    expect(gaitRate("walk", 200, 0, false, 1)).toBe(catWalkRate(200, catLegLength()));
+    for (const id of ["limp", "clumsy", "sadWalk", "carry"] as const) expect(gaitRate(id, 200, 0, false, 1)).toBe(gaitRate("walk", 200, 0, false, 1));
+    expect(gaitRate("run", 600, 0, false, 1)).toBe(catRunRate(600, catLegLength()));
+    expect(gaitRate("sit", 600, 0, false, 1)).toBe(1);
+    expect(gaitRate("jumpUp", 600, 0, false, 1)).toBe(1);
+    expect(gaitRate("walk", 0, 0, false, 1)).toBe(0);
+    // Довші лапи (більша порода) — повільніший темп, коротші (манчкін, кошеня) — швидший.
+    expect(gaitRate("walk", 150, 0, false, 1.12)).toBeLessThan(gaitRate("walk", 150, 0, false, 1));
+    expect(gaitRate("walk", 150, 0, true, 1)).toBeGreaterThan(gaitRate("walk", 150, 0, false, 1));
+    expect(gaitRate("walk", 60, 1, false, 0.65)).toBeGreaterThan(gaitRate("walk", 60, 0, false, 1));
+  });
+
+  /**
+   * Кіт іде праворуч зі швидкістю `speed` (одиниці арту за секунду на екрані) з темпом `gaitRate`; скелет гри з масштабом
+   * спрайта `scale`, пропорціями й лапами кота. Кожні 5 мс — подушечка кожної лапи у світі (корінь іде з котом). Повертає
+   * медіану того, на скільки за крок зсувається відносно підлоги подушечка, що стоїть (не вище за 0,4 одиниці від свого
+   * місця у вихідній позі), — частку зсуву кота: 0 — лапа стоїть, 1 — їде разом із котом.
+   */
+  function slip(anim: "walk" | "run" | "carry", speed: number, kitten: number, shortLegs: boolean, scale: number): number {
+    const rate = gaitRate(anim, speed, kitten, shortLegs, scale);
+    const proportions = [...(shortLegs ? ["short-legs"] : []), ...(kitten > 0 ? [{ name: "kitten", weight: kitten }] : [])];
+    const skin = isoCatSkin({ muzzle: "normal", ears: "normal", tail: "long", build: "normal", legs: shortLegs ? "short" : "normal" }, false);
+    const make = (): Rig<string, string, string> => new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, proportions, skin }) as never;
+    // Подушечка — у точці `paw` кадру лапи: коротка лапа манчкіна на стільки коротша за кістку, на скільки опущено таз.
+    const reach = (rig: Rig<string, string, string>, leg: string): number => rig.bone(leg).len - (shortLegs ? (CAT_RIG.proportions?.["short-legs"]?.pelvis?.y ?? 0) : 0);
+    const paw = (rig: Rig<string, string, string>, leg: string): { x: number; y: number } => {
+      const w = rig.bone(leg).world;
+      const len = reach(rig, leg);
+      return { x: (w.a * len + w.tx) * scale, y: (w.b * len + w.ty) * scale };
+    };
+    const legs = ["leg-front-near", "leg-front-far", "leg-back-near", "leg-back-far"];
+    const rest = make().evaluate(0);
+    const floor = legs.map((leg) => paw(rest, leg).y);
+    const rig = make();
+    rig.play(CAT_ANIMS[anim] as never, 0, { blend: 0 });
+    const STEP = 5;
+    const slips: number[] = [];
+    let prev: { x: number; y: number }[] | null = null;
+    for (let t = 0; t <= 3000; t += STEP) {
+      rig.evaluate(t * rate);
+      const root = (speed * t) / 1000;
+      const now = legs.map((leg) => {
+        const p = paw(rig, leg);
+        return { x: p.x + root, y: p.y };
+      });
+      if (prev) {
+        for (let i = 0; i < legs.length; i++) {
+          if (Math.abs(now[i]!.y - floor[i]!) > 0.4 * scale || Math.abs(prev[i]!.y - floor[i]!) > 0.4 * scale) continue;
+          slips.push((now[i]!.x - prev[i]!.x) / ((speed * STEP) / 1000));
+        }
+      }
+      prev = now;
+    }
+    expect(slips.length).toBeGreaterThan(100);
+    return Math.abs(slips.sort((a, b) => a - b)[Math.floor(slips.length / 2)]!);
+  }
+
+  it("подушечка, що стоїть, нерухома відносно підлоги: дорослий, більша порода, манчкін, кошеня — хода й біг", () => {
+    // Сим веде кота 2,5 клітинки за ігрову хвилину (0,75 с): уздовж осі клітинок горизонтальна складова — 64 на клітинку.
+    const walk = (2.5 / 0.75) * TILE.x;
+    for (const [kitten, short, scale] of [
+      [0, false, 1],
+      [0, false, 1.12],
+      [0, true, 1],
+    ] as const) {
+      for (const anim of ["walk", "carry"] as const) expect(slip(anim, walk * 0.8, kitten, short, scale), `${anim} ${short} ${scale}`).toBeLessThan(0.05);
+      expect(slip("run", walk * 1.6, kitten, short, scale), `run ${short} ${scale}`).toBeLessThan(0.08);
+    }
+    // Кошеня (передні коротші за задні, `catLegLength` — середня): ковзає не більше ніж на ≈ 6 %, як каже N1.
+    expect(slip("walk", walk * 0.3, 1, false, 0.65)).toBeLessThan(0.1);
+    // А з темпом за `walkFactor` (1 — за будь-якої швидкості кота) лапа їхала б.
+    const fixed = gaitRate("walk", walk * 0.8, 0, false, 1);
+    expect(Math.abs(fixed - 1)).toBeGreaterThan(0.1);
   });
 });
 
