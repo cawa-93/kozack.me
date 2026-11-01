@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 69 48" width="69" height="48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 69 50" width="69" height="50">
 <!-- cat/body/stocky/back — тулуб кремезної статури (короткий, глибокий, з широкими грудьми), ракурс back (¾ ззаду). A7 «Кіт — основа» (хвиля 2), маски шерсті — A9a (хвиля 2); рукою еталонів F1b, art/STYLE.md.
-size 69×48; pivot (21, 26) — центр таза (суглоб із тазом, над задніми лапами); points: neck (44.1, 15.7), neck-back (46.9, 12.1), neck-base (40.4, 18.1), neck-base-back (43.2, 14.5), shoulder-far (49.7, 24), shoulder-far-back (44.6, 24), shoulder-near (44.6, 27.5), shoulder-near-back (49.7, 27.5), hip-far (25.1, 24), hip-far-back (20, 24), hip-near (20, 27.5), hip-near-back (25.1, 27.5), tail (14.4, 16.9), tail-back (15.3, 15.7), back (33, 12.1), back-back (31.1, 9.7).
+size 69×50; pivot (21, 26) — центр таза (суглоб із тазом, над задніми лапами); points: neck (44.1, 15.7), neck-back (46.9, 12.1), neck-base (40.4, 18.1), neck-base-back (43.2, 14.5), shoulder-far (49.7, 24), shoulder-far-back (44.6, 24), shoulder-near (44.6, 27.5), shoulder-near-back (49.7, 27.5), hip-far (25.1, 24), hip-far-back (20, 24), hip-near (20, 27.5), hip-near-back (25.1, 27.5), tail (14.4, 16.9), tail-back (15.3, 15.7), back (33, 12.1), back-back (31.1, 9.7).
 Шари: fill, fluff, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink, fluff-ink.
 Корінь скелета (точка підлоги під серединою кота) — pivot + (14, 20). Маски — у координатах тулуба; обтинає компонувальник.
 fluff / fluff-ink — пасма довгої шерсті («манішка», бахрома живота, «штанці»): компонувальник кладе їх лише довгошерстим.

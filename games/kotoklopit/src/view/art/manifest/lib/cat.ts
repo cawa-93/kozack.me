@@ -52,7 +52,7 @@ function scaled(part: Part, k: { x: number; y: number }): Part {
  */
 const BODIES: Record<Shape["build"], Part> = {
   slim: {
-    size: { w: 72, h: 42 },
+    size: { w: 72, h: 46 },
     pivot: { x: 23, y: 22 },
     points: {
       neck: { x: 48.1, y: 14.3 },
@@ -74,7 +74,7 @@ const BODIES: Record<Shape["build"], Part> = {
     },
   },
   normal: {
-    size: { w: 70, h: 44 },
+    size: { w: 70, h: 48 },
     pivot: { x: 23, y: 24 },
     points: {
       neck: { x: 47, y: 15 },
@@ -96,7 +96,7 @@ const BODIES: Record<Shape["build"], Part> = {
     },
   },
   stocky: {
-    size: { w: 69, h: 48 },
+    size: { w: 69, h: 50 },
     pivot: { x: 21, y: 26 },
     points: {
       neck: { x: 44.1, y: 15.7 },
