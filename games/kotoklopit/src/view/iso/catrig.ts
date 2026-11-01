@@ -19,9 +19,11 @@ import { girthOf } from "../../sim/weight";
 import type { Cat, Shape } from "../../sim/types";
 import type { CatEars } from "../anim/catface";
 import { ART_VIEWS, type ArtId, type ArtView } from "../art/types";
+import { artEntry } from "../art/manifest";
+import { CAT_ANIMS } from "../rig/anims";
 import { catBrawlTop } from "../rig/anims/cat/behavior";
 import { CAT_FIT, CAT_RIG, catProportions, catSkin, type CatSlot } from "../rig/defs/cat";
-import type { Affine, ProportionRef, RigFit } from "../rig/rigcore";
+import { Rig, type Affine, type ProportionRef, type RigFit } from "../rig/rigcore";
 import type { BoneDef, BoneOf, RigDef, RigSkin, RigViewSetup, SlotDef, SocketOf, Vec2 } from "../rig/types";
 
 type CatBone = BoneOf<typeof CAT_RIG>;
@@ -228,6 +230,34 @@ export function bonePoint(rig: { bone(id: IsoCatBone): { readonly world: Readonl
   out.y = w.b * local.x + w.d * local.y + w.ty;
   out.x = x;
   return out;
+}
+
+/** Під ковдрою: де посередині між основами вух (pivot кадрів вух), у системі кореня без масштабу спрайта — за формами. */
+const BLANKET_EARS = new Map<string, Vec2>();
+
+/**
+ * Кіт під ковдрою (анімація `blanket`, N1, на початку циклу): середина між основами вух у системі кореня скелета (обличчям
+ * праворуч, без масштабу спрайта), для статури, лап і ваги пропорцій кошеняти — вигляд ставить кота так, щоб вушка росли
+ * з горбика ковдри (`catspot.ts`, `blanketOffset`). Рахується раз на набір форм.
+ */
+export function blanketEars(shape: Pick<Shape, "build" | "legs">, kitten: number): Vec2 {
+  const key = `${shape.build}|${shape.legs}|${kitten}`;
+  let ears = BLANKET_EARS.get(key);
+  if (!ears) {
+    const rig = new Rig(ISO_CAT_RIG, {
+      fit: ISO_CAT_FIT,
+      lookup: artEntry,
+      skin: isoCatSkin({ muzzle: "normal", ears: "normal", tail: "long", ...shape }, false),
+      proportions: proportionsOf(shape, kitten, 0),
+    });
+    rig.play(CAT_ANIMS.blanket as never, 0, { blend: 0 });
+    rig.evaluate(0);
+    const a = rig.slot("ear-near");
+    const b = rig.slot("ear-far");
+    ears = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    BLANKET_EARS.set(key, ears);
+  }
+  return ears;
 }
 
 /** Над клубком бійки (N2, `catBrawlTop`), у системі кореня дорослого кота. */

@@ -1,11 +1,11 @@
 // Один кіт ізометричного вигляду (крок 16, T1): скелет (`RigSprite` зі скелетом `ISO_CAT_RIG`) із запеченими частинами
-// його шерсті й форм породи, тінь під ним, річ у зубах, а коли кота видно лише частково (під меблями, у будиночку, під
-// ковдрою) — лише очі, вушка й кінчик хвоста. Що грати, куди дивитися й де стояти, вирішує частина котів (`cats.ts`), тут —
+// його шерсті й форм породи, тінь під ним, річ у зубах, а коли кіт ховається (під меблями, у будиночку) — лише очі й кінчик
+// хвоста. Під ковдрою кота показує скелет: анімація `blanket` (N1) лишає видимими вушка й кінчик хвоста. Що грати, куди дивитися й де стояти, вирішує частина котів (`cats.ts`), тут —
 // лише як це показати. Глибина — точка в реєстрі (`iso/depth.ts`).
 //
 // Видимий кіт щокадру нових об'єктів не створює: обвіс, пропорції, рецепт шерсті й анімація змінюються, лише коли змінилося
 // те, від чого вони залежать (порівнянням полів, без рядків-ключів), а точки голови й спинки пишуться в ті самі об'єкти. Що
-// визирає (очі, вушка, кінчик хвоста схованого кота), просить кадр щокадру — це кілька котів, а не два десятки.
+// визирає (очі й кінчик хвоста схованого кота), просить кадр щокадру — це кілька котів, а не два десятки.
 
 import Phaser from "phaser";
 
@@ -38,7 +38,7 @@ type CatRigAnim = RigAnim<IsoCatBone, IsoCatSlot>;
 const GAP_SHADOW = { scale: 1.1, layers: 2 } as const;
 
 /** Очі з-під меблів і з будиночка — на такій висоті над підлогою (одиниці арту), кінчик хвоста — збоку від очей. */
-const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9, earSpread: 7, earTilt: 18 } as const;
+const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9 } as const;
 
 /** Над котом, якого не рахували (за краєм камери), одиниці арту: верх вух дорослого ≈ 56 і запас, як у якоря `head`. */
 const CULLED_HEAD = 64;
@@ -114,8 +114,8 @@ export interface CatFrame {
   time: number;
 }
 
-/** Форми породи й вагітність, з яких зібрано обвіс (`isoCatSkin`). */
-type SkinInputs = Pick<Shape, "muzzle" | "ears" | "tail" | "build" | "legs"> & { pregnant: boolean };
+/** Форми породи, вагітність і чи без хвоста (кошеня під ковдрою), з яких зібрано обвіс (`isoCatSkin`). */
+type SkinInputs = Pick<Shape, "muzzle" | "ears" | "tail" | "build" | "legs"> & { pregnant: boolean; tailless: boolean };
 
 export class IsoCatView {
   readonly sprite: IsoCatSprite;
@@ -130,10 +130,9 @@ export class IsoCatView {
   /** Що в зубах (кадр атласу в гнізді `teeth`). */
   private teethImage: Phaser.GameObjects.Image | null = null;
   private teethKey = "";
-  /** Що визирає, коли самого кота не видно: очі, вушка, кінчик хвоста. */
+  /** Що визирає, коли самого кота не видно: очі й кінчик хвоста. */
   private peekEyes: Phaser.GameObjects.Image | null = null;
   private peekTail: Phaser.GameObjects.Image | null = null;
-  private peekEars: Phaser.GameObjects.Image[] = [];
 
   /** Кіт, якого показує вигляд (той самий id; об'єкт стану може бути новим). */
   private cat: Cat;
@@ -190,7 +189,9 @@ export class IsoCatView {
     this.clock += dt * f.speed;
     this.updateRecipe(cat, f.time);
     this.cat = cat;
-    this.updateSkin(cat.shape, f.pregnant);
+    // Кошеня під ковдрою: горбик — на дорослого, і коротенький хвостик кошеняти не виходить з-під його краю, а лягав би на
+    // ковдру спереду, — лише вушка (`blanketOffset`).
+    this.updateSkin(cat.shape, f.pregnant, f.anim === "blanket" && f.kitten > 0);
     this.updateProportions(cat.shape, f.kitten, f.girth);
     this.root.x = f.root.x;
     this.root.y = f.root.y;
@@ -236,7 +237,6 @@ export class IsoCatView {
     this.teethImage?.setVisible(false);
     this.peekEyes?.setVisible(false);
     this.peekTail?.setVisible(false);
-    for (const ear of this.peekEars) ear.setVisible(false);
     this.point.hide();
     this.lastShow = "none";
   }
@@ -246,7 +246,7 @@ export class IsoCatView {
     return this.lastShow !== "none";
   }
 
-  /** Чи видно сам скелет (а не лише очі чи вушка). */
+  /** Чи видно сам скелет (а не лише очі). */
   get rigShown(): boolean {
     return this.lastShow === "rig";
   }
@@ -259,7 +259,6 @@ export class IsoCatView {
     this.teethImage?.destroy();
     this.peekEyes?.destroy();
     this.peekTail?.destroy();
-    for (const ear of this.peekEars) ear.destroy();
     releaseBaked(this.scene, this.owner);
   }
 
@@ -276,7 +275,6 @@ export class IsoCatView {
     this.sprite.setDepth(depth + CAT_PIECE.body);
     this.peekEyes?.setDepth(depth + CAT_PIECE.peek);
     this.peekTail?.setDepth(depth + CAT_PIECE.peek);
-    for (const ear of this.peekEars) ear.setDepth(depth + CAT_PIECE.peek);
   }
 
   /**
@@ -294,12 +292,13 @@ export class IsoCatView {
     if (changed) this.sprite.refreshTextures();
   }
 
-  /** Обвіс: форми породи й живіт вагітної. */
-  private updateSkin(shape: Shape, pregnant: boolean): void {
+  /** Обвіс: форми породи, живіт вагітної і (кошеня під ковдрою) без хвоста. */
+  private updateSkin(shape: Shape, pregnant: boolean, tailless: boolean): void {
     const s = this.skin;
-    if (s && s.muzzle === shape.muzzle && s.ears === shape.ears && s.tail === shape.tail && s.build === shape.build && s.legs === shape.legs && s.pregnant === pregnant) return;
-    this.skin = { muzzle: shape.muzzle, ears: shape.ears, tail: shape.tail, build: shape.build, legs: shape.legs, pregnant };
-    this.sprite.setSkin(isoCatSkin(shape, pregnant));
+    if (s && s.muzzle === shape.muzzle && s.ears === shape.ears && s.tail === shape.tail && s.build === shape.build && s.legs === shape.legs && s.pregnant === pregnant && s.tailless === tailless) return;
+    this.skin = { muzzle: shape.muzzle, ears: shape.ears, tail: shape.tail, build: shape.build, legs: shape.legs, pregnant, tailless };
+    const skin = isoCatSkin(shape, pregnant);
+    this.sprite.setSkin(tailless ? { ...skin, tail: null } : skin);
   }
 
   /** Пропорції скелета: короткі лапи, статура, кошеня, повнота. */
@@ -366,12 +365,11 @@ export class IsoCatView {
   }
 
   /**
-   * Що визирає (`CatShow`): з-під меблів і з будиночка — очі (стан — з обличчя) і, з-під меблів, кінчик хвоста; з-під
-   * ковдри — вушка й кінчик хвоста. Частини запечені тим самим рецептом, що й кіт.
+   * Що визирає (`CatShow`): з-під меблів і з будиночка — очі (стан — з обличчя) і, з-під меблів, кінчик хвоста. Частини
+   * запечені тим самим рецептом, що й кіт.
    */
   private drawPeek(f: CatFrame): void {
     const eyes = f.show === "eyes" && !f.culled;
-    const ears = f.show === "ears" && !f.culled;
     const owner = this.owner;
     const view: ArtView = "front";
     const s = f.scale;
@@ -388,9 +386,9 @@ export class IsoCatView {
     } else {
       this.peekEyes?.setVisible(false);
     }
-    // Кінчик хвоста: з-під меблів — збоку від очей, з-під ковдри — з протилежного від вушок краю горбика.
+    // Кінчик хвоста з-під меблів — збоку від очей.
     const tailArt = this.sprite.rig.skin.tail;
-    const tail = ((eyes && f.under) || ears) && this.cat.shape.tail !== "none";
+    const tail = eyes && f.under && this.cat.shape.tail !== "none";
     if (tail && tailArt) {
       if (!this.peekTail) {
         this.peekTail = addBakedArt(this.scene, this.layer, tailArt, this.recipe, { view, owner });
@@ -400,35 +398,13 @@ export class IsoCatView {
       }
       const side = f.facing.flip ? 1 : -1;
       const x = f.root.x + side * PEEK.tailSide * s;
-      const y = f.root.y - (ears ? 0 : PEEK.tailUp) * s;
+      const y = f.root.y - PEEK.tailUp * s;
       this.cropTailTip(this.peekTail, tailArt);
       this.peekTail.setVisible(true).setPosition(x, y);
       const base = this.baseScale(this.peekTail);
       this.peekTail.setScale(base * s * (f.facing.flip ? -1 : 1), this.baseScale(this.peekTail, "y") * s);
     } else {
       this.peekTail?.setVisible(false);
-    }
-    // Вушка з-під ковдри: обидва, трохи розведені.
-    const earArt = this.sprite.rig.skin["ear-near"];
-    if (ears && earArt) {
-      while (this.peekEars.length < 2) {
-        const image = addBakedArt(this.scene, this.layer, earArt, this.recipe, { view, owner });
-        image.setDepth(this.pieceDepth(CAT_PIECE.peek));
-        this.peekEars.push(image);
-      }
-      for (let i = 0; i < this.peekEars.length; i++) {
-        const image = this.peekEars[i]!;
-        setBakedArt(image, earArt, i === 0 ? this.far : this.recipe, { view, owner });
-        const side = i === 0 ? 1 : -1;
-        const dir = f.facing.flip ? -1 : 1;
-        image
-          .setVisible(true)
-          .setPosition(f.root.x + side * dir * PEEK.earSpread * s, f.root.y - 2 * s)
-          .setAngle(side * dir * PEEK.earTilt)
-          .setScale(this.baseScale(image) * s * 0.85, this.baseScale(image, "y") * s * 0.85);
-      }
-    } else {
-      for (const image of this.peekEars) image.setVisible(false);
     }
   }
 
@@ -454,7 +430,7 @@ export class IsoCatView {
     image.setOrigin(tip.x / entry.size.w, (tip.y + half) / entry.size.h);
   }
 
-  /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима чи вушками). */
+  /** Точки для інших частин: над головою й спинка (з видимого скелета; інакше — над очима). */
   private updatePoints(f: CatFrame, evaluated: boolean): void {
     // Якір і гніздо пишуть просто в точки (немає — точка лишається, як була). У клубку бійки бабл — над кулею (`catBrawlTop`),
     // а тому, хто лежить на спині, рука лягає на живіт (`catPetPoint`), а не на спинку, що на підлозі.

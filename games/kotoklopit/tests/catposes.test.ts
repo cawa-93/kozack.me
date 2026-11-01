@@ -19,7 +19,7 @@ import type { Cat, CatAct, DiseaseId, Save, TraitLevel } from "../src/sim/types"
 import { catEventAnims, catMemory, catTransition } from "../src/view/anim/catevents";
 import { blinkEyes, catFace, CAT_EARS, CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
 import { CAT_ANIM_GROUPS, CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
-import { catAnim, catPose } from "../src/view/pose";
+import { catAnim, catPose, hidesUnder } from "../src/view/pose";
 import { blinkAmount } from "../src/view/thoughts";
 import { recordEvents, withCatCorner } from "./helpers";
 
@@ -57,6 +57,10 @@ describe("назви анімацій кота (`anim/ids.ts`)", () => {
     for (const ms of Object.values(CAT_ONE_SHOT_MS)) expect(ms).toBeGreaterThan(0);
   });
 
+  it("анімації `hide` немає: схованого під меблями анімація не показує", () => {
+    // З-під краю визирають очі, їх малює вигляд (`hidesUnder`).
+    expect(CAT_ANIM_IDS).not.toContain("hide");
+  });
 });
 
 describe("нові пози кота (`catPose`)", () => {
@@ -153,7 +157,12 @@ describe("нові пози кота (`catPose`)", () => {
     expect(catPose(save.current, cat)).toBe("loaf");
     cat.x = 14.5;
     cat.y = 10.5;
-    expect(catPose(save.current, cat)).toBe("hide");
+    // Під диваном — теж буханець, але схований: його не видно, лише очі з-під краю (`hidesUnder`).
+    expect(catPose(save.current, cat)).toBe("loaf");
+    expect(hidesUnder(save.current, cat, "loaf")).toBe(true);
+    cat.x = fridge.x + 0.5;
+    cat.y = fridge.y + 0.5;
+    expect(hidesUnder(save.current, cat, "loaf")).toBe(false);
   });
 
   it("бешкет: лапає зачинену шафку, з відчиненої — їсть; перекидає смітник лапою", () => {

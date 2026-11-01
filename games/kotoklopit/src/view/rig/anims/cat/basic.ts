@@ -371,19 +371,6 @@ const SQUAT_BACK: Pose = {
   "leg-front-far": { rot: 12, x: -1, y: 1, sx: 0.8 },
 };
 
-/** Ховається: припав до підлоги пласко, лапи підібрані, голова низько й уперед (з-під меблів видно очі), хвіст по підлозі. */
-const HIDE: Pose = {
-  pelvis: { y: 13 },
-  body: { sy: 0.94 },
-  "leg-back-near": { rot: -20, sx: 0.35 },
-  "leg-back-far": { rot: -20, sx: 0.35 },
-  "leg-front-near": { rot: -60, sx: 0.4 },
-  "leg-front-far": { rot: -60, sx: 0.4 },
-  neck: { x: 3, y: 6 },
-  head: { rot: 8 },
-  tail: tail(-88),
-};
-
 /**
  * На руках (§9.12): обвислий — животом на руці персонажа (гніздо `arms` — на рівні рук), груди вище за круп, передні лапи
  * підібрані вперед і лежать на передпліччі, а задні висять під власною вагою прямо вниз, витягнуті; хвіст звисає. Так кіт на
@@ -864,22 +851,6 @@ const sleep: CatAnim = {
   views: { back: { slots: CURL_BACK_SLOTS } },
 };
 
-const HIDE_MS = 3000;
-const hide: CatAnim = {
-  duration: HIDE_MS,
-  loop: true,
-  bones: merge(still(HIDE), {
-    body: breathe(HIDE_MS, HIDE, 0.03, 2),
-    // Визирає: голова трохи повертається; кінчик хвоста двічі сіпається.
-    head: rotAround(HIDE_MS, HIDE, "head", [0, -3, 0, 2]),
-    tail: {
-      ...still({ tail: HIDE.tail ?? {} }).tail,
-      rot: [-88, -88, -80, -88, -82, -88, -88].map((v, i) => key([0, 1900, 2050, 2200, 2350, 2550, HIDE_MS][i] ?? 0, v, "inOut")),
-    },
-  }),
-  views: { back: BACK_NEAR },
-};
-
 const CARRIED_MS = 3000;
 const carried: CatAnim = {
   duration: CARRIED_MS,
@@ -931,7 +902,7 @@ const carrier: CatAnim = {
  * менший, — тож горбик розміру дорослого сховав би його цілком: горбик під кошеням треба масштабувати за масштабом кореня
  * кота (T1 разом з A4) чи ховати кошеня під ковдрою інакше. Дихання ледь підіймає вушка, кінчик хвоста ліниво ворушиться.
  */
-const BLANKET: Pose = { ...TUCKED, pelvis: { y: 12 }, neck: { x: -2, y: 4 }, head: { rot: -4 }, tail: { ...tail(-20, 0.6), x: 10, y: -10 } };
+const BLANKET: Pose = { ...TUCKED, pelvis: { y: 12 }, neck: { x: -2, y: 4 }, head: { rot: 6 }, tail: { ...tail(-20, 0.6), x: 19.3, y: -5.7 } };
 const BLANKET_MS = 4000;
 const BLANKET_Y = at(BLANKET, "pelvis", "y");
 const blanket: CatAnim = {
@@ -1244,7 +1215,6 @@ export const CAT_BASIC = defineAnims(CAT_RIG, {
   squat,
   jumpUp,
   jumpDown,
-  hide,
   carried,
   blanket,
   sprawl,

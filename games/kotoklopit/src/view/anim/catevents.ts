@@ -8,7 +8,7 @@ import { hasDisease } from "../../sim/diseases";
 import type { GameEvent } from "../../sim/events";
 import { HIGH_PLACES, objectAt } from "../../sim/home";
 import type { Cat, GameState, Vec } from "../../sim/types";
-import { catPose } from "../pose";
+import { catPose, hidesUnder } from "../pose";
 import type { CatFace } from "./catface";
 import { CAT_ONE_SHOT_MS, CAT_OVERLAYS, type CatAnimId, type CatOneShotId } from "./ids";
 
@@ -59,14 +59,16 @@ function panting(state: GameState, ids: readonly number[]): CatOneShot[] {
  * Пози, у яких разової анімації всього тіла (чухання, тертя очей, блювання) не зіграти: кіт під меблями, у переносці, під
  * ковдрою, у клубку бійки, на руках чи на колінах. Тоді лишається обличчя (і накладки — чхання, шипіння, задишка).
  */
-const NO_BODY_SHOTS: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["hide", "carrier", "blanket", "brawl", "carried", "sleep", "snore"]);
+const NO_BODY_SHOTS: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["carrier", "blanket", "brawl", "carried", "sleep", "snore"]);
 
 /** Разова анімація тіла, що не лягає на теперішню позу кота, — лише обличчям. */
 function fitted(state: GameState, shots: CatOneShot[]): CatOneShot[] {
   return shots.map((s) => {
     if (s.anim === null || CAT_OVERLAYS.has(s.anim)) return s;
     const cat = state.cats.find((c) => c.id === s.cat);
-    return cat && NO_BODY_SHOTS.has(catPose(state, cat)) ? { ...s, anim: null } : s;
+    if (!cat) return s;
+    const pose = catPose(state, cat);
+    return NO_BODY_SHOTS.has(pose) || hidesUnder(state, cat, pose) ? { ...s, anim: null } : s;
   });
 }
 

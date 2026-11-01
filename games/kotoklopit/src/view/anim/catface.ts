@@ -12,7 +12,7 @@ import { catFeeling } from "../../sim/actions";
 import { hasDisease } from "../../sim/diseases";
 import { absoluteMinute } from "../../sim/time";
 import type { Cat, GameState } from "../../sim/types";
-import { catPose, interactionWith, isLicked, withFriend } from "../pose";
+import { catPose, hidesUnder, interactionWith, isLicked, withFriend } from "../pose";
 import { blinkAmount, catLook } from "../thoughts";
 import type { CatAnimId } from "./ids";
 
@@ -60,7 +60,7 @@ function baseFace(state: GameState, cat: Cat, time: number, pose: CatAnimId): Ca
   // Спина дугою й клубок бійки (§9.4): очі широко розплющені, вуха притиснуті вбік і назад.
   if (pose === "arch" || pose === "brawl") return face("round", "closed", "back");
   // З-під меблів видно лише очі (§9.12): насторожені.
-  if (pose === "hide") return face("open", "closed", "flat");
+  if (hidesUnder(state, cat, pose)) return face("open", "closed", "flat");
   // Під рукою, на руках, у ванні, біля вікна, коли вилизує друг (§9.12, §9.4 В1): мружиться, терпить, пручається.
   const feeling = catFeeling(state, cat) ?? (isLicked(cat) ? "content" : null);
   // З вудкою кіт азартний: очі круглі (хоч і задоволений).

@@ -20,6 +20,9 @@ import { actTargetPoint } from "./targets";
  */
 export const FACING_HYSTERESIS = 0.2;
 
+/** Під ковдрою — головою праворуч, до подушки (горбик ковдри намальовано так). */
+const BLANKET_FACING: RigFacing = { view: "front", flip: false };
+
 /** Коротший за це рух (у клітинках за кадр) — не рух: кіт стоїть, напрям не з руху. */
 const MIN_STEP = 1e-4;
 /** Довший за це «крок» за кадр — переставляння симом (стали поруч, повернули зі сходів), а не рух. */
@@ -84,6 +87,7 @@ export interface CatFacingOptions {
  *   прикріплено в гніздо скелета персонажа (`arms`, `lap`; `RigSprite.attach`), а вміст гнізда дзеркалить сам контейнер
  *   персонажа — `flip` коту поверх нього дзеркалив би вдруге, і кіт дивився б у протилежний бік. Ракурс — персонажа. Куди
  *   кіт дивиться у світі — `personFacing`.
+ * - Під ковдрою — лицем до нас, головою праворуч, до подушки: видно лише вушка й кінчик хвоста над горбиком.
  * - У парі (протистояння, бійка, вилизування, гра, сон поруч) — обличчям до пари вздовж горизонталі екрана (`pairs.ts`).
  * - Іде — за рухом (різниця позицій; кадр без руху — як минулого кадру, а без нього — до `goal` чи `run`). Іде й той, у кого
  *   немає `goal`: у грі з другом утікач біжить до `act.run` (засідка, погоня), мисливець — до нього (погоня, боротьба).
@@ -99,6 +103,9 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
   const fallback: RigFacing = { view: "front", flip: simSide };
   const held = state.character.held;
   if ((held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap") return { view: personFacing(state, prev).view, flip: false };
+  // Під ковдрою (§9.12) видно лише вушка й кінчик хвоста над горбиком: голова — до подушки, праворуч, як горбик і
+  // намальовано (вигляд кладе вушка на його гребінь, `blanketOffset`).
+  if (cat.act.kind === "sleep" && cat.act.blanket === true && cat.act.goal === null) return BLANKET_FACING;
   const pair = options.pair === undefined ? pairOf(state, cat) : options.pair;
   if (pair?.facing) return pair.facing;
   const act = cat.act;

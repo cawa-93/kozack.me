@@ -10,8 +10,10 @@ import { CARRIER_SPOT, HIGH_PLACES, itemPoint, objectAt, objectById } from "../.
 import type { Cat, GameState, HomeItem, Vec } from "../../sim/types";
 import type { CatAnimId } from "../anim/ids";
 import type { PairPlacement } from "../anim/pairs";
+import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
 import { isoCatPerch } from "../world/objects";
+import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
 
@@ -23,15 +25,19 @@ import { artOffset, footprintCenter } from "./geometry";
  *   у верхній коробці, нижче за борт;
  * - `under` — ховається під меблями: з-під ближчого краю видно очі й кінчик хвоста;
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі;
- * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): видно вушка й кінчик хвоста;
+ * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): анімація `blanket` (N1) показує лише вушка над
+ *   горбиком і кінчик хвоста;
  * - `carrier` — спить у переносці: клубочок під ґратками (`CARRIER_GRATE_DEPTH`);
  * - `drum` — спить у барабані пральної машини;
  * - `robot` — їде на роботі-пилососі («Безстрашний»).
  */
 export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "blanket" | "carrier" | "drum" | "robot";
 
-/** Що з кота видно: увесь скелет, лише очі (і кінчик хвоста), лише вушка й кінчик хвоста. */
-export type CatShow = "rig" | "eyes" | "ears" | "none";
+/**
+ * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста), лише очі (і кінчик
+ * хвоста) з-під меблів чи з будиночка, нічого.
+ */
+export type CatShow = "rig" | "eyes" | "none";
 
 export interface CatSpot {
   kind: CatSpotKind;
@@ -99,6 +105,25 @@ export const BOWL_SIDE = { along: 0.64, behind: 0.08 } as const;
 export const BOWL_APPROACH = 0.8;
 
 const ZERO: Vec = { x: 0, y: 0 };
+
+/**
+ * Кіт під ковдрою (§9.12, «Теплолюбність»): де посередині між основами вух — на гребені горбика ковдри (`env/bed`, стан
+ * `hump`; одиниці арту від точки `blanket` ліжка). Гребінь — ≈ 25 над ковдрою, трохи праворуч від точки (верхній контур
+ * горбика, `art/env/bed.svg`); основи вух — на середині його контуру (≈ 1,5 нижче за край), тож вушка виростають із ковдри, а
+ * не висять над нею. Голова — праворуч, до подушки: горбик так і намальовано («голова праворуч нижче»).
+ */
+export const BLANKET_EARS: Vec = { x: 4.5, y: -21.5 };
+
+/**
+ * Зсув кореня кота під ковдрою від pivot ліжка (одиниці арту): середина основ його вух (`blanketEars` — за статурою, лапами й
+ * віком; × масштаб кота) — у точці `BLANKET_EARS` горбика.
+ */
+export function blanketOffset(cat: Pick<Cat, "ageWeeks" | "traits" | "breed" | "shape">): Vec {
+  const at = pointOf("env/bed", "blanket");
+  const size = catSize(cat);
+  const ears = blanketEars(cat.shape, size.kitten);
+  return { x: at.x + BLANKET_EARS.x - ears.x * size.scale, y: at.y + BLANKET_EARS.y - ears.y * size.scale };
+}
 
 function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot {
   return { kind, at, lift: 0, offset: ZERO, box: null, above: null, scale: 1, shadow: false, show: "rig", item: null, ...extra };
@@ -169,10 +194,10 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     const washer = objectById("washer");
     return spot("drum", footprintCenter(washer), { offset: pointOf("env/washer", "drum"), box: washer.id, scale: SPOT_SCALE.drum });
   }
-  // Під ковдрою (§9.12, «Теплолюбність»): горбик — ліжко, з-під нього — вушка й кінчик хвоста.
+  // Під ковдрою (§9.12, «Теплолюбність»): горбик — ліжко, над ним — вушка й кінчик хвоста (анімація `blanket` ховає решту).
   if (anim === "blanket") {
     const bed = objectById("bed");
-    return spot("blanket", footprintCenter(bed), { offset: pointOf("env/bed", "blanket"), box: bed.id, show: "ears" });
+    return spot("blanket", footprintCenter(bed), { offset: blanketOffset(cat), box: bed.id });
   }
   // У будиночку (§9.12): у темному вході — очі.
   const house = houseOf(state, cat);
@@ -188,15 +213,15 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   const tile = pair ? { x: cat.x + pair.tile.x, y: cat.y + pair.tile.y } : { x: cat.x, y: cat.y };
   const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (object && object.kind !== "door") {
-    // Ховається під меблями — визирає з-під ближчого краю; нагорі (холодильник, шафа) — лежить там (`catPose` — буханець).
-    const hiding = anim === "hide" && !HIGH_PLACES.includes(object.id);
+    // Ховається під меблями — визирає з-під ближчого краю; нагорі (холодильник, шафа) — лежить там буханцем (`hidesUnder`).
+    const hiding = hidesUnder(state, cat, anim) && !HIGH_PLACES.includes(object.id);
     const perch = isoCatPerch(object.id, pair ? tile : cat, hiding);
     if (hiding) return spot("under", perch.at, { box: object.id, show: "eyes" });
     // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
     // вона лягла б на передню стінку.
     return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
   }
-  if (anim === "hide") return spot("under", tile, { show: "eyes" });
+  if (hidesUnder(state, cat, anim)) return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.
   const bowl = pair ? null : bowlOf(state, cat);
   if (bowl) {

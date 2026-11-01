@@ -152,8 +152,9 @@ export function catPose(state: GameState, cat: Cat): CatAnimId {
       if (act.target === "tile") return "sprawl";
       return sleepAnim(cat);
     case "hide":
-      // Хто ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»), — лежить там, а не визирає з-під низу.
-      return HIGH_PLACES.includes(objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.id ?? "") ? "loaf" : "hide";
+      // Хто ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»), — лежить там буханцем; під меблями й у будиночку —
+      // теж буханцем, але його не видно: з-під краю визирають лише очі (`hidesUnder`).
+      return "loaf";
     case "ambush":
       return "crouch";
     case "catnip":
@@ -210,6 +211,16 @@ export function catPose(state: GameState, cat: Cat): CatAnimId {
   if (look === "nudge") return "nudge";
   if ((act.kind === "idle" || act.kind === "wander") && cat.needs.fatigue >= LOAF_FATIGUE && !isLicked(cat)) return "loaf";
   return "sit";
+}
+
+/**
+ * Кіт ховається під меблями чи в будиночку (§9.6, §9.12): поза — буханець (`catPose`), але його не видно — вигляд показує
+ * лише очі з-під краю (`iso/catspot.ts`, `iso/catview.ts`), обличчя насторожене (`catface.ts`), разових анімацій тіла немає
+ * (`catevents.ts`). Нагорі (холодильник, шафа — «Лазіння») — лежить буханцем на виду.
+ */
+export function hidesUnder(state: GameState, cat: Cat, pose: CatAnimId): boolean {
+  if (pose !== "loaf" || cat.act.kind !== "hide" || cat.act.goal !== null) return false;
+  return !HIGH_PLACES.includes(objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.id ?? "");
 }
 
 /**

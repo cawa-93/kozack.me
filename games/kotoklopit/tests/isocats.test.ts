@@ -2,6 +2,8 @@
 // кошеняти й повнота, складання анімацій (основна + накладка + обличчя), де кіт (меблі, схованки, барабан, переноска,
 // ковдра, робот, руки) і налаштування рендерера. Усе без Phaser.
 
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
@@ -12,6 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Feeder, HomeItem, Save } from "../src/sim/types";
 import { CAT_EARS } from "../src/view/anim/catface";
+import { catFacing } from "../src/view/anim/catfacing";
 import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
 import { ART_VIEWS } from "../src/view/art/types";
@@ -26,8 +29,9 @@ import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from 
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
-import { BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
+import { BLANKET_EARS, blanketOffset, BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
+import { catPose } from "../src/view/pose";
 import { isoOrder } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
@@ -327,8 +331,14 @@ describe("де кіт (`catSpot`)", () => {
     const bed = objectById("bed");
     const cat = withCat(save, { x: bed.x + 0.5, y: bed.y + 1.2 });
     cat.act = act("hide", { target: "bed" });
-    const under = catSpot(save.current, cat, "hide", null, SPOT);
+    // Схований — буханець (`catPose`), якого не видно (`hidesUnder`): з-під краю — лише очі.
+    expect(catPose(save.current, cat)).toBe("loaf");
+    const under = catSpot(save.current, cat, "loaf", null, SPOT);
     expect(under).toMatchObject({ kind: "under", show: "eyes", lift: 0, box: "bed" });
+    // Той самий буханець без схованки (утомився на ліжку) — на ліжку, на виду.
+    cat.act = act("idle");
+    expect(catSpot(save.current, cat, "loaf", null, SPOT)).toMatchObject({ kind: "furniture", box: "bed", show: "rig" });
+    cat.act = act("hide", { target: "bed" });
     expect(under.at.x === bed.x + bed.w || under.at.y === bed.y + bed.h).toBe(true);
     save.current.home.items.push({ id: 900, kind: "house", quality: "premium", slot: "house-1" });
     cat.x = 1.5;
@@ -362,7 +372,8 @@ describe("де кіт (`catSpot`)", () => {
     cat.x = bed.x + 0.5;
     cat.y = bed.y + 0.5;
     cat.act = act("sleep", { target: "bed", blanket: true });
-    expect(catSpot(save.current, cat, "blanket", null, SPOT)).toMatchObject({ kind: "blanket", show: "ears", box: "bed", offset: artOffset("env/bed", "blanket") });
+    // Під ковдрою — скелет (анімація `blanket` лишає видимими вушка й кінчик хвоста), вушка — на гребені горбика.
+    expect(catSpot(save.current, cat, "blanket", null, SPOT)).toMatchObject({ kind: "blanket", show: "rig", box: "bed", offset: blanketOffset(cat) });
     save.current.home.appliances.robot = "premium";
     cat.x = 12.5;
     cat.y = 7.5;
@@ -697,6 +708,98 @@ describe("точки кота для інших частин (`bonePoint`)", () 
           expect(rig.anchor("head", { x: 0, y: 0 }, false)!.y).toBeGreaterThan(top.y);
         }
       }
+    }
+  });
+});
+
+describe("кіт під ковдрою (`blanketOffset`, анімація `blanket`)", () => {
+  /**
+   * Верхній край горбика ковдри (`art/env/bed.svg`, стан `st-hump`, заливка горбика) від точки `blanket` ліжка: кінцеві точки
+   * кривих верхнього контуру зліва направо, [dx, висота над ковдрою].
+   */
+  function humpProfile(): [number, number][] {
+    const svg = readFileSync(new URL("../art/env/bed.svg", import.meta.url), "utf8");
+    const group = svg.slice(svg.indexOf('class="st-hump"'));
+    const d = [...group.matchAll(/<path d="([^"]+)"/g)][1]![1]!;
+    const nums = (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+    const at = artOffset("env/bed", "blanket")!;
+    const pivot = artEntry("env/bed")!.pivot;
+    const bx = pivot.x + at.x;
+    const by = pivot.y + at.y;
+    const out: [number, number][] = [[nums[0]! - bx, by - nums[1]!]];
+    // M x y, далі Q cx cy x y: кінцеві точки — кожна друга пара; верхній контур — доки x росте.
+    for (let i = 4; i + 1 < nums.length; i += 4) {
+      const x = nums[i]! - bx;
+      if (x <= out[out.length - 1]![0]) break;
+      out.push([x, by - nums[i + 1]!]);
+    }
+    return out;
+  }
+  const HUMP = humpProfile();
+  const humpAt = (dx: number): number => {
+    for (let i = 1; i < HUMP.length; i++) {
+      const [x0, y0] = HUMP[i - 1]!;
+      const [x1, y1] = HUMP[i]!;
+      if (dx >= x0 && dx <= x1) return y0 + ((y1 - y0) * (dx - x0)) / (x1 - x0);
+    }
+    return 0;
+  };
+
+  /** Вушка й корінь хвоста кота під ковдрою: наскільки нижче за край горбика (від'ємне — висить над ним), одиниці арту. */
+  function below(build: "slim" | "normal" | "stocky", legs: "normal" | "short", ageWeeks: number): { ears: number[]; tail: number } {
+    const shape = { muzzle: "normal", ears: "normal", tail: "long", build, legs, coat: null } as const;
+    const cat = { ageWeeks, traits: [], breed: ["mixed", "mixed"], shape } as unknown as Cat;
+    const size = catSize(cat);
+    const rig = new Rig(ISO_CAT_RIG, { fit: ISO_CAT_FIT, lookup: artEntry, skin: isoCatSkin(shape, false), proportions: isoCatProportions(cat, size) });
+    rig.play(CAT_ANIMS.blanket as never, 0, { blend: 0 });
+    rig.evaluate(0);
+    const offset = blanketOffset(cat);
+    const at = artOffset("env/bed", "blanket")!;
+    const depth = (slot: "ear-near" | "ear-far" | "tail"): number => {
+      const p = rig.slot(slot);
+      const dx = offset.x - at.x + p.x * size.scale;
+      const dy = offset.y - at.y + p.y * size.scale;
+      return dy + humpAt(dx);
+    };
+    return { ears: [depth("ear-near"), depth("ear-far")], tail: depth("tail") };
+  }
+
+  it("горбик з арту — купол ≈ 25 над ковдрою, гребінь трохи праворуч від точки `blanket`", () => {
+    const top = Math.max(...HUMP.map(([, h]) => h));
+    expect(top).toBeGreaterThan(22);
+    expect(top).toBeLessThan(28);
+    expect(humpAt(BLANKET_EARS.x)).toBeGreaterThan(top - 2);
+  });
+
+  it("вушка ростуть із гребеня горбика (основи — на його контурі), а не висять над ним: будь-яка статура, короткі лапи, кошеня", () => {
+    for (const build of ["slim", "normal", "stocky"] as const) {
+      for (const legs of ["normal", "short"] as const) {
+        for (const age of [40, 1, 2]) {
+          for (const ear of below(build, legs, age).ears) {
+            expect(ear, `${build} ${legs} ${age}`).toBeGreaterThan(0);
+            expect(ear, `${build} ${legs} ${age}`).toBeLessThan(3.5);
+          }
+        }
+      }
+    }
+  });
+
+  it("корінь хвоста дорослого — на лівому схилі горбика (кінчик стирчить з-під ковдри збоку), не висить над ним", () => {
+    for (const build of ["slim", "normal", "stocky"] as const) {
+      const tail = below(build, "normal", 40).tail;
+      expect(tail, build).toBeGreaterThan(-2.5);
+      expect(tail, build).toBeLessThan(4.5);
+    }
+  });
+
+  it("під ковдрою кіт завжди головою праворуч, до подушки (горбик так намальовано)", () => {
+    const save = game();
+    const bed = objectById("bed");
+    const cat = withCat(save, { x: bed.x + 0.5, y: bed.y + 0.6 });
+    for (const side of [1, -1] as const) {
+      cat.facing = side;
+      cat.act = act("sleep", { target: "bed", blanket: true, minutes: 300 });
+      expect(catFacing(save.current, cat, null)).toEqual({ view: "front", flip: false });
     }
   });
 });
