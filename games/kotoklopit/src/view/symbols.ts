@@ -120,8 +120,10 @@ const NEED_ICONS: Record<Need, IconName> = {
  */
 export function refusalBubble(refusal: Refusal): { icon: IconName; count?: number; mark?: Mark } {
   switch (refusal.reason) {
+    // Руки зайняті (GAME_DESIGN §11.4: «долоня, перекреслена»; рецензія хвилі 3) — долоня в рукаві з мазком «ні»: скринька в
+    // руках, як було, читалася коробкою (box, no-room, cat-box).
     case "hands-full":
-      return { icon: "hands" };
+      return { icon: "hands", mark: "no" };
     case "empty":
       return { icon: PRODUCT_ICONS[refusal.product], count: 0 };
     case "not-here":
