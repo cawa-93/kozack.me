@@ -123,6 +123,12 @@ export interface CatFacingOptions {
    * сима йде відрізками трохи різного нахилу; без поля (чи нульовий) — крок цього кадру.
    */
   heading?: Vec | null;
+  /**
+   * Де кіт намальований на підлозі (клітинки), якщо не в точці сима: у юрбі біля персонажа він обабіч нього, хоч сим і
+   * поставив його в точку персонажа. Від цієї точки — куди дивиться той, хто стоїть біля персонажа (до нього, головою від нього
+   * під рукою); без поля — точка сима.
+   */
+  at?: Vec | null;
 }
 
 /**
@@ -166,20 +172,27 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
     if (goal) return facingFromTiles({ x: goal.x + 0.5 - cat.x, y: goal.y + 0.5 - cat.y }, null) ?? fallback;
   }
   const person = state.character.body;
+  // Біля персонажа — від того місця, де кота намальовано (юрба), а не від точки сима.
+  const self = options.at ?? cat;
   const look = catLook(state, cat);
   // Кіт на підвіконні дивиться у вікно (§9.12, «Вікно»): обидва вікна — у задніх стінах ізометрії.
   if (act.kind === "window" && look !== "sad") {
     const pane = WINDOWS.find((w) => w.sill === act.target);
     if (pane) return facingFromTiles({ x: pane.wall.x + 0.5 - cat.x, y: pane.wall.y + 0.5 - cat.y }, prev) ?? { view: "back", flip: simSide };
   }
-  if (look === "sulk") return { view: "back", flip: !sideTo(cat, person, null, !simSide) };
-  if (look === "belly") return { view: "front", flip: !sideTo(cat, person, null, !simSide) };
+  if (look === "sulk") return { view: "back", flip: !sideTo(self, person, null, !simSide) };
+  if (look === "belly") return { view: "front", flip: !sideTo(self, person, null, !simSide) };
   // Під рукою (§10, «Пестощі») — так само головою від персонажа: рука лягає на спинку з боку крупа, а не тягнеться через
   // голову, і вуха й морду видно — як змінюється вираз, зокрема вуха «літачком», коли кіт попереджає (рецензія хвилі 3).
-  if (interactionWith(state, cat) === "pet") return { view: "front", flip: !sideTo(cat, person, null, !simSide) };
-  if (look === "blink" || look === "nudge") return { view: "front", flip: sideTo(cat, person, prev, simSide) };
+  if (interactionWith(state, cat) === "pet") return { view: "front", flip: !sideTo(self, person, null, !simSide) };
+  if (look === "blink" || look === "nudge") return { view: "front", flip: sideTo(self, person, prev, simSide) };
   if (act.kind === "attention" || act.kind === "follow" || act.target === "character" || act.target === "food" || act.target === "feet") {
-    return facingFromTiles({ x: person.x - cat.x, y: person.y - cat.y }, prev) ?? fallback;
+    // Персонаж збоку (майже по горизонталі екрана: юрба обабіч нього, на `CROWD.front` ближче до камери) — лицем до нас, хоч
+    // би кіт підійшов знизу спиною до камери: морду й прохання видно. Помітно вище чи нижче — як каже напрям.
+    const dir = { x: person.x - self.x, y: person.y - self.y };
+    const s = isoScreenDir(dir);
+    const beside = Math.abs(s.y) <= FACING_HYSTERESIS * Math.hypot(s.x, s.y);
+    return facingFromTiles(dir, beside ? { view: "front", flip: prev?.flip ?? s.x < 0 } : prev) ?? fallback;
   }
   const target = actTargetPoint(state, cat);
   if (target !== null && Math.hypot(target.x - cat.x, target.y - cat.y) >= MIN_TARGET) {

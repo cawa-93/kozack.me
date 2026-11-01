@@ -8,7 +8,7 @@
 
 import Phaser from "phaser";
 
-import { brawlFoe, catAnim, type CatAnimChoice } from "../pose";
+import { brawlFoe, catAnim, interactionWith, type CatAnimChoice } from "../pose";
 import type { GameEvent } from "../../sim/events";
 import { showsPregnancy } from "../../sim/reproduction";
 import type { Target } from "../../sim/targets";
@@ -22,7 +22,7 @@ import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim
 import { PERSON_ONE_SHOT_MS, type CatOneShotId } from "../anim/ids";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/person/move";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
-import { catCrowds, catPairs, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
+import { catCrowds, catPairs, crowdMemory, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
 import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
@@ -185,6 +185,8 @@ export class IsoCatsView implements CatsPart {
   /** Юрба (`catCrowds`): хто стоїть на підлозі цього кадру й куди кого зсунути. */
   private readonly crowdMembers: CrowdMember[] = [];
   private readonly crowdShifts = new Map<number, Vec>();
+  /** Місця юрби біля персонажа між кадрами (`catCrowds`). */
+  private readonly crowdPlaces = crowdMemory();
   /** Спинка кота від кореня (кіт, якого беруть на руки чи опускають). */
   private readonly petOffset: Point = { x: 0, y: 0 };
 
@@ -324,13 +326,21 @@ export class IsoCatsView implements CatsPart {
       const spot = catSpot(state, cat, mem.choice.anim, pair, SPOT_DEPTHS);
       mem.spot = spot;
       if (pair || spot.kind !== "floor" || catMoving(cat)) continue;
-      members.push({ id: cat.id, at: spot.at, size: this.sizeOf(cat), toPerson: towardPerson(cat) });
+      // Під рукою — теж до персонажа; звідки прийшов — з ракурсу, яким ішов (дивився праворуч — прийшов зліва).
+      const touched = interactionWith(state, cat) !== null;
+      const from = mem.facing ? (mem.facing.flip ? 1 : -1) : 0;
+      members.push({ id: cat.id, at: spot.at, size: this.sizeOf(cat), toPerson: touched || towardPerson(cat), touched, shift: mem.crowd, from });
     }
-    return catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts);
+    return catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts, this.crowdPlaces);
   }
 
-  /** Зсув кота в юрбі цього кадру (`Memory.crowd`): плавно до `target` (null — без зсуву); кадр без часу — як був. */
-  private crowdShift(mem: Memory, target: Vec | null, seconds: number, first: boolean): Vec {
+  /**
+   * Зсув кота в юрбі цього кадру (`Memory.crowd`): плавно до `target` (null — без зсуву); кадр без часу — як був. Вийшов із
+   * юрби, а стоїть, де стояв (`hold`: персонаж відійшов, кота перестали гладити), — лишається там, де його намалювали, а не
+   * ковзає в точку сима (у ноги персонажа): зсув знімається, коли кіт рушить.
+   */
+  private crowdShift(mem: Memory, target: Vec | null, hold: boolean, seconds: number, first: boolean): Vec {
+    if (target === null && hold) return mem.crowd;
     const tx = target?.x ?? 0;
     const ty = target?.y ?? 0;
     const k = first ? 1 : seconds > 0 ? 1 - Math.exp((-seconds * 1000) / CROWD_EASE_MS) : 0;
@@ -367,15 +377,20 @@ export class IsoCatsView implements CatsPart {
     const lifting = handsLift && handsLift.cat === cat.id ? handsLift : null;
     // Місце — з першого проходу, якщо разова не змінила пози; на підлозі в юрбі — зсунутий уздовж екрана.
     const base = anim === choice.anim && mem.spot ? mem.spot : catSpot(state, cat, anim, pair, SPOT_DEPTHS);
-    const shift = this.crowdShift(mem, base.kind === "floor" ? crowd : null, seconds, mem.pos === null);
-    const own = base.kind === "floor" && (shift.x !== 0 || shift.y !== 0) ? { ...base, at: { x: base.at.x + shift.x, y: base.at.y + shift.y } } : base;
+    const floor = base.kind === "floor";
+    const still = floor && pair === null && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
+    const shift = this.crowdShift(mem, floor ? crowd : null, still, seconds, mem.pos === null);
+    const own = floor && (shift.x !== 0 || shift.y !== 0) ? { ...base, at: { x: base.at.x + shift.x, y: base.at.y + shift.y } } : base;
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
     this.liftFrom(view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук). Іде — за
     // згладженим напрямом руху й не віддзеркалюючись надто часто (`smoothHeading`, `holdFlip`).
     if (mem.pos) smoothHeading(mem.heading, cat.x - mem.pos.x, cat.y - mem.pos.y, seconds);
     const was = mem.facing;
-    const faced = spot.kind === "hands" ? personFacing(state, was) : faceTo(catFacing(state, cat, mem.pos, { prev: was, pair, heading: mem.heading }), spot);
+    const faced =
+      spot.kind === "hands"
+        ? personFacing(state, was)
+        : faceTo(catFacing(state, cat, mem.pos, { prev: was, pair, heading: mem.heading, at: own.kind === "floor" ? own.at : null }), spot);
     const facing = holdFlip(faced, was, spot.kind !== "hands" && catMoving(cat), time - mem.flipAt);
     if (was && facing.flip !== was.flip) mem.flipAt = time;
     mem.facing = facing;
@@ -650,6 +665,7 @@ export class IsoCatsView implements CatsPart {
     for (const view of this.views.values()) view.destroy();
     this.views.clear();
     this.memory.clear();
+    this.crowdPlaces.slots.clear();
     for (const cloud of this.clouds.values()) {
       cloud.image.destroy();
       for (const tuft of cloud.tufts) tuft.destroy();

@@ -201,17 +201,48 @@ export function pairOf(state: GameState, cat: Cat, sizeOf: SizeOf = ADULT): Pair
  * купкою баблів і разом із баблами закривали персонажа. Тож коти, що стоять (не в парі) майже в одній точці на екрані
  * (ближче за `near`), стають рядком уздовж горизонталі екрана з кроком `step` (≈ пів кота, × розмір) довкола спільної
  * середини; а ті, хто прийшов до персонажа й стоїть біля його ніг (ближче за `person`), — обабіч нього, перший на
- * `beside` від його точки, далі з кроком `step`. Одиниці арту (= px світу ізометрії).
+ * `beside` від його точки, далі з кроком `step`, і на `front` ближче до камери: інакше кіт поруч і персонаж мали той самий
+ * ключ глибини (x + y), і хто з них зверху, вирішувала похибка округлення — кота, якого гладять, то було видно, то ні
+ * (рецензія хвилі 3). Одиниці арту (= px світу ізометрії).
  */
-export const CROWD = { near: { x: 24, y: 14 }, person: { x: 44, y: 30 }, beside: 56, step: 36 } as const;
+export const CROWD = { near: { x: 24, y: 14 }, person: { x: 44, y: 30 }, beside: 56, step: 36, front: 3 } as const;
 
 /** Кіт юрби: де стоїть (точка підлоги з `catSpot`, клітинки), його розмір і чи прийшов до персонажа. */
 export interface CrowdMember {
   id: number;
   at: Vec;
   size: number;
+  /**
+   * Стає в юрбу біля ніг персонажа: прийшов до нього (`towardPerson`) чи під рукою (`touched`). Хто вже має там місце
+   * (`CrowdMemory`), лишається в ній, поки стоїть біля ніг, хоч би що тепер робив: кота, якого почали гладити, сим перемикає з
+   * уваги на `idle`, а того, хто відмовився, — на `wander` (рецензія хвилі 3).
+   */
   toPerson: boolean;
+  /** Під рукою (гладять, грається вудочкою): на своєму боці стає найближче до персонажа, щоб рука дістала. */
+  touched?: boolean;
+  /** Де кіт намальований зараз — зсув від `at` у клітинках (юрба минулих кадрів): з якого боку персонажа він стоїть. */
+  shift?: Vec;
+  /** Звідки кіт прийшов, коли стоїть точно в точці персонажа: −1 — зліва, 1 — справа (з ракурсу, яким ішов), 0 — невідомо. */
+  from?: number;
 }
+
+/** Місце кота в юрбі біля персонажа: бік (−1 — ліворуч, 1 — праворуч) і черга на ньому (менша — ближче до персонажа). */
+export interface CrowdSlot {
+  side: -1 | 1;
+  order: number;
+}
+
+/**
+ * Що юрба біля персонажа пам'ятає між кадрами (`catCrowds`): місце кожного кота в ній. Без цього місця роздавалися наново
+ * щокадру за тим, хто де стоїть, і кіт, що вийшов із юрби чи став у неї, переставляв решту — хтось перебігав на другий бік
+ * крізь персонажа (рецензія хвилі 3). `next` — черга наступного, хто стане.
+ */
+export interface CrowdMemory {
+  slots: Map<number, CrowdSlot>;
+  next: number;
+}
+
+export const crowdMemory = (): CrowdMemory => ({ slots: new Map(), next: 0 });
 
 /** Кіт прийшов до персонажа (§9.12): просить, іде по увагу чи слідом, по корм із рук чи до ніг — як у `catFacing`. */
 export function towardPerson(cat: Cat): boolean {
@@ -222,22 +253,33 @@ export function towardPerson(cat: Cat): boolean {
 /**
  * Зсуви котів юрби (`CROWD`) уздовж горизонталі екрана, у клітинках (`isoTileDir`): пише в `out` (очищає) лише тих, кого
  * треба зсунути. `person` — точка персонажа в клітинках (null — його немає вдома); `blocked` — чи клітинка, куди став би кіт,
- * зайнята (стіна, меблі): тоді кіт лишається на своєму місці.
+ * зайнята (стіна, меблі): тоді кіт лишається на своєму місці. `memory` — місця юрби біля персонажа з минулого кадру
+ * (оновлюється): хто вже стоїть біля ніг, той на своєму боці й у своїй черзі, новий стає з краю; без неї — усі нові.
  */
-export function catCrowds(members: readonly CrowdMember[], person: Vec | null, blocked: (x: number, y: number) => boolean, out: Map<number, Vec>): Map<number, Vec> {
+export function catCrowds(
+  members: readonly CrowdMember[],
+  person: Vec | null,
+  blocked: (x: number, y: number) => boolean,
+  out: Map<number, Vec>,
+  memory: CrowdMemory = crowdMemory(),
+): Map<number, Vec> {
   out.clear();
   const n = members.length;
-  if (n === 0) return out;
+  const slots = memory.slots;
   const screen = members.map((m) => isoScreenDir(m.at));
   const ps = person ? isoScreenDir(person) : null;
+  const near = (a: Vec, b: Vec, box: { x: number; y: number }): boolean => Math.abs(a.x - b.x) < box.x && Math.abs(a.y - b.y) < box.y;
+  // Біля ніг персонажа: прийшов до нього, під рукою чи вже стоїть у юрбі.
+  const byPerson = members.map((m, i) => ps !== null && (m.toPerson || m.touched === true || slots.has(m.id)) && near(screen[i]!, ps, CROWD.person));
+  // Хто вийшов із юрби біля персонажа (пішов, відійшов, персонаж сам пішов), місця більше не тримає.
+  for (const id of slots.keys()) if (!members.some((m, i) => m.id === id && byPerson[i])) slots.delete(id);
+  if (n === 0) return out;
   // Групи: хто майже в одній точці (ланцюжком), і окремо — хто біля ніг персонажа.
   const group = members.map((_, i) => i);
   const root = (i: number): number => {
     while (group[i] !== i) i = group[i] = group[group[i]!]!;
     return i;
   };
-  const near = (a: Vec, b: Vec, box: { x: number; y: number }): boolean => Math.abs(a.x - b.x) < box.x && Math.abs(a.y - b.y) < box.y;
-  const byPerson = members.map((m, i) => m.toPerson && ps !== null && near(screen[i]!, ps, CROWD.person));
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       if (byPerson[i] !== byPerson[j]) continue;
@@ -254,32 +296,79 @@ export function catCrowds(members: readonly CrowdMember[], person: Vec | null, b
   for (const list of groups.values()) {
     const atPerson = byPerson[list[0]!] === true && ps !== null;
     if (list.length < 2 && !atPerson) continue;
-    // Зліва направо, як стояли (за однакового x — за номером): ніхто не перебігає крізь іншого.
-    list.sort((a, b) => screen[a]!.x - screen[b]!.x || members[a]!.id - members[b]!.id);
     const size = list.reduce((sum, i) => sum + members[i]!.size, 0) / list.length;
     const step = CROWD.step * size;
     const target = new Map<number, number>();
+    // Біля персонажа — трохи ближче до камери за нього (`CROWD.front`).
+    const front = atPerson ? CROWD.front * size : 0;
     if (atPerson) {
-      // Обабіч персонажа: ліва половина рядка — ліворуч від нього, права — праворуч (непарний — туди, де вже стоїть).
-      const left = list.filter((i) => screen[i]!.x < ps.x).length;
-      const nLeft = Math.min(Math.ceil(list.length / 2), Math.max(Math.floor(list.length / 2), left));
-      list.forEach((i, k) => {
-        const side = k < nLeft ? -1 : 1;
-        const slot = side < 0 ? nLeft - 1 - k : k - nLeft;
-        target.set(i, ps.x + side * (CROWD.beside * size + slot * step));
-      });
+      personRow(list, members, screen, ps, memory);
+      // Обабіч персонажа: на кожному боці — за чергою, перший на `beside` від нього.
+      for (const side of SIDES) {
+        const row = list.filter((i) => slots.get(members[i]!.id)?.side === side);
+        row.sort((a, b) => slots.get(members[a]!.id)!.order - slots.get(members[b]!.id)!.order);
+        row.forEach((i, k) => target.set(i, ps.x + side * (CROWD.beside * size + k * step)));
+      }
     } else {
+      // Зліва направо, як стояли (за однакового x — за номером): ніхто не перебігає крізь іншого.
+      list.sort((a, b) => screen[a]!.x - screen[b]!.x || members[a]!.id - members[b]!.id);
       const cx = list.reduce((sum, i) => sum + screen[i]!.x, 0) / list.length;
       list.forEach((i, k) => target.set(i, cx + (k - (list.length - 1) / 2) * step));
     }
     for (const i of list) {
       const dx = target.get(i)! - screen[i]!.x;
-      if (Math.abs(dx) < 1e-9) continue;
-      const shift = isoTileDir({ x: dx, y: 0 });
+      // Майже на одній висоті з персонажем — трохи ближче до камери; хто й так помітно перед ним чи за ним, той там і стоїть.
+      const rise = atPerson ? screen[i]!.y - ps.y : 0;
+      const dy = Math.abs(rise) < front ? front - rise : 0;
+      if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) continue;
+      const shift = isoTileDir({ x: dx, y: dy });
       const at = members[i]!.at;
       if (blocked(Math.floor(at.x + shift.x), Math.floor(at.y + shift.y))) continue;
       out.set(members[i]!.id, shift);
     }
   }
   return out;
+}
+
+const SIDES = [-1, 1] as const;
+
+/**
+ * Місця юрби біля персонажа (`CrowdMemory`): хто вже має місце, лишається на ньому; новий стає з краю того боку, де стоїть
+ * (чи звідки прийшов, коли стоїть точно в точці персонажа), якщо там не на двох більше, ніж на другому, — інакше з краю
+ * другого; той, кого гладять чи з ким грається персонаж, — найближчий до нього на своєму боці (рука має дістати), і там
+ * лишається й потім.
+ */
+function personRow(list: readonly number[], members: readonly CrowdMember[], screen: readonly Vec[], ps: Vec, memory: CrowdMemory): void {
+  const slots = memory.slots;
+  let left = 0;
+  let right = 0;
+  for (const i of list) {
+    const slot = slots.get(members[i]!.id);
+    if (slot?.side === -1) left++;
+    else if (slot) right++;
+  }
+  const fresh = list.filter((i) => !slots.has(members[i]!.id));
+  fresh.sort((a, b) => screen[a]!.x - screen[b]!.x || members[a]!.id - members[b]!.id);
+  for (const i of fresh) {
+    const m = members[i]!;
+    const drawn = m.shift ? isoScreenDir({ x: m.at.x + m.shift.x, y: m.at.y + m.shift.y }).x : screen[i]!.x;
+    const dx = drawn - ps.x;
+    const hint = Math.abs(dx) >= 1 ? Math.sign(dx) : Math.sign(m.from ?? 0);
+    const fewer = left < right ? -1 : left > right ? 1 : 0;
+    const pick = Math.abs(left - right) >= 2 || hint === 0 ? fewer || hint || 1 : hint;
+    const side: -1 | 1 = pick < 0 ? -1 : 1;
+    slots.set(m.id, { side, order: memory.next++ });
+    if (side < 0) left++;
+    else right++;
+  }
+  for (const i of list) {
+    if (members[i]!.touched !== true) continue;
+    const own = slots.get(members[i]!.id)!;
+    let first = Number.POSITIVE_INFINITY;
+    for (const j of list) {
+      const slot = slots.get(members[j]!.id)!;
+      if (j !== i && slot.side === own.side) first = Math.min(first, slot.order);
+    }
+    if (own.order > first) own.order = first - 1;
+  }
 }

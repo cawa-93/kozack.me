@@ -14,7 +14,7 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel, Vec } from "../src/sim/types";
 import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, FACING_SMOOTH, holdFlip, personFacing, smoothHeading } from "../src/view/anim/catfacing";
 import { isoScreenDir, isoTileDir, ISO_TILE } from "../src/view/anim/iso";
-import { catCrowds, catPairs, CROWD, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf, type CrowdMember } from "../src/view/anim/pairs";
+import { catCrowds, catPairs, CROWD, crowdMemory, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf, type CrowdMember } from "../src/view/anim/pairs";
 import { isoOrder } from "../src/view/world/isoorder";
 import type { RigFacing } from "../src/view/rig/types";
 import { withCatCorner } from "./helpers";
@@ -301,6 +301,29 @@ describe("куди дивиться кіт (`catFacing`)", () => {
     expect(catFacing(save.current, cat, null)).toEqual(FRONT_LEFT);
   });
 
+  it("у юрбі біля персонажа (сим поставив кота в його точку) — куди дивитися, від того місця, де кота намальовано (`at`)", () => {
+    const save = game();
+    const body = save.current.character.body;
+    body.x = 9.5;
+    body.y = 8.5;
+    const cat = withCat(save, { x: 9.5, y: 8.5 });
+    cat.facing = -1;
+    const right = { x: 9.5 + 0.44, y: 8.5 - 0.44 };
+    const left = { x: 9.5 - 0.44, y: 8.5 + 0.44 };
+    // Під рукою праворуч від персонажа — головою праворуч, від нього; ліворуч — ліворуч.
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 0.5 };
+    expect(catFacing(save.current, cat, null, { at: right })).toEqual(FRONT);
+    expect(catFacing(save.current, cat, null, { at: left })).toEqual(FRONT_LEFT);
+    // Прийшов по увагу й стоїть обабіч — до персонажа.
+    save.current.character.activity = null;
+    cat.act = act("attention", { target: "character" });
+    expect(catFacing(save.current, cat, null, { at: left })).toEqual(FRONT);
+    expect(catFacing(save.current, cat, null, { at: right })).toEqual(FRONT_LEFT);
+    // Підійшов знизу (спиною до камери) і став обабіч — обертається мордою до нас; персонаж помітно вище — спиною.
+    expect(catFacing(save.current, cat, null, { at: { x: left.x, y: left.y + 0.05 }, prev: BACK })).toEqual(FRONT);
+    expect(catFacing(save.current, cat, null, { at: { x: 10.1, y: 9.1 }, prev: FRONT })).toEqual(BACK);
+  });
+
   it("на руках і на колінах — туди ж, куди персонаж: ракурс персонажа, а flip — відносно нього (гніздо дзеркалить контейнер)", () => {
     const save = game();
     const cat = withCat(save);
@@ -505,8 +528,80 @@ describe("юрба (`catCrowds`)", () => {
     const xs = members.map((m) => placed(m, out)).map((p) => p.x - ps.x).sort((a, b) => a - b);
     // Двоє ліворуч, двоє праворуч, перший — на `beside` від персонажа, далі — з кроком `step`.
     expect(xs).toEqual([-CROWD.beside - CROWD.step, -CROWD.beside, CROWD.beside, CROWD.beside + CROWD.step].map((x) => expect.closeTo(x, 6)));
-    // Лише вздовж горизонталі екрана: вертикаль — та сама.
-    for (const m of members) expect(placed(m, out).y).toBeCloseTo(ps.y, 6);
+    // Уздовж горизонталі екрана й трохи ближче до камери (`front`): хто зверху, кіт чи персонаж, не вирішує похибка округлення.
+    for (const m of members) expect(placed(m, out).y).toBeCloseTo(ps.y + CROWD.front, 6);
+  });
+
+  /** Де на екрані кожен кіт юрби біля персонажа відносно нього (x) після зсуву. */
+  const sides = (members: readonly CrowdMember[], out: Map<number, Vec>, person: Vec): Map<number, number> =>
+    new Map(members.map((m) => [m.id, placed(m, out).x - isoScreenDir(person).x]));
+
+  it("кота під рукою сим перемикає з уваги на `idle` — він лишається на своєму місці, і решта юрби не переставляється", () => {
+    const person = { x: 4.5, y: 8.5 };
+    const memory = crowdMemory();
+    const at = { x: 4.5, y: 8.5 };
+    const before = [1, 2, 3].map((id) => member(id, at, true));
+    const first = sides(before, catCrowds(before, person, free, new Map(), memory), person);
+    // Кота 1 почали гладити: сим міняє йому дію на `idle` — до персонажа він більше «не йде», але під рукою.
+    const petted = [{ ...member(1, at, false), touched: true }, member(2, at, true), member(3, at, true)];
+    const second = sides(petted, catCrowds(petted, person, free, new Map(), memory), person);
+    for (const id of [1, 2, 3]) expect(second.get(id), `кіт ${id}`).toBeCloseTo(first.get(id)!, 6);
+    // Під рукою — не в ногах персонажа: збоку, на `beside`.
+    expect(Math.abs(second.get(1)!)).toBeCloseTo(CROWD.beside, 6);
+    // Перестали гладити, а кіт стоїть, де стояв, — так і лишається (не ковзає в ноги персонажа).
+    const after = [member(1, at, false), member(2, at, true), member(3, at, true)];
+    const third = sides(after, catCrowds(after, person, free, new Map(), memory), person);
+    for (const id of [1, 2, 3]) expect(third.get(id), `кіт ${id}`).toBeCloseTo(first.get(id)!, 6);
+  });
+
+  it("місця тримаються між кадрами: хто вийшов, не перекидає решту на другий бік; новий стає з краю свого боку", () => {
+    const person = { x: 4.5, y: 8.5 };
+    const memory = crowdMemory();
+    const at = { x: 4.5, y: 8.5 };
+    const four = [1, 2, 3, 4].map((id) => member(id, at, true));
+    const was = sides(four, catCrowds(four, person, free, new Map(), memory), person);
+    // Двоє ліворуч і двоє праворуч.
+    expect([...was.values()].filter((x) => x < 0)).toHaveLength(2);
+    // Один із правих пішов (рушив — сим веде його геть, у юрбі його вже немає): решта на своїх боках.
+    const goneId = [...was.entries()].find(([, x]) => x > 0)![0];
+    const three = four.filter((m) => m.id !== goneId);
+    const now = sides(three, catCrowds(three, person, free, new Map(), memory), person);
+    for (const m of three) expect(Math.sign(now.get(m.id)!), `кіт ${m.id}`).toBe(Math.sign(was.get(m.id)!));
+    // Ліві не зрушили; правий, що лишився, став ближче, на `beside`.
+    for (const m of three.filter((m) => was.get(m.id)! < 0)) expect(now.get(m.id)!).toBeCloseTo(was.get(m.id)!, 6);
+    expect(Math.min(...three.map((m) => now.get(m.id)!).filter((x) => x > 0))).toBeCloseTo(CROWD.beside, 6);
+    // Новий, що прийшов зліва (дивиться праворуч — `from` −1), стає з краю лівого боку: ліві не рухаються.
+    const five = [...three, { ...member(9, at, true), from: -1 }];
+    const next = sides(five, catCrowds(five, person, free, new Map(), memory), person);
+    for (const m of three) expect(next.get(m.id)!).toBeCloseTo(now.get(m.id)!, 6);
+    expect(next.get(9)!).toBeCloseTo(-CROWD.beside - 2 * CROWD.step, 6);
+  });
+
+  it("кіт під рукою на дальньому місці стає найближчим до персонажа на своєму боці (рука дістає) і там лишається", () => {
+    const person = { x: 4.5, y: 8.5 };
+    const memory = crowdMemory();
+    const at = { x: 4.5, y: 8.5 };
+    const four = [1, 2, 3, 4].map((id) => member(id, at, true));
+    const was = sides(four, catCrowds(four, person, free, new Map(), memory), person);
+    const [outerId, outerX] = [...was.entries()].find(([, x]) => Math.abs(x) > CROWD.beside + 1)!;
+    const touch = (id: number): CrowdMember[] => four.map((m) => (m.id === id ? { ...m, touched: true } : m));
+    const now = sides(four, catCrowds(touch(outerId), person, free, new Map(), memory), person);
+    expect(now.get(outerId)!).toBeCloseTo(Math.sign(outerX) * CROWD.beside, 6);
+    // Ніхто не перейшов на другий бік.
+    for (const m of four) expect(Math.sign(now.get(m.id)!)).toBe(Math.sign(was.get(m.id)!));
+    // Пестощі скінчилися — лишається найближчим.
+    const after = sides(four, catCrowds(four, person, free, new Map(), memory), person);
+    expect(after.get(outerId)!).toBeCloseTo(Math.sign(outerX) * CROWD.beside, 6);
+  });
+
+  it("персонаж відійшов — кіт уже не в юрбі біля нього й місця не тримає", () => {
+    const memory = crowdMemory();
+    const at = { x: 4.5, y: 8.5 };
+    const cat = member(1, at, false);
+    catCrowds([member(1, at, true)], { x: 4.5, y: 8.5 }, free, new Map(), memory);
+    expect(memory.slots.has(1)).toBe(true);
+    expect(catCrowds([cat], { x: 6.5, y: 8.5 }, free, new Map(), memory).size).toBe(0);
+    expect(memory.slots.size).toBe(0);
   });
 
   it("один біля ніг персонажа — збоку від нього, з того боку, де стоїть; далеко від нього — на місці", () => {
