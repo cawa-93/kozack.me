@@ -6,9 +6,10 @@
 // Те саме, що показував старий кіт на ізометричній підлозі (перехідний вигляд F3b), і те, що каже маніфест
 // про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота, `top` ящиків.
 
-import { CARRIER_SPOT, HIGH_PLACES, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
-import type { Cat, GameState, HomeItem, Vec } from "../../sim/types";
+import { CARRIER_SPOT, HIGH_PLACES, isSolid, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
+import type { Cat, GameState, HomeItem, LitterItem, ScratcherItem, Vec } from "../../sim/types";
 import type { CatAnimId } from "../anim/ids";
+import { isoScreenDir } from "../anim/iso";
 import type { PairPlacement } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
@@ -26,13 +27,14 @@ import { artOffset, footprintCenter } from "./geometry";
  * - `under` — ховається під меблями: з-під ближчого видного краю видно очі й кінчик хвоста (з-під дивана — з боку сидіння,
  *   `hidePeek`);
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі (сплячого — ще й кінчик хвоста з входу);
+ * - `litter` — присідає в лотку: на наповнювачі, над лотком у порядку малювання (`LITTER_SEAT`);
  * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): анімація `blanket` (N1) показує лише вушка над
  *   горбиком і кінчик хвоста;
  * - `carrier` — спить у переносці: клубочок під ґратками (`CARRIER_GRATE_DEPTH`);
  * - `drum` — спить у барабані пральної машини;
  * - `robot` — їде на роботі-пилососі («Безстрашний»).
  */
-export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "blanket" | "carrier" | "drum" | "robot";
+export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "litter" | "blanket" | "carrier" | "drum" | "robot";
 
 /**
  * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста), лише очі (і кінчик
@@ -65,6 +67,8 @@ export interface CatSpot {
   show: CatShow;
   /** Річ, у якій кіт (будиночок): її id у реєстрі. */
   item: string | null;
+  /** Куди кіт дивиться (клітинки): на річ, біля якої стоїть збоку (`besideSeat`); null — як каже `catFacing`. */
+  faces: Vec | null;
 }
 
 /** Що частина котів знає про глибини інших частин світу. */
@@ -84,6 +88,12 @@ export const CAT_PIECE = { shadow: 0.001, body: 0.002, peek: 0.003 } as const;
 
 /** Над точкою речі, у її проміжку глибини: кіт у будиночку й на роботі — над ними, нижче за ґратки чи накладки вище. */
 const ABOVE_ITEM = ISO_DEPTH_SLOT * 0.4;
+/**
+ * Кіт у лотку — одразу над лотком у його проміжку глибини: тінь і тулуб (`CAT_PIECE`) нижче за хвилі запаху брудного лотка
+ * (`ON.fx` 0,003, `floor.ts`), тож запах здіймається й над котом.
+ */
+export const IN_LITTER = ISO_DEPTH_SLOT * 0.05;
+
 /**
  * Наскільки найвищий шматок кота в переносці (тулуб) нижче за ґратки: з таким запасом похибка округлення глибин (~1e-13 на
  * глибинах у сотні) не поставить його на ґратки чи над ними.
@@ -131,7 +141,7 @@ export function blanketOffset(cat: Pick<Cat, "ageWeeks" | "traits" | "breed" | "
 }
 
 function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot {
-  return { kind, at, lift: 0, offset: ZERO, box: null, behind: false, above: null, scale: 1, shadow: false, show: "rig", item: null, ...extra };
+  return { kind, at, lift: 0, offset: ZERO, box: null, behind: false, above: null, scale: 1, shadow: false, show: "rig", item: null, faces: null, ...extra };
 }
 
 // --- Схованка під меблями -------------------------------------------------------------------------
@@ -218,6 +228,86 @@ export function bowlSeat(cat: Vec, bowl: Vec, feeder: boolean, facesRight: boole
   return { x: cat.x + (side * half - BOWL_SIDE.behind) * k, y: cat.y + (-side * half - BOWL_SIDE.behind) * k };
 }
 
+// --- Лоток і кігтеточка ---------------------------------------------------------------------------
+
+/**
+ * Кіт у лотку (§9.12; рецензія хвилі 3): присідає на наповнювачі — на `lift` над підлогою (наповнювач на 13, борт 22,
+ * `art/item/litter/*.svg`) — і в порядку малювання одразу над лотком (`IN_LITTER`). У точці лотка на підлозі передній борт і
+ * дашок ховали кота, крім кінчиків вух, і присідання (і крику від болю, §9.5) не було видно. У закритому лотку дашок — над
+ * задньою половиною, вхід — на грані +x, тож кіт сидить у відкритій передній частині: на `premium` клітинки далі по x.
+ */
+export const LITTER_SEAT = { lift: 12, premium: 0.16 } as const;
+
+/**
+ * Кіт поруч із річчю, яку дере чи нюхає (§9.12; рецензія хвилі 3): збоку вздовж горизонталі екрана на `along` клітинок (x − y),
+ * з того боку, звідки на неї дивиться, і на `front` ближче до камери — тож у порядку малювання він над річчю й лапами чи
+ * носом дістає до неї, а не ховається за нею. Кігтеточка — стовпчик ≈ 0,2 клітинки на підставці, лоток — 0,8 × 0,6.
+ */
+export const BESIDE = { scratcher: { along: 0.62, front: 0.1 }, litter: { along: 0.95, front: 0.08 } } as const;
+/** З такої відстані до речі (клітинки) кіт, що йде до неї, уже стає збоку — плавно, а не ривком в останню мить. */
+export const BESIDE_APPROACH = 0.8;
+
+/** Річ котячого кутка з цілі дії кота (`item:<id>`) потрібного виду. */
+function targetItem<K extends HomeItem["kind"]>(state: GameState, cat: Cat, kind: K): Extract<HomeItem, { kind: K }> | null {
+  const target = cat.act.target;
+  if (!target?.startsWith("item:")) return null;
+  const id = Number(target.slice(5));
+  const item = state.home.items.find((i) => i.id === id);
+  return item?.kind === kind ? (item as Extract<HomeItem, { kind: K }>) : null;
+}
+
+/** Лоток, до якого кіт прийшов у туалет (§9.12): у ньому присідає, а чистюля, що відмовився (`refused`), нюхає його збоку. */
+export function litterOf(state: GameState, cat: Cat): LitterItem | null {
+  return cat.act.kind === "toilet" ? targetItem(state, cat, "litter") : null;
+}
+
+/** Кігтеточка, яку кіт дере (§9.12, «Дряпання»). */
+export function scratcherOf(state: GameState, cat: Cat): ScratcherItem | null {
+  return cat.act.kind === "scratch" ? targetItem(state, cat, "scratcher") : null;
+}
+
+/**
+ * Місце збоку зайняте, коли інша річ котячого кутка ближче за це на екрані (одиниці арту: по горизонталі й по вертикалі) —
+ * кіт стояв би на ній чи перед нею: лотки й кігтеточки стоять рядком по діагоналі сітки, і сусідня річ на екрані якраз там.
+ */
+const BESIDE_CLEAR = { x: 56, y: 40 } as const;
+
+/** Зсув місця збоку від речі (`BESIDE`): `side` −1 — ліворуч на екрані, 1 — праворуч. Праворуч на екрані — +x і −y. */
+const besideShift = (side: number, along: number, front: number): Vec => ({ x: (side * along) / 2 + front, y: (-side * along) / 2 + front });
+
+/**
+ * З якого боку речі `item` стати (`BESIDE`): −1 — ліворуч на екрані, 1 — праворуч. Звідки кіт на неї дивиться (`facesRight`
+ * — праворуч: тоді ліворуч від неї), якщо там вільно; інакше — з другого боку, якщо вільно там. Зайнято — стіна чи меблі або
+ * інша річ котячого кутка ближче за `BESIDE_CLEAR` на екрані.
+ */
+export function besideSide(state: GameState, item: HomeItem, facesRight: boolean, along: number, front: number): -1 | 1 {
+  const p = itemPoint(item);
+  const free = (side: number): boolean => {
+    const shift = besideShift(side, along, front);
+    const at = { x: p.x + shift.x, y: p.y + shift.y };
+    if (isSolid(state, Math.floor(at.x), Math.floor(at.y))) return false;
+    return !state.home.items.some((other) => {
+      if (other === item || other.kind === "toy") return false;
+      const d = isoScreenDir({ x: itemPoint(other).x - at.x, y: itemPoint(other).y - at.y });
+      return Math.abs(d.x) < BESIDE_CLEAR.x && Math.abs(d.y) < BESIDE_CLEAR.y;
+    });
+  };
+  const first = facesRight ? -1 : 1;
+  return free(first) || !free(-first) ? first : (-first as -1 | 1);
+}
+
+/**
+ * Де стоїть кіт поруч із річчю в точці `item` (`BESIDE`): збоку вздовж горизонталі екрана на `along` (`side` — з якого боку,
+ * `besideSide`) і на `front` ближче до камери. Кіт, що ще йде, стає туди поступово з `BESIDE_APPROACH` клітинок (`arrived` —
+ * дійшов). Зсув — від самого кота: дійшовши, він у точці речі.
+ */
+export function besideSeat(cat: Vec, item: Vec, side: -1 | 1, arrived: boolean, along: number, front: number): Vec {
+  const k = arrived ? 1 : Math.max(0, 1 - Math.hypot(item.x - cat.x, item.y - cat.y) / BESIDE_APPROACH);
+  if (k === 0) return { x: cat.x, y: cat.y };
+  const shift = besideShift(side, along, front);
+  return { x: cat.x + shift.x * k, y: cat.y + shift.y * k };
+}
+
 /**
  * Де кіт (див. `CatSpotKind`): `anim` — що він грає (`catAnim`), `pair` — місце в парі (`catPairs`), `held` — на руках чи
  * колінах; `depths` — глибини інших частин світу.
@@ -278,8 +368,26 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     const feeder = (state.home.feeders ?? []).some((f) => f.slot === bowl.slot);
     return spot("floor", bowlSeat(cat, itemPoint(bowl), feeder, cat.facing >= 0, act.goal === null), { shadow: true });
   }
+  if (!pair) {
+    // У лотку — присідає на наповнювачі (у закритому — у відкритій частині); чистюля, що відмовився, нюхає його збоку.
+    const litter = litterOf(state, cat);
+    if (litter && act.goal === null && act.refused !== true) {
+      const p = itemPoint(litter);
+      const at = litter.quality === "premium" ? { x: p.x + LITTER_SEAT.premium, y: p.y } : p;
+      return spot("litter", at, { lift: LITTER_SEAT.lift, above: { id: `item:${litter.id}`, offset: IN_LITTER } });
+    }
+    // Дере кігтеточку чи нюхає лоток — збоку від речі (з вільного боку), лапами чи носом до неї.
+    const scratcher = scratcherOf(state, cat);
+    const beside = scratcher ? { item: scratcher, ...BESIDE.scratcher } : litter ? { item: litter, ...BESIDE.litter } : null;
+    if (beside) {
+      const p = itemPoint(beside.item);
+      const side = besideSide(state, beside.item, cat.facing >= 0, beside.along, beside.front);
+      const arrived = act.goal === null;
+      return spot("floor", besideSeat(cat, p, side, arrived, beside.along, beside.front), { shadow: true, faces: arrived ? p : null });
+    }
+  }
   return spot("floor", tile, { shadow: true });
 }
 
-/** Чи кіт на чомусь над підлогою: на меблях, на роботі (для плавного стрибка — висота змінюється не миттю). */
-export const raised = (kind: CatSpotKind): boolean => kind === "furniture" || kind === "robot";
+/** Чи кіт на чомусь над підлогою: на меблях, на роботі, у лотку (для плавного стрибка — висота змінюється не миттю). */
+export const raised = (kind: CatSpotKind): boolean => kind === "furniture" || kind === "robot" || kind === "litter";

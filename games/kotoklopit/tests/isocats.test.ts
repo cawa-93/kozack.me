@@ -30,6 +30,8 @@ import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { BELLY_ABOVE, bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import {
+  BESIDE,
+  besideSide,
   BLANKET_EARS,
   blanketOffset,
   BOWL_APPROACH,
@@ -38,6 +40,8 @@ import {
   bowlSeat,
   CAT_PIECE,
   catSpot,
+  IN_LITTER,
+  LITTER_SEAT,
   SOFA_HIDE,
   SPOT_SCALE,
   underGrate,
@@ -588,6 +592,74 @@ describe("де кіт (`catSpot`)", () => {
         }
       }
     }
+  });
+
+  it("у лотку — присідає на наповнювачі над лотком (у закритому — у відкритій частині); чистюля, що відмовився, нюхає збоку", () => {
+    const save = game();
+    const home = save.current.home;
+    home.items = home.items.filter((i) => i.kind !== "litter");
+    home.items.push({ id: 811, kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 } as HomeItem);
+    home.items.push({ id: 812, kind: "litter", quality: "premium", slot: "litter-2", litter: "cheap", uses: 0 } as HomeItem);
+    const cheap = slotCenter("litter-1");
+    const premium = slotCenter("litter-2");
+    const cat = withCat(save, cheap);
+    cat.act = act("toilet", { target: "item:811" });
+    expect(catSpot(save.current, cat, "squat", null, SPOT)).toMatchObject({ kind: "litter", at: cheap, lift: LITTER_SEAT.lift, above: { id: "item:811", offset: IN_LITTER }, shadow: false });
+    // Тулуб — нижче за хвилі запаху брудного лотка (`ON.fx` 0,003 у `floor.ts`), тож запах і над котом.
+    expect(IN_LITTER + CAT_PIECE.body).toBeLessThan(0.003);
+    cat.x = premium.x;
+    cat.y = premium.y;
+    cat.act = act("toilet", { target: "item:812" });
+    expect(catSpot(save.current, cat, "squat", null, SPOT)).toMatchObject({ kind: "litter", at: { x: premium.x + LITTER_SEAT.premium, y: premium.y }, above: { id: "item:812" } });
+    // Ще йде до лотка — на підлозі.
+    cat.act = act("toilet", { target: "item:812", goal: { x: 9, y: 3 } });
+    expect(catSpot(save.current, cat, "walk", null, SPOT).kind).toBe("floor");
+    // Відмовився від брудного — стоїть збоку, ближче до камери, і дивиться на лоток.
+    cat.act = act("toilet", { target: "item:812", refused: true });
+    const sniff = catSpot(save.current, cat, "sniff", null, SPOT);
+    expect(sniff).toMatchObject({ kind: "floor", shadow: true, faces: premium });
+    const d = isoScreenDir({ x: sniff.at.x - premium.x, y: sniff.at.y - premium.y });
+    expect(Math.abs(d.x)).toBeCloseTo(BESIDE.litter.along * 64, 6);
+    expect(d.y).toBeGreaterThan(0);
+  });
+
+  it("дере кігтеточку — збоку від стовпчика, ближче до камери: у порядку малювання після неї, лапами до неї", () => {
+    const save = game();
+    const home = save.current.home;
+    home.items.push({ id: 821, kind: "scratcher", quality: "premium", slot: "scratcher-3" } as HomeItem);
+    const post = slotCenter("scratcher-3");
+    const cat = withCat(save, post);
+    cat.act = act("scratch", { target: "item:821" });
+    for (const facing of [1, -1]) {
+      cat.facing = facing;
+      const spot = catSpot(save.current, cat, "scratch", null, SPOT);
+      expect(spot).toMatchObject({ kind: "floor", faces: post });
+      const d = isoScreenDir({ x: spot.at.x - post.x, y: spot.at.y - post.y });
+      // Дивиться праворуч — стоїть ліворуч, і навпаки.
+      expect(Math.sign(d.x)).toBe(-facing);
+      expect(Math.abs(d.x)).toBeCloseTo(BESIDE.scratcher.along * 64, 6);
+      const order = isoOrder([], [{ ...post, half: 38 }, { ...spot.at, half: isoCatHalf(cat) }]);
+      expect([...order]).toEqual([0, 1]);
+    }
+    // Ще йде — далеко від кігтеточки у своїй точці.
+    cat.act = act("scratch", { target: "item:821", goal: { x: 11, y: 9 } });
+    cat.x = post.x + 1.5;
+    expect(catSpot(save.current, cat, "walk", null, SPOT).at).toEqual({ x: cat.x, y: cat.y });
+  });
+
+  it("збоку від речі — з вільного боку: якщо там інша річ котячого кутка, то з другого", () => {
+    const save = game();
+    const home = save.current.home;
+    home.items = home.items.filter((i) => i.kind !== "litter");
+    const left = { id: 831, kind: "litter", quality: "cheap", slot: "litter-5", litter: "cheap", uses: 0 } as HomeItem;
+    const right = { id: 832, kind: "litter", quality: "cheap", slot: "litter-6", litter: null, uses: 0 } as HomeItem;
+    home.items.push(right);
+    // Нікого поруч — з боку, звідки дивиться.
+    expect(besideSide(save.current, right, true, BESIDE.litter.along, BESIDE.litter.front)).toBe(-1);
+    expect(besideSide(save.current, right, false, BESIDE.litter.along, BESIDE.litter.front)).toBe(1);
+    // Ліворуч на екрані (−x) — сусідній лоток (1, 6): стати праворуч.
+    home.items.push(left);
+    expect(besideSide(save.current, right, true, BESIDE.litter.along, BESIDE.litter.front)).toBe(1);
   });
 
   it("на справжньому дні: кожен кіт удома має місце, і на меблях — на висоті їхнього верху", () => {

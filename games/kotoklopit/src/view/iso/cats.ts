@@ -1,7 +1,7 @@
 // Коти ізометричного вигляду як частина світу (крок 16, T1, `GRAPHICS_PLAN.md`): кожен кіт — скелет зі запеченими
 // частинами його шерсті й породи (`catview.ts`), що грає анімацію за тим, що кіт робить і відчуває (`catAnim`, `catFace`,
 // разові від подій і стрибки — `catevents.ts`), дивиться в один із чотирьох ізометричних ракурсів (`catFacing`), стоїть
-// там, де він є (`catspot.ts`: підлога, меблі, схованка, будиночок, барабан, переноска, ковдра, робот, руки), у парі —
+// там, де він є (`catspot.ts`: підлога, меблі, схованка, будиночок, лоток, барабан, переноска, ковдра, робот, руки), у парі —
 // розсунутий уздовж екрана (`catPairs`), у клубку бійки — на тлі хмари пилу. Як і старий вигляд (до кроку 16):
 // імена в нашийниках (§9.10), приховані числа режиму розробки (§11.5), точки для баблів і руки, що гладить, підсвітка
 // кота-цілі (§8.2). Глибина — точки реєстру (`iso/depth.ts`).
@@ -280,7 +280,7 @@ export class IsoCatsView implements CatsPart {
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
     this.liftFrom(view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
-    const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : catFacing(state, cat, mem.pos, { prev: mem.facing, pair });
+    const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : faceTo(catFacing(state, cat, mem.pos, { prev: mem.facing, pair }), spot);
     mem.facing = facing;
     if (mem.pos) {
       mem.pos.x = cat.x;
@@ -605,6 +605,13 @@ export class IsoCatsView implements CatsPart {
     if (current?.target.active) current.target.filters?.internal.remove(current.glow);
     this.glowing = null;
   }
+}
+
+/** Кіт збоку від речі (`CatSpot.faces`) дивиться на неї: ліворуч чи праворуч на екрані — до неї; ракурс — як був. */
+function faceTo(facing: RigFacing, spot: CatSpot): RigFacing {
+  if (!spot.faces) return facing;
+  const flip = spot.faces.x - spot.faces.y < spot.at.x - spot.at.y;
+  return flip === facing.flip ? facing : { view: facing.view, flip };
 }
 
 /**
