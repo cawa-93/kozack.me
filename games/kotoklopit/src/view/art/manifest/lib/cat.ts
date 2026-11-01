@@ -164,5 +164,5 @@ export const CAT_TAILS: Record<Exclude<Shape["tail"], "none">, Part> = {
   long: TAIL_LONG,
   short: { size: { w: 37, h: 42 }, pivot: { x: 23, y: 30 }, points: { tip: { x: 13.2, y: 15.2 }, "tip-back": { x: 24.2, y: 13.4 } } },
   fluffy: { size: { w: 55, h: 58 }, pivot: { x: 32, y: 45 }, points: { tip: { x: 28.6, y: 16.2 }, "tip-back": { x: 38.4, y: 17.6 } } },
-  bobtail: { size: { w: 40, h: 37 }, pivot: { x: 22, y: 22 }, points: { tip: { x: 18.4, y: 10.8 }, "tip-back": { x: 21, y: 10.2 } } },
+  bobtail: { size: { w: 37, h: 34 }, pivot: { x: 22, y: 22 }, points: { tip: { x: 18.4, y: 10.8 }, "tip-back": { x: 21, y: 10.2 } } },
 };

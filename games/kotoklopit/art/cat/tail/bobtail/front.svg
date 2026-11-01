@@ -1,20 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 37" width="40" height="37">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 34" width="37" height="34">
 <!-- cat/tail/bobtail/front — бобтейл — помпон (японський, американський), ракурс front (¾ спереду). Пакет A8a (варіанти форм), art/STYLE.md.
-size 40×37; pivot (22, 22) — корінь хвоста на крупі; points: tip (18.4, 10.8), tip-back (21, 10.2).
+size 37×34; pivot (22, 22) — корінь хвоста на крупі; points: tip (18.4, 10.8), tip-back (21, 10.2).
 Шари: fill, fluff, point, tortie-a, tortie-b, tortie-c, tabby-classic, tabby-mackerel, tabby-spotted, tabby-ticked, white-1, white-2, white-3, shade, ink, fluff-ink.
-Кулька з пасмами по колу; корінь усередині. fluff / fluff-ink — пасма довгошерстих (крім низу, що ховається в круп).
+Кулька з пасмами по колу; корінь усередині. fluff / fluff-ink — 4 довші пасма довгошерстих лише на зовнішньому боці (угорі й назад, геть від крупа).
 front — за тулубом, back — перед крупом. Маски (A9b) — як у довгого: поінт — увесь хвіст, tortie-a — кінчик, b — корінь, c — середина; кільця табі й темний кінчик; білого немає.
 -->
 <defs>
 <path id="cat-tail-bobtail-front-shape" d="M25.1 19.6Q25.8 23.8 21.4 24Q17.6 27.7 14.6 23.4Q10.4 22.7 11.5 18.9Q9.1 15.3 13.5 13.9Q14.8 9.7 18.8 11.8Q23.2 10.1 23.9 14.6Q28.5 16.3 25 19.5Z"/>
 <clipPath id="cat-tail-bobtail-front-clip"><use href="#cat-tail-bobtail-front-shape"/></clipPath>
-<clipPath id="cat-tail-bobtail-front-mask"><path d="M4.3 4.4L33 4.4L33 32.9L4.3 32.9Z"/></clipPath>
+<clipPath id="cat-tail-bobtail-front-mask"><path d="M4.2 5.2L29 5.2L29 28.2L4.2 28.2Z"/></clipPath>
 </defs>
 <g id="fill">
 <use href="#cat-tail-bobtail-front-shape" fill="#ffffff"/>
 </g>
 <g id="fluff" clip-path="url(#cat-tail-bobtail-front-mask)">
-<path d="M26.1 22.2Q28.8 28.5 22.2 25.8Q20 32.4 16.3 26.4Q10.2 29.8 11.4 23Q4.8 21 9.8 16.7Q5.7 11.7 12.3 12.4Q12.1 4.9 17.8 10.1Q22.3 5 23.4 11.5Q30.4 10.8 27.1 16.7Q32.5 20.3 26 22.2Z" fill="#ffffff"/>
+<path d="M14.6 20.6L11.1 22.7Q4.7 21.1 9.9 17.2Q4.9 11.8 12.4 12.5Q12.8 6.1 18 10.2Q23.1 5.7 24.2 12.3L21.4 15.3L22.7 17.3L22.6 19.7L21.3 21.6L19 22.6L16.5 22.2L14.6 20.6Z" fill="#ffffff"/>
 </g>
 <g id="point" clip-path="url(#cat-tail-bobtail-front-mask)">
 <path d="M1 0.8L35.8 0.8L35.8 35.6L1 35.6Z" fill="#ffffff"/>
@@ -59,14 +59,9 @@ front — за тулубом, back — перед крупом. Маски (A9b
 <use href="#cat-tail-bobtail-front-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <g id="fluff-ink">
-<path d="M26.5 23.4Q27.9 27.7 23.4 26.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M21.8 27Q19.9 31.3 17.1 27.5" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M15.2 27Q10.8 28.9 11.2 24.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M10.1 22.7Q5.8 20.8 8.9 17.5" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M9.2 15.7Q6.7 12.2 11.1 12.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M12.4 11.1Q12.7 6.1 16.8 9.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M18.7 9.2Q22 6 23.2 10.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M24.6 11.5Q29.4 11.4 27.7 15.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M27.9 17.4Q31.4 20.1 27.2 21.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.7 22.3Q5.9 20.9 8.8 18.1" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.9 16Q6.2 12.5 10.8 12.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.6 11.1Q13.3 7.2 16.8 9.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.1 9.3Q22.7 6.9 23.9 10.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>
