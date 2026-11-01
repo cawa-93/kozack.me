@@ -25,13 +25,14 @@ import { COLORS } from "../colors";
 import type { RigFacing } from "../rig/types";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
-import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
+import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { catPlay, gaitRate, groundAt, nextGait, nextLift, startShot, type CatShot, type GaitMemory, type Lift } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
+import { liftedRoot } from "./personlook";
 import { CARRIER_GRATE_DEPTH } from "./floor";
 
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
@@ -78,6 +79,8 @@ interface Memory {
   lift: Lift | null;
   /** Де була точка підлоги під котом і як швидко він іде на екрані: темп лап ходи й бігу (`gaitRate`). */
   gait: GaitMemory | null;
+  /** Де кіт стояв на підлозі, коли персонаж почав брати його на руки (`Hands.lift`), px світу. */
+  liftFrom: Point | null;
   /** Розмір (кошеня, порода) і для якого віку й об'єкта кота його рахували: щокадру не перераховувати. */
   size: CatSize | null;
   sizeAge: number;
@@ -136,6 +139,8 @@ export class IsoCatsView implements CatsPart {
     time: 0,
   };
   private readonly labelOrder: Phaser.GameObjects.Text[] = [];
+  /** Спинка кота від кореня (кіт, якого беруть на руки чи опускають). */
+  private readonly petOffset: Point = { x: 0, y: 0 };
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -214,7 +219,7 @@ export class IsoCatsView implements CatsPart {
   private memoryOf(id: number): Memory {
     let mem = this.memory.get(id);
     if (!mem) {
-      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, gait: null, size: null, sizeAge: Number.NaN, sizeCat: null };
+      mem = { pos: null, facing: null, transition: null, shot: null, lift: null, gait: null, liftFrom: null, size: null, sizeAge: Number.NaN, sizeCat: null };
       this.memory.set(id, mem);
     }
     return mem;
@@ -254,7 +259,12 @@ export class IsoCatsView implements CatsPart {
     mem.shot = shot;
     const { anim, overlay, restart, face } = play;
 
-    const spot = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
+    // Персонаж бере кота на руки чи опускає (`Hands.lift`, T2): кіт біля рук, хоч сим уже й відпустив його, і йде з кистями.
+    const handsLift = this.ctx.world.person.hands.lift;
+    const lifting = handsLift && handsLift.cat === cat.id ? handsLift : null;
+    const own = catSpot(state, cat, anim, pair, SPOT_DEPTHS);
+    const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
+    this.liftFrom(view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук).
     const facing = spot.kind === "hands" ? personFacing(state, mem.facing) : catFacing(state, cat, mem.pos, { prev: mem.facing, pair });
     mem.facing = facing;
@@ -269,7 +279,8 @@ export class IsoCatsView implements CatsPart {
     this.place(view, spot, mem, time, f);
     const act = cat.act;
     const carrying = act.kind === "carry" && act.picked === true && act.dropped !== true;
-    f.anim = anim;
+    // Беручи на руки й опускаючи: на підлозі — сидить, у руках — «на руках».
+    f.anim = lifting ? (lifting.w >= 0.5 ? "carried" : anim === "carried" ? "sit" : anim) : anim;
     f.overlay = overlay;
     f.restart = restart;
     // Клубок бійки: обидва грають ту саму анімацію дзеркально — другий (з більшим номером) зі зсунутою фазою (N2).
@@ -285,7 +296,7 @@ export class IsoCatsView implements CatsPart {
     f.girth = girthOf(cat);
     f.show = spot.show;
     f.under = spot.kind === "under";
-    f.shadow = spot.shadow;
+    f.shadow = lifting ? lifting.w < 0.5 : spot.shadow;
     // Порожній прямокутник — камери ще немає (перший кадр): нікого не відкидати.
     f.culled = this.visible.width > CULL_MARGIN * 2 && !this.visible.contains(f.root.x, f.root.y);
     f.teeth = carrying ? this.teethOf(state, act.carry, act.target) : null;
@@ -309,6 +320,13 @@ export class IsoCatsView implements CatsPart {
       mem.lift = null;
       const hands = this.ctx.world.person.hands;
       this.placeOnPerson(view, hands.depth);
+      if (hands.lift && mem.liftFrom) {
+        // Спинка кота (гніздо `pet`) від кореня — з минулого кадру.
+        this.petOffset.x = view.back.x - view.root.x;
+        this.petOffset.y = view.back.y - view.root.y;
+        liftedRoot(mem.liftFrom, hands.lift, this.petOffset, hands, f.root, f.ground);
+        return;
+      }
       f.root.x = f.ground.x = hands.x;
       f.root.y = f.ground.y = hands.y;
       return;
@@ -321,6 +339,26 @@ export class IsoCatsView implements CatsPart {
     f.root.x = f.ground.x = s.x + spot.offset.x;
     f.root.y = s.y + spot.offset.y - lift;
     f.ground.y = s.y + spot.offset.y - (mem.lift ? groundAt(mem.lift, time) : lift);
+  }
+
+  /**
+   * Де кіт стоїть на підлозі, поки персонаж бере його на руки чи опускає (`liftedRoot`): бере (сим уже тримає кота) — де його
+   * намалювали востаннє перед тим, як персонаж узявся (кіт був на підлозі), опускає (сим уже відпустив) — його місце на
+   * підлозі за симом (`own`), щоб коли разова скінчиться, кіт лишився там само. Не бере й не опускає — забути.
+   */
+  private liftFrom(view: IsoCatView, mem: Memory, lifting: HandsLift | null, own: CatSpot): void {
+    if (!lifting) {
+      mem.liftFrom = null;
+      return;
+    }
+    if (own.kind !== "hands") {
+      const s = ISO.toScreen(own.at);
+      mem.liftFrom ??= { x: 0, y: 0 };
+      mem.liftFrom.x = s.x + own.offset.x;
+      mem.liftFrom.y = s.y + own.offset.y - own.lift;
+    } else if (!mem.liftFrom) {
+      mem.liftFrom = view.shown ? { x: view.root.x, y: view.root.y } : { x: lifting.at.x, y: lifting.at.y };
+    }
   }
 
   /**

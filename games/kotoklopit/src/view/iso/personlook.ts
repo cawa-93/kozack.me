@@ -1,14 +1,17 @@
 // Що показує персонаж нового вигляду (крок 16, T2) — чисті правила без Phaser для `iso/person.ts`: кадр очей за тим, наскільки
 // вони заплющені, поправки вигляду поверх анімації, річ у гнізді рук (і коли вона там з'являється чи зникає в разовій справі),
-// телефон біля вуха, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах), чи брати накладку рук,
-// порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
+// телефон біля вуха, чи анімація сама хилить голову, у якому гнізді кіт (на руках чи на колінах), де кіт, якого беруть на руки
+// чи опускають, чи брати накладку рук, порядок шматків персонажа в його проміжку глибини й масштаб тіні. Перевіряє
 // `tests/isoperson.test.ts`.
 
+import type { GameEvent } from "../../sim/events";
 import type { Item } from "../../sim/types";
-import { PERSON_CONTACT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
+import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personCatLift } from "../rig/anims/person/move";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
+import type { Point } from "../world/part";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { dishFrame, type IsoFrame } from "./looks";
 import { NO_EXTRAS, type MixExtras } from "./personmix";
@@ -180,4 +183,53 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): 
 export function shownHeld(before: Item | null, now: Item | null, shot: PersonAnimId | null, elapsed: number): Item | null {
   if (shot === null || !(shot in PERSON_CONTACT_MS)) return now;
   return elapsed < PERSON_CONTACT_MS[shot as keyof typeof PERSON_CONTACT_MS] ? before : now;
+}
+
+// --- Кіт, якого беруть на руки й опускають ---------------------------------------------------------
+
+/** Плавно 0…1 (smoothstep). */
+function smooth(x: number): number {
+  const c = Math.max(0, Math.min(1, x));
+  return c * c * (3 - 2 * c);
+}
+
+/**
+ * Який кіт у разовій «бере на руки» чи «опускає» (`personEventAnim`): узяв на руки, опустив, кіт зістрибнув із рук від м'яти;
+ * інша подія — null.
+ */
+export function liftedCat(event: GameEvent): number | null {
+  return event.type === "picked-up" || event.type === "put-down" || event.type === "catnip" ? event.cat : null;
+}
+
+/**
+ * Ваги кота біля рук у мить `t` (мс) разової `pickUp` чи `putDown` (контракт N4a): `w` — наскільки кіт у руках
+ * (`personCatLift`), `grip` — наскільки його місце на підлозі під кистями (`personCatGrip`), а не там, де він стоїть сам.
+ * Бере: поки персонаж присідає й тягнеться до кота, той підсувається під кисті (до миті «підхопив»), далі йде вгору з руками.
+ * Опускає: кіт іде з рук на підлогу під кистями (до миті «відпустив»), далі відходить туди, де стоятиме сам (`putDownCat` у
+ * симі ставить його на 0,6 клітинки попереду), — щоб, коли разова скінчиться, частина котів малювала його там само.
+ */
+export function liftWeights(anim: "pickUp" | "putDown", t: number, out = { w: 0, grip: 0 }): { w: number; grip: number } {
+  out.w = personCatLift(anim, t);
+  if (anim === "pickUp") out.grip = smooth(t / PERSON_PICKUP_GRAB_MS);
+  else out.grip = 1 - smooth((t - PERSON_PUTDOWN_RELEASE_MS) / (PERSON_ONE_SHOT_MS.putDown - PERSON_PUTDOWN_RELEASE_MS));
+  return out;
+}
+
+/**
+ * Де корінь кота, якого беруть на руки чи опускають (частина котів, `cats.ts`), px світу: місце на підлозі — lerp(`own` —
+ * там, де кіт стоїть сам; під кистями — `at` мінус `pet`, зсув його спинки від кореня, `grip`), а корінь — lerp(місце на
+ * підлозі, `hands` — гніздо рук, `w`). Пише в `root` і `ground` (місце на підлозі: там тінь).
+ */
+export function liftedRoot(
+  own: Point,
+  lift: { readonly w: number; readonly grip: number; readonly at: Point },
+  pet: Point,
+  hands: Point,
+  root: Point,
+  ground: Point,
+): void {
+  ground.x = own.x + (lift.at.x - pet.x - own.x) * lift.grip;
+  ground.y = own.y + (lift.at.y - pet.y - own.y) * lift.grip;
+  root.x = ground.x + (hands.x - ground.x) * lift.w;
+  root.y = ground.y + (hands.y - ground.y) * lift.w;
 }

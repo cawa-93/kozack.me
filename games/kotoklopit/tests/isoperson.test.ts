@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item, ToyItem } from "../src/sim/types";
-import { PERSON_ANIM_IDS, PERSON_CONTACT_MS } from "../src/view/anim/ids";
+import { PERSON_ANIM_IDS, PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS } from "../src/view/anim/ids";
 import { personAnim } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
 import { framesOf } from "../src/view/art/types";
@@ -17,6 +17,9 @@ import {
   EYES,
   eyesFrame,
   heldFrame,
+  liftedCat,
+  liftedRoot,
+  liftWeights,
   movesHead,
   PHONE_HELD,
   shownHeld,
@@ -29,6 +32,7 @@ import {
   SLEEP_DROOP,
 } from "../src/view/iso/personlook";
 import { NO_EXTRAS } from "../src/view/iso/personmix";
+import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../src/view/rig/anims/person/move";
 import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { newGame } from "../src/sim/game";
 
@@ -216,3 +220,55 @@ describe("глибина в проміжку персонажа", () => {
     expect(CARGO_PIECES).toBeGreaterThan(0.003);
   });
 });
+
+describe("кіт, якого беруть на руки й опускають, рухається з кистями (контракт N4a)", () => {
+  const ms = PERSON_ONE_SHOT_MS.pickUp;
+
+  it("який кіт: узяв на руки, опустив, зістрибнув від м'яти; інші події — ні", () => {
+    expect(liftedCat({ type: "picked-up", cat: 3, offended: false })).toBe(3);
+    expect(liftedCat({ type: "put-down", cat: 4 })).toBe(4);
+    expect(liftedCat({ type: "catnip", cat: 5, reaction: "roll" })).toBe(5);
+    expect(liftedCat({ type: "tap-opened", cat: 6 })).toBeNull();
+  });
+
+  it("бере: кіт підсувається під кисті до «підхопив» і йде вгору з руками; опускає — навпаки, і в кінці там, де стоятиме сам", () => {
+    const at = (anim: "pickUp" | "putDown", t: number): { w: number; grip: number } => liftWeights(anim, t);
+    expect(at("pickUp", 0)).toEqual({ w: 0, grip: 0 });
+    expect(at("pickUp", PERSON_PICKUP_GRAB_MS)).toEqual({ w: 0, grip: 1 });
+    expect(at("pickUp", ms)).toEqual({ w: 1, grip: 1 });
+    expect(at("putDown", 0)).toEqual({ w: 1, grip: 1 });
+    expect(at("putDown", PERSON_PUTDOWN_RELEASE_MS)).toEqual({ w: 0, grip: 1 });
+    expect(at("putDown", ms)).toEqual({ w: 0, grip: 0 });
+    // Плавно: без стрибків між сусідніми кадрами.
+    for (const anim of ["pickUp", "putDown"] as const) {
+      let prev = at(anim, 0);
+      for (let t = 16; t <= ms; t += 16) {
+        const now = at(anim, t);
+        expect(Math.abs(now.w - prev.w), `${anim} @${t}`).toBeLessThan(0.15);
+        expect(Math.abs(now.grip - prev.grip), `${anim} @${t}`).toBeLessThan(0.15);
+        prev = now;
+      }
+    }
+  });
+
+  it("корінь кота: на підлозі — там, де стоїть сам, чи спинкою під кистями; у руках — у гнізді рук", () => {
+    const own = { x: 100, y: 200 };
+    const pet = { x: 2, y: -30 };
+    const hands = { x: 150, y: 120 };
+    const gripAt = { x: 130, y: 172 };
+    const root = { x: 0, y: 0 };
+    const ground = { x: 0, y: 0 };
+    liftedRoot(own, { w: 0, grip: 0, at: gripAt }, pet, hands, root, ground);
+    expect(root).toEqual(own);
+    expect(ground).toEqual(own);
+    liftedRoot(own, { w: 0, grip: 1, at: gripAt }, pet, hands, root, ground);
+    expect({ x: root.x + pet.x, y: root.y + pet.y }).toEqual(gripAt);
+    liftedRoot(own, { w: 1, grip: 1, at: gripAt }, pet, hands, root, ground);
+    expect(root).toEqual(hands);
+    expect(ground).toEqual({ x: gripAt.x - pet.x, y: gripAt.y - pet.y });
+    liftedRoot(own, { w: 0.5, grip: 1, at: gripAt }, pet, hands, root, ground);
+    expect(root.x).toBeCloseTo((gripAt.x - pet.x + hands.x) / 2);
+    expect(root.y).toBeCloseTo((gripAt.y - pet.y + hands.y) / 2);
+  });
+});
+

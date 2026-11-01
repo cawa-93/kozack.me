@@ -36,18 +36,32 @@ import { artEntry } from "../art/manifest";
 import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
-import { personWithArms } from "../rig/anims/person/move";
+import { personCatGrip, personWithArms } from "../rig/anims/person/move";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
 import { slotFrame } from "../rig/rigcore";
 import { RigSprite, type RigSpriteOf, type SocketWorld } from "../rig/rigsprite";
 import type { AnimOf, RigFacing, Vec2 } from "../rig/types";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
-import type { Hands, PersonPart, Point, WorldFrame } from "../world/part";
+import type { Hands, HandsLift, PersonPart, Point, WorldFrame } from "../world/part";
 import { isoDepth, type IsoPointHandle } from "./depth";
 import { ANCHOR_GAP } from "./geometry";
 import type { IsoFrame } from "./looks";
-import { armsOverlay, cargoDepth, catSocket, eyesFrame, heldFrame, movesHead, PERSON_DEPTH, personExtras, reachDepth, shadowScale, shownHeld } from "./personlook";
+import {
+  armsOverlay,
+  cargoDepth,
+  catSocket,
+  eyesFrame,
+  heldFrame,
+  liftedCat,
+  liftWeights,
+  movesHead,
+  PERSON_DEPTH,
+  personExtras,
+  reachDepth,
+  shadowScale,
+  shownHeld,
+} from "./personlook";
 import { mixAnims } from "./personmix";
 import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedPose, ROD_PLAY, type PartPose, type UnitRect } from "./personreach";
 import { glideOffset, personSpot, shotFace, shotPlace, showFace, type ShotPlace } from "./personspot";
@@ -72,6 +86,8 @@ interface Shot {
   ms: number;
   place: ShotPlace | null;
   before: Item | null;
+  /** Кіт, якого бере на руки чи опускає (`liftedCat`). */
+  cat: number | null;
 }
 
 /** Разова анімація, що зараз грає: подія й з якого моменту годинника анімацій. */
@@ -148,8 +164,13 @@ export class IsoPersonView implements PersonPart {
   private readonly tmpTarget: Vec2 = { x: 0, y: 0 };
   private readonly tmpSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
 
+  /** Кіт, якого бере на руки чи опускає (`Hands.lift`): той самий об'єкт щокадру. */
+  private readonly lift: HandsLift = { cat: -1, w: 0, grip: 0, at: { x: 0, y: 0 } };
+  /** Де кисті підхоплюють кота (`personCatGrip`) за ракурсом і статурою: рахується раз на пару. */
+  private readonly grips = new Map<string, Vec2>();
+
   readonly head: Point = { x: 0, y: 0 };
-  readonly hands: Hands = { x: 0, y: 0, depth: 0 };
+  readonly hands: Hands = { x: 0, y: 0, depth: 0, lift: null };
 
   constructor(private readonly ctx: PartContext) {
     const scene = ctx.scene;
@@ -368,6 +389,30 @@ export class IsoPersonView implements PersonPart {
     }
     this.hands.depth = cargoDepth(this.depth, this.sprite.facing.view === "back");
     this.hands.facing = this.sprite.facing;
+    this.hands.lift = this.liftNow();
+  }
+
+  /**
+   * Бере кота на руки чи опускає (`pickUp`, `putDown` з котом): ваги (`liftWeights`) і де кисті підхоплюють кота у світі
+   * (`personCatGrip` у системі кореня, віддзеркалений разом зі скелетом). Інакше — null.
+   */
+  private liftNow(): HandsLift | null {
+    const shot = this.oneShot;
+    if (this.hidden || !shot || shot.cat === null || (shot.anim !== "pickUp" && shot.anim !== "putDown")) return null;
+    const facing = this.sprite.facing;
+    const build = this.look?.build ?? 1;
+    const key = `${facing.view}|${build}`;
+    let grip = this.grips.get(key);
+    if (!grip) {
+      grip = personCatGrip(facing.view, personProportions({ build }));
+      this.grips.set(key, grip);
+    }
+    const lift = this.lift;
+    liftWeights(shot.anim, Math.min(shot.ms, Math.max(0, this.clock - shot.start)), lift);
+    lift.cat = shot.cat;
+    lift.at.x = this.sprite.x + (facing.flip ? -grip.x : grip.x);
+    lift.at.y = this.sprite.y + grip.y;
+    return lift;
   }
 
   /**
@@ -474,7 +519,7 @@ export class IsoPersonView implements PersonPart {
 
   onEvent(event: GameEvent): void {
     const shot = personEventAnim(event);
-    if (shot) this.pending = { anim: shot.anim, ms: shot.ms, place: shotPlace(event), before: this.lastHeld };
+    if (shot) this.pending = { anim: shot.anim, ms: shot.ms, place: shotPlace(event), before: this.lastHeld, cat: liftedCat(event) };
   }
 
   /** День показують заново: разові, ракурс і перехід до місця справи — з чистого аркуша. */
