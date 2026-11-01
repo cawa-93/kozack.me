@@ -249,6 +249,8 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
 
       const litter = (fill: Quality | null, uses: number): LitterItem => ({ id: 1, kind: "litter", quality: q, slot: "litter-1", litter: fill, uses });
       expect(litterFrame(litter(null, 0)).state).toBe("empty");
+      // Без наповнювача лоток брудний після першого ж відвідування (`LITTER_CAPACITY.none`): видно, і є запах.
+      expect(litterFrame(litter(null, 1)).state).toBe("empty-dirty");
       expect(litterFrame(litter("premium", 0)).state).toBe("premium");
       expect(litterFrame(litter("cheap", 1)).state).toBe("cheap-used");
       expect(litterFrame(litter("cheap", 99)).state).toBe("cheap-dirty");

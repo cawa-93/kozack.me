@@ -190,9 +190,12 @@ export function waterFrame(item: WaterItem): IsoFrame {
   return frame(`item/water/${item.quality}`, level);
 }
 
-/** Лоток (§9.12): без наповнювача; чистий; з грудками (ним користувалися); брудний (`isDirty` — ще й запах). */
+/**
+ * Лоток (§9.12): без наповнювача (чистий чи вже брудний — без наповнювача досить одного відвідування); чистий; з грудками
+ * (ним користувалися); брудний (`isDirty` — ще й запах: `-dirty` у назві стану).
+ */
 export function litterFrame(item: LitterItem): IsoFrame {
-  if (item.litter === null) return frame(`item/litter/${item.quality}`, "empty");
+  if (item.litter === null) return frame(`item/litter/${item.quality}`, isDirty(item) ? "empty-dirty" : "empty");
   const use = isDirty(item) ? "-dirty" : item.uses > 0 ? "-used" : "";
   return frame(`item/litter/${item.quality}`, `${item.litter}${use}`);
 }

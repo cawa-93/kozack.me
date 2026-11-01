@@ -21,8 +21,12 @@ const QUALITIES = ["cheap", "premium"] as const;
 const BOWL_FOOD = ["empty", "cheap-1", "cheap-2", "premium-1", "premium-2", "sterile-1", "sterile-2"] as const;
 /** Корм у бункері годівниці. */
 const FEEDER_FOOD = ["empty", "cheap-low", "cheap-full", "premium-low", "premium-full", "sterile-low", "sterile-full"] as const;
-/** Наповнювач у лотку (`LitterItem.litter`): немає; глиняний (`cheap`) чи силікагелевий (`premium`) — чистий, з грудками, брудний. */
-const LITTER_FILL = ["empty", "cheap", "cheap-used", "cheap-dirty", "premium", "premium-used", "premium-dirty"] as const;
+/**
+ * Наповнювач у лотку (`LitterItem.litter`): немає (`empty`; `empty-dirty` — без наповнювача кіт уже сходив, такий лоток
+ * брудний після першого ж відвідування, `LITTER_CAPACITY.none`); глиняний (`cheap`) чи силікагелевий (`premium`) — чистий,
+ * з грудками, брудний.
+ */
+const LITTER_FILL = ["empty", "empty-dirty", "cheap", "cheap-used", "cheap-dirty", "premium", "premium-used", "premium-dirty"] as const;
 
 /** Записи обох якостей: `make(якість)` дає решту запису. */
 const both = (kind: string, make: (q: (typeof QUALITIES)[number]) => Omit<ArtEntry, "id">): ArtEntry[] =>
@@ -53,13 +57,15 @@ export const MANIFEST: readonly ArtEntry[] = [
     states: ["floor", "hidden", "teeth", "hand"],
   })),
   // Будиночок для сну й схованки (§9.12): картонний з дахом-клапанами й арочним входом (`cheap`) і м'який зі сливової
-  // повсті (`premium`). Кіт усередині — лише очі в темному вході (`door` — центр входу на правій грані +x стін 0,76 × 0,76,
-  // z ≈ 26). Слід ≈ 0,8 × 0,8 клітинки (на екрані 102,4 завширшки), стіни ≈ 38, гребінь 60.
+  // повсті з опуклими стінами й дахом-склепінням (`premium`). Кіт усередині — лише очі в темному вході (`door` — центр
+  // входу на правій грані +x стін 0,76 × 0,76, z ≈ 26). Слід ≈ 0,8 × 0,8 клітинки (на екрані 102,4 завширшки), стіни
+  // ≈ 38 (у м'якого — 30, далі склепіння), верх 60.
   ...both("house", () => ({ ...floorItem(132, 136, 36), points: { door: { x: 90.5, y: 86 } } })),
   // Кігтеточка (§9.12): дешева — стовпчик із сизалем на підставці з ковроліну, заввишки 89, з поличкою й помпоном (еталон
   // F1a `art/item/scratcher/cheap.svg`; `top` — центр верху полички, де сидить кіт), і дорога (`premium`) — вища й
-  // акуратніша: рівний товстий стовпчик на підставці 0,54 × 0,54, полиця з подушкою на висоті 100 (`top` — центр верху
-  // подушки, як `ITEM_LOOKS`), помпон праворуч. Кіт дере її стоячи на задніх лапах.
+  // акуратніша: рівний товстий стовпчик на підставці 0,54 × 0,54, квадратна полиця 0,44 × 0,44 (ширша за полицю дешевої) з
+  // товстою подушкою, верх на висоті 100 (`top` — центр верху подушки, як `ITEM_LOOKS`), помпон праворуч. Кіт дере її
+  // стоячи на задніх лапах.
   { id: "item/scratcher/cheap", size: { w: 112, h: 140 }, pivot: { x: 54, y: 112 }, points: { top: { x: 57, y: 23 } } },
   { id: "item/scratcher/premium", ...floorItem(96, 148, 26), points: { top: { x: 48, y: 22 } } },
   // Автогодівниця над місцем миски (§9.12, правка автора 2026-10-23): проста — вузький сірий бункер (`cheap`), розумна —
