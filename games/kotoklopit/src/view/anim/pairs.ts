@@ -41,13 +41,20 @@ export const PAIR_GAPS: Readonly<Record<Exclude<PairKind, "nursing">, number>> =
   faceoff: 64,
   // Одна фігура посередині: кожен малює свою кулю довкола спільної точки.
   brawl: 0,
-  // Голова того, хто вилизує, дістає до щоки друга.
-  groom: 30,
+  // Сидять упритул боками, голова того, хто вилизує (анімація `lick` тягне її вперед), дістає до щоки друга. З 30 тулуби
+  // налягали майже цілком, і на телефоні пара читалася як один двоголовий кіт із шістьма лапами (рецензія хвилі 3).
+  groom: 46,
   // Мисливець над тим, хто на спині.
   wrestle: 34,
   pile: 30,
   cuddle: 40,
 };
+
+/**
+ * Той, хто вилизує, — на стільки ближче до камери, ніж друг (одиниці арту, × розмір пари): у порядку малювання завжди поверх
+ * друга (§9.4, поза 3), хоч би з якого боку сидів, — його голова лягає на щоку друга, а не ховається за нею.
+ */
+export const GROOM_FRONT = 3;
 
 /** Кошенята біля матері: крок рядка й на скільки рядок перед нею (ближче до камери), одиниці арту. */
 export const NURSING = { spacing: 20, front: 10 } as const;
@@ -153,8 +160,10 @@ export function catPairs(state: GameState, sizeOf: SizeOf = ADULT): Map<number, 
     }
     const mid = { x: (pa.x + pb.x) / 2, y: (pa.y + pb.y) / 2 };
     const half = gap / 2;
-    const shift = (p: Vec, left: boolean): Vec => ({ x: mid.x + (left ? -half : half) - p.x, y: mid.y - p.y });
-    placed.set(a.id, placement(kind, b, shift(pa, aLeft), towards(aLeft)));
+    const shift = (p: Vec, left: boolean, front = 0): Vec => ({ x: mid.x + (left ? -half : half) - p.x, y: mid.y + front - p.y });
+    // Той, хто вилизує (`a` — у його дії `groom`), — трохи ближче до камери.
+    const front = kind === "groom" ? GROOM_FRONT * ((sizeOf(a) + sizeOf(b)) / 2) : 0;
+    placed.set(a.id, placement(kind, b, shift(pa, aLeft, front), towards(aLeft)));
     placed.set(b.id, placement(kind, a, shift(pb, !aLeft), towards(!aLeft)));
   }
   return placed;

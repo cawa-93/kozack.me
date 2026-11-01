@@ -14,7 +14,8 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel, Vec } from "../src/sim/types";
 import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, personFacing } from "../src/view/anim/catfacing";
 import { isoScreenDir, isoTileDir, ISO_TILE } from "../src/view/anim/iso";
-import { catPairs, NURSING, PAIR_GAPS, pairOf } from "../src/view/anim/pairs";
+import { catPairs, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf } from "../src/view/anim/pairs";
+import { isoOrder } from "../src/view/world/isoorder";
 import type { RigFacing } from "../src/view/rig/types";
 import { withCatCorner } from "./helpers";
 
@@ -239,7 +240,7 @@ describe("куди дивиться кіт (`catFacing`)", () => {
 
 describe("розведення пар (`catPairs`)", () => {
   /** Обидва після зсуву — на одній горизонталі екрана, на відстані `gap`. */
-  function expectSideBySide(a: Cat, b: Cat, pairs: ReturnType<typeof catPairs>, gap: number): void {
+  function expectSideBySide(a: Cat, b: Cat, pairs: ReturnType<typeof catPairs>, gap: number, front = 0): void {
     const pa = pairs.get(a.id)!;
     const pb = pairs.get(b.id)!;
     const at = (cat: Cat, p: typeof pa): Vec => {
@@ -248,7 +249,7 @@ describe("розведення пар (`catPairs`)", () => {
     };
     const sa = at(a, pa);
     const sb = at(b, pb);
-    expect(sa.y).toBeCloseTo(sb.y, 6);
+    expect(sa.y - front).toBeCloseTo(sb.y, 6);
     expect(Math.abs(sa.x - sb.x)).toBeCloseTo(gap, 6);
     // Той, хто ліворуч (у клубку — хто був ліворуч), дивиться праворуч, і навпаки, — обличчям одне до одного.
     const aLeft = sa.x < sb.x || (sa.x === sb.x && isoScreenDir(a).x < isoScreenDir(b).x);
@@ -297,7 +298,20 @@ describe("розведення пар (`catPairs`)", () => {
     const b = withCat(save, { x: 9.9, y: 8.5 });
     a.act = act("groom", { target: `cat:${b.id}` });
     b.act = act("idle", { target: `licked:${a.id}` });
-    expectSideBySide(a, b, catPairs(save.current), PAIR_GAPS.groom);
+    // Той, хто вилизує, — трохи ближче до камери: у порядку малювання поверх друга, з якого боку не сидів би.
+    expectSideBySide(a, b, catPairs(save.current), PAIR_GAPS.groom, GROOM_FRONT);
+    b.x = 9.1;
+    expectSideBySide(a, b, catPairs(save.current), PAIR_GAPS.groom, GROOM_FRONT);
+    for (const [x, y] of [[9.9, 8.5], [9.1, 8.5], [9.5, 8.9], [9.5, 8.1]] as const) {
+      b.x = x;
+      b.y = y;
+      const pairs = catPairs(save.current);
+      const ta = { x: a.x + pairs.get(a.id)!.tile.x, y: a.y + pairs.get(a.id)!.tile.y, half: 30 };
+      const tb = { x: b.x + pairs.get(b.id)!.tile.x, y: b.y + pairs.get(b.id)!.tile.y, half: 30 };
+      expect([...isoOrder([], [ta, tb])]).toEqual([1, 0]);
+    }
+    b.x = 9.9;
+    b.y = 8.5;
     const game2 = { phase: "tussle" as const, left: 2, chaser: a.id, swap: 2 };
     a.act = act("wrestle", { target: `cat:${b.id}`, paired: true, game: game2 });
     b.act = act("wrestle", { target: `cat:${a.id}`, paired: true, game: game2 });
