@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { WEIGHT } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
-import { CARRIER_SPOT, objectById, slotCenter } from "../src/sim/home";
+import { CARRIER_SPOT, isWall, objectAt, objectById, slotCenter } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Feeder, HomeItem, Save } from "../src/sim/types";
@@ -29,7 +29,20 @@ import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from 
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { BELLY_ABOVE, bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
-import { BLANKET_EARS, blanketOffset, BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
+import {
+  BLANKET_EARS,
+  blanketOffset,
+  BOWL_APPROACH,
+  BOWL_BEHIND,
+  bowlOf,
+  bowlSeat,
+  CAT_PIECE,
+  catSpot,
+  SOFA_HIDE,
+  SPOT_SCALE,
+  underGrate,
+} from "../src/view/iso/catspot";
+import { isoScreenDir } from "../src/view/anim/iso";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { catPose } from "../src/view/pose";
 import { isoOrder } from "../src/view/world/isoorder";
@@ -527,6 +540,54 @@ describe("де кіт (`catSpot`)", () => {
     cat.x = sofa.x + 0.5;
     cat.y = sofa.y + 0.5;
     expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", shadow: true });
+  });
+
+  it("під диваном (спинкою до камери, між передньою стіною й шафою з пилососом) — очі з боку сидіння, над його краєм на екрані", () => {
+    const save = game();
+    const sofa = objectById("sofa");
+    const cat = withCat(save, { x: sofa.x + 0.5, y: sofa.y + 0.5 });
+    cat.act = act("hide");
+    let last = -Infinity;
+    for (let i = 0; i < sofa.w; i++) {
+      cat.x = sofa.x + i + 0.5;
+      const spot = catSpot(save.current, cat, "loaf", null, SPOT);
+      // За коробкою дивана (край сидіння ховає щілину й низ очей), на лінії сидіння, у межах між ящиками й шафою.
+      expect(spot).toMatchObject({ kind: "under", show: "eyes", box: "sofa", behind: true, at: { y: SOFA_HIDE.y } });
+      expect(spot.at.x).toBeGreaterThanOrEqual(SOFA_HIDE.from);
+      expect(spot.at.x).toBeLessThanOrEqual(SOFA_HIDE.to);
+      // Хто правіше під диваном, той правіше й тут.
+      expect(spot.at.x).toBeGreaterThan(last);
+      last = spot.at.x;
+      // Очі (на 7 над підлогою) — щонайменше на 8 вище за дальній край сидіння (верх 34) на екрані: край на тій самій
+      // вертикалі екрана, що й очі, — у точці сидіння (x1, 10), де x1 − 10 = x − y.
+      const edge = 64 * (sofa.y - spot.at.y) - isoObjectLook("sofa").top;
+      expect(-7).toBeLessThan(edge - 8);
+      // Шафа з пилососом (16, 10) не закриває очей (півширина кадру очей ≈ 16 × найбільший масштаб 1,12): її лівий кут на
+      // екрані — (16, 11).
+      const vacuum = objectById("vacuum");
+      expect(isoScreenDir({ x: vacuum.x - spot.at.x, y: vacuum.y + vacuum.h - spot.at.y }).x).toBeGreaterThan(18);
+    }
+  });
+
+  it("схованка під ліжком і диваном — не в стіні й не в іншій речі; під ліжком — на ближньому краї, на коробці ліжка", () => {
+    const save = game();
+    for (const id of ["bed", "sofa"]) {
+      const o = objectById(id);
+      for (let x = o.x; x < o.x + o.w; x++) {
+        for (let y = o.y; y < o.y + o.h; y++) {
+          const cat = withCat(save, { x: x + 0.5, y: y + 0.5 });
+          cat.act = act("hide");
+          const spot = catSpot(save.current, cat, "loaf", null, SPOT);
+          expect(spot.kind).toBe("under");
+          const tx = Math.floor(spot.at.x);
+          const ty = Math.floor(spot.at.y);
+          expect(isWall(tx, ty)).toBe(false);
+          const other = objectAt(save.current, tx, ty);
+          expect(other === null || other.id === id).toBe(true);
+          if (id === "bed") expect(spot.behind).toBe(false);
+        }
+      }
+    }
   });
 
   it("на справжньому дні: кожен кіт удома має місце, і на меблях — на висоті їхнього верху", () => {

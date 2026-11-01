@@ -346,6 +346,7 @@ export class IsoCatsView implements CatsPart {
       return;
     }
     if (spot.above) view.point.placeAbove(spot.above.id, spot.above.offset);
+    else if (spot.box && spot.behind) view.point.placeUnder(spot.at.x, spot.at.y, spot.box);
     else if (spot.box) view.point.place(spot.at.x, spot.at.y, spot.box);
     else view.point.place(spot.at.x, spot.at.y);
     const s = ISO.toScreen(spot.at);

@@ -6,13 +6,13 @@
 // Те саме, що показував старий кіт на ізометричній підлозі (перехідний вигляд F3b), і те, що каже маніфест
 // про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота, `top` ящиків.
 
-import { CARRIER_SPOT, HIGH_PLACES, itemPoint, objectAt, objectById } from "../../sim/home";
+import { CARRIER_SPOT, HIGH_PLACES, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
 import type { Cat, GameState, HomeItem, Vec } from "../../sim/types";
 import type { CatAnimId } from "../anim/ids";
 import type { PairPlacement } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
-import { isoCatPerch } from "../world/objects";
+import { isoCatPerch, isoObjectLook } from "../world/objects";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
@@ -23,7 +23,8 @@ import { artOffset, footprintCenter } from "./geometry";
  * - `hands` — на руках чи колінах персонажа (`PersonPart.hands`);
  * - `floor` — на підлозі (і за мискою, з якої їсть); `furniture` — на меблях, на висоті верху (`isoCatPerch`), у ящиках —
  *   у верхній коробці, нижче за борт;
- * - `under` — ховається під меблями: з-під ближчого краю видно очі й кінчик хвоста;
+ * - `under` — ховається під меблями: з-під ближчого видного краю видно очі й кінчик хвоста (з-під дивана — з боку сидіння,
+ *   `hidePeek`);
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі;
  * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): анімація `blanket` (N1) показує лише вушка над
  *   горбиком і кінчик хвоста;
@@ -49,6 +50,11 @@ export interface CatSpot {
   offset: Vec;
   /** Коробка реєстру глибини, на якій кіт (меблі, барабан, ліжко) чи під краєм якої (`under`); null — підлога. */
   box: string | null;
+  /**
+   * Точка — за коробкою `box` (`placeUnder`), а не на ній: з-під дивана очі визирають з боку сидіння, і край сидіння ховає
+   * щілину й низ очей.
+   */
+  behind: boolean;
   /** Точка реєстру, над якою кіт, і зсув у її проміжку (переноска, робот, будиночок); null — сам по собі. */
   above: { id: string; offset: number } | null;
   /** Масштаб кота тут: у барабані й переносці клубочок менший, щоб помістився. */
@@ -78,7 +84,6 @@ export const CAT_PIECE = { shadow: 0.001, body: 0.002, peek: 0.003 } as const;
 
 /** Над точкою речі, у її проміжку глибини: кіт у будиночку й на роботі — над ними, нижче за ґратки чи накладки вище. */
 const ABOVE_ITEM = ISO_DEPTH_SLOT * 0.4;
-
 /**
  * Наскільки найвищий шматок кота в переносці (тулуб) нижче за ґратки: з таким запасом похибка округлення глибин (~1e-13 на
  * глибинах у сотні) не поставить його на ґратки чи над ними.
@@ -126,7 +131,48 @@ export function blanketOffset(cat: Pick<Cat, "ageWeeks" | "traits" | "breed" | "
 }
 
 function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot {
-  return { kind, at, lift: 0, offset: ZERO, box: null, above: null, scale: 1, shadow: false, show: "rig", item: null, ...extra };
+  return { kind, at, lift: 0, offset: ZERO, box: null, behind: false, above: null, scale: 1, shadow: false, show: "rig", item: null, ...extra };
+}
+
+// --- Схованка під меблями -------------------------------------------------------------------------
+
+/**
+ * Схованка під диваном (§9.12; рецензія хвилі 3). Диван стоїть під передньою стіною спинкою до камери: його ближній край
+ * y1 = 11 лежить на передній стіні, а торець x1 = 16 упирається в шафу з пилососом, тож з боку камери під ним не видно
+ * нічого — кота, що сховався, не було видно зовсім. Видно лише бік сидіння: очі визирають з-під його дальнього краю, над
+ * силуетом дивана на екрані, як шкарпетка в схованці (`SOFA_PEEK`, `iso/geometry.ts`), — на лінії `y`, на 0,58 клітинки від
+ * сидіння: очі (на 7 над підлогою) — на ≈ 11 над краєм сидіння (верх 34) на екрані, цілі, а темна щілина під ними
+ * (`GAP_SHADOW`) лише виглядає з-за краю. І в межах `from`…`to` уздовж дивана: правіше
+ * висока шафа з пилососом закриває очі на екрані, лівіше — бік ящиків біля входу (12, 9), коли вони є. Хто де під диваном
+ * у сима (клітинки 13–15), той там само й у цих межах.
+ */
+export const SOFA_HIDE = { y: 9.42, from: 13.62, to: 14.18 } as const;
+
+/** Чи видно точку схованки `p` на краю сліду речі `id`: не в стіні (передні — y = 11 і x = 19) і не в іншій речі за краєм. */
+function peekOpen(state: GameState, id: string, p: Vec): boolean {
+  const tx = Math.floor(p.x);
+  const ty = Math.floor(p.y);
+  if (isWall(tx, ty)) return false;
+  const other = objectAt(state, tx, ty);
+  return other === null || other.id === id;
+}
+
+/**
+ * Звідки визирає кіт, що сховався під річчю `id` (§9.12): з-під ближчого до камери краю сліду (`isoCatPerch`), якщо його
+ * видно (`peekOpen`), інакше — з-під другого ближнього; під диваном жоден не видно — з боку сидіння (`SOFA_HIDE`, точка за
+ * коробкою дивана). `behind` — точка за коробкою речі, а не на ній.
+ */
+export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; behind: boolean } {
+  const near = isoCatPerch(id, cat, true).at;
+  if (peekOpen(state, id, near)) return { at: near, behind: false };
+  const f = isoObjectLook(id).footprint;
+  const other = near.x === f.x1 ? { x: cat.x, y: f.y1 } : { x: f.x1, y: cat.y };
+  if (peekOpen(state, id, other)) return { at: other, behind: false };
+  if (id === "sofa") {
+    const t = Math.min(1, Math.max(0, (cat.x - f.x0) / (f.x1 - f.x0)));
+    return { at: { x: SOFA_HIDE.from + (SOFA_HIDE.to - SOFA_HIDE.from) * t, y: SOFA_HIDE.y }, behind: true };
+  }
+  return { at: near, behind: false };
 }
 
 /** Точка кадру речі (`name` запису `id`) — зсув від pivot; немає — нуль. */
@@ -213,10 +259,14 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   const tile = pair ? { x: cat.x + pair.tile.x, y: cat.y + pair.tile.y } : { x: cat.x, y: cat.y };
   const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (object && object.kind !== "door") {
-    // Ховається під меблями — визирає з-під ближчого краю; нагорі (холодильник, шафа) — лежить там буханцем (`hidesUnder`).
+    // Ховається під меблями — визирає з-під ближчого видного краю (`hidePeek`); нагорі (холодильник, шафа) — лежить там
+    // буханцем (`hidesUnder`).
     const hiding = hidesUnder(state, cat, anim) && !HIGH_PLACES.includes(object.id);
-    const perch = isoCatPerch(object.id, pair ? tile : cat, hiding);
-    if (hiding) return spot("under", perch.at, { box: object.id, show: "eyes" });
+    if (hiding) {
+      const peek = hidePeek(state, object.id, pair ? tile : cat);
+      return spot("under", peek.at, { box: object.id, behind: peek.behind, show: "eyes" });
+    }
+    const perch = isoCatPerch(object.id, pair ? tile : cat, false);
     // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
     // вона лягла б на передню стінку.
     return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
