@@ -8,7 +8,7 @@
 // реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у її
 // проміжку глибини. Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола
 // з комп'ютером і кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що
-// сидить, між ними.
+// сидить, між ними; засунутий під стіл — під коробкою стола (сидіння) і на ній (спинка), як частина стола.
 
 import type Phaser from "phaser";
 
@@ -26,7 +26,7 @@ import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
 import { artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
-import { SEATS, seatAt, seatDepthPoint, seatMode, type Seat } from "./personseat";
+import { SEATS, seatAt, seatMode, seatSpot, type Seat, type SeatSpot } from "./personseat";
 import { glideOffset } from "./personspot";
 import { IsoHighlight } from "./highlight";
 import {
@@ -148,7 +148,8 @@ export class IsoApartmentView implements ApartmentPart {
   /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
   private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
   private readonly chairs: Chair[] = [];
-  private readonly tmpPoint: Vec = { x: 0, y: 0 };
+  /** Куди стає шматок стільця в реєстрі глибини (`seatSpot`): один на всі, щоб не виділяти щокадру. */
+  private readonly seatSpot: SeatSpot = { x: 0, y: 0, box: null, under: false };
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -341,8 +342,10 @@ export class IsoApartmentView implements ApartmentPart {
       for (const part of ["seat", "backrest"] as const) {
         const piece = chair.pieces[part];
         piece.image.setPosition(at.x, at.y);
-        const point = seatDepthPoint(chair.seat, chair.center, part, this.tmpPoint);
-        piece.point.place(point.x, point.y);
+        const spot = seatSpot(chair.seat, chair.center, part, this.seatSpot);
+        if (spot.box === null) piece.point.place(spot.x, spot.y);
+        else if (spot.under) piece.point.placeUnder(spot.x, spot.y, spot.box);
+        else piece.point.place(spot.x, spot.y, spot.box);
       }
     }
   }
