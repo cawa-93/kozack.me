@@ -400,22 +400,23 @@ const CARRIED: Pose = {
 };
 
 /**
- * Розпластався на прохолодній плитці (§9.12; це сон): тулуб пласкіший і впритул до підлоги, усі лапи витягнуті вздовж
- * підлоги — передні вперед, задні назад, ближня й дальня поруч, — а голова лежить підборіддям і щокою на підлозі. Так
- * плитку видно з першого погляду: довгий плаский кіт з покладеною головою (той, хто ховається, — з піднятою головою й
- * підібраними лапами).
+ * Розпластався на прохолодній плитці (§9.12: «розпластується на боці»; це сон): лежить на боці — тулуб сплющений згори
+ * донизу (не дзеркально, як у того, хто на спині: спина лишається вгорі, живіт — до камери) і впритул до підлоги, а лапи
+ * прямі й розкинуті парами — передні вперед, задні назад, дальні ширше за ближні, як зірочка. Голова лежить на щоці, теж
+ * на боці (`headAt`, нахил 45°). Силует — тонкий, з розкинутими лапами й похиленою головою: ні той, хто ховається (лапи
+ * підібрані, голова піднята), ні буханець.
  */
-const SPRAWL_PELVIS: Tweak = { y: 14 };
-const SPRAWL_BODY: Tweak = { sy: 0.88 };
+const SPRAWL_PELVIS: Tweak = { sy: 0.62, y: 14 };
+/** Де pivot голови (одиниці арту від кореня): перед грудьми, на підлозі. */
+const SPRAWL_HEAD_AT: Vec2 = { x: 21, y: -9 };
 const SPRAWL: Pose = {
   pelvis: SPRAWL_PELVIS,
-  body: SPRAWL_BODY,
-  "leg-back-near": { rot: 80, sx: 1 },
-  "leg-back-far": { rot: 74, sx: 0.94 },
-  "leg-front-near": { rot: -80, sx: 1.02 },
-  "leg-front-far": { rot: -74, sx: 0.96 },
-  ...headAt(SPRAWL_PELVIS, SPRAWL_BODY, { x: 20, y: -10 }, 24),
-  tail: tail(-100),
+  "leg-front-near": { rot: -48, sx: 1 },
+  "leg-front-far": { rot: -72, sx: 0.95 },
+  "leg-back-near": { rot: 45, sx: 1 },
+  "leg-back-far": { rot: 69, sx: 0.95 },
+  ...headAt(SPRAWL_PELVIS, {}, SPRAWL_HEAD_AT, 45),
+  tail: tail(-110),
 };
 
 /**
@@ -776,10 +777,21 @@ const carried: CatAnim = {
 };
 
 const SPRAWL_MS = 4000;
+const SPRAWL_FRONT = at(SPRAWL, "leg-front-near", "rot");
 const sprawl: CatAnim = {
   duration: SPRAWL_MS,
   loop: true,
-  bones: merge(still(SPRAWL), { body: breathe(SPRAWL_MS, SPRAWL, 0.04, 2), tail: { ...still({ tail: SPRAWL.tail ?? {} }).tail, ...rotAround(SPRAWL_MS, SPRAWL, "tail", [0, 4]) } }),
+  bones: merge(still(SPRAWL), {
+    body: breathe(SPRAWL_MS, SPRAWL, 0.04, 2),
+    tail: { ...still({ tail: SPRAWL.tail ?? {} }).tail, ...rotAround(SPRAWL_MS, SPRAWL, "tail", [0, 4]) },
+    // Бачить сон: раз за цикл ближня передня лапа двічі сіпається.
+    "leg-front-near": {
+      ...still({ "leg-front-near": SPRAWL["leg-front-near"] ?? {} })["leg-front-near"],
+      rot: [0, 2600, 2680, 2780, 2860, 3000, SPRAWL_MS].map((t, i) => key(t, SPRAWL_FRONT + ([0, 0, -9, 0, -6, 0, 0][i] ?? 0), "inOut")),
+    },
+  }),
+  // Ззаду голова повернута від камери, і на боці ближнє вухо стирчало б окремим гачком за потилицею — там вона нахилена менше.
+  views: { back: { bones: { ...NEAR_FRONT_IN, ...posed([{ t: 0, pose: headAt(SPRAWL_PELVIS, {}, SPRAWL_HEAD_AT, 15) }]) }, slots: NEAR_FRONT_UNDER } },
 };
 
 /** У переносці — клубочок, тісніший, ніж на підлозі (§9.12: крізь дверцята видно клубочок шерсті). */
