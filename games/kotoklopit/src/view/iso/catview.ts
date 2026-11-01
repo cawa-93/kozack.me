@@ -26,8 +26,12 @@ import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 export type IsoCatSprite = RigSprite<IsoCatBone, IsoCatSlot, IsoCatSocket>;
 type CatRigAnim = RigAnim<IsoCatBone, IsoCatSlot>;
 
-/** Тінь під котом: на скільки ширша (повнота) і наскільки темніша, коли під меблями видно лише очі (темна щілина). */
-const GAP_SHADOW = { scale: 1.1, alpha: 1 } as const;
+/**
+ * Тінь під котом: на скільки ширша, коли під меблями видно лише очі, і скільки разів вона лежить одна на одній — темна
+ * щілина під меблями. Тінь арту — `SHADE.base` (0,3, `STYLE.md` §3), дві поспіль — ≈ 0,51, тобто `SHADE.deep` (0,5): щілина
+ * помітно темніша за тінь під лапами, як і в старому вигляді (там 0,55 проти 0,22).
+ */
+const GAP_SHADOW = { scale: 1.1, layers: 2 } as const;
 
 /** Очі з-під меблів і з будиночка — на такій висоті над підлогою (одиниці арту), кінчик хвоста — збоку від очей. */
 const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9, earSpread: 7, earTilt: 18 } as const;
@@ -56,8 +60,10 @@ export interface CatFrame {
   speed: number;
   face: CatFace;
   facing: RigFacing;
-  /** Корінь скелета на екрані (точка підлоги під котом, піднята на висоту меблів), px світу. */
+  /** Корінь скелета на екрані (точка підлоги під котом, піднята на висоту меблів і дуги стрибка), px світу. */
   root: Point;
+  /** Поверхня під котом (підлога чи верх меблів, без дуги стрибка): там тінь, px світу. */
+  ground: Point;
   /** Масштаб усього кота (кошеня, порода, клубочок у барабані). */
   scale: number;
   /** Пропорції скелета (`isoCatProportions`). */
@@ -85,6 +91,8 @@ export class IsoCatView {
 
   private readonly shadow: Phaser.GameObjects.Image;
   private readonly shadowBase: Vec2;
+  /** Другий шар тіні — темна щілина під меблями (`GAP_SHADOW`); створюється, коли кіт уперше ховається. */
+  private gapShadow: Phaser.GameObjects.Image | null = null;
   /** Що в зубах (кадр атласу в гнізді `teeth`). */
   private teethImage: Phaser.GameObjects.Image | null = null;
   private teethKey = "";
@@ -158,12 +166,21 @@ export class IsoCatView {
     if (visible) this.sprite.update(this.clock);
     this.updateTeeth(f.teeth, visible);
 
-    // Тінь: під лапами, ширша в повного; під меблями — темна щілина, з якої визирають очі.
+    // Тінь: на поверхні під лапами (у стрибку — не злітає з котом), ширша в повного; під меблями — темна щілина, з якої
+    // визирають очі.
     const gap = f.under && !f.culled;
     this.shadow.setVisible((f.shadow && visible) || gap);
     if (this.shadow.visible) {
       const k = f.scale * (gap ? GAP_SHADOW.scale : 1);
-      this.shadow.setPosition(f.root.x, f.root.y).setScale(this.shadowBase.x * k * f.girth, this.shadowBase.y * k);
+      this.shadow.setPosition(f.ground.x, f.ground.y).setScale(this.shadowBase.x * k * f.girth, this.shadowBase.y * k);
+    }
+    if (gap && !this.gapShadow) {
+      this.gapShadow = addArt(this.scene, this.layer, "fx/shadow/cat");
+      this.gapShadow.setDepth(this.pieceDepth(CAT_PIECE.shadow));
+    }
+    if (this.gapShadow) {
+      this.gapShadow.setVisible(gap && GAP_SHADOW.layers > 1);
+      if (this.gapShadow.visible) this.gapShadow.setPosition(this.shadow.x, this.shadow.y).setScale(this.shadow.scaleX, this.shadow.scaleY);
     }
     this.drawPeek(f);
     this.updatePoints(f, visible);
@@ -174,6 +191,7 @@ export class IsoCatView {
   hide(): void {
     this.sprite.setVisible(false);
     this.shadow.setVisible(false);
+    this.gapShadow?.setVisible(false);
     this.teethImage?.setVisible(false);
     this.peekEyes?.setVisible(false);
     this.peekTail?.setVisible(false);
@@ -196,6 +214,7 @@ export class IsoCatView {
     this.point.remove();
     this.sprite.destroy();
     this.shadow.destroy();
+    this.gapShadow?.destroy();
     this.teethImage?.destroy();
     this.peekEyes?.destroy();
     this.peekTail?.destroy();
@@ -212,6 +231,7 @@ export class IsoCatView {
   private applyDepth(depth: number): void {
     this.depth = depth;
     this.shadow.setDepth(depth + CAT_PIECE.shadow);
+    this.gapShadow?.setDepth(depth + CAT_PIECE.shadow);
     this.sprite.setDepth(depth + CAT_PIECE.body);
     this.peekEyes?.setDepth(depth + CAT_PIECE.peek);
     this.peekTail?.setDepth(depth + CAT_PIECE.peek);

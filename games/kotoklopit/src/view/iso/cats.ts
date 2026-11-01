@@ -26,7 +26,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { catPlay, nextLift, startShot, type CatShot, type Lift } from "./catplay";
+import { catPlay, groundAt, nextLift, startShot, type CatShot, type Lift } from "./catplay";
 import { catSize, isoCatHalf, isoCatProportions, type CatSize } from "./catrig";
 import { catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -200,7 +200,7 @@ export class IsoCatsView implements CatsPart {
     mem.facing = facing;
     mem.pos = { x: cat.x, y: cat.y };
 
-    const root = this.place(view, spot, mem, time);
+    const { root, ground } = this.place(view, spot, mem, time);
     const act = cat.act;
     const carrying = act.kind === "carry" && act.picked === true && act.dropped !== true;
     const toy = carrying && act.carry === "toy" ? state.home.items.find((item) => `item:${item.id}` === act.target) : undefined;
@@ -212,6 +212,7 @@ export class IsoCatsView implements CatsPart {
       face,
       facing,
       root,
+      ground,
       scale: size.scale * spot.scale,
       proportions: isoCatProportions(cat, size),
       pregnant: showsPregnancy(state, cat),
@@ -227,20 +228,25 @@ export class IsoCatsView implements CatsPart {
     view.draw(cat, f);
   }
 
-  /** Поставити точку кота в реєстр глибини й повернути, де на екрані корінь його скелета. */
-  private place(view: IsoCatView, spot: CatSpot, mem: Memory, time: number): Point {
+  /**
+   * Поставити точку кота в реєстр глибини й повернути, де на екрані корінь його скелета (з дугою стрибка) і поверхня під ним
+   * (без дуги — там тінь).
+   */
+  private place(view: IsoCatView, spot: CatSpot, mem: Memory, time: number): { root: Point; ground: Point } {
     if (spot.kind === "hands") {
       mem.lift = null;
       const hands = this.ctx.world.person.hands;
       this.placeOnPerson(view, hands.depth);
-      return { x: hands.x, y: hands.y };
+      return { root: { x: hands.x, y: hands.y }, ground: { x: hands.x, y: hands.y } };
     }
     if (spot.above) view.point.placeAbove(spot.above.id, spot.above.offset);
     else if (spot.box) view.point.place(spot.at.x, spot.at.y, spot.box);
     else view.point.place(spot.at.x, spot.at.y);
     const s = ISO.toScreen(spot.at);
     const lift = this.lift(mem, spot, time);
-    return { x: s.x + spot.offset.x, y: s.y + spot.offset.y - lift };
+    const x = s.x + spot.offset.x;
+    const ground = s.y + spot.offset.y - (mem.lift ? groundAt(mem.lift, time) : lift);
+    return { root: { x, y: s.y + spot.offset.y - lift }, ground: { x, y: ground } };
   }
 
   /**

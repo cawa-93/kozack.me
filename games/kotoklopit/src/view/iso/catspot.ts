@@ -192,7 +192,9 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     const hiding = anim === "hide" && !HIGH_PLACES.includes(object.id);
     const perch = isoCatPerch(object.id, pair ? tile : cat, hiding);
     if (hiding) return spot("under", perch.at, { box: object.id, show: "eyes" });
-    return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: true });
+    // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
+    // вона лягла б на передню стінку.
+    return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
   }
   if (anim === "hide") return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.

@@ -20,7 +20,7 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, withFace } from "../src/view/iso/catanim";
-import { catPlay, JUMP, liftAt, nextLift, startShot } from "../src/view/iso/catplay";
+import { catPlay, groundAt, JUMP, liftAt, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import { BOWL_APPROACH, BOWL_BEHIND, bowlOf, bowlSeat, CAT_PIECE, catSpot, SPOT_SCALE, underGrate } from "../src/view/iso/catspot";
@@ -397,6 +397,22 @@ describe("де кіт (`catSpot`)", () => {
     }
   });
 
+  it("у ящиках біля входу — у верхній коробці, нижче за борт, без тіні (вона лягла б на передню стінку)", () => {
+    const save = game();
+    save.current.home.boxes = { food: { cheap: 4, premium: 0 } };
+    const boxes = objectById("boxes");
+    const cat = withCat(save, { x: boxes.x + 0.5, y: boxes.y + 0.5 });
+    cat.act = act("sleep", { target: "boxes" });
+    const look = isoObjectLook("boxes");
+    expect(look.perch).toBeLessThan(look.top);
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", box: "boxes", lift: look.perch, shadow: false });
+    // На інших меблях — з тінню.
+    const sofa = objectById("sofa");
+    cat.x = sofa.x + 0.5;
+    cat.y = sofa.y + 0.5;
+    expect(catSpot(save.current, cat, "sleep", null, SPOT)).toMatchObject({ kind: "furniture", shadow: true });
+  });
+
   it("на справжньому дні: кожен кіт удома має місце, і на меблях — на висоті їхнього верху", () => {
     const save = game();
     for (let i = 0; i < 6; i++) withCat(save, { x: 3.5 + i * 2, y: 8.5 }, i);
@@ -431,6 +447,18 @@ describe("що грає кіт цього кадру (`catPlay`)", () => {
     const meow = catPlay(choice, face, startShot(null, { mouth: "meow" }, 500, 0), 10).play;
     expect(meow).toEqual({ anim: "walk", overlay: "content", speed: 0.6, restart: false, face: { ...face, mouth: "meow" } });
     expect(startShot("hiss", null, 0, 0)).toBeNull();
+  });
+
+  it("тінь у стрибку не злітає з котом: першу половину — на нижчій поверхні, другу — там, куди стрибає", () => {
+    const up: Lift = { from: 0, to: 62, start: 1000 };
+    expect(groundAt(up, 1000)).toBe(0);
+    expect(groundAt(up, 1000 + JUMP.ms * 0.4)).toBe(0);
+    expect(groundAt(up, 1000 + JUMP.ms * 0.9)).toBe(62);
+    expect(groundAt(up, 1000 + JUMP.ms)).toBe(62);
+    const down: Lift = { from: 62, to: 0, start: 0 };
+    for (const t of [0, JUMP.ms * 0.3, JUMP.ms * 0.7, JUMP.ms * 2]) expect(groundAt(down, t)).toBe(0);
+    // Тінь ніколи не вища за кота.
+    for (let t = 1000; t <= 1000 + JUMP.ms; t += 10) expect(groundAt(up, t)).toBeLessThanOrEqual(liftAt(up, t) + 1e-9);
   });
 
   it("стрибок на меблі: висота йде дугою за час стрибка, на руки й у переноску — одразу", () => {
