@@ -1,7 +1,5 @@
-// Яка графіка світу (крок 16, `GRAPHICS_PLAN.md`): стара «три чверті» чи нова ізометрія 2:1. Поки нова не готова, її
-// вмикає прапорець `?gfx=iso`, і браузер пам'ятає вибір (автор дивиться прев'ю з телефона, а сценарії міняють адресу);
-// `?gfx=legacy` повертає старий вигляд і теж запам'ятовується. Без прапорця — збережений вибір, а типово — старий вигляд.
-// Без Phaser.
+// Яка графіка світу (крок 16, `GRAPHICS_PLAN.md`): стара «три чверті» чи нова ізометрія 2:1. З хвилі 3 типова — ізометрія;
+// `?gfx=legacy` ще повертає старий вигляд і запам'ятовується, поки його не видалено (той самий пакет хвилі 3). Без Phaser.
 
 export type GfxMode = "legacy" | "iso";
 
@@ -10,8 +8,8 @@ export const GFX_MODES: readonly GfxMode[] = ["legacy", "iso"];
 export const GFX_PARAM = "gfx";
 /** Ключ збереженого вибору в localStorage. */
 export const GFX_KEY = "kotoklopit:gfx";
-/** Типово — старий вигляд, доки ізометрія не стане типовою (хвиля 3). */
-export const DEFAULT_GFX: GfxMode = "legacy";
+/** Типово — ізометрія (хвиля 3). */
+export const DEFAULT_GFX: GfxMode = "iso";
 
 /** Сховище вибору: localStorage браузера чи підміна в тестах. */
 export type GfxStorage = Pick<Storage, "getItem" | "setItem">;

@@ -1,5 +1,5 @@
 // Прапорець графіки (крок 16, хвиля 0): `?gfx=iso` вмикає ізометрію, `?gfx=legacy` повертає старий вигляд, і обидва
-// запам'ятовуються під `kotoklopit:gfx`; без прапорця — збережене, типово — старий вигляд.
+// запам'ятовуються під `kotoklopit:gfx`; без прапорця — збережене, типово — ізометрія (хвиля 3).
 
 import { describe, expect, it } from "vitest";
 
@@ -25,10 +25,10 @@ describe("прапорець графіки", () => {
     expect(parseGfx(undefined)).toBeNull();
   });
 
-  it("типово — старий вигляд", () => {
-    expect(DEFAULT_GFX).toBe("legacy");
-    expect(chooseGfx("", memory())).toBe("legacy");
-    expect(chooseGfx("", null)).toBe("legacy");
+  it("типово — ізометрія", () => {
+    expect(DEFAULT_GFX).toBe("iso");
+    expect(chooseGfx("", memory())).toBe("iso");
+    expect(chooseGfx("", null)).toBe("iso");
   });
 
   it("?gfx=iso вмикає ізометрію й запам'ятовує, наступна сторінка без прапорця — теж ізометрія", () => {
@@ -50,7 +50,7 @@ describe("прапорець графіки", () => {
     const storage = memory({ [GFX_KEY]: "iso" });
     expect(chooseGfx("?gfx=3d", storage)).toBe("iso");
     expect(storage.items[GFX_KEY]).toBe("iso");
-    expect(chooseGfx("", memory({ [GFX_KEY]: "щось" }))).toBe("legacy");
+    expect(chooseGfx("", memory({ [GFX_KEY]: "щось" }))).toBe("iso");
   });
 
   it("сховище, що кидає помилку, гри не ламає", () => {
@@ -63,6 +63,6 @@ describe("прапорець графіки", () => {
       },
     };
     expect(chooseGfx("?gfx=iso", broken)).toBe("iso");
-    expect(chooseGfx("", broken)).toBe("legacy");
+    expect(chooseGfx("", broken)).toBe("iso");
   });
 });
