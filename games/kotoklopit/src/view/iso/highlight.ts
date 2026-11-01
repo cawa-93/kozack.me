@@ -1,7 +1,10 @@
 // Підсвітка цілі дії в ізометричному світі (§8.2, крок 16): сяйво (Glow, фільтр Phaser 4) довкола малюнка цілі — лише на
-// одній цілі за раз. Фільтри Phaser 4 є лише у WebGL; у режимі Canvas (`Phaser.AUTO` без WebGL) — запасний варіант: контур
-// сліду цілі на підлозі й на її висоті (каркас) — смуга кольору підсвітки в чорнильній облямівці (T4), щоб читалася і на
-// світлій підлозі, і на темній стіні. Колір — токен `highlight` палітри арту (`art/STYLE.md`: лише для інтерфейсу).
+// одній цілі за раз. Фільтри Phaser 4 є лише у WebGL; у режимі Canvas (`Phaser.AUTO` без WebGL) — запасний варіант: кутик
+// сліду цілі на підлозі — два передні ребра (T4), смуга кольору підсвітки в чорнильній облямівці, щоб читалася і на світлій
+// підлозі, і на темній. Каркаса на висоті цілі немає: висота — найвища точка (монітор, узголів'я, кран), і коробка на ній
+// над усім слідом обводила б порожнечу, а задні ребра сліду йшли б крізь саму річ. Кутик лежить на глибині цілі, як сяйво
+// на її малюнку: той, хто стоїть перед ціллю (персонаж за столом), його закриває. Колір — токен `highlight` палітри арту
+// (`art/STYLE.md`: лише для інтерфейсу).
 //
 // Як ходить: частина в `update` починає кадр (`begin`), позначки кличуть `highlight` частини, а та — `request`; у своєму
 // `lateUpdate` частина кличе `apply`: сяйво переходить на нову ціль, зі старої знімається. Ціль, якої цього кадру не
@@ -10,7 +13,6 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../../art/palette";
-import { WORLD_LAYERS } from "../world/layers";
 import type { IsoFootprint } from "../world/objects";
 import { footprintCorners } from "./geometry";
 
@@ -20,13 +22,18 @@ const GLOW_PULSE = 4;
 /** Скільки вибірок і на яку відстань (px текстури): досить для чіткого обрису, не дорого для однієї цілі. */
 const GLOW_QUALITY = 8;
 const GLOW_DISTANCE = 10;
-/** Контур Canvas: над квартирою, під позначками старого вигляду. */
-const OUTLINE_DEPTH = WORLD_LAYERS.marks - 0.5;
+/**
+ * Контур Canvas — над малюнком цілі, у її проміжку глибини (`ISO_DEPTH_SLOT` 0,01), нижче за те, що лежить на ній: кутик на
+ * підлозі перед ціллю закриває лише те, що стоїть перед нею.
+ */
+const OUTLINE_ABOVE = 0.0005;
 /** Колір сяйва й контуру — токен `highlight` палітри арту; облямівка контуру — `ink`. */
 const HIGHLIGHT = Number.parseInt(PALETTE.highlight.slice(1), 16);
 const INK = Number.parseInt(PALETTE.ink.slice(1), 16);
 /** Контур Canvas: смуга підсвітки й чорнильна облямівка під нею (одиниці арту). */
-const OUTLINE = { band: 4, ink: 8 } as const;
+const OUTLINE = { band: 4, ink: 7 } as const;
+/** Передні ребра сліду: лівий, нижній і правий кути (`footprintCorners`). */
+const FRONT_CORNERS = [3, 2, 1] as const;
 
 /** Що підсвітити цього кадру. */
 interface Request {
@@ -86,21 +93,19 @@ export class IsoHighlight {
   }
 
   private drawOutline(wanted: Request | null): void {
-    const g = (this.outline ??= this.scene.add.graphics().setDepth(OUTLINE_DEPTH).addToDisplayList(this.layer));
+    const g = (this.outline ??= this.scene.add.graphics().addToDisplayList(this.layer));
     g.clear();
     if (!wanted || !wanted.image.visible) return;
-    const floor = footprintCorners(wanted.footprint).map((p) => new Phaser.Math.Vector2(p.x, p.y));
-    const top = floor.map((p) => new Phaser.Math.Vector2(p.x, p.y - wanted.height));
+    g.setDepth(wanted.image.depth + OUTLINE_ABOVE);
+    const corners = footprintCorners(wanted.footprint);
+    const front = FRONT_CORNERS.map((i) => new Phaser.Math.Vector2(corners[i]!.x, corners[i]!.y));
     // Спершу чорнильна облямівка, поверх — смуга підсвітки: пульс міняє яскравість обох.
     for (const [width, color] of [
       [OUTLINE.ink, INK],
       [OUTLINE.band, HIGHLIGHT],
     ] as const) {
       g.lineStyle(width, color, wanted.alpha);
-      g.strokePoints(floor, true, true);
-      g.strokePoints(top, true, true);
-      // Видимі ребра: ліве, переднє й праве.
-      for (const i of [1, 2, 3]) g.lineBetween(floor[i]!.x, floor[i]!.y, top[i]!.x, top[i]!.y);
+      g.strokePoints(front, false, false);
     }
   }
 
