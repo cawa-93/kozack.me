@@ -1,14 +1,18 @@
 // Змішування анімацій персонажа нового вигляду (крок 16, T2, `GRAPHICS_PLAN.md`, «Скелети й анімації»): основна анімація
-// плюс накладка рук (`PERSON_OVERLAYS`: несе річ, тримає кота) плюс поправки вигляду (очі засинання, сховати руку, що
-// гладить, голова хилиться) — в одну анімацію скелета, яку грає `Rig`. Без Phaser.
+// (чи разова) плюс накладка рук (`PERSON_OVERLAYS`: несе річ, тримає кота) плюс поправки вигляду (очі засинання, схована
+// ближня рука, голова хилиться) — в одну анімацію скелета, яку грає `Rig`. Без Phaser.
 //
-// Чому так: `Rig` грає одну анімацію, а накладка за контрактом `anim/ids.ts` — «поверх основної: її доріжки додаються до
-// доріжок основної (rot і pos додаються, scale множиться), тож вона рухає лише свої кістки». Тут обидві зводяться в одну:
-// доріжки кісток складаються (зі своїм часом кожної: накладка по колу йде за модулем своєї тривалості), а доріжки слотів
-// (кадр, видимість, z) накладки й поправок перекривають основну. Зведена анімація має тривалість і повтор основної (або
-// кілька її циклів, якщо інакше накладка рвалася б на стику), тож вибір «за поступом» і разові працюють як з основною.
+// Як зводиться: накладка рук ЗАМІНЮЄ доріжки основної для кісток, які вона рухає (руки й кисті), — як `personWithArms`
+// пакета N4a (`rig/anims/person/move.ts`): інакше розмах рук ходи, ривка чи разової підкидав би річ і кота (накладки N4a —
+// нерухомі пози рук). Решта кісток — від основної. Поправки додаються зверху (поворот голови, що хилиться). Доріжки слотів
+// (кадр, видимість, z) накладки й поправок перекривають основну. Кожен шар — зі своїм часом: накладка по колу йде за модулем
+// своєї тривалості, і зведена має тривалість і повтор основної (або кілька її циклів, якщо інакше накладка рвалася б на
+// стику), тож вибір «за поступом» і разові працюють як з основною. Після злиття з N4a можна брати `personWithArms` (ще й
+// противага рук нахилу тулуба) — тоді сюди йдуть лише поправки.
+//
 // Результат кешовано за (основна, накладка, поправки), тож щокадру нічого не створюється, а та сама комбінація — той самий
-// об'єкт (`Rig.play` її не перезапускає).
+// об'єкт (`Rig.play` її не перезапускає). Поправки — незмінні об'єкти, яких небагато (`personExtras` у `personlook.ts`):
+// їхній ключ рахується раз на об'єкт.
 //
 // Перевіряє `tests/isopersonmix.test.ts`.
 
@@ -26,7 +30,7 @@ const MAX_REPEATS = 6;
 /** Похибка стику циклів, мс: менше — не видно. */
 const SEAM_MS = 1;
 
-/** Поправки вигляду поверх анімації. */
+/** Поправки вигляду поверх анімації. Незмінні: ключ кешу рахується раз на об'єкт. */
 export interface MixExtras {
   /** Кадри слотів (очі: `half`, `closed`) — перекривають анімацію весь час. */
   readonly frames?: Readonly<Record<string, string>>;
@@ -42,6 +46,8 @@ export interface MixExtras {
 /** Шар зведення: анімація зі своїм часом. */
 interface Layer {
   readonly anim: LooseAnim;
+  /** Доріжки кісток шару заміняють доріжки нижчих шарів для тих самих кісток (накладка рук), а не додаються до них. */
+  readonly replace: boolean;
   /** Час шару в момент `t` зведеної анімації. */
   readonly time: (t: number) => number;
   /** Час шару збігається з часом зведеної (основна з одним циклом, поправки). */
@@ -49,14 +55,23 @@ interface Layer {
 }
 
 const NONE = {};
+/** Без поправок. */
+export const NO_EXTRAS: MixExtras = Object.freeze({});
 const MEMO = new WeakMap<object, WeakMap<object, Map<string, LooseAnim>>>();
+/** Ключ кешу кожного об'єкта поправок. */
+const KEYS = new WeakMap<MixExtras, string>();
 
 /**
  * Основна анімація з накладкою й поправками: без накладки й поправок — сама основна (той самий об'єкт). Однакові входи — той
  * самий результат.
  */
-export function mixAnims<B extends string, S extends string>(main: RigAnim<B, S>, overlay: RigAnim<B, S> | null, extras: MixExtras = {}): RigAnim<B, S> {
-  const key = extrasKey(extras);
+export function mixAnims<B extends string, S extends string>(main: RigAnim<B, S>, overlay: RigAnim<B, S> | null, extras: MixExtras = NO_EXTRAS): RigAnim<B, S> {
+  if (!overlay && extras === NO_EXTRAS) return main;
+  let key = KEYS.get(extras);
+  if (key === undefined) {
+    key = extrasKey(extras);
+    KEYS.set(extras, key);
+  }
   if (!overlay && key === "") return main;
   let byOverlay = MEMO.get(main);
   if (!byOverlay) {
@@ -128,10 +143,10 @@ function moves(anim: LooseAnim): boolean {
 function buildMix(main: LooseAnim, overlay: LooseAnim | null, extras: MixExtras): LooseAnim {
   const repeats = mixRepeats(main, overlay);
   const duration = main.duration * repeats;
-  const layers: Layer[] = [{ anim: main, time: layerTime(main), aligned: repeats === 1 }];
-  if (overlay) layers.push({ anim: overlay, time: layerTime(overlay), aligned: overlay.duration === duration && overlay.loop === main.loop });
+  const layers: Layer[] = [{ anim: main, replace: false, time: layerTime(main), aligned: repeats === 1 }];
+  if (overlay) layers.push({ anim: overlay, replace: true, time: layerTime(overlay), aligned: overlay.duration === duration && overlay.loop === main.loop });
   const extra = extrasAnim(extras, duration, main.loop);
-  if (extra) layers.push({ anim: extra, time: (t) => t, aligned: true });
+  if (extra) layers.push({ anim: extra, replace: false, time: (t) => t, aligned: true });
 
   const base = mixTracks(layers, null, duration);
   const out: LooseAnim = { duration, loop: main.loop, ...base };
@@ -179,6 +194,21 @@ function boneTrack(anim: LooseAnim, view: ArtView | null, bone: string, channel:
   return over ?? anim.bones?.[bone]?.[channel];
 }
 
+/** Чи шар рухає кістку (будь-яка доріжка) — в основних доріжках чи в перевизначенні ракурсу `view`. */
+function movesBone(anim: LooseAnim, view: ArtView | null, bone: string): boolean {
+  const has = (t: BoneTracks | undefined): boolean => Boolean(t?.rot?.length || t?.pos?.length || t?.scale?.length);
+  return has(anim.bones?.[bone]) || (view !== null && has(anim.views?.[view]?.bones?.[bone]));
+}
+
+/** Шари, що діють на кістку: від найвищого, який її заміняє (накладка рук, що її рухає), догори; інакше — усі. */
+function boneLayers(layers: readonly Layer[], view: ArtView | null, bone: string): readonly Layer[] {
+  for (let i = layers.length - 1; i > 0; i--) {
+    const layer = layers[i]!;
+    if (layer.replace && movesBone(layer.anim, view, bone)) return layers.slice(i);
+  }
+  return layers;
+}
+
 function slotTrack(anim: LooseAnim, view: ArtView | null, slot: string, channel: keyof SlotTracks): readonly StepKey<string | boolean | number>[] | undefined {
   const over = view ? anim.views?.[view]?.slots?.[slot]?.[channel] : undefined;
   return (over ?? anim.slots?.[slot]?.[channel]) as readonly StepKey<string | boolean | number>[] | undefined;
@@ -199,10 +229,13 @@ function mixTracks(layers: readonly Layer[], view: ArtView | null, duration: num
   const bones: Record<string, BoneTracks> = {};
   for (const id of boneIds) {
     const tracks: BoneTracks = {};
+    const active = boneLayers(layers, view, id);
+    // Кістку, яку заміняє накладка, перевизначення ракурсу основної вже не чіпає: без доріжки ракурсу `Rig` бере основну
+    // зведену доріжку — накладку.
     for (const channel of ["rot", "pos", "scale"] as const) {
-      const own = view ? layers.some((l) => l.anim.views?.[view]?.bones?.[id]?.[channel]) : true;
+      const own = view ? active.some((l) => l.anim.views?.[view]?.bones?.[id]?.[channel]) : true;
       if (!own) continue;
-      const parts = layers.flatMap((layer) => {
+      const parts = active.flatMap((layer) => {
         const keys = boneTrack(layer.anim, view, id, channel);
         return keys && keys.length > 0 ? [{ layer, keys }] : [];
       });

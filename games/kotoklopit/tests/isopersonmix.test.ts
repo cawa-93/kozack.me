@@ -1,11 +1,11 @@
 // Змішування анімацій персонажа нового вигляду (крок 16, T2): основна + накладка рук + поправки вигляду — одна анімація
-// скелета (`src/view/iso/personmix.ts`). Накладка за контрактом `anim/ids.ts` додається до основної (rot і pos — сума,
-// scale — добуток) зі своїм часом, доріжки слотів накладки й поправок перекривають основну.
+// скелета (`src/view/iso/personmix.ts`). Накладка рук заміняє доріжки основної для кісток, які рухає (як `personWithArms`
+// пакета N4a), зі своїм часом; поправки додаються; доріжки слотів накладки й поправок перекривають основну.
 
 import { describe, expect, it } from "vitest";
 
 import { PERSON_ANIM_IDS, PERSON_OVERLAYS } from "../src/view/anim/ids";
-import { mixAnims, mixRepeats } from "../src/view/iso/personmix";
+import { mixAnims, mixRepeats, NO_EXTRAS } from "../src/view/iso/personmix";
 import { PERSON_ANIMS } from "../src/view/rig/anims/index";
 import { PERSON_FIT, PERSON_RIG } from "../src/view/rig/defs/person";
 import { Rig, sampleNumber, sampleStep, sampleVec } from "../src/view/rig/rigcore";
@@ -37,7 +37,6 @@ const CARRY: Anim = {
   bones: {
     "arm-near": { rot: [{ t: 0, v: -60 }] },
     "hand-near": { rot: [{ t: 0, v: 0 }, { t: 500, v: 6 }, { t: 1000, v: 0 }] },
-    "leg-near": { scale: [{ t: 0, v: { x: 1, y: 1.1 } }] },
   },
 };
 
@@ -46,13 +45,14 @@ const rot = (anim: Anim, bone: string, t: number): number => sampleNumber(anim.b
 describe("mixAnims: основна й накладка", () => {
   it("без накладки й поправок — сама основна; ті самі входи — той самий об'єкт", () => {
     expect(mixAnims(WALK, null)).toBe(WALK);
+    expect(mixAnims(WALK, null, NO_EXTRAS)).toBe(WALK);
     expect(mixAnims(WALK, null, {})).toBe(WALK);
     const a = mixAnims(WALK, CARRY, { frames: { eyes: "half" } });
     expect(mixAnims(WALK, CARRY, { frames: { eyes: "half" } })).toBe(a);
     expect(mixAnims(WALK, CARRY)).not.toBe(a);
   });
 
-  it("повороти й положення складаються, масштаби множаться — у кожен момент, з часом кожної", () => {
+  it("накладка заміняє доріжки основної для своїх кісток (руки не розгойдуються з ходою), решта — від основної; у кожної свій час", () => {
     const mixed = mixAnims(WALK, CARRY);
     const repeats = mixRepeats(WALK, CARRY as never);
     expect(mixed.duration).toBe(WALK.duration * repeats);
@@ -61,13 +61,28 @@ describe("mixAnims: основна й накладка", () => {
       if (t > mixed.duration) continue;
       const walk = t % WALK.duration;
       const carry = t % CARRY.duration;
-      expect(rot(mixed, "arm-near", t)).toBeCloseTo(rot(WALK, "arm-near", walk) + rot(CARRY, "arm-near", carry), 0);
+      expect(rot(mixed, "arm-near", t)).toBeCloseTo(-60, 6);
       expect(rot(mixed, "hand-near", t)).toBeCloseTo(rot(CARRY, "hand-near", carry), 0);
+      expect(rot(mixed, "leg-near", t)).toBeCloseTo(rot(WALK, "leg-near", walk), 0);
       const scale = sampleVec(mixed.bones?.["leg-near"]?.scale ?? [], t, { x: 0, y: 0 });
       const walkScale = sampleVec(WALK.bones?.["leg-near"]?.scale ?? [], walk, { x: 0, y: 0 });
       expect(scale.x).toBeCloseTo(walkScale.x, 1);
-      expect(scale.y).toBeCloseTo(walkScale.y * 1.1, 2);
+      expect(scale.y).toBeCloseTo(walkScale.y, 2);
     }
+  });
+
+  it("накладка заміняє кістку цілком: доріжки основної, яких у накладці немає (масштаб руки), теж від накладки", () => {
+    const main: Anim = { duration: 500, loop: true, bones: { "arm-near": { rot: [{ t: 0, v: 10 }], scale: [{ t: 0, v: { x: 0.8, y: 1 } }] } } };
+    const mixed = mixAnims(main, { duration: 500, loop: true, bones: { "arm-near": { rot: [{ t: 0, v: -60 }] } } });
+    expect(mixed.bones?.["arm-near"]).toEqual({ rot: [{ t: 0, v: -60 }] });
+  });
+
+  it("поправки додаються поверх накладки й основної (голова хилиться)", () => {
+    const main: Anim = { duration: 1000, loop: false, bones: { head: { rot: [{ t: 0, v: 4 }] } } };
+    const mixed = mixAnims(main, CARRY, { ramp: { head: 10 } });
+    expect(rot(mixed, "head", 0)).toBeCloseTo(4);
+    expect(rot(mixed, "head", 1000)).toBeCloseTo(14);
+    expect(rot(mixed, "arm-near", 500)).toBeCloseTo(-60);
   });
 
   it("накладка, що рухається по колу, не рветься на стику: зведена — кілька циклів основної, поки обидві не замкнуться", () => {
@@ -81,10 +96,9 @@ describe("mixAnims: основна й накладка", () => {
     expect(mixed.duration).toBe(1000);
   });
 
-  it("стала накладка на доріжці основної — ті самі ключі й переходи, зсунуті на сталу", () => {
-    const mixed = mixAnims(WALK, { duration: 1000, loop: true, bones: { "arm-near": { rot: [{ t: 0, v: -60 }] } } });
-    expect(mixed.bones?.["arm-near"]?.rot).toEqual(WALK.bones?.["arm-near"]?.rot?.map((k) => ({ ...k, v: k.v - 60 })));
-    // Кістки лише основної — ті самі доріжки.
+  it("кістки, яких не рухають ні накладка, ні поправки, — ті самі доріжки основної (ключі й переходи)", () => {
+    const mixed = mixAnims(WALK, null, { ramp: { "leg-far": 5 } });
+    expect(mixed.bones?.["arm-near"]).toEqual(WALK.bones?.["arm-near"]);
     expect(mixed.bones?.["leg-near"]).toEqual(WALK.bones?.["leg-near"]);
   });
 
@@ -105,13 +119,17 @@ describe("mixAnims: основна й накладка", () => {
     expect(rot(mixed, "head", 1000)).toBe(18);
   });
 
-  it("перевизначення ракурсу: зведена доріжка ракурсу — з доріжок цього ракурсу обох (решта — з основних)", () => {
-    const main: Anim = { ...WALK, views: { back: { bones: { "arm-near": { rot: [{ t: 0, v: 5 }] } } } } };
+  it("перевизначення ракурсу: накладка заміняє й перевизначення основної; своє перевизначення накладки — у її ракурсі", () => {
+    const main: Anim = { ...WALK, views: { back: { bones: { "arm-near": { rot: [{ t: 0, v: 5 }] }, "leg-near": { rot: [{ t: 0, v: 3 }] } } } } };
     const mixed = mixAnims(main, CARRY);
-    expect(rot(mixed, "arm-near", 0)).toBeCloseTo(-80);
-    expect(sampleNumber(mixed.views?.back?.bones?.["arm-near"]?.rot ?? [], 0)).toBeCloseTo(-55);
-    expect(sampleNumber(mixed.views?.back?.bones?.["arm-near"]?.rot ?? [], 777)).toBeCloseTo(-55);
+    expect(rot(mixed, "arm-near", 0)).toBeCloseTo(-60);
+    // Ззаду рука — та сама накладка (`Rig` бере основну доріжку), нога — перевизначення основної.
+    expect(mixed.views?.back?.bones?.["arm-near"]).toBeUndefined();
+    expect(sampleNumber(mixed.views?.back?.bones?.["leg-near"]?.rot ?? [], 0)).toBeCloseTo(3);
     expect(mixed.views?.front).toBeUndefined();
+    const own = mixAnims(main, { ...CARRY, views: { back: { bones: { "arm-near": { rot: [{ t: 0, v: -40 }] } } } } });
+    expect(sampleNumber(own.views?.back?.bones?.["arm-near"]?.rot ?? [], 0)).toBeCloseTo(-40);
+    expect(rot(own, "arm-near", 0)).toBeCloseTo(-60);
   });
 
   it("зведене з анімаціями реєстру грається скелетом персонажа: кожна основна з кожною накладкою рук", () => {
