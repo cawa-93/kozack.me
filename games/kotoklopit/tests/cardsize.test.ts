@@ -31,6 +31,16 @@ describe("розміри картки", () => {
     expect(rule(media, ".card")).toContain(`border-image-outset: ${CARD_CSS.low.outset}px;`);
   });
 
+  it("картка ліворуч (`.aside`): поле — не менше за виріз камери, як рахує `asideCardRight`", () => {
+    const aside = ".overlay.aside:not(.cinematic):not(.solid)";
+    for (const side of ["left", "right"]) {
+      expect(rule(css, `\n${aside}`)).toContain(`padding-${side}: max(${CARD_CSS.pad}px, env(safe-area-inset-${side}));`);
+      const media = css.slice(css.indexOf(`@media (max-height: ${CARD_CSS.low.maxHeight}px)`));
+      expect(rule(media, aside)).toContain(`padding-${side}: max(${CARD_CSS.low.pad}px, env(safe-area-inset-${side}));`);
+    }
+    expect(rule(css, `\n${aside}`)).toContain("justify-content: flex-start;");
+  });
+
   it("правий край притиснутої ліворуч картки", () => {
     expect(asideCardRight({ width: 1280, height: 720 })).toBe(16 + 560 + 4);
     expect(asideCardRight({ width: 844, height: 390 })).toBe(8 + 560 + 3);

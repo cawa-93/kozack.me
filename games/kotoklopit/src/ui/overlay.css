@@ -45,6 +45,8 @@
   --shade-soft: rgb(63 37 65 / 0.16);
   --dim: rgb(46 31 41 / 0.55);
   --dim-solid: rgb(46 31 41 / 0.95);
+  /* На місці, коли картка ліворуч (`.aside`): парковку пункту праворуч має бути добре видно. */
+  --dim-aside: rgb(46 31 41 / 0.25);
   --hand: "Pangolin", system-ui, sans-serif;
   --paper-tile: url("../../art/ui/paper.svg");
 }
@@ -68,6 +70,16 @@
 
 .overlay.solid:not(.cinematic) {
   background: var(--dim-solid);
+}
+
+/* На місці (§8.5 «На місці — кадр парковки»): картка ліворуч, а праворуч від неї — парковка пункту, тож тло затемнене слабше.
+   Поле ліворуч і праворуч — не менше за виріз камери телефона: картка не лягає під нього. Чи вміщається парковка, вирішує сцена
+   дороги (`parkingLayout`), а не ширина екрана; правий край картки вона рахує за тими самими числами (`src/ui/cardsize.ts`). */
+.overlay.aside:not(.cinematic):not(.solid) {
+  justify-content: flex-start;
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-left: max(16px, env(safe-area-inset-left));
+  background: var(--dim-aside);
 }
 
 .overlay[hidden] {
@@ -846,6 +858,11 @@
     padding: 8px;
     font-size: 14px;
     line-height: 1.35;
+  }
+
+  .overlay.aside:not(.cinematic):not(.solid) {
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-left: max(8px, env(safe-area-inset-left));
   }
 
   .card {

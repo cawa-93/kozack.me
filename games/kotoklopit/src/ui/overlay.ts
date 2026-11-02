@@ -169,10 +169,20 @@ export class Overlay {
     this.root.hidden = false;
   }
 
+  /**
+   * Картку притиснуто ліворуч, а тло затемнене слабше (`.aside`): на місці (§8.5 «На місці — кадр парковки») праворуч від неї
+   * видно парковку пункту. Чи вона там уміщається, вирішує сцена дороги (`RaceScene.parkingAside`), а не ширина екрана; день
+   * ставить це щокадру. Титулки, кінця гри й меню (`solid`) не стосується.
+   */
+  setAside(on: boolean): void {
+    this.root.classList.toggle("aside", on);
+  }
+
   show(card: Card): void {
     this.card = card;
     this.root.classList.remove("cinematic", "dawn");
     this.root.classList.toggle("solid", card.solid ?? false);
+    if (card.solid) this.root.classList.remove("aside");
     const panel = element("section", "card");
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
@@ -223,7 +233,7 @@ export class Overlay {
 
   close(): void {
     this.card = null;
-    this.root.classList.remove("cinematic", "dawn");
+    this.root.classList.remove("cinematic", "dawn", "aside");
     this.root.hidden = true;
     this.root.replaceChildren();
   }
