@@ -33,7 +33,7 @@ import {
   glassTint,
   lightmapKey,
   lightmapPlan,
-  paneQuad,
+  paneGlass,
   sourceLevel,
   stripsOf,
   sunColor,
@@ -117,6 +117,8 @@ export class IsoLightView implements WorldPart {
   private readonly depth: IsoDepth;
   /** Вікна, чий малюнок є в маніфесті: кухонне з'являється разом зі своїм артом (до того — ні скла, ні смуги на голій стіні). */
   private readonly panes: readonly Pane[];
+  /** Видиме скло цих вікон на екрані (`paneGlass`): тонується лише воно, не рама, укоси й фіранки. */
+  private readonly glassPolys: readonly Point[][];
   private readonly outline: readonly Point[];
   private readonly keys: { map: string; sun: string };
   private parts: Parts | null = null;
@@ -131,6 +133,7 @@ export class IsoLightView implements WorldPart {
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
     this.panes = PANES.filter((pane) => artEntry(`env/window/${pane.room}`) !== undefined);
+    this.glassPolys = this.panes.flatMap((pane) => paneGlass(pane));
     this.outline = apartmentOutline();
     const n = instances++;
     this.keys = { map: `light/map/${n}`, sun: `light/sun/${n}` };
@@ -245,10 +248,9 @@ export class IsoLightView implements WorldPart {
       this.glassKey = key;
       parts.glass.clear();
       parts.glass.fillStyle(color, 1);
-      for (const pane of this.panes) {
-        const quad = paneQuad(pane);
+      for (const poly of this.glassPolys) {
         parts.glass.beginPath();
-        quad.forEach((p, i) => (i === 0 ? parts.glass.moveTo(p.x, p.y) : parts.glass.lineTo(p.x, p.y)));
+        poly.forEach((p, i) => (i === 0 ? parts.glass.moveTo(p.x, p.y) : parts.glass.lineTo(p.x, p.y)));
         parts.glass.closePath();
         parts.glass.fillPath();
       }

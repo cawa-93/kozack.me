@@ -9,7 +9,7 @@
 
 import { MAP_HEIGHT, MAP_WIDTH } from "../../sim/home";
 import type { Vec } from "../../sim/types";
-import type { Pane } from "../decor";
+import { GLASS_RECESS, type Pane } from "../decor";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE, ISO_WALLS } from "../world/projection";
 import { lightKey, type Daylight } from "./daylight";
@@ -130,6 +130,16 @@ export function paneQuad(pane: Pane): Point[] {
   return [screen(at(u0), z0), screen(at(u1), z0), screen(at(u1), z1), screen(at(u0), z1)];
 }
 
+/**
+ * Видиме скло вікна на екрані, px світу: многокутники `Pane.glass` у площині скла (`GLASS_RECESS` від лиця стіни) — лише скло
+ * стулок, без рами, укосів, фіранок і штори (§8.9: темніє й теплішає лише скло).
+ */
+export function paneGlass(pane: Pane): Point[][] {
+  const plane = (pane.face === "y" ? pane.wall.y : pane.wall.x) + 1 - GLASS_RECESS;
+  const at = (u: number): Vec => (pane.face === "y" ? { x: u, y: plane } : { x: plane, y: u });
+  return pane.glass.map((poly) => poly.map(([u, z]) => screen(at(u), z)));
+}
+
 /** Пів діагоналі ромба: радіус кола на підлозі в клітинках → піввісь еліпса на екрані по горизонталі. */
 export const CELL_RX = Math.SQRT2 * (ISO_TILE.width / 2);
 
@@ -238,7 +248,7 @@ export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes
     tone,
     pools: sources.flatMap((source) => poolsOf(source, t)),
     strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
-    glass: panes.map((pane) => ({ points: paneQuad(pane), color: glass, alpha: 1 })),
+    glass: panes.flatMap((pane) => paneGlass(pane).map((points) => ({ points, color: glass, alpha: 1 }))),
   };
 }
 
