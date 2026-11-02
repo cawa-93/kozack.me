@@ -63,8 +63,8 @@ const CAT_TAP_MS = 250;
  */
 const FALL_ASLEEP = { eyes: 1300, darkFrom: 1000, total: 2300, zoom: 0.5, lead: 0.01 } as const;
 /**
- * Після аварії (§8.5) квартира проступає з чорного за `ms` мс; під титулкою ночі чи екраном кінця гри темрява тримається ще
- * `covered` мс, як після засинання, — щоб квартира не блимнула перед ними.
+ * Після дороги (аварія, дорога додому, §8.5) квартира проступає з чорного за `ms` мс; під титулкою ночі чи екраном кінця гри
+ * темрява тримається ще `covered` мс, як після засинання, — щоб квартира не блимнула перед ними.
  */
 const ROAD_REVEAL = { ms: 400, covered: 1000 } as const;
 
@@ -97,6 +97,11 @@ export class DayScene extends Phaser.Scene {
   private dark!: Phaser.GameObjects.Rectangle;
   /** Персонаж засинає (§8.8): коли почав (мс) і чи падає без сил. */
   private asleep: { started: number; collapsed: boolean } | null = null;
+  /**
+   * Дорога додому йде (§8.5): що зробити, коли катсцена скінчилася (час дороги й персонаж удома — `goHome`, `carryFoundling`),
+   * і з яким збереженням вона почалася — гру замінили посеред катсцени, і стара дорога вже нічого не робить.
+   */
+  private arrival: { save: Save; arrive: () => void } | null = null;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
@@ -162,7 +167,7 @@ export class DayScene extends Phaser.Scene {
       }),
     );
     this.cleanup.push(() => this.world.destroy());
-    // Гонка скінчилася (доїхали чи аварія): сцена дороги будить день і каже, з чим (`RoadEnd`).
+    // Дорога скінчилася (гонка, аварія, дорога додому): сцена дороги будить день і каже, з чим (`RoadEnd`).
     const onWake = (_sys: Phaser.Scenes.Systems, end?: RoadEnd): void => this.onRoadEnd(end);
     this.events.on(Phaser.Scenes.Events.WAKE, onWake);
     this.cleanup.push(() => this.events.off(Phaser.Scenes.Events.WAKE, onWake));
@@ -318,7 +323,7 @@ export class DayScene extends Phaser.Scene {
     this.time.delayedCall(covered ? 1000 : 0, () => this.wakeUp());
   }
 
-  /** Прибрати засинання: очі, наїзд і темряву (і темряву після аварії). */
+  /** Прибрати засинання: очі, наїзд і темряву (і темряву після дороги). */
   private wakeUp(): void {
     this.asleep = null;
     this.tweens.killTweensOf(this.dark);
@@ -328,16 +333,28 @@ export class DayScene extends Phaser.Scene {
 
   /**
    * Сцена дороги розбудила день (`RoadEnd`). Аварія (§8.5): екран уже чорний після анімації — він і лишається чорним під карткою
-   * аварії, доки її не закрили (`revealFromDark`). Звичайний кінець гонки — нічого: далі картка на місці, як і раніше.
+   * аварії, доки її не закрили (`revealFromDark`). Дорога додому: тепер минає її час і персонаж удома (`arrival`), і квартира
+   * проступає з чорного, яким катсцена скінчилася. Звичайний кінець гонки — нічого: далі картка на місці, як і раніше.
    */
   private onRoadEnd(end: RoadEnd | undefined): void {
-    if (end?.crashed !== true) return;
+    if (end?.crashed === true) {
+      this.tweens.killTweensOf(this.dark);
+      this.dark.setFillStyle(0x000000, 1);
+      return;
+    }
+    if (end?.mode !== "home") return;
+    const arrival = this.arrival;
+    this.arrival = null;
     this.tweens.killTweensOf(this.dark);
     this.dark.setFillStyle(0x000000, 1);
+    // Гру замінили посеред катсцени (сценарій, нова гра) — стара дорога додому нічого не рахує.
+    if (arrival && arrival.save === this.session.save) arrival.arrive();
+    this.viewport.jump();
+    this.revealFromDark();
   }
 
   /**
-   * Квартира проступає з чорного після аварії (§8.5). Ніч настала — титулка, гра скінчилася — екран кінця (`game-over` показує
+   * Квартира проступає з чорного після дороги (§8.5). Ніч настала — титулка, гра скінчилася — екран кінця (`game-over` показує
    * його трохи згодом): тоді темрява тримається, доки вони не закрили екран, як після засинання.
    */
   private revealFromDark(): void {
@@ -345,6 +362,20 @@ export class DayScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.dark);
     const cinematic = (this.overlay.isOpen && this.overlay.shown === null) || this.state.end !== null;
     this.tweens.add({ targets: this.dark, fillAlpha: 0, duration: ROAD_REVEAL.ms, delay: cinematic ? ROAD_REVEAL.covered : 0 });
+  }
+
+  /**
+   * Дорога додому (§8.5): коротка катсцена без керування (сцена дороги, `RoadStart` «home»), а тоді `arrive` — те саме, що й
+   * раніше без катсцени: минає час дороги, і персонаж удома біля дверей (чи ніч, чи кінець гри). Поки катсцена йде, день спить і
+   * стан гри не змінюється: перезавантаження сторінки посеред неї повертає туди, звідки персонаж ще не виїхав.
+   */
+  private driveHome(arrive: () => void): void {
+    this.arrival = { save: this.session.save, arrive };
+    this.moving = false;
+    this.catPress = null;
+    this.touch.reset();
+    this.scene.launch("race", { mode: "home" } satisfies RoadStart);
+    this.scene.sleep();
   }
 
   private dash(): void {
@@ -465,10 +496,10 @@ export class DayScene extends Phaser.Scene {
         again();
       },
       // Час на місці — лише за отримані послуги, без жодної — 15 хвилин (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
+      // Спершу дорога додому катсценою (рішення автора 2026-11-02), а тоді минає час, як і раніше.
       home: () => {
         this.overlay.close();
-        goHome(this.session.save);
-        this.viewport.jump();
+        this.driveHome(() => goHome(this.session.save));
       },
     });
     // На зборах підвищили — спершу картка кар'єри, а візит після неї (раніше візит її затирав).
@@ -919,11 +950,14 @@ export class DayScene extends Phaser.Scene {
           decideFoundling(this.state, true);
           this.overlay.close();
         },
+        // Віднести в притулок (§4.1) — як поїздка без гонки: повертаючись, персонаж їде додому тією самою катсценою (§8.5), а
+        // рішення й дві години — коли вона скінчилася (перезавантаження посеред неї — знову картка знайди).
         () => {
-          decideFoundling(this.state, false);
           this.overlay.close();
-          carryFoundling(this.session.save);
-          this.viewport.jump();
+          this.driveHome(() => {
+            decideFoundling(this.state, false);
+            carryFoundling(this.session.save);
+          });
         },
       ),
     );

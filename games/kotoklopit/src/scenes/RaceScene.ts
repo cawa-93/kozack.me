@@ -1,6 +1,7 @@
-// Гонка дорогою (§8.5): три смуги, свої й чужі машини; джойстик чи стрілки: вперед — газ, назад — гальмо. Сцена лише малює стан
-// гонки й передає керування в симуляцію; коли гонка закінчилася, повертає день. Аварію показує, як засинання
-// (`src/view/racecrash.ts`): камера наїжджає на машину, екран темніє, а тоді день показує картку аварії.
+// Дорога (§8.5): гонка й дорога додому. Гонка — три смуги, свої й чужі машини; джойстик чи стрілки: вперед — газ, назад — гальмо.
+// Сцена лише малює стан гонки й передає керування в симуляцію; коли гонка закінчилася, повертає день. Аварію показує, як
+// засинання (`src/view/racecrash.ts`): камера наїжджає на машину, екран темніє, а тоді день показує картку аварії. Дорога
+// додому — коротка катсцена без керування (`src/view/homeroad.ts`): сим тоді не йде, час дороги рахує день, коли вона скінчилася.
 
 import Phaser from "phaser";
 
@@ -18,6 +19,7 @@ import { artEntry } from "../view/art/manifest";
 import { RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
+import { canSkipHomeRoad, HOME_ROAD, homeRoadFrame, type HomeRoadFrame } from "../view/homeroad";
 import { CRASH_FX, crashView } from "../view/racecrash";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
@@ -57,11 +59,11 @@ export const DESTINATION_TITLES: Record<Destination, string> = {
 };
 
 /**
- * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5). Передавати завжди: Phaser без даних лишає сцені ті, з
- * якими її запускали минулого разу.
+ * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5) чи дорогу додому — катсцену без керування. Передавати
+ * завжди: Phaser без даних лишає сцені ті, з якими її запускали минулого разу.
  */
 export interface RoadStart {
-  mode: "race";
+  mode: "race" | "home";
 }
 
 /**
@@ -71,6 +73,12 @@ export interface RoadStart {
 export interface RoadEnd {
   mode: RoadStart["mode"];
   crashed?: boolean;
+}
+
+/** Чи друкує зараз гравець у полі вводу (панель розробника): тоді клавіша катсцени не пропускає. */
+function isTyping(): boolean {
+  const active = document.activeElement;
+  return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
 }
 
 export class RaceScene extends Phaser.Scene {
@@ -86,13 +94,15 @@ export class RaceScene extends Phaser.Scene {
   private stick: { id: number; origin: { x: number; y: number }; x: number; y: number; steered: boolean } | null = null;
   /** Дорога, узбіччя, машини й смуга прогресу з атласу (крок 16, A14); створюється з кожною гонкою. */
   private art: RaceArt | null = null;
-  /** Темрява поверх дороги: аварія (§8.5). */
+  /** Темрява поверх дороги: аварія (§8.5) і початок та кінець дороги додому. */
   private dark!: Phaser.GameObjects.Rectangle;
   /**
    * Аварію показано (§8.5): скільки мс іде анімація (лише поки гра не стоїть) і з яким збереженням вона почалася — гру
    * замінили посеред анімації, і день сам покаже, що треба.
    */
   private crash: { ms: number; save: Save } | null = null;
+  /** Дорога додому (§8.5): скільки мс іде катсцена, з яким збереженням почалася й чи гравець її пропустив. */
+  private home: { ms: number; save: Save; skipped: boolean } | null = null;
 
   constructor(private readonly session: Session) {
     super("race");
@@ -102,11 +112,12 @@ export class RaceScene extends Phaser.Scene {
     return this.session.save.current;
   }
 
-  create(): void {
+  create(data?: Partial<RoadStart>): void {
     const art = new RaceArt(this);
     this.art = art;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => art.destroy());
     this.crash = null;
+    this.home = data?.mode === "home" ? { ms: 0, save: this.session.save, skipped: false } : null;
     // Темрява — над усім, і над написом.
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(RACE_DEPTH.dark);
     // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
@@ -123,6 +134,10 @@ export class RaceScene extends Phaser.Scene {
       .setStroke(PALETTE.ink, 5);
     this.touched = false;
     this.stick = null;
+    if (this.home) {
+      this.listenSkip();
+      return;
+    }
     const keyboard = this.input.keyboard;
     if (keyboard) {
       const K = Phaser.Input.Keyboard.KeyCodes;
@@ -141,6 +156,21 @@ export class RaceScene extends Phaser.Scene {
       if (shown) this.stick = null;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
+  }
+
+  /**
+   * Дорогу додому пропускає будь-яке натискання (§8.5): дотик, клавіша миші чи клавіатури — але не те, що закрило картку
+   * візиту (`canSkipHomeRoad`), і не клавіша в полі панелі розробника.
+   */
+  private listenSkip(): void {
+    const skip = (): void => {
+      const home = this.home;
+      if (home && canSkipHomeRoad(home.ms)) home.skipped = true;
+    };
+    this.input.on("pointerdown", skip);
+    this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
+      if (!event.repeat && !isTyping()) skip();
+    });
   }
 
   /** Джойстик з'являється під пальцем будь-де на екрані. Точка дотику — у пікселях полотна, гонка — в одиницях інтерфейсу. */
@@ -187,6 +217,7 @@ export class RaceScene extends Phaser.Scene {
   }
 
   override update(_time: number, delta: number): void {
+    if (this.home) return this.updateHome(delta);
     if (this.crash) return this.updateCrash(delta);
     const state = this.state;
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
@@ -256,6 +287,23 @@ export class RaceScene extends Phaser.Scene {
     // Камера не виходить за кадр (`crashView`), тож темрява на весь кадр закриває все, що видно.
     this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
     return frame.done;
+  }
+
+  /**
+   * Дорога додому (§8.5): катсцена йде, поки гра не стоїть, і закінчується сама чи натисканням; тоді день — він і рахує час
+   * дороги (`goHome`), як раніше. Гру замінили посеред катсцени — день одразу, і дороги він не рахує.
+   */
+  private updateHome(delta: number): void {
+    const home = this.home;
+    const art = this.art;
+    if (!home || !art) return;
+    if (home.skipped || this.session.save !== home.save) return this.finish({ mode: "home" });
+    home.ms += this.animationMs(delta);
+    const view = this.layout();
+    const frame = homeRoadFrame(home.ms, view.height);
+    art.drawHome(frame, view);
+    this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
+    if (frame.done) this.finish({ mode: "home" });
   }
 
   /**
@@ -397,13 +445,70 @@ class RaceArt {
     this.marker = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.marker);
   }
 
+  /** Кадр гонки: дорога їде донизу, поки машина їде вгору; машини потоку там, де їх веде сим; смуга прогресу. */
   draw(race: Race, view: RaceView): void {
-    const { width, height, k, ppu, cx, playerY } = view;
-    const distance = race.done * ppu;
-    const tiles = RACE_TILES;
+    const { height, k, ppu, cx, playerY } = view;
+    this.drawRoad(race.done * ppu, view);
 
-    // Узбіччя: стовпці зі своєю фазою, віддзеркалені через один; дорога — одна колона плиток посередині. Ряди теж
-    // віддзеркалюються через один (`rowFlipped`), тож малюнок не повторюється на одному екрані.
+    // Машини потоку: ті, що в кадрі (з запасом на довжину машини).
+    const reach = (artEntry("race/car/traffic")?.size.h ?? 84) * k;
+    let n = 0;
+    for (const car of race.cars) {
+      const y = playerY - (carAt(race, car) - race.done) * ppu;
+      if (y < -reach || y > height + reach) continue;
+      let look = this.looks.get(car);
+      if (!look) {
+        look = trafficLook(car);
+        this.looks.set(car, look);
+      }
+      this.fit(this.trafficImage(n++, look), k, k).setPosition(laneX(cx, car.lane, k), y).setRotation(0);
+    }
+    hideFrom(this.traffic, n);
+
+    this.fit(this.player, k, k)
+      .setPosition(laneX(cx, race.lane, k), playerY)
+      .setRotation(steerTilt(race.lane, race.targetLane));
+
+    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом.
+    const barTop = view.safe.top + 90;
+    const barH = height - barTop - view.safe.bottom - 40;
+    const barX = cx + RACE_BAR_X * k;
+    this.placeBar(this.track, barX, barTop, barH, k);
+    const done = Math.max(0, Math.min(1, race.road > 0 ? race.done / race.road : 0));
+    const fillH = barH * done;
+    if (fillH >= 1) this.placeBar(this.fill, barX, barTop + barH - fillH, fillH, k);
+    else hideFrom(this.fill, 0);
+    this.fit(this.marker, RACE_MARKER_SCALE * k, RACE_MARKER_SCALE * k)
+      .setPosition(barX, barMarkerY(barTop, barH, done, k))
+      .setVisible(true);
+  }
+
+  /**
+   * Кадр дороги додому (§8.5, `homeRoadFrame`): та сама дорога, але камера їде вниз — дорога біжить угору; машини (і своя)
+   * повернуті носом донизу; смуги прогресу немає — це не гонка.
+   */
+  drawHome(frame: HomeRoadFrame, view: RaceView): void {
+    const { k, cx } = view;
+    this.drawRoad(-frame.camera, view);
+    let n = 0;
+    for (const car of frame.traffic) {
+      this.fit(this.trafficImage(n++, car.look), k, k).setPosition(laneX(cx, car.lane, k), car.y).setRotation(Math.PI);
+    }
+    hideFrom(this.traffic, n);
+    this.fit(this.player, k, k).setPosition(laneX(cx, HOME_ROAD.lane, k), frame.car).setRotation(Math.PI);
+    hideFrom(this.track, 0);
+    hideFrom(this.fill, 0);
+    this.marker.setVisible(false);
+  }
+
+  /**
+   * Поле й дорога плитками, зсунутими на `distance` пікселів проїханого (більше — нижче, менше — вище). Узбіччя — стовпці зі
+   * своєю фазою, віддзеркалені через один; дорога — одна колона плиток посередині. Ряди теж віддзеркалюються через один
+   * (`rowFlipped`), тож малюнок не повторюється на одному екрані.
+   */
+  private drawRoad(distance: number, view: RaceView): void {
+    const { width, height, k, cx } = view;
+    const tiles = RACE_TILES;
     const vergePeriod = tiles.verge.period * k;
     const vergePivot = (artEntry("race/verge")?.pivot.y ?? 256) - tiles.verge.top;
     let n = 0;
@@ -422,36 +527,6 @@ class RaceArt {
       this.fit(image, rowFlipped(row.n) ? -k : k, k).setPosition(cx, row.y + roadPivot * k);
     }
     hideFrom(this.road, n);
-
-    // Машини потоку: ті, що в кадрі (з запасом на довжину машини).
-    const reach = (artEntry("race/car/traffic")?.size.h ?? 84) * k;
-    n = 0;
-    for (const car of race.cars) {
-      const y = playerY - (carAt(race, car) - race.done) * ppu;
-      if (y < -reach || y > height + reach) continue;
-      let look = this.looks.get(car);
-      if (!look) {
-        look = trafficLook(car);
-        this.looks.set(car, look);
-      }
-      this.fit(this.trafficImage(n++, look), k, k).setPosition(laneX(cx, car.lane, k), y);
-    }
-    hideFrom(this.traffic, n);
-
-    this.fit(this.player, k, k)
-      .setPosition(laneX(cx, race.lane, k), playerY)
-      .setRotation(steerTilt(race.lane, race.targetLane));
-
-    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом.
-    const barTop = view.safe.top + 90;
-    const barH = height - barTop - view.safe.bottom - 40;
-    const barX = cx + RACE_BAR_X * k;
-    this.placeBar(this.track, barX, barTop, barH, k);
-    const done = Math.max(0, Math.min(1, race.road > 0 ? race.done / race.road : 0));
-    const fillH = barH * done;
-    if (fillH >= 1) this.placeBar(this.fill, barX, barTop + barH - fillH, fillH, k);
-    else hideFrom(this.fill, 0);
-    this.fit(this.marker, RACE_MARKER_SCALE * k, RACE_MARKER_SCALE * k).setPosition(barX, barMarkerY(barTop, barH, done, k));
   }
 
   /** Звільнити запечені кадри потоку (сцена гонки закінчилася). */
