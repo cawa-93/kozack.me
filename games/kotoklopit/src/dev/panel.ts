@@ -4,7 +4,7 @@
 import { actionSpeed, glitchChance } from "../sim/body";
 import { DEFAULT_NAME, newGame } from "../sim/game";
 import { isDrowsy } from "../sim/sleep";
-import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
+import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf, workBoost } from "../sim/time";
 import type { Address, Chronotype, Difficulty, Product, Quality, Save, StatName } from "../sim/types";
 import { patienceLevel, positionOf } from "../sim/work";
 import type { Session } from "../session";
@@ -182,6 +182,10 @@ export class DevPanel {
       speed.append(button);
     }
     this.refreshers.push(() => (pause.checked = this.session.paused));
+    // Прискорення роботи (§8): поточний множник, щоб було видно, що розгін працює; вибрана поруч швидкість множиться на нього.
+    const boost = el("span", { class: "dev-clock" });
+    this.refreshers.push(() => (boost.textContent = `робота ×${String(Math.round(workBoost(this.session.workSeconds) * 10) / 10).replace(".", ",")}`));
+    speed.append(boost);
     const clock = el("span", { class: "dev-clock" });
     this.refreshers.push(() => (clock.textContent = `${formatClock(state().minute)} · день ${state().day}`));
     return this.section(
