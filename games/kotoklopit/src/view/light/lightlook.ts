@@ -36,7 +36,7 @@ export function luma(c: Rgb): number {
 export const TONE = {
   night: rgb(0x7c8cb0),
   outage: rgb(0x5e6a8c),
-  morning: rgb(0xffd9bc),
+  morning: rgb(0xffd0ac),
   evening: rgb(0xffcf9e),
 } as const;
 
