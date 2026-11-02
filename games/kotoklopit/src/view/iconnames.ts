@@ -67,6 +67,7 @@ export const ICON_NAMES = [
   "cat-laptop",
   "no-internet",
   "washer",
+  "vacuum",
   "mix",
   "no-room",
   "kit",

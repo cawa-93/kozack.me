@@ -1,9 +1,10 @@
 // Арт пилососа (рішення автора 2026-11-02, GAME_DESIGN §8.7 «Пилосос у руках»; пакет «Арт пилососа»): вертикальний пилосос,
 // що стоїть на підлозі (`env/vacuum`), пилосос у руках (`item/vacuum`, ракурси front і back) і накладка рук `holdVacuum`
-// (`personWithArms`): кулак на ручці, щітка на підлозі попереду й не відривається від неї в ході.
+// (`personWithArms`): кулак на ручці, щітка на підлозі попереду й не відривається від неї в ході; іконка `icon/vacuum`.
 
 import { describe, expect, it } from "vitest";
 
+import { ICON_NAMES } from "../src/view/iconnames";
 import { PERSON_OVERLAYS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtView } from "../src/view/art/types";
@@ -63,6 +64,11 @@ describe("пилосос: кадри", () => {
     }
     expect((back?.y ?? 0) + 20).toBeLessThan(front?.y ?? 0);
     expect(personVacuumBrush("front")).toEqual({ x: (front?.x ?? 0) - (e?.pivot.x ?? 0), y: (front?.y ?? 0) - (e?.pivot.y ?? 0) });
+  });
+
+  it("іконка `icon/vacuum` — назва в ICON_NAMES і запис у маніфесті", () => {
+    expect(ICON_NAMES).toContain("vacuum");
+    expect(artEntry("icon/vacuum")?.size).toEqual({ w: 64, h: 64 });
   });
 });
 
