@@ -1,4 +1,4 @@
-// Панель розробника (§11.5): F1 чи кнопка в куті. Розділи «Час», «Персонаж», «Дім», «Події»,
+// Панель розробника (§11.5): F1 чи кнопка в куті. Розділи «Час» (зі світлом доби, §8.9), «Персонаж», «Дім», «Події»,
 // «Сценарії», приховані числа й журнал.
 
 import { actionSpeed, glitchChance } from "../sim/body";
@@ -12,6 +12,7 @@ import { DIFFICULTY_TITLES, fill, POSITION_TITLES } from "../texts";
 import { courierNow, crashNow, jumpTo, rebase, setSeed, setTime, skipDays, skipToMonday, sleepNow, type TimeOfDay } from "./commands";
 import { CatsSection } from "./cats";
 import type { Journal } from "./journal";
+import { LIGHT_PRESETS } from "./lightparam";
 import {
   applyScenario,
   deleteLocalScenario,
@@ -226,7 +227,47 @@ export class DevPanel {
         }),
       ),
       speed,
+      this.lightRow(),
     );
+  }
+
+  /**
+   * Світло доби (§8.9): за годинником гри (авто), на одну з годин `LIGHT_PRESETS` чи вимкнене зовсім (звірка знімків) —
+   * `Session.lightAt`, як `?light=`. Час гри не змінюється: світанок до пробудження так не показати (лише сценарієм).
+   * Година з адреси, якої немає серед готових, — окремим пунктом.
+   */
+  private lightRow(): HTMLElement {
+    const presets = Object.entries(LIGHT_PRESETS);
+    const custom = el("option", { value: "custom" }, "");
+    custom.hidden = true;
+    const select = el(
+      "select",
+      {},
+      el("option", { value: "auto" }, "авто"),
+      ...presets.map(([name, minute]) => el("option", { value: name }, formatClock(minute))),
+      custom,
+      el("option", { value: "off" }, "вимк."),
+    );
+    const current = (): string => {
+      const at = this.session.lightAt;
+      if (at === null) return "auto";
+      if (at === "off") return "off";
+      const preset = presets.find(([, minute]) => minute === at);
+      if (preset) return preset[0];
+      custom.textContent = formatClock(at);
+      custom.hidden = false;
+      return "custom";
+    };
+    select.addEventListener("change", () => {
+      const value = select.value;
+      if (value === "custom") return;
+      this.session.lightAt = value === "auto" ? null : value === "off" ? "off" : (LIGHT_PRESETS[value] ?? null);
+      this.journal.add(`Режим розробки: світло доби — ${select.selectedOptions[0]?.textContent ?? value}`);
+    });
+    this.refreshers.push(() => {
+      if (document.activeElement !== select) select.value = current();
+    });
+    return el("div", { class: "dev-grid" }, el("label", { class: "dev-field" }, el("span", {}, "Світло"), select));
   }
 
   private characterSection(): HTMLElement {
