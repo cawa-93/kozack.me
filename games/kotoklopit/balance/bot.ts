@@ -17,7 +17,7 @@ import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
-import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
+import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, VACUUM_HOME, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
@@ -58,6 +58,9 @@ const POOR_MONEY = 100;
 const PATIENCE_MINUTES = 12 * 60;
 /** Кіт піде на руки без образи (§9.12): не спить і хоче уваги чи любить руки — як `unwilling` у грі, навпаки. */
 const willingToHold = (cat: Cat): boolean => cat.act.kind !== "sleep" && (cat.needs.attention >= 40 || traitLevel(cat, "lap") > 0);
+/** Вільне місце посеред вітальні, де бот відпускає кота, якого не вдалося відпустити там, де стояв. */
+const RELEASE_SPOT: Vec = { x: 9.5, y: 8.5 };
+
 /** Скільки хвилин не підходити до кота, до якого бот не дійшов. */
 const UNREACHABLE_CAT_MINUTES = 30;
 /** Скільки грошей лишити після необов'язкової покупки (дорогий корм-дієта, ветеринар): на корм і комунальні. */
@@ -372,7 +375,7 @@ export class Bot {
     if (!held) return;
     switch (held.kind) {
       case "cat":
-        interact(this.save);
+        this.release("cat");
         return;
       case "toy":
         // Біля кота натискання з іграшкою нічого не робить (утримання почало б гру, §8.2):
@@ -444,7 +447,7 @@ export class Bot {
     const body = s.character.body;
     const targets = this.vacuumTargets();
     if (targets.length === 0 || s.minute - this.vacuumSince > VACUUM_MAX_MINUTES) {
-      interact(this.save);
+      this.putVacuumDown();
       // Не дійшов до всього — не брати пилосос знову одразу.
       if (targets.length > 0) this.skip.set("vacuum", s.minute + 60);
       return;
@@ -453,6 +456,38 @@ export class Bot {
     for (const tile of this.vacuumPath(target.at) ?? []) this.walkToTile(tile);
     this.approach(target.at);
     if (this.vacuumTargets().some((t) => t.key === target.key)) this.skip.set(target.key, s.minute + 60);
+  }
+
+  /**
+   * Поставити пилосос (§8.7): натиснути; не вийшло (перед персонажем річ чи стіна) — розвернутися на всі боки, а тоді дійти до
+   * його місця біля дивана (`VACUUM_HOME`) і поставити там. Інакше бот тримав пилосос годинами й помирав від голоду
+   * (повний баланс блоку «День і ніч», 2026-11-02: сова, «Мамина царапка», seed 101, д280).
+   */
+  private putVacuumDown(): void {
+    this.release("vacuum", VACUUM_HOME);
+  }
+
+  /**
+   * Відпустити кота чи поставити пилосос: натиснути; не вийшло (перед персонажем річ чи стіна) — розвернутися на всі боки, а
+   * тоді дійти до вільного місця `spot` (типово — посеред вітальні) і спробувати там. Кіт, якого бот узяв, бо той заступав
+   * холодильник, інакше лишався в руках до кінця дня (повний баланс блоку «День і ніч», 2026-11-02).
+   */
+  private release(kind: "cat" | "vacuum", spot: Vec = RELEASE_SPOT): void {
+    const held = (): boolean => this.state.character.held?.kind === kind;
+    const tryAround = (): void => {
+      interact(this.save);
+      const body = this.state.character.body;
+      for (const facing of [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }]) {
+        if (!held()) return;
+        body.facing = facing;
+        interact(this.save);
+      }
+    };
+    tryAround();
+    if (!held()) return;
+    for (const tile of this.path({ x: spot.x - 0.3, y: spot.y - 0.3, w: 0.6, h: 0.6 }) ?? []) this.walkToTile(tile);
+    tryAround();
+    if (held()) this.wait(1);
   }
 
   /** Шлях клітинками до місця, звідки до точки ближче `VACUUM_NEAR` (без стіни між ними); немає такого — найближче. */
@@ -777,6 +812,13 @@ export class Bot {
       if (target?.type === "mess" && this.state.character.held === null) {
         this.holdHere(target.id);
         continue;
+      }
+      // Кіт заступає ціль (сидить перед холодильником чи плитою, і ціллю дії стає він): узяти на руки — далі його відпустить
+      // `handleHeld` — і підійти ще раз. Інакше бот годинами стояв перед котом і помирав від голоду з повним холодильником
+      // (повний баланс блоку «День і ніч», 2026-11-02: жайворонок, «Реалістичний», seed 303, д159–160).
+      if (target?.type === "cat" && !id.startsWith("cat:") && this.state.character.held === null) {
+        interact(this.save);
+        if (this.state.character.held !== null) return false;
       }
       // Іграшка чи пилосос заступає ціль (лежить чи стоїть перед плитою, холодильником): підняти й покласти за спину.
       if (((target?.type === "item" && target.item.kind === "toy") || target?.type === "vacuum") && this.state.character.held === null) {
