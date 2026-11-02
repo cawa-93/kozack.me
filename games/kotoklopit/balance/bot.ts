@@ -9,7 +9,8 @@ import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { needsHumanMeds } from "../src/sim/illness";
-import { furVisible } from "../src/sim/household";
+import { FUR_SPOTS, furVisible, isDryMess, tuftsOf } from "../src/sim/household";
+import { DUST_SPOTS, dustOf, floorDust } from "../src/sim/dust";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
 import { checkout, room, type CartLine } from "../src/sim/shop";
@@ -60,6 +61,16 @@ const willingToHold = (cat: Cat): boolean => cat.act.kind !== "sleep" && (cat.ne
 const UNREACHABLE_CAT_MINUTES = 30;
 /** Скільки грошей лишити після необов'язкової покупки (дорогий корм-дієта, ветеринар): на корм і комунальні. */
 const SPARE_MONEY = 300;
+/**
+ * Скільки місць пилу (§8.7, «Пил і павутина») набирається, перш ніж бот бере пилосос і без жмутів шерсті й пилу на підлозі:
+ * ≈ 3 доби (чотири кімнати — по пилу раз на 36 годин). Тоді пил не встигає вийти на підлогу ні в ванній, ні на кухні (там кути й
+ * стіни заповнюються за ~5 діб).
+ */
+const VACUUM_DUST = 8;
+/** Найдовше, скільки бот ходить із пилососом за раз, хвилин: те, до чого не дійти, він пропускає й так. */
+const VACUUM_MAX_MINUTES = 45;
+/** Як близько бот підходить із пилососом до того, що прибирає: з запасом до радіуса пилососа (`VACUUM.radius` 1,5). */
+const VACUUM_NEAR = 1.3;
 
 export interface BotPolicy {
   /**
@@ -100,6 +111,8 @@ export class Bot {
   private readonly overdue = new Map<number, number>();
   /** Цілі, до яких не вдалося дійти: до якої хвилини дня їх пропускати. */
   private readonly skip = new Map<string, number>();
+  /** З якої хвилини дня бот ходить із пилососом (§8.7). */
+  private vacuumSince = 0;
 
   constructor(
     readonly save: Save,
@@ -195,8 +208,9 @@ export class Bot {
     if (washer === "done" || (washer === "idle" && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {
       return named("laundry", () => this.use("washer"));
     }
-    // Шерсть стало видно — вона дратує, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17): пилососити одразу, а не з 60.
-    if (furVisible(s) && !this.skipped("vacuum")) return named("vacuum", () => this.hold("vacuum"));
+    // Жмути шерсті чи пил на підлозі дратують, як безлад (А17; §8.7, рішення автора 2026-11-02): пилососити одразу; пил у кутах і
+    // біля стін — коли його набралося стільки, що скоро вийде на підлогу. Пилосос носять квартирою (`vacuumStep`).
+    if (this.wantsVacuum() && !this.skipped("vacuum")) return named("vacuum", () => this.takeVacuum());
     if (s.cats.length > 0) {
       // Уважний гравець відповідає котові, який просить уваги чи гри (§9.12), і пестить для здорового глузду.
       const low = ch.stats.sanity < this.policy.sanityTarget;
@@ -382,6 +396,91 @@ export class Bot {
         // Смітник перекинув кіт (§9.12, «Кмітливість у бешкеті»): страву — назад на плиту, спершу прибрати сміття.
         this.use(trashTipped(this.state) ? "stove" : "trash");
         return;
+      case "vacuum":
+        this.vacuumStep();
+        return;
+    }
+  }
+
+  // --- Пилосос (§8.7) -------------------------------------------------------------------------
+
+  /** Чи пилососити: видно жмути шерсті чи пил на підлозі, або пилу в кутах і біля стін набралося `VACUUM_DUST`. */
+  private wantsVacuum(): boolean {
+    const s = this.state;
+    return furVisible(s) || floorDust(s).length > 0 || dustOf(s).length >= VACUUM_DUST;
+  }
+
+  /** Узяти пилосос (§8.7): дійти до нього й натиснути; далі його носить `vacuumStep`. */
+  private takeVacuum(): void {
+    this.vacuumSince = this.state.minute;
+    this.use("vacuum");
+  }
+
+  /** Що ще прибрати пилососом: жмути шерсті, пил і павутина, сухий безлад — з ключами, щоб пропускати недосяжне. */
+  private vacuumTargets(): { key: string; at: Vec }[] {
+    const s = this.state;
+    const targets: { key: string; at: Vec }[] = [];
+    for (const i of tuftsOf(s)) {
+      const at = FUR_SPOTS[i];
+      if (at) targets.push({ key: `tuft:${i}`, at });
+    }
+    for (const i of dustOf(s)) {
+      const at = DUST_SPOTS[i];
+      if (at) targets.push({ key: `dust:${i}`, at });
+    }
+    for (const mess of s.home.messes) if (isDryMess(mess.kind)) targets.push({ key: `mess:${mess.id}`, at: mess });
+    return targets.filter((t) => !this.skipped(t.key));
+  }
+
+  /**
+   * Пилосос у руках (§8.7): пройти до найближчого, що лишилося (дорогою пилосос прибирає й те, повз що бот іде), а коли нічого не
+   * лишилося чи минуло `VACUUM_MAX_MINUTES` — поставити пилосос там, де стоїш. Чого не прибрав, підійшовши, — пропустити на годину.
+   */
+  private vacuumStep(): void {
+    const s = this.state;
+    const body = s.character.body;
+    const targets = this.vacuumTargets();
+    if (targets.length === 0 || s.minute - this.vacuumSince > VACUUM_MAX_MINUTES) {
+      interact(this.save);
+      // Не дійшов до всього — не брати пилосос знову одразу.
+      if (targets.length > 0) this.skip.set("vacuum", s.minute + 60);
+      return;
+    }
+    const target = targets.reduce((best, t) => (Math.hypot(t.at.x - body.x, t.at.y - body.y) < Math.hypot(best.at.x - body.x, best.at.y - body.y) ? t : best));
+    for (const tile of this.vacuumPath(target.at) ?? []) this.walkToTile(tile);
+    this.approach(target.at);
+    if (this.vacuumTargets().some((t) => t.key === target.key)) this.skip.set(target.key, s.minute + 60);
+  }
+
+  /** Шлях клітинками до місця, звідки до точки ближче `VACUUM_NEAR` (без стіни між ними); немає такого — найближче. */
+  private vacuumPath(at: Vec): Vec[] | null {
+    let best: Rect | null = null;
+    let bestDistance = Infinity;
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        if (isSolid(this.state, x, y)) continue;
+        const center = { x: x + 0.5, y: y + 0.5 };
+        const distance = Math.hypot(center.x - at.x, center.y - at.y);
+        if (distance < bestDistance && this.clearLine(center, { x: at.x, y: at.y, w: 0, h: 0 })) {
+          best = { x: x + 0.2, y: y + 0.2, w: 0.6, h: 0.6 };
+          bestDistance = distance;
+        }
+      }
+    }
+    return best ? this.path(best) : null;
+  }
+
+  /** Підступити до точки, поки до неї далі `VACUUM_NEAR` (персонаж упирається в меблі — далі не йде). */
+  private approach(at: Vec): void {
+    let previous = Infinity;
+    for (let i = 0; i < 20; i++) {
+      const body = this.state.character.body;
+      const dx = at.x - body.x;
+      const dy = at.y - body.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance <= VACUUM_NEAR || distance > previous - 0.01) return;
+      previous = distance;
+      advance(this.save, WALK_STEP, { move: { x: dx / distance, y: dy / distance }, hold: false });
     }
   }
 
@@ -627,7 +726,9 @@ export class Bot {
   }
 
   private sleep(): NightReport | null {
-    if (this.state.character.held) this.handleHeld();
+    // Пилосос — просто поставити, де стоїш (§8.7); решту з рук — куди слід.
+    if (this.state.character.held?.kind === "vacuum") interact(this.save);
+    else if (this.state.character.held) this.handleHeld();
     // Лягти можна лише у вікні сну (§8.8): дочекатися його.
     while (!canGoToSleep(this.state) && this.state.end === null) this.wait(10);
     if (this.state.end !== null) return null;
@@ -727,6 +828,11 @@ export class Bot {
 
   private rectOf(id: string): Rect | null {
     const s = this.state;
+    // Пилосос на підлозі (§8.7): там, де його поставили.
+    if (id === "vacuum") {
+      const at = s.home.vacuumAt;
+      return at ? { x: at.x - 0.3, y: at.y - 0.3, w: 0.6, h: 0.6 } : null;
+    }
     if (!id.includes(":")) return objectById(id);
     const target = targetById(s, id);
     if (!target) return null;
