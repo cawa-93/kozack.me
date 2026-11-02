@@ -8,8 +8,8 @@ import { dropEverything } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { VACUUM } from "../src/sim/config";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
-import { isSolid, objectById, slotById, VACUUM_HOME } from "../src/sim/home";
-import { FUR_SPOTS, furVisible, tickHousehold, tuftsOf } from "../src/sim/household";
+import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, LAUNDRY_BASKET, objectById, roomAt, slotById, VACUUM_HOME } from "../src/sim/home";
+import { FUR_SPOTS, furVisible, putVacuumDown, ROBOT_DOCK, tickHousehold, tuftsOf } from "../src/sim/household";
 import { answerCall } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -49,6 +49,19 @@ function timidCat(save: Save, at: Vec): Cat {
   addCat(save.current, cat);
   cat.act = idleAct(30);
   return cat;
+}
+
+/**
+ * Між точками стіна — як для руки (§10, `targets.ts`) і пилососа (`clearPath`): крок 0,1 клітинки, останній відрізок не
+ * рахується (біля самої стіни можна).
+ */
+function wallBetween(a: Vec, b: Vec): boolean {
+  const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.1);
+  for (let i = 1; i < steps - 1; i++) {
+    const t = i / steps;
+    if (isWall(Math.floor(a.x + (b.x - a.x) * t), Math.floor(a.y + (b.y - a.y) * t))) return true;
+  }
+  return false;
 }
 
 let messId = 900;
@@ -97,6 +110,57 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     expect([Math.floor(at!.x), Math.floor(at!.y)]).not.toEqual([tile.x, tile.y]);
     expect(save.current.home.items.some((i) => i.kind !== "toy" && slotById(i.slot).x === Math.floor(at!.x) && slotById(i.slot).y === Math.floor(at!.y))).toBe(false);
     takeVacuum(save);
+  });
+
+  it("з будь-якого місця й обличчям будь-куди стає в тій самій кімнаті, без стіни між ним і персонажем, не під ногами й не на речі (рецензія 2026-11-02)", () => {
+    const save = game();
+    const state = save.current;
+    state.cats = [];
+    state.home.carrier = "cheap";
+    state.home.appliances.robot = "cheap";
+    const tile = (p: Vec): string => `${Math.floor(p.x)},${Math.floor(p.y)}`;
+    // Клітинки речей на підлозі: лотки, миски, переноска, база робота, кошик білизни.
+    const taken = new Set([...state.home.items.map((i) => tile(itemPoint(i))), tile(CARRIER_TILE), tile(ROBOT_DOCK), tile(LAUNDRY_BASKET)]);
+    const walkable = (x: number, y: number): boolean =>
+      [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]].every(([dx = 0, dy = 0]) => !isSolid(state, Math.floor(x + dx), Math.floor(y + dy)));
+    const directions = Array.from({ length: 8 }, (_, a) => ({ x: Math.cos((a * Math.PI) / 4), y: Math.sin((a * Math.PI) / 4) }));
+    const wrong: string[] = [];
+    let total = 0;
+    for (let y = 0.35; y < 12; y += 0.25) {
+      for (let x = 0.35; x < 20; x += 0.25) {
+        if (!walkable(x, y)) continue;
+        for (const facing of directions) {
+          total++;
+          state.character.body.x = x;
+          state.character.body.y = y;
+          state.character.body.facing = { ...facing };
+          state.character.held = { kind: "vacuum" };
+          state.home.vacuumAt = null;
+          putVacuumDown(state);
+          const at = state.home.vacuumAt!;
+          const body = { x, y };
+          const rooms = [roomAt(body), roomAt(at)];
+          const problems = [
+            ...(wallBetween(body, at) ? ["стіна"] : []),
+            ...(rooms[0] && rooms[1] && rooms[0] !== rooms[1] ? [`${rooms[0]} → ${rooms[1]}`] : []),
+            ...(Math.hypot(at.x - x, at.y - y) < 0.45 ? ["під ногами"] : []),
+            ...(isSolid(state, Math.floor(at.x), Math.floor(at.y)) || hiddenTile(Math.floor(at.x), Math.floor(at.y)) || taken.has(tile(at)) ? ["на речі чи за стіною"] : []),
+          ];
+          if (problems.length > 0) wrong.push(`(${x}, ${y}) → (${at.x.toFixed(2)}, ${at.y.toFixed(2)}): ${problems.join(", ")}`);
+        }
+      }
+    }
+    expect(total).toBeGreaterThan(10_000);
+    expect(wrong).toEqual([]);
+    // Приклади рецензії: ванна біля стіни зі спальнею й кухня біля стіни з вітальнею.
+    for (const [x, y, fx, fy, room] of [[8.4, 4.4, -1, 0, "bathroom"], [13.4, 4.4, 0, 1, "kitchen"], [13.4, 4.4, -1, 0, "kitchen"]] as const) {
+      state.character.body.x = x;
+      state.character.body.y = y;
+      state.character.body.facing = { x: fx, y: fy };
+      state.character.held = { kind: "vacuum" };
+      putVacuumDown(state);
+      expect(roomAt(state.home.vacuumAt!)).toBe(room);
+    }
   });
 
   it("з пилососом у руках інших речей не взяти, кота теж: натискання лише ставить пилосос", () => {

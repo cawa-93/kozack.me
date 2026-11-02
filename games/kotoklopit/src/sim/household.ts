@@ -1,7 +1,6 @@
 // Побут (§8.7): шерсть і пилосос, прання, техніка (автогодівниця, фонтанчик, робот-пилосос), поломки.
 
 import { asleep, traitLevel } from "./cat";
-import { visibleFloorNear } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, VACUUM, WATER_CAPACITY } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
@@ -10,7 +9,7 @@ import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
-import { hiddenTile, isSolid, isWall, itemPoint, itemTile, objectById, slotCenter, STASHES, VACUUM_HOME } from "./home";
+import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
 import type { BowlItem, Cat, Feeder, GameState, HomeItem, MessKind, Product, Quality, Vec } from "./types";
@@ -228,43 +227,77 @@ export function takeVacuum(state: GameState): void {
 }
 
 /**
- * Чи можна поставити пилосос на клітинку: видна підлога (`visibleFloorNear`) без речі котячого кутка — лотка, миски, будиночка,
- * іграшки. Поставлений на річ, він був би на одній клітинці з нею, і ціллю біля них ставала б річ, а пилосос — не взяти (баланс
- * 2026-11-02: бот, що поставив пилосос на лоток, більше його не брав).
+ * Чи можна поставити пилосос на клітинку: видна підлога (`hiddenTile`) без речі — лотка, миски, будиночка, іграшки, ящиків біля
+ * входу, переноски, бази робота-пилососа, кошика білизни. Поставлений на річ, він був би на одній клітинці з нею, і ціллю біля
+ * них ставала б річ, а пилосос — не взяти (баланс 2026-11-02: бот, що поставив пилосос на лоток, більше його не брав); на
+ * переносці, базі й кошику він ще й стояв би в них (рецензія пилососа 2026-11-02).
  */
 function vacuumFits(state: GameState, x: number, y: number): boolean {
-  if (isSolid(state, x, y) || hiddenTile(x, y)) return false;
-  return !state.home.items.some((item) => {
-    const tile = itemTile(item);
-    return tile.x === x && tile.y === y;
-  });
+  if (isSolid(state, x, y) || hiddenTile(x, y) || objectAt(state, x, y) !== null) return false;
+  const home = state.home;
+  const on = (p: Vec): boolean => Math.floor(p.x) === x && Math.floor(p.y) === y;
+  if (on(LAUNDRY_BASKET) || (home.carrier !== null && on(CARRIER_TILE)) || (home.appliances.robot && on(ROBOT_DOCK))) return false;
+  return !home.items.some((item) => on(itemTile(item)));
 }
 
-/** Де стане поставлений пилосос: у точці `p`, якщо там можна (`vacuumFits`), інакше — посередині найближчої такої клітинки. */
-function vacuumSpot(state: GameState, p: Vec): Vec {
+/** Куди ставлять пилосос: на стільки клітинок перед персонажем (§8.7). */
+const VACUUM_PUT = 0.5;
+/** Ближче за це до персонажа поставлений пилосос стояв би в нього під ногами, клітинки. */
+const VACUUM_UNDERFOOT = 0.45;
+/** Пилосос, поставлений на іншу клітинку, — не ближче за це до її країв, клітинки. */
+const VACUUM_MARGIN = 0.2;
+
+/** Точка клітинки (`x`, `y`), найближча до `p`, — не ближче `VACUUM_MARGIN` до країв. */
+function inTile(p: Vec, x: number, y: number): Vec {
+  return {
+    x: Math.min(Math.max(p.x, x + VACUUM_MARGIN), x + 1 - VACUUM_MARGIN),
+    y: Math.min(Math.max(p.y, y + VACUUM_MARGIN), y + 1 - VACUUM_MARGIN),
+  };
+}
+
+/** Точки в одній кімнаті: прохід між кімнатами (`roomAt` null) — спільний для обох (§8.7). */
+const sameRoom = (a: Vec, b: Vec): boolean => {
+  const ra = roomAt(a);
+  const rb = roomAt(b);
+  return ra === null || rb === null || ra === rb;
+};
+
+/**
+ * Де стане поставлений пилосос (§8.7, [Уточнено]): у точці перед персонажем, якщо там можна (`vacuumFits`), інакше — у найближчій
+ * до неї точці сусідньої клітинки, де можна, тієї самої кімнати, без стіни між нею й персонажем (як і прибирає він не крізь
+ * стіну) і не під ногами (`VACUUM_UNDERFOOT`). Раніше запасна клітинка бралася лише за відстанню, і від стіни ванної пилосос
+ * опинявся за нею в спальні (рецензія пилососа 2026-11-02). Такої клітинки немає зовсім — у клітинці персонажа, якомога ближче
+ * до точки перед ним.
+ */
+function vacuumSpot(state: GameState, body: Vec, facing: Vec): Vec {
+  const p = { x: body.x + facing.x * VACUUM_PUT, y: body.y + facing.y * VACUUM_PUT };
+  const allowed = (x: number, y: number, at: Vec): boolean => vacuumFits(state, x, y) && sameRoom(body, at) && clearPath(body, at);
   const tx = Math.floor(p.x);
   const ty = Math.floor(p.y);
-  if (vacuumFits(state, tx, ty)) return { x: p.x, y: p.y };
+  if (allowed(tx, ty, p)) return p;
   for (let r = 1; r < 4; r++) {
     let best: Vec | null = null;
+    let bestDistance = Infinity;
     for (let dy = -r; dy <= r; dy++) {
       for (let dx = -r; dx <= r; dx++) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !vacuumFits(state, tx + dx, ty + dy)) continue;
-        const c = { x: tx + dx + 0.5, y: ty + dy + 0.5 };
-        if (!best || Math.hypot(c.x - p.x, c.y - p.y) < Math.hypot(best.x - p.x, best.y - p.y)) best = c;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const at = inTile(p, tx + dx, ty + dy);
+        const distance = Math.hypot(at.x - p.x, at.y - p.y);
+        if (distance >= bestDistance || Math.hypot(at.x - body.x, at.y - body.y) < VACUUM_UNDERFOOT || !allowed(tx + dx, ty + dy, at)) continue;
+        best = at;
+        bestDistance = distance;
       }
     }
     if (best) return best;
   }
-  const at = visibleFloorNear(state, p);
-  return { x: at.x, y: at.y };
+  return inTile(p, Math.floor(body.x), Math.floor(body.y));
 }
 
 /** Поставити пилосос (§8.7): будь-де на підлогу, як іграшку, — на видну підлогу перед персонажем; поставлений лишається там. */
 export function putVacuumDown(state: GameState): void {
   if (state.character.held?.kind !== "vacuum") return;
-  const { x, y, facing } = state.character.body;
-  state.home.vacuumAt = vacuumSpot(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
+  const body = state.character.body;
+  state.home.vacuumAt = vacuumSpot(state, body, body.facing);
   state.character.held = null;
   emit(state, { type: "vacuum", stage: "put" });
 }
