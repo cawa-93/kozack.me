@@ -1,5 +1,7 @@
 // Робота за комп'ютером (§8.6): гроші, репутація, терпіння керівництва, щоденна летучка.
 
+import type { Input } from "./actions";
+import { isMoving } from "./body";
 import { earn, unpleasantTask } from "./character";
 import {
   ABSENCE_REPUTATION,
@@ -71,6 +73,18 @@ export function isWorkTime(state: GameState, minute = state.minute): boolean {
 
 export function isWorking(state: GameState): boolean {
   return state.character.activity?.kind === "work";
+}
+
+/**
+ * Робота за комп'ютером іде (§8, «Прискорення роботи»): персонаж працює чи шукає роботу (це теж робота за комп'ютером), і рух
+ * у цьому кадрі не підніме його з-за комп'ютера — `tickActivity` знімає з роботи на першому ж кроці, тож кадр, у якому
+ * персонаж устає, іде вже з ×1 (інакше він робив би перший крок у десять разів довшим). Усе інше, що зупиняє роботу, — кіт сів
+ * на клавіатуру, перегриз дріт, відключили інтернет, дзвінок мами, поїздка, сон, звільнення, — знімає її (`stopWork`), а кіт,
+ * що спить на комп'ютері, перегризений дріт і відключений інтернет не дають за нього й сісти: окремо їх перевіряти не треба.
+ * Кіт на колінах роботі не заважає.
+ */
+export function workGoesOn(state: GameState, input?: Input): boolean {
+  return isWorking(state) && (input === undefined || !isMoving(input.move));
 }
 
 /** Терпіння нижче 50 — «!», на нулі — «Х» (§8.6). */

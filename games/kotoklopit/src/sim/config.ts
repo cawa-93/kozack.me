@@ -5,6 +5,11 @@ import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, 
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
+/**
+ * Прискорення роботи (§8, рішення автора 2026-11-02): поки персонаж працює за комп'ютером, час рівномірно розганяється від ×1
+ * до ×`max` за `rampSeconds` секунд реального часу й далі йде з ×`max`.
+ */
+export const WORK_BOOST = { max: 10, rampSeconds: 60 } as const;
 
 export const MINUTES_PER_HOUR = 60;
 export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
