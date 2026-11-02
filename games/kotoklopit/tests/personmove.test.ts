@@ -402,7 +402,11 @@ describe("рух персонажа: основна з накладкою рук
         const made = personWithArms(anim(name), overlay, name) as LooseAnim;
         expect({ duration: made.duration, loop: made.loop }).toEqual({ duration: base.duration, loop: base.loop });
         for (const [id, track] of Object.entries(base.bones ?? {})) if (!/^(arm|hand)-/.test(id)) expect(made.bones?.[id], `${name} ${id}`).toBe(track);
-        expect(made.slots).toBe(base.slots);
+        // З пилососом дальня рука — від основної, а кулак ближньої — над ручкою (z слота `arm-near`).
+        if (overlay === "holdVacuum") {
+          for (const id of ["arm-far", "hand-far"]) expect(made.bones?.[id], `${name} ${id}`).toBe(base.bones?.[id]);
+          expect(made.slots).toEqual({ ...base.slots, "arm-near": { ...base.slots?.["arm-near"], z: [{ t: 0, v: 13 }] } });
+        } else expect(made.slots).toBe(base.slots);
         expect(animProblems(PERSON_RIG as unknown as RigDef<string, string, string>, made, `${name}+${overlay}`)).toEqual([]);
       }
     }

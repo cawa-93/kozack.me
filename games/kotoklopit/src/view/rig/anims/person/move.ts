@@ -25,7 +25,8 @@
 //   свій кут у світі (тулуб нахиляється — руки ні), річ рівно; тримає кота — руки разом із тулубом (кіт у гнізді `arms` на
 //   тулубі), кисті під котом. Анімації, які самі ведуть руки (`PERSON_OWN_ARMS` з `anim/ids.ts`: вудочка, бере й опускає
 //   кота, усі справи N4b), накладки не беруть. `carry` і `holdCat` у групі — лише поза рук над вихідним тулубом (для
-//   реєстру й галереї).
+//   реєстру й галереї). Тримає пилосос (`holdVacuum`, рішення автора 2026-11-02) — так само, але замінює лише ближню руку,
+//   а щітку тримає на підлозі нахилом пилососа в кулаці (розділ «Пилосос у руках» нижче).
 // - Ззаду ближня рука — з боку обличчя, дальня — з боку спини: де руки йдуть «у боки» (відмова, посковзнувся, паморочиться,
 //   кульгає), ракурс `back` має ті самі кути з протилежним знаком (`sidewaysArms`), інакше рука йшла б через спину. Де рука
 //   йде до грудей (вкусили, застуда), ззаду вона йде вперед і коротшає (від камери), а не назад через спину.
@@ -40,10 +41,11 @@
 
 import { ILLNESS_EFFECTS, MINUTES_PER_HOUR, REAL_SECONDS_PER_GAME_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
 import { PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../../../anim/ids";
+import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
-import { Rig, type ProportionRef } from "../../rigcore";
+import { entryPoint, Rig, type ProportionRef } from "../../rigcore";
 import { defineAnims, type AnimOf, type BoneOf, type BoneTracks, type Ease, type Key, type Vec2 } from "../../types";
 
 type PersonBone = BoneOf<typeof PERSON_RIG>;
@@ -516,6 +518,147 @@ function withoutArms(bones: Readonly<Tracks> | undefined): Tracks {
   return out;
 }
 
+// --- Пилосос у руках ----------------------------------------------------------------------------
+//
+// Рішення автора 2026-11-02 (GAME_DESIGN §8.7, «Пилосос у руках»): вертикальний пилосос беруть у руки, як будь-яку річ, і
+// ходять із ним квартирою. Накладка рук `holdVacuum`: ближня рука тримає ручку (кадр `item/vacuum` у гнізді `held`, pivot —
+// хват), щітка — на підлозі попереду; дальня рука — як в основній (махає в ході, розводить руками, відмовляючи). Кут ближньої
+// руки тримається у світі, хоч би як нахилявся тулуб (як «несе»). Хода й ривок підкидають таз, а з ним плече й кулак, тож
+// кисть повертає пилосос довкола кулака рівно настільки, щоб щітка лишалася на підлозі: ковзає нею, а ручка ходить
+// угору-вниз (`vacuumTilts`).
+
+/**
+ * Кут ближньої руки з пилососом (відносно вихідної, «−» — уперед), окремо для ракурсів: спереду кулак перед животом
+ * (≈ 64 над підлогою), ззаду рука йде вглиб, тож майже донизу — кулак біля стегна праворуч від тулуба.
+ */
+const VACUUM_ARM: Readonly<Record<ArtView, number>> = { front: -40, back: -22 };
+
+/**
+ * Щітка від хвату за замовчуванням (поки кадру `item/vacuum` немає): спереду щітка ближче до камери — нижче на екрані, ззаду
+ * — далі від неї, вище.
+ */
+const VACUUM_BRUSH: Readonly<Record<ArtView, Vec2>> = { front: { x: 58, y: 76 }, back: { x: 49, y: 50 } };
+
+/** Підлога попереду в умовному ¾ скелета (як `FWD_X`, `FWD_Y` справ, N4b): на одиницю праворуч — на стільки нижче (спереду). */
+const FLOOR_SLOPE = 0.3 / 0.85;
+
+/**
+ * Найбільший нахил пилососа в кулаці, градуси: далі щітка вже відривається від підлоги (присів, упав). Ззаду хода й ривок
+ * нахиляють тулуб уперед, плече з кулаком іде вниз і вперед, і пилосос там лягає пологіше на 6–28° (спереду — ±2…6°).
+ */
+const VACUUM_TILT_MAX = 28;
+
+/**
+ * Кулак над ручкою пилососа: ближня рука (12) — над гніздом `held` (12,5), як у справі «пилососить» (`OVER_HELD`, N4b). Ззаду
+ * гніздо й так за тулубом.
+ */
+const VACUUM_SLOTS = { "arm-near": { z: [k(0, 13)] } } as const;
+
+/**
+ * Щітка пилососа відносно хвату в ракурсі `view`: точка `brush` (ззаду — `brush-back`) кадру `item/vacuum` від його pivot
+ * (одиниці арту, обличчям праворуч, пилосос рівно). Без кадру — `VACUUM_BRUSH`. Функція, а не об'єкт: експортовані об'єкти
+ * файлу анімацій — групи анімацій.
+ */
+export function personVacuumBrush(view: ArtView): Vec2 {
+  const entry = artEntry("item/vacuum");
+  const point = entryPoint(entry, "brush", view);
+  return entry && point ? { x: point.x - entry.pivot.x, y: point.y - entry.pivot.y } : { ...VACUUM_BRUSH[view] };
+}
+
+/**
+ * Ближня рука й кисть із пилососом над тулубом, що повертається за ключами `torso`: рука тримає кут у світі (противага
+ * тулуба), кисть — пилосос рівно, плюс нахил `tilts` (ключі, градуси) довкола кулака.
+ */
+function vacuumTracks(view: ArtView, torso: readonly Key<number>[] | undefined, tilts: readonly Key<number>[]): Tracks {
+  const a = VACUUM_ARM[view];
+  const keys = torso && torso.length > 0 ? torso : [k(0, 0)];
+  const still: Key<Vec2>[] = [k(0, { x: 0, y: 0 })];
+  const one: Key<Vec2>[] = [k(0, { x: 1, y: 1 })];
+  return {
+    "arm-near": { rot: keys.map((key) => k(key.t, round(a - key.v), key.ease)), pos: still, scale: one },
+    "hand-near": { rot: tilts.map((key) => k(key.t, round(levelHand(a) + key.v), key.ease)), pos: still, scale: one },
+  };
+}
+
+/** Ближня рука й кисть — їх замінює накладка з пилососом (дальня — від основної). */
+const NEAR_BONES: ReadonlySet<string> = new Set<PersonBone>(["arm-near", "hand-near"]);
+
+function withoutNear(bones: Readonly<Tracks> | undefined): Tracks {
+  const out: Tracks = {};
+  for (const [id, track] of Object.entries(bones ?? {}) as [PersonBone, BoneTracks][]) if (!NEAR_BONES.has(id)) out[id] = track;
+  return out;
+}
+
+/** Основна `base` з пилососом у ближній руці й нахилом `tilts` (за ракурсами). */
+function vacuumOver(base: PersonAnim, tilts: Readonly<Record<ArtView, readonly Key<number>[]>>): PersonAnim {
+  const back = base.views?.back;
+  const torsoFront = base.bones?.torso?.rot;
+  const torsoBack = back?.bones?.torso?.rot ?? torsoFront;
+  return {
+    ...base,
+    bones: { ...withoutNear(base.bones), ...vacuumTracks("front", torsoFront, tilts.front) },
+    views: { ...base.views, back: { ...back, bones: { ...withoutNear(back?.bones), ...vacuumTracks("back", torsoBack, tilts.back) } } },
+    slots: { ...base.slots, "arm-near": { ...base.slots?.["arm-near"], ...VACUUM_SLOTS["arm-near"] } },
+  };
+}
+
+/** Без нахилу: пилосос рівно в кулаці. */
+const NO_TILT: Readonly<Record<ArtView, readonly Key<number>[]>> = { front: [k(0, 0)], back: [k(0, 0)] };
+
+/**
+ * Нахил пилососа в кулаці (градуси, «−» — щіткою вгору) у ключах по всій основній, для кожного ракурсу: щітка на лінії
+ * підлоги попереду, що йде через неї ж у вихідній позі накладки (`holdVacuum` над вихідним тілом) з нахилом підлоги ракурсу
+ * (`FLOOR_SLOPE`: спереду праворуч — нижче, ззаду — вище). Поза — зі скелета за числами визначення (вони дають ту саму позу,
+ * що й точки арту), як `personCatGrip`.
+ */
+function vacuumTilts(base: PersonAnim): Record<ArtView, Key<number>[]> {
+  const probe = vacuumOver(base, NO_TILT);
+  const rest = vacuumOver({ duration: 1, loop: true }, NO_TILT);
+  const n = base.duration > 1200 ? 36 : 24;
+  const out = {} as Record<ArtView, Key<number>[]>;
+  for (const view of ["front", "back"] as const) {
+    const brush = personVacuumBrush(view);
+    const slope = view === "front" ? FLOOR_SLOPE : -FLOOR_SLOPE;
+    const rig = new Rig(PERSON_RIG, { facing: { view, flip: false } });
+    rig.play(rest, 0, { blend: 0 });
+    rig.evaluate(0);
+    const r = rig.socket("held", undefined, false);
+    const x0 = (r?.x ?? 0) + brush.x;
+    const y0 = (r?.y ?? 0) + brush.y;
+    rig.play(probe, 0, { blend: 0, restart: true });
+    const keys: Key<number>[] = [];
+    for (let i = 0; i <= n; i++) {
+      const t = round((base.duration * i) / n);
+      rig.evaluate(t);
+      const s = rig.socket("held", undefined, false);
+      if (!s) continue;
+      // Щітка після повороту на d (радіани) довкола кулака — і як далеко вона від лінії підлоги.
+      const miss = (d: number): number => {
+        const a = s.rot * DEG + d;
+        const bx = s.x + brush.x * Math.cos(a) - brush.y * Math.sin(a);
+        const by = s.y + brush.x * Math.sin(a) + brush.y * Math.cos(a);
+        return by - (y0 + slope * (bx - x0));
+      };
+      let d = 0;
+      for (let step = 0; step < 4; step++) {
+        const m = miss(d);
+        const dm = (miss(d + 1e-3) - m) / 1e-3;
+        if (Math.abs(dm) < 1e-6) break;
+        d -= m / dm;
+      }
+      const deg = Math.max(-VACUUM_TILT_MAX, Math.min(VACUUM_TILT_MAX, d / DEG));
+      keys.push(k(t, round(deg), "linear"));
+    }
+    out[view] = keys;
+  }
+  return out;
+}
+
+/** Накладка «тримає пилосос» для реєстру й галереї: пилосос рівно над вихідним тілом. */
+function vacuumOverlay(): PersonAnim {
+  return vacuumOver({ duration: 2400, loop: true }, NO_TILT);
+}
+
 // --- Присідання й пози всього тіла --------------------------------------------------------------
 
 /** Присів біля кота: ноги коротші (стегна до камери) й без повороту — взуття рівно; «таз назад» — нахилом тулуба. */
@@ -786,6 +929,14 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
    * галереї); у грі — тільки `personWithArms(основна, "holdCat")`.
    */
   holdCat: armsOverlay("holdCat"),
+
+  /**
+   * Тримає вертикальний пилосос (накладка рук; рішення автора 2026-11-02, GAME_DESIGN §8.7): ближня рука на ручці, щітка на
+   * підлозі попереду, кулак над ручкою. Тут — лише поза над вихідним тілом (для реєстру й галереї); у грі — тільки
+   * `personWithArms(основна, "holdVacuum")`, де дальня рука від основної, а пилосос хилиться в кулаці так, щоб щітка не
+   * відривалася від підлоги.
+   */
+  holdVacuum: vacuumOverlay(),
 
   /**
    * Гладить кота на підлозі: присів глибоко, нахилився, ближня рука вперед і вниз — на спинці кота — і гладить уздовж
@@ -1123,25 +1274,34 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
 
 // --- Основна з накладкою рук -------------------------------------------------------------------
 
-const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay, PersonAnim>>();
+const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay | "holdVacuum", PersonAnim>>();
 
 /**
  * Основна анімація `base` (її назва — `id`) з накладкою рук (`PersonAnimChoice.overlay`): доріжки рук і кистей основної
  * ЗАМІНЕНО позою накладки (розмах ходи й ривка не підкидає ні річ, ні кота), решта — від основної. Несе річ (`carry`) — руки
  * тримають свій кут у світі проти нахилу тулуба (противага), а кисть — річ рівно (кут гнізда `held` у світі — 0); тримає кота
- * (`holdCat`) — руки разом із тулубом, кисті під котом у гнізді `arms`. Анімації, які самі ведуть руки (`PERSON_OWN_ARMS` з
- * `anim/ids.ts`: вудочка, бере й опускає кота, усі справи N4b), і накладка null — основна як є. Для тієї самої пари — той
- * самий об'єкт (`Rig.play` не починає її знову). Разові (вкусили, відмова, спіткнувся, посковзнувся) з річчю чи котом у
- * руках — так само: тіло реагує, руки тримають.
+ * (`holdCat`) — руки разом із тулубом, кисті під котом у гнізді `arms`; тримає пилосос (`holdVacuum`) — замінено лише
+ * ближню руку й кисть (дальня — від основної), кулак над ручкою (z слота `arm-near`), щітка на підлозі. Анімації, які самі
+ * ведуть руки (`PERSON_OWN_ARMS` з `anim/ids.ts`: вудочка, бере й опускає кота, усі справи N4b), і накладка null — основна
+ * як є. Для тієї самої пари — той самий об'єкт (`Rig.play` не починає її знову). Разові (вкусили, відмова, спіткнувся,
+ * посковзнувся) з річчю чи котом у руках — так само: тіло реагує, руки тримають.
  */
 export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null, id: PersonAnimId): PersonAnim {
-  if (overlay === null || !(overlay in ARMS_OVERLAYS) || PERSON_OWN_ARMS.has(id)) return base;
-  const arms = overlay as PersonArmsOverlay;
+  if (overlay === null || !(overlay in ARMS_OVERLAYS || overlay === "holdVacuum") || PERSON_OWN_ARMS.has(id)) return base;
   let cache = WITH_ARMS.get(base);
   if (!cache) {
     cache = new Map();
     WITH_ARMS.set(base, cache);
   }
+  if (overlay === "holdVacuum") {
+    // Пилосос у руках: ближня рука з пилососом, дальня — від основної, щітка на підлозі (`vacuumTilts`).
+    const known = cache.get(overlay);
+    if (known) return known;
+    const made = vacuumOver(base, vacuumTilts(base));
+    cache.set(overlay, made);
+    return made;
+  }
+  const arms = overlay as PersonArmsOverlay;
   const known = cache.get(arms);
   if (known) return known;
   const spec = ARMS_OVERLAYS[arms];

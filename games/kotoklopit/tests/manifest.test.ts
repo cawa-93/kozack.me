@@ -75,11 +75,11 @@ describe("маніфест: правила записів", () => {
     expect(() => pack([{ key: "a", w: limit + 1, h: 10 }])).toThrow(/не влазить/);
   });
 
-  it("ракурси — лише в частин скелета кота й персонажа, і там обидва", () => {
-    for (const e of ENTRIES) {
-      const rig = e.id.startsWith("cat/") || e.id.startsWith("person/");
-      expect(e.views, e.id).toEqual(rig ? ART_VIEWS : undefined);
-    }
+  it("ракурси — лише в частин скелета кота й персонажа й у пилососа в руках, і там обидва", () => {
+    // Пилосос у руках (`item/vacuum`, рішення автора 2026-11-02, GAME_DESIGN §8.7): щітка лежить на підлозі попереду, а
+    // підлога попереду в ¾ спереду нижче на екрані, ніж у ¾ ззаду, — тож свій кадр на ракурс персонажа.
+    const viewed = (id: string): boolean => id.startsWith("cat/") || id.startsWith("person/") || id === "item/vacuum";
+    for (const e of ENTRIES) expect(e.views, e.id).toEqual(viewed(e.id) ? ART_VIEWS : undefined);
   });
 
   it("шари — лише дозволені для категорії", () => {
