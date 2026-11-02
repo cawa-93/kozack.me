@@ -73,6 +73,13 @@ describe("душ у день відключення (§8.7, §4.1): вода х�
     expectFrame({ id: "env/shower", state: showerState(outage) });
   });
 
+  it("купання кота у відключення — без змін (§4.1): вода тече як завжди (running), холодна — лише душ персонажа", () => {
+    const { usual, outage } = bothDays("appliances");
+    for (const state of [usual, outage]) state.character.activity = { kind: "use", target: "shower", progress: 0.2, inside: true, bath: true };
+    expect(showerState(usual)).toBe("running");
+    expect(showerState(outage)).toBe("running");
+  });
+
   it("без води — так само, як звичайного дня: сухо чи мокрий піддон", () => {
     const { usual, outage } = bothDays("appliances");
     usual.character.activity = null;

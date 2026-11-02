@@ -106,11 +106,12 @@ export function dishFrame(dish: Dish): IsoFrame {
 
 /**
  * Душова кабіна (§8.7): тече вода, поки персонаж усередині чи купає кота; мокрий піддон, поки на ньому сидить кіт. У день
- * відключення світла (§4.1, рішення автора 2026-11-02) бойлер не гріє — вода холодна: без пари й запітнілого скла.
+ * відключення світла (§4.1, рішення автора 2026-11-02) бойлер не гріє — вода холодна: душ персонажа без пари й запітнілого
+ * скла. Купання кота у відключення — без змін (§4.1): вода тече як завжди (`running`).
  */
 export function showerState(state: GameState): string {
   const activity = state.character.activity;
-  if (activity?.kind === "use" && activity.target === "shower") return powerOut(state) ? "running-cold" : "running";
+  if (activity?.kind === "use" && activity.target === "shower") return powerOut(state) && activity.bath !== true ? "running-cold" : "running";
   return state.cats.some((cat) => cat.away === null && objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.id === "shower") ? "wet" : "dry";
 }
 
