@@ -14,6 +14,7 @@ import { MAX_BOXES, STORAGES, type FillStage } from "../src/sim/storage";
 import type { Dish, Home, HomeItem, Item, Look, MessKind, Quality, Shape, ThingKind } from "../src/sim/types";
 import { LOOK_OPTIONS } from "../src/ui/look";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
+import { cobwebState, type CobwebState } from "../src/view/art/manifest/a20-dust";
 import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { artEntries, artEntry, DEFAULT_RES, manifestProblems } from "../src/view/art/manifest";
 import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, type WhiteLayer } from "../src/view/art/types";
@@ -122,6 +123,8 @@ describe("маніфест: правила записів", () => {
       "a18-traces-stuff": ["env/trace/"],
       // Котячі сліди (§9.12, рішення автора 2026-11-02): шафа в спальні.
       "a19-traces-bedroom": ["env/trace/"],
+      // Пил і павутина (§8.7, рішення автора 2026-11-02): «людське» забруднення кімнат.
+      "a20-dust": ["mess/dust/", "mess/cobweb"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
@@ -347,6 +350,20 @@ describe("маніфест: речі котів, у руках, бруд", () =>
     for (const t of TRINKETS) expect(states(`mess/trinket/${t.kind}`)).toEqual(["standing", "fallen"]);
     expect(FUR_SPOTS.length).toBeGreaterThan(0);
     entry("mess/fur-tuft");
+  });
+
+  it("пил і павутина (§8.7): кадри кутів, стін і підлоги; стан павутини в задньому куті кожної кімнати — з мапи", () => {
+    for (const id of ["mess/dust/corner", "mess/dust/wall-x", "mess/dust/wall-y"]) entry(id);
+    expect(states("mess/dust/floor").length).toBeGreaterThan(1);
+    // Високий кут із двома задніми стінами — лише в спальні; у ванній і кухні висока лише стіна y = 0, у вітальні — x = 0.
+    const corner = (id: string): CobwebState | null => {
+      const room = ROOMS.find((r) => r.id === id);
+      return room ? cobwebState(room) : null;
+    };
+    expect([corner("bedroom"), corner("bathroom"), corner("kitchen"), corner("living")]).toEqual(["corner", "wall-x", "wall-x", "wall-y"]);
+    for (const room of ROOMS) expect(states("mess/cobweb"), room.id).toContain(cobwebState(room));
+    // Посеред кімнати задніх стін немає — павутині там не бути.
+    expect(cobwebState({ x: 4, y: 3 })).toBeNull();
   });
 });
 
