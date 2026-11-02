@@ -85,6 +85,24 @@ export function canvasFit(css: { width: number; height: number }, dpr: number, s
   return { width, height, density: height / h, unit, ui: height / h / unit };
 }
 
+/**
+ * Найбільша роздільність тексту Phaser (`Text.resolution`). Камера інтерфейсу збільшує одиниці щонайбільше в ≈ 2,55 раза
+ * (`MAX_CANVAS_PIXELS` / 1280 × 720 під коренем), камера квартири з наїздом засинання — до ≈ 2,7; більше текстура напису
+ * не потребує, а пам'ять росте з квадратом роздільності.
+ */
+export const MAX_TEXT_RESOLUTION = 3;
+
+/**
+ * Роздільність тексту, що на екрані збільшений у `scale` разів (пікселі полотна на піксель шрифту: зум камери інтерфейсу
+ * `CanvasFit.ui` чи камери квартири з масштабом контейнера): текстура напису — піксель у піксель полотна. Стала 2 була м'якою
+ * на 1440 × 900 за DPR 2 (зум інтерфейсу 2,25) і 2560 × 1440 (2,55), а на телефоні — зайвою. Не менше 1 і не більше
+ * `MAX_TEXT_RESOLUTION`; сотих досить — так дрібні зміни зуму не перемальовують напис.
+ */
+export function textResolution(scale: number): number {
+  if (!(scale > 0)) return 1;
+  return Math.min(MAX_TEXT_RESOLUTION, Math.max(1, Math.round(scale * 100) / 100));
+}
+
 /** Масштаб камери: усю квартиру видно, якщо клітинка при цьому не дрібніша за мінімум; інакше — мінімум. */
 export function cameraZoom(view: ZoomView, projection: Pick<Projection, "world" | "tile">): number {
   const bounds = projection.world;

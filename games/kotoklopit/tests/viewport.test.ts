@@ -5,7 +5,22 @@
 import { describe, expect, it } from "vitest";
 
 import { ISO } from "../src/view/world/projection";
-import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, canvasFit, fitsWhole, FOLLOW_LIFT, followTarget, HUD_HEIGHT, MAX_CANVAS_PIXELS, MAX_DENSITY, MIN_TILE_CSS, type ZoomView } from "../src/view/zoom";
+import {
+  BASE_HEIGHT,
+  BASE_WIDTH,
+  cameraZoom,
+  canvasFit,
+  fitsWhole,
+  FOLLOW_LIFT,
+  followTarget,
+  HUD_HEIGHT,
+  MAX_CANVAS_PIXELS,
+  MAX_DENSITY,
+  MAX_TEXT_RESOLUTION,
+  MIN_TILE_CSS,
+  textResolution,
+  type ZoomView,
+} from "../src/view/zoom";
 
 /**
  * Область квартири на екрані CSS `cssWidth × cssHeight` так, як її рахує `Viewport.layout` на програмному WebGL (полотно
@@ -169,5 +184,36 @@ describe("полотно в пікселях пристрою (canvasFit)", () =
     const area = { width: fit.width, height: fit.height - HUD_HEIGHT * fit.ui, cssScale: fit.density };
     const zoom = cameraZoom(area, ISO);
     expect(css(ISO.tile.height, zoom, area)).toBeCloseTo(MIN_TILE_CSS, 6);
+  });
+});
+
+describe("роздільність тексту (textResolution)", () => {
+  it("напис інтерфейсу — піксель у піксель полотна: роздільність — зум камери інтерфейсу", () => {
+    // 1440 × 900 за DPR 2 — зум 2,25 (стала 2 була м'якою), 2560 × 1440 за DPR 2 — ≈ 2,55, телефон 844 × 390 за DPR 3 — ≈ 1,35.
+    expect(textResolution(canvasFit({ width: 1440, height: 900 }, 2, false).ui)).toBe(2.25);
+    expect(textResolution(canvasFit({ width: 2560, height: 1440 }, 2, false).ui)).toBeCloseTo(2.55, 2);
+    expect(textResolution(canvasFit({ width: 844, height: 390 }, 3, false).ui)).toBeCloseTo(1.35, 2);
+    expect(textResolution(canvasFit({ width: 1280, height: 720 }, 1, false).ui)).toBe(1);
+    // Програмний WebGL — полотно в одиницях інтерфейсу.
+    expect(textResolution(canvasFit({ width: 844, height: 390 }, 3, true).ui)).toBe(1);
+  });
+
+  it("не менше 1 і не більше межі; на будь-якому екрані зум інтерфейсу в межах", () => {
+    expect(textResolution(0.4)).toBe(1);
+    expect(textResolution(Number.NaN)).toBe(1);
+    expect(textResolution(0)).toBe(1);
+    expect(textResolution(9)).toBe(MAX_TEXT_RESOLUTION);
+    for (const [w, h] of [[640, 360], [844, 390], [1280, 720], [1920, 1080], [2560, 1440], [3840, 2160], [5120, 2880]] as const) {
+      for (const dpr of [1, 1.5, 2, 3, 4]) {
+        const ui = canvasFit({ width: w, height: h }, dpr, false).ui;
+        expect(ui, `${w}×${h}@${dpr}`).toBeLessThanOrEqual(MAX_TEXT_RESOLUTION);
+        expect(textResolution(ui)).toBeCloseTo(ui, 2);
+      }
+    }
+  });
+
+  it("сотих досить: зум, що ледь змінився, дає ту саму роздільність (напис не перемальовується)", () => {
+    expect(textResolution(2.2501)).toBe(textResolution(2.2499));
+    expect(textResolution(1.354)).toBe(1.35);
   });
 });

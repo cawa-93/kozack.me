@@ -21,6 +21,7 @@ import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
 import { canvasNow, HUD_HEIGHT, type Frame } from "./viewport";
+import { textResolution } from "./zoom";
 import { UI_LAYERS } from "./world/layers";
 
 /** Шкали показників (§6): іконка замість назви (§11.4) — сердечко, тарілка, мило, думка. */
@@ -129,15 +130,25 @@ export class Hud {
   private readonly hintUnder: Phaser.GameObjects.Image;
   /** У скільки разів зараз збільшені дрібні написи й підказка (`hudTextScale`); 1 — як на десктопі. */
   private textScale = 1;
+  /** Усі написи панелі: їхню роздільність веде зум камери інтерфейсу (`textResolution`). */
+  private readonly texts: Phaser.GameObjects.Text[] = [];
+  /** Роздільність написів зараз. */
+  private resolution: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
     layer: Phaser.GameObjects.Layer,
     onPhone: () => void,
   ) {
-    // Написи — паперовим на темній панелі з чорнильною обвідкою (`iso/uilook.ts`).
+    // Написи — паперовим на темній панелі з чорнильною обвідкою (`iso/uilook.ts`), піксель у піксель полотна.
+    const resolution = textResolution(canvasNow().ui);
+    this.resolution = resolution;
+    const keep = (made: Phaser.GameObjects.Text): Phaser.GameObjects.Text => {
+      this.texts.push(made);
+      return made;
+    };
     const text = (x: number, y: number, size: number, color: string = UI_TEXT.main) =>
-      scene.add.text(x, y, "", { fontFamily: UI_FONT, fontSize: `${size}px`, color, stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3, resolution: 2 });
+      keep(scene.add.text(x, y, "", { fontFamily: UI_FONT, fontSize: `${size}px`, color, stroke: UI_TEXT.stroke, strokeThickness: size >= 30 ? 4 : 3, resolution }));
     // Шрифти великі: на телефоні полотно зменшується майже вдвічі.
     // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
     const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
@@ -185,8 +196,8 @@ export class Hud {
 
     // Бабл телефона: мовна хмаринка під панеллю, хвостиком до телефона; натиснути — сховати. Папір і чорнило палітри арту.
     this.newsBg = scene.add.graphics();
-    this.newsTitle = scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", fontStyle: "bold", color: UI_TEXT.onPaper, resolution: 2 });
-    this.newsText = scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", color: UI_TEXT.onPaper, resolution: 2, wordWrap: { width: NEWS.width } });
+    this.newsTitle = keep(scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", fontStyle: "bold", color: UI_TEXT.onPaper, resolution }));
+    this.newsText = keep(scene.add.text(0, 0, "", { fontFamily: UI_FONT, fontSize: "17px", color: UI_TEXT.onPaper, resolution, wordWrap: { width: NEWS.width } }));
     this.news = scene.add.container(0, 0, [this.newsBg, this.newsTitle, this.newsText]).setDepth(DEPTH).setVisible(false).addToDisplayList(layer);
     this.news.on("pointerdown", (_p: unknown, _x: number, _y: number, event: EventData) => {
       event.stopPropagation();
@@ -209,8 +220,9 @@ export class Hud {
   }
 
   /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
-  layout({ width, safe }: Frame): void {
+  layout({ width, safe, ui }: Frame): void {
     this.scaleSmall(hudTextScale(1 / canvasNow().unit));
+    this.sharpen(textResolution(ui));
     this.band(width, safe.top + HUD_HEIGHT);
     this.left.setPosition(safe.left, safe.top);
     const x = width - safe.right - BUTTONS_INSET;
@@ -239,6 +251,16 @@ export class Hud {
     const { ring, icon } = statDisc(2 * HINT.r * k + 2);
     this.hintUnder.setPosition(at.x, at.y).setDisplaySize(ring, ring);
     this.hintIcon.setPosition(at.x, at.y).setDisplaySize(icon, icon);
+  }
+
+  /**
+   * Роздільність написів — за зумом камери інтерфейсу (`textResolution`): лише коли він змінився (розмір вікна, DPR), бо
+   * кожна зміна перемальовує текстуру напису.
+   */
+  private sharpen(resolution: number): void {
+    if (resolution === this.resolution) return;
+    this.resolution = resolution;
+    for (const text of this.texts) text.setResolution(resolution);
   }
 
   /** Чи показує телефон зараз бабл. */

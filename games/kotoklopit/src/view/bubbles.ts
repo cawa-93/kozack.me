@@ -25,6 +25,7 @@ import {
 import { isoPopColor, UI_FILL, UI_FONT, UI_TEXT } from "./iso/uilook";
 import type { EventBubble, Thinker } from "./symbols";
 import { WORLD_LAYERS } from "./world/layers";
+import { textResolution } from "./zoom";
 
 const BUBBLE_DEPTH = WORLD_LAYERS.bubbles;
 /** Скільки висить бабл події, перш ніж згаснути, мс. */
@@ -128,7 +129,7 @@ export class Bubbles {
       // Кількість — чорнильна плашка з паперовою обвідкою й паперовими цифрами: видно і на світлій підлозі, і на темній стіні.
       const c = BUBBLE_COUNT;
       const label = scene.add
-        .text(0, 0, String(count), { fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: 2 })
+        .text(0, 0, String(count), { fontFamily: UI_FONT, fontSize: `${c.font}px`, fontStyle: "bold", color: UI_TEXT.main, resolution: this.resolution(look.scale) })
         .setOrigin(0.5);
       const h = c.height;
       const w = countPillWidth(label.width);
@@ -212,13 +213,22 @@ export class Bubbles {
     if (!start) return;
     // Одиниця світу ізометрії дрібна (≈ 0,72 px CSS на телефоні), тож напис — 22 px; колір — токеном палітри арту
     // (`isoPopColor`).
-    const style = { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: 2 };
+    const style = { fontFamily: UI_FONT, fontSize: "22px", fontStyle: "bold", color: isoPopColor(color), stroke: UI_TEXT.stroke, strokeThickness: 4, resolution: this.resolution(1) };
     const label = this.scene.add
       .text(0, 0, text, style)
       .setOrigin(0.5, 1)
       .setAlpha(0.75);
     const container = this.scene.add.container(start.x, start.y - 4, [label]).setDepth(BUBBLE_DEPTH + 2).addToDisplayList(this.layer);
     this.float(container, at, 700);
+  }
+
+  /**
+   * Роздільність напису в баблі, збільшеного контейнером у `scale` разів: пікселі полотна на піксель шрифту — зум камери
+   * квартири (`Viewport`, разом із наїздом) на масштаб (`textResolution`). Береться, коли бабл складається: бабли живуть
+   * секунду-дві.
+   */
+  private resolution(scale: number): number {
+    return textResolution(this.scene.cameras.main.zoom * scale);
   }
 
   /** Підйом і згасання; позиція щокадру — від місця, якщо воно рухоме (див. `update`). */
