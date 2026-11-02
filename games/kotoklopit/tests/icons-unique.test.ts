@@ -347,6 +347,16 @@ describe("унікальна іконка на унікальний кейс (§
     expect(Object.values(STATE_ICONS.computer)).not.toContain("no-internet");
   });
 
+  it("холодна вода в душі без світла — своя іконка: не крапля «тече вода» й не сніжинка «кіт мерзне» (§4.1, рішення автора 2026-11-02)", () => {
+    const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
+    expect(icon("state:coldShower")).toBe("cold-water");
+    expect(meaningOf("state:coldShower")).toBe("state:coldShower");
+    expect(icon("state:shower")).toBe("drop");
+    expect(icon("event:weather-felt:feel=cold")).toBe("chilly");
+    expect(icon("state:coldShower")).not.toBe(icon("state:shower"));
+    expect(icon("state:coldShower")).not.toBe(icon("event:weather-felt:feel=cold"));
+  });
+
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {
     const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
     expect(icon("event:scared")).not.toBe(icon("state:computer.patienceWarning"));

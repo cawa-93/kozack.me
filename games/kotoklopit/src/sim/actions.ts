@@ -11,7 +11,7 @@ import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
 import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
-import { cookFactor } from "./modifiers";
+import { cookFactor, powerOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
@@ -32,6 +32,7 @@ import {
   LITTER_SANITY,
   MEAL_SATIETY,
   MESS_SANITY,
+  MODIFIERS,
   MOOD,
   LOVE_BEHAVIOR,
   MINUTES_PER_DAY,
@@ -541,12 +542,21 @@ export function bathMinutes(state: GameState): number {
   return BATH.minutes * (1 + BATH.fearStep * Math.min(2, fear));
 }
 
-/** Тривалість тривалої дії з ціллю, без урахування швидкості. */
-function useMinutes(target: Target): number {
+/**
+ * Тривалість тривалої дії з ціллю, без урахування швидкості. Душ без світла холодний — бойлер не гріє — і вдвічі коротший
+ * («Планове відключення», §4.1, §8.7, рішення автора 2026-11-02).
+ */
+function useMinutes(state: GameState, target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
   if (target.type === "object" && target.object.kind === "computer") return CHEWING.fixMinutes;
-  return target.type === "object" && target.object.kind === "shower" ? SHOWER_MINUTES : EAT_MINUTES;
+  if (target.type === "object" && target.object.kind === "shower") return SHOWER_MINUTES * (powerOut(state) ? MODIFIERS.outage.showerMinutes : 1);
+  return EAT_MINUTES;
+}
+
+/** Скільки гігієни дає душ без засобу чи з ним (§8.7): холодний, без світла, — ×0,8 (§4.1, рішення автора 2026-11-02). */
+function showerHygiene(state: GameState, quality: Quality | null): number {
+  return SHOWER_HYGIENE[quality ?? "none"] * (powerOut(state) ? MODIFIERS.outage.showerHygiene : 1);
 }
 
 /** Чи можна зараз почати чи продовжити тривалу дію з ціллю. */
@@ -610,7 +620,7 @@ export function useProgress(state: GameState): number | null {
   if (activity?.kind !== "use") return null;
   const target = targetById(state, activity.target);
   // Купання «Водобоязні» — довше за душ: смуга від його тривалості (перевірка купання 2026-10-28).
-  return target ? Math.min(1, activity.progress / (activity.bath === true ? bathMinutes(state) : useMinutes(target))) : null;
+  return target ? Math.min(1, activity.progress / (activity.bath === true ? bathMinutes(state) : useMinutes(state, target))) : null;
 }
 
 /**
@@ -628,7 +638,7 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
       return;
     }
     activity.progress += minutes * actionSpeed(state);
-    if (activity.progress >= (activity.bath === true ? bathMinutes(state) : useMinutes(target))) {
+    if (activity.progress >= (activity.bath === true ? bathMinutes(state) : useMinutes(state, target))) {
       character.activity = null;
       if (activity.bath === true) bathe(state, stateRng(state, "behavior"));
       else finishUse(state, target);
@@ -711,7 +721,7 @@ function holdTick(state: GameState, minutes: number): boolean {
     return true;
   }
   current.progress += minutes * actionSpeed(state);
-  if (current.progress >= useMinutes(target)) {
+  if (current.progress >= useMinutes(state, target)) {
     character.activity = null;
     finishUse(state, target);
   }
@@ -753,12 +763,13 @@ function finishUse(state: GameState, target: Target): void {
     return;
   }
   if (object.kind === "shower") {
-    // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі (§8.7).
-    const plain = state.character.stats.hygiene + SHOWER_HYGIENE.none >= statCeiling(state, "hygiene");
+    // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі (§8.7). Холодний душ без світла
+    // миє ×0,8 — і без засобу теж, тож межу перевіряють з тим самим множником (§4.1, рішення автора 2026-11-02).
+    const plain = state.character.stats.hygiene + showerHygiene(state, null) >= statCeiling(state, "hygiene");
     const quality = plain ? null : useSupply(state, "hygiene");
-    const hygiene = SHOWER_HYGIENE[quality ?? "none"];
+    const hygiene = showerHygiene(state, quality);
     changeStat(state, "hygiene", hygiene);
-    emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene") });
+    emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene"), ...(powerOut(state) ? { cold: true as const } : {}) });
     // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
     showerDrops(state);
     return;

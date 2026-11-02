@@ -24,7 +24,7 @@ import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
 import { diseaseLabel } from "../ui/icons";
-import { answerCall, decideFoundling, ignoreCall } from "../sim/modifiers";
+import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
@@ -38,7 +38,7 @@ import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
 import type { BubbleKind, IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
-import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, STATE_ICONS, stoveIcon } from "../view/symbols";
+import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
@@ -729,9 +729,9 @@ export class DayScene extends Phaser.Scene {
     }
     set("computer", computer);
 
-    // Персонаж у душовій кабіні — над нею вода.
+    // Персонаж у душовій кабіні — над нею вода; без світла — холодна (§4.1).
     const activity = state.character.activity;
-    set("shower", activity?.kind === "use" && activity.inside ? STATE_ICONS.shower : null);
+    set("shower", showerIcon(activity, !powerOut(state)));
     set("stove", stoveIcon(state.home.stove.item));
     // Кіт на сходах важливіший за пакунок (§9.12).
     set("door", state.cats.some((c) => c.away === "stairs") ? STATE_ICONS.door.stairs : state.home.porch.length > 0 ? STATE_ICONS.door.porch : null);

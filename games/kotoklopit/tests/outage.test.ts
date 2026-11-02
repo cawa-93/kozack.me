@@ -6,15 +6,18 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { tickStove } from "../src/sim/actions";
-import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { supplyCount } from "../src/sim/economy";
+import type { GameEvent } from "../src/sim/events";
 import { advance, interact, newGame } from "../src/sim/game";
 import { powerOut } from "../src/sim/modifiers";
 import type { Save, StatName } from "../src/sim/types";
 import { isWorking, patienceLevel, standupToday, startWork, tickWork } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
 import { scheduleOf } from "../src/view/schedule";
+import { showerIcon } from "../src/view/symbols";
 import { personThought } from "../src/view/thoughts";
-import { recordEvents } from "./helpers";
+import { recordEvents, standAt } from "./helpers";
 
 const STATS: StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
@@ -171,6 +174,52 @@ describe("«Планове відключення» — день без світ
     expect(cook(null)).toEqual({ ready: COOK_MINUTES, burnt: BURN_MINUTES.normal });
     expect(COOK_MINUTES * 1.25).toBe(25);
     expect(cook("outage")).toEqual({ ready: COOK_MINUTES * 1.25, burnt: Math.ceil(BURN_MINUTES.normal * 1.25) });
+  });
+
+  it("душ без світла холодний: 5 хвилин замість 10, гігієна ×0,8 (§8.7)", () => {
+    expect(MODIFIERS.outage.showerMinutes).toBe(0.5);
+    expect(MODIFIERS.outage.showerHygiene).toBe(0.8);
+    const shower = (day: string | null, hygiene = 20): { minutes: number; event: GameEvent | undefined; used: number } => {
+      const save = game(day);
+      save.current.minute = 11 * 60;
+      save.current.character.stats.hygiene = hygiene;
+      save.current.home.supplies.hygiene = { cheap: 2, premium: 0 };
+      standAt(save, "shower");
+      const { events, stop } = recordEvents();
+      interact(save);
+      expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
+      let minutes = 0;
+      while (save.current.character.activity !== null && minutes < 30) {
+        advance(save, 0.5);
+        minutes += 0.5;
+      }
+      stop();
+      return { minutes, event: events.find((e) => e.type === "showered"), used: 2 - supplyCount(save.current, "hygiene") };
+    };
+    const normal = shower(null);
+    expect(normal.minutes).toBe(SHOWER_MINUTES);
+    expect(normal.event).toEqual({ type: "showered", hygiene: SHOWER_HYGIENE.cheap, quality: "cheap", left: 1 });
+    const cold = shower("outage");
+    expect(cold.minutes).toBe(SHOWER_MINUTES * 0.5);
+    expect(cold.minutes).toBe(5);
+    expect(cold.event).toEqual({ type: "showered", hygiene: SHOWER_HYGIENE.cheap * 0.8, quality: "cheap", left: 1, cold: true });
+    // Засіб не витрачається, коли й без нього гігієна дійде до межі — з тим самим множником: 93 + 8 — уже 100, а 93 + 8 × 0,8 — ще ні.
+    expect(shower(null, 93).used).toBe(0);
+    expect(shower("outage", 93).used).toBe(1);
+    expect(shower("outage", 95).used).toBe(0);
+  });
+
+  it("над кабіною без світла — «холодна вода» замість «тече вода», вголос (стан речі); купання кота — як завжди", () => {
+    const inside = { kind: "use", target: "shower", progress: 0, inside: true } as const;
+    expect(showerIcon(inside, true)).toBe("drop");
+    expect(showerIcon(inside, false)).toBe("cold-water");
+    expect(showerIcon({ ...inside, bath: true }, false)).toBe("drop");
+    expect(showerIcon(null, false)).toBeNull();
+    expect(showerIcon({ kind: "use", target: "shower", progress: 0 }, false)).toBeNull();
+    // Персонажа в кабіні не видно, і думки там немає — навіть без світла за роботою не думають (у кабіні не працюють).
+    const save = game("outage");
+    save.current.character.activity = { ...inside };
+    expect(personThought(save.current)).toBeNull();
   });
 
   it("сценарій «Без світла» (`scenarios/power-outage.json`): біля комп'ютера — натискання саджає працювати, і робота йде годину без перерви", () => {

@@ -92,7 +92,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "ate":
       return `Їжа: ситість ${signed(event.satiety)}, у холодильнику ${event.food}`;
     case "showered":
-      return `Душ: гігієна ${signed(event.hygiene)} (${event.quality ?? "без засобів"}), лишилося ${event.left}`;
+      return `Душ${event.cold === true ? " холодний (без світла)" : ""}: гігієна ${signed(event.hygiene)} (${event.quality ?? "без засобів"}), лишилося ${event.left}`;
     case "work-started":
       return "Сів за комп'ютер";
     case "work-stopped":

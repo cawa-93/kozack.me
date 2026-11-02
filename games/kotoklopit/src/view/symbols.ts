@@ -92,6 +92,11 @@ export const STATE_ICONS = {
   computer: { wireChewed: "wire", call: "camera", patienceOut: "cross", patienceWarning: "alert" },
   /** Персонаж у душовій кабіні — тече вода. */
   shower: "drop",
+  /**
+   * Персонаж у душовій кабіні в день без світла — тече холодна вода: бойлер не гріє (§4.1, рішення автора 2026-11-02). Інший випадок,
+   * ніж «тече вода», — своя іконка замість краплі (`showerIcon`).
+   */
+  coldShower: "cold-water",
   /** Під дверима: кіт на сходах нявчить (його не видно) — важливіший за пакунок. */
   door: { stairs: "meow", porch: "box" },
   /** Пральна машина пере чи чекає, щоб випране розвісили (§8.7). */
@@ -105,6 +110,18 @@ export const STATE_ICONS = {
   /** Персонаж сонний — думка (§8.8). */
   drowsy: "zz",
 } as const satisfies Record<string, IconName | Record<string, IconName>>;
+
+/**
+ * Що каже душова кабіна, поки в ній персонаж (§11.4, §8.7): тече вода. У день без світла душ холодний — над кабіною «холодна вода»
+ * (§4.1, рішення автора 2026-11-02). Рішення виконавця 2026-11-02 за правилом «бабл — вголос чи думка»: це стан речі вголос, як і
+ * «тече вода», а не думка персонажа — його в кабіні не видно й думки там вимкнено (`personThought`), а над річчю думки не буває
+ * (`Thinker`); і замість краплі, а не разом з нею: над річчю — один стан. Купання кота — без змін (рішення виконавця за планом):
+ * над кабіною та сама крапля. `power` — чи є світло (`!powerOut`).
+ */
+export function showerIcon(activity: GameState["character"]["activity"], power: boolean): IconName | null {
+  if (activity?.kind !== "use" || activity.inside !== true) return null;
+  return !power && activity.bath !== true ? STATE_ICONS.coldShower : STATE_ICONS.shower;
+}
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */
 export function itemIcon(item: Item): IconName {
