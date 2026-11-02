@@ -42,6 +42,8 @@ import {
   CAT_PIECE,
   catSpot,
   IN_LITTER,
+  LAP_SEAT,
+  lapSeat,
   LITTER_SEAT,
   SOFA_HIDE,
   SPOT_SCALE,
@@ -702,6 +704,45 @@ describe("де кіт (`catSpot`)", () => {
         expect(spot.lift).toBe(stage !== null && look.perchFull ? look.perchFull[stage] : look.perch);
       }
     }
+  });
+});
+
+describe("кіт на колінах того, хто сидить спиною до камери (`lapSeat`)", () => {
+  const seat = (back: boolean, flip: boolean, order: number, scale = 1) => lapSeat(back, flip, order, scale, { x: 0, y: 0, front: false });
+
+  it("за комп'ютером (спиною до нас) кіт не в силуеті персонажа: перший — збоку, ближчому до камери, і поверх персонажа", () => {
+    // Дивиться праворуч угору — ближчий до нас правий бік, праворуч на екрані; ліворуч угору — навпаки.
+    const right = seat(true, false, 0);
+    expect(right).toEqual({ x: LAP_SEAT.near, y: LAP_SEAT.drop, front: true });
+    expect(seat(true, true, 0)).toEqual({ x: -LAP_SEAT.near, y: LAP_SEAT.drop, front: true });
+    // Пів ширини кота-клубка (≈ 25) за краєм гнізда й нижче: тулуб персонажа не закриває кота.
+    expect(Math.abs(right.x)).toBeGreaterThanOrEqual(30);
+    // Кошеня — ближче, за своїм розміром.
+    expect(seat(true, false, 0, 0.5).x).toBeCloseTo(LAP_SEAT.near * 0.5, 6);
+  });
+
+  it("другий кіт на колінах — з другого боку, за тулубом, а не в тій самій точці; третій — далі від першого", () => {
+    const first = seat(true, false, 0);
+    const second = seat(true, false, 1);
+    expect(Math.sign(second.x)).toBe(-Math.sign(first.x));
+    expect(second.front).toBe(false);
+    expect(Math.abs(second.x - first.x)).toBeGreaterThan(60);
+    const third = seat(true, false, 2);
+    expect(third.front).toBe(true);
+    expect(third.x).toBeGreaterThan(first.x);
+    expect(seat(true, false, 3).x).toBeLessThan(second.x);
+  });
+
+  it("обличчям до камери — у самому гнізді колін і поверх персонажа (там кота й так видно)", () => {
+    expect(seat(false, false, 0)).toEqual({ x: 0, y: 0, front: true });
+    expect(seat(false, true, 1)).toEqual({ x: 0, y: 0, front: true });
+  });
+
+  it("на колінах — місце `hands`, як і на руках: частина котів ставить кота від гнізда персонажа", () => {
+    const save = game();
+    const cat = withCat(save, { x: 7, y: 7.65 });
+    cat.act = act("lap", { target: "character", minutes: 240 });
+    expect(catSpot(save.current, cat, "sleep", null, SPOT).kind).toBe("hands");
   });
 });
 

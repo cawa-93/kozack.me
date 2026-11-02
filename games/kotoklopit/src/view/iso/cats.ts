@@ -35,10 +35,10 @@ import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world
 import { ISO } from "../world/projection";
 import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, startShot, WALK_GAITS, type CatShot, type GaitMemory, type Lift } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
-import { CAT_PIECE, catSpot, raised, type CatSpot, type CatSpotDepths } from "./catspot";
+import { CAT_PIECE, catSpot, lapSeat, raised, type CatSpot, type CatSpotDepths, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
-import { liftedRoot } from "./personlook";
+import { liftedRoot, PERSON_DEPTH } from "./personlook";
 import { CARRIER_GRATE_DEPTH } from "./floor";
 
 /** На скільки вбік від голови персонажа бабл кота, якого він тримає на руках, px (§11.4), — як у старому вигляді. */
@@ -117,6 +117,8 @@ interface Memory {
   pairTile: Vec;
   /** Де кіт щодо рук персонажа минулого кадру: 0 — сам, 1 — на руках чи колінах, 2 — його беруть чи опускають. */
   hands: number;
+  /** Котрий кіт на колінах персонажа цього кадру (`lapSeat`: 0 — перший); −1 — не на колінах. */
+  lap: number;
   /** Корінь кота, що щойно став у руки чи зійшов з них, доходить до нового місця (`LIFT_BLEND.root`): зсув і коли почався. */
   rootFix: { x: number; y: number; start: number } | null;
   /** Для стрибків і позіхання (`catTransition`). */
@@ -203,6 +205,9 @@ export class IsoCatsView implements CatsPart {
   private readonly jump: Vec = { x: 0, y: 0 };
   /** Спинка кота від кореня (кіт, якого беруть на руки чи опускають). */
   private readonly petOffset: Point = { x: 0, y: 0 };
+  /** Скільки котів уже на колінах цього кадру (перший прохід) і місце кота на них (`lapSeat`). */
+  private lapCount = 0;
+  private readonly lapAt: LapSeat = { x: 0, y: 0, front: true };
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -301,6 +306,7 @@ export class IsoCatsView implements CatsPart {
         floorWas: false,
         pairTile: { x: 0, y: 0 },
         hands: 0,
+        lap: -1,
         rootFix: null,
         transition: null,
         shot: null,
@@ -339,10 +345,13 @@ export class IsoCatsView implements CatsPart {
   private crowd(state: GameState, pairs: ReadonlyMap<number, PairPlacement>): ReadonlyMap<number, Vec> {
     const members = this.crowdMembers;
     members.length = 0;
+    this.lapCount = 0;
     for (const cat of state.cats) {
       const mem = this.memoryOf(cat.id);
       mem.choice = catAnim(state, cat);
       mem.spot = null;
+      // На колінах — за чергою (`state.cats` — за номером): перший з ближчого до камери боку, другий — з другого.
+      mem.lap = cat.away === null && cat.act.kind === "lap" ? this.lapCount++ : -1;
       if (cat.away !== null) continue;
       const pair = pairs.get(cat.id) ?? null;
       const spot = catSpot(state, cat, mem.choice.anim, pair, SPOT_DEPTHS);
@@ -430,6 +439,7 @@ export class IsoCatsView implements CatsPart {
     }
 
     const f = this.frame;
+    f.scale = size.scale * spot.scale;
     this.place(view, spot, mem, time, f);
     this.fixRoot(view, mem, spot.kind === "hands" ? (lifting ? 2 : 1) : 0, time, f);
     const act = cat.act;
@@ -449,7 +459,6 @@ export class IsoCatsView implements CatsPart {
     f.phase = anim === "brawl" && pair?.kind === "brawl" && cat.id > pair.with ? CAT_BRAWL_PHASE_MS : 0;
     f.face = face;
     f.facing = facing;
-    f.scale = size.scale * spot.scale;
     // Хода й біг — у такт тому, як кіт іде на екрані (точка підлоги під ним), з довжиною його лап: лапи не ковзають.
     mem.gait = nextGait(mem.gait, f.ground.x, f.ground.y, seconds);
     f.speed = gaitRate(f.anim, mem.gait.speed, size.kitten, cat.shape.legs === "short", f.scale);
@@ -535,16 +544,19 @@ export class IsoCatsView implements CatsPart {
     if (spot.kind === "hands") {
       mem.lift = null;
       const hands = this.ctx.world.person.hands;
-      this.placeOnPerson(view, hands.depth);
       if (hands.lift && mem.liftFrom) {
+        this.placeOnPerson(view, hands.depth, null);
         // Спинка кота (гніздо `pet`) від кореня — з минулого кадру.
         this.petOffset.x = view.back.x - view.root.x;
         this.petOffset.y = view.back.y - view.root.y;
         liftedRoot(mem.liftFrom, hands.lift, this.petOffset, hands, f.root, f.ground);
         return;
       }
-      f.root.x = f.ground.x = hands.x;
-      f.root.y = f.ground.y = hands.y;
+      // На колінах того, хто сидить спиною до камери, — упоперек колін, виступає збоку (`lapSeat`), а не в його силуеті.
+      const lap = mem.lap >= 0 ? lapSeat(hands.facing?.view === "back", hands.facing?.flip === true, mem.lap, f.scale, this.lapAt) : null;
+      this.placeOnPerson(view, hands.depth, lap);
+      f.root.x = f.ground.x = hands.x + (lap?.x ?? 0);
+      f.root.y = f.ground.y = hands.y + (lap?.y ?? 0);
       return;
     }
     if (spot.above) view.point.placeAbove(spot.above.id, spot.above.offset);
@@ -581,15 +593,16 @@ export class IsoCatsView implements CatsPart {
   /**
    * Кіт на руках чи на колінах — поверх персонажа (§9.12): над його точкою реєстру (`person`), на глибині рук
    * (`hands.depth`), якщо вона в проміжку персонажа; інакше — на пів проміжку над ним, як старий кіт на ізометричній підлозі.
+   * На колінах того, хто сидить спиною до камери (`lap`), — поверх персонажа чи за ним, як каже `lapSeat`.
    */
-  private placeOnPerson(view: IsoCatView, handsDepth: number): void {
+  private placeOnPerson(view: IsoCatView, handsDepth: number, lap: LapSeat | null): void {
     const person = this.depth.point("person");
     if (!person) {
       view.point.hide();
       view.sprite.setDepth(handsDepth);
       return;
     }
-    const rel = handsDepth - person.depth;
+    const rel = lap ? (lap.front ? PERSON_DEPTH.cargoFront : PERSON_DEPTH.cargoBack) : handsDepth - person.depth;
     const offset = Number.isFinite(rel) && Math.abs(rel) < ISO_DEPTH_SLOT ? rel : IsoCatView.ABOVE;
     view.point.placeAbove("person", offset);
   }
