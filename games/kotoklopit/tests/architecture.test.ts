@@ -25,6 +25,21 @@ describe("симуляція", () => {
   });
 });
 
+const light = import.meta.glob<string>("../src/view/light/*.ts", { query: "?raw", import: "default", eager: true });
+
+describe("світло доби (§8.9)", () => {
+  it("чисті модулі `src/view/light/*` — без Phaser і DOM; Phaser і полотно — лише в `lighttex.ts`", () => {
+    const files = Object.entries(light);
+    expect(files.map(([file]) => file.replace(/^.*\//, ""))).toEqual(expect.arrayContaining(["daylight.ts", "lightlook.ts", "lightmap.ts", "sources.ts", "sunstrips.ts", "lighttex.ts"]));
+    for (const [file, source] of files) {
+      if (file.endsWith("/lighttex.ts")) continue;
+      expect(source, file).not.toMatch(/from\s+["']phaser["']/);
+      expect(source, file).not.toMatch(/\b(window|document|localStorage)\s*[.[]/);
+      expect(source, file).not.toMatch(/\bCanvasRenderingContext2D\b|\bHTMLCanvasElement\b/);
+    }
+  });
+});
+
 const app = import.meta.glob<string>("../src/**/*.ts", { query: "?raw", import: "default", eager: true });
 
 describe("режим розробки", () => {

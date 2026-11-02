@@ -1,4 +1,4 @@
-// Світ із п'яти частин (крок 16, хвиля 0): сцена кличе частини в порядку, у якому вони одна одну питають, а запити
+// Світ із шести частин (крок 16, хвиля 0; світло доби — §8.9): сцена кличе частини в порядку, у якому вони одна одну питають, а запити
 // «де що» й підсвітку цілі отримує частина-власниця — тож частини можна міняти поодинці.
 
 import { describe, expect, it } from "vitest";
@@ -38,12 +38,19 @@ function world(): { world: World; log: string[] } {
   const person: PersonPart = { ...fake("person", log, (id) => id === "person"), head: { x: 7, y: 8 }, hands: { x: 1, y: 2, depth: 3 }, brush: null };
   const cats: CatsPart = { ...fake("cats", log, (id) => id.startsWith("cat:"), ["cat"]), points: (cat) => (cat === 1 ? { head: { x: 1, y: 1 }, back: { x: 2, y: 2 } } : null) };
   const result = new World(ISO);
-  result.attach({ apartment, floor: fake("floor", log, (id) => /^(item|mess):/.test(id), ["item", "mess"]), cats, person, marks: fake("marks", log, () => false) });
+  result.attach({
+    apartment,
+    floor: fake("floor", log, (id) => /^(item|mess):/.test(id), ["item", "mess"]),
+    cats,
+    person,
+    marks: fake("marks", log, () => false),
+    light: fake("light", log, () => false),
+  });
   return { world: result, log };
 }
 
 describe("світ із частин", () => {
-  it("кадр: персонаж, коти, куточок, квартира, позначки — а потім другий прохід", () => {
+  it("кадр: персонаж, коти, куточок, квартира, позначки, світло доби — а потім другий прохід", () => {
     const { world: w, log } = world();
     w.update(newGame({ address: "she", difficulty: "normal", seed: 1 }).current, FRAME);
     expect(log).toEqual([
@@ -52,11 +59,13 @@ describe("світ із частин", () => {
       "floor.update",
       "apartment.update",
       "marks.update",
+      "light.update",
       "person.late",
       "cats.late",
       "floor.late",
       "apartment.late",
       "marks.late",
+      "light.late",
     ]);
   });
 
@@ -88,9 +97,9 @@ describe("світ із частин", () => {
     w.onEvent({ type: "glitch" } as Parameters<World["onEvent"]>[0], 0);
     w.reset();
     w.destroy();
-    expect(log.filter((l) => l.endsWith(".glitch"))).toHaveLength(5);
-    expect(log.filter((l) => l.endsWith(".reset"))).toHaveLength(5);
-    expect(log.filter((l) => l.endsWith(".destroy"))).toHaveLength(5);
+    expect(log.filter((l) => l.endsWith(".glitch"))).toHaveLength(6);
+    expect(log.filter((l) => l.endsWith(".reset"))).toHaveLength(6);
+    expect(log.filter((l) => l.endsWith(".destroy"))).toHaveLength(6);
   });
 
   it("шари глибини: позначки під рукою, сердечка під баблами, підписи над усім світом; темрява над панеллю", () => {
