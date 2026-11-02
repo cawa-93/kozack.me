@@ -768,9 +768,11 @@ export class Bot {
         target = targetOf(this.state);
         if (target?.id === id) return true;
       }
-      // Безлад заступає ціль (його прибирають порожніми руками): прибрати й підійти ще раз.
+      // Безлад заступає ціль (його прибирають порожніми руками): прибрати тут же — він і є ціль дії — і підійти ще раз. Не
+      // `hold`: той знову йшов до безладу, звідти ціллю ставав сусідній, і goTo ↔ hold без меж водили бота між двома купками
+      // годинами, доки він не помирав від голоду (рецензія пилососа 2026-11-02).
       if (target?.type === "mess" && this.state.character.held === null) {
-        this.hold(target.id);
+        this.holdHere(target.id);
         continue;
       }
       // Іграшка чи пилосос заступає ціль (лежить чи стоїть перед плитою, холодильником): підняти й покласти за спину.
@@ -798,6 +800,11 @@ export class Bot {
 
   private hold(id: string): void {
     if (!this.goTo(id)) return this.wait(1);
+    this.holdHere(id);
+  }
+
+  /** Утримувати дію там, де стоїш, — до години, поки вона не скінчилася (`id` — ціль, заради якої тримають). */
+  private holdHere(id: string): void {
     for (let spent = 0; spent < 60; spent += HOLD_STEP) {
       advance(this.save, HOLD_STEP, { move: { x: 0, y: 0 }, hold: true });
       const activity = this.state.character.activity;
