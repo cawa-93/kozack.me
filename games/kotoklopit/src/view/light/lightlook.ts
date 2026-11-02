@@ -85,8 +85,6 @@ export const CANDLE_LIGHT = {
   color: 0xf6c88e,
   glowColor: 0xffb45a,
   coreColor: 0xffe2a0,
-  /** Висота полум'я над поверхнею господаря, одиниці арту. */
-  flame: 20,
   /** Радіус плями, клітинки. */
   radius: 1.45,
   glow: { radius: 40, alpha: 0.5 },

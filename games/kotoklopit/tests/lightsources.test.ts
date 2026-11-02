@@ -8,10 +8,15 @@ import { DAYLIGHT } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { ROOMS, roomAt } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
-import { CANDLES, CEILING_LAMPS, SCONCES } from "../src/view/decor";
+import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
+import type { ArtId } from "../src/view/art/types";
+import { BOILER, CANDLES, CEILING_LAMPS, POWER_STATION, SCONCES } from "../src/view/decor";
+import { artOffset } from "../src/view/iso/geometry";
 import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
 import { CANDLE_LIGHT } from "../src/view/light/lightlook";
 import { candleFlicker, lightSources, litStrength, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
+import type { Point } from "../src/view/world/part";
+import { ISO } from "../src/view/world/projection";
 
 function state(outage = false): GameState {
   const s = newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
@@ -141,6 +146,32 @@ describe("джерела світла квартири", () => {
       expect(source.at.y, source.id).toBeGreaterThan(0);
       expect(Number.isFinite(source.screen.x) && Number.isFinite(source.screen.y), source.id).toBe(true);
     }
+  });
+
+  it("бра, бойлер, станція й свічки світять з точки свого кадру арту (абажур, індикатор, дисплей, полум'я), а не з лиця стіни", () => {
+    const list = [...at(22, 30, state()), ...at(22, 30, state(true))];
+    const pivots: Record<string, { id: ArtId; name: string; pivot: Point }> = {
+      boiler: { id: "env/boiler", name: "led", pivot: ISO.toScreen(BOILER.at) },
+      station: { id: "env/power-station", name: "display", pivot: ISO.toScreen(POWER_STATION.at) },
+    };
+    SCONCES.forEach((sconce, i) => (pivots[`sconce:${i}`] = { id: sconce.id, name: "lamp", pivot: ISO.toScreen(sconce.at) }));
+    // Свічку квартира ставить pivot-ом (дном блюдця) на поверхню господаря: над точкою `at` на висоті `z`.
+    CANDLES.forEach((candle, i) => {
+      const floor = ISO.toScreen(candle.at);
+      pivots[`candle:${i}`] = { id: "env/candle", name: "flame", pivot: { x: floor.x, y: floor.y - candle.z } };
+    });
+    for (const [id, { id: art, name, pivot }] of Object.entries(pivots)) {
+      const source = list.find((s) => s.id === id);
+      expect(source, id).toBeDefined();
+      const offset = artOffset(art, name);
+      expect(offset, `${art}#${name}`).not.toBeNull();
+      expect(source?.screen.x, id).toBeCloseTo(pivot.x + (offset?.x ?? NaN), 6);
+      expect(source?.screen.y, id).toBeCloseTo(pivot.y + (offset?.y ?? NaN), 6);
+    }
+    // Полум'я — там, де його намальовано: на `LIGHT_ART.candle.flame` над поверхнею господаря.
+    const candle = list.find((s) => s.id === "candle:0");
+    const floor = ISO.toScreen(CANDLES[0]!.at);
+    expect((floor.y - CANDLES[0]!.z) - (candle?.screen.y ?? NaN)).toBeCloseTo(LIGHT_ART.candle.flame, 6);
   });
 
   it("мерехтіння свічки — детерміноване, у межах і живе", () => {

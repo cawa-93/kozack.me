@@ -16,7 +16,9 @@ import { DAYLIGHT } from "../../sim/config";
 import { objectById, type RoomId } from "../../sim/home";
 import { powerOut } from "../../sim/modifiers";
 import type { GameState, Vec } from "../../sim/types";
-import { BOILER, CANDLES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, SCONCES, type WallFace } from "../decor";
+import { LIGHT_ART } from "../art/manifest/a21-light";
+import type { ArtId } from "../art/types";
+import { BOILER, CANDLES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, SCONCES, type Candle, type WallFace } from "../decor";
 import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
@@ -71,6 +73,21 @@ function lifted(at: Vec, z: number): Point {
   return { x: p.x, y: p.y - z };
 }
 
+/**
+ * Звідки світить декор на екрані: точка `name` кадру `id` (абажур бра, індикатор бойлера, дисплей станції, полум'я свічки), коли
+ * pivot кадру стоїть у `pivot`, — там, де її намальовано (настінне світить не з лиця стіни, а з абажура на відстані від нього).
+ * Запису чи точки в маніфесті немає — запасний варіант: на висоті `z` просто над pivot (числа `decor.ts`).
+ */
+export function decorPoint(id: ArtId, name: string, pivot: Point, z: number): Point {
+  const offset = artOffset(id, name);
+  return offset ? { x: pivot.x + offset.x, y: pivot.y + offset.y } : { x: pivot.x, y: pivot.y - z };
+}
+
+/** Pivot кадру свічки на екрані: точка поверхні господаря під нею (`CANDLES`), так її ставить квартира (`iso/apartment.ts`). */
+export function candlePivot(candle: Candle): Point {
+  return lifted(candle.at, candle.z);
+}
+
 /** Точка кріплення речі квартири на екрані (`pan` плити, `screen` комп'ютера): перша, яка є в маніфесті. */
 function objectPoint(id: string, points: readonly string[]): Point {
   const object = objectById(id);
@@ -122,7 +139,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           kind: "sconce",
           room: sconce.room,
           at: sconceFloor(sconce.at, sconce.face),
-          screen: lifted(sconce.at, sconce.lamp),
+          screen: decorPoint(sconce.id, "lamp", ISO.toScreen(sconce.at), sconce.lamp),
           radius: SCONCE_LIGHT.floor.radius,
           color: SCONCE_LIGHT.color,
           strength,
@@ -140,7 +157,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           kind: "candle",
           room: null,
           at: candle.at,
-          screen: lifted(candle.at, candle.z + CANDLE_LIGHT.flame),
+          screen: decorPoint("env/candle", "flame", candlePivot(candle), LIGHT_ART.candle.flame),
           radius: CANDLE_LIGHT.radius,
           color: CANDLE_LIGHT.color,
           strength,
@@ -154,7 +171,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       kind: "station",
       room: "living",
       at: POWER_STATION.at,
-      screen: lifted(POWER_STATION.at, POWER_STATION.display),
+      screen: decorPoint("env/power-station", "display", ISO.toScreen(POWER_STATION.at), POWER_STATION.display),
       radius: STATION_LIGHT.radius,
       color: STATION_LIGHT.color,
       strength: 1,
@@ -165,7 +182,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       kind: "boiler",
       room: "bathroom",
       at: BOILER.at,
-      screen: lifted(BOILER.at, BOILER.led),
+      screen: decorPoint("env/boiler", "led", ISO.toScreen(BOILER.at), BOILER.led),
       radius: 0,
       color: BOILER_LIGHT.color,
       strength: 1,
