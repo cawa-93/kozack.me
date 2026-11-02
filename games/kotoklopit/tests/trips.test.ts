@@ -36,7 +36,7 @@ import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
 import { accidentBedtime, accidentCost, accidentHome, accidentOf, canLeave, crashSpeedFactor, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Difficulty, GameState, Save, TraitLevel } from "../src/sim/types";
-import { fill, GROOMED, VET_MANNER } from "../src/texts";
+import { ACCIDENT_TEXTS, accidentLines, fill, GROOMED, VET_MANNER } from "../src/texts";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(minute = 19 * 60): Save {
@@ -473,7 +473,7 @@ describe("аварія забирає години, а не день (§8.5, §5
     expect(loaded.current.minute).toBeCloseTo(home ?? -1);
   });
 
-  it("ремонт — за швидкістю: на ×6 — 120 ₴, а коли грошей менше — усе, що було", () => {
+  it("ремонт — за швидкістю: на ×6 — 120 ₴, а коли грошей менше — усе, що було; картка каже скільки", () => {
     for (const money of [1000, 100]) {
       let found = false;
       for (let seed = 1; seed < 40 && !found; seed++) {
@@ -487,6 +487,8 @@ describe("аварія забирає години, а не день (§8.5, §5
         found = true;
         expect(trip.repaired).toBe(Math.min(money, 120));
         expect(save.current.character.money).toBe(money - Math.min(money, 120));
+        const line = money >= 120 ? fill(ACCIDENT_TEXTS.repair, "she", { сума: 120 }) : fill(ACCIDENT_TEXTS.repairAll, "she", { сума: money });
+        expect(accidentLines(save.current)).toContain(line);
       }
       expect(found, `ремонт не випав (${money} ₴)`).toBe(true);
     }
@@ -660,6 +662,45 @@ describe("аварія забирає години, а не день (§8.5, §5
     expect(save.current.end).toBeNull();
     expect(save.current.trip).toBeNull();
     for (const value of Object.values(save.current.character.stats)) expect(value).toBeGreaterThanOrEqual(ACCIDENT.floor);
+  });
+
+  describe("картка аварії (TEXTS.md, «Аварія»)", () => {
+    const lines = (save: Save): string[] => {
+      const trip = save.current.trip;
+      if (trip) trip.losses = [];
+      const result = accidentLines(save.current);
+      for (const line of result) expect(line).not.toMatch(/[{}[\]|]/);
+      return result;
+    };
+    const hm = (text: string): string => text.replace(/ /g, "\u00a0");
+
+    it("день триває: скільки забрали документи й ремонт і о котрій персонаж удома", () => {
+      expect(lines(crashed(9 * 60, 1))).toEqual([fill(ACCIDENT_TEXTS.day, "she", { тривалість: hm("7 год 30 хв"), час: "о 16:30" }), ACCIDENT_TEXTS.none]);
+      // Перед одинадцятою — «об».
+      expect(lines(crashed(6 * 60, 0))[0]).toBe(fill(ACCIDENT_TEXTS.day, "she", { тривалість: hm("5 год"), час: "об 11:00" }));
+    });
+
+    it("години дійшли до часу сну — решта дня до нього й ніч; аварія вже після часу сну — лише ніч", () => {
+      expect(lines(crashed(19 * 60, 1))[0]).toBe(fill(ACCIDENT_TEXTS.night, "she", { тривалість: hm("3 год") }));
+      expect(lines(crashed(22 * 60 + 30, 1))[0]).toBe(ACCIDENT_TEXTS.late);
+    });
+
+    it("кіт у переносці: удень — «усі ці години», уночі — «до ночі»", () => {
+      const withCarrier = (minute: number): string[] => {
+        const save = saturday(minute);
+        const cat = withCat(save);
+        cat.name = "Мурка";
+        cat.sex = "female";
+        save.current.home.carrier = "cheap";
+        save.current.character.held = { kind: "cat", cat: cat.id };
+        expect(startTrip(save.current, "vet")).toBe(true);
+        crashAt(save, 1);
+        return lines(save);
+      };
+      expect(withCarrier(9 * 60)).toContain(fill(ACCIDENT_TEXTS.carrierDay, "female", { кіт: "Мурка" }));
+      expect(withCarrier(19 * 60)).toContain(fill(ACCIDENT_TEXTS.carrierNight, "female", { кіт: "Мурка" }));
+      expect(fill(ACCIDENT_TEXTS.carrierDay, "male", { кіт: "Барсик" })).toBe("Барсик усі ці години просидів у переносці.");
+    });
   });
 });
 

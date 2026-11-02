@@ -3,7 +3,9 @@
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
 import type { GuestsVisit } from "./sim/events";
-import type { Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
+import { formatClock } from "./sim/time";
+import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
+import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
 
 /**
  * Підставити значення й обрати форми: за статтю кота чи за звертанням до персонажа («він» — чоловіча форма, «вона» — жіноча;
@@ -645,6 +647,75 @@ export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
 
 /** Хвороби персонажа (§6.5). */
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };
+
+/**
+ * Картка аварії (§8.5, `TEXTS.md` «Аварія»). Аварія забирає години, а не день (рішення автора 2026-11-02): перший рядок каже,
+ * скільки забрали документи й ремонт і коли персонаж удома (`day`), — або що вже ніч: години дійшли до часу сну (`night`, решта
+ * дня до нього) чи аварія сталася вже після нього (`late`). `{тривалість}` — «7 год 30 хв», `{час}` — «о 17:00» (`atClock`).
+ * Далі — кожна втрата окремим рядком і кіт у переносці.
+ */
+export const ACCIDENT_TEXTS = {
+  day: "Сталася аварія. Документи й ремонт забрали {тривалість}, і додому вдалося потрапити лише {час}.",
+  night: "Сталася аварія. Документи й ремонт забрали решту дня, {тривалість}, і додому вдалося потрапити лише під ніч.",
+  late: "Сталася аварія, і документи довелося оформлювати аж до глибокої ночі.",
+  repair: "Ремонт машини: −{сума} ₴.",
+  /** Грошей на ремонт не вистачило (перевірка поїздок 2026-10-28: картка завжди казала «−60 ₴»). */
+  repairAll: "Ремонт машини: −{сума} ₴ — усе, що було.",
+  repairNone: "Ремонт машини: грошей на нього не було.",
+  // Втрата здоров'я — це ще й хвороба «Травма» (§6.5), а не лише забої (загальна ревізія 2026-10-29: картка казала «Легкі забої»).
+  health: "Травма. Варто показатися лікарю.",
+  sanity: "Нерви на межі.",
+  cat: "{кіт} у переносці страшенно [перелякався|перелякалася].",
+  none: "На щастя, без інших втрат.",
+  /** Кіт у переносці їде з персонажем, хоч би що він утратив (загальна ревізія 2026-10-29): удень — усі ці години, інакше — до ночі. */
+  carrierDay: "{кіт} усі ці години [просидів у|просиділа в] переносці.",
+  carrierNight: "{кіт} до ночі [просидів у|просиділа в] переносці.",
+} as const;
+
+/** «о 17:00», а перед голосним — «об 11:00» (як у «Ветеринар удома»). */
+export function atClock(minute: number): string {
+  const clock = formatClock(minute);
+  return `${clock.startsWith("11:") ? "об" : "о"} ${clock}`;
+}
+
+/**
+ * Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». Пробіли нерозривні:
+ * «1» і «год» не розходяться по рядках (рецензія хвилі 3: у вузькій колонці назви на телефоні рядок рвався між ними).
+ */
+export const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)}\u00a0год${m % 60 ? `\u00a0${m % 60}\u00a0хв` : ""}` : `${m}\u00a0хв`);
+
+/**
+ * Рядки картки аварії (§8.5, `ACCIDENT_TEXTS`): скільки забрали документи й ремонт і о котрій персонаж удома — а коли їхні години
+ * доходять до часу сну, решта дня до нього й ніч (рішення автора 2026-11-02); числа — ті самі, що перемотає `rewindAccident`. Далі
+ * кожна втрата: ремонт — скільки справді заплатили (грошей могло бути менше; перевірка поїздок 2026-10-28), переляканий кіт — той,
+ * що їхав у переносці (крок 17, вичитка 2026-10-28); і кіт у переносці, хоч би що він утратив (загальна ревізія 2026-10-29).
+ */
+export function accidentLines(state: GameState): string[] {
+  const accident = accidentOf(state);
+  const trip = state.trip;
+  if (!accident || !trip) return [];
+  const address = state.character.address;
+  const home = accidentHome(state);
+  const left = Math.round(accidentBedtime(state) - state.minute);
+  const first =
+    home !== null
+      ? fill(ACCIDENT_TEXTS.day, address, { тривалість: minutesText(accident.minutes), час: atClock(home) })
+      : left > 0
+        ? fill(ACCIDENT_TEXTS.night, address, { тривалість: minutesText(left) })
+        : ACCIDENT_TEXTS.late;
+  const cat = state.cats.find((c) => c.id === trip.cat);
+  const loss = (kind: AccidentLoss): string => {
+    if (kind === "cat") return fill(ACCIDENT_TEXTS.cat, cat?.sex ?? "male", { кіт: cat?.name ?? "Кіт" });
+    if (kind !== "repair") return ACCIDENT_TEXTS[kind];
+    // У старих збереженнях скільки заплатили немає — тоді всю ціну.
+    const paid = trip.repaired ?? accident.repair;
+    const shown = Math.floor(paid);
+    if (paid >= accident.repair) return fill(ACCIDENT_TEXTS.repair, address, { сума: shown });
+    return shown > 0 ? fill(ACCIDENT_TEXTS.repairAll, address, { сума: shown }) : ACCIDENT_TEXTS.repairNone;
+  };
+  const carrier = home !== null ? ACCIDENT_TEXTS.carrierDay : ACCIDENT_TEXTS.carrierNight;
+  return [first, ...(trip.losses.length > 0 ? trip.losses.map(loss) : [ACCIDENT_TEXTS.none]), ...(cat ? [fill(carrier, cat.sex, { кіт: cat.name })] : [])];
+}
 
 /**
  * Повідомлення дня «Мамині гостинці» (§4.1, рішення автора 2026-10-26): мама заходила й поставила судочки в холодильник

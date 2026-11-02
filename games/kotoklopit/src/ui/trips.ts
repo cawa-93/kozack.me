@@ -1,13 +1,13 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { ACCIDENT, DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { roadMinutes, tripBlocker } from "../sim/trips";
-import type { AccidentLoss, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
+import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { BREED_ABOUT, diseaseTitle, fill, GROOMED, ILLNESS_TITLES, VET_ADVICE, VET_MANNER } from "../texts";
+import { accidentLines, BREED_ABOUT, diseaseTitle, fill, GROOMED, ILLNESS_TITLES, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -17,12 +17,6 @@ import { traitChips } from "./traits";
 
 /** Невдале дешеве лікування цієї поїздки не повторюють — ні у ветеринара, ні в лікаря (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6). */
 const NO_RETRY = "не допомогло — повторно лише наступного разу";
-
-/**
- * Тривалість у написах карток — з config, а не текстом (загальна ревізія 2026-10-29): 90 — «1 год 30 хв». Пробіли нерозривні:
- * «1» і «год» не розходяться по рядках (рецензія хвилі 3: у вузькій колонці назви на телефоні рядок рвався між ними).
- */
-const minutesText = (m: number): string => (m >= 60 ? `${Math.floor(m / 60)}\u00a0год${m % 60 ? `\u00a0${m % 60}\u00a0хв` : ""}` : `${m}\u00a0хв`);
 
 /**
  * Ціна на кнопці: число й «₴» нерозривно, а з назвою послуги — «Звичайне лікування · 30 ₴»: якщо не вміщується, рядок
@@ -89,42 +83,15 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   };
 }
 
-const CARRIER_TILL_NIGHT = "{кіт} до ночі [просидів|просиділа] в переносці.";
-
-const LOSS_TEXTS: Record<AccidentLoss, string> = {
-  repair: `Ремонт машини: −${ACCIDENT.repair} ₴.`,
-  // Втрата здоров'я — це ще й хвороба «Травма» (§6.5), а не лише забої (загальна ревізія 2026-10-29: картка казала «Легкі забої»).
-  health: "Травма. Варто показатися лікарю.",
-  sanity: "Нерви на межі.",
-  cat: "{кіт} у переносці страшенно [перелякався|перелякалася].",
-};
-
-/** Ремонт: скільки справді заплатили — грошей могло бути менше (перевірка поїздок 2026-10-28: картка завжди казала «−60 ₴»). */
-function repairText(paid: number = ACCIDENT.repair): string {
-  if (paid >= ACCIDENT.repair) return LOSS_TEXTS.repair;
-  const shown = Math.floor(paid);
-  return shown > 0 ? `Ремонт машини: −${shown} ₴ — усе, що було.` : "Ремонт машини: грошей на нього не було.";
-}
-
-/** Втрата аварії: ремонт — скільки заплатили, переляканий кіт — той, що їхав у переносці (крок 17, вичитка 2026-10-28). */
-function lossText(state: GameState, loss: AccidentLoss): string {
-  if (loss === "repair") return repairText(state.trip?.repaired);
-  const cat = state.cats.find((c) => c.id === state.trip?.cat);
-  return loss === "cat" ? fill(LOSS_TEXTS.cat, cat?.sex ?? "male", { кіт: cat?.name ?? "Кіт" }) : LOSS_TEXTS[loss];
-}
-
+/**
+ * Картка аварії (§8.5): скільки забрали документи й ремонт і коли персонаж удома чи що вже ніч (рішення автора 2026-11-02), втрати
+ * й кіт у переносці — рядки `accidentLines` (`src/texts.ts`, щоб їх перевіряли тести без сцен).
+ */
 export function accidentCard(state: GameState, onClose: () => void): Card {
-  const losses = state.trip?.losses ?? [];
-  // Кіт у переносці їде з персонажем до ночі, хоч би що він утратив (загальна ревізія 2026-10-29: картка про це мовчала).
-  const cat = state.cats.find((c) => c.id === state.trip?.cat);
   return {
     kicker: "Аварія",
     title: "Бам!",
-    body: [
-      "Сталася аварія. Решту дня довелося оформлювати документи, і додому вдалося потрапити лише під ніч.",
-      ...(losses.length > 0 ? losses.map((l) => lossText(state, l)) : ["На щастя, без інших втрат."]),
-      ...(cat ? [fill(CARRIER_TILL_NIGHT, cat.sex, { кіт: cat.name })] : []),
-    ],
+    body: accidentLines(state),
     actions: [{ label: "Додому", primary: true, onSelect: onClose }],
   };
 }
