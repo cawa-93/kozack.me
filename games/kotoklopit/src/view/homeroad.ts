@@ -73,7 +73,7 @@ export interface HomeRoadFrame {
   camera: number;
   /** Своя машина: y середини на екрані (носом донизу, у смузі `HOME_ROAD.lane`); поза кадром — вище чи нижче за нього. */
   car: number;
-  /** Попутні машини, що в кадрі (з запасом на довжину машини). */
+  /** Попутні машини, що в кадрі (з запасом на довжину машини й `margin`). */
   traffic: HomeRoadCar[];
   /** Темрява поверх дороги: 0 — немає, 1 — чорний екран. */
   dark: number;
@@ -91,9 +91,10 @@ export function carReach(height: number): number {
 /**
  * Кадр дороги додому через `ms` мс від початку катсцени на полотні заввишки `height` (одиниці інтерфейсу). Своя машина їде
  * рівно: між `enter` і `exit` вона проходить увесь кадр і ще свою довжину, тож на екрані з'являється згори, а зникає знизу; до
- * і після — за краями.
+ * і після — за краями. `margin` (px) — запас відсікання попутних машин понад їхню довжину: уночі машина за верхнім краєм ще
+ * світить фарами донизу, у кадр (`LIGHT_REACH`, `src/view/racelight.ts`); удень — 0.
  */
-export function homeRoadFrame(ms: number, height: number): HomeRoadFrame {
+export function homeRoadFrame(ms: number, height: number, margin = 0): HomeRoadFrame {
   const time = Math.max(0, ms);
   const seconds = time / 1000;
   const reach = carReach(height);
@@ -105,7 +106,7 @@ export function homeRoadFrame(ms: number, height: number): HomeRoadFrame {
   const traffic: HomeRoadCar[] = [];
   TRAFFIC.forEach((spot, i) => {
     const y = spot.y * height - lag;
-    if (y > top && y < bottom) traffic.push({ lane: spot.lane, y, look: trafficLook({ start: i }) });
+    if (y > top - margin && y < bottom + margin) traffic.push({ lane: spot.lane, y, look: trafficLook({ start: i }) });
   });
   const dark = Math.max(clamp01(1 - time / HOME_ROAD.fadeIn), clamp01((time - (HOME_ROAD.ms - HOME_ROAD.fadeOut)) / HOME_ROAD.fadeOut));
   return { camera, car, traffic, dark, done: time >= HOME_ROAD.ms };
