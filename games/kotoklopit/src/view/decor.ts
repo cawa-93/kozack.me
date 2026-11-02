@@ -94,8 +94,11 @@ export const CANDLES: readonly Candle[] = [
   { host: "counter-right", at: { x: 16.42, y: 1.3 }, z: 62 },
   { host: "sink", at: { x: 11.22, y: 1.25 }, z: 70 },
   { host: "computer", at: { x: 7.84, y: 6.18 }, z: 54 },
-  { host: "sill-living", at: { x: 1.14, y: 8.43 }, z: 70 },
-  { host: "sill-bedroom", at: { x: 4.17, y: 1.14 }, z: 70 },
+  // Підвіконня — на кінцях дошок, не там, де сидить кіт (`WINDOWS[].seat` і `seat` кадру — посередині дошки): у вітальні —
+  // на ближньому кінці (на дальньому — кактус), у спальні — на лівому (дальшому від камери: кіт перед свічкою; плед —
+  // з x ≈ 4,23).
+  { host: "sill-living", at: { x: 1.14, y: 8.875 }, z: 70 },
+  { host: "sill-bedroom", at: { x: 4.13, y: 1.14 }, z: 70 },
 ];
 
 /**

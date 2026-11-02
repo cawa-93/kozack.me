@@ -1,14 +1,17 @@
 // Вигляд декору квартири (`src/view/iso/decorlook.ts`; §8.9 «День і ніч», §4.1 «Планове відключення», рішення автора
 // 2026-11-02): бра горять із лампами, бойлер гріє, поки є електрика, а зарядна станція й свічки стоять лише в день
-// відключення — свічки горять у темний час замість ламп.
+// відключення — свічки горять у темний час замість ламп; свічки на підвіконнях — не там, де сидить кіт.
 
 import { describe, expect, it } from "vitest";
 
 import { DAYLIGHT } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
-import type { GameState } from "../src/sim/types";
+import { WINDOWS } from "../src/sim/home";
+import type { GameState, Vec } from "../src/sim/types";
+import { CANDLES } from "../src/view/decor";
 import { decorLook, type DecorLook } from "../src/view/iso/decorlook";
 import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
+import { isoCatPerch } from "../src/view/world/objects";
 
 const state = (outage: boolean): GameState => {
   const save = newGame({ address: "she", difficulty: "normal", seed: 14 });
@@ -64,3 +67,22 @@ describe("вигляд декору (decorlook.ts)", () => {
     expect(out).toEqual({ sconce: "off", boiler: "off", station: true, candles: "lit" });
   });
 });
+
+describe("свічки дня відключення (decor.ts, §4.1)", () => {
+  /** Не ближче за це (клітинки) до місця, де сидить кіт: інакше кіт сидить на свічці. */
+  const AWAY = 0.35;
+
+  it("на підвіконнях — на кінцях дошок, не там, де сидить кіт (WINDOWS[].seat і місце кота на дошці, isoCatPerch)", () => {
+    const sills = CANDLES.filter((candle) => WINDOWS.some((w) => w.sill === candle.host));
+    expect(sills.map((c) => c.host).sort()).toEqual(WINDOWS.map((w) => w.sill).sort());
+    for (const candle of CANDLES) {
+      const seats: Vec[] = WINDOWS.filter((w) => w.sill === candle.host).map((w) => w.seat);
+      // Де кота на цій речі малює ізометричний вигляд (на підвіконні — посередині дошки біля вікна, не в точці сима).
+      for (const seat of [...seats]) seats.push(isoCatPerch(candle.host, seat, false).at);
+      for (const seat of seats) {
+        expect(Math.hypot(candle.at.x - seat.x, candle.at.y - seat.y), `${candle.host}: свічка біля (${seat.x}; ${seat.y})`).toBeGreaterThanOrEqual(AWAY);
+      }
+    }
+  });
+});
+
