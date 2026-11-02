@@ -7,14 +7,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { PRODUCTS, THOUGHTS } from "../src/sim/config";
+import { PRODUCTS, THINGS, THOUGHTS } from "../src/sim/config";
 import type { GameEvent, Refusal } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, CatAct, Dish, Item, Product, Save, StatName } from "../src/sim/types";
+import type { Cat, CatAct, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, eventBubbles, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon } from "../src/view/symbols";
+import { catAsk, eventBubbles, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -29,6 +29,7 @@ interface Shown {
 const keyOf = (shown: Shown): string => `${shown.icon}|${shown.count === undefined ? "" : shown.count === 0 ? "0" : "N"}|${shown.mark ?? ""}`;
 
 const PRODUCT_LIST = Object.keys(PRODUCTS) as Product[];
+const THING_LIST = Object.keys(THINGS) as ThingKind[];
 const STATS: StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
 function itemLabel(item: Item): string {
@@ -144,6 +145,8 @@ function collectCases(): Map<string, Shown[]> {
     if (stove) add(`stove:${id}`, { icon: stove });
     add(`table:${id}`, { icon: itemIcon(dish) });
   }
+  // Речі магазину (§11.4 «Іконка біля назви», рішення автора 2026-11-02): іконка біля назви речі — як `THING_ICONS`.
+  for (const thing of THING_LIST) add(`thing:${thing}`, { icon: THING_ICONS[thing] });
   // Бабли стану над речами, котами й персонажем.
   for (const [name, value] of Object.entries(STATE_ICONS)) {
     if (typeof value === "string") add(`state:${name}`, { icon: value });
@@ -186,6 +189,15 @@ for (const [product, extra] of Object.entries(ALSO)) {
     group.why += `; ${extra.why}`;
   }
 }
+/**
+ * Речі магазину з наявною іконкою (§11.4 «Іконка біля назви»): біля назви — та сама іконка, що в баблі про цю річ, щоб гравець
+ * вивчив, що бабл каже саме про неї. Решта речей — свої іконки, без груп.
+ */
+Object.assign(SAME, {
+  іграшка: { why: "кіт хоче гратися саме вудочкою: думка показує ту саму іграшку, що біля назви в магазині", ids: ["thought:cat:play", "thing:toy"] },
+  "замок на шафку": { why: "кіт смикає шафку, а брязкає той самий замок, що біля назви в магазині", ids: ["event:cabinet-pawed:opened=false", "thing:lock"] },
+  автогодівниця: { why: "корм у миску досипає автогодівниця — на іконці вона сама над мискою; та сама річ, що біля назви в магазині", ids: ["event:feeder", "thing:feeder"] },
+});
 Object.assign(SAME, {
   страва: { why: "готова страва на плиті й на столі — одна річ", ids: ["stove:meal", "table:meal"] },
   крадіжка: { why: "кіт вкрав і хрумтить вашу їжу — хоч готову страву з плити, хоч сиру порцію зі столу: та сама втрата", ids: ["event:stole:object=stove:item=meal", "event:stole:object=table:item=raw"] },
@@ -253,6 +265,17 @@ describe("унікальна іконка на унікальний кейс (§
 
   it("кожен випадок із груп справді є в грі — перелік не застаріває", () => {
     for (const [name, group] of Object.entries(SAME)) for (const id of group.ids) expect(cases.has(id), `${name}: ${id}`).toBe(true);
+  });
+
+  it("річ магазину — сама річ, а не стан чи потреба (§11.4 «Іконка біля назви»)", () => {
+    const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
+    for (const thing of THING_LIST) expect(cases.has(`thing:${thing}`), thing).toBe(true);
+    // Миска для корму — не корм, миска для води — не спрага й не порожня поїлка, лоток — не наповнювач і не брудний лоток.
+    expect(icon("thing:bowl")).not.toBe(icon("supply:catFood"));
+    expect(icon("thing:water")).not.toBe(icon("thought:cat:thirst"));
+    expect(icon("thing:water")).not.toBe(icon("state:waterEmpty"));
+    expect(icon("thing:litter")).not.toBe(icon("supply:litter"));
+    expect(icon("thing:litter")).not.toBe(icon("state:litterDirty"));
   });
 
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {

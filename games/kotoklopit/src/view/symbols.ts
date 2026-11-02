@@ -2,7 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
-import type { Cat, Dish, GameState, Item, Product, StatName } from "../sim/types";
+import type { Cat, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
@@ -21,6 +21,28 @@ export const PRODUCT_ICONS: Record<Product, IconName> = {
   detergent: "detergent",
   catnip: "catnip",
   momMeal: "mom-meal",
+};
+
+/**
+ * Іконка кожної речі магазину (§11.4 «Іконка біля назви», рішення автора 2026-11-02): стоїть біля назви речі в магазині
+ * (у телефоні й у поїздці, §6.4), щоб гравець вивчав мову іконок. Сама річ, як у грі (`item/<річ>/*`), а не стан чи потреба:
+ * миска для корму — не корм (`kibble`), миска для води — не спрага (`drink`) і не порожня поїлка (`thirst`), лоток — не
+ * наповнювач (`litter`) і не брудний лоток (`dirty`). Іграшка, замок і автогодівниця — ті самі іконки, що в баблах про них:
+ * кіт хоче гратися саме вудочкою (`toy`), брязкає саме цей замок (`lock`), досипає корм саме автогодівниця (`kibble-pour`,
+ * на малюнку — вона сама над мискою); групи одного значення — `tests/icons-unique.test.ts`.
+ */
+export const THING_ICONS: Record<ThingKind, IconName> = {
+  bowl: "food-bowl",
+  water: "water-bowl",
+  litter: "litter-box",
+  toy: "toy",
+  house: "cat-house",
+  scratcher: "scratcher",
+  carrier: "carrier",
+  feeder: "kibble-pour",
+  fountain: "fountain",
+  robot: "robot-vacuum",
+  lock: "lock",
 };
 
 /**
