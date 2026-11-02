@@ -7,10 +7,14 @@ import { describe, expect, it } from "vitest";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { tickStove } from "../src/sim/actions";
 import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { createCat } from "../src/sim/cat";
 import { supplyCount } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
 import { advance, interact, newGame } from "../src/sim/game";
+import { tapWasher, tickHousehold } from "../src/sim/household";
 import { powerOut } from "../src/sim/modifiers";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import type { Save, StatName } from "../src/sim/types";
 import { isWorking, patienceLevel, standupToday, startWork, tickWork } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
@@ -236,5 +240,66 @@ describe("«Планове відключення» — день без світ
     stop();
     expect(isWorking(save.current)).toBe(true);
     expect(save.current.character.money).toBeGreaterThan(money);
+  });
+});
+
+describe("«Планове відключення» — день без світла: техніка (§4.1, §8.7, рішення автора 2026-11-02)", () => {
+  /** Відмова біля речі: що каже персонаж. */
+  const refusalAt = (save: Save, id: string): GameEvent | undefined => {
+    standAt(save, id);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    return events.find((e) => e.type === "refused");
+  };
+
+  it("пральна машина не працює — своя відмова «немає світла»: засіб лишається, машина не запускається", () => {
+    const save = game("outage");
+    save.current.home.clothes = 0;
+    save.current.home.supplies.detergent = { cheap: 2, premium: 0 };
+    expect(refusalAt(save, "washer")).toMatchObject({ object: "washer", reason: "no-power" });
+    expect(save.current.home.washer.state).toBe("idle");
+    expect(supplyCount(save.current, "detergent")).toBe(2);
+    expect(tapWasher(save.current)).toBe("no-power");
+    // Звичайного дня — пере.
+    const normal = game(null);
+    normal.current.home.clothes = 0;
+    normal.current.home.supplies.detergent = { cheap: 2, premium: 0 };
+    expect(tapWasher(normal.current)).toBe("started");
+  });
+
+  it("без струму можна розвісити випране й вигнати кота з барабана; «немає світла» — лише замість запуску прання", () => {
+    const save = game("outage");
+    save.current.home.clothes = 0;
+    save.current.home.washer = { state: "done", minutes: 0, quality: "cheap" };
+    expect(tapWasher(save.current)).toBe("hung");
+    expect(save.current.home.clothes).toBeGreaterThan(0);
+    save.current.home.clothes = 0;
+    save.current.home.supplies.detergent = { cheap: 1, premium: 0 };
+    const cat = createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 3, at: { x: 10.5, y: 1.5 } });
+    cat.arrivedDay = -10;
+    addCat(save.current, cat);
+    cat.act = { kind: "sleep", target: null, goal: null, minutes: 300, elapsed: 0 };
+    expect(tapWasher(save.current)).toBe("cat");
+    expect(tapWasher(save.current)).toBe("no-power");
+    // Чистого одягу досить — без світла відмова та сама: машина однаково не працює.
+    save.current.home.clothes = 30;
+    expect(tapWasher(save.current)).toBe("no-power");
+  });
+
+  it("прання, запущене до відключення, стоїть на паузі й допирається, щойно світло є (рішення виконавця 2026-11-02); біля неї — «немає світла», а не «ще пере»", () => {
+    const save = game("outage");
+    save.current.home.washer = { state: "washing", minutes: 30, quality: "cheap" };
+    const { events, stop } = recordEvents();
+    for (let m = 11 * 60; m < 13 * 60; m++) tickHousehold(save.current, m, 1);
+    stop();
+    expect(save.current.home.washer).toEqual({ state: "washing", minutes: 30, quality: "cheap" });
+    // Без струму й віджиму немає — машина не гуркоче й не лякає котів.
+    expect(events.some((e) => e.type === "laundry")).toBe(false);
+    expect(refusalAt(save, "washer")).toMatchObject({ reason: "no-power" });
+    save.current.modifiers.day = null;
+    expect(refusalAt(save, "washer")).toMatchObject({ reason: "washing" });
+    for (let m = 13 * 60; m < 13 * 60 + 31; m++) tickHousehold(save.current, m, 1);
+    expect(save.current.home.washer.state).toBe("done");
   });
 });

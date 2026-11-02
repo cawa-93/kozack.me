@@ -32,6 +32,8 @@ export const REFUSALS: Refusal[] = [
   { reason: "too-early" },
   { reason: "washing" },
   { reason: "cat-on-computer" },
+  // Немає світла: пральна машина в день «Планового відключення» (§4.1, рішення автора 2026-11-02).
+  { reason: "no-power" },
   { reason: "no-packages" },
   { reason: "healthy" },
   { reason: "dose-taken" },

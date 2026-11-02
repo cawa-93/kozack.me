@@ -742,7 +742,9 @@ export class DayScene extends Phaser.Scene {
     set("table", onTable !== null && state.character.activity === null && canUse(state, { type: "object", id: "table", object: table }) && target?.id !== "table" ? itemIcon(onTable) : null);
     // Побут (§8.7): пральна машина пере чи чекає, щоб випране розвісили; одяг скінчився.
     const washer = state.home.washer.state;
-    set("washer", washer === "washing" ? STATE_ICONS.washer.washing : washer === "done" ? STATE_ICONS.washer.done : null);
+    // Прання, запущене до відключення, без світла стоїть (§4.1): над машиною — «немає світла», а не «пере».
+    const washing = powerOut(state) ? STATE_ICONS.washer.noPower : STATE_ICONS.washer.washing;
+    set("washer", washer === "washing" ? washing : washer === "done" ? STATE_ICONS.washer.done : null);
 
     // Котячий куток: без води, брудний лоток. Порожню миску показує кіт, що просить їсти.
     for (const thing of state.home.items) {

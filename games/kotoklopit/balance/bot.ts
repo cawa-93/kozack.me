@@ -22,6 +22,7 @@ import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf, standupToday } from "../src/sim/work";
+import { powerOut } from "../src/sim/modifiers";
 import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
 /** Скільки ігрових хвилин один крок ходьби. */
@@ -203,9 +204,10 @@ export class Bot {
       return named("cook", () => this.cook());
     }
     if (ch.stats.hygiene < 45) return named("shower", () => this.shower());
-    // Побут (§8.7): випране — розвісити, одяг закінчується — прати, шерсті багато — пилососити.
+    // Побут (§8.7): випране — розвісити, одяг закінчується — прати, шерсті багато — пилососити. Без світла пральна машина не
+    // працює (§4.1, рішення автора 2026-11-02): розвісити можна, а прати — ні, інакше бот увесь день ходив би до неї по відмову.
     const washer = s.home.washer.state;
-    if (washer === "done" || (washer === "idle" && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {
+    if (washer === "done" || (washer === "idle" && !powerOut(s) && s.home.clothes <= 1 && supplyCount(s, "detergent") > 0 && !this.skipped("washer"))) {
       return named("laundry", () => this.use("washer"));
     }
     // Жмути шерсті чи пил на підлозі дратують, як безлад (А17; §8.7, рішення автора 2026-11-02): пилососити одразу; пил у кутах і

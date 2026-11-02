@@ -7,7 +7,7 @@ import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
-import { hygieneFactorMod } from "./modifiers";
+import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
@@ -109,11 +109,13 @@ export function catInWasher(state: GameState): Cat | null {
 
 /**
  * Дія біля пральної машини (§8.7): спершу вигнати кота з барабана, потім запустити прання з пральним
- * засобом, а випране — розвісити. Повертає, що сталося, або причину відмови.
+ * засобом, а випране — розвісити. Повертає, що сталося, або причину відмови. Без світла («Планове відключення», §4.1, рішення
+ * автора 2026-11-02) машина не працює: розвісити випране й вигнати кота можна — для цього струм не потрібен, — а запустити прання
+ * ні; прання, запущене до відключення, стоїть, і машина каже саме це, а не «ще пере».
  */
-export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty" | "busy" | "clean" {
+export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty" | "busy" | "clean" | "no-power" {
   const washer = state.home.washer;
-  if (washer.state === "washing") return "busy";
+  if (washer.state === "washing") return powerOut(state) ? "no-power" : "busy";
   if (washer.state === "done") {
     // Чистого одягу — не менше, ніж було: прання з повною шафою не зменшує запасу (перевірка побуту 2026-10-28).
     state.home.clothes = Math.max(state.home.clothes, HOUSEHOLD.clothesDays[washer.quality]);
@@ -130,6 +132,8 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
     emit(state, { type: "laundry", stage: "cat", cat: cat.id });
     return "cat";
   }
+  // Без світла не запустити: ні засіб, ні чистий одяг тут уже нічого не змінюють (§4.1).
+  if (powerOut(state)) return "no-power";
   // Чистого одягу вже не менше, ніж дасть засіб, що візьметься першим (спершу дорожчий): прання нічого не додасть — машина не
   // запускається, засіб лишається, як і в душі на межі (§8.7; загальна ревізія 2026-10-29: засіб витрачався, а гучний віджим
   // даремно лякав і будив котів).
@@ -347,7 +351,10 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(FUR_MAX, home.fur + furPerHour(state, cat) * hours);
   topUpTufts(state);
   tickDust(state, minutes);
-  if (home.washer.state === "washing") {
+  // Без світла прання, запущене до відключення, стоїть на паузі й допереться, щойно світло буде (§4.1; рішення виконавця
+  // 2026-11-02: не губить засіб і не дає випраного без струму; буває лише в старому збереженні чи з панелі розробки — запустити
+  // прання в день відключення не можна, а вчорашнє допирається вночі).
+  if (home.washer.state === "washing" && !powerOut(state)) {
     const before = home.washer.minutes;
     home.washer.minutes -= minutes;
     // Віджим — останні хвилини прання: машина гуркоче на всю ванну (§9.12).

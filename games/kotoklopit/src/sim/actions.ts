@@ -337,6 +337,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       const result = tapWasher(state);
       if (result === "empty") return refuse(state, target.id, { reason: "empty", product: "detergent" });
       if (result === "busy") return refuse(state, target.id, "washing");
+      // Без світла пральна машина не працює (§4.1, рішення автора 2026-11-02).
+      if (result === "no-power") return refuse(state, target.id, "no-power");
       if (result === "clean") return refuse(state, target.id, "clothes-clean");
       return null;
     }

@@ -99,8 +99,11 @@ export const STATE_ICONS = {
   coldShower: "cold-water",
   /** Під дверима: кіт на сходах нявчить (його не видно) — важливіший за пакунок. */
   door: { stairs: "meow", porch: "box" },
-  /** Пральна машина пере чи чекає, щоб випране розвісили (§8.7). */
-  washer: { washing: "washer", done: "washed" },
+  /**
+   * Пральна машина пере чи чекає, щоб випране розвісили (§8.7); прання, запущене до відключення, стоїть без світла — машина каже
+   * «немає світла», як і у відмові (§4.1, рішення автора 2026-11-02).
+   */
+  washer: { washing: "washer", done: "washed", noPower: "no-power" },
   /** Порожня миска для води — стан речі, не спрага кота. */
   waterEmpty: "thirst",
   /** Брудний лоток. */
@@ -209,6 +212,10 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "washer" };
     case "cat-on-computer":
       return { icon: "cat-laptop" };
+    // Немає світла (§4.1, рішення автора 2026-11-02): пральна машина не працює — своя іконка, не перегризений дріт (`wire`), не
+    // розряджена батарейка «без сил» (`battery-low`) і не «машина ще пере» (`washer`).
+    case "no-power":
+      return { icon: "no-power" };
     case "no-packages":
       return { icon: "box", count: 0 };
     case "healthy":
