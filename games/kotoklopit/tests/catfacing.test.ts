@@ -623,6 +623,30 @@ describe("юрба (`catCrowds`)", () => {
     expect(memory.slots.size).toBe(0);
   });
 
+  it("персонаж стоїть не в центрі клітинки, а коти прийшли в її центр — обабіч нього, і жоден не в смузі його ніг", () => {
+    // Ступив праворуч угору (6,03; 7,30), а троє — у центрі клітинки (5,5; 7,5): ≈ 47 ліворуч від нього на екрані. І стоїть
+    // ліворуч угорі своєї клітинки (4,9; 8,1), коти — у центрі (4,5; 8,5): ≈ 51 ліворуч.
+    for (const [person, at] of [
+      [{ x: 6.03, y: 7.3 }, { x: 5.5, y: 7.5 }],
+      [{ x: 4.9, y: 8.1 }, { x: 4.5, y: 8.5 }],
+    ] as const) {
+      const three = [1, 2, 3].map((id) => member(id, at, true));
+      const xs = [...sides(three, catCrowds(three, person, free, new Map()), person).values()];
+      // Стояли ліворуч від нього — ліворуч і лишаються (крізь персонажа не перебігають), рядком від `beside`.
+      expect(xs.sort((a, b) => b - a)).toEqual([-CROWD.beside, -CROWD.beside - CROWD.step, -CROWD.beside - 2 * CROWD.step].map((x) => expect.closeTo(x, 6)));
+      for (const x of xs) expect(Math.abs(x)).toBeGreaterThanOrEqual(CROWD.beside - 1e-6);
+    }
+    // Будь-де в клітинці персонажа кіт у її центрі — біля його ніг.
+    for (const dx of [-0.49, 0, 0.49]) {
+      for (const dy of [-0.49, 0, 0.49]) {
+        const person = { x: 4.5 + dx, y: 8.5 + dy };
+        const cat = member(1, { x: 4.5, y: 8.5 }, true);
+        const x = placed(cat, catCrowds([cat], person, free, new Map())).x - isoScreenDir(person).x;
+        expect(Math.abs(x), `персонаж ${person.x}, ${person.y}`).toBeCloseTo(CROWD.beside, 6);
+      }
+    }
+  });
+
   it("один біля ніг персонажа — збоку від нього, з того боку, де стоїть; далеко від нього — на місці", () => {
     const person = { x: 5.5, y: 5.5 };
     const left = member(1, { x: 5.45, y: 5.55 }, true);
