@@ -4,6 +4,7 @@
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
 import type { Cat, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
+import type { DiseaseId, IllnessId } from "../sim/types";
 
 /** Іконка кожного запасу: над сховищем, над персонажем і в ящиках (§6.4). */
 export const PRODUCT_ICONS: Record<Product, IconName> = {
@@ -188,14 +189,15 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "wire" };
     case "cat-bored":
       return { icon: "bored" };
-    // Ривка немає (загальна ревізія 2026-10-29): застуджений — градусник, без сил — розряджена батарейка.
+    // Ривка немає (загальна ревізія 2026-10-29): застуджений — градусник, без сил — розряджена батарейка. Іконка хвороби — та
+    // сама, що біля її назви в лікаря (`ILLNESS_ICONS`, §11.4 «Іконка біля назви»).
     case "cold":
-      return { icon: "thermometer" };
+      return { icon: ILLNESS_ICONS.cold };
     case "weak":
-      return { icon: "battery-low" };
+      return { icon: ILLNESS_ICONS.exhaustion };
     // Травмований (§6.5; рішення автора 2026-10-29, дрібні питання) — пластир навскіс (A11b), не градусник застуди.
     case "injured":
-      return { icon: "bandage" };
+      return { icon: ILLNESS_ICONS.injury };
     // Чистого одягу досить (§8.7, загальна ревізія 2026-10-29): стос складених сорочок із галочкою — не брудна сорочка
     // («Чистюля»), не мокра (прання готове) і не «повне сховище».
     case "clothes-clean":
@@ -272,9 +274,12 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
     case "cat-dodged":
       // Чистюля не йде на руки в брудному одязі — його думка.
       return [{ kind: "think", at: cat(event.cat), icon: "laundry" }];
-    case "symptom":
-      // Чхання й крик болю чути, а свербіж і очі кіт відчуває.
-      return [event.symptom === "sneeze" || event.symptom === "pain" ? { kind: "say", at: cat(event.cat), icon: event.symptom } : { kind: "think", at: cat(event.cat), icon: event.symptom }];
+    case "symptom": {
+      // Чхання й крик болю чути, а свербіж і очі кіт відчуває. Іконка — хвороби, про яку кіт так сигналізує: та сама, що біля
+      // її назви у ветеринара (`DISEASE_ICONS`, §11.4 «Іконка біля назви»).
+      const icon = DISEASE_ICONS[SYMPTOM_DISEASE[event.symptom]];
+      return [event.symptom === "sneeze" || event.symptom === "pain" ? { kind: "say", at: cat(event.cat), icon } : { kind: "think", at: cat(event.cat), icon }];
+    }
     case "medicine-spat":
       // Кіт випльовує таблетку чи струшує краплі (§9.5, Х3): це видно й чути — уголос над котом.
       return [{ kind: "say", at: cat(event.cat), icon: event.medicine === "pills" ? "spit-pill" : "spit-drops" }];
@@ -407,3 +412,48 @@ export function eventBubbles(event: GameEvent): EventBubble[] {
       return [];
   }
 }
+
+/**
+ * Іконка біля назви хвороби кота в картці ветеринара (§11.4 «Іконка біля назви», рішення автора 2026-11-02; §8.5): картка вчить
+ * мови баблів, тож іконка — та сама, що в баблі, яким кіт про хворобу сигналізує (подія `symptom`, бабл бере іконку звідси):
+ * застуда — чхання, кон'юнктивіт — очі, сечокам'яна — крик болю, блохи й дерматит — «свербить» (обидві кіт показує однаково —
+ * рішення автора 2026-10-27, §9.5: «свербить» — це блохи чи дерматит). Травма — пластир, як у травмованого персонажа
+ * (`ILLNESS_ICONS`). Про решту кіт баблом не сигналізує: кожна має свою іконку, і її видно лише в картці.
+ */
+export const DISEASE_ICONS: Record<DiseaseId, IconName> = {
+  cold: "sneeze",
+  fleas: "itch",
+  worms: "worms",
+  stomach: "stomach",
+  injury: "bandage",
+  cystitis: "urine",
+  conjunctivitis: "eyes",
+  urolithiasis: "pain",
+  dermatitis: "itch",
+  obesity: "obese",
+  heart: "cardio",
+  joints: "joints",
+  spine: "spine",
+  breathing: "lungs",
+  gingivitis: "gums",
+};
+
+/**
+ * Іконка біля назви хвороби персонажа в лікаря (§11.4 «Іконка біля назви», §6.5): та сама, що в його відмові ривка
+ * (`refusalBubble` бере її звідси): застуда — градусник, виснаження — розряджена батарейка, травма — пластир.
+ */
+export const ILLNESS_ICONS: Record<IllnessId, IconName> = {
+  cold: "thermometer",
+  exhaustion: "battery-low",
+  injury: "bandage",
+};
+
+/** Ознака хвороби, яку кіт показує баблом (подія `symptom`, §9.5). */
+type Symptom = Extract<GameEvent, { type: "symptom" }>["symptom"];
+
+/**
+ * Про яку хворобу кіт сигналізує баблом-ознакою (§9.5: `showSymptoms` у `diseases.ts`; крик болю сечокам'яної в лотку —
+ * `catai.ts`): бабл бере іконку цієї хвороби з `DISEASE_ICONS`, тож у баблі й у картці ветеринара вона одна. Свербить і від
+ * бліх, і від дерматиту — іконка в них спільна (це перевіряє `tests/icons-unique.test.ts`).
+ */
+const SYMPTOM_DISEASE: Record<Symptom, DiseaseId> = { sneeze: "cold", itch: "fleas", eyes: "conjunctivitis", pain: "urolithiasis" };

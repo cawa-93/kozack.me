@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, eventBubbles, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -155,6 +155,9 @@ function collectCases(): Map<string, Shown[]> {
   // Сердечка настрою кота.
   add("mood:up", { icon: MOOD_ICONS.up });
   add("mood:down", { icon: MOOD_ICONS.down });
+  // Іконка біля назви хвороби (§11.4 «Іконка біля назви»): кота — у ветеринара, персонажа — у лікаря.
+  for (const [disease, icon] of Object.entries(DISEASE_ICONS)) add(`disease:${disease}`, { icon });
+  for (const [illness, icon] of Object.entries(ILLNESS_ICONS)) add(`illness:${illness}`, { icon });
   return cases;
 }
 
@@ -223,6 +226,20 @@ Object.assign(SAME, {
   "пральна машина пере": { why: "стан машини над нею і у відмові прати ще", ids: ["state:washer.washing", "refusal:washing"] },
   відеодзвінок: { why: "летучка чи нарада почалася й іде — камера над комп'ютером", ids: ["state:computer.call", "event:standup-started", "event:modifier:kind=meeting-start"] },
 });
+// Хвороби (§11.4 «Іконка біля назви», рішення автора 2026-11-02): біля назви хвороби в картці — та сама іконка, що в баблі, яким
+// кіт про неї сигналізує, чи у відмові ривка персонажа: картка вчить, що означає бабл, тож це той самий випадок.
+Object.assign(SAME, {
+  чхання: { why: "кіт застудився: чхає — бабл, і та сама іконка біля «Застуди» у ветеринара", ids: ["event:symptom:symptom=sneeze", "disease:cold"] },
+  свербить: {
+    why: "кіт чухається — бабл; біля бліх і дерматиту у ветеринара — та сама іконка: обидві кіт показує однаково (рішення автора 2026-10-27, §9.5), і картка так і вчить: «свербить» — це блохи чи дерматит",
+    ids: ["event:symptom:symptom=itch", "disease:fleas", "disease:dermatitis"],
+  },
+  "болять очі": { why: "кіт тре очі — бабл, і та сама іконка біля кон'юнктивіту у ветеринара", ids: ["event:symptom:symptom=eyes", "disease:conjunctivitis"] },
+  "крик болю": { why: "сечокам'яна: кіт кричить у лотку — бабл, і та сама іконка біля неї у ветеринара", ids: ["event:symptom:symptom=pain", "disease:urolithiasis"] },
+  травма: { why: "травма — пластир: відмова ривка травмованого персонажа, «Травма» в лікаря й травма кота у ветеринара", ids: ["refusal:injured", "illness:injury", "disease:injury"] },
+  "застуда персонажа": { why: "персонаж застуджений: відмова ривка й «Застуда» в лікаря — градусник", ids: ["refusal:cold", "illness:cold"] },
+  виснаження: { why: "персонаж без сил: відмова ривка й «Виснаження» в лікаря — розряджена батарейка", ids: ["refusal:weak", "illness:exhaustion"] },
+});
 
 /** Значення випадку: його група або він сам. */
 function meaningOf(id: string): string {
@@ -276,6 +293,21 @@ describe("унікальна іконка на унікальний кейс (§
     expect(icon("thing:water")).not.toBe(icon("state:waterEmpty"));
     expect(icon("thing:litter")).not.toBe(icon("supply:litter"));
     expect(icon("thing:litter")).not.toBe(icon("state:litterDirty"));
+  });
+
+  it("біля хвороби — та сама іконка, що в баблі кота й у відмові ривка персонажа (§11.4 «Іконка біля назви»)", () => {
+    const symptom = (s: "sneeze" | "itch" | "eyes" | "pain"): IconName | undefined => eventBubbles({ type: "symptom", cat: 1, symptom: s })[0]?.icon;
+    expect(DISEASE_ICONS.cold).toBe(symptom("sneeze"));
+    expect(DISEASE_ICONS.fleas).toBe(symptom("itch"));
+    expect(DISEASE_ICONS.dermatitis).toBe(symptom("itch"));
+    expect(DISEASE_ICONS.conjunctivitis).toBe(symptom("eyes"));
+    expect(DISEASE_ICONS.urolithiasis).toBe(symptom("pain"));
+    expect(ILLNESS_ICONS.cold).toBe(refusalBubble({ reason: "cold" }).icon);
+    expect(ILLNESS_ICONS.exhaustion).toBe(refusalBubble({ reason: "weak" }).icon);
+    expect(ILLNESS_ICONS.injury).toBe(refusalBubble({ reason: "injured" }).icon);
+    // Травма кота — той самий пластир, що в персонажа; серце хвороби кота — не серце здоров'я персонажа на панелі.
+    expect(DISEASE_ICONS.injury).toBe(ILLNESS_ICONS.injury);
+    expect(DISEASE_ICONS.heart).not.toBe(STAT_ICONS.health);
   });
 
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {
