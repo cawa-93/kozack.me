@@ -10,7 +10,7 @@ import { ROOMS, roomAt } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
 import type { ArtId } from "../src/view/art/types";
-import { BOILER, CANDLES, CEILING_LAMPS, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLES, CEILING_LAMPS, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../src/view/decor";
 import { artOffset } from "../src/view/iso/geometry";
 import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
 import { CANDLE_LIGHT } from "../src/view/light/lightlook";
@@ -54,6 +54,8 @@ describe("джерела світла квартири", () => {
     expect(count(list, "candle")).toBe(CANDLES.length);
     expect(count(list, "station")).toBe(1);
     expect(list.filter((s) => s.kind === "candle").map((s) => s.host)).toEqual(CANDLES.map((c) => c.host));
+    // Сяйво дисплея — над точкою станції в реєстрі глибини (`iso/apartment.ts`), а не на тлі під нею.
+    expect(list.find((s) => s.kind === "station")?.host).toBe(POWER_STATION_POINT);
     // Свічки мерехтять, кожна — зі своїм зерном.
     const seeds = list.filter((s) => s.kind === "candle").map((s) => s.flicker);
     expect(new Set(seeds).size).toBe(CANDLES.length);

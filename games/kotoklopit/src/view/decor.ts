@@ -75,6 +75,9 @@ export const BOILER = { at: { x: 10.18, y: 1 } as Vec, face: "y" as WallFace, z:
  */
 export const POWER_STATION = { at: { x: 8.27, y: 6.21 } as Vec, display: 18 };
 
+/** Id точки зарядної станції в реєстрі глибини (`iso/apartment.ts`): сяйво дисплея (`iso/light.ts`) — одразу над нею. */
+export const POWER_STATION_POINT = "power-station";
+
 /**
  * Свічки (`env/candle`, лише в день відключення, лише вигляд — коти їх не чіпають): точка підлоги під свічкою (`at`) і висота
  * поверхні господаря, на якій вона стоїть (`z`). Господарі — речі мапи (`OBJECTS`), свічка малюється в їхньому проміжку

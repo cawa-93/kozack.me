@@ -18,7 +18,7 @@ import { powerOut } from "../../sim/modifiers";
 import type { GameState, Vec } from "../../sim/types";
 import { LIGHT_ART } from "../art/manifest/a21-light";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, SCONCES, type Candle, type WallFace } from "../decor";
+import { BOILER, CANDLES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, POWER_STATION_POINT, SCONCES, type Candle, type WallFace } from "../decor";
 import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
@@ -45,7 +45,10 @@ export interface LightSource {
   readonly color: number;
   /** Яскравість 0–1 (для свічок — до мерехтіння): лампа, що вмикається, — між 0 і 1. */
   readonly strength: number;
-  /** Річ квартири, над якою сяйво (свічка на столі, полум'я на плиті): у її проміжку глибини. */
+  /**
+   * Над чим сяйво — id речі квартири (свічка на столі, полум'я на плиті) чи точки реєстру глибини (дисплей зарядної станції,
+   * `POWER_STATION_POINT`): у її проміжку глибини, над її кадром.
+   */
   readonly host?: string;
   /** Настінне (бра, бойлер): на якому лиці стіни. */
   readonly face?: WallFace;
@@ -175,6 +178,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
       radius: STATION_LIGHT.radius,
       color: STATION_LIGHT.color,
       strength: 1,
+      host: POWER_STATION_POINT,
     });
   } else if (d.dark > 0) {
     out.push({

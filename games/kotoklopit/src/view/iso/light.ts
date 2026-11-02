@@ -10,7 +10,8 @@
 // - смуги сонця — додаванням на підлозі (`BACKDROP.sun`), під стінами й меблями;
 // - конуси від невидимих стельових світильників — додаванням, точки реєстру глибини під світильником: ближчі меблі, стіни, коти
 //   й персонаж їх закривають;
-// - сяйво бра, бойлера й станції — на стіні (`BACKDROP.glow`), свічок, газу й екрана — у проміжку глибини свого господаря.
+// - сяйво бра й бойлера — на стіні (`BACKDROP.glow`), свічок, газу, екрана й дисплея станції — у проміжку глибини свого
+//   господаря (станції — над її точкою реєстру).
 //
 // Удень (`daylight` → null) і коли світло доби вимкнене (`WorldFrame.lightMinute` = null, режим розробки `?light=off`) усе
 // сховано, а до першої ночі нічого й не створено: удень квартира до пікселя така, як без світла доби. Режими змішування
@@ -68,7 +69,8 @@ interface GlowLook {
 const GLOWS: Record<Exclude<LightKind, "ceiling">, GlowLook> = {
   sconce: { parts: [{ color: SCONCE_LIGHT.color, ...SCONCE_LIGHT.glow }], wall: true, needsDark: false },
   boiler: { parts: [{ color: BOILER_LIGHT.color, ...BOILER_LIGHT.glow }], wall: true, needsDark: true },
-  station: { parts: [{ color: STATION_LIGHT.color, ...STATION_LIGHT.glow }], wall: true, needsDark: true },
+  // Станція стоїть на підлозі (точка реєстру, не тло): сяйво дисплея — над її кадром (`POWER_STATION_POINT`), а не під нею.
+  station: { parts: [{ color: STATION_LIGHT.color, ...STATION_LIGHT.glow }], wall: false, needsDark: true },
   candle: {
     parts: [
       { color: CANDLE_LIGHT.glowColor, ...CANDLE_LIGHT.glow },

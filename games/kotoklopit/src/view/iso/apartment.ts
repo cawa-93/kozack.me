@@ -26,7 +26,7 @@ import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLES, PANES, POWER_STATION, SCONCES } from "../decor";
+import { BOILER, CANDLES, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
@@ -253,7 +253,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.backdrop.push(this.boiler.image);
     // Зарядна станція стоїть на підлозі перед стіною ряду 5 і праворуч від стола: точка в реєстрі (стіна за нею, стіл ліворуч).
     const station = this.art("env/power-station", ISO.toScreen(POWER_STATION.at), 0).setVisible(false);
-    this.station = { image: station, point: this.depth.addPoint((d) => station.setDepth(d), { half: STATION_HALF }), shown: false };
+    this.station = { image: station, point: this.depth.addPoint((d) => station.setDepth(d), { half: STATION_HALF, id: POWER_STATION_POINT }), shown: false };
 
     // Внутрішні стіни й передні плінтуси — коробки: вони закривають тих, хто за ними. Слід на сегменті — тією самою коробкою.
     for (const segment of WALL_SEGMENTS) {
