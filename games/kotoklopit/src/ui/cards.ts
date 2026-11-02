@@ -35,11 +35,11 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
-import { diseaseLabel, thingLabel } from "./icons";
+import { diseaseLabel, productLabel, thingLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
-import { plural, PRODUCT_TITLES, VARIANT_TITLES } from "./titles";
+import { plural, VARIANT_TITLES } from "./titles";
 
 export { plural };
 import { LOOK_OPTIONS } from "./look";
@@ -485,21 +485,24 @@ function canPutCollar(state: GameState, cat: Cat): boolean {
   return !cat.collar && supplyCount(state, "collar") > 0;
 }
 
-/** Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10, §9.12): ліки, ласощі, котяча м'ята, нашийник. */
+/**
+ * Догляд за котом на руках біля аптечки (§8.7, §9.5, §9.10, §9.12): ліки, ласощі, котяча м'ята, нашийник. Біля назви кожного
+ * запасу — його іконка, як у магазині (§11.4 «Іконка біля назви», `productLabel`).
+ */
 export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice) => void, onCancel: () => void): Card {
   const supply = state.home.supplies;
   const actions: CardAction[] = [];
   for (const m of ["pills", "drops"] as const) {
-    if (supplyCount(state, m) > 0) actions.push({ label: `${PRODUCT_TITLES[m].name} ×${supplyCount(state, m)}`, onSelect: () => onPick({ medicine: m }) });
+    if (supplyCount(state, m) > 0) actions.push({ label: `${productLabel(m)} ×${supplyCount(state, m)}`, onSelect: () => onPick({ medicine: m }) });
   }
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.treats[q] > 0) actions.push({ label: `${VARIANT_TITLES["treats"]?.[q] ?? ""} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
+    if (supply.treats[q] > 0) actions.push({ label: `${productLabel("treats", VARIANT_TITLES["treats"]?.[q] ?? "")} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
   }
   // Котяча м'ята (§9.12): кіт зістрибне з рук — що він із нею робитиме, видно з нього самого.
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.catnip[q] > 0) actions.push({ label: `${VARIANT_TITLES["catnip"]?.[q] ?? ""} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
+    if (supply.catnip[q] > 0) actions.push({ label: `${productLabel("catnip", VARIANT_TITLES["catnip"]?.[q] ?? "")} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
   }
-  if (canPutCollar(state, cat)) actions.push({ label: `${PRODUCT_TITLES.collar.name} ×${supplyCount(state, "collar")}`, onSelect: () => onPick("collar") });
+  if (canPutCollar(state, cat)) actions.push({ label: `${productLabel("collar")} ×${supplyCount(state, "collar")}`, onSelect: () => onPick("collar") });
   // Це меню вибору, як «Куди поїхати?»: головної дії немає, тож пробіл чи Enter нічого не обирають за гравця. Раніше головною
   // була перша дія (таблетки): другий пробіл, що брав кота, давав ліки здоровому коту (загальна ревізія 2026-10-29).
   return {

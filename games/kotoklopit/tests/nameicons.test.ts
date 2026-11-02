@@ -1,17 +1,22 @@
 // Іконка біля назви (GAME_DESIGN §11.4 «Іконка біля назви», рішення автора 2026-11-02): у магазині біля кожного запасу й речі,
-// у ветеринара біля кожної хвороби кота, у лікаря — біля хвороби персонажа стоїть та сама іконка, що в грі. У картці це
-// `<img>` із SVG `art/icon/<назва>.svg` (`src/ui/icons.ts`); у тексті — позначка, яку малюнком замінює `drawIcons`.
+// у ветеринара біля кожної хвороби кота, у лікаря — біля хвороби персонажа, на кнопках догляду біля аптечки — біля запасу
+// стоїть та сама іконка, що в грі. У картці це `<img>` із SVG `art/icon/<назва>.svg` (`src/ui/icons.ts`); у тексті — позначка,
+// яку малюнком замінює `drawIcons`.
 
 import { describe, expect, it } from "vitest";
 
+import { createCat } from "../src/sim/cat";
 import { DISEASES, ILLNESSES } from "../src/sim/config";
+import { newGame } from "../src/sim/game";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import { GOODS, goodsKey } from "../src/sim/shop";
 import type { AlbumEntry, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
 import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES } from "../src/texts";
-import { albumCause } from "../src/ui/cards";
-import { diseaseLabel, iconMark, iconUrl, illnessLabel, named, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
+import { albumCause, careCard } from "../src/ui/cards";
+import { diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
 import { goodsIcon, goodsLabel } from "../src/ui/shop";
-import { PRODUCT_TITLES, THING_TITLES } from "../src/ui/titles";
+import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "../src/ui/titles";
 import { ICON_NAMES, type IconName } from "../src/view/iconnames";
 import { DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
 
@@ -98,12 +103,45 @@ describe("іконка біля назви: магазин (§6.4)", () => {
     for (const thing of Object.keys(THING_ICONS) as ThingKind[]) expect(thingLabel(thing), thing).toBe(goodsLabel({ thing }));
   });
 
+  it("назва запасу з іконкою (productLabel) — та сама, що в магазині", () => {
+    for (const goods of GOODS) if ("product" in goods) expect(productLabel(goods.product), goods.product).toBe(goodsLabel(goods));
+  });
+
   it("відомі відповідності: корм — гранули, миска — миска, автогодівниця — та, що досипає корм", () => {
     expect(goodsIcon({ product: "catFood" })).toBe("kibble");
     expect(goodsIcon({ product: "litter" })).toBe("litter");
     expect(goodsIcon({ thing: "bowl" })).toBe("food-bowl");
     expect(goodsIcon({ thing: "litter" })).toBe("litter-box");
     expect(goodsIcon({ thing: "feeder" })).toBe("kibble-pour");
+  });
+});
+
+describe("іконка біля назви: догляд біля аптечки (§8.7, §9.10, §9.12)", () => {
+  it("на кожній кнопці запасу — його іконка, та сама, що в магазині; текст кнопки той самий", () => {
+    const save = newGame({ address: "she", difficulty: "normal", seed: 8 });
+    const cat = createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 3, at: { x: 9.5, y: 8.5 } });
+    addCat(save.current, cat);
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    cat.collar = false;
+    Object.assign(save.current.home.supplies, {
+      pills: { cheap: 2, premium: 0 },
+      drops: { cheap: 0, premium: 1 },
+      treats: { cheap: 3, premium: 1 },
+      catnip: { cheap: 1, premium: 2 },
+      collar: { cheap: 1, premium: 0 },
+    });
+    const labels = careCard(save.current, cat, () => {}, () => {}).actions.map((a) => a.label);
+    const shop = (product: Product): IconName => goodsIcon({ product });
+    expect(labels.map(iconOf)).toEqual([shop("pills"), shop("drops"), shop("treats"), shop("treats"), shop("catnip"), shop("catnip"), shop("collar")]);
+    expect(labels.map(plain)).toEqual([
+      `${PRODUCT_TITLES.pills.name} ×2`,
+      `${PRODUCT_TITLES.drops.name} ×1`,
+      `${VARIANT_TITLES["treats"]?.premium} ×1`,
+      `${VARIANT_TITLES["treats"]?.cheap} ×3`,
+      `${VARIANT_TITLES["catnip"]?.premium} ×2`,
+      `${VARIANT_TITLES["catnip"]?.cheap} ×1`,
+      `${PRODUCT_TITLES.collar.name} ×1`,
+    ]);
   });
 });
 

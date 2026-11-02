@@ -20,7 +20,9 @@ import { absoluteMinute } from "../src/sim/time";
 import type { BowlItem, Cat, LitterItem, Save, ToyItem, TraitLevel } from "../src/sim/types";
 import { startWork } from "../src/sim/work";
 import { careCard } from "../src/ui/cards";
+import { named, splitIcons } from "../src/ui/icons";
 import { traitAbout, traitHint } from "../src/ui/traits";
+import { PRODUCT_ICONS } from "../src/view/symbols";
 import { hours, recordEvents, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
@@ -198,8 +200,12 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     const save = game();
     const cat = catnipCat(save);
     const labels = careCard(save.current, cat, () => {}, () => {}).actions.map((a) => a.label);
-    expect(labels).toContain("Мататабі ×5");
-    expect(labels).toContain("Сушена м'ята ×5");
+    // Текст кнопки — без позначки іконки; біля назви — іконка м'яти, та сама, що в магазині (§11.4 «Іконка біля назви»).
+    const text = (label: string): string => splitIcons(label).map((p) => (typeof p === "string" ? p : p.word)).join("");
+    expect(labels.map(text)).toContain("Мататабі ×5");
+    expect(labels.map(text)).toContain("Сушена м'ята ×5");
+    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Мататабі")} ×5`);
+    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Сушена м'ята")} ×5`);
   });
 
   it("кіт без риси катається 5 хвилин і тішиться; «+» — довше, а тоді засинає: прояв «+»", () => {

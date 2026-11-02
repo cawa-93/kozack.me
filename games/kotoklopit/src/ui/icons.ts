@@ -12,10 +12,10 @@
 // приватної області Unicode й назва іконки малими латинськими, тож `toLowerCase` (назва посеред речення) її не змінює.
 
 import { ILLNESS_TITLES, diseaseTitle } from "../texts";
-import type { IllnessId, ThingKind } from "../sim/types";
+import type { IllnessId, Product, ThingKind } from "../sim/types";
 import { ICON_NAMES, type IconName } from "../view/iconnames";
-import { DISEASE_ICONS, ILLNESS_ICONS, THING_ICONS } from "../view/symbols";
-import { THING_TITLES } from "./titles";
+import { DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
+import { PRODUCT_TITLES, THING_TITLES } from "./titles";
 
 /** Тека SVG іконок (`art/icon/`) — так, як її ключі дає `import.meta.glob` із цього файлу. */
 const ICON_DIR = "../../art/icon/";
@@ -60,6 +60,12 @@ export const illnessLabel = (id: IllnessId): string => named(ILLNESS_ICONS[id], 
 
 /** Назва речі з іконкою (§11.4): та сама, що біля неї в магазині (`THING_ICONS`), — і в «Моїх речах» телефона. */
 export const thingLabel = (kind: ThingKind): string => named(THING_ICONS[kind], THING_TITLES[kind]);
+
+/**
+ * Назва запасу з іконкою (§11.4, §6.4): та сама, що біля нього в магазині, над сховищем і в думці персонажа (`PRODUCT_ICONS`).
+ * Назва — загальна (`PRODUCT_TITLES`) чи назва варіанта (`VARIANT_TITLES`: «Делікатеси», «Мататабі»), іконка — одна на запас.
+ */
+export const productLabel = (product: Product, title: string = PRODUCT_TITLES[product].name): string => named(PRODUCT_ICONS[product], title);
 
 /** Шматок тексту: звичайний текст чи іконка зі словом за нею. */
 export type IconPart = string | { icon: IconName; word: string };
