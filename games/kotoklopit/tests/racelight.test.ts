@@ -33,6 +33,7 @@ import {
   LIGHT_REACH,
   lightFade,
   LIGHTMAP,
+  lightmapKey,
   lightmapSize,
   lookSeed,
   lotLights,
@@ -41,6 +42,7 @@ import {
   PARKED_LIGHTS,
   poolAlpha,
   raceNight,
+  sameLightmapKey,
   signGlow,
   SIGN_AT,
   STREET_LAMPS,
@@ -50,6 +52,7 @@ import {
   tripLightMinute,
   underBody,
   type CarKind,
+  type NightLights,
 } from "../src/view/racelight";
 import { laneX, RACE_PLAYER_Y, racePixelsPerUnit, raceScale, steerTilt, TRAFFIC_COLORS, TRAFFIC_KINDS } from "../src/view/racelook";
 
@@ -460,6 +463,40 @@ describe("ніч гонки", () => {
     // Половина 1282 × 722 — 641 × 361, непарні: текстура — 642 × 362, рівно та, що лишить `setSize`.
     expect(lightmapSize(1282, 722)).toEqual({ w: 642, h: 362 });
     expect(lightmapSize(1280, 720)).toEqual({ w: 640, h: 360 });
+  });
+
+  it("ключ lightmap: той самий кадр — той самий ключ (не перемальовується), а будь-яка зміна того, що світить, — інший", () => {
+    const view = { height: 720, k: 1, cx: 640 };
+    const level = raceNight(daylight(22 * 60, true));
+    if (!level) throw new Error("немає ночі");
+    const size = lightmapSize(1280, 720);
+    const frame = (over: { offset?: number; lotY?: number | null; x?: number; rotation?: number; head?: number; reverse?: number } = {}): NightLights => {
+      const lotY = over.lotY === undefined ? 300 : over.lotY;
+      const lot = lotLights(lotY, view);
+      const head = over.head ?? 1;
+      const car = { lights: carLights({ x: over.x ?? 600, y: 500, rotation: over.rotation ?? 0 }, "player"), head, tail: TAIL.running * head, reverse: over.reverse ?? 0 };
+      return { pools: [...streetPools(over.offset ?? 100, view, lotY), ...lot.pools], cars: [car], sign: lot.sign };
+    };
+    const base = lightmapKey(size, 1, level, frame());
+    expect(sameLightmapKey(lightmapKey(size, 1, level, frame()), base)).toBe(true);
+    // Нічого ще не намальовано (новий показ сцени, контекст WebGL повернувся) — малювати.
+    expect(sameLightmapKey(null, base)).toBe(false);
+    const changed = [
+      lightmapKey(lightmapSize(1282, 720), 1, level, frame()),
+      lightmapKey(size, 1.25, level, frame()),
+      lightmapKey(size, 1, { ...level, tone: level.tone - 1 }, frame()),
+      lightmapKey(size, 1, { ...level, lamps: level.lamps * 0.9 }, frame()),
+      lightmapKey(size, 1, level, frame({ offset: 101 })),
+      lightmapKey(size, 1, level, frame({ lotY: 301 })),
+      lightmapKey(size, 1, level, frame({ lotY: null })),
+      lightmapKey(size, 1, level, frame({ x: 601 })),
+      lightmapKey(size, 1, level, frame({ rotation: 0.01 })),
+      lightmapKey(size, 1, level, frame({ head: 0.5 })),
+      lightmapKey(size, 1, level, frame({ reverse: 0.5 })),
+      lightmapKey(size, 1, level, { ...frame(), cars: [] }),
+      lightmapKey(size, 1, level, { ...frame(), sign: null }),
+    ];
+    for (const [i, key] of changed.entries()) expect(sameLightmapKey(base, key), `зміна ${i}`).toBe(false);
   });
 });
 

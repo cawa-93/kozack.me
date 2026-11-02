@@ -2,10 +2,10 @@
 // поверх дороги, узбіччя, парковки, машин і будівлі пункту, але під табличкою пункту, смугою прогресу, машинкою на ній,
 // джойстиком і написами — HUD гонки не темніє.
 //
-// - Світло ночі (lightmap): DynamicTexture у пів роздільності кадру, щокадру — тон ночі (`RaceNightLevel.tone`), а поверх
+// - Світло ночі (lightmap): DynamicTexture у пів роздільності кадру — тон ночі (`RaceNightLevel.tone`), а поверх
 //   додаванням м'які градієнти світла — плями вуличних ліхтарів і ліхтарів парковки, промені фар, червоне світло задніх вогнів
 //   (і біле — заднього ходу) та світло таблички. Зображення цієї текстури лягає на кадр множенням (MULTIPLY): де світла немає
-//   — темно, а де є — видно барви дороги, як удень.
+//   — темно, а де є — видно барви дороги, як удень. Перемальовується, лише коли змінилося те, що світить (`lightmapKey`).
 // - Поверх (додаванням): самі фари й задні вогні — світлі цятки — і ледь помітний ореол таблички; іконка пункту на табличці —
 //   над усім цим (`RACE_DEPTH.sign`), тож табличка «світиться».
 //
@@ -22,13 +22,14 @@ import {
   beamAlpha,
   BULB,
   LIGHTMAP,
+  lightmapKey,
   lightmapSize,
   LIGHT_COLORS,
   poolAlpha,
+  sameLightmapKey,
   SIGN_GLOW,
   TAIL,
-  type CarLight,
-  type LightPool,
+  type NightLights,
   type RaceNightLevel,
 } from "./racelight";
 
@@ -42,24 +43,6 @@ export interface RaceNightDepths {
   tails: number;
   /** Ореол таблички. */
   signGlow: number;
-}
-
-/**
- * Машина, що світить: її вогні, які видно (`carLights`; у машин потоку — без тих, що під кузовом своєї, `trafficLights`), і
- * наскільки горять фари, задні вогні й задній хід (0–1, уже з непрозорістю машини й згасанням за краєм кадру).
- */
-export interface LitCar {
-  lights: readonly CarLight[];
-  head: number;
-  tail: number;
-  reverse: number;
-}
-
-/** Що світить у кадрі: плями ліхтарів (вулиця й парковка), машини й табличка пункту (null — парковки в кадрі немає). */
-export interface NightLights {
-  pools: readonly LightPool[];
-  cars: readonly LitCar[];
-  sign: LightPool | null;
 }
 
 /** Кадр дороги: розмір (одиниці інтерфейсу) і масштаб арту. */
@@ -139,13 +122,19 @@ function ensureTextures(textures: Phaser.Textures.TextureManager): void {
   add(TEX.sign.key, () => poolCanvas(TEX.sign.size, LIGHT_COLORS.sign, 0.5));
 }
 
-/** Шар ночі сцени дороги: створюється з артом гонки (з першого кадру), удень — схований. */
+/**
+ * Шар ночі сцени дороги: створюється з артом гонки (з першого кадру), удень — схований. Lightmap перемальовується, лише коли
+ * змінилося те, від чого залежить її вміст (`lightmapKey`), а після втрати контексту WebGL — наново (вміст текстури на GPU
+ * пропадає, `RESTORE_WEBGL`).
+ */
 export class RaceNight {
   private readonly lightmap: Phaser.Textures.DynamicTexture | null;
   private readonly image: Phaser.GameObjects.Image | null;
   private readonly bulbs: Phaser.GameObjects.Image[] = [];
   private readonly tails: Phaser.GameObjects.Image[] = [];
   private readonly halo: Phaser.GameObjects.Image;
+  /** Ключ того, що зараз намальовано в lightmap (`lightmapKey`); null — нічого певного: перемалювати. */
+  private drawn: number[] | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -158,6 +147,15 @@ export class RaceNight {
       ? scene.add.image(0, 0, LIGHTMAP_KEY).setOrigin(0, 0).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(depths.night).setVisible(false)
       : null;
     this.halo = scene.add.image(0, 0, TEX.pool.key).setBlendMode(Phaser.BlendModes.ADD).setDepth(depths.signGlow).setVisible(false);
+    // Контекст WebGL повернувся — вміст lightmap на GPU пропав: наступний кадр малює її наново.
+    const renderer = scene.renderer;
+    if (renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+      const restored = (): void => {
+        this.drawn = null;
+      };
+      renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, restored);
+      scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => renderer.off(Phaser.Renderer.Events.RESTORE_WEBGL, restored));
+    }
   }
 
   /**
@@ -172,12 +170,51 @@ export class RaceNight {
       return;
     }
     const { k } = view;
-    const res = LIGHTMAP.res;
-    const { w, h } = lightmapSize(view.width, view.height);
-    if (lightmap.width !== w || lightmap.height !== h) {
-      lightmap.setSize(w, h);
+    const size = lightmapSize(view.width, view.height);
+    if (lightmap.width !== size.w || lightmap.height !== size.h) {
+      lightmap.setSize(size.w, size.h);
       image.setTexture(LIGHTMAP_KEY);
     }
+    const key = lightmapKey(size, k, level, lights);
+    if (!sameLightmapKey(this.drawn, key)) {
+      this.paint(lightmap, k, level, lights);
+      this.drawn = key;
+    }
+    image.setScale(1 / LIGHTMAP.res).setVisible(true);
+
+    // Самі фари й задні вогні — цятки поверх кузовів, щокадру (це не lightmap).
+    let bulbs = 0;
+    let tails = 0;
+    for (const car of lights.cars) {
+      for (const light of car.lights) {
+        if (light.kind === "head") {
+          if (car.head > 0) this.dot(this.bulbs, bulbs++, TEX.bulb, this.depths.beams, light.x, light.y, 2 * BULB.radius * k, BULB.alpha * car.head);
+          continue;
+        }
+        if (car.tail > 0) this.dot(this.tails, tails++, TEX.tail, this.depths.tails, light.x, light.y, 2 * TAIL.dot * k, TAIL.dotAlpha * car.tail);
+        if (car.reverse > 0) this.dot(this.tails, tails++, TEX.reverse, this.depths.tails, light.x, light.y, 2 * TAIL.dot * k, TAIL.reverse * car.reverse);
+      }
+    }
+    hideFrom(this.bulbs, bulbs);
+    hideFrom(this.tails, tails);
+
+    const sign = lights.sign;
+    const halo = SIGN_GLOW.haloAlpha * level.lamps;
+    if (sign && halo > 0) {
+      this.halo
+        .setPosition(sign.x, sign.y)
+        .setScale((2 * SIGN_GLOW.halo * k) / TEX.pool.size)
+        .setAlpha(halo)
+        .setVisible(true);
+    } else this.halo.setVisible(false);
+  }
+
+  /**
+   * Намалювати lightmap: тон ночі, а поверх додаванням — плями ліхтарів і табличка (на силу ліхтарів `level.lamps`), промені
+   * фар і світло задніх вогнів та заднього ходу на асфальті позаду.
+   */
+  private paint(lightmap: Phaser.Textures.DynamicTexture, k: number, level: RaceNightLevel, lights: NightLights): void {
+    const res = LIGHTMAP.res;
     lightmap.fill(level.tone, 1);
     const stamp = (key: string, size: number, x: number, y: number, diameter: number, alpha: number): void => {
       if (alpha <= 0) return;
@@ -186,8 +223,6 @@ export class RaceNight {
     for (const pool of lights.pools) stamp(TEX.pool.key, TEX.pool.size, pool.x, pool.y, 2 * pool.radius, pool.alpha * level.lamps);
     if (lights.sign) stamp(TEX.sign.key, TEX.sign.size, lights.sign.x, lights.sign.y, 2 * lights.sign.radius, lights.sign.alpha * level.lamps);
 
-    let bulbs = 0;
-    let tails = 0;
     const beamScale = (BEAM.length * k * res) / TEX.beam.size;
     for (const car of lights.cars) {
       for (const light of car.lights) {
@@ -201,37 +236,17 @@ export class RaceNight {
             originY: 1,
             blendMode: Phaser.BlendModes.ADD,
           });
-          this.dot(this.bulbs, bulbs++, TEX.bulb, this.depths.beams, light.x, light.y, 2 * BULB.radius * k, BULB.alpha * car.head);
           continue;
         }
         // Світло задніх вогнів — на асфальті позаду: середина зсунута назад, куди вони світять.
         const behind = TAIL.behind * TAIL.glow * k;
         const gx = light.x + Math.sin(light.rotation) * behind;
         const gy = light.y - Math.cos(light.rotation) * behind;
-        if (car.tail > 0) {
-          stamp(TEX.tail.key, TEX.tail.size, gx, gy, 2 * TAIL.glow * k, TAIL.glowAlpha * car.tail);
-          this.dot(this.tails, tails++, TEX.tail, this.depths.tails, light.x, light.y, 2 * TAIL.dot * k, TAIL.dotAlpha * car.tail);
-        }
-        if (car.reverse > 0) {
-          stamp(TEX.reverse.key, TEX.reverse.size, gx, gy, 2 * TAIL.glow * k, TAIL.glowAlpha * car.reverse);
-          this.dot(this.tails, tails++, TEX.reverse, this.depths.tails, light.x, light.y, 2 * TAIL.dot * k, TAIL.reverse * car.reverse);
-        }
+        if (car.tail > 0) stamp(TEX.tail.key, TEX.tail.size, gx, gy, 2 * TAIL.glow * k, TAIL.glowAlpha * car.tail);
+        if (car.reverse > 0) stamp(TEX.reverse.key, TEX.reverse.size, gx, gy, 2 * TAIL.glow * k, TAIL.glowAlpha * car.reverse);
       }
     }
     lightmap.render();
-    image.setScale(1 / res).setVisible(true);
-    hideFrom(this.bulbs, bulbs);
-    hideFrom(this.tails, tails);
-
-    const sign = lights.sign;
-    const halo = SIGN_GLOW.haloAlpha * level.lamps;
-    if (sign && halo > 0) {
-      this.halo
-        .setPosition(sign.x, sign.y)
-        .setScale((2 * SIGN_GLOW.halo * k) / TEX.pool.size)
-        .setAlpha(halo)
-        .setVisible(true);
-    } else this.halo.setVisible(false);
   }
 
   /** Сховати весь шар (день). */

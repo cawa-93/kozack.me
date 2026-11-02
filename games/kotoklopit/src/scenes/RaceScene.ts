@@ -69,10 +69,12 @@ import {
   TAIL,
   trafficLights,
   tripLightMinute,
+  type LitCar,
+  type NightLights,
   type OwnLights,
   type RaceNightLevel,
 } from "../view/racelight";
-import { RaceNight, type LitCar, type NightLights } from "../view/racenight";
+import { RaceNight } from "../view/racenight";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
   barMarkerY,

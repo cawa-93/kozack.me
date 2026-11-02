@@ -412,6 +412,53 @@ export function lotLights(lotY: number | null, view: PoolView): LotLights {
   return { pools, sign: reachesFrame(sign.y, sign.radius, height) ? sign : null };
 }
 
+// --- Що світить у кадрі -------------------------------------------------------------------------------------------
+
+/**
+ * Машина, що світить: її вогні, які видно (`carLights`; у машин потоку — без тих, що під кузовом своєї, `trafficLights`), і
+ * наскільки горять фари, задні вогні й задній хід (0–1, уже з непрозорістю машини й згасанням за краєм кадру).
+ */
+export interface LitCar {
+  lights: readonly CarLight[];
+  head: number;
+  tail: number;
+  reverse: number;
+}
+
+/** Що світить у кадрі: плями ліхтарів (вулиця й парковка), машини й табличка пункту (null — не світить у кадр). */
+export interface NightLights {
+  pools: readonly LightPool[];
+  cars: readonly LitCar[];
+  sign: LightPool | null;
+}
+
+/**
+ * Ключ кадру lightmap (`RaceNight`): усе, від чого залежить її вміст, — розмір (px, `lightmapSize`), масштаб арту `k`, тон і
+ * ліхтарі ночі, плями й табличка, вогні машин (де, куди світять) і наскільки вони горять. Той самий ключ — та сама картинка:
+ * на нерухомому кадрі (на місці, з карткою пункту; машина на старті гонки) lightmap не перемальовується. Кількості — у ключі,
+ * тож різні набори не зливаються в однакову послідовність чисел.
+ */
+export function lightmapKey(size: { w: number; h: number }, k: number, level: RaceNightLevel, lights: NightLights): number[] {
+  const key = [size.w, size.h, k, level.tone, level.lamps, lights.pools.length];
+  for (const pool of lights.pools) key.push(pool.x, pool.y, pool.radius, pool.alpha);
+  const sign = lights.sign;
+  if (sign) key.push(1, sign.x, sign.y, sign.radius, sign.alpha);
+  else key.push(0);
+  key.push(lights.cars.length);
+  for (const car of lights.cars) {
+    key.push(car.lights.length, car.head, car.tail, car.reverse);
+    for (const light of car.lights) key.push(light.kind === "head" ? 1 : 0, light.x, light.y, light.rotation);
+  }
+  return key;
+}
+
+/** Чи ключі lightmap (`lightmapKey`) однакові. */
+export function sameLightmapKey(a: readonly number[] | null, b: readonly number[]): boolean {
+  if (a === null || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 // --- Текстури м'яких градієнтів -----------------------------------------------------------------------------------
 
 /**
