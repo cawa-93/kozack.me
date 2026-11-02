@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../src/sim/config";
+import { BOWL_CAPACITY, FEEDER_CAPACITY, STORAGE_LIMITS, WATER_CAPACITY } from "../src/sim/config";
+import { STORAGES, storageStages } from "../src/sim/storage";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, objectById, OBJECTS, TRINKETS, WINDOWS } from "../src/sim/home";
 import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, WaterItem } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
@@ -287,6 +288,32 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
         for (const kind of [null, "cheap", "premium"] as const) for (const sterile of [false, true]) expectFrame(feederFrame(feeder(food, kind, sterile)));
       }
     }
+  });
+
+  it("холодильник: кожен рівень продуктів — свій кадр, з самими маминими судочками — зачинений без продуктів нагорі", () => {
+    const state = applyScenario(FILE_SCENARIOS["empty-supplies"]!).current;
+    state.home.acquired = [...new Set([...state.home.acquired, "food" as const])];
+    const fridge = STORAGES.find((s) => s.object === "fridge")!;
+    const seen = new Set<string>();
+    for (let count = 0; count <= STORAGE_LIMITS.food; count++) {
+      state.home.supplies.food = { cheap: count, premium: 0 };
+      state.home.supplies.momMeal = { cheap: 0, premium: 0 };
+      const look = fridgeLook(state);
+      const stage = storageStages(state, fridge)[0]!;
+      expect(look.body.state).toBe(stage === 0 ? "open" : "closed");
+      expect(look.food).toEqual({ id: "env/fridge/food", state: `full-${stage}` });
+      expect(look.mom).toBe(false);
+      seen.add(look.food!.state!);
+    }
+    expect([...seen].sort()).toEqual(["full-0", "full-1", "full-2", "full-3", "full-4"]);
+    // Продуктів немає, а мамині судочки є: зачинений, нагорі — лише судочок (не банка «мало»).
+    state.home.acquired = [...new Set([...state.home.acquired, "momMeal" as const])];
+    state.home.supplies.food = { cheap: 0, premium: 0 };
+    state.home.supplies.momMeal = { cheap: 1, premium: 0 };
+    expect(fridgeLook(state)).toEqual({ body: { id: "env/fridge", state: "closed" }, food: null, mom: true });
+    // Продукти й судочки разом — рівень продуктів.
+    state.home.supplies.food = { cheap: STORAGE_LIMITS.food, premium: 0 };
+    expect(fridgeLook(state).food?.state).toBe("full-4");
   });
 
   it("страви, безлад, дрібнички й кошик білизни — кадри маніфесту", () => {

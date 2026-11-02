@@ -34,13 +34,15 @@ export function stagesOf(state: GameState, object: string): (FillStage | null)[]
 // --- Речі квартири --------------------------------------------------------------------------
 
 /**
- * Холодильник (§6.4, як `storagelook.ts`): порожній — прочинений і темний; накладка продуктів — стан запасу; поки є мамині
- * судочки (рішення автора 2026-10-26), на ньому судочок, а порожнім він не буває. Продуктів ще не бувало — без накладки.
+ * Холодильник (§6.4, як `storagelook.ts`): порожній — прочинений і темний; накладка продуктів — стан запасу (нагорі стільки
+ * продуктів, скільки запасу: банка, хлібина, пакет молока); поки є мамині судочки (рішення автора 2026-10-26), на ньому
+ * судочок, а порожнім він не буває: без продуктів — зачинений, з самим судочком нагорі (банка «мало» сказала б, що продукти
+ * є). Продуктів ще не бувало — без накладки.
  */
 export function fridgeLook(state: GameState): { body: IsoFrame; food: IsoFrame | null; mom: boolean } {
   const [food = null, mom = null] = stagesOf(state, "fridge");
   const meals = mom !== null && mom > 0;
-  const stage: FillStage | null = meals && !food ? 1 : food;
+  const stage: FillStage | null = meals && !food ? null : food;
   return {
     body: frame("env/fridge", stage === 0 ? "open" : "closed"),
     food: stage === null ? null : frame("env/fridge/food", fullState(stage)),
