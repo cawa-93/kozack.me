@@ -25,7 +25,7 @@ import { PERSON_ONE_SHOT_MS, type CatOneShotId } from "../anim/ids";
 import { isoTileDir } from "../anim/iso";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/person/move";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
-import { catCrowds, catPairs, crowdMemory, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
+import { catCrowds, catPairs, crowdMemory, perchCrowds, perchMemory, towardPerson, type CrowdMember, type PairPlacement, type PerchMember } from "../anim/pairs";
 import { addArt, setArt } from "../art/atlas";
 import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
@@ -36,7 +36,7 @@ import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world
 import { ISO } from "../world/projection";
 import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PutDown } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
-import { bowlOf, CAT_PIECE, catSpot, lapSeat, raised, type CatSpot, type CatSpotDepths, type LapSeat } from "./catspot";
+import { bowlOf, CAT_PIECE, catSpot, lapSeat, perchPlace, raised, type CatSpot, type CatSpotDepths, type CatSpotKind, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 import { liftedRoot, PERSON_DEPTH } from "./personlook";
@@ -82,6 +82,9 @@ const LIFT_BLEND = { up: PERSON_ONE_SHOT_MS.pickUp - PERSON_PICKUP_GRAB_MS, down
  * вбік кроком, а не перескакує.
  */
 const CROWD_EASE_MS = 140;
+
+/** Де кіт лежить на речі, і котів там розсуває юрба на речах (`perchCrowds`, `perchPlace`): меблі, будиночок, схованка. */
+const PERCHED: ReadonlySet<CatSpotKind> = new Set<CatSpotKind>(["furniture", "house", "under"]);
 
 /** Підписи над котами (імена в нашийниках, приховані числа), що налягли б один на одного, — один над одним із таким проміжком, px. */
 const LABEL_GAP = 1;
@@ -202,6 +205,9 @@ export class IsoCatsView implements CatsPart {
   private readonly crowdShifts = new Map<number, Vec>();
   /** Місця юрби біля персонажа між кадрами (`catCrowds`). */
   private readonly crowdPlaces = crowdMemory();
+  /** Юрба на речах (`perchCrowds`): хто лежить на меблях, у будиночку чи під меблями цього кадру, і черга приходу. */
+  private readonly perchMembers: PerchMember[] = [];
+  private readonly perchPlaces = perchMemory();
   /** Ігрова хвилина минулого кадру й скільки клітинок найшвидший кіт міг пробігти за цей кадр (`catStep`). */
   private minuteWas: number | null = null;
   private catStep = Number.POSITIVE_INFINITY;
@@ -347,11 +353,14 @@ export class IsoCatsView implements CatsPart {
 
   /**
    * Перший прохід кадру: поза (`catAnim`) і місце (`catSpot`) кожного кота — у пам'ять, — і зсуви юрби (`catCrowds`): хто стоїть
-   * на підлозі не в парі майже в одній точці з іншими чи біля ніг персонажа.
+   * на підлозі не в парі майже в одній точці з іншими чи біля ніг персонажа; і юрби на речах (`perchCrowds`): хто лежить на
+   * тій самій речі (меблі, будиночок, схованка під меблями).
    */
   private crowd(state: GameState, pairs: ReadonlyMap<number, PairPlacement>): ReadonlyMap<number, Vec> {
     const members = this.crowdMembers;
     members.length = 0;
+    const perched = this.perchMembers;
+    perched.length = 0;
     this.lapCount = 0;
     for (const cat of state.cats) {
       const mem = this.memoryOf(cat.id);
@@ -363,6 +372,10 @@ export class IsoCatsView implements CatsPart {
       const pair = pairs.get(cat.id) ?? null;
       const spot = catSpot(state, cat, mem.choice.anim, pair, SPOT_DEPTHS);
       mem.spot = spot;
+      // На речі (не йде): з іншими на тій самій — рядком у межах її поверхні. Клубок бійки й кошенята біля матері — одна
+      // фігура, їх не розсувають.
+      const place = PERCHED.has(spot.kind) && !catMoving(cat) && pair?.kind !== "brawl" && pair?.kind !== "nursing" ? perchPlace(spot) : null;
+      if (place) perched.push({ id: cat.id, key: place.key, at: spot.at, size: this.sizeOf(cat), area: place.area, partner: pair?.with ?? null });
       // Кота щойно опустили — стоїть, де його поставили руки, і в юрбу не стає (`stillPutDown`).
       const lifting = this.ctx.world.person.hands.lift?.cat === cat.id;
       if (!stillPutDown(mem.putDown, cat, state.character.body, catMoving(cat), lifting)) mem.putDown = null;
@@ -383,7 +396,8 @@ export class IsoCatsView implements CatsPart {
         bowl: bowl ? { id: bowl.id, at: itemPoint(bowl) } : null,
       });
     }
-    return catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts, this.crowdPlaces);
+    catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts, this.crowdPlaces);
+    return perchCrowds(perched, this.crowdShifts, this.perchPlaces);
   }
 
   /**
@@ -433,12 +447,15 @@ export class IsoCatsView implements CatsPart {
     // там, де його поставили руки (зсув тримається, юрба не зсуває).
     const base = anim === choice.anim && mem.spot ? mem.spot : catSpot(state, cat, anim, pair, SPOT_DEPTHS);
     const floor = base.kind === "floor";
+    // На речі (меблі, будиночок, схованка) — зсунутий у рядку юрби на речах (`perchCrowds`); вийшов з рядка, а лежить, де
+    // лежав (сусід пішов), — лишається там, де його намалювали: місця не перебігають.
+    const perched = PERCHED.has(base.kind);
     const put = mem.putDown !== null;
-    const still = floor && pair === null && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
-    const shift = this.crowdShift(mem, floor && !put ? crowd : null, still || put, seconds, mem.pos === null);
+    const still = (perched || (floor && pair === null)) && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
+    const shift = this.crowdShift(mem, (floor && !put) || perched ? crowd : null, still || put, seconds, mem.pos === null);
     // Сим переставив кота чи пара змінила зсув — доганяє нове місце (`CATCH`); далеко позаду — біжить туди лицем.
     const lag = this.catchUp(cat, mem, base, pair, seconds);
-    const moved = floor && (shift.x !== 0 || shift.y !== 0 || lag.x !== 0 || lag.y !== 0);
+    const moved = (floor || perched) && (shift.x !== 0 || shift.y !== 0 || lag.x !== 0 || lag.y !== 0);
     const own = moved ? { ...base, at: { x: base.at.x + shift.x + lag.x, y: base.at.y + shift.y + lag.y } } : base;
     const catching = floor && anim === choice.anim && Math.hypot(lag.x, lag.y) > CATCH.run;
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
@@ -796,6 +813,7 @@ export class IsoCatsView implements CatsPart {
     this.views.clear();
     this.memory.clear();
     this.crowdPlaces.slots.clear();
+    this.perchPlaces.order.clear();
     this.minuteWas = null;
     for (const cloud of this.clouds.values()) {
       cloud.image.destroy();

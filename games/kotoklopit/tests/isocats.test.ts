@@ -46,14 +46,17 @@ import {
   LAP_SEAT,
   lapSeat,
   LITTER_SEAT,
+  perchPlace,
   SOFA_HIDE,
   SPOT_SCALE,
   underGrate,
 } from "../src/view/iso/catspot";
 import { isoScreenDir } from "../src/view/anim/iso";
+import { catPairs, PERCH, perchCrowds, perchMemory, type PerchMember } from "../src/view/anim/pairs";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { artOffset, footprintCenter } from "../src/view/iso/geometry";
 import { shapedStage } from "../src/view/iso/looks";
-import { catPose } from "../src/view/pose";
+import { catAnim, catPose } from "../src/view/pose";
 import { isoOrder } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
@@ -1223,5 +1226,79 @@ describe("рендерер (`catrender.ts`)", () => {
     expect(catRenderConfig(() => "SwiftShader")).toEqual({ maxTextures: 1 });
     expect(catRenderConfig(() => "Apple GPU")).toBeNull();
     expect(catRenderConfig(() => null)).toBeNull();
+  });
+});
+
+describe("коти на тій самій речі (`perchPlace`, `perchCrowds`)", () => {
+  /** Як перший прохід `IsoCatsView`: місце кожного кота й зсуви юрби на речах — точка, де його намалюють. */
+  function placed(save: Save, sizes: (cat: Cat) => number = () => 1): Map<number, { kind: string; at: Vec; key: string | null }> {
+    const state = save.current;
+    const pairs = catPairs(state, sizes);
+    const members: PerchMember[] = [];
+    const spots = new Map<number, { kind: string; at: Vec; key: string | null }>();
+    for (const cat of state.cats) {
+      if (cat.away !== null) continue;
+      const pair = pairs.get(cat.id) ?? null;
+      const spot = catSpot(state, cat, catAnim(state, cat).anim, pair, SPOT);
+      const place = cat.act.goal === null ? perchPlace(spot) : null;
+      if (place) members.push({ id: cat.id, key: place.key, at: spot.at, size: sizes(cat), area: place.area, partner: pair?.with ?? null });
+      spots.set(cat.id, { kind: spot.kind, at: spot.at, key: place?.key ?? null });
+    }
+    const out = perchCrowds(members, new Map(), perchMemory());
+    for (const [id, s] of spots) {
+      const shift = out.get(id);
+      if (shift) spots.set(id, { ...s, at: { x: s.at.x + shift.x, y: s.at.y + shift.y } });
+    }
+    return spots;
+  }
+  const screenGap = (a: Vec, b: Vec): number => {
+    const d = isoScreenDir({ x: a.x - b.x, y: a.y - b.y });
+    return Math.hypot(d.x, d.y);
+  };
+
+  it("сценарій «Техніка» (`appliances`): двоє кошенят сплять на ліжку — рядком уздовж ліжка, обидва на ньому", () => {
+    const save = applyScenario(FILE_SCENARIOS["appliances"]!);
+    const named = (name: string): Cat => save.current.cats.find((c) => c.name === name)!;
+    const size = (cat: Cat): number => catSize(cat).relative;
+    const spots = placed(save, size);
+    const a = spots.get(named("Тигрик").id)!;
+    const b = spots.get(named("Пиріжок").id)!;
+    expect(a.kind).toBe("furniture");
+    expect(a.key).toBe("bed");
+    expect(b.key).toBe("bed");
+    // У сима — в одній точці; на екрані — на крок кошенят один від одного, уздовж довгого боку ліжка (y).
+    expect(named("Тигрик").x).toBe(named("Пиріжок").x);
+    expect(screenGap(a.at, b.at)).toBeCloseTo(PERCH.step * size(named("Тигрик")), 6);
+    expect(a.at.x).toBeCloseTo(b.at.x, 9);
+    const f = isoObjectLook("bed").footprint;
+    for (const p of [a.at, b.at]) expect(p.x >= f.x0 && p.x <= f.x1 && p.y >= f.y0 && p.y <= f.y1).toBe(true);
+  });
+
+  it("двоє в одному будиночку — дві пари очей поруч уздовж входу; двоє під тим самим краєм ліжка — так само", () => {
+    const save = game();
+    save.current.home.items.push({ id: 900, kind: "house", quality: "premium", slot: "house-1" });
+    const a = withCat(save, { x: 1.5, y: 9.5 });
+    const b = withCat(save, { x: 1.5, y: 9.5 });
+    a.act = act("sleep", { target: "item:900", minutes: 300 });
+    b.act = act("sleep", { target: "item:900", minutes: 300 });
+    let spots = placed(save);
+    expect(spots.get(a.id)!.kind).toBe("house");
+    // Уздовж входу на грані +x: x той самий, y — на крок очей.
+    expect(spots.get(a.id)!.at.x).toBeCloseTo(spots.get(b.id)!.at.x, 9);
+    expect(screenGap(spots.get(a.id)!.at, spots.get(b.id)!.at)).toBeCloseTo(PERCH.eyes, 6);
+    for (const cat of [a, b]) expect(Math.abs(spots.get(cat.id)!.at.y - 9.5)).toBeLessThanOrEqual(PERCH.door + 1e-9);
+    // Ховаються під ліжком у тій самій клітинці: очі з-під того самого краю — поруч, на тому самому краї.
+    for (const cat of [a, b]) {
+      cat.x = 1.5;
+      cat.y = 2.5;
+      cat.act = act("hide", { minutes: 20 });
+    }
+    spots = placed(save);
+    const ea = spots.get(a.id)!;
+    const eb = spots.get(b.id)!;
+    expect(ea.kind).toBe("under");
+    expect(ea.key).toBe(eb.key);
+    expect(ea.at.x).toBeCloseTo(eb.at.x, 9);
+    expect(screenGap(ea.at, eb.at)).toBeCloseTo(PERCH.eyes, 6);
   });
 });

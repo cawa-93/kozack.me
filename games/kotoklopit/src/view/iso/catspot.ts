@@ -10,7 +10,7 @@ import { CARRIER_SPOT, HIGH_PLACES, isSolid, isWall, itemPoint, objectAt, object
 import type { Cat, GameState, HomeItem, LitterItem, ScratcherItem, Vec } from "../../sim/types";
 import type { CatAnimId } from "../anim/ids";
 import { isoScreenDir } from "../anim/iso";
-import type { PairPlacement } from "../anim/pairs";
+import { PERCH, type PairPlacement, type PerchArea } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
 import { isoCatPerch, isoObjectLook } from "../world/objects";
@@ -455,3 +455,48 @@ export function lapSeat(back: boolean, flip: boolean, order: number, scale: numb
 
 /** Чи кіт на чомусь над підлогою: на меблях, на роботі, у лотку (для плавного стрибка — висота змінюється не миттю). */
 export const raised = (kind: CatSpotKind): boolean => kind === "furniture" || kind === "robot" || kind === "litter";
+
+// --- Юрба на речах --------------------------------------------------------------------------------
+
+/** Річ, на якій кіт для юрби на речах (`perchCrowds`): ключ (котів з тим самим ключем розсувають) і поверхня. */
+export interface PerchPlace {
+  readonly key: string;
+  readonly area: PerchArea;
+}
+
+/** Місця за ключем: речі стоять на своїх місцях, тож поверхня того самого ключа щоразу та сама (щокадру не створювати). */
+const PERCH_PLACES = new Map<string, PerchPlace>();
+
+function perchPlaceOf(key: string, area: () => PerchArea): PerchPlace {
+  let place = PERCH_PLACES.get(key);
+  if (!place) {
+    place = { key, area: area() };
+    PERCH_PLACES.set(key, place);
+  }
+  return place;
+}
+
+/**
+ * Де розсунути котів, що лежать на тій самій речі (`perchCrowds`, `PERCH`): на меблях — у межах сліду речі (`isoObjectLook`;
+ * у підвіконня — лише дошка); у будиночку — уздовж входу на грані +x (очі в темряві); під меблями — уздовж краю, з-під якого
+ * визирають очі (`hidePeek`; під диваном — лінія `SOFA_HIDE`). Решта місць — null: там кіт сам (барабан, переноска, лоток)
+ * чи його не розсувають (на підлозі — `catCrowds`, руки).
+ */
+export function perchPlace(spot: CatSpot): PerchPlace | null {
+  const box = spot.box;
+  if (spot.kind === "furniture" && box) {
+    return perchPlaceOf(box, () => ({ ...isoObjectLook(box).footprint, margin: PERCH.margin, step: PERCH.step }));
+  }
+  if (spot.kind === "house" && spot.item) {
+    const { x, y } = spot.at;
+    return perchPlaceOf(spot.item, () => ({ x0: x, x1: x, y0: y - PERCH.door, y1: y + PERCH.door, margin: 0, step: PERCH.eyes }));
+  }
+  if (spot.kind !== "under" || !box) return null;
+  if (spot.behind) {
+    return perchPlaceOf(`under:${box}:seat`, () => ({ x0: SOFA_HIDE.from, x1: SOFA_HIDE.to, y0: SOFA_HIDE.y, y1: SOFA_HIDE.y, margin: 0, step: PERCH.eyes }));
+  }
+  const f = isoObjectLook(box).footprint;
+  if (spot.at.x === f.x1) return perchPlaceOf(`under:${box}:x`, () => ({ x0: f.x1, x1: f.x1, y0: f.y0, y1: f.y1, margin: PERCH.edge, step: PERCH.eyes }));
+  if (spot.at.y === f.y1) return perchPlaceOf(`under:${box}:y`, () => ({ x0: f.x0, x1: f.x1, y0: f.y1, y1: f.y1, margin: PERCH.edge, step: PERCH.eyes }));
+  return null;
+}

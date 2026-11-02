@@ -14,7 +14,7 @@ import { absoluteMinute } from "../src/sim/time";
 import type { Cat, CatAct, Save, TraitLevel, Vec } from "../src/sim/types";
 import { catFacing, facingFromScreen, facingFromTiles, FACING_HYSTERESIS, FACING_SMOOTH, holdFlip, personFacing, smoothHeading } from "../src/view/anim/catfacing";
 import { isoScreenDir, isoTileDir, ISO_TILE } from "../src/view/anim/iso";
-import { catCrowds, catPairs, CROWD, crowdMemory, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf, type CrowdMember } from "../src/view/anim/pairs";
+import { catCrowds, catPairs, CROWD, crowdMemory, GROOM_FRONT, NURSING, PAIR_GAPS, pairOf, PERCH, perchCrowds, perchMemory, type CrowdMember, type PerchArea, type PerchMember } from "../src/view/anim/pairs";
 import { isoOrder } from "../src/view/world/isoorder";
 import type { RigFacing } from "../src/view/rig/types";
 import { withCatCorner } from "./helpers";
@@ -731,5 +731,110 @@ describe("юрба (`catCrowds`)", () => {
     // Лівий пішов би в стіну (x < 1) — лишився; правий зсунувся.
     expect(out.size).toBe(1);
     expect(catCrowds([], null, free, out).size).toBe(0);
+  });
+});
+
+describe("юрба на речах (`perchCrowds`)", () => {
+  /** Поверхні: ліжко 1 × 2 (довгий бік — y), верх холодильника 1 × 1, дошка підвіконня вітальні (вздовж y), вхід будиночка. */
+  const BED: PerchArea = { x0: 1, y0: 1, x1: 2, y1: 3, margin: PERCH.margin, step: PERCH.step };
+  const FRIDGE: PerchArea = { x0: 13, y0: 1, x1: 14, y1: 2, margin: PERCH.margin, step: PERCH.step };
+  const SILL: PerchArea = { x0: 1, y0: 8, x1: 1.3, y1: 9, margin: PERCH.margin, step: PERCH.step };
+  const member = (id: number, at: Vec, area: PerchArea, key = "bed", size = 1, partner: number | null = null): PerchMember => ({ id, key, at, size, area, partner });
+  const placedAt = (m: PerchMember, out: Map<number, Vec>): Vec => {
+    const shift = out.get(m.id) ?? { x: 0, y: 0 };
+    return { x: m.at.x + shift.x, y: m.at.y + shift.y };
+  };
+  const screen = (m: PerchMember, out: Map<number, Vec>): Vec => isoScreenDir(placedAt(m, out));
+  const gap = (a: PerchMember, b: PerchMember, out: Map<number, Vec>): number => {
+    const pa = screen(a, out);
+    const pb = screen(b, out);
+    return Math.hypot(pa.x - pb.x, pa.y - pb.y);
+  };
+  const inside = (p: Vec, area: PerchArea): boolean => p.x >= area.x0 - 1e-9 && p.x <= area.x1 + 1e-9 && p.y >= area.y0 - 1e-9 && p.y <= area.y1 + 1e-9;
+
+  it("двоє в одній точці ліжка — рядком уздовж довгого боку (y), на крок один від одного, обидва на ліжку", () => {
+    const a = member(1, { x: 1.5, y: 2.5 }, BED);
+    const b = member(2, { x: 1.5, y: 2.5 }, BED);
+    const out = perchCrowds([a, b], new Map());
+    expect(gap(a, b, out)).toBeCloseTo(PERCH.step, 6);
+    // Уздовж y: x не змінився, середина — там, де лежали.
+    expect(placedAt(a, out).x).toBeCloseTo(1.5, 9);
+    expect(placedAt(b, out).x).toBeCloseTo(1.5, 9);
+    expect((placedAt(a, out).y + placedAt(b, out).y) / 2).toBeCloseTo(2.5, 9);
+    for (const m of [a, b]) expect(inside(placedAt(m, out), BED)).toBe(true);
+  });
+
+  it("кошенята — тісніше (крок × розмір); хто й так далі за крок — лишається, де лежав", () => {
+    const a = member(1, { x: 1.5, y: 2.5 }, BED, "bed", 0.5);
+    const b = member(2, { x: 1.5, y: 2.5 }, BED, "bed", 0.5);
+    expect(gap(a, b, perchCrowds([a, b], new Map()))).toBeCloseTo(PERCH.step * 0.5, 6);
+    const far = member(3, { x: 1.5, y: 1.5 }, BED);
+    const near = member(4, { x: 1.5, y: 2.5 }, BED);
+    expect(perchCrowds([far, near], new Map()).size).toBe(0);
+  });
+
+  it("квадратна річ — горизонталлю екрана; не вміщаються — щільніше, але не ближче за `squeeze` кроку, і в межах речі", () => {
+    const cats = [1, 2, 3].map((id) => member(id, { x: 13.5, y: 1.5 }, FRIDGE, "fridge"));
+    const out = perchCrowds(cats, new Map());
+    const ys = cats.map((m) => screen(m, out).y);
+    for (const y of ys) expect(y).toBeCloseTo(ys[0]!, 6);
+    const xs = cats.map((m) => screen(m, out).x).sort((p, q) => p - q);
+    // Троє по 40 не вміщаються в 0,6 клітинки горизонталі (77): крок менший за 40, але не менший за squeeze.
+    const step = xs[1]! - xs[0]!;
+    expect(step).toBeLessThan(PERCH.step);
+    expect(step).toBeGreaterThanOrEqual(PERCH.step * PERCH.squeeze - 1e-6);
+    expect(xs[2]! - xs[1]!).toBeCloseTo(step, 6);
+    for (const m of cats) expect(inside(placedAt(m, out), FRIDGE)).toBe(true);
+    // Шестеро кошенят на підвіконні: кожного видно (не ближче за squeeze кроку).
+    const kids = [1, 2, 3, 4, 5, 6].map((id) => member(id, { x: 1.12, y: 8.5 }, SILL, "sill", 0.6));
+    const sill = perchCrowds(kids, new Map());
+    const along = kids.map((m) => placedAt(m, sill).y).sort((p, q) => p - q);
+    for (let i = 1; i < along.length; i++) expect((along[i]! - along[i - 1]!) * Math.hypot(64, 32)).toBeGreaterThanOrEqual(PERCH.step * 0.6 * PERCH.squeeze - 1e-6);
+    // На підвіконні — уздовж дошки, на тій самій відстані від стіни.
+    for (const m of kids) expect(placedAt(m, sill).x).toBeCloseTo(1.12, 9);
+  });
+
+  it("за рівних місць — черга приходу: хто лежав, лишається з того самого боку, хоч би який номер мав новий", () => {
+    const memory = perchMemory();
+    const first = member(9, { x: 1.5, y: 2.5 }, BED);
+    expect(perchCrowds([first], new Map(), memory).size).toBe(0);
+    const late = member(2, { x: 1.5, y: 2.5 }, BED);
+    const out = perchCrowds([late, first], new Map(), memory);
+    // Новий — далі вздовж ліжка (у кінці рядка), той, хто лежав, — з початку, хоч номер у нового менший.
+    expect(placedAt(late, out).y).toBeGreaterThan(placedAt(first, out).y);
+    // Наступного кадру — так само.
+    const again = perchCrowds([first, late], new Map(), memory);
+    expect(placedAt(late, again).y).toBeCloseTo(placedAt(late, out).y, 9);
+    // Пішов і повернувся — тепер він новий.
+    perchCrowds([late], new Map(), memory);
+    const back = perchCrowds([first, late], new Map(), memory);
+    expect(placedAt(first, back).y).toBeGreaterThan(placedAt(late, back).y);
+  });
+
+  it("двоє з пари лежать на своїй відстані, третій їх не розділяє; різні речі одна одну не зсувають", () => {
+    // Пара, розсунута `catPairs` уздовж горизонталі екрана (±15), і третій у тій самій точці.
+    const half = isoTileDir({ x: 15, y: 0 });
+    const a = member(1, { x: 1.5 - half.x, y: 2.5 - half.y }, BED, "bed", 1, 2);
+    const b = member(2, { x: 1.5 + half.x, y: 2.5 + half.y }, BED, "bed", 1, 1);
+    const c = member(3, { x: 1.5, y: 2.5 }, BED);
+    const out = perchCrowds([a, b, c], new Map());
+    const pos = (m: PerchMember): number => placedAt(m, out).y;
+    // Пара — поруч (її відстань уздовж ліжка не змінилася), третій — з одного боку від обох.
+    expect(Math.abs(pos(a) - pos(b))).toBeCloseTo(Math.abs(a.at.y - b.at.y), 9);
+    const c0 = pos(c);
+    expect((c0 - pos(a)) * (c0 - pos(b))).toBeGreaterThan(0);
+    expect(Math.min(gap(c, a, out), gap(c, b, out))).toBeGreaterThan(PERCH.step * 0.5);
+    // Двоє на різних речах у «тій самій» точці (ключі різні) не зсуваються.
+    const x = member(4, { x: 13.5, y: 1.5 }, FRIDGE, "fridge");
+    const y = member(5, { x: 13.5, y: 1.5 }, FRIDGE, "wardrobe");
+    expect(perchCrowds([x, y], new Map()).size).toBe(0);
+  });
+
+  it("дописує в той самий об'єкт, не очищаючи юрби на підлозі", () => {
+    const out = new Map<number, Vec>([[42, { x: 0.1, y: 0 }]]);
+    const result = perchCrowds([member(1, { x: 1.5, y: 2.5 }, BED), member(2, { x: 1.5, y: 2.5 }, BED)], out);
+    expect(result).toBe(out);
+    expect(out.get(42)).toEqual({ x: 0.1, y: 0 });
+    expect(out.size).toBe(3);
   });
 });

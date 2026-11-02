@@ -10,7 +10,7 @@ import { isNewborn } from "../../sim/reproduction";
 import type { Cat, GameState, Vec } from "../../sim/types";
 import { brawlFoe } from "../pose";
 import type { RigFacing } from "../rig/types";
-import { isoScreenDir, isoTileDir } from "./iso";
+import { ISO_TILE, isoScreenDir, isoTileDir } from "./iso";
 
 /**
  * Пара: `faceoff` — протистояння (обидва дугою), `brawl` — клубок бійки (обидва в одній точці), `groom` — вилизує друга чи
@@ -421,4 +421,232 @@ function personRow(
     }
     if (own.order > first) own.order = first - 1;
   }
+}
+
+// --- Юрба на речах ----------------------------------------------------------------------------------
+
+/**
+ * Юрба на речах (доробки після хвилі 3): сим кладе котів на меблі в центр клітинки (ліжко, диван, підвіконня, верх
+ * холодильника й шафи, стільниці), а `catCrowds` розсуває лише тих, хто на підлозі, — двоє кошенят, що сплять на ліжку,
+ * малювалися одне в одному: видно було одне, а над ним — дві таблички нашийників. Так само двоє в одному будиночку чи під тим
+ * самим краєм ліжка — дві пари очей в одній точці. Тож коти, що не йдуть і лежать на тій самій речі (`PerchMember.key`),
+ * стають рядком у межах її поверхні (`PerchArea`): уздовж найдовшої лінії, що проходить через них (довгий бік ліжка, дивана,
+ * стола; у квадратної речі — горизонталь екрана, діагональ ромба; у будиночку — уздовж входу), з кроком `PerchArea.step` ×
+ * середній розмір сусідів. Хто й так далі за крок, лишається, де був. Не вміщаються — щільніше, з перекриттям, але не ближче
+ * за `squeeze` кроку, щоб кожного було видно, — і тоді рядок може вийти за край. Двоє з пари (`catPairs`: сплять поруч,
+ * вилизування) — сусіди в рядку на своїй відстані, третій їх не розділяє. Хто де за рівних місць — за чергою приходу
+ * (`PerchMemory`): новий стає з краю, а ті, хто вже лежить, не перебігають один через одного.
+ *
+ * Числа — одиниці арту (крок; кіт ≈ 70 завдовжки, клубком ≈ 50) і клітинки (відступи). `eyes` — крок очей, що визирають з
+ * будиночка й з-під меблів (пара очей ≈ 16 завширшки); `door` — пів ширини входу будиночка (0,32 клітинки) і `edge` — відступ
+ * від кінців краю, з-під якого визирають очі.
+ */
+export const PERCH = { step: 40, margin: 0.2, squeeze: 0.45, eyes: 18, door: 0.16, edge: 0.15 } as const;
+
+/** Де на речі можна розсунути котів: прямокутник у клітинках (слід речі, край схованки, вхід будиночка), відступ і крок. */
+export interface PerchArea {
+  readonly x0: number;
+  readonly y0: number;
+  readonly x1: number;
+  readonly y1: number;
+  /** Відступ від країв, клітинки; кіт, що й так ближче до краю, лишається на своїй лінії. */
+  readonly margin: number;
+  /** Крок рядка дорослих, одиниці арту на екрані (× середній розмір сусідів). */
+  readonly step: number;
+}
+
+/** Кіт на речі: де він (`CatSpot.at`), розмір, що це за річ і яка в неї поверхня. */
+export interface PerchMember {
+  id: number;
+  /** Річ (меблі, будиночок, край схованки): коти з тим самим ключем — один рядок. */
+  key: string;
+  at: Vec;
+  size: number;
+  area: PerchArea;
+  /** Друг пари (`catPairs`), якщо він на тій самій речі: сусід у рядку на їхній відстані. */
+  partner: number | null;
+}
+
+/** Черга приходу котів на речі між кадрами (`perchCrowds`): хто прийшов раніше, той за рівних місць лишається, де лежав. */
+export interface PerchMemory {
+  order: Map<number, number>;
+  next: number;
+}
+
+export const perchMemory = (): PerchMemory => ({ order: new Map(), next: 0 });
+
+/** Довжина ребра клітинки на екрані, одиниці арту: уздовж осі x чи y клітинок. */
+const EDGE = Math.hypot(ISO_TILE.w / 2, ISO_TILE.h / 2);
+
+/**
+ * Лінії рядка: напрям у клітинках на одиницю арту вздовж нього на екрані — уздовж x клітинок, уздовж y, горизонталь екрана.
+ * Порядок — за перевагою за рівної довжини.
+ */
+const PERCH_AXES: readonly Vec[] = [{ x: 1 / EDGE, y: 0 }, { x: 0, y: 1 / EDGE }, isoTileDir({ x: 1, y: 0 })];
+
+/**
+ * Зсуви котів на речах (`PERCH`) у клітинках: дописує в `out` (не очищає — там уже юрба на підлозі) лише тих, кого треба
+ * зсунути. `memory` — черга приходу (оновлюється).
+ */
+export function perchCrowds(members: readonly PerchMember[], out: Map<number, Vec>, memory: PerchMemory = perchMemory()): Map<number, Vec> {
+  const order = memory.order;
+  // Хто зійшов з речі чи рушив, місця в черзі не тримає; новий — у кінець черги.
+  for (const id of order.keys()) if (!members.some((m) => m.id === id)) order.delete(id);
+  for (const m of members) if (!order.has(m.id)) order.set(m.id, memory.next++);
+  for (let i = 0; i < members.length; i++) {
+    const key = members[i]!.key;
+    let first = true;
+    let count = 1;
+    for (let j = 0; j < members.length; j++) {
+      if (j === i || members[j]!.key !== key) continue;
+      if (j < i) first = false;
+      count++;
+    }
+    if (!first || count < 2) continue;
+    perchRow(
+      members.filter((m) => m.key === key),
+      order,
+      out,
+    );
+  }
+  return out;
+}
+
+/** Блок сусідів, що стоять упритул: з `from` по `to` у рядку, ширина й сума (місце − зсув у блоці) — для середини. */
+interface PerchBlock {
+  from: number;
+  to: number;
+  width: number;
+  sum: number;
+  count: number;
+}
+
+/** Рядок котів на одній речі (`perchCrowds`). */
+function perchRow(row: PerchMember[], order: ReadonlyMap<number, number>, out: Map<number, Vec>): void {
+  const n = row.length;
+  const area = row[0]!.area;
+  let px = 0;
+  let py = 0;
+  for (const m of row) {
+    px += m.at.x / n;
+    py += m.at.y / n;
+  }
+  // Межі з відступом; середина, що й так ближче до краю, — межа там, де вона.
+  const x0 = Math.min(area.x0 + area.margin, px);
+  const x1 = Math.max(area.x1 - area.margin, px);
+  const y0 = Math.min(area.y0 + area.margin, py);
+  const y1 = Math.max(area.y1 - area.margin, py);
+  // Найдовша лінія через середину в межах: [lo, hi] — одиниці арту від середини.
+  let axis = PERCH_AXES[0]!;
+  let lo = 0;
+  let hi = 0;
+  for (const d of PERCH_AXES) {
+    const [a, b] = clipLine(px, py, d, x0, x1, y0, y1);
+    if (b - a > hi - lo + 1e-6) {
+      axis = d;
+      lo = a;
+      hi = b;
+    }
+  }
+  // Місце кожного вздовж лінії, одиниці арту від середини.
+  const norm = axis.x * axis.x + axis.y * axis.y;
+  const s = row.map((m) => ((m.at.x - px) * axis.x + (m.at.y - py) * axis.y) / norm);
+  const index = new Map(row.map((m, i) => [m.id, i]));
+  const partnerOf = (i: number): number => {
+    const p = row[i]!.partner;
+    const j = p === null ? undefined : index.get(p);
+    return j !== undefined && row[j]!.partner === row[i]!.id ? j : -1;
+  };
+  // Пара — одне ціле: місце — середина пари, черга — того з двох, хто прийшов раніше.
+  const unitAt = (i: number): number => {
+    const j = partnerOf(i);
+    return j < 0 ? s[i]! : (s[i]! + s[j]!) / 2;
+  };
+  const unitOrder = (i: number): number => {
+    const j = partnerOf(i);
+    const own = order.get(row[i]!.id) ?? 0;
+    return j < 0 ? own : Math.min(own, order.get(row[j]!.id) ?? 0);
+  };
+  const sorted = row.map((_, i) => i);
+  sorted.sort((a, b) => Math.round((unitAt(a) - unitAt(b)) * 1e6) || unitOrder(a) - unitOrder(b) || s[a]! - s[b]! || row[a]!.id - row[b]!.id);
+  // Найменша відстань між сусідами в рядку: крок за їхнім розміром, а двоє з пари — як лежать (не далі за крок).
+  const gaps = sorted.map((i, k) => {
+    if (k === 0) return 0;
+    const prev = sorted[k - 1]!;
+    const step = area.step * ((row[prev]!.size + row[i]!.size) / 2);
+    return partnerOf(i) === prev ? Math.min(step, Math.abs(s[i]! - s[prev]!)) : step;
+  });
+  const total = gaps.reduce((sum, g) => sum + g, 0);
+  let blocks = perchBlocks(sorted, s, gaps, 1, lo, hi);
+  // Не вміщаються — щільніше (не ближче за `squeeze` кроку).
+  const span = hi - lo;
+  let scale = 1;
+  if (blocks.some((b) => b.width > span + 1e-6) && total > 0) {
+    scale = Math.max(PERCH.squeeze, span / total);
+    blocks = perchBlocks(sorted, s, gaps, scale, lo, hi);
+  }
+  for (const block of blocks) {
+    let at = blockStart(block, lo, hi);
+    for (let k = block.from; k <= block.to; k++) {
+      if (k > block.from) at += gaps[k]! * scale;
+      const i = sorted[k]!;
+      const move = at - s[i]!;
+      if (Math.abs(move) < 1e-6) continue;
+      out.set(row[i]!.id, { x: axis.x * move, y: axis.y * move });
+    }
+  }
+}
+
+/** Де починається блок: середина його котів, у межах [lo, hi]; ширший за межі — посередині. */
+function blockStart(block: PerchBlock, lo: number, hi: number): number {
+  if (block.width > hi - lo) return (lo + hi - block.width) / 2;
+  return Math.min(hi - block.width, Math.max(lo, block.sum / block.count));
+}
+
+/**
+ * Блоки рядка (зліва направо): кожен кіт — свій блок, а блок, що налазить на попередній ближче за відстань між ними (`gaps`
+ * × `scale`), зливається з ним — і так, доки ніхто не налазить.
+ */
+function perchBlocks(sorted: readonly number[], s: readonly number[], gaps: readonly number[], scale: number, lo: number, hi: number): PerchBlock[] {
+  const blocks: PerchBlock[] = [];
+  for (let k = 0; k < sorted.length; k++) {
+    blocks.push({ from: k, to: k, width: 0, sum: s[sorted[k]!]!, count: 1 });
+    while (blocks.length >= 2) {
+      const b = blocks[blocks.length - 1]!;
+      const a = blocks[blocks.length - 2]!;
+      const gap = gaps[b.from]! * scale;
+      if (blockStart(b, lo, hi) - (blockStart(a, lo, hi) + a.width) >= gap - 1e-6) break;
+      a.sum += b.sum - b.count * (a.width + gap);
+      a.count += b.count;
+      a.width += gap + b.width;
+      a.to = b.to;
+      blocks.pop();
+    }
+  }
+  return blocks;
+}
+
+/**
+ * Відрізок прямої `p + t·d` у прямокутнику [x0, x1] × [y0, y1]: [від, до] за t (точка p — усередині). Вироджений бік
+ * (x0 = x1) — пряма вздовж нього, якщо d його не перетинає.
+ */
+function clipLine(px: number, py: number, d: Vec, x0: number, x1: number, y0: number, y1: number): [number, number] {
+  let lo = Number.NEGATIVE_INFINITY;
+  let hi = Number.POSITIVE_INFINITY;
+  const slab = (p: number, v: number, a: number, b: number): void => {
+    if (Math.abs(v) < 1e-12) {
+      if (p < a - 1e-9 || p > b + 1e-9) {
+        lo = 0;
+        hi = 0;
+      }
+      return;
+    }
+    const t0 = (a - p) / v;
+    const t1 = (b - p) / v;
+    lo = Math.max(lo, Math.min(t0, t1));
+    hi = Math.min(hi, Math.max(t0, t1));
+  };
+  slab(px, d.x, x0, x1);
+  slab(py, d.y, y0, y1);
+  return hi < lo ? [0, 0] : [lo, hi];
 }
