@@ -238,7 +238,7 @@ Object.assign(SAME, {
   "крик болю": { why: "сечокам'яна: кіт кричить у лотку — бабл, і та сама іконка біля неї у ветеринара", ids: ["event:symptom:symptom=pain", "disease:urolithiasis"] },
   травма: { why: "травма — пластир: відмова ривка травмованого персонажа, «Травма» в лікаря й травма кота у ветеринара", ids: ["refusal:injured", "illness:injury", "disease:injury"] },
   "застуда персонажа": { why: "персонаж застуджений: відмова ривка й «Застуда» в лікаря — градусник", ids: ["refusal:cold", "illness:cold"] },
-  виснаження: { why: "персонаж без сил: відмова ривка й «Виснаження» в лікаря — розряджена батарейка", ids: ["refusal:weak", "illness:exhaustion"] },
+  // Виснаження — не група: ривка воно не забирає, а відмова «без сил» (батарейка) — від здоров'я нижче 25 (рецензія 2026-11-02).
 });
 
 /** Значення випадку: його група або він сам. */
@@ -295,7 +295,7 @@ describe("унікальна іконка на унікальний кейс (§
     expect(icon("thing:litter")).not.toBe(icon("state:litterDirty"));
   });
 
-  it("біля хвороби — та сама іконка, що в баблі кота й у відмові ривка персонажа (§11.4 «Іконка біля назви»)", () => {
+  it("біля хвороби — та сама іконка, що в баблі кота й у відмові ривка персонажа; виснаження — своя (§11.4 «Іконка біля назви»)", () => {
     const symptom = (s: "sneeze" | "itch" | "eyes" | "pain"): IconName | undefined => eventBubbles({ type: "symptom", cat: 1, symptom: s })[0]?.icon;
     expect(DISEASE_ICONS.cold).toBe(symptom("sneeze"));
     expect(DISEASE_ICONS.fleas).toBe(symptom("itch"));
@@ -303,8 +303,13 @@ describe("унікальна іконка на унікальний кейс (§
     expect(DISEASE_ICONS.conjunctivitis).toBe(symptom("eyes"));
     expect(DISEASE_ICONS.urolithiasis).toBe(symptom("pain"));
     expect(ILLNESS_ICONS.cold).toBe(refusalBubble({ reason: "cold" }).icon);
-    expect(ILLNESS_ICONS.exhaustion).toBe(refusalBubble({ reason: "weak" }).icon);
     expect(ILLNESS_ICONS.injury).toBe(refusalBubble({ reason: "injured" }).icon);
+    // Виснаження ривка не забирає: «без сил» (здоров'я нижче 25) — батарейка, а біля «Виснаження» в лікаря — своя іконка
+    // (рецензія 2026-11-02); і не сонливість увечері (zz).
+    expect(refusalBubble({ reason: "weak" }).icon).toBe("battery-low");
+    expect(ILLNESS_ICONS.exhaustion).not.toBe(refusalBubble({ reason: "weak" }).icon);
+    expect(ILLNESS_ICONS.exhaustion).not.toBe(STATE_ICONS.drowsy);
+    expect(meaningOf("illness:exhaustion")).toBe("illness:exhaustion");
     // Травма кота — той самий пластир, що в персонажа; серце хвороби кота — не серце здоров'я персонажа на панелі.
     expect(DISEASE_ICONS.injury).toBe(ILLNESS_ICONS.injury);
     expect(DISEASE_ICONS.heart).not.toBe(STAT_ICONS.health);

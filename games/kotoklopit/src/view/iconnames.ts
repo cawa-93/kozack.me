@@ -113,6 +113,7 @@ export const ICON_NAMES = [
   "hiss-kitten",
   "thermometer",
   "battery-low",
+  "exhausted",
   "bandage",
   "folded",
   "nest",

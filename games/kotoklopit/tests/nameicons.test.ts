@@ -131,14 +131,24 @@ describe("іконка біля назви: ветеринар і лікар (§
     expect(iconOf(diseaseLabel("urolithiasis"))).toBe(bubble("pain"));
   });
 
-  it("біля кожної хвороби персонажа в лікаря — іконка його відмови ривка", () => {
+  it("біля кожної хвороби персонажа в лікаря — її іконка: застуда й травма — як у відмові ривка", () => {
     for (const id of illnesses) {
       expect(iconOf(illnessLabel(id)), id).toBe(ILLNESS_ICONS[id]);
       expect(plain(illnessLabel(id)), id).toBe(ILLNESS_TITLES[id]);
+      expect(iconUrl(ILLNESS_ICONS[id]), id).not.toBeNull();
     }
     expect(iconOf(illnessLabel("cold"))).toBe(refusalBubble({ reason: "cold" }).icon);
-    expect(iconOf(illnessLabel("exhaustion"))).toBe(refusalBubble({ reason: "weak" }).icon);
     expect(iconOf(illnessLabel("injury"))).toBe(refusalBubble({ reason: "injured" }).icon);
+  });
+
+  it("виснаження — своя іконка, не батарейка відмови «без сил» (рецензія 2026-11-02)", () => {
+    // Ривок забирають застуда, травма й здоров'я нижче 25 (`dashRefusal`), а виснаження — ні: відмова «weak» — не про нього.
+    expect(iconOf(illnessLabel("exhaustion"))).toBe("exhausted");
+    expect(iconOf(illnessLabel("exhaustion"))).not.toBe(refusalBubble({ reason: "weak" }).icon);
+    expect(refusalBubble({ reason: "weak" }).icon).toBe("battery-low");
+    // І не інша хвороба персонажа чи кота.
+    const others = [...illnesses.filter((id) => id !== "exhaustion").map((id) => ILLNESS_ICONS[id]), ...Object.values(DISEASE_ICONS)];
+    expect(others).not.toContain(ILLNESS_ICONS.exhaustion);
   });
 
   it("«Заходила ветеринарка»: ті самі слова, біля кожної хвороби — її іконка", () => {

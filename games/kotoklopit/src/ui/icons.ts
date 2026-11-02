@@ -52,7 +52,10 @@ export function diseaseLabel(id: string): string {
   return icon === undefined ? diseaseTitle(id) : named(icon, diseaseTitle(id));
 }
 
-/** Назва хвороби персонажа з іконкою (§11.4, §6.5): та сама, що в його відмові ривка (`ILLNESS_ICONS`). */
+/**
+ * Назва хвороби персонажа з іконкою (§11.4, §6.5; `ILLNESS_ICONS`): у застуди й травми — та сама, що в його відмові ривка, у
+ * виснаження — своя (ривка воно не забирає).
+ */
 export const illnessLabel = (id: IllnessId): string => named(ILLNESS_ICONS[id], ILLNESS_TITLES[id]);
 
 /** Назва речі з іконкою (§11.4): та сама, що біля неї в магазині (`THING_ICONS`), — і в «Моїх речах» телефона. */
