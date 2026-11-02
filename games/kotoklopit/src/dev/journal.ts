@@ -1,9 +1,10 @@
 // Журнал режиму розробки (§11.5): приховані зміни й кидки випадковості з подій симуляції.
 
-import { CHEWING, CLAW, GIFTS, PET } from "../sim/config";
+import { CHEWING, CLAW, GIFTS, PET, TRACE_CAT_DAYS } from "../sim/config";
 import { onEvent, type GameEvent } from "../sim/events";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
-import type { Delivery, GameState, Item, Quality } from "../sim/types";
+import { catDays } from "../sim/traces";
+import type { CatTrace, Delivery, GameState, Item, Quality } from "../sim/types";
 
 export interface JournalEntry {
   stamp: string;
@@ -25,6 +26,22 @@ const item = (i: Item): string => {
 };
 /** Де кіт точить кігті (§9.12). */
 const SCRATCH_SPOTS = { post: "кігтеточка", sofa: "диван, ремонт до комунальних", doorframe: "одвірок, ремонт до комунальних", rug: "потягується на килимку", boxes: "коробки біля входу" } as const;
+/** Котячі сліди в квартирі (§9.12, «Котячі сліди в квартирі»). */
+const TRACES: Record<CatTrace, string> = {
+  sofa: "подертий диван",
+  doorframe: "подертий одвірок кухні",
+  rug: "загнутий кут килима у вітальні",
+  cabinet: "подряпини на дверцятах шафки з кормом",
+  door: "подряпини на вхідних дверях",
+  "boxes-claws": "сліди кігтів на коробках біля входу",
+  "boxes-chewed": "погризений клапан коробки біля входу",
+  "bath-mat": "загнутий куточок килимка перед душем",
+  "bedroom-rug": "петля на килимку біля ліжка",
+  wallpaper: "подерті шпалери у вітальні",
+  lino: "загнутий клапоть лінолеуму на кухні",
+};
+/** Сліди від котоднів (§9.12): у журналі — скільки котоднів набралося. */
+const BY_CAT_DAYS = new Set<CatTrace>(TRACE_CAT_DAYS.map((step) => step.trace));
 const goods = (d: Delivery): string => ("product" in d ? d.product : d.thing);
 const catName = (state: GameState, id: number): string => state.cats.find((c) => c.id === id)?.name ?? `кіт ${id}`;
 
@@ -277,6 +294,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)} прогриз пакет: −1 ${event.product}`;
     case "wire-fixed":
       return `Дріт комп'ютера полагоджено: ремонт +${CHEWING.wireRepair}`;
+    case "trace":
+      return `З'явився слід: ${TRACES[event.trace]}${BY_CAT_DAYS.has(event.trace) ? ` (котодні: ${number(catDays(state), 0)})` : ""}`;
     case "sock-found":
       return event.where === "trip" ? `Шукали шкарпетку перед виїздом: +${GIFTS.sockSearch} хв` : "Пилосос знайшов шкарпетку в котячій схованці";
     case "ambushed":

@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
+import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -283,6 +283,11 @@ export type GameEvent =
   | { type: "bag-chewed"; cat: number; product: Product }
   /** Персонаж полагодив перегризений дріт (§9.12, «Гризіння»). */
   | { type: "wire-fixed" }
+  /**
+   * У квартирі з'явився котячий слід (§9.12, «Котячі сліди в квартирі»): кіт уперше щось подер чи полапав, або набралося
+   * «котоднів». Без бабла й підказки (показуй, а не розказуй, §11.4) — лише для журналу режиму розробки; слід видно на квартирі.
+   */
+  | { type: "trace"; trace: CatTrace }
   /** Знайшлася шкарпетка з котячої схованки (§9.12, «Подарунки й схованки»): шукали перед виїздом чи її витяг пилосос. */
   | { type: "sock-found"; where: "trip" | "vacuum" }
   | { type: "tripped"; cat: number }

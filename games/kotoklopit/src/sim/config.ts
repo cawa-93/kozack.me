@@ -1,7 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
-import type { CatNeed, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
 export const REAL_SECONDS_PER_GAME_HOUR = 45;
@@ -940,6 +940,18 @@ export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinu
  * `afterSleep` одразу точить кігті.
  */
 export const SCRATCH = { premium: 0.9, cheap: 0.6, traitStep: 0.2, minutes: 2, relief: 30, mood: 1, weight: 0.3, frequencyStep: 0.25, minWeight: 0.15, calmSofa: 0.5, boxes: 0.5, doorframe: 0.3, afterSleep: 0.25, afterSleepMinutes: 60 } as const;
+/**
+ * Котячі сліди без своєї дії (§9.12 «Гра й бешкет» — «Котячі сліди в квартирі», рішення автора 2026-11-02; які сліди й пороги —
+ * рішення виконавця): щоночі до «котоднів» додається, скільки котів живе вдома (кошенята теж), і щойно котоднів не менше за
+ * поріг, по черзі з'являються загнутий куточок килимка перед душем, петля на килимку біля ліжка, подерті шпалери у вітальні
+ * й загнутий клапоть лінолеуму на кухні. З одним котом перший слід — за 2 дні, останній — за два тижні.
+ */
+export const TRACE_CAT_DAYS: readonly { trace: CatTrace; catDays: number }[] = [
+  { trace: "bath-mat", catDays: 2 },
+  { trace: "bedroom-rug", catDays: 5 },
+  { trace: "wallpaper", catDays: 9 },
+  { trace: "lino", catDays: 14 },
+];
 /**
  * «Мисливський інстинкт» (§9.12 «Гра й бешкет», рішення автора 2026-10-25, `TRAITS_REVIEW.md`; зроблено 2026-10-26): кіт, що
  * хоче гратися, розмотує рулон туалетного паперу у ванній з вагою `roll` × (1 + `rollStep` × рівень) (`roll` 0,05 — рішення автора
