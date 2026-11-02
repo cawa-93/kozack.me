@@ -10,6 +10,7 @@ import {
   BESIDE_GAP,
   BESIDE_MAX_WIDTHS,
   BUBBLE_COUNT,
+  bubbleRepeat,
   bubbleSpan,
   countPillCenter,
   countPillWidth,
@@ -286,5 +287,28 @@ describe("бабли поруч (layoutBubbles)", () => {
       lay(three);
       expect(apart(three[0]!, three[1]!) && apart(three[1]!, three[2]!) && apart(three[0]!, three[2]!)).toBe(true);
     });
+  });
+});
+
+describe("той самий бабл ще раз (bubbleRepeat)", () => {
+  const refusal = { owner: "person", kind: "think", icon: "food", count: 0 } as const;
+
+  it("та сама відмова кілька разів поспіль — той самий бабл наново вискакує, а не новий поверх старого", () => {
+    expect(bubbleRepeat(refusal, { ...refusal })).toBe("again");
+    const marked = { owner: "person", kind: "think", icon: "washer", mark: "no" } as const;
+    expect(bubbleRepeat(marked, { ...marked })).toBe("again");
+  });
+
+  it("та сама іконка з іншою кількістю чи позначкою — на місці старого", () => {
+    expect(bubbleRepeat({ ...refusal, count: 3 }, { ...refusal, count: 2 })).toBe("update");
+    expect(bubbleRepeat({ ...refusal, count: undefined }, refusal)).toBe("update");
+    expect(bubbleRepeat({ owner: "person", kind: "think", icon: "washer" }, { owner: "person", kind: "think", icon: "washer", mark: "no" })).toBe("update");
+  });
+
+  it("інший власник, вид чи іконка — інший бабл (стає поруч); напис без власника не повторюється", () => {
+    expect(bubbleRepeat(refusal, { ...refusal, owner: "cat:1" })).toBeNull();
+    expect(bubbleRepeat(refusal, { ...refusal, kind: "say" })).toBeNull();
+    expect(bubbleRepeat(refusal, { ...refusal, icon: "soap" })).toBeNull();
+    expect(bubbleRepeat({ ...refusal, owner: undefined }, { ...refusal, owner: undefined })).toBeNull();
   });
 });

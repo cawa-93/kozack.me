@@ -11,6 +11,7 @@ import { addArt } from "./art/atlas";
 import { bubbleArt, iconArt, markArt, type BubbleKind, type IconName, type Mark } from "./iconnames";
 import {
   BUBBLE_COUNT,
+  bubbleRepeat,
   bubbleSpan,
   countPillCenter,
   countPillWidth,
@@ -18,6 +19,7 @@ import {
   isoBubbleLook,
   layoutBubbles,
   type BubbleBounds,
+  type BubbleSays,
   type BubbleSpan,
   type IsoBubbleLook,
   type LaidBubble,
@@ -43,6 +45,13 @@ const EVENT_LIFT = 8;
 const SLIDE_MS = 80;
 /** Відступ ряду баблів від краю видимої частини світу, одиниці світу (`layoutBubbles`, `bounds`). */
 const EDGE = 4;
+/** Виринання бабла: з якого масштабу, як довго, мс (бабл події; бабл стану — з 0,6 за 160 мс). */
+const POP = { from: 0.5, ms: 180 } as const;
+/**
+ * Повтор того самого бабла (`bubbleRepeat`, «again»): бабл, що висить, наново «вискакує» з цього масштабу — помітно, що
+ * натискання дійшло, а другого бабла поверх немає.
+ */
+const POP_AGAIN = 0.6;
 
 /**
  * Бабл, що стає в ряд з іншими (`LaidBubble`): `x`, `y` — його точка, `target` — куди стати, `dx` — зсув, з яким він
@@ -73,6 +82,10 @@ export type Anchor = { x: number; y: number } | (() => { x: number; y: number } 
 interface Floater extends Placed {
   at: Anchor;
   rise: number;
+  /** Що каже бабл події (повтор — `bubbleRepeat`); у напису — нічого. */
+  says: BubbleSays | undefined;
+  /** Скільки висить, перш ніж згаснути, мс (повтор починає відлік знову). */
+  hold: number;
 }
 
 /** Бабл, щойно складений: контейнер і скільки він займає ліворуч і праворуч від точки. */
@@ -189,15 +202,29 @@ export class Bubbles {
   /**
    * Бабл події (§11.4) — вголос чи думка над `bubble.at`: виринає й за мить зникає. Якщо місце — функція,
    * бабл летить за тим, над ким виринув (персонаж чи кіт іде далі, а бабл — з ним). Поки він видно, бабл
-   * стану там само схований, щоб дві хмаринки не злипалися в одну.
+   * стану там само схований, щоб дві хмаринки не злипалися в одну. Той самий бабл, що ще висить (відмова, натиснута
+   * кілька разів поспіль), не виринає вдруге поверх себе, а наново «вискакує» сам; та сама іконка з іншою кількістю — на
+   * місці старої (`bubbleRepeat`).
    */
   show(bubble: EventBubble, at: Anchor, hold = EVENT_HOLD_MS): void {
+    const says: BubbleSays = { owner: bubble.at, kind: bubble.kind, icon: bubble.icon, mark: bubble.mark, count: bubble.count };
+    for (const shown of this.floaters) {
+      const repeat = shown.says ? bubbleRepeat(shown.says, says) : null;
+      if (repeat === "again") {
+        this.again(shown, hold);
+        return;
+      }
+      if (repeat === "update") {
+        this.drop(shown);
+        break;
+      }
+    }
     const start = place(at);
     if (!start) return;
     const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - EVENT_LIFT, bubble.count, bubble.mark);
-    container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
-    this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, hold, { owner: bubble.at, span, icon: bubble.icon, height: this.looks[bubble.kind].height });
+    container.setScale(POP.from).setDepth(BUBBLE_DEPTH + 1);
+    this.scene.tweens.add({ targets: container, scale: 1, duration: POP.ms, ease: "Back.easeOut" });
+    this.float(container, at, hold, { owner: bubble.at, span, icon: bubble.icon, height: this.looks[bubble.kind].height, says });
     const state = this.states.get(bubble.at);
     if (state) {
       state.visible = false;
@@ -235,22 +262,53 @@ export class Bubbles {
   private float(
     container: Phaser.GameObjects.Container,
     at: Anchor,
-    delay: number,
-    beside: Pick<Floater, "owner" | "span" | "icon" | "height"> = { owner: undefined, span: NO_SPAN, icon: undefined, height: 0 },
+    hold: number,
+    beside: Pick<Floater, "owner" | "span" | "icon" | "height" | "says"> = { owner: undefined, span: NO_SPAN, icon: undefined, height: 0, says: undefined },
   ): void {
-    const floater: Floater = { container, at, rise: 0, x: container.x, y: container.y, visible: true, target: 0, dx: 0, placed: false, ...beside };
+    const floater: Floater = { container, at, rise: 0, x: container.x, y: container.y, visible: true, target: 0, dx: 0, placed: false, hold, ...beside };
     this.floaters.add(floater);
-    this.scene.tweens.add({ targets: floater, rise: -34, delay, duration: 500 });
+    this.fade(floater);
+  }
+
+  /** Через `hold` мс бабл підіймається на `EVENT_RISE` (34, `iso/markslayout.ts`) і згасає за 0,5 с, потім зникає. */
+  private fade(floater: Floater): void {
+    const { container, hold } = floater;
+    this.scene.tweens.add({ targets: floater, rise: -34, delay: hold, duration: 500 });
     this.scene.tweens.add({
       targets: container,
       alpha: 0,
-      delay,
+      delay: hold,
       duration: 500,
+      // Згас: зникає сам (зупиняти твіни тут не треба — вони й так скінчилися).
       onComplete: () => {
         this.floaters.delete(floater);
         container.destroy();
       },
     });
+  }
+
+  /**
+   * Той самий бабл ще раз (`bubbleRepeat`, «again»): на своєму місці (і той, що вже згасав, — знову непрозорий і внизу)
+   * наново вискакує й висить від початку.
+   */
+  private again(floater: Floater, hold: number): void {
+    const { container } = floater;
+    this.scene.tweens.killTweensOf(floater);
+    this.scene.tweens.killTweensOf(container);
+    floater.rise = 0;
+    floater.hold = hold;
+    container.setAlpha(1).setScale(POP_AGAIN);
+    this.scene.tweens.add({ targets: container, scale: 1, duration: POP.ms, ease: "Back.easeOut" });
+    this.fade(floater);
+    this.arrange(0);
+  }
+
+  /** Бабл події зникає одразу: його замінив новий на тому самому місці. */
+  private drop(floater: Floater): void {
+    if (!this.floaters.delete(floater)) return;
+    this.scene.tweens.killTweensOf(floater);
+    this.scene.tweens.killTweensOf(floater.container);
+    floater.container.destroy();
   }
 
   /** Бабли подій летять за тими, над ким виринули, і стають поруч (`arrange`); бабли стану під ними сховані. Викликати щокадру. */

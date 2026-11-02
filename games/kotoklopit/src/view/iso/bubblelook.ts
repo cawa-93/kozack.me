@@ -137,6 +137,29 @@ export function bubbleSpan(look: IsoBubbleLook, pill?: number, side: CountSide =
   return { left: Math.max(look.span.left, -(center - half) * look.scale), right: Math.max(look.span.right, (center + half) * look.scale) };
 }
 
+/** Що каже бабл події: над ким, вид, іконка, позначка й кількість (`EventBubble` без місця). */
+export interface BubbleSays {
+  owner: string | undefined;
+  kind: BubbleKind;
+  icon: string;
+  mark?: Mark | undefined;
+  count?: number | undefined;
+}
+
+/**
+ * Бабл події `next` виринає, коли над тим самим ще висить `shown` (`Bubbles.show`):
+ * - `"again"` — той самий бабл (відмова, натиснута кілька разів поспіль): новий поверх старого виринав на тому самому місці,
+ *   і гравець не бачив, що натискання дійшло, — тож старий наново «вискакує» й висить знову від початку;
+ * - `"update"` — та сама іконка над тим самим, але інша кількість чи позначка (запас витрачено ще раз): старий зникає, а новий
+ *   виринає на його місці, а не поверх нього;
+ * - `null` — інший бабл: стає поруч (`layoutBubbles`).
+ * Бабли без власника (напис «+N ₴») не повторюються.
+ */
+export function bubbleRepeat(shown: BubbleSays, next: BubbleSays): "again" | "update" | null {
+  if (shown.owner === undefined || shown.owner !== next.owner || shown.kind !== next.kind || shown.icon !== next.icon) return null;
+  return shown.mark === next.mark && shown.count === next.count ? "again" : "update";
+}
+
 /** Бабл не відходить від своєї точки далі, ніж на стільки своїх ширин (`layoutBubbles`): у тісноті він лишається біля власника. */
 export const BESIDE_MAX_WIDTHS = 2;
 
@@ -260,8 +283,8 @@ function overlap(list: readonly LaidBubble[], i: number, j: number, gap: number)
  *   (коти в протистоянні стоять ніс до носа, і їхні «шипить» лягали один на один — рецензія хвилі 3). Ряд, що налазить на
  *   інший бабл чи ряд, зливається з ним.
  * - Свої бабли (той самий власник) — завжди в одному ряду: два різні над тим самим стоять поруч по обидва боки точки, хто
- *   виринув раніше — ліворуч. Той самий бабл того самого власника (відмова, натиснута кілька разів поспіль; «шипить»
- *   щохвилини) стає туди ж, де попередній такий, а не поруч.
+ *   виринув раніше — ліворуч. Той самий бабл того самого власника стає туди ж, де попередній такий, а не поруч (бабли
+ *   подій `Bubbles.show` і так не дублює — `bubbleRepeat`; це запас для решти).
  * - Ряд не виходить за край видимої частини світу (`bounds`), якщо точки всіх у ньому видно: інакше бабл кота біля краю
  *   екрана, відійшовши вбік, ховався б за краєм.
  * - Бабл не відходить далі за `BESIDE_MAX_WIDTHS` своїх ширин: у тісноті (купа котів) ряди не зливаються, і бабл лишається
