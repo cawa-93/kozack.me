@@ -150,8 +150,8 @@ export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" }
 
 /**
  * Пилосос у руках (`vacuum`, N4b: пилососить, руки порожні): кадр A4 `env/vacuum/cleaner` — pivot у ручці, яку тримає кулак
- * (гніздо `held`), балон на полозках біля ніг, щітка на підлозі попереду. Шафа тим часом стоїть відчинена й порожня
- * (`vacuumState`, `iso/looks.ts`): пилосос — у руках.
+ * (гніздо `held`), балон на полозках біля ніг, щітка на підлозі попереду. Застаріле (рішення автора 2026-11-02, §8.7): шафи
+ * більше немає — вертикальний пилосос стоїть на підлозі (`env/vacuum`), а в руках — `item/vacuum` з накладкою `holdVacuum`.
  */
 export const VACUUM_HELD = { frame: { id: "env/vacuum/cleaner", state: null } as IsoFrame, scale: 1 } as const;
 

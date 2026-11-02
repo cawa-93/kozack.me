@@ -241,7 +241,7 @@ describe("маніфест: квартира", () => {
       sock: ["mess/sock", "peek"],
     } as const satisfies Partial<Record<keyof Home, readonly [string, string]>>;
     for (const [id, state] of Object.values(flags)) expect(states(id), id).toContain(state);
-    // Решта: перекинутий смітник, увімкнений монітор, відчинені двері, кран, душ, кіт під ковдрою, шафа з пилососом.
+    // Решта: перекинутий смітник, увімкнений монітор, відчинені двері, кран, душ, кіт під ковдрою.
     const shown: readonly [string, string][] = [
       ["env/trash", "tipped"],
       ["env/computer", "on"],
@@ -250,9 +250,11 @@ describe("маніфест: квартира", () => {
       ["env/sink", "running"],
       ["env/shower", "running"],
       ["env/bed", "hump"],
-      ["env/vacuum", "open"],
     ];
     for (const [id, state] of shown) expect(states(id), id).toContain(state);
+    // Вертикальний пилосос (рішення автора 2026-11-02, §8.7) станів не має: на підлозі він стоїть, а в руках — інший кадр
+    // (`item/vacuum`); шафи з дверцятами більше немає.
+    expect(states("env/vacuum")).toEqual([]);
   });
 
   it("8 сховищ × стани запасів 0–4: кожен запас видно з самого сховища", () => {
