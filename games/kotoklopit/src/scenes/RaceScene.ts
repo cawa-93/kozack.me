@@ -171,8 +171,10 @@ export class RaceScene extends Phaser.Scene {
       .setVisible(false)
       .setDepth(RACE_DEPTH.ui)
       .setStroke(PALETTE.ink, 5);
+    // Керування — лише своєї гонки: перестроювання, натиснуте ще в минулій (на прибутті, на місці, у від'їзді), сюди не переходить.
     this.touched = false;
     this.stick = null;
+    this.steer = 0;
     if (this.home) {
       this.listenSkip();
       return;
@@ -187,7 +189,9 @@ export class RaceScene extends Phaser.Scene {
       const K = Phaser.Input.Keyboard.KeyCodes;
       this.keys = keyboard.addKeys({ up: K.W, down: K.S, up2: K.UP, down2: K.DOWN }, false) as RaceScene["keys"];
       for (const [key, dir] of [["LEFT", -1], ["A", -1], ["RIGHT", 1], ["D", 1]] as const) {
-        keyboard.on(`keydown-${key}`, () => (this.steer = dir));
+        keyboard.on(`keydown-${key}`, () => {
+          if (this.steering()) this.steer = dir;
+        });
       }
     }
     this.input.addPointer(2);
@@ -217,8 +221,19 @@ export class RaceScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Чи гравець зараз кермує: гонка, а не аварія, прибуття, кадр на місці чи від'їзд. Обробники керування з `create` живуть, доки
+   * працює сцена, а вона тепер лишається й на прибутті, на місці під карткою пункту й у від'їзді: там стрілка чи дотик нічого не
+   * кермують — інакше перестроювання лишилося б у полі й наступна гонка почалася б із нього (машина сама в сусідню смугу, а
+   * підказки старту немає).
+   */
+  private steering(): boolean {
+    return this.home === null && this.crash === null && this.arrival === null && this.parked === null;
+  }
+
   /** Джойстик з'являється під пальцем будь-де на екрані. Точка дотику — у пікселях полотна, гонка — в одиницях інтерфейсу. */
   private down(p: Phaser.Input.Pointer): void {
+    if (!this.steering()) return;
     this.touched = true;
     if (this.stick !== null) return;
     const ui = canvasNow().ui;
