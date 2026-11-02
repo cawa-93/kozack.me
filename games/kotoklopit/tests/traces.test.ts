@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { describe as describeEvent } from "../src/dev/journal";
 import { applyScenario } from "../src/dev/scenarios";
 import { createCat, idleAct } from "../src/sim/cat";
-import { tickCats } from "../src/sim/catai";
+import { tickCats, upHigh } from "../src/sim/catai";
 import { CHEWING, CUNNING, SCRATCH, STORAGE_LIMITS, TRACE_CAT_DAYS } from "../src/sim/config";
 import { DOOR_TILE } from "../src/sim/door";
 import { addSupply, place, stash, unpack } from "../src/sim/economy";
@@ -174,6 +174,41 @@ describe("сліди від дії кота: уперше — і назавжд�
     stop();
     expect(traces(save.current)).toEqual(["door"]);
     expect(traceEvents(events)).toEqual(["door"]);
+  });
+
+  /** Кіт іде спати нагору `id` із сусідньої клітинки під ним; повертає, скільки кроків до мети. */
+  function climb(save: Save, cat: Cat, id: "wardrobe" | "fridge"): number {
+    const high = objectById(id);
+    Object.assign(cat, { x: high.x + 0.5, y: high.y + 1.5 });
+    cat.act = { kind: "sleep", target: null, goal: { x: high.x, y: high.y }, minutes: 60, elapsed: 0 };
+    let ticks = 0;
+    for (; ticks < 20 && cat.act.goal !== null; ticks++) tickCats(save.current, 0.1, { present: true });
+    expect(cat.act.goal, id).toBeNull();
+    return ticks;
+  }
+
+  it("виліз на шафу в спальні — подряпини на шухляді, щойно нагорі, раз і без свідків; холодильник слідів не лишає", () => {
+    // Персонаж у вітальні (`game`): спальні не бачить.
+    const save = game();
+    const cat = withCat(save, { climbing: 1 }, 40);
+    const { events, stop } = recordEvents();
+    expect(climb(save, cat, "fridge")).toBeGreaterThan(1);
+    expect(traces(save.current)).toEqual([]);
+    // Лише зібрався на шафу, ще не нагорі, — сліду немає.
+    const wardrobe = objectById("wardrobe");
+    Object.assign(cat, { x: wardrobe.x + 0.5, y: wardrobe.y + 1.5 });
+    cat.act = { kind: "sleep", target: null, goal: { x: wardrobe.x, y: wardrobe.y }, minutes: 60, elapsed: 0 };
+    tickCats(save.current, 0.1, { present: true });
+    expect(cat.act.goal).not.toBeNull();
+    expect(traces(save.current)).toEqual([]);
+    climb(save, cat, "wardrobe");
+    expect(upHigh(save.current, cat)).toBe(true);
+    expect(traces(save.current)).toEqual(["wardrobe"]);
+    // Удруге на шафі — нового сліду немає.
+    climb(save, cat, "wardrobe");
+    stop();
+    expect(traces(save.current)).toEqual(["wardrobe"]);
+    expect(traceEvents(events)).toEqual(["wardrobe"]);
   });
 
   it("гриз пакети в коробках — погризений клапан, раз; дріт комп'ютера слідів не лишає", () => {

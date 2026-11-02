@@ -515,7 +515,11 @@ export function climbWeight(cat: Cat): number {
  * злізти сам боїться й кричить.
  */
 function climbed(state: GameState, cat: Cat, rng: Rng): void {
-  if (highPlaceOf(state, cat) === null) return;
+  const high = highPlaceOf(state, cat);
+  if (high === null) return;
+  // Уперше нагорі шафи в спальні — подряпини кігтями на її шухляді (§9.12, «Котячі сліди в квартирі»): видерся, чіпляючись за
+  // фасад. Слід лишається, хоч би персонаж цього й не бачив; на холодильнику слідів немає.
+  if (high.id === "wardrobe") addTrace(state, "wardrobe");
   observe(state, cat, "climbing");
   const level = traitLevel(cat, "climbing");
   const chance = isKitten(cat) ? CLIMBING.kitten : level >= CLIMBING.strongLevel ? CLIMBING.strong : 0;

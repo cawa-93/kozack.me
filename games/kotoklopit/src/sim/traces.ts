@@ -15,6 +15,7 @@ const ALL: Record<CatTrace, true> = {
   rug: true,
   cabinet: true,
   door: true,
+  wardrobe: true,
   "boxes-claws": true,
   "boxes-chewed": true,
   "bath-mat": true,
