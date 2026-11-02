@@ -84,8 +84,12 @@ export const MOOD_ICONS = { up: "mood-up", down: "mood-down" } as const satisfie
  * `itemIcon`), кіт, що просить, — `catAsk`.
  */
 export const STATE_ICONS = {
-  /** Над комп'ютером (§8.6, §4.1, §9.12): перегризений дріт, відеодзвінок по роботі, немає інтернету, «Х» і «!» терпіння. */
-  computer: { wireChewed: "wire", call: "camera", noInternet: "no-internet", patienceOut: "cross", patienceWarning: "alert" },
+  /**
+   * Над комп'ютером (§8.6, §9.12): перегризений дріт, відеодзвінок по роботі, «Х» і «!» терпіння. Стану «немає інтернету» над ним
+   * більше немає: у день без світла комп'ютер працює, а про відсутній інтернет думає персонаж (`personThought`; рішення автора
+   * 2026-11-02, §4.1).
+   */
+  computer: { wireChewed: "wire", call: "camera", patienceOut: "cross", patienceWarning: "alert" },
   /** Персонаж у душовій кабіні — тече вода. */
   shower: "drop",
   /** Під дверима: кіт на сходах нявчить (його не видно) — важливіший за пакунок. */
@@ -188,8 +192,6 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "washer" };
     case "cat-on-computer":
       return { icon: "cat-laptop" };
-    case "no-internet":
-      return { icon: "no-internet" };
     case "no-packages":
       return { icon: "box", count: 0 };
     case "healthy":

@@ -24,8 +24,8 @@ import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
 import { upgradeTraces } from "./traces";
 import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save } from "./types";
-import { isWorking, newJob, stopWork, tickWork } from "./work";
-import { internetOut, momAtNight, tickModifiers } from "./modifiers";
+import { isWorking, newJob, tickWork } from "./work";
+import { momAtNight, tickModifiers } from "./modifiers";
 
 export const SAVE_VERSION = 13;
 
@@ -161,7 +161,6 @@ function tick(state: GameState, minutes: number, input: Input): void {
     // Пилосос у руках гуде й прибирає довкола персонажа там, куди той дійшов (§8.7).
     tickVacuum(state, minutes);
   }
-  if (internetOut(state) && isWorking(state)) stopWork(state);
   tickWork(state, from, minutes);
   tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);

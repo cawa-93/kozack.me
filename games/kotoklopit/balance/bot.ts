@@ -21,7 +21,7 @@ import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slo
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
-import { isWorkday, isWorkTime, positionOf } from "../src/sim/work";
+import { isWorkday, isWorkTime, positionOf, standupToday } from "../src/sim/work";
 import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
 /** Скільки ігрових хвилин один крок ходьби. */
@@ -251,8 +251,9 @@ export class Bot {
       return minute >= WORK_START_MINUTE && minute < WORK_END_MINUTE && this.workedToday < SEARCH_HOURS_PER_DAY;
     }
     if (!isWorkday(s) || !isWorkTime(s)) return false;
-    // Терпіння не можна доводити до «Х»; летучка о 10:00.
-    const standup = s.minute >= 9.9 * 60 && s.minute < 10.25 * 60;
+    // Терпіння не можна доводити до «Х»; летучка о 10:00 — крім дня без світла: тоді її немає, а терпіння не спадає (§4.1, рішення
+    // автора 2026-11-02), тож бот працює лише свою норму.
+    const standup = standupToday(s) && s.minute >= 9.9 * 60 && s.minute < 10.25 * 60;
     // Здоровий глузд на межі: працювати лише щоб не дійшло до «Х» — краще втратити трохи репутації, ніж розум.
     if (s.character.stats.sanity < CRISIS_SANITY) return s.job.patience < 15;
     return standup || s.job.patience < 60 || this.workedToday < this.workTarget();

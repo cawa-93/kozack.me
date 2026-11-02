@@ -11,7 +11,6 @@ import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
 import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
-import { internetOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
@@ -281,8 +280,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (catOnComputer(state)) return refuse(state, target.id, "cat-on-computer");
       // Кіт перегриз дріт — спершу полагодити: утримати дію біля комп'ютера (§9.12, «Гризіння»).
       if (state.home.wireChewed === true) return refuse(state, target.id, "wire-chewed");
-      // Планове відключення інтернету (§4.1): комп'ютер не працює.
-      if (internetOut(state)) return refuse(state, target.id, "no-internet");
+      // Без світла («Планове відключення», §4.1, рішення автора 2026-11-02) за комп'ютер сідають, як завжди: він працює від
+      // зарядної станції, лише робота йде повільніше (`payFactor`, `reputationFactor`, `searchFactor`).
       startWork(state);
       return null;
     case "bed":

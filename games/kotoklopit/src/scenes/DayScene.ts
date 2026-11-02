@@ -19,12 +19,12 @@ import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
-import { isWorking, isWorkday, isWorkTime, patienceLevel, workGoesOn } from "../sim/work";
+import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
 import { diseaseLabel } from "../ui/icons";
-import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
+import { answerCall, decideFoundling, ignoreCall } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
@@ -713,7 +713,8 @@ export class DayScene extends Phaser.Scene {
       else this.bubbles.setState(id, "say", null, 0, 0);
     };
     const working = isWorking(state);
-    const standup = isWorkday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
+    // Летучки в день без світла немає (§4.1, рішення автора 2026-11-02) — і камера над комп'ютером її не обіцяє.
+    const standup = standupToday(state) && state.minute >= STANDUP_MINUTE && state.minute < STANDUP_MINUTE + STANDUP_MINUTES;
     let computer: IconName | null = null;
     const day = state.minute % 1440;
     // Нарада — лише в робочий день: звільненого чи на лікарняному камера не чекає (перевірка модифікаторів 2026-10-28).
@@ -722,7 +723,6 @@ export class DayScene extends Phaser.Scene {
     const icons = STATE_ICONS.computer;
     if (state.home.wireChewed === true) computer = icons.wireChewed;
     else if (!working && (standup || meeting)) computer = icons.call;
-    else if (internetOut(state)) computer = icons.noInternet;
     else if (!working && isWorkTime(state)) {
       const level = patienceLevel(state);
       computer = level === "out" ? icons.patienceOut : level === "warning" ? icons.patienceWarning : null;

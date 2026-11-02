@@ -110,6 +110,15 @@ function collectCases(): Map<string, Shown[]> {
     const thought = personThought(save.current);
     if (thought) add(`thought:person:${stat}`, { icon: thought });
   }
+  // День без світла (§4.1, рішення автора 2026-11-02): персонаж працює й думає, що інтернету немає. Колись це був стан над
+  // комп'ютером і відмова сісти за нього; тепер — лише думка, і групи в неї немає: іконка «немає інтернету» — лише тут.
+  for (const stat of STATS) save.current.character.stats[stat] = 100;
+  save.current.modifiers.day = "outage";
+  save.current.character.activity = { kind: "work", minutes: 0, money: 0, reputation: 0, sanity: 0 };
+  const offline = personThought(save.current);
+  if (offline) add("thought:person:no-internet", { icon: offline });
+  save.current.modifiers.day = null;
+  save.current.character.activity = null;
   // Думки кота про стан.
   const needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
   const think = (id: string, change: (c: Cat) => void): void => {
@@ -226,7 +235,6 @@ Object.assign(SAME, {
   "кіт на комп'ютері": { why: "кіт сів на клавіатуру — над комп'ютером і у відмові сісти за нього", ids: ["event:keyboard", "refusal:cat-on-computer"] },
   "дріт перегризено": { why: "стан речі над нею вголос, у мить, коли перегризли, і у відмові працювати", ids: ["state:computer.wireChewed", "event:wire-chewed", "refusal:wire-chewed"] },
   "смітник перекинуто": { why: "смітник перекинувся — над ним і у відмові щось викинути", ids: ["event:trash-tipped", "refusal:trash-tipped"] },
-  "немає інтернету": { why: "стан комп'ютера над ним і у відмові працювати", ids: ["state:computer.noInternet", "refusal:no-internet"] },
   "пральна машина пере": { why: "стан машини над нею і у відмові прати ще", ids: ["state:washer.washing", "refusal:washing"] },
   відеодзвінок: { why: "летучка чи нарада почалася й іде — камера над комп'ютером", ids: ["state:computer.call", "event:standup-started", "event:modifier:kind=meeting-start"] },
 });
@@ -331,6 +339,12 @@ describe("унікальна іконка на унікальний кейс (§
     expect(medical).not.toContain(DESTINATION_ICONS.vet);
     expect(medical).not.toContain(DESTINATION_ICONS.doctor);
     expect(DESTINATION_ICONS.shelter).not.toBe(THING_ICONS.house);
+  });
+
+  it("«немає інтернету» — лише думка персонажа за роботою в день без світла: ні стану над комп'ютером, ні відмови (§4.1, рішення автора 2026-11-02)", () => {
+    const withIcon = [...cases].filter(([, shown]) => shown.some((s) => s.icon === "no-internet")).map(([id]) => id);
+    expect(withIcon).toEqual(["thought:person:no-internet"]);
+    expect(Object.values(STATE_ICONS.computer)).not.toContain("no-internet");
   });
 
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {

@@ -1403,7 +1403,11 @@ export const MODIFIERS = {
   lull: { decay: 0.5, reputation: 0.5 },
   meeting: { from: 14 * 60, minutes: 60, attended: 0.5, present: 1.5, absent: -5 },
   lunch: { from: 12 * 60, to: 14 * 60 },
-  pay: { "pay-delay": 0.5, bonus: 1.5, "fast-internet": 1.25 } as Record<string, number>,
+  /**
+   * Множник зарплати за модифікатором дня. «Планове відключення» — ×0,75: без світла персонаж працює з телефона й зарядної
+   * станції, повільніше (§4.1, рішення автора 2026-11-02).
+   */
+  pay: { "pay-delay": 0.5, bonus: 1.5, "fast-internet": 1.25, outage: 0.75 } as Record<string, number>,
   reprimand: -3,
   praise: 3,
   /**
@@ -1420,7 +1424,14 @@ export const MODIFIERS = {
   coldWarmth: 3,
   renovation: { unpleasant: 1.2, catMoodPerHour: -0.5 },
   neighborsAway: 0.8,
-  outage: { from: 11 * 60, to: 15 * 60 },
+  /**
+   * «Планове відключення» (§4.1, рішення автора 2026-11-02; скасовує частину А14 від 2026-10-29, коли відключали лише інтернет з
+   * 11:00 до 15:00): світла немає весь день — від пробудження до пробудження, як і будь-який модифікатор дня. Робота доступна, але
+   * репутація за годину ×`reputation` (гроші — `pay.outage`), терпіння керівництва не спадає, а летучки немає; пошук роботи
+   * ×`search`; на газовому пальнику страва готується ×`cook` довше (і підгорає пізніше); душ холодний: гігієна ×`showerHygiene`,
+   * тривалість ×`showerMinutes`. Пральна машина й робот-пилосос не працюють.
+   */
+  outage: { reputation: 0.75, search: 0.75, cook: 1.25, showerHygiene: 0.8, showerMinutes: 0.5 },
   inspection: { minute: 15 * 60, mess: 5, litter: 5, fur: 10 },
   recalculation: 10,
   guests: { minute: 19 * 60, mess: -3, max: -15, hideMinutes: 120 },

@@ -18,10 +18,9 @@ import { fallIll } from "../src/sim/diseases";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
-import { tickHousehold, tuftsOf } from "../src/sim/household";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
-import { callImpression, isWorkday, isWorking, startWork, tickWork } from "../src/sim/work";
+import { callImpression, isWorkday, startWork, tickWork } from "../src/sim/work";
 import { hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 14 });
@@ -557,40 +556,6 @@ describe("ефекти (§4.1)", () => {
     expect(save.current.job.reputation).toBeLessThan(reputation);
   });
 
-  it("«Планове відключення» — без інтернету: комп'ютер відмовляє своєю причиною, а робот-пилосос, як щодня, їде о 12:00 (рішення автора 2026-10-29, А14)", () => {
-    const save = game();
-    save.current.day = 1;
-    save.current.modifiers.day = "outage";
-    save.current.minute = 10 * 60 + 30;
-    expect(scheduleOf(save.current)).toContain("11:00–15:00 без інтернету");
-    save.current.minute = 11 * 60 + 50;
-    walkTo(save, "computer");
-    const { events, stop } = recordEvents();
-    interact(save);
-    stop();
-    expect(events.find((e) => e.type === "refused")).toMatchObject({ reason: "no-internet" });
-    expect(isWorking(save.current)).toBe(false);
-    // Світло є: робот-пилосос прибирає посеред відключення — жмути шерсті, повз які проїжджає (§8.7).
-    save.current.home.appliances.robot = "cheap";
-    save.current.home.fur = 60;
-    for (let minute = 11 * 60 + 50; minute < 13 * 60 + 10; minute++) tickHousehold(save.current, minute, 1);
-    expect(tuftsOf(save.current)).toEqual([]);
-    expect(save.current.home.fur).toBeLessThan(10);
-  });
-
-  it("сценарій «Без інтернету» (`scenarios/internet-outage.json`): біля комп'ютера у відключення — відмова «немає інтернету», о 12:00 їде робот-пилосос (рішення автора 2026-10-29, А14)", () => {
-    const scenario = FILE_SCENARIOS["internet-outage"];
-    if (!scenario) throw new Error("немає сценарію");
-    const save = applyScenario(scenario);
-    expect(save.current.modifiers.day).toBe("outage");
-    const { events, stop } = recordEvents();
-    interact(save);
-    expect(events.find((e) => e.type === "refused")).toMatchObject({ object: "computer", reason: "no-internet" });
-    expect(tuftsOf(save.current).length).toBeGreaterThan(0);
-    for (let i = 0; i < 80; i++) advance(save, 1);
-    stop();
-    expect(tuftsOf(save.current)).toEqual([]);
-  });
 
   it("гості: безлад — сором", () => {
     const save = game();

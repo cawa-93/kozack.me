@@ -32,7 +32,6 @@ export const REFUSALS: Refusal[] = [
   { reason: "too-early" },
   { reason: "washing" },
   { reason: "cat-on-computer" },
-  { reason: "no-internet" },
   { reason: "no-packages" },
   { reason: "healthy" },
   { reason: "dose-taken" },

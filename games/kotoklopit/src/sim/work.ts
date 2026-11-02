@@ -28,7 +28,7 @@ import {
   WORKDAYS_PER_WEEK,
 } from "./config";
 import { emit, type PatienceLevel } from "./events";
-import { patienceDecayFactor, payFactor, reputationFactor, toOffice, workdayOverride } from "./modifiers";
+import { patienceDecayFactor, payFactor, powerOut, reputationFactor, searchFactor, toOffice, workdayOverride } from "./modifiers";
 import { weekdayOf } from "./time";
 import type { GameState, Job } from "./types";
 
@@ -79,9 +79,9 @@ export function isWorking(state: GameState): boolean {
  * Робота за комп'ютером іде (§8, «Прискорення роботи»): персонаж працює чи шукає роботу (це теж робота за комп'ютером), і рух
  * у цьому кадрі не підніме його з-за комп'ютера — `tickActivity` знімає з роботи на першому ж кроці, тож кадр, у якому
  * персонаж устає, іде вже з ×1 (інакше він робив би перший крок у десять разів довшим). Усе інше, що зупиняє роботу, — кіт сів
- * на клавіатуру, перегриз дріт, відключили інтернет, дзвінок мами, поїздка, сон, звільнення, — знімає її (`stopWork`), а кіт,
- * що спить на комп'ютері, перегризений дріт і відключений інтернет не дають за нього й сісти: окремо їх перевіряти не треба.
- * Кіт на колінах роботі не заважає.
+ * на клавіатуру, перегриз дріт, дзвінок мами, поїздка, сон, звільнення, — знімає її (`stopWork`), а кіт, що спить на комп'ютері,
+ * і перегризений дріт не дають за нього й сісти: окремо їх перевіряти не треба. Кіт на колінах роботі не заважає, а без світла
+ * («Планове відключення», §4.1, рішення автора 2026-11-02) робота йде, лише повільніше.
  */
 export function workGoesOn(state: GameState, input?: Input): boolean {
   return isWorking(state) && (input === undefined || !isMoving(input.move));
@@ -155,7 +155,8 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     // Поїздка — попереджена відсутність (§8.6): терпіння не змінюється, у робочий час — штраф до репутації.
     // Збори в офісі — це робота, а не відсутність (§8.5).
     const trip = state.trip;
-    // В обідню перерву й без інтернету («Планове відключення») керівництво нічого не чекає — і поїздка тоді не штрафується (перевірка модифікаторів 2026-10-28).
+    // В обідню перерву (перевірка модифікаторів 2026-10-28) і весь день без світла («Планове відключення», рішення автора 2026-11-02)
+    // керівництво нічого не чекає — і поїздка тоді не штрафується.
     if (workTime && trip.destination !== "office" && patienceDecayFactor(state) > 0) {
       // Зараховується, щойно настає робочий час: і поїздка, що почалася до 09:00. Знайду, яку відносять у притулок, гравець не
       // обирав і не може відкласти: вона штрафується як перша поїздка тижня й до лічильника не додається (§8.6, загальна ревізія
@@ -173,7 +174,8 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     activity.sanity += unpleasantTask(state, sanity * hours);
     activity.minutes += minutes;
     const vacancy = searchProgress(state).vacancy;
-    job.searchHours += hours;
+    // Без світла пошук іде ×0,75 («Планове відключення», §4.1, рішення автора 2026-11-02).
+    job.searchHours += hours * searchFactor(state);
     if (job.searchHours < JOB_SEARCH.hours[state.difficulty] && searchProgress(state).vacancy > vacancy) {
       // Чергова вакансія — відмова; далі нова (§8.6).
       emit(state, { type: "job-rejected", vacancy });
@@ -199,7 +201,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     job.patience = Math.min(PATIENCE_MAX, job.patience + position.patienceRecovery * hours);
   } else if (workTime) {
     // «Х»: персонаж у робочий день кинув роботу, репутація падає щогодини — але не в обідню
-    // перерву й не без інтернету: тоді й терпіння не падає (§4.1).
+    // перерву й не в день без світла: тоді й терпіння не падає (§4.1).
     if (levelBefore === "out" && patienceDecayFactor(state) > 0) changeReputation(state, ABSENCE_REPUTATION * position.reputation * hours);
     const patience = job.patience - position.patienceDecay * patienceDecayFactor(state) * hours;
     // Похибка дробових кроків не повинна відкладати «Х» на хвилину.
@@ -211,9 +213,18 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
   tickStandup(state, from, from + minutes);
 }
 
+/**
+ * Чи буде сьогодні летучка о 10:00 (§8.6): лише в робочий день, і не в день «Планового відключення» — без світла її скасовано: ні
+ * штрафу, ні бонусу, ні камери над комп'ютером (§4.1, рішення автора 2026-11-02). Читають і вигляд (розклад, камера, персонаж на
+ * дзвінку), і бот.
+ */
+export function standupToday(state: GameState): boolean {
+  return isWorkday(state) && !powerOut(state);
+}
+
 /** Щоденна летучка о 10:00 на 15 хвилин (§8.6). */
 function tickStandup(state: GameState, from: number, to: number): void {
-  if (!isWorkday(state)) return;
+  if (!standupToday(state)) return;
   const start = STANDUP_MINUTE;
   const end = STANDUP_MINUTE + STANDUP_MINUTES;
   if (from < start && to >= start) emit(state, { type: "standup-started" });

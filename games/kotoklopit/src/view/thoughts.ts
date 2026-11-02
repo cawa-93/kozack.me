@@ -5,6 +5,8 @@ import { asleep, sulking } from "../sim/cat";
 import { bellyUp, headNudges, hungerThreshold, slowBlinks } from "../sim/catai";
 import { MOOD_LOOK, THOUGHTS } from "../sim/config";
 import { inView } from "../sim/knowledge";
+import { powerOut } from "../sim/modifiers";
+import { isWorking } from "../sim/work";
 import type { Cat, CatActKind, GameState, StatName } from "../sim/types";
 import type { IconName } from "./iconnames";
 import { STAT_ICONS, type EventBubble } from "./symbols";
@@ -37,7 +39,11 @@ export function catThought(state: GameState, cat: Cat): IconName | null {
   return null;
 }
 
-/** Про що думає персонаж (§11.4): найнижчий показник під межею; не в поїздці й не з душової кабіни. */
+/**
+ * Про що думає персонаж (§11.4): найнижчий показник під межею; не в поїздці й не з душової кабіни. Показники важливіші: коли
+ * жоден не низький, а персонаж у день без світла працює чи шукає роботу, — думка «немає інтернету» (§4.1, рішення автора
+ * 2026-11-02: робота йде з телефона, повільніше; та сама іконка, що була над комп'ютером, — той самий випадок).
+ */
 export function personThought(state: GameState): IconName | null {
   const character = state.character;
   const activity = character.activity;
@@ -47,7 +53,8 @@ export function personThought(state: GameState): IconName | null {
     const value = character.stats[stat];
     if (value < THOUGHTS.personLow && (lowest === null || value < lowest.value)) lowest = { value, icon };
   }
-  return lowest?.icon ?? null;
+  if (lowest) return lowest.icon;
+  return powerOut(state) && isWorking(state) ? "no-internet" : null;
 }
 
 /**

@@ -3,7 +3,7 @@
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
-import { isWorkday } from "../sim/work";
+import { isWorkday, standupToday } from "../sim/work";
 
 const at = (minute: number, what: string): [number, string] => [minute, `${formatClock(minute)} ${what}`];
 
@@ -11,7 +11,8 @@ const at = (minute: number, what: string): [number, string] => [minute, `${forma
 const DAY_EVENTS: Record<string, [number, string]> = {
   meeting: at(MODIFIERS.meeting.from, "нарада"),
   lunch: at(MODIFIERS.lunch.from, "обідня перерва"),
-  outage: [MODIFIERS.outage.from, `${formatClock(MODIFIERS.outage.from)}–${formatClock(MODIFIERS.outage.to)} без інтернету`],
+  // «Планове відключення» — світла немає весь день, а не в певні години (§4.1, рішення автора 2026-11-02): запланованої події
+  // в розкладі немає, а ефект дня «Без світла» — на панелі (`hud.ts`).
   inspection: at(MODIFIERS.inspection.minute, "перевірка ОСББ"),
   guests: at(MODIFIERS.guests.minute, "гості"),
   festival: at(MODIFIERS.festival.minute, "феєрверки"),
@@ -33,7 +34,8 @@ export function scheduleOf(state: GameState): string[] {
   if (isWorkday(state)) {
     // Робота вже йде — вона не «запланована»: рядок лише до її початку.
     if (minute < WORK_START_MINUTE) other.push([WORK_START_MINUTE, `${formatClock(WORK_START_MINUTE)}–${formatClock(WORK_END_MINUTE)} робота`]);
-    if (minute < STANDUP_MINUTE + STANDUP_MINUTES) important.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летучка`]);
+    // У день без світла летучки немає (§4.1, рішення автора 2026-11-02).
+    if (standupToday(state) && minute < STANDUP_MINUTE + STANDUP_MINUTES) important.push([STANDUP_MINUTE, `${formatClock(STANDUP_MINUTE)} летучка`]);
   }
   const event = DAY_EVENTS[state.modifiers.day ?? ""];
   // Робочі події — лише в робочий день, офіс — поки зборів не було (перевірка модифікаторів 2026-10-28: розклад обіцяв нараду на лікарняному й офіс після зборів).

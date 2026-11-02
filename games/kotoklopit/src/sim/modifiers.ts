@@ -312,7 +312,11 @@ export function ignoreCall(state: GameState): boolean {
 
 // --- Множники для інших модулів ---------------------------------------------------------------
 
-/** Спад терпіння (§8.6): дедлайн, затишшя, тижневі. */
+/**
+ * Спад терпіння (§8.6): дедлайн, затишшя, тижневі. В обідню перерву й увесь день «Планового відключення» керівництво нічого не
+ * чекає — терпіння не спадає, тож і «Х» немає, і поїздки в робочий час не штрафуються (§4.1; рішення автора 2026-11-02, цей
+ * наслідок автор підтвердив).
+ */
 export function patienceDecayFactor(state: GameState): number {
   let factor = 1;
   if (active(state, "deadline")) factor *= MODIFIERS.deadline.decay;
@@ -320,18 +324,26 @@ export function patienceDecayFactor(state: GameState): number {
   factor *= MODIFIERS.week.decay[state.modifiers.week ?? ""] ?? 1;
   const minute = state.minute % 1440;
   if (active(state, "lunch") && minute >= MODIFIERS.lunch.from && minute < MODIFIERS.lunch.to) return 0;
-  if (internetOut(state)) return 0;
+  if (powerOut(state)) return 0;
   return factor;
 }
 
+/** Репутація за годину роботи (§8.6): дедлайн і затишшя; без світла («Планове відключення», §4.1) — ×0,75. */
 export function reputationFactor(state: GameState): number {
   if (active(state, "deadline")) return MODIFIERS.deadline.reputation;
   if (active(state, "lull")) return MODIFIERS.lull.reputation;
+  if (powerOut(state)) return MODIFIERS.outage.reputation;
   return 1;
 }
 
+/** Зарплата за годину (§8.6): «Затримка зарплати», «Премія», «Швидкий інтернет», «Планове відключення» — `MODIFIERS.pay`. */
 export function payFactor(state: GameState): number {
   return MODIFIERS.pay[state.modifiers.day ?? ""] ?? 1;
+}
+
+/** Пошук роботи за годину (§8.6): без світла («Планове відключення», §4.1, рішення автора 2026-11-02) — ×0,75. */
+export function searchFactor(state: GameState): number {
+  return powerOut(state) ? MODIFIERS.outage.search : 1;
 }
 
 /** Робочий день із модифікаторами: робоча субота й аврал додають, вихідний і відпустка — забирають. */
@@ -340,15 +352,6 @@ export function workdayOverride(state: GameState): boolean | null {
   if (state.modifiers.week === "vacation" || active(state, "midweek-off")) return false;
   if (weekend && (active(state, "work-saturday") || state.modifiers.week === "crunch")) return true;
   return null;
-}
-
-/**
- * Планове відключення (§4.1): провайдер відключив інтернет — комп'ютер не працює. Решта техніки працює: світло є (рішення автора
- * 2026-10-29, `GENERAL_REVIEW.md`, А14; раніше титулка обіцяла, що вимкнуть світло).
- */
-export function internetOut(state: GameState): boolean {
-  const minute = state.minute % 1440;
-  return active(state, "outage") && minute >= MODIFIERS.outage.from && minute < MODIFIERS.outage.to;
 }
 
 /**
