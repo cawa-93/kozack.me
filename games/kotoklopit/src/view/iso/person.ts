@@ -37,7 +37,7 @@ import { artEntry } from "../art/manifest";
 import { farRecipe, personRecipe } from "../art/recipes";
 import type { ArtId, TintRecipe } from "../art/types";
 import { PERSON_ANIMS } from "../rig/anims/index";
-import { personCatGrip, personWithArms } from "../rig/anims/person/move";
+import { personCatGrip, personVacuumBrush, personWithArms } from "../rig/anims/person/move";
 import { PERSON_FAR_SLOTS, PERSON_FIT, PERSON_RIG, personProportions, personSkin, type PersonSlot } from "../rig/defs/person";
 import { slotFrame } from "../rig/rigcore";
 import { RigSprite, type RigSpriteOf, type SocketWorld } from "../rig/rigsprite";
@@ -171,6 +171,9 @@ export class IsoPersonView implements PersonPart {
   private readonly tmpPoint: Vec2 = { x: 0, y: 0 };
   private readonly tmpTarget: Vec2 = { x: 0, y: 0 };
   private readonly tmpSocket: SocketWorld = { x: 0, y: 0, angle: 0, flipped: false };
+  /** Щітка пилососа в руках цього кадру (`brush`) і чи вона є. */
+  private readonly brushAt: Point = { x: 0, y: 0 };
+  private brushShown = false;
 
   /** Кіт, якого бере на руки чи опускає (`Hands.lift`): той самий об'єкт щокадру. */
   private readonly lift: HandsLift = { cat: -1, w: 0, grip: 0, at: { x: 0, y: 0 } };
@@ -179,6 +182,11 @@ export class IsoPersonView implements PersonPart {
 
   readonly head: Point = { x: 0, y: 0 };
   readonly hands: Hands = { x: 0, y: 0, depth: 0, lift: null };
+
+  /** Щітка пилососа в руках на екрані (§8.7): туди втягується пил, шерсть і сухий безлад, що прибрав пилосос. */
+  get brush(): Point | null {
+    return this.brushShown ? this.brushAt : null;
+  }
 
   constructor(private readonly ctx: PartContext) {
     const scene = ctx.scene;
@@ -413,6 +421,21 @@ export class IsoPersonView implements PersonPart {
     this.hands.depth = cargoDepth(this.depth, this.sprite.facing.view === "back");
     this.hands.facing = this.sprite.facing;
     this.hands.lift = this.liftNow();
+    this.updateBrush();
+  }
+
+  /**
+   * Щітка пилососа в руках (`brush`): гніздо `held` плюс щітка кадру `item/vacuum` від хвату в ракурсі персонажа
+   * (`personVacuumBrush`), повернута й віддзеркалена разом із гніздом.
+   */
+  private updateBrush(): void {
+    const cargo = this.cargo.held;
+    const socket = cargo.image.visible && cargo.key.startsWith("item/vacuum|") ? this.sprite.socket("held", this.tmpSocket) : null;
+    this.brushShown = socket !== null;
+    if (!socket) return;
+    const at = socketPoint(socket, personVacuumBrush(this.sprite.facing.view));
+    this.brushAt.x = at.x;
+    this.brushAt.y = at.y;
   }
 
   /**

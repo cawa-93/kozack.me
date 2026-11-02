@@ -116,12 +116,14 @@ export interface ApartmentPart extends WorldPart {
   objectAnchor(id: string): Point | null;
 }
 
-/** Персонаж: його голова й руки потрібні котам і баблам. */
+/** Персонаж: його голова й руки потрібні котам і баблам, щітка пилососа — підлозі (туди втягується прибране). */
 export interface PersonPart extends WorldPart {
   /** Над головою: тут бабли персонажа (камера йде не за цією точкою, а за ногами за симуляцією — `followTarget`, §8.4). */
   readonly head: Point;
   /** Де персонаж тримає кота (§9.12). */
   readonly hands: Hands;
+  /** Щітка пилососа в руках на екрані (§8.7, «Пилосос у руках»), px світу; null — пилососа в руках немає чи його не видно. */
+  readonly brush: Point | null;
 }
 
 /** Коти. */
@@ -149,6 +151,6 @@ export interface WorldQuery {
   objectAnchor(id: string): Point | null;
   /** Підсвітити ціль у частині, якій вона належить. */
   highlight(target: Target, alpha: number): boolean;
-  readonly person: { readonly head: Point; readonly hands: Hands };
+  readonly person: { readonly head: Point; readonly hands: Hands; readonly brush: Point | null };
   cat(id: number): CatPoints | null;
 }

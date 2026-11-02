@@ -35,7 +35,7 @@ function fake(name: string, log: string[], owns: (id: string) => boolean, claims
 function world(): { world: World; log: string[] } {
   const log: string[] = [];
   const apartment: ApartmentPart = { ...fake("apartment", log, (id) => !id.includes(":"), ["object"]), objectAnchor: () => ({ x: -1, y: -1 }) };
-  const person: PersonPart = { ...fake("person", log, (id) => id === "person"), head: { x: 7, y: 8 }, hands: { x: 1, y: 2, depth: 3 } };
+  const person: PersonPart = { ...fake("person", log, (id) => id === "person"), head: { x: 7, y: 8 }, hands: { x: 1, y: 2, depth: 3 }, brush: null };
   const cats: CatsPart = { ...fake("cats", log, (id) => id.startsWith("cat:"), ["cat"]), points: (cat) => (cat === 1 ? { head: { x: 1, y: 1 }, back: { x: 2, y: 2 } } : null) };
   const result = new World(ISO);
   result.attach({ apartment, floor: fake("floor", log, (id) => /^(item|mess):/.test(id), ["item", "mess"]), cats, person, marks: fake("marks", log, () => false) });

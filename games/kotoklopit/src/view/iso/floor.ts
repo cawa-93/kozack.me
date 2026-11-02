@@ -2,7 +2,8 @@
 // лотки (з запахом, коли брудні), будиночки, кігтеточки, іграшки, автогодівниці, робот і док, переноска, кошик білизни,
 // шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті, пил і скинуті дрібнички — кожне
 // окремим кадром маніфесту з точкою в реєстрі глибини (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а
-// пласке (бруд, шерсть, пил, док) — під тими, хто на ньому. Павутину на стіні малює квартира (`apartment.ts`).
+// пласке (бруд, шерсть, пил, док) — під тими, хто на ньому. Павутину на стіні малює квартира (`apartment.ts`). Те, що
+// прибрав пилосос у руках, не зникає миттю, а втягується в щітку (`SUCK`).
 //
 // Що показати — зі стану гри (`looks.ts`).
 
@@ -49,12 +50,29 @@ const DUST_HALF = { corner: 31, wall: 42, floor: 25 } as const;
 const DUST_HEIGHT = 4;
 /** Вертикальний пилосос на підлозі (`env/vacuum`): кадр без станів. */
 const VACUUM_FRAME: IsoFrame = { id: "env/vacuum", state: null };
+/**
+ * Прибране пилососом у руках (§8.7) втягується в щітку: за `ms` летить до неї, прискорюючись, меншає до `shrink` і блідне до
+ * `fade`.
+ */
+const SUCK = { ms: 280, shrink: 0.25, fade: 0.4 } as const;
 
 /** Накладка на річ: малюнок, кадр, що зараз показано, і зсув глибини від самої речі. */
 interface Extra {
   image: Phaser.GameObjects.Image;
   key: string;
   offset: number;
+}
+
+/**
+ * Те, що втягується в щітку пилососа: річ, звідки (px світу), з якої миті й базовий масштаб; `orphan` — її вже немає в мапах
+ * (прибраний безлад): наприкінці прибрати зовсім, інакше (жмут, пил) — сховати до наступного разу.
+ */
+interface Suck {
+  spot: Spot;
+  from: Point;
+  start: number;
+  scale: { x: number; y: number };
+  orphan: boolean;
 }
 
 /** Річ на підлозі: малюнок, точка в реєстрі глибини, що на ній лежить (фонтанчик, запах, ґратки). */
@@ -86,6 +104,8 @@ export class IsoFloorView implements WorldPart {
   private readonly dust = new Map<number, Spot>();
   /** Одиничні: робот, його док, переноска, кошик білизни, шкарпетка за диваном, вертикальний пилосос. */
   private readonly singles = new Map<string, Spot>();
+  /** Що зараз втягується в щітку пилососа. */
+  private readonly sucking: Suck[] = [];
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -241,7 +261,8 @@ export class IsoFloorView implements WorldPart {
       this.place(spot, look, fallen, 8);
     }
 
-    this.forgetUnseen();
+    this.forgetUnseen(state.character.held?.kind === "vacuum", frame.time);
+    this.suck(frame.time);
   }
 
   /**
@@ -296,17 +317,64 @@ export class IsoFloorView implements WorldPart {
 
   /**
    * Речі, яких цього кадру немає (продали, прибрали, зламалися), прибрати; жмути шерсті й пил — сховати: місця сталі, і там
-   * знову ляже шерсть чи пил.
+   * знову ляже шерсть чи пил. З пилососом у руках (`vacuum`) безлад, шерсть і пил, що зникли, прибрав він (руками з ним не
+   * прибирають, а робот бере лише шерсть і пил), — вони втягуються в щітку (`SUCK`) і лише тоді зникають.
    */
-  private forgetUnseen(): void {
+  private forgetUnseen(vacuum: boolean, time: number): void {
     for (const map of [this.items, this.messes, this.feeders, this.trinkets, this.singles] as Map<unknown, Spot>[]) {
       for (const [key, spot] of map) {
         if (spot.seen) continue;
-        destroySpot(spot);
         map.delete(key);
+        if (vacuum && map === this.messes) this.startSuck(spot, time, true);
+        else destroySpot(spot);
       }
     }
-    for (const spots of [this.tufts, this.dust]) for (const spot of spots.values()) if (!spot.seen) this.hide(spot);
+    for (const spots of [this.tufts, this.dust]) {
+      for (const spot of spots.values()) {
+        if (spot.seen || !spot.image.visible || this.sucking.some((s) => s.spot === spot)) continue;
+        if (vacuum) this.startSuck(spot, time, false);
+        else this.hide(spot);
+      }
+    }
+  }
+
+  /** Почати втягувати річ у щітку: її точка лишається в реєстрі (пласка — під персонажем і пилососом) до кінця. */
+  private startSuck(spot: Spot, time: number, orphan: boolean): void {
+    this.sucking.push({ spot, from: { x: spot.image.x, y: spot.image.y }, start: time, scale: { x: spot.image.scaleX, y: spot.image.scaleY }, orphan });
+  }
+
+  /**
+   * Те, що втягується, — до щітки пилососа (`PersonPart.brush`; поставили пилосос посеред польоту — лишається, де була,
+   * і просто зникає): за `SUCK.ms`, прискорюючись, меншає й блідне. Летить по підлозі — його точка в реєстрі глибини йде
+   * разом із ним (`floorAt`), тож кіт, що стоїть ближче до камери, його закриває. Наприкінці — масштаб і прозорість як
+   * були, і сховати чи прибрати.
+   */
+  private suck(time: number): void {
+    const brush = this.ctx.world.person.brush;
+    for (let i = this.sucking.length - 1; i >= 0; i--) {
+      const s = this.sucking[i]!;
+      const t = (time - s.start) / SUCK.ms;
+      const image = s.spot.image;
+      if (t >= 1 || !(t >= 0)) {
+        image.setScale(s.scale.x, s.scale.y).setAlpha(1);
+        if (s.orphan) destroySpot(s.spot);
+        else this.hide(s.spot);
+        this.sucking.splice(i, 1);
+        continue;
+      }
+      const e = t * t;
+      const to = brush ?? s.from;
+      const k = 1 - (1 - SUCK.shrink) * e;
+      const x = s.from.x + (to.x - s.from.x) * e;
+      const y = s.from.y + (to.y - s.from.y) * e;
+      image
+        .setPosition(x, y)
+        .setScale(s.scale.x * k, s.scale.y * k)
+        .setAlpha(1 - (1 - SUCK.fade) * e)
+        .setVisible(true);
+      const floor = floorAt(x, y);
+      s.spot.point.place(floor.x, floor.y);
+    }
   }
 
   lateUpdate(): void {
@@ -316,6 +384,9 @@ export class IsoFloorView implements WorldPart {
 
   /** Новий день чи нова гра: id речей і безладу можуть означати вже інше. */
   reset(): void {
+    // Прибраний безлад, що ще втягувався, — уже поза мапами: прибрати окремо.
+    for (const s of this.sucking) if (s.orphan) destroySpot(s.spot);
+    this.sucking.length = 0;
     for (const spots of this.all()) for (const spot of spots) destroySpot(spot);
     this.items.clear();
     this.messes.clear();
@@ -367,6 +438,14 @@ export class IsoFloorView implements WorldPart {
 /** Де показано річ котячого кутка: на своєму місці, а загнану під диван — там, де її видно (`stashPoint`). */
 function shownAt(item: HomeItem): Vec {
   return stashPoint(itemPoint(item), item.kind === "toy" ? item.hidden : undefined);
+}
+
+/** Точка підлоги (клітинки) під точкою екрана (px світу): обернення `ISO.toScreen`. */
+function floorAt(x: number, y: number): Vec {
+  const origin = ISO.toScreen({ x: 0, y: 0 });
+  const u = (x - origin.x) / (ISO.tile.width / 2);
+  const v = (y - origin.y) / (ISO.tile.height / 2);
+  return { x: (u + v) / 2, y: (v - u) / 2 };
 }
 
 function frameKey(frame: IsoFrame): string {
