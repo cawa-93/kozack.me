@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { hudHeight } from "../src/view/iso/hudlook";
 import { ISO } from "../src/view/world/projection";
 import {
   BASE_HEIGHT,
@@ -13,7 +14,6 @@ import {
   fitsWhole,
   FOLLOW_LIFT,
   followTarget,
-  HUD_HEIGHT,
   MAX_CANVAS_PIXELS,
   MAX_DENSITY,
   MAX_TEXT_RESOLUTION,
@@ -33,7 +33,8 @@ function view(cssWidth: number, cssHeight: number, safeTopCss = 0): ZoomView {
   const width = sx < sy ? BASE_WIDTH : cssWidth / sy;
   const height = sx < sy ? cssHeight / sx : BASE_HEIGHT;
   const cssScale = height / cssHeight;
-  return { width, height: height - (safeTopCss * cssScale + HUD_HEIGHT), cssScale };
+  // Смуга панелі — як у `Viewport.layout`: на низькому екрані вища (`hudHeight`).
+  return { width, height: height - (safeTopCss * cssScale + hudHeight(1 / cssScale)), cssScale };
 }
 
 /** Скільки px CSS займає `units` одиниць світу за зуму камери. */
@@ -142,7 +143,7 @@ describe("полотно в пікселях пристрою (canvasFit)", () =
       const old = view(w, h);
       expect(fit.ui).toBe(1);
       expect(fit.density).toBeCloseTo(old.cssScale, 9);
-      expect(fit.height).toBeCloseTo(old.height + HUD_HEIGHT, 9);
+      expect(fit.height).toBeCloseTo(old.height + hudHeight(1 / fit.unit), 9);
       expect(fit.width).toBeCloseTo(w * old.cssScale, 9);
     }
   });
@@ -181,7 +182,7 @@ describe("полотно в пікселях пристрою (canvasFit)", () =
 
   it("зум квартири за новою щільністю — та сама клітинка в px CSS, що й раніше", () => {
     const fit = canvasFit({ width: 844, height: 390 }, 3, false);
-    const area = { width: fit.width, height: fit.height - HUD_HEIGHT * fit.ui, cssScale: fit.density };
+    const area = { width: fit.width, height: fit.height - hudHeight(1 / fit.unit) * fit.ui, cssScale: fit.density };
     const zoom = cameraZoom(area, ISO);
     expect(css(ISO.tile.height, zoom, area)).toBeCloseTo(MIN_TILE_CSS, 6);
   });
