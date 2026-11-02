@@ -52,7 +52,7 @@ import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
-import type { RoadEnd, RoadStart } from "./RaceScene";
+import type { RaceScene, RoadEnd, RoadStart } from "./RaceScene";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -103,6 +103,11 @@ export class DayScene extends Phaser.Scene {
    * і з яким збереженням вона почалася — гру замінили посеред катсцени, і стара дорога вже нічого не робить.
    */
   private arrival: { save: Save; arrive: () => void } | null = null;
+  /**
+   * Поїздка на місці, а сцени дороги на парковці ще немає (перезавантаження сторінки): її вже запущено (`RoadStart` «parked»),
+   * і день, поки вона не стала, другої не запускає, а квартири вже не показує (§8.5 «На місці — кадр парковки»).
+   */
+  private parkingRequested = false;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
@@ -226,6 +231,7 @@ export class DayScene extends Phaser.Scene {
   private restart(): void {
     this.overlay.close();
     this.queued.length = 0;
+    this.parkingRequested = false;
     this.wakeUp();
     this.bubbles.clear();
     this.hearts.clear();
@@ -334,13 +340,20 @@ export class DayScene extends Phaser.Scene {
 
   /**
    * Сцена дороги розбудила день (`RoadEnd`). Аварія (§8.5): екран уже чорний після анімації — він і лишається чорним під карткою
-   * аварії, доки її не закрили (`revealFromDark`). Дорога додому: тепер минає її час і персонаж удома (`arrival`), і квартира
-   * проступає з чорного, яким катсцена скінчилася. Звичайний кінець гонки — нічого: далі картка на місці, як і раніше.
+   * аварії, доки її не закрили (`revealFromDark`). Машина стала на парковці (§8.5 «На місці — кадр парковки») — нічого не
+   * темніє: сцена дороги лишається на кадрі на місці, день його не закриває (`showParking`), а картку пункту покаже поверх нього
+   * (`updateTrip`). Дорога додому: тепер минає її час і персонаж удома (`arrival`), і квартира проступає з чорного, яким
+   * катсцена скінчилася. Інший кінець гонки (ніч у дорозі, гру замінили) — нічого: далі день сам покаже, що треба.
    */
   private onRoadEnd(end: RoadEnd | undefined): void {
     if (end?.crashed === true) {
       this.tweens.killTweensOf(this.dark);
       this.dark.setFillStyle(0x000000, 1);
+      return;
+    }
+    if (end?.parked === true) {
+      // Пробудження вмикає видимість дня — сховати одразу, ще до кадру: квартира не блимне поверх парковки.
+      this.showParking();
       return;
     }
     if (end?.mode !== "home") return;
@@ -366,8 +379,9 @@ export class DayScene extends Phaser.Scene {
   }
 
   /**
-   * Дорога додому (§8.5): коротка катсцена без керування (сцена дороги, `RoadStart` «home»), а тоді `arrive` — те саме, що й
-   * раніше без катсцени: минає час дороги, і персонаж удома біля дверей (чи ніч, чи кінець гри). Поки катсцена йде, день спить і
+   * Дорога додому (§8.5): коротка катсцена без керування, а тоді `arrive` — те саме, що й раніше без катсцени: минає час дороги,
+   * і персонаж удома біля дверей (чи ніч, чи кінець гри). З місця вона починається від'їздом із парковки (§8.5 «На місці — кадр
+   * парковки», `RaceScene.depart`), а без парковки (знайда) — з чорного (`RoadStart` «home»). Поки катсцена йде, день спить і
    * стан гри не змінюється: перезавантаження сторінки посеред неї повертає туди, звідки персонаж ще не виїхав.
    */
   private driveHome(arrive: () => void): void {
@@ -375,8 +389,30 @@ export class DayScene extends Phaser.Scene {
     this.moving = false;
     this.catPress = null;
     this.touch.reset();
-    this.scene.launch("race", { mode: "home" } satisfies RoadStart);
+    this.overlay.setAside(false);
+    if (!this.race.depart()) this.scene.launch("race", { mode: "home" } satisfies RoadStart);
     this.scene.sleep();
+  }
+
+  /** Сцена дороги (§8.5): гонка, прибуття, кадр на місці й дорога додому. */
+  private get race(): RaceScene {
+    return this.scene.get("race") as RaceScene;
+  }
+
+  /**
+   * На місці (§8.5 «На місці — кадр парковки»): поки сцена дороги на парковці (чи її вже запущено туди), квартири, панелі й
+   * баблів не видно — день схований, і під карткою пункту видно кадр парковки; картку притиснуто ліворуч, якщо праворуч від неї
+   * вміщається парковка (`RaceScene.parkingAside`). Щокадру: пробудження дня (`wake`) саме вмикає його видимість.
+   */
+  private showParking(): void {
+    const state = this.state;
+    const visit = state.trip?.phase === "visit" && state.end === null;
+    if (!visit) this.parkingRequested = false;
+    const parked = visit && this.race.parkedNow;
+    if (parked) this.parkingRequested = false;
+    const away = visit && (parked || this.parkingRequested);
+    this.scene.setVisible(!away);
+    this.overlay.setAside(parked && this.race.parkingAside);
   }
 
   private dash(): void {
@@ -412,7 +448,7 @@ export class DayScene extends Phaser.Scene {
     return { move: this.world.projection.screenToTileDir({ x, y }), hold };
   }
 
-  /** Поїздка (§8.5): гонку веде своя сцена, подію на місці й аварію — картки. */
+  /** Поїздка (§8.5): гонку, прибуття й кадр на місці веде сцена дороги, подію на місці й аварію — картки. */
   private updateTrip(): boolean {
     const trip = this.state.trip;
     if (trip === null || this.state.end !== null) return false;
@@ -424,9 +460,21 @@ export class DayScene extends Phaser.Scene {
       }
       return true;
     }
+    // На місці (§8.5 «На місці — кадр парковки»), а сцени дороги на парковці немає (перезавантаження сторінки посеред прибуття,
+    // візиту чи від'їзду; сценарій) — запустити її одразу на місці, ще під меню: квартира не блимне. Не тоді, коли машина вже
+    // рушила додому (`arrival`): день от-от засне.
+    if (trip.phase === "visit" && !this.race.parkedNow && !this.parkingRequested && this.arrival === null) {
+      this.scene.launch("race", { mode: "parked" } satisfies RoadStart);
+      this.parkingRequested = true;
+      this.showParking();
+    }
+    // Аварія (§8.5): картка — на чорному. Після анімації в гонці екран уже чорний; після перезавантаження сторінки посеред аварії —
+    // теж, і з карткою дзвінка мами перед нею. Закрили картку аварії — квартира проступає з чорного (чи титулка ночі).
+    if (trip.phase === "accident" && this.dark.fillAlpha < 1) {
+      this.tweens.killTweensOf(this.dark);
+      this.dark.setFillStyle(0x000000, 1);
+    }
     if (this.overlay.isOpen) return true;
-    // Аварія (§8.5): після анімації в гонці екран чорний і картка — на чорному; закрили — квартира проступає з чорного (чи
-    // титулка ночі). Після перезавантаження сторінки посеред аварії — одразу картка поверх квартири, як і раніше.
     if (trip.phase === "accident") {
       this.overlay.show(
         accidentCard(this.state, () => {
@@ -438,7 +486,8 @@ export class DayScene extends Phaser.Scene {
       );
       return true;
     }
-    this.showVisit();
+    // Картка пункту — лише поверх кадру парковки: машина вже стала на місці.
+    if (this.race.parkedNow) this.showVisit();
     return true;
   }
 
@@ -527,12 +576,14 @@ export class DayScene extends Phaser.Scene {
 
   private queueCard(card: Card): void {
     // Гонку картки не перебивають (§8.5): чекають, доки персонаж доїде чи потрапить в аварію. Раніше картка вискакувала
-    // поверх дороги, а машина без керування врізалася (перевірка поїздок 2026-10-28).
-    if (this.overlay.isOpen || this.state.trip?.phase === "drive") this.queued.push(card);
+    // поверх дороги, а машина без керування врізалася (перевірка поїздок 2026-10-28). «Доїде» — коли машина вже стала на
+    // парковці (§8.5 «На місці — кадр парковки»): поки день спить (прибуття, дорога додому), картка теж чекає.
+    if (this.overlay.isOpen || this.state.trip?.phase === "drive" || this.sys.isSleeping()) this.queued.push(card);
     else this.overlay.show(card);
   }
 
   override update(time: number, delta: number): void {
+    this.showParking();
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
     if (this.updateTrip()) {
