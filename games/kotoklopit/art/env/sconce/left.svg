@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 160" width="48" height="160">
+<!-- env/sconce/left — бра на задній стіні x = 0 (лице x = 1) у вітальні, обабіч вікна (SCONCES у src/view/decor.ts: (1; 7,2) і (1; 9,8)). Пакет P2a «Арт і вигляд декору» (§8.9, рішення автора 2026-11-02). Свій малюнок, не дзеркало env/sconce/back (art/STYLE.md §10).
+size 48×160; pivot (12, 156) — точка підлоги біля лиця стіни під бра; points: lamp (25.5, 22.5) — центр абажура на висоті 140 (SCONCES[].lamp), вісь на 0,21 від стіни.
+Кругла помаранчева чашечка на стіні (z 109–126), латунна трубка й патрон; помаранчевий абажур-«дзвоник» (опуклі боки), Ø 0,34 знизу, Ø 0,17 угорі, z 129–151,
+з червоною тасьмою по низу (історія: абажур із тієї самої тканини, що й чашечка, — набір).
+Стани: st-off — тканина orange, у верхньому отворі темне нутро й сіра колба; st-on — orangeHi, світла смуга під тасьмою, нутро й колба paper (сяйво — код).
+Контур LINE_SMALL. Без шарів.
+-->
+<g id="p-plate">
+<path d="M7.3 42.1L7.5 39.8L8.1 37.5L9 35.3L10.3 33.3L11.7 31.7L13.3 30.6L14.8 30.2L16.3 30.3L17.5 31L18.5 32.3L19.1 34L19.3 36.1L19.1 38.4L18.5 40.8L17.5 43L16.3 45L14.8 46.6L13.3 47.6L11.7 48.1L10.3 48L9 47.3L8.1 46L7.5 44.2Z" fill="#d9843f"/>
+<path d="M19.3 36.1L19.1 38.4L18.5 40.8L17.5 43L16.3 45L14.8 46.6L13.3 47.6L11.7 48.1L10.3 48L9 47.3L8.1 46L7.5 44.2L7.3 42.1Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M10.9 39.1A2.4 2.4 0 0 0 15.7 39.1A2.4 2.4 0 0 0 10.9 39.1Z" fill="#d4a54c"/>
+<path d="M10.9 39.1A2.4 2.4 0 0 0 15.7 39.1A2.4 2.4 0 0 0 10.9 39.1Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.3 42.1L7.5 39.8L8.1 37.5L9 35.3L10.3 33.3L11.7 31.7L13.3 30.6L14.8 30.2L16.3 30.3L17.5 31L18.5 32.3L19.1 34L19.3 36.1L19.1 38.4L18.5 40.8L17.5 43L16.3 45L14.8 46.6L13.3 47.6L11.7 48.1L10.3 48L9 47.3L8.1 46L7.5 44.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-arm">
+<path d="M13.3 39.1L21.4 44.2Q25.4 47.2 25.4 36.7" fill="none" stroke="#2e1f29" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.3 39.1L21.4 44.2Q25.4 47.2 25.4 36.7" fill="none" stroke="#d4a54c" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M21.2 35.7L21.2 29.7A4.2 2.1 0 0 0 29.6 29.7L29.6 35.7A4.2 2.1 0 0 1 21.2 35.7Z" fill="#d4a54c"/>
+<path d="M21.2 35.7L21.2 29.7A4.2 2.1 0 0 0 29.6 29.7L29.6 35.7A4.2 2.1 0 0 1 21.2 35.7Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shade-off" class="st-off">
+<path d="M17.7 11.7Q15 23.1 10.1 33.7A15.4 7.7 0 0 0 40.8 33.7Q38.1 22.3 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="#d9843f"/>
+<path d="M10.1 33.7A15.4 7.7 0 0 0 40.8 33.7L38.7 27.7A13.3 6.6 0 0 1 12.2 27.7Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M10.1 33.7A15.4 7.7 0 0 0 40.8 33.7L39.6 30.1A14.1 7.1 0 0 1 11.3 30.1Z" fill="#c4524b"/>
+<path d="M22 15.2Q19.4 27.8 18.5 40.6Q21.1 28 22 15.2Z" fill="#6b5263"/>
+<path d="M28.9 15.2Q29.7 28 32.4 40.6Q31.5 27.8 28.9 15.2Z" fill="#6b5263"/>
+<path d="M17.7 11.7A7.7 3.8 0 0 0 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="#d9843f"/>
+<path d="M17.7 11.7A7.7 3.8 0 0 0 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="#3f2541" fill-opacity="0.5"/>
+<path d="M21.7 12.7A3.7 2.1 0 0 0 29.1 12.7A3.7 2.1 0 0 0 21.7 12.7Z" fill="#cdc6be"/>
+<path d="M21.7 12.7A3.7 2.1 0 0 0 29.1 12.7A3.7 2.1 0 0 0 21.7 12.7Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.7 11.7A7.7 3.8 0 0 0 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.7 11.7Q15 23.1 10.1 33.7A15.4 7.7 0 0 0 40.8 33.7Q38.1 22.3 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shade-on" class="st-on">
+<path d="M17.7 11.7Q15 23.1 10.1 33.7A15.4 7.7 0 0 0 40.8 33.7Q38.1 22.3 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="#eaa967"/>
+<path d="M10.1 33.7A15.4 7.7 0 0 0 40.8 33.7L39.6 30.1A14.1 7.1 0 0 1 11.3 30.1Z" fill="#dc7c69"/>
+<path d="M22 15.2Q19.4 27.8 18.5 40.6Q21.1 28 22 15.2Z" fill="#d4a54c"/>
+<path d="M28.9 15.2Q29.7 28 32.4 40.6Q31.5 27.8 28.9 15.2Z" fill="#d4a54c"/>
+<path d="M17.7 11.7A7.7 3.8 0 0 0 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="#f2e7d0"/>
+<path d="M21.7 12.7A3.7 2.1 0 0 0 29.1 12.7A3.7 2.1 0 0 0 21.7 12.7Z" fill="#f2e7d0"/>
+<path d="M21.7 12.7A3.7 2.1 0 0 0 29.1 12.7A3.7 2.1 0 0 0 21.7 12.7Z" fill="none" stroke="#e8c47d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.7 11.7A7.7 3.8 0 0 0 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.7 11.7Q15 23.1 10.1 33.7A15.4 7.7 0 0 0 40.8 33.7Q38.1 22.3 33.1 11.7A7.7 3.8 0 0 0 17.7 11.7Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

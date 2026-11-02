@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 176" width="104" height="176">
+<!-- env/window/kitchen — вікно в задній стіні кухні (клітинка стіни 16,0) над правою стільницею, накладка поверх плити стіни. Пакет P2a «Арт і вигляд декору» (§8.9, рішення автора 2026-11-02: «Додати вікно на кухню» — лише декор, без підвіконня).
+size 104×176; pivot (100, 172) — верхня вершина ромба клітинки (16,0): кадр стає в toScreen(16, 0), як вікно спальні; points: —.
+Отвір x 16,1–16,9, z 125–185 у грані y = 1 (PANES у src/view/decor.ts): над кахельним фартухом (z 56–118), під кришкою стіни (200).
+Рама в глибині 0,1 (видно лівий і нижній укоси), дві стулки — скло z 131–176 (ліва x 16,165–16,455, права 16,545–16,835), ручка на правій.
+Рулонна штора в смужку (red / redHi): касета на стіні над отвором z 187–195 (виступ 0,075), полотно опущене до z 172 — закриває верхню
+планку рами й верх скла (видне скло — z 131–170), планка-обважнювач, праворуч шнур із намистиною до z 150. Фіранок немає: місця під
+кришкою мало. Без шарів.
+-->
+<defs>
+<clipPath id="window-kitchen-hole"><path d="M42.4 82.2L93.6 107.8L93.6 47.8L42.4 22.2Z"/></clipPath>
+</defs>
+<g id="p-window" clip-path="url(#window-kitchen-hole)">
+<path d="M42.4 82.2L93.6 107.8L93.6 47.8L42.4 22.2Z" fill="#e0d4b9"/>
+<path d="M42.4 82.2L48.8 79L48.8 19L42.4 22.2Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M42.4 82.2L93.6 107.8L100 104.6L48.8 79Z" fill="#f2e9d4"/>
+<path d="M48.8 79L100 104.6L100 44.6L48.8 19Z" fill="#f2e9d4"/>
+<path d="M53 75.1L71.5 84.4Q71.1 61.9 71.5 39.4L53 30.1Q53.4 52.6 53 75.1Z" fill="#a8c4c4"/>
+<path d="M54.6 56.9Q59.5 51.4 61.6 44.4Q56.7 49.9 54.6 56.9Z" fill="#d4e3dc"/>
+<path d="M57.8 68.5Q60.9 65.7 62.2 61.7Q59.1 64.5 57.8 68.5Z" fill="#d4e3dc"/>
+<path d="M53 75.1L71.5 84.4Q71.1 61.9 71.5 39.4L53 30.1Q53.4 52.6 53 75.1Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.3 87.2L95.8 96.5Q95.4 74 95.8 51.5L77.3 42.2Q77.7 64.7 77.3 87.2Z" fill="#a8c4c4"/>
+<path d="M80.8 68Q85.7 62.5 87.8 55.5Q82.9 61 80.8 68Z" fill="#d4e3dc"/>
+<path d="M84.6 80.9Q87.5 78.5 88.5 74.8Q85.6 77.3 84.6 80.9Z" fill="#d4e3dc"/>
+<path d="M77.3 87.2L95.8 96.5Q95.4 74 95.8 51.5L77.3 42.2Q77.7 64.7 77.3 87.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M77.6 72.2L80.8 73.8L80.8 62.8L77.6 61.2Z" fill="#cdc6be"/>
+<path d="M77.6 72.2L80.8 73.8L80.8 62.8L77.6 61.2Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.8 79L48.8 19" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.8 79L100 104.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-hole-ink">
+<path d="M45.1 83.5Q68 95.6 90.9 106.5Q93.6 107.8 93.6 104.8Q94.4 77.8 93.6 50.8Q93.6 47.8 90.9 46.5Q68 34.6 45.1 23.5Q42.4 22.2 42.4 25.2Q41.7 52.2 42.4 79.2Q42.4 82.2 45.1 83.5Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-blind">
+<path d="M37.6 35Q65.4 49.8 93.9 63.2L93.9 47.2L37.6 19L37.6 35Z" fill="#c4524b"/>
+<path d="M37.6 30.5L93.9 58.7L93.9 55.7L37.6 27.5Z" fill="#dc7c69"/>
+<path d="M37.6 24.5L93.9 52.7L93.9 51.2L37.6 23Z" fill="#dc7c69"/>
+<path d="M37.6 22.5L93.9 50.7L93.9 47.2L37.6 19Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M37.6 35Q65.4 49.8 93.9 63.2L93.9 47.2L37.6 19L37.6 35Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36 37.7L93.6 66.5L93.6 63L36 34.2Z" fill="#b98b60"/>
+<path d="M36 37.7Q64.6 52.5 93.6 66.5L93.6 63L36 34.2L36 37.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.3 49.5Q92.5 67 93.3 84.5" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M90.7 87.1A2.6 3.2 0 0 0 95.9 87.1A2.6 3.2 0 0 0 90.7 87.1Z" fill="#9a6a47"/>
+<path d="M90.7 87.1A2.6 3.2 0 0 0 95.9 87.1A2.6 3.2 0 0 0 90.7 87.1Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.1 20.4L93.3 50.4L93.3 42.4L33.1 12.4Z" fill="#e0d4b9"/>
+<path d="M33.1 12.4L93.3 42.4L98.1 40L37.9 10Z" fill="#f2e9d4"/>
+<path d="M93.3 50.4L98.1 48L98.1 40L93.3 42.4Z" fill="#e0d4b9"/>
+<path d="M33.1 20.4L93.3 50.4L93.3 47.9L33.1 17.9Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M33.8 12.7L93 42.3" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.3 49.8L93.3 42.8" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.1 20.4Q62.9 36 93.3 50.4L98.1 48L98.1 40Q67.8 25.4 37.9 10L33.1 12.4L33.1 20.4Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

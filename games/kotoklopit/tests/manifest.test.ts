@@ -18,6 +18,8 @@ import { cobwebState, type CobwebState } from "../src/view/art/manifest/a20-dust
 import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { artEntries, artEntry, DEFAULT_RES, manifestProblems } from "../src/view/art/manifest";
 import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, type WhiteLayer } from "../src/view/art/types";
+import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
+import { BOILER, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { ICON_NAMES, type BubbleKind, type Mark } from "../src/view/iconnames";
 
 const ENTRIES = artEntries();
@@ -125,6 +127,8 @@ describe("маніфест: правила записів", () => {
       "a19-traces-bedroom": ["env/trace/"],
       // Пил і павутина (§8.7, рішення автора 2026-11-02): «людське» забруднення кімнат.
       "a20-dust": ["mess/dust/", "mess/cobweb"],
+      // День і ніч, відключення світла (§8.9, §4.1, рішення автора 2026-11-02): декор квартири, якого сим не знає.
+      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
@@ -288,15 +292,50 @@ describe("маніфест: квартира", () => {
   });
 
   it("вікна, туалетний папір, дріт, кошик білизни", () => {
-    for (const w of WINDOWS) {
-      const sill = OBJECTS.find((o) => o.id === w.sill);
-      expect(sill, w.sill).toBeDefined();
-      entry(`env/window/${roomAt(sill ?? { x: 0, y: 0 })}`);
-      expect(entry(`env/${w.sill}`).points?.["seat"], w.sill).toBeDefined();
+    // Вікна — з PANES (`src/view/decor.ts`): над підвіконнями `WINDOWS` і кухонне без підвіконня (§8.9).
+    expect(PANES.filter((p) => p.sill).map((p) => p.sill)).toEqual(WINDOWS.map((w) => w.sill));
+    for (const pane of PANES) {
+      const e = entry(`env/window/${pane.room}`);
+      // Отвір на лиці стіни (y = 1 чи x = 1) уміщується в полотно, pivot — верхня вершина ромба клітинки стіни.
+      const face = (along: number, z: number): { x: number; y: number } =>
+        pane.face === "y" ? iso({ x: along - pane.wall.x, y: 1 - pane.wall.y }, z) : iso({ x: 1 - pane.wall.x, y: along - pane.wall.y }, z);
+      for (const along of pane.span) for (const z of pane.z) expect(inside(e, face(along, z)), `${e.id}: отвір (${along}, z ${z})`).toBe(true);
+      expect(roomAt(pane.face === "y" ? { x: pane.wall.x, y: 1 } : { x: 1, y: pane.wall.y }), e.id).toBe(pane.room);
+      if (!pane.sill) continue;
+      const sill = OBJECTS.find((o) => o.id === pane.sill);
+      expect(sill, pane.sill).toBeDefined();
+      expect(roomAt(sill ?? { x: 0, y: 0 }), pane.sill).toBe(pane.room);
+      expect(entry(`env/${pane.sill}`).points?.["seat"], pane.sill).toBeDefined();
     }
     entry("env/toilet-roll");
     entry("env/wire");
     expect(states("env/laundry-basket")).toEqual(expect.arrayContaining(["load-0", "load-5", "overflow"]));
+  });
+
+  it("декор квартири (decor.ts) — на тих місцях і висотах, за якими намальовано арт (a21-light, §8.9, §4.1)", () => {
+    // Бра: лице й висота абажура — ті самі, що в малюнку; точка `lamp` — центр абажура на `out` від лиця стіни.
+    for (const sconce of SCONCES) {
+      const art = LIGHT_ART.sconce[sconce.id];
+      expect(sconce.face, sconce.id).toBe(art.face);
+      expect(sconce.lamp, sconce.id).toBe(art.lamp);
+      const e = entry(sconce.id);
+      expect(e.states).toEqual(["off", "on"]);
+      const axis = iso(art.face === "y" ? { x: 0, y: art.out } : { x: art.out, y: 0 }, art.lamp);
+      const lamp = e.points?.["lamp"];
+      expect(Math.abs((lamp?.x ?? NaN) - (e.pivot.x + axis.x)), sconce.id).toBeLessThanOrEqual(0.25);
+      expect(Math.abs((lamp?.y ?? NaN) - (e.pivot.y + axis.y)), sconce.id).toBeLessThanOrEqual(0.25);
+    }
+    expect(BOILER).toEqual({ at: LIGHT_ART.boiler.at, face: "y", z: LIGHT_ART.boiler.z, led: LIGHT_ART.boiler.led });
+    expect(states("env/boiler")).toEqual(["on", "off"]);
+    expect(entry("env/boiler").points?.["led"]).toBeDefined();
+    expect(POWER_STATION).toEqual({ at: LIGHT_ART.station.at, display: LIGHT_ART.station.display });
+    expect(entry("env/power-station").points?.["display"]).toBeDefined();
+    expect(states("env/candle")).toEqual(["out", "lit"]);
+    const flame = entry("env/candle").points?.["flame"];
+    expect(flame && entry("env/candle").pivot.y - flame.y).toBe(LIGHT_ART.candle.flame);
+    const kitchen = PANES.find((p) => p.room === "kitchen");
+    expect(kitchen && { wall: kitchen.wall, span: kitchen.span, z: kitchen.z }).toEqual(LIGHT_ART.kitchenWindow);
+    expect(kitchen?.sill).toBeUndefined();
   });
 });
 
