@@ -2,7 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
-import type { Cat, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
+import type { Cat, Destination, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 import type { DiseaseId, IllnessId } from "../sim/types";
 
@@ -44,6 +44,23 @@ export const THING_ICONS: Record<ThingKind, IconName> = {
   fountain: "fountain",
   robot: "robot-vacuum",
   lock: "lock",
+};
+
+/**
+ * Іконка кожного пункту поїздки (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки», рішення автора 2026-11-02): біля
+ * назви пункту в «Куди поїхати?», у заголовку картки пункту, на кнопці знайди «Віднести в притулок» і на табличці на даху
+ * будівлі біля парковки. Кожен пункт — свій малюнок, ні з чим іншим у грі не спільний: магазин — вітрина, а не кошик 🛒
+ * (замовлення з телефона — інший випадок); ветеринар, лікар і притулок — не ліки, не аптечка й не котячий будиночок.
+ */
+export const DESTINATION_ICONS: Record<Destination, IconName> = {
+  shop: "store",
+  vet: "vet-clinic",
+  doctor: "doctor-office",
+  shelter: "shelter",
+  breeder: "breeder",
+  groomer: "groomer",
+  office: "office",
+  show: "cat-show",
 };
 
 /**

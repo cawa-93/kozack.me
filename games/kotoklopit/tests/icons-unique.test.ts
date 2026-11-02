@@ -7,14 +7,14 @@
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { PRODUCTS, THINGS, THOUGHTS } from "../src/sim/config";
+import { PRODUCTS, THINGS, THOUGHTS, TRIPS } from "../src/sim/config";
 import type { GameEvent, Refusal } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import type { Cat, CatAct, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
+import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -30,6 +30,7 @@ const keyOf = (shown: Shown): string => `${shown.icon}|${shown.count === undefin
 
 const PRODUCT_LIST = Object.keys(PRODUCTS) as Product[];
 const THING_LIST = Object.keys(THINGS) as ThingKind[];
+const DESTINATION_LIST = Object.keys(TRIPS) as Destination[];
 const STATS: StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
 function itemLabel(item: Item): string {
@@ -158,6 +159,9 @@ function collectCases(): Map<string, Shown[]> {
   // Іконка біля назви хвороби (§11.4 «Іконка біля назви»): кота — у ветеринара, персонажа — у лікаря.
   for (const [disease, icon] of Object.entries(DISEASE_ICONS)) add(`disease:${disease}`, { icon });
   for (const [illness, icon] of Object.entries(ILLNESS_ICONS)) add(`illness:${illness}`, { icon });
+  // Пункти поїздок (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»): біля назви пункту в картках і на табличці на
+  // даху — кожен свій, без груп одного значення.
+  for (const destination of DESTINATION_LIST) add(`destination:${destination}`, { icon: DESTINATION_ICONS[destination] });
   return cases;
 }
 
@@ -313,6 +317,20 @@ describe("унікальна іконка на унікальний кейс (§
     // Травма кота — той самий пластир, що в персонажа; серце хвороби кота — не серце здоров'я персонажа на панелі.
     expect(DISEASE_ICONS.injury).toBe(ILLNESS_ICONS.injury);
     expect(DISEASE_ICONS.heart).not.toBe(STAT_ICONS.health);
+  });
+
+  it("пункт поїздки — свій малюнок, ні з чим не спільний: не ліки, не аптечка, не котячий будиночок (§11.4 «Іконка біля назви»)", () => {
+    const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
+    for (const destination of DESTINATION_LIST) {
+      expect(cases.has(`destination:${destination}`), destination).toBe(true);
+      expect(meaningOf(`destination:${destination}`), destination).toBe(`destination:${destination}`);
+    }
+    expect(new Set(DESTINATION_LIST.map((d) => DESTINATION_ICONS[d])).size).toBe(DESTINATION_LIST.length);
+    // Ветеринар і лікар — не аптечка, не ліки й не хвороби; притулок — не будиночок із магазину.
+    const medical = [icon("refusal:kit-empty"), icon("supply:pills"), icon("supply:humanMeds"), ...Object.values(ILLNESS_ICONS), ...Object.values(DISEASE_ICONS)];
+    expect(medical).not.toContain(DESTINATION_ICONS.vet);
+    expect(medical).not.toContain(DESTINATION_ICONS.doctor);
+    expect(DESTINATION_ICONS.shelter).not.toBe(THING_ICONS.house);
   });
 
   it("переляк кота — не «!» терпіння, спрага — не крапля душу й не перекреслена крапля порожньої миски", () => {
