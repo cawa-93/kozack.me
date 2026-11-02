@@ -1,20 +1,23 @@
 // Де видно персонажа нового вигляду й куди він дивиться (крок 16, T2): сим знає лише точку тіла (`body`) і напрям руху, а
 // вигляд садить персонажа за стіл і комп'ютер, ставить перед річчю, якою він користується, і кладе біля ліжка — за даними
 // `world/objects.ts` (`IsoObjectLook.use`: де персонаж стоїть чи сидить і куди дивиться). За справою з котом, лотком чи
-// безладом — лицем до них; кота, якого гладить чи з яким грається, — там, де кота намальовано (`touchFacing`). Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Обличчя, коли воно головне
-// (засинає, падає без сил: §8.8 «плавно заплющує очі»), видно: ракурс `back` ховає очі (`showFace`, `SLEEP_TURN`). Кота, якого
-// купають, видно перед персонажем (`BATH_FACE`). Разові справи біля речі (узяв із холодильника, насипав корм, запустив
-// пральку, забрав пакунки) — лицем до неї (`shotPlace`, `shotFace`). Без Phaser.
+// безладом — лицем до них; кота, якого гладить чи з яким грається, — там, де кота намальовано (`touchFacing`); лагодить
+// перегризений дріт — на підлозі біля обриву (`wireFixSpot`). Плавний перехід між точкою тіла й місцем справи —
+// `glideOffset`. Обличчя, коли воно головне (засинає, падає без сил: §8.8 «плавно заплющує очі»), видно: ракурс `back` ховає
+// очі (`showFace`, `SLEEP_TURN`). Кота, якого купають, видно перед персонажем (`BATH_FACE`). Разові справи біля речі (узяв із
+// холодильника, насипав корм, запустив пральку, забрав пакунки) — лицем до неї (`shotPlace`, `shotFace`). Без Phaser.
 //
 // Перевіряє `tests/isopersonspot.test.ts`.
 
-import { itemPoint, OBJECTS } from "../../sim/home";
+import { itemPoint, OBJECTS, WIRE_TILE } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { GameState, Vec } from "../../sim/types";
 import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
+import { isoTileDir } from "../anim/iso";
 import type { RigFacing } from "../rig/types";
 import { isoObjectLook, type IsoUse } from "../world/objects";
 import type { Point } from "../world/part";
+import { artOffset } from "./geometry";
 
 /** Де видно персонажа: точка підлоги в клітинках і куди дивиться (напрям у клітинках; null — як каже `personAnim`). */
 export interface PersonSpot {
@@ -72,6 +75,28 @@ export const BATH_FACE: Vec = { x: 1, y: 0 };
  */
 export const SLEEP_TURN = 0.6;
 
+/**
+ * Лагодячи перегризений дріт (`fix`, §9.12 «Гризіння»), персонаж сидить на підлозі біля місця обриву — точки `cut` запису
+ * `env/wire` (кадр у центрі клітинки `WIRE_TILE`; звідти ж сиплються іскри, `iso/fx.ts`), — спиною до камери, лицем до
+ * дроту, а не посередині стола з комп'ютером (знахідка «Відомі проблеми (після хвилі 3)»). `hands` — де на екрані від ніг
+ * (кореня скелета) точка підлоги під кистями анімації `fix` у ракурсі `back` (кисті ≈ (37; −31…−39), ≈ 16 над підлогою, ступні
+ * — ≈ (42; −22)): уздовж осі −y сітки, тож обрив — під руками, біля ступень. Одиниці арту.
+ */
+export const FIX_AT_WIRE = { hands: { x: 36, y: -18 } } as const;
+
+let fixSpot: PersonSpot | null = null;
+
+/** Де сидить і куди дивиться персонаж, що лагодить дріт (`FIX_AT_WIRE`): рахується раз. */
+export function wireFixSpot(): PersonSpot {
+  if (fixSpot) return fixSpot;
+  const cut = artOffset("env/wire", "cut") ?? { x: 0, y: 0 };
+  const cutShift = isoTileDir(cut);
+  const at = { x: WIRE_TILE.x + 0.5 + cutShift.x, y: WIRE_TILE.y + 0.5 + cutShift.y };
+  const hands = isoTileDir(FIX_AT_WIRE.hands);
+  fixSpot = { at: { x: at.x - hands.x, y: at.y - hands.y }, face: hands, pose: "sit" };
+  return fixSpot;
+}
+
 /** Лицем до точки `to` з точки тіла. */
 function toward(from: Vec, to: Vec | null): Vec | null {
   if (!to) return null;
@@ -82,9 +107,10 @@ function toward(from: Vec, to: Vec | null): Vec | null {
 
 /**
  * Де видно персонажа, що грає анімацію `anim` (`personAnim`; `progress` — поступ засинання): засинає в ліжку — біля ліжка,
- * спершу лицем до кімнати, з `SLEEP_TURN` — лицем до ліжка; працює й лагодить дріт — за комп'ютером; їсть — за столом; купає
- * кота — біля душу боком (`BATH_FACE`); пилососить — перед шафою з пилососом; чистить лоток, прибирає безлад, гладить чи
- * грається з котом — там, де стоїть, лицем до цілі. Інакше — точка тіла, напрям — за рухом.
+ * спершу лицем до кімнати, з `SLEEP_TURN` — лицем до ліжка; працює — за комп'ютером; лагодить дріт — на підлозі біля обриву
+ * (`wireFixSpot`); їсть — за столом; купає кота — біля душу боком (`BATH_FACE`); пилососить — перед шафою з пилососом;
+ * чистить лоток, прибирає безлад, гладить чи грається з котом — там, де стоїть, лицем до цілі. Інакше — точка тіла, напрям —
+ * за рухом.
  */
 export function personSpot(state: GameState, anim: PersonAnimId, progress: number | null = null): PersonSpot {
   const { body, activity } = state.character;
@@ -97,6 +123,7 @@ export function personSpot(state: GameState, anim: PersonAnimId, progress: numbe
   if (activity?.kind === "work") return useOf("computer") ?? here;
   if (activity?.kind === "use") {
     const target = activity.target;
+    if (target === "computer") return wireFixSpot();
     const object = useOf(target);
     if (object) return anim === "bath" ? { ...object, face: BATH_FACE } : object;
     const [kind, raw] = target.split(":");

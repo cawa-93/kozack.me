@@ -5,14 +5,32 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { newGame } from "../src/sim/game";
-import { itemPoint } from "../src/sim/home";
+import { isSolid, itemPoint, WIRE_TILE } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
 import { facingFromTiles } from "../src/view/anim/catfacing";
 import { EYES, eyesFrame } from "../src/view/iso/personlook";
-import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, shotFace, shotPlace, showFace, SLEEP_TURN, TOUCH_FACE, touchFacing } from "../src/view/iso/personspot";
+import { artOffset } from "../src/view/iso/geometry";
+import {
+  BATH_FACE,
+  FIX_AT_WIRE,
+  GLIDE_JUMP,
+  glideOffset,
+  personSpot,
+  shotFace,
+  shotPlace,
+  showFace,
+  SLEEP_TURN,
+  TOUCH_FACE,
+  touchFacing,
+  wireFixSpot,
+} from "../src/view/iso/personspot";
+import { PERSON_ANIMS } from "../src/view/rig/anims";
+import { PERSON_RIG } from "../src/view/rig/defs/person";
+import { Rig } from "../src/view/rig/rigcore";
 import { isoObjectLook } from "../src/view/world/objects";
+import { ISO } from "../src/view/world/projection";
 import { withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -28,14 +46,43 @@ describe("personSpot: де видно персонажа", () => {
     expect(personSpot(state, "walk")).toEqual({ at: { x: 9.5, y: 8.5 }, face: null, pose: null });
   });
 
-  it("працює й шукає роботу — сидить за комп'ютером спиною до нас; лагодить дріт — там само", () => {
+  it("працює й шукає роботу — сидить за комп'ютером спиною до нас", () => {
     const state = game().current;
     const use = isoObjectLook("computer").use;
     state.character.activity = { kind: "work", minutes: 0, money: 0, reputation: 0, sanity: 0 };
     expect(personSpot(state, "work")).toEqual({ at: use?.at, face: use?.facing, pose: "sit" });
     expect(facingFromTiles(use?.facing ?? { x: 0, y: 0 }, null)?.view).toBe("back");
+  });
+
+  it("лагодить дріт — на підлозі біля обриву (точка `cut` дроту), спиною до нас, лицем до нього; не в столі й не в стіні", () => {
+    const state = game().current;
     state.character.activity = { kind: "use", target: "computer", progress: 0 };
-    expect(personSpot(state, "fix").at).toEqual(use?.at);
+    const spot = personSpot(state, "fix");
+    expect(spot).toBe(wireFixSpot());
+    // Обрив — там, звідки сиплються іскри (`iso/fx.ts`): кадр дроту в центрі `WIRE_TILE`, зсув точки `cut`.
+    const wire = ISO.toScreen({ x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 });
+    const cut = artOffset("env/wire", "cut")!;
+    const feet = ISO.toScreen(spot.at);
+    // Від ніг до обриву на екрані — точка підлоги під кистями анімації `fix` (`FIX_AT_WIRE.hands`).
+    expect(wire.x + cut.x - feet.x).toBeCloseTo(FIX_AT_WIRE.hands.x, 6);
+    expect(wire.y + cut.y - feet.y).toBeCloseTo(FIX_AT_WIRE.hands.y, 6);
+    // Лицем до дроту, спиною до камери, праворуч угору.
+    expect(facingFromTiles(spot.face ?? { x: 0, y: 0 }, null)).toEqual({ view: "back", flip: false });
+    // Не посередині стола, як раніше, а праворуч від нього: перед його коробкою, на вільній підлозі.
+    const desk = isoObjectLook("computer");
+    expect(Math.hypot(spot.at.x - desk.use!.at.x, spot.at.y - desk.use!.at.y)).toBeGreaterThan(1);
+    expect(spot.at.x >= desk.footprint.x1 || spot.at.y >= desk.footprint.y1).toBe(true);
+    expect(isSolid(state, Math.floor(spot.at.x), Math.floor(spot.at.y))).toBe(false);
+    // Кулаки анімації `fix` у ракурсі `back` — над цією точкою підлоги (тягнуть дріт до себе й убік — до 24 убік, на 8–36 вище), увесь цикл.
+    const rig = new Rig(PERSON_RIG, { facing: { view: "back", flip: false } });
+    rig.play(PERSON_ANIMS.fix, 0, { blend: 0 });
+    for (let t = 0; t < PERSON_ANIMS.fix.duration; t += 100) {
+      rig.evaluate(t);
+      const hands = rig.anchor("hands")!;
+      expect(Math.abs(hands.x - FIX_AT_WIRE.hands.x), `@${t}`).toBeLessThan(24);
+      expect(FIX_AT_WIRE.hands.y - hands.y, `@${t}`).toBeGreaterThan(8);
+      expect(FIX_AT_WIRE.hands.y - hands.y, `@${t}`).toBeLessThan(36);
+    }
   });
 
   it("їсть за столом сидячи, купає кота перед душем, пилососить біля шафи; засинає — біля ліжка", () => {

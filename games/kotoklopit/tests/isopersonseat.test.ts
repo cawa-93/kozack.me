@@ -1,5 +1,5 @@
 // Стільці нового вигляду (крок 16, хвиля 3, «Стики персонажа»; `src/view/iso/personseat.ts`): де стоїть стілець до стола з
-// комп'ютером і кухонного стола — засунутий, висунутий під того, хто сідає, чи відкочений; і як його шматки (сидіння, спинка)
+// комп'ютером і кухонного стола — засунутий чи висунутий під того, хто сідає; і як його шматки (сидіння, спинка)
 // стають у порядку глибини проти того, хто сидить і хто йде вздовж стола.
 
 import { describe, expect, it } from "vitest";
@@ -23,6 +23,7 @@ import {
   type Seat,
   type SeatSpot,
 } from "../src/view/iso/personseat";
+import { wireFixSpot } from "../src/view/iso/personspot";
 import { PERSON_SEAT } from "../src/view/rig/anims/person/chores";
 import { isoOrder, type IsoPoint } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -83,24 +84,23 @@ describe("стільці: де стоять", () => {
     expect(seatMode(s, desk)).toBe("tucked");
   });
 
-  it("їсть за кухонним столом — стілець висунутий; лагодить дріт на підлозі під столом — крісло відкочене вбік", () => {
+  it("їсть за кухонним столом — стілець висунутий; лагодить дріт (на підлозі біля обриву) — крісло засунуте", () => {
     const s = state();
     s.character.activity = { kind: "use", target: "table", progress: 0 };
     expect(seatMode(s, kitchen)).toBe("pulled");
     expect(seatMode(s, desk)).toBe("tucked");
     s.character.activity = { kind: "use", target: "computer", progress: 0 };
-    expect(seatMode(s, desk)).toBe("aside");
-    // Відкочене — не там, де сидять на підлозі (`use.at`), а вбік більше ніж на пів клітинки.
-    const use = isoObjectLook("computer").use!;
-    const aside = seatAt(desk, "aside");
-    expect(Math.hypot(aside.x - use.at.x, aside.y - use.at.y)).toBeGreaterThan(0.5);
+    expect(seatMode(s, desk)).toBe("tucked");
+    // Засунуте крісло не там, де сидить той, хто лагодить дріт.
+    const fix = wireFixSpot().at;
+    const tucked = seatAt(desk, "tucked");
+    expect(Math.hypot(tucked.x - fix.x, tucked.y - fix.y)).toBeGreaterThan(0.8);
   });
 
   it("стільці стоять на підлозі кімнати, не на стінах і не на інших речах (сим про них не знає)", () => {
     const s = state();
     for (const chair of SEATS) {
-      for (const mode of ["tucked", "pulled", "aside"] as const) {
-        if (mode === "aside" && !chair.aside) continue;
+      for (const mode of ["tucked", "pulled"] as const) {
         const at = seatAt(chair, mode);
         // Ні центр, ні кути сидіння (≈ 0,21 клітинки) — не в стіні.
         for (const [dx, dy] of [[0, 0], [-0.21, -0.2], [0.21, -0.2], [0.21, 0.2], [-0.21, 0.2]] as const) {

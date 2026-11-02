@@ -4,8 +4,8 @@
 // (`world/objects.ts`), і стілець стоїть саме там, під тазом. Стілець — меблі: він у квартирі завжди; поки за столом ніхто
 // не сидить, він засунутий під стіл (`tucked`): сидіння під стільницею, спинка — впритул до краю стола (обидві спинки вищі за
 // стільницю, тож далі не засунеш). Так він не стоїть на дорозі тому, хто підходить до стола чи йде вздовж нього (сим тримає
-// тіло персонажа на `BODY_RADIUS` 0,3 від краю), і котам; персонаж сідає — стілець висунутий (`pulled`); лагодить дріт,
-// сівши на підлогу під столом, — крісло відкочене вбік (`aside`), щоб не стояти на ногах.
+// тіло персонажа на `BODY_RADIUS` 0,3 від краю), і котам; персонаж сідає — стілець висунутий (`pulled`). Лагодить дріт
+// персонаж на підлозі біля обриву, праворуч від стола (`wireFixSpot` у `personspot.ts`), — крісло лишається засунутим.
 //
 // Глибина: кадр стільця — два шматки (стани запису): сидіння (з ніжками й хрестовиною) — за тим, хто сидить, спинка — перед
 // ним (сидять спиною до камери, обличчям до стола). Кожен шматок — точка в реєстрі глибини (`iso/depth.ts`) на своєму краю
@@ -19,7 +19,7 @@ import type { GameState, Vec } from "../../sim/types";
 import type { ArtId } from "../art/types";
 import { isoObjectLook, type IsoUse } from "../world/objects";
 
-/** Стілець: id, кадр, стіл, до якого він стоїть, де його спинка і куди він відкочується, коли під столом лагодять дріт. */
+/** Стілець: id, кадр, стіл, до якого він стоїть, і де його спинка. */
 export interface Seat {
   readonly id: string;
   readonly art: ArtId;
@@ -30,21 +30,17 @@ export interface Seat {
    * глибоко засунутий стілець і заходить під стіл (`seatTuck`).
    */
   readonly back: number;
-  /** Зсув від місця, де сидять, коли стілець відкочено вбік (клітинки); null — стілець не відкочується. */
-  readonly aside: Vec | null;
 }
 
 export const SEATS: readonly Seat[] = [
-  // Крісло на колесах: лагодячи дріт, персонаж сидить на підлозі під столом — крісло відкочене вздовж стола до лівого краю
-  // (на екрані — угору ліворуч, за персонажем): праворуч чи назад воно стояло б перед ним і закривало його. Спинка (z 42–75)
-  // нахилена назад: низ — на 0,23 від центру сидіння, на висоті стільниці (54) — ≈ 0,24.
-  { id: "chair-desk", art: "env/chair-desk", object: "computer", back: 0.24, aside: { x: -0.68, y: 0.08 } },
+  // Крісло на колесах. Спинка (z 42–75) нахилена назад: низ — на 0,23 від центру сидіння, на висоті стільниці (54) — ≈ 0,24.
+  { id: "chair-desk", art: "env/chair-desk", object: "computer", back: 0.24 },
   // Стояки спинки (до 80) — на 0,15 від центру сидіння.
-  { id: "chair-kitchen", art: "env/chair-kitchen", object: "table", back: 0.15, aside: null },
+  { id: "chair-kitchen", art: "env/chair-kitchen", object: "table", back: 0.15 },
 ];
 
-/** Де стілець: засунутий до стола, висунутий (на ньому сидять) чи відкочений убік. */
-export type SeatMode = "tucked" | "pulled" | "aside";
+/** Де стілець: засунутий до стола чи висунутий (на ньому сидять). */
+export type SeatMode = "tucked" | "pulled";
 
 /** На скільки клітинок спинка засунутого стільця перед краєм стола (щоб не врізалася в стільницю). */
 export const SEAT_TUCK_GAP = 0.03;
@@ -84,17 +80,13 @@ export function seatTuck(seat: Seat): number {
 }
 
 /**
- * Де стілець зараз (`state` — стан гри): за комп'ютером працюють чи шукають роботу — висунутий, лагодять дріт — відкочений
- * убік (якщо може); за столом їдять — висунутий; інакше — засунутий. У поїздці персонажа немає — засунутий.
+ * Де стілець зараз (`state` — стан гри): за комп'ютером працюють чи шукають роботу — висунутий (лагодять дріт — на підлозі
+ * біля обриву, крісло засунуте); за столом їдять — висунутий; інакше — засунутий. У поїздці персонажа немає — засунутий.
  */
 export function seatMode(state: GameState, seat: Seat): SeatMode {
   const activity = state.character.activity;
   if (state.trip !== null || !activity) return "tucked";
-  if (seat.object === "computer") {
-    if (activity.kind === "work") return "pulled";
-    if (activity.kind === "use" && activity.target === "computer") return seat.aside ? "aside" : "tucked";
-    return "tucked";
-  }
+  if (seat.object === "computer") return activity.kind === "work" ? "pulled" : "tucked";
   if (activity.kind === "use" && activity.target === seat.object && activity.bath !== true) return "pulled";
   return "tucked";
 }
@@ -103,9 +95,8 @@ export function seatMode(state: GameState, seat: Seat): SeatMode {
 export function seatAt(seat: Seat, mode: SeatMode, out: Vec = { x: 0, y: 0 }): Vec {
   const { at, facing } = useOf(seat.object);
   const tuck = mode === "tucked" ? seatTuck(seat) : 0;
-  const side = mode === "aside" ? seat.aside : null;
-  out.x = at.x + facing.x * tuck + (side?.x ?? 0);
-  out.y = at.y + facing.y * tuck + (side?.y ?? 0);
+  out.x = at.x + facing.x * tuck;
+  out.y = at.y + facing.y * tuck;
   return out;
 }
 
@@ -124,8 +115,8 @@ export interface SeatSpot {
  * Куди в реєстрі глибини стає шматок `part` стільця з центром `center` (клітинки); пише в `out`. Точка — на краю стільця
  * (`SEAT_DEPTH`). Сидіння, чия точка під стільницею, — під коробкою стола (`placeUnder`: одразу за ним, стільниця й ніжки
  * перед ним); спинка біля краю стола (`SEAT_AT_EDGE`) — на коробці стола (`place(…, box)`: одразу над ним і над усім, що на
- * ньому). Обидва тоді з рештою — як сам стіл: хто стоїть перед столом, той і перед засунутим стільцем. Висунутий і відкочений
- * стілець, і той, що їде, поки не дістався краю, — на підлозі.
+ * ньому). Обидва тоді з рештою — як сам стіл: хто стоїть перед столом, той і перед засунутим стільцем. Висунутий стілець і
+ * той, що їде, поки не дістався краю, — на підлозі.
  */
 export function seatSpot(seat: Seat, center: Vec, part: keyof typeof SEAT_DEPTH, out: SeatSpot): SeatSpot {
   const { at, facing } = useOf(seat.object);
