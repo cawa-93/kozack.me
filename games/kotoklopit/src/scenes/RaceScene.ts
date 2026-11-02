@@ -30,6 +30,7 @@ import {
   arrivalFrame,
   arrivalStart,
   departureFrame,
+  lotCars,
   lotInFrame,
   lotScreenY,
   parkedCars,
@@ -184,6 +185,7 @@ export class RaceScene extends Phaser.Scene {
       this.drawParked();
       return;
     }
+    if (trip) art.prepare(trip);
     const keyboard = this.input.keyboard;
     if (keyboard) {
       const K = Phaser.Input.Keyboard.KeyCodes;
@@ -709,6 +711,17 @@ class RaceArt {
     this.marker = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.marker);
     this.lot = addArt(scene, null, "race/lot").setDepth(RACE_DEPTH.lot).setVisible(false);
     this.sign = addArt(scene, null, iconArt(DESTINATION_ICONS.shop)).setDepth(RACE_DEPTH.sign).setVisible(false);
+  }
+
+  /**
+   * Запекти наперед дах пункту й запарковані машини (§8.5 «На місці — кадр парковки»): ліниво вони запікалися б у мить, коли
+   * парковка в'їжджає в кадр (≈ 1 с до фінішу на ×1), — машина тоді на швидкості під керуванням, а дах (282 × 188 одиниць арту,
+   * ≈ 0,2 Мпкс полотна) — це десятки мс в одному кадрі на телефоні. На старті гонки машина стоїть, і ривок непомітний. Запечене
+   * звільняє `destroy` наприкінці сцени, як і решту.
+   */
+  prepare(trip: Trip): void {
+    this.buildingImage(trip.destination).setVisible(false);
+    lotCars(trip.seed).forEach(({ look }, i) => this.carImage(this.parked, i, look, RACE_DEPTH.traffic).setVisible(false));
   }
 
   /** Вигляд машини потоку, який сцена показує (з першої зустрічі): той самий і на прибутті (`arrivalStart`). */
