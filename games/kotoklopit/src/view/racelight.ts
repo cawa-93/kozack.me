@@ -134,9 +134,15 @@ export const LIGHT_COLORS = {
 /**
  * Своя машина на парковці (§8.5 «На місці — кадр парковки»): фари гаснуть за `offMs` до кінця прибуття (машина вже стає), на
  * місці не горять, а на від'їзді вмикаються з `onFrom` за `onMs`; задній хід — поки машина задкує з місця (`DEPARTURE.reverse`).
- * Світло доби на від'їзді доганяє час після візиту за `catchUp` (`departureLightMinute`).
  */
-export const OWN_LIGHTS = { offMs: 350, onFrom: 120, onMs: 250, reverseOff: 150, catchUp: 600 } as const;
+export const OWN_LIGHTS = { offMs: 350, onFrom: 120, onMs: 250, reverseOff: 150 } as const;
+
+/**
+ * Світло доби на від'їзді доганяє час після візиту (`departureLightMinute`) за `catchUp` мс — увесь від'їзд до затемнення
+ * (`DEPARTURE.fadeOut`). Після 30 хвилин магазину о 19:50 темрява за від'їзд росте з 0,43 до глухої ночі; доганяючи за 0,6 с
+ * (так було), кадр темнів би ривком — до 0,82 за ці 0,6 с, — а фари потоку вмикалися б усі разом.
+ */
+export const DEPARTURE_LIGHT = { catchUp: DEPARTURE.ms - DEPARTURE.fadeOut } as const;
 
 /**
  * Запас відсікання машин уночі, одиниці арту: від середини машини до кінчика променя фари (найдовша машина). Машина, далі за
@@ -178,12 +184,13 @@ export function tripLightMinute(state: GameState, stage: TripLightStage, progres
 /**
  * Світло від'їзду з парковки через `ms` мс від «Додому»: від'їзд без розриву переходить у дорогу додому (`departureFrame`, уся
  * катсцена — `HOME_ROAD.ms`), тож хвилина — як у дорозі додому з часткою `ms / HOME_ROAD.ms`. Перший кадр — той самий, що на
- * місці, тож від хвилини на місці світло доганяє час після візиту плавно, за `OWN_LIGHTS.catchUp`, а не стрибком.
+ * місці, тож від хвилини на місці світло доганяє час після візиту плавно, за весь від'їзд до затемнення
+ * (`DEPARTURE_LIGHT.catchUp`), а не стрибком.
  */
 export function departureLightMinute(state: GameState, ms: number): number {
   const parked = tripLightMinute(state, "drive");
   const home = tripLightMinute(state, "home", ms / HOME_ROAD.ms);
-  return parked + (home - parked) * smooth(ms / OWN_LIGHTS.catchUp);
+  return parked + (home - parked) * smooth(ms / DEPARTURE_LIGHT.catchUp);
 }
 
 // --- Рівень ночі ------------------------------------------------------------------------------------------------

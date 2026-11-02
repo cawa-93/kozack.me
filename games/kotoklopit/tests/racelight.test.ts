@@ -23,6 +23,7 @@ import {
   BEAM_SPREAD,
   CAR_LIGHTS,
   carLights,
+  DEPARTURE_LIGHT,
   departureLightMinute,
   departureLights,
   DRIVING_LIGHTS,
@@ -454,15 +455,21 @@ describe("на яку хвилину світло в поїздці (`tripLightM
     expect(tripLightMinute(state, "home", 0)).toBe(state.minute + visit);
     expect(tripLightMinute(state, "home", 0.5)).toBe(state.minute + visit + road / 2);
     expect(tripLightMinute(state, "home", 2)).toBe(state.minute + visit + road);
-    // Від'їзд починається тим самим кадром, що на місці, і доганяє час після візиту плавно.
+    // Від'їзд починається тим самим кадром, що на місці, і доганяє час після візиту плавно — увесь від'їзд до затемнення.
+    expect(DEPARTURE_LIGHT.catchUp).toBe(HOME_ROAD.ms - HOME_ROAD.fadeOut);
     expect(departureLightMinute(state, 0)).toBe(state.minute);
-    expect(departureLightMinute(state, OWN_LIGHTS.catchUp)).toBeCloseTo(tripLightMinute(state, "home", OWN_LIGHTS.catchUp / HOME_ROAD.ms));
+    expect(departureLightMinute(state, DEPARTURE_LIGHT.catchUp)).toBeCloseTo(tripLightMinute(state, "home", DEPARTURE_LIGHT.catchUp / HOME_ROAD.ms));
     let prev = departureLightMinute(state, 0);
     for (let ms = 10; ms <= HOME_ROAD.ms; ms += 10) {
       const minute = departureLightMinute(state, ms);
       expect(minute).toBeGreaterThanOrEqual(prev);
       prev = minute;
     }
+    // Темрява на від'їзді росте без ривка: за кадр (16 мс) — до ≈ 0,0065 (доганяючи за 0,6 с, як було, — до 0,016).
+    const darkAt = (ms: number): number => raceNight(daylight(departureLightMinute(state, ms), true))?.dark ?? 0;
+    expect(darkAt(0)).toBeCloseTo(0.43, 2);
+    expect(darkAt(DEPARTURE_LIGHT.catchUp)).toBeGreaterThan(0.8);
+    for (let ms = 16; ms <= HOME_ROAD.ms; ms += 16) expect(darkAt(ms) - darkAt(ms - 16), `${ms} мс`).toBeLessThan(0.008);
     const end = departureLightMinute(state, HOME_ROAD.ms);
     expect(end).toBe(tripLightMinute(state, "home", 1));
     // Наприкінці дороги додому — та сама хвилина, що вдома: тон не стрибає.
