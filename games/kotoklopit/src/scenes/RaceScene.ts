@@ -9,23 +9,26 @@ import { PALETTE } from "../../art/palette";
 import { drive } from "../sim/game";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
-import type { GameState, Race, RaceCar, Save, Trip } from "../sim/types";
+import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
 import { RACE_START_HINT } from "../texts";
 import { DESTINATION_TITLES } from "../ui/titles";
-import { addArt } from "../view/art/atlas";
+import { addArt, setArt } from "../view/art/atlas";
 import { addBakedArt, releaseBaked, setBakedArt } from "../view/art/bake";
 import { artEntry } from "../view/art/manifest";
-import { RACE_TILES } from "../view/art/manifest/a14-race";
+import { RACE_BUILDING, RACE_LOT, RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
 import { canSkipHomeRoad, HOME_ROAD, homeRoadFrame, type HomeRoadFrame } from "../view/homeroad";
+import { iconArt } from "../view/iconnames";
+import { lotInFrame, lotScreenY, parkedCars, raceBarAlpha, type CarPose, type ParkingCar } from "../view/parking";
 import { CRASH_FX, crashView } from "../view/racecrash";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
   barMarkerY,
   barParts,
+  DESTINATION_ROOFS,
   laneX,
   RACE_BAR_X,
   RACE_MARKER_SCALE,
@@ -41,6 +44,7 @@ import {
   type BarPart,
   type TrafficLook,
 } from "../view/racelook";
+import { DESTINATION_ICONS } from "../view/symbols";
 
 const MAX_FRAME_SECONDS = 0.1;
 /** Джойстик гонки: радіус, мертва зона й наскільки відхилити вбік, щоб перестроїтися. */
@@ -271,7 +275,7 @@ export class RaceScene extends Phaser.Scene {
     const crash = this.crash;
     if (!trip || !art || !crash) return true;
     const view = this.layout();
-    art.draw(trip.race, view);
+    art.draw(trip, view);
     const frame = crashView(crash.ms, { x: laneX(view.cx, trip.race.lane, view.k), y: view.playerY }, view);
     this.cameras.main.setZoom(canvasNow().ui * frame.zoom).setScroll(frame.scroll.x, frame.scroll.y);
     // Камера не виходить за кадр (`crashView`), тож темрява на весь кадр закриває все, що видно.
@@ -291,7 +295,7 @@ export class RaceScene extends Phaser.Scene {
     home.ms += this.animationMs(delta);
     const view = this.layout();
     const frame = homeRoadFrame(home.ms, view.height);
-    art.drawHome(frame, view);
+    art.drawFrame(homeRoad(frame, view.k), view);
     this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
     if (frame.done) this.finish({ mode: "home" });
   }
@@ -320,7 +324,7 @@ export class RaceScene extends Phaser.Scene {
     const view = this.layout();
     const { height, safe } = view;
     const g = this.g.clear();
-    art.draw(race, view);
+    art.draw(trip, view);
     this.drawStick(g);
     const roadLeft = view.cx - RACE_TILES.road.curb * view.k;
     const carTop = { x: laneX(view.cx, race.lane, view.k), y: view.playerY - RACE_CAR_FRONT * view.k };
@@ -374,10 +378,23 @@ export class RaceScene extends Phaser.Scene {
 
 // --- Арт гонки (крок 16, A14) ------------------------------------------------------------------------
 
-/** Шари гонки: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис; над усім — темрява. */
-const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, marker: 5, ui: 10, dark: 20 } as const;
+/**
+ * Шари гонки: поле, дорога, парковка пункту (з'їзд — над дорогою), машини потоку й запарковані, своя машина, будівля пункту
+ * (над машинами) й іконка на її табличці, смуга прогресу, джойстик і напис; над усім — темрява.
+ */
+const RACE_DEPTH = { verge: 0, road: 1, lot: 2, traffic: 3, player: 4, building: 5, sign: 6, bar: 7, marker: 8, ui: 10, dark: 20 } as const;
 /** Від середини своєї машини до її переду з контуром, одиниці арту (`race/car/player`): над ним — підказка «W ↑». */
 const RACE_CAR_FRONT = 34;
+/**
+ * Середина таблички на даху в рамці парковки (одиниці арту від середини дороги й від середньої лінії з'їзду): точка `sign`
+ * полотна `race/building`, що лягає pivot у `pivotAt`.
+ */
+const SIGN_AT = {
+  x: RACE_BUILDING.pivotAt.x + RACE_BUILDING.sign.x - RACE_BUILDING.pivot.x,
+  y: RACE_BUILDING.pivotAt.y + RACE_BUILDING.sign.y - RACE_BUILDING.pivot.y,
+} as const;
+/** Власник запечених дахів будівлі пункту (`releaseBaked` наприкінці сцени). */
+const BUILDING_OWNER = "race:building";
 
 /** Розміри кадру гонки: полотно, масштаб арту, пікселів на одиницю дороги, середина дороги, де своя машина, безпечна зона. */
 interface RaceView {
@@ -390,11 +407,33 @@ interface RaceView {
   safe: Insets;
 }
 
+/**
+ * Кадр дороги без керування (§8.5): прибуття, на місці, від'їзд із парковки чи дорога додому. Зсув дороги — як `distance` у
+ * `drawRoad`; x машин — px від середини дороги (`RaceView.cx`), поворот — радіани (0 — носом угору); парковка пункту — середня
+ * лінія з'їзду (px кадру), пункт і запарковані машини, або null — дорога без парковки.
+ */
+interface RoadFrame {
+  offset: number;
+  car: CarPose;
+  traffic: readonly ParkingCar[];
+  lot: { y: number; destination: Destination; cars: readonly ParkingCar[] } | null;
+}
+
 /** Рецепт машини потоку: кузов (`fill`) — колір потоку, решта шарів — як намальовано (тінь — звичайним накладанням). */
 function trafficRecipe(color: number): TintRecipe {
   const tint = TRAFFIC_COLORS[color] ?? COLORS.paper;
+  return bakedRecipe(`race-car-${tint.toString(16)}`, tint);
+}
+
+/** Рецепт будівлі пункту: дах (`fill`) — колір пункту (`DESTINATION_ROOFS`), решта — як намальовано, як у машин потоку. */
+function buildingRecipe(destination: Destination): TintRecipe {
+  const tint = DESTINATION_ROOFS[destination];
+  return bakedRecipe(`race-building-${tint.toString(16)}`, tint);
+}
+
+function bakedRecipe(key: string, tint: number): TintRecipe {
   return {
-    key: `race-car-${tint.toString(16)}`,
+    key,
     steps: [
       { layer: "fill", color: tint, put: "source-over" },
       { layer: "detail", color: null, put: "source-over" },
@@ -407,18 +446,27 @@ function trafficRecipe(color: number): TintRecipe {
 /**
  * Гонка з атласу (`src/view/art/manifest/a14-race.ts`): узбіччя стовпцями й дорога плитками (`racelook.ts`), машини
  * потоку — запечені кадри свого кольору (власник на колір, `releaseBaked` наприкінці гонки), своя машина нахиляється, поки
- * перестроюється, а смуга прогресу розтягується трьома частинами кадру, і на ній — своя машинка, зменшена. Зображення беруться
- * з пулів і ховаються, коли зайві.
+ * перестроюється, а смуга прогресу розтягується трьома частинами кадру, і на ній — своя машинка, зменшена. За фінішем —
+ * парковка пункту (§8.5 «На місці — кадр парковки», `src/view/parking.ts`): з'їзд і місця, запарковані машини, будівля з
+ * дахом кольору пункту (запечений, власник `race:building`) і табличка з іконкою пункту. Усе, що на дорозі й біля неї, стоїть
+ * від середини дороги `RaceView.cx`: на місці світ зсунуто вбік ним, а не камерою. Зображення беруться з пулів і ховаються,
+ * коли зайві.
  */
 class RaceArt {
   private readonly verge: Phaser.GameObjects.Image[] = [];
   private readonly road: Phaser.GameObjects.Image[] = [];
   private readonly traffic: Phaser.GameObjects.Image[] = [];
+  /** Запарковані машини на парковці пункту. */
+  private readonly parked: Phaser.GameObjects.Image[] = [];
   private readonly player: Phaser.GameObjects.Image;
   private readonly track: Phaser.GameObjects.Image[];
   private readonly fill: Phaser.GameObjects.Image[];
   /** Своя машинка на смузі прогресу — там, де пройдене. */
   private readonly marker: Phaser.GameObjects.Image;
+  /** Парковка пункту, будівля (з першої появи) й іконка пункту на табличці. */
+  private readonly lot: Phaser.GameObjects.Image;
+  private building: Phaser.GameObjects.Image | null = null;
+  private readonly sign: Phaser.GameObjects.Image;
   /** Вигляд машини потоку — з першої зустрічі (`trafficLook`): машина, яку сим відсуває назад, не перефарбовується. */
   private readonly looks = new WeakMap<RaceCar, TrafficLook>();
   /** Що показує зображення потоку (вид і рецепт). */
@@ -433,10 +481,26 @@ class RaceArt {
     this.track = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "track" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
     this.fill = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "fill" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
     this.marker = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.marker);
+    this.lot = addArt(scene, null, "race/lot").setDepth(RACE_DEPTH.lot).setVisible(false);
+    this.sign = addArt(scene, null, iconArt(DESTINATION_ICONS.shop)).setDepth(RACE_DEPTH.sign).setVisible(false);
   }
 
-  /** Кадр гонки: дорога їде донизу, поки машина їде вгору; машини потоку там, де їх веде сим; смуга прогресу. */
-  draw(race: Race, view: RaceView): void {
+  /** Вигляд машини потоку, який сцена показує (з першої зустрічі): той самий і на прибутті (`arrivalStart`). */
+  lookOf(car: RaceCar): TrafficLook {
+    let look = this.looks.get(car);
+    if (!look) {
+      look = trafficLook(car);
+      this.looks.set(car, look);
+    }
+    return look;
+  }
+
+  /**
+   * Кадр гонки: дорога їде донизу, поки машина їде вгору; машини потоку там, де їх веде сим; попереду — парковка пункту, коли
+   * вона в кадрі; смуга прогресу, що згасає, поки парковка в'їжджає в кадр згори (`raceBarAlpha`).
+   */
+  draw(trip: Trip, view: RaceView): void {
+    const race = trip.race;
     const { height, k, ppu, cx, playerY } = view;
     this.drawRoad(race.done * ppu, view);
 
@@ -446,12 +510,7 @@ class RaceArt {
     for (const car of race.cars) {
       const y = playerY - (carAt(race, car) - race.done) * ppu;
       if (y < -reach || y > height + reach) continue;
-      let look = this.looks.get(car);
-      if (!look) {
-        look = trafficLook(car);
-        this.looks.set(car, look);
-      }
-      this.fit(this.trafficImage(n++, look), k, k).setPosition(laneX(cx, car.lane, k), y).setRotation(0);
+      this.fit(this.carImage(this.traffic, n++, this.lookOf(car), RACE_DEPTH.traffic), k, k).setPosition(laneX(cx, car.lane, k), y).setRotation(0).setAlpha(1);
     }
     hideFrom(this.traffic, n);
 
@@ -459,33 +518,97 @@ class RaceArt {
       .setPosition(laneX(cx, race.lane, k), playerY)
       .setRotation(steerTilt(race.lane, race.targetLane));
 
-    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом.
+    const lotY = lotScreenY(race.done, race.road, height);
+    this.drawLot({ y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) }, view);
+
+    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом. Стоїть там, де парковка, тож
+    // згасає, поки та в'їжджає в кадр.
+    const alpha = raceBarAlpha(lotY, height);
+    if (!(alpha > 0)) {
+      this.hideBar();
+      return;
+    }
     const barTop = view.safe.top + 90;
     const barH = height - barTop - view.safe.bottom - 40;
     const barX = cx + RACE_BAR_X * k;
-    this.placeBar(this.track, barX, barTop, barH, k);
+    this.placeBar(this.track, barX, barTop, barH, k, alpha);
     const done = Math.max(0, Math.min(1, race.road > 0 ? race.done / race.road : 0));
     const fillH = barH * done;
-    if (fillH >= 1) this.placeBar(this.fill, barX, barTop + barH - fillH, fillH, k);
+    if (fillH >= 1) this.placeBar(this.fill, barX, barTop + barH - fillH, fillH, k, alpha);
     else hideFrom(this.fill, 0);
     this.fit(this.marker, RACE_MARKER_SCALE * k, RACE_MARKER_SCALE * k)
       .setPosition(barX, barMarkerY(barTop, barH, done, k))
+      .setAlpha(alpha)
       .setVisible(true);
   }
 
   /**
-   * Кадр дороги додому (§8.5, `homeRoadFrame`): та сама дорога, але камера їде вниз — дорога біжить угору; машини (і своя)
-   * повернуті носом донизу; смуги прогресу немає — це не гонка.
+   * Кадр дороги без керування (§8.5, `RoadFrame`): прибуття, на місці, від'їзд із парковки чи дорога додому — зсув дороги, своя
+   * машина там і так повернута, як каже кадр, машини потоку з їхньою непрозорістю й парковка, якщо вона є; смуги прогресу
+   * немає — це не гонка.
    */
-  drawHome(frame: HomeRoadFrame, view: RaceView): void {
-    const { k, cx } = view;
-    this.drawRoad(-frame.camera, view);
-    let n = 0;
-    for (const car of frame.traffic) {
-      this.fit(this.trafficImage(n++, car.look), k, k).setPosition(laneX(cx, car.lane, k), car.y).setRotation(Math.PI);
+  drawFrame(frame: RoadFrame, view: RaceView): void {
+    const { k } = view;
+    this.drawRoad(frame.offset, view);
+    frame.traffic.forEach((car, i) => this.placeCar(this.carImage(this.traffic, i, car.look, RACE_DEPTH.traffic), car, view));
+    hideFrom(this.traffic, frame.traffic.length);
+    this.fit(this.player, k, k).setPosition(view.cx + frame.car.x, frame.car.y).setRotation(frame.car.rotation);
+    this.drawLot(frame.lot, view);
+    this.hideBar();
+  }
+
+  /**
+   * Парковка пункту з будівлею (§8.5 «На місці — кадр парковки»; `RoadFrame.lot`): з'їзд і місця, запарковані машини, будівля з
+   * дахом кольору пункту й іконка пункту на табличці; y — від середньої лінії з'їзду, x — від середини дороги `view.cx`. Не в
+   * кадрі (чи парковки немає) — сховано.
+   */
+  private drawLot(lot: RoadFrame["lot"], view: RaceView): void {
+    const { k, cx, height } = view;
+    if (lot === null || !lotInFrame(lot.y, height)) {
+      this.lot.setVisible(false);
+      this.building?.setVisible(false);
+      this.sign.setVisible(false);
+      hideFrom(this.parked, 0);
+      return;
     }
-    hideFrom(this.traffic, n);
-    this.fit(this.player, k, k).setPosition(laneX(cx, HOME_ROAD.lane, k), frame.car).setRotation(Math.PI);
+    const lotY = lot.y;
+    this.fit(this.lot, k, k)
+      .setPosition(cx + RACE_LOT.entrance.x * k, lotY + RACE_LOT.entrance.y * k)
+      .setVisible(true);
+    this.fit(this.buildingImage(lot.destination), k, k).setPosition(cx + RACE_BUILDING.pivotAt.x * k, lotY + RACE_BUILDING.pivotAt.y * k);
+    // Іконка — стороною `sign.icon` одиниць арту (кадр атласу — повна сторона іконки).
+    const icon = iconArt(DESTINATION_ICONS[lot.destination]);
+    setArt(this.sign, icon);
+    const scale = (RACE_BUILDING.sign.icon / (artEntry(icon)?.size.w ?? RACE_BUILDING.sign.size)) * k;
+    this.fit(this.sign, scale, scale)
+      .setPosition(cx + SIGN_AT.x * k, lotY + SIGN_AT.y * k)
+      .setVisible(true);
+    lot.cars.forEach((car, i) => this.placeCar(this.carImage(this.parked, i, car.look, RACE_DEPTH.traffic), car, view));
+    hideFrom(this.parked, lot.cars.length);
+  }
+
+  /** Будівля пункту: запечений дах кольору пункту (той самий — нічого не робить). */
+  private buildingImage(destination: Destination): Phaser.GameObjects.Image {
+    const recipe = buildingRecipe(destination);
+    this.owners.add(BUILDING_OWNER);
+    let image = this.building;
+    if (!image) {
+      image = addBakedArt(this.scene, null, "race/building", recipe, { owner: BUILDING_OWNER }).setDepth(RACE_DEPTH.building);
+      this.building = image;
+    } else if (this.shown.get(image) !== recipe.key) {
+      setBakedArt(image, "race/building", recipe, { owner: BUILDING_OWNER });
+    }
+    this.shown.set(image, recipe.key);
+    return image.setVisible(true);
+  }
+
+  /** Машина кадру без керування: x — від середини дороги, поворот і непрозорість — з кадру. */
+  private placeCar(image: Phaser.GameObjects.Image, car: ParkingCar, view: RaceView): void {
+    this.fit(image, view.k, view.k).setPosition(view.cx + car.x, car.y).setRotation(car.rotation).setAlpha(car.alpha);
+  }
+
+  /** Сховати смугу прогресу й машинку на ній. */
+  private hideBar(): void {
     hideFrom(this.track, 0);
     hideFrom(this.fill, 0);
     this.marker.setVisible(false);
@@ -519,7 +642,7 @@ class RaceArt {
     hideFrom(this.road, n);
   }
 
-  /** Звільнити запечені кадри потоку (сцена гонки закінчилася). */
+  /** Звільнити запечені кадри потоку й будівлі (сцена гонки закінчилася). */
   destroy(): void {
     for (const owner of this.owners) releaseBaked(this.scene, owner);
     this.owners.clear();
@@ -535,8 +658,8 @@ class RaceArt {
     return image.setVisible(true);
   }
 
-  /** Машина потоку з пулу: запечений кадр виду й кольору (той самий — нічого не робить). */
-  private trafficImage(i: number, look: TrafficLook): Phaser.GameObjects.Image {
+  /** Машина потоку (чи запаркована) з пулу: запечений кадр виду й кольору (той самий — нічого не робить). */
+  private carImage(pool: Phaser.GameObjects.Image[], i: number, look: TrafficLook, depth: number): Phaser.GameObjects.Image {
     let recipe = this.recipes.get(look.color);
     if (!recipe) {
       recipe = trafficRecipe(look.color);
@@ -545,10 +668,10 @@ class RaceArt {
     const owner = `race:${look.color}`;
     this.owners.add(owner);
     const key = `${look.kind}@${recipe.key}`;
-    let image = this.traffic[i];
+    let image = pool[i];
     if (!image) {
-      image = addBakedArt(this.scene, null, "race/car/traffic", recipe, { state: look.kind, owner }).setDepth(RACE_DEPTH.traffic);
-      this.traffic[i] = image;
+      image = addBakedArt(this.scene, null, "race/car/traffic", recipe, { state: look.kind, owner }).setDepth(depth);
+      pool[i] = image;
     } else if (this.shown.get(image) !== key) {
       setBakedArt(image, "race/car/traffic", recipe, { state: look.kind, owner });
     }
@@ -570,7 +693,7 @@ class RaceArt {
   }
 
   /** Розтягнути смугу (три зображення одного кадру) на висоту `height` від `top`: краї як є, середина — розтягнута. */
-  private placeBar(parts: Phaser.GameObjects.Image[], x: number, top: number, height: number, k: number): void {
+  private placeBar(parts: Phaser.GameObjects.Image[], x: number, top: number, height: number, k: number, alpha: number): void {
     const entry = artEntry("race/progress");
     const frameH = entry?.size.h ?? 96;
     const slice = entry?.points?.["slice"]?.y ?? frameH / 4;
@@ -585,10 +708,20 @@ class RaceArt {
       }
       // Обрізка — у пікселях повного кадру (атлас кладе його з `res` пікселів на одиницю).
       const res = image.frame.realHeight / frameH;
-      this.fit(image, k, part.scaleY).setPosition(x, part.y).setVisible(true);
+      this.fit(image, k, part.scaleY).setPosition(x, part.y).setAlpha(alpha).setVisible(true);
       image.setCrop(0, part.cropY * res, image.frame.realWidth, part.cropH * res);
     });
   }
+}
+
+/** Кадр дороги додому (`homeRoadFrame`) як кадр без керування: дорога біжить угору, машини (і своя) — носом донизу. */
+function homeRoad(frame: HomeRoadFrame, k: number): RoadFrame {
+  return {
+    offset: -frame.camera,
+    car: { x: laneX(0, HOME_ROAD.lane, k), y: frame.car, rotation: Math.PI },
+    traffic: frame.traffic.map((car) => ({ x: laneX(0, car.lane, k), y: car.y, rotation: Math.PI, look: car.look, alpha: 1 })),
+    lot: null,
+  };
 }
 
 /** Сховати зображення пулу з номера `from`. */
