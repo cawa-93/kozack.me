@@ -1,0 +1,34 @@
+{
+  "name": "Котячі сліди",
+  "description": "Субота третього тижня, 12:00. «Прожита» квартира з усіма котячими слідами (§9.12, «Котячі сліди в квартирі»; на старті гри їх немає — див. «Перше кошеня»): подерта оббивка на торці правого підлокітника дивана, подертий одвірок біля проходу на кухню, загнутий дальній кут килима у вітальні, подерті шпалери в передньому куті вітальні, подряпини на лівих дверцятах шафки з кормом, подряпини знизу на внутрішньому боці вхідних дверей (Втікачка на сходах — двері відчинені), подряпини на шухляді шафи в спальні, загнутий куточок килимка перед душем, петля на килимку біля ліжка й подряпини на паркеті спальні, клапоть лінолеуму на кухні, а біля входу — купа ящиків із подряпинами кігтів і погризеним клапаном. Що перевірити: кожен слід — на своєму місці без зсуву й швів; Дослідник спить у верхній коробці — над подряпинами купи, а передні стінки коробки з їхніми слідами — над ним; Альпіністка спить на шафі — над нею; Килимок спить на килимі біля загнутого кута — над ним; Руйнівник спить на дивані; підійдіть персонажем за стіну біля проходу на кухню — одвірок згасає разом зі стіною. Уся квартира з усіма слідами видно на великому екрані (від ≈ 1000 px CSS заввишки).",
+  "game": { "address": "she", "difficulty": "normal", "seed": 31 },
+  "state": {
+    "day": 19,
+    "minute": 720,
+    "modifiers": { "day": null },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 60 }, "body": { "x": 11.5, "y": 8.5 } },
+    "home": {
+      "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } },
+      "boxes": { "food": { "cheap": 40, "premium": 0 }, "catFood": { "cheap": 55, "premium": 0 } },
+      "traces": ["sofa", "bath-mat", "rug", "cabinet", "bedroom-rug", "boxes-claws", "door", "wallpaper", "doorframe", "boxes-chewed", "wardrobe", "lino"],
+      "catDays": 60
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Втікачка", "sex": "female", "arrivedDay": -20, "away": "stairs", "x": 11, "y": 10.9,
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 0, "elapsed": 0 },
+      "traits": [{ "group": "escape", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 26, "name": "Дослідник", "sex": "male", "arrivedDay": -20, "x": 12.5, "y": 9.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": "boxes", "goal": null, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "curiosity", "level": 2, "seen": 0, "known": true }, { "group": "chewing", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 28, "name": "Альпіністка", "sex": "female", "arrivedDay": -20, "x": 6.5, "y": 1.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "climbing", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 32, "name": "Руйнівник", "sex": "male", "arrivedDay": -20, "x": 14.5, "y": 10.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "scratching", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 24, "name": "Килимок", "sex": "male", "arrivedDay": -20, "x": 9.6, "y": 7.6, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 },
+      "traits": [{ "group": "scratching", "level": -1, "seen": 0, "known": true }] }
+  ]
+}

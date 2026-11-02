@@ -1,6 +1,7 @@
 // Котячі сліди у вигляді квартири (§9.12, «Котячі сліди в квартирі»; §8.3): кожен слід — накладка `env/trace/…` на своєму
 // господарі (`TRACE_OVERLAYS`, `iso/looks.ts`) з тим самим полотном, pivot, роздільністю й станами, тож лягає на нього точно.
-// Накладку видно, лише поки слід є й видно господаря, і в стані господаря.
+// Накладку видно, лише поки слід є й видно господаря, і в стані господаря. Сценарії: на старті й у звичайних — квартира
+// ціла, у «прожитій» і великих старих зграях — зі слідами.
 
 import { describe, expect, it } from "vitest";
 
@@ -8,7 +9,7 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { newGame } from "../src/sim/game";
 import { OBJECTS, ROOMS } from "../src/sim/home";
 import { addTrace, BOX_TRACES, CAT_TRACES, traces } from "../src/sim/traces";
-import type { GameState } from "../src/sim/types";
+import type { CatTrace, GameState } from "../src/sim/types";
 import { artEntries, artEntry } from "../src/view/art/manifest";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import type { ArtId } from "../src/view/art/types";
@@ -99,5 +100,25 @@ describe("накладки котячих слідів (iso/looks.ts)", () => {
     expect(boxesState(state)).toBeNull();
     for (const id of BOX_OVERLAYS) expect(frameOf(state, id), id).toBeNull();
     expect(frameOf(state, "env/trace/sofa")).not.toBeNull();
+  });
+});
+
+describe("котячі сліди в сценаріях", () => {
+  /** Сценарії зі слідами й що в них є; решта — ціла квартира, як на старті. */
+  const LIVED: Record<string, readonly CatTrace[]> = {
+    "cat-traces": CAT_TRACES,
+    "many-cats": CAT_TRACES.filter((t) => !BOX_TRACES.includes(t)),
+    "ten-cats": CAT_TRACES.filter((t) => !BOX_TRACES.includes(t)),
+  };
+
+  it("«прожита» квартира — усі сліди й купа ящиків зі слідами на ній; великі старі зграї — усі, крім слідів коробок; решта — ціла", () => {
+    for (const [name, scenario] of Object.entries(FILE_SCENARIOS)) {
+      const state = applyScenario(scenario).current;
+      expect(sorted(traces(state)), name).toEqual(sorted(LIVED[name] ?? []));
+    }
+    const lived = applyScenario(FILE_SCENARIOS["cat-traces"]!).current;
+    expect(lived.cats.length).toBeGreaterThan(1);
+    expect(boxesState(lived)).not.toBeNull();
+    expect(sorted(shown(lived))).toEqual(sorted(TRACE_OVERLAYS.map((o) => o.id)));
   });
 });
