@@ -21,6 +21,7 @@ import { emit, endGame } from "./events";
 import { SLOTS, SURFACE_IDS } from "./home";
 import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
+import { tidyBoxTraces } from "./traces";
 import type { Appliance, BowlItem, Delivery, Feeder, GameState, Home, HomeItem, Product, Quality, Spending, ThingKind, UtilitiesReport } from "./types";
 
 /** Із запасів спершу береться дороге. */
@@ -195,6 +196,8 @@ export function unpack(state: GameState): { product: Product; amount: number }[]
     }
     if (box.cheap + box.premium <= 0) delete boxes[product];
   }
+  // Усе розпаковано — коробки зникають разом із котячими слідами на них (§9.12, «Котячі сліди в квартирі»).
+  tidyBoxTraces(state);
   if (moved.length > 0) emit(state, { type: "unpacked", moved });
   return moved;
 }

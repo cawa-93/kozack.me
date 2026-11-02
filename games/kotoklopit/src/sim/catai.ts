@@ -124,6 +124,7 @@ import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./repr
 import { enoughFor, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
+import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
 import type { BowlItem, Cat, CatAct, CatActKind, Dish, ForbiddenZone, GameState, HomeItem, LitterItem, MessKind, PlayPhase, Product, Quality, ToyItem, TrinketKind, Vec, WaterItem } from "./types";
 import { exercise, gainWeight, settleWeight, weightSeen } from "./weight";
 import { isWorking, stopWork } from "./work";
@@ -1318,6 +1319,9 @@ function chewDone(state: GameState, cat: Cat, rng: Rng): void {
   if (!bag || !box) return;
   box[bag.quality] -= 1;
   emit(state, { type: "bag-chewed", cat: cat.id, product: bag.product });
+  // Погризений клапан на коробках (§9.12, «Котячі сліди в квартирі»); догриз останній пакет — коробок і слідів на них немає.
+  addTrace(state, "boxes-chewed");
+  tidyBoxTraces(state);
   if (bag.product === "catFood" || bag.product === "sterileFood" || bag.product === "treats") {
     cat.needs.hunger = Math.max(0, cat.needs.hunger - PORTION_HUNGER * (bag.product === "treats" ? 0.25 : 1));
     // Прогризене — теж крадене (§9.12, «Схильність до повноти»; перевірка етапу 2026-10-26: кіт з'їдав пакет, не гладшаючи). Корм
@@ -1387,6 +1391,8 @@ function raidDone(state: GameState, cat: Cat, rng: Rng): void {
   if (state.home.cabinetOpen !== true) {
     const opened = cabinetGives(state, cat, rng);
     emit(state, { type: "cabinet-pawed", cat: cat.id, opened });
+    // Подряпини на дверцятах (§9.12, «Котячі сліди в квартирі») — хоч відчинив, хоч замок утримав.
+    addTrace(state, "cabinet");
     // Дверцята на замку голодний кіт смикає знову й знову — прояв не частіше ніж раз на пів години (перевірка етапу 2026-10-26).
     observe(state, cat, "cunning", 1, false, opened ? 0 : CUNNING.observeEvery);
     if (!opened) return;
@@ -2347,6 +2353,9 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       } else if (act.target === "sofa" || act.target === "doorframe") state.home.repairs += SOFA_REPAIR;
       const where: ScratchSpot = post ? "post" : act.target === "doorframe" || act.target === "rug" || act.target === "boxes" ? act.target : "sofa";
       emit(state, { type: "scratched", cat: cat.id, where });
+      // Перший раз на цьому місці — слід назавжди (§9.12, «Котячі сліди в квартирі»); кігтеточка слідів не лишає.
+      const trace = SCRATCH_TRACES[where];
+      if (trace) addTrace(state, trace);
       // Прояв — на місці, на очах персонажа (§9.9): «+» дере диван чи одвірок, «−» — кігтеточку, килимок чи коробки.
       observe(state, cat, "scratching", where === "sofa" || where === "doorframe" ? 1 : -1);
       return;
@@ -2677,6 +2686,9 @@ function perform(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
     case "attention":
       // «Терплячий зранку» біля ліжка чекає мовчки, як і каже підказка (§9.12, рішення автора 2026-10-26).
       if (act.kind !== "beg" || act.target !== "bed") askAloud(state, cat, minutes);
+      // «Втікач» дійшов до вхідних дверей і кричить під ними — дряпає їх знизу (§9.12, «Котячі сліди в квартирі»): слід лишається,
+      // хоч би персонаж цього й не бачив.
+      if (act.kind === "beg" && act.target === "door") addTrace(state, "door");
       if (act.kind === "attention") {
         if (cat.needs.attention < ATTENTION_SATISFIED) act.minutes = 0;
         else if (act.target === "character" && context.present && isWorking(state)) arriveAtWork(state, cat, rng);
