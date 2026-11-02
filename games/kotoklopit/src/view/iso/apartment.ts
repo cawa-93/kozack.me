@@ -55,6 +55,7 @@ import {
   showerState,
   sinkState,
   stoveArtState,
+  washerArtState,
   STORAGE_OVERLAYS,
   storageOverlays,
   TRACE_OVERLAYS,
@@ -493,7 +494,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.show(this.get("bed"), { id: "env/bed", state: bedState(state) });
     // Шафи з пилососом більше немає (§8.7, рішення автора 2026-11-02): пилосос стоїть на підлозі (`home.vacuumAt`) — його
     // малюватиме пакет вигляду.
-    this.show(this.get("washer"), { id: "env/washer", state: state.home.washer.state });
+    this.show(this.get("washer"), { id: "env/washer", state: washerArtState(state) });
     this.show(this.get("shower"), { id: "env/shower", state: showerState(state) });
     this.show(this.get("sink"), { id: "env/sink", state: sinkState(state) });
     // Накладки одного сховища — по черзі над річчю (гель під шампунем).

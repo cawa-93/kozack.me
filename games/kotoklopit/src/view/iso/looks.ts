@@ -89,6 +89,15 @@ export function stoveArtState(state: GameState): string {
   return powerOut(state) ? `gas-${look}` : look;
 }
 
+/**
+ * Кадр пральної машини (§8.7): її стан, а прання, що стало на паузу без світла (§4.1, рішення автора 2026-11-02; запущене до
+ * відключення — `household.ts`), — як машина, що стоїть: барабан не крутиться, вогник погас.
+ */
+export function washerArtState(state: GameState): string {
+  const washer = state.home.washer.state;
+  return washer === "washing" && powerOut(state) ? "idle" : washer;
+}
+
 /** Страва на столі чи стільниці (§8.7): `item/dish/*` з якістю продуктів, мамин судочок — свій. */
 export function dishFrame(dish: Dish): IsoFrame {
   if (dish.kind === "meal" && dish.mom === true) return frame("item/dish/mom");

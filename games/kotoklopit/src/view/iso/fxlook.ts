@@ -48,9 +48,9 @@ export function stovePuffPoint(state: GameState): "pan" | "pan-gas" {
   return powerOut(state) ? "pan-gas" : "pan";
 }
 
-/** Пральна машина (§8.7): поки пере — над кришкою пара. */
+/** Пральна машина (§8.7): поки пере — над кришкою пара; прання на паузі без світла (§4.1) не парує. */
 export function washerFx(state: GameState): ThingFx | null {
-  return state.home.washer.state === "washing" ? "steam" : null;
+  return state.home.washer.state === "washing" && !powerOut(state) ? "steam" : null;
 }
 
 /** Перегризений дріт (§9.12, «Гризіння»): з кінців дроту, поки його не полагодили, час від часу сиплються іскри. */
