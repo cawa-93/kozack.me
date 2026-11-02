@@ -1,6 +1,7 @@
 // Числа гри. Біля кожного — розділ GAME_DESIGN.md, звідки воно взяте.
 // Позначка «чернетка» — значення для балансування (§11.2).
 
+import type { RoomId } from "./home";
 import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 /** Реальних секунд на одну ігрову годину (§8). */
@@ -24,8 +25,10 @@ export const TOTAL_DAYS = TOTAL_WEEKS * DAYS_PER_WEEK;
  * залежить, а читає їх `src/view/light/daylight.ts`. Ніч — до `dawn` і з `night`; теплий ранок — `dawn`–`morningEnd` (темрява
  * сходить до `sunrise`); день `morningEnd`–`eveningStart` — рівно як було; вечір — `eveningStart`–`night` (присмерк густішає
  * після `sunset`). Тепло ранку найсильніше `warmMorning`, вечора — `warmEvening`. Лампи вмикаються близько `lampsOn` і
- * гаснуть близько `lampsOff`, плавно за `lampFade` хвилин. Сонце світить у вікна вранці `sunMorning` (вікна стіни y = 0 —
- * спальня й кухня) і ввечері `sunEvening` (вікно стіни x = 0 — вітальня).
+ * гаснуть близько `lampsOff`, плавно за `lampFade` хвилин; невидимі стельові світильники кожної кімнати — зі своїм зсувом
+ * `lampShift`, хвилини (рішення автора 2026-11-02: лампи вмикаються «зі зсувом по кімнатах»): вітальня — рівно за `lampsOn`,
+ * спальня трохи раніше, кухня й ванна пізніше; бра — без зсуву (їхній кадр on/off — за `lampsOn`). Сонце світить у вікна
+ * вранці `sunMorning` (вікна стіни y = 0 — спальня й кухня) і ввечері `sunEvening` (вікно стіни x = 0 — вітальня).
  */
 export const DAYLIGHT = {
   dawn: 5 * 60,
@@ -41,6 +44,7 @@ export const DAYLIGHT = {
   lampsOn: 20 * 60,
   lampsOff: 6 * 60 + 30,
   lampFade: 20,
+  lampShift: { living: 0, kitchen: 4, bedroom: -3, bathroom: 7 } satisfies Record<RoomId, number>,
   sunMorning: { from: 6 * 60, to: 9 * 60 + 30 },
   sunEvening: { from: 18 * 60, to: 20 * 60 + 15 },
 } as const;

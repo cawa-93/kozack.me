@@ -3,7 +3,7 @@
 // Чиста функція стану гри й світла доби, без Phaser і DOM (`tests/lightsources.test.ts`).
 //
 // - Невидимі стельові світильники (`CEILING_LAMPS`) і бра (`SCONCES`) — лише коли є електрика й лампи доби горять
-//   (стельові — зі зсувом по кімнатах, `CEILING_LIGHT.shift`; бра — разом зі станом арту `lampsOn`).
+//   (стельові — зі зсувом по кімнатах, `DAYLIGHT.lampShift`; бра — разом зі станом арту `lampsOn`).
 // - Свічки (`CANDLES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки — коли «запалені»,
 //   `Daylight.candles`).
 // - Індикатор бойлера (`BOILER`) — коли є електрика (у відключення не горить).
@@ -12,6 +12,7 @@
 //
 // Мерехтіння свічок — детерміноване від часу кадру (`candleFlicker`): той самий час — та сама яскравість.
 
+import { DAYLIGHT } from "../../sim/config";
 import { objectById, type RoomId } from "../../sim/home";
 import { powerOut } from "../../sim/modifiers";
 import type { GameState, Vec } from "../../sim/types";
@@ -50,10 +51,10 @@ export interface LightSource {
   readonly flicker?: number;
 }
 
-/** Лампи кімнати 0–1: світло доби зі зсувом увімкнення цієї кімнати (`CEILING_LIGHT.shift`). */
+/** Лампи кімнати 0–1: світло доби зі зсувом увімкнення цієї кімнати (`DAYLIGHT.lampShift`, §8.9). */
 export function roomLamps(d: Daylight, room: RoomId): number {
   if (!d.power) return 0;
-  return daylight(d.minute - CEILING_LIGHT.shift[room], true)?.lamps ?? 0;
+  return daylight(d.minute - DAYLIGHT.lampShift[room], true)?.lamps ?? 0;
 }
 
 /** Точка на екрані над точкою підлоги `at` на висоті `z` (одиниці арту). */

@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { DAYLIGHT } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { ROOMS, roomAt } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
@@ -90,6 +91,12 @@ describe("джерела світла квартири", () => {
       expect(level).toBeLessThan(1);
     }
     expect(new Set(levels).size).toBeGreaterThan(1);
+    // Зсув кімнати — число гри (`DAYLIGHT.lampShift`, §8.9): лампа кімнати — на пів шляху рівно о `lampsOn` + її зсув.
+    for (const room of ROOMS) {
+      const shifted = daylight(DAYLIGHT.lampsOn + DAYLIGHT.lampShift[room.id], true);
+      if (!shifted) throw new Error("увечері світло доби є");
+      expect(roomLamps(shifted, room.id), room.id).toBeCloseTo(0.5, 6);
+    }
     expect(kinds(at(19, 30, state()))).not.toContain("ceiling");
     expect(kinds(at(6, 50, state()))).not.toContain("ceiling");
     expect(kinds(at(6, 50, state()))).not.toContain("sconce");
