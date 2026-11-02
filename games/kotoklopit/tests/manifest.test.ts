@@ -114,6 +114,8 @@ describe("маніфест: правила записів", () => {
       "a14-race": ["race/"],
       // Хвиля 3, «Стики персонажа»: стільці до стола з комп'ютером і кухонного стола.
       "a15-seats": ["env/chair-"],
+      // Котячі сліди вітальні (§9.12, «Котячі сліди в квартирі»): накладки на плити, стіну й диван.
+      "a16-traces-living": ["env/trace/"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
