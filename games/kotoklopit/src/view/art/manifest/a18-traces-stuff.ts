@@ -13,6 +13,7 @@
 import type { ArtEntry, ArtId } from "../types";
 import { MANIFEST as BUILD } from "./a01-build";
 import { MANIFEST as KITCHEN } from "./a02-kitchen";
+import { MANIFEST as ROOMS } from "./a04-rooms";
 
 /** Накладка-слід `id` на кадрі господаря `host` з модуля `entries`: його полотно, pivot, роздільність і стани. */
 function traceOn(id: ArtId, entries: readonly ArtEntry[], host: ArtId): ArtEntry {
@@ -35,4 +36,9 @@ export const MANIFEST: readonly ArtEntry[] = [
   // `env/door/leaf`, тож видно лише, коли двері відчинені. Зачинені двері (`env/door`) показують зовнішній дермантин, на якому
   // подряпин немає, тож другого запису не треба.
   traceOn("env/trace/door", BUILD, "env/door/leaf"),
+  // Сліди кігтів на коробках біля входу (`boxes-claws`: кіт подер коробки, «Любить кігтеточку») — три борозни на грані +x;
+  // стани купи `pile-1`…`pile-4`. Купа малюється двома кадрами: сама купа й передні стінки верхньої коробки поверх кота
+  // (`env/boxes/front`, який закриває всю купу нижче за борт), тож слід — двома записами, кожен на своєму кадрі.
+  traceOn("env/trace/boxes-claws", ROOMS, "env/boxes"),
+  traceOn("env/trace/boxes-claws/front", ROOMS, "env/boxes/front"),
 ];
