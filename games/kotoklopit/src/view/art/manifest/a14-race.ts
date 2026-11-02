@@ -108,6 +108,17 @@ export const MANIFEST: readonly ArtEntry[] = [
     pivot: RACE_LOT.pivot,
     points: { entrance: lotPoint(RACE_LOT.entrance), ...Object.fromEntries(RACE_LOT.slots.map((slot, i) => [`slot-${i}`, lotPoint(slot)])) },
   },
+  // Будівля пункту (`RACE_BUILDING`): плаский дах згори — парапет, кондиціонер, витяжка, грибки вентиляції, труба, люк;
+  // «історії» — калюжа біля зливу й паперовий літачок. Дах — білий `fill`, який код фарбує кольором пункту
+  // (`DESTINATION_ROOFS`), решта — `detail` без барв даху, тіні (падаюча — поза дахом) і контур, як у `race/car/traffic`.
+  // Точка `sign` — середина таблички, на яку код ставить іконку пункту.
+  {
+    id: "race/building",
+    size: RACE_BUILDING.canvas,
+    pivot: RACE_BUILDING.pivot,
+    layers: ["fill", "detail", "shade", "ink"],
+    points: { sign: { x: RACE_BUILDING.sign.x, y: RACE_BUILDING.sign.y } },
+  },
   // Смуга прогресу дороги збоку: `track` — паперова доріжка з картатим фінішем, `fill` — пройдене (тягнеться вгору). Код
   // розтягує її трьома частинами: верх до `slice.y` і низ від `size.h − slice.y` — як є, середину — на потрібну висоту.
   { id: "race/progress", ...centered(36, 96), points: { slice: { x: 18, y: 22 } }, states: ["track", "fill"] },
