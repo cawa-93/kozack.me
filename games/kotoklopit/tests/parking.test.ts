@@ -6,11 +6,15 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { RACE } from "../src/sim/config";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
+import { RACE, TRIPS } from "../src/sim/config";
+import { tripCat } from "../src/sim/destinations";
+import { goHome } from "../src/sim/game";
 import { newRace } from "../src/sim/race";
 import { createRng, type Rng } from "../src/sim/rng";
 import { gameMinutes } from "../src/sim/time";
-import type { Race } from "../src/sim/types";
+import { HOME_DOOR } from "../src/sim/trips";
+import type { Race, Save } from "../src/sim/types";
 import { asideCardRight } from "../src/ui/cardsize";
 import { LOT_AHEAD, RACE_BUILDING, RACE_LOT } from "../src/view/art/manifest/a14-race";
 import { carReach, HOME_ROAD, homeRoadFrame } from "../src/view/homeroad";
@@ -30,6 +34,7 @@ import {
   parkedFrame,
   PARKING,
   parkingLayout,
+  parkingSpot,
   raceBarAlpha,
   ROAD_UNIT,
   type ArrivalStart,
@@ -41,6 +46,7 @@ import {
 } from "../src/view/parking";
 import { laneX, RACE_PLAYER_Y, racePixelsPerUnit, raceScale, steerTilt, TRAFFIC_COLORS, TRAFFIC_KINDS } from "../src/view/racelook";
 import { canvasFit } from "../src/view/zoom";
+import { driveSafely } from "./helpers";
 
 /** Висоти кадру: 720 (десктоп і телефон набік) і вищі (вузьке вікно). */
 const HEIGHTS = [720, 960, 1440];
@@ -770,5 +776,68 @@ describe("де парковка на місці", () => {
     const need = RACE_LOT.reach.right - RACE_LOT.reach.left + 2 * PARKING.margin;
     expect(parkingLayout(view, 1280 - need).aside).toBe(true);
     expect(parkingLayout(view, 1280 - need + 1).aside).toBe(false);
+  });
+});
+
+describe("сценарії кадру парковки (scenarios/shop-visit, vet-visit, vet-arrival)", () => {
+  function scenario(id: string): Save {
+    const found = FILE_SCENARIOS[id];
+    if (!found) throw new Error(`немає сценарію ${id}`);
+    return applyScenario(found);
+  }
+
+  /** Додому: поїздки вже немає, персонаж біля дверей, кіт з переноски — удома. */
+  function expectHome(save: Save): void {
+    const state = save.current;
+    expect(state.trip).toBeNull();
+    expect(state.end).toBeNull();
+    expect(state.character.body.x).toBe(HOME_DOOR.x);
+    expect(state.character.body.y).toBe(HOME_DOOR.y);
+    for (const cat of state.cats) expect(cat.away).toBeNull();
+  }
+
+  it("«У магазині» — на місці, у магазині без кота, грошей на дві оплати; «Додому» доводить додому", () => {
+    const save = scenario("shop-visit");
+    const trip = save.current.trip;
+    expect(trip?.destination).toBe("shop");
+    expect(trip?.phase).toBe("visit");
+    expect(tripCat(save.current)).toBeNull();
+    expect(trip?.race.done).toBe(trip?.race.road);
+    expect(trip?.visit).toBe(TRIPS.shop.visit);
+    expect(save.current.character.money).toBeGreaterThanOrEqual(2 * 100);
+    // Кадр на місці — з цієї поїздки: та сама парковка й після перезавантаження.
+    if (trip) expect(parkedFrame(720, parkingSpot(trip))).toEqual(parkedFrame(720, parkingSpot(structuredClone(trip))));
+    goHome(save);
+    expectHome(save);
+  });
+
+  it("«У ветеринара» — на місці з котом у переносці; «Додому» доводить додому разом із котом", () => {
+    const save = scenario("vet-visit");
+    const trip = save.current.trip;
+    expect(trip?.destination).toBe("vet");
+    expect(trip?.phase).toBe("visit");
+    expect(trip?.cat).toBe(5);
+    const cat = tripCat(save.current);
+    expect(cat).not.toBeNull();
+    expect(cat?.away).toBe("trip");
+    expect(save.current.character.held).toBeNull();
+    goHome(save);
+    expectHome(save);
+    expect(save.current.cats.find((c) => c.id === 5)?.away).toBeNull();
+  });
+
+  it("«Прибуття до ветеринара» — ще в дорозі за мить до фінішу, машин немає; без газу доїжджає й стає на місці", () => {
+    const save = scenario("vet-arrival");
+    const trip = save.current.trip;
+    expect(trip?.phase).toBe("drive");
+    expect(trip?.race.cars).toEqual([]);
+    expect(trip?.race.speed).toBeGreaterThan(0);
+    expect((trip?.race.road ?? 0) - (trip?.race.done ?? 0)).toBeCloseTo(0.05);
+    expect(tripCat(save.current)?.away).toBe("trip");
+    driveSafely(save);
+    expect(save.current.trip?.phase).toBe("visit");
+    expect(save.current.trip?.race.cars).toEqual([]);
+    goHome(save);
+    expectHome(save);
   });
 });
