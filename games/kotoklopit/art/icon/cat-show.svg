@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/cat-show — виставка котів: гірчичний кубок-трофей із котячими вухами на вінцях і лапкою, на ніжці й дерев'яній підставці. Іконки пунктів поїздок (GAME_DESIGN §11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5). Ручки — шар чорнила під шаром фарби (облямівка, як ручка kit).
+Біля «Виставка котів» у «Куди поїхати?», у заголовку картки пункту й на табличці на даху (DESTINATION_ICONS, symbols.ts). Кубок, а не розетка: не печатка-розетка «фермерських» продуктів item/dish/raw (кругла, зі стрічками).
+-->
+<defs>
+<clipPath id="icon-cat-show-cup"><path d="M15.2 12.6Q32 11.4 48.8 12.6Q49.4 26.4 42 32.6Q38.4 35.4 32 35.6Q25.6 35.4 22 32.6Q14.6 26.4 15.2 12.6Z"/></clipPath>
+<clipPath id="icon-cat-show-base"><path d="M19.6 46.2Q32 45.4 44.4 46.2Q46.4 50.4 46.4 54.6Q32 55.4 17.6 54.6Q17.6 50.4 19.6 46.2Z"/></clipPath>
+</defs>
+<g id="p-handles">
+<path d="M15.6 16.4Q8.6 15.8 9.4 21.6Q10.4 26.6 18.6 28.4M48.4 16.4Q55.4 15.8 54.6 21.6Q53.6 26.6 45.4 28.4" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.6 16.4Q8.6 15.8 9.4 21.6Q10.4 26.6 18.6 28.4M48.4 16.4Q55.4 15.8 54.6 21.6Q53.6 26.6 45.4 28.4" fill="none" stroke="#d4a54c" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-base">
+<path d="M28.4 35.2L35.6 35.2L36.4 41.2Q38.8 42.4 39.6 46.2L24.4 46.2Q25.2 42.4 27.6 41.2Z" fill="#d4a54c"/>
+<path d="M28.4 35.2L35.6 35.2L36.4 41.2Q38.8 42.4 39.6 46.2L24.4 46.2Q25.2 42.4 27.6 41.2Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M28.4 35.2L35.6 35.2L36.4 41.2Q38.8 42.4 39.6 46.2L24.4 46.2Q25.2 42.4 27.6 41.2Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.6 46.2Q32 45.4 44.4 46.2Q46.4 50.4 46.4 54.6Q32 55.4 17.6 54.6Q17.6 50.4 19.6 46.2Z" fill="#9a6a47"/>
+<path d="M26 49.2Q32 48.8 38 49.2L38 52.4Q32 52.8 26 52.4Z" fill="#e8c47d"/>
+<path d="M0 52.4Q32 51.4 64 52.6L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-cat-show-base)"/>
+<path d="M19.6 46.2Q32 45.4 44.4 46.2Q46.4 50.4 46.4 54.6Q32 55.4 17.6 54.6Q17.6 50.4 19.6 46.2Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.6 54.6Q32 55.4 46.4 54.6" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-cup">
+<path d="M18.8 13Q19.4 8.6 21.2 7.2Q24.2 9 26.8 12.4ZM45.2 13Q44.6 8.6 42.8 7.2Q39.8 9 37.2 12.4Z" fill="#d4a54c"/>
+<path d="M18.8 13Q19.4 8.6 21.2 7.2Q24.2 9 26.8 12.4ZM45.2 13Q44.6 8.6 42.8 7.2Q39.8 9 37.2 12.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.2 12.6Q32 11.4 48.8 12.6Q49.4 26.4 42 32.6Q38.4 35.4 32 35.6Q25.6 35.4 22 32.6Q14.6 26.4 15.2 12.6Z" fill="#d4a54c"/>
+<path d="M15.4 12.8Q32 11.6 48.6 12.8Q48.6 15.6 48.2 17.6Q32 16.2 15.8 17.6Q15.4 15.6 15.4 12.8Z" fill="#e8c47d"/>
+<path d="M0 25.6Q32 23.4 64 25.8L64 40L0 40Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-cat-show-cup)"/>
+<path d="M27.2 30Q27 25.6 32 25.4Q37 25.6 36.8 30Q36.2 32 32 31.4Q27.8 32 27.2 30Z" fill="#e8c47d"/>
+<path d="M24.3 23.4A2.1 2.1 0 1 1 28.5 23.4A2.1 2.1 0 1 1 24.3 23.4Z" fill="#e8c47d"/>
+<path d="M27.9 20.8A2.1 2.1 0 1 1 32.1 20.8A2.1 2.1 0 1 1 27.9 20.8Z" fill="#e8c47d"/>
+<path d="M31.9 20.8A2.1 2.1 0 1 1 36.1 20.8A2.1 2.1 0 1 1 31.9 20.8Z" fill="#e8c47d"/>
+<path d="M35.5 23.4A2.1 2.1 0 1 1 39.7 23.4A2.1 2.1 0 1 1 35.5 23.4Z" fill="#e8c47d"/>
+<path d="M16.6 17.6Q32 16.4 47.4 17.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.2 12.6Q32 11.4 48.8 12.6Q49.4 26.4 42 32.6Q38.4 35.4 32 35.6Q25.6 35.4 22 32.6Q14.6 26.4 15.2 12.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

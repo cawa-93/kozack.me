@@ -129,6 +129,16 @@ export const ICON_NAMES = [
   "picky",
   "stolen",
   "door-ask",
+  // Пункти поїздок (§11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»): біля назви пункту в картках і на табличці на
+  // даху будівлі біля парковки (`DESTINATION_ICONS`).
+  "store",
+  "vet-clinic",
+  "doctor-office",
+  "shelter",
+  "breeder",
+  "groomer",
+  "office",
+  "cat-show",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

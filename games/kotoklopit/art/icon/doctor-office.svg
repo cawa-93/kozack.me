@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/doctor-office — лікар: стетоскоп — дві оливи вгорі, синя трубка розгалуженням донизу й сіра металева голівка праворуч унизу. Іконки пунктів поїздок (GAME_DESIGN §11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5). Трубка — шар чорнила під шаром фарби (облямівка замість окремого штриха, як ручка kit), щоб не тоншала до волосини.
+Біля «Лікар» у «Куди поїхати?», у заголовку картки пункту й на табличці на даху (DESTINATION_ICONS, symbols.ts). Інструмент лікаря, а не ліки чи хвороба: не градусник thermometer (застуда), не пластир bandage, не капсула human-meds і не таблетки pills; і не кіт у конусі ветеринара vet-clinic.
+-->
+<defs>
+<clipPath id="icon-doctor-office-piece"><path d="M34.8 45A10.6 10.6 0 1 1 56 45A10.6 10.6 0 1 1 34.8 45Z"/></clipPath>
+</defs>
+<g id="p-tube">
+<path d="M18.6 12Q15.6 28 30 33.8M45.4 12Q48.4 28 34 33.8M32 33.4Q31.4 47.6 34.4 51Q36.6 53 39 51.2" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.6 12Q15.6 28 30 33.8M45.4 12Q48.4 28 34 33.8M32 33.4Q31.4 47.6 34.4 51Q36.6 53 39 51.2" fill="none" stroke="#6c84a3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.6 17Q17 22 18 25.6M46.4 17Q47 22 46 25.6" fill="none" stroke="#94a8c0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-tips">
+<path d="M14.2 11.4A4.2 4.2 0 1 1 22.6 11.4A4.2 4.2 0 1 1 14.2 11.4Z" fill="#4b4146"/>
+<path d="M41.4 11.4A4.2 4.2 0 1 1 49.8 11.4A4.2 4.2 0 1 1 41.4 11.4Z" fill="#4b4146"/>
+<path d="M14.2 11.4A4.2 4.2 0 1 1 22.6 11.4A4.2 4.2 0 1 1 14.2 11.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.4 11.4A4.2 4.2 0 1 1 49.8 11.4A4.2 4.2 0 1 1 41.4 11.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-piece">
+<path d="M34.8 45A10.6 10.6 0 1 1 56 45A10.6 10.6 0 1 1 34.8 45Z" fill="#a69f9b"/>
+<path d="M35.8 43.4Q36.8 35.2 45.4 35Q54 35.2 55 43.4Q45.4 40.6 35.8 43.4Z" fill="#cdc6be"/>
+<path d="M30 47.4Q45.4 45.4 62 47.8L62 60L30 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-doctor-office-piece)"/>
+<path d="M34.8 45A10.6 10.6 0 1 1 56 45A10.6 10.6 0 1 1 34.8 45Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

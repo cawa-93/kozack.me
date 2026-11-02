@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/store — магазин: бірюзова вітрина спереду під смугастим навісом із фестонами (червоне з паперовим), велике скло й двері. Іконки пунктів поїздок (GAME_DESIGN §11.4 «Іконка біля назви», §8.5 «На місці — кадр парковки»), art/STYLE.md (іконки).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Біля «Магазин» у «Куди поїхати?», у заголовку картки пункту й на табличці на даху (DESTINATION_ICONS, symbols.ts). Вітрина, а не кошик: кошик ui/glyph/cart — замовлення з телефона, інший випадок. Низька й широка, з навісом — не офіс (icon/office, висока вежа з вікнами) і не дім (ui/glyph/home, двосхилий дах).
+-->
+<defs>
+<clipPath id="icon-store-wall"><path d="M11.5 26Q32 25.4 52.5 26Q53.1 41 52.5 54.8Q32 55.4 11.5 54.8Q10.9 41 11.5 26Z"/></clipPath>
+</defs>
+<g id="p-wall">
+<path d="M11.5 26Q32 25.4 52.5 26Q53.1 41 52.5 54.8Q32 55.4 11.5 54.8Q10.9 41 11.5 26Z" fill="#5f9089"/>
+<path d="M15.8 39Q26 38.4 36.2 39Q36.7 45 36.2 51Q26 51.6 15.8 51Q15.3 45 15.8 39Z" fill="#a8c4c4"/>
+<path d="M19.4 48.8Q23.4 44.4 26.6 40.6Q24.4 45.4 21.8 49Z M26.2 49Q29.2 46 31.8 42.6Q30.6 46.4 28.4 49.1Z" fill="#d4e3dc"/>
+<path d="M40.8 54.8L40.8 41.4Q45 38.8 49.2 41.4L49.2 54.8Z" fill="#8bb3aa"/>
+<path d="M0 26L64 26L64 32Q61.4 41 56.5 32Q51.6 41 46.7 32Q41.8 41 36.9 32Q32 41 27.1 32Q22.2 41 17.3 32Q12.4 41 7.5 32Q3 41 0 32Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-store-wall)"/>
+<path d="M0 50.4Q20 49.4 32 50.2Q44 51 64 49.8L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-store-wall)"/>
+<path d="M15.8 39Q26 38.4 36.2 39Q36.7 45 36.2 51Q26 51.6 15.8 51Q15.3 45 15.8 39Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M40.8 54.6L40.8 41.4Q45 38.8 49.2 41.4L49.2 54.6" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.5 30Q10.9 42 11.5 54.8Q32 55.4 52.5 54.8Q53.1 42 52.5 30" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.5 54.8Q32 55.4 52.5 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-awning">
+<path d="M14 11.6L21.2 11.2L17.3 22L17.3 27Q12.4 37 7.5 27L7.5 22Z" fill="#c4524b"/>
+<path d="M21.2 11.2L28.4 11L27.1 22L27.1 27Q22.2 37 17.3 27L17.3 22Z" fill="#f2e7d0"/>
+<path d="M28.4 11L35.6 11L36.9 22L36.9 27Q32 37 27.1 27L27.1 22Z" fill="#c4524b"/>
+<path d="M35.6 11L42.8 11.2L46.7 22L46.7 27Q41.8 37 36.9 27L36.9 22Z" fill="#f2e7d0"/>
+<path d="M42.8 11.2L50 11.6L56.5 22L56.5 27Q51.6 37 46.7 27L46.7 22Z" fill="#c4524b"/>
+<path d="M7.5 22.4Q32 21.4 56.5 22.4L56.5 27Q51.6 37 46.7 27Q41.8 37 36.9 27Q32 37 27.1 27Q22.2 37 17.3 27Q12.4 37 7.5 27Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M9.5 22.3Q32 21.4 54.5 22.3" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 11.6Q32 10.4 50 11.6L56.5 22L56.5 27Q51.6 37 46.7 27Q41.8 37 36.9 27Q32 37 27.1 27Q22.2 37 17.3 27Q12.4 37 7.5 27L7.5 22Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
