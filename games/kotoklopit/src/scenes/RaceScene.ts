@@ -5,7 +5,8 @@
 // — кадр парковки», `src/view/parking.ts`) — без керування машина гальмує й стає на парковці пункту, і сцена лишається на цьому
 // кадрі, поки день показує картку пункту поверх нього; «Додому» — машина виїжджає з парковки (`departureFrame`) й без розриву
 // йде дорога додому. З чорного (`src/view/homeroad.ts`) дорога додому починається лише тоді, коли машини на парковці немає:
-// знайда, яку відносять у притулок, і запасний шлях.
+// знайда, яку відносять у притулок, і запасний шлях. У темний час (§8.9 «День і ніч») поверх дороги — ніч (`src/view/racenight.ts`,
+// розрахунки — `src/view/racelight.ts`): тон, фари й задні вогні, вуличні ліхтарі, світло таблички; HUD гонки — над нею.
 
 import Phaser from "phaser";
 
@@ -25,10 +26,12 @@ import { artEntry } from "../view/art/manifest";
 import { RACE_BUILDING, RACE_LOT, RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
-import { canSkipHomeRoad, HOME_ROAD, homeRoadFrame, type HomeRoadFrame } from "../view/homeroad";
+import { CAR_REACH, canSkipHomeRoad, HOME_ROAD, homeRoadFrame, type HomeRoadFrame } from "../view/homeroad";
 import { iconArt } from "../view/iconnames";
+import { daylight } from "../view/light/daylight";
 import {
   arrivalFrame,
+  arrivalMs,
   arrivalStart,
   departureFrame,
   LOT_BOUNDS,
@@ -48,6 +51,27 @@ import {
   type ParkingSpot,
 } from "../view/parking";
 import { CRASH_FX, crashView } from "../view/racecrash";
+import {
+  arrivalLights,
+  departureLightMinute,
+  departureLights,
+  DRIVING_LIGHTS,
+  headlightsOn,
+  LIGHT_REACH,
+  lightFade,
+  lookSeed,
+  lotPools,
+  PARKED_LIGHTS,
+  raceNight,
+  SIGN_AT,
+  signGlow,
+  streetPools,
+  TAIL,
+  tripLightMinute,
+  type OwnLights,
+  type RaceNightLevel,
+} from "../view/racelight";
+import { RaceNight, type LitCar, type NightLights } from "../view/racenight";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
   barMarkerY,
@@ -392,7 +416,7 @@ export class RaceScene extends Phaser.Scene {
     const view = this.layout();
     this.place = this.parkingPlace(view);
     const frame = arrivalFrame(arrival.ms, view.height, arrival.start);
-    art.drawFrame(parkingRoad(frame, trip.destination), this.panned(view, frame.pan));
+    art.drawFrame(parkingRoad(frame, trip.destination, arrivalLights(arrival.ms, arrivalMs(arrival.start))), this.panned(view, frame.pan));
     return frame.done;
   }
 
@@ -423,7 +447,7 @@ export class RaceScene extends Phaser.Scene {
     const view = this.layout();
     this.place = this.parkingPlace(view);
     const frame = parkedFrame(view.height, parked.spot);
-    art.drawFrame(parkingRoad(frame, parked.destination), this.panned(view, frame.pan));
+    art.drawFrame(parkingRoad(frame, parked.destination, PARKED_LIGHTS), this.panned(view, frame.pan));
     this.dark.setFillStyle(0x000000, 0);
     this.drawParkedLabel(parked.destination, view.safe.top);
   }
@@ -487,10 +511,11 @@ export class RaceScene extends Phaser.Scene {
     if (home.from === "parked") {
       this.place = this.parkingPlace(view);
       const departure = departureFrame(home.ms, view.height, home.at.spot);
-      art.drawFrame(parkingRoad(departure, home.at.destination), this.panned(view, departure.pan));
+      art.drawFrame(parkingRoad(departure, home.at.destination, departureLights(home.ms)), this.panned(view, departure.pan));
       frame = departure;
     } else {
-      const road = homeRoadFrame(home.ms, view.height);
+      // Уночі — з запасом на промінь фар: попутна за верхнім краєм світить донизу, у кадр (`LIGHT_REACH`).
+      const road = homeRoadFrame(home.ms, view.height, view.night ? (LIGHT_REACH - CAR_REACH) * view.k : 0);
       art.drawFrame(homeRoad(road, view.k), view);
       frame = road;
     }
@@ -516,14 +541,31 @@ export class RaceScene extends Phaser.Scene {
 
   /**
    * Розміри кадру дороги: в одиницях інтерфейсу (1280 × 720, що ширшає чи вищає) — полотно в пікселях пристрою, камера
-   * масштабує (`fitUiCamera` щокадру ставить звичайний масштаб і прокрутку; наїзд аварії — поверх).
+   * масштабує (`fitUiCamera` щокадру ставить звичайний масштаб і прокрутку; наїзд аварії — поверх). І ніч гонки (§8.9) — щокадру
+   * плавно за годинником: гонка його рухає, тож ніч може настати посеред неї.
    */
   private layout(): RaceView {
     const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
     const css = safeArea();
     const unit = canvasNow().unit;
     const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
-    return { width, height, k: raceScale(height), ppu: racePixelsPerUnit(height), cx: width / 2, playerY: height * RACE_PLAYER_Y, safe };
+    const minute = this.lightMinute();
+    const night = raceNight(minute === null ? null : daylight(minute, true));
+    return { width, height, k: raceScale(height), ppu: racePixelsPerUnit(height), cx: width / 2, playerY: height * RACE_PLAYER_Y, safe, night };
+  }
+
+  /**
+   * На яку хвилину світло доби на дорозі (§8.9): у гонці, на прибутті, в аварії й на місці — годинник гри; на від'їзді й у
+   * дорозі додому — уже з часом візиту й частки дороги, які сим додасть, коли катсцена скінчиться (`tripLightMinute`), — тож
+   * удома тон не стрибає. Режим розробки задає хвилину сам (`Session.lightAt`, `?light=`); `off` — без світла доби (null).
+   */
+  private lightMinute(): number | null {
+    const at = this.session.lightAt;
+    if (at === "off") return null;
+    if (at !== null) return at;
+    const home = this.home;
+    if (!home) return tripLightMinute(this.state, "drive");
+    return home.from === "parked" ? departureLightMinute(this.state, home.ms) : tripLightMinute(this.state, "home", home.ms / HOME_ROAD.ms);
   }
 
   /**
@@ -613,23 +655,36 @@ export class RaceScene extends Phaser.Scene {
 
 /**
  * Шари гонки: поле, дорога, парковка пункту (з'їзд — над дорогою), машини потоку й запарковані, своя машина, будівля пункту
- * (над машинами) й іконка на її табличці, смуга прогресу, джойстик і напис; над усім — темрява.
+ * (над машинами) й іконка на її табличці, смуга прогресу, джойстик і напис; над усім — темрява. Ніч (§8.9, `RaceNight`): світло
+ * ночі — над будівлею й під іконкою таблички (табличка «світиться»), над ним — самі фари, задні вогні й ореол таблички; смуга
+ * прогресу, машинка на ній, джойстик і написи — над ніччю, тож HUD гонки не темніє.
  */
-const RACE_DEPTH = { verge: 0, road: 1, lot: 2, traffic: 3, player: 4, building: 5, sign: 6, bar: 7, marker: 8, ui: 10, dark: 20 } as const;
+const RACE_DEPTH = {
+  verge: 0,
+  road: 1,
+  lot: 2,
+  traffic: 3,
+  player: 4,
+  building: 5,
+  night: 5.5,
+  beams: 5.7,
+  tails: 5.8,
+  signGlow: 5.9,
+  sign: 6,
+  bar: 7,
+  marker: 8,
+  ui: 10,
+  dark: 20,
+} as const;
 /** Від середини своєї машини до її переду з контуром, одиниці арту (`race/car/player`): над ним — підказка «W ↑». */
 const RACE_CAR_FRONT = 34;
-/**
- * Середина таблички на даху в рамці парковки (одиниці арту від середини дороги й від середньої лінії з'їзду): точка `sign`
- * полотна `race/building`, що лягає pivot у `pivotAt`.
- */
-const SIGN_AT = {
-  x: RACE_BUILDING.pivotAt.x + RACE_BUILDING.sign.x - RACE_BUILDING.pivot.x,
-  y: RACE_BUILDING.pivotAt.y + RACE_BUILDING.sign.y - RACE_BUILDING.pivot.y,
-} as const;
 /** Власник запечених дахів будівлі пункту (`releaseBaked` наприкінці сцени). */
 const BUILDING_OWNER = "race:building";
 
-/** Розміри кадру гонки: полотно, масштаб арту, пікселів на одиницю дороги, середина дороги, де своя машина, безпечна зона. */
+/**
+ * Розміри кадру гонки: полотно, масштаб арту, пікселів на одиницю дороги, середина дороги, де своя машина, безпечна зона; ніч
+ * гонки (`raceNight`; удень — null).
+ */
 interface RaceView {
   width: number;
   height: number;
@@ -638,18 +693,22 @@ interface RaceView {
   cx: number;
   playerY: number;
   safe: Insets;
+  night: RaceNightLevel | null;
 }
 
 /**
  * Кадр дороги без керування (§8.5): прибуття, на місці, від'їзд із парковки чи дорога додому. Зсув дороги — як `distance` у
  * `drawRoad`; x машин — px від середини дороги (`RaceView.cx`), поворот — радіани (0 — носом угору); парковка пункту — середня
- * лінія з'їзду (px кадру), пункт і запарковані машини, або null — дорога без парковки.
+ * лінія з'їзду (px кадру), пункт і запарковані машини, або null — дорога без парковки. Уночі (§8.9): вогні своєї машини
+ * (`lights`; на місці — вимкнено) і за скільки одиниць арту за краєм кадру гаснуть вогні попутних (`lightBand`, `lightFade`).
  */
 interface RoadFrame {
   offset: number;
   car: CarPose;
   traffic: readonly ParkingCar[];
   lot: { y: number; destination: Destination; cars: readonly ParkingCar[] } | null;
+  lights: OwnLights;
+  lightBand?: number;
 }
 
 /** Рецепт машини потоку: кузов (`fill`) — колір потоку, решта шарів — як намальовано (тінь — звичайним накладанням). */
@@ -708,8 +767,11 @@ class RaceArt {
   private readonly applied = new WeakMap<Phaser.GameObjects.Image, { x: number; y: number }>();
   private readonly recipes = new Map<number, TintRecipe>();
   private readonly owners = new Set<string>();
+  /** Ніч (§8.9): з першого кадру й незалежно від темряви `dark`; удень схована. */
+  private readonly night: RaceNight;
 
   constructor(private readonly scene: Phaser.Scene) {
+    this.night = new RaceNight(scene, { night: RACE_DEPTH.night, beams: RACE_DEPTH.beams, tails: RACE_DEPTH.tails, signGlow: RACE_DEPTH.signGlow });
     this.player = addArt(scene, null, "race/car/player").setDepth(RACE_DEPTH.player);
     this.track = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "track" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
     this.fill = [0, 1, 2].map(() => addArt(scene, null, "race/progress", { state: "fill" }).setDepth(RACE_DEPTH.bar).setOrigin(0.5, 0));
@@ -749,21 +811,28 @@ class RaceArt {
     const lotY = lotScreenY(race.done, race.road, height);
     this.drawRoad(race.done * ppu, view, lotY);
 
-    // Машини потоку: ті, що в кадрі (з запасом на довжину машини).
+    // Машини потоку: ті, що в кадрі (з запасом на довжину машини). Уночі їхні вогні гаснуть за краєм кадру раніше, ніж машину
+    // відсікає сцена чи прибирає сим (`lightFade`), тож запасу на промінь тут не треба.
     const reach = (artEntry("race/car/traffic")?.size.h ?? 84) * k;
+    const lit: LitCar[] = [];
     let n = 0;
     for (const car of race.cars) {
       const y = playerY - (carAt(race, car) - race.done) * ppu;
       if (y < -reach || y > height + reach) continue;
-      this.fit(this.carImage(this.traffic, n++, this.lookOf(car), RACE_DEPTH.traffic), k, k).setPosition(laneX(cx, car.lane, k), y).setRotation(0).setAlpha(1);
+      const look = this.lookOf(car);
+      const pose = { x: laneX(cx, car.lane, k), y, rotation: 0 };
+      this.fit(this.carImage(this.traffic, n++, look, RACE_DEPTH.traffic), k, k).setPosition(pose.x, pose.y).setRotation(0).setAlpha(1);
+      if (view.night) lit.push(trafficLit(pose, look, view.night, lightFade(y, height, k)));
     }
     hideFrom(this.traffic, n);
 
-    this.fit(this.player, k, k)
-      .setPosition(laneX(cx, race.lane, k), playerY)
-      .setRotation(steerTilt(race.lane, race.targetLane));
+    const player = { x: laneX(cx, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) };
+    this.fit(this.player, k, k).setPosition(player.x, player.y).setRotation(player.rotation);
+    if (view.night) lit.push(ownLit(player, DRIVING_LIGHTS, view.night));
 
-    this.drawLot({ y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) }, view);
+    const lot = { y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) };
+    this.drawLot(lot, view);
+    this.drawNight(view, race.done * ppu, lot.y, lit);
 
     // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом. Стоїть там, де парковка, тож
     // згасає, поки та в'їжджає в кадр.
@@ -792,13 +861,42 @@ class RaceArt {
    * немає — це не гонка.
    */
   drawFrame(frame: RoadFrame, view: RaceView): void {
-    const { k } = view;
+    const { k, height } = view;
     this.drawRoad(frame.offset, view, frame.lot?.y ?? null);
     frame.traffic.forEach((car, i) => this.placeCar(this.carImage(this.traffic, i, car.look, RACE_DEPTH.traffic), car, view));
     hideFrom(this.traffic, frame.traffic.length);
-    this.fit(this.player, k, k).setPosition(view.cx + frame.car.x, frame.car.y).setRotation(frame.car.rotation);
+    const player = { x: view.cx + frame.car.x, y: frame.car.y, rotation: frame.car.rotation };
+    this.fit(this.player, k, k).setPosition(player.x, player.y).setRotation(player.rotation);
     this.drawLot(frame.lot, view);
     this.hideBar();
+    const night = view.night;
+    const lit: LitCar[] = [];
+    if (night) {
+      for (const car of frame.traffic) {
+        const pose = { x: view.cx + car.x, y: car.y, rotation: car.rotation };
+        lit.push(trafficLit(pose, car.look, night, car.alpha * lightFade(car.y, height, k, frame.lightBand)));
+      }
+      lit.push(ownLit(player, frame.lights, night));
+    }
+    this.drawNight(view, frame.offset, frame.lot?.y ?? null, lit);
+  }
+
+  /**
+   * Ніч (§8.9, `RaceNight`): тон, плями вуличних ліхтарів уздовж дороги (зсув `offset`, як у `drawRoad`), ліхтарі парковки й
+   * сяйво таблички, коли парковка в кадрі (`lotY` — середня лінія з'їзду, px; null — парковки немає), вогні машин `cars`.
+   * Удень (`view.night` — null) — шар схований.
+   */
+  private drawNight(view: RaceView, offset: number, lotY: number | null, cars: readonly LitCar[]): void {
+    const night = view.night;
+    if (!night) {
+      this.night.draw(view, null, NO_LIGHTS);
+      return;
+    }
+    const { k, cx, height } = view;
+    const lot = lotY !== null && lotInFrame(lotY, height) ? lotY : null;
+    const pools = streetPools(offset, view, lotY);
+    if (lot !== null) pools.push(...lotPools(lot, cx, k));
+    this.night.draw(view, night, { pools, cars, sign: lot === null ? null : signGlow(lot, cx, k) });
   }
 
   /**
@@ -979,19 +1077,39 @@ function parkedAt(trip: Trip): ParkedAt {
   return { spot: parkingSpot(trip), destination: trip.destination };
 }
 
-/** Кадр парковки (прибуття, на місці, від'їзд) як кадр без керування: з парковкою пункту. */
-function parkingRoad(frame: ParkingFrame, destination: Destination): RoadFrame {
-  return { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, destination, cars: frame.parked } };
+/** Кадр парковки (прибуття, на місці, від'їзд) як кадр без керування: з парковкою пункту й вогнями своєї машини `lights`. */
+function parkingRoad(frame: ParkingFrame, destination: Destination, lights: OwnLights): RoadFrame {
+  return { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, destination, cars: frame.parked }, lights };
 }
 
-/** Кадр дороги додому (`homeRoadFrame`) як кадр без керування: дорога біжить угору, машини (і своя) — носом донизу. */
+/**
+ * Кадр дороги додому (`homeRoadFrame`) як кадр без керування: дорога біжить угору, машини (і своя) — носом донизу. Попутні
+ * відсікаються з запасом на промінь (уночі), тож і гаснуть за ним (`LIGHT_REACH`).
+ */
 function homeRoad(frame: HomeRoadFrame, k: number): RoadFrame {
   return {
     offset: -frame.camera,
     car: { x: laneX(0, HOME_ROAD.lane, k), y: frame.car, rotation: Math.PI },
     traffic: frame.traffic.map((car) => ({ x: laneX(0, car.lane, k), y: car.y, rotation: Math.PI, look: car.look, alpha: 1 })),
     lot: null,
+    lights: DRIVING_LIGHTS,
+    lightBand: LIGHT_REACH,
   };
+}
+
+/** Нічого не світить (день). */
+const NO_LIGHTS: NightLights = { pools: [], cars: [], sign: null };
+
+/** Машина потоку вночі: фари й задні вогні — з її порога (`headlightsOn`), `fade` — непрозорість і згасання за краєм кадру. */
+function trafficLit(pose: CarPose, look: TrafficLook, night: RaceNightLevel, fade: number): LitCar {
+  const on = headlightsOn(night.dark, lookSeed(look)) ? fade : 0;
+  return { pose, kind: look.kind, head: on, tail: TAIL.running * on, reverse: 0 };
+}
+
+/** Своя машина вночі: вогні етапу (`lights`), коли її фари вже ввімкнено (свій поріг — `HEADLIGHTS.threshold`). */
+function ownLit(pose: CarPose, lights: OwnLights, night: RaceNightLevel): LitCar {
+  const on = headlightsOn(night.dark, null) ? 1 : 0;
+  return { pose, kind: "player", head: lights.head * on, tail: lights.tail * on, reverse: lights.reverse * on };
 }
 
 /** Сховати зображення пулу з номера `from`. */
