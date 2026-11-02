@@ -55,6 +55,11 @@ export interface CatPoints {
    * меблів).
    */
   mouth?: Point;
+  /**
+   * Корінь скелета на екрані (точка підлоги під котом, піднята на висоту меблів; у юрбі — там, де кота намальовано): до нього
+   * обертається персонаж, що гладить кота чи грається з ним (`touchFacing`).
+   */
+  root?: Point;
   facing?: Readonly<RigFacing>;
   scale?: number;
   rigShown?: boolean;

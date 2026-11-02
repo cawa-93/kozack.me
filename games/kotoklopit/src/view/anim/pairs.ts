@@ -211,10 +211,12 @@ export function pairOf(state: GameState, cat: Cat, sizeOf: SizeOf = ADULT): Pair
  * `step` довкола своєї точки голови опинялися поза мискою, а коти — спинами одне до одного (рецензія, cats-r3-2). `bowl` —
  * трохи більше, ніж голова того, хто їсть (анімація `eat`), висунута від кореня вперед (≈ 31), тож морди — лицем до лиця над
  * мискою (≈ 11 від її середини) й обидві видно; ближче голови налазили одна на одну, і від дальшого кота лишався тулуб.
- * `tie` — на скільки кожен наступний праворуч у ряду ближче до камери (сталий порядок малювання сусідів). Одиниці арту
- * (= px світу ізометрії).
+ * `tie` — на скільки кожен наступний праворуч у ряду ближче до камери (сталий порядок малювання сусідів). Кіт під рукою
+ * (`touched`) стає обабіч персонажа й з `touch` — ширшої смуги «біля ніг» по вертикалі екрана: гладити й гратися можна котом
+ * за `REACH` + 0,6 ≈ 1,35 клітинки (до ≈ 61 угору чи вниз на екрані), і кіт ≈ 50 позаду персонажа лишався за його ногами й
+ * тулубом, а кіт ≈ 50 попереду — під ногами, куди рука не дістає (доробки після хвилі 3). Одиниці арту (= px світу ізометрії).
  */
-export const CROWD = { near: { x: 24, y: 14 }, person: { x: 72, y: 40 }, beside: 56, step: 36, front: 3, bowl: 42, tie: 0.5 } as const;
+export const CROWD = { near: { x: 24, y: 14 }, person: { x: 72, y: 40 }, touch: { x: 72, y: 62 }, beside: 56, step: 36, front: 3, bowl: 42, tie: 0.5 } as const;
 
 /** Кіт юрби: де стоїть (точка підлоги з `catSpot`, клітинки), його розмір і чи прийшов до персонажа. */
 export interface CrowdMember {
@@ -284,7 +286,9 @@ export function catCrowds(
   const ps = person ? isoScreenDir(person) : null;
   const near = (a: Vec, b: Vec, box: { x: number; y: number }): boolean => Math.abs(a.x - b.x) < box.x && Math.abs(a.y - b.y) < box.y;
   // Біля ніг персонажа: прийшов до нього, під рукою чи вже стоїть у юрбі (і не їсть із миски).
-  const byPerson = members.map((m, i) => ps !== null && !m.bowl && (m.toPerson || m.touched === true || slots.has(m.id)) && near(screen[i]!, ps, CROWD.person));
+  const byPerson = members.map(
+    (m, i) => ps !== null && !m.bowl && (m.toPerson || m.touched === true || slots.has(m.id)) && near(screen[i]!, ps, m.touched === true ? CROWD.touch : CROWD.person),
+  );
   // Хто вийшов із юрби біля персонажа (пішов, відійшов, персонаж сам пішов), місця більше не тримає.
   for (const id of slots.keys()) if (!members.some((m, i) => m.id === id && byPerson[i])) slots.delete(id);
   if (n === 0) return out;

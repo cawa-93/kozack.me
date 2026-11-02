@@ -658,6 +658,20 @@ describe("юрба (`catCrowds`)", () => {
     expect(catCrowds([far], person, free, new Map()).size).toBe(0);
   });
 
+  it("кіт під рукою позаду персонажа (≈ 51 угору на екрані) — обабіч нього, а не за ногами; той, хто лише прийшов, — на місці", () => {
+    const person = { x: 5.5, y: 5.5 };
+    const ps = isoScreenDir(person);
+    // Діагональ угору: 0,8 клітинки за x і y — ≈ 51 угору на екрані, кіт у межах `REACH` + 0,6 від персонажа.
+    const at = { x: 4.7, y: 4.7 };
+    expect(ps.y - isoScreenDir(at).y).toBeGreaterThan(CROWD.person.y);
+    expect(ps.y - isoScreenDir(at).y).toBeLessThan(CROWD.touch.y);
+    const petted: CrowdMember = { ...member(1, at, true), touched: true };
+    const x = placed(petted, catCrowds([petted], person, free, new Map())).x - ps.x;
+    expect(Math.abs(x)).toBeCloseTo(CROWD.beside, 6);
+    // Не під рукою — смуга «біля ніг» звичайна: стоїть, де стоїть.
+    expect(catCrowds([member(1, at, true)], person, free, new Map()).size).toBe(0);
+  });
+
   it("двоє в одній точці — рядком довкола спільної середини, правіший трохи ближче до камери; хто стоїть окремо — на місці", () => {
     const a = member(1, { x: 9.5, y: 8.5 });
     const b = member(2, { x: 9.5, y: 8.5 });

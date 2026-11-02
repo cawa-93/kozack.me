@@ -68,7 +68,7 @@ import {
 } from "./personlook";
 import { mixAnims } from "./personmix";
 import { cropPixels, featherAt, featherRect, lineEnd, palmAt, reachArm, reachedPose, ROD_PLAY, type PartPose, type UnitRect } from "./personreach";
-import { glideOffset, personSpot, shotFace, shotPlace, showFace, type ShotPlace } from "./personspot";
+import { glideOffset, personSpot, shotFace, shotPlace, showFace, touchFacing, type ShotPlace } from "./personspot";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
@@ -251,16 +251,19 @@ export class IsoPersonView implements PersonPart {
     this.clock += dt * params.speed * (free ? gaitRate(choice.anim, frame.moving, this.pace) : 1);
 
     this.advanceShot(params);
-    // Куди дивиться: за справою — лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно); разова справа біля речі —
-    // лицем до неї.
+    // Куди дивиться: гладить кота чи грається з ним — лицем туди, де кота намальовано (юрба ставить його обабіч, `touchFacing`);
+    // за справою — лицем до цілі; засинаючи — спершу лицем до кімнати (очі видно); разова справа біля речі — лицем до неї.
+    const reach = this.reachTargets(state, choice);
+    const touched = this.oneShot ? null : (reach.pet ?? reach.rod);
+    const catAt = touched === null ? null : (this.ctx.world.cat(touched)?.root ?? null);
     const face = (this.oneShot?.place ? shotFace(state, this.oneShot.place) : null) ?? spot.face;
-    const faced = (face && facingFromTiles(face, this.facing)) || { view: choice.view, flip: choice.flip };
+    const faced = catAt ? touchFacing(feet, catAt, this.facing) : (face && facingFromTiles(face, this.facing)) || { view: choice.view, flip: choice.flip };
     const facing = showFace(choice.anim, faced);
     this.facing = facing;
 
     // Спершу ракурс: новий ракурс — нова вихідна поза, і `play` не змішує з позою старого.
     this.sprite.setFacing(facing);
-    this.play(choice, this.reachTargets(state, choice));
+    this.play(choice, reach);
     this.sprite.setPosition(feet.x, feet.y);
     this.sprite.update(this.clock);
     this.sprite.setVisible(!this.hidden);

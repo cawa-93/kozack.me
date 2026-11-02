@@ -1,7 +1,7 @@
 // Де видно персонажа нового вигляду й куди він дивиться (крок 16, T2): сим знає лише точку тіла (`body`) і напрям руху, а
 // вигляд садить персонажа за стіл і комп'ютер, ставить перед річчю, якою він користується, і кладе біля ліжка — за даними
 // `world/objects.ts` (`IsoObjectLook.use`: де персонаж стоїть чи сидить і куди дивиться). За справою з котом, лотком чи
-// безладом — лицем до них. Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Обличчя, коли воно головне
+// безладом — лицем до них; кота, якого гладить чи з яким грається, — там, де кота намальовано (`touchFacing`). Плавний перехід між точкою тіла й місцем справи — `glideOffset`. Обличчя, коли воно головне
 // (засинає, падає без сил: §8.8 «плавно заплющує очі»), видно: ракурс `back` ховає очі (`showFace`, `SLEEP_TURN`). Кота, якого
 // купають, видно перед персонажем (`BATH_FACE`). Разові справи біля речі (узяв із холодильника, насипав корм, запустив
 // пральку, забрав пакунки) — лицем до неї (`shotPlace`, `shotFace`). Без Phaser.
@@ -14,6 +14,7 @@ import type { GameState, Vec } from "../../sim/types";
 import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
 import type { RigFacing } from "../rig/types";
 import { isoObjectLook, type IsoUse } from "../world/objects";
+import type { Point } from "../world/part";
 
 /** Де видно персонажа: точка підлоги в клітинках і куди дивиться (напрям у клітинках; null — як каже `personAnim`). */
 export interface PersonSpot {
@@ -25,6 +26,29 @@ export interface PersonSpot {
 
 /** Ближче за це (клітинки) до цілі — напрям до неї не рахується (ціль під ногами). */
 const MIN_FACE = 0.05;
+
+/**
+ * Персонаж, що гладить кота чи грається з ним вудочкою, дивиться на того кота, якого НАМАЛЬОВАНО (`touchFacing`), а не на
+ * точку сима: кота під рукою юрба ставить обабіч персонажа (`catCrowds`), хоч сим тримає його в точці персонажа чи трохи
+ * нижче, і лицем до точки сима персонаж гладив кота ліворуч від себе рукою за спину (знахідка «Відомі проблеми (після
+ * хвилі 3)»). Одиниці арту (= px світу): кіт ближче за `side` по горизонталі — ліво й право як були (кіт під самими ногами);
+ * корінь кота помітно вище за ноги (далі за `behind` — кіт за персонажем, на ліжку чи підвіконні) — ракурс `back`, лицем до
+ * нього; інакше — `front` (кіт збоку чи перед ним — обличчя й руку видно). Ракурс `back` тримається, поки кіт вище за
+ * `behind` − `hysteresis`. Кіт на дивані перед персонажем (сидіння ≈ 34) — корінь ≈ на висоті ніг, тож `front`.
+ */
+export const TOUCH_FACE = { side: 6, behind: 24, hysteresis: 8 } as const;
+
+/**
+ * Куди дивиться персонаж, що гладить кота чи грається з ним вудочкою (`TOUCH_FACE`): `feet` — його ноги на екрані, `cat` —
+ * корінь скелета кота на екрані (`CatPoints.root`), `prev` — ракурс минулого кадру.
+ */
+export function touchFacing(feet: Readonly<Point>, cat: Readonly<Point>, prev: RigFacing | null): RigFacing {
+  const dx = cat.x - feet.x;
+  const dy = cat.y - feet.y;
+  const flip = Math.abs(dx) < TOUCH_FACE.side ? (prev?.flip ?? false) : dx < 0;
+  const behind = prev?.view === "back" ? TOUCH_FACE.behind - TOUCH_FACE.hysteresis : TOUCH_FACE.behind;
+  return { view: dy < -behind ? "back" : "front", flip };
+}
 
 const OBJECT_IDS: ReadonlySet<string> = new Set(OBJECTS.map((o) => o.id));
 

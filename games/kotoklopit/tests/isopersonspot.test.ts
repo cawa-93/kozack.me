@@ -11,7 +11,7 @@ import { createRng } from "../src/sim/rng";
 import type { Save } from "../src/sim/types";
 import { facingFromTiles } from "../src/view/anim/catfacing";
 import { EYES, eyesFrame } from "../src/view/iso/personlook";
-import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, shotFace, shotPlace, showFace, SLEEP_TURN } from "../src/view/iso/personspot";
+import { BATH_FACE, GLIDE_JUMP, glideOffset, personSpot, shotFace, shotPlace, showFace, SLEEP_TURN, TOUCH_FACE, touchFacing } from "../src/view/iso/personspot";
 import { isoObjectLook } from "../src/view/world/objects";
 import { withCatCorner } from "./helpers";
 
@@ -108,6 +108,33 @@ describe("personSpot: де видно персонажа", () => {
     state.home.messes.push({ id: 77, kind: "vomit", x: 9.5, y: 9.5, cat: null });
     state.character.activity = { kind: "use", target: "mess:77", progress: 0 };
     expect(personSpot(state, "clean").face).toEqual({ x: 0, y: 1 });
+  });
+});
+
+describe("touchFacing: гладить чи грається — лицем до кота, якого намальовано", () => {
+  const feet = { x: 100, y: 200 };
+
+  it("кіт обабіч (юрба) — дзеркалом до нього, ракурсом `front`, хоч би куди персонаж дивився перед тим", () => {
+    // Юрба ставить кота на `CROWD.beside` × розмір від персонажа й на `front` ближче до камери.
+    for (const prev of [null, { view: "front", flip: false }, { view: "front", flip: true }, { view: "back", flip: false }, { view: "back", flip: true }] as const) {
+      expect(touchFacing(feet, { x: feet.x - 56, y: feet.y + 3 }, prev)).toEqual({ view: "front", flip: true });
+      expect(touchFacing(feet, { x: feet.x + 56, y: feet.y + 3 }, prev)).toEqual({ view: "front", flip: false });
+      // Кошеня (розмір ≈ 0,5) — ближче, той самий бік.
+      expect(touchFacing(feet, { x: feet.x - 28, y: feet.y + 1.5 }, prev)).toEqual({ view: "front", flip: true });
+    }
+  });
+
+  it("кіт під самими ногами — ліво й право як були; помітно позаду (ліжко, підвіконня) — ракурс `back` з гістерезисом", () => {
+    const prev = { view: "front", flip: true } as const;
+    expect(touchFacing(feet, { x: feet.x + TOUCH_FACE.side / 2, y: feet.y + 30 }, prev)).toEqual({ view: "front", flip: true });
+    expect(touchFacing(feet, { x: feet.x + TOUCH_FACE.side / 2, y: feet.y + 30 }, null).flip).toBe(false);
+    const behind = touchFacing(feet, { x: feet.x + 30, y: feet.y - TOUCH_FACE.behind - 1 }, prev);
+    expect(behind).toEqual({ view: "back", flip: false });
+    // Трохи нижче за межу — ще `back` (гістерезис), нижче за межу мінус гістерезис — `front`.
+    expect(touchFacing(feet, { x: feet.x + 30, y: feet.y - TOUCH_FACE.behind + 1 }, behind).view).toBe("back");
+    expect(touchFacing(feet, { x: feet.x + 30, y: feet.y - TOUCH_FACE.behind + TOUCH_FACE.hysteresis + 1 }, behind).view).toBe("front");
+    // Кіт на дивані перед персонажем: корінь піднято на сидіння (≈ 34), а підлога під ним ≈ 22 нижче за ноги — `front`.
+    expect(touchFacing(feet, { x: feet.x - 30, y: feet.y + 22 - 34 }, null)).toEqual({ view: "front", flip: true });
   });
 });
 

@@ -816,7 +816,7 @@ export class IsoCatsView implements CatsPart {
 
   points(cat: number): CatPoints | null {
     const view = this.views.get(cat);
-    return view ? { head: view.head, back: view.back, mouth: view.mouth, facing: view.facing, scale: view.scale, rigShown: view.rigShown } : null;
+    return view ? { head: view.head, back: view.back, mouth: view.mouth, root: view.root, facing: view.facing, scale: view.scale, rigShown: view.rigShown } : null;
   }
 
   /**
