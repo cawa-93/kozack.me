@@ -449,7 +449,9 @@ describe("на місці", () => {
       owns.add(slot);
       const cars = lotCars(seed);
       counts.add(cars.length);
-      expect(cars.length).toBeLessThanOrEqual(2);
+      // «Кілька запаркованих машин» (§8.5): не менше двох — порожньою чи з однією машиною парковка не буває.
+      expect(cars.length).toBeGreaterThanOrEqual(2);
+      expect(cars.length).toBeLessThanOrEqual(3);
       const slots = cars.map((car) => car.slot);
       expect(slots).not.toContain(slot);
       expect(new Set(slots).size).toBe(slots.length);
@@ -462,9 +464,9 @@ describe("на місці", () => {
         kinds.add(car.look.kind);
       }
     }
-    // Своє — будь-яке, крім крайнього правого (задки з нього — за майданчик); поруч 0, 1 чи 2 машини різних видів.
+    // Своє — будь-яке, крім крайнього правого (задки з нього — за майданчик); поруч 2 чи 3 машини різних видів.
     expect([...owns].sort()).toEqual([0, 1, 2]);
-    expect([...counts].sort()).toEqual([0, 1, 2]);
+    expect([...counts].sort()).toEqual([2, 3]);
     expect(kinds.size).toBe(TRAFFIC_KINDS.length);
   });
 

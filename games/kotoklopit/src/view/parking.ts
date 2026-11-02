@@ -153,7 +153,8 @@ function lotLayout(seed: number): LotLayout {
   // Крайнє праве місце — ніколи не своє: задки з нього праворуч машина виїхала б за майданчик.
   const own = rng.int(0, slots - 2);
   const free = Array.from({ length: slots }, (_, i) => i).filter((i) => i !== own);
-  const count = rng.int(0, 2);
+  // Поруч «кілька запаркованих машин» (§8.5): дві чи три — з трьох вільних місць, тож порожньою парковка не буває.
+  const count = rng.int(2, 3);
   const colors = TRAFFIC_COLORS.map((_, i) => i);
   const cars: LotLayout["cars"] = [];
   for (let n = 0; n < count && free.length > 0; n++) {
@@ -170,7 +171,7 @@ export function ownSlot(seed: number): number {
   return lotLayout(seed).own;
 }
 
-/** Запарковані машини (0–2) на інших місцях: номер місця й вигляд (вид і колір потоку, різні кольори) — із зерна поїздки. */
+/** Запарковані машини (2–3) на інших місцях: номер місця й вигляд (вид і колір потоку, різні кольори) — із зерна поїздки. */
 export function lotCars(seed: number): readonly { slot: number; look: TrafficLook }[] {
   return lotLayout(seed).cars;
 }
