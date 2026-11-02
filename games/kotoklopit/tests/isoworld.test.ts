@@ -34,6 +34,8 @@ import {
   sinkState,
   stoveState,
   storageOverlays,
+  TRACE_OVERLAYS,
+  traceFrame,
   trashState,
   trinketFrame,
   vacuumState,
@@ -85,6 +87,10 @@ function framesOf(state: GameState): IsoFrame[] {
   if (state.home.appliances.robot) frames.push(robotFrame(state, state.home.appliances.robot));
   for (const mess of state.home.messes) frames.push(messFrame(mess.kind));
   for (const t of TRINKETS) frames.push(trinketFrame(t.kind, state.home.trinkets?.[t.kind] !== undefined));
+  for (const overlay of TRACE_OVERLAYS) {
+    const trace = traceFrame(state, overlay);
+    if (trace) frames.push(trace);
+  }
   return frames;
 }
 

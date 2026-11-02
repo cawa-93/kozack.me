@@ -5,10 +5,11 @@
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config";
 import type { GameEvent } from "../../sim/events";
-import { objectAt } from "../../sim/home";
+import { objectAt, type RoomId } from "../../sim/home";
 import { robotProgress } from "../../sim/household";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
-import type { BowlItem, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, WaterItem } from "../../sim/types";
+import { CAT_TRACES, hasTrace } from "../../sim/traces";
+import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
 import type { ArtId } from "../art/types";
 
@@ -151,6 +152,96 @@ export function opensDoor(event: GameEvent): boolean {
 export function doorState(state: GameState, sinceOpened: number): "closed" | "open" {
   if (state.cats.some((cat) => cat.away === "stairs")) return "open";
   return sinceOpened >= 0 && sinceOpened < DOOR_OPEN_MS ? "open" : "closed";
+}
+
+// --- Котячі сліди -----------------------------------------------------------------------------
+
+/**
+ * На чому лежить накладка котячого сліду (§9.12, «Котячі сліди в квартирі»): плита підлоги кімнати, задня стіна кімнати,
+ * сегмент внутрішньої стіни (`WALL_SEGMENTS`), річ квартири (`OBJECTS`), прочинене полотно вхідних дверей (`DOOR_BOXES.leaf`)
+ * чи передні стінки верхньої коробки купи ящиків (`BOXES_FRONT`). Вигляд ставить накладку в ту саму точку, що й господаря,
+ * тією самою глибиною трохи над ним і показує лише разом із ним.
+ */
+export type TraceHost =
+  | { readonly kind: "floor"; readonly room: RoomId }
+  | { readonly kind: "wall"; readonly room: RoomId }
+  | { readonly kind: "segment"; readonly segment: ArtId }
+  | { readonly kind: "object"; readonly object: string }
+  | { readonly kind: "door-leaf" }
+  | { readonly kind: "boxes-front" };
+
+/** Накладка сліду: запис маніфесту `env/trace/…` і її господар. */
+export interface TraceOverlay {
+  readonly trace: CatTrace;
+  readonly id: ArtId;
+  readonly host: TraceHost;
+}
+
+/**
+ * Накладки кожного сліду (запис на кожне значення `CatTrace` — тип не дасть забути новий). Слід, що лежить на кількох кадрах,
+ * — кілька накладок: сліди на коробках — і на купі, і на передніх стінках верхньої коробки поверх кота в ній.
+ */
+const OVERLAYS: Record<CatTrace, readonly Omit<TraceOverlay, "trace">[]> = {
+  sofa: [{ id: "env/trace/sofa", host: { kind: "object", object: "sofa" } }],
+  doorframe: [{ id: "env/trace/doorframe", host: { kind: "segment", segment: "env/wall/inner/row5-x17" } }],
+  rug: [{ id: "env/trace/rug", host: { kind: "floor", room: "living" } }],
+  cabinet: [{ id: "env/trace/cabinet", host: { kind: "object", object: "cat-cabinet" } }],
+  door: [{ id: "env/trace/door", host: { kind: "door-leaf" } }],
+  wardrobe: [{ id: "env/trace/wardrobe", host: { kind: "object", object: "wardrobe" } }],
+  "boxes-claws": [
+    { id: "env/trace/boxes-claws", host: { kind: "object", object: "boxes" } },
+    { id: "env/trace/boxes-claws/front", host: { kind: "boxes-front" } },
+  ],
+  "boxes-chewed": [
+    { id: "env/trace/boxes-chewed", host: { kind: "object", object: "boxes" } },
+    { id: "env/trace/boxes-chewed/front", host: { kind: "boxes-front" } },
+  ],
+  "bath-mat": [{ id: "env/trace/bath-mat", host: { kind: "floor", room: "bathroom" } }],
+  "bedroom-rug": [{ id: "env/trace/bedroom-rug", host: { kind: "floor", room: "bedroom" } }],
+  wallpaper: [{ id: "env/trace/wallpaper", host: { kind: "wall", room: "living" } }],
+  lino: [{ id: "env/trace/lino", host: { kind: "floor", room: "kitchen" } }],
+};
+
+/** Усі накладки котячих слідів (§9.12) у порядку `CAT_TRACES`. */
+export const TRACE_OVERLAYS: readonly TraceOverlay[] = CAT_TRACES.flatMap((trace) => OVERLAYS[trace].map((overlay) => ({ trace, ...overlay })));
+
+/** Кадр-господар накладки: з нього маніфест бере полотно, pivot, роздільність і стани накладки. */
+export function traceHostArt(host: TraceHost): ArtId {
+  switch (host.kind) {
+    case "floor":
+    case "wall":
+      return `env/room/${host.room}/${host.kind}`;
+    case "segment":
+      return host.segment;
+    case "object":
+      return `env/${host.object}`;
+    case "door-leaf":
+      return "env/door/leaf";
+    case "boxes-front":
+      return "env/boxes/front";
+  }
+}
+
+/**
+ * Стан господаря, який повторює накладка: шафка з кормом відчинена чи зачинена (`cabinetLook`), купа ящиків — скільки коробок
+ * (`boxesState`); решта господарів станів не має (null). Купи немає — undefined: господаря не видно, накладки теж.
+ */
+function hostState(state: GameState, host: TraceHost): string | null | undefined {
+  if (host.kind === "boxes-front" || (host.kind === "object" && host.object === "boxes")) return boxesState(state) ?? undefined;
+  if (host.kind === "object" && host.object === "cat-cabinet") return cabinetLook(state).body.state;
+  return null;
+}
+
+/**
+ * Кадр накладки сліду (§9.12, «Котячі сліди в квартирі»): сліду ще немає (`traces`) чи не видно купи ящиків, на якій він
+ * лежить, — null (накладки не видно); інакше — той самий стан, що в господаря. З'явився слід посеред дня — наступного ж
+ * кадру накладка є, без анімації. Прочинене полотно дверей видно лише тоді, коли двері відчинені (`doorState`): накладку на
+ * ньому вигляд показує разом із полотном.
+ */
+export function traceFrame(state: GameState, overlay: TraceOverlay): IsoFrame | null {
+  if (!hasTrace(state, overlay.trace)) return null;
+  const hosted = hostState(state, overlay.host);
+  return hosted === undefined ? null : frame(overlay.id, hosted);
 }
 
 /** Накладки аптечки: ласощі, нашийник і м'ята — у порядку їхніх запасів у `STORAGES` (після таблеток і крапель). */

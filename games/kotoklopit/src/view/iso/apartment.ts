@@ -1,12 +1,14 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
 // передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
-// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера. Кадри — з маніфесту арту (`addArt`), тож поки
-// арту немає, на їхньому місці заглушки потрібного розміру й pivot.
+// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди. Кадри — з маніфесту арту
+// (`addArt`), тож поки арту немає, на їхньому місці заглушки потрібного розміру й pivot.
 //
 // Що показати — зі стану гри (`looks.ts`).
 // Глибина: плити кімнат, вікна й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін — коробки в
 // реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у її
-// проміжку глибини. Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола
+// проміжку глибини. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
+// (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами, шпалери —
+// над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола
 // з комп'ютером і кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що
 // сидить, між ними; засунутий під стіл — під коробкою стола (сидіння) і на ній (спинка), як частина стола.
 
@@ -47,20 +49,35 @@ import {
   stoveState,
   STORAGE_OVERLAYS,
   storageOverlays,
+  TRACE_OVERLAYS,
+  traceFrame,
   trashState,
   trinketFrame,
   vacuumState,
   type IsoFrame,
+  type TraceHost,
+  type TraceOverlay,
 } from "./looks";
 
-/** Порядок шарів тла: підлога, задні стіни, вікна на них, папір на стіні ванної. */
-const BACKDROP = { floor: ISO_BACKDROP_DEPTH, wall: ISO_BACKDROP_DEPTH + 1, window: ISO_BACKDROP_DEPTH + 2, decal: ISO_BACKDROP_DEPTH + 3 } as const;
+/**
+ * Порядок шарів тла: підлога, котячі сліди на підлогах (над усіма плитами підлог), задні стіни, подерті шпалери на стіні
+ * вітальні, вікна на стінах, папір на стіні ванної.
+ */
+const BACKDROP = {
+  floor: ISO_BACKDROP_DEPTH,
+  floorTrace: ISO_BACKDROP_DEPTH + 0.5,
+  wall: ISO_BACKDROP_DEPTH + 1,
+  wallTrace: ISO_BACKDROP_DEPTH + 1.5,
+  window: ISO_BACKDROP_DEPTH + 2,
+  decal: ISO_BACKDROP_DEPTH + 3,
+} as const;
 
 /**
  * Глибина того, що лежить на речі, — над нею, у її проміжку (`ISO_DEPTH_SLOT` 0,01) і нижче за його половину: кіт, що
- * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`).
+ * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
+ * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
 
 /** Півширина стільця на екрані, одиниці арту (`IsoPointOptions.half`): з ким його малюнок може перекритися. */
 const CHAIR_HALF = 44;
@@ -111,6 +128,25 @@ interface Wall {
   box: IsoBoxHandle;
   footprint: IsoFootprint;
   alpha: number;
+  /** Котячі сліди на сегменті (подертий одвірок): згасають разом із ним. */
+  marks: readonly TraceMark[];
+}
+
+/**
+ * Накладка котячого сліду не на речі квартири (§9.12): на плиті підлоги чи стіни кімнати, сегменті стіни, прочиненому
+ * полотні дверей чи передніх стінках ящиків. Зображення одне на весь час (сховане, поки сліду немає); глибину йому ставить
+ * господар — у своєму проміжку, на `piece.offset` вище (`marksAt`).
+ */
+interface TraceMark {
+  overlay: TraceOverlay;
+  piece: Piece;
+}
+
+/** Накладка сліду на речі квартири (як решта того, що на речі, — `put`) і її зсув глибини над річчю. */
+interface ObjectMark {
+  overlay: TraceOverlay;
+  object: string;
+  offset: number;
 }
 
 /**
@@ -150,6 +186,9 @@ export class IsoApartmentView implements ApartmentPart {
   /** Передні стінки верхньої коробки купи ящиків: точка на коробці `boxes`, після кота в ній. */
   private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
   private readonly chairs: Chair[] = [];
+  /** Накладки котячих слідів поза речами (`TraceMark`) і на речах (`ObjectMark`). */
+  private readonly marks: TraceMark[] = [];
+  private readonly objectMarks: readonly ObjectMark[] = objectMarkList();
   /** Куди стає шматок стільця в реєстрі глибини (`seatSpot`): один на всі, щоб не виділяти щокадру. */
   private readonly seatSpot: SeatSpot = { x: 0, y: 0, box: null, under: false, above: false };
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
@@ -161,11 +200,14 @@ export class IsoApartmentView implements ApartmentPart {
     this.glow = new IsoHighlight(scene, layer);
     this.fx = new IsoFxView(ctx);
 
-    // Плити кімнат: підлога й задні стіни кожної — в одну точку, верхню вершину ромба першої клітинки кімнати.
+    // Плити кімнат: підлога й задні стіни кожної — в одну точку, верхню вершину ромба першої клітинки кімнати. Котячі сліди
+    // на них — у ту саму точку: на підлогах — над усіма плитами підлог і під стінами, на стіні — над нею й під вікнами.
     for (const room of ROOMS) {
       const at = ISO.toScreen({ x: room.x, y: room.y });
       this.backdrop.push(this.art(`env/room/${room.id}/floor`, at, BACKDROP.floor));
       this.backdrop.push(this.art(`env/room/${room.id}/wall`, at, BACKDROP.wall));
+      this.marksOn((host) => host.kind === "floor" && host.room === room.id, at, BACKDROP.floorTrace);
+      this.marksOn((host) => host.kind === "wall" && host.room === room.id, at, BACKDROP.wallTrace);
     }
     // Вікна — накладки на задню стіну в клітинці стіни.
     for (const pane of WINDOWS) {
@@ -175,13 +217,18 @@ export class IsoApartmentView implements ApartmentPart {
     this.toiletRoll = { image: this.art("env/toilet-roll", ISO.toScreen(TOILET_ROLL), BACKDROP.decal), key: "", offset: 0 };
     this.backdrop.push(this.toiletRoll.image);
 
-    // Внутрішні стіни й передні плінтуси — коробки: вони закривають тих, хто за ними.
+    // Внутрішні стіни й передні плінтуси — коробки: вони закривають тих, хто за ними. Слід на сегменті — тією самою коробкою.
     for (const segment of WALL_SEGMENTS) {
       const { rect } = segment;
-      const image = this.art(segment.id, ISO.toScreen(rect), 0);
+      const at = ISO.toScreen(rect);
+      const image = this.art(segment.id, at, 0);
+      const marks = this.marksOn((host) => host.kind === "segment" && host.segment === segment.id, at);
       const footprint = { x0: rect.x, y0: rect.y, x1: rect.x + rect.w, y1: rect.y + rect.h };
-      const box = this.depth.addBox(footprint, (d) => image.setDepth(d));
-      const wall = { segment, image, box, footprint, alpha: 1 };
+      const box = this.depth.addBox(footprint, (d) => {
+        image.setDepth(d);
+        marksAt(marks, d);
+      });
+      const wall = { segment, image, box, footprint, alpha: 1, marks };
       this.walls.push(wall);
       if (segment.kind === "inner") {
         this.inner.push(wall);
@@ -200,7 +247,16 @@ export class IsoApartmentView implements ApartmentPart {
     this.door = this.openDoor(this.get("door"));
     const boxes = this.get("boxes");
     const front = this.art("env/boxes/front", boxes.at, 0).setVisible(false);
-    this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: this.depth.addPoint((d) => front.setDepth(d), { half: BOXES_FRONT.half }) };
+    // Сліди на передніх стінках — тією самою точкою, одразу над ними.
+    const frontMarks = this.marksOn((host) => host.kind === "boxes-front", boxes.at);
+    const frontPoint = this.depth.addPoint(
+      (d) => {
+        front.setDepth(d);
+        marksAt(frontMarks, d);
+      },
+      { half: BOXES_FRONT.half },
+    );
+    this.boxesFront = { piece: { image: front, key: "", offset: 0 }, point: frontPoint };
     for (const seat of SEATS) this.chairs.push(this.chair(seat));
   }
 
@@ -214,10 +270,25 @@ export class IsoApartmentView implements ApartmentPart {
     return { seat, pieces: { seat: piece("seat"), backrest: piece("backrest") }, center, target: { ...center }, placed: { x: Number.NaN, y: Number.NaN }, sitting: false };
   }
 
+  /**
+   * Накладки котячих слідів (`TRACE_OVERLAYS`) на господарі, якого вибирає `match`, у точці `at`: сховані, доки сліду немає
+   * (`drawTraces`). Глибина — `depth` (плити кімнат); господар із реєстру глибини ставить її сам (`marksAt`).
+   */
+  private marksOn(match: (host: TraceHost) => boolean, at: Point, depth = 0): TraceMark[] {
+    const marks = TRACE_OVERLAYS.filter((overlay) => match(overlay.host)).map((overlay, i) => ({
+      overlay,
+      piece: { image: this.art(overlay.id, at, depth).setVisible(false), key: "", offset: ON.trace + i * ON.step },
+    }));
+    this.marks.push(...marks);
+    return marks;
+  }
+
   /** Шматки відчинених дверей (`OpenDoor`): поки двері зачинені, їхніх коробок у порядку немає. */
   private openDoor(door: Thing): OpenDoor {
     const leaf = this.art("env/door/leaf", door.at, 0).setVisible(false);
     const post = this.art("env/door/post", door.at, 0).setVisible(false);
+    // Подряпини на внутрішньому боці полотна — тією самою коробкою, одразу над ним.
+    const leafMarks = this.marksOn((host) => host.kind === "door-leaf", door.at);
     const view: OpenDoor = {
       owner: door,
       body: this.depth.addBox(DOOR_BOXES.body, (d) => {
@@ -225,7 +296,10 @@ export class IsoApartmentView implements ApartmentPart {
         door.body.image.setDepth(d);
       }),
       leaf,
-      leafBox: this.depth.addBox(DOOR_BOXES.leaf, (d) => leaf.setDepth(d)),
+      leafBox: this.depth.addBox(DOOR_BOXES.leaf, (d) => {
+        leaf.setDepth(d);
+        marksAt(leafMarks, d);
+      }),
       post,
       postBox: this.depth.addBox(DOOR_BOXES.post, (d) => post.setDepth(d)),
       open: false,
@@ -314,6 +388,7 @@ export class IsoApartmentView implements ApartmentPart {
     }
     this.drawDoor(state, frame.time);
     this.drawStates(state);
+    this.drawTraces(state);
     this.drawSurfaces(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
@@ -406,6 +481,23 @@ export class IsoApartmentView implements ApartmentPart {
     }
   }
 
+  /**
+   * Котячі сліди (§9.12, «Котячі сліди в квартирі»; `traceFrame`): накладка є, поки є слід і видно господаря, — у стані
+   * господаря (шафка відчинена чи зачинена, скільки коробок у купі); подряпини на дверях — лише разом із прочиненим
+   * полотном. Слід з'явився посеред дня — накладка є з цього ж кадру. Зображень щокадру не створюємо: накладки поза речами
+   * створено разом із квартирою, а на речах — з першою появою (`put`).
+   */
+  private drawTraces(state: GameState): void {
+    for (const mark of this.objectMarks) this.put(this.get(mark.object), mark.overlay.id, traceFrame(state, mark.overlay), mark.offset);
+    for (const mark of this.marks) {
+      const look = traceFrame(state, mark.overlay);
+      if (look) setPiece(mark.piece, look);
+      // Накладки, якої ще не намальовано, не видно: маджентова заглушка на все полотно господаря закрила б його.
+      const shown = look !== null && (mark.overlay.host.kind !== "door-leaf" || this.door.open) && !isArtStub(mark.piece.image);
+      mark.piece.image.setVisible(shown);
+    }
+  }
+
   /** Страви на поверхнях (плита показує свою сковороду сама) і дрібнички на своїх місцях (§8.7, §9.12). */
   private drawSurfaces(state: GameState): void {
     const { home } = state;
@@ -436,6 +528,7 @@ export class IsoApartmentView implements ApartmentPart {
       wall.alpha += (target - wall.alpha) * Math.min(1, dt * FADE_RATE);
       if (Math.abs(wall.alpha - target) < 0.01) wall.alpha = target;
       wall.image.setAlpha(wall.alpha);
+      for (const mark of wall.marks) mark.piece.image.setAlpha(wall.alpha);
     }
   }
 
@@ -476,6 +569,8 @@ export class IsoApartmentView implements ApartmentPart {
     this.door.post.destroy();
     this.boxesFront.point.remove();
     this.boxesFront.piece.image.destroy();
+    for (const mark of this.marks) mark.piece.image.destroy();
+    this.marks.length = 0;
     this.wirePoint.remove();
     this.wire.image.destroy();
     for (const chair of this.chairs) {
@@ -509,6 +604,25 @@ export class IsoApartmentView implements ApartmentPart {
     this.glow.request(thing.body.image, thing.look.footprint, thing.look.tall, alpha);
     return true;
   }
+}
+
+/** Накладки слідів на речах квартири: кожна — одразу над річчю, кілька на одній речі — по черзі (`ON.step`). */
+function objectMarkList(): ObjectMark[] {
+  const count = new Map<string, number>();
+  const marks: ObjectMark[] = [];
+  for (const overlay of TRACE_OVERLAYS) {
+    if (overlay.host.kind !== "object") continue;
+    const object = overlay.host.object;
+    const i = count.get(object) ?? 0;
+    count.set(object, i + 1);
+    marks.push({ overlay, object, offset: ON.trace + i * ON.step });
+  }
+  return marks;
+}
+
+/** Глибина накладок слідів на господарі з глибиною `depth`: кожна — на свій зсув вище (`TraceMark`). */
+function marksAt(marks: readonly TraceMark[], depth: number): void {
+  for (const mark of marks) mark.piece.image.setDepth(depth + mark.piece.offset);
 }
 
 /** Показати кадр на частині речі, якщо він інший, ніж зараз. */
