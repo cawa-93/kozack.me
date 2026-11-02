@@ -19,6 +19,32 @@ export const DAYS_PER_WEEK = 7;
 export const TOTAL_WEEKS = 50;
 export const TOTAL_DAYS = TOTAL_WEEKS * DAYS_PER_WEEK;
 
+/**
+ * День і ніч (§8.9, рішення автора 2026-11-02) — хвилини доби, однакові щодня (сезонів немає). Лише вигляд: сим від них не
+ * залежить, а читає їх `src/view/light/daylight.ts`. Ніч — до `dawn` і з `night`; теплий ранок — `dawn`–`morningEnd` (темрява
+ * сходить до `sunrise`); день `morningEnd`–`eveningStart` — рівно як було; вечір — `eveningStart`–`night` (присмерк густішає
+ * після `sunset`). Тепло ранку найсильніше `warmMorning`, вечора — `warmEvening`. Лампи вмикаються близько `lampsOn` і
+ * гаснуть близько `lampsOff`, плавно за `lampFade` хвилин. Сонце світить у вікна вранці `sunMorning` (вікна стіни y = 0 —
+ * спальня й кухня) і ввечері `sunEvening` (вікно стіни x = 0 — вітальня).
+ */
+export const DAYLIGHT = {
+  dawn: 5 * 60,
+  sunrise: 7 * 60,
+  morningEnd: 9 * 60 + 30,
+  eveningStart: 18 * 60,
+  sunset: 19 * 60 + 30,
+  night: 21 * 60,
+  /** Частка нічної темряви на сході (`sunrise`) і заході (`sunset`) сонця. */
+  twilight: 0.35,
+  warmMorning: { from: 6 * 60, to: 8 * 60 },
+  warmEvening: { from: 19 * 60, to: 20 * 60 },
+  lampsOn: 20 * 60,
+  lampsOff: 6 * 60 + 30,
+  lampFade: 20,
+  sunMorning: { from: 6 * 60, to: 9 * 60 + 30 },
+  sunEvening: { from: 18 * 60, to: 20 * 60 + 15 },
+} as const;
+
 // Сон (§8.8). Усі вікна — у годинах до наступного пробудження.
 export const SLEEP_NEED_HOURS = 8;
 /** Лягти можна, коли до пробудження лишається 10 годин або менше. */
