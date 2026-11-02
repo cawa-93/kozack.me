@@ -389,6 +389,7 @@ export class DayScene extends Phaser.Scene {
     this.moving = false;
     this.catPress = null;
     this.touch.reset();
+    this.overlay.setAway(false);
     this.overlay.setAside(false);
     if (!this.race.depart()) this.scene.launch("race", { mode: "home" } satisfies RoadStart);
     this.scene.sleep();
@@ -401,8 +402,9 @@ export class DayScene extends Phaser.Scene {
 
   /**
    * На місці (§8.5 «На місці — кадр парковки»): поки сцена дороги на парковці (чи її вже запущено туди), квартири, панелі й
-   * баблів не видно — день схований, і під карткою пункту видно кадр парковки; картку притиснуто ліворуч, якщо праворуч від неї
-   * вміщається парковка (`RaceScene.parkingAside`). Щокадру: пробудження дня (`wake`) саме вмикає його видимість.
+   * баблів не видно — день схований, і під карткою пункту видно кадр парковки; тло під карткою затемнене слабше (`setAway`), а
+   * саму картку притиснуто ліворуч, якщо праворуч від неї вміщається парковка (`RaceScene.parkingAside`). Щокадру: пробудження дня
+   * (`wake`) саме вмикає його видимість.
    */
   private showParking(): void {
     const state = this.state;
@@ -412,6 +414,7 @@ export class DayScene extends Phaser.Scene {
     if (parked) this.parkingRequested = false;
     const away = visit && (parked || this.parkingRequested);
     this.scene.setVisible(!away);
+    this.overlay.setAway(parked);
     this.overlay.setAside(parked && this.race.parkingAside);
   }
 
