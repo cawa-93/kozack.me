@@ -29,6 +29,7 @@ import { iconArt } from "../view/iconnames";
 import {
   arrivalFrame,
   arrivalStart,
+  departureFrame,
   lotInFrame,
   lotScreenY,
   parkedCars,
@@ -289,6 +290,23 @@ export class RaceScene extends Phaser.Scene {
     return this.parked !== null && this.place.aside;
   }
 
+  /**
+   * «Додому» з місця (§8.5 «На місці — кадр парковки»): машина виїжджає з парковки й без розриву йде дорога додому — від'їзд
+   * (`departureFrame`) з того самого кадру, без затемнення на початку; пропуск натисканням, як у дорозі додому. Повертає false,
+   * якщо машина не стоїть на парковці (знайда, сцени дороги немає): тоді день запускає дорогу додому з чорного сам.
+   */
+  depart(): boolean {
+    const parked = this.parked;
+    if (!parked || !this.sys.isActive()) return false;
+    this.parked = null;
+    this.home = { ms: 0, save: this.session.save, skipped: false, from: "parked", at: { spot: parked.spot, destination: parked.destination } };
+    this.stick = null;
+    this.g.clear();
+    this.label.setVisible(false);
+    this.listenSkip();
+    return true;
+  }
+
   /** Чи йде час дороги: пауза розробника чи заглушка «Поверніть телефон» (§10) зупиняють і гонку, і анімації. */
   private running(): boolean {
     return !this.session.paused && !isRotateNoticeShown();
@@ -432,7 +450,9 @@ export class RaceScene extends Phaser.Scene {
 
   /**
    * Дорога додому (§8.5): катсцена йде, поки гра не стоїть, і закінчується сама чи натисканням; тоді день — він і рахує час
-   * дороги (`goHome`), як раніше. Гру замінили посеред катсцени — день одразу, і дороги він не рахує.
+   * дороги (`goHome`), як раніше. З місця вона починається від'їздом із парковки (`departureFrame`: світ зсунутий так само, як на
+   * місці, і повертається до середини дороги), інакше — з чорного (`homeRoadFrame`). Гру замінили посеред катсцени — день
+   * одразу, і дороги він не рахує. Перезавантаження сторінки посеред неї — знову кадр на місці й картка пункту: сим ще на місці.
    */
   private updateHome(delta: number): void {
     const home = this.home;
@@ -441,8 +461,17 @@ export class RaceScene extends Phaser.Scene {
     if (home.skipped || this.session.save !== home.save) return this.finish({ mode: "home" });
     home.ms += this.animationMs(delta);
     const view = this.layout();
-    const frame = homeRoadFrame(home.ms, view.height);
-    art.drawFrame(homeRoad(frame, view.k), view);
+    let frame: { dark: number; done: boolean };
+    if (home.from === "parked") {
+      this.place = this.parkingPlace(view);
+      const departure = departureFrame(home.ms, view.height, home.at.spot);
+      art.drawFrame(parkingRoad(departure, home.at.destination), this.panned(view, departure.pan));
+      frame = departure;
+    } else {
+      const road = homeRoadFrame(home.ms, view.height);
+      art.drawFrame(homeRoad(road, view.k), view);
+      frame = road;
+    }
     this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
     if (frame.done) this.finish({ mode: "home" });
   }
