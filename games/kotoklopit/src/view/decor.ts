@@ -90,7 +90,7 @@ export const CANDLES: readonly Candle[] = [
   { host: "table", at: { x: 13.3, y: 3.35 }, z: 54 },
   { host: "counter-right", at: { x: 16.42, y: 1.3 }, z: 62 },
   { host: "sink", at: { x: 11.22, y: 1.25 }, z: 70 },
-  { host: "computer", at: { x: 7.78, y: 6.22 }, z: 54 },
+  { host: "computer", at: { x: 7.84, y: 6.18 }, z: 54 },
   { host: "sill-living", at: { x: 1.14, y: 8.43 }, z: 70 },
   { host: "sill-bedroom", at: { x: 4.17, y: 1.14 }, z: 70 },
 ];

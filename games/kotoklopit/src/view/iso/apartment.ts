@@ -1,12 +1,15 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
 // передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
-// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7). Кадри —
-// з маніфесту арту (`addArt`), тож поки арту немає, на їхньому місці заглушки потрібного розміру й pivot.
+// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7), а також
+// декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра, бойлер, зарядна
+// станція й свічки дня відключення. Кадри — з маніфесту арту (`addArt`), тож поки арту немає, на їхньому місці заглушки
+// потрібного розміру й pivot.
 //
 // Що показати — зі стану гри (`looks.ts`).
-// Глибина: плити кімнат, вікна, павутина й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін —
-// коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у
-// її проміжку глибини. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
+// Глибина: плити кімнат, вікна, павутина, папір, бра й бойлер на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й
+// сегменти стін — коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва,
+// дрібничка, свічка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
+// реєстрі, як дріт. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
 // (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами,
 // шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня
 // стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола з комп'ютером і кухонного
@@ -16,17 +19,19 @@
 import type Phaser from "phaser";
 
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
-import { isPresent, objectById, OBJECTS, ROOMS, roomAt, TOILET_ROLL, TRINKETS, WINDOWS, WIRE_TILE, type HomeObject } from "../../sim/home";
+import { isPresent, objectById, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
 import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
+import { BOILER, CANDLES, PANES, POWER_STATION, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
+import { decorLook, type DecorLook } from "./decorlook";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
 import { artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
@@ -84,7 +89,10 @@ export const BACKDROP = {
  * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
  * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, candle: 0.0027, lock: 0.003 } as const;
+
+/** Півширина зарядної станції на екрані, одиниці арту (`IsoPointOptions.half`): кабель до системного блока — на 62 ліворуч. */
+const STATION_HALF = 62;
 
 /** Півширина стільця на екрані, одиниці арту (`IsoPointOptions.half`): з ким його малюнок може перекритися. */
 const CHAIR_HALF = 44;
@@ -186,6 +194,18 @@ export class IsoApartmentView implements ApartmentPart {
   /** Павутина за місцем `DUST_SPOTS` (§8.7): зображення з першою появою, далі лише ховається й показується. */
   private readonly cobwebs = new Map<number, Phaser.GameObjects.Image>();
   private readonly toiletRoll: Piece;
+  /** Бра й бойлер на задніх стінах (тло, як рулон паперу): стан — за світлом доби й електрикою (`decorLook`). */
+  private readonly sconces: Piece[] = [];
+  private readonly boiler: Piece;
+  /** Зарядна станція дня відключення: на підлозі праворуч від стола з комп'ютером, точка реєстру. */
+  private readonly station: { image: Phaser.GameObjects.Image; point: IsoPointHandle; shown: boolean };
+  /** Свічки дня відключення на господарях (`CANDLES`): зсув від pivot господаря — точка поверхні під свічкою. */
+  private readonly candles: readonly { host: string; name: string; offset: Point }[] = CANDLES.map((candle, i) => {
+    const at = ISO.toScreen(candle.at);
+    const host = objectScreen(objectById(candle.host));
+    return { host: candle.host, name: `candle:${i}`, offset: { x: at.x - host.x, y: at.y - candle.z - host.y } };
+  });
+  private readonly decor: DecorLook = { sconce: "off", boiler: "on", station: false, candles: null };
   private readonly wire: Piece;
   private readonly wirePoint: IsoPointHandle;
   private readonly glow: IsoHighlight;
@@ -218,13 +238,21 @@ export class IsoApartmentView implements ApartmentPart {
       this.marksOn((host) => host.kind === "floor" && host.room === room.id, at, BACKDROP.floorTrace);
       this.marksOn((host) => host.kind === "wall" && host.room === room.id, at, BACKDROP.wallTrace);
     }
-    // Вікна — накладки на задню стіну в клітинці стіни.
-    for (const pane of WINDOWS) {
-      this.backdrop.push(this.art(`env/window/${roomAt(objectById(pane.sill)) ?? "living"}`, ISO.toScreen(pane.wall), BACKDROP.window));
-    }
-    // Рулон паперу на задній стіні ванної: його закриває все, що стоїть перед стіною.
+    // Вікна — накладки на задню стіну в клітинці стіни (`PANES`: над підвіконнями й кухонне без підвіконня, §8.9).
+    for (const pane of PANES) this.backdrop.push(this.art(`env/window/${pane.room}`, ISO.toScreen(pane.wall), BACKDROP.window));
+    // Рулон паперу на задній стіні ванної, бра й бойлер: їх закриває все, що стоїть перед стіною.
     this.toiletRoll = { image: this.art("env/toilet-roll", ISO.toScreen(TOILET_ROLL), BACKDROP.decal), key: "", offset: 0 };
     this.backdrop.push(this.toiletRoll.image);
+    for (const sconce of SCONCES) {
+      const piece = { image: this.art(sconce.id, ISO.toScreen(sconce.at), BACKDROP.decal), key: "", offset: 0 };
+      this.sconces.push(piece);
+      this.backdrop.push(piece.image);
+    }
+    this.boiler = { image: this.art("env/boiler", ISO.toScreen(BOILER.at), BACKDROP.decal), key: "", offset: 0 };
+    this.backdrop.push(this.boiler.image);
+    // Зарядна станція стоїть на підлозі перед стіною ряду 5 і праворуч від стола: точка в реєстрі (стіна за нею, стіл ліворуч).
+    const station = this.art("env/power-station", ISO.toScreen(POWER_STATION.at), 0).setVisible(false);
+    this.station = { image: station, point: this.depth.addPoint((d) => station.setDepth(d), { half: STATION_HALF }), shown: false };
 
     // Внутрішні стіни й передні плінтуси — коробки: вони закривають тих, хто за ними. Слід на сегменті — тією самою коробкою.
     for (const segment of WALL_SEGMENTS) {
@@ -362,10 +390,11 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Показати щось на речі (накладку, страву, дрібничку, замок) під назвою `name`: кадр `frame` (null — сховати), у точці
-   * кріплення `point` запису речі (без неї — у pivot речі, як накладки того самого полотна).
+   * Показати щось на речі (накладку, страву, дрібничку, свічку, замок) під назвою `name`: кадр `frame` (null — сховати), у
+   * точці кріплення `point` запису речі чи на зсуві `point` від її pivot (без нього — у pivot речі, як накладки того самого
+   * полотна).
    */
-  private put(thing: Thing, name: string, frame: IsoFrame | null, offset: number, point?: string): void {
+  private put(thing: Thing, name: string, frame: IsoFrame | null, offset: number, point?: string | Point): void {
     let piece = thing.extras.get(name);
     if (!frame) {
       piece?.image.setVisible(false);
@@ -377,7 +406,7 @@ export class IsoApartmentView implements ApartmentPart {
       thing.extras.set(name, piece);
     }
     setPiece(piece, frame);
-    const shift = point ? (artOffset(`env/${thing.object.id}`, point) ?? { x: 0, y: 0 }) : { x: 0, y: 0 };
+    const shift = typeof point === "string" ? (artOffset(`env/${thing.object.id}`, point) ?? { x: 0, y: 0 }) : (point ?? { x: 0, y: 0 });
     // Накладки, якої ще не намальовано, на вже намальованій речі не видно: маджентова заглушка на все полотно речі закрила
     // б еталон (холодильник F1a під накладкою наповнення A2). Коли накладку намалюють, вона з'явиться сама.
     const hidden = isArtStub(piece.image) && !isArtStub(thing.body.image);
@@ -398,7 +427,9 @@ export class IsoApartmentView implements ApartmentPart {
     this.drawDoor(state, frame.time);
     this.drawStates(state);
     this.drawTraces(state);
-    this.drawSurfaces(state);
+    const decor = decorLook(state, frame.lightMinute, this.decor);
+    this.drawSurfaces(state, decor);
+    this.drawDecor(decor);
     this.drawCobwebs(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
@@ -509,8 +540,11 @@ export class IsoApartmentView implements ApartmentPart {
     }
   }
 
-  /** Страви на поверхнях (плита показує свою сковороду сама) і дрібнички на своїх місцях (§8.7, §9.12). */
-  private drawSurfaces(state: GameState): void {
+  /**
+   * Страви на поверхнях (плита показує свою сковороду сама), дрібнички на своїх місцях (§8.7, §9.12) і свічки дня відключення
+   * (§4.1, `CANDLES`) — над дрібничками, у проміжку господаря: кіт, що виліз на річ, — над свічкою.
+   */
+  private drawSurfaces(state: GameState, decor: DecorLook): void {
     const { home } = state;
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
@@ -523,6 +557,23 @@ export class IsoApartmentView implements ApartmentPart {
       const thing = this.get(trinket.object);
       this.put(thing, `trinket:${trinket.kind}`, home.trinkets?.[trinket.kind] ? null : trinketFrame(trinket.kind, false), ON.trinket, trinket.kind);
     }
+    const candle: IsoFrame | null = decor.candles ? { id: "env/candle", state: decor.candles } : null;
+    for (const spot of this.candles) this.put(this.get(spot.host), spot.name, candle, ON.candle, spot.offset);
+  }
+
+  /**
+   * Декор на стінах і підлозі (§8.9, §4.1; `decorLook`): бра горять із лампами, індикатор бойлера — коли є електрика, зарядна
+   * станція стоїть біля стола з комп'ютером лише в день відключення.
+   */
+  private drawDecor(decor: DecorLook): void {
+    SCONCES.forEach((sconce, i) => setPiece(this.sconces[i]!, { id: sconce.id, state: decor.sconce }));
+    setPiece(this.boiler, { id: "env/boiler", state: decor.boiler });
+    const station = this.station;
+    if (decor.station === station.shown) return;
+    station.shown = decor.station;
+    station.image.setVisible(decor.station);
+    if (decor.station) station.point.place(POWER_STATION.at.x, POWER_STATION.at.y);
+    else station.point.hide();
   }
 
   /**
@@ -614,6 +665,8 @@ export class IsoApartmentView implements ApartmentPart {
     this.marks.length = 0;
     this.wirePoint.remove();
     this.wire.image.destroy();
+    this.station.point.remove();
+    this.station.image.destroy();
     for (const chair of this.chairs) {
       for (const piece of Object.values(chair.pieces)) {
         piece.point.remove();

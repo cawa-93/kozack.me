@@ -8,11 +8,13 @@ import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, STORAGE_LIMITS, WATER_CAPACITY } from "../src/sim/config";
 import { DUST_SPOTS, dustOf } from "../src/sim/dust";
 import { STORAGES, storageStages } from "../src/sim/storage";
-import { MAP, MAP_HEIGHT, MAP_WIDTH, objectById, OBJECTS, TRINKETS, WINDOWS } from "../src/sim/home";
+import { MAP, MAP_HEIGHT, MAP_WIDTH, objectById, OBJECTS, roomAt, TRINKETS, WINDOWS } from "../src/sim/home";
 import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, WaterItem } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
-import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
+import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
+import { BOILER, CANDLES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
 import {
@@ -92,6 +94,13 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
+  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, бойлер; станція й свічки дня відключення — о хвилині стану.
+  for (const pane of PANES) frames.push({ id: `env/window/${pane.room}`, state: null });
+  const decor = decorLook(state, state.minute);
+  for (const sconce of SCONCES) frames.push({ id: sconce.id, state: decor.sconce });
+  frames.push({ id: "env/boiler", state: decor.boiler });
+  if (decor.station) frames.push({ id: "env/power-station", state: null });
+  if (decor.candles) frames.push({ id: "env/candle", state: decor.candles });
   // Вертикальний пилосос на підлозі, пил і павутина (§8.7).
   if (state.home.vacuumAt) frames.push({ id: "env/vacuum", state: null });
   for (const index of dustOf(state)) {
@@ -272,6 +281,101 @@ describe("пил і павутина (iso/looks.ts, §8.7)", () => {
     // Лівий кут кімнати (дзеркально) і середина кімнати.
     expect(cobwebLook({ x: 1, y: 5 })).toEqual({ frame: { id: "mess/cobweb", state: "wall-y" }, flip: true });
     expect(cobwebLook({ x: 4, y: 3 })).toBeNull();
+  });
+});
+
+describe("декор квартири (decor.ts, §8.9 «День і ніч», §4.1 «Планове відключення»)", () => {
+  /** Клітинка задньої стіни за лицем: лице y — ряд 0 над `along`, лице x — стовпець 0 ліворуч від `along`. */
+  const backWall = (face: "y" | "x", along: number): string | null =>
+    face === "y" ? wallKind(Math.floor(along), 0) : wallKind(0, Math.floor(along));
+  /** Кімната перед лицем стіни. */
+  const roomBy = (face: "y" | "x", along: number): string | null => roomAt(face === "y" ? { x: along, y: 1.5 } : { x: 1.5, y: along });
+
+  it("вікна — у задніх стінах своєї кімнати: над підвіконнями — ті самі, що WINDOWS, кухонне (16, 0) — без підвіконня", () => {
+    expect(PANES.filter((p) => p.sill).map((p) => ({ sill: p.sill, wall: p.wall }))).toEqual(WINDOWS.map((w) => ({ sill: w.sill, wall: w.wall })));
+    for (const pane of PANES) {
+      const along = pane.face === "y" ? pane.wall.x : pane.wall.y;
+      expect(pane.face === "y" ? pane.wall.y : pane.wall.x, pane.room).toBe(0);
+      expect(backWall(pane.face, along), pane.room).toBe("back");
+      expect(roomBy(pane.face, (pane.span[0] + pane.span[1]) / 2), pane.room).toBe(pane.room);
+      // Отвір — у межах клітинки стіни й нижче за кришку стіни.
+      expect(pane.span[0] >= along && pane.span[1] <= along + 1, pane.room).toBe(true);
+      expect(pane.z[0] > 0 && pane.z[1] < ISO_WALLS.back, pane.room).toBe(true);
+    }
+    const kitchen = PANES.find((p) => p.room === "kitchen");
+    expect(kitchen?.sill).toBeUndefined();
+    // Над кахельним фартухом кухні (z до 118) і над стільницею під ним.
+    expect(kitchen?.z[0]).toBeGreaterThan(118);
+    expect(kitchen && isoObjectLook("counter-right").tall).toBeLessThan(kitchen?.z[0] ?? 0);
+  });
+
+  it("бра й бойлер — на лиці задньої стіни своєї кімнати, нижче за кришку стіни й обабіч вікон (не на фіранках)", () => {
+    for (const sconce of SCONCES) {
+      const along = sconce.face === "y" ? sconce.at.x : sconce.at.y;
+      expect(sconce.face === "y" ? sconce.at.y : sconce.at.x, sconce.id).toBe(1);
+      expect(backWall(sconce.face, along), `${sconce.id} (${along})`).toBe("back");
+      expect(roomBy(sconce.face, along), `${sconce.id} (${along})`).toBe(sconce.room);
+      expect(sconce.lamp > 100 && sconce.lamp < ISO_WALLS.back - 30, sconce.id).toBe(true);
+      // Фіранки виходять за отвір на ≈ 0,4 клітинки з кожного боку; абажур — ≈ 0,17 від осі.
+      for (const pane of PANES) {
+        if (pane.face !== sconce.face) continue;
+        expect(along < pane.span[0] - 0.4 - 0.17 || along > pane.span[1] + 0.4 + 0.17, `${sconce.id} (${along}) біля вікна ${pane.room}`).toBe(true);
+      }
+    }
+    expect(SCONCES.map((s) => s.room).sort()).toEqual(["bedroom", "living", "living"]);
+    // Бойлер — у ванній над пральною машиною: вище за неї й нижче за кришку стіни.
+    expect(BOILER.at.y).toBe(1);
+    expect(backWall("y", BOILER.at.x)).toBe("back");
+    expect(roomBy("y", BOILER.at.x)).toBe("bathroom");
+    const washer = objectById("washer");
+    expect(BOILER.at.x > washer.x && BOILER.at.x < washer.x + washer.w).toBe(true);
+    expect(BOILER.z[0]).toBeGreaterThan(isoObjectLook("washer").tall);
+    expect(BOILER.z[1]).toBeLessThan(ISO_WALLS.back);
+    expect(BOILER.led > BOILER.z[0] && BOILER.led < BOILER.z[1]).toBe(true);
+  });
+
+  it("свічки — над своїми господарями: у сліді з блюдцем, на висоті верху, не на страві й не на дрібничці", () => {
+    /** Півдіаметр блюдця, клітинки (`art/env/candle.svg`). */
+    const SAUCER = 0.125;
+    for (const candle of CANDLES) {
+      const object = objectById(candle.host);
+      const look = isoObjectLook(candle.host);
+      const f = look.footprint;
+      const { x, y } = candle.at;
+      expect(x - SAUCER >= f.x0 && x + SAUCER <= f.x1 && y - SAUCER >= f.y0 && y + SAUCER <= f.y1, `${candle.host}: (${x}, ${y}) у сліді`).toBe(true);
+      expect(candle.z, candle.host).toBe(look.top);
+      // Не на страві й не на дрібничці господаря: точки кадру господаря (одиниці арту) далі за пів блюдця й пів дрібнички.
+      const entry = artEntry(`env/${candle.host}`);
+      if (!entry) throw new Error(candle.host);
+      const at = pointsOn(object, entry)((x - object.x) / object.w, (y - object.y) / object.h, candle.z);
+      const busy = ["dish", ...TRINKETS.filter((t) => t.object === candle.host).map((t) => t.kind)];
+      for (const name of busy) {
+        const p = entry.points?.[name];
+        if (p) expect(Math.hypot(p.x - at.x, p.y - at.y), `${candle.host}: свічка біля «${name}»`).toBeGreaterThan(20);
+      }
+    }
+    // На кожній речі — не більше однієї свічки, і всі господарі різні.
+    expect(new Set(CANDLES.map((c) => c.host)).size).toBe(CANDLES.length);
+  });
+
+  it("зарядна станція — на вільній підлозі праворуч від стола з комп'ютером, перед стіною ряду 5 і лівіше за розетку дроту", () => {
+    const { x, y } = POWER_STATION.at;
+    /** Півслід станції (`art/env/power-station.svg`): 0,46 × 0,3 клітинки. */
+    const half = { x: 0.23, y: 0.15 };
+    const box = { x0: x - half.x, y0: y - half.y, x1: x + half.x, y1: y + half.y };
+    expect(MAP[Math.floor(y)]?.[Math.floor(x)]).toBe(".");
+    for (const object of OBJECTS) {
+      const f = isoObjectLook(object.id).footprint;
+      const overlaps = box.x0 < f.x1 && box.x1 > f.x0 && box.y0 < f.y1 && box.y1 > f.y0;
+      expect(overlaps, `станція на ${object.id}`).toBe(false);
+    }
+    const desk = isoObjectLook("computer").footprint;
+    expect(box.x0).toBeGreaterThanOrEqual(desk.x1);
+    expect(box.y0).toBeGreaterThan(6);
+    expect(box.y1).toBeLessThan(desk.y1);
+    // Розетка дроту — над (8,75; 6): станція її не закриває.
+    expect(box.x1).toBeLessThan(8.75 - 0.1);
+    expect(POWER_STATION.display).toBeGreaterThan(0);
   });
 });
 
