@@ -2,6 +2,9 @@
 // Сцена лише малює стан гонки й передає керування в симуляцію; коли гонка закінчилася, повертає день. Аварію показує, як
 // засинання (`src/view/racecrash.ts`): камера наїжджає на машину, екран темніє, а тоді день показує картку аварії. Дорога
 // додому — коротка катсцена без керування (`src/view/homeroad.ts`): сим тоді не йде, час дороги рахує день, коли вона скінчилася.
+// Доїхали (§8.5 «На місці — кадр парковки», `src/view/parking.ts`) — без керування машина гальмує й стає на парковці пункту, і
+// сцена лишається на цьому кадрі, поки день показує картку пункту поверх нього; «Додому» — машина виїжджає з парковки й без
+// розриву йде дорога додому.
 
 import Phaser from "phaser";
 
@@ -13,6 +16,7 @@ import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
 import { RACE_START_HINT } from "../texts";
+import { asideCardRight } from "../ui/cardsize";
 import { DESTINATION_TITLES } from "../ui/titles";
 import { addArt, setArt } from "../view/art/atlas";
 import { addBakedArt, releaseBaked, setBakedArt } from "../view/art/bake";
@@ -22,7 +26,23 @@ import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
 import { canSkipHomeRoad, HOME_ROAD, homeRoadFrame, type HomeRoadFrame } from "../view/homeroad";
 import { iconArt } from "../view/iconnames";
-import { lotInFrame, lotScreenY, parkedCars, raceBarAlpha, type CarPose, type ParkingCar } from "../view/parking";
+import {
+  arrivalFrame,
+  arrivalStart,
+  lotInFrame,
+  lotScreenY,
+  parkedCars,
+  parkedFrame,
+  parkingLayout,
+  parkingSpot,
+  raceBarAlpha,
+  type ArrivalStart,
+  type CarPose,
+  type ParkingCar,
+  type ParkingFrame,
+  type ParkingLayout,
+  type ParkingSpot,
+} from "../view/parking";
 import { CRASH_FX, crashView } from "../view/racecrash";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
@@ -53,20 +73,23 @@ const STICK_DEAD = 0.2;
 const STICK_STEER = 0.5;
 
 /**
- * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5) чи дорогу додому — катсцену без керування. Передавати
- * завжди: Phaser без даних лишає сцені ті, з якими її запускали минулого разу.
+ * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5), дорогу додому з чорного — катсцену без керування (знайда,
+ * запасний шлях) — чи одразу кадр на місці (`parked`: поїздка вже на місці, а сцени дороги немає — перезавантаження сторінки).
+ * Передавати завжди: Phaser без даних лишає сцені ті, з якими її запускали минулого разу.
  */
 export interface RoadStart {
-  mode: "race" | "home";
+  mode: "race" | "home" | "parked";
 }
 
 /**
- * З чим сцена дороги будить день (`scene.wake("day", …)`): що вона показувала й чи скінчилася аварією — тоді екран уже чорний
- * (анімація аварії), і день тримає його чорним під карткою аварії.
+ * З чим сцена дороги будить день (`scene.wake("day", …)`): що вона показувала; чи скінчилася аварією — тоді екран уже чорний
+ * (анімація аварії), і день тримає його чорним під карткою аварії; чи машина стала на парковці (`parked`) — тоді сцена дороги
+ * не зупиняється, а лишається на кадрі на місці під карткою пункту, і день не темніє.
  */
 export interface RoadEnd {
-  mode: RoadStart["mode"];
+  mode: "race" | "home";
   crashed?: boolean;
+  parked?: boolean;
 }
 
 /** Чи друкує зараз гравець у полі вводу (панель розробника): тоді клавіша катсцени не пропускає. */
@@ -95,8 +118,20 @@ export class RaceScene extends Phaser.Scene {
    * замінили посеред анімації, і день сам покаже, що треба.
    */
   private crash: { ms: number; save: Save } | null = null;
-  /** Дорога додому (§8.5): скільки мс іде катсцена, з яким збереженням почалася й чи гравець її пропустив. */
-  private home: { ms: number; save: Save; skipped: boolean } | null = null;
+  /**
+   * Дорога додому (§8.5): скільки мс іде катсцена, з яким збереженням почалася, чи гравець її пропустив і звідки — з парковки
+   * (від'їзд, `departureFrame`, з того місця, що й на місці) чи з чорного (`homeRoadFrame`).
+   */
+  private home: ({ ms: number; save: Save; skipped: boolean } & ({ from: "black" } | { from: "parked"; at: ParkedAt })) | null = null;
+  /**
+   * Прибуття (§8.5 «На місці — кадр парковки»): знімок гонки в мить фінішу (`arrivalStart`; той самий об'єкт до кінця —
+   * план прибуття рахується з нього раз), скільки мс іде анімація й з яким збереженням вона почалася.
+   */
+  private arrival: { start: ArrivalStart; ms: number; save: Save } | null = null;
+  /** На місці: кадр парковки під карткою пункту — з яким збереженням, де стала машина й який пункт. */
+  private parked: ({ save: Save } & ParkedAt) | null = null;
+  /** Де парковка на місці зараз (`parkingLayout`): щокадру — розмір екрана й безпечна зона змінюються. */
+  private place: ParkingLayout = { aside: false, pan: 0, strip: null };
 
   constructor(private readonly session: Session) {
     super("race");
@@ -109,9 +144,18 @@ export class RaceScene extends Phaser.Scene {
   create(data?: Partial<RoadStart>): void {
     const art = new RaceArt(this);
     this.art = art;
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => art.destroy());
+    // Phaser перевикористовує сцену: стан минулого показу — геть, і день не бачить парковки, якої вже немає.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      art.destroy();
+      this.parked = null;
+      this.arrival = null;
+    });
     this.crash = null;
-    this.home = data?.mode === "home" ? { ms: 0, save: this.session.save, skipped: false } : null;
+    this.arrival = null;
+    this.place = { aside: false, pan: 0, strip: null };
+    this.home = data?.mode === "home" ? { ms: 0, save: this.session.save, skipped: false, from: "black" } : null;
+    const trip = this.state.trip;
+    this.parked = data?.mode === "parked" && trip?.phase === "visit" ? { save: this.session.save, ...parkedAt(trip) } : null;
     // Темрява — над усім, і над написом.
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(RACE_DEPTH.dark);
     // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
@@ -130,6 +174,11 @@ export class RaceScene extends Phaser.Scene {
     this.stick = null;
     if (this.home) {
       this.listenSkip();
+      return;
+    }
+    // На місці одразу (перезавантаження сторінки): кадр парковки без керування гонки — день уже показує меню чи картку поверх.
+    if (data?.mode === "parked") {
+      this.drawParked();
       return;
     }
     const keyboard = this.input.keyboard;
@@ -213,6 +262,8 @@ export class RaceScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     if (this.home) return this.updateHome(delta);
     if (this.crash) return this.updateCrash(delta);
+    if (this.arrival) return this.updateArrival(delta);
+    if (this.parked) return this.updateParked();
     const state = this.state;
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     if (this.running()) {
@@ -220,9 +271,22 @@ export class RaceScene extends Phaser.Scene {
       const { result, night } = drive(this.session.save, gameMinutes(seconds) * this.session.speed, this.input_());
       // Врізалися (сим уже застосував аварію, §8.5) — спершу анімація аварії тут, а картку покаже день.
       if (result === "crash" && night === null && state.end === null) return this.startCrash();
+      // Доїхали (§8.5 «На місці — кадр парковки») — спершу прибуття на парковку тут, а картку пункту покаже день поверх неї.
+      // Ніч чи кінець гри в ту саму мить — день одразу, як і раніше.
+      if (result === "arrived" && night === null && state.end === null && this.state.trip?.phase === "visit") return this.startArrival();
       if (result !== null || night !== null) return this.finish({ mode: "race" });
     }
     this.draw();
+  }
+
+  /** Машина стоїть на парковці під карткою пункту (§8.5 «На місці — кадр парковки»): день показує картку пункту, лише коли так. */
+  get parkedNow(): boolean {
+    return this.parked !== null;
+  }
+
+  /** Чи картку пункту притиснути ліворуч (`Overlay.setAside`): праворуч від неї вміщається парковка (`parkingLayout`, щокадру). */
+  get parkingAside(): boolean {
+    return this.parked !== null && this.place.aside;
   }
 
   /** Чи йде час дороги: пауза розробника чи заглушка «Поверніть телефон» (§10) зупиняють і гонку, і анімації. */
@@ -237,8 +301,91 @@ export class RaceScene extends Phaser.Scene {
 
   private finish(end: RoadEnd): void {
     this.stick = null;
+    this.arrival = null;
+    this.parked = null;
     this.scene.wake("day", end);
     this.scene.stop();
+  }
+
+  /**
+   * Прибуття (§8.5 «На місці — кадр парковки»): керування більше немає — напис, підказка, джойстик і смуга прогресу зникають, а
+   * машина без стрибка гальмує від своєї швидкості в мить фінішу й звертає на своє місце на парковці (`arrivalFrame`).
+   */
+  private startArrival(): void {
+    const trip = this.state.trip;
+    const art = this.art;
+    if (!trip || !art) return this.finish({ mode: "race" });
+    const start = arrivalStart(trip.race, trip.seed, this.session.speed, (car) => art.lookOf(car));
+    this.arrival = { start, ms: 0, save: this.session.save };
+    this.stick = null;
+    this.g.clear();
+    this.label.setVisible(false);
+    this.hint.setVisible(false);
+    this.drawArrival();
+  }
+
+  /**
+   * Анімація прибуття йде, поки гра не стоїть; скінчилася — кадр на місці, і день показує картку пункту поверх нього (сцена дороги
+   * лишається). Гру замінили, поїздка вже не на місці чи гра скінчилася — день одразу: він сам покаже, що треба. Перезавантаження
+   * сторінки посеред прибуття — одразу кадр на місці: сим уже на місці, а анімація нічого не зберігає.
+   */
+  private updateArrival(delta: number): void {
+    const arrival = this.arrival;
+    if (!arrival) return;
+    const state = this.state;
+    const trip = state.trip;
+    if (this.session.save !== arrival.save || trip?.phase !== "visit" || state.end !== null) return this.finish({ mode: "race" });
+    arrival.ms += this.animationMs(delta);
+    if (!this.drawArrival()) return;
+    this.arrival = null;
+    this.parked = { save: arrival.save, ...parkedAt(trip) };
+    this.drawParked();
+    this.scene.wake("day", { mode: "race", parked: true } satisfies RoadEnd);
+  }
+
+  /** Кадр прибуття: дорога гальмує, машина звертає на парковку, світ зсувається вбік. Повертає, чи анімація скінчилася. */
+  private drawArrival(): boolean {
+    const arrival = this.arrival;
+    const art = this.art;
+    const trip = this.state.trip;
+    if (!arrival || !art || !trip) return true;
+    const view = this.layout();
+    this.place = this.parkingPlace(view);
+    const frame = arrivalFrame(arrival.ms, view.height, arrival.start);
+    art.drawFrame(parkingRoad(frame, trip.destination), this.panned(view, frame.pan));
+    return frame.done;
+  }
+
+  /**
+   * На місці: кадр нерухомий, поки день показує картку пункту. Гру замінили, а поїздка й далі на місці (сценарій) — той самий
+   * кадр уже нового пункту; поїздки на місці більше немає чи гра скінчилася — сцена зупиняється сама, без пробудження дня: він
+   * не спить, а з цієї миті вже не чекає парковки (`parkedNow`).
+   */
+  private updateParked(): void {
+    const parked = this.parked;
+    if (!parked) return;
+    const state = this.state;
+    const trip = state.trip;
+    if (trip?.phase !== "visit" || state.end !== null) {
+      this.parked = null;
+      this.scene.stop();
+      return;
+    }
+    if (this.session.save !== parked.save) this.parked = { save: this.session.save, ...parkedAt(trip) };
+    this.drawParked();
+  }
+
+  /** Кадр на місці (`parkedFrame`) і напис «пункт · час» угорі вільної смуги. */
+  private drawParked(): void {
+    const parked = this.parked;
+    const art = this.art;
+    if (!parked || !art) return;
+    const view = this.layout();
+    this.place = this.parkingPlace(view);
+    const frame = parkedFrame(view.height, parked.spot);
+    art.drawFrame(parkingRoad(frame, parked.destination), this.panned(view, frame.pan));
+    this.dark.setFillStyle(0x000000, 0);
+    this.drawParkedLabel(parked.destination, view);
   }
 
   /**
@@ -301,6 +448,22 @@ export class RaceScene extends Phaser.Scene {
   }
 
   /**
+   * Де парковка на місці (`parkingLayout`): картка пункту, притиснута ліворуч (`asideCardRight` — у px CSS, як її кладе
+   * `overlay.css`), і вільна смуга праворуч від неї. Вікно в px CSS — кадр в одиницях інтерфейсу поділити на одиниці на px.
+   */
+  private parkingPlace(view: RaceView): ParkingLayout {
+    const unit = canvasNow().unit;
+    const css = safeArea();
+    const card = asideCardRight({ width: view.width / unit, height: view.height / unit }, css.left, css.right) * unit;
+    return parkingLayout(view, card);
+  }
+
+  /** Кадр зі світом, зсунутим убік на частку `pan` зсуву парковки (`ParkingLayout.pan`): середина дороги — `cx`. */
+  private panned(view: RaceView, pan: number): RaceView {
+    return { ...view, cx: view.width / 2 + pan * this.place.pan };
+  }
+
+  /**
    * Розміри кадру дороги: в одиницях інтерфейсу (1280 × 720, що ширшає чи вищає) — полотно в пікселях пристрою, камера
    * масштабує (`fitUiCamera` щокадру ставить звичайний масштаб і прокрутку; наїзд аварії — поверх).
    */
@@ -345,8 +508,21 @@ export class RaceScene extends Phaser.Scene {
   /** Куди їдемо, котра година й швидкість — угорі ліворуч. */
   private drawLabel(trip: Trip, safe: Insets): void {
     this.label
+      .setOrigin(0, 0)
       .setPosition(safe.left + 20, safe.top + 16)
       .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · ×${trip.race.speed.toFixed(1).replace(".", ",")}`);
+  }
+
+  /**
+   * На місці (§8.5 «На місці — кадр парковки»): панелі квартири немає — угорі вільної смуги праворуч від картки назва пункту й
+   * годинник, без швидкості (над будівлею, а не на ній); картка посередині — угорі ліворуч, як у гонці.
+   */
+  private drawParkedLabel(destination: Destination, view: RaceView): void {
+    const { safe } = view;
+    const strip = this.place.strip;
+    const label = this.label.setText(`${DESTINATION_TITLES[destination]} · ${formatClock(this.state.minute)}`).setVisible(true);
+    if (strip) label.setOrigin(0.5, 0).setPosition((strip.left + strip.right) / 2, safe.top + 16);
+    else label.setOrigin(0, 0).setPosition(safe.left + 20, safe.top + 16);
   }
 
   /**
@@ -712,6 +888,21 @@ class RaceArt {
       image.setCrop(0, part.cropY * res, image.frame.realWidth, part.cropH * res);
     });
   }
+}
+
+/** Де стала машина на місці (зсув дороги й зерно поїздки, `parkingSpot`) і який пункт. */
+interface ParkedAt {
+  spot: ParkingSpot;
+  destination: Destination;
+}
+
+function parkedAt(trip: Trip): ParkedAt {
+  return { spot: parkingSpot(trip), destination: trip.destination };
+}
+
+/** Кадр парковки (прибуття, на місці, від'їзд) як кадр без керування: з парковкою пункту. */
+function parkingRoad(frame: ParkingFrame, destination: Destination): RoadFrame {
+  return { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, destination, cars: frame.parked } };
 }
 
 /** Кадр дороги додому (`homeRoadFrame`) як кадр без керування: дорога біжить угору, машини (і своя) — носом донизу. */
