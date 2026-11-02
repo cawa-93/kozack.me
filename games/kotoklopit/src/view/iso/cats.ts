@@ -22,6 +22,7 @@ import { catFace, type CatFace } from "../anim/catface";
 import { catFacing, catMoving, facingFromTiles, holdFlip, personFacing, smoothHeading } from "../anim/catfacing";
 import { catEventAnims, catMemory, catTransition, type CatMemory } from "../anim/catevents";
 import { PERSON_ONE_SHOT_MS, type CatOneShotId } from "../anim/ids";
+import { isoTileDir } from "../anim/iso";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS } from "../rig/anims/person/move";
 import { CAT_BRAWL_PHASE_MS } from "../rig/anims/cat/behavior";
 import { catCrowds, catPairs, crowdMemory, towardPerson, type CrowdMember, type PairPlacement } from "../anim/pairs";
@@ -33,7 +34,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, startShot, WALK_GAITS, type CatShot, type GaitMemory, type Lift } from "./catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PutDown } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { CAT_PIECE, catSpot, lapSeat, raised, type CatSpot, type CatSpotDepths, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -130,6 +131,11 @@ interface Memory {
   gait: GaitMemory | null;
   /** Де кіт стояв на підлозі, коли персонаж почав брати його на руки (`Hands.lift`), px світу. */
   liftFrom: Point | null;
+  /**
+   * Кота опустили (`putDown`): де його поставив сим і де стояв персонаж. Поки обидва там і кіт не рушив (`stillPutDown`), він
+   * стоїть, де його поставили руки, — зсув від точки сима в `crowd`, юрба його не зсуває.
+   */
+  putDown: PutDown | null;
   /** Розмір (кошеня, порода) і для якого віку й об'єкта кота його рахували: щокадру не перераховувати. */
   size: CatSize | null;
   sizeAge: number;
@@ -313,6 +319,7 @@ export class IsoCatsView implements CatsPart {
         lift: null,
         gait: null,
         liftFrom: null,
+        putDown: null,
         size: null,
         sizeAge: Number.NaN,
         sizeCat: null,
@@ -356,7 +363,10 @@ export class IsoCatsView implements CatsPart {
       const pair = pairs.get(cat.id) ?? null;
       const spot = catSpot(state, cat, mem.choice.anim, pair, SPOT_DEPTHS);
       mem.spot = spot;
-      if (pair || spot.kind !== "floor" || catMoving(cat)) continue;
+      // Кота щойно опустили — стоїть, де його поставили руки, і в юрбу не стає (`stillPutDown`).
+      const lifting = this.ctx.world.person.hands.lift?.cat === cat.id;
+      if (!stillPutDown(mem.putDown, cat, state.character.body, catMoving(cat), lifting)) mem.putDown = null;
+      if (mem.putDown || pair || spot.kind !== "floor" || catMoving(cat)) continue;
       // Під рукою — теж до персонажа; звідки прийшов — з ракурсу, яким ішов (дивився праворуч — прийшов зліва).
       const touched = interactionWith(state, cat) !== null;
       const from = mem.facing ? (mem.facing.flip ? 1 : -1) : 0;
@@ -407,18 +417,21 @@ export class IsoCatsView implements CatsPart {
     // Персонаж бере кота на руки чи опускає (`Hands.lift`, T2): кіт біля рук, хоч сим уже й відпустив його, і йде з кистями.
     const handsLift = this.ctx.world.person.hands.lift;
     const lifting = handsLift && handsLift.cat === cat.id ? handsLift : null;
-    // Місце — з першого проходу, якщо разова не змінила пози; на підлозі в юрбі — зсунутий уздовж екрана.
+    if (lifting) this.markPutDown(mem, cat, state.character.body);
+    // Місце — з першого проходу, якщо разова не змінила пози; на підлозі в юрбі — зсунутий уздовж екрана; щойно опущений —
+    // там, де його поставили руки (зсув тримається, юрба не зсуває).
     const base = anim === choice.anim && mem.spot ? mem.spot : catSpot(state, cat, anim, pair, SPOT_DEPTHS);
     const floor = base.kind === "floor";
+    const put = mem.putDown !== null;
     const still = floor && pair === null && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
-    const shift = this.crowdShift(mem, floor ? crowd : null, still, seconds, mem.pos === null);
+    const shift = this.crowdShift(mem, floor && !put ? crowd : null, still || put, seconds, mem.pos === null);
     // Сим переставив кота чи пара змінила зсув — доганяє нове місце (`CATCH`); далеко позаду — біжить туди лицем.
     const lag = this.catchUp(cat, mem, base, pair, seconds);
     const moved = floor && (shift.x !== 0 || shift.y !== 0 || lag.x !== 0 || lag.y !== 0);
     const own = moved ? { ...base, at: { x: base.at.x + shift.x + lag.x, y: base.at.y + shift.y + lag.y } } : base;
     const catching = floor && anim === choice.anim && Math.hypot(lag.x, lag.y) > CATCH.run;
     const spot = lifting && own.kind !== "hands" ? { ...own, kind: "hands" as const } : own;
-    this.liftFrom(view, mem, lifting, own);
+    this.liftFrom(state, view, mem, lifting, own);
     // На руках і на колінах — туди ж, куди персонаж у світі (кіт не в гнізді скелета персонажа, а в точці його рук). Іде — за
     // згладженим напрямом руху й не віддзеркалюючись надто часто (`smoothHeading`, `holdFlip`).
     if (mem.pos) smoothHeading(mem.heading, cat.x - mem.pos.x, cat.y - mem.pos.y, seconds);
@@ -441,6 +454,8 @@ export class IsoCatsView implements CatsPart {
     const f = this.frame;
     f.scale = size.scale * spot.scale;
     this.place(view, spot, mem, time, f);
+    // Опускають (сим уже відпустив): кіт там, де його ставлять руки, — і там лишиться, коли разова скінчиться.
+    if (lifting && floor) this.keepPutDown(mem, base, f.ground);
     this.fixRoot(view, mem, spot.kind === "hands" ? (lifting ? 2 : 1) : 0, time, f);
     const act = cat.act;
     const carrying = act.kind === "carry" && act.picked === true && act.dropped !== true;
@@ -572,22 +587,51 @@ export class IsoCatsView implements CatsPart {
 
   /**
    * Де кіт стоїть на підлозі, поки персонаж бере його на руки чи опускає (`liftedRoot`): бере (сим уже тримає кота) — де його
-   * намалювали востаннє перед тим, як персонаж узявся (кіт був на підлозі), опускає (сим уже відпустив) — його місце на
-   * підлозі за симом (`own`), щоб коли разова скінчиться, кіт лишився там само. Не бере й не опускає — забути.
+   * намалювали востаннє перед тим, як персонаж узявся (кіт був на підлозі), опускає (сим уже відпустив) — під кистями
+   * (`putDownGround`), і там лишиться, коли разова скінчиться (`keepPutDown`). Під кистями стіна чи меблі — на його місці на
+   * підлозі за симом (`own`). Не бере й не опускає — забути.
    */
-  private liftFrom(view: IsoCatView, mem: Memory, lifting: HandsLift | null, own: CatSpot): void {
+  private liftFrom(state: GameState, view: IsoCatView, mem: Memory, lifting: HandsLift | null, own: CatSpot): void {
     if (!lifting) {
       mem.liftFrom = null;
       return;
     }
     if (own.kind !== "hands") {
-      const s = ISO.toScreen(own.at);
       mem.liftFrom ??= { x: 0, y: 0 };
+      // Спинка кота від кореня — з минулого кадру (як у `place`).
+      this.petOffset.x = view.back.x - view.root.x;
+      this.petOffset.y = view.back.y - view.root.y;
+      const under = putDownGround(lifting.at, this.petOffset, mem.liftFrom);
+      const s = ISO.toScreen(own.at);
+      const tile = isoTileDir({ x: under.x - s.x - own.offset.x, y: under.y - s.y - own.offset.y });
+      if (view.shown && !isSolid(state, Math.floor(own.at.x + tile.x), Math.floor(own.at.y + tile.y))) return;
       mem.liftFrom.x = s.x + own.offset.x;
       mem.liftFrom.y = s.y + own.offset.y - own.lift;
     } else if (!mem.liftFrom) {
       mem.liftFrom = view.shown ? { x: view.root.x, y: view.root.y } : { x: lifting.at.x, y: lifting.at.y };
     }
+  }
+
+  /** Кота беруть чи опускають: запам'ятати, де його поставив сим і де стоїть персонаж (`stillPutDown`). */
+  private markPutDown(mem: Memory, cat: Cat, body: Vec): void {
+    const put = (mem.putDown ??= { cat: { x: 0, y: 0 }, person: { x: 0, y: 0 } });
+    put.cat.x = cat.x;
+    put.cat.y = cat.y;
+    put.person.x = body.x;
+    put.person.y = body.y;
+  }
+
+  /**
+   * Опускають кота (сим уже відпустив): зсув від його місця за симом (`base`) до того, де він стоїть цього кадру (`ground`,
+   * px світу), — у `crowd`, і без доганяння: коли разова скінчиться, кіт лишиться, де його поставили руки.
+   */
+  private keepPutDown(mem: Memory, base: CatSpot, ground: Point): void {
+    const s = ISO.toScreen(base.at);
+    const tile = isoTileDir({ x: ground.x - s.x - base.offset.x, y: ground.y - s.y - base.offset.y });
+    mem.crowd.x = tile.x;
+    mem.crowd.y = tile.y;
+    mem.catchUp.x = 0;
+    mem.catchUp.y = 0;
   }
 
   /**

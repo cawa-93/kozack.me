@@ -16,7 +16,7 @@ import { gameMinutes } from "../src/sim/time";
 import type { Cat, CatAct, Feeder, HomeItem, Save, Vec } from "../src/sim/types";
 import { CAT_EARS } from "../src/view/anim/catface";
 import { catFacing } from "../src/view/anim/catfacing";
-import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
+import { CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS, PERSON_ONE_SHOT_MS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
 import { ART_VIEWS } from "../src/view/art/types";
 import { CAT_ANIMS } from "../src/view/rig/anims";
@@ -25,7 +25,8 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withBelly, withFace } from "../src/view/iso/catanim";
-import { CATCH, catchUp, catJump, catPlay, catStep, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, startShot, type Lift } from "../src/view/iso/catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, type Lift } from "../src/view/iso/catplay";
+import { liftedRoot, liftWeights } from "../src/view/iso/personlook";
 import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
 import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
@@ -898,6 +899,40 @@ describe("темп лап ходи й бігу (`gaitRate`)", () => {
     // А з темпом за `walkFactor` (1 — за будь-якої швидкості кота) лапа їхала б.
     const fixed = gaitRate("walk", walk * 0.8, 0, false, 1);
     expect(Math.abs(fixed - 1)).toBeGreaterThan(0.1);
+  });
+});
+
+describe("кіт, якого опустили, — там, де його поставили руки (`putDownGround`, `stillPutDown`)", () => {
+  it("увесь `putDown` корінь кота — під кистями (не далі за 0,1 клітинки), а після «відпустив» не ковзає до точки сима", () => {
+    // Кисті праворуч від персонажа (ракурс front), а сим поставив кота на 0,6 клітинки попереду — просто під персонажем.
+    const gripAt = { x: 640, y: 660 };
+    const pet = { x: 6, y: -32 };
+    const hands = { x: 660, y: 600 };
+    const sim = { x: 600, y: 700 };
+    const own = putDownGround(gripAt, pet, { x: 0, y: 0 });
+    const root = { x: 0, y: 0 };
+    const ground = { x: 0, y: 0 };
+    const tile = Math.hypot(64, 32);
+    for (let t = 0; t <= PERSON_ONE_SHOT_MS.putDown; t += 20) {
+      const lift = liftWeights("putDown", t);
+      liftedRoot(own, { ...lift, at: gripAt }, pet, hands, root, ground);
+      // Кіт на підлозі (вага рук 0) — спинкою під кистями; у руках — дорогою з гнізда рук під кисті.
+      if (lift.w === 0) expect(Math.hypot(root.x + pet.x - gripAt.x, root.y + pet.y - gripAt.y), `@${t}`).toBeLessThan(0.1 * tile);
+      expect(ground, `@${t}`).toEqual({ x: gripAt.x - pet.x, y: gripAt.y - pet.y });
+    }
+    // Наприкінці — не там, де сим (той був би на ≈ 0,4 клітинки ліворуч від рук).
+    expect(Math.hypot(ground.x - sim.x, ground.y - sim.y)).toBeGreaterThan(0.4 * tile);
+  });
+
+  it("лишається там, поки його беруть чи опускають, а потім — поки не рушив, сим його не переставив і персонаж не відійшов", () => {
+    const put = { cat: { x: 6.42, y: 9.42 }, person: { x: 6, y: 9 } };
+    expect(stillPutDown(null, put.cat, put.person, false, false)).toBe(false);
+    expect(stillPutDown(put, { x: 6.42, y: 9.42 }, { x: 6, y: 9 }, false, false)).toBe(true);
+    // Руки саме опускають — хоч би де сим його вже поставив.
+    expect(stillPutDown(put, { x: 7, y: 9 }, { x: 6, y: 9 }, false, true)).toBe(true);
+    expect(stillPutDown(put, { x: 6.42, y: 9.42 }, { x: 6, y: 9 }, true, false)).toBe(false);
+    expect(stillPutDown(put, { x: 6.5, y: 9.42 }, { x: 6, y: 9 }, false, false)).toBe(false);
+    expect(stillPutDown(put, { x: 6.42, y: 9.42 }, { x: 5.9, y: 9 }, false, false)).toBe(false);
   });
 });
 
