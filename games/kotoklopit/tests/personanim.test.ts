@@ -83,7 +83,7 @@ describe("основна анімація персонажа (`personAnim`)", ()
     expect(personAnim(state, still).anim).toBe("meeting");
   });
 
-  it("тривалі дії: їсть за столом, чистить лоток, прибирає, пилососить, лагодить дріт; у душі не видно; купає кота без накладки рук", () => {
+  it("тривалі дії: їсть за столом, чистить лоток, прибирає, лагодить дріт; у душі не видно; купає кота без накладки рук", () => {
     const save = game();
     const state = save.current;
     const use = (target: string, extra: { inside?: true; bath?: true } = {}): string => {
@@ -93,7 +93,6 @@ describe("основна анімація персонажа (`personAnim`)", ()
     expect(use("table")).toBe("eat");
     expect(use("item:3")).toBe("litter");
     expect(use("mess:7")).toBe("clean");
-    expect(use("vacuum")).toBe("vacuum");
     expect(use("computer")).toBe("fix");
     expect(personAnim(state, still).params.target).toBe("computer");
     use("shower", { inside: true });

@@ -19,6 +19,7 @@ import {
   GAIT_MIN_RATE,
   gaitRate,
   heldFrame,
+  heldView,
   liftedCat,
   liftedRoot,
   liftWeights,
@@ -44,11 +45,12 @@ import { newGame } from "../src/sim/game";
 
 const toy = (quality: "cheap" | "premium"): ToyItem => ({ id: 1, kind: "toy", quality, x: 3, y: 9, uses: 0 });
 
-/** Стан гри: персонаж пилососить (тривала дія біля шафи з пилососом), руки порожні. */
+/** Стан гри: персонаж тримає вертикальний пилосос (§8.7, «Пилосос у руках»), нічим не зайнятий. */
 function vacuuming() {
   const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
-  state.character.held = null;
-  state.character.activity = { kind: "use", target: "vacuum", progress: 0 };
+  state.home.vacuumAt = null;
+  state.character.held = { kind: "vacuum", minutes: 0 };
+  state.character.activity = null;
   return state;
 }
 
@@ -146,16 +148,27 @@ describe("речі в руках (§8.4)", () => {
     for (const item of items) expect(heldFrame(item)?.scale).toBe(1);
   });
 
-  it("пилососить — пилосос A4 у гнізді рук, лише з порожніми руками в анімації пилососа", () => {
-    const vacuum = heldFrame(null, "vacuum");
+  it("пилосос у руках — `item/vacuum` у гнізді `held` кадром ракурсу персонажа, накладка `holdVacuum` (§8.7)", () => {
+    const state = vacuuming();
+    const vacuum = heldFrame(state.character.held);
     expect(vacuum?.socket).toBe("held");
     expect(vacuum?.frame).toEqual(VACUUM_HELD.frame);
     expect(vacuum?.scale).toBe(1);
-    expect(artEntry(VACUUM_HELD.frame.id)?.points?.["brush"]).toBeDefined();
-    expect(heldFrame({ kind: "cat", cat: 3 }, "vacuum")).toBeNull();
-    expect(heldFrame(items[0]!, "vacuum")?.frame.id).toBe("item/dish/raw");
-    // Анімація пилососа справді грає з річчю в гнізді `held` (N4b: щітка — від точки `brush` цього кадру).
-    expect(personAnim(vacuuming(), { moving: false, sleepiness: 0 }).anim).toBe("vacuum");
+    // Кадр — з ракурсом персонажа: щітка на підлозі, а підлога попереду в ¾ спереду й ззаду на екрані різна.
+    const entry = artEntry(VACUUM_HELD.frame.id);
+    expect(entry?.views).toEqual(["front", "back"]);
+    for (const view of ["front", "back"] as const) expect(heldView(entry?.views, view)).toBe(view);
+    // Речі без ракурсів — один кадр на обидва.
+    expect(heldView(artEntry("item/scoop")?.views, "back")).toBeNull();
+    // Стоїть, іде, ривок, відмова — руки тримає накладка пилососа (ближня рука на ручці, щітка на підлозі).
+    const still = personAnim(state, { moving: false, sleepiness: 0 });
+    expect(still.anim).toBe("idle");
+    expect(still.overlay).toBe("holdVacuum");
+    expect(still.params.held).toBe("vacuum");
+    expect(personAnim(state, { moving: true, sleepiness: 0 })).toMatchObject({ anim: "walk", overlay: "holdVacuum" });
+    expect(armsOverlay("refuse", still.overlay)).toBe("holdVacuum");
+    // Старої справи «пилососить» біля шафи (N4b `vacuum`) більше немає.
+    expect(Object.keys(PERSON_ANIMS)).not.toContain("vacuum");
   });
 
   it("у разовій справі річ з'являється в руці й лишає її в мить дотику (`PERSON_CONTACT_MS`), а не з першого кадру", () => {
@@ -329,7 +342,7 @@ describe("темп ходи (`gaitRate`, контракт N4a `personGaitSpeed`)
 
   it("стоячи, у справах, оглушений на місці (кнопку руху не натиснуто) — темп 1; уперся в стіну — ноги переступають повільно", () => {
     const side = walk(362, 0);
-    for (const anim of ["idle", "vacuum", "pet", "carry", "trip"] as const) expect(gaitRate(anim, true, side)).toBe(1);
+    for (const anim of ["idle", "litter", "pet", "carry", "trip"] as const) expect(gaitRate(anim, true, side)).toBe(1);
     expect(gaitRate("dizzy", false, side)).toBe(1);
     expect(gaitRate("walk", false, side)).toBe(1);
     expect(gaitRate("walk", true, walk(0, 0))).toBe(GAIT_MIN_RATE);

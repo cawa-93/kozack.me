@@ -8,6 +8,7 @@ import type { GameEvent } from "../../sim/events";
 import type { Item } from "../../sim/types";
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
+import type { ArtView } from "../art/types";
 import { PERSON_PICKUP_GRAB_MS, PERSON_PUTDOWN_RELEASE_MS, personCatLift, personGaitSpeed, type PersonGait } from "../rig/anims/person/move";
 import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
@@ -149,11 +150,11 @@ export function catSocket(anim: PersonAnimId): "lap" | "arms" {
 export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" } as IsoFrame, scale: 0.62, shift: { x: 9, y: 8 } } as const;
 
 /**
- * Пилосос у руках (`vacuum`, N4b: пилососить, руки порожні): кадр A4 `env/vacuum/cleaner` — pivot у ручці, яку тримає кулак
- * (гніздо `held`), балон на полозках біля ніг, щітка на підлозі попереду. Застаріле (рішення автора 2026-11-02, §8.7): шафи
- * більше немає — вертикальний пилосос стоїть на підлозі (`env/vacuum`), а в руках — `item/vacuum` з накладкою `holdVacuum`.
+ * Вертикальний пилосос у руках (рішення автора 2026-11-02, GAME_DESIGN §8.7, «Пилосос у руках»): кадр A5 `item/vacuum` —
+ * pivot у хваті ручки (гніздо `held`, кулак накладки `holdVacuum`), щітка на підлозі попереду. Єдина річ у руках із
+ * ракурсами (`front`, `back`): кадр — того ракурсу, в якому персонаж (`heldView`), інакше ззаду щітка «висіла» б над підлогою.
  */
-export const VACUUM_HELD = { frame: { id: "env/vacuum/cleaner", state: null } as IsoFrame, scale: 1 } as const;
+export const VACUUM_HELD = { frame: { id: "item/vacuum", state: null } as IsoFrame, scale: 1 } as const;
 
 /** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
 export interface HeldFrame {
@@ -166,14 +167,13 @@ export interface HeldFrame {
 
 /**
  * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
- * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»); з порожніми руками в
- * анімації телефону (`anim` — `phone`) — телефон біля вуха (`PHONE_HELD`), у анімації пилососа (`vacuum`) — пилосос
- * (`VACUUM_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
+ * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
+ * (`held`, `VACUUM_HELD`; кадр — з ракурсом персонажа, `heldView`); з порожніми руками в анімації телефону (`anim` — `phone`) —
+ * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
 export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): HeldFrame | null {
   if (item === null) {
     if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
-    if (anim === "vacuum") return { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale };
     return null;
   }
   if (heldThing(item) === "cat") return null;
@@ -187,7 +187,6 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): 
     case "burnt":
       return { socket: "held", frame: dishFrame(item), scale: 1 };
     case "vacuum":
-      // Тимчасово — колишній пилосос із шафи (`VACUUM_HELD`), доки пакет арту не намалює `item/vacuum` (§8.7, 2026-11-02).
       return { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale };
     default:
       return null;
@@ -203,6 +202,15 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): 
 export function shownHeld(before: Item | null, now: Item | null, shot: PersonAnimId | null, elapsed: number): Item | null {
   if (shot === null || !(shot in PERSON_CONTACT_MS)) return now;
   return elapsed < PERSON_CONTACT_MS[shot as keyof typeof PERSON_CONTACT_MS] ? before : now;
+}
+
+/**
+ * Ракурс кадру речі в гнізді рук: запис із ракурсами (`views` маніфесту — пилосос `item/vacuum`) — той, у якому персонаж
+ * (`view`), бо щітка лежить на підлозі, а підлога попереду в ¾ спереду нижче на екрані, ніж у ¾ ззаду; без ракурсів — null
+ * (один кадр на обидва).
+ */
+export function heldView(views: readonly ArtView[] | undefined, view: ArtView): ArtView | null {
+  return views?.includes(view) === true ? view : null;
 }
 
 // --- Кіт, якого беруть на руки й опускають ---------------------------------------------------------

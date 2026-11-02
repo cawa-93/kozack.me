@@ -81,7 +81,7 @@ describe("пилосос у руках: накладка `holdVacuum`", () => {
   it("накладка — у переліку накладок і в реєстрі; для анімацій, що самі ведуть руки, — основна як є", () => {
     expect(PERSON_OVERLAYS.has("holdVacuum")).toBe(true);
     expect(PERSON_ANIMS.holdVacuum).toBe(PERSON_MOVE.holdVacuum);
-    expect(personWithArms(PERSON_ANIMS.vacuum, "holdVacuum", "vacuum")).toBe(PERSON_ANIMS.vacuum);
+    expect(personWithArms(PERSON_ANIMS.litter, "holdVacuum", "litter")).toBe(PERSON_ANIMS.litter);
     expect(personWithArms(PERSON_ANIMS.walk, "holdVacuum", "walk")).toBe(personWithArms(PERSON_ANIMS.walk, "holdVacuum", "walk"));
   });
 

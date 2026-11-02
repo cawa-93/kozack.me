@@ -3,7 +3,7 @@
 // нога й черевик затінені (`farRecipe`, `PERSON_FAR_SLOTS`), тінь під ногами (`fx/shadow/person`) — рішення автора 2026-10-30.
 //
 // Що грає — `personAnim` (основна з `PERSON_ANIMS`, накладка рук, ракурс, поступ засинання) і `personEventAnim` (разові від
-// подій): накладку рук (несе річ, тримає кота) кладе `personWithArms` (N4a) — заміняє руки основної й разової, руки з річчю
+// подій): накладку рук (несе річ, тримає кота, тримає пилосос) кладе `personWithArms` (N4a) — заміняє руки основної й разової, руки з річчю
 // тримають рівно проти нахилу тулуба, а анімації, що ведуть руки самі (`PERSON_OWN_ARMS`), лишає як є; поправки вигляду
 // (очі засинання, схована рука, голова хилиться) — `mixAnims` (`personmix.ts`). Де видно й куди дивиться — `personSpot`
 // (за столом, за комп'ютером, біля ліжка, лицем до кота), обличчя, падаючи без сил, — `showFace`. Хода йде в такт тому, як
@@ -55,6 +55,7 @@ import {
   eyesFrame,
   gaitRate,
   heldFrame,
+  heldView,
   liftedCat,
   liftWeights,
   movesHead,
@@ -367,7 +368,8 @@ export class IsoPersonView implements PersonPart {
 
   /**
    * Річ у руках — у гнізді `held`, вудочка — у `rod` (граючись із котом — лише паличка: пір'я кружляє над котом), телефон
-   * біля вуха (`anim` — `phone`) і пилосос (`vacuum`) — у `held`; кота малює частина котів (у точці `hands`).
+   * біля вуха (`anim` — `phone`) — у `held`; кота малює частина котів (у точці `hands`). Річ із ракурсами (пилосос — щітка на
+   * підлозі попереду, §8.7) — кадром ракурсу персонажа (`heldView`): змінився ракурс — інший кадр.
    */
   private updateCargo(item: Item | null, anim: PersonAnimId): void {
     const want = this.hidden ? null : heldFrame(item, anim);
@@ -376,14 +378,15 @@ export class IsoPersonView implements PersonPart {
       const frame = want?.socket === socket ? want.frame : null;
       cargo.image.setVisible(frame !== null);
       if (!frame || !want) continue;
-      const key = frameKey(frame);
+      const entry = artEntry(frame.id);
+      const view = heldView(entry?.views, this.sprite.facing.view);
+      const key = view ? `${frameKey(frame)}|${view}` : frameKey(frame);
       const shift = want.shift ?? null;
       if (cargo.key !== key || cargo.shift !== shift) {
         cargo.key = key;
         cargo.shift = shift;
         // `setArt` ставить origin у pivot кадру; зсув — інша точка кадру в гнізді (телефон визирає з-під кулака).
-        setArt(cargo.image, frame.id, { state: frame.state });
-        const entry = artEntry(frame.id);
+        setArt(cargo.image, frame.id, { state: frame.state, ...(view ? { view } : {}) });
         if (entry) cargo.image.setOrigin((entry.pivot.x + (shift?.x ?? 0)) / entry.size.w, (entry.pivot.y + (shift?.y ?? 0)) / entry.size.h);
       }
       if (cargo.scale !== want.scale) {

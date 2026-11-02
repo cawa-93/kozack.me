@@ -133,6 +133,12 @@ const CARGO_LOOK: Readonly<Record<Exclude<SocketCargo, "cat">, { id: ArtId; stat
   sock: { id: "mess/sock", state: "carried" },
 };
 
+/**
+ * Накладка рук із пилососом (`holdVacuum`, §8.7, «Пилосос у руках»): у гнізді `held` — пилосос, а не тарілка, кадром ракурсу
+ * скелета (щітка на підлозі попереду).
+ */
+const VACUUM_ANIM = "holdVacuum";
+
 /** Що показують частини: запечене компонувальником (як у грі) чи шар атласу (`all` — увесь кадр; у шарованих — заглушка). */
 type Show = FrameLayer | "baked";
 const LAYERS: readonly Show[] = ["baked", "all", "ink", "fill", "shade", "detail"];
@@ -294,6 +300,8 @@ function mount(ctx: GalleryContext): GalleryView {
         baked: state.layer === "baked" ? bakedOf(RIGS.cat) : null,
       });
       cargo = cargoRig;
+    } else if (kind === "held" && state.anim === VACUUM_ANIM) {
+      cargo = addArt(scene, null, "item/vacuum", { view: state.view });
     } else {
       const look = CARGO_LOOK[kind];
       const layer = look.layered ? atlasLayer() : undefined;
@@ -393,6 +401,7 @@ function mount(ctx: GalleryContext): GalleryView {
       state.view = v;
       sprite?.setFacing({ view: v });
       cargoRig?.setFacing({ view: v });
+      if (state.anim === VACUUM_ANIM) setCargo();
       saveParams();
     });
     select(main, "Напрям:", [["right", "праворуч"], ["left", "ліворуч"]] as const, state.flip ? "left" : "right", (v) => {
@@ -402,9 +411,11 @@ function mount(ctx: GalleryContext): GalleryView {
     });
     const anims = [...animsOf(state.rig).keys()];
     select(main, "Анімація:", [["", "вихідна поза"], ...anims.map((a) => [a, a] as const)], state.anim, (v) => {
+      const vacuum = state.anim === VACUUM_ANIM || v === VACUUM_ANIM;
       state.anim = v;
       const anim = animNow();
       sprite?.play(anim, { from: ctx.time(), blend: state.blend && running ? undefined : 0 });
+      if (vacuum) setCargo();
       saveParams();
     });
     check(main, "змішувати пози при зміні анімації (≈ 120 мс)", state.blend, (v) => (state.blend = v));

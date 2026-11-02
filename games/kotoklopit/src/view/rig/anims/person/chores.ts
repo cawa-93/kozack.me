@@ -21,7 +21,7 @@
 //
 // Ноги стоять: де таз зсувається (нахил, сидіння, падіння), кути ніг рахує `stance` — ступні лишаються на своїх місцях на
 // підлозі, а стопи — рівно. Річ у руках (гніздо `held` на кисті ближньої руки) кисть тримає рівно (`level`): тарілка не
-// перекидається, пилосос стоїть.
+// перекидається.
 //
 // Руки справ — власні: накладки рук (`carry`, `holdCat`) справи не беруть (`PERSON_OWN_ARMS`), тож річ і кіт тримаються в
 // гнізді так, як ведуть руки справи. Стики з накладками — у позах накладок (`CARRY`, `HOLD` — з `move.ts`, N4a: `personArmsPose`):
@@ -31,7 +31,6 @@
 // кінцевої. Мить, коли річ з'являється в руці чи лишає її, — `PERSON_CONTACT_MS` (вигляд міняє вміст гнізда саме тоді).
 
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS } from "../../../anim/ids";
-import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
 import { isoObjectLook } from "../../../world/objects";
 import { ISO_TILE } from "../../../world/projection";
@@ -442,7 +441,7 @@ const SIT_SLOTS: Slots = { "shoe-near": { visible: [{ t: 0, v: false }] } };
 
 /**
  * Ближня рука над річчю в гнізді `held`: гніздо лежить над рукою (`PERSON_RIG`: тарілку, совок і страву несуть на кулаці), а
- * телефон біля вуха кулак тримає ззовні — з камери телефон визирає з-під руки на щоці, і ручка пилососа — у кулаці.
+ * телефон біля вуха кулак тримає ззовні — з камери телефон визирає з-під руки на щоці.
  */
 const OVER_HELD: Slots = { "arm-near": { z: [{ t: 0, v: 13 }] } };
 
@@ -871,41 +870,6 @@ function clean(s: Space): readonly Beat[] {
 }
 
 /**
- * Щітка пилососа відносно кулака (точка `brush` кадру `env/vacuum/cleaner` від його pivot — ручки в гнізді `held`): A4
- * малює пилосос обличчям праворуч, щітка на підлозі під кулаком на висоті ≈ 76. Поки кадру немає — щітка на 46 попереду.
- */
-const BRUSH: Vec2 = (() => {
-  const entry = artEntry("env/vacuum/cleaner");
-  const brush = entry?.points?.brush;
-  return entry && brush ? { x: brush.x - entry.pivot.x, y: brush.y - entry.pivot.y } : { x: 46, y: 76 };
-})();
-
-/**
- * Пилососить: ступні розставлені, ближня рука водить ручкою пилососа (`env/vacuum/cleaner` у гнізді `held`) уперед-назад,
- * вага переходить з ноги на ногу. Пилосос повертається в руці довкола кулака: уперед — трубка лягає нижче (−6°), і щітка
- * випереджає кулак, назад — підводиться (+6°); кулак опускається й піднімається рівно настільки, щоб щітка йшла по підлозі.
- */
-function vacuum(s: Space): readonly Beat[] {
-  const near = s.step(6);
-  const far = s.step(-6);
-  // Ближня рука тримає ручку збоку (у ¾ спереду так вона менше перетинає груди), дальня — шланг біля стегна.
-  const side = s.view === "front" ? 14 : 8;
-  /** Висота кулака, за якої щітка пилососа, нахиленого на `tilt`, — на підлозі. */
-  const grip = (tilt: number): number => BRUSH.x * Math.sin(tilt * RAD) + BRUSH.y * Math.cos(tilt * RAD);
-  // Коліна трохи зігнуті (таз нижче на `bob`): так обидві ступні дістають підлогу, коли вага переходить уперед і назад.
-  const at = (shift: number, f: number, tilt: number, head: number, bob: number): Pose => {
-    const b = lean(5 + shift * 0.6, shift, bob);
-    return level(add(body(b, near, far), { "arm-near": s.reach("near", b, f, grip(tilt), side), "arm-far": s.reach("far", b, f - 26, 56, -14) }, nod(head)), tilt);
-  };
-  return [
-    [0, at(-4, 18, 6, 6, 3.5)],
-    [560, at(6, 40, -6, 11, 4.5), "out"],
-    [800, at(5, 37, -5, 10, 4)],
-    [1400, at(-4, 18, 6, 6, 3.5)],
-  ];
-}
-
-/**
  * Лагодить дріт: сів на підлогу біля стола (ноги вперед, під стіл), згорбився, обидві руки крутять і обмотують дріт, ближня
  * зрідка відтягує стрічку.
  */
@@ -1114,7 +1078,6 @@ export const PERSON_CHORES = defineAnims(PERSON_RIG, {
   meds: anim(MS.meds, false, meds),
   litter: anim(1800, true, litter),
   clean: anim(1600, true, clean),
-  vacuum: anim(1400, true, vacuum, OVER_HELD),
   washer: anim(MS.washer, false, washer),
   bowl: anim(MS.bowl, false, bowl),
   unpack: anim(MS.unpack, false, unpack),

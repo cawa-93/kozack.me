@@ -12,7 +12,6 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { PERSON_ANIM_GROUPS, PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../src/view/anim/ids";
 import { personAnim, type PersonLocal } from "../src/view/anim/personanim";
-import { artEntry } from "../src/view/art/manifest";
 import type { ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_CHORES, PERSON_SEAT } from "../src/view/rig/anims/person/chores";
@@ -215,8 +214,8 @@ describe("справи персонажа: ступні й руки", () => {
     }
   });
 
-  it("стоячи ступні — на вихідних місцях (крім справ, де ступні розставлені: лоток, пилосос, дріт, сидячи)", () => {
-    const placed = new Set<Name>(["litter", "vacuum", "fix", "work", "meeting", "eat"]);
+  it("стоячи ступні — на вихідних місцях (крім справ, де ступні розставлені: лоток, дріт, сидячи)", () => {
+    const placed = new Set<Name>(["litter", "fix", "work", "meeting", "eat"]);
     for (const view of VIEWS) {
       const rest = poseAt(view, null, 0);
       for (const name of NAMES) {
@@ -252,13 +251,13 @@ describe("справи персонажа: річ у руці", () => {
     }
   });
 
-  it("річ у руках спереду — на кулаці, поверх руки; телефон біля вуха й ручку пилососа кулак тримає поверх них", () => {
+  it("річ у руках спереду — на кулаці, поверх руки; телефон біля вуха кулак тримає поверх нього", () => {
     const order = (rig: LooseRig): string[] => rig.order.map((item) => item.id);
     for (const name of NAMES) {
       const rig = rigFor("front");
       rig.play(ANIMS[name], 0, { blend: 0 });
       const ids = order(rig.evaluate(0));
-      const over = name === "phone" || name === "vacuum";
+      const over = name === "phone";
       expect(ids.indexOf("arm-near") > ids.indexOf("held"), name).toBe(over);
     }
     // Ззаду річ і телефон — за тулубом, як і були.
@@ -266,41 +265,6 @@ describe("справи персонажа: річ у руці", () => {
     back.play(ANIMS.phone, 0, { blend: 0 });
     const ids = order(back.evaluate(0));
     expect(ids.indexOf("held")).toBeLessThan(ids.indexOf("torso"));
-  });
-
-  it("пилосос: нахил ±6°, щітка на підлозі й випереджає кулак (іде далі за нього)", () => {
-    const entry = artEntry("env/vacuum/cleaner");
-    const point = entry?.points?.brush;
-    const brush = entry && point ? { x: point.x - entry.pivot.x, y: point.y - entry.pivot.y } : { x: 46, y: 76 };
-    for (const view of VIEWS) {
-      const anim = ANIMS.vacuum;
-      const rig = rigFor(view);
-      rig.play(anim, 0, { blend: 0 });
-      const fists: number[] = [];
-      const brushes: number[] = [];
-      const heights: number[] = [];
-      for (const t of times(anim)) {
-        rig.evaluate(t);
-        const held = rig.socket("held");
-        if (!held) throw new Error("немає гнізда held");
-        expect(Math.abs(held.rot), `${view} нахил @${Math.round(t)}`).toBeLessThan(7);
-        const c = Math.cos(held.rot * DEG);
-        const sn = Math.sin(held.rot * DEG);
-        const bx = held.x + brush.x * c - brush.y * sn;
-        const by = held.y + brush.x * sn + brush.y * c;
-        // Щітка — на підлозі: кулак тримається на висоті, за якої щітка під ним торкається підлоги його глибини (у ¾ ззаду
-        // підлога попереду вище на екрані, спереду — нижче), тож на екрані щітка — біля лінії ступень, з того боку, куди йде
-        // глибина, і не підстрибує.
-        expect(Math.abs(by), `${view} щітка @${Math.round(t)}`).toBeLessThan(14);
-        expect(view === "back" ? by : -by, `${view} щітка з боку глибини @${Math.round(t)}`).toBeLessThan(0.5);
-        fists.push(held.x);
-        brushes.push(bx);
-        heights.push(by);
-      }
-      const span = (v: number[]): number => Math.max(...v) - Math.min(...v);
-      expect(span(brushes), `${view}: щітка ходить далі за кулак`).toBeGreaterThan(span(fists) + 8);
-      expect(span(heights), `${view}: щітка не підстрибує`).toBeLessThan(9);
-    }
   });
 });
 

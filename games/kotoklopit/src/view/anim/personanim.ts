@@ -29,8 +29,8 @@ export interface PersonLocal {
 
 /**
  * Що в руках (§8.4) — що кріпиться в гніздо рук: кіт (`arms`), сира порція, готова й пригоріла страва, мамин судочок, совок
- * звичайного корму й корму для стерилізованих, вудочка (`held`, `rod`), вертикальний пилосос (§8.7, рішення автора 2026-11-02;
- * як його несуть і як він гуде — пакет вигляду).
+ * звичайного корму й корму для стерилізованих, вудочка (`held`, `rod`), вертикальний пилосос (`held`, щітка на підлозі
+ * попереду; §8.7, рішення автора 2026-11-02, «Пилосос у руках»).
  */
 export type HeldThing = "cat" | "raw" | "meal" | "burnt" | "mom-meal" | "scoop" | "sterile-scoop" | "rod" | "vacuum";
 
@@ -98,12 +98,14 @@ export function inMeeting(state: GameState): boolean {
   return state.modifiers.day === "meeting" && minute >= meeting.from && minute < meeting.from + meeting.minutes;
 }
 
-/** Тривала дія утриманням (§10) — яка анімація: їсть за столом, лоток, безлад, пилосос, лагодить дріт, купає кота. */
+/**
+ * Тривала дія утриманням (§10) — яка анімація: їсть за столом, лоток, безлад, лагодить дріт, купає кота. Пилосос — не справа
+ * біля речі, а річ у руках (рішення автора 2026-11-02, §8.7): з ним персонаж стоїть і ходить (накладка `holdVacuum`).
+ */
 function useAnim(target: string, bath: boolean): PersonAnimId {
   if (bath) return "bath";
   if (target.startsWith("item:")) return "litter";
   if (target.startsWith("mess:")) return "clean";
-  if (target === "vacuum") return "vacuum";
   if (target === "computer") return "fix";
   return "eat";
 }
@@ -130,7 +132,8 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
     hidden: state.trip !== null || (activity?.kind === "use" && activity.inside === true && activity.bath !== true),
     dirty: state.home.clothes <= 0,
   };
-  const overlay: PersonAnimId | null = held === "cat" ? "holdCat" : held !== null ? "carry" : null;
+  // Накладка рук: кіт на руках, пилосос (ближня рука на ручці, щітка на підлозі — `holdVacuum`), решта — несе перед собою.
+  const overlay: PersonAnimId | null = held === "cat" ? "holdCat" : held === "vacuum" ? "holdVacuum" : held !== null ? "carry" : null;
   const choose = (anim: PersonAnimId, view: ArtView = facing.view, flip = facing.flip): PersonAnimChoice => ({
     anim,
     overlay: PERSON_OWN_ARMS.has(anim) ? null : overlay,
