@@ -15,6 +15,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import type { Cat, MessKind, Save, Vec } from "../src/sim/types";
+import { PersonSwept } from "../src/view/iso/swept";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -226,8 +227,9 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     expect(save.current.home.messes.map((m) => m.id).sort()).toEqual(kept.sort());
     expect(near.every((id) => !save.current.home.messes.some((m) => m.id === id))).toBe(true);
     const swept = events.find((e) => e.type === "vacuumed");
-    expect(swept).toMatchObject({ by: "person", tufts: 0 });
-    expect(swept?.type === "vacuumed" && [...swept.messes].sort()).toEqual([...dry].sort());
+    expect(swept).toMatchObject({ by: "person", tufts: [] });
+    expect(swept?.type === "vacuumed" && swept.messes.map((m) => m.kind).sort()).toEqual([...dry].sort());
+    expect(swept?.type === "vacuumed" && swept.messes.map((m) => m.id).sort()).toEqual([...near].sort());
     // За стіною ряду 5 (у ванній) — ні, хоч і ближче за 1,5.
     place(save, { x: 8.5, y: 6.35 });
     const behind = mess(save, "paper", { x: 8.5, y: 4.9 });
@@ -319,7 +321,7 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     stop();
     expect(tuftsOf(state)).toEqual([1, 2, 3, 4, 5]);
     expect(state.home.fur).toBeCloseTo(55 - 100 / 12, 1);
-    expect(events.find((e) => e.type === "vacuumed")).toMatchObject({ by: "person", tufts: 1 });
+    expect(events.find((e) => e.type === "vacuumed")).toMatchObject({ by: "person", tufts: [0] });
     // Шерсті вже менше 50, а п'ять жмутів лежать, доки їх не приберуть, — і шкодять.
     expect(furVisible(state)).toBe(true);
     // Шерсть знову дійшла до 50 — жмут з'являється на першому вільному місці.
@@ -327,6 +329,30 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     state.home.fur = 50;
     tickHousehold(state, state.minute, 0.1);
     expect(tuftsOf(state)).toEqual([1, 2, 3, 4, 5, 0]);
+  });
+
+  it("у щітку втягується лише прибране пилососом у руках — не те, що о 12:00 прибрав робот (вигляд, PersonSwept; рецензія 2026-11-02)", () => {
+    const save = game();
+    const state = save.current;
+    state.cats = [];
+    state.home.appliances.robot = "cheap";
+    state.home.fur = 100;
+    tickHousehold(state, state.minute, 0.1);
+    takeVacuum(save);
+    place(save, FUR_SPOTS[0]!);
+    state.minute = hours(12) - 1;
+    const { events, stop } = recordEvents();
+    advance(save, 6);
+    stop();
+    const swept = new PersonSwept();
+    for (const event of events) swept.onEvent(event);
+    const robot = events.flatMap((e) => (e.type === "vacuumed" && e.by === "robot" ? e.tufts : []));
+    // Робот за ці хвилини прибрав жмут біля бази (вітальня, праворуч), персонаж — лише той, біля якого стоїть.
+    expect(robot).toContain(4);
+    expect([...swept.tufts]).toEqual([0]);
+    expect(robot.some((i) => swept.tufts.has(i))).toBe(false);
+    swept.clear();
+    expect(swept.tufts.size + swept.dust.size + swept.messes.size).toBe(0);
   });
 
   it("сто шерсті — усі дванадцять жмутів; прибравши всі, шерсті не лишається", () => {

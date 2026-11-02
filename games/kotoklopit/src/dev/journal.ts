@@ -172,9 +172,9 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return event.stage === "taken" ? "Пилосос у руках: гуде" : "Пилосос поставлено";
     case "vacuumed": {
       const parts = [
-        ...(event.tufts > 0 ? [`жмутів шерсті ${event.tufts}`] : []),
+        ...(event.tufts.length > 0 ? [`жмутів шерсті ${event.tufts.length}`] : []),
         ...event.dust.map((i) => dustName(i)),
-        ...event.messes,
+        ...event.messes.map((m) => m.kind),
       ];
       return `${event.by === "robot" ? "Робот-пилосос прибрав" : "Пилосос прибрав"}: ${parts.join(", ")}`;
     }

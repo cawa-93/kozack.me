@@ -3,7 +3,7 @@
 // шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті, пил і скинуті дрібнички — кожне
 // окремим кадром маніфесту з точкою в реєстрі глибини (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а
 // пласке (бруд, шерсть, пил, док) — під тими, хто на ньому. Павутину на стіні малює квартира (`apartment.ts`). Те, що
-// прибрав пилосос у руках, не зникає миттю, а втягується в щітку (`SUCK`).
+// прибрав пилосос у руках (`PersonSwept`), не зникає миттю, а втягується в щітку (`SUCK`).
 //
 // Що показати — зі стану гри (`looks.ts`).
 
@@ -11,6 +11,7 @@ import type Phaser from "phaser";
 
 import { carriedToy } from "../../sim/catai";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
+import type { GameEvent } from "../../sim/events";
 import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
 import { FUR_SPOTS, ROBOT_DOCK, robotAt, tuftsOf } from "../../sim/household";
 import { VACUUM_TARGET, type Target } from "../../sim/targets";
@@ -24,6 +25,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import { basketState, carrierOccupied, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { PersonSwept } from "./swept";
 
 /** Що лежить на речі, — у її проміжку глибини, нижче за пів проміжку (`ISO_DEPTH_SLOT` 0,01). */
 const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
@@ -106,6 +108,8 @@ export class IsoFloorView implements WorldPart {
   private readonly singles = new Map<string, Spot>();
   /** Що зараз втягується в щітку пилососа. */
   private readonly sucking: Suck[] = [];
+  /** Що прибрав пилосос у руках з минулого кадру (події `vacuumed`): лише воно втягується в щітку. */
+  private readonly swept = new PersonSwept();
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -261,8 +265,12 @@ export class IsoFloorView implements WorldPart {
       this.place(spot, look, fallen, 8);
     }
 
-    this.forgetUnseen(state.character.held?.kind === "vacuum", frame.time);
+    this.forgetUnseen(frame.time);
     this.suck(frame.time);
+  }
+
+  onEvent(event: GameEvent): void {
+    this.swept.onEvent(event);
   }
 
   /**
@@ -317,25 +325,27 @@ export class IsoFloorView implements WorldPart {
 
   /**
    * Речі, яких цього кадру немає (продали, прибрали, зламалися), прибрати; жмути шерсті й пил — сховати: місця сталі, і там
-   * знову ляже шерсть чи пил. З пилососом у руках (`vacuum`) безлад, шерсть і пил, що зникли, прибрав він (руками з ним не
-   * прибирають, а робот бере лише шерсть і пил), — вони втягуються в щітку (`SUCK`) і лише тоді зникають.
+   * знову ляже шерсть чи пил. Безлад, шерсть і пил, що прибрав пилосос у руках (`swept`), втягуються в щітку (`SUCK`) і лише
+   * тоді зникають; прибране роботом-пилососом і руками — зникає одразу.
    */
-  private forgetUnseen(vacuum: boolean, time: number): void {
+  private forgetUnseen(time: number): void {
+    const swept = this.swept;
     for (const map of [this.items, this.messes, this.feeders, this.trinkets, this.singles] as Map<unknown, Spot>[]) {
       for (const [key, spot] of map) {
         if (spot.seen) continue;
         map.delete(key);
-        if (vacuum && map === this.messes) this.startSuck(spot, time, true);
+        if (map === this.messes && swept.messes.has(key as number)) this.startSuck(spot, time, true);
         else destroySpot(spot);
       }
     }
-    for (const spots of [this.tufts, this.dust]) {
-      for (const spot of spots.values()) {
+    for (const [spots, sucked] of [[this.tufts, swept.tufts], [this.dust, swept.dust]] as const) {
+      for (const [index, spot] of spots) {
         if (spot.seen || !spot.image.visible || this.sucking.some((s) => s.spot === spot)) continue;
-        if (vacuum) this.startSuck(spot, time, false);
+        if (sucked.has(index)) this.startSuck(spot, time, false);
         else this.hide(spot);
       }
     }
+    swept.clear();
   }
 
   /** Почати втягувати річ у щітку: її точка лишається в реєстрі (пласка — під персонажем і пилососом) до кінця. */
@@ -387,6 +397,7 @@ export class IsoFloorView implements WorldPart {
     // Прибраний безлад, що ще втягувався, — уже поза мапами: прибрати окремо.
     for (const s of this.sucking) if (s.orphan) destroySpot(s.spot);
     this.sucking.length = 0;
+    this.swept.clear();
     for (const spots of this.all()) for (const spot of spots) destroySpot(spot);
     this.items.clear();
     this.messes.clear();

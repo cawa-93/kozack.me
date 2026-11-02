@@ -12,7 +12,7 @@ import { addMess } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
-import type { BowlItem, Cat, Feeder, GameState, HomeItem, MessKind, Product, Quality, Vec } from "./types";
+import type { BowlItem, Cat, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
 
 /** Шкала шерсті квартири (§8.7): 0–100. */
 const FUR_MAX = 100;
@@ -172,11 +172,11 @@ function clearPath(a: Vec, b: Vec): boolean {
   return true;
 }
 
-/** Що прибрав пилосос за раз (§8.7): скільки жмутів шерсті, які місця пилу й який безлад. */
+/** Що прибрав пилосос за раз (§8.7): місця жмутів шерсті й пилу і який безлад. */
 interface Swept {
-  tufts: number;
+  tufts: number[];
   dust: number[];
-  messes: MessKind[];
+  messes: Pick<Mess, "id" | "kind">[];
 }
 
 /**
@@ -194,7 +194,7 @@ function sweep(state: GameState, at: Vec, radius: number, robot: boolean, out: S
   if (tufts.length > 0) {
     home.tufts = tuftsOf(state).filter((i) => !tufts.includes(i));
     home.fur = Math.max(0, home.fur - tufts.length * TUFT_FUR);
-    out.tufts += tufts.length;
+    out.tufts.push(...tufts);
   }
   for (const index of dustOf(state)) {
     const spot = DUST_SPOTS[index];
@@ -206,12 +206,12 @@ function sweep(state: GameState, at: Vec, radius: number, robot: boolean, out: S
   const messes = home.messes.filter((m) => isDryMess(m.kind) && near(m));
   if (messes.length === 0) return;
   home.messes = home.messes.filter((m) => !messes.includes(m));
-  out.messes.push(...messes.map((m) => m.kind));
+  out.messes.push(...messes.map((m) => ({ id: m.id, kind: m.kind })));
 }
 
 /** Пилосос щось прибрав (§8.7): подія для журналу. */
 function reportSwept(state: GameState, by: "person" | "robot", swept: Swept): void {
-  if (swept.tufts + swept.dust.length + swept.messes.length === 0) return;
+  if (swept.tufts.length + swept.dust.length + swept.messes.length === 0) return;
   emit(state, { type: "vacuumed", by, ...swept });
 }
 
@@ -315,7 +315,7 @@ export function tickVacuum(state: GameState, minutes: number): void {
   if (Math.floor(held.minutes / VACUUM.noiseEvery) > Math.floor(before / VACUUM.noiseEvery)) loudNoise(state, "vacuum", null);
   unpleasantTask(state, VACUUM.sanityPerMinute * minutes);
   const body = state.character.body;
-  const swept: Swept = { tufts: 0, dust: [], messes: [] };
+  const swept: Swept = { tufts: [], dust: [], messes: [] };
   sweep(state, body, VACUUM.radius, false, swept);
   reportSwept(state, "person", swept);
   const stash = STASHES.sofa.at;
@@ -400,7 +400,7 @@ const ROBOT_SWEEP_STEP = 0.2;
 /** Робот-пилосос проїхав маршрутом від частки `from` до `to` (0–1): прибрати, повз що він проїхав (§8.7). */
 function robotSweep(state: GameState, from: number, to: number): void {
   const steps = Math.max(1, Math.ceil(((to - from) * ROUTE_LENGTH) / ROBOT_SWEEP_STEP));
-  const swept: Swept = { tufts: 0, dust: [], messes: [] };
+  const swept: Swept = { tufts: [], dust: [], messes: [] };
   for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), VACUUM.robotReach, true, swept);
   reportSwept(state, "robot", swept);
 }
