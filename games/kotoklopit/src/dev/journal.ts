@@ -1,7 +1,9 @@
 // Журнал режиму розробки (§11.5): приховані зміни й кидки випадковості з подій симуляції.
 
 import { CHEWING, CLAW, GIFTS, PET, TRACE_CAT_DAYS } from "../sim/config";
+import { DUST_SPOTS, type DustKind } from "../sim/dust";
 import { onEvent, type GameEvent } from "../sim/events";
+import type { RoomId } from "../sim/home";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
 import { catDays } from "../sim/traces";
 import type { CatTrace, Delivery, GameState, Item, Quality } from "../sim/types";
@@ -45,6 +47,13 @@ const TRACES: Record<CatTrace, string> = {
 /** Сліди від котоднів (§9.12): у журналі — скільки котоднів набралося. */
 const BY_CAT_DAYS = new Set<CatTrace>(TRACE_CAT_DAYS.map((step) => step.trace));
 const goods = (d: Delivery): string => ("product" in d ? d.product : d.thing);
+/** Місце пилу (§8.7, «Пил і павутина»): кімната й вид. */
+const DUST_KINDS: Record<DustKind, string> = { cobweb: "павутина в куті", corner: "клубок пилу в куті", wall: "пил біля стіни", floor: "клубок пилу на підлозі" };
+const ROOM_NAMES: Record<RoomId, string> = { bedroom: "спальня", bathroom: "ванна", kitchen: "кухня", living: "вітальня" };
+const dustName = (index: number): string => {
+  const spot = DUST_SPOTS[index];
+  return spot ? `${ROOM_NAMES[spot.room]} — ${DUST_KINDS[spot.kind]} (${index})` : `місце ${index}`;
+};
 const catName = (state: GameState, id: number): string => state.cats.find((c) => c.id === id)?.name ?? `кіт ${id}`;
 
 export function stampOf(state: GameState): string {
@@ -164,10 +173,13 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "vacuumed": {
       const parts = [
         ...(event.tufts > 0 ? [`жмутів шерсті ${event.tufts}`] : []),
+        ...event.dust.map((i) => dustName(i)),
         ...event.messes,
       ];
       return `${event.by === "robot" ? "Робот-пилосос прибрав" : "Пилосос прибрав"}: ${parts.join(", ")}`;
     }
+    case "dust":
+      return `Пил: ${dustName(event.spot)}`;
     case "feeder":
       return `Автогодівниця насипала корм: мисок ${event.bowls.length}`;
     case "feeder-emptied":

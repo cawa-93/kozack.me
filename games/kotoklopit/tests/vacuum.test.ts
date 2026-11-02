@@ -272,6 +272,8 @@ describe("старі збереження (§8.7, рішення автора 20
     const home = save.current.home as Partial<typeof save.current.home>;
     delete home.vacuumAt;
     delete home.tufts;
+    delete home.dust;
+    delete home.dustClock;
     save.current.home.fur = 60;
     save.current.character.activity = { kind: "use", target: "vacuum", progress: 4 };
     const loaded = deserialize(serialize(save)).current;

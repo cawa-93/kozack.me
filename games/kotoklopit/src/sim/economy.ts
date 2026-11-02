@@ -52,6 +52,9 @@ export function newHome(): Home {
     feeders: [],
     fur: 0,
     tufts: [],
+    // Квартира на старті чиста (§8.7, «Пил і павутина»): пил набирається з часом.
+    dust: [],
+    dustClock: 0,
     vacuumAt: { ...VACUUM_HOME },
     clothes: START_CLOTHES,
     washer: { state: "idle", minutes: 0, quality: "cheap" },
