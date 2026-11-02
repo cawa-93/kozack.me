@@ -126,7 +126,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "trip-arrived":
       return `Доїхали: ${event.destination}`;
     case "trip-crashed":
-      return `Аварія: ${event.losses.join(", ") || "без втрат"}`;
+      // Години й ремонт — за швидкістю в мить аварії (§8.5; рішення автора 2026-11-02).
+      return `Аварія на ×${number(event.speed, 2)}: ${number(event.minutes / 60, 2)} год на документи й ремонт; втрати: ${event.losses.join(", ") || "немає"}`;
     case "trip-ended":
       return `Удома після поїздки: ${event.destination}`;
     case "bought":

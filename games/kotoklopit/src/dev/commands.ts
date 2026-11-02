@@ -9,6 +9,7 @@ import {
   FIRST_DAY_MODIFIER,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
+  RACE,
   WORK_END_MINUTE,
 } from "../sim/config";
 import { ringBell } from "../sim/door";
@@ -90,6 +91,18 @@ export function courierNow(state: GameState): void {
   const now = absoluteMinute(state.day, state.minute);
   for (const delivery of state.home.deliveries) delivery.at = Math.min(delivery.at, now);
   if (tickDeliveries(state) > 0) ringBell(state, false);
+}
+
+/**
+ * Примусово влаштувати аварію (§11.5, «Поїздки»): у гонці просто перед машиною персонажа в її смузі з'являється інша, і наступний
+ * кадр гонки в неї врізається — на тій швидкості, що зараз (від неї години й ремонт аварії, §8.5; рішення автора 2026-11-02). Між
+ * ними — пів довжини машини й шлях за крок гонки на цій швидкості: навіть на ×10 персонаж не проскочить. Повертає, чи йде гонка.
+ */
+export function crashNow(state: GameState): boolean {
+  const race = state.trip?.phase === "drive" ? state.trip.race : null;
+  if (!race) return false;
+  race.cars.push({ lane: Math.round(race.lane), start: race.done - RACE.carSpeed * race.minutes + RACE.carLength / 2 + race.speed * RACE.step });
+  return true;
 }
 
 /** Новий seed: умови й поведінка з наступного дня підуть інакше. */

@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { courierNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
+import { courierNow, crashNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
 import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId, type Scenario } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
-import { DEFAULT_LOOK, interact, newGame } from "../src/sim/game";
+import { DEFAULT_LOOK, drive, interact, newGame } from "../src/sim/game";
+import { NO_RACE_INPUT, newRace } from "../src/sim/race";
 import { weekdayOf, weekOf } from "../src/sim/time";
 import { createCat, idleAct } from "../src/sim/cat";
 import { dispatch, utilitiesDue } from "../src/sim/economy";
-import { THINGS } from "../src/sim/config";
+import { THINGS, TRIPS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hours, recordEvents } from "./helpers";
@@ -161,6 +162,24 @@ describe("команди режиму розробки", () => {
     expect(save.current.home.porch).toHaveLength(1);
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
     expect(host.act.target).toBe("guest");
+  });
+
+  it("«Аварія зараз» (§11.5, «Поїздки»): наступний кадр гонки — аварія на поточній швидкості, навіть на ×10 і посеред перестроювання; поза гонкою — нічого", () => {
+    for (const [speed, lane] of [[1, 1], [4, 0.5], [10, 2]] as const) {
+      const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
+      save.current.day = 5;
+      save.current.minute = 9 * 60;
+      expect(crashNow(save.current)).toBe(false);
+      save.current.trip = { destination: "shop", phase: "drive", cat: null, race: newRace(TRIPS.shop.road, 7), losses: [], visit: 0, seed: 7 };
+      Object.assign(save.current.trip.race, { speed, lane, targetLane: Math.round(lane) });
+      expect(crashNow(save.current)).toBe(true);
+      const { events, stop } = recordEvents();
+      expect(drive(save, 1 / 60, NO_RACE_INPUT).result, `×${speed}`).toBe("crash");
+      stop();
+      expect(save.current.trip.accident?.speed).toBeCloseTo(speed, 1);
+      const crashed = events.find((e) => e.type === "trip-crashed");
+      expect(crashed && describeEvent(crashed, save.current)).toContain(`Аварія на ×${speed}`);
+    }
   });
 });
 

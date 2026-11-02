@@ -9,7 +9,7 @@ import type { Address, Chronotype, Difficulty, Product, Quality, Save, StatName 
 import { patienceLevel, positionOf } from "../sim/work";
 import type { Session } from "../session";
 import { DIFFICULTY_TITLES, fill, POSITION_TITLES } from "../texts";
-import { courierNow, jumpTo, rebase, setSeed, setTime, skipDays, skipToMonday, sleepNow, type TimeOfDay } from "./commands";
+import { courierNow, crashNow, jumpTo, rebase, setSeed, setTime, skipDays, skipToMonday, sleepNow, type TimeOfDay } from "./commands";
 import { CatsSection } from "./cats";
 import type { Journal } from "./journal";
 import {
@@ -351,8 +351,21 @@ export class DevPanel {
           setSeed(this.save, seed);
           this.changed(`seed — ${seed}`, false);
         }),
+        this.crashButton(),
       ),
     );
+  }
+
+  /**
+   * «Поїздки» (§11.5): примусово влаштувати аварію — лише в гонці, на поточній швидкості (від неї години й ремонт аварії, §8.5).
+   * Знімків перегравання не змінює: інакше «Переграти день» повертав би в гонку з машиною просто перед персонажем.
+   */
+  private crashButton(): HTMLButtonElement {
+    const button = this.button("Аварія зараз", () => {
+      if (crashNow(this.save.current)) this.journal.add("Режим розробки: аварія зараз — машина просто попереду");
+    });
+    this.refreshers.push(() => (button.disabled = this.save.current.trip?.phase !== "drive"));
+    return button;
   }
 
   private scenarioSection(): HTMLElement {
