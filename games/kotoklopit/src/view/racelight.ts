@@ -18,7 +18,7 @@ import type { GameState } from "../sim/types";
 import { RACE_BUILDING, RACE_TILES } from "./art/manifest/a14-race";
 import { CAR_REACH, HOME_ROAD } from "./homeroad";
 import type { Daylight } from "./light/daylight";
-import { DEPARTURE, LOT_BOUNDS, type CarPose } from "./parking";
+import { CAR_BODY, DEPARTURE, LOT_BOUNDS, type CarPose } from "./parking";
 import { scrollOffset, TRAFFIC_COLORS, TRAFFIC_KINDS, type TrafficKind, type TrafficLook } from "./racelook";
 
 /** Вид машини: своя чи машина потоку. */
@@ -252,6 +252,33 @@ export function carLights(pose: CarPose, kind: CarKind, k = 1): CarLight[] {
   for (const side of [-1, 1]) lights.push({ kind: "head", ...at(side * head.x, head.y), rotation: pose.rotation });
   for (const side of [-1, 1]) lights.push({ kind: "tail", ...at(side * tail.x, tail.y), rotation: pose.rotation + Math.PI });
   return lights;
+}
+
+/**
+ * Чи точка `point` (px) під кузовом машини виду `kind` у позі `pose` на кадрі з `k` px на одиницю арту: кузов — прямокутник
+ * `CAR_BODY` навколо pivot, повернутий разом із машиною.
+ */
+export function underBody(point: Point, pose: CarPose, kind: CarKind, k = 1): boolean {
+  const body = CAR_BODY[kind];
+  const dx = point.x - pose.x;
+  const dy = point.y - pose.y;
+  const cos = Math.cos(pose.rotation);
+  const sin = Math.sin(pose.rotation);
+  // У рамку кузова — поворот назад, на −rotation (`carLights` повертає на +rotation).
+  const x = (dx * cos + dy * sin) / k;
+  const y = (dy * cos - dx * sin) / k;
+  return Math.abs(x) < body.w / 2 && Math.abs(y) < body.h / 2;
+}
+
+/**
+ * Вогні машини потоку виду `kind` у позі `pose`, яких не закриває своя машина (`own` — її поза; null — своєї в кадрі немає).
+ * Своя — над потоком, а цятки вогнів і світло в lightmap — над усіма кузовами (`RACE_DEPTH`), тож вогонь під кузовом своєї
+ * світив би крізь нього: фари машини, що пригальмовує впритул позаду (сим тримає її за `RACE.carLength`), і задні вогні тієї,
+ * у яку врізалися (кадр аварії з наїздом камери). Такий вогонь не горить зовсім — ні цятки, ні світла (промінь, пляма).
+ */
+export function trafficLights(pose: CarPose, kind: TrafficKind, own: CarPose | null, k = 1): CarLight[] {
+  const lights = carLights(pose, kind, k);
+  return own === null ? lights : lights.filter((light) => !underBody(light, own, "player", k));
 }
 
 /**

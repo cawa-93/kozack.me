@@ -4,13 +4,14 @@
 
 import { describe, expect, it } from "vitest";
 
+import { crashNow } from "../src/dev/commands";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { DAYLIGHT, GIFTS, MODIFIERS, TRIPS } from "../src/sim/config";
+import { DAYLIGHT, GIFTS, MODIFIERS, RACE, TRIPS } from "../src/sim/config";
 import { carAt, NO_RACE_INPUT } from "../src/sim/race";
 import { carryFoundling, drive, goHome } from "../src/sim/game";
 import { gameMinutes } from "../src/sim/time";
 import { roadMinutes, visitMinutes } from "../src/sim/trips";
-import type { Save } from "../src/sim/types";
+import type { RaceCar, Save } from "../src/sim/types";
 import { RACE_TILES } from "../src/view/art/manifest/a14-race";
 import { CAR_REACH, HOME_ROAD, homeRoadFrame, TRAFFIC } from "../src/view/homeroad";
 import { daylight } from "../src/view/light/daylight";
@@ -42,10 +43,12 @@ import {
   STREET_LAMPS,
   streetPools,
   TAIL,
+  trafficLights,
   tripLightMinute,
+  underBody,
   type CarKind,
 } from "../src/view/racelight";
-import { RACE_PLAYER_Y, racePixelsPerUnit, raceScale, TRAFFIC_COLORS, TRAFFIC_KINDS } from "../src/view/racelook";
+import { laneX, RACE_PLAYER_Y, racePixelsPerUnit, raceScale, steerTilt, TRAFFIC_COLORS, TRAFFIC_KINDS } from "../src/view/racelook";
 
 const KINDS = Object.keys(CAR_LIGHTS) as CarKind[];
 
@@ -129,6 +132,62 @@ describe("вогні машин", () => {
     expect(poolAlpha(1)).toBe(0);
     expect(poolAlpha(0.5)).toBeGreaterThan(poolAlpha(0.8));
     expect(poolAlpha(0.4, 0.5)).toBe(1);
+  });
+});
+
+describe("вогні під кузовом своєї машини", () => {
+  it("кузов — прямокутник `CAR_BODY` навколо pivot, повернутий і масштабований разом із машиною", () => {
+    const pose = { x: 300, y: 400, rotation: 0.2 };
+    const k = 1.5;
+    const { w, h } = CAR_BODY.player;
+    const cos = Math.cos(pose.rotation);
+    const sin = Math.sin(pose.rotation);
+    const at = (x: number, y: number): { x: number; y: number } => ({ x: pose.x + (x * cos - y * sin) * k, y: pose.y + (x * sin + y * cos) * k });
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        expect(underBody(at(sx * (w / 2 - 1), sy * (h / 2 - 1)), pose, "player", k)).toBe(true);
+        expect(underBody(at(sx * (w / 2 + 1), sy * (h / 2 - 1)), pose, "player", k)).toBe(false);
+        expect(underBody(at(sx * (w / 2 - 1), sy * (h / 2 + 1)), pose, "player", k)).toBe(false);
+      }
+    }
+    // Без повороту той самий кут уже поза кузовом: прямокутник справді повернутий.
+    expect(underBody(at(w / 2 - 1, h / 2 - 1), { ...pose, rotation: 0 }, "player", k)).toBe(false);
+  });
+
+  it("кадр аварії: фари машини впритул позаду (сим тримає її за `RACE.carLength`) і задні вогні тієї, у яку врізалися, — під кузовом своєї й не горять; решта горять", () => {
+    const save = scenario("night-drive");
+    const race = save.current.trip?.race;
+    if (!race) throw new Error("немає гонки");
+    const lane = Math.round(race.lane);
+    // Машина у своїй смузі позаду ближче, ніж дозволяє сим: він пригальмовує її рівно на довжину машини позаду.
+    const behind: RaceCar = { lane, start: race.done - RACE.carSpeed * race.minutes - RACE.carLength / 2 };
+    race.cars.push(behind);
+    expect(crashNow(save.current)).toBe(true);
+    const ahead = race.cars.at(-1);
+    if (!ahead) throw new Error("немає машини попереду");
+    expect(drive(save, 1 / 60, NO_RACE_INPUT).result).toBe("crash");
+    expect(carAt(race, behind) - race.done).toBeCloseTo(-RACE.carLength, 9);
+    expect(carAt(race, ahead) - race.done).toBeGreaterThanOrEqual(0);
+    expect(carAt(race, ahead) - race.done).toBeLessThan(RACE.carLength);
+    const neighbours = race.cars.filter((car) => car.lane !== lane);
+    expect(neighbours.length).toBeGreaterThan(0);
+    for (const height of [720, 390]) {
+      // Пози — як у кадрі гонки (`RaceArt.draw`), з якого починається кадр аварії.
+      const k = raceScale(height);
+      const ppu = racePixelsPerUnit(height);
+      const cx = 640;
+      const playerY = height * RACE_PLAYER_Y;
+      const own = { x: laneX(cx, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) };
+      const poseOf = (car: RaceCar): { x: number; y: number; rotation: number } => ({ x: laneX(cx, car.lane, k), y: playerY - (carAt(race, car) - race.done) * ppu, rotation: 0 });
+      for (const kind of TRAFFIC_KINDS) {
+        expect(trafficLights(poseOf(behind), kind, own, k).map((light) => light.kind), kind).toEqual(["tail", "tail"]);
+        expect(trafficLights(poseOf(ahead), kind, own, k).map((light) => light.kind), kind).toEqual(["head", "head"]);
+        // Без своєї машини — усі чотири, як `carLights`.
+        expect(trafficLights(poseOf(behind), kind, null, k)).toEqual(carLights(poseOf(behind), kind, k));
+        // У сусідніх смугах своя нічого не закриває.
+        for (const car of neighbours) expect(trafficLights(poseOf(car), kind, own, k)).toEqual(carLights(poseOf(car), kind, k));
+      }
+    }
   });
 });
 

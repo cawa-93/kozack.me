@@ -53,6 +53,7 @@ import {
 import { CRASH_FX, crashView } from "../view/racecrash";
 import {
   arrivalLights,
+  carLights,
   departureLightMinute,
   departureLights,
   DRIVING_LIGHTS,
@@ -66,6 +67,7 @@ import {
   SIGN_AT,
   streetPools,
   TAIL,
+  trafficLights,
   tripLightMinute,
   type OwnLights,
   type RaceNightLevel,
@@ -813,6 +815,7 @@ class RaceArt {
     // Машини потоку: ті, що в кадрі (з запасом на довжину машини). Уночі їхні вогні гаснуть за краєм кадру раніше, ніж машину
     // відсікає сцена чи прибирає сим (`lightFade`), тож запасу на промінь тут не треба.
     const reach = (artEntry("race/car/traffic")?.size.h ?? 84) * k;
+    const player = { x: laneX(cx, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) };
     const lit: LitCar[] = [];
     let n = 0;
     for (const car of race.cars) {
@@ -821,13 +824,12 @@ class RaceArt {
       const look = this.lookOf(car);
       const pose = { x: laneX(cx, car.lane, k), y, rotation: 0 };
       this.fit(this.carImage(this.traffic, n++, look, RACE_DEPTH.traffic), k, k).setPosition(pose.x, pose.y).setRotation(0).setAlpha(1);
-      if (view.night) lit.push(trafficLit(pose, look, view.night, lightFade(y, height, k)));
+      if (view.night) lit.push(trafficLit(pose, look, player, view.night, k, lightFade(y, height, k)));
     }
     hideFrom(this.traffic, n);
 
-    const player = { x: laneX(cx, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) };
     this.fit(this.player, k, k).setPosition(player.x, player.y).setRotation(player.rotation);
-    if (view.night) lit.push(ownLit(player, DRIVING_LIGHTS, view.night));
+    if (view.night) lit.push(ownLit(player, DRIVING_LIGHTS, view.night, k));
 
     const lot = { y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) };
     this.drawLot(lot, view);
@@ -873,9 +875,9 @@ class RaceArt {
     if (night) {
       for (const car of frame.traffic) {
         const pose = { x: view.cx + car.x, y: car.y, rotation: car.rotation };
-        lit.push(trafficLit(pose, car.look, night, car.alpha * lightFade(car.y, height, k, frame.lightBand)));
+        lit.push(trafficLit(pose, car.look, player, night, k, car.alpha * lightFade(car.y, height, k, frame.lightBand)));
       }
-      lit.push(ownLit(player, frame.lights, night));
+      lit.push(ownLit(player, frame.lights, night, k));
     }
     this.drawNight(view, frame.offset, frame.lot?.y ?? null, lit);
   }
@@ -1096,16 +1098,19 @@ function homeRoad(frame: HomeRoadFrame, k: number): RoadFrame {
 /** Нічого не світить (день). */
 const NO_LIGHTS: NightLights = { pools: [], cars: [], sign: null };
 
-/** Машина потоку вночі: фари й задні вогні — з її порога (`headlightsOn`), `fade` — непрозорість і згасання за краєм кадру. */
-function trafficLit(pose: CarPose, look: TrafficLook, night: RaceNightLevel, fade: number): LitCar {
+/**
+ * Машина потоку вночі на кадрі з `k` px на одиницю арту: фари й задні вогні — з її порога (`headlightsOn`), `fade` —
+ * непрозорість і згасання за краєм кадру; вогні під кузовом своєї машини (`own` — її поза) не горять (`trafficLights`).
+ */
+function trafficLit(pose: CarPose, look: TrafficLook, own: CarPose, night: RaceNightLevel, k: number, fade: number): LitCar {
   const on = headlightsOn(night.dark, lookSeed(look)) ? fade : 0;
-  return { pose, kind: look.kind, head: on, tail: TAIL.running * on, reverse: 0 };
+  return { lights: trafficLights(pose, look.kind, own, k), head: on, tail: TAIL.running * on, reverse: 0 };
 }
 
 /** Своя машина вночі: вогні етапу (`lights`), коли її фари вже ввімкнено (свій поріг — `HEADLIGHTS.threshold`). */
-function ownLit(pose: CarPose, lights: OwnLights, night: RaceNightLevel): LitCar {
+function ownLit(pose: CarPose, lights: OwnLights, night: RaceNightLevel, k: number): LitCar {
   const on = headlightsOn(night.dark, null) ? 1 : 0;
-  return { pose, kind: "player", head: lights.head * on, tail: lights.tail * on, reverse: lights.reverse * on };
+  return { lights: carLights(pose, "player", k), head: lights.head * on, tail: lights.tail * on, reverse: lights.reverse * on };
 }
 
 /** Сховати зображення пулу з номера `from`. */

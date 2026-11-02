@@ -16,19 +16,17 @@
 
 import Phaser from "phaser";
 
-import type { CarPose } from "./parking";
 import {
   BEAM,
   BEAM_SPREAD,
   beamAlpha,
   BULB,
-  carLights,
   LIGHTMAP,
   LIGHT_COLORS,
   poolAlpha,
   SIGN_GLOW,
   TAIL,
-  type CarKind,
+  type CarLight,
   type LightPool,
   type RaceNightLevel,
 } from "./racelight";
@@ -46,12 +44,11 @@ export interface RaceNightDepths {
 }
 
 /**
- * Машина, що світить: поза (px; x — разом із серединою дороги), вид і наскільки горять її фари, задні вогні й задній хід (0–1,
- * уже з непрозорістю машини й згасанням за краєм кадру).
+ * Машина, що світить: її вогні, які видно (`carLights`; у машин потоку — без тих, що під кузовом своєї, `trafficLights`), і
+ * наскільки горять фари, задні вогні й задній хід (0–1, уже з непрозорістю машини й згасанням за краєм кадру).
  */
 export interface LitCar {
-  pose: CarPose;
-  kind: CarKind;
+  lights: readonly CarLight[];
   head: number;
   tail: number;
   reverse: number;
@@ -193,7 +190,7 @@ export class RaceNight {
     let tails = 0;
     const beamScale = (BEAM.length * k * res) / TEX.beam.size;
     for (const car of lights.cars) {
-      for (const light of carLights(car.pose, car.kind, k)) {
+      for (const light of car.lights) {
         if (light.kind === "head") {
           if (car.head <= 0) continue;
           lightmap.stamp(TEX.beam.key, undefined, light.x * res, light.y * res, {
