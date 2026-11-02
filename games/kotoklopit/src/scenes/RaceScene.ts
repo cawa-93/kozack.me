@@ -1,5 +1,6 @@
 // Гонка дорогою (§8.5): три смуги, свої й чужі машини; джойстик чи стрілки: вперед — газ, назад — гальмо. Сцена лише малює стан
-// гонки й передає керування в симуляцію; коли гонка закінчилася, повертає день.
+// гонки й передає керування в симуляцію; коли гонка закінчилася, повертає день. Аварію показує, як засинання
+// (`src/view/racecrash.ts`): камера наїжджає на машину, екран темніє, а тоді день показує картку аварії.
 
 import Phaser from "phaser";
 
@@ -7,7 +8,7 @@ import { PALETTE } from "../../art/palette";
 import { drive } from "../sim/game";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
-import type { Destination, GameState, Race, RaceCar, Trip } from "../sim/types";
+import type { Destination, GameState, Race, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
 import { RACE_START_HINT } from "../texts";
@@ -17,6 +18,7 @@ import { artEntry } from "../view/art/manifest";
 import { RACE_TILES } from "../view/art/manifest/a14-race";
 import type { ArtId, TintRecipe } from "../view/art/types";
 import { COLORS } from "../view/colors";
+import { CRASH_FX, crashView } from "../view/racecrash";
 import { canvasNow, fitUiCamera } from "../view/viewport";
 import {
   barMarkerY,
@@ -54,6 +56,23 @@ export const DESTINATION_TITLES: Record<Destination, string> = {
   show: "Виставка котів",
 };
 
+/**
+ * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5). Передавати завжди: Phaser без даних лишає сцені ті, з
+ * якими її запускали минулого разу.
+ */
+export interface RoadStart {
+  mode: "race";
+}
+
+/**
+ * З чим сцена дороги будить день (`scene.wake("day", …)`): що вона показувала й чи скінчилася аварією — тоді екран уже чорний
+ * (анімація аварії), і день тримає його чорним під карткою аварії.
+ */
+export interface RoadEnd {
+  mode: RoadStart["mode"];
+  crashed?: boolean;
+}
+
 export class RaceScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private label!: Phaser.GameObjects.Text;
@@ -67,6 +86,13 @@ export class RaceScene extends Phaser.Scene {
   private stick: { id: number; origin: { x: number; y: number }; x: number; y: number; steered: boolean } | null = null;
   /** Дорога, узбіччя, машини й смуга прогресу з атласу (крок 16, A14); створюється з кожною гонкою. */
   private art: RaceArt | null = null;
+  /** Темрява поверх дороги: аварія (§8.5). */
+  private dark!: Phaser.GameObjects.Rectangle;
+  /**
+   * Аварію показано (§8.5): скільки мс іде анімація (лише поки гра не стоїть) і з яким збереженням вона почалася — гру
+   * замінили посеред анімації, і день сам покаже, що треба.
+   */
+  private crash: { ms: number; save: Save } | null = null;
 
   constructor(private readonly session: Session) {
     super("race");
@@ -80,6 +106,9 @@ export class RaceScene extends Phaser.Scene {
     const art = new RaceArt(this);
     this.art = art;
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => art.destroy());
+    this.crash = null;
+    // Темрява — над усім, і над написом.
+    this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(RACE_DEPTH.dark);
     // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
     this.g = this.add.graphics().setDepth(RACE_DEPTH.ui);
     this.label = this.add
@@ -93,6 +122,7 @@ export class RaceScene extends Phaser.Scene {
       .setDepth(RACE_DEPTH.ui)
       .setStroke(PALETTE.ink, 5);
     this.touched = false;
+    this.stick = null;
     const keyboard = this.input.keyboard;
     if (keyboard) {
       const K = Phaser.Input.Keyboard.KeyCodes;
@@ -157,21 +187,87 @@ export class RaceScene extends Phaser.Scene {
   }
 
   override update(_time: number, delta: number): void {
+    if (this.crash) return this.updateCrash(delta);
     const state = this.state;
-    if (state.trip?.phase !== "drive" || state.end !== null) return this.finish();
-    // Пауза розробника чи заглушка «Поверніть телефон» (§10): дорога стоїть.
-    if (!this.session.paused && !isRotateNoticeShown()) {
+    if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
+    if (this.running()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
       const { result, night } = drive(this.session.save, gameMinutes(seconds) * this.session.speed, this.input_());
-      if (result !== null || night !== null) return this.finish();
+      // Врізалися (сим уже застосував аварію, §8.5) — спершу анімація аварії тут, а картку покаже день.
+      if (result === "crash" && night === null && state.end === null) return this.startCrash();
+      if (result !== null || night !== null) return this.finish({ mode: "race" });
     }
     this.draw();
   }
 
-  private finish(): void {
+  /** Чи йде час дороги: пауза розробника чи заглушка «Поверніть телефон» (§10) зупиняють і гонку, і анімації. */
+  private running(): boolean {
+    return !this.session.paused && !isRotateNoticeShown();
+  }
+
+  /** Мілісекунди анімації за кадр: стільки ж, скільки гра йде (довгий кадр — не більше 0,1 с). */
+  private animationMs(delta: number): number {
+    return this.running() ? Math.min(delta, MAX_FRAME_SECONDS * 1000) : 0;
+  }
+
+  private finish(end: RoadEnd): void {
     this.stick = null;
-    this.scene.wake("day");
+    this.scene.wake("day", end);
     this.scene.stop();
+  }
+
+  /**
+   * Аварія (§8.5): як засинання (§8.8) — машина стоїть, де врізалася, камера наїжджає на неї, екран темніє до чорного. Керування
+   * більше немає, напис і підказка зникають; поштовх камери — мить удару.
+   */
+  private startCrash(): void {
+    this.crash = { ms: 0, save: this.session.save };
+    this.stick = null;
+    this.g.clear();
+    this.label.setVisible(false);
+    this.hint.setVisible(false);
+    this.cameras.main.shake(CRASH_FX.shakeMs, CRASH_FX.shake);
+    this.drawCrash();
+  }
+
+  /**
+   * Анімація аварії йде, поки гра не стоїть; скінчилася — день, і він покаже картку аварії. Гру замінили (сценарій, нова гра)
+   * чи аварії вже немає — день одразу: він сам покаже, що треба. Перезавантаження сторінки посеред анімації — одразу картка:
+   * сим уже в аварії, а анімація нічого не зберігає.
+   */
+  private updateCrash(delta: number): void {
+    const crash = this.crash;
+    if (!crash) return;
+    if (this.session.save !== crash.save || this.state.trip?.phase !== "accident") return this.finish({ mode: "race" });
+    crash.ms += this.animationMs(delta);
+    if (this.drawCrash()) this.finish({ mode: "race", crashed: true });
+  }
+
+  /** Кадр аварії: гонка, як у мить удару, з наїздом камери й темрявою (`crashView`). Повертає, чи анімація скінчилася. */
+  private drawCrash(): boolean {
+    const trip = this.state.trip;
+    const art = this.art;
+    const crash = this.crash;
+    if (!trip || !art || !crash) return true;
+    const view = this.layout();
+    art.draw(trip.race, view);
+    const frame = crashView(crash.ms, { x: laneX(view.cx, trip.race.lane, view.k), y: view.playerY }, view);
+    this.cameras.main.setZoom(canvasNow().ui * frame.zoom).setScroll(frame.scroll.x, frame.scroll.y);
+    // Камера не виходить за кадр (`crashView`), тож темрява на весь кадр закриває все, що видно.
+    this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
+    return frame.done;
+  }
+
+  /**
+   * Розміри кадру дороги: в одиницях інтерфейсу (1280 × 720, що ширшає чи вищає) — полотно в пікселях пристрою, камера
+   * масштабує (`fitUiCamera` щокадру ставить звичайний масштаб і прокрутку; наїзд аварії — поверх).
+   */
+  private layout(): RaceView {
+    const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
+    const css = safeArea();
+    const unit = canvasNow().unit;
+    const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
+    return { width, height, k: raceScale(height), ppu: racePixelsPerUnit(height), cx: width / 2, playerY: height * RACE_PLAYER_Y, safe };
   }
 
   /**
@@ -183,13 +279,9 @@ export class RaceScene extends Phaser.Scene {
     const art = this.art;
     if (!trip || !art) return;
     const race = trip.race;
-    // Гонка — в одиницях інтерфейсу (1280 × 720, що ширшає чи вищає): полотно — у пікселях пристрою, камера масштабує.
-    const { width, height } = fitUiCamera(this.cameras.main, this.scale.gameSize);
+    const view = this.layout();
+    const { height, safe } = view;
     const g = this.g.clear();
-    const css = safeArea();
-    const unit = canvasNow().unit;
-    const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
-    const view: RaceView = { width, height, k: raceScale(height), ppu: racePixelsPerUnit(height), cx: width / 2, playerY: height * RACE_PLAYER_Y, safe };
     art.draw(race, view);
     this.drawStick(g);
     const roadLeft = view.cx - RACE_TILES.road.curb * view.k;
@@ -244,8 +336,8 @@ export class RaceScene extends Phaser.Scene {
 
 // --- Арт гонки (крок 16, A14) ------------------------------------------------------------------------
 
-/** Шари гонки: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис. */
-const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, marker: 5, ui: 10 } as const;
+/** Шари гонки: поле, дорога, машини потоку, своя машина, смуга прогресу, джойстик і напис; над усім — темрява. */
+const RACE_DEPTH = { verge: 0, road: 1, traffic: 2, player: 3, bar: 4, marker: 5, ui: 10, dark: 20 } as const;
 /** Від середини своєї машини до її переду з контуром, одиниці арту (`race/car/player`): над ним — підказка «W ↑». */
 const RACE_CAR_FRONT = 34;
 

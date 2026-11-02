@@ -51,6 +51,7 @@ import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
+import type { RoadEnd, RoadStart } from "./RaceScene";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
 const MAX_FRAME_SECONDS = 0.1;
@@ -61,6 +62,11 @@ const CAT_TAP_MS = 250;
  * наїжджає на `zoom`; потім ніч. Падіння без сил починається за `lead` ігрових хвилин до межі.
  */
 const FALL_ASLEEP = { eyes: 1300, darkFrom: 1000, total: 2300, zoom: 0.5, lead: 0.01 } as const;
+/**
+ * Після аварії (§8.5) квартира проступає з чорного за `ms` мс; під титулкою ночі чи екраном кінця гри темрява тримається ще
+ * `covered` мс, як після засинання, — щоб квартира не блимнула перед ними.
+ */
+const ROAD_REVEAL = { ms: 400, covered: 1000 } as const;
 
 
 type Keys = Record<
@@ -156,6 +162,10 @@ export class DayScene extends Phaser.Scene {
       }),
     );
     this.cleanup.push(() => this.world.destroy());
+    // Гонка скінчилася (доїхали чи аварія): сцена дороги будить день і каже, з чим (`RoadEnd`).
+    const onWake = (_sys: Phaser.Scenes.Systems, end?: RoadEnd): void => this.onRoadEnd(end);
+    this.events.on(Phaser.Scenes.Events.WAKE, onWake);
+    this.cleanup.push(() => this.events.off(Phaser.Scenes.Events.WAKE, onWake));
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup.forEach((stop) => stop()));
     this.restart();
     // Меню на старті (§4.2): лише для справжньої збереженої гри, не для сценаріїв режиму розробки.
@@ -308,11 +318,33 @@ export class DayScene extends Phaser.Scene {
     this.time.delayedCall(covered ? 1000 : 0, () => this.wakeUp());
   }
 
-  /** Прибрати засинання: очі, наїзд і темряву. */
+  /** Прибрати засинання: очі, наїзд і темряву (і темряву після аварії). */
   private wakeUp(): void {
     this.asleep = null;
+    this.tweens.killTweensOf(this.dark);
     this.dark.setFillStyle(0x000000, 0);
     this.viewport.focus(1);
+  }
+
+  /**
+   * Сцена дороги розбудила день (`RoadEnd`). Аварія (§8.5): екран уже чорний після анімації — він і лишається чорним під карткою
+   * аварії, доки її не закрили (`revealFromDark`). Звичайний кінець гонки — нічого: далі картка на місці, як і раніше.
+   */
+  private onRoadEnd(end: RoadEnd | undefined): void {
+    if (end?.crashed !== true) return;
+    this.tweens.killTweensOf(this.dark);
+    this.dark.setFillStyle(0x000000, 1);
+  }
+
+  /**
+   * Квартира проступає з чорного після аварії (§8.5). Ніч настала — титулка, гра скінчилася — екран кінця (`game-over` показує
+   * його трохи згодом): тоді темрява тримається, доки вони не закрили екран, як після засинання.
+   */
+  private revealFromDark(): void {
+    if (this.dark.fillAlpha <= 0) return;
+    this.tweens.killTweensOf(this.dark);
+    const cinematic = (this.overlay.isOpen && this.overlay.shown === null) || this.state.end !== null;
+    this.tweens.add({ targets: this.dark, fillAlpha: 0, duration: ROAD_REVEAL.ms, delay: cinematic ? ROAD_REVEAL.covered : 0 });
   }
 
   private dash(): void {
@@ -355,17 +387,21 @@ export class DayScene extends Phaser.Scene {
     if (trip.phase === "drive") {
       // Поки відкрита картка (меню після перезавантаження сторінки посеред гонки), гонка не йде: перевірка поїздок 2026-10-28.
       if (!this.overlay.isOpen && !this.scene.isActive("race")) {
-        this.scene.launch("race");
+        this.scene.launch("race", { mode: "race" } satisfies RoadStart);
         this.scene.sleep();
       }
       return true;
     }
     if (this.overlay.isOpen) return true;
+    // Аварія (§8.5): після анімації в гонці екран чорний і картка — на чорному; закрили — квартира проступає з чорного (чи
+    // титулка ночі). Після перезавантаження сторінки посеред аварії — одразу картка поверх квартири, як і раніше.
     if (trip.phase === "accident") {
       this.overlay.show(
         accidentCard(this.state, () => {
           this.overlay.close();
           rewindAccident(this.session.save);
+          this.viewport.jump();
+          this.revealFromDark();
         }),
       );
       return true;
