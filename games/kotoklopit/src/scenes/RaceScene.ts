@@ -478,13 +478,13 @@ export class RaceScene extends Phaser.Scene {
 
   /**
    * Де парковка на місці (`parkingLayout`): картка пункту, притиснута ліворуч (`asideCardRight` — у px CSS, як її кладе
-   * `overlay.css`), і вільна смуга праворуч від неї. Вікно в px CSS — кадр в одиницях інтерфейсу поділити на одиниці на px.
+   * `overlay.css`), і вільна смуга праворуч від неї. Вікно й безпечна зона в px CSS — кадр в одиницях інтерфейсу, поділений на
+   * одиниці на px.
    */
   private parkingPlace(view: RaceView): ParkingLayout {
     const unit = canvasNow().unit;
-    const css = safeArea();
-    const card = asideCardRight({ width: view.width / unit, height: view.height / unit }, css.left, css.right) * unit;
-    return parkingLayout(view, card);
+    const css = { width: view.width / unit, height: view.height / unit };
+    return parkingLayout(view, asideCardRight(css, view.safe.left / unit, view.safe.right / unit) * unit);
   }
 
   /** Кадр зі світом, зсунутим убік на частку `pan` зсуву парковки (`ParkingLayout.pan`): середина дороги — `cx`. */
