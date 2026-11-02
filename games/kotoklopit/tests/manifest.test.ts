@@ -261,6 +261,8 @@ describe("маніфест: квартира", () => {
   });
 
   it("стани дня відключення світла (§4.1, рішення автора 2026-11-02)", () => {
+    // Холодний душ: вода тече без пари й запітнілого скла.
+    expect(states("env/shower")).toContain("running-cold");
     // Робот-пилосос не виїжджає й стоїть на доку без заряду, у доку погас вогник живлення.
     for (const quality of ["cheap", "premium"] as const) expect(states(`item/robot/${quality}`), quality).toContain("off");
     expect(states("item/robot-dock")).toEqual(["on", "off"]);

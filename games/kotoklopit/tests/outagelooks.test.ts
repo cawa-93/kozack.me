@@ -10,7 +10,7 @@ import { powerOut } from "../src/sim/modifiers";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtId } from "../src/view/art/types";
-import { dockFrame, robotFrame, type IsoFrame } from "../src/view/iso/looks";
+import { dockFrame, robotFrame, showerState, type IsoFrame } from "../src/view/iso/looks";
 
 /** Стан сценарію (свіжа копія). */
 function scenario(name: string): GameState {
@@ -36,6 +36,24 @@ function expectFrame(frame: IsoFrame): void {
   expect(entry, frame.id).toBeDefined();
   expect(entry?.states ?? [], `${frame.id}#${frame.state}`).toContain(frame.state);
 }
+
+describe("душ у день відключення (§8.7, §4.1): вода холодна", () => {
+  it("поки персонаж у душі, вода тече: звичайного дня — гаряча (running), у відключення — холодна (running-cold)", () => {
+    const { usual, outage } = bothDays("appliances");
+    for (const state of [usual, outage]) state.character.activity = { kind: "use", target: "shower", progress: 0.2, inside: true };
+    expect(showerState(usual)).toBe("running");
+    expect(showerState(outage)).toBe("running-cold");
+    expectFrame({ id: "env/shower", state: showerState(outage) });
+  });
+
+  it("без води — так само, як звичайного дня: сухо чи мокрий піддон", () => {
+    const { usual, outage } = bothDays("appliances");
+    usual.character.activity = null;
+    outage.character.activity = null;
+    expect(showerState(outage)).toBe(showerState(usual));
+    expect(["dry", "wet"]).toContain(showerState(outage));
+  });
+});
 
 describe("робот-пилосос і док у день відключення (§8.7, §4.1)", () => {
   it("звичайного дня — заряджається на доку й прибирає; у відключення — вимкнений (off), і на доку, і в дорозі", () => {

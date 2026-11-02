@@ -85,10 +85,13 @@ export function dishFrame(dish: Dish): IsoFrame {
   return frame(`item/dish/${dish.kind}`, dish.quality);
 }
 
-/** Душова кабіна (§8.7): тече вода, поки персонаж усередині чи купає кота; мокрий піддон, поки на ньому сидить кіт. */
+/**
+ * Душова кабіна (§8.7): тече вода, поки персонаж усередині чи купає кота; мокрий піддон, поки на ньому сидить кіт. У день
+ * відключення світла (§4.1, рішення автора 2026-11-02) бойлер не гріє — вода холодна: без пари й запітнілого скла.
+ */
 export function showerState(state: GameState): string {
   const activity = state.character.activity;
-  if (activity?.kind === "use" && activity.target === "shower") return "running";
+  if (activity?.kind === "use" && activity.target === "shower") return powerOut(state) ? "running-cold" : "running";
   return state.cats.some((cat) => cat.away === null && objectAt(state, Math.floor(cat.x), Math.floor(cat.y))?.id === "shower") ? "wet" : "dry";
 }
 
