@@ -442,6 +442,22 @@ describe("згасання внутрішніх стін (iso/geometry.ts, walls
     expect(faded(state)).toEqual([]);
   });
 
+  it("умивальник (11, 1) за стіною x = 12: кіт на ньому видно й так, а той, що сховався під ним, — на підлозі й гасить стіну", () => {
+    const state = quiet();
+    const cat = state.cats[0]!;
+    cat.x = 11.5;
+    cat.y = 1.5;
+    // П'є з крана на стільниці (70) — над стіною (66): стіна стоїть, тумбу закриває, як і задумано (A3).
+    cat.act = { kind: "drink", target: "sink", goal: null, minutes: 5, elapsed: 1 };
+    expect(faded(state)).toEqual([]);
+    // Ховається під умивальником — визирає з-під тумби на підлозі, яку закриває стіна: стіна згасає.
+    cat.act = { kind: "hide", target: null, goal: null, minutes: 20, elapsed: 1 };
+    expect(faded(state)).toEqual(["col12-y1"]);
+    // Нагорі шафи (6, 1; за стіною x = 7) кіт ховається на виду — на верху (170), стіна його не закриває.
+    cat.x = 6.5;
+    expect(faded(state)).toEqual([]);
+  });
+
   it("персонаж за стіною гасить її, як і раніше; у душовій кабіні — ні", () => {
     const state = quiet();
     state.character.body.x = 6.5;

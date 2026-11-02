@@ -3,7 +3,7 @@
 // підсвітки. Перевіряє `tests/isoworld.test.ts`.
 
 import { carriedToy } from "../../sim/catai";
-import { objectAt, slotById, TRINKETS, type Rect } from "../../sim/home";
+import { HIGH_PLACES, objectAt, slotById, TRINKETS, type Rect } from "../../sim/home";
 import type { Cat, GameState, TrinketKind, Vec } from "../../sim/types";
 import { artEntry } from "../art/manifest";
 import type { ArtId } from "../art/types";
@@ -173,10 +173,15 @@ function markWalls(walls: readonly IsoBox[], h: number, p: Vec, figure: Figure, 
   for (let i = 0; i < walls.length; i++) if (!out[i] && boxCovers(walls[i]!, h, p, figure)) out[i] = true;
 }
 
-/** На якій висоті кіт, що стоїть на клітинці речі квартири (`isoCatPerch`): на підлозі — 0. */
+/**
+ * На якій висоті кіт, що стоїть на клітинці речі квартири (`isoCatPerch`): на підлозі — 0. Хто ховається під річчю (`hide`,
+ * не нагорі холодильника чи шафи — `hidesUnder`), той на підлозі під нею, а не на її верху: інакше кіт під умивальником
+ * «сидів» на 70 над підлогою, вище за стіну x = 12 (66), і стіна, що закриває тумбу й очі з-під неї, не згасала.
+ */
 function catLift(state: GameState, cat: Cat): number {
   const object = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (!object || object.kind === "door") return 0;
+  if (cat.act.kind === "hide" && !HIGH_PLACES.includes(object.id)) return 0;
   return isoCatPerch(object.id, cat, false, shapedStage(state, object.id)).lift;
 }
 
