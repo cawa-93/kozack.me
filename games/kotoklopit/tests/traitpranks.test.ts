@@ -13,7 +13,7 @@ import { addSupply, freeSlots, place, supplyCount } from "../src/sim/economy";
 import { unavailable } from "../src/sim/shop";
 import { advance, deserialize, interact, newGame, returnHome, serialize } from "../src/sim/game";
 import { AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, HIGH_PLACES, hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, PAPER_TRAIL, roomAt, ROLL_TILE, SPAWN, STASHES, TRASH_PAW, WIRE_TILE } from "../src/sim/home";
-import { nightlyHousehold, vacuumed } from "../src/sim/household";
+import { nightlyHousehold } from "../src/sim/household";
 import { startTrip } from "../src/sim/trips";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -377,14 +377,23 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(save.current.minute - before).toBeCloseTo(TRIPS.shop.visit + GIFTS.sockSearch + TRIPS.shop.road);
   });
 
-  it("пилосос знаходить шкарпетку сам", () => {
+  it("пилосос знаходить шкарпетку сам — коли з ним у руках підійти до дивана (§8.7, рішення автора 2026-11-02)", () => {
     const save = game();
     save.current.home.sock = true;
+    walkTo(save, "vacuum");
+    interact(save);
+    expect(save.current.character.held?.kind).toBe("vacuum");
     const { events, stop } = recordEvents();
-    vacuumed(save.current);
+    // Далеко від дивана — шкарпетки не видно.
+    advance(save, 0.5);
+    expect(save.current.home.sock).toBe(true);
+    const body = save.current.character.body;
+    body.x = STASHES.sofa.at.x + 0.3;
+    body.y = STASHES.sofa.at.y - 1;
+    advance(save, 0.5);
     stop();
     expect(save.current.home.sock).toBeUndefined();
-    expect(events.some((e) => e.type === "sock-found" && e.where === "vacuum")).toBe(true);
+    expect(events.filter((e) => e.type === "sock-found" && e.where === "vacuum")).toHaveLength(1);
   });
 
   it("гра наодинці біля дивана інколи заганяє іграшку під нього — у будь-якого кота", () => {

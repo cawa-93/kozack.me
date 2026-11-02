@@ -18,7 +18,7 @@ import {
   UTILITIES_BASE,
 } from "./config";
 import { emit, endGame } from "./events";
-import { SLOTS, SURFACE_IDS } from "./home";
+import { SLOTS, SURFACE_IDS, VACUUM_HOME } from "./home";
 import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { tidyBoxTraces } from "./traces";
@@ -51,6 +51,8 @@ export function newHome(): Home {
     appliances: { fountain: null, robot: null },
     feeders: [],
     fur: 0,
+    tufts: [],
+    vacuumAt: { ...VACUUM_HOME },
     clothes: START_CLOTHES,
     washer: { state: "idle", minutes: 0, quality: "cheap" },
   };

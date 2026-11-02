@@ -38,7 +38,6 @@ import {
   traceFrame,
   trashState,
   trinketFrame,
-  vacuumState,
   waterFrame,
   type IsoFrame,
 } from "../src/view/iso/looks";
@@ -68,7 +67,6 @@ function framesOf(state: GameState): IsoFrame[] {
     { id: "env/trash", state: trashState(state) },
     { id: "env/computer", state: computerState(state) },
     { id: "env/bed", state: bedState(state) },
-    { id: "env/vacuum", state: vacuumState(state) },
     { id: "env/washer", state: state.home.washer.state },
     { id: "env/shower", state: showerState(state) },
     { id: "env/sink", state: sinkState(state) },

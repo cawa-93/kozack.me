@@ -10,7 +10,12 @@ export type Target =
   | { type: "object"; id: string; object: HomeObject }
   | { type: "item"; id: string; item: HomeItem }
   | { type: "mess"; id: string; mess: Mess }
-  | { type: "cat"; id: string; cat: Cat };
+  | { type: "cat"; id: string; cat: Cat }
+  /** Вертикальний пилосос, що стоїть на підлозі (§8.7, «Пилосос у руках»): `at` — точка підлоги під ним. */
+  | { type: "vacuum"; id: typeof VACUUM_TARGET; at: Vec };
+
+/** Id цілі «пилосос на підлозі» (§8.7). */
+export const VACUUM_TARGET = "vacuum";
 
 /** Половина розміру безладу й кота на підлозі, у клітинках. */
 const SMALL_RADIUS = 0.35;
@@ -46,6 +51,9 @@ function candidates(state: GameState): Target[] {
     if (item.kind === "house" || item.kind === "scratcher" || (item.kind === "toy" && handsFull)) continue;
     targets.push({ type: "item", id: itemTargetId(item), item });
   }
+  // Пилосос на підлозі (§8.7): його, як іграшку, беруть лише порожніми руками, тож з повними він нічого не заступає.
+  const vacuum = state.home.vacuumAt;
+  if (vacuum && !handsFull) targets.push({ type: "vacuum", id: VACUUM_TARGET, at: vacuum });
   // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
   if (state.character.held === null) {
     for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });
@@ -67,6 +75,8 @@ export function targetCenter(target: Target): Vec {
       return { x: target.mess.x, y: target.mess.y };
     case "cat":
       return { x: target.cat.x, y: target.cat.y };
+    case "vacuum":
+      return target.at;
   }
 }
 

@@ -21,6 +21,7 @@ const quality = (q: Quality): string => (q === "premium" ? "дорога" : "д�
 const item = (i: Item): string => {
   if (i.kind === "cat") return "кіт";
   if (i.kind === "toy") return `іграшка (${quality(i.toy.quality)})`;
+  if (i.kind === "vacuum") return "пилосос";
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
@@ -158,8 +159,15 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `${catName(state, event.cat)}: купання`;
     case "laundry":
       return `Прання: ${event.stage}`;
-    case "vacuumed":
-      return "Пропилососено";
+    case "vacuum":
+      return event.stage === "taken" ? "Пилосос у руках: гуде" : "Пилосос поставлено";
+    case "vacuumed": {
+      const parts = [
+        ...(event.tufts > 0 ? [`жмутів шерсті ${event.tufts}`] : []),
+        ...event.messes,
+      ];
+      return `${event.by === "robot" ? "Робот-пилосос прибрав" : "Пилосос прибрав"}: ${parts.join(", ")}`;
+    }
     case "feeder":
       return `Автогодівниця насипала корм: мисок ${event.bowls.length}`;
     case "feeder-emptied":

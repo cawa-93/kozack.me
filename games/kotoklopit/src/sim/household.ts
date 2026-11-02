@@ -1,29 +1,24 @@
 // Побут (§8.7): шерсть і пилосос, прання, техніка (автогодівниця, фонтанчик, робот-пилосос), поломки.
 
 import { asleep, traitLevel } from "./cat";
+import { visibleFloorNear } from "./catmove";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, VACUUM, WATER_CAPACITY } from "./config";
 import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
-import { itemPoint, objectById, slotCenter } from "./home";
+import { isWall, itemPoint, objectById, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
-import type { BowlItem, Cat, Feeder, GameState, HomeItem, Product, Quality, Vec } from "./types";
+import type { BowlItem, Cat, Feeder, GameState, HomeItem, MessKind, Product, Quality, Vec } from "./types";
 
-/** Шерсті багато — її видно (§8.7): від `HOUSEHOLD.dirtyFur`. */
-export const furVisible = (state: GameState): boolean => state.home.fur >= HOUSEHOLD.dirtyFur;
-
-/** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
-export function hygieneFactor(state: GameState): number {
-  const home = state.home;
-  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
-}
+/** Шкала шерсті квартири (§8.7): 0–100. */
+const FUR_MAX = 100;
 
 /**
- * Де лежать жмути шерсті (§8.7): сталі місця по квартирі; що більше шерсті, то більше їх видно — спершу у вітальні, потім у
+ * Де лежать жмути шерсті (§8.7): сталі місця по квартирі; що більше шерсті, то більше їх з'являється — спершу у вітальні, потім у
  * спальні, на кухні й у ванній, а далі знову у вітальні.
  */
 export const FUR_SPOTS: readonly Vec[] = [
@@ -31,16 +26,53 @@ export const FUR_SPOTS: readonly Vec[] = [
   { x: 4.1, y: 2.6 }, { x: 14.6, y: 2.4 }, { x: 9.6, y: 3.6 }, { x: 6.8, y: 8.9 }, { x: 11.2, y: 7.1 }, { x: 3.4, y: 9.6 },
 ];
 
+/** Скільки шерсті — один жмут (§8.7): прибраний жмут знімає зі шкали свою частку, 1/12. */
+const TUFT_FUR = FUR_MAX / FUR_SPOTS.length;
+
+/** Жмути шерсті на підлозі (§8.7): індекси `FUR_SPOTS` у порядку появи. */
+export function tuftsOf(state: Pick<GameState, "home">): readonly number[] {
+  return state.home.tufts ?? [];
+}
+
 /**
- * Видимі жмути шерсті (§8.7): вони дратують, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17). Шерсть видно лише
- * від `HOUSEHOLD.dirtyFur` — тоді ж вона прискорює падіння гігієни й тягне на штраф ОСББ, тож що видно, те й шкодить (реалізація
- * рішення А17, рішення самостійно; автору варто підтвердити). Від межі (50) — 6 жмутів у вітальні, на 100 — усі 12.
- * Коли прибирає робот-пилосос, жмути зникають по одному, лише поки їх більше шести, а шість останніх — разом, щойно шерсті
- * менше 50. Раніше жмути з'являлися вже з ~8 шерсті й ні на що не впливали.
+ * Видимі жмути шерсті (§8.7): безлад на своїх місцях (рішення автора 2026-11-02, «Пилосос у руках»). Від 50 шерсті вони
+ * з'являються на перших вільних місцях (`topUpTufts`) і лежать, доки їх не прибере пилосос у руках чи робот-пилосос. Вони
+ * дратують, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), прискорюють падіння гігієни й тягнуть на штраф ОСББ
+ * (`furVisible`): що видно, те й шкодить.
  */
-export function furTufts(state: GameState): readonly Vec[] {
-  if (!furVisible(state)) return [];
-  return FUR_SPOTS.slice(0, Math.floor((state.home.fur / 100) * FUR_SPOTS.length));
+export function furTufts(state: Pick<GameState, "home">): readonly Vec[] {
+  return tuftsOf(state).flatMap((i) => {
+    const spot = FUR_SPOTS[i];
+    return spot ? [spot] : [];
+  });
+}
+
+/**
+ * Шерсть видно (§8.7): на підлозі лежить хоч один жмут. Жмути з'являються лише від `HOUSEHOLD.dirtyFur` (50), а прибирають їх по
+ * одному, тож у недопилососеній квартирі шерсті може бути вже менше 50, а жмути ще лежать — і шкодять, доки лежать (рішення
+ * виконавця 2026-11-02: «Шерсть видно лише від 50» — про появу жмутів, «видима шерсть шкодить» — про жмути, що лежать).
+ */
+export const furVisible = (state: Pick<GameState, "home">): boolean => tuftsOf(state).length > 0;
+
+/** Скільки жмутів лежить за шкалою шерсті (§8.7): від 50 — частка шкали × 12 (на 50 — шість), менше 50 нових немає. */
+function tuftTarget(fur: number): number {
+  return fur >= HOUSEHOLD.dirtyFur ? Math.min(FUR_SPOTS.length, Math.floor((fur / FUR_MAX) * FUR_SPOTS.length)) : 0;
+}
+
+/**
+ * Нові жмути шерсті (§8.7): на перші вільні місця `FUR_SPOTS`, доки їх не стане стільки, скільки за шкалою (`tuftTarget`). Ті, що
+ * лежать, лишаються, хоч би скільки шерсті було: їх прибирають.
+ */
+export function topUpTufts(state: GameState): void {
+  const tufts = (state.home.tufts ??= []);
+  const target = tuftTarget(state.home.fur);
+  for (let i = 0; i < FUR_SPOTS.length && tufts.length < target; i++) if (!tufts.includes(i)) tufts.push(i);
+}
+
+/** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
+export function hygieneFactor(state: GameState): number {
+  const home = state.home;
+  return (home.clothes <= 0 ? HOUSEHOLD.noClothesHygiene : 1) * (furVisible(state) ? HOUSEHOLD.furHygiene : 1) * hygieneFactorMod(state);
 }
 
 /**
@@ -108,25 +140,135 @@ export function tapWasher(state: GameState): "cat" | "started" | "hung" | "empty
 }
 
 /**
- * Пилососити завершено (§8.7): шерсті немає. Котів лякає сам гул пилососа — гучний звук, щойно він загудів
- * (`holdTick`, §9.12).
+ * Сухе сміття (§8.7, «Пилосос у руках»): його бере пилосос — клапті шерсті після бійки, розсипаний наповнювач, папір, сміття з
+ * перекинутого смітника, уламки. Мокре й органічне — калюжі, блювоту, «сюрприз», шерстяну грудку, мітку — лише руками.
  */
-export function vacuumed(state: GameState): void {
-  state.home.fur = 0;
-  unpleasantTask(state, HOUSEHOLD.vacuumSanity);
-  emit(state, { type: "vacuumed" });
-  // Пилосос знаходить шкарпетку в котячій схованці під диваном (§9.12, «Подарунки й схованки»).
-  if (state.home.sock === true) {
+const DRY: Record<MessKind, boolean> = {
+  surprise: false,
+  vomit: false,
+  hairball: false,
+  litter: true,
+  broken: true,
+  fur: true,
+  mark: false,
+  puddle: false,
+  paper: true,
+  garbage: true,
+};
+
+/** Безлад сухий: його прибирає пилосос (§8.7). */
+export const isDryMess = (kind: MessKind): boolean => DRY[kind];
+
+/** Між точками немає стіни: пилосос крізь стіну не дістає, як і рука (§10, `targets.ts`); біля самої стіни — дістає. */
+function clearPath(a: Vec, b: Vec): boolean {
+  const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.1);
+  for (let i = 1; i < steps - 1; i++) {
+    const t = i / steps;
+    if (isWall(Math.floor(a.x + (b.x - a.x) * t), Math.floor(a.y + (b.y - a.y) * t))) return false;
+  }
+  return true;
+}
+
+/** Що прибрав пилосос за раз (§8.7): скільки жмутів шерсті й який безлад. */
+interface Swept {
+  tufts: number;
+  messes: MessKind[];
+}
+
+/**
+ * Прибрати пилососом довкола точки `at` у радіусі `radius` (§8.7): жмути шерсті (кожен знімає зі шкали свою частку) і сухий
+ * безлад; крізь стіну — ні. Робот (`robot`) бере лише жмути: безладу він не прибирав і раніше. Прибране пилососом здорового глузду окремо не забирає (його забирає сам пилосос). Додає прибране до `out`.
+ */
+function sweep(state: GameState, at: Vec, radius: number, robot: boolean, out: Swept): void {
+  const home = state.home;
+  const near = (p: Vec): boolean => Math.hypot(p.x - at.x, p.y - at.y) <= radius && clearPath(at, p);
+  const tufts = tuftsOf(state).filter((i) => {
+    const spot = FUR_SPOTS[i];
+    return spot !== undefined && near(spot);
+  });
+  if (tufts.length > 0) {
+    home.tufts = tuftsOf(state).filter((i) => !tufts.includes(i));
+    home.fur = Math.max(0, home.fur - tufts.length * TUFT_FUR);
+    out.tufts += tufts.length;
+  }
+  if (robot) return;
+  const messes = home.messes.filter((m) => isDryMess(m.kind) && near(m));
+  if (messes.length === 0) return;
+  home.messes = home.messes.filter((m) => !messes.includes(m));
+  out.messes.push(...messes.map((m) => m.kind));
+}
+
+/** Пилосос щось прибрав (§8.7): подія для журналу. */
+function reportSwept(state: GameState, by: "person" | "robot", swept: Swept): void {
+  if (swept.tufts + swept.messes.length === 0) return;
+  emit(state, { type: "vacuumed", by, ...swept });
+}
+
+/**
+ * Узяти пилосос у руки (§8.7, «Пилосос у руках», рішення автора 2026-11-02): коротким натисканням біля нього, як іграшку. Він
+ * загудів — гучний звук на всю квартиру (§9.12): коти, що не сплять, лякаються й ховаються, сміливі — ні.
+ */
+export function takeVacuum(state: GameState): void {
+  state.home.vacuumAt = null;
+  state.character.held = { kind: "vacuum", minutes: 0 };
+  emit(state, { type: "vacuum", stage: "taken" });
+  loudNoise(state, "vacuum", null);
+}
+
+/** Поставити пилосос (§8.7): будь-де на підлогу, як іграшку, — на видну підлогу перед персонажем; поставлений лишається там. */
+export function putVacuumDown(state: GameState): void {
+  if (state.character.held?.kind !== "vacuum") return;
+  const { x, y, facing } = state.character.body;
+  const at = visibleFloorNear(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
+  state.home.vacuumAt = { x: at.x, y: at.y };
+  state.character.held = null;
+  emit(state, { type: "vacuum", stage: "put" });
+}
+
+/**
+ * Пилосос у руках за хвилини (§8.7, «Пилосос у руках»): гуде — гучний звук щоразу через `VACUUM.noiseEvery` хвилин (§9.12);
+ * неприємне — здоровий глузд `VACUUM.sanityPerMinute` за хвилину (§8.1); прибирає сухе сміття в радіусі `VACUUM.radius` від
+ * персонажа; біля дивана витягає шкарпетку з котячої схованки (§9.12, «Подарунки й схованки»).
+ */
+export function tickVacuum(state: GameState, minutes: number): void {
+  const held = state.character.held;
+  if (held?.kind !== "vacuum") return;
+  const before = held.minutes ?? 0;
+  held.minutes = before + minutes;
+  if (Math.floor(held.minutes / VACUUM.noiseEvery) > Math.floor(before / VACUUM.noiseEvery)) loudNoise(state, "vacuum", null);
+  unpleasantTask(state, VACUUM.sanityPerMinute * minutes);
+  const body = state.character.body;
+  const swept: Swept = { tufts: 0, messes: [] };
+  sweep(state, body, VACUUM.radius, false, swept);
+  reportSwept(state, "person", swept);
+  const stash = STASHES.sofa.at;
+  if (state.home.sock === true && Math.hypot(stash.x - body.x, stash.y - body.y) <= VACUUM.radius) {
     delete state.home.sock;
     emit(state, { type: "sock-found", where: "vacuum" });
   }
 }
 
-/** Хвилини побуту вдень і вночі: шерсть, прання, техніка за розкладом. */
+/**
+ * Старе збереження чи сценарій (до рішення автора 2026-11-02, «Пилосос у руках»): шафи з пилососом немає — пилосос стоїть на її
+ * місці (`VACUUM_HOME`), а почате «пилососити» біля шафи скасовано; жмути шерсті лягають на свої місця за шкалою шерсті. Пилосос,
+ * якого сценарій дав у руки, — у руках, а не на підлозі.
+ */
+export function upgradeVacuum(state: GameState): void {
+  const home = state.home;
+  const inHands = state.character.held?.kind === "vacuum";
+  if (inHands) home.vacuumAt = null;
+  else if (!home.vacuumAt) home.vacuumAt = { ...VACUUM_HOME };
+  const activity = state.character.activity;
+  if (activity?.kind === "use" && activity.target === "vacuum") state.character.activity = null;
+  topUpTufts(state);
+}
+
+/** Хвилини побуту вдень і вночі: шерсть і жмути, прання, техніка за розкладом. */
 export function tickHousehold(state: GameState, from: number, minutes: number): void {
   const home = state.home;
   const hours = minutes / 60;
-  for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(100, home.fur + furPerHour(state, cat) * hours);
+  for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(FUR_MAX, home.fur + furPerHour(state, cat) * hours);
+  topUpTufts(state);
   if (home.washer.state === "washing") {
     const before = home.washer.minutes;
     home.washer.minutes -= minutes;
@@ -149,9 +291,11 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
 }
 
 /**
- * Робот-пилосос (§8.7): о 12:00 вирушає з бази й годину їздить усією квартирою; шерсть зникає поступово й до кінця
- * прибирання — повністю. Він тихий (§9.12, рішення автора 2026-10-26): гучний звук чути лише в кімнаті, де він зараз
- * їде (з проходу — до `NOISE.reach` клітинок), і кожен кіт чує його раз за прибирання — коли робот проїжджає повз.
+ * Робот-пилосос (§8.7): о 12:00 вирушає з бази й годину їздить усією квартирою; прибирає жмути шерсті, повз які проїжджає, — у радіусі `VACUUM.robotReach` від себе, крізь стіни — ні (рішення автора 2026-11-02, «Пилосос у руках»: раніше
+ * вся шерсть рівномірно танула й до кінця прибирання зникала зовсім; тепер шерсть зникає з кожним прибраним жмутом, як від
+ * пилососа в руках, а того, повз що він не проїхав, робот не бере). Він тихий (§9.12, рішення автора 2026-10-26):
+ * гучний звук чути лише в кімнаті, де він зараз їде (з проходу — до `NOISE.reach` клітинок), і кожен кіт чує його раз за
+ * прибирання — коли робот проїжджає повз.
  */
 function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {
   const start = HOUSEHOLD.robotMinute;
@@ -161,15 +305,25 @@ function robotClean(state: GameState, from: number, minutes: number, crossed: (m
   const lo = Math.max(a, start);
   const hi = Math.min(a + minutes, end);
   if (hi <= lo) return;
+  robotSweep(state, (lo - start) / HOUSEHOLD.robotMinutes, (hi - start) / HOUSEHOLD.robotMinutes);
   if (hi >= end) {
-    state.home.fur = 0;
     delete state.home.robotHeard;
     emit(state, { type: "robot" });
     return;
   }
   const heard = (state.home.robotHeard ??= []);
   heard.push(...loudNoise(state, "robot", along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes), (cat) => !heard.includes(cat.id)));
-  state.home.fur *= 1 - (hi - lo) / (end - lo);
+}
+
+/** Крок, яким робот-пилосос «проходить» свій шлях за крок часу, клітинки: щоб не проскочити жмут чи пил між точками. */
+const ROBOT_SWEEP_STEP = 0.2;
+
+/** Робот-пилосос проїхав маршрутом від частки `from` до `to` (0–1): прибрати, повз що він проїхав (§8.7). */
+function robotSweep(state: GameState, from: number, to: number): void {
+  const steps = Math.max(1, Math.ceil(((to - from) * ROUTE_LENGTH) / ROBOT_SWEEP_STEP));
+  const swept: Swept = { tufts: 0, messes: [] };
+  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), VACUUM.robotReach, true, swept);
+  reportSwept(state, "robot", swept);
 }
 
 /** Скільки проїхав робот-пилосос: 0–1 під час прибирання, null — стоїть на базі чи його немає (§8.7). */
@@ -219,9 +373,13 @@ const ROBOT_ROUTE: readonly Vec[] = [
   ROBOT_DOCK,
 ];
 
+/** Довжини відрізків маршруту робота-пилососа й увесь маршрут, клітинки. */
+const ROUTE_LENGTHS: readonly number[] = ROBOT_ROUTE.slice(1).map((p, i) => Math.hypot(p.x - (ROBOT_ROUTE[i]?.x ?? 0), p.y - (ROBOT_ROUTE[i]?.y ?? 0)));
+const ROUTE_LENGTH = ROUTE_LENGTHS.reduce((a, b) => a + b, 0);
+
 /** Точка на маршруті за часткою пройденого шляху 0–1. */
 function along(route: readonly Vec[], progress: number): Vec {
-  const lengths = route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
+  const lengths = route === ROBOT_ROUTE ? ROUTE_LENGTHS : route.slice(1).map((p, i) => Math.hypot(p.x - (route[i]?.x ?? 0), p.y - (route[i]?.y ?? 0)));
   let left = progress * lengths.reduce((a, b) => a + b, 0);
   for (let i = 0; i < lengths.length; i++) {
     const length = lengths[i] ?? 0;

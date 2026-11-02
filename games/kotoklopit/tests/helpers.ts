@@ -50,6 +50,9 @@ export function standAt(save: Save, id: string): void {
 
 /** Прямокутник цілі: річ квартири чи місце речі котячого кутка (`item:<id>`). */
 function rectOf(id: string): Rect {
+  // Пилосос на підлозі (§8.7): там, де його поставили.
+  const vacuum = current?.current.home.vacuumAt;
+  if (id === "vacuum" && vacuum) return { x: vacuum.x - 0.3, y: vacuum.y - 0.3, w: 0.6, h: 0.6 };
   if (!id.startsWith("item:")) return objectById(id);
   const item = current?.current.home.items.find((i) => `item:${i.id}` === id);
   if (!item) throw new Error(`Немає «${id}»`);

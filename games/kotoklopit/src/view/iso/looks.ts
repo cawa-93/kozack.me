@@ -103,12 +103,6 @@ export function bedState(state: GameState): string {
   return state.cats.some((cat) => cat.away === null && cat.act.kind === "sleep" && cat.act.blanket === true) ? "hump" : "made";
 }
 
-/** Шафа з пилососом (§8.7): відчинена й порожня, поки персонаж прибирає пилососом. */
-export function vacuumState(state: GameState): string {
-  const activity = state.character.activity;
-  return activity?.kind === "use" && activity.target === "vacuum" ? "open" : "closed";
-}
-
 /** Смітник (§9.12): лежить на боці, поки сміття не прибрали. */
 export function trashState(state: GameState): string {
   return trashTipped(state) ? "tipped" : "standing";

@@ -7,7 +7,7 @@ import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { addSupply, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
-import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, wearOut } from "../src/sim/household";
+import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
 import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
@@ -412,15 +412,6 @@ describe("перевірка побуту 2026-10-28", () => {
 });
 
 describe("шерсть і техніка (§8.7)", () => {
-  it("пилососять утриманням дії біля шафи: шерсті немає", () => {
-    const save = game();
-    save.current.minute = hours(19);
-    save.current.home.fur = 70;
-    standAt(save, "vacuum");
-    holdUntilDone(save);
-    expect(save.current.home.fur).toBe(0);
-  });
-
   it("фонтанчик доливає воду; техніка й автогодівниці додають комунальних", () => {
     const save = game();
     save.current.home.appliances.fountain = "cheap";
@@ -433,48 +424,48 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
   });
 
-  it("одне утримання — одна дія: після пилососа, що тримають далі, новий не починається (§10)", () => {
-    const save = game();
-    save.current.home.fur = 80;
-    standAt(save, "vacuum");
-    const { events, stop } = recordEvents();
-    for (let i = 0; i < 60; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
-    expect(events.filter((e) => e.type === "vacuumed")).toHaveLength(1);
-    // Відпустили й знову тримають — пилосос знову працює.
-    advance(save, 0.1, { move: { x: 0, y: 0 }, hold: false });
-    for (let i = 0; i < 30; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
-    stop();
-    expect(events.filter((e) => e.type === "vacuumed")).toHaveLength(2);
-  });
-
-  it("робот-пилосос о 12:00 годину їздить і прибирає шерсть поступово (§8.7)", () => {
+  it("робот-пилосос о 12:00 годину їздить і прибирає жмути, повз які проїжджає (§8.7, рішення автора 2026-11-02)", () => {
     const save = game();
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 60;
     save.current.minute = 11 * 60 + 50;
     expect(robotProgress(save.current)).toBeNull();
-    tickHousehold(save.current, 11 * 60 + 50, 40);
+    tickHousehold(save.current, 11 * 60 + 50, 10);
+    // На 60 — сім жмутів: шість у вітальні й один у спальні.
+    expect(tuftsOf(save.current)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    for (let minute = 12 * 60; minute < 12 * 60 + 30; minute++) tickHousehold(save.current, minute, 1);
     save.current.minute = 12 * 60 + 30;
     expect(robotProgress(save.current)).toBeCloseTo(0.5);
-    expect(save.current.home.fur).toBeGreaterThan(20);
-    expect(save.current.home.fur).toBeLessThan(40);
-    tickHousehold(save.current, 12 * 60 + 30, 35);
+    // За пів години робот проїхав лише частину квартири: прибрано жмути, повз які він проїхав, і кожен зняв свою частку шерсті.
+    const left = tuftsOf(save.current).length;
+    expect(left).toBeGreaterThan(0);
+    expect(left).toBeLessThan(7);
+    expect(save.current.home.fur).toBeCloseTo(60 - ((7 - left) * 100) / 12);
+    for (let minute = 12 * 60 + 30; minute < 13 * 60 + 5; minute++) tickHousehold(save.current, minute, 1);
     save.current.minute = 13 * 60 + 5;
-    expect(save.current.home.fur).toBe(0);
+    expect(tuftsOf(save.current)).toEqual([]);
+    expect(save.current.home.fur).toBeCloseTo(60 - (7 * 100) / 12);
     expect(robotProgress(save.current)).toBeNull();
   });
 
-  it("у робота жмути зникають по одному, поки їх більше шести, а шість останніх — разом, щойно шерсті менше 50 (§8.7)", () => {
+  it("у робота жмути зникають по одному, коли він проїжджає повз; жмута на кухні він не дістає (§8.7)", () => {
     const save = game();
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 70;
-    const seen: number[] = [];
+    topUpTufts(save.current);
+    const seen: number[] = [furTufts(save.current).length];
     for (let minute = 12 * 60; minute < 13 * 60; minute++) {
       tickHousehold(save.current, minute, 1);
       const tufts = furTufts(save.current).length;
       if (seen.at(-1) !== tufts) seen.push(tufts);
     }
-    expect(seen).toEqual([8, 7, 6, 0]);
+    // Вісім жмутів; восьмий (на кухні перед плитою) — далеко від маршруту робота.
+    expect(seen[0]).toBe(8);
+    expect(seen.at(-1)).toBe(1);
+    expect(tuftsOf(save.current)).toEqual([7]);
+    // Зникали поступово, а не всі разом.
+    expect(seen.length).toBeGreaterThan(3);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]).toBeLessThan(seen[i - 1]!);
   });
 
   it("дешева річ може зламатися від використання, дорога — ні", () => {
@@ -522,6 +513,7 @@ describe("видима шерсть дратує, як безлад (рішен�
     state.character.body.x = at.x;
     state.character.body.y = at.y;
     state.home.fur = fur;
+    topUpTufts(state);
     for (let i = 0; i < messes; i++) state.home.messes.push({ id: 100 + i, kind: "vomit", x: 4.5 + i * 0.5, y: 8.5, cat: null });
     const before = state.character.stats.sanity;
     annoyingMesses(state, 60);
@@ -529,15 +521,18 @@ describe("видима шерсть дратує, як безлад (рішен�
   };
   const living = { x: 9.5, y: 8.5 };
 
-  it("шерсть видно лише від 50 — тоді ж і гігієна падає швидше", () => {
+  it("жмути з'являються лише від 50 — тоді ж і гігієна падає швидше", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
     state.home.fur = HOUSEHOLD.dirtyFur - 1;
+    topUpTufts(state);
     expect(furTufts(state)).toEqual([]);
     const clean = hygieneFactor(state);
     state.home.fur = HOUSEHOLD.dirtyFur;
-    expect(furTufts(state).length).toBeGreaterThan(0);
+    topUpTufts(state);
+    expect(furTufts(state)).toEqual(FUR_SPOTS.slice(0, 6));
     expect(hygieneFactor(state)).toBeCloseTo(clean * HOUSEHOLD.furHygiene);
     state.home.fur = 100;
+    topUpTufts(state);
     expect(furTufts(state)).toEqual(FUR_SPOTS);
   });
 

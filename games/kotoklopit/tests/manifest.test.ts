@@ -318,6 +318,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       catfood: "item/scoop",
       cat: null,
       toy: "item/toy/cheap",
+      // Пилосос у руках (§8.7, рішення автора 2026-11-02): тимчасово — колишній кадр пилососа з шафи; `item/vacuum` малює пакет арту.
+      vacuum: "env/vacuum/cleaner",
     };
     for (const id of Object.values(held)) if (id !== null) entry(id);
     for (const kind of ["raw", "meal", "burnt"] as const satisfies readonly Dish["kind"][]) expect(states(`item/dish/${kind}`)).toEqual(keys(QUALITIES));

@@ -1253,8 +1253,6 @@ export const HOUSEHOLD = {
   noClothesHygiene: 2,
   /** Вище цієї гігієни персонаж у брудному одязі не стає навіть після душу. */
   noClothesHygieneCeiling: 60,
-  vacuumMinutes: 10,
-  vacuumSanity: -2,
   washMinutes: 60,
   /**
    * Чистого одягу після прання, днів (§8.7): дорогий засіб — 12 (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17; було 8 —
@@ -1268,6 +1266,14 @@ export const HOUSEHOLD = {
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
+/**
+ * Пилосос у руках (§8.7 «Пилосос у руках», §8.1; рішення автора 2026-11-02). Поки він у руках — здоровий глузд
+ * `sanityPerMinute` за хвилину (неприємне: 10 хвилин — −2, як раніше за все прибирання), гучний звук щойно взяли й далі щоразу
+ * через `noiseEvery` хвилин; прибирає сухе сміття в радіусі `radius` клітинок від персонажа. Робот-пилосос прибирає жмути шерсті
+ * в радіусі `robotReach` від себе (рішення виконавця: робот ≈ 0,3 клітинки завширшки й щітки збоку — те, що він
+ * «проїжджає повз»).
+ */
+export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10, radius: 1.5, robotReach: 0.9 } as const;
 /** Ласощі (§7): настрій, любов, повернення втрати після неприємного, межа на день. */
 export const TREATS = { mood: { cheap: 3, premium: 5 } as Record<Quality, number>, love: 2, hurtMinutes: 60, refund: 0.5, perDay: 2, stomach: 0.2 } as const;
 /** Купання (§8.7): неприємне ловити й купати; водолаз — радіє, решта — ні; безшерстим — щотижня. */

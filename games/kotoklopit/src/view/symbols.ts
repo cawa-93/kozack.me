@@ -101,6 +101,10 @@ export function itemIcon(item: Item): IconName {
       return "cat";
     case "toy":
       return "toy";
+    case "vacuum":
+      // Тимчасово «гучне»: свою іконку `icon/vacuum` малює пакет арту (§8.7, рішення автора 2026-11-02). Пилосос у руках ні в
+      // відмову «не сюди», ні на стіл чи плиту не потрапляє — натискання з ним лише ставить його.
+      return "loud";
   }
 }
 

@@ -8,7 +8,7 @@ import { stun } from "../src/sim/body";
 import { changeMood, createCat, idleAct, isAdapting } from "../src/sim/cat";
 import { decide, jealousy, tickCats } from "../src/sim/catai";
 import { HISS_PAUSE_MINUTES, HOUSEHOLD, MODIFIERS, NOISE, RELATIONS, STRESS_EFFECTS, STUN_PAUSE_MINUTES, TALKATIVE, WAKE_UP } from "../src/sim/config";
-import { advance, goToSleep, newGame } from "../src/sim/game";
+import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { itemTile, roomAt } from "../src/sim/home";
 import { robotAt, tapWasher, tickHousehold } from "../src/sim/household";
 import { tickModifiers } from "../src/sim/modifiers";
@@ -100,16 +100,16 @@ describe("спільні паузи (§9.12, рішення автора 2026-10
 });
 
 describe("гучний звук (§9.12, рішення автора 2026-10-25)", () => {
-  it("пилосос загудів: несміливий ховається, сміливий іде подивитися — обидва прояви видно", () => {
+  it("пилосос загудів у руках: несміливий ховається, сміливий іде подивитися — обидва прояви видно", () => {
     const save = game();
     standAt(save, "vacuum");
     const plain = awake(withCat(save, {}, { x: 14.5, y: 8.5 }));
     const brave = awake(withCat(save, { bravery: 1 }, { x: 12.5, y: 8.5 }));
     const timid = awake(withCat(save, { bravery: -1 }, { x: 10.5, y: 8.5 }));
     const { events, stop } = recordEvents();
-    advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    interact(save);
     stop();
-    expect(save.current.character.activity?.kind).toBe("use");
+    expect(save.current.character.held?.kind).toBe("vacuum");
     expect(plain.act.kind).toBe("hide");
     expect(timid.act.kind).toBe("hide");
     expect(timid.traits[0]?.seen).toBe(1);
@@ -247,9 +247,11 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     standAt(save, "vacuum");
     const brave = awake(withCat(save, { bravery: 1 }, { x: 14.5, y: 8.5 }));
     save.current.home.fur = 50;
+    // Узяти пилосос (загудів) і одразу поставити.
     const tap = (): void => {
-      advance(save, 0.1, { move: { x: 0, y: 0 }, hold: true });
-      advance(save, 0.02, { move: { x: 1, y: 0 }, hold: false });
+      interact(save);
+      interact(save);
+      advance(save, 0.02);
       standAt(save, "vacuum");
     };
     for (let i = 0; i < 10; i++) tap();

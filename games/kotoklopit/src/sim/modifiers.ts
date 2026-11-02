@@ -19,7 +19,7 @@ import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
 import { weekdayOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { furVisible, stockBowl } from "./household";
+import { furVisible, putVacuumDown, stockBowl } from "./household";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 
@@ -296,6 +296,9 @@ export function answerCall(state: GameState): boolean {
   // перервано (§8.7, `stopBath` у putDownCat).
   const held = state.character.held;
   if (held?.kind === "cat") putDownCat(state, held.cat);
+  // Пилосос, що гуде в руках, ставлять на підлогу, щоб говорити (§8.7, рішення виконавця 2026-11-02): інакше 30 хвилин розмови
+  // він гудів би й забирав здоровий глузд, нічого не прибираючи.
+  if (held?.kind === "vacuum") putVacuumDown(state);
   return true;
 }
 

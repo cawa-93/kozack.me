@@ -18,7 +18,7 @@ import { fallIll } from "../src/sim/diseases";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { boxesShown } from "../src/sim/storage";
-import { tickHousehold } from "../src/sim/household";
+import { tickHousehold, tuftsOf } from "../src/sim/household";
 import type { Save } from "../src/sim/types";
 import { weekdayOf } from "../src/sim/time";
 import { callImpression, isWorkday, isWorking, startWork, tickWork } from "../src/sim/work";
@@ -570,11 +570,12 @@ describe("ефекти (§4.1)", () => {
     stop();
     expect(events.find((e) => e.type === "refused")).toMatchObject({ reason: "no-internet" });
     expect(isWorking(save.current)).toBe(false);
-    // Світло є: робот-пилосос прибирає посеред відключення.
+    // Світло є: робот-пилосос прибирає посеред відключення — жмути шерсті, повз які проїжджає (§8.7).
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 60;
-    tickHousehold(save.current, 11 * 60 + 50, 80);
-    expect(save.current.home.fur).toBe(0);
+    for (let minute = 11 * 60 + 50; minute < 13 * 60 + 10; minute++) tickHousehold(save.current, minute, 1);
+    expect(tuftsOf(save.current)).toEqual([]);
+    expect(save.current.home.fur).toBeLessThan(10);
   });
 
   it("сценарій «Без інтернету» (`scenarios/internet-outage.json`): біля комп'ютера у відключення — відмова «немає інтернету», о 12:00 їде робот-пилосос (рішення автора 2026-10-29, А14)", () => {
@@ -585,9 +586,10 @@ describe("ефекти (§4.1)", () => {
     const { events, stop } = recordEvents();
     interact(save);
     expect(events.find((e) => e.type === "refused")).toMatchObject({ object: "computer", reason: "no-internet" });
+    expect(tuftsOf(save.current).length).toBeGreaterThan(0);
     for (let i = 0; i < 80; i++) advance(save, 1);
     stop();
-    expect(save.current.home.fur).toBe(0);
+    expect(tuftsOf(save.current)).toEqual([]);
   });
 
   it("гості: безлад — сором", () => {

@@ -29,9 +29,10 @@ export interface PersonLocal {
 
 /**
  * Що в руках (§8.4) — що кріпиться в гніздо рук: кіт (`arms`), сира порція, готова й пригоріла страва, мамин судочок, совок
- * звичайного корму й корму для стерилізованих, вудочка (`held`, `rod`).
+ * звичайного корму й корму для стерилізованих, вудочка (`held`, `rod`), вертикальний пилосос (§8.7, рішення автора 2026-11-02;
+ * як його несуть і як він гуде — пакет вигляду).
  */
-export type HeldThing = "cat" | "raw" | "meal" | "burnt" | "mom-meal" | "scoop" | "sterile-scoop" | "rod";
+export type HeldThing = "cat" | "raw" | "meal" | "burnt" | "mom-meal" | "scoop" | "sterile-scoop" | "rod" | "vacuum";
 
 /** Річ у руках як `HeldThing`; null — руки порожні. */
 export function heldThing(item: Item | null): HeldThing | null {
@@ -47,6 +48,7 @@ export function heldThing(item: Item | null): HeldThing | null {
       return item.mom === true ? "mom-meal" : "meal";
     case "raw":
     case "burnt":
+    case "vacuum":
       return item.kind;
   }
 }

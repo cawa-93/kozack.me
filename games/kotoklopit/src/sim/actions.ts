@@ -9,16 +9,14 @@ import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
-import { catInWasher, emptyFeeder, furPerHour, sameFood, tapWasher, vacuumed } from "./household";
+import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
-import { loudNoise } from "./noise";
 import { internetOut } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
   BATH,
   BOWL_CAPACITY,
-  HOUSEHOLD,
   ILLNESS,
   BURN_MINUTES,
   CHEWING,
@@ -117,6 +115,14 @@ export function tap(state: GameState): TapResult {
     character.holdSpent = true;
     return null;
   }
+  // Пилосос ставлять на підлогу будь-де, як іграшку (§8.7, рішення автора 2026-11-02, «Пилосос у руках»): з ним у руках
+  // натискання лише ставить його. Одне утримання — одна дія (§10): поки кнопку не відпустили, прибирати руками чи гладити кота
+  // біля поставленого пилососа не почнуть.
+  if (held?.kind === "vacuum") {
+    putVacuumDown(state);
+    character.holdSpent = true;
+    return null;
+  }
   // З іграшкою біля кота натискання нічого не робить: утримання тут же почне гру (§8.2).
   if (held?.kind === "toy" && target?.type === "cat") return null;
   // Іграшку кладуть на підлогу будь-де, крім смітника.
@@ -132,6 +138,11 @@ export function tap(state: GameState): TapResult {
       return tapItem(state, target.item, target.id, held);
     case "mess":
       // Безлад прибирають утриманням дії, і ціллю він буває лише з порожніми руками.
+      return null;
+    case "vacuum":
+      // Пилосос беруть у руки коротким натисканням, як іграшку (§8.7); ціллю він буває лише з порожніми руками.
+      if (held !== null) return refuse(state, target.id, "hands-full");
+      takeVacuum(state);
       return null;
     case "cat":
       // Кота в протистоянні торкаються — коти розходяться (§9.4, рішення автора 2026-10-26); рук для цього не треба.
@@ -328,10 +339,6 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (result === "clean") return refuse(state, target.id, "clothes-clean");
       return null;
     }
-    case "vacuum":
-      // Пилососять утриманням дії (§8.7).
-      if (held !== null) return refuse(state, target.id, "hands-full");
-      return null;
   }
 }
 
@@ -538,7 +545,6 @@ export function bathMinutes(state: GameState): number {
 function useMinutes(target: Target): number {
   if (target.type === "item") return CLEAN_LITTER_MINUTES;
   if (target.type === "mess") return CLEAN_MESS_MINUTES;
-  if (target.type === "object" && target.object.kind === "vacuum") return HOUSEHOLD.vacuumMinutes;
   if (target.type === "object" && target.object.kind === "computer") return CHEWING.fixMinutes;
   return target.type === "object" && target.object.kind === "shower" ? SHOWER_MINUTES : EAT_MINUTES;
 }
@@ -548,7 +554,7 @@ export function canUse(state: GameState, target: Target): boolean {
   if (state.character.held !== null) return false;
   switch (target.type) {
     case "object":
-      if (target.object.kind === "shower" || target.object.kind === "vacuum") return true;
+      if (target.object.kind === "shower") return true;
       // Перегризений дріт лагодять утриманням дії (§9.12, «Гризіння»).
       if (target.object.kind === "computer") return state.home.wireChewed === true && catOnComputer(state) === null;
       if (target.object.kind === "table") return state.home.surfaces[target.object.id]?.kind === "meal";
@@ -558,6 +564,9 @@ export function canUse(state: GameState, target: Target): boolean {
     case "mess":
     case "cat":
       return true;
+    case "vacuum":
+      // Пилосос беруть натисканням, а не утриманням (§8.7).
+      return false;
   }
 }
 
@@ -684,11 +693,7 @@ function holdTick(state: GameState, minutes: number): boolean {
       return true;
     }
     else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
-    else {
-      character.activity = { kind: "use", target: target.id, progress: 0 };
-      // Пилосос загудів — гучний звук на всю квартиру (§9.12).
-      if (target.type === "object" && target.object.kind === "vacuum") loudNoise(state, "vacuum", null);
-    }
+    else character.activity = { kind: "use", target: target.id, progress: 0 };
   }
   const current = character.activity;
   if (current?.kind === "pet") {
@@ -739,7 +744,6 @@ function finishUse(state: GameState, target: Target): void {
   }
   if (target.type !== "object") return;
   const object = target.object;
-  if (object.kind === "vacuum") return vacuumed(state);
   if (object.kind === "computer") {
     // Дріт замотано й замінено (§9.12, «Гризіння»): неприємно, а новий дріт — до ремонту на комунальних.
     delete state.home.wireChewed;
@@ -1014,6 +1018,8 @@ export function dropEverything(state: GameState): void {
   if (back !== null) returnSupply(state, back.product, back.quality);
   if (held?.kind === "cat") putDownCat(state, held.cat);
   if (held?.kind === "toy") dropToy(state);
+  // Пилосос — на підлогу поруч (§8.7): уночі він не гуде.
+  if (held?.kind === "vacuum") putVacuumDown(state);
   // Страву з рук — на вільну поверхню кухні, а не в нікуди.
   if (back === null && (held?.kind === "meal" || held?.kind === "burnt")) {
     const surfaces = state.home.surfaces;

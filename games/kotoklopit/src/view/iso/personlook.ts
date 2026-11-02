@@ -186,6 +186,9 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): 
     case "meal":
     case "burnt":
       return { socket: "held", frame: dishFrame(item), scale: 1 };
+    case "vacuum":
+      // Тимчасово — колишній пилосос із шафи (`VACUUM_HELD`), доки пакет арту не намалює `item/vacuum` (§8.7, 2026-11-02).
+      return { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale };
     default:
       return null;
   }

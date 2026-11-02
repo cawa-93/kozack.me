@@ -54,7 +54,6 @@ import {
   traceFrame,
   trashState,
   trinketFrame,
-  vacuumState,
   type IsoFrame,
   type TraceHost,
   type TraceOverlay,
@@ -451,7 +450,8 @@ export class IsoApartmentView implements ApartmentPart {
     this.show(this.get("trash"), { id: "env/trash", state: trashState(state) });
     this.show(this.get("computer"), { id: "env/computer", state: computerState(state) });
     this.show(this.get("bed"), { id: "env/bed", state: bedState(state) });
-    this.show(this.get("vacuum"), { id: "env/vacuum", state: vacuumState(state) });
+    // Шафи з пилососом більше немає (§8.7, рішення автора 2026-11-02): пилосос стоїть на підлозі (`home.vacuumAt`) — його
+    // малюватиме пакет вигляду.
     this.show(this.get("washer"), { id: "env/washer", state: state.home.washer.state });
     this.show(this.get("shower"), { id: "env/shower", state: showerState(state) });
     this.show(this.get("sink"), { id: "env/sink", state: sinkState(state) });

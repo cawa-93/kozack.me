@@ -577,10 +577,6 @@ describe("де кіт (`catSpot`)", () => {
       // вертикалі екрана, що й очі, — у точці сидіння (x1, 10), де x1 − 10 = x − y.
       const edge = 64 * (sofa.y - spot.at.y) - isoObjectLook("sofa").top;
       expect(-7).toBeLessThan(edge - 8);
-      // Шафа з пилососом (16, 10) не закриває очей (півширина кадру очей ≈ 16 × найбільший масштаб 1,12): її лівий кут на
-      // екрані — (16, 11).
-      const vacuum = objectById("vacuum");
-      expect(isoScreenDir({ x: vacuum.x - spot.at.x, y: vacuum.y + vacuum.h - spot.at.y }).x).toBeGreaterThan(18);
     }
   });
 

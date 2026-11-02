@@ -18,7 +18,7 @@ import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
 import { accidentBedtime, accidentHome, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
-import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
+import { annoyingMesses, tickHousehold, tickVacuum, upgradeFeeder, upgradeVacuum } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
@@ -132,7 +132,7 @@ export function advance(save: Save, minutes: number, input: Input = IDLE): Night
 }
 
 const CAT_TRIPS = new Set(["vet", "groomer", "shelter", "breeder", "show"]);
-const CAT_USES = /^(item|mess):|^vacuum$/;
+const CAT_USES = /^(item|mess):/;
 
 /** На що йде час (§4.2): робота, коти, собі чи «метушня» — ходіння між справами. */
 function timeCategory(state: GameState, input: Input): keyof GameState["stats"]["minutes"] | null {
@@ -144,6 +144,8 @@ function timeCategory(state: GameState, input: Input): keyof GameState["stats"][
   if (activity?.kind === "pet" || activity?.kind === "play") return "cats";
   // Купання кота — час на котів (§4.2; перевірка купання 2026-10-28: ішло в «собі»).
   if (activity?.kind === "use") return activity.bath === true || CAT_USES.test(activity.target) ? "cats" : "self";
+  // З пилососом у руках — прибирання (§4.2: пилосос — час на котів), хоч персонаж із ним і ходить (§8.7).
+  if (state.character.held?.kind === "vacuum") return "cats";
   return isMoving(input.move) ? "bustle" : null;
 }
 
@@ -156,6 +158,8 @@ function tick(state: GameState, minutes: number, input: Input): void {
   if (!away) {
     tickActivity(state, input, minutes);
     moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
+    // Пилосос у руках гуде й прибирає довкола персонажа там, куди той дійшов (§8.7).
+    tickVacuum(state, minutes);
   }
   if (internetOut(state) && isWorking(state)) stopWork(state);
   tickWork(state, from, minutes);
@@ -370,6 +374,8 @@ export function upgradeState(state: GameState): void {
   upgradeShortNights(state);
   // Котячі сліди (§9.12, рішення автора 2026-11-02): у старих збереженнях їх немає, а котодні рахуються з першої ночі.
   upgradeTraces(state);
+  // Пилосос у руках і жмути шерсті на місцях (§8.7, рішення автора 2026-11-02): шафи з пилососом немає — він стоїть на її місці.
+  upgradeVacuum(state);
 }
 
 /**

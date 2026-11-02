@@ -22,8 +22,10 @@ const WARDROBE = furniture(objectById("wardrobe"), { top: 170 });
 const SOFA = furniture(objectById("sofa"), { top: 34, tall: 60 });
 const DESK_TOP = 54;
 const COMPUTER = furniture(objectById("computer"), { top: DESK_TOP, tall: 112 });
-// Праворуч — запас під дверцята, відчинені на 90° навколо дальньої петлі (площина y = −0,36 від центру сліду).
-const VACUUM = furniture(objectById("vacuum"), { top: 140, pad: { right: 48 } });
+// Праворуч — запас під дверцята, відчинені на 90° навколо дальньої петлі (площина y = −0,36 від центру сліду). Шафи з пилососом у
+// квартирі вже немає (§8.7, рішення автора 2026-11-02: пилосос стоїть на підлозі й його носять у руках) — слід 1 × 1 колишньої
+// шафи, доки пакет арту не намалює вертикальний пилосос замість неї.
+const VACUUM = furniture({ w: 1, h: 1 }, { top: 140, pad: { right: 48 } });
 const LITTER_BAG = furniture(objectById("litter-bag"), { top: 56, pad: { left: 16 } });
 const STERILE_BIN = furniture(objectById("sterile-bin"), { top: 50, pad: { right: 16 } });
 const CAT_KIT = furniture(objectById("cat-kit"), { top: 40, tall: 56 });

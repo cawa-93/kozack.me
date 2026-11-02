@@ -85,14 +85,12 @@ describe("personSpot: де видно персонажа", () => {
     }
   });
 
-  it("їсть за столом сидячи, купає кота перед душем, пилососить біля шафи; засинає — біля ліжка", () => {
+  it("їсть за столом сидячи, купає кота перед душем; засинає — біля ліжка", () => {
     const state = game().current;
     state.character.activity = { kind: "use", target: "table", progress: 0 };
     expect(personSpot(state, "eat")).toMatchObject({ at: isoObjectLook("table").use?.at, pose: "sit" });
     state.character.activity = { kind: "use", target: "shower", progress: 0, inside: true, bath: true };
     expect(personSpot(state, "bath")).toMatchObject({ at: isoObjectLook("shower").use?.at, pose: "stand" });
-    state.character.activity = { kind: "use", target: "vacuum", progress: 0 };
-    expect(personSpot(state, "vacuum").at).toEqual(isoObjectLook("vacuum").use?.at);
     state.character.activity = null;
     expect(personSpot(state, "fallAsleep", 1)).toMatchObject({ at: isoObjectLook("bed").use?.at, face: isoObjectLook("bed").use?.facing });
     // Падає без сил — там, де стоїть.

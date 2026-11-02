@@ -174,15 +174,17 @@ function peekOpen(state: GameState, id: string, p: Vec): boolean {
  * коробкою дивана). `behind` — точка за коробкою речі, а не на ній.
  */
 export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; behind: boolean } {
-  const near = isoCatPerch(id, cat, true).at;
-  if (peekOpen(state, id, near)) return { at: near, behind: false };
   const f = isoObjectLook(id).footprint;
-  const other = near.x === f.x1 ? { x: cat.x, y: f.y1 } : { x: f.x1, y: cat.y };
-  if (peekOpen(state, id, other)) return { at: other, behind: false };
+  // Під диваном — завжди з боку сидіння, як затвердив автор: шафи з пилососом біля торця вже немає (§8.7, рішення автора
+  // 2026-11-02), і торець (16, 10) відкрився, але там на старті стоїть сам пилосос; чи визирати з торця — вирішить пакет вигляду.
   if (id === "sofa") {
     const t = Math.min(1, Math.max(0, (cat.x - f.x0) / (f.x1 - f.x0)));
     return { at: { x: SOFA_HIDE.from + (SOFA_HIDE.to - SOFA_HIDE.from) * t, y: SOFA_HIDE.y }, behind: true };
   }
+  const near = isoCatPerch(id, cat, true).at;
+  if (peekOpen(state, id, near)) return { at: near, behind: false };
+  const other = near.x === f.x1 ? { x: cat.x, y: f.y1 } : { x: f.x1, y: cat.y };
+  if (peekOpen(state, id, other)) return { at: other, behind: false };
   return { at: near, behind: false };
 }
 
