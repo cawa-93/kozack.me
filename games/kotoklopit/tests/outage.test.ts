@@ -5,7 +5,8 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { MODIFIERS, PATIENCE_MAX, POSITIONS, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { tickStove } from "../src/sim/actions";
+import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { powerOut } from "../src/sim/modifiers";
 import type { Save, StatName } from "../src/sim/types";
@@ -151,6 +152,25 @@ describe("«Планове відключення» — день без світ
     for (const stat of STATS) normal.current.character.stats[stat] = 100;
     startWork(normal.current);
     expect(personThought(normal.current)).toBeNull();
+  });
+
+  it("плита без світла — газовий пальник: страва готова за 25 хвилин замість 20 і підгорає ×1,25 пізніше (§8.7)", () => {
+    expect(MODIFIERS.outage.cook).toBe(1.25);
+    const cook = (day: string | null): { ready: number; burnt: number } => {
+      const save = game(day);
+      save.current.home.stove = { item: { kind: "raw", quality: "cheap" }, minutes: 0 };
+      let minute = 0;
+      let ready = -1;
+      while (save.current.home.stove.item?.kind !== "burnt" && minute < 600) {
+        tickStove(save.current, 1);
+        minute += 1;
+        if (ready < 0 && save.current.home.stove.item?.kind === "meal") ready = minute;
+      }
+      return { ready, burnt: minute };
+    };
+    expect(cook(null)).toEqual({ ready: COOK_MINUTES, burnt: BURN_MINUTES.normal });
+    expect(COOK_MINUTES * 1.25).toBe(25);
+    expect(cook("outage")).toEqual({ ready: COOK_MINUTES * 1.25, burnt: Math.ceil(BURN_MINUTES.normal * 1.25) });
   });
 
   it("сценарій «Без світла» (`scenarios/power-outage.json`): біля комп'ютера — натискання саджає працювати, і робота йде годину без перерви", () => {

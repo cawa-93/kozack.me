@@ -11,6 +11,7 @@ import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
 import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
+import { cookFactor } from "./modifiers";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
@@ -1028,12 +1029,16 @@ export function dropEverything(state: GameState): void {
   character.held = null;
 }
 
-/** Плита готує своїм часом: страва готова за 20 хвилин і підгорає ще через 15 (§8.7). */
+/**
+ * Плита готує своїм часом: страва готова за 20 хвилин і підгорає ще через 15 (§8.7). `stove.minutes` — хвилини звичайного
+ * готування: без світла, на газовому пальнику, вони йдуть ×1,25 повільніше — страва готова за 25 хвилин і підгорає теж пізніше
+ * («Планове відключення», §4.1, рішення автора 2026-11-02); смуга над плитою від цього не змінюється.
+ */
 export function tickStove(state: GameState, minutes: number): void {
   const stove = state.home.stove;
   const item = stove.item;
   if (item === null) return;
-  stove.minutes += minutes;
+  stove.minutes += minutes / cookFactor(state);
   if (item.kind === "raw" && stove.minutes >= COOK_MINUTES) {
     stove.item = { kind: "meal", quality: item.quality };
     emit(state, { type: "cooked", result: "ready" });

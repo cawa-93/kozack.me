@@ -346,6 +346,14 @@ export function searchFactor(state: GameState): number {
   return powerOut(state) ? MODIFIERS.outage.search : 1;
 }
 
+/**
+ * У скільки разів довше готує плита (§8.7): без світла страву гріють на газовому пальнику — ×1,25, і підгорає вона так само пізніше
+ * («Планове відключення», §4.1, рішення автора 2026-11-02).
+ */
+export function cookFactor(state: GameState): number {
+  return powerOut(state) ? MODIFIERS.outage.cook : 1;
+}
+
 /** Робочий день із модифікаторами: робоча субота й аврал додають, вихідний і відпустка — забирають. */
 export function workdayOverride(state: GameState): boolean | null {
   const weekend = weekdayOf(state.day) >= 5;
