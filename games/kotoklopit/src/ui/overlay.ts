@@ -2,6 +2,7 @@
 // Це DOM, а не полотно: текст лишається чітким на будь-якому екрані. Поки картка відкрита, гра на паузі.
 
 import { drawGlyphs } from "./glyphs";
+import { drawIcons } from "./icons";
 import "./overlay.css";
 
 export interface CardAction {
@@ -115,6 +116,8 @@ export class Overlay {
       }, TITLE_TIMING.exit * 1000);
     };
     screen.addEventListener("click", advance);
+    // Іконки біля назв (§11.4): хвороба кота на прощанні, як і в картках.
+    drawIcons(screen);
     this.card = { title: "", body: [], actions: [{ label: "", primary: true, onSelect: advance }], onDismiss: advance };
     this.root.classList.add("cinematic");
     this.root.replaceChildren(screen);
@@ -158,6 +161,7 @@ export class Overlay {
     screen.append(buttons);
     screen.addEventListener("click", () => screen.classList.add("all"));
     drawGlyphs(screen);
+    drawIcons(screen);
     this.card = { title: "", body: [], actions: gated };
     this.root.classList.remove("dawn");
     this.root.classList.add("cinematic");
@@ -211,6 +215,7 @@ export class Overlay {
     }
     if (card.actions.length > 0) panel.append(actions);
     drawGlyphs(panel);
+    drawIcons(panel);
     this.root.replaceChildren(panel);
     this.root.hidden = false;
     panel.querySelector<HTMLButtonElement>(".primary:not(:disabled)")?.focus({ preventScroll: true });
