@@ -1,12 +1,12 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
 // передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
-// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди. Кадри — з маніфесту арту
-// (`addArt`), тож поки арту немає, на їхньому місці заглушки потрібного розміру й pivot.
+// плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7). Кадри —
+// з маніфесту арту (`addArt`), тож поки арту немає, на їхньому місці заглушки потрібного розміру й pivot.
 //
 // Що показати — зі стану гри (`looks.ts`).
-// Глибина: плити кімнат, вікна й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін — коробки в
-// реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у її
-// проміжку глибини. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
+// Глибина: плити кімнат, вікна, павутина й папір на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й сегменти стін —
+// коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва, дрібничка, замок), — у
+// її проміжку глибини. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
 // (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами,
 // шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня
 // стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола з комп'ютером і кухонного
@@ -15,6 +15,7 @@
 
 import type Phaser from "phaser";
 
+import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import { isPresent, objectById, OBJECTS, ROOMS, roomAt, TOILET_ROLL, TRINKETS, WINDOWS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
@@ -37,6 +38,7 @@ import {
   bedState,
   boxesState,
   cabinetLook,
+  cobwebLook,
   computerState,
   dishFrame,
   doorState,
@@ -61,7 +63,8 @@ import {
 
 /**
  * Порядок шарів тла: підлога, котячі сліди на підлогах (над усіма плитами підлог), задні стіни, подерті шпалери на стіні
- * вітальні, вікна на стінах, папір на стіні ванної.
+ * вітальні, вікна на стінах, павутина в кутах (§8.7: висить на задній стіні — над нею, під усім, що стоїть у кімнаті),
+ * папір на стіні ванної.
  */
 const BACKDROP = {
   floor: ISO_BACKDROP_DEPTH,
@@ -69,6 +72,7 @@ const BACKDROP = {
   wall: ISO_BACKDROP_DEPTH + 1,
   wallTrace: ISO_BACKDROP_DEPTH + 1.5,
   window: ISO_BACKDROP_DEPTH + 2,
+  cobweb: ISO_BACKDROP_DEPTH + 2.5,
   decal: ISO_BACKDROP_DEPTH + 3,
 } as const;
 
@@ -176,6 +180,8 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly innerBoxes: IsoFootprint[] = [];
   private readonly covered: boolean[] = [];
   private readonly backdrop: Phaser.GameObjects.Image[] = [];
+  /** Павутина за місцем `DUST_SPOTS` (§8.7): зображення з першою появою, далі лише ховається й показується. */
+  private readonly cobwebs = new Map<number, Phaser.GameObjects.Image>();
   private readonly toiletRoll: Piece;
   private readonly wire: Piece;
   private readonly wirePoint: IsoPointHandle;
@@ -390,6 +396,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.drawStates(state);
     this.drawTraces(state);
     this.drawSurfaces(state);
+    this.drawCobwebs(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
     setPiece(this.wire, { id: "env/wire", state: state.home.wireChewed === true ? "chewed" : "whole" });
@@ -516,6 +523,33 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
+   * Павутина в кутах кімнат (§8.7, «Пил і павутина»): висить на задній стіні над місцем `DUST_SPOTS` (точка підлоги в куті) —
+   * на тлі над стіною й вікнами, під усім, що стоїть у кімнаті (душова кабіна й холодильник закривають її низ), у стані й
+   * напрямку за кутом (`cobwebLook`). Прибрали — ховається.
+   */
+  private drawCobwebs(state: GameState): void {
+    const shown = new Set(dustOf(state));
+    DUST_SPOTS.forEach((spot, index) => {
+      if (spot.kind !== "cobweb") return;
+      const look = shown.has(index) ? cobwebLook(spot) : null;
+      let image = this.cobwebs.get(index);
+      if (!look) {
+        image?.setVisible(false);
+        return;
+      }
+      if (!image) {
+        image = this.art(look.frame.id, ISO.toScreen(spot), BACKDROP.cobweb);
+        this.cobwebs.set(index, image);
+        this.backdrop.push(image);
+      }
+      setArt(image, look.frame.id, { state: look.frame.state });
+      // Віддзеркалення — знаком масштабу довкола pivot (кута на підлозі); `setArt` масштаб відносно базового зберігає.
+      if (image.scaleX < 0 !== look.flip) image.setScale(-image.scaleX, image.scaleY);
+      image.setVisible(true);
+    });
+  }
+
+  /**
    * Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає (`GRAPHICS_PLAN.md`, «Контракти»;
    * хвиля 3 — `wallsToFade`): воно за нею й близько, на тій самій горизонталі екрана. Плінтуси низькі — не згасають.
    */
@@ -586,6 +620,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.chairs.length = 0;
     for (const image of this.backdrop) image.destroy();
     this.backdrop.length = 0;
+    this.cobwebs.clear();
   }
 
   /** Над річчю квартири, поки вона є (сховища з'являються після першого запасу, §6.4). */

@@ -1,16 +1,17 @@
 // Ізометричний котячий куточок і безлад на підлозі (крок 16, F3b, `GRAPHICS_PLAN.md`): миски й поїлки з фонтанчиком,
 // лотки (з запахом, коли брудні), будиночки, кігтеточки, іграшки, автогодівниці, робот і док, переноска, кошик білизни,
-// шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті й скинуті дрібнички — кожне
+// шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті, пил і скинуті дрібнички — кожне
 // окремим кадром маніфесту з точкою в реєстрі глибини (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а
-// пласке (бруд, шерсть, док) — під тими, хто на ньому.
+// пласке (бруд, шерсть, пил, док) — під тими, хто на ньому. Павутину на стіні малює квартира (`apartment.ts`).
 //
 // Що показати — зі стану гри (`looks.ts`).
 
 import type Phaser from "phaser";
 
 import { carriedToy } from "../../sim/catai";
+import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
-import { furTufts, ROBOT_DOCK, robotAt } from "../../sim/household";
+import { FUR_SPOTS, ROBOT_DOCK, robotAt, tuftsOf } from "../../sim/household";
 import { VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
@@ -21,7 +22,7 @@ import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierOccupied, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierOccupied, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 
 /** Що лежить на речі, — у її проміжку глибини, нижче за пів проміжку (`ISO_DEPTH_SLOT` 0,01). */
 const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
@@ -38,6 +39,14 @@ const SMELL_MS = 450;
 const SMELL_LIFT = 0.8;
 /** Пів сторони сліду речі на підлозі для каркаса підсвітки без WebGL, клітинки. */
 const OUTLINE_HALF = 0.4;
+/** Жмут шерсті на підлозі: бабла над ним немає, висота — для порядку; півширина малюнка `mess/fur-tuft`. */
+const TUFT = { height: 4, half: 16 } as const;
+/**
+ * Пил на підлозі (§8.7): пласкі кадри `mess/dust/*` — півширина за видом (полотна 62, 84 і 50 одиниць арту, `a20-dust.ts`),
+ * висота — для порядку.
+ */
+const DUST_HALF = { corner: 31, wall: 42, floor: 25 } as const;
+const DUST_HEIGHT = 4;
 /** Вертикальний пилосос на підлозі (`env/vacuum`): кадр без станів. */
 const VACUUM_FRAME: IsoFrame = { id: "env/vacuum", state: null };
 
@@ -65,12 +74,16 @@ interface Spot {
 export class IsoFloorView implements WorldPart {
   private readonly depth: IsoDepth;
   private readonly glow: IsoHighlight;
-  /** Речі котячого кутка за id, безлад за id, автогодівниці за місцем миски, дрібнички за видом, жмути шерсті за номером. */
+  /**
+   * Речі котячого кутка за id, безлад за id, автогодівниці за місцем миски, дрібнички за видом, жмути шерсті за місцем
+   * (`FUR_SPOTS`), пил на підлозі за місцем (`DUST_SPOTS`).
+   */
   private readonly items = new Map<number, Spot>();
   private readonly messes = new Map<number, Spot>();
   private readonly feeders = new Map<string, Spot>();
   private readonly trinkets = new Map<TrinketKind, Spot>();
-  private readonly tufts: Spot[] = [];
+  private readonly tufts = new Map<number, Spot>();
+  private readonly dust = new Map<number, Spot>();
   /** Одиничні: робот, його док, переноска, кошик білизни, шкарпетка за диваном, вертикальний пилосос. */
   private readonly singles = new Map<string, Spot>();
 
@@ -190,11 +203,31 @@ export class IsoFloorView implements WorldPart {
       this.place(spot, messFrame(mess.kind), mess, MESS_HEIGHT);
     }
 
-    // Шерсть видно лише від межі (§8.7, А17): що більше, то більше жмутів.
-    furTufts(state).forEach((at, i) => {
-      const spot = (this.tufts[i] ??= this.spot({ id: "mess/fur-tuft", state: null }, { flat: true, half: 16 }));
-      this.place(spot, { id: "mess/fur-tuft", state: null }, at, 4);
-    });
+    // Жмути шерсті (§8.7, рішення автора 2026-11-02): лежать на своїх місцях, доки їх не прибере пилосос чи робот, — прибирають
+    // їх не по черзі, тож місце, а не порядок появи.
+    for (const index of tuftsOf(state)) {
+      const at = FUR_SPOTS[index];
+      if (!at) continue;
+      let spot = this.tufts.get(index);
+      if (!spot) {
+        spot = this.spot({ id: "mess/fur-tuft", state: null }, { flat: true, half: TUFT.half });
+        this.tufts.set(index, spot);
+      }
+      this.place(spot, { id: "mess/fur-tuft", state: null }, at, TUFT.height);
+    }
+
+    // Пил (§8.7, «Пил і павутина»): купки в кутах, смужки біля плінтусів і клубки на підлозі — пласкі, як безлад.
+    for (const index of dustOf(state)) {
+      const at = DUST_SPOTS[index];
+      const look = dustFrame(index);
+      if (!at || !look || at.kind === "cobweb") continue;
+      let spot = this.dust.get(index);
+      if (!spot) {
+        spot = this.spot(look, { flat: true, half: DUST_HALF[at.kind] });
+        this.dust.set(index, spot);
+      }
+      this.place(spot, look, at, DUST_HEIGHT);
+    }
 
     // Скинуті дрібнички лежать на підлозі до ранку; розбитий кухоль — уламки, їх показує безлад (§9.12).
     for (const [kind, fallen] of Object.entries(home.trinkets ?? {}) as [TrinketKind, { x: number; y: number; broken?: true } | undefined][]) {
@@ -256,11 +289,15 @@ export class IsoFloorView implements WorldPart {
     yield this.messes.values();
     yield this.feeders.values();
     yield this.trinkets.values();
-    yield this.tufts;
+    yield this.tufts.values();
+    yield this.dust.values();
     yield this.singles.values();
   }
 
-  /** Речі, яких цього кадру немає (продали, прибрали, зламалися), прибрати; жмути шерсті — сховати, їх знову стане більше. */
+  /**
+   * Речі, яких цього кадру немає (продали, прибрали, зламалися), прибрати; жмути шерсті й пил — сховати: місця сталі, і там
+   * знову ляже шерсть чи пил.
+   */
   private forgetUnseen(): void {
     for (const map of [this.items, this.messes, this.feeders, this.trinkets, this.singles] as Map<unknown, Spot>[]) {
       for (const [key, spot] of map) {
@@ -269,7 +306,7 @@ export class IsoFloorView implements WorldPart {
         map.delete(key);
       }
     }
-    for (const spot of this.tufts) if (!spot.seen) this.hide(spot);
+    for (const spots of [this.tufts, this.dust]) for (const spot of spots.values()) if (!spot.seen) this.hide(spot);
   }
 
   lateUpdate(): void {
@@ -284,7 +321,8 @@ export class IsoFloorView implements WorldPart {
     this.messes.clear();
     this.feeders.clear();
     this.trinkets.clear();
-    this.tufts.length = 0;
+    this.tufts.clear();
+    this.dust.clear();
     this.singles.clear();
   }
 

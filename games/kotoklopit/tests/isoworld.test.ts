@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, STORAGE_LIMITS, WATER_CAPACITY } from "../src/sim/config";
+import { DUST_SPOTS, dustOf } from "../src/sim/dust";
 import { STORAGES, storageStages } from "../src/sim/storage";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, objectById, OBJECTS, TRINKETS, WINDOWS } from "../src/sim/home";
 import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, WaterItem } from "../src/sim/types";
@@ -20,8 +21,10 @@ import {
   bowlFrame,
   boxesState,
   cabinetLook,
+  cobwebLook,
   computerState,
   dishFrame,
+  dustFrame,
   feederFrame,
   fridgeLook,
   itemFrame,
@@ -89,8 +92,14 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
-  // Вертикальний пилосос на підлозі (§8.7).
+  // Вертикальний пилосос на підлозі, пил і павутина (§8.7).
   if (state.home.vacuumAt) frames.push({ id: "env/vacuum", state: null });
+  for (const index of dustOf(state)) {
+    const spot = DUST_SPOTS[index]!;
+    const look = spot.kind === "cobweb" ? (cobwebLook(spot)?.frame ?? null) : dustFrame(index);
+    if (!look) throw new Error(`пил на місці ${index}: кадру немає`);
+    frames.push(look);
+  }
   return frames;
 }
 
@@ -232,6 +241,37 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
         expect(look.half * 2, id(q)).toBeLessThanOrEqual(entry.size.w);
       }
     }
+  });
+});
+
+describe("пил і павутина (iso/looks.ts, §8.7)", () => {
+  it("кожне місце пилу — свій кадр: купка в куті, смужка вздовж осі стіни, клубки на підлозі різняться з сусідами", () => {
+    DUST_SPOTS.forEach((spot, index) => {
+      const look = spot.kind === "cobweb" ? (cobwebLook(spot)?.frame ?? null) : dustFrame(index);
+      expect(look, `місце ${index}`).not.toBeNull();
+      if (spot.kind === "cobweb") expect(dustFrame(index)).toBeNull();
+      if (spot.kind === "wall") expect(look?.id).toBe(spot.along === "y" ? "mess/dust/wall-y" : "mess/dust/wall-x");
+      if (spot.kind === "corner") expect(look?.id).toBe("mess/dust/corner");
+    });
+    // Сусідні клубки на підлозі однієї кімнати — різні.
+    DUST_SPOTS.forEach((spot, index) => {
+      const next = DUST_SPOTS[index + 1];
+      if (spot.kind === "floor" && next?.kind === "floor" && next.room === spot.room) expect(dustFrame(index)?.state).not.toBe(dustFrame(index + 1)?.state);
+    });
+  });
+
+  it("павутина — на задній стіні свого кута: верхня вершина кімнати — за мапою стін, правий кут ванної — віддзеркалена чверть", () => {
+    const cobwebs = DUST_SPOTS.filter((spot) => spot.kind === "cobweb");
+    expect(cobwebs.map((spot) => spot.room)).toEqual(["bedroom", "bathroom", "kitchen", "living"]);
+    const looks = Object.fromEntries(cobwebs.map((spot) => [spot.room, cobwebLook(spot)]));
+    expect(looks["bedroom"]).toEqual({ frame: { id: "mess/cobweb", state: "corner" }, flip: false });
+    expect(looks["kitchen"]).toEqual({ frame: { id: "mess/cobweb", state: "wall-x" }, flip: false });
+    expect(looks["living"]).toEqual({ frame: { id: "mess/cobweb", state: "wall-y" }, flip: false });
+    // Ванна (12, 1): задня стіна y = 0 підходить до кута зліва, праворуч — низька внутрішня стіна; рівний край — праворуч.
+    expect(looks["bathroom"]).toEqual({ frame: { id: "mess/cobweb", state: "wall-x" }, flip: true });
+    // Лівий кут кімнати (дзеркально) і середина кімнати.
+    expect(cobwebLook({ x: 1, y: 5 })).toEqual({ frame: { id: "mess/cobweb", state: "wall-y" }, flip: true });
+    expect(cobwebLook({ x: 4, y: 3 })).toBeNull();
   });
 });
 

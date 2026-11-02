@@ -4,13 +4,16 @@
 
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
 import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config";
+import { DUST_SPOTS } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { objectAt, type RoomId } from "../../sim/home";
 import { robotProgress } from "../../sim/household";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
-import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, WaterItem } from "../../sim/types";
+import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
+import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
+import { wallKind } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
 
 /** Кадр: id запису маніфесту й стан (null — запис без станів). */
@@ -380,3 +383,56 @@ export function carrierOccupied(state: GameState): boolean {
 export function messFrame(kind: MessKind): IsoFrame {
   return frame(`mess/${kind}`);
 }
+
+// --- Пил і павутина (§8.7) ---------------------------------------------------------------------------
+
+/** Клубки пилу на відкритій підлозі (`mess/dust/floor`): три різні, по черзі за номером місця — сусідні різняться. */
+const FLOOR_DUST = ["a", "b", "c"] as const;
+
+/**
+ * Пил на підлозі (§8.7, «Пил і павутина», рішення автора 2026-11-02) на місці `DUST_SPOTS[index]`: купка в куті
+ * (`mess/dust/corner`), смужка вздовж плінтуса — уздовж осі стіни (`wall-x` — стіна y = const, `wall-y` — x = const),
+ * клубок на підлозі (`mess/dust/floor`, стан за номером місця). Павутина висить на стіні — `cobwebLook`; null — її та
+ * невідоме місце.
+ */
+export function dustFrame(index: number): IsoFrame | null {
+  const spot = DUST_SPOTS[index];
+  switch (spot?.kind) {
+    case "corner":
+      return frame("mess/dust/corner");
+    case "wall":
+      return frame(spot.along === "y" ? "mess/dust/wall-y" : "mess/dust/wall-x");
+    case "floor":
+      return frame("mess/dust/floor", FLOOR_DUST[index % FLOOR_DUST.length]!);
+    default:
+      return null;
+  }
+}
+
+/** Павутина: кадр `mess/cobweb` і чи віддзеркалити його (`flip` — по горизонталі довкола pivot, кута на підлозі). */
+export interface CobwebLook {
+  frame: IsoFrame;
+  flip: boolean;
+}
+
+/**
+ * Павутина в куті з точкою підлоги `corner` (§8.7; місце `DUST_SPOTS` виду `cobweb`). Малюнок `mess/cobweb` розраховано на
+ * верхню вершину ромба кімнати (`cobwebState`: обидві задні стіни, лише y = 0 праворуч від кута чи лише x = 0 ліворуч). Сим
+ * ставить павутину й у правий кут кімнати — ванна, (12, 1) над умивальником, бо лівий закриває душова кабіна: там задня
+ * стіна y = 0 підходить до кута зліва, а праворуч — низька внутрішня стіна (66), над якою павутині нема на чому висіти. Тоді —
+ * чверть павутини на стіні вздовж осі x (`wall-x`), віддзеркалена: рівний край — над лінією кута праворуч, павутина — на
+ * задній стіні кімнати ліворуч від нього. Лівий кут (дзеркально: x = 0 підходить згори, знизу внутрішня стіна) — так само з
+ * `wall-y`. Задньої стіни біля кута немає — null.
+ */
+export function cobwebLook(corner: Vec): CobwebLook | null {
+  const x = Math.floor(corner.x);
+  const y = Math.floor(corner.y);
+  const back = (cx: number, cy: number): boolean => wallKind(cx, cy) === "back";
+  const floor = (cx: number, cy: number): boolean => wallKind(cx, cy) === null;
+  if (back(x - 1, y - 1) && floor(x - 1, y) && !floor(x, y) && !back(x, y)) return cobweb("wall-x", true);
+  if (back(x - 1, y - 1) && floor(x, y - 1) && !floor(x, y) && !back(x, y)) return cobweb("wall-y", true);
+  const state = cobwebState(corner);
+  return state ? cobweb(state, false) : null;
+}
+
+const cobweb = (state: CobwebState, flip: boolean): CobwebLook => ({ frame: frame("mess/cobweb", state), flip });
