@@ -17,9 +17,9 @@ import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf } from "../sim/targets";
-import { gameMinutes, weekOf } from "../sim/time";
+import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
-import { isWorking, isWorkday, isWorkTime, patienceLevel } from "../sim/work";
+import { isWorking, isWorkday, isWorkTime, patienceLevel, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
@@ -468,6 +468,7 @@ export class DayScene extends Phaser.Scene {
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
     if (this.updateTrip()) {
+      this.tickClock(0, false);
       this.render(time, 0);
       return;
     }
@@ -481,7 +482,7 @@ export class DayScene extends Phaser.Scene {
       const pending = this.catPress !== null && this.time.now - this.catPress < CAT_TAP_MS;
       const simInput: Input = pending ? { ...input, hold: false } : input;
       this.moving = this.state.character.activity === null && this.state.character.body.stun <= 0 && isMoving(input.move);
-      const minutes = gameMinutes(seconds) * this.session.speed;
+      const minutes = this.tickClock(seconds, true, simInput);
       // Пора падати без сил (§8.8): зупинитися перед межею й засинати анімацією, а не миттєво.
       const untilCollapse = collapseMinute(this.state) - this.state.minute - FALL_ASLEEP.lead;
       if (minutes >= untilCollapse) {
@@ -498,8 +499,20 @@ export class DayScene extends Phaser.Scene {
       }
     } else {
       this.moving = false;
+      this.tickClock(seconds, false);
     }
     this.render(time, seconds);
+  }
+
+  /**
+   * Годинник кадру (§8): скільки ігрових хвилин минає за кадр — зі швидкістю режиму розробки й прискоренням роботи. Правило —
+   * у `clockFrame`; сцена лише тримає між кадрами секунди розгону (`Session.workSeconds`).
+   */
+  private tickClock(seconds: number, running: boolean, input?: Input): number {
+    const working = workGoesOn(this.state, input);
+    const clock = clockFrame(this.session.workSeconds, { seconds, running, working, speed: this.session.speed });
+    this.session.workSeconds = clock.boostSeconds;
+    return clock.minutes;
   }
 
   /** Скільки грошей бачила сцена: приріст показується над персонажем (§11.4). */
