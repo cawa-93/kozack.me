@@ -351,6 +351,15 @@ export function internetOut(state: GameState): boolean {
   return active(state, "outage") && minute >= MODIFIERS.outage.from && minute < MODIFIERS.outage.to;
 }
 
+/**
+ * Планове відключення електрики (§4.1, рішення автора 2026-11-02): увесь день «Планового відключення» світла немає — від
+ * пробудження до наступного пробудження, як і будь-який модифікатор дня. Читають і сим (робота, плита, душ, прання, робот), і
+ * вигляд (світло доби, свічки, бойлер).
+ */
+export function powerOut(state: GameState): boolean {
+  return active(state, "outage");
+}
+
 /** Неприємні справи (§8.1): ремонт у сусідів — дорожче, сусіди у відпустці — дешевше. */
 export function unpleasantFactor(state: GameState): number {
   if (active(state, "renovation")) return MODIFIERS.renovation.unpleasant;

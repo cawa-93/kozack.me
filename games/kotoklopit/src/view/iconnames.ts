@@ -139,6 +139,10 @@ export const ICON_NAMES = [
   "groomer",
   "office",
   "cat-show",
+  // День відключення електрики (§4.1, §11.4, рішення автора 2026-11-02): відмова «немає світла» (пральна машина) і бабл
+  // «холодна вода» в душі.
+  "no-power",
+  "cold-water",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];
