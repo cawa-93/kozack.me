@@ -79,6 +79,16 @@ export function stoveState(state: GameState): string {
   return item.kind === "meal" ? "ready" : "burnt";
 }
 
+/**
+ * Кадр плити (`env/stove`): що на сковороді (`stoveState`), а в день відключення світла (§4.1, рішення автора 2026-11-02) —
+ * те саме на туристичному газовому пальнику (`gas-<стан>`: сковорода піднята, полум'я синє, вогник панелі погас). Пару й
+ * дим (`stoveFx`) рахує базовий `stoveState`, тож від пальника вони не залежать; звідки вони йдуть — `stovePuffPoint`.
+ */
+export function stoveArtState(state: GameState): string {
+  const look = stoveState(state);
+  return powerOut(state) ? `gas-${look}` : look;
+}
+
 /** Страва на столі чи стільниці (§8.7): `item/dish/*` з якістю продуктів, мамин судочок — свій. */
 export function dishFrame(dish: Dish): IsoFrame {
   if (dish.kind === "meal" && dish.mom === true) return frame("item/dish/mom");

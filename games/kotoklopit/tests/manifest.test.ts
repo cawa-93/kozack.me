@@ -261,6 +261,12 @@ describe("маніфест: квартира", () => {
   });
 
   it("стани дня відключення світла (§4.1, рішення автора 2026-11-02)", () => {
+    // Плита: на кожен стан — той самий на туристичному газовому пальнику, і точка пари над піднятою сковородою.
+    const stove = states("env/stove");
+    const base = stove.filter((s) => !s.startsWith("gas-"));
+    expect(base).toEqual(expect.arrayContaining(["off", "raw", "cooking", "ready", "burnt"]));
+    expect(stove.filter((s) => s.startsWith("gas-")).sort()).toEqual(base.map((s) => `gas-${s}`).sort());
+    expect(entry("env/stove").points?.["pan-gas"]).toBeDefined();
     // Холодний душ: вода тече без пари й запітнілого скла.
     expect(states("env/shower")).toContain("running-cold");
     // Робот-пилосос не виїжджає й стоїть на доку без заряду, у доку погас вогник живлення.

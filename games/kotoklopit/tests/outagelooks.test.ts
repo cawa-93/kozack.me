@@ -10,7 +10,7 @@ import { powerOut } from "../src/sim/modifiers";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtId } from "../src/view/art/types";
-import { dockFrame, robotFrame, showerState, type IsoFrame } from "../src/view/iso/looks";
+import { dockFrame, robotFrame, showerState, stoveArtState, stoveState, type IsoFrame } from "../src/view/iso/looks";
 
 /** Стан сценарію (свіжа копія). */
 function scenario(name: string): GameState {
@@ -36,6 +36,33 @@ function expectFrame(frame: IsoFrame): void {
   expect(entry, frame.id).toBeDefined();
   expect(entry?.states ?? [], `${frame.id}#${frame.state}`).toContain(frame.state);
 }
+
+describe("плита в день відключення (§8.7, §4.1): туристичний газовий пальник", () => {
+  it("кадр плити — той самий вміст сковороди на пальнику (gas-<стан>), а stoveState лишається базовим", () => {
+    const { usual, outage } = bothDays("appliances");
+    const dishes: GameState["home"]["stove"][] = [
+      { item: null, minutes: 0 },
+      { item: { kind: "raw", quality: "cheap" }, minutes: 0 },
+      { item: { kind: "raw", quality: "premium" }, minutes: 5 },
+      { item: { kind: "meal", quality: "cheap" }, minutes: 40 },
+      { item: { kind: "burnt", quality: "cheap" }, minutes: 90 },
+    ];
+    const seen = new Set<string>();
+    for (const stove of dishes) {
+      usual.home.stove = structuredClone(stove);
+      outage.home.stove = structuredClone(stove);
+      const base = stoveState(usual);
+      expect(stoveState(outage), JSON.stringify(stove)).toBe(base);
+      expect(stoveArtState(usual)).toBe(base);
+      expect(stoveArtState(outage)).toBe(`gas-${base}`);
+      expectFrame({ id: "env/stove", state: stoveArtState(usual) });
+      expectFrame({ id: "env/stove", state: stoveArtState(outage) });
+      seen.add(base);
+    }
+    // Перебрали всі стани плити: на кожен є газовий.
+    expect([...seen].sort()).toEqual(["burnt", "cooking", "off", "raw", "ready"]);
+  });
+});
 
 describe("душ у день відключення (§8.7, §4.1): вода холодна", () => {
   it("поки персонаж у душі, вода тече: звичайного дня — гаряча (running), у відключення — холодна (running-cold)", () => {

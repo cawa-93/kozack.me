@@ -9,6 +9,7 @@
 
 import { hasDisease } from "../../sim/diseases";
 import type { GameEvent } from "../../sim/events";
+import { powerOut } from "../../sim/modifiers";
 import type { Cat, GameState } from "../../sim/types";
 import { catEventAnims } from "../anim/catevents";
 import { CAT_ONE_SHOT_MS } from "../anim/ids";
@@ -28,11 +29,22 @@ export type ThingFx = "steam" | "smoke";
 /** Ефект кота: хропіння, задишка, чхання. */
 export type CatFxKind = "snore" | "pant" | "sneeze";
 
-/** Плита (§8.7): поки страва вариться чи готова й гріється — пара; пригоріла — дим; порожня чи сире щойно поклали — нічого. */
+/**
+ * Плита (§8.7): поки страва вариться чи готова й гріється — пара; пригоріла — дим; порожня чи сире щойно поклали — нічого.
+ * На газовому пальнику дня відключення — так само: рахує базовий `stoveState`, а не кадр `stoveArtState`.
+ */
 export function stoveFx(state: GameState): ThingFx | null {
   const look = stoveState(state);
   if (look === "cooking" || look === "ready") return "steam";
   return look === "burnt" ? "smoke" : null;
+}
+
+/**
+ * Звідки пара й дим плити — точка запису `env/stove`: середина сковороди (`pan`), а в день відключення світла (§4.1, рішення
+ * автора 2026-11-02) — середина сковороди, піднятої на туристичний газовий пальник (`pan-gas`, кадри `gas-*`).
+ */
+export function stovePuffPoint(state: GameState): "pan" | "pan-gas" {
+  return powerOut(state) ? "pan-gas" : "pan";
 }
 
 /** Пральна машина (§8.7): поки пере — над кришкою пара. */

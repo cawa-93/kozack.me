@@ -27,8 +27,10 @@ import {
   sparkState,
   sparking,
   stoveFx,
+  stovePuffPoint,
   washerFx,
 } from "../src/view/iso/fxlook";
+import { stoveArtState } from "../src/view/iso/looks";
 import { catPose } from "../src/view/pose";
 
 /** Стан сценарію (свіжа копія). */
@@ -72,6 +74,33 @@ describe("пара й дим над речами (§8.7)", () => {
     expect(stoveFx(state)).toBe("steam");
     state.home.stove = { item: { kind: "burnt", quality: "cheap" }, minutes: 90 };
     expect(stoveFx(state)).toBe("smoke");
+  });
+
+  it("плита на газовому пальнику дня відключення (§4.1): та сама пара й дим, але з піднятої сковороди (pan-gas)", () => {
+    const usual = scenario("appliances");
+    usual.modifiers.day = null;
+    const outage = scenario("appliances");
+    outage.modifiers.day = "outage";
+    // Вариться під кришкою (gas-cooking) — пара, як і звичайного дня; пригоріло (gas-burnt) — дим.
+    for (const [item, minutes, art, fx] of [
+      [{ kind: "raw", quality: "cheap" }, 3, "gas-cooking", "steam"],
+      [{ kind: "meal", quality: "cheap" }, 40, "gas-ready", "steam"],
+      [{ kind: "burnt", quality: "cheap" }, 90, "gas-burnt", "smoke"],
+    ] as const) {
+      for (const state of [usual, outage]) state.home.stove = { item: { ...item }, minutes };
+      expect(stoveArtState(outage)).toBe(art);
+      expect(stoveFx(outage)).toBe(fx);
+      expect(stoveFx(outage)).toBe(stoveFx(usual));
+    }
+    expect(stovePuffPoint(usual)).toBe("pan");
+    expect(stovePuffPoint(outage)).toBe("pan-gas");
+    // Точка є в записі плити: над серединою сковороди, піднята разом із нею (кадри gas-* — та сама сковорода вище).
+    const points = artEntry("env/stove")?.points ?? {};
+    const pan = points["pan"];
+    const gas = points["pan-gas"];
+    expect(pan && gas, "точки pan і pan-gas").toBeTruthy();
+    expect(gas?.x).toBe(pan?.x);
+    expect((pan?.y ?? 0) - (gas?.y ?? 0)).toBeGreaterThan(10);
   });
 
   it("пральна машина: пара лише поки пере", () => {

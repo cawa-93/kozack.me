@@ -49,7 +49,7 @@ import {
   shapedState,
   showerState,
   sinkState,
-  stoveState,
+  stoveArtState,
   STORAGE_OVERLAYS,
   storageOverlays,
   TRACE_OVERLAYS,
@@ -456,7 +456,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.put(cabinet, "food", cupboard.food, ON.overlay);
     this.put(cabinet, "lock", cupboard.lock, ON.lock, cupboard.lockPoint);
 
-    this.show(this.get("stove"), { id: "env/stove", state: stoveState(state) });
+    this.show(this.get("stove"), { id: "env/stove", state: stoveArtState(state) });
     this.show(this.get("trash"), { id: "env/trash", state: trashState(state) });
     this.show(this.get("computer"), { id: "env/computer", state: computerState(state) });
     this.show(this.get("bed"), { id: "env/bed", state: bedState(state) });

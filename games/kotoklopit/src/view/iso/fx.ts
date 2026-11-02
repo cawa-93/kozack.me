@@ -30,15 +30,20 @@ import {
   sparkState,
   sparking,
   stoveFx,
+  stovePuffPoint,
   washerFx,
   type CatFxKind,
   type ThingFx,
 } from "./fxlook";
+
+/** Точка плити, з якої йде пара й дим (`stovePuffPoint`). */
+type StovePuffPoint = ReturnType<typeof stovePuffPoint>;
 import { artOffset, objectScreen } from "./geometry";
 
 /**
- * Звідки росте пара й дим і куди хилиться: точка запису речі (`pan` плити — конфорка зі сковородою, `top` пральної машини —
- * середина кришки), зсув від неї (одиниці арту) і нахил стовпчика, градуси. Над плитою й пральною машиною, поки вони
+ * Звідки росте пара й дим і куди хилиться: точка запису речі (`pan` плити — конфорка зі сковородою, а в день відключення —
+ * `pan-gas`, сковорода на газовому пальнику; `top` пральної машини — середина кришки), зсув від неї (одиниці арту) і нахил
+ * стовпчика, градуси. Над плитою й пральною машиною, поки вони
  * працюють, висить бабл стану (`DayScene`, §11.4) просто над серединою речі — і закрив би прямий стовпчик (перевірка
  * знімками): пара йде з лівого краю кришки й хилиться ліворуч, від хвостика бабла, тож видно і її, і бабл. У пральної машини
  * — з лівого дальнього боку кришки: праворуч від середини стоїть каністра засобу (A3).
@@ -77,8 +82,11 @@ export class IsoFxView {
   private readonly shots: Shot[] = [];
   /** Коли дріт перегризли (мс сцени): одразу після цього — довший сніп іскор. */
   private chewedAt = Number.NEGATIVE_INFINITY;
-  /** Де пара плити й пральної машини й де дріт перекушено: речі не рухаються. */
-  private readonly stoveAt: Point;
+  /**
+   * Де пара плити й пральної машини й де дріт перекушено: речі не рухаються. У плити — дві точки: звичайна сковорода (`pan`)
+   * і піднята на газовий пальник дня відключення (`pan-gas`); котра цього кадру — `stovePuffPoint`.
+   */
+  private readonly stoveAt: Readonly<Record<StovePuffPoint, Point>>;
   private readonly washerAt: Point;
   private readonly sparkAt: Point;
   private readonly sparkCell: Point;
@@ -87,7 +95,7 @@ export class IsoFxView {
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
-    this.stoveAt = puffFrom("stove");
+    this.stoveAt = { pan: puffFrom("stove"), "pan-gas": puffFrom("stove", "pan-gas") };
     this.washerAt = puffFrom("washer");
     // Дріт: кадр — у центрі клітинки `WIRE_TILE`, місце розриву — точка `cut` запису; клітинки розриву — для глибини.
     const tile = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
@@ -126,7 +134,7 @@ export class IsoFxView {
   }
 
   update(state: GameState, time: number): void {
-    this.drawThing("stove", stoveFx(state), this.stoveAt, time);
+    this.drawThing("stove", stoveFx(state), this.stoveAt[stovePuffPoint(state)], time);
     this.drawThing("washer", washerFx(state), this.washerAt, time);
     this.drawSpark(state, time);
     this.drawCats(state, time);
@@ -245,12 +253,15 @@ export class IsoFxView {
   }
 }
 
-/** Звідки росте пара над річчю (`PUFF_FROM`), px світу. */
-function puffFrom(object: keyof typeof PUFF_FROM): Point {
+/**
+ * Звідки росте пара над річчю (`PUFF_FROM`), px світу; `point` — інша точка запису замість звичайної (сковорода на газовому
+ * пальнику дня відключення), зсув той самий.
+ */
+function puffFrom(object: keyof typeof PUFF_FROM, point: string = PUFF_FROM[object].point): Point {
   const from = PUFF_FROM[object];
   const at = objectScreen(objectById(object));
-  const point = artOffset(`env/${object}`, from.point) ?? { x: 0, y: 0 };
-  return { x: at.x + point.x + from.shift.x, y: at.y + point.y + from.shift.y };
+  const offset = artOffset(`env/${object}`, point) ?? { x: 0, y: 0 };
+  return { x: at.x + offset.x + from.shift.x, y: at.y + offset.y + from.shift.y };
 }
 
 function destroyFx(fx: Fx): void {
