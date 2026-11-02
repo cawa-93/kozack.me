@@ -14,7 +14,10 @@ import type { Projection } from "./world/projection";
 export const BASE_WIDTH = 1280;
 export const BASE_HEIGHT = 720;
 
-/** Висота смуги інтерфейсу вгорі, без безпечної зони. */
+/**
+ * Висота смуги інтерфейсу вгорі, без безпечної зони, — на десктопі; на низькому екрані (телефон набік) смуга вища, щоб
+ * уміщувалися більші кружечки показників (`hudHeight`, `HUD_LAYOUT` у `iso/hudlook.ts`).
+ */
 export const HUD_HEIGHT = 76;
 
 /**

@@ -16,11 +16,24 @@ import type { GameState, Product, StatName } from "../sim/types";
 import { fill, ILLNESS_TITLES } from "../texts";
 import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
-import { bandRect, HUD_ART, HUD_BAND, HUD_STATES, hudTextScale, isoBarRects, STAT_BLINK, STAT_FILL, statDisc } from "./iso/hudlook";
+import {
+  bandRect,
+  HUD_ART,
+  HUD_BAND,
+  HUD_LAYOUT,
+  HUD_STATES,
+  hudLayout,
+  hudTextScale,
+  isoBarRects,
+  STAT_BLINK,
+  STAT_FILL,
+  statDisc,
+  type HudLayout,
+} from "./iso/hudlook";
 import { UI_FILL, UI_FONT, UI_TEXT, uiEntry } from "./iso/uilook";
 import { scheduleOf } from "./schedule";
 import { PRODUCT_ICONS, STAT_ICONS } from "./symbols";
-import { canvasNow, HUD_HEIGHT, type Frame } from "./viewport";
+import { canvasNow, type Frame } from "./viewport";
 import { textResolution } from "./zoom";
 import { UI_LAYERS } from "./world/layers";
 
@@ -32,13 +45,11 @@ const STATS: readonly { name: StatName; icon: IconName }[] = [
   { name: "sanity", icon: STAT_ICONS.sanity },
 ];
 
-const ICON_SIZE = 30;
-const BAR_X = 34;
-const BAR_Y = 20;
-const BAR_WIDTH = 116;
-const BAR_HEIGHT = 12;
+/** Де показники: перший починається на `STATS_X`, кожен наступний — на `STATS_STEP` правіше (кружечок і шкала — `HudLayout`). */
 const STATS_X = 238;
 const STATS_STEP = 158;
+/** Верх дати, грошей і розкладу на десктопі; на телефоні — на `HudLayout.drop` нижче. */
+const TOP_Y = { date: 5, money: 20, schedule: 4 } as const;
 /** Штрихування частини шкали над межею (§6.3): крок смужок. */
 const HATCH_STEP = 6;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
@@ -59,15 +70,12 @@ const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`) і де годинник під датою. */
 const SMALL_TEXT = { date: 17, effects: 18, schedule: 18, news: 17, clockY: 26 } as const;
 /**
- * Найширша дата, px полотна: від лівого краю (20) до кружечка першого показника з просвітом. Збільшена на телефоні дата
- * «Тиждень 12 · п'ятниця» інакше налазила б на нього — тоді вона стискається вшир.
+ * Найширша дата, px полотна: від лівого краю (20) до кружечка першого показника з просвітом (його лівий край — той самий в
+ * обох розкладах, `HudLayout`). Збільшена на телефоні дата «Тиждень 12 · п'ятниця» інакше налазила б на нього — тоді вона
+ * стискається вшир.
  */
 const DATE_MAX_WIDTH = STATS_X - 20 - 14;
-/**
- * Кружечки (`statDisc`): чорнильне кільце показника (радіус `ICON_SIZE / 2 + 2` разом із контуром 2) і підказки (`HINT.r`),
- * а іконка менша — так, щоб довкола неї лишався папір.
- */
-const STAT_DISC = statDisc(2 * (ICON_SIZE / 2 + 2) + 2);
+/** Кружечок підказки (`statDisc`, `HINT.r` з контуром 2): іконка менша за папір — довкола неї лишається просвіт. */
 const HINT_DISC = statDisc(2 * HINT.r + 2);
 
 type EventData = Phaser.Types.Input.EventData;
@@ -91,8 +99,8 @@ interface BarLook {
 /** Заливка — під рамкою арту, тож її кінці — півкола: радіус — половина висоти заливки (`isoBarRects`). */
 const BAR_LOOK: Omit<BarLook, "radius"> = { trough: UI_FILL.trough, blink: STAT_BLINK, hatch: UI_FILL.hatch };
 
-/** Місце шкали показника `i`: 116 × 12 праворуч від іконки; рамку й заливку в ньому розкладає `isoBarRects`. */
-const barSlot = (i: number): BarRect => ({ x: STATS_X + i * STATS_STEP + BAR_X, y: BAR_Y, w: BAR_WIDTH, h: BAR_HEIGHT });
+/** Місце шкали показника `i` за розкладом панелі (праворуч від кружечка); рамку й заливку в ньому розкладає `isoBarRects`. */
+const barSlot = (i: number, layout: HudLayout): BarRect => ({ x: STATS_X + i * STATS_STEP + layout.bar.x, y: layout.bar.y, w: layout.bar.w, h: layout.bar.h });
 
 export class Hud {
   /** Смуга панелі: розтягнути на ширину екрана й висоту панелі з безпечною зоною. */
@@ -102,9 +110,15 @@ export class Hud {
   private readonly date: Phaser.GameObjects.Text;
   private readonly clock: Phaser.GameObjects.Text;
   private readonly bars: Phaser.GameObjects.Graphics;
-  /** Де шкали й як їх малювати. */
-  private readonly barRects: readonly BarRect[];
-  private readonly barLook: BarLook;
+  /** Кружечки показників: паперове кільце й іконка. */
+  private readonly discs: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image }[];
+  /** Рамки шкал — «три частини» над заливкою. */
+  private readonly barFrames: StretchArt[];
+  /** Де заливка шкал і як її малювати (за розкладом панелі, `arrange`). */
+  private barRects: BarRect[] = [];
+  private readonly barLook: BarLook = { ...BAR_LOOK, radius: 0 };
+  /** Розклад панелі зараз: десктоп чи низький екран (`hudLayout`); null — ще не розкладено. */
+  private shape: HudLayout | null = null;
   private readonly money: Phaser.GameObjects.Text;
   private readonly effects: Phaser.GameObjects.Text;
   private readonly schedule: Phaser.GameObjects.Text;
@@ -153,32 +167,22 @@ export class Hud {
     // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
     const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
     this.band = (width, height) => band.place(bandRect(band.frame, width, height));
-    this.date = text(20, 5, 17, UI_TEXT.muted);
+    this.date = text(20, TOP_Y.date, 17, UI_TEXT.muted);
     this.clock = text(20, 26, 36).setFontStyle("bold");
-    // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка.
-    const labels = STATS.flatMap((stat, i) => {
-      const x = STATS_X + i * STATS_STEP + ICON_SIZE / 2;
-      const y = BAR_Y + BAR_HEIGHT / 2;
-      const { ring, icon } = STAT_DISC;
-      return [
-        addArt(scene, null, HUD_ART.stat).setPosition(x, y).setDisplaySize(ring, ring),
-        addArt(scene, null, iconArt(stat.icon)).setPosition(x, y).setDisplaySize(icon, icon),
-      ];
-    });
+    // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка. Місце й розмір — `arrange`.
+    this.discs = STATS.map((stat) => ({ ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, iconArt(stat.icon)) }));
     this.bars = scene.add.graphics();
-    const bars = STATS.map((_, i) => isoBarRects(barSlot(i), uiEntry(HUD_ART.bar).size));
-    this.barLook = { ...BAR_LOOK, radius: (bars[0]?.fill.h ?? 0) / 2 };
-    this.barRects = bars.map((bar) => bar.fill);
-    this.effects = text(STATS_X, 44, 18, UI_TEXT.warning);
-    this.money = text(866, 20, 30).setFontStyle("bold");
-    this.schedule = text(990, 4, 18, UI_TEXT.muted);
+    this.effects = text(STATS_X, HUD_LAYOUT.desktop.effectsY, 18, UI_TEXT.warning);
+    this.money = text(866, TOP_Y.money, 30).setFontStyle("bold");
+    this.schedule = text(990, TOP_Y.schedule, 18, UI_TEXT.muted);
     this.left = scene.add
-      .container(0, 0, [this.date, this.clock, ...labels, this.bars])
+      .container(0, 0, [this.date, this.clock, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
     // Рамки шкал — «три частини» над заливкою.
-    for (const bar of bars) new StretchArt(scene, this.left, HUD_ART.bar).place(bar.frame);
+    this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
     this.left.add([this.effects, this.money, this.schedule]);
+    this.arrange(HUD_LAYOUT.desktop);
 
     // Телефон персонажа: доставка (§6.4).
     this.phoneArt = addArt(scene, null, HUD_ART.phone, { state: HUD_STATES.phone.idle });
@@ -221,28 +225,65 @@ export class Hud {
 
   /** Розкласти інтерфейс по екрану: ні ліва частина, ні кнопки праворуч не заходять під виріз камери. */
   layout({ width, safe, ui }: Frame): void {
-    this.scaleSmall(hudTextScale(1 / canvasNow().unit));
+    const cssPerUnit = 1 / canvasNow().unit;
+    this.scaleSmall(hudTextScale(cssPerUnit));
+    const shape = this.arrange(hudLayout(cssPerUnit));
+    this.placeClock();
     this.sharpen(textResolution(ui));
-    this.band(width, safe.top + HUD_HEIGHT);
+    const height = shape.height;
+    this.band(width, safe.top + height);
     this.left.setPosition(safe.left, safe.top);
     const x = width - safe.right - BUTTONS_INSET;
-    this.phone.setPosition(x, safe.top + HUD_HEIGHT / 2 - 1);
+    this.phone.setPosition(x, safe.top + height / 2 - 1);
     // Під телефоном, уже над квартирою: у смузі інтерфейсу на екрані 16:9 місця немає.
-    this.fullscreen?.button.setPosition(x, safe.top + HUD_HEIGHT + 34);
+    this.fullscreen?.button.setPosition(x, safe.top + height + 34);
     // Бабл телефона — правим верхнім кутом під телефоном, лівіше кнопки повного екрана.
-    this.news.setPosition(x - 30, safe.top + HUD_HEIGHT + 10);
+    this.news.setPosition(x - 30, safe.top + height + 10);
+  }
+
+  /**
+   * Розкласти панель за `layout` (десктоп чи низький екран, `hudLayout`) — лише коли розклад змінився: кружечки показників,
+   * рамки й заливка шкал, рядок станів, дата, гроші й розклад. Повертає розклад, що діє.
+   */
+  private arrange(layout: HudLayout): HudLayout {
+    if (layout === this.shape) return layout;
+    this.shape = layout;
+    const { ring, icon } = statDisc(layout.disc.outer, layout.disc.fill);
+    this.discs.forEach((disc, i) => {
+      const x = STATS_X + i * STATS_STEP + layout.disc.x;
+      disc.ring.setPosition(x, layout.disc.y).setDisplaySize(ring, ring);
+      disc.icon.setPosition(x, layout.disc.y).setDisplaySize(icon, icon);
+    });
+    const frame = uiEntry(HUD_ART.bar).size;
+    this.barRects = this.barFrames.map((art, i) => {
+      const bar = isoBarRects(barSlot(i, layout), frame);
+      art.place(bar.frame);
+      return bar.fill;
+    });
+    // Заливка — під рамкою арту, тож її кінці — півкола.
+    this.barLook.radius = (this.barRects[0]?.h ?? 0) / 2;
+    this.effects.setY(layout.effectsY);
+    this.date.setY(TOP_Y.date + layout.drop);
+    this.money.setY(TOP_Y.money + layout.drop);
+    this.schedule.setY(TOP_Y.schedule + layout.drop);
+    return layout;
+  }
+
+  /** Годинник — під датою: нижче, коли дата збільшена (`scaleSmall`) і коли смуга вища (`arrange`). */
+  private placeClock(): void {
+    const date = Math.round(SMALL_TEXT.date * this.textScale);
+    this.clock.setY(SMALL_TEXT.clockY + date - SMALL_TEXT.date + (this.shape?.drop ?? 0));
   }
 
   /**
    * Дрібні написи (дата, стани, розклад, бабл телефона) і підказка на телефоні — у `k` разів більші, коли полотно на екрані
-   * зменшене (телефон, `hudTextScale`); лише коли масштаб змінився. Годинник опускається під більшу дату.
+   * зменшене (телефон, `hudTextScale`); лише коли масштаб змінився. Годинник опускається під більшу дату (`placeClock`).
    */
   private scaleSmall(k: number): void {
     if (k === this.textScale) return;
     this.textScale = k;
     const px = (size: number): number => Math.round(size * k);
     this.date.setFontSize(px(SMALL_TEXT.date));
-    this.clock.setY(SMALL_TEXT.clockY + px(SMALL_TEXT.date) - SMALL_TEXT.date);
     this.effects.setFontSize(px(SMALL_TEXT.effects));
     this.schedule.setFontSize(px(SMALL_TEXT.schedule));
     this.newsTitle.setFontSize(px(SMALL_TEXT.news));

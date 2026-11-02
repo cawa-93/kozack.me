@@ -98,12 +98,12 @@ export interface StatDisc {
 
 /**
  * Кружечок нового вигляду на місці старого завширшки `outer` (з контуром), px: чорнильне кільце завбільшки як старий
- * кружечок, а іконка — `HUD_STAT_FILL` паперу в ньому. Розклад панелі не змінюється: кружечок не налазить ні на шкалу, ні
- * на рядок станів під ним.
+ * кружечок, а іконка — частка `fill` паперу в ньому (типово `HUD_STAT_FILL`). Розклад панелі не змінюється: кружечок не
+ * налазить ні на шкалу, ні на рядок станів під ним.
  */
-export function statDisc(outer: number): StatDisc {
+export function statDisc(outer: number, fill: number = HUD_STAT_FILL): StatDisc {
   const ring = Math.round(outer / HUD_STAT_ART.ink);
-  return { ring, icon: Math.round((ring * HUD_STAT_ART.paper * HUD_STAT_FILL) / ICON_DRAWN) };
+  return { ring, icon: Math.round((ring * HUD_STAT_ART.paper * fill) / ICON_DRAWN) };
 }
 
 /** Найменший розмір дрібних написів панелі на екрані, px CSS (дата, стани, розклад, бабл телефона). */
@@ -123,6 +123,54 @@ export const HUD_TEXT_MAX = 1.35;
 export function hudTextScale(cssPerUnit: number): number {
   const want = HUD_SMALL_TEXT_CSS / (HUD_SMALL_TEXT * cssPerUnit);
   return Math.min(HUD_TEXT_MAX, Math.max(1, want));
+}
+
+/**
+ * Розклад панелі (`hud.ts`), одиниці інтерфейсу. Показник `i` починається на `STATS_X + i · 158`, його кружечок і шкала — від
+ * цього початку; гроші, розклад і телефон — на тих самих місцях по горизонталі.
+ */
+export interface HudLayout {
+  /** Висота смуги без безпечної зони (`Viewport` ставить камеру квартири під неї). */
+  height: number;
+  /** На стільки нижче, ніж на десктопі, дата з годинником, гроші й розклад: посередині вищої смуги. */
+  drop: number;
+  /**
+   * Кружечок показника: зовнішній діаметр чорнильного кільця з контуром (`statDisc`), частка паперу під малюнком іконки й
+   * центр — від початку показника й від верху смуги.
+   */
+  disc: { outer: number; fill: number; x: number; y: number };
+  /** Місце шкали від початку показника (рамку й заливку в ньому розкладає `isoBarRects`). */
+  bar: Rect;
+  /** Верх рядка станів («Пошук роботи», «Застуда»). */
+  effectsY: number;
+}
+
+/**
+ * Два розклади панелі.
+ *
+ * - `desktop` — як був: смуга 76 (`HUD_HEIGHT`), кружечок 36 біля шкали 116 × 12, рядок станів під ними.
+ * - `phone` — низький екран (телефон набік, там, де `hudTextScale` збільшує написи): на 844 × 390 одиниця інтерфейсу —
+ *   ≈ 0,54 px CSS, і в кружечку 36 іконка показника була ≈ 12 px CSS (рецензія хвилі 3, `ui-r1-9`). Кружечок 52 з тим самим
+ *   просвітом паперу довкола іконки (2,8, тому частка 0,86, а не 0,8) — іконка ≈ 18,5 px CSS на 844 × 390 (≈ 17 на 740 × 360);
+ *   шкала — праворуч від нього, коротша (100 замість 116), з тим самим кінцем, тож гроші й розклад не зсуваються. Рядок
+ *   станів мусить лишитися під кружечками (довгий — «Сонливість · Недосип» — іде під сусідніми показниками), тож смуга
+ *   вища на 12 одиниць (≈ 6,5 px CSS — квартира нижча на ≈ 2 %); дата з годинником, гроші й розклад опускаються на
+ *   половину цього — посередині смуги. Без вищої смуги більші кружечки лягли б на рядок станів, а перенести його нікуди:
+ *   праворуч стоять гроші й розклад, а на телефоні 16:9 смуга не ширша за десктоп.
+ */
+export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayout } = {
+  desktop: { height: 76, drop: 0, disc: { outer: 36, fill: HUD_STAT_FILL, x: 15, y: 26 }, bar: { x: 34, y: 20, w: 116, h: 12 }, effectsY: 44 },
+  phone: { height: 88, drop: 6, disc: { outer: 52, fill: 0.86, x: 23, y: 30 }, bar: { x: 50, y: 24, w: 100, h: 12 }, effectsY: 55 },
+};
+
+/** Розклад панелі для екрана, де одиниця інтерфейсу займає `cssPerUnit` px CSS (`1 / CanvasFit.unit`). */
+export function hudLayout(cssPerUnit: number): HudLayout {
+  return hudTextScale(cssPerUnit) > 1 ? HUD_LAYOUT.phone : HUD_LAYOUT.desktop;
+}
+
+/** Висота смуги панелі без безпечної зони (`hudLayout`): камера квартири — під нею. */
+export function hudHeight(cssPerUnit: number): number {
+  return hudLayout(cssPerUnit).height;
 }
 
 /**

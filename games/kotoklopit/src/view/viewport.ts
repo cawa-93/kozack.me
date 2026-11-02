@@ -10,6 +10,7 @@ import Phaser from "phaser";
 
 import { safeArea, type Insets } from "../screen";
 import type { Vec } from "../sim/types";
+import { hudHeight } from "./iso/hudlook";
 import type { Projection } from "./world/projection";
 import { BASE_HEIGHT, BASE_WIDTH, cameraZoom, canvasFit, followTarget, HUD_HEIGHT, type CanvasFit } from "./zoom";
 
@@ -175,9 +176,9 @@ export class Viewport {
     const safe = { top: css.top * unit, right: css.right * unit, bottom: css.bottom * unit, left: css.left * unit };
     this.frame = { width, height, safe, ui };
 
-    // Квартира — під смугою інтерфейсу; під вирізом камери її видно, там лише стіни й підлога. Камера квартири — у
-    // пікселях полотна.
-    const top = (safe.top + HUD_HEIGHT) * ui;
+    // Квартира — під смугою інтерфейсу (на низькому екрані вона вища, `hudHeight`); під вирізом камери її видно, там лише
+    // стіни й підлога. Камера квартири — у пікселях полотна.
+    const top = (safe.top + hudHeight(1 / unit)) * ui;
     this.camera.setViewport(0, top, game.width, game.height - top);
     // Зум — більший із «видно всю квартиру» й «клітинка не дрібніша за мінімум» (§8.4, `zoom.ts`).
     this.zoomBase = cameraZoom({ width: game.width, height: game.height - top, cssScale: fit.density }, this.projection);
