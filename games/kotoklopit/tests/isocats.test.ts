@@ -902,6 +902,19 @@ describe("темп лап ходи й бігу (`gaitRate`)", () => {
   });
 });
 
+describe("кіт біля миски дивиться на неї (`CatSpot.faces`)", () => {
+  it("дійшов до миски — `faces` у її точці (збоку — лицем до неї); ще йде — як каже `catFacing`", () => {
+    const save = game();
+    const bowl = save.current.home.items.find((i) => i.kind === "bowl")!;
+    const p = slotCenter(bowl.slot);
+    const cat = withCat(save, p);
+    cat.act = act("eat", { target: `item:${bowl.id}` });
+    expect(catSpot(save.current, cat, "eat", null, SPOT).faces).toEqual(p);
+    cat.act = act("eat", { target: `item:${bowl.id}`, goal: { x: Math.floor(p.x), y: Math.floor(p.y) } });
+    expect(catSpot(save.current, cat, "walk", null, SPOT).faces).toBeNull();
+  });
+});
+
 describe("кіт, якого опустили, — там, де його поставили руки (`putDownGround`, `stillPutDown`)", () => {
   it("увесь `putDown` корінь кота — під кистями (не далі за 0,1 клітинки), а після «відпустив» не ковзає до точки сима", () => {
     // Кисті праворуч від персонажа (ракурс front), а сим поставив кота на 0,6 клітинки попереду — просто під персонажем.

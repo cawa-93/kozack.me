@@ -15,7 +15,7 @@ import type { Target } from "../../sim/targets";
 import type { Cat, GameState, Quality, Vec } from "../../sim/types";
 import { hasDisease } from "../../sim/diseases";
 import { coatOf } from "../../sim/genetics";
-import { isSolid } from "../../sim/home";
+import { isSolid, itemPoint } from "../../sim/home";
 import { absoluteMinute } from "../../sim/time";
 import { girthOf } from "../../sim/weight";
 import { catFace, type CatFace } from "../anim/catface";
@@ -36,7 +36,7 @@ import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world
 import { ISO } from "../world/projection";
 import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PutDown } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
-import { CAT_PIECE, catSpot, lapSeat, raised, type CatSpot, type CatSpotDepths, type LapSeat } from "./catspot";
+import { bowlOf, CAT_PIECE, catSpot, lapSeat, raised, type CatSpot, type CatSpotDepths, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 import { liftedRoot, PERSON_DEPTH } from "./personlook";
@@ -370,7 +370,18 @@ export class IsoCatsView implements CatsPart {
       // Під рукою — теж до персонажа; звідки прийшов — з ракурсу, яким ішов (дивився праворуч — прийшов зліва).
       const touched = interactionWith(state, cat) !== null;
       const from = mem.facing ? (mem.facing.flip ? 1 : -1) : 0;
-      members.push({ id: cat.id, at: spot.at, size: this.sizeOf(cat), toPerson: touched || towardPerson(cat), touched, shift: mem.crowd, from });
+      // Їсть чи п'є з миски (дійшов до неї): з іншими біля тієї самої — обабіч неї.
+      const bowl = spot.faces !== null ? bowlOf(state, cat) : null;
+      members.push({
+        id: cat.id,
+        at: spot.at,
+        size: this.sizeOf(cat),
+        toPerson: touched || towardPerson(cat),
+        touched,
+        shift: mem.crowd,
+        from,
+        bowl: bowl ? { id: bowl.id, at: itemPoint(bowl) } : null,
+      });
     }
     return catCrowds(members, state.character.body, (x, y) => isSolid(state, x, y), this.crowdShifts, this.crowdPlaces);
   }
@@ -865,10 +876,18 @@ export class IsoCatsView implements CatsPart {
   }
 }
 
+/**
+ * Ближче за це вздовж горизонталі екрана (клітинки x − y; ≈ 10 px) кіт стоїть не збоку від речі, а просто за нею (за мискою)
+ * — тоді дивиться, як каже `catFacing`.
+ */
+const FACES_DEAD = 0.15;
+
 /** Кіт збоку від речі (`CatSpot.faces`) дивиться на неї: ліворуч чи праворуч на екрані — до неї; ракурс — як був. */
 function faceTo(facing: RigFacing, spot: CatSpot): RigFacing {
   if (!spot.faces) return facing;
-  const flip = spot.faces.x - spot.faces.y < spot.at.x - spot.at.y;
+  const d = spot.faces.x - spot.faces.y - (spot.at.x - spot.at.y);
+  if (Math.abs(d) < FACES_DEAD) return facing;
+  const flip = d < 0;
   return flip === facing.flip ? facing : { view: facing.view, flip };
 }
 

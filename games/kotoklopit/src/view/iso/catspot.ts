@@ -380,10 +380,13 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   }
   if (hidesUnder(state, cat, anim)) return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.
+  // Дійшов — лицем до миски (`faces`): збоку від неї (автогодівниця позаду, двоє біля однієї миски — `catCrowds`) дивиться
+  // на неї, просто за нею — як каже `catFacing`.
   const bowl = pair ? null : bowlOf(state, cat);
   if (bowl) {
     const feeder = (state.home.feeders ?? []).some((f) => f.slot === bowl.slot);
-    return spot("floor", bowlSeat(cat, itemPoint(bowl), feeder, cat.facing >= 0, act.goal === null), { shadow: true });
+    const p = itemPoint(bowl);
+    return spot("floor", bowlSeat(cat, p, feeder, cat.facing >= 0, act.goal === null), { shadow: true, faces: act.goal === null ? p : null });
   }
   if (!pair) {
     // У лотку — присідає на наповнювачі (у закритому — у відкритій частині); чистюля, що відмовився, нюхає його збоку. Хто

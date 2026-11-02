@@ -528,8 +528,10 @@ describe("юрба (`catCrowds`)", () => {
     const xs = members.map((m) => placed(m, out)).map((p) => p.x - ps.x).sort((a, b) => a - b);
     // Двоє ліворуч, двоє праворуч, перший — на `beside` від персонажа, далі — з кроком `step`.
     expect(xs).toEqual([-CROWD.beside - CROWD.step, -CROWD.beside, CROWD.beside, CROWD.beside + CROWD.step].map((x) => expect.closeTo(x, 6)));
-    // Уздовж горизонталі екрана й трохи ближче до камери (`front`): хто зверху, кіт чи персонаж, не вирішує похибка округлення.
-    for (const m of members) expect(placed(m, out).y).toBeCloseTo(ps.y + CROWD.front, 6);
+    // Уздовж горизонталі екрана й трохи ближче до камери (`front`): хто зверху, кіт чи персонаж, не вирішує похибка округлення;
+    // і кожен наступний праворуч — ще на `tie` ближче (сусіди не міняються місцями від похибки).
+    const ys = members.map((m) => placed(m, out)).sort((a, b) => a.x - b.x).map((p) => p.y - ps.y);
+    expect(ys).toEqual([0, 1, 2, 3].map((k) => expect.closeTo(CROWD.front + k * CROWD.tie, 6)));
   });
 
   /** Де на екрані кожен кіт юрби біля персонажа відносно нього (x) після зсуву. */
@@ -656,22 +658,54 @@ describe("юрба (`catCrowds`)", () => {
     expect(catCrowds([far], person, free, new Map()).size).toBe(0);
   });
 
-  it("двоє біля однієї миски (охоронець і злодій) — рядком довкола спільної середини; хто стоїть окремо — на місці", () => {
-    const a = member(1, { x: 17.15, y: 3.15 });
-    const b = member(2, { x: 17.15, y: 3.15 });
+  it("двоє в одній точці — рядком довкола спільної середини, правіший трохи ближче до камери; хто стоїть окремо — на місці", () => {
+    const a = member(1, { x: 9.5, y: 8.5 });
+    const b = member(2, { x: 9.5, y: 8.5 });
     const c = member(3, { x: 14.5, y: 6.5 });
     const out = catCrowds([a, b, c], null, free, new Map());
     const pa = placed(a, out);
     const pb = placed(b, out);
     expect(Math.abs(pa.x - pb.x)).toBeCloseTo(CROWD.step, 6);
     expect((pa.x + pb.x) / 2).toBeCloseTo(isoScreenDir(a.at).x, 6);
-    expect(pa.y).toBeCloseTo(pb.y, 6);
+    // Ключ глибини (x + y) правішого більший на сталу величину, а не на похибку округлення.
+    const [left, right] = pa.x < pb.x ? [pa, pb] : [pb, pa];
+    expect(right.y - left.y).toBeCloseTo(CROWD.tie, 6);
     expect(out.has(3)).toBe(false);
     // Кошенята — тісніше (крок за розміром).
     const k1 = member(4, { x: 9.5, y: 8.5 }, false, 0.5);
     const k2 = member(5, { x: 9.5, y: 8.5 }, false, 0.5);
     const kids = catCrowds([k1, k2], null, free, new Map());
     expect(Math.abs(placed(k1, kids).x - placed(k2, kids).x)).toBeCloseTo(CROWD.step * 0.5, 6);
+  });
+
+  it("двоє біля однієї миски (охоронець і злодій, двоє голодних) — обабіч неї, і той, хто дивиться праворуч, — ліворуч", () => {
+    const bowl = { id: 90, at: { x: 17.5, y: 3.5 } };
+    // Обидва сидять за мискою (`bowlSeat`) в одній точці; Мурка дивиться ліворуч (`from` 1), Барсик — праворуч (−1).
+    const seat = { x: 17.15, y: 3.15 };
+    const murka = { ...member(104, seat), from: 1, bowl };
+    const barsik = { ...member(105, seat), from: -1, bowl };
+    const out = catCrowds([murka, barsik], null, free, new Map());
+    const bx = isoScreenDir(bowl.at).x;
+    expect(placed(barsik, out).x - bx).toBeCloseTo(-CROWD.bowl, 6);
+    expect(placed(murka, out).x - bx).toBeCloseTo(CROWD.bowl, 6);
+    // Не ближче до камери, ніж сиділи (за мискою), — лише сталий порядок сусідів.
+    expect(placed(murka, out).y - isoScreenDir(seat).y).toBeCloseTo(CROWD.tie, 6);
+    // Далі місця тримаються, хоч би як вони тепер дивилися: хто ліворуч, той ліворуч.
+    const shifted = (m: CrowdMember): CrowdMember => ({ ...m, shift: out.get(m.id)!, from: -(m.from ?? 0) });
+    const next = catCrowds([shifted(murka), shifted(barsik)], null, free, new Map());
+    expect(placed(barsik, next).x).toBeLessThan(placed(murka, next).x);
+    // Кошенята — тісніше.
+    const k1 = { ...member(1, seat, false, 0.5), bowl };
+    const k2 = { ...member(2, seat, false, 0.5), bowl };
+    const kids = catCrowds([k1, k2], null, free, new Map());
+    expect(Math.abs(placed(k1, kids).x - placed(k2, kids).x)).toBeCloseTo(2 * CROWD.bowl * 0.5, 6);
+  });
+
+  it("кіт біля миски не стає в юрбу біля ніг персонажа, а один біля своєї миски — на своєму місці", () => {
+    const bowl = { id: 90, at: { x: 4.5, y: 8.5 } };
+    const person = { x: 4.5, y: 8.5 };
+    const eating = { ...member(1, { x: 4.15, y: 8.15 }, true), bowl };
+    expect(catCrowds([eating], person, free, new Map()).size).toBe(0);
   });
 
   it("місце в юрбі в стіні чи в меблях — кіт лишається, де стоїть; щокадру той самий вихідний об'єкт", () => {
