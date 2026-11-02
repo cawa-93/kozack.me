@@ -111,6 +111,10 @@ export function tap(state: GameState): TapResult {
   if (held?.kind === "cat") {
     if (target?.type === "object" && target.object.kind === "shower") return tapObject(state, target.object, held);
     putDownCat(state, held.cat);
+    // Одне утримання — одна дія (§10): натискання, що опустило кота, ще триває — і пестощі опущеного кота не почнуться, поки
+    // кнопку не відпустили (перевірка графіки 2026-11-02: за мить довшого натискання його вже гладили). Відпущена кнопка
+    // скидає прапорець у `tickActivity`.
+    character.holdSpent = true;
     return null;
   }
   // З іграшкою біля кота натискання нічого не робить: утримання тут же почне гру (§8.2).

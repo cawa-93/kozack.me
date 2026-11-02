@@ -14,6 +14,7 @@ import { advance, deserialize, goToSleep, interact, newGame, serialize } from ".
 import { addCat } from "../src/sim/night";
 import { relation } from "../src/sim/relations";
 import { createRng } from "../src/sim/rng";
+import { targetOf } from "../src/sim/targets";
 import { absoluteMinute } from "../src/sim/time";
 import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
 import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
@@ -523,6 +524,26 @@ describe("догляд персонажа (§9.12)", () => {
     expect(cat.love).toBeLessThan(love);
     interact(save);
     expect(save.current.character.held).toBeNull();
+  });
+
+  it("натискання опускає кота, а утримання, що ще триває, його не гладить, поки кнопку не відпустили (§10, перевірка графіки 2026-11-02)", () => {
+    const save = game();
+    const cat = withCat(save, { x: 4.5, y: 7.6 });
+    Object.assign(save.current.character.body, { x: 4.5, y: 8.2, facing: { x: 0, y: -1 } });
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    interact(save);
+    expect(save.current.character.held).toBeNull();
+    expect(targetOf(save.current)).toMatchObject({ type: "cat" });
+    // Кнопку тримають довше за натискання: опущеного кота не гладять.
+    const { events, stop } = recordEvents();
+    for (let i = 0; i < 8; i++) advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+    stop();
+    expect(save.current.character.activity).toBeNull();
+    expect(events.some((e) => e.type === "purr")).toBe(false);
+    // Відпустили — і нове утримання знову гладить.
+    advance(save, 0.05);
+    advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
   });
 
   it("кіт, що лише йде спати, ще не спить: на руки чи пестощі — не «розбудили» й не проти волі (загальна ревізія 2026-10-29)", () => {
