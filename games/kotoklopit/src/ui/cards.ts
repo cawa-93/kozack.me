@@ -35,10 +35,11 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
+import { thingLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
-import { plural, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
+import { plural, PRODUCT_TITLES, VARIANT_TITLES } from "./titles";
 
 export { plural };
 import { LOOK_OPTIONS } from "./look";
@@ -427,11 +428,12 @@ function albumCards(state: GameState): (string | HTMLElement)[] {
 }
 
 
+/** «Мої речі» в телефоні (§8.7): біля назви речі — та сама іконка, що в магазині (§11.4 «Іконка біля назви»). */
 function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   const shop = element("div", "shop");
   for (const item of state.home.items) {
     const row = element("div", "shop-row");
-    const name = element("span", "shop-name", THING_TITLES[item.kind]);
+    const name = element("span", "shop-name", thingLabel(item.kind));
     name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${item.kind}`]?.[item.quality] ?? ""));
     row.append(name);
     const button = element("button", "button", "Викинути");
@@ -453,7 +455,7 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   ];
   for (const { kind, quality, thing } of extra) {
     const row = element("div", "shop-row");
-    const name = element("span", "shop-name", THING_TITLES[kind]);
+    const name = element("span", "shop-name", thingLabel(kind));
     name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${kind}`]?.[quality] ?? ""));
     row.append(name);
     const button = element("button", "button", "Викинути");

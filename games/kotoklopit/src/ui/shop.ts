@@ -6,7 +6,10 @@ import { shopModifier } from "../sim/destinations";
 import { incoming } from "../sim/economy";
 import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, offered, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
+import type { IconName } from "../view/iconnames";
+import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
+import { named } from "./icons";
 import { element } from "./overlay";
 import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
@@ -14,6 +17,17 @@ import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 function goodsName(goods: Goods): string {
   return "product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing];
 }
+
+/**
+ * Іконка товару біля його назви (§11.4 «Іконка біля назви», рішення автора 2026-11-02): запас — та сама, що над сховищем, у
+ * думці персонажа й на кнопці телефона, коли запас скінчився (`PRODUCT_ICONS`), річ — іконка самої речі (`THING_ICONS`).
+ */
+export function goodsIcon(goods: Goods): IconName {
+  return "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
+}
+
+/** Назва товару з іконкою перед нею — так, як її показує рядок магазину (`icons.ts`). */
+export const goodsLabel = (goods: Goods): string => named(goodsIcon(goods), goodsName(goods));
 
 /** Чому товар не взяти — коротким підписом у рядку (§6.4). */
 const UNAVAILABLE: Record<Unavailable, string> = {
@@ -84,7 +98,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
     box.append(element("p", "shop-section", title));
     for (const g of goods) {
       const row = element("div", "shop-item");
-      const name = element("span", "shop-name", goodsName(g));
+      const name = element("span", "shop-name", goodsLabel(g));
       // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
       const mod = mode === "store" ? shopModifier(state, g) : 0;
       const arrow = Math.abs(mod) >= 0.005 ? (mod < 0 ? "₴↓" : "₴↑") : "";
