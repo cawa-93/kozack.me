@@ -4,9 +4,11 @@
 //
 // - карта світла — зображення з полотна (`CanvasTexture`) у координатах світу, 0,5 px на одиницю арту, множенням над усією
 //   квартирою, меблями, котами й персонажем (`WORLD_LAYERS.light`, під позначками, баблами й панеллю): тон доби, світлі плями
-//   ламп, бра, свічок і техніки, світліші смуги сонця й світле скло. Перемальовується лише за новим ключем (`lightmapKey`) і
-//   не частіше ніж `LIGHTMAP.minRedrawMs`;
-// - скло вікон — множенням просто над вікнами (`BACKDROP.window`), під усім, що стоїть: темніє лише скло, а не кіт перед ним;
+//   ламп, бра, свічок і техніки й трохи світліші смуги сонця. Скла в ній немає: над склом, як і над котом на підвіконні перед
+//   ним, — тон. Перемальовується лише за новим ключем (`lightmapKey`) і не частіше ніж `LIGHTMAP.minRedrawMs`;
+// - скло вікон (лише видиме скло стулок, `paneGlass`) — просто над вікнами (`BACKDROP.window`), під усім, що стоїть: множенням
+//   темніє, де скло темніше за тон, і додаванням світлішає, де тепле скло світліше за тон (`glassLayers`), — а кіт перед ним
+//   ні;
 // - смуги сонця — додаванням на підлозі (`BACKDROP.sun`), під стінами й меблями;
 // - конуси від невидимих стельових світильників — додаванням, точки реєстру глибини під світильником: ближчі меблі, стіни, коти
 //   й персонаж їх закривають;
@@ -29,8 +31,8 @@ import {
   apartmentOutline,
   CELL_RX,
   cssColor,
+  glassLayers,
   glassOf,
-  glassTint,
   lightmapKey,
   lightmapPlan,
   paneGlass,
@@ -51,8 +53,9 @@ import { ISO } from "../world/projection";
 import { BACKDROP } from "./apartment";
 import { isoDepth, type IsoDepth, type IsoPointHandle } from "./depth";
 
-/** Скло — одразу над вікнами, під павутиною й усім, що стоїть у кімнаті. */
+/** Скло — одразу над вікнами, під павутиною й усім, що стоїть у кімнаті: спершу множник, над ним — додаток. */
 const GLASS_DEPTH = BACKDROP.window + 0.25;
+const GLASS_ADD_DEPTH = GLASS_DEPTH + 0.05;
 
 /** Полотно поза екраном для розмитих смуг (тінь фігури лягає на полотно, сама фігура — ні), px полотна. */
 const SHADOW_SHIFT = 4096;
@@ -108,6 +111,7 @@ interface Parts {
   readonly sun: Phaser.Textures.CanvasTexture;
   readonly sunImage: Phaser.GameObjects.Image;
   readonly glass: Phaser.GameObjects.Graphics;
+  readonly glassAdd: Phaser.GameObjects.Graphics;
   readonly cones: readonly Cone[];
 }
 
@@ -179,7 +183,10 @@ export class IsoLightView implements WorldPart {
     };
     const map = canvas(this.keys.map);
     const sun = canvas(this.keys.sun);
-    const glass = scene.add.graphics().addToDisplayList(layer).setBlendMode(Phaser.BlendModes.MULTIPLY).setDepth(GLASS_DEPTH).setVisible(false);
+    const glassLayer = (blend: Phaser.BlendModes, depth: number): Phaser.GameObjects.Graphics =>
+      scene.add.graphics().addToDisplayList(layer).setBlendMode(blend).setDepth(depth).setVisible(false);
+    const glass = glassLayer(Phaser.BlendModes.MULTIPLY, GLASS_DEPTH);
+    const glassAdd = glassLayer(Phaser.BlendModes.ADD, GLASS_ADD_DEPTH);
     const coneKey = softTexture(scene, "cone", CONE.color);
     const cones = CEILING_LAMPS.map((lamp, i): Cone => {
       const img = new Phaser.GameObjects.Image(scene, 0, 0, coneKey).setOrigin(0.5, 0).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
@@ -195,6 +202,7 @@ export class IsoLightView implements WorldPart {
       sun,
       sunImage: image(this.keys.sun, Phaser.BlendModes.ADD, BACKDROP.sun),
       glass,
+      glassAdd,
       cones,
     };
     return this.parts;
@@ -224,38 +232,42 @@ export class IsoLightView implements WorldPart {
     ctx.clip();
     ctx.fillStyle = cssColor(plan.tone);
     ctx.fill();
-    // Плями, смуги й скло — найсвітліше з того, що вже є, і нового (`lighten`): перекриті плями не дають гарячих місць.
+    // Плями й смуги — найсвітліше з того, що вже є, і нового (`lighten`): перекриті плями не дають гарячих місць.
     ctx.globalCompositeOperation = "lighten";
     for (const pool of plan.pools) paintPool(ctx, pool);
     for (const strip of plan.strips) {
       softFill(ctx, strip.points, "#ffffff", cssColor(strip.color, strip.alpha), SUN.blur * s, s);
     }
-    for (const glass of plan.glass) {
-      trace(ctx, glass.points);
-      ctx.fillStyle = cssColor(glass.color, glass.alpha);
-      ctx.fill();
-    }
     ctx.restore();
     texture.refresh();
   }
 
-  /** Скло вікон: множник скло / max(тон, скло) просто над вікнами. */
+  /** Скло вікон просто над вікнами: множник, де скло темніше за тон, і додаток, де тепле скло світліше (`glassLayers`). */
   private drawGlass(parts: Parts, d: Daylight): void {
-    const tint = glassTint(toneOf(d), glassOf(d));
-    const color = hex(tint);
-    const key = String(color);
+    const layers = glassLayers(toneOf(d), glassOf(d));
+    const mul = hex(layers.mul);
+    const add = hex(layers.add);
+    const key = `${mul}|${add}`;
     if (key !== this.glassKey) {
       this.glassKey = key;
-      parts.glass.clear();
-      parts.glass.fillStyle(color, 1);
-      for (const poly of this.glassPolys) {
-        parts.glass.beginPath();
-        poly.forEach((p, i) => (i === 0 ? parts.glass.moveTo(p.x, p.y) : parts.glass.lineTo(p.x, p.y)));
-        parts.glass.closePath();
-        parts.glass.fillPath();
-      }
+      this.fillGlass(parts.glass, mul);
+      this.fillGlass(parts.glassAdd, add);
     }
-    parts.glass.setVisible(this.panes.length > 0);
+    const any = this.panes.length > 0;
+    parts.glass.setVisible(any && mul !== 0xffffff);
+    parts.glassAdd.setVisible(any && add !== 0);
+  }
+
+  /** Залити видиме скло всіх вікон кольором `color`. */
+  private fillGlass(g: Phaser.GameObjects.Graphics, color: number): void {
+    g.clear();
+    g.fillStyle(color, 1);
+    for (const poly of this.glassPolys) {
+      g.beginPath();
+      poly.forEach((p, i) => (i === 0 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y)));
+      g.closePath();
+      g.fillPath();
+    }
   }
 
   /** Смуги сонця на підлозі: градієнт від вікна вглиб кімнати, м'які краї. */
@@ -351,6 +363,7 @@ export class IsoLightView implements WorldPart {
       parts.mapImage.setVisible(false);
       parts.sunImage.setVisible(false);
       parts.glass.setVisible(false);
+      parts.glassAdd.setVisible(false);
       for (const cone of parts.cones) {
         cone.image.setVisible(false);
         cone.point.hide();
@@ -375,6 +388,7 @@ export class IsoLightView implements WorldPart {
       parts.mapImage.destroy();
       parts.sunImage.destroy();
       parts.glass.destroy();
+      parts.glassAdd.destroy();
       for (const cone of parts.cones) {
         cone.point.remove();
         cone.image.destroy();

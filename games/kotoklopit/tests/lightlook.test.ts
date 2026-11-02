@@ -11,7 +11,7 @@ import { newGame } from "../src/sim/game";
 import { PANES } from "../src/view/decor";
 import { daylight, type Daylight } from "../src/view/light/daylight";
 import { CEILING_LIGHT, GLASS, luma, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
-import { apartmentOutline, expandConvex, glassOf, glassTint, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
+import { apartmentOutline, expandConvex, glassLayers, glassOf, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
 import { lightSources } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
@@ -78,24 +78,44 @@ describe("вигляд світла доби", () => {
     }
   });
 
-  it("скло вночі темно-синє; на світанку тепле; шар скла разом із картою дає рівно колір скла", () => {
+  it("скло вночі темно-синє; на світанку тепле; шар скла під картою (лише тон) дає шибці рівно колір скла", () => {
     const night = glassOf(d(23 * 60));
     expect(night.b).toBeGreaterThan(night.r);
     expect(luma(night)).toBeLessThan(0.3);
     expect(near(night, GLASS.night)).toBe(true);
     const dawn = glassOf(d(7 * 60));
     expect(dawn.r).toBeGreaterThan(dawn.b);
-    for (const minute of [23 * 60, 5 * 60 + 10, 7 * 60, 19 * 60 + 30, 20 * 60 + 30]) {
-      const light = d(minute);
-      const tone = toneOf(light);
-      const glass = glassOf(light);
-      const tint = glassTint(tone, glass);
-      const map = { r: Math.max(tone.r, glass.r), g: Math.max(tone.g, glass.g), b: Math.max(tone.b, glass.b) };
-      for (const ch of ["r", "g", "b"] as const) {
-        expect(tint[ch]).toBeLessThanOrEqual(1);
-        expect(tint[ch] * map[ch]).toBeCloseTo(glass[ch], 6);
+    let warmer = 0;
+    for (const minute of [23 * 60, 5 * 60 + 10, 6 * 60 + 30, 7 * 60, 8 * 60, 19 * 60, 19 * 60 + 30, 20 * 60 + 30]) {
+      for (const power of [true, false]) {
+        const light = d(minute, power);
+        const tone = toneOf(light);
+        const glass = glassOf(light);
+        const { mul, add } = glassLayers(tone, glass);
+        for (const ch of ["r", "g", "b"] as const) {
+          expect(mul[ch]).toBeLessThanOrEqual(1);
+          expect(add[ch]).toBeGreaterThanOrEqual(0);
+          expect(add[ch]).toBeLessThanOrEqual(1);
+          // Додаток — лише там, де множник не темнить: одне з двох.
+          if (add[ch] > 0) expect(mul[ch]).toBe(1);
+          // Шибка на малюнку (`GLASS.art`): шар скла, потім карта (тон) — рівно шибка × скло.
+          expect(tone[ch] * (GLASS.art[ch] * mul[ch] + add[ch]), `${minute} ${ch}`).toBeCloseTo(GLASS.art[ch] * glass[ch], 6);
+        }
+        if (add.r + add.g + add.b > 0) warmer++;
       }
     }
+    // На світанку й увечері тепле скло світліше за тон кімнати — тоді шар скла додає світло.
+    expect(warmer).toBeGreaterThan(0);
+  });
+
+  it("у карті світла немає скла: над вікном (і над котом на підвіконні перед ним) — лише тон", () => {
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    const light = d(19 * 60 + 30);
+    const plan = lightmapPlan(light, lightSources(s, light), PANES, 0);
+    expect(Object.keys(plan).sort()).toEqual(["pools", "strips", "tone"]);
+    // Смуги сонця в карті лише трохи світлішають те, що в них стоїть (видиму смугу на підлозі дає додавання під меблями).
+    expect(SUN.lift).toBeLessThanOrEqual(0.4);
+    for (const strip of plan.strips) expect(strip.alpha).toBeLessThanOrEqual(SUN.lift);
   });
 
   it("силует квартири охоплює підлогу й задні стіни, з полем; отвори вікон — усередині", () => {

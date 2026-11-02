@@ -1,11 +1,12 @@
 // Що малює світло доби квартири (§8.9 «День і ніч»): чистий план без Phaser і DOM — `iso/light.ts` лише виконує його на
-// Canvas2D. Карта світла (множенням над усією квартирою) — тон доби в силуеті квартири, світлі плями від джерел (`sources.ts`),
-// світліші смуги сонця й світле скло вікон; шар скла (множенням просто над вікнами, під усім, що стоїть) — темне чи тепле скло;
-// смуги сонця на підлозі (додаванням). Кольори й числа — `lightlook.ts`.
+// Canvas2D. Карта світла (множенням над усією квартирою) — тон доби в силуеті квартири, світлі плями від джерел (`sources.ts`)
+// і трохи світліші смуги сонця; шар скла (просто над вікнами, під усім, що стоїть) — темне чи тепле скло; смуги сонця на
+// підлозі (додаванням). Кольори й числа — `lightlook.ts`.
 //
 // Карта множить: колір 1 — нічого не змінює, менший — темнить. Тож удень і на межах дня (темрява й тепло 0) план — тотожність:
-// тон і скло білі, плям і смуг немає, і перехід у день без стрибка. Скло: карта над ним — max(тон, скло), а шар скла домножує
-// на скло / max(тон, скло), тож скло виходить рівно кольору `glassOf`, а кіт на підвіконні перед ним — кольору тону.
+// тон і скло білі, плям і смуг немає, і перехід у день без стрибка. Скла в карті немає: над ним, як і над котом на підвіконні
+// перед ним, — тон. Шар скла під речами доводить скло до кольору `glassOf`: множником скло / тон, де скло темніше за тон, і
+// додаванням (скло − тон) / тон × колір шибки (`GLASS.art`), де тепле скло світліше за тон (`glassLayers`).
 
 import { MAP_HEIGHT, MAP_WIDTH } from "../../sim/home";
 import type { Vec } from "../../sim/types";
@@ -51,10 +52,25 @@ export function glassOf(d: Daylight): Rgb {
   return mix(mix(WHITE, GLASS.night, d.dark), GLASS.warm, d.warm * GLASS.warmMix);
 }
 
-/** Множник шару скла: скло / max(тон, скло) за каналами — разом із картою світла над склом дає рівно `glass`. */
-export function glassTint(tone: Rgb, glass: Rgb): Rgb {
-  const k = (t: number, g: number): number => (g <= 0 ? 0 : g / Math.max(t, g));
-  return { r: k(tone.r, glass.r), g: k(tone.g, glass.g), b: k(tone.b, glass.b) };
+/** Шар скла під речами: множник (≤ 1) і додаток (≥ 0) за каналами, `glassLayers`. */
+export interface GlassLayers {
+  readonly mul: Rgb;
+  readonly add: Rgb;
+}
+
+/**
+ * Шар скла під речами для тону карти `tone` і кольору скла `glass`: скло на малюнку `w` стає t · (w · mul + add). Де скло
+ * темніше за тон — mul = скло / тон, add = 0: рівно w · скло. Де тепле скло світліше за тон — mul = 1, add = (скло − тон) / тон
+ * × `GLASS.art`: для кольору шибки рівно w · скло, для відблисків — трохи тьмяніше.
+ */
+export function glassLayers(tone: Rgb, glass: Rgb): GlassLayers {
+  const mul = (t: number, g: number): number => (t <= 0 ? 1 : Math.min(1, g / t));
+  const add = (t: number, g: number, w: number): number => (t <= 0 ? 0 : Math.max(0, g / t - 1) * w);
+  const w = GLASS.art;
+  return {
+    mul: { r: mul(tone.r, glass.r), g: mul(tone.g, glass.g), b: mul(tone.b, glass.b) },
+    add: { r: add(tone.r, glass.r, w.r), g: add(tone.g, glass.g, w.g), b: add(tone.b, glass.b, w.b) },
+  };
 }
 
 /** Колір для Canvas2D: `rgba(r, g, b, a)`. */
@@ -172,10 +188,8 @@ export interface LightmapPlan {
   readonly tone: Rgb;
   /** Світлі плями (найсвітліше з тону й плями — `lighten`). */
   readonly pools: readonly PoolPaint[];
-  /** Світліші смуги сонця. */
+  /** Трохи світліші смуги сонця (`SUN.lift`). */
   readonly strips: readonly PolyPaint[];
-  /** Світле скло (на світанку й увечері скло світліше за тон кімнати). */
-  readonly glass: readonly PolyPaint[];
 }
 
 /** Яскравість джерела в мить `time` (мс сцени): свічки мерехтять. */
@@ -243,12 +257,10 @@ export function sunColor(d: Daylight): Rgb {
 export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes: readonly Pane[], time: number): LightmapPlan {
   const tone = toneOf(d);
   const t = flickerTime(time);
-  const glass = glassOf(d);
   return {
     tone,
     pools: sources.flatMap((source) => poolsOf(source, t)),
     strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
-    glass: panes.flatMap((pane) => paneGlass(pane).map((points) => ({ points, color: glass, alpha: 1 }))),
   };
 }
 
