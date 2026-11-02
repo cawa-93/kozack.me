@@ -1,0 +1,266 @@
+// Що малює світло доби квартири (§8.9 «День і ніч»): чистий план без Phaser і DOM — `iso/light.ts` лише виконує його на
+// Canvas2D. Карта світла (множенням над усією квартирою) — тон доби в силуеті квартири, світлі плями від джерел (`sources.ts`),
+// світліші смуги сонця й світле скло вікон; шар скла (множенням просто над вікнами, під усім, що стоїть) — темне чи тепле скло;
+// смуги сонця на підлозі (додаванням). Кольори й числа — `lightlook.ts`.
+//
+// Карта множить: колір 1 — нічого не змінює, менший — темнить. Тож удень і на межах дня (темрява й тепло 0) план — тотожність:
+// тон і скло білі, плям і смуг немає, і перехід у день без стрибка. Скло: карта над ним — max(тон, скло), а шар скла домножує
+// на скло / max(тон, скло), тож скло виходить рівно кольору `glassOf`, а кіт на підвіконні перед ним — кольору тону.
+
+import { MAP_HEIGHT, MAP_WIDTH } from "../../sim/home";
+import type { Vec } from "../../sim/types";
+import type { Pane } from "../decor";
+import type { Point } from "../world/part";
+import { ISO, ISO_TILE, ISO_WALLS } from "../world/projection";
+import { lightKey, type Daylight } from "./daylight";
+import {
+  CANDLE_LIGHT,
+  CEILING_LIGHT,
+  GAS_LIGHT,
+  GLASS,
+  LIGHTMAP,
+  POOL_LIFT,
+  SCONCE_LIGHT,
+  SCREEN_LIGHT,
+  SUN,
+  TONE,
+  WHITE,
+  rgb,
+  type Rgb,
+} from "./lightlook";
+import { candleFlicker, type LightKind, type LightSource } from "./sources";
+import { sunStrips } from "./sunstrips";
+
+export function mix(a: Rgb, b: Rgb, t: number): Rgb {
+  return { r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t };
+}
+
+function times(a: Rgb, b: Rgb): Rgb {
+  return { r: a.r * b.r, g: a.g * b.g, b: a.b * b.b };
+}
+
+/** Тон доби: білий удень, синьо-сірий уночі (у відключення — темніший), з теплим відтінком світанку чи заходу. */
+export function toneOf(d: Daylight): Rgb {
+  const base = mix(WHITE, d.power ? TONE.night : TONE.outage, d.dark);
+  const tint = d.phase === "morning" ? TONE.morning : TONE.evening;
+  return times(base, mix(WHITE, tint, d.warm));
+}
+
+/** Колір скла вікон: темно-синій уночі, теплий на світанку й увечері, білий (як удень) на межах дня. */
+export function glassOf(d: Daylight): Rgb {
+  return mix(mix(WHITE, GLASS.night, d.dark), GLASS.warm, d.warm * GLASS.warmMix);
+}
+
+/** Множник шару скла: скло / max(тон, скло) за каналами — разом із картою світла над склом дає рівно `glass`. */
+export function glassTint(tone: Rgb, glass: Rgb): Rgb {
+  const k = (t: number, g: number): number => (g <= 0 ? 0 : g / Math.max(t, g));
+  return { r: k(tone.r, glass.r), g: k(tone.g, glass.g), b: k(tone.b, glass.b) };
+}
+
+/** Колір для Canvas2D: `rgba(r, g, b, a)`. */
+export function cssColor(c: Rgb, alpha = 1): string {
+  const ch = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 255);
+  return `rgba(${ch(c.r)}, ${ch(c.g)}, ${ch(c.b)}, ${Math.min(1, Math.max(0, alpha))})`;
+}
+
+const screen = (p: Vec, z = 0): Point => {
+  const s = ISO.toScreen(p);
+  return { x: s.x, y: s.y - z };
+};
+
+/**
+ * Опуклий многокутник, ширший на `margin` з кожного боку: кожну грань зсунуто назовні, вершини — перетини сусідніх граней.
+ * Обхід — будь-який.
+ */
+export function expandConvex(points: readonly Point[], margin: number): Point[] {
+  const n = points.length;
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    area += a.x * b.y - b.x * a.y;
+  }
+  const sign = area > 0 ? 1 : -1;
+  // Зовнішня нормаль грані a→b: для обходу з додатною площею (на екрані, де y донизу, — за годинниковою) — (dy, −dx).
+  const shifted = points.map((a, i) => {
+    const b = points[(i + 1) % n]!;
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const nx = (sign * (b.y - a.y)) / len;
+    const ny = (sign * -(b.x - a.x)) / len;
+    return { a: { x: a.x + nx * margin, y: a.y + ny * margin }, b: { x: b.x + nx * margin, y: b.y + ny * margin } };
+  });
+  return shifted.map((edge, i) => {
+    const prev = shifted[(i - 1 + n) % n]!;
+    return intersect(prev.a, prev.b, edge.a, edge.b) ?? edge.a;
+  });
+}
+
+function intersect(a: Point, b: Point, c: Point, d: Point): Point | null {
+  const den = (a.x - b.x) * (c.y - d.y) - (a.y - b.y) * (c.x - d.x);
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((a.x - c.x) * (c.y - d.y) - (a.y - c.y) * (c.x - d.x)) / den;
+  return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+}
+
+/**
+ * Силует квартири на екрані, px світу: ромб підлоги з задніми стінами заввишки `ISO_WALLS.back` над рядом y = 0 і стовпцем
+ * x = 0, ширший на `LIGHTMAP.margin`. Поза ним карта світла прозора — тло екрана ніч не темнить.
+ */
+export function apartmentOutline(): Point[] {
+  const h = ISO_WALLS.back;
+  return expandConvex(
+    [
+      screen({ x: 0, y: 0 }, h),
+      screen({ x: MAP_WIDTH, y: 0 }, h),
+      screen({ x: MAP_WIDTH, y: 0 }),
+      screen({ x: MAP_WIDTH, y: MAP_HEIGHT }),
+      screen({ x: 0, y: MAP_HEIGHT }),
+      screen({ x: 0, y: MAP_HEIGHT }, h),
+    ],
+    LIGHTMAP.margin,
+  );
+}
+
+/** Отвір вікна на екрані, px світу: чотирикутник на лиці стіни (`Pane.span` × `Pane.z`). */
+export function paneQuad(pane: Pane): Point[] {
+  const plane = pane.face === "y" ? pane.wall.y + 1 : pane.wall.x + 1;
+  const at = (u: number): Vec => (pane.face === "y" ? { x: u, y: plane } : { x: plane, y: u });
+  const [u0, u1] = pane.span;
+  const [z0, z1] = pane.z;
+  return [screen(at(u0), z0), screen(at(u1), z0), screen(at(u1), z1), screen(at(u0), z1)];
+}
+
+/** Пів діагоналі ромба: радіус кола на підлозі в клітинках → піввісь еліпса на екрані по горизонталі. */
+export const CELL_RX = Math.SQRT2 * (ISO_TILE.width / 2);
+
+/** Світла пляма на карті: еліпс з центром (x, y), піввісями rx × ry, повне світло до частки `core`, далі — спадає. */
+export interface PoolPaint {
+  readonly x: number;
+  readonly y: number;
+  readonly rx: number;
+  readonly ry: number;
+  readonly core: number;
+  readonly color: Rgb;
+  readonly alpha: number;
+}
+
+/** Многокутник на карті чи шарі (px світу) кольору `color` з прозорістю `alpha`. */
+export interface PolyPaint {
+  readonly points: readonly Point[];
+  readonly color: Rgb;
+  readonly alpha: number;
+}
+
+/** Смуга сонця на підлозі (px світу): градієнт від ближнього до вікна краю (`near`) до дальнього (`far`). */
+export interface StripPaint extends PolyPaint {
+  readonly near: Point;
+  readonly far: Point;
+}
+
+export interface LightmapPlan {
+  /** Тон доби всієї квартири. */
+  readonly tone: Rgb;
+  /** Світлі плями (найсвітліше з тону й плями — `lighten`). */
+  readonly pools: readonly PoolPaint[];
+  /** Світліші смуги сонця. */
+  readonly strips: readonly PolyPaint[];
+  /** Світле скло (на світанку й увечері скло світліше за тон кімнати). */
+  readonly glass: readonly PolyPaint[];
+}
+
+/** Яскравість джерела в мить `time` (мс сцени): свічки мерехтять. */
+export function sourceLevel(source: LightSource, time: number): number {
+  return source.flicker === undefined ? source.strength : source.strength * candleFlicker(source.flicker, time);
+}
+
+/** Час, за яким мерехтять свічки на карті світла: крок `CANDLE_LIGHT.flickerStep` (не частіше ≈ 4 разів на секунду). */
+export function flickerTime(time: number): number {
+  return Math.floor(time / CANDLE_LIGHT.flickerStep) * CANDLE_LIGHT.flickerStep;
+}
+
+/** Наскільки центр плями піднято від підлоги до джерела (частка шляху до `LightSource.screen`). */
+const LIFT: Record<LightKind, number> = { ceiling: 0, sconce: 0, candle: POOL_LIFT, station: 0, boiler: 0, gas: POOL_LIFT, screen: 0 };
+
+/** Плями одного джерела на карті світла (`time` — уже крокований час мерехтіння). */
+function poolsOf(source: LightSource, time: number): PoolPaint[] {
+  const level = sourceLevel(source, time);
+  if (level <= 0) return [];
+  const color = rgb(source.color);
+  const pools: PoolPaint[] = [];
+  if (source.radius > 0) {
+    const floor = ISO.toScreen(source.at);
+    const lift = LIFT[source.kind];
+    const x = floor.x + (source.screen.x - floor.x) * lift;
+    const y = floor.y + (source.screen.y - floor.y) * lift;
+    const spread = source.kind === "ceiling" ? CEILING_LIGHT.spread : 1;
+    const rx = source.radius * spread * CELL_RX;
+    // Свічка й газ — над поверхнею: пляма й на речах довкола, не лише на підлозі — кругліша.
+    const ry = rx * (lift > 0 ? 0.62 : 0.5);
+    pools.push({ x, y, rx, ry, core: source.kind === "ceiling" ? CEILING_LIGHT.core : 0.12, color, alpha: level });
+  }
+  if (source.kind === "sconce") {
+    const r = SCONCE_LIGHT.wall;
+    pools.push({ x: source.screen.x, y: source.screen.y, rx: r, ry: r, core: 0.15, color, alpha: level * 0.85 });
+  }
+  if (source.kind === "screen") {
+    // Сам екран (`iso/marks.ts`, у реєстрі глибини) — під картою: світиться, а не темніє.
+    pools.push({ x: source.screen.x, y: source.screen.y, rx: 44, ry: 36, core: 0.45, color: rgb(SCREEN_LIGHT.color), alpha: level });
+  }
+  if (source.kind === "gas") pools.push({ x: source.screen.x, y: source.screen.y, rx: 22, ry: 16, core: 0.3, color: rgb(GAS_LIGHT.color), alpha: level });
+  if (source.kind === "candle") pools.push({ x: source.screen.x, y: source.screen.y, rx: 16, ry: 18, core: 0.3, color: rgb(CANDLE_LIGHT.coreColor), alpha: level });
+  return pools;
+}
+
+/** Смуги сонця від вікон `panes` (px світу), кольору сонця цієї частини доби й прозорості `alpha` на повну силу сонця. */
+export function stripsOf(d: Daylight, panes: readonly Pane[], color: Rgb, alpha: number): StripPaint[] {
+  const sun = d.sun;
+  if (!sun || sun.strength <= 0) return [];
+  const out: StripPaint[] = [];
+  for (const pane of panes) {
+    for (const strip of sunStrips(pane, sun)) {
+      out.push({ points: strip.points.map((p) => screen(p)), near: screen(strip.near), far: screen(strip.far), color, alpha: alpha * sun.strength });
+    }
+  }
+  return out;
+}
+
+/** Колір смуги сонця на підлозі (ADD): уранці — золотавий, увечері — помаранчевий. */
+export function sunColor(d: Daylight): Rgb {
+  return rgb(d.phase === "morning" ? SUN.morning : SUN.evening);
+}
+
+/** План карти світла для світла доби `d`, джерел `sources` і вікон `panes` у мить `time` (мс сцени). */
+export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes: readonly Pane[], time: number): LightmapPlan {
+  const tone = toneOf(d);
+  const t = flickerTime(time);
+  const glass = glassOf(d);
+  return {
+    tone,
+    pools: sources.flatMap((source) => poolsOf(source, t)),
+    strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
+    glass: panes.map((pane) => ({ points: paneQuad(pane), color: glass, alpha: 1 })),
+  };
+}
+
+const q = (v: number): number => Math.round(v * LIGHTMAP.steps);
+
+/**
+ * Ключ карти світла: той самий ключ — та сама картинка з точністю до кроку (`lightKey` доби, джерела з яскравістю й крок
+ * мерехтіння, поки горять свічки). Перемальовують лише за новим ключем.
+ */
+export function lightmapKey(d: Daylight, sources: readonly LightSource[], time: number): string {
+  let key = lightKey(d);
+  let flicker = false;
+  for (const source of sources) {
+    key += `|${source.id}:${q(source.strength)}`;
+    if (source.flicker !== undefined) flicker = true;
+  }
+  return flicker ? `${key}|f${flickerTime(time)}` : key;
+}
+
+/** Ключ смуг сонця на підлозі: стіна, сила й висота сонця (як у `lightKey`); сонця немає — "-". */
+export function sunKey(d: Daylight): string {
+  const sun = d.sun;
+  if (!sun || sun.strength <= 0) return "-";
+  return `${d.phase}|${sun.wall}${Math.round(sun.strength * 16)}:${Math.round(sun.elevation * 16)}`;
+}
