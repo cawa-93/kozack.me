@@ -12,7 +12,7 @@ import { ISO } from "../src/view/world/projection";
 import { UI_LAYERS, WORLD_LAYERS } from "../src/view/world/layers";
 import { World } from "../src/view/world/world";
 
-const FRAME: WorldFrame = { time: 0, seconds: 0, moving: false, sleepiness: 0, blocked: false, showHidden: false };
+const FRAME: WorldFrame = { time: 0, seconds: 0, moving: false, sleepiness: 0, blocked: false, showHidden: false, lightMinute: null };
 
 /** Частина-підміна: записує, що з нею робили, і відповідає своєю точкою на свої id. */
 function fake(name: string, log: string[], owns: (id: string) => boolean, claims: Target["type"][] = []): WorldPart {

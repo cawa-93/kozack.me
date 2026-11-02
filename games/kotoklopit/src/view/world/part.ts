@@ -79,6 +79,11 @@ export interface WorldFrame {
   blocked: boolean;
   /** Режим розробки: приховані числа над котами (§11.5). */
   showHidden: boolean;
+  /**
+   * Хвилина для світла доби (§8.9, `light/daylight.ts`): зазвичай `state.minute`; режим розробки підміняє її (`?light=`,
+   * `Session.lightAt`), а `null` — світло доби вимкнене зовсім (звірка знімків: удень світло не додає жодного пікселя).
+   */
+  lightMinute: number | null;
 }
 
 export interface WorldPart {

@@ -657,7 +657,7 @@ export class DayScene extends Phaser.Scene {
 
   private render(time: number, seconds: number): void {
     const state = this.state;
-    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: this.session.showHidden };
+    const frame: WorldFrame = { time, seconds, moving: this.moving, sleepiness: this.sleepiness(time), blocked: this.blocked(), showHidden: this.session.showHidden, lightMinute: lightMinuteOf(this.session, state.minute) };
     this.hud.update(state, time);
     if (!this.overlay.isOpen && !this.hud.saying) {
       const news = this.news.shift();
@@ -1233,4 +1233,10 @@ export class DayScene extends Phaser.Scene {
       );
     show("shop");
   }
+}
+
+/** Хвилина світла доби для кадру (§8.9): за годинником гри, або та, яку задав режим розробки (`Session.lightAt`). */
+function lightMinuteOf(session: Session, minute: number): number | null {
+  const at = session.lightAt;
+  return at === "off" ? null : (at ?? minute);
 }
