@@ -5,6 +5,7 @@ import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, she
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { roadMinutes, tripBlocker } from "../sim/trips";
+import { formatClock } from "../sim/time";
 import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { accidentLines, BREED_ABOUT, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
@@ -336,7 +337,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : "Збори в офісі тривали три години. Керівництво бачило вас особисто.");
       break;
   }
-  // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»).
-  return { kicker: "Поїздка", title: destinationLabel(destination), body, actions };
+  // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»). Годинник —
+  // у підзаголовку, коли картка посередині й напису над парковкою немає (§8.5 «На місці — кадр парковки»).
+  return { kicker: "Поїздка", awayClock: formatClock(state.minute), title: destinationLabel(destination), body, actions };
 }
 

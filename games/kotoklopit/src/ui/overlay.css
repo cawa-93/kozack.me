@@ -219,6 +219,16 @@
   letter-spacing: 0.03em;
 }
 
+/* Годинник на місці (§8.5 «На місці — кадр парковки», `Card.awayClock`): у підзаголовку картки пункту — лише коли картка
+   посередині (`.away` без `.aside`). Коли вона ліворуч, час показує напис над парковкою у вільній смузі праворуч. */
+.card-clock {
+  display: none;
+}
+
+.overlay.away:not(.aside) .card-clock {
+  display: inline;
+}
+
 .card-title {
   margin: 0 0 8px;
   font: 400 31px/1.15 var(--hand);

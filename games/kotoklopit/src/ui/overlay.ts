@@ -22,6 +22,12 @@ export interface CardTab {
 
 export interface Card {
   kicker?: string;
+  /**
+   * Годинник на місці (§8.5 «На місці — кадр парковки»): дописується до підзаголовка («Поїздка · 10:45»), але видно його лише на
+   * місці з карткою посередині (`.away` без `.aside`, `overlay.css`). Коли картка ліворуч, час показує напис над парковкою у
+   * вільній смузі (`RaceScene`), а без смуги той ховався б під карткою.
+   */
+  awayClock?: string;
   /** Порожній заголовок не показується: так картка з вкладками економить висоту. */
   title: string;
   tabs?: CardTab[];
@@ -201,7 +207,11 @@ export class Overlay {
       close.addEventListener("click", () => dismiss());
       panel.append(close);
     }
-    if (card.kicker) panel.append(element("p", "card-kicker", card.kicker));
+    if (card.kicker) {
+      const kicker = element("p", "card-kicker", card.kicker);
+      if (card.awayClock) kicker.append(element("span", "card-clock", ` · ${card.awayClock}`));
+      panel.append(kicker);
+    }
     if (card.title) {
       const title = element("h2", "card-title", card.title);
       title.id = "card-title";

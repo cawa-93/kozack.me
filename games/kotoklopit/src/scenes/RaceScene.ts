@@ -418,7 +418,7 @@ export class RaceScene extends Phaser.Scene {
     const frame = parkedFrame(view.height, parked.spot);
     art.drawFrame(parkingRoad(frame, parked.destination), this.panned(view, frame.pan));
     this.dark.setFillStyle(0x000000, 0);
-    this.drawParkedLabel(parked.destination, view);
+    this.drawParkedLabel(parked.destination, view.safe.top);
   }
 
   /**
@@ -559,16 +559,19 @@ export class RaceScene extends Phaser.Scene {
 
   /**
    * На місці (§8.5 «На місці — кадр парковки»): панелі квартири немає — угорі вільної смуги праворуч від картки назва пункту й
-   * годинник, без швидкості (над будівлею, а не на ній). Картка посередині — угорі посередині: над нею, коли картка нижча за
-   * екран, а ні — під нею цілий, а не обрізаний її краєм, як угорі ліворуч (667 × 375: картка займає майже всю ширину).
+   * годинник, без швидкості (над будівлею, а не на ній). Картка посередині — напису немає: вільної смуги нема, а висока картка
+   * (магазин на 667 × 375) закрила б його цілком; годинник тоді — у підзаголовку картки пункту (`Card.awayClock`).
    */
-  private drawParkedLabel(destination: Destination, view: RaceView): void {
+  private drawParkedLabel(destination: Destination, top: number): void {
     const strip = this.place.strip;
-    const x = strip ? (strip.left + strip.right) / 2 : view.width / 2;
+    if (!strip) {
+      this.label.setVisible(false);
+      return;
+    }
     this.label
       .setText(`${DESTINATION_TITLES[destination]} · ${formatClock(this.state.minute)}`)
       .setOrigin(0.5, 0)
-      .setPosition(x, view.safe.top + 16)
+      .setPosition((strip.left + strip.right) / 2, top + 16)
       .setVisible(true);
   }
 
