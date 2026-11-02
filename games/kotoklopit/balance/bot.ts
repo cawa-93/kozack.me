@@ -773,8 +773,8 @@ export class Bot {
         this.hold(target.id);
         continue;
       }
-      // Іграшка заступає ціль (лежить перед плитою): підняти й покласти за спину.
-      if (target?.type === "item" && target.item.kind === "toy" && this.state.character.held === null) {
+      // Іграшка чи пилосос заступає ціль (лежить чи стоїть перед плитою, холодильником): підняти й покласти за спину.
+      if (((target?.type === "item" && target.item.kind === "toy") || target?.type === "vacuum") && this.state.character.held === null) {
         interact(this.save);
         const body = this.state.character.body;
         body.facing = { x: -body.facing.x, y: -body.facing.y };
