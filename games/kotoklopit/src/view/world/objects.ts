@@ -174,8 +174,11 @@ export function isoCatPerch(id: string, cat: Vec, hiding: boolean, stage: FillSt
   return { at: { x: cat.x, y: cat.y }, lift: lift ?? 0 };
 }
 
-/** Речі на підлозі (§9.12, §8.5, §8.7): котячий куточок і техніка — для висоти бабла й ширини малюнка. */
-export type IsoFloorKind = HomeItem["kind"] | "feeder" | "robot" | "carrier" | "basket";
+/**
+ * Речі на підлозі (§9.12, §8.5, §8.7): котячий куточок, техніка й вертикальний пилосос, що стоїть на підлозі, — для висоти бабла
+ * й ширини малюнка.
+ */
+export type IsoFloorKind = HomeItem["kind"] | "feeder" | "robot" | "carrier" | "basket" | "vacuum";
 
 /** Ізометричний вигляд речі на підлозі. */
 export interface IsoItemLook {
@@ -201,6 +204,9 @@ const ITEM_LOOKS: Readonly<Record<IsoFloorKind, Readonly<Record<Quality, IsoItem
   robot: same({ height: 20, half: 32 }),
   carrier: same({ height: 70, half: 48 }),
   basket: same({ height: 54, half: 36 }),
+  // Вертикальний пилосос (`env/vacuum`, рішення автора 2026-11-02, §8.7): верх ручки-петлі — 98; вузький (щітка ≈ 40 одиниць
+  // на екрані), тож півширина менша за пів полотна (полотно — сліду 1 × 1, 144).
+  vacuum: same({ height: 98, half: 24 }),
 };
 
 function same(look: IsoItemLook): Record<Quality, IsoItemLook> {

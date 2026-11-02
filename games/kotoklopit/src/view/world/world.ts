@@ -2,7 +2,7 @@
 // створює фабрика (`factory.ts`). Без Phaser.
 
 import type { GameEvent } from "../../sim/events";
-import type { Target } from "../../sim/targets";
+import { VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import type { CatPoints, PersonPart, Point, WorldFrame, WorldPart, WorldParts, WorldQuery } from "./part";
 import type { Projection } from "./projection";
@@ -50,10 +50,14 @@ export class World implements WorldQuery {
     for (const part of this.ordered()) part.destroy();
   }
 
-  /** Якір до частини-власниці за id: `person`, `cat:N`, `item:N` і `mess:N`, без двокрапки — річ квартири. */
+  /**
+   * Якір до частини-власниці за id: `person`, `cat:N`, `item:N` і `mess:N`, вертикальний пилосос на підлозі (`VACUUM_TARGET`),
+   * без двокрапки — річ квартири.
+   */
   anchor(id: string): Point | null {
     const { person, cats, floor, apartment } = this.all;
     if (id === "person") return person.anchor(id);
+    if (id === VACUUM_TARGET) return floor.anchor(id);
     const colon = id.indexOf(":");
     if (colon < 0) return apartment.anchor(id);
     const kind = id.slice(0, colon);

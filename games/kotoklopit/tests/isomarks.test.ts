@@ -86,6 +86,22 @@ describe("підсвітка цілі (§8.2)", () => {
     expect(highlightTarget(state, false)).toBeNull();
   });
 
+  it("пилосос на підлозі — ціль, яку підсвічують; з пилососом у руках — нічого (натискання лише ставить його, §8.7)", () => {
+    const state = scenario("dusty-home");
+    const vacuum = state.home.vacuumAt;
+    if (!vacuum) throw new Error("у сценарії пилосос стоїть на підлозі");
+    state.character.body = { ...state.character.body, x: vacuum.x, y: vacuum.y - 0.6, facing: { x: 0, y: 1 } };
+    expect(highlightTarget(state, false)?.type).toBe("vacuum");
+    // Узяв пилосос, а перед ним — кіт, що прийшов подивитися: ціль є, але підсвітки немає.
+    state.home.vacuumAt = null;
+    state.character.held = { kind: "vacuum", minutes: 0 };
+    const cat = state.cats[0]!;
+    cat.x = vacuum.x;
+    cat.y = vacuum.y - 0.1;
+    expect(targetOf(state)?.type).toBe("cat");
+    expect(highlightTarget(state, false)).toBeNull();
+  });
+
   it("пульс — як у старому вигляді, 0,2–0,9", () => {
     for (let time = 0; time < 3000; time += 37) {
       const pulse = highlightPulse(time);

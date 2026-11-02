@@ -89,6 +89,8 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
+  // Вертикальний пилосос на підлозі (§8.7).
+  if (state.home.vacuumAt) frames.push({ id: "env/vacuum", state: null });
   return frames;
 }
 
@@ -219,6 +221,7 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
       ["robot", (q) => `item/robot/${q}`],
       ["carrier", (q) => `item/carrier/${q}`],
       ["basket", () => "env/laundry-basket"],
+      ["vacuum", () => "env/vacuum"],
     ];
     for (const [kind, id] of cases) {
       for (const q of QUALITIES) {

@@ -19,10 +19,11 @@ import { artOffset, objectScreen } from "./geometry";
 
 /**
  * Ціль, яку підсвічують цього кадру: та, з якою персонаж зараз щось зробить (`targetOf`), — лише поки він нічим не зайнятий
- * і гра не стоїть (як у старому вигляді).
+ * і гра не стоїть (як у старому вигляді). З пилососом у руках натискання лише ставить його на підлогу (§8.7, «Пилосос у
+ * руках»), хоч би що було перед персонажем, — тож і підсвічувати нічого: інакше світився б кіт, що прийшов подивитися.
  */
 export function highlightTarget(state: GameState, blocked: boolean): Target | null {
-  if (blocked || state.character.activity !== null) return null;
+  if (blocked || state.character.activity !== null || state.character.held?.kind === "vacuum") return null;
   return targetOf(state);
 }
 

@@ -1,7 +1,8 @@
 // Ізометричний котячий куточок і безлад на підлозі (крок 16, F3b, `GRAPHICS_PLAN.md`): миски й поїлки з фонтанчиком,
 // лотки (з запахом, коли брудні), будиночки, кігтеточки, іграшки, автогодівниці, робот і док, переноска, кошик білизни,
-// шкарпетка в схованці, бруд, жмути шерсті й скинуті дрібнички — кожне окремим кадром маніфесту з точкою в реєстрі глибини
-// (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а пласке (бруд, шерсть, док) — під тими, хто на ньому.
+// шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті й скинуті дрібнички — кожне
+// окремим кадром маніфесту з точкою в реєстрі глибини (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а
+// пласке (бруд, шерсть, док) — під тими, хто на ньому.
 //
 // Що показати — зі стану гри (`looks.ts`).
 
@@ -10,7 +11,7 @@ import type Phaser from "phaser";
 import { carriedToy } from "../../sim/catai";
 import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
 import { furTufts, ROBOT_DOCK, robotAt } from "../../sim/household";
-import type { Target } from "../../sim/targets";
+import { VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
@@ -37,6 +38,8 @@ const SMELL_MS = 450;
 const SMELL_LIFT = 0.8;
 /** Пів сторони сліду речі на підлозі для каркаса підсвітки без WebGL, клітинки. */
 const OUTLINE_HALF = 0.4;
+/** Вертикальний пилосос на підлозі (`env/vacuum`): кадр без станів. */
+const VACUUM_FRAME: IsoFrame = { id: "env/vacuum", state: null };
 
 /** Накладка на річ: малюнок, кадр, що зараз показано, і зсув глибини від самої речі. */
 interface Extra {
@@ -68,7 +71,7 @@ export class IsoFloorView implements WorldPart {
   private readonly feeders = new Map<string, Spot>();
   private readonly trinkets = new Map<TrinketKind, Spot>();
   private readonly tufts: Spot[] = [];
-  /** Одиничні: робот, його док, переноска, кошик білизни, шкарпетка за диваном. */
+  /** Одиничні: робот, його док, переноска, кошик білизни, шкарпетка за диваном, вертикальний пилосос. */
   private readonly singles = new Map<string, Spot>();
 
   constructor(private readonly ctx: PartContext) {
@@ -233,6 +236,9 @@ export class IsoFloorView implements WorldPart {
     });
     // Шкарпетка в схованці (§9.12, «Подарунки й схованки»): п'ятка визирає з-за дивана — під ним (`SOFA_PEEK`).
     if (home.sock === true) this.single("sock", { id: "mess/sock", state: "peek" }, SOFA_PEEK, 8, { half: 20 }, "sofa");
+    // Вертикальний пилосос (§8.7, «Пилосос у руках»): стоїть там, де його поставили; у руках його малює персонаж (`item/vacuum`).
+    const vacuum = home.vacuumAt;
+    if (vacuum) this.single(VACUUM_TARGET, VACUUM_FRAME, vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
   }
 
   private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {
@@ -287,11 +293,12 @@ export class IsoFloorView implements WorldPart {
     this.glow.destroy();
   }
 
-  /** Над річчю котячого кутка чи безладом. */
+  /** Над річчю котячого кутка, безладом чи вертикальним пилососом на підлозі. */
   anchor(id: string): Point | null {
+    const home = this.ctx.state().home;
+    if (id === VACUUM_TARGET) return home.vacuumAt ? floorAnchorAt(home.vacuumAt, isoItemLook("vacuum").height) : null;
     const [kind, raw] = id.split(":");
     const number = Number(raw);
-    const home = this.ctx.state().home;
     if (kind === "item") {
       const item = home.items.find((i) => i.id === number);
       return item ? floorAnchorAt(shownAt(item), isoItemLook(item.kind, item.quality).height) : null;
@@ -303,8 +310,13 @@ export class IsoFloorView implements WorldPart {
     return null;
   }
 
-  /** Сяйво довкола речі чи безладу (без WebGL — каркас довкола точки). */
+  /** Сяйво довкола речі, безладу чи пилососа на підлозі (без WebGL — каркас довкола точки). */
   highlight(target: Target, alpha: number): boolean {
+    if (target.type === "vacuum") {
+      const spot = this.singles.get(VACUUM_TARGET);
+      if (spot) this.glow.request(spot.image, around(target.at), isoItemLook("vacuum").height, alpha);
+      return true;
+    }
     if (target.type !== "item" && target.type !== "mess") return false;
     const spot = target.type === "item" ? this.items.get(target.item.id) : this.messes.get(target.mess.id);
     const at: Vec = target.type === "item" ? shownAt(target.item) : target.mess;
