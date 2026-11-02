@@ -372,7 +372,8 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
-  if (home.appliances.robot && minutes < 1440) robotClean(state, from, minutes, crossed);
+  // Без світла робот-пилосос не виїжджає з бази (§4.1, рішення автора 2026-11-02): ні прибирання, ні шуму, ні котів на ньому.
+  if (home.appliances.robot && minutes < 1440 && !powerOut(state)) robotClean(state, from, minutes, crossed);
 }
 
 /**
@@ -412,9 +413,12 @@ function robotSweep(state: GameState, from: number, to: number): void {
   reportSwept(state, "robot", swept);
 }
 
-/** Скільки проїхав робот-пилосос: 0–1 під час прибирання, null — стоїть на базі чи його немає (§8.7). */
+/**
+ * Скільки проїхав робот-пилосос: 0–1 під час прибирання, null — стоїть на базі чи його немає (§8.7). Без світла він стоїть на базі
+ * весь день (§4.1, рішення автора 2026-11-02): з null вигляд показує його на базі, а кіт, що на ньому катався, злазить.
+ */
 export function robotProgress(state: GameState): number | null {
-  if (!state.home.appliances.robot) return null;
+  if (!state.home.appliances.robot || powerOut(state)) return null;
   const minute = state.minute % 1440;
   const start = HOUSEHOLD.robotMinute;
   if (minute < start || minute >= start + HOUSEHOLD.robotMinutes) return null;

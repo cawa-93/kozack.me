@@ -11,7 +11,7 @@ import { createCat } from "../src/sim/cat";
 import { supplyCount } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
 import { advance, interact, newGame } from "../src/sim/game";
-import { tapWasher, tickHousehold } from "../src/sim/household";
+import { ROBOT_DOCK, robotAt, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf } from "../src/sim/household";
 import { powerOut } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -226,20 +226,26 @@ describe("«Планове відключення» — день без світ
     expect(personThought(save.current)).toBeNull();
   });
 
-  it("сценарій «Без світла» (`scenarios/power-outage.json`): біля комп'ютера — натискання саджає працювати, і робота йде годину без перерви", () => {
+  it("сценарій «Без світла» (`scenarios/power-outage.json`): біля комп'ютера — натискання саджає працювати, і робота йде годину без перерви; робот-пилосос о 12:00 стоїть на базі", () => {
     const scenario = FILE_SCENARIOS["power-outage"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
     expect(save.current.modifiers.day).toBe("outage");
     const money = save.current.character.money;
+    const tufts = tuftsOf(save.current).length;
+    expect(tufts).toBeGreaterThan(0);
     const { events, stop } = recordEvents();
     interact(save);
     expect(events.some((e) => e.type === "refused")).toBe(false);
     expect(events.some((e) => e.type === "work-started")).toBe(true);
-    for (let i = 0; i < 60; i++) advance(save, 1);
+    for (let i = 0; i < 60; i++) {
+      advance(save, 1);
+      expect(robotProgress(save.current)).toBeNull();
+    }
     stop();
     expect(isWorking(save.current)).toBe(true);
     expect(save.current.character.money).toBeGreaterThan(money);
+    expect(tuftsOf(save.current).length).toBe(tufts);
   });
 });
 
@@ -301,5 +307,34 @@ describe("«Планове відключення» — день без світ
     expect(refusalAt(save, "washer")).toMatchObject({ reason: "washing" });
     for (let m = 13 * 60; m < 13 * 60 + 31; m++) tickHousehold(save.current, m, 1);
     expect(save.current.home.washer.state).toBe("done");
+  });
+
+  it("робот-пилосос о 12:00 не виїжджає: стоїть на базі, шерсть лежить, шуму немає", () => {
+    const run = (day: string | null): { tufts: number; progress: (number | null)[]; events: string[]; at: { x: number; y: number } } => {
+      const save = game(day);
+      save.current.home.appliances.robot = "cheap";
+      save.current.home.fur = 60;
+      topUpTufts(save.current);
+      const progress: (number | null)[] = [];
+      let at = robotAt(save.current);
+      const { events, stop } = recordEvents();
+      for (let m = 11 * 60 + 50; m < 13 * 60 + 10; m++) {
+        tickHousehold(save.current, m, 1);
+        save.current.minute = m + 1;
+        progress.push(robotProgress(save.current));
+        if (m === 12 * 60 + 30) at = robotAt(save.current);
+      }
+      stop();
+      return { tufts: tuftsOf(save.current).length, progress, events: events.map((e) => e.type), at };
+    };
+    const normal = run(null);
+    expect(normal.tufts).toBe(0);
+    expect(normal.progress.some((p) => p !== null)).toBe(true);
+    expect(normal.events).toContain("robot");
+    const outage = run("outage");
+    expect(outage.tufts).toBeGreaterThan(0);
+    expect(outage.progress.every((p) => p === null)).toBe(true);
+    expect(outage.events).not.toContain("robot");
+    expect(outage.at).toEqual(ROBOT_DOCK);
   });
 });
