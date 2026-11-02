@@ -14,7 +14,7 @@ import { isDrowsy } from "../sim/sleep";
 import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, Product, StatName } from "../sim/types";
-import { fill, ILLNESS_TITLES } from "../texts";
+import { fill, ILLNESS_TITLES, PANEL_STATES } from "../texts";
 import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
 import {
@@ -368,15 +368,15 @@ export class Hud {
     this.money.setText(`${Math.floor(money)} ₴`);
 
     const effects: string[] = [];
-    if (isDrowsy(state)) effects.push("Сонливість");
-    if (sleepSpeed < 0) effects.push("Недосип");
-    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? "Добре [виспався|виспалася]" : "[Виспався|Виспалася]", state.character.address));
+    if (isDrowsy(state)) effects.push(PANEL_STATES.drowsy);
+    if (sleepSpeed < 0) effects.push(PANEL_STATES.sleepDebt);
+    if (sleepSpeed > 0) effects.push(fill(sleepSpeed >= 0.1 ? PANEL_STATES.wellRested : PANEL_STATES.rested, state.character.address));
     // Знесилення й голод видно з самих шкал: вони блимають (§11.4), тож слово не повторює їх.
     const job = state.job;
-    if (job.unemployed) effects.push("Пошук роботи");
-    if (onSickLeave(state)) effects.push("Лікарняний");
+    if (job.unemployed) effects.push(PANEL_STATES.jobSearch);
+    if (onSickLeave(state)) effects.push(PANEL_STATES.sickLeave);
     // День «Планового відключення» (§4.1, рішення автора 2026-11-02): світла немає весь день — у розкладі події немає, тож тут.
-    if (powerOut(state)) effects.push("Без світла");
+    if (powerOut(state)) effects.push(PANEL_STATES.noPower);
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
     this.effects.setText(effects.join(" · "));
     // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.

@@ -647,6 +647,20 @@ export const DISEASE_TITLES: Record<string, string> = {
 export const diseaseTitle = (id: string): string => DISEASE_TITLES[id] ?? id;
 
 /** Хвороби персонажа (§6.5). */
+/**
+ * Рядок станів під шкалами панелі (`TEXTS.md`, «Панель: стани»; §11.4): сонливість, недосип, виспався, пошук роботи,
+ * лікарняний і день без світла (§4.1, рішення автора 2026-11-02; текст — пропозиція, чекає затвердження автора).
+ */
+export const PANEL_STATES = {
+  drowsy: "Сонливість",
+  sleepDebt: "Недосип",
+  wellRested: "Добре [виспався|виспалася]",
+  rested: "[Виспався|Виспалася]",
+  jobSearch: "Пошук роботи",
+  sickLeave: "Лікарняний",
+  noPower: "Без світла",
+} as const;
+
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };
 
 /**
