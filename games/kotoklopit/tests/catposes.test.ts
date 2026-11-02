@@ -282,6 +282,24 @@ describe("обличчя кота (`catFace`)", () => {
     expect(catFace(save.current, cat, 0)).toEqual({ eyes: "round", mouth: "closed", ears: "flat" });
   });
 
+  it("висловухий попереджає, шкірячи ікла: вух не притисне, а від «терпить» його відрізняв би лише хвіст", () => {
+    const save = game();
+    const cat = withCat(save);
+    cat.shape = { ...cat.shape, ears: "folded" };
+    cat.needs.attention = 0;
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: 0 };
+    const reluctant = catFace(save.current, cat, 0);
+    expect(reluctant).toEqual({ eyes: "squint", mouth: "closed", ears: "flat" });
+    save.current.character.activity = { kind: "pet", cat: cat.id, minutes: petTolerance(cat) - PETTING.warnMinutes + 0.25 };
+    const warning = catFace(save.current, cat, 0);
+    expect(warning).toEqual({ eyes: "squint", mouth: "hiss", ears: "back" });
+    // Не так, як той, хто шипить (очі круглі), і не так, як терпить: інший і рот, не лише вуха, яких не видно.
+    expect(warning.mouth).not.toBe(reluctant.mouth);
+    // Решта вух — як були: рот закритий.
+    cat.shape = { ...cat.shape, ears: "curled" };
+    expect(catFace(save.current, cat, 0).mouth).toBe("closed");
+  });
+
   it("сумний — напівзаплющені, вуха вбік; повільне кліпання — за часом; дуга — круглі, вуха назад, щойно шипів — рот з іклами", () => {
     const save = game();
     const cat = withCat(save);

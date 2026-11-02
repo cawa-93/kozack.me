@@ -6,7 +6,8 @@
 // дужками), `squint` (сердито примружені), `round` (широко розплющені), `sick` (кон'юнктивіт: червоні, сльозяться); рот
 // `cat/mouth` — `closed`, `meow`, `hiss` (з іклами), `yawn`, `eat`, `tongue`. Вуха — `up` (звичайні), `flat` (притиснуті:
 // терпить, пручається, страх), `side` (опущені вбік: сум), `back` (притиснуті вбік і назад: дуга, шипіння); у висловухого
-// стан вух не видно. Разові анімації (`catevents.ts`) на свій час перекривають ці кадри.
+// стан вух не видно (попереджаючи, він натомість шкірить ікла). Разові анімації (`catevents.ts`) на свій час перекривають
+// ці кадри.
 
 import { catFeeling } from "../../sim/actions";
 import { hasDisease } from "../../sim/diseases";
@@ -68,7 +69,10 @@ function baseFace(state: GameState, cat: Cat, time: number, pose: CatAnimId): Ca
   if (feeling === "content") return face("arc");
   if (feeling === "reluctant") return face("squint", "closed", "flat");
   // Попереджає (§10, рішення автора 2026-10-30, п. 4): вуха притиснуті «літачком», як перед ворогом, очі сердито звужені.
-  if (feeling === "warning") return face("squint", "closed", "back");
+  // Висловухий (`folded`) вух не притисне — їх стану не видно, і від «терпить» його відрізняв би лише хвіст накладки (доробки
+  // після хвилі 3): замість вух він шкірить ікла (рот `hiss`). Від того, хто шипить, його відрізняють примружені очі й те, що
+  // бабла шипіння немає.
+  if (feeling === "warning") return face("squint", cat.shape.ears === "folded" ? "hiss" : "closed", "back");
   if (feeling === "struggling") return face("round", "closed", "flat");
   switch (pose) {
     case "lick":
