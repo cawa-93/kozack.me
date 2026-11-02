@@ -153,7 +153,8 @@ export type GameEvent =
   | { type: "dash" }
   | { type: "trip-started"; destination: Destination }
   | { type: "trip-arrived"; destination: Destination }
-  | { type: "trip-crashed"; losses: AccidentLoss[] }
+  /** Аварія (§8.5): втрати, швидкість у мить аварії й скільки хвилин заберуть документи й ремонт (рішення автора 2026-11-02). */
+  | { type: "trip-crashed"; losses: AccidentLoss[]; speed: number; minutes: number }
   | { type: "trip-ended"; destination: Destination }
   | { type: "bought"; goods: string; quality: Quality }
   | { type: "vet-exam"; cat: number }

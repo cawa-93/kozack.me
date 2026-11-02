@@ -1,5 +1,5 @@
-// Поїздки (§8.5): вирушити з дому, гонка, подія на місці, повернення без гонки; аварія —
-// втрати й перемотування дня до сну. Події на місці — `destinations.ts`.
+// Поїздки (§8.5): вирушити з дому, гонка, подія на місці, повернення без гонки; аварія — втрати, години й ремонт за
+// швидкістю, а тоді перемотування цих годин чи дня до сну (`rewindAccident`). Події на місці — `destinations.ts`.
 
 import { changeMood, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
@@ -12,7 +12,7 @@ import { driveRace, newRace, type RaceInput } from "./race";
 import { deriveSeed, type Rng } from "./rng";
 import { wakeMinute } from "./sleep";
 import { targetOf } from "./targets";
-import type { AccidentLoss, Cat, Destination, GameState, Trip } from "./types";
+import type { AccidentCost, AccidentLoss, Cat, Destination, Difficulty, GameState, Trip } from "./types";
 import { isNewborn } from "./reproduction";
 import { isWorkday, stopWork } from "./work";
 import { catOnStairs, openDoor } from "./door";
@@ -140,18 +140,21 @@ export function driveTrip(state: GameState, clock: TripClock, minutes: number, i
 }
 
 /**
- * Аварія (§8.5): кожна втрата — з шансом за складністю, найбільше 2/3/4; зайві відкидаються навмання.
+ * Аварія (§8.5): кожна втрата — з шансом за складністю, найбільше 2/3/4; зайві відкидаються навмання. Години й ремонт — за
+ * швидкістю в мить аварії (рішення автора 2026-11-02): поїздка пам'ятає їх і після перезавантаження сторінки.
  */
 function crash(state: GameState, rng: Rng): void {
   const trip = state.trip;
   if (!trip) return;
+  const accident = accidentCost(state.difficulty, trip.race.speed);
+  trip.accident = accident;
   const candidates: AccidentLoss[] = ["repair", "health", "sanity"];
   if (trip.cat !== null) candidates.push("cat");
   let losses = candidates.filter(() => rng.chance(ACCIDENT.chance[state.difficulty]));
   while (losses.length > ACCIDENT.max[state.difficulty]) losses.splice(rng.int(0, losses.length - 1), 1);
   for (const loss of losses) {
     if (loss === "repair") {
-      trip.repaired = Math.min(ACCIDENT.repair, Math.max(0, state.character.money));
+      trip.repaired = Math.min(accident.repair, Math.max(0, state.character.money));
       spend(state, trip.repaired, "other");
     }
     if (loss === "health") {
@@ -166,10 +169,50 @@ function crash(state: GameState, rng: Rng): void {
   }
   trip.phase = "accident";
   trip.losses = losses;
-  emit(state, { type: "trip-crashed", losses });
+  emit(state, { type: "trip-crashed", losses, speed: accident.speed, minutes: accident.minutes });
 }
 
-/** Хвилина, коли після аварії персонаж засинає: оптимальний час сну, за 8 годин до пробудження (§8.5). */
+/** Множник швидкості аварії (§8.5; рішення автора 2026-11-02): 0,5 + швидкість / 4, не більше 2 (×1 — 0,75, ×2 — 1, від ×6 — 2). */
+export function crashSpeedFactor(speed: number): number {
+  return Math.min(ACCIDENT.speedMax, ACCIDENT.speedBase + Math.max(0, speed) * ACCIDENT.speedStep);
+}
+
+/**
+ * Години й ремонт аварії на цій швидкості (§8.5, §5.2; рішення автора 2026-11-02): 10 годин і 60 ₴ × множник складності × множник
+ * швидкості; години — цілими чвертями години (`ACCIDENT.roundMinutes`), ремонт — до гривні.
+ */
+export function accidentCost(difficulty: Difficulty, speed: number): AccidentCost {
+  const factor = ACCIDENT.scale[difficulty] * crashSpeedFactor(speed);
+  const quarters = Math.round((ACCIDENT.hours * MINUTES_PER_HOUR * factor) / ACCIDENT.roundMinutes);
+  return { speed, minutes: quarters * ACCIDENT.roundMinutes, repair: Math.round(ACCIDENT.repair * factor) };
+}
+
+/**
+ * Що забрала аварія поїздки (§8.5); null — поїздка не в аварії. Збереження до рішення автора 2026-11-02 швидкості в мить аварії
+ * не пам'ятає: години — як на ×2, а ремонт уже сплачено за старою ціною (`ACCIDENT.legacySpeed`).
+ */
+export function accidentOf(state: GameState): AccidentCost | null {
+  const trip = state.trip;
+  if (trip?.phase !== "accident") return null;
+  return trip.accident ?? { ...accidentCost(state.difficulty, ACCIDENT.legacySpeed), repair: ACCIDENT.repair };
+}
+
+/**
+ * Хвилина, коли після аварії персонаж удома й день триває (§8.5; рішення автора 2026-11-02): години аварії й час, поки шукали
+ * шкарпетку перед виїздом (§9.12, «Подарунки й схованки»; він минає й після звичайної поїздки, `returnHome`). null — перемотування
+ * доходить до оптимального часу сну чи далі, і день закінчується, як і раніше (`accidentBedtime`); так само, коли це не аварія.
+ */
+export function accidentHome(state: GameState): number | null {
+  const accident = accidentOf(state);
+  if (!accident) return null;
+  const home = state.minute + accident.minutes + (state.trip?.search ?? 0);
+  return home < accidentBedtime(state) ? home : null;
+}
+
+/**
+ * Хвилина, коли після аварії персонаж засинає, якщо її години доходять до неї: оптимальний час сну, за 8 годин до пробудження
+ * (§8.5).
+ */
 export function accidentBedtime(state: GameState): number {
   return wakeMinute(state) + MINUTES_PER_DAY - SLEEP_NEED_HOURS * MINUTES_PER_HOUR;
 }

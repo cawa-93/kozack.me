@@ -17,7 +17,7 @@ import { applyPureBreedLook } from "./genetics";
 import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
-import { accidentBedtime, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
+import { accidentBedtime, accidentHome, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
 import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
@@ -171,7 +171,7 @@ function tick(state: GameState, minutes: number, input: Input): void {
   if (tickDeliveries(state) > 0) ringBell(state, false);
 }
 
-/** Хвилини гонки (§8.5); при аварії день перемотується до сну. Повертає звіт про ніч, якщо вона настала. */
+/** Хвилини гонки (§8.5); аварію перемотує `rewindAccident`, коли гравець закрив її картку. Повертає звіт про ніч, якщо вона настала. */
 export function drive(save: Save, minutes: number, input: RaceInput): { result: "arrived" | "crash" | null; night: NightReport | null } {
   let night: NightReport | null = null;
   const clock = {
@@ -183,11 +183,23 @@ export function drive(save: Save, minutes: number, input: RaceInput): { result: 
 }
 
 /**
- * Після аварії (§8.5): решта дня проходить без персонажа до оптимального часу сну, потім він удома
- * й засинає (додому його повертає `sleep`, і ця ніч знімків не оновлює, §6.1). Якщо аварія сталася пізніше, засинає одразу.
+ * Після аварії (§8.5; рішення автора 2026-11-02): минають години аварії — документи й ремонт — без персонажа (показники не нижче
+ * 5, ситість не нижче 25, голод не забирає здоров'я, `passAwakeTime`), а тоді він удома біля дверей, як після звичайної поїздки,
+ * і день триває. Якщо ці години доходять до оптимального часу сну чи далі — як і раніше: решта дня минає до нього, персонаж
+ * удома й засинає (додому його повертає `sleep`, і ця ніч знімків не оновлює, §6.1); аварія сталася пізніше — засинає одразу.
+ * Повертає звіт про ніч, якщо вона настала.
  */
 export function rewindAccident(save: Save): NightReport | null {
   const state = save.current;
+  // Картку вже закрили (подвійне натискання) — перемотувати вдруге нічого.
+  if (state.trip?.phase !== "accident" || state.end !== null) return null;
+  const home = accidentHome(state);
+  if (home !== null) {
+    const night = advance(save, home - state.minute);
+    if (night || state.end !== null) return night;
+    arriveHome(save);
+    return null;
+  }
   const left = accidentBedtime(state) - state.minute;
   if (left > 0) {
     const night = advance(save, left);
@@ -227,6 +239,12 @@ export function returnHome(save: Save, visitMinutes: number, roadMinutes: number
   const search = save.current.trip?.search ?? 0;
   const night = advance(save, visitMinutes + search) ?? advance(save, roadMinutes);
   if (night || save.current.end !== null) return night;
+  arriveHome(save);
+  return null;
+}
+
+/** Персонаж повернувся вдень (§8.5): після поїздки чи аварії, що не забрала дня (рішення автора 2026-11-02), — удома біля дверей. */
+function arriveHome(save: Save): void {
   // Коти, що заходять разом із персонажем: з переноски й щойно взяті в притулку чи розпліднику.
   const arrived = save.current.cats.filter((c) => c.away === "trip").map((c) => c.id);
   if (endTrip(save.current)) {
@@ -235,7 +253,6 @@ export function returnHome(save: Save, visitMinutes: number, roadMinutes: number
     // Персонаж повернувся вдень — коти можуть вийти зустрічати до дверей (§9.12, «Відданість»).
     greetAtDoor(save.current, arrived);
   }
-  return null;
 }
 
 /** Коротке натискання дії (§10). Повертає звіт про ніч, якщо персонаж ліг спати. */
@@ -434,7 +451,8 @@ export function upgradeModifiers(state: GameState): void {
  * гру збережено, гра завершує — дорогою чи на місці персонаж уже вдома біля дверей (оплачене в кафе своє вже дало). Час, що
  * лишався поїздці (решта дороги туди, час у кафе — до трьох оплачених годин — і 30 хвилин додому), при цьому не минає: тут лише
  * стан гри, без збереження й годинника, а поїздки, якою прокрутити день, уже немає (рецензія реалізації А15, рішення виконавця:
- * одноразовий випадок старого збереження, §8.5). Після аварії день, як і раніше, перемотується до сну: поїздку лише записано на магазин — так само «собі» й без кота, а картка аварії пункту
+ * одноразовий випадок старого збереження, §8.5). Аварія дорогою туди лишається аварією, як будь-яка (години — як на ×2,
+ * `accidentOf`): поїздку лише записано на магазин — так само «собі» й без кота, а картка аварії пункту
  * не називає. «Віддати» з притулку прибрано: запис про кота, якого там уже віддали, зникає з журналу візиту (кіт — в альбомі),
  * а кіт, що приїхав у переносці й лишився, повертається з персонажем додому.
  */

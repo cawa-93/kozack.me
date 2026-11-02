@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
-import { ACCIDENT, BATH, DOCTOR_TREAT, GROOMER, MINUTES_PER_DAY, MODIFIERS, START_CLOTHES, STERILIZATION, TRIP_IDLE_MINUTES, TRIPS, VET } from "../src/sim/config";
+import { ACCIDENT, BATH, DOCTOR_TREAT, GIFTS, GROOMER, MINUTES_PER_DAY, MODIFIERS, RACE, START_CLOTHES, STERILIZATION, TOTAL_DAYS, TRIP_IDLE_MINUTES, TRIPS, VET } from "../src/sim/config";
 import {
   adopt,
   breederCats,
@@ -27,12 +27,14 @@ import {
 import { fallIll, hasDisease } from "../src/sim/diseases";
 import { MIXED } from "../src/sim/breeds";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { advance, deserialize, drive, goHome, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
+import { advance, deserialize, drive, goHome, goToSleep, newGame, replayDay, replayWeek, returnHome, rewindAccident, serialize } from "../src/sim/game";
 import { doctorTreat, fallIllPerson, isIll } from "../src/sim/illness";
+import { answerCall } from "../src/sim/modifiers";
+import type { GameEvent } from "../src/sim/events";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
-import { accidentBedtime, canLeave, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
+import { accidentBedtime, accidentCost, accidentHome, accidentOf, canLeave, crashSpeedFactor, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Difficulty, GameState, Save, TraitLevel } from "../src/sim/types";
 import { fill, GROOMED, VET_MANNER } from "../src/texts";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
@@ -44,6 +46,20 @@ function game(minute = 19 * 60): Save {
   save.current.character.money = 1000;
   standAt(save, "door");
   return save;
+}
+
+/**
+ * Аварія на цій швидкості (§8.5): машина просто попереду, і наступний крок гонки в неї врізається. За крок персонаж проїжджає
+ * `швидкість × RACE.step`, тож машина трохи далі — щоб на ×10 він у неї врізався, а не проскочив. Години й ремонт аварії
+ * залежать від швидкості (рішення автора 2026-11-02): за крок без газу вона падає лише на 0,0025.
+ */
+function crashAt(save: Save, speed = 0): void {
+  const race = save.current.trip?.race;
+  if (!race) throw new Error("немає поїздки");
+  race.speed = speed;
+  race.cars.push({ lane: Math.round(race.lane), start: race.done - RACE.carSpeed * race.minutes + 0.1 + speed * RACE.step });
+  drive(save, RACE.step, NO_RACE_INPUT);
+  expect(save.current.trip?.phase).toBe("accident");
 }
 
 function withCat(save: Save): Cat {
@@ -113,15 +129,11 @@ describe("гонка (§8.5)", () => {
     expect(trip("empty-roads").back).toBeCloseTo(empty);
   });
 
-  it("аварія: втрати не більше 3, решта дня минає, персонаж засинає вдома", () => {
+  it("аварія: втрати не більше 3; на ×6 опівдні 20 годин доходять до сну — решта дня минає, персонаж засинає вдома", () => {
     const save = game(12 * 60);
     save.current.day = 5;
     startTrip(save.current, "shop");
-    const trip = save.current.trip;
-    if (!trip) throw new Error("немає поїздки");
-    trip.race.cars.push({ lane: 1, start: 0.05 });
-    drive(save, 0.1, NO_RACE_INPUT);
-    expect(save.current.trip?.phase).toBe("accident");
+    crashAt(save, 6);
     expect(save.current.trip?.losses.length).toBeLessThanOrEqual(3);
     const night = rewindAccident(save);
     expect(night).not.toBeNull();
@@ -225,7 +237,10 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     liveDay(save);
   };
 
-  /** З ранку поточного дня о 12:00 потрапити в аварію й перемотати день; повертає ранок дня аварії. */
+  /**
+   * З ранку поточного дня о 12:00 потрапити в аварію на ×10 (20 годин — до сну, рішення автора 2026-11-02) й перемотати день;
+   * повертає ранок дня аварії.
+   */
   const crash = (save: Save): GameState => {
     const morning = structuredClone(save.current);
     const day = save.current.day;
@@ -236,9 +251,7 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     advance(save, 12 * 60 - save.current.minute);
     standAt(save, "door");
     expect(startTrip(save.current, "shop")).toBe(true);
-    save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
-    drive(save, 0.1, NO_RACE_INPUT);
-    expect(save.current.trip?.phase).toBe("accident");
+    crashAt(save, RACE.maxSpeed);
     rewindAccident(save);
     expect(save.current.end).toBeNull();
     expect(save.current.day).toBe(day + 1);
@@ -345,6 +358,309 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     expect(loaded.morning).toBeNull();
     expect(loaded.dayStart.day).toBe(2);
   });
+
+  describe("аварія, після якої день триває (рішення автора 2026-11-02): знімків не змінює, а ніч після неї — звичайна", () => {
+    /** Прожити дні до `day`, о 9:00 цього дня потрапити в аварію на ×1 (7,5 години — додому о 16:30); повертає ранок дня аварії. */
+    const crashMorning = (day: number): { save: Save; morning: GameState } => {
+      const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 6 }));
+      while (save.current.day < day) live(save);
+      const morning = structuredClone(save.current);
+      advance(save, 9 * 60 - save.current.minute);
+      standAt(save, "door");
+      expect(startTrip(save.current, "shop")).toBe(true);
+      crashAt(save, 1);
+      expect(rewindAccident(save)).toBeNull();
+      expect(save.current.trip).toBeNull();
+      expect(save.current.day).toBe(day);
+      return { save, morning };
+    };
+    /** Решту дня — до часу сну, а тоді лягти: звичайна ніч. */
+    const finishDay = (save: Save): void => {
+      save.current.home.clothes = START_CLOTHES;
+      const stats = save.current.character.stats;
+      stats.satiety = Math.max(stats.satiety, 60);
+      stats.hygiene = Math.max(stats.hygiene, 60);
+      advance(save, accidentBedtime(save.current) - save.current.minute);
+      goToSleep(save);
+    };
+
+    it("у будень: «Переграти день» — ранок цього ж дня; наступна ніч робить знімком новий ранок", () => {
+      const { save, morning } = crashMorning(2);
+      expect(save.dayStart.day).toBe(2);
+      expect(save.morning).toBeNull();
+      finishDay(save);
+      expect(save.current.day).toBe(3);
+      expect(save.dayStart.day).toBe(3);
+      expect(save.weekStart.day).toBe(0);
+      expect(save.morning).toBeNull();
+
+      const again = crashMorning(2);
+      replayDay(again.save);
+      expect(again.save.current.day).toBe(2);
+      expect(again.save.current.minute).toBe(morning.minute);
+      expect(again.save.current.character).toEqual(morning.character);
+    });
+
+    it("у неділю: ніч на понеділок, як завжди, робить знімком тижня понеділок", () => {
+      const { save } = crashMorning(6);
+      finishDay(save);
+      expect(save.current.day).toBe(7);
+      expect(save.dayStart.day).toBe(7);
+      expect(save.weekStart.day).toBe(7);
+      replayWeek(save);
+      expect(save.current.day).toBe(7);
+    });
+  });
+});
+
+describe("аварія забирає години, а не день (§8.5, §5.2; рішення автора 2026-11-02)", () => {
+  /** Субота (без роботи) о цій хвилині, без модифікатора дня й з грошима, персонаж біля дверей. */
+  function saturday(minute: number, difficulty: Difficulty = "normal"): Save {
+    const save = withCatCorner(newGame({ address: "she", difficulty, seed: 6 }));
+    save.current.modifiers.day = null;
+    save.current.day = 5;
+    save.current.minute = minute;
+    save.current.character.money = 1000;
+    standAt(save, "door");
+    return save;
+  }
+
+  /** О цій хвилині суботи вирушити в магазин і потрапити в аварію на цій швидкості. */
+  function crashed(minute: number, speed: number, difficulty: Difficulty = "normal"): Save {
+    const save = saturday(minute, difficulty);
+    expect(startTrip(save.current, "shop")).toBe(true);
+    crashAt(save, speed);
+    return save;
+  }
+
+  it("години й ремонт: 10 год і 60 ₴ × складність (×0,8 / ×1 / ×1,25) × швидкість (0,5 + швидкість / 4, не більше 2)", () => {
+    expect([0, 1, 2, 4, 6, 10].map((speed) => crashSpeedFactor(speed))).toEqual([0.5, 0.75, 1, 1.5, 2, 2]);
+    const cost = (difficulty: Difficulty, speed: number): [number, number] => {
+      const { minutes, repair } = accidentCost(difficulty, speed);
+      return [minutes / 60, repair];
+    };
+    // Середня (§8.5): ×1 — 7,5 години й 45 ₴, ×2 — 10 і 60, ×4 — 15 і 90, від ×6 — 20 і 120.
+    expect([1, 2, 4, 6, 10].map((speed) => cost("normal", speed))).toEqual([
+      [7.5, 45],
+      [10, 60],
+      [15, 90],
+      [20, 120],
+      [20, 120],
+    ]);
+    // §5.2: на ×2 — 8 годин і 48 ₴ на легкій, 12,5 і 75 — на важкій.
+    expect(cost("easy", 2)).toEqual([8, 48]);
+    expect(cost("hard", 2)).toEqual([12.5, 75]);
+    expect(cost("hard", 10)).toEqual([25, 150]);
+    // Години — цілими чвертями години: на важкій ×1 — 9 год 22,5 хв, тобто 9 год 30 хв; ремонт — до гривні (56,25 — 56).
+    expect(cost("hard", 1)).toEqual([9.5, 56]);
+    expect(accidentCost("normal", 3.37).minutes % ACCIDENT.roundMinutes).toBe(0);
+  });
+
+  it("поїздка пам'ятає швидкість у мить аварії, години й ціну ремонту — і після перезавантаження сторінки посеред аварії", () => {
+    const save = crashed(9 * 60, 3);
+    const accident = save.current.trip?.accident;
+    expect(accident?.speed).toBeCloseTo(3, 2);
+    expect(accident?.minutes).toBe(12.5 * 60);
+    expect(accident?.repair).toBe(75);
+    const home = accidentHome(save.current);
+    expect(home).toBeCloseTo(save.current.minute + 12.5 * 60);
+    const loaded = deserialize(serialize(save));
+    expect(loaded.current.trip?.phase).toBe("accident");
+    expect(loaded.current.trip?.accident).toEqual(accident);
+    expect(accidentHome(loaded.current)).toBe(home);
+    rewindAccident(loaded);
+    expect(loaded.current.trip).toBeNull();
+    expect(loaded.current.minute).toBeCloseTo(home ?? -1);
+  });
+
+  it("ремонт — за швидкістю: на ×6 — 120 ₴, а коли грошей менше — усе, що було", () => {
+    for (const money of [1000, 100]) {
+      let found = false;
+      for (let seed = 1; seed < 40 && !found; seed++) {
+        const save = saturday(9 * 60);
+        save.current.character.money = money;
+        save.current.rng.behavior = seed;
+        startTrip(save.current, "shop");
+        crashAt(save, 6);
+        const trip = save.current.trip;
+        if (!trip?.losses.includes("repair")) continue;
+        found = true;
+        expect(trip.repaired).toBe(Math.min(money, 120));
+        expect(save.current.character.money).toBe(money - Math.min(money, 120));
+      }
+      expect(found, `ремонт не випав (${money} ₴)`).toBe(true);
+    }
+  });
+
+  it("аварія вранці: години минають без персонажа, а тоді він удома біля дверей, як після поїздки, і день триває; показники не нижче порогів", () => {
+    const save = saturday(9 * 60);
+    const cat = withCat(save);
+    save.current.home.carrier = "cheap";
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(startTrip(save.current, "vet")).toBe(true);
+    crashAt(save, 1);
+    // Ситість нижче 25 ще до аварії, гігієна й здоров'я — на межі (втрати аварії випадкові, тож показники — уже після неї).
+    const stats = save.current.character.stats;
+    Object.assign(stats, { satiety: 20, hygiene: 6, health: 30, sanity: 6 });
+    save.current.character.illnesses = [];
+    const minutes = { ...save.current.stats.minutes };
+    const from = save.current.minute;
+    const { events, stop } = recordEvents();
+    const night = rewindAccident(save);
+    stop();
+    expect(night).toBeNull();
+    expect(save.current.end).toBeNull();
+    expect(save.current.trip).toBeNull();
+    expect(save.current.day).toBe(5);
+    expect(save.current.minute).toBeCloseTo(from + 7.5 * 60);
+    // Удома біля дверей, кіт із переноски — поруч, як після звичайної поїздки (`returnHome`).
+    expect(save.current.character.body).toMatchObject({ x: HOME_DOOR.x, y: HOME_DOOR.y });
+    expect(cat.away).toBeNull();
+    expect(events).toContainEqual(expect.objectContaining({ type: "trip-ended", destination: "vet" }));
+    expect(events).not.toContainEqual(expect.objectContaining({ type: "night" }));
+    // Перемотування — як і раніше (§8.5, А1): ситість не падає нижче, ніж була, голод не забирає здоров'я, решта — не нижче 5.
+    expect(stats.satiety).toBe(20);
+    expect(stats.health).toBe(30);
+    expect(stats.hygiene).toBeGreaterThanOrEqual(ACCIDENT.floor);
+    expect(stats.sanity).toBeGreaterThanOrEqual(ACCIDENT.floor);
+    // Час перемотування в статистику фіналу не рахується (§4.2).
+    expect(save.current.stats.minutes).toEqual(minutes);
+    // Далі — звичайний день: голод знову забирає здоров'я.
+    advance(save, 60);
+    expect(stats.health).toBeLessThan(30);
+  });
+
+  it("аварія ввечері: години доходять до оптимального часу сну — ніч, як раніше: персонаж спить 8 годин, а ніч знімків не оновлює", () => {
+    const save = crashed(19 * 60, 1);
+    expect(accidentHome(save.current)).toBeNull();
+    const dayStart = save.dayStart.day;
+    const night = rewindAccident(save);
+    expect(night?.sleptHours).toBeCloseTo(8, 0);
+    expect(save.current.trip).toBeNull();
+    expect(save.current.day).toBe(6);
+    expect(save.dayStart.day).toBe(dayStart);
+    expect(save.morning?.day).toBe(6);
+  });
+
+  it("межа — оптимальний час сну: години, що закінчуються рівно в нього, — уже ніч; на хвилину раніше — день триває", () => {
+    const save = crashed(9 * 60, 1);
+    const state = save.current;
+    state.minute = accidentBedtime(state) - 7.5 * 60;
+    expect(accidentHome(state)).toBeNull();
+    state.minute -= 1;
+    expect(accidentHome(state)).toBe(accidentBedtime(state) - 1);
+  });
+
+  it("складність: та сама аварія на ×1 о 8:00 — додому о 14:00 на легкій, о 15:30 на середній і о 17:30 на важкій", () => {
+    const home = (difficulty: Difficulty): number => {
+      // Трохи понад ×1: за крок гонки без газу швидкість падає, а 9 год 22,5 хв важкої — якраз між чвертями години.
+      const save = crashed(8 * 60, 1.01, difficulty);
+      const from = save.current.minute;
+      rewindAccident(save);
+      expect(save.current.trip).toBeNull();
+      return Math.round(save.current.minute - from);
+    };
+    expect([home("easy"), home("normal"), home("hard")]).toEqual([6 * 60, 7.5 * 60, 9.5 * 60]);
+  });
+
+  it("«Пробки» й «Порожні дороги» змінюють дорогу, а не години аварії", () => {
+    for (const modifier of ["traffic", "empty-roads"]) {
+      const save = saturday(9 * 60);
+      save.current.modifiers.day = modifier;
+      startTrip(save.current, "shop");
+      crashAt(save, 2);
+      expect(save.current.trip?.accident?.minutes, modifier).toBe(10 * 60);
+    }
+  });
+
+  it("шкарпетку шукали перед виїздом — ці 10 хвилин минають і після аварії, як після поїздки", () => {
+    const save = saturday(9 * 60);
+    save.current.home.sock = true;
+    startTrip(save.current, "shop");
+    expect(save.current.trip?.search).toBe(GIFTS.sockSearch);
+    crashAt(save, 1);
+    const from = save.current.minute;
+    rewindAccident(save);
+    expect(save.current.minute).toBeCloseTo(from + 7.5 * 60 + GIFTS.sockSearch);
+  });
+
+  it("картку закрили двічі — вдруге нічого не перемотується", () => {
+    const save = crashed(9 * 60, 1);
+    rewindAccident(save);
+    const after = structuredClone(save.current);
+    expect(rewindAccident(save)).toBeNull();
+    expect(save.current).toEqual(after);
+  });
+
+  it("старе збереження посеред аварії, без швидкості й годин: як на ×2 — 8 / 10 / 12,5 години за складністю, ремонт уже сплачено", () => {
+    for (const [difficulty, hours] of [["easy", 8], ["normal", 10], ["hard", 12.5]] as const) {
+      const save = crashed(8 * 60, 6, difficulty);
+      const old = JSON.parse(serialize(save)) as { current: { trip: Record<string, unknown> } };
+      delete old.current.trip["accident"];
+      const loaded = deserialize(JSON.stringify(old));
+      expect(accidentOf(loaded.current), difficulty).toMatchObject({ minutes: hours * 60, repair: ACCIDENT.repair });
+      const from = loaded.current.minute;
+      rewindAccident(loaded);
+      expect(loaded.current.trip, difficulty).toBeNull();
+      expect(loaded.current.minute, difficulty).toBeCloseTo(from + hours * 60);
+    }
+  });
+
+  it("дзвінок мами під час перемотування чекає відповіді, а персонаж уже вдома й може відповісти", () => {
+    const save = saturday(9 * 60);
+    save.current.today.callAt = 12 * 60;
+    startTrip(save.current, "shop");
+    crashAt(save, 1);
+    const { events, stop } = recordEvents();
+    rewindAccident(save);
+    stop();
+    expect(events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "mom-call" }));
+    expect(save.current.trip).toBeNull();
+    expect(save.current.today.callPending).toBe(true);
+    expect(answerCall(save.current)).toBe(true);
+  });
+
+  it("мама з гостинцями: прийшла, поки перемотувався день, — подзвонить, щойно персонаж удома, а після 20:00 лишить пакет, як після поїздки", () => {
+    const visit = (minute: number, speed: number): GameEvent[] => {
+      const save = saturday(minute);
+      save.current.modifiers.day = "mom-food";
+      save.current.today.mom = { at: minute + 60 };
+      startTrip(save.current, "shop");
+      crashAt(save, speed);
+      const { events, stop } = recordEvents();
+      rewindAccident(save);
+      expect(save.current.trip).toBeNull();
+      advance(save, 15);
+      stop();
+      return events;
+    };
+    // О 9:00 на ×1 — удома о 16:30: мама дзвонить і заходить.
+    expect(visit(9 * 60, 1)).toContainEqual(expect.objectContaining({ type: "modifier", kind: "mom-food", value: 1 }));
+    // Об 11:00 на ×2 — удома о 21:00: мама вже пішла, пакет у ящиках біля входу.
+    expect(visit(11 * 60, 2)).toContainEqual(expect.objectContaining({ type: "modifier", kind: "mom-food", value: 0 }));
+  });
+
+  it("останній день гри: аварія ввечері — ніч і пенсія, як і раніше; аварія вранці — день триває", () => {
+    const evening = crashed(19 * 60, 1);
+    evening.current.day = TOTAL_DAYS - 1;
+    rewindAccident(evening);
+    expect(evening.current.end).toBe("retirement");
+
+    const morning = crashed(9 * 60, 1);
+    morning.current.day = TOTAL_DAYS - 1;
+    rewindAccident(morning);
+    expect(morning.current.end).toBeNull();
+    expect(morning.current.trip).toBeNull();
+  });
+
+  it("гра не закінчується під час перемотування, хоч би всі показники були на межі", () => {
+    const save = crashed(9 * 60, 1);
+    Object.assign(save.current.character.stats, { satiety: 6, hygiene: 6, health: 6, sanity: 6 });
+    rewindAccident(save);
+    expect(save.current.end).toBeNull();
+    expect(save.current.trip).toBeNull();
+    for (const value of Object.values(save.current.character.stats)) expect(value).toBeGreaterThanOrEqual(ACCIDENT.floor);
+  });
 });
 
 describe("поїздки й робота (§8.6)", () => {
@@ -410,34 +726,38 @@ describe("поїздки й робота (§8.6)", () => {
     expect(save.current.minute).toBeGreaterThan(18 * 60);
     expect(late.events).not.toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
 
+    // Аварія на ×2 о 9:30 забирає 10 годин (рішення автора 2026-11-02): персонаж удома о 19:30, і день триває.
     const crashed = game(9 * 60 + 30);
     crashed.current.day = 1;
     crashed.current.modifiers.day = "office";
     startTrip(crashed.current, "office");
-    crashed.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
-    drive(crashed, 0.1, NO_RACE_INPUT);
-    expect(crashed.current.trip?.phase).toBe("accident");
+    crashAt(crashed, 2);
     const rewind = recordEvents();
     rewindAccident(crashed);
     rewind.stop();
     expect(rewind.events).toContainEqual(expect.objectContaining({ type: "standup", attended: false }));
     expect(rewind.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "office-missed" }));
+    expect(crashed.current.trip).toBeNull();
+    expect(crashed.current.day).toBe(1);
+    // Збори минули: удруге в офіс не поїхати.
+    expect(tripBlocker(crashed.current, "office")).toBe("office");
   });
 
   it("гості й ОСББ, поки персонаж у поїздці, не заходять: сором гостей після аварії не закінчує гру (перевірка поїздок 2026-10-28)", () => {
-    const save = game(12 * 60);
+    // Гості о 19:00, а аварія на ×2 об 11:00 забирає 10 годин (рішення автора 2026-11-02): удома персонаж о 21:00, і день триває.
+    const save = game(11 * 60);
     save.current.day = 5;
     save.current.modifiers.day = "guests";
     save.current.character.stats.sanity = 12;
     for (let i = 0; i < 6; i++) save.current.home.messes.push({ id: 100 + i, kind: "vomit", x: 5.5 + i * 0.5, y: 8.5, cat: null });
     startTrip(save.current, "shop");
-    save.current.trip?.race.cars.push({ lane: 1, start: 0.05 });
-    drive(save, 0.1, NO_RACE_INPUT);
-    expect(save.current.trip?.phase).toBe("accident");
+    crashAt(save, 2);
     const { events, stop } = recordEvents();
     rewindAccident(save);
     stop();
     expect(save.current.end).toBeNull();
+    expect(save.current.trip).toBeNull();
+    expect(save.current.day).toBe(5);
     expect(events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "guests-away" }));
     expect(events).not.toContainEqual(expect.objectContaining({ type: "modifier", kind: "guests" }));
 
@@ -1002,12 +1322,14 @@ describe("пункти призначення (§8.5)", () => {
       }
     });
 
-    it("аварія дорогою в котокафе зі старого збереження лишається аварією: день перемотується до сну, як і раніше", () => {
+    it("аварія дорогою в котокафе зі старого збереження лишається аварією: швидкості збереження не пам'ятає — 10 годин, як на ×2 (рішення автора 2026-11-02)", () => {
       const save = oldCafeTrip("accident");
       expect(save.current.trip).toMatchObject({ destination: "shop", phase: "accident" });
+      expect(save.current.trip?.accident).toBeUndefined();
       rewindAccident(save);
       expect(save.current.trip).toBeNull();
-      expect(save.current.day).toBe(6);
+      expect(save.current.day).toBe(5);
+      expect(save.current.minute).toBeCloseTo(19 * 60);
     });
   });
 });
