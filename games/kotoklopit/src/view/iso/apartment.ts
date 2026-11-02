@@ -529,7 +529,10 @@ export class IsoApartmentView implements ApartmentPart {
       wall.alpha += (target - wall.alpha) * Math.min(1, dt * FADE_RATE);
       if (Math.abs(wall.alpha - target) < 0.01) wall.alpha = target;
       wall.image.setAlpha(wall.alpha);
-      for (const mark of wall.marks) mark.piece.image.setAlpha(wall.alpha);
+      // Слід на стіні — окреме зображення поверх неї, а групової прозорості немає: з тією самою альфою кут зі слідом згасав би до
+      // 1 − (1 − 0,4)² = 0,64 замість 0,4 стіни й лишався щільною плямою (рецензія 2026-11-02). Квадрат альфи — наближення: пляма
+      // ≈ 0,5, ближче до стіни, а незгасла стіна (1) — без змін.
+      for (const mark of wall.marks) mark.piece.image.setAlpha(wall.alpha * wall.alpha);
     }
   }
 
