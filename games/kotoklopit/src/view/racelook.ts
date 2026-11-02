@@ -8,7 +8,7 @@
 
 import { PALETTE } from "../../art/palette";
 import { RACE } from "../sim/config";
-import type { RaceCar } from "../sim/types";
+import type { Destination, RaceCar } from "../sim/types";
 import { RACE_TILES } from "./art/manifest/a14-race";
 
 /** Висота полотна, для якої намальовано арт гонки: на ній 1 одиниця арту = 1 px. */
@@ -176,3 +176,23 @@ export function barMarkerY(top: number, height: number, done: number, k: number)
   const at = top + height * (1 - Math.max(0, Math.min(1, done)));
   return Math.max(top + inset, Math.min(top + height - inset, at));
 }
+
+/**
+ * Колір даху будівлі пункту (рішення автора 2026-11-02, `GAME_DESIGN.md` §8.5 «На місці — кадр парковки»; `art/STYLE.md` §11 race):
+ * основні тони барвистих сімей і картону чи дерева — не `green` і не `grey`, щоб дах не зливався з узбіччям і асфальтом. Кожен
+ * пункт — свій колір: дах разом з іконкою на табличці каже, куди приїхали.
+ */
+export const DESTINATION_ROOFS: Record<Destination, number> = Object.fromEntries(
+  (
+    [
+      ["shop", PALETTE.orange],
+      ["vet", PALETTE.teal],
+      ["doctor", PALETTE.blue],
+      ["shelter", PALETTE.mustard],
+      ["breeder", PALETTE.plum],
+      ["groomer", PALETTE.pink],
+      ["office", PALETTE.cardboard],
+      ["show", PALETTE.red],
+    ] as const
+  ).map(([destination, hex]) => [destination, Number.parseInt(hex.slice(1), 16)]),
+) as Record<Destination, number>;

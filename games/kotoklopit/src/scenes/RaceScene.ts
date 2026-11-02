@@ -9,10 +9,11 @@ import { PALETTE } from "../../art/palette";
 import { drive } from "../sim/game";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
-import type { Destination, GameState, Race, RaceCar, Save, Trip } from "../sim/types";
+import type { GameState, Race, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
 import { RACE_START_HINT } from "../texts";
+import { DESTINATION_TITLES } from "../ui/titles";
 import { addArt } from "../view/art/atlas";
 import { addBakedArt, releaseBaked, setBakedArt } from "../view/art/bake";
 import { artEntry } from "../view/art/manifest";
@@ -46,17 +47,6 @@ const MAX_FRAME_SECONDS = 0.1;
 const STICK_RADIUS = 70;
 const STICK_DEAD = 0.2;
 const STICK_STEER = 0.5;
-
-export const DESTINATION_TITLES: Record<Destination, string> = {
-  shop: "Магазин",
-  vet: "Ветеринар",
-  doctor: "Лікар",
-  shelter: "Притулок",
-  breeder: "Розплідник",
-  groomer: "Грумер",
-  office: "Офіс",
-  show: "Виставка котів",
-};
 
 /**
  * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5) чи дорогу додому — катсцену без керування. Передавати

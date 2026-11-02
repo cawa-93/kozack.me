@@ -1,6 +1,6 @@
 // Назви запасів і речей (§6.4): для магазину, телефона й карток.
 
-import type { Product, Quality, ThingKind } from "../sim/types";
+import type { Destination, Product, Quality, ThingKind } from "../sim/types";
 
 /** Українська множина: 1 порція, 2 порції, 5 порцій. */
 export function plural(n: number, one: string, few: string, many: string): string {
@@ -86,3 +86,15 @@ export const SERVICE_TITLES = {
   // як делікатний шампунь, що від дерматиту радить ветеринар: воно його й лікує (рецензія реалізації А15, рішення самостійно).
   wash: { cheap: "Купання", premium: "Делікатне купання" },
 } as const satisfies Record<string, Record<Quality, string>>;
+
+/** Назви пунктів поїздок (§8.5): у «Куди поїхати?», заголовку картки пункту й написі сцени дороги. */
+export const DESTINATION_TITLES: Record<Destination, string> = {
+  shop: "Магазин",
+  vet: "Ветеринар",
+  doctor: "Лікар",
+  shelter: "Притулок",
+  breeder: "Розплідник",
+  groomer: "Грумер",
+  office: "Офіс",
+  show: "Виставка котів",
+};
