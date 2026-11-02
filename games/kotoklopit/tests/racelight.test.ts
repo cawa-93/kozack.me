@@ -32,6 +32,8 @@ import {
   headlightThreshold,
   LIGHT_REACH,
   lightFade,
+  LIGHTMAP,
+  lightmapSize,
   lookSeed,
   lotLights,
   lotPools,
@@ -436,6 +438,28 @@ describe("ніч гонки", () => {
     expect(evening?.lamps).toBeGreaterThan(0);
     // Відключення електрики — лише в квартирі: дорога та сама.
     expect(raceNight(daylight(22 * 60, false))).toEqual(raceNight(daylight(22 * 60, true)));
+  });
+
+  it("lightmap — парних сторін, як їх лишає `DynamicTexture.setSize` (`forceEven`), і не менший за кадр у `LIGHTMAP.res`", () => {
+    // Як округлює Phaser: униз до цілого, а непарне — на 1 більше.
+    const forceEven = (n: number): number => (Math.floor(n) % 2 === 0 ? Math.floor(n) : Math.floor(n) + 1);
+    for (const width of [1280, 1281, 1282, 1558.15, 667.3, 3, 0.5]) {
+      for (const height of [720, 722, 390.4]) {
+        const { w, h } = lightmapSize(width, height);
+        for (const [side, frame] of [
+          [w, width],
+          [h, height],
+        ] as const) {
+          expect(forceEven(side), `${width} × ${height}`).toBe(side);
+          expect(side).toBeGreaterThanOrEqual(frame * LIGHTMAP.res);
+          expect(side).toBeGreaterThanOrEqual(2);
+          expect(side - frame * LIGHTMAP.res).toBeLessThan(2);
+        }
+      }
+    }
+    // Половина 1282 × 722 — 641 × 361, непарні: текстура — 642 × 362, рівно та, що лишить `setSize`.
+    expect(lightmapSize(1282, 722)).toEqual({ w: 642, h: 362 });
+    expect(lightmapSize(1280, 720)).toEqual({ w: 640, h: 360 });
   });
 });
 

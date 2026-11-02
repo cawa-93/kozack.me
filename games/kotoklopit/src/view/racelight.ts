@@ -121,6 +121,16 @@ export const SIGN_GLOW = { radius: 96, alpha: 0.85, halo: 64, haloAlpha: 0.14 } 
  */
 export const LIGHTMAP = { res: 0.5 } as const;
 
+/**
+ * Розмір lightmap (px) для кадру `width × height` одиниць інтерфейсу: `LIGHTMAP.res` від кадру, з округленням угору до парного
+ * (і не менше 2). `DynamicTexture.setSize` сам округлює сторони до парних (`forceEven`), тож з непарною стороною розмір
+ * текстури ніколи не збігався б із заданим, і `RaceNight` щокадру міняв би його й текстуру зображення наново.
+ */
+export function lightmapSize(width: number, height: number): { w: number; h: number } {
+  const even = (size: number): number => Math.max(2, 2 * Math.ceil((size * LIGHTMAP.res) / 2));
+  return { w: even(width), h: even(height) };
+}
+
 /** Кольори світла (0xRRGGBB): вуличні ліхтарі, фари, задні вогні, задній хід, самі фари, табличка. */
 export const LIGHT_COLORS = {
   pool: 0xffd28a,

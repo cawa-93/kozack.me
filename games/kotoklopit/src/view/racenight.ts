@@ -22,6 +22,7 @@ import {
   beamAlpha,
   BULB,
   LIGHTMAP,
+  lightmapSize,
   LIGHT_COLORS,
   poolAlpha,
   SIGN_GLOW,
@@ -172,8 +173,7 @@ export class RaceNight {
     }
     const { k } = view;
     const res = LIGHTMAP.res;
-    const w = Math.max(2, Math.ceil(view.width * res));
-    const h = Math.max(2, Math.ceil(view.height * res));
+    const { w, h } = lightmapSize(view.width, view.height);
     if (lightmap.width !== w || lightmap.height !== h) {
       lightmap.setSize(w, h);
       image.setTexture(LIGHTMAP_KEY);
