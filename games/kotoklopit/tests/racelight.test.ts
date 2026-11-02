@@ -14,7 +14,7 @@ import type { Save } from "../src/sim/types";
 import { RACE_TILES } from "../src/view/art/manifest/a14-race";
 import { CAR_REACH, HOME_ROAD, homeRoadFrame, TRAFFIC } from "../src/view/homeroad";
 import { daylight } from "../src/view/light/daylight";
-import { CAR_BODY, DEPARTURE, LOT_BOUNDS } from "../src/view/parking";
+import { CAR_BODY, DEPARTURE, LOT_BOUNDS, lotInFrame } from "../src/view/parking";
 import {
   arrivalLights,
   BEAM,
@@ -31,6 +31,7 @@ import {
   LIGHT_REACH,
   lightFade,
   lookSeed,
+  lotLights,
   lotPools,
   OWN_LIGHTS,
   PARKED_LIGHTS,
@@ -314,6 +315,38 @@ describe("вуличні ліхтарі й парковка", () => {
     const sign = signGlow(lotY, view.cx, 2);
     expect(sign.x).toBe(view.cx + SIGN_AT.x * 2);
     expect(sign.y).toBe(lotY + SIGN_AT.y * 2);
+  });
+
+  it("світло парковки — поки воно світить у кадр, а не поки в кадрі малюнок парковки: на верхньому краї кадру проступає плавно", () => {
+    // Скільки світла парковки (плями ліхтарів і табличка, як їх кладе lightmap) на верхньому рядку кадру (y = 0) праворуч.
+    const xs = Array.from({ length: 65 }, (_, i) => view.cx + i * 10);
+    const row = (lotY: number): number[] => {
+      const { pools, sign } = lotLights(lotY, view);
+      return xs.map((x) => {
+        let sum = 0;
+        for (const pool of pools) sum += pool.alpha * poolAlpha(Math.hypot(x - pool.x, pool.y) / pool.radius);
+        if (sign) sum += sign.alpha * poolAlpha(Math.hypot(x - sign.x, sign.y) / sign.radius, 0.5);
+        return sum;
+      });
+    };
+    let prev = row(-250);
+    expect(Math.max(...prev)).toBe(0);
+    let early = false;
+    for (let lotY = -250; lotY <= 0; lotY += 0.25) {
+      const next = row(lotY);
+      for (const [i, value] of next.entries()) expect(Math.abs(value - (prev[i] ?? 0)), `lotY ${lotY}`).toBeLessThan(0.02);
+      // Малюнка парковки в кадрі ще немає, а її світло вже лягає на верхній край.
+      if (!lotInFrame(lotY, view.height) && Math.max(...next) > 0) early = true;
+      prev = next;
+    }
+    expect(early).toBe(true);
+    expect(Math.max(...prev)).toBeGreaterThan(0.3);
+    // Далеко за краєм кадру й без парковки — нічого.
+    expect(lotLights(-1000, view)).toEqual({ pools: [], sign: null });
+    expect(lotLights(view.height + 1000, view)).toEqual({ pools: [], sign: null });
+    expect(lotLights(null, view)).toEqual({ pools: [], sign: null });
+    // У кадрі — усі плями й табличка.
+    expect(lotLights(400, view)).toEqual({ pools: lotPools(400, view.cx, 1), sign: signGlow(400, view.cx, 1) });
   });
 });
 

@@ -326,12 +326,17 @@ export function streetPools(distance: number, view: PoolView, lotY: number | nul
   for (let row = scrollOffset(distance, period) - 2 * period; row < height + period; row += period) {
     for (const lamp of STREET_LAMPS.lamps) {
       const y = row + lamp.at * period;
-      if (y < -radius || y > height + radius) continue;
+      if (!reachesFrame(y, radius, height)) continue;
       if (lamp.side > 0 && lot !== null && y > lot.top && y < lot.bottom) continue;
       pools.push({ x: cx + lamp.side * STREET_LAMPS.x * k, y, radius, alpha: STREET_LAMPS.alpha });
     }
   }
   return pools;
+}
+
+/** Чи світить у кадр заввишки `height` пляма з серединою на `y` і радіусом `radius` (px). */
+function reachesFrame(y: number, radius: number, height: number): boolean {
+  return y >= -radius && y <= height + radius;
 }
 
 /** Плями ліхтарів парковки пункту, коли середня лінія з'їзду — на `lotY` px, а середина дороги — на `cx` px. */
@@ -342,6 +347,25 @@ export function lotPools(lotY: number, cx: number, k: number): LightPool[] {
 /** Сяйво таблички пункту (середина таблички й радіус світла, px). */
 export function signGlow(lotY: number, cx: number, k: number): LightPool {
   return { x: cx + SIGN_AT.x * k, y: lotY + SIGN_AT.y * k, radius: SIGN_GLOW.radius * k, alpha: SIGN_GLOW.alpha };
+}
+
+/** Світло парковки пункту в кадрі: плями її ліхтарів і сяйво таблички (null — не світить у кадр). */
+export interface LotLights {
+  pools: LightPool[];
+  sign: LightPool | null;
+}
+
+/**
+ * Світло парковки пункту (`lotY` — середня лінія з'їзду, px; null — парковки немає): плями ліхтарів (`lotPools`) і сяйво
+ * таблички (`signGlow`), кожне — поки воно світить у кадр за власним радіусом, як `streetPools`, а не поки в кадрі малюнок
+ * парковки (`lotInFrame`): пляма ліхтаря над з'їздом сягає далеко нижче за край парковки (`LOT_BOUNDS.bottom`), тож інакше
+ * на верхньому краї кадру вона з'являлася б стрибком, а вуличних праворуч там уже немає (`streetPools`).
+ */
+export function lotLights(lotY: number | null, view: PoolView): LotLights {
+  if (lotY === null) return { pools: [], sign: null };
+  const { height, k, cx } = view;  const pools = lotPools(lotY, cx, k).filter((pool) => reachesFrame(pool.y, pool.radius, height));
+  const sign = signGlow(lotY, cx, k);
+  return { pools, sign: reachesFrame(sign.y, sign.radius, height) ? sign : null };
 }
 
 // --- Текстури м'яких градієнтів -----------------------------------------------------------------------------------

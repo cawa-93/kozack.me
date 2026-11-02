@@ -60,11 +60,10 @@ import {
   LIGHT_REACH,
   lightFade,
   lookSeed,
-  lotPools,
+  lotLights,
   PARKED_LIGHTS,
   raceNight,
   SIGN_AT,
-  signGlow,
   streetPools,
   TAIL,
   tripLightMinute,
@@ -883,8 +882,8 @@ class RaceArt {
 
   /**
    * Ніч (§8.9, `RaceNight`): тон, плями вуличних ліхтарів уздовж дороги (зсув `offset`, як у `drawRoad`), ліхтарі парковки й
-   * сяйво таблички, коли парковка в кадрі (`lotY` — середня лінія з'їзду, px; null — парковки немає), вогні машин `cars`.
-   * Удень (`view.night` — null) — шар схований.
+   * сяйво таблички, поки вони світять у кадр (`lotLights`; `lotY` — середня лінія з'їзду, px; null — парковки немає), вогні
+   * машин `cars`. Удень (`view.night` — null) — шар схований.
    */
   private drawNight(view: RaceView, offset: number, lotY: number | null, cars: readonly LitCar[]): void {
     const night = view.night;
@@ -892,11 +891,8 @@ class RaceArt {
       this.night.draw(view, null, NO_LIGHTS);
       return;
     }
-    const { k, cx, height } = view;
-    const lot = lotY !== null && lotInFrame(lotY, height) ? lotY : null;
-    const pools = streetPools(offset, view, lotY);
-    if (lot !== null) pools.push(...lotPools(lot, cx, k));
-    this.night.draw(view, night, { pools, cars, sign: lot === null ? null : signGlow(lot, cx, k) });
+    const lot = lotLights(lotY, view);
+    this.night.draw(view, night, { pools: [...streetPools(offset, view, lotY), ...lot.pools], cars, sign: lot.sign });
   }
 
   /**
