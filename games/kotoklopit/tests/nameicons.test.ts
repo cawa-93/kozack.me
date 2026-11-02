@@ -1,24 +1,25 @@
 // Іконка біля назви (GAME_DESIGN §11.4 «Іконка біля назви», рішення автора 2026-11-02): у магазині біля кожного запасу й речі,
-// у ветеринара біля кожної хвороби кота, у лікаря — біля хвороби персонажа, на кнопках догляду біля аптечки — біля запасу
-// стоїть та сама іконка, що в грі. У картці це `<img>` із SVG `art/icon/<назва>.svg` (`src/ui/icons.ts`); у тексті — позначка,
-// яку малюнком замінює `drawIcons`.
+// у ветеринара біля кожної хвороби кота, у лікаря — біля хвороби персонажа, на кнопках догляду біля аптечки — біля запасу,
+// біля назви пункту поїздки (§8.5 «На місці — кадр парковки») — стоїть та сама іконка, що в грі. У картці це `<img>` із SVG
+// `art/icon/<назва>.svg` (`src/ui/icons.ts`); у тексті — позначка, яку малюнком замінює `drawIcons`.
 
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { DISEASES, ILLNESSES } from "../src/sim/config";
+import { DISEASES, ILLNESSES, MODIFIERS, TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { GOODS, goodsKey } from "../src/sim/shop";
-import type { AlbumEntry, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
+import type { AlbumEntry, Destination, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
 import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES } from "../src/texts";
-import { albumCause, careCard } from "../src/ui/cards";
-import { diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
+import { albumCause, careCard, foundlingCard } from "../src/ui/cards";
+import { destinationLabel, diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
 import { goodsIcon, goodsLabel } from "../src/ui/shop";
-import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "../src/ui/titles";
+import { DESTINATION_TITLES, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "../src/ui/titles";
+import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 import { ICON_NAMES, type IconName } from "../src/view/iconnames";
-import { DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
+import { DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
 
 /** Перша іконка в тексті з позначками. */
 const iconOf = (text: string): IconName | undefined => splitIcons(text).find((p): p is Exclude<IconPart, string> => typeof p !== "string")?.icon;
@@ -208,5 +209,112 @@ describe("іконка біля назви: ветеринар і лікар (§
     expect(plain(farewellText(entry, diseaseLabel).cause)).toBe(farewellText(entry, diseaseTitle).cause);
     // Старість — без іконки.
     expect(albumCause({ ...entry, cause: { kind: "old" } }, diseaseLabel)).toBe("старість");
+  });
+});
+
+/**
+ * Найпростіший DOM для карток поїздок без браузера: картки будують рядки через `element` (`document.createElement`), а тест
+ * дивиться лише на текст назв. Елемент пам'ятає клас, текст і дітей; решта — те, що картки викликають, без дії.
+ */
+class FakeElement {
+  className = "";
+  textContent = "";
+  disabled = false;
+  type = "";
+  readonly style: Record<string, string> = {};
+  readonly children: (FakeElement | string)[] = [];
+  readonly classList = { add: (): void => {}, remove: (): void => {}, toggle: (): void => {}, contains: (): boolean => false };
+
+  constructor(readonly tagName: string) {}
+
+  append(...nodes: (FakeElement | string)[]): void {
+    this.children.push(...nodes);
+  }
+
+  prepend(...nodes: (FakeElement | string)[]): void {
+    this.children.unshift(...nodes);
+  }
+
+  addEventListener(): void {}
+
+  setAttribute(): void {}
+
+  /** Усі нащадки з класом (селектор — лише `.клас`). */
+  findAll(className: string): FakeElement[] {
+    const own = this.children.filter((c): c is FakeElement => typeof c !== "string");
+    return own.flatMap((c) => [...(c.className.split(" ").includes(className) ? [c] : []), ...c.findAll(className)]);
+  }
+
+  querySelector(selector: string): FakeElement | null {
+    return this.findAll(selector.replace(/^\./, ""))[0] ?? null;
+  }
+}
+
+describe("іконка біля назви: пункти поїздок (§8.5 «На місці — кадр парковки», §11.4)", () => {
+  const destinations = Object.keys(TRIPS) as Destination[];
+  const noop = (): void => {};
+  const handlers: VisitHandlers = { checkout: noop, exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
+
+  beforeAll(() => {
+    // Магазин на місці одразу малює гліфи підсумку (`drawGlyphs`): обхід тексту без вузлів нічого не знаходить.
+    vi.stubGlobal("document", { createElement: (tag: string) => new FakeElement(tag), createTreeWalker: () => ({ nextNode: () => null }) });
+    vi.stubGlobal("NodeFilter", { SHOW_TEXT: 4 });
+  });
+  afterAll(() => vi.unstubAllGlobals());
+
+  /** Звичайний день без зборів і виставки, удома кіт (тоді в списку є й ветеринар із грумером). */
+  function setup(): { save: ReturnType<typeof newGame>; cat: number } {
+    const save = newGame({ address: "she", difficulty: "normal", seed: 8 });
+    save.current.modifiers.day = null;
+    save.current.character.money = 400;
+    const cat = createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 20, at: { x: 9.5, y: 8.5 } });
+    addCat(save.current, cat);
+    return { save, cat: cat.id };
+  }
+
+  it("назва пункту з іконкою (destinationLabel): іконка — DESTINATION_ICONS, назва та сама (DESTINATION_TITLES), SVG є", () => {
+    expect(destinations.length).toBe(8);
+    for (const d of destinations) {
+      expect(iconOf(destinationLabel(d)), d).toBe(DESTINATION_ICONS[d]);
+      expect(plain(destinationLabel(d)), d).toBe(DESTINATION_TITLES[d]);
+      expect(iconUrl(DESTINATION_ICONS[d]), d).not.toBeNull();
+    }
+    // Магазин — вітрина з навісом, а не кошик 🛒 (замовлення з телефона, гліф `ui/glyph/cart`).
+    expect(DESTINATION_ICONS.shop).toBe("store");
+  });
+
+  it("«Куди поїхати?»: у рядку кожного пункту — назва з його іконкою", () => {
+    const { save } = setup();
+    const card = destinationCard(save.current, noop, noop);
+    const list = card.body.find((b): b is HTMLElement => typeof b !== "string") as unknown as FakeElement;
+    const names = list.findAll("shop-name").map((n) => n.textContent);
+    // Збори в офісі й виставка — лише в їхній день: у звичайний день їх у списку немає.
+    const shown = destinations.filter((d) => d !== "office" && d !== "show");
+    expect(names.map(iconOf)).toEqual(shown.map((d) => DESTINATION_ICONS[d]));
+    expect(names.map(plain)).toEqual(shown.map((d) => DESTINATION_TITLES[d]));
+  });
+
+  it("заголовок картки пункту — назва з його іконкою, у кожного пункту", () => {
+    for (const d of destinations) {
+      const { save, cat } = setup();
+      save.current.trip = {
+        destination: d,
+        phase: "visit",
+        cat: TRIPS[d].cat ? cat : null,
+        race: { road: 10, done: 10, minutes: 10, lane: 1, targetLane: 1, speed: 1, cars: [], spawned: 0, rng: 1 },
+        losses: [],
+        visit: 0,
+        seed: 5,
+      };
+      const { title } = visitCard(save.current, { exam: null, done: [] }, handlers);
+      expect(iconOf(title), d).toBe(DESTINATION_ICONS[d]);
+      expect(plain(title), d).toBe(DESTINATION_TITLES[d]);
+    }
+  });
+
+  it("знайда: на кнопці «Віднести в притулок» — іконка притулку, та сама, що в «Куди поїхати?»; текст той самий", () => {
+    const label = foundlingCard(noop, noop).actions[1]?.label ?? "";
+    expect(iconOf(label)).toBe(DESTINATION_ICONS.shelter);
+    expect(plain(label)).toBe(`Віднести в притулок · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`);
   });
 });

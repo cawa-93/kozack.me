@@ -35,7 +35,7 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
-import { diseaseLabel, productLabel, thingLabel } from "./icons";
+import { destinationLabel, diseaseLabel, productLabel, thingLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
@@ -515,7 +515,10 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
   };
 }
 
-/** Знайда (§8.5, §4.1): взяти кошеня чи віднести в притулок. */
+/**
+ * Знайда (§8.5, §4.1): взяти кошеня чи віднести в притулок. Біля «притулок» на кнопці — іконка притулку, та сама, що в «Куди
+ * поїхати?» (§11.4 «Іконка біля назви»).
+ */
 export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
   return {
     kicker: "Знайда",
@@ -523,7 +526,7 @@ export function foundlingCard(onTake: () => void, onShelter: () => void): Card {
     body: ["Під дверима сидить змокле кошеня й тремтить. Дивиться так, ніби давно на вас чекало."],
     actions: [
       { label: "Узяти додому", primary: true, onSelect: onTake },
-      { label: `Віднести в притулок · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`, onSelect: onShelter },
+      { label: `Віднести в ${destinationLabel("shelter").toLowerCase()} · 🕐 ${MODIFIERS.foundlingShelterMinutes / 60} год`, onSelect: onShelter },
     ],
   };
 }

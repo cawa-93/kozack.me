@@ -12,10 +12,10 @@
 // приватної області Unicode й назва іконки малими латинськими, тож `toLowerCase` (назва посеред речення) її не змінює.
 
 import { ILLNESS_TITLES, diseaseTitle } from "../texts";
-import type { IllnessId, Product, ThingKind } from "../sim/types";
+import type { Destination, IllnessId, Product, ThingKind } from "../sim/types";
 import { ICON_NAMES, type IconName } from "../view/iconnames";
-import { DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
-import { PRODUCT_TITLES, THING_TITLES } from "./titles";
+import { DESTINATION_ICONS, DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
+import { DESTINATION_TITLES, PRODUCT_TITLES, THING_TITLES } from "./titles";
 
 /** Тека SVG іконок (`art/icon/`) — так, як її ключі дає `import.meta.glob` із цього файлу. */
 const ICON_DIR = "../../art/icon/";
@@ -66,6 +66,12 @@ export const thingLabel = (kind: ThingKind): string => named(THING_ICONS[kind], 
  * Назва — загальна (`PRODUCT_TITLES`) чи назва варіанта (`VARIANT_TITLES`: «Делікатеси», «Мататабі»), іконка — одна на запас.
  */
 export const productLabel = (product: Product, title: string = PRODUCT_TITLES[product].name): string => named(PRODUCT_ICONS[product], title);
+
+/**
+ * Назва пункту поїздки з іконкою (§11.4, §8.5 «На місці — кадр парковки»; `DESTINATION_ICONS`): у «Куди поїхати?», у заголовку
+ * картки пункту й на кнопці знайди «Віднести в притулок» — та сама іконка, що на табличці на даху будівлі біля парковки.
+ */
+export const destinationLabel = (destination: Destination): string => named(DESTINATION_ICONS[destination], DESTINATION_TITLES[destination]);
 
 /** Шматок тексту: звичайний текст чи іконка зі словом за нею. */
 export type IconPart = string | { icon: IconName; word: string };

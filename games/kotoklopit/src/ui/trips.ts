@@ -7,9 +7,9 @@ import { visibility } from "../sim/knowledge";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { accidentLines, BREED_ABOUT, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
-import { diseaseLabel, illnessLabel } from "./icons";
+import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
 import { shopCatalog } from "./shop";
-import { DESTINATION_TITLES, SERVICE_TITLES } from "./titles";
+import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
 import { element, type Card } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
@@ -63,7 +63,8 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     if (TRIPS[destination].cat && state.cats.length === 0) continue;
     const row = element("div", "shop-row");
     const trip = TRIPS[destination];
-    const name = element("span", "shop-name", DESTINATION_TITLES[destination]);
+    // Біля назви пункту — його іконка, та сама, що на табличці на даху будівлі біля парковки (§11.4 «Іконка біля назви»).
+    const name = element("span", "shop-name", destinationLabel(destination));
     const note = blocker === null || (everywhere !== null && blocker === everywhere) ? `🚗 ~${minutesText(roadMinutes(state, destination))} · 🕐 ~${minutesText(trip.visit)}` : BLOCKERS[blocker];
     name.append(blocker === null || (everywhere !== null && blocker === everywhere) ? stockNote(note) : element("span", "shop-stock", note));
     row.append(name);
@@ -335,6 +336,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : "Збори в офісі тривали три години. Керівництво бачило вас особисто.");
       break;
   }
-  return { kicker: "Поїздка", title: DESTINATION_TITLES[destination], body, actions };
+  // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»).
+  return { kicker: "Поїздка", title: destinationLabel(destination), body, actions };
 }
 
