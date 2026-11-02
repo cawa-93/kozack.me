@@ -118,6 +118,8 @@ describe("маніфест: правила записів", () => {
       "a16-traces-living": ["env/trace/"],
       // Котячі сліди (§9.12), пакет «Підлоги спальні, ванної й кухні»: накладки на плити підлог.
       "a17-traces-floors": ["env/trace/"],
+      // Котячі сліди (§9.12, рішення автора 2026-11-02): шафка, двері, коробки.
+      "a18-traces-stuff": ["env/trace/"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
