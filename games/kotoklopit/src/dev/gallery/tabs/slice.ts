@@ -7,6 +7,11 @@
 //
 // Не арт (так і підписано в панелі): стіна-манекен під вікном, тіні під ногами (їх малюватиме вигляд, T1/T2) і затінення
 // дальніх частин (`farRecipe`; перемикач) — обидва автор узяв у гру (2026-10-30).
+//
+// Котячий слід на кухні (§9.12, «Котячі сліди в квартирі», 2026-11-02) — надірваний клапоть лінолеуму — тепер окрема накладка
+// `env/trace/lino` поверх цілої плити підлоги (у грі — з котами). Зріз показує його, як і раніше: автор затвердив зріз
+// (2026-10-30) з клаптем у еталоні підлоги F1a, а на кухні зрізу живуть коти; перемикач ховає накладку — підлога, як на
+// старті гри.
 
 import Phaser from "phaser";
 
@@ -167,11 +172,13 @@ interface State {
   dim: boolean;
   shadows: boolean;
   fridgeOpen: boolean;
+  /** Котячий слід на лінолеумі (накладка `env/trace/lino`). */
+  lino: boolean;
 }
 
 function mount(ctx: GalleryContext): GalleryView {
   const { scene } = ctx;
-  const state: State = { walk: true, dim: true, shadows: true, fridgeOpen: false };
+  const state: State = { walk: true, dim: true, shadows: true, fridgeOpen: false, lino: true };
   /** Область перегляду, CSS px (`ctx.onResize` дає її одразу). */
   let size = { w: scene.scale.width / galleryView().dpr, h: scene.scale.height / galleryView().dpr };
   const root = new Phaser.GameObjects.Container(scene, 0, 0);
@@ -247,6 +254,8 @@ function mount(ctx: GalleryContext): GalleryView {
   const kitchen = new Phaser.GameObjects.Container(scene, 0, 0);
   root.add(kitchen);
   art(kitchen, "env/room/kitchen/floor", KITCHEN_AT.x, KITCHEN_AT.y);
+  // Котячий слід — накладка з полотном, pivot і роздільністю плити підлоги: у ту саму точку, над підлогою й під стіною.
+  const lino = art(kitchen, "env/trace/lino", KITCHEN_AT.x, KITCHEN_AT.y);
   art(kitchen, "env/room/kitchen/wall", KITCHEN_AT.x, KITCHEN_AT.y);
   const kitchenShadows = new Phaser.GameObjects.Container(scene, 0, 0);
   kitchen.add(kitchenShadows);
@@ -437,6 +446,7 @@ function mount(ctx: GalleryContext): GalleryView {
     paradeShadows.setVisible(state.shadows);
   });
   check("холодильник у кухні відчинений", "fridgeOpen", () => setArt(fridge, "env/fridge", { state: state.fridgeOpen ? "open" : "closed" }));
+  check("котячий слід на лінолеумі (накладка; у грі — з котами)", "lino", () => lino.setVisible(state.lino));
   const stubs = document.createElement("p");
   stubs.style.marginTop = "8px";
   panel.append(stubs);
