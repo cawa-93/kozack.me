@@ -115,14 +115,17 @@ export function daylight(minute: number, power: boolean): Daylight | null {
   };
 }
 
+/** З якого рівня ламп (свічок) доби їхній кадр арту горить: з половини шляху вмикання. */
+export const LIT_FROM = 0.5;
+
 /** Чи горять електричні лампи й бра (стан арту `on`): з половини шляху вмикання. */
 export function lampsOn(d: Daylight | null): boolean {
-  return (d?.lamps ?? 0) >= 0.5;
+  return (d?.lamps ?? 0) >= LIT_FROM;
 }
 
 /** Чи горять свічки (стан арту `lit`). */
 export function candlesLit(d: Daylight | null): boolean {
-  return (d?.candles ?? 0) >= 0.5;
+  return (d?.candles ?? 0) >= LIT_FROM;
 }
 
 const q = (v: number, steps: number): number => Math.round(v * steps);

@@ -3,9 +3,9 @@
 // Чиста функція стану гри й світла доби, без Phaser і DOM (`tests/lightsources.test.ts`).
 //
 // - Невидимі стельові світильники (`CEILING_LAMPS`) і бра (`SCONCES`) — лише коли є електрика й лампи доби горять
-//   (стельові — зі зсувом по кімнатах, `DAYLIGHT.lampShift`; бра — разом зі станом арту `lampsOn`).
-// - Свічки (`CANDLES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки — коли «запалені»,
-//   `Daylight.candles`).
+//   (стельові — зі зсувом по кімнатах, `DAYLIGHT.lampShift`; бра — лише разом зі станом арту `lampsOn`, `litStrength`).
+// - Свічки (`CANDLES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки — лише разом зі станом
+//   арту `lit`, `candlesLit`).
 // - Індикатор бойлера (`BOILER`) — коли є електрика (у відключення не горить).
 // - Газовий пальник на плиті — у відключення, поки на плиті страва: синє полум'я.
 // - Екран комп'ютера — поки на ньому щось є (робота, пошук, кіт на клавіатурі): на станції він працює і у відключення.
@@ -21,7 +21,7 @@ import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
 import { ISO } from "../world/projection";
-import { daylight, type Daylight } from "./daylight";
+import { candlesLit, daylight, LIT_FROM, lampsOn, type Daylight } from "./daylight";
 import { BOILER_LIGHT, CANDLE_LIGHT, CEILING_LIGHT, GAS_LIGHT, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT } from "./lightlook";
 
 /** Що світить: стельовий світильник, бра, свічка, дисплей станції, індикатор бойлера, газове полум'я, екран комп'ютера. */
@@ -55,6 +55,14 @@ export interface LightSource {
 export function roomLamps(d: Daylight, room: RoomId): number {
   if (!d.power) return 0;
   return daylight(d.minute - DAYLIGHT.lampShift[room], true)?.lamps ?? 0;
+}
+
+/**
+ * Яскравість бра чи свічки за рівнем ламп (свічок) доби `level`: світять, лише поки їхній кадр арту горить (`lampsOn`,
+ * `candlesLit` — з 0,5), і розгоряються від 0 на цій межі до 1 на повну: погашена свічка не світиться.
+ */
+export function litStrength(level: number): number {
+  return Math.min(1, Math.max(0, (level - LIT_FROM) / (1 - LIT_FROM)));
 }
 
 /** Точка на екрані над точкою підлоги `at` на висоті `z` (одиниці арту). */
@@ -106,7 +114,8 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
         strength,
       });
     });
-    if (d.lamps > 0) {
+    if (lampsOn(d)) {
+      const strength = litStrength(d.lamps);
       SCONCES.forEach((sconce, i) => {
         out.push({
           id: `sconce:${i}`,
@@ -116,14 +125,15 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           screen: lifted(sconce.at, sconce.lamp),
           radius: SCONCE_LIGHT.floor.radius,
           color: SCONCE_LIGHT.color,
-          strength: d.lamps,
+          strength,
           face: sconce.face,
         });
       });
     }
   }
   if (outage) {
-    if (d.candles > 0) {
+    if (candlesLit(d)) {
+      const strength = litStrength(d.candles);
       CANDLES.forEach((candle, i) => {
         out.push({
           id: `candle:${i}`,
@@ -133,7 +143,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           screen: lifted(candle.at, candle.z + CANDLE_LIGHT.flame),
           radius: CANDLE_LIGHT.radius,
           color: CANDLE_LIGHT.color,
-          strength: d.candles,
+          strength,
           host: candle.host,
           flicker: i + 1,
         });

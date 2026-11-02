@@ -9,9 +9,9 @@ import { newGame } from "../src/sim/game";
 import { ROOMS, roomAt } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { CANDLES, CEILING_LAMPS, SCONCES } from "../src/view/decor";
-import { daylight } from "../src/view/light/daylight";
+import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
 import { CANDLE_LIGHT } from "../src/view/light/lightlook";
-import { candleFlicker, lightSources, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
+import { candleFlicker, lightSources, litStrength, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
 
 function state(outage = false): GameState {
   const s = newGame({ address: "she", difficulty: "normal", seed: 3 }).current;
@@ -100,6 +100,30 @@ describe("джерела світла квартири", () => {
     expect(kinds(at(19, 30, state()))).not.toContain("ceiling");
     expect(kinds(at(6, 50, state()))).not.toContain("ceiling");
     expect(kinds(at(6, 50, state()))).not.toContain("sconce");
+  });
+
+  it("бра й свічки світять, лише поки їхній кадр арту горить (lampsOn, candlesLit), і розгоряються з 0 на цій межі", () => {
+    for (const outage of [false, true]) {
+      const s = state(outage);
+      for (let minute = 0; minute < 1440; minute += 1) {
+        const d = daylight(minute, !outage);
+        const list = lightSources(s, d);
+        const kind: LightKind = outage ? "candle" : "sconce";
+        const lit = outage ? candlesLit(d) : lampsOn(d);
+        const level = outage ? (d?.candles ?? 0) : (d?.lamps ?? 0);
+        const own = list.filter((source) => source.kind === kind);
+        expect(own.length, `${kind} о ${minute}`).toBe(lit ? (outage ? CANDLES.length : SCONCES.length) : 0);
+        for (const source of own) {
+          expect(source.strength, `${source.id} о ${minute}`).toBeCloseTo((level - 0.5) / 0.5, 9);
+          expect(source.strength).toBeGreaterThanOrEqual(0);
+          expect(source.strength).toBeLessThanOrEqual(1);
+        }
+      }
+    }
+    expect(litStrength(0.4)).toBe(0);
+    expect(litStrength(0.5)).toBe(0);
+    expect(litStrength(0.75)).toBeCloseTo(0.5);
+    expect(litStrength(1)).toBe(1);
   });
 
   it("у сови по півночі (хвилина 1530) — те саме, що о 01:30", () => {
