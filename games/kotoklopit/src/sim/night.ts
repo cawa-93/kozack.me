@@ -41,6 +41,7 @@ import { chooseWeekModifier, startModifiers } from "./modifiers";
 import { createRng, deriveSeed, seedDay, stateRng, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
 import { isSunday, weekOf } from "./time";
+import { nightlyTraces } from "./traces";
 import type { Cat, GameState, NightReport, NightStep } from "./types";
 import { morningJob } from "./work";
 
@@ -311,6 +312,9 @@ function wakingSight(state: GameState, bed: { x: number; y: number; w: number; h
 
 /** Здоров'я котів змінюється від середнього настрою за день (§9.6). */
 function catHealth({ state, rng, week }: Night): void {
+  // Коти прожили з персонажем ще день — «котодні» й котячі сліди з часом (§9.12, «Котячі сліди в квартирі»). Рахуються ті, хто
+  // жив удома цього дня: до смертей ночі й до котів, що з'являться вночі (кошеня з притулку рахується з наступної ночі).
+  nightlyTraces(state);
   // Поки хвороба шкодить, гарний настрій здоров'я не відновлює (§9.5, Х5).
   for (const cat of state.cats) closeCatDay(state, cat, !isHurting(state, cat));
   // Хвороби — після підсумку дня, бо цистит залежить від середнього настрою дня (§9.5).

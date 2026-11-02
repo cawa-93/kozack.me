@@ -22,6 +22,7 @@ import { annoyingMesses, tickHousehold, upgradeFeeder } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
+import { upgradeTraces } from "./traces";
 import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save } from "./types";
 import { isWorking, newJob, stopWork, tickWork } from "./work";
 import { internetOut, momAtNight, tickModifiers } from "./modifiers";
@@ -350,6 +351,8 @@ export function upgradeState(state: GameState): void {
   upgradeLadder(state);
   upgradeBreedLook(state);
   upgradeShortNights(state);
+  // Котячі сліди (§9.12, рішення автора 2026-11-02): у старих збереженнях їх немає, а котодні рахуються з першої ночі.
+  upgradeTraces(state);
 }
 
 /**
