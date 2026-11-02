@@ -31,6 +31,7 @@ import {
   arrivalFrame,
   arrivalStart,
   departureFrame,
+  LOT_BOUNDS,
   lotCars,
   lotInFrame,
   lotScreenY,
@@ -745,7 +746,8 @@ class RaceArt {
   draw(trip: Trip, view: RaceView): void {
     const race = trip.race;
     const { height, k, ppu, cx, playerY } = view;
-    this.drawRoad(race.done * ppu, view);
+    const lotY = lotScreenY(race.done, race.road, height);
+    this.drawRoad(race.done * ppu, view, lotY);
 
     // Машини потоку: ті, що в кадрі (з запасом на довжину машини).
     const reach = (artEntry("race/car/traffic")?.size.h ?? 84) * k;
@@ -761,7 +763,6 @@ class RaceArt {
       .setPosition(laneX(cx, race.lane, k), playerY)
       .setRotation(steerTilt(race.lane, race.targetLane));
 
-    const lotY = lotScreenY(race.done, race.road, height);
     this.drawLot({ y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) }, view);
 
     // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом. Стоїть там, де парковка, тож
@@ -792,7 +793,7 @@ class RaceArt {
    */
   drawFrame(frame: RoadFrame, view: RaceView): void {
     const { k } = view;
-    this.drawRoad(frame.offset, view);
+    this.drawRoad(frame.offset, view, frame.lot?.y ?? null);
     frame.traffic.forEach((car, i) => this.placeCar(this.carImage(this.traffic, i, car.look, RACE_DEPTH.traffic), car, view));
     hideFrom(this.traffic, frame.traffic.length);
     this.fit(this.player, k, k).setPosition(view.cx + frame.car.x, frame.car.y).setRotation(frame.car.rotation);
@@ -860,17 +861,28 @@ class RaceArt {
   /**
    * Поле й дорога плитками, зсунутими на `distance` пікселів проїханого (більше — нижче, менше — вище). Узбіччя — стовпці зі
    * своєю фазою, віддзеркалені через один; дорога — одна колона плиток посередині. Ряди теж віддзеркалюються через один
-   * (`rowFlipped`), тож малюнок не повторюється на одному екрані.
+   * (`rowFlipped`), тож малюнок не повторюється на одному екрані. Плитки узбіччя, що лягають під парковку з будівлею (`lotY` —
+   * середня лінія з'їзду, px; null — парковки немає), — без дерев (стан `plain`): крону вигляду згори не сховаєш під асфальтом
+   * чи дахом, а край плитки — лише трава, тож шва немає й плитка не змінюється, поки їде разом із парковкою.
    */
-  private drawRoad(distance: number, view: RaceView): void {
+  private drawRoad(distance: number, view: RaceView, lotY: number | null): void {
     const { width, height, k, cx } = view;
     const tiles = RACE_TILES;
     const vergePeriod = tiles.verge.period * k;
     const vergePivot = (artEntry("race/verge")?.pivot.y ?? 256) - tiles.verge.top;
+    // Вміст плитки — від верху ряду (`row.y`) на `vergeSize` донизу й на половину того в боки від середини стовпця.
+    const vergeSize = (tiles.verge.bottom - tiles.verge.top) * k;
+    const lot =
+      lotY === null
+        ? null
+        : { left: cx + LOT_BOUNDS.left * k, right: cx + LOT_BOUNDS.right * k, top: lotY + LOT_BOUNDS.top * k, bottom: lotY + LOT_BOUNDS.bottom * k };
     let n = 0;
     for (const column of vergeColumns(width, cx, k)) {
+      const underLot = lot !== null && column.x - vergeSize / 2 < lot.right && column.x + vergeSize / 2 > lot.left;
       for (const row of tileRows(distance + column.phase * vergePeriod, vergePeriod, height)) {
         const image = this.pooled(this.verge, n++, "race/verge", RACE_DEPTH.verge);
+        const plain = underLot && row.y < lot.bottom && row.y + vergeSize > lot.top;
+        setArt(image, "race/verge", { state: plain ? "plain" : "full" });
         this.fit(image, column.flip !== rowFlipped(row.n) ? -k : k, k).setPosition(column.x, row.y + vergePivot * k);
       }
     }

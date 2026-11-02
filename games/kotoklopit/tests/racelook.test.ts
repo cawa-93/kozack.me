@@ -318,4 +318,39 @@ describe("плитки арту повторюються без шва (art/race
     }
     expect(bad).toBe(0);
   });
+
+  it("узбіччя під парковкою (стан plain, §8.5 «На місці — кадр парковки») — та сама плитка без дерев, кущів і їхніх тіней: краї й смуги перекриття ті самі", async () => {
+    expect(artEntry("race/verge")?.states).toEqual(["full", "plain"]);
+    // Лише дерева з кущами й їхні тіні — у стані full; решта шматків (трава, пучки, квіти, камінці, кротовина) — в обох.
+    const text = readFileSync(path.join(ART_DIR, "race/verge.svg"), "utf8");
+    const pieces = [...text.matchAll(/<g id="(p-[a-z-]+)"([^>]*)>/g)].map(([, id, attrs]) => [id, /class="([^"]*)"/.exec(attrs ?? "")?.[1] ?? null] as const);
+    expect(pieces.filter(([, cls]) => cls !== null)).toEqual([
+      ["p-shadows", "st-full"],
+      ["p-trees", "st-full"],
+    ]);
+    const scale = 2;
+    const full = await raster("race/verge.svg", scale, "full");
+    const plain = await raster("race/verge.svg", scale, "plain");
+    const { top, bottom, period, edge } = RACE_TILES.verge;
+    const width = full.info.width;
+    const delta = (x: number, y: number): number => {
+      const i = (y * width + x) * 4;
+      let max = 0;
+      for (let ch = 0; ch < 4; ch++) max = Math.max(max, Math.abs((full.data[i + ch] ?? 0) - (plain.data[i + ch] ?? 0)));
+      return max;
+    };
+    // Краї (бокові смуги трави й смуги перекриття вгорі й унизу) — до пікселя ті самі: стани стикуються між собою без шва.
+    let edges = 0;
+    let inside = 0;
+    for (let y = 0; y < full.info.height; y++) {
+      for (let x = 0; x < width; x++) {
+        const band = y < (top + bottom - period) * scale || y >= (top + period) * scale || x < edge * scale || x >= width - edge * scale;
+        if (band) edges = Math.max(edges, delta(x, y));
+        else if (delta(x, y) > 8) inside++;
+      }
+    }
+    expect(edges).toBeLessThanOrEqual(3);
+    // А всередині дерев і кущів справді немає: різниться чимала частина плитки.
+    expect(inside / (width * full.info.height)).toBeGreaterThan(0.1);
+  });
 });
