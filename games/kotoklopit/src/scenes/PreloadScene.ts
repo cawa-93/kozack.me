@@ -4,7 +4,8 @@
 // DayScene.
 //
 // Індикатор — заставка з index.html (`#boot`: назва гри й смуга, видно ще до коду гри): поки коду немає, смуга біжить
-// туди-сюди, а тут вона заповнюється ходом завантаження (`--boot-progress`). Гра готова — заставку прибрано.
+// туди-сюди, а тут вона заповнюється ходом завантаження (`--boot-progress`) — за байтами сторінок атласу, рівномірно й без
+// повернень назад (`loadArtAtlas` → `AtlasLoadProgress`). Гра готова — заставку прибрано.
 //
 // Атласу немає (404, порожній, не той формат, сторінка не прийшла й після повторів Phaser): у продакшні заставка каже, що
 // гра не завантажилася, і кнопка «Спробувати ще» довантажує лише те, чого бракує (`atlasload.ts` пам'ятає сторінки, що
@@ -23,9 +24,6 @@ import { LOAD_FAILED } from "../texts";
 import { markArtReady } from "../view/art/atlas";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
 
-/** Яку частку смуги займає перший прохід (`index.json` — маленький файл); решта — сторінки атласу. */
-const INDEX_SHARE = 0.1;
-
 /** Заставка з index.html: назва, смуга й місце для повідомлення, що гра не завантажилася. */
 interface Boot {
   root: HTMLElement;
@@ -42,8 +40,6 @@ function bootScreen(): Boot | null {
 export class PreloadScene extends Phaser.Scene {
   private readonly next: string;
   private boot: Boot | null = null;
-  /** Котрий прохід завантажувача зараз: 0 — `index.json`, далі — сторінки. */
-  private pass = 0;
 
   constructor(next = "day") {
     super("preload");
@@ -52,25 +48,13 @@ export class PreloadScene extends Phaser.Scene {
 
   create(): void {
     this.boot = bootScreen();
-    // Хід завантаження — події завантажувача сцени: спершу черга з `index.json`, після неї — черга сторінок.
-    const onProgress = (value: number): void => this.progress(this.pass === 0 ? value * INDEX_SHARE : INDEX_SHARE + value * (1 - INDEX_SHARE));
-    const onComplete = (): void => {
-      this.pass++;
-    };
-    this.load.on(Phaser.Loader.Events.PROGRESS, onProgress);
-    this.load.on(Phaser.Loader.Events.COMPLETE, onComplete);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.load.off(Phaser.Loader.Events.PROGRESS, onProgress);
-      this.load.off(Phaser.Loader.Events.COMPLETE, onComplete);
-    });
     this.attempt();
   }
 
-  /** Спроба завантажити атлас (перша чи «Спробувати ще»). */
+  /** Спроба завантажити атлас (перша чи «Спробувати ще»): смуга — з нуля, далі за байтами, що прийшли. */
   private attempt(): void {
-    this.pass = 0;
     this.progress(0);
-    void loadArtAtlas(this).then(
+    void loadArtAtlas(this, undefined, (value) => this.progress(value)).then(
       (result) => this.loaded(result.state),
       () => this.loaded("none"),
     );

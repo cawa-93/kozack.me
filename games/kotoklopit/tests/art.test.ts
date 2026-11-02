@@ -568,6 +568,8 @@ describe("збирання атласу на фікстурах", () => {
     // Сторінка — webp розміру з index.json; пікселі шару — без втрат ті самі, що в растрі.
     const page = index.pages[0]!;
     expect(page.file).toMatch(/^page-0\.[0-9a-f]{10}\.webp$/);
+    // Розмір файлу — для смуги заставки (поступ за байтами, `loadprogress.ts`).
+    expect(page.bytes).toBe(build.files.get(page.file)!.length);
     const decoded = await sharp(build.files.get(page.file)!).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     expect([decoded.info.width, decoded.info.height]).toEqual([page.w, page.h]);
     const pageRgba: Rgba = { w: decoded.info.width, h: decoded.info.height, data: decoded.data };

@@ -287,7 +287,7 @@ export async function buildArt(options: ArtBuildOptions): Promise<ArtBuild> {
     }
     const file = `page-${p}.${hashOf(data).slice(0, 10)}.webp`;
     files.set(file, data);
-    pages.push({ file, w: size.w, h: size.h });
+    pages.push({ file, w: size.w, h: size.h, bytes: data.length });
     bytes += data.length;
   }
 

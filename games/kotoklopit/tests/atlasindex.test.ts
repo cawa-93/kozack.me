@@ -42,6 +42,13 @@ describe("index.json атласу", () => {
     expect(problems).toEqual([]);
   });
 
+  it("розмір файлу сторінки (bytes) — необов'язковий, але додатний", () => {
+    const ok = { version: 1, pages: [{ file: "p.webp", w: 4, h: 4, bytes: 120 }], frames: {} };
+    expect(artIndexProblems(ok)).toEqual([]);
+    expect(artIndexProblems({ ...ok, pages: [{ file: "p.webp", w: 4, h: 4, bytes: 0 }] })).toEqual(["сторінка 0: bytes має бути додатним"]);
+    expect(artIndexProblems({ ...ok, pages: [{ file: "p.webp", w: 4, h: 4, bytes: "120" }] })).toEqual(["сторінка 0: bytes має бути додатним"]);
+  });
+
   it("зламаний index.json — null і перелік помилок", () => {
     const problems: string[] = [];
     expect(parseArtIndex(JSON.stringify({ ...INDEX, version: 2 }), problems)).toBeNull();

@@ -71,6 +71,8 @@ export function artIndexProblems(data: unknown): string[] {
   pages.forEach((page: unknown, i) => {
     if (!isObject(page) || typeof page["file"] !== "string" || page["file"] === "" || !isPositive(page["w"]) || !isPositive(page["h"])) {
       add(`сторінка ${i}: треба { file, w, h }`);
+    } else if (page["bytes"] !== undefined && !isPositive(page["bytes"])) {
+      add(`сторінка ${i}: bytes має бути додатним`);
     }
   });
   const frames = data["frames"];

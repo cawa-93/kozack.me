@@ -5,11 +5,13 @@
 //
 // Кликати з `create()` сцени, а не з `preload()`: завантажувач іде двома проходами (спершу `index.json`, потім сторінки,
 // яких до нього не знати), і кожен запускає сам (`load.start()`), тож він не чекає кадрів гри — і скрипт знімків, у якого
-// час стоїть, дочекається атласу. Хід завантаження — звичайні події `scene.load` (`progress`) для індикатора.
+// час стоїть, дочекається атласу. Хід завантаження для індикатора — `onProgress`: частка за байтами (`loadprogress.ts`), а не
+// за файлами, як подія `progress` завантажувача.
 
 import Phaser from "phaser";
 
 import { artIndexUrl, artPageUrl, parseArtIndex } from "./atlasindex";
+import { AtlasLoadProgress } from "./loadprogress";
 import { shareArtAtlas } from "./sources";
 import { ART_TEXTURE, layerFrameName, type ArtIndex, type FrameId, type FrameLayer } from "./types";
 
@@ -40,13 +42,15 @@ const arrived = new WeakMap<Phaser.Game, Map<string, HTMLImageElement>>();
 /**
  * Завантажити атлас (якщо його ще немає) і скласти текстуру `ART_TEXTURE`. Атласу немає (файлу немає, він не той, сторінка
  * не прийшла) — `state: "none"`, і `addArt` малює заглушки; помилки формату — `console.warn`. `base` — базова адреса гри.
+ * `onProgress` — хід завантаження, частка 0–1 за байтами, що не спадає (для смуги заставки; лише тому, хто почав
+ * завантаження).
  */
-export function loadArtAtlas(scene: Phaser.Scene, base: string = import.meta.env.BASE_URL): Promise<ArtAtlasResult> {
+export function loadArtAtlas(scene: Phaser.Scene, base: string = import.meta.env.BASE_URL, onProgress?: (fraction: number) => void): Promise<ArtAtlasResult> {
   if (scene.textures.exists(ART_TEXTURE)) return Promise.resolve({ state: "ready", index: loadedArtIndex(scene) });
   const game = scene.game;
   let loading = pending.get(game);
   if (!loading) {
-    loading = load(scene, base).finally(() => pending.delete(game));
+    loading = load(scene, base, onProgress).finally(() => pending.delete(game));
     pending.set(game, loading);
   }
   return loading;
@@ -58,10 +62,22 @@ export function loadedArtIndex(scene: Phaser.Scene): ArtIndex | null {
   return (index as ArtIndex | undefined) ?? null;
 }
 
-function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
+function load(scene: Phaser.Scene, base: string, onProgress?: (fraction: number) => void): Promise<ArtAtlasResult> {
   return new Promise((resolve) => {
     const loader = scene.load;
-    const none = (): void => resolve({ state: "none", index: null });
+    // Поступ за байтами: спершу `index.json`, потім сторінки (`AtlasLoadProgress`); слухач знято, щойно завантаження скінчилося.
+    const progress = new AtlasLoadProgress();
+    const report = (fraction: number): void => onProgress?.(fraction);
+    const onFile = (file: Phaser.Loader.File): void => {
+      if (file.key === INDEX_KEY) report(progress.indexProgress(file.percentComplete));
+      else if (file.key.startsWith(PAGE_KEY)) report(progress.pageProgress(Number(file.key.slice(PAGE_KEY.length)), file.bytesLoaded, file.bytesTotal));
+    };
+    if (onProgress) loader.on(Phaser.Loader.Events.FILE_PROGRESS, onFile);
+    const finish = (result: ArtAtlasResult): void => {
+      loader.off(Phaser.Loader.Events.FILE_PROGRESS, onFile);
+      resolve(result);
+    };
+    const none = (): void => finish({ state: "none", index: null });
     /**
      * Обробник події завантажувача: виняток у ньому (зламаний кадр, текстура не склалася) — «none», а не вічне очікування
      * (обіцянка інакше так і не скінчилася б, і гра лишилася б на смузі завантаження).
@@ -96,12 +112,14 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
       }
       const have = kept;
       const images: (HTMLImageElement | undefined)[] = index.pages.map((page) => have.get(page.file));
+      report(progress.pages(index.pages, images.map((image) => image !== undefined)));
       index.pages.forEach((page, i) => {
         if (images[i]) return;
         loader.addFile(
           new PageFile(loader, `${PAGE_KEY}${i}`, artPageUrl(base, page.file), (image) => {
             images[i] = image;
             have.set(page.file, image);
+            report(progress.pageDone(i));
           }),
         );
       });
@@ -119,7 +137,7 @@ function load(scene: Phaser.Scene, base: string): Promise<ArtAtlasResult> {
         // Ті самі сторінки — портретові в редакторі (`sources.ts`): інакше він вантажив би й тримав їх удруге.
         shareArtAtlas(index, images as HTMLImageElement[]);
         arrived.delete(scene.game);
-        resolve({ state: "ready", index });
+        finish({ state: "ready", index });
       }));
       loader.start();
     }));
