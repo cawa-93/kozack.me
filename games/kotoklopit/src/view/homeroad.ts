@@ -36,9 +36,10 @@ export const CAR_REACH = 44;
 
 /**
  * Попутні машини на початку катсцени: смуга й y середини (висот кадру). За катсцену камера обганяє їх на
- * (`camera` − `traffic`) × 3 с = 1,8 висоти кадру, тож вони стоять до 2,9 висоти — кадр повний до кінця.
+ * (`camera` − `traffic`) × 3 с = 1,8 висоти кадру, тож вони стоять до 2,9 висоти — кадр повний до кінця. Від'їзд із парковки
+ * (`src/view/parking.ts`) ставить ті самі машини під нижній край кадру: вигляд машини `i` там той самий (`trafficLook({ start: i })`).
  */
-const TRAFFIC: readonly { lane: number; y: number }[] = [
+export const TRAFFIC: readonly { lane: number; y: number }[] = [
   { lane: 0, y: 0.08 },
   { lane: 2, y: 0.34 },
   { lane: 0, y: 0.62 },
