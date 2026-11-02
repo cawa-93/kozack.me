@@ -892,8 +892,9 @@ describe("переставлений кіт доганяє своє місце (
       // За кадр — не далі, ніж найшвидший біг сима чи вигляду: жодного перескоку.
       expect(dist(path[i]!, path[i - 1]!), `кадр ${i}`).toBeLessThanOrEqual(Math.max(step, CATCH.fast * FRAME) + 1e-9);
     }
-    // Кадр переставлення: намальований кіт ще далеко позаду.
+    // Кадр переставлення: намальований кіт ще далеко позаду — і біжить туди (`CATCH.run`), а не ковзає в позі.
     expect(dist(path[20]!, sim(20))).toBeGreaterThan(1);
+    expect(dist(path[20]!, sim(20))).toBeGreaterThan(CATCH.run);
     // Доганяє за ≤ 300 мс: далі вже там, де його поставив сим.
     expect(dist(path[20 + 18]!, sim(20 + 18))).toBeLessThan(0.01);
     // Біг рівний: без переставлення намальований кіт там само, де кіт сима.
@@ -905,6 +906,8 @@ describe("переставлений кіт доганяє своє місце (
     const path = drawn(30, () => ({ x: 9, y: 9 }), (i) => (i >= 5 ? shift : { x: 0, y: 0 }));
     const target = { x: 9 + shift.x, y: 9 + shift.y };
     const full = Math.hypot(shift.x, shift.y);
+    // Зсув пари (і бійки, що зійшлася з 0,6 клітинки: по 0,3 кожному) — коротке ковзання без бігу.
+    expect(Math.max(full, 0.3)).toBeLessThan(CATCH.run);
     // Кадр, коли пара ввімкнулася: кіт ще майже там, де був.
     expect(dist(path[5]!, { x: 9, y: 9 })).toBeLessThan(full * 0.2);
     // За 100 мс — понад половину шляху, за 250 мс — на місці.
