@@ -41,4 +41,8 @@ export const MANIFEST: readonly ArtEntry[] = [
   // (`env/boxes/front`, який закриває всю купу нижче за борт), тож слід — двома записами, кожен на своєму кадрі.
   traceOn("env/trace/boxes-claws", ROOMS, "env/boxes"),
   traceOn("env/trace/boxes-claws/front", ROOMS, "env/boxes/front"),
+  // Погризений лівий передній клапан верхньої відкритої коробки (`boxes-chewed`: кіт гриз пакети в коробках) — так само
+  // двома записами; частина `front` обтята по клапану, щоб латка над його краєм не лягала на кота в коробці.
+  traceOn("env/trace/boxes-chewed", ROOMS, "env/boxes"),
+  traceOn("env/trace/boxes-chewed/front", ROOMS, "env/boxes/front"),
 ];
