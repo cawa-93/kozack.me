@@ -205,8 +205,12 @@ export class IsoCatsView implements CatsPart {
   private readonly crowdShifts = new Map<number, Vec>();
   /** Місця юрби біля персонажа між кадрами (`catCrowds`). */
   private readonly crowdPlaces = crowdMemory();
-  /** Юрба на речах (`perchCrowds`): хто лежить на меблях, у будиночку чи під меблями цього кадру, і черга приходу. */
+  /**
+   * Юрба на речах (`perchCrowds`): хто лежить на меблях, у будиночку чи під меблями цього кадру (записи — з `perchPool`, щоб
+   * щокадру не створювати нових), і черга приходу.
+   */
   private readonly perchMembers: PerchMember[] = [];
+  private readonly perchPool: PerchMember[] = [];
   private readonly perchPlaces = perchMemory();
   /** Ігрова хвилина минулого кадру й скільки клітинок найшвидший кіт міг пробігти за цей кадр (`catStep`). */
   private minuteWas: number | null = null;
@@ -375,7 +379,16 @@ export class IsoCatsView implements CatsPart {
       // На речі (не йде): з іншими на тій самій — рядком у межах її поверхні. Клубок бійки й кошенята біля матері — одна
       // фігура, їх не розсувають.
       const place = PERCHED.has(spot.kind) && !catMoving(cat) && pair?.kind !== "brawl" && pair?.kind !== "nursing" ? perchPlace(spot) : null;
-      if (place) perched.push({ id: cat.id, key: place.key, at: spot.at, size: this.sizeOf(cat), area: place.area, partner: pair?.with ?? null });
+      if (place) {
+        const m = (this.perchPool[perched.length] ??= { id: 0, key: "", at: spot.at, size: 1, area: place.area, partner: null });
+        m.id = cat.id;
+        m.key = place.key;
+        m.at = spot.at;
+        m.size = this.sizeOf(cat);
+        m.area = place.area;
+        m.partner = pair?.with ?? null;
+        perched.push(m);
+      }
       // Кота щойно опустили — стоїть, де його поставили руки, і в юрбу не стає (`stillPutDown`).
       const lifting = this.ctx.world.person.hands.lift?.cat === cat.id;
       if (!stillPutDown(mem.putDown, cat, state.character.body, catMoving(cat), lifting)) mem.putDown = null;

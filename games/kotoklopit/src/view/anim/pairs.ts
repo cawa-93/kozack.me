@@ -490,8 +490,13 @@ const PERCH_AXES: readonly Vec[] = [{ x: 1 / EDGE, y: 0 }, { x: 0, y: 1 / EDGE }
  */
 export function perchCrowds(members: readonly PerchMember[], out: Map<number, Vec>, memory: PerchMemory = perchMemory()): Map<number, Vec> {
   const order = memory.order;
-  // Хто зійшов з речі чи рушив, місця в черзі не тримає; новий — у кінець черги.
-  for (const id of order.keys()) if (!members.some((m) => m.id === id)) order.delete(id);
+  // Хто зійшов з речі чи рушив, місця в черзі не тримає; новий — у кінець черги. Щокадру — без нових об'єктів, поки рядків
+  // немає (рядок — рідкість, а котів буває два десятки).
+  for (const id of order.keys()) {
+    let here = false;
+    for (const m of members) here ||= m.id === id;
+    if (!here) order.delete(id);
+  }
   for (const m of members) if (!order.has(m.id)) order.set(m.id, memory.next++);
   for (let i = 0; i < members.length; i++) {
     const key = members[i]!.key;
