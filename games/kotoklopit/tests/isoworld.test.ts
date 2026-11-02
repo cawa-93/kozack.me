@@ -498,6 +498,21 @@ describe("згасання внутрішніх стін (iso/geometry.ts, walls
     expect(faded(state)).toEqual([]);
   });
 
+  it("пилосос на підлозі за стіною гасить її — у стовпцях x = 6 і x = 11 і біля проходу під стіною ряду 5; далі від стіни — ні (рецензія 2026-11-02)", () => {
+    const state = quiet();
+    expect(state.home.vacuumAt).not.toBeNull();
+    state.home.vacuumAt = { x: 6.5, y: 3.5 };
+    expect(faded(state)).toEqual(["col7-y1"]);
+    state.home.vacuumAt = { x: 11.5, y: 2.5 };
+    expect(faded(state)).toEqual(["col12-y1"]);
+    state.home.vacuumAt = { x: 16.5, y: 4.5 };
+    expect(faded(state)).toEqual(["row5-x17"]);
+    state.home.vacuumAt = { x: 5.5, y: 2.5 };
+    expect(faded(state)).toEqual([]);
+    state.home.vacuumAt = null;
+    expect(faded(state)).toEqual([]);
+  });
+
   it("кіт, що сидить за стіною, гасить її; той, що лише йде повз, на руках чи високо на шафі, — ні", () => {
     const state = quiet();
     const cat = state.cats[0]!;

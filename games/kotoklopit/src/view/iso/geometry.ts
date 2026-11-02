@@ -1,5 +1,5 @@
 // Геометрія ізометричної квартири й підлоги (крок 16, F3b) — чисті розрахунки без Phaser: де стає кадр речі, де на ній
-// точка кріплення з маніфесту, де бабл, чи стіна закриває персонажа, кота, лоток чи безлад (тоді вона згасає) і контур
+// точка кріплення з маніфесту, де бабл, чи стіна закриває персонажа, кота, лоток, безлад чи пилосос (тоді вона згасає) і контур
 // підсвітки. Перевіряє `tests/isoworld.test.ts`.
 
 import { carriedToy } from "../../sim/catai";
@@ -119,7 +119,10 @@ const TRINKET_KINDS: readonly TrinketKind[] = [...new Set(TRINKETS.map((t) => t.
  * - котом, що не йде (`act.goal` null: сидить у лотку, спить, їсть, гризе), — тулуб `CAT_FIGURE`, на меблях — на висоті
  *   `perch`; хто лише проходить повз, стіну не блимає;
  * - річчю котячого кутка (лоток, миска, іграшка) — серединою малюнка (`ITEM_CORE`);
- * - безладом і скинутою дрібничкою (`SPOT_FIGURE`).
+ * - безладом і скинутою дрібничкою (`SPOT_FIGURE`);
+ * - вертикальним пилососом на підлозі (`home.vacuumAt`, §8.7) — серединою малюнка, як річ котячого кутка: його ставлять
+ *   будь-де, зокрема в стовпцях x = 6 і x = 11 і біля проходів під стінами ряду 5, де стіна закривала щітку (рецензія
+ *   пилососа 2026-11-02).
  * Жмути шерсті (`FUR_SPOTS`) лежать там, де стіни їх не закривають. Персонаж у душовій кабіні й у поїздці не рахується.
  */
 export function wallsToFade(state: GameState, walls: readonly IsoBox[], h: number, out: boolean[]): void {
@@ -159,6 +162,12 @@ export function wallsToFade(state: GameState, walls: readonly IsoBox[], h: numbe
     markWalls(walls, h, SPOT, ITEM, out);
   }
   for (const mess of home.messes) markWalls(walls, h, mess, SPOT_FIGURE, out);
+  if (home.vacuumAt) {
+    const look = isoItemLook("vacuum");
+    ITEM.height = look.height;
+    ITEM.half = look.half * ITEM_CORE;
+    markWalls(walls, h, home.vacuumAt, ITEM, out);
+  }
   const fallen = home.trinkets;
   if (fallen) {
     for (const kind of TRINKET_KINDS) {
