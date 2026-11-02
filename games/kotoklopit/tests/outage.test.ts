@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { Bot } from "../balance/bot";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { tickStove } from "../src/sim/actions";
 import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
@@ -349,6 +350,32 @@ describe("«Планове відключення» — день без світ
     expect(events.find((e) => e.type === "refused")).toMatchObject({ object: "washer", reason: "no-power" });
     expect(supplyCount(save.current, "detergent")).toBe(2);
     expect(save.current.home.washer.state).toBe("idle");
+  });
+
+  it("бот балансу проживає день без світла: працює, на летучку не чекає, по відмову до пральної машини не ходить і не застрягає", () => {
+    const live = (day: string | null): { save: Save; bot: Bot; tasks: string[]; events: GameEvent[]; night: unknown } => {
+      const save = newGame({ address: "she", difficulty: "normal", seed: 101 });
+      save.current.day = 8;
+      save.current.modifiers.day = day;
+      save.current.modifiers.week = null;
+      // Одяг закінчився, засіб є: звичайного дня бот пішов би прати.
+      save.current.home.clothes = 0;
+      save.current.home.supplies.detergent = { cheap: 2, premium: 0 };
+      const tasks: string[] = [];
+      const bot = new Bot(save, undefined, (task) => tasks.push(task));
+      const { events, stop } = recordEvents();
+      const night = bot.day();
+      stop();
+      return { save, bot, tasks, events, night };
+    };
+    expect(live(null).tasks).toContain("laundry");
+    const { save, bot, tasks, events, night } = live("outage");
+    expect(night).not.toBeNull();
+    expect(save.current.day).toBe(9);
+    expect(tasks).not.toContain("laundry");
+    expect(events.some((e) => e.type === "refused" && e.reason === "no-power")).toBe(false);
+    expect(events.some((e) => e.type === "standup-started" || e.type === "standup")).toBe(false);
+    expect(bot.log.worked).toBeGreaterThan(1);
   });
 
   it("робот-пилосос о 12:00 не виїжджає: стоїть на базі, шерсть лежить, шуму немає", () => {
