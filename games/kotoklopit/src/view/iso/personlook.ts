@@ -20,13 +20,14 @@ type PersonAnim = AnimOf<typeof PERSON_RIG>;
 
 /**
  * Що в проміжку глибини персонажа (`ISO_DEPTH_SLOT` 0,01) над його точкою, знизу догори: тінь, кіт на руках у ракурсі `back`
- * (за тулубом), сам персонаж, рука, що гладить (коли кіт за персонажем), кіт на руках у ракурсі `front` (перед ним), запах.
+ * (за тулубом), сам персонаж, рука, що гладить (коли кіт за персонажем), спинка стільця, на якому він сидить (`seatSpot`,
+ * `placeAbove("person", backrest)`), кіт на руках у ракурсі `front` (перед ним), запах.
  * Кіт на руках — точка кота в реєстрі над точкою персонажа (`placeAbove("person", hands.depth − глибина персонажа)`), а свої
  * шматки кіт кладе ще вище за неї, до `CARGO_PIECES` (T1: тінь +0,001, тіло +0,002, очі з-під меблів +0,003), тож проміжки
  * кота ззаду й спереду — від `cargoBack` і `cargoFront` на `CARGO_PIECES` угору. Старий кіт кладе себе через
  * `placeAbove("person")` (пів проміжку) — теж перед персонажем.
  */
-export const PERSON_DEPTH = { shadow: 0.0002, cargoBack: 0.0004, body: 0.004, reach: 0.0045, cargoFront: 0.005, smell: 0.009 } as const;
+export const PERSON_DEPTH = { shadow: 0.0002, cargoBack: 0.0004, body: 0.004, reach: 0.0045, backrest: 0.0048, cargoFront: 0.005, smell: 0.009 } as const;
 
 /** Скільки глибини над своєю точкою займають шматки кота (`PERSON_DEPTH`). */
 export const CARGO_PIECES = 0.0035;

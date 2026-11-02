@@ -12,8 +12,14 @@
 // стільця (`SEAT_DEPTH`), тож той, хто сидить (точка в `use.at`), між ними, а коти й персонаж поруч — як із будь-якою
 // річчю на підлозі. Засунутий стілець — частина стола (`seatSpot`): сидіння під стільницею — під коробкою стола (стільниця й
 // ніжки перед ним), спинка біля краю — на коробці стола (перед ним і всім, що на ньому); з рештою обидва — як сам стіл, тож
-// той, хто йде вздовж стола, — перед стільцем, хоч би де стояв ліворуч чи праворуч. Без Phaser: перевіряє
-// `tests/isopersonseat.test.ts`.
+// той, хто йде вздовж стола, — перед стільцем, хоч би де стояв ліворуч чи праворуч.
+//
+// Сідаючи (доробки після хвилі 3): сим одразу садить персонажа, і вигляд показує його сидячим, поки він переходить до `use.at`
+// (`glideOffset`), а стілець виїжджав з тією самою швидкістю — ≈ 0,25 с сидіння ще проходило під стільницею крізь край стола,
+// і кілька кадрів спинка, хоч уже й висунута, була за тим, хто сідає (його точка ще ближче до камери). Тепер стілець їде
+// швидше (`SEAT_GLIDE_RATE`), а спинку висунутого стільця, щойно вона ближча до камери за місце, де сидять, реєстр ставить
+// просто над тим, хто сидить (`SeatSpot.above` → `placeAbove("person")`): спинка перед ним, хоч би де він ще був. Без Phaser:
+// перевіряє `tests/isopersonseat.test.ts`.
 
 import type { GameState, Vec } from "../../sim/types";
 import type { ArtId } from "../art/types";
@@ -56,6 +62,12 @@ export const SEAT_AT_EDGE = 0.1;
  * стола за центр (той, хто сидить у центрі, — перед ним), спинка — на задньому краю (перед тим, хто сидить).
  */
 export const SEAT_DEPTH = { seat: -0.05, backrest: 0.22 } as const;
+
+/**
+ * Як швидко стілець їде, коли його засувають чи висувають: частка шляху за секунду (експонента, `glideOffset`). Удвічі
+ * швидше за персонажа (`GLIDE_RATE` 12): висунутий стілець — під тим, хто сідає, за ≈ 0,1 с, а не за ≈ 0,25.
+ */
+export const SEAT_GLIDE_RATE = 24;
 
 /** Де сидять за річчю `object`: `use.at` і напрям до стола (`use.facing`) — дані `world/objects.ts`, без копій. */
 function useOf(object: string): IsoUse {
@@ -102,13 +114,14 @@ export function seatAt(seat: Seat, mode: SeatMode, out: Vec = { x: 0, y: 0 }): V
 
 /**
  * Де шматок стільця в реєстрі глибини: точка (клітинки) і стіл, під яким (`under`) чи на якому вона стоїть (`box`; null — на
- * підлозі, як будь-яка річ).
+ * підлозі, як будь-яка річ); `above` — спинка просто над тим, хто сидить (`placeAbove("person")`), а не за своєю точкою.
  */
 export interface SeatSpot {
   x: number;
   y: number;
   box: string | null;
   under: boolean;
+  above: boolean;
 }
 
 /**
@@ -116,17 +129,21 @@ export interface SeatSpot {
  * (`SEAT_DEPTH`). Сидіння, чия точка під стільницею, — під коробкою стола (`placeUnder`: одразу за ним, стільниця й ніжки
  * перед ним); спинка біля краю стола (`SEAT_AT_EDGE`) — на коробці стола (`place(…, box)`: одразу над ним і над усім, що на
  * ньому). Обидва тоді з рештою — як сам стіл: хто стоїть перед столом, той і перед засунутим стільцем. Висунутий стілець і
- * той, що їде, поки не дістався краю, — на підлозі.
+ * той, що їде, поки не дістався краю, — на підлозі. На стільці сидять (`sitting`: `seatMode` — `pulled`), а спинка вже не
+ * ближче до стола, ніж місце, де сидять (`use.at`), — вона над тим, хто сидить (`above`).
  */
-export function seatSpot(seat: Seat, center: Vec, part: keyof typeof SEAT_DEPTH, out: SeatSpot): SeatSpot {
+export function seatSpot(seat: Seat, center: Vec, part: keyof typeof SEAT_DEPTH, out: SeatSpot, sitting = false): SeatSpot {
   const { at, facing } = useOf(seat.object);
   // Уздовж напрямку «від стола» (протилежного `use.facing`).
   out.x = center.x - facing.x * SEAT_DEPTH[part];
   out.y = center.y - facing.y * SEAT_DEPTH[part];
   // Наскільки центр стільця перед краєм стола (від'ємне — під стільницею).
-  const front = seatEdge(seat) - ((center.x - at.x) * facing.x + (center.y - at.y) * facing.y);
+  const ahead = (center.x - at.x) * facing.x + (center.y - at.y) * facing.y;
+  const front = seatEdge(seat) - ahead;
   const table = part === "seat" ? front + SEAT_DEPTH.seat < 0 : front + seat.back <= SEAT_AT_EDGE;
   out.box = table ? seat.object : null;
   out.under = table && part === "seat";
+  // Спинка (на `SEAT_DEPTH.backrest` від центру) не ближче до стола, ніж `use.at`.
+  out.above = sitting && part === "backrest" && SEAT_DEPTH.backrest - ahead >= 0;
   return out;
 }

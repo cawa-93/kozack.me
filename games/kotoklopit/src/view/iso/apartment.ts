@@ -26,7 +26,8 @@ import { ISO } from "../world/projection";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
 import { artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
-import { SEATS, seatAt, seatMode, seatSpot, type Seat, type SeatSpot } from "./personseat";
+import { PERSON_DEPTH } from "./personlook";
+import { SEAT_GLIDE_RATE, SEATS, seatAt, seatMode, seatSpot, type Seat, type SeatSpot } from "./personseat";
 import { glideOffset } from "./personspot";
 import { IsoHighlight } from "./highlight";
 import {
@@ -98,8 +99,9 @@ interface Chair {
   pieces: Record<"seat" | "backrest", { image: Phaser.GameObjects.Image; point: IsoPointHandle }>;
   center: Vec;
   target: Vec;
-  /** Центр, у якому кадр поставлено (щоб не переставляти нерухомий стілець щокадру). */
+  /** Центр, у якому кадр поставлено, і чи на ньому сиділи (щоб не переставляти нерухомий стілець щокадру). */
   placed: Vec;
+  sitting: boolean;
 }
 
 /** Сегмент внутрішньої стіни чи переднього плінтуса. */
@@ -149,7 +151,7 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly boxesFront: { piece: Piece; point: IsoPointHandle };
   private readonly chairs: Chair[] = [];
   /** Куди стає шматок стільця в реєстрі глибини (`seatSpot`): один на всі, щоб не виділяти щокадру. */
-  private readonly seatSpot: SeatSpot = { x: 0, y: 0, box: null, under: false };
+  private readonly seatSpot: SeatSpot = { x: 0, y: 0, box: null, under: false, above: false };
   /** Час минулого кадру, мс: від нього — швидкість згасання стін. */
   private lastTime: number | null = null;
 
@@ -209,7 +211,7 @@ export class IsoApartmentView implements ApartmentPart {
       return { image, point: this.depth.addPoint((d) => image.setDepth(d), { half: CHAIR_HALF }) };
     };
     const center = seatAt(seat, "tucked");
-    return { seat, pieces: { seat: piece("seat"), backrest: piece("backrest") }, center, target: { ...center }, placed: { x: Number.NaN, y: Number.NaN } };
+    return { seat, pieces: { seat: piece("seat"), backrest: piece("backrest") }, center, target: { ...center }, placed: { x: Number.NaN, y: Number.NaN }, sitting: false };
   }
 
   /** Шматки відчинених дверей (`OpenDoor`): поки двері зачинені, їхніх коробок у порядку немає. */
@@ -328,22 +330,27 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Стільці: засунуті до стола, висунуті під того, хто сідає, чи відкочені (`seatMode`) — їдуть туди плавно, з тією самою
-   * швидкістю, з якою персонаж переходить до місця справи (`glideOffset`), тож таз опускається на сидіння, а не поруч.
+   * Стільці: засунуті до стола чи висунуті під того, хто сідає (`seatMode`), — їдуть туди плавно, удвічі швидше, ніж персонаж
+   * переходить до місця справи (`SEAT_GLIDE_RATE`, `glideOffset`): стілець уже під ним, коли таз опускається. Спинка висунутого
+   * стільця, на якому сидять, — над тим, хто сидить (`SeatSpot.above`).
    */
   private moveChairs(state: GameState, seconds: number): void {
     for (const chair of this.chairs) {
-      seatAt(chair.seat, seatMode(state, chair.seat), chair.target);
-      glideOffset(chair.center, chair.target, seconds, chair.center);
-      if (chair.center.x === chair.placed.x && chair.center.y === chair.placed.y) continue;
+      const mode = seatMode(state, chair.seat);
+      seatAt(chair.seat, mode, chair.target);
+      glideOffset(chair.center, chair.target, seconds, chair.center, SEAT_GLIDE_RATE);
+      const sitting = mode === "pulled";
+      if (chair.center.x === chair.placed.x && chair.center.y === chair.placed.y && chair.sitting === sitting) continue;
       chair.placed.x = chair.center.x;
       chair.placed.y = chair.center.y;
+      chair.sitting = sitting;
       const at = ISO.toScreen(chair.center);
       for (const part of ["seat", "backrest"] as const) {
         const piece = chair.pieces[part];
         piece.image.setPosition(at.x, at.y);
-        const spot = seatSpot(chair.seat, chair.center, part, this.seatSpot);
-        if (spot.box === null) piece.point.place(spot.x, spot.y);
+        const spot = seatSpot(chair.seat, chair.center, part, this.seatSpot, sitting);
+        if (spot.above) piece.point.placeAbove("person", PERSON_DEPTH.backrest);
+        else if (spot.box === null) piece.point.place(spot.x, spot.y);
         else if (spot.under) piece.point.placeUnder(spot.x, spot.y, spot.box);
         else piece.point.place(spot.x, spot.y, spot.box);
       }

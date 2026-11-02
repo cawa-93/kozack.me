@@ -13,6 +13,7 @@ import { framesOf } from "../src/view/art/types";
 import {
   SEAT_AT_EDGE,
   SEAT_DEPTH,
+  SEAT_GLIDE_RATE,
   SEAT_TUCK_GAP,
   seatAt,
   seatEdge,
@@ -23,7 +24,7 @@ import {
   type Seat,
   type SeatSpot,
 } from "../src/view/iso/personseat";
-import { wireFixSpot } from "../src/view/iso/personspot";
+import { GLIDE_RATE, glideOffset, wireFixSpot } from "../src/view/iso/personspot";
 import { PERSON_SEAT } from "../src/view/rig/anims/person/chores";
 import { isoOrder, type IsoPoint } from "../src/view/world/isoorder";
 import { isoObjectLook } from "../src/view/world/objects";
@@ -37,8 +38,8 @@ const desk = seat("chair-desk");
 const kitchen = seat("chair-kitchen");
 
 /** Шматок стільця в реєстрі глибини (`seatSpot`). */
-const spotOf = (chair: Seat, center: { x: number; y: number }, part: "seat" | "backrest"): SeatSpot =>
-  seatSpot(chair, center, part, { x: 0, y: 0, box: null, under: false });
+const spotOf = (chair: Seat, center: { x: number; y: number }, part: "seat" | "backrest", sitting = false): SeatSpot =>
+  seatSpot(chair, center, part, { x: 0, y: 0, box: null, under: false, above: false }, sitting);
 
 /** Півширина стільця на екрані (`CHAIR_HALF` в `iso/apartment.ts`), одиниці арту. */
 const CHAIR_HALF = 44;
@@ -211,7 +212,49 @@ describe("стільці: глибина проти того, хто сидит�
         const back = spotOf(chair, center, "backrest");
         const ahead = back.box === null && back.x + back.y > use.at.x + use.at.y;
         expect(order.indexOf(2) > order.indexOf(3), `${chair.id} t ${t.toFixed(2)}`).toBe(ahead);
+        // Сидячи — та сама межа: спинка, не ближча до стола за місце, де сидять, — просто над тим, хто сидить.
+        const sitting = spotOf(chair, center, "backrest", true);
+        const past = (center.x - use.at.x) * use.facing.x + (center.y - use.at.y) * use.facing.y <= SEAT_DEPTH.backrest + 1e-9;
+        expect(sitting.above, `${chair.id} t ${t.toFixed(2)}`).toBe(past);
+        // Ще не над ним — і в порядку за місцем, де сидять (спинка ніколи не опиняється за тим, хто вже сидить).
+        if (!sitting.above) expect(ahead, `${chair.id} t ${t.toFixed(2)}`).toBe(false);
+        // Сидіння й стілець, на якому не сидять, — ніколи не над персонажем.
+        expect(spotOf(chair, center, "seat", true).above).toBe(false);
+        expect(back.above).toBe(false);
       }
+    }
+  });
+
+  it("сідає: стілець — під ним за ≈ 0,1 с, удвічі швидше, ніж він переходить на місце; спинка відтоді — над ним до кінця", () => {
+    expect(SEAT_GLIDE_RATE).toBeGreaterThanOrEqual(2 * GLIDE_RATE);
+    for (const chair of SEATS) {
+      const use = isoObjectLook(chair.object).use!;
+      const from = seatAt(chair, "tucked");
+      const center = { ...from };
+      const target = seatAt(chair, "pulled");
+      const path = Math.hypot(target.x - from.x, target.y - from.y);
+      let above = false;
+      for (let frame = 1; frame <= 60; frame++) {
+        glideOffset(center, target, 1 / 60, center, SEAT_GLIDE_RATE);
+        const spot = spotOf(chair, center, "backrest", true);
+        // Спинка, що вже над тим, хто сидить, — над ним і далі (не стрибає за нього й назад).
+        if (above) expect(spot.above, `${chair.id} кадр ${frame}`).toBe(true);
+        above = spot.above;
+        // За 6 кадрів (0,1 с) — далі за 90 % шляху; спинка тоді вже над тим, хто сидить.
+        if (frame === 6) {
+          expect(Math.hypot(target.x - center.x, target.y - center.y), chair.id).toBeLessThan(path * 0.1);
+          expect(spot.above, chair.id).toBe(true);
+        }
+      }
+      expect(Math.hypot(center.x - use.at.x, center.y - use.at.y)).toBeLessThan(1e-3);
+    }
+  });
+
+  it("персонаж устав — стілець засувають, і спинка знову за своєю точкою (не над ним)", () => {
+    for (const chair of SEATS) {
+      const center = seatAt(chair, "pulled");
+      expect(spotOf(chair, center, "backrest", true).above, chair.id).toBe(true);
+      expect(spotOf(chair, center, "backrest", false).above, chair.id).toBe(false);
     }
   });
 

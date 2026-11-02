@@ -161,15 +161,15 @@ export const GLIDE_RATE = 12;
 export const GLIDE_JUMP = 3;
 
 /**
- * Зсув вигляду від точки тіла до місця справи (`offset` → `target`, клітинки) за `seconds`: плавно, експонентою. Зсув, а не
- * точка: без справи він згасає до нуля, тож персонаж, що йде, не відстає від тіла. Пише новий зсув в `out` (може бути сам
- * `offset`) і повертає його.
+ * Зсув вигляду від точки тіла до місця справи (`offset` → `target`, клітинки) за `seconds`: плавно, експонентою (`rate` —
+ * частка відстані за секунду; стілець їде швидше, `SEAT_GLIDE_RATE`). Зсув, а не точка: без справи він згасає до нуля, тож
+ * персонаж, що йде, не відстає від тіла. Пише новий зсув в `out` (може бути сам `offset`) і повертає його.
  */
-export function glideOffset(offset: Vec, target: Vec, seconds: number, out: Vec = { x: 0, y: 0 }): Vec {
+export function glideOffset(offset: Vec, target: Vec, seconds: number, out: Vec = { x: 0, y: 0 }, rate: number = GLIDE_RATE): Vec {
   const dx = target.x - offset.x;
   const dy = target.y - offset.y;
   const gap = Math.hypot(dx, dy);
-  const k = gap > GLIDE_JUMP || seconds >= 1 || gap < 1e-3 ? 1 : 1 - Math.exp(-GLIDE_RATE * Math.max(0, seconds));
+  const k = gap > GLIDE_JUMP || seconds >= 1 || gap < 1e-3 ? 1 : 1 - Math.exp(-rate * Math.max(0, seconds));
   out.x = k === 1 ? target.x : offset.x + dx * k;
   out.y = k === 1 ? target.y : offset.y + dy * k;
   return out;
