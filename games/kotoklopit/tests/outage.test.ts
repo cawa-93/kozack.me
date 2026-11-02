@@ -15,6 +15,7 @@ import { ROBOT_DOCK, robotAt, robotProgress, tapWasher, tickHousehold, topUpTuft
 import { powerOut } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { targetOf } from "../src/sim/targets";
 import type { Save, StatName } from "../src/sim/types";
 import { isWorking, patienceLevel, standupToday, startWork, tickWork } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
@@ -315,6 +316,39 @@ describe("«Планове відключення» — день без світ
     expect(refusalAt(save, "washer")).toMatchObject({ reason: "washing" });
     for (let m = 13 * 60; m < 13 * 60 + 31; m++) tickHousehold(save.current, m, 1);
     expect(save.current.home.washer.state).toBe("done");
+  });
+
+  it("сценарій «Холодний душ» (`scenarios/power-outage-shower.json`): персонажка в кабіні без світла — над нею «холодна вода», за 5 хвилин виходить із +48 гігієни й стоїть біля кабіни", () => {
+    const scenario = FILE_SCENARIOS["power-outage-shower"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(powerOut(save.current)).toBe(true);
+    expect(showerIcon(save.current.character.activity, false)).toBe("cold-water");
+    const { events, stop } = recordEvents();
+    let minutes = 0;
+    while (save.current.character.activity !== null && minutes < 30) {
+      advance(save, 0.5);
+      minutes += 0.5;
+    }
+    stop();
+    expect(minutes).toBe(5);
+    expect(events.find((e) => e.type === "showered")).toMatchObject({ hygiene: SHOWER_HYGIENE.cheap * 0.8, quality: "cheap", cold: true });
+    expect(targetOf(save.current)?.id).toBe("shower");
+  });
+
+  it("сценарій «Пральна машина без світла» (`scenarios/power-outage-washer.json`): одяг брудний, засіб є — біля машини відмова «немає світла»", () => {
+    const scenario = FILE_SCENARIOS["power-outage-washer"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    expect(powerOut(save.current)).toBe(true);
+    expect(save.current.home.clothes).toBe(0);
+    expect(targetOf(save.current)?.id).toBe("washer");
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(events.find((e) => e.type === "refused")).toMatchObject({ object: "washer", reason: "no-power" });
+    expect(supplyCount(save.current, "detergent")).toBe(2);
+    expect(save.current.home.washer.state).toBe("idle");
   });
 
   it("робот-пилосос о 12:00 не виїжджає: стоїть на базі, шерсть лежить, шуму немає", () => {
