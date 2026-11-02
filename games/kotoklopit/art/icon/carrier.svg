@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/carrier — переноска: червона пластикова переноска спереду — ґратчасті дверцята з темним нутром і гірчичною засувкою, згори ручка дугою, як item/carrier/premium. Іконки речей магазину (GAME_DESIGN §11.4 «Іконка біля назви», рішення автора 2026-11-02), art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Біля назви «Переноска» в магазині (THING_ICONS, symbols.ts). Від коробок (box, cat-box, empty) — пластиком, ручкою й ґратами з темним нутром; від пральної машини (washer) — ґратами замість круглого вікна.
+-->
+<defs>
+<clipPath id="icon-carrier-body"><path d="M14.4 19.6Q32 18.6 49.6 19.6Q54.2 20.4 55.6 27.4Q56.2 41.4 55.2 54.2Q32 55 8.8 54.2Q7.8 41.4 8.4 27.4Q9.8 20.4 14.4 19.6Z"/></clipPath>
+<clipPath id="icon-carrier-door"><path d="M15.6 32Q32 31.4 48.4 32Q49.2 41 48.6 50.4Q32 51 15.4 50.4Q14.8 41 15.6 32Z"/></clipPath>
+</defs>
+<g id="p-handle">
+<path d="M22.6 22.6Q21.8 9.8 32 9.6Q42.2 9.8 41.4 22.6" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.6 22.6Q21.8 9.8 32 9.6Q42.2 9.8 41.4 22.6" fill="none" stroke="#6d6266" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-body">
+<path d="M14.4 19.6Q32 18.6 49.6 19.6Q54.2 20.4 55.6 27.4Q56.2 41.4 55.2 54.2Q32 55 8.8 54.2Q7.8 41.4 8.4 27.4Q9.8 20.4 14.4 19.6Z" fill="#c4524b"/>
+<path d="M2 47.4Q32 50.6 62 47.4L62 62L2 62Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-carrier-body)"/>
+<path d="M14.4 19.6Q32 18.6 49.6 19.6Q54.2 20.4 55.6 27.4Q32 28.6 8.4 27.4Q9.8 20.4 14.4 19.6Z" fill="#dc7c69"/>
+<path d="M8.4 27.4Q32 28.6 55.6 27.4" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-door">
+<path d="M15.6 32Q32 31.4 48.4 32Q49.2 41 48.6 50.4Q32 51 15.4 50.4Q14.8 41 15.6 32Z" fill="#4b4146"/>
+<path d="M14 31L50 31L50 36.4Q32 34.8 14 36.4Z" fill="#3f2541" fill-opacity="0.5" clip-path="url(#icon-carrier-door)"/>
+<path d="M21.6 32.8L21.4 49.8" fill="none" stroke="#cdc6be" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.9 32.8L27.4 49.8" fill="none" stroke="#cdc6be" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.4 32.8L33.2 49.8" fill="none" stroke="#cdc6be" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.5 32.8L39 49.8" fill="none" stroke="#cdc6be" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.6 32Q32 31.4 48.4 32Q49.2 41 48.6 50.4Q32 51 15.4 50.4Q14.8 41 15.6 32Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44 38Q47.4 37.8 51 38.2Q51.2 41.4 51 44.6Q47.4 45 44 44.8Z" fill="#d4a54c"/>
+<path d="M44 38Q47.4 37.8 51 38.2Q51.2 41.4 51 44.6Q47.4 45 44 44.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M14.4 19.6Q32 18.6 49.6 19.6Q54.2 20.4 55.6 27.4Q56.2 41.4 55.2 54.2Q32 55 8.8 54.2Q7.8 41.4 8.4 27.4Q9.8 20.4 14.4 19.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.8 54.2Q32 55 55.2 54.2" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

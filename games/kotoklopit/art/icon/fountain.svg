@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/fountain — фонтанчик для води: сіра поїлка з водою, посередині білий купол із синім носиком, з нього дугою праворуч б'є струмінь у воду, як item/fountain/cheap на поїлці. Іконки речей магазину (GAME_DESIGN §11.4 «Іконка біля назви», рішення автора 2026-11-02), art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Біля назви «Фонтанчик для води» в магазині (THING_ICONS, symbols.ts). Та сама поїлка, що water-bowl: фонтанчик ставлять на неї. Від icon/drink (спрага: крапля падає згори в миску) — куполом і дугою струменя, що б'є вгору й убік; від icon/drop — миска з куполом, а не сама крапля.
+-->
+<defs>
+<clipPath id="icon-fountain-body"><path d="M8 40C8 35.9 18.3 32.6 31 32.6C43.7 32.6 54 35.9 54 40C53.4 47.5 48.5 54.5 44.5 55Q31 55.7 17.5 55C13.5 54.5 8.6 47.5 8 40Z"/></clipPath>
+<clipPath id="icon-fountain-dome"><path d="M18.6 42.4Q18.8 30.4 31 29.6Q43.2 30.4 43.4 42.4Q31 44.6 18.6 42.4Z"/></clipPath>
+</defs>
+<g id="p-bowl">
+<path d="M8 40C8 35.9 18.3 32.6 31 32.6C43.7 32.6 54 35.9 54 40C53.4 47.5 48.5 54.5 44.5 55Q31 55.7 17.5 55C13.5 54.5 8.6 47.5 8 40Z" fill="#a69f9b"/>
+<path d="M2 55Q32 59.5 62 55L62 64L2 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-fountain-body)"/>
+<path d="M54 40C54 44.1 43.7 47.4 31 47.4C18.3 47.4 8 44.1 8 40C8 35.9 18.3 32.6 31 32.6C43.7 32.6 54 35.9 54 40Z" fill="#cdc6be"/>
+<path d="M54 40C54 44.1 43.7 47.4 31 47.4C18.3 47.4 8 44.1 8 40L8.8 43.2C8.8 47.3 18.7 50.6 31 50.6C43.3 50.6 53.2 47.3 53.2 43.2Z" fill="#cdc6be"/>
+<path d="M9.2 44.6C11.2 48.1 20.3 50.6 31 50.6C41.7 50.6 50.8 48.1 52.8 44.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 41C50 44.2 41.5 46.7 31 46.7C20.5 46.7 12 44.2 12 41C12 37.8 20.5 35.3 31 35.3C41.5 35.3 50 37.8 50 41Z" fill="#a69f9b"/>
+<path d="M50 41C50 44.2 41.5 46.7 31 46.7C20.5 46.7 12 44.2 12 41C12 37.8 20.5 35.3 31 35.3C41.5 35.3 50 37.8 50 41Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M49.6 42.5C49.6 45.3 41.3 47.6 31 47.6C20.7 47.6 12.4 45.3 12.4 42.5C12.4 39.7 20.7 37.4 31 37.4C41.3 37.4 49.6 39.7 49.6 42.5Z" fill="#5f9089"/>
+<path d="M13.3 40.9C15.8 38.8 22.9 37.4 31 37.4C39.1 37.4 46.2 38.8 48.7 40.9" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M50 41C50 44.2 41.5 46.7 31 46.7C20.5 46.7 12 44.2 12 41C12 37.8 20.5 35.3 31 35.3C41.5 35.3 50 37.8 50 41Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M8 40C8 35.9 18.3 32.6 31 32.6C43.7 32.6 54 35.9 54 40C53.4 47.5 48.5 54.5 44.5 55Q31 55.7 17.5 55C13.5 54.5 8.6 47.5 8 40Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.5 55Q31 55.7 44.5 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-dome">
+<path d="M15.4 43.6Q17.7 45.3 20.4 44.2Q18 43.3 15.4 43.6Z" fill="#8bb3aa"/>
+<path d="M42.4 44.2Q45 44.4 47.4 43.4Q44.7 42.4 42.4 44.2Z" fill="#8bb3aa"/>
+<path d="M18.6 42.4Q18.8 30.4 31 29.6Q43.2 30.4 43.4 42.4Q31 44.6 18.6 42.4Z" fill="#f2e9d4"/>
+<path d="M14 37.6Q30 40.6 46 37.6L46 46L14 46Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-fountain-dome)"/>
+<path d="M18.6 42.4Q18.8 30.4 31 29.6Q43.2 30.4 43.4 42.4Q31 44.6 18.6 42.4Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.6 30.6Q27.4 25.4 31 25.2Q34.6 25.4 34.4 30.6Z" fill="#6c84a3"/>
+<path d="M27.6 30.6Q27.4 25.4 31 25.2Q34.6 25.4 34.4 30.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-jet">
+<path d="M34.1 26.5L35.1 24.6L36.1 23L37.1 21.7L38 20.6L38.8 19.8L39.6 19.2L40.1 18.9L40.5 18.9L40.6 18.9L40.6 19L40.6 19L40.8 19.1L41.1 19.4L41.7 19.8L42.4 20.5L43.2 21.5L44.1 22.7L45.1 24.1L46.1 25.8L47.1 27.7L48.2 29.9L49.3 32.3L50.4 34.9L51.6 37.8L54.4 37L53.8 33.9L53.2 31L52.5 28.3L51.9 25.9L51.2 23.6L50.4 21.5L49.6 19.6L48.8 17.9L47.9 16.3L46.8 15L45.7 13.8L44.3 12.9L42.8 12.2L41 11.9L39.3 12.1L37.8 12.7L36.4 13.7L35.3 14.8L34.3 16.1L33.5 17.6L32.7 19.2L32 21L31.4 23L30.7 25.1Z" fill="#8bb3aa"/>
+<path d="M34.1 26.5L35.1 24.6L36.1 23L37.1 21.7L38 20.6L38.8 19.8L39.6 19.2L40.1 18.9L40.5 18.9L40.6 18.9L40.6 19L40.6 19L40.8 19.1L41.1 19.4L41.7 19.8L42.4 20.5L43.2 21.5L44.1 22.7L45.1 24.1L46.1 25.8L47.1 27.7L48.2 29.9L49.3 32.3L50.4 34.9L51.6 37.8L54.4 37L53.8 33.9L53.2 31L52.5 28.3L51.9 25.9L51.2 23.6L50.4 21.5L49.6 19.6L48.8 17.9L47.9 16.3L46.8 15L45.7 13.8L44.3 12.9L42.8 12.2L41 11.9L39.3 12.1L37.8 12.7L36.4 13.7L35.3 14.8L34.3 16.1L33.5 17.6L32.7 19.2L32 21L31.4 23L30.7 25.1Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M54.6 31.4Q57 30.1 57.2 27.4Q54.8 28.7 54.6 31.4Z" fill="#8bb3aa"/>
+<path d="M54.6 31.4Q57 30.1 57.2 27.4Q54.8 28.7 54.6 31.4Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48 33.6Q48.1 30.9 46 29.2Q45.9 31.9 48 33.6Z" fill="#8bb3aa"/>
+<path d="M48 33.6Q48.1 30.9 46 29.2Q45.9 31.9 48 33.6Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>
