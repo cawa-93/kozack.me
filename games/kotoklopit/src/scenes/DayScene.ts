@@ -23,6 +23,7 @@ import { isWorking, isWorkday, isWorkTime, patienceLevel, workGoesOn } from "../
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
+import { diseaseLabel } from "../ui/icons";
 import { answerCall, decideFoundling, ignoreCall, internetOut } from "../sim/modifiers";
 import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
@@ -893,11 +894,11 @@ export class DayScene extends Phaser.Scene {
         return;
       case "home-vet": {
         // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12); хвороби — id:
-        // назви й поради до них дає `homeVetText`.
+        // назви (з іконкою, як у ветеринара, — §11.4 «Іконка біля назви») й поради до них дає `homeVetText`.
         const cats = this.state.cats
           .filter((c) => c.away === null)
           .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => d.id), manner: vetManner(c) }));
-        this.notice("Заходила ветеринарка", homeVetText(cats));
+        this.notice("Заходила ветеринарка", homeVetText(cats, diseaseLabel));
         return;
       }
       case "inspection": {

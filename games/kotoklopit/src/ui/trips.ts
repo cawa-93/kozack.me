@@ -7,7 +7,8 @@ import { visibility } from "../sim/knowledge";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { DESTINATION_TITLES } from "../scenes/RaceScene";
-import { accidentLines, BREED_ABOUT, diseaseTitle, fill, GROOMED, ILLNESS_TITLES, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
+import { accidentLines, BREED_ABOUT, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
+import { diseaseLabel, illnessLabel } from "./icons";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import type { CartLine } from "../sim/shop";
@@ -188,8 +189,9 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       // Як кіт поводився на огляді (§9.12): спокійний, шипів чи вирвався.
       if (log.exam.manner) body.push(fill(VET_MANNER.vet[log.exam.manner], cat.sex, { кіт: cat.name }));
       const known = cat.diseases.filter((d) => d.known);
-      // Вилікуване цієї поїздки зникає зі списку: без рядка картка казала б «хвороб не знайдено», ніби їх і не було.
-      const cured = log.done.filter((x) => x.endsWith(":cured")).map((x) => diseaseTitle(x.split(":")[0] ?? "").toLowerCase());
+      // Вилікуване цієї поїздки зникає зі списку: без рядка картка казала б «хвороб не знайдено», ніби їх і не було. Назви — з
+      // іконкою, як і в рядках хвороб (§11.4 «Іконка біля назви»).
+      const cured = log.done.filter((x) => x.endsWith(":cured")).map((x) => diseaseLabel(x.split(":")[0] ?? "").toLowerCase());
       if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
       else if (known.length === 0) body.push("Хвороб не знайдено.");
       if (cat.pregnancy?.known) body.push(`${cat.name} вагітна.`);
@@ -197,10 +199,11 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       const sterilize = sterilizeRow();
       if (sterilize) body.push(sterilize);
       const list = element("div", "shop");
+      // Біля назви хвороби — та сама іконка, що в баблі, яким кіт про неї сигналізує (§11.4 «Іконка біля назви»).
       for (const d of known) {
         // Ожиріння грошима не лікують — лише дієта й ігри (§9.12, «Схильність до повноти»).
         if (DISEASES[d.id].cure.kind === "weight") {
-          list.append(advised(row(diseaseTitle(d.id), "дієта й ігри"), d.id));
+          list.append(advised(row(diseaseLabel(d.id), "дієта й ігри"), d.id));
           continue;
         }
         const chronic = DISEASES[d.id].cure.kind === "control";
@@ -220,7 +223,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
                   : `🕐 ${minutesText(VET.treatMinutes)}`;
         list.append(
           advised(row(
-            diseaseTitle(d.id),
+            diseaseLabel(d.id),
             note,
             button(priced(SERVICE_TITLES.treat.cheap, VET.cheap), VET.cheap, () => h.treat(d.id, "cheap"), result === "controlled" || result === "failed" || left > VET.controlDays.cheap),
             button(priced(SERVICE_TITLES.treat.premium, VET.premium), VET.premium, () => h.treat(d.id, "premium"), result === "controlled" || result === "failed" || left > VET.controlDays.premium),
@@ -237,18 +240,19 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       // Що дало лікування цієї поїздки, як і у ветеринара: інакше вилікуване зникало, і картка казала «нічого серйозного»,
       // а після невдалого дешевого не змінювалася зовсім (перевірка поїздок 2026-10-28).
       const results = log.done.filter((x) => x.startsWith("self:")).map((x) => x.split(":") as [string, IllnessId, string]);
-      const cured = results.filter(([, , result]) => result === "cured").map(([, id]) => ILLNESS_TITLES[id].toLowerCase());
+      const cured = results.filter(([, , result]) => result === "cured").map(([, id]) => illnessLabel(id).toLowerCase());
       if (cured.length > 0) body.push(`Вилікувано: ${cured.join(", ")}.`);
       else if (ill.length === 0) body.push("Лікар вислухав вас: нічого серйозного.");
       const list = element("div", "shop");
       // Прийом — година на всі хвороби (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): коли лікар цієї поїздки вже
       // лікував, часу в рядках не пишуть.
       const time = trip?.visit ? "" : `🕐 ${minutesText(TRIPS.doctor.visit)}`;
+      // Біля назви хвороби — та сама іконка, що у відмові ривка (§11.4 «Іконка біля назви»).
       for (const i of ill) {
         const failed = results.filter(([, id]) => id === i.id).at(-1)?.[2] === "failed";
         list.append(
           row(
-            ILLNESS_TITLES[i.id],
+            illnessLabel(i.id),
             failed ? NO_RETRY : time,
             button(priced(SERVICE_TITLES.treat.cheap, DOCTOR_TREAT.cheap), DOCTOR_TREAT.cheap, () => h.treatSelf(i.id, "cheap"), failed),
             button(priced(SERVICE_TITLES.treat.premium, DOCTOR_TREAT.premium), DOCTOR_TREAT.premium, () => h.treatSelf(i.id, "premium"), failed),
@@ -303,7 +307,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       if (log.done.includes("groom")) {
         body.push(fill(GROOMED[washes ? "hairless" : "coat"], cat.sex, { кіт: cat.name }));
         // Дорогий грумер вилікував дерматит, про який знали з огляду (§8.5; рецензія реалізації А15) — як у ветеринара.
-        if (log.done.includes("dermatitis:cured")) body.push(`Вилікувано: ${diseaseTitle("dermatitis").toLowerCase()}.`);
+        if (log.done.includes("dermatitis:cured")) body.push(`Вилікувано: ${diseaseLabel("dermatitis").toLowerCase()}.`);
         const manner = vetManner(cat);
         if (manner) body.push(fill(VET_MANNER[washes ? "wash" : "groomer"][manner], cat.sex, { кіт: cat.name }));
         break;

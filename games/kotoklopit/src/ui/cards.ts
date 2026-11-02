@@ -35,7 +35,7 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
-import { thingLabel } from "./icons";
+import { diseaseLabel, thingLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog } from "./shop";
 import type { CartLine } from "../sim/shop";
@@ -120,7 +120,8 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   for (const id of night?.lostCats ?? []) {
     const entry = state.album.find((e) => e.id === id);
     if (!entry) continue;
-    const text = farewellText(entry, diseaseTitle);
+    // Хвороба, від якої кіт помер, — з іконкою, як у ветеринара (§11.4 «Іконка біля назви»).
+    const text = farewellText(entry, diseaseLabel);
     // На прощанні відкривається весь характер кота (§9.7): риси з описом по дотику. «Прощавай, {кіт}» вимагало б кличного відмінка.
     events.push([`Прощання: ${entry.name}`, text.cause, `«${text.title}». ${text.life}`, ...(entry.traits.length > 0 ? [traitChips(entry.traits, entry.sex)] : [])]);
   }
@@ -368,8 +369,9 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
     if (isNursing(state, cat)) states.push("годує кошенят");
     if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
     if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
-    const found = cat.diseases.filter((d) => d.known).map((d) => diseaseTitle(d.id));
-    // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-28).
+    const found = cat.diseases.filter((d) => d.known).map((d) => diseaseLabel(d.id));
+    // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-28), з іконкою, як у
+    // ветеринара (§11.4 «Іконка біля назви»).
     if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
     // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
     const known = cat.traits.filter((t) => visibility(state, t) === 3);
@@ -410,18 +412,18 @@ const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: 
 
 /**
  * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
- * «хвороба «Хвороба серця»»).
+ * «хвороба «Хвороба серця»»). `title` — назва хвороби: в альбомі — з іконкою (`diseaseLabel`, §11.4 «Іконка біля назви»).
  */
-export function albumCause(entry: AlbumEntry): string {
-  return entry.cause.kind === "disease" ? diseaseTitle(entry.cause.disease).toLowerCase() : (CAUSE_TITLES[entry.cause.kind] ?? "");
+export function albumCause(entry: AlbumEntry, title: (id: string) => string = diseaseTitle): string {
+  return entry.cause.kind === "disease" ? title(entry.cause.disease).toLowerCase() : (CAUSE_TITLES[entry.cause.kind] ?? "");
 }
 
 /** Альбом пам'яті (§9.7): ім'я, вік, усі риси, причина й опис життя. */
 function albumCards(state: GameState): (string | HTMLElement)[] {
   if (state.album.length === 0) return ["Альбом поки порожній."];
   return [...state.album].reverse().map((entry) => {
-    const text = farewellText(entry, diseaseTitle);
-    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry)}`, `«${text.title}». ${text.life}`);
+    const text = farewellText(entry, diseaseLabel);
+    const card = note(`${entry.name}, ${weeks(entry.ageWeeks)} — ${albumCause(entry, diseaseLabel)}`, `«${text.title}». ${text.life}`);
     card.append(entry.traits.length > 0 ? traitChips(entry.traits, entry.sex) : element("p", "trait-about", "Без помітних рис."));
     return card;
   });

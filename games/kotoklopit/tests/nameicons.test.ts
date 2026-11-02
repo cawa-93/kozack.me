@@ -4,13 +4,16 @@
 
 import { describe, expect, it } from "vitest";
 
+import { DISEASES, ILLNESSES } from "../src/sim/config";
 import { GOODS, goodsKey } from "../src/sim/shop";
-import type { Product, ThingKind } from "../src/sim/types";
-import { iconMark, iconUrl, named, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
+import type { AlbumEntry, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
+import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES } from "../src/texts";
+import { albumCause } from "../src/ui/cards";
+import { diseaseLabel, iconMark, iconUrl, illnessLabel, named, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
 import { goodsIcon, goodsLabel } from "../src/ui/shop";
 import { PRODUCT_TITLES, THING_TITLES } from "../src/ui/titles";
 import { ICON_NAMES, type IconName } from "../src/view/iconnames";
-import { eventBubbles, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
+import { DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
 
 /** Перша іконка в тексті з позначками. */
 const iconOf = (text: string): IconName | undefined => splitIcons(text).find((p): p is Exclude<IconPart, string> => typeof p !== "string")?.icon;
@@ -101,5 +104,61 @@ describe("іконка біля назви: магазин (§6.4)", () => {
     expect(goodsIcon({ thing: "bowl" })).toBe("food-bowl");
     expect(goodsIcon({ thing: "litter" })).toBe("litter-box");
     expect(goodsIcon({ thing: "feeder" })).toBe("kibble-pour");
+  });
+});
+
+describe("іконка біля назви: ветеринар і лікар (§8.5, §6.5)", () => {
+  const diseases = Object.keys(DISEASES) as DiseaseId[];
+  const illnesses = Object.keys(ILLNESSES) as IllnessId[];
+
+  it("біля кожної хвороби кота — її іконка (DISEASE_ICONS), назва та сама", () => {
+    expect(diseases.length).toBe(15);
+    for (const id of diseases) {
+      expect(iconOf(diseaseLabel(id)), id).toBe(DISEASE_ICONS[id]);
+      expect(plain(diseaseLabel(id)), id).toBe(diseaseTitle(id));
+      expect(iconUrl(DISEASE_ICONS[id]), id).not.toBeNull();
+    }
+    // Невідома хвороба — без іконки, як і без назви.
+    expect(diseaseLabel("no-such")).toBe("no-such");
+  });
+
+  it("у ветеринара — та сама іконка, що в баблі-ознаці кота: чхання, «свербить» (блохи й дерматит), очі, крик болю", () => {
+    const bubble = (symptom: "sneeze" | "itch" | "eyes" | "pain"): IconName | undefined => eventBubbles({ type: "symptom", cat: 1, symptom })[0]?.icon;
+    expect(iconOf(diseaseLabel("cold"))).toBe(bubble("sneeze"));
+    expect(iconOf(diseaseLabel("fleas"))).toBe(bubble("itch"));
+    expect(iconOf(diseaseLabel("dermatitis"))).toBe(bubble("itch"));
+    expect(iconOf(diseaseLabel("conjunctivitis"))).toBe(bubble("eyes"));
+    expect(iconOf(diseaseLabel("urolithiasis"))).toBe(bubble("pain"));
+  });
+
+  it("біля кожної хвороби персонажа в лікаря — іконка його відмови ривка", () => {
+    for (const id of illnesses) {
+      expect(iconOf(illnessLabel(id)), id).toBe(ILLNESS_ICONS[id]);
+      expect(plain(illnessLabel(id)), id).toBe(ILLNESS_TITLES[id]);
+    }
+    expect(iconOf(illnessLabel("cold"))).toBe(refusalBubble({ reason: "cold" }).icon);
+    expect(iconOf(illnessLabel("exhaustion"))).toBe(refusalBubble({ reason: "weak" }).icon);
+    expect(iconOf(illnessLabel("injury"))).toBe(refusalBubble({ reason: "injured" }).icon);
+  });
+
+  it("«Заходила ветеринарка»: ті самі слова, біля кожної хвороби — її іконка", () => {
+    const cats = [
+      { name: "Мурка", sex: "female" as const, diseases: ["fleas", "heart"], manner: null },
+      { name: "Барсик", sex: "male" as const, diseases: [], manner: null },
+    ];
+    const text = homeVetText(cats, diseaseLabel);
+    expect(plain(text)).toBe(homeVetText(cats));
+    const icons = splitIcons(text).flatMap((p) => (typeof p === "string" ? [] : [p.icon]));
+    expect(icons).toEqual([DISEASE_ICONS.fleas, DISEASE_ICONS.heart]);
+  });
+
+  it("альбом і прощання: хвороба, від якої кіт помер, — з тією самою іконкою, слова ті самі", () => {
+    const entry = { id: 3, name: "Мурка", sex: "female", lifeMood: 60, cause: { kind: "disease", disease: "heart" } } as AlbumEntry;
+    expect(iconOf(albumCause(entry, diseaseLabel))).toBe(DISEASE_ICONS.heart);
+    expect(plain(albumCause(entry, diseaseLabel))).toBe(albumCause(entry));
+    expect(iconOf(farewellText(entry, diseaseLabel).cause)).toBe(DISEASE_ICONS.heart);
+    expect(plain(farewellText(entry, diseaseLabel).cause)).toBe(farewellText(entry, diseaseTitle).cause);
+    // Старість — без іконки.
+    expect(albumCause({ ...entry, cause: { kind: "old" } }, diseaseLabel)).toBe("старість");
   });
 });

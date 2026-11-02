@@ -743,11 +743,15 @@ export function guestsText(visit: GuestsVisit | undefined): string {
 /**
  * Повідомлення «Заходила ветеринарка» (§4.1, рішення автора 2026-10-27, Х7): вона оглядає котів, що вдома, — хвороби
  * кожного (назвами, `diseases` — id хвороб), порада до кожної знайденої хвороби (`VET_ADVICE`, Д2; однакова хвороба в кількох
- * котів — одна порада, загальна ревізія 2026-10-29) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`).
+ * котів — одна порада, загальна ревізія 2026-10-29) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`). `title` —
+ * назва хвороби: у картці — з іконкою (`diseaseLabel`, `src/ui/icons.ts`; §11.4 «Іконка біля назви»).
  */
-export function homeVetText(cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[]): string {
+export function homeVetText(
+  cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[],
+  title: (id: string) => string = diseaseTitle,
+): string {
   const [only] = cats;
-  const titles = (c: { diseases: readonly string[] }): string => c.diseases.map(diseaseTitle).join(", ").toLowerCase();
+  const titles = (c: { diseases: readonly string[] }): string => c.diseases.map((id) => title(id)).join(", ").toLowerCase();
   const found = cats.length === 1 && only
     ? `${only.name}: ${only.diseases.length > 0 ? `знайшла — ${titles(only)}` : "хвороб не знайшла"}.`
     : homeVetFound(cats, titles);
