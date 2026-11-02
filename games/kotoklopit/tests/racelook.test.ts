@@ -10,12 +10,13 @@ import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
 import { PALETTE } from "../art/palette";
-import { RACE } from "../src/sim/config";
+import { RACE, TRIPS } from "../src/sim/config";
 import { artEntry } from "../src/view/art/manifest";
 import { RACE_TILES } from "../src/view/art/manifest/a14-race";
 import {
   barMarkerY,
   barParts,
+  DESTINATION_ROOFS,
   laneX,
   racePixelsPerUnit,
   raceScale,
@@ -153,6 +154,25 @@ describe("машини", () => {
     for (const color of TRAFFIC_COLORS) expect(palette.has(color)).toBe(true);
     for (const red of [PALETTE.red, PALETTE.redHi, PALETTE.redLo]) expect(TRAFFIC_COLORS).not.toContain(Number.parseInt(red.slice(1), 16));
     expect(artEntry("race/car/traffic")?.states).toEqual([...TRAFFIC_KINDS]);
+  });
+});
+
+describe("дах будівлі пункту (§8.5 «На місці — кадр парковки», STYLE §11 race)", () => {
+  const hex = (color: string): number => Number.parseInt(color.slice(1), 16);
+
+  it("кожен пункт — свій колір: дах разом з іконкою на табличці каже, куди приїхали", () => {
+    expect(Object.keys(DESTINATION_ROOFS).sort()).toEqual(Object.keys(TRIPS).sort());
+    const roofs = Object.values(DESTINATION_ROOFS);
+    expect(new Set(roofs).size).toBe(roofs.length);
+  });
+
+  it("лише основні тони барвистих сімей і картону чи дерева — не green і не grey: дах не зливається з узбіччям і асфальтом", () => {
+    const allowed = new Set([PALETTE.red, PALETTE.pink, PALETTE.orange, PALETTE.mustard, PALETTE.teal, PALETTE.blue, PALETTE.plum, PALETTE.cardboard, PALETTE.wood].map(hex));
+    const forbidden = [PALETTE.green, PALETTE.greenHi, PALETTE.greenLo, PALETTE.grey, PALETTE.greyHi, PALETTE.greyLo, PALETTE.dark, PALETTE.carpet].map(hex);
+    for (const [destination, roof] of Object.entries(DESTINATION_ROOFS)) {
+      expect(allowed.has(roof), destination).toBe(true);
+      expect(forbidden, destination).not.toContain(roof);
+    }
   });
 });
 
