@@ -24,4 +24,6 @@ function onHost(trace: CatTrace, host: ArtId): ArtEntry {
 export const MANIFEST: readonly ArtEntry[] = [
   // Ванна: ближній куточок смугастого килимка перед душем (≈ 8,9; 2,57) загнуто вгору виворотом, під ним видно плитку.
   onHost("bath-mat", "env/room/bathroom/floor"),
+  // Спальня: петля, що вибилася з краю круглого плетеного килимка біля ліжка (≈ 3,0; 2,1) — кіт зачепив кігтями.
+  onHost("bedroom-rug", "env/room/bedroom/floor"),
 ];
