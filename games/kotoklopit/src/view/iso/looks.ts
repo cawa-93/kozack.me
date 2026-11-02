@@ -8,6 +8,7 @@ import { DUST_SPOTS } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { objectAt, type RoomId } from "../../sim/home";
 import { robotProgress } from "../../sim/household";
+import { powerOut } from "../../sim/modifiers";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
 import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
@@ -359,9 +360,18 @@ export function feederFrame(feeder: Feeder): IsoFrame {
   return frame(`item/feeder/${feeder.quality}`, `${kind}-${level}`);
 }
 
-/** Робот-пилосос (§8.7): на доку заряджається, у дорозі — прибирає. */
+/**
+ * Робот-пилосос (§8.7): на доку заряджається, у дорозі — прибирає. У день відключення світла (§4.1, рішення автора
+ * 2026-11-02) він не виїжджає (це вирішує сим) і стоїть на доку без заряду: вогник погас.
+ */
 export function robotFrame(state: GameState, quality: Quality): IsoFrame {
+  if (powerOut(state)) return frame(`item/robot/${quality}`, "off");
   return frame(`item/robot/${quality}`, robotProgress(state) === null ? "charging" : "cleaning");
+}
+
+/** Док робота (§8.7): зелений вогник живлення горить, а в день відключення світла (§4.1) погас. */
+export function dockFrame(state: GameState): IsoFrame {
+  return frame("item/robot-dock", powerOut(state) ? "off" : "on");
 }
 
 /**

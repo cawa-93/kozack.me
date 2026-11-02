@@ -260,6 +260,12 @@ describe("маніфест: квартира", () => {
     expect(states("env/vacuum")).toEqual([]);
   });
 
+  it("стани дня відключення світла (§4.1, рішення автора 2026-11-02)", () => {
+    // Робот-пилосос не виїжджає й стоїть на доку без заряду, у доку погас вогник живлення.
+    for (const quality of ["cheap", "premium"] as const) expect(states(`item/robot/${quality}`), quality).toContain("off");
+    expect(states("item/robot-dock")).toEqual(["on", "off"]);
+  });
+
   it("8 сховищ × стани запасів 0–4: кожен запас видно з самого сховища", () => {
     expect(STORAGES).toHaveLength(8);
     for (const storage of STORAGES) {

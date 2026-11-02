@@ -24,7 +24,7 @@ import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierOccupied, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 
 /** Що лежить на речі, — у її проміжку глибини, нижче за пів проміжку (`ISO_DEPTH_SLOT` 0,01). */
@@ -282,7 +282,7 @@ export class IsoFloorView implements WorldPart {
     const robot = home.appliances.robot;
     if (robot) {
       // Док плаский: робот на ньому — над ним.
-      this.single("dock", { id: "item/robot-dock", state: null }, ROBOT_DOCK, 14, { flat: true, half: 32 });
+      this.single("dock", dockFrame(state), ROBOT_DOCK, 14, { flat: true, half: 32 });
       this.single("robot", robotFrame(state, robot), robotAt(state), isoItemLook("robot", robot).height, { id: "robot", half: isoItemLook("robot", robot).half });
     }
     if (home.carrier) {
