@@ -170,7 +170,7 @@ export class Bubbles {
     container.setScale(0.6);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 160, ease: "Back.easeOut" });
     const look = this.looks[kind];
-    this.states.set(anchor, { container, kind, name: icon, owner: anchor, icon, x, y, span: look.span, height: look.room, visible, target: 0, dx: 0, placed: false });
+    this.states.set(anchor, { container, kind, name: icon, owner: anchor, icon, x, y, span: look.span, height: look.height, visible, target: 0, dx: 0, placed: false });
     // Стає в ряд одразу, ще до кадру.
     this.arrange(0);
   }
@@ -196,7 +196,7 @@ export class Bubbles {
     const { container, span } = this.make(bubble.kind, bubble.icon, start.x, start.y - EVENT_LIFT, bubble.count, bubble.mark);
     container.setScale(0.5).setDepth(BUBBLE_DEPTH + 1);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 180, ease: "Back.easeOut" });
-    this.float(container, at, hold, { owner: bubble.at, span, icon: bubble.icon, height: this.looks[bubble.kind].room });
+    this.float(container, at, hold, { owner: bubble.at, span, icon: bubble.icon, height: this.looks[bubble.kind].height });
     const state = this.states.get(bubble.at);
     if (state) {
       state.visible = false;

@@ -63,6 +63,9 @@ describe("бабл нового вигляду", () => {
       expect(look.count.y).toBeLessThan(look.icon.y);
       // Вище за точку бабл займає верх фону (від вістря) у масштабі й виринання.
       expect(look.room).toBeGreaterThanOrEqual(bubble.pivot.y * look.scale + 8);
+      // Сам бабл (без виринання) — від вістря до верху фону: за цим бабли поруч розходяться (`layoutBubbles`).
+      expect(look.height).toBeGreaterThanOrEqual(bubble.pivot.y * look.scale);
+      expect(look.height).toBeLessThan(look.room);
       expect(look.scale).toBe(ISO_BUBBLE_SCALE);
     });
   }
@@ -135,7 +138,7 @@ describe("бабл нового вигляду: межі й кількість",
 describe("бабли поруч (layoutBubbles)", () => {
   const say = isoBubbleLook("say");
   const think = isoBubbleLook("think");
-  const height = say.room;
+  const height = say.height;
   const width = say.span.left + say.span.right;
   /** Сталий крок старого вигляду: однакові бабли завширшки 58. */
   const step = 58;

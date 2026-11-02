@@ -68,6 +68,8 @@ export interface IsoBubbleLook {
   count: ArtPoint;
   /** Полотно фону ліворуч і праворуч від вістря, одиниці світу (вістря думки — не посередині: кружечки збоку). */
   span: BubbleSpan;
+  /** Висота бабла над вістрям, одиниці світу: верх фону чи плашки кількості, що вища (`layoutBubbles`). */
+  height: number;
   /**
    * Скільки місця над точкою бабла займає сам бабл разом із виринанням, одиниці світу (для `DayScene.belowHud`): верх
    * фону чи плашки кількості, що вища (у мовній хмаринці плашка стирчить над фоном).
@@ -86,13 +88,15 @@ export function isoBubbleLook(kind: BubbleKind): IsoBubbleLook {
   const count = { x: icon.x + corner, y: icon.y - corner };
   const scale = ISO_BUBBLE_SCALE;
   const countTop = -(count.y - BUBBLE_COUNT.height / 2 - BUBBLE_COUNT.outline / 2);
+  const height = Math.ceil(Math.max(pivot.y, countTop) * scale);
   return {
     scale,
     icon,
     iconSize: ICON_ART_SIZE,
     count,
     span: { left: pivot.x * scale, right: (size.w - pivot.x) * scale },
-    room: Math.ceil(Math.max(pivot.y, countTop) * scale) + RISE + MARGIN,
+    height,
+    room: height + RISE + MARGIN,
   };
 }
 
@@ -148,7 +152,7 @@ export interface LaidBubble {
   x: number;
   y: number;
   span: BubbleSpan;
-  /** Скільки бабл займає над точкою (`IsoBubbleLook.room`): бабли, далі один від одного по вертикалі, не налазять. */
+  /** Висота бабла над вістрям (`IsoBubbleLook.height`): бабл, чий верх нижче за вістря іншого, на нього не налазить. */
   height: number;
   /** Схований бабл (стану, поки над тим самим висить бабл події) не стає й не заважає. */
   visible: boolean;
@@ -232,11 +236,15 @@ function layRow(list: readonly LaidBubble[], count: number, a: number, b: number
   return ok;
 }
 
-/** Чи бабли `i` і `j` (з їхніми зсувами) налазять один на одного: на тій самій висоті й ближче, ніж `gap`, по горизонталі. */
+/**
+ * Чи бабли `i` і `j` (з їхніми зсувами) налазять один на одного: верх нижчого — вище за вістря вищого, а по горизонталі
+ * ближче, ніж `gap`.
+ */
 function overlap(list: readonly LaidBubble[], i: number, j: number, gap: number): boolean {
   const a = list[i]!;
   const b = list[j]!;
-  if (Math.abs(a.y - b.y) >= Math.max(a.height, b.height)) return false;
+  const lower = a.y >= b.y ? a : b;
+  if (lower.y - lower.height >= (lower === a ? b.y : a.y)) return false;
   const ax = a.x + shift[i]!;
   const bx = b.x + shift[j]!;
   return ax + a.span.right + gap > bx - b.span.left + EPS && bx + b.span.right + gap > ax - a.span.left + EPS;
