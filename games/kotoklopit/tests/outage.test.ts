@@ -18,6 +18,7 @@ import { createRng } from "../src/sim/rng";
 import type { Save, StatName } from "../src/sim/types";
 import { isWorking, patienceLevel, standupToday, startWork, tickWork } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
+import { DAY_MODIFIER_TEXTS } from "../src/texts";
 import { scheduleOf } from "../src/view/schedule";
 import { showerIcon } from "../src/view/symbols";
 import { personThought } from "../src/view/thoughts";
@@ -52,6 +53,13 @@ describe("«Планове відключення» — день без світ
     }
     expect(powerOut(game(null).current)).toBe(false);
     expect(powerOut(game("fast-internet").current)).toBe(false);
+  });
+
+  it("титулка — ситуація без пояснення ефекту (TEXTS.md §11.3а): світло вимкнуть на весь день, без годин і без інтернету", () => {
+    const text = DAY_MODIFIER_TEXTS["outage"];
+    expect(text?.title).toBe("Планове відключення");
+    expect(text?.situation).toBe("Сьогодні в районі на весь день планово вимкнуть світло.");
+    expect(text?.situation).not.toMatch(/\d|інтернет/u);
   });
 
   it("за комп'ютер сідають, як завжди: відмови немає, а година роботи дає ×0,75 грошей і репутації", () => {

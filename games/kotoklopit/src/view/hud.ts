@@ -9,6 +9,7 @@ import { addArt, setArt } from "./art/atlas";
 import { canFullscreen, isFullscreen, toggleFullscreen } from "../screen";
 import { statCeiling } from "../sim/character";
 import { LOW_STAT } from "../sim/config";
+import { powerOut } from "../sim/modifiers";
 import { isDrowsy } from "../sim/sleep";
 import { onSickLeave } from "../sim/work";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
@@ -374,6 +375,8 @@ export class Hud {
     const job = state.job;
     if (job.unemployed) effects.push("Пошук роботи");
     if (onSickLeave(state)) effects.push("Лікарняний");
+    // День «Планового відключення» (§4.1, рішення автора 2026-11-02): світла немає весь день — у розкладі події немає, тож тут.
+    if (powerOut(state)) effects.push("Без світла");
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
     this.effects.setText(effects.join(" · "));
     // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.
