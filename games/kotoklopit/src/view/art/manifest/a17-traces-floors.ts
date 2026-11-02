@@ -26,4 +26,6 @@ export const MANIFEST: readonly ArtEntry[] = [
   onHost("bath-mat", "env/room/bathroom/floor"),
   // Спальня: петля, що вибилася з краю круглого плетеного килимка біля ліжка (≈ 3,0; 2,1) — кіт зачепив кігтями.
   onHost("bedroom-rug", "env/room/bedroom/floor"),
+  // Кухня: надірваний і загнутий клапоть лінолеуму між плитою й столом (≈ 16,2; 2,5) — дірка до основи й клапоть виворотом.
+  onHost("lino", "env/room/kitchen/floor"),
 ];
