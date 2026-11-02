@@ -772,15 +772,21 @@ export interface ParkingLayout {
  * Де парковка на місці (§8.5 «На місці — кадр парковки»): `view` — кадр в одиницях інтерфейсу, `cardRight` — правий край картки,
  * притиснутої ліворуч, в одиницях інтерфейсу (`asideCardRight(…)` × одиниць інтерфейсу на px CSS). Якщо вільна смуга праворуч
  * від картки (мінус безпечна зона й поля `PARKING.margin`) вміщає парковку з будівлею (`RACE_LOT.reach`), картку притиснуто
- * ліворуч, а дорогу зсунуто так, що парковка — посередині смуги; інакше картка посередині, а дорога — на своєму місці. Зсув
- * робить сцена через `cx`, не камерою.
+ * ліворуч, а дорогу зсунуто так, що парковка — посередині смуги; інакше картка посередині, а дорогу зсунуто ліворуч рівно
+ * настільки, щоб парковка з будівлею вміщалася в кадр з полем праворуч (уміщається й так — не зсунуто: 667 × 375). Зсув робить
+ * сцена через `cx`, не камерою.
  */
 export function parkingLayout(view: ParkingView, cardRight: number): ParkingLayout {
   const margin = PARKING.margin * view.k;
   const left = cardRight + margin;
   const right = view.width - view.safe.right - margin;
   const need = (RACE_LOT.reach.right - RACE_LOT.reach.left) * view.k;
-  if (!(right - left >= need)) return { aside: false, pan: 0, strip: null };
+  if (!(right - left >= need)) {
+    // Картка посередині, але парковка з будівлею однаково в кадрі (§8.5, рецензія реалізації 2026-11-02): на вузькому високому
+    // вікні (800 × 900) вона виходила за правий край разом зі своєю машиною на місці.
+    const lotRight = view.width / 2 + RACE_LOT.reach.right * view.k;
+    return { aside: false, pan: Math.min(0, right - lotRight), strip: null };
+  }
   const lotMiddle = view.width / 2 + ((RACE_LOT.reach.left + RACE_LOT.reach.right) / 2) * view.k;
   return { aside: true, pan: (left + right) / 2 - lotMiddle, strip: { left: cardRight, right: view.width - view.safe.right } };
 }

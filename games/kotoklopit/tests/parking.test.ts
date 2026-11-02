@@ -763,12 +763,33 @@ describe("де парковка на місці", () => {
     }
   });
 
-  it("парковка не вміщається праворуч (667 × 375, 800 × 900) — картка посередині, дорога на своєму місці", () => {
+  it("парковка не вміщається праворуч від картки (667 × 375) — картка посередині, дорога на своєму місці: парковка й так у кадрі", () => {
+    const { view, layout } = layoutFor({ width: 667, height: 375 });
+    expect(layout).toEqual({ aside: false, pan: 0, strip: null });
+    expect(view.width / 2 + RACE_LOT.reach.right * view.k).toBeLessThanOrEqual(view.width - PARKING.margin * view.k);
+  });
+
+  it("вузьке високе вікно (800 × 900, 960 × 1040) — картка посередині, а дорогу зсунуто ліворуч рівно настільки, щоб парковка з будівлею була в кадрі", () => {
     for (const css of [
-      { width: 667, height: 375 },
       { width: 800, height: 900 },
+      { width: 960, height: 1040 },
     ]) {
-      expect(layoutFor(css).layout).toEqual({ aside: false, pan: 0, strip: null });
+      const name = `${css.width}×${css.height}`;
+      const { view, layout } = layoutFor(css);
+      expect(layout.aside, name).toBe(false);
+      expect(layout.strip, name).toBeNull();
+      expect(layout.pan, name).toBeLessThan(0);
+      const cx = view.width / 2 + layout.pan;
+      const margin = PARKING.margin * view.k;
+      // Без зсуву парковка виходила за правий край; зі зсувом її правий край — на полі від краю кадру.
+      expect(view.width / 2 + RACE_LOT.reach.right * view.k, name).toBeGreaterThan(view.width);
+      expect(cx + RACE_LOT.reach.right * view.k, name).toBeCloseTo(view.width - view.safe.right - margin, 6);
+      expect(cx + LOT_BOUNDS.left * view.k, name).toBeGreaterThan(0);
+      // Своя машина на будь-якому своєму місці — уся в кадрі.
+      for (const slot of [0, 1, 2]) {
+        const x = cx + (RACE_LOT.slots[slot]?.x ?? 0) * view.k;
+        expect(x + (CAR_BODY.player.w / 2) * view.k, `${name}, місце ${slot}`).toBeLessThan(view.width);
+      }
     }
   });
 
