@@ -10,7 +10,7 @@ import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod } from "./modifiers";
 import { addMess } from "./catai";
-import { isWall, itemPoint, objectById, slotCenter, STASHES, VACUUM_HOME } from "./home";
+import { hiddenTile, isSolid, isWall, itemPoint, itemTile, objectById, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
 import type { BowlItem, Cat, Feeder, GameState, HomeItem, MessKind, Product, Quality, Vec } from "./types";
@@ -227,12 +227,44 @@ export function takeVacuum(state: GameState): void {
   loudNoise(state, "vacuum", null);
 }
 
+/**
+ * Чи можна поставити пилосос на клітинку: видна підлога (`visibleFloorNear`) без речі котячого кутка — лотка, миски, будиночка,
+ * іграшки. Поставлений на річ, він був би на одній клітинці з нею, і ціллю біля них ставала б річ, а пилосос — не взяти (баланс
+ * 2026-11-02: бот, що поставив пилосос на лоток, більше його не брав).
+ */
+function vacuumFits(state: GameState, x: number, y: number): boolean {
+  if (isSolid(state, x, y) || hiddenTile(x, y)) return false;
+  return !state.home.items.some((item) => {
+    const tile = itemTile(item);
+    return tile.x === x && tile.y === y;
+  });
+}
+
+/** Де стане поставлений пилосос: у точці `p`, якщо там можна (`vacuumFits`), інакше — посередині найближчої такої клітинки. */
+function vacuumSpot(state: GameState, p: Vec): Vec {
+  const tx = Math.floor(p.x);
+  const ty = Math.floor(p.y);
+  if (vacuumFits(state, tx, ty)) return { x: p.x, y: p.y };
+  for (let r = 1; r < 4; r++) {
+    let best: Vec | null = null;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !vacuumFits(state, tx + dx, ty + dy)) continue;
+        const c = { x: tx + dx + 0.5, y: ty + dy + 0.5 };
+        if (!best || Math.hypot(c.x - p.x, c.y - p.y) < Math.hypot(best.x - p.x, best.y - p.y)) best = c;
+      }
+    }
+    if (best) return best;
+  }
+  const at = visibleFloorNear(state, p);
+  return { x: at.x, y: at.y };
+}
+
 /** Поставити пилосос (§8.7): будь-де на підлогу, як іграшку, — на видну підлогу перед персонажем; поставлений лишається там. */
 export function putVacuumDown(state: GameState): void {
   if (state.character.held?.kind !== "vacuum") return;
   const { x, y, facing } = state.character.body;
-  const at = visibleFloorNear(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
-  state.home.vacuumAt = { x: at.x, y: at.y };
+  state.home.vacuumAt = vacuumSpot(state, { x: x + facing.x * 0.5, y: y + facing.y * 0.5 });
   state.character.held = null;
   emit(state, { type: "vacuum", stage: "put" });
 }

@@ -8,7 +8,7 @@ import { dropEverything } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { VACUUM } from "../src/sim/config";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
-import { isSolid, objectById, VACUUM_HOME } from "../src/sim/home";
+import { isSolid, objectById, slotById, VACUUM_HOME } from "../src/sim/home";
 import { FUR_SPOTS, furVisible, tickHousehold, tuftsOf } from "../src/sim/household";
 import { answerCall } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
@@ -81,6 +81,21 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     // Узяти знову — там, де поставили.
     advance(save, 1);
     expect(save.current.home.vacuumAt).toEqual({ x: 6, y: 8.5 });
+    takeVacuum(save);
+  });
+
+  it("на лоток чи миску пилосос не ставлять — він стає на вільну підлогу поруч, і його можна взяти знову", () => {
+    const save = game();
+    const litter = save.current.home.items.find((i) => i.kind === "litter");
+    if (!litter || litter.kind !== "litter") throw new Error("немає лотка");
+    const tile = slotById(litter.slot);
+    takeVacuum(save);
+    place(save, { x: tile.x, y: tile.y + 0.5 });
+    interact(save);
+    const at = save.current.home.vacuumAt;
+    expect(at).not.toBeNull();
+    expect([Math.floor(at!.x), Math.floor(at!.y)]).not.toEqual([tile.x, tile.y]);
+    expect(save.current.home.items.some((i) => i.kind !== "toy" && slotById(i.slot).x === Math.floor(at!.x) && slotById(i.slot).y === Math.floor(at!.y))).toBe(false);
     takeVacuum(save);
   });
 
