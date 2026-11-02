@@ -1,0 +1,106 @@
+{
+ "name": "Прибуття ввечері",
+ "description": "Субота першого тижня, 19:40. Персонажка з Бубликом у переносці в присмерку за мить до фінішу дороги до ветеринара (×3): у машин потоку вже горять фари, без газу своя докотиться сама й зверне на парковку біля клініки, а там фари погаснуть; табличка клініки світиться (§8.5 «На місці — кадр парковки», §8.9 «День і ніч»). Тоді картка ветеринара поверх парковки. Для знімків прибуття (--ms).",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 31
+ },
+ "state": {
+  "day": 5,
+  "minute": 1180,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "money": 400,
+   "stats": {
+    "satiety": 80,
+    "hygiene": 80,
+    "sanity": 55
+   },
+   "body": {
+    "x": 10.5,
+    "y": 10.45,
+    "facing": {
+     "x": 0,
+     "y": 1
+    }
+   },
+   "held": null
+  },
+  "home": {
+   "carrier": "cheap",
+   "supplies": {
+    "catFood": {
+     "cheap": 20,
+     "premium": 0
+    },
+    "litter": {
+     "cheap": 6,
+     "premium": 0
+    }
+   }
+  },
+  "trip": {
+   "destination": "vet",
+   "phase": "drive",
+   "cat": 5,
+   "race": {
+    "road": 60,
+    "done": 59.95,
+    "minutes": 22,
+    "lane": 1,
+    "targetLane": 1,
+    "speed": 3,
+    "cars": [
+     {
+      "lane": 0,
+      "start": 49.45
+     },
+     {
+      "lane": 2,
+      "start": 50.35
+     },
+     {
+      "lane": 0,
+      "start": 48.55
+     },
+     {
+      "lane": 1,
+      "start": 50.85
+     }
+    ],
+    "spawned": 70,
+    "rng": 20261102
+   },
+   "losses": [],
+   "visit": 0,
+   "seed": 52817
+  }
+ },
+ "cats": [
+  {
+   "id": 5,
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Бублик",
+   "sex": "male",
+   "arrivedDay": -5,
+   "away": "trip",
+   "x": 9.5,
+   "y": 9.2,
+   "diseases": [
+    {
+     "id": "injury",
+     "day": 4,
+     "doses": 0,
+     "diet": 0,
+     "calm": 0,
+     "controlled": null,
+     "known": false
+    }
+   ]
+  }
+ ]
+}
