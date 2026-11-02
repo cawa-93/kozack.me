@@ -4,11 +4,12 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { DUST } from "../src/sim/config";
 import { addDust, DUST_SPOTS, dustOf, floorDust, tickDust, type DustKind } from "../src/sim/dust";
 import { advance, interact, newGame } from "../src/sim/game";
-import { hiddenTile, isFixedSolid, isWall, OBJECTS, ROOMS, SLOTS, type RoomId } from "../src/sim/home";
-import { annoyingMesses, FUR_SPOTS, tickHousehold } from "../src/sim/household";
+import { hiddenTile, isFixedSolid, isWall, OBJECTS, ROOMS, SLOTS, VACUUM_HOME, type RoomId } from "../src/sim/home";
+import { annoyingMesses, FUR_SPOTS, furTufts, tickHousehold } from "../src/sim/household";
 import { absoluteMinute } from "../src/sim/time";
 import type { GameState, Save, Vec } from "../src/sim/types";
 import { WALL_HEIGHT, WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
@@ -203,6 +204,33 @@ describe("пил на підлозі дратує, кути й стіни — л
     const before = state.character.stats.sanity;
     annoyingMesses(state, 60);
     expect(state.character.stats.sanity - before).toBe(0);
+  });
+});
+
+describe("сценарій «Запилена квартира» (`scenarios/dusty-home.json`)", () => {
+  it("пил у кожній кімнаті — у кутах, біля стін і на підлозі; дев'ять жмутів; пилосос на місці шафи; пилосос у руках прибирає довкола, а блювоту — ні", () => {
+    const scenario = FILE_SCENARIOS["dusty-home"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const state = save.current;
+    for (const room of ROOMS) {
+      const kinds = new Set(dustOf(state).flatMap((i) => (DUST_SPOTS[i]!.room === room.id ? [DUST_SPOTS[i]!.kind] : [])));
+      expect([...kinds].sort(), room.id).toEqual(["cobweb", "corner", "floor", "wall"]);
+    }
+    // Вітальня — ще не вся: двоє останніх місць на підлозі вільні.
+    expect(spotsOf("living").filter((i) => !dustOf(state).includes(i))).toHaveLength(2);
+    expect(furTufts(state)).toHaveLength(9);
+    expect(state.home.vacuumAt).toEqual(VACUUM_HOME);
+    expect(state.cats).toHaveLength(3);
+    standAt(save, "vacuum");
+    interact(save);
+    expect(state.character.held?.kind).toBe("vacuum");
+    // Пройти вітальнею вздовж килима: папір зникає, блювота лишається.
+    const body = state.character.body;
+    body.x = 11.2;
+    body.y = 8.4;
+    advance(save, 0.1);
+    expect(state.home.messes.map((m) => m.kind)).toEqual(["broken", "vomit"]);
   });
 });
 
