@@ -8,12 +8,14 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { GUESTS, MODIFIERS } from "../src/sim/config";
 import { courierNow } from "../src/dev/commands";
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, guestAtDoor } from "../src/sim/door";
 import type { GameEvent } from "../src/sim/events";
 import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { targetOf } from "../src/sim/targets";
 import { canLeave } from "../src/sim/trips";
 import type { Cat, DoorGuest, GameState, Save, TraitLevel } from "../src/sim/types";
 import { foundlingCard } from "../src/ui/cards";
@@ -325,6 +327,25 @@ describe("гість подзвонив — дія біля дверей від�
     stop();
     expect(bells(events)).toBe(0);
     expect(visitsOf(events, "cleaner")).toHaveLength(1);
+  });
+});
+
+describe("сценарій «Ветеринарка вдома» (режим розробки)", () => {
+  it("персонаж біля дверей: після дзвінка дія біля них — огляд одразу, а об 11:00 ветеринарка вже не приходить", () => {
+    const scenario = FILE_SCENARIOS["home-vet"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const { events, stop } = recordEvents();
+    advance(save, 2);
+    expect(bells(events)).toBe(1);
+    expect(targetOf(save.current)?.id).toBe("door");
+    expect(canLeave(save.current)).toBe(false);
+    interact(save);
+    expect(visitsOf(events, "home-vet")).toHaveLength(1);
+    expect(save.current.cats.find((c) => c.name === "Мурка")?.diseases[0]?.known).toBe(true);
+    advance(save, 10);
+    stop();
+    expect(visitsOf(events, "home-vet")).toHaveLength(1);
   });
 });
 
