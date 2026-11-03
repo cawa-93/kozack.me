@@ -34,7 +34,7 @@ import { ISO } from "../world/projection";
 import { decorLook, type DecorLook } from "./decorlook";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
-import { artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
+import { anchorLift, artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
 import { PERSON_DEPTH } from "./personlook";
 import { SEAT_GLIDE_RATE, SEATS, seatAt, seatMode, seatSpot, type Seat, type SeatSpot } from "./personseat";
 import { glideOffset } from "./personspot";
@@ -680,11 +680,15 @@ export class IsoApartmentView implements ApartmentPart {
     this.cobwebs.clear();
   }
 
-  /** Над річчю квартири, поки вона є (сховища з'являються після першого запасу, §6.4). */
+  /**
+   * Над річчю квартири, поки вона є (сховища з'являються після першого запасу, §6.4); над плитою з газовим пальником — над
+   * піднятою сковородою (`anchorLift`).
+   */
   anchor(id: string): Point | null {
     const thing = this.things.get(id);
     if (!thing) return null;
-    return isPresent(this.ctx.state(), thing.object) ? objectAnchorAt(thing.object) : null;
+    const state = this.ctx.state();
+    return isPresent(state, thing.object) ? objectAnchorAt(thing.object, anchorLift(state, id)) : null;
   }
 
   objectAnchor(id: string): Point | null {

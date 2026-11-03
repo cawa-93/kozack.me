@@ -11,7 +11,7 @@ import type { IsoBox } from "../world/isoorder";
 import { isoCatPerch, isoItemLook, isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE } from "../world/projection";
-import { shapedStage } from "./looks";
+import { shapedStage, stoveArtState } from "./looks";
 
 /** Пів ширини й пів висоти ромба плитки: на стільки зсувається екран з кожною клітинкою x − y і x + y. */
 const HALF_W = ISO_TILE.width / 2;
@@ -41,11 +41,29 @@ export function artOffset(id: ArtId, name: string): Point | null {
   return { x: point.x - entry.pivot.x, y: point.y - entry.pivot.y };
 }
 
-/** Точка над річчю квартири для бабла й позначок (§11.4): над найвищою точкою, зі зсувом бабла (`IsoObjectLook.bubble`). */
-export function objectAnchorAt(object: Rect & { id: string }): Point {
+/**
+ * Точка над річчю квартири для бабла й позначок (§11.4): над найвищою точкою, зі зсувом бабла (`IsoObjectLook.bubble`), і ще
+ * на `lift` вище (`anchorLift`: сковорода на газовому пальнику).
+ */
+export function objectAnchorAt(object: Rect & { id: string }, lift = 0): Point {
   const look = isoObjectLook(object.id);
   const p = objectScreen(object);
-  return { x: p.x + look.bubble.x, y: p.y - look.tall - ANCHOR_GAP + look.bubble.y };
+  return { x: p.x + look.bubble.x, y: p.y - look.tall - ANCHOR_GAP + look.bubble.y - lift };
+}
+
+/**
+ * На скільки газовий пальник дня відключення піднімає сковороду плити (`GAS_LIFT` маніфесту `a02-kitchen.ts`): від точки
+ * `pan` (середина сковороди на конфорці) до `pan-gas` (на пальнику) кадру `env/stove`.
+ */
+export const STOVE_GAS_LIFT = (artOffset("env/stove", "pan")?.y ?? 0) - (artOffset("env/stove", "pan-gas")?.y ?? 0);
+
+/**
+ * На скільки бабл і позначки речі вищі за звичайні (`objectAnchorAt`): у день відключення (§4.1, рішення автора 2026-11-02)
+ * сковорода плити стоїть на газовому пальнику (`gas-*`, `stoveArtState`) — на `STOVE_GAS_LIFT` вище, і бабл стану плити
+ * піднімається разом із нею, щоб не закривати кришку (рішення автора 2026-11-03: «бабл має бути вище»).
+ */
+export function anchorLift(state: GameState, id: string): number {
+  return id === "stove" && stoveArtState(state).startsWith("gas-") ? STOVE_GAS_LIFT : 0;
 }
 
 /** Точка над річчю на підлозі заввишки `height` у точці `p` (клітинки). */

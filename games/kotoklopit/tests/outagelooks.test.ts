@@ -1,15 +1,18 @@
 // Вигляд дня відключення світла (§4.1 «Планове відключення», рішення автора 2026-11-02; пакет «Арт відключення»): які
 // кадри показують плита, душ, робот-пилосос і його док, коли світла немає (`powerOut`), — і що кожен такий кадр є в
-// маніфесті. Чисті функції `src/view/iso/looks.ts`; сим відключення (робот не виїжджає, холодний душ коротший) — інший пакет.
+// маніфесті; бабл плити — над сковородою, піднятою на пальник (`anchorLift`, рішення автора 2026-11-03). Чисті функції
+// `src/view/iso/looks.ts` і `geometry.ts`; сим відключення (робот не виїжджає, холодний душ коротший) — інший пакет.
 
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { HOUSEHOLD } from "../src/sim/config";
+import { objectById, OBJECTS } from "../src/sim/home";
 import { powerOut } from "../src/sim/modifiers";
 import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import type { ArtId } from "../src/view/art/types";
+import { anchorLift, artOffset, objectAnchorAt, objectScreen, STOVE_GAS_LIFT } from "../src/view/iso/geometry";
 import { dockFrame, robotFrame, showerState, stoveArtState, stoveState, type IsoFrame } from "../src/view/iso/looks";
 
 /** Стан сценарію (свіжа копія). */
@@ -61,6 +64,31 @@ describe("плита в день відключення (§8.7, §4.1): тури
     }
     // Перебрали всі стани плити: на кожен є газовий.
     expect([...seen].sort()).toEqual(["burnt", "cooking", "off", "raw", "ready"]);
+  });
+
+  it("бабл плити — над піднятою сковородою: у відключення вищий на підйом пальника (pan → pan-gas), удень — той самий", () => {
+    const { usual, outage } = bothDays("appliances");
+    const stove = objectById("stove");
+    // Підйом — з маніфесту (`GAS_LIFT` у `a02-kitchen.ts`: точки `pan` і `pan-gas`), а не своє число.
+    expect(STOVE_GAS_LIFT).toBeGreaterThan(0);
+    expect(STOVE_GAS_LIFT).toBe((artOffset("env/stove", "pan")?.y ?? 0) - (artOffset("env/stove", "pan-gas")?.y ?? 0));
+    // Середина сковороди на екрані: на конфорці (`pan`) і на пальнику (`pan-gas`).
+    const pan = (point: "pan" | "pan-gas"): number => objectScreen(stove).y + (artOffset("env/stove", point)?.y ?? NaN);
+    for (const item of [null, { kind: "raw", quality: "cheap" }, { kind: "meal", quality: "cheap" }, { kind: "burnt", quality: "cheap" }] as const) {
+      usual.home.stove = { item, minutes: item?.kind === "raw" ? 5 : 0 };
+      outage.home.stove = structuredClone(usual.home.stove);
+      expect(anchorLift(usual, "stove")).toBe(0);
+      expect(anchorLift(outage, "stove")).toBe(STOVE_GAS_LIFT);
+      const day = objectAnchorAt(stove, anchorLift(usual, "stove"));
+      const gas = objectAnchorAt(stove, anchorLift(outage, "stove"));
+      expect(day).toEqual(objectAnchorAt(stove));
+      expect(gas).toEqual({ x: day.x, y: day.y - STOVE_GAS_LIFT });
+      // Над сковородою на пальнику — так само високо, як над сковородою на конфорці: кришку бабл не закриває.
+      expect(pan("pan-gas") - gas.y).toBeCloseTo(pan("pan") - day.y, 9);
+      expect(pan("pan") - day.y).toBeGreaterThan(0);
+    }
+    // Решта речей у відключення бабла не піднімає.
+    for (const object of OBJECTS) if (object.id !== "stove") expect(anchorLift(outage, object.id), object.id).toBe(0);
   });
 });
 
