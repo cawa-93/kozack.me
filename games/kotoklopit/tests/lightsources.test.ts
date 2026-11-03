@@ -176,7 +176,7 @@ describe("джерела світла квартири", () => {
     expect((floor.y - CANDLES[0]!.z) - (candle?.screen.y ?? NaN)).toBeCloseTo(LIGHT_ART.candle.flame, 6);
   });
 
-  it("мерехтіння свічки — детерміноване, у межах і живе", () => {
+  it("мерехтіння свічки — детерміноване, живе, яскравість лише спадає: від 1 до 1 − `CANDLE_LIGHT.flicker`", () => {
     const values: number[] = [];
     for (let t = 0; t < 5000; t += 50) values.push(candleFlicker(2, t));
     expect(values.every((v) => v >= 1 - CANDLE_LIGHT.flicker - 1e-9 && v <= 1)).toBe(true);

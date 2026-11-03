@@ -75,7 +75,7 @@ describe("вигляд світла доби", () => {
     expect(CANDLE_LIGHT.radius).toBeLessThan(lampReach);
     expect(CANDLE_LIGHT.radius).toBeGreaterThanOrEqual(1.8);
     expect(CANDLE_LIGHT.poolCore).toBeLessThanOrEqual(CEILING_LIGHT.core);
-    // Мерехтіння — не більше ±10 % і не частіше ≈ 4 разів на секунду.
+    // Мерехтіння: яскравість спадає щонайбільше на 10 % (від 1 до 1 − flicker, `candleFlicker`) і не частіше ≈ 4 разів на секунду.
     expect(CANDLE_LIGHT.flicker).toBeLessThanOrEqual(0.1);
     expect(CANDLE_LIGHT.flickerStep).toBeGreaterThanOrEqual(250);
   });
