@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { useProgress } from "../src/sim/actions";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, MODIFIERS, STANDUP_MINUTE } from "../src/sim/config";
-import { objectById } from "../src/sim/home";
+import { objectById, WIRE_TILE } from "../src/sim/home";
 import { targetOf } from "../src/sim/targets";
 import type { GameState } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
@@ -16,9 +16,10 @@ import { ANCHOR_GAP, artOffset, objectAnchorAt, objectScreen } from "../src/view
 import {
   actionBar,
   actionBarAnchor,
+  actionBarPoint,
   BUBBLE_HALF,
   EVENT_RISE,
-  stackTop,
+  FIX_HEAD,
   SURFACE_CLEAR,
   BAR,
   BAR_RISE,
@@ -26,7 +27,6 @@ import {
   barExtent,
   BUBBLE_ROOM,
   computerScreen,
-  computerStack,
   FLIGHT,
   GLASS_INSET,
   flightArc,
@@ -44,12 +44,18 @@ import {
   screenTime,
   SEARCH_BAR,
   searchBar,
+  searchBarBox,
   STACK_GAP,
   stageMark,
   STOVE_BAR,
   stoveBar,
   stoveFaceBar,
+  wireBarAnchor,
 } from "../src/view/iso/markslayout";
+import { wireFixSpot } from "../src/view/iso/personspot";
+import { PERSON_ANIMS } from "../src/view/rig/anims";
+import { PERSON_RIG } from "../src/view/rig/defs/person";
+import { Rig } from "../src/view/rig/rigcore";
 import { isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
 
@@ -270,25 +276,17 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     expect(BUBBLE_ROOM).toBeGreaterThanOrEqual(62);
   });
 
-  it("над комп'ютером — стосом над зоною бабла: знизу смужка пошуку, над нею смуга лагодження дроту", () => {
+  it("смужка пошуку роботи — над зоною бабла комп'ютера, по центру, над монітором", () => {
     const anchor = objectAnchorAt(objectById("computer"));
     // Зона бабла — з запасом на те, куди бабл події підіймається, згасаючи.
     const bubble = { top: anchor.y - BUBBLE_ROOM - EVENT_RISE, bottom: anchor.y };
-    const both = computerStack(anchor, true, true);
-    const search = barExtent(both.search!, true);
-    const action = barExtent(both.action!, false);
-    // Ні смужка, ні смуга не заходять у зону бабла (його вістря — у якорі): бабл відмови не закриває етап, де все скінчилося.
+    const box = searchBarBox(anchor);
+    const search = barExtent(box, true);
+    // Смужка не заходить у зону бабла (його вістря — у якорі): бабл відмови не закриває етап, де все скінчилося.
     expect(search.bottom).toBeCloseTo(bubble.top - STACK_GAP, 9);
-    expect(action.bottom).toBeCloseTo(search.top - STACK_GAP, 9);
-    for (const box of [both.search!, both.action!]) expect(box.x + box.w / 2).toBe(anchor.x);
-    expect([both.search!.w, both.action!.w]).toEqual([SEARCH_BAR.width, BAR.width]);
-    // Смужка пошуку стоїть на тому самому місці, хоч би що було над нею; смуга дії без пошуку — на її місці.
-    expect(computerStack(anchor, true, false).search).toEqual(both.search);
-    expect(computerStack(anchor, true, false).action).toBeNull();
-    const alone = computerStack(anchor, false, true);
-    expect(alone.search).toBeNull();
-    expect(barExtent(alone.action!, false).bottom).toBeCloseTo(bubble.top - STACK_GAP, 9);
-    // І над монітором: екран і записку на ньому не закривають.
+    expect(box.x + box.w / 2).toBe(anchor.x);
+    expect([box.w, box.h]).toEqual([SEARCH_BAR.width, SEARCH_BAR.height]);
+    // І над монітором: екран і записку на ньому не закриває.
     const quad = computerScreen();
     const screenTop = Math.min(onScreen(quad, -1, 1).y, onScreen(quad, 1, 1).y);
     expect(search.bottom).toBeLessThan(screenTop);
@@ -296,28 +294,92 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
 
   it("бабл події, згасаючи й підіймаючись (останні 0,4 с), не заходить на смужку пошуку", () => {
     const anchor = objectAnchorAt(objectById("computer"));
-    const search = barExtent(computerStack(anchor, true, false).search!, true);
+    const search = barExtent(searchBarBox(anchor), true);
     // Бабл виринає на 8 вище за якір і за 0,5 с згасання підіймається на EVENT_RISE (`Bubbles.float`).
     const highest = anchor.y - BUBBLE_ROOM - EVENT_RISE;
     expect(search.bottom).toBeLessThan(highest);
     expect(EVENT_RISE).toBeGreaterThanOrEqual(34);
   });
 
-  it("комп'ютер біля верхнього краю видимого світу: стос — ліворуч від бабла й увесь під панеллю", () => {
+  it("комп'ютер біля верхнього краю видимого світу: смужка пошуку — ліворуч від бабла й уся під панеллю", () => {
     const anchor = objectAnchorAt(objectById("computer"));
-    const above = computerStack(anchor, true, true);
+    const above = searchBarBox(anchor);
     // Місця вгорі досить — як і без краю.
-    expect(computerStack(anchor, true, true, stackTop(above) - 10)).toEqual(above);
-    for (const top of [stackTop(above) + 1, anchor.y - BUBBLE_ROOM - 20, anchor.y - 30, anchor.y + 40]) {
-      const stack = computerStack(anchor, true, true, top);
-      expect(stackTop(stack)).toBeGreaterThanOrEqual(top + STACK_GAP - 1e-9);
+    expect(searchBarBox(anchor, barExtent(above, true).top - 10)).toEqual(above);
+    for (const top of [barExtent(above, true).top + 1, anchor.y - BUBBLE_ROOM - 20, anchor.y - 30, anchor.y + 40]) {
+      const box = searchBarBox(anchor, top);
+      expect(barExtent(box, true).top).toBeGreaterThanOrEqual(top + STACK_GAP - 1e-9);
       // Ліворуч від бабла (його вістря — в якорі, по центру), не заходить на нього.
-      for (const box of [stack.search!, stack.action!]) expect(box.x + box.w).toBeLessThanOrEqual(anchor.x - BUBBLE_HALF);
-      // Смуга дії — над смужкою пошуку, як і вгорі.
-      expect(barExtent(stack.action!, false).bottom).toBeLessThan(barExtent(stack.search!, true).top);
+      expect(box.x + box.w).toBeLessThanOrEqual(anchor.x - BUBBLE_HALF);
     }
-    const alone = computerStack(anchor, false, true, anchor.y);
-    expect(alone.action!.x + alone.action!.w).toBeLessThanOrEqual(anchor.x - BUBBLE_HALF);
+  });
+
+  it("смуга лагодження дроту — над обривом, поруч із персонажем, а не над комп'ютером (§9.12, рішення автора 2026-11-03)", () => {
+    // Сценарій «Лагодження дроту»: дріт перегризено, персонаж лагодить його утриманням — зроблено третину.
+    const state = scenario("wire-fix");
+    expect(state.home.wireChewed).toBe(true);
+    expect(screenShow(state)).toBe("off");
+    const bar = actionBar(state);
+    expect(bar?.target).toBe("computer");
+    expect(bar?.value).toBeCloseTo(1 / 3, 9);
+    const computer = objectAnchorAt(objectById("computer"));
+    // Лагодження — тривала дія з ціллю «комп'ютер»: смуга не біля його якоря, а над обривом.
+    const at = actionBarPoint(bar!.target, { anchor: (id) => (id === "computer" ? computer : null) });
+    expect(at).toEqual(wireBarAnchor());
+    const box = barBox(at!);
+    const extent = barExtent(box, false);
+    // Над місцем обриву: по центру точки `cut` дроту (звідти сиплються іскри).
+    const wire = ISO.toScreen({ x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 });
+    const cut = artOffset("env/wire", "cut")!;
+    const breakAt = { x: wire.x + cut.x, y: wire.y + cut.y };
+    expect(box.x + box.w / 2).toBeCloseTo(breakAt.x, 9);
+    expect(extent.bottom).toBeLessThan(breakAt.y);
+    // Персонаж сидить біля обриву (`wireFixSpot`): маківку анімації `fix` у ракурсі `back` за весь цикл рахує скелет.
+    const feet = ISO.toScreen(wireFixSpot().at);
+    const rig = new Rig(PERSON_RIG, { facing: { view: "back", flip: false } });
+    rig.play(PERSON_ANIMS.fix, 0, { blend: 0 });
+    let highest = Number.POSITIVE_INFINITY;
+    for (let t = 0; t < PERSON_ANIMS.fix.duration; t += 50) {
+      rig.evaluate(t);
+      const head = rig.anchor("head")!;
+      const top = { x: feet.x + head.x, y: feet.y + head.y };
+      highest = Math.min(highest, top.y);
+      // На екрані — ближче до персонажа, ніж до комп'ютера (і до його бабла): гравець її бачить, дивлячись на персонажа.
+      const middle = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+      const toPerson = Math.hypot(middle.x - top.x, middle.y - top.y);
+      expect(toPerson, `@${t}`).toBeLessThan(Math.hypot(middle.x - computer.x, middle.y - computer.y) / 2);
+      expect(toPerson, `@${t}`).toBeLessThan(BAR.width / 2);
+      // Маківка — під смугою, по її ширині; смуга лягає на неї лише краєм, як на верх речі (не закриває голову).
+      expect(top.x, `@${t}`).toBeGreaterThan(box.x);
+      expect(top.x, `@${t}`).toBeLessThan(box.x + box.w);
+      expect(extent.bottom - top.y, `@${t}`).toBeLessThanOrEqual(BAR.height);
+      // Бабл персонажа (думка) — вістрям на ANCHOR_GAP над маківкою: у якорі смуги, як бабл над річчю, а поки голова
+      // хитається — трохи нижче, але не далі за пів заливки; над смугою він не зависає.
+      const tip = top.y - ANCHOR_GAP;
+      expect(tip, `@${t}`).toBeGreaterThanOrEqual(at!.y - 1e-9);
+      expect(tip - at!.y, `@${t}`).toBeLessThan(BAR.height / 2);
+    }
+    // `FIX_HEAD` — найвища маківка за цикл (з точністю до кроку).
+    expect(feet.y - highest).toBeLessThanOrEqual(FIX_HEAD);
+    expect(feet.y - highest).toBeGreaterThan(FIX_HEAD - 2);
+    // Бабл перегризеного дроту лишається над комп'ютером і смуги не торкається: смуга нижча за його вістря.
+    expect(extent.top).toBeGreaterThan(computer.y);
+  });
+
+  it("смужка пошуку стоїть на своєму місці, хоч дріт лагодять, хоч ні: смуга лагодження — не над комп'ютером", () => {
+    const state = working(scenario("job-search"));
+    const anchor = objectAnchorAt(objectById("computer"));
+    const box = searchBarBox(anchor);
+    // Лагодження дроту: персонаж біля обриву, смуга — там; смужка пошуку від цього не залежить.
+    state.home.wireChewed = true;
+    state.character.activity = { kind: "use", target: "computer", progress: 5 };
+    const bar = actionBar(state);
+    expect(bar?.target).toBe("computer");
+    const fix = barExtent(barBox(actionBarPoint(bar!.target, { anchor: () => anchor })!), false);
+    const search = barExtent(box, true);
+    // Смуга лагодження — нижче за смужку пошуку й зону бабла комп'ютера, поза нею по вертикалі.
+    expect(fix.top).toBeGreaterThan(search.bottom);
+    expect(fix.top).toBeGreaterThan(anchor.y);
   });
 
   it("смуга їжі над столом висить вище за страву й кухоль; над іншими речами — у якорі", () => {
@@ -327,6 +389,11 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     const sink = objectAnchorAt(objectById("sink"));
     expect(actionBarAnchor("sink", sink)).toBe(sink);
     expect(actionBarAnchor("item:4", { x: 1, y: 2 })).toEqual({ x: 1, y: 2 });
+    // Те саме з якоря цілі у світі; ціль не видно — смуги немає.
+    const world = { anchor: (id: string) => (id === "table" ? table : id === "sink" ? sink : null) };
+    expect(actionBarPoint("table", world)).toEqual(actionBarAnchor("table", table));
+    expect(actionBarPoint("sink", world)).toBe(sink);
+    expect(actionBarPoint("item:4", world)).toBeNull();
   });
 
   it("смуга плити — намальована на лицьовій грані плити: у її площині, посередині, не ширша за 0,8 клітинки", () => {

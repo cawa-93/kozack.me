@@ -4,8 +4,8 @@
 // - Підсвітку малює частина, якій належить ціль (квартира й куточок — сяйвом, `iso/highlight.ts`): позначки щокадру
 //   кажуть світу, що підсвітити й наскільки яскраво (пульс), а самим позначкам цілей не належить.
 // - Смуги дії й пошуку — інтерфейс над світом (`WORLD_LAYERS.marks`), без ізометрії: смуга дії — над ціллю, під баблом (над
-//   столом — вище за страву й кухоль); над комп'ютером — стосом над зоною його бабла, а біля верхнього краю — збоку від нього
-//   (`computerStack`).
+//   столом — вище за страву й кухоль), лагодження дроту — над обривом, поруч із персонажем (`wireBarAnchor`); смужка пошуку —
+//   над зоною бабла комп'ютера, а біля верхнього краю — збоку від нього (`searchBarBox`).
 // - Смуга плити й зміст екрана намальовані на речах: у площині їхньої грані й у проміжку глибини речі (`iso/depth.ts`), тож
 //   їх закриває той, хто стоїть чи сидить перед ними (персонаж біля плити й за столом, кіт на клавіатурі).
 
@@ -21,16 +21,16 @@ import { isoDepth, type IsoDepth, type IsoPointHandle } from "./depth";
 import { drawBar, drawFaceBar, drawScreen, drawSearchBar } from "./marksdraw";
 import {
   actionBar,
-  actionBarAnchor,
+  actionBarPoint,
   barBox,
   computerScreen,
-  computerStack,
   highlightPulse,
   highlightTarget,
   rejectionAt,
   screenShow,
   screenTime,
   searchBar,
+  searchBarBox,
   stoveBar,
   stoveFaceBar,
   type FaceBar,
@@ -88,19 +88,17 @@ export class IsoMarksView implements WorldPart {
     if (target) world.highlight(target, highlightPulse(time));
 
     const g = this.bars.clear();
-    // Смуга тривалої дії — над ціллю, під її баблом; над комп'ютером (лагодження дроту) — у стосі над баблом.
+    // Смуга тривалої дії — над ціллю, під її баблом; лагодження дроту — над обривом, поруч із персонажем (§9.12).
     const action = actionBar(state);
-    const onComputer = action?.target === "computer";
-    const actionAnchor = action && !onComputer ? world.anchor(action.target) : null;
-    if (action && actionAnchor) drawBar(g, barBox(actionBarAnchor(action.target, actionAnchor)), action.value, "good");
+    const actionAt = action ? actionBarPoint(action.target, world) : null;
+    if (action && actionAt) drawBar(g, barBox(actionAt), action.value, "good");
     // Пошук роботи (§8.6): етапи поточної вакансії, на відмові смужка червона; над комп'ютером, над зоною його бабла.
     const search = searchBar(state, this.rejection, time);
-    const computer = search || onComputer ? world.objectAnchor("computer") : null;
-    if (computer) {
-      // Верхній край видимого світу (під панеллю): стос, що не влазить над баблом, стає збоку від нього.
-      const stack = computerStack(computer, search !== null, onComputer, this.ctx.scene.cameras.main.worldView.y);
-      if (search && stack.search) drawSearchBar(g, stack.search, search.value, search.stages, search.rejected);
-      if (action && stack.action) drawBar(g, stack.action, action.value, "good");
+    const computer = search ? world.objectAnchor("computer") : null;
+    if (search && computer) {
+      // Верхній край видимого світу (під панеллю): смужка, що не влазить над баблом, стає збоку від нього.
+      const box = searchBarBox(computer, this.ctx.scene.cameras.main.worldView.y);
+      drawSearchBar(g, box, search.value, search.stages, search.rejected);
     }
 
     // Плита (§8.7): зелена — готується, червона — скоро підгорить; на лицьовій грані плити, щоб не закривати страву.
