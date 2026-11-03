@@ -18,7 +18,7 @@ import type { GameState } from "../sim/types";
 import { RACE_BUILDING, RACE_TILES } from "./art/manifest/a14-race";
 import { CAR_REACH, HOME_ROAD } from "./homeroad";
 import type { Daylight } from "./light/daylight";
-import { CAR_BODY, DEPARTURE, LOT_BOUNDS, type CarPose } from "./parking";
+import { CAR_BODY, DEPARTURE, HOME_DEPARTURE, LOT_BOUNDS, type CarPose } from "./parking";
 import { scrollOffset, TRAFFIC_COLORS, TRAFFIC_KINDS, type TrafficKind, type TrafficLook } from "./racelook";
 
 /** Вид машини: своя чи машина потоку. */
@@ -170,8 +170,8 @@ const smooth = (u: number): number => {
 // --- Світло доби в поїздці ----------------------------------------------------------------------------------
 
 /**
- * Етап поїздки для світла: гонка, прибуття, аварія й кадр на місці — `drive` (годинник гри); від'їзд із парковки —
- * `departure`; дорога додому — `home`.
+ * Етап поїздки для світла: гонка, прибуття, аварія, кадр на місці й від'їзд від свого будинку (час гри не йде, §8.5 «Виїзд із
+ * дому») — `drive` (годинник гри); від'їзд із парковки пункту — `departure`; дорога додому — `home`.
  */
 export type TripLightStage = "drive" | "departure" | "home";
 
@@ -335,6 +335,21 @@ export function arrivalLights(ms: number, total: number): OwnLights {
 export function departureLights(ms: number): OwnLights {
   const on = smooth((ms - OWN_LIGHTS.onFrom) / OWN_LIGHTS.onMs);
   const reverse = on * (1 - smooth((ms - DEPARTURE.reverse) / OWN_LIGHTS.reverseOff));
+  return { head: on, tail: TAIL.running * on, reverse };
+}
+
+/**
+ * Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03): машина стоїть на своєму місці з вимкненими вогнями (як на
+ * місці біля пункту) і вмикає їх з `onFrom` за `OWN_LIGHTS.onMs`, поки кадр проступає з чорного й до того, як вона рушить
+ * (`HOME_DEPARTURE.reverseFrom`); задній хід — поки задкує з місця. Наприкінці — як у гонці (`DRIVING_LIGHTS`): гонка починається
+ * без стрибка.
+ */
+export const HOME_LIGHTS = { onFrom: 60 } as const;
+
+/** Вогні своєї машини через `ms` мс від'їзду від свого будинку (`HOME_DEPARTURE`). */
+export function homeDepartureLights(ms: number): OwnLights {
+  const on = smooth((ms - HOME_LIGHTS.onFrom) / OWN_LIGHTS.onMs);
+  const reverse = on * (1 - smooth((ms - (HOME_DEPARTURE.reverseFrom + HOME_DEPARTURE.reverse)) / OWN_LIGHTS.reverseOff));
   return { head: on, tail: TAIL.running * on, reverse };
 }
 

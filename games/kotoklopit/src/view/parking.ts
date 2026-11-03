@@ -2,6 +2,8 @@
 // парковка й будівля пункту. Прибуття без керування: машина гальмує від своєї швидкості, перестроюється праворуч, звертає на
 // з'їзд і стає на своє місце носом угору, а потік їде далі. На місці — нерухомий кадр під карткою пункту. «Додому» — машина
 // задки виїжджає з місця, проїздом їде до з'їзду, звертає на дорогу носом донизу й без розриву переходить у дорогу додому.
+// Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03) — дзеркало: та сама парковка біля свого будинку, машина задки
+// виїжджає з місця, звертає на дорогу носом угору в середню смугу й стає там, де починається гонка, — і без розриву гонка.
 //
 // Чисті розрахунки без Phaser і DOM (`tests/parking.test.ts`); малює `RaceScene`. Як і в `homeroad.ts`, кадр — функція часу від
 // початку анімації: кадри з різним кроком показують те саме. Кінець прибуття, кадр на місці й початок від'їзду — той самий кадр.
@@ -17,12 +19,14 @@
 //   (`cx = width / 2 + frame.pan × parkingLayout(…).pan`), і так само ставить дорогу, узбіччя, парковку й будівлю;
 // - поворот — радіани за годинниковою стрілкою, 0 — носом угору (як `setRotation` арту машин у Phaser).
 
+import { PALETTE } from "../../art/palette";
 import { RACE } from "../sim/config";
-import { carAt } from "../sim/race";
+import { carAt, driveRace, newRace } from "../sim/race";
 import { createRng, deriveSeed } from "../sim/rng";
 import { gameMinutes } from "../sim/time";
-import type { Race, RaceCar, Trip } from "../sim/types";
+import type { Destination, Difficulty, Race, RaceCar, Trip } from "../sim/types";
 import { LOT_AHEAD, RACE_BUILDING, RACE_LOT } from "./art/manifest/a14-race";
+import type { ArtId } from "./art/types";
 import { CAR_REACH, HOME_ROAD, TRAFFIC } from "./homeroad";
 import {
   laneX,
@@ -391,15 +395,37 @@ interface DeparturePath {
   turnAt: number;
 }
 
-function departurePath(slot: number): DeparturePath {
+/** Задки з місця `slot` у проїзд: корма звертає праворуч, ніс — до з'їзду (і на від'їзді від пункту, і від свого будинку). */
+function reversePath(slot: number): { path: Path; cusp: Vec } {
   const start = slotAt(slot);
   const r = PARKING.park;
   const out = { x: start.x, y: AISLE - r };
   const cusp = { x: start.x + r, y: AISLE };
+  return { path: buildPath([line(start, out, true), curve(out, SOUTH, cusp, EAST, KAPPA * r, KAPPA * r, true)]), cusp };
+}
+
+/**
+ * За скільки секунд від рушання машина проїжджає `distance` одиниць арту, коли розганяється `smooth` до `speed` одиниць арту
+ * за секунду за `ramp` секунд: за `ramp` вона проїжджає половину того, що проїхала б за той час на повній швидкості.
+ */
+function rampTime(distance: number, speed: number, ramp: number): number {
+  const full = (speed * ramp) / 2;
+  if (distance >= full) return ramp + (distance - full) / speed;
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (speed * ramp * smoothArea(mid) < distance) lo = mid;
+    else hi = mid;
+  }
+  return ramp * hi;
+}
+
+function departurePath(slot: number): DeparturePath {
+  const { path: back, cusp } = reversePath(slot);
   const turnOut = { x: RIGHT_LANE + PARKING.turnOut, y: AISLE };
   const onRoad = { x: RIGHT_LANE, y: AISLE + PARKING.turnOut };
   const inLane = { x: HOME_LANE, y: onRoad.y + DEPARTURE.laneChange };
-  const back = buildPath([line(start, out, true), curve(out, SOUTH, cusp, EAST, KAPPA * r, KAPPA * r, true)]);
   const ahead = buildPath([
     line(cusp, turnOut),
     curve(turnOut, WEST, onRoad, SOUTH, KAPPA * PARKING.turnOut),
@@ -408,22 +434,7 @@ function departurePath(slot: number): DeparturePath {
     line(inLane, { x: HOME_LANE, y: inLane.y + 100 * SCREEN }),
   ]);
   const turn = ahead.marks[1] ?? 0;
-  // Розгін `smooth`: за `lotRamp` проїжджає половину того, що проїхав би за той час на повній швидкості.
-  const ramp = DEPARTURE.lotRamp / 1000;
-  const full = (DEPARTURE.lotSpeed * ramp) / 2;
-  let turnAt: number;
-  if (turn >= full) turnAt = ramp + (turn - full) / DEPARTURE.lotSpeed;
-  else {
-    let lo = 0;
-    let hi = 1;
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2;
-      if (DEPARTURE.lotSpeed * ramp * smoothArea(mid) < turn) lo = mid;
-      else hi = mid;
-    }
-    turnAt = ramp * hi;
-  }
-  return { back, ahead, turn, turnAt };
+  return { back, ahead, turn, turnAt: rampTime(turn, DEPARTURE.lotSpeed, DEPARTURE.lotRamp / 1000) };
 }
 
 // --- Накладання кузовів ------------------------------------------------------------------------------------
@@ -748,6 +759,196 @@ export function departureFrame(ms: number, height: number, spot: ParkingSpot): P
   };
 }
 
+// --- Виїзд із дому ---------------------------------------------------------------------------------------------
+
+/**
+ * Свій будинок (§8.5 «Виїзд із дому — від'їзд від свого будинку», рішення автора 2026-11-03): та сама парковка з будівлею, що
+ * біля пунктів, але дах — свого кольору, а на табличці — дім. Рішення виконавця: дах — дерево `wood` (дахи — барвисті сім'ї,
+ * картон чи дерево, `art/STYLE.md` §11 race; дерева не має жоден пункт, `DESTINATION_ROOFS`, і воно темніше за картонний дах
+ * офісу); табличка — гліф дому `ui/glyph/home`, той самий, що в «🏠 Речі» телефона й «🏠 кіт» наприкінці гри: значення те
+ * саме — дім (§11.4 «унікальна іконка на унікальний кейс»). Своє місце й машини сусідів — із зерна гри (`homeLotSeed`): щоразу
+ * ті самі, бо це свій двір.
+ */
+export const HOME_LOT = {
+  roof: Number.parseInt(PALETTE.wood.slice(1), 16),
+  sign: "ui/glyph/home" as ArtId,
+} as const;
+
+/** Чия парковка в кадрі: пункту чи свого будинку. */
+export type LotPlace = Destination | "home";
+
+/** Звідки береться вигляд парковки свого будинку: інша сіль, ніж у поїздок (`LOT_SALT` — уже поверх неї). */
+const HOME_SALT = 0x40_3e;
+
+/** Зерно парковки свого будинку (`lotCars`, `ownSlot`) із зерна гри (`state.seed`): та сама в кожній поїздці й після перезавантаження. */
+export function homeLotSeed(gameSeed: number): number {
+  return deriveSeed(gameSeed, HOME_SALT);
+}
+
+/**
+ * Виїзд із дому (≈ 3 с; час — мс від запуску сцени дороги, коли квартира вже темна). Кадр проступає з чорного (`fadeIn`), поки
+ * машина стоїть на своєму місці носом угору й вмикає фари; з `reverseFrom` вона задки виїжджає з місця в проїзд (`reverse`, як від
+ * пункту), рушає проїздом до з'їзду (розгін до `lotSpeed` за `lotRamp`, як від пункту), звертає праворуч на дорогу носом угору,
+ * перестроюється в середню смугу (`laneChange`) і без перельоту стає там, де починається гонка (`brake`: трохи розганяється й
+ * гальмує до нуля — гонка починається з місця). Камера стоїть, поки машина на майданчику, а щойно та звертає на дорогу, їде
+ * вгору разом із нею: на скільки машина просунулася вгору дорогою, на таку частку шляху камери (`HOME_SHIFT`), — тож машина на
+ * екрані лише трохи опускається на своє місце в гонці, розганяється й гальмує дорога, як у гонці, а парковка з будинком
+ * відпливає вниз і до кінця вся на `clear` одиниць арту під нижнім краєм кадру. Зсув убік (вузьке вікно) за `panMs` від рушання
+ * повертається до середини дороги. Наприкінці кадр — рівно кадр старту гонки; напис і смуга прогресу гонки проступають за
+ * `hud` мс до кінця. Числа — рішення виконавця; перестроювання (`laneChange`) — довше, ніж від пункту: машина звертає в
+ * середню смугу без різкого нахилу.
+ *
+ * `clear`: верх парковки з будинком (`LOT_BOUNDS.top`) — під нижнім краєм, і так далеко, що ні кадр парковки, ні те, що поруч із
+ * нею інакше (дерева на плитках узбіччя під нею, `RaceScene.drawRoad`; вуличні ліхтарі праворуч поруч із нею, `streetPools`,
+ * яких там немає на 1,5 радіуса плями — 315), уже не сягає кадру: кадр старту гонки без неї той самий
+ * (`tests/homedeparture.test.ts`).
+ */
+export const HOME_DEPARTURE = {
+  fadeIn: HOME_ROAD.fadeIn,
+  reverseFrom: 350,
+  reverse: DEPARTURE.reverse,
+  lotSpeed: DEPARTURE.lotSpeed,
+  lotRamp: DEPARTURE.lotRamp,
+  laneChange: 320,
+  ms: 3000,
+  panMs: DEPARTURE.panMs,
+  clear: 320,
+  hud: 300,
+} as const;
+
+/** Коли машина рушає вперед (задки — позаду), мс. */
+const HOME_FORWARD = HOME_DEPARTURE.reverseFrom + HOME_DEPARTURE.reverse;
+/** Смуга старту гонки (`newRace`) і своя машина там на екрані (одиниці арту від верху кадру; x — від середини дороги). */
+const START_LANE = newRace(0, 0).lane;
+/** Середня лінія з'їзду свого будинку наприкінці від'їзду: верх парковки з будинком — на `clear` під нижнім краєм кадру. */
+const HOME_LOT_END = SCREEN - LOT_BOUNDS.top + HOME_DEPARTURE.clear;
+/** На скільки камера їде вгору за від'їзд (світ — донизу). */
+const HOME_SHIFT = HOME_LOT_END - PARKED_LOT_Y;
+/** Де своя машина стає наприкінці, у рамці парковки: там, де вона на старті гонки. */
+const HOME_END: Vec = { x: laneX(0, START_LANE, 1), y: PLAYER_Y - HOME_LOT_END };
+/** Машини потоку гонки на ×1, одиниць арту за секунду: на від'їзді час гри не йде, і швидкість гри (×N розробника) не діє. */
+const HOME_TRAFFIC = RACE.carSpeed * gameMinutes(1) * ROAD_UNIT;
+
+/** Шлях від'їзду від свого будинку й рух ним. */
+interface HomeDeparturePlan {
+  back: Path;
+  ahead: Path;
+  /** Шлях уперед до кінця повороту на дорогу: досі — розгін проїздом (`lotSpeed`), далі — дорогою до старту гонки. */
+  turn: number;
+  /** За скільки секунд від рушання вперед машина доїжджає до `turn` і з якою швидкістю (одиниць арту за секунду). */
+  turnAt: number;
+  turnSpeed: number;
+  /** Скільки секунд від `turn` до старту гонки й швидкість на початку цього відрізка в шляхах за той час (`brake`). */
+  road: number;
+  pace: number;
+}
+
+function homeDeparturePath(slot: number): HomeDeparturePlan {
+  const { path: back, cusp } = reversePath(slot);
+  const turnOut = { x: RIGHT_LANE + PARKING.turnOut, y: AISLE };
+  const onRoad = { x: RIGHT_LANE, y: AISLE - PARKING.turnOut };
+  const inLane = { x: HOME_END.x, y: onRoad.y - HOME_DEPARTURE.laneChange };
+  const ahead = buildPath([
+    line(cusp, turnOut),
+    curve(turnOut, WEST, onRoad, NORTH, KAPPA * PARKING.turnOut),
+    curve(onRoad, NORTH, inLane, NORTH, HOME_DEPARTURE.laneChange / 3),
+    line(inLane, HOME_END),
+  ]);
+  const turn = ahead.marks[2] ?? 0;
+  const ramp = HOME_DEPARTURE.lotRamp / 1000;
+  const turnAt = rampTime(turn, HOME_DEPARTURE.lotSpeed, ramp);
+  const turnSpeed = HOME_DEPARTURE.lotSpeed * smooth(turnAt / ramp);
+  const road = (HOME_DEPARTURE.ms - HOME_FORWARD) / 1000 - turnAt;
+  const rest = ahead.length - turn;
+  return { back, ahead, turn, turnAt, turnSpeed, road, pace: rest > 0 ? (turnSpeed * road) / rest : 0 };
+}
+
+const homeDepartures = new Map<number, HomeDeparturePlan>();
+
+function planHomeDeparture(slot: number): HomeDeparturePlan {
+  let plan = homeDepartures.get(slot);
+  if (!plan) {
+    plan = homeDeparturePath(slot);
+    homeDepartures.set(slot, plan);
+  }
+  return plan;
+}
+
+/** Де своя машина через `ms` мс від'їзду від свого будинку, у рамці парковки (одиниці арту). */
+function homeDeparturePose(ms: number, plan: HomeDeparturePlan): { x: number; y: number; rotation: number } {
+  if (ms < HOME_FORWARD) return pathAt(plan.back, plan.back.length * smooth((ms - HOME_DEPARTURE.reverseFrom) / HOME_DEPARTURE.reverse));
+  const t = (ms - HOME_FORWARD) / 1000;
+  if (t < plan.turnAt) {
+    const ramp = HOME_DEPARTURE.lotRamp / 1000;
+    return pathAt(plan.ahead, HOME_DEPARTURE.lotSpeed * ramp * smoothArea(t / ramp));
+  }
+  const u = plan.road > 0 ? (t - plan.turnAt) / plan.road : 1;
+  return pathAt(plan.ahead, plan.turn + (plan.ahead.length - plan.turn) * brake(u, plan.pace));
+}
+
+/**
+ * Від'їзд від свого будинку: де стала гонка (`done` — 0 на свіжій), зерно парковки свого будинку (`homeLotSeed`) і машини потоку
+ * гонки в мить її старту (`ahead` — одиниць дороги попереду своєї машини, вигляд — `trafficLook`, як їх покаже гонка).
+ */
+export interface HomeDepartureStart extends ParkingSpot {
+  cars: readonly ArrivalCar[];
+}
+
+/**
+ * Знімок старту гонки для від'їзду від свого будинку: сим ставить машини потоку лише з першим кроком гонки (`driveRace`), тож
+ * перший крок робиться на копії (`race` не змінюється) — і ті самі машини гонка поставить сама, коли від'їзд скінчиться.
+ * `gameSeed` — зерно гри (`state.seed`), `difficulty` і `traffic` — як у `driveTrip` (складність і `trafficFactor`).
+ */
+export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Difficulty, traffic = 1): HomeDepartureStart {
+  const probe = structuredClone(race);
+  driveRace(probe, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic);
+  return {
+    done: race.done,
+    seed: homeLotSeed(gameSeed),
+    cars: probe.cars.map((car) => ({ lane: car.lane, ahead: carAt(probe, car) - probe.done, look: trafficLook(car) })),
+  };
+}
+
+/**
+ * Кадр від'їзду від свого будинку через `ms` мс від запуску сцени дороги на кадрі заввишки `height` px (`HOME_DEPARTURE`). На
+ * `ms` = 0 — кадр парковки, як на місці біля пункту (парковка з будинком посередині висоти кадру, машина на своєму місці носом
+ * угору, дорога порожня), але чорний: він проступає за `fadeIn`. Зсув убік (`pan`) — частка `lotFitPan`: картки немає, тож
+ * парковку лише вміщено в кадр. З `HOME_DEPARTURE.ms` — `done` і кадр старту гонки: зсув дороги `done × ppu`, своя машина в
+ * смузі старту на `RACE_PLAYER_Y` носом угору, машини потоку там, де їх поставить перший крок гонки (`homeDepartureStart`), —
+ * вони весь від'їзд їдуть дорогою зі швидкістю потоку гонки на ×1 і з'являються згори, бо камера їх обганяє; парковка з
+ * будинком — уся під нижнім краєм кадру.
+ */
+export function homeDepartureFrame(ms: number, height: number, start: HomeDepartureStart): ParkingAnimationFrame {
+  const time = Math.min(Math.max(0, ms), HOME_DEPARTURE.ms);
+  const k = raceScale(height);
+  const plan = planHomeDeparture(ownSlot(start.seed));
+  const pose = homeDeparturePose(time, plan);
+  // Камера — за машиною вгору дорогою: частка шляху вгору від проїзду до старту гонки (задки — ще ні).
+  const up = time < HOME_FORWARD ? 0 : clamp01((AISLE - pose.y) / (AISLE - HOME_END.y));
+  const lotY = PARKED_LOT_Y + HOME_SHIFT * up;
+  const behind = (HOME_TRAFFIC * (HOME_DEPARTURE.ms - time)) / 1000;
+  const traffic: ParkingCar[] = [];
+  for (const car of start.cars) {
+    const y = lotY + HOME_END.y - car.ahead * ROAD_UNIT + behind;
+    if (inFrame(y)) traffic.push({ x: laneX(0, car.lane, 1) * k, y: y * k, rotation: 0, look: car.look, alpha: 1 });
+  }
+  return {
+    offset: zero((start.done * ROAD_UNIT + lotY - HOME_LOT_END) * k),
+    lot: lotY * k,
+    pan: 1 - smooth((time - HOME_FORWARD) / HOME_DEPARTURE.panMs),
+    car: { x: zero(pose.x * k), y: (lotY + pose.y) * k, rotation: pose.rotation },
+    parked: parkedCars(start.seed, lotY * k, height),
+    traffic,
+    dark: clamp01(1 - time / HOME_DEPARTURE.fadeIn),
+    done: ms >= HOME_DEPARTURE.ms,
+  };
+}
+
+/** Напис і смуга прогресу гонки через `ms` мс від'їзду від свого будинку: проступають за `HOME_DEPARTURE.hud` до кінця (0–1). */
+export function homeDepartureHud(ms: number): number {
+  return smooth((ms - (HOME_DEPARTURE.ms - HOME_DEPARTURE.hud)) / HOME_DEPARTURE.hud);
+}
+
 // --- Де парковка в кадрі ---------------------------------------------------------------------------------------
 
 /** Кадр сцени дороги в одиницях інтерфейсу (`RaceView`): розмір, масштаб арту й безпечна зона. */
@@ -781,12 +982,20 @@ export function parkingLayout(view: ParkingView, cardRight: number): ParkingLayo
   const left = cardRight + margin;
   const right = view.width - view.safe.right - margin;
   const need = (RACE_LOT.reach.right - RACE_LOT.reach.left) * view.k;
-  if (!(right - left >= need)) {
-    // Картка посередині, але парковка з будівлею однаково в кадрі (§8.5, рецензія реалізації 2026-11-02): на вузькому високому
-    // вікні (800 × 900) вона виходила за правий край разом зі своєю машиною на місці.
-    const lotRight = view.width / 2 + RACE_LOT.reach.right * view.k;
-    return { aside: false, pan: Math.min(0, right - lotRight), strip: null };
-  }
+  // Картка посередині, але парковка з будівлею однаково в кадрі (§8.5, рецензія реалізації 2026-11-02): на вузькому високому
+  // вікні (800 × 900) вона виходила за правий край разом зі своєю машиною на місці.
+  if (!(right - left >= need)) return { aside: false, pan: lotFitPan(view), strip: null };
   const lotMiddle = view.width / 2 + ((RACE_LOT.reach.left + RACE_LOT.reach.right) / 2) * view.k;
   return { aside: true, pan: (left + right) / 2 - lotMiddle, strip: { left: cardRight, right: view.width - view.safe.right } };
+}
+
+/**
+ * Зсув середини дороги (одиниці інтерфейсу, ≤ 0), за якого парковка з будівлею вміщається в кадр з полем `PARKING.margin`
+ * праворуч від безпечної зони: уміщається й так — 0. Так стоїть парковка під карткою посередині (`parkingLayout`) і біля свого
+ * будинку на виїзді з дому (`homeDepartureFrame`: картки там немає).
+ */
+export function lotFitPan(view: ParkingView): number {
+  const right = view.width - view.safe.right - PARKING.margin * view.k;
+  const lotRight = view.width / 2 + RACE_LOT.reach.right * view.k;
+  return Math.min(0, right - lotRight);
 }
