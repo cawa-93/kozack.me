@@ -12,6 +12,7 @@ import { addMess } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
+import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
 
 /** Шкала шерсті квартири (§8.7): 0–100. */
@@ -36,7 +37,7 @@ export function tuftsOf(state: Pick<GameState, "home">): readonly number[] {
 
 /**
  * Видимі жмути шерсті (§8.7): безлад на своїх місцях (рішення автора 2026-11-02, «Пилосос у руках»). Від 50 шерсті вони
- * з'являються на перших вільних місцях (`topUpTufts`) і лежать, доки їх не прибере пилосос у руках чи робот-пилосос. Вони
+ * з'являються по одному біля котів (`shedTuft`) і лежать, доки їх не прибере пилосос у руках чи робот-пилосос. Вони
  * дратують, як безлад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), прискорюють падіння гігієни й тягнуть на штраф ОСББ
  * (`furVisible`): що видно, те й шкодить.
  */
@@ -60,13 +61,99 @@ function tuftTarget(fur: number): number {
 }
 
 /**
- * Нові жмути шерсті (§8.7): на перші вільні місця `FUR_SPOTS`, доки їх не стане стільки, скільки за шкалою (`tuftTarget`). Ті, що
- * лежать, лишаються, хоч би скільки шерсті було: їх прибирають.
+ * Скільки жмутів ще ляже за шкалою (§8.7, [Змінено пізніше]): шерсть на них уже набралася, а вони з'являються по одному
+ * (`shedTuft`). Нуль — на підлозі всі, скільки за шкалою.
+ */
+export function pendingTufts(state: Pick<GameState, "home">): number {
+  return Math.max(0, tuftTarget(state.home.fur) - tuftsOf(state).length);
+}
+
+/**
+ * Жмути шерсті за шкалою одразу (§8.7): на перші вільні місця `FUR_SPOTS`, доки їх не стане стільки, скільки за шкалою
+ * (`tuftTarget`). Так вони лягають там, де їхньої появи не видно: у старому збереженні чи сценарії, де жмутів ще не було
+ * (`upgradeVacuum`), і вранці, якщо за коротку ніч не всі встигли з'явитися (`nightlyHousehold`). Протягом дня й ночі вони
+ * з'являються по одному (`shedTuft`). Ті, що лежать, лишаються, хоч би скільки шерсті було: їх прибирають.
  */
 export function topUpTufts(state: GameState): void {
   const tufts = (state.home.tufts ??= []);
   const target = tuftTarget(state.home.fur);
+  const before = tufts.length;
   for (let i = 0; i < FUR_SPOTS.length && tufts.length < target; i++) if (!tufts.includes(i)) tufts.push(i);
+  if (tufts.length > before) state.home.tuftAt = absoluteMinute(state.day, state.minute);
+}
+
+/** Коти вдома, що лишають шерсть (§8.7): кіт у поїздці чи на сходах тут не линяє, безшерстий — не линяє зовсім. */
+function shedders(state: GameState): Cat[] {
+  return state.cats.filter((c) => c.away === null && furPerHour(state, c) > 0);
+}
+
+/** Як далеко кіт від місця жмута (§8.7): відстань, клітинки, і чи між ними немає стіни (`clearPath`). */
+interface TuftReach {
+  distance: number;
+  clear: boolean;
+}
+
+/** Ближче для жмута: без стіни між котом і місцем — завжди ближче, ніж крізь стіну, а далі — за відстанню. */
+const closer = (a: TuftReach, b: TuftReach | null): boolean => b === null || (a.clear !== b.clear ? a.clear : a.distance < b.distance);
+
+/**
+ * Хто з котів `cats` найближчий до місця `spot` (§8.7, `closer`): жмут із-під кота не опиняється за стіною в іншій кімнаті, коли
+ * поруч є місце без стіни. Котів немає — null.
+ */
+function nearestShedder(cats: readonly Cat[], spot: Vec): (TuftReach & { cat: Cat }) | null {
+  let best: (TuftReach & { cat: Cat }) | null = null;
+  for (const cat of cats) {
+    const reach = { cat, distance: Math.hypot(spot.x - cat.x, spot.y - cat.y), clear: clearPath(cat, spot) };
+    if (closer(reach, best)) best = reach;
+  }
+  return best;
+}
+
+/**
+ * Де ляже новий жмут (§8.7, «Жмути шерсті» [Змінено пізніше], рішення автора 2026-11-03): на вільному місці `FUR_SPOTS`,
+ * найближчому до кота вдома (`nearestShedder`); котів удома немає — на першому вільному, як і раніше. Вільних місць немає — null.
+ */
+function nextTuftSpot(state: GameState): number | null {
+  const tufts = tuftsOf(state);
+  const free = FUR_SPOTS.flatMap((_, i) => (tufts.includes(i) ? [] : [i]));
+  const cats = shedders(state);
+  let best: (TuftReach & { index: number }) | null = null;
+  for (const index of free) {
+    const near = nearestShedder(cats, FUR_SPOTS[index]!);
+    if (near && closer(near, best)) best = { index, distance: near.distance, clear: near.clear };
+  }
+  return best?.index ?? free[0] ?? null;
+}
+
+/**
+ * З-під якого кота вдома викотився жмут на місці `index` (§8.7, [Змінено пізніше]): найближчого до нього, від кого до місця
+ * немає стіни; такого немає (котів удома немає чи всі за стіною) — null. Для вигляду: звідки жмут котиться на своє місце.
+ */
+export function tuftCat(state: GameState, index: number): Cat | null {
+  const spot = FUR_SPOTS[index];
+  if (!spot) return null;
+  const near = nearestShedder(shedders(state), spot);
+  return near?.clear === true ? near.cat : null;
+}
+
+/**
+ * Новий жмут шерсті за хвилини побуту (§8.7, «Жмути шерсті» [Змінено пізніше], рішення автора 2026-11-03: «котяча шерсть на
+ * підлозі з'являється посеред дня миттєво, що псує враження»): жмутів менше, ніж за шкалою (`tuftTarget`), — лягає один, біля
+ * кота вдома (`nextTuftSpot`), і не раніше ніж за `HOUSEHOLD.tuftEveryMinutes` після попереднього (`home.tuftAt`). Так на 50
+ * шерсті шість жмутів з'являються один за одним, а не всі разом; уночі — так само, і до ранку їх стільки, скільки за шкалою.
+ * Шкодять (`furVisible`) лише ті, що вже лежать.
+ */
+export function shedTuft(state: GameState): void {
+  const home = state.home;
+  const tufts = (home.tufts ??= []);
+  if (tufts.length >= tuftTarget(home.fur)) return;
+  const now = absoluteMinute(state.day, state.minute);
+  // Годинник пішов назад (режим розробки) — чекати не на що.
+  if (home.tuftAt !== undefined && now >= home.tuftAt && now - home.tuftAt < HOUSEHOLD.tuftEveryMinutes) return;
+  const index = nextTuftSpot(state);
+  if (index === null) return;
+  tufts.push(index);
+  home.tuftAt = now;
 }
 
 /** Множник падіння гігієни (§8.7): без чистого одягу й у шерсті вона падає швидше. */
@@ -341,7 +428,9 @@ export function upgradeVacuum(state: GameState): void {
   else if (!home.vacuumAt) home.vacuumAt = { ...VACUUM_HOME };
   const activity = state.character.activity;
   if (activity?.kind === "use" && activity.target === "vacuum") state.character.activity = null;
-  topUpTufts(state);
+  // Жмутів ще не було (старе збереження, сценарій) — лягають за шкалою одразу; у збереженні, де вони вже з'являлися по одному
+  // (`tuftAt`), — і далі по одному: завантаження стану не змінює (§8.7, [Змінено пізніше]).
+  if (home.tuftAt === undefined) topUpTufts(state);
 }
 
 /** Хвилини побуту вдень і вночі: шерсть і жмути, пил, прання, техніка за розкладом. */
@@ -349,7 +438,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const home = state.home;
   const hours = minutes / 60;
   for (const cat of state.cats) if (cat.away === null) home.fur = Math.min(FUR_MAX, home.fur + furPerHour(state, cat) * hours);
-  topUpTufts(state);
+  shedTuft(state);
   tickDust(state, minutes);
   // Без світла прання, запущене до відключення, стоїть на паузі й допереться, щойно світло буде (§4.1; рішення виконавця
   // 2026-11-02: не губить засіб і не дає випраного без струму; буває лише в старому збереженні чи з панелі розробки — запустити
@@ -594,9 +683,13 @@ export function upgradeFeeder(state: GameState): void {
   if (quality && bowl && "slot" in bowl && feeders.length === 0) feeders.push({ slot: bowl.slot, quality, food: 0, foodQuality: null, sterile: false });
 }
 
-/** Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. */
+/**
+ * Ранок (§8.7): мінус день чистого одягу; дешева техніка може зламатися. Жмутів шерсті вранці стільки, скільки за шкалою: уночі
+ * вони з'являються по одному (`shedTuft`), а якщо за коротку ніч не всі встигли — решта лягає зараз, поки гравець не бачить.
+ */
 export function nightlyHousehold(state: GameState, rng: Rng): void {
   const home = state.home;
+  topUpTufts(state);
   home.clothes = Math.max(0, home.clothes - 1);
   // Скинуті дрібнички вранці знову на столах, а розбитий кухоль — уже новий (§9.12, «Скидання речей»).
   delete home.trinkets;

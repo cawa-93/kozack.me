@@ -9,7 +9,7 @@ import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
 import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { needsHumanMeds } from "../src/sim/illness";
-import { FUR_SPOTS, furVisible, isDryMess, tuftsOf } from "../src/sim/household";
+import { FUR_SPOTS, furVisible, isDryMess, pendingTufts, tuftsOf } from "../src/sim/household";
 import { DUST_SPOTS, dustOf, floorDust } from "../src/sim/dust";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
@@ -410,10 +410,14 @@ export class Bot {
 
   // --- Пилосос (§8.7) -------------------------------------------------------------------------
 
-  /** Чи пилососити: видно жмути шерсті чи пил на підлозі, або пилу в кутах і біля стін набралося `VACUUM_DUST`. */
+  /**
+   * Чи пилососити: видно жмути шерсті, а нових за шкалою вже не буде (`pendingTufts`), чи пил на підлозі, або пилу в кутах і біля
+   * стін набралося `VACUUM_DUST`. Жмути з'являються по одному (§8.7, [Змінено пізніше], 2026-11-03): бот, як і раніше, прибирає їх
+   * усі разом, а не бігає з пилососом по кожен (так він пилососив удвічі частіше — гучний пилосос щоразу лякає котів).
+   */
   private wantsVacuum(): boolean {
     const s = this.state;
-    return furVisible(s) || floorDust(s).length > 0 || dustOf(s).length >= VACUUM_DUST;
+    return (furVisible(s) && pendingTufts(s) === 0) || floorDust(s).length > 0 || dustOf(s).length >= VACUUM_DUST;
   }
 
   /** Узяти пилосос (§8.7): дійти до нього й натиснути; далі його носить `vacuumStep`. */

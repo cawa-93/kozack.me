@@ -1,0 +1,215 @@
+// Жмути шерсті з'являються по одному біля кота (§8.7, «Жмути шерсті» [Змінено пізніше], рішення автора 2026-11-03: «котяча
+// шерсть на підлозі з'являється посеред дня миттєво, що псує враження»): у симуляції — не частіше ніж раз на
+// `HOUSEHOLD.tuftEveryMinutes`, на вільному місці, найближчому до кота вдома, уночі так само. Поріг 50, число жмутів за шкалою й
+// прибирання — як і раніше.
+
+import { describe, expect, it } from "vitest";
+
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
+import { createCat } from "../src/sim/cat";
+import { HOUSEHOLD } from "../src/sim/config";
+import { advance, deserialize, goToSleep, newGame, serialize } from "../src/sim/game";
+import { isWall, roomAt } from "../src/sim/home";
+import { FUR_SPOTS, furPerHour, furVisible, nightlyHousehold, tickHousehold, tuftCat, tuftsOf } from "../src/sim/household";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
+import { absoluteMinute } from "../src/sim/time";
+import type { Cat, GameState, Save, Vec } from "../src/sim/types";
+import { hours, withCatCorner } from "./helpers";
+
+function game(): Save {
+  const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 12 }));
+  save.current.modifiers.day = null;
+  save.current.modifiers.week = null;
+  save.current.minute = hours(10);
+  return save;
+}
+
+/** Кіт удома в точці `at` (короткошерстий, без рис): лишає шерсть. */
+function catAt(state: GameState, at: Vec): Cat {
+  const cat = createCat(state, createRng(state.nextId), { source: "shelter", ageWeeks: 30, at });
+  cat.traits = [];
+  cat.arrivedDay = -10;
+  cat.shape.coat = null;
+  addCat(state, cat);
+  return cat;
+}
+
+/**
+ * Прожити `minutes` хвилин побуту похвилинно (коти стоять, де стоять). Повертає, на якій хвилині від старту з'являвся кожен
+ * новий жмут, і який.
+ */
+function live(state: GameState, minutes: number): { minute: number; index: number }[] {
+  const appeared: { minute: number; index: number }[] = [];
+  for (let m = 0; m < minutes; m++) {
+    const before = tuftsOf(state).length;
+    tickHousehold(state, state.minute, 1);
+    for (const index of tuftsOf(state).slice(before)) appeared.push({ minute: m, index });
+    state.minute += 1;
+  }
+  return appeared;
+}
+
+const distance = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+describe("жмути з'являються по одному (§8.7, [Змінено пізніше], рішення автора 2026-11-03)", () => {
+  it("на 50 шерсті шість жмутів лягають не разом, а по одному — щонайменше через `tuftEveryMinutes`; без котів — на перших місцях", () => {
+    const state = game().current;
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    const appeared = live(state, 2 * hours(1));
+    expect(appeared.map((a) => a.index)).toEqual([0, 1, 2, 3, 4, 5]);
+    // Перший — одразу, як шерсть дійшла до 50; далі — по одному.
+    expect(appeared[0]?.minute).toBe(0);
+    for (let i = 1; i < appeared.length; i++) expect(appeared[i]!.minute - appeared[i - 1]!.minute).toBeGreaterThanOrEqual(HOUSEHOLD.tuftEveryMinutes);
+    // Не повільніше, ніж треба: за годину — усі, скільки за шкалою.
+    expect(appeared.at(-1)!.minute).toBeLessThanOrEqual(hours(1));
+    expect(furVisible(state)).toBe(true);
+  });
+
+  it("менше 50 жмутів не з'являється, хоч би скільки часу минуло; понад шкалу — теж ні", () => {
+    const state = game().current;
+    state.home.fur = HOUSEHOLD.dirtyFur - 0.1;
+    expect(live(state, hours(2))).toEqual([]);
+    state.home.fur = 60;
+    expect(live(state, hours(3))).toHaveLength(7);
+  });
+
+  it("новий жмут — на вільному місці, найближчому до кота вдома, і викочується саме з-під нього", () => {
+    const state = game().current;
+    const cat = catAt(state, { x: 5.6, y: 8.6 });
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    const appeared = live(state, hours(1));
+    const nearest = FUR_SPOTS.map((spot, index) => ({ index, d: distance(spot, cat) })).sort((a, b) => a.d - b.d);
+    // Шість найближчих до кота — у вітальні, де й він: стіни між ними немає.
+    for (const { index } of nearest.slice(0, 6)) expect(roomAt(FUR_SPOTS[index]!)).toBe("living");
+    expect(appeared).toHaveLength(6);
+    expect(appeared.map((a) => a.index)).toEqual(nearest.slice(0, 6).map((n) => n.index));
+    for (const { index } of appeared) expect(tuftCat(state, index)?.id).toBe(cat.id);
+  });
+
+  it("із кількох котів — біля того, до кого місце найближче", () => {
+    const state = game().current;
+    const near = catAt(state, { x: 4.3, y: 2.9 });
+    catAt(state, { x: 9.3, y: 9.6 });
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    live(state, 1);
+    // Спальня (4,1; 2,6) — за 0,36 клітинки від першого кота; до другого найближче місце далі.
+    expect(tuftsOf(state)).toEqual([6]);
+    expect(tuftCat(state, 6)?.id).toBe(near.id);
+  });
+
+  it("жмут не лягає за стіною, коли поруч кота є місце без стіни", () => {
+    const state = game().current;
+    // Кіт на кухні біля правої стіни: місце у вітальні (15,6; 7,2) ближче за кухонне (14,6; 2,4), але за стіною ряду 5.
+    const cat = catAt(state, { x: 18.4, y: 4.3 });
+    const living = FUR_SPOTS[4]!;
+    const kitchen = FUR_SPOTS[7]!;
+    expect(distance(cat, living)).toBeLessThan(distance(cat, kitchen));
+    expect(isWall(17, 5)).toBe(true);
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    live(state, 1);
+    expect(tuftsOf(state)).toEqual([7]);
+    // З-за стіни жмут не котиться: вигляд покаже, як він проступає на місці.
+    expect(tuftCat(state, 4)).toBeNull();
+    expect(tuftCat(state, 7)?.id).toBe(cat.id);
+  });
+
+  it("кіт у поїздці, на сходах чи безшерстий жмута не лишає: без інших котів — перше вільне місце, як було", () => {
+    for (const setup of [(c: Cat) => (c.away = "trip"), (c: Cat) => (c.away = "stairs"), (c: Cat) => (c.shape.coat = "hairless")]) {
+      const state = game().current;
+      const cat = catAt(state, { x: 11.6, y: 7.4 });
+      setup(cat);
+      state.home.fur = HOUSEHOLD.dirtyFur;
+      tickHousehold(state, state.minute, 0.1);
+      expect(tuftsOf(state)).toEqual([0]);
+      expect(tuftCat(state, 0)).toBeNull();
+    }
+  });
+
+  it("шкала доросла до ще одного жмута одразу після попереднього — новий лише за `tuftEveryMinutes` після нього", () => {
+    const state = game().current;
+    state.home.fur = 55;
+    live(state, 5 * HOUSEHOLD.tuftEveryMinutes + 1);
+    expect(tuftsOf(state)).toEqual([0, 1, 2, 3, 4, 5]);
+    const sixth = state.home.tuftAt!;
+    state.home.fur = 60;
+    const late = live(state, HOUSEHOLD.tuftEveryMinutes);
+    expect(late.map((a) => a.index)).toEqual([6]);
+    expect(state.home.tuftAt! - sixth).toBe(HOUSEHOLD.tuftEveryMinutes);
+  });
+
+  it("уночі жмути набираються так само по одному, і до ранку їх стільки, скільки за шкалою", () => {
+    const save = game();
+    const state = save.current;
+    catAt(state, { x: 9.5, y: 8.4 });
+    catAt(state, { x: 3.2, y: 2.6 });
+    state.home.fur = 60;
+    state.minute = hours(23);
+    const bed = absoluteMinute(state.day, state.minute);
+    goToSleep(save);
+    const morning = save.current;
+    const target = Math.floor((morning.home.fur / 100) * FUR_SPOTS.length);
+    expect(target).toBeGreaterThanOrEqual(7);
+    expect(tuftsOf(morning)).toHaveLength(target);
+    // Останній ліг уночі, не раніше, ніж мали б лягти сім по одному, — і не вранці всі разом.
+    const last = morning.home.tuftAt!;
+    expect(last).toBeGreaterThanOrEqual(bed + 6 * HOUSEHOLD.tuftEveryMinutes);
+    expect(last).toBeLessThan(absoluteMinute(morning.day, morning.minute));
+  });
+
+  it("вранці жмутів не менше, ніж за шкалою, хоч би якою короткою була ніч", () => {
+    const state = game().current;
+    state.home.fur = 60;
+    nightlyHousehold(state, createRng(1));
+    expect(tuftsOf(state)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+});
+
+describe("жмути й збереження (§8.7, [Змінено пізніше])", () => {
+  it("у збереженні, де жмути вже з'являлися по одному, завантаження їх не докладає: далі — по одному", () => {
+    const save = game();
+    const state = save.current;
+    state.home.fur = 60;
+    live(state, 1);
+    expect(tuftsOf(state)).toEqual([0]);
+    const loaded = deserialize(serialize(save)).current;
+    expect(tuftsOf(loaded)).toEqual([0]);
+    expect(loaded.home.tuftAt).toBe(state.home.tuftAt);
+    live(loaded, HOUSEHOLD.tuftEveryMinutes);
+    expect(tuftsOf(loaded)).toEqual([0, 1]);
+  });
+
+  it("старе збереження без `tuftAt`: жмути за шкалою лягають одразу, а наступний — уже з проміжком", () => {
+    const save = game();
+    save.current.home.fur = 60;
+    delete save.current.home.tuftAt;
+    const loaded = deserialize(serialize(save)).current;
+    expect(tuftsOf(loaded)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(loaded.home.tuftAt).toBe(absoluteMinute(loaded.day, loaded.minute));
+    loaded.home.fur = 70;
+    expect(live(loaded, HOUSEHOLD.tuftEveryMinutes + 1).map((a) => a.minute)).toEqual([HOUSEHOLD.tuftEveryMinutes]);
+  });
+
+  it("сценарій «Шерсть дійшла до 50» (`scenarios/fur-tufts.json`): жмутів ще немає; за годину гри — шість, по одному, кожен біля кота", () => {
+    const scenario = FILE_SCENARIOS["fur-tufts"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const state = save.current;
+    expect(tuftsOf(state)).toEqual([]);
+    expect(state.home.fur).toBeLessThan(HOUSEHOLD.dirtyFur);
+    expect(state.cats).toHaveLength(3);
+    for (const cat of state.cats) expect(furPerHour(state, cat), cat.name).toBeGreaterThan(0);
+    const seen: { minute: number; index: number }[] = [];
+    for (let m = 0; m < hours(1); m++) {
+      const before = tuftsOf(save.current).length;
+      advance(save, 1);
+      for (const index of tuftsOf(save.current).slice(before)) seen.push({ minute: m, index });
+    }
+    // Перший — за кілька хвилин, щойно шерсть дійшла до 50, — біля Пушка на килимі.
+    expect(seen[0]!.minute).toBeLessThan(5);
+    expect(tuftCat(save.current, seen[0]!.index)?.name).toBe("Пушок");
+    expect(seen).toHaveLength(6);
+    for (let i = 1; i < seen.length; i++) expect(seen[i]!.minute - seen[i - 1]!.minute).toBeGreaterThanOrEqual(HOUSEHOLD.tuftEveryMinutes);
+    for (const { index } of seen) expect(tuftCat(save.current, index), `жмут ${index}`).not.toBeNull();
+  });
+});

@@ -430,8 +430,9 @@ describe("шерсть і техніка (§8.7)", () => {
     save.current.home.fur = 60;
     save.current.minute = 11 * 60 + 50;
     expect(robotProgress(save.current)).toBeNull();
+    topUpTufts(save.current);
     tickHousehold(save.current, 11 * 60 + 50, 10);
-    // На 60 — сім жмутів: шість у вітальні й один у спальні.
+    // На 60 — сім жмутів (котів немає — на перших місцях): шість у вітальні й один у спальні.
     expect(tuftsOf(save.current)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     for (let minute = 12 * 60; minute < 12 * 60 + 30; minute++) tickHousehold(save.current, minute, 1);
     save.current.minute = 12 * 60 + 30;

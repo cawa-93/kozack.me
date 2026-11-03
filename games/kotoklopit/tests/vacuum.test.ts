@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 
 import { dropEverything } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { VACUUM } from "../src/sim/config";
+import { HOUSEHOLD, VACUUM } from "../src/sim/config";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, LAUNDRY_BASKET, objectById, roomAt, slotById, VACUUM_HOME } from "../src/sim/home";
-import { FUR_SPOTS, furVisible, putVacuumDown, ROBOT_DOCK, tickHousehold, tuftsOf } from "../src/sim/household";
+import { FUR_SPOTS, furVisible, putVacuumDown, ROBOT_DOCK, tickHousehold, topUpTufts, tuftsOf } from "../src/sim/household";
 import { answerCall } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -302,7 +302,7 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
 });
 
 describe("жмути шерсті на своїх місцях (§8.7, рішення автора 2026-11-02)", () => {
-  it("від 50 шерсті — шість жмутів на перших місцях; прибраний пилососом жмут знімає 1/12 шерсті, решта лежать і нижче 50", () => {
+  it("від 50 шерсті — шість жмутів (без котів — на перших місцях); прибраний пилососом жмут знімає 1/12 шерсті, решта лежать і нижче 50", () => {
     const save = game();
     const state = save.current;
     state.home.fur = 49;
@@ -310,7 +310,7 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     expect(tuftsOf(state)).toEqual([]);
     expect(furVisible(state)).toBe(false);
     state.home.fur = 55;
-    tickHousehold(state, state.minute, 0.1);
+    topUpTufts(state);
     expect(tuftsOf(state)).toEqual([0, 1, 2, 3, 4, 5]);
     takeVacuum(save);
     // До першого жмута (вітальня, біля лівої стіни) — і лише до нього.
@@ -324,9 +324,13 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     expect(events.find((e) => e.type === "vacuumed")).toMatchObject({ by: "person", tufts: [0] });
     // Шерсті вже менше 50, а п'ять жмутів лежать, доки їх не приберуть, — і шкодять.
     expect(furVisible(state)).toBe(true);
-    // Шерсть знову дійшла до 50 — жмут з'являється на першому вільному місці.
+    // Шерсть знову дійшла до 50 — жмут з'являється (котів удома немає — на першому вільному місці), але не раніше ніж за
+    // `tuftEveryMinutes` після попереднього (§8.7, [Змінено пізніше]).
     interact(save);
     state.home.fur = 50;
+    tickHousehold(state, state.minute, 0.1);
+    expect(tuftsOf(state)).toEqual([1, 2, 3, 4, 5]);
+    state.minute += HOUSEHOLD.tuftEveryMinutes;
     tickHousehold(state, state.minute, 0.1);
     expect(tuftsOf(state)).toEqual([1, 2, 3, 4, 5, 0]);
   });
@@ -337,7 +341,7 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     state.cats = [];
     state.home.appliances.robot = "cheap";
     state.home.fur = 100;
-    tickHousehold(state, state.minute, 0.1);
+    topUpTufts(state);
     takeVacuum(save);
     place(save, FUR_SPOTS[0]!);
     state.minute = hours(12) - 1;
@@ -359,7 +363,7 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
     const save = game();
     const state = save.current;
     state.home.fur = 100;
-    tickHousehold(state, state.minute, 0.1);
+    topUpTufts(state);
     expect(tuftsOf(state)).toHaveLength(FUR_SPOTS.length);
     takeVacuum(save);
     for (const spot of FUR_SPOTS) {
