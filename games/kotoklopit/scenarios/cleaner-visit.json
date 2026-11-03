@@ -1,0 +1,61 @@
+{
+  "name": "Прибиральниця",
+  "description": "Субота другого тижня, 12:50, день «Прибиральниця» (§4.1, рішення автора 2026-11-03: безкоштовна, невидима, прибирання миттєве, запаси гравця). Квартира брудна: «сюрприз» біля ліжка, блювота, шерстяна грудка, розсипаний наповнювач, папір, уламки, перекинутий смітник; шерсті 80 — дев'ять жмутів; пил і павутина в усіх кімнатах; лоток у ванній брудний, другий використаний; чистий одяг скінчився (кошик переповнений), машина стоїть; миски порожні, поїлки майже сухі; на плиті вариться страва. Запаси: корм на три миски, два пакети наповнювача, один засіб для прання. О 12:54 дзвінок у двері (бабл над дверима): «Душа компанії» Пушок біжить зустрічати й чекає під дверима, сором'язлива Тихоня ховається, Соня спить. О 13:00 двері прочиняються — і миттєво зникає весь безлад, жмути, пил і павутина, смітник стоїть, обидва лотки чисті (наповнювача більше немає), машина пере, обидві миски повні, поїлки повні; страва на плиті лишається. Картка «Заходила прибиральниця»: «…у квартирі чисто. Лотки почищено. Прання запущено. Котячі миски й поїлки повні.»",
+  "game": { "address": "she", "difficulty": "normal", "seed": 31 },
+  "state": {
+    "day": 12,
+    "minute": 770,
+    "modifiers": { "day": "cleaner" },
+    "nextId": 200,
+    "character": {
+      "money": 400,
+      "stats": { "satiety": 80, "hygiene": 60, "sanity": 60 },
+      "body": { "x": 13.5, "y": 8.5, "facing": { "x": -0.7071, "y": 0.7071 } }
+    },
+    "home": {
+      "clothes": 0,
+      "fur": 80,
+      "tufts": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      "dust": [0, 1, 2, 3, 4, 5, 6, 10, 11, 12, 13, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+      "dustClock": 20000,
+      "stove": { "item": { "kind": "raw", "quality": "cheap" }, "minutes": 4 },
+      "supplies": {
+        "catFood": { "cheap": 3, "premium": 0 },
+        "litter": { "cheap": 2, "premium": 0 },
+        "detergent": { "cheap": 1, "premium": 0 }
+      },
+      "items": [
+        { "id": 1, "kind": "bowl", "quality": "cheap", "slot": "bowl-1", "food": 0, "foodQuality": null, "sterile": false },
+        { "id": 2, "kind": "bowl", "quality": "cheap", "slot": "bowl-2", "food": 1, "foodQuality": "cheap", "sterile": false },
+        { "id": 3, "kind": "water", "quality": "cheap", "slot": "water-1", "water": 0 },
+        { "id": 4, "kind": "water", "quality": "cheap", "slot": "water-2", "water": 2 },
+        { "id": 5, "kind": "litter", "quality": "cheap", "slot": "litter-1", "litter": "cheap", "uses": 3 },
+        { "id": 6, "kind": "litter", "quality": "cheap", "slot": "litter-2", "litter": "cheap", "uses": 2 },
+        { "id": 7, "kind": "toy", "quality": "cheap", "x": 6.5, "y": 9.2, "uses": 0 }
+      ],
+      "messes": [
+        { "id": 101, "kind": "surprise", "x": 3.5, "y": 1.6, "cat": null },
+        { "id": 102, "kind": "vomit", "x": 11.6, "y": 8.3, "cat": null },
+        { "id": 103, "kind": "hairball", "x": 4.6, "y": 3.9, "cat": null },
+        { "id": 104, "kind": "litter", "x": 9.6, "y": 4.3, "cat": null },
+        { "id": 105, "kind": "paper", "x": 10.5, "y": 7.5, "cat": null },
+        { "id": 106, "kind": "broken", "x": 3.1, "y": 8.7, "cat": null },
+        { "id": 107, "kind": "garbage", "x": 17.5, "y": 2.6, "cat": null }
+      ]
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Пушок", "sex": "male", "sterilized": true, "arrivedDay": -20, "x": 12.5, "y": 7.6,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "guests", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 26, "name": "Тихоня", "sex": "female", "arrivedDay": -20, "x": 5.5, "y": 8.5,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+      "traits": [{ "group": "guests", "level": -1, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 40, "name": "Соня", "sex": "female", "arrivedDay": -20, "x": 1.5, "y": 2,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 },
+      "traits": [] }
+  ]
+}

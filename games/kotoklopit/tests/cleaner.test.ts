@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { createCat } from "../src/sim/cat";
 import { trashTipped } from "../src/sim/catai";
 import { cleanHome, settleDust } from "../src/sim/cleaner";
@@ -411,5 +412,61 @@ describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () =>
   it("двері: персонаж відчиняє прибиральниці, коли він удома; без нього їх ніхто не бачить", () => {
     expect(opensDoor({ type: "modifier", kind: "cleaner", value: 0, cleaner: visit() })).toBe(true);
     expect(opensDoor({ type: "modifier", kind: "cleaner-away", value: 0, cleaner: visit() })).toBe(false);
+  });
+});
+
+describe("сценарії", () => {
+  const load = (name: string): Save => {
+    const file = FILE_SCENARIOS[name];
+    if (!file) throw new Error(`Немає сценарію «${name}»`);
+    expect(file.name.length).toBeGreaterThan(0);
+    expect(file.description?.length ?? 0).toBeGreaterThan(0);
+    return applyScenario(file);
+  };
+
+  it("«Прибиральниця»: о 12:54 дзвінок — Пушок біжить до дверей, Тихоня ховається; о 13:00 усе чисто з тих запасів, що були, страва на плиті лишається", () => {
+    const save = load("cleaner-visit");
+    const state = save.current;
+    expect(state.modifiers.day).toBe("cleaner");
+    expect(state.minute).toBe(CLEANER - 10);
+    const cat = (name: string): Cat => state.cats.find((c) => c.name === name)!;
+    const { events, stop } = recordEvents();
+    advance(save, 5);
+    expect(events.some((e) => e.type === "doorbell")).toBe(true);
+    expect(cat("Пушок").act.target).toBe("guest");
+    expect(cat("Тихоня").act.kind).toBe("hide");
+    expect(cat("Соня").act.kind).toBe("sleep");
+    expect(state.home.messes.length).toBeGreaterThan(0);
+    advance(save, 6);
+    stop();
+    const home = state.home;
+    expect(home.messes).toEqual([]);
+    expect(tuftsOf(state)).toEqual([]);
+    expect(dustOf(state)).toEqual([]);
+    expect(home.items.filter((i): i is LitterItem => i.kind === "litter").map((b) => b.uses)).toEqual([0, 0]);
+    expect(home.supplies.litter.cheap).toBe(0);
+    expect(home.washer.state).toBe("washing");
+    expect(home.supplies.detergent.cheap).toBe(0);
+    expect(home.items.filter((i): i is BowlItem => i.kind === "bowl").map((b) => b.food)).toEqual([BOWL_CAPACITY, BOWL_CAPACITY]);
+    expect(home.items.filter((i): i is WaterItem => i.kind === "water").map((w) => w.water)).toEqual([WATER_CAPACITY, WATER_CAPACITY]);
+    expect(home.stove.item?.kind).toBe("raw");
+    const visit = visitOf(events);
+    expect(visit?.kind).toBe("cleaner");
+    expect(cleanerText(visit?.visit, true)).toBe("Прибиральниця пройшлася з ганчіркою й пилососом — у квартирі чисто. Лотки почищено. Прання запущено. Котячі миски й поїлки повні.");
+    // Двері відчиняла персонажка: Пушок, що чекав під дверима, на сходи не вибіг.
+    expect(state.cats.every((c) => c.away === null)).toBe(true);
+  });
+
+  it("«Будівельний пил»: чиста квартира о 09:58, о 10:00 — уся вітальня, до 12:00 — уся квартира", () => {
+    const save = load("construction-dust");
+    const state = save.current;
+    expect(state.modifiers.day).toBe("construction-dust");
+    expect(dustOf(state)).toEqual([]);
+    expect(scheduleOf(state)).toContain("10:00–12:00 пил");
+    advance(save, 3);
+    const living = DUST_SPOTS.flatMap((s, i) => (s.room === "living" ? [i] : []));
+    expect([...dustOf(state)].sort((a, b) => a - b)).toEqual(living);
+    advance(save, 2 * 60);
+    expect(dustOf(state)).toHaveLength(DUST_SPOTS.length);
   });
 });
