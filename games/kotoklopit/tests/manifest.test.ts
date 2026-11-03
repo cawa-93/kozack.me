@@ -19,7 +19,7 @@ import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGM
 import { artEntries, artEntry, DEFAULT_RES, manifestProblems } from "../src/view/art/manifest";
 import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, type WhiteLayer } from "../src/view/art/types";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
-import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_CANDLE, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { ICON_NAMES, type BubbleKind, type Mark } from "../src/view/iconnames";
 
 const ENTRIES = artEntries();
@@ -128,7 +128,7 @@ describe("маніфест: правила записів", () => {
       // Пил і павутина (§8.7, рішення автора 2026-11-02): «людське» забруднення кімнат.
       "a20-dust": ["mess/dust/", "mess/cobweb"],
       // День і ніч, відключення світла (§8.9, §4.1, рішення автора 2026-11-02): декор квартири, якого сим не знає.
-      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle-shelf/", "env/desk-lamp"],
+      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle-shelf/", "env/desk-lamp", "env/desk-candle"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
@@ -350,6 +350,13 @@ describe("маніфест: квартира", () => {
     expect(bulb && entry("env/desk-lamp").pivot.y - bulb.y).toBe(LIGHT_ART.deskLamp.lamp);
     expect(bulb && bulb.x - entry("env/desk-lamp").pivot.x).toBe(LIGHT_ART.deskLamp.dx);
     expect(DESK_LAMP.lamp - DESK_LAMP.z).toBe(LIGHT_ART.deskLamp.lamp);
+    // Свічка на столі (день відключення, замість лампи): стани — як у свічок на поличках, полум'я — на `flame` над стільницею
+    // (pivot), просто над центром підсвічника.
+    expect(states("env/desk-candle")).toEqual(["out", "lit"]);
+    const flame = entry("env/desk-candle").points?.["flame"];
+    expect(flame && entry("env/desk-candle").pivot.y - flame.y).toBe(LIGHT_ART.deskCandle.flame);
+    expect(flame?.x).toBe(entry("env/desk-candle").pivot.x);
+    expect(DESK_CANDLE.flame - DESK_CANDLE.z).toBe(LIGHT_ART.deskCandle.flame);
     const kitchen = PANES.find((p) => p.room === "kitchen");
     expect(kitchen && { wall: kitchen.wall, span: kitchen.span, z: kitchen.z }).toEqual(LIGHT_ART.kitchenWindow);
     expect(kitchen?.sill).toBeUndefined();
