@@ -237,6 +237,9 @@ describe("картка на місці: тло й положення (§8.5 «Н
     // Картка в один рядок: іконка, назва, бірка з ціною, «−», кількість, «+»; кнопки — не менші за 40 px.
     expect(rule(".shop-item")).toContain("grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;");
     expect(rule(".button.step,\n.button.step:active:not(:disabled),\n.button.step:disabled")).toContain("width: 40px;");
+    // На вигляд 40 px, а дотик — у зоні 44 × 44 px, як затверджені раніше 44 px під палець (рецензія 2026-11-03).
+    expect(rule(".button.step")).toContain("position: relative;");
+    expect(rule(".button.step::after")).toContain("inset: -2px;");
     // Після товару з однією карткою (нашийник) у двох колонках наступний — з нового рядка.
     expect(rule(".shop-item.single + .shop-item")).toContain("grid-column-start: 1;");
     expect(rule(".card:has(> .card-tabbar)")).toContain("width: min(820px, 100%);");
