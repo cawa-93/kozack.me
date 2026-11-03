@@ -391,6 +391,12 @@
   font: 400 14px/1.3 system-ui, sans-serif;
 }
 
+/* Опис риси під чипами в рядку кота (притулок, розплідник: `traitChips` усередині `.shop-name`) — звичайним шрифтом, як підпис
+   під назвою, а не рукописним від назви: дрібний рукописний читається гірше (рецензія 2026-11-03). */
+.shop-name .trait-about {
+  font: 400 14px/1.3 system-ui, sans-serif;
+}
+
 @media (max-width: 520px) {
   .shop-row {
     grid-template-columns: 1fr 1fr;

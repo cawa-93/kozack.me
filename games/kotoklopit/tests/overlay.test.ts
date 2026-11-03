@@ -209,6 +209,12 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".overlay.away:not(.aside) .card-clock")).toContain("display: inline;");
   });
 
+  it("CSS: назва рядка — рукописна, а підпис під нею й опис риси (притулок, розплідник) — звичайним шрифтом", () => {
+    expect(rule(".shop-name")).toContain("var(--hand)");
+    expect(rule(".shop-stock")).toContain("system-ui");
+    expect(rule(".shop-name .trait-about")).toContain("system-ui");
+  });
+
   it("CSS: слабше тло — за .away, а .aside лише притискає картку ліворуч", () => {
     expect(rule(".overlay.away:not(.cinematic):not(.solid)")).toContain("background: var(--dim-away);");
     expect(rule(".overlay.aside:not(.cinematic):not(.solid)")).not.toContain("background");
