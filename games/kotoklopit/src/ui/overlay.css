@@ -7,7 +7,7 @@
    Кольори — токени art/palette.ts.
    ============================================================================================================= */
 
-/* Рукописний шрифт заголовків, кнопок і вкладок: Pangolin (Kevin Burke, The Pangolin Project Authors; SIL Open Font
+/* Рукописний шрифт заголовків, кнопок, вкладок, а з рішення автора 2026-11-03 — ще й назв рядків, цін і сум магазину: Pangolin (Kevin Burke, The Pangolin Project Authors; SIL Open Font
    License 1.1 — src/ui/fonts/OFL.txt), woff2 з @fontsource/pangolin 5.3.0, лише підмножини cyrillic і latin (є і, ї, є,
    ґ). Файли браузер вантажить, лише коли шрифт ужито. */
 @font-face {
