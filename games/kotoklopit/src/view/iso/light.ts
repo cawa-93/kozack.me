@@ -12,8 +12,8 @@
 // - смуги сонця — додаванням на підлозі (`BACKDROP.sun`), під стінами й меблями;
 // - конуси від невидимих стельових світильників — додаванням, точки реєстру глибини під світильником: ближчі меблі, стіни, коти
 //   й персонаж їх закривають;
-// - сяйво бра, свічок на поличках і бойлера — на стіні (`BACKDROP.glow`), настільної лампи, газу, екрана й дисплея станції — у
-//   проміжку глибини свого господаря (станції — над її коробкою в реєстрі).
+// - сяйво бра, свічок на поличках і бойлера — на стіні (`BACKDROP.glow`), настільної лампи, свічки на столі, газу, екрана й
+//   дисплея станції — у проміжку глибини свого господаря (станції — над її коробкою в реєстрі).
 //
 // Удень (`daylight` → null) і коли світло доби вимкнене (`WorldFrame.lightMinute` = null, режим розробки `?light=off`) усе
 // сховано, а до першої ночі нічого й не створено: удень квартира до пікселя така, як без світла доби. Режими змішування
@@ -66,7 +66,10 @@ const SHADOW_SHIFT = 4096;
 /** Сяйво джерела: кольори й розміри частин (сяйво й, у свічки, яскраве ядро), де воно — на стіні чи над господарем. */
 interface GlowLook {
   readonly parts: readonly { readonly color: number; readonly radius: number; readonly alpha: number }[];
-  /** На стіні — під усім, що стоїть (`BACKDROP.glow`); інакше — у проміжку глибини господаря. */
+  /**
+   * На стіні — під усім, що стоїть (`BACKDROP.glow`); інакше — у проміжку глибини господаря. Джерело з господарем
+   * (`LightSource.host`) — завжди над господарем: свічка на столі світить, як свічка на поличці, але стоїть на столі.
+   */
   readonly wall: boolean;
   /** Видно лише в темряві: сяйво дрібної техніки вдень-присмерку не світиться. */
   readonly needsDark: boolean;
@@ -79,7 +82,8 @@ const GLOWS: Record<Exclude<LightKind, "ceiling">, GlowLook> = {
   boiler: { parts: [{ color: BOILER_LIGHT.color, ...BOILER_LIGHT.glow }], wall: true, needsDark: true },
   // Станція стоїть на підлозі (коробка реєстру, не тло): сяйво дисплея — над її кадром (`POWER_STATION_ID`), а не під нею.
   station: { parts: [{ color: STATION_LIGHT.color, ...STATION_LIGHT.glow }], wall: false, needsDark: true },
-  // Свічки — на настінних поличках (рішення автора 2026-11-03): сяйво на стіні, під усім, що стоїть у кімнаті.
+  // Свічки — на настінних поличках (рішення автора 2026-11-03): сяйво на стіні, під усім, що стоїть у кімнаті. Свічка на
+  // столі з комп'ютером у день відключення (`DESK_CANDLE`, з господарем) — над столом, як лампа: кіт на столі — над сяйвом.
   candle: {
     parts: [
       { color: CANDLE_LIGHT.glowColor, ...CANDLE_LIGHT.glow },
@@ -351,14 +355,15 @@ export class IsoLightView implements LightPart {
     if (existing) return existing;
     const { scene, layer } = this.ctx;
     const look = GLOWS[source.kind as Exclude<LightKind, "ceiling">];
+    const wall = look.wall && source.host === undefined;
     const images = look.parts.map((part) => {
       const img = new Phaser.GameObjects.Image(scene, 0, 0, softTexture(scene, "glow", part.color)).setBlendMode(Phaser.BlendModes.ADD).setVisible(false);
       img.setDisplaySize(part.radius * 2, part.radius * 2);
-      if (look.wall) img.setDepth(BACKDROP.glow);
+      if (wall) img.setDepth(BACKDROP.glow);
       layer.add(img);
       return img;
     });
-    const point = look.wall
+    const point = wall
       ? null
       : this.depth.addPoint((depth) => images.forEach((img, i) => img.setDepth(depth + i * 0.0001)));
     const glow = { look, images, point };

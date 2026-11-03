@@ -13,7 +13,7 @@ import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, 
 import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
-import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_CANDLE, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, SCONCES } from "../src/view/decor";
 import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
@@ -97,12 +97,13 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
-  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, настільна лампа, бойлер; станція й полички зі свічками дня
-  // відключення — о хвилині стану.
+  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, настільна лампа, бойлер; станція, полички зі свічками й свічка на
+  // столі замість лампи дня відключення — о хвилині стану.
   for (const pane of PANES) frames.push({ id: `env/window/${pane.room}`, state: null });
   const decor = decorLook(state, state.minute);
   for (const sconce of SCONCES) frames.push({ id: sconce.id, state: decor.sconce });
-  frames.push({ id: "env/desk-lamp", state: decor.deskLamp });
+  if (decor.deskLamp) frames.push({ id: "env/desk-lamp", state: decor.deskLamp });
+  if (decor.deskCandle) frames.push({ id: "env/desk-candle", state: decor.deskCandle });
   frames.push({ id: "env/boiler", state: decor.boiler });
   if (decor.station) frames.push({ id: "env/power-station", state: null });
   const candles = decor.candles;
@@ -366,8 +367,34 @@ describe("декор квартири (decor.ts, §8.9 «День і ніч», �
       const p = entry.points?.[name];
       if (p) expect(Math.hypot(p.x - at.x, p.y - at.y), `лампа біля «${name}»`).toBeGreaterThan(20);
     }
-    // Свічок на меблях немає (рішення автора 2026-11-03: «Настінні полички»): усі — на поличках на задніх стінах.
+    // Свічок на меблях немає (рішення автора 2026-11-03: «Настінні полички»): усі — на поличках на задніх стінах, крім свічки
+    // на столі з комп'ютером, що в день відключення стоїть замість лампи — на тому самому місці.
     for (const shelf of CANDLE_SHELVES) expect(shelf.face === "y" ? shelf.at.y : shelf.at.x, shelf.room).toBe(1);
+  });
+
+  it("свічка на столі (день відключення, замість лампи) — на місці лампи: у сліді стола з підсвічником, на висоті верху, не на ручці й не на клавіатурі", () => {
+    // Рішення автора 2026-11-03: «Під час евенту відключення на столі замість лампи - свічка».
+    expect(DESK_CANDLE.host).toBe(DESK_LAMP.host);
+    expect(DESK_CANDLE.at).toEqual(DESK_LAMP.at);
+    expect(DESK_CANDLE.z).toBe(DESK_LAMP.z);
+    /** Пів підсвічника, клітинки (`art/env/desk-candle.svg`: Ø 0,25). */
+    const BASE = 0.125;
+    const object = objectById(DESK_CANDLE.host);
+    const look = isoObjectLook(DESK_CANDLE.host);
+    const f = look.footprint;
+    const { x, y } = DESK_CANDLE.at;
+    expect(x - BASE >= f.x0 && x + BASE <= f.x1 && y - BASE >= f.y0 && y + BASE <= f.y1, `(${x}, ${y}) у сліді`).toBe(true);
+    expect(DESK_CANDLE.z).toBe(look.top);
+    const entry = artEntry(`env/${DESK_CANDLE.host}`);
+    if (!entry) throw new Error(DESK_CANDLE.host);
+    const at = pointsOn(object, entry)((x - object.x) / object.w, (y - object.y) / object.h, DESK_CANDLE.z);
+    for (const name of ["keyboard", ...TRINKETS.filter((t) => t.object === DESK_CANDLE.host).map((t) => t.kind)]) {
+      const p = entry.points?.[name];
+      if (p) expect(Math.hypot(p.x - at.x, p.y - at.y), `свічка біля «${name}»`).toBeGreaterThan(20);
+    }
+    // Пляма тепла — на підлозі вітальні перед столом.
+    expect(MAP[Math.floor(DESK_CANDLE.pool.y)]?.[Math.floor(DESK_CANDLE.pool.x)]).toBe(".");
+    expect(DESK_CANDLE.pool.y).toBeGreaterThan(object.y + object.h);
   });
 
   it("зарядна станція — на вільній підлозі під розеткою дроту, перед стіною ряду 5, праворуч від стола з комп'ютером", () => {

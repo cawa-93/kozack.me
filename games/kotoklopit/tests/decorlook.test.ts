@@ -1,7 +1,8 @@
 // Вигляд декору квартири (`src/view/iso/decorlook.ts`; §8.9 «День і ніч», §4.1 «Планове відключення», рішення автора
 // 2026-11-02 і 2026-11-03): бра й настільна лампа горять із лампами, бойлер гріє, поки є електрика, а зарядна станція й
-// полички зі свічками є лише в день відключення — свічки горять у темний час замість ламп. Де висять полички й стоїть лампа і
-// що коти їх не закривають — `candleshelves.test.ts`.
+// полички зі свічками є лише в день відключення — свічки горять у темний час замість ламп; на столі з комп'ютером цього дня
+// замість лампи свічка («Під час евенту відключення на столі замість лампи - свічка»). Де висять полички, стоять лампа й
+// свічка і що коти їх не закривають — `candleshelves.test.ts`.
 
 import { describe, expect, it } from "vitest";
 
@@ -22,7 +23,7 @@ describe("вигляд декору (decorlook.ts)", () => {
   it("звичайний день: бойлер горить, станції й поличок немає; бра й настільна лампа — лише в темний час, разом із лампами", () => {
     const s = state(false);
     for (const minute of [at(12), at(9, 30), at(17, 59)]) {
-      expect(decorLook(s, minute), `${minute}`).toEqual({ sconce: "off", deskLamp: "off", boiler: "on", station: false, candles: null });
+      expect(decorLook(s, minute), `${minute}`).toEqual({ sconce: "off", deskLamp: "off", deskCandle: null, boiler: "on", station: false, candles: null });
     }
     for (const minute of [at(22, 30), at(1, 30), at(5, 30)]) {
       expect(decorLook(s, minute).sconce, `${minute}`).toBe("on");
@@ -33,6 +34,7 @@ describe("вигляд декору (decorlook.ts)", () => {
       const look = decorLook(s, minute);
       expect(look.sconce === "on", `${minute}`).toBe(lampsOn(daylight(minute, true)));
       expect(look.deskLamp, `${minute}`).toBe(look.sconce);
+      expect(look.deskCandle, `${minute}`).toBeNull();
       expect(look.candles, `${minute}`).toBeNull();
     }
     // Вмикаються близько 20:00, гаснуть близько 06:30.
@@ -42,16 +44,32 @@ describe("вигляд декору (decorlook.ts)", () => {
     expect(decorLook(s, DAYLIGHT.lampsOff + 20).deskLamp).toBe("off");
   });
 
-  it("день відключення: бра й настільна лампа не вмикаються, бойлер згаслий, станція й полички є весь день, свічки горять у темний час", () => {
+  it("день відключення: бра не вмикаються, бойлер згаслий, станція й полички є весь день, свічки горять у темний час", () => {
     const s = state(true);
-    expect(decorLook(s, at(12))).toEqual({ sconce: "off", deskLamp: "off", boiler: "off", station: true, candles: "out" });
-    expect(decorLook(s, at(22, 30))).toEqual({ sconce: "off", deskLamp: "off", boiler: "off", station: true, candles: "lit" });
+    expect(decorLook(s, at(12))).toEqual({ sconce: "off", deskLamp: null, deskCandle: "out", boiler: "off", station: true, candles: "out" });
+    expect(decorLook(s, at(22, 30))).toEqual({ sconce: "off", deskLamp: null, deskCandle: "lit", boiler: "off", station: true, candles: "lit" });
     for (let minute = 0; minute < 1440; minute += 5) {
       const look = decorLook(s, minute);
       expect(look.sconce, `${minute}`).toBe("off");
-      expect(look.deskLamp, `${minute}`).toBe("off");
       expect(look.candles, `${minute}`).toBe(candlesLit(daylight(minute, false)) ? "lit" : "out");
     }
+  });
+
+  it("на столі з комп'ютером — лампа, а в день відключення замість неї свічка: лампи немає зовсім, свічка горить разом зі свічками на поличках", () => {
+    // Рішення автора 2026-11-03: «Під час евенту відключення на столі замість лампи - свічка».
+    for (let minute = 0; minute < 1440; minute += 5) {
+      const outage = decorLook(state(true), minute);
+      expect(outage.deskLamp, `${minute}`).toBeNull();
+      expect(outage.deskCandle, `${minute}`).toBe(outage.candles);
+      expect(outage.deskCandle, `${minute}`).toBe(candlesLit(daylight(minute, false)) ? "lit" : "out");
+      const normal = decorLook(state(false), minute);
+      expect(normal.deskCandle, `${minute}`).toBeNull();
+      expect(normal.deskLamp, `${minute}`).toBe(lampsOn(daylight(minute, true)) ? "on" : "off");
+    }
+    // Свічка на столі вночі горить, удень і вранці, коли свічки на поличках згасли, — погашена.
+    expect(decorLook(state(true), at(22, 30)).deskCandle).toBe("lit");
+    expect(decorLook(state(true), at(12)).deskCandle).toBe("out");
+    expect(decorLook(state(true), at(8)).deskCandle).toBe("out");
   });
 
   it("сова після півночі (хвилина понад 1440) — те саме, що та сама година доби", () => {
@@ -61,17 +79,17 @@ describe("вигляд декору (decorlook.ts)", () => {
     }
   });
 
-  it("світло доби вимкнене (lightMinute null, `?light=off`): як удень — бра й лампа не горять, свічки погашені; бойлер, станція й полички — за електрикою", () => {
-    expect(decorLook(state(false), null)).toEqual({ sconce: "off", deskLamp: "off", boiler: "on", station: false, candles: null });
-    expect(decorLook(state(true), null)).toEqual({ sconce: "off", deskLamp: "off", boiler: "off", station: true, candles: "out" });
+  it("світло доби вимкнене (lightMinute null, `?light=off`): як удень — бра й лампа не горять, свічки погашені; бойлер, станція, полички й свічка на столі — за електрикою", () => {
+    expect(decorLook(state(false), null)).toEqual({ sconce: "off", deskLamp: "off", deskCandle: null, boiler: "on", station: false, candles: null });
+    expect(decorLook(state(true), null)).toEqual({ sconce: "off", deskLamp: null, deskCandle: "out", boiler: "off", station: true, candles: "out" });
   });
 
   it("пише в переданий об'єкт (квартира не виділяє його щокадру)", () => {
     const out = decorLookInit();
-    expect(out).toEqual({ sconce: "off", deskLamp: "off", boiler: "on", station: false, candles: null });
+    expect(out).toEqual({ sconce: "off", deskLamp: "off", deskCandle: null, boiler: "on", station: false, candles: null });
     expect(decorLook(state(true), at(23), out)).toBe(out);
-    expect(out).toEqual({ sconce: "off", deskLamp: "off", boiler: "off", station: true, candles: "lit" });
+    expect(out).toEqual({ sconce: "off", deskLamp: null, deskCandle: "lit", boiler: "off", station: true, candles: "lit" });
     expect(decorLook(state(false), at(23), out)).toBe(out);
-    expect(out).toEqual({ sconce: "on", deskLamp: "on", boiler: "on", station: false, candles: null });
+    expect(out).toEqual({ sconce: "on", deskLamp: "on", deskCandle: null, boiler: "on", station: false, candles: null });
   });
 });

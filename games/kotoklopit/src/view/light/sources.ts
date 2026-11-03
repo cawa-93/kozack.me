@@ -5,8 +5,8 @@
 // - Невидимі стельові світильники (`CEILING_LAMPS`), бра (`SCONCES`) і настільна лампа (`DESK_LAMP`) — лише коли є електрика
 //   й лампи доби горять (стельові — зі зсувом по кімнатах, `DAYLIGHT.lampShift`; бра й лампа — лише разом зі станом арту
 //   `lampsOn`, `litStrength`).
-// - Свічки на поличках (`CANDLE_SHELVES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки —
-//   лише разом зі станом арту `lit`, `candlesLit`).
+// - Свічки на поличках (`CANDLE_SHELVES`), свічка на столі з комп'ютером замість настільної лампи (`DESK_CANDLE`) і дисплей
+//   зарядної станції (`POWER_STATION`) — лише в день відключення (свічки — лише разом зі станом арту `lit`, `candlesLit`).
 // - Індикатор бойлера (`BOILER`) — коли є електрика (у відключення не горить).
 // - Газовий пальник на плиті — у відключення, поки на плиті страва: синє полум'я.
 // - Екран комп'ютера — поки на ньому щось є (робота, пошук, кіт на клавіатурі): на станції він працює і у відключення.
@@ -18,7 +18,19 @@ import { objectById, type RoomId } from "../../sim/home";
 import { powerOut } from "../../sim/modifiers";
 import type { GameState, Vec } from "../../sim/types";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLE_SHELVES, CEILING_HEIGHT, CEILING_LAMPS, DESK_LAMP, POWER_STATION, POWER_STATION_ID, SCONCES, type CandleShelf, type WallFace } from "../decor";
+import {
+  BOILER,
+  CANDLE_SHELVES,
+  CEILING_HEIGHT,
+  CEILING_LAMPS,
+  DESK_CANDLE,
+  DESK_LAMP,
+  POWER_STATION,
+  POWER_STATION_ID,
+  SCONCES,
+  type CandleShelf,
+  type WallFace,
+} from "../decor";
 import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
@@ -27,13 +39,16 @@ import { candlesLit, daylight, LIT_FROM, lampsOn, type Daylight } from "./daylig
 import { BOILER_LIGHT, CANDLE_LIGHT, CEILING_LIGHT, DESK_LAMP_LIGHT, GAS_LIGHT, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT } from "./lightlook";
 
 /**
- * Що світить: стельовий світильник, бра, настільна лампа, свічка на поличці, дисплей станції, індикатор бойлера, газове
- * полум'я, екран комп'ютера.
+ * Що світить: стельовий світильник, бра, настільна лампа, свічка (на поличці чи на столі), дисплей станції, індикатор
+ * бойлера, газове полум'я, екран комп'ютера.
  */
 export type LightKind = "ceiling" | "sconce" | "lamp" | "candle" | "station" | "boiler" | "gas" | "screen";
 
 export interface LightSource {
-  /** Сталий id джерела між кадрами: `ceiling:2`, `sconce:0`, `lamp`, `candle:3`, `station`, `boiler`, `gas`, `screen`. */
+  /**
+   * Сталий id джерела між кадрами: `ceiling:2`, `sconce:0`, `lamp`, `candle:3` (поличка), `candle:desk` (свічка на столі),
+   * `station`, `boiler`, `gas`, `screen`.
+   */
   readonly id: string;
   readonly kind: LightKind;
   /** Кімната, у якій джерело (для стельових — чия лампа). */
@@ -49,8 +64,8 @@ export interface LightSource {
   /** Яскравість 0–1 (для свічок — до мерехтіння): лампа, що вмикається, — між 0 і 1. */
   readonly strength: number;
   /**
-   * Над чим сяйво — id речі квартири (лампа на столі, полум'я на плиті) чи коробки/точки реєстру глибини (дисплей зарядної
-   * станції — коробка `POWER_STATION_ID`): у її проміжку глибини, над її кадром.
+   * Над чим сяйво — id речі квартири (лампа й свічка на столі, полум'я на плиті) чи коробки/точки реєстру глибини (дисплей
+   * зарядної станції — коробка `POWER_STATION_ID`): у її проміжку глибини, над її кадром.
    */
   readonly host?: string;
   /** Настінне (бра, свічка на поличці, бойлер): на якому лиці стіни. */
@@ -102,6 +117,11 @@ export function deskLampPivot(): Point {
   return lifted(DESK_LAMP.at, DESK_LAMP.z);
 }
 
+/** Pivot кадру свічки на столі на екрані: центр підсвічника на стільниці (`DESK_CANDLE`), так її ставить квартира. */
+export function deskCandlePivot(): Point {
+  return lifted(DESK_CANDLE.at, DESK_CANDLE.z);
+}
+
 /** Точка кріплення речі квартири на екрані (`pan` плити, `screen` комп'ютера): перша, яка є в маніфесті. */
 function objectPoint(id: string, points: readonly string[]): Point {
   const object = objectById(id);
@@ -128,8 +148,8 @@ const DESK_LAMP_FLOOR: Vec = { x: DESK_LAMP.at.x + DESK_LAMP_LIGHT.floor.x, y: D
 const SCREEN_FLOOR: Vec = { x: 7, y: 7.1 };
 
 /**
- * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, настільна лампа, свічки, станція,
- * бойлер, газ, екран.
+ * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, настільна лампа, свічки (полички,
+ * потім стіл), станція, бойлер, газ, екран.
  */
 export function lightSources(state: GameState, d: Daylight | null): LightSource[] {
   if (!d) return [];
@@ -195,6 +215,21 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           face: shelf.face,
           flicker: i + 1,
         });
+      });
+      // Свічка на столі з комп'ютером замість лампи (рішення автора 2026-11-03): світить, як свічка на поличці (колір, радіус,
+      // мерехтіння зі своїм зерном), але стоїть на столі — сяйво над столом, у його проміжку глибини, як у лампи (`host`), а
+      // пляма тягнеться до підлоги перед столом (`DESK_CANDLE.pool`).
+      out.push({
+        id: "candle:desk",
+        kind: "candle",
+        room: "living",
+        at: DESK_CANDLE.pool,
+        screen: decorPoint("env/desk-candle", "flame", deskCandlePivot(), DESK_CANDLE.flame - DESK_CANDLE.z),
+        radius: CANDLE_LIGHT.radius,
+        color: CANDLE_LIGHT.color,
+        strength,
+        host: DESK_CANDLE.host,
+        flicker: CANDLE_SHELVES.length + 1,
       });
     }
     out.push({
