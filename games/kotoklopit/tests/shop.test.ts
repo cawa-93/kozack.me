@@ -9,7 +9,7 @@ import { shopModifier } from "../src/sim/destinations";
 import { addSupply, deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
+import { canCheckout, cartDelivery, cartTotal, checkout, discount, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 4 });
@@ -76,6 +76,26 @@ describe("універсальний магазин (§6.4)", () => {
         expect(mod).toBeLessThanOrEqual(0.1);
       }
     }
+  });
+
+  it("дорожчий варіант на місці буває не дорожчим за дешевий (модифікатор — на варіант) лише в наповнювача, і тоді — завжди з біркою від −10%", () => {
+    // Рецензія 2026-11-03, рішення виконавця (§6.4, «Кожен товар у своїй картці»): поїздка — ставка, як акція в супермаркеті;
+    // бірка каже, що це знижка, а не гірший товар.
+    const inverted = new Set<string>();
+    for (const difficulty of ["easy", "normal", "hard"] as const) {
+      const state = newGame({ address: "she", difficulty, seed: 4 }).current;
+      state.modifiers.day = null;
+      for (let seed = 1; seed <= 300; seed++) {
+        state.trip = { destination: "shop", seed } as Save["current"]["trip"];
+        for (const g of GOODS) {
+          if (variants(g).length < 2) continue;
+          if (unitPrice(state, g, "premium", "store") > unitPrice(state, g, "cheap", "store")) continue;
+          inverted.add(goodsKey(g));
+          expect(discount(state, g, "premium", "store"), `${difficulty} ${seed} ${goodsKey(g)}`).toBeGreaterThanOrEqual(10);
+        }
+      }
+    }
+    expect([...inverted]).toEqual(["litter"]);
   });
 
   it("чому товар не взяти: у ящиках, немає місця, уже є, уже їде", () => {
