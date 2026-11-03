@@ -128,7 +128,7 @@ describe("маніфест: правила записів", () => {
       // Пил і павутина (§8.7, рішення автора 2026-11-02): «людське» забруднення кімнат.
       "a20-dust": ["mess/dust/", "mess/cobweb"],
       // День і ніч, відключення світла (§8.9, §4.1, рішення автора 2026-11-02): декор квартири, якого сим не знає.
-      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle"],
+      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle", "env/desk-lamp"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());

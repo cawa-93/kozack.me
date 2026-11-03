@@ -1,14 +1,19 @@
 // Маніфест пакета P2a «Арт і вигляд декору» блоку «День і ніч + відключення світла» (§8.9 «День і ніч», §4.1 «Планове
-// відключення», рішення автора 2026-11-02): кухонне вікно, бра, бойлер, зарядна станція й свічки — декор квартири, якого сим
-// не знає. Місця — `src/view/decor.ts` (PANES, SCONCES, BOILER, POWER_STATION, CANDLES); SVG — `art/env/window/kitchen.svg`,
-// `art/env/sconce/<лице>.svg`, `art/env/boiler.svg`, `art/env/power-station.svg`, `art/env/candle.svg`.
+// відключення», рішення автора 2026-11-02): кухонне вікно, бра, бойлер, зарядна станція, полички зі свічками й настільна лампа —
+// декор квартири, якого сим не знає. Місця — `src/view/decor.ts` (PANES, SCONCES, BOILER, POWER_STATION, CANDLE_SHELVES,
+// DESK_LAMP); SVG — `art/env/window/kitchen.svg`, `art/env/sconce/<лице>.svg`, `art/env/boiler.svg`,
+// `art/env/power-station.svg`, `art/env/candle-shelf/<лице>.svg`, `art/env/desk-lamp.svg`.
 //
 // Pivot настінного (бра, бойлер) — точка підлоги біля лиця стіни під річчю, як у рулону паперу (`env/toilet-roll`): квартира
 // ставить кадр у `toScreen(at)` на тлі (`BACKDROP.decal`), і все, що стоїть перед стіною, його закриває. Вікно — накладка на
 // стіну з pivot у верхній вершині ромба клітинки стіни, як вікна спальні й вітальні (`WINDOW` у `a01-build.ts`). Станція
-// стоїть на підлозі (pivot — під центром сліду), свічка — на поверхні господаря (pivot — центр дна блюдця).
+// стоїть на підлозі (pivot — під центром сліду). Поличка зі свічкою (рішення автора 2026-11-03: «Настінні полички») — теж на
+// тлі, але її pivot — точка на лиці стіни під серединою дошки на висоті верху дошки, а не на підлозі (рішення виконавця
+// 2026-11-03): полички тієї самої стіни висять на різній висоті (`CANDLE_SHELVES[].z` — у кухні нижче за відклеєні шпалери, у
+// ванній вище за котів на пральній машині), а малюнок на лице один. Настільна лампа — на стільниці стола з комп'ютером, як
+// дрібничка (pivot — центр основи на стільниці).
 //
-// Числа, за якими намальовано SVG (`LIGHT_ART`), мусять збігатися з `decor.ts` — це перевіряє `tests/decorlook.test.ts`:
+// Числа, за якими намальовано SVG (`LIGHT_ART`), мусять збігатися з `decor.ts` — це перевіряє `tests/manifest.test.ts`:
 // зміниться висота бра чи місце станції в `decor.ts` — тест покаже, що перемалювати. Точки (`lamp`, `led`, `display`,
 // `flame`) — звідки світить сяйво (`light/sources.ts`): настінне світиться не на лиці стіни, а на відстані від нього
 // (абажур — на 0,21 клітинки, індикатор бойлера — на передньому боці «бочки»), тож джерелу світла краще брати точку кадру
@@ -42,6 +47,13 @@ export const LIGHT_ART = {
   station: { at: { x: 8.27, y: 6.21 }, display: 18 },
   /** Свічка: полум'я на `flame` над поверхнею господаря. */
   candle: { flame: 29 },
+  /** Поличка зі свічкою: середина полум'я на `flame` над верхом дошки (pivot), уздовж осі полички на екрані. */
+  shelf: {
+    "env/candle-shelf/back": { face: "y", flame: 15.5 },
+    "env/candle-shelf/left": { face: "x", flame: 23 },
+  },
+  /** Настільна лампа: лампочка на `lamp` над стільницею (pivot) і на `dx` убік на екрані (абажур — ліворуч від основи). */
+  deskLamp: { lamp: 28.5, dx: -12 },
   /** Кухонне вікно: клітинка стіни, отвір уздовж стіни й по висоті. */
   kitchenWindow: { wall: { x: 16, y: 0 }, span: [16.1, 16.9], z: [125, 185] },
 } as const;
@@ -60,6 +72,18 @@ function sconce(id: keyof typeof SCONCE): ArtEntry {
 
 const BOILER = { size: { w: 56, h: 208 }, pivot: { x: 41, y: 204 } } as const;
 const STATION = { size: { w: 99, h: 77 }, pivot: { x: 62, y: 53 } } as const;
+/** Полички: полотно, pivot (лице стіни під серединою дошки, верх дошки) і x полум'я на полотні. */
+const SHELF = {
+  "env/candle-shelf/back": { size: { w: 41, h: 57 }, pivot: { x: 26, y: 28.5 }, flameX: 24.5 },
+  "env/candle-shelf/left": { size: { w: 46, h: 66 }, pivot: { x: 16.5, y: 36.5 }, flameX: 21.5 },
+} as const satisfies Record<keyof typeof LIGHT_ART.shelf, { size: ArtSize; pivot: ArtPoint; flameX: number }>;
+
+function shelf(id: keyof typeof SHELF): ArtEntry {
+  const { size, pivot, flameX } = SHELF[id];
+  return { id, size, pivot, points: { flame: { x: flameX, y: pivot.y - LIGHT_ART.shelf[id].flame } }, states: ["out", "lit"] };
+}
+
+const DESK_LAMP = { size: { w: 62, h: 66 }, pivot: { x: 33, y: 47.5 } } as const;
 const CANDLE = { size: { w: 44, h: 54 }, pivot: { x: 18, y: 42 } } as const;
 
 export const MANIFEST: readonly ArtEntry[] = [
@@ -87,4 +111,21 @@ export const MANIFEST: readonly ArtEntry[] = [
   // Свічка в синьому емальованому блюдці-підсвічнику (лише в день відключення, лише вигляд): `out` — погашена, `lit` — язичок
   // полум'я (`flame` — середина полум'я). Стоїть на поверхні господаря (`CANDLES`), pivot — центр дна блюдця.
   { id: "env/candle", ...CANDLE, points: { flame: { x: CANDLE.pivot.x, y: CANDLE.pivot.y - LIGHT_ART.candle.flame } }, states: ["out", "lit"] },
+  // Полички зі свічками (рішення автора 2026-11-03 на скаргу «кіт клубком на підвіконні вітальні лежить поверх свічки»: свічок на
+  // меблях немає — «Настінні полички»): по одній у кімнаті, високо на задній стіні, лише в день відключення. На стіні y = 0
+  // (ванна, кухня) — дерев'яна дошка на фігурній консолі, свічка в склянці й коробок сірників; на стіні x = 0 (спальня,
+  // вітальня) — свій малюнок, не дзеркало: дошка на двох латунних кутниках, свічка-стовпчик на синьому емальованому блюдці.
+  // `out` — погашена, `lit` — язичок полум'я (`flame` — середина полум'я; сяйво — код).
+  shelf("env/candle-shelf/back"),
+  shelf("env/candle-shelf/left"),
+  // Настільна лампа на столі з комп'ютером (рішення автора 2026-11-03: «Додати лампу на робочий стіл»): у задньому правому куті
+  // стола біля стіни — праворуч від монітора й за ручкою. Зелена основа, металева стійка, абажур дивиться на стіл перед
+  // монітором; `off` — нутро абажура в тіні, `on` — світле (`lamp` — лампочка; сяйво й пляма — код). Горить сама з лампами
+  // квартири, у день відключення — ні.
+  {
+    id: "env/desk-lamp",
+    ...DESK_LAMP,
+    points: { lamp: { x: DESK_LAMP.pivot.x + LIGHT_ART.deskLamp.dx, y: DESK_LAMP.pivot.y - LIGHT_ART.deskLamp.lamp } },
+    states: ["off", "on"],
+  },
 ];
