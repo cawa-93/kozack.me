@@ -1,5 +1,5 @@
-// Гонка дорогою (§8.5): три смуги, інші машини їдуть ×0,5; газ розганяє до ×10, без газу машина
-// поступово зупиняється, гальмо — швидше; перестроювання.
+// Гонка дорогою (§8.5): три смуги, інші машини їдуть ×0,5; машина стартує не з місця (з тією швидкістю, з якою доїхала до
+// старту на від'їзді від дому); газ розганяє до ×10, без газу машина поступово зупиняється, гальмо — швидше; перестроювання.
 // Відстані — у хвилинах дороги за звичайної швидкості, час — в ігрових хвилинах.
 
 import { RACE } from "./config";
@@ -14,9 +14,12 @@ export interface RaceInput {
 
 export const NO_RACE_INPUT: RaceInput = { steer: 0, throttle: 0 };
 
+/** Смуга старту — середня. */
+const START_LANE = 1;
+
 export function newRace(road: number, seed: number): Race {
-  // Перша машина — трохи попереду: на старті є час роззирнутися.
-  return { road, done: 0, minutes: 0, lane: 1, targetLane: 1, speed: RACE.startSpeed, cars: [], spawned: 1, rng: seed >>> 0 };
+  // Перша машина — трохи попереду: на старті є час роззирнутися. Машина вже котиться (`startSpeed`, §8.5 «Виїзд із дому»).
+  return { road, done: 0, minutes: 0, lane: START_LANE, targetLane: START_LANE, speed: RACE.startSpeed, cars: [], spawned: 1, rng: seed >>> 0 };
 }
 
 /** Де зараз машина на дорозі. */
@@ -31,7 +34,10 @@ function spawn(race: Race, difficulty: Difficulty, traffic: number): void {
     const gap = RACE.gap / (RACE.traffic[difficulty] * traffic);
     while (race.spawned + RACE.carSpeed * race.minutes < ahead) {
       race.spawned += gap * (0.4 + rng.next() * 1.2);
-      race.cars.push({ lane: rng.int(0, RACE.lanes - 1), start: race.spawned });
+      const lane = rng.int(0, RACE.lanes - 1);
+      // Своя смуга на старті вільна (`RACE.startClear`): без газу машина зі `startSpeed` не наздоганяє потоку. Решта машин —
+      // ті самі, що й без цього правила (той самий ряд випадкових чисел).
+      if (lane !== START_LANE || race.spawned >= RACE.startClear) race.cars.push({ lane, start: race.spawned });
     }
     race.rng = Math.floor(rng.next() * 4294967296) >>> 0;
   }
