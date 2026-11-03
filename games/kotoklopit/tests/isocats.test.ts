@@ -26,7 +26,7 @@ import { CAT_FIT, CAT_RIG } from "../src/view/rig/defs/cat";
 import { animProblems, BLEND_MS, fitProblems, Rig, rigProblems } from "../src/view/rig/rigcore";
 import type { RigAnim, RigDef } from "../src/view/rig/types";
 import { composeCatAnim, layerAnims, layeredTiming, MAX_PERIOD, playBlend, withBelly, withFace } from "../src/view/iso/catanim";
-import { CATCH, catchUp, catJump, catPlay, catStep, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, type Lift } from "../src/view/iso/catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, crowdShift, GAIT_TELEPORT, gaitRate, gaitSpeed, groundAt, JUMP, liftAt, nextGait, nextLift, putDownGround, seatCatchUp, startShot, stillPutDown, type Lift, type PlaceMemory } from "../src/view/iso/catplay";
 import { liftedRoot, liftWeights } from "../src/view/iso/personlook";
 import { catJumpLift, catLegLength, catPetPoint, catRunRate, catWalkRate } from "../src/view/rig/anims/cat/basic";
 import { catBrawlTop } from "../src/view/rig/anims/cat/behavior";
@@ -1494,5 +1494,73 @@ describe("стіл із комп'ютером: на клавіатурі — т�
     advance(save, 1);
     expect(catOnComputer(save.current)).toBe(named("Грілка"));
     expect(spot(named("Грілка")).at).toEqual(ISO_KEYBOARD.seat);
+  });
+
+  it("троє прийшли на клавіатуру, перша зійшла — друга з рядка обабіч доходить саме на клавіатуру, а не тримає зсув рядка", () => {
+    // Рецензія пакета: друга стояла в рядку ліворуч від клавіатури (зсув уздовж y), а ставши на клавіатуру, тримала його
+    // (`crowdShift`, `hold`: сим її не рухав) — і сиділа позаду клавіатури, між нею й монітором.
+    const FRAME = 1 / 60;
+    const step = catStep(gameMinutes(FRAME));
+    const save = game();
+    const [first, second, third] = [0, 1, 2].map(() => withCat(save, { x: DESK.x + 0.5, y: DESK.y + 0.5 }));
+    for (const cat of [first!, second!, third!]) cat.act = act("keyboard", { target: "computer", minutes: 30 });
+    // Як `IsoCatsView` для котів на речах, що стоять: місце (`catSpot`), рядок (`perchCrowds`), доганяння нового місця
+    // (`seatCatchUp`) і зсув юрби, що тримається, поки кіт не рушить (`crowdShift`, `hold`).
+    const places = new Map<number, PlaceMemory>();
+    const rows = perchMemory();
+    let frames = 0;
+    const frame = (): Map<number, Vec> => {
+      const state = save.current;
+      const spots = new Map<number, CatSpot>();
+      const members: PerchMember[] = [];
+      for (const cat of state.cats) {
+        const spot = catSpot(state, cat, catAnim(state, cat).anim, null, SPOT);
+        spots.set(cat.id, spot);
+        const place = spot.kind === "furniture" && cat.act.goal === null ? perchPlace(spot) : null;
+        if (place) members.push({ id: cat.id, key: place.key, at: spot.at, size: 1, area: place.area, partner: null });
+      }
+      const shifts = perchCrowds(members, new Map(), rows);
+      const drawn = new Map<number, Vec>();
+      for (const [id, spot] of spots) {
+        if (spot.kind !== "furniture") continue;
+        let mem = places.get(id);
+        const first = mem === undefined;
+        mem ??= { crowd: { x: 0, y: 0 }, catchUp: { x: 0, y: 0 }, seatWas: null };
+        places.set(id, mem);
+        const lag = first ? mem.catchUp : seatCatchUp(mem, spot.box!, spot.at, frames > 0 ? step : Number.POSITIVE_INFINITY, FRAME);
+        const shift = crowdShift(mem, shifts.get(id) ?? null, true, FRAME, first);
+        drawn.set(id, { x: spot.at.x + shift.x + lag.x, y: spot.at.y + shift.y + lag.y });
+      }
+      frames++;
+      return drawn;
+    };
+    let drawn = frame();
+    for (let i = 0; i < 30; i++) drawn = frame();
+    expect(catOnComputer(save.current)).toBe(first);
+    expect(onKeyboard(deskRoot(drawn.get(first!.id)!))).toBe(true);
+    // Друга й третя — рядком ліворуч від клавіатури, уздовж стола поперек (y), не на ній.
+    for (const cat of [second!, third!]) {
+      expect(onKeyboard(deskRoot(drawn.get(cat.id)!)), cat.name).toBe(false);
+      expect(Math.abs(drawn.get(cat.id)!.y - (DESK.y + 0.5)), cat.name).toBeGreaterThan(0.1);
+    }
+    // Першу забрали на руки: тепер роботі заважає друга — і за пів секунди вона саме на клавіатурі, у її точці.
+    first!.x = 7;
+    first!.y = 7.6;
+    first!.act = act("idle", { minutes: 5 });
+    expect(catOnComputer(save.current)).toBe(second);
+    let was = drawn.get(second!.id)!;
+    for (let i = 0; i < 30; i++) {
+      drawn = frame();
+      const now = drawn.get(second!.id)!;
+      // Крок по стільниці, а не перескок.
+      expect(Math.hypot(now.x - was.x, now.y - was.y), `кадр ${i}`).toBeLessThanOrEqual(Math.max(step, CATCH.fast * FRAME) + 1e-9);
+      was = now;
+    }
+    expect(onKeyboard(deskRoot(was))).toBe(true);
+    expect(was.x).toBeCloseTo(ISO_KEYBOARD.seat.x, 6);
+    expect(was.y).toBeCloseTo(ISO_KEYBOARD.seat.y, 6);
+    // Третя лишилася поруч, де лежала (сусідка пішла — місця не перебігають), не на клавіатурі.
+    expect(onKeyboard(deskRoot(drawn.get(third!.id)!))).toBe(false);
+    expect(drawn.get(third!.id)!.x).toBeLessThanOrEqual(BESIDE_LEFT + 1e-9);
   });
 });

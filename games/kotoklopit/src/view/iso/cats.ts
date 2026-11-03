@@ -35,7 +35,7 @@ import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
 import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { CATCH, catchUp, catJump, catPlay, catStep, gaitRate, groundAt, nextGait, nextLift, putDownGround, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PutDown } from "./catplay";
+import { CATCH, catchUp, catJump, catPlay, catStep, crowdShift, gaitRate, groundAt, nextGait, nextLift, putDownGround, seatCatchUp, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PlaceMemory, type PutDown } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
 import { bowlOf, CAT_PIECE, catSpot, lapSeat, perchPlace, raised, type CatSpot, type CatSpotDepths, type CatSpotKind, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
@@ -78,12 +78,6 @@ const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
  */
 const LIFT_BLEND = { up: PERSON_ONE_SHOT_MS.pickUp - PERSON_PICKUP_GRAB_MS, down: PERSON_PUTDOWN_RELEASE_MS, root: 150 } as const;
 
-/**
- * За скільки мс кіт доходить до свого місця в юрбі (`catCrowds`) на ≈ 63 %: прийшовши до персонажа чи до миски, він відступає
- * вбік кроком, а не перескакує.
- */
-const CROWD_EASE_MS = 140;
-
 /** Де кіт лежить на речі, і котів там розсуває юрба на речах (`perchCrowds`, `perchPlace`): меблі, будиночок, схованка. */
 const PERCHED: ReadonlySet<CatSpotKind> = new Set<CatSpotKind>(["furniture", "house", "under"]);
 
@@ -104,8 +98,8 @@ const TOYS: Readonly<Record<Quality, { kind: "toy"; quality: Quality }>> = {
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
 
-/** Що частина пам'ятає про кота між кадрами. */
-interface Memory {
+/** Що частина пам'ятає про кота між кадрами (де намальований щодо свого місця — `PlaceMemory`). */
+interface Memory extends PlaceMemory {
   /** Де кіт був минулого кадру й куди дивився (`catFacing`). */
   pos: Vec | null;
   facing: RigFacing | null;
@@ -116,15 +110,9 @@ interface Memory {
   /** Поза й накладка цього кадру (`catAnim`) і місце кота за нею (`catSpot`; null — не вдома): з першого проходу, для юрби. */
   choice: CatAnimChoice | null;
   spot: CatSpot | null;
-  /** Зсув кота в юрбі зараз, клітинки: плавно йде до того, що каже `catCrowds` (`CROWD_EASE_MS`). */
-  crowd: Vec;
-  /** На скільки намальований кіт ще позаду свого місця на підлозі чи на речі (клітинки): доганяє його (`CATCH`). */
-  catchUp: Vec;
   /** Минулого кадру кіт стояв на підлозі (`floor`), і який тоді був зсув пари (клітинки): що змінилося, те стрибок. */
   floorWas: boolean;
   pairTile: Vec;
-  /** Минулого кадру кіт був на меблях (`furniture`): на якій речі й де на ній (`CatSpot.at`, клітинки); null — не на меблях. */
-  seatWas: { box: string; x: number; y: number } | null;
   /** Де кіт щодо рук персонажа минулого кадру: 0 — сам, 1 — на руках чи колінах, 2 — його беруть чи опускають. */
   hands: number;
   /** Котрий кіт на колінах персонажа цього кадру (`lapSeat`: 0 — перший); −1 — не на колінах. */
@@ -430,25 +418,6 @@ export class IsoCatsView implements CatsPart {
     return perchCrowds(perched, this.crowdShifts, this.perchPlaces);
   }
 
-  /**
-   * Зсув кота в юрбі цього кадру (`Memory.crowd`): плавно до `target` (null — без зсуву); кадр без часу — як був. Вийшов із
-   * юрби, а стоїть, де стояв (`hold`: персонаж відійшов, кота перестали гладити), — лишається там, де його намалювали, а не
-   * ковзає в точку сима (у ноги персонажа): зсув знімається, коли кіт рушить.
-   */
-  private crowdShift(mem: Memory, target: Vec | null, hold: boolean, seconds: number, first: boolean): Vec {
-    if (target === null && hold) return mem.crowd;
-    const tx = target?.x ?? 0;
-    const ty = target?.y ?? 0;
-    const k = first ? 1 : seconds > 0 ? 1 - Math.exp((-seconds * 1000) / CROWD_EASE_MS) : 0;
-    mem.crowd.x += (tx - mem.crowd.x) * k;
-    mem.crowd.y += (ty - mem.crowd.y) * k;
-    if (Math.abs(mem.crowd.x) < 1e-4 && Math.abs(mem.crowd.y) < 1e-4) {
-      mem.crowd.x = 0;
-      mem.crowd.y = 0;
-    }
-    return mem.crowd;
-  }
-
   private drawCat(state: GameState, cat: Cat, view: IsoCatView, mem: Memory, size: CatSize, pair: PairPlacement | null, crowd: Vec | null, time: number, seconds: number): void {
     // Стрибок на меблі чи з них, позіхання після сну — разові від зміни між кадрами.
     const transition = catTransition(state, cat, mem.transition);
@@ -483,9 +452,11 @@ export class IsoCatsView implements CatsPart {
     const perched = PERCHED.has(base.kind);
     const put = mem.putDown !== null;
     const still = (perched || (floor && pair === null)) && !catMoving(cat) && mem.pos !== null && mem.pos.x === cat.x && mem.pos.y === cat.y;
-    const shift = this.crowdShift(mem, (floor && !put) || perched ? crowd : null, still || put, seconds, mem.pos === null);
-    // Сим переставив кота чи пара змінила зсув — доганяє нове місце (`CATCH`); далеко позаду — біжить туди лицем.
+    // Сим переставив кота чи пара змінила зсув — доганяє нове місце (`CATCH`); далеко позаду — біжить туди лицем. Спершу
+    // доганяння: коли стрибнуло місце на речі, зсув юрби від старого місця переходить у нього (`seatCatchUp`) і далі не
+    // тримається.
     const lag = this.catchUp(cat, mem, base, pair, seconds);
+    const shift = crowdShift(mem, (floor && !put) || perched ? crowd : null, still || put, seconds, mem.pos === null);
     const moved = (floor || perched) && (shift.x !== 0 || shift.y !== 0 || lag.x !== 0 || lag.y !== 0);
     const own = moved ? { ...base, at: { x: base.at.x + shift.x + lag.x, y: base.at.y + shift.y + lag.y } } : base;
     const catching = floor && anim === choice.anim && Math.hypot(lag.x, lag.y) > CATCH.run;
@@ -565,7 +536,10 @@ export class IsoCatsView implements CatsPart {
   private catchUp(cat: Cat, mem: Memory, base: CatSpot, pair: PairPlacement | null, seconds: number): Vec {
     const lag = mem.catchUp;
     const was = mem.pos;
-    if (base.kind === "furniture" && base.box !== null && was !== null) return this.seatCatchUp(mem, base.box, base.at, seconds);
+    if (base.kind === "furniture" && base.box !== null && was !== null) {
+      mem.floorWas = false;
+      return seatCatchUp(mem, base.box, base.at, this.catStep, seconds);
+    }
     mem.seatWas = null;
     if (base.kind !== "floor" || was === null) {
       lag.x = 0;
@@ -592,33 +566,6 @@ export class IsoCatsView implements CatsPart {
     mem.floorWas = true;
     mem.pairTile.x = pair?.tile.x ?? 0;
     mem.pairTile.y = pair?.tile.y ?? 0;
-    return lag;
-  }
-
-  /**
-   * Місце кота на меблях (`CatSpot.at` на речі `box`) за кадр стрибнуло далі, ніж кіт пробіг би (`catStep`): на столі з
-   * комп'ютером той, хто став заважати роботі, переходить на клавіатуру, а той, хто перестав, — з неї поруч (`deskSeat`); пара
-   * на меблях увімкнула чи зняла зсув. Кіт доганяє нове місце (`CATCH`, без бігу — це крок по стільниці), а не перескакує.
-   * Ходою по речі місце змінюється не швидше за кота, тож там нічого не доганяє; щойно виліз на річ чи переліз на іншу — теж
-   * (там стрибок, `nextLift`).
-   */
-  private seatCatchUp(mem: Memory, box: string, at: Vec, seconds: number): Vec {
-    const lag = mem.catchUp;
-    mem.floorWas = false;
-    const seat = mem.seatWas;
-    if (seat === null || seat.box !== box) {
-      lag.x = 0;
-      lag.y = 0;
-      mem.seatWas = { box, x: at.x, y: at.y };
-      return lag;
-    }
-    this.moved.x = at.x - seat.x;
-    this.moved.y = at.y - seat.y;
-    this.pairShift.x = 0;
-    this.pairShift.y = 0;
-    catchUp(lag, catJump(this.moved, this.pairShift, this.catStep, this.jump), seconds);
-    seat.x = at.x;
-    seat.y = at.y;
     return lag;
   }
 

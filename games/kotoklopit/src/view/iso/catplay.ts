@@ -180,6 +180,88 @@ export function catchUp(lag: Vec, jump: Vec | null, seconds: number): Vec {
   return lag;
 }
 
+// --- Місце в юрбі й на речі між кадрами ------------------------------------------------------------
+
+/**
+ * За скільки мс кіт доходить до свого місця в юрбі (`catCrowds`, `perchCrowds`) на ≈ 63 %: прийшовши до персонажа чи до миски,
+ * він відступає вбік кроком, а не перескакує.
+ */
+export const CROWD_EASE_MS = 140;
+
+/** Що вигляд котів (`iso/cats.ts`) пам'ятає між кадрами про те, де кіт намальований щодо свого місця. */
+export interface PlaceMemory {
+  /** Зсув кота в юрбі зараз, клітинки: плавно йде до того, що кажуть `catCrowds` і `perchCrowds` (`crowdShift`). */
+  crowd: Vec;
+  /** На скільки намальований кіт ще позаду свого місця на підлозі чи на речі (клітинки): доганяє його (`CATCH`). */
+  catchUp: Vec;
+  /** Минулого кадру кіт був на меблях (`furniture`): на якій речі й де на ній (`CatSpot.at`, клітинки); null — не на меблях. */
+  seatWas: { box: string; x: number; y: number } | null;
+}
+
+/**
+ * Зсув кота в юрбі цього кадру (`PlaceMemory.crowd`, пише туди ж і повертає): плавно до `target` (null — без зсуву); кадр без
+ * часу — як був; `first` — перший кадр кота, одразу на місці. Вийшов із юрби, а стоїть, де стояв (`hold`: персонаж відійшов,
+ * кота перестали гладити, сусід на речі пішов), — лишається там, де його намалювали, а не ковзає в точку сима (у ноги
+ * персонажа): зсув знімається, коли кіт рушить. Місце на речі стрибнуло — зсув уже не тримається (`seatCatchUp`).
+ */
+export function crowdShift(mem: Pick<PlaceMemory, "crowd">, target: Vec | null, hold: boolean, seconds: number, first: boolean): Vec {
+  const crowd = mem.crowd;
+  if (target === null && hold) return crowd;
+  const tx = target?.x ?? 0;
+  const ty = target?.y ?? 0;
+  const k = first ? 1 : seconds > 0 ? 1 - Math.exp((-seconds * 1000) / CROWD_EASE_MS) : 0;
+  crowd.x += (tx - crowd.x) * k;
+  crowd.y += (ty - crowd.y) * k;
+  if (Math.abs(crowd.x) < 1e-4 && Math.abs(crowd.y) < 1e-4) {
+    crowd.x = 0;
+    crowd.y = 0;
+  }
+  return crowd;
+}
+
+/** Буфери `seatCatchUp`: щокадру не створювати нових. */
+const SEAT_MOVED: Vec = { x: 0, y: 0 };
+const SEAT_NO_PAIR: Vec = { x: 0, y: 0 };
+const SEAT_JUMP: Vec = { x: 0, y: 0 };
+
+/**
+ * Місце кота на меблях (`CatSpot.at` на речі `box`) за кадр стрибнуло далі, ніж кіт пробіг би (`step`, `catStep`): на столі з
+ * комп'ютером той, хто став заважати роботі, переходить на клавіатуру, а той, хто перестав, — з неї поруч (`deskSeat`); пара
+ * на меблях увімкнула чи зняла зсув. Кіт доганяє нове місце (`CATCH`, без бігу — це крок по стільниці), а не перескакує
+ * (`PlaceMemory.catchUp` — пише туди ж і повертає). Ходою по речі місце змінюється не швидше за кота, тож там нічого не
+ * доганяє; щойно виліз на річ чи переліз на іншу — теж (там стрибок, `nextLift`).
+ *
+ * Зсув юрби, який кіт тримав від старого місця (`crowdShift`, `hold`: стояв у рядку обабіч клавіатури, а сусід пішов), — до
+ * нового місця вже не стосується: він переходить у доганяння, і намальований кіт лишається, де був, а доходить саме в нове
+ * місце (рецензія пакета «кіт на клавіатурі»: друга з рядка, ставши на клавіатуру, тримала зсув рядка й сиділа позаду
+ * клавіатури, між нею й монітором). Новий рядок, якщо він є, зсуне кота вже від нового місця.
+ */
+export function seatCatchUp(mem: PlaceMemory, box: string, at: Vec, step: number, seconds: number): Vec {
+  const lag = mem.catchUp;
+  const seat = mem.seatWas;
+  if (seat === null || seat.box !== box) {
+    lag.x = 0;
+    lag.y = 0;
+    mem.seatWas = { box, x: at.x, y: at.y };
+    return lag;
+  }
+  SEAT_MOVED.x = at.x - seat.x;
+  SEAT_MOVED.y = at.y - seat.y;
+  seat.x = at.x;
+  seat.y = at.y;
+  const jump = catJump(SEAT_MOVED, SEAT_NO_PAIR, step, SEAT_JUMP);
+  // Спершу — ближче на крок цього кадру (що лишилося з минулих), потім стрибок разом зі старим зсувом юрби: цього кадру
+  // намальований кіт іде не далі, ніж без зсуву.
+  catchUp(lag, null, seconds);
+  if (jump.x !== 0 || jump.y !== 0) {
+    lag.x += mem.crowd.x;
+    lag.y += mem.crowd.y;
+    mem.crowd.x = 0;
+    mem.crowd.y = 0;
+  }
+  return catchUp(lag, jump, 0);
+}
+
 // --- Опустили на підлогу -----------------------------------------------------------------------
 
 /**
