@@ -250,7 +250,13 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     total.classList.toggle("short", sum > state.character.money);
     // З порожнім кошиком «Очистити» немає зовсім (§6.4), а не сіра неактивна — віконце сум займає її місце.
     clear.hidden = lines.length === 0;
-    const home = lines.length === 0 && options.home !== undefined;
+    payButton();
+  }
+
+  /** Головна кнопка смуги: «Додому», «Купити», «✓ Куплено» чи «Замовити». */
+  function payButton(): void {
+    const sum = cartTotal(state, cart, mode);
+    const home = filled().length === 0 && options.home !== undefined;
     // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03). Мить після покупки —
     // неактивна «✓ Куплено» (`BOUGHT_PAUSE_MS`). На місці сума кошика — лише у віконці поруч, а не ще й на кнопці (рецензія
     // 2026-11-03): «Додому», «Купити» й «✓ Куплено» тоді майже однакові завширшки, і кнопка не стрибає. У телефоні на
@@ -274,7 +280,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
   if (settling) {
     setTimeout(() => {
       settling = false;
-      update();
+      // Лише кнопка: картку тим часом могла перебудувати послуга, і цей (уже знятий) кошик не має переписати збережений (`kept`).
+      payButton();
       // Вимкнена кнопка фокуса не тримає (`Overlay.show` фокусує головну, лише коли вона активна): коли пауза минула й фокус ніде,
       // він — на «Додому», як у щойно відкритій картці, і Enter чи пробіл везуть додому.
       if (pay.isConnected && document.activeElement === document.body) pay.focus({ preventScroll: true });

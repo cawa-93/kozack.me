@@ -380,6 +380,21 @@ describe("подвійний дотик «Купити» не везе додо�
     }
   });
 
+  it("пауза картки, яку вже перебудувала послуга, не переписує збереженого кошика нової картки", () => {
+    vi.useFakeTimers();
+    try {
+      const state = at("vet", 3);
+      const kept = new Map<string, number>();
+      shopCatalog(state, "store", { checkout: noop, home: noop, kept, bought: true });
+      // Нова картка (після огляду) — уже з іншим кошиком.
+      kept.set("drops:cheap", 2);
+      vi.advanceTimersByTime(BOUGHT_PAUSE_MS);
+      expect([...kept.entries()]).toEqual([["drops:cheap", 2]]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("перший показ картки й оновлення після послуги — одразу «Додому»; у телефоні паузи немає", () => {
     expect(visit("vet").pay().textContent).toBe("Додому");
     const phone = shopCatalog(at(null), "delivery", { checkout: noop, bought: true });
