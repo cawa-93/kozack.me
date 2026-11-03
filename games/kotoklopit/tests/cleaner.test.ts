@@ -145,6 +145,21 @@ describe("прибиральниця (§4.1)", () => {
     expect(state.home.surfaces["table"]).toEqual({ kind: "meal", quality: "cheap" });
   });
 
+  it("шкарпетку з котячої схованки під диваном пилосос знаходить сам — найближчий виїзд її вже не шукає (§9.12)", () => {
+    // Рецензія пакета 2026-11-03: картка казала «пройшлася з пилососом», а п'ятка з-під дивана лишалася.
+    const state = game().current;
+    withCat(state);
+    state.home.sock = true;
+    const { events, stop } = recordEvents();
+    const visit = cleanHome(state);
+    stop();
+    expect(state.home.sock).toBeUndefined();
+    expect(visit.sock).toBe(true);
+    // Знайшов не персонаж — думки «шкарпетка знайшлася» немає.
+    expect(events.some((e) => e.type === "sock-found")).toBe(false);
+    expect(cleanHome(state).sock).toBe(false);
+  });
+
   it("лотки, якими користувалися, — свіжий наповнювач із запасу; миски — корм, поїлки — вода; що зроблено — у події", () => {
     const save = game();
     const state = save.current;
@@ -175,7 +190,7 @@ describe("прибиральниця (§4.1)", () => {
     expect(state.home.washer.state).toBe("idle");
     expect(bowls.map((b) => b.food)).toEqual([0, 1]);
     expect(water.water).toBe(WATER_CAPACITY);
-    expect(visit).toEqual({ messes: 10, tufts: 9, dust: DUST_SPOTS.length, litter: 0, hung: false, washing: false, fed: null, watered: true });
+    expect(visit).toEqual({ messes: 10, tufts: 9, dust: DUST_SPOTS.length, litter: 0, hung: false, washing: false, fed: null, watered: true, sock: false });
   });
 
   it("наповнювача на один лоток — чистить один; корму на одну миску — «насипано не всім»", () => {
@@ -411,7 +426,7 @@ describe("будівельний пил (§4.1)", () => {
 });
 
 describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () => {
-  const visit = (over: Partial<CleanerVisit> = {}): CleanerVisit => ({ messes: 3, tufts: 2, dust: 5, litter: 0, hung: false, washing: false, fed: null, watered: false, ...over });
+  const visit = (over: Partial<CleanerVisit> = {}): CleanerVisit => ({ messes: 3, tufts: 2, dust: 5, litter: 0, hung: false, washing: false, fed: null, watered: false, sock: false, ...over });
 
   it("титулки пари — з `TEXTS.md`", () => {
     expect(DAY_MODIFIER_TEXTS["construction-dust"]).toEqual({ title: "Будівельний пил", situation: "У під'їзді ремонт: з десятої до полудня в квартиру летітиме пил." });

@@ -34,6 +34,7 @@ function cleanerLine(home: boolean, visit: CleanerVisit): string {
   if (visit.washing) done.push("запустила прання");
   if (visit.fed) done.push(visit.fed === "full" ? "миски повні" : "корму не на всі миски");
   if (visit.watered) done.push("долила поїлки");
+  if (visit.sock) done.push("пилосос знайшов шкарпетку в схованці");
   return `Прибиральниця${home ? "" : " (вас не було)"}: ${done.join(", ")}`;
 }
 /** Де кіт точить кігті (§9.12). */

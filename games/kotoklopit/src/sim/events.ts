@@ -32,6 +32,8 @@ export interface CleanerVisit {
   fed: "full" | "some" | null;
   /** Хоч одну поїлку долито. */
   watered: boolean;
+  /** Пилосос знайшов шкарпетку в котячій схованці під диваном (§9.12, «Подарунки й схованки») — лише для журналу. */
+  sock: boolean;
 }
 
 export type ModifierEvent =
