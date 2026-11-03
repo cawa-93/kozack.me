@@ -196,10 +196,10 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: PRODUCT_ICONS[refusal.product], count: 0 };
     case "not-here":
       return { icon: itemIcon(refusal.item), mark: "no" };
-    // Місце зайняте (§11.4; ревізія іконок 2026-11-03, раунд 2): тарілка зі стравою на стільниці з ✓ — та сама граматика
-    // «це вже є», що в повної миски й повної води (`full`); «!» читали «увага», а «зайнято» — ніхто.
+    // Місце зайняте (§11.4; ревізія іконок 2026-11-03, раунд 3): страва на стільниці й поруч табличка «в'їзд заборонено» — без
+    // позначки: з ✓ (раунд 2) іконку читали «готово / подано», а «!» (раунд 1) — «увага».
     case "occupied":
-      return { icon: "taken", mark: "ok" };
+      return { icon: "taken" };
     case "full":
       return { icon: refusal.what === "bowl" ? "kibble" : "drop", mark: "ok" };
     case "clean":
