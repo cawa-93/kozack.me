@@ -19,6 +19,7 @@ import {
   CEILING_LIGHT,
   GAS_LIGHT,
   GLASS,
+  HIGHLIGHT_DARK,
   LIGHTMAP,
   POOL_LIFT,
   POOL_ROUND,
@@ -28,6 +29,7 @@ import {
   TONE,
   WHITE,
   rgb,
+  toHex,
   type Rgb,
 } from "./lightlook";
 import { candleFlicker, type LightKind, type LightSource } from "./sources";
@@ -171,6 +173,33 @@ export interface PoolPaint {
   readonly alpha: number;
 }
 
+/**
+ * Як спадає пляма від краю ядра до краю: частка шляху від ядра до краю → частка `alpha` (між точками — лінійно, як градієнт
+ * Canvas2D у `iso/light.ts`).
+ */
+export const POOL_FALLOFF: readonly (readonly [at: number, k: number])[] = [
+  [0, 1],
+  [0.25, 0.74],
+  [0.5, 0.4],
+  [0.75, 0.13],
+  [1, 0],
+];
+
+/** Прозорість плями `pool` у точці `p` (px світу): `alpha` до ядра, далі спадає за `POOL_FALLOFF`, за краєм — 0. */
+export function poolAlphaAt(pool: PoolPaint, p: Point): number {
+  if (pool.rx <= 0 || pool.ry <= 0 || pool.alpha <= 0) return 0;
+  const r = Math.hypot((p.x - pool.x) / pool.rx, (p.y - pool.y) / pool.ry);
+  if (r >= 1) return 0;
+  if (r <= pool.core) return pool.alpha;
+  const u = (r - pool.core) / (1 - pool.core);
+  for (let i = 1; i < POOL_FALLOFF.length; i++) {
+    const [a, ka] = POOL_FALLOFF[i - 1]!;
+    const [b, kb] = POOL_FALLOFF[i]!;
+    if (u <= b) return pool.alpha * (ka + ((kb - ka) * (u - a)) / (b - a));
+  }
+  return 0;
+}
+
 /** Многокутник на карті чи шарі (px світу) кольору `color` з прозорістю `alpha`. */
 export interface PolyPaint {
   readonly points: readonly Point[];
@@ -264,6 +293,43 @@ export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes
     pools: sources.flatMap((source) => poolsOf(source, t)),
     strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
   };
+}
+
+/**
+ * Колір карти світла плану `plan` у точці `p` (px світу): тон, над ним плями — найсвітліше з того, що є, і плями з її
+ * прозорістю (`lighten`, як їх кладе `iso/light.ts`). Смуг сонця тут немає: вони світлішають карту щонайбільше на `SUN.lift`,
+ * і для підсвітки цілі (`highlightBoost`) це не важить.
+ */
+export function lightAt(plan: LightmapPlan, p: Point): Rgb {
+  let c = plan.tone;
+  for (const pool of plan.pools) {
+    const a = poolAlphaAt(pool, p);
+    if (a <= 0) continue;
+    const up = (dst: number, src: number): number => dst + a * (Math.max(dst, src) - dst);
+    c = { r: up(c.r, pool.color.r), g: up(c.g, pool.color.g), b: up(c.b, pool.color.b) };
+  }
+  return c;
+}
+
+/** Підсилення сяйва цілі (`HIGHLIGHT_DARK`): у скільки разів сильніше (`strength`) і наскільки ближче до білого (`whiten`). */
+export interface HighlightBoost {
+  readonly strength: number;
+  readonly whiten: number;
+}
+
+/**
+ * Підсилення сяйва цілі, на якій яскравість карти світла `level` (0–1, `lightAt`): 1 / level, щонайбільше `HIGHLIGHT_DARK.boost`;
+ * колір — ближчий до білого пропорційно підсиленню. Світло повне (удень, під лампою) — без змін.
+ */
+export function highlightBoost(level: number): HighlightBoost {
+  const { boost, whiten } = HIGHLIGHT_DARK;
+  const strength = level > 0 ? Math.min(boost, Math.max(1, 1 / level)) : boost;
+  return { strength, whiten: (whiten * (strength - 1)) / (boost - 1) };
+}
+
+/** Колір 0xrrggbb, ближчий до білого на частку `t` (0 — той самий). */
+export function whitened(color: number, t: number): number {
+  return t <= 0 ? color : toHex(mix(rgb(color), WHITE, Math.min(1, t)));
 }
 
 const q = (v: number): number => Math.round(v * LIGHTMAP.steps);

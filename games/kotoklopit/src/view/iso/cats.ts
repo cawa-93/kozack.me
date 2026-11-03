@@ -29,6 +29,7 @@ import { catCrowds, catPairs, crowdMemory, perchCrowds, perchMemory, towardPerso
 import { addArt, setArt } from "../art/atlas";
 import { COAT_WHITE, PIGMENT_LOOK } from "../art/recipes";
 import { COLORS } from "../colors";
+import { highlightBoost, whitened } from "../light/lightmap";
 import type { RigFacing } from "../rig/types";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
@@ -96,7 +97,10 @@ const TOYS: Readonly<Record<Quality, { kind: "toy"; quality: Quality }>> = {
   premium: { kind: "toy", quality: "premium" },
 };
 
-/** Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`); без WebGL — кільце на підлозі. */
+/**
+ * Підсвітка кота-цілі (§8.2): сяйво (як у речей квартири, `iso/highlight.ts`; у темряві — сильніше й світліше, `HIGHLIGHT_DARK`);
+ * без WebGL — кільце на підлозі (над картою світла, тож ніч його не гасить).
+ */
 const GLOW = { min: 2, pulse: 4, quality: 8, distance: 10 } as const;
 const RING = { w: 58, h: 24, line: 4 } as const;
 
@@ -169,6 +173,8 @@ export class IsoCatsView implements CatsPart {
   private wanted: { view: IsoCatView; alpha: number } | null = null;
   private glowing: { target: Phaser.GameObjects.Container; glow: Phaser.Filters.Glow } | null = null;
   private ring: Phaser.GameObjects.Graphics | null = null;
+  /** Де на коті-цілі беремо яскравість карти світла (між лапами й головою): одна точка на всі кадри. */
+  private readonly glowAt: Point = { x: 0, y: 0 };
   private readonly webgl: boolean;
   /** Видимий світ із запасом (`CULL_MARGIN`): коти поза ним не рахуються. */
   private readonly visible = new Phaser.Geom.Rectangle();
@@ -888,7 +894,17 @@ export class IsoCatsView implements CatsPart {
         const filters = target.filters;
         if (filters) this.glowing = { target, glow: filters.internal.addGlow(COLORS.highlight, GLOW.min, 0, 1, false, GLOW.quality, GLOW.distance) };
       }
-      if (this.glowing) this.glowing.glow.outerStrength = GLOW.min + GLOW.pulse * wanted.alpha;
+      if (this.glowing) {
+        // Яскравість карти світла посередині кота — між лапами й головою.
+        const { root, head } = wanted.view;
+        this.glowAt.x = (root.x + head.x) / 2;
+        this.glowAt.y = (root.y + head.y) / 2;
+        const boost = highlightBoost(this.ctx.world.lightLevel(this.glowAt));
+        const glow = this.glowing.glow;
+        glow.outerStrength = (GLOW.min + GLOW.pulse * wanted.alpha) * boost.strength;
+        const color = whitened(COLORS.highlight, boost.whiten);
+        if (glow.color !== color) glow.color = color;
+      }
     }
     // Без WebGL (чи коли видно лише очі) — кільце на підлозі довкола кота.
     const ringed = wanted && !target ? wanted : null;

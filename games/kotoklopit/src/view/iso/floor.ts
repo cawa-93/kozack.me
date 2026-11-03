@@ -113,7 +113,7 @@ export class IsoFloorView implements WorldPart {
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
-    this.glow = new IsoHighlight(ctx.scene, ctx.layer);
+    this.glow = new IsoHighlight(ctx.scene, ctx.layer, ctx.world);
   }
 
   /** Створити річ із кадром `frame` і точкою в реєстрі (`options` — пласка, півширина, id). */

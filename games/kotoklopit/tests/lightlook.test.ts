@@ -10,8 +10,23 @@ import { MAP_HEIGHT, MAP_WIDTH } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
 import { CEILING_LAMPS, PANES } from "../src/view/decor";
 import { daylight, type Daylight } from "../src/view/light/daylight";
-import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, luma, POOL_LIFT, POOL_ROUND, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
-import { apartmentOutline, CELL_RX, expandConvex, glassLayers, glassOf, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
+import { PALETTE } from "../art/palette";
+import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, HIGHLIGHT_DARK, luma, POOL_LIFT, POOL_ROUND, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
+import {
+  apartmentOutline,
+  CELL_RX,
+  expandConvex,
+  glassLayers,
+  glassOf,
+  highlightBoost,
+  lightAt,
+  lightmapKey,
+  lightmapPlan,
+  paneQuad,
+  poolAlphaAt,
+  toneOf,
+  whitened,
+} from "../src/view/light/lightmap";
 import { lightSources } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
@@ -106,6 +121,52 @@ describe("вигляд світла доби", () => {
     }
     // Піднята пляма кругліша за пляму на підлозі.
     expect(POOL_ROUND.raised).toBeGreaterThan(POOL_ROUND.floor);
+  });
+
+  it("яскравість карти в точці (`lightAt`) — як її малюють: повна в ядрі плями, спадає за `POOL_FALLOFF`, за краєм — тон", () => {
+    const pool = { x: 100, y: 50, rx: 40, ry: 20, core: 0.3, color: rgb(0xfff0d6), alpha: 0.8 };
+    expect(poolAlphaAt(pool, { x: 100, y: 50 })).toBeCloseTo(0.8, 9);
+    expect(poolAlphaAt(pool, { x: 100 + 40 * 0.3, y: 50 })).toBeCloseTo(0.8, 9);
+    // Посередині спаду (0,3 + 0,7 · 0,5 радіуса) — 0,4 від `alpha`; по вертикалі — у ry.
+    expect(poolAlphaAt(pool, { x: 100 + 40 * 0.65, y: 50 })).toBeCloseTo(0.8 * 0.4, 9);
+    expect(poolAlphaAt(pool, { x: 100, y: 50 + 20 * 0.65 })).toBeCloseTo(0.8 * 0.4, 9);
+    expect(poolAlphaAt(pool, { x: 140, y: 50 })).toBe(0);
+    const tone = TONE.outage;
+    const plan = { tone, pools: [pool], strips: [] };
+    expect(near(lightAt(plan, { x: 300, y: 50 }), tone, 1e-9)).toBe(true);
+    // У ядрі — тон, ближчий до кольору плями на її `alpha` (`lighten`: світлішає лише те, що темніше за пляму).
+    const center = lightAt(plan, { x: 100, y: 50 });
+    for (const ch of ["r", "g", "b"] as const) expect(center[ch]).toBeCloseTo(tone[ch] + 0.8 * (Math.max(tone[ch], pool.color[ch]) - tone[ch]), 9);
+  });
+
+  it("підсвітка цілі в темряві сильніша й світліша за яскравістю карти на ній; удень і під лампою — без змін (рецензія 2026-11-03)", () => {
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    const lit = d(23 * 60);
+    const night = lightmapPlan(lit, lightSources(s, lit), PANES, 0);
+    // Посередині плями лампи — майже повне світло: сяйво як удень.
+    const lamp = CEILING_LAMPS[3]!;
+    const under = highlightBoost(luma(lightAt(night, ISO.toScreen(lamp.at))));
+    expect(under.strength).toBeLessThan(1.1);
+    expect(highlightBoost(1)).toEqual({ strength: 1, whiten: 0 });
+    expect(whitened(0xf3d27a, 0)).toBe(0xf3d27a);
+    // Поза лампами вночі — ×1,8, у відключення — ×2,4 і найсвітліше (`HIGHLIGHT_DARK`).
+    const corner = highlightBoost(luma(TONE.night));
+    expect(corner.strength).toBeCloseTo(1 / luma(TONE.night), 6);
+    expect(corner.strength).toBeGreaterThan(1.7);
+    const outage = highlightBoost(luma(TONE.outage));
+    expect(outage.strength).toBeCloseTo(Math.min(HIGHLIGHT_DARK.boost, 1 / luma(TONE.outage)), 6);
+    expect(outage.strength).toBeGreaterThan(2.3);
+    expect(outage.whiten).toBeGreaterThan(corner.whiten);
+    expect(outage.whiten).toBeLessThanOrEqual(HIGHLIGHT_DARK.whiten);
+    expect(highlightBoost(0.1)).toEqual(highlightBoost(0));
+    // Під множенням на тон відключення світліше сяйво яскравіше за жовте.
+    const t = TONE.outage;
+    const glow = (color: number): number => {
+      const c = rgb(color);
+      return luma({ r: c.r * t.r, g: c.g * t.g, b: c.b * t.b });
+    };
+    const yellow = Number.parseInt(PALETTE.highlight.slice(1), 16);
+    expect(glow(whitened(yellow, outage.whiten))).toBeGreaterThan(glow(yellow) * 1.1);
   });
 
   it("світанок і вечір — різні відтінки: вечір помаранчевіший", () => {

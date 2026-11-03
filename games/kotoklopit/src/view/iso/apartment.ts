@@ -227,7 +227,7 @@ export class IsoApartmentView implements ApartmentPart {
   constructor(private readonly ctx: PartContext) {
     const { scene, layer } = ctx;
     this.depth = isoDepth(ctx);
-    this.glow = new IsoHighlight(scene, layer);
+    this.glow = new IsoHighlight(scene, layer, ctx.world);
     this.fx = new IsoFxView(ctx);
 
     // Плити кімнат: підлога й задні стіни кожної — в одну точку, верхню вершину ромба першої клітинки кімнати. Котячі сліди

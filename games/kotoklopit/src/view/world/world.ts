@@ -85,4 +85,8 @@ export class World implements WorldQuery {
   cat(id: number): CatPoints | null {
     return this.all.cats.points(id);
   }
+
+  lightLevel(p: Point): number {
+    return this.all.light.lightLevel(p);
+  }
 }

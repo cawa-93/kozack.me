@@ -12,7 +12,7 @@ import { IsoLightView } from "../iso/light";
 import { IsoMarksView } from "../iso/marks";
 import { IsoPersonView } from "../iso/person";
 import type { PartContext } from "./context";
-import type { ApartmentPart, CatsPart, PersonPart, WorldPart } from "./part";
+import type { ApartmentPart, CatsPart, LightPart, PersonPart, WorldPart } from "./part";
 import { ISO, type Projection } from "./projection";
 import { World } from "./world";
 
@@ -25,7 +25,7 @@ export interface WorldBuilders {
   marks(ctx: PartContext): WorldPart;
   person(ctx: PartContext): PersonPart;
   cats(ctx: PartContext): CatsPart;
-  light(ctx: PartContext): WorldPart;
+  light(ctx: PartContext): LightPart;
 }
 
 /** Світ гри: ізометрична проєкція й частини на кадрах атласу арту. */

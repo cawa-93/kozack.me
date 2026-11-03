@@ -33,22 +33,25 @@ import {
   cssColor,
   glassLayers,
   glassOf,
+  lightAt,
   lightmapKey,
   lightmapPlan,
   paneGlass,
+  POOL_FALLOFF,
   sourceLevel,
   stripsOf,
   sunColor,
   sunKey,
   toneOf,
+  type LightmapPlan,
   type PoolPaint,
 } from "../light/lightmap";
-import { BOILER_LIGHT, CANDLE_LIGHT, CONE, GAS_LIGHT, LIGHTMAP, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT, SUN, type Rgb } from "../light/lightlook";
+import { BOILER_LIGHT, CANDLE_LIGHT, CONE, GAS_LIGHT, LIGHTMAP, luma, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT, SUN, toHex } from "../light/lightlook";
 import { CONE_BASE, softTexture } from "../light/lighttex";
 import { lightSources, type LightKind, type LightSource } from "../light/sources";
 import type { PartContext } from "../world/context";
 import { WORLD_LAYERS } from "../world/layers";
-import type { Point, WorldFrame, WorldPart } from "../world/part";
+import type { LightPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
 import { BACKDROP } from "./apartment";
 import { isoDepth, type IsoDepth, type IsoPointHandle } from "./depth";
@@ -117,7 +120,7 @@ interface Parts {
 
 let instances = 0;
 
-export class IsoLightView implements WorldPart {
+export class IsoLightView implements LightPart {
   private readonly depth: IsoDepth;
   /** Вікна, чий малюнок є в маніфесті: кухонне з'являється разом зі своїм артом (до того — ні скла, ні смуги на голій стіні). */
   private readonly panes: readonly Pane[];
@@ -131,6 +134,11 @@ export class IsoLightView implements WorldPart {
   private shown = false;
   private mapKey = "";
   private mapAt = Number.NEGATIVE_INFINITY;
+  /**
+   * План карти, намальованої останньою (null — ще не малювали): з нього — яскравість світла в точці, поки карту видно
+   * (`lightLevel`).
+   */
+  private painted: LightmapPlan | null = null;
   private sunKeyShown = "";
   private glassKey = "";
 
@@ -215,12 +223,13 @@ export class IsoLightView implements WorldPart {
     if (key !== this.mapKey && (!visible || time - this.mapAt >= LIGHTMAP.minRedrawMs)) {
       this.mapKey = key;
       this.mapAt = time;
-      this.paintMap(parts.map, lightmapPlan(d, sources, this.panes, time));
+      this.painted = lightmapPlan(d, sources, this.panes, time);
+      this.paintMap(parts.map, this.painted);
     }
     parts.mapImage.setVisible(true);
   }
 
-  private paintMap(texture: Phaser.Textures.CanvasTexture, plan: ReturnType<typeof lightmapPlan>): void {
+  private paintMap(texture: Phaser.Textures.CanvasTexture, plan: LightmapPlan): void {
     const ctx = texture.context;
     const s = LIGHTMAP.scale;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -245,8 +254,8 @@ export class IsoLightView implements WorldPart {
   /** Скло вікон просто над вікнами: множник, де скло темніше за тон, і додаток, де тепле скло світліше (`glassLayers`). */
   private drawGlass(parts: Parts, d: Daylight): void {
     const layers = glassLayers(toneOf(d), glassOf(d));
-    const mul = hex(layers.mul);
-    const add = hex(layers.add);
+    const mul = toHex(layers.mul);
+    const add = toHex(layers.add);
     const key = `${mul}|${add}`;
     if (key !== this.glassKey) {
       this.glassKey = key;
@@ -376,6 +385,7 @@ export class IsoLightView implements WorldPart {
   }
 
   reset(): void {
+    this.painted = null;
     this.mapKey = "";
     this.mapAt = Number.NEGATIVE_INFINITY;
     this.sunKeyShown = "";
@@ -411,6 +421,12 @@ export class IsoLightView implements WorldPart {
   highlight(): boolean {
     return false;
   }
+
+  /** Яскравість карти світла в точці `p` (px світу): тон і плями, які зараз видно (`lightAt`); карти немає — 1. */
+  lightLevel(p: Point): number {
+    const plan = this.painted;
+    return plan && this.parts?.mapImage.visible ? luma(lightAt(plan, p)) : 1;
+  }
 }
 
 /** Шлях многокутника (без заливки). */
@@ -430,11 +446,8 @@ function paintPool(ctx: CanvasRenderingContext2D, pool: PoolPaint): void {
   const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
   const tail = 1 - core;
   gradient.addColorStop(0, cssColor(color, alpha));
-  gradient.addColorStop(core, cssColor(color, alpha));
-  gradient.addColorStop(core + tail * 0.25, cssColor(color, alpha * 0.74));
-  gradient.addColorStop(core + tail * 0.5, cssColor(color, alpha * 0.4));
-  gradient.addColorStop(core + tail * 0.75, cssColor(color, alpha * 0.13));
-  gradient.addColorStop(1, cssColor(color, 0));
+  // Спад від ядра до краю — той самий, за яким `lightAt` рахує яскравість у точці (`POOL_FALLOFF`).
+  for (const [at, k] of POOL_FALLOFF) gradient.addColorStop(at >= 1 ? 1 : core + tail * at, cssColor(color, alpha * k));
   ctx.fillStyle = gradient;
   ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
   ctx.restore();
@@ -459,10 +472,4 @@ function softFill(ctx: CanvasRenderingContext2D, points: readonly Point[], fill:
   );
   ctx.fill();
   ctx.restore();
-}
-
-/** Колір 0–1 → 0xrrggbb. */
-function hex(c: Rgb): number {
-  const ch = (v: number): number => Math.round(Math.min(1, Math.max(0, v)) * 255);
-  return (ch(c.r) << 16) | (ch(c.g) << 8) | ch(c.b);
 }

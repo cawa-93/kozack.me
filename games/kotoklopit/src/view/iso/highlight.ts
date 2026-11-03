@@ -4,7 +4,8 @@
 // підлозі, і на темній. Каркаса на висоті цілі немає: висота — найвища точка (монітор, узголів'я, кран), і коробка на ній
 // над усім слідом обводила б порожнечу, а задні ребра сліду йшли б крізь саму річ. Кутик лежить на глибині цілі, як сяйво
 // на її малюнку: той, хто стоїть перед ціллю (персонаж за столом), його закриває. Колір — токен `highlight` палітри арту
-// (`art/STYLE.md`: лише для інтерфейсу).
+// (`art/STYLE.md`: лише для інтерфейсу). Сяйво й кутик — під картою світла доби, тож у темряві вони сильніші й світліші
+// (`HIGHLIGHT_DARK`, за яскравістю карти на цілі — `WorldQuery.lightLevel`): інакше множення гасить їх до ледь помітної лінії.
 //
 // Як ходить: частина в `update` починає кадр (`begin`), позначки кличуть `highlight` частини, а та — `request`; у своєму
 // `lateUpdate` частина кличе `apply`: сяйво переходить на нову ціль, зі старої знімається. Ціль, якої цього кадру не
@@ -13,7 +14,9 @@
 import Phaser from "phaser";
 
 import { PALETTE } from "../../../art/palette";
+import { highlightBoost, whitened, type HighlightBoost } from "../light/lightmap";
 import type { IsoFootprint } from "../world/objects";
+import type { Point, WorldQuery } from "../world/part";
 import { footprintCorners } from "./geometry";
 
 /** Сила сяйва: від слабкого до сильного за пульсом позначок (`alpha` 0–1). */
@@ -49,10 +52,14 @@ export class IsoHighlight {
   /** Запасний контур (лише без WebGL). */
   private outline: Phaser.GameObjects.Graphics | null = null;
   private readonly webgl: boolean;
+  /** Середина малюнка цілі цього кадру (`boost`): одна точка на всі кадри. */
+  private readonly center: Point = { x: 0, y: 0 };
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly layer: Phaser.GameObjects.Layer,
+    /** Світ: яскравість карти світла на цілі (`lightLevel`). */
+    private readonly world: Pick<WorldQuery, "lightLevel">,
   ) {
     this.webgl = scene.sys.game.renderer.type === Phaser.WEBGL;
   }
@@ -89,7 +96,19 @@ export class IsoHighlight {
       if (!filters) return;
       this.glowing = { image, glow: filters.internal.addGlow(HIGHLIGHT, GLOW_MIN, 0, 1, false, GLOW_QUALITY, GLOW_DISTANCE) };
     }
-    this.glowing.glow.outerStrength = GLOW_MIN + GLOW_PULSE * wanted.alpha;
+    const boost = this.boost(wanted.image);
+    const glow = this.glowing.glow;
+    glow.outerStrength = (GLOW_MIN + GLOW_PULSE * wanted.alpha) * boost.strength;
+    const color = whitened(HIGHLIGHT, boost.whiten);
+    if (glow.color !== color) glow.color = color;
+  }
+
+  /** Підсилення підсвітки за яскравістю карти світла посередині малюнка цілі (`HIGHLIGHT_DARK`). */
+  private boost(image: Phaser.GameObjects.Image): HighlightBoost {
+    const c = this.center;
+    c.x = image.x + (0.5 - image.originX) * image.displayWidth;
+    c.y = image.y + (0.5 - image.originY) * image.displayHeight;
+    return highlightBoost(this.world.lightLevel(c));
   }
 
   private drawOutline(wanted: Request | null): void {
@@ -99,10 +118,10 @@ export class IsoHighlight {
     g.setDepth(wanted.image.depth + OUTLINE_ABOVE);
     const corners = footprintCorners(wanted.footprint);
     const front = FRONT_CORNERS.map((i) => new Phaser.Math.Vector2(corners[i]!.x, corners[i]!.y));
-    // Спершу чорнильна облямівка, поверх — смуга підсвітки: пульс міняє яскравість обох.
+    // Спершу чорнильна облямівка, поверх — смуга підсвітки: пульс міняє яскравість обох. У темряві смуга світліша (`boost`).
     for (const [width, color] of [
       [OUTLINE.ink, INK],
-      [OUTLINE.band, HIGHLIGHT],
+      [OUTLINE.band, whitened(HIGHLIGHT, this.boost(wanted.image).whiten)],
     ] as const) {
       g.lineStyle(width, color, wanted.alpha);
       g.strokePoints(front, false, false);

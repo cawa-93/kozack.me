@@ -137,6 +137,12 @@ export interface CatsPart extends WorldPart {
   points(cat: number): CatPoints | null;
 }
 
+/** Світло доби: ще й яскравість карти світла в точці — для підсвітки цілі в темряві (`HIGHLIGHT_DARK`). */
+export interface LightPart extends WorldPart {
+  /** Яскравість карти світла в точці екрана `p` (px світу), 0–1: 1 — карти немає (удень) чи світло там повне. */
+  lightLevel(p: Point): number;
+}
+
 /** Шість частин світу. */
 export interface WorldParts {
   apartment: ApartmentPart;
@@ -150,7 +156,7 @@ export interface WorldParts {
    * Світло доби (§8.9): тон доби, плями й промені ламп, свічки, смуги сонця, скло вікон. Нічого не підсвічує й не має якорів;
    * оновлюється останньою — коли глибини всього іншого вже відомі.
    */
-  light: WorldPart;
+  light: LightPart;
 }
 
 /** Що частини питають в усього світу: точки персонажа й котів, якорі інших частин. */
@@ -163,4 +169,9 @@ export interface WorldQuery {
   highlight(target: Target, alpha: number): boolean;
   readonly person: { readonly head: Point; readonly hands: Hands; readonly brush: Point | null };
   cat(id: number): CatPoints | null;
+  /**
+   * Яскравість карти світла доби в точці екрана `p` (px світу), 0–1 (1 — удень). Світло оновлюється останнім, тож у
+   * `lateUpdate` — уже цього кадру.
+   */
+  lightLevel(p: Point): number;
 }
