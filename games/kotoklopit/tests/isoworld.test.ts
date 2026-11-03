@@ -46,7 +46,7 @@ import {
   waterFrame,
   type IsoFrame,
 } from "../src/view/iso/looks";
-import { isoCatPerch, isoItemLook, isoObjectLook } from "../src/view/world/objects";
+import { ISO_KEYBOARD, isoCatPerch, isoItemLook, isoObjectLook } from "../src/view/world/objects";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
 
 const QUALITIES: readonly Quality[] = ["cheap", "premium"];
@@ -171,6 +171,15 @@ describe("ізометричні дані речей (world/objects.ts)", () => 
       const at = pointsOn(object, entry)((perch.at.x - object.x) / object.w, (perch.at.y - object.y) / object.h, perch.lift);
       expect(at, pane.sill).toEqual(entry.points?.["seat"]);
     }
+    // Клавіатура, на якій лежить кіт, що заважає роботі (`ISO_KEYBOARD`, §9.12 «Сон на комп'ютері» [Уточнено]), — точка
+    // `keyboard` на висоті стільниці; рамка намальованої клавіатури — довкола неї, на стільниці.
+    const desk = objectById("computer");
+    const computer = artEntry("env/computer");
+    if (!computer) throw new Error("env/computer");
+    const { seat, frame } = ISO_KEYBOARD;
+    expect(pointsOn(desk, computer)((seat.x - desk.x) / desk.w, (seat.y - desk.y) / desk.h, isoObjectLook("computer").top)).toEqual(computer.points?.["keyboard"]);
+    expect(seat.x > frame.x0 && seat.x < frame.x1 && seat.y > frame.y0 && seat.y < frame.y1).toBe(true);
+    expect(frame.x0 > desk.x && frame.x1 < desk.x + desk.w && frame.y0 > desk.y && frame.y1 < desk.y + desk.h).toBe(true);
   });
 
   it("кіт на речі — над своєю точкою на висоті верху; у душі — на піддоні біля входу; під річчю — з-під ближчого краю", () => {

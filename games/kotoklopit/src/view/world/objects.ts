@@ -174,6 +174,32 @@ export function isoCatPerch(id: string, cat: Vec, hiding: boolean, stage: FillSt
   return { at: { x: cat.x, y: cat.y }, lift: lift ?? 0 };
 }
 
+/** Клавіатура на столі з комп'ютером: точка (клітинки) і рамка на стільниці. */
+export interface IsoKeyboard {
+  /** Де сидить чи спить кіт, що заважає роботі: точка `keyboard` запису `env/computer`, на висоті стільниці (`perch`). */
+  readonly seat: Vec;
+  /** Сама намальована клавіатура на стільниці: прямокутник довкола неї (вона лежить трохи навскіс). */
+  readonly frame: IsoFootprint;
+}
+
+/**
+ * Клавіатура на столі з комп'ютером (§9.12 «Кіт і робота», «Сон на комп'ютері» — [Уточнено] 2026-11-03, рішення автора: кіт,
+ * що заважає роботі, лежить саме на клавіатурі, а той, що поруч, — поруч і не заважає). Частки сліду стола 2 × 1 уздовж x і
+ * y: точка — та сама, що в маніфесті (`COMPUTER.at(0.5, 0.6, DESK_TOP)`, `a04-rooms.ts`; збіг перевіряє
+ * `tests/isoworld.test.ts`), рамка — за контуром клавіатури в `art/env/computer.svg` (шлях `p-keyboard`: кути ≈ (6,69; 6,44),
+ * (7,23; 6,48), (7,24; 6,7), (6,72; 6,69) на висоті стільниці 54). Хто де на столі — `deskSeat` (`iso/catspot.ts`).
+ */
+const KEYBOARD_ON_DESK = { seat: { fx: 0.5, fy: 0.6 }, frame: { fx0: 0.345, fx1: 0.62, fy0: 0.44, fy1: 0.7 } } as const;
+
+export const ISO_KEYBOARD: IsoKeyboard = (() => {
+  const desk = OBJECTS.find((o) => o.id === "computer");
+  if (!desk) throw new Error("Немає стола з комп'ютером");
+  const { seat, frame } = KEYBOARD_ON_DESK;
+  const x = (f: number): number => desk.x + f * desk.w;
+  const y = (f: number): number => desk.y + f * desk.h;
+  return { seat: { x: x(seat.fx), y: y(seat.fy) }, frame: { x0: x(frame.fx0), x1: x(frame.fx1), y0: y(frame.fy0), y1: y(frame.fy1) } };
+})();
+
 /**
  * Речі на підлозі (§9.12, §8.5, §8.7): котячий куточок, техніка й вертикальний пилосос, що стоїть на підлозі, — для висоти бабла
  * й ширини малюнка.

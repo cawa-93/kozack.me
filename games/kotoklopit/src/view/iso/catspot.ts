@@ -6,14 +6,16 @@
 // Те саме, що показував старий кіт на ізометричній підлозі (перехідний вигляд F3b), і те, що каже маніфест
 // про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота, `top` ящиків.
 
+import { catOnComputer } from "../../sim/catai";
 import { CARRIER_SPOT, HIGH_PLACES, isSolid, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
 import type { Cat, GameState, HomeItem, LitterItem, ScratcherItem, Vec } from "../../sim/types";
+import { catMoving } from "../anim/catfacing";
 import type { CatAnimId } from "../anim/ids";
 import { isoScreenDir } from "../anim/iso";
 import { PERCH, type PairPlacement, type PerchArea } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
-import { isoCatPerch, isoObjectLook } from "../world/objects";
+import { ISO_KEYBOARD, isoCatPerch, isoObjectLook } from "../world/objects";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
@@ -24,7 +26,8 @@ import { shapedStage } from "./looks";
  * - `away` — не вдома (поїздка, сходи): не видно;
  * - `hands` — на руках чи колінах персонажа (`PersonPart.hands`);
  * - `floor` — на підлозі (і за мискою, з якої їсть); `furniture` — на меблях, на висоті верху (`isoCatPerch`), у ящиках —
- *   у верхній коробці, нижче за борт;
+ *   у верхній коробці, нижче за борт, на столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею
+ *   (`deskSeat`);
  * - `under` — ховається під меблями: з-під ближчого видного краю видно очі й кінчик хвоста (з-під дивана — з боку сидіння,
  *   `hidePeek`);
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі (сплячого — ще й кінчик хвоста з входу);
@@ -232,6 +235,52 @@ export function bowlSeat(cat: Vec, bowl: Vec, feeder: boolean, facesRight: boole
   return { x: cat.x + (side * half - BOWL_SIDE.behind) * k, y: cat.y + (-side * half - BOWL_SIDE.behind) * k };
 }
 
+// --- Стіл із комп'ютером --------------------------------------------------------------------------
+
+/** Стіл із комп'ютером (`OBJECTS`): на ньому клавіатура (`ISO_KEYBOARD`). */
+const DESK = "computer";
+
+/**
+ * Кіт поруч із клавіатурою (§9.12, «Сон на комп'ютері» — [Уточнено] 2026-11-03) — не ближче за стільки клітинок уздовж стола
+ * (x) до її рамки (`ISO_KEYBOARD.frame`): ліворуч — посередині лівої половини стола (6,5), куди сим і садовить кота (так автор
+ * і бачив кота «поруч із клавіатурою»), праворуч — на 7,43, на миші між клавіатурою й ручкою. Ближче тулуб того, хто сидить,
+ * чи клубок сплячого (≈ 50 одиниць завширшки) уже лежав би на клавіатурі.
+ */
+export const BESIDE_KEYBOARD = 0.19;
+
+/** Межі вздовж стола (x), між якими кіт уже на клавіатурі (`BESIDE_KEYBOARD`). */
+const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD;
+const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD;
+
+/**
+ * Де кіт на столі з комп'ютером (§9.12 «Кіт і робота», «Сон на комп'ютері» — [Уточнено] 2026-11-03: що бачить гравець, те й
+ * правило). Той, хто заважає роботі, — кого повертає `catOnComputer` сима (сидить на клавіатурі чи спить на комп'ютері), — на
+ * самій клавіатурі (`ISO_KEYBOARD.seat`), хоч би на якій половині стола його поставив сим. Решта, хто сидить чи лежить на
+ * столі (обнюхує ручку, прийшов на клавіатуру, коли там уже хтось є, лишився, коли перестав заважати), — поруч із клавіатурою,
+ * не на ній: того, хто опинився над нею вздовж стола, зсунуто до ближчого її боку (`BESIDE_KEYBOARD`). Хто йде столом — там,
+ * де йде. `at` — точка кота на столі (у парі — зі зсувом пари).
+ */
+export function deskSeat(state: GameState, cat: Cat, at: Vec): Vec {
+  if (catOnComputer(state) === cat) return ISO_KEYBOARD.seat;
+  if (catMoving(cat) || at.x <= BESIDE_LEFT || at.x >= BESIDE_RIGHT) return at;
+  const { x0, x1 } = ISO_KEYBOARD.frame;
+  return { x: at.x < (x0 + x1) / 2 ? BESIDE_LEFT : BESIDE_RIGHT, y: at.y };
+}
+
+/**
+ * Юрба на столі з комп'ютером (`perchPlace`): той, хто на клавіатурі, — сам (рядок не зсуне його з неї), а ті, хто поруч
+ * (`deskSeat`), — рядком у межах своєї частини стола обабіч клавіатури, тож і сусіди не засувають їх на неї.
+ */
+function deskPlace(at: Vec): PerchPlace {
+  const { seat } = ISO_KEYBOARD;
+  if (at.x > BESIDE_LEFT && at.x < BESIDE_RIGHT) {
+    return perchPlaceOf(`${DESK}:keyboard`, () => ({ x0: seat.x, x1: seat.x, y0: seat.y, y1: seat.y, margin: 0, step: PERCH.step }));
+  }
+  const f = isoObjectLook(DESK).footprint;
+  const side = at.x < seat.x ? { key: "left", x0: f.x0, x1: BESIDE_LEFT } : { key: "right", x0: BESIDE_RIGHT, x1: f.x1 };
+  return perchPlaceOf(`${DESK}:${side.key}`, () => ({ x0: side.x0, x1: side.x1, y0: f.y0, y1: f.y1, margin: PERCH.margin, step: PERCH.step }));
+}
+
 // --- Лоток і кігтеточка ---------------------------------------------------------------------------
 
 /**
@@ -377,9 +426,11 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
       return spot("under", peek.at, { box: object.id, behind: peek.behind, show: "eyes" });
     }
     const perch = isoCatPerch(object.id, pair ? tile : cat, false, shapedStage(state, object.id));
+    // На столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею (`deskSeat`).
+    const at = object.id === DESK ? deskSeat(state, cat, perch.at) : perch.at;
     // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
     // вона лягла б на передню стінку.
-    return spot("furniture", perch.at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
+    return spot("furniture", at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
   }
   if (hidesUnder(state, cat, anim)) return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.
@@ -481,12 +532,13 @@ function perchPlaceOf(key: string, area: () => PerchArea): PerchPlace {
 
 /**
  * Де розсунути котів, що лежать на тій самій речі (`perchCrowds`, `PERCH`): на меблях — у межах сліду речі (`isoObjectLook`;
- * у підвіконня — лише дошка); у будиночку — уздовж входу на грані +x (очі в темряві); під меблями — уздовж краю, з-під якого
- * визирають очі (`hidePeek`; під диваном — лінія `SOFA_HIDE`). Решта місць — null: там кіт сам (барабан, переноска, лоток)
- * чи його не розсувають (на підлозі — `catCrowds`, руки).
+ * у підвіконня — лише дошка; на столі з комп'ютером — обабіч клавіатури, `deskPlace`); у будиночку — уздовж входу на грані +x
+ * (очі в темряві); під меблями — уздовж краю, з-під якого визирають очі (`hidePeek`; під диваном — лінія `SOFA_HIDE`). Решта
+ * місць — null: там кіт сам (барабан, переноска, лоток) чи його не розсувають (на підлозі — `catCrowds`, руки).
  */
 export function perchPlace(spot: CatSpot): PerchPlace | null {
   const box = spot.box;
+  if (spot.kind === "furniture" && box === DESK) return deskPlace(spot.at);
   if (spot.kind === "furniture" && box) {
     return perchPlaceOf(box, () => ({ ...isoObjectLook(box).footprint, margin: PERCH.margin, step: PERCH.step }));
   }

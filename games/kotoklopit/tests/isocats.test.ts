@@ -7,9 +7,10 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { createCat, idleAct } from "../src/sim/cat";
+import { catOnComputer } from "../src/sim/catai";
 import { WEIGHT } from "../src/sim/config";
 import { advance, newGame } from "../src/sim/game";
-import { CARRIER_SPOT, isWall, objectAt, objectById, slotCenter } from "../src/sim/home";
+import { CARRIER_SPOT, isWall, objectAt, objectById, slotCenter, TRINKETS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { gameMinutes } from "../src/sim/time";
@@ -33,6 +34,7 @@ import { catRenderConfig, isSoftwareRenderer } from "../src/view/iso/catrender";
 import { BELLY_ABOVE, bonePoint, brawlTop, CAT_HALF_WIDTH, catSize, EAR_BONES, EAR_POSES, fatWeight, ISO_CAT_FIT, ISO_CAT_RIG, isoCatHalf, isoCatProportions, isoCatSkin, KITTEN_SIZE } from "../src/view/iso/catrig";
 import {
   BESIDE,
+  BESIDE_KEYBOARD,
   besideSide,
   BLANKET_EARS,
   blanketOffset,
@@ -42,6 +44,7 @@ import {
   bowlSeat,
   CAT_PIECE,
   catSpot,
+  deskSeat,
   IN_LITTER,
   LAP_SEAT,
   lapSeat,
@@ -54,11 +57,12 @@ import {
 import { isoScreenDir } from "../src/view/anim/iso";
 import { catPairs, PERCH, perchCrowds, perchMemory, type PerchMember } from "../src/view/anim/pairs";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { artOffset, footprintCenter } from "../src/view/iso/geometry";
+import { IsoDepth } from "../src/view/iso/depth";
+import { artOffset, footprintCenter, objectScreen } from "../src/view/iso/geometry";
 import { shapedStage } from "../src/view/iso/looks";
 import { catAnim, catPose } from "../src/view/pose";
-import { isoOrder } from "../src/view/world/isoorder";
-import { isoObjectLook } from "../src/view/world/objects";
+import { isoOrder, objectBox } from "../src/view/world/isoorder";
+import { ISO_KEYBOARD, isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
 import { withCatCorner } from "./helpers";
 
@@ -83,6 +87,42 @@ const act = (kind: CatAct["kind"], extra: Partial<CatAct> = {}): CatAct => ({ ki
 
 /** Ґратки переноски — як у `floor.ts` (`CARRIER_GRATE_DEPTH`; сам `floor.ts` тягне Phaser). */
 const SPOT = { grate: 0.004 } as const;
+
+/** Стіл із комп'ютером і висота стільниці — на ній клавіатура (`ISO_KEYBOARD`). */
+const DESK = objectById("computer");
+const DESK_TOP = isoObjectLook("computer").perch ?? 0;
+/** Межі вздовж стола, між якими кіт уже на клавіатурі (`BESIDE_KEYBOARD`). */
+const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD;
+const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD;
+
+/** Корінь кота на столі на екрані (без дуги стрибка): точка стільниці під лапами, px світу. */
+function deskRoot(at: Vec): Vec {
+  const s = ISO.toScreen(at);
+  return { x: s.x, y: s.y - DESK_TOP };
+}
+
+/** Чи точка екрана — на намальованій клавіатурі: у її рамці (`ISO_KEYBOARD.frame`) на стільниці — паралелограмі на екрані. */
+function onKeyboard(p: Vec): boolean {
+  const { x0, y0, x1, y1 } = ISO_KEYBOARD.frame;
+  const corners = [
+    { x: x0, y: y0 },
+    { x: x1, y: y0 },
+    { x: x1, y: y1 },
+    { x: x0, y: y1 },
+  ].map(deskRoot);
+  let side = 0;
+  for (let i = 0; i < corners.length; i++) {
+    const a = corners[i]!;
+    const b = corners[(i + 1) % corners.length]!;
+    const cross = Math.sign((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x));
+    if (cross === 0) continue;
+    if (side === 0) side = cross;
+    else if (cross !== side) return false;
+  }
+  return true;
+}
+
+const inDesk = (p: Vec): boolean => p.x >= DESK.x && p.x <= DESK.x + DESK.w && p.y >= DESK.y && p.y <= DESK.y + DESK.h;
 
 describe("скелет кота в грі (`ISO_CAT_RIG`)", () => {
   it("правильний: без помилок визначення й точок арту, усі кістки й слоти `CAT_RIG` на місці", () => {
@@ -1296,5 +1336,140 @@ describe("коти на тій самій речі (`perchPlace`, `perchCrowds`)
     expect(ea.key).toBe(eb.key);
     expect(ea.at.x).toBeCloseTo(eb.at.x, 9);
     expect(screenGap(ea.at, eb.at)).toBeCloseTo(PERCH.eyes, 6);
+  });
+
+  it("на столі з комп'ютером: на клавіатурі — лише той, хто заважає роботі; решта — поруч, рядком обабіч неї, не на ній", () => {
+    const save = game();
+    const pen = TRINKETS.find((t) => t.kind === "pen")!;
+    // Двоє прийшли на клавіатуру (сим садить обох на ліву половину стола), третій обнюхує ручку, четвертий лежить праворуч.
+    const first = withCat(save, { x: 6.5, y: 6.5 });
+    const second = withCat(save, { x: 6.5, y: 6.5 });
+    const sniff = withCat(save, pen.seat);
+    const lying = withCat(save, { x: 7.5, y: 6.5 });
+    first.act = act("keyboard", { target: "computer", minutes: 30 });
+    second.act = act("keyboard", { target: "computer", minutes: 30 });
+    sniff.act = act("knock", { target: "trinket:pen", minutes: 5 });
+    lying.act = act("idle", { minutes: 60 });
+    expect(catOnComputer(save.current)).toBe(first);
+    let spots = placed(save);
+    expect(spots.get(first.id)!.at).toEqual(ISO_KEYBOARD.seat);
+    expect(onKeyboard(deskRoot(spots.get(first.id)!.at))).toBe(true);
+    const beside = [second, sniff, lying];
+    for (const cat of beside) {
+      const s = spots.get(cat.id)!;
+      expect(s.kind, cat.name).toBe("furniture");
+      expect(onKeyboard(deskRoot(s.at)), cat.name).toBe(false);
+      expect(s.at.x <= BESIDE_LEFT + 1e-9 || s.at.x >= BESIDE_RIGHT - 1e-9, cat.name).toBe(true);
+      expect(inDesk(s.at), cat.name).toBe(true);
+      expect(s.key, cat.name).not.toBe(spots.get(first.id)!.key);
+    }
+    // Двоє праворуч — рядком на своїй частині стола, а не одне в одному.
+    expect(spots.get(sniff.id)!.key).toBe(spots.get(lying.id)!.key);
+    expect(screenGap(spots.get(sniff.id)!.at, spots.get(lying.id)!.at)).toBeGreaterThan(PERCH.step * PERCH.squeeze - 1e-6);
+    // Першу забрали з клавіатури — тепер роботі заважає друга, і на клавіатурі вже вона; решта — де були.
+    first.x = 7;
+    first.y = 7.6;
+    first.act = act("idle", { minutes: 5 });
+    expect(catOnComputer(save.current)).toBe(second);
+    const before = spots;
+    spots = placed(save);
+    expect(spots.get(second.id)!.at).toEqual(ISO_KEYBOARD.seat);
+    for (const cat of [sniff, lying]) expect(spots.get(cat.id)!.at).toEqual(before.get(cat.id)!.at);
+  });
+});
+
+describe("стіл із комп'ютером: на клавіатурі — той, хто заважає роботі (`deskSeat`, §9.12 «Сон на комп'ютері» [Уточнено])", () => {
+  it("корінь кота в точці клавіатури — на екрані там, де `keyboard` кадру стола, посеред намальованої клавіатури", () => {
+    const root = deskRoot(ISO_KEYBOARD.seat);
+    expect(onKeyboard(root)).toBe(true);
+    const point = artOffset("env/computer", "keyboard")!;
+    const at = objectScreen(DESK);
+    // Маніфест округлює точки до 0,5 одиниці.
+    expect(Math.abs(root.x - (at.x + point.x))).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(root.y - (at.y + point.y))).toBeLessThanOrEqual(0.5);
+  });
+
+  it("кіт на клавіатурі — у точці `keyboard`, хоч сим і садить його на ліву половину стола; ще йде — там, де йде", () => {
+    const save = game();
+    const cat = withCat(save, { x: DESK.x + 0.5, y: DESK.y + 0.5 });
+    cat.act = act("keyboard", { target: "computer", minutes: 30 });
+    expect(catOnComputer(save.current)).toBe(cat);
+    const spot = catSpot(save.current, cat, "keyboard", null, SPOT);
+    expect(spot).toMatchObject({ kind: "furniture", box: "computer", lift: DESK_TOP, at: ISO_KEYBOARD.seat, shadow: true, show: "rig" });
+    expect(onKeyboard(deskRoot(spot.at))).toBe(true);
+    // Розбуджений на правій половині (сідає на клавіатуру, `wakeOnComputer`) — так само на ній.
+    cat.x = DESK.x + 1.5;
+    expect(catSpot(save.current, cat, "keyboard", null, SPOT).at).toEqual(ISO_KEYBOARD.seat);
+    // Ще йде до клавіатури — роботі ще не заважає (`catOnComputer`), і він там, куди дійшов.
+    cat.x = DESK.x + 0.3;
+    cat.y = DESK.y + 0.9;
+    cat.act = act("keyboard", { target: "computer", minutes: 30, goal: { x: DESK.x, y: DESK.y } });
+    expect(catOnComputer(save.current)).toBeNull();
+    expect(catSpot(save.current, cat, "walk", null, SPOT).at).toEqual({ x: cat.x, y: cat.y });
+  });
+
+  it("сплячий на комп'ютері — на клавіатурі, на якій половині стола не ліг би; у парі — теж на ній", () => {
+    const save = game();
+    const cat = withCat(save, { x: DESK.x + 0.5, y: DESK.y + 0.5 });
+    for (const x of [DESK.x + 0.5, DESK.x + 1.5]) {
+      cat.x = x;
+      cat.act = act("sleep", { minutes: 120 });
+      expect(catOnComputer(save.current)).toBe(cat);
+      const anim = catAnim(save.current, cat).anim;
+      expect(catSpot(save.current, cat, anim, null, SPOT)).toMatchObject({ kind: "furniture", box: "computer", lift: DESK_TOP, at: ISO_KEYBOARD.seat });
+    }
+    // Сон поруч із другом (пара зсуває обох уздовж екрана) — той, хто заважає, усе одно на клавіатурі.
+    const pair = { kind: "pile" as const, with: 99, offset: { x: 15, y: 0 }, tile: { x: 0.1171875, y: -0.1171875 }, facing: null };
+    expect(catSpot(save.current, cat, "sleep", pair, SPOT).at).toEqual(ISO_KEYBOARD.seat);
+  });
+
+  it("кіт на столі, що роботі не заважає, — поза рамкою клавіатури: де б не стояв уздовж стола, поруч із нею", () => {
+    const save = game();
+    const pen = TRINKETS.find((t) => t.kind === "pen")!;
+    const cat = withCat(save, pen.seat);
+    // Обнюхує ручку (сим садить його ліворуч від неї, впритул до клавіатури): поруч із клавіатурою, але досі ліворуч від ручки.
+    cat.act = act("knock", { target: "trinket:pen", minutes: 5 });
+    expect(catOnComputer(save.current)).toBeNull();
+    const knock = catSpot(save.current, cat, "knock", null, SPOT);
+    expect(knock.at.x).toBeCloseTo(BESIDE_RIGHT, 9);
+    expect(knock.at.y).toBe(pen.seat.y);
+    expect(onKeyboard(deskRoot(knock.at))).toBe(false);
+    expect(knock.at.x).toBeLessThan(DESK.x + pen.at * DESK.w);
+    // Сидить на лівій половині (там, де сим садить кота на клавіатуру) — там і лишається: це вже поруч.
+    cat.x = DESK.x + 0.5;
+    cat.act = act("idle", { minutes: 30 });
+    expect(catSpot(save.current, cat, "sit", null, SPOT).at.x).toBeCloseTo(DESK.x + 0.5, 9);
+    // Будь-де вздовж стола й поперек — не на клавіатурі.
+    for (let x = DESK.x + 0.05; x < DESK.x + DESK.w; x += 0.05) {
+      for (const y of [DESK.y + 0.2, DESK.y + 0.5, DESK.y + 0.8]) {
+        cat.x = x;
+        cat.y = y;
+        const at = catSpot(save.current, cat, "sit", null, SPOT).at;
+        expect(onKeyboard(deskRoot(at)), `${x.toFixed(2)}, ${y}`).toBe(false);
+        expect(at.x <= BESIDE_LEFT + 1e-9 || at.x >= BESIDE_RIGHT - 1e-9).toBe(true);
+        expect(at.y).toBe(y);
+      }
+    }
+    // Іде столом — там, де йде, хоч би й через клавіатуру.
+    cat.x = DESK.x + 1;
+    cat.y = DESK.y + 0.5;
+    cat.act = act("idle", { minutes: 30, goal: { x: DESK.x + 1, y: DESK.y } });
+    expect(catSpot(save.current, cat, "walk", null, SPOT).at).toEqual({ x: DESK.x + 1, y: DESK.y + 0.5 });
+    expect(deskSeat(save.current, cat, { x: cat.x, y: cat.y })).toEqual({ x: cat.x, y: cat.y });
+  });
+
+  it("на клавіатурі — над столом і над змістом екрана монітора, під персонажем, що сидить за столом", () => {
+    const registry = new IsoDepth();
+    const depth = { desk: Number.NaN, screen: Number.NaN, cat: Number.NaN, person: Number.NaN };
+    registry.addBox({ ...objectBox(DESK), id: DESK.id }, (d) => (depth.desk = d));
+    // Зміст екрана — як у `marks.ts` (`ON_THING_DEPTH`): над кадром стола, у його проміжку глибини.
+    registry.addPoint((d) => (depth.screen = d)).placeAbove(DESK.id, 0.0012);
+    registry.addPoint((d) => (depth.cat = d)).place(ISO_KEYBOARD.seat.x, ISO_KEYBOARD.seat.y, DESK.id);
+    const use = isoObjectLook(DESK.id).use!;
+    registry.addPoint((d) => (depth.person = d), { id: "person" }).place(use.at.x, use.at.y);
+    registry.solve();
+    expect(depth.cat + CAT_PIECE.shadow).toBeGreaterThan(depth.screen);
+    expect(depth.cat).toBeGreaterThan(depth.desk);
+    expect(depth.person).toBeGreaterThan(depth.cat + CAT_PIECE.peek);
   });
 });
