@@ -13,7 +13,7 @@
 
 **Перевірки:**
 
-- Перед кожним комітом — швидкі: `npm run typecheck -w games/kotoklopit` і `npm test -w games/kotoklopit` (кілька секунд; локально перед першим прогоном після нових файлів у `scenarios/` чи `src/view/art/manifest/` — `npx vitest --clearCache`).
+- **Тести — комплексно, а не після кожної правки** (правило автора 2026-11-03: «Те саме стосується тестів. По можливості, запускай тести не після кожної правки, а комплексно»). Під час роботи — лише те, що зачеплено: `npm run typecheck -w games/kotoklopit` і тести своєї ділянки (`npx vitest run tests/<файл>` у `games/kotoklopit`). Увесь набір `npm test -w games/kotoklopit` — раз наприкінці великої правки чи блоку (перед пушем) і після зведення гілок; посеред роботи — лише коли зміна може зачепити багато чого (сим, спільні модулі). Перед першим прогоном після нових файлів у `scenarios/` чи `src/view/art/manifest/` — `npx vitest --clearCache`.
 - Раз наприкінці блоку: `npm run build -w games/kotoklopit`, якщо зачеплено сцени, графіку чи конфіг; короткий баланс `BALANCE_WEEKS=2 BALANCE_SEEDS=1 npm run balance -w games/kotoklopit`, якщо змінилася поведінка (`balance/REPORT.md` після короткого прогону не комітити — `git checkout`).
 - Повний баланс (`BALANCE_WEEKS=50 npm run balance -w games/kotoklopit`, 50 тижнів × 3 seed; без `BALANCE_WEEKS` — лише 6 тижнів) — наприкінці великої механіки, з комітом `balance/REPORT.md`.
 - Не комітити `.idea/` і згенероване (`balance/TRACE.txt`, `public/games/`).
