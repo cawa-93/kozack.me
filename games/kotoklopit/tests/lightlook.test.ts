@@ -10,7 +10,7 @@ import { MAP_HEIGHT, MAP_WIDTH } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
 import { CEILING_LAMPS, PANES } from "../src/view/decor";
 import { daylight, type Daylight } from "../src/view/light/daylight";
-import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, luma, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
+import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, luma, POOL_LIFT, POOL_ROUND, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
 import { apartmentOutline, CELL_RX, expandConvex, glassLayers, glassOf, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
 import { lightSources } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
@@ -80,16 +80,32 @@ describe("вигляд світла доби", () => {
     expect(CANDLE_LIGHT.flickerStep).toBeGreaterThanOrEqual(250);
   });
 
-  it("пляма свічки на карті — радіуса `CANDLE_LIGHT.radius`, з повним світлом до `poolCore`", () => {
+  it("пляма свічки на карті — радіуса `CANDLE_LIGHT.radius`, з повним світлом до `poolCore`, кругліша й між підлогою та полум'ям", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     s.modifiers.day = "outage";
     const dark = d(23 * 60, false);
     const sources = lightSources(s, dark).filter((source) => source.kind === "candle");
     expect(sources.length).toBeGreaterThan(0);
     const plan = lightmapPlan(dark, sources, PANES, 0);
-    const pools = plan.pools.filter((pool) => pool.core === CANDLE_LIGHT.poolCore);
+    // Тепла пляма свічки — її кольору (мала пляма полум'я — `coreColor`), не за ядром: ядро можна підбирати, а 0,3 — це вже
+    // ядро плями полум'я.
+    const warm = rgb(CANDLE_LIGHT.color);
+    const pools = plan.pools.filter((pool) => near(pool.color, warm, 1e-9));
     expect(pools).toHaveLength(sources.length);
-    for (const pool of pools) expect(pool.rx).toBeCloseTo(CANDLE_LIGHT.radius * CELL_RX, 6);
+    for (const source of sources) {
+      // Центр — на `POOL_LIFT` шляху від точки підлоги під свічкою до полум'я: тепло й на господареві, і на підлозі.
+      const floor = ISO.toScreen(source.at);
+      const x = floor.x + (source.screen.x - floor.x) * POOL_LIFT;
+      const y = floor.y + (source.screen.y - floor.y) * POOL_LIFT;
+      const pool = pools.find((p) => Math.hypot(p.x - x, p.y - y) < 1e-6);
+      expect(pool, source.id).toBeDefined();
+      if (!pool) continue;
+      expect(pool.rx, source.id).toBeCloseTo(CANDLE_LIGHT.radius * CELL_RX, 6);
+      expect(pool.ry / pool.rx, source.id).toBeCloseTo(POOL_ROUND.raised, 6);
+      expect(pool.core, source.id).toBe(CANDLE_LIGHT.poolCore);
+    }
+    // Піднята пляма кругліша за пляму на підлозі.
+    expect(POOL_ROUND.raised).toBeGreaterThan(POOL_ROUND.floor);
   });
 
   it("світанок і вечір — різні відтінки: вечір помаранчевіший", () => {

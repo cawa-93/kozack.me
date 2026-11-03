@@ -21,6 +21,7 @@ import {
   GLASS,
   LIGHTMAP,
   POOL_LIFT,
+  POOL_ROUND,
   SCONCE_LIGHT,
   SCREEN_LIGHT,
   SUN,
@@ -219,7 +220,7 @@ function poolsOf(source: LightSource, time: number): PoolPaint[] {
     const spread = source.kind === "ceiling" ? CEILING_LIGHT.spread : 1;
     const rx = source.radius * spread * CELL_RX;
     // Свічка й газ — над поверхнею: пляма й на речах довкола, не лише на підлозі — кругліша.
-    const ry = rx * (lift > 0 ? 0.62 : 0.5);
+    const ry = rx * (lift > 0 ? POOL_ROUND.raised : POOL_ROUND.floor);
     const core = source.kind === "ceiling" ? CEILING_LIGHT.core : source.kind === "candle" ? CANDLE_LIGHT.poolCore : 0.12;
     pools.push({ x, y, rx, ry, core, color, alpha: level });
   }
