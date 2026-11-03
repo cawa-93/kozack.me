@@ -103,6 +103,14 @@ export function clearOfHead(look: StorageLook, plate: StoragePlate, head: Point 
   return across && along ? Math.min(plate.y, head.y - look.drop - HEAD_GAP) : plate.y;
 }
 
+/**
+ * Ширина фішки плашки (§6.4): іконка, відступ, текст і поле після нього (`pad`), але не менша за сталу фішку (`chip`, з лімітом —
+ * `wideChip`), щоб звичайні плашки лишилися, як були; ширший текст (корм 110/110) розсуває фішку, а не вилазить за плашку.
+ */
+export function storageChipWidth(look: StorageLook, withLimit: boolean, textWidth: number): number {
+  return Math.max(withLimit ? look.wideChip : look.chip, Math.ceil(look.icon + look.gap + textWidth + look.pad));
+}
+
 interface Indicator {
   container: Phaser.GameObjects.Container;
   key: string;
@@ -137,15 +145,9 @@ export class StorageIndicators {
       return;
     }
     current?.container.destroy();
-    const size = this.size(lines);
-    this.shown.set(id, { container: this.make(lines, x, this.lift(x, y, size), size), key, ...size });
-  }
-
-  /** Розмір плашки для цих рядків, без тіні. */
-  private size(lines: readonly StorageLine[]): { width: number; height: number } {
-    const look = this.look;
-    const chip = lines.some((l) => l.limit !== undefined) ? look.wideChip : look.chip;
-    return { width: lines.length * chip + look.pad, height: look.icon + look.pad * 2 };
+    const made = this.make(lines);
+    made.container.setPosition(x, this.lift(x, y, made));
+    this.shown.set(id, { ...made, key });
   }
 
   /** Низ плашки: у точці (x, y) чи над головою персонажа, якщо він під нею. */
@@ -153,31 +155,39 @@ export class StorageIndicators {
     return clearOfHead(this.look, { x, y, ...size }, this.head());
   }
 
-  private make(lines: readonly StorageLine[], x: number, y: number, size: { width: number; height: number }): Phaser.GameObjects.Container {
+  /**
+   * Плашка в точці (0, 0) — низ посередині; розмір — без тіні. Ширина кожної фішки — за найширшим, що вона може показати
+   * («ліміт/ліміт», а без ліміту — саме число): текст не вилазить за плашку (корм 110/110 не вміщався в сталу фішку), а плашка не
+   * стрибає, коли кількість міняється.
+   */
+  private make(lines: readonly StorageLine[]): { container: Phaser.GameObjects.Container; width: number; height: number } {
     const look = this.look;
-    const chip = lines.some((l) => l.limit !== undefined) ? look.wideChip : look.chip;
-    const { width, height } = size;
+    const texts = lines.map((line) => {
+      const widest = line.limit === undefined ? String(line.count) : `${line.limit}/${line.limit}`;
+      const text = this.scene.add
+        .text(0, 0, widest, { fontFamily: FONT, fontSize: `${look.fontSize}px`, fontStyle: "bold", color: line.count === 0 ? look.zero : look.text, resolution: 2 })
+        .setOrigin(0, 0.5);
+      const measured = text.width;
+      text.setText(line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`);
+      return { text, measured };
+    });
+    const chips = lines.map((line, i) => storageChipWidth(look, line.limit !== undefined, texts[i]?.measured ?? 0));
+    const width = chips.reduce((sum, w) => sum + w, 0) + look.pad;
+    const height = look.icon + look.pad * 2;
     const bg = this.scene.add.graphics();
     if (look.drop > 0) bg.fillStyle(look.dropColor, look.dropAlpha).fillRoundedRect(-width / 2, -height + look.drop, width, height, look.radius);
     bg.fillStyle(look.fill, look.fillAlpha).fillRoundedRect(-width / 2, -height, width, height, look.radius);
     bg.lineStyle(look.line, look.lineColor, look.lineAlpha).strokeRoundedRect(-width / 2, -height, width, height, look.radius);
     const parts: Phaser.GameObjects.GameObject[] = [bg];
+    let left = -width / 2 + look.pad;
     lines.forEach((line, i) => {
-      const left = -width / 2 + look.pad + i * chip;
       parts.push(this.scene.add.image(left + look.icon / 2, -height / 2, iconTexture(PRODUCT_ICONS[line.product])).setDisplaySize(look.icon, look.icon));
-      parts.push(
-        this.scene.add
-          .text(left + look.icon + look.gap, -height / 2, line.limit === undefined ? String(line.count) : `${line.count}/${line.limit}`, {
-            fontFamily: FONT,
-            fontSize: `${look.fontSize}px`,
-            fontStyle: "bold",
-            color: line.count === 0 ? look.zero : look.text,
-            resolution: 2,
-          })
-          .setOrigin(0, 0.5),
-      );
+      const text = texts[i]?.text;
+      if (text) parts.push(text.setPosition(left + look.icon + look.gap, -height / 2));
+      left += chips[i] ?? 0;
     });
-    return this.scene.add.container(x, y, parts).setDepth(DEPTH).addToDisplayList(this.layer);
+    const container = this.scene.add.container(0, 0, parts).setDepth(DEPTH).addToDisplayList(this.layer);
+    return { container, width, height };
   }
 
   clear(): void {

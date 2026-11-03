@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { PALETTE, SHADE } from "../art/palette";
 import { BUBBLE_ROOM } from "../src/view/iso/markslayout";
-import { clearOfHead, STORAGE_LOOK } from "../src/view/storage";
+import { clearOfHead, STORAGE_LOOK, storageChipWidth } from "../src/view/storage";
 
 describe("індикатор сховищ (§6.4)", () => {
   it("папір, чорнильна рамка й тінь з палітри арту, у масштабі камери ізометрії", () => {
@@ -39,5 +39,17 @@ describe("індикатор сховищ (§6.4)", () => {
     expect(clearOfHead(iso, { ...plate, y: 500 }, head)).toBe(500);
     // Без персонажа — де була.
     expect(clearOfHead(iso, plate, null)).toBe(plate.y);
+  });
+
+  it("широке число розсуває фішку, а не вилазить за плашку (корм 110/110, дрібний баг автора 2026-11-03)", () => {
+    const look = STORAGE_LOOK;
+    // Звичайні числа — стала фішка, як була.
+    expect(storageChipWidth(look, true, 30)).toBe(look.wideChip);
+    expect(storageChipWidth(look, false, 10)).toBe(look.chip);
+    // Текст ширший за місце в сталій фішці — фішка вміщує іконку, відступ, текст і поле після нього.
+    const wide = 80;
+    const chip = storageChipWidth(look, true, wide);
+    expect(chip).toBeGreaterThan(look.wideChip);
+    expect(chip).toBeGreaterThanOrEqual(look.icon + look.gap + wide + look.pad);
   });
 });
