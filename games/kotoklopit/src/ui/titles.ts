@@ -87,6 +87,17 @@ export const SERVICE_TITLES = {
   wash: { cheap: "Купання", premium: "Делікатне купання" },
 } as const satisfies Record<string, Record<Quality, string>>;
 
+/** Розділи каталогу (§6.4): запаси й речі — у магазині й телефоні. */
+export const SHOP_SECTION_TITLES = { supplies: "Запаси", things: "Речі" } as const;
+
+/**
+ * Назва розділу запасів у каталозі пункту, що продає не все (`STORE_GOODS` у `src/sim/config.ts`; §8.5, «Ліки у ветеринара й
+ * лікаря», рішення автора 2026-11-03): ветеринар і лікар продають самі ліки. Без запису — «Запаси», як у магазині. Новий пункт
+ * продажу з частиною каталогу — рядок тут: це перевіряє `tests/shopcart.test.ts` (рецензія 2026-11-03: раніше «Ліки» писалися
+ * будь-якому пункту, крім магазину).
+ */
+export const STORE_SECTION_TITLES: Partial<Record<Destination, string>> = { vet: "Ліки", doctor: "Ліки" };
+
 /** Назви пунктів поїздок (§8.5): у «Куди поїхати?», заголовку картки пункту й написі сцени дороги. */
 export const DESTINATION_TITLES: Record<Destination, string> = {
   shop: "Магазин",

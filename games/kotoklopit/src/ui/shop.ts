@@ -11,7 +11,7 @@ import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
 import { named } from "./icons";
 import { element } from "./overlay";
-import { PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
+import { PRODUCT_TITLES, SHOP_SECTION_TITLES, STORE_SECTION_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
 
 
 function goodsName(goods: Goods): string {
@@ -90,13 +90,20 @@ function priceTag(percent: number): HTMLElement {
   return element("span", "price-tag", `−${percent}%`);
 }
 
-/** Розділи каталогу: на місці у ветеринара й лікаря продають лише ліки (§8.5) — «Ліки», деінде — «Запаси» й «Речі». */
+/**
+ * Розділ запасів каталогу: на місці в пункті, що продає частину каталогу, — його назва (`STORE_SECTION_TITLES`: у ветеринара й
+ * лікаря — «Ліки», §8.5), деінде — «Запаси».
+ */
+export function suppliesTitle(state: GameState, mode: ShopMode): string {
+  const at = mode === "store" ? state.trip?.destination : undefined;
+  return (at === undefined ? undefined : STORE_SECTION_TITLES[at]) ?? SHOP_SECTION_TITLES.supplies;
+}
+
+/** Розділи каталогу: запаси (`suppliesTitle`) і речі. */
 function sections(state: GameState, mode: ShopMode, goods: readonly Goods[]): { title: string; goods: Goods[] }[] {
-  const supplies = goods.filter((g) => "product" in g);
-  const medsOnly = mode === "store" && state.trip?.destination !== "shop";
   return [
-    { title: medsOnly ? "Ліки" : "Запаси", goods: supplies },
-    { title: "Речі", goods: goods.filter((g) => "thing" in g) },
+    { title: suppliesTitle(state, mode), goods: goods.filter((g) => "product" in g) },
+    { title: SHOP_SECTION_TITLES.things, goods: goods.filter((g) => "thing" in g) },
   ];
 }
 

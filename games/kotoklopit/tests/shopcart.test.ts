@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createCat } from "../src/sim/cat";
-import { TRIPS } from "../src/sim/config";
+import { STORE_GOODS, TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -17,8 +17,8 @@ import type { Destination, GameState } from "../src/sim/types";
 import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
 import { splitIcons } from "../src/ui/icons";
 import type { Card } from "../src/ui/overlay";
-import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, packText, shopCatalog } from "../src/ui/shop";
-import { plural } from "../src/ui/titles";
+import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, packText, shopCatalog, suppliesTitle } from "../src/ui/shop";
+import { plural, STORE_SECTION_TITLES } from "../src/ui/titles";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 
 /**
@@ -407,6 +407,18 @@ describe("картки поїздок (§8.5)", () => {
     const docList = doctor.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-item").length > 0);
     expect(docList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(["Ліки для себе"]);
     expect(doctor.bar ? fake(doctor.bar).find("shop-pay").textContent : "").toBe("Додому");
+  });
+
+  it("назва розділу запасів — з даних: пункт, що продає частину каталогу (STORE_GOODS), має свою назву; магазин і телефон — «Запаси»", () => {
+    for (const d of Object.keys(TRIPS) as Destination[]) {
+      const stock = STORE_GOODS[d];
+      expect(STORE_SECTION_TITLES[d] !== undefined, d).toBe(stock !== undefined && stock !== "all");
+    }
+    expect(suppliesTitle(at("vet"), "store")).toBe("Ліки");
+    expect(suppliesTitle(at("doctor"), "store")).toBe("Ліки");
+    expect(suppliesTitle(at("shop"), "store")).toBe("Запаси");
+    expect(suppliesTitle(at("vet"), "delivery")).toBe("Запаси");
+    expect(suppliesTitle(at(null), "delivery")).toBe("Запаси");
   });
 
   it("підпису «Поїздка» немає; гроші — рівно один раз: у смузі кошика (магазин, ветеринар, лікар) чи в примітці біля заголовка", () => {
