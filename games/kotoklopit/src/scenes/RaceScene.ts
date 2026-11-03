@@ -354,6 +354,11 @@ export class RaceScene extends Phaser.Scene {
     if (this.arrival) return this.updateArrival(delta);
     if (this.parked) return this.updateParked();
     if (this.leave) return this.updateLeave(delta);
+    this.updateRace(delta);
+  }
+
+  /** Кадр гонки: крок сима з керуванням гравця, тоді кадр — машини потоку вже з цього кроку. */
+  private updateRace(delta: number): void {
     const state = this.state;
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     if (this.running()) {
@@ -420,6 +425,11 @@ export class RaceScene extends Phaser.Scene {
    * кличемо). Скінчився чи гравець натиснув будь-що — гонка в цій самій сцені: кадр кінця від'їзду — це кадр її старту, тож
    * розриву немає, а пропуск — одразу гонка. Гру замінили чи поїздка вже не та (сценарій) — день: він сам покаже, що треба.
    * Перезавантаження сторінки посеред від'їзду — одразу гонка: позначка від'їзду (`takeDeparture`) живе лише в пам'яті.
+   *
+   * Перший кадр гонки — уже з кроком сима того самого кадру (`updateRace`): машини потоку сим ставить лише першим кроком
+   * (`driveRace`), і кадр гонки без нього на мить лишився б без них (уночі — і без їхніх фар), а наступний кадр поставив би їх
+   * знову (рецензія від'їзду 2026-11-03). Крок — ті самі машини, що в знімку старту (`homeDepartureStart`) і в кадрі кінця
+   * від'їзду.
    */
   private updateLeave(delta: number): void {
     const leave = this.leave;
@@ -430,7 +440,7 @@ export class RaceScene extends Phaser.Scene {
     if (!leave.skipped && !this.drawLeave()) return;
     this.leave = null;
     this.dark.setFillStyle(0x000000, 0);
-    this.draw();
+    this.updateRace(delta);
   }
 
   /**

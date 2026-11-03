@@ -84,7 +84,10 @@ function corners(box: CarBox): { x: number; y: number }[] {
   }));
 }
 
-/** Кадр старту гонки, як його малює `RaceArt.draw` перед першим кроком: своя машина й машини потоку першого кроку. */
+/**
+ * Перший кадр гонки, як його малює `RaceArt.draw` після першого кроку сима (`RaceScene.updateRace` — і в кадрі, де скінчився
+ * від'їзд): своя машина й машини потоку, які поставив цей крок.
+ */
 function raceStart(race: Race, height: number, difficulty: Difficulty, traffic: number): { car: { x: number; y: number; rotation: number }; cars: { x: number; y: number; kind: string; color: number }[]; offset: number } {
   const k = raceScale(height);
   const ppu = racePixelsPerUnit(height);
