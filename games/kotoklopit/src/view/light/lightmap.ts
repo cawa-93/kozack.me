@@ -220,7 +220,8 @@ function poolsOf(source: LightSource, time: number): PoolPaint[] {
     const rx = source.radius * spread * CELL_RX;
     // Свічка й газ — над поверхнею: пляма й на речах довкола, не лише на підлозі — кругліша.
     const ry = rx * (lift > 0 ? 0.62 : 0.5);
-    pools.push({ x, y, rx, ry, core: source.kind === "ceiling" ? CEILING_LIGHT.core : 0.12, color, alpha: level });
+    const core = source.kind === "ceiling" ? CEILING_LIGHT.core : source.kind === "candle" ? CANDLE_LIGHT.poolCore : 0.12;
+    pools.push({ x, y, rx, ry, core, color, alpha: level });
   }
   if (source.kind === "sconce") {
     const r = SCONCE_LIGHT.wall;

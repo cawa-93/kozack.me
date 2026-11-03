@@ -1,6 +1,6 @@
 // Вигляд світла доби (§8.9 «День і ніч», рішення автора 2026-11-02): ніч синьо-сіра й не фіолетова (фіолетовий — серпанок
-// низького глузду), база ≈ 0,55 яскравості, у відключення темніше (≈ 0,42); під лампою ≈ 0,95 тепла; смуги сонця не яскравіші
-// за 0,35; скло вночі темно-синє. На межах дня план карти світла — тотожність (без стрибка в день), а скло виходить рівно свого
+// низького глузду), база ≈ 0,55 яскравості, у відключення темніше (≈ 0,42); під лампою ≈ 0,95 тепла; свічка тьмяніша за лампу
+// й світить ближче, але не цяткою (рішення виконавця 2026-11-03); смуги сонця не яскравіші за 0,35; скло вночі темно-синє. На межах дня план карти світла — тотожність (без стрибка в день), а скло виходить рівно свого
 // кольору. Силует квартири охоплює всю підлогу й задні стіни.
 
 import { describe, expect, it } from "vitest";
@@ -8,10 +8,10 @@ import { describe, expect, it } from "vitest";
 import { DAYLIGHT } from "../src/sim/config";
 import { MAP_HEIGHT, MAP_WIDTH } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
-import { PANES } from "../src/view/decor";
+import { CEILING_LAMPS, PANES } from "../src/view/decor";
 import { daylight, type Daylight } from "../src/view/light/daylight";
-import { CEILING_LIGHT, GLASS, luma, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
-import { apartmentOutline, expandConvex, glassLayers, glassOf, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
+import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, luma, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
+import { apartmentOutline, CELL_RX, expandConvex, glassLayers, glassOf, lightmapKey, lightmapPlan, paneQuad, toneOf } from "../src/view/light/lightmap";
 import { lightSources } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
@@ -59,6 +59,37 @@ describe("вигляд світла доби", () => {
     expect(lamp.r).toBeGreaterThanOrEqual(lamp.g);
     expect(lamp.g).toBeGreaterThanOrEqual(lamp.b);
     expect(SUN.add).toBeLessThanOrEqual(0.35);
+  });
+
+  it("свічка тьмяніша за лампу й світить ближче, але не цяткою; мерехтить спокійно (рішення виконавця 2026-11-03)", () => {
+    // Відключення помітно темніше за ніч при лампах.
+    expect(luma(TONE.night) - luma(TONE.outage)).toBeGreaterThan(0.1);
+    const candle = rgb(CANDLE_LIGHT.color);
+    expect(luma(candle)).toBeLessThan(luma(rgb(CEILING_LIGHT.color)));
+    // Тепла, як полум'я: червоний ≥ зелений ≥ синій; світліша за тон відключення, тож біля свічки світлішає.
+    expect(candle.r).toBeGreaterThanOrEqual(candle.g);
+    expect(candle.g).toBeGreaterThanOrEqual(candle.b);
+    expect(luma(candle)).toBeGreaterThan(luma(TONE.outage) + 0.3);
+    // Пляма свічки менша за пляму найменшої лампи, але сягає сусідніх клітинок (господар, стіна за ним, підлога поруч).
+    const lampReach = Math.min(...CEILING_LAMPS.map((lamp) => lamp.radius * CEILING_LIGHT.spread));
+    expect(CANDLE_LIGHT.radius).toBeLessThan(lampReach);
+    expect(CANDLE_LIGHT.radius).toBeGreaterThanOrEqual(1.8);
+    expect(CANDLE_LIGHT.poolCore).toBeLessThanOrEqual(CEILING_LIGHT.core);
+    // Мерехтіння — не більше ±10 % і не частіше ≈ 4 разів на секунду.
+    expect(CANDLE_LIGHT.flicker).toBeLessThanOrEqual(0.1);
+    expect(CANDLE_LIGHT.flickerStep).toBeGreaterThanOrEqual(250);
+  });
+
+  it("пляма свічки на карті — радіуса `CANDLE_LIGHT.radius`, з повним світлом до `poolCore`", () => {
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    s.modifiers.day = "outage";
+    const dark = d(23 * 60, false);
+    const sources = lightSources(s, dark).filter((source) => source.kind === "candle");
+    expect(sources.length).toBeGreaterThan(0);
+    const plan = lightmapPlan(dark, sources, PANES, 0);
+    const pools = plan.pools.filter((pool) => pool.core === CANDLE_LIGHT.poolCore);
+    expect(pools).toHaveLength(sources.length);
+    for (const pool of pools) expect(pool.rx).toBeCloseTo(CANDLE_LIGHT.radius * CELL_RX, 6);
   });
 
   it("світанок і вечір — різні відтінки: вечір помаранчевіший", () => {
