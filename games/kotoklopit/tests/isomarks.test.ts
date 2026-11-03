@@ -8,7 +8,7 @@ import { useProgress } from "../src/sim/actions";
 import { BURN_MINUTES, COOK_MINUTES, JOB_SEARCH, MODIFIERS, STANDUP_MINUTE } from "../src/sim/config";
 import { objectById, WIRE_TILE } from "../src/sim/home";
 import { targetOf } from "../src/sim/targets";
-import type { GameState } from "../src/sim/types";
+import type { GameState, Look } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
@@ -55,8 +55,9 @@ import {
   wireBarAnchor,
 } from "../src/view/iso/markslayout";
 import { wireFixSpot } from "../src/view/iso/personspot";
+import { BUILDS, FACES, HAIR_STYLES } from "../src/view/palette";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
-import { PERSON_RIG } from "../src/view/rig/defs/person";
+import { PERSON_FIT, PERSON_RIG, personProportions, personSkin } from "../src/view/rig/defs/person";
 import { Rig } from "../src/view/rig/rigcore";
 import { isoObjectLook } from "../src/view/world/objects";
 import { ISO } from "../src/view/world/projection";
@@ -66,6 +67,11 @@ function scenario(name: string): GameState {
   const file = FILE_SCENARIOS[name];
   if (!file) throw new Error(`Немає сценарію «${name}»`);
   return applyScenario(file).current;
+}
+
+/** Усі вигляди персонажа, від яких залежить скелет (§5.1): обличчя, зачіска й статура. */
+function allLooks(): Pick<Look, "face" | "hair" | "build">[] {
+  return FACES.flatMap((_, face) => HAIR_STYLES.flatMap((_, hair) => BUILDS.map((_, build) => ({ face, hair, build }))));
 }
 
 /** Персонаж сидить за комп'ютером і працює (чи шукає роботу, якщо безробітний). */
@@ -336,40 +342,53 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
     const breakAt = { x: wire.x + cut.x, y: wire.y + cut.y };
     expect(box.x + box.w / 2).toBeCloseTo(breakAt.x, 9);
     expect(extent.bottom).toBeLessThan(breakAt.y);
-    // Персонаж сидить біля обриву (`wireFixSpot`): маківку анімації `fix` у ракурсі `back` за весь цикл рахує скелет.
+    // Персонаж сидить біля обриву (`wireFixSpot`): маківку анімації `fix` у ракурсі `back` за весь цикл рахує скелет — такий
+    // самий, як у грі (`IsoPersonView`: суглоби з точок кадрів, обвіс і пропорції за виглядом), для кожного вигляду: якір
+    // `head` — точка `top` кадру зачіски, і кучері вищі за решту.
     const feet = ISO.toScreen(wireFixSpot().at);
-    const rig = new Rig(PERSON_RIG, { facing: { view: "back", flip: false } });
-    rig.play(PERSON_ANIMS.fix, 0, { blend: 0 });
     let highest = Number.POSITIVE_INFINITY;
-    for (let t = 0; t < PERSON_ANIMS.fix.duration; t += 50) {
-      rig.evaluate(t);
-      const head = rig.anchor("head")!;
-      const top = { x: feet.x + head.x, y: feet.y + head.y };
-      highest = Math.min(highest, top.y);
-      // На екрані — ближче до персонажа, ніж до комп'ютера (і до його бабла): гравець її бачить, дивлячись на персонажа.
-      const middle = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
-      const toPerson = Math.hypot(middle.x - top.x, middle.y - top.y);
-      expect(toPerson, `@${t}`).toBeLessThan(Math.hypot(middle.x - computer.x, middle.y - computer.y) / 2);
-      expect(toPerson, `@${t}`).toBeLessThan(BAR.width / 2);
-      // Маківка — під смугою, по її ширині; смуга лягає на неї лише краєм, як на верх речі (не закриває голову).
-      expect(top.x, `@${t}`).toBeGreaterThan(box.x);
-      expect(top.x, `@${t}`).toBeLessThan(box.x + box.w);
-      expect(extent.bottom - top.y, `@${t}`).toBeLessThanOrEqual(BAR.height);
-      // Бабл персонажа (думка, бабли подій) — вістрям на ANCHOR_GAP над маківкою, але не нижче за смугу
-      // (`personBubbleAnchor`): поки голова хитається, найнижча точка бабла (вістря вголос, низ найменшого кружечка думки)
-      // лишається на рамці, а не в заливці, — бабл не закриває, скільки зроблено; і над смугою не зависає (не вище за
-      // чорнильний верх рамки).
-      for (const kind of ["say", "think"] as const) {
-        const tip = personBubbleAnchor(state, { x: top.x, y: top.y - ANCHOR_GAP }, kind);
-        const lowest = tip.y + BUBBLE_BELOW[kind];
-        expect(tip.x, `${kind} @${t}`).toBe(top.x);
-        expect(lowest, `${kind} @${t}`).toBeLessThanOrEqual(at!.y);
-        expect(lowest, `${kind} @${t}`).toBeGreaterThanOrEqual(at!.y - BAR_RISE);
+    for (const look of allLooks()) {
+      const name = `обличчя ${look.face}, зачіска ${look.hair}, статура ${look.build}`;
+      const rig = new Rig(PERSON_RIG, {
+        fit: PERSON_FIT,
+        lookup: artEntry,
+        skin: personSkin(look),
+        proportions: personProportions(look),
+        facing: { view: "back", flip: false },
+      });
+      rig.play(PERSON_ANIMS.fix, 0, { blend: 0 });
+      for (let t = 0; t < PERSON_ANIMS.fix.duration; t += 25) {
+        rig.evaluate(t);
+        const head = rig.anchor("head")!;
+        const top = { x: feet.x + head.x, y: feet.y + head.y };
+        highest = Math.min(highest, top.y);
+        const where = `${name} @${t}`;
+        // На екрані — ближче до персонажа, ніж до комп'ютера (і до його бабла): гравець її бачить, дивлячись на персонажа.
+        const middle = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+        const toPerson = Math.hypot(middle.x - top.x, middle.y - top.y);
+        expect(toPerson, where).toBeLessThan(Math.hypot(middle.x - computer.x, middle.y - computer.y) / 2);
+        expect(toPerson, where).toBeLessThan(BAR.width / 2);
+        // Маківка — під смугою, по її ширині; смуга лягає на неї лише краєм, як на верх речі (не закриває голову).
+        expect(top.x, where).toBeGreaterThan(box.x);
+        expect(top.x, where).toBeLessThan(box.x + box.w);
+        expect(top.y, where).toBeGreaterThanOrEqual(at!.y + ANCHOR_GAP);
+        expect(extent.bottom - top.y, where).toBeLessThanOrEqual(BAR.height);
+        // Бабл персонажа (думка, бабли подій) — вістрям на ANCHOR_GAP над маківкою, але не нижче за смугу
+        // (`personBubbleAnchor`): поки голова хитається, найнижча точка бабла (вістря вголос, низ найменшого кружечка думки)
+        // лишається на рамці, а не в заливці, — бабл не закриває, скільки зроблено; і над смугою не зависає (не вище за
+        // чорнильний верх рамки).
+        for (const kind of ["say", "think"] as const) {
+          const tip = personBubbleAnchor(state, { x: top.x, y: top.y - ANCHOR_GAP }, kind);
+          const lowest = tip.y + BUBBLE_BELOW[kind];
+          expect(tip.x, `${kind}, ${where}`).toBe(top.x);
+          expect(lowest, `${kind}, ${where}`).toBeLessThanOrEqual(at!.y);
+          expect(lowest, `${kind}, ${where}`).toBeGreaterThanOrEqual(at!.y - BAR_RISE);
+        }
       }
     }
-    // `FIX_HEAD` — найвища маківка за цикл (з точністю до кроку).
+    // `FIX_HEAD` — найвища маківка за цикл серед усіх виглядів (з точністю до кроку й до одиниці вгору).
     expect(feet.y - highest).toBeLessThanOrEqual(FIX_HEAD);
-    expect(feet.y - highest).toBeGreaterThan(FIX_HEAD - 2);
+    expect(feet.y - highest).toBeGreaterThan(FIX_HEAD - 1);
     // Бабл перегризеного дроту лишається над комп'ютером і смуги не торкається: смуга нижча за його вістря.
     expect(extent.top).toBeGreaterThan(computer.y);
   });
