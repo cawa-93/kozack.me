@@ -149,7 +149,8 @@ export const DOOR_OPEN_MS = 1600;
 
 /**
  * Подія, з якою відчиняють вхідні двері (§9.12, «Двері й гості»; `openDoor` у `sim/door.ts`): забрали пакунки, кіт вибіг на
- * сходи чи повернувся з них (упіймали або сам), вирушили в поїздку чи повернулися, зайшли мама, гості, ОСББ чи ветеринарка.
+ * сходи чи повернувся з них (упіймали або сам), вирушили в поїздку чи повернулися, зайшли мама, гості, ОСББ, ветеринарка чи
+ * прибиральниця.
  */
 export function opensDoor(event: GameEvent): boolean {
   switch (event.type) {
@@ -160,7 +161,8 @@ export function opensDoor(event: GameEvent): boolean {
     case "trip-ended":
       return true;
     case "modifier":
-      return event.kind === "mom-food" || event.kind === "guests" || event.kind === "inspection" || event.kind === "home-vet";
+      // Прибиральниці (§4.1) двері відчиняє персонаж, коли він удома; без нього вона заходить своїми ключами — цього ніхто не бачить.
+      return event.kind === "mom-food" || event.kind === "guests" || event.kind === "inspection" || event.kind === "home-vet" || event.kind === "cleaner";
     default:
       return false;
   }

@@ -2,7 +2,7 @@
 
 import { catsAxis, careerAxis, type CareerAxis, type CatsAxis } from "./sim/finale";
 import { lifeLevel } from "./sim/farewell";
-import type { GuestsVisit } from "./sim/events";
+import type { CleanerVisit, GuestsVisit } from "./sim/events";
 import { formatClock } from "./sim/time";
 import { accidentBedtime, accidentHome, accidentOf } from "./sim/trips";
 import type { AccidentLoss, Address, AlbumEntry, FarewellCause, GameEnd, GameState, IllnessId, Ledger, Sex, Spending, UtilitiesReport } from "./sim/types";
@@ -193,6 +193,15 @@ export const DAY_MODIFIER_TEXTS: Record<string, { title: string; situation: stri
   "recalculation": {
     title: "Перерахунок комунальних",
     situation: "ОСББ знайшло помилку у ваших рахунках. На вашу користь.",
+  },
+  // Пара «Будівельний пил ↔ Прибиральниця» (рішення автора 2026-11-03, §4.1; тексти — пропозиція виконавця, `TEXTS.md`).
+  "construction-dust": {
+    title: "Будівельний пил",
+    situation: "У під'їзді ремонт: з десятої до полудня в квартиру летітиме пил.",
+  },
+  "cleaner": {
+    title: "Прибиральниця",
+    situation: "О 13:00 прийде прибиральниця — мама подарувала прибирання.",
   },
   "guests": {
     title: "Гості",
@@ -740,6 +749,25 @@ export const MOM_FOOD_TEXTS = {
   visit: { title: "Заходила мама", text: "Мама привезла повні судочки й сама поставила їх у холодильник." },
   porch: { title: "Гостинці від мами", text: "Мама вас не застала й лишила під дверима пакет із судочками. Він у ящиках біля входу." },
 } as const;
+
+/** Заголовок картки прибиральниці (§4.1): і коли персонаж удома, і коли його не було. */
+export const CLEANER_TITLE = "Заходила прибиральниця";
+
+/**
+ * Повідомлення «Заходила прибиральниця» (§4.1, рішення автора 2026-11-03; тексти — `TEXTS.md`): у квартирі чисто, а далі — лише
+ * те, на що вистачило запасів і що було треба: лотки, випране, прання, миски й поїлки. `home` — персонаж був удома.
+ */
+export function cleanerText(visit: CleanerVisit | undefined, home: boolean): string {
+  const lines = [home ? "Прибиральниця пройшлася з ганчіркою й пилососом — у квартирі чисто." : "Поки вас не було, заходила прибиральниця — у квартирі чисто."];
+  if (!visit) return lines[0] ?? "";
+  if (visit.litter > 0) lines.push(visit.litter === 1 ? "Лоток почищено." : "Лотки почищено.");
+  if (visit.hung) lines.push("Випране розвішано.");
+  if (visit.washing) lines.push("Прання запущено.");
+  if (visit.fed === "full") lines.push(visit.watered ? "Котячі миски й поїлки повні." : "Котячі миски повні.");
+  else if (visit.fed === "some") lines.push(visit.watered ? "У котячі миски насипано корму, поїлки повні." : "У котячі миски насипано корму.");
+  else if (visit.watered) lines.push("Поїлки повні.");
+  return lines.join(" ");
+}
 
 /**
  * Повідомлення дня «Прийшли гості» (§4.1, §9.12 «Двері й гості»): що саме бачили гості — безлад, шипіння з-під дивана,

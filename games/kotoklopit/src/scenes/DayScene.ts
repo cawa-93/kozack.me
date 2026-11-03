@@ -6,7 +6,7 @@ import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
-import { onEvent, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
+import { onEvent, type CleanerVisit, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, goHome, interact, newGame, newSeed, replayDay, replayWeek, rewindAccident } from "../sim/game";
 import { doctorTreat } from "../sim/illness";
 import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
@@ -29,7 +29,7 @@ import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
@@ -945,7 +945,7 @@ export class DayScene extends Phaser.Scene {
         }
         break;
       case "modifier":
-        this.onModifier(event.kind, event.value, event.guests, event.paid);
+        this.onModifier(event.kind, event.value, event.guests, event.paid, event.cleaner);
         break;
       case "career": {
         const message = CAREER_MESSAGES[event.change];
@@ -997,7 +997,7 @@ export class DayScene extends Phaser.Scene {
     this.queueCard(card);
   }
 
-  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number): void {
+  private onModifier(kind: ModifierEvent, value: number, guests?: GuestsVisit, paidNow?: number, cleaner?: CleanerVisit): void {
     const money = Math.round(Math.abs(value));
     switch (kind) {
       case "mom-call":
@@ -1050,6 +1050,11 @@ export class DayScene extends Phaser.Scene {
       }
       case "office-missed":
         this.notice("Збори без вас", "На зборах в офісі вас так і не дочекалися.");
+        return;
+      // Прибиральниця (§4.1, рішення автора 2026-11-03): невидима, тож що вона зробила, каже картка — і коли персонажа не було.
+      case "cleaner":
+      case "cleaner-away":
+        this.notice(CLEANER_TITLE, cleanerText(cleaner, kind === "cleaner"));
         return;
       case "fireworks":
         this.cameras.main.shake(300, 0.004);

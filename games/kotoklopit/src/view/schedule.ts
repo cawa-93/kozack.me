@@ -1,11 +1,13 @@
 // Короткий розклад дня в інтерфейсі (§8.4): заплановані події, про які персонаж знає, — спершу важливі, у межах групи за часом.
 
+import { constructionDustHours } from "../sim/cleaner";
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
 import { isWorkday, standupToday } from "../sim/work";
 
 const at = (minute: number, what: string): [number, string] => [minute, `${formatClock(minute)} ${what}`];
+const dust = constructionDustHours();
 
 /** Події модифікатора дня (§4.1): коли й готовий рядок розкладу. */
 const DAY_EVENTS: Record<string, [number, string]> = {
@@ -17,6 +19,9 @@ const DAY_EVENTS: Record<string, [number, string]> = {
   guests: at(MODIFIERS.guests.minute, "гості"),
   festival: at(MODIFIERS.festival.minute, "феєрверки"),
   "home-vet": at(MODIFIERS.homeVetMinute, "ветеринарка"),
+  // Пара «Будівельний пил ↔ Прибиральниця» (§4.1, рішення автора 2026-11-03): пил — проміжок, як робота, і, як вона, лише до початку.
+  cleaner: at(MODIFIERS.cleaner.minute, "прибиральниця"),
+  "construction-dust": [dust.from, `${formatClock(dust.from)}–${formatClock(dust.to)} пил`],
   office: [18 * 60, "до 18:00 офіс"],
 };
 

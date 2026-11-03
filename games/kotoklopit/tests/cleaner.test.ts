@@ -16,6 +16,9 @@ import { chooseDayModifier, DAY_PAIRS, tickModifiers } from "../src/sim/modifier
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, GameState, LitterItem, Save, WaterItem } from "../src/sim/types";
+import { CLEANER_TITLE, cleanerText, DAY_MODIFIER_TEXTS } from "../src/texts";
+import { opensDoor } from "../src/view/iso/looks";
+import { scheduleOf } from "../src/view/schedule";
 import { recordEvents } from "./helpers";
 
 const CLEANER = MODIFIERS.cleaner.minute;
@@ -362,5 +365,51 @@ describe("будівельний пил (§4.1)", () => {
     state.home.dust = [];
     tickModifiers(state, 10 * 60 - 0.5, 1, false);
     expect(dustOf(state)).toEqual([]);
+  });
+});
+
+describe("тексти, розклад і двері (§4.1, `TEXTS.md`)", () => {
+  const visit = (over: Partial<CleanerVisit> = {}): CleanerVisit => ({ messes: 3, tufts: 2, dust: 5, litter: 0, hung: false, washing: false, fed: null, watered: false, ...over });
+
+  it("титулки пари — з `TEXTS.md`", () => {
+    expect(DAY_MODIFIER_TEXTS["construction-dust"]).toEqual({ title: "Будівельний пил", situation: "У під'їзді ремонт: з десятої до полудня в квартиру летітиме пил." });
+    expect(DAY_MODIFIER_TEXTS["cleaner"]).toEqual({ title: "Прибиральниця", situation: "О 13:00 прийде прибиральниця — мама подарувала прибирання." });
+  });
+
+  it("картка «Заходила прибиральниця» — у квартирі чисто, а далі лише те, що вдалося; без персонажа — «Поки вас не було…»", () => {
+    expect(CLEANER_TITLE).toBe("Заходила прибиральниця");
+    expect(cleanerText(visit({ litter: 2, washing: true, fed: "full", watered: true }), true)).toBe(
+      "Прибиральниця пройшлася з ганчіркою й пилососом — у квартирі чисто. Лотки почищено. Прання запущено. Котячі миски й поїлки повні.",
+    );
+    expect(cleanerText(visit({ litter: 1, hung: true, fed: "some", watered: true }), false)).toBe(
+      "Поки вас не було, заходила прибиральниця — у квартирі чисто. Лоток почищено. Випране розвішано. У котячі миски насипано корму, поїлки повні.",
+    );
+    // Нічого із запасів — лише чистота (і вода, якщо доливала).
+    expect(cleanerText(visit(), true)).toBe("Прибиральниця пройшлася з ганчіркою й пилососом — у квартирі чисто.");
+    expect(cleanerText(visit({ watered: true }), true)).toBe("Прибиральниця пройшлася з ганчіркою й пилососом — у квартирі чисто. Поїлки повні.");
+    expect(cleanerText(visit({ fed: "full" }), true)).toMatch(/ Котячі миски повні\.$/);
+    expect(cleanerText(visit({ fed: "some" }), true)).toMatch(/ У котячі миски насипано корму\.$/);
+    // Ціни й чисел ефектів картка не називає (§11.3а).
+    expect(cleanerText(visit({ litter: 3, hung: true, washing: true, fed: "full", watered: true }), true)).not.toMatch(/\d/);
+  });
+
+  it("розклад: «13:00 прибиральниця» і «10:00–12:00 пил» — до події, як інші рядки", () => {
+    const at = (day: string, hour: number): string[] => {
+      const state = game(day).current;
+      state.minute = hour * 60;
+      return scheduleOf(state);
+    };
+    expect(at("cleaner", 9.5)).toContain("13:00 прибиральниця");
+    expect(at("cleaner", 12.9)).toContain("13:00 прибиральниця");
+    expect(at("cleaner", 13.5)).not.toContain("13:00 прибиральниця");
+    expect(at("construction-dust", 8)).toContain("10:00–12:00 пил");
+    expect(at("construction-dust", 10.25).some((line) => line.includes("пил"))).toBe(false);
+    // На панелі (два перші рядки) — серед важливого, разом із летучкою.
+    expect(at("cleaner", 9.5).slice(0, 2)).toEqual(["10:00 летучка", "13:00 прибиральниця"]);
+  });
+
+  it("двері: персонаж відчиняє прибиральниці, коли він удома; без нього їх ніхто не бачить", () => {
+    expect(opensDoor({ type: "modifier", kind: "cleaner", value: 0, cleaner: visit() })).toBe(true);
+    expect(opensDoor({ type: "modifier", kind: "cleaner-away", value: 0, cleaner: visit() })).toBe(false);
   });
 });

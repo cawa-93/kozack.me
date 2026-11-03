@@ -2,7 +2,7 @@
 
 import { CHEWING, CLAW, GIFTS, PET, TRACE_CAT_DAYS } from "../sim/config";
 import { DUST_SPOTS, type DustKind } from "../sim/dust";
-import { onEvent, type GameEvent } from "../sim/events";
+import { onEvent, type CleanerVisit, type GameEvent } from "../sim/events";
 import type { RoomId } from "../sim/home";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
 import { catDays } from "../sim/traces";
@@ -27,6 +27,15 @@ const item = (i: Item): string => {
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
+/** Що зробила прибиральниця (§4.1): прибране й те, що взяло запаси. */
+function cleanerLine(home: boolean, visit: CleanerVisit): string {
+  const done = [`безладу ${visit.messes}`, `жмутів ${visit.tufts}`, `пилу ${visit.dust}`, `лотків ${visit.litter}`];
+  if (visit.hung) done.push("розвісила випране");
+  if (visit.washing) done.push("запустила прання");
+  if (visit.fed) done.push(visit.fed === "full" ? "миски повні" : "корму не на всі миски");
+  if (visit.watered) done.push("долила поїлки");
+  return `Прибиральниця${home ? "" : " (вас не було)"}: ${done.join(", ")}`;
+}
 /** Де кіт точить кігті (§9.12). */
 const SCRATCH_SPOTS = { post: "кігтеточка", sofa: "диван, ремонт до комунальних", doorframe: "одвірок, ремонт до комунальних", rug: "потягується на килимку", boxes: "коробки біля входу" } as const;
 /** Котячі сліди в квартирі (§9.12, «Котячі сліди в квартирі»). */
@@ -189,7 +198,7 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "broke":
       return `Зламалося: ${event.what}`;
     case "modifier":
-      return `Модифікатор: ${event.kind} (${number(event.value)})`;
+      return event.cleaner ? cleanerLine(event.kind === "cleaner", event.cleaner) : `Модифікатор: ${event.kind} (${number(event.value)})`;
     case "groom-started":
       return `${catName(state, event.cat)} почав вилизувати ${catName(state, event.friend)}`;
     case "groomed":
