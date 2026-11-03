@@ -351,7 +351,7 @@ describe("унікальна іконка на унікальний кейс (§
     expect(Object.values(STATE_ICONS.computer)).not.toContain("no-internet");
   });
 
-  it("холодна вода в душі без світла — своя іконка: не крапля «тече вода» й не сніжинка «кіт мерзне» (§4.1, рішення автора 2026-11-02)", () => {
+  it("холодна вода в душі без світла — своя іконка (синя крапля зі сніжинкою): не крапля «тече вода» й не сніжинка «кіт мерзне» (§4.1, рішення автора 2026-11-02; малюнок — 2026-11-03)", () => {
     const icon = (id: string): IconName | undefined => cases.get(id)?.[0]?.icon;
     expect(icon("state:coldShower")).toBe("cold-water");
     expect(meaningOf("state:coldShower")).toBe("state:coldShower");
