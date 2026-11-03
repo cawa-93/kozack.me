@@ -206,15 +206,22 @@ describe("назви варіантів (§6.4)", () => {
     }
   });
 
-  it("назва варіанта стоїть у картці сама (рішення автора 2026-11-03): унікальна, різна у двох варіантів, не довша за 26 знаків", async () => {
-    const { VARIANT_TITLES } = await import("../src/ui/titles");
+  it("назва варіанта стоїть у картці сама (рішення автора 2026-11-03): унікальна, різна у двох варіантів, не довша за 30 знаків", async () => {
+    const { PRODUCT_TITLES, VARIANT_TITLES } = await import("../src/ui/titles");
     const { goodsKey, variants } = await import("../src/sim/shop");
     const shown = GOODS.flatMap((g) => variants(g).map((q) => ({ key: goodsKey(g), name: VARIANT_TITLES[goodsKey(g)]?.[q] ?? "" })));
     // Жодна картка не повторює назви іншої — і два варіанти одного товару теж різні.
     expect(new Set(shown.map((s) => s.name)).size).toBe(shown.length);
-    // Не довга: на телефоні набік — один-два рядки біля іконки (`TEXTS.md`, «Назви товарів»). Корм для стерилізованих — виняток:
-    // без «корму» незрозуміло, що це, а «для стерилізованих» переноситься цілим другим рядком.
-    for (const { key, name } of shown) expect(name.length, name).toBeLessThanOrEqual(key === "sterileFood" ? 32 : 26);
+    // І не повторює загальної назви товару: та — про обидва варіанти разом (картка догляду рахує обидва; рецензія 2026-11-03:
+    // «Таблетки для котів» були й назвою дешевих).
+    const general = new Set(Object.values(PRODUCT_TITLES).map((t) => t.name.toLowerCase()));
+    for (const { name } of shown) expect(general.has(name.toLowerCase()), name).toBe(false);
+    // Не довга: на телефоні набік — один-два рядки біля іконки (`TEXTS.md`, «Назви товарів»), як найдовша з прикладу автора
+    // («Ветеринарні таблетки для котів»). Корм для стерилізованих — виняток: без «корму» незрозуміло, що це, а «для
+    // стерилізованих» переноситься цілим другим рядком.
+    for (const { key, name } of shown) expect(name.length, name).toBeLessThanOrEqual(key === "sterileFood" ? 32 : 30);
+    // Таблетки й краплі — як у прикладі автора (рішення автора 2026-11-03).
+    expect(VARIANT_TITLES["pills"]).toEqual({ cheap: "Аптечні таблетки для котів", premium: "Ветеринарні таблетки для котів" });
     // Для кого — видно з назви: ліки, ласощі, шампунь і м'ята для котів кажуть це самі, а ліки для себе — ні.
     for (const key of ["pills", "drops", "treats", "shampoo", "catnip"]) {
       for (const name of Object.values(VARIANT_TITLES[key] ?? {})) expect(name, name).toMatch(/кот|ветеринар/iu);
