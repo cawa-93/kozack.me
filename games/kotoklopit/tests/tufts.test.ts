@@ -15,6 +15,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, GameState, Save, Vec } from "../src/sim/types";
+import { catSpot } from "../src/view/iso/catspot";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "../src/view/iso/tuftappear";
 import { hours, withCatCorner } from "./helpers";
 
@@ -253,6 +254,35 @@ describe("поява жмута на екрані (вигляд, `view/iso/tufta
     expect(tuftRollFrom(null, root, spot)).toBeNull();
     expect(tuftRollFrom({ x: spot.x + 1, y: spot.y }, null, spot)).toBeNull();
     expect(tuftRollFrom({ x: spot.x + TUFT_APPEAR.reach + 0.5, y: spot.y }, root, spot)).toBeNull();
+  });
+
+  it("котиться лише по підлозі: жмут із-під кота на шафі, холодильнику чи на руках проступає на місці, а не летить згори", () => {
+    const cases: { name: string; at: Vec; carried?: boolean; spot: number }[] = [
+      // Шафа (6, 1) і холодильник (13, 1) — `HIGH_PLACES`: меблі не стіна, тож жмут лягає «з-під» кота нагорі.
+      { name: "шафа", at: { x: 6.5, y: 1.5 }, spot: 6 },
+      { name: "холодильник", at: { x: 13.5, y: 1.5 }, spot: 7 },
+      { name: "на руках", at: { x: 9.5, y: 8.4 }, carried: true, spot: 2 },
+    ];
+    for (const { name, at, carried, spot } of cases) {
+      const state = game().current;
+      const cat = catAt(state, at);
+      if (carried) {
+        state.character.held = { kind: "cat", cat: cat.id };
+        state.character.body.x = at.x;
+        state.character.body.y = at.y;
+      }
+      state.home.fur = HOUSEHOLD.dirtyFur;
+      live(state, 1);
+      expect(tuftsOf(state), name).toEqual([spot]);
+      expect(tuftCat(state, spot)?.id, name).toBe(cat.id);
+      // Кіт не на підлозі (`catSpot`): точки підлоги під ним вигляд не дає (`CatPoints.floor` — лише для `floor`), і без неї
+      // жмут не котиться.
+      expect(catSpot(state, cat, "sit", null, { grate: 0.004 }).kind, name).not.toBe("floor");
+      expect(tuftRollFrom(cat, null, FUR_SPOTS[spot]!), name).toBeNull();
+    }
+    // А той самий кіт на підлозі — стоїть на підлозі: звідти й котиться.
+    const state = game().current;
+    expect(catSpot(state, catAt(state, { x: 9.5, y: 8.4 }), "sit", null, { grate: 0.004 }).kind).toBe("floor");
   });
 
   it("за ≈ 0,6–1 с викочується від кота, сповільнюючись, наростає й проступає; наприкінці — рівно на місці", () => {

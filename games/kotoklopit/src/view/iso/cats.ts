@@ -139,6 +139,12 @@ interface Memory {
   /** Де кіт стояв на підлозі, коли персонаж почав брати його на руки (`Hands.lift`), px світу. */
   liftFrom: Point | null;
   /**
+   * Цього кадру кіт стоїть на підлозі сам (`floor`: не на меблях, не на руках, не в речі), і де на екрані точка підлоги під ним
+   * (без дуги стрибка), px світу: звідти викочується новий жмут шерсті (`CatPoints.floor`).
+   */
+  onFloor: boolean;
+  floor: Point;
+  /**
    * Кота опустили (`putDown`): де його поставив сим і де стояв персонаж. Поки обидва там і кіт не рушив (`stillPutDown`), він
    * стоїть, де його поставили руки, — зсув від точки сима в `crowd`, юрба його не зсуває.
    */
@@ -335,6 +341,8 @@ export class IsoCatsView implements CatsPart {
         lift: null,
         gait: null,
         liftFrom: null,
+        onFloor: false,
+        floor: { x: 0, y: 0 },
         putDown: null,
         size: null,
         sizeAge: Number.NaN,
@@ -449,6 +457,7 @@ export class IsoCatsView implements CatsPart {
       mem.floorWas = false;
       mem.lift = null;
       mem.gait = null;
+      mem.onFloor = false;
       return;
     }
 
@@ -501,6 +510,10 @@ export class IsoCatsView implements CatsPart {
     const f = this.frame;
     f.scale = size.scale * spot.scale;
     this.place(view, spot, mem, time, f);
+    // На підлозі поверхня під котом — сама підлога (`ground`, без дуги стрибка): там і точка для жмута шерсті.
+    mem.onFloor = spot.kind === "floor";
+    mem.floor.x = f.ground.x;
+    mem.floor.y = f.ground.y;
     // Опускають (сим уже відпустив): кіт там, де його ставлять руки, — і там лишиться, коли разова скінчиться.
     if (lifting && floor) this.keepPutDown(mem, base, f.ground);
     this.fixRoot(view, mem, spot.kind === "hands" ? (lifting ? 2 : 1) : 0, time, f);
@@ -853,7 +866,9 @@ export class IsoCatsView implements CatsPart {
 
   points(cat: number): CatPoints | null {
     const view = this.views.get(cat);
-    return view ? { head: view.head, back: view.back, mouth: view.mouth, root: view.root, facing: view.facing, scale: view.scale, rigShown: view.rigShown } : null;
+    const mem = this.memory.get(cat);
+    const floor = mem?.onFloor === true ? mem.floor : null;
+    return view ? { head: view.head, back: view.back, mouth: view.mouth, root: view.root, floor, facing: view.facing, scale: view.scale, rigShown: view.rigShown } : null;
   }
 
   /**

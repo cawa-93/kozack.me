@@ -39,12 +39,14 @@ export function freshTuft(state: GameState): number | null {
 }
 
 /**
- * Звідки котиться новий жмут (px світу): з-під кота (`root` — корінь кота на екрані, `cat` — де він у симуляції), якщо кота видно
- * й він не далі `TUFT_APPEAR.reach` клітинок від місця жмута `spot`; інакше null — жмут проступає на місці.
+ * Звідки котиться новий жмут (px світу): з-під кота — з точки підлоги під ним на екрані (`floor`, `CatPoints.floor`; `cat` — де
+ * він у симуляції), якщо кота видно, він стоїть на підлозі й не далі `TUFT_APPEAR.reach` клітинок від місця жмута `spot`; інакше
+ * null — жмут проступає на місці. Котиться лише по підлозі: кіт на меблях, на руках чи в речі точки підлоги не має (`floor`
+ * null), і жмут не летить у повітрі з висоти меблів чи з рук.
  */
-export function tuftRollFrom(cat: Vec | null, root: Point | null, spot: Vec): Point | null {
-  if (!cat || !root || Math.hypot(spot.x - cat.x, spot.y - cat.y) > TUFT_APPEAR.reach) return null;
-  return { x: root.x, y: root.y };
+export function tuftRollFrom(cat: Vec | null, floor: Point | null, spot: Vec): Point | null {
+  if (!cat || !floor || Math.hypot(spot.x - cat.x, spot.y - cat.y) > TUFT_APPEAR.reach) return null;
+  return { x: floor.x, y: floor.y };
 }
 
 /**

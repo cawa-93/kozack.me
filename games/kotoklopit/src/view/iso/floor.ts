@@ -416,20 +416,23 @@ export class IsoFloorView implements WorldPart {
   }
 
   /**
-   * Почати появу нового жмута (§8.7, [Змінено пізніше]): котиться з-під кота, з-під якого він ліг (`tuftCat`), — якщо цього кота
-   * зараз видно (`WorldQuery`) і він недалеко (`tuftRollFrom`), — інакше проступає на місці.
+   * Почати появу нового жмута (§8.7, [Змінено пізніше]): котиться по підлозі з-під кота, з-під якого він ліг (`tuftCat`), — якщо
+   * цього кота зараз видно (`WorldQuery`), він стоїть на підлозі (`CatPoints.floor`) і недалеко (`tuftRollFrom`), — інакше
+   * проступає на місці. Кіт на меблях, на руках чи колінах, у речі чи під нею — жмут не летить у повітрі з висоти меблів чи з
+   * рук, а проступає на місці.
    */
   private startAppear(state: GameState, spot: Spot, index: number, at: Vec, time: number): void {
     const world = this.ctx.world;
     const cat = tuftCat(state, index);
-    const root = cat && world.anchor(`cat:${cat.id}`) ? (world.cat(cat.id)?.root ?? null) : null;
+    const floor = cat && world.anchor(`cat:${cat.id}`) ? (world.cat(cat.id)?.floor ?? null) : null;
     const to = ISO.toScreen(at);
-    this.appearing.push({ spot, from: tuftRollFrom(cat, root, at), to: { x: to.x, y: to.y }, start: time, scale: { x: spot.image.scaleX, y: spot.image.scaleY } });
+    this.appearing.push({ spot, from: tuftRollFrom(cat, floor, at), to: { x: to.x, y: to.y }, start: time, scale: { x: spot.image.scaleX, y: spot.image.scaleY } });
   }
 
   /**
    * Нові жмути з'являються (`tuftAppearLook`) за `TUFT_APPEAR.ms`: котиться по підлозі — його точка в реєстрі глибини йде разом
-   * із ним (`floorAt`), як і в того, що втягується в щітку. Наприкінці — свого розміру, непрозорий і рівно на місці.
+   * із ним (`floorAt`), як і в того, що втягується в щітку. Котиться він від точки підлоги (`CatPoints.floor`), тож `floorAt`
+   * дає клітинки між котом і місцем, а не позаду них. Наприкінці — свого розміру, непрозорий і рівно на місці.
    */
   private appear(time: number): void {
     for (let i = this.appearing.length - 1; i >= 0; i--) {
