@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { tickCats } from "../src/sim/catai";
 import { GUESTS, MODIFIERS } from "../src/sim/config";
-import { courierNow } from "../src/dev/commands";
+import { courierNow, jumpTo, setTime } from "../src/dev/commands";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { fallIll } from "../src/sim/diseases";
 import { DOOR_TILE, GUEST_DAY, guestAtDoor } from "../src/sim/door";
@@ -379,6 +379,67 @@ describe("гість подзвонив — дія біля дверей від�
     stop();
     expect(bells(events)).toBe(0);
     expect(visitsOf(events, "cleaner")).toHaveLength(1);
+  });
+});
+
+describe("перехід у час режиму розробки (§11.5) і гість під дверима (рецензія 2026-11-03)", () => {
+  it("«Вечір» після дзвінка, повз хвилину візиту: під дверима нікого — можна поїхати, а двері не впускають гостя через години", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "home-vet");
+    if (!guest) throw new Error("немає ветеринарки");
+    const { save } = game(guest);
+    const state = save.current;
+    untilRing(save, guest);
+    expect(guestAtDoor(state)).toBe("home-vet");
+    jumpTo(save, "evening");
+    expect(guestAtDoor(state)).toBeNull();
+    expect(canLeave(state)).toBe(true);
+    const { events, stop } = recordEvents();
+    interact(save);
+    advance(save, 30);
+    stop();
+    expect(visitsOf(events, "home-vet")).toHaveLength(0);
+  });
+
+  it("день і година: гостя, що подзвонив учора, в інший день під дверима немає — і штрафу ОСББ у звичайний день теж", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "inspection");
+    if (!guest) throw new Error("немає ОСББ");
+    const { save } = game(guest);
+    const state = save.current;
+    untilRing(save, guest);
+    const money = state.character.money;
+    setTime(save, state.day + 1, 12);
+    standAt(save, "door");
+    expect(guestAtDoor(state)).toBeNull();
+    expect(canLeave(state)).toBe(true);
+    const { events, stop } = recordEvents();
+    interact(save);
+    stop();
+    expect(visitsOf(events, "inspection")).toHaveLength(0);
+    expect(state.character.money).toBe(money);
+  });
+
+  it("стрибок у межах дня до хвилини візиту: дзвінка вже не чули — гість заходить у свою хвилину, як і без запису", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
+    if (!guest) throw new Error("немає гостей");
+    const { save } = game(guest);
+    const state = save.current;
+    untilRing(save, guest);
+    setTime(save, state.day, (guest.minute - 2) / 60);
+    expect(guestAtDoor(state)).toBeNull();
+    const { events, stop } = recordEvents();
+    pastVisit(save, guest);
+    stop();
+    expect(visitsOf(events, "guests")).toHaveLength(1);
+  });
+
+  it("запис гостя не того дня (подія дня інша) — під дверима нікого: двері його не впускають", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
+    if (!guest) throw new Error("немає гостей");
+    const { save } = game(guest);
+    const state = save.current;
+    state.today.guest = { who: "inspection" };
+    expect(guestAtDoor(state)).toBeNull();
+    expect(canLeave(state)).toBe(true);
   });
 });
 

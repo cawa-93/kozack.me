@@ -12,7 +12,7 @@ import {
   RACE,
   WORK_END_MINUTE,
 } from "../sim/config";
-import { ringBell } from "../sim/door";
+import { clearGuest, ringBell } from "../sim/door";
 import { tickDeliveries } from "../sim/economy";
 import { goToSleep } from "../sim/game";
 import { seedDay } from "../sim/rng";
@@ -30,7 +30,8 @@ export function rebase(save: Save): void {
 
 /**
  * Перейти в день і годину без плину часу. Година, раніша за пробудження, — це ніч
- * після цього дня (01:00 — ще не спав).
+ * після цього дня (01:00 — ще не спав). Гість, що подзвонив, уже не під дверима (`clearGuest`, §9.12): хвилину його візиту
+ * могли перестрибнути, а інакше він «висів» би під дверима до ночі чи заходив в інший день (рецензія 2026-11-03).
  */
 export function setTime(save: Save, day: number, hour: number): void {
   const state = save.current;
@@ -39,6 +40,7 @@ export function setTime(save: Save, day: number, hour: number): void {
   let minute = Math.round(hour * MINUTES_PER_HOUR);
   if (minute < wakeMinute(state)) minute += MINUTES_PER_DAY;
   state.minute = minute;
+  clearGuest(state);
   if (changedDay) {
     // Модифікатори дня обиратиме крок 14 плану; «Перший день» — лише день 0.
     state.modifiers.day = state.day === 0 ? FIRST_DAY_MODIFIER : null;
@@ -50,7 +52,7 @@ export function setTime(save: Save, day: number, hour: number): void {
 
 export type TimeOfDay = "morning" | "evening" | "night";
 
-/** Ранок — пробудження, вечір — кінець робочого дня, ніч — найраніша пора лягати. */
+/** Ранок — пробудження, вечір — кінець робочого дня, ніч — найраніша пора лягати. Гість під дверима — як у `setTime`. */
 export function jumpTo(save: Save, time: TimeOfDay): void {
   const state = save.current;
   const wake = wakeMinute(state);
@@ -60,6 +62,7 @@ export function jumpTo(save: Save, time: TimeOfDay): void {
     night: wake + MINUTES_PER_DAY - BEDTIME_EARLIEST_HOURS_BEFORE_WAKE * MINUTES_PER_HOUR,
   }[time];
   state.minute = minute;
+  clearGuest(state);
   if (time === "morning") state.character.body = newBody();
 }
 
