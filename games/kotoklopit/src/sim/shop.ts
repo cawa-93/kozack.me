@@ -81,6 +81,18 @@ export function discount(state: GameState, goods: Goods, quality: Quality, mode:
 
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
 
+/**
+ * Скільки цього варіанта (товар × якість) уже їде доставкою чи чекає під дверима (§6.4): запасу — порцій, душів тощо (упаковок ×
+ * їхній вміст), речі — штук. Для підпису «🚗 …» на картці варіанта (рішення автора 2026-11-03, «Кожен товар у своїй картці»):
+ * підпис каже про той варіант, що справді їде, а не про весь товар.
+ */
+export function coming(state: GameState, goods: Goods, quality: Quality): number {
+  return [...state.home.deliveries, ...state.home.porch].reduce((sum, d) => {
+    if (d.quality !== quality || !same("product" in d ? { product: d.product } : { thing: d.thing }, goods)) return sum;
+    return sum + ("product" in goods ? PRODUCTS[goods.product].units[quality] : 1);
+  }, 0);
+}
+
 /** Скільки мисок (будь-якої якості) у кошику. */
 const cartBowls = (cart: readonly CartLine[]): number => cart.reduce((sum, l) => sum + ("thing" in l.goods && l.goods.thing === "bowl" ? l.count : 0), 0);
 

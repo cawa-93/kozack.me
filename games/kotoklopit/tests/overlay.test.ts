@@ -230,10 +230,15 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".card-actions.end")).toContain("justify-content: flex-end;");
   });
 
-  it("CSS: каталог — контейнер, товар в один рядок у одній колонці від 460 px; ширший (820 px) лише телефон — картка з вкладками", () => {
+  it("CSS: каталог — контейнер карток варіантів; у двох колонках (і вузькому списку) бірка над ціною; ширший (820 px) лише телефон — картка з вкладками", () => {
     expect(rule(".shop:has(> .shop-item)")).toContain("container: catalog / inline-size;");
     expect(rule(".shop:has(> .shop-item)")).toContain("repeat(auto-fill, minmax(min(340px, 100%), 1fr))");
-    expect(css).toContain("@container catalog (min-width: 460px) and (max-width: 687px) {");
+    expect(css).toContain("@container catalog (min-width: 690px) or (max-width: 459px) {");
+    // Картка в один рядок: іконка, назва, бірка з ціною, «−», кількість, «+»; кнопки — не менші за 40 px.
+    expect(rule(".shop-item")).toContain("grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;");
+    expect(rule(".button.step,\n.button.step:active:not(:disabled),\n.button.step:disabled")).toContain("width: 40px;");
+    // Після товару з однією карткою (нашийник) у двох колонках наступний — з нового рядка.
+    expect(rule(".shop-item.single + .shop-item")).toContain("grid-column-start: 1;");
     expect(rule(".card:has(> .card-tabbar)")).toContain("width: min(820px, 100%);");
     // Картка пункту на місці — без вкладок: її ширина лишається 560 px (парковка праворуч, `cardsize.ts`).
     expect(rule(".card")).toContain("width: min(560px, 100%);");

@@ -1,6 +1,6 @@
 // Назви запасів і речей (§6.4): для магазину, телефона й карток.
 
-import type { Destination, Product, Quality, ThingKind } from "../sim/types";
+import type { Destination, Product, Quality } from "../sim/types";
 
 /** Українська множина: 1 порція, 2 порції, 5 порцій. */
 export function plural(n: number, one: string, few: string, many: string): string {
@@ -29,21 +29,6 @@ export const PRODUCT_TITLES: Record<Product, { name: string; unit: (n: number) =
   catnip: { name: "Котяча м'ята", unit: (n) => `${n} ${plural(n, "раз", "рази", "разів")}`, place: "в аптечці" },
   // Лише від мами (§4.1, §6.4, рішення автора 2026-10-26): у магазині їх немає.
   momMeal: { name: "Мамині судочки", unit: (n) => `${n} ${plural(n, "судочок", "судочки", "судочків")}`, place: "у холодильнику" },
-};
-
-
-export const THING_TITLES: Record<ThingKind, string> = {
-  bowl: "Миска для корму",
-  water: "Миска для води",
-  litter: "Лоток",
-  toy: "Іграшка-вудочка",
-  house: "Будиночок",
-  scratcher: "Кігтеточка",
-  carrier: "Переноска",
-  feeder: "Автогодівниця",
-  fountain: "Фонтанчик для води",
-  robot: "Робот-пилосос",
-  lock: "Замок на шафку з кормом",
 };
 
 /**

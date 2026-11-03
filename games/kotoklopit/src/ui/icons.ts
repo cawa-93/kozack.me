@@ -12,10 +12,10 @@
 // приватної області Unicode й назва іконки малими латинськими, тож `toLowerCase` (назва посеред речення) її не змінює.
 
 import { ILLNESS_TITLES, diseaseTitle } from "../texts";
-import type { Destination, IllnessId, Product, ThingKind } from "../sim/types";
+import type { Destination, IllnessId, Product } from "../sim/types";
 import { ICON_NAMES, type IconName } from "../view/iconnames";
-import { DESTINATION_ICONS, DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
-import { DESTINATION_TITLES, PRODUCT_TITLES, THING_TITLES } from "./titles";
+import { DESTINATION_ICONS, DISEASE_ICONS, ILLNESS_ICONS, PRODUCT_ICONS } from "../view/symbols";
+import { DESTINATION_TITLES, PRODUCT_TITLES } from "./titles";
 
 /** Тека SVG іконок (`art/icon/`) — так, як її ключі дає `import.meta.glob` із цього файлу. */
 const ICON_DIR = "../../art/icon/";
@@ -62,14 +62,12 @@ export function diseaseLabel(id: string): string {
  */
 export const illnessLabel = (id: IllnessId): string => named(ILLNESS_ICONS[id], ILLNESS_TITLES[id]);
 
-/** Назва речі з іконкою (§11.4): та сама, що біля неї в магазині (`THING_ICONS`), — і в «Моїх речах» телефона. */
-export const thingLabel = (kind: ThingKind): string => named(THING_ICONS[kind], THING_TITLES[kind]);
-
 /**
- * Назва запасу з іконкою (§11.4, §6.4): та сама, що біля нього в магазині, над сховищем і в думці персонажа (`PRODUCT_ICONS`).
- * Назва — загальна (`PRODUCT_TITLES`) чи назва варіанта (`VARIANT_TITLES`: «Делікатеси», «Мататабі»), іконка — одна на запас.
+ * Назва запасу з іконкою (§11.4, §6.4): та сама іконка, що на його картках у магазині, над сховищем і в думці персонажа
+ * (`PRODUCT_ICONS`), і загальна назва (`PRODUCT_TITLES`) — коли варіант не важливий (ліки в картці догляду — скільки є обох).
+ * Назва варіанта з іконкою — `variantLabel` (`shop.ts`).
  */
-export const productLabel = (product: Product, title: string = PRODUCT_TITLES[product].name): string => named(PRODUCT_ICONS[product], title);
+export const productLabel = (product: Product): string => named(PRODUCT_ICONS[product], PRODUCT_TITLES[product].name);
 
 /**
  * Назва пункту поїздки з іконкою (§11.4, §8.5 «На місці — кадр парковки»; `DESTINATION_ICONS`): у «Куди поїхати?», у заголовку

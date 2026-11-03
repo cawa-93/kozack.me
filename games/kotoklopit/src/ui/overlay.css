@@ -781,9 +781,10 @@
   }
 }
 
-/* Універсальний магазин (§6.4): товар із біркою знижки, варіанти зі степперами, а внизу картки — смуга кошика (рішення автора
-   2026-11-03, «Бірка знижки й кошик унизу»). Назви, ціни й кількість — рукописним шрифтом карток і більші, ніж текст картки;
-   варіант і підписи — звичайним шрифтом (дрібний рукописний читається гірше). */
+/* Універсальний магазин (§6.4): кожен варіант товару — своя картка в один рядок (рішення автора 2026-11-03, «Кожен товар у своїй
+   картці»): іконка товару, назва варіанта з підписом під нею, бірка знижки й ціна, «−», кількість, «+»; а внизу картки — смуга
+   кошика (рішення автора 2026-11-03, «Бірка знижки й кошик унизу»). Назви, ціни й кількість — рукописним шрифтом карток і
+   більші, ніж текст картки; підписи — звичайним шрифтом (дрібний рукописний читається гірше). */
 .shop-section {
   margin: 8px 0 0;
   color: var(--ink-soft);
@@ -792,59 +793,45 @@
   text-transform: uppercase;
 }
 
+/* Картка варіанта: стовпці — іконка, назва (до двох рядків, з підписом під нею), бірка з ціною, «−», кількість, «+». Висота — від
+   кнопок «−» і «+» (40 px) з тонкими полями: на екрані якомога більше карток (рішення автора 2026-11-03, «Кожен товар у своїй
+   картці»); довга назва з підписом роблять вищою лише свою картку. */
 .shop-item {
   display: grid;
-  gap: 4px;
-  padding: 8px 10px 10px;
+  grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;
+  align-items: center;
+  column-gap: 8px;
+  padding: 3px 8px 6px;
   border-radius: 12px;
   background: var(--enamel);
   box-shadow: inset 0 -3px 0 var(--shade-soft);
 }
 
-/* Каталог із кошиком (рецензія 2026-11-03, «ергономічніше» — рішення автора 2026-11-03): розкладку товару вирішує ширина самого
-   списку (контейнер `catalog`), а не екрана. Від 690 px (картка телефона, ширша нижче) — дві колонки товарів, кожен товар
-   стовпчиком; від 460 px — одна колонка, а товар в один рядок: ліворуч іконка, назва й бірка, праворуч варіанти; вужче
-   (телефон стоячи) — товар стовпчиком: назва з біркою над варіантами. Так на телефоні набік видно вдвічі більше товарів. */
-.shop:has(> .shop-item) {
-  container: catalog / inline-size;
-  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-  align-items: start;
-}
-
-.shop > .shop-section {
-  grid-column: 1 / -1;
-}
-
-/* Телефон (єдина картка з вкладками) — ширший (до 820 px): він посередині, обабіч нього й так порожньо, а товари магазину стають
-   у дві колонки (рецензія 2026-11-03). Ширший на всіх вкладках, а не лише в магазині: інакше картка, що посередині, звужувалася б
-   на інших вкладках, і рядок вкладок їхав би з-під пальця. Картки пункту на місці лишаються 560 px — праворуч від них парковка
-   (`src/ui/cardsize.ts`). */
-.card:has(> .card-tabbar) {
-  width: min(820px, 100%);
-}
-
-/* Кнопки меню гри (вкладка «Гра» телефона) — поруч, скільки вміщується, а не кожна на всю ширину ширшої картки. */
-.card:has(> .card-tabbar) .shop:has(> .button) {
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-}
-
-/* Назва товару й бірка знижки праворуч. */
-.shop-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+/* Іконка товару (§11.4 «Іконка біля назви») — окремим стовпцем, а не в рядку назви: назва у два рядки стоїть рівно біля неї. */
+.shop-icon .name-icon {
+  display: block;
+  width: 30px;
+  height: 30px;
+  margin: 0;
 }
 
 .shop-item .shop-name {
-  font-size: 21px;
+  font-size: 19px;
+  line-height: 1.08;
+  overflow-wrap: break-word;
 }
 
-/* Іконка біля назви товару чи рядка — по висоті рядка назви: 1,6em від більшої рукописної назви були б завеликі. */
-.shop-name > .named > .name-icon {
-  width: 1.3em;
-  height: 1.3em;
-  margin: -0.15em 0.18em -0.1em 0;
+.shop-item .shop-stock {
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+/* Бірка знижки й ціна: в одній колонці — поруч, бірка перед ціною (як у прикладі автора: «… −29% 11 ₴»). */
+.shop-cost {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 /* Бірка знижки «−X%»: червоний цінник із отвором (`art/ui/tag.svg`), трохи навскіс, як у супермаркеті; напис — паперовим
@@ -861,33 +848,9 @@
   padding: 0 0.25em 0.12em 1em;
   background: url("../../art/ui/tag.svg") 0 0 / 100% 100% no-repeat;
   color: var(--paper);
-  font: 400 16px/1 var(--hand);
+  font: 400 15px/1 var(--hand);
   white-space: nowrap;
   transform: rotate(-6deg);
-}
-
-/* Рядок варіанта: назва й «×15», ціна окремим стовпцем, «−», кількість, «+». */
-.shop-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto 2.2ch auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.shop-option {
-  font-size: 16px;
-  line-height: 1.25;
-}
-
-.shop-pack {
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
-.shop-pack .name-icon {
-  width: 1.3em;
-  height: 1.3em;
-  margin: -0.2em 0.1em -0.15em 0;
 }
 
 .shop-price {
@@ -896,11 +859,17 @@
   text-align: right;
 }
 
-/* Варіант, якого не взяти (§6.4: «у ящиках», «немає місця», «уже є», «уже їде»), — сірий: і назва, і ціна. */
-.shop-line.muted .shop-option,
-.shop-line.muted .shop-pack,
-.shop-line.muted .shop-price {
+/* Варіант, якого не взяти (§6.4: «у ящиках», «немає місця», «уже є», «уже їде»), — сіра вся картка, крім кнопок: назва, ціна,
+   іконка й бірка. Підпис, чому не взяти, лишається читким. */
+.shop-item.muted .shop-name,
+.shop-item.muted .shop-price {
   color: var(--grey-lo);
+}
+
+.shop-item.muted .shop-icon,
+.shop-item.muted .price-tag {
+  opacity: 0.45;
+  filter: grayscale(1);
 }
 
 .shop-count {
@@ -909,53 +878,75 @@
 }
 
 /* Варіант у кошику — кількість кольором кнопки «Купити», щоб видно було, що вже взято. */
-.shop-line.chosen .shop-count {
+.shop-item.chosen .shop-count {
   color: var(--orange);
 }
 
-/* Товар в один рядок (одна колонка від 460 px, вище; дві колонки — від 2 × 340 px і проміжку 8–10 px, тож межа — 687 px): стовпець
-   назви — 150 px (найдовше нерозривне — «Автогодівниця» з іконкою, ≈ 149 px; слово через дефіс переноситься після дефіса,
-   `icons.ts`), бірка — під назвою; праворуч варіанти, кожен своїм рядком. Кнопки «−» і «+» — ті самі 44 px, назва варіанта
-   переходить на другий рядок, а не дрібнішає. */
-@container catalog (min-width: 460px) and (max-width: 687px) {
+/* Каталог (рецензія 2026-11-03, «ергономічніше» — рішення автора 2026-11-03): розкладку вирішує ширина самого списку (контейнер
+   `catalog`), а не екрана. Від 690 px (картка телефона, ширша нижче) — дві колонки карток, вужче — одна. */
+.shop:has(> .shop-item) {
+  container: catalog / inline-size;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+  align-items: start;
+  gap: 6px;
+}
+
+.shop > .shop-section {
+  grid-column: 1 / -1;
+}
+
+/* У двох колонках дешевий варіант — ліворуч, дорогий — праворуч: рядок — один товар. Після товару з однією карткою (нашийник)
+   наступний товар — з нового рядка, а не навпіл між двома (у одній колонці правило нічого не змінює). */
+.shop-item.single + .shop-item {
+  grid-column-start: 1;
+}
+
+/* Дві колонки (телефон) і вузький список: бірка — над ціною, а не перед нею, — так назві лишається місце, і вона не ламається
+   на третій рядок. Бірка тут менша: разом із ціною вона не вища за кнопки «−» і «+». */
+@container catalog (min-width: 690px) or (max-width: 459px) {
   .shop-item {
-    grid-template-columns: 150px minmax(0, 1fr);
-    column-gap: 10px;
-    row-gap: 2px;
-    align-items: center;
-    padding: 5px 8px 7px 10px;
+    grid-template-columns: 28px minmax(0, 1fr) auto 40px 2.2ch 40px;
+    column-gap: 6px;
+    padding-right: 6px;
   }
 
-  .shop-item > .shop-head {
-    grid-column: 1;
-    grid-row: 1 / span 3;
+  .shop-icon .name-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .shop-cost {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    align-items: flex-end;
+    gap: 0;
   }
 
-  .shop-item > .shop-line {
-    grid-column: 2;
+  .shop-cost > .price-tag {
+    width: 4.3em;
+    height: 1.9em;
+    margin: -3px -3px 1px 0;
+    font-size: 14px;
   }
+}
 
-  .shop-item .shop-name {
-    font-size: 19px;
-    line-height: 1.15;
-  }
+/* Телефон (єдина картка з вкладками) — ширший (до 820 px): він посередині, обабіч нього й так порожньо, а товари магазину стають
+   у дві колонки (рецензія 2026-11-03). Ширший на всіх вкладках, а не лише в магазині: інакше картка, що посередині, звужувалася б
+   на інших вкладках, і рядок вкладок їхав би з-під пальця. Картки пункту на місці лишаються 560 px — праворуч від них парковка
+   (`src/ui/cardsize.ts`). */
+.card:has(> .card-tabbar) {
+  width: min(820px, 100%);
+}
 
-  .shop-item .shop-option {
-    font-size: 15px;
-    line-height: 1.2;
-  }
+/* Кнопки меню гри (вкладка «Гра» телефона) — поруч, скільки вміщується, а не кожна на всю ширину ширшої картки. */
+.card:has(> .card-tabbar) .shop:has(> .button) {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
 
-  .shop-item .shop-line {
-    gap: 6px;
-  }
-
-  .shop-item .price-tag {
-    margin: 0 0 0 -4px;
-    font-size: 15px;
-  }
+/* Іконка біля назви рядка (послуги, пункти, речі) — по висоті рядка назви: 1,6em від більшої рукописної назви були б завеликі. */
+.shop-name > .named > .name-icon {
+  width: 1.3em;
+  height: 1.3em;
+  margin: -0.15em 0.18em -0.1em 0;
 }
 
 /* Смуга кошика (рішення автора 2026-11-03): липне до низу картки на папері, як кнопки дій; ліворуч — «Очистити» іконкою (лише з
@@ -1016,24 +1007,25 @@
   white-space: nowrap;
 }
 
-/* Степер «−» / «+»: ціла картинка зі знаком; знак-текст лишається для читача екрана. Перша кнопка рядка — «−». 44 px — під
-   палець (рішення автора 2026-11-03: «Зроби інтерфейс магазину ергономічнишим»). */
+/* Степер «−» / «+»: ціла картинка зі знаком; знак-текст лишається для читача екрана. Перша кнопка картки — «−». Під палець
+   (рішення автора 2026-11-03: «Зроби інтерфейс магазину ергономічнишим»): було 44 px, тепер 40 px — не менше (рішення автора
+   2026-11-03, «Кожен товар у своїй картці»: карток на екрані більше). */
 .button.step,
 .button.step:active:not(:disabled),
 .button.step:disabled {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
   padding: 0;
   border: 0;
   border-image: none;
-  background: url("../../art/ui/button-step/plus.svg") 0 0 / 44px 44px no-repeat;
+  background: url("../../art/ui/button-step/plus.svg") 0 0 / 40px 40px no-repeat;
   color: transparent;
   font-size: 0;
 }
 
-.shop-line > .button.step:first-of-type {
+.shop-item > .button.step:first-of-type {
   background-image: url("../../art/ui/button-step/minus.svg");
 }
 
@@ -1046,7 +1038,7 @@
   background-image: url("../../art/ui/button-step/plus-disabled.svg");
 }
 
-.shop-line > .button.step:first-of-type:disabled {
+.shop-item > .button.step:first-of-type:disabled {
   background-image: url("../../art/ui/button-step/minus-disabled.svg");
 }
 
@@ -1169,11 +1161,19 @@
   }
 
   .shop-item .shop-name {
-    font-size: 19px;
+    font-size: 18px;
   }
 
-  .shop-option {
-    font-size: 15px;
+  /* Картки товарів — вужчі стовпці й поля: назві лишається місце (рішення автора 2026-11-03, «Кожен товар у своїй картці»). */
+  .shop-item {
+    grid-template-columns: 28px minmax(0, 1fr) auto 40px 2.2ch 40px;
+    column-gap: 6px;
+    padding-right: 6px;
+  }
+
+  .shop-icon .name-icon {
+    width: 28px;
+    height: 28px;
   }
 
   .shop-price {

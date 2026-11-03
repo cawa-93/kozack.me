@@ -35,11 +35,11 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
-import { destinationLabel, diseaseLabel, productLabel, thingLabel } from "./icons";
+import { destinationLabel, diseaseLabel, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
-import { shopCatalog } from "./shop";
+import { shopCatalog, variantLabel } from "./shop";
 import type { CartLine } from "../sim/shop";
-import { plural, VARIANT_TITLES } from "./titles";
+import { plural } from "./titles";
 
 export { plural };
 import { LOOK_OPTIONS } from "./look";
@@ -230,8 +230,8 @@ export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
   checkout: (cart: CartLine[]) => void;
   discard: (item: HomeItem) => void;
-  /** Викинути техніку, автогодівницю (над місцем миски `slot`), переноску чи замок на шафку. */
-  discardThing: (thing: DiscardThing) => void;
+  /** Викинути техніку, автогодівницю (над місцем миски `slot`), переноску чи замок на шафку; `quality` — для назви в підтвердженні. */
+  discardThing: (thing: DiscardThing, quality: Quality) => void;
   advertise: (cat: Cat) => void;
   cancelAd: (cat: Cat) => void;
   newGame: () => void;
@@ -432,14 +432,15 @@ function albumCards(state: GameState): (string | HTMLElement)[] {
 }
 
 
-/** «Мої речі» в телефоні (§8.7): біля назви речі — та сама іконка, що в магазині (§11.4 «Іконка біля назви»). */
+/**
+ * «Мої речі» в телефоні (§8.7): річ — та сама іконка й та сама назва варіанта, що на її картці в магазині (§11.4 «Іконка біля
+ * назви»; рішення автора 2026-11-03, «Кожен товар у своїй картці»: назва варіанта стоїть сама, без назви речі над нею).
+ */
 function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   const shop = element("div", "shop");
   for (const item of state.home.items) {
     const row = element("div", "shop-row");
-    const name = element("span", "shop-name", thingLabel(item.kind));
-    name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${item.kind}`]?.[item.quality] ?? ""));
-    row.append(name);
+    row.append(element("span", "shop-name", variantLabel({ thing: item.kind }, item.quality)));
     const button = element("button", "button", "Викинути");
     button.addEventListener("click", () => handlers.discard(item));
     row.append(button);
@@ -459,11 +460,9 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   ];
   for (const { kind, quality, thing } of extra) {
     const row = element("div", "shop-row");
-    const name = element("span", "shop-name", thingLabel(kind));
-    name.append(element("span", "shop-stock", VARIANT_TITLES[`thing:${kind}`]?.[quality] ?? ""));
-    row.append(name);
+    row.append(element("span", "shop-name", variantLabel({ thing: kind }, quality)));
     const button = element("button", "button", "Викинути");
-    button.addEventListener("click", () => handlers.discardThing(thing));
+    button.addEventListener("click", () => handlers.discardThing(thing, quality));
     row.append(button);
     shop.append(row);
   }
@@ -498,11 +497,11 @@ export function careCard(state: GameState, cat: Cat, onPick: (choice: CareChoice
     if (supplyCount(state, m) > 0) actions.push({ label: `${productLabel(m)} ×${supplyCount(state, m)}`, onSelect: () => onPick({ medicine: m }) });
   }
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.treats[q] > 0) actions.push({ label: `${productLabel("treats", VARIANT_TITLES["treats"]?.[q] ?? "")} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
+    if (supply.treats[q] > 0) actions.push({ label: `${variantLabel({ product: "treats" }, q)} ×${supply.treats[q]}`, onSelect: () => onPick({ treat: q }) });
   }
   // Котяча м'ята (§9.12): кіт зістрибне з рук — що він із нею робитиме, видно з нього самого.
   for (const q of ["premium", "cheap"] as const) {
-    if (supply.catnip[q] > 0) actions.push({ label: `${productLabel("catnip", VARIANT_TITLES["catnip"]?.[q] ?? "")} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
+    if (supply.catnip[q] > 0) actions.push({ label: `${variantLabel({ product: "catnip" }, q)} ×${supply.catnip[q]}`, onSelect: () => onPick({ catnip: q }) });
   }
   if (canPutCollar(state, cat)) actions.push({ label: `${productLabel("collar")} ×${supplyCount(state, "collar")}`, onSelect: () => onPick("collar") });
   // Це меню вибору, як «Куди поїхати?»: головної дії немає, тож пробіл чи Enter нічого не обирають за гравця. Раніше головною

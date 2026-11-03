@@ -10,13 +10,13 @@ import { DISEASES, ILLNESSES, MODIFIERS, TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { GOODS, goodsKey } from "../src/sim/shop";
+import { GOODS, goodsKey, variants } from "../src/sim/shop";
 import type { AlbumEntry, Destination, DiseaseId, IllnessId, Product, ThingKind } from "../src/sim/types";
 import { diseaseTitle, farewellText, homeVetText, ILLNESS_TITLES } from "../src/texts";
 import { albumCause, careCard, foundlingCard } from "../src/ui/cards";
-import { destinationLabel, diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, thingLabel, type IconPart } from "../src/ui/icons";
-import { goodsIcon, goodsLabel } from "../src/ui/shop";
-import { DESTINATION_TITLES, PRODUCT_TITLES, THING_TITLES, VARIANT_TITLES } from "../src/ui/titles";
+import { destinationLabel, diseaseLabel, iconMark, iconUrl, illnessLabel, named, productLabel, splitIcons, type IconPart } from "../src/ui/icons";
+import { goodsIcon, variantLabel, variantTitle } from "../src/ui/shop";
+import { DESTINATION_TITLES, PRODUCT_TITLES, VARIANT_TITLES } from "../src/ui/titles";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 import { ICON_NAMES, type IconName } from "../src/view/iconnames";
 import { DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, PRODUCT_ICONS, refusalBubble, THING_ICONS } from "../src/view/symbols";
@@ -75,13 +75,16 @@ describe("іконка біля назви: позначка в тексті", (
 });
 
 describe("іконка біля назви: магазин (§6.4)", () => {
-  it("біля кожного запасу — його іконка (PRODUCT_ICONS), біля кожної речі — іконка речі (THING_ICONS)", () => {
+  it("біля кожного варіанта запасу — іконка запасу (PRODUCT_ICONS), речі — іконка речі (THING_ICONS); назва — варіанта", () => {
     expect(GOODS.length).toBeGreaterThan(0);
     for (const goods of GOODS) {
       const icon = "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
       expect(goodsIcon(goods), goodsKey(goods)).toBe(icon);
-      expect(iconOf(goodsLabel(goods)), goodsKey(goods)).toBe(icon);
-      expect(plain(goodsLabel(goods)), goodsKey(goods)).toBe("product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing]);
+      for (const q of variants(goods)) {
+        expect(iconOf(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(icon);
+        expect(plain(variantLabel(goods, q)), `${goodsKey(goods)} ${q}`).toBe(VARIANT_TITLES[goodsKey(goods)]?.[q]);
+        expect(variantTitle(goods, q), `${goodsKey(goods)} ${q}`).toBe(VARIANT_TITLES[goodsKey(goods)]?.[q]);
+      }
       expect(iconUrl(icon), goodsKey(goods)).not.toBeNull();
     }
   });
@@ -103,12 +106,12 @@ describe("іконка біля назви: магазин (§6.4)", () => {
     }
   });
 
-  it("«Мої речі» в телефоні — та сама іконка речі й та сама назва, що в магазині", () => {
-    for (const thing of Object.keys(THING_ICONS) as ThingKind[]) expect(thingLabel(thing), thing).toBe(goodsLabel({ thing }));
-  });
-
-  it("назва запасу з іконкою (productLabel) — та сама, що в магазині", () => {
-    for (const goods of GOODS) if ("product" in goods) expect(productLabel(goods.product), goods.product).toBe(goodsLabel(goods));
+  it("назва запасу з іконкою (productLabel) — та сама іконка, що на його картках у магазині, і загальна назва", () => {
+    for (const goods of GOODS) {
+      if (!("product" in goods)) continue;
+      expect(iconOf(productLabel(goods.product)), goods.product).toBe(goodsIcon(goods));
+      expect(plain(productLabel(goods.product)), goods.product).toBe(PRODUCT_TITLES[goods.product].name);
+    }
   });
 
   it("відомі відповідності: корм — гранули, миска — миска, автогодівниця — та, що досипає корм", () => {

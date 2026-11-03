@@ -1,21 +1,23 @@
-// Універсальний магазин (§6.4): один каталог запасів і речей, кількість кнопками «−» і «+», а внизу картки — смуга кошика: сума,
-// гроші, «Очистити» й одна головна кнопка (рішення автора 2026-11-03, «Бірка знижки й кошик унизу»). Той самий компонент — у
-// телефоні (доставка) і на місці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
+// Універсальний магазин (§6.4): один каталог запасів і речей — кожен варіант товару своєю карткою з кількістю кнопками «−» і «+»
+// (рішення автора 2026-11-03, «Кожен товар у своїй картці»), а внизу картки — смуга кошика: сума, гроші, «Очистити» й одна
+// головна кнопка (рішення автора 2026-11-03, «Бірка знижки й кошик унизу»). Той самий компонент — у телефоні (доставка) і на
+// місці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
-import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
-import { incoming } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, catalog, discount, fitCart, goodsKey, goodsTotal, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { canCheckout, cartDelivery, cartTotal, catalog, coming, discount, fitCart, goodsKey, goodsTotal, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import type { IconName } from "../view/iconnames";
 import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
 import { drawGlyphs } from "./glyphs";
-import { named } from "./icons";
+import { iconMark, named } from "./icons";
 import { element } from "./overlay";
-import { PRODUCT_TITLES, SHOP_SECTION_TITLES, STORE_SECTION_TITLES, THING_TITLES, VARIANT_TITLES } from "./titles";
+import { PRODUCT_TITLES, SHOP_SECTION_TITLES, STORE_SECTION_TITLES, VARIANT_TITLES } from "./titles";
 
-
-function goodsName(goods: Goods): string {
-  return "product" in goods ? PRODUCT_TITLES[goods.product].name : THING_TITLES[goods.thing];
+/**
+ * Назва варіанта товару (§6.4; `VARIANT_TITLES`): стоїть у картці сама, без назви товару, тож каже й що це, й для кого (рішення
+ * автора 2026-11-03, «Кожен товар у своїй картці»; `TEXTS.md`, «Назви товарів»).
+ */
+export function variantTitle(goods: Goods, quality: Quality): string {
+  return VARIANT_TITLES[goodsKey(goods)]?.[quality] ?? quality;
 }
 
 /**
@@ -26,8 +28,8 @@ export function goodsIcon(goods: Goods): IconName {
   return "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
 }
 
-/** Назва товару з іконкою перед нею — так, як її показує рядок магазину (`icons.ts`). */
-export const goodsLabel = (goods: Goods): string => named(goodsIcon(goods), goodsName(goods));
+/** Назва варіанта з іконкою товару перед нею — так, як її показує картка магазину, і в «Моїх речах» телефона (`icons.ts`). */
+export const variantLabel = (goods: Goods, quality: Quality): string => named(goodsIcon(goods), variantTitle(goods, quality));
 
 /** Чому товар не взяти — коротким підписом у рядку (§6.4). */
 const UNAVAILABLE: Record<Unavailable, string> = {
@@ -54,35 +56,19 @@ export const BOUGHT = "✓ Куплено";
 export const BOUGHT_PAUSE_MS = 600;
 
 /**
- * Під назвою товару (§6.4, правка автора 2026-10-23): скільки його вже їде (з тим, що чекає під
- * дверима), і чому його не взяти — з урахуванням кошика (миска в кошику дає місце автогодівниці, §9.12).
- * Скільки вдома — не показуємо: це видно зі сховищ.
+ * Під назвою варіанта (§6.4, правка автора 2026-10-23): скільки саме цього варіанта вже їде (з тим, що чекає під дверима; рішення
+ * автора 2026-11-03, «Кожен товар у своїй картці»: картка — варіант), і чому товар не взяти — з урахуванням кошика (миска в
+ * кошику дає місце автогодівниці, §9.12). Скільки вдома — не показуємо: це видно зі сховищ. «×N» — скільки в упаковці — більше
+ * не пишемо (те саме рішення).
  */
-function stockText(state: GameState, goods: Goods, cart: readonly CartLine[]): string {
+export function stockText(state: GameState, goods: Goods, quality: Quality, cart: readonly CartLine[]): string {
   const parts: string[] = [];
-  const home = state.home;
-  const packages = [...home.deliveries, ...home.porch];
-  if ("product" in goods) {
-    const coming = incoming(state, goods.product);
-    if (coming > 0) parts.push(`🚗 ${PRODUCT_TITLES[goods.product].unit(coming)}`);
-  } else {
-    const coming = packages.filter((d) => "thing" in d && d.thing === goods.thing).length;
-    if (coming > 0) parts.push(`🚗 ×${coming}`);
-  }
+  const n = coming(state, goods, quality);
+  if (n > 0) parts.push(`🚗 ${"product" in goods ? PRODUCT_TITLES[goods.product].unit(n) : `${n} шт.`}`);
   const reason = unavailable(state, goods, cart);
-  // «Уже їде» дублював би 🚗.
+  // «Уже їде» дублював би 🚗 (і в картці іншого варіанта тієї самої речі: техніка й переноска — по одній).
   if (reason !== null && reason !== "ordered") parts.push(UNAVAILABLE[reason]);
   return parts.join(" · ");
-}
-
-/**
- * Скільки в упаковці — «×15» (рішення автора 2026-11-03: «Замість "15 душів - 15 ₴" писати щось накшталт "х15 - 15 ₴"»); штучне
- * (нашийник) — нічого. Автогодівниця — скільки корму вміщує (§9.12): іконка корму й число, як індикатор сховища.
- */
-export function packText(goods: Goods, quality: Quality): string {
-  if ("thing" in goods) return goods.thing === "feeder" ? named(PRODUCT_ICONS.catFood, String(FEEDER_CAPACITY[quality])) : "";
-  const units = PRODUCTS[goods.product].units[quality];
-  return units > 1 ? `×${units}` : "";
 }
 
 /** Бірка знижки «−X%» (§6.4; рішення автора 2026-11-03): червоний цінник із отвором (`art/ui/tag.svg`), трохи навскіс. */
@@ -99,7 +85,7 @@ export function suppliesTitle(state: GameState, mode: ShopMode): string {
   return (at === undefined ? undefined : STORE_SECTION_TITLES[at]) ?? SHOP_SECTION_TITLES.supplies;
 }
 
-/** Розділи каталогу: запаси (`suppliesTitle`) і речі. */
+/** Розділи каталогу: запаси (`suppliesTitle`) і речі. Це розділи, як відділи магазину, а не назви товарів: вони лишаються. */
 function sections(state: GameState, mode: ShopMode, goods: readonly Goods[]): { title: string; goods: Goods[] }[] {
   return [
     { title: suppliesTitle(state, mode), goods: goods.filter((g) => "product" in g) },
@@ -157,42 +143,38 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
   const shown = catalog(state, mode);
   let discounted = 0;
   for (const section of sections(state, mode, shown)) {
-    // До першого кота речей у магазині немає (§11.3а) — і заголовка без рядків теж.
+    // До першого кота речей у магазині немає (§11.3а) — і заголовка без карток теж.
     if (section.goods.length === 0) continue;
     list.append(element("p", "shop-section", section.title));
     for (const g of section.goods) {
-      const item = element("div", "shop-item");
-      const head = element("div", "shop-head");
-      const name = element("span", "shop-name", goodsLabel(g));
-      // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
-      const stock = element("span", "shop-stock");
-      name.append(stock);
-      updaters.push(() => {
-        const text = stockText(state, g, cart);
-        stock.textContent = text;
-        stock.style.display = text === "" ? "none" : "";
-      });
-      head.append(name);
-      item.append(head);
-      // Нашийник — один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), решта — два.
-      for (const quality of variants(g)) {
+      // Кожен варіант — своя картка (рішення автора 2026-11-03, «Кожен товар у своїй картці»): товар за товаром, спершу дешевий,
+      // тоді дорогий. Нашийник — один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), решта — два.
+      const qualities = variants(g);
+      for (const quality of qualities) {
         const line: CartLine = { goods: g, quality, count: kept?.get(`${goodsKey(g)}:${quality}`) ?? 0 };
         cart.push(line);
-        const label = element("span", "shop-option", VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality);
-        const pack = packText(g, quality);
-        if (pack !== "") label.append(" ", element("span", "shop-pack", pack));
-        // Знижка — біркою на варіанті: модифікатор випадає для кожного варіанта окремо; подорожчання — нічим (рішення автора 2026-11-03).
+        // Картка в один рядок: іконка товару, назва варіанта з підписом під нею, бірка й ціна, «−», кількість, «+».
+        const item = element("div", "shop-item");
+        // Товар з однією карткою: у двох колонках наступний товар — з нового рядка, щоб рядок лишався одним товаром (`overlay.css`).
+        if (qualities.length === 1) item.classList.add("single");
+        const icon = element("span", "shop-icon", iconMark(goodsIcon(g)));
+        const name = element("span", "shop-name", variantTitle(g, quality));
+        // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
+        const stock = element("span", "shop-stock");
+        name.append(stock);
+        // Бірка — між назвою й ціною (у двох колонках — над ціною): модифікатор випадає для кожного варіанта окремо;
+        // подорожчання — нічим (рішення автора 2026-11-03).
+        const cost = element("span", "shop-cost");
         const off = discount(state, g, quality, mode);
         if (off > 0) {
-          label.append(" ", priceTag(off));
+          cost.append(priceTag(off));
           discounted += 1;
         }
-        const price = element("span", "shop-price", `${unitPrice(state, g, quality, mode)} ₴`);
+        cost.append(element("span", "shop-price", `${unitPrice(state, g, quality, mode)} ₴`));
         const minus = element("button", "button step", "−");
         const count = element("span", "shop-count", "0");
         const plus = element("button", "button step", "+");
-        const option = element("div", "shop-line");
-        option.append(label, price, minus, count, plus);
+        item.append(icon, name, cost, minus, count, plus);
         minus.addEventListener("click", () => {
           line.count = Math.max(0, line.count - 1);
           // Забрали миску — автогодівниця, якій вона давала місце, теж виходить з кошика (§9.12).
@@ -204,17 +186,19 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
           update();
         });
         updaters.push(() => {
+          const text = stockText(state, g, quality, cart);
+          stock.textContent = text;
+          stock.style.display = text === "" ? "none" : "";
           const space = room(state, cart, g, quality);
           count.textContent = String(line.count);
           minus.disabled = line.count === 0;
           plus.disabled = line.count >= space || state.end !== null;
-          // Не взяти — сірий увесь рядок варіанта (`.shop-line.muted`, `overlay.css`).
-          option.classList.toggle("muted", space === 0 && line.count === 0);
-          option.classList.toggle("chosen", line.count > 0);
+          // Не взяти — сіра вся картка, крім кнопок (`.shop-item.muted`, `overlay.css`).
+          item.classList.toggle("muted", space === 0 && line.count === 0);
+          item.classList.toggle("chosen", line.count > 0);
         });
-        item.append(option);
+        list.append(item);
       }
-      list.append(item);
     }
   }
   // Збережений кошик — лише те, що й досі вміщується (§6.4).

@@ -18,7 +18,7 @@ import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
-import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Save, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
@@ -42,7 +42,7 @@ import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS,
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
-import { THING_TITLES } from "../ui/titles";
+import { variantTitle } from "../ui/shop";
 import { MoodHearts } from "../view/moodhearts";
 import { TouchControls } from "../view/touch";
 import { isRotateNoticeShown, onRotateNotice } from "../screen";
@@ -1234,10 +1234,12 @@ export class DayScene extends Phaser.Scene {
     if (this.blocked()) return;
     // Підказку телефоном побачено (§6.4).
     seePhoneHints(this.state);
-    const confirmDiscard = (kind: ThingKind, done: () => void): void =>
+    // Назва — варіанта речі, та сама, що в «Моїх речах» і на картці магазину (рішення автора 2026-11-03, «Кожен товар у своїй
+    // картці»): «Викинути: керамічна миска для корму?».
+    const confirmDiscard = (kind: ThingKind, quality: Quality, done: () => void): void =>
       this.overlay.show({
         kicker: "Речі",
-        title: `Викинути: ${THING_TITLES[kind].toLowerCase()}?`,
+        title: `Викинути: ${variantTitle({ thing: kind }, quality).toLowerCase()}?`,
         // Без прогнозу комунальних: тексти не пояснюють механік (§11.3а; крок 17, вичитка 2026-10-28).
         body: ["Повернути не можна."],
         actions: [
@@ -1261,11 +1263,11 @@ export class DayScene extends Phaser.Scene {
             show(tab);
           },
           // Викинути — назавжди: спершу картка-підтвердження (перевірка побуту 2026-10-28: подвійний дотик викидав другу річ).
-          discard: (item: HomeItem) => confirmDiscard(item.kind, () => discard(this.state, item.id)),
-          discardThing: (thing) => {
-            if ("appliance" in thing) confirmDiscard(thing.appliance, () => discardAppliance(this.state, thing.appliance));
-            else if ("feeder" in thing) confirmDiscard("feeder", () => discardFeeder(this.state, thing.feeder));
-            else confirmDiscard(thing.owned, () => (thing.owned === "carrier" ? discardCarrier(this.state) : discardLock(this.state)));
+          discard: (item: HomeItem) => confirmDiscard(item.kind, item.quality, () => discard(this.state, item.id)),
+          discardThing: (thing, quality) => {
+            if ("appliance" in thing) confirmDiscard(thing.appliance, quality, () => discardAppliance(this.state, thing.appliance));
+            else if ("feeder" in thing) confirmDiscard("feeder", quality, () => discardFeeder(this.state, thing.feeder));
+            else confirmDiscard(thing.owned, quality, () => (thing.owned === "carrier" ? discardCarrier(this.state) : discardLock(this.state)));
           },
           // Віддати — назавжди: спершу картка-підтвердження (перевірка розмноження 2026-10-28: був один дотик без підтвердження);
           // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).

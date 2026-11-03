@@ -1,7 +1,8 @@
-// Каталог і кошик унизу (GAME_DESIGN §6.4, «Бірка знижки й кошик унизу»; §8.5, «Ліки у ветеринара й лікаря» і «Картки поїздок
-// без «Поїздка»»; рішення автора 2026-11-03): бірка «−X%» — лише на знижці, рядка зі стрілкою немає; головна кнопка смуги на
-// місці — «Додому» з порожнім кошиком і «Купити» з непорожнім (сума — у віконці поруч); «Очистити» — іконкою, лише з непорожнім кошиком; гроші —
-// рівно один раз у картці.
+// Каталог і кошик унизу (GAME_DESIGN §6.4, «Бірка знижки й кошик унизу» і «Кожен товар у своїй картці»; §8.5, «Ліки у
+// ветеринара й лікаря» і «Картки поїздок без «Поїздка»»; рішення автора 2026-11-03): кожен варіант — своя картка без назви
+// товару й «×N»; бірка «−X%» — лише на знижці, на картці варіанта, рядка зі стрілкою немає; головна кнопка смуги на місці —
+// «Додому» з порожнім кошиком і «Купити» з непорожнім (сума — у віконці поруч); «Очистити» — іконкою, лише з непорожнім кошиком;
+// гроші — рівно один раз у картці.
 
 import { readFileSync } from "node:fs";
 
@@ -13,12 +14,14 @@ import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { catalog, checkout, discount, goodsKey, unitPrice, variants, type CartLine, type Goods } from "../src/sim/shop";
+import { place } from "../src/sim/economy";
 import type { Destination, GameState } from "../src/sim/types";
 import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
 import { splitIcons } from "../src/ui/icons";
 import type { Card } from "../src/ui/overlay";
-import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, packText, shopCatalog, suppliesTitle } from "../src/ui/shop";
-import { plural, STORE_SECTION_TITLES } from "../src/ui/titles";
+import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, goodsIcon, shopCatalog, suppliesTitle, variantLabel, variantTitle } from "../src/ui/shop";
+import { PRODUCT_TITLES, plural, STORE_SECTION_TITLES } from "../src/ui/titles";
+import { iconMark } from "../src/ui/icons";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 
 /**
@@ -142,14 +145,76 @@ function open(state: GameState, mode: "store" | "delivery", withHome = true) {
   return { shop, list, bar, bought, homes: () => home, kept, pay: bar.find("shop-pay"), clear: bar.find("shop-clear") };
 }
 
+describe("кожен товар у своїй картці (§6.4; рішення автора 2026-11-03)", () => {
+  it("кожен варіант — окрема картка, по порядку: товар за товаром, дешевий, тоді дорогий; у нашийника — одна картка", () => {
+    for (const mode of ["store", "delivery"] as const) {
+      const state = mode === "store" ? at("shop", 2) : at(null);
+      const { list } = open(state, mode, mode === "store");
+      const items = list.findAll("shop-item");
+      const shown = variantsOf(catalog(state, mode));
+      expect(items, mode).toHaveLength(shown.length);
+      // Карток товарів із кількома варіантами всередині більше немає.
+      expect(list.findAll("shop-head"), mode).toEqual([]);
+      expect(list.findAll("shop-line"), mode).toEqual([]);
+      shown.forEach(({ goods: g, quality: q }, i) => {
+        const item = items[i];
+        const what = `${mode} ${goodsKey(g)} ${q}`;
+        // Одна картка — одна назва, одна ціна, «−», кількість і «+».
+        expect(item?.findAll("shop-name"), what).toHaveLength(1);
+        expect(item?.findAll("shop-price"), what).toHaveLength(1);
+        expect(item?.findAll("step"), what).toHaveLength(2);
+        expect(item?.findAll("shop-count"), what).toHaveLength(1);
+        expect(item?.find("shop-price").textContent, what).toBe(`${unitPrice(state, g, q, mode)}\u00a0₴`);
+        // Нашийник — одна картка (один варіант): у двох колонках наступний товар — з нового рядка (`.single`).
+        expect(item?.classList.contains("single"), what).toBe(variants(g).length === 1);
+      });
+      expect(items.filter((i) => i.classList.contains("single")).length, mode).toBe(shown.filter(({ goods: g }) => variants(g).length === 1).length);
+    }
+  });
+
+  it("у картці — іконка товару й назва варіанта, без назви товару й без «×N» (скільки в упаковці, місткість автогодівниці)", () => {
+    const state = at(null);
+    const { list } = open(state, "delivery", false);
+    const items = list.findAll("shop-item");
+    const shown = variantsOf(catalog(state, "delivery"));
+    shown.forEach(({ goods: g, quality: q }, i) => {
+      const item = items[i];
+      const what = `${goodsKey(g)} ${q}`;
+      // Іконка — та сама, що була біля назви товару (§11.4), окремим стовпцем.
+      expect(item?.find("shop-icon").textContent, what).toBe(iconMark(goodsIcon(g)));
+      const name = item?.find("shop-name");
+      const stock = name?.find("shop-stock").textContent ?? "";
+      expect(name?.textContent, what).toBe(variantTitle(g, q) + stock);
+      // Назви товару («Продукти», «Засоби гігієни»…) у картці немає: крім назви варіанта, там лише іконка, ціна й кнопки.
+      if ("product" in g) expect(item?.textContent.replace(name?.textContent ?? "", ""), what).not.toContain(PRODUCT_TITLES[g.product].name);
+    });
+    // «×15», «×55», «×20» (автогодівниця) — ніде в каталозі.
+    expect(list.textContent).not.toMatch(/×\s?\d/u);
+    expect(list.findAll("shop-pack")).toEqual([]);
+  });
+
+  it("підпис «🚗 …» — під тим варіантом, що справді їде, а не під обома", () => {
+    const state = at(null);
+    const catFood = { product: "catFood" } as const;
+    expect(checkout(state, [{ goods: catFood, quality: "premium", count: 1 }, { goods: { thing: "toy" }, quality: "cheap", count: 2 }], "delivery")).toBe(true);
+    const { list } = open(state, "delivery", false);
+    const shown = variantsOf(catalog(state, "delivery"));
+    const stockOf = (key: string, q: string): string => list.findAll("shop-item")[shown.findIndex((v) => goodsKey(v.goods) === key && v.quality === q)]?.find("shop-stock").textContent ?? "";
+    expect(stockOf("catFood", "premium")).toBe("🚗 55 порцій");
+    expect(stockOf("catFood", "cheap")).toBe("");
+    expect(stockOf("thing:toy", "cheap")).toBe("🚗 2 шт.");
+    expect(stockOf("thing:toy", "premium")).toBe("");
+  });
+});
+
 describe("бірка знижки замість стрілки (§6.4)", () => {
-  it("бірка «−X%» — лише на товарах зі знижкою (discount), подорожчання й «без змін» — нічого; стрілок «₴↓ / ₴↑» немає", () => {
+  it("бірка «−X%» — лише на картках варіантів зі знижкою (discount), подорожчання й «без змін» — нічого; стрілок «₴↓ / ₴↑» немає", () => {
     let tagged = 0;
     let untagged = 0;
     for (const seed of [1, 2, 3, 4, 5]) {
       const state = at("shop", seed);
       const { list, shop } = open(state, "store");
-      const lines = list.findAll("shop-line");
+      const lines = list.findAll("shop-item");
       const shown = variantsOf(catalog(state, "store"));
       expect(lines).toHaveLength(shown.length);
       shown.forEach(({ goods: g, quality: q }, i) => {
@@ -170,6 +235,21 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     expect(untagged).toBeGreaterThan(0);
   });
 
+  it("бірка — між назвою й ціною; знижки двох варіантів одного товару бувають різні (як у прикладі автора: −29% і −3%)", () => {
+    const pills = { product: "pills" } as const;
+    const both = (s: number): number[] => (["cheap", "premium"] as const).map((q) => discount(at("vet", s), pills, q, "store"));
+    let seed = 1;
+    while (!(both(seed).every((x) => x > 0) && both(seed)[0] !== both(seed)[1])) seed += 1;
+    const [cheap, premium] = both(seed);
+    const { list, shop } = open(at("vet", seed), "store");
+    const items = list.findAll("shop-item").slice(0, 2);
+    expect(items.map((i) => i.find("price-tag").textContent)).toEqual([`−${cheap}%`, `−${premium}%`]);
+    // Бірка й ціна — разом, після назви: «… −29% 11 ₴».
+    for (const item of items) expect(item.find("shop-cost").children.map((c) => (typeof c === "string" ? c : c.className))).toEqual(["price-tag", "shop-price"]);
+    expect(items[0]?.children.map((c) => (typeof c === "string" ? c : c.className))).toEqual(["shop-icon", "shop-name", "shop-cost", "button step", "shop-count", "button step"]);
+    expect(shop.discounted).toBe(list.findAll("price-tag").length);
+  });
+
   it("у телефоні звичайного дня бірок немає, а в «Акцію в зоомагазині» — на корм", () => {
     const state = at(null);
     expect(open(state, "delivery", false).list.findAll("price-tag")).toEqual([]);
@@ -179,21 +259,6 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     expect(tags.map((t) => t.textContent)).toEqual(["−30%", "−30%"]);
   });
 
-  it("рядок варіанта: назва й «×15» замість «15 душів», ціна — окремим стовпцем", () => {
-    expect(packText({ product: "hygiene" }, "cheap")).toBe("×15");
-    expect(packText({ product: "catFood" }, "premium")).toBe("×55");
-    // Нашийник — поштучно; речі — без упаковки; автогодівниця — іконка корму й скільки порцій уміщує.
-    expect(packText({ product: "collar" }, "cheap")).toBe("");
-    expect(packText({ thing: "bowl" }, "cheap")).toBe("");
-    expect(plain(packText({ thing: "feeder" }, "premium"))).toBe("20");
-    const state = at("shop", 2);
-    const { list } = open(state, "store");
-    const line = list.findAll("shop-line")[0];
-    expect(line?.find("shop-option").textContent).toMatch(/×\d+/u);
-    expect(line?.find("shop-option").textContent).not.toMatch(/порці|душ|₴/u);
-    const goods = catalog(state, "store")[0];
-    expect(line?.find("shop-price").textContent).toBe(`${goods ? unitPrice(state, goods, "cheap", "store") : 0} ₴`);
-  });
 });
 
 describe("смуга кошика внизу (§6.4)", () => {
@@ -223,18 +288,19 @@ describe("смуга кошика внизу (§6.4)", () => {
     expect(homes()).toBe(1);
   });
 
-  it("варіант, якого не взяти («у ящиках»), — сірий: клас muted на рядку варіанта, і CSS фарбує саме його назву й ціну", () => {
+  it("варіант, якого не взяти («у ящиках»), — сіра картка: клас muted на картці, підпис — у ній, і CSS фарбує назву, ціну й іконку", () => {
     const state = at("shop", 3);
     const goods = catalog(state, "store")[0];
     if (!goods || !("product" in goods)) throw new Error("перший товар — запас");
-    const before = open(state, "store").list.findAll("shop-line").slice(0, 2);
+    const before = open(state, "store").list.findAll("shop-item").slice(0, 2);
     expect(before.map((l) => l.classList.contains("muted"))).toEqual([false, false]);
     checkout(state, [{ goods, quality: "cheap", count: 1 }], "store");
-    const after = open(state, "store").list.findAll("shop-item")[0];
-    expect(after?.find("shop-stock").textContent).toContain("у ящиках");
-    expect(after?.findAll("shop-line").map((l) => l.classList.contains("muted"))).toEqual([true, true]);
+    // У ящиках — запас, тож не взяти жодного з двох варіантів: обидві картки сірі, і в кожній — чому.
+    const after = open(state, "store").list.findAll("shop-item").slice(0, 2);
+    expect(after.map((i) => i.find("shop-stock").textContent)).toEqual(["у ящиках", "у ящиках"]);
+    expect(after.map((l) => l.classList.contains("muted"))).toEqual([true, true]);
     const css = readFileSync(new URL("../src/ui/overlay.css", import.meta.url), "utf8");
-    for (const part of ["shop-option", "shop-price"]) expect(css.includes(`.shop-line.muted .${part}`), part).toBe(true);
+    for (const part of ["shop-name", "shop-price", "shop-icon", "price-tag"]) expect(css.includes(`.shop-item.muted .${part}`), part).toBe(true);
   });
 
   it("грошей не вистачає — сума кошика червона, «Купити» неактивна, а «Додому» не з'являється", () => {
@@ -417,14 +483,16 @@ describe("картки поїздок (§8.5)", () => {
     const vet = visitCard(at("vet"), { exam: null, done: [] }, handlers);
     const vetList = vet.body.map((b) => (typeof b === "string" ? null : fake(b))).filter((b): b is FakeElement => b !== null && b.findAll("shop-item").length > 0)[0];
     expect(vetList?.findAll("shop-section").map((s) => s.textContent)).toEqual(["Ліки"]);
-    expect(vetList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(["Таблетки для котів", "Краплі для котів"]);
+    // Картка — варіант: назва варіанта, без назви товару (рішення автора 2026-11-03, «Кожен товар у своїй картці»).
+    const names = (goods: Goods[]): string[] => goods.flatMap((g) => variants(g).map((q) => variantTitle(g, q)));
+    expect(vetList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(names([{ product: "pills" }, { product: "drops" }]));
     expect(vet.actions).toEqual([]);
     expect(vet.bar ? fake(vet.bar).find("shop-pay").textContent : "").toBe("Додому");
 
     // Лікар продає ліки й здоровому.
     const doctor = visitCard(at("doctor"), { exam: null, done: [] }, handlers);
     const docList = doctor.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-item").length > 0);
-    expect(docList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(["Ліки для себе"]);
+    expect(docList?.findAll("shop-name").map((n) => plain(n.textContent))).toEqual(names([{ product: "humanMeds" }]));
     expect(doctor.bar ? fake(doctor.bar).find("shop-pay").textContent : "").toBe("Додому");
   });
 
@@ -504,5 +572,26 @@ describe("картки поїздок (§8.5)", () => {
     const shop = phoneCard(state, "shop", phone);
     expect(shop.bar ? fake(shop.bar).find("shop-pay").textContent : "").toBe("Замовити");
     expect(phoneCard(state, "mine", phone).bar).toBeUndefined();
+  });
+
+  it("«Мої речі»: рядок речі — її іконка й назва варіанта, та сама, що на картці магазину, без назви речі над нею; «Викинути» знає якість", () => {
+    const state = at(null);
+    state.home.carrier = "premium";
+    const bowl = place(state, "bowl", "premium");
+    if (bowl) state.home.items.push(bowl);
+    const thrown: [string, string][] = [];
+    const phone: PhoneHandlers = {
+      checkout: noop, discard: (item) => thrown.push([item.kind, item.quality]), discardThing: (thing, quality) => thrown.push([JSON.stringify(thing), quality]),
+      advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop,
+    };
+    const card = phoneCard(state, "mine", phone);
+    const list = card.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-row").length > 0);
+    const rows = list?.findAll("shop-row") ?? [];
+    const expected = [...state.home.items.map((i) => variantLabel({ thing: i.kind }, i.quality)), variantLabel({ thing: "carrier" }, "premium")];
+    expect(expected.length).toBeGreaterThan(1);
+    expect(rows.map((r) => r.find("shop-name").textContent)).toEqual(expected);
+    expect(list?.findAll("shop-stock")).toEqual([]);
+    rows.at(-1)?.find("button").click();
+    expect(thrown).toEqual([[JSON.stringify({ owned: "carrier" }), "premium"]]);
   });
 });
