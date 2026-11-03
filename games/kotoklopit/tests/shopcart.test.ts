@@ -240,22 +240,25 @@ describe("смуга кошика внизу (§6.4)", () => {
     expect(homes()).toBe(0);
   });
 
-  it("«Очистити» — іконкою (без тексту, з назвою для підказки й читача екрана), лише з непорожнім кошиком; очищає все", () => {
+  it("«Очистити» — іконкою (без тексту, з назвою для підказки й читача екрана), лише з непорожнім кошиком (з порожнім її немає); очищає все", () => {
     const state = at("shop", 4);
-    const { list, clear, pay, kept } = open(state, "store");
+    const { list, bar, clear, pay, kept } = open(state, "store");
     expect(clear.textContent).toBe("⌫");
     expect(clear.title).toBe(CLEAR_CART);
     expect(clear.attributes["aria-label"]).toBe(CLEAR_CART);
-    expect(clear.disabled).toBe(true);
+    expect(clear.hidden).toBe(true);
+    // Ліворуч у смузі, перед сумами, — якнайдалі від головної кнопки (рецензія 2026-11-03).
+    expect(bar.children.map((c) => (typeof c === "string" ? c : c.className))).toEqual(["button shop-clear", "shop-sums", "button primary shop-pay"]);
     const steps = list.findAll("step");
     steps[1]?.click();
     steps[3]?.click();
     steps[3]?.click();
+    expect(clear.hidden).toBe(false);
     expect(clear.disabled).toBe(false);
     expect(kept.size).toBe(2);
     clear.click();
     expect(list.findAll("shop-count").map((c) => c.textContent)).toEqual(list.findAll("shop-count").map(() => "0"));
-    expect(clear.disabled).toBe(true);
+    expect(clear.hidden).toBe(true);
     expect(pay.textContent).toBe("Додому");
     expect(kept.size).toBe(0);
   });

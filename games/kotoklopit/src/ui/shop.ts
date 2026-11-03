@@ -210,7 +210,9 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
   // Збережений кошик — лише те, що й досі вміщується (§6.4).
   fitCart(state, cart);
 
-  // Смуга кошика внизу (рішення автора 2026-11-03): суми — у заглибленому віконці, праворуч «Очистити» й головна кнопка.
+  // Смуга кошика внизу (рішення автора 2026-11-03): ліворуч «Очистити», далі суми в заглибленому віконці, праворуч головна кнопка.
+  // «Очистити» — біля суми, яку очищає, і якнайдалі від «Купити»: промах повз головну кнопку не стирає кошика (рецензія
+  // 2026-11-03).
   const bar = element("div", "shop-bar");
   const sums = element("div", "shop-sums");
   const total = element("span", "shop-total");
@@ -223,7 +225,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
   drawGlyphs(clear);
   const verb = mode === "store" ? "Купити" : "Замовити";
   const pay = element("button", "button primary shop-pay", verb);
-  bar.append(sums, clear, pay);
+  bar.append(clear, sums, pay);
 
   const filled = (): CartLine[] => cart.filter((l) => l.count > 0);
   // Щойно купили на місці: поки не минула пауза, з порожнім кошиком головна кнопка — «✓ Куплено», а не «Додому».
@@ -239,7 +241,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     total.textContent = `🛒 ${goodsTotal(state, lines, mode)} ₴${delivery}`;
     drawGlyphs(total);
     total.classList.toggle("short", sum > state.character.money);
-    clear.disabled = lines.length === 0;
+    // З порожнім кошиком «Очистити» немає зовсім (§6.4), а не сіра неактивна — віконце сум займає її місце.
+    clear.hidden = lines.length === 0;
     const home = lines.length === 0 && options.home !== undefined;
     // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03). Мить після покупки —
     // неактивна «✓ Куплено» (`BOUGHT_PAUSE_MS`).
