@@ -1,7 +1,7 @@
 // Жмути шерсті з'являються по одному біля кота (§8.7, «Жмути шерсті» [Змінено пізніше], рішення автора 2026-11-03: «котяча
 // шерсть на підлозі з'являється посеред дня миттєво, що псує враження»): у симуляції — не частіше ніж раз на
-// `HOUSEHOLD.tuftEveryMinutes`, на вільному місці, найближчому до кота вдома, уночі так само. Поріг 50, число жмутів за шкалою й
-// прибирання — як і раніше.
+// `HOUSEHOLD.tuftEveryMinutes`, на вільному місці, найближчому до кота вдома, уночі так само; на екрані — котиться з-під кота й
+// наростає (чисті розрахунки `view/iso/tuftappear.ts`). Поріг 50, число жмутів за шкалою й прибирання — як і раніше.
 
 import { describe, expect, it } from "vitest";
 
@@ -15,6 +15,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
 import type { Cat, GameState, Save, Vec } from "../src/sim/types";
+import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "../src/view/iso/tuftappear";
 import { hours, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -211,5 +212,68 @@ describe("жмути й збереження (§8.7, [Змінено пізні�
     expect(seen).toHaveLength(6);
     for (let i = 1; i < seen.length; i++) expect(seen[i]!.minute - seen[i - 1]!.minute).toBeGreaterThanOrEqual(HOUSEHOLD.tuftEveryMinutes);
     for (const { index } of seen) expect(tuftCat(save.current, index), `жмут ${index}`).not.toBeNull();
+  });
+});
+
+describe("поява жмута на екрані (вигляд, `view/iso/tuftappear.ts`)", () => {
+  it("з появою показують лише жмут, що ліг щойно: давніший (поки гравця не було) і без `tuftAt` — уже лежать", () => {
+    const state = game().current;
+    expect(freshTuft(state)).toBeNull();
+    state.home.fur = 60;
+    live(state, 1);
+    expect(freshTuft(state)).toBe(0);
+    state.minute += TUFT_APPEAR.freshMinutes + 1;
+    expect(freshTuft(state)).toBeNull();
+    // Годинник пішов назад (режим розробки) — теж без появи.
+    state.minute -= 2 * (TUFT_APPEAR.freshMinutes + 1);
+    expect(freshTuft(state)).toBeNull();
+  });
+
+  it("котиться з-під кота, якщо його видно й він недалеко; інакше — проступає на місці", () => {
+    const spot = FUR_SPOTS[2]!;
+    const root = { x: 100, y: 50 };
+    expect(tuftRollFrom({ x: spot.x + 1, y: spot.y }, root, spot)).toEqual(root);
+    expect(tuftRollFrom(null, root, spot)).toBeNull();
+    expect(tuftRollFrom({ x: spot.x + 1, y: spot.y }, null, spot)).toBeNull();
+    expect(tuftRollFrom({ x: spot.x + TUFT_APPEAR.reach + 0.5, y: spot.y }, root, spot)).toBeNull();
+  });
+
+  it("за ≈ 0,6–1 с викочується від кота, сповільнюючись, наростає й проступає; наприкінці — рівно на місці", () => {
+    expect(TUFT_APPEAR.ms).toBeGreaterThanOrEqual(600);
+    expect(TUFT_APPEAR.ms).toBeLessThanOrEqual(1000);
+    const from = { x: 40, y: 10 };
+    const to = { x: 100, y: 50 };
+    const start = tuftAppearLook(0, from, to);
+    expect(start).toMatchObject({ x: from.x, y: from.y, alpha: 0, scale: TUFT_APPEAR.grow, angle: 0 });
+    expect(tuftAppearLook(1, from, to)).toEqual({ x: to.x, y: to.y, scale: 1, alpha: 1, angle: 0 });
+    expect(tuftAppearLook(TUFT_APPEAR.fade, from, to).alpha).toBe(1);
+    let left = Infinity;
+    let step = Infinity;
+    let scale = 0;
+    let wobbled = false;
+    for (let i = 1; i <= 20; i++) {
+      const look = tuftAppearLook(i / 20, from, to);
+      const d = distance(look, to);
+      expect(d).toBeLessThanOrEqual(left);
+      // Сповільнюється: кожен крок не довший за попередній.
+      expect(left === Infinity || left - d <= step + 1e-9).toBe(true);
+      if (left !== Infinity) step = left - d;
+      left = d;
+      expect(look.scale).toBeGreaterThanOrEqual(scale);
+      scale = look.scale;
+      expect(Math.abs(look.angle)).toBeLessThanOrEqual(TUFT_APPEAR.wobble);
+      if (look.angle !== 0) wobbled = true;
+    }
+    expect(wobbled).toBe(true);
+  });
+
+  it("без кота — на місці: не рухається й не хитається, лише наростає й проступає", () => {
+    const to = { x: 100, y: 50 };
+    for (let i = 0; i <= 10; i++) {
+      const look = tuftAppearLook(i / 10, null, to);
+      expect(look).toMatchObject({ x: to.x, y: to.y, angle: 0 });
+    }
+    expect(tuftAppearLook(0, null, to).scale).toBe(TUFT_APPEAR.grow);
+    expect(tuftAppearLook(0.5, null, to).scale).toBeLessThan(1);
   });
 });

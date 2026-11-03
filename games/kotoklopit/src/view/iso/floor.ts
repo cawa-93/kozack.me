@@ -3,7 +3,8 @@
 // шкарпетка в схованці, вертикальний пилосос, що стоїть на підлозі, бруд, жмути шерсті, пил і скинуті дрібнички — кожне
 // окремим кадром маніфесту з точкою в реєстрі глибини (`iso/depth.ts`): кіт і персонаж стають перед річчю чи за нею, а
 // пласке (бруд, шерсть, пил, док) — під тими, хто на ньому. Павутину на стіні малює квартира (`apartment.ts`). Те, що
-// прибрав пилосос у руках (`PersonSwept`), не зникає миттю, а втягується в щітку (`SUCK`).
+// прибрав пилосос у руках (`PersonSwept`), не зникає миттю, а втягується в щітку (`SUCK`). Новий жмут шерсті не вискакує, а
+// викочується з-під кота й наростає (`Appear`, `tuftappear.ts`).
 //
 // Що показати — зі стану гри (`looks.ts`).
 
@@ -13,7 +14,7 @@ import { carriedToy } from "../../sim/catai";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
-import { FUR_SPOTS, ROBOT_DOCK, robotAt, tuftsOf } from "../../sim/household";
+import { FUR_SPOTS, ROBOT_DOCK, robotAt, tuftCat, tuftsOf } from "../../sim/household";
 import { VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
@@ -26,6 +27,7 @@ import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
 import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
+import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
 /** Що лежить на речі, — у її проміжку глибини, нижче за пів проміжку (`ISO_DEPTH_SLOT` 0,01). */
 const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
@@ -77,6 +79,18 @@ interface Suck {
   orphan: boolean;
 }
 
+/**
+ * Новий жмут шерсті, що з'являється (§8.7, [Змінено пізніше], `tuftappear.ts`): звідки котиться (px світу; null — проступає на
+ * місці), куди, з якої миті й його базовий масштаб.
+ */
+interface Appear {
+  spot: Spot;
+  from: Point | null;
+  to: Point;
+  start: number;
+  scale: { x: number; y: number };
+}
+
 /** Річ на підлозі: малюнок, точка в реєстрі глибини, що на ній лежить (фонтанчик, запах, ґратки). */
 interface Spot {
   image: Phaser.GameObjects.Image;
@@ -110,6 +124,13 @@ export class IsoFloorView implements WorldPart {
   private readonly sucking: Suck[] = [];
   /** Що прибрав пилосос у руках з минулого кадру (події `vacuumed`): лише воно втягується в щітку. */
   private readonly swept = new PersonSwept();
+  /** Нові жмути шерсті, що зараз з'являються. */
+  private readonly appearing: Appear[] = [];
+  /**
+   * Підлогу вже показано хоч раз після початку дня, гри чи сценарію (`reset`): до того жмути, що лежать, — одразу на місці, без
+   * появи.
+   */
+  private settled = false;
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -228,16 +249,19 @@ export class IsoFloorView implements WorldPart {
     }
 
     // Жмути шерсті (§8.7, рішення автора 2026-11-02): лежать на своїх місцях, доки їх не прибере пилосос чи робот, — прибирають
-    // їх не по черзі, тож місце, а не порядок появи.
+    // їх не по черзі, тож місце, а не порядок появи. Новий, що ліг щойно (`freshTuft`), не вискакує, а з'являється (`Appear`).
+    const fresh = this.settled ? freshTuft(state) : null;
     for (const index of tuftsOf(state)) {
       const at = FUR_SPOTS[index];
       if (!at) continue;
       let spot = this.tufts.get(index);
+      const shown = spot?.image.visible === true;
       if (!spot) {
         spot = this.spot({ id: "mess/fur-tuft", state: null }, { flat: true, half: TUFT.half });
         this.tufts.set(index, spot);
       }
       this.place(spot, { id: "mess/fur-tuft", state: null }, at, TUFT.height);
+      if (!shown && index === fresh) this.startAppear(state, spot, index, at, frame.time);
     }
 
     // Пил (§8.7, «Пил і павутина»): купки в кутах, смужки біля плінтусів і клубки на підлозі — пласкі, як безлад.
@@ -267,6 +291,8 @@ export class IsoFloorView implements WorldPart {
 
     this.forgetUnseen(frame.time);
     this.suck(frame.time);
+    this.appear(frame.time);
+    this.settled = true;
   }
 
   onEvent(event: GameEvent): void {
@@ -341,6 +367,8 @@ export class IsoFloorView implements WorldPart {
     for (const [spots, sucked] of [[this.tufts, swept.tufts], [this.dust, swept.dust]] as const) {
       for (const [index, spot] of spots) {
         if (spot.seen || !spot.image.visible || this.sucking.some((s) => s.spot === spot)) continue;
+        // Жмут прибрали, поки він ще з'являвся: спершу — свого розміру й на місці, а тоді втягується чи зникає.
+        this.endAppear(spot);
         if (sucked.has(index)) this.startSuck(spot, time, false);
         else this.hide(spot);
       }
@@ -387,6 +415,50 @@ export class IsoFloorView implements WorldPart {
     }
   }
 
+  /**
+   * Почати появу нового жмута (§8.7, [Змінено пізніше]): котиться з-під кота, з-під якого він ліг (`tuftCat`), — якщо цього кота
+   * зараз видно (`WorldQuery`) і він недалеко (`tuftRollFrom`), — інакше проступає на місці.
+   */
+  private startAppear(state: GameState, spot: Spot, index: number, at: Vec, time: number): void {
+    const world = this.ctx.world;
+    const cat = tuftCat(state, index);
+    const root = cat && world.anchor(`cat:${cat.id}`) ? (world.cat(cat.id)?.root ?? null) : null;
+    const to = ISO.toScreen(at);
+    this.appearing.push({ spot, from: tuftRollFrom(cat, root, at), to: { x: to.x, y: to.y }, start: time, scale: { x: spot.image.scaleX, y: spot.image.scaleY } });
+  }
+
+  /**
+   * Нові жмути з'являються (`tuftAppearLook`) за `TUFT_APPEAR.ms`: котиться по підлозі — його точка в реєстрі глибини йде разом
+   * із ним (`floorAt`), як і в того, що втягується в щітку. Наприкінці — свого розміру, непрозорий і рівно на місці.
+   */
+  private appear(time: number): void {
+    for (let i = this.appearing.length - 1; i >= 0; i--) {
+      const a = this.appearing[i]!;
+      const t = (time - a.start) / TUFT_APPEAR.ms;
+      if (t >= 1 || !(t >= 0)) {
+        this.endAppear(a.spot);
+        continue;
+      }
+      const look = tuftAppearLook(t, a.from, a.to);
+      a.spot.image
+        .setPosition(look.x, look.y)
+        .setScale(a.scale.x * look.scale, a.scale.y * look.scale)
+        .setAlpha(look.alpha)
+        .setRotation(look.angle);
+      const floor = floorAt(look.x, look.y);
+      a.spot.point.place(floor.x, floor.y);
+    }
+  }
+
+  /** Жмут більше не з'являється: свого розміру, непрозорий, рівно; на місці його ставить `place`. */
+  private endAppear(spot: Spot): void {
+    const i = this.appearing.findIndex((a) => a.spot === spot);
+    if (i < 0) return;
+    const a = this.appearing[i]!;
+    spot.image.setPosition(a.to.x, a.to.y).setScale(a.scale.x, a.scale.y).setAlpha(1).setRotation(0);
+    this.appearing.splice(i, 1);
+  }
+
   lateUpdate(): void {
     this.glow.apply();
     this.depth.solve();
@@ -397,6 +469,8 @@ export class IsoFloorView implements WorldPart {
     // Прибраний безлад, що ще втягувався, — уже поза мапами: прибрати окремо.
     for (const s of this.sucking) if (s.orphan) destroySpot(s.spot);
     this.sucking.length = 0;
+    this.appearing.length = 0;
+    this.settled = false;
     this.swept.clear();
     for (const spots of this.all()) for (const spot of spots) destroySpot(spot);
     this.items.clear();
