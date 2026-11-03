@@ -425,6 +425,8 @@ describe("картки поїздок (§8.5)", () => {
     for (const d of Object.keys(TRIPS) as Destination[]) {
       const card = visitCard(at(d), { exam: null, done: [] }, handlers);
       expect(card.kicker, d).toBeUndefined();
+      // Без вкладок: ширший лише телефон (`.card:has(> .card-tabbar)`), картка пункту — 560 px, праворуч парковка.
+      expect(card.tabs, d).toBeUndefined();
       expect(purses(card), d).toBe(1);
       const store = d === "shop" || d === "vet" || d === "doctor";
       expect(card.bar !== undefined, d).toBe(store);

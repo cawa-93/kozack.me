@@ -225,6 +225,15 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".card-actions.end")).toContain("justify-content: flex-end;");
   });
 
+  it("CSS: каталог — контейнер, товар в один рядок у одній колонці від 460 px; ширший (820 px) лише телефон — картка з вкладками", () => {
+    expect(rule(".shop:has(> .shop-item)")).toContain("container: catalog / inline-size;");
+    expect(rule(".shop:has(> .shop-item)")).toContain("repeat(auto-fill, minmax(min(340px, 100%), 1fr))");
+    expect(css).toContain("@container catalog (min-width: 460px) and (max-width: 687px) {");
+    expect(rule(".card:has(> .card-tabbar)")).toContain("width: min(820px, 100%);");
+    // Картка пункту на місці — без вкладок: її ширина лишається 560 px (парковка праворуч, `cardsize.ts`).
+    expect(rule(".card")).toContain("width: min(560px, 100%);");
+  });
+
   it("CSS: слабше тло — за .away, а .aside лише притискає картку ліворуч", () => {
     expect(rule(".overlay.away:not(.cinematic):not(.solid)")).toContain("background: var(--dim-away);");
     expect(rule(".overlay.aside:not(.cinematic):not(.solid)")).not.toContain("background");
