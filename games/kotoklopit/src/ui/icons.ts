@@ -34,8 +34,12 @@ export function iconUrl(name: IconName, files: Readonly<Record<string, string>> 
 const OPEN = "\u{E000}";
 const CLOSE = "\u{E001}";
 const KNOWN = new Set<string>(ICON_NAMES);
-/** Позначка й слово за нею: іконку не відривають від назви переносом рядка. */
-const MARK = new RegExp(`${OPEN}([a-z0-9-]+)${CLOSE}(\\S*)`, "gu");
+/**
+ * Позначка й слово за нею: іконку не відривають від назви переносом рядка. Слово через дефіс («Іграшка-вудочка», «Робот-пилосос»)
+ * нерозривне лише до дефіса включно — далі рядок, як і будь-який текст, може перенестися: у вузькому стовпці назви товару
+ * (`overlay.css`, товар в один рядок) ціле «Іграшка-вудочка» з іконкою вилазило за край (рецензія 2026-11-03).
+ */
+const MARK = new RegExp(`${OPEN}([a-z0-9-]+)${CLOSE}([^\\s-]*-?)`, "gu");
 
 /** Позначка іконки в тексті картки: на екрані її замінює малюнок (`drawIcons`). */
 export const iconMark = (icon: IconName): string => `${OPEN}${icon}${CLOSE}`;
@@ -77,7 +81,7 @@ export const destinationLabel = (destination: Destination): string => named(DEST
 export type IconPart = string | { icon: IconName; word: string };
 
 /**
- * Текст на шматки: позначки іконок — окремо, разом зі словом за ними (до пробілу), решта — як є. Позначка невідомої іконки
+ * Текст на шматки: позначки іконок — окремо, разом зі словом за ними (до пробілу чи до дефіса включно), решта — як є. Позначка невідомої іконки
  * зникає, слово лишається. Чистий розрахунок без DOM.
  */
 export function splitIcons(text: string): IconPart[] {
