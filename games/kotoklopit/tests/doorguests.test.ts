@@ -296,7 +296,7 @@ describe("гість подзвонив — дія біля дверей від�
     }
   });
 
-  it("з іншою річчю в руках — «руки зайняті», і гість чекає далі", () => {
+  it("з продуктами в руках — «руки зайняті», і гість чекає далі", () => {
     const guest = GUESTS_BY_DOOR.find((g) => g.who === "inspection");
     if (!guest) throw new Error("немає ОСББ");
     const { save } = game(guest);
@@ -309,6 +309,27 @@ describe("гість подзвонив — дія біля дверей від�
     expect(events).toContainEqual({ type: "refused", object: "door", reason: "hands-full" });
     expect(visitsOf(events, "inspection")).toHaveLength(0);
     expect(guestAtDoor(state)).toBe("inspection");
+  });
+
+  it("іграшку чи пилосос натискання біля дверей лише ставить на підлогу — як і з пакунками; гостю відчиняє наступне", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "inspection");
+    if (!guest) throw new Error("немає ОСББ");
+    const toy = { id: 990, kind: "toy", quality: "cheap", x: 0, y: 0, uses: 0 } as const;
+    for (const held of [{ kind: "toy", toy: { ...toy } }, { kind: "vacuum" }] as const) {
+      const { save } = game(guest);
+      const state = save.current;
+      untilRing(save, guest);
+      state.character.held = structuredClone(held) as NonNullable<GameState["character"]["held"]>;
+      const { events, stop } = recordEvents();
+      interact(save);
+      expect(state.character.held, held.kind).toBeNull();
+      expect(guestAtDoor(state), held.kind).toBe("inspection");
+      expect(visitsOf(events, "inspection"), held.kind).toHaveLength(0);
+      interact(save);
+      stop();
+      expect(visitsOf(events, "inspection"), held.kind).toHaveLength(1);
+      expect(events.some((e) => e.type === "refused"), held.kind).toBe(false);
+    }
   });
 
   it("порядок біля дверей: спершу кіт на сходах, тоді гість, тоді пакунки", () => {

@@ -302,7 +302,8 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       }
       // Тоді — гість, що подзвонив і чекає (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03): персонаж відчиняє йому,
       // і візит стається зараз; пакунки нікуди не дінуться — їх забирають наступним натисканням. Кота на руках не опускає (сюди з
-      // котом на руках веде `tap`); з іншою річчю в руках — руки зайняті, як і з пакунками.
+      // котом на руках веде `tap`). Іграшку й пилосос `tap` ставить на підлогу ще до цього, тож сюди з річчю доходять лише
+      // продукти, страва й корм — руки зайняті, як і з пакунками.
       if ((held === null || held.kind === "cat") && admitGuest(state)) return null;
       if (held !== null) return refuse(state, target.id, "hands-full");
       if (receivePackages(state).length === 0) return refuse(state, target.id, "no-packages");
