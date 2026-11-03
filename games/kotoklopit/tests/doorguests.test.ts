@@ -256,6 +256,22 @@ describe("гість подзвонив — дія біля дверей від�
     expect(checked).toBe(true);
   });
 
+  it("«−», що сховався від дзвінка, сидить у схованці ще рівно 2 години від того, як гості зайшли (рецензія 2026-11-03)", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
+    if (!guest) throw new Error("немає гостей");
+    const { save } = game(guest);
+    const shy = withCat(save, { guests: -1 }, { x: 4.5, y: 8.5 });
+    untilRing(save, guest);
+    advance(save, 3);
+    expect(shy.act.kind).toBe("hide");
+    expect(shy.act.goal).toBeNull();
+    expect(shy.act.elapsed).toBeGreaterThan(0);
+    interact(save);
+    expect(shy.away).toBeNull();
+    expect(shy.act.kind).toBe("hide");
+    expect(shy.act.minutes).toBeCloseTo(MODIFIERS.guests.hideMinutes, 9);
+  });
+
   it("з іншою річчю в руках — «руки зайняті», і гість чекає далі", () => {
     const guest = GUESTS_BY_DOOR.find((g) => g.who === "inspection");
     if (!guest) throw new Error("немає ОСББ");

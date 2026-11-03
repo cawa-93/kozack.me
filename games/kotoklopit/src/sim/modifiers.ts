@@ -579,8 +579,10 @@ export function guestsVisit(state: GameState): void {
     if (level >= 0) continue;
     // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
     // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
+    // `minutes` дії — лишок, тож «ще 2 години від того, як гості зайшли» — лишок не менший за них (рецензія 2026-11-03: тут додавали
+    // ще й те, що кіт уже просидів, і він ховався на ці хвилини довше).
     if (asleep(cat) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
-    if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, cat.act.elapsed + m.hideMinutes);
+    if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, m.hideMinutes);
     else {
       const spot = hideSpot(state, rng, cat);
       startAct(cat, "hide", spot.at, m.hideMinutes, spot.target);
