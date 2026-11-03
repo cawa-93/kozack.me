@@ -248,6 +248,8 @@ describe("маніфест: квартира", () => {
       sock: ["mess/sock", "peek"],
     } as const satisfies Partial<Record<keyof Home, readonly [string, string]>>;
     for (const [id, state] of Object.values(flags)) expect(states(id), id).toContain(state);
+    // Дріт у день відключення — у гнізді зарядної станції, цілий і перегризений (§4.1, рішення автора 2026-11-03).
+    expect(states("env/wire")).toEqual(["whole", "chewed", "station", "station-chewed"]);
     // Решта: перекинутий смітник, увімкнений монітор, відчинені двері, кран, душ, кіт під ковдрою.
     const shown: readonly [string, string][] = [
       ["env/trash", "tipped"],
@@ -328,8 +330,9 @@ describe("маніфест: квартира", () => {
     expect(BOILER).toEqual({ at: LIGHT_ART.boiler.at, face: "y", z: LIGHT_ART.boiler.z, led: LIGHT_ART.boiler.led });
     expect(states("env/boiler")).toEqual(["on", "off"]);
     expect(entry("env/boiler").points?.["led"]).toBeDefined();
-    expect(POWER_STATION).toEqual({ at: LIGHT_ART.station.at, display: LIGHT_ART.station.display });
+    expect(POWER_STATION).toEqual({ at: LIGHT_ART.station.at, display: LIGHT_ART.station.display, half: LIGHT_ART.station.half });
     expect(entry("env/power-station").points?.["display"]).toBeDefined();
+    expect(entry("env/power-station").points?.["cord"]).toBeDefined();
     // Полички зі свічками: малюнок на лице стіни, полум'я — на `flame` над верхом дошки (pivot), як у `decor.ts`.
     for (const shelf of CANDLE_SHELVES) {
       const art = LIGHT_ART.shelf[shelf.id];

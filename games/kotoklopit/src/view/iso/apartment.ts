@@ -26,7 +26,7 @@ import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, POWER_STATION_POINT, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
@@ -62,6 +62,7 @@ import {
   traceFrame,
   trashState,
   trinketFrame,
+  wireState,
   type IsoFrame,
   type TraceHost,
   type TraceOverlay,
@@ -92,8 +93,11 @@ export const BACKDROP = {
  */
 const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
 
-/** Півширина зарядної станції на екрані, одиниці арту (`IsoPointOptions.half`): кабель до системного блока — на 62 ліворуч. */
-const STATION_HALF = 62;
+/** Дріт комп'ютера (`env/wire`): кадр і точка реєстру — у центрі клітинки `WIRE_TILE`. */
+const WIRE_AT: Vec = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
+
+/** Коробка зарядної станції в реєстрі глибини: слід її корпусу (`POWER_STATION_BOX`). */
+const STATION_BOX = { ...POWER_STATION_BOX, id: POWER_STATION_POINT };
 
 /** Півширина стільця на екрані, одиниці арту (`IsoPointOptions.half`): з ким його малюнок може перекритися. */
 const CHAIR_HALF = 44;
@@ -200,8 +204,8 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly boiler: Piece;
   /** Полички зі свічками дня відключення на задніх стінах (`CANDLE_SHELVES`, тло, як бра): є лише без електрики. */
   private readonly shelves: Piece[] = [];
-  /** Зарядна станція дня відключення: на підлозі праворуч від стола з комп'ютером, точка реєстру. */
-  private readonly station: { image: Phaser.GameObjects.Image; point: IsoPointHandle; shown: boolean };
+  /** Зарядна станція дня відключення: на підлозі під розеткою праворуч від стола з комп'ютером, коробка реєстру. */
+  private readonly station: { image: Phaser.GameObjects.Image; box: IsoBoxHandle; shown: boolean };
   /** Настільна лампа на столі з комп'ютером (`DESK_LAMP`): зсув від pivot стола — центр основи на стільниці. */
   private readonly deskLamp: Point = (() => {
     const at = ISO.toScreen(DESK_LAMP.at);
@@ -260,9 +264,12 @@ export class IsoApartmentView implements ApartmentPart {
       this.shelves.push(piece);
       this.backdrop.push(piece.image);
     }
-    // Зарядна станція стоїть на підлозі перед стіною ряду 5 і праворуч від стола: точка в реєстрі (стіна за нею, стіл ліворуч).
+    // Зарядна станція стоїть на підлозі перед стіною ряду 5 під розеткою, праворуч від стола: коробка свого сліду в реєстрі
+    // (стіна за нею, стіл ліворуч; коти й персонаж перед нею чи праворуч — перед нею), є лише в день відключення.
     const station = this.art("env/power-station", ISO.toScreen(POWER_STATION.at), 0).setVisible(false);
-    this.station = { image: station, point: this.depth.addPoint((d) => station.setDepth(d), { half: STATION_HALF, id: POWER_STATION_POINT }), shown: false };
+    const stationBox = this.depth.addBox(STATION_BOX, (d) => station.setDepth(d));
+    stationBox.setActive(false);
+    this.station = { image: station, box: stationBox, shown: false };
 
     // Внутрішні стіни й передні плінтуси — коробки: вони закривають тих, хто за ними. Слід на сегменті — тією самою коробкою.
     for (const segment of WALL_SEGMENTS) {
@@ -283,12 +290,12 @@ export class IsoApartmentView implements ApartmentPart {
       }
     }
 
-    // Дріт комп'ютера: по підлозі від стола до розетки на стіні ряду 5 — пласка річ перед стіною й столом.
-    const wireAt = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
-    const wire = this.art("env/wire", ISO.toScreen(wireAt), 0);
+    // Дріт комп'ютера: по підлозі від стола до розетки на стіні ряду 5 — пласка річ перед стіною й столом; у день відключення
+    // — до зарядної станції під розеткою і під нею (`drawDecor`).
+    const wire = this.art("env/wire", ISO.toScreen(WIRE_AT), 0);
     this.wire = { image: wire, key: "", offset: 0 };
     this.wirePoint = this.depth.addPoint((d) => wire.setDepth(d), { flat: true });
-    this.wirePoint.place(wireAt.x, wireAt.y);
+    this.wirePoint.place(WIRE_AT.x, WIRE_AT.y);
 
     for (const object of OBJECTS) this.things.set(object.id, this.thing(object));
     this.door = this.openDoor(this.get("door"));
@@ -441,9 +448,10 @@ export class IsoApartmentView implements ApartmentPart {
     this.drawSurfaces(state, decor);
     this.drawDecor(decor);
     this.drawCobwebs(state);
-    // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
+    // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»; у день відключення — у гнізді
+    // зарядної станції, §4.1).
     setPiece(this.toiletRoll, { id: "env/toilet-roll", state: state.home.rollDown === true ? "unrolled" : "full" });
-    setPiece(this.wire, { id: "env/wire", state: state.home.wireChewed === true ? "chewed" : "whole" });
+    setPiece(this.wire, { id: "env/wire", state: wireState(state) });
     const dt = this.lastTime === null ? 1 : Math.min(0.25, Math.max(0, (frame.time - this.lastTime) / 1000));
     this.moveChairs(state, dt);
     this.fadeWalls(state, frame.time);
@@ -587,8 +595,12 @@ export class IsoApartmentView implements ApartmentPart {
     if (decor.station === station.shown) return;
     station.shown = decor.station;
     station.image.setVisible(decor.station);
-    if (decor.station) station.point.place(POWER_STATION.at.x, POWER_STATION.at.y);
-    else station.point.hide();
+    station.box.setActive(decor.station);
+    // Дріт, що йде в гніздо станції (`wireState`), — одразу під нею, а відносно решти — як вона: шнур її вилки лягає поверх
+    // кінця дроту (стик — `art/env/power-station.svg`), а хто стоїть перед станцією, той і перед дротом. Без станції — пласка
+    // річ на підлозі, як завжди.
+    if (decor.station) this.wirePoint.placeUnder(WIRE_AT.x, WIRE_AT.y, POWER_STATION_POINT);
+    else this.wirePoint.place(WIRE_AT.x, WIRE_AT.y);
   }
 
   /**
@@ -680,7 +692,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.marks.length = 0;
     this.wirePoint.remove();
     this.wire.image.destroy();
-    this.station.point.remove();
+    this.station.box.remove();
     this.station.image.destroy();
     for (const chair of this.chairs) {
       for (const piece of Object.values(chair.pieces)) {

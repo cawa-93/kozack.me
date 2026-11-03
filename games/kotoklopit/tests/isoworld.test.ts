@@ -13,7 +13,7 @@ import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, 
 import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
-import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, SCONCES } from "../src/view/decor";
 import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
@@ -44,8 +44,10 @@ import {
   trashState,
   trinketFrame,
   waterFrame,
+  wireState,
   type IsoFrame,
 } from "../src/view/iso/looks";
+import { wireFixSpot } from "../src/view/iso/personspot";
 import { ISO_KEYBOARD, isoCatPerch, isoItemLook, isoObjectLook } from "../src/view/world/objects";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
 
@@ -78,6 +80,7 @@ function framesOf(state: GameState): IsoFrame[] {
     { id: "env/litter-bag", state: shapedState(state, "litter-bag") },
     { id: "env/sterile-bin", state: shapedState(state, "sterile-bin") },
     { id: "env/laundry-basket", state: basketState(state.home.clothes) },
+    { id: "env/wire", state: wireState(state) },
   );
   for (const id of ["shower", "sink", "washer"] as const) for (const overlay of storageOverlays(state, id)) if (overlay) frames.push(overlay);
   const kit = kitLook(state);
@@ -367,11 +370,12 @@ describe("декор квартири (decor.ts, §8.9 «День і ніч», �
     for (const shelf of CANDLE_SHELVES) expect(shelf.face === "y" ? shelf.at.y : shelf.at.x, shelf.room).toBe(1);
   });
 
-  it("зарядна станція — на вільній підлозі праворуч від стола з комп'ютером, перед стіною ряду 5 і лівіше за розетку дроту", () => {
+  it("зарядна станція — на вільній підлозі під розеткою дроту, перед стіною ряду 5, праворуч від стола з комп'ютером", () => {
     const { x, y } = POWER_STATION.at;
-    /** Півслід станції (`art/env/power-station.svg`): 0,46 × 0,3 клітинки. */
-    const half = { x: 0.23, y: 0.15 };
-    const box = { x0: x - half.x, y0: y - half.y, x1: x + half.x, y1: y + half.y };
+    /** Слід корпусу станції (`art/env/power-station.svg`): 0,46 × 0,3 клітинки. */
+    const box = POWER_STATION_BOX;
+    expect(box.x1 - box.x0).toBeCloseTo(0.46, 6);
+    expect(box.y1 - box.y0).toBeCloseTo(0.3, 6);
     expect(MAP[Math.floor(y)]?.[Math.floor(x)]).toBe(".");
     for (const object of OBJECTS) {
       const f = isoObjectLook(object.id).footprint;
@@ -382,9 +386,28 @@ describe("декор квартири (decor.ts, §8.9 «День і ніч», �
     expect(box.x0).toBeGreaterThanOrEqual(desk.x1);
     expect(box.y0).toBeGreaterThan(6);
     expect(box.y1).toBeLessThan(desk.y1);
-    // Розетка дроту — над (8,75; 6): станція її не закриває.
-    expect(box.x1).toBeLessThan(8.75 - 0.1);
+    // Під розеткою дроту над (8,75; 6) (рішення автора 2026-11-03: «Потрібно трошки змістити зарядну станцію до розетки. І кабель
+    // повинен вставлятись в неї, а не в розетку»): розетка — над серединою сліду, тож станція її закриває; прохід до ванної
+    // (з x 10) вільний.
+    expect(box.x0 < 8.75 - 0.15 && box.x1 > 8.75 + 0.15).toBe(true);
+    expect(box.x1).toBeLessThan(10 - 0.5);
     expect(POWER_STATION.display).toBeGreaterThan(0);
+  });
+
+  it("зарядна станція на екрані не закриває стіл, крісло, персонажа за столом і того, хто лагодить дріт біля обриву", () => {
+    // Корпус станції (`art/env/power-station.svg`): найлівіше — вилка в лівому гнізді, що виступає з лицьової грані за лівий кут
+    // сліду (з контуром — x 34,7 на полотні з pivot 62). Шнур із вилки лягає на підлогу ще лівіше, але перед правим боком стола,
+    // нижче за його низ на екрані, і поверх дроту, що й так там лежить.
+    const left = ISO.toScreen(POWER_STATION.at).x - 28;
+    const desk = isoObjectLook("computer").footprint;
+    // Стіл: найправіша точка на екрані — кут сліду (x1, y0), з пів зовнішнього контуру (`LINE.outer` 6).
+    expect(left, "стіл").toBeGreaterThan(ISO.toScreen({ x: desk.x1, y: desk.y0 }).x + 3);
+    // Персонаж за столом сидить у `use.at` (і крісло під ним) — разом із ліктями й кріслом (`CHAIR_HALF` 44 у `apartment.ts`).
+    const use = isoObjectLook("computer").use;
+    if (!use) throw new Error("computer: use");
+    expect(left, "крісло й персонаж за столом").toBeGreaterThan(ISO.toScreen(use.at).x + 44);
+    // Персонаж, що сидить на підлозі біля обриву дроту (`wireFixSpot`), спиною до камери: з ліктями.
+    expect(left, "лагодить дріт").toBeGreaterThan(ISO.toScreen(wireFixSpot().at).x + PERSON_FIGURE.half);
   });
 });
 

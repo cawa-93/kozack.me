@@ -125,6 +125,17 @@ export function computerState(state: GameState): string {
   return isWorking(state) ? "on" : "off";
 }
 
+/**
+ * Дріт комп'ютера (`env/wire`, §9.12 «Гризіння»): перегризений — `chewed`, доки не полагодять. У день відключення (§4.1
+ * «Біля комп'ютера», рішення автора 2026-11-03: «кабель повинен вставлятись в неї, а не в розетку») під розеткою стоїть
+ * зарядна станція (`decorLook.station` — та сама умова), і дріт іде в її гніздо: `station`, перегризений — `station-chewed`.
+ */
+export function wireState(state: GameState): string {
+  const chewed = state.home.wireChewed === true;
+  if (powerOut(state)) return chewed ? "station-chewed" : "station";
+  return chewed ? "chewed" : "whole";
+}
+
 /** Ліжко (§9.12, «Теплолюбність»): горбик ковдри, поки під нею спить кіт. */
 export function bedState(state: GameState): string {
   return state.cats.some((cat) => cat.away === null && cat.act.kind === "sleep" && cat.act.blanket === true) ? "hump" : "made";

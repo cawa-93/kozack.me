@@ -3,12 +3,18 @@
 і вгору до вилки в розетці. Пакет A1b.
 size 120×72; pivot (56, 52) — центр клітинки WIRE_TILE (8,5; 6,5) на підлозі; points: desk (22.1, 20.1) — вилка в системному
 блоці (грань +x корпусу під столом, x 7,8), socket (99.2, 22.4) — вилка в розетці, cut (35, 55) — між
-перекушеними кінцями (st-chewed), звідки сиплються іскри fx/spark.
+перекушеними кінцями (st-chewed, st-station-chewed), звідки сиплються іскри fx/spark, station (59.5, 56) — де дріт у стані station
+сходиться зі шнуром вилки зарядної станції (env/power-station, її точка cord (31.5, 64)).
 Розетку (накладку з гніздами, z 17–31) малює стіна env/wall/inner/row5-x5; тут лише вилки (сірі, з рифленням). Дріт сортується як точка pivot,
-тобто після стола, тож вилку на грані системного блока видно поверх нього.
+тобто після стола, тож вилку на грані системного блока видно поверх нього, і як пласка річ — під станцією.
 Стани: st-whole — цілий світло-сірий дріт у чорнильному контурі; st-chewed — перекушений посередині петлі (home.wireChewed: комп'ютер не
 працює, доки не полагодять, — те саме, що icon/wire): два кінці трохи розведені, з кожного стирчать мідні жилки й обгризена ізоляція, між
 ними порожньо, на підлозі крихти. Без іскор (іскра — fx/spark, A6).
+st-station, st-station-chewed — день відключення (§4.1, рішення автора 2026-11-03: «кабель повинен вставлятись в неї, а не в розетку»):
+під розеткою стоїть зарядна станція, і дріт іде не до стіни, а по підлозі прямо до неї й закінчується в точці station; вилку в гнізді станції й
+шнур від неї до підлоги малює сама станція (вона над дротом), її шнур лягає поверх останніх ≈ 10 одиниць дроту на тій самій прямій — стик
+безшовний. Вилки в розетці немає (p-plug — лише whole і chewed). station-chewed — перекушений там само, що chewed (той самий лівий кінець,
+жилки правого кінця на прямій до станції, одна крихта нижче), тож точка cut і смуга лагодження ті самі.
 Контур LINE_SMALL. Без шарів.
 -->
 <g id="p-wire-whole" class="st-whole">
@@ -37,7 +43,33 @@ size 120×72; pivot (56, 52) — центр клітинки WIRE_TILE (8,5; 6,5
 <path d="M45.4 57.9Q42 58.2 38.9 60.4Q42.2 60.1 45.8 61.1ZM46.2 58Q42 57.5 38 56.3Q41.3 59.3 45 61ZM46.8 58.5Q43.7 56.9 41.6 54.5Q42.1 58.1 44.3 60.5Z" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M45.4 57.9Q42 58.2 38.9 60.4Q42.2 60.1 45.8 61.1ZM46.2 58Q42 57.5 38 56.3Q41.3 59.3 45 61ZM46.8 58.5Q43.7 56.9 41.6 54.5Q42.1 58.1 44.3 60.5Z" fill="#d9843f"/>
 </g>
-<g id="p-plug">
+<g id="p-wire-station" class="st-station">
+<path d="M25.3 22.5L18.9 25.7L18.9 17.7L25.3 14.5ZM14.4 23.5L18.9 25.7L18.9 17.7L14.4 15.5Z" fill="#a69f9b"/>
+<path d="M20.8 12.3L25.3 14.5L18.9 17.7L14.4 15.5Z" fill="#cdc6be"/>
+<path d="M14.4 15.5L18.9 17.7L25.3 14.5M18.9 17.7L18.9 25.7" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.4 23.5L14.4 15.5L20.8 12.3L25.3 14.5L25.3 22.5L18.9 25.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.7 20.7L20.5 22.3M23.7 18L20.5 19.6" fill="none" stroke="#716869" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.1 20.1C22.7 21.3 25.3 24.2 25.9 27C26.6 29.8 26.1 34 25.9 37C25.7 39.9 24 41.8 24.6 44.6C25.3 47.5 25.6 51.8 29.8 54.2C33.2 56.1 39.6 54.1 43.57 54.51L59.5 56" fill="none" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.1 20.1C22.7 21.3 25.3 24.2 25.9 27C26.6 29.8 26.1 34 25.9 37C25.7 39.9 24 41.8 24.6 44.6C25.3 47.5 25.6 51.8 29.8 54.2C33.2 56.1 39.6 54.1 43.57 54.51L59.5 56" fill="none" stroke="#cdc6be" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wire-station-chewed" class="st-station-chewed">
+<path d="M25.3 22.5L18.9 25.7L18.9 17.7L25.3 14.5ZM14.4 23.5L18.9 25.7L18.9 17.7L14.4 15.5Z" fill="#a69f9b"/>
+<path d="M20.8 12.3L25.3 14.5L18.9 17.7L14.4 15.5Z" fill="#cdc6be"/>
+<path d="M14.4 15.5L18.9 17.7L25.3 14.5M18.9 17.7L18.9 25.7" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.4 23.5L14.4 15.5L20.8 12.3L25.3 14.5L25.3 22.5L18.9 25.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.7 20.7L20.5 22.3M23.7 18L20.5 19.6" fill="none" stroke="#716869" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.7 57.6Q23.3 60.7 27.3 60.4Q24.7 57.4 20.7 57.6ZM32.1 62.2Q35.7 62.2 37.7 59.1Q34 59.1 32.1 62.2ZM12 53Q12.4 56.3 15.5 57.4Q15.2 54.1 12 53ZM46 64.1Q48.7 65.4 50.7 63.2Q48 61.9 46 64.1Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.7 57.6Q23.3 60.7 27.3 60.4Q24.7 57.4 20.7 57.6ZM32.1 62.2Q35.7 62.2 37.7 59.1Q34 59.1 32.1 62.2ZM12 53Q12.4 56.3 15.5 57.4Q15.2 54.1 12 53ZM46 64.1Q48.7 65.4 50.7 63.2Q48 61.9 46 64.1Z" fill="#cdc6be"/>
+<path d="M22.1 20.1C22.7 21.3 25.3 24.2 25.9 27C26.6 29.8 26.1 34 25.9 37C25.7 39.9 24.7 42.2 24.6 44.6C24.5 47 25 49.7 25.3 51.4C25.5 53 26.1 54.2 26.2 54.7" fill="none" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.1 20.1C22.7 21.3 25.3 24.2 25.9 27C26.6 29.8 26.1 34 25.9 37C25.7 39.9 24.7 42.2 24.6 44.6C24.5 47 25 49.7 25.3 51.4C25.5 53 26.1 54.2 26.2 54.7" fill="none" stroke="#cdc6be" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44.5 54.6L59.5 56" fill="none" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44.5 54.6L59.5 56" fill="none" stroke="#cdc6be" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.8 54.5Q26.8 57.3 30.3 58.8Q28.3 56.1 27.3 52.5ZM24.4 53.8Q26.2 57.7 27.3 61.6Q28.1 57.4 27.6 53.3ZM24.5 53Q24.9 56.5 23.8 59.6Q26.7 57.2 27.5 54.1Z" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.8 54.5Q26.8 57.3 30.3 58.8Q28.3 56.1 27.3 52.5ZM24.4 53.8Q26.2 57.7 27.3 61.6Q28.1 57.4 27.6 53.3ZM24.5 53Q24.9 56.5 23.8 59.6Q26.7 57.2 27.5 54.1Z" fill="#d9843f"/>
+<path d="M45.4 53.5Q42 53.8 38.9 56Q42.2 55.7 45.8 56.7ZM46.2 53.6Q42 53.1 38 51.9Q41.3 54.9 45 56.6ZM46.8 54.1Q43.7 52.5 41.6 50.1Q42.1 53.7 44.3 56.1Z" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.4 53.5Q42 53.8 38.9 56Q42.2 55.7 45.8 56.7ZM46.2 53.6Q42 53.1 38 51.9Q41.3 54.9 45 56.6ZM46.8 54.1Q43.7 52.5 41.6 50.1Q42.1 53.7 44.3 56.1Z" fill="#d9843f"/>
+</g>
+<g id="p-plug" class="st-whole st-chewed">
 <path d="M101.8 27.4L110.1 31.5L110.1 21L101.8 16.9Z" fill="#3f2541" fill-opacity="0.3"/>
 <path d="M107.5 28.3L102.7 30.7L102.7 19.2L107.5 16.8ZM95.7 27.1L102.7 30.7L102.7 19.2L95.7 15.6Z" fill="#a69f9b"/>
 <path d="M100.5 13.2L107.5 16.8L102.7 19.2L95.7 15.6Z" fill="#cdc6be"/>
