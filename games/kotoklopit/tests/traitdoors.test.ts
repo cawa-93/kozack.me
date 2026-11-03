@@ -177,7 +177,7 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     const hisser = withCat(save, { guests: -2 }, { x: 6.5, y: 8.5 });
     const plain = withCat(save, {}, { x: 9.5, y: 7.5 });
     const { events, stop } = recordEvents();
-    ringBell(save.current);
+    ringBell(save.current, "guests");
     stop();
     expect(events.some((e) => e.type === "doorbell")).toBe(true);
     expect(host.act.target).toBe("guest");
@@ -197,7 +197,7 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
     const save = game();
     const shy = withCat(save, { guests: -1 }, { x: 7.5, y: 8.5 });
     save.current.trip = { destination: "shop", phase: "visit", cat: null } as unknown as NonNullable<Save["current"]["trip"]>;
-    ringBell(save.current);
+    ringBell(save.current, "guests");
     expect(shy.act.kind).toBe("hide");
     expect(seen(shy, "guests")).toBe(0);
   });

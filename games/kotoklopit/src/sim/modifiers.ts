@@ -3,7 +3,7 @@
 
 import { knownBreedHalves } from "./breeds";
 import { asleep, changeMood, createCat, isAdapting, traitLevel } from "./cat";
-import { openDoor, ringBell } from "./door";
+import { guestDue, openDoor, ringBell } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
@@ -217,6 +217,8 @@ export function startModifiers(state: GameState, rng: Rng): void {
   delete today.showDone;
   today.earlyWake = 0;
   delete today.mom;
+  // Гість, якому так і не відчинили (персонаж ліг, не дочекавшись), уже не під дверима (§9.12).
+  delete today.guest;
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
   switch (state.modifiers.day) {
     case "reprimand":
@@ -430,7 +432,11 @@ function tickMom(state: GameState, from: number, minutes: number): void {
   }
   if (end < mom.at) return;
   if (!home) {
-    if (mom.rang || end >= MODIFIERS.mom.until) state.today.mom = { at: mom.at, porch: true };
+    if (mom.rang || end >= MODIFIERS.mom.until) {
+      state.today.mom = { at: mom.at, porch: true };
+      // Мама вже не під дверима (§9.12): поки вона там, вирушити не можна, тож так буває лише в старих збереженнях.
+      guestDue(state, "mom");
+    }
     return;
   }
   if (!mom.rang) {
@@ -441,10 +447,18 @@ function tickMom(state: GameState, from: number, minutes: number): void {
     // Персонаж удома (чи щойно повернувся) — мама дзвонить.
     mom.at = Math.max(mom.at, from);
     mom.rang = true;
-    ringBell(state);
+    ringBell(state, "mom");
     return;
   }
   if (end < mom.at + GUESTS.ringLead) return;
+  if (guestDue(state, "mom")) momVisit(state);
+}
+
+/**
+ * Мама заходить (§4.1): двері відчинено, судочки в холодильнику. У свою хвилину (`tickMom`) чи раніше — гравець відчинив їй
+ * після дзвінка (`admitGuest`, §9.12, рішення автора 2026-11-03): її запис знято, тож повтору не буде.
+ */
+export function momVisit(state: GameState): void {
   delete state.today.mom;
   openDoor(state);
   momGifts(state, true);
@@ -474,6 +488,115 @@ export function momAtNight(state: GameState): void {
   stash(state, "momMeal", "cheap", PRODUCTS.momMeal.units.cheap);
 }
 
+/**
+ * Ветеринарка заходить (§4.1): оглядає всіх котів, що вдома. У свою хвилину (`tickModifiers`) чи раніше — гравець відчинив їй
+ * після дзвінка (`admitGuest`, §9.12, рішення автора 2026-11-03). Як гості й ОСББ: поки персонаж у поїздці, ветеринарці ніхто не
+ * відчинить (перевірка поїздок 2026-10-28).
+ */
+export function homeVetVisit(state: GameState): void {
+  if (state.trip !== null) {
+    emit(state, { type: "modifier", kind: "home-vet-away", value: 0 });
+    return;
+  }
+  openDoor(state);
+  // Ветеринари оглядають усіх доступних котів (рішення автора 2026-10-27, Х7): ветеринарка — всіх, хто вдома.
+  const cats = state.cats.filter((c) => c.away === null);
+  const rng = stateRng(state, "behavior");
+  for (const cat of cats) {
+    for (const d of cat.diseases) d.known = true;
+    if (cat.pregnancy) cat.pregnancy.known = true;
+    // Що бачить ветеринар, — як у клініці (vetExam, §9.9). Любові огляд удома не коштує: без переноски й дороги (§4.1).
+    cat.sterilizedKnown = true;
+    cat.breedKnown = [true, true];
+    // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
+    // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.
+    const manner = vetManner(cat);
+    if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
+    if (manner === "hid") {
+      // Кіт на руках персонажа справді виривається з рук і стає на підлогу поруч, як «cat-broke-free» у catai: інакше
+      // повідомлення казало «вирвався з рук і сховався», а кіт лишався на руках (загальна ревізія 2026-10-29).
+      if (isCarried(state, cat)) {
+        // Вирвався посеред купання — купання перервано (§8.7).
+        stopBath(state);
+        state.character.held = null;
+        const at = visibleFloorNear(state, state.character.body);
+        cat.x = at.x;
+        cat.y = at.y;
+        emit(state, { type: "cat-broke-free", cat: cat.id });
+      }
+      const spot = hideSpot(state, rng, cat);
+      startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
+    }
+  }
+  if (cats.length > 0) emit(state, { type: "modifier", kind: "home-vet", value: cats.length });
+}
+
+/**
+ * Представник ОСББ заходить (§4.1): штраф за безлад, брудні лотки й шерсть. У свою хвилину чи раніше — гравець відчинив йому
+ * після дзвінка (`admitGuest`, §9.12, рішення автора 2026-11-03). Персонажа немає вдома (поїздка, зокрема аварія) — подзвонив і
+ * пішов: двері ніхто не відчинив (перевірка поїздок 2026-10-28).
+ */
+export function inspectionVisit(state: GameState): void {
+  if (state.trip !== null) {
+    emit(state, { type: "modifier", kind: "inspection-away", value: 0 });
+    return;
+  }
+  const m = MODIFIERS.inspection;
+  openDoor(state);
+  const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
+  const fine = state.home.messes.length * m.mess + dirty * m.litter + (furVisible(state) ? m.fur : 0);
+  const paid = Math.min(fine, Math.max(0, state.character.money));
+  spend(state, paid, "other");
+  // Скільки справді заплатили — картка каже й це (перевірка модифікаторів 2026-10-28: писала повний штраф, хоча знято лише те, що було).
+  emit(state, { type: "modifier", kind: "inspection", value: fine, paid });
+}
+
+/**
+ * Гості заходять (§4.1, §9.12 «Гості»): сором за безлад, захват від «Душі компанії», шипіння «−». У свою хвилину чи раніше —
+ * гравець відчинив їм після дзвінка (`admitGuest`, рішення автора 2026-11-03). Персонажа немає вдома — подзвонили й пішли
+ * (перевірка поїздок 2026-10-28; раніше гості «заходили» в порожню квартиру, а їхній сором під час перемотування після аварії
+ * міг закінчити гру).
+ */
+export function guestsVisit(state: GameState): void {
+  if (state.trip !== null) {
+    emit(state, { type: "modifier", kind: "guests-away", value: 0 });
+    return;
+  }
+  const m = MODIFIERS.guests;
+  // «Душа компанії» тішить гостей (§9.12, «Гості») — рахується, поки двері ще не відчинено: та, що зустріла гостей під дверима
+  // й вибігла на сходи, щойно їх відчинили, теж їх потішила (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5; раніше двері
+  // відчинялися раніше за підрахунок, і втеча забирала захват — саме в того кота, що через рису біг зустрічати).
+  let delight = 0;
+  for (const cat of state.cats) if (cat.away === null && traitLevel(cat, "guests") > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
+  openDoor(state);
+  const shame = Math.max(m.max, state.home.messes.length * m.mess);
+  // «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»); хто вибіг на сходи, той не вдома.
+  let hissing = 0;
+  const rng = stateRng(state, "behavior");
+  for (const cat of state.cats) {
+    if (cat.away !== null) continue;
+    const level = traitLevel(cat, "guests");
+    if (level >= 0) continue;
+    // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
+    // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
+    if (asleep(cat) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
+    if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, cat.act.elapsed + m.hideMinutes);
+    else {
+      const spot = hideSpot(state, rng, cat);
+      startAct(cat, "hide", spot.at, m.hideMinutes, spot.target);
+    }
+    if (level <= -2) {
+      hissing += GUESTS.hissSanity;
+      emit(state, { type: "hissed-guests", cat: cat.id });
+    }
+  }
+  // Захват гостей — здоровий глузд від котів: множник складності, як на пестощі (§5.2, §9.12; загальна ревізія
+  // 2026-10-29), межа — до множника. Сором і шипіння — втрати, їх множник не стосується.
+  const total = shame + Math.min(GUESTS.delightMax, delight) * DIFFICULTY[state.difficulty].catSanity + hissing;
+  changeStat(state, "sanity", total);
+  emit(state, { type: "modifier", kind: "guests", value: total, guests: { mess: shame < 0, hissed: hissing < 0, delighted: delight > 0 } });
+}
+
 /** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, прибиральниця й будівельний пил, друг, відпускні. */
 export function tickModifiers(state: GameState, from: number, minutes: number, working: boolean): void {
   const today = state.today;
@@ -497,42 +620,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     }
   }
   // Ветеринарка — візит, як гості й ОСББ: дзвонить за `GUESTS.ringLead` хвилин, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей; рішення автора 2026-10-29, А5: дзвінок — за 6 хвилин, щоб гравець встиг узяти кота на руки).
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state);
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) openDoor(state);
-  // Як гості й ОСББ (нижче): поки персонаж у поїздці, ветеринарці ніхто не відчинить (перевірка поїздок 2026-10-28).
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip !== null) emit(state, { type: "modifier", kind: "home-vet-away", value: 0 });
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && state.trip === null) {
-    // Ветеринари оглядають усіх доступних котів (рішення автора 2026-10-27, Х7): ветеринарка — всіх, хто вдома.
-    const cats = state.cats.filter((c) => c.away === null);
-    const rng = stateRng(state, "behavior");
-    for (const cat of cats) {
-      for (const d of cat.diseases) d.known = true;
-      if (cat.pregnancy) cat.pregnancy.known = true;
-      // Що бачить ветеринар, — як у клініці (vetExam, §9.9). Любові огляд удома не коштує: без переноски й дороги (§4.1).
-      cat.sterilizedKnown = true;
-      cat.breedKnown = [true, true];
-      // Як кіт поводився на огляді (§9.12 «Переноска й ветеринар»): ветеринарка оглядає його при персонажі, тож це видно, де
-      // б кіт не був, — якщо персонаж удома. «Жах клініки» вирвався й потім ховається.
-      const manner = vetManner(cat);
-      if (manner !== null) observe(state, cat, "vet", manner === "calm" ? 1 : -1, true);
-      if (manner === "hid") {
-        // Кіт на руках персонажа справді виривається з рук і стає на підлогу поруч, як «cat-broke-free» у catai: інакше
-        // повідомлення казало «вирвався з рук і сховався», а кіт лишався на руках (загальна ревізія 2026-10-29).
-        if (isCarried(state, cat)) {
-          // Вирвався посеред купання — купання перервано (§8.7).
-          stopBath(state);
-          state.character.held = null;
-          const at = visibleFloorNear(state, state.character.body);
-          cat.x = at.x;
-          cat.y = at.y;
-          emit(state, { type: "cat-broke-free", cat: cat.id });
-        }
-        const spot = hideSpot(state, rng, cat);
-        startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
-      }
-    }
-    if (cats.length > 0) emit(state, { type: "modifier", kind: "home-vet", value: cats.length });
-  }
+  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`guestDue`, §9.12, рішення автора 2026-11-03).
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state, "home-vet");
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && guestDue(state, "home-vet")) homeVetVisit(state);
   // Феєрверки — гучний звук на всю квартиру (§9.12): несміливі ховаються й засмучуються.
   if (day === "festival" && crossed(from, minutes, m.festival.minute)) {
     loudNoise(state, "fireworks", null);
@@ -544,55 +634,11 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   }
   if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за `GUESTS.ringLead` хвилин до оголошеного часу, коли заходять, — двері відчинено (§9.12 «Двері й гості»; рішення автора 2026-10-29, А5).
-  if ((day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) || (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead))) ringBell(state);
-  // Персонажа немає вдома (поїздка, зокрема аварія) — подзвонили й пішли: двері ніхто не відчинив (перевірка поїздок 2026-10-28;
-  // раніше гості «заходили» в порожню квартиру, а їхній сором під час перемотування після аварії міг закінчити гру).
-  const away = state.trip !== null;
-  if (away && day === "inspection" && crossed(from, minutes, m.inspection.minute)) emit(state, { type: "modifier", kind: "inspection-away", value: 0 });
-  if (away && day === "guests" && crossed(from, minutes, m.guests.minute)) emit(state, { type: "modifier", kind: "guests-away", value: 0 });
-  if (!away && day === "inspection" && crossed(from, minutes, m.inspection.minute)) {
-    openDoor(state);
-    const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
-    const fine = state.home.messes.length * m.inspection.mess + dirty * m.inspection.litter + (furVisible(state) ? m.inspection.fur : 0);
-    const paid = Math.min(fine, Math.max(0, state.character.money));
-    spend(state, paid, "other");
-    // Скільки справді заплатили — картка каже й це (перевірка модифікаторів 2026-10-28: писала повний штраф, хоча знято лише те, що було).
-    emit(state, { type: "modifier", kind: "inspection", value: fine, paid });
-  }
-  if (!away && day === "guests" && crossed(from, minutes, m.guests.minute)) {
-    // «Душа компанії» тішить гостей (§9.12, «Гості») — рахується, поки двері ще не відчинено: та, що зустріла гостей під дверима
-    // й вибігла на сходи, щойно їх відчинили, теж їх потішила (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5; раніше двері
-    // відчинялися раніше за підрахунок, і втеча забирала захват — саме в того кота, що через рису біг зустрічати).
-    let delight = 0;
-    for (const cat of state.cats) if (cat.away === null && traitLevel(cat, "guests") > 0 && !isAdapting(state, cat)) delight += GUESTS.delight;
-    openDoor(state);
-    const shame = Math.max(m.guests.max, state.home.messes.length * m.guests.mess);
-    // «Шипить на гостей» шипить на них з-під дивана (§9.12, «Гості»); хто вибіг на сходи, той не вдома.
-    let hissing = 0;
-    const rng = stateRng(state, "behavior");
-    for (const cat of state.cats) {
-      if (cat.away !== null) continue;
-      const level = traitLevel(cat, "guests");
-      if (level >= 0) continue;
-      // «−» ховається, як і від дзвінка: сплячого, кота на руках, новонародженого й того, що звикає, не чіпають; хто вже
-      // сховався від дзвінка — сидить там довше (перевірка модифікаторів 2026-10-28: усіх силоміць гнало під ліжко, будило й рахувало шипіння).
-      if (asleep(cat) || isCarried(state, cat) || isNewborn(cat) || isAdapting(state, cat)) continue;
-      if (cat.act.kind === "hide") cat.act.minutes = Math.max(cat.act.minutes, cat.act.elapsed + m.guests.hideMinutes);
-      else {
-        const spot = hideSpot(state, rng, cat);
-        startAct(cat, "hide", spot.at, m.guests.hideMinutes, spot.target);
-      }
-      if (level <= -2) {
-        hissing += GUESTS.hissSanity;
-        emit(state, { type: "hissed-guests", cat: cat.id });
-      }
-    }
-    // Захват гостей — здоровий глузд від котів: множник складності, як на пестощі (§5.2, §9.12; загальна ревізія
-    // 2026-10-29), межа — до множника. Сором і шипіння — втрати, їх множник не стосується.
-    const total = shame + Math.min(GUESTS.delightMax, delight) * DIFFICULTY[state.difficulty].catSanity + hissing;
-    changeStat(state, "sanity", total);
-    emit(state, { type: "modifier", kind: "guests", value: total, guests: { mess: shame < 0, hissed: hissing < 0, delighted: delight > 0 } });
-  }
+  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`guestDue`, рішення автора 2026-11-03).
+  if (day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) ringBell(state, "inspection");
+  if (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead)) ringBell(state, "guests");
+  if (day === "inspection" && crossed(from, minutes, m.inspection.minute) && guestDue(state, "inspection")) inspectionVisit(state);
+  if (day === "guests" && crossed(from, minutes, m.guests.minute) && guestDue(state, "guests")) guestsVisit(state);
   // Хто до 18:00 уже їде на збори, той поїхав (§4.1): раніше штраф наздоганяв його в дорозі (перевірка поїздок 2026-10-28).
   if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);

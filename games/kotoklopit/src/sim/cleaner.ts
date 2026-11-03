@@ -3,7 +3,7 @@
 // осідає кімната за кімнатою — без випадковості, як і звичайний пил (§8.7 «Пил і павутина»). Викликає `tickModifiers`.
 
 import { BOWL_CAPACITY, GUESTS, HOUSEHOLD, MODIFIERS, WATER_CAPACITY } from "./config";
-import { openDoor, ringBell } from "./door";
+import { guestDue, openDoor, ringBell } from "./door";
 import { addDust, dustOf } from "./dust";
 import { takeSupply, topQuality } from "./economy";
 import { emit, type CleanerVisit } from "./events";
@@ -21,11 +21,19 @@ const crossed = (from: number, minutes: number, at: number): boolean => from % 1
  * як на будь-який візит (§9.12 «Двері й гості»), — а о цій хвилині заходить і прибирає. Персонаж удома — він відчиняє їй двері
  * (коти біля дверей можуть вибігти, як і з іншими гостями); персонажа немає — вона відчиняє своїми ключами й зачиняє за собою
  * (рішення виконавця 2026-11-03: без господаря двері ніхто не тримає відчиненими, тож коти не вибігають), і прибирання те саме.
+ * Гравець відчинив їй раніше (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03) — о цій хвилині вона вже не приходить.
  */
 export function tickCleaner(state: GameState, from: number, minutes: number): void {
   const at = MODIFIERS.cleaner.minute;
-  if (crossed(from, minutes, at - GUESTS.ringLead)) ringBell(state);
-  if (!crossed(from, minutes, at)) return;
+  if (crossed(from, minutes, at - GUESTS.ringLead)) ringBell(state, "cleaner");
+  if (crossed(from, minutes, at) && guestDue(state, "cleaner")) cleanerVisit(state);
+}
+
+/**
+ * Прибиральниця заходить і прибирає (§4.1): у свою хвилину (`tickCleaner`) чи раніше — гравець відчинив їй після дзвінка
+ * (`admitGuest`, §9.12, рішення автора 2026-11-03). Персонажа немає — вона відчиняє своїми ключами (вище).
+ */
+export function cleanerVisit(state: GameState): void {
   const home = state.trip === null;
   if (home) openDoor(state);
   const visit = cleanHome(state);

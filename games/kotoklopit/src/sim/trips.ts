@@ -15,7 +15,7 @@ import { targetOf } from "./targets";
 import type { AccidentCost, AccidentLoss, Cat, Destination, Difficulty, GameState, Trip } from "./types";
 import { isNewborn } from "./reproduction";
 import { isWorkday, stopWork } from "./work";
-import { catOnStairs, openDoor } from "./door";
+import { catOnStairs, guestAtDoor, openDoor } from "./door";
 
 /** Де персонаж з'являється вдома після поїздки: біля дверей. */
 export const HOME_DOOR = { x: 10.5, y: 10.2 } as const;
@@ -35,13 +35,13 @@ function heldCat(state: GameState): Cat | null {
 }
 
 /**
- * Чи можна вирушити від дверей (§8.5): персонаж біля дверей, під ними немає пакунків, жоден кіт
- * не втік, у руках нічого або кіт.
+ * Чи можна вирушити від дверей (§8.5): персонаж біля дверей, під ними немає пакунків і ніхто не чекає, щоб йому відчинили
+ * (гість подзвонив — двері відчиняють йому, §9.12, рішення автора 2026-11-03), жоден кіт не втік, у руках нічого або кіт.
  */
 export function canLeave(state: GameState): boolean {
   if (state.trip !== null || state.end !== null) return false;
   if (targetOf(state)?.id !== "door") return false;
-  if (state.home.porch.length > 0 || state.cats.some((c) => c.away === "stairs")) return false;
+  if (state.home.porch.length > 0 || guestAtDoor(state) !== null || state.cats.some((c) => c.away === "stairs")) return false;
   const held = state.character.held;
   return held === null || held.kind === "cat";
 }

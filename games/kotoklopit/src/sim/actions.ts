@@ -4,7 +4,8 @@
 import { actionSpeed, isMoving } from "./body";
 import { asleep, changeLove, changeMood, idleAct, offend, petResting, sulking, traitLevel } from "./cat";
 import { backAway, beggingFood, carryFeeling, catInBox, catOnComputer, catOnSink, forbiddenZoneAt, freshWater, hearFood, jealousy, openTap, sayNo, separateFight, showerDrops, touchStandoff, trashTipped, turnAway, upHigh, waterFright } from "./catai";
-import { openDoor } from "./door";
+import { guestAtDoor, openDoor } from "./door";
+import { admitGuest } from "./visits";
 import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
@@ -106,9 +107,11 @@ export function tap(state: GameState): TapResult {
   if (character.activity !== null) return null;
   const held = character.held;
   const target = targetOf(state);
-  // Кота на руках опускають будь-де, а біля душу — купають (§8.7).
+  // Кота на руках опускають будь-де, а біля душу — купають (§8.7). Біля дверей, під якими чекає гість, — відчиняють йому, не
+  // опускаючи кота: його й узяли на руки, щоб не вибіг (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03).
   if (held?.kind === "cat") {
-    if (target?.type === "object" && target.object.kind === "shower") return tapObject(state, target.object, held);
+    const object = target?.type === "object" ? target.object : null;
+    if (object !== null && (object.kind === "shower" || (object.kind === "door" && guestAtDoor(state) !== null))) return tapObject(state, object, held);
     putDownCat(state, held.cat);
     // Одне утримання — одна дія (§10): натискання, що опустило кота, ще триває — і пестощі опущеного кота не почнуться, поки
     // кнопку не відпустили (перевірка графіки 2026-11-02: за мить довшого натискання його вже гладили). Відпущена кнопка
@@ -291,13 +294,17 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (!canGoToSleep(state)) return refuse(state, target.id, "too-early");
       return "sleep";
     case "door": {
-      if (held !== null) return refuse(state, target.id, "hands-full");
-      // Спершу — кіт на сходах: його треба впіймати (§9.12).
+      // Спершу — кіт на сходах: його треба впіймати (§9.12), вільними руками.
       const escaped = state.cats.find((c) => c.away === "stairs");
-      if (escaped) {
+      if (escaped && held === null) {
         catchCat(state, escaped);
         return null;
       }
+      // Тоді — гість, що подзвонив і чекає (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03): персонаж відчиняє йому,
+      // і візит стається зараз; пакунки нікуди не дінуться — їх забирають наступним натисканням. Кота на руках не опускає (сюди з
+      // котом на руках веде `tap`); з іншою річчю в руках — руки зайняті, як і з пакунками.
+      if ((held === null || held.kind === "cat") && admitGuest(state)) return null;
+      if (held !== null) return refuse(state, target.id, "hands-full");
       if (receivePackages(state).length === 0) return refuse(state, target.id, "no-packages");
       openDoor(state);
       return null;

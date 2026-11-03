@@ -1,6 +1,7 @@
 // Вхідні двері (§9.12 «Двері й гості», рішення автора 2026-10-25, `TRAITS_REVIEW.md`): коли їх відчиняють, коти біля
 // них вибігають на сходи чи відходять подалі («Втечі»); на дзвінок «Душа компанії» біжить зустрічати, а сором'язливий
-// ховається («Гості»). Хто й коли відчиняє двері — пакунки, поїздки, гості, ОСББ, мама, знайда — вирішують інші модулі.
+// ховається («Гості»). Хто й коли відчиняє двері — пакунки, поїздки, гості, ОСББ, мама, знайда — вирішують інші модулі; тут —
+// лише запис, хто подзвонив і чекає під дверима (`guestAtDoor`), а впускає його раніше `visits.ts` (рішення автора 2026-11-03).
 
 import { asleep, isAdapting, traitLevel } from "./cat";
 import { backAway, hideSpot, isCarried, startAct } from "./catai";
@@ -10,7 +11,7 @@ import { emit } from "./events";
 import { observe } from "./knowledge";
 import { escapeBonus, isNewborn } from "./reproduction";
 import { stateRng } from "./rng";
-import type { Cat, GameState, Vec } from "./types";
+import type { Cat, DoorGuest, GameState, Vec } from "./types";
 
 /** Вхідні двері: від цієї точки рахується, хто біля них (§9.12). */
 export const DOOR: Vec = { x: 11, y: 10.5 };
@@ -66,15 +67,20 @@ export function openDoor(state: GameState, except: readonly number[] = []): void
 export const catOnStairs = (state: GameState): boolean => state.cats.some((c) => c.away === "stairs");
 
 /**
- * Дзвінок у двері (§9.12 «Двері й гості»): кур'єр, гості, ОСББ, мама, ветеринарка. Кіт, що не спить, звик до дому й нічим
- * важливим не зайнятий, реагує за «Гостями»: «+» біжить до дверей і 5 хвилин сидить там (прояв — `doorSeen` у `catai.ts`), «−»
- * ховається на 30 × |рівень| хвилин, а «Шипить на гостей» ще й шипить з-під дивана. `visitor` — дзвонить той, хто зайде сам
- * за `GUESTS.ringLead` хвилин: дзвінок чути (бабл над дверима), а «+» чекає під дверима, поки зайдуть, і ще 5 хвилин —
- * гравець встигає взяти його на руки (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5). Кур'єр лише лишає пакунок: його
- * дзвінок показує сама доставка, а двері відчиняє гравець.
+ * Дзвінок у двері (§9.12 «Двері й гості»): кур'єр, гості, ОСББ, мама, ветеринарка, прибиральниця. Кіт, що не спить, звик до дому
+ * й нічим важливим не зайнятий, реагує за «Гостями»: «+» біжить до дверей і 5 хвилин сидить там (прояв — `doorSeen` у
+ * `catai.ts`), «−» ховається на 30 × |рівень| хвилин, а «Шипить на гостей» ще й шипить з-під дивана. `guest` — дзвонить той,
+ * хто зайде сам за `GUESTS.ringLead` хвилин: дзвінок чути (бабл над дверима), «+» чекає під дверима, поки зайдуть, і ще 5
+ * хвилин — гравець встигає взяти його на руки (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А5), — а гість чекає під
+ * дверима: дія біля дверей відчинить йому раніше (рішення автора 2026-11-03, `visits.ts`). `false` — кур'єр: він лише лишає
+ * пакунок, його дзвінок показує сама доставка, а двері відчиняє гравець.
  */
-export function ringBell(state: GameState, visitor = true): void {
-  if (visitor) emit(state, { type: "doorbell" });
+export function ringBell(state: GameState, guest: DoorGuest | false): void {
+  const visitor = guest !== false;
+  if (visitor) {
+    state.today.guest = { who: guest };
+    emit(state, { type: "doorbell" });
+  }
   const rng = stateRng(state, "behavior");
   for (const cat of state.cats) {
     const level = traitLevel(cat, "guests");
@@ -90,5 +96,37 @@ export function ringBell(state: GameState, visitor = true): void {
     if (level <= -2) emit(state, { type: "hissed-guests", cat: cat.id });
     // Ховається, щойно задзвонили, — прояв «−» (§9.9).
     observe(state, cat, "guests", -1);
+  }
+}
+
+/**
+ * Хто подзвонив у двері й чекає, поки йому відчинять (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03): дія біля
+ * дверей відчиняє йому, а не веде в поїздку. null — під дверима ніхто не чекає.
+ */
+export function guestAtDoor(state: GameState): DoorGuest | null {
+  const guest = state.today.guest;
+  return guest !== undefined && guest.in !== true ? guest.who : null;
+}
+
+/**
+ * Призначена хвилина візиту `who` (§9.12): гість заходить (чи, коли персонажа немає, іде) — запис про нього знято. False —
+ * гравець уже відчинив йому раніше (`admitGuest`), і візит не повторюється. Без запису (дзвінка не чули: хвилину перемотали
+ * сценарієм чи старим збереженням) візит відбувається, як і раніше.
+ */
+export function guestDue(state: GameState, who: DoorGuest): boolean {
+  const guest = state.today.guest;
+  if (guest?.who !== who) return true;
+  delete state.today.guest;
+  return guest.in !== true;
+}
+
+/**
+ * Гостю відчинили раніше за його хвилину (§9.12): «+», що чекав під дверима, зустрічає ще `GUESTS.greetMinutes` — від того, як
+ * гостя впустили, а не від призначеної хвилини (рішення виконавця 2026-11-03).
+ */
+export function greetNow(state: GameState): void {
+  for (const cat of state.cats) {
+    const act = cat.act;
+    if (act.kind === "idle" && act.target === "guest") act.minutes = Math.min(act.minutes, act.elapsed + GUESTS.greetMinutes);
   }
 }
