@@ -61,13 +61,14 @@ export const BOUGHT_PAUSE_MS = 600;
  * кошику дає місце автогодівниці, §9.12). Скільки вдома — не показуємо: це видно зі сховищ. «×N» — скільки в упаковці — більше
  * не пишемо (те саме рішення).
  */
-export function stockText(state: GameState, goods: Goods, quality: Quality, cart: readonly CartLine[]): string {
+function stockText(state: GameState, goods: Goods, quality: Quality, cart: readonly CartLine[]): string {
   const parts: string[] = [];
   const n = coming(state, goods, quality);
   if (n > 0) parts.push(`🚗 ${"product" in goods ? PRODUCT_TITLES[goods.product].unit(n) : `${n} шт.`}`);
   const reason = unavailable(state, goods, cart);
-  // «Уже їде» дублював би 🚗 (і в картці іншого варіанта тієї самої речі: техніка й переноска — по одній).
-  if (reason !== null && reason !== "ordered") parts.push(UNAVAILABLE[reason]);
+  // «Уже їде» дублював би 🚗 у картці варіанта, що їде; у картці іншого варіанта тієї самої речі (техніка, переноска й замок —
+  // по одній) — пояснює, чому вона сіра.
+  if (reason !== null && !(reason === "ordered" && n > 0)) parts.push(UNAVAILABLE[reason]);
   return parts.join(" · ");
 }
 

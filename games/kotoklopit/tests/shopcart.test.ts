@@ -205,6 +205,17 @@ describe("кожен товар у своїй картці (§6.4; рішенн�
     expect(stockOf("thing:toy", "cheap")).toBe("🚗 2 шт.");
     expect(stockOf("thing:toy", "premium")).toBe("");
   });
+
+  it("переноска їде — картка дешевої «🚗 1 шт.», а сіра картка дорогої пояснює чому: «уже їде»", () => {
+    const state = at(null);
+    expect(checkout(state, [{ goods: { thing: "carrier" }, quality: "cheap", count: 1 }], "delivery")).toBe(true);
+    const { list } = open(state, "delivery", false);
+    const shown = variantsOf(catalog(state, "delivery"));
+    const card = (q: string): FakeElement | undefined => list.findAll("shop-item")[shown.findIndex((v) => goodsKey(v.goods) === "thing:carrier" && v.quality === q)];
+    expect(card("cheap")?.find("shop-stock").textContent).toBe("🚗 1 шт.");
+    expect(card("premium")?.find("shop-stock").textContent).toBe("уже їде");
+    expect([card("cheap"), card("premium")].map((c) => c?.classList.contains("muted"))).toEqual([true, true]);
+  });
 });
 
 describe("бірка знижки замість стрілки (§6.4)", () => {
