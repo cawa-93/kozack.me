@@ -204,6 +204,11 @@ describe("картка на місці: тло й положення (§8.5 «Н
     }
   });
 
+  it("CSS: частини примітки біля заголовка переносяться між собою (вузька картка), кожна ціла", () => {
+    expect(rule(".card-aside")).toContain("flex-wrap: wrap;");
+    expect(rule(".card-aside-part")).toContain("white-space: nowrap;");
+  });
+
   it("CSS: годинник у підзаголовку видно лише на місці з карткою посередині (.away без .aside)", () => {
     expect(rule(".card-clock")).toContain("display: none;");
     expect(rule(".overlay.away:not(.aside) .card-clock")).toContain("display: inline;");

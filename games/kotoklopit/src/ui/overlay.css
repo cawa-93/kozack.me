@@ -276,7 +276,12 @@
   margin: 0;
 }
 
+/* Частини примітки нерозривні, а між ними рядок може перенестися (flex-wrap): на вузькій картці (вікно стоячи) примітка з подією
+   дня, знижками й годинником інакше вилазила за край картки. */
 .card-aside {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   margin: 0 0 0 auto;
   color: var(--ink-soft);
   font: 400 18px/1.2 var(--hand);
