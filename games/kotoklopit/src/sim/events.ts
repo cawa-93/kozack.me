@@ -14,6 +14,26 @@ export interface GuestsVisit {
   delighted: boolean;
 }
 
+/**
+ * Що зробила прибиральниця (§4.1, рішення автора 2026-11-03): скільки безладу, жмутів шерсті й місць пилу прибрала (для журналу) і
+ * що з того, що бере запаси, вдалося, — з цього картка «Заходила прибиральниця» складає слова (`cleanerText`).
+ */
+export interface CleanerVisit {
+  messes: number;
+  tufts: number;
+  dust: number;
+  /** Скільки лотків почищено (наповнювач — із запасу). */
+  litter: number;
+  /** Випране з машини розвішано. */
+  hung: boolean;
+  /** Брудний одяг у машині — прання запущено (засіб — із запасу). */
+  washing: boolean;
+  /** Корм у миски: насипано, і всі повні (`full`); насипано, але корму вистачило не на всі (`some`); не насипано — null. */
+  fed: "full" | "some" | null;
+  /** Хоч одну поїлку долито. */
+  watered: boolean;
+}
+
 export type ModifierEvent =
   | "reputation"
   | "meeting-start"
@@ -30,7 +50,10 @@ export type ModifierEvent =
   | "vacation-pay"
   | "mom-call"
   /** Мама занесла гостинці (`value` 1) чи лишила під дверима, а персонаж їх заніс (0) (§4.1). */
-  | "mom-food";
+  | "mom-food"
+  /** Заходила прибиральниця (§4.1): персонаж удома — «cleaner», у поїздці — «cleaner-away»; що зробила — `cleaner`. */
+  | "cleaner"
+  | "cleaner-away";
 
 /** Де кіт точить кігті (§9.12, «Дряпання»). */
 export type ScratchSpot = "post" | "sofa" | "doorframe" | "rug" | "boxes";
@@ -155,9 +178,9 @@ export type GameEvent =
   | { type: "broke"; what: string }
   /**
    * Подія дня (§4.1). `guests` — що сталося з гостями (§9.12 «Двері й гості»): безлад, шипіння з-під дивана, захват від котів;
-   * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26).
+   * з цього повідомлення дня й складає слова (перевірка етапу 2026-10-26). `cleaner` — що зробила прибиральниця (§4.1).
    */
-  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number }
+  | { type: "modifier"; kind: ModifierEvent; value: number; guests?: GuestsVisit; paid?: number; cleaner?: CleanerVisit }
   | { type: "career"; change: "promoted" | "demoted" | "fired" | "hired"; position: number }
   | { type: "ordered"; delivery: Delivery; price: number }
   /** Пошук роботи: вакансія закінчилася відмовою, далі — нова (§8.6). */

@@ -1445,6 +1445,17 @@ export const MODIFIERS = {
   inspection: { minute: 15 * 60, mess: 5, litter: 5, fur: 10 },
   recalculation: 10,
   guests: { minute: 19 * 60, mess: -3, max: -15, hideMinutes: 120 },
+  /**
+   * «Прибиральниця» (§4.1, рішення автора 2026-11-03; час — пропозиція виконавця): дзвонить у двері за `GUESTS.ringLead` хвилин
+   * до `minute` і о `minute` миттєво прибирає квартиру (`src/sim/cleaner.ts`).
+   */
+  cleaner: { minute: 13 * 60 },
+  /**
+   * «Будівельний пил» (§4.1, рішення автора 2026-11-03; числа — пропозиція виконавця): від `from` щоразу через `every` хвилин
+   * пил і павутина заповнюють наступну кімнату з `rooms` — усі її місця (§8.7 «Пил і павутина»): о 10:00 вітальня з вхідними
+   * дверима, о 10:30 ванна (її прохід навпроти дверей), об 11:00 кухня, об 11:30 спальня — до 12:00 пил осів усюди.
+   */
+  constructionDust: { from: 10 * 60, every: 30, rooms: ["living", "bathroom", "kitchen", "bedroom"] as readonly RoomId[] },
   friend: { from: 10 * 60, to: 16 * 60 },
   noisyWake: { min: 60, max: 120 },
   vigor: 1.15,

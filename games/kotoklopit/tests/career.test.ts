@@ -226,6 +226,9 @@ describe("захист першого тижня для репутації (§8.
     const save = game();
     const { events, stop } = recordEvents();
     for (let day = 0; day < FIRST_WEEK_PROTECTION.days; day++) {
+      // Найпростіший гравець не пилососить: пил на підлозі, що лишився після «Будівельного пилу» (§4.1), дратував би його весь
+      // наступний день і закінчив би гру здоровим глуздом, — тут перевіряють лише репутацію, тож пил прибрано щоранку.
+      save.current.home.dust = [];
       liveDay(save);
       expect(save.current.job.unemployed).toBe(false);
       expect(save.current.job.reputation).toBeGreaterThanOrEqual(FIRST_WEEK_PROTECTION.reputation);

@@ -95,7 +95,7 @@ describe("вибір модифікаторів: перевірка модифі
 
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
     const save = newGame({ address: "she", difficulty: "hard", seed: 14 });
-    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat"]);
+    const hard = new Set(["deadline", "meeting", "pay-delay", "reprimand", "work-saturday", "outage", "inspection", "construction-dust", "guests", "noisy-neighbors", "sick", "mom-call", "traffic", "renovation", "food-price-up", "full-moon", "festival", "heat"]);
     let hardCount = 0;
     let total = 0;
     for (let seed = 0; seed < 3000; seed++) {

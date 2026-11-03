@@ -22,6 +22,7 @@ import type { Cat, GameState } from "./types";
 import { furVisible, putVacuumDown, stockBowl } from "./household";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
+import { tickCleaner, tickConstructionDust } from "./cleaner";
 
 type When = "any" | "weekday" | "saturday" | "cat" | "work" | "workday" | "weekend-cat";
 
@@ -54,6 +55,8 @@ export const DAY_PAIRS: readonly Pair[] = [
   // раніше відключення інтернету зупиняло пошук — перевірка модифікаторів 2026-10-28).
   pair("outage", "fast-internet", "home", "weekday", "workday"),
   pair("inspection", "recalculation", "home", "any"),
+  // Прибиральниця прибирає й без котів (пил, безлад, прання), тож пара — будь-коли (рішення автора 2026-11-03, §4.1).
+  pair("construction-dust", "cleaner", "home", "any"),
   // Друг приходить допомогти з котами — лише коли вони є (перевірка модифікаторів 2026-10-28).
   pair("guests", "friend-help", "home", "any", "cat"),
   // «Тиха ніч» — коти не будять: лише коли вони є, інакше день без модифікатора (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14).
@@ -471,7 +474,7 @@ export function momAtNight(state: GameState): void {
   stash(state, "momMeal", "cheap", PRODUCTS.momMeal.units.cheap);
 }
 
-/** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, друг, відпускні. */
+/** Хвилини дня: нарада, ветеринар удома, феєрверки, тихий вечір, перевірка, гості, прибиральниця й будівельний пил, друг, відпускні. */
 export function tickModifiers(state: GameState, from: number, minutes: number, working: boolean): void {
   const today = state.today;
   const m = MODIFIERS;
@@ -604,6 +607,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     emit(state, { type: "modifier", kind: "vacation-pay", value: pay });
   }
   if (day === "friend-help") friendHelps(state, from, minutes);
+  // Прибиральниця — візит із дзвінком за `GUESTS.ringLead` хвилин; будівельний пил — кімната за кімнатою (§4.1, рішення автора 2026-11-03).
+  if (day === "cleaner") tickCleaner(state, from, minutes);
+  if (day === "construction-dust") tickConstructionDust(state, from, minutes);
   if (today.callAt !== null && crossed(from, minutes, today.callAt)) {
     today.callAt = null;
     // Дзвінок чекає, поки гравець вирішить: картка живе лише в сцені, і після перезавантаження сторінки дзвінок зникав без
