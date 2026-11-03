@@ -1,37 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-<!-- icon/litter — наповнювач для лотка: мішок із зав'язаною горловиною й бірюзовою смугою з лапкою, біля нього — купка сірих гранул. Пакет A11a, art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
-size 64×64; pivot (32, 32) — центр; points немає. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
-Мішок — як сховище наповнювача в квартирі (env/litter-bag, §6.4: «мішок із зав'язаною горловиною й лапкою»): та сама бірюзова смуга з білою лапкою — з нею мішок не читається як «мішок грошей». Круглий і зав'язаний — не паперовий пакет продуктів (icon/food); сірі гранули біля мішка — наповнювач, не корм.
+<!-- icon/litter — наповнювач для лотка: мішок із зав'язаною горловиною й бірюзовою смугою, на смузі — крихітний лоток із гіркою наповнювача; біля мішка — велика грудкувата купка сірих гранул (≈ 35 % ширини) зі світлими гранулами. Ревізія іконок 2026-11-03 (доручення автора: «зрозумілі для людини й розбірливі в малому масштабі»), art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Мішок — як сховище наповнювача в квартирі (env/litter-bag, §6.4: «мішок із зав'язаною горловиною»), мотузяного кольору, не червоний пакет корму chew-bag. Лоток на смузі (низький і широкий, як icon/litter-box) замість білої лапки: лапка є й на shampoo та kit, а лоток каже, для чого наповнювач. Сіра купка — наповнювач, не бурий корм (kibble, food).
 -->
-<defs><clipPath id="icon-litter-body"><path d="M10.4 54.6Q7.6 45 10.6 37.4Q13.4 30 21.6 26Q25.2 24.2 25.2 21L38.8 21Q38.8 24.2 42.4 26Q50.6 30 53.4 37.4Q56.4 45 53.6 54.6Q32 55.8 10.4 54.6Z"/></clipPath><clipPath id="icon-litter-heap"><path d="M42.8 56.4Q42.4 51.4 47.6 49.8Q51.6 47.6 55 50.6Q58.2 52.4 57.2 56.2Q50.2 57.6 42.8 56.4Z"/></clipPath></defs>
+<defs>
+<clipPath id="icon-litter-body"><path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z"/></clipPath>
+<clipPath id="icon-litter-heap"><path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z"/></clipPath>
+</defs>
 <g id="p-tuft">
-<path d="M25.4 21Q21 16.4 19.4 10.4Q23.6 12.4 26.4 10.4Q29.4 7.6 32.4 10Q35.6 7.4 38.2 10.4Q41.4 12.6 45 10.2Q43.2 16.4 38.6 21Z" fill="#c9a872"/>
-<path d="M29.4 19.4Q29.78 15.68 28 12.4Q27.62 16.12 29.4 19.4Z" fill="#a5844f"/>
-<path d="M35 19.4Q36.78 16.22 36.4 12.6Q34.62 15.78 35 19.4Z" fill="#a5844f"/>
-<path d="M25.4 21Q21 16.4 19.4 10.4Q23.6 12.4 26.4 10.4Q29.4 7.6 32.4 10Q35.6 7.4 38.2 10.4Q41.4 12.6 45 10.2Q43.2 16.4 38.6 21Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.35 21Q16.18 16.4 15.03 10.4Q18.05 12.4 20.07 10.4Q22.23 7.6 24.39 10Q26.69 7.4 28.56 10.4Q30.87 12.6 33.46 10.2Q32.16 16.4 28.85 21Z" fill="#c9a872"/>
+<path d="M22.23 19.4Q22.5 15.68 21.22 12.4Q20.95 16.12 22.23 19.4Z" fill="#a5844f"/>
+<path d="M26.26 19.4Q27.54 16.22 27.27 12.6Q25.99 15.78 26.26 19.4Z" fill="#a5844f"/>
+<path d="M19.35 21Q16.18 16.4 15.03 10.4Q18.05 12.4 20.07 10.4Q22.23 7.6 24.39 10Q26.69 7.4 28.56 10.4Q30.87 12.6 33.46 10.2Q32.16 16.4 28.85 21Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <g id="p-sack">
-<path d="M10.4 54.6Q7.6 45 10.6 37.4Q13.4 30 21.6 26Q25.2 24.2 25.2 21L38.8 21Q38.8 24.2 42.4 26Q50.6 30 53.4 37.4Q56.4 45 53.6 54.6Q32 55.8 10.4 54.6Z" fill="#c9a872"/>
-<path d="M10.6 37.4Q13.4 30 21.6 26Q25.2 24.2 25.2 21L38.8 21Q38.8 24.2 42.4 26Q50.6 30 53.4 37.4Q32 32.8 10.6 37.4Z" fill="#ddc391"/>
-<path d="M20.8 30.2Q18.56 33.52 17.6 37.4Q20.57 34.41 20.8 30.2Z" fill="#a5844f"/>
-<path d="M43.2 30.2Q43.43 34.41 46.4 37.4Q45.44 33.52 43.2 30.2Z" fill="#a5844f"/>
-<path d="M4 38.4Q18 36.2 32 37.4Q46 38.6 60 36.6L60 51.2Q46 53 32 51.8Q18 50.6 4 52.8Z" fill="#5f9089" clip-path="url(#icon-litter-body)"/>
-<path d="M26.94 48.58Q26.69 43.87 31.4 43.75Q36.11 43.87 35.86 48.58Q35.37 50.69 31.4 49.95Q27.43 50.69 26.94 48.58Z" fill="#f2e7d0"/><ellipse cx="25.57" cy="42.01" rx="2.05" ry="2.29" fill="#f2e7d0"/><ellipse cx="29.23" cy="39.41" rx="2.05" ry="2.36" fill="#f2e7d0"/><ellipse cx="33.69" cy="39.53" rx="2.05" ry="2.36" fill="#f2e7d0"/><ellipse cx="37.35" cy="42.26" rx="2.05" ry="2.29" fill="#f2e7d0"/>
-<path d="M4 49.6Q18 47.8 32 50.6Q46 52.8 60 49.6L60 60L4 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-body)"/>
-<path d="M8.6 38.6Q18 36.6 32 37.8Q46 39 55.4 37.2" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M8.4 52Q18 50.8 32 52Q46 53.2 55.6 51.4" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M10.4 54.6Q7.6 45 10.6 37.4Q13.4 30 21.6 26Q25.2 24.2 25.2 21L38.8 21Q38.8 24.2 42.4 26Q50.6 30 53.4 37.4Q56.4 45 53.6 54.6Q32 55.8 10.4 54.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M10.4 54.6Q32 55.8 53.6 54.6" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z" fill="#c9a872"/>
+<path d="M8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q24.1 32.8 8.69 37.4Z" fill="#ddc391"/>
+<path d="M16.04 30.2Q14.42 33.52 13.73 37.4Q15.87 34.41 16.04 30.2Z" fill="#a5844f"/>
+<path d="M32.16 30.2Q32.33 34.41 34.47 37.4Q33.78 33.52 32.16 30.2Z" fill="#a5844f"/>
+<path d="M3.94 37.4Q14.02 35.2 24.1 36.4Q34.18 37.6 44.26 35.6L44.26 52.2Q34.18 54 24.1 52.8Q14.02 51.6 3.94 53.8Z" fill="#5f9089" clip-path="url(#icon-litter-body)"/>
+<path d="M14.2 44.6Q14.6 41.6 17.6 41.8Q19.6 39.8 22.6 40.8Q25.4 39.4 27.8 41.2Q31.6 40.8 32.8 44.6Z" fill="#cdc6be"/>
+<path d="M14.2 44.6Q14.6 41.6 17.6 41.8Q19.6 39.8 22.6 40.8Q25.4 39.4 27.8 41.2Q31.6 40.8 32.8 44.6Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.6 44.2Q23.5 43.6 34.4 44.2L33.4 49.8Q23.5 50.6 13.6 49.8Z" fill="#f2e7d0"/>
+<path d="M12.6 44.2Q23.5 43.6 34.4 44.2L33.4 49.8Q23.5 50.6 13.6 49.8Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.94 49.6Q14.02 47.8 24.1 50.6Q34.18 52.8 44.26 49.6L44.26 60L3.94 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-body)"/>
+<path d="M7.25 37.6Q14.02 35.6 24.1 36.8Q34.18 38 40.95 36.2" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8.55 54.6Q6.53 45 8.69 37.4Q10.71 30 16.61 26Q19.2 24.2 19.2 21L29 21Q29 24.2 31.59 26Q37.49 30 39.51 37.4Q41.67 45 39.65 54.6Q24.1 55.8 8.55 54.6Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.15 55Q24.1 55.8 36.05 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <g id="p-tie">
-<path d="M23.2 20Q32 22.4 40.8 20" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M23.2 20Q32 22.4 40.8 20" fill="none" stroke="#b98b60" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.76 20Q24.1 22.4 30.44 20" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.76 20Q24.1 22.4 30.44 20" fill="none" stroke="#b98b60" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
-<g id="p-spill">
-<path d="M42.8 56.4Q42.4 51.4 47.6 49.8Q51.6 47.6 55 50.6Q58.2 52.4 57.2 56.2Q50.2 57.6 42.8 56.4Z" fill="#cdc6be"/>
-<path d="M40 54Q50 55.6 60 53.4L60 60L40 60Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-heap)"/>
-<path d="M46.8 52.8Q48.39 53.36 49.4 52Q47.81 51.44 46.8 52.8Z" fill="#716869"/>
-<path d="M51.2 51.2Q51.95 52.69 53.6 52.4Q52.85 50.91 51.2 51.2Z" fill="#716869"/>
-<path d="M42.8 56.4Q42.4 51.4 47.6 49.8Q51.6 47.6 55 50.6Q58.2 52.4 57.2 56.2Q50.2 57.6 42.8 56.4Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g id="p-heap">
+<path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z" fill="#cdc6be"/>
+<path d="M36.6 50.2A3.4 3.4 0 1 0 43.4 50.2A3.4 3.4 0 1 0 36.6 50.2Z" fill="#a69f9b"/>
+<path d="M48.4 49A3.4 3.4 0 1 0 55.2 49A3.4 3.4 0 1 0 48.4 49Z" fill="#a69f9b"/>
+<path d="M42.8 52.6A3 3 0 1 0 48.8 52.6A3 3 0 1 0 42.8 52.6Z" fill="#a69f9b"/>
+<path d="M0 51.5Q16 52.5 32 51.5Q48 50.5 64 51.5L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-litter-heap)"/>
+<path d="M43 45.8A2.8 2.8 0 1 0 48.6 45.8A2.8 2.8 0 1 0 43 45.8Z" fill="#f2e7d0"/>
+<path d="M43 45.8A2.8 2.8 0 1 0 48.6 45.8A2.8 2.8 0 1 0 43 45.8Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M38.6 45.2A2.4 2.4 0 1 0 43.4 45.2A2.4 2.4 0 1 0 38.6 45.2Z" fill="#f2e7d0"/>
+<path d="M38.6 45.2A2.4 2.4 0 1 0 43.4 45.2A2.4 2.4 0 1 0 38.6 45.2Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.4 43.8A2.4 2.4 0 1 0 53.2 43.8A2.4 2.4 0 1 0 48.4 43.8Z" fill="#f2e7d0"/>
+<path d="M48.4 43.8A2.4 2.4 0 1 0 53.2 43.8A2.4 2.4 0 1 0 48.4 43.8Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34 54.8Q33.2 49.8 37 47Q38.6 41.8 43.8 42Q47.4 38.2 51.6 41Q55.8 42.2 55.8 47Q57 51 55.8 54.8Q45 55.6 34 54.8Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36.4 54.8Q45 55.6 53.6 54.8" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>
