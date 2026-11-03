@@ -528,7 +528,9 @@ export function homeVetVisit(state: GameState): void {
       startAct(cat, "hide", spot.at, VET.homeHideMinutes, spot.target);
     }
   }
-  if (cats.length > 0) emit(state, { type: "modifier", kind: "home-vet", value: cats.length });
+  // Картка є й тоді, коли оглядати не було кого (усі коти на сходах чи котів немає): гравець відчинив — і бачить, хто заходив
+  // (§9.12 «Подзвонили — двері гостю»; рецензія пакета 2026-11-03: раніше картки не було зовсім).
+  emit(state, { type: "modifier", kind: "home-vet", value: cats.length });
 }
 
 /**

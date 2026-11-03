@@ -272,6 +272,30 @@ describe("гість подзвонив — дія біля дверей від�
     expect(shy.act.minutes).toBeCloseTo(MODIFIERS.guests.hideMinutes, 9);
   });
 
+  it("кожен гість, якому відчинили, дає картку — і коли єдиний кіт вибіг на сходи (ветеринарці тоді нікого оглядати, рецензія 2026-11-03)", () => {
+    for (const guest of GUESTS_BY_DOOR) {
+      // Кіт, що вибігає (60%), сидить під дверима; беремо перший seed, де він справді вибіг, коли гостю відчинили.
+      let checked = false;
+      for (let seed = 21; seed < 41 && !checked; seed++) {
+        const { save, cat } = game(guest, seed);
+        cat.traits = [{ group: "escape", level: 2, seen: 0, known: true }];
+        cat.x = DOOR_TILE.x + 0.5;
+        cat.y = DOOR_TILE.y + 0.5;
+        cat.act = idleAct(30);
+        untilRing(save, guest);
+        const { events, stop } = recordEvents();
+        interact(save);
+        stop();
+        if (cat.away !== "stairs") continue;
+        checked = true;
+        const card = visitsOf(events, guest.kind);
+        expect(card, guest.who).toHaveLength(1);
+        if (guest.who === "home-vet") expect(card[0]).toMatchObject({ value: 0 });
+      }
+      expect(checked, guest.who).toBe(true);
+    }
+  });
+
   it("з іншою річчю в руках — «руки зайняті», і гість чекає далі", () => {
     const guest = GUESTS_BY_DOOR.find((g) => g.who === "inspection");
     if (!guest) throw new Error("немає ОСББ");

@@ -1011,11 +1011,13 @@ export class DayScene extends Phaser.Scene {
         return;
       case "home-vet": {
         // Ветеринарка оглянула всіх котів, що вдома (рішення автора 2026-10-27, Х7), і як кожен поводився (§9.12); хвороби — id:
-        // назви (з іконкою, як у ветеринара, — §11.4 «Іконка біля назви») й поради до них дає `homeVetText`.
+        // назви (з іконкою, як у ветеринара, — §11.4 «Іконка біля назви») й поради до них дає `homeVetText`. Оглядати не було
+        // кого — картка каже, хто гуляв на сходах (рецензія 2026-11-03).
         const cats = this.state.cats
           .filter((c) => c.away === null)
           .map((c) => ({ name: c.name, sex: c.sex, diseases: c.diseases.map((d) => d.id), manner: vetManner(c) }));
-        this.notice("Заходила ветеринарка", homeVetText(cats, diseaseLabel));
+        const stairs = this.state.cats.filter((c) => c.away === "stairs").map((c) => ({ name: c.name, sex: c.sex }));
+        this.notice("Заходила ветеринарка", homeVetText(cats, diseaseLabel, stairs));
         return;
       }
       case "inspection": {

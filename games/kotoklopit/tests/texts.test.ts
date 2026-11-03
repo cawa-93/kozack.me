@@ -9,7 +9,7 @@ import type { Cat } from "../src/sim/types";
 import { breedAbout, breedText } from "../src/ui/cards";
 import { traitAbout } from "../src/ui/traits";
 import { DISEASES, POSITIONS } from "../src/sim/config";
-import { BREED_ABOUT, BREED_HALF, endingText, fill, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
+import { BREED_ABOUT, BREED_HALF, endingText, fill, HOME_VET_NOBODY, homeVetText, KITTEN_MESSAGE, POSITION_TITLES, TRAIT_ABOUT, VET_ADVICE } from "../src/texts";
 
 describe("тексти (TEXTS.md)", () => {
   it("підставляє значення й обирає форму за статтю", () => {
@@ -159,5 +159,15 @@ describe("опис порід і поради ветеринара (рішенн
     expect(one).toBe(`Мурчик: знайшла — хвороба суглобів. ${VET_ADVICE["joints"]}`);
     const healthy = [{ name: "Мурчик", sex: "male", diseases: [], manner: null }, { name: "Пушок", sex: "male", diseases: [], manner: null }] as const;
     expect(homeVetText(healthy)).toBe("Оглянула котів (2): хвороб не знайшла.");
+  });
+
+  it("«Заходила ветеринарка», а оглядати не було кого: хто гуляв на сходах — чи котів у домі немає (рецензія 2026-11-03)", () => {
+    expect(homeVetText([], undefined, [{ name: "Мурка", sex: "female" }])).toBe("Ветеринарка випила кави, але оглядати не було кого: Мурка гуляла на сходах.");
+    expect(homeVetText([], undefined, [{ name: "Барсик", sex: "male" }])).toBe("Ветеринарка випила кави, але оглядати не було кого: Барсик гуляв на сходах.");
+    expect(homeVetText([], undefined, [{ name: "Мурка", sex: "female" }, { name: "Барсик", sex: "male" }])).toBe(
+      "Ветеринарка випила кави, але оглядати не було кого: Мурка, Барсик гуляли на сходах.",
+    );
+    expect(homeVetText([])).toBe(HOME_VET_NOBODY.none);
+    for (const text of Object.values(HOME_VET_NOBODY)) expect(text).not.toMatch(/\d/);
   });
 });

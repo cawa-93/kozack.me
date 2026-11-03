@@ -784,15 +784,36 @@ export function guestsText(visit: GuestsVisit | undefined): string {
 }
 
 /**
+ * Ветеринарці не було кого оглянути (§9.12 «Подзвонили — двері гостю»; рецензія пакета 2026-11-03, рішення виконавця): усі коти
+ * на сходах чи котів у домі немає. Картка однаково є — гравець відчинив двері й бачить, хто заходив.
+ */
+export const HOME_VET_NOBODY = {
+  /** Один кіт на сходах; форма — за його статтю. */
+  stairs: "Ветеринарка випила кави, але оглядати не було кого: {кіт} [гуляв|гуляла] на сходах.",
+  /** Кілька котів на сходах; `{коти}` — імена через кому. */
+  stairsMany: "Ветеринарка випила кави, але оглядати не було кого: {коти} гуляли на сходах.",
+  /** Котів у домі немає. */
+  none: "Ветеринарка випила кави, але оглядати не було кого: котів у домі немає.",
+} as const;
+
+/**
  * Повідомлення «Заходила ветеринарка» (§4.1, рішення автора 2026-10-27, Х7): вона оглядає котів, що вдома, — хвороби
  * кожного (назвами, `diseases` — id хвороб), порада до кожної знайденої хвороби (`VET_ADVICE`, Д2; однакова хвороба в кількох
  * котів — одна порада, загальна ревізія 2026-10-29) і як поводився той, у кого є риса «Ветеринар» (`VET_MANNER.home`). `title` —
- * назва хвороби: у картці — з іконкою (`diseaseLabel`, `src/ui/icons.ts`; §11.4 «Іконка біля назви»).
+ * назва хвороби: у картці — з іконкою (`diseaseLabel`, `src/ui/icons.ts`; §11.4 «Іконка біля назви»). Удома нікого — хто на
+ * сходах (`stairs`), той і причина (`HOME_VET_NOBODY`).
  */
 export function homeVetText(
   cats: readonly { name: string; sex: Sex; diseases: readonly string[]; manner: "calm" | "hiss" | "hid" | null }[],
   title: (id: string) => string = diseaseTitle,
+  stairs: readonly { name: string; sex: Sex }[] = [],
 ): string {
+  if (cats.length === 0) {
+    const [out] = stairs;
+    if (!out) return HOME_VET_NOBODY.none;
+    if (stairs.length === 1) return fill(HOME_VET_NOBODY.stairs, out.sex, { кіт: out.name });
+    return fill(HOME_VET_NOBODY.stairsMany, out.sex, { коти: stairs.map((c) => c.name).join(", ") });
+  }
   const [only] = cats;
   const titles = (c: { diseases: readonly string[] }): string => c.diseases.map((id) => title(id)).join(", ").toLowerCase();
   const found = cats.length === 1 && only
