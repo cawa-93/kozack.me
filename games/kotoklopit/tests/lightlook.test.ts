@@ -6,9 +6,10 @@
 import { describe, expect, it } from "vitest";
 
 import { DAYLIGHT } from "../src/sim/config";
-import { MAP_HEIGHT, MAP_WIDTH } from "../src/sim/home";
+import { MAP_HEIGHT, MAP_WIDTH, ROOMS } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
-import { CEILING_LAMPS, PANES } from "../src/view/decor";
+import type { Vec } from "../src/sim/types";
+import { CANDLE_SHELVES, CEILING_LAMPS, PANES } from "../src/view/decor";
 import { daylight, type Daylight } from "../src/view/light/daylight";
 import { PALETTE } from "../art/palette";
 import { CANDLE_LIGHT, CEILING_LIGHT, GLASS, HIGHLIGHT_DARK, luma, POOL_LIFT, POOL_ROUND, rgb, SUN, TONE, type Rgb } from "../src/view/light/lightlook";
@@ -93,6 +94,40 @@ describe("вигляд світла доби", () => {
     // Мерехтіння: яскравість спадає щонайбільше на 10 % (від 1 до 1 − flicker, `candleFlicker`) і не частіше ≈ 4 разів на секунду.
     expect(CANDLE_LIGHT.flicker).toBeLessThanOrEqual(0.1);
     expect(CANDLE_LIGHT.flickerStep).toBeGreaterThanOrEqual(250);
+  });
+
+  it("відключення зі свічкою на поличці в кожній кімнаті — темніше за ніч із лампами: у кожній кімнаті й у квартирі загалом", () => {
+    // Середня яскравість карти світла на підлозі (центри клітинок кімнати) о 23:00: зі світлом — стельові лампи, бра й
+    // настільна лампа, у відключення — свічки на поличках (рішення автора 2026-11-03: по одній у кожній кімнаті).
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    const mean = (outage: boolean, room: (typeof ROOMS)[number] | null): number => {
+      s.modifiers.day = outage ? "outage" : null;
+      const light = d(23 * 60, !outage);
+      const plan = lightmapPlan(light, lightSources(s, light), PANES, 0);
+      let sum = 0;
+      let n = 0;
+      for (const r of room ? [room] : ROOMS) {
+        for (let x = r.x; x < r.x + r.w; x++) {
+          for (let y = r.y; y < r.y + r.h; y++) {
+            sum += luma(lightAt(plan, ISO.toScreen({ x: x + 0.5, y: y + 0.5 })));
+            n++;
+          }
+        }
+      }
+      return sum / n;
+    };
+    for (const room of ROOMS) expect(mean(false, room) - mean(true, room), room.id).toBeGreaterThan(0.2);
+    expect(mean(false, null) - mean(true, null)).toBeGreaterThan(0.2);
+    // Але біля свічки світліше, ніж у темряві тону відключення: на стіні під поличкою й на підлозі перед нею тепло.
+    s.modifiers.day = "outage";
+    const dark = d(23 * 60, false);
+    const plan = lightmapPlan(dark, lightSources(s, dark), PANES, 0);
+    for (const shelf of CANDLE_SHELVES) {
+      const out = (o: number): Vec => (shelf.face === "y" ? { x: shelf.at.x, y: 1 + o } : { x: 1 + o, y: shelf.at.y });
+      const wall = ISO.toScreen(shelf.at);
+      expect(luma(lightAt(plan, { x: wall.x, y: wall.y - shelf.z + 40 })), `${shelf.room}: стіна під поличкою`).toBeGreaterThan(luma(TONE.outage) + 0.2);
+      expect(luma(lightAt(plan, ISO.toScreen(out(0.5)))), `${shelf.room}: підлога перед поличкою`).toBeGreaterThan(luma(TONE.outage) + 0.08);
+    }
   });
 
   it("пляма свічки на карті — радіуса `CANDLE_LIGHT.radius`, з повним світлом до `poolCore`, кругліша й між підлогою та полум'ям", () => {

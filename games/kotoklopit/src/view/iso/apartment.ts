@@ -1,14 +1,14 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
 // передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
 // плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7), а також
-// декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра, бойлер, зарядна
-// станція й свічки дня відключення. Кадри — з маніфесту арту (`addArt`), тож поки арту немає, на їхньому місці заглушки
-// потрібного розміру й pivot.
+// декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра,
+// бойлер, зарядна станція й полички зі свічками дня відключення. Кадри — з маніфесту арту (`addArt`), тож поки арту немає, на
+// їхньому місці заглушки потрібного розміру й pivot.
 //
 // Що показати — зі стану гри (`looks.ts`).
-// Глибина: плити кімнат, вікна, павутина, папір, бра й бойлер на задній стіні — під усім (`ISO_BACKDROP_DEPTH`); меблі й
-// сегменти стін — коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва,
-// дрібничка, свічка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
+// Глибина: плити кімнат, вікна, павутина, папір, бра, полички й бойлер на задній стіні — під усім (`ISO_BACKDROP_DEPTH`);
+// меблі й сегменти стін — коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва,
+// дрібничка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
 // реєстрі, як дріт. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
 // (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами,
 // шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня
@@ -19,19 +19,19 @@
 import type Phaser from "phaser";
 
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
-import { isPresent, objectById, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
+import { isPresent, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
 import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLES, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
+import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
 import { ISO } from "../world/projection";
-import { decorLook, type DecorLook } from "./decorlook";
+import { decorLook, decorLookInit, type DecorLook } from "./decorlook";
 import { ISO_BACKDROP_DEPTH, isoDepth, type IsoBoxHandle, type IsoDepth, type IsoPointHandle } from "./depth";
 import { IsoFxView } from "./fx";
 import { anchorLift, artOffset, BOXES_FRONT, DOOR_BOXES, objectAnchorAt, objectScreen, wallsToFade } from "./geometry";
@@ -70,8 +70,8 @@ import {
 /**
  * Порядок шарів тла: підлога, котячі сліди на підлогах (над усіма плитами підлог), смуги сонця з вікон (§8.9, `iso/light.ts`:
  * на підлозі, під стінами й усім, що стоїть), задні стіни, подерті шпалери на стіні вітальні, вікна на стінах, павутина в
- * кутах (§8.7: висить на задній стіні — над нею, під усім, що стоїть у кімнаті), папір, бра й бойлер на стінах (`decal`) і
- * їхнє сяйво (`glow`).
+ * кутах (§8.7: висить на задній стіні — над нею, під усім, що стоїть у кімнаті), папір, бра, полички зі свічками й бойлер на
+ * стінах (`decal`) і їхнє сяйво (`glow`).
  */
 export const BACKDROP = {
   floor: ISO_BACKDROP_DEPTH,
@@ -90,7 +90,7 @@ export const BACKDROP = {
  * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
  * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, candle: 0.0027, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
 
 /** Півширина зарядної станції на екрані, одиниці арту (`IsoPointOptions.half`): кабель до системного блока — на 62 ліворуч. */
 const STATION_HALF = 62;
@@ -198,15 +198,11 @@ export class IsoApartmentView implements ApartmentPart {
   /** Бра й бойлер на задніх стінах (тло, як рулон паперу): стан — за світлом доби й електрикою (`decorLook`). */
   private readonly sconces: Piece[] = [];
   private readonly boiler: Piece;
+  /** Полички зі свічками дня відключення на задніх стінах (`CANDLE_SHELVES`, тло, як бра): є лише без електрики. */
+  private readonly shelves: Piece[] = [];
   /** Зарядна станція дня відключення: на підлозі праворуч від стола з комп'ютером, точка реєстру. */
   private readonly station: { image: Phaser.GameObjects.Image; point: IsoPointHandle; shown: boolean };
-  /** Свічки дня відключення на господарях (`CANDLES`): зсув від pivot господаря — точка поверхні під свічкою. */
-  private readonly candles: readonly { host: string; name: string; offset: Point }[] = CANDLES.map((candle, i) => {
-    const at = ISO.toScreen(candle.at);
-    const host = objectScreen(objectById(candle.host));
-    return { host: candle.host, name: `candle:${i}`, offset: { x: at.x - host.x, y: at.y - candle.z - host.y } };
-  });
-  private readonly decor: DecorLook = { sconce: "off", boiler: "on", station: false, candles: null };
+  private readonly decor: DecorLook = decorLookInit();
   private readonly wire: Piece;
   private readonly wirePoint: IsoPointHandle;
   private readonly glow: IsoHighlight;
@@ -251,6 +247,13 @@ export class IsoApartmentView implements ApartmentPart {
     }
     this.boiler = { image: this.art("env/boiler", ISO.toScreen(BOILER.at), BACKDROP.decal), key: "", offset: 0 };
     this.backdrop.push(this.boiler.image);
+    // Полички зі свічками: pivot — лице стіни під серединою дошки на висоті верху дошки; поки є електрика, їх немає.
+    for (const shelf of CANDLE_SHELVES) {
+      const floor = ISO.toScreen(shelf.at);
+      const piece = { image: this.art(shelf.id, { x: floor.x, y: floor.y - shelf.z }, BACKDROP.decal).setVisible(false), key: "", offset: 0 };
+      this.shelves.push(piece);
+      this.backdrop.push(piece.image);
+    }
     // Зарядна станція стоїть на підлозі перед стіною ряду 5 і праворуч від стола: точка в реєстрі (стіна за нею, стіл ліворуч).
     const station = this.art("env/power-station", ISO.toScreen(POWER_STATION.at), 0).setVisible(false);
     this.station = { image: station, point: this.depth.addPoint((d) => station.setDepth(d), { half: STATION_HALF, id: POWER_STATION_POINT }), shown: false };
@@ -429,7 +432,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.drawStates(state);
     this.drawTraces(state);
     const decor = decorLook(state, frame.lightMinute, this.decor);
-    this.drawSurfaces(state, decor);
+    this.drawSurfaces(state);
     this.drawDecor(decor);
     this.drawCobwebs(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
@@ -542,10 +545,9 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Страви на поверхнях (плита показує свою сковороду сама), дрібнички на своїх місцях (§8.7, §9.12) і свічки дня відключення
-   * (§4.1, `CANDLES`) — над дрібничками, у проміжку господаря: кіт, що виліз на річ, — над свічкою.
+   * Страви на поверхнях (плита показує свою сковороду сама) і дрібнички на своїх місцях (§8.7, §9.12).
    */
-  private drawSurfaces(state: GameState, decor: DecorLook): void {
+  private drawSurfaces(state: GameState): void {
     const { home } = state;
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
@@ -558,17 +560,20 @@ export class IsoApartmentView implements ApartmentPart {
       const thing = this.get(trinket.object);
       this.put(thing, `trinket:${trinket.kind}`, home.trinkets?.[trinket.kind] ? null : trinketFrame(trinket.kind, false), ON.trinket, trinket.kind);
     }
-    const candle: IsoFrame | null = decor.candles ? { id: "env/candle", state: decor.candles } : null;
-    for (const spot of this.candles) this.put(this.get(spot.host), spot.name, candle, ON.candle, spot.offset);
   }
 
   /**
-   * Декор на стінах і підлозі (§8.9, §4.1; `decorLook`): бра горять із лампами, індикатор бойлера — коли є електрика, зарядна
-   * станція стоїть біля стола з комп'ютером лише в день відключення.
+   * Декор на стінах і підлозі (§8.9, §4.1; `decorLook`): бра горять із лампами, індикатор бойлера — коли є електрика, полички
+   * зі свічками на стінах і зарядна станція біля стола з комп'ютером є лише в день відключення.
    */
   private drawDecor(decor: DecorLook): void {
     SCONCES.forEach((sconce, i) => setPiece(this.sconces[i]!, { id: sconce.id, state: decor.sconce }));
     setPiece(this.boiler, { id: "env/boiler", state: decor.boiler });
+    CANDLE_SHELVES.forEach((shelf, i) => {
+      const piece = this.shelves[i]!;
+      if (decor.candles) setPiece(piece, { id: shelf.id, state: decor.candles });
+      piece.image.setVisible(decor.candles !== null);
+    });
     const station = this.station;
     if (decor.station === station.shown) return;
     station.shown = decor.station;

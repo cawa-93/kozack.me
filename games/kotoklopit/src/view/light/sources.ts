@@ -4,8 +4,8 @@
 //
 // - Невидимі стельові світильники (`CEILING_LAMPS`) і бра (`SCONCES`) — лише коли є електрика й лампи доби горять
 //   (стельові — зі зсувом по кімнатах, `DAYLIGHT.lampShift`; бра — лише разом зі станом арту `lampsOn`, `litStrength`).
-// - Свічки (`CANDLES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки — лише разом зі станом
-//   арту `lit`, `candlesLit`).
+// - Свічки на поличках (`CANDLE_SHELVES`) і дисплей зарядної станції (`POWER_STATION`) — лише в день відключення (свічки —
+//   лише разом зі станом арту `lit`, `candlesLit`).
 // - Індикатор бойлера (`BOILER`) — коли є електрика (у відключення не горить).
 // - Газовий пальник на плиті — у відключення, поки на плиті страва: синє полум'я.
 // - Екран комп'ютера — поки на ньому щось є (робота, пошук, кіт на клавіатурі): на станції він працює і у відключення.
@@ -16,9 +16,8 @@ import { DAYLIGHT } from "../../sim/config";
 import { objectById, type RoomId } from "../../sim/home";
 import { powerOut } from "../../sim/modifiers";
 import type { GameState, Vec } from "../../sim/types";
-import { LIGHT_ART } from "../art/manifest/a21-light";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, POWER_STATION_POINT, SCONCES, type Candle, type WallFace } from "../decor";
+import { BOILER, CANDLE_SHELVES, CEILING_HEIGHT, CEILING_LAMPS, POWER_STATION, POWER_STATION_POINT, SCONCES, type CandleShelf, type WallFace } from "../decor";
 import { artOffset, objectScreen } from "../iso/geometry";
 import { screenShow } from "../iso/markslayout";
 import type { Point } from "../world/part";
@@ -26,11 +25,14 @@ import { ISO } from "../world/projection";
 import { candlesLit, daylight, LIT_FROM, lampsOn, type Daylight } from "./daylight";
 import { BOILER_LIGHT, CANDLE_LIGHT, CEILING_LIGHT, GAS_LIGHT, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT } from "./lightlook";
 
-/** Що світить: стельовий світильник, бра, свічка, дисплей станції, індикатор бойлера, газове полум'я, екран комп'ютера. */
+/**
+ * Що світить: стельовий світильник, бра, свічка на поличці, дисплей станції, індикатор бойлера, газове полум'я, екран
+ * комп'ютера.
+ */
 export type LightKind = "ceiling" | "sconce" | "candle" | "station" | "boiler" | "gas" | "screen";
 
 export interface LightSource {
-  /** Сталий id джерела між кадрами: `ceiling:2`, `sconce:0`, `candle:4`, `station`, `boiler`, `gas`, `screen`. */
+  /** Сталий id джерела між кадрами: `ceiling:2`, `sconce:0`, `candle:3`, `station`, `boiler`, `gas`, `screen`. */
   readonly id: string;
   readonly kind: LightKind;
   /** Кімната, у якій джерело (для стельових — чия лампа). */
@@ -46,11 +48,11 @@ export interface LightSource {
   /** Яскравість 0–1 (для свічок — до мерехтіння): лампа, що вмикається, — між 0 і 1. */
   readonly strength: number;
   /**
-   * Над чим сяйво — id речі квартири (свічка на столі, полум'я на плиті) чи точки реєстру глибини (дисплей зарядної станції,
+   * Над чим сяйво — id речі квартири (полум'я на плиті, екран комп'ютера) чи точки реєстру глибини (дисплей зарядної станції,
    * `POWER_STATION_POINT`): у її проміжку глибини, над її кадром.
    */
   readonly host?: string;
-  /** Настінне (бра, бойлер): на якому лиці стіни. */
+  /** Настінне (бра, свічка на поличці, бойлер): на якому лиці стіни. */
   readonly face?: WallFace;
   /** Зерно мерехтіння (свічки). */
   readonly flicker?: number;
@@ -86,10 +88,14 @@ export function decorPoint(id: ArtId, name: string, pivot: Point, z: number): Po
   return offset ? { x: pivot.x + offset.x, y: pivot.y + offset.y } : { x: pivot.x, y: pivot.y - z };
 }
 
-/** Pivot кадру свічки на екрані: точка поверхні господаря під нею (`CANDLES`), так її ставить квартира (`iso/apartment.ts`). */
-export function candlePivot(candle: Candle): Point {
-  return lifted(candle.at, candle.z);
+/**
+ * Pivot кадру полички зі свічкою на екрані: точка лиця стіни під серединою дошки на висоті верху дошки (`CANDLE_SHELVES`), так
+ * її ставить квартира (`iso/apartment.ts`).
+ */
+export function shelfPivot(shelf: CandleShelf): Point {
+  return lifted(shelf.at, shelf.z);
 }
+
 
 /** Точка кріплення речі квартири на екрані (`pan` плити, `screen` комп'ютера): перша, яка є в маніфесті. */
 function objectPoint(id: string, points: readonly string[]): Point {
@@ -102,18 +108,18 @@ function objectPoint(id: string, points: readonly string[]): Point {
   return base;
 }
 
-/** Центр плями бра на підлозі: на `SCONCE_LIGHT.floor.out` клітинки від стіни вглиб кімнати. */
-function sconceFloor(at: Vec, face: WallFace): Vec {
-  const out = SCONCE_LIGHT.floor.out;
+/** Точка підлоги на `out` клітинки від лиця стіни вглиб кімнати: центр плями настінного світла (бра, свічки на поличках). */
+function offWall(at: Vec, face: WallFace, out: number): Vec {
   return face === "y" ? { x: at.x, y: at.y + out } : { x: at.x + out, y: at.y };
 }
+
 
 /** Перед столом із комп'ютером, де сидить персонаж: туди падає світло екрана. */
 const SCREEN_FLOOR: Vec = { x: 7, y: 7.1 };
 
 /**
- * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, свічки, станція, бойлер, газ,
- * екран.
+ * Джерела світла цього кадру. Удень (`d` = null) — жодного. Порядок сталий: стельові, бра, свічки, станція, бойлер,
+ * газ, екран.
  */
 export function lightSources(state: GameState, d: Daylight | null): LightSource[] {
   if (!d) return [];
@@ -141,7 +147,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           id: `sconce:${i}`,
           kind: "sconce",
           room: sconce.room,
-          at: sconceFloor(sconce.at, sconce.face),
+          at: offWall(sconce.at, sconce.face, SCONCE_LIGHT.floor.out),
           screen: decorPoint(sconce.id, "lamp", ISO.toScreen(sconce.at), sconce.lamp),
           radius: SCONCE_LIGHT.floor.radius,
           color: SCONCE_LIGHT.color,
@@ -154,17 +160,17 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
   if (outage) {
     if (candlesLit(d)) {
       const strength = litStrength(d.candles);
-      CANDLES.forEach((candle, i) => {
+      CANDLE_SHELVES.forEach((shelf, i) => {
         out.push({
           id: `candle:${i}`,
           kind: "candle",
-          room: null,
-          at: candle.at,
-          screen: decorPoint("env/candle", "flame", candlePivot(candle), LIGHT_ART.candle.flame),
+          room: shelf.room,
+          at: offWall(shelf.at, shelf.face, CANDLE_LIGHT.floor.out),
+          screen: decorPoint(shelf.id, "flame", shelfPivot(shelf), shelf.flame - shelf.z),
           radius: CANDLE_LIGHT.radius,
           color: CANDLE_LIGHT.color,
           strength,
-          host: candle.host,
+          face: shelf.face,
           flicker: i + 1,
         });
       });

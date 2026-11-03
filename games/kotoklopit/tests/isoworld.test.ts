@@ -13,7 +13,7 @@ import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, 
 import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
-import { BOILER, CANDLES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
@@ -94,13 +94,15 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
-  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, бойлер; станція й свічки дня відключення — о хвилині стану.
+  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, бойлер; станція й полички зі свічками дня відключення — о
+  // хвилині стану.
   for (const pane of PANES) frames.push({ id: `env/window/${pane.room}`, state: null });
   const decor = decorLook(state, state.minute);
   for (const sconce of SCONCES) frames.push({ id: sconce.id, state: decor.sconce });
   frames.push({ id: "env/boiler", state: decor.boiler });
   if (decor.station) frames.push({ id: "env/power-station", state: null });
-  if (decor.candles) frames.push({ id: "env/candle", state: decor.candles });
+  const candles = decor.candles;
+  if (candles) for (const shelf of CANDLE_SHELVES) frames.push({ id: shelf.id, state: candles });
   // Вертикальний пилосос на підлозі, пил і павутина (§8.7).
   if (state.home.vacuumAt) frames.push({ id: "env/vacuum", state: null });
   for (const index of dustOf(state)) {
@@ -343,29 +345,6 @@ describe("декор квартири (decor.ts, §8.9 «День і ніч», �
     expect(BOILER.led > BOILER.z[0] && BOILER.led < BOILER.z[1]).toBe(true);
   });
 
-  it("свічки — над своїми господарями: у сліді з блюдцем, на висоті верху, не на страві й не на дрібничці", () => {
-    /** Півдіаметр блюдця, клітинки (`art/env/candle.svg`). */
-    const SAUCER = 0.125;
-    for (const candle of CANDLES) {
-      const object = objectById(candle.host);
-      const look = isoObjectLook(candle.host);
-      const f = look.footprint;
-      const { x, y } = candle.at;
-      expect(x - SAUCER >= f.x0 && x + SAUCER <= f.x1 && y - SAUCER >= f.y0 && y + SAUCER <= f.y1, `${candle.host}: (${x}, ${y}) у сліді`).toBe(true);
-      expect(candle.z, candle.host).toBe(look.top);
-      // Не на страві й не на дрібничці господаря: точки кадру господаря (одиниці арту) далі за пів блюдця й пів дрібнички.
-      const entry = artEntry(`env/${candle.host}`);
-      if (!entry) throw new Error(candle.host);
-      const at = pointsOn(object, entry)((x - object.x) / object.w, (y - object.y) / object.h, candle.z);
-      const busy = ["dish", ...TRINKETS.filter((t) => t.object === candle.host).map((t) => t.kind)];
-      for (const name of busy) {
-        const p = entry.points?.[name];
-        if (p) expect(Math.hypot(p.x - at.x, p.y - at.y), `${candle.host}: свічка біля «${name}»`).toBeGreaterThan(20);
-      }
-    }
-    // На кожній речі — не більше однієї свічки, і всі господарі різні.
-    expect(new Set(CANDLES.map((c) => c.host)).size).toBe(CANDLES.length);
-  });
 
   it("зарядна станція — на вільній підлозі праворуч від стола з комп'ютером, перед стіною ряду 5 і лівіше за розетку дроту", () => {
     const { x, y } = POWER_STATION.at;

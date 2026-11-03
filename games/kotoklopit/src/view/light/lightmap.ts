@@ -248,7 +248,7 @@ function poolsOf(source: LightSource, time: number): PoolPaint[] {
     const y = floor.y + (source.screen.y - floor.y) * lift;
     const spread = source.kind === "ceiling" ? CEILING_LIGHT.spread : 1;
     const rx = source.radius * spread * CELL_RX;
-    // Свічка й газ — над поверхнею: пляма й на речах довкола, не лише на підлозі — кругліша.
+    // Свічка й газ — над поверхнею: пляма й на речах і стіні довкола, не лише на підлозі — кругліша.
     const ry = rx * (lift > 0 ? POOL_ROUND.raised : POOL_ROUND.floor);
     const core = source.kind === "ceiling" ? CEILING_LIGHT.core : source.kind === "candle" ? CANDLE_LIGHT.poolCore : 0.12;
     pools.push({ x, y, rx, ry, core, color, alpha: level });

@@ -19,7 +19,7 @@ import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGM
 import { artEntries, artEntry, DEFAULT_RES, manifestProblems } from "../src/view/art/manifest";
 import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, type WhiteLayer } from "../src/view/art/types";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
-import { BOILER, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { ICON_NAMES, type BubbleKind, type Mark } from "../src/view/iconnames";
 
 const ENTRIES = artEntries();
@@ -128,7 +128,7 @@ describe("маніфест: правила записів", () => {
       // Пил і павутина (§8.7, рішення автора 2026-11-02): «людське» забруднення кімнат.
       "a20-dust": ["mess/dust/", "mess/cobweb"],
       // День і ніч, відключення світла (§8.9, §4.1, рішення автора 2026-11-02): декор квартири, якого сим не знає.
-      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle", "env/desk-lamp"],
+      "a21-light": ["env/window/kitchen", "env/sconce/", "env/boiler", "env/power-station", "env/candle-shelf/", "env/desk-lamp"],
     };
     const names = Object.keys(files).map((f) => f.replace(/^.*\//, "").replace(/\.ts$/, ""));
     expect(names.sort()).toEqual(Object.keys(allowed).sort());
@@ -330,9 +330,17 @@ describe("маніфест: квартира", () => {
     expect(entry("env/boiler").points?.["led"]).toBeDefined();
     expect(POWER_STATION).toEqual({ at: LIGHT_ART.station.at, display: LIGHT_ART.station.display });
     expect(entry("env/power-station").points?.["display"]).toBeDefined();
-    expect(states("env/candle")).toEqual(["out", "lit"]);
-    const flame = entry("env/candle").points?.["flame"];
-    expect(flame && entry("env/candle").pivot.y - flame.y).toBe(LIGHT_ART.candle.flame);
+    // Полички зі свічками: малюнок на лице стіни, полум'я — на `flame` над верхом дошки (pivot), як у `decor.ts`.
+    for (const shelf of CANDLE_SHELVES) {
+      const art = LIGHT_ART.shelf[shelf.id];
+      expect(shelf.face, shelf.id).toBe(art.face);
+      expect(shelf.flame - shelf.z, `${shelf.id} (${shelf.room})`).toBe(art.flame);
+      expect(states(shelf.id)).toEqual(["out", "lit"]);
+      const flame = entry(shelf.id).points?.["flame"];
+      expect(flame && entry(shelf.id).pivot.y - flame.y, shelf.id).toBe(art.flame);
+    }
+    // Свічки на меблях більше немає (рішення автора 2026-11-03: «Настінні полички»).
+    expect(artEntry("env/candle")).toBeUndefined();
     const kitchen = PANES.find((p) => p.room === "kitchen");
     expect(kitchen && { wall: kitchen.wall, span: kitchen.span, z: kitchen.z }).toEqual(LIGHT_ART.kitchenWindow);
     expect(kitchen?.sill).toBeUndefined();
