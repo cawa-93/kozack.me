@@ -44,6 +44,7 @@ import {
   bowlSeat,
   CAT_PIECE,
   catSpot,
+  type CatSpot,
   deskSeat,
   IN_LITTER,
   LAP_SEAT,
@@ -1471,5 +1472,27 @@ describe("стіл із комп'ютером: на клавіатурі — т�
     expect(depth.cat + CAT_PIECE.shadow).toBeGreaterThan(depth.screen);
     expect(depth.cat).toBeGreaterThan(depth.desk);
     expect(depth.person).toBeGreaterThan(depth.cat + CAT_PIECE.peek);
+  });
+
+  it("сценарії: «Кіт на клавіатурі» — Клавіша на клавіатурі, робота стоїть, Подушка поруч; «Кіт спить на комп'ютері» — на клавіатурі", () => {
+    let save = applyScenario(FILE_SCENARIOS["keyboard-cat"]!);
+    advance(save, 1);
+    const named = (name: string): Cat => save.current.cats.find((c) => c.name === name)!;
+    const spot = (cat: Cat): CatSpot => catSpot(save.current, cat, catAnim(save.current, cat).anim, null, SPOT);
+    expect(save.current.character.activity).toBeNull();
+    expect(catOnComputer(save.current)).toBe(named("Клавіша"));
+    expect(spot(named("Клавіша")).at).toEqual(ISO_KEYBOARD.seat);
+    const pillow = spot(named("Подушка"));
+    expect(pillow).toMatchObject({ kind: "furniture", box: "computer" });
+    expect(catAnim(save.current, named("Подушка")).anim).toBe("loaf");
+    expect(onKeyboard(deskRoot(pillow.at))).toBe(false);
+    expect(pillow.at.x).toBeGreaterThanOrEqual(BESIDE_RIGHT);
+    // Забрали Клавішу — комп'ютер вільний: Подушка роботі не заважає.
+    named("Клавіша").act = act("idle", { minutes: 5 });
+    expect(catOnComputer(save.current)).toBeNull();
+    save = applyScenario(FILE_SCENARIOS["computer-sleep"]!);
+    advance(save, 1);
+    expect(catOnComputer(save.current)).toBe(named("Грілка"));
+    expect(spot(named("Грілка")).at).toEqual(ISO_KEYBOARD.seat);
   });
 });
