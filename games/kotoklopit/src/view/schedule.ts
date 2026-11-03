@@ -45,7 +45,10 @@ export function scheduleOf(state: GameState): string[] {
   const event = DAY_EVENTS[state.modifiers.day ?? ""];
   // Робочі події — лише в робочий день, офіс — поки зборів не було (перевірка модифікаторів 2026-10-28: розклад обіцяв нараду на лікарняному й офіс після зборів).
   const work = state.modifiers.day === "meeting" || state.modifiers.day === "lunch" || state.modifiers.day === "office";
-  const done = state.modifiers.day === "office" && state.today.officeDone;
+  // Гостю дня (ветеринарка, ОСББ, гості, прибиральниця) відчинили раніше за його час — він уже був (§9.12 «Подзвонили — двері
+  // гостю», рішення автора 2026-11-03): у розкладі його вже немає.
+  const guest = state.today.guest;
+  const done = (state.modifiers.day === "office" && state.today.officeDone) || (guest?.in === true && guest.who === state.modifiers.day);
   if (event && minute < event[0] && (!work || isWorkday(state)) && !done) important.push(event);
   const today = absoluteMinute(state.day, 0);
   const next = Math.min(...state.home.deliveries.map((d) => d.at - today));
