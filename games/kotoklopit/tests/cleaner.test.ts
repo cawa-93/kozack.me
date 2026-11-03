@@ -214,6 +214,25 @@ describe("прибиральниця (§4.1)", () => {
     expect(visit.fed).toBeNull();
   });
 
+  it("стерилізованого кота немає в квартирі (повезли до ветеринара, вибіг на сходи) — у порожню миску однаково корм для стерилізованих", () => {
+    // Рецензія пакета 2026-11-03: кіт у поїздці чи на сходах лишався без свого корму — у миску йшов звичайний.
+    for (const away of ["trip", "stairs"] as const) {
+      const save = game();
+      const state = save.current;
+      const cat = withCat(state, { sterilized: true });
+      cat.away = away;
+      if (away === "trip") state.trip = { destination: "vet" } as unknown as NonNullable<GameState["trip"]>;
+      const { bowls } = dirty(state);
+      bowls[1]!.food = 0;
+      bowls[1]!.foodQuality = null;
+      stock(state, { catFood: 10, sterileFood: 10 });
+      tickModifiers(state, CLEANER - 0.5, 1, false);
+      expect(bowls.every((b) => b.sterile && b.food === BOWL_CAPACITY)).toBe(true);
+      expect(state.home.supplies.catFood.cheap).toBe(10);
+      expect(state.home.supplies.sterileFood.cheap).toBe(10 - 2 * BOWL_CAPACITY);
+    }
+  });
+
   it("пральна машина: випране розвішує; брудний одяг — запускає прання із засобом із запасу; прання, що йде, не чіпає", () => {
     // Випране в машині й чистого одягу мало: розвісила — і вже досить, нового прання не треба.
     const done = game().current;

@@ -41,7 +41,8 @@ export function tickCleaner(state: GameState, from: number, minutes: number): vo
  *   лотків лишається, як була.
  * - Пральна машина (`laundry`).
  * - Миски — корм із запасу, як насипала б автогодівниця чи друг (`stockBowl`): тим самим, що вже в мисці, а в порожню — для
- *   стерилізованих, коли вдома стерилізований кіт; лише коли в домі є коти. Поїлки — вода доверху, завжди.
+ *   стерилізованих, коли в домі живе стерилізований кіт, хоч би де він зараз був (`includeAway`: кота повезли до ветеринара чи
+ *   він вибіг на сходи, коли персонаж відчиняв їй двері); лише коли в домі є коти. Поїлки — вода доверху, завжди.
  *
  * Страву на плиті й столах не чіпає; скинуті дрібнички й розмотаний рулон (їх гравець не прибирає — вони на місцях уранці),
  * дріт, шафку з кормом і шкарпетку в схованці — теж (рішення виконавця 2026-11-03). Повертає, що зроблено.
@@ -74,7 +75,7 @@ export function cleanHome(state: GameState): CleanerVisit {
   const bowls = home.items.filter((i): i is BowlItem => i.kind === "bowl");
   if (state.cats.length > 0) {
     let poured = 0;
-    for (const bowl of bowls) poured += stockBowl(state, bowl);
+    for (const bowl of bowls) poured += stockBowl(state, bowl, BOWL_CAPACITY, { includeAway: true });
     if (poured > 0) visit.fed = bowls.every((b) => b.food >= BOWL_CAPACITY) ? "full" : "some";
   }
   for (const item of home.items) {

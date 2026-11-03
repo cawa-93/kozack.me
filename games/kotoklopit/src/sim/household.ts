@@ -650,12 +650,23 @@ function feed(state: GameState): number[] {
   return filled;
 }
 
+/** Як насипати миску не персонажу (`stockBowl`). */
+export interface StockOptions {
+  /**
+   * Корм для стерилізованих — коли в домі живе стерилізований кіт, хоч би де він зараз був (у поїздці, на сходах), а не лише
+   * коли він у квартирі. Так насипає прибиральниця (§4.1, рецензія пакета 2026-11-03): вона приходить і тоді, коли кота повезли
+   * до ветеринара, а коли двері їй відчиняє персонаж, кіт міг саме вибігти на сходи.
+   */
+  includeAway?: boolean;
+}
+
 /**
- * Яким кормом насипати порожню миску не персонажу (автогодівниця, друг, §4.1, §8.7): коли вдома є
- * стерилізований кіт — кормом для стерилізованих, поки він є, бо звичайний йому шкодить (§9.8).
+ * Яким кормом насипати порожню миску не персонажу (автогодівниця, друг, прибиральниця, §4.1, §8.7): коли вдома є
+ * стерилізований кіт — кормом для стерилізованих, поки він є, бо звичайний йому шкодить (§9.8); з `includeAway` — і коли він
+ * не вдома.
  */
-function bowlFoodKind(state: GameState): { quality: Quality; sterile: boolean } | null {
-  if (state.cats.some((c) => c.sterilized && c.away === null)) {
+function bowlFoodKind(state: GameState, options: StockOptions = {}): { quality: Quality; sterile: boolean } | null {
+  if (state.cats.some((c) => c.sterilized && (options.includeAway === true || c.away === null))) {
     const quality = topQuality(state, "sterileFood");
     if (quality !== null) return { quality, sterile: true };
   }
@@ -671,8 +682,8 @@ function bowlFoodKind(state: GameState): { quality: Quality; sterile: boolean } 
  * Досипати миску зі сховища до `upTo` порцій (§6.4): тим самим кормом, що вже в ній, — корми не
  * змішують; порожню — за bowlFoodKind. Повертає, скільки насипано.
  */
-export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY): number {
-  const kind = bowl.food > 0 && bowl.foodQuality !== null ? { quality: bowl.foodQuality, sterile: bowl.sterile } : bowlFoodKind(state);
+export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY, options: StockOptions = {}): number {
+  const kind = bowl.food > 0 && bowl.foodQuality !== null ? { quality: bowl.foodQuality, sterile: bowl.sterile } : bowlFoodKind(state, options);
   if (kind === null || bowl.food >= upTo) return 0;
   const poured = takeSupplies(state, kind.sterile ? "sterileFood" : "catFood", kind.quality, upTo - bowl.food);
   if (poured === 0) return 0;
