@@ -6,6 +6,7 @@
 // Униз екраном — `front`, угору — `back`; ліворуч — `flip`. Межі між ракурсами — діагоналі сітки (рух уздовж x − y чи
 // x + y), і щоб кіт на них не тремтів, ракурс змінюється, лише коли напрям відійшов від межі на `FACING_HYSTERESIS`.
 
+import { catOnComputer } from "../../sim/catai";
 import { WINDOWS } from "../../sim/home";
 import type { Cat, GameState, Vec } from "../../sim/types";
 import { interactionWith } from "../pose";
@@ -145,8 +146,9 @@ export interface CatFacingOptions {
  * - Стоїть: на підвіконні під вікном у задній стіні — спиною до нас, у вікно (сумний — до нас, щоб було видно смуток, як і в
  *   старому вигляді); «Образливий» дметься — спиною, від персонажа; «Пастка на животику» і кіт під рукою — головою від
  *   персонажа; відданий, що кліпає, і ласкавий, що бодається, — до персонажа; ті два — завжди лицем до нас, бо це про
- *   морду. Хто просить, іде по увагу чи слідом — до персонажа; далі — до цілі дії (річ, кіт-суперник, друг); інакше —
- *   `facing` сима: праворуч чи ліворуч, лицем до нас.
+ *   морду. Хто просить, іде по увагу чи слідом — до персонажа; хто сидить на клавіатурі й заважає роботі (`catOnComputer`), —
+ *   лицем до нас (на клавіатурі посеред стола, `deskSeat`), бік — як був; далі — до цілі дії (річ, кіт-суперник, друг);
+ *   інакше — `facing` сима: праворуч чи ліворуч, лицем до нас.
  */
 export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, options: CatFacingOptions = {}): RigFacing {
   const prev = options.prev ?? null;
@@ -194,6 +196,10 @@ export function catFacing(state: GameState, cat: Cat, prevPos: Vec | null, optio
     const beside = Math.abs(s.y) <= FACING_HYSTERESIS * Math.hypot(s.x, s.y);
     return facingFromTiles(dir, beside ? { view: "front", flip: prev?.flip ?? s.x < 0 } : prev) ?? fallback;
   }
+  // Сидить на клавіатурі й заважає роботі (`catOnComputer`): вигляд малює його на самій клавіатурі посеред стола (`deskSeat`),
+  // а не там, куди його поставив сим, — лицем до нас, лапами на клавішах, бік — як був. До середини комп'ютера від точки сима
+  // з правої половини стола (розбудили на комп'ютері, `wakeOnComputer`) він сидів би спиною до камери на пів монітора.
+  if (act.kind === "keyboard" && catOnComputer(state) === cat) return { view: "front", flip: prev?.flip ?? simSide };
   const target = actTargetPoint(state, cat);
   if (target !== null && Math.hypot(target.x - cat.x, target.y - cat.y) >= MIN_TARGET) {
     return facingFromTiles({ x: target.x - cat.x, y: target.y - cat.y }, prev) ?? fallback;

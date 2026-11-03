@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { createCat, idleAct } from "../src/sim/cat";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { advance, newGame } from "../src/sim/game";
-import { WINDOWS } from "../src/sim/home";
+import { catOnComputer } from "../src/sim/catai";
+import { objectById, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { absoluteMinute } from "../src/sim/time";
@@ -250,6 +251,30 @@ describe("куди дивиться кіт (`catFacing`)", () => {
     expect(catFacing(save.current, cat, null)).toEqual(FRONT_LEFT);
     cat.facing = 1;
     expect(catFacing(save.current, cat, null)).toEqual(FRONT);
+  });
+
+  it("сидить на клавіатурі й заважає роботі — лицем до нас, з якої половини стола не сів би; бік — як був (рецензія пакета)", () => {
+    const save = game();
+    const desk = objectById("computer");
+    // Розбудили на правій половині стола (`wakeOnComputer`): сідає на клавіатуру, а вигляд малює його на ній посеред стола
+    // (`deskSeat`). До середини комп'ютера від точки сима (−0,5 по x) — спиною до камери, на пів монітора.
+    const cat = withCat(save, { x: desk.x + 1.5, y: desk.y + 0.5 });
+    cat.facing = -1;
+    cat.act = act("keyboard", { target: "computer", minutes: 5 });
+    expect(catOnComputer(save.current)).toBe(cat);
+    expect(catFacing(save.current, cat, null, { pair: null })).toEqual(FRONT_LEFT);
+    expect(catFacing(save.current, cat, null, { pair: null, prev: FRONT })).toEqual(FRONT);
+    expect(catFacing(save.current, cat, null, { pair: null, prev: BACK_LEFT })).toEqual(FRONT_LEFT);
+    // На лівій половині, куди його садить сим, — так само лицем до нас.
+    cat.x = desk.x + 0.5;
+    cat.facing = 1;
+    expect(catFacing(save.current, cat, null, { pair: null })).toEqual(FRONT);
+    // Другий з act keyboard, що чекає поруч (на клавіатурі вже перший), роботі не заважає — дивиться на комп'ютер, як і раніше.
+    const second = withCat(save, { x: desk.x + 1.5, y: desk.y + 0.5 });
+    second.facing = 1;
+    second.act = act("keyboard", { target: "computer", minutes: 5 });
+    expect(catOnComputer(save.current)).toBe(cat);
+    expect(catFacing(save.current, second, null, { pair: null })).toEqual(BACK_LEFT);
   });
 
   it("на підвіконні під вікном у задній стіні — спиною до нас, у вікно; сумний — лицем до нас", () => {
