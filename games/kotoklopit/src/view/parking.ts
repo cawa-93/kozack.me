@@ -247,14 +247,22 @@ const smoothArea = (u: number): number => (u <= 0 ? 0 : u >= 1 ? u - 0.5 : u * u
 const zero = (value: number): number => (value === 0 ? 0 : value);
 
 /**
+ * Частка шляху за частку часу `u` (0…1), коли на початку швидкість — `a` шляхів за весь час, а наприкінці — `b`: кубічна
+ * Ерміта. Без перельоту й без руху назад, поки обидві від 0 до 3.
+ */
+function ease(u: number, a: number, b: number): number {
+  const t = clamp01(u);
+  return ((a + b - 2) * t + (3 - 2 * a - b)) * t * t + a * t;
+}
+
+/**
  * Частка шляху за частку часу `u` (0…1), коли на старті швидкість — `m` шляхів за весь час, а наприкінці — нуль, без
- * перельоту. До `m` = 3 — кубічна Ерміта (за малої швидкості машина ще трохи розганяється), далі — 1 − (1 − u)^m: що
+ * перельоту. До `m` = 3 — кубічна Ерміта (`ease`; за малої швидкості машина ще трохи розганяється), далі — 1 − (1 − u)^m: що
  * більше `m`, то різкіше гальмування на початку. На `m` = 3 обидві — та сама крива 1 − (1 − u)³.
  */
 function brake(u: number, m: number): number {
-  const t = clamp01(u);
-  if (m <= 3) return ((m - 2) * t + (3 - 2 * m)) * t * t + m * t;
-  return 1 - (1 - t) ** m;
+  if (m <= 3) return ease(u, m, 0);
+  return 1 - (1 - clamp01(u)) ** m;
 }
 
 // --- Шлях своєї машини --------------------------------------------------------------------------------------
@@ -789,14 +797,14 @@ export function homeLotSeed(gameSeed: number): number {
  * Виїзд із дому (≈ 3 с; час — мс від запуску сцени дороги, коли квартира вже темна). Кадр проступає з чорного (`fadeIn`), поки
  * машина стоїть на своєму місці носом угору й вмикає фари; з `reverseFrom` вона задки виїжджає з місця в проїзд (`reverse`, як від
  * пункту), рушає проїздом до з'їзду (розгін до `lotSpeed` за `lotRamp`, як від пункту), звертає праворуч на дорогу носом угору,
- * перестроюється в середню смугу (`laneChange`) і без перельоту стає там, де починається гонка (`brake`: трохи розганяється й
- * гальмує до нуля — гонка починається з місця). Камера стоїть, поки машина на майданчику, а щойно та звертає на дорогу, їде
- * вгору разом із нею: на скільки машина просунулася вгору дорогою, на таку частку шляху камери (`HOME_SHIFT`), — тож машина на
- * екрані лише трохи опускається на своє місце в гонці, розганяється й гальмує дорога, як у гонці, а парковка з будинком
- * відпливає вниз і до кінця вся на `clear` одиниць арту під нижнім краєм кадру. Зсув убік (вузьке вікно) за `panMs` від рушання
- * повертається до середини дороги. Наприкінці кадр — рівно кадр старту гонки; напис і смуга прогресу гонки проступають за
- * `hud` мс до кінця. Числа — рішення виконавця; перестроювання (`laneChange`) — довше, ніж від пункту: машина звертає в
- * середню смугу без різкого нахилу.
+ * перестроюється в середню смугу (`laneChange`) і без гальмування доїжджає туди, де починається гонка, — зі швидкістю, з якою
+ * гонка стартує (`HOME_SPEED`; рішення автора 2026-11-03). Дорогою швидкість плавно переходить (`ease`) від тієї, з якою машина
+ * звернула на дорогу, до швидкості старту. Камера стоїть, поки машина на майданчику, а щойно та звертає на дорогу, їде вгору
+ * разом із нею (`homeCamera`) і наприкінці — рівно з її швидкістю: машина на екрані стоїть на своєму місці в гонці, а дорога
+ * біжить, як у гонці в першу мить. Парковка з будинком відпливає вниз і до кінця вся на `clear` одиниць арту під нижнім краєм
+ * кадру. Зсув убік (вузьке вікно) за `panMs` від рушання повертається до середини дороги. Наприкінці кадр — рівно кадр гонки в
+ * мить старту; напис і смуга прогресу гонки проступають за `hud` мс до кінця. Числа — рішення виконавця; перестроювання
+ * (`laneChange`) — довше, ніж від пункту: машина звертає в середню смугу без різкого нахилу.
  *
  * `clear`: верх парковки з будинком (`LOT_BOUNDS.top`) — під нижнім краєм, і так далеко, що ні кадр парковки, ні те, що поруч із
  * нею інакше (дерева на плитках узбіччя під нею, `RaceScene.drawRoad`; вуличні ліхтарі праворуч поруч із нею, `streetPools`,
@@ -824,10 +832,24 @@ const START_LANE = newRace(0, 0).lane;
 const HOME_LOT_END = SCREEN - LOT_BOUNDS.top + HOME_DEPARTURE.clear;
 /** На скільки камера їде вгору за від'їзд (світ — донизу). */
 const HOME_SHIFT = HOME_LOT_END - PARKED_LOT_Y;
-/** Де своя машина стає наприкінці, у рамці парковки: там, де вона на старті гонки. */
+/** Де своя машина наприкінці, у рамці парковки: там, де вона на старті гонки. */
 const HOME_END: Vec = { x: laneX(0, START_LANE, 1), y: PLAYER_Y - HOME_LOT_END };
+/** Шлях своєї машини вгору від проїзду до старту гонки (рамка парковки, одиниці арту). */
+const HOME_RISE = AISLE - HOME_END.y;
+/**
+ * Камера за машиною вгору дорогою (`homeCamera`): частка шляху камери (`HOME_SHIFT`) за часткою `p` шляху машини вгору
+ * (`HOME_RISE`) — `p + HOME_BEND × (p² − p)`. З `HOME_BEND` = `HOME_RISE / HOME_SHIFT − 1` наприкінці (`p` = 1) камера їде рівно
+ * зі швидкістю машини — машина на екрані стоїть; на початку камера трохи швидша (`HOME_BEND` ≈ −0,07), тож машина на екрані
+ * плавно опускається з проїзду на своє місце в гонці.
+ */
+const HOME_BEND = HOME_RISE / HOME_SHIFT - 1;
 /** Машини потоку гонки на ×1, одиниць арту за секунду: на від'їзді час гри не йде, і швидкість гри (×N розробника) не діє. */
 const HOME_TRAFFIC = RACE.carSpeed * gameMinutes(1) * ROAD_UNIT;
+/**
+ * Своя машина на старті гонки на ×1 (`RACE.startSpeed`), одиниць арту за секунду: з нею машина доїжджає до старту, і з нею ж
+ * біжить дорога наприкінці від'їзду — як у гонці в першу мить. Швидкість гри (×N розробника) тут не діє, як і в потоку.
+ */
+const HOME_SPEED = RACE.startSpeed * gameMinutes(1) * ROAD_UNIT;
 
 /** Шлях від'їзду від свого будинку й рух ним. */
 interface HomeDeparturePlan {
@@ -838,9 +860,13 @@ interface HomeDeparturePlan {
   /** За скільки секунд від рушання вперед машина доїжджає до `turn` і з якою швидкістю (одиниць арту за секунду). */
   turnAt: number;
   turnSpeed: number;
-  /** Скільки секунд від `turn` до старту гонки й швидкість на початку цього відрізка в шляхах за той час (`brake`). */
+  /**
+   * Скільки секунд від `turn` до старту гонки й швидкість на початку цього відрізка (`pace`) і наприкінці (`finish` —
+   * `HOME_SPEED`) у шляхах за той час (`ease`).
+   */
   road: number;
   pace: number;
+  finish: number;
 }
 
 function homeDeparturePath(slot: number): HomeDeparturePlan {
@@ -852,6 +878,7 @@ function homeDeparturePath(slot: number): HomeDeparturePlan {
     line(cusp, turnOut),
     curve(turnOut, WEST, onRoad, NORTH, KAPPA * PARKING.turnOut),
     curve(onRoad, NORTH, inLane, NORTH, HOME_DEPARTURE.laneChange / 3),
+    // Останній відрізок — прямо вгору: наприкінці машина їде рівно дорогою, як у гонці.
     line(inLane, HOME_END),
   ]);
   const turn = ahead.marks[2] ?? 0;
@@ -860,7 +887,8 @@ function homeDeparturePath(slot: number): HomeDeparturePlan {
   const turnSpeed = HOME_DEPARTURE.lotSpeed * smooth(turnAt / ramp);
   const road = (HOME_DEPARTURE.ms - HOME_FORWARD) / 1000 - turnAt;
   const rest = ahead.length - turn;
-  return { back, ahead, turn, turnAt, turnSpeed, road, pace: rest > 0 ? (turnSpeed * road) / rest : 0 };
+  const paths = (speed: number): number => (rest > 0 ? (speed * road) / rest : 0);
+  return { back, ahead, turn, turnAt, turnSpeed, road, pace: paths(turnSpeed), finish: paths(HOME_SPEED) };
 }
 
 const homeDepartures = new Map<number, HomeDeparturePlan>();
@@ -883,7 +911,13 @@ function homeDeparturePose(ms: number, plan: HomeDeparturePlan): { x: number; y:
     return pathAt(plan.ahead, HOME_DEPARTURE.lotSpeed * ramp * smoothArea(t / ramp));
   }
   const u = plan.road > 0 ? (t - plan.turnAt) / plan.road : 1;
-  return pathAt(plan.ahead, plan.turn + (plan.ahead.length - plan.turn) * brake(u, plan.pace));
+  return pathAt(plan.ahead, plan.turn + (plan.ahead.length - plan.turn) * ease(u, plan.pace, plan.finish));
+}
+
+/** Яку частку шляху вгору (`HOME_SHIFT`) камера вже проїхала, коли своя машина — на `y` у рамці парковки (`HOME_BEND`). */
+function homeCamera(y: number): number {
+  const p = clamp01((AISLE - y) / HOME_RISE);
+  return p + HOME_BEND * (p * p - p);
 }
 
 /**
@@ -896,8 +930,10 @@ export interface HomeDepartureStart extends ParkingSpot {
 
 /**
  * Знімок старту гонки для від'їзду від свого будинку: сим ставить машини потоку лише з першим кроком гонки (`driveRace`), тож
- * перший крок робиться на копії (`race` не змінюється) — і ті самі машини гонка поставить сама, коли від'їзд скінчиться.
- * `gameSeed` — зерно гри (`state.seed`), `difficulty` і `traffic` — як у `driveTrip` (складність і `trafficFactor`).
+ * перший крок робиться на копії (`race` не змінюється) — і ті самі машини гонка поставить сама, коли від'їзд скінчиться. Де вони
+ * — у мить старту (`race.minutes`), ще до кроку: кадр кінця від'їзду — гонка в мить старту, а її перший крок — уже рух від нього
+ * (машина стартує не з місця, `RACE.startSpeed`). `gameSeed` — зерно гри (`state.seed`), `difficulty` і `traffic` — як у
+ * `driveTrip` (складність і `trafficFactor`).
  */
 export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Difficulty, traffic = 1): HomeDepartureStart {
   const probe = structuredClone(race);
@@ -905,7 +941,7 @@ export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Dif
   return {
     done: race.done,
     seed: homeLotSeed(gameSeed),
-    cars: probe.cars.map((car) => ({ lane: car.lane, ahead: carAt(probe, car) - probe.done, look: trafficLook(car) })),
+    cars: probe.cars.map((car) => ({ lane: car.lane, ahead: carAt(race, car) - race.done, look: trafficLook(car) })),
   };
 }
 
@@ -913,18 +949,19 @@ export function homeDepartureStart(race: Race, gameSeed: number, difficulty: Dif
  * Кадр від'їзду від свого будинку через `ms` мс від запуску сцени дороги на кадрі заввишки `height` px (`HOME_DEPARTURE`). На
  * `ms` = 0 — кадр парковки, як на місці біля пункту (парковка з будинком посередині висоти кадру, машина на своєму місці носом
  * угору, дорога порожня), але чорний: він проступає за `fadeIn`. Зсув убік (`pan`) — частка `lotFitPan`: картки немає, тож
- * парковку лише вміщено в кадр. З `HOME_DEPARTURE.ms` — `done` і кадр старту гонки: зсув дороги `done × ppu`, своя машина в
- * смузі старту на `RACE_PLAYER_Y` носом угору, машини потоку там, де їх поставить перший крок гонки (`homeDepartureStart`), —
- * вони весь від'їзд їдуть дорогою зі швидкістю потоку гонки на ×1 і з'являються згори, бо камера їх обганяє; парковка з
- * будинком — уся під нижнім краєм кадру.
+ * парковку лише вміщено в кадр. З `HOME_DEPARTURE.ms` — `done` і кадр гонки в мить старту: зсув дороги `done × ppu`, своя машина в
+ * смузі старту на `RACE_PLAYER_Y` носом угору, машини потоку там, де вони в мить старту (ті, що поставить перший крок гонки,
+ * `homeDepartureStart`), — вони весь від'їзд їдуть дорогою зі швидкістю потоку гонки на ×1 і з'являються згори, бо камера їх
+ * обганяє; парковка з будинком — уся під нижнім краєм кадру. Наприкінці дорога біжить зі швидкістю старту гонки на ×1
+ * (`RACE.startSpeed`), а своя машина на екрані стоїть: перший крок гонки продовжує рух без ривка.
  */
 export function homeDepartureFrame(ms: number, height: number, start: HomeDepartureStart): ParkingAnimationFrame {
   const time = Math.min(Math.max(0, ms), HOME_DEPARTURE.ms);
   const k = raceScale(height);
   const plan = planHomeDeparture(ownSlot(start.seed));
   const pose = homeDeparturePose(time, plan);
-  // Камера — за машиною вгору дорогою: частка шляху вгору від проїзду до старту гонки (задки — ще ні).
-  const up = time < HOME_FORWARD ? 0 : clamp01((AISLE - pose.y) / (AISLE - HOME_END.y));
+  // Камера — за машиною вгору дорогою (задки — ще ні).
+  const up = time < HOME_FORWARD ? 0 : homeCamera(pose.y);
   const lotY = PARKED_LOT_Y + HOME_SHIFT * up;
   const behind = (HOME_TRAFFIC * (HOME_DEPARTURE.ms - time)) / 1000;
   const traffic: ParkingCar[] = [];

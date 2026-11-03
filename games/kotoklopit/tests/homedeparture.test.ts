@@ -1,7 +1,8 @@
 // Виїзд із дому (§8.5 «Виїзд із дому — від'їзд від свого будинку», рішення автора 2026-11-03; `src/view/parking.ts`,
 // `homeDepartureFrame`): з чорного — парковка біля свого будинку, машина задкує з місця, звертає на дорогу носом угору в середню
-// смугу й стає на старті гонки — і без розриву гонка. Вогні вночі (`src/view/racelight.ts`), позначка «щойно вирушили від
-// дверей» (`src/view/departing.ts`) і сценарій `scenarios/home-departure.json` (поле `leave`). Без Phaser.
+// смугу й без гальмування доїжджає до старту гонки — і без розриву, з тією самою швидкістю, гонка (рішення автора 2026-11-03).
+// Вогні вночі (`src/view/racelight.ts`), позначка «щойно вирушили від дверей» (`src/view/departing.ts`), підказка старту
+// (`src/view/starthint.ts`) і сценарій `scenarios/home-departure.json` (поле `leave`). Без Phaser.
 
 import { describe, expect, it } from "vitest";
 
@@ -10,8 +11,9 @@ import { applyScenario, FILE_SCENARIOS, leaveHome, type Scenario } from "../src/
 import { MODIFIERS, RACE } from "../src/sim/config";
 import { deserialize, serialize } from "../src/sim/game";
 import { carAt, driveRace, newRace } from "../src/sim/race";
+import { gameMinutes } from "../src/sim/time";
 import { canLeave } from "../src/sim/trips";
-import type { Difficulty, Race, Trip } from "../src/sim/types";
+import type { Difficulty, Race, RaceCar, Trip } from "../src/sim/types";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
 import { RACE_LOT, RACE_TILES } from "../src/view/art/manifest/a14-race";
 import { artEntry } from "../src/view/art/manifest";
@@ -49,6 +51,7 @@ import {
   tripLightMinute,
 } from "../src/view/racelight";
 import { DESTINATION_ROOFS, laneX, RACE_PLAYER_Y, racePixelsPerUnit, raceScale, steerTilt, tileRows, trafficLook, vergeColumns } from "../src/view/racelook";
+import { startHintShown } from "../src/view/starthint";
 import { DESTINATION_ICONS } from "../src/view/symbols";
 
 /** Висоти кадру: 720 (десктоп і телефон набік) і вищі (вузьке вікно). */
@@ -84,24 +87,46 @@ function corners(box: CarBox): { x: number; y: number }[] {
   }));
 }
 
+/** Кадр гонки (x — від середини дороги). */
+interface RaceFrame {
+  car: { x: number; y: number; rotation: number };
+  cars: { x: number; y: number; kind: string; color: number }[];
+  offset: number;
+}
+
 /**
- * Перший кадр гонки, як його малює `RaceArt.draw` після першого кроку сима (`RaceScene.updateRace` — і в кадрі, де скінчився
- * від'їзд): своя машина й машини потоку, які поставив цей крок.
+ * Кадр гонки `race`, як його малює `RaceArt.draw`, з машинами потоку `cars` (у мить старту сим їх ще не поставив — їх ставить
+ * перший крок, тож їх беруть з копії після нього): своя машина, зсув дороги й машини потоку в кадрі.
  */
-function raceStart(race: Race, height: number, difficulty: Difficulty, traffic: number): { car: { x: number; y: number; rotation: number }; cars: { x: number; y: number; kind: string; color: number }[]; offset: number } {
+function raceFrame(race: Race, cars: readonly RaceCar[], height: number): RaceFrame {
   const k = raceScale(height);
   const ppu = racePixelsPerUnit(height);
   const playerY = height * RACE_PLAYER_Y;
-  const after = structuredClone(race);
-  // Перший кадр гонки: сим робить крок (≥ `RACE.step`) — і ставить машини потоку.
-  driveRace(after, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic);
   const reach = 84 * k;
-  const cars = after.cars
-    .map((car) => ({ x: laneX(0, car.lane, k), y: playerY - (carAt(after, car) - after.done) * ppu, ...trafficLook(car) }))
+  const shown = cars
+    .map((car) => ({ x: laneX(0, car.lane, k), y: playerY - (carAt(race, car) - race.done) * ppu, ...trafficLook(car) }))
     .filter((car) => car.y >= -reach && car.y <= height + reach)
     .map(({ kind, color, x, y }) => ({ x, y, kind, color }));
-  return { car: { x: laneX(0, after.lane, k), y: playerY, rotation: steerTilt(after.lane, after.targetLane) }, cars, offset: after.done * ppu };
+  return { car: { x: laneX(0, race.lane, k), y: playerY, rotation: steerTilt(race.lane, race.targetLane) }, cars: shown, offset: race.done * ppu };
 }
+
+/** Перший крок гонки на копії (`RACE.step`, без керування): машини потоку, які він поставить. */
+function firstStep(race: Race, difficulty: Difficulty, traffic: number): Race {
+  const after = structuredClone(race);
+  driveRace(after, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic);
+  return after;
+}
+
+/**
+ * Гонка в мить старту (кадр кінця від'їзду): та сама гонка, ще без кроку, — машина вже котиться (`RACE.startSpeed`), тож перший
+ * крок — уже рух від цього кадру; машини потоку — ті, що поставить перший крок, там, де вони в мить старту.
+ */
+function raceStart(race: Race, height: number, difficulty: Difficulty, traffic: number): RaceFrame {
+  return raceFrame(race, firstStep(race, difficulty, traffic).cars, height);
+}
+
+/** Швидкість старту гонки на ×1 на екрані, px за секунду на кадрі заввишки `height`: так біжить дорога в першу мить гонки. */
+const startScroll = (height: number): number => RACE.startSpeed * gameMinutes(1) * racePixelsPerUnit(height);
 
 describe("виїзд із дому: свій будинок", () => {
   it("дах — свого кольору з палітри, не такий, як у жодного пункту; табличка — гліф дому 🏠, не іконка пункту", () => {
@@ -126,7 +151,7 @@ describe("виїзд із дому: свій будинок", () => {
     expect(layouts.size).toBeGreaterThan(1);
   });
 
-  it("знімок старту не змінює гонку: машини потоку — ті самі, що поставить перший крок гонки", () => {
+  it("знімок старту не змінює гонку: машини потоку — ті самі, що поставить перший крок гонки, там, де вони в мить старту", () => {
     for (const difficulty of DIFFICULTIES) {
       for (const traffic of TRAFFIC) {
         for (let seed = 1; seed <= 12; seed++) {
@@ -135,12 +160,16 @@ describe("виїзд із дому: свій будинок", () => {
           const start = homeDepartureStart(race, seed, difficulty, traffic);
           expect(race).toEqual(before);
           expect(start.done).toBe(0);
-          const after = structuredClone(race);
-          driveRace(after, RACE.step, { steer: 0, throttle: 0 }, difficulty, traffic);
+          const after = firstStep(race, difficulty, traffic);
           expect(start.cars.map((car) => [car.lane, car.look])).toEqual(after.cars.map((car) => [car.lane, trafficLook(car)]));
-          for (const [i, car] of start.cars.entries()) expect(car.ahead).toBeCloseTo(carAt(after, after.cars[i] ?? { lane: 0, start: 0 }) - after.done, 9);
-          // Усі машини старту — попереду своєї щонайменше на одиницю дороги (`newRace`: `spawned` = 1).
-          for (const car of start.cars) expect(car.ahead).toBeGreaterThanOrEqual(1);
+          // У мить старту (`race.minutes`), а не після кроку: машина стартує не з місця, і крок — уже рух.
+          for (const [i, car] of start.cars.entries()) expect(car.ahead).toBeCloseTo(carAt(race, after.cars[i] ?? { lane: 0, start: 0 }) - race.done, 9);
+          // Усі машини старту — попереду своєї щонайменше на одиницю дороги (`newRace`: `spawned` = 1), а в смузі старту — далі
+          // за межу вільної смуги (`RACE.startClear`).
+          for (const car of start.cars) {
+            expect(car.ahead).toBeGreaterThanOrEqual(1);
+            if (car.lane === race.lane) expect(car.ahead).toBeGreaterThanOrEqual(RACE.startClear);
+          }
         }
       }
     }
@@ -174,7 +203,7 @@ describe("виїзд із дому: рух", () => {
     }
   });
 
-  it("наприкінці — кадр старту гонки: своя машина в смузі старту носом угору, зсув дороги, машини потоку, парковки в кадрі немає", () => {
+  it("наприкінці — кадр гонки в мить старту: своя машина в смузі старту носом угору, зсув дороги, машини потоку, парковки в кадрі немає", () => {
     for (const height of HEIGHTS) {
       for (const difficulty of DIFFICULTIES) {
         for (const traffic of TRAFFIC) {
@@ -210,17 +239,27 @@ describe("виїзд із дому: рух", () => {
     }
   });
 
-  it("без стрибка й без перельоту: машина плавно гальмує до нуля на старті, дорога спиняється разом із нею", () => {
+  it("без гальмування (рішення автора 2026-11-03): наприкінці машина на екрані стоїть на старті, а дорога біжить зі швидкістю старту гонки", () => {
     for (const height of HEIGHTS) {
       const k = raceScale(height);
-      for (const seed of [1, 2, 3, 4, 5, 6]) {
+      for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
         const start = startOf(seed);
         const end = homeDepartureFrame(HOME_DEPARTURE.ms, height, start);
+        // Похідна зсуву дороги в останню мить — швидкість, з якою дорога біжить у гонці на старті (`RACE.startSpeed` на ×1).
+        const h = 1;
+        const just = homeDepartureFrame(HOME_DEPARTURE.ms - h, height, start);
+        expect(((end.offset - just.offset) * 1000) / h / startScroll(height)).toBeCloseTo(1, 2);
+        // Своя машина на екрані вже стоїть на своєму місці в гонці: за останній кадр (16 мс) — менше за піксель.
         const before = homeDepartureFrame(HOME_DEPARTURE.ms - 16, height, start);
-        // За останній кадр — менше за піксель (швидкість ≈ 0), як машина, що стоїть на старті гонки.
         expect(Math.hypot(end.car.x - before.car.x, end.car.y - before.car.y)).toBeLessThan(0.5 * k);
-        expect(Math.abs(end.offset - before.offset)).toBeLessThan(0.5 * k);
         expect(Math.abs(end.car.rotation - before.car.rotation)).toBeLessThan(1e-3);
+        // Дорогою до старту машина не гальмує: останні 0,9 с дорога біжить майже зі швидкістю старту гонки (не повільніше за 0,85
+        // від неї) — не спиняється й не сповільнюється помітно.
+        for (let ms = HOME_DEPARTURE.ms - 900 + 20; ms <= HOME_DEPARTURE.ms; ms += 20) {
+          const frame = homeDepartureFrame(ms, height, start);
+          const prior = homeDepartureFrame(ms - 20, height, start);
+          expect(((frame.offset - prior.offset) * 50) / startScroll(height), `${ms} мс`).toBeGreaterThan(0.85);
+        }
         // Кадр за кадром — без стрибків (найшвидше — ≈ 1100 одиниць арту за секунду, ×3,8 гонки).
         let prev = homeDepartureFrame(0, height, start);
         for (let ms = 5; ms <= HOME_DEPARTURE.ms; ms += 5) {
@@ -229,6 +268,51 @@ describe("виїзд із дому: рух", () => {
           expect(Math.abs(frame.car.rotation - prev.car.rotation)).toBeLessThan(0.12);
           expect(Math.abs(frame.offset - prev.offset) / k).toBeLessThan(6.5);
           prev = frame;
+        }
+      }
+    }
+  });
+
+  it("від'їзд і гонка — без шва: останні кадри від'їзду й перші кадри гонки зсувають дорогу й машини потоку однаково, своя машина стоїть", () => {
+    // Як у сцені (`RaceScene.updateLeave`): кадри по 16,7 мс; від'їзд скінчився посеред кадру — гонці дістається лише решта кадру.
+    const dt = 1000 / 60;
+    for (const height of HEIGHTS) {
+      const k = raceScale(height);
+      for (const difficulty of DIFFICULTIES) {
+        for (let seed = 1; seed <= 6; seed++) {
+          const race = fresh(seed);
+          const start = homeDepartureStart(race, seed, difficulty, 1);
+          const frames: RaceFrame[] = [];
+          // Кадри від'їзду: …, T − 2,3 dt, T − 1,3 dt, T − 0,3 dt.
+          for (const n of [3, 2, 1]) {
+            const frame = homeDepartureFrame(HOME_DEPARTURE.ms - (n - 0.7) * dt, height, start);
+            frames.push({ car: frame.car, offset: frame.offset, cars: frame.traffic.map((car) => ({ x: car.x, y: car.y, kind: car.look.kind, color: car.look.color })) });
+          }
+          // Кадри гонки: перший — лише 0,7 dt (решта кадру за кінцем від'їзду), далі — по dt.
+          const live = structuredClone(race);
+          for (const ms of [0.7 * dt, dt, dt]) {
+            expect(driveRace(live, gameMinutes(ms / 1000), { steer: 0, throttle: 0 }, difficulty, 1)).toBeNull();
+            frames.push(raceFrame(live, live.cars, height));
+          }
+          // Зсув дороги за кадр — той самий (з точністю до 2 %: швидкість ледь змінюється — без газу машина в гонці поступово
+          // сповільнюється); ривок — крок за весь кадр після кінця від'їзду — дав би ×1,3, а гальмування до нуля — ×0.
+          const steps = frames.slice(1).map((frame, i) => frame.offset - (frames[i]?.offset ?? 0));
+          for (const step of steps) expect(Math.abs(step / (startScroll(height) * (dt / 1000)) - 1)).toBeLessThan(0.02);
+          for (const [i, frame] of frames.entries()) {
+            expect(frame.car.x, `кадр ${i}`).toBeCloseTo(laneX(0, race.lane, k), 6);
+            expect(Math.abs(frame.car.y - height * RACE_PLAYER_Y), `кадр ${i}`).toBeLessThan(0.05 * k);
+            expect(frame.car.rotation).toBeCloseTo(0, 6);
+          }
+          // Машини потоку: кожна, що є в сусідніх кадрах, за кадр зсувається однаково — і через межу від'їзду й гонки.
+          const moves: number[] = [];
+          for (let i = 1; i < frames.length; i++) {
+            for (const car of frames[i]?.cars ?? []) {
+              const same = frames[i - 1]?.cars.find((c) => c.x === car.x && c.kind === car.kind && c.color === car.color);
+              if (same) moves.push(car.y - same.y);
+            }
+          }
+          const expected = (startScroll(height) - RACE.carSpeed * gameMinutes(1) * racePixelsPerUnit(height)) * (dt / 1000);
+          for (const move of moves) expect(move / expected).toBeCloseTo(1, 1);
         }
       }
     }
@@ -451,6 +535,29 @@ describe("виїзд із дому: кадр старту гонки без бу
   });
 });
 
+describe("підказка старту гонки (§8.5): машина вже котиться", () => {
+  it("від самого старту — є, поки гравець нічого не натиснув, хоч машина й котиться; після першого натискання — ні", () => {
+    const race = fresh(3);
+    expect(race.speed).toBeGreaterThan(0);
+    expect(startHintShown(race, true, false)).toBe(true);
+    expect(startHintShown(race, true, true)).toBe(false);
+    // Без натискання машина зупинилася — підказка лишається.
+    driveRace(race, 20, { steer: 0, throttle: 0 }, "normal");
+    expect(race.speed).toBe(0);
+    expect(startHintShown(race, true, false)).toBe(true);
+  });
+
+  it("гонка після перезавантаження (не від старту): поки машина котиться — немає, спинилася — є", () => {
+    const race = fresh(3);
+    driveRace(race, 1, { steer: 0, throttle: 1 }, "normal");
+    expect(race.speed).toBeGreaterThan(0);
+    expect(startHintShown(race, false, false)).toBe(false);
+    race.speed = 0;
+    expect(startHintShown(race, false, false)).toBe(true);
+    expect(startHintShown(race, false, true)).toBe(false);
+  });
+});
+
 describe("виїзд із дому: лише від дверей", () => {
   it("позначку «щойно вирушили» забирають раз, і лише з тієї самої поїздки: копія з JSON (перезавантаження) — без неї", () => {
     const trip: Trip = { destination: "shop", phase: "drive", cat: null, race: fresh(5), losses: [], visit: 30, seed: 41 };
@@ -490,14 +597,24 @@ describe("сценарій «Виїзд із дому» (scenarios/home-departur
     expect(other.current.trip).toBeNull();
   });
 
-  it("на старті гонки видно машини потоку: на від'їзді вони в'їжджають у кадр згори", () => {
+  it("на старті гонки видно машини потоку — у сусідніх смугах, своя вільна (`RACE.startClear`): на від'їзді вони в'їжджають у кадр згори", () => {
     const save = applyScenario(scenario());
     const trip = leaveHome(save, scenario());
     if (!trip) throw new Error("сценарій не вирушив");
     const start = homeDepartureStart(trip.race, save.current.seed, save.current.difficulty, 1);
     const end = homeDepartureFrame(HOME_DEPARTURE.ms, 720, start);
-    expect(end.traffic.length).toBeGreaterThanOrEqual(2);
+    expect(end.traffic.length).toBeGreaterThanOrEqual(1);
+    for (const car of end.traffic) expect(car.x).not.toBeCloseTo(laneX(0, trip.race.lane, 1), 6);
     expect(homeDepartureFrame(HOME_DEPARTURE.reverseFrom, 720, start).traffic).toEqual([]);
+  });
+
+  it("перезавантаження посеред від'їзду — одразу гонка вже з тією самою швидкістю: швидкість старту — у симі", () => {
+    const save = applyScenario(scenario());
+    const trip = leaveHome(save, scenario());
+    if (!trip) throw new Error("сценарій не вирушив");
+    const reloaded = deserialize(serialize(save)).current.trip;
+    expect(reloaded?.race.speed).toBe(RACE.startSpeed);
+    expect(reloaded?.race.minutes).toBe(0);
   });
 
   it("перезавантаження посеред від'їзду: поїздка з JSON — без позначки, тож одразу гонка", () => {

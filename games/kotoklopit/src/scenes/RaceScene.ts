@@ -7,9 +7,10 @@
 // йде дорога додому. З чорного (`src/view/homeroad.ts`) дорога додому починається лише тоді, коли машини на парковці немає:
 // знайда, яку відносять у притулок, і запасний шлях. Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03) — дзеркало:
 // поїздка щойно вирушила від дверей, і день, затемнивши квартиру, запускає сцену дороги з від'їздом від свого будинку
-// (`homeDepartureFrame`): з чорного — парковка біля дому, машина задкує, звертає на дорогу носом угору й стає на старті, і без
-// розриву починається гонка. У темний час (§8.9 «День і ніч») поверх дороги — ніч (`src/view/racenight.ts`, розрахунки —
-// `src/view/racelight.ts`): тон, фари й задні вогні, вуличні ліхтарі, світло таблички; HUD гонки — над нею.
+// (`homeDepartureFrame`): з чорного — парковка біля дому, машина задкує, звертає на дорогу носом угору й доїжджає до старту, і без
+// розриву, з тією самою швидкістю, починається гонка. У темний час (§8.9 «День і ніч») поверх дороги — ніч
+// (`src/view/racenight.ts`, розрахунки — `src/view/racelight.ts`): тон, фари й задні вогні, вуличні ліхтарі, світло таблички;
+// HUD гонки — над нею.
 
 import Phaser from "phaser";
 
@@ -38,6 +39,7 @@ import {
   arrivalMs,
   arrivalStart,
   departureFrame,
+  HOME_DEPARTURE,
   HOME_LOT,
   homeDepartureFrame,
   homeDepartureHud,
@@ -107,6 +109,7 @@ import {
   type BarPart,
   type TrafficLook,
 } from "../view/racelook";
+import { startHintShown } from "../view/starthint";
 import { DESTINATION_ICONS } from "../view/symbols";
 
 const MAX_FRAME_SECONDS = 0.1;
@@ -145,10 +148,12 @@ function isTyping(): boolean {
 export class RaceScene extends Phaser.Scene {
   private g!: Phaser.GameObjects.Graphics;
   private label!: Phaser.GameObjects.Text;
-  /** «W ↑» на дорозі, поки машина стоїть, а гравець ще нічого не натискав (на клавіатурі). */
+  /** «W ↑» на дорозі на старті гонки (і поки машина стоїть), а гравець ще нічого не натискав (на клавіатурі; `startHintShown`). */
   private hint!: Phaser.GameObjects.Text;
   /** Гравець уже торкнувся екрана чи натиснув газ, гальмо чи смугу в цій гонці: підказка старту більше не потрібна. */
   private touched = false;
+  /** Сцена показує гонку від самого старту (від'їзд від дому чи свіжа гонка), а не з середини після перезавантаження (`startHintShown`). */
+  private fromStart = false;
   private keys: Record<"up" | "down" | "up2" | "down2", Phaser.Input.Keyboard.Key> | null = null;
   private steer: -1 | 0 | 1 = 0;
   /** Плаваючий джойстик, як удома: вперед — газ, назад — гальмо, убік — перестроїтися. */
@@ -234,6 +239,7 @@ export class RaceScene extends Phaser.Scene {
       .setStroke(PALETTE.ink, 5);
     // Керування — лише своєї гонки: перестроювання, натиснуте ще в минулій (на прибутті, на місці, у від'їзді), сюди не переходить.
     this.touched = false;
+    this.fromStart = trip?.phase === "drive" && trip.race.minutes === 0;
     this.stick = null;
     this.steer = 0;
     if (this.home) {
@@ -430,6 +436,11 @@ export class RaceScene extends Phaser.Scene {
    * (`driveRace`), і кадр гонки без нього на мить лишився б без них (уночі — і без їхніх фар), а наступний кадр поставив би їх
    * знову (рецензія від'їзду 2026-11-03). Крок — ті самі машини, що в знімку старту (`homeDepartureStart`) і в кадрі кінця
    * від'їзду.
+   *
+   * Машина стартує не з місця (§8.5, рішення автора 2026-11-03): кадр кінця від'їзду — гонка в мить старту, а дорога в ньому
+   * біжить зі швидкістю старту. Тож від'їзд, що скінчився сам, передає гонці лише ту частку кадру, яка вже за його кінцем: інакше
+   * дорога за цей кадр проїхала б більше, ніж за звичайний, — ривок. Кінець припав рівно на кадр — у ньому й лишається кадр кінця
+   * від'їзду (там ті самі машини потоку), а гонка — з наступного. Пропуск — як і раніше, крок на весь кадр.
    */
   private updateLeave(delta: number): void {
     const leave = this.leave;
@@ -438,9 +449,10 @@ export class RaceScene extends Phaser.Scene {
     if (this.session.save !== leave.save || state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     leave.ms += this.animationMs(delta);
     if (!leave.skipped && !this.drawLeave()) return;
+    const over = leave.skipped ? delta : leave.ms - HOME_DEPARTURE.ms;
     this.leave = null;
     this.dark.setFillStyle(0x000000, 0);
-    this.updateRace(delta);
+    if (over > 0) this.updateRace(over);
   }
 
   /**
@@ -467,7 +479,7 @@ export class RaceScene extends Phaser.Scene {
       this.drawLabel(trip, view.safe, hud);
       // Підказка старту проступає разом із написом, над передом своєї машини, що якраз стає на старт: наприкінці від'їзду вона
       // там само й така сама, як у першому кадрі гонки (`draw`), — не з'являється стрибком (рецензія від'їзду 2026-11-03).
-      this.drawStartHint(g, trip.race.speed === 0 && !this.touched, panned, { x: panned.cx + frame.car.x, y: frame.car.y }, hud);
+      this.drawStartHint(g, startHintShown(trip.race, this.fromStart, this.touched), panned, { x: panned.cx + frame.car.x, y: frame.car.y }, hud);
     } else {
       this.label.setVisible(false);
       this.hint.setVisible(false);
@@ -686,7 +698,7 @@ export class RaceScene extends Phaser.Scene {
     const g = this.g.clear();
     art.draw(trip, view);
     this.drawStick(g);
-    this.drawStartHint(g, race.speed === 0 && !this.touched, view, { x: laneX(view.cx, race.lane, view.k), y: view.playerY });
+    this.drawStartHint(g, startHintShown(race, this.fromStart, this.touched), view, { x: laneX(view.cx, race.lane, view.k), y: view.playerY });
     this.drawLabel(trip, view.safe);
   }
 
@@ -729,10 +741,11 @@ export class RaceScene extends Phaser.Scene {
   }
 
   /**
-   * Підказка без слів на старті (§8.5, §11.3а «показуй, а не розказуй»; загальна ревізія 2026-10-29): машина стоїть, а гравець
-   * ще нічого не натискав — на сенсорному екрані ліворуч від дороги ледь помітно пульсує тінь джойстика, що тягнеться вгору,
-   * а з клавіатурою над машиною — «W ↑». Від першого дотику чи натискання підказка зникає до кінця гонки. `car` — середина своєї
-   * машини на екрані, `fade` — частка проступання (наприкінці від'їзду від свого будинку, `homeDepartureHud`).
+   * Підказка без слів на старті (§8.5, §11.3а «показуй, а не розказуй»; загальна ревізія 2026-10-29): гонка від самого старту чи
+   * машина стоїть, а гравець ще нічого не натискав (`startHintShown`) — на сенсорному екрані ліворуч від дороги ледь помітно
+   * пульсує тінь джойстика, що тягнеться вгору, а з клавіатурою над машиною — «W ↑». Від першого дотику чи натискання підказка
+   * зникає до кінця гонки. `car` — середина своєї машини на екрані, `fade` — частка проступання (наприкінці від'їзду від свого
+   * будинку, `homeDepartureHud`).
    */
   private drawStartHint(g: Phaser.GameObjects.Graphics, shown: boolean, view: RaceView, car: { x: number; y: number }, fade = 1): void {
     const touch = window.matchMedia("(pointer: coarse)").matches;
