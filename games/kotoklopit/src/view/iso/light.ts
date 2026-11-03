@@ -12,8 +12,8 @@
 // - смуги сонця — додаванням на підлозі (`BACKDROP.sun`), під стінами й меблями;
 // - конуси від невидимих стельових світильників — додаванням, точки реєстру глибини під світильником: ближчі меблі, стіни, коти
 //   й персонаж їх закривають;
-// - сяйво бра, свічок на поличках і бойлера — на стіні (`BACKDROP.glow`), газу, екрана й дисплея станції — у проміжку глибини
-//   свого господаря (станції — над її точкою реєстру).
+// - сяйво бра, свічок на поличках і бойлера — на стіні (`BACKDROP.glow`), настільної лампи, газу, екрана й дисплея станції — у
+//   проміжку глибини свого господаря (станції — над її точкою реєстру).
 //
 // Удень (`daylight` → null) і коли світло доби вимкнене (`WorldFrame.lightMinute` = null, режим розробки `?light=off`) усе
 // сховано, а до першої ночі нічого й не створено: удень квартира до пікселя така, як без світла доби. Режими змішування
@@ -46,7 +46,7 @@ import {
   type LightmapPlan,
   type PoolPaint,
 } from "../light/lightmap";
-import { BOILER_LIGHT, CANDLE_LIGHT, CONE, GAS_LIGHT, LIGHTMAP, luma, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT, SUN, toHex } from "../light/lightlook";
+import { BOILER_LIGHT, CANDLE_LIGHT, CONE, DESK_LAMP_LIGHT, GAS_LIGHT, LIGHTMAP, luma, SCONCE_LIGHT, SCREEN_LIGHT, STATION_LIGHT, SUN, toHex } from "../light/lightlook";
 import { CONE_BASE, softTexture } from "../light/lighttex";
 import { lightSources, type LightKind, type LightSource } from "../light/sources";
 import type { PartContext } from "../world/context";
@@ -74,6 +74,8 @@ interface GlowLook {
 
 const GLOWS: Record<Exclude<LightKind, "ceiling">, GlowLook> = {
   sconce: { parts: [{ color: SCONCE_LIGHT.color, ...SCONCE_LIGHT.glow }], wall: true, needsDark: false },
+  // Настільна лампа — над столом (у його проміжку глибини): кіт на столі й персонаж за ним — над сяйвом.
+  lamp: { parts: [{ color: DESK_LAMP_LIGHT.color, ...DESK_LAMP_LIGHT.glow }], wall: false, needsDark: false },
   boiler: { parts: [{ color: BOILER_LIGHT.color, ...BOILER_LIGHT.glow }], wall: true, needsDark: true },
   // Станція стоїть на підлозі (точка реєстру, не тло): сяйво дисплея — над її кадром (`POWER_STATION_POINT`), а не під нею.
   station: { parts: [{ color: STATION_LIGHT.color, ...STATION_LIGHT.glow }], wall: false, needsDark: true },

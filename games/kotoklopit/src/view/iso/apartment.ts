@@ -1,14 +1,14 @@
 // Ізометрична квартира (крок 16, F3b, `GRAPHICS_PLAN.md`): плити кімнат (підлога й задні стіни), вікна, внутрішні стіни й
 // передні плінтуси сегментами, поріг дверей, меблі `OBJECTS` зі станами, наповнення сховищ, ящики біля входу, страви на
 // плиті й поверхнях, дрібнички на столах, туалетний папір, дріт комп'ютера, котячі сліди, павутина в кутах (§8.7), а також
-// декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра,
+// декор, якого сим не знає (§8.9, §4.1; `src/view/decor.ts`, стани — `decorlook.ts`): кухонне вікно, бра, настільна лампа,
 // бойлер, зарядна станція й полички зі свічками дня відключення. Кадри — з маніфесту арту (`addArt`), тож поки арту немає, на
 // їхньому місці заглушки потрібного розміру й pivot.
 //
 // Що показати — зі стану гри (`looks.ts`).
 // Глибина: плити кімнат, вікна, павутина, папір, бра, полички й бойлер на задній стіні — під усім (`ISO_BACKDROP_DEPTH`);
 // меблі й сегменти стін — коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва,
-// дрібничка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
+// настільна лампа, дрібничка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
 // реєстрі, як дріт. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
 // (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами,
 // шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня
@@ -19,14 +19,14 @@
 import type Phaser from "phaser";
 
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
-import { isPresent, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
+import { isPresent, objectById, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
 import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
@@ -90,7 +90,7 @@ export const BACKDROP = {
  * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
  * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, trinket: 0.0025, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
 
 /** Півширина зарядної станції на екрані, одиниці арту (`IsoPointOptions.half`): кабель до системного блока — на 62 ліворуч. */
 const STATION_HALF = 62;
@@ -202,6 +202,12 @@ export class IsoApartmentView implements ApartmentPart {
   private readonly shelves: Piece[] = [];
   /** Зарядна станція дня відключення: на підлозі праворуч від стола з комп'ютером, точка реєстру. */
   private readonly station: { image: Phaser.GameObjects.Image; point: IsoPointHandle; shown: boolean };
+  /** Настільна лампа на столі з комп'ютером (`DESK_LAMP`): зсув від pivot стола — центр основи на стільниці. */
+  private readonly deskLamp: Point = (() => {
+    const at = ISO.toScreen(DESK_LAMP.at);
+    const host = objectScreen(objectById(DESK_LAMP.host));
+    return { x: at.x - host.x, y: at.y - DESK_LAMP.z - host.y };
+  })();
   private readonly decor: DecorLook = decorLookInit();
   private readonly wire: Piece;
   private readonly wirePoint: IsoPointHandle;
@@ -432,7 +438,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.drawStates(state);
     this.drawTraces(state);
     const decor = decorLook(state, frame.lightMinute, this.decor);
-    this.drawSurfaces(state);
+    this.drawSurfaces(state, decor);
     this.drawDecor(decor);
     this.drawCobwebs(state);
     // Розмотаний рулон (§9.12, «Мисливський інстинкт») і перегризений дріт (§9.12, «Гризіння»).
@@ -545,9 +551,11 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /**
-   * Страви на поверхнях (плита показує свою сковороду сама) і дрібнички на своїх місцях (§8.7, §9.12).
+   * Страви на поверхнях (плита показує свою сковороду сама), дрібнички на своїх місцях (§8.7, §9.12) і настільна лампа на столі
+   * з комп'ютером (§8.9, `DESK_LAMP`) — під дрібничками, у проміжку стола: кіт, що виліз на стіл, — над лампою, а ручка, що
+   * лежить перед нею, — теж.
    */
-  private drawSurfaces(state: GameState): void {
+  private drawSurfaces(state: GameState, decor: DecorLook): void {
     const { home } = state;
     for (const id of Object.keys(home.surfaces)) {
       const thing = this.things.get(id);
@@ -560,6 +568,7 @@ export class IsoApartmentView implements ApartmentPart {
       const thing = this.get(trinket.object);
       this.put(thing, `trinket:${trinket.kind}`, home.trinkets?.[trinket.kind] ? null : trinketFrame(trinket.kind, false), ON.trinket, trinket.kind);
     }
+    this.put(this.get(DESK_LAMP.host), "desk-lamp", { id: "env/desk-lamp", state: decor.deskLamp }, ON.lamp, this.deskLamp);
   }
 
   /**

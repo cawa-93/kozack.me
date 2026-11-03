@@ -1,5 +1,6 @@
-// Полички зі свічками дня відключення (§4.1 «Планове відключення»; рішення автора 2026-11-03: «кіт клубком на підвіконні
-// вітальні лежить поверх свічки — пересунь свічки так, щоб вони не пересікались» → «Настінні полички»).
+// Полички зі свічками дня відключення й настільна лампа (§4.1 «Планове відключення», §8.9 «День і ніч»; рішення автора
+// 2026-11-03: «кіт клубком на підвіконні вітальні лежить поверх свічки — пересунь свічки так, щоб вони не пересікались» →
+// «Настінні полички»; «Додати лампу на робочий стіл»).
 //
 // Полички висять на задніх стінах на тлі (`BACKDROP.decal`): усе, що стоїть перед стіною, малюється поверх них. Тож на екрані
 // малюнок полички зі свічкою (з полум'ям) не має перетинатися з малюнком кота в жодній позі на жодному місці, де кіт сидить,
@@ -31,16 +32,16 @@ import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
 import { artEntry } from "../src/view/art/manifest";
 import { ART_VIEWS, svgPath, type ArtView } from "../src/view/art/types";
-import { BOILER, CANDLE_SHELVES, PANES, SCONCES, type CandleShelf } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, SCONCES, type CandleShelf } from "../src/view/decor";
 import { composeCatAnim } from "../src/view/iso/catanim";
 import { catSize, ISO_CAT_FIT, ISO_CAT_RIG, isoCatSkin } from "../src/view/iso/catrig";
 import { perchPlace, type CatSpot } from "../src/view/iso/catspot";
 import { objectScreen } from "../src/view/iso/geometry";
 import { cobwebLook, TRACE_OVERLAYS } from "../src/view/iso/looks";
-import { shelfPivot } from "../src/view/light/sources";
+import { deskLampPivot, shelfPivot } from "../src/view/light/sources";
 import { CAT_ANIMS } from "../src/view/rig/anims";
 import { Rig, slotFrame } from "../src/view/rig/rigcore";
-import { isoCatPerch } from "../src/view/world/objects";
+import { isoCatPerch, isoObjectLook } from "../src/view/world/objects";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
 
 /** Прямокутник на екрані чи відносно pivot кадру, одиниці арту. */
@@ -88,6 +89,39 @@ async function allStates(id: string): Promise<Box | null> {
     if (b) box = box ? unite(box, b) : b;
   }
   return box;
+}
+
+/** Непрозорі пікселі кадру однокадрового запису: рамка обрізки відносно pivot (пікселі `RES`) і альфа. */
+interface Mask {
+  x0: number;
+  y0: number;
+  w: number;
+  h: number;
+  alpha: (i: number, j: number) => number;
+}
+
+async function maskOf(id: string, state: string | null): Promise<Mask> {
+  const entry = artEntry(id);
+  if (!entry) throw new Error(id);
+  const svg = readFileSync(path.join(import.meta.dirname, "..", "art", ...svgPath(entry, null).split("/")), "utf8");
+  const r = await rasterFrame({ svg, size: entry.size, res: RES, layers: null, fileLayers: topLevelLayers(svg), state, states: entry.states ?? [] });
+  const layer = r.layers[0]!;
+  return { x0: r.trim.x - entry.pivot.x * RES, y0: r.trim.y - entry.pivot.y * RES, w: r.w, h: r.h, alpha: (i, j) => layer.data[(j * layer.w + i) * 4 + 3]! };
+}
+
+/** Чи перетинаються непрозорі пікселі двох кадрів, поставлених pivot-ами в точки `at` (одиниці арту на екрані). */
+async function masksTouch(a: { id: string; state: string | null; at: Vec }, b: { id: string; state: string | null; at: Vec }): Promise<boolean> {
+  const ma = await maskOf(a.id, a.state);
+  const mb = await maskOf(b.id, b.state);
+  // Зсув b відносно a у пікселях.
+  const dx = Math.round((b.at.x - a.at.x) * RES) + mb.x0 - ma.x0;
+  const dy = Math.round((b.at.y - a.at.y) * RES) + mb.y0 - ma.y0;
+  for (let j = Math.max(0, dy); j < Math.min(ma.h, dy + mb.h); j++) {
+    for (let i = Math.max(0, dx); i < Math.min(ma.w, dx + mb.w); i++) {
+      if (ma.alpha(i, j) > 0 && mb.alpha(i - dx, j - dy) > 0) return true;
+    }
+  }
+  return false;
 }
 
 // --- Кіт у позах ------------------------------------------------------------------------------
@@ -424,3 +458,69 @@ describe("полички зі свічками дня відключення (§
   });
 });
 
+describe("настільна лампа на столі з комп'ютером (§8.9, рішення автора 2026-11-03: «Додати лампу на робочий стіл»)", () => {
+  const desk = objectById(DESK_LAMP.host);
+  const deskArt = artEntry(`env/${DESK_LAMP.host}`);
+  if (!deskArt) throw new Error(DESK_LAMP.host);
+  /** Точка кадру стола на екрані. */
+  const deskPoint = (name: string): Vec => {
+    const p = deskArt.points?.[name];
+    if (!p) throw new Error(name);
+    const at = objectScreen(desk);
+    return { x: at.x + p.x - deskArt.pivot.x, y: at.y + p.y - deskArt.pivot.y };
+  };
+
+  it("стоїть на стільниці (у сліді стола, на висоті верху), у задньому куті біля стіни", () => {
+    const f = isoObjectLook(DESK_LAMP.host).footprint;
+    /** Пів основи, клітинки (`art/env/desk-lamp.svg`: Ø 0,18). */
+    const BASE = 0.09;
+    const { x, y } = DESK_LAMP.at;
+    expect(x - BASE >= f.x0 && x + BASE <= f.x1 && y - BASE >= f.y0 && y + BASE <= f.y1).toBe(true);
+    expect(DESK_LAMP.z).toBe(isoObjectLook(DESK_LAMP.host).top);
+    expect(DESK_LAMP.lamp - DESK_LAMP.z).toBe(LIGHT_ART.deskLamp.lamp);
+    // Біля стіни ряду 5 (задній край стола — y = 6) і в правому куті.
+    expect(y - f.y0).toBeLessThan(0.25);
+    expect(f.x1 - x).toBeLessThan(0.3);
+  });
+
+  it("не заступає монітор, клавіатуру й ручку", async () => {
+    const lamp = await allStates("env/desk-lamp");
+    if (!lamp) throw new Error("env/desk-lamp");
+    const p = deskLampPivot();
+    const box = shifted(lamp, p.x, p.y);
+    // Монітор: кути скла (`screen-*`) з рамкою (≈ 6 довкола скла).
+    const glass = ["screen-tl", "screen-tr", "screen-bl", "screen-br"].map(deskPoint);
+    const monitor = { x0: Math.min(...glass.map((g) => g.x)) - 6, y0: Math.min(...glass.map((g) => g.y)) - 6, x1: Math.max(...glass.map((g) => g.x)) + 6, y1: Math.max(...glass.map((g) => g.y)) + 6 };
+    expect(gapOf(box, monitor), `лампа ${fmt(box)} і монітор ${fmt(monitor)}`).toBeGreaterThan(0);
+    // Клавіатура: ≈ 0,5 × 0,2 клітинки довкола точки `keyboard` — на екрані ≈ ±22 × ±12.
+    const k = deskPoint("keyboard");
+    expect(gapOf(box, { x0: k.x - 22, y0: k.y - 12, x1: k.x + 22, y1: k.y + 12 }), "клавіатура").toBeGreaterThan(0);
+    // Ручка на столі (`pen`), поки її не скинули: лежить перед лампою, ліворуч від основи, нижче за абажур — рамки кадрів
+    // перетинаються, тож порівнюємо самі пікселі (ручка на стільниці, абажур — над нею).
+    const at = deskPoint("pen");
+    for (const state of ["off", "on"]) {
+      expect(await masksTouch({ id: "env/desk-lamp", state, at: p }, { id: "mess/trinket/pen", state: "standing", at }), `ручка, лампа ${state}`).toBe(false);
+    }
+  });
+
+  it("кіт на столі — перед лампою (ближче до кімнати): лампа в задньому куті біля стіни, кіт поверх неї стоїть перед нею", async () => {
+    // Кіт на столі — над усім, що на ньому (у проміжку глибини стола, `ON` в `iso/apartment.ts`), як над дрібничкою: лампа
+    // котів не закриває ніколи. Місця котів на столі — посередині його глибини (y 6,5), а лампа — біля стіни, тож кожен кіт, чий
+    // малюнок перекриває лампу, ближчий до кімнати, ніж її основа й абажур (абажур дивиться вперед на ≈ 0,15 клітинки):
+    // перекриває її, як і має. Кіт ліворуч від лампи дістає абажура лише витягнутою лапою чи хвостом у крайній позі.
+    const lamp = await allStates("env/desk-lamp");
+    if (!lamp) throw new Error("env/desk-lamp");
+    const p = deskLampPivot();
+    const box = shifted(lamp, p.x, p.y);
+    let overlapping = 0;
+    for (const { host, at, root } of ROOTS) {
+      if (host !== DESK_LAMP.host) continue;
+      const covers = POSE_BOXES.some(({ box: cat }) => gapOf(box, shifted(cat, root.x, root.y)) <= 0);
+      if (!covers) continue;
+      overlapping++;
+      expect(at.y, `кіт на столі (${at.x.toFixed(2)}; ${at.y.toFixed(2)}) поверх лампи`).toBeGreaterThan(DESK_LAMP.at.y + 0.25);
+    }
+    // Коти справді бувають поруч із лампою (правий край стола) — перевірка не порожня.
+    expect(overlapping).toBeGreaterThan(0);
+  });
+});

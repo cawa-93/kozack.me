@@ -19,7 +19,7 @@ import { backWallCells, CAT_COAT, CAT_FLUFF, iso, TH, TW, WALL_HEIGHT, WALL_SEGM
 import { artEntries, artEntry, DEFAULT_RES, manifestProblems } from "../src/view/art/manifest";
 import { ART_VIEWS, framesOf, type ArtEntry, type ArtLayer, type TortieLayer, type WhiteLayer } from "../src/view/art/types";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
-import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { ICON_NAMES, type BubbleKind, type Mark } from "../src/view/iconnames";
 
 const ENTRIES = artEntries();
@@ -341,6 +341,12 @@ describe("маніфест: квартира", () => {
     }
     // Свічки на меблях більше немає (рішення автора 2026-11-03: «Настінні полички»).
     expect(artEntry("env/candle")).toBeUndefined();
+    // Настільна лампа: лампочка — на `lamp` над стільницею (pivot) і на `dx` убік.
+    expect(states("env/desk-lamp")).toEqual(["off", "on"]);
+    const bulb = entry("env/desk-lamp").points?.["lamp"];
+    expect(bulb && entry("env/desk-lamp").pivot.y - bulb.y).toBe(LIGHT_ART.deskLamp.lamp);
+    expect(bulb && bulb.x - entry("env/desk-lamp").pivot.x).toBe(LIGHT_ART.deskLamp.dx);
+    expect(DESK_LAMP.lamp - DESK_LAMP.z).toBe(LIGHT_ART.deskLamp.lamp);
     const kitchen = PANES.find((p) => p.room === "kitchen");
     expect(kitchen && { wall: kitchen.wall, span: kitchen.span, z: kitchen.z }).toEqual(LIGHT_ART.kitchenWindow);
     expect(kitchen?.sill).toBeUndefined();

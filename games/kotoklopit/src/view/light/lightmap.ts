@@ -17,6 +17,7 @@ import { lightKey, type Daylight } from "./daylight";
 import {
   CANDLE_LIGHT,
   CEILING_LIGHT,
+  DESK_LAMP_LIGHT,
   GAS_LIGHT,
   GLASS,
   HIGHLIGHT_DARK,
@@ -233,7 +234,7 @@ export function flickerTime(time: number): number {
 }
 
 /** Наскільки центр плями піднято від підлоги до джерела (частка шляху до `LightSource.screen`). */
-const LIFT: Record<LightKind, number> = { ceiling: 0, sconce: 0, candle: POOL_LIFT, station: 0, boiler: 0, gas: POOL_LIFT, screen: 0 };
+const LIFT: Record<LightKind, number> = { ceiling: 0, sconce: 0, lamp: POOL_LIFT, candle: POOL_LIFT, station: 0, boiler: 0, gas: POOL_LIFT, screen: 0 };
 
 /** Плями одного джерела на карті світла (`time` — уже крокований час мерехтіння). */
 function poolsOf(source: LightSource, time: number): PoolPaint[] {
@@ -248,7 +249,7 @@ function poolsOf(source: LightSource, time: number): PoolPaint[] {
     const y = floor.y + (source.screen.y - floor.y) * lift;
     const spread = source.kind === "ceiling" ? CEILING_LIGHT.spread : 1;
     const rx = source.radius * spread * CELL_RX;
-    // Свічка й газ — над поверхнею: пляма й на речах і стіні довкола, не лише на підлозі — кругліша.
+    // Свічка, газ і настільна лампа — над поверхнею: пляма й на речах і стіні довкола, не лише на підлозі — кругліша.
     const ry = rx * (lift > 0 ? POOL_ROUND.raised : POOL_ROUND.floor);
     const core = source.kind === "ceiling" ? CEILING_LIGHT.core : source.kind === "candle" ? CANDLE_LIGHT.poolCore : 0.12;
     pools.push({ x, y, rx, ry, core, color, alpha: level });
@@ -256,6 +257,11 @@ function poolsOf(source: LightSource, time: number): PoolPaint[] {
   if (source.kind === "sconce") {
     const r = SCONCE_LIGHT.wall;
     pools.push({ x: source.screen.x, y: source.screen.y, rx: r, ry: r, core: 0.15, color, alpha: level * 0.85 });
+  }
+  if (source.kind === "lamp") {
+    // Абажур із лампочкою: світле нутро не темніє під тоном ночі.
+    const r = DESK_LAMP_LIGHT.bulb;
+    pools.push({ x: source.screen.x, y: source.screen.y, rx: r, ry: r, core: 0.25, color, alpha: level * 0.9 });
   }
   if (source.kind === "screen") {
     // Сам екран (`iso/marks.ts`, у реєстрі глибини) — під картою: світиться, а не темніє.

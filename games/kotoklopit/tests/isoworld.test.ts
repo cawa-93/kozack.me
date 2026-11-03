@@ -13,7 +13,7 @@ import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, 
 import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
 import { frameId, type ArtId } from "../src/view/art/types";
-import { BOILER, CANDLE_SHELVES, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, SCONCES } from "../src/view/decor";
 import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { ANCHOR_GAP, artOffset, boxCovers, floorAnchorAt, footprintCorners, objectAnchorAt, objectScreen, PERSON_FIGURE, wallsToFade } from "../src/view/iso/geometry";
@@ -94,11 +94,12 @@ function framesOf(state: GameState): IsoFrame[] {
     const trace = traceFrame(state, overlay);
     if (trace) frames.push(trace);
   }
-  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, бойлер; станція й полички зі свічками дня відключення — о
-  // хвилині стану.
+  // Декор, якого сим не знає (§8.9, §4.1): вікна, бра, настільна лампа, бойлер; станція й полички зі свічками дня
+  // відключення — о хвилині стану.
   for (const pane of PANES) frames.push({ id: `env/window/${pane.room}`, state: null });
   const decor = decorLook(state, state.minute);
   for (const sconce of SCONCES) frames.push({ id: sconce.id, state: decor.sconce });
+  frames.push({ id: "env/desk-lamp", state: decor.deskLamp });
   frames.push({ id: "env/boiler", state: decor.boiler });
   if (decor.station) frames.push({ id: "env/power-station", state: null });
   const candles = decor.candles;
@@ -345,6 +346,26 @@ describe("декор квартири (decor.ts, §8.9 «День і ніч», �
     expect(BOILER.led > BOILER.z[0] && BOILER.led < BOILER.z[1]).toBe(true);
   });
 
+  it("настільна лампа — на столі з комп'ютером: у сліді з основою, на висоті верху, не на ручці й не на клавіатурі", () => {
+    /** Півдіаметр основи, клітинки (`art/env/desk-lamp.svg`). */
+    const BASE = 0.09;
+    const object = objectById(DESK_LAMP.host);
+    const look = isoObjectLook(DESK_LAMP.host);
+    const f = look.footprint;
+    const { x, y } = DESK_LAMP.at;
+    expect(x - BASE >= f.x0 && x + BASE <= f.x1 && y - BASE >= f.y0 && y + BASE <= f.y1, `(${x}, ${y}) у сліді`).toBe(true);
+    expect(DESK_LAMP.z).toBe(look.top);
+    // Не на дрібничці й не на клавіатурі: точки кадру стола (одиниці арту) далі за пів основи й пів дрібнички.
+    const entry = artEntry(`env/${DESK_LAMP.host}`);
+    if (!entry) throw new Error(DESK_LAMP.host);
+    const at = pointsOn(object, entry)((x - object.x) / object.w, (y - object.y) / object.h, DESK_LAMP.z);
+    for (const name of ["keyboard", ...TRINKETS.filter((t) => t.object === DESK_LAMP.host).map((t) => t.kind)]) {
+      const p = entry.points?.[name];
+      if (p) expect(Math.hypot(p.x - at.x, p.y - at.y), `лампа біля «${name}»`).toBeGreaterThan(20);
+    }
+    // Свічок на меблях немає (рішення автора 2026-11-03: «Настінні полички»): усі — на поличках на задніх стінах.
+    for (const shelf of CANDLE_SHELVES) expect(shelf.face === "y" ? shelf.at.y : shelf.at.x, shelf.room).toBe(1);
+  });
 
   it("зарядна станція — на вільній підлозі праворуч від стола з комп'ютером, перед стіною ряду 5 і лівіше за розетку дроту", () => {
     const { x, y } = POWER_STATION.at;

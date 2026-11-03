@@ -1,5 +1,5 @@
 // Джерела світла квартири (§8.9 «День і ніч», §4.1 «Планове відключення»; рішення автора 2026-11-02 і 2026-11-03): удень —
-// нічого; уночі — невидимі стельові світильники в усіх кімнатах, бра й індикатор бойлера; у відключення
+// нічого; уночі — невидимі стельові світильники в усіх кімнатах, бра, настільна лампа й індикатор бойлера; у відключення
 // замість них — свічки на поличках (по одній у кімнаті), дисплей зарядної станції й синє газове полум'я; екран комп'ютера —
 // поки на ньому щось є. Мерехтіння свічок — детерміноване.
 
@@ -11,10 +11,10 @@ import { ROOMS, roomAt } from "../src/sim/home";
 import type { GameState } from "../src/sim/types";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
 import type { ArtId } from "../src/view/art/types";
-import { BOILER, CANDLE_SHELVES, CEILING_LAMPS, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../src/view/decor";
+import { BOILER, CANDLE_SHELVES, CEILING_LAMPS, DESK_LAMP, POWER_STATION, POWER_STATION_POINT, SCONCES } from "../src/view/decor";
 import { artOffset } from "../src/view/iso/geometry";
 import { candlesLit, daylight, lampsOn } from "../src/view/light/daylight";
-import { CANDLE_LIGHT } from "../src/view/light/lightlook";
+import { CANDLE_LIGHT, DESK_LAMP_LIGHT } from "../src/view/light/lightlook";
 import { candleFlicker, lightSources, litStrength, roomLamps, type LightKind, type LightSource } from "../src/view/light/sources";
 import type { Point } from "../src/view/world/part";
 import { ISO } from "../src/view/world/projection";
@@ -36,22 +36,38 @@ describe("джерела світла квартири", () => {
     expect(lightSources(state(), null)).toEqual([]);
   });
 
-  it("уночі зі світлом: стельові світильники в кожній кімнаті, бра й індикатор бойлера; свічок і станції немає", () => {
+  it("уночі зі світлом: стельові світильники в кожній кімнаті, бра, настільна лампа й індикатор бойлера; свічок і станції немає", () => {
     const list = at(22, 30, state());
     expect(count(list, "ceiling")).toBe(CEILING_LAMPS.length);
     expect(count(list, "sconce")).toBe(SCONCES.length);
+    expect(count(list, "lamp")).toBe(1);
     expect(count(list, "boiler")).toBe(1);
     expect(count(list, "candle")).toBe(0);
     expect(count(list, "station")).toBe(0);
     for (const room of ROOMS) expect(list.some((s) => s.kind === "ceiling" && s.room === room.id), room.id).toBe(true);
-    for (const source of list.filter((s) => s.kind === "ceiling" || s.kind === "sconce")) expect(source.strength).toBe(1);
+    for (const source of list.filter((s) => s.kind === "ceiling" || s.kind === "sconce" || s.kind === "lamp")) expect(source.strength).toBe(1);
   });
 
+  it("настільна лампа: тепла пляма на столі й підлозі перед ним, сяйво над столом; у день відключення не світить", () => {
+    const lamp = at(22, 30, state()).find((s) => s.kind === "lamp");
+    expect(lamp?.host).toBe(DESK_LAMP.host);
+    expect(lamp?.room).toBe("living");
+    expect(lamp?.color).toBe(DESK_LAMP_LIGHT.color);
+    expect(lamp?.radius).toBe(DESK_LAMP_LIGHT.radius);
+    // Пляма — перед лампою, на підлозі вітальні перед столом (стіл — ряд 6, стіна — ряд 5).
+    expect(roomAt(lamp?.at ?? { x: 0, y: 0 })).toBe("living");
+    expect(lamp?.at.y ?? 0).toBeGreaterThan(DESK_LAMP.at.y);
+    // Без електрики — ні вдень, ні вночі.
+    for (let minute = 0; minute < 1440; minute += 15) {
+      expect(count(lightSources(state(true), daylight(minute, false)), "lamp"), `${minute}`).toBe(0);
+    }
+  });
 
-  it("у відключення: ні ламп, ні бра, ні бойлера — свічки на поличках у кожній кімнаті й дисплей станції", () => {
+  it("у відключення: ні ламп, ні бра, ні лампи на столі, ні бойлера — свічки на поличках у кожній кімнаті й дисплей станції", () => {
     const list = at(22, 30, state(true));
     expect(count(list, "ceiling")).toBe(0);
     expect(count(list, "sconce")).toBe(0);
+    expect(count(list, "lamp")).toBe(0);
     expect(count(list, "boiler")).toBe(0);
     expect(count(list, "candle")).toBe(CANDLE_SHELVES.length);
     expect(count(list, "station")).toBe(1);
@@ -123,17 +139,17 @@ describe("джерела світла квартири", () => {
     expect(kinds(at(6, 50, state()))).not.toContain("sconce");
   });
 
-  it("бра й свічки світять, лише поки їхній кадр арту горить (lampsOn, candlesLit), і розгоряються з 0 на цій межі", () => {
+  it("бра, настільна лампа й свічки світять, лише поки їхній кадр арту горить (lampsOn, candlesLit), і розгоряються з 0 на цій межі", () => {
     for (const outage of [false, true]) {
       const s = state(outage);
       for (let minute = 0; minute < 1440; minute += 1) {
         const d = daylight(minute, !outage);
         const list = lightSources(s, d);
-        const kinds: LightKind[] = outage ? ["candle"] : ["sconce"];
+        const kinds: LightKind[] = outage ? ["candle"] : ["sconce", "lamp"];
         const lit = outage ? candlesLit(d) : lampsOn(d);
         const level = outage ? (d?.candles ?? 0) : (d?.lamps ?? 0);
         const own = list.filter((source) => kinds.includes(source.kind));
-        expect(own.length, `${kinds.join(", ")} о ${minute}`).toBe(lit ? (outage ? CANDLE_SHELVES.length : SCONCES.length) : 0);
+        expect(own.length, `${kinds.join(", ")} о ${minute}`).toBe(lit ? (outage ? CANDLE_SHELVES.length : SCONCES.length + 1) : 0);
         for (const source of own) {
           expect(source.strength, `${source.id} о ${minute}`).toBeCloseTo((level - 0.5) / 0.5, 9);
           expect(source.strength).toBeGreaterThanOrEqual(0);
@@ -164,7 +180,7 @@ describe("джерела світла квартири", () => {
     }
   });
 
-  it("бра, бойлер, станція й свічки світять з точки свого кадру арту (абажур, індикатор, дисплей, полум'я)", () => {
+  it("бра, лампа, бойлер, станція й свічки світять з точки свого кадру арту (абажур, лампочка, індикатор, дисплей, полум'я)", () => {
     const list = [...at(22, 30, state()), ...at(22, 30, state(true))];
     const lift = (at: Point, z: number): Point => {
       const floor = ISO.toScreen(at);
@@ -173,6 +189,8 @@ describe("джерела світла квартири", () => {
     const pivots: Record<string, { id: ArtId; name: string; pivot: Point }> = {
       boiler: { id: "env/boiler", name: "led", pivot: ISO.toScreen(BOILER.at) },
       station: { id: "env/power-station", name: "display", pivot: ISO.toScreen(POWER_STATION.at) },
+      // Лампу квартира ставить pivot-ом (центром основи) на стільницю: над точкою `at` на висоті стільниці.
+      lamp: { id: "env/desk-lamp", name: "lamp", pivot: lift(DESK_LAMP.at, DESK_LAMP.z) },
     };
     SCONCES.forEach((sconce, i) => (pivots[`sconce:${i}`] = { id: sconce.id, name: "lamp", pivot: ISO.toScreen(sconce.at) }));
     // Поличку квартира ставить pivot-ом (лицем стіни під серединою дошки) на висоту верху дошки `z`.
@@ -192,6 +210,8 @@ describe("джерела світла квартири", () => {
       expect(floor.y - (candle?.screen.y ?? NaN), shelf.room).toBeCloseTo(shelf.flame, 6);
       expect(shelf.flame - shelf.z, shelf.room).toBe(LIGHT_ART.shelf[shelf.id].flame);
     });
+    const lamp = list.find((s) => s.id === "lamp");
+    expect(ISO.toScreen(DESK_LAMP.at).y - (lamp?.screen.y ?? NaN)).toBeCloseTo(DESK_LAMP.lamp, 6);
   });
 
   it("мерехтіння свічки — детерміноване, живе, яскравість лише спадає: від 1 до 1 − `CANDLE_LIGHT.flicker`", () => {
