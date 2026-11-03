@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DAYLIGHT } from "../src/sim/config";
-import { MAP_HEIGHT, MAP_WIDTH, ROOMS } from "../src/sim/home";
+import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS } from "../src/sim/home";
 import { newGame } from "../src/sim/game";
 import type { Vec } from "../src/sim/types";
 import { CANDLE_SHELVES, CEILING_LAMPS, PANES } from "../src/view/decor";
@@ -29,6 +29,7 @@ import {
   whitened,
 } from "../src/view/light/lightmap";
 import { lightSources } from "../src/view/light/sources";
+import { isoObjectLook } from "../src/view/world/objects";
 import type { Point } from "../src/view/world/part";
 import { ISO, ISO_WALLS } from "../src/view/world/projection";
 
@@ -127,6 +128,59 @@ describe("вигляд світла доби", () => {
       const wall = ISO.toScreen(shelf.at);
       expect(luma(lightAt(plan, { x: wall.x, y: wall.y - shelf.z + 40 })), `${shelf.room}: стіна під поличкою`).toBeGreaterThan(luma(TONE.outage) + 0.2);
       expect(luma(lightAt(plan, ISO.toScreen(out(0.5)))), `${shelf.room}: підлога перед поличкою`).toBeGreaterThan(luma(TONE.outage) + 0.08);
+    }
+  });
+
+  it("свічка світить лише у своїй кімнаті: на видимих підлозі й задніх стінах інших кімнат — щонайбільше ≈ 0,03 яскравості (рецензія 2026-11-03)", () => {
+    // Карта світла плям за кімнатами не обрізає, а внутрішні стіни на екрані — лише заввишки 66: пляма свічки біля сусідньої
+    // кімнати лягала на її стіну (поличка спальні за 0,65 клітинки від стіни ряду 5 — ліва стіна вітальні світлішала на 0,11–0,21,
+    // хоч бра вітальні у відключення погашені). Перевіряємо кожну свічку окремо, о 23:00 (повна сила), лише там, де поверхню
+    // видно: від точки до камери (x + t, y + t, z + 64t) не заступає ні внутрішня чи передня стіна, ні річ квартири (сховища,
+    // що з'являються не завжди, і ящики — не заступають: так перевіряється більше точок).
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    s.modifiers.day = "outage";
+    const dark = d(23 * 60, false);
+    const boxes: { x0: number; y0: number; x1: number; y1: number; h: number }[] = [];
+    MAP.forEach((row, y) =>
+      [...row].forEach((c, x) => {
+        if (c !== "#" || y === 0 || x === 0) return;
+        const front = y === MAP_HEIGHT - 1 || x === MAP_WIDTH - 1;
+        boxes.push({ x0: x, y0: y, x1: x + 1, y1: y + 1, h: front ? ISO_WALLS.plinth : ISO_WALLS.inner });
+      }),
+    );
+    for (const o of OBJECTS) {
+      if (o.requires || o.walkable) continue;
+      const look = isoObjectLook(o.id);
+      boxes.push({ ...look.footprint, h: look.tall });
+    }
+    /** Промінь до камери з точки (x, y, z) не входить у жодну з коробок (t > 0). */
+    const visible = (x: number, y: number, z: number): boolean =>
+      boxes.every((b) => {
+        const t0 = Math.max(1e-6, b.x0 - x, b.y0 - y);
+        const t1 = Math.min(b.x1 - x, b.y1 - y, (b.h - z) / 64);
+        return t0 >= t1;
+      });
+    const sources = lightSources(s, dark).filter((source) => source.kind === "candle");
+    expect(sources).toHaveLength(CANDLE_SHELVES.length);
+    for (const source of sources) {
+      const plan = lightmapPlan(dark, [source], PANES, 0);
+      const base = luma(plan.tone);
+      let worst = { add: 0, where: "" };
+      const probe = (room: string, at: Vec, z: number): void => {
+        if (!visible(at.x, at.y, z)) return;
+        const p = ISO.toScreen(at);
+        const add = luma(lightAt(plan, { x: p.x, y: p.y - z })) - base;
+        if (add > worst.add) worst = { add, where: `${room} (${at.x.toFixed(2)}; ${at.y.toFixed(2)}), z ${z}` };
+      };
+      for (const r of ROOMS) {
+        if (r.id === source.room) continue;
+        for (let i = 0; i <= r.w * 10; i++) for (let j = 0; j <= r.h * 10; j++) probe(`підлога ${r.id}`, { x: r.x + i / 10, y: r.y + j / 10 }, 0);
+        for (let z = 0; z <= ISO_WALLS.back; z += 5) {
+          if (r.y === 1) for (let i = 0; i <= r.w * 20; i++) probe(`задня стіна ${r.id}`, { x: r.x + i / 20, y: 1 }, z);
+          if (r.x === 1) for (let j = 0; j <= r.h * 20; j++) probe(`ліва стіна ${r.id}`, { x: 1, y: r.y + j / 20 }, z);
+        }
+      }
+      expect(worst.add, `${source.id} (${source.room}): ${worst.where}`).toBeLessThanOrEqual(0.03);
     }
   });
 

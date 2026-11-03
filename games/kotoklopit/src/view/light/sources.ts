@@ -113,7 +113,10 @@ function objectPoint(id: string, points: readonly string[]): Point {
   return base;
 }
 
-/** Точка підлоги на `out` клітинки від лиця стіни вглиб кімнати: центр плями настінного світла (бра, свічки на поличках). */
+/**
+ * Точка підлоги на `out` клітинки від лиця стіни вглиб кімнати: центр плями настінного світла (бра, свічки на поличках; у
+ * поличок біля сусідньої кімнати — своя точка `CandleShelf.pool`).
+ */
 function offWall(at: Vec, face: WallFace, out: number): Vec {
   return face === "y" ? { x: at.x, y: at.y + out } : { x: at.x + out, y: at.y };
 }
@@ -184,7 +187,7 @@ export function lightSources(state: GameState, d: Daylight | null): LightSource[
           id: `candle:${i}`,
           kind: "candle",
           room: shelf.room,
-          at: offWall(shelf.at, shelf.face, CANDLE_LIGHT.floor.out),
+          at: shelf.pool ?? offWall(shelf.at, shelf.face, CANDLE_LIGHT.floor.out),
           screen: decorPoint(shelf.id, "flame", shelfPivot(shelf), shelf.flame - shelf.z),
           radius: CANDLE_LIGHT.radius,
           color: CANDLE_LIGHT.color,

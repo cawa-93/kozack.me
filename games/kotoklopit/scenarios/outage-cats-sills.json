@@ -6,7 +6,7 @@
     "day": 8,
     "minute": 1290,
     "modifiers": { "day": "outage" },
-    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 70 }, "body": { "x": 3.5, "y": 5.5, "facing": { "x": 0, "y": 1 } } },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 70 }, "body": { "x": 3.5, "y": 5.05, "facing": { "x": 0, "y": 1 } } },
     "home": {
       "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } }
     }
