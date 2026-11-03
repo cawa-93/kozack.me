@@ -8,7 +8,7 @@ import { inView, observe } from "./knowledge";
 import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
-import { addMess } from "./catai";
+import { addMess, whereIs } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
@@ -82,9 +82,19 @@ export function topUpTufts(state: GameState): void {
   if (tufts.length > before) state.home.tuftAt = absoluteMinute(state.day, state.minute);
 }
 
-/** Коти вдома, що лишають шерсть (§8.7): кіт у поїздці чи на сходах тут не линяє, безшерстий — не линяє зовсім. */
-function shedders(state: GameState): Cat[] {
-  return state.cats.filter((c) => c.away === null && furPerHour(state, c) > 0);
+/** Кіт удома, що лишає шерсть (§8.7), і де він зараз. */
+interface Shedder {
+  cat: Cat;
+  at: Vec;
+}
+
+/**
+ * Коти вдома, що лишають шерсть (§8.7): кіт у поїздці чи на сходах тут не линяє, безшерстий — не линяє зовсім. Кота на руках
+ * персонаж несе з собою (`whereIs`): його шерсть лягає біля персонажа, а не там, де кота взяли, — клітинка кота на руках
+ * стоїть на місці до `putDownCat`.
+ */
+function shedders(state: GameState): Shedder[] {
+  return state.cats.flatMap((cat) => (cat.away === null && furPerHour(state, cat) > 0 ? [{ cat, at: whereIs(state, cat) }] : []));
 }
 
 /** Як далеко кіт від місця жмута (§8.7): відстань, клітинки, і чи між ними немає стіни (`clearPath`). */
@@ -100,10 +110,10 @@ const closer = (a: TuftReach, b: TuftReach | null): boolean => b === null || (a.
  * Хто з котів `cats` найближчий до місця `spot` (§8.7, `closer`): жмут із-під кота не опиняється за стіною в іншій кімнаті, коли
  * поруч є місце без стіни. Котів немає — null.
  */
-function nearestShedder(cats: readonly Cat[], spot: Vec): (TuftReach & { cat: Cat }) | null {
+function nearestShedder(cats: readonly Shedder[], spot: Vec): (TuftReach & { cat: Cat }) | null {
   let best: (TuftReach & { cat: Cat }) | null = null;
-  for (const cat of cats) {
-    const reach = { cat, distance: Math.hypot(spot.x - cat.x, spot.y - cat.y), clear: clearPath(cat, spot) };
+  for (const { cat, at } of cats) {
+    const reach = { cat, distance: Math.hypot(spot.x - at.x, spot.y - at.y), clear: clearPath(at, spot) };
     if (closer(reach, best)) best = reach;
   }
   return best;

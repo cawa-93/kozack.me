@@ -115,6 +115,23 @@ describe("жмути з'являються по одному (§8.7, [Зміне
     expect(tuftCat(state, 7)?.id).toBe(cat.id);
   });
 
+  it("кіт на руках лишає шерсть біля персонажа, що його несе, а не там, де його взяли", () => {
+    const state = game().current;
+    // Кота взяли у вітальні й несуть у ванну купати: його клітинка лишається там, де його взяли, до `putDownCat`.
+    const cat = catAt(state, { x: 14.2, y: 8 });
+    state.character.held = { kind: "cat", cat: cat.id };
+    state.character.body.x = 10.2;
+    state.character.body.y = 3.2;
+    expect(roomAt(state.character.body)).toBe("bathroom");
+    state.home.fur = HOUSEHOLD.dirtyFur;
+    live(state, 1);
+    // Ванна (9,6; 3,6) — поруч із персонажем, а не (15,6; 7,2) біля того місця, де кота взяли: воно за стіною від персонажа.
+    expect(tuftsOf(state)).toEqual([8]);
+    expect(roomAt(FUR_SPOTS[8]!)).toBe("bathroom");
+    expect(tuftCat(state, 8)?.id).toBe(cat.id);
+    expect(tuftCat(state, 4)).toBeNull();
+  });
+
   it("кіт у поїздці, на сходах чи безшерстий жмута не лишає: без інших котів — перше вільне місце, як було", () => {
     for (const setup of [(c: Cat) => (c.away = "trip"), (c: Cat) => (c.away = "stairs"), (c: Cat) => (c.shape.coat = "hairless")]) {
       const state = game().current;

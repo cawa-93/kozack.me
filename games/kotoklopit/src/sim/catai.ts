@@ -3715,7 +3715,7 @@ export function envy(state: GameState, lucky: Cat, gift: "treat" | "collar"): vo
 }
 
 /** Де кіт зараз: кота на руках персонаж несе з собою (його клітинка — та, де його взяли). */
-const whereIs = (state: GameState, cat: Cat): Vec => (isCarried(state, cat) ? state.character.body : cat);
+export const whereIs = (state: GameState, cat: Cat): Vec => (isCarried(state, cat) ? state.character.body : cat);
 
 /**
  * Заздрість спрацювала (§9.12, «Заздрісність», рішення автора 2026-10-25): заздрісний дметься й свариться з тим, кому перепало, і
