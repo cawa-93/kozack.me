@@ -5,13 +5,17 @@
 // — кадр парковки», `src/view/parking.ts`) — без керування машина гальмує й стає на парковці пункту, і сцена лишається на цьому
 // кадрі, поки день показує картку пункту поверх нього; «Додому» — машина виїжджає з парковки (`departureFrame`) й без розриву
 // йде дорога додому. З чорного (`src/view/homeroad.ts`) дорога додому починається лише тоді, коли машини на парковці немає:
-// знайда, яку відносять у притулок, і запасний шлях. У темний час (§8.9 «День і ніч») поверх дороги — ніч (`src/view/racenight.ts`,
-// розрахунки — `src/view/racelight.ts`): тон, фари й задні вогні, вуличні ліхтарі, світло таблички; HUD гонки — над нею.
+// знайда, яку відносять у притулок, і запасний шлях. Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03) — дзеркало:
+// поїздка щойно вирушила від дверей, і день, затемнивши квартиру, запускає сцену дороги з від'їздом від свого будинку
+// (`homeDepartureFrame`): з чорного — парковка біля дому, машина задкує, звертає на дорогу носом угору й стає на старті, і без
+// розриву починається гонка. У темний час (§8.9 «День і ніч») поверх дороги — ніч (`src/view/racenight.ts`, розрахунки —
+// `src/view/racelight.ts`): тон, фари й задні вогні, вуличні ліхтарі, світло таблички; HUD гонки — над нею.
 
 import Phaser from "phaser";
 
 import { PALETTE } from "../../art/palette";
 import { drive } from "../sim/game";
+import { trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
 import { formatClock, gameMinutes } from "../sim/time";
 import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
@@ -34,8 +38,13 @@ import {
   arrivalMs,
   arrivalStart,
   departureFrame,
+  HOME_LOT,
+  homeDepartureFrame,
+  homeDepartureHud,
+  homeDepartureStart,
   LOT_BOUNDS,
   lotCars,
+  lotFitPan,
   lotInFrame,
   lotScreenY,
   parkedCars,
@@ -45,6 +54,8 @@ import {
   raceBarAlpha,
   type ArrivalStart,
   type CarPose,
+  type HomeDepartureStart,
+  type LotPlace,
   type ParkingCar,
   type ParkingFrame,
   type ParkingLayout,
@@ -58,6 +69,7 @@ import {
   departureLights,
   DRIVING_LIGHTS,
   headlightsOn,
+  homeDepartureLights,
   LIGHT_REACH,
   lightFade,
   lookSeed,
@@ -106,10 +118,11 @@ const STICK_STEER = 0.5;
 /**
  * Що показує сцена дороги (`scene.launch("race", …)`): гонку (§8.5), дорогу додому з чорного — катсцену без керування (знайда,
  * запасний шлях) — чи одразу кадр на місці (`parked`: поїздка вже на місці, а сцени дороги немає — перезавантаження сторінки).
- * Передавати завжди: Phaser без даних лишає сцені ті, з якими її запускали минулого разу.
+ * `depart` — гонку, але спершу від'їзд від свого будинку (§8.5 «Виїзд із дому»): поїздка щойно вирушила від дверей
+ * (`takeDeparture`), квартира вже темна. Передавати завжди: Phaser без даних лишає сцені ті, з якими її запускали минулого разу.
  */
 export interface RoadStart {
-  mode: "race" | "home" | "parked";
+  mode: "race" | "home" | "parked" | "depart";
 }
 
 /**
@@ -164,6 +177,13 @@ export class RaceScene extends Phaser.Scene {
   private arrival: { start: ArrivalStart; ms: number; save: Save } | null = null;
   /** На місці: кадр парковки під карткою пункту — з яким збереженням, де стала машина й який пункт. */
   private parked: ({ save: Save } & ParkedAt) | null = null;
+  /**
+   * Від'їзд від свого будинку перед гонкою (§8.5 «Виїзд із дому»): скільки мс іде, з яким збереженням почався, чи гравець його
+   * пропустив і знімок старту гонки (`homeDepartureStart`). Скінчився — гонка в тій самій сцені, без розриву.
+   */
+  private leave: { ms: number; save: Save; skipped: boolean; start: HomeDepartureStart } | null = null;
+  /** Натискання вже пропускає катсцену (`listenSkip`): обробники — раз на показ сцени. */
+  private skipListening = false;
   /** Де парковка на місці зараз (`parkingLayout`): щокадру — розмір екрана й безпечна зона змінюються. */
   private place: ParkingLayout = { aside: false, pan: 0, strip: null };
 
@@ -183,13 +203,21 @@ export class RaceScene extends Phaser.Scene {
       art.destroy();
       this.parked = null;
       this.arrival = null;
+      this.leave = null;
     });
     this.crash = null;
     this.arrival = null;
+    this.skipListening = false;
     this.place = { aside: false, pan: 0, strip: null };
     this.home = data?.mode === "home" ? { ms: 0, save: this.session.save, skipped: false, from: "black" } : null;
     const trip = this.state.trip;
     this.parked = data?.mode === "parked" && trip?.phase === "visit" ? { save: this.session.save, ...parkedAt(trip) } : null;
+    // Від'їзд від свого будинку — лише перед свіжою гонкою (ще не їхали): інакше — одразу гонка, як і раніше.
+    const state = this.state;
+    this.leave =
+      data?.mode === "depart" && trip?.phase === "drive" && trip.race.minutes === 0 && state.end === null
+        ? { ms: 0, save: this.session.save, skipped: false, start: homeDepartureStart(trip.race, state.seed, state.difficulty, trafficFactor(state)) }
+        : null;
     // Темрява — над усім, і над написом.
     this.dark = this.add.rectangle(0, 0, 1, 1, 0x000000, 0).setOrigin(0).setDepth(RACE_DEPTH.dark);
     // Над полем і дорогою: джойстик і підказка, а написи — з чорнильною обвідкою, щоб читалися на траві.
@@ -218,6 +246,10 @@ export class RaceScene extends Phaser.Scene {
       return;
     }
     if (trip) art.prepare(trip);
+    if (this.leave) {
+      art.prepareHome(this.leave.start);
+      this.listenSkip();
+    }
     const keyboard = this.input.keyboard;
     if (keyboard) {
       const K = Phaser.Input.Keyboard.KeyCodes;
@@ -238,16 +270,22 @@ export class RaceScene extends Phaser.Scene {
       if (shown) this.stick = null;
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, stop);
+    // Перший кадр — уже чорний кадр від'їзду: сцена не блимне тим, що стоїть на місцях за замовчуванням.
+    if (this.leave) this.drawLeave();
   }
 
   /**
    * Дорогу додому пропускає будь-яке натискання (§8.5): дотик, клавіша миші чи клавіатури — але не те, що закрило картку
-   * візиту (`canSkipHomeRoad`), і не клавіша в полі панелі розробника.
+   * візиту (`canSkipHomeRoad`), і не клавіша в полі панелі розробника. Від'їзд від свого будинку — так само, з першої миті:
+   * картку «Куди поїхати?» закрили ще в квартирі, до її затемнення (§8.5 «Виїзд із дому»: натискання пропускає — одразу гонка).
    */
   private listenSkip(): void {
+    if (this.skipListening) return;
+    this.skipListening = true;
     const skip = (): void => {
       const home = this.home;
       if (home && canSkipHomeRoad(home.ms)) home.skipped = true;
+      if (this.leave) this.leave.skipped = true;
     };
     this.input.on("pointerdown", skip);
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
@@ -259,10 +297,11 @@ export class RaceScene extends Phaser.Scene {
    * Чи гравець зараз кермує: гонка, а не аварія, прибуття, кадр на місці чи від'їзд. Обробники керування з `create` живуть, доки
    * працює сцена, а вона тепер лишається й на прибутті, на місці під карткою пункту й у від'їзді: там стрілка чи дотик нічого не
    * кермують — інакше перестроювання лишилося б у полі й наступна гонка почалася б із нього (машина сама в сусідню смугу, а
-   * підказки старту немає).
+   * підказки старту немає). Від'їзд від свого будинку — теж без керування: дотик лише пропускає його, і гонка починається з
+   * підказкою старту.
    */
   private steering(): boolean {
-    return this.home === null && this.crash === null && this.arrival === null && this.parked === null;
+    return this.home === null && this.crash === null && this.arrival === null && this.parked === null && this.leave === null;
   }
 
   /** Джойстик з'являється під пальцем будь-де на екрані. Точка дотику — у пікселях полотна, гонка — в одиницях інтерфейсу. */
@@ -314,6 +353,7 @@ export class RaceScene extends Phaser.Scene {
     if (this.crash) return this.updateCrash(delta);
     if (this.arrival) return this.updateArrival(delta);
     if (this.parked) return this.updateParked();
+    if (this.leave) return this.updateLeave(delta);
     const state = this.state;
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     if (this.running()) {
@@ -370,8 +410,54 @@ export class RaceScene extends Phaser.Scene {
     this.stick = null;
     this.arrival = null;
     this.parked = null;
+    this.leave = null;
     this.scene.wake("day", end);
     this.scene.stop();
+  }
+
+  /**
+   * Від'їзд від свого будинку (§8.5 «Виїзд із дому»): йде, поки гра не стоїть, без керування, і час гри тим часом не йде (сим не
+   * кличемо). Скінчився чи гравець натиснув будь-що — гонка в цій самій сцені: кадр кінця від'їзду — це кадр її старту, тож
+   * розриву немає, а пропуск — одразу гонка. Гру замінили чи поїздка вже не та (сценарій) — день: він сам покаже, що треба.
+   * Перезавантаження сторінки посеред від'їзду — одразу гонка: позначка від'їзду (`takeDeparture`) живе лише в пам'яті.
+   */
+  private updateLeave(delta: number): void {
+    const leave = this.leave;
+    if (!leave) return;
+    const state = this.state;
+    if (this.session.save !== leave.save || state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
+    leave.ms += this.animationMs(delta);
+    if (!leave.skipped && !this.drawLeave()) return;
+    this.leave = null;
+    this.dark.setFillStyle(0x000000, 0);
+    this.draw();
+  }
+
+  /**
+   * Кадр від'їзду від свого будинку (`homeDepartureFrame`): парковка з дахом свого кольору й гліфом дому на табличці, вогні
+   * своєї машини (`homeDepartureLights`), темрява з чорного на початку; наприкінці проступають напис і смуга прогресу гонки.
+   * Повертає, чи від'їзд скінчився.
+   */
+  private drawLeave(): boolean {
+    const leave = this.leave;
+    const art = this.art;
+    const trip = this.state.trip;
+    if (!leave || !art || !trip) return true;
+    const view = this.layout();
+    const frame = homeDepartureFrame(leave.ms, view.height, leave.start);
+    const panned = { ...view, cx: view.width / 2 + frame.pan * lotFitPan(view) };
+    art.drawFrame(
+      { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, place: "home", cars: frame.parked }, lights: homeDepartureLights(leave.ms) },
+      panned,
+    );
+    const hud = homeDepartureHud(leave.ms);
+    art.drawBar(trip, panned, hud);
+    this.g.clear();
+    this.hint.setVisible(false);
+    if (hud > 0) this.drawLabel(trip, view.safe, hud);
+    else this.label.setVisible(false);
+    this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
+    return frame.done;
   }
 
   /**
@@ -601,12 +687,14 @@ export class RaceScene extends Phaser.Scene {
     }
   }
 
-  /** Куди їдемо, котра година й швидкість — угорі ліворуч. */
-  private drawLabel(trip: Trip, safe: Insets): void {
+  /** Куди їдемо, котра година й швидкість — угорі ліворуч (`alpha` — поки проступає наприкінці від'їзду від свого будинку). */
+  private drawLabel(trip: Trip, safe: Insets, alpha = 1): void {
     this.label
       .setOrigin(0, 0)
       .setPosition(safe.left + 20, safe.top + 16)
-      .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · ×${trip.race.speed.toFixed(1).replace(".", ",")}`);
+      .setText(`${DESTINATION_TITLES[trip.destination]} · ${formatClock(this.state.minute)} · ×${trip.race.speed.toFixed(1).replace(".", ",")}`)
+      .setAlpha(alpha)
+      .setVisible(true);
   }
 
   /**
@@ -709,7 +797,7 @@ interface RoadFrame {
   offset: number;
   car: CarPose;
   traffic: readonly ParkingCar[];
-  lot: { y: number; destination: Destination; cars: readonly ParkingCar[] } | null;
+  lot: { y: number; place: LotPlace; cars: readonly ParkingCar[] } | null;
   lights: OwnLights;
   lightBand?: number;
 }
@@ -720,9 +808,12 @@ function trafficRecipe(color: number): TintRecipe {
   return bakedRecipe(`race-car-${tint.toString(16)}`, tint);
 }
 
-/** Рецепт будівлі пункту: дах (`fill`) — колір пункту (`DESTINATION_ROOFS`), решта — як намальовано, як у машин потоку. */
-function buildingRecipe(destination: Destination): TintRecipe {
-  const tint = DESTINATION_ROOFS[destination];
+/**
+ * Рецепт будівлі пункту: дах (`fill`) — колір пункту (`DESTINATION_ROOFS`), решта — як намальовано, як у машин потоку. Свій
+ * будинок (§8.5 «Виїзд із дому») — дах свого кольору (`HOME_LOT.roof`).
+ */
+function buildingRecipe(place: LotPlace): TintRecipe {
+  const tint = place === "home" ? HOME_LOT.roof : DESTINATION_ROOFS[place];
   return bakedRecipe(`race-building-${tint.toString(16)}`, tint);
 }
 
@@ -794,6 +885,16 @@ class RaceArt {
     lotCars(trip.seed).forEach(({ look }, i) => this.carImage(this.parked, i, look, RACE_DEPTH.traffic).setVisible(false));
   }
 
+  /**
+   * Від'їзд від свого будинку (§8.5 «Виїзд із дому»): запекти й дах свого кольору, машини сусідів і потік старту гонки — поки
+   * кадр ще чорний. Дах пункту лишається запеченим (`prepare`): у гонці будівля лише перемикається на нього, без запікання.
+   */
+  prepareHome(start: HomeDepartureStart): void {
+    this.buildingImage("home").setVisible(false);
+    lotCars(start.seed).forEach(({ look }, i) => this.carImage(this.parked, i, look, RACE_DEPTH.traffic).setVisible(false));
+    start.cars.forEach(({ look }, i) => this.carImage(this.traffic, i, look, RACE_DEPTH.traffic).setVisible(false));
+  }
+
   /** Вигляд машини потоку, який сцена показує (з першої зустрічі): той самий і на прибутті (`arrivalStart`). */
   lookOf(car: RaceCar): TrafficLook {
     let look = this.looks.get(car);
@@ -833,13 +934,20 @@ class RaceArt {
     this.fit(this.player, k, k).setPosition(player.x, player.y).setRotation(player.rotation);
     if (view.night) lit.push(ownLit(player, DRIVING_LIGHTS, view.night, k));
 
-    const lot = { y: lotY, destination: trip.destination, cars: parkedCars(trip.seed, lotY, height) };
+    const lot = { y: lotY, place: trip.destination, cars: parkedCars(trip.seed, lotY, height) };
     this.drawLot(lot, view);
     this.drawNight(view, race.done * ppu, lot.y, lit);
+    this.drawBar(trip, view);
+  }
 
-    // Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом. Стоїть там, де парковка, тож
-    // згасає, поки та в'їжджає в кадр.
-    const alpha = raceBarAlpha(lotY, height);
+  /**
+   * Смуга прогресу збоку дороги: від панелі (90 px під безпечною зоною) до 40 px над низом. Стоїть там, де парковка пункту, тож
+   * згасає, поки та в'їжджає в кадр; `fade` — ще й проступає наприкінці від'їзду від свого будинку (§8.5 «Виїзд із дому»).
+   */
+  drawBar(trip: Trip, view: RaceView, fade = 1): void {
+    const race = trip.race;
+    const { height, k, cx } = view;
+    const alpha = raceBarAlpha(lotScreenY(race.done, race.road, height), height) * fade;
     if (!(alpha > 0)) {
       this.hideBar();
       return;
@@ -901,8 +1009,8 @@ class RaceArt {
 
   /**
    * Парковка пункту з будівлею (§8.5 «На місці — кадр парковки»; `RoadFrame.lot`): з'їзд і місця, запарковані машини, будівля з
-   * дахом кольору пункту й іконка пункту на табличці; y — від середньої лінії з'їзду, x — від середини дороги `view.cx`. Не в
-   * кадрі (чи парковки немає) — сховано.
+   * дахом кольору пункту й іконка пункту на табличці (свій будинок, §8.5 «Виїзд із дому», — дах свого кольору й гліф дому,
+   * `HOME_LOT`); y — від середньої лінії з'їзду, x — від середини дороги `view.cx`. Не в кадрі (чи парковки немає) — сховано.
    */
   private drawLot(lot: RoadFrame["lot"], view: RaceView): void {
     const { k, cx, height } = view;
@@ -917,9 +1025,9 @@ class RaceArt {
     this.fit(this.lot, k, k)
       .setPosition(cx + RACE_LOT.entrance.x * k, lotY + RACE_LOT.entrance.y * k)
       .setVisible(true);
-    this.fit(this.buildingImage(lot.destination), k, k).setPosition(cx + RACE_BUILDING.pivotAt.x * k, lotY + RACE_BUILDING.pivotAt.y * k);
+    this.fit(this.buildingImage(lot.place), k, k).setPosition(cx + RACE_BUILDING.pivotAt.x * k, lotY + RACE_BUILDING.pivotAt.y * k);
     // Іконка — стороною `sign.icon` одиниць арту (кадр атласу — повна сторона іконки).
-    const icon = iconArt(DESTINATION_ICONS[lot.destination]);
+    const icon = lot.place === "home" ? HOME_LOT.sign : iconArt(DESTINATION_ICONS[lot.place]);
     setArt(this.sign, icon);
     const scale = (RACE_BUILDING.sign.icon / (artEntry(icon)?.size.w ?? RACE_BUILDING.sign.size)) * k;
     this.fit(this.sign, scale, scale)
@@ -929,9 +1037,9 @@ class RaceArt {
     hideFrom(this.parked, lot.cars.length);
   }
 
-  /** Будівля пункту: запечений дах кольору пункту (той самий — нічого не робить). */
-  private buildingImage(destination: Destination): Phaser.GameObjects.Image {
-    const recipe = buildingRecipe(destination);
+  /** Будівля пункту (чи свій будинок): запечений дах кольору пункту (той самий — нічого не робить). */
+  private buildingImage(place: LotPlace): Phaser.GameObjects.Image {
+    const recipe = buildingRecipe(place);
     this.owners.add(BUILDING_OWNER);
     let image = this.building;
     if (!image) {
@@ -1079,7 +1187,7 @@ function parkedAt(trip: Trip): ParkedAt {
 
 /** Кадр парковки (прибуття, на місці, від'їзд) як кадр без керування: з парковкою пункту й вогнями своєї машини `lights`. */
 function parkingRoad(frame: ParkingFrame, destination: Destination, lights: OwnLights): RoadFrame {
-  return { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, destination, cars: frame.parked }, lights };
+  return { offset: frame.offset, car: frame.car, traffic: frame.traffic, lot: { y: frame.lot, place: destination, cars: frame.parked }, lights };
 }
 
 /**

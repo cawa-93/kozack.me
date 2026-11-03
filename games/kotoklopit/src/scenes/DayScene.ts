@@ -52,6 +52,7 @@ import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
 import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
+import { markDeparture, takeDeparture } from "../view/departing";
 import type { RaceScene, RoadEnd, RoadStart } from "./RaceScene";
 
 /** Довгий кадр (вкладка у фоні) не перемотує день: найбільше 0,1 секунди за кадр. */
@@ -68,6 +69,8 @@ const FALL_ASLEEP = { eyes: 1300, darkFrom: 1000, total: 2300, zoom: 0.5, lead: 
  * темрява тримається ще `covered` мс, як після засинання, — щоб квартира не блимнула перед ними.
  */
 const ROAD_REVEAL = { ms: 400, covered: 1000 } as const;
+/** Виїзд із дому (§8.5 «Виїзд із дому»): квартира темніє за стільки мс, а тоді — від'їзд від свого будинку в сцені дороги. */
+const LEAVE_DARK_MS = 350;
 
 
 type Keys = Record<
@@ -108,6 +111,13 @@ export class DayScene extends Phaser.Scene {
    * і день, поки вона не стала, другої не запускає, а квартири вже не показує (§8.5 «На місці — кадр парковки»).
    */
   private parkingRequested = false;
+  /**
+   * Виїзд із дому (§8.5 «Виїзд із дому», рішення автора 2026-11-03): поїздка щойно вирушила від дверей (`takeDeparture`), і
+   * квартира темніє (`LEAVE_DARK_MS`, мс від початку — лише поки не відкрита картка); гра тим часом стоїть, а введення не діє.
+   * Темно — запущено сцену дороги з від'їздом від свого будинку (`launched`), а день засинає, щойно вона пішла, — уже під її
+   * чорним кадром, тож квартира не блимне.
+   */
+  private leaving: { ms: number; launched: boolean } | null = null;
   private bubbles!: Bubbles;
   private hearts!: MoodHearts;
   /** Хто й коли думає про свій стан (§11.4). */
@@ -232,6 +242,7 @@ export class DayScene extends Phaser.Scene {
     this.overlay.close();
     this.queued.length = 0;
     this.parkingRequested = false;
+    this.leaving = null;
     this.wakeUp();
     this.bubbles.clear();
     this.hearts.clear();
@@ -275,7 +286,8 @@ export class DayScene extends Phaser.Scene {
           this.state,
           (destination) => {
             this.overlay.close();
-            startTrip(this.state, destination);
+            // Вирушили від дверей — спершу від'їзд від свого будинку (§8.5 «Виїзд із дому»), а не одразу гонка.
+            if (startTrip(this.state, destination) && this.state.trip) markDeparture(this.state.trip);
           },
           () => this.overlay.close(),
         ),
@@ -423,9 +435,9 @@ export class DayScene extends Phaser.Scene {
     dash(this.state);
   }
 
-  /** Гра стоїть: картка, пауза розробника, кінець гри, засинання чи заглушка «Поверніть телефон» (§10). */
+  /** Гра стоїть: картка, пауза розробника, кінець гри, засинання, виїзд із дому чи заглушка «Поверніть телефон» (§10). */
   private blocked(): boolean {
-    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null || isRotateNoticeShown();
+    return this.overlay.isOpen || this.session.paused || this.state.end !== null || this.asleep !== null || this.leaving !== null || isRotateNoticeShown();
   }
 
   private readInput(): Input {
@@ -452,17 +464,25 @@ export class DayScene extends Phaser.Scene {
   }
 
   /** Поїздка (§8.5): гонку, прибуття й кадр на місці веде сцена дороги, подію на місці й аварію — картки. */
-  private updateTrip(): boolean {
+  private updateTrip(delta: number): boolean {
     const trip = this.state.trip;
-    if (trip === null || this.state.end !== null) return false;
+    if (trip === null || this.state.end !== null) {
+      this.leaving = null;
+      return false;
+    }
     if (trip.phase === "drive") {
       // Поки відкрита картка (меню після перезавантаження сторінки посеред гонки), гонка не йде: перевірка поїздок 2026-10-28.
-      if (!this.overlay.isOpen && !this.scene.isActive("race")) {
+      if (this.overlay.isOpen) return true;
+      // Щойно вирушили від дверей (§8.5 «Виїзд із дому») — спершу квартира темніє, а тоді від'їзд від свого будинку.
+      if (this.leaving === null && !this.scene.isActive("race") && takeDeparture(trip)) this.leaving = { ms: 0, launched: false };
+      if (this.leaving) this.leaveHome(this.leaving, delta);
+      else if (!this.scene.isActive("race")) {
         this.scene.launch("race", { mode: "race" } satisfies RoadStart);
         this.scene.sleep();
       }
       return true;
     }
+    this.leaving = null;
     // На місці (§8.5 «На місці — кадр парковки»), а сцени дороги на парковці немає (перезавантаження сторінки посеред прибуття,
     // візиту чи від'їзду; сценарій) — запустити її одразу на місці, ще під меню: квартира не блимне. Не тоді, коли машина вже
     // рушила додому (`arrival`): день от-от засне.
@@ -492,6 +512,40 @@ export class DayScene extends Phaser.Scene {
     // Картка пункту — лише поверх кадру парковки: машина вже стала на місці.
     if (this.race.parkedNow) this.showVisit();
     return true;
+  }
+
+  /**
+   * Виїзд із дому (§8.5 «Виїзд із дому»): квартира темніє, як перед засинанням чи після аварії (шар `dark`), а гра стоїть; темно
+   * — сцена дороги починає від'їзд від свого будинку з чорного (`RoadStart` «depart»), і день засинає наступного кадру, коли вона
+   * вже малює свій чорний кадр поверх (сцена дороги — над днем), а темряву дня тоді прибрано: прокидається день після дороги
+   * сам знає, що показати (`onRoadEnd`).
+   */
+  private leaveHome(leaving: { ms: number; launched: boolean }, delta: number): void {
+    if (!leaving.launched) {
+      leaving.ms += Math.min(delta, MAX_FRAME_SECONDS * 1000);
+      const dark = Phaser.Math.Clamp(leaving.ms / LEAVE_DARK_MS, 0, 1);
+      this.tweens.killTweensOf(this.dark);
+      this.dark.setFillStyle(0x000000, dark);
+      if (dark < 1) return;
+      this.moving = false;
+      this.catPress = null;
+      this.touch.reset();
+      this.scene.launch("race", { mode: "depart" } satisfies RoadStart);
+      leaving.launched = true;
+      return;
+    }
+    if (!this.scene.isActive("race")) {
+      // Сцена дороги так і не пішла (за секунду її вже не чекають) — тоді гонка, як раніше: квартира не застигає темною.
+      leaving.ms += Math.min(delta, MAX_FRAME_SECONDS * 1000);
+      if (leaving.ms > LEAVE_DARK_MS + 1000) {
+        this.leaving = null;
+        this.dark.setFillStyle(0x000000, 0);
+      }
+      return;
+    }
+    this.leaving = null;
+    this.scene.sleep();
+    this.dark.setFillStyle(0x000000, 0);
   }
 
   private showVisit(): void {
@@ -589,7 +643,7 @@ export class DayScene extends Phaser.Scene {
     this.showParking();
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
-    if (this.updateTrip()) {
+    if (this.updateTrip(delta)) {
       this.tickClock(0, false);
       this.render(time, 0);
       return;

@@ -1,16 +1,18 @@
 // Виїзд із дому (§8.5 «Виїзд із дому — від'їзд від свого будинку», рішення автора 2026-11-03; `src/view/parking.ts`,
 // `homeDepartureFrame`): з чорного — парковка біля свого будинку, машина задкує з місця, звертає на дорогу носом угору в середню
-// смугу й стає на старті гонки — і без розриву гонка. Вогні вночі — `src/view/racelight.ts`. Без Phaser.
+// смугу й стає на старті гонки — і без розриву гонка. Вогні вночі (`src/view/racelight.ts`) і позначка «щойно вирушили від
+// дверей» (`src/view/departing.ts`). Без Phaser.
 
 import { describe, expect, it } from "vitest";
 
 import { PALETTE } from "../art/palette";
 import { MODIFIERS, RACE } from "../src/sim/config";
 import { carAt, driveRace, newRace } from "../src/sim/race";
-import type { Difficulty, Race } from "../src/sim/types";
+import type { Difficulty, Race, Trip } from "../src/sim/types";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
 import { RACE_LOT, RACE_TILES } from "../src/view/art/manifest/a14-race";
 import { artEntry } from "../src/view/art/manifest";
+import { markDeparture, takeDeparture } from "../src/view/departing";
 import { carReach } from "../src/view/homeroad";
 import { iconArt } from "../src/view/iconnames";
 import {
@@ -439,5 +441,15 @@ describe("виїзд із дому: кадр старту гонки без бу
         }
       }
     }
+  });
+});
+
+describe("виїзд із дому: лише від дверей", () => {
+  it("позначку «щойно вирушили» забирають раз, і лише з тієї самої поїздки: копія з JSON (перезавантаження) — без неї", () => {
+    const trip: Trip = { destination: "shop", phase: "drive", cat: null, race: fresh(5), losses: [], visit: 30, seed: 41 };
+    markDeparture(trip);
+    expect(takeDeparture(structuredClone(trip))).toBe(false);
+    expect(takeDeparture(trip)).toBe(true);
+    expect(takeDeparture(trip)).toBe(false);
   });
 });
