@@ -46,6 +46,7 @@ import {
   catSpot,
   type CatSpot,
   deskSeat,
+  faceTo,
   IN_LITTER,
   LAP_SEAT,
   lapSeat,
@@ -93,8 +94,8 @@ const SPOT = { grate: 0.004 } as const;
 const DESK = objectById("computer");
 const DESK_TOP = isoObjectLook("computer").perch ?? 0;
 /** Межі вздовж стола, між якими кіт уже на клавіатурі (`BESIDE_KEYBOARD`). */
-const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD;
-const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD;
+const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD.left;
+const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD.right;
 
 /** Корінь кота на столі на екрані (без дуги стрибка): точка стільниці під лапами, px світу. */
 function deskRoot(at: Vec): Vec {
@@ -1494,6 +1495,51 @@ describe("стіл із комп'ютером: на клавіатурі — т�
     advance(save, 1);
     expect(catOnComputer(save.current)).toBe(named("Грілка"));
     expect(spot(named("Грілка")).at).toEqual(ISO_KEYBOARD.seat);
+  });
+
+  it("лежить праворуч від клавіатури (буханець, клубок) — головою від неї, і голова на неї не лягає; ліворуч — як каже `catFacing`", () => {
+    // Рецензія пакета: буханець на 7,5 обличчям ліворуч клав голову на правий кінець клавіатури — ніби на ній двоє.
+    const save = game();
+    const keyboard = withCat(save, { x: DESK.x + 0.5, y: DESK.y + 0.5 });
+    keyboard.act = act("keyboard", { target: "computer", minutes: 30 });
+    const cat = withCat(save, { x: DESK.x + 1.5, y: DESK.y + 0.5 });
+    cat.needs.fatigue = 90;
+    const half = isoCatHalf(cat);
+    for (const kind of ["idle", "sleep"] as const) {
+      cat.act = act(kind, { minutes: 60 });
+      for (const x of [7.3, 7.43, 7.5, 7.6, 7.75]) {
+        for (const y of [6.3, 6.5, 6.7]) {
+          for (const facing of [-1, 1] as const) {
+            cat.x = x;
+            cat.y = y;
+            cat.facing = facing;
+            const label = `${kind} ${x}, ${y}, facing ${facing}`;
+            expect(catOnComputer(save.current), label).toBe(keyboard);
+            const anim = catAnim(save.current, cat).anim;
+            expect(["loaf", "sleep"], label).toContain(anim);
+            const spot = catSpot(save.current, cat, anim, null, SPOT);
+            const look = faceTo(catFacing(save.current, cat, null, { pair: null }), spot);
+            expect(look.flip, label).toBe(false);
+            expect(spot.at.x, label).toBeGreaterThanOrEqual(BESIDE_RIGHT - 1e-9);
+            // Обрис голови на екрані: від кореня в бік голови на півдовжини кота, на висоті тулуба й голови.
+            const root = deskRoot(spot.at);
+            const ahead = look.flip ? -1 : 1;
+            for (const h of [2, 8, 14, 20]) for (let k = 0; k <= half; k += 2) expect(onKeyboard({ x: root.x + ahead * k, y: root.y - h }), label).toBe(false);
+          }
+        }
+      }
+    }
+    // Без цього правила (як і було, обличчям ліворуч на 7,5) голова лягала на клавіатуру.
+    const old = deskRoot({ x: 7.5, y: 6.5 });
+    expect(onKeyboard({ x: old.x - half * 0.8, y: old.y - 8 })).toBe(true);
+    // Ліворуч від клавіатури вона на екрані нижче за лапи: там лежить, як каже `catFacing`; хто сидить праворуч — теж.
+    cat.x = DESK.x + 0.5;
+    cat.act = act("idle", { minutes: 60 });
+    expect(catSpot(save.current, cat, "loaf", null, SPOT).faces).toBeNull();
+    cat.x = DESK.x + 1.5;
+    cat.needs.fatigue = 10;
+    expect(catAnim(save.current, cat).anim).toBe("sit");
+    expect(catSpot(save.current, cat, "sit", null, SPOT)).toMatchObject({ faces: null, at: { x: BESIDE_RIGHT, y: cat.y } });
   });
 
   it("троє прийшли на клавіатуру, перша зійшла — друга з рядка обабіч доходить саме на клавіатуру, а не тримає зсув рядка", () => {

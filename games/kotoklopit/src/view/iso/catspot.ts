@@ -15,6 +15,7 @@ import { isoScreenDir } from "../anim/iso";
 import { PERCH, type PairPlacement, type PerchArea } from "../anim/pairs";
 import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
+import type { RigFacing } from "../rig/types";
 import { ISO_KEYBOARD, isoCatPerch, isoObjectLook } from "../world/objects";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
@@ -71,8 +72,29 @@ export interface CatSpot {
   show: CatShow;
   /** Річ, у якій кіт (будиночок): її id у реєстрі. */
   item: string | null;
-  /** Куди кіт дивиться (клітинки): на річ, біля якої стоїть збоку (`besideSeat`); null — як каже `catFacing`. */
+  /**
+   * Куди кіт дивиться (клітинки; лише ліворуч чи праворуч на екрані, `faceTo`): на річ, біля якої стоїть збоку (`besideSeat`),
+   * на столі з комп'ютером — від клавіатури (`deskFaces`); null — як каже `catFacing`.
+   */
   faces: Vec | null;
+}
+
+/**
+ * Ближче за це вздовж горизонталі екрана (клітинки x − y; ≈ 10 px) кіт стоїть не збоку від речі, а просто за нею (за мискою)
+ * — тоді дивиться, як каже `catFacing`.
+ */
+const FACES_DEAD = 0.15;
+
+/**
+ * Куди дивиться кіт на своєму місці (`CatSpot.faces`): ліворуч чи праворуч на екрані — туди (на річ, біля якої стоїть збоку;
+ * від клавіатури); ракурс — як каже `catFacing` (`facing`).
+ */
+export function faceTo(facing: RigFacing, spot: CatSpot): RigFacing {
+  if (!spot.faces) return facing;
+  const d = spot.faces.x - spot.faces.y - (spot.at.x - spot.at.y);
+  if (Math.abs(d) < FACES_DEAD) return facing;
+  const flip = d < 0;
+  return flip === facing.flip ? facing : { view: facing.view, flip };
 }
 
 /** Що частина котів знає про глибини інших частин світу. */
@@ -242,15 +264,19 @@ const DESK = "computer";
 
 /**
  * Кіт поруч із клавіатурою (§9.12, «Сон на комп'ютері» — [Уточнено] 2026-11-03) — не ближче за стільки клітинок уздовж стола
- * (x) до її рамки (`ISO_KEYBOARD.frame`): ліворуч — посередині лівої половини стола (6,5), куди сим і садовить кота (так автор
- * і бачив кота «поруч із клавіатурою»), праворуч — на 7,43, на миші між клавіатурою й ручкою. Ближче тулуб того, хто сидить,
- * чи клубок сплячого (≈ 50 одиниць завширшки) уже лежав би на клавіатурі.
+ * (x) до її рамки (`ISO_KEYBOARD.frame`). Ближче тулуб того, хто сидить, чи клубок сплячого (≈ 50 одиниць завширшки) уже лежав
+ * би на клавіатурі.
+ * - `left` — посередині лівої половини стола (6,5), куди сим і садовить кота (так автор і бачив кота «поруч із клавіатурою»):
+ *   клавіатура тут на екрані перед котом і нижче за його лапи, тож ні голова, ні круп на неї не лягають.
+ * - `right` — на 7,6, між мишею й ручкою: тут клавіатура на екрані позаду кота й ліворуч, на висоті його тулуба й голови.
+ *   Ближче (рецензія пакета, знімки на 7,43 і 7,5) той, хто сидить обличчям до неї, ставив передні лапи на її правий кінець, а
+ *   круп буханця, що лежить головою від неї (`deskFaces`), заходив на її кут.
  */
-export const BESIDE_KEYBOARD = 0.19;
+export const BESIDE_KEYBOARD = { left: 0.19, right: 0.36 } as const;
 
 /** Межі вздовж стола (x), між якими кіт уже на клавіатурі (`BESIDE_KEYBOARD`). */
-const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD;
-const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD;
+const BESIDE_LEFT = ISO_KEYBOARD.frame.x0 - BESIDE_KEYBOARD.left;
+const BESIDE_RIGHT = ISO_KEYBOARD.frame.x1 + BESIDE_KEYBOARD.right;
 
 /**
  * Де кіт на столі з комп'ютером (§9.12 «Кіт і робота», «Сон на комп'ютері» — [Уточнено] 2026-11-03: що бачить гравець, те й
@@ -265,6 +291,22 @@ export function deskSeat(state: GameState, cat: Cat, at: Vec): Vec {
   if (catMoving(cat) || at.x <= BESIDE_LEFT || at.x >= BESIDE_RIGHT) return at;
   const { x0, x1 } = ISO_KEYBOARD.frame;
   return { x: at.x < (x0 + x1) / 2 ? BESIDE_LEFT : BESIDE_RIGHT, y: at.y };
+}
+
+/**
+ * Пози, у яких кіт лежить (буханець, клубок сну, животом догори): голова — низько, на висоті клавіатури (`deskFaces`). Хто
+ * сидить, тримає голову високо, над нею.
+ */
+const DESK_LYING: ReadonlySet<CatAnimId> = new Set<CatAnimId>(["loaf", "decline", "sleep", "snore", "belly"]);
+
+/**
+ * Куди дивиться кіт на столі з комп'ютером (`CatSpot.faces`, `faceTo`): той, хто лежить праворуч від клавіатури (`at` —
+ * після `deskSeat`), — головою від неї, праворуч. Обличчям до неї голова буханця чи клубка лягала б на її правий кінець, і
+ * здавалося б, що на клавіатурі двоє (рецензія пакета: буханець на 7,5 обличчям ліворуч закривав чверть клавіатури). Ліворуч
+ * від клавіатури (вона там на екрані нижче за лапи, `BESIDE_KEYBOARD`) і решта котів — null, як каже `catFacing`.
+ */
+export function deskFaces(anim: CatAnimId, at: Vec): Vec | null {
+  return DESK_LYING.has(anim) && at.x >= BESIDE_RIGHT ? { x: at.x + 1, y: at.y } : null;
 }
 
 /**
@@ -426,11 +468,13 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
       return spot("under", peek.at, { box: object.id, behind: peek.behind, show: "eyes" });
     }
     const perch = isoCatPerch(object.id, pair ? tile : cat, false, shapedStage(state, object.id));
-    // На столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею (`deskSeat`).
-    const at = object.id === DESK ? deskSeat(state, cat, perch.at) : perch.at;
+    // На столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею (`deskSeat`); хто лежить
+    // праворуч від неї — головою від неї (`deskFaces`).
+    const desk = object.id === DESK;
+    const at = desk ? deskSeat(state, cat, perch.at) : perch.at;
     // У ящиках біля входу кіт лежить у верхній коробці, нижче за її борт (`perch` нижче за `top`): тіні на дні не видно —
     // вона лягла б на передню стінку.
-    return spot("furniture", at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes" });
+    return spot("furniture", at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes", faces: desk ? deskFaces(anim, at) : null });
   }
   if (hidesUnder(state, cat, anim)) return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.

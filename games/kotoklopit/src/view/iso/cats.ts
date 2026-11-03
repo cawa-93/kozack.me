@@ -37,7 +37,7 @@ import type { CatPoints, CatsPart, HandsLift, Point, WorldFrame } from "../world
 import { ISO } from "../world/projection";
 import { CATCH, catchUp, catJump, catPlay, catStep, crowdShift, gaitRate, groundAt, nextGait, nextLift, putDownGround, seatCatchUp, startShot, stillPutDown, WALK_GAITS, type CatShot, type GaitMemory, type Lift, type PlaceMemory, type PutDown } from "./catplay";
 import { catSize, isoCatHalf, type CatSize } from "./catrig";
-import { bowlOf, CAT_PIECE, catSpot, lapSeat, perchPlace, raised, type CatSpot, type CatSpotDepths, type CatSpotKind, type LapSeat } from "./catspot";
+import { bowlOf, CAT_PIECE, catSpot, faceTo, lapSeat, perchPlace, raised, type CatSpot, type CatSpotDepths, type CatSpotKind, type LapSeat } from "./catspot";
 import { IsoCatView, type CatFrame } from "./catview";
 import { ISO_DEPTH_SLOT, isoDepth, type IsoDepth } from "./depth";
 import { liftedRoot, PERSON_DEPTH } from "./personlook";
@@ -920,21 +920,6 @@ export class IsoCatsView implements CatsPart {
     if (current?.target.active) current.target.filters?.internal.remove(current.glow);
     this.glowing = null;
   }
-}
-
-/**
- * Ближче за це вздовж горизонталі екрана (клітинки x − y; ≈ 10 px) кіт стоїть не збоку від речі, а просто за нею (за мискою)
- * — тоді дивиться, як каже `catFacing`.
- */
-const FACES_DEAD = 0.15;
-
-/** Кіт збоку від речі (`CatSpot.faces`) дивиться на неї: ліворуч чи праворуч на екрані — до неї; ракурс — як був. */
-function faceTo(facing: RigFacing, spot: CatSpot): RigFacing {
-  if (!spot.faces) return facing;
-  const d = spot.faces.x - spot.faces.y - (spot.at.x - spot.at.y);
-  if (Math.abs(d) < FACES_DEAD) return facing;
-  const flip = d < 0;
-  return flip === facing.flip ? facing : { view: facing.view, flip };
 }
 
 /**
