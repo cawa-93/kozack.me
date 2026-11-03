@@ -552,7 +552,8 @@ export class DayScene extends Phaser.Scene {
   /** Кошик на місці (`goodsKey:якість` → кількість, §6.4, §8.5): переживає оновлення картки пункту після послуги. */
   private readonly visitCart = new Map<string, number>();
 
-  private showVisit(): void {
+  /** Картка пункту на місці (§8.5). `bought` — оновлення після покупки: головна кнопка смуги мить — «✓ Куплено» (`BOUGHT_PAUSE_MS`). */
+  private showVisit(bought = false): void {
     const state = this.state;
     const trip = state.trip;
     if (!trip) return;
@@ -572,7 +573,7 @@ export class DayScene extends Phaser.Scene {
       checkout: (cart) => {
         checkout(state, cart, "store");
         this.visitCart.clear();
-        again();
+        this.showVisit(true);
       },
       // Знімок огляду симуляція сама кладе в журнал поїздки: огляд входить і в операцію (рішення автора 2026-10-29, А3).
       exam: () => {
@@ -616,7 +617,7 @@ export class DayScene extends Phaser.Scene {
         this.overlay.close();
         this.driveHome(() => goHome(this.session.save));
       },
-    }, this.visitCart);
+    }, { kept: this.visitCart, bought });
     // На зборах підвищили — спершу картка кар'єри, а візит після неї (раніше візит її затирав).
     if (arrived && this.overlay.isOpen) this.queued.unshift(card);
     else this.overlay.show(card);

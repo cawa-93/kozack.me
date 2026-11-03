@@ -10,11 +10,12 @@ import { TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { catalog, discount, goodsKey, unitPrice, type CartLine } from "../src/sim/shop";
+import { catalog, checkout, discount, goodsKey, unitPrice, type CartLine } from "../src/sim/shop";
 import type { Destination, GameState } from "../src/sim/types";
 import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
 import { splitIcons } from "../src/ui/icons";
-import { CLEAR_CART, packText, shopCatalog } from "../src/ui/shop";
+import type { Card } from "../src/ui/overlay";
+import { BOUGHT, BOUGHT_PAUSE_MS, CLEAR_CART, packText, shopCatalog } from "../src/ui/shop";
 import { plural } from "../src/ui/titles";
 import { destinationCard, visitCard, type VisitHandlers } from "../src/ui/trips";
 
@@ -263,6 +264,100 @@ describe("смуга кошика внизу (§6.4)", () => {
     const again = shopCatalog(state, "store", { checkout: () => {}, home: () => {}, kept: first.kept });
     expect(fake(again.list).findAll("shop-count").map((c) => c.textContent)).toEqual(["0", "1", "0", "0"]);
     expect(fake(again.bar).find("shop-pay").textContent).toMatch(/^Купити · /u);
+  });
+});
+
+describe("подвійний дотик «Купити» не везе додому (§6.4; рецензія 2026-11-03)", () => {
+  const noop = (): void => {};
+  /**
+   * Картка пункту так, як її показує день (`DayScene.showVisit`): покупка — сим, кошик порожній, і картка одразу перебудовується
+   * з `bought`; «Додому» рахує, скільки разів поїхали.
+   */
+  function visit(destination: Destination) {
+    const state = at(destination, 3);
+    const kept = new Map<string, number>();
+    let homes = 0;
+    let card: Card | null = null;
+    const show = (bought: boolean): void => {
+      const handlers: VisitHandlers = {
+        checkout: (cart) => {
+          checkout(state, cart, "store");
+          kept.clear();
+          show(true);
+        },
+        exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop,
+        home: () => (homes += 1),
+      };
+      card = visitCard(state, { exam: null, done: [] }, handlers, { kept, bought });
+    };
+    show(false);
+    const current = (): FakeElement => {
+      const bar = card?.bar;
+      if (!bar) throw new Error("немає смуги кошика");
+      return fake(bar);
+    };
+    const list = (): FakeElement => fake(card?.body.find((b): b is HTMLElement => typeof b !== "string" && fake(b).findAll("shop-item").length > 0));
+    const step = (i: number): FakeElement | undefined => list().findAll("step")[i];
+    return { state, homes: () => homes, pay: () => current().find("shop-pay"), plus: (i: number) => step(i * 2 + 1)?.click(), minus: (i: number) => step(i * 2)?.click() };
+  }
+
+  it("два натискання поспіль: перше купує, друге влучає в неактивну «✓ Куплено» — візит триває; після паузи — «Додому»", () => {
+    vi.useFakeTimers();
+    try {
+      for (const destination of ["shop", "vet", "doctor"] as const) {
+        const v = visit(destination);
+        const money = v.state.character.money;
+        v.plus(0);
+        expect(v.pay().textContent, destination).toMatch(/^Купити/u);
+        v.pay().click();
+        v.pay().click();
+        expect(v.state.character.money, destination).toBeLessThan(money);
+        expect(v.homes(), destination).toBe(0);
+        expect(v.state.trip?.phase, destination).toBe("visit");
+        expect(v.pay().textContent, destination).toBe(BOUGHT);
+        expect(v.pay().disabled, destination).toBe(true);
+        vi.advanceTimersByTime(BOUGHT_PAUSE_MS - 1);
+        v.pay().click();
+        expect(v.homes(), destination).toBe(0);
+        expect(v.pay().textContent, destination).toBe(BOUGHT);
+        vi.advanceTimersByTime(1);
+        expect(v.pay().textContent, destination).toBe("Додому");
+        expect(v.pay().disabled, destination).toBe(false);
+        v.pay().click();
+        expect(v.homes(), destination).toBe(1);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("за паузу можна докласти в кошик — тоді одразу «Купити», а спорожнили до кінця паузи — знову «✓ Куплено»", () => {
+    vi.useFakeTimers();
+    try {
+      const v = visit("shop");
+      v.plus(0);
+      v.pay().click();
+      expect(v.pay().textContent).toBe(BOUGHT);
+      // Продукти тепер у ящиках — кладемо засоби гігієни (третій рядок).
+      v.plus(2);
+      expect(v.pay().textContent).toMatch(/^Купити/u);
+      expect(v.pay().disabled).toBe(false);
+      v.minus(2);
+      expect(v.pay().textContent).toBe(BOUGHT);
+      v.plus(2);
+      vi.advanceTimersByTime(BOUGHT_PAUSE_MS);
+      expect(v.pay().textContent).toMatch(/^Купити/u);
+      v.minus(2);
+      expect(v.pay().textContent).toBe("Додому");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("перший показ картки й оновлення після послуги — одразу «Додому»; у телефоні паузи немає", () => {
+    expect(visit("vet").pay().textContent).toBe("Додому");
+    const phone = shopCatalog(at(null), "delivery", { checkout: noop, bought: true });
+    expect(fake(phone.bar).find("shop-pay").textContent).toBe("Замовити");
   });
 });
 

@@ -41,6 +41,18 @@ const UNAVAILABLE: Record<Unavailable, string> = {
 /** Кнопка «Очистити» — без тексту, лише іконка (гліф `⌫` → `ui/glyph/cart-clear`); назва — для підказки й читача екрана. */
 export const CLEAR_CART = "Очистити кошик";
 
+/** Головна кнопка мить після покупки на місці (`BOUGHT_PAUSE_MS`): «✓» — зроблено цієї поїздки, як «✓ під контролем». */
+export const BOUGHT = "✓ Куплено";
+
+/**
+ * Скільки мілісекунд після покупки на місці головна кнопка — неактивна «✓ Куплено», а не «Додому» (рецензія 2026-11-03, рішення
+ * виконавця; GAME_DESIGN §6.4, «Бірка знижки й кошик унизу»). Після покупки картка перебудовується, і з порожнім кошиком на тому
+ * самому місці, де була «Купити», стає «Додому»: другий дотик подвійного натискання «Купити» інакше одразу вивозив би додому.
+ * 600 мс — довше за паузу між дотиками подвійного натискання (≈ 300–500 мс; подвійний клік у Windows — до 500 мс) і досить
+ * коротко, щоб не заважати поїхати.
+ */
+export const BOUGHT_PAUSE_MS = 600;
+
 /**
  * Під назвою товару (§6.4, правка автора 2026-10-23): скільки його вже їде (з тим, що чекає під
  * дверима), і чому його не взяти — з урахуванням кошика (миска в кошику дає місце автогодівниці, §9.12).
@@ -93,6 +105,11 @@ export interface CatalogOptions {
   checkout: (cart: CartLine[]) => void;
   /** На місці (§8.5): «Додому» — головна кнопка смуги, доки кошик порожній. У телефоні її немає. */
   home?: () => void;
+  /**
+   * Картка — перша після покупки на місці: головна кнопка з порожнім кошиком ще `BOUGHT_PAUSE_MS` — неактивна «✓ Куплено», а
+   * тоді «Додому» (рецензія 2026-11-03).
+   */
+  bought?: boolean;
   /**
    * Кошик, що переживає оновлення картки (`goodsKey:якість` → кількість): у ветеринара послуга (огляд, лікування) оновлює картку,
    * і покладене до неї в кошик не зникає (§8.5, рішення виконавця 2026-11-03).
@@ -208,6 +225,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
   bar.append(sums, clear, pay);
 
   const filled = (): CartLine[] => cart.filter((l) => l.count > 0);
+  // Щойно купили на місці: поки не минула пауза, з порожнім кошиком головна кнопка — «✓ Куплено», а не «Додому».
+  let settling = options.bought === true && options.home !== undefined;
   function update(): void {
     for (const u of updaters) u();
     remember();
@@ -221,9 +240,11 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     total.classList.toggle("short", sum > state.character.money);
     clear.disabled = lines.length === 0;
     const home = lines.length === 0 && options.home !== undefined;
-    // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03).
-    pay.textContent = home ? "Додому" : sum > 0 ? `${verb} · ${sum} ₴` : verb;
-    pay.disabled = !home && !canCheckout(state, cart, mode);
+    // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03). Мить після покупки —
+    // неактивна «✓ Куплено» (`BOUGHT_PAUSE_MS`).
+    const wait = home && settling;
+    pay.textContent = wait ? BOUGHT : home ? "Додому" : sum > 0 ? `${verb} · ${sum} ₴` : verb;
+    pay.disabled = wait || (!home && !canCheckout(state, cart, mode));
   }
 
   clear.addEventListener("click", () => {
@@ -236,5 +257,14 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     else if (canCheckout(state, cart, mode)) options.checkout(lines);
   });
   update();
+  if (settling) {
+    setTimeout(() => {
+      settling = false;
+      update();
+      // Вимкнена кнопка фокуса не тримає (`Overlay.show` фокусує головну, лише коли вона активна): коли пауза минула й фокус ніде,
+      // він — на «Додому», як у щойно відкритій картці, і Enter чи пробіл везуть додому.
+      if (pay.isConnected && document.activeElement === document.body) pay.focus({ preventScroll: true });
+    }, BOUGHT_PAUSE_MS);
+  }
   return { list, bar, discounted };
 }

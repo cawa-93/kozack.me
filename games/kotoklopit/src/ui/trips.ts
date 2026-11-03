@@ -10,7 +10,7 @@ import { formatClock } from "../sim/time";
 import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
-import { shopCatalog } from "./shop";
+import { shopCatalog, type CatalogOptions } from "./shop";
 import { SERVICE_TITLES } from "./titles";
 import { catalog, type CartLine } from "../sim/shop";
 import { element, type Card, type CardAction } from "./overlay";
@@ -145,9 +145,10 @@ const describe = (value: number, words: [string, string, string, string]): strin
 /**
  * Подія на місці (§8.5). Де щось продають (`STORE_GOODS`: магазин, ліки у ветеринара й лікаря) — каталог із кошиком, а внизу
  * смуга кошика з грошима й «Додому» / «Купити» (рішення автора 2026-11-03); деінде — «Додому» кнопкою внизу, а гроші — у
- * примітці праворуч від заголовка. `cart` — кошик, що переживає оновлення картки після послуги (`CatalogOptions.kept`).
+ * примітці праворуч від заголовка. `store` — кошик, що переживає оновлення картки після послуги (`CatalogOptions.kept`), і чи
+ * картка — перша після покупки (`CatalogOptions.bought`: мить «✓ Куплено» замість «Додому»).
  */
-export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, cart?: Map<string, number>): Card {
+export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, store: Pick<CatalogOptions, "kept" | "bought"> = {}): Card {
   const trip = state.trip;
   const destination = trip?.destination ?? "shop";
   const money = Math.floor(state.character.money);
@@ -367,7 +368,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, car
   }
   // Каталог пункту з кошиком (§6.4, §8.5): у ветеринара й лікаря — під послугами. Гроші — у смузі кошика, поруч із сумою, а
   // «Додому» — її головна кнопка, доки кошик порожній.
-  const shop = shopCatalog(state, "store", { checkout: h.checkout, home: h.home, ...(cart ? { kept: cart } : {}) });
+  const shop = shopCatalog(state, "store", { ...store, checkout: h.checkout, home: h.home });
   body.push(shop.list);
   // Подія дня, що змінює ціни того, що є в каталозі («Акція в зоомагазині», «Подорожчання корму»), і скільки знижок.
   const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== 1);
