@@ -1,0 +1,34 @@
+{
+  "name": "Відключення, коти під поличками",
+  "description": "Вівторок другого тижня, 21:30, день «Планове відключення» (§4.1; рішення автора 2026-11-03: свічки — на настінних поличках, по одній у кімнаті, і жоден кіт на меблях їх не перекриває). Коти — на меблях під поличками й поруч: на пральній машині, умивальнику й у душовій кабіні ванної (поличка між кабіною й бойлером, над рулоном паперу), двоє сплять рядком на правій стільниці кухні (поличка над смітником, праворуч від них), двоє — на кухонному столі, двоє — на столі з комп'ютером. Персонаж — на кухні між столом і шафкою з кормом, тож на 844×390 у кадрі поличка кухні над смітником і коти на стільниці й столі, на 1280×720 — ще поличка ванної з котами під нею й двоє котів на столі з комп'ютером. Свічки горять, лампа на столі вимкнена (світла немає). Удень (`?light=12:00`) свічки погашені, полички висять там само; зі світлом (сценарій `night-lamps`) поличок немає.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 16 },
+  "state": {
+    "day": 8,
+    "minute": 1290,
+    "modifiers": { "day": "outage" },
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 70 }, "body": { "x": 16.5, "y": 3.5, "facing": { "x": 1, "y": 0 } } },
+    "home": {
+      "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 40, "name": "Барабан", "sex": "male", "arrivedDay": -10, "x": 10.5, "y": 1.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Крапля", "sex": "female", "arrivedDay": -10, "x": 11.5, "y": 1.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Піддон", "sex": "male", "arrivedDay": -10, "x": 8.5, "y": 1.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 10 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Сіль", "sex": "male", "arrivedDay": -10, "x": 16.5, "y": 1.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Перець", "sex": "female", "arrivedDay": -10, "x": 17.5, "y": 1.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Ложка", "sex": "male", "arrivedDay": -10, "x": 13.5, "y": 3.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Виделка", "sex": "female", "arrivedDay": -10, "x": 14.5, "y": 3.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Миша", "sex": "male", "arrivedDay": -10, "x": 6.5, "y": 6.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } },
+    { "source": "shelter", "ageWeeks": 40, "name": "Клавіша", "sex": "female", "arrivedDay": -10, "x": 7.5, "y": 6.5, "needs": { "hunger": 10, "attention": 10, "fatigue": 90 },
+      "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 240, "elapsed": 0 } }
+  ]
+}
