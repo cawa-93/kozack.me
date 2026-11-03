@@ -118,7 +118,7 @@ const NAMES: readonly IconName[] = [
   "hiss-window",
   // рука гладить сіру котячу голову (мініатюра `attention`),
   "hiss-hand",
-  // на кошеня.
+  // сіре кошеня сидить мордою до глядача.
   "hiss-kitten",
   // Гризе дріт (хрумтить).
   "chew-wire",
