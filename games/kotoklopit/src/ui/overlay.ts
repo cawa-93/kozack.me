@@ -23,16 +23,28 @@ export interface CardTab {
 export interface Card {
   kicker?: string;
   /**
-   * Годинник на місці (§8.5 «На місці — кадр парковки»): дописується до підзаголовка («Поїздка · 10:45»), але видно його лише на
-   * місці з карткою посередині (`.away` без `.aside`, `overlay.css`). Коли картка ліворуч, час показує напис над парковкою у
-   * вільній смузі (`RaceScene`), а без смуги той ховався б під карткою.
+   * Годинник на місці (§8.5 «На місці — кадр парковки»): останньою частиною примітки праворуч від заголовка («🕐 10:45»;
+   * рішення автора 2026-11-03 — до того дописувався до підзаголовка «Поїздка · 10:45»), але видно його лише на місці з карткою
+   * посередині (`.away` без `.aside`, `overlay.css`). Коли картка ліворуч, час показує напис над парковкою у вільній смузі
+   * (`RaceScene`), а без смуги той ховався б під карткою.
    */
   awayClock?: string;
   /** Порожній заголовок не показується: так картка з вкладками економить висоту. */
   title: string;
+  /**
+   * Примітка праворуч від заголовка, у тому самому рядку (§8.5, «Картки поїздок без «Поїздка»»; рішення автора 2026-11-03):
+   * короткі частини через « · » — гроші, події дня, знижки. Не вміщається — переходить під заголовок. Без неї (і без
+   * годинника) заголовок — як був.
+   */
+  aside?: string[];
   tabs?: CardTab[];
   /** Абзаци тексту або готові елементи. */
   body: (string | HTMLElement)[];
+  /**
+   * Смуга, що липне до низу картки, зі своїми кнопками: кошик магазину з «Додому» чи «Купити» (§6.4, «Бірка знижки й кошик
+   * унизу»). Стоїть після тіла й перед кнопками дій (`actions`), якщо ті є.
+   */
+  bar?: HTMLElement;
   actions: CardAction[];
   /** Esc закриває картку. */
   onDismiss?: () => void;
@@ -207,17 +219,20 @@ export class Overlay {
       close.addEventListener("click", () => dismiss());
       panel.append(close);
     }
-    if (card.kicker) {
-      const kicker = element("p", "card-kicker", card.kicker);
-      if (card.awayClock) kicker.append(element("span", "card-clock", ` · ${card.awayClock}`));
-      panel.append(kicker);
-    }
-    if (card.title) {
-      const title = element("h2", "card-title", card.title);
+    if (card.kicker) panel.append(element("p", "card-kicker", card.kicker));
+    const title = card.title ? element("h2", "card-title", card.title) : null;
+    if (title) {
       title.id = "card-title";
       panel.setAttribute("aria-labelledby", title.id);
-      panel.append(title);
     }
+    const note = cardAside(card);
+    if (note) {
+      // Заголовок і примітка — один рядок (`.card-head`): примітка праворуч, а коли не вміщається — під заголовком.
+      const head = element("div", "card-head");
+      if (title) head.append(title);
+      head.append(note);
+      panel.append(head);
+    } else if (title) panel.append(title);
     if (card.tabs) {
       const tabs = element("div", "card-tabs");
       tabs.setAttribute("role", "tablist");
@@ -234,6 +249,7 @@ export class Overlay {
       if (typeof part !== "string") panel.append(part);
       else for (const paragraph of part.split("\n\n")) panel.append(element("p", "card-text", paragraph));
     }
+    if (card.bar) panel.append(card.bar);
     const actions = element("div", "card-actions");
     for (const action of card.actions) {
       const button = element("button", action.primary ? "button primary" : "button", action.label);
@@ -286,6 +302,19 @@ export class Overlay {
       }
     }
   }
+}
+
+/**
+ * Примітка праворуч від заголовка (`Card.aside`): частини окремими шматками (« · » між ними ставить CSS), годинник на місці —
+ * останнім (`.card-clock`: його видно лише з карткою посередині, і тоді перед ним немає зайвої « · »). Нічого — null.
+ */
+function cardAside(card: Card): HTMLElement | null {
+  const parts = card.aside ?? [];
+  if (parts.length === 0 && !card.awayClock) return null;
+  const note = element("p", "card-aside");
+  for (const part of parts) note.append(element("span", "card-aside-part", part));
+  if (card.awayClock) note.append(element("span", "card-aside-part card-clock", `🕐 ${card.awayClock}`));
+  return note;
 }
 
 export function element<K extends keyof HTMLElementTagNameMap>(

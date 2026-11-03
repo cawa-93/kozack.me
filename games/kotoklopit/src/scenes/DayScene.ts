@@ -549,6 +549,9 @@ export class DayScene extends Phaser.Scene {
     this.dark.setFillStyle(0x000000, 0);
   }
 
+  /** Кошик на місці (`goodsKey:якість` → кількість, §6.4, §8.5): переживає оновлення картки пункту після послуги. */
+  private readonly visitCart = new Map<string, number>();
+
   private showVisit(): void {
     const state = this.state;
     const trip = state.trip;
@@ -557,6 +560,8 @@ export class DayScene extends Phaser.Scene {
     const log = (trip.log ??= { exam: null, done: [] });
     // Перший показ візиту, а не оновлення картки після дії на місці.
     const arrived = !this.overlay.isOpen;
+    // Кошик на місці переживає оновлення картки після послуги (огляд, лікування), а новий візит починається з порожнього (§8.5).
+    if (arrived) this.visitCart.clear();
     if (trip.destination === "office" && !log.done.includes("office")) {
       officeMeeting(state);
       log.done.push("office");
@@ -566,6 +571,7 @@ export class DayScene extends Phaser.Scene {
     const card = visitCard(state, log, {
       checkout: (cart) => {
         checkout(state, cart, "store");
+        this.visitCart.clear();
         again();
       },
       // Знімок огляду симуляція сама кладе в журнал поїздки: огляд входить і в операцію (рішення автора 2026-10-29, А3).
@@ -606,10 +612,11 @@ export class DayScene extends Phaser.Scene {
       // Час на місці — лише за отримані послуги, без жодної — 15 хвилин (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
       // Спершу дорога додому катсценою (рішення автора 2026-11-02), а тоді минає час, як і раніше.
       home: () => {
+        this.visitCart.clear();
         this.overlay.close();
         this.driveHome(() => goHome(this.session.save));
       },
-    });
+    }, this.visitCart);
     // На зборах підвищили — спершу картка кар'єри, а візит після неї (раніше візит її затирав).
     if (arrived && this.overlay.isOpen) this.queued.unshift(card);
     else this.overlay.show(card);

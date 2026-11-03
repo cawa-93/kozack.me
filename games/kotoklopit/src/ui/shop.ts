@@ -1,10 +1,10 @@
-// Універсальний магазин (§6.4): один каталог запасів і речей, кількість кнопками «−» і «+», разом
-// до сплати й одна кнопка. Той самий компонент — у телефоні (доставка) і в поїздці (на місці).
+// Універсальний магазин (§6.4): один каталог запасів і речей, кількість кнопками «−» і «+», а внизу картки — смуга кошика: сума,
+// гроші, «Очистити» й одна головна кнопка (рішення автора 2026-11-03, «Бірка знижки й кошик унизу»). Той самий компонент — у
+// телефоні (доставка) і на місці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
 import { FEEDER_CAPACITY, PRODUCTS } from "../sim/config";
-import { shopModifier } from "../sim/destinations";
 import { incoming } from "../sim/economy";
-import { canCheckout, cartDelivery, cartTotal, fitCart, GOODS, goodsKey, goodsTotal, offered, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
+import { canCheckout, cartDelivery, cartTotal, catalog, discount, fitCart, goodsKey, goodsTotal, room, unavailable, unitPrice, variants, type CartLine, type Goods, type ShopMode, type Unavailable } from "../sim/shop";
 import type { GameState, Quality } from "../sim/types";
 import type { IconName } from "../view/iconnames";
 import { PRODUCT_ICONS, THING_ICONS } from "../view/symbols";
@@ -38,6 +38,9 @@ const UNAVAILABLE: Record<Unavailable, string> = {
   ordered: "уже їде",
 };
 
+/** Кнопка «Очистити» — без тексту, лише іконка (гліф `⌫` → `ui/glyph/cart-clear`); назва — для підказки й читача екрана. */
+export const CLEAR_CART = "Очистити кошик";
+
 /**
  * Під назвою товару (§6.4, правка автора 2026-10-23): скільки його вже їде (з тим, що чекає під
  * дверима), і чому його не взяти — з урахуванням кошика (миска в кошику дає місце автогодівниці, §9.12).
@@ -60,66 +63,109 @@ function stockText(state: GameState, goods: Goods, cart: readonly CartLine[]): s
   return parts.join(" · ");
 }
 
-/** Розмір упаковки для запасу («10 чисток лотка»), а для автогодівниці — скільки корму вміщує (§9.12). */
-function packText(goods: Goods, quality: Quality): string {
-  if ("thing" in goods && goods.thing === "feeder") return ` · ${PRODUCT_TITLES.catFood.unit(FEEDER_CAPACITY[quality])}`;
-  if (!("product" in goods)) return "";
-  const units = PRODUCTS[goods.product].units;
-  return ` · ${PRODUCT_TITLES[goods.product].unit(units[quality])}`;
+/**
+ * Скільки в упаковці — «×15» (рішення автора 2026-11-03: «Замість "15 душів - 15 ₴" писати щось накшталт "х15 - 15 ₴"»); штучне
+ * (нашийник) — нічого. Автогодівниця — скільки корму вміщує (§9.12): іконка корму й число, як індикатор сховища.
+ */
+export function packText(goods: Goods, quality: Quality): string {
+  if ("thing" in goods) return goods.thing === "feeder" ? named(PRODUCT_ICONS.catFood, String(FEEDER_CAPACITY[quality])) : "";
+  const units = PRODUCTS[goods.product].units[quality];
+  return units > 1 ? `×${units}` : "";
 }
 
+/** Бірка знижки «−X%» (§6.4; рішення автора 2026-11-03): червоний цінник із отвором (`art/ui/tag.svg`), трохи навскіс. */
+function priceTag(percent: number): HTMLElement {
+  return element("span", "price-tag", `−${percent}%`);
+}
+
+/** Розділи каталогу: на місці у ветеринара й лікаря продають лише ліки (§8.5) — «Ліки», деінде — «Запаси» й «Речі». */
+function sections(state: GameState, mode: ShopMode, goods: readonly Goods[]): { title: string; goods: Goods[] }[] {
+  const supplies = goods.filter((g) => "product" in g);
+  const medsOnly = mode === "store" && state.trip?.destination !== "shop";
+  return [
+    { title: medsOnly ? "Ліки" : "Запаси", goods: supplies },
+    { title: "Речі", goods: goods.filter((g) => "thing" in g) },
+  ];
+}
+
+export interface CatalogOptions {
+  /** Оплатити кошик (§6.4): на місці — купити, у телефоні — замовити доставку. Отримує лише непорожні рядки й лише тоді, коли кошик можна оплатити. */
+  checkout: (cart: CartLine[]) => void;
+  /** На місці (§8.5): «Додому» — головна кнопка смуги, доки кошик порожній. У телефоні її немає. */
+  home?: () => void;
+  /**
+   * Кошик, що переживає оновлення картки (`goodsKey:якість` → кількість): у ветеринара послуга (огляд, лікування) оновлює картку,
+   * і покладене до неї в кошик не зникає (§8.5, рішення виконавця 2026-11-03).
+   */
+  kept?: Map<string, number>;
+}
+
+export interface Catalog {
+  /** Розділи з товарами — у тіло картки. */
+  list: HTMLElement;
+  /** Смуга кошика — внизу картки (`Card.bar`). */
+  bar: HTMLElement;
+  /** Скільки товарів каталогу сьогодні з біркою знижки — для примітки біля заголовка (§8.5). */
+  discounted: number;
+}
+
+const lineKey = (line: CartLine): string => `${goodsKey(line.goods)}:${line.quality}`;
+
 /**
- * Каталог із кошиком. `onCheckout` отримує кошик, лише коли його можна оплатити (§6.4): усе
- * вміщується вдома й грошей досить.
+ * Каталог із кошиком (§6.4): товари — у `list`, смуга кошика — у `bar`. Головна кнопка смуги на місці — «Додому», доки кошик
+ * порожній, і «Купити · N ₴», щойно в ньому щось є (рішення автора 2026-11-03); у телефоні — «Замовити». `checkout` отримує
+ * кошик, лише коли його можна оплатити: усе вміщується вдома й грошей досить.
  */
-export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart: CartLine[]) => void): HTMLElement {
+export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOptions): Catalog {
   const cart: CartLine[] = [];
-  const box = element("div", "shop");
+  const list = element("div", "shop");
   const updaters: (() => void)[] = [];
-  const total = element("span", "shop-total");
-  const verb = mode === "store" ? "Купити" : "Замовити";
-  const pay = element("button", "button primary", verb);
-  const update = (): void => {
-    for (const u of updaters) u();
-    const sum = cartTotal(state, cart, mode);
-    // Ціни в каталозі базові; доставка — окремим підписом (§6.4): 10% бази й надбавка, раз на кошик.
-    const filled = cart.filter((l) => l.count > 0);
-    const delivery = mode === "delivery" ? ` · 🚗 доставка ${cartDelivery(state, filled, mode)} ₴` : "";
-    total.textContent = `🛒 ${goodsTotal(state, filled, mode)} ₴${delivery} · 👛 ${Math.floor(state.character.money)} ₴`;
-    drawGlyphs(total);
-    pay.textContent = sum > 0 ? `${verb} · ${sum} ₴` : verb;
-    total.classList.toggle("short", sum > state.character.money);
-    pay.disabled = !canCheckout(state, cart, mode);
+  const kept = options.kept;
+  const remember = (): void => {
+    if (!kept) return;
+    kept.clear();
+    for (const line of cart) if (line.count > 0) kept.set(lineKey(line), line.count);
   };
 
-  const section = (title: string, goods: readonly Goods[]): void => {
+  const shown = catalog(state, mode);
+  let discounted = 0;
+  for (const section of sections(state, mode, shown)) {
     // До першого кота речей у магазині немає (§11.3а) — і заголовка без рядків теж.
-    if (goods.length === 0) return;
-    box.append(element("p", "shop-section", title));
-    for (const g of goods) {
-      const row = element("div", "shop-item");
+    if (section.goods.length === 0) continue;
+    list.append(element("p", "shop-section", section.title));
+    for (const g of section.goods) {
+      const item = element("div", "shop-item");
+      const head = element("div", "shop-head");
       const name = element("span", "shop-name", goodsLabel(g));
-      // Ціна сьогодні нижча чи вища — стрілкою, без слів «дешевше» й «дорожче» (§11.4); на скільки й чому — ні (§11.3а).
-      const mod = mode === "store" ? shopModifier(state, g) : 0;
-      const arrow = Math.abs(mod) >= 0.005 ? (mod < 0 ? "₴↓" : "₴↑") : "";
       // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
       const stock = element("span", "shop-stock");
       name.append(stock);
       updaters.push(() => {
-        const text = [stockText(state, g, cart), arrow].filter((s) => s !== "").join(" · ");
+        const text = stockText(state, g, cart);
         stock.textContent = text;
         stock.style.display = text === "" ? "none" : "";
       });
-      row.append(name);
+      head.append(name);
+      // Знижка — біркою праворуч від назви; подорожчання — нічим (рішення автора 2026-11-03).
+      const off = discount(state, g, mode);
+      if (off > 0) {
+        head.append(priceTag(off));
+        discounted += 1;
+      }
+      item.append(head);
       // Нашийник — один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), решта — два.
       for (const quality of variants(g)) {
-        const line: CartLine = { goods: g, quality, count: 0 };
+        const line: CartLine = { goods: g, quality, count: kept?.get(`${goodsKey(g)}:${quality}`) ?? 0 };
         cart.push(line);
-        const price = unitPrice(state, g, quality, mode);
-        const label = element("span", "shop-option", `${VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality}${packText(g, quality)} — ${price} ₴`);
+        const label = element("span", "shop-option", VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality);
+        const pack = packText(g, quality);
+        if (pack !== "") label.append(" ", element("span", "shop-pack", pack));
+        const price = element("span", "shop-price", `${unitPrice(state, g, quality, mode)} ₴`);
         const minus = element("button", "button step", "−");
         const count = element("span", "shop-count", "0");
         const plus = element("button", "button step", "+");
+        const option = element("div", "shop-line");
+        option.append(label, price, minus, count, plus);
         minus.addEventListener("click", () => {
           line.count = Math.max(0, line.count - 1);
           // Забрали миску — автогодівниця, якій вона давала місце, теж виходить з кошика (§9.12).
@@ -135,27 +181,59 @@ export function shopCatalog(state: GameState, mode: ShopMode, onCheckout: (cart:
           count.textContent = String(line.count);
           minus.disabled = line.count === 0;
           plus.disabled = line.count >= space || state.end !== null;
-          label.classList.toggle("muted", space === 0 && line.count === 0);
+          option.classList.toggle("muted", space === 0 && line.count === 0);
+          option.classList.toggle("chosen", line.count > 0);
         });
-        const option = element("div", "shop-line");
-        option.append(label, minus, count, plus);
-        row.append(option);
+        item.append(option);
       }
-      box.append(row);
+      list.append(item);
     }
-  };
-  const shown = GOODS.filter((g) => offered(state, g));
-  section("Запаси", shown.filter((g) => "product" in g));
-  section("Речі", shown.filter((g) => "thing" in g));
+  }
+  // Збережений кошик — лише те, що й досі вміщується (§6.4).
+  fitCart(state, cart);
 
-  pay.addEventListener("click", () => {
-    if (canCheckout(state, cart, mode)) onCheckout(cart.filter((l) => l.count > 0));
+  // Смуга кошика внизу (рішення автора 2026-11-03): суми — у заглибленому віконці, праворуч «Очистити» й головна кнопка.
+  const bar = element("div", "shop-bar");
+  const sums = element("div", "shop-sums");
+  const total = element("span", "shop-total");
+  const money = element("span", "shop-money", `👛 ${Math.floor(state.character.money)} ₴`);
+  drawGlyphs(money);
+  sums.append(total, money);
+  const clear = element("button", "button shop-clear", "⌫");
+  clear.title = CLEAR_CART;
+  clear.setAttribute("aria-label", CLEAR_CART);
+  drawGlyphs(clear);
+  const verb = mode === "store" ? "Купити" : "Замовити";
+  const pay = element("button", "button primary shop-pay", verb);
+  bar.append(sums, clear, pay);
+
+  const filled = (): CartLine[] => cart.filter((l) => l.count > 0);
+  function update(): void {
+    for (const u of updaters) u();
+    remember();
+    const lines = filled();
+    const sum = cartTotal(state, cart, mode);
+    // Ціни в каталозі — без доставки; доставка — окремо в смузі (§6.4): 10% бази й надбавка, раз на кошик.
+    const delivery = mode === "delivery" ? ` · 🚗 доставка ${cartDelivery(state, lines, mode)} ₴` : "";
+    total.textContent = `🛒 ${goodsTotal(state, lines, mode)} ₴${delivery}`;
+    drawGlyphs(total);
+    total.classList.toggle("short", sum > state.character.money);
+    clear.disabled = lines.length === 0;
+    const home = lines.length === 0 && options.home !== undefined;
+    // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03).
+    pay.textContent = home ? "Додому" : sum > 0 ? `${verb} · ${sum} ₴` : verb;
+    pay.disabled = !home && !canCheckout(state, cart, mode);
+  }
+
+  clear.addEventListener("click", () => {
+    for (const line of cart) line.count = 0;
+    update();
   });
-  // Підсумок і оплата — угорі й закріплені: кнопки картки внизу не заступають їх на телефоні.
-  const footer = element("div", "shop-footer");
-  footer.append(total, pay);
-  box.prepend(footer);
+  pay.addEventListener("click", () => {
+    const lines = filled();
+    if (lines.length === 0) options.home?.();
+    else if (canCheckout(state, cart, mode)) options.checkout(lines);
+  });
   update();
-  return box;
+  return { list, bar, discounted };
 }
-

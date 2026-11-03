@@ -249,8 +249,9 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const tabs = (Object.keys(PHONE_TABS) as PhoneTab[]).filter((t) => (t !== "cats" || state.cats.length > 0) && (t !== "album" || state.album.length > 0));
   const tab = tabs.includes(wanted) ? wanted : "shop";
   const body: (string | HTMLElement)[] = [];
-  // Що вже їде, видно в рядку кожного товару (§6.4).
-  if (tab === "shop") body.push(shopCatalog(state, "delivery", handlers.checkout));
+  // Що вже їде, видно в рядку кожного товару (§6.4); смуга кошика з «Замовити» — внизу картки (рішення автора 2026-11-03).
+  const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
+  if (shop) body.push(shop.list);
   if (tab === "mine") {
     body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`);
     // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
@@ -266,6 +267,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
     title: "",
     tabs: tabs.map((t) => ({ label: PHONE_TABS[t], active: t === tab, onSelect: () => handlers.tab(t) })),
     body,
+    ...(shop ? { bar: shop.bar } : {}),
     actions: [],
     onDismiss: handlers.close,
     closable: true,

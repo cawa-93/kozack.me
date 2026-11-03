@@ -1,18 +1,19 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
-import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, TRIPS, VET, WEIGHT } from "../sim/config";
+import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, STORE_GOODS, TRIPS, VET, WEIGHT } from "../sim/config";
 import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
+import { priceFactor, roadFactor } from "../sim/modifiers";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import { formatClock } from "../sim/time";
 import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
-import { accidentLines, BREED_ABOUT, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
+import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
 import { shopCatalog } from "./shop";
 import { SERVICE_TITLES } from "./titles";
-import type { CartLine } from "../sim/shop";
-import { element, type Card } from "./overlay";
+import { catalog, type CartLine } from "../sim/shop";
+import { element, type Card, type CardAction } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
 import { traitChips } from "./traits";
 
@@ -51,7 +52,23 @@ const BLOCKERS = {
   show: "Виставка — лише в її день.",
 } as const;
 
-/** Куди поїхати (§8.5). */
+/** Гроші персонажа в примітці біля заголовка чи в смузі кошика — у картці рівно один раз (§8.5; рішення автора 2026-11-03). */
+const purse = (state: GameState): string => `👛 ${Math.floor(state.character.money)} ₴`;
+
+/** Назва сьогоднішньої події дня (§4.1), якщо вона є й `affects` — для примітки біля заголовка картки (§8.5). */
+function dayEvent(state: GameState, affects: boolean): string[] {
+  const id = state.modifiers.day;
+  const title = id === null ? undefined : DAY_MODIFIER_TEXTS[id]?.title;
+  return affects && title !== undefined ? [title] : [];
+}
+
+/** Скільки товарів каталогу сьогодні з біркою знижки (§6.4): «7 знижок»; нуль — нічого. */
+const discounts = (n: number): string[] => (n > 0 ? [`${n} ${plural(n, "знижка", "знижки", "знижок")}`] : []);
+
+/**
+ * Куди поїхати (§8.5). Підпису «Поїздка» немає, а праворуч від заголовка — подія дня, що змінює дорогу («Пробки», «Порожні
+ * дороги»), і гроші (рішення автора 2026-11-03).
+ */
 export function destinationCard(state: GameState, onPick: (d: Destination) => void, onCancel: () => void): Card {
   const list = element("div", "shop");
   // Причину, через яку не можна їхати нікуди, кажуть один раз, а не в кожному рядку.
@@ -76,8 +93,8 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
     list.append(row);
   }
   return {
-    kicker: "Поїздка",
     title: "Куди поїхати?",
+    aside: [...dayEvent(state, roadFactor(state) !== 1), purse(state)],
     body: [...(everywhere !== null ? [BLOCKERS[everywhere]] : []), list],
     actions: [],
     onDismiss: onCancel,
@@ -109,7 +126,7 @@ function goingHome(body: (string | HTMLElement)[], log: VisitLog): void {
 }
 
 export interface VisitHandlers {
-  /** Купити кошик на місці (§6.4). */
+  /** Купити кошик на місці (§6.4): у магазині, ліки — у ветеринара й лікаря (§8.5). */
   checkout: (cart: CartLine[]) => void;
   exam: () => void;
   treat: (disease: DiseaseId, quality: Quality) => void;
@@ -125,13 +142,16 @@ export interface VisitHandlers {
 
 const describe = (value: number, words: [string, string, string, string]): string => words[value >= 75 ? 0 : value >= 50 ? 1 : value >= 25 ? 2 : 3];
 
-/** Подія на місці (§8.5). */
-export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Card {
+/**
+ * Подія на місці (§8.5). Де щось продають (`STORE_GOODS`: магазин, ліки у ветеринара й лікаря) — каталог із кошиком, а внизу
+ * смуга кошика з грошима й «Додому» / «Купити» (рішення автора 2026-11-03); деінде — «Додому» кнопкою внизу, а гроші — у
+ * примітці праворуч від заголовка. `cart` — кошик, що переживає оновлення картки після послуги (`CatalogOptions.kept`).
+ */
+export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, cart?: Map<string, number>): Card {
   const trip = state.trip;
   const destination = trip?.destination ?? "shop";
   const money = Math.floor(state.character.money);
-  const body: (string | HTMLElement)[] = [`👛 ${money} ₴`];
-  const actions = [{ label: "Додому", primary: true, onSelect: h.home }];
+  const body: (string | HTMLElement)[] = [];
   const button = (label: string, price: number, onClick: () => void, disabled = false): HTMLButtonElement => {
     const b = element("button", "button", label);
     b.disabled = disabled || price > money;
@@ -173,7 +193,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
   };
   switch (destination) {
     case "shop":
-      body.push(shopCatalog(state, "store", h.checkout));
+      // Каталог — після перемикача, як і ліки у ветеринара й лікаря.
       break;
     case "vet": {
       if (!cat) break;
@@ -338,7 +358,19 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers): Ca
       break;
   }
   // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»). Годинник —
-  // у підзаголовку, коли картка посередині й напису над парковкою немає (§8.5 «На місці — кадр парковки»).
-  return { kicker: "Поїздка", awayClock: formatClock(state.minute), title: destinationLabel(destination), body, actions };
+  // останнім у примітці праворуч від заголовка, коли картка посередині й напису над парковкою немає (§8.5 «На місці — кадр
+  // парковки»); підпису «Поїздка» немає (рішення автора 2026-11-03).
+  const card = { awayClock: formatClock(state.minute), title: destinationLabel(destination), body };
+  if (STORE_GOODS[destination] === undefined) {
+    const home: CardAction = { label: "Додому", primary: true, onSelect: h.home };
+    return { ...card, aside: [purse(state)], actions: [home] };
+  }
+  // Каталог пункту з кошиком (§6.4, §8.5): у ветеринара й лікаря — під послугами. Гроші — у смузі кошика, поруч із сумою, а
+  // «Додому» — її головна кнопка, доки кошик порожній.
+  const shop = shopCatalog(state, "store", { checkout: h.checkout, home: h.home, ...(cart ? { kept: cart } : {}) });
+  body.push(shop.list);
+  // Подія дня, що змінює ціни того, що є в каталозі («Акція в зоомагазині», «Подорожчання корму»), і скільки знижок.
+  const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== 1);
+  return { ...card, aside: [...dayEvent(state, repriced), ...discounts(shop.discounted)], bar: shop.bar, actions: [] };
 }
 

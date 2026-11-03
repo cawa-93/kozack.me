@@ -1,7 +1,8 @@
 // Картка на місці (GAME_DESIGN §8.5 «На місці — кадр парковки»): тло під карткою затемнене слабше (`.away`) — хоч би де стояла
 // картка, а притиснута ліворуч вона (`.aside`) лише тоді, коли праворуч уміщається парковка. Обидва класи ставить день щокадру,
-// а меню, титулка й кінець гри (`solid`) і закрита картка їх не мають. Годинник на місці — у підзаголовку картки пункту, і видно
-// його лише з карткою посередині: коли вона ліворуч, час показує напис над парковкою.
+// а меню, титулка й кінець гри (`solid`) і закрита картка їх не мають. Годинник на місці — у примітці праворуч від заголовка
+// картки пункту (рішення автора 2026-11-03: підпису «Поїздка» немає), і видно його лише з карткою посередині: коли вона
+// ліворуч, час показує напис над парковкою.
 
 import { readFileSync } from "node:fs";
 
@@ -97,7 +98,10 @@ describe("картка на місці: тло й положення (§8.5 «Н
     return { overlay, root };
   }
 
-  const card: Card = { kicker: "Поїздка", title: "Ветеринар", body: ["Бублик у переносці."], actions: [{ label: "Додому", primary: true, onSelect: () => {} }] };
+  const card: Card = { title: "Ветеринар", body: ["Бублик у переносці."], actions: [{ label: "Додому", primary: true, onSelect: () => {} }] };
+  /** Дитина-елемент панелі з цим класом. */
+  const child = (parent: FakeElement | undefined, className: string): FakeElement | undefined =>
+    parent?.children.find((c): c is FakeElement => c instanceof FakeElement && c.className === className);
 
   it("слабше тло (.away) і картка ліворуч (.aside) — окремо: посередині тло теж слабше", () => {
     const { overlay, root } = setup();
@@ -137,22 +141,48 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(root.classList.contains("aside")).toBe(false);
   });
 
-  it("годинник на місці (awayClock) — у підзаголовку картки окремим елементом; без нього підзаголовок як був", () => {
+  it("годинник на місці (awayClock) — останнім у примітці праворуч від заголовка (рішення автора 2026-11-03); без примітки заголовок як був", () => {
     const { overlay, root } = setup();
     overlay.show({ ...card, awayClock: "10:45" });
     const panel = root.children[0] as FakeElement;
-    const kicker = panel.children.find((c): c is FakeElement => c instanceof FakeElement && c.className === "card-kicker");
-    expect(kicker?.textContent).toBe("Поїздка");
-    const clock = kicker?.children[0] as FakeElement | undefined;
-    expect(clock?.className).toBe("card-clock");
-    expect(clock?.textContent).toBe(" · 10:45");
+    const head = child(panel, "card-head");
+    expect(child(head, "card-title")?.textContent).toBe("Ветеринар");
+    const note = child(head, "card-aside");
+    const clock = note?.children.at(-1) as FakeElement | undefined;
+    expect(clock?.className).toBe("card-aside-part card-clock");
+    expect(clock?.textContent).toBe("🕐 10:45");
+    // Підзаголовка немає, якщо його не передали.
+    expect(child(panel, "card-kicker")).toBeUndefined();
 
-    overlay.show(card);
-    const plain = (root.children[0] as FakeElement).children.find((c): c is FakeElement => c instanceof FakeElement && c.className === "card-kicker");
-    expect(plain?.children).toEqual([]);
+    // Примітка — частини по черзі, годинник — останнім.
+    overlay.show({ ...card, aside: ["Пробки", "👛 300 ₴"], awayClock: "10:45" });
+    const parts = child(child(root.children[0] as FakeElement, "card-head"), "card-aside")?.children as FakeElement[];
+    expect(parts.map((p) => p.textContent)).toEqual(["Пробки", "👛 300 ₴", "🕐 10:45"]);
+    expect(parts.map((p) => p.className)).toEqual(["card-aside-part", "card-aside-part", "card-aside-part card-clock"]);
+
+    // Іншим карткам нічого не змінюється: заголовок — прямо в картці, без рядка з приміткою.
+    overlay.show({ ...card, kicker: "Подія дня" });
+    const plain = root.children[0] as FakeElement;
+    expect(child(plain, "card-head")).toBeUndefined();
+    expect(child(plain, "card-title")?.textContent).toBe("Ветеринар");
+    expect(child(plain, "card-kicker")?.children).toEqual([]);
   });
 
-  it("картка пункту — з годинником поїздки (час прибуття, як у написі над парковкою) у кожного пункту", () => {
+  it("смуга (bar) — після тіла картки й перед кнопками дій; без кнопок дій їхнього рядка немає", () => {
+    const { overlay, root } = setup();
+    const bar = new FakeElement("div");
+    bar.className = "shop-bar";
+    overlay.show({ ...card, bar: bar as unknown as HTMLElement, actions: [] });
+    const panel = root.children[0] as FakeElement;
+    expect(panel.children.at(-1)).toBe(bar);
+    expect(child(panel, "card-actions")).toBeUndefined();
+    overlay.show({ ...card, bar: bar as unknown as HTMLElement });
+    const both = root.children[0] as FakeElement;
+    expect(both.children.at(-2)).toBe(bar);
+    expect((both.children.at(-1) as FakeElement).className).toBe("card-actions");
+  });
+
+  it("картка пункту — з годинником поїздки (час прибуття, як у написі над парковкою) у кожного пункту, без підпису «Поїздка»", () => {
     const noop = (): void => {};
     const handlers: VisitHandlers = { checkout: noop, exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
     for (const destination of Object.keys(TRIPS) as Destination[]) {
@@ -168,7 +198,7 @@ describe("картка на місці: тло й положення (§8.5 «Н
         seed: 5,
       };
       const shown = visitCard(save.current, { exam: null, done: [] }, handlers);
-      expect(shown.kicker, destination).toBe("Поїздка");
+      expect(shown.kicker, destination).toBeUndefined();
       expect(shown.awayClock, destination).toBe(formatClock(save.current.minute));
       expect(shown.awayClock, destination).toBe("10:45");
     }
