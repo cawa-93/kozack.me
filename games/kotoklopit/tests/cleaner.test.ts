@@ -13,6 +13,7 @@ import type { CleanerVisit, GameEvent } from "../src/sim/events";
 import { advance, newGame } from "../src/sim/game";
 import { objectById, ROOMS } from "../src/sim/home";
 import { tuftsOf } from "../src/sim/household";
+import { isDirty } from "../src/sim/resources";
 import { chooseDayModifier, DAY_PAIRS, tickModifiers } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -190,6 +191,27 @@ describe("прибиральниця (§4.1)", () => {
     expect(state.home.supplies.litter.cheap).toBe(0);
     expect(bowls.map((b) => b.food)).toEqual([BOWL_CAPACITY, 0]);
     expect(visit).toMatchObject({ litter: 1, fed: "some" });
+  });
+
+  it("наповнювача мало — спершу брудні лотки, тоді ті, що забрудняться найшвидше, хоч би в якому порядку вони стояли", () => {
+    // Рецензія пакета 2026-11-03: останній пакет ішов у лоток, яким скористалися раз, а брудний лишався брудним.
+    const save = game();
+    const state = save.current;
+    withCat(state);
+    const boxes: LitterItem[] = [
+      { id: 911, kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 1 },
+      { id: 912, kind: "litter", quality: "cheap", slot: "litter-2", litter: "cheap", uses: 3 },
+      { id: 913, kind: "litter", quality: "cheap", slot: "litter-3", litter: null, uses: 0 },
+    ];
+    state.home.items.push(...boxes);
+    expect(isDirty(boxes[1]!)).toBe(true);
+    stock(state, { litter: 1 });
+    expect(cleanHome(state).litter).toBe(1);
+    expect(boxes.map((b) => [b.uses, b.litter])).toEqual([[1, "cheap"], [0, "cheap"], [0, null]]);
+    // Ще пакет — у порожній лоток (брудний після першого ж відвідування), а не в той, де лишилося два відвідування.
+    stock(state, { litter: 1 });
+    expect(cleanHome(state).litter).toBe(1);
+    expect(boxes.map((b) => [b.uses, b.litter])).toEqual([[1, "cheap"], [0, "cheap"], [0, "cheap"]]);
   });
 
   it("корм — той, що насипав би й гравець: стерилізованому коту — для стерилізованих; без котів мисок не наповнює", () => {

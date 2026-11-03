@@ -10,7 +10,8 @@ import { emit, type CleanerVisit } from "./events";
 import type { RoomId } from "./home";
 import { catInWasher, stockBowl, tuftsOf } from "./household";
 import { powerOut } from "./modifiers";
-import type { BowlItem, GameState } from "./types";
+import { litterCapacity } from "./resources";
+import type { BowlItem, GameState, HomeItem, LitterItem } from "./types";
 
 /** Хвилину дня `at` перетнули за крок від `from` завдовжки `minutes` (як `crossed` у `modifiers.ts`). */
 const crossed = (from: number, minutes: number, at: number): boolean => from % 1440 < at && (from % 1440) + minutes >= at;
@@ -38,7 +39,7 @@ export function tickCleaner(state: GameState, from: number, minutes: number): vo
  *   наповнювач, папір, уламки й сміття з перекинутого смітника (прибрали сміття — смітник знову стоїть, `trashTipped`).
  * - Жмути шерсті (і шкала шерсті — до нуля), пил і павутина в усіх кімнатах.
  * - Лотки, якими користувалися, і порожні — свіжий наповнювач із запасу, як у гравця (`takeSupply`: спершу кращий); немає — решта
- *   лотків лишається, як була.
+ *   лотків лишається, як була. На всі не вистачає — спершу ті, якими коти вже не користуються (`litterOrder`).
  * - Пральна машина (`laundry`).
  * - Миски — корм із запасу, як насипала б автогодівниця чи друг (`stockBowl`): тим самим, що вже в мисці, а в порожню — для
  *   стерилізованих, коли в домі живе стерилізований кіт, хоч би де він зараз був (`includeAway`: кота повезли до ветеринара чи
@@ -63,8 +64,7 @@ export function cleanHome(state: GameState): CleanerVisit {
   home.tufts = [];
   home.fur = 0;
   home.dust = [];
-  for (const box of home.items) {
-    if (box.kind !== "litter" || (box.uses === 0 && box.litter !== null)) continue;
+  for (const box of litterOrder(home.items)) {
     const litter = takeSupply(state, "litter");
     if (litter === null) break;
     box.uses = 0;
@@ -84,6 +84,19 @@ export function cleanHome(state: GameState): CleanerVisit {
     visit.watered = true;
   }
   return visit;
+}
+
+/**
+ * Які лотки чистити й у якому порядку (§4.1, рецензія пакета 2026-11-03): ті, якими користувалися, і порожні; першими — ті, де
+ * до «брудного» (`isDirty`, §9.12) лишилося найменше відвідин: брудні, тоді ті, що забрудняться найшвидше (порожній лоток без
+ * наповнювача брудний після першого ж відвідування), за рівного — де відвідин більше. Інакше, коли наповнювача на всі не
+ * вистачало, останній пакет міг піти в лоток, яким скористалися раз, а брудний, у який коти вже не ходять, лишався брудним.
+ */
+function litterOrder(items: readonly HomeItem[]): LitterItem[] {
+  const left = (box: LitterItem): number => litterCapacity(box) - box.uses;
+  return items
+    .filter((i): i is LitterItem => i.kind === "litter" && (i.uses > 0 || i.litter === null))
+    .sort((a, b) => left(a) - left(b) || b.uses - a.uses);
 }
 
 /**
