@@ -604,6 +604,63 @@ describe("свічка на столі з комп'ютером у день ві
     }
   });
 
+  it("полум'я закриває лише кіт на правому кінці стола, що стоїть перед свічкою; лівий кінець стола — ніколи (відоме, рецензія 2026-11-03)", async () => {
+    // Усі місця котів на столі (`ROOTS`: сон на будь-якій клітинці, скидання ручки, поруч з іншим котом, рядком), усі пози на
+    // речі, усі накладки почуттів, крім `warn` (вище), найбільший кіт у різних формах, обличчям у будь-який бік; рамки частин
+    // скелета окремо. Місця на стільниці, де полум'я не закриває жоден із них, немає: коти бувають уздовж усього стола (x 6,47–
+    // 7,9 посередині глибини), і кожен у позі «сидить» — ±73 одиниці арту вшир і до 107 угору, а стіл на екрані — 192 вшир.
+    // Свічка на місці лампи (рішення автора: «на столі замість лампи») — у задньому правому куті, тож полум'я закривають лише
+    // коти на правому кінці стола (x від ≈ 6,87; найбільше — на ≈ 48 одиниць, жебракує на (7,9; 6,5)), і кожен із них —
+    // перед свічкою, ближче до кімнати: закриває її, як закрив би справжній кіт, а не стоїть «за» нею. Відоме для автора
+    // (`GRAPHICS_PLAN.md`, «Відомі проблеми», 2; `GAME_DESIGN.md` §4.1). Кіт на лівому кінці (сон на лівій клітинці, крадіжка
+    // страви) — ніколи.
+    const overlays = OVERLAYS.filter((overlay) => overlay !== "warn");
+    const entry = artEntry("env/desk-candle");
+    const flame = entry?.points?.["flame"];
+    const lit = await contentBox("env/desk-candle", "lit", null);
+    if (!entry || !flame || !lit) throw new Error("env/desk-candle#flame");
+    const p = deskCandlePivot();
+    const fx = flame.x - entry.pivot.x;
+    const fire = shifted({ x0: fx - 6, y0: lit.y0, x1: fx + 6, y1: flame.y - entry.pivot.y + 6 }, p.x, p.y);
+    const parts = new Map<CatAnimId, Box[]>();
+    for (const pose of PERCH_POSES) {
+      if (pose === "arch" && !ARCH_HOSTS.has(DESK_CANDLE.host)) continue;
+      const list: Box[] = [];
+      const missing: Missing = new Map();
+      poseBox(pose, missing, list, overlays);
+      expect(missing.size, pose).toBe(0);
+      parts.set(pose, list);
+    }
+    let covering = 0;
+    let left = 0;
+    for (const { host, at, root } of ROOTS) {
+      if (host !== DESK_CANDLE.host) continue;
+      let gap = Infinity;
+      let worst = "";
+      for (const [pose, list] of parts) {
+        for (const part of list) {
+          for (const b of [part, flipped(part)]) {
+            const g = gapOf(fire, shifted(b, root.x, root.y));
+            if (g < gap) [gap, worst] = [g, pose];
+          }
+        }
+      }
+      const where = `кіт на столі (${at.x.toFixed(2)}; ${at.y.toFixed(2)}), поза «${worst}», полум'я ${fmt(fire)}`;
+      if (at.x <= 6.7) {
+        left++;
+        expect(gap, where).toBeGreaterThan(MARGIN);
+      }
+      if (gap > 0) continue;
+      covering++;
+      // Закриває — лише той, хто справді перед свічкою.
+      expect(at.y, where).toBeGreaterThan(DESK_CANDLE.at.y + 0.25);
+      expect(at.x, where).toBeGreaterThan(6.8);
+    }
+    expect(left).toBeGreaterThan(0);
+    // Відоме: коти на правому кінці полум'я закривають (якщо колись перестануть — оновити опис у GRAPHICS_PLAN і GAME_DESIGN).
+    expect(covering).toBeGreaterThan(0);
+  });
+
   it("кіт на столі — перед свічкою (ближче до кімнати): свічка в задньому куті біля стіни, кіт поверх неї стоїть перед нею", async () => {
     // Як і лампа: свічка — частина стола (у його проміжку глибини), кіт на столі — над нею. Місця котів на столі — посередині
     // його глибини (y 6,5), а свічка — біля стіни, тож кіт, чий малюнок перекриває свічку чи полум'я, ближчий до кімнати й
