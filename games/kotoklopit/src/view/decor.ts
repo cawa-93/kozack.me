@@ -170,7 +170,7 @@ export const POWER_STATION_BOX = {
  * (2026-11-03) Станція — коробка свого сліду, а не точка: під розеткою вона стоїть у ряду, де ходять коти й лежить дріт, і
  * хто стоїть перед нею чи праворуч (x ≥ x1 чи y ≥ y1), — перед нею, а дріт, що йде в її гніздо, — одразу під нею.
  */
-export const POWER_STATION_POINT = "power-station";
+export const POWER_STATION_ID = "power-station";
 
 /**
  * Настінна поличка зі свічкою (`env/candle-shelf/back` на лиці y = 1, `env/candle-shelf/left` на лиці x = 1 — своїм малюнком,

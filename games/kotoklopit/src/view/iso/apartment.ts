@@ -8,13 +8,13 @@
 // Що показати — зі стану гри (`looks.ts`).
 // Глибина: плити кімнат, вікна, павутина, папір, бра, полички й бойлер на задній стіні — під усім (`ISO_BACKDROP_DEPTH`);
 // меблі й сегменти стін — коробки в реєстрі глибини (`iso/depth.ts`), а все, що лежить на речі (накладки наповнення, страва,
-// настільна лампа, дрібничка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — точка в
-// реєстрі, як дріт. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка `env/trace/…` на своєму господарі
-// (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма плитами підлог і під стінами,
-// шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає разом зі стіною. Внутрішня
-// стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола з комп'ютером і кухонного
-// стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що сидить, між ними; засунутий
-// під стіл — під коробкою стола (сидіння) і на ній (спинка), як частина стола.
+// настільна лампа, дрібничка, замок), — у її проміжку глибини; зарядна станція стоїть на підлозі перед стіною ряду 5 — коробка
+// свого сліду в реєстрі, а дріт у її гнізді — одразу під нею. Котячий слід (§9.12, «Котячі сліди в квартирі») — накладка
+// `env/trace/…` на своєму господарі (`TRACE_OVERLAYS`): у тій самій точці, одразу над ним (сліди на підлогах — над усіма
+// плитами підлог і під стінами, шпалери — над стіною й під вікнами) і лише разом із ним; накладка на сегменті стіни згасає
+// разом зі стіною. Внутрішня стіна, що закриває персонажа, кота, лоток чи безлад, напівпрозоро згасає. Стільці до стола з
+// комп'ютером і кухонного стола (`personseat.ts`) — два шматки, сидіння й спинка, кожен — точка в реєстрі: персонаж, що
+// сидить, між ними; засунутий під стіл — під коробкою стола (сидіння) і на ній (спинка), як частина стола.
 
 import type Phaser from "phaser";
 
@@ -26,7 +26,7 @@ import type { GameState, Vec } from "../../sim/types";
 import { addArt, isArtStub, setArt } from "../art/atlas";
 import { WALL_HEIGHT, WALL_SEGMENTS, type WallSegment } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
-import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, POWER_STATION_POINT, SCONCES } from "../decor";
+import { BOILER, CANDLE_SHELVES, DESK_LAMP, PANES, POWER_STATION, POWER_STATION_BOX, POWER_STATION_ID, SCONCES } from "../decor";
 import type { PartContext } from "../world/context";
 import { isoObjectLook, type IsoFootprint, type IsoObjectLook } from "../world/objects";
 import type { ApartmentPart, Point, WorldFrame } from "../world/part";
@@ -97,7 +97,7 @@ const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.0
 const WIRE_AT: Vec = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
 
 /** Коробка зарядної станції в реєстрі глибини: слід її корпусу (`POWER_STATION_BOX`). */
-const STATION_BOX = { ...POWER_STATION_BOX, id: POWER_STATION_POINT };
+const STATION_BOX = { ...POWER_STATION_BOX, id: POWER_STATION_ID };
 
 /** Півширина стільця на екрані, одиниці арту (`IsoPointOptions.half`): з ким його малюнок може перекритися. */
 const CHAIR_HALF = 44;
@@ -599,7 +599,7 @@ export class IsoApartmentView implements ApartmentPart {
     // Дріт, що йде в гніздо станції (`wireState`), — одразу під нею, а відносно решти — як вона: шнур її вилки лягає поверх
     // кінця дроту (стик — `art/env/power-station.svg`), а хто стоїть перед станцією, той і перед дротом. Без станції — пласка
     // річ на підлозі, як завжди.
-    if (decor.station) this.wirePoint.placeUnder(WIRE_AT.x, WIRE_AT.y, POWER_STATION_POINT);
+    if (decor.station) this.wirePoint.placeUnder(WIRE_AT.x, WIRE_AT.y, POWER_STATION_ID);
     else this.wirePoint.place(WIRE_AT.x, WIRE_AT.y);
   }
 

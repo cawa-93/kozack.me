@@ -13,7 +13,7 @@ import type { GameState } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import { LIGHT_ART } from "../src/view/art/manifest/a21-light";
 import { WALL_SEGMENTS } from "../src/view/art/manifest/lib/geometry";
-import { POWER_STATION, POWER_STATION_BOX, POWER_STATION_POINT } from "../src/view/decor";
+import { POWER_STATION, POWER_STATION_BOX, POWER_STATION_ID } from "../src/view/decor";
 import { decorLook } from "../src/view/iso/decorlook";
 import { IsoDepth } from "../src/view/iso/depth";
 import { sparking } from "../src/view/iso/fxlook";
@@ -106,8 +106,8 @@ describe("дріт комп'ютера в день відключення — у
       registry.addBox({ x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h }, (d) => depths.set(segment.id, d));
     }
     // Як у квартирі (`iso/apartment.ts`): станція — коробка свого сліду, дріт у її гнізді — під нею.
-    registry.addBox({ ...POWER_STATION_BOX, id: POWER_STATION_POINT }, (d) => depths.set("station", d));
-    registry.addPoint((d) => depths.set("wire", d), { flat: true }).placeUnder(WIRE_AT.x, WIRE_AT.y, POWER_STATION_POINT);
+    registry.addBox({ ...POWER_STATION_BOX, id: POWER_STATION_ID }, (d) => depths.set("station", d));
+    registry.addPoint((d) => depths.set("wire", d), { flat: true }).placeUnder(WIRE_AT.x, WIRE_AT.y, POWER_STATION_ID);
     // Кіт гризе дріт (центр `WIRE_TILE`), кіт іде рядом 6 перед лівим краєм станції, кіт праворуч від неї біля стіни, персонаж
     // лагодить дріт біля обриву; кіт ліворуч від станції біля стіни — за нею.
     const front = { chew: WIRE_AT, walk: { x: 8.3, y: 6.5 }, right: { x: 9.2, y: 6.2 }, fix: wireFixSpot().at };
@@ -130,7 +130,7 @@ describe("дріт комп'ютера в день відключення — у
     const registry = new IsoDepth();
     const depths = new Map<string, number>();
     registry.addBox({ ...isoObjectLook("computer").footprint, id: "computer" }, (d) => depths.set("computer", d));
-    const station = registry.addBox({ ...POWER_STATION_BOX, id: POWER_STATION_POINT }, (d) => depths.set("station", d));
+    const station = registry.addBox({ ...POWER_STATION_BOX, id: POWER_STATION_ID }, (d) => depths.set("station", d));
     station.setActive(false);
     registry.addPoint((d) => depths.set("wire", d), { flat: true }).place(WIRE_AT.x, WIRE_AT.y);
     registry.addPoint((d) => depths.set("cat", d)).place(WIRE_AT.x, WIRE_AT.y);
