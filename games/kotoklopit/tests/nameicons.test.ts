@@ -140,15 +140,10 @@ describe("іконка біля назви: догляд біля аптечки
     const labels = careCard(save.current, cat, () => {}, () => {}).actions.map((a) => a.label);
     const shop = (product: Product): IconName => goodsIcon({ product });
     expect(labels.map(iconOf)).toEqual([shop("pills"), shop("drops"), shop("treats"), shop("treats"), shop("catnip"), shop("catnip"), shop("collar")]);
-    expect(labels.map(plain)).toEqual([
-      `${PRODUCT_TITLES.pills.name} ×2`,
-      `${PRODUCT_TITLES.drops.name} ×1`,
-      `${VARIANT_TITLES["treats"]?.premium} ×1`,
-      `${VARIANT_TITLES["treats"]?.cheap} ×3`,
-      `${VARIANT_TITLES["catnip"]?.premium} ×2`,
-      `${VARIANT_TITLES["catnip"]?.cheap} ×1`,
-      `${PRODUCT_TITLES.collar.name} ×1`,
-    ]);
+    // Без «для котів» (картка й так про кота; рецензія 2026-11-03): ліки — загальною назвою (обидва варіанти разом), нашийник —
+    // назвою з каталогу.
+    expect(labels.map(plain)).toEqual(["Таблетки ×2", "Краплі ×1", "Делікатеси ×1", "Смаколики ×3", "Мататабі ×2", "Сушена котяча м'ята ×1", `${VARIANT_TITLES["collar"]?.cheap} ×1`]);
+    expect(PRODUCT_TITLES.pills.name).toBe("Таблетки для котів");
   });
 });
 

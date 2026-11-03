@@ -86,10 +86,11 @@ describe("ласощі й нашийник (§7, §9.10)", () => {
     expect(hasCareSupplies(save.current, cat)).toBe(false);
     expect(putCollar(save.current)).toBe(false);
     expect(save.current.home.supplies.collar.cheap).toBe(1);
-    // Без нашийника — одна кнопка «Нашийник ×1», з іконкою нашийника перед назвою, як у магазині (§11.4 «Іконка біля назви»).
+    // Без нашийника — одна кнопка «Нашийник з іменем ×1» (назвою з каталогу; рецензія 2026-11-03), з іконкою нашийника перед
+    // назвою, як у магазині (§11.4 «Іконка біля назви»).
     cat.collar = false;
     expect(hasCareSupplies(save.current, cat)).toBe(true);
-    expect(card().actions.map((a) => a.label)).toEqual([`${named(PRODUCT_ICONS.collar, "Нашийник")} ×1`]);
+    expect(card().actions.map((a) => a.label)).toEqual([`${named(PRODUCT_ICONS.collar, "Нашийник з іменем")} ×1`]);
     expect(putCollar(save.current)).toBe(true);
     expect(card().actions).toEqual([]);
   });

@@ -202,11 +202,12 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     const labels = careCard(save.current, cat, () => {}, () => {}).actions.map((a) => a.label);
     // Текст кнопки — без позначки іконки; біля назви — іконка м'яти, та сама, що в магазині (§11.4 «Іконка біля назви»).
     const text = (label: string): string => splitIcons(label).map((p) => (typeof p === "string" ? p : p.word)).join("");
-    // Назви — варіантів, ті самі, що на картках магазину (рішення автора 2026-11-03, «Кожен товар у своїй картці»).
-    expect(labels.map(text)).toContain("Мататабі для котів ×5");
-    expect(labels.map(text)).toContain("Котяча м'ята ×5");
-    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Мататабі для котів")} ×5`);
-    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Котяча м'ята")} ×5`);
+    // Назви — варіантів, ті самі, що на картках магазину (рішення автора 2026-11-03, «Кожен товар у своїй картці»), але без
+    // «для котів»: картка й так про кота (рецензія 2026-11-03).
+    expect(labels.map(text)).toContain("Мататабі ×5");
+    expect(labels.map(text)).toContain("Сушена котяча м'ята ×5");
+    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Мататабі")} ×5`);
+    expect(labels).toContain(`${named(PRODUCT_ICONS.catnip, "Сушена котяча м'ята")} ×5`);
   });
 
   it("кіт без риси катається 5 хвилин і тішиться; «+» — довше, а тоді засинає: прояв «+»", () => {
