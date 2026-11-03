@@ -462,10 +462,16 @@ export class RaceScene extends Phaser.Scene {
     );
     const hud = homeDepartureHud(leave.ms);
     art.drawBar(trip, panned, hud);
-    this.g.clear();
-    this.hint.setVisible(false);
-    if (hud > 0) this.drawLabel(trip, view.safe, hud);
-    else this.label.setVisible(false);
+    const g = this.g.clear();
+    if (hud > 0) {
+      this.drawLabel(trip, view.safe, hud);
+      // Підказка старту проступає разом із написом, над передом своєї машини, що якраз стає на старт: наприкінці від'їзду вона
+      // там само й така сама, як у першому кадрі гонки (`draw`), — не з'являється стрибком (рецензія від'їзду 2026-11-03).
+      this.drawStartHint(g, trip.race.speed === 0 && !this.touched, panned, { x: panned.cx + frame.car.x, y: frame.car.y }, hud);
+    } else {
+      this.label.setVisible(false);
+      this.hint.setVisible(false);
+    }
     this.dark.setSize(view.width, view.height).setFillStyle(0x000000, frame.dark);
     return frame.done;
   }
@@ -677,14 +683,11 @@ export class RaceScene extends Phaser.Scene {
     if (!trip || !art) return;
     const race = trip.race;
     const view = this.layout();
-    const { height, safe } = view;
     const g = this.g.clear();
     art.draw(trip, view);
     this.drawStick(g);
-    const roadLeft = view.cx - RACE_TILES.road.curb * view.k;
-    const carTop = { x: laneX(view.cx, race.lane, view.k), y: view.playerY - RACE_CAR_FRONT * view.k };
-    this.drawStartHint(g, race.speed === 0 && !this.touched, { x: Math.max(safe.left + STICK_RADIUS + 12, roadLeft / 2), y: height * 0.62 }, carTop);
-    this.drawLabel(trip, safe);
+    this.drawStartHint(g, race.speed === 0 && !this.touched, view, { x: laneX(view.cx, race.lane, view.k), y: view.playerY });
+    this.drawLabel(trip, view.safe);
   }
 
   /** Джойстик під пальцем. */
@@ -728,21 +731,25 @@ export class RaceScene extends Phaser.Scene {
   /**
    * Підказка без слів на старті (§8.5, §11.3а «показуй, а не розказуй»; загальна ревізія 2026-10-29): машина стоїть, а гравець
    * ще нічого не натискав — на сенсорному екрані ліворуч від дороги ледь помітно пульсує тінь джойстика, що тягнеться вгору,
-   * а з клавіатурою над машиною — «W ↑». Від першого дотику чи натискання підказка зникає до кінця гонки.
+   * а з клавіатурою над машиною — «W ↑». Від першого дотику чи натискання підказка зникає до кінця гонки. `car` — середина своєї
+   * машини на екрані, `fade` — частка проступання (наприкінці від'їзду від свого будинку, `homeDepartureHud`).
    */
-  private drawStartHint(g: Phaser.GameObjects.Graphics, shown: boolean, stickAt: { x: number; y: number }, carTop: { x: number; y: number }): void {
+  private drawStartHint(g: Phaser.GameObjects.Graphics, shown: boolean, view: RaceView, car: { x: number; y: number }, fade = 1): void {
     const touch = window.matchMedia("(pointer: coarse)").matches;
     const pulse = 0.5 + 0.5 * Math.sin(this.time.now / 300);
     this.hint.setVisible(shown && !touch);
     if (!shown) return;
     if (!touch) {
-      this.hint.setPosition(carTop.x, carTop.y).setAlpha(0.35 + 0.4 * pulse);
+      this.hint.setPosition(car.x, car.y - RACE_CAR_FRONT * view.k).setAlpha((0.35 + 0.4 * pulse) * fade);
       return;
     }
-    const { x, y } = stickAt;
+    // Тінь джойстика — ліворуч від дороги, посередині поля (не ближче до краю, ніж безпечна зона).
+    const roadLeft = view.cx - RACE_TILES.road.curb * view.k;
+    const x = Math.max(view.safe.left + STICK_RADIUS + 12, roadLeft / 2);
+    const y = view.height * 0.62;
     // Палець тягне ручку вгору й відпускає — раз на секунду.
     const reach = ((this.time.now / 1100) % 1) * STICK_RADIUS * 0.7;
-    const alpha = 0.1 + 0.15 * pulse;
+    const alpha = (0.1 + 0.15 * pulse) * fade;
     g.fillStyle(0xffffff, alpha * 0.6).fillCircle(x, y, STICK_RADIUS);
     g.lineStyle(3, 0xffffff, alpha * 1.6).strokeCircle(x, y, STICK_RADIUS);
     g.fillStyle(0xffffff, alpha * 1.8).fillCircle(x, y - reach, 30);
