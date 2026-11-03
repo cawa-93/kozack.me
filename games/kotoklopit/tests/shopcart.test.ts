@@ -448,6 +448,20 @@ describe("картки поїздок (§8.5)", () => {
     expect(visitCard(early, { exam: null, done: [] }, handlers).aside ?? []).not.toContain("Акція в зоомагазині");
   });
 
+  it("ветеринар і лікар: біля заголовка — на що знижки («ліки: 1 знижка»), а не просто «1 знижка»", () => {
+    for (const d of ["vet", "doctor"] as const) {
+      let seen = 0;
+      for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        const state = at(d, seed);
+        const n = catalog(state, "store").filter((g) => discount(state, g, "store") > 0).length;
+        const aside = visitCard(state, { exam: null, done: [] }, handlers).aside ?? [];
+        expect(aside.filter((p) => p.includes("знижк")), `${d} ${seed}`).toEqual(n > 0 ? [`ліки: ${n} ${plural(n, "знижка", "знижки", "знижок")}`] : []);
+        seen += n;
+      }
+      expect(seen, d).toBeGreaterThan(0);
+    }
+  });
+
   it("«Куди поїхати?»: без «Поїздка»; праворуч від заголовка — «Пробки» чи «Порожні дороги» й гроші", () => {
     const state = at(null, 5, 250);
     const plainDay = destinationCard(state, noop, noop);

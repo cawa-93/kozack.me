@@ -11,7 +11,7 @@ import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } 
 import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
 import { shopCatalog, type CatalogOptions } from "./shop";
-import { SERVICE_TITLES } from "./titles";
+import { SERVICE_TITLES, STORE_SECTION_TITLES } from "./titles";
 import { catalog, type CartLine } from "../sim/shop";
 import { element, type Card, type CardAction } from "./overlay";
 import { breedLine, breedText, plural } from "./cards";
@@ -62,8 +62,16 @@ function dayEvent(state: GameState, affects: boolean): string[] {
   return affects && title !== undefined ? [title] : [];
 }
 
-/** Скільки товарів каталогу сьогодні з біркою знижки (§6.4): «7 знижок»; нуль — нічого. */
-const discounts = (n: number): string[] => (n > 0 ? [`${n} ${plural(n, "знижка", "знижки", "знижок")}`] : []);
+/**
+ * Скільки товарів каталогу сьогодні з біркою знижки (§6.4): «7 знижок»; нуль — нічого. Де продають лише частину каталогу
+ * (`section` — назва її розділу, `STORE_SECTION_TITLES`), — на що знижки: «ліки: 1 знижка», а не просто «1 знижка», яку біля
+ * «Лікар» легко прийняти за знижку на лікування (рецензія 2026-11-03).
+ */
+function discounts(n: number, section?: string): string[] {
+  if (n <= 0) return [];
+  const count = `${n} ${plural(n, "знижка", "знижки", "знижок")}`;
+  return [section === undefined ? count : `${section.toLocaleLowerCase("uk")}: ${count}`];
+}
 
 /**
  * Куди поїхати (§8.5). Підпису «Поїздка» немає, а праворуч від заголовка — подія дня, що змінює дорогу («Пробки», «Порожні
@@ -372,6 +380,6 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
   body.push(shop.list);
   // Подія дня, що змінює ціни того, що є в каталозі («Акція в зоомагазині», «Подорожчання корму»), і скільки знижок.
   const repriced = catalog(state, "store").some((g) => "product" in g && priceFactor(state, g.product) !== 1);
-  return { ...card, aside: [...dayEvent(state, repriced), ...discounts(shop.discounted)], bar: shop.bar, actions: [] };
+  return { ...card, aside: [...dayEvent(state, repriced), ...discounts(shop.discounted, STORE_SECTION_TITLES[destination])], bar: shop.bar, actions: [] };
 }
 
