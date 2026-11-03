@@ -149,11 +149,12 @@ export function clearGuest(state: GameState): void {
 
 /**
  * Гостю відчинили раніше за його хвилину (§9.12): «+», що чекав під дверима, зустрічає ще `GUESTS.greetMinutes` — від того, як
- * гостя впустили, а не від призначеної хвилини (рішення виконавця 2026-11-03).
+ * гостя впустили, а не від призначеної хвилини (рішення виконавця 2026-11-03). `minutes` дії — скільки вона ще триває на місці
+ * (а не вся її тривалість), тож лишок і обмежуємо: хто ще біжить до дверей, дійшовши, посидить ті самі 5 хвилин.
  */
 export function greetNow(state: GameState): void {
   for (const cat of state.cats) {
     const act = cat.act;
-    if (act.kind === "idle" && act.target === "guest") act.minutes = Math.min(act.minutes, act.elapsed + GUESTS.greetMinutes);
+    if (act.kind === "idle" && act.target === "guest") act.minutes = Math.min(act.minutes, GUESTS.greetMinutes);
   }
 }

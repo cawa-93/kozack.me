@@ -103,8 +103,8 @@ const GUESTS_BY_DOOR: Guest[] = [
  * Субота (без роботи), день гостя, 8 хвилин до дзвінка; персонаж біля дверей, з порожніми руками. Удома — кіт без рис, що спить
  * далеко від дверей: не вибіжить, коли їх відчинять, а ветеринарці є кого оглянути.
  */
-function game(guest: Guest): { save: Save; cat: Cat } {
-  const save = newGame({ address: "she", difficulty: "normal", seed: 21 });
+function game(guest: Guest, seed = 21): { save: Save; cat: Cat } {
+  const save = newGame({ address: "she", difficulty: "normal", seed });
   const state = save.current;
   state.day = 5;
   state.minute = guest.minute - GUESTS.ringLead - 8;
@@ -209,15 +209,13 @@ describe("гість подзвонив — дія біля дверей від�
     });
   }
 
-  it("кота на руках, відчиняючи гостю, не опускають — його й узяли, щоб не вибіг; «+» зустрічає ще 5 хвилин від того, як впустили", () => {
+  it("кота на руках, відчиняючи гостю, не опускають — його й узяли, щоб не вибіг", () => {
     const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
     if (!guest) throw new Error("немає гостей");
     const { save } = game(guest);
     const state = save.current;
     const held = withCat(save, { guests: 2, escape: 2 }, { x: 9.5, y: 9.5 });
-    const host = withCat(save, { guests: 1 }, { x: 9.5, y: 8.5 });
     untilRing(save, guest);
-    expect(host.act.target).toBe("guest");
     state.character.held = { kind: "cat", cat: held.id };
     const { events, stop } = recordEvents();
     interact(save);
@@ -225,11 +223,37 @@ describe("гість подзвонив — дія біля дверей від�
     expect(visitsOf(events, "guests")).toHaveLength(1);
     expect(state.character.held).toEqual({ kind: "cat", cat: held.id });
     expect(held.away).toBeNull();
-    // «+», що чекав під дверима, зустрічає ще 5 хвилин від цієї миті, а не від 19:00.
-    if (host.away === null) expect(host.act.minutes - host.act.elapsed).toBeLessThanOrEqual(GUESTS.greetMinutes);
     // Без гостя під дверима кота з рук, як і раніше, опускають.
     interact(save);
     expect(state.character.held).toBeNull();
+  });
+
+  it("«+», що чекав під дверима, зустрічає ще рівно 5 хвилин від того, як впустили, а не від 19:00 (рецензія 2026-11-03)", () => {
+    const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
+    if (!guest) throw new Error("немає гостей");
+    // «+» сидить під дверима, тож, коли їх відчиняють, може вибігти на сходи (10%): тоді зустрічати вже нікому — беремо перший
+    // seed, де він лишився вдома. Перевірка безумовна: такий seed має знайтися.
+    let checked = false;
+    for (let seed = 21; seed < 41 && !checked; seed++) {
+      const { save } = game(guest, seed);
+      const host = withCat(save, { guests: 1 }, { x: 9.5, y: 8.5 });
+      untilRing(save, guest);
+      // Ще 3 хвилини під дверима — дія вже йде: `minutes` — лишок, `elapsed` — скільки минуло.
+      advance(save, 3);
+      expect(host.act.target).toBe("guest");
+      expect(host.act.goal).toBeNull();
+      expect(host.act.elapsed).toBeGreaterThan(2);
+      interact(save);
+      if (host.away !== null) continue;
+      checked = true;
+      expect(host.act.target).toBe("guest");
+      expect(host.act.minutes).toBeCloseTo(GUESTS.greetMinutes, 9);
+      advance(save, GUESTS.greetMinutes - 0.1);
+      expect(host.act.target).toBe("guest");
+      advance(save, 0.2);
+      expect(host.act.target).not.toBe("guest");
+    }
+    expect(checked).toBe(true);
   });
 
   it("з іншою річчю в руках — «руки зайняті», і гість чекає далі", () => {
