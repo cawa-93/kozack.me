@@ -248,7 +248,7 @@ describe("смуга кошика внизу (§6.4)", () => {
     const { list, bar, pay } = open(state, "delivery", false);
     expect(pay.textContent).toBe("Замовити");
     expect(pay.disabled).toBe(true);
-    expect(bar.find("shop-total").textContent).toMatch(/^🛒 0 ₴ · 🚗 доставка \d+ ₴$/u);
+    expect(bar.find("shop-total").textContent).toMatch(/^🛒 0 ₴ · 🚗 \d+ ₴$/u);
     expect(bar.find("shop-money").textContent).toBe("👛 300 ₴");
     list.findAll("step")[1]?.click();
     expect(pay.textContent).toMatch(/^Замовити · \d+ ₴$/u);

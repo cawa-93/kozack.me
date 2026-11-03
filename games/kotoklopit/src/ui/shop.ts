@@ -213,8 +213,9 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     remember();
     const lines = filled();
     const sum = cartTotal(state, cart, mode);
-    // Ціни в каталозі — без доставки; доставка — окремо в смузі (§6.4): 10% бази й надбавка, раз на кошик.
-    const delivery = mode === "delivery" ? ` · 🚗 доставка ${cartDelivery(state, lines, mode)} ₴` : "";
+    // Ціни в каталозі — без доставки; доставка — окремо в смузі (§6.4): 10% бази й надбавка, раз на кошик. Машина й ціна без
+    // слова «доставка» (символи замість слів, §11.4): так суми вміщуються в один рядок і на телефоні.
+    const delivery = mode === "delivery" ? ` · 🚗 ${cartDelivery(state, lines, mode)} ₴` : "";
     total.textContent = `🛒 ${goodsTotal(state, lines, mode)} ₴${delivery}`;
     drawGlyphs(total);
     total.classList.toggle("short", sum > state.character.money);

@@ -234,6 +234,9 @@ export class Overlay {
       panel.append(head);
     } else if (title) panel.append(title);
     if (card.tabs) {
+      // Рядок вкладок липне до верху картки (`.card-tabbar`) разом із хрестиком: товари каталогу, що прокручуються, не
+      // пропливають під хрестиком (рішення виконавця 2026-11-03: раніше там липнув підсумок магазину, а тепер кошик унизу).
+      const tabbar = element("div", "card-tabbar");
       const tabs = element("div", "card-tabs");
       tabs.setAttribute("role", "tablist");
       for (const tab of card.tabs) {
@@ -243,7 +246,8 @@ export class Overlay {
         button.addEventListener("click", () => tab.onSelect());
         tabs.append(button);
       }
-      panel.append(tabs);
+      tabbar.append(tabs);
+      panel.append(tabbar);
     }
     for (const part of card.body) {
       if (typeof part !== "string") panel.append(part);

@@ -182,6 +182,32 @@
   transform: translateY(2px);
 }
 
+/* Рядок вкладок липне до верху картки (телефон): те, що прокручується, ховається під ним, а не пропливає під хрестиком, —
+   там тиснули б «+» каталогу. Непрозорий папір — на всю ширину області прокрутки (і під хрестиком, що лежить вище) і трохи
+   вище й нижче: ширше за рядок — тінню (вона не додає прокрутки вбік), а clip-path не пускає її вниз на вміст. */
+.card-tabbar {
+  position: sticky;
+  top: -5px;
+  z-index: 1;
+  padding-bottom: 8px;
+}
+
+/* Поле під вкладками — полем рядка (папір під ним), а не полем вкладок: воно випало б за межі рядка, і крізь нього визирав
+   би вміст. */
+.card-tabbar > .card-tabs {
+  margin-bottom: 0;
+}
+
+.card-tabbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--paper);
+  box-shadow: 0 0 0 64px var(--paper);
+  clip-path: inset(-5px -64px 0);
+}
+
 /* Вкладки (телефон): один компактний рядок угорі, прокручується вбік, якщо не вміщується; місце довкола — під поле полотна
    (4 px), бо рядок, що прокручується, обтинає. */
 .card-tabs {
@@ -353,15 +379,16 @@
   box-shadow: inset 0 -3px 0 var(--shade-soft);
 }
 
+/* Назва рядка — рукописним шрифтом карток, як назви товарів у каталозі (рішення автора 2026-11-03: «можливо змінити шрифт щоб
+   він відповідав стилю гри»): послуги у ветеринара й лікаря стоять в одній картці з ліками. Підпис під назвою — звичайним. */
 .shop-name {
-  font-weight: 600;
+  font: 400 19px/1.25 var(--hand);
 }
 
 .shop-stock {
   display: block;
   color: var(--ink-soft);
-  font-size: 14px;
-  font-weight: 400;
+  font: 400 14px/1.3 system-ui, sans-serif;
 }
 
 @media (max-width: 520px) {
@@ -766,15 +793,11 @@
 }
 
 .shop-item .shop-name {
-  font: 400 21px/1.25 var(--hand);
+  font-size: 21px;
 }
 
-.shop-item .shop-stock {
-  font: 400 14px/1.3 system-ui, sans-serif;
-}
-
-/* Іконка біля назви товару — по висоті рядка назви: 1,6em від рукописної назви були б завеликі. */
-.shop-item .shop-name .name-icon {
+/* Іконка біля назви товару чи рядка — по висоті рядка назви: 1,6em від більшої рукописної назви були б завеликі. */
+.shop-name > .named > .name-icon {
   width: 1.3em;
   height: 1.3em;
   margin: -0.15em 0.18em -0.1em 0;
@@ -788,13 +811,13 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 3.9em;
-  height: 1.95em;
-  margin: -1px 2px 0 0;
-  padding: 0 0.15em 0.1em 0.85em;
+  width: 4.5em;
+  height: 2.15em;
+  margin: -2px 2px 0 0;
+  padding: 0 0.25em 0.12em 1em;
   background: url("../../art/ui/tag.svg") 0 0 / 100% 100% no-repeat;
   color: var(--paper);
-  font: 400 17px/1 var(--hand);
+  font: 400 16px/1 var(--hand);
   white-space: nowrap;
   transform: rotate(-6deg);
 }
@@ -1021,6 +1044,10 @@
     margin: 0 -6px 0 8px;
   }
 
+  .card-tabbar {
+    top: 0;
+  }
+
   .card-actions,
   .shop-bar {
     bottom: -2px;
@@ -1032,6 +1059,10 @@
     min-height: 42px;
     padding: 5px 10px;
     font-size: 18px;
+  }
+
+  .shop-name {
+    font-size: 17px;
   }
 
   .shop-item .shop-name {
