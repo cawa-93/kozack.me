@@ -852,8 +852,10 @@
   text-align: right;
 }
 
-.shop-option.muted,
-.shop-line:has(> .shop-option.muted) .shop-price {
+/* Варіант, якого не взяти (§6.4: «у ящиках», «немає місця», «уже є», «уже їде»), — сірий: і назва, і ціна. */
+.shop-line.muted .shop-option,
+.shop-line.muted .shop-pack,
+.shop-line.muted .shop-price {
   color: var(--grey-lo);
 }
 

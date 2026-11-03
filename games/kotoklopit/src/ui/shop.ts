@@ -198,6 +198,7 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
           count.textContent = String(line.count);
           minus.disabled = line.count === 0;
           plus.disabled = line.count >= space || state.end !== null;
+          // Не взяти — сірий увесь рядок варіанта (`.shop-line.muted`, `overlay.css`).
           option.classList.toggle("muted", space === 0 && line.count === 0);
           option.classList.toggle("chosen", line.count > 0);
         });

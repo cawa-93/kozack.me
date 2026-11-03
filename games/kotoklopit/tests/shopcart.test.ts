@@ -3,6 +3,8 @@
 // місці — «Додому» з порожнім кошиком і «Купити · N ₴» з непорожнім; «Очистити» — іконкою, лише з непорожнім кошиком; гроші —
 // рівно один раз у картці.
 
+import { readFileSync } from "node:fs";
+
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { createCat } from "../src/sim/cat";
@@ -211,6 +213,20 @@ describe("смуга кошика внизу (§6.4)", () => {
     expect(pay.textContent).toBe("Додому");
     pay.click();
     expect(homes()).toBe(1);
+  });
+
+  it("варіант, якого не взяти («у ящиках»), — сірий: клас muted на рядку варіанта, і CSS фарбує саме його назву й ціну", () => {
+    const state = at("shop", 3);
+    const goods = catalog(state, "store")[0];
+    if (!goods || !("product" in goods)) throw new Error("перший товар — запас");
+    const before = open(state, "store").list.findAll("shop-line").slice(0, 2);
+    expect(before.map((l) => l.classList.contains("muted"))).toEqual([false, false]);
+    checkout(state, [{ goods, quality: "cheap", count: 1 }], "store");
+    const after = open(state, "store").list.findAll("shop-item")[0];
+    expect(after?.find("shop-stock").textContent).toContain("у ящиках");
+    expect(after?.findAll("shop-line").map((l) => l.classList.contains("muted"))).toEqual([true, true]);
+    const css = readFileSync(new URL("../src/ui/overlay.css", import.meta.url), "utf8");
+    for (const part of ["shop-option", "shop-price"]) expect(css.includes(`.shop-line.muted .${part}`), part).toBe(true);
   });
 
   it("грошей не вистачає — сума кошика червона, «Купити» неактивна, а «Додому» не з'являється", () => {
