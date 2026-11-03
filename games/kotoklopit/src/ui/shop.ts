@@ -74,11 +74,10 @@ export const BOUGHT_PAUSE_MS = 600;
  * кошику дає місце автогодівниці, §9.12). Скільки вдома — не показуємо: це видно зі сховищ. «×N» — скільки в упаковці — більше
  * не пишемо (те саме рішення).
  */
-function stockText(state: GameState, goods: Goods, quality: Quality, cart: readonly CartLine[]): string {
+function stockText(state: GameState, goods: Goods, quality: Quality, reason: Unavailable | null): string {
   const parts: string[] = [];
   const n = coming(state, goods, quality);
   if (n > 0) parts.push(`🚗 ${"product" in goods ? PRODUCT_TITLES[goods.product].unit(n) : `${n} шт.`}`);
-  const reason = unavailable(state, goods, cart);
   // «Уже їде» дублював би 🚗 у картці варіанта, що їде; у картці іншого варіанта тієї самої речі (техніка, переноска й замок —
   // по одній) — пояснює, чому вона сіра.
   if (reason !== null && !(reason === "ordered" && n > 0)) parts.push(UNAVAILABLE[reason]);
@@ -201,15 +200,18 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
           update();
         });
         updaters.push(() => {
-          const text = stockText(state, g, quality, cart);
+          const reason = unavailable(state, g, cart);
+          const text = stockText(state, g, quality, reason);
           stock.textContent = text;
           stock.style.display = text === "" ? "none" : "";
           const space = room(state, cart, g, quality);
           count.textContent = String(line.count);
           minus.disabled = line.count === 0;
           plus.disabled = line.count >= space || state.end !== null;
-          // Не взяти — сіра вся картка, крім кнопок (`.shop-item.muted`, `overlay.css`).
-          item.classList.toggle("muted", space === 0 && line.count === 0);
+          // Не взяти — сіра вся картка, крім кнопок (`.shop-item.muted`, `overlay.css`), і лише тоді, коли підпис каже чому
+          // (`unavailable`). Місце, яке займає інший варіант того самого товару в кошику (остання миска, переноска, п'ять іграшок
+          // за раз), картки не сірить: у неї лише неактивний «+», як у картки, що в кошику вже до межі (рецензія 2026-11-03).
+          item.classList.toggle("muted", reason !== null && line.count === 0);
           item.classList.toggle("chosen", line.count > 0);
         });
         list.append(item);

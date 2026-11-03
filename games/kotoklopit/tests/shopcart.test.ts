@@ -331,6 +331,33 @@ describe("смуга кошика внизу (§6.4)", () => {
     for (const part of ["shop-name", "shop-price", "shop-icon", "price-tag"]) expect(css.includes(`.shop-item.muted .${part}`), part).toBe(true);
   });
 
+  it("варіант, місце якого займає інший варіант у кошику, — не сірий: лише «+» неактивний (рецензія 2026-11-03)", () => {
+    const state = at(null);
+    expect(state.home.carrier).toBeNull();
+    const { list } = open(state, "delivery", false);
+    const shown = variantsOf(catalog(state, "delivery"));
+    const items = list.findAll("shop-item");
+    const card = (thing: string, quality: string): FakeElement | undefined =>
+      items[shown.findIndex((v) => "thing" in v.goods && v.goods.thing === thing && v.quality === quality)];
+    const cheap = card("carrier", "cheap");
+    const premium = card("carrier", "premium");
+    cheap?.findAll("step")[1]?.click();
+    expect(cheap?.find("shop-count").textContent).toBe("1");
+    // Переноска — одна: дорожчу вже не взяти, але не через те, що вдома, — картка не сіра й без підпису, лише «+» неактивний.
+    expect(premium?.findAll("step")[1]?.disabled).toBe(true);
+    expect(premium?.classList.contains("muted")).toBe(false);
+    expect(premium?.find("shop-stock").textContent).toBe("");
+    // Забрали з кошика — «+» знову активний.
+    cheap?.findAll("step")[0]?.click();
+    expect(premium?.findAll("step")[1]?.disabled).toBe(false);
+    // Іграшок — п'ять за раз: п'ять дешевих — і дорожча так само не сіра.
+    const toy = card("toy", "cheap");
+    for (let i = 0; i < 6; i++) toy?.findAll("step")[1]?.click();
+    expect(toy?.find("shop-count").textContent).toBe("5");
+    expect(card("toy", "premium")?.findAll("step")[1]?.disabled).toBe(true);
+    expect(card("toy", "premium")?.classList.contains("muted")).toBe(false);
+  });
+
   it("грошей не вистачає — сума кошика червона, «Купити» неактивна, а «Додому» не з'являється", () => {
     const state = at("shop", 3, 5);
     const { list, bar, pay, homes } = open(state, "store");
