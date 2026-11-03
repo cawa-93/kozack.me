@@ -429,8 +429,9 @@ describe("картки поїздок (§8.5)", () => {
       const store = d === "shop" || d === "vet" || d === "doctor";
       expect(card.bar !== undefined, d).toBe(store);
       expect((card.aside ?? []).some((p) => p.includes("👛")), d).toBe(!store);
-      // «Додому» — кнопкою внизу лише там, де смуги кошика немає.
+      // «Додому» — кнопкою внизу лише там, де смуги кошика немає, і теж праворуч, як головна кнопка смуги (рецензія 2026-11-03).
       expect(card.actions.map((a) => a.label), d).toEqual(store ? [] : ["Додому"]);
+      expect(card.actionsEnd === true, d).toBe(!store);
     }
   });
 

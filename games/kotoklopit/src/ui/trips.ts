@@ -372,7 +372,8 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
   const card = { awayClock: formatClock(state.minute), title: destinationLabel(destination), body };
   if (STORE_GOODS[destination] === undefined) {
     const home: CardAction = { label: "Додому", primary: true, onSelect: h.home };
-    return { ...card, aside: [purse(state)], actions: [home] };
+    // «Додому» — праворуч, там само, де головна кнопка смуги кошика в інших пунктах (рецензія 2026-11-03).
+    return { ...card, aside: [purse(state)], actions: [home], actionsEnd: true };
   }
   // Каталог пункту з кошиком (§6.4, §8.5): у ветеринара й лікаря — під послугами. Гроші — у смузі кошика, поруч із сумою, а
   // «Додому» — її головна кнопка, доки кошик порожній.

@@ -46,6 +46,11 @@ export interface Card {
    */
   bar?: HTMLElement;
   actions: CardAction[];
+  /**
+   * Кнопки дій — праворуч (`.card-actions.end`), а не ліворуч: картка пункту на місці, де «Додому» стоїть там само, де в смузі
+   * кошика магазину, ветеринара й лікаря (рецензія 2026-11-03, GAME_DESIGN §8.5, «Картки поїздок без «Поїздка»»).
+   */
+  actionsEnd?: boolean;
   /** Esc закриває картку. */
   onDismiss?: () => void;
   /** Хрестик у кутку замість кнопки «Скасувати» чи «Закрити»; натискання — як Esc. */
@@ -254,7 +259,7 @@ export class Overlay {
       else for (const paragraph of part.split("\n\n")) panel.append(element("p", "card-text", paragraph));
     }
     if (card.bar) panel.append(card.bar);
-    const actions = element("div", "card-actions");
+    const actions = element("div", card.actionsEnd ? "card-actions end" : "card-actions");
     for (const action of card.actions) {
       const button = element("button", action.primary ? "button primary" : "button", action.label);
       button.disabled = action.disabled ?? false;

@@ -215,6 +215,16 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".shop-name .trait-about")).toContain("system-ui");
   });
 
+  it("кнопки дій праворуч — лише за actionsEnd (картка пункту), решта карток — як були", () => {
+    const { overlay, root } = setup();
+    const actions = (): FakeElement | undefined => (root.children[0] as FakeElement).children.find((c): c is FakeElement => c instanceof FakeElement && c.classList.contains("card-actions"));
+    overlay.show({ ...card, actionsEnd: true });
+    expect(actions()?.className).toBe("card-actions end");
+    overlay.show(card);
+    expect(actions()?.className).toBe("card-actions");
+    expect(rule(".card-actions.end")).toContain("justify-content: flex-end;");
+  });
+
   it("CSS: слабше тло — за .away, а .aside лише притискає картку ліворуч", () => {
     expect(rule(".overlay.away:not(.cinematic):not(.solid)")).toContain("background: var(--dim-away);");
     expect(rule(".overlay.aside:not(.cinematic):not(.solid)")).not.toContain("background");
