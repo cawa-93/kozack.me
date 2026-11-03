@@ -100,6 +100,19 @@ export function ringBell(state: GameState, guest: DoorGuest | false): void {
 }
 
 /**
+ * Подія дня кожного гостя (§4.1): ті, хто заходить сам, приходять лише у свій день. За цією таблицею двері знають, що під ними
+ * чекає саме сьогоднішній гість, а розклад (§8.4) — що гостя дня вже впустили; назва гостя й назва дня не мусять збігатися (мама —
+ * день «Мамині гостинці»). Новий гість — рядок тут і у `VISITS` (`visits.ts`): тип `Record` не дасть забути жодного.
+ */
+export const GUEST_DAY: Readonly<Record<DoorGuest, string>> = {
+  mom: "mom-food",
+  "home-vet": "home-vet",
+  inspection: "inspection",
+  guests: "guests",
+  cleaner: "cleaner",
+};
+
+/**
  * Хто подзвонив у двері й чекає, поки йому відчинять (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03): дія біля
  * дверей відчиняє йому, а не веде в поїздку. null — під дверима ніхто не чекає.
  */
@@ -108,16 +121,30 @@ export function guestAtDoor(state: GameState): DoorGuest | null {
   return guest !== undefined && guest.in !== true ? guest.who : null;
 }
 
+/** Гостя події сьогоднішнього дня вже впустили раніше за його хвилину (§9.12): у розкладі (§8.4) його вже немає. */
+export function dayGuestLetIn(state: GameState): boolean {
+  const guest = state.today.guest;
+  return guest?.in === true && GUEST_DAY[guest.who] === state.modifiers.day;
+}
+
 /**
- * Призначена хвилина візиту `who` (§9.12): гість заходить (чи, коли персонажа немає, іде) — запис про нього знято. False —
- * гравець уже відчинив йому раніше (`admitGuest`), і візит не повторюється. Без запису (дзвінка не чули: хвилину перемотали
- * сценарієм чи старим збереженням) візит відбувається, як і раніше.
+ * Призначена хвилина візиту `who` (§9.12): забрати запис про гостя — він заходить (чи, коли персонажа немає, іде). Повертає, чи
+ * візит відбувається зараз: false — гравець уже відчинив йому раніше (`admitGuest`), і візит не повторюється. Без запису (дзвінка
+ * не чули: хвилину перемотали сценарієм чи старим збереженням) візит відбувається, як і раніше.
  */
-export function guestDue(state: GameState, who: DoorGuest): boolean {
+export function takeGuest(state: GameState, who: DoorGuest): boolean {
   const guest = state.today.guest;
   if (guest?.who !== who) return true;
-  delete state.today.guest;
+  clearGuest(state);
   return guest.in !== true;
+}
+
+/**
+ * Під дверима вже ніхто не чекає (§9.12): ранок нового дня (гостю так і не відчинили — персонаж ліг, не дочекавшись) чи мама,
+ * що лишила пакет під дверима.
+ */
+export function clearGuest(state: GameState): void {
+  delete state.today.guest;
 }
 
 /**

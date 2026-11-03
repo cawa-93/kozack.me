@@ -3,7 +3,7 @@
 
 import { knownBreedHalves } from "./breeds";
 import { asleep, changeMood, createCat, isAdapting, traitLevel } from "./cat";
-import { guestDue, openDoor, ringBell } from "./door";
+import { clearGuest, openDoor, ringBell, takeGuest } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat, stopBath } from "./actions";
 import { hideSpot, isCarried, isDirty, startAct } from "./catai";
@@ -218,7 +218,7 @@ export function startModifiers(state: GameState, rng: Rng): void {
   today.earlyWake = 0;
   delete today.mom;
   // Гість, якому так і не відчинили (персонаж ліг, не дочекавшись), уже не під дверима (§9.12).
-  delete today.guest;
+  clearGuest(state);
   const perHour = POSITIONS[state.job.position]?.reputation ?? 1;
   switch (state.modifiers.day) {
     case "reprimand":
@@ -435,7 +435,7 @@ function tickMom(state: GameState, from: number, minutes: number): void {
     if (mom.rang || end >= MODIFIERS.mom.until) {
       state.today.mom = { at: mom.at, porch: true };
       // Мама вже не під дверима (§9.12): поки вона там, вирушити не можна, тож так буває лише в старих збереженнях.
-      guestDue(state, "mom");
+      clearGuest(state);
     }
     return;
   }
@@ -451,7 +451,7 @@ function tickMom(state: GameState, from: number, minutes: number): void {
     return;
   }
   if (end < mom.at + GUESTS.ringLead) return;
-  if (guestDue(state, "mom")) momVisit(state);
+  if (takeGuest(state, "mom")) momVisit(state);
 }
 
 /**
@@ -620,9 +620,9 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
     }
   }
   // Ветеринарка — візит, як гості й ОСББ: дзвонить за `GUESTS.ringLead` хвилин, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей; рішення автора 2026-10-29, А5: дзвінок — за 6 хвилин, щоб гравець встиг узяти кота на руки).
-  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`guestDue`, §9.12, рішення автора 2026-11-03).
+  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`takeGuest`, §9.12, рішення автора 2026-11-03).
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state, "home-vet");
-  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && guestDue(state, "home-vet")) homeVetVisit(state);
+  if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && takeGuest(state, "home-vet")) homeVetVisit(state);
   // Феєрверки — гучний звук на всю квартиру (§9.12): несміливі ховаються й засмучуються.
   if (day === "festival" && crossed(from, minutes, m.festival.minute)) {
     loudNoise(state, "fireworks", null);
@@ -634,11 +634,11 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
   }
   if (day === "mom-food") tickMom(state, from, minutes);
   // Дзвонять за `GUESTS.ringLead` хвилин до оголошеного часу, коли заходять, — двері відчинено (§9.12 «Двері й гості»; рішення автора 2026-10-29, А5).
-  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`guestDue`, рішення автора 2026-11-03).
+  // Гравець відчинив раніше — у свою хвилину візит не повторюється (`takeGuest`, рішення автора 2026-11-03).
   if (day === "inspection" && crossed(from, minutes, m.inspection.minute - GUESTS.ringLead)) ringBell(state, "inspection");
   if (day === "guests" && crossed(from, minutes, m.guests.minute - GUESTS.ringLead)) ringBell(state, "guests");
-  if (day === "inspection" && crossed(from, minutes, m.inspection.minute) && guestDue(state, "inspection")) inspectionVisit(state);
-  if (day === "guests" && crossed(from, minutes, m.guests.minute) && guestDue(state, "guests")) guestsVisit(state);
+  if (day === "inspection" && crossed(from, minutes, m.inspection.minute) && takeGuest(state, "inspection")) inspectionVisit(state);
+  if (day === "guests" && crossed(from, minutes, m.guests.minute) && takeGuest(state, "guests")) guestsVisit(state);
   // Хто до 18:00 уже їде на збори, той поїхав (§4.1): раніше штраф наздоганяв його в дорозі (перевірка поїздок 2026-10-28).
   if (day === "office" && crossed(from, minutes, 18 * 60) && !today.officeDone && !toOffice(state) && isWorkday(state)) {
     const delta = m.officeAbsent * (POSITIONS[state.job.position]?.reputation ?? 1);

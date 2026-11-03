@@ -10,9 +10,10 @@ import { GUESTS, MODIFIERS } from "../src/sim/config";
 import { courierNow } from "../src/dev/commands";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { fallIll } from "../src/sim/diseases";
-import { DOOR_TILE, guestAtDoor } from "../src/sim/door";
+import { DOOR_TILE, GUEST_DAY, guestAtDoor } from "../src/sim/door";
 import type { GameEvent } from "../src/sim/events";
 import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
+import { DAY_PAIRS } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
@@ -142,6 +143,17 @@ function pastVisit(save: Save, guest: Guest): void {
 }
 
 describe("гість подзвонив — дія біля дверей відчиняє йому (§9.12, рішення автора 2026-11-03)", () => {
+  it("кожен гість — подія свого дня з переліку модифікаторів (§4.1), явно, а не збігом назв; тут перевірено кожного", () => {
+    const days = new Set(DAY_PAIRS.flatMap((p) => [p.hard, p.easy]));
+    for (const [who, day] of Object.entries(GUEST_DAY)) {
+      expect(days.has(day), who).toBe(true);
+      expect(GUESTS_BY_DOOR.find((g) => g.who === who)?.day, who).toBe(day);
+    }
+    expect(GUESTS_BY_DOOR).toHaveLength(Object.keys(GUEST_DAY).length);
+    // Мама — день «Мамині гостинці»: назва гостя й назва дня різні.
+    expect(GUEST_DAY.mom).toBe("mom-food");
+  });
+
   for (const guest of GUESTS_BY_DOOR) {
     it(`${guest.who}: дзвінок → двері → подія одразу, без поїздки; у свою хвилину візит не повторюється`, () => {
       const { save, cat } = game(guest);

@@ -2,6 +2,7 @@
 
 import { constructionDustHours } from "../sim/cleaner";
 import { MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES, WORK_END_MINUTE, WORK_START_MINUTE } from "../sim/config";
+import { dayGuestLetIn } from "../sim/door";
 import { absoluteMinute, formatClock } from "../sim/time";
 import type { GameState } from "../sim/types";
 import { isWorkday, standupToday } from "../sim/work";
@@ -46,9 +47,8 @@ export function scheduleOf(state: GameState): string[] {
   // Робочі події — лише в робочий день, офіс — поки зборів не було (перевірка модифікаторів 2026-10-28: розклад обіцяв нараду на лікарняному й офіс після зборів).
   const work = state.modifiers.day === "meeting" || state.modifiers.day === "lunch" || state.modifiers.day === "office";
   // Гостю дня (ветеринарка, ОСББ, гості, прибиральниця) відчинили раніше за його час — він уже був (§9.12 «Подзвонили — двері
-  // гостю», рішення автора 2026-11-03): у розкладі його вже немає.
-  const guest = state.today.guest;
-  const done = (state.modifiers.day === "office" && state.today.officeDone) || (guest?.in === true && guest.who === state.modifiers.day);
+  // гостю», рішення автора 2026-11-03): у розкладі його вже немає. Чий це день, каже `GUEST_DAY`, а не збіг назв.
+  const done = (state.modifiers.day === "office" && state.today.officeDone) || dayGuestLetIn(state);
   if (event && minute < event[0] && (!work || isWorkday(state)) && !done) important.push(event);
   const today = absoluteMinute(state.day, 0);
   const next = Math.min(...state.home.deliveries.map((d) => d.at - today));

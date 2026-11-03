@@ -3,7 +3,7 @@
 // осідає кімната за кімнатою — без випадковості, як і звичайний пил (§8.7 «Пил і павутина»). Викликає `tickModifiers`.
 
 import { BOWL_CAPACITY, GUESTS, HOUSEHOLD, MODIFIERS, WATER_CAPACITY } from "./config";
-import { guestDue, openDoor, ringBell } from "./door";
+import { openDoor, ringBell, takeGuest } from "./door";
 import { addDust, dustOf } from "./dust";
 import { takeSupply, topQuality } from "./economy";
 import { emit, type CleanerVisit } from "./events";
@@ -26,7 +26,7 @@ const crossed = (from: number, minutes: number, at: number): boolean => from % 1
 export function tickCleaner(state: GameState, from: number, minutes: number): void {
   const at = MODIFIERS.cleaner.minute;
   if (crossed(from, minutes, at - GUESTS.ringLead)) ringBell(state, "cleaner");
-  if (crossed(from, minutes, at) && guestDue(state, "cleaner")) cleanerVisit(state);
+  if (crossed(from, minutes, at) && takeGuest(state, "cleaner")) cleanerVisit(state);
 }
 
 /**
