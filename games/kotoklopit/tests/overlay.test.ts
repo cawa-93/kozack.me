@@ -234,6 +234,10 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".shop:has(> .shop-item)")).toContain("container: catalog / inline-size;");
     expect(rule(".shop:has(> .shop-item)")).toContain("repeat(auto-fill, minmax(min(340px, 100%), 1fr))");
     expect(css).toContain("@container catalog (min-width: 690px) or (max-width: 459px) {");
+    // В одній колонці бірка — перед ціною, а ціни однакової ширини: бірки стоять рівним стовпцем (рецензія 2026-11-03).
+    const one = css.indexOf("@container catalog (min-width: 460px) and (max-width: 689px) {");
+    expect(one).toBeGreaterThan(0);
+    expect(css.slice(one, css.indexOf("}", one))).toMatch(/\.shop-price \{\s*min-width: 2\.75em;/u);
     // Картка в один рядок: іконка, назва, бірка з ціною, «−», кількість, «+»; кнопки — не менші за 40 px.
     expect(rule(".shop-item")).toContain("grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;");
     expect(rule(".button.step,\n.button.step:active:not(:disabled),\n.button.step:disabled")).toContain("width: 40px;");
