@@ -28,6 +28,19 @@ export function goodsIcon(goods: Goods): IconName {
   return "product" in goods ? PRODUCT_ICONS[goods.product] : THING_ICONS[goods.thing];
 }
 
+/**
+ * Назва варіанта в картці каталогу: слово через дефіс («робот-пилосос», «фонтанчик-поїлка») — цілим (`.nowrap`), тож назва у два
+ * рядки не рветься на дефісі — «Простий / робот-пилосос», а не «Простий робот- / пилосос» (рецензія 2026-11-03, рішення
+ * виконавця; рядки ще й збалансовані, `overlay.css`). Не нерозривний дефіс U+2011: у Pangolin його немає, і браузер малював би
+ * його іншим шрифтом.
+ */
+function nameParts(title: string): (string | HTMLElement)[] {
+  return title
+    .split(/(\S*-\S*)/u)
+    .filter((part) => part !== "")
+    .map((part) => (part.includes("-") ? element("span", "nowrap", part) : part));
+}
+
 /** Назва варіанта з іконкою товару перед нею — так, як її показує картка магазину, і в «Моїх речах» телефона (`icons.ts`). */
 export const variantLabel = (goods: Goods, quality: Quality): string => named(goodsIcon(goods), variantTitle(goods, quality));
 
@@ -159,7 +172,8 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         // Товар з однією карткою: у двох колонках наступний товар — з нового рядка, щоб рядок лишався одним товаром (`overlay.css`).
         if (qualities.length === 1) item.classList.add("single");
         const icon = element("span", "shop-icon", iconMark(goodsIcon(g)));
-        const name = element("span", "shop-name", variantTitle(g, quality));
+        const name = element("span", "shop-name");
+        name.append(...nameParts(variantTitle(g, quality)));
         // Підпис оновлюється з кошиком: миска в кошику знімає «немає миски без годівниці» (§9.12).
         const stock = element("span", "shop-stock");
         name.append(stock);

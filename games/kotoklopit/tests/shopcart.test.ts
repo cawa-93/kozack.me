@@ -193,6 +193,23 @@ describe("кожен товар у своїй картці (§6.4; рішенн�
     expect(list.findAll("shop-pack")).toEqual([]);
   });
 
+  it("назва у два рядки не рветься на дефісі: слово через дефіс — цілим (.nowrap), рядки збалансовані (рецензія 2026-11-03)", () => {
+    const state = at(null);
+    const { list } = open(state, "delivery", false);
+    const names = list.findAll("shop-item").map((i) => i.find("shop-name"));
+    const robot = names.find((n) => n.textContent.startsWith(variantTitle({ thing: "robot" }, "cheap")));
+    expect(robot?.findAll("nowrap").map((n) => n.textContent)).toEqual(["робот-пилосос"]);
+    // Кожне слово з дефісом у будь-якій назві — у своєму .nowrap, і лише такі слова.
+    for (const name of names) {
+      const words = name.children.filter((c): c is FakeElement => typeof c !== "string" && c.classList.contains("nowrap")).map((c) => c.textContent);
+      const title = name.textContent.replace(name.find("shop-stock").textContent, "");
+      expect(words, title).toEqual(title.split(" ").filter((w) => w.includes("-")));
+    }
+    const css = readFileSync(new URL("../src/ui/overlay.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.shop-item \.shop-name \{[^}]*text-wrap: balance;/u);
+    expect(css).toMatch(/\.nowrap \{\s*white-space: nowrap;/u);
+  });
+
   it("підпис «🚗 …» — під тим варіантом, що справді їде, а не під обома", () => {
     const state = at(null);
     const catFood = { product: "catFood" } as const;

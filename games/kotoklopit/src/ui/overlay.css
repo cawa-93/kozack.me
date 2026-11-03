@@ -815,10 +815,13 @@
   margin: 0;
 }
 
+/* Назва у два рядки — збалансовано: рядки приблизно рівні, а не «Ароматний набір для / душу» чи «Міцна вудочка з / пір'ям»
+   (рецензія 2026-11-03, рішення виконавця). Слово через дефіс не рветься (`.nowrap`, `nameParts` у `shop.ts`). */
 .shop-item .shop-name {
   font-size: 19px;
   line-height: 1.08;
   overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 .shop-item .shop-stock {
