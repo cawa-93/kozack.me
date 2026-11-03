@@ -70,9 +70,11 @@ describe("універсальний магазин (§6.4)", () => {
     const state = game().current;
     state.trip = { destination: "shop", seed: 7 } as Save["current"]["trip"];
     for (const g of GOODS) {
-      const mod = shopModifier(state, g);
-      expect(mod).toBeGreaterThanOrEqual(-0.3);
-      expect(mod).toBeLessThanOrEqual(0.1);
+      for (const q of ["cheap", "premium"] as const) {
+        const mod = shopModifier(state, g, q);
+        expect(mod).toBeGreaterThanOrEqual(-0.3);
+        expect(mod).toBeLessThanOrEqual(0.1);
+      }
     }
   });
 

@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { describe as describeEvent } from "../src/dev/journal";
 import { createCat } from "../src/sim/cat";
 import { MODIFIERS, PRODUCTS, SHOP_WINDOW, STORE_GOODS, TRIP_IDLE_MINUTES, TRIPS } from "../src/sim/config";
-import { shopModifier, soldAt, vetExam } from "../src/sim/destinations";
+import { shopModifier, soldAt, variantIndex, vetExam } from "../src/sim/destinations";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -62,16 +62,16 @@ describe("що де продається (§8.5, STORE_GOODS)", () => {
     for (const g of [pills, drops, humanMeds]) expect(variants(g)).toEqual(["cheap", "premium"]);
   });
 
-  it("ціна ліків у ветеринара й лікаря — як у магазині: той самий модифікатор поїздки з вікна складності", () => {
+  it("ціна ліків у ветеринара й лікаря — як у магазині: той самий модифікатор поїздки з вікна складності, для кожного варіанта", () => {
     for (const seed of [1, 5, 77, 1234]) {
       for (const [destination, goods] of [["vet", pills], ["vet", drops], ["doctor", humanMeds]] as const) {
         const here = at(destination, seed);
         const shop = at("shop", seed);
-        expect(shopModifier(here, goods)).toBe(shopModifier(shop, goods));
-        const mod = shopModifier(here, goods);
-        expect(mod).toBeGreaterThanOrEqual(SHOP_WINDOW.normal.min);
-        expect(mod).toBeLessThanOrEqual(SHOP_WINDOW.normal.max);
         for (const q of variants(goods)) {
+          const mod = shopModifier(here, goods, q);
+          expect(mod).toBe(shopModifier(shop, goods, q));
+          expect(mod).toBeGreaterThanOrEqual(SHOP_WINDOW.normal.min);
+          expect(mod).toBeLessThanOrEqual(SHOP_WINDOW.normal.max);
           expect(unitPrice(here, goods, q, "store"), `${destination} ${goodsKey(goods)} ${q}`).toBe(Math.round(PRODUCTS[goods.product].price[q] * (1 + mod)));
           expect(unitPrice(here, goods, q, "store")).toBe(unitPrice(shop, goods, q, "store"));
         }
@@ -157,24 +157,24 @@ describe("що де продається (§8.5, STORE_GOODS)", () => {
 });
 
 describe("бірка знижки «−X%» (§6.4; правило — рішення виконавця)", () => {
-  /** Сьогоднішня ціна хоч одного варіанта, округлена до гривні, нижча за звичайну. */
-  const cheaper = (state: GameState, g: Goods): boolean => variants(g).some((q) => unitPrice(state, g, q, "store") < regularPrice(g, q));
-
-  it("на місці: знижка — на скільки ціна нижча за звичайну; подорожчання й «без змін» — без бірки", () => {
+  it("на місці: знижка варіанта — на скільки його ціна нижча за звичайну; подорожчання й «без змін» — без бірки", () => {
     let discounted = 0;
     let raised = 0;
     for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
       const state = at("shop", seed);
       for (const g of catalog(state, "store")) {
-        const mod = shopModifier(state, g);
-        const x = discount(state, g, "store");
-        if (mod > 0) {
-          expect(x, `${seed} ${goodsKey(g)}`).toBe(0);
-          raised += 1;
-        } else if (cheaper(state, g) && Math.round(-mod * 100) >= 1) {
-          expect(x, `${seed} ${goodsKey(g)}`).toBe(Math.round(-mod * 100));
-          discounted += 1;
-        } else expect(x, `${seed} ${goodsKey(g)}`).toBe(0);
+        for (const q of variants(g)) {
+          const mod = shopModifier(state, g, q);
+          const x = discount(state, g, q, "store");
+          const what = `${seed} ${goodsKey(g)} ${q}`;
+          if (mod > 0) {
+            expect(x, what).toBe(0);
+            raised += 1;
+          } else if (unitPrice(state, g, q, "store") < regularPrice(g, q) && Math.round(-mod * 100) >= 1) {
+            expect(x, what).toBe(Math.round(-mod * 100));
+            discounted += 1;
+          } else expect(x, what).toBe(0);
+        }
       }
     }
     // На середній вікно −30%…+10%: знижок більше, ніж подорожчань, але є й ті, й ті.
@@ -186,28 +186,65 @@ describe("бірка знижки «−X%» (§6.4; правило — ріше�
     const litter = { product: "litter" } as const;
     // Шукаємо поїздку, де наповнювач (11 і 15 ₴) дешевший на 1–3%: 10,7 → 11, 14,6 → 15.
     let seed = 1;
-    while (!(shopModifier(at("shop", seed), litter) < -0.01 && shopModifier(at("shop", seed), litter) > -0.03)) seed += 1;
+    const near = (s: number, q: "cheap" | "premium"): boolean => shopModifier(at("shop", s), litter, q) < -0.01 && shopModifier(at("shop", s), litter, q) > -0.03;
+    while (!near(seed, "cheap")) seed += 1;
     const state = at("shop", seed);
     expect(unitPrice(state, litter, "cheap", "store")).toBe(11);
-    expect(unitPrice(state, litter, "premium", "store")).toBe(15);
-    expect(discount(state, litter, "store")).toBe(0);
+    expect(discount(state, litter, "cheap", "store")).toBe(0);
+    seed = 1;
+    while (!near(seed, "premium")) seed += 1;
+    expect(unitPrice(at("shop", seed), litter, "premium", "store")).toBe(15);
+    expect(discount(at("shop", seed), litter, "premium", "store")).toBe(0);
+  });
+
+  it("модифікатор і бірка — для кожного варіанта окремо: у дешевих і дорогих таблеток знижки бувають різні (рішення автора 2026-11-03)", () => {
+    const pills = { product: "pills" } as const;
+    // Номер варіанта — товар за товаром, у кожного дешевий, тоді дорогий: зерна різних варіантів різні.
+    const indices = GOODS.flatMap((g) => (["cheap", "premium"] as const).map((q) => variantIndex(g, q)));
+    expect(indices).toEqual(indices.map((_, i) => i));
+    // Як у прикладі автора: обидва варіанти зі знижкою, але різною.
+    const both = (s: number): [number, number] => [discount(at("shop", s), pills, "cheap", "store"), discount(at("shop", s), pills, "premium", "store")];
+    let seed = 1;
+    while (!(both(seed)[0] > 0 && both(seed)[1] > 0 && both(seed)[0] !== both(seed)[1])) seed += 1;
+    expect(seed).toBeLessThan(50);
+    const [cheap, premium] = both(seed);
+    expect(cheap).not.toBe(premium);
+    // У ветеринара — ті самі знижки, що мали б ці таблетки в магазині цієї поїздки.
+    expect([discount(at("vet", seed), pills, "cheap", "store"), discount(at("vet", seed), pills, "premium", "store")]).toEqual([cheap, premium]);
+    // По всьому каталогу: модифікатори двох варіантів одного товару різні — кожен випадає сам, а не один на товар.
+    let pairs = 0;
+    for (const s of [1, 2, 3, 4, 5]) {
+      const state = at("shop", s);
+      for (const g of catalog(state, "store")) {
+        if (variants(g).length < 2) continue;
+        pairs += 1;
+        expect(shopModifier(state, g, "cheap"), `${s} ${goodsKey(g)}`).not.toBe(shopModifier(state, g, "premium"));
+      }
+    }
+    expect(pairs).toBeGreaterThan(50);
+    // Якості, якої товар не має (нашийник — один варіант), бірки немає.
+    for (const s of [1, 2, 3, 4, 5]) expect(discount(at("shop", s), { product: "collar" }, "premium", "store")).toBe(0);
   });
 
   it("подія дня входить у сьогоднішню ціну: «Акція в зоомагазині» — бірка й у телефоні, «Подорожчання корму» — ні", () => {
     const state = at(null);
     const catFood = { product: "catFood" } as const;
-    for (const g of catalog(state, "delivery")) expect(discount(state, g, "delivery"), goodsKey(g)).toBe(0);
+    for (const g of catalog(state, "delivery")) for (const q of variants(g)) expect(discount(state, g, q, "delivery"), `${goodsKey(g)} ${q}`).toBe(0);
     state.modifiers.day = "pet-sale";
     const sale = Math.round((1 - (MODIFIERS.catFoodPrice["pet-sale"] ?? 1)) * 100);
     expect(sale).toBe(30);
-    expect(discount(state, catFood, "delivery")).toBe(sale);
-    expect(discount(state, { product: "food" }, "delivery")).toBe(0);
+    // У телефоні модифікатора поїздки немає: знижка дня — та сама в обох варіантів корму.
+    expect(discount(state, catFood, "cheap", "delivery")).toBe(sale);
+    expect(discount(state, catFood, "premium", "delivery")).toBe(sale);
+    expect(discount(state, { product: "food" }, "cheap", "delivery")).toBe(0);
     state.modifiers.day = "food-price-up";
-    expect(discount(state, catFood, "delivery")).toBe(0);
-    // На місці — подія разом із модифікатором поїздки.
+    expect(discount(state, catFood, "cheap", "delivery")).toBe(0);
+    // На місці — подія разом із модифікатором поїздки цього варіанта.
     const shop = at("shop", 3);
     shop.modifiers.day = "pet-sale";
-    const factor = (MODIFIERS.catFoodPrice["pet-sale"] ?? 1) * (1 + shopModifier(shop, catFood));
-    expect(discount(shop, catFood, "store")).toBe(Math.round((1 - factor) * 100));
+    for (const q of variants(catFood)) {
+      const factor = (MODIFIERS.catFoodPrice["pet-sale"] ?? 1) * (1 + shopModifier(shop, catFood, q));
+      expect(discount(shop, catFood, q, "store"), q).toBe(Math.round((1 - factor) * 100));
+    }
   });
 });

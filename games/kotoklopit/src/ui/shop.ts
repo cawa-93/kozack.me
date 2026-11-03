@@ -129,7 +129,10 @@ export interface Catalog {
   list: HTMLElement;
   /** Смуга кошика — внизу картки (`Card.bar`). */
   bar: HTMLElement;
-  /** Скільки товарів каталогу сьогодні з біркою знижки — для примітки біля заголовка (§8.5). */
+  /**
+   * Скільки карток каталогу сьогодні з біркою знижки — для примітки біля заголовка (§8.5). Рахує варіанти, а не товари: знижка
+   * випадає для кожного варіанта окремо (§6.4, «Кожен товар у своїй картці»).
+   */
   discounted: number;
 }
 
@@ -170,12 +173,6 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         stock.style.display = text === "" ? "none" : "";
       });
       head.append(name);
-      // Знижка — біркою праворуч від назви; подорожчання — нічим (рішення автора 2026-11-03).
-      const off = discount(state, g, mode);
-      if (off > 0) {
-        head.append(priceTag(off));
-        discounted += 1;
-      }
       item.append(head);
       // Нашийник — один варіант (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17), решта — два.
       for (const quality of variants(g)) {
@@ -184,6 +181,12 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
         const label = element("span", "shop-option", VARIANT_TITLES[goodsKey(g)]?.[quality] ?? quality);
         const pack = packText(g, quality);
         if (pack !== "") label.append(" ", element("span", "shop-pack", pack));
+        // Знижка — біркою на варіанті: модифікатор випадає для кожного варіанта окремо; подорожчання — нічим (рішення автора 2026-11-03).
+        const off = discount(state, g, quality, mode);
+        if (off > 0) {
+          label.append(" ", priceTag(off));
+          discounted += 1;
+        }
         const price = element("span", "shop-price", `${unitPrice(state, g, quality, mode)} ₴`);
         const minus = element("button", "button step", "−");
         const count = element("span", "shop-count", "0");

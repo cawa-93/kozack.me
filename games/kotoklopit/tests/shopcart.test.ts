@@ -12,7 +12,7 @@ import { STORE_GOODS, TRIPS } from "../src/sim/config";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { catalog, checkout, discount, goodsKey, unitPrice, type CartLine } from "../src/sim/shop";
+import { catalog, checkout, discount, goodsKey, unitPrice, variants, type CartLine, type Goods } from "../src/sim/shop";
 import type { Destination, GameState } from "../src/sim/types";
 import { phoneCard, type PhoneHandlers } from "../src/ui/cards";
 import { splitIcons } from "../src/ui/icons";
@@ -128,6 +128,9 @@ function at(destination: Destination | null, seed = 5, money = 1000): GameState 
   return state;
 }
 
+/** Варіанти товарів по порядку каталогу: товар за товаром, дешевий, тоді дорогий. */
+const variantsOf = (goods: readonly Goods[]): { goods: Goods; quality: CartLine["quality"] }[] => goods.flatMap((g) => variants(g).map((quality) => ({ goods: g, quality })));
+
 /** Каталог із кошиком і що отримали обробники. */
 function open(state: GameState, mode: "store" | "delivery", withHome = true) {
   const bought: CartLine[][] = [];
@@ -146,21 +149,21 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     for (const seed of [1, 2, 3, 4, 5]) {
       const state = at("shop", seed);
       const { list, shop } = open(state, "store");
-      const items = list.findAll("shop-item");
-      const goods = catalog(state, "store");
-      expect(items).toHaveLength(goods.length);
-      goods.forEach((g, i) => {
-        const tags = items[i]?.findAll("price-tag") ?? [];
-        const x = discount(state, g, "store");
+      const lines = list.findAll("shop-line");
+      const shown = variantsOf(catalog(state, "store"));
+      expect(lines).toHaveLength(shown.length);
+      shown.forEach(({ goods: g, quality: q }, i) => {
+        const tags = lines[i]?.findAll("price-tag") ?? [];
+        const x = discount(state, g, q, "store");
         if (x > 0) {
-          expect(tags.map((t) => t.textContent), goodsKey(g)).toEqual([`−${x}%`]);
+          expect(tags.map((t) => t.textContent), `${goodsKey(g)} ${q}`).toEqual([`−${x}%`]);
           tagged += 1;
         } else {
-          expect(tags, goodsKey(g)).toEqual([]);
+          expect(tags, `${goodsKey(g)} ${q}`).toEqual([]);
           untagged += 1;
         }
       });
-      expect(shop.discounted).toBe(goods.filter((g) => discount(state, g, "store") > 0).length);
+      expect(shop.discounted).toBe(shown.filter(({ goods: g, quality: q }) => discount(state, g, q, "store") > 0).length);
       expect(list.textContent).not.toMatch(/₴↓|₴↑/u);
     }
     expect(tagged).toBeGreaterThan(0);
@@ -172,7 +175,8 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     expect(open(state, "delivery", false).list.findAll("price-tag")).toEqual([]);
     state.modifiers.day = "pet-sale";
     const tags = open(state, "delivery", false).list.findAll("price-tag");
-    expect(tags.map((t) => t.textContent)).toEqual(["−30%"]);
+    // Знижка дня — на обидва варіанти корму.
+    expect(tags.map((t) => t.textContent)).toEqual(["−30%", "−30%"]);
   });
 
   it("рядок варіанта: назва й «×15» замість «15 душів», ціна — окремим стовпцем", () => {
@@ -185,7 +189,7 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
     const state = at("shop", 2);
     const { list } = open(state, "store");
     const line = list.findAll("shop-line")[0];
-    expect(line?.find("shop-option").textContent).toMatch(/×\d+$/u);
+    expect(line?.find("shop-option").textContent).toMatch(/×\d+/u);
     expect(line?.find("shop-option").textContent).not.toMatch(/порці|душ|₴/u);
     const goods = catalog(state, "store")[0];
     expect(line?.find("shop-price").textContent).toBe(`${goods ? unitPrice(state, goods, "cheap", "store") : 0} ₴`);
@@ -454,7 +458,7 @@ describe("картки поїздок (§8.5)", () => {
 
   it("магазин: біля заголовка — подія дня, що змінює ціни того, що є в каталозі, і скільки знижок", () => {
     const state = at("shop", 2);
-    const n = catalog(state, "store").filter((g) => discount(state, g, "store") > 0).length;
+    const n = variantsOf(catalog(state, "store")).filter(({ goods: g, quality: q }) => discount(state, g, q, "store") > 0).length;
     expect(n).toBeGreaterThan(1);
     expect(visitCard(state, { exam: null, done: [] }, handlers).aside).toEqual([`${n} ${plural(n, "знижка", "знижки", "знижок")}`]);
     state.modifiers.day = "pet-sale";
@@ -471,7 +475,7 @@ describe("картки поїздок (§8.5)", () => {
       let seen = 0;
       for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
         const state = at(d, seed);
-        const n = catalog(state, "store").filter((g) => discount(state, g, "store") > 0).length;
+        const n = variantsOf(catalog(state, "store")).filter(({ goods: g, quality: q }) => discount(state, g, q, "store") > 0).length;
         const aside = visitCard(state, { exam: null, done: [] }, handlers).aside ?? [];
         expect(aside.filter((p) => p.includes("знижк")), `${d} ${seed}`).toEqual(n > 0 ? [`ліки: ${n} ${plural(n, "знижка", "знижки", "знижок")}`] : []);
         seen += n;

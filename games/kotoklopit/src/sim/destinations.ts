@@ -71,20 +71,33 @@ export function soldAt(destination: Destination, goods: Goods): boolean {
 /** Чи продається товар там, куди зараз поїхав персонаж. */
 export const soldHere = (state: GameState, goods: Goods): boolean => state.trip !== null && soldAt(state.trip.destination, goods);
 
+/** Якості по порядку (§6.4): у каталозі в кожного товару спершу дешевий варіант, потім дорогий. */
+const QUALITIES: readonly Quality[] = ["cheap", "premium"];
+
 /**
- * Модифікатор ціни товару на цю поїздку (§6.4): випадає окремо для кожного товару. Ліки у ветеринара й лікаря — так само, як
- * у магазині (рішення автора 2026-11-03, §8.5): та сама формула й той самий модифікатор, що мали б ці ліки в магазині.
+ * Порядковий номер варіанта (товар × якість) серед усіх товарів магазину (`GOODS`): товар за товаром, у кожного — дешевий, тоді
+ * дорогий. З нього — зерно модифікатора ціни варіанта (`shopModifier`).
  */
-export function shopModifier(state: GameState, goods: Goods): number {
-  const range = SHOP_WINDOW[state.difficulty];
+export function variantIndex(goods: Goods, quality: Quality): number {
   const index = GOODS.findIndex((g) => goodsKey(g) === goodsKey(goods));
-  const rng = createRng(deriveSeed(state.trip?.seed ?? state.seed, index + 1));
+  return index * QUALITIES.length + QUALITIES.indexOf(quality);
+}
+
+/**
+ * Модифікатор ціни варіанта товару на цю поїздку (§6.4): випадає окремо для кожного товару й кожної якості — у дешевих і дорогих
+ * таблеток знижки різні (рішення автора 2026-11-03, «Кожен товар у своїй картці»; до того — один на товар). Ліки у ветеринара й
+ * лікаря — так само, як у магазині (рішення автора 2026-11-03, §8.5): та сама формула й той самий модифікатор, що мали б ці ліки
+ * в магазині.
+ */
+export function shopModifier(state: GameState, goods: Goods, quality: Quality): number {
+  const range = SHOP_WINDOW[state.difficulty];
+  const rng = createRng(deriveSeed(state.trip?.seed ?? state.seed, variantIndex(goods, quality) + 1));
   return range.min + rng.next() * (range.max - range.min);
 }
 
 export function shopPrice(state: GameState, goods: Goods, quality: Quality): number {
   const base = "product" in goods ? PRODUCTS[goods.product].price[quality] * priceFactor(state, goods.product) : THINGS[goods.thing].price[quality];
-  return Math.round(base * (1 + shopModifier(state, goods)));
+  return Math.round(base * (1 + shopModifier(state, goods, quality)));
 }
 
 /**

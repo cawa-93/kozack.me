@@ -63,18 +63,20 @@ export function regularPrice(goods: Goods, quality: Quality): number {
 }
 
 /**
- * Знижка товару сьогодні, у відсотках, — для бірки «−X%» (§6.4, «Бірка знижки й кошик унизу»; рішення автора 2026-11-03, правило —
- * рішення виконавця): на скільки сьогоднішня ціна тут нижча за звичайну (`regularPrice`), округлено до відсотка. У сьогоднішню
- * ціну входять подія дня, що змінює ціну корму (`priceFactor`), і на місці — модифікатор поїздки (`shopModifier`); у телефоні
- * модифікатора поїздки немає. 0 — бірки немає: подорожчання, знижка менше 1% чи жоден варіант, округлений до гривні, не
- * дешевший за звичайну ціну.
+ * Знижка варіанта товару сьогодні, у відсотках, — для бірки «−X%» на його картці (§6.4, «Бірка знижки й кошик унизу» і «Кожен
+ * товар у своїй картці»; рішення автора 2026-11-03, правило — рішення виконавця): на скільки сьогоднішня ціна цього варіанта тут
+ * нижча за звичайну (`regularPrice`), округлено до відсотка. У сьогоднішню ціну входять подія дня, що змінює ціну корму
+ * (`priceFactor`), і на місці — модифікатор поїздки цього варіанта (`shopModifier`); у телефоні модифікатора поїздки немає. 0 —
+ * бірки немає: подорожчання, знижка менше 1% чи ціна, округлена до гривні, не дешевша за звичайну. Якості, якої товар не має, —
+ * теж 0.
  */
-export function discount(state: GameState, goods: Goods, mode: ShopMode): number {
+export function discount(state: GameState, goods: Goods, quality: Quality, mode: ShopMode): number {
+  if (!variants(goods).includes(quality)) return 0;
   const day = "product" in goods ? priceFactor(state, goods.product) : 1;
-  const factor = day * (mode === "store" ? 1 + shopModifier(state, goods) : 1);
+  const factor = day * (mode === "store" ? 1 + shopModifier(state, goods, quality) : 1);
   const percent = Math.round((1 - factor) * 100);
   if (percent < 1) return 0;
-  return variants(goods).some((q) => unitPrice(state, goods, q, mode) < regularPrice(goods, q)) ? percent : 0;
+  return unitPrice(state, goods, quality, mode) < regularPrice(goods, quality) ? percent : 0;
 }
 
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
