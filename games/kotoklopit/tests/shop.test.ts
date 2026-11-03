@@ -205,4 +205,20 @@ describe("назви варіантів (§6.4)", () => {
       for (const name of Object.values(names ?? {})) expect(name).not.toMatch(/дешев|дорог/i);
     }
   });
+
+  it("назва варіанта стоїть у картці сама (рішення автора 2026-11-03): унікальна, різна у двох варіантів, не довша за 26 знаків", async () => {
+    const { VARIANT_TITLES } = await import("../src/ui/titles");
+    const { goodsKey, variants } = await import("../src/sim/shop");
+    const shown = GOODS.flatMap((g) => variants(g).map((q) => ({ key: goodsKey(g), name: VARIANT_TITLES[goodsKey(g)]?.[q] ?? "" })));
+    // Жодна картка не повторює назви іншої — і два варіанти одного товару теж різні.
+    expect(new Set(shown.map((s) => s.name)).size).toBe(shown.length);
+    // Не довга: на телефоні набік — один-два рядки біля іконки (`TEXTS.md`, «Назви товарів»). Корм для стерилізованих — виняток:
+    // без «корму» незрозуміло, що це, а «для стерилізованих» переноситься цілим другим рядком.
+    for (const { key, name } of shown) expect(name.length, name).toBeLessThanOrEqual(key === "sterileFood" ? 32 : 26);
+    // Для кого — видно з назви: ліки, ласощі, шампунь і м'ята для котів кажуть це самі, а ліки для себе — ні.
+    for (const key of ["pills", "drops", "treats", "shampoo", "catnip"]) {
+      for (const name of Object.values(VARIANT_TITLES[key] ?? {})) expect(name, name).toMatch(/кот|ветеринар/iu);
+    }
+    for (const name of Object.values(VARIANT_TITLES["humanMeds"] ?? {})) expect(name, name).not.toMatch(/кот|ветеринар/iu);
+  });
 });
