@@ -10,9 +10,11 @@ import { targetOf, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import { isWorking, searchProgress } from "../../sim/work";
 import { inMeeting } from "../anim/personanim";
+import type { BubbleKind } from "../iconnames";
 import { isoObjectLook } from "../world/objects";
 import type { Point } from "../world/part";
 import { ISO, ISO_TILE } from "../world/projection";
+import { BUBBLE_BELOW } from "./bubblelook";
 import { ANCHOR_GAP, artOffset, objectScreen } from "./geometry";
 import { wireFixSpot } from "./personspot";
 
@@ -239,6 +241,18 @@ export function wireBarAnchor(): Point {
   const feet = ISO.toScreen(wireFixSpot().at);
   wireBar = { x: wire.x + cut.x, y: feet.y - FIX_HEAD - ANCHOR_GAP };
   return wireBar;
+}
+
+/**
+ * Якір бабла виду `kind` над персонажем (думка, бабли подій; `head` — точка над маківкою, уже на `ANCHOR_GAP` вище за неї).
+ * Поки він лагодить дріт, бабл не опускається нижче за смугу лагодження (`wireBarAnchor`): маківка в анімації `fix` хитається
+ * нижче за найвищу точку, під яку поставлено смугу, і вістря бабла заходило в заливку — закривало саме те, скільки зроблено
+ * (рецензія пакета «wire», 2026-11-03). Найнижча точка бабла — вістря вголос чи низ найменшого кружечка думки (`BUBBLE_BELOW`)
+ * — тоді не нижча за якір смуги: на рамці, як вістря бабла над річчю (`BAR_RISE`). Інакше — сама точка над маківкою.
+ */
+export function personBubbleAnchor(state: GameState, head: Point, kind: BubbleKind): Point {
+  if (actionBar(state)?.target !== "computer") return { x: head.x, y: head.y };
+  return { x: head.x, y: Math.min(head.y, wireBarAnchor().y - BUBBLE_BELOW[kind]) };
 }
 
 /**

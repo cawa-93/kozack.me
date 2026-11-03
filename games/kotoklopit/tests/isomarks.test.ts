@@ -12,6 +12,7 @@ import type { GameState } from "../src/sim/types";
 import { searchProgress } from "../src/sim/work";
 import { inMeeting } from "../src/view/anim/personanim";
 import { artEntry } from "../src/view/art/manifest";
+import { BUBBLE_BELOW } from "../src/view/iso/bubblelook";
 import { ANCHOR_GAP, artOffset, objectAnchorAt, objectScreen } from "../src/view/iso/geometry";
 import {
   actionBar,
@@ -37,6 +38,7 @@ import {
   highlightTarget,
   onFace,
   onScreen,
+  personBubbleAnchor,
   REJECTION_MS,
   rejectionAt,
   SCREEN_HALF,
@@ -353,17 +355,44 @@ describe("смуги (§8.2, §8.6, §8.7)", () => {
       expect(top.x, `@${t}`).toBeGreaterThan(box.x);
       expect(top.x, `@${t}`).toBeLessThan(box.x + box.w);
       expect(extent.bottom - top.y, `@${t}`).toBeLessThanOrEqual(BAR.height);
-      // Бабл персонажа (думка) — вістрям на ANCHOR_GAP над маківкою: у якорі смуги, як бабл над річчю, а поки голова
-      // хитається — трохи нижче, але не далі за пів заливки; над смугою він не зависає.
-      const tip = top.y - ANCHOR_GAP;
-      expect(tip, `@${t}`).toBeGreaterThanOrEqual(at!.y - 1e-9);
-      expect(tip - at!.y, `@${t}`).toBeLessThan(BAR.height / 2);
+      // Бабл персонажа (думка, бабли подій) — вістрям на ANCHOR_GAP над маківкою, але не нижче за смугу
+      // (`personBubbleAnchor`): поки голова хитається, найнижча точка бабла (вістря вголос, низ найменшого кружечка думки)
+      // лишається на рамці, а не в заливці, — бабл не закриває, скільки зроблено; і над смугою не зависає (не вище за
+      // чорнильний верх рамки).
+      for (const kind of ["say", "think"] as const) {
+        const tip = personBubbleAnchor(state, { x: top.x, y: top.y - ANCHOR_GAP }, kind);
+        const lowest = tip.y + BUBBLE_BELOW[kind];
+        expect(tip.x, `${kind} @${t}`).toBe(top.x);
+        expect(lowest, `${kind} @${t}`).toBeLessThanOrEqual(at!.y);
+        expect(lowest, `${kind} @${t}`).toBeGreaterThanOrEqual(at!.y - BAR_RISE);
+      }
     }
     // `FIX_HEAD` — найвища маківка за цикл (з точністю до кроку).
     expect(feet.y - highest).toBeLessThanOrEqual(FIX_HEAD);
     expect(feet.y - highest).toBeGreaterThan(FIX_HEAD - 2);
     // Бабл перегризеного дроту лишається над комп'ютером і смуги не торкається: смуга нижча за його вістря.
     expect(extent.top).toBeGreaterThan(computer.y);
+  });
+
+  it("якір бабла персонажа опускається не нижче за смугу лагодження лише тоді, коли лагодять дріт", () => {
+    const state = scenario("wire-fix");
+    const at = wireBarAnchor();
+    // Лагодить: голова нижче за якір смуги — вістря вголос на якорі смуги, думка — вище на свій найменший кружечок (по x —
+    // над маківкою); голова вище — над маківкою, як завжди.
+    expect(personBubbleAnchor(state, { x: at.x + 7, y: at.y + 5 }, "say")).toEqual({ x: at.x + 7, y: at.y });
+    expect(personBubbleAnchor(state, { x: at.x + 7, y: at.y + 5 }, "think")).toEqual({ x: at.x + 7, y: at.y - BUBBLE_BELOW.think });
+    expect(BUBBLE_BELOW.think).toBeGreaterThan(0);
+    for (const kind of ["say", "think"] as const) {
+      expect(personBubbleAnchor(state, { x: at.x - 3, y: at.y - 40 }, kind)).toEqual({ x: at.x - 3, y: at.y - 40 });
+    }
+    // Без лагодження смуги немає — бабл над маківкою, хоч би де вона була; точку не віддає ту саму (її змінює вигляд).
+    state.character.activity = null;
+    const head = { x: at.x + 7, y: at.y + 5 };
+    for (const kind of ["say", "think"] as const) {
+      const free = personBubbleAnchor(state, head, kind);
+      expect(free).toEqual(head);
+      expect(free).not.toBe(head);
+    }
   });
 
   it("смужка пошуку стоїть на своєму місці, хоч дріт лагодять, хоч ні: смуга лагодження — не над комп'ютером", () => {

@@ -36,6 +36,12 @@ export const BUBBLE_COUNT = {
   font: 24,
 } as const;
 
+/**
+ * Наскільки бабл виду `kind` виступає під свою точку (вістря), одиниці світу. Хвостик вголос закінчується в ній самій, а pivot
+ * думки — центр найменшого кружечка (`ui/bubble/think`: r 4 і контур 4), тож кружечок сягає на 4 + 2 одиниці фону нижче.
+ */
+export const BUBBLE_BELOW: Readonly<Record<BubbleKind, number>> = { say: 0, think: (4 + 4 / 2) * ISO_BUBBLE_SCALE };
+
 /** Наскільки вище за вістря бабл події виринає (як у старому вигляді: `y − 8` у `Bubbles.show`). */
 const RISE = 8;
 /**

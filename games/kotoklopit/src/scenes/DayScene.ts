@@ -50,6 +50,7 @@ import { Viewport } from "../view/viewport";
 import { UI_LAYERS } from "../view/world/layers";
 import { createWorld, WORLD_BUILDERS } from "../view/world/factory";
 import { flyIsoIcon } from "../view/iso/marksflight";
+import { personBubbleAnchor } from "../view/iso/markslayout";
 import type { WorldFrame } from "../view/world/part";
 import type { World } from "../view/world/world";
 import { markDeparture, takeDeparture } from "../view/departing";
@@ -705,7 +706,7 @@ export class DayScene extends Phaser.Scene {
       const shown = Math.floor(this.earned);
       this.earned -= shown;
       this.earnedShownAt = time;
-      this.bubbles.popText(`+${shown} ₴`, this.personAnchor, "#8fdc7a");
+      this.bubbles.popText(`+${shown} ₴`, () => this.personAnchor("say"), "#8fdc7a");
     }
   }
 
@@ -842,8 +843,9 @@ export class DayScene extends Phaser.Scene {
     // Ящики біля входу (§6.4): зблизька видно, що в них лежить.
     const boxes = this.world.anchor("boxes");
     this.storage.set("boxes", boxes && !personBusy ? boxesIndicator(state) : [], boxes?.x ?? 0, boxes?.y ?? 0);
-    // Сонливість — думка персонажа.
-    const head = this.belowHud(this.world.person.head, "think") ?? this.world.person.head;
+    // Сонливість — думка персонажа (поки лагодить дріт — вістрям на рамці смуги лагодження, `personBubbleAnchor`).
+    const over = personBubbleAnchor(state, this.world.person.head, "think");
+    const head = this.belowHud(over, "think") ?? over;
     this.bubbles.setState("person", "think", isDrowsy(state) ? STATE_ICONS.drowsy : null, head.x, head.y);
   }
 
@@ -855,15 +857,20 @@ export class DayScene extends Phaser.Scene {
     flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
   }
 
-  /** Над головою персонажа: бабли подій летять за ним, коли він іде. */
-  private readonly personAnchor = (): { x: number; y: number } => ({ x: this.world.person.head.x, y: this.world.person.head.y });
+  /**
+   * Над головою персонажа (бабл виду `kind`): бабли подій летять за ним, коли він іде; поки лагодить дріт — вістрям на рамці смуги
+   * лагодження, а не в заливці (`personBubbleAnchor`).
+   */
+  private personAnchor(kind: BubbleKind): { x: number; y: number } {
+    return personBubbleAnchor(this.state, this.world.person.head, kind);
+  }
 
   /**
    * Де бабл події: над персонажем, котом чи річчю — і летить за ним. Не вище видимого краю квартири: інакше
    * над котом на шафі чи над верхнім рядом бабл ховається під панеллю.
    */
   private anchorFn(id: string, kind: BubbleKind): Anchor {
-    return () => this.belowHud(id === "person" ? this.personAnchor() : this.world.anchor(id), kind);
+    return () => this.belowHud(id === "person" ? this.personAnchor(kind) : this.world.anchor(id), kind);
   }
 
   /** Точка бабла, опущена так, щоб увесь бабл лишався під панеллю (§11.4). */
