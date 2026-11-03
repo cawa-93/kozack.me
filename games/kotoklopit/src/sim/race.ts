@@ -35,9 +35,10 @@ function spawn(race: Race, difficulty: Difficulty, traffic: number): void {
     while (race.spawned + RACE.carSpeed * race.minutes < ahead) {
       race.spawned += gap * (0.4 + rng.next() * 1.2);
       const lane = rng.int(0, RACE.lanes - 1);
-      // Своя смуга на старті вільна (`RACE.startClear`): без газу машина зі `startSpeed` не наздоганяє потоку. Решта машин —
-      // ті самі, що й без цього правила (той самий ряд випадкових чисел).
-      if (lane !== START_LANE || race.spawned >= RACE.startClear) race.cars.push({ lane, start: race.spawned });
+      // Своя смуга на старті вільна (`RACE.startClear`): без газу машина зі `startSpeed` не наздоганяє потоку. Сусідні — ближче
+      // (`RACE.startSide`): перестроїлися туди першою дією — є секунда, щоб загальмувати. Решта машин — ті самі, що й без цього
+      // правила (той самий ряд випадкових чисел).
+      if (race.spawned >= (lane === START_LANE ? RACE.startClear : RACE.startSide)) race.cars.push({ lane, start: race.spawned });
     }
     race.rng = Math.floor(rng.next() * 4294967296) >>> 0;
   }

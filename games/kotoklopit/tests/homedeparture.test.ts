@@ -164,13 +164,28 @@ describe("виїзд із дому: свій будинок", () => {
           expect(start.cars.map((car) => [car.lane, car.look])).toEqual(after.cars.map((car) => [car.lane, trafficLook(car)]));
           // У мить старту (`race.minutes`), а не після кроку: машина стартує не з місця, і крок — уже рух.
           for (const [i, car] of start.cars.entries()) expect(car.ahead).toBeCloseTo(carAt(race, after.cars[i] ?? { lane: 0, start: 0 }) - race.done, 9);
-          // Усі машини старту — попереду своєї щонайменше на одиницю дороги (`newRace`: `spawned` = 1), а в смузі старту — далі
-          // за межу вільної смуги (`RACE.startClear`).
+          // Усі машини старту — попереду своєї за межею вільних смуг: у сусідніх — `RACE.startSide`, у смузі старту — далі,
+          // `RACE.startClear`.
           for (const car of start.cars) {
-            expect(car.ahead).toBeGreaterThanOrEqual(1);
+            expect(car.ahead).toBeGreaterThanOrEqual(RACE.startSide);
             if (car.lane === race.lane) expect(car.ahead).toBeGreaterThanOrEqual(RACE.startClear);
           }
         }
+      }
+    }
+  });
+
+  it("потік не зник (рецензія 2026-11-03): сусідні смуги вільні ближче, ніж видно дорогу, і машини потоку на старті бувають у кадрі", () => {
+    // Скільки дороги видно попереду своєї машини: від неї до верхнього краю кадру.
+    for (const height of HEIGHTS) expect((height * RACE_PLAYER_Y) / racePixelsPerUnit(height)).toBeGreaterThan(RACE.startSide + RACE.carLength);
+    for (const difficulty of DIFFICULTIES) {
+      for (const traffic of TRAFFIC) {
+        let shown = 0;
+        for (let seed = 1; seed <= 100; seed++) {
+          if (homeDepartureFrame(HOME_DEPARTURE.ms, 720, startOf(seed, difficulty, traffic)).traffic.length > 0) shown++;
+        }
+        // Виміряно: 12–35 % стартів, залежно від складності й дня.
+        expect(shown, `${difficulty}, ×${traffic}`).toBeGreaterThanOrEqual(5);
       }
     }
   });

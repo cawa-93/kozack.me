@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { MODIFIERS, RACE, TRIPS } from "../src/sim/config";
 import { driveRace, newRace } from "../src/sim/race";
+import { gameMinutes } from "../src/sim/time";
 import type { Difficulty, RaceCar } from "../src/sim/types";
 
 const GAS = { steer: 0 as const, throttle: 1 };
@@ -70,14 +71,27 @@ describe("швидкість у гонці (§8.5)", () => {
   });
 });
 
-describe("старт гонки: своя смуга вільна (§8.5 «Виїзд із дому»)", () => {
+describe("старт гонки: своя смуга вільна, сусідні — ближче (§8.5 «Виїзд із дому»)", () => {
   it("вільної смуги вистачає: без газу машина гасить різницю з потоком раніше, ніж наздожене машину на межі", () => {
     // Скільки машина без газу зі старту проїде понад машину потоку, поки не стане повільнішою за неї, — плюс довжина машини.
     const closing = (RACE.startSpeed - RACE.carSpeed) ** 2 / (2 * RACE.coasting);
     expect(RACE.startClear).toBeGreaterThanOrEqual(closing + RACE.carLength);
   });
 
-  it("ближче за `startClear` у смузі старту машин потоку немає; у сусідніх — є, і за межею своя смуга — як завжди", () => {
+  it("сусідніх смуг вистачає на секунду реакції: перестроїлися першою дією, котилися секунду — ще встигаєш загальмувати", () => {
+    // За секунду реакції (`startReaction`) без газу машина наздоганяє потік на стільки; швидкість тоді — `react`.
+    const t = gameMinutes(RACE.startReaction);
+    const coast = (RACE.startSpeed - RACE.carSpeed) * t - (RACE.coasting * t * t) / 2;
+    const react = RACE.startSpeed - RACE.coasting * t;
+    // Гальмо з `react` до швидкості потоку наздоганяє ще на стільки.
+    const brake = (react - RACE.carSpeed) ** 2 / (2 * RACE.braking);
+    expect(RACE.startReaction).toBe(1);
+    expect(RACE.startSide).toBeGreaterThanOrEqual(coast + brake + RACE.carLength);
+    // Своя смуга — вільна далі: без жодного натискання машина гасить різницю з потоком без гальма.
+    expect(RACE.startSide).toBeLessThan(RACE.startClear);
+  });
+
+  it("ближче за `startClear` у смузі старту машин потоку немає, ближче за `startSide` — і в сусідніх; далі — як завжди", () => {
     const startLane = newRace(0, 0).lane;
     let side = 0;
     let beyond = 0;
@@ -92,6 +106,7 @@ describe("старт гонки: своя смуга вільна (§8.5 «Ви�
             for (const car of race.cars) seen.add(car);
           }
           for (const car of seen) {
+            expect(car.start, `зерно ${seed}, ${difficulty}, ×${traffic}`).toBeGreaterThanOrEqual(RACE.startSide);
             if (car.start < RACE.startClear) {
               expect(car.lane, `зерно ${seed}, ${difficulty}, ×${traffic}`).not.toBe(startLane);
               side++;
@@ -117,6 +132,51 @@ describe("старт гонки: своя смуга вільна (§8.5 «Ви�
         }
       }
     }
+  });
+
+  it("перестроїлися першою дією в сусідню смугу (рецензія 2026-11-03): за секунду реакції без аварії, і гальмо чи повернення рятують", () => {
+    // Кадрами, як у сцені (60 кадрів за секунду): перестроювання — у першому кадрі, далі газ, гальмо чи смуга — за планом.
+    const frame = gameMinutes(1 / 60);
+    const react = gameMinutes(RACE.startReaction);
+    const drive = (
+      steer: -1 | 1,
+      after: { throttle: number; back: boolean },
+      difficulty: Difficulty,
+      traffic: number,
+      seed: number,
+      limit: number,
+    ): number | null => {
+      const race = newRace(1000, seed);
+      let back = false;
+      for (let t = 0; t < limit; t += frame) {
+        const reacted = t >= react;
+        const turn: -1 | 0 | 1 = t === 0 ? steer : reacted && after.back && !back ? (steer === 1 ? -1 : 1) : 0;
+        if (turn !== 0 && t > 0) back = true;
+        if (driveRace(race, frame, { steer: turn, throttle: reacted ? after.throttle : 0 }, difficulty, traffic) === "crash") return t;
+      }
+      return null;
+    };
+    let crashed = 0;
+    for (const difficulty of DIFFICULTIES) {
+      for (const traffic of TRAFFIC) {
+        for (let seed = 1; seed <= 60; seed++) {
+          for (const steer of [-1, 1] as const) {
+            const label = `зерно ${seed}, ${difficulty}, ×${traffic}, смуга ${steer}`;
+            // Котиться далі без гальма — аварія можлива, але не раніше, ніж мине секунда реакції.
+            const coast = drive(steer, { throttle: 0, back: false }, difficulty, traffic, seed, 15);
+            if (coast !== null) {
+              crashed++;
+              expect(coast, label).toBeGreaterThan(react);
+            }
+            // Через секунду загальмували — без аварії; повернулися у свою смугу — теж.
+            expect(drive(steer, { throttle: -1, back: false }, difficulty, traffic, seed, 15), label).toBeNull();
+            expect(drive(steer, { throttle: 0, back: true }, difficulty, traffic, seed, 15), label).toBeNull();
+          }
+        }
+      }
+    }
+    // Машини в сусідніх смугах на старті є: хто котиться в них без гальма, той часто врізається.
+    expect(crashed).toBeGreaterThan(200);
   });
 });
 
