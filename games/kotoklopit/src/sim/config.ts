@@ -1420,6 +1420,16 @@ export const BREEDER = { cats: 3, age: 2, price: { wild: 800, unusual: 700, colo
 export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
 /** Скільки однакових іграшок можна взяти в кошик за раз (§6.4): місця їм не треба. */
 export const SHOP_TOYS_PER_ORDER = 5;
+/**
+ * Що продається на місці (§8.5, «Ліки у ветеринара й лікаря»; рішення автора 2026-11-03): у магазині — увесь каталог (§6.4), у
+ * ветеринара — ліки для котів, у лікаря — ліки для себе. Ціни — як у магазині (`shopPrice`, вікно `SHOP_WINDOW`). Деінде на
+ * місці нічого не продають.
+ */
+export const STORE_GOODS: Partial<Record<Destination, readonly Product[] | "all">> = {
+  shop: "all",
+  vet: ["pills", "drops"],
+  doctor: ["humanMeds"],
+};
 /** Вікно ціни в магазині за складністю (§6.4). */
 export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
   // Правка автора 2026-10-23: зсунуто на 10% у бік знижок, щоб поїздка була варта часу.

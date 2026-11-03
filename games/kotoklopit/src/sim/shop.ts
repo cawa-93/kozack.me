@@ -1,10 +1,11 @@
 // Універсальний магазин (§6.4): один каталог запасів і речей, кошик із кількістю, оплата цілком.
-// Той самий кошик — доставкою з телефона чи на місці в поїздці.
+// Той самий кошик — доставкою з телефона чи на місці в поїздці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
 import { hadCat, spend } from "./character";
-import { SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, THINGS } from "./config";
-import { GOODS, goodsKey, purchase, shopPrice, type Goods } from "./destinations";
+import { PRODUCTS, SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, THINGS } from "./config";
+import { GOODS, goodsKey, purchase, shopModifier, shopPrice, soldHere, type Goods } from "./destinations";
 import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
+import { priceFactor } from "./modifiers";
 import type { GameState, Quality, ThingKind } from "./types";
 
 export { GOODS, goodsKey, type Goods };
@@ -42,10 +43,38 @@ export interface CartLine {
   count: number;
 }
 
+/**
+ * Що показує каталог (§6.4, §8.5): у телефоні — усе, що магазин уже показує (`offered`); на місці — лише те з цього, що
+ * продають там, куди поїхали (`soldHere`: у ветеринара — ліки для котів, у лікаря — ліки для себе).
+ */
+export function catalog(state: GameState, mode: ShopMode): Goods[] {
+  return GOODS.filter((g) => offered(state, g) && (mode === "delivery" || soldHere(state, g)));
+}
+
 /** Ціна штуки: у магазині — сьогоднішня, у телефоні — базова; доставка рахується окремо (§6.4). */
 export function unitPrice(state: GameState, goods: Goods, quality: Quality, mode: ShopMode): number {
   if (mode === "store") return shopPrice(state, goods, quality);
   return "product" in goods ? productPrice(state, goods.product, quality) : THINGS[goods.thing].price[quality];
+}
+
+/** Звичайна ціна штуки (§6.4, таблиця «Ціни»): без модифікатора поїздки й без подій дня. */
+export function regularPrice(goods: Goods, quality: Quality): number {
+  return "product" in goods ? PRODUCTS[goods.product].price[quality] : THINGS[goods.thing].price[quality];
+}
+
+/**
+ * Знижка товару сьогодні, у відсотках, — для бірки «−X%» (§6.4, «Бірка знижки й кошик унизу»; рішення автора 2026-11-03, правило —
+ * рішення виконавця): на скільки сьогоднішня ціна тут нижча за звичайну (`regularPrice`), округлено до відсотка. У сьогоднішню
+ * ціну входять подія дня, що змінює ціну корму (`priceFactor`), і на місці — модифікатор поїздки (`shopModifier`); у телефоні
+ * модифікатора поїздки немає. 0 — бірки немає: подорожчання, знижка менше 1% чи жоден варіант, округлений до гривні, не
+ * дешевший за звичайну ціну.
+ */
+export function discount(state: GameState, goods: Goods, mode: ShopMode): number {
+  const day = "product" in goods ? priceFactor(state, goods.product) : 1;
+  const factor = day * (mode === "store" ? 1 + shopModifier(state, goods) : 1);
+  const percent = Math.round((1 - factor) * 100);
+  if (percent < 1) return 0;
+  return variants(goods).some((q) => unitPrice(state, goods, q, mode) < regularPrice(goods, q)) ? percent : 0;
 }
 
 const same = (a: Goods, b: Goods): boolean => goodsKey(a) === goodsKey(b);
@@ -109,11 +138,15 @@ export function cartTotal(state: GameState, cart: readonly CartLine[], mode: Sho
   return lines.length === 0 ? 0 : goodsTotal(state, lines, mode) + cartDelivery(state, lines, mode);
 }
 
-/** Кошик можна оплатити: усе вміщується й грошей досить. */
+/**
+ * Кошик можна оплатити: усе вміщується й грошей досить. На місці — лише те, що тут продають (`soldHere`, §8.5): у магазині —
+ * усе, у ветеринара — ліки для котів, у лікаря — ліки для себе.
+ */
 export function canCheckout(state: GameState, cart: readonly CartLine[], mode: ShopMode): boolean {
-  if (state.end !== null || (mode === "store" && state.trip?.destination !== "shop")) return false;
+  if (state.end !== null) return false;
   const lines = cart.filter((l) => l.count > 0);
   if (lines.length === 0) return false;
+  if (mode === "store" && lines.some((l) => !soldHere(state, l.goods))) return false;
   if (lines.some((l) => l.count > room(state, cart, l.goods, l.quality))) return false;
   return cartTotal(state, lines, mode) <= state.character.money;
 }

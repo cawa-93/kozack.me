@@ -19,6 +19,7 @@ import {
   SHELTER,
   SHOP_WINDOW,
   STERILIZATION,
+  STORE_GOODS,
   THINGS,
   TRAIT_EFFECTS,
   TRIPS,
@@ -35,7 +36,7 @@ import { priceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekOf } from "./time";
-import type { Cat, DiseaseId, GameState, Product, Quality, ThingKind, VisitLog } from "./types";
+import type { Cat, Destination, DiseaseId, GameState, Product, Quality, ThingKind, VisitLog } from "./types";
 import { changeReputation, isWorkday } from "./work";
 
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
@@ -55,9 +56,25 @@ export function tripCat(state: GameState): Cat | null {
   return state.cats.find((c) => c.id === id) ?? null;
 }
 
-// --- Магазин --------------------------------------------------------------------------------
+// --- Магазин і ліки на місці ----------------------------------------------------------------
 
-/** Модифікатор ціни товару на цю поїздку (§6.4): випадає окремо для кожного товару. */
+/**
+ * Чи продається товар у пункті (§8.5, `STORE_GOODS`; рішення автора 2026-11-03): у магазині — усе, у ветеринара — ліки для
+ * котів, у лікаря — ліки для себе, деінде — нічого.
+ */
+export function soldAt(destination: Destination, goods: Goods): boolean {
+  const stock = STORE_GOODS[destination];
+  if (stock === undefined) return false;
+  return stock === "all" || ("product" in goods && stock.includes(goods.product));
+}
+
+/** Чи продається товар там, куди зараз поїхав персонаж. */
+export const soldHere = (state: GameState, goods: Goods): boolean => state.trip !== null && soldAt(state.trip.destination, goods);
+
+/**
+ * Модифікатор ціни товару на цю поїздку (§6.4): випадає окремо для кожного товару. Ліки у ветеринара й лікаря — так само, як
+ * у магазині (рішення автора 2026-11-03, §8.5): та сама формула й той самий модифікатор, що мали б ці ліки в магазині.
+ */
 export function shopModifier(state: GameState, goods: Goods): number {
   const range = SHOP_WINDOW[state.difficulty];
   const index = GOODS.findIndex((g) => goodsKey(g) === goodsKey(goods));
@@ -70,18 +87,22 @@ export function shopPrice(state: GameState, goods: Goods, quality: Quality): num
   return Math.round(base * (1 + shopModifier(state, goods)));
 }
 
-/** Купити в магазині: речі одразу на своїх місцях, запаси — у ящиках біля входу (§6.4, §8.5). */
+/**
+ * Купити на місці — у магазині чи ліки у ветеринара й лікаря (§8.5): речі одразу на своїх місцях, запаси — у ящиках біля
+ * входу (§6.4, §8.5).
+ */
 export function buyAtShop(state: GameState, goods: Goods, quality: Quality): boolean {
   if ("product" in goods && !canOrderProduct(state, goods.product)) return false;
   return purchase(state, goods, quality);
 }
 
 /**
- * Оплатити й забрати додому одну штуку. Що запасу ще немає в ящиках, перевіряє той, хто купує:
- * кошик перевіряє це один раз, бо після першої упаковки запас уже в ящиках.
+ * Оплатити й забрати додому одну штуку там, де її продають (`soldHere`). Що запасу ще немає в ящиках, перевіряє той, хто купує:
+ * кошик перевіряє це один раз, бо після першої упаковки запас уже в ящиках. Часу на місці покупка не додає: у магазині час —
+ * самі покупки (`TRIPS.shop.visit`), а ліки у ветеринара й лікаря — не послуга (§8.5, рішення виконавця 2026-11-03).
  */
 export function purchase(state: GameState, goods: Goods, quality: Quality): boolean {
-  if (state.trip?.destination !== "shop") return false;
+  if (!soldHere(state, goods)) return false;
   if ("thing" in goods && freeSlots(state, goods.thing) <= 0) return false;
   if (!spend(state, shopPrice(state, goods, quality), spendingOf(goods))) return false;
   // Запаси з магазину, як і доставка, — у ящики біля входу (§6.4).
