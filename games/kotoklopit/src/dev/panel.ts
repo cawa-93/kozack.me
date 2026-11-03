@@ -9,6 +9,7 @@ import type { Address, Chronotype, Difficulty, Product, Quality, Save, StatName 
 import { patienceLevel, positionOf } from "../sim/work";
 import type { Session } from "../session";
 import { DIFFICULTY_TITLES, fill, POSITION_TITLES } from "../texts";
+import { markDeparture } from "../view/departing";
 import { courierNow, crashNow, jumpTo, rebase, setSeed, setTime, skipDays, skipToMonday, sleepNow, type TimeOfDay } from "./commands";
 import { CatsSection } from "./cats";
 import type { Journal } from "./journal";
@@ -18,6 +19,7 @@ import {
   deleteLocalScenario,
   FILE_SCENARIOS,
   hasLegacyPosition,
+  leaveHome,
   localScenarios,
   saveLocalScenario,
   scenarioFromSave,
@@ -481,6 +483,12 @@ export class DevPanel {
     this.session.persistent = false;
     this.session.replace(applyScenario(scenario));
     this.journal.add(`Режим розробки: сценарій «${scenario.name}»`);
+    // Сценарій вирушає від дверей (§8.5 «Виїзд із дому»): день покаже від'їзд від свого будинку, як після «Куди поїхати?».
+    if (scenario.leave !== undefined) {
+      const trip = leaveHome(this.session.save, scenario);
+      if (trip) markDeparture(trip);
+      else this.journal.add(`Режим розробки: сценарій «${scenario.name}» не вирушив від дверей (${scenario.leave})`);
+    }
     if (hasLegacyPosition(scenario)) {
       const { job, character } = this.save.current;
       const title = fill(POSITION_TITLES[job.position] ?? "", character.address);

@@ -1,13 +1,16 @@
 // Виїзд із дому (§8.5 «Виїзд із дому — від'їзд від свого будинку», рішення автора 2026-11-03; `src/view/parking.ts`,
 // `homeDepartureFrame`): з чорного — парковка біля свого будинку, машина задкує з місця, звертає на дорогу носом угору в середню
-// смугу й стає на старті гонки — і без розриву гонка. Вогні вночі (`src/view/racelight.ts`) і позначка «щойно вирушили від
-// дверей» (`src/view/departing.ts`). Без Phaser.
+// смугу й стає на старті гонки — і без розриву гонка. Вогні вночі (`src/view/racelight.ts`), позначка «щойно вирушили від
+// дверей» (`src/view/departing.ts`) і сценарій `scenarios/home-departure.json` (поле `leave`). Без Phaser.
 
 import { describe, expect, it } from "vitest";
 
 import { PALETTE } from "../art/palette";
+import { applyScenario, FILE_SCENARIOS, leaveHome, type Scenario } from "../src/dev/scenarios";
 import { MODIFIERS, RACE } from "../src/sim/config";
+import { deserialize, serialize } from "../src/sim/game";
 import { carAt, driveRace, newRace } from "../src/sim/race";
+import { canLeave } from "../src/sim/trips";
 import type { Difficulty, Race, Trip } from "../src/sim/types";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
 import { RACE_LOT, RACE_TILES } from "../src/view/art/manifest/a14-race";
@@ -43,6 +46,7 @@ import {
   lotLights,
   PARKED_LIGHTS,
   streetPools,
+  tripLightMinute,
 } from "../src/view/racelight";
 import { DESTINATION_ROOFS, laneX, RACE_PLAYER_Y, racePixelsPerUnit, raceScale, steerTilt, tileRows, trafficLook, vergeColumns } from "../src/view/racelook";
 import { DESTINATION_ICONS } from "../src/view/symbols";
@@ -451,5 +455,56 @@ describe("виїзд із дому: лише від дверей", () => {
     expect(takeDeparture(structuredClone(trip))).toBe(false);
     expect(takeDeparture(trip)).toBe(true);
     expect(takeDeparture(trip)).toBe(false);
+  });
+});
+
+describe("сценарій «Виїзд із дому» (scenarios/home-departure)", () => {
+  function scenario(): Scenario {
+    const found = FILE_SCENARIOS["home-departure"];
+    if (!found) throw new Error("немає сценарію home-departure");
+    return found;
+  }
+
+  it("персонажка біля дверей вирушає в магазин, як з «Куди поїхати?»: свіжа гонка, годинник не зрушив; без `leave` — нічого", () => {
+    const found = scenario();
+    expect(found.leave).toBe("shop");
+    const save = applyScenario(found);
+    const minute = save.current.minute;
+    expect(canLeave(save.current)).toBe(true);
+    const trip = leaveHome(save, found);
+    expect(trip).toBe(save.current.trip);
+    expect(trip?.destination).toBe("shop");
+    expect(trip?.phase).toBe("drive");
+    expect(trip?.race.minutes).toBe(0);
+    expect(trip?.race.done).toBe(0);
+    expect(trip?.race.cars).toEqual([]);
+    expect(save.current.minute).toBe(minute);
+    // Світло від'їзду — за годинником гри (`drive`), як у гонці: час не йде.
+    expect(tripLightMinute(save.current, "drive")).toBe(minute);
+    const { leave: _leave, ...without } = found;
+    const other = applyScenario(without);
+    expect(leaveHome(other, without)).toBeNull();
+    expect(other.current.trip).toBeNull();
+  });
+
+  it("на старті гонки видно машини потоку: на від'їзді вони в'їжджають у кадр згори", () => {
+    const save = applyScenario(scenario());
+    const trip = leaveHome(save, scenario());
+    if (!trip) throw new Error("сценарій не вирушив");
+    const start = homeDepartureStart(trip.race, save.current.seed, save.current.difficulty, 1);
+    const end = homeDepartureFrame(HOME_DEPARTURE.ms, 720, start);
+    expect(end.traffic.length).toBeGreaterThanOrEqual(2);
+    expect(homeDepartureFrame(HOME_DEPARTURE.reverseFrom, 720, start).traffic).toEqual([]);
+  });
+
+  it("перезавантаження посеред від'їзду: поїздка з JSON — без позначки, тож одразу гонка", () => {
+    const save = applyScenario(scenario());
+    const trip = leaveHome(save, scenario());
+    if (!trip) throw new Error("сценарій не вирушив");
+    markDeparture(trip);
+    const reloaded = deserialize(serialize(save));
+    expect(reloaded.current.trip).toEqual(trip);
+    if (reloaded.current.trip) expect(takeDeparture(reloaded.current.trip)).toBe(false);
+    expect(takeDeparture(trip)).toBe(true);
   });
 });

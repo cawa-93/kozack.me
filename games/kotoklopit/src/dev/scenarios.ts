@@ -8,7 +8,8 @@ import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Cat, CatSource, GameState, Look, Product, Quality, Save } from "../sim/types";
+import { startTrip } from "../sim/trips";
+import type { Cat, CatSource, Destination, GameState, Look, Product, Quality, Save, Trip } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
@@ -24,6 +25,11 @@ export interface Scenario {
   cats?: CatSpec[];
   /** Стосунки котів сценарію (§9.4): [номер кота, номер кота, значення], номери — з `cats`. */
   relations?: [number, number, number][];
+  /**
+   * Одразу вирушити від дверей у цей пункт, як вибір у «Куди поїхати?» (`leaveHome`): показ починається з виїзду з дому (§8.5
+   * «Виїзд із дому»). Персонаж у стані сценарію має стояти біля дверей.
+   */
+  leave?: Destination;
 }
 
 const DEFAULT_GAME: NewGameOptions = { address: "she", difficulty: "normal", seed: 1 };
@@ -123,6 +129,16 @@ export function applyScenario(scenario: Scenario): Save {
   save.current = state;
   rebase(save);
   return save;
+}
+
+/**
+ * Вирушити від дверей у пункт сценарію (`Scenario.leave`): те саме, що вибір у «Куди поїхати?» (`startTrip`). Повертає поїздку,
+ * якщо вона почалася (тоді режим розробки позначає її як виїзд із дому, `markDeparture`), інакше — null: сценарій без `leave`,
+ * персонаж не біля дверей чи поїхати не можна.
+ */
+export function leaveHome(save: Save, scenario: Scenario): Trip | null {
+  if (scenario.leave === undefined) return null;
+  return startTrip(save.current, scenario.leave) ? save.current.trip : null;
 }
 
 /** Зберегти поточний стан як сценарій. */
