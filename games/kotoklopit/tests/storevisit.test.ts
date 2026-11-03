@@ -4,9 +4,11 @@
 
 import { describe, expect, it } from "vitest";
 
+import { describe as describeEvent } from "../src/dev/journal";
 import { createCat } from "../src/sim/cat";
 import { MODIFIERS, PRODUCTS, SHOP_WINDOW, STORE_GOODS, TRIP_IDLE_MINUTES, TRIPS } from "../src/sim/config";
 import { shopModifier, soldAt, vetExam } from "../src/sim/destinations";
+import { onEvent, type GameEvent } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
@@ -105,6 +107,23 @@ describe("що де продається (§8.5, STORE_GOODS)", () => {
     // Таблетки вже в ящиках: ще раз не купити — ні тут, ні в магазині.
     expect(room(state, [], pills, "premium")).toBe(0);
     expect(canCheckout(state, [line(pills, "premium", 1)], "store")).toBe(false);
+  });
+
+  it("подія «куплено» каже, де купили, — журнал розробки пише пункт, а не «в магазині» (рецензія 2026-11-03)", () => {
+    const events: GameEvent[] = [];
+    const off = onEvent((e) => void events.push(e));
+    try {
+      for (const d of ["shop", "vet", "doctor"] as const) {
+        const state = at(d);
+        const goods = d === "doctor" ? humanMeds : pills;
+        expect(checkout(state, [line(goods, "cheap", 1)], "store"), d).toBe(true);
+        const bought = events.filter((e) => e.type === "bought").at(-1);
+        expect(bought, d).toEqual({ type: "bought", goods: goodsKey(goods), quality: "cheap", destination: d });
+        expect(bought && describeEvent(bought, state), d).toBe(`Куплено (${d}): ${goodsKey(goods)} (cheap)`);
+      }
+    } finally {
+      off();
+    }
   });
 
   it("у лікаря: ліки для себе й здоровому — у ящики; грошей не вистачає — нічого", () => {

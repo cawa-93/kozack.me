@@ -102,7 +102,8 @@ export function buyAtShop(state: GameState, goods: Goods, quality: Quality): boo
  * самі покупки (`TRIPS.shop.visit`), а ліки у ветеринара й лікаря — не послуга (§8.5, рішення виконавця 2026-11-03).
  */
 export function purchase(state: GameState, goods: Goods, quality: Quality): boolean {
-  if (!soldHere(state, goods)) return false;
+  const destination = state.trip?.destination;
+  if (destination === undefined || !soldAt(destination, goods)) return false;
   if ("thing" in goods && freeSlots(state, goods.thing) <= 0) return false;
   if (!spend(state, shopPrice(state, goods, quality), spendingOf(goods))) return false;
   // Запаси з магазину, як і доставка, — у ящики біля входу (§6.4).
@@ -111,7 +112,7 @@ export function purchase(state: GameState, goods: Goods, quality: Quality): bool
     const item = place(state, goods.thing, quality);
     if (item) state.home.items.push(item);
   }
-  emit(state, { type: "bought", goods: goodsKey(goods), quality });
+  emit(state, { type: "bought", goods: goodsKey(goods), quality, destination });
   return true;
 }
 

@@ -198,7 +198,8 @@ export type GameEvent =
   /** Аварія (§8.5): втрати, швидкість у мить аварії й скільки хвилин заберуть документи й ремонт (рішення автора 2026-11-02). */
   | { type: "trip-crashed"; losses: AccidentLoss[]; speed: number; minutes: number }
   | { type: "trip-ended"; destination: Destination }
-  | { type: "bought"; goods: string; quality: Quality }
+  /** Куплено на місці (§8.5): у магазині, а ліки — у ветеринара й лікаря; `destination` — де саме (журнал розробки). */
+  | { type: "bought"; goods: string; quality: Quality; destination: Destination }
   | { type: "vet-exam"; cat: number }
   | { type: "sterilized"; cat: number }
   | { type: "heat"; cat: number }

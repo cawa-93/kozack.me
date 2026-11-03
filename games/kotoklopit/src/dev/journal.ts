@@ -151,7 +151,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
     case "trip-ended":
       return `Удома після поїздки: ${event.destination}`;
     case "bought":
-      return `Куплено в магазині: ${event.goods} (${event.quality})`;
+      // Купують і ліки у ветеринара й лікаря (§8.5), а не лише в магазині.
+      return `Куплено (${event.destination}): ${event.goods} (${event.quality})`;
     case "vet-exam":
       return `Огляд у ветеринара: ${catName(state, event.cat)}`;
     case "sterilized":
