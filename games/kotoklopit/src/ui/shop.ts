@@ -235,9 +235,9 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     remember();
     const lines = filled();
     const sum = cartTotal(state, cart, mode);
-    // Ціни в каталозі — без доставки; доставка — окремо в смузі (§6.4): 10% бази й надбавка, раз на кошик. Машина й ціна без
-    // слова «доставка» (символи замість слів, §11.4): так суми вміщуються в один рядок і на телефоні.
-    const delivery = mode === "delivery" ? ` · 🚗 ${cartDelivery(state, lines, mode)} ₴` : "";
+    // Ціни в каталозі — без доставки; доставка — окремо в смузі (§6.4): 10% бази й надбавка, раз на кошик. Лише з непорожнім
+    // кошиком (порожній нічого не везе) і зі словом «доставка»: 🚗 у тій самій картці ще й «уже їде» (рецензія 2026-11-03).
+    const delivery = mode === "delivery" && lines.length > 0 ? ` · 🚗 доставка ${cartDelivery(state, lines, mode)} ₴` : "";
     total.textContent = `🛒 ${goodsTotal(state, lines, mode)} ₴${delivery}`;
     drawGlyphs(total);
     total.classList.toggle("short", sum > state.character.money);
@@ -245,9 +245,12 @@ export function shopCatalog(state: GameState, mode: ShopMode, options: CatalogOp
     clear.hidden = lines.length === 0;
     const home = lines.length === 0 && options.home !== undefined;
     // «Додому» — лише з порожнім кошиком; з непорожнім на її місці «Купити» (рішення автора 2026-11-03). Мить після покупки —
-    // неактивна «✓ Куплено» (`BOUGHT_PAUSE_MS`).
+    // неактивна «✓ Куплено» (`BOUGHT_PAUSE_MS`). На місці сума кошика — лише у віконці поруч, а не ще й на кнопці (рецензія
+    // 2026-11-03): «Додому», «Купити» й «✓ Куплено» тоді майже однакові завширшки, і кнопка не стрибає. У телефоні на
+    // кнопці — уся сума з доставкою, якої у віконці окремим числом немає.
     const wait = home && settling;
-    pay.textContent = wait ? BOUGHT : home ? "Додому" : sum > 0 ? `${verb} · ${sum} ₴` : verb;
+    const label = mode === "delivery" && sum > 0 ? `${verb} · ${sum} ₴` : verb;
+    pay.textContent = wait ? BOUGHT : home ? "Додому" : label;
     pay.disabled = wait || (!home && !canCheckout(state, cart, mode));
   }
 

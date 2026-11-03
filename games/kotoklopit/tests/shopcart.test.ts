@@ -1,6 +1,6 @@
 // Каталог і кошик унизу (GAME_DESIGN §6.4, «Бірка знижки й кошик унизу»; §8.5, «Ліки у ветеринара й лікаря» і «Картки поїздок
 // без «Поїздка»»; рішення автора 2026-11-03): бірка «−X%» — лише на знижці, рядка зі стрілкою немає; головна кнопка смуги на
-// місці — «Додому» з порожнім кошиком і «Купити · N ₴» з непорожнім; «Очистити» — іконкою, лише з непорожнім кошиком; гроші —
+// місці — «Додому» з порожнім кошиком і «Купити» з непорожнім (сума — у віконці поруч); «Очистити» — іконкою, лише з непорожнім кошиком; гроші —
 // рівно один раз у картці.
 
 import { readFileSync } from "node:fs";
@@ -193,17 +193,21 @@ describe("бірка знижки замість стрілки (§6.4)", () => 
 });
 
 describe("смуга кошика внизу (§6.4)", () => {
-  it("на місці: порожній кошик — «Додому» (поїхати); щось у кошику — «Купити · N ₴» (купити), «Додому» немає", () => {
+  it("на місці: порожній кошик — «Додому» (поїхати); щось у кошику — «Купити» (купити), «Додому» немає; сума — лише у віконці", () => {
     const state = at("shop", 3);
-    const { list, pay, bought, homes } = open(state, "store");
+    const { list, bar, pay, bought, homes } = open(state, "store");
     expect(pay.textContent).toBe("Додому");
+    expect(bar.find("shop-total").textContent).toBe("🛒 0 ₴");
     expect(pay.disabled).toBe(false);
     expect(pay.classList.contains("primary")).toBe(true);
     const plus = list.findAll("step")[1];
     plus?.click();
     const goods = catalog(state, "store")[0];
     const price = goods ? unitPrice(state, goods, "cheap", "store") : 0;
-    expect(pay.textContent).toBe(`Купити · ${price} ₴`);
+    expect(pay.textContent).toBe("Купити");
+    // Сума кошика — один раз, у віконці; доставки на місці немає (рецензія 2026-11-03).
+    expect(bar.find("shop-total").textContent).toBe(`🛒 ${price} ₴`);
+    expect(bar.textContent.split(`${price} ₴`)).toHaveLength(2);
     pay.click();
     expect(homes()).toBe(0);
     expect(bought).toHaveLength(1);
@@ -234,7 +238,7 @@ describe("смуга кошика внизу (§6.4)", () => {
     const { list, bar, pay, homes } = open(state, "store");
     list.findAll("step")[1]?.click();
     expect(bar.find("shop-total").classList.contains("short")).toBe(true);
-    expect(pay.textContent).toMatch(/^Купити · /u);
+    expect(pay.textContent).toBe("Купити");
     expect(pay.disabled).toBe(true);
     pay.click();
     expect(homes()).toBe(0);
@@ -263,15 +267,18 @@ describe("смуга кошика внизу (§6.4)", () => {
     expect(kept.size).toBe(0);
   });
 
-  it("у телефоні — «Замовити» (з порожнім кошиком неактивна), без «Додому»; сума — з доставкою окремо; гроші — у смузі", () => {
+  it("у телефоні — «Замовити · N ₴» (з порожнім кошиком неактивна «Замовити»), без «Додому»; доставка — словом і лише з непорожнім кошиком; гроші — у смузі", () => {
     const state = at(null, 5, 300);
     const { list, bar, pay } = open(state, "delivery", false);
     expect(pay.textContent).toBe("Замовити");
     expect(pay.disabled).toBe(true);
-    expect(bar.find("shop-total").textContent).toMatch(/^🛒 0 ₴ · 🚗 \d+ ₴$/u);
+    // Порожній кошик нічого не везе — і плати за доставку не видно (рецензія 2026-11-03).
+    expect(bar.find("shop-total").textContent).toBe("🛒 0 ₴");
     expect(bar.find("shop-money").textContent).toBe("👛 300 ₴");
     list.findAll("step")[1]?.click();
-    expect(pay.textContent).toMatch(/^Замовити · \d+ ₴$/u);
+    const total = bar.find("shop-total").textContent.match(/^🛒 (\d+) ₴ · 🚗 доставка (\d+) ₴$/u);
+    expect(total).not.toBeNull();
+    expect(pay.textContent).toBe(`Замовити · ${Number(total?.[1]) + Number(total?.[2])} ₴`);
     expect(pay.disabled).toBe(false);
   });
 
@@ -282,7 +289,7 @@ describe("смуга кошика внизу (§6.4)", () => {
     expect([...first.kept.entries()]).toEqual([["pills:premium", 1]]);
     const again = shopCatalog(state, "store", { checkout: () => {}, home: () => {}, kept: first.kept });
     expect(fake(again.list).findAll("shop-count").map((c) => c.textContent)).toEqual(["0", "1", "0", "0"]);
-    expect(fake(again.bar).find("shop-pay").textContent).toMatch(/^Купити · /u);
+    expect(fake(again.bar).find("shop-pay").textContent).toBe("Купити");
   });
 });
 
