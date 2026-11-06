@@ -6,6 +6,7 @@
 import { petOver } from "../../sim/actions";
 import { MINUTES_PER_DAY, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../../sim/config";
 import type { GameEvent } from "../../sim/events";
+import { cleaningTool } from "../../sim/household";
 import { isIll } from "../../sim/illness";
 import { collapseMinute, isDrowsy } from "../../sim/sleep";
 import type { GameState, Item } from "../../sim/types";
@@ -134,7 +135,8 @@ export function personAnim(state: GameState, local: PersonLocal): PersonAnimChoi
     dirty: state.home.clothes <= 0,
   };
   // Накладка рук: кіт на руках, пилосос (ближня рука на ручці, щітка на підлозі — `holdVacuum`), решта — несе перед собою.
-  const overlay: PersonAnimId | null = held === "cat" ? "holdCat" : held === "vacuum" ? "holdVacuum" : held !== null ? "carry" : null;
+  const tool: PersonAnimId = cleaningTool(state) === "vacuum" ? "holdVacuum" : "holdBroom";
+  const overlay: PersonAnimId | null = held === "cat" ? "holdCat" : held === "vacuum" ? tool : held !== null ? "carry" : null;
   const choose = (anim: PersonAnimId, view: ArtView = facing.view, flip = facing.flip): PersonAnimChoice => ({
     anim,
     overlay: PERSON_OWN_ARMS.has(anim) ? null : overlay,

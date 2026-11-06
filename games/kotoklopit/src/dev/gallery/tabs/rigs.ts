@@ -134,10 +134,10 @@ const CARGO_LOOK: Readonly<Record<Exclude<SocketCargo, "cat">, { id: ArtId; stat
 };
 
 /**
- * Накладка рук із пилососом (`holdVacuum`, §8.7, «Пилосос у руках»): у гнізді `held` — пилосос, а не тарілка, кадром ракурсу
+ * Накладка рук із пилососом чи віником (`holdVacuum`, `holdBroom`, §8.7): у гнізді `held` — вони, а не тарілка, кадром ракурсу
  * скелета (щітка на підлозі попереду).
  */
-const VACUUM_ANIM = "holdVacuum";
+const TOOL_ART: Readonly<Record<string, "item/vacuum" | "item/broom">> = { holdVacuum: "item/vacuum", holdBroom: "item/broom" };
 
 /** Що показують частини: запечене компонувальником (як у грі) чи шар атласу (`all` — увесь кадр; у шарованих — заглушка). */
 type Show = FrameLayer | "baked";
@@ -300,8 +300,8 @@ function mount(ctx: GalleryContext): GalleryView {
         baked: state.layer === "baked" ? bakedOf(RIGS.cat) : null,
       });
       cargo = cargoRig;
-    } else if (kind === "held" && state.anim === VACUUM_ANIM) {
-      cargo = addArt(scene, null, "item/vacuum", { view: state.view });
+    } else if (kind === "held" && state.anim in TOOL_ART) {
+      cargo = addArt(scene, null, TOOL_ART[state.anim] ?? "item/vacuum", { view: state.view });
     } else {
       const look = CARGO_LOOK[kind];
       const layer = look.layered ? atlasLayer() : undefined;
@@ -401,7 +401,7 @@ function mount(ctx: GalleryContext): GalleryView {
       state.view = v;
       sprite?.setFacing({ view: v });
       cargoRig?.setFacing({ view: v });
-      if (state.anim === VACUUM_ANIM) setCargo();
+      if (state.anim in TOOL_ART) setCargo();
       saveParams();
     });
     select(main, "Напрям:", [["right", "праворуч"], ["left", "ліворуч"]] as const, state.flip ? "left" : "right", (v) => {
@@ -411,7 +411,7 @@ function mount(ctx: GalleryContext): GalleryView {
     });
     const anims = [...animsOf(state.rig).keys()];
     select(main, "Анімація:", [["", "вихідна поза"], ...anims.map((a) => [a, a] as const)], state.anim, (v) => {
-      const vacuum = state.anim === VACUUM_ANIM || v === VACUUM_ANIM;
+      const vacuum = state.anim in TOOL_ART || v in TOOL_ART;
       state.anim = v;
       const anim = animNow();
       sprite?.play(anim, { from: ctx.time(), blend: state.blend && running ? undefined : 0 });

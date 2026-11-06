@@ -160,6 +160,7 @@ describe("речі в руках (§8.4)", () => {
     for (const view of ["front", "back"] as const) expect(heldView(entry?.views, view)).toBe(view);
     // Речі без ракурсів — один кадр на обидва.
     expect(heldView(artEntry("item/scoop")?.views, "back")).toBeNull();
+    state.home.appliances.vacuum = "cheap";
     // Стоїть, іде, ривок, відмова — руки тримає накладка пилососа (ближня рука на ручці, щітка на підлозі).
     const still = personAnim(state, { moving: false, sleepiness: 0 });
     expect(still.anim).toBe("idle");

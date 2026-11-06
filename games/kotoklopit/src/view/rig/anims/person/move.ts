@@ -45,7 +45,7 @@ import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
 import { ISO_TILE } from "../../../world/projection";
 import { PERSON_RIG } from "../../defs/person";
-import { entryPoint, Rig, type ProportionRef } from "../../rigcore";
+import { entryPoint, Rig, sampleNumber, type ProportionRef } from "../../rigcore";
 import { defineAnims, type AnimOf, type BoneOf, type BoneTracks, type Ease, type Key, type Vec2 } from "../../types";
 
 type PersonBone = BoneOf<typeof PERSON_RIG>;
@@ -659,6 +659,35 @@ function vacuumOverlay(): PersonAnim {
   return vacuumOver({ duration: 2400, loop: true }, NO_TILT);
 }
 
+/** Підмітання (`holdBroom`, §8.7): `ms` — приблизний період помаху, `tilt` — його розмах у кожен бік, градуси. */
+const SWEEP = { ms: 640, tilt: 8 } as const;
+/** Ключів на один помах. */
+const SWEEP_KEYS = 12;
+
+/**
+ * Нахил `floor` із помахами віника в кулаці. Рука стоїть: кінець держака йде дугою майже вздовж поперечної осі підлоги, тож у
+ * ¾ віник лишається на підлозі й мете вбік. Рухати саму руку не можна: на краю розмаху кулак піднімається, і віник відривається
+ * від підлоги. Помахів за основну — ціле число, дробове смикало б віник на стику петлі.
+ */
+function sweepTilts(duration: number, floor: Readonly<Record<ArtView, readonly Key<number>[]>>): Record<ArtView, Key<number>[]> {
+  const cycles = Math.max(1, Math.round(duration / SWEEP.ms));
+  const n = cycles * SWEEP_KEYS;
+  const out = {} as Record<ArtView, Key<number>[]>;
+  for (const view of ["front", "back"] as const) {
+    out[view] = Array.from({ length: n + 1 }, (_, i) => {
+      const t = round((duration * i) / n);
+      const deg = sampleNumber(floor[view], t) + SWEEP.tilt * Math.sin((2 * Math.PI * cycles * i) / n);
+      return k(t, round(Math.max(-VACUUM_TILT_MAX, Math.min(VACUUM_TILT_MAX, deg))), "linear");
+    });
+  }
+  return out;
+}
+
+/** Накладка «підмітає віником» для реєстру й галереї: над вихідним тілом, у грі нахил підбирає `personWithArms`. */
+function broomOverlay(): PersonAnim {
+  return vacuumOver({ duration: 2400, loop: true }, sweepTilts(2400, NO_TILT));
+}
+
 // --- Присідання й пози всього тіла --------------------------------------------------------------
 
 /** Присів біля кота: ноги коротші (стегна до камери) й без повороту — взуття рівно; «таз назад» — нахилом тулуба. */
@@ -937,6 +966,9 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
    * відривалася від підлоги.
    */
   holdVacuum: vacuumOverlay(),
+
+  /** Підмітає віником (GAME_DESIGN §8.7): як `holdVacuum`, але віник безперервно ходить у кулаці з боку в бік. */
+  holdBroom: broomOverlay(),
 
   /**
    * Гладить кота на підлозі: присів глибоко, нахилився, ближня рука вперед і вниз — на спинці кота — і гладить уздовж
@@ -1274,7 +1306,7 @@ export const PERSON_MOVE = defineAnims(PERSON_RIG, {
 
 // --- Основна з накладкою рук -------------------------------------------------------------------
 
-const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay | "holdVacuum", PersonAnim>>();
+const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay | "holdVacuum" | "holdBroom", PersonAnim>>();
 
 /**
  * Основна анімація `base` (її назва — `id`) з накладкою рук (`PersonAnimChoice.overlay`): доріжки рук і кистей основної
@@ -1287,17 +1319,18 @@ const WITH_ARMS = new WeakMap<PersonAnim, Map<PersonArmsOverlay | "holdVacuum", 
  * посковзнувся) з річчю чи котом у руках — так само: тіло реагує, руки тримають.
  */
 export function personWithArms(base: PersonAnim, overlay: PersonAnimId | null, id: PersonAnimId): PersonAnim {
-  if (overlay === null || !(overlay in ARMS_OVERLAYS || overlay === "holdVacuum") || PERSON_OWN_ARMS.has(id)) return base;
+  if (overlay === null || !(overlay in ARMS_OVERLAYS || overlay === "holdVacuum" || overlay === "holdBroom") || PERSON_OWN_ARMS.has(id)) return base;
   let cache = WITH_ARMS.get(base);
   if (!cache) {
     cache = new Map();
     WITH_ARMS.set(base, cache);
   }
-  if (overlay === "holdVacuum") {
-    // Пилосос у руках: ближня рука з пилососом, дальня — від основної, щітка на підлозі (`vacuumTilts`).
+  if (overlay === "holdVacuum" || overlay === "holdBroom") {
+    // Пилосос чи віник у руках: ближня рука з ним, дальня — від основної, щітка на підлозі (`vacuumTilts`).
     const known = cache.get(overlay);
     if (known) return known;
-    const made = vacuumOver(base, vacuumTilts(base));
+    const tilts = vacuumTilts(base);
+    const made = vacuumOver(base, overlay === "holdBroom" ? sweepTilts(base.duration, tilts) : tilts);
     cache.set(overlay, made);
     return made;
   }

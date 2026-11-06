@@ -158,6 +158,14 @@ export const VACUUM_HELD = { frame: { id: "item/vacuum", state: null } as IsoFra
 /** Віник у руках (§8.7): той самий контракт, що в `VACUUM_HELD`. */
 export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame, scale: 1 } as const;
 
+/** Кадри пилу з-під віника (`fx/sweep-dust`) і скільки триває кожен, мс. */
+const SWEEP_DUST = { frames: ["a", "b", "c"], ms: 170 } as const;
+
+/** Кадр пилу з-під віника в мить `time`, мс. */
+export function sweepDustState(time: number): (typeof SWEEP_DUST.frames)[number] {
+  return SWEEP_DUST.frames[Math.floor(time / SWEEP_DUST.ms) % SWEEP_DUST.frames.length] ?? "a";
+}
+
 /** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
 export interface HeldFrame {
   socket: "held" | "rod";

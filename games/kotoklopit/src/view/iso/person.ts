@@ -63,6 +63,7 @@ import {
   newPace,
   nextPace,
   PERSON_DEPTH,
+  sweepDustState,
   personExtras,
   reachDepth,
   shadowScale,
@@ -120,6 +121,9 @@ export class IsoPersonView implements PersonPart {
   /** Базовий масштаб кадру тіні (`addArt`: 1 одиниця арту = 1 px світу) — статура його лише множить. */
   private readonly shadowBase: Vec2;
   private readonly smell: Phaser.GameObjects.Image;
+  /** Пил з-під віника (§8.7) і його поточний кадр: кадр міняється рідше, ніж малюється світ. */
+  private readonly sweepDust: Phaser.GameObjects.Image;
+  private sweepDustShown: string | null = null;
   private readonly cargo: Record<"held" | "rod", Cargo>;
   /** Паличка вудочки в руці під час гри — обтята (без мотузки й пір'я). */
   private readonly rodCrop: Crop = { frame: null };
@@ -205,6 +209,7 @@ export class IsoPersonView implements PersonPart {
     this.shadowBase = { x: this.shadow.scaleX, y: this.shadow.scaleY };
     ctx.layer.add(this.sprite);
     this.smell = addArt(scene, ctx.layer, "fx/smell", { state: "a" }).setVisible(false);
+    this.sweepDust = addArt(scene, ctx.layer, "fx/sweep-dust", { state: "a" }).setVisible(false);
     this.cargo = {
       held: this.socketImage("held", { id: "item/dish/meal", state: "cheap" }),
       rod: this.socketImage("rod", { id: "item/toy/cheap", state: "hand" }),
@@ -233,6 +238,7 @@ export class IsoPersonView implements PersonPart {
     this.shadow.setDepth(d + PERSON_DEPTH.shadow);
     this.sprite.setDepth(d + PERSON_DEPTH.body);
     this.smell.setDepth(d + PERSON_DEPTH.smell);
+    this.sweepDust.setDepth(d + PERSON_DEPTH.smell);
   }
 
   update(state: GameState, frame: WorldFrame): void {
@@ -292,8 +298,21 @@ export class IsoPersonView implements PersonPart {
       setArt(this.smell, "fx/smell", { state: Math.floor(time / SMELL_MS) % 2 === 0 ? "a" : "b" });
       this.smell.setPosition(this.head.x, this.head.y + ANCHOR_GAP);
     }
+    this.updateSweepDust(time);
     if (this.hidden) this.point.hide();
     else this.point.place(this.at.x, this.at.y);
+  }
+
+  /** Пил із-під віника (§8.7): лише поки віник у руках, у точці, де він торкається підлоги. */
+  private updateSweepDust(time: number): void {
+    const sweeping = this.brushShown && this.cargo.held.key.startsWith("item/broom|");
+    this.sweepDust.setVisible(sweeping);
+    if (!sweeping) return;
+    this.sweepDust.setPosition(this.brushAt.x, this.brushAt.y);
+    const state = sweepDustState(time);
+    if (state === this.sweepDustShown) return;
+    this.sweepDustShown = state;
+    setArt(this.sweepDust, "fx/sweep-dust", { state });
   }
 
   /**
@@ -592,6 +611,7 @@ export class IsoPersonView implements PersonPart {
     for (const cargo of Object.values(this.cargo)) cargo.image.destroy();
     this.shadow.destroy();
     this.smell.destroy();
+    this.sweepDust.destroy();
     this.line.destroy();
     this.feather.destroy();
     this.arm?.destroy();

@@ -7,7 +7,9 @@ import { describe, expect, it } from "vitest";
 import { ICON_NAMES } from "../src/view/iconnames";
 import { PERSON_OVERLAYS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
-import { heldFrame } from "../src/view/iso/personlook";
+import { newGame } from "../src/sim/game";
+import { personAnim } from "../src/view/anim/personanim";
+import { heldFrame, sweepDustState } from "../src/view/iso/personlook";
 import type { ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_MOVE, personVacuumBrush, personWithArms } from "../src/view/rig/anims/person/move";
@@ -87,6 +89,19 @@ describe("пилосос: кадри", () => {
     const held = { kind: "vacuum" } as const;
     expect(heldFrame(held, null, "broom")?.frame.id).toBe("item/broom");
     expect(heldFrame(held, null, "vacuum")?.frame.id).toBe("item/vacuum");
+  });
+
+  it("накладка за інструментом: віник підмітає, пилосос ні", () => {
+    const state = newGame({ address: "she", difficulty: "normal", seed: 8 }).current;
+    state.character.held = { kind: "vacuum", minutes: 0 };
+    expect(personAnim(state, { moving: false, sleepiness: 0 }).overlay).toBe("holdBroom");
+    state.home.appliances.vacuum = "cheap";
+    expect(personAnim(state, { moving: false, sleepiness: 0 }).overlay).toBe("holdVacuum");
+  });
+
+  it("пил з-під віника йде по колу всіх кадрів `fx/sweep-dust`", () => {
+    const frames = new Set(Array.from({ length: 30 }, (_, i) => sweepDustState(i * 60)));
+    expect([...frames].sort()).toEqual(artEntry("fx/sweep-dust")?.states);
   });
 });
 
@@ -177,6 +192,48 @@ describe("пилосос у руках: накладка `holdVacuum`", () => {
     const b = order(back.evaluate(0));
     expect(b.indexOf("held")).toBeLessThan(b.indexOf("torso"));
     expect(b.indexOf("arm-near")).toBeGreaterThan(b.indexOf("held"));
+  });
+
+  it("віник мете з боку в бік: кулак там само, де з пилососом, нахил у межах, петля не смикається", () => {
+    for (const view of VIEWS) {
+      for (const name of ["idle", "walk", "trudge", "limp"] as const) {
+        const broom = personWithArms(PERSON_MOVE[name], "holdBroom", name) as LooseAnim;
+        const vacuum = personWithArms(PERSON_MOVE[name], "holdVacuum", name) as LooseAnim;
+        const a = rigFor(view, true);
+        const b = rigFor(view, true);
+        a.play(broom, 0, { blend: 0 });
+        b.play(vacuum, 0, { blend: 0 });
+        const xs: number[] = [];
+        for (let i = 0; i <= 80; i++) {
+          const t = (broom.duration * i) / 80;
+          a.evaluate(t);
+          b.evaluate(t);
+          const swept = brushAt(a, view);
+          const still = brushAt(b, view);
+          const label = `${name} ${view} @${Math.round(t)}`;
+          xs.push(swept.x - still.x);
+          expect(Math.abs(swept.rot), label).toBeLessThanOrEqual(28.01);
+          // Гніздо сидить у кисті трохи осторонь її оберту, тож ледь ворушиться разом із віником.
+          expect(Math.hypot(swept.fist.x - still.fist.x, swept.fist.y - still.fist.y), label).toBeLessThan(1.5);
+        }
+        expect(Math.max(...xs) - Math.min(...xs), `${name} ${view}`).toBeGreaterThan(10);
+        expect(Math.abs((xs[0] ?? 0) - (xs.at(-1) ?? 0)), `${name} ${view}`).toBeLessThan(1);
+      }
+    }
+  });
+
+  it("пилосос не підмітає: рука стоїть, щітка їде лише з ходою", () => {
+    for (const view of VIEWS) {
+      const made = personWithArms(PERSON_MOVE.idle, "holdVacuum", "idle") as LooseAnim;
+      const rig = rigFor(view, true);
+      rig.play(made, 0, { blend: 0 });
+      const xs: number[] = [];
+      for (let t = 0; t <= made.duration; t += made.duration / 60) {
+        rig.evaluate(t);
+        xs.push(brushAt(rig, view).x);
+      }
+      expect(Math.max(...xs) - Math.min(...xs), view).toBeLessThan(6);
+    }
   });
 
   it("дальня рука — від основної: у ході махає, як без пилососа", () => {

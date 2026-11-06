@@ -88,9 +88,9 @@ export const PERSON_ANIM_GROUPS = {
    * чи подряпали (разова), хворий (застуда: стоїть, шмигає носом), кульгає (травма), виснажений (стоїть і плететься — `trudge`),
    * відмова (разова: розводить руками), спіткнувся об кота чи збив кіт (разова), посковзнувся (разова), бере кота на руки й
    * опускає (разові). Ще — тримає вертикальний пилосос (накладка рук `holdVacuum`: ближня рука на ручці `item/vacuum` у гнізді
-   * `held`, щітка на підлозі попереду; рішення автора 2026-11-02, GAME_DESIGN §8.7).
+   * `held`, щітка на підлозі попереду; GAME_DESIGN §8.7) і віник (`holdBroom`: те саме, але він безперервно ходить з боку в бік).
    */
-  move: ["idle", "walk", "dash", "carry", "holdCat", "holdVacuum", "pet", "rod", "dizzy", "bitten", "sick", "limp", "exhausted", "trudge", "refuse", "trip", "slip", "pickUp", "putDown"],
+  move: ["idle", "walk", "dash", "carry", "holdCat", "holdVacuum", "holdBroom", "pet", "rod", "dizzy", "bitten", "sick", "limp", "exhausted", "trudge", "refuse", "trip", "slip", "pickUp", "putDown"],
   /**
    * N4b «Персонаж — справи» → `rig/anims/person/chores.ts`: працює сидячи за комп'ютером, нарада (летучка й важлива нарада:
    * говорить у камеру), їсть за столом, ліки (разова: п'є таблетку), чистить лоток, прибирає безлад, пралька (разова:
@@ -143,7 +143,7 @@ export type PersonOneShotId = keyof typeof PERSON_ONE_SHOT_MS;
 export const PERSON_CONTACT_MS = { take: 170, put: 260, trash: 280, bowl: 330 } as const satisfies Partial<Record<PersonOneShotId, number>>;
 
 /** Накладки персонажа: руки з річчю, котом чи пилососом поверх ходьби, стояння, ривка. */
-export const PERSON_OVERLAYS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["carry", "holdCat", "holdVacuum"]);
+export const PERSON_OVERLAYS: ReadonlySet<PersonAnimId> = new Set<PersonAnimId>(["carry", "holdCat", "holdVacuum", "holdBroom"]);
 
 /**
  * Анімації, які самі ведуть руки, — накладки рук (`PERSON_OVERLAYS`) не беруть: `personAnim` дає для них `overlay: null`, і
