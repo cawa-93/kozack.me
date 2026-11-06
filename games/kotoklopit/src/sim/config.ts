@@ -632,8 +632,8 @@ export const JEALOUSY = { near: 2, leave: 0.5, lapLevel: 2, comeStep: 0.25, conf
 export const TERRITORY = { enemyLevel: 1, guardStep: 0.3, guardReach: 2, guardRelation: -3, guardPause: 30, guardLevel: 2, guardMinutes: 10, surpriseNeed: 95, surpriseChance: 0.3, shareEvery: 30 } as const;
 /** «Турбота про кошенят» (§9.4, §9.12). */
 export const NURTURING = { relationStep: 10, groomStep: 0.2, groomMood: 2, groomRelation: 1, hugStep: 1.5, warmPerHour: 0.5, motherMood: 1, swatReach: 1.2, swatStep: 0.5, swatMood: -2, swatPause: 60, observeEvery: 60 } as const;
-/** Ваги варіантів, коли кіт хоче гратися; `traitStep` — риса. */
-export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5 } as const;
+/** Ваги варіантів, коли кіт хоче гратися; `traitStep` — риса; від голоду `hungryFrom` вага крадіжки × `hungrySteal`. */
+export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5, hungryFrom: 60, hungrySteal: 2 } as const;
 /** Дрібнички на столах (§9.12): `repair` — до ремонту. */
 export const KNOCKING = { weight: 0.15, sniffStep: 0.5, sniffMinutes: 0.5, mugBreaks: 0.5, repair: 2, ignoredMinutes: 5, attentionStep: 0.2, reach: 6 } as const;
 /** «Допитливість» (§9.12). */
@@ -996,8 +996,8 @@ export const MODIFIERS = {
   /** Множник довжини дороги: інакше обережний водій їхав би так само довго. */
   road: { traffic: 1.3, "empty-roads": 0.8 } as Record<string, number>,
   catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
-  /** Виставка: здоровий глузд призу × `DIFFICULTY.catSanity` (§6.2), гроші — ні. */
-  show: { fee: 20, mood: -5, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
+  /** Виставка: `pedigree` і `luck` (випадково, до цього числа) — у бал; здоровий глузд призу × `DIFFICULTY.catSanity` (§6.2), гроші — ні. */
+  show: { fee: 20, mood: -5, pedigree: { pure: 0.5, half: 0.25 }, luck: 0.3, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
   /** × репутація за годину посади. */
   officeAbsent: -5,
   /** Модифікатори тижня; `vacationPayHours` — годин оплати. */
@@ -1173,8 +1173,8 @@ export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
 export const COMPUTER_SLEEP = { base: 1, step: 2, helperStep: 0.5 } as const;
 /** Прогнали з місця (§9.12). */
 export const SHOO = { mood: -3, love: -2 } as const;
-/** Шерстяна грудка (§9.12): `perHour` — шанс; `wake*` — у спільній стелі нічних побудок. */
-export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
+/** Шерстяна грудка (§9.12): `perHour` — шанс; `night` — множник із години `nightFrom` до години `nightTo`; `wake*` — у спільній стелі нічних побудок. */
+export const HAIRBALL = { perHour: 1 / 72, night: 2, nightFrom: 23, nightTo: 5, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
 /** «Мітки» (§9.8, §9.12): `mood`, `crowd`, `newCatDays` — тригери. */
 export const MARKING = { triggerPerHour: 1 / 48, calmPerHour: 1 / 144, mood: 50, newCatDays: 3, crowd: 4, minutes: 1 } as const;
 /** Шанс блювоти за одиницю «Швидкості їжі». */

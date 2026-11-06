@@ -195,7 +195,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   settleWeight(cat, minutes);
   // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
   const hour = hourOf(state.minute);
-  const night = hour >= 23 || hour < 5;
+  const night = hour >= HAIRBALL.nightFrom || hour < HAIRBALL.nightTo;
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   // Безшерстий шерсті не ковтає — і грудок не зригує (перевірка розмноження 2026-10-28).
   const rate =
@@ -1232,7 +1232,7 @@ function choosePlay(state: GameState, cat: Cat, rng: Rng, context: CatContext): 
   const food = dishes(state, true).filter((d) => d.dish.kind !== "burnt");
   const steal = food[rng.int(0, food.length - 1)];
   if (steal) {
-    const hungry = cat.needs.hunger >= 60 ? 2 : 1;
+    const hungry = cat.needs.hunger >= MISCHIEF.hungryFrom ? MISCHIEF.hungrySteal : 1;
     allowed("kitchen", steal.id, MISCHIEF.steal * traitFactor(cat, "thief", MISCHIEF.traitStep) * hungry, active(() => start(cat, "steal", objectTile(steal.id), 1, steal.id)));
   }
   // Іграшку під меблями чи в зубах в іншого кота не поганяєш (§9.12, «Подарунки й схованки»).

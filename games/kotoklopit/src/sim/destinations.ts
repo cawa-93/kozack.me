@@ -313,9 +313,9 @@ export function enterShow(state: GameState, rng: Rng): number | null {
   // Три години на виставці — лише з участю (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6).
   trip.visit += TRIPS.show.visit;
   const [a, b] = cat.breed;
-  const pedigree = a === b && a !== MIXED ? 0.5 : a !== MIXED || b !== MIXED ? 0.25 : 0;
+  const pedigree = a === b && a !== MIXED ? show.pedigree.pure : a !== MIXED || b !== MIXED ? show.pedigree.half : 0;
   // «Душа компанії» спокійно тримається перед суддями, «Шипить на гостей» — навпаки (§9.12, «Гості»).
-  const score = cat.mood / 100 + pedigree + rng.next() * 0.3 + GUESTS.showStep * traitLevel(cat, "guests");
+  const score = cat.mood / 100 + pedigree + rng.next() * show.luck + GUESTS.showStep * traitLevel(cat, "guests");
   changeMood(state, cat, show.mood, "виставка");
   const prize = show.prizes.find((p) => score >= p.score);
   (trip.log ??= { exam: null, done: [] }).done.push(`show:${prize?.money ?? 0}`);
