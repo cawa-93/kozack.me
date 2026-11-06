@@ -37,7 +37,7 @@ import { collectAds, giveAwayBlocker, oldAgeDeaths, zeroHealthDeaths } from "./f
 import { objectById, roomAt } from "./home";
 import { initRelations, nightlyRelations } from "./relations";
 import { loudNoise } from "./noise";
-import { conceive, giveBirth, inHeat, isNewborn, nightlyStates } from "./reproduction";
+import { conceive, giveBirth, inHeat, isNewborn, leaveNest, nightlyStates } from "./reproduction";
 import { chooseWeekModifier, startModifiers } from "./modifiers";
 import { createRng, deriveSeed, seedDay, stateRng, streamSeed, type Rng } from "./rng";
 import { sleepSpeedAfter, wakeMinute } from "./sleep";
@@ -361,6 +361,7 @@ function ageCats({ state, rng }: Night): void {
     if (!ageDue(state, cat)) continue;
     ageCat(state, cat, rng);
     agingDiseases(state, cat, rng);
+    leaveNest(cat);
   }
 }
 
