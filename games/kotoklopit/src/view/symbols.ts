@@ -2,6 +2,7 @@
 // перевірити, що кожна відмова має свою іконку.
 
 import type { GameEvent, HissCause, Need, Refusal } from "../sim/events";
+import { movableItem } from "../sim/targets";
 import type { Cat, Destination, Dish, GameState, Item, Product, StatName, ThingKind } from "../sim/types";
 import type { IconName, Mark } from "./iconnames";
 import type { DiseaseId, IllnessId } from "../sim/types";
@@ -125,6 +126,15 @@ export const STATE_ICONS = {
 export function showerIcon(activity: GameState["character"]["activity"], power: boolean): IconName | null {
   if (activity?.kind !== "use" || activity.inside !== true) return null;
   return !power && activity.bath !== true ? STATE_ICONS.coldShower : STATE_ICONS.shower;
+}
+
+/** Іконка на кнопці перестановки (§10): річ у руках чи та, яку візьмуть; null — кнопки немає. */
+export function carryIcon(state: GameState): IconName | null {
+  const { held, activity } = state.character;
+  if (held?.kind === "thing") return THING_ICONS[held.item.kind];
+  if (held !== null || activity !== null) return null;
+  const item = movableItem(state);
+  return item ? THING_ICONS[item.kind] : null;
 }
 
 /** Іконка речі в руках чи на місці (§11.4): та сама, що скрізь у грі. */

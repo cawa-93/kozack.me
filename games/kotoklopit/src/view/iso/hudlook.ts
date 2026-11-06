@@ -44,6 +44,8 @@ export const TOUCH_ART = {
   action: "ui/touch/action",
   /** Кнопка ривка (радіус 46): `ready` і `cooldown`. */
   dash: "ui/touch/dash",
+  /** Кнопка перестановки речі (радіус 46): порожній диск під іконкою речі. */
+  carry: "ui/touch/carry",
 } as const satisfies Record<string, ArtId>;
 
 // Числа, зняті з SVG A13 (`HUD_BAND`, `HUD_BAR_ART`, `HUD_STAT_ART`): у маніфесті їх немає, а код кладе кадри за
@@ -182,6 +184,7 @@ export const TOUCH_ALPHA = {
   knob: 0.6,
   action: { idle: 0.55, held: 0.85 },
   dash: { ready: 0.55, cooldown: 0.35 },
+  carry: 0.75,
 } as const;
 
 /** Кольори шкал показників — з палітри арту: здоров'я червоне, ситість помаранчева, гігієна синя, глузд сливовий. */

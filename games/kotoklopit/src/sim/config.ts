@@ -875,8 +875,11 @@ export const HOUSEHOLD = {
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
-/** Перестановка речей (§8.7), клітинки: точка перед персонажем, біля якої шукають вільну клітинку, і найдальший центр клітинки. */
-export const MOVING = { ahead: 0.9, reach: 1.6 } as const;
+/**
+ * Перестановка речей (§8.7), клітинки: `take` — до краю речі, яку беруть; `ahead` — точка перед персонажем, біля якої шукають вільну
+ * клітинку; `reach` — найдальший центр такої клітинки. `take` дістає сусідню клітинку навскіс: щойно поставлену річ можна взяти знову.
+ */
+export const MOVING = { take: 1, ahead: 0.9, reach: 1.6 } as const;
 /** Пилосос у руках (§8.1, §8.7). */
 export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10 } as const;
 /**

@@ -5,7 +5,7 @@
 // тому, як персонаж іде на екрані). Перевіряє `tests/isoperson.test.ts`.
 
 import type { GameEvent } from "../../sim/events";
-import type { CleaningTool, Item } from "../../sim/types";
+import type { CleaningTool, Item, PlacedItem } from "../../sim/types";
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { ArtView } from "../art/types";
@@ -14,7 +14,7 @@ import type { PERSON_RIG } from "../rig/defs/person";
 import type { AnimOf } from "../rig/types";
 import type { Point } from "../world/part";
 import { ISO_DEPTH_SLOT } from "./depth";
-import { dishFrame, type IsoFrame } from "./looks";
+import { dishFrame, feederFrame, placedFrame, type IsoFrame } from "./looks";
 import { NO_EXTRAS, type MixExtras } from "./personmix";
 
 type PersonAnim = AnimOf<typeof PERSON_RIG>;
@@ -158,6 +158,9 @@ export const VACUUM_HELD = { frame: { id: "item/vacuum", state: null } as IsoFra
 /** Віник у руках (§8.7): той самий контракт, що в `VACUUM_HELD`. */
 export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame, scale: 1 } as const;
 
+/** Річ котячого кутка в руках (§8.7): той самий кадр, що на підлозі; велику несуть меншою, інакше вона закрила б персонажа. */
+const THING_HELD: Record<PlacedItem["kind"], number> = { bowl: 1, water: 1, litter: 0.62, house: 0.55, scratcher: 0.5 };
+
 /** Кадри пилу з-під віника (`fx/sweep-dust`) і скільки триває кожен, мс. */
 const SWEEP_DUST = { frames: ["a", "b", "c"], ms: 170 } as const;
 
@@ -178,7 +181,8 @@ export interface HeldFrame {
 /**
  * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
  * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
- * чи віник (`held`, `VACUUM_HELD`, `BROOM_HELD` за `tool`; кадр — з ракурсом персонажа, `heldView`); з порожніми руками в анімації телефону (`anim` — `phone`) —
+ * чи віник (`held`, `VACUUM_HELD`, `BROOM_HELD` за `tool`; кадр — з ракурсом персонажа, `heldView`), річ котячого кутка (`held`,
+ * миска з годівницею — кадром годівниці); з порожніми руками в анімації телефону (`anim` — `phone`) —
  * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
 export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom"): HeldFrame | null {
@@ -198,6 +202,8 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, t
       return { socket: "held", frame: dishFrame(item), scale: 1 };
     case "vacuum":
       return tool === "vacuum" ? { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale } : { socket: "held", frame: BROOM_HELD.frame, scale: BROOM_HELD.scale };
+    case "thing":
+      return { socket: "held", frame: item.feeder ? feederFrame(item.feeder) : placedFrame(item.item), scale: THING_HELD[item.item.kind] };
     default:
       return null;
   }

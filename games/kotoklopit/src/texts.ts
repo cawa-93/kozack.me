@@ -318,7 +318,7 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation: str
 };
 
 /** Керування на титулці першого дня — єдине, чого гра не показує сама (§11.3а). */
-export const CONTROLS_KEYBOARD = "WASD — рух · Пробіл — дія · Shift — ривок · Q — телефон";
+export const CONTROLS_KEYBOARD = "WASD — рух · Пробіл — дія · Shift — ривок · F — переставити річ · Q — телефон";
 export const CONTROLS_TOUCH = "Ліворуч — рух · Праворуч — дія й ривок";
 /** Керування в гонці (§8.5): у вкладці «Гра» телефона, щоб його можна було перечитати (загальна ревізія 2026-10-29). */
 export const CONTROLS_RACE_KEYBOARD = "У гонці: W — газ · S — гальмо · A, D — смуга";

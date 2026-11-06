@@ -11,7 +11,7 @@ import { robotProgress } from "../../sim/household";
 import { powerOut } from "../../sim/modifiers";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
-import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
+import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
 import { isWorking } from "../../sim/work";
 import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
 import { wallKind } from "../art/manifest/lib/geometry";
@@ -370,22 +370,26 @@ export function litterFrame(item: LitterItem): IsoFrame {
   return frame(`item/litter/${item.quality}`, `${item.litter}${use}`);
 }
 
-/** Кадр речі котячого кутка; іграшка — на підлозі чи загнана під диван або холодильник (видно лише пір'їнку). */
-export function itemFrame(state: GameState, item: HomeItem): IsoFrame {
+/** Кадр речі на клітинці, коли нею ніхто не користується (§8.7): у руках персонажа й на місці, куди вона стане. */
+export function placedFrame(item: PlacedItem): IsoFrame {
   switch (item.kind) {
     case "bowl":
-      return bowlFrame(item, bowlEaten(state, item) ?? 0);
+      return bowlFrame(item);
     case "water":
       return waterFrame(item);
     case "litter":
       return litterFrame(item);
-    case "toy":
-      return frame(`item/toy/${item.quality}`, item.hidden !== undefined ? "hidden" : "floor");
     case "house":
       return frame(`item/house/${item.quality}`);
     case "scratcher":
       return frame(`item/scratcher/${item.quality}`);
   }
+}
+
+/** Кадр речі котячого кутка; іграшка — на підлозі чи загнана під диван або холодильник (видно лише пір'їнку). */
+export function itemFrame(state: GameState, item: HomeItem): IsoFrame {
+  if (item.kind === "toy") return frame(`item/toy/${item.quality}`, item.hidden !== undefined ? "hidden" : "floor");
+  return item.kind === "bowl" ? bowlFrame(item, bowlEaten(state, item) ?? 0) : placedFrame(item);
 }
 
 /** Автогодівниця (§9.12): що у віконці бункера — вид корму й мало/повно (до половини — `low`); порожня — `empty`. */

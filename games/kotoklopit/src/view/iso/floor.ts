@@ -15,6 +15,7 @@ import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { CARRIER_SPOT, itemPoint, ROBOT_DOCK, slotCenter } from "../../sim/home";
 import { cleaningTool, FUR_SPOTS, robotAt, tuftCat, tuftsOf } from "../../sim/household";
+import { thingSpot } from "../../sim/moving";
 import { VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
@@ -23,9 +24,10 @@ import { isoItemLook, type IsoFootprint } from "../world/objects";
 import type { Point, WorldFrame, WorldPart } from "../world/part";
 import { ISO } from "../world/projection";
 import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } from "./depth";
+import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, itemFrame, messFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -34,6 +36,9 @@ const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
 
 /** Ґратки переноски — над нею (у її проміжку): кіт, що спить у переносці (`catspot.ts`), — між нею й ґратками. */
 export const CARRIER_GRATE_DEPTH = ON.grate;
+
+/** Наскільки видно річ на клітинці, куди вона стане з рук (§8.7). */
+const GHOST_ALPHA = 0.6;
 
 /** Автогодівниця стоїть позаду своєї миски на тій самій клітинці: для порядку — на стільки клітинок далі. */
 const FEEDER_BEHIND = 0.3;
@@ -108,6 +113,7 @@ interface Spot {
 export class IsoFloorView implements WorldPart {
   private readonly depth: IsoDepth;
   private readonly glow: IsoHighlight;
+  private readonly placeMark: PlaceMark;
   /**
    * Речі котячого кутка за id, безлад за id, автогодівниці за місцем миски, дрібнички за видом, жмути шерсті за місцем
    * (`FUR_SPOTS`), пил на підлозі за місцем (`DUST_SPOTS`).
@@ -137,6 +143,7 @@ export class IsoFloorView implements WorldPart {
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
     this.glow = new IsoHighlight(ctx.scene, ctx.layer, ctx.world);
+    this.placeMark = new PlaceMark(ctx.scene, ctx.layer, this.depth);
   }
 
   /** Створити річ із кадром `frame` і точкою в реєстрі (`options` — пласка, півширина, id). */
@@ -239,6 +246,7 @@ export class IsoFloorView implements WorldPart {
     }
 
     this.drawHousehold(state);
+    this.drawThingSpot(state);
 
     // Безлад (§9.12): пласкі плями під котами й персонажем.
     for (const mess of home.messes) {
@@ -329,6 +337,26 @@ export class IsoFloorView implements WorldPart {
     // Вертикальний пилосос (§8.7, «Пилосос у руках»): стоїть там, де його поставили; у руках його малює персонаж (`item/vacuum`).
     const vacuum = home.vacuumAt;
     if (vacuum) this.single(VACUUM_TARGET, TOOL_FRAME[cleaningTool(state)], vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
+  }
+
+  /** Поки річ у руках, видно, де вона стане (§8.7): напівпрозора річ і контур клітинки. Поставити нікуди — нічого не видно. */
+  private drawThingSpot(state: GameState): void {
+    const held = state.character.held;
+    const place = held?.kind === "thing" ? thingSpot(state) : null;
+    if (held?.kind !== "thing" || place === null) {
+      this.placeMark.hide();
+      return;
+    }
+    const { kind, quality } = held.item;
+    const look = isoItemLook(kind, quality);
+    const at = { x: place.x + 0.5, y: place.y + 0.5 };
+    const ghost = this.single(`ghost:${kind}:${quality}`, placedFrame(held.item), at, look.height, { half: look.half });
+    this.extra(ghost, "feeder", held.feeder ? feederFrame(held.feeder) : null, -ON.overlay);
+    const fountain = kind === "water" ? state.home.appliances.fountain : null;
+    this.extra(ghost, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: "on" } : null, ON.overlay);
+    ghost.image.setAlpha(GHOST_ALPHA);
+    for (const extra of ghost.extras.values()) extra.image.setAlpha(GHOST_ALPHA);
+    this.placeMark.show(at);
   }
 
   private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {

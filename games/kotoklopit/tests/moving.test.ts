@@ -14,6 +14,9 @@ import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { itemTargetId, movableItem } from "../src/sim/targets";
 import type { BowlItem, Cat, CatActKind, CarriedThing, Feeder, GameState, HomeItem, LitterItem, PlacedItem, Save, Vec, WaterItem } from "../src/sim/types";
+import { heldFrame } from "../src/view/iso/personlook";
+import { highlightTarget } from "../src/view/iso/markslayout";
+import { carryIcon, THING_ICONS } from "../src/view/symbols";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -145,6 +148,24 @@ describe("поставити річ (§8.7)", () => {
     expect(state.character.held).toBeNull();
   });
 
+  it("щойно поставлену річ можна одразу взяти знову, не сходячи з місця", () => {
+    const save = game();
+    const state = save.current;
+    const box = item(state, "litter");
+    lift(save, box);
+    for (const facing of [
+      { x: 1, y: 0 },
+      { x: 0.7071, y: 0.7071 },
+      { x: -0.7071, y: 0.7071 },
+    ]) {
+      stand(state, { x: 6.5, y: 8.5 }, facing);
+      moveThing(state);
+      expect(state.character.held).toBeNull();
+      moveThing(state);
+      expect(state.character.held?.kind).toBe("thing");
+    }
+  });
+
   it("дія теж ставить річ: окрему кнопку шукати не треба", () => {
     const save = game();
     const state = save.current;
@@ -243,6 +264,51 @@ describe("поставити річ (§8.7)", () => {
       moveThing(state);
       expect(roomAt(itemPoint(state.home.items.find((i) => i.id === box.id) as HomeItem))).toBe(room);
     }
+  });
+});
+
+describe("вигляд (§8.7, §10)", () => {
+  const things: PlacedItem[] = [
+    { id: 1, kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null, sterile: false },
+    { id: 2, kind: "water", quality: "premium", slot: "water-1", water: 1 },
+    { id: 3, kind: "litter", quality: "premium", slot: "litter-1", litter: "cheap", uses: 2 },
+    { id: 4, kind: "house", quality: "cheap", slot: "house-1" },
+    { id: 5, kind: "scratcher", quality: "premium", slot: "scratcher-1" },
+  ];
+
+  it("кожну річ персонаж тримає в руках", () => {
+    for (const thing of things) expect(heldFrame({ kind: "thing", item: thing }), thing.kind).toMatchObject({ socket: "held" });
+  });
+
+  it("миску з годівницею несуть разом: у руках видно годівницю", () => {
+    const feeder: Feeder = { slot: "bowl-1", quality: "premium", food: 5, foodQuality: "cheap", sterile: false };
+    expect(heldFrame({ kind: "thing", item: things[0] as BowlItem, feeder })?.frame.id).toBe("item/feeder/premium");
+  });
+
+  it("кнопка видна біля речі й з річчю в руках, а з іншими руками чи далеко — ні", () => {
+    const save = game();
+    const state = save.current;
+    const box = item(state, "litter");
+    stand(state, { x: 15.5, y: 8.5 });
+    expect(carryIcon(state)).toBeNull();
+    standAt(save, itemTargetId(box));
+    expect(carryIcon(state)).toBe(THING_ICONS.litter);
+    state.character.held = { kind: "vacuum", minutes: 0 };
+    expect(carryIcon(state)).toBeNull();
+    state.character.held = null;
+    moveThing(state);
+    stand(state, { x: 15.5, y: 8.5 });
+    expect(carryIcon(state)).toBe(THING_ICONS.litter);
+  });
+
+  it("поки річ у руках, ціль дії не підсвічено: видно клітинку", () => {
+    const save = game();
+    const state = save.current;
+    const bowl = item(state, "bowl");
+    standAt(save, itemTargetId(bowl));
+    expect(highlightTarget(state, false)).not.toBeNull();
+    moveThing(state);
+    expect(highlightTarget(state, false)).toBeNull();
   });
 });
 

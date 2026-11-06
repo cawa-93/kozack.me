@@ -23,10 +23,12 @@ import { wireFixSpot } from "./personspot";
 /**
  * Ціль, яку підсвічують цього кадру: та, з якою персонаж зараз щось зробить (`targetOf`), — лише поки він нічим не зайнятий
  * і гра не стоїть (як у старому вигляді). З пилососом у руках натискання лише ставить його на підлогу (§8.7, «Пилосос у
- * руках»), хоч би що було перед персонажем, — тож і підсвічувати нічого: інакше світився б кіт, що прийшов подивитися.
+ * руках»), хоч би що було перед персонажем, — тож і підсвічувати нічого: інакше світився б кіт, що прийшов подивитися. Те саме
+ * з річчю котячого кутка (§8.7): там підсвічено клітинку, куди вона стане.
  */
 export function highlightTarget(state: GameState, blocked: boolean): Target | null {
-  if (blocked || state.character.activity !== null || state.character.held?.kind === "vacuum") return null;
+  const held = state.character.held?.kind;
+  if (blocked || state.character.activity !== null || held === "vacuum" || held === "thing") return null;
   return targetOf(state);
 }
 

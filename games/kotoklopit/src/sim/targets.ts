@@ -2,7 +2,7 @@
 // і передусім та, на яку дивиться персонаж.
 
 import { highPlaceOf, isCarried } from "./catai";
-import { FACING_PRIORITY, REACH } from "./config";
+import { FACING_PRIORITY, MOVING, REACH } from "./config";
 import { centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
@@ -139,7 +139,7 @@ export function movableItem(state: GameState): PlacedItem | null {
     if (item.kind === "toy") continue;
     const target: Target = { type: "item", id: itemTargetId(item), item };
     const distance = distanceTo(body, target);
-    if (distance > REACH || !reachable(body, target)) continue;
+    if (distance > MOVING.take || !reachable(body, target)) continue;
     const score = distance - FACING_PRIORITY * facingTo(body, targetCenter(target));
     if (score < bestScore) {
       best = item;

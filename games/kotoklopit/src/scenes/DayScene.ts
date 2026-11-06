@@ -31,6 +31,7 @@ import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
 import { CAREER_MESSAGES, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
+import { moveThing } from "../sim/moving";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
 import { StorageIndicators } from "../view/storage";
 import { boxesIndicator, STORAGES, storageIndicator } from "../sim/storage";
@@ -38,7 +39,7 @@ import { showsFightBubble } from "../view/pose";
 import { Hud } from "../view/hud";
 import type { BubbleKind, IconName } from "../view/iconnames";
 import { createIconTextures } from "../view/icons";
-import { catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS, stoveIcon } from "../view/symbols";
+import { carryIcon, catAsk, eventBubbles, itemIcon, PRODUCT_ICONS, showerIcon, STATE_ICONS, stoveIcon } from "../view/symbols";
 import { ThoughtClock } from "../view/thoughts";
 import { type TraitNews, traitNews } from "../ui/traits";
 import { discardFeeder } from "../sim/household";
@@ -163,6 +164,7 @@ export class DayScene extends Phaser.Scene {
       ui,
       () => this.act(),
       () => this.dash(),
+      () => this.carry(),
     );
     this.viewport.onLayout((frame) => {
       this.gloom.setSize(frame.width, frame.height);
@@ -235,6 +237,7 @@ export class DayScene extends Phaser.Scene {
     on("SPACE", () => this.act());
     on("E", () => this.act());
     on("SHIFT", () => this.dash());
+    on("F", () => this.carry());
     on("Q", () => this.openPhone());
   }
 
@@ -434,6 +437,12 @@ export class DayScene extends Phaser.Scene {
   private dash(): void {
     if (this.blocked()) return;
     dash(this.state);
+  }
+
+  /** Кнопка перестановки речі (§8.7, §10). */
+  private carry(): void {
+    if (this.blocked()) return;
+    moveThing(this.state);
   }
 
   /** Гра стоїть: картка, пауза розробника, кінець гри, засинання, виїзд із дому чи заглушка «Поверніть телефон» (§10). */
@@ -734,7 +743,7 @@ export class DayScene extends Phaser.Scene {
     // Камера — за ногами персонажа за симуляцією, а не за якорем бабла з пози скелета: не гойдається з кроком (§8.4).
     this.viewport.follow(state.character.body, seconds);
     this.updateStateBubbles();
-    this.touch.draw(canDash(state));
+    this.touch.draw(canDash(state), carryIcon(state));
     this.drawFallingAsleep(time);
     // Низький здоровий глузд — світ трохи пливе (§6.3).
     const sanity = state.character.stats.sanity;
