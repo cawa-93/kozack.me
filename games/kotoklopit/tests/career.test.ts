@@ -210,14 +210,14 @@ describe("пониження на вершині повільне — дзерк
     expect(daysToDemotion(0)).toBe(2);
     // Експерт — 8-ма посада (індекс 7).
     expect(daysToDemotion(7)).toBe(4);
-    expect(neglectedDay(director)).toBeCloseTo(3.6, 1);
-    expect(daysToDemotion(director)).toBe(15);
-    // Падіння з вершини до стажера за повного нехтування — ~90 робочих днів, як і з драбиною з 10 посад (87): посад більше,
+    expect(neglectedDay(director)).toBeCloseTo(2.9, 1);
+    expect(daysToDemotion(director)).toBe(18);
+    // Падіння з вершини до стажера за повного нехтування — ~120 робочих днівв, як і з драбиною з 10 посад (87): посад більше,
     // але кожне пониження — на меншу сходинку (А10).
     let fall = 0;
     for (let position = director; position > 0; position--) fall += daysToDemotion(position);
-    expect(fall).toBeGreaterThanOrEqual(85);
-    expect(fall).toBeLessThanOrEqual(95);
+    expect(fall).toBeGreaterThanOrEqual(115);
+    expect(fall).toBeLessThanOrEqual(130);
   });
 });
 
