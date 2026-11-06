@@ -14,6 +14,7 @@ import { room } from "../src/sim/shop";
 import { targetOf } from "../src/sim/targets";
 import { endTrip, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, CatNeed, GameState, Quality, Save, TraitLevel } from "../src/sim/types";
+import { carrierLocked, carrierOccupied } from "../src/view/iso/looks";
 import { eventBubbles } from "../src/view/symbols";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
@@ -517,5 +518,23 @@ describe("смерть під замком (§8.7)", () => {
     sit(state, [who], 60, false);
     expect(state.album.at(-1)?.id).toBe(who.id);
     expect(state.character.stats.sanity).toBe(sanity);
+  });
+});
+
+describe("вигляд переноски (§8.7)", () => {
+  it("з котом під замком вона зачинена, а порожня — ні", () => {
+    const save = game("cheap", "cheap");
+    const state = save.current;
+    expect(carrierLocked(state, 0)).toBe(false);
+    seat(state, cat(save));
+    expect(carrierLocked(state, 0)).toBe(true);
+    expect(carrierLocked(state, 1)).toBe(false);
+  });
+
+  it("кота, що заліз поспати сам, ніхто не зачиняв", () => {
+    const save = game("cheap");
+    cat(save).act = { kind: "sleep", target: "carrier", goal: null, minutes: 60, elapsed: 0 };
+    expect(carrierOccupied(save.current)).toBe(true);
+    expect(carrierLocked(save.current, 0)).toBe(false);
   });
 });

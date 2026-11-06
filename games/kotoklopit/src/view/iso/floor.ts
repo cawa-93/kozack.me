@@ -28,7 +28,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierHolds, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierLocked, carrierOccupied, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -344,8 +344,9 @@ export class IsoFloorView implements WorldPart {
     shown.forEach((carrier, index) => {
       const id = index === 0 ? "carrier" : `carrier-${index}`;
       const look = isoItemLook("carrier");
-      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: "body" }, CARRIER_SPOT, look.height, { id, half: look.half });
-      this.extra(spot, "grate", carrierHolds(state, index) ? { id: `item/carrier/${carrier.quality}`, state: "grate" } : null, ON.grate);
+      const locked = carrierLocked(state, index);
+      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: locked ? "closed" : "body" }, CARRIER_SPOT, look.height, { id, half: look.half });
+      this.extra(spot, "grate", !locked && index === 0 && carrierOccupied(state) ? { id: `item/carrier/${carrier.quality}`, state: "grate" } : null, ON.grate);
       spot.point.place(CARRIER_SPOT.x + index * CARRIER_ORDER, CARRIER_SPOT.y + index * CARRIER_ORDER);
       const slot = carrierSlot(shown.length, index);
       const shake = carrierShakes(state, index) ? Math.sin(time / CARRIER_SHAKE.ms) * CARRIER_SHAKE.px : 0;

@@ -452,9 +452,9 @@ export function carrierSlot(count: number, index: number): Point {
   return CARRIER_PILE[count - 1]?.[index] ?? { x: 0, y: 0 };
 }
 
-/** У видимій переносці `index` хтось є: кіт під замком чи той, хто спить у ній сам. */
-export function carrierHolds(state: GameState, index: number): boolean {
-  return cagedCats(state).some((cat) => carrierOf(state, cat) === index) || (index === 0 && carrierOccupied(state));
+/** У видимій переносці `index` кіт під замком (§8.7): її дверцята зачинено. Хто заліз поспати сам, сидить за відчиненими. */
+export function carrierLocked(state: GameState, index: number): boolean {
+  return cagedCats(state).some((cat) => carrierOf(state, cat) === index);
 }
 
 /** Кіт у переносці `index` гризе її (§8.7): вона смикається. */
