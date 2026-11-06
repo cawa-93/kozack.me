@@ -1,6 +1,7 @@
 import { targetOf } from "../src/sim/targets";
 import { addCatCorner } from "../src/dev/scenarios";
 import { changeStat } from "../src/sim/character";
+import { BODY_PACE } from "../src/sim/config";
 import { onEvent, type GameEvent } from "../src/sim/events";
 import { advance, drive, goToSleep, interact } from "../src/sim/game";
 import { distanceToRect, isSolid, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, type Rect } from "../src/sim/home";
@@ -12,6 +13,11 @@ let current: Save | null = null;
 /** Хвилина дня з годин: 22.5 — 22:30, 26 — 02:00 наступної доби. */
 export function hours(value: number): number {
   return value * 60;
+}
+
+/** Скільки ігрових хвилин минає за стільки хвилин тіла (§8): час ходьби чи дії, а не годинника. */
+export function bodyMinutes(minutes: number): number {
+  return minutes * BODY_PACE;
 }
 
 /**

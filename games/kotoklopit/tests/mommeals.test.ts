@@ -12,7 +12,7 @@ import { GOODS } from "../src/sim/shop";
 import { boxesIndicator, STORAGES, storageIndicator } from "../src/sim/storage";
 import type { GameState, Product, Quality, Save } from "../src/sim/types";
 import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../src/view/symbols";
-import { hours, recordEvents, standAt, walkTo } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 5 });
 const meals = (save: Save): number => save.current.home.supplies.momMeal.cheap;
@@ -50,7 +50,7 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     interact(save);
     expect(save.current.home.surfaces["table"]).toEqual(SUDOCHOK);
     const { events, stop } = recordEvents();
-    advance(save, EAT_MINUTES * 3, { move: { x: 0, y: 0 }, hold: true });
+    advance(save, bodyMinutes(EAT_MINUTES * 3), { move: { x: 0, y: 0 }, hold: true });
     stop();
     const ate = events.filter((e) => e.type === "ate");
     expect(ate).toHaveLength(1);

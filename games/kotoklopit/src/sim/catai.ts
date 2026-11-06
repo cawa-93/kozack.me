@@ -135,6 +135,8 @@ export { enoughFor, isDirty, itemsOf };
 /** Хто є поруч із котами: персонаж удома й не спить — до нього можна піти по увагу. */
 export interface CatContext {
   present: boolean;
+  /** Скільки ігрових хвилин триває хвилина тіла (§8); без поля — одна: уночі темп один. */
+  pace?: number;
 }
 
 const clamp = (value: number, min = 0, max = 100): number => Math.min(max, Math.max(min, value));
@@ -225,6 +227,8 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
 
 /** Звідки кіт іде мітити: з дій, які не шкода кинути (§9.12). */
 const MARK_FROM = new Set(["idle", "wander", "toy", "beg", "attention"]);
+/** Стани кота, а не дії: вони йдуть за годинником, а не в темпі тіла (§8). Туди кіт іде в темпі тіла. */
+const CLOCK_ACTS = new Set<CatActKind>(["sleep", "hide", "lap"]);
 /** Звідки кіт починає кахикати перед грудкою: спить чи нічим важливим не зайнятий (§9.12). */
 const COUGH_FROM = new Set(["idle", "wander", "toy", "sleep", "beg", "attention", "follow", "hide"]);
 
@@ -3174,7 +3178,8 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   dropsSeen(state, cat);
   rememberSeen(state, cat);
   cuddleSeen(state, cat);
-  let left = minutes;
+  const pace = context.pace ?? 1;
+  let left = minutes / pace;
   for (let guard = 0; guard < 8 && left > 1e-9; guard++) {
     if (cat.act.kind === "follow") {
       left = escort(state, cat, left, context);
@@ -3208,9 +3213,10 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       }
       continue;
     }
-    const used = Math.min(left, Math.max(0, cat.act.minutes));
-    perform(state, cat, used, rng, context);
-    cat.act.minutes -= used;
+    const scale = CLOCK_ACTS.has(cat.act.kind) ? pace : 1;
+    const used = Math.min(left, Math.max(0, cat.act.minutes) / scale);
+    perform(state, cat, used * scale, rng, context);
+    cat.act.minutes -= used * scale;
     left -= used;
     if (cat.act.minutes <= 1e-9) {
       const done = cat.act;

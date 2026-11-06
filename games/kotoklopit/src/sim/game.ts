@@ -8,7 +8,7 @@ import { breedById, isPurebred } from "./breeds";
 import { visibleFloorNear } from "./catmove";
 import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { FIRST_DAY_MODIFIER, ILLNESS_EFFECTS, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
+import { BODY_PACE, FIRST_DAY_MODIFIER, ILLNESS_EFFECTS, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
@@ -156,16 +156,17 @@ function tick(state: GameState, minutes: number, input: Input): void {
   if (category) state.stats.minutes[category] += minutes;
   const away = state.trip !== null;
   if (!away) {
-    tickActivity(state, input, minutes);
-    moveBody(state, state.character.activity === null ? input.move : IDLE.move, minutes);
+    const body = minutes / BODY_PACE;
+    tickActivity(state, input, body);
+    moveBody(state, state.character.activity === null ? input.move : IDLE.move, body);
     // Пилосос у руках гуде й прибирає довкола персонажа там, куди той дійшов (§8.7).
-    tickVacuum(state, minutes);
+    tickVacuum(state, body);
   }
   tickWork(state, from, minutes);
   tickModifiers(state, from, minutes, isWorking(state));
   tickStove(state, minutes);
   tickHousehold(state, from, minutes);
-  tickCats(state, minutes, { present: !away });
+  tickCats(state, minutes, { present: !away, pace: BODY_PACE });
   if (!away) annoyingMesses(state, minutes);
   // Поки день перемотується після аварії, показники не нижче 5, ситість — не нижче 25, а голод не забирає здоров'я (§8.5, А1).
   passAwakeTime(state, minutes / MINUTES_PER_HOUR, state.trip?.phase === "accident");

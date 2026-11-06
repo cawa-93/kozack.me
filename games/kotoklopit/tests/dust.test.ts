@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { DUST } from "../src/sim/config";
+import { DUST, HOUSEHOLD } from "../src/sim/config";
 import { addDust, DUST_SPOTS, dustOf, floorDust, tickDust, type DustKind } from "../src/sim/dust";
 import { advance, interact, newGame } from "../src/sim/game";
 import { hiddenTile, isFixedSolid, isWall, OBJECTS, ROOMS, SLOTS, VACUUM_HOME, type RoomId } from "../src/sim/home";
@@ -267,7 +267,7 @@ describe("пил прибирають (§8.7)", () => {
     save.current.home.appliances.robot = "cheap";
     const living = spotsOf("living");
     save.current.home.dust = [...living];
-    for (let minute = 12 * 60; minute < 13 * 60; minute++) tickHousehold(save.current, minute, 1);
+    for (let minute = HOUSEHOLD.robotMinute; minute < HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes; minute++) tickHousehold(save.current, minute, 1);
     const left = dustOf(save.current).map((i) => DUST_SPOTS[i]!.kind);
     expect(left).toContain("cobweb");
     // Клубки на підлозі вітальні робот об'їздив усі.

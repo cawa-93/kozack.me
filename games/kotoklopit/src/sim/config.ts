@@ -12,6 +12,10 @@ import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, 
 export const REAL_SECONDS_PER_GAME_HOUR = 30;
 /** Темп дороги свій (§8.5), тож час на реакцію не залежить від темпу дня. */
 export const RACE_SECONDS_PER_GAME_HOUR = 45;
+/** Темп тіла (§8): числа руху й дій персонажа й котів задані для нього, тож у реальних секундах вони не залежать від темпу дня. */
+export const BODY_SECONDS_PER_GAME_HOUR = 45;
+/** Скільки ігрових хвилин триває хвилина тіла. */
+export const BODY_PACE = BODY_SECONDS_PER_GAME_HOUR / REAL_SECONDS_PER_GAME_HOUR;
 /** Розгін часу за комп'ютером (§8): від ×1 до ×`max` за `rampSeconds`. */
 export const WORK_BOOST = { max: 10, rampSeconds: 40 } as const;
 
@@ -861,7 +865,7 @@ export const HOUSEHOLD = {
   washMinutes: 60,
   clothesDays: { cheap: 7, premium: 12 } as Record<Quality, number>,
   robotMinute: 12 * 60,
-  robotMinutes: 60,
+  robotMinutes: 60 * BODY_PACE,
   breakPerUse: 1 / 150,
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,

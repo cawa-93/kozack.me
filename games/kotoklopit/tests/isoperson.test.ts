@@ -328,16 +328,16 @@ describe("темп ходи (`gaitRate`, контракт N4a `personGaitSpeed`)
   }
 
   it("ходою вбік екрана годинник іде швидше, ніж уздовж осі клітинки, — у такт `personGaitSpeed`; стопи не ковзають", () => {
-    const side = walk(543, 0);
-    const axis = walk(384, 192);
-    expect(side.vx).toBeCloseTo(543, 0);
-    expect(gaitRate("walk", true, side)).toBeCloseTo(personGaitSpeed("walk", 543, 0), 2);
-    expect(gaitRate("walk", true, axis)).toBeCloseTo(personGaitSpeed("walk", 384, 192), 2);
-    expect(gaitRate("walk", true, side) / gaitRate("walk", true, axis)).toBeCloseTo(543 / 384, 2);
+    const side = walk(362, 0);
+    const axis = walk(256, 128);
+    expect(side.vx).toBeCloseTo(362, 0);
+    expect(gaitRate("walk", true, side)).toBeCloseTo(personGaitSpeed("walk", 362, 0), 2);
+    expect(gaitRate("walk", true, axis)).toBeCloseTo(personGaitSpeed("walk", 256, 128), 2);
+    expect(gaitRate("walk", true, side) / gaitRate("walk", true, axis)).toBeCloseTo(362 / 256, 2);
     // Уздовж осі клітинки — номінальна швидкість циклу: темп ≈ 1.
     expect(gaitRate("walk", true, axis)).toBeGreaterThan(0.9);
     expect(gaitRate("walk", true, axis)).toBeLessThan(1.1);
-    for (const gait of ["dash", "limp", "trudge", "dizzy"] as const) expect(gaitRate(gait, true, side)).toBeCloseTo(personGaitSpeed(gait, 543, 0), 2);
+    for (const gait of ["dash", "limp", "trudge", "dizzy"] as const) expect(gaitRate(gait, true, side)).toBeCloseTo(personGaitSpeed(gait, 362, 0), 2);
   });
 
   it("стоячи, у справах, оглушений на місці (кнопку руху не натиснуто) — темп 1; уперся в стіну — ноги переступають повільно", () => {

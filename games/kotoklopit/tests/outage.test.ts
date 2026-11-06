@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { Bot } from "../balance/bot";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { tickStove } from "../src/sim/actions";
-import { BURN_MINUTES, CAREER_PACE, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { BURN_MINUTES, CAREER_PACE, COOK_MINUTES, HOUSEHOLD, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
 import { createCat } from "../src/sim/cat";
 import { supplyCount } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
@@ -24,7 +24,7 @@ import { DAY_MODIFIER_TEXTS } from "../src/texts";
 import { scheduleOf } from "../src/view/schedule";
 import { showerIcon } from "../src/view/symbols";
 import { personThought } from "../src/view/thoughts";
-import { recordEvents, standAt } from "./helpers";
+import { bodyMinutes, recordEvents, standAt } from "./helpers";
 
 const STATS: StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
@@ -204,7 +204,7 @@ describe("«Планове відключення» — день без світ
       expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
       let minutes = 0;
       while (save.current.character.activity !== null && minutes < 30) {
-        advance(save, 0.5);
+        advance(save, bodyMinutes(0.5));
         minutes += 0.5;
       }
       stop();
@@ -319,7 +319,7 @@ describe("«Планове відключення» — день без світ
     expect(save.current.home.washer.state).toBe("done");
   });
 
-  it("сценарій «Холодний душ» (`scenarios/power-outage-shower.json`): персонажка в кабіні без світла — над нею «холодна вода», за 5 хвилин виходить із +48 гігієни й стоїть біля кабіни", () => {
+  it("сценарій «Холодний душ» (`scenarios/power-outage-shower.json`): персонажка в кабіні без світла — над нею «холодна вода», за 5 хвилин тіла виходить із +48 гігієни й стоїть біля кабіни", () => {
     const scenario = FILE_SCENARIOS["power-outage-shower"];
     if (!scenario) throw new Error("немає сценарію");
     const save = applyScenario(scenario);
@@ -328,7 +328,7 @@ describe("«Планове відключення» — день без світ
     const { events, stop } = recordEvents();
     let minutes = 0;
     while (save.current.character.activity !== null && minutes < 30) {
-      advance(save, 0.5);
+      advance(save, bodyMinutes(0.5));
       minutes += 0.5;
     }
     stop();
@@ -387,11 +387,11 @@ describe("«Планове відключення» — день без світ
       const progress: (number | null)[] = [];
       let at = robotAt(save.current);
       const { events, stop } = recordEvents();
-      for (let m = 11 * 60 + 50; m < 13 * 60 + 10; m++) {
+      for (let m = HOUSEHOLD.robotMinute - 10; m < HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes + 10; m++) {
         tickHousehold(save.current, m, 1);
         save.current.minute = m + 1;
         progress.push(robotProgress(save.current));
-        if (m === 12 * 60 + 30) at = robotAt(save.current);
+        if (m === HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes / 2) at = robotAt(save.current);
       }
       stop();
       return { tufts: tuftsOf(save.current).length, progress, events: events.map((e) => e.type), at };

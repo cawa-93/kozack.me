@@ -10,7 +10,7 @@ import { objectById } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, ToyItem, TraitLevel } from "../src/sim/types";
-import { hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
@@ -52,9 +52,9 @@ describe("гра з котом (§8.2, §9.12)", () => {
     const sanity = save.current.character.stats.sanity;
     const { events, stop } = recordEvents();
     for (let i = 0; i < 12 && save.current.character.activity?.kind !== undefined || i === 0; i++) {
-      advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+      advance(save, bodyMinutes(0.5), { move: { x: 0, y: 0 }, hold: true });
     }
-    advance(save, 6, { move: { x: 0, y: 0 }, hold: true });
+    advance(save, bodyMinutes(6), { move: { x: 0, y: 0 }, hold: true });
     stop();
     expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 5);
     expect(cat.needs.play).toBeLessThan(10);
@@ -186,7 +186,7 @@ describe("кіт і робота (§9.12)", () => {
     played.save.current.character.held = { kind: "toy", toy };
     const games = recordEvents();
     for (let i = 0; i < 200 && !games.events.some((e) => e.type === "played"); i++) {
-      advance(played.save, 0.05, HOLD);
+      advance(played.save, bodyMinutes(0.05), HOLD);
       expect(catOnComputer(played.save.current)?.id).toBe(played.cat.id);
     }
     games.stop();
@@ -237,7 +237,7 @@ describe("кіт і робота (§9.12)", () => {
     played.save.current.character.held = { kind: "toy", toy };
     const games = recordEvents();
     for (let i = 0; i < 200 && !games.events.some((e) => e.type === "played"); i++) {
-      advance(played.save, 0.05, HOLD);
+      advance(played.save, bodyMinutes(0.05), HOLD);
       expect(catOnComputer(played.save.current)?.id).toBe(played.cat.id);
     }
     games.stop();
@@ -252,15 +252,15 @@ describe("кіт і робота (§9.12)", () => {
     const cat = withCat(save, {}, { x: 7.5, y: 6.5 });
     cat.needs.attention = 90;
     cat.act = { kind: "keyboard", target: "computer", goal: null, minutes: 12, elapsed: 0 };
-    for (let i = 0; i < 60; i++) advance(save, 0.05, { move: { x: 0, y: 0 }, hold: true });
+    for (let i = 0; i < 60; i++) advance(save, bodyMinutes(0.05), { move: { x: 0, y: 0 }, hold: true });
     expect(save.current.character.activity).toMatchObject({ kind: "pet", cat: cat.id });
     expect(cat.act).toMatchObject({ kind: "keyboard", goal: null });
     expect(cat.act.minutes).toBeCloseTo(9, 1);
     // Відпустили — сидить решту свого часу й іде сам.
-    advance(save, 0.05);
-    advance(save, 8.5);
+    advance(save, bodyMinutes(0.05));
+    advance(save, bodyMinutes(8.5));
     expect(catOnComputer(save.current)?.id).toBe(cat.id);
-    advance(save, 1);
+    advance(save, bodyMinutes(1));
     expect(catOnComputer(save.current)).toBeNull();
   });
 
@@ -274,8 +274,8 @@ describe("кіт і робота (§9.12)", () => {
     cat.needs.attention = 100;
     cat.act = { kind: "lap", target: "character", goal: null, minutes: 240, elapsed: 0 };
     const sanity = save.current.character.stats.sanity;
-    advance(save, 30);
-    // Робота забирає 5 за годину, а кіт на колінах дає 1 за хвилину.
+    advance(save, bodyMinutes(30));
+    // Робота забирає 5 за годину, а кіт на колінах дає 1 за хвилину тіла.
     expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 10);
     expect(save.current.character.activity?.kind).toBe("work");
   });
@@ -333,7 +333,7 @@ describe("грудки й ноги (§9.12)", () => {
       body.y = 8.5;
       save.current.home.messes.push({ id: 900, kind: "hairball", x: 6.5, y: 8.5, cat: null });
       const { events, stop } = recordEvents();
-      for (let i = 0; i < 40; i++) advance(save, 0.02, { move: { x: 1, y: 0 }, hold: false });
+      for (let i = 0; i < 40; i++) advance(save, bodyMinutes(0.02), { move: { x: 1, y: 0 }, hold: false });
       stop();
       if (events.some((e) => e.type === "slipped")) slipped++;
     }

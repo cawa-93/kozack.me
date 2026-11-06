@@ -10,7 +10,7 @@ import { OBJECTS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Save, Vec } from "../src/sim/types";
-import { hours, recordEvents, walkTo } from "./helpers";
+import { bodyMinutes, hours, recordEvents, walkTo } from "./helpers";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 1 });
 
@@ -18,12 +18,13 @@ const place = (save: Save, x: number, y: number, facing: Vec = { x: 0, y: 1 }): 
   Object.assign(save.current.character.body, { x, y, facing });
 };
 
+/** Іти стільки хвилин тіла. */
 const walk = (save: Save, move: Vec, minutes: number): void => {
-  advance(save, minutes, { move, hold: false });
+  advance(save, bodyMinutes(minutes), { move, hold: false });
 };
 
 describe("рух (§8.4)", () => {
-  it("ходьба — 3 клітинки за ігрову хвилину", () => {
+  it("ходьба — 3 клітинки за хвилину тіла", () => {
     const save = game();
     place(save, 4.5, 8.5);
     walk(save, { x: 1, y: 0 }, 1);

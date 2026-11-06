@@ -18,7 +18,7 @@ import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { startWork } from "../src/sim/work";
 import { catLook } from "../src/view/thoughts";
-import { hours, recordEvents, walkTo, withCatCorner } from "./helpers";
+import { bodyMinutes, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
@@ -64,17 +64,17 @@ describe("«Ласкавість» (рішення автора 2026-10-25)", ()
     const save = game();
     const cat = withCat(save, { affection: -1 });
     faceCat(save);
-    advance(save, AFFECTION.leaveAfter - 1 - 0.1, HOLD);
+    advance(save, bodyMinutes(AFFECTION.leaveAfter - 1 - 0.1), HOLD);
     expect(save.current.character.activity).toMatchObject({ kind: "pet" });
     expect(catFeeling(save.current, cat)).toBe("reluctant");
-    advance(save, 0.3, HOLD);
+    advance(save, bodyMinutes(0.3), HOLD);
     expect(save.current.character.activity).toMatchObject({ kind: "pet", left: true });
 
     const fond = game();
     const wants = withCat(fond, { affection: -2 });
     wants.needs.attention = 90;
     faceCat(fond);
-    advance(fond, 2, HOLD);
+    advance(fond, bodyMinutes(2), HOLD);
     expect(fond.current.character.activity).toMatchObject({ kind: "pet" });
     expect(fond.current.character.activity).not.toHaveProperty("left");
     expect(seen(wants, "affection")).toBe(0);
@@ -176,9 +176,9 @@ describe("«Терпимість до гладження» (рішення ав�
     cat.needs.attention = 100;
     faceCat(save);
     const tolerance = petTolerance(cat);
-    advance(save, tolerance - PETTING.warnMinutes - 0.2, HOLD);
+    advance(save, bodyMinutes(tolerance - PETTING.warnMinutes - 0.2), HOLD);
     expect(catFeeling(save.current, cat)).toBe("content");
-    advance(save, 0.4, HOLD);
+    advance(save, bodyMinutes(0.4), HOLD);
     expect(catFeeling(save.current, cat)).toBe("warning");
   });
 
@@ -189,11 +189,11 @@ describe("«Терпимість до гладження» (рішення ав�
     faceCat(save);
     const plain = petTolerance(cat, 0);
     expect(petTolerance(cat)).toBeGreaterThan(plain + 1);
-    advance(save, plain - 0.2, HOLD);
+    advance(save, bodyMinutes(plain - 0.2), HOLD);
     expect(seen(cat, "petting")).toBe(0);
-    advance(save, 1, HOLD);
+    advance(save, bodyMinutes(1), HOLD);
     expect(seen(cat, "petting")).toBe(1);
-    advance(save, 1, HOLD);
+    advance(save, bodyMinutes(1), HOLD);
     expect(seen(cat, "petting")).toBe(1);
     expect(save.current.character.activity).toMatchObject({ kind: "pet" });
     expect(PET.wantsAttention).toBeLessThan(cat.needs.attention);

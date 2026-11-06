@@ -19,7 +19,7 @@ import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { BowlItem, Cat, LitterItem, NightReport, Save, TraitLevel, WaterItem } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
+import { bodyMinutes, holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 function game(seed = 11): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed }));
@@ -953,13 +953,13 @@ describe("«Шерстяні грудки» (рішення автора 2026-10
 describe("«Догляд за шерстю» (рішення автора 2026-10-25)", () => {
   const HOLD = { move: { x: 0, y: 0 }, hold: true };
 
-  /** Пестити кота 2,5 хвилини (він уваги хоче й терпить). */
+  /** Пестити кота 2,5 хвилини тіла (він уваги хоче й терпить). */
   function petFor(save: Save, cat: Cat): ReturnType<typeof recordEvents>["events"] {
     Object.assign(save.current.character.body, { x: cat.x, y: cat.y + 0.6, facing: { x: 0, y: -1 } });
     cat.needs.attention = 90;
     cat.love = 80;
     const { events, stop } = recordEvents();
-    for (let i = 0; i < 10; i++) advance(save, 0.25, HOLD);
+    for (let i = 0; i < 10; i++) advance(save, bodyMinutes(0.25), HOLD);
     stop();
     return events;
   }

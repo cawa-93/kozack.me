@@ -19,7 +19,7 @@ import { callImpression } from "../src/sim/work";
 import { chronotypeCard, startName } from "../src/ui/cards";
 import { LOOK_OPTIONS, lookRng, randomLook } from "../src/ui/look";
 import { BUILDS, FACES, HAIR_STYLES, PALETTE } from "../src/view/palette";
-import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 /** Що відповів умивальник на дію: причина відмови чи undefined. */
 function sinkRefusal(save: Save): unknown {
@@ -31,10 +31,10 @@ function sinkRefusal(save: Save): unknown {
   return event?.type === "refused" ? event.reason : undefined;
 }
 
-/** Хвилина ходьби праворуч із середини вітальні: скільки клітинок пройдено. */
+/** Хвилина тіла ходьби праворуч із середини вітальні: скільки клітинок пройдено. */
 function walkMinute(save: Save): number {
   Object.assign(save.current.character.body, { x: 4.5, y: 8.5, facing: { x: 1, y: 0 } });
-  advance(save, 1, { move: { x: 1, y: 0 }, hold: false });
+  advance(save, bodyMinutes(1), { move: { x: 1, y: 0 }, hold: false });
   return save.current.character.body.x - 4.5;
 }
 

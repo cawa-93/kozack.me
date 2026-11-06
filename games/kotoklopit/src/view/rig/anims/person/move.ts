@@ -39,7 +39,7 @@
 //   підлозі до гнізда `arms`: корінь — lerp(місце, гніздо, w), кут — w × кут гнізда, де w = `personCatLift(anim, t)`
 //   (0 — на підлозі, 1 — у руках); у `putDown` — навпаки, кіт на підлозі з `PERSON_PUTDOWN_RELEASE_MS`.
 
-import { ILLNESS_EFFECTS, MINUTES_PER_HOUR, REAL_SECONDS_PER_GAME_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
+import { BODY_SECONDS_PER_GAME_HOUR, ILLNESS_EFFECTS, MINUTES_PER_HOUR, WALK_TILES_PER_MINUTE } from "../../../../sim/config";
 import { PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../../../anim/ids";
 import { artEntry } from "../../../art/manifest";
 import type { ArtView } from "../../../art/types";
@@ -312,7 +312,7 @@ function upperTracks(ms: number, n: number, up: Upper): Tracks {
  * Номінальна швидкість ходьби в симі по горизонталі екрана, одиниць арту за секунду: `WALK_TILES_PER_MINUTE` клітинок за
  * ігрову хвилину уздовж осі клітинки, а вісь клітинки на екрані — півромба вбік на кожну клітинку.
  */
-const NOMINAL_SPEED = (WALK_TILES_PER_MINUTE / (REAL_SECONDS_PER_GAME_HOUR / MINUTES_PER_HOUR)) * (ISO_TILE.width / 2);
+const NOMINAL_SPEED = (WALK_TILES_PER_MINUTE / (BODY_SECONDS_PER_GAME_HOUR / MINUTES_PER_HOUR)) * (ISO_TILE.width / 2);
 
 /** Тривалість циклу, мс: щоб за швидкості відтворення 1 хода йшла зі швидкістю `speed`. */
 const cycleMs = (gait: Gait, speed: number): number => Math.round((strideOf(gait) / speed) * 1000);

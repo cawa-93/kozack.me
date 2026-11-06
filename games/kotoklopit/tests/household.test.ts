@@ -20,7 +20,7 @@ import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } fro
 import { careCard, hasCareSupplies } from "../src/ui/cards";
 import { named } from "../src/ui/icons";
 import { PRODUCT_ICONS } from "../src/view/symbols";
-import { holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
+import { bodyMinutes, holdUntilDone, hours, recordEvents, standAt, walkTo, withCatCorner } from "./helpers";
 
 const always = () => ({ ...createRng(1), chance: () => true });
 const never = () => ({ ...createRng(1), chance: () => false });
@@ -108,7 +108,7 @@ describe("купання (§8.7)", () => {
     // Купання займає час (рішення автора 2026-10-28): спершу кабіна, ефекти — наприкінці.
     expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true, bath: true });
     expect(save.current.home.supplies.shampoo.cheap).toBe(5);
-    for (let i = 0; i < 60 && save.current.character.activity !== null; i++) advance(save, 0.5);
+    for (let i = 0; i < 60 && save.current.character.activity !== null; i++) advance(save, bodyMinutes(0.5));
     expect(lover.mood).toBeGreaterThan(mood);
     expect(save.current.character.stats.sanity).toBeLessThan(sanity);
     expect(save.current.home.supplies.shampoo.cheap).toBe(4);
@@ -128,17 +128,17 @@ describe("купання (§8.7)", () => {
       const cats = save.current.stats.minutes.cats;
       const { events, stop } = recordEvents();
       interact(save);
-      advance(save, 10);
+      advance(save, bodyMinutes(10));
       expect(useProgress(save.current)).toBeCloseTo(10 / 15, 1);
       for (let i = 0; i < 40 && save.current.character.activity !== null; i++) advance(save, 0.5);
       stop();
       expect(events).toContainEqual(expect.objectContaining({ type: "bathed" }));
       expect(save.current.home.supplies.shampoo.cheap).toBe(4);
-      expect(save.current.stats.minutes.cats - cats).toBeGreaterThanOrEqual(14);
+      expect(save.current.stats.minutes.cats - cats).toBeGreaterThanOrEqual(bodyMinutes(14));
     }
   });
 
-  it("купання триває 10 хвилин, «Водобоязнь» — удвічі довше; без шампуню не почати (рішення автора 2026-10-28)", () => {
+  it("купання триває 10 хвилин тіла, «Водобоязнь» — удвічі довше; без шампуню не почати (рішення автора 2026-10-28)", () => {
     const save = game();
     save.current.home.supplies.shampoo = { cheap: 5, premium: 0 };
     held(save);
@@ -148,8 +148,8 @@ describe("купання (§8.7)", () => {
     standAt(save, "shower");
     const start = save.current.minute;
     interact(save);
-    for (let i = 0; i < 100 && save.current.character.activity !== null; i++) advance(save, 0.5);
-    expect(save.current.minute - start).toBeGreaterThanOrEqual(19.5);
+    for (let i = 0; i < 100 && save.current.character.activity !== null; i++) advance(save, bodyMinutes(0.5));
+    expect(save.current.minute - start).toBeGreaterThanOrEqual(bodyMinutes(19.5));
     save.current.home.supplies.shampoo = { cheap: 0, premium: 0 };
     held(save);
     const { events, stop } = recordEvents();
@@ -254,7 +254,7 @@ describe("перевірка побуту 2026-10-28", () => {
     interact(save);
     expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
     expect(stun(save.current)).toBe(false);
-    for (let i = 0; i < 40 && save.current.character.activity !== null; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    for (let i = 0; i < 40 && save.current.character.activity !== null; i++) advance(save, bodyMinutes(0.5), { move: { x: 0, y: 0 }, hold: true });
     expect(save.current.character.activity).toBeNull();
     expect(save.current.character.holdSpent).toBe(true);
   });
@@ -425,7 +425,7 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
   });
 
-  it("робот-пилосос о 12:00 годину їздить і прибирає жмути, повз які проїжджає (§8.7, рішення автора 2026-11-02)", () => {
+  it("робот-пилосос о 12:00 годину тіла їздить і прибирає жмути, повз які проїжджає (§8.7, рішення автора 2026-11-02)", () => {
     const save = game();
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 60;
@@ -435,16 +435,18 @@ describe("шерсть і техніка (§8.7)", () => {
     tickHousehold(save.current, 11 * 60 + 50, 10);
     // На 60 — сім жмутів (котів немає — на перших місцях): шість у вітальні й один у спальні.
     expect(tuftsOf(save.current)).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    for (let minute = 12 * 60; minute < 12 * 60 + 30; minute++) tickHousehold(save.current, minute, 1);
-    save.current.minute = 12 * 60 + 30;
+    const half = HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes / 2;
+    const end = HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes;
+    for (let minute = HOUSEHOLD.robotMinute; minute < half; minute++) tickHousehold(save.current, minute, 1);
+    save.current.minute = half;
     expect(robotProgress(save.current)).toBeCloseTo(0.5);
-    // За пів години робот проїхав лише частину квартири: прибрано жмути, повз які він проїхав, і кожен зняв свою частку шерсті.
+    // За пів часу робот проїхав лише частину квартири: прибрано жмути, повз які він проїхав, і кожен зняв свою частку шерсті.
     const left = tuftsOf(save.current).length;
     expect(left).toBeGreaterThan(0);
     expect(left).toBeLessThan(7);
     expect(save.current.home.fur).toBeCloseTo(60 - ((7 - left) * 100) / 12);
-    for (let minute = 12 * 60 + 30; minute < 13 * 60 + 5; minute++) tickHousehold(save.current, minute, 1);
-    save.current.minute = 13 * 60 + 5;
+    for (let minute = half; minute < end + 5; minute++) tickHousehold(save.current, minute, 1);
+    save.current.minute = end + 5;
     expect(tuftsOf(save.current)).toEqual([]);
     expect(save.current.home.fur).toBeCloseTo(60 - (7 * 100) / 12);
     expect(robotProgress(save.current)).toBeNull();
@@ -456,7 +458,7 @@ describe("шерсть і техніка (§8.7)", () => {
     save.current.home.fur = 70;
     topUpTufts(save.current);
     const seen: number[] = [furTufts(save.current).length];
-    for (let minute = 12 * 60; minute < 13 * 60; minute++) {
+    for (let minute = HOUSEHOLD.robotMinute; minute < HOUSEHOLD.robotMinute + HOUSEHOLD.robotMinutes; minute++) {
       tickHousehold(save.current, minute, 1);
       const tufts = furTufts(save.current).length;
       if (seen.at(-1) !== tufts) seen.push(tufts);

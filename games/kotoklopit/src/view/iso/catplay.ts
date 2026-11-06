@@ -5,7 +5,7 @@
 
 import type { CatFace } from "../anim/catface";
 import { CAT_ONE_SHOT_MS, CAT_OVERLAYS, type CatAnimId, type CatOneShotId } from "../anim/ids";
-import { CAT_WALK_TILES_PER_MINUTE, ZOOMIES } from "../../sim/config";
+import { BODY_PACE, CAT_WALK_TILES_PER_MINUTE, ZOOMIES } from "../../sim/config";
 import type { Vec } from "../../sim/types";
 import type { CatAnimChoice } from "../pose";
 import { catJumpLift, catLegLength, catRunRate, catWalkRate } from "../rig/anims/cat/basic";
@@ -132,7 +132,7 @@ export function gaitRate(anim: CatAnimId, speed: number, kitten: number, shortLe
  * зміни пози (з 0,3 переможений бійки на мить спалахував бігом). Стрибок, довший за `max` клітинки, — переставляння (з
  * поїздки, з рук): одразу, як і раніше.
  */
-export const CATCH = { speed: CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed, slack: 1.25, eps: 0.02, fast: 12, ms: 70, slow: 2.5, run: 0.45, max: 2 } as const;
+export const CATCH = { speed: (CAT_WALK_TILES_PER_MINUTE * ZOOMIES.speed) / BODY_PACE, slack: 1.25, eps: 0.02, fast: 12, ms: 70, slow: 2.5, run: 0.45, max: 2 } as const;
 
 /** Скільки клітинок найшвидший кіт міг пробігти за кадр, що тривав `minutes` ігрових хвилин (немає чи від'ємне — скільки завгодно). */
 export function catStep(minutes: number): number {

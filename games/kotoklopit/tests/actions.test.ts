@@ -7,16 +7,20 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { dash } from "../src/sim/body";
-import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, MEAL_SATIETY, SHOWER_HYGIENE } from "../src/sim/config";
+import { BURN_MINUTES, COOK_MINUTES, EAT_MINUTES, HOUSEHOLD, HYGIENE_PER_HOUR, MEAL_SATIETY, MINUTES_PER_HOUR, SATIETY_PER_HOUR, SHOWER_HYGIENE, SHOWER_MINUTES } from "../src/sim/config";
 import { supplyCount } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import type { Save } from "../src/sim/types";
-import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 const game = (): Save => withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 1 }));
 
+/** Кроки тіла — частки ігрової хвилини: їхня сума на округлення менша за тривалість дії, тож дія закінчується на цьому кроці. */
+const LAST_STEP = 0.001;
+
+/** Тримати дію стільки хвилин тіла. */
 const holdFor = (save: Save, minutes: number): void => {
-  advance(save, minutes, { move: { x: 0, y: 0 }, hold: true });
+  advance(save, bodyMinutes(minutes), { move: { x: 0, y: 0 }, hold: true });
 };
 
 /** Приготувати страву й покласти її на стіл. */
@@ -151,7 +155,7 @@ describe("плита (§8.7)", () => {
 });
 
 describe("їжа за столом (§8.7)", () => {
-  it("страву їдять утриманням дії 10 хвилин", () => {
+  it("страву їдять утриманням дії 10 хвилин тіла", () => {
     const save = game();
     serveMeal(save);
     expect(save.current.home.surfaces["table"]?.kind).toBe("meal");
@@ -161,11 +165,11 @@ describe("їжа за столом (§8.7)", () => {
     const { events, stop } = recordEvents();
     holdFor(save, 5);
     expect(useProgress(save.current)).toBeCloseTo(0.5);
-    holdFor(save, 5);
+    holdFor(save, 5 + LAST_STEP);
     stop();
     expect(save.current.home.surfaces["table"]).toBeNull();
-    // Ситість за 10 хвилин їжі трохи спала, але порція додала свою частку.
-    expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap - 4 / 6);
+    // Ситість за час їжі трохи спала, але порція додала свою частку.
+    expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap + (SATIETY_PER_HOUR * bodyMinutes(EAT_MINUTES)) / MINUTES_PER_HOUR);
     expect(events).toContainEqual({ type: "ate", satiety: MEAL_SATIETY.cheap, food: 5 });
   });
 
@@ -210,7 +214,7 @@ describe("їжа за столом (§8.7)", () => {
 });
 
 describe("душ (§8.7)", () => {
-  it("натиснути — і 10 хвилин у кабіні: гігієна росте залежно від засобів", () => {
+  it("натиснути — і 10 хвилин тіла в кабіні: гігієна росте залежно від засобів", () => {
     for (const [supply, hygiene] of [
       [{ cheap: 1, premium: 0 }, SHOWER_HYGIENE.cheap],
       [{ cheap: 1, premium: 1 }, SHOWER_HYGIENE.premium],
@@ -222,8 +226,8 @@ describe("душ (§8.7)", () => {
       save.current.home.supplies.hygiene = { ...supply };
       standAt(save, "shower");
       interact(save);
-      advance(save, 10);
-      expect(stats.hygiene).toBeCloseTo(20 + hygiene - 3 / 6);
+      advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
+      expect(stats.hygiene).toBeCloseTo(20 + hygiene + (HYGIENE_PER_HOUR * bodyMinutes(SHOWER_MINUTES)) / MINUTES_PER_HOUR);
       expect(supplyCount(save.current, "hygiene")).toBe(Math.max(0, supply.cheap + supply.premium - 1));
     }
   });
@@ -236,7 +240,7 @@ describe("душ (§8.7)", () => {
     save.current.home.supplies.hygiene = { cheap: 0, premium: 1 };
     standAt(save, "shower");
     interact(save);
-    advance(save, 10);
+    advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
     expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling, 0);
     advance(save, 60);
     expect(stats.hygiene).toBeCloseTo(HOUSEHOLD.noClothesHygieneCeiling - 3 * HOUSEHOLD.noClothesHygiene, 0);
@@ -251,7 +255,7 @@ describe("душ (§8.7)", () => {
       save.current.home.supplies.hygiene = { cheap: 2, premium: 0 };
       standAt(save, "shower");
       interact(save);
-      advance(save, 10);
+      advance(save, bodyMinutes(SHOWER_MINUTES) + LAST_STEP);
       expect(supplyCount(save.current, "hygiene")).toBe(2 - used);
       expect(stats.hygiene).toBeCloseTo(clothes > 0 ? 100 : HOUSEHOLD.noClothesHygieneCeiling, 0);
     }
@@ -262,7 +266,7 @@ describe("душ (§8.7)", () => {
     save.current.minute = hours(22.5);
     standAt(save, "shower");
     interact(save);
-    advance(save, 10);
+    advance(save, bodyMinutes(SHOWER_MINUTES));
     expect(useProgress(save.current)).toBeCloseTo(0.8);
   });
 
@@ -271,10 +275,10 @@ describe("душ (§8.7)", () => {
     standAt(save, "shower");
     const { x, y } = save.current.character.body;
     interact(save);
-    advance(save, 5, { move: { x: 0, y: 1 }, hold: false });
+    advance(save, bodyMinutes(5), { move: { x: 0, y: 1 }, hold: false });
     expect(save.current.character.body).toMatchObject({ x, y });
     expect(save.current.character.activity).toMatchObject({ kind: "use", inside: true });
-    advance(save, 6, { move: { x: 0, y: 1 }, hold: false });
+    advance(save, bodyMinutes(6), { move: { x: 0, y: 1 }, hold: false });
     expect(save.current.character.activity).toBeNull();
   });
 

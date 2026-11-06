@@ -18,7 +18,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, Save, TraitLevel } from "../src/sim/types";
 import { changeRelation, nightlyRelations, relation } from "../src/sim/relations";
-import { recordEvents, withCatCorner } from "./helpers";
+import { bodyMinutes, recordEvents, withCatCorner } from "./helpers";
 
 function game(difficulty: "easy" | "normal" | "hard" = "normal"): Save {
   const save = newGame({ address: "she", difficulty, seed: 4 });
@@ -127,7 +127,7 @@ describe("прояв — лише того боку, що показала по�
       decide(save.current, cat, createRng(1), { present: true });
       const minutes = cat.act.kind === "attention" ? cat.act.minutes : 0;
       // Персонаж не гладить: кіт ходить слідом, поки похід не скінчиться.
-      for (let i = 0; i < 80; i++) advance(save, 0.5);
+      for (let i = 0; i < 80; i++) advance(save, bodyMinutes(0.5));
       return { demanding: cat.traits[0]?.seen ?? 0, affection: cat.traits[1]?.seen ?? 0, minutes };
     };
     const loud = seenAfterVisit(2);

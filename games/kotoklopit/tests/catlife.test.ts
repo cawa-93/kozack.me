@@ -17,7 +17,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { absoluteMinute } from "../src/sim/time";
 import type { BowlItem, Cat, LitterItem, Save, TraitLevel, WaterItem } from "../src/sim/types";
-import { holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
+import { bodyMinutes, holdUntilDone, hours, recordEvents, walkTo, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 11 }));
@@ -479,14 +479,14 @@ describe("догляд персонажа (§9.12)", () => {
     save.current.character.body.y = 8.2;
     save.current.character.body.facing = { x: 0, y: -1 };
     const sanity = save.current.character.stats.sanity;
-    advance(save, 2, { move: { x: 0, y: 0 }, hold: true });
+    advance(save, bodyMinutes(2), { move: { x: 0, y: 0 }, hold: true });
     expect(save.current.character.stats.sanity).toBeGreaterThan(sanity + 3);
     expect(cat.interacted).toBe(true);
 
     cat.traits.push({ group: "petting", level: -2, seen: 0, known: false });
     expect(petTolerance(cat)).toBe(PET.minToleranceMinutes);
     const { events, stop } = recordEvents();
-    advance(save, 3, { move: { x: 0, y: 0 }, hold: true });
+    advance(save, bodyMinutes(3), { move: { x: 0, y: 0 }, hold: true });
     stop();
     expect(events.some((e) => e.type === "bite")).toBe(true);
   });
@@ -502,7 +502,7 @@ describe("догляд персонажа (§9.12)", () => {
     const { events, stop } = recordEvents();
     const feelings = new Set<string | null>();
     for (let i = 0; i < 20; i++) {
-      advance(save, 0.25, { move: { x: 0, y: 0 }, hold: true });
+      advance(save, bodyMinutes(0.25), { move: { x: 0, y: 0 }, hold: true });
       if (events.some((e) => e.type === "bite")) feelings.add(catFeeling(save.current, cat));
     }
     stop();
@@ -809,9 +809,9 @@ describe("після попередження чи укусу кіт чверт�
     Object.assign(cat, { x: 4.5, y: 7.6, act: idleAct(30) });
   }
 
-  /** Утримувати дію `minutes` хвилин дрібними кроками. */
+  /** Утримувати дію `minutes` хвилин тіла дрібними кроками. */
   function hold(save: Save, minutes: number): void {
-    for (let spent = 0; spent < minutes - 1e-9; spent += 0.05) advance(save, 0.05, HOLD);
+    for (let spent = 0; spent < minutes - 1e-9; spent += 0.05) advance(save, bodyMinutes(0.05), HOLD);
   }
 
   it("відпустити кнопку на попередженні й натиснути знову — кіт іде з-під руки: одна відмова на утримання, без здорового глузду й укусу", () => {

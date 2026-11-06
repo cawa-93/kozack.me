@@ -16,7 +16,7 @@ import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import type { Cat, MessKind, Save, Vec } from "../src/sim/types";
 import { PersonSwept } from "../src/view/iso/swept";
-import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 8 }));
@@ -237,42 +237,43 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     expect(save.current.home.messes.some((m) => m.id === behind)).toBe(true);
   });
 
-  it("гуде: гучний звук, щойно взяли, і далі щодесять хвилин, поки в руках", () => {
+  it("гуде: гучний звук, щойно взяли, і далі щодесять хвилин тіла, поки в руках", () => {
     const save = game();
     standAt(save, "vacuum");
     const { events, stop } = recordEvents();
-    const scared = (): number => events.filter((e) => e.type === "scared").length;
-    timidCat(save, { x: 12.5, y: 8.5 });
+    // Схованка йде за годинником, тож кіт, що злякався першим, може вилізти й злякатися знову: рахуємо кожного окремо.
+    const scared = (cat: Cat): number => events.filter((e) => e.type === "scared" && e.cat === cat.id).length;
+    const first = timidCat(save, { x: 12.5, y: 8.5 });
     interact(save);
-    expect(scared()).toBe(1);
-    advance(save, 9);
+    expect(scared(first)).toBe(1);
+    advance(save, bodyMinutes(9));
     // Новий кіт, що не спить, — гул чути лише на десятій хвилині.
-    timidCat(save, { x: 13.5, y: 8.5 });
-    advance(save, 0.9);
-    expect(scared()).toBe(1);
-    advance(save, 0.2);
-    expect(scared()).toBe(2);
-    advance(save, 5);
-    timidCat(save, { x: 14.5, y: 8.5 });
-    advance(save, 4.8);
-    expect(scared()).toBe(2);
-    advance(save, 0.4);
-    expect(scared()).toBe(3);
+    const second = timidCat(save, { x: 13.5, y: 8.5 });
+    advance(save, bodyMinutes(0.9));
+    expect(scared(second)).toBe(0);
+    advance(save, bodyMinutes(0.2));
+    expect(scared(second)).toBe(1);
+    advance(save, bodyMinutes(5));
+    const third = timidCat(save, { x: 14.5, y: 8.5 });
+    advance(save, bodyMinutes(4.8));
+    expect(scared(third)).toBe(0);
+    advance(save, bodyMinutes(0.4));
+    expect(scared(third)).toBe(1);
     // Поставили — більше не гуде.
     interact(save);
-    timidCat(save, { x: 11.5, y: 8.5 });
-    advance(save, 20);
+    const fourth = timidCat(save, { x: 11.5, y: 8.5 });
+    advance(save, bodyMinutes(20));
     stop();
-    expect(scared()).toBe(3);
+    expect(scared(fourth)).toBe(0);
   });
 
-  it("неприємне: здоровий глузд −0,2 за хвилину, поки в руках (§8.1)", () => {
+  it("неприємне: здоровий глузд −0,2 за хвилину тіла, поки в руках (§8.1)", () => {
     const run = (vacuum: boolean): number => {
       const save = game();
       standAt(save, "vacuum");
       if (vacuum) interact(save);
       const before = save.current.character.stats.sanity;
-      advance(save, 10);
+      advance(save, bodyMinutes(10));
       return save.current.character.stats.sanity - before;
     };
     expect(run(true) - run(false)).toBeCloseTo(VACUUM.sanityPerMinute * 10, 6);

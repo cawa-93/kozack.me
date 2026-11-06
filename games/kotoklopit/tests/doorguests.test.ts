@@ -21,7 +21,7 @@ import { canLeave } from "../src/sim/trips";
 import type { Cat, DoorGuest, GameState, Save, TraitLevel } from "../src/sim/types";
 import { foundlingCard } from "../src/ui/cards";
 import { scheduleOf } from "../src/view/schedule";
-import { hours, recordEvents, standAt } from "./helpers";
+import { bodyMinutes, hours, recordEvents, standAt } from "./helpers";
 
 /** Мама дзвонить о цій хвилині (сценарій дня «Мамині гостинці» кидає її випадково, §4.1). */
 const MOM_AT = hours(12);
@@ -228,7 +228,7 @@ describe("гість подзвонив — дія біля дверей від�
     expect(state.character.held).toBeNull();
   });
 
-  it("«+», що чекав під дверима, зустрічає ще рівно 5 хвилин від того, як впустили, а не від 19:00 (рецензія 2026-11-03)", () => {
+  it("«+», що чекав під дверима, зустрічає ще рівно 5 хвилин тіла від того, як впустили, а не від 19:00 (рецензія 2026-11-03)", () => {
     const guest = GUESTS_BY_DOOR.find((g) => g.who === "guests");
     if (!guest) throw new Error("немає гостей");
     // «+» сидить під дверима, тож, коли їх відчиняють, може вибігти на сходи (10%): тоді зустрічати вже нікому — беремо перший
@@ -238,8 +238,8 @@ describe("гість подзвонив — дія біля дверей від�
       const { save } = game(guest, seed);
       const host = withCat(save, { guests: 1 }, { x: 9.5, y: 8.5 });
       untilRing(save, guest);
-      // Ще 3 хвилини під дверима — дія вже йде: `minutes` — лишок, `elapsed` — скільки минуло.
-      advance(save, 3);
+      // Ще 3 хвилини тіла під дверима — дія вже йде: `minutes` — лишок, `elapsed` — скільки минуло.
+      advance(save, bodyMinutes(3));
       expect(host.act.target).toBe("guest");
       expect(host.act.goal).toBeNull();
       expect(host.act.elapsed).toBeGreaterThan(2);
@@ -248,9 +248,9 @@ describe("гість подзвонив — дія біля дверей від�
       checked = true;
       expect(host.act.target).toBe("guest");
       expect(host.act.minutes).toBeCloseTo(GUESTS.greetMinutes, 9);
-      advance(save, GUESTS.greetMinutes - 0.1);
+      advance(save, bodyMinutes(GUESTS.greetMinutes - 0.1));
       expect(host.act.target).toBe("guest");
-      advance(save, 0.2);
+      advance(save, bodyMinutes(0.2));
       expect(host.act.target).not.toBe("guest");
     }
     expect(checked).toBe(true);
@@ -262,7 +262,7 @@ describe("гість подзвонив — дія біля дверей від�
     const { save } = game(guest);
     const shy = withCat(save, { guests: -1 }, { x: 4.5, y: 8.5 });
     untilRing(save, guest);
-    advance(save, 3);
+    advance(save, bodyMinutes(3));
     expect(shy.act.kind).toBe("hide");
     expect(shy.act.goal).toBeNull();
     expect(shy.act.elapsed).toBeGreaterThan(0);

@@ -10,7 +10,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { startWork } from "../src/sim/work";
 import type { Cat, Save } from "../src/sim/types";
-import { standAt, withCatCorner } from "./helpers";
+import { bodyMinutes, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
   const save = withCatCorner(newGame({ address: "she", difficulty: "normal", seed: 11 }));
@@ -30,7 +30,7 @@ function withCat(save: Save, at = { x: 4.5, y: 8.5 }): Cat {
 }
 
 describe("здоровий глузд від котів (§9.12)", () => {
-  it("кіт, що хоче уваги, хоче її всі 5 хвилин, які терпить: +2 за хвилину", () => {
+  it("кіт, що хоче уваги, хоче її всі 5 хвилин тіла, які терпить: +2 за хвилину", () => {
     const save = game();
     const body = save.current.character.body;
     Object.assign(body, { x: 9.5, y: 8.5, facing: { x: 0, y: -1 } });
@@ -38,7 +38,7 @@ describe("здоровий глузд від котів (§9.12)", () => {
     cat.needs.attention = 60;
     const { stats } = save.current.character;
     stats.sanity = 40;
-    for (let i = 0; i < 10; i++) advance(save, 0.5, { move: { x: 0, y: 0 }, hold: true });
+    for (let i = 0; i < 10; i++) advance(save, bodyMinutes(0.5), { move: { x: 0, y: 0 }, hold: true });
     expect(save.current.character.activity?.kind).toBe("pet");
     // Увага −4 за хвилину (і трохи росте сама): за 5 хвилин — з 60 приблизно до 40, і весь час «хоче» (+2 за хвилину).
     expect(cat.needs.attention).toBeGreaterThanOrEqual(40);

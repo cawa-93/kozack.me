@@ -6,7 +6,7 @@ import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { petResting, traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
+import { BODY_PACE, DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { needsHumanMeds } from "../src/sim/illness";
 import { FUR_SPOTS, furVisible, isDryMess, pendingTufts, tuftsOf } from "../src/sim/household";
@@ -141,7 +141,7 @@ export class Bot {
       // Оглушений персонаж нічого не може (§9.12): дочекатися, а не повторювати дію без руху часу.
       const stun = this.state.character.body.stun;
       if (stun > 0) {
-        this.wait(stun + 0.01);
+        this.wait(stun * BODY_PACE + 0.01);
         continue;
       }
       const task = this.next();
@@ -872,7 +872,7 @@ export class Bot {
   }
 
   private holdFor(minutes: number): void {
-    for (let spent = 0; spent < minutes; spent += HOLD_STEP) {
+    for (let spent = 0; spent < minutes * BODY_PACE; spent += HOLD_STEP) {
       advance(this.save, HOLD_STEP, { move: { x: 0, y: 0 }, hold: true });
       // Гра й пестощі, що закінчилися, чекають, поки кнопку відпустять (§9.12).
       const activity = this.state.character.activity;
@@ -976,7 +976,7 @@ export class Bot {
       const before = this.state.minute;
       // Оглушений персонаж просто чекає.
       if (body.stun > 0) {
-        advance(this.save, body.stun + 0.01);
+        advance(this.save, body.stun * BODY_PACE + 0.01);
         continue;
       }
       const step = Math.min(WALK_STEP, distance / 3 + 0.005);
