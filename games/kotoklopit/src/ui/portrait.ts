@@ -5,10 +5,8 @@
 // `iso/personportrait.ts`; крок 16, T2). Поки атлас вантажиться, полотно лишається як було, а коли атлас готовий, портрет
 // перемальовується сам.
 
-import type { Cat, Look } from "../sim/types";
-import { composeFigure, composePortrait } from "../view/art/compose";
-import { catRecipeOf } from "../view/art/recipes";
-import { catPortraitParts } from "../view/iso/catportrait";
+import type { Look } from "../sim/types";
+import { composePortrait } from "../view/art/compose";
 import { personPortraitParts } from "../view/iso/personportrait";
 
 /** Полотно портрета заданого розміру в CSS-пікселях; малюнок — `drawPortrait`. */
@@ -25,11 +23,6 @@ export function portraitCanvas(width: number, height: number): HTMLCanvasElement
 
 /** Поле довкола фігури, частка меншої сторони полотна. */
 const PADDING = 0.04;
-
-/** Намалювати кота (§9.7); атлас ще вантажиться — перемалює, щойно він готовий. */
-export function drawCatPortrait(canvas: HTMLCanvasElement, cat: Cat): void {
-  composeFigure(canvas, catPortraitParts(cat), catRecipeOf(cat), { padding: PADDING, onReady: () => drawCatPortrait(canvas, cat) });
-}
 
 /**
  * Намалювати персонажа анфас на весь зріст частинами скелета з гри (`composePortrait`). Атлас ще вантажиться — портрет

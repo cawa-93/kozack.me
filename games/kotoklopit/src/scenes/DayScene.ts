@@ -1265,8 +1265,8 @@ export class DayScene extends Phaser.Scene {
     const cat = this.blocked() ? undefined : nextNewcomer(this.state);
     if (!cat) return;
     this.overlay.show(
-      catIntroCard(this.state, cat, (name) => {
-        meetCat(cat, name);
+      catIntroCard(this.state, cat, () => {
+        meetCat(cat);
         this.overlay.close();
       }),
     );

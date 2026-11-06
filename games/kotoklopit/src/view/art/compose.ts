@@ -576,7 +576,7 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
 }
 
 /** Намалювати частини фігури тим самим рецептом, що в грі, вписавши в полотно; решта — як у `composePortrait`. */
-export function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: readonly PortraitPart[], recipe: TintRecipe, opts: PortraitOptions = {}): boolean {
+function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: readonly PortraitPart[], recipe: TintRecipe, opts: PortraitOptions = {}): boolean {
   const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
   const state = artFrameState(frames);
   if (state === "missing") return false;
@@ -602,37 +602,10 @@ export function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts
     placed.push({ part, source });
   }
 
-  // Межі фігури в одиницях арту: полотно кожної частини навколо її pivot, з поворотом і масштабом.
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  const drawn = placed.map(({ part, source }) => {
-    const { size, pivot } = source.frame;
-    const m = partMatrix(part, pivot);
-    for (const [cx, cy] of [
-      [0, 0],
-      [size.w, 0],
-      [0, size.h],
-      [size.w, size.h],
-    ] as const) {
-      const x = m.a * cx + m.c * cy + m.e;
-      const y = m.b * cx + m.d * cy + m.f;
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x);
-      maxY = Math.max(maxY, y);
-    }
-    return { source, m, far: part.far === true };
-  });
+  const { k, ox, oy } = fitFigure(placed, canvas.width, canvas.height, opts.padding ?? 0.06, opts.align ?? "center");
+  const drawn = placed.map(({ part, source }) => ({ source, m: partMatrix(part, source.frame.pivot), far: part.far === true }));
   const W = canvas.width;
   const H = canvas.height;
-  const pad = Math.min(W, H) * (opts.padding ?? 0.06);
-  const bw = Math.max(1, maxX - minX);
-  const bh = Math.max(1, maxY - minY);
-  const k = Math.max(0, Math.min((W - pad * 2) / bw, (H - pad * 2) / bh));
-  const ox = (W - bw * k) / 2 - minX * k;
-  const oy = (opts.align === "bottom" ? H - pad - bh * k : (H - bh * k) / 2) - minY * k;
 
   const far = farRecipe(recipe);
   ctx.save();
@@ -655,6 +628,94 @@ export function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts
   }
   ctx.restore();
   return true;
+}
+
+/** Як вписати частини в полотно `W` × `H`: межі фігури в одиницях арту, з поворотом частин, і поле `padding`. */
+function fitFigure(placed: readonly { part: PortraitPart; source: FrameLayers }[], W: number, H: number, padding: number, align: "center" | "bottom"): { k: number; ox: number; oy: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const { part, source } of placed) {
+    const { size, pivot } = source.frame;
+    const m = partMatrix(part, pivot);
+    for (const [cx, cy] of [
+      [0, 0],
+      [size.w, 0],
+      [0, size.h],
+      [size.w, size.h],
+    ] as const) {
+      const x = m.a * cx + m.c * cy + m.e;
+      const y = m.b * cx + m.d * cy + m.f;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  const pad = Math.min(W, H) * padding;
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const k = Math.max(0, Math.min((W - pad * 2) / bw, (H - pad * 2) / bh));
+  return { k, ox: (W - bw * k) / 2 - minX * k, oy: (align === "bottom" ? H - pad - bh * k : (H - bh * k) / 2) - minY * k };
+}
+
+/**
+ * Фігура, що рухається (живий портрет кота, §9.7). Складати шари кадру щокадру задорого, тож кожен кадр частини тонується лише раз, а
+ * далі його готове полотно тільки перекладають. Масштаб — за першою позою: рухи не міняють розміру фігури.
+ */
+export class FigureCanvas {
+  private readonly tinted = new Map<string, Canvas2D>();
+  private readonly far: TintRecipe;
+  private fit: { k: number; ox: number; oy: number } | null = null;
+
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    private readonly recipe: TintRecipe,
+    private readonly padding: number,
+  ) {
+    this.far = farRecipe(recipe);
+  }
+
+  /** Намалювати позу; false — кадри ще вантажаться чи їх немає, тоді полотно лишається як було. */
+  draw(parts: readonly PortraitPart[]): boolean {
+    const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
+    const state = artFrameState(frames);
+    if (state === "loading") void loadArtFrames(frames);
+    if (state !== "ready") return false;
+    const ctx = this.canvas.getContext("2d");
+    if (!ctx) return false;
+    const placed: { part: PortraitPart; source: FrameLayers }[] = [];
+    for (const [i, part] of parts.entries()) {
+      const source = artLayerSource(frames[i] ?? part.id);
+      if (!source) return false;
+      placed.push({ part, source });
+    }
+    const { width: W, height: H } = this.canvas;
+    const { k, ox, oy } = (this.fit ??= fitFigure(placed, W, H, this.padding, "center"));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    for (const [i, { part, source }] of placed.entries()) {
+      const key = `${frames[i]}|${part.far === true}`;
+      let tinted = this.tinted.get(key);
+      if (!tinted) {
+        const made = createCtx(source.w, source.h);
+        if (!made) continue;
+        composeFrame(made, source.source, part.far === true ? this.far : this.recipe, { w: source.w, h: source.h });
+        this.tinted.set(key, made);
+        tinted = made;
+      }
+      const m = partMatrix(part, source.frame.pivot);
+      const sx = source.frame.size.w / source.w;
+      const sy = source.frame.size.h / source.h;
+      ctx.setTransform(m.a * k * sx, m.b * k * sx, m.c * k * sy, m.d * k * sy, m.e * k + ox, m.f * k + oy);
+      ctx.drawImage(tinted.canvas, 0, 0);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    return true;
+  }
 }
 
 /** Перетворення полотна частини (одиниці арту від лівого верхнього кута) у простір фігури: pivot → (x, y), поворот, масштаб. */

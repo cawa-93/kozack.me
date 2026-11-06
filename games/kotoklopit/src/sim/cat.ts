@@ -216,11 +216,15 @@ export function nextNewcomer(state: GameState): Cat | undefined {
   return state.cats.find((cat) => cat.newcomer === true && cat.away === null);
 }
 
-/** Гравець познайомився з котом (§9.7): порожнє поле лишає згенероване ім'я. */
-export function meetCat(cat: Cat, name: string): void {
+/** Гравець познайомився з котом (§9.7). */
+export function meetCat(cat: Cat): void {
+  delete cat.newcomer;
+}
+
+/** Нове ім'я кота (§9.7): порожнє поле лишає те, що було. */
+export function renameCat(cat: Cat, name: string): void {
   const own = name.trim();
   if (own !== "") cat.name = own;
-  delete cat.newcomer;
 }
 
 export function isOld(cat: Cat): boolean {

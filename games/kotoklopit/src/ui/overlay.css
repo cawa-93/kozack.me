@@ -455,32 +455,52 @@
   border-image: url("../../art/ui/well.svg") 16 fill / 16px / 4px stretch;
 }
 
-/* Знайомство з новим котом (§9.7): портрет ліворуч, ім'я й те, що відомо, праворуч. */
-.cat-intro {
+/* Картка кота (§9.7): портрет ліворуч, ім'я й те, що відомо, праворуч. Витягнута вшир: у знайомстві й у телефоні — одна. */
+.card:has(.cat-profile) {
+  width: min(820px, 100%);
+}
+
+.cat-profile {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--enamel);
+  box-shadow: inset 0 -3px 0 var(--shade-soft);
 }
 
-.cat-intro .portrait {
+.cat-profile + .cat-profile {
+  margin-top: 10px;
+}
+
+.cat-profile-extra {
+  margin-top: 8px;
+}
+
+.cat-profile-extra:empty {
+  display: none;
+}
+
+.cat-profile .portrait {
   flex: none;
 }
 
-.cat-intro-side {
+.cat-profile-side {
   flex: 1;
   min-width: 0;
 }
 
-.cat-intro-facts {
+.cat-profile-facts {
   margin-top: 10px;
 }
 
-.cat-intro-line {
+.cat-profile-line {
   margin: 0 0 4px;
   font-size: 15px;
 }
 
-.cat-intro-head {
+.cat-profile-head {
   font-weight: 600;
 }
 
@@ -597,12 +617,12 @@
 }
 
 @media (max-width: 420px) {
-  .cat-intro {
+  .cat-profile {
     flex-direction: column;
     align-items: center;
   }
 
-  .cat-intro-side {
+  .cat-profile-side {
     width: 100%;
   }
 
@@ -1438,7 +1458,7 @@
      портрет — не вищий, ніж лишає картка без прокрутки (`--look-chrome`: поля екрана, рамка, підзаголовок, заголовок,
      кнопки й рамка портрета); вигляду він не міняє, лише масштаб. */
   .card:has(.look-editor),
-  .card:has(.cat-intro) {
+  .card:has(.cat-profile) {
     --look-chrome: 182px;
     width: min(780px, 100%);
   }
@@ -1455,9 +1475,10 @@
     max-width: calc((100dvh - var(--look-chrome)) * 13 / 22);
   }
 
-  .cat-intro .portrait {
-    max-height: calc(100dvh - var(--look-chrome));
-    max-width: calc(100dvh - var(--look-chrome));
+  /* Поля картки кота теж забирають висоту. */
+  .cat-profile .portrait {
+    max-height: calc(100dvh - var(--look-chrome) - 24px);
+    max-width: calc(100dvh - var(--look-chrome) - 24px);
   }
 }
 

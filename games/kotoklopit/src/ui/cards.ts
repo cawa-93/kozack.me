@@ -10,7 +10,7 @@ import { WEEK_PAIRS } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, Trait, ThingKind } from "../sim/types";
+import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
 import {
   ADDRESS_TEXTS,
   BREED_ABOUT,
@@ -42,6 +42,7 @@ import { plural } from "./titles";
 export { plural };
 import { UTILITIES_ICON } from "../view/symbols";
 import { LOOK_OPTIONS } from "./look";
+import { catProfile, type CatFacts } from "./catprofile";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { traitChips, traitHint } from "./traits";
 
@@ -310,7 +311,7 @@ export function playerLine(state: GameState): string {
   return `${name} · ${job} · ${DIFFICULTY_TITLES[state.difficulty]}`;
 }
 
-export const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
+const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
 
 /**
  * Порода, як її знає персонаж (§9.11): «мейнкун × ?», «[безпородний|безпородна]», «мейнкун, [чистокровний|чистокровна]»; null — невідома.
@@ -352,8 +353,8 @@ export function breedAbout(cat: Cat): string[] {
   return lines;
 }
 
-/** Що про кота вже відомо (§9.9): рядки про породу, стани, хвороби й здогадки та риси, відомі цілком. Без імені, статі й віку. */
-export function catFacts(state: GameState, cat: Cat): { lines: string[]; known: Trait[] } {
+/** Що про кота вже відомо (§9.9): стать і вік, рядки про породу, стани, хвороби й здогадки та риси, відомі цілком. */
+export function catFacts(state: GameState, cat: Cat): CatFacts {
   const lines: string[] = [];
   const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
   if (breed !== null) lines.push(breed);
@@ -380,36 +381,28 @@ export function catFacts(state: GameState, cat: Cat): { lines: string[]; known: 
     } else if (seen === 1) lines.push("❓ Помічено щось дивне");
   }
   if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
-  return { lines, known };
+  return { head: `${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`, lines, known };
 }
 
-/** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
+/** Картки котів (§9.7, §9.9): та сама картка, що й у знайомстві, а під нею — оголошення. */
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
-    const { lines, known } = catFacts(state, cat);
-    lines.unshift(`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`);
-    const card = note(...lines);
-    // Ім'я — заголовок картки, навіть коли під ним самі риси.
-    const title = card.firstElementChild;
-    if (title instanceof HTMLElement) title.style.fontWeight = "600";
-    if (known.length > 0) card.append(traitChips(known, cat.sex));
+    const card = element("div", "cat-profile-extra");
     // Оголошення (§9.8): з підтвердженням (картку показує сцена) і можна зняти; новонародженого й матір новонароджених — ні.
     const blocker = giveAwayBlocker(state, cat);
     if (state.ads.includes(cat.id)) {
       card.append(note(`Оголошення: завтра вранці ${cat.name} поїде до нових господарів.`));
       const cancel = element("button", "button", "Зняти оголошення");
-      cancel.style.marginTop = "8px";
       cancel.addEventListener("click", () => handlers.cancelAd(cat));
       card.append(cancel);
     } else if (blocker === "nursing") card.append(note("Годує новонароджених — поки що лишається вдома."));
     else if (blocker === null) {
       const ad = element("button", "button", "Віддати в добрі руки");
-      ad.style.marginTop = "8px";
       ad.addEventListener("click", () => handlers.advertise(cat));
       card.append(ad);
     }
-    return card;
+    return catProfile(cat, catFacts(state, cat), card);
   });
 }
 
