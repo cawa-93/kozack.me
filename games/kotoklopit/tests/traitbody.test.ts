@@ -197,7 +197,7 @@ function sleepSpots(traits: Record<string, TraitLevel>, day: string | null = nul
     const sun = sunSpot(save.current.minute);
     if (cat.act.target === "tile") counts["tile"]! += 1;
     else if (WINDOWS.some((w) => w.sill === cat.act.target)) counts["sill"]! += 1;
-    else if (goal && sun && goal.x === sun.x && goal.y === sun.y) counts["sun"]! += 1;
+    else if (goal && sun && goal.x === Math.floor(sun.x) && goal.y === Math.floor(sun.y)) counts["sun"]! += 1;
     else if (goal && goal.y === computer.y && goal.x >= computer.x && goal.x < computer.x + computer.w) counts["computer"]! += 1;
     else if (goal && goal.x >= bed.x && goal.x < bed.x + bed.w && goal.y >= bed.y && goal.y < bed.y + bed.h) counts["bed"]! += 1;
   }
@@ -211,10 +211,12 @@ function arrive(save: Save, cat: Cat): void {
 
 describe("«Теплолюбність» (§9.12, рішення автора 2026-10-25)", () => {
   it("сонячна пляма: «+» лягає туди частіше, «Холодостійкий» — ніколи; «−» спить на комп'ютері рідше, −2 — ніколи", () => {
-    const plain = sleepSpots({});
-    const warm = sleepSpots({ warmth: 2 });
-    const cool = sleepSpots({ warmth: -1 });
-    const cold = sleepSpots({ warmth: -2 });
+    // Пляма лише там, де є смуга сонця (§8.9): удень її немає.
+    const sunny = hours(7.5);
+    const plain = sleepSpots({}, null, sunny);
+    const warm = sleepSpots({ warmth: 2 }, null, sunny);
+    const cool = sleepSpots({ warmth: -1 }, null, sunny);
+    const cold = sleepSpots({ warmth: -2 }, null, sunny);
     expect(warm["sun"]).toBeGreaterThan(plain["sun"]!);
     expect(warm["computer"]).toBeGreaterThan(plain["computer"]!);
     expect(cool["sun"]).toBeLessThan(plain["sun"]!);

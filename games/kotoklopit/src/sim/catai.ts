@@ -95,6 +95,7 @@ import {
   STEAL_HUNGER,
   STERILIZATION,
   STRESS_EFFECTS,
+  SUN_SPOTS,
   SURPRISE_CHANCE,
   TALKATIVE,
   TERRITORY,
@@ -678,13 +679,11 @@ function urgent(state: GameState, cat: Cat): boolean {
   return n.toilet >= NEED_THRESHOLD.toilet || n.hunger >= hungerThreshold(cat) || n.thirst >= NEED_THRESHOLD.thirst || n.fatigue >= sleepThreshold(cat, state.minute);
 }
 
-/** Сонячна пляма у вітальні мандрує за годиною (§9.3). */
+/** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає — null. */
 export function sunSpot(minute: number): Vec | null {
-  const hour = hourOf(minute);
-  if (hour >= 8 && hour < 11) return { x: 3, y: 9 };
-  if (hour >= 11 && hour < 15) return { x: 8, y: 9 };
-  if (hour >= 15 && hour < 18) return { x: 16, y: 8 };
-  return null;
+  const m = hourOf(minute) * MINUTES_PER_HOUR;
+  const spot = SUN_SPOTS.find((s) => m >= s.from && m < s.to);
+  return spot ? { x: spot.x, y: spot.y } : null;
 }
 
 function weightedPick<T>(rng: Rng, options: readonly { weight: number; value: T }[]): T | null {
@@ -795,7 +794,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(sun) });
+  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(tileOf(sun)) });
   // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
   // Плитка одна: поки на ній спить кіт чи вже йде туди спати, інший її не обирає (перевірка етапу 2026-10-26: у спеку коти лягали
   // в ту саму точку, один в одного).
@@ -3367,7 +3366,12 @@ function sleptWarm(state: GameState, cat: Cat): void {
   const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (level > 0 && o?.kind === "bed" && (isCold(state) || level >= WARMTH.blanketLevel)) cat.act.blanket = true;
   const sun = sunSpot(state.minute);
-  const sunny = sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
+  const sunny = sun !== null && Math.floor(cat.x) === Math.floor(sun.x) && Math.floor(cat.y) === Math.floor(sun.y);
+  // Шлях веде лише до середини клітинки, а смуга вузька: дійшовши, кіт лягає на саму пляму (§8.9).
+  if (sunny && cat.act.target === null) {
+    cat.x = sun.x;
+    cat.y = sun.y;
+  }
   if (cat.act.blanket === true || o?.kind === "computer" || sunny) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
 }
 
