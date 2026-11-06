@@ -4,6 +4,7 @@ import { dropEverything, tickStove } from "./actions";
 import { newBody } from "./body";
 import { knownBreedHalves, shelterBreed } from "./breeds";
 import { observe, setWitnessing } from "./knowledge";
+import { cageStage } from "./carriers";
 import { ageCat, ageDue, asleep, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, closeLedger, passSleepTime } from "./character";
@@ -149,6 +150,8 @@ function plannedWakeUps(state: GameState, rng: Rng, from: number, to: number): P
   const dawn = MINUTES_PER_DAY + WAKE_UP.morningMinute;
   for (const cat of state.cats) {
     // Новонароджені нікого не будять: вони й феєрверків не чують (перевірка модифікаторів 2026-10-28).
+    // Кіт під замком кричить: хто вже нагадує про себе, будить персонажа (§8.7).
+    if (cat.away === "carrier" && cageStage(cat) !== "calm") wakes.push({ cat, minute: from + Math.floor(rng.next() * (to - from)), reason: "night" });
     if (cat.away !== null || isNewborn(cat)) continue;
     // Тиха ніч: коти не будять (§4.1).
     if (state.modifiers.day === "quiet-night" || state.modifiers.day === "quiet-evening") continue;

@@ -224,7 +224,7 @@ function catChips(state: GameState): HTMLElement | null {
 export type PhoneTab = "shop" | "mine" | "cats" | "album" | "game";
 
 /** Річ без місця в «Моїх речах» (§8.7): техніка, автогодівниця над місцем миски, переноска чи замок на шафку. */
-export type DiscardThing = { appliance: Appliance } | { feeder: string } | { owned: "carrier" | "lock" };
+export type DiscardThing = { appliance: Appliance } | { feeder: string } | { carrier: number } | { owned: "lock" };
 
 export interface PhoneHandlers {
   /** Оплатити кошик доставкою (§6.4). */
@@ -410,7 +410,7 @@ function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
 }
 
 /** Причина в альбомі (§9.7); віддані — «живе в нових руках» (§9.8), як і на титулці. */
-const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", given: "живе в нових руках" };
+const CAUSE_TITLES: Record<string, string> = { old: "старість", sorrow: "туга", carrier: "замкнений у переносці", given: "живе в нових руках" };
 
 /**
  * Причина в першому рядку альбому: хвороба — сама назва з малої, як «старість» і «туга» (загальна ревізія 2026-10-29: було
@@ -448,9 +448,9 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   }
   // Техніка й автогодівниці теж (§8.7): раніше їх тут не було, тож викинути їх не можна було зовсім (перевірка побуту 2026-10-28);
   // переноска й замок на шафку — так само (загальна ревізія 2026-10-29), щоб дешеві можна було замінити дорожчими.
-  const { carrier, lock } = state.home;
+  const { carriers, lock } = state.home;
   const extra: { kind: ThingKind; quality: Quality; thing: DiscardThing }[] = [
-    ...(carrier === null ? [] : [{ kind: "carrier" as const, quality: carrier, thing: { owned: "carrier" as const } }]),
+    ...carriers.map((c, index) => ({ kind: "carrier" as const, quality: c.quality, thing: { carrier: index } })),
     ...(lock === undefined ? [] : [{ kind: "lock" as const, quality: lock, thing: { owned: "lock" as const } }]),
     ...(["fountain", "robot", "vacuum"] as const).flatMap((a) => {
       const quality = state.home.appliances[a];

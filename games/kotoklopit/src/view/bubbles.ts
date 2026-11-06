@@ -66,6 +66,8 @@ interface Placed extends LaidBubble {
 
 /** Бабл стану. */
 interface StateBubble extends Placed {
+  /** Напис на плашці: скільки котів під замком (§8.7). */
+  count: string | undefined;
   /** Ключ, як у `setState`. */
   owner: string;
   kind: BubbleKind;
@@ -127,7 +129,7 @@ export class Bubbles {
    * у верхньому куті іконки (правому; з позначкою — лівому, `countSide`). Усе — у вкладеному контейнері зі сталим масштабом
    * (`ISO_BUBBLE_SCALE`), бо масштаб зовнішнього анімують виринання й `setState`.
    */
-  private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number, mark?: Mark): Made {
+  private make(kind: BubbleKind, icon: IconName, x: number, y: number, count?: number | string, mark?: Mark): Made {
     const look = this.looks[kind];
     const scene = this.scene;
     const body = scene.add.container(0, 0).setScale(look.scale);
@@ -163,15 +165,15 @@ export class Bubbles {
    * Над річчю — завжди вголос: речі не думають (§11.4), тож думка — лише над `Thinker`.
    */
   setState(anchor: Thinker, kind: "think", icon: IconName | null, x: number, y: number): void;
-  setState(anchor: string, kind: "say", icon: IconName | null, x: number, y: number): void;
-  setState(anchor: string, kind: BubbleKind, icon: IconName | null, x: number, y: number): void {
+  setState(anchor: string, kind: "say", icon: IconName | null, x: number, y: number, count?: string): void;
+  setState(anchor: string, kind: BubbleKind, icon: IconName | null, x: number, y: number, count?: string): void {
     const current = this.states.get(anchor);
     if (icon === null) {
       current?.container.destroy();
       this.states.delete(anchor);
       return;
     }
-    if (current && current.name === icon && current.kind === kind) {
+    if (current && current.name === icon && current.kind === kind && current.count === count) {
       current.visible = !this.busy(anchor);
       current.x = x;
       current.y = y;
@@ -180,11 +182,11 @@ export class Bubbles {
     }
     current?.container.destroy();
     const visible = !this.busy(anchor);
-    const container = this.make(kind, icon, x, y).container.setVisible(visible);
+    const container = this.make(kind, icon, x, y, count).container.setVisible(visible);
     container.setScale(0.6);
     this.scene.tweens.add({ targets: container, scale: 1, duration: 160, ease: "Back.easeOut" });
     const look = this.looks[kind];
-    this.states.set(anchor, { container, kind, name: icon, owner: anchor, icon, x, y, span: look.span, height: look.height, visible, target: 0, dx: 0, placed: false });
+    this.states.set(anchor, { container, kind, name: icon, count, owner: anchor, icon, x, y, span: look.span, height: look.height, visible, target: 0, dx: 0, placed: false });
     // Стає в ряд одразу, ще до кадру.
     this.arrange(0);
   }

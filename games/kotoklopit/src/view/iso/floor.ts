@@ -11,12 +11,13 @@
 import type Phaser from "phaser";
 
 import { carriedToy } from "../../sim/catai";
+import { CARRIER } from "../../sim/config";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { CARRIER_SPOT, itemPoint, ROBOT_DOCK, slotCenter } from "../../sim/home";
 import { cleaningTool, FUR_SPOTS, robotAt, tuftCat, tuftsOf } from "../../sim/household";
 import { thingSpot } from "../../sim/moving";
-import { VACUUM_TARGET, type Target } from "../../sim/targets";
+import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
@@ -27,7 +28,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierHolds, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -36,6 +37,10 @@ const ON = { overlay: 0.002, fx: 0.003, grate: 0.004 } as const;
 
 /** Ґратки переноски — над нею (у її проміжку): кіт, що спить у переносці (`catspot.ts`), — між нею й ґратками. */
 export const CARRIER_GRATE_DEPTH = ON.grate;
+
+/** Купа переносок (§8.7): крок порядку малювання між ними, клітинки, і як смикається та, яку гризуть. */
+const CARRIER_ORDER = 0.01;
+const CARRIER_SHAKE = { ms: 28, px: 2.5 } as const;
 
 /** Наскільки видно річ на клітинці, куди вона стане з рук (§8.7). */
 const GHOST_ALPHA = 0.6;
@@ -245,7 +250,7 @@ export class IsoFloorView implements WorldPart {
       this.place(spot, look, c, isoItemLook("feeder", feeder.quality).height, undefined, { x: c.x - FEEDER_BEHIND, y: c.y - FEEDER_BEHIND });
     }
 
-    this.drawHousehold(state);
+    this.drawHousehold(state, frame.time);
     this.drawThingSpot(state);
 
     // Безлад (§9.12): пласкі плями під котами й персонажем.
@@ -313,7 +318,7 @@ export class IsoFloorView implements WorldPart {
    * Побут (§8.5, §8.7): робот-пилосос на доку чи в дорозі; переноска біля дверей (з ґратками поверх кота, що в ній спить);
    * кошик білизни біля пральної машини наповнюється, поки чистого одягу меншає; шкарпетка визирає з-за дивана.
    */
-  private drawHousehold(state: GameState): void {
+  private drawHousehold(state: GameState, time: number): void {
     const { home } = state;
     const robot = home.appliances.robot;
     if (robot) {
@@ -321,13 +326,7 @@ export class IsoFloorView implements WorldPart {
       this.single("dock", dockFrame(state), ROBOT_DOCK, 14, { flat: true, half: 32 });
       this.single("robot", robotFrame(state, robot), robotAt(state), isoItemLook("robot", robot).height, { id: "robot", half: isoItemLook("robot", robot).half });
     }
-    if (home.carrier) {
-      const carrier = this.single("carrier", { id: `item/carrier/${home.carrier}`, state: "body" }, CARRIER_SPOT, isoItemLook("carrier").height, {
-        id: "carrier",
-        half: isoItemLook("carrier").half,
-      });
-      this.extra(carrier, "grate", carrierOccupied(state) ? { id: `item/carrier/${home.carrier}`, state: "grate" } : null, ON.grate);
-    }
+    this.drawCarriers(state, time);
     this.single("basket", { id: "env/laundry-basket", state: basketState(home.clothes) }, BASKET_AT, isoItemLook("basket").height, {
       id: "basket",
       half: isoItemLook("basket").half,
@@ -337,6 +336,22 @@ export class IsoFloorView implements WorldPart {
     // Вертикальний пилосос (§8.7, «Пилосос у руках»): стоїть там, де його поставили; у руках його малює персонаж (`item/vacuum`).
     const vacuum = home.vacuumAt;
     if (vacuum) this.single(VACUUM_TARGET, TOOL_FRAME[cleaningTool(state)], vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
+  }
+
+  /** Переноски (§8.7): один об'єкт, купа з кількох. Кіт гризе — його переноска смикається. */
+  private drawCarriers(state: GameState, time: number): void {
+    const shown = state.home.carriers.slice(0, CARRIER.shown);
+    shown.forEach((carrier, index) => {
+      const id = index === 0 ? "carrier" : `carrier-${index}`;
+      const look = isoItemLook("carrier");
+      const spot = this.single(id, { id: `item/carrier/${carrier.quality}`, state: "body" }, CARRIER_SPOT, look.height, { id, half: look.half });
+      this.extra(spot, "grate", carrierHolds(state, index) ? { id: `item/carrier/${carrier.quality}`, state: "grate" } : null, ON.grate);
+      spot.point.place(CARRIER_SPOT.x + index * CARRIER_ORDER, CARRIER_SPOT.y + index * CARRIER_ORDER);
+      const slot = carrierSlot(shown.length, index);
+      const shake = carrierShakes(state, index) ? Math.sin(time / CARRIER_SHAKE.ms) * CARRIER_SHAKE.px : 0;
+      const s = ISO.toScreen(CARRIER_SPOT);
+      for (const image of [spot.image, ...[...spot.extras.values()].map((e) => e.image)]) image.setPosition(s.x + slot.x + shake, s.y + slot.y);
+    });
   }
 
   /** Поки річ у руках, видно, де вона стане (§8.7): напівпрозора річ і контур клітинки. Поставити нікуди — нічого не видно. */
@@ -524,6 +539,7 @@ export class IsoFloorView implements WorldPart {
   anchor(id: string): Point | null {
     const home = this.ctx.state().home;
     if (id === VACUUM_TARGET) return home.vacuumAt ? floorAnchorAt(home.vacuumAt, isoItemLook("vacuum").height) : null;
+    if (id === CARRIER_TARGET) return home.carriers.length > 0 ? floorAnchorAt(CARRIER_SPOT, isoItemLook("carrier").height * (home.carriers.length > 1 ? 2 : 1)) : null;
     const [kind, raw] = id.split(":");
     const number = Number(raw);
     if (kind === "item") {
@@ -542,6 +558,11 @@ export class IsoFloorView implements WorldPart {
     if (target.type === "vacuum") {
       const spot = this.singles.get(VACUUM_TARGET);
       if (spot) this.glow.request(spot.image, around(target.at), isoItemLook("vacuum").height, alpha);
+      return true;
+    }
+    if (target.type === "carrier") {
+      const spot = this.singles.get(CARRIER_TARGET);
+      if (spot) this.glow.request(spot.image, around(target.at), isoItemLook("carrier").height, alpha);
       return true;
     }
     if (target.type !== "item" && target.type !== "mess") return false;

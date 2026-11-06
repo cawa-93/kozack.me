@@ -36,7 +36,7 @@ import { priceFactor } from "./modifiers";
 import { addCat, applyMorningSanity, giveStarterPack } from "./night";
 import { createRng, deriveSeed, stateRng, type Rng } from "./rng";
 import { weekOf } from "./time";
-import type { Cat, Destination, DiseaseId, GameState, Product, Quality, ThingKind, VisitLog } from "./types";
+import type { Cat, Destination, DiseaseId, GameState, Product, Quality, ThingKind, TripRider, VisitLog } from "./types";
 import { changeReputation, isWorkday } from "./work";
 
 /** Товар магазину: запаси чи річ для котів (і те, і те буває «litter»: наповнювач і лоток). */
@@ -50,10 +50,32 @@ export const GOODS: readonly Goods[] = [
 
 export const goodsKey = (goods: Goods): string => ("product" in goods ? goods.product : `thing:${goods.thing}`);
 
-/** Кіт у переносці цієї поїздки. */
+/** Кіт, чия картка зараз на місці (§8.5): коти йдуть по черзі. */
 export function tripCat(state: GameState): Cat | null {
   const id = state.trip?.cat;
   return state.cats.find((c) => c.id === id) ?? null;
+}
+
+/** Де їде поточний кіт. */
+export function tripCatPlace(state: GameState): TripRider["place"] | null {
+  return state.trip?.riders?.find((r) => r.cat === state.trip?.cat)?.place ?? null;
+}
+
+/** Наступний кіт черги (§8.5); на виставці по колу: там обирають одного. null — черга скінчилася. */
+export function nextTripRider(state: GameState): Cat | null {
+  const trip = state.trip;
+  const riders = trip?.riders ?? [];
+  if (!trip || riders.length < 2) return null;
+  const next = riders[riders.findIndex((r) => r.cat === trip.cat) + 1] ?? (trip.destination === "show" ? riders[0] : undefined);
+  return state.cats.find((c) => c.id === next?.cat) ?? null;
+}
+
+/** Перейти до наступного кота (§8.5): його журнал візиту порожній, послуги минулого лишаються зробленими. */
+export function nextTripCat(state: GameState): void {
+  const next = nextTripRider(state);
+  if (!state.trip || !next) return;
+  state.trip.cat = next.id;
+  state.trip.log = { exam: null, done: [] };
 }
 
 // --- Магазин і ліки на місці ----------------------------------------------------------------

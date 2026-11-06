@@ -26,7 +26,7 @@
    }
   },
   "home": {
-   "carrier": "cheap",
+   "carriers": [{ "quality": "cheap", "wear": 0 }],
    "supplies": {
     "catFood": { "cheap": 10, "premium": 10 },
     "litter": { "cheap": 6, "premium": 0 },

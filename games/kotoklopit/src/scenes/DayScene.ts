@@ -4,19 +4,20 @@ import { IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
-import { discard, discardAppliance, discardCarrier, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
+import { carrierRoom, discardCarrier } from "../sim/carriers";
+import { discard, discardAppliance, discardLock, seePhoneHints, supplyCount } from "../sim/economy";
 import { checkout } from "../sim/shop";
 import { onEvent, type CleanerVisit, type GameEvent, type GuestsVisit, type ModifierEvent } from "../sim/events";
 import { advance, carryFoundling, goHome, interact, newGame, newSeed, replayDay, replayWeek, rewindAccident } from "../sim/game";
 import { doctorTreat } from "../sim/illness";
-import { adopt, buyFromBreeder, enterShow, groom, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
+import { adopt, buyFromBreeder, enterShow, groom, nextTripCat, officeMeeting, vetExam, vetManner, vetSterilize, vetTreat } from "../sim/destinations";
 import { canLeave, startTrip } from "../sim/trips";
 import { advertise, cancelAd, recentlyArrived } from "../sim/farewell";
 import { exportSave, exportUnreadable, importSave } from "../ui/files";
 import { accidentCard, destinationCard, visitCard } from "../ui/trips";
 import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
-import { targetOf } from "../sim/targets";
+import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
@@ -29,7 +30,7 @@ import { giveCatnip, giveTreat, putCollar } from "../sim/care";
 import { giveMedicine, medicineCat } from "../sim/diseases";
 import { stateRng } from "../sim/rng";
 import { Overlay, type Card } from "../ui/overlay";
-import { CAREER_MESSAGES, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
+import { CAREER_MESSAGES, carrierDeathNews, CLEANER_TITLE, cleanerText, DIFFICULTY_TITLES, fill, GIVE_AWAY_LATER, GIVE_AWAY_RECENT, guestsText, homeVetText, IMPORT_SAVE, MOM_FOOD_TEXTS, POSITION_TITLES, UNREADABLE_SAVE } from "../texts";
 import { canUse } from "../sim/actions";
 import { moveThing } from "../sim/moving";
 import { type Anchor, Bubbles, THOUGHT_HOLD_MS } from "../view/bubbles";
@@ -589,6 +590,10 @@ export class DayScene extends Phaser.Scene {
         vetExam(state);
         again();
       },
+      nextCat: () => {
+        nextTripCat(state);
+        again();
+      },
       // Що дали послуги, симуляція сама пише в журнал поїздки (§8.5): картка показує це в рядках.
       treat: (disease, quality) => {
         vetTreat(state, disease, quality, rng);
@@ -779,6 +784,11 @@ export class DayScene extends Phaser.Scene {
   /** Бабли стану (§11.4): що висить, поки триває. Над речами й котами — вголос, над персонажем — думка. */
   private updateStateBubbles(): void {
     const state = this.state;
+    // Коти під замком (§8.7): гравець завжди бачить, скільки їх, хоч би скільки було переносок.
+    const caged = state.home.caged?.length ?? 0;
+    const carrierAnchor = caged > 0 ? this.belowHud(this.world.anchor(CARRIER_TARGET), "say") : null;
+    if (carrierAnchor) this.bubbles.setState(CARRIER_TARGET, "say", "cat", carrierAnchor.x, carrierAnchor.y, `${caged}/${carrierRoom(state.home)}`);
+    else this.bubbles.setState(CARRIER_TARGET, "say", null, 0, 0);
     const set = (id: string, icon: IconName | null): void => {
       const anchor = this.belowHud(this.world.anchor(id), "say");
       if (anchor) this.bubbles.setState(id, "say", icon, anchor.x, anchor.y);
@@ -948,6 +958,9 @@ export class DayScene extends Phaser.Scene {
         break;
       case "cat-fight":
         this.cameras.main.shake(120, 0.002);
+        break;
+      case "cat-gone":
+        if (event.entry.cause.kind === "carrier") this.news.push(carrierDeathNews(event.entry));
         break;
       case "trait-noticed": {
         // Про кота щось стало відомо — телефон скаже (§9.9, правка автора 2026-10-25).
@@ -1276,7 +1289,8 @@ export class DayScene extends Phaser.Scene {
           discardThing: (thing, quality) => {
             if ("appliance" in thing) confirmDiscard(thing.appliance, quality, () => discardAppliance(this.state, thing.appliance));
             else if ("feeder" in thing) confirmDiscard("feeder", quality, () => discardFeeder(this.state, thing.feeder));
-            else confirmDiscard(thing.owned, quality, () => (thing.owned === "carrier" ? discardCarrier(this.state) : discardLock(this.state)));
+            else if ("carrier" in thing) confirmDiscard("carrier", quality, () => discardCarrier(this.state, thing.carrier));
+            else confirmDiscard(thing.owned, quality, () => discardLock(this.state));
           },
           // Віддати — назавжди: спершу картка-підтвердження (перевірка розмноження 2026-10-28: був один дотик без підтвердження);
           // без чисел ефекту — тексти не називають прихованих чисел (§11.3а; крок 17, вичитка 2026-10-28).

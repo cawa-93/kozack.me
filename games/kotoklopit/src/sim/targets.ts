@@ -3,7 +3,7 @@
 
 import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, MOVING, REACH } from "./config";
-import { centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
+import { CARRIER_SPOT, centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
 import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
 export type Target =
@@ -12,10 +12,14 @@ export type Target =
   | { type: "mess"; id: string; mess: Mess }
   | { type: "cat"; id: string; cat: Cat }
   /** Вертикальний пилосос, що стоїть на підлозі (§8.7, «Пилосос у руках»): `at` — точка підлоги під ним. */
-  | { type: "vacuum"; id: typeof VACUUM_TARGET; at: Vec };
+  | { type: "vacuum"; id: typeof VACUUM_TARGET; at: Vec }
+  /** Переноски біля дверей (§8.7). */
+  | { type: "carrier"; id: typeof CARRIER_TARGET; at: Vec };
 
 /** Id цілі «пилосос на підлозі» (§8.7). */
 export const VACUUM_TARGET = "vacuum";
+/** Id цілі «переноски» (§8.7). */
+export const CARRIER_TARGET = "carrier";
 
 /** Половина розміру безладу й кота на підлозі, у клітинках. */
 const SMALL_RADIUS = 0.35;
@@ -54,6 +58,7 @@ function candidates(state: GameState): Target[] {
   // Пилосос на підлозі (§8.7): його, як іграшку, беруть лише порожніми руками, тож з повними він нічого не заступає.
   const vacuum = state.home.vacuumAt;
   if (vacuum && !handsFull) targets.push({ type: "vacuum", id: VACUUM_TARGET, at: vacuum });
+  if (state.home.carriers.length > 0) targets.push({ type: "carrier", id: CARRIER_TARGET, at: { x: CARRIER_SPOT.x, y: CARRIER_SPOT.y - 0.4 } });
   // З річчю в руках безлад не прибрати, тож він не заступає смітник чи стіл (§10).
   if (state.character.held === null) {
     for (const mess of state.home.messes) targets.push({ type: "mess", id: messTargetId(mess), mess });
@@ -76,6 +81,7 @@ export function targetCenter(target: Target): Vec {
     case "cat":
       return { x: target.cat.x, y: target.cat.y };
     case "vacuum":
+    case "carrier":
       return target.at;
   }
 }

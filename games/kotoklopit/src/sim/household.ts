@@ -345,7 +345,7 @@ function vacuumFits(state: GameState, x: number, y: number): boolean {
   if (isSolid(state, x, y) || hiddenTile(x, y) || objectAt(state, x, y) !== null) return false;
   const home = state.home;
   const on = (p: Vec): boolean => Math.floor(p.x) === x && Math.floor(p.y) === y;
-  if (on(LAUNDRY_BASKET) || (home.carrier !== null && on(CARRIER_TILE)) || (home.appliances.robot && on(ROBOT_DOCK))) return false;
+  if (on(LAUNDRY_BASKET) || (home.carriers.length > 0 && on(CARRIER_TILE)) || (home.appliances.robot && on(ROBOT_DOCK))) return false;
   return !home.items.some((item) => on(itemTile(item)));
 }
 

@@ -150,7 +150,7 @@ export interface BubbleSays {
   kind: BubbleKind;
   icon: string;
   mark?: Mark | undefined;
-  count?: number | undefined;
+  count?: number | string | undefined;
 }
 
 /**

@@ -1,13 +1,13 @@
 // Картки поїздок (§8.5): куди поїхати, подія на місці, аварія.
 
 import { DISEASES, DOCTOR_TREAT, GROOMER, MODIFIERS, SHELTER, STERILIZATION, STORE_GOODS, TRIPS, VET, WEIGHT } from "../sim/config";
-import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, vetManner } from "../sim/destinations";
+import { breederCatPrice, breederCats, groomerWashes, knownSterilizeBlocker, nextTripRider, shelterCats, sterilizeMinutes, sterilizePrice, tripCat, tripCatPlace, vetManner } from "../sim/destinations";
 import { breedById, MIXED } from "../sim/breeds";
 import { visibility } from "../sim/knowledge";
 import { priceFactor, roadFactor } from "../sim/modifiers";
 import { roadMinutes, tripBlocker } from "../sim/trips";
 import { formatClock } from "../sim/time";
-import type { Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
+import type { Cat, Destination, DiseaseId, GameState, IllnessId, Quality, VisitLog } from "../sim/types";
 import { accidentLines, BREED_ABOUT, DAY_MODIFIER_TEXTS, fill, GROOMED, minutesText, VET_ADVICE, VET_MANNER } from "../texts";
 import { destinationLabel, diseaseLabel, illnessLabel } from "./icons";
 import { shopCatalog, type CatalogOptions } from "./shop";
@@ -44,13 +44,15 @@ function stockNote(note: string): HTMLElement {
  * списком (рецензія реалізації А15, 2026-10-29: у рядку «no-cat» стояв текст «Спершу опустіть кота.», якого ніхто не бачив).
  */
 const BLOCKERS = {
-  cat: "Візьміть кота на руки й підійдіть із ним до дверей.",
-  carrier: "Потрібна переноска: її можна замовити з телефона.",
-  "no-cat": "З котом на руках — лише туди, де потрібен кіт.",
   newborn: "Новонароджене — лише біля мами.",
   office: "Їхати в офіс треба лише в день зборів.",
   show: "Виставка — лише в її день.",
 } as const;
+
+/** Де кіт на місці (§8.5): у переносці чи на руках. */
+function whereCat(state: GameState, cat: Cat): string {
+  return `${cat.name} ${tripCatPlace(state) === "hands" ? "на руках" : "у переносці"}.`;
+}
 
 /** Гроші персонажа в примітці біля заголовка чи в смузі кошика — у картці рівно один раз (§8.5; рішення автора 2026-11-03). */
 const purse = (state: GameState): string => `👛 ${Math.floor(state.character.money)} ₴`;
@@ -81,7 +83,7 @@ export function destinationCard(state: GameState, onPick: (d: Destination) => vo
   const list = element("div", "shop");
   // Причину, через яку не можна їхати нікуди, кажуть один раз, а не в кожному рядку.
   const held = state.character.held?.kind === "cat" ? tripBlocker(state, "shop") : null;
-  const everywhere = held === "no-cat" || held === "newborn" ? held : null;
+  const everywhere = held === "newborn" ? held : null;
   for (const destination of Object.keys(TRIPS) as Destination[]) {
     const blocker = tripBlocker(state, destination);
     if ((destination === "office" && blocker === "office") || (destination === "show" && blocker === "show")) continue;
@@ -137,6 +139,8 @@ export interface VisitHandlers {
   /** Купити кошик на місці (§6.4): у магазині, ліки — у ветеринара й лікаря (§8.5). */
   checkout: (cart: CartLine[]) => void;
   exam: () => void;
+  /** Перейти до наступного кота черги (§8.5). */
+  nextCat: () => void;
   treat: (disease: DiseaseId, quality: Quality) => void;
   treatSelf: (illness: IllnessId, quality: Quality) => void;
   adopt: (cat: number) => void;
@@ -207,7 +211,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
     case "vet": {
       if (!cat) break;
       if (!log.exam) {
-        body.push(`${cat.name} у переносці.`);
+        body.push(whereCat(state, cat));
         body.push(row("Огляд", `🕐 ${minutesText(TRIPS.vet.visit)}`, button(`${VET.exam}\u00a0₴`, VET.exam, h.exam)));
         const sterilize = sterilizeRow();
         if (sterilize) body.push(sterilize);
@@ -344,7 +348,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
       }
       const titles = SERVICE_TITLES[washes ? "wash" : "groom"];
       body.push(
-        `${cat.name} у переносці.`,
+        whereCat(state, cat),
         row("Грумінг", `🕐 ${minutesText(TRIPS.groomer.visit)}`, button(priced(titles.cheap, GROOMER.price.cheap), GROOMER.price.cheap, () => h.groom("cheap")), button(priced(titles.premium, GROOMER.price.premium), GROOMER.price.premium, () => h.groom("premium"))),
       );
       break;
@@ -353,7 +357,7 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
       if (!cat) break;
       const result = log.done.find((d) => d.startsWith("show:"));
       if (!result) {
-        body.push(`${cat.name} у переносці.`);
+        body.push(whereCat(state, cat));
         body.push(row("Участь", `🕐 ${minutesText(TRIPS.show.visit)}`, button(`${MODIFIERS.show.fee}\u00a0₴`, MODIFIERS.show.fee, h.show)));
         break;
       }
@@ -365,6 +369,13 @@ export function visitCard(state: GameState, log: VisitLog, h: VisitHandlers, sto
       // Звільнили дорогою — зборів немає, і персонаж одразу їде назад (`officeMeeting`).
       body.push(trip?.visit === 0 ? "На збори вас уже не пустили: ви тут більше не працюєте." : "Збори в офісі тривали три години. Керівництво бачило вас особисто.");
       break;
+  }
+  // Коти йдуть по черзі (§8.5): наступного кличуть, коли з цим закінчили чи нічого не хочуть робити.
+  const next = nextTripRider(state);
+  if (next && (destination === "vet" || destination === "groomer" || (destination === "show" && state.today.showDone !== true))) {
+    const go = element("button", "button", "Далі");
+    go.addEventListener("click", h.nextCat);
+    body.push(row(`Наступний кіт: ${next.name}`, "", go));
   }
   // Заголовок — назва пункту з його іконкою, як у «Куди поїхати?» і на табличці на даху (§11.4 «Іконка біля назви»). Годинник —
   // останнім у примітці праворуч від заголовка, коли картка посередині й напису над парковкою немає (§8.5 «На місці — кадр

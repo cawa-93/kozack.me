@@ -194,6 +194,9 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
       return once("put");
     case "thing-moved":
       return once(event.stage === "taken" ? "take" : "put");
+    case "cat-seated":
+    case "carrier-opened":
+      return once("put");
     case "trashed":
       return once("trash");
     case "fed":

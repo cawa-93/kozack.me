@@ -239,6 +239,8 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "human-meds", mark: "ok" };
     case "no-room":
       return { icon: "no-room" };
+    case "carrier-full":
+      return { icon: "carrier", mark: "no" };
     case "no-place":
       return { icon: "no-place", mark: "no" };
     case "thing-busy":
@@ -298,7 +300,7 @@ export type Thinker = "person" | `cat:${number}`;
  * Бабл події (§11.4, правка автора 2026-10-25): вголос — над тим, хто чи що звучить (персонаж, кіт чи річ —
  * ключ, як у `anchorOf` сцени), думка — лише над персонажем чи котом.
  */
-export type EventBubble = { icon: IconName; count?: number; mark?: Mark } & ({ kind: "say"; at: string } | { kind: "think"; at: Thinker });
+export type EventBubble = { icon: IconName; count?: number | string; mark?: Mark } & ({ kind: "say"; at: string } | { kind: "think"; at: Thinker });
 
 /**
  * Які бабли показує подія. Що відбувається вголос (нявкання, дзвінок, «ай», звук речі) — мовна хмаринка;
@@ -308,6 +310,10 @@ export type EventBubble = { icon: IconName; count?: number; mark?: Mark } & ({ k
 export function eventBubbles(event: GameEvent): EventBubble[] {
   const cat = (id: number): `cat:${number}` => `cat:${id}`;
   switch (event.type) {
+    case "cat-seated":
+      return [{ kind: "think", at: "person", icon: "cat", count: `${event.seated}/${event.room}` }];
+    case "carrier-cry":
+      return [{ kind: "say", at: "carrier", icon: "meow" }];
     case "refused":
       // Відмова — думка персонажа: він зрозумів, що заважає (ціль і так видно рамкою).
       return [{ kind: "think", at: "person", ...refusalBubble(event) }];

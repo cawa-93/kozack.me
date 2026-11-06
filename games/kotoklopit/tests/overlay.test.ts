@@ -184,7 +184,7 @@ describe("картка на місці: тло й положення (§8.5 «Н
 
   it("картка пункту — з годинником поїздки (час прибуття, як у написі над парковкою) у кожного пункту, без підпису «Поїздка»", () => {
     const noop = (): void => {};
-    const handlers: VisitHandlers = { checkout: noop, exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
+    const handlers: VisitHandlers = { checkout: noop, exam: noop, nextCat: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
     for (const destination of Object.keys(TRIPS) as Destination[]) {
       const save = newGame({ address: "she", difficulty: "normal", seed: 8 });
       save.current.minute = 10 * 60 + 45;

@@ -465,7 +465,7 @@ describe("де кіт (`catSpot`)", () => {
   it("переноска, барабан пральки, ковдра, робот — у точках їхніх кадрів, менший клубочок там, де тісно", () => {
     const save = game();
     const cat = withCat(save, { x: 8.5, y: 9.5 });
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     cat.act = act("sleep", { target: "carrier" });
     expect(catSpot(save.current, cat, "carrier", null, SPOT)).toMatchObject({
       kind: "carrier",
@@ -570,7 +570,7 @@ describe("де кіт (`catSpot`)", () => {
   it("у переносці весь кіт — під ґратками: тінь і тулуб нижче за їхню глибину за будь-якої глибини переноски", () => {
     const save = game();
     const cat = withCat(save, { x: 8.5, y: 9.5 });
-    save.current.home.carrier = "premium";
+    save.current.home.carriers = [{ quality: "premium", wear: 0 }];
     cat.act = act("sleep", { target: "carrier" });
     const offset = catSpot(save.current, cat, "carrier", null, SPOT).above!.offset;
     expect(offset).toBe(underGrate(SPOT.grate));

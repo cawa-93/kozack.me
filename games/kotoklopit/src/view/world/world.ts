@@ -2,7 +2,7 @@
 // створює фабрика (`factory.ts`). Без Phaser.
 
 import type { GameEvent } from "../../sim/events";
-import { VACUUM_TARGET, type Target } from "../../sim/targets";
+import { CARRIER_TARGET, VACUUM_TARGET, type Target } from "../../sim/targets";
 import type { GameState } from "../../sim/types";
 import type { CatPoints, PersonPart, Point, WorldFrame, WorldPart, WorldParts, WorldQuery } from "./part";
 import type { Projection } from "./projection";
@@ -58,7 +58,7 @@ export class World implements WorldQuery {
   anchor(id: string): Point | null {
     const { person, cats, floor, apartment } = this.all;
     if (id === "person") return person.anchor(id);
-    if (id === VACUUM_TARGET) return floor.anchor(id);
+    if (id === VACUUM_TARGET || id === CARRIER_TARGET) return floor.anchor(id);
     const colon = id.indexOf(":");
     if (colon < 0) return apartment.anchor(id);
     const kind = id.slice(0, colon);

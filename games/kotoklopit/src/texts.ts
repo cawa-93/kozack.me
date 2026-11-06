@@ -487,7 +487,13 @@ export const FAREWELL_CAUSES: Record<FarewellCause["kind"], string | readonly st
   disease: "{кіт} не [здолав|здолала] недугу — {хвороба}. Цього разу дев'ятого життя не вистачило.",
   sorrow: "{кіт} [згас|згасла] від туги. Котам теж потрібно, щоб їх любили.",
   given: "{кіт} тепер живе в нових руках. Сподіваємося, [йому|їй] там добре.",
+  carrier: "{кіт} [не дочекався|не дочекалася], поки відчинять переноску.",
 };
+
+/** Кіт помер під замком просто вдень (§8.7): повідомлення телефона. */
+export function carrierDeathNews(entry: AlbumEntry): { title: string; text: string } {
+  return { title: entry.name, text: fill(FAREWELL_CAUSES.carrier as string, entry.sex, { кіт: entry.name }) };
+}
 
 /**
  * Опис життя за рівнем середнього настрою (§9.7): від «Агонії» (0) до «Легенди» (9). Найчастіший рівень — «Котячий рай» — має кілька
@@ -692,11 +698,14 @@ export const ACCIDENT_TEXTS = {
   // Втрата здоров'я — це ще й хвороба «Травма» (§6.5), а не лише забої (загальна ревізія 2026-10-29: картка казала «Легкі забої»).
   health: "Травма. Варто показатися лікарю.",
   sanity: "Нерви на межі.",
-  cat: "{кіт} у переносці страшенно [перелякався|перелякалася].",
+  cat: "{кіт} страшенно [перелякався|перелякалася].",
+  injured: "{кіт} [травмувався|травмувалася] й кульгає.",
   none: "На щастя, без інших втрат.",
   /** Кіт у переносці їде з персонажем, хоч би що він утратив (загальна ревізія 2026-10-29): удень — усі ці години, інакше — до ночі. */
   carrierDay: "{кіт} усі ці години [просидів у|просиділа в] переносці.",
   carrierNight: "{кіт} до ночі [просидів у|просиділа в] переносці.",
+  handsDay: "{кіт} усі ці години [просидів|просиділа] у вас на руках.",
+  handsNight: "{кіт} до ночі [просидів|просиділа] у вас на руках.",
 } as const;
 
 /** «о 17:00», а перед голосним — «об 11:00» (як у «Ветеринар удома»). */
@@ -730,9 +739,9 @@ export function accidentLines(state: GameState): string[] {
       : left > 0
         ? fill(ACCIDENT_TEXTS.night, address, { тривалість: minutesText(left) })
         : ACCIDENT_TEXTS.late;
-  const cat = state.cats.find((c) => c.id === trip.cat);
-  const loss = (kind: AccidentLoss): string => {
-    if (kind === "cat") return fill(ACCIDENT_TEXTS.cat, cat?.sex ?? "male", { кіт: cat?.name ?? "Кіт" });
+  const riders = (trip.riders ?? []).flatMap((r) => state.cats.filter((c) => c.id === r.cat).map((cat) => ({ cat, place: r.place })));
+  const each = (text: string, cats: readonly { cat: { sex: Sex; name: string } }[]): string[] => cats.map(({ cat }) => fill(text, cat.sex, { кіт: cat.name }));
+  const loss = (kind: Exclude<AccidentLoss, "cat">): string => {
     if (kind !== "repair") return ACCIDENT_TEXTS[kind];
     // У старих збереженнях скільки заплатили немає — тоді всю ціну.
     const paid = trip.repaired ?? accident.repair;
@@ -741,7 +750,16 @@ export function accidentLines(state: GameState): string[] {
     return shown > 0 ? fill(ACCIDENT_TEXTS.repairAll, address, { сума: shown }) : ACCIDENT_TEXTS.repairNone;
   };
   const carrier = home !== null ? ACCIDENT_TEXTS.carrierDay : ACCIDENT_TEXTS.carrierNight;
-  return [first, ...(trip.losses.length > 0 ? trip.losses.map(loss) : [ACCIDENT_TEXTS.none]), ...(cat ? [fill(carrier, cat.sex, { кіт: cat.name })] : [])];
+  const hands = home !== null ? ACCIDENT_TEXTS.handsDay : ACCIDENT_TEXTS.handsNight;
+  const injured = riders.filter((r) => trip.injured?.includes(r.cat.id) === true);
+  const losses = trip.losses.flatMap((kind) => (kind === "cat" ? each(ACCIDENT_TEXTS.cat, riders) : [loss(kind)]));
+  return [
+    first,
+    ...(losses.length + injured.length > 0 ? losses : [ACCIDENT_TEXTS.none]),
+    ...each(ACCIDENT_TEXTS.injured, injured),
+    ...each(carrier, riders.filter((r) => r.place !== "hands")),
+    ...each(hands, riders.filter((r) => r.place === "hands")),
+  ];
 }
 
 /**

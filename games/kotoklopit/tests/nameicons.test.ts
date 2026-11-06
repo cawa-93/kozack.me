@@ -254,7 +254,7 @@ class FakeElement {
 describe("іконка біля назви: пункти поїздок (§8.5 «На місці — кадр парковки», §11.4)", () => {
   const destinations = Object.keys(TRIPS) as Destination[];
   const noop = (): void => {};
-  const handlers: VisitHandlers = { checkout: noop, exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
+  const handlers: VisitHandlers = { checkout: noop, exam: noop, nextCat: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
 
   beforeAll(() => {
     // Магазин на місці одразу малює гліфи підсумку (`drawGlyphs`): обхід тексту без вузлів нічого не знаходить.

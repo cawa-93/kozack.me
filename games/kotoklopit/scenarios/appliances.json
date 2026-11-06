@@ -230,7 +230,7 @@
    "porch": [],
    "utilitiesDebt": 0,
    "repairs": 0,
-   "carrier": "cheap",
+   "carriers": [{ "quality": "cheap", "wear": 0 }],
    "appliances": {
     "fountain": "premium",
     "robot": "premium"

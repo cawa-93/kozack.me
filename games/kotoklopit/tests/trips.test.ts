@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { seatCat } from "../src/sim/carriers";
 import { createCat } from "../src/sim/cat";
 import { nightlyCare } from "../src/sim/care";
 import { ACCIDENT, BATH, DOCTOR_TREAT, GIFTS, GROOMER, MINUTES_PER_DAY, MODIFIERS, RACE, START_CLOTHES, STERILIZATION, TOTAL_DAYS, TRIP_IDLE_MINUTES, TRIPS, VET } from "../src/sim/config";
@@ -78,17 +79,16 @@ describe("вирушити (§8.5)", () => {
     expect(canLeave(save.current)).toBe(false);
   });
 
-  it("до ветеринара — лише з котом на руках і переноскою", () => {
+  it("до ветеринара можна й без кота, а з котом на руках — куди завгодно й без переноски", () => {
     const save = game();
     const cat = withCat(save);
-    expect(tripBlocker(save.current, "vet")).toBe("cat");
-    save.current.character.held = { kind: "cat", cat: cat.id };
-    expect(tripBlocker(save.current, "vet")).toBe("carrier");
-    save.current.home.carrier = "cheap";
     expect(tripBlocker(save.current, "vet")).toBeNull();
-    expect(tripBlocker(save.current, "shop")).toBe("no-cat");
+    save.current.character.held = { kind: "cat", cat: cat.id };
+    expect(tripBlocker(save.current, "vet")).toBeNull();
+    expect(tripBlocker(save.current, "shop")).toBeNull();
     expect(startTrip(save.current, "vet")).toBe(true);
     expect(cat.away).toBe("trip");
+    expect(save.current.trip?.riders).toEqual([{ cat: cat.id, place: "hands" }]);
     expect(save.current.character.held).toBeNull();
   });
 });
@@ -504,7 +504,7 @@ describe("аварія забирає години, а не день (§8.5, §5
   it("аварія вранці: години минають без персонажа, а тоді він удома біля дверей, як після поїздки, і день триває; показники не нижче порогів", () => {
     const save = saturday(9 * 60);
     const cat = withCat(save);
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     expect(startTrip(save.current, "vet")).toBe(true);
     crashAt(save, 1);
@@ -698,8 +698,9 @@ describe("аварія забирає години, а не день (§8.5, §5
         const cat = withCat(save);
         cat.name = "Мурка";
         cat.sex = "female";
-        save.current.home.carrier = "cheap";
+        save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
         save.current.character.held = { kind: "cat", cat: cat.id };
+        seatCat(save.current, cat);
         expect(startTrip(save.current, "vet")).toBe(true);
         crashAt(save, 1);
         return lines(save);
@@ -837,7 +838,7 @@ describe("поїздки й робота (§8.6)", () => {
     save.current.day = 6;
     save.current.modifiers.day = "show";
     const cat = withCat(save);
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     expect(startTrip(save.current, "show")).toBe(true);
     driveSafely(save);
@@ -863,7 +864,7 @@ describe("поїздки й робота (§8.6)", () => {
       // Головний приз: настрій 100 і чистокровний — бал понад 1 за будь-якого випадку.
       cat.mood = 100;
       cat.breed = ["perska", "perska"];
-      save.current.home.carrier = "cheap";
+      save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: cat.id };
       expect(startTrip(save.current, "show")).toBe(true);
       driveSafely(save);
@@ -950,7 +951,7 @@ describe("пункти призначення (§8.5)", () => {
       save.current.day = 5;
       const cat = withCat(save);
       if (level !== 0) cat.traits.push({ group: "vet", level, seen: 0, known: false });
-      save.current.home.carrier = "premium";
+      save.current.home.carriers = [{ quality: "premium", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: cat.id };
       arrive(save, "vet");
       const love = cat.love;
@@ -966,7 +967,7 @@ describe("пункти призначення (§8.5)", () => {
     save.current.day = 5;
     const cat = withCat(save);
     fallIll(save.current, cat, "injury");
-    save.current.home.carrier = "premium";
+    save.current.home.carriers = [{ quality: "premium", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     arrive(save, "vet");
     expect(cat.diseases[0]?.known).toBe(false);
@@ -984,7 +985,7 @@ describe("пункти призначення (§8.5)", () => {
       save.current.day = 5;
       const cat = withCat(save);
       fallIll(save.current, cat, "heart");
-      save.current.home.carrier = "premium";
+      save.current.home.carriers = [{ quality: "premium", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: cat.id };
       arrive(save, "vet");
       vetExam(save.current);
@@ -1003,7 +1004,7 @@ describe("пункти призначення (§8.5)", () => {
     const disease = cat.diseases[0];
     if (!disease) throw new Error("немає хвороби");
     disease.controlled = save.current.day + 10;
-    save.current.home.carrier = "premium";
+    save.current.home.carriers = [{ quality: "premium", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     arrive(save, "vet");
     vetExam(save.current);
@@ -1023,7 +1024,7 @@ describe("пункти призначення (§8.5)", () => {
     const cat = withCat(save);
     cat.weight = 80;
     fallIll(save.current, cat, "obesity");
-    save.current.home.carrier = "premium";
+    save.current.home.carriers = [{ quality: "premium", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     arrive(save, "vet");
     // Дорогою зайва вага трохи йде.
@@ -1044,7 +1045,7 @@ describe("пункти призначення (§8.5)", () => {
       cat.traits = [];
       cat.arrivedDay = -10;
       addCat(save.current, cat);
-      save.current.home.carrier = "premium";
+      save.current.home.carriers = [{ quality: "premium", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: cat.id };
       arrive(save, "vet");
       return { save, state: save.current, cat };
@@ -1197,15 +1198,12 @@ describe("пункти призначення (§8.5)", () => {
   });
 
   describe("притулок лише дає котів, віддають через оголошення (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
-    it("з котом на руках у притулок не їдуть — як і в магазин, навіть із переноскою", () => {
+    it("з котом на руках у притулок їхати можна: це помилка гравця, яку гра дозволяє", () => {
       const save = game(9 * 60);
       save.current.day = 5;
       const own = withCat(save);
-      save.current.home.carrier = "cheap";
+      save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: own.id };
-      expect(tripBlocker(save.current, "shelter")).toBe("no-cat");
-      expect(startTrip(save.current, "shelter")).toBe(false);
-      save.current.character.held = null;
       expect(tripBlocker(save.current, "shelter")).toBeNull();
     });
 
@@ -1280,7 +1278,7 @@ describe("пункти призначення (§8.5)", () => {
       const cat = withCat(save);
       cat.shape.coat = coat;
       cat.bathedDay = 0;
-      save.current.home.carrier = "cheap";
+      save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
       save.current.character.held = { kind: "cat", cat: cat.id };
       arrive(save, "groomer");
       return { save, cat };
@@ -1389,7 +1387,7 @@ describe("час на місці — лише за отриману послуг
     save.current.day = 5;
     const cat = withCat(save);
     cat.breed = [MIXED, MIXED];
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     return { save, cat };
   }
@@ -1574,7 +1572,7 @@ describe("невдале дешеве лікування не повторюют
     const cat = withCat(save);
     fallIll(save.current, cat, "injury");
     fallIll(save.current, cat, "fleas");
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     save.current.character.held = { kind: "cat", cat: cat.id };
     expect(startTrip(save.current, "vet")).toBe(true);
     driveSafely(save);

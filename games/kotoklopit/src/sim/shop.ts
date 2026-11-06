@@ -98,7 +98,7 @@ const cartBowls = (cart: readonly CartLine[]): number => cart.reduce((sum, l) =>
 
 /** Скільки речей цього типу вміститься разом із кошиком: автогодівниць — ще й над мисками з кошика (§9.12). */
 function thingRoom(state: GameState, cart: readonly CartLine[], thing: ThingKind): number {
-  if (thing === "toy") return SHOP_TOYS_PER_ORDER;
+  if (thing === "toy" || thing === "carrier") return SHOP_TOYS_PER_ORDER;
   return thing === "feeder" ? feederRoom(state, cartBowls(cart)) : freeSlots(state, thing);
 }
 
@@ -142,7 +142,7 @@ export function unavailable(state: GameState, goods: Goods, cart: readonly CartL
   const { thing } = goods;
   // Автогодівниці — з урахуванням мисок у кошику (§9.12).
   if (thingRoom(state, cart, thing) > 0) return null;
-  if (thing === "carrier" || thing === "lock" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
+  if (thing === "lock" || isAppliance(thing)) return ownsThing(state, thing) ? "owned" : "ordered";
   // Автогодівниця — одна на миску (§9.12).
   return thing === "feeder" ? "no-bowl" : "no-room";
 }

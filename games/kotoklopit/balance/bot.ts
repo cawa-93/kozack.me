@@ -18,7 +18,7 @@ import { checkout, room, type CartLine } from "../src/sim/shop";
 import { advance, drive, goHome, goToSleep, interact, rewindAccident } from "../src/sim/game";
 import { adopt, shelterCats, tripCat, vetExam, vetTreat } from "../src/sim/destinations";
 import { canLeave, startTrip } from "../src/sim/trips";
-import { distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, VACUUM_HOME, type Rect } from "../src/sim/home";
+import { CARRIER_SPOT, distanceToRect, isSolid, isWall, MAP_HEIGHT, MAP_WIDTH, objectById, slotById, VACUUM_HOME, type Rect } from "../src/sim/home";
 import { canGoToSleep, hoursUntilWake } from "../src/sim/sleep";
 import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
@@ -343,7 +343,7 @@ export class Bot {
       if (premium === 0 && stomach && s.character.money > PRODUCTS.catFood.price.premium + SPARE_MONEY) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });
       // Переноска — щойно є з чим їхати до ветеринара.
       const carrier = [...s.home.deliveries, ...s.home.porch].some((d) => "thing" in d && d.thing === "carrier");
-      if (s.home.carrier === null && !carrier && s.character.money > VET.exam + VET.premium + SPARE_MONEY && s.cats.some((c) => this.needsVet(c))) {
+      if (s.home.carriers.length === 0 && !carrier && s.character.money > VET.exam + VET.premium + SPARE_MONEY && s.cats.some((c) => this.needsVet(c))) {
         cart.push({ goods: { thing: "carrier" }, quality: "cheap", count: 1 });
       }
       need("litter", Math.max(2, cats));
@@ -613,7 +613,7 @@ export class Bot {
    */
   private vetCase(): Cat | null {
     const s = this.state;
-    if (s.home.carrier === null || this.skipped("vet") || isWorkTime(s) || !canLeave(s)) return null;
+    if (s.home.carriers.length === 0 || this.skipped("vet") || isWorkTime(s) || !canLeave(s)) return null;
     if (s.minute < VET_TRIP_HOURS.from * 60 || s.minute > VET_TRIP_HOURS.to * 60) return null;
     if (s.character.money < VET.exam + VET.premium + SPARE_MONEY) return null;
     return s.cats.find((c) => c.away === null && this.needsVet(c)) ?? null;
@@ -629,6 +629,9 @@ export class Bot {
     if (!this.goTo(`cat:${cat.id}`)) return this.wait(1);
     interact(this.save);
     if (this.state.character.held?.kind !== "cat") return;
+    // Кіт на руках їде найгірше (§8.5): спершу посадити.
+    if (!this.goTo("carrier")) return;
+    interact(this.save);
     if (!this.goTo("door") || !startTrip(this.state, "vet")) return;
     const trip = this.driveThere();
     if (!trip) return;
@@ -890,6 +893,7 @@ export class Bot {
       const at = s.home.vacuumAt;
       return at ? { x: at.x - 0.3, y: at.y - 0.3, w: 0.6, h: 0.6 } : null;
     }
+    if (id === "carrier") return { x: CARRIER_SPOT.x - 0.3, y: CARRIER_SPOT.y - 0.7, w: 0.6, h: 0.6 };
     if (!id.includes(":")) return objectById(id);
     const target = targetById(s, id);
     if (!target) return null;

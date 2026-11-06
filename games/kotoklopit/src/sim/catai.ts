@@ -111,6 +111,7 @@ import {
   ZOOMIES,
 } from "./config";
 import { afterMeal, afterTheft, cannotJump, eatFactor, eatsLess, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
+import { tickCaged } from "./carriers";
 import { feederAt, takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
@@ -797,7 +798,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
   const carrier = traitLevel(cat, "carrier");
-  if (carrier > 0 && state.home.carrier !== null && (state.trip?.cat ?? null) === null) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
+  if (carrier > 0 && state.home.carriers.length > 0 && (state.trip?.riders?.length ?? 0) === 0) options.push({ weight: CARRIER_HOME.sleepStep * carrier, value: { at: { ...CARRIER_TILE }, target: "carrier" } });
   // Ящики біля входу з покупками — коробки для допитливих (§9.12, «Допитливість»).
   const curiosity = traitLevel(cat, "curiosity");
   if (curiosity > 0 && hasBoxes(state)) options.push({ weight: CURIOSITY.boxStep * curiosity, value: { at: objectTile("boxes"), target: "boxes" } });
@@ -2985,7 +2986,7 @@ function returnFromStairs(state: GameState, cat: Cat): void {
  */
 export function carrierDread(state: GameState, cat: Cat): number {
   const level = traitLevel(cat, "carrier");
-  if (level >= 0 || state.home.carrier === null || !isCarried(state, cat)) return 0;
+  if (level >= 0 || !isCarried(state, cat)) return 0;
   const body = state.character.body;
   return Math.hypot(body.x - DOOR.x, body.y - DOOR.y) <= CARRIER_HOME.reach ? -level : 0;
 }
@@ -3080,7 +3081,8 @@ export function claw(state: GameState, cat: Cat, at: "carrier" | "bath" | "ambus
 function dreadCarrier(state: GameState, cat: Cat, dread: number, minutes: number, rng: Rng): void {
   changeMood(state, cat, CARRY.struggleMood * dread * minutes);
   observe(state, cat, "carrier", -1, false, CARRY.observeEvery);
-  const calmer = state.home.carrier === "premium" ? CARRIER_HOME.premium : 1;
+  const best = state.home.carriers[0]?.quality;
+  const calmer = best === "premium" ? CARRIER_HOME.premium : best === undefined ? CARRIER_HOME.none : 1;
   if (!rng.chance(1 - (1 - CARRIER_HOME.scratchStep * dread * calmer) ** minutes)) return;
   claw(state, cat, "carrier");
   if (!rng.chance(CARRIER_HOME.escape * calmer)) return;
@@ -3102,6 +3104,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
   recordMood(cat, minutes);
   if (cat.away !== null) {
     if (cat.away === "stairs" && state.minute >= ESCAPE.returnMinute) returnFromStairs(state, cat);
+    if (cat.away === "carrier") tickCaged(state, cat, minutes, rng, context.present);
     return;
   }
   if (isCarried(state, cat)) return carried(state, cat, minutes, rng);

@@ -120,7 +120,7 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     const save = game();
     const state = save.current;
     state.cats = [];
-    state.home.carrier = "cheap";
+    state.home.carriers = [{ quality: "cheap", wear: 0 }];
     state.home.appliances.robot = "cheap";
     const tile = (p: Vec): string => `${Math.floor(p.x)},${Math.floor(p.y)}`;
     // Клітинки речей на підлозі: лотки, миски, переноска, база робота, кошик білизни.

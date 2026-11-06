@@ -345,6 +345,23 @@ export type Appliance = "fountain" | "robot" | "vacuum";
 /** Чим персонаж прибирає в руках (§8.7). */
 export type CleaningTool = "broom" | "vacuum";
 
+/** Переноска (§8.7). */
+export interface Carrier {
+  quality: Quality;
+  /** Хвилини гризіння: на `CARRIER.strength` вона ламається. */
+  wear: number;
+}
+
+/** Годинник кота під замком (§8.7). */
+export interface CatCage {
+  /** Хвилини етапів; потреба й сусід у переносці женуть його швидше. */
+  clock: number;
+  /** Хвилин від останнього крику. */
+  cry: number;
+  /** Кіт уже нагадав про себе: «Сам лізе» відтоді поводиться, як кіт без риси. */
+  alarmed?: true;
+}
+
 /**
  * Автогодівниця (§9.12, правка автора 2026-10-23): стоїть над місцем миски й тримає її повною, доки
  * в ній є корм. Миска зламалася чи її викинули — годівниця лишається й чекає нову.
@@ -392,14 +409,24 @@ export interface Race {
 }
 
 /** Поїздка (§8.5): гонка туди, подія на місці, повернення без гонки; аварія — перемотування. */
+/** Кіт у поїздці й де він їде (§8.5). */
+export interface TripRider {
+  cat: number;
+  place: Quality | "hands";
+}
+
 export interface Trip {
   destination: Destination;
   phase: "drive" | "visit" | "accident";
-  /** Кіт у переносці. */
+  /** Кіт, чия картка зараз на місці (§8.5): коти йдуть по черзі. */
   cat: number | null;
+  /** Хто їде й де: перші — з дорогих переносок, останній — на руках. */
+  riders?: TripRider[];
   race: Race;
   /** Втрати після аварії (§8.5). */
   losses: AccidentLoss[];
+  /** Коти, що травмувалися в аварії (§8.5). */
+  injured?: number[];
   /** Скільки заплатили за ремонт машини: коли грошей менше — усе, що було (у старих збереженнях — немає). */
   repaired?: number;
   /**
@@ -535,7 +562,10 @@ export interface Home {
   /** Ремонт меблів (подертий диван) до найближчого платежу комунальних (§6.4). */
   repairs: number;
   /** Переноска для котів (§8.5): одна на дім; null — немає. */
-  carrier: Quality | null;
+  /** Переноски (§8.7): дорогі попереду. */
+  carriers: Carrier[];
+  /** Коти під замком у порядку посадки. */
+  caged?: number[];
   /** Техніка (§8.7): якість кожної, null — немає. */
   appliances: Record<Appliance, Quality | null>;
   /** Автогодівниці над мисками (§9.12). У старих збереженнях немає. */
@@ -1026,12 +1056,14 @@ export interface Cat {
   facing: number;
   act: CatAct;
   /** Кіт поза квартирою: утік на сходи (§9.12); null — удома. */
-  away: "stairs" | "trip" | null;
+  away: "stairs" | "trip" | "carrier" | null;
+  /** Кіт під замком у переносці (§8.7). */
+  cage?: CatCage;
   parents: { mother: number | null; father: number | null };
 }
 
 /** Чому кота не стало (§9.7): старість, хвороба, туга (поганий настрій) чи віддали в добрі руки. */
-export type FarewellCause = { kind: "old" } | { kind: "disease"; disease: string } | { kind: "sorrow" } | { kind: "given" };
+export type FarewellCause = { kind: "old" } | { kind: "disease"; disease: string } | { kind: "sorrow" } | { kind: "given" } | { kind: "carrier" };
 
 /** Запис «Альбому пам'яті» (§9.7): усе про кота, якого більше немає вдома. */
 export interface AlbumEntry {

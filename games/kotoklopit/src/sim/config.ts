@@ -816,6 +816,8 @@ export const RACE = {
 export const ACCIDENT = {
   chance: { easy: 0.4, normal: 0.5, hard: 0.625 } as Record<Difficulty, number>,
   max: { easy: 2, normal: 3, hard: 4 } as Record<Difficulty, number>,
+  /** Шанс травми кота за місцем (§8.5): `maybeFallIll` кладе поверх складність. */
+  catInjury: { hands: 0.4, cheap: 0.2, premium: 0.1 },
   /** Ремонт і години аварії: × `scale` × множник швидкості (§5.2). */
   repair: 60,
   hours: 10,
@@ -837,11 +839,37 @@ export const ACCIDENT = {
   satietyFloor: 25,
 } as const;
 /** Посадка в переноску (§8.5): `traitStep` — «Переноска»; не більше нуля. */
-export const CARRIER_MOOD = { cheap: -5, premium: -2, traitStep: 3 } as const;
+export const CARRIER_MOOD = { hands: -8, cheap: -5, premium: -2, traitStep: 3 } as const;
 /** Подряпина кота (§8.7, §9.12): одне правило для переноски, ванни й «Ніндзя»; без «Травми». */
 export const CLAW = { health: -3 } as const;
 /** Переноска вдома (§9.12): `premium` — множник шансів із дорогою. */
-export const CARRIER_HOME = { sleepStep: 1.5, reach: 2, scratchStep: 0.1, escape: 0.25, premium: 0.5 } as const;
+export const CARRIER_HOME = { sleepStep: 1.5, reach: 2, scratchStep: 0.1, escape: 0.25, premium: 0.5, none: 1.5 } as const;
+/**
+ * Переноски й кіт під замком (§8.7), хвилини: `stages` — межі етапів кота без риси; `strength` — скільки гризіння витримує; `trait` — за
+ * рисою «Переноска»: `stages` множить межі, `chew` — швидкість гризіння, `mood` — падіння настрою, `bite` — шанс укусу.
+ */
+export const CARRIER = {
+  cats: 2,
+  shown: 4,
+  stages: { cry: 15, stress: 120, chew: 300 },
+  moodPerHour: { calm: 0, cry: -1, stress: -3, chew: -5 },
+  cryEvery: { calm: Infinity, cry: 20, stress: 10, chew: 10 },
+  strength: { cheap: 420, premium: 1140 } as Record<Quality, number>,
+  trait: {
+    2: { stages: Infinity, chew: 1, mood: 0, bite: 1 },
+    1: { stages: 2, chew: 0.5, mood: 0.5, bite: 1 },
+    0: { stages: 1, chew: 1, mood: 1, bite: 1 },
+    [-1]: { stages: 0.6, chew: 1.5, mood: 1.5, bite: 1 },
+    [-2]: { stages: 0.3, chew: 2, mood: 2, bite: 2 },
+  },
+  alarmHealth: 30,
+  needPace: 2,
+  pairPace: 2,
+  bite: 0.5,
+  offense: -3,
+  vitalNeed: 100,
+  healthPerHour: 2,
+} as const;
 /** Поїздка в робочий час (§8.6): поїздок за 7 днів × репутація за годину / стільки. */
 export const TRIP_REPUTATION_DIVIDER = 3;
 /** Ветеринар (§8.5): `exam`, `cheap`, `premium` — ціни; `hideMinutes`, `homeHideMinutes` — «Жах клініки». */

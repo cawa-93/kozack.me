@@ -369,6 +369,7 @@ export function upgradeState(state: GameState): void {
   upgradeSupplies(state);
   upgradeAlbumDays(state);
   upgradeDiseases(state);
+  upgradeCarriers(state);
   upgradeTrip(state);
   upgradeLadder(state);
   upgradeBreedLook(state);
@@ -463,9 +464,18 @@ export function upgradeModifiers(state: GameState): void {
  * не називає. «Віддати» з притулку прибрано: запис про кота, якого там уже віддали, зникає з журналу візиту (кіт — в альбомі),
  * а кіт, що приїхав у переносці й лишився, повертається з персонажем додому.
  */
+/** Старе збереження: одна переноска в `home.carrier` (§8.7). */
+function upgradeCarriers(state: GameState): void {
+  const home = state.home as GameState["home"] & { carrier?: Quality | null };
+  home.carriers ??= home.carrier ? [{ quality: home.carrier, wear: 0 }] : [];
+  delete home.carrier;
+}
+
 export function upgradeTrip(state: GameState): void {
   const trip = state.trip;
   if (trip === null) return;
+  // Старе збереження: кіт їхав один, у єдиній переносці (§8.5).
+  trip.riders ??= trip.cat === null ? [] : [{ cat: trip.cat, place: state.home.carriers[0]?.quality ?? "cheap" }];
   // Віддали кота в притулку старої гри — теж послуга (рецензія реалізації А6), хоч запис про це з журналу й зникає.
   const served = trip.log !== undefined && (trip.log.exam !== null || trip.log.done.length > 0);
   if (trip.log) trip.log.done = trip.log.done.filter((done) => !done.startsWith("given:"));

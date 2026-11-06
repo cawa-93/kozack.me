@@ -1,9 +1,11 @@
 // Поїздки (§8.5): вирушити з дому, гонка, подія на місці, повернення без гонки; аварія — втрати, години й ремонт за
 // швидкістю, а тоді перемотування цих годин чи дня до сну (`rewindAccident`). Події на місці — `destinations.ts`.
 
+import { boardCats } from "./carriers";
 import { changeMood, idleAct, stress, traitLevel } from "./cat";
 import { changeStat, spend } from "./character";
 import { ACCIDENT, CARRIER_MOOD, GIFTS, MINUTES_PER_DAY, MINUTES_PER_HOUR, SLEEP_NEED_HOURS, TRIP_IDLE_MINUTES, TRIPS } from "./config";
+import { maybeFallIll } from "./diseases";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { roadFactor, trafficFactor } from "./modifiers";
@@ -47,7 +49,7 @@ export function canLeave(state: GameState): boolean {
 }
 
 /** Чому сюди зараз не поїхати; null — можна. */
-export function tripBlocker(state: GameState, destination: Destination): "cat" | "carrier" | "no-cat" | "newborn" | "office" | "show" | null {
+export function tripBlocker(state: GameState, destination: Destination): "newborn" | "office" | "show" | null {
   const cat = heldCat(state);
   // Виставка — лише в її день і раз (§4.1): раніше можна було їздити знову й знову по призи (перевірка поїздок 2026-10-28).
   if (destination === "show" && (state.modifiers.day !== "show" || state.today.showDone === true)) return "show";
@@ -57,16 +59,7 @@ export function tripBlocker(state: GameState, destination: Destination): "cat" |
   if (destination === "office" && (state.modifiers.day !== "office" || state.today.officeDone || !isWorkday(state))) return "office";
   // Новонароджене лежить біля матері (§9.8): у переноску його не саджають (перевірка розмноження 2026-10-28) — після офісу й
   // виставки, щоб їх, як завжди, не було в списку в інші дні (повторна перевірка розмноження й побуту 2026-10-28).
-  if (cat && isNewborn(cat)) return "newborn";
-  if (TRIPS[destination].cat) {
-    if (!cat) return "cat";
-    if (state.home.carrier === null) return "carrier";
-    return null;
-  }
-  // Притулок котів не приймає — туди їздять лише взяти кота, а віддають через оголошення (§9.8; рішення автора 2026-10-29,
-  // `GENERAL_REVIEW.md`, А15): з котом на руках туди, як і в магазин, не їдуть.
-  if (cat) return "no-cat";
-  return null;
+  return cat && isNewborn(cat) ? "newborn" : null;
 }
 
 /** Вирушити (§8.5): кота з рук — у переноску, гонка починається. */
@@ -80,24 +73,27 @@ export function startTrip(state: GameState, destination: Destination): boolean {
   stopWork(state);
   state.character.activity = null;
   if (cat) {
-    const trait = traitLevel(cat, "carrier");
-    // Як кіт опирається переносці, персонаж бачить: кіт у нього в руках (§9.9).
-    if (trait < 0) observe(state, cat, "carrier", -1);
+    // Як кіт опирається, персонаж бачить: кіт у нього в руках (§9.9).
+    if (traitLevel(cat, "carrier") < 0) observe(state, cat, "carrier", -1);
     state.character.held = null;
     cat.away = "trip";
-    // Переноску беруть у дорогу (§9.12 «Переноска»): кіт, що спав у ній, вилазить (перевірка етапу 2026-10-26).
-    for (const other of state.cats) if (other.act.kind === "sleep" && other.act.target === "carrier") other.act = idleAct();
-    const carrier = state.home.carrier ?? "cheap";
-    // «Переноска» дзеркальна (§9.12, рішення автора 2026-10-25): «+» втрачає менше, «Сам лізе в переноску» — нічого.
-    changeMood(state, cat, Math.min(0, CARRIER_MOOD[carrier] + CARRIER_MOOD.traitStep * trait), "переноска");
-    stress(state, cat);
+  }
+  const riders = boardCats(state, cat);
+  // Переноски беруть у дорогу (§9.12 «Переноска»): кіт, що спав у ній, вилазить.
+  if (riders.some((r) => r.place !== "hands")) for (const other of state.cats) if (other.act.kind === "sleep" && other.act.target === "carrier") other.act = idleAct();
+  for (const rider of riders) {
+    const passenger = state.cats.find((c) => c.id === rider.cat);
+    if (!passenger) continue;
+    // «Переноска» дзеркальна: «+» втрачає менше, «Сам лізе в переноску» — нічого.
+    changeMood(state, passenger, Math.min(0, CARRIER_MOOD[rider.place] + CARRIER_MOOD.traitStep * traitLevel(passenger, "carrier")), "переноска");
+    stress(state, passenger);
   }
   // Поїздка в робочий час (§8.6) зараховується, щойно настає робочий час: і на старті, і в дорозі (`tickWork`).
   const seed = deriveSeed(state.seed, state.day, Math.floor(state.minute), state.replays);
   // Час послуги додає сама послуга (§8.5; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): на старті поїздки
   // до ветеринара, лікаря, грумера, на виставку, у притулок чи розплідник часу на місці ще немає.
   const visit = TRIPS[destination].service ? 0 : TRIPS[destination].visit;
-  state.trip = { destination, phase: "drive", cat: cat?.id ?? null, race: newRace(roadMinutes(state, destination), seed), losses: [], visit, seed };
+  state.trip = { destination, phase: "drive", cat: riders[0]?.cat ?? null, riders, race: newRace(roadMinutes(state, destination), seed), losses: [], visit, seed };
   // Шкарпетку кіт заніс у схованку (§9.12, «Подарунки й схованки»): поки її шукали, минуло 10 хвилин — поїздка довша.
   if (state.home.sock === true) {
     delete state.home.sock;
@@ -149,7 +145,8 @@ function crash(state: GameState, rng: Rng): void {
   const accident = accidentCost(state.difficulty, trip.race.speed);
   trip.accident = accident;
   const candidates: AccidentLoss[] = ["repair", "health", "sanity"];
-  if (trip.cat !== null) candidates.push("cat");
+  const riders = trip.riders ?? [];
+  if (riders.length > 0) candidates.push("cat");
   let losses = candidates.filter(() => rng.chance(ACCIDENT.chance[state.difficulty]));
   while (losses.length > ACCIDENT.max[state.difficulty]) losses.splice(rng.int(0, losses.length - 1), 1);
   for (const loss of losses) {
@@ -163,9 +160,16 @@ function crash(state: GameState, rng: Rng): void {
     }
     if (loss === "sanity") changeStat(state, "sanity", ACCIDENT.sanity, ACCIDENT.floor);
     if (loss === "cat") {
-      const cat = state.cats.find((c) => c.id === trip.cat);
-      if (cat) changeMood(state, cat, ACCIDENT.catMood, "аварія");
+      for (const rider of riders) {
+        const cat = state.cats.find((c) => c.id === rider.cat);
+        if (cat) changeMood(state, cat, ACCIDENT.catMood, "аварія");
+      }
     }
+  }
+  // Травма — незалежно від решти втрат (§8.5): шанс за місцем, складність кладе `illnessChance`.
+  for (const rider of riders) {
+    const cat = state.cats.find((c) => c.id === rider.cat);
+    if (cat && maybeFallIll(state, cat, "injury", ACCIDENT.catInjury[rider.place], rng)) (trip.injured ??= []).push(cat.id);
   }
   trip.phase = "accident";
   trip.losses = losses;

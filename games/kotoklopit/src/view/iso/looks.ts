@@ -2,6 +2,7 @@
 // Те саме джерело стану, що в старого вигляду (малюнків кодом до кроку 16), лише кадрами атласу. Чисті функції без Phaser:
 // їх перевіряє `tests/isoworld.test.ts` (кожен стан — кадр, що є в маніфесті).
 
+import { cageStage, cagedCats, carrierOf } from "../../sim/carriers";
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
 import { BOWL_CAPACITY, FEEDER_CAPACITY } from "../../sim/config";
 import { DUST_SPOTS } from "../../sim/dust";
@@ -17,6 +18,7 @@ import { isWorking } from "../../sim/work";
 import { cobwebState, type CobwebState } from "../art/manifest/a20-dust";
 import { wallKind } from "../art/manifest/lib/geometry";
 import type { ArtId } from "../art/types";
+import type { Point } from "../world/part";
 
 /** Кадр: id запису маніфесту й стан (null — запис без станів). */
 export interface IsoFrame {
@@ -433,6 +435,28 @@ export function basketState(clothes: number): string {
 /** Кіт спить у переносці (§9.12, «Сам лізе в переноску»): поверх нього — дверцята з ґратками. */
 export function carrierOccupied(state: GameState): boolean {
   return state.cats.some((cat) => cat.away === null && cat.act.kind === "sleep" && cat.act.target === "carrier");
+}
+
+/** Де стоїть переноска `index` із `count` видимих (§8.7), одиниці арту від `CARRIER_SPOT`: купа, як ящики. */
+const CARRIER_PILE: readonly (readonly Point[])[] = [
+  [{ x: 0, y: 0 }],
+  [{ x: 0, y: 0 }, { x: 0, y: -46 }],
+  [{ x: -32, y: 0 }, { x: 32, y: 0 }, { x: 0, y: -46 }],
+  [{ x: -32, y: 0 }, { x: 32, y: 0 }, { x: -32, y: -46 }, { x: 32, y: -46 }],
+];
+
+export function carrierSlot(count: number, index: number): Point {
+  return CARRIER_PILE[count - 1]?.[index] ?? { x: 0, y: 0 };
+}
+
+/** У видимій переносці `index` хтось є: кіт під замком чи той, хто спить у ній сам. */
+export function carrierHolds(state: GameState, index: number): boolean {
+  return cagedCats(state).some((cat) => carrierOf(state, cat) === index) || (index === 0 && carrierOccupied(state));
+}
+
+/** Кіт у переносці `index` гризе її (§8.7): вона смикається. */
+export function carrierShakes(state: GameState, index: number): boolean {
+  return cagedCats(state).some((cat) => carrierOf(state, cat) === index && cageStage(cat) === "chew");
 }
 
 /** Безлад (§9.12): `mess/<вид>`. */

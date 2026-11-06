@@ -10,6 +10,7 @@ import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
+import { canSeat, releaseCats, seatCat } from "./carriers";
 import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
 import { cookFactor, powerOut } from "./modifiers";
@@ -112,6 +113,8 @@ export function tap(state: GameState): TapResult {
   // Кота на руках опускають будь-де, а біля душу — купають (§8.7). Біля дверей, під якими чекає гість, — відчиняють йому, не
   // опускаючи кота: його й узяли на руки, щоб не вибіг (§9.12 «Подзвонили — двері гостю», рішення автора 2026-11-03).
   if (held?.kind === "cat") {
+    // Кота біля переносок садять, а не опускають (§8.7).
+    if (target?.type === "carrier") return tapCarrier(state, target.id);
     const object = target?.type === "object" ? target.object : null;
     if (object !== null && (object.kind === "shower" || (object.kind === "door" && guestAtDoor(state) !== null))) return tapObject(state, object, held);
     putDownCat(state, held.cat);
@@ -155,6 +158,8 @@ export function tap(state: GameState): TapResult {
       if (held !== null) return refuse(state, target.id, "hands-full");
       takeVacuum(state);
       return null;
+    case "carrier":
+      return tapCarrier(state, target.id);
     case "cat":
       // Кота в протистоянні торкаються — коти розходяться (§9.4, рішення автора 2026-10-26); рук для цього не треба.
       if (touchStandoff(state, target.cat)) return null;
@@ -439,6 +444,24 @@ function pourFood(state: GameState, bowl: BowlItem, id: string, held: Item & { k
   return null;
 }
 
+/** Дія біля переносок (§8.7): кота з рук садять, порожніми руками випускають усіх. */
+function tapCarrier(state: GameState, id: string): TapResult {
+  const { character } = state;
+  const held = character.held;
+  if (held?.kind === "cat") {
+    const cat = state.cats.find((c) => c.id === held.cat);
+    if (cat && !canSeat(cat)) return refuse(state, id, "newborn");
+    if (cat && !seatCat(state, cat)) return refuse(state, id, "carrier-full");
+    character.holdSpent = true;
+    return null;
+  }
+  if (held !== null) return refuse(state, id, "hands-full");
+  if ((state.home.caged?.length ?? 0) === 0) return refuse(state, id, { reason: "need", need: "cat" });
+  releaseCats(state);
+  character.holdSpent = true;
+  return null;
+}
+
 /** Покласти іграшку на підлогу під ногами. */
 function dropToy(state: GameState): void {
   const held = state.character.held;
@@ -593,7 +616,8 @@ export function canUse(state: GameState, target: Target): boolean {
     case "cat":
       return true;
     case "vacuum":
-      // Пилосос беруть натисканням, а не утриманням (§8.7).
+    case "carrier":
+      // Пилосос беруть натисканням, а не утриманням (§8.7), переноски — теж.
       return false;
   }
 }

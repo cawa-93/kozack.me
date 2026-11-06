@@ -22,7 +22,7 @@ import { withCatCorner } from "./helpers";
 /** Що бачить гравець: іконка, позначка поверх неї й кількість («0» — окреме значення: закінчилося). */
 interface Shown {
   icon: IconName;
-  count?: number;
+  count?: number | string;
   mark?: Mark;
 }
 

@@ -183,6 +183,12 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Прання: ${event.stage}`;
     case "vacuum":
       return event.stage === "taken" ? "Пилосос у руках: гуде" : "Пилосос поставлено";
+    case "cat-seated":
+      return `Кіт у переносці: ${event.seated} з ${event.room}`;
+    case "carrier-cry":
+      return "Кіт кричить у переносці";
+    case "carrier-opened":
+      return `Випущено з переносок: ${event.cats}`;
     case "thing-moved":
       return event.stage === "taken" ? `Узято в руки: ${placed(event.item)}` : `Поставлено: ${placed(event.item)} на ${event.item.slot}`;
     case "vacuumed": {

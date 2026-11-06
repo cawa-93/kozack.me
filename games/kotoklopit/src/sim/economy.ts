@@ -1,6 +1,6 @@
 // Запаси, доставка й комунальні (§6.4).
 
-import { idleAct } from "./cat";
+import { addCarrier } from "./carriers";
 import { spend } from "./character";
 import {
   DELIVERY,
@@ -47,7 +47,7 @@ export function newHome(): Home {
     porch: [],
     utilitiesDebt: 0,
     repairs: 0,
-    carrier: null,
+    carriers: [],
     appliances: { fountain: null, robot: null, vacuum: null },
     feeders: [],
     fur: 0,
@@ -270,9 +270,9 @@ export function ownedItems(state: GameState): readonly HomeItem[] {
 
 /** Скільки ще речей цього типу вміститься: межа виду мінус ті, що вже є й що їдуть (§6.4, §8.7). Іграшкам місце не потрібне. */
 export function freeSlots(state: GameState, thing: ThingKind): number {
-  if (thing === "toy") return Infinity;
+  if (thing === "toy" || thing === "carrier") return Infinity;
   const home = state.home;
-  if (thing === "carrier" || thing === "lock" || isAppliance(thing)) {
+  if (thing === "lock" || isAppliance(thing)) {
     const ordered = [...home.deliveries, ...home.porch].some((d) => "thing" in d && d.thing === thing);
     return !ownsThing(state, thing) && !ordered ? 1 : 0;
   }
@@ -297,10 +297,9 @@ export function feederRoom(state: GameState, cartBowls = 0): number {
   return Math.max(0, bowlsWithoutFeeder(state).length + newBowls - packagesOf(state, "feeder"));
 }
 
-/** Річ без місця вже є вдома: переноска, замок на шафці чи техніка (§6.4). */
-export function ownsThing(state: GameState, thing: "carrier" | "lock" | Appliance): boolean {
+/** Річ без місця вже є вдома: замок на шафці чи техніка (§6.4). */
+export function ownsThing(state: GameState, thing: "lock" | Appliance): boolean {
   const home = state.home;
-  if (thing === "carrier") return home.carrier !== null;
   if (thing === "lock") return home.lock !== undefined;
   return home.appliances[thing] !== null;
 }
@@ -362,7 +361,7 @@ export function orderThing(state: GameState, thing: ThingKind, quality: Quality)
 /** Нова річ стає на вільне місце свого типу, іграшка — на підлогу біля дверей. */
 export function place(state: GameState, thing: ThingKind, quality: Quality): HomeItem | null {
   if (thing === "carrier") {
-    state.home.carrier = quality;
+    addCarrier(state.home, quality);
     return null;
   }
   // Замок — на шафку з кормом (§9.12, «Кмітливість у бешкеті»).
@@ -421,18 +420,6 @@ export function discard(state: GameState, itemId: number): boolean {
 export function discardAppliance(state: GameState, appliance: Appliance): boolean {
   if (state.home.appliances[appliance] === null) return false;
   state.home.appliances[appliance] = null;
-  return true;
-}
-
-/**
- * Викинути переноску (§8.7), як техніку: потім можна купити знову, зокрема дорожчу (загальна ревізія 2026-10-29: переноски
- * не було в «Моїх речах», тож дешеву не замінити дорогою). Переноску, в якій кіт у поїздці, не викинути; кіт, що спав у ній,
- * вилазить — як перед поїздкою (§9.12 «Переноска»).
- */
-export function discardCarrier(state: GameState): boolean {
-  if (state.home.carrier === null || (state.trip?.cat ?? null) !== null) return false;
-  state.home.carrier = null;
-  for (const cat of state.cats) if (cat.act.kind === "sleep" && cat.act.target === "carrier") cat.act = idleAct();
   return true;
 }
 

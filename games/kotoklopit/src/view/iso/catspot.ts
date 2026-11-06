@@ -7,6 +7,7 @@
 // про точки речей: `drum` пральки, `blanket` ліжка, `inside` переноски, `door` будиночка, `top` робота, `top` ящиків.
 
 import { catOnComputer } from "../../sim/catai";
+import { CARRIER } from "../../sim/config";
 import { CARRIER_SPOT, HIGH_PLACES, isSolid, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
 import type { Cat, GameState, HomeItem, LitterItem, ScratcherItem, Vec } from "../../sim/types";
 import { catMoving } from "../anim/catfacing";
@@ -17,6 +18,7 @@ import { hidesUnder } from "../pose";
 import type { ArtId } from "../art/types";
 import type { RigFacing } from "../rig/types";
 import { ISO_KEYBOARD, isoCatPerch, isoObjectLook } from "../world/objects";
+import { carrierSlot } from "./looks";
 import { blanketEars, catSize } from "./catrig";
 import { ISO_DEPTH_SLOT } from "./depth";
 import { artOffset, footprintCenter } from "./geometry";
@@ -429,9 +431,12 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   if ((held?.kind === "cat" && held.cat === cat.id) || cat.act.kind === "lap") return spot("hands", { x: cat.x, y: cat.y });
   const act = cat.act;
   // У переносці (§9.12): клубочок крізь ґратки.
-  if (act.kind === "sleep" && act.target === "carrier" && act.goal === null && state.home.carrier) {
+  const carrier = state.home.carriers[0];
+  if (act.kind === "sleep" && act.target === "carrier" && act.goal === null && carrier) {
+    const inside = pointOf(`item/carrier/${carrier.quality}`, "inside");
+    const slot = carrierSlot(Math.min(state.home.carriers.length, CARRIER.shown), 0);
     return spot("carrier", CARRIER_SPOT, {
-      offset: pointOf(`item/carrier/${state.home.carrier}`, "inside"),
+      offset: { x: inside.x + slot.x, y: inside.y + slot.y },
       above: { id: "carrier", offset: underGrate(depths.grate) },
       scale: SPOT_SCALE.carrier,
     });

@@ -223,12 +223,12 @@ describe("кожен товар у своїй картці (§6.4; рішенн�
     expect(stockOf("thing:toy", "premium")).toBe("");
   });
 
-  it("переноска їде — картка дешевої «🚗 1 шт.», а сіра картка дорогої пояснює чому: «уже їде»", () => {
+  it("замок їде — картка дешевої «🚗 1 шт.», а сіра картка дорогої пояснює чому: «уже їде»", () => {
     const state = at(null);
-    expect(checkout(state, [{ goods: { thing: "carrier" }, quality: "cheap", count: 1 }], "delivery")).toBe(true);
+    expect(checkout(state, [{ goods: { thing: "lock" }, quality: "cheap", count: 1 }], "delivery")).toBe(true);
     const { list } = open(state, "delivery", false);
     const shown = variantsOf(catalog(state, "delivery"));
-    const card = (q: string): FakeElement | undefined => list.findAll("shop-item")[shown.findIndex((v) => goodsKey(v.goods) === "thing:carrier" && v.quality === q)];
+    const card = (q: string): FakeElement | undefined => list.findAll("shop-item")[shown.findIndex((v) => goodsKey(v.goods) === "thing:lock" && v.quality === q)];
     expect(card("cheap")?.find("shop-stock").textContent).toBe("🚗 1 шт.");
     expect(card("premium")?.find("shop-stock").textContent).toBe("уже їде");
     expect([card("cheap"), card("premium")].map((c) => c?.classList.contains("muted"))).toEqual([true, true]);
@@ -333,17 +333,17 @@ describe("смуга кошика внизу (§6.4)", () => {
 
   it("варіант, місце якого займає інший варіант у кошику, — не сірий: лише «+» неактивний (рецензія 2026-11-03)", () => {
     const state = at(null);
-    expect(state.home.carrier).toBeNull();
+    expect(state.home.lock).toBeUndefined();
     const { list } = open(state, "delivery", false);
     const shown = variantsOf(catalog(state, "delivery"));
     const items = list.findAll("shop-item");
     const card = (thing: string, quality: string): FakeElement | undefined =>
       items[shown.findIndex((v) => "thing" in v.goods && v.goods.thing === thing && v.quality === quality)];
-    const cheap = card("carrier", "cheap");
-    const premium = card("carrier", "premium");
+    const cheap = card("lock", "cheap");
+    const premium = card("lock", "premium");
     cheap?.findAll("step")[1]?.click();
     expect(cheap?.find("shop-count").textContent).toBe("1");
-    // Переноска — одна: дорожчу вже не взяти, але не через те, що вдома, — картка не сіра й без підпису, лише «+» неактивний.
+    // Замок — один: дорожчу вже не взяти, але не через те, що вдома, — картка не сіра й без підпису, лише «+» неактивний.
     expect(premium?.findAll("step")[1]?.disabled).toBe(true);
     expect(premium?.classList.contains("muted")).toBe(false);
     expect(premium?.find("shop-stock").textContent).toBe("");
@@ -436,7 +436,7 @@ describe("подвійний дотик «Купити» не везе додо�
           kept.clear();
           show(true);
         },
-        exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop,
+        exam: noop, nextCat: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop,
         home: () => (homes += 1),
       };
       card = visitCard(state, { exam: null, done: [] }, handlers, { kept, bought });
@@ -529,7 +529,7 @@ describe("подвійний дотик «Купити» не везе додо�
 
 describe("картки поїздок (§8.5)", () => {
   const noop = (): void => {};
-  const handlers: VisitHandlers = { checkout: noop, exam: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
+  const handlers: VisitHandlers = { checkout: noop, exam: noop, nextCat: noop, treat: noop, treatSelf: noop, adopt: noop, sterilize: noop, buyKitten: noop, groom: noop, show: noop, home: noop };
   /** Скільки разів гроші «👛» у картці: тіло, примітка, смуга. */
   const purses = (card: ReturnType<typeof visitCard>): number =>
     [...card.body.map((b) => (typeof b === "string" ? b : fake(b).textContent)), ...(card.aside ?? []), card.bar ? fake(card.bar).textContent : ""].join("|").split("👛").length - 1;
@@ -631,7 +631,7 @@ describe("картки поїздок (§8.5)", () => {
 
   it("«Мої речі»: рядок речі — її іконка й назва варіанта, та сама, що на картці магазину, без назви речі над нею; «Викинути» знає якість", () => {
     const state = at(null);
-    state.home.carrier = "premium";
+    state.home.carriers = [{ quality: "premium", wear: 0 }];
     const bowl = place(state, "bowl", "premium");
     if (bowl) state.home.items.push(bowl);
     const thrown: [string, string][] = [];
@@ -647,6 +647,6 @@ describe("картки поїздок (§8.5)", () => {
     expect(rows.map((r) => r.find("shop-name").textContent)).toEqual(expected);
     expect(list?.findAll("shop-stock")).toEqual([]);
     rows.at(-1)?.find("button").click();
-    expect(thrown).toEqual([[JSON.stringify({ owned: "carrier" }), "premium"]]);
+    expect(thrown).toEqual([[JSON.stringify({ carrier: 0 }), "premium"]]);
   });
 });

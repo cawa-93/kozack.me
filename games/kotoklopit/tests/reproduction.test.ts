@@ -381,7 +381,7 @@ describe("новонароджені: перевірка розмноження 
     baby.ageWeeks = 1;
     expect(sterilizeBlocker(s, baby)).toBeNull();
     s.character.held = { kind: "cat", cat: baby.id };
-    s.home.carrier = "cheap";
+    s.home.carriers = [{ quality: "cheap", wear: 0 }];
     expect(tripBlocker(s, "vet")).toBeNull();
   });
 });
@@ -486,7 +486,7 @@ describe("стерилізація вагітної (рішення автора
     s.minute = 9 * 60;
     s.modifiers.day = null;
     s.character.money = 1000;
-    s.home.carrier = "cheap";
+    s.home.carriers = [{ quality: "cheap", wear: 0 }];
     const tom = withCat(save, "male");
     tom.traits = [];
     tom.mood = 60;

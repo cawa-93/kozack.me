@@ -30,7 +30,7 @@
    "held": null
   },
   "home": {
-   "carrier": "cheap",
+   "carriers": [{ "quality": "cheap", "wear": 0 }],
    "supplies": {
     "catFood": {
      "cheap": 20,

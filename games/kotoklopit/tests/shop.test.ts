@@ -29,7 +29,7 @@ describe("універсальний магазин (§6.4)", () => {
     expect(room(state, [], { product: "food" }, "cheap")).toBe(0);
     // Миски: скільки вільних місць.
     expect(room(state, [], { thing: "bowl" }, "cheap")).toBeGreaterThan(1);
-    expect(room(state, [line({ thing: "carrier" }, "premium", 1)], { thing: "carrier" }, "cheap")).toBe(0);
+    expect(room(state, [line({ thing: "lock" }, "premium", 1)], { thing: "lock" }, "cheap")).toBe(0);
   });
 
   it("нашийник — один варіант, без якостей; решта товарів — два (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
@@ -98,12 +98,14 @@ describe("універсальний магазин (§6.4)", () => {
     expect(unavailable(state, { product: "food" })).toBeNull();
     state.home.boxes = { food: { cheap: 5, premium: 0 } };
     expect(unavailable(state, { product: "food" })).toBe("boxes");
-    expect(unavailable(state, { thing: "carrier" })).toBeNull();
-    checkout(state, [line({ thing: "carrier" }, "cheap", 1)], "delivery");
-    expect(unavailable(state, { thing: "carrier" })).toBe("ordered");
+    expect(unavailable(state, { thing: "lock" })).toBeNull();
+    checkout(state, [line({ thing: "lock" }, "cheap", 1)], "delivery");
+    expect(unavailable(state, { thing: "lock" })).toBe("ordered");
     state.home.deliveries = [];
-    state.home.carrier = "cheap";
-    expect(unavailable(state, { thing: "carrier" })).toBe("owned");
+    state.home.lock = "cheap";
+    expect(unavailable(state, { thing: "lock" })).toBe("owned");
+    state.home.carriers = [{ quality: "cheap", wear: 0 }];
+    expect(unavailable(state, { thing: "carrier" })).toBeNull();
     checkout(state, [line({ thing: "house" }, "cheap", 3)], "delivery");
     expect(unavailable(state, { thing: "house" })).toBe("no-room");
     expect(unavailable(state, { thing: "toy" })).toBeNull();

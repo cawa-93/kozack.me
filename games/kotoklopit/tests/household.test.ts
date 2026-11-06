@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
-import { addSupply, discard, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
+import { discardCarrier } from "../src/sim/carriers";
+import { addSupply, discard, discardAppliance, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf, wearOut } from "../src/sim/household";
@@ -368,35 +369,33 @@ describe("перевірка побуту 2026-10-28", () => {
     const save = game();
     const state = save.current;
     state.character.money = 1000;
-    state.home.carrier = "cheap";
+    state.home.carriers = [{ quality: "cheap", wear: 0 }];
     state.home.lock = "cheap";
-    expect(unavailable(state, { thing: "carrier" })).toBe("owned");
     expect(unavailable(state, { thing: "lock" })).toBe("owned");
     const cat = held(save);
     state.character.held = null;
     cat.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 0 };
     // Переноску, в якій інший кіт у поїздці, не викинути.
-    state.trip = { destination: "vet", cat: 999 } as Save["current"]["trip"];
-    expect(discardCarrier(state)).toBe(false);
-    expect(state.home.carrier).toBe("cheap");
+    state.trip = { destination: "vet", cat: 999, riders: [{ cat: 999, place: "cheap" }] } as Save["current"]["trip"];
+    expect(discardCarrier(state, 0)).toBe(false);
+    expect(state.home.carriers.map((c) => c.quality)).toEqual(["cheap"]);
     state.trip = null;
-    expect(discardCarrier(state)).toBe(true);
-    expect(state.home.carrier).toBeNull();
+    expect(discardCarrier(state, 0)).toBe(true);
+    expect(state.home.carriers).toEqual([]);
     expect(cat.act.kind).toBe("idle");
     expect(discardLock(state)).toBe(true);
     expect(state.home.lock).toBeUndefined();
     expect(discardLock(state)).toBe(false);
     // Тепер магазин пропонує обидві якості, і дорожча стає на місце дешевої.
-    for (const thing of ["carrier", "lock"] as const) {
-      expect(unavailable(state, { thing })).toBeNull();
-      expect(room(state, [], { thing }, "premium")).toBe(1);
-    }
+    expect(unavailable(state, { thing: "lock" })).toBeNull();
+    expect(room(state, [], { thing: "lock" }, "premium")).toBe(1);
+    expect(room(state, [], { thing: "carrier" }, "premium")).toBeGreaterThan(1);
     const cart = (["carrier", "lock"] as const).map((thing) => ({ goods: { thing }, quality: "premium" as const, count: 1 }));
     expect(checkout(state, cart, "delivery")).toBe(true);
     for (const d of state.home.deliveries) d.at = 0;
     tickDeliveries(state);
     receivePackages(state);
-    expect(state.home.carrier).toBe("premium");
+    expect(state.home.carriers.map((c) => c.quality)).toEqual(["premium"]);
     expect(state.home.lock).toBe("premium");
   });
 

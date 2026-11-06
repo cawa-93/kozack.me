@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { seatCat } from "../src/sim/carriers";
 import { createCat, idleAct } from "../src/sim/cat";
 import { carrierDread, carryFeeling, decide, tickCats } from "../src/sim/catai";
 import { CARRIER_HOME, CLAW, ESCAPE, GUESTS, MINUTES_PER_HOUR, MODIFIERS, REAL_SECONDS_PER_GAME_HOUR, TRIPS, VET } from "../src/sim/config";
@@ -376,7 +377,7 @@ describe("«Гості»: дзвінок у двері (§9.12, рішення �
 /** Персонаж біля дверей з котом на руках, удома дешева переноска. */
 function atDoorWith(save: Save, cat: Cat): void {
   standAt(save, "door");
-  save.current.home.carrier = "cheap";
+  save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
   save.current.character.held = { kind: "cat", cat: cat.id };
 }
 
@@ -386,6 +387,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
       const save = game();
       const cat = withCat(save, level === 0 ? {} : { carrier: level }, { x: 5.5, y: 8.5 });
       atDoorWith(save, cat);
+      seatCat(save.current, cat);
       cat.mood = 60;
       expect(startTrip(save.current, "vet")).toBe(true);
       return 60 - cat.mood;
@@ -401,7 +403,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
     for (let seed = 1; seed <= 60; seed++) {
       for (const level of [0, 2] as const) {
         const save = game(seed);
-        save.current.home.carrier = "cheap";
+        save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
         const cat = withCat(save, level === 0 ? {} : { carrier: level }, { x: 5.5, y: 8.5 });
         cat.needs.fatigue = 90;
         decide(save.current, cat, createRng(seed), { present: true });
@@ -419,7 +421,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
       decide(save.current, cat, createRng(seed), { present: true });
       expect(cat.act.target).not.toBe("carrier");
     }
-    save.current.home.carrier = "cheap";
+    save.current.home.carriers = [{ quality: "cheap", wear: 0 }];
     cat.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 0 };
     Object.assign(cat, { x: 8.5, y: 9.5 });
     tickCats(save.current, 0.25, { present: true });
@@ -432,6 +434,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
     sleeper.act = { kind: "sleep", target: "carrier", goal: null, minutes: 300, elapsed: 10 };
     const passenger = withCat(save, {}, { x: 5.5, y: 8.5 });
     atDoorWith(save, passenger);
+    seatCat(save.current, passenger);
     expect(startTrip(save.current, "vet")).toBe(true);
     expect(sleeper.act.kind).not.toBe("sleep");
     sleeper.needs.fatigue = 90;
@@ -468,8 +471,8 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
     const save = game();
     const cat = withCat(save, { carrier: -2 }, { x: 5.5, y: 8.5 });
     atDoorWith(save, cat);
-    save.current.home.carrier = null;
-    expect(carrierDread(save.current, cat)).toBe(0);
+    save.current.home.carriers = [];
+    expect(carrierDread(save.current, cat)).toBe(2);
   });
 
   it("з дорогою переноскою «−» удвічі рідше дряпається й удвічі рідше виривається після подряпини (рішення автора 2026-10-29, А5)", () => {
@@ -480,7 +483,7 @@ describe("«Переноска» (§9.12 «Переноска й ветерин�
         const save = game(seed);
         const cat = withCat(save, { carrier: -2 }, { x: 5.5, y: 8.5 });
         atDoorWith(save, cat);
-        save.current.home.carrier = carrier;
+        save.current.home.carriers = carrier ? [{ quality: carrier, wear: 0 }] : [];
         const { events, stop } = recordEvents();
         tickCats(save.current, 1, { present: true });
         stop();
