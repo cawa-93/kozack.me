@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import { changeLook } from "../src/sim/character";
 import { interact, newGame } from "../src/sim/game";
+import { createCat } from "../src/sim/cat";
 import { objectById } from "../src/sim/home";
+import { addCat } from "../src/sim/night";
+import { createRng } from "../src/sim/rng";
 import { targetOf } from "../src/sim/targets";
 import { recordEvents } from "./helpers";
 
@@ -22,6 +25,13 @@ function atWardrobe() {
 describe("шафа (§8.7)", () => {
   it("біля шафи вона — ціль дії", () => {
     expect(targetOf(atWardrobe().current)?.id).toBe("wardrobe");
+  });
+
+  it("кіт на шафі заступає її: ціль — він", () => {
+    const save = atWardrobe();
+    const wardrobe = objectById("wardrobe");
+    addCat(save.current, createCat(save.current, createRng(4), { source: "shelter", ageWeeks: 30, at: { x: wardrobe.x + 0.5, y: wardrobe.y + 0.5 } }));
+    expect(targetOf(save.current)).toMatchObject({ type: "cat" });
   });
 
   it("порожніми руками дія нічого не змінює й не відмовляє: редактор відкриває сцена", () => {

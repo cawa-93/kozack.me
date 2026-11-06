@@ -44,10 +44,15 @@ export const itemTargetId = (item: HomeItem): string => `item:${item.id}`;
 export const messTargetId = (mess: Mess): string => `mess:${mess.id}`;
 export const catTargetId = (cat: Cat): string => `cat:${cat.id}`;
 
+/** Кіт на шафі заступає її (§8.7): його знімають чи чують «не дотягтися» (§9.12), а шафа почекає, поки він зліз. */
+function catOnWardrobe(state: GameState, object: HomeObject): boolean {
+  return object.kind === "wardrobe" && state.cats.some((c) => c.away === null && highPlaceOf(state, c)?.id === object.id);
+}
+
 /** Усі цілі, з якими зараз можна взаємодіяти. */
 function candidates(state: GameState): Target[] {
   const targets: Target[] = [];
-  for (const object of objectsOf(state)) if (object.interactive) targets.push({ type: "object", id: object.id, object });
+  for (const object of objectsOf(state)) if (object.interactive && !catOnWardrobe(state, object)) targets.push({ type: "object", id: object.id, object });
   // Будиночок і кігтеточка — для котів: персонажу з ними робити нічого.
   // Іграшку з повними руками не підняти, тож вона не заступає плиту чи стіл (§10).
   const handsFull = state.character.held !== null;
