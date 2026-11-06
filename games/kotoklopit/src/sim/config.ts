@@ -279,7 +279,7 @@ export const HIGH_HYGIENE = 75;
 export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
 
 /** Множник `POSITIONS.reputation` за години роботи: кар'єра вміщується в гру; штрафи й події — без нього. */
-export const CAREER_PACE = 2.5;
+export const CAREER_PACE = 3.5;
 /**
  * Посади: `pay` — ₴, решта теж за годину. Репутацію підібрано, щоб сумлінний гравець ставав директором ближче до кінця гри.
  */
@@ -290,6 +290,7 @@ export const POSITIONS: readonly {
   reputation: number;
   sanity: number;
 }[] = [
+  { pay: 7, patienceDecay: 23, patienceRecovery: 57, reputation: 3.3, sanity: -5.7 },
   { pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 },
   { pay: 13, patienceDecay: 27, patienceRecovery: 54, reputation: 2.36, sanity: -6.3 },
   { pay: 15, patienceDecay: 29, patienceRecovery: 51, reputation: 1.79, sanity: -6.6 },
@@ -298,13 +299,16 @@ export const POSITIONS: readonly {
   { pay: 18, patienceDecay: 35, patienceRecovery: 41, reputation: 0.85, sanity: -7.6 },
   { pay: 19, patienceDecay: 37, patienceRecovery: 38, reputation: 0.68, sanity: -7.9 },
   { pay: 20, patienceDecay: 38, patienceRecovery: 34, reputation: 0.55, sanity: -8.2 },
-  { pay: 22, patienceDecay: 40, patienceRecovery: 32, reputation: 0.45, sanity: -8.6 },
-  { pay: 24, patienceDecay: 42, patienceRecovery: 29, reputation: 0.37, sanity: -8.9 },
-  { pay: 26, patienceDecay: 44, patienceRecovery: 27, reputation: 0.31, sanity: -9.2 },
-  { pay: 29, patienceDecay: 46, patienceRecovery: 24, reputation: 0.26, sanity: -9.5 },
-  { pay: 33, patienceDecay: 48, patienceRecovery: 22, reputation: 0.22, sanity: -9.9 },
-  { pay: 38, patienceDecay: 50, patienceRecovery: 20, reputation: 0.19, sanity: -10.2 },
-  { pay: 45, patienceDecay: 52, patienceRecovery: 17, reputation: 0.16, sanity: -10.5 },
+  { pay: 22, patienceDecay: 39, patienceRecovery: 33, reputation: 0.5, sanity: -8.4 },
+  { pay: 24, patienceDecay: 40, patienceRecovery: 32, reputation: 0.45, sanity: -8.6 },
+  { pay: 26, patienceDecay: 42, patienceRecovery: 29, reputation: 0.37, sanity: -8.9 },
+  { pay: 28, patienceDecay: 44, patienceRecovery: 27, reputation: 0.31, sanity: -9.2 },
+  { pay: 31, patienceDecay: 45, patienceRecovery: 25, reputation: 0.28, sanity: -9.3 },
+  { pay: 34, patienceDecay: 46, patienceRecovery: 24, reputation: 0.26, sanity: -9.5 },
+  { pay: 38, patienceDecay: 48, patienceRecovery: 22, reputation: 0.22, sanity: -9.9 },
+  { pay: 43, patienceDecay: 50, patienceRecovery: 20, reputation: 0.19, sanity: -10.2 },
+  { pay: 50, patienceDecay: 52, patienceRecovery: 17, reputation: 0.16, sanity: -10.5 },
+  { pay: 57, patienceDecay: 54, patienceRecovery: 15, reputation: 0.13, sanity: -10.8 },
 ];
 
 /** Оплата посад старих збережень: така посада стає посадою `POSITIONS` із найближчою оплатою. */
@@ -1086,7 +1090,7 @@ export const MODIFIERS = {
 export const HAPPY_LIFE = 85;
 export const SUFFERED_LIFE = 70;
 /** Кар'єра на пенсії (§4.2): посада (від 1), нижче `middle` — низька. */
-export const CAREER_AXIS = { middle: 9, high: 15 } as const;
+export const CAREER_AXIS = { middle: 11, high: 19 } as const;
 /** Проявів риси, щоб відкрити її (§9.9). */
 export const OBSERVATIONS: Record<Difficulty, number> = { easy: 3, normal: 6, hard: 9 };
 /** Свідок у проході між кімнатами (§9.9). */

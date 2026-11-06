@@ -528,7 +528,7 @@ describe("ефекти (§4.1)", () => {
     expect(praise.save.current.job.reputation).toBeCloseTo(MODIFIERS.reputationKeep.max);
     expect(praise.events.some((e) => e.type === "career")).toBe(false);
     // Далеко від меж — повні ∓3 години репутації.
-    expect(morning("reprimand", 50).save.current.job.reputation).toBeCloseTo(50 - 3 * 3.09);
+    expect(morning("reprimand", 50).save.current.job.reputation).toBeCloseTo(50 - 3 * 3.3);
     // Уже біля межі — «Догана» не піднімає репутацію.
     expect(morning("reprimand", 0.5).save.current.job.reputation).toBeCloseTo(0.5);
   });
@@ -623,7 +623,7 @@ describe("ефекти (§4.1)", () => {
     expect(save.current.minute).toBe(10 * 60);
     expect(save.current.job.tripDays).toEqual([1]);
     // Година в робочий час (09:00–10:00) — як перша поїздка тижня: репутація за годину стажера / 3.
-    expect(save.current.job.reputation).toBeCloseTo(50 - 3.09 / 3);
+    expect(save.current.job.reputation).toBeCloseTo(50 - 3.3 / 3);
   });
 
   it("нічні кидки кроку не залежать від того, скільки чисел узяли раніші кроки: примусове кошеня те саме (перевірка розмноження 2026-10-28)", () => {

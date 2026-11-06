@@ -111,8 +111,8 @@ describe("фінал (§4.2)", () => {
       save.current.job.position = position - 1;
       return careerAxis(save.current);
     };
-    expect(POSITIONS).toHaveLength(15);
-    expect([1, 8, 9, 14, 15].map(at)).toEqual(["low", "low", "middle", "middle", "high"]);
+    expect(POSITIONS).toHaveLength(19);
+    expect([1, 10, 11, 18, 19].map(at)).toEqual(["low", "low", "middle", "middle", "high"]);
     // Межі пропорційні колишнім (1–5, 6–9 і 10 з 10 посад): середня починається на тій самій частці драбини (~56%).
     expect((CAREER_AXIS.middle - 1) / (POSITIONS.length - 1)).toBeCloseTo((6 - 1) / (10 - 1), 1);
     expect(CAREER_AXIS.high).toBe(POSITIONS.length);

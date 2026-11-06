@@ -22,7 +22,7 @@ describe("тексти (TEXTS.md)", () => {
     const text = fill(KITTEN_MESSAGE, "female", { персонаж: "Марта", кошеня: "Мурка" });
     expect(text).not.toMatch(/[{}[\]|]/);
     expect(text).toContain("поїхала");
-    expect(fill(POSITION_TITLES[0] ?? "", "female")).toBe("Стажерка");
+    expect(fill(POSITION_TITLES[0] ?? "", "female")).toBe("Практикантка");
   });
 
   it("екран кінця гри для кожної причини; пенсія стажера без котів — «Тихе життя» (§4.2)", () => {
@@ -37,15 +37,15 @@ describe("тексти (TEXTS.md)", () => {
     expect(endingText(state, "retirement").title).toBe("Кар'єрист");
   });
 
-  it("фінал пенсії за драбиною з 15 посад (§4.2; рішення автора 2026-10-29, А10): «Старший експерт» (8) — ще низька кар'єра, «Керівник групи» (9) і «Заступник директора» (14) — середня, директор — висока", () => {
+  it("фінал пенсії за драбиною з 19 посад (§4.2; рішення автора 2026-10-29, А10): «Провідний експерт» (10) — ще низька кар'єра, «Керівник групи» (9) і «Заступник директора» (14) — середня, директор — висока", () => {
     const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const title = (position: number): string => {
       state.job.position = position - 1;
       return endingText(state, "retirement").title;
     };
-    expect([8, 9, 14, 15].map(title)).toEqual(["Тихе життя", "Звичайне життя", "Звичайне життя", "Кар'єристка"]);
-    // Тексти низької кар'єри не кажуть, що підвищень не було: на 8-й посаді їх було сім.
-    state.job.position = 7;
+    expect([10, 11, 18, 19].map(title)).toEqual(["Тихе життя", "Звичайне життя", "Звичайне життя", "Кар'єристка"]);
+    // Тексти низької кар'єри не кажуть, що підвищень не було: на 10-й посаді їх було дев'ять.
+    state.job.position = 9;
     expect(endingText(state, "retirement").text).not.toMatch(/підвищень не було|ні кар'єри/iu);
   });
 

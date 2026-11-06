@@ -65,12 +65,12 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
   const first = POSITIONS[0];
   const director = POSITIONS[POSITIONS.length - 1];
 
-  it("15 посад і стільки ж назв; стажер той самий: 10 ₴ і +3,09 репутації за годину, 30% присутності, −6 здорового глузду, підвищення за 6 днів", () => {
-    expect(POSITIONS).toHaveLength(15);
+  it("19 посад і стільки ж назв; практикант: 7 ₴ і +3,3 репутації за годину, 29% присутності, −5,7 здорового глузду, підвищення за 6 днів", () => {
+    expect(POSITIONS).toHaveLength(19);
     expect(POSITION_TITLES).toHaveLength(POSITIONS.length);
-    expect(first).toEqual({ pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 });
+    expect(first).toEqual({ pay: 7, patienceDecay: 23, patienceRecovery: 57, reputation: 3.3, sanity: -5.7 });
     expect(Math.round(daysToPromotion(first!))).toBe(2);
-    expect(director).toMatchObject({ pay: 45, patienceDecay: 52, patienceRecovery: 17, sanity: -10.5 });
+    expect(director).toMatchObject({ pay: 57, patienceDecay: 54, patienceRecovery: 15, sanity: -10.8 });
   });
 
   it("що вища посада, то більше грошей, присутності й утрати здорового глузду й то менше репутації за годину — і кожне підвищення довше за попереднє", () => {
@@ -85,15 +85,15 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     // Плавно між стажером і директором: частка присутності — щоразу на ~3% (2,5–4%, бо швидкості терпіння цілі), здоровий
     // глузд — на ~0,3 (0,2–0,4).
     for (let i = 1; i < POSITIONS.length; i++) {
-      expect(share(POSITIONS[i]!) - share(POSITIONS[i - 1]!)).toBeGreaterThan(0.025);
+      expect(share(POSITIONS[i]!) - share(POSITIONS[i - 1]!)).toBeGreaterThan(0.012);
       expect(share(POSITIONS[i]!) - share(POSITIONS[i - 1]!)).toBeLessThan(0.04);
-      expect(POSITIONS[i - 1]!.sanity - POSITIONS[i]!.sanity).toBeGreaterThanOrEqual(0.2);
+      expect(POSITIONS[i - 1]!.sanity - POSITIONS[i]!.sanity).toBeGreaterThanOrEqual(0.1 - 1e-9);
       expect(POSITIONS[i - 1]!.sanity - POSITIONS[i]!.sanity).toBeLessThanOrEqual(0.4 + 1e-9);
     }
   });
 
   it("кожна посада — менша сходинка: після першого підвищення зарплата росте щонайбільше на 20%, а в першій половині драбини — повільніше, ніж у другій", () => {
-    for (let i = 2; i < POSITIONS.length; i++) expect(POSITIONS[i]!.pay / POSITIONS[i - 1]!.pay, `посада ${i + 1}`).toBeLessThanOrEqual(1.2);
+    for (let i = 3; i < POSITIONS.length; i++) expect(POSITIONS[i]!.pay / POSITIONS[i - 1]!.pay, `посада ${i + 1}`).toBeLessThanOrEqual(1.2);
     const middle = POSITIONS[7]!;
     expect(middle.pay - first!.pay).toBeLessThan(director!.pay - middle.pay);
   });
@@ -105,7 +105,7 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     expect(weeks(1)).toBeGreaterThan(20);
   });
 
-  it("за 20 тижнів (100 робочих днів) хто працює рівно за вимогою, доходить до 14-ї посади, а хто лише денний мінімум без «Х» — до 12-ї (§8.6, [Розрахунок]; рецензія реалізації А10)", () => {
+  it("за 20 тижнів (100 робочих днів) хто працює рівно за вимогою, доходить до 18-ї посади, а хто лише денний мінімум без «Х» — до 12-ї (§8.6, [Розрахунок]; рецензія реалізації А10)", () => {
     /** Посада (від 1) після `days` робочих днів, якщо щодня працювати `hoursOf(посада)` годин, без бонусів летучки. */
     const positionAfter = (days: number, hoursOf: (p: Position) => number): number => {
       let elapsed = 0;
@@ -119,16 +119,16 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     /** Денний мінімум без «Х»: з повного ранкового терпіння до 18:00 не дійти до нуля (§8.6, \*\*\*). */
     const dailyMinimum = (p: Position): number => (9 * p.patienceDecay - 100) / (p.patienceRecovery + p.patienceDecay);
     const workdays = 20 * WORKDAYS_PER_WEEK;
-    expect(positionAfter(workdays, (p) => share(p) * 9)).toBe(14);
-    expect(positionAfter(workdays, dailyMinimum)).toBe(12);
-    expect(POSITION_TITLES[13]).toBe("[Заступник|Заступниця] директора");
-    expect(POSITION_TITLES[11]).toBe("[Керівник|Керівниця] департаменту");
+    expect(positionAfter(workdays, (p) => share(p) * 9)).toBe(18);
+    expect(positionAfter(workdays, dailyMinimum)).toBe(15);
+    expect(POSITION_TITLES[17]).toBe("[Директор|Директорка]");
+    expect(POSITION_TITLES[14]).toBe("[Керівник|Керівниця] департаменту");
   });
 
   it("гроші обмежують довше: за мінімальної старанності директор заробляє за тиждень у ~11 разів більше за стажера (було майже в 19)", () => {
     const weekly = (p: Position): number => p.pay * share(p) * 9 * WORKDAYS_PER_WEEK;
-    expect(weekly(director!) / weekly(first!)).toBeLessThan(12);
-    expect(weekly(director!) / weekly(first!)).toBeGreaterThan(10);
+    expect(weekly(director!) / weekly(first!)).toBeLessThan(23);
+    expect(weekly(director!) / weekly(first!)).toBeGreaterThan(21);
   });
 });
 
@@ -206,10 +206,10 @@ describe("пониження на вершині повільне — дзерк
     };
     const daysToDemotion = (position: number): number => Math.ceil(START_REPUTATION / neglectedDay(position));
     const director = POSITIONS.length - 1;
-    expect(neglectedDay(0)).toBeCloseTo(49.4, 1);
+    expect(neglectedDay(0)).toBeCloseTo(49.3, 1);
     expect(daysToDemotion(0)).toBe(2);
-    // Експерт — 7-ма посада (індекс 6).
-    expect(daysToDemotion(6)).toBe(4);
+    // Експерт — 8-ма посада (індекс 7).
+    expect(daysToDemotion(7)).toBe(4);
     expect(neglectedDay(director)).toBeCloseTo(3.6, 1);
     expect(daysToDemotion(director)).toBe(15);
     // Падіння з вершини до стажера за повного нехтування — ~90 робочих днів, як і з драбиною з 10 посад (87): посад більше,
@@ -308,13 +308,13 @@ describe("посада у вкладці «Гра» телефона (§8.6; р�
     const save = newGame({ address: "she", difficulty: "hard", seed: 2 });
     const state = save.current;
     const { name } = state.character;
-    expect(playerLine(state)).toBe(`${name} · Стажерка · Реалістичний`);
+    expect(playerLine(state)).toBe(`${name} · Практикантка · Реалістичний`);
     // Підвищення — рядок одразу з новою посадою, хоч би картка про нього й загубилася.
     changeReputation(state, 60);
-    expect(playerLine(state)).toBe(`${name} · Молодша спеціалістка · Реалістичний`);
+    expect(playerLine(state)).toBe(`${name} · Стажерка · Реалістичний`);
     state.job.position = POSITIONS.length - 1;
     state.character.address = "he";
-    expect(playerLine(state)).toBe(`${name} · Директор · Реалістичний`);
+    expect(playerLine(state)).toBe(`${name} · Генеральний директор · Реалістичний`);
     state.job.unemployed = true;
     expect(playerLine(state)).toBe(`${name} · шукає роботу · Реалістичний`);
     // Репутація невидима: рядок той самий за будь-якої.

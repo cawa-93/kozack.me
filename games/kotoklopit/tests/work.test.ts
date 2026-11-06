@@ -41,7 +41,7 @@ describe("робота за комп'ютером (§8.6)", () => {
   });
 
   it("стажер заробляє 10 за годину на середній складності, 12,5 на легкій і 8 на важкій", () => {
-    for (const [difficulty, pay] of [["easy", 12.5], ["normal", 10], ["hard", 8]] as const) {
+    for (const [difficulty, pay] of [["easy", 8.75], ["normal", 7], ["hard", 5.6]] as const) {
       const save = game("she", difficulty);
       const money = save.current.character.money;
       work(save, hours(12), hours(2));
@@ -49,23 +49,23 @@ describe("робота за комп'ютером (§8.6)", () => {
     }
   });
 
-  it("година роботи: +3,09 × `CAREER_PACE` репутації і −6 здорового глузду", () => {
+  it("година роботи: +3,3 × `CAREER_PACE` репутації і −5,7 здорового глузду", () => {
     const save = game();
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
-    expect(save.current.job.reputation).toBeCloseTo(50 + 3.09 * CAREER_PACE);
-    expect(save.current.character.stats.sanity).toBeCloseTo(34);
+    expect(save.current.job.reputation).toBeCloseTo(50 + 3.3 * CAREER_PACE);
+    expect(save.current.character.stats.sanity).toBeCloseTo(34.3);
   });
 
-  it("що вища посада, то більше робота забирає здорового глузду: директору −10,5 за годину", () => {
+  it("що вища посада, то більше робота забирає здорового глузду: на вершині −10,8 за годину", () => {
     const save = game();
     save.current.job.position = POSITIONS.length - 1;
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
-    expect(save.current.character.stats.sanity).toBeCloseTo(40 - 10.5);
+    expect(save.current.character.stats.sanity).toBeCloseTo(40 - 10.8);
   });
 
-  it("хронотип не змінює втрат здорового глузду: година роботи будь-коли забирає 6 і жайворонку, і сові (рішення автора 2026-10-29, А4)", () => {
+  it("хронотип не змінює втрат здорового глузду: година роботи будь-коли забирає 5,7 і жайворонку, і сові (рішення автора 2026-10-29, А4)", () => {
     const loss = (chronotype: Chronotype, from: number): number => {
       const save = newGame({ address: "she", difficulty: "normal", seed: 1, chronotype });
       save.current.modifiers.day = null;
@@ -75,7 +75,7 @@ describe("робота за комп'ютером (§8.6)", () => {
       return before - save.current.character.stats.sanity;
     };
     for (const chronotype of ["lark", "owl"] as const) {
-      for (const from of [hours(8), hours(9), hours(11), hours(16), hours(18), hours(19)]) expect(loss(chronotype, from)).toBeCloseTo(6);
+      for (const from of [hours(8), hours(9), hours(11), hours(16), hours(18), hours(19)]) expect(loss(chronotype, from)).toBeCloseTo(5.7);
     }
   });
 
@@ -102,6 +102,7 @@ describe("робота за комп'ютером (§8.6)", () => {
 describe("терпіння керівництва (§8.6)", () => {
   it("без роботи «!» з'являється через 2 години, «Х» — через 4, далі репутація падає", () => {
     const save = game();
+    save.current.job.position = 1;
     waitUntil(save, hours(9));
     const { events, stop } = recordEvents();
     advance(save, hours(2) - 1);
@@ -170,7 +171,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
   };
 
   it("пропуск — −1 × репутація за годину", () => {
-    expect(standup(() => {})).toEqual({ attended: false, reputation: -3.09 });
+    expect(standup(() => {})).toEqual({ attended: false, reputation: -3.3 });
   });
 
   it("присутність із гігієною 75+ дає дзеркальний бонус, із низькою — штраф", () => {
@@ -180,9 +181,9 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
         waitUntil(save, hours(10) - 1);
         startWork(save.current);
       });
-    expect(present(100)).toEqual({ attended: true, reputation: 0.5 * 3.09 });
+    expect(present(100)).toEqual({ attended: true, reputation: 0.5 * 3.3 });
     expect(present(60)).toEqual({ attended: true, reputation: 0 });
-    expect(present(26)).toEqual({ attended: true, reputation: -0.5 * 3.09 });
+    expect(present(26)).toEqual({ attended: true, reputation: -0.5 * 3.3 });
   });
 
   it("зараховано, якщо персонаж пробув щонайменше половину летучки", () => {
@@ -259,7 +260,7 @@ describe("справедливість роботи (ревізія 2026-10-22)"
   it("на лікарняному працювати можна: година оплачується, як у вихідні, — зарплата й репутація посади; керівництво нічого не чекає (§6.5; рішення автора 2026-10-29, А7)", () => {
     const hour = (setup: (save: Save) => void): { money: number; reputation: number } => {
       const save = game();
-      save.current.job.position = 3;
+      save.current.job.position = 4;
       save.current.modifiers.week = null;
       setup(save);
       const money = save.current.character.money;
