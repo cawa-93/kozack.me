@@ -875,10 +875,16 @@ export const HOUSEHOLD = {
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
+/** Пилосос у руках (§8.1, §8.7). */
+export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10 } as const;
 /**
- * Пилосос (§8.1, §8.7): `robotReach` — маршрут робота бере всі жмути, крім кухонного, і пил на підлозі вітальні й спальні.
+ * Робот-пилосос за якістю (§8.7): `reach` — досяжність із маршруту, клітинки; `starts` — коли виїжджає, хвилини доби; `messes` —
+ * чи бере сухий безлад. Між двома `reach` лежать усі кути й смужки біля стін (`tests/robot.test.ts`).
  */
-export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10, robotReach: 0.9 } as const;
+export const ROBOT: Record<Quality, { reach: number; starts: readonly number[]; messes: boolean }> = {
+  cheap: { reach: 0.82, starts: [HOUSEHOLD.robotMinute], messes: false },
+  premium: { reach: 1, starts: [HOUSEHOLD.robotMinute, 18 * 60], messes: true },
+};
 /**
  * Досяжність інструмента в руках (§8.7), клітинки. `web` — до павутини: у віника більша за `floor`, бо до павутин за ліжком,
  * умивальником і холодильником ближче як на 1,33 не підійти, а персонаж у кут упирається не ідеально (`tests/dust.test.ts`).

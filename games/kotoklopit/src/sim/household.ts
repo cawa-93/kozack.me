@@ -2,7 +2,7 @@
 
 import { asleep, traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, TOOL_REACH, VACUUM, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM, WATER_CAPACITY } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
 import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
@@ -482,27 +482,23 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
-  // Без світла робот-пилосос не виїжджає з бази (§4.1, рішення автора 2026-11-02): ні прибирання, ні шуму, ні котів на ньому.
-  if (home.appliances.robot && minutes < 1440 && !powerOut(state)) robotClean(state, from, minutes, crossed);
+  // Без світла робот-пилосос не виїжджає з бази (§4.1): ні прибирання, ні шуму, ні котів на ньому.
+  const robot = home.appliances.robot;
+  if (robot && minutes < 1440 && !powerOut(state)) for (const start of ROBOT[robot].starts) robotClean(state, robot, start, from, minutes, crossed);
 }
 
 /**
- * Робот-пилосос (§8.7): о 12:00 вирушає з бази й годину їздить усією квартирою; прибирає жмути шерсті й пил на підлозі, повз
- * які проїжджає, — у радіусі `VACUUM.robotReach` від себе, крізь стіни — ні (рішення автора 2026-11-02, «Пилосос у руках»: раніше
- * вся шерсть рівномірно танула й до кінця прибирання зникала зовсім; тепер шерсть зникає з кожним прибраним жмутом, як від
- * пилососа в руках, а павутини й того, повз що він не проїхав, робот не бере). Він тихий (§9.12, рішення автора 2026-10-26):
- * гучний звук чути лише в кімнаті, де він зараз їде (з проходу — до `NOISE.reach` клітинок), і кожен кіт чує його раз за
- * прибирання — коли робот проїжджає повз.
+ * Виїзд робота-пилососа від хвилини `start` (§8.7), його частина за цей крок часу. Кожен кіт чує робота раз за прибирання — коли
+ * той проїжджає повз (§9.12).
  */
-function robotClean(state: GameState, from: number, minutes: number, crossed: (minute: number) => boolean): void {
-  const start = HOUSEHOLD.robotMinute;
+function robotClean(state: GameState, quality: Quality, start: number, from: number, minutes: number, crossed: (minute: number) => boolean): void {
   const end = start + HOUSEHOLD.robotMinutes;
   if (crossed(start)) state.home.robotHeard = [];
   const a = from % 1440;
   const lo = Math.max(a, start);
   const hi = Math.min(a + minutes, end);
   if (hi <= lo) return;
-  robotSweep(state, (lo - start) / HOUSEHOLD.robotMinutes, (hi - start) / HOUSEHOLD.robotMinutes);
+  robotSweep(state, quality, (lo - start) / HOUSEHOLD.robotMinutes, (hi - start) / HOUSEHOLD.robotMinutes);
   if (hi >= end) {
     delete state.home.robotHeard;
     emit(state, { type: "robot" });
@@ -512,30 +508,31 @@ function robotClean(state: GameState, from: number, minutes: number, crossed: (m
   heard.push(...loudNoise(state, "robot", along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes), (cat) => !heard.includes(cat.id)));
 }
 
-/** Робот павутини не дістає. */
-const ROBOT_REACH = { floor: VACUUM.robotReach, web: 0 };
+/**
+ * Крок, яким робот-пилосос «проходить» свій шлях за крок часу, клітинки: щоб не проскочити жмут чи пил між точками. Дрібний, бо
+ * дорогий дістає кути лише з самого повороту маршруту, а крок часу цю точку зазвичай минає.
+ */
+const ROBOT_SWEEP_STEP = 0.05;
 
-/** Крок, яким робот-пилосос «проходить» свій шлях за крок часу, клітинки: щоб не проскочити жмут чи пил між точками. */
-const ROBOT_SWEEP_STEP = 0.2;
-
-/** Робот-пилосос проїхав маршрутом від частки `from` до `to` (0–1): прибрати, повз що він проїхав (§8.7). */
-function robotSweep(state: GameState, from: number, to: number): void {
+/** Робот-пилосос проїхав маршрутом від частки `from` до `to` (0–1): прибрати, повз що він проїхав (§8.7). Павутини не дістає. */
+function robotSweep(state: GameState, quality: Quality, from: number, to: number): void {
+  const { reach, messes } = ROBOT[quality];
   const steps = Math.max(1, Math.ceil(((to - from) * ROUTE_LENGTH) / ROBOT_SWEEP_STEP));
   const swept: Swept = { tufts: [], dust: [], messes: [] };
-  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), ROBOT_REACH, false, swept);
+  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), { floor: reach, web: 0 }, messes, swept);
   reportSwept(state, "robot", swept);
 }
 
 /**
  * Скільки проїхав робот-пилосос: 0–1 під час прибирання, null — стоїть на базі чи його немає (§8.7). Без світла він стоїть на базі
- * весь день (§4.1, рішення автора 2026-11-02): з null вигляд показує його на базі, а кіт, що на ньому катався, злазить.
+ * весь день (§4.1): з null вигляд показує його на базі, а кіт, що на ньому катався, злазить.
  */
 export function robotProgress(state: GameState): number | null {
-  if (!state.home.appliances.robot || powerOut(state)) return null;
+  const quality = state.home.appliances.robot;
+  if (!quality || powerOut(state)) return null;
   const minute = state.minute % 1440;
-  const start = HOUSEHOLD.robotMinute;
-  if (minute < start || minute >= start + HOUSEHOLD.robotMinutes) return null;
-  return (minute - start) / HOUSEHOLD.robotMinutes;
+  const start = ROBOT[quality].starts.find((s) => minute >= s && minute < s + HOUSEHOLD.robotMinutes);
+  return start === undefined ? null : (minute - start) / HOUSEHOLD.robotMinutes;
 }
 
 /**

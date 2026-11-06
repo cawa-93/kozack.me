@@ -406,4 +406,21 @@ describe("«Планове відключення» — день без світ
     expect(outage.events).not.toContain("robot");
     expect(outage.at).toEqual(ROBOT_DOCK);
   });
+
+  it("дорогий робот-пилосос не виїжджає ні вдень, ні ввечері", () => {
+    const save = game("outage");
+    save.current.home.appliances.robot = "premium";
+    save.current.home.fur = 60;
+    topUpTufts(save.current);
+    const tufts = tuftsOf(save.current).length;
+    const { events, stop } = recordEvents();
+    for (let m = HOUSEHOLD.robotMinute - 10; m < 23 * 60; m++) {
+      tickHousehold(save.current, m, 1);
+      save.current.minute = m + 1;
+      expect(robotProgress(save.current)).toBeNull();
+    }
+    stop();
+    expect(tuftsOf(save.current)).toHaveLength(tufts);
+    expect(events.map((e) => e.type)).not.toContain("robot");
+  });
 });
