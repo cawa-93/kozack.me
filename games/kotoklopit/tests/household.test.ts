@@ -452,7 +452,7 @@ describe("шерсть і техніка (§8.7)", () => {
     expect(robotProgress(save.current)).toBeNull();
   });
 
-  it("у робота жмути зникають по одному, коли він проїжджає повз; жмута на кухні він не дістає (§8.7)", () => {
+  it("у робота жмути зникають по одному, коли він проїжджає повз (§8.7)", () => {
     const save = game();
     save.current.home.appliances.robot = "cheap";
     save.current.home.fur = 70;
@@ -463,10 +463,8 @@ describe("шерсть і техніка (§8.7)", () => {
       const tufts = furTufts(save.current).length;
       if (seen.at(-1) !== tufts) seen.push(tufts);
     }
-    // Вісім жмутів; восьмий (на кухні перед плитою) — далеко від маршруту робота.
     expect(seen[0]).toBe(8);
-    expect(seen.at(-1)).toBe(1);
-    expect(tuftsOf(save.current)).toEqual([7]);
+    expect(seen.at(-1)).toBe(0);
     // Зникали поступово, а не всі разом.
     expect(seen.length).toBeGreaterThan(3);
     for (let i = 1; i < seen.length; i++) expect(seen[i]).toBeLessThan(seen[i - 1]!);

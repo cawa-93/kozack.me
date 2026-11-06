@@ -870,7 +870,7 @@ export const HOUSEHOLD = {
   washMinutes: 60,
   clothesDays: { cheap: 7, premium: 12 } as Record<Quality, number>,
   robotMinute: 12 * 60,
-  robotMinutes: 60 * BODY_PACE,
+  robotMinutes: 64 * BODY_PACE,
   breakPerUse: 1 / 150,
   applianceBreakPerDay: 0.02,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
