@@ -549,6 +549,8 @@ export function callCard(onAnswer: () => void, onIgnore: () => void): Card {
   };
 }
 
+const LOOK_TITLE = "Як ви виглядаєте?";
+
 /** Меню на старті (§4.2): продовжити збережену гру чи почати нову. */
 export function titleCard(state: GameState, onContinue: () => void, onNew: () => void): Card {
   const { name } = state.character;
@@ -570,6 +572,37 @@ export function titleCard(state: GameState, onContinue: () => void, onNew: () =>
  * нова випадкова зовнішність (`shuffle`); з такої редактор і починає.
  */
 export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () => Look): Card {
+  const editor = lookEditor(start, shuffle);
+  return {
+    kicker: "Нова гра · 1 з 5",
+    solid: true,
+    title: LOOK_TITLE,
+    body: [editor.root],
+    actions: [
+      { label: "Далі", primary: true, onSelect: () => onDone({ ...editor.look }) },
+      { label: "Випадково", onSelect: editor.randomize },
+    ],
+  };
+}
+
+/** Біля шафи (§8.7): той самий редактор поверх гри; хрестик чи Esc — без змін. */
+export function wardrobeCard(start: Look, onDone: (look: Look) => void, onCancel: () => void, shuffle: () => Look): Card {
+  const editor = lookEditor(start, shuffle);
+  return {
+    kicker: "Шафа",
+    title: LOOK_TITLE,
+    body: [editor.root],
+    actions: [
+      { label: "Готово", primary: true, onSelect: () => onDone({ ...editor.look }) },
+      { label: "Випадково", onSelect: editor.randomize },
+    ],
+    closable: true,
+    onDismiss: onCancel,
+  };
+}
+
+/** Редактор зовнішності (§5.1): портрет і повзунки; `look` — те, що обрано зараз. */
+function lookEditor(start: Look, shuffle: () => Look): { root: HTMLElement; look: Look; randomize: () => void } {
   const look: Look = { ...start };
   const editor = element("div", "look-editor");
   const canvas = portraitCanvas(130, 220);
@@ -604,23 +637,12 @@ export function lookCard(start: Look, onDone: (look: Look) => void, shuffle: () 
     sliders.append(row);
   }
   editor.append(canvas, sliders);
-  return {
-    kicker: "Нова гра · 1 з 5",
-    solid: true,
-    title: "Як ви виглядаєте?",
-    body: [editor],
-    actions: [
-      { label: "Далі", primary: true, onSelect: () => onDone({ ...look }) },
-      {
-        label: "Випадково",
-        onSelect: () => {
-          Object.assign(look, shuffle());
-          for (const show of sync) show();
-          redraw();
-        },
-      },
-    ],
+  const randomize = (): void => {
+    Object.assign(look, shuffle());
+    for (const show of sync) show();
+    redraw();
   };
+  return { root: editor, look, randomize };
 }
 
 /**

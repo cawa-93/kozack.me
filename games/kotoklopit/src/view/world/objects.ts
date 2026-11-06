@@ -98,7 +98,7 @@ const LOOKS: Readonly<Record<string, LookSpec>> = {
   "cat-cabinet": { top: 80, use: front(18.5, 4.35) },
   // Стіл із комп'ютером під внутрішньою стіною ряду 5: персонаж працює сидячи, спиною до камери; монітор — ближче до стіни.
   computer: { top: DESK, tall: 112, use: front(7, 7.35, "sit"), bubble: { x: 16, y: 0 } },
-  wardrobe: { top: 170, use: null },
+  wardrobe: { top: 170, use: front(6.5, 2.35) },
   // Підвіконня: вузька дошка з батареєю вздовж стіни з вікном — слід лише дошки, решта клітинки — підлога перед нею.
   "sill-bedroom": { top: SILL, tall: SILL + 6, use: null, footprint: { x0: 4, y0: 1, x1: 5, y1: 1.3 } },
   "sill-living": { top: SILL, tall: SILL + 6, use: null, footprint: { x0: 1, y0: 8, x1: 1.3, y1: 9 } },

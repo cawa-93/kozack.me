@@ -22,7 +22,7 @@ import {
   STAT_MAX,
 } from "./config";
 import { endGame } from "./events";
-import type { GameState, Ledger, Spending, StatName } from "./types";
+import type { GameState, Ledger, Look, Spending, StatName } from "./types";
 
 export const STAT_NAMES: readonly StatName[] = ["health", "satiety", "hygiene", "sanity"];
 
@@ -68,6 +68,11 @@ export function changeStat(state: GameState, stat: StatName, delta: number, floo
   if (delta < 0) next = Math.max(next, Math.min(current, Math.max(floor, statFloor(state, stat))));
   stats[stat] = Math.max(next, 0);
   if (next <= 0) endGame(state, stat);
+}
+
+/** Зовнішність змінили біля шафи (§8.7). */
+export function changeLook(state: GameState, look: Look): void {
+  state.character.look = look;
 }
 
 export function earn(state: GameState, amount: number): void {

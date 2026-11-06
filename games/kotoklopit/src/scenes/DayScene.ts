@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 import { IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
+import { changeLook } from "../sim/character";
 import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
@@ -22,7 +23,7 @@ import { clockFrame, weekOf } from "../sim/time";
 import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
-import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, type EnteredName, type PhoneTab } from "../ui/cards";
+import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
 import { lookRng, randomLook } from "../ui/look";
 import { diseaseLabel } from "../ui/icons";
 import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
@@ -279,6 +280,10 @@ export class DayScene extends Phaser.Scene {
     if (this.blocked()) return;
     const { held, activity } = this.state.character;
     const target = targetOf(this.state);
+    if (held === null && target?.id === "wardrobe") {
+      this.openWardrobe();
+      return;
+    }
     // Кота в протистоянні торкаються одразу, натисканням (§9.4): відпустивши кнопку, його не беруть на руки.
     if (held === null && activity === null && target?.type === "cat" && !inStandoff(target.cat)) {
       this.catPress = this.time.now;
@@ -1250,6 +1255,22 @@ export class DayScene extends Phaser.Scene {
       );
     };
     pickLook(randomLook(looks));
+  }
+
+  /** Шафа (§8.7): редактор зовнішності поверх гри. */
+  private openWardrobe(): void {
+    const looks = lookRng(newSeed());
+    this.overlay.show(
+      wardrobeCard(
+        this.state.character.look,
+        (look) => {
+          changeLook(this.state, look);
+          this.overlay.close();
+        },
+        () => this.overlay.close(),
+        () => randomLook(looks),
+      ),
+    );
   }
 
   private openPhone(): void {
