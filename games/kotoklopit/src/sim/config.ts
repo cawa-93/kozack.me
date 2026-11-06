@@ -311,9 +311,6 @@ export const POSITIONS: readonly {
   { pay: 57, patienceDecay: 54, patienceRecovery: 15, reputation: 0.13, sanity: -10.8 },
 ];
 
-/** Оплата посад старих збережень: така посада стає посадою `POSITIONS` із найближчою оплатою. */
-export const LEGACY_POSITION_PAY: readonly number[] = [10, 13, 17, 22, 28, 35, 43, 52, 62, 75];
-
 // Коти (§9.1–9.6, §9.12).
 export const CAT_AGE_LIMIT = 5;
 /** Без «Довголіття» (§9.1). */
@@ -843,8 +840,6 @@ export const ACCIDENT = {
   speedMax: 2,
   /** Години — кратно стільком: швидкість будь-яка, і картка писала б «13 год 26 хв». */
   roundMinutes: 15,
-  /** Для старого збереження: швидкості воно не пам'ятає, ремонт уже сплачено. */
-  legacySpeed: 2,
   health: -10,
   sanity: -10,
   catMood: -20,

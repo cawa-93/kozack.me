@@ -7,7 +7,7 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { ACCIDENT, CARRIER, CARRIER_MOOD, NEED_THRESHOLD, PET } from "../src/sim/config";
 import { nextTripCat, nextTripRider, tripCat, tripCatPlace } from "../src/sim/destinations";
 import { removeCat } from "../src/sim/farewell";
-import { deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
+import { goToSleep, interact, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { room } from "../src/sim/shop";
@@ -86,18 +86,6 @@ describe("кілька переносок (§8.7)", () => {
   it("у магазині їх можна брати скільки завгодно", () => {
     const { current: state } = game("cheap");
     expect(room(state, [], { thing: "carrier" }, "premium")).toBeGreaterThan(1);
-  });
-
-  it("старе збереження: одна переноска тієї самої якості, кіт у поїздці їде в ній", () => {
-    const save = game();
-    const riding = cat(save);
-    const home = save.current.home as GameState["home"] & { carrier?: Quality };
-    delete (home as { carriers?: unknown }).carriers;
-    home.carrier = "premium";
-    save.current.trip = { destination: "vet", phase: "visit", cat: riding.id, race: {}, losses: [], visit: 0, seed: 1 } as unknown as GameState["trip"];
-    const loaded = deserialize(serialize(save)).current;
-    expect(loaded.home.carriers).toEqual([{ quality: "premium", wear: 0 }]);
-    expect(loaded.trip?.riders).toEqual([{ cat: riding.id, place: "premium" }]);
   });
 });
 

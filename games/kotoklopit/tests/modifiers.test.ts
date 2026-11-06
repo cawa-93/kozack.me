@@ -65,7 +65,7 @@ describe("вибір модифікаторів: перевірка модифі
     expect(withCat.has("quiet-night")).toBe(true);
   });
 
-  it("«Щеплення» немає, а «Ветеринар удома» лишився без пари — легким боком; старе збереження з днем щеплення — день без модифікатора (рішення автора 2026-10-29, А14)", () => {
+  it("«Щеплення» немає, а «Ветеринар удома» лишився без пари — легким боком", () => {
     const withCat = seen((save) => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } })), 2, 3000);
     expect(withCat.has("vaccination")).toBe(false);
     expect(withCat.has("home-vet")).toBe(true);
@@ -83,14 +83,6 @@ describe("вибір модифікаторів: перевірка модифі
       expect(rolls.chance(MODIFIERS.hardShare.hard)).toBe(false);
     }
     expect(homeVet).toBeGreaterThan(20);
-    // Збереження з днем «Щеплення»: день без модифікатора, полів про щеплення немає.
-    const old = game();
-    old.current.modifiers.day = "vaccination";
-    Object.assign(old.current.today, { vaccinated: false, vaccineMissedUntil: 8 });
-    const copy = deserialize(serialize(old));
-    expect(copy.current.modifiers.day).toBeNull();
-    expect("vaccinated" in copy.current.today).toBe(false);
-    expect("vaccineMissedUntil" in copy.current.today).toBe(false);
   });
 
   it("частка важкого боку — за складністю й тоді, коли в пари сьогодні можливий лише один бік", () => {
@@ -328,11 +320,6 @@ describe("події модифікаторів: перевірка модифі
     expect(night.current.today.callPending).toBeUndefined();
     expect(ignoreCall(night.current)).toBe(false);
     expect(night.current.character.stats.sanity).toBe(before);
-    // Старе збереження без поля: дзвінок не чекає.
-    const old = rang();
-    delete old.current.today.callPending;
-    const copy = deserialize(serialize(old));
-    expect(answerCall(copy.current)).toBe(false);
   });
 });
 

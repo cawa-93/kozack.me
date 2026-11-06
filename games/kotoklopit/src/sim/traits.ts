@@ -114,39 +114,6 @@ export const TRAIT_GROUPS: readonly TraitGroup[] = [
 
 const BY_ID = new Map(TRAIT_GROUPS.map((g) => [g.id, g]));
 
-/**
- * Злиті групи (рішення автора 2026-10-25, `TRAITS.md`): колишня група → та, у яку її злито. Розмотування паперу —
- * те саме полювання лапою на річ, що рухається; навмисно ховають іграшки ті самі коти, що носять подарунки; спека
- * й холод — це теплолюбність (гроза й феєрверки — «Сміливість»). «Одужання» — у «Витривалості» (рішення автора 2026-10-29,
- * `GENERAL_REVIEW.md`, А16): тиха риса, що лише множила відновлення здоров'я, якого за Х5 під час хвороби немає, не мала
- * помітного наслідку. Окремо ці групи більше не видають.
- */
-export const MERGED_GROUPS: Readonly<Record<string, string>> = { toiletPaper: "hunting", toyHiding: "gifts", weather: "warmth", recovery: "hardiness" };
-
-/**
- * Риси зі старого збереження (§9.1): риса злитої групи стає рисою нової з тим самим рівнем і лічильником проявів;
- * якщо риса нової групи в кота вже є, лишається сильніша за модулем (за рівності — та, що вже була в цій групі).
- * Без цього `traitGroup` кидав би помилку на невідомій групі.
- */
-export function migrateTraits(traits: readonly Trait[]): Trait[] {
-  const result: Trait[] = [];
-  const migrated = new Set<Trait>();
-  for (const trait of traits) {
-    const target = MERGED_GROUPS[trait.group];
-    const moved = target ? { ...trait, group: target } : trait;
-    if (target) migrated.add(moved);
-    const index = result.findIndex((t) => t.group === moved.group);
-    const existing = result[index];
-    if (!existing) {
-      result.push(moved);
-      continue;
-    }
-    const stronger = Math.abs(moved.level) - Math.abs(existing.level);
-    if (stronger > 0 || (stronger === 0 && migrated.has(existing))) result[index] = moved;
-  }
-  return result;
-}
-
 export function traitGroup(id: string): TraitGroup {
   const found = BY_ID.get(id);
   if (!found) throw new Error(`Немає групи рис «${id}»`);

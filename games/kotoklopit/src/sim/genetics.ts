@@ -194,8 +194,8 @@ export function applyBreedLook(rng: Rng, genes: Genes, shape: Shape, look: Breed
 }
 
 /**
- * Зовнішність чистокровного (§9.11): гени й форми, які задає порода, напевно. Без випадковості — тож ні кошеня (`giveBirth`), ні
- * оновлення старого збереження (`upgradeBreedLook`) не зсувають потоків §6.1, а повторно вона нічого не змінює.
+ * Зовнішність чистокровного (§9.11): гени й форми, які задає порода, напевно. Без випадковості — тож кошеня (`giveBirth`) не
+ * зсуває потоків §6.1.
  */
 export function applyPureBreedLook(genes: Genes, shape: Shape, look: BreedLook): void {
   const g = genes as unknown as Record<string, unknown>;

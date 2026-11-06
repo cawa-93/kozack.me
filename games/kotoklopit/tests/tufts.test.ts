@@ -198,17 +198,6 @@ describe("жмути й збереження (§8.7, [Змінено пізні�
     expect(tuftsOf(loaded)).toEqual([0, 1]);
   });
 
-  it("старе збереження без `tuftAt`: жмути за шкалою лягають одразу, а наступний — уже з проміжком", () => {
-    const save = game();
-    save.current.home.fur = 60;
-    delete save.current.home.tuftAt;
-    const loaded = deserialize(serialize(save)).current;
-    expect(tuftsOf(loaded)).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    expect(loaded.home.tuftAt).toBe(absoluteMinute(loaded.day, loaded.minute));
-    loaded.home.fur = 70;
-    expect(live(loaded, HOUSEHOLD.tuftEveryMinutes + 1).map((a) => a.minute)).toEqual([HOUSEHOLD.tuftEveryMinutes]);
-  });
-
   it("сценарій «Шерсть дійшла до 50» (`scenarios/fur-tufts.json`): жмутів ще немає; за годину гри — шість, по одному, кожен біля кота", () => {
     const scenario = FILE_SCENARIOS["fur-tufts"];
     if (!scenario) throw new Error("немає сценарію");

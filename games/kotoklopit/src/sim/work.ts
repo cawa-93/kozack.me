@@ -38,7 +38,6 @@ const PATIENCE_EPSILON = 1e-9;
 export function newJob(): Job {
   return {
     position: 0,
-    ladder: POSITIONS.length,
     reputation: START_REPUTATION,
     patience: PATIENCE_MAX,
     standupMinutes: 0,

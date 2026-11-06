@@ -191,14 +191,11 @@ export function accidentCost(difficulty: Difficulty, speed: number): AccidentCos
   return { speed, minutes: quarters * ACCIDENT.roundMinutes, repair: Math.round(ACCIDENT.repair * factor) };
 }
 
-/**
- * Що забрала аварія поїздки (§8.5); null — поїздка не в аварії. Збереження до рішення автора 2026-11-02 швидкості в мить аварії
- * не пам'ятає: години — як на ×2, а ремонт уже сплачено за старою ціною (`ACCIDENT.legacySpeed`).
- */
+/** Що забрала аварія поїздки (§8.5); null — поїздка не в аварії. */
 export function accidentOf(state: GameState): AccidentCost | null {
   const trip = state.trip;
   if (trip?.phase !== "accident") return null;
-  return trip.accident ?? { ...accidentCost(state.difficulty, ACCIDENT.legacySpeed), repair: ACCIDENT.repair };
+  return trip.accident ?? null;
 }
 
 /**

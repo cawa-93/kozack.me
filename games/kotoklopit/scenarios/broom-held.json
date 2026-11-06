@@ -33,14 +33,9 @@
   },
   "home": {
    "fur": 60,
-   "tufts": [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5
-   ],
+   "tufts": [0, 1, 2, 3, 4, 5, 6],
+   "tuftAt": 17940,
+   "vacuumAt": null,
    "messes": [
     {
      "id": 901,

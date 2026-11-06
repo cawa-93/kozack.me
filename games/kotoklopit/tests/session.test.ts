@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { loadSave, Session } from "../src/session";
-import { newGame, serialize } from "../src/sim/game";
+import { newGame, SAVE_VERSION, serialize } from "../src/sim/game";
 
 /** Сховище браузера для тесту: у Node його немає. */
 function fakeStorage(items: Record<string, string>): void {
@@ -15,8 +15,18 @@ function fakeStorage(items: Record<string, string>): void {
   };
 }
 
+/** Те, що `Session.restore` бере в браузера, крім сховища. */
+function fakeBrowser(): void {
+  Object.assign(globalThis, { window: { setInterval: () => 0 }, document: { addEventListener: () => undefined } });
+}
+
+const OTHER_VERSION = JSON.stringify({ version: SAVE_VERSION + 1, current: {} });
+
 afterEach(() => {
-  delete (globalThis as { localStorage?: unknown }).localStorage;
+  const browser = globalThis as { localStorage?: unknown; window?: unknown; document?: unknown };
+  delete browser.localStorage;
+  delete browser.window;
+  delete browser.document;
 });
 
 describe("збереження в браузері", () => {
@@ -27,20 +37,31 @@ describe("збереження в браузері", () => {
   });
 
   it("нечитабельне збереження (інша версія чи пошкоджене) відкладається окремо, щоб нова гра його не перезаписала", () => {
-    const items: Record<string, string> = { "kotoklopit:save": '{"version":1,"current":{}}' };
+    const items: Record<string, string> = { "kotoklopit:save": OTHER_VERSION };
     fakeStorage(items);
     // Сцена отримує його текст, щоб запропонувати зберегти файлом (Ц3).
-    expect(loadSave()).toEqual({ save: null, unreadable: '{"version":1,"current":{}}' });
-    expect(items["kotoklopit:save-unreadable"]).toBe('{"version":1,"current":{}}');
+    expect(loadSave()).toEqual({ save: null, unreadable: OTHER_VERSION });
+    expect(items["kotoklopit:save-unreadable"]).toBe(OTHER_VERSION);
+  });
+
+  it("збереження іншої версії не валить гру: вона починається з чистого стану", () => {
+    const items: Record<string, string> = { "kotoklopit:save": OTHER_VERSION };
+    fakeStorage(items);
+    fakeBrowser();
+    const session = Session.restore({ address: "she", difficulty: "normal" });
+    expect(session.unreadable).toBe(OTHER_VERSION);
+    expect(session.save).toMatchObject({ version: SAVE_VERSION, current: { day: 0, cats: [], album: [] } });
+    session.persist();
+    expect(items["kotoklopit:save"]).toBe(OTHER_VERSION);
   });
 
   it("доки картка про нечитабельне збереження без відповіді, автозбереження його не перезаписує", () => {
-    const items: Record<string, string> = { "kotoklopit:save": '{"version":1,"current":{}}' };
+    const items: Record<string, string> = { "kotoklopit:save": OTHER_VERSION };
     fakeStorage(items);
     const session = new Session(newGame({ address: "she", difficulty: "normal", seed: 3 }));
     session.unreadable = loadSave().unreadable;
     session.persist();
-    expect(items["kotoklopit:save"]).toBe('{"version":1,"current":{}}');
+    expect(items["kotoklopit:save"]).toBe(OTHER_VERSION);
     // Відповів — далі зберігається нова гра.
     session.unreadable = null;
     session.persist();

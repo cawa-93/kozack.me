@@ -10,7 +10,7 @@ import { createCat, idleAct } from "../src/sim/cat";
 import { decide, forbiddenZoneAt, jealousy, noGo, noMemory, sayNo, startWindow, tickCats, windowWeight } from "../src/sim/catai";
 import { CATNIP, GIFTS, GROOMING, JEALOUSY, NURTURING, OBEDIENCE, PET, PLAY, PLAYFUL, PRODUCTS, RELATIONS, SHOO, SOCIABILITY, SOFA_REPAIR, TERRITORY, WINDOW } from "../src/sim/config";
 import { addSupply, place, supplyCount } from "../src/sim/economy";
-import { advance, deserialize, newGame, serialize } from "../src/sim/game";
+import { advance, newGame } from "../src/sim/game";
 import { hiddenTile, isSolid, itemTile, MAP_HEIGHT, MAP_WIDTH, objectById, SPAWN, WINDOWS } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { isEnemy, nightlyRelations, relation } from "../src/sim/relations";
@@ -292,14 +292,6 @@ describe("«Котяча м'ята» (§9.12, рішення автора 2026-1
     expect(traitAbout({ group: "catnip", level: -1 }, "female")).not.toBe(traitAbout({ group: "catnip", level: -2 }, "female"));
     expect(traitHint(cat, { group: "catnip", level: -1 })).toContain("байдужа");
   });
-
-  it("старе збереження без м'яти в запасах завантажується", () => {
-    const save = game();
-    const data = JSON.parse(serialize(save)) as { current: { home: { supplies: Record<string, unknown> } } };
-    delete data.current.home.supplies.catnip;
-    const loaded = deserialize(JSON.stringify(data));
-    expect(loaded.current.home.supplies.catnip).toEqual({ cheap: 0, premium: 0 });
-  });
 });
 
 /** Кіт уже на підвіконні й дивиться у вікно. */
@@ -470,14 +462,6 @@ describe("«Вікно» (§9.12, рішення автора 2026-10-25)", () =
   it("описи: «Не дивиться у вікно» й «Нудьгує біля вікна» різні", () => {
     expect(traitAbout({ group: "window", level: -1 }, "male")).not.toBe(traitAbout({ group: "window", level: -2 }, "male"));
     expect(traitAbout({ group: "window", level: -2 }, "male")).toContain("злиться");
-  });
-
-  it("стара гра: персонаж там, де тепер підвіконня, після завантаження — поруч", () => {
-    const save = game();
-    const sill = objectById(WINDOWS[0]!.sill);
-    Object.assign(save.current.character.body, { x: sill.x + 0.5, y: sill.y + 0.5 });
-    const body = deserialize(serialize(save)).current.character.body;
-    expect(isSolid(save.current, Math.floor(body.x), Math.floor(body.y))).toBe(false);
   });
 });
 

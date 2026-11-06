@@ -35,7 +35,7 @@ import type { GameEvent } from "../src/sim/events";
 import { addCat } from "../src/sim/night";
 import { NO_RACE_INPUT } from "../src/sim/race";
 import { createRng } from "../src/sim/rng";
-import { accidentBedtime, accidentCost, accidentHome, accidentOf, canLeave, crashSpeedFactor, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
+import { accidentBedtime, accidentCost, accidentHome, canLeave, crashSpeedFactor, HOME_DOOR, startTrip, tripBlocker } from "../src/sim/trips";
 import type { Cat, Difficulty, GameState, Save, TraitLevel } from "../src/sim/types";
 import { ACCIDENT_TEXTS, accidentLines, fill, GROOMED, VET_MANNER } from "../src/texts";
 import { driveSafely, hours, liveDay, recordEvents, standAt, withCatCorner } from "./helpers";
@@ -358,14 +358,6 @@ describe("знімки після аварії (§6.1, §8.5; рішення а�
     expect(save.current.day).toBe(7);
   });
 
-  it("збереження без окремого ранку (старіша версія) завантажується: ранок — знімок дня", () => {
-    const { save } = crashOn(2);
-    const { morning: _, ...old } = save;
-    const loaded = deserialize(JSON.stringify(old));
-    expect(loaded.morning).toBeNull();
-    expect(loaded.dayStart.day).toBe(2);
-  });
-
   describe("аварія, після якої день триває (рішення автора 2026-11-02): знімків не змінює, а ніч після неї — звичайна", () => {
     /** Прожити дні до `day`, о 9:00 цього дня потрапити в аварію на ×1 (7,5 години — додому о 16:30); повертає ранок дня аварії. */
     const crashMorning = (day: number): { save: Save; morning: GameState } => {
@@ -599,20 +591,6 @@ describe("аварія забирає години, а не день (§8.5, §5
     const after = structuredClone(save.current);
     expect(rewindAccident(save)).toBeNull();
     expect(save.current).toEqual(after);
-  });
-
-  it("старе збереження посеред аварії, без швидкості й годин: як на ×2 — 8 / 10 / 12,5 години за складністю, ремонт уже сплачено", () => {
-    for (const [difficulty, hours] of [["easy", 8], ["normal", 10], ["hard", 12.5]] as const) {
-      const save = crashed(8 * 60, 6, difficulty);
-      const old = JSON.parse(serialize(save)) as { current: { trip: Record<string, unknown> } };
-      delete old.current.trip["accident"];
-      const loaded = deserialize(JSON.stringify(old));
-      expect(accidentOf(loaded.current), difficulty).toMatchObject({ minutes: hours * 60, repair: ACCIDENT.repair });
-      const from = loaded.current.minute;
-      rewindAccident(loaded);
-      expect(loaded.current.trip, difficulty).toBeNull();
-      expect(loaded.current.minute, difficulty).toBeCloseTo(from + hours * 60);
-    }
   });
 
   it("дзвінок мами під час перемотування чекає відповіді, а персонаж уже вдома й може відповісти", () => {
@@ -1206,29 +1184,6 @@ describe("пункти призначення (§8.5)", () => {
       save.current.character.held = { kind: "cat", cat: own.id };
       expect(tripBlocker(save.current, "shelter")).toBeNull();
     });
-
-    it("стара гра посеред візиту до притулку: запис про відданого кота зникає з журналу, а кіт із переноски повертається додому", () => {
-      const save = game(9 * 60);
-      save.current.day = 5;
-      const own = withCat(save);
-      arrive(save, "shelter");
-      const [a] = shelterCats(save.current);
-      if (!a) throw new Error("немає котів");
-      adopt(save.current, a.id);
-      const trip = save.current.trip;
-      if (!trip) throw new Error("немає поїздки");
-      // Так стара гра зберігала візит, де одного кота вже віддали, а другий приїхав у переносці.
-      trip.log = { exam: null, done: [a.name, "given:999"] };
-      trip.cat = own.id;
-      own.away = "trip";
-      const loaded = deserialize(serialize(save));
-      expect(loaded.current.trip?.log?.done).toEqual([a.name]);
-      returnHome(loaded, loaded.current.trip?.visit ?? 0, TRIPS.shelter.road);
-      expect(loaded.current.cats.map((c) => [c.id, c.away])).toEqual([
-        [own.id, null],
-        [a.id, null],
-      ]);
-    });
   });
 
   it("кіт, якого взяли в притулку, буває з блохами, як і примусове кошеня (крок 17)", () => {
@@ -1343,39 +1298,8 @@ describe("пункти призначення (§8.5)", () => {
   });
 
   describe("котокафе прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15)", () => {
-    /** Збереження старої гри, у якому персонаж їде в котокафе чи вже там. */
-    function oldCafeTrip(phase: "drive" | "visit" | "accident"): Save {
-      const save = game(9 * 60);
-      save.current.day = 5;
-      expect(startTrip(save.current, "shop")).toBe(true);
-      const old = JSON.parse(serialize(save)) as { current: { trip: { destination: string; phase: string }; character: { body: { x: number; y: number } } } };
-      old.current.trip.destination = "cafe";
-      old.current.trip.phase = phase;
-      old.current.character.body.x = 3.5;
-      old.current.character.body.y = 3.5;
-      return deserialize(JSON.stringify(old));
-    }
-
     it("у списку поїздок котокафе немає", () => {
       expect(Object.keys(TRIPS)).not.toContain("cafe");
-    });
-
-    it("поїздка в котокафе зі старого збереження — дорогою чи на місці — завершується: персонаж удома біля дверей", () => {
-      for (const phase of ["drive", "visit"] as const) {
-        const loaded = oldCafeTrip(phase).current;
-        expect(loaded.trip, phase).toBeNull();
-        expect(loaded.character.body, phase).toMatchObject({ x: HOME_DOOR.x, y: HOME_DOOR.y });
-      }
-    });
-
-    it("аварія дорогою в котокафе зі старого збереження лишається аварією: швидкості збереження не пам'ятає — 10 годин, як на ×2 (рішення автора 2026-11-02)", () => {
-      const save = oldCafeTrip("accident");
-      expect(save.current.trip).toMatchObject({ destination: "shop", phase: "accident" });
-      expect(save.current.trip?.accident).toBeUndefined();
-      rewindAccident(save);
-      expect(save.current.trip).toBeNull();
-      expect(save.current.day).toBe(5);
-      expect(save.current.minute).toBeCloseTo(19 * 60);
     });
   });
 });
@@ -1517,49 +1441,6 @@ describe("час на місці — лише за отриману послуг
       expect(state.trip?.log?.done).toEqual([kitten.name]);
     };
     expect(onSite(rich, "breeder", buyOne)).toBeCloseTo(TRIPS.breeder.visit);
-  });
-
-  it("стара гра посеред візиту: без отриманої послуги — 15 хвилин, отримане рахується, як і раніше", () => {
-    // Так стара гра зберігала візит до грумера, де грумінгу ще не було: повний час послуги — від старту поїздки.
-    const idle = withCatAtDoor().save;
-    expect(startTrip(idle.current, "groomer")).toBe(true);
-    driveSafely(idle);
-    const trip = idle.current.trip;
-    if (!trip) throw new Error("немає поїздки");
-    trip.visit = TRIPS.groomer.visit;
-    const loaded = deserialize(serialize(idle));
-    expect(loaded.current.trip?.visit).toBe(0);
-    const at = loaded.current.minute;
-    goHome(loaded);
-    expect(loaded.current.minute - at).toBeCloseTo(TRIP_IDLE_MINUTES + TRIPS.groomer.road);
-
-    // Огляд у старій грі вже був: його година на місці лишається.
-    const examined = withCatAtDoor().save;
-    expect(startTrip(examined.current, "vet")).toBe(true);
-    driveSafely(examined);
-    expect(vetExam(examined.current)).not.toBeNull();
-    expect(deserialize(serialize(examined)).current.trip?.visit).toBe(TRIPS.vet.visit);
-  });
-
-  it("стара гра посеред візиту до притулку: без кота — 15 хвилин, а взятий чи відданий кіт лишає годину (рецензія реалізації А6)", () => {
-    /** Так стара гра зберігала візит до притулку: година на місці — від старту поїздки, журнал — що там зробили. */
-    const oldVisit = (done: string[]): Save => {
-      const save = game(9 * 60);
-      save.current.day = 5;
-      expect(startTrip(save.current, "shelter")).toBe(true);
-      driveSafely(save);
-      const trip = save.current.trip;
-      if (!trip) throw new Error("немає поїздки");
-      trip.visit = TRIPS.shelter.visit;
-      if (done.length > 0) trip.log = { exam: null, done };
-      return deserialize(serialize(save));
-    };
-    expect(oldVisit([]).current.trip?.visit).toBe(0);
-    expect(oldVisit(["Мурка"]).current.trip?.visit).toBe(TRIPS.shelter.visit);
-    // Віддавали кота в притулку — і це була послуга, хоч запис про неї з журналу зникає (рішення автора А15).
-    const given = oldVisit(["given:999"]);
-    expect(given.current.trip?.log?.done).toEqual([]);
-    expect(given.current.trip?.visit).toBe(TRIPS.shelter.visit);
   });
 });
 

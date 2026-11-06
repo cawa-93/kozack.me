@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import { Bot } from "../balance/bot";
 import { EAT_MINUTES, MEAL_SATIETY, STORAGE_LIMITS } from "../src/sim/config";
 import { addSupply, canOrderProduct, order, stash, supplyCount, useSupply } from "../src/sim/economy";
-import { advance, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
+import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { tickModifiers } from "../src/sim/modifiers";
 import { GOODS } from "../src/sim/shop";
 import { boxesIndicator, STORAGES, storageIndicator } from "../src/sim/storage";
-import type { GameState, Product, Quality, Save } from "../src/sim/types";
+import type { Save } from "../src/sim/types";
 import { eventBubbles, itemIcon, PRODUCT_ICONS, stoveIcon } from "../src/view/symbols";
 import { bodyMinutes, hours, recordEvents, standAt, walkTo } from "./helpers";
 
@@ -123,19 +123,13 @@ describe("мамині судочки в холодильнику (§6.4, ріш
     expect(stoveIcon(null)).toBeNull();
   });
 
-  it("старі збереження: судочків немає — порожньо; пакет мами під дверима зі старої гри — у ящиках біля входу", () => {
-    const save = game();
-    for (const state of [save.current, save.dayStart, save.weekStart]) {
-      delete (state.home.supplies as Partial<Record<Product, Record<Quality, number>>>).momMeal;
-    }
-    const old: GameState = save.current;
-    old.modifiers.day = "mom-food";
-    old.today.mom = { at: hours(12), porch: true };
-    const copy = deserialize(serialize(save));
-    for (const state of [copy.current, copy.dayStart, copy.weekStart]) expect(state.home.supplies.momMeal).toEqual({ cheap: 0, premium: 0 });
-    tickModifiers(copy.current, hours(13), 1, false);
-    expect(copy.current.home.boxes?.momMeal?.cheap).toBe(2);
-    expect(copy.current.today.mom).toBeUndefined();
+  it("пакет мами під дверима — у ящиках біля входу", () => {
+    const { current: state } = game();
+    state.modifiers.day = "mom-food";
+    state.today.mom = { at: hours(12), porch: true };
+    tickModifiers(state, hours(13), 1, false);
+    expect(state.home.boxes?.momMeal?.cheap).toBe(2);
+    expect(state.today.mom).toBeUndefined();
   });
 
   it("бот балансу їсть судочки з холодильника, навіть коли продуктів немає", () => {

@@ -424,7 +424,7 @@ export function buyFromBreeder(state: GameState, catId: number): Cat | null {
   const cat = state.breeder.cats.find((c) => c.id === catId);
   if (!cat || !spend(state, breederCatPrice(state), "other")) return null;
   trip.visit = Math.max(trip.visit, TRIPS.breeder.visit);
-  // Хто їде додому з персонажем, картка бере з журналу візиту; він же каже, що послугу отримали (`upgradeTrip`).
+  // Хто їде додому з персонажем, картка бере з журналу візиту.
   (trip.log ??= { exam: null, done: [] }).done.push(cat.name);
   state.breeder.cats = state.breeder.cats.filter((c) => c !== cat);
   welcome(state, cat);
@@ -458,7 +458,7 @@ export function adopt(state: GameState, catId: number): Cat | null {
   const cat = state.shelter.cats.find((c) => c.id === catId);
   if (!cat || !spend(state, SHELTER.price, "other")) return null;
   trip.visit = Math.max(trip.visit, TRIPS.shelter.visit);
-  // Хто їде додому з персонажем, картка бере з журналу візиту; він же каже, що послугу отримали (`upgradeTrip`).
+  // Хто їде додому з персонажем, картка бере з журналу візиту.
   (trip.log ??= { exam: null, done: [] }).done.push(cat.name);
   state.shelter.cats = state.shelter.cats.filter((c) => c !== cat);
   welcome(state, cat);

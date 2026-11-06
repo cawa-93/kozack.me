@@ -33,7 +33,7 @@ export const BOX_TRACES: readonly CatTrace[] = ["boxes-claws", "boxes-chewed"];
 /** Слід від того, де кіт точив кігті (§9.12, «Дряпання»): диван, одвірок, килим вітальні, коробки; кігтеточка — нічого. */
 export const SCRATCH_TRACES: Readonly<Partial<Record<ScratchSpot, CatTrace>>> = { sofa: "sofa", doorframe: "doorframe", rug: "rug", boxes: "boxes-claws" };
 
-/** Сліди, що вже з'явилися, у порядку появи. На старті, у старих збереженнях і сценаріях без поля — жодного. */
+/** Сліди, що вже з'явилися, у порядку появи. На старті й у сценаріях без поля — жодного. */
 export function traces(state: Pick<GameState, "home">): readonly CatTrace[] {
   return state.home.traces ?? [];
 }
@@ -81,29 +81,4 @@ function catDayTraces(state: GameState): void {
 export function nightlyTraces(state: GameState): void {
   if (state.cats.length > 0) state.home.catDays = catDays(state) + state.cats.length;
   catDayTraces(state);
-}
-
-/**
- * Сліди зі збереження чи сценарію (§9.12): невідомі й повторені відкидаються, сліди коробок без коробок — теж; котодні — невід'ємне
- * число, а сліди їхніх досягнутих порогів є (сценарій може задати лише котодні). Без події: це не нова поява сліду.
- */
-export function upgradeTraces(state: GameState): void {
-  const home = state.home;
-  const days: unknown = home.catDays;
-  if (days !== undefined && (typeof days !== "number" || !Number.isFinite(days) || days < 0)) Reflect.deleteProperty(home, "catDays");
-  const saved: unknown = home.traces;
-  if (saved !== undefined) {
-    const list: unknown[] = Array.isArray(saved) ? saved : [];
-    const valid = list.filter((t, i): t is CatTrace => CAT_TRACES.includes(t as CatTrace) && list.indexOf(t) === i);
-    home.traces = hasBoxes(state) ? valid : valid.filter((t) => !BOX_TRACES.includes(t));
-  }
-  fillCatDayTraces(state);
-}
-
-/** Досягнуті пороги котоднів без їхніх слідів — дописати мовчки (`upgradeTraces`). */
-function fillCatDayTraces(state: GameState): void {
-  for (const step of TRACE_CAT_DAYS) {
-    if (catDays(state) < step.catDays || hasTrace(state, step.trace)) continue;
-    (state.home.traces ??= []).push(step.trace);
-  }
 }

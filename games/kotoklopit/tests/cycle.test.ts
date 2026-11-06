@@ -6,7 +6,7 @@ import { createCat } from "../src/sim/cat";
 import { CAREER_AXIS, POSITIONS } from "../src/sim/config";
 import { removeCat } from "../src/sim/farewell";
 import { careerAxis, catsAxis, catsMood } from "../src/sim/finale";
-import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { advance, deserialize, interact, newGame, SAVE_VERSION, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hours, standAt } from "./helpers";
@@ -88,23 +88,6 @@ describe("фінал (§4.2)", () => {
     expect(catsMood(save.current)).toBeCloseTo((6 * 4 * 90 + 40) / 25);
   });
 
-  it("старе збереження: скільки днів кіт з альбому прожив удома — з дат появи й прощання; відданого забрали вранці (А11)", () => {
-    const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
-    for (const [i, cause] of [[1, { kind: "old" }], [2, { kind: "given" }]] as const) {
-      const cat = createCat(save.current, createRng(i), { source: "shelter", ageWeeks: 3 });
-      addCat(save.current, cat);
-      cat.arrivedDay = 3;
-      cat.moodHistory = [80];
-      removeCat(save.current, cat, cause, 12);
-    }
-    const json = JSON.parse(serialize(save)) as { current: { album: Record<string, unknown>[] } };
-    for (const entry of json.current.album) delete entry["days"];
-    const loaded = deserialize(JSON.stringify(json));
-    // Підсумок дня пишеться щоночі до прощання: дні 3–12 — 10 днів; відданого забрали вранці 12-го — 9 (оголошення до 2026-10-28
-    // писали в альбом учорашній день — тоді насправді 10, але з альбому цього не розрізнити).
-    expect(loaded.current.album.map((e) => e.days)).toEqual([10, 9]);
-  });
-
   it("кар'єра: 1–8 — низька, 9–14 — середня, лише директор (15) — висока; безробітний — низька (Ц1; драбина з 15 посад — А10)", () => {
     const save = newGame({ address: "she", difficulty: "normal", seed: 3 });
     const at = (position: number): string => {
@@ -134,6 +117,6 @@ describe("збереження й персонаж (§4.2, §5.1)", () => {
 
   it("стара версія збереження не завантажується", () => {
     const save = newGame({ address: "he", difficulty: "hard", seed: 9 });
-    expect(() => deserialize(serialize({ ...save, version: 1 }))).toThrow();
+    expect(() => deserialize(serialize({ ...save, version: SAVE_VERSION - 1 }))).toThrow();
   });
 });

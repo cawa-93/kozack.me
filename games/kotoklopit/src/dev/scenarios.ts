@@ -3,13 +3,13 @@
 
 import { WATER_CAPACITY } from "../sim/config";
 import { createCat } from "../sim/cat";
-import { newGame, upgradeState, type NewGameOptions } from "../sim/game";
+import { newGame, type NewGameOptions } from "../sim/game";
 import { addCat } from "../sim/night";
 import { changeRelation, relation } from "../sim/relations";
 import { createRng, seedDay } from "../sim/rng";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import { startTrip } from "../sim/trips";
-import type { Cat, CatSource, Destination, GameState, Look, Product, Quality, Save, Trip } from "../sim/types";
+import type { Cat, CatSource, Destination, GameState, Product, Quality, Save, Trip } from "../sim/types";
 import { rebase } from "./commands";
 
 type DeepPartial<T> = T extends readonly unknown[] ? T : T extends object ? { [K in keyof T]?: DeepPartial<T[K]> } : T;
@@ -33,28 +33,6 @@ export interface Scenario {
 }
 
 const DEFAULT_GAME: NewGameOptions = { address: "she", difficulty: "normal", seed: 1 };
-
-/**
- * Зовнішність чоловічого персонажа за замовчуванням до рішення автора 2026-10-29 (`GENERAL_REVIEW.md`, А4): тепер без редактора
- * вона одна для всіх (`DEFAULT_LOOK`), а старий сценарій зі статтю «чоловік» виглядає, як тоді.
- */
-const LEGACY_MALE_LOOK: Look = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
-
-/**
- * Параметри нової гри зі сценарію. У сценаріях, збережених до рішення автора 2026-10-29 (`GENERAL_REVIEW.md`, А4), замість
- * звертання — стать персонажа, а хронотип і зовнішність без вибору йшли зі статі (чоловік — сова, коротка стрижка й синій верх):
- * так і лишається.
- */
-function gameOptions(game: Scenario["game"]): NewGameOptions {
-  const { sex, ...rest } = (game ?? {}) as Partial<NewGameOptions> & { sex?: unknown };
-  const legacy: Partial<NewGameOptions> =
-    sex === undefined || rest.address !== undefined
-      ? {}
-      : sex === "male"
-        ? { address: "he", chronotype: "owl", look: LEGACY_MALE_LOOK }
-        : { address: "she" };
-  return { ...DEFAULT_GAME, ...legacy, ...rest };
-}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -82,20 +60,9 @@ export function addCatCorner(state: GameState): void {
   );
 }
 
-/**
- * Посаду сценарію записано за колишньою драбиною з 10 посад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10; §8.6, §11.5):
- * сценарій задає посаду без поля `ladder`. Так виглядають сценарії, збережені з гри до рішення, тож їхню посаду переводять на нову
- * драбину, як у збереженні. Тому новий сценарій задає посаду разом із `"ladder": 15` — інакше її теж переведуть (рецензія
- * реалізації А10: `"position": 9` без драбини — «Заступник керівника відділу» — ставав директором), а режим розробки пише про
- * переведення в журнал.
- */
-export function hasLegacyPosition(scenario: Scenario): boolean {
-  return scenario.state?.job?.position !== undefined && scenario.state.job.ladder === undefined;
-}
-
 /** Нова гра в стані сценарію. Знімки перегравання починаються з нього. */
 export function applyScenario(scenario: Scenario): Save {
-  const save = newGame(gameOptions(scenario.game));
+  const save = newGame({ ...DEFAULT_GAME, ...scenario.game });
   const state = deepMerge(save.current, structuredClone(scenario.state ?? {}));
   // День змінився — засіяти потоки для нього, якщо сценарій не задав їх сам.
   if (!scenario.state?.rng) seedDay(state);
@@ -121,11 +88,6 @@ export function applyScenario(scenario: Scenario): Save {
     const b = added[j];
     if (a && b) changeRelation(state, a, b, value - relation(state, a, b));
   }
-  // Сценарій, збережений старішою версією гри, оновлюється, як і збереження: риси в нових групах (2026-10-25), автогодівниця
-  // над миской (2026-10-23), шафа й підвіконня (2026-10-26), нові запаси. Посаду без драбини переводять, як у збереженні
-  // (`hasLegacyPosition`), хоч нова гра під сценарієм уже з новою драбиною.
-  if (hasLegacyPosition(scenario)) Reflect.deleteProperty(state.job, "ladder");
-  upgradeState(state);
   save.current = state;
   rebase(save);
   return save;

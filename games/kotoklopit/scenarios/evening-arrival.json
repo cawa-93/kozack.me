@@ -46,6 +46,7 @@
    "destination": "vet",
    "phase": "drive",
    "cat": 5,
+   "riders": [{ "cat": 5, "place": "cheap" }],
    "race": {
     "road": 60,
     "done": 59.95,

@@ -360,31 +360,6 @@ describe("догляд персонажа (§9.12)", () => {
     expect(lost({ bravery: 1 })).toBeCloseTo(0);
   });
 
-  it("старе збереження: дзвіночок зникає з нашийника, з аптечки, з ящиків і з пакунків, а нашийник будь-якої якості — один (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А17)", () => {
-    const save = game();
-    const cat = withCat(save);
-    const other = withCat(save);
-    const home = save.current.home as unknown as Record<string, unknown> & typeof save.current.home;
-    cat.collar = { quality: "premium", bell: true } as unknown as Cat["collar"];
-    other.collar = null as unknown as Cat["collar"];
-    home.supplies.collar = { cheap: 1, premium: 2 };
-    home.porch.push({ id: 93, quality: "premium", at: 0, product: "collar" });
-    (home.supplies as Record<string, unknown>)["bell"] = { cheap: 2, premium: 1 };
-    home.boxes = { food: { cheap: 3, premium: 0 }, ...({ bell: { cheap: 1, premium: 0 } } as object) };
-    home.acquired.push("bell" as never);
-    home.porch.push({ id: 90, quality: "cheap", at: 0, product: "bell" as never }, { id: 91, quality: "cheap", at: 0, product: "food" });
-    home.deliveries.push({ id: 92, quality: "premium", at: 10_000, product: "bell" as never });
-    const loaded = deserialize(serialize(save)).current;
-    expect(loaded.cats.map((c) => c.collar)).toEqual([true, false]);
-    expect(loaded.home.supplies.collar).toEqual({ cheap: 3, premium: 0 });
-    expect(loaded.home.porch.find((d) => d.id === 93)?.quality).toBe("cheap");
-    expect(loaded.home.supplies).not.toHaveProperty("bell");
-    expect(loaded.home.boxes).toEqual({ food: { cheap: 3, premium: 0 } });
-    expect(loaded.home.acquired).not.toContain("bell");
-    expect(loaded.home.porch.map((d) => d.id).sort()).toEqual([91, 93]);
-    expect(loaded.home.deliveries.map((d) => d.id)).not.toContain(92);
-  });
-
   it("корм із шафки — у миску одразу доверху, вода доливається одним натисканням", () => {
     const save = game();
     addSupply(save.current, "catFood", "cheap", 0); // шафку видно, коли корм уже бував удома
@@ -932,7 +907,7 @@ describe("після попередження чи укусу кіт чверт�
     expect(forFood).toBe(true);
   });
 
-  it("стара гра без поля паузи — кіт дається гладити", () => {
+  it("без поля паузи кіт дається гладити", () => {
     const { save, cat } = petting();
     delete cat.petWarnedAt;
     const restored = deserialize(serialize(save));

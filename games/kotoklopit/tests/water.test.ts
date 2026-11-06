@@ -7,7 +7,7 @@ import { decide, stonesFactor, tickCats } from "../src/sim/catai";
 import { DRINKING, FOUNTAIN, MODIFIERS, WATER_CAPACITY } from "../src/sim/config";
 import { cleanHome } from "../src/sim/cleaner";
 import { discardAppliance, place } from "../src/sim/economy";
-import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { advance, interact, newGame } from "../src/sim/game";
 import { tickHousehold } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { fountainWorks, waterCapacity } from "../src/sim/resources";
@@ -159,13 +159,6 @@ describe("простий фонтанчик (§8.7)", () => {
     discardAppliance(state, "fountain");
     buyFountain(state, "cheap");
     expect(state.home.fountainTank).toBe(0);
-  });
-
-  it("старе збереження: бака тоді не було, тож він повний", () => {
-    const save = game();
-    save.current.home.appliances.fountain = "cheap";
-    delete save.current.home.fountainTank;
-    expect(deserialize(serialize(save)).current.home.fountainTank).toBe(FOUNTAIN.tank);
   });
 
   it("порожній бак видно: кадр без води, хоч у поїлці ще є вода", () => {
