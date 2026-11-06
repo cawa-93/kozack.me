@@ -7,7 +7,7 @@ import { changeStat } from "../src/sim/character";
 import { createCat } from "../src/sim/cat";
 import { DASH_COOLDOWN_MINUTES } from "../src/sim/config";
 import { addSupply } from "../src/sim/economy";
-import { advance, DEFAULT_LOOK, deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
+import { advance, DEFAULT_LOOK, goToSleep, interact, newGame } from "../src/sim/game";
 import { hygieneFactor } from "../src/sim/household";
 import { addCat } from "../src/sim/night";
 import { hoursUntilWake } from "../src/sim/sleep";
@@ -51,13 +51,6 @@ describe("жіночого циклу немає (рішення автора 20
       expect(state.character.body.dashCooldown).toBe(DASH_COOLDOWN_MINUTES);
     }
   });
-
-  it("зі старого збереження зникає день початку циклу", () => {
-    const save = newGame({ address: "she", difficulty: "normal", seed: 1 });
-    Object.assign(save.current.character, { cycleStart: -12 });
-    const loaded = deserialize(serialize(save));
-    expect(loaded.current.character).not.toHaveProperty("cycleStart");
-  });
 });
 
 describe("бороди немає (рішення автора 2026-10-29, А4)", () => {
@@ -88,13 +81,6 @@ describe("бороди немає (рішення автора 2026-10-29, А4)"
     addSupply(save.current, "humanMeds", "cheap", 5);
     expect(sinkRefusal(save)).toBeUndefined();
     expect(sinkRefusal(save)).toBe("dose-taken");
-  });
-
-  it("зі старого збереження зникають дні гоління й підрівнювання", () => {
-    const save = newGame({ address: "he", difficulty: "normal", seed: 1 });
-    Object.assign(save.current.character, { beard: { shaved: 0, trimmed: -100 } });
-    const loaded = deserialize(serialize(save));
-    expect(loaded.current.character).not.toHaveProperty("beard");
   });
 });
 
@@ -146,28 +132,9 @@ describe("звертання «він / вона» — лише граматик
     expect(he.cats.length).toBeGreaterThan(0);
     expect(he).toEqual(week("she"));
   });
-
-  it("стара гра: стать персонажа стає звертанням (чоловіча — «він», жіноча — «вона»), а хронотип лишається, який був", () => {
-    for (const [sex, address] of [["male", "he"], ["female", "she"]] as const) {
-      const save = newGame({ address: "she", difficulty: "normal", seed: 1, chronotype: "owl" });
-      const old = save.current.character as unknown as Record<string, unknown>;
-      delete old["address"];
-      old["sex"] = sex;
-      const loaded = deserialize(serialize(save)).current.character;
-      expect(loaded.address).toBe(address);
-      expect(loaded).not.toHaveProperty("sex");
-      expect(loaded.chronotype).toBe("owl");
-    }
-  });
 });
 
 describe("редактор персонажа один для всіх (рішення автора 2026-10-29, А4)", () => {
-  /** Зовнішності за замовчуванням, які були до рішення: жіноча й чоловіча. */
-  const OLD_LOOKS: Record<"female" | "male", Look> = {
-    female: { face: 0, skin: 1, hair: 1, hairColor: 1, eyes: 0, build: 1, top: 0, bottom: 0, shoes: 0 },
-    male: { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 },
-  };
-
   it("редактор пропонує кожну частину зовнішності й усі її варіанти, які вміє намалювати графіка", () => {
     expect(LOOK_OPTIONS.map((o) => o.key).sort()).toEqual(Object.keys(DEFAULT_LOOK).sort());
     const drawn: Record<keyof Look, number> = {
@@ -212,17 +179,6 @@ describe("редактор персонажа один для всіх (ріше
     // Своя копія в кожній грі: змінити її — не змінити зовнішності за замовчуванням.
     he.hair = 3;
     expect(DEFAULT_LOOK.hair).toBe(1);
-  });
-
-  it("стара гра: зовнішність лишається тією самою — частини конструктора й раніше були спільні", () => {
-    for (const sex of ["female", "male"] as const) {
-      const look = { ...OLD_LOOKS[sex], hair: 3, build: 2 };
-      const save = newGame({ address: "she", difficulty: "normal", seed: 1, look });
-      const old = save.current.character as unknown as Record<string, unknown>;
-      delete old["address"];
-      old["sex"] = sex;
-      expect(deserialize(serialize(save)).current.character.look).toEqual(look);
-    }
   });
 
   it("малюнок персонажа не знає ні статі, ні звертання: портрет і персонаж у квартирі беруть лише зовнішність", () => {

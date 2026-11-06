@@ -18,7 +18,6 @@ import {
   applyScenario,
   deleteLocalScenario,
   FILE_SCENARIOS,
-  hasLegacyPosition,
   leaveHome,
   localScenarios,
   saveLocalScenario,
@@ -488,11 +487,6 @@ export class DevPanel {
       const trip = leaveHome(this.session.save, scenario);
       if (trip) markDeparture(trip);
       else this.journal.add(`Режим розробки: сценарій «${scenario.name}» не вирушив від дверей (${scenario.leave})`);
-    }
-    if (hasLegacyPosition(scenario)) {
-      const { job, character } = this.save.current;
-      const title = fill(POSITION_TITLES[job.position] ?? "", character.address);
-      this.journal.add(`Режим розробки: посаду сценарію без "ladder" прочитано за драбиною з 10 посад і переведено — тепер «${title}», ${job.position + 1} з ${POSITION_TITLES.length} (§8.6)`);
     }
   }
 

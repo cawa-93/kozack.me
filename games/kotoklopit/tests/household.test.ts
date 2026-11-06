@@ -6,7 +6,7 @@ import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { discardCarrier } from "../src/sim/carriers";
 import { addSupply, discard, discardAppliance, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
-import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { advance, interact, newGame } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf, wearOut } from "../src/sim/household";
 import { tickCats } from "../src/sim/catai";
@@ -779,14 +779,5 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     const slot = feeder.slot;
     discard(save.current, spare.id);
     expect([feeder.slot, other.slot]).toEqual([slot, spare.slot]);
-  });
-
-  it("старе збереження: одна годівниця на дім стає порожньою годівницею над першою миской", () => {
-    const save = game();
-    delete save.current.home.feeders;
-    (save.current.home.appliances as Record<string, unknown>)["feeder"] = "premium";
-    const loaded = deserialize(serialize(save));
-    expect(loaded.current.home.appliances).not.toHaveProperty("feeder");
-    expect(loaded.current.home.feeders).toEqual([{ slot: firstBowl(loaded).slot, quality: "premium", food: 0, foodQuality: null, sterile: false }]);
   });
 });

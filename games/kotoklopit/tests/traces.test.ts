@@ -9,13 +9,13 @@ import { CHEWING, CUNNING, SCRATCH, STORAGE_LIMITS, TRACE_CAT_DAYS } from "../sr
 import { DOOR_TILE } from "../src/sim/door";
 import { addSupply, place, stash, unpack } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
-import { advance, deserialize, goToSleep, newGame, replayDay, replayWeek, serialize, upgradeState } from "../src/sim/game";
+import { advance, deserialize, goToSleep, newGame, replayDay, replayWeek, serialize } from "../src/sim/game";
 import { BOX_SCRATCH, CABINET_PAW, DOORFRAME, itemTile, objectById, RUG, WIRE_TILE } from "../src/sim/home";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hoursUntilWake } from "../src/sim/sleep";
-import { addTrace, BOX_TRACES, CAT_TRACES, catDays, hasTrace, nightlyTraces, traces } from "../src/sim/traces";
-import type { Cat, CatTrace, GameState, Save, TraitLevel, Vec } from "../src/sim/types";
+import { addTrace, CAT_TRACES, catDays, hasTrace, nightlyTraces, traces } from "../src/sim/traces";
+import type { Cat, CatTrace, Save, TraitLevel, Vec } from "../src/sim/types";
 import { eventBubbles } from "../src/view/symbols";
 import { hours, recordEvents, withCatCorner } from "./helpers";
 
@@ -367,13 +367,10 @@ describe("сліди з котоднями (§9.12)", () => {
 });
 
 describe("сліди в збереженнях, сценаріях і переграванні (§6.1, §9.12)", () => {
-  it("старий стан без полів: слідів немає, котодні — 0 і рахуються з першої ночі", () => {
+  it("у новій грі слідів немає, котодні — 0 і рахуються з першої ночі", () => {
     const save = game();
     withCat(save);
     withCat(save);
-    const state: GameState = save.current;
-    Reflect.deleteProperty(state.home, "traces");
-    Reflect.deleteProperty(state.home, "catDays");
     const loaded = deserialize(serialize(save)).current;
     expect(traces(loaded)).toEqual([]);
     expect(catDays(loaded)).toBe(0);
@@ -422,29 +419,5 @@ describe("сліди в збереженнях, сценаріях і перег
     replayWeek(save);
     expect(traces(save.current)).toEqual([]);
     expect(catDays(save.current)).toBe(0);
-  });
-
-  it("стан зі сценарію чи збереження перевіряється: невідомі й повторені сліди відкидаються, сліди коробок без коробок — теж", () => {
-    const save = game();
-    const home = save.current.home as unknown as Record<string, unknown>;
-    home.traces = ["sofa", "sofa", "bogus", "toString", "boxes-chewed", 7];
-    home.catDays = -3;
-    upgradeState(save.current);
-    expect(traces(save.current)).toEqual(["sofa"]);
-    expect(save.current.home.catDays).toBeUndefined();
-    home.traces = "sofa";
-    upgradeState(save.current);
-    expect(traces(save.current)).toEqual([]);
-  });
-
-  it("сценарій задає сліди й котодні: досягнуті пороги котоднів дописуються, сліди коробок — лише з коробками", () => {
-    const save = applyScenario({
-      name: "сліди",
-      state: { home: { traces: ["door", "boxes-claws"], catDays: 5, boxes: { food: { cheap: 2, premium: 0 } } } },
-    });
-    expect(traces(save.current)).toEqual(["door", "boxes-claws", "bath-mat", "bedroom-rug"]);
-    expect(traces(save.weekStart)).toEqual(traces(save.current));
-    const bare = applyScenario({ name: "без коробок", state: { home: { traces: [...BOX_TRACES, "cabinet"] } } });
-    expect(traces(bare.current)).toEqual(["cabinet"]);
   });
 });

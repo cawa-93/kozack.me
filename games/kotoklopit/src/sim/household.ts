@@ -9,7 +9,7 @@ import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from ".
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
-import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
+import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES } from "./home";
 import { loudNoise, quietRobot } from "./noise";
 import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
@@ -73,9 +73,8 @@ export function pendingTufts(state: Pick<GameState, "home">): number {
 
 /**
  * Жмути шерсті за шкалою одразу (§8.7): на перші вільні місця `FUR_SPOTS`, доки їх не стане стільки, скільки за шкалою
- * (`tuftTarget`). Так вони лягають там, де їхньої появи не видно: у старому збереженні чи сценарії, де жмутів ще не було
- * (`upgradeVacuum`), і вранці, якщо за коротку ніч не всі встигли з'явитися (`nightlyHousehold`). Протягом дня й ночі вони
- * з'являються по одному (`shedTuft`). Ті, що лежать, лишаються, хоч би скільки шерсті було: їх прибирають.
+ * (`tuftTarget`). Так вони лягають там, де їхньої появи не видно: вранці, якщо за коротку ніч не всі встигли з'явитися
+ * (`nightlyHousehold`). Протягом дня й ночі вони з'являються по одному (`shedTuft`). Ті, що лежать, лишаються, хоч би скільки шерсті було: їх прибирають.
  */
 export function topUpTufts(state: GameState): void {
   const tufts = (state.home.tufts ??= []);
@@ -437,29 +436,6 @@ export function tickVacuum(state: GameState, minutes: number): void {
   }
 }
 
-/**
- * Старе збереження чи сценарій (до рішення автора 2026-11-02, «Пилосос у руках»): шафи з пилососом немає — пилосос стоїть на її
- * місці (`VACUUM_HOME`), а почате «пилососити» біля шафи скасовано; жмути шерсті лягають на свої місця за шкалою шерсті. Пилосос,
- * якого сценарій дав у руки, — у руках, а не на підлозі.
- */
-/** Старе збереження з простим фонтанчиком (§8.7): бака тоді не було, тож він повний. */
-export function upgradeFountain(state: GameState): void {
-  if (state.home.appliances.fountain === "cheap") state.home.fountainTank ??= FOUNTAIN.tank;
-}
-
-export function upgradeVacuum(state: GameState): void {
-  const home = state.home;
-  home.appliances.vacuum ??= null;
-  const inHands = state.character.held?.kind === "vacuum";
-  if (inHands) home.vacuumAt = null;
-  else if (!home.vacuumAt) home.vacuumAt = { ...VACUUM_HOME };
-  const activity = state.character.activity;
-  if (activity?.kind === "use" && activity.target === "vacuum") state.character.activity = null;
-  // Жмутів ще не було (старе збереження, сценарій) — лягають за шкалою одразу; у збереженні, де вони вже з'являлися по одному
-  // (`tuftAt`), — і далі по одному: завантаження стану не змінює (§8.7, [Змінено пізніше]).
-  if (home.tuftAt === undefined) topUpTufts(state);
-}
-
 /** Фонтанчик доливає поїлки (§8.7): простий — із бака, поки в ньому є вода, дорогий — без міри. */
 function topUpWater(state: GameState): void {
   const { home } = state;
@@ -491,7 +467,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   shedTuft(state);
   tickDust(state, minutes);
   // Без світла прання, запущене до відключення, стоїть на паузі й допереться, щойно світло буде (§4.1; рішення виконавця
-  // 2026-11-02: не губить засіб і не дає випраного без струму; буває лише в старому збереженні чи з панелі розробки — запустити
+  // 2026-11-02: не губить засіб і не дає випраного без струму; буває лише з панелі розробки — запустити
   // прання в день відключення не можна, а вчорашнє допирається вночі).
   if (home.washer.state === "washing" && !powerOut(state)) {
     const before = home.washer.minutes;
@@ -747,19 +723,6 @@ export function stockBowl(state: GameState, bowl: BowlItem, upTo = BOWL_CAPACITY
   bowl.foodQuality = kind.quality;
   bowl.sterile = kind.sterile;
   return poured;
-}
-
-/**
- * Старе збереження (до правки автора 2026-10-23): одна автогодівниця на дім, у `appliances.feeder`.
- * Вона стає порожньою годівницею тієї ж якості над першою миской.
- */
-export function upgradeFeeder(state: GameState): void {
-  const appliances = state.home.appliances as Partial<Record<string, Quality | null>>;
-  const quality = appliances["feeder"];
-  delete appliances["feeder"];
-  const feeders = (state.home.feeders ??= []);
-  const bowl = state.home.items.find((i) => i.kind === "bowl");
-  if (quality && bowl && "slot" in bowl && feeders.length === 0) feeders.push({ slot: bowl.slot, quality, food: 0, foodQuality: null, sterile: false });
 }
 
 /**

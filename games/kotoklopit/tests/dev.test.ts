@@ -1,20 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import { courierNow, crashNow, jumpTo, setTime, skipDays, skipToMonday, sleepNow } from "../src/dev/commands";
-import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId, type Scenario } from "../src/dev/scenarios";
+import { applyScenario, deepMerge, FILE_SCENARIOS, scenarioFromSave, scenarioId } from "../src/dev/scenarios";
 import { describe as describeEvent } from "../src/dev/journal";
-import { DEFAULT_LOOK, drive, interact, newGame } from "../src/sim/game";
+import { drive, interact, newGame } from "../src/sim/game";
 import { NO_RACE_INPUT, newRace } from "../src/sim/race";
 import { weekdayOf, weekOf } from "../src/sim/time";
 import { createCat, idleAct } from "../src/sim/cat";
-import { dispatch, utilitiesDue } from "../src/sim/economy";
-import { THINGS, TRIPS } from "../src/sim/config";
+import { dispatch } from "../src/sim/economy";
+import { TRIPS } from "../src/sim/config";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { hours, recordEvents } from "./helpers";
 
-/** Зовнішність чоловічого персонажа за замовчуванням до рішення автора А4 (2026-10-29). */
-const OLD_MALE_LOOK = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
+const CHAOS_LOOK = { face: 0, skin: 1, hair: 0, hairColor: 0, eyes: 0, build: 1, top: 1, bottom: 0, shoes: 0 };
 
 describe("сценарії (§11.5)", () => {
   it("зміни накладаються поверх нової гри: об'єкти зливаються, масиви й числа замінюються", () => {
@@ -68,50 +67,11 @@ describe("сценарії (§11.5)", () => {
     expect(restored.current).toEqual(save.current);
   });
 
-  it("сценарій, збережений до злиття груп рис, відкривається з рисами в нових групах (2026-10-25)", () => {
-    const save = applyScenario({
-      name: "Старий",
-      cats: [{ ageWeeks: 10, traits: [{ group: "weather", level: 2, seen: 1, known: false }, { group: "toiletPaper", level: -1, seen: 0, known: false }] }],
-    });
-    expect(save.current.cats[0]?.traits).toEqual([
-      { group: "warmth", level: 2, seen: 1, known: false },
-      { group: "hunting", level: -1, seen: 0, known: false },
-    ]);
-  });
-
-  it("сценарій, збережений до автогодівниць над мисками (2026-10-23), оновлюється, як збереження: годівниця над миской, комунальні — за одну (загальна ревізія 2026-10-29)", () => {
-    // У старому стані годівниця — одна на дім, у `appliances.feeder`; нинішній тип такого ключа не знає.
-    const scenario = (feeder: boolean): Scenario => ({
-      name: "Стара годівниця",
-      cats: [{ ageWeeks: 10 }],
-      ...(feeder ? { state: { home: { appliances: { feeder: "cheap" } } } as unknown as NonNullable<Scenario["state"]> } : {}),
-    });
-    const save = applyScenario(scenario(true));
-    const home = save.current.home;
-    expect("feeder" in home.appliances).toBe(false);
-    expect(home.feeders).toHaveLength(1);
-    expect(utilitiesDue(save.current)).toBe(utilitiesDue(applyScenario(scenario(false)).current) + THINGS.feeder.utilities);
-  });
-
-  it("сценарій, збережений до рішення автора А4 (2026-10-29), зі статтю персонажа: чоловік — «він» і сова, як тоді, жінка — «вона» й жайворонок", () => {
-    const legacy = (sex: string, extra = {}): Scenario => ({ name: "Старий", game: { sex, ...extra } }) as unknown as Scenario;
-    const he = applyScenario(legacy("male")).current.character;
-    expect([he.address, he.chronotype]).toEqual(["he", "owl"]);
-    expect(he).not.toHaveProperty("sex");
-    // Зовнішність — та, що тоді була за замовчуванням у чоловіка, а не спільна тепер.
-    expect(he.look).toEqual(OLD_MALE_LOOK);
-    const she = applyScenario(legacy("female")).current.character;
-    expect([she.address, she.chronotype]).toEqual(["she", "lark"]);
-    expect(she.look).toEqual(DEFAULT_LOOK);
-    // Хронотип, записаний у сценарії, важить більше.
-    expect(applyScenario(legacy("male", { chronotype: "lark" })).current.character.chronotype).toBe("lark");
-  });
-
-  it("«Вечірній хаос» — «він» і сова з тією самою зовнішністю, що й до рішення автора А4", () => {
+  it("«Вечірній хаос» — «він» і сова зі своєю зовнішністю", () => {
     const scenario = FILE_SCENARIOS["chaos-evening"];
     if (!scenario) throw new Error("немає сценарію");
     const { address, chronotype, look } = applyScenario(scenario).current.character;
-    expect([address, chronotype, look]).toEqual(["he", "owl", OLD_MALE_LOOK]);
+    expect([address, chronotype, look]).toEqual(["he", "owl", CHAOS_LOOK]);
   });
 
   it("id сценарію — латиницею з назви", () => {

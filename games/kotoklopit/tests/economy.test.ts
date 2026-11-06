@@ -48,15 +48,6 @@ describe("підказка телефоном (§6.4)", () => {
     useSupply(state, "collar");
     expect(state.home.phoneHints).toEqual([]);
   });
-
-  it("старе збереження без полів підказки не ламається", () => {
-    const { current: state } = game();
-    delete state.home.ranOut;
-    delete state.home.phoneHints;
-    state.home.supplies.hygiene = { cheap: 1, premium: 0 };
-    useSupply(state, "hygiene");
-    expect(state.home.phoneHints).toEqual(["hygiene"]);
-  });
 });
 
 describe("доставка (§6.4)", () => {

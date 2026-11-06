@@ -1,6 +1,6 @@
 // Пилосос у руках (§8.7, «Пилосос у руках», рішення автора 2026-11-02): узяти й поставити будь-де, з ним у руках інших речей не
 // взяти, гул (гучний звук щодесять хвилин) і здоровий глузд −0,2 за хвилину, прибирання сухого сміття в радіусі 1,5 клітинки,
-// жмути шерсті на своїх місцях, старі збереження.
+// жмути шерсті на своїх місцях.
 
 import { describe, expect, it } from "vitest";
 
@@ -8,8 +8,8 @@ import { dropEverything } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { HOUSEHOLD, THINGS, TOOL_REACH, VACUUM } from "../src/sim/config";
 import { DUST_SPOTS, dustOf } from "../src/sim/dust";
-import { discardAppliance, freeSlots, ownsThing, place as placeThing, utilitiesDue } from "../src/sim/economy";
-import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { discardAppliance, freeSlots, place as placeThing, utilitiesDue } from "../src/sim/economy";
+import { advance, interact, newGame } from "../src/sim/game";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, LAUNDRY_BASKET, objectById, ROBOT_DOCK, roomAt, slotById, VACUUM_HOME } from "../src/sim/home";
 import { cleaningTool, FUR_SPOTS, furVisible, putVacuumDown, tickHousehold, topUpTufts, tuftsOf } from "../src/sim/household";
 import { answerCall } from "../src/sim/modifiers";
@@ -381,31 +381,6 @@ describe("жмути шерсті на своїх місцях (§8.7, ріше�
   });
 });
 
-describe("старі збереження (§8.7, рішення автора 2026-11-02)", () => {
-  it("шафи з пилососом немає — пилосос стоїть на її місці, почате «пилососити» скасовано, жмути лягають на місця за шерстю", () => {
-    const save = game();
-    const home = save.current.home as Partial<typeof save.current.home>;
-    delete home.vacuumAt;
-    delete home.tufts;
-    delete home.dust;
-    delete home.dustClock;
-    save.current.home.fur = 60;
-    save.current.character.activity = { kind: "use", target: "vacuum", progress: 4 };
-    const loaded = deserialize(serialize(save)).current;
-    expect(loaded.home.vacuumAt).toEqual(VACUUM_HOME);
-    expect(loaded.character.activity).toBeNull();
-    expect(tuftsOf(loaded)).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    expect(loaded.home.fur).toBe(60);
-  });
-
-  it("пилосос, якого сценарій дав у руки, — у руках, а не ще й на підлозі", () => {
-    const save = game();
-    save.current.character.held = { kind: "vacuum" };
-    const loaded = deserialize(serialize(save)).current;
-    expect(loaded.home.vacuumAt).toBeNull();
-  });
-});
-
 describe("віник і пилосос (§8.7)", () => {
   /** Покласти сміття за `distance` праворуч від персонажа в середині вітальні й зробити крок часу: чи прибрав. */
   function sweeps(save: Save, distance: number): boolean {
@@ -503,14 +478,5 @@ describe("віник і пилосос (§8.7)", () => {
     state.modifiers.day = null;
     expect(cleaningTool(state)).toBe("vacuum");
     expect(sweeps(save, TOOL_REACH.broom.floor + 0.2)).toBe(true);
-  });
-
-  it("у старому збереженні пилососа в техніці немає — удома віник, і пилосос можна купити", () => {
-    const save = game();
-    delete (save.current.home.appliances as Partial<typeof save.current.home.appliances>).vacuum;
-    const loaded = deserialize(serialize(save));
-    expect(loaded.current.home.appliances.vacuum).toBeNull();
-    expect(ownsThing(loaded.current, "vacuum")).toBe(false);
-    expect(cleaningTool(loaded.current)).toBe("broom");
   });
 });

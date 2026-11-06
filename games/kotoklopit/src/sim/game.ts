@@ -2,28 +2,21 @@
 // і збереження в JSON (§6.1).
 
 import { catchEscaped, IDLE, tap, tickActivity, tickStove, type Input } from "./actions";
-import { isMoving, moveBody, newBody, unstickBody } from "./body";
+import { isMoving, moveBody, newBody } from "./body";
 import { greetAtDoor, tickCats } from "./catai";
-import { breedById, isPurebred } from "./breeds";
-import { visibleFloorNear } from "./catmove";
-import { isSolid } from "./home";
 import { passAwakeTime } from "./character";
-import { BODY_PACE, FIRST_DAY_MODIFIER, ILLNESS_EFFECTS, LEGACY_POSITION_PAY, MINUTES_PER_HOUR, MODIFIERS, POSITIONS, PRODUCTS, SINGLE_VARIANT, START_MONEY, START_STATS, TRIPS } from "./config";
+import { BODY_PACE, FIRST_DAY_MODIFIER, MINUTES_PER_HOUR, MODIFIERS, START_MONEY, START_STATS } from "./config";
 import { newHome, tickDeliveries } from "./economy";
 import { openDoor, ringBell } from "./door";
 import { emit, endGame } from "./events";
-import { OLD_AGE_SOURCE, upgradeAlbumDays } from "./farewell";
-import { applyPureBreedLook } from "./genetics";
 import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
 import { accidentBedtime, accidentHome, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
-import { annoyingMesses, tickHousehold, tickVacuum, upgradeFeeder, upgradeFountain, upgradeVacuum } from "./household";
+import { annoyingMesses, tickHousehold, tickVacuum } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
-import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
-import { upgradeTraces } from "./traces";
-import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Product, Quality, Save } from "./types";
+import type { Address, Chronotype, Difficulty, GameState, Look, NightReport, Save } from "./types";
 import { isWorking, newJob, tickWork } from "./work";
 import { momAtNight, tickModifiers } from "./modifiers";
 
@@ -82,7 +75,6 @@ export function newGame(options: NewGameOptions): Save {
       illnesses: [],
       shortNights: 0,
       restedNights: 0,
-      shortSleepHours: ILLNESS_EFFECTS.shortSleepHours,
     },
     job: newJob(),
     home: newHome(),
@@ -347,224 +339,7 @@ export function deserialize(json: string): Save {
   const data: unknown = JSON.parse(json);
   const version = typeof data === "object" && data !== null && "version" in data ? data.version : undefined;
   if (version !== SAVE_VERSION) throw new Error(`Непідтримувана версія збереження: ${String(version)}`);
-  const save = data as Save;
-  // Ранку після аварії окремо від знімків старіші збереження не пам'ятають (рецензія реалізації А1, 2026-10-29).
-  save.morning ??= null;
-  for (const state of [save.current, save.dayStart, save.weekStart, save.morning]) if (state !== null) upgradeState(state);
-  return save;
-}
-
-/**
- * Усі оновлення стану, збереженого старішою версією гри: і для збережень (`deserialize`), і для сценаріїв режиму розробки
- * (`applyScenario`), щоб нова міграція одразу діяла для обох (загальна ревізія 2026-10-29: сценарії мігрували лише риси, і стара
- * автогодівниця в сценарії не працювала, а комунальні за неї нараховувалися).
- */
-export function upgradeState(state: GameState): void {
-  upgradeCharacter(state);
-  upgradeModifiers(state);
-  upgradeFeeder(state);
-  upgradeFountain(state);
-  upgradeTraits(state);
-  upgradeWardrobe(state);
-  upgradeSupplies(state);
-  upgradeAlbumDays(state);
-  upgradeDiseases(state);
-  upgradeCarriers(state);
-  upgradeTrip(state);
-  upgradeLadder(state);
-  upgradeBreedLook(state);
-  upgradeShortNights(state);
-  // Котячі сліди (§9.12, рішення автора 2026-11-02): у старих збереженнях їх немає, а котодні рахуються з першої ночі.
-  upgradeTraces(state);
-  // Пилосос у руках і жмути шерсті на місцях (§8.7, рішення автора 2026-11-02): шафи з пилососом немає — він стоїть на її місці.
-  upgradeVacuum(state);
-}
-
-/**
- * Поріг короткої ночі — 6 годин (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, дрібні питання — «Поріг виснаження»; §6.5): у
- * збереженні з іншим порогом (до рішення — 7 годин, поля `shortSleepHours` немає) короткими рахувалися й ночі по 6–7 годин, а з
- * яких ночей склався рахунок, невідомо, — він починається заново (рецензія реалізації дрібних питань, 2026-10-29, рішення
- * виконавця). Інакше дві ночі по 6,5 години й одна нова коротка давали б «Виснаження». Сценарій режиму розробки зливається з
- * новою грою, де поріг уже записано, тож його рахунок лишається, як задано.
- */
-export function upgradeShortNights(state: GameState): void {
-  const character = state.character;
-  if (character.shortSleepHours !== ILLNESS_EFFECTS.shortSleepHours) character.shortNights = 0;
-  character.shortSleepHours = ILLNESS_EFFECTS.shortSleepHours;
-}
-
-/**
- * Чистокровний — і гени породи (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А9; §9.11): чистокровний кіт, народжений удома
- * в грі, збереженій раніше, мав від породи лише форми, — тепер він отримує й гени породи, як отримав би кошеням, щоб картка не
- * писала про породу того, чого в кота немає (рецензія реалізації А9, 2026-10-29, рішення виконавця). Без випадковості, тож
- * повторне завантаження нічого не змінює. Коти з притулку, розплідника й знайди мали гени породи й раніше, а альбом пам'яті
- * лишається, яким був.
- */
-export function upgradeBreedLook(state: GameState): void {
-  for (const cat of state.cats) if (cat.source === "born" && isPurebred(cat.breed)) applyPureBreedLook(cat.genes, cat.shape, breedById(cat.breed[0]));
-}
-
-/**
- * Драбина з 15 посад (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А10; §8.6): у збереженні з колишньою драбиною з 10 посад
- * (поля `ladder` немає) посада стає посадою нової драбини з найближчою погодинною оплатою — зарплата майже та сама, — але
- * директором лишається лише директор: колишні 43–62 ₴ («Керівник групи», «Керівник відділу», «Директор напряму») стають
- * «Заступником директора». Репутація лишається. За тієї самої оплати посада нової драбини вища: присутності треба більше, а колишні
- * 4-та й 5-та посади (низька кар'єра у фіналі) стають 9-ю й 12-ю (середня) — §8.6, [Наслідок] (рецензія реалізації А10).
- */
-export function upgradeLadder(state: GameState): void {
-  const job = state.job;
-  if (job.ladder === undefined) job.position = legacyPosition(job.position);
-  job.ladder = POSITIONS.length;
-}
-
-/** Посада нової драбини для посади колишньої (`upgradeLadder`). */
-export function legacyPosition(old: number): number {
-  const director = POSITIONS.length - 1;
-  if (old >= LEGACY_POSITION_PAY.length - 1) return director;
-  const pay = LEGACY_POSITION_PAY[Math.max(0, old)] ?? 0;
-  let best = 0;
-  for (let i = 1; i < director; i++) {
-    if (Math.abs((POSITIONS[i]?.pay ?? 0) - pay) < Math.abs((POSITIONS[best]?.pay ?? 0) - pay)) best = i;
-  }
-  return best;
-}
-
-/**
- * Персонаж без статі (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А4): стать зі старого збереження стає звертанням у текстах
- * (чоловіча — «він», жіноча — «вона»), а дні жіночого циклу (`cycleStart`) і гоління й підрівнювання (`beard`) зникають. Хронотип
- * у збереженні вже записаний — його не чіпають.
- */
-export function upgradeCharacter(state: GameState): void {
-  const character = state.character as GameState["character"] & { sex?: unknown };
-  if (character.sex !== undefined) {
-    character.address ??= character.sex === "male" ? "he" : "she";
-    Reflect.deleteProperty(character, "sex");
-  }
-  Reflect.deleteProperty(character, "cycleStart");
-  Reflect.deleteProperty(character, "beard");
-}
-
-/**
- * «Щеплення» прибрано (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А14): день, збережений з ним, — день без модифікатора, а
- * пропущене щеплення більше нічого не важить — поля про нього зникають.
- */
-export function upgradeModifiers(state: GameState): void {
-  if (state.modifiers.day === "vaccination") state.modifiers.day = null;
-  Reflect.deleteProperty(state.today, "vaccinated");
-  Reflect.deleteProperty(state.today, "vaccineMissedUntil");
-}
-
-/**
- * Поїздки, що нічого не давали (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А15). Котокафе прибрано: поїздку туди, на якій
- * гру збережено, гра завершує — дорогою чи на місці персонаж уже вдома біля дверей (оплачене в кафе своє вже дало). Час, що
- * лишався поїздці (решта дороги туди, час у кафе — до трьох оплачених годин — і 30 хвилин додому), при цьому не минає: тут лише
- * стан гри, без збереження й годинника, а поїздки, якою прокрутити день, уже немає (рецензія реалізації А15, рішення виконавця:
- * одноразовий випадок старого збереження, §8.5). Аварія дорогою туди лишається аварією, як будь-яка (години — як на ×2,
- * `accidentOf`): поїздку лише записано на магазин — так само «собі» й без кота, а картка аварії пункту
- * не називає. «Віддати» з притулку прибрано: запис про кота, якого там уже віддали, зникає з журналу візиту (кіт — в альбомі),
- * а кіт, що приїхав у переносці й лишився, повертається з персонажем додому.
- */
-/** Старе збереження: одна переноска в `home.carrier` (§8.7). */
-function upgradeCarriers(state: GameState): void {
-  const home = state.home as GameState["home"] & { carrier?: Quality | null };
-  home.carriers ??= home.carrier ? [{ quality: home.carrier, wear: 0 }] : [];
-  delete home.carrier;
-}
-
-export function upgradeTrip(state: GameState): void {
-  const trip = state.trip;
-  if (trip === null) return;
-  // Старе збереження: кіт їхав один, у єдиній переносці (§8.5).
-  trip.riders ??= trip.cat === null ? [] : [{ cat: trip.cat, place: state.home.carriers[0]?.quality ?? "cheap" }];
-  // Віддали кота в притулку старої гри — теж послуга (рецензія реалізації А6), хоч запис про це з журналу й зникає.
-  const served = trip.log !== undefined && (trip.log.exam !== null || trip.log.done.length > 0);
-  if (trip.log) trip.log.done = trip.log.done.filter((done) => !done.startsWith("given:"));
-  if ((trip.destination as string) === "cafe") {
-    if (trip.phase === "accident") trip.destination = "shop";
-    else endTrip(state);
-    return;
-  }
-  // Час на місці — лише за отримані послуги (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6): у старій грі поїздка
-  // до ветеринара, лікаря, грумера, на виставку, у притулок чи розплідник (рецензія реалізації А6) вже на старті мала повний час
-  // послуги. Якщо на місці ще нічого не отримали (журнал візиту порожній: узятого кота сцена записує туди на ім'я), цього часу
-  // немає — «Додому» забере 15 хвилин; отримане вже рахується, як і раніше.
-  if (TRIPS[trip.destination].service && !served) trip.visit = 0;
-}
-
-/**
- * «Старечих болячок» немає (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13): у старих збереженнях їх знімають з котів удома,
- * у притулку й у розпліднику, а кіт, що помер від них, в альбомі пам'яті пішов від старості. Шкода від них у журналі здоров'я
- * лишається шкодою від старості (§9.7): кіт, якого вони довели до нуля здоров'я, якщо помре, піде від старості, а не від туги
- * (рецензія реалізації А13, 2026-10-29: раніше цю шкоду викидали з журналу, і причиною ставав поганий настрій).
- */
-export function upgradeDiseases(state: GameState): void {
-  const removed = (id: string): boolean => id === "senior";
-  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
-  for (const cat of cats) {
-    cat.diseases = cat.diseases.filter((d) => !removed(d.id));
-    for (const entry of cat.healthLog) if (entry.source === "disease:senior") entry.source = OLD_AGE_SOURCE;
-  }
-  for (const entry of state.album) if (entry.cause?.kind === "disease" && removed(entry.cause.disease)) entry.cause = { kind: "old" };
-}
-
-/**
- * Нові запаси (котяча м'ята, 2026-10-26, §9.12): у старих збереженнях їх немає — порожньо. Дзвіночка більше немає (рішення автора
- * 2026-10-29, `GENERAL_REVIEW.md`, А17): його запас в аптечці, у ящиках біля входу й у пакунках, що їдуть чи чекають під дверима,
- * зникає (5 ₴ за пакунок не повертають — дрібниця). Нашийник тепер один, без якостей (там само): нашийник будь-якої якості на
- * коті — просто нашийник, а дорогі в аптечці, у ящиках і в пакунках стають такими самими, як дешеві.
- */
-export function upgradeSupplies(state: GameState): void {
-  const home = state.home;
-  const gone = (product: string): boolean => product === "bell";
-  for (const product of Object.keys(home.supplies)) if (gone(product)) Reflect.deleteProperty(home.supplies, product);
-  for (const product of Object.keys(home.boxes ?? {})) if (gone(product)) Reflect.deleteProperty(home.boxes ?? {}, product);
-  home.acquired = home.acquired.filter((p) => !gone(p));
-  if (home.ranOut) home.ranOut = home.ranOut.filter((p) => !gone(p));
-  if (home.phoneHints) home.phoneHints = home.phoneHints.filter((p) => !gone(p));
-  home.deliveries = home.deliveries.filter((d) => !("product" in d && gone(d.product)));
-  home.porch = home.porch.filter((d) => !("product" in d && gone(d.product)));
-  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
-  for (const cat of cats) cat.collar = Boolean(cat.collar);
-  const single = (stock: Record<Quality, number> | undefined): void => {
-    if (!stock) return;
-    stock.cheap += stock.premium;
-    stock.premium = 0;
-  };
-  for (const product of SINGLE_VARIANT) {
-    single(home.supplies[product]);
-    single(home.boxes?.[product]);
-  }
-  for (const d of [...home.deliveries, ...home.porch]) if ("product" in d && SINGLE_VARIANT.includes(d.product)) d.quality = "cheap";
-  for (const product of Object.keys(PRODUCTS) as Product[]) home.supplies[product] ??= { cheap: 0, premium: 0 };
-}
-
-/**
- * Шафа в спальні (2026-10-26, §9.12 «Лазіння») і підвіконня (2026-10-26, «Вікно») стали там, де в грі, збереженій раніше, міг
- * стояти персонаж чи лежати іграшка, безлад або скинута дрібничка: персонажа — на вільну клітинку поруч, речі — на видну підлогу
- * поруч (перевірка етапу 2026-10-26).
- */
-export function upgradeWardrobe(state: GameState): void {
-  unstickBody(state);
-  const toys = state.home.items.filter((item) => item.kind === "toy");
-  const fallen = Object.values(state.home.trinkets ?? {}).filter((t) => t !== undefined);
-  for (const thing of [...toys, ...state.home.messes, ...fallen]) {
-    if (!isSolid(state, Math.floor(thing.x), Math.floor(thing.y))) continue;
-    const at = visibleFloorNear(state, thing);
-    thing.x = at.x;
-    thing.y = at.y;
-  }
-}
-
-/**
- * Злиті групи рис (2026-10-25): у котів удома, у притулку, у розпліднику й в альбомі пам'яті. Ще й для сценаріїв
- * режиму розробки, збережених зі старої гри. Заздрість до дорогого корму прибрано (рішення автора 2026-10-29,
- * `GENERAL_REVIEW.md`, А16) — разом із полем `premiumAt`, коли кіт востаннє їв такий корм.
- */
-export function upgradeTraits(state: GameState): void {
-  const cats = [...state.cats, ...(state.shelter?.cats ?? []), ...(state.breeder?.cats ?? [])];
-  for (const cat of cats) cat.traits = migrateTraits(cat.traits);
-  for (const entry of state.album) entry.traits = migrateTraits(entry.traits);
-  for (const cat of state.cats) Reflect.deleteProperty(cat, "premiumAt");
+  return data as Save;
 }
 
 function clone<T>(value: T): T {

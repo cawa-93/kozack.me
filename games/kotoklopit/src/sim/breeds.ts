@@ -121,11 +121,6 @@ export function riskHalves(breed: readonly [string, string], risk: string): numb
   return breed.filter((id) => breedById(id).risks.includes(risk)).length;
 }
 
-/** Чистокровний: дві однакові справжні породи (§9.11). */
-export function isPurebred(breed: readonly [string, string]): boolean {
-  return breed[0] === breed[1] && breed[0] !== MIXED;
-}
-
 /** Що видно про породу (§9.11): легка — усе, середня — чистокровна повністю, напівкровка — половина; важка — нічого. */
 export function knownBreedHalves(state: GameState, breed: readonly [string, string], rng: Rng): [boolean, boolean] {
   if (state.difficulty === "easy") return [true, true];

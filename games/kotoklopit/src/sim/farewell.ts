@@ -10,14 +10,8 @@ import type { Rng } from "./rng";
 import type { AlbumEntry, Cat, FarewellCause, GameState } from "./types";
 
 /**
- * Джерело шкоди в журналі здоров'я «старість» (§9.7): лише шкода від колишніх «старечих болячок» зі старого збереження
- * (рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А13, §9.5; `upgradeDiseases`). Сама гра так шкоду не записує.
- */
-export const OLD_AGE_SOURCE = "old";
-
-/**
  * Причина смерті від нульового здоров'я (§9.7): джерело, що завдало найбільше шкоди за останній
- * тиждень, — хвороба чи туга (поганий настрій); шкода від колишніх «старечих болячок» — старість.
+ * тиждень, — хвороба чи туга (поганий настрій).
  */
 export function zeroHealthCause(cat: Cat): FarewellCause {
   const bySource = new Map<string, number>();
@@ -30,7 +24,6 @@ export function zeroHealthCause(cat: Cat): FarewellCause {
       most = amount;
     }
   }
-  if (top === OLD_AGE_SOURCE) return { kind: "old" };
   return top.startsWith("disease:") ? { kind: "disease", disease: top.slice("disease:".length) } : { kind: "sorrow" };
 }
 
@@ -61,22 +54,6 @@ export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day:
   state.album.push(entry);
   emit(state, { type: "cat-gone", entry });
   return entry;
-}
-
-/**
- * Скільки днів кіт з альбому прожив удома (§4.2; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А11): старі збереження цього
- * не пам'ятали — рахуємо з дат. Підсумок дня записується щоночі до прощання, тож це дні від появи до ночі прощання включно; кота,
- * якого віддали, забирають уранці за оголошенням (а до А15 — ще й удень у притулку), і в альбомі — день, коли забрали: останній
- * записаний день — напередодні. Наближено: до 2026-10-28 (8576eba) кота за оголошенням забирали вранці, але в альбом писали
- * вчорашній день, уже записаний уночі, — таким котам виходить на день менше, ніж вони прожили. Від відданих у притулок їх не
- * відрізнити (причина та сама), тож точніше не порахувати; на осі котів це вага одного дня на такого кота.
- */
-export function upgradeAlbumDays(state: GameState): void {
-  for (const entry of state.album as (Omit<AlbumEntry, "days"> & { days?: number })[]) {
-    if (entry.days !== undefined) continue;
-    const days = entry.day - entry.arrivedDay + (entry.cause?.kind === "given" ? 0 : 1);
-    entry.days = Number.isFinite(days) ? Math.max(0, days) : 0;
-  }
 }
 
 /** Чому кота зараз не віддати (§9.8): новонароджений чи мати, що годує новонароджених; null — можна. */
