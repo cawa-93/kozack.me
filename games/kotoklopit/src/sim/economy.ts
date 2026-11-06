@@ -479,6 +479,12 @@ export function utilitiesDue(state: GameState): number {
   );
 }
 
+/** Цього тижня до сплати (§6.4): комунальні мінус знижка перерахунку. */
+const utilitiesThisWeek = (state: GameState): number => Math.max(0, utilitiesDue(state) - state.today.utilitiesDiscount);
+
+/** Скільки знімуть у найближчу ніч на понеділок (§6.4): цей тиждень і борг, якщо він є. */
+export const utilitiesPlanned = (state: GameState): number => state.home.utilitiesDebt + utilitiesThisWeek(state);
+
 export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "fountain" || thing === "robot" || thing === "vacuum";
 
 /**
@@ -488,7 +494,7 @@ export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "
 export function payUtilities(state: GameState): UtilitiesReport {
   const home = state.home;
   // Перерахунок комунальних (§4.1) зменшує цей платіж.
-  const due = Math.max(0, utilitiesDue(state) - state.today.utilitiesDiscount);
+  const due = utilitiesThisWeek(state);
   state.today.utilitiesDiscount = 0;
   // Ремонт іде в цей платіж (чи в борг), далі рахується наново.
   home.repairs = 0;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { START_MONEY } from "../src/sim/config";
-import { deliveryCost, order, payUtilities, productPrice, seePhoneHints, supplyCount, unpack, useSupply, utilitiesDue } from "../src/sim/economy";
+import { deliveryCost, order, payUtilities, productPrice, seePhoneHints, supplyCount, unpack, useSupply, utilitiesDue, utilitiesPlanned } from "../src/sim/economy";
 import { advance, goToSleep, interact, newGame } from "../src/sim/game";
 import { absoluteMinute } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -182,6 +182,23 @@ describe("комунальні в ніч на понеділок (§6.4)", () =>
     expect(partial?.utilities).toEqual({ outcome: "partial", paid: 40, nextDue: 80 });
     expect(save.current.character.money).toBe(10);
     expect(save.current.home.utilitiesDebt).toBe(40);
+  });
+
+  it("планові комунальні на панелі: цей тиждень, борг і знижка перерахунку — стільки ж, скільки потім знімуть", () => {
+    const save = game();
+    const state = save.current;
+    state.character.money = 1000;
+    const due = utilitiesDue(state);
+    expect(utilitiesPlanned(state)).toBe(due);
+    state.home.utilitiesDebt = 49;
+    expect(utilitiesPlanned(state)).toBe(due + 49);
+    state.today.utilitiesDiscount = 10;
+    const planned = utilitiesPlanned(state);
+    expect(planned).toBe(due + 49 - 10);
+    expect(payUtilities(state).paid).toBe(planned);
+    // Знижка більша за тиждень: сума не від'ємна.
+    state.today.utilitiesDiscount = due + 100;
+    expect(utilitiesPlanned(state)).toBe(0);
   });
 
   it("борг більший за поточний тиждень: оплачується більший тиждень, на який вистачає грошей (загальна ревізія 2026-10-29)", () => {
