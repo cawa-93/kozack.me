@@ -13,7 +13,7 @@ import { isNewborn } from "./reproduction";
 import { enoughFor } from "./resources";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { Cat, CatDisease, DiseaseId, GameState, Medicine } from "./types";
+import type { Cat, CatDisease, DiseaseId, GameState, Medicine, Quality } from "./types";
 
 export const hasDisease = (cat: Cat, id: DiseaseId): boolean => cat.diseases.some((d) => d.id === id);
 
@@ -106,15 +106,15 @@ export function showSymptoms(state: GameState, cat: Cat, minutes: number, rng: R
   if (hasDisease(cat, "conjunctivitis") && rng.chance(chance)) emit(state, { type: "symptom", cat: cat.id, symptom: "eyes" });
 }
 
-/** Кіт поїв (§9.5): дешевий корм іноді засмучує шлунок, дорогий — дієта для нього. */
-export function afterMeal(state: GameState, cat: Cat, premium: boolean, rng: Rng): void {
+/** Кіт поїв (§9.5): дешевий корм іноді засмучує шлунок, дорогий — дієта для нього. `bowl` — з якої миски, коли їв із миски. */
+export function afterMeal(state: GameState, cat: Cat, premium: boolean, rng: Rng, bowl?: Quality): void {
   const stomach = cat.diseases.find((d) => d.id === "stomach");
   const diet = DISEASES.stomach.cure;
   if (stomach && premium && diet.kind === "diet") {
     stomach.diet += 1;
     if (stomach.diet >= diet.portions) cure(state, cat, stomach, rng);
   }
-  if (!premium) maybeFallIll(state, cat, "stomach", ILLNESS.cheapFoodStomach, rng);
+  if (!premium) maybeFallIll(state, cat, "stomach", ILLNESS.cheapFoodStomach * (bowl === "premium" ? ILLNESS.ceramicStomach : 1), rng);
 }
 
 /** Чи зригне кіт одразу після їжі через розлад шлунка. */

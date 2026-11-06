@@ -725,6 +725,8 @@ export const ILLNESS = {
   /** Стерилізований кіт на звичайному кормі (§9.8). */
   regularFoodStones: 0.03,
   cheapFoodStomach: 0.01,
+  /** Керамічна миска легше миється (§6.4): множник до `cheapFoodStomach`. */
+  ceramicStomach: 0.5,
   cystitisMood: 25,
   cystitis: 0.15,
   calmMood: 40,

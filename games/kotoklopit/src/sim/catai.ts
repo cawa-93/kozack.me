@@ -111,7 +111,7 @@ import {
   ZOOMIES,
 } from "./config";
 import { afterMeal, afterTheft, cannotJump, eatFactor, eatsLess, fallIll, fatigueFactor, hasDisease, hungerFactor, isObese, isUnwell, maybeFallIll, missesLitter, showSymptoms, sleepFactor, toiletFactor, vomitsAfterMeal, walkFactor } from "./diseases";
-import { takeSupply } from "./economy";
+import { feederAt, takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
 import { robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
@@ -2083,7 +2083,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       // Перекус «Апетиту +» біля повної миски — увесь зайвий (рішення автора 2026-10-26).
       const excess = act.snack === true ? 1 : Math.min(1, Math.max(0, WEIGHT.fullHunger - cat.needs.hunger) / WEIGHT.excessRange);
       // Корм для стерилізованих тримає вагу стерилізованого: без його множника (рішення автора 2026-10-26).
-      if (excess > 0) gainWeight(state, cat, WEIGHT.portion * portion * excess, bowl.sterile);
+      if (excess > 0 && feederAt(state, bowl.slot)?.quality !== "premium") gainWeight(state, cat, WEIGHT.portion * portion * excess, bowl.sterile);
       if (nibble) bowl.half = true;
       else {
         bowl.food -= 1;
@@ -2102,7 +2102,7 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       itemMood(state, cat, bowl);
       emit(state, { type: "cat-ate", cat: cat.id, quality });
       resourceConflict(state, cat, rng, enoughFor(state, "bowl"), "bowl");
-      afterMeal(state, cat, quality === "premium", rng);
+      afterMeal(state, cat, quality === "premium", rng, bowl.quality);
       // Стерилізованому — лише корм для стерилізованих (§9.8).
       if (cat.sterilized && !bowl.sterile) maybeFallIll(state, cat, "urolithiasis", ILLNESS.regularFoodStones * stonesFactor(state, cat), rng);
       // «Малоїжка» відходить, лишивши пів миски, — прояв «Апетиту −» (§9.9); слабкий чи хворий клює через здоров'я, не через рису.
