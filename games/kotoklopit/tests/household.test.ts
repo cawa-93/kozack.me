@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
-import { addSupply, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
+import { addSupply, discard, discardAppliance, discardCarrier, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf, wearOut } from "../src/sim/household";
@@ -732,6 +732,55 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     nightlyHousehold(save.current, always());
     expect(save.current.home.feeders).toHaveLength(0);
     expect(save.current.home.messes.filter((m) => m.kind === "broken")).toHaveLength(broken + 1);
+  });
+
+  /** Годівниця з кормом над першою миской і друга миска без годівниці. */
+  function withSpareBowl(): { save: Save; bowl: BowlItem; feeder: Feeder; spare: BowlItem } {
+    const { save, bowl, feeder } = withFeeder("cheap", 0);
+    save.current.home.items = save.current.home.items.filter((i) => i.kind !== "bowl" || i === bowl);
+    Object.assign(feeder, { food: 6, foodQuality: "cheap" });
+    const spare = place(save.current, "bowl", "premium");
+    if (spare?.kind !== "bowl") throw new Error("миска не стала");
+    save.current.home.items.push(spare);
+    return { save, bowl, feeder, spare };
+  }
+
+  it("миску під годівницею викинули — годівниця одразу переходить до миски без годівниці й наповнює її", () => {
+    const { save, bowl, feeder, spare } = withSpareBowl();
+    expect(discard(save.current, bowl.id)).toBe(true);
+    expect(feeder.slot).toBe(spare.slot);
+    // Телефон ще відкритий: другої годівниці купити вже ні для кого.
+    expect(freeSlots(save.current, "feeder")).toBe(0);
+    tickHousehold(save.current, 3 * 60, 1);
+    expect(spare.food).toBeGreaterThan(0);
+    expect(spare.foodQuality).toBe("cheap");
+  });
+
+  it("миска під годівницею зламалася — годівниця теж переходить, а миска з іншим кормом її корму не бере", () => {
+    const { save, bowl, feeder, spare } = withSpareBowl();
+    Object.assign(spare, { food: 1, foodQuality: "premium" });
+    bowl.quality = "cheap";
+    wearOut(save.current, bowl, always());
+    tickHousehold(save.current, 3 * 60, 1);
+    expect(feeder.slot).toBe(spare.slot);
+    expect(spare.food).toBe(1);
+    expect(feeder.food).toBe(6);
+  });
+
+  it("збереження, де годівниця вже стоїть без миски поруч із миской без годівниці, виправляється саме", () => {
+    const { save, bowl, feeder, spare } = withSpareBowl();
+    save.current.home.items = save.current.home.items.filter((i) => i !== bowl);
+    tickHousehold(save.current, 3 * 60, 1);
+    expect(feeder.slot).toBe(spare.slot);
+  });
+
+  it("миски без годівниці немає — годівниця лишається на своєму місці й чекає нову", () => {
+    const { save, feeder, spare } = withSpareBowl();
+    const other: Feeder = { slot: spare.slot, quality: "cheap", food: 0, foodQuality: null, sterile: false };
+    save.current.home.feeders = [feeder, other];
+    const slot = feeder.slot;
+    discard(save.current, spare.id);
+    expect([feeder.slot, other.slot]).toEqual([slot, spare.slot]);
   });
 
   it("старе збереження: одна годівниця на дім стає порожньою годівницею над першою миской", () => {

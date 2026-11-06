@@ -289,9 +289,7 @@ function packagesOf(state: GameState, thing: ThingKind): number {
  * 2026-10-29: раніше рахувалися лише миски, що вже стоять, тож миску й годівницю доводилося замовляти двома замовленнями.
  */
 export function feederRoom(state: GameState, cartBowls = 0): number {
-  const home = state.home;
-  const waiting = (home.feeders ?? []).filter((f) => !home.items.some((i) => i.kind === "bowl" && i.slot === f.slot)).length;
-  const newBowls = Math.max(0, packagesOf(state, "bowl") + cartBowls - waiting);
+  const newBowls = Math.max(0, packagesOf(state, "bowl") + cartBowls - waitingFeeders(state).length);
   return Math.max(0, bowlsWithoutFeeder(state).length + newBowls - packagesOf(state, "feeder"));
 }
 
@@ -311,6 +309,24 @@ export function feederAt(state: GameState, slot: string): Feeder | null {
 /** Миски, над якими ще немає автогодівниці (§9.12). */
 function bowlsWithoutFeeder(state: GameState): BowlItem[] {
   return state.home.items.filter((i): i is BowlItem => i.kind === "bowl" && feederAt(state, i.slot) === null);
+}
+
+/** Автогодівниці над порожнім місцем, під якими немає миски (§9.12). */
+function waitingFeeders(state: GameState): Feeder[] {
+  const home = state.home;
+  return (home.feeders ?? []).filter((f) => !home.items.some((i) => i.kind === "bowl" && i.slot === f.slot));
+}
+
+/**
+ * Годівниця без миски переходить до миски без годівниці (§9.12). Це правило стану, а не реакція на викидання: миска зникає й
+ * ламанням, а збереження вже могло дійти сюди з розведеними годівницею й миской, тож його тримає `tickHousehold`.
+ */
+export function settleFeeders(state: GameState): void {
+  for (const feeder of waitingFeeders(state)) {
+    const bowl = bowlsWithoutFeeder(state)[0];
+    if (!bowl) return;
+    feeder.slot = bowl.slot;
+  }
 }
 
 /**
@@ -380,6 +396,8 @@ export function discard(state: GameState, itemId: number): boolean {
   const item = items[index];
   if (!item) return false;
   items.splice(index, 1);
+  // Одразу, а не з наступним тіком: телефон ще відкритий, і магазин не має показати місце для годівниці, яка вже переходить.
+  settleFeeders(state);
   emit(state, { type: "discarded", item });
   return true;
 }

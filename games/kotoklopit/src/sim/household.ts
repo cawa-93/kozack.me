@@ -5,7 +5,7 @@ import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, VACUUM, WATER_CAPACITY } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
-import { addSupply, takeSupplies, topQuality, useSupply } from "./economy";
+import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
@@ -470,6 +470,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
     }
   }
   const crossed = (minute: number): boolean => from % 1440 < minute && (from + minutes) % 1440 >= minute && minutes < 1440;
+  settleFeeders(state);
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
   if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
