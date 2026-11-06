@@ -498,6 +498,21 @@ export const WEIGHT = {
 } as const;
 /** «Теплолюбність» (§9.12): `tileStep`, `heatTile` — вага прохолодної плитки; `sillStep` — підвіконня над батареєю. */
 export const WARMTH = { sun: 2, coldStep: 0.5, coolStep: 0.5, tileStep: 1.5, heatTile: 2, blanketLevel: 2, feelEvery: 180, heatThirstStep: 0.25, observeEvery: 120, sillStep: 1 } as const;
+/**
+ * Сонячна пляма для сну (§8.9): точка підлоги, де з `from` до `to` (хвилини доби) кіт лежить у яскравій смузі сонця. Смуга
+ * мандрує, а рама кидає на неї тінь, тож точка не центр клітинки: такий ледь торкається смуги, і клубок лежав би поруч. Під
+ * передньою стіною спальні смугу закриває стіна, тож точки — далі від неї. Розійшлося з вікнами чи `SUN` — падає
+ * `tests/sunspot.test.ts`.
+ */
+export const SUN_SPOTS: readonly { from: number; to: number; x: number; y: number }[] = [
+  { from: 6 * 60 + 30, to: 7 * 60 + 8, x: 5.55, y: 3.6 },
+  { from: 7 * 60 + 10, to: 7 * 60 + 43, x: 5.2, y: 3.05 },
+  { from: 7 * 60 + 44, to: 8 * 60 + 34, x: 5.15, y: 3.2 },
+  { from: 8 * 60 + 36, to: 9 * 60, x: 4.9, y: 2.6 },
+  { from: 18 * 60 + 15, to: 18 * 60 + 47, x: 2.8, y: 8.85 },
+  { from: 18 * 60 + 48, to: 19 * 60 + 18, x: 3.45, y: 9.05 },
+  { from: 19 * 60 + 20, to: 19 * 60 + 45, x: 4.35, y: 9.4 },
+];
 /** Мстивість (§9.12): `perHour` — шанс за одиницю; `refundStep` — додаток до `TREATS.refund`. */
 export const REVENGE = { minutes: 240, perHour: 0.1, refundStep: 0.25 } as const;
 /** «Образливість» (§9.12). `againMinutes` — інакше думка вискакувала б щокадру. */

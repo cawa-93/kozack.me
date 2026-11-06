@@ -1,0 +1,37 @@
+{
+ "name": "Гніздо в будиночку",
+ "description": "Понеділок другого тижня, 11:00. Кошенята народилися цієї ночі й лежать у будиночках (§9.8): четверо в картонному, мати вийшла й сидить поруч; троє в повстяному разом із матір'ю. Кошенят видно у вході, будиночки не здаються порожніми. Кнопка перестановки біля будиночка — відмова; кошеня можна взяти на руки.",
+ "game": { "address": "she", "difficulty": "normal", "seed": 31 },
+ "cats": [
+  { "id": 801, "source": "shelter", "ageWeeks": 12, "name": "Мурка", "sex": "female", "arrivedDay": -10, "litters": 1, "restUntil": 21, "x": 7.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:902", "goal": null, "minutes": 300, "elapsed": 0 } },
+  { "id": 802, "source": "shelter", "ageWeeks": 12, "name": "Ряба", "sex": "female", "arrivedDay": -10, "litters": 1, "restUntil": 21, "x": 5.5, "y": 7.5,
+    "act": { "kind": "sleep", "target": null, "goal": null, "minutes": 300, "elapsed": 0 } },
+  { "id": 811, "source": "born", "ageWeeks": 0, "name": "Перше", "sex": "female", "arrivedDay": 7, "parents": { "mother": 802, "father": null }, "nest": 901, "x": 4.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:901", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 812, "source": "born", "ageWeeks": 0, "name": "Друге", "sex": "male", "arrivedDay": 7, "parents": { "mother": 802, "father": null }, "nest": 901, "x": 4.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:901", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 813, "source": "born", "ageWeeks": 0, "name": "Третє", "sex": "female", "arrivedDay": 7, "parents": { "mother": 802, "father": null }, "nest": 901, "x": 4.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:901", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 814, "source": "born", "ageWeeks": 0, "name": "Четверте", "sex": "male", "arrivedDay": 7, "parents": { "mother": 802, "father": null }, "nest": 901, "x": 4.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:901", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 821, "source": "born", "ageWeeks": 0, "name": "П'яте", "sex": "female", "arrivedDay": 7, "parents": { "mother": 801, "father": null }, "nest": 902, "x": 7.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:902", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 822, "source": "born", "ageWeeks": 0, "name": "Шосте", "sex": "male", "arrivedDay": 7, "parents": { "mother": 801, "father": null }, "nest": 902, "x": 7.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:902", "goal": null, "minutes": 600, "elapsed": 0 } },
+  { "id": 823, "source": "born", "ageWeeks": 0, "name": "Сьоме", "sex": "female", "arrivedDay": 7, "parents": { "mother": 801, "father": null }, "nest": 902, "x": 7.5, "y": 8.5,
+    "act": { "kind": "sleep", "target": "item:902", "goal": null, "minutes": 600, "elapsed": 0 } }
+ ],
+ "state": {
+  "day": 7,
+  "minute": 660,
+  "modifiers": { "day": null },
+  "character": { "body": { "x": 6.5, "y": 7.5, "facing": { "x": 0.7071, "y": 0.7071 } } },
+  "home": {
+   "items": [
+    { "id": 901, "kind": "house", "quality": "cheap", "slot": "floor-4-8" },
+    { "id": 902, "kind": "house", "quality": "premium", "slot": "floor-7-8" }
+   ]
+  }
+ }
+}

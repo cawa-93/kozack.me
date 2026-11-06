@@ -1,15 +1,16 @@
 // Розмноження (§9.8): тічка, мітки, вагітність, пологи й новонароджені; спадковість (§9.10, §9.11).
 
-import { changeMood, createCat, pastCatNames, takenCatNames } from "./cat";
+import { changeMood, createCat, idleAct, pastCatNames, takenCatNames } from "./cat";
 import { visibleFloorNear } from "./catmove";
 import { BREEDING, MODIFIERS, STERILIZATION } from "./config";
 import { emit } from "./events";
 import { breedById, knownBreedHalves, MIXED } from "./breeds";
 import { applyPureBreedLook, fitBreedForms, inheritBreed, inheritGenes, inheritShape } from "./genetics";
+import { itemPoint } from "./home";
 import { pickCatName } from "./names";
 import { isEnemy, isFriend } from "./relations";
 import type { Rng } from "./rng";
-import type { Cat, GameState } from "./types";
+import type { Cat, CatAct, GameState, HouseItem } from "./types";
 
 /** Дорослий для розмноження: від 2 тижнів, нестерилізований (§9.8). */
 const fertile = (cat: Cat): boolean => !cat.sterilized && cat.ageWeeks >= BREEDING.minAge;
@@ -38,8 +39,62 @@ export function escapeBonus(state: GameState, cat: Cat): number {
 /** Нестерилізований кіт частіше б'ється (§9.8). */
 export const fightFactor = (cat: Cat): number => (fertile(cat) && cat.sex === "male" ? BREEDING.fightFactor : 1);
 
-/** Новонароджений (вік 0) лежить біля матері (§9.8). */
+/** Новонароджений (вік 0) лежить у гнізді чи біля матері (§9.8). */
 export const isNewborn = (cat: Cat): boolean => cat.source === "born" && cat.ageWeeks === 0;
+
+/** Гніздо новонародженого (§9.8); будиночок викинули, він зламався чи в руках персонажа — null. */
+export function nestOf(state: GameState, kitten: Cat): HouseItem | null {
+  if (kitten.nest === undefined || !isNewborn(kitten)) return null;
+  const item = state.home.items.find((i) => i.id === kitten.nest);
+  return item?.kind === "house" ? item : null;
+}
+
+/** Гніздо матері: будиночок її новонароджених (§9.8). */
+export function motherNest(state: GameState, mother: Cat): HouseItem | null {
+  for (const kitten of state.cats) {
+    const nest = kitten.parents.mother === mother.id ? nestOf(state, kitten) : null;
+    if (nest) return nest;
+  }
+  return null;
+}
+
+/** Будиночок — гніздо: інші коти туди не заходять (§9.8). */
+export const isNest = (state: GameState, house: HouseItem): boolean => state.cats.some((kitten) => isNewborn(kitten) && kitten.nest === house.id);
+
+/** Ціль дії кота в будиночку. */
+export const nestTarget = (house: HouseItem): string => `item:${house.id}`;
+
+/** Новонароджений спить — у гнізді (`target`) чи на підлозі (null). */
+export const newbornSleep = (target: string | null): CatAct => ({ kind: "sleep", target, goal: null, minutes: 600, elapsed: 0 });
+
+/** Кіт дійшов до будиночка й спить чи ховається всередині (§8.7). */
+const insideHouse = (cat: Cat, house: HouseItem): boolean =>
+  cat.away === null && cat.act.goal === null && (cat.act.kind === "sleep" || cat.act.kind === "hide") && cat.act.target === nestTarget(house);
+
+/**
+ * Будиночок для пологів (§9.8): вільний — спершу дорогий, серед однакових найближчий до матері; немає — null. `born` — кошенята
+ * цієї ночі: у `state.cats` їх ще немає, і друга мати обрала б те саме гніздо.
+ */
+function pickNest(state: GameState, mother: Cat, born: readonly Cat[]): HouseItem | null {
+  const from = (house: HouseItem): number => Math.hypot(itemPoint(house).x - mother.x, itemPoint(house).y - mother.y);
+  const free = state.home.items.filter(
+    (item): item is HouseItem =>
+      item.kind === "house" && !isNest(state, item) && !born.some((kitten) => kitten.nest === item.id) && !state.cats.some((cat) => cat !== mother && insideHouse(cat, item)),
+  );
+  return free.sort((a, b) => Number(b.quality === "premium") - Number(a.quality === "premium") || from(a) - from(b))[0] ?? null;
+}
+
+/** Мати, якщо вона вдома, лягає в гніздо, а хто йшов туди, шукає інше (§9.8, §8.7). */
+function settleNest(state: GameState, mother: Cat, nest: HouseItem): void {
+  const target = nestTarget(nest);
+  for (const cat of state.cats) if (cat !== mother && cat.act.target === target) cat.act = idleAct();
+  const held = state.character.held;
+  if (mother.away !== null || (held?.kind === "cat" && held.cat === mother.id)) return;
+  const at = itemPoint(nest);
+  mother.x = at.x;
+  mother.y = at.y;
+  mother.act = newbornSleep(target);
+}
 
 /**
  * Ніч: відновлення після операції й розклад тічки. `week` — модифікатор тижня дня, у який входимо: у ніч на понеділок — уже
@@ -123,6 +178,7 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
     const father = state.cats.find((c) => c.id === pregnancy.father) ?? state.album.find((e) => e.id === pregnancy.father) ?? mother;
     const size = litterSize(rng, mother.litters === 0);
     const before = born.length;
+    const nest = pickNest(state, mother, born);
     for (let i = 0; i < size; i++) {
       const sex = rng.chance(0.5) ? "female" : "male";
       const kitten = createCat(state, rng, {
@@ -132,8 +188,9 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
         // Ім'я — тут, а не в createCat: там його кидок ішов би після кидка «at» і зсунув би порядок випадковості. Зайняті — і коти
         // тижневих списків притулку та розплідника, і брати-сестри; альбом — уникати (загальна ревізія 2026-10-29).
         name: pickCatName(rng, sex, takenCatNames(state).concat(born.map((c) => c.name)), pastCatNames(state)),
-        // Гніздо — на підлозі біля матері (перевірка розмноження 2026-10-28: кошенята з'являлися там, де вона була, — і нагорі).
+        // Без гнізда — на підлозі біля матері: там, де була вона, кошенята опинялися й нагорі.
         at: (() => {
+          if (nest) return itemPoint(nest);
           const base = visibleFloorNear(state, { x: mother.x, y: mother.y + 0.2 });
           return visibleFloorNear(state, { x: base.x + (rng.next() - 0.5) * 0.6, y: base.y });
         })(),
@@ -152,9 +209,11 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
       kitten.breedKnown = knownBreedHalves(state, kitten.breed, rng);
       kitten.parents = { mother: mother.id, father: pregnancy.father };
       kitten.arrivedDay = state.day + 1;
-      kitten.act = { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0 };
+      kitten.act = newbornSleep(nest ? nestTarget(nest) : null);
+      if (nest) kitten.nest = nest.id;
       born.push(kitten);
     }
+    if (nest) settleNest(state, mother, nest);
     mother.pregnancy = null;
     mother.litters += 1;
     mother.restUntil = state.day + 1 + BREEDING.restDays;
@@ -163,7 +222,14 @@ export function giveBirth(state: GameState, rng: Rng): Cat[] {
   return born;
 }
 
-/** Мати новонародженого: біля неї кошеня лежить у гнізді. */
+/** Постаршав (§9.1): кошеня прокидається й виходить із гнізда саме (§9.8). */
+export function leaveNest(cat: Cat): void {
+  if (cat.nest === undefined) return;
+  delete cat.nest;
+  cat.act = idleAct();
+}
+
+/** Мати новонародженого: без гнізда кошеня лежить біля неї. */
 export function motherOf(state: GameState, kitten: Cat): Cat | null {
   return state.cats.find((c) => c.id === kitten.parents.mother) ?? null;
 }

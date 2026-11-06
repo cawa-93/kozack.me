@@ -95,6 +95,7 @@ import {
   STEAL_HUNGER,
   STERILIZATION,
   STRESS_EFFECTS,
+  SUN_SPOTS,
   SURPRISE_CHANCE,
   TALKATIVE,
   TERRITORY,
@@ -124,7 +125,7 @@ import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus 
 import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
-import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
+import { breedingHunger, fightFactor, inHeat, isNest, isNewborn, motherNest, motherOf, nestOf, nestTarget, newbornSleep } from "./reproduction";
 import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
@@ -678,13 +679,11 @@ function urgent(state: GameState, cat: Cat): boolean {
   return n.toilet >= NEED_THRESHOLD.toilet || n.hunger >= hungerThreshold(cat) || n.thirst >= NEED_THRESHOLD.thirst || n.fatigue >= sleepThreshold(cat, state.minute);
 }
 
-/** Сонячна пляма у вітальні мандрує за годиною (§9.3). */
+/** Точка сонячної плями цієї години (§8.9): там, де вигляд малює смуги сонця; смуг немає — null. */
 export function sunSpot(minute: number): Vec | null {
-  const hour = hourOf(minute);
-  if (hour >= 8 && hour < 11) return { x: 3, y: 9 };
-  if (hour >= 11 && hour < 15) return { x: 8, y: 9 };
-  if (hour >= 15 && hour < 18) return { x: 16, y: 8 };
-  return null;
+  const m = hourOf(minute) * MINUTES_PER_HOUR;
+  const spot = SUN_SPOTS.find((s) => m >= s.from && m < s.to);
+  return spot ? { x: spot.x, y: spot.y } : null;
 }
 
 function weightedPick<T>(rng: Rng, options: readonly { weight: number; value: T }[]): T | null {
@@ -705,7 +704,15 @@ interface Spot {
 }
 
 const houseSpots = (state: GameState): { weight: number; value: Spot }[] =>
-  itemsOf(state, "house").map((h) => ({ weight: HOUSE_SLEEP[h.quality], value: { at: itemTile(h), target: `item:${h.id}` } }));
+  itemsOf(state, "house")
+    .filter((h) => !isNest(state, h))
+    .map((h) => ({ weight: HOUSE_SLEEP[h.quality], value: { at: itemTile(h), target: `item:${h.id}` } }));
+
+/** Мати спить і ховається лише в гнізді (§9.8). */
+function nestSpot(state: GameState, cat: Cat): Spot | null {
+  const nest = motherNest(state, cat);
+  return nest ? { at: itemTile(nest), target: nestTarget(nest) } : null;
+}
 
 /**
  * До цього сплячого кота можна лягти купкою (§9.4): він спить на підлозі, ліжку чи дивані — не в будиночку, переносці,
@@ -754,6 +761,8 @@ function nearestCat(state: GameState, cat: Cat, fits: (other: Cat) => boolean): 
 
 /** Місця для сну з вагою (§9.3, §9.12): ліжко, диван, сонячна пляма, комп'ютер, будиночки, будь-де на підлозі. */
 function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
+  const nest = nestSpot(state, cat);
+  if (nest) return nest;
   const bed = objectById("bed");
   const sofa = objectById("sofa");
   const at = (p: Vec): Spot => ({ at: p, target: null });
@@ -785,7 +794,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(sun) });
+  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(tileOf(sun)) });
   // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
   // Плитка одна: поки на ній спить кіт чи вже йде туди спати, інший її не обирає (перевірка етапу 2026-10-26: у спеку коти лягали
   // в ту саму точку, один в одного).
@@ -845,6 +854,8 @@ function loungerSpots(state: GameState, cat: Cat, climb: number): { weight: numb
 
 /** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
 export function hideSpot(state: GameState, rng: Rng, cat?: Cat): Spot {
+  const nest = cat ? nestSpot(state, cat) : null;
+  if (nest) return nest;
   if (cat && traitLevel(cat, "climbing") > 0 && !cannotJump(cat)) {
     const high = objectById(HIGH_PLACES[rng.int(0, HIGH_PLACES.length - 1)] ?? "fridge");
     return { at: { x: high.x, y: high.y }, target: null };
@@ -3355,24 +3366,36 @@ function sleptWarm(state: GameState, cat: Cat): void {
   const o = objectAt(state, Math.floor(cat.x), Math.floor(cat.y));
   if (level > 0 && o?.kind === "bed" && (isCold(state) || level >= WARMTH.blanketLevel)) cat.act.blanket = true;
   const sun = sunSpot(state.minute);
-  const sunny = sun !== null && Math.floor(cat.x) === sun.x && Math.floor(cat.y) === sun.y;
+  const sunny = sun !== null && Math.floor(cat.x) === Math.floor(sun.x) && Math.floor(cat.y) === Math.floor(sun.y);
+  // Шлях веде лише до середини клітинки, а смуга вузька: дійшовши, кіт лягає на саму пляму (§8.9).
+  if (sunny && cat.act.target === null) {
+    cat.x = sun.x;
+    cat.y = sun.y;
+  }
   if (cat.act.blanket === true || o?.kind === "computer" || sunny) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
 }
 
-/** Новонароджений лежить у гнізді біля матері й нічого не потребує сам (§9.8). */
+/** Новонароджений лежить у гнізді чи біля матері й нічого не потребує сам (§9.8). */
 function nurse(state: GameState, kitten: Cat): void {
   kitten.needs = { hunger: 0, thirst: 0, toilet: 0, fatigue: 0, attention: 0, play: 0 };
+  const nest = nestOf(state, kitten);
+  const target = nest ? nestTarget(nest) : null;
+  if (nest && kitten.act.target === target) return;
   const mother = motherOf(state, kitten);
   if (mother && mother.away === null && !isCarried(state, mother) && asleep(mother)) {
-    // Лягають біля неї на підлозі: мати, що спить на холодильнику, шафі чи комп'ютері, лишала там кошенят, і їх не було як
-    // зняти (перевірка розмноження 2026-10-28).
-    // Спершу підлога біля матері, потім зсув кошеняти в межах тієї клітинки (повторна перевірка розмноження й побуту 2026-10-28: усі стояли в одній точці).
+    // Без гнізда лягають біля неї на підлозі: мати, що спить на холодильнику, шафі чи комп'ютері, лишала там кошенят, і їх не
+    // було як зняти. Спершу підлога біля матері, потім зсув кошеняти в межах тієї клітинки: усі стояли в одній точці.
     const base = visibleFloorNear(state, { x: mother.x, y: mother.y + 0.15 });
-    const spot = visibleFloorNear(state, { x: base.x + ((kitten.id % 3) - 1) * 0.25, y: base.y });
+    const spot = nest ? itemPoint(nest) : visibleFloorNear(state, { x: base.x + ((kitten.id % 3) - 1) * 0.25, y: base.y });
     kitten.x = spot.x;
     kitten.y = spot.y;
+    if (nest) {
+      kitten.act = newbornSleep(target);
+      return;
+    }
   }
-  if (kitten.act.kind !== "sleep") start(kitten, "sleep", null, 600);
+  // Ціль буває від будиночка, якого вже немає: кошеня тепер на підлозі.
+  if (kitten.act.kind !== "sleep" || kitten.act.target !== null) kitten.act = newbornSleep(null);
 }
 
 /** Хвилини життя всіх котів удома (§9.3). */
