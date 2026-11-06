@@ -60,8 +60,8 @@ function baseFace(state: GameState, cat: Cat, time: number, pose: CatAnimId): Ca
   if (isHissing(state, cat)) return face("round", "hiss", "back");
   // Спина дугою й клубок бійки (§9.4): очі широко розплющені, вуха притиснуті вбік і назад.
   if (pose === "arch" || pose === "brawl") return face("round", "closed", "back");
-  // З-під меблів видно лише очі (§9.12): насторожені.
-  if (hidesUnder(state, cat, pose)) return face("open", "closed", "flat");
+  // Вуха вгору: з-під меблів кота впізнають за ними (§9.12).
+  if (hidesUnder(state, cat, pose)) return face("open");
   // Під рукою, на руках, у ванні, біля вікна, коли вилизує друг (§9.12, §9.4 В1): мружиться, терпить, пручається.
   const feeling = catFeeling(state, cat) ?? (isLicked(cat) ? "content" : null);
   // З вудкою кіт азартний: очі круглі (хоч і задоволений).

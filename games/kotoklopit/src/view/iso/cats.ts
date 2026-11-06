@@ -79,6 +79,9 @@ const SPOT_DEPTHS: CatSpotDepths = { grate: CARRIER_GRATE_DEPTH };
 const LIFT_BLEND = { up: PERSON_ONE_SHOT_MS.pickUp - PERSON_PICKUP_GRAB_MS, down: PERSON_PUTDOWN_RELEASE_MS, root: 150 } as const;
 
 /** Де кіт лежить на речі, і котів там розсуває юрба на речах (`perchCrowds`, `perchPlace`): меблі, будиночок, схованка. */
+/** Ракурси голови, що визирає з-під меблів: сталі, щоб не створювати об'єкт щокадру. */
+const PEEK_FACING = { right: { view: "front", flip: false }, left: { view: "front", flip: true } } as const;
+
 const PERCHED: ReadonlySet<CatSpotKind> = new Set<CatSpotKind>(["furniture", "house", "under"]);
 
 /** Підписи над котами (імена в нашийниках, приховані числа), що налягли б один на одного, — один над одним із таким проміжком, px. */
@@ -194,7 +197,6 @@ export class IsoCatsView implements CatsPart {
     pregnant: false,
     girth: 1,
     show: "rig",
-    under: false,
     doorTail: false,
     shadow: false,
     teeth: null,
@@ -500,22 +502,23 @@ export class IsoCatsView implements CatsPart {
     const held = state.character.held?.kind === "cat" && state.character.held.cat === cat.id;
     // Доганяє нове місце — біжить (травмований кульгає), якщо й так не йде.
     const body = catching && anim !== "run" && !WALK_GAITS.has(anim) ? (hasDisease(cat, "injury") ? "limp" : "run") : anim;
-    f.anim = lifting ? (held && lifting.w > 0 ? "carried" : sitting) : body;
+    // З-під меблів — лише голова (`peek`), і завжди обличчям до камери: зі спини голови не впізнати.
+    const peeking = spot.kind === "under";
+    f.anim = lifting ? (held && lifting.w > 0 ? "carried" : sitting) : peeking ? "peek" : body;
     f.blendMs = lifting ? (held ? LIFT_BLEND.up : LIFT_BLEND.down) : null;
-    f.overlay = overlay;
+    f.overlay = peeking ? null : overlay;
     f.restart = restart;
     // Клубок бійки: обидва грають ту саму анімацію дзеркально — другий (з більшим номером) зі зсунутою фазою (N2).
     f.phase = anim === "brawl" && pair?.kind === "brawl" && cat.id > pair.with ? CAT_BRAWL_PHASE_MS : 0;
     f.face = face;
-    f.facing = facing;
+    f.facing = peeking ? (facing.flip ? PEEK_FACING.left : PEEK_FACING.right) : facing;
     // Хода й біг — у такт тому, як кіт іде на екрані (точка підлоги під ним), з довжиною його лап: лапи не ковзають.
     mem.gait = nextGait(mem.gait, f.ground.x, f.ground.y, seconds);
     f.speed = gaitRate(f.anim, mem.gait.speed, size.kitten, cat.shape.legs === "short", f.scale);
     f.kitten = size.kitten;
-    f.pregnant = showsPregnancy(state, cat);
+    f.pregnant = showsPregnancy(state, cat) && !peeking;
     f.girth = girthOf(cat);
     f.show = spot.show;
-    f.under = spot.kind === "under";
     // Спить у будиночку: з темного входу видно ще й кінчик хвоста — самі заплющені очі там не видно.
     f.doorTail = spot.doorTail && act.kind === "sleep";
     // У клубку бійки тінь — сама хмара пилу під котами: тінь ближчого лягла б на хмару.

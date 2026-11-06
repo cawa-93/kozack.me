@@ -215,8 +215,8 @@ export function catPose(state: GameState, cat: Cat): CatAnimId {
 
 /**
  * Кіт ховається під меблями чи в будиночку (§9.6, §9.12): поза — буханець (`catPose`), але його не видно — вигляд показує
- * лише очі з-під краю (`iso/catspot.ts`, `iso/catview.ts`), обличчя насторожене (`catface.ts`), разових анімацій тіла немає
- * (`catevents.ts`). Нагорі (холодильник, шафа — «Лазіння») — лежить буханцем на виду.
+ * з-під меблів голову (`peek`), у будиночку очі (`iso/catspot.ts`), разових анімацій тіла немає (`catevents.ts`). Нагорі
+ * (холодильник, шафа — «Лазіння») — лежить буханцем на виду.
  */
 export function hidesUnder(state: GameState, cat: Cat, pose: CatAnimId): boolean {
   if (pose !== "loaf" || cat.act.kind !== "hide" || cat.act.goal !== null) return false;

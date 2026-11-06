@@ -1,6 +1,6 @@
 // Один кіт ізометричного вигляду (крок 16, T1): скелет (`RigSprite` зі скелетом `ISO_CAT_RIG`) із запеченими частинами
-// його шерсті й форм породи, тінь під ним, річ у зубах, а коли кіт ховається (під меблями, у будиночку) — лише очі й кінчик
-// хвоста. Під ковдрою кота показує скелет: анімація `blanket` (N1) лишає видимими вушка й кінчик хвоста. Що грати, куди дивитися й де стояти, вирішує частина котів (`cats.ts`), тут —
+// його шерсті й форм породи, тінь під ним, річ у зубах, а в будиночку — лише очі й кінчик хвоста. Під ковдрою й під меблями
+// кота показує скелет: анімації `blanket` і `peek` лишають видимими лише вушка й кінчик хвоста чи голову. Що грати, куди дивитися й де стояти, вирішує частина котів (`cats.ts`), тут —
 // лише як це показати. Глибина — точка в реєстрі (`iso/depth.ts`).
 //
 // Видимий кіт щокадру нових об'єктів не створює: обвіс, пропорції, рецепт шерсті й анімація змінюються, лише коли змінилося
@@ -30,15 +30,8 @@ import { ISO_DEPTH_SLOT, type IsoPointHandle } from "./depth";
 export type IsoCatSprite = RigSprite<IsoCatBone, IsoCatSlot, IsoCatSocket>;
 type CatRigAnim = RigAnim<IsoCatBone, IsoCatSlot>;
 
-/**
- * Тінь під котом: на скільки ширша, коли під меблями видно лише очі, і скільки разів вона лежить одна на одній — темна
- * щілина під меблями. Тінь арту — `SHADE.base` (0,3, `STYLE.md` §3), дві поспіль — ≈ 0,51, тобто `SHADE.deep` (0,5): щілина
- * помітно темніша за тінь під лапами, як і в старому вигляді (там 0,55 проти 0,22).
- */
-const GAP_SHADOW = { scale: 1.1, layers: 2 } as const;
-
-/** Очі з-під меблів і з будиночка — на такій висоті над підлогою (одиниці арту), кінчик хвоста — збоку від очей. */
-const PEEK = { eyes: 7, tailSide: 20, tailUp: 2, tailWindow: 9 } as const;
+/** Кінчик хвоста з входу будиночка: половина вікна кадру хвоста. Бабл над котом у будиночку — на `eyesTop` над очима. */
+const PEEK = { tailWindow: 9, eyesTop: 22 } as const;
 /**
  * Кіт спить у будиночку (рецензія хвилі 3): заплющені очі — темна дужка в темному вході, і будиночок здавався порожнім. Тож з
  * входу ще й звисає на підлогу кінчик хвоста кольору шерсті: зсув від середини входу (точка `door` на висоті ≈ 26, грань +x) —
@@ -115,7 +108,6 @@ export interface CatFrame {
   girth: number;
   show: CatShow;
   /** Ховається під меблями: з-під краю визирають очі й кінчик хвоста, під ними — темна щілина (з будиночка — лише очі). */
-  under: boolean;
   /** Спить у будиночку: з входу на поріг звисає кінчик хвоста (`DOOR_TAIL`). */
   doorTail: boolean;
   shadow: boolean;
@@ -138,8 +130,6 @@ export class IsoCatView {
 
   private readonly shadow: Phaser.GameObjects.Image;
   private readonly shadowBase: Vec2;
-  /** Другий шар тіні — темна щілина під меблями (`GAP_SHADOW`); створюється, коли кіт уперше ховається. */
-  private gapShadow: Phaser.GameObjects.Image | null = null;
   /** Що в зубах (кадр атласу в гнізді `teeth`). */
   private teethImage: Phaser.GameObjects.Image | null = null;
   private teethKey = "";
@@ -221,22 +211,9 @@ export class IsoCatView {
     if (visible) this.sprite.update(this.clock);
     this.updateTeeth(f.teeth, visible);
 
-    // Тінь: на поверхні під лапами (у стрибку — не злітає з котом), ширша в повного; під меблями — темна щілина, з якої
-    // визирають очі.
-    const gap = f.under && !f.culled;
-    this.shadow.setVisible((f.shadow && visible) || gap);
-    if (this.shadow.visible) {
-      const k = f.scale * (gap ? GAP_SHADOW.scale : 1);
-      this.shadow.setPosition(f.ground.x, f.ground.y).setScale(this.shadowBase.x * k * f.girth, this.shadowBase.y * k);
-    }
-    if (gap && !this.gapShadow) {
-      this.gapShadow = addArt(this.scene, this.layer, "fx/shadow/cat");
-      this.gapShadow.setDepth(this.pieceDepth(CAT_PIECE.shadow));
-    }
-    if (this.gapShadow) {
-      this.gapShadow.setVisible(gap && GAP_SHADOW.layers > 1);
-      if (this.gapShadow.visible) this.gapShadow.setPosition(this.shadow.x, this.shadow.y).setScale(this.shadow.scaleX, this.shadow.scaleY);
-    }
+    // Тінь: на поверхні під лапами (у стрибку — не злітає з котом), ширша в повного.
+    this.shadow.setVisible(f.shadow && visible);
+    if (this.shadow.visible) this.shadow.setPosition(f.ground.x, f.ground.y).setScale(this.shadowBase.x * f.scale * f.girth, this.shadowBase.y * f.scale);
     this.drawPeek(f);
     this.updatePoints(f, visible);
     this.lastShow = f.show;
@@ -246,7 +223,6 @@ export class IsoCatView {
   hide(): void {
     this.sprite.setVisible(false);
     this.shadow.setVisible(false);
-    this.gapShadow?.setVisible(false);
     this.teethImage?.setVisible(false);
     this.peekEyes?.setVisible(false);
     this.peekTail?.setVisible(false);
@@ -268,7 +244,6 @@ export class IsoCatView {
     this.point.remove();
     this.sprite.destroy();
     this.shadow.destroy();
-    this.gapShadow?.destroy();
     this.teethImage?.destroy();
     this.peekEyes?.destroy();
     this.peekTail?.destroy();
@@ -284,7 +259,6 @@ export class IsoCatView {
   private applyDepth(depth: number): void {
     this.depth = depth;
     this.shadow.setDepth(depth + CAT_PIECE.shadow);
-    this.gapShadow?.setDepth(depth + CAT_PIECE.shadow);
     this.sprite.setDepth(depth + CAT_PIECE.body);
     this.peekEyes?.setDepth(depth + CAT_PIECE.peek);
     this.peekTail?.setDepth(depth + CAT_PIECE.peek);
@@ -378,8 +352,8 @@ export class IsoCatView {
   }
 
   /**
-   * Що визирає (`CatShow`): з-під меблів і з будиночка — очі (стан — з обличчя) і, з-під меблів, кінчик хвоста. Частини
-   * запечені тим самим рецептом, що й кіт.
+   * Що видно з будиночка (`CatShow`): очі (стан — з обличчя), у сплячого ще й кінчик хвоста на порозі. Частини запечені тим
+   * самим рецептом, що й кіт.
    */
   private drawPeek(f: CatFrame): void {
     const eyes = f.show === "eyes" && !f.culled;
@@ -394,14 +368,13 @@ export class IsoCatView {
       } else {
         setBakedArt(this.peekEyes, "cat/eyes", this.recipe, { state, view, owner });
       }
-      this.peekEyes.setVisible(true).setPosition(f.root.x, f.root.y - PEEK.eyes * s);
+      this.peekEyes.setVisible(true).setPosition(f.root.x, f.root.y);
       this.peekEyes.setScale(this.baseScale(this.peekEyes) * s, this.baseScale(this.peekEyes, "y") * s);
     } else {
       this.peekEyes?.setVisible(false);
     }
-    // Кінчик хвоста з-під меблів — збоку від очей; зі сплячого в будиночку — на порозі входу.
     const tailArt = this.sprite.rig.skin.tail;
-    const tail = eyes && (f.under || f.doorTail) && this.cat.shape.tail !== "none";
+    const tail = eyes && f.doorTail && this.cat.shape.tail !== "none";
     if (tail && tailArt) {
       if (!this.peekTail) {
         this.peekTail = addBakedArt(this.scene, this.layer, tailArt, this.recipe, { view, owner });
@@ -409,11 +382,8 @@ export class IsoCatView {
       } else {
         setBakedArt(this.peekTail, tailArt, this.recipe, { view, owner });
       }
-      const side = f.facing.flip ? 1 : -1;
-      const x = f.doorTail ? f.root.x + DOOR_TAIL.x * s : f.root.x + side * PEEK.tailSide * s;
-      const y = f.doorTail ? f.root.y + DOOR_TAIL.y * s : f.root.y - PEEK.tailUp * s;
       this.cropTailTip(this.peekTail, tailArt);
-      this.peekTail.setVisible(true).setPosition(x, y);
+      this.peekTail.setVisible(true).setPosition(f.root.x + DOOR_TAIL.x * s, f.root.y + DOOR_TAIL.y * s);
       const base = this.baseScale(this.peekTail);
       this.peekTail.setScale(base * s * (f.facing.flip ? -1 : 1), this.baseScale(this.peekTail, "y") * s);
     } else {
@@ -465,9 +435,9 @@ export class IsoCatView {
     }
     this.head.x = f.root.x;
     // Скелет не рахували (кіт за краєм камери) — над ним, як над дорослим котом заввишки ≈ 56.
-    this.head.y = f.root.y - (f.show === "rig" ? CULLED_HEAD : PEEK.eyes + 22) * f.scale;
+    this.head.y = f.root.y - (f.show === "rig" ? CULLED_HEAD : PEEK.eyesTop) * f.scale;
     this.back.x = f.root.x;
-    this.back.y = f.root.y - PEEK.eyes * f.scale;
+    this.back.y = f.root.y;
     this.mouth.x = this.back.x;
     this.mouth.y = this.back.y;
   }

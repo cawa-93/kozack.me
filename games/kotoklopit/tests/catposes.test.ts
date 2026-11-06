@@ -19,6 +19,7 @@ import type { Cat, CatAct, DiseaseId, Save, TraitLevel } from "../src/sim/types"
 import { catEventAnims, catMemory, catTransition } from "../src/view/anim/catevents";
 import { blinkEyes, catFace, CAT_EARS, CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
 import { CAT_ANIM_GROUPS, CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
+import { CAT_ANIMS, PERSON_ANIMS } from "../src/view/rig/anims";
 import { catAnim, catPose, hidesUnder } from "../src/view/pose";
 import { blinkAmount } from "../src/view/thoughts";
 import { recordEvents, withCatCorner } from "./helpers";
@@ -57,9 +58,10 @@ describe("назви анімацій кота (`anim/ids.ts`)", () => {
     for (const ms of Object.values(CAT_ONE_SHOT_MS)) expect(ms).toBeGreaterThan(0);
   });
 
-  it("анімації `hide` немає: схованого під меблями анімація не показує", () => {
-    // З-під краю визирають очі, їх малює вигляд (`hidesUnder`).
+  it("схованого під меблями показує `peek`: лише голова, тіла й хвоста не видно", () => {
     expect(CAT_ANIM_IDS).not.toContain("hide");
+    const hidden = Object.keys(CAT_ANIMS.peek.slots ?? {}).sort();
+    expect(hidden).toEqual(["body", "leg-back-far", "leg-back-near", "leg-front-far", "leg-front-near", "tail"]);
   });
 });
 

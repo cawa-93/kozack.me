@@ -934,6 +934,29 @@ const blanket: CatAnim = {
   },
 };
 
+/**
+ * Визирає з-під меблів (§9.12): лише голова, решту сховано, а верх чи низ обрізає край меблів, що малюється поверх неї. Без
+ * голови очі на телефоні читалися цятками на підлозі. Очі — на корені по горизонталі й на `PEEK_EYES` над ним (там вигляд
+ * ставить точку схованки, `hidePeek`), тож зсув таза рахується від очей у вихідній позі. Голова ледь хитається: рух на
+ * телефоні помітніший за нерухому морду.
+ */
+const PEEK_EYES = 7;
+const PEEK: Pose = { ...TUCKED, pelvis: { x: -21, y: 37.4 - PEEK_EYES }, head: { rot: 0 } };
+const PEEK_MS = 5000;
+const peek: CatAnim = {
+  duration: PEEK_MS,
+  loop: true,
+  bones: merge(still(PEEK), { head: rotAround(PEEK_MS, PEEK, "head", [0, 3]) }),
+  slots: {
+    tail: HIDDEN,
+    body: HIDDEN,
+    "leg-back-far": HIDDEN,
+    "leg-back-near": HIDDEN,
+    "leg-front-far": HIDDEN,
+    "leg-front-near": HIDDEN,
+  },
+};
+
 // --- Справи ------------------------------------------------------------------------------------------
 
 /**
@@ -1219,6 +1242,7 @@ export const CAT_BASIC = defineAnims(CAT_RIG, {
   jumpDown,
   carried,
   blanket,
+  peek,
   sprawl,
   carrier,
   belly,

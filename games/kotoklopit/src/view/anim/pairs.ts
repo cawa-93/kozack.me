@@ -441,7 +441,7 @@ function personRow(
  * будиночка й з-під меблів (пара очей ≈ 16 завширшки); `door` — пів ширини входу будиночка (0,32 клітинки) і `edge` — відступ
  * від кінців краю, з-під якого визирають очі.
  */
-export const PERCH = { step: 40, margin: 0.2, squeeze: 0.45, eyes: 18, door: 0.16, edge: 0.15 } as const;
+export const PERCH = { step: 40, margin: 0.2, squeeze: 0.45, eyes: 18, head: 34, door: 0.16, edge: 0.15 } as const;
 
 /** Де на речі можна розсунути котів: прямокутник у клітинках (слід речі, край схованки, вхід будиночка), відступ і крок. */
 export interface PerchArea {

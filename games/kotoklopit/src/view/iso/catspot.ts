@@ -1,5 +1,5 @@
 // Де кіт ізометричного вигляду (крок 16, T1): на підлозі, на меблях (на висоті їхнього верху), під меблями (з-під краю
-// визирають очі), у будиночку, у барабані пральки, на роботі-пилососі, у переносці, під ковдрою, у ящиках, на руках чи
+// визирає голова), у будиночку, у барабані пральки, на роботі-пилососі, у переносці, під ковдрою, у ящиках, на руках чи
 // колінах персонажа, у поїздці, за мискою. Чисті розрахунки без Phaser (`tests/isocats.test.ts`): яка точка підлоги, на
 // якій висоті, на якій коробці реєстру глибини чи над якою точкою, з яким зсувом на екрані й що з кота видно.
 //
@@ -31,8 +31,7 @@ import { shapedStage } from "./looks";
  * - `floor` — на підлозі (і за мискою, з якої їсть); `furniture` — на меблях, на висоті верху (`isoCatPerch`), у ящиках —
  *   у верхній коробці, нижче за борт, на столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею
  *   (`deskSeat`);
- * - `under` — ховається під меблями: з-під ближчого видного краю видно очі й кінчик хвоста (з-під дивана — з боку сидіння,
- *   `hidePeek`);
+ * - `under` — ховається під меблями: з-під ближчого видного краю визирає голова (з-під дивана — з боку сидіння, `hidePeek`);
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі (сплячого — ще й кінчик хвоста з входу);
  * - `litter` — присідає в лотку: на наповнювачі, над лотком у порядку малювання (`LITTER_SEAT`);
  * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): анімація `blanket` (N1) показує лише вушка над
@@ -45,8 +44,8 @@ import { shapedStage } from "./looks";
 export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "litter" | "blanket" | "carrier" | "drum" | "robot" | "lounger";
 
 /**
- * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста), лише очі (і кінчик
- * хвоста) з-під меблів чи з будиночка, нічого.
+ * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста, під меблями — голова),
+ * лише очі (і кінчик хвоста сплячого) з будиночка, нічого.
  */
 export type CatShow = "rig" | "eyes" | "none";
 
@@ -61,8 +60,7 @@ export interface CatSpot {
   /** Коробка реєстру глибини, на якій кіт (меблі, барабан, ліжко) чи під краєм якої (`under`); null — підлога. */
   box: string | null;
   /**
-   * Точка — за коробкою `box` (`placeUnder`), а не на ній: з-під дивана очі визирають з боку сидіння, і край сидіння ховає
-   * щілину й низ очей.
+   * Точка — за коробкою `box` (`placeUnder`), а не на ній: край сидіння дивана обрізає голову знизу, рама ліжка — згори.
    */
   behind: boolean;
   /** Точка реєстру, над якою кіт, і зсув у її проміжку (переноска, робот, будиночок); null — сам по собі. */
@@ -190,6 +188,9 @@ function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot
  */
 export const SOFA_HIDE = { y: 9.42, from: 13.62, to: 14.18 } as const;
 
+/** Голова під ліжком — на стільки одиниць арту нижче за край сліду: рама малюється поверх неї й без зсуву закривала б очі. */
+const BED_PEEK: Vec = { x: 0, y: 4 };
+
 /** Чи видно точку схованки `p` на краю сліду речі `id`: не в стіні (передні — y = 11 і x = 19) і не в іншій речі за краєм. */
 function peekOpen(state: GameState, id: string, p: Vec): boolean {
   const tx = Math.floor(p.x);
@@ -204,19 +205,19 @@ function peekOpen(state: GameState, id: string, p: Vec): boolean {
  * видно (`peekOpen`), інакше — з-під другого ближнього; під диваном жоден не видно — з боку сидіння (`SOFA_HIDE`, точка за
  * коробкою дивана). `behind` — точка за коробкою речі, а не на ній.
  */
-export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; behind: boolean } {
+export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; behind: boolean; offset: Vec } {
   const f = isoObjectLook(id).footprint;
   // Під диваном — завжди з боку сидіння, як затвердив автор. Шафи з пилососом біля торця вже немає (§8.7, рішення автора
   // 2026-11-02), і торець (16, 10) відкрився, але з торця кіт не визирає: там на старті (і часто потім) стоїть сам пилосос.
   if (id === "sofa") {
     const t = Math.min(1, Math.max(0, (cat.x - f.x0) / (f.x1 - f.x0)));
-    return { at: { x: SOFA_HIDE.from + (SOFA_HIDE.to - SOFA_HIDE.from) * t, y: SOFA_HIDE.y }, behind: true };
+    return { at: { x: SOFA_HIDE.from + (SOFA_HIDE.to - SOFA_HIDE.from) * t, y: SOFA_HIDE.y }, behind: true, offset: ZERO };
   }
   const near = isoCatPerch(id, cat, true).at;
-  if (peekOpen(state, id, near)) return { at: near, behind: false };
   const other = near.x === f.x1 ? { x: cat.x, y: f.y1 } : { x: f.x1, y: cat.y };
-  if (peekOpen(state, id, other)) return { at: other, behind: false };
-  return { at: near, behind: false };
+  const at = peekOpen(state, id, near) || !peekOpen(state, id, other) ? near : other;
+  const bed = id === "bed";
+  return { at, behind: bed, offset: bed ? BED_PEEK : ZERO };
 }
 
 /** Точка кадру речі (`name` запису `id`) — зсув від pivot; немає — нуль. */
@@ -488,7 +489,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     const hiding = hidesUnder(state, cat, anim) && !HIGH_PLACES.includes(object.id);
     if (hiding) {
       const peek = hidePeek(state, object.id, pair ? tile : cat);
-      return spot("under", peek.at, { box: object.id, behind: peek.behind, show: "eyes" });
+      return spot("under", peek.at, { box: object.id, behind: peek.behind, offset: peek.offset });
     }
     const perch = isoCatPerch(object.id, pair ? tile : cat, false, shapedStage(state, object.id));
     // На столі з комп'ютером — на клавіатурі той, хто заважає роботі, решта — поруч із нею (`deskSeat`); хто лежить
@@ -499,7 +500,6 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
     // вона лягла б на передню стінку.
     return spot("furniture", at, { lift: perch.lift, box: object.id, shadow: object.kind !== "boxes", faces: desk ? deskFaces(anim, at) : null });
   }
-  if (hidesUnder(state, cat, anim)) return spot("under", tile, { show: "eyes" });
   // Їсть чи п'є з миски — за нею (чи збоку, коли позаду автогодівниця), а не в ній.
   // Дійшов — лицем до миски (`faces`): збоку від неї (автогодівниця позаду, двоє біля однієї миски — `catCrowds`) дивиться
   // на неї, просто за нею — як каже `catFacing`.
@@ -614,11 +614,11 @@ export function perchPlace(spot: CatSpot): PerchPlace | null {
     return perchPlaceOf(spot.item, () => ({ x0: x, x1: x, y0: y - PERCH.door, y1: y + PERCH.door, margin: 0, step: PERCH.eyes }));
   }
   if (spot.kind !== "under" || !box) return null;
-  if (spot.behind) {
-    return perchPlaceOf(`under:${box}:seat`, () => ({ x0: SOFA_HIDE.from, x1: SOFA_HIDE.to, y0: SOFA_HIDE.y, y1: SOFA_HIDE.y, margin: 0, step: PERCH.eyes }));
+  if (box === "sofa") {
+    return perchPlaceOf(`under:${box}:seat`, () => ({ x0: SOFA_HIDE.from, x1: SOFA_HIDE.to, y0: SOFA_HIDE.y, y1: SOFA_HIDE.y, margin: 0, step: PERCH.head }));
   }
   const f = isoObjectLook(box).footprint;
-  if (spot.at.x === f.x1) return perchPlaceOf(`under:${box}:x`, () => ({ x0: f.x1, x1: f.x1, y0: f.y0, y1: f.y1, margin: PERCH.edge, step: PERCH.eyes }));
-  if (spot.at.y === f.y1) return perchPlaceOf(`under:${box}:y`, () => ({ x0: f.x0, x1: f.x1, y0: f.y1, y1: f.y1, margin: PERCH.edge, step: PERCH.eyes }));
+  if (spot.at.x === f.x1) return perchPlaceOf(`under:${box}:x`, () => ({ x0: f.x1, x1: f.x1, y0: f.y0, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
+  if (spot.at.y === f.y1) return perchPlaceOf(`under:${box}:y`, () => ({ x0: f.x0, x1: f.x1, y0: f.y1, y1: f.y1, margin: PERCH.edge, step: PERCH.head }));
   return null;
 }

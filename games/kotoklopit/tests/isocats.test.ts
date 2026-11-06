@@ -438,15 +438,15 @@ describe("де кіт (`catSpot`)", () => {
     expect(catSpot(save.current, cat, "loaf", null, SPOT)).toMatchObject({ kind: "furniture", lift: 150, box: "fridge" });
   });
 
-  it("під меблями — з-під ближчого краю видно очі й кінчик хвоста; у будиночку — очі у вході", () => {
+  it("під меблями — з-під ближчого краю визирає голова (скелет); у будиночку — очі у вході", () => {
     const save = game();
     const bed = objectById("bed");
     const cat = withCat(save, { x: bed.x + 0.5, y: bed.y + 1.2 });
     cat.act = act("hide", { target: "bed" });
-    // Схований — буханець (`catPose`), якого не видно (`hidesUnder`): з-під краю — лише очі.
+    // Схований — буханець (`catPose`), якого не видно (`hidesUnder`): з-під краю — голова, яку обрізає рама.
     expect(catPose(save.current, cat)).toBe("loaf");
     const under = catSpot(save.current, cat, "loaf", null, SPOT);
-    expect(under).toMatchObject({ kind: "under", show: "eyes", lift: 0, box: "bed" });
+    expect(under).toMatchObject({ kind: "under", show: "rig", lift: 0, box: "bed", behind: true });
     // Той самий буханець без схованки (утомився на ліжку) — на ліжку, на виду.
     cat.act = act("idle");
     expect(catSpot(save.current, cat, "loaf", null, SPOT)).toMatchObject({ kind: "furniture", box: "bed", show: "rig" });
@@ -608,8 +608,8 @@ describe("де кіт (`catSpot`)", () => {
     for (let i = 0; i < sofa.w; i++) {
       cat.x = sofa.x + i + 0.5;
       const spot = catSpot(save.current, cat, "loaf", null, SPOT);
-      // За коробкою дивана (край сидіння ховає щілину й низ очей), на лінії сидіння, у межах між ящиками й шафою.
-      expect(spot).toMatchObject({ kind: "under", show: "eyes", box: "sofa", behind: true, at: { y: SOFA_HIDE.y } });
+      // За коробкою дивана (край сидіння обрізає голову знизу), на лінії сидіння, у межах між ящиками й шафою.
+      expect(spot).toMatchObject({ kind: "under", show: "rig", box: "sofa", behind: true, at: { y: SOFA_HIDE.y } });
       expect(spot.at.x).toBeGreaterThanOrEqual(SOFA_HIDE.from);
       expect(spot.at.x).toBeLessThanOrEqual(SOFA_HIDE.to);
       // Хто правіше під диваном, той правіше й тут.
@@ -637,7 +637,7 @@ describe("де кіт (`catSpot`)", () => {
           expect(isWall(tx, ty)).toBe(false);
           const other = objectAt(save.current, tx, ty);
           expect(other === null || other.id === id).toBe(true);
-          if (id === "bed") expect(spot.behind).toBe(false);
+          expect(spot.behind).toBe(true);
         }
       }
     }
@@ -1325,7 +1325,7 @@ describe("коти на тій самій речі (`perchPlace`, `perchCrowds`)
     expect(spots.get(a.id)!.at.x).toBeCloseTo(spots.get(b.id)!.at.x, 9);
     expect(screenGap(spots.get(a.id)!.at, spots.get(b.id)!.at)).toBeCloseTo(PERCH.eyes, 6);
     for (const cat of [a, b]) expect(Math.abs(spots.get(cat.id)!.at.y - 9.5)).toBeLessThanOrEqual(PERCH.door + 1e-9);
-    // Ховаються під ліжком у тій самій клітинці: очі з-під того самого краю — поруч, на тому самому краї.
+    // Ховаються під ліжком у тій самій клітинці: голови з-під того самого краю — поруч, на тому самому краї.
     for (const cat of [a, b]) {
       cat.x = 1.5;
       cat.y = 2.5;
@@ -1337,7 +1337,7 @@ describe("коти на тій самій речі (`perchPlace`, `perchCrowds`)
     expect(ea.kind).toBe("under");
     expect(ea.key).toBe(eb.key);
     expect(ea.at.x).toBeCloseTo(eb.at.x, 9);
-    expect(screenGap(ea.at, eb.at)).toBeCloseTo(PERCH.eyes, 6);
+    expect(screenGap(ea.at, eb.at)).toBeCloseTo(PERCH.head, 6);
   });
 
   it("на столі з комп'ютером: на клавіатурі — лише той, хто заважає роботі; решта — поруч, рядком обабіч неї, не на ній", () => {
