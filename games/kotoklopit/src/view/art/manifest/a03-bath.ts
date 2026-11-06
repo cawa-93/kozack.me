@@ -32,9 +32,10 @@ export const MANIFEST: readonly ArtEntry[] = [
     points: { tray: SHOWER.at(0.5, 0.85, 6), shelf: SHOWER.at(0.195, 0.195, 140) },
     states: ["dry", "running", "wet", "running-cold"],
   },
-  // Силует персонажа в кабіні (§8.7), те саме полотно: `wash-1`…`wash-4` — кадри миття над краєм пари кадру `running`, `steam` — пара
-  // поверх них; `legs` — решта тіла, видна лише крізь чисте скло холодного душу (`running-cold`).
-  { id: "env/shower/figure", ...SHOWER.geometry, states: ["wash-1", "wash-2", "wash-3", "wash-4", "steam", "legs"] },
+  // Силует персонажа в кабіні (§8.7): `wash-1`…`wash-4` — кадри миття над краєм пари кадру `running`, `steam` — пара поверх них;
+  // `legs` — решта тіла, видна лише крізь чисте скло холодного душу (`running-cold`). Полотно — лише права стулка, а щільність
+  // мала: м'яка тінь деталей не має, а шість кадрів на все полотно кабіни не вмістилися б у бюджет атласу.
+  { id: "env/shower/figure", size: { w: 64, h: 176 }, pivot: { x: 4, y: 170 }, res: 1, states: ["wash-1", "wash-2", "wash-3", "wash-4", "steam", "legs"] },
   // Накладка душу «засоби гігієни» (§6.4): синя пляшечка гелю з дозатором на поличці — рівень видно крізь пластик; 0 —
   // порожня лежить на боці, 4 — повна, з дозатора лізе піна.
   { id: "env/shower/hygiene", ...SHOWER.geometry, states: FULL },
