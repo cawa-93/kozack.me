@@ -224,7 +224,7 @@ describe("вигляд світла доби", () => {
     expect(poolAlphaAt(pool, { x: 100, y: 50 + 20 * 0.65 })).toBeCloseTo(0.8 * 0.4, 9);
     expect(poolAlphaAt(pool, { x: 140, y: 50 })).toBe(0);
     const tone = TONE.outage;
-    const plan = { tone, pools: [pool], strips: [] };
+    const plan = { tone, pools: [pool], strips: [], stripsKey: "-" };
     expect(near(lightAt(plan, { x: 300, y: 50 }), tone, 1e-9)).toBe(true);
     // У ядрі — тон, ближчий до кольору плями на її `alpha` (`lighten`: світлішає лише те, що темніше за пляму).
     const center = lightAt(plan, { x: 100, y: 50 });
@@ -312,10 +312,23 @@ describe("вигляд світла доби", () => {
     const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
     const light = d(19 * 60 + 30);
     const plan = lightmapPlan(light, lightSources(s, light), PANES, 0);
-    expect(Object.keys(plan).sort()).toEqual(["pools", "strips", "tone"]);
+    expect(Object.keys(plan).sort()).toEqual(["pools", "strips", "stripsKey", "tone"]);
     // Смуги сонця в карті лише трохи світлішають те, що в них стоїть (видиму смугу на підлозі дає додавання під меблями).
     expect(SUN.lift).toBeLessThanOrEqual(0.4);
     for (const strip of plan.strips) expect(strip.alpha).toBeLessThanOrEqual(SUN.lift);
+  });
+
+  it("смуги на карті залежать лише від сонця: карта змінилася, а сонце те саме — смуг не перемальовують", () => {
+    const s = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
+    const lamps = d(20 * 60);
+    const candles = d(20 * 60, false);
+    const plan = (light: Daylight): ReturnType<typeof lightmapPlan> => lightmapPlan(light, lightSources(s, light), PANES, 0);
+    expect(plan(lamps).strips.length).toBeGreaterThan(0);
+    expect(lightmapKey(candles, lightSources(s, candles), 0)).not.toBe(lightmapKey(lamps, lightSources(s, lamps), 0));
+    expect(plan(candles).stripsKey).toBe(plan(lamps).stripsKey);
+    // Сонце пішло далі — смуги інші; сонця немає — смуг немає.
+    expect(plan(d(19 * 60)).stripsKey).not.toBe(plan(lamps).stripsKey);
+    expect(plan(d(23 * 60)).strips).toEqual([]);
   });
 
   it("силует квартири охоплює підлогу й задні стіни, з полем; отвори вікон — усередині", () => {

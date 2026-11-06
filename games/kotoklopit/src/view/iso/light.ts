@@ -1,11 +1,12 @@
-// Світло доби в квартирі (§8.9 «День і ніч», рішення автора 2026-11-02) — шоста частина світу: оновлюється останньою, коли
-// глибини всього іншого вже відомі. Що й де — чисті модулі `light/*` (`lightmap.ts`, `sources.ts`, `sunstrips.ts`), тут —
-// лише малювання:
+// Світло доби в квартирі (§8.9) — шоста частина світу: оновлюється останньою, коли глибини всього іншого вже відомі. Що й де —
+// чисті модулі `light/*` (`lightmap.ts`, `sources.ts`, `sunstrips.ts`), тут — лише малювання:
 //
 // - карта світла — зображення з полотна (`CanvasTexture`) у координатах світу, 0,5 px на одиницю арту, множенням над усією
 //   квартирою, меблями, котами й персонажем (`WORLD_LAYERS.light`, під позначками, баблами й панеллю): тон доби, світлі плями
 //   ламп, бра, свічок і техніки й трохи світліші смуги сонця. Скла в ній немає: над склом, як і над котом на підвіконні перед
-//   ним, — тон. Перемальовується лише за новим ключем (`lightmapKey`) і не частіше ніж `LIGHTMAP.minRedrawMs`;
+//   ним, — тон. Перемальовується лише за новим ключем (`lightmapKey`) і не частіше ніж `LIGHTMAP.minRedrawMs`, тож глухої ночі
+//   не малюється зовсім, а частіше за все — у присмерк і при свічках. Малюється під час гри, а не лежить готовою: у ній плями
+//   джерел, що горять саме зараз, і тон хвилини, наперед цього не запекти;
 // - скло вікон (лише видиме скло стулок, `paneGlass`) — просто над вікнами (`BACKDROP.window`), під усім, що стоїть: множенням
 //   темніє, де скло темніше за тон, і додаванням світлішає, де тепле скло світліше за тон (`glassLayers`), — а кіт перед ним
 //   ні;
@@ -148,6 +149,9 @@ export class IsoLightView implements LightPart {
   private painted: LightmapPlan | null = null;
   private sunKeyShown = "";
   private glassKey = "";
+  /** Смуги сонця карти (`stripsLayer`) і ключ того, що на них намальовано. */
+  private strips: HTMLCanvasElement | null = null;
+  private stripsKey = "";
 
   constructor(private readonly ctx: PartContext) {
     this.depth = isoDepth(ctx);
@@ -251,11 +255,37 @@ export class IsoLightView implements LightPart {
     // Плями й смуги — найсвітліше з того, що вже є, і нового (`lighten`): перекриті плями не дають гарячих місць.
     ctx.globalCompositeOperation = "lighten";
     for (const pool of plan.pools) paintPool(ctx, pool);
-    for (const strip of plan.strips) {
-      softFill(ctx, strip.points, "#ffffff", cssColor(strip.color, strip.alpha), SUN.blur * s, s);
+    const strips = this.stripsLayer(plan, texture.width, texture.height);
+    if (strips) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(strips, 0, 0);
     }
     ctx.restore();
     texture.refresh();
+  }
+
+  /**
+   * Смуги сонця карти — окреме полотно, що оновлюється лише за новим `plan.stripsKey`. Прямо на карті розмита тінь із `lighten`
+   * компонується по всьому відсіченню, смуга за смугою: карта зі смугами малювалася в кілька разів довше, а ввечері вона
+   * оновлюється кілька разів на секунду. Смуги одного кольору зливаються на прозорому в те саме, що й послідовно на карті.
+   */
+  private stripsLayer(plan: LightmapPlan, w: number, h: number): HTMLCanvasElement | null {
+    if (plan.strips.length === 0) return null;
+    if (this.strips && this.stripsKey === plan.stripsKey) return this.strips;
+    const canvas = this.strips ?? document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    // Карта лежить у пам'яті процесора (`CanvasTexture`): полотно з відеопам'яті довелося б щоразу читати назад.
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    const s = LIGHTMAP.scale;
+    ctx.setTransform(s, 0, 0, s, 0, 0);
+    for (const strip of plan.strips) {
+      softFill(ctx, strip.points, "#ffffff", cssColor(strip.color, strip.alpha), SUN.blur * s, s);
+    }
+    this.strips = canvas;
+    this.stripsKey = plan.stripsKey;
+    return canvas;
   }
 
   /** Скло вікон просто над вікнами: множник, де скло темніше за тон, і додаток, де тепле скло світліше (`glassLayers`). */
@@ -398,6 +428,7 @@ export class IsoLightView implements LightPart {
     this.mapAt = Number.NEGATIVE_INFINITY;
     this.sunKeyShown = "";
     this.glassKey = "";
+    this.stripsKey = "";
   }
 
   destroy(): void {
@@ -420,6 +451,7 @@ export class IsoLightView implements LightPart {
     }
     this.glows.clear();
     this.parts = null;
+    this.strips = null;
   }
 
   anchor(): Point | null {

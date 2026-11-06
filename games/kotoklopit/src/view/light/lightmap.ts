@@ -221,6 +221,8 @@ export interface LightmapPlan {
   readonly pools: readonly PoolPaint[];
   /** Трохи світліші смуги сонця (`SUN.lift`). */
   readonly strips: readonly PolyPaint[];
+  /** Ключ смуг (`sunKey`): поки він той самий, смуги не перемальовують, навіть коли карта змінилася. */
+  readonly stripsKey: string;
 }
 
 /** Яскравість джерела в мить `time` (мс сцени): свічки мерехтять. */
@@ -298,6 +300,7 @@ export function lightmapPlan(d: Daylight, sources: readonly LightSource[], panes
     tone,
     pools: sources.flatMap((source) => poolsOf(source, t)),
     strips: stripsOf(d, panes, rgb(SUN.mapColor), SUN.lift),
+    stripsKey: sunKey(d),
   };
 }
 
