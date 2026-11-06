@@ -227,13 +227,14 @@ export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
 export const UTILITIES_BASE = 34;
 /** Речі для котів: ціна й внесок у комунальні за тиждень. */
 export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utilities: number }> = {
-  bowl: { price: { cheap: 10, premium: 40 }, utilities: 1 },
-  water: { price: { cheap: 10, premium: 40 }, utilities: 1 },
-  litter: { price: { cheap: 25, premium: 90 }, utilities: 4 },
-  toy: { price: { cheap: 10, premium: 45 }, utilities: 0 },
-  house: { price: { cheap: 60, premium: 225 }, utilities: 6 },
-  scratcher: { price: { cheap: 60, premium: 225 }, utilities: 6 },
-  carrier: { price: { cheap: 30, premium: 120 }, utilities: 0 },
+  bowl: { price: { cheap: 10, premium: 60 }, utilities: 1 },
+  water: { price: { cheap: 10, premium: 60 }, utilities: 1 },
+  litter: { price: { cheap: 25, premium: 150 }, utilities: 4 },
+  // Дорога лише міцніша (`TOY.durability`): ціна за гру має лишатися близькою до дешевої.
+  toy: { price: { cheap: 10, premium: 30 }, utilities: 0 },
+  house: { price: { cheap: 60, premium: 350 }, utilities: 6 },
+  scratcher: { price: { cheap: 60, premium: 350 }, utilities: 6 },
+  carrier: { price: { cheap: 30, premium: 150 }, utilities: 0 },
   feeder: { price: { cheap: 1000, premium: 2000 }, utilities: 8 },
   fountain: { price: { cheap: 1200, premium: 2400 }, utilities: 6 },
   robot: { price: { cheap: 1500, premium: 3000 }, utilities: 10 },
