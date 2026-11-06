@@ -162,7 +162,7 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
   hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 15, premium: 35 } },
   catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 100, premium: 200 } },
   sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 120, premium: 220 } },
-  litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 11, premium: 15 } },
+  litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 11, premium: 22 } },
   pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
   drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 50 } },
   humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
@@ -942,11 +942,11 @@ export const STORE_GOODS: Partial<Record<Destination, readonly Product[] | "all"
   vet: ["pills", "drops"],
   doctor: ["humanMeds"],
 };
-/** Вікно ціни, частка від базової (§6.4): зсунуто до знижок, щоб поїздка була варта часу. */
+/** Вікно ціни, частка від базової (§6.4): поїздка в середньому дешевша за доставку, але знижка є не на все. */
 export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
-  easy: { min: -0.4, max: 0 },
-  normal: { min: -0.3, max: 0.1 },
-  hard: { min: -0.2, max: 0.2 },
+  easy: { min: -0.35, max: 0.05 },
+  normal: { min: -0.25, max: 0.15 },
+  hard: { min: -0.15, max: 0.25 },
 };
 /** Модифікатори (§4.1, `DAY_MODIFIERS.md`): спершу шанси вибору, далі ефекти; `decay` — множник спаду терпіння. */
 export const MODIFIERS = {

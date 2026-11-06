@@ -9,7 +9,7 @@ import { shopModifier } from "../src/sim/destinations";
 import { addSupply, deliveryCost, freeSlots, receivePackages, tickDeliveries } from "../src/sim/economy";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { canCheckout, cartDelivery, cartTotal, checkout, discount, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
+import { canCheckout, cartDelivery, cartTotal, checkout, fitCart, GOODS, goodsKey, offered, room, unavailable, unitPrice, variants, type CartLine } from "../src/sim/shop";
 import type { Save } from "../src/sim/types";
 
 const game = (): Save => newGame({ address: "she", difficulty: "normal", seed: 4 });
@@ -65,23 +65,20 @@ describe("універсальний магазин (§6.4)", () => {
     expect(cartDelivery(state, [line({ product: "food" }, "cheap", 1)], "store")).toBe(0);
   });
 
-  it("ціни в магазині на 10% у бік знижок: середня — від −30% до +10%", () => {
-    expect(SHOP_WINDOW.normal).toEqual({ min: -0.3, max: 0.1 });
+  it("ціни в магазині: на середній — від −25% до +15%", () => {
+    expect(SHOP_WINDOW.normal).toEqual({ min: -0.25, max: 0.15 });
     const state = game().current;
     state.trip = { destination: "shop", seed: 7 } as Save["current"]["trip"];
     for (const g of GOODS) {
       for (const q of ["cheap", "premium"] as const) {
         const mod = shopModifier(state, g, q);
-        expect(mod).toBeGreaterThanOrEqual(-0.3);
-        expect(mod).toBeLessThanOrEqual(0.1);
+        expect(mod).toBeGreaterThanOrEqual(-0.25);
+        expect(mod).toBeLessThanOrEqual(0.15);
       }
     }
   });
 
-  it("дорожчий варіант на місці буває не дорожчим за дешевий (модифікатор — на варіант) лише в наповнювача, і тоді — завжди з біркою від −10%", () => {
-    // Рецензія 2026-11-03, рішення виконавця (§6.4, «Кожен товар у своїй картці»): поїздка — ставка, як акція в супермаркеті;
-    // бірка каже, що це знижка, а не гірший товар.
-    const inverted = new Set<string>();
+  it("дорожчий варіант на місці завжди дорожчий за дешевий, хоч модифікатор у кожного свій", () => {
     for (const difficulty of ["easy", "normal", "hard"] as const) {
       const state = newGame({ address: "she", difficulty, seed: 4 }).current;
       state.modifiers.day = null;
@@ -89,13 +86,10 @@ describe("універсальний магазин (§6.4)", () => {
         state.trip = { destination: "shop", seed } as Save["current"]["trip"];
         for (const g of GOODS) {
           if (variants(g).length < 2) continue;
-          if (unitPrice(state, g, "premium", "store") > unitPrice(state, g, "cheap", "store")) continue;
-          inverted.add(goodsKey(g));
-          expect(discount(state, g, "premium", "store"), `${difficulty} ${seed} ${goodsKey(g)}`).toBeGreaterThanOrEqual(10);
+          expect(unitPrice(state, g, "premium", "store"), `${difficulty} ${seed} ${goodsKey(g)}`).toBeGreaterThan(unitPrice(state, g, "cheap", "store"));
         }
       }
     }
-    expect([...inverted]).toEqual(["litter"]);
   });
 
   it("чому товар не взяти: у ящиках, немає місця, уже є, уже їде", () => {

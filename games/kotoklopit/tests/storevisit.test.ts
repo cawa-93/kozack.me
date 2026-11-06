@@ -177,14 +177,14 @@ describe("бірка знижки «−X%» (§6.4; правило — ріше�
         }
       }
     }
-    // На середній вікно −30%…+10%: знижок більше, ніж подорожчань, але є й ті, й ті.
+    // На середній знижок більше, ніж подорожчань, але є й ті, й ті.
     expect(discounted).toBeGreaterThan(raised);
     expect(raised).toBeGreaterThan(0);
   });
 
   it("знижка, якої на ціні не видно (ціна, округлена до гривні, та сама), — без бірки", () => {
     const litter = { product: "litter" } as const;
-    // Шукаємо поїздку, де наповнювач (11 і 15 ₴) дешевший на 1–3%: 10,7 → 11, 14,6 → 15.
+    // Шукаємо поїздку, де наповнювач (11 і 22 ₴) дешевший на 1–3%: 10,7 → 11, 21,6 → 22.
     let seed = 1;
     const near = (s: number, q: "cheap" | "premium"): boolean => shopModifier(at("shop", s), litter, q) < -0.01 && shopModifier(at("shop", s), litter, q) > -0.03;
     while (!near(seed, "cheap")) seed += 1;
@@ -193,7 +193,7 @@ describe("бірка знижки «−X%» (§6.4; правило — ріше�
     expect(discount(state, litter, "cheap", "store")).toBe(0);
     seed = 1;
     while (!near(seed, "premium")) seed += 1;
-    expect(unitPrice(at("shop", seed), litter, "premium", "store")).toBe(15);
+    expect(unitPrice(at("shop", seed), litter, "premium", "store")).toBe(22);
     expect(discount(at("shop", seed), litter, "premium", "store")).toBe(0);
   });
 
