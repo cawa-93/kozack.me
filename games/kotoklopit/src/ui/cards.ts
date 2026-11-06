@@ -15,10 +15,7 @@ import {
   ADDRESS_TEXTS,
   BREED_ABOUT,
   BREED_HALF,
-  CONTROLS_KEYBOARD,
-  CONTROLS_RACE_KEYBOARD,
-  CONTROLS_RACE_TOUCH,
-  CONTROLS_TOUCH,
+  CONTROLS_TITLES,
   DAY_MODIFIER_TEXTS,
   DIFFICULTY_TITLES,
   POSITION_TITLES,
@@ -35,13 +32,15 @@ import {
   UTILITIES_MESSAGES,
   WAKE_TEXTS,
 } from "../texts";
-import { destinationLabel, diseaseLabel, productLabel } from "./icons";
+import { allControls, homeControls } from "./controls";
+import { destinationLabel, diseaseLabel, named, productLabel } from "./icons";
 import { element, type Card, type CardAction, type TitleSection } from "./overlay";
 import { shopCatalog, variantLabel } from "./shop";
 import type { CartLine } from "../sim/shop";
 import { plural } from "./titles";
 
 export { plural };
+import { UTILITIES_ICON } from "../view/symbols";
 import { LOOK_OPTIONS } from "./look";
 import { drawPortrait, portraitCanvas } from "./portrait";
 import { traitChips, traitHint } from "./traits";
@@ -132,7 +131,7 @@ export function dayTitle(state: GameState, night: NightReport | null): TitleSect
   // Куди пішли гроші минулого тижня (§6.4, рішення автора 2026-10-27, Е4).
   if (night?.ledger) events.push([LEDGER_TEXTS.heading, ...ledgerLines(night.ledger)]);
   if (night === null && state.day === 0) {
-    events.push(["Керування", isTouch() ? CONTROLS_TOUCH : CONTROLS_KEYBOARD]);
+    events.push([CONTROLS_TITLES.first, homeControls(isTouch())]);
   }
   const sections: TitleSection[] = [
     { heading: `Тиждень ${weekOf(state.day)}`, blocks: weekBlocks },
@@ -253,7 +252,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
   if (tab === "mine") {
-    body.push(`Комунальні: ${utilitiesDue(state)} ₴ на тиждень.`);
+    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень.`);
     // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
     const debt = state.home.utilitiesDebt;
     if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.address, { борг: debt, платіж: debt + utilitiesDue(state) }));
@@ -292,13 +291,11 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   const load = element("button", "button", "Завантажити з файлу");
   load.addEventListener("click", () => input.click());
   box.append(fresh, save, load, input);
-  const touch = isTouch();
   return [
-    playerLine(state),
-    "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом.",
+    element("p", "game-player", playerLine(state)),
+    allControls(isTouch()),
     box,
-    `Керування: ${touch ? CONTROLS_TOUCH : CONTROLS_KEYBOARD}`,
-    touch ? CONTROLS_RACE_TOUCH : CONTROLS_RACE_KEYBOARD,
+    element("p", "game-note", "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом."),
   ];
 }
 

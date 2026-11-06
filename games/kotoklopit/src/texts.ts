@@ -317,12 +317,38 @@ export const WEEK_MODIFIER_TEXTS: Record<string, { title: string; situation: str
   },
 };
 
-/** Керування на титулці першого дня — єдине, чого гра не показує сама (§11.3а). */
-export const CONTROLS_KEYBOARD = "WASD — рух · Пробіл — дія · Shift — ривок · F — переставити річ · Q — телефон";
-export const CONTROLS_TOUCH = "Ліворуч — рух · Праворуч — дія й ривок";
-/** Керування в гонці (§8.5): у вкладці «Гра» телефона, щоб його можна було перечитати (загальна ревізія 2026-10-29). */
-export const CONTROLS_RACE_KEYBOARD = "У гонці: W — газ · S — гальмо · A, D — смуга";
-export const CONTROLS_RACE_TOUCH = "У гонці: вгору — газ · униз — гальмо · убік — смуга";
+/** Кнопка екрана на підказці керування: як вона виглядає в грі (`src/ui/controls.ts`). */
+export type TouchButton = "stick" | "stick-up" | "stick-down" | "stick-side" | "action" | "dash" | "carry" | "phone";
+/** Підказка керування (§11.3а): клавіші чи кнопка екрана й призначення. */
+export type ControlHint = { keys: readonly string[]; what: string } | { button: TouchButton; what: string };
+
+export const CONTROLS_TITLES = { first: "Керування", home: "Вдома", race: "У гонці" } as const;
+/** Керування вдома — єдине, чого гра не показує сама (§11.3а). */
+export const CONTROLS_KEYBOARD: readonly ControlHint[] = [
+  { keys: ["W", "A", "S", "D"], what: "рух" },
+  { keys: ["Пробіл"], what: "дія" },
+  { keys: ["Shift"], what: "ривок" },
+  { keys: ["F"], what: "переставити річ" },
+  { keys: ["Q"], what: "телефон" },
+];
+export const CONTROLS_TOUCH: readonly ControlHint[] = [
+  { button: "stick", what: "рух" },
+  { button: "action", what: "дія" },
+  { button: "dash", what: "ривок" },
+  { button: "carry", what: "переставити річ" },
+  { button: "phone", what: "телефон" },
+];
+/** Керування в гонці (§8.5). */
+export const CONTROLS_RACE_KEYBOARD: readonly ControlHint[] = [
+  { keys: ["W"], what: "газ" },
+  { keys: ["S"], what: "гальмо" },
+  { keys: ["A", "D"], what: "смуга" },
+];
+export const CONTROLS_RACE_TOUCH: readonly ControlHint[] = [
+  { button: "stick-up", what: "газ" },
+  { button: "stick-down", what: "гальмо" },
+  { button: "stick-side", what: "смуга" },
+];
 /**
  * Підказка без слів на дорозі від самого старту гонки (і поки машина стоїть), а гравець ще нічого не натискав (§8.5,
  * `startHintShown`; на сенсорному екрані — тінь джойстика).
