@@ -52,6 +52,7 @@ import {
   kitLook,
   opensDoor,
   shapedState,
+  showerFigure,
   showerState,
   sinkState,
   stoveArtState,
@@ -91,7 +92,7 @@ export const BACKDROP = {
  * виліз на річ, — уже над усім цим (`IsoPointHandle.place(x, y, id)`). Котячий слід (`trace`) — одразу над річчю: під
  * накладками наповнення, замком і контуром підсвітки без WebGL (`OUTLINE_ABOVE` у `highlight.ts`), бо він — частина речі.
  */
-const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, mom: 0.0015, dish: 0.002, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
+const ON = { trace: 0.0002, overlay: 0.001, step: 0.0001, figure: 0.0012, mom: 0.0015, dish: 0.002, lamp: 0.0022, trinket: 0.0025, lock: 0.003 } as const;
 
 /** Дріт комп'ютера (`env/wire`): кадр і точка реєстру — у центрі клітинки `WIRE_TILE`. */
 const WIRE_AT: Vec = { x: WIRE_TILE.x + 0.5, y: WIRE_TILE.y + 0.5 };
@@ -450,7 +451,7 @@ export class IsoApartmentView implements ApartmentPart {
       if (!present) for (const piece of thing.extras.values()) piece.image.setVisible(false);
     }
     this.drawDoor(state, frame.time);
-    this.drawStates(state);
+    this.drawStates(state, frame.time);
     this.drawTraces(state);
     const decor = decorLook(state, frame.lightMinute, this.decor);
     this.drawSurfaces(state, decor);
@@ -500,7 +501,7 @@ export class IsoApartmentView implements ApartmentPart {
   }
 
   /** Стани речей і наповнення сховищ (§6.4, §8.7, §9.12). */
-  private drawStates(state: GameState): void {
+  private drawStates(state: GameState, time: number): void {
     const fridge = this.get("fridge");
     const cold = fridgeLook(state);
     this.show(fridge, cold.body);
@@ -520,7 +521,11 @@ export class IsoApartmentView implements ApartmentPart {
     // Шафи з пилососом більше немає (§8.7, рішення автора 2026-11-02): пилосос стоїть на підлозі (`home.vacuumAt`) — його
     // малюватиме пакет вигляду.
     this.show(this.get("washer"), { id: "env/washer", state: washerArtState(state) });
-    this.show(this.get("shower"), { id: "env/shower", state: showerState(state) });
+    const shower = this.get("shower");
+    this.show(shower, { id: "env/shower", state: showerState(state) });
+    const figure = showerFigure(state, time);
+    this.put(shower, "figure", figure?.wash ?? null, ON.figure);
+    this.put(shower, "figure-over", figure?.over ?? null, ON.figure + ON.step);
     this.show(this.get("sink"), { id: "env/sink", state: sinkState(state) });
     // Накладки одного сховища — по черзі над річчю (гель під шампунем).
     for (const id of ["shower", "sink", "washer"] as const) {

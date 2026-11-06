@@ -312,6 +312,21 @@ export function shapedStage(state: GameState, object: string): FillStage | null 
   return stagesOf(state, object)[0] ?? 0;
 }
 
+/** Кадри миття силуету в кабіні (§8.7) і скільки мс стоїть кожен. */
+export const SHOWER_WASH = { frames: ["wash-1", "wash-2", "wash-3", "wash-4"], ms: 380 } as const;
+
+/**
+ * Силует персонажа в кабіні (§8.7), `time` — час сцени, мс: кадр миття й накладка над ним — пара, а в холодному душі, де пари
+ * немає, — решта тіла. null — персонаж не миється; купаючи кота, він стоїть перед кабіною.
+ */
+export function showerFigure(state: GameState, time: number): { wash: IsoFrame; over: IsoFrame } | null {
+  const activity = state.character.activity;
+  if (activity?.kind !== "use" || activity.target !== "shower" || activity.bath === true) return null;
+  const { frames, ms } = SHOWER_WASH;
+  const wash = frames[Math.floor(time / ms) % frames.length] ?? frames[0];
+  return { wash: frame("env/shower/figure", wash), over: frame("env/shower/figure", powerOut(state) ? "legs" : "steam") };
+}
+
 /** Сховища-фігури (мішок наповнювача, бак стерильного корму): їхня форма — наповнення, тож стан `full-N` — у самій речі. */
 export function shapedState(state: GameState, object: (typeof SHAPED)[number]): string {
   return fullState(shapedStage(state, object) ?? 0);
