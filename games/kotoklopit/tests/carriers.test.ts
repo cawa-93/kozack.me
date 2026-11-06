@@ -6,7 +6,8 @@ import { addCarrier, cageStage, cagedCats, carrierOf, carrierRoom, discardCarrie
 import { createCat, idleAct } from "../src/sim/cat";
 import { ACCIDENT, CARRIER, CARRIER_MOOD, NEED_THRESHOLD, PET } from "../src/sim/config";
 import { nextTripCat, nextTripRider, tripCat, tripCatPlace } from "../src/sim/destinations";
-import { deserialize, interact, newGame, serialize } from "../src/sim/game";
+import { removeCat } from "../src/sim/farewell";
+import { deserialize, goToSleep, interact, newGame, serialize } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import { room } from "../src/sim/shop";
@@ -482,6 +483,27 @@ describe("смерть під замком (§8.7)", () => {
     expect(state.album.at(-1)).toMatchObject({ id: who.id, cause: { kind: "carrier" } });
     expect(state.home.caged).toEqual([]);
     expect(state.character.stats.sanity).toBeLessThan(sanity);
+  });
+
+  it("кіт не дочекався ночі: ранок рахує його як утрату", () => {
+    const save = game("premium");
+    const state = save.current;
+    const who = cat(save);
+    seat(state, who);
+    who.health = 1;
+    who.needs.hunger = CARRIER.vitalNeed;
+    state.minute = hours(23);
+    const report = goToSleep(save);
+    expect(report?.lostCats).toContain(who.id);
+  });
+
+  it("кіт, якого не стало інакше, місця в переносці не займає", () => {
+    const save = game("cheap");
+    const state = save.current;
+    const who = cat(save);
+    seat(state, who);
+    removeCat(state, who, { kind: "given" }, state.day);
+    expect(state.home.caged).toEqual([]);
   });
 
   it("уночі смерть не забирає глузду одразу: це рахує ранок", () => {

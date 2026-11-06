@@ -38,6 +38,8 @@ export function zeroHealthCause(cat: Cat): FarewellCause {
 export function removeCat(state: GameState, cat: Cat, cause: FarewellCause, day: number): AlbumEntry {
   state.cats = state.cats.filter((c) => c.id !== cat.id);
   forgetRelations(state, cat);
+  // Кіт міг сидіти в переносці (§8.7): без цього місце лишалося б зайнятим.
+  if (state.home.caged) state.home.caged = state.home.caged.filter((id) => id !== cat.id);
   const held = state.character.held;
   if (held?.kind === "cat" && held.cat === cat.id) state.character.held = null;
   const entry: AlbumEntry = {

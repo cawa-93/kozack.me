@@ -88,7 +88,7 @@ function freeCat(state: GameState, cat: Cat, rng: Rng): void {
   stress(state, cat);
 }
 
-/** Посадити кота з рук (§8.7). Міста немає — false, це відмова. */
+/** Посадити кота з рук (§8.7). Місця немає — false, це відмова. */
 export function seatCat(state: GameState, cat: Cat): boolean {
   const { home } = state;
   const caged = (home.caged ??= []);
@@ -178,7 +178,6 @@ export function tickCaged(state: GameState, cat: Cat, minutes: number, rng: Rng,
 
 /** Кіт не дочекався (§8.7): помирає одразу; уночі втрату рахує ранок, як і будь-яку іншу. */
 function dieCaged(state: GameState, cat: Cat, present: boolean): void {
-  state.home.caged = (state.home.caged ?? []).filter((id) => id !== cat.id);
   removeCat(state, cat, { kind: "carrier" }, state.day);
   if (present) applyMorningSanity(state, 1, 0);
 }

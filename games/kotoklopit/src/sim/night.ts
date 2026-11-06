@@ -213,7 +213,10 @@ function sleep({ state, report, rng }: Night): void {
         setWitnessing(true);
       }
       const since = state.nextId;
+      const gone = state.album.length;
       tickCats(state, step, { present: false });
+      // Кіт не дочекався до ранку (§8.7): це втрата, як і будь-яка нічна.
+      for (const entry of state.album.slice(gone)) if (entry.cause.kind === "carrier") report.lostCats.push(entry.id);
       lost += coughWakes(state, report, rng, since);
       minute += step;
       state.minute = minute;
