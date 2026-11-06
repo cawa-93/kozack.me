@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS, hasLegacyPosition } from "../src/dev/scenarios";
-import { FIRST_WEEK_PROTECTION, JOB_SEARCH, LEGACY_POSITION_PAY, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
+import { CAREER_PACE, FIRST_WEEK_PROTECTION, JOB_SEARCH, LEGACY_POSITION_PAY, POSITIONS, REPUTATION_MAX, START_REPUTATION, WORKDAYS_PER_WEEK } from "../src/sim/config";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { weekdayOf } from "../src/sim/time";
 import type { Save } from "../src/sim/types";
@@ -60,7 +60,7 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
   /** Частка присутності: спад / (відновлення + спад) (§8.6). */
   const share = (p: Position): number => p.patienceDecay / (p.patienceDecay + p.patienceRecovery);
   /** Робочих днів до підвищення, якщо щодня працювати частку присутності × 9 годин, ще й помножену на `effort` (§8.6). */
-  const daysToPromotion = (p: Position, effort = 1): number => (REPUTATION_MAX - START_REPUTATION) / (p.reputation * share(p) * 9 * effort);
+  const daysToPromotion = (p: Position, effort = 1): number => (REPUTATION_MAX - START_REPUTATION) / (p.reputation * CAREER_PACE * share(p) * 9 * effort);
   const daysToDirector = (effort: number): number => POSITIONS.slice(0, -1).reduce((sum, p) => sum + daysToPromotion(p, effort), 0);
   const first = POSITIONS[0];
   const director = POSITIONS[POSITIONS.length - 1];
@@ -69,7 +69,7 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
     expect(POSITIONS).toHaveLength(15);
     expect(POSITION_TITLES).toHaveLength(POSITIONS.length);
     expect(first).toEqual({ pay: 10, patienceDecay: 25, patienceRecovery: 58, reputation: 3.09, sanity: -6 });
-    expect(Math.round(daysToPromotion(first!))).toBe(6);
+    expect(Math.round(daysToPromotion(first!))).toBe(2);
     expect(director).toMatchObject({ pay: 45, patienceDecay: 52, patienceRecovery: 17, sanity: -10.5 });
   });
 
@@ -100,25 +100,25 @@ describe("драбина з 15 посад (§8.6; рішення автора 20
 
   it("сумлінний гравець (на 30% більше за вимогу посади) стає директором ближче до кінця гри, а хто працює рівно за вимогою, за 50 тижнів директором не стає", () => {
     const weeks = (effort: number): number => daysToDirector(effort) / WORKDAYS_PER_WEEK;
-    expect(weeks(1.3)).toBeGreaterThan(40);
-    expect(weeks(1.3)).toBeLessThan(47);
-    expect(weeks(1)).toBeGreaterThan(50);
+    expect(weeks(1.3)).toBeGreaterThan(16);
+    expect(weeks(1.3)).toBeLessThan(19);
+    expect(weeks(1)).toBeGreaterThan(20);
   });
 
-  it("за 50 тижнів (250 робочих днів) хто працює рівно за вимогою, доходить до 14-ї посади, а хто лише денний мінімум без «Х» — до 12-ї (§8.6, [Розрахунок]; рецензія реалізації А10)", () => {
+  it("за 20 тижнів (100 робочих днів) хто працює рівно за вимогою, доходить до 14-ї посади, а хто лише денний мінімум без «Х» — до 12-ї (§8.6, [Розрахунок]; рецензія реалізації А10)", () => {
     /** Посада (від 1) після `days` робочих днів, якщо щодня працювати `hoursOf(посада)` годин, без бонусів летучки. */
     const positionAfter = (days: number, hoursOf: (p: Position) => number): number => {
       let elapsed = 0;
       for (let i = 0; i < POSITIONS.length - 1; i++) {
         const p = POSITIONS[i]!;
-        elapsed += (REPUTATION_MAX - START_REPUTATION) / (p.reputation * hoursOf(p));
+        elapsed += (REPUTATION_MAX - START_REPUTATION) / (p.reputation * CAREER_PACE * hoursOf(p));
         if (elapsed > days) return i + 1;
       }
       return POSITIONS.length;
     };
     /** Денний мінімум без «Х»: з повного ранкового терпіння до 18:00 не дійти до нуля (§8.6, \*\*\*). */
     const dailyMinimum = (p: Position): number => (9 * p.patienceDecay - 100) / (p.patienceRecovery + p.patienceDecay);
-    const workdays = 50 * WORKDAYS_PER_WEEK;
+    const workdays = 20 * WORKDAYS_PER_WEEK;
     expect(positionAfter(workdays, (p) => share(p) * 9)).toBe(14);
     expect(positionAfter(workdays, dailyMinimum)).toBe(12);
     expect(POSITION_TITLES[13]).toBe("[Заступник|Заступниця] директора");

@@ -21,8 +21,8 @@ export const MINUTES_PER_HOUR = 60;
 export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 export const DAYS_PER_WEEK = 7;
 
-/** Гра триває 50 тижнів (§4.2). */
-export const TOTAL_WEEKS = 50;
+/** Гра триває 20 тижнів (§4.2). */
+export const TOTAL_WEEKS = 20;
 export const TOTAL_DAYS = TOTAL_WEEKS * DAYS_PER_WEEK;
 
 /**
@@ -328,6 +328,11 @@ export const HIGH_HYGIENE = 75;
  */
 export const JOB_SEARCH = { hours: { easy: 16, normal: 20, hard: 24 } as Record<Difficulty, number>, sanityShare: 0.5, stages: 4 } as const;
 
+/**
+ * У скільки разів швидше за `reputation` з таблиці росте репутація за години роботи (§8.6): кар'єра вміщується в 20 тижнів. Штрафи
+ * й події дня рахуються від таблиці без цього множника, тож понижують так само повільно.
+ */
+export const CAREER_PACE = 2.5;
 /**
  * Посади від стажера до директора (§8.6). Терпіння й здоровий глузд (робота — неприємне, §8.1) — за годину. Рішення автора
  * 2026-10-29 (`GENERAL_REVIEW.md`, А10): 15 посад замість 10, кожна — менша сходинка. Стажер той самий; зарплата росте пологіше,

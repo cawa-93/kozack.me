@@ -279,7 +279,7 @@ function sleep(save: Save, collapsed: boolean): NightReport | null {
   endTrip(state);
   // Гостинці мами, що чекали під дверима чи щойно приїхали з нею, — пакет судочків у ящиках біля входу (§4.1, §6.4).
   momAtNight(state);
-  // Неділя 50-го тижня: пенсія, остання ніч уже не обробляється (§4.2).
+  // Неділя 20-го тижня: пенсія, остання ніч уже не обробляється (§4.2).
   if (isLastDay(state.day)) {
     endGame(state, "retirement");
     return null;

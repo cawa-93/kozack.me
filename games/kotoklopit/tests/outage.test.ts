@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { Bot } from "../balance/bot";
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { tickStove } from "../src/sim/actions";
-import { BURN_MINUTES, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
+import { BURN_MINUTES, CAREER_PACE, COOK_MINUTES, MODIFIERS, PATIENCE_MAX, POSITIONS, SHOWER_HYGIENE, SHOWER_MINUTES, STANDUP_MINUTE, THOUGHTS } from "../src/sim/config";
 import { createCat } from "../src/sim/cat";
 import { supplyCount } from "../src/sim/economy";
 import type { GameEvent } from "../src/sim/events";
@@ -138,7 +138,7 @@ describe("«Планове відключення» — день без світ
     expect(run("outage", false)).toEqual({ events: [], reputation: 0 });
     const worked = run("outage", true);
     expect(worked.events).toEqual([]);
-    expect(worked.reputation).toBeCloseTo(0.5 * (POSITIONS[0]?.reputation ?? 0) * MODIFIERS.outage.reputation, 6);
+    expect(worked.reputation).toBeCloseTo(0.5 * (POSITIONS[0]?.reputation ?? 0) * CAREER_PACE * MODIFIERS.outage.reputation, 6);
 
     const save = game("outage");
     expect(standupToday(save.current)).toBe(false);

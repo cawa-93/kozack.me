@@ -34,9 +34,9 @@ export function isSunday(day: number): boolean {
   return weekdayOf(day) === DAYS_PER_WEEK - 1;
 }
 
-/** Неділя 50-го тижня: після неї — пенсія (§4.2). */
+/** Неділя 20-го тижня чи пізніше (збереження довшої гри): після неї — пенсія (§4.2). */
 export function isLastDay(day: number): boolean {
-  return day === TOTAL_DAYS - 1;
+  return day >= TOTAL_DAYS - 1;
 }
 
 /** Хвилина від початку гри: так зручно порівнювати час різних днів. */

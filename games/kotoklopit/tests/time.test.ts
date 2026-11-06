@@ -11,14 +11,16 @@ describe("час", () => {
     expect(raceMinutes(45)).toBe(60);
   });
 
-  it("50 тижнів — 350 днів (§4.2)", () => {
-    expect(TOTAL_DAYS).toBe(350);
+  it("20 тижнів — 140 днів (§4.2)", () => {
+    expect(TOTAL_DAYS).toBe(140);
     expect(weekOf(0)).toBe(1);
     expect(weekOf(6)).toBe(1);
     expect(weekOf(7)).toBe(2);
-    expect(weekOf(TOTAL_DAYS - 1)).toBe(50);
+    expect(weekOf(TOTAL_DAYS - 1)).toBe(20);
     expect(isLastDay(TOTAL_DAYS - 1)).toBe(true);
     expect(isLastDay(TOTAL_DAYS - 2)).toBe(false);
+    // Збереження гри, що була довшою: пенсія наступної ночі, а не ніколи.
+    expect(isLastDay(TOTAL_DAYS + 30)).toBe(true);
   });
 
   it("гра починається з понеділка", () => {

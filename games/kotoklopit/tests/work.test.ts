@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { POSITIONS } from "../src/sim/config";
+import { CAREER_PACE, POSITIONS } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { unpleasantTask } from "../src/sim/character";
 import type { Address, Chronotype, Difficulty, Save } from "../src/sim/types";
@@ -49,11 +49,11 @@ describe("робота за комп'ютером (§8.6)", () => {
     }
   });
 
-  it("година роботи: +3,09 репутації і −6 здорового глузду", () => {
+  it("година роботи: +3,09 × `CAREER_PACE` репутації і −6 здорового глузду", () => {
     const save = game();
     save.current.minute = hours(12);
     work(save, hours(12), hours(1));
-    expect(save.current.job.reputation).toBeCloseTo(50 + 3.09);
+    expect(save.current.job.reputation).toBeCloseTo(50 + 3.09 * CAREER_PACE);
     expect(save.current.character.stats.sanity).toBeCloseTo(34);
   });
 
@@ -274,10 +274,10 @@ describe("справедливість роботи (ревізія 2026-10-22)"
     };
     const saturday = hour((save) => (save.current.day = 5));
     const sick = hour(sickLeave);
-    // Старший спеціаліст: 16 ₴ і +1,37 репутації за годину — як у суботу (драбина з 15 посад, рішення автора 2026-10-29, А10).
+    // Старший спеціаліст: 16 ₴ і +1,37 × `CAREER_PACE` репутації за годину — як у суботу (драбина з 15 посад, рішення автора 2026-10-29, А10).
     expect(sick.money).toBeCloseTo(16);
     expect(sick.money).toBeCloseTo(saturday.money);
-    expect(sick.reputation).toBeCloseTo(1.37);
+    expect(sick.reputation).toBeCloseTo(1.37 * CAREER_PACE);
     expect(sick.reputation).toBeCloseTo(saturday.reputation);
     // Без роботи цілий будень лікарняного — ні летучки, ні «!» і «Х», репутація не падає.
     const save = game();

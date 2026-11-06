@@ -5,6 +5,7 @@ import { isMoving } from "./body";
 import { earn, unpleasantTask } from "./character";
 import {
   ABSENCE_REPUTATION,
+  CAREER_PACE,
   CALL_DIRTY_CLOTHES,
   CALL_HYGIENE_REPUTATION,
   DIFFICULTY,
@@ -193,7 +194,7 @@ export function tickWork(state: GameState, from: number, minutes: number): void 
     const money = position.pay * DIFFICULTY[state.difficulty].earnings * payFactor(state) * hours;
     const reputationBefore = job.reputation;
     earn(state, money);
-    changeReputation(state, position.reputation * reputationFactor(state) * hours);
+    changeReputation(state, position.reputation * CAREER_PACE * reputationFactor(state) * hours);
     activity.sanity += unpleasantTask(state, position.sanity * hours);
     activity.minutes += minutes;
     activity.money += money;
