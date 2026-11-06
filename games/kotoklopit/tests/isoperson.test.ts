@@ -150,7 +150,7 @@ describe("речі в руках (§8.4)", () => {
 
   it("пилосос у руках — `item/vacuum` у гнізді `held` кадром ракурсу персонажа, накладка `holdVacuum` (§8.7)", () => {
     const state = vacuuming();
-    const vacuum = heldFrame(state.character.held);
+    const vacuum = heldFrame(state.character.held, null, "vacuum");
     expect(vacuum?.socket).toBe("held");
     expect(vacuum?.frame).toEqual(VACUUM_HELD.frame);
     expect(vacuum?.scale).toBe(1);

@@ -9,6 +9,7 @@ import { BOWL_CAPACITY, FEEDER_CAPACITY, STORAGE_LIMITS, WATER_CAPACITY } from "
 import { DUST_SPOTS, dustOf } from "../src/sim/dust";
 import { STORAGES, storageStages } from "../src/sim/storage";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, objectById, OBJECTS, roomAt, TRINKETS, WINDOWS } from "../src/sim/home";
+import { cleaningTool } from "../src/sim/household";
 import type { BowlItem, Dish, Feeder, GameState, LitterItem, MessKind, Quality, WaterItem } from "../src/sim/types";
 import { artEntry } from "../src/view/art/manifest";
 import { pointsOn, WALL_HEIGHT, WALL_SEGMENTS, wallKind } from "../src/view/art/manifest/lib/geometry";
@@ -109,7 +110,7 @@ function framesOf(state: GameState): IsoFrame[] {
   const candles = decor.candles;
   if (candles) for (const shelf of CANDLE_SHELVES) frames.push({ id: shelf.id, state: candles });
   // Вертикальний пилосос на підлозі, пил і павутина (§8.7).
-  if (state.home.vacuumAt) frames.push({ id: "env/vacuum", state: null });
+  if (state.home.vacuumAt) frames.push({ id: cleaningTool(state) === "vacuum" ? "env/vacuum" : "env/broom", state: null });
   for (const index of dustOf(state)) {
     const spot = DUST_SPOTS[index]!;
     const look = spot.kind === "cobweb" ? (cobwebLook(spot)?.frame ?? null) : dustFrame(index);

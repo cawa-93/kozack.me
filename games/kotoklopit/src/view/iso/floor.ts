@@ -14,9 +14,9 @@ import { carriedToy } from "../../sim/catai";
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { CARRIER_SPOT, itemPoint, slotCenter } from "../../sim/home";
-import { FUR_SPOTS, ROBOT_DOCK, robotAt, tuftCat, tuftsOf } from "../../sim/household";
+import { cleaningTool, FUR_SPOTS, ROBOT_DOCK, robotAt, tuftCat, tuftsOf } from "../../sim/household";
 import { VACUUM_TARGET, type Target } from "../../sim/targets";
-import type { GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
+import type { CleaningTool, GameState, HomeItem, TrinketKind, Vec } from "../../sim/types";
 import { addArt, setArt } from "../art/atlas";
 import type { PartContext } from "../world/context";
 import { isoItemLook, type IsoFootprint } from "../world/objects";
@@ -52,8 +52,8 @@ const TUFT = { height: 4, half: 16 } as const;
  */
 const DUST_HALF = { corner: 31, wall: 42, floor: 25 } as const;
 const DUST_HEIGHT = 4;
-/** Вертикальний пилосос на підлозі (`env/vacuum`): кадр без станів. */
-const VACUUM_FRAME: IsoFrame = { id: "env/vacuum", state: null };
+/** Інструмент на підлозі (§8.7): кадри без станів. */
+const TOOL_FRAME: Record<CleaningTool, IsoFrame> = { vacuum: { id: "env/vacuum", state: null }, broom: { id: "env/broom", state: null } };
 /**
  * Прибране пилососом у руках (§8.7) втягується в щітку: за `ms` летить до неї, прискорюючись, меншає до `shrink` і блідне до
  * `fade`.
@@ -328,7 +328,7 @@ export class IsoFloorView implements WorldPart {
     if (home.sock === true) this.single("sock", { id: "mess/sock", state: "peek" }, SOFA_PEEK, 8, { half: 20 }, "sofa");
     // Вертикальний пилосос (§8.7, «Пилосос у руках»): стоїть там, де його поставили; у руках його малює персонаж (`item/vacuum`).
     const vacuum = home.vacuumAt;
-    if (vacuum) this.single(VACUUM_TARGET, VACUUM_FRAME, vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
+    if (vacuum) this.single(VACUUM_TARGET, TOOL_FRAME[cleaningTool(state)], vacuum, isoItemLook("vacuum").height, { id: VACUUM_TARGET, half: isoItemLook("vacuum").half });
   }
 
   private single(name: string, frame: IsoFrame, at: Vec, height: number, options: IsoPointOptions, under?: string): Spot {

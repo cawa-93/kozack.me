@@ -134,4 +134,12 @@ export const MANIFEST: readonly ArtEntry[] = [
     points: { brush: { x: 70.3, y: 101.3 }, "brush-back": { x: 61.5, y: 75.2 } },
     views: ["front", "back"],
   },
+  // Віник у руках (§8.7): полотно, pivot і точки — як у `item/vacuum`, бо накладка `holdVacuum` і нахил у кулаці спільні.
+  {
+    id: "item/broom",
+    size: { w: 97, h: 115 },
+    pivot: { x: 12.5, y: 25.5 },
+    points: { brush: { x: 70.3, y: 101.3 }, "brush-back": { x: 61.5, y: 75.2 } },
+    views: ["front", "back"],
+  },
 ];

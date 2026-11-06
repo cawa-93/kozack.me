@@ -26,7 +26,8 @@ import Phaser from "phaser";
 
 import { petOver } from "../../sim/actions";
 import type { GameEvent } from "../../sim/events";
-import type { GameState, Item, Look } from "../../sim/types";
+import { cleaningTool } from "../../sim/household";
+import type { CleaningTool, GameState, Item, Look } from "../../sim/types";
 import { PALETTE as ART } from "../../../art/palette";
 import { PERSON_BY_PROGRESS, type PersonAnimId } from "../anim/ids";
 import { facingFromTiles } from "../anim/catfacing";
@@ -282,7 +283,7 @@ export class IsoPersonView implements PersonPart {
     this.shadow.setPosition(feet.x, feet.y).setScale(shadow.x, shadow.y).setVisible(!this.hidden);
     const shot = this.oneShot;
     const shown = shownHeld(shot?.before ?? null, character.held, shot?.anim ?? null, shot ? this.clock - shot.start : 0);
-    this.updateCargo(shown, shot ? shot.anim : choice.anim);
+    this.updateCargo(shown, shot ? shot.anim : choice.anim, cleaningTool(state));
     this.lastHeld = character.held;
     this.updatePoints();
     const smelly = params.dirty && !this.hidden;
@@ -379,8 +380,8 @@ export class IsoPersonView implements PersonPart {
    * біля вуха (`anim` — `phone`) — у `held`; кота малює частина котів (у точці `hands`). Річ із ракурсами (пилосос — щітка на
    * підлозі попереду, §8.7) — кадром ракурсу персонажа (`heldView`): змінився ракурс — інший кадр.
    */
-  private updateCargo(item: Item | null, anim: PersonAnimId): void {
-    const want = this.hidden ? null : heldFrame(item, anim);
+  private updateCargo(item: Item | null, anim: PersonAnimId, tool: CleaningTool): void {
+    const want = this.hidden ? null : heldFrame(item, anim, tool);
     for (const socket of ["held", "rod"] as const) {
       const cargo = this.cargo[socket];
       const frame = want?.socket === socket ? want.frame : null;
@@ -425,12 +426,13 @@ export class IsoPersonView implements PersonPart {
   }
 
   /**
-   * Щітка пилососа в руках (`brush`): гніздо `held` плюс щітка кадру `item/vacuum` від хвату в ракурсі персонажа
+   * Щітка пилососа чи віника в руках (`brush`): гніздо `held` плюс щітка кадру від хвату в ракурсі персонажа
    * (`personVacuumBrush`), повернута й віддзеркалена разом із гніздом.
    */
   private updateBrush(): void {
     const cargo = this.cargo.held;
-    const socket = cargo.image.visible && cargo.key.startsWith("item/vacuum|") ? this.sprite.socket("held", this.tmpSocket) : null;
+    const brushed = cargo.key.startsWith("item/vacuum|") || cargo.key.startsWith("item/broom|");
+    const socket = cargo.image.visible && brushed ? this.sprite.socket("held", this.tmpSocket) : null;
     this.brushShown = socket !== null;
     if (!socket) return;
     const at = socketPoint(socket, personVacuumBrush(this.sprite.facing.view));

@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { ICON_NAMES } from "../src/view/iconnames";
 import { PERSON_OVERLAYS } from "../src/view/anim/ids";
 import { artEntry } from "../src/view/art/manifest";
+import { heldFrame } from "../src/view/iso/personlook";
 import type { ArtView } from "../src/view/art/types";
 import { PERSON_ANIMS } from "../src/view/rig/anims";
 import { PERSON_MOVE, personVacuumBrush, personWithArms } from "../src/view/rig/anims/person/move";
@@ -69,6 +70,23 @@ describe("пилосос: кадри", () => {
   it("іконка `icon/vacuum` — назва в ICON_NAMES і запис у маніфесті", () => {
     expect(ICON_NAMES).toContain("vacuum");
     expect(artEntry("icon/vacuum")?.size).toEqual({ w: 64, h: 64 });
+  });
+
+  it("віник — той самий контракт, що в пилососа: накладка рук і нахил у кулаці спільні", () => {
+    const broom = artEntry("item/broom");
+    const vacuum = artEntry("item/vacuum");
+    expect(broom?.size).toEqual(vacuum?.size);
+    expect(broom?.pivot).toEqual(vacuum?.pivot);
+    expect(broom?.points).toEqual(vacuum?.points);
+    expect(broom?.views).toEqual(vacuum?.views);
+    expect(artEntry("env/broom")?.size).toEqual(artEntry("env/vacuum")?.size);
+    expect(artEntry("env/broom")?.pivot).toEqual(artEntry("env/vacuum")?.pivot);
+  });
+
+  it("у руках — кадр того інструмента, що зараз удома", () => {
+    const held = { kind: "vacuum" } as const;
+    expect(heldFrame(held, null, "broom")?.frame.id).toBe("item/broom");
+    expect(heldFrame(held, null, "vacuum")?.frame.id).toBe("item/vacuum");
   });
 });
 

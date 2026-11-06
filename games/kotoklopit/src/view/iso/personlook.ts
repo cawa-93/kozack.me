@@ -5,7 +5,7 @@
 // тому, як персонаж іде на екрані). Перевіряє `tests/isoperson.test.ts`.
 
 import type { GameEvent } from "../../sim/events";
-import type { Item } from "../../sim/types";
+import type { CleaningTool, Item } from "../../sim/types";
 import { PERSON_CONTACT_MS, PERSON_ONE_SHOT_MS, PERSON_OWN_ARMS, type PersonAnimId } from "../anim/ids";
 import { heldThing } from "../anim/personanim";
 import type { ArtView } from "../art/types";
@@ -155,6 +155,8 @@ export const PHONE_HELD = { frame: { id: "mess/trinket/phone", state: "fallen" }
  * ракурсами (`front`, `back`): кадр — того ракурсу, в якому персонаж (`heldView`), інакше ззаду щітка «висіла» б над підлогою.
  */
 export const VACUUM_HELD = { frame: { id: "item/vacuum", state: null } as IsoFrame, scale: 1 } as const;
+/** Віник у руках (§8.7): той самий контракт, що в `VACUUM_HELD`. */
+export const BROOM_HELD = { frame: { id: "item/broom", state: null } as IsoFrame, scale: 1 } as const;
 
 /** Що в гнізді рук: гніздо, кадр, масштаб відносно звичайного (1 — як намальовано) і зсув кадру від гнізда. */
 export interface HeldFrame {
@@ -168,10 +170,10 @@ export interface HeldFrame {
 /**
  * Річ у руках (`Item`, §8.4) — кадр і гніздо скелета: страва, мамин судочок, сира порція (`held`, кадри `item/dish/*`), совок
  * корму (`held`, `item/scoop` з видом корму), вудочка (`rod`, `item/toy/<якість>` у стані «в руці»), вертикальний пилосос
- * (`held`, `VACUUM_HELD`; кадр — з ракурсом персонажа, `heldView`); з порожніми руками в анімації телефону (`anim` — `phone`) —
+ * чи віник (`held`, `VACUUM_HELD`, `BROOM_HELD` за `tool`; кадр — з ракурсом персонажа, `heldView`); з порожніми руками в анімації телефону (`anim` — `phone`) —
  * телефон біля вуха (`PHONE_HELD`). Кіт і порожні руки — null: кота малює частина котів (у точці `hands`).
  */
-export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): HeldFrame | null {
+export function heldFrame(item: Item | null, anim: PersonAnimId | null = null, tool: CleaningTool = "broom"): HeldFrame | null {
   if (item === null) {
     if (anim === "phone") return { socket: "held", frame: PHONE_HELD.frame, scale: PHONE_HELD.scale, shift: PHONE_HELD.shift };
     return null;
@@ -187,7 +189,7 @@ export function heldFrame(item: Item | null, anim: PersonAnimId | null = null): 
     case "burnt":
       return { socket: "held", frame: dishFrame(item), scale: 1 };
     case "vacuum":
-      return { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale };
+      return tool === "vacuum" ? { socket: "held", frame: VACUUM_HELD.frame, scale: VACUUM_HELD.scale } : { socket: "held", frame: BROOM_HELD.frame, scale: BROOM_HELD.scale };
     default:
       return null;
   }
