@@ -446,20 +446,20 @@ describe("аварія забирає години, а не день (§8.5, §5
       const { minutes, repair } = accidentCost(difficulty, speed);
       return [minutes / 60, repair];
     };
-    // Середня (§8.5): ×1 — 7,5 години й 45 ₴, ×2 — 10 і 60, ×4 — 15 і 90, від ×6 — 20 і 120.
+    // Середня (§8.5): ×1 — 7,5 години й 68 ₴, ×2 — 10 і 90, ×4 — 15 і 135, від ×6 — 20 і 180.
     expect([1, 2, 4, 6, 10].map((speed) => cost("normal", speed))).toEqual([
-      [7.5, 45],
-      [10, 60],
-      [15, 90],
-      [20, 120],
-      [20, 120],
+      [7.5, 68],
+      [10, 90],
+      [15, 135],
+      [20, 180],
+      [20, 180],
     ]);
-    // §5.2: на ×2 — 8 годин і 48 ₴ на легкій, 12,5 і 75 — на важкій.
-    expect(cost("easy", 2)).toEqual([8, 48]);
-    expect(cost("hard", 2)).toEqual([12.5, 75]);
-    expect(cost("hard", 10)).toEqual([25, 150]);
-    // Години — цілими чвертями години: на важкій ×1 — 9 год 22,5 хв, тобто 9 год 30 хв; ремонт — до гривні (56,25 — 56).
-    expect(cost("hard", 1)).toEqual([9.5, 56]);
+    // §5.2: на ×2 — 8 годин і 72 ₴ на легкій, 12,5 і 113 — на важкій.
+    expect(cost("easy", 2)).toEqual([8, 72]);
+    expect(cost("hard", 2)).toEqual([12.5, 113]);
+    expect(cost("hard", 10)).toEqual([25, 225]);
+    // Години — цілими чвертями години: на важкій ×1 — 9 год 22,5 хв, тобто 9 год 30 хв; ремонт — до гривні (84,375 — 84).
+    expect(cost("hard", 1)).toEqual([9.5, 84]);
     expect(accidentCost("normal", 3.37).minutes % ACCIDENT.roundMinutes).toBe(0);
   });
 
@@ -468,7 +468,7 @@ describe("аварія забирає години, а не день (§8.5, §5
     const accident = save.current.trip?.accident;
     expect(accident?.speed).toBeCloseTo(3, 2);
     expect(accident?.minutes).toBe(12.5 * 60);
-    expect(accident?.repair).toBe(75);
+    expect(accident?.repair).toBe(112);
     const home = accidentHome(save.current);
     expect(home).toBeCloseTo(save.current.minute + 12.5 * 60);
     const loaded = deserialize(serialize(save));
@@ -492,9 +492,9 @@ describe("аварія забирає години, а не день (§8.5, §5
         const trip = save.current.trip;
         if (!trip?.losses.includes("repair")) continue;
         found = true;
-        expect(trip.repaired).toBe(Math.min(money, 120));
-        expect(save.current.character.money).toBe(money - Math.min(money, 120));
-        const line = money >= 120 ? fill(ACCIDENT_TEXTS.repair, "she", { сума: 120 }) : fill(ACCIDENT_TEXTS.repairAll, "she", { сума: money });
+        expect(trip.repaired).toBe(Math.min(money, 180));
+        expect(save.current.character.money).toBe(money - Math.min(money, 180));
+        const line = money >= 180 ? fill(ACCIDENT_TEXTS.repair, "she", { сума: 180 }) : fill(ACCIDENT_TEXTS.repairAll, "she", { сума: money });
         expect(accidentLines(save.current)).toContain(line);
       }
       expect(found, `ремонт не випав (${money} ₴)`).toBe(true);
@@ -876,8 +876,8 @@ describe("поїздки й робота (§8.6)", () => {
     expect(prize("normal").sanity).toBeCloseTo(10);
     expect(prize("easy").sanity).toBeCloseTo(12.5);
     expect(prize("hard").sanity).toBeCloseTo(8);
-    // Гроші — сталі: 300 мінус участь 20 на будь-якій складності.
-    for (const difficulty of ["easy", "normal", "hard"] as const) expect(prize(difficulty).money).toBe(280);
+    // Гроші — сталі: 300 мінус участь 30 на будь-якій складності.
+    for (const difficulty of ["easy", "normal", "hard"] as const) expect(prize(difficulty).money).toBe(270);
   });
 
   it("після пропущених о 18:00 зборів офісу немає в списку; на лікарняному — теж; звільнили дорогою — зборів немає (перевірка поїздок 2026-10-28)", () => {
@@ -933,8 +933,8 @@ describe("пункти призначення (§8.5)", () => {
     arrive(save, "shop");
     const price = shopPrice(save.current, { product: "catFood" }, "cheap");
     // Середня складність: від −30% до +10% (правка 2026-10-23).
-    expect(price).toBeGreaterThanOrEqual(70);
-    expect(price).toBeLessThanOrEqual(110);
+    expect(price).toBeGreaterThanOrEqual(105);
+    expect(price).toBeLessThanOrEqual(165);
     buyAtShop(save.current, { product: "litter" }, "cheap");
     buyAtShop(save.current, { thing: "litter" }, "cheap");
     // Запас — у ящиках біля входу, річ — одразу на місці (§6.4).

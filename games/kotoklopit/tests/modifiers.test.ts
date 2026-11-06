@@ -217,7 +217,7 @@ describe("події модифікаторів: перевірка модифі
     const fine = recordEvents();
     tickModifiers(osbb.current, 15 * 60 - 1, 2, false);
     fine.stop();
-    expect(fine.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "inspection", value: 10, paid: 4 }));
+    expect(fine.events).toContainEqual(expect.objectContaining({ type: "modifier", kind: "inspection", value: 16, paid: 4 }));
 
     const vet = game();
     withCat(vet);

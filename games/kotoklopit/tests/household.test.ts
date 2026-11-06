@@ -422,7 +422,7 @@ describe("шерсть і техніка (§8.7)", () => {
     if (water?.kind === "water") water.water = 0;
     tickHousehold(save.current, 7 * 60 + 59, 2);
     expect(water?.kind === "water" && water.water).toBe(8);
-    expect(utilitiesDue(save.current)).toBe(40 + 8 + 6);
+    expect(utilitiesDue(save.current)).toBe(61 + 12 + 9);
   });
 
   it("робот-пилосос о 12:00 годину тіла їздить і прибирає жмути, повз які проїжджає (§8.7, рішення автора 2026-11-02)", () => {

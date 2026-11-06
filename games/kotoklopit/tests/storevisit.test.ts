@@ -184,16 +184,16 @@ describe("бірка знижки «−X%» (§6.4; правило — ріше�
 
   it("знижка, якої на ціні не видно (ціна, округлена до гривні, та сама), — без бірки", () => {
     const litter = { product: "litter" } as const;
-    // Шукаємо поїздку, де наповнювач (11 і 22 ₴) дешевший на 1–3%: 10,7 → 11, 21,6 → 22.
+    // Шукаємо поїздку, де наповнювач (17 і 33 ₴) дешевший на 1–1,5%: 16,8 → 17, 32,6 → 33.
     let seed = 1;
-    const near = (s: number, q: "cheap" | "premium"): boolean => shopModifier(at("shop", s), litter, q) < -0.01 && shopModifier(at("shop", s), litter, q) > -0.03;
+    const near = (s: number, q: "cheap" | "premium"): boolean => shopModifier(at("shop", s), litter, q) < -0.01 && shopModifier(at("shop", s), litter, q) > -0.015;
     while (!near(seed, "cheap")) seed += 1;
     const state = at("shop", seed);
-    expect(unitPrice(state, litter, "cheap", "store")).toBe(11);
+    expect(unitPrice(state, litter, "cheap", "store")).toBe(17);
     expect(discount(state, litter, "cheap", "store")).toBe(0);
     seed = 1;
     while (!near(seed, "premium")) seed += 1;
-    expect(unitPrice(at("shop", seed), litter, "premium", "store")).toBe(22);
+    expect(unitPrice(at("shop", seed), litter, "premium", "store")).toBe(33);
     expect(discount(at("shop", seed), litter, "premium", "store")).toBe(0);
   });
 

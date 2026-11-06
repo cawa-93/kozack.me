@@ -37,19 +37,19 @@ function withCat(save: Save): Cat {
 
 describe("купівля речей (§6.4)", () => {
   it("на старті комунальні — 40", () => {
-    expect(utilitiesDue(game().current)).toBe(40);
+    expect(utilitiesDue(game().current)).toBe(61);
   });
 
   it("лоток привозять доставкою на вільне місце, і комунальні зростають на 4", () => {
     const save = game();
     expect(freeSlots(save.current, "litter")).toBe(5);
     buy(save, "litter", "cheap");
-    // Лоток 25, доставка — 10% бази (2,5 → 3) і надбавка 10 (§6.4).
-    expect(save.current.character.money).toBe(2000 - 38);
+    // Лоток 50, доставка — 10% бази й надбавка 15 (§6.4).
+    expect(save.current.character.money).toBe(2000 - 70);
     const boxes = save.current.home.items.filter((i) => i.kind === "litter");
     expect(boxes.map((b) => ("slot" in b ? b.slot : ""))).toEqual(["litter-1", "litter-2"]);
     expect(freeSlots(save.current, "litter")).toBe(4);
-    expect(utilitiesDue(save.current)).toBe(44);
+    expect(utilitiesDue(save.current)).toBe(67);
   });
 
   it("замовлена річ уже займає місце, а без вільних місць замовити не можна", () => {
@@ -65,16 +65,16 @@ describe("купівля речей (§6.4)", () => {
     buy(save, "toy", "premium");
     const toys = save.current.home.items.filter((i) => i.kind === "toy");
     expect(toys).toHaveLength(2);
-    expect(utilitiesDue(save.current)).toBe(40);
+    expect(utilitiesDue(save.current)).toBe(61);
   });
 
   it("викинута річ зменшує комунальні", () => {
     const save = game();
     buy(save, "scratcher", "cheap");
-    expect(utilitiesDue(save.current)).toBe(46);
+    expect(utilitiesDue(save.current)).toBe(70);
     const post = save.current.home.items.find((i) => i.kind === "scratcher");
     expect(post && discard(save.current, post.id)).toBe(true);
-    expect(utilitiesDue(save.current)).toBe(40);
+    expect(utilitiesDue(save.current)).toBe(61);
   });
 });
 
@@ -93,8 +93,8 @@ describe("кігтеточка й диван (§9.12)", () => {
     }
     expect(scratched).toBe(1);
     for (let i = 0; i < 30 && cat.act.kind === "scratch"; i++) tickCats(save.current, 1, { present: false });
-    expect(save.current.home.repairs).toBe(3);
-    expect(utilitiesDue(save.current)).toBe(43);
+    expect(save.current.home.repairs).toBe(5);
+    expect(utilitiesDue(save.current)).toBe(66);
     payUtilities(save.current);
     expect(save.current.home.repairs).toBe(0);
   });

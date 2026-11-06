@@ -51,7 +51,7 @@ describe("універсальний магазин (§6.4)", () => {
     const total = cartTotal(state, cart, "delivery");
     // У каталозі — базові ціни, доставка — раз на весь кошик.
     const goods = unitPrice(state, { product: "food" }, "cheap", "delivery") + 2 * unitPrice(state, { thing: "bowl" }, "cheap", "delivery");
-    expect(goods).toBe(40 + 2 * 10);
+    expect(goods).toBe(60 + 2 * 20);
     expect(total).toBe(goods + deliveryCost(state, goods));
     expect(checkout(state, cart, "delivery")).toBe(true);
     expect(state.character.money).toBe(1000 - total);
@@ -60,7 +60,7 @@ describe("універсальний магазин (§6.4)", () => {
 
   it("доставка в телефоні: порожній кошик — лише надбавка, у магазині доставки немає", () => {
     const state = game().current;
-    expect(cartDelivery(state, [], "delivery")).toBe(10);
+    expect(cartDelivery(state, [], "delivery")).toBe(15);
     expect(cartTotal(state, [], "delivery")).toBe(0);
     expect(cartDelivery(state, [line({ product: "food" }, "cheap", 1)], "store")).toBe(0);
   });

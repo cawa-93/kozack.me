@@ -80,7 +80,7 @@ export const START_STATS: Record<StatName, number> = {
   hygiene: 80,
   sanity: 40,
 };
-export const START_MONEY = 300;
+export const START_MONEY = 450;
 /** Ситість і гігієна за годину неспання. */
 export const SATIETY_PER_HOUR = -4;
 export const HYGIENE_PER_HOUR = -3;
@@ -160,20 +160,20 @@ export const SHOWER_HYGIENE: Record<Quality | "none", number> = { none: 8, cheap
  * одиниці.
  */
 export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: Record<Quality, number> }> = {
-  food: { units: { cheap: 20, premium: 20 }, price: { cheap: 40, premium: 120 } },
-  hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 15, premium: 50 } },
-  catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 100, premium: 300 } },
-  sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 120, premium: 330 } },
-  litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 11, premium: 22 } },
-  pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 50 } },
-  drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 75 } },
-  humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 65 } },
-  treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 50 } },
+  food: { units: { cheap: 20, premium: 20 }, price: { cheap: 60, premium: 180 } },
+  hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 23, premium: 75 } },
+  catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 150, premium: 450 } },
+  sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 180, premium: 495 } },
+  litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 17, premium: 33 } },
+  pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 23, premium: 75 } },
+  drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 30, premium: 113 } },
+  humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 30, premium: 98 } },
+  treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 23, premium: 75 } },
   // Без якостей: `SINGLE_VARIANT`.
-  collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 15, premium: 15 } },
-  shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 40 } },
-  detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 45 } },
-  catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 45 } },
+  collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 23, premium: 23 } },
+  shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 60 } },
+  detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 18, premium: 68 } },
+  catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 23, premium: 68 } },
   // Не продаються (`UNSOLD`), ціни немає.
   momMeal: { units: { cheap: 2, premium: 2 }, price: { cheap: 0, premium: 0 } },
 };
@@ -223,34 +223,34 @@ export const STORAGE_LIMITS: Record<Product, number> = {
 /** Стартовий пакет кота з притулку (§9.12). */
 export const SHELTER_STARTER_PACK = { catFood: 8, litter: PRODUCTS.litter.units.cheap };
 /** Доставка: `share` — частка ціни кожного товару, `fee` — надбавка за замовлення. */
-export const DELIVERY = { share: 0.1, fee: { easy: 8, normal: 10, hard: 12 } as Record<Difficulty, number> } as const;
+export const DELIVERY = { share: 0.1, fee: { easy: 12, normal: 15, hard: 18 } as Record<Difficulty, number> } as const;
 export const DELIVERY_HOURS = 6;
 /** Якщо персонаж спить, привезуть у цю хвилину наступного дня. */
 export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
 /** Комунальні за тиждень без внеску речей. */
-export const UTILITIES_BASE = 34;
+export const UTILITIES_BASE = 51;
 /** Речі для котів: ціна й внесок у комунальні за тиждень. */
 export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utilities: number }> = {
-  bowl: { price: { cheap: 10, premium: 60 }, utilities: 1 },
-  water: { price: { cheap: 10, premium: 60 }, utilities: 1 },
-  litter: { price: { cheap: 25, premium: 150 }, utilities: 4 },
+  bowl: { price: { cheap: 20, premium: 120 }, utilities: 2 },
+  water: { price: { cheap: 20, premium: 120 }, utilities: 2 },
+  litter: { price: { cheap: 50, premium: 300 }, utilities: 6 },
   // Дорога міцніша (`TOY.durability`) і з дзвіночком (`TOY.bell`).
-  toy: { price: { cheap: 10, premium: 60 }, utilities: 0 },
-  house: { price: { cheap: 60, premium: 350 }, utilities: 6 },
-  scratcher: { price: { cheap: 60, premium: 350 }, utilities: 6 },
-  carrier: { price: { cheap: 30, premium: 150 }, utilities: 0 },
-  feeder: { price: { cheap: 1000, premium: 2000 }, utilities: 8 },
-  fountain: { price: { cheap: 1200, premium: 2400 }, utilities: 6 },
-  robot: { price: { cheap: 1500, premium: 3000 }, utilities: 10 },
+  toy: { price: { cheap: 20, premium: 120 }, utilities: 0 },
+  house: { price: { cheap: 120, premium: 700 }, utilities: 9 },
+  scratcher: { price: { cheap: 120, premium: 700 }, utilities: 9 },
+  carrier: { price: { cheap: 60, premium: 300 }, utilities: 0 },
+  feeder: { price: { cheap: 2000, premium: 4000 }, utilities: 12 },
+  fountain: { price: { cheap: 2400, premium: 4800 }, utilities: 9 },
+  robot: { price: { cheap: 3000, premium: 6000 }, utilities: 15 },
   // Замок на шафку з кормом (`CUNNING.cheapLock`).
-  lock: { price: { cheap: 15, premium: 60 }, utilities: 0 },
+  lock: { price: { cheap: 30, premium: 120 }, utilities: 0 },
   // Замінює віник (§8.7). Новий запис — лише в кінець: місце в `GOODS` задає ціну магазину.
-  vacuum: { price: { cheap: 800, premium: 800 }, utilities: 4 },
+  vacuum: { price: { cheap: 1600, premium: 1600 }, utilities: 6 },
 };
 /** Порції (§9.12). */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
 /** Ремонт дивана до найближчого платежу. */
-export const SOFA_REPAIR = 3;
+export const SOFA_REPAIR = 5;
 export const DELIVERED_TOY_AT = { x: 9.5, y: 9.3 } as const;
 
 // Робота (§8.6).
@@ -656,7 +656,7 @@ export const NURTURING = { relationStep: 10, groomStep: 0.2, groomMood: 2, groom
 /** Ваги варіантів, коли кіт хоче гратися; `traitStep` — риса; від голоду `hungryFrom` вага крадіжки × `hungrySteal`. */
 export const MISCHIEF = { zoomies: 0.3, knock: 0.3, steal: 0.2, toy: 0.5, wander: 0.5, scratch: 0.3, traitStep: 0.5, hungryFrom: 60, hungrySteal: 2 } as const;
 /** Дрібнички на столах (§9.12): `repair` — до ремонту. */
-export const KNOCKING = { weight: 0.15, sniffStep: 0.5, sniffMinutes: 0.5, mugBreaks: 0.5, repair: 2, ignoredMinutes: 5, attentionStep: 0.2, reach: 6 } as const;
+export const KNOCKING = { weight: 0.15, sniffStep: 0.5, sniffMinutes: 0.5, mugBreaks: 0.5, repair: 3, ignoredMinutes: 5, attentionStep: 0.2, reach: 6 } as const;
 /** «Допитливість» (§9.12). */
 export const CURIOSITY = { boxStep: 1, sniffStep: 0.5, sniffMinutes: 1, shunMinutes: 0.5, shunHours: 2, freshHours: 4 } as const;
 /** Кігтеточка чи диван (§9.12): `premium`, `cheap` — шанс обрати кігтеточку; `relief` — скільки гри знімає. */
@@ -677,7 +677,7 @@ export const CUNNING = { openStep: 0.15, pawMinutes: 1, fullLevel: 2, fullWeight
 /** «Лазіння» (§9.12): `kitten`, `strong` — шанс застрягти. */
 export const CLIMBING = { base: 0.3, step: 1.5, warmStep: 0.5, kitten: 0.2, strong: 0.05, strongLevel: 2, lureReach: 2.5, rescueSanity: -1, jumpNeed: 95, jumpMood: -3, jumpInjury: 0.2 } as const;
 /** «Гризіння» (§9.12): `decideStep` — шанс за спокійне рішення. */
-export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMinutes: 2, maxMinutes: 3, wireChance: 0.15, fixMinutes: 15, fixSanity: -2, wireRepair: 5 } as const;
+export const CHEWING = { decideStep: 0.02, kitten: 0.01, playWeight: 0.1, minMinutes: 2, maxMinutes: 3, wireChance: 0.15, fixMinutes: 15, fixSanity: -2, wireRepair: 8 } as const;
 /** «Засідки» (§9.12): `waitRelief` — частка `PLAY_RELIEF` без стрибка. */
 export const AMBUSH = { step: 0.25, base: 0.04, kitten: 0.1, bored: 2, played: 0.5, playedMinutes: 5, minutes: 10, reach: 1, strongLevel: 2, dashMinutes: 0.5, waitRelief: 0.5 } as const;
 /**
@@ -830,7 +830,7 @@ export const ACCIDENT = {
   /** Шанс травми кота за місцем (§8.5): `maybeFallIll` кладе поверх складність. */
   catInjury: { hands: 0.4, cheap: 0.2, premium: 0.1 },
   /** Ремонт і години аварії: × `scale` × множник швидкості (§5.2). */
-  repair: 60,
+  repair: 90,
   hours: 10,
   scale: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
   /** Множник швидкості: `speedBase` + швидкість × `speedStep`, до `speedMax`. */
@@ -885,9 +885,9 @@ export const CARRIER = {
 export const TRIP_REPUTATION_DIVIDER = 3;
 /** Ветеринар (§8.5): `exam`, `cheap`, `premium` — ціни; `hideMinutes`, `homeHideMinutes` — «Жах клініки». */
 export const VET = {
-  exam: 40,
-  cheap: 30,
-  premium: 80,
+  exam: 60,
+  cheap: 45,
+  premium: 120,
   cheapWorks: 0.7,
   treatMinutes: 60,
   /** Контроль хронічної, дні. */
@@ -984,10 +984,10 @@ export const INHERIT_TRAIT_CHANCE = 0.5;
 /** Шанс двох X (§9.10): лише такий кіт буває черепаховим чи калико. */
 export const XXY_MALE = 1 / 3000;
 /** Стерилізація (§9.8): `minAge` — тижні, щоб кошеня не завагітніло раніше, ніж його можна прооперувати. */
-export const STERILIZATION = { price: 120, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5, minAge: 1 } as const;
+export const STERILIZATION = { price: 180, minutes: 120, recoveryDays: 3, mood: -10, recoveryMoodPerDay: -2, recoveryFatigue: 1.5, minAge: 1 } as const;
 /** Притулок (§8.5, §9.8): вік — тижні; `visibleTraits` — відомих рис. */
 export const SHELTER = {
-  price: 50,
+  price: 75,
   cats: 3,
   minAge: 1,
   maxAge: 5,
@@ -999,9 +999,9 @@ export const SHELTER = {
   breed: 0.1,
 } as const;
 /** Розплідник (§9.11): `age` — тижні; ціна — за рідкісністю породи. */
-export const BREEDER = { cats: 3, age: 2, price: { wild: 800, unusual: 700, colorpoint: 600, large: 550, common: 450 } } as const;
+export const BREEDER = { cats: 3, age: 2, price: { wild: 1200, unusual: 1050, colorpoint: 900, large: 825, common: 675 } } as const;
 /** Грумер (§8.5): `days` — скільки кіт линяє менше. */
-export const GROOMER = { price: { cheap: 40, premium: 90 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
+export const GROOMER = { price: { cheap: 60, premium: 135 } as Record<Quality, number>, days: { cheap: 7, premium: 14 } as Record<Quality, number>, mood: { cheap: -5, premium: -3 } as Record<Quality, number> } as const;
 /** Однакових іграшок у кошику за раз (§6.4). */
 export const SHOP_TOYS_PER_ORDER = 5;
 /** Що продається на місці (§8.5); ціни — `SHOP_WINDOW`. */
@@ -1048,7 +1048,7 @@ export const MODIFIERS = {
   /** «Планове відключення»: множники. */
   outage: { reputation: 0.75, search: 0.75, cook: 1.25, showerHygiene: 0.8, showerMinutes: 0.5 },
   /** Штрафи за безлад, лоток, шерсть. */
-  inspection: { minute: 15 * 60, mess: 5, litter: 5, fur: 10 },
+  inspection: { minute: 15 * 60, mess: 8, litter: 8, fur: 15 },
   /** Знижка комунальних. */
   recalculation: 10,
   guests: { minute: 19 * 60, mess: -3, max: -15, hideMinutes: 120 },
@@ -1068,7 +1068,7 @@ export const MODIFIERS = {
   road: { traffic: 1.3, "empty-roads": 0.8 } as Record<string, number>,
   catFoodPrice: { "food-price-up": 1.3, "pet-sale": 0.7 } as Record<string, number>,
   /** Виставка: `pedigree` і `luck` (випадково, до цього числа) — у бал; здоровий глузд призу × `DIFFICULTY.catSanity` (§6.2), гроші — ні. */
-  show: { fee: 20, mood: -5, pedigree: { pure: 0.5, half: 0.25 }, luck: 0.3, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
+  show: { fee: 30, mood: -5, pedigree: { pure: 0.5, half: 0.25 }, luck: 0.3, prizes: [{ score: 1, money: 300, sanity: 10 }, { score: 0.8, money: 150, sanity: 5 }, { score: 0.6, money: 60, sanity: 0 }] },
   /** × репутація за годину посади. */
   officeAbsent: -5,
   /** Модифікатори тижня; `vacationPayHours` — годин оплати. */
@@ -1112,7 +1112,7 @@ export const ILLNESS_EFFECTS = {
   medsWork: 0.7,
 } as const;
 /** Лікар (§6.5): `health` — після лікування. */
-export const DOCTOR_TREAT = { cheap: 30, premium: 80, cheapWorks: 0.7, health: 10 } as const;
+export const DOCTOR_TREAT = { cheap: 45, premium: 120, cheapWorks: 0.7, health: 10 } as const;
 /** Смерть кота (§9.2, §9.5): `zeroHealth` — за нульового здоров'я ввечері; решта — понад межу віку. */
 export const DEATH = { zeroHealth: 0.6, ageBase: 0.2, ageStep: 0.1, longevityStep: 0.05 } as const;
 /** Стосунки між котами (§9.4): `sociabilityStep` — за рівень обох; `kittenBonus` — дорослий із кошеням. */

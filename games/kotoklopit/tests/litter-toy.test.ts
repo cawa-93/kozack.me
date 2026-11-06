@@ -226,6 +226,6 @@ describe("вудочка з дзвіночком (§6.4)", () => {
   });
 
   it("вудочка лишається дешевою річчю, а дорога коштує вдвічі більше за колишню", () => {
-    expect(THINGS.toy.price).toEqual({ cheap: 10, premium: 60 });
+    expect(THINGS.toy.price).toEqual({ cheap: 20, premium: 120 });
   });
 });
