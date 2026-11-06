@@ -2,13 +2,21 @@
 // поведінки котів (`catai.ts`), щоб ту саму межу «вистачає» брали й сварки, й зараження через лоток (`diseases.ts`) без
 // циклічного імпорту diseases ↔ catai (загальна ревізія 2026-10-29).
 
-import { LITTER_CAPACITY } from "./config";
+import { LITTER_CAPACITY, WATER_CAPACITY } from "./config";
 import { SLOTS } from "./home";
 import { isNewborn } from "./reproduction";
-import type { GameState, HomeItem, LitterItem } from "./types";
+import type { GameState, HomeItem, LitterItem, WaterItem } from "./types";
 
 export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
   state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
+
+export const waterCapacity = (item: WaterItem): number => WATER_CAPACITY[item.quality];
+
+/** Фонтанчик працює (§8.7): дорогий завжди, простий — поки в баку є вода. Порожній для рис кота — усе одно що його немає. */
+export function fountainWorks(state: Pick<GameState, "home">): boolean {
+  const { appliances, fountainTank } = state.home;
+  return appliances.fountain === "premium" || (appliances.fountain === "cheap" && (fountainTank ?? 0) > 0);
+}
 
 export function litterCapacity(box: LitterItem): number {
   return LITTER_CAPACITY[box.litter ?? "none"];

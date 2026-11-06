@@ -3,12 +3,13 @@
 // їх перевіряє `tests/isoworld.test.ts` (кожен стан — кадр, що є в маніфесті).
 
 import { bowlEaten, isDirty, trashTipped } from "../../sim/catai";
-import { BOWL_CAPACITY, FEEDER_CAPACITY, WATER_CAPACITY } from "../../sim/config";
+import { BOWL_CAPACITY, FEEDER_CAPACITY } from "../../sim/config";
 import { DUST_SPOTS } from "../../sim/dust";
 import type { GameEvent } from "../../sim/events";
 import { objectAt, type RoomId } from "../../sim/home";
 import { robotProgress } from "../../sim/household";
 import { powerOut } from "../../sim/modifiers";
+import { fountainWorks, waterCapacity } from "../../sim/resources";
 import { boxesShown, STORAGES, storageStages, type FillStage } from "../../sim/storage";
 import { CAT_TRACES, hasTrace } from "../../sim/traces";
 import type { BowlItem, CatTrace, Dish, Feeder, GameState, HomeItem, LitterItem, MessKind, PlacedItem, Quality, TrinketKind, Vec, WaterItem } from "../../sim/types";
@@ -355,7 +356,7 @@ export function bowlFrame(item: BowlItem, eaten = 0): IsoFrame {
 
 /** Миска з водою (§9.12): порожня, мало, половина, повна (`WATER_CAPACITY` ковтків). */
 export function waterFrame(item: WaterItem): IsoFrame {
-  const share = item.water / WATER_CAPACITY;
+  const share = item.water / waterCapacity(item);
   const level = share <= 0 ? "empty" : share <= 1 / 3 ? "low" : share <= 2 / 3 ? "half" : "full";
   return frame(`item/water/${item.quality}`, level);
 }
@@ -368,6 +369,11 @@ export function litterFrame(item: LitterItem): IsoFrame {
   if (item.litter === null) return frame(`item/litter/${item.quality}`, isDirty(item) ? "empty-dirty" : "empty");
   const use = isDirty(item) ? "-dirty" : item.uses > 0 ? "-used" : "";
   return frame(`item/litter/${item.quality}`, `${item.litter}${use}`);
+}
+
+/** Фонтанчик на поїлці (§8.7): вода йде, поки він працює й поїлка не порожня. */
+export function fountainFrame(state: Pick<GameState, "home">, fountain: Quality, water: WaterItem): IsoFrame {
+  return frame(`item/fountain/${fountain}`, fountainWorks(state) && water.water > 0 ? "on" : "dry");
 }
 
 /** Кадр речі на клітинці, коли нею ніхто не користується (§8.7): у руках персонажа й на місці, куди вона стане. */

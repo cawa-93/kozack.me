@@ -411,10 +411,12 @@ export const PORTION_HUNGER = 100;
 /** Кіт чує, як насипають корм: голод, з якого біжить. */
 export const FOOD_SOUND = { hunger: 50, appetiteStep: 10 } as const;
 /** «Пиття» (§9.12): `stonesStep` — шанс сечокам'яної. */
-export const DRINKING = { sinkStep: 0.4, tapMood: 2, bowlMood: -1, fountainMood: 1, spill: 0.25, freshThirst: 20, stonesStep: 0.25, mug: 0.5, mugMood: 1 } as const;
+export const DRINKING = { sinkStep: 0.4, tapMood: 2, bowlMood: -1, fountainMood: 1, spill: 0.25, cheapSpill: 0.05, freshThirst: 20, stonesStep: 0.25, premiumStones: 0.5, mug: 0.5, mugMood: 1 } as const;
 /** Місткість: порції й ковтки. */
 export const BOWL_CAPACITY = 2;
-export const WATER_CAPACITY = 8;
+export const WATER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 12 };
+/** Бак простого фонтанчика, ковтки (§8.7): один на всі поїлки, кіт п'є приблизно 5 разів на добу. */
+export const FOUNTAIN = { tank: 40 } as const;
 /** Лоток брудний після стількох відвідин. */
 export const LITTER_CAPACITY: Record<Quality | "none", number> = { none: 1, cheap: 3, premium: 5 };
 export const CLEAN_LITTER_MINUTES = 3;

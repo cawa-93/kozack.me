@@ -1,0 +1,76 @@
+{
+ "name": "Бак фонтанчика",
+ "description": "Субота другого тижня, 11:00. Простий фонтанчик, у баку 3 ковтки (§8.7): двоє спраглих котів швидко його вичерпають, купол стане сухим. Дія біля поїлки наповнює бак. Пластикова поїлка біля бака може перекинутися, керамічна поруч — ні.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 15.5,
+   "y": 7.5,
+   "needs": {
+    "thirst": 80
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Мурка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 13.5,
+   "y": 7.5,
+   "needs": {
+    "thirst": 80
+   }
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 15.5,
+    "y": 7.5,
+    "facing": {
+     "x": 0.7071,
+     "y": -0.7071
+    }
+   }
+  },
+  "home": {
+   "appliances": {
+    "fountain": "cheap",
+    "robot": null,
+    "vacuum": null
+   },
+   "fountainTank": 3,
+   "items": [
+    {
+     "id": 901,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-1",
+     "water": 5
+    },
+    {
+     "id": 902,
+     "kind": "water",
+     "quality": "premium",
+     "slot": "water-2",
+     "water": 9
+    }
+   ]
+  }
+ }
+}

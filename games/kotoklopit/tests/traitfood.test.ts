@@ -582,6 +582,7 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
       decide(save.current, cat, createRng(seed), { present: false });
       if (cat.act.kind === "beg" && cat.act.target === "sink") sink += 1;
       save.current.home.appliances.fountain = "cheap";
+      save.current.home.fountainTank = 40;
       decide(save.current, cat, createRng(seed), { present: false });
       expect(cat.act.kind).toBe("drink");
     }
@@ -688,7 +689,7 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     // «Фонтанолюб» здебільшого сідає на умивальник.
     expect(pick({ drinking: 2 })).toBeLessThan(often);
     expect(pick({ drinking: 1 }, (save) => (save.current.home.trinkets = { mug: { x: 15.35, y: 4.3 } }))).toBe(0);
-    expect(pick({ drinking: 1 }, (save) => (save.current.home.appliances.fountain = "cheap"))).toBe(0);
+    expect(pick({ drinking: 1 }, (save) => Object.assign(save.current.home, { appliances: { ...save.current.home.appliances, fountain: "cheap" }, fountainTank: 40 }))).toBe(0);
     expect(pick({ drinking: 1 }, (save, cat) => sayNo(save.current, cat, "kitchen", createRng(1)))).toBe(0);
   });
 
@@ -735,6 +736,7 @@ describe("«Пиття» (рішення автора 2026-10-25)", () => {
     expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBeCloseTo(1.5);
     expect(stonesFactor(save.current, withCat(save, { drinking: -2 }))).toBeCloseTo(0.5);
     save.current.home.appliances.fountain = "cheap";
+    save.current.home.fountainTank = 40;
     expect(stonesFactor(save.current, withCat(save, { drinking: 2 }))).toBe(1);
   });
 });

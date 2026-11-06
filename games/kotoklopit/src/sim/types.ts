@@ -523,6 +523,8 @@ export interface Home {
   surfaces: Record<string, Dish | null>;
   /** Речі для котів на своїх місцях. */
   items: HomeItem[];
+  /** Ковтки в баку простого фонтанчика (§8.7). */
+  fountainTank?: number;
   messes: Mess[];
   /** Пакунки в дорозі. */
   deliveries: Delivery[];

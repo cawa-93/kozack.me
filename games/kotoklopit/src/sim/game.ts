@@ -18,7 +18,7 @@ import { runNight } from "./night";
 import { stateRng, seedDay, streamSeed } from "./rng";
 import { newRace, type RaceInput } from "./race";
 import { accidentBedtime, accidentHome, driveTrip, endTrip, roadMinutes, visitMinutes } from "./trips";
-import { annoyingMesses, tickHousehold, tickVacuum, upgradeFeeder, upgradeVacuum } from "./household";
+import { annoyingMesses, tickHousehold, tickVacuum, upgradeFeeder, upgradeFountain, upgradeVacuum } from "./household";
 import { canGoToSleep, collapseMinute, wakeMinute } from "./sleep";
 import { migrateTraits } from "./traits";
 import { isLastDay, weekdayOf } from "./time";
@@ -363,6 +363,7 @@ export function upgradeState(state: GameState): void {
   upgradeCharacter(state);
   upgradeModifiers(state);
   upgradeFeeder(state);
+  upgradeFountain(state);
   upgradeTraits(state);
   upgradeWardrobe(state);
   upgradeSupplies(state);

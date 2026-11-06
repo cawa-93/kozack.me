@@ -10,7 +10,7 @@ import { visibleFloorNear } from "./catmove";
 import { maybeFallIll } from "./diseases";
 import { needsHumanMeds, takeHumanMeds, treatable } from "./illness";
 import { bathe } from "./care";
-import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
+import { catInWasher, emptyFeeder, fillFountainTank, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
 import { cookFactor, powerOut } from "./modifiers";
 import { dropThing, putThing } from "./moving";
@@ -51,13 +51,13 @@ import {
   SHOO,
   STRESS_EFFECTS,
   UNWILLING_ATTENTION,
-  WATER_CAPACITY,
   WORK_CAT,
 } from "./config";
 import { feederAt, receivePackages, returnSupply, supplyCount, topQuality, unpack, useSupplies, useSupply } from "./economy";
 import { emit, type Refusal } from "./events";
 import { isSolid, SURFACE_IDS, type HomeObject } from "./home";
 import { isNewborn } from "./reproduction";
+import { waterCapacity } from "./resources";
 import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
@@ -374,8 +374,9 @@ function tapItem(state: GameState, item: HomeItem, id: string, held: Item | null
     }
     case "water":
       if (held !== null) return refuse(state, id, "hands-full");
-      if (item.water >= WATER_CAPACITY) return refuse(state, id, { reason: "full", what: "water" });
-      item.water = WATER_CAPACITY;
+      // Бак простого фонтанчика наповнюють разом із поїлкою (§8.7): поїлка з ним майже завжди повна.
+      if (!fillFountainTank(state) && item.water >= waterCapacity(item)) return refuse(state, id, { reason: "full", what: "water" });
+      item.water = waterCapacity(item);
       emit(state, { type: "watered", item: item.id });
       freshWater(state, item);
       return null;

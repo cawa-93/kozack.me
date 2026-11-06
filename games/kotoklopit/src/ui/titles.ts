@@ -66,7 +66,7 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   "thing:scratcher": { cheap: "Проста кігтеточка", premium: "Кігтеточка з лежанкою" },
   "thing:carrier": { cheap: "Пластикова переноска", premium: "Надійна переноска" },
   "thing:feeder": { cheap: "Проста автогодівниця", premium: "Розумна автогодівниця" },
-  "thing:fountain": { cheap: "Фонтанчик-поїлка", premium: "Тихий фонтанчик-поїлка" },
+  "thing:fountain": { cheap: "Фонтанчик-поїлка з баком", premium: "Автоматичний фонтанчик-поїлка" },
   "thing:robot": { cheap: "Простий робот-пилосос", premium: "Розумний робот-пилосос" },
   "thing:lock": { cheap: "Дитячий замочок на шафку", premium: "Магнітний замок на шафку" },
   "thing:vacuum": { cheap: "Вертикальний пилосос", premium: "Вертикальний пилосос" },

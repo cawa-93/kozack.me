@@ -479,8 +479,8 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
     for (const q of QUALITIES) {
       const water = (w: number): WaterItem => ({ id: 1, kind: "water", quality: q, slot: "water-1", water: w });
       expect(waterFrame(water(0)).state).toBe("empty");
-      expect(waterFrame(water(WATER_CAPACITY)).state).toBe("full");
-      for (let w = 0; w <= WATER_CAPACITY; w++) expectFrame(waterFrame(water(w)));
+      expect(waterFrame(water(WATER_CAPACITY[q])).state).toBe("full");
+      for (let w = 0; w <= WATER_CAPACITY[q]; w++) expectFrame(waterFrame(water(w)));
 
       const litter = (fill: Quality | null, uses: number): LitterItem => ({ id: 1, kind: "litter", quality: q, slot: "litter-1", litter: fill, uses });
       expect(litterFrame(litter(null, 0)).state).toBe("empty");

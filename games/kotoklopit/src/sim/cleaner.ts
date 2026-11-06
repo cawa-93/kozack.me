@@ -2,15 +2,15 @@
 // двері за `GUESTS.ringLead` хвилин і о 13:00 миттєво прибирає квартиру із запасів гравця. Будівельний пил з 10:00 до 12:00
 // осідає кімната за кімнатою — без випадковості, як і звичайний пил (§8.7 «Пил і павутина»). Викликає `tickModifiers`.
 
-import { BOWL_CAPACITY, GUESTS, HOUSEHOLD, MODIFIERS, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, GUESTS, HOUSEHOLD, MODIFIERS } from "./config";
 import { openDoor, ringBell, takeGuest } from "./door";
 import { addDust, dustOf } from "./dust";
 import { takeSupply, topQuality } from "./economy";
 import { emit, type CleanerVisit } from "./events";
 import type { RoomId } from "./home";
-import { catInWasher, stockBowl, tuftsOf } from "./household";
+import { catInWasher, fillFountainTank, stockBowl, tuftsOf } from "./household";
 import { powerOut } from "./modifiers";
-import { litterCapacity } from "./resources";
+import { litterCapacity, waterCapacity } from "./resources";
 import type { BowlItem, GameState, HomeItem, LitterItem } from "./types";
 
 /** Хвилину дня `at` перетнули за крок від `from` завдовжки `minutes` (як `crossed` у `modifiers.ts`). */
@@ -91,10 +91,11 @@ export function cleanHome(state: GameState): CleanerVisit {
     if (poured > 0) visit.fed = bowls.every((b) => b.food >= BOWL_CAPACITY) ? "full" : "some";
   }
   for (const item of home.items) {
-    if (item.kind !== "water" || item.water >= WATER_CAPACITY) continue;
-    item.water = WATER_CAPACITY;
+    if (item.kind !== "water" || item.water >= waterCapacity(item)) continue;
+    item.water = waterCapacity(item);
     visit.watered = true;
   }
+  if (fillFountainTank(state)) visit.watered = true;
   return visit;
 }
 

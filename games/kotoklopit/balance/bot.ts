@@ -6,10 +6,11 @@ import { petOver, petTolerance } from "../src/sim/actions";
 import { isMoving } from "../src/sim/body";
 import { petResting, traitLevel } from "../src/sim/cat";
 import { catOnComputer, isDirty, itemsOf, trashTipped } from "../src/sim/catai";
-import { BODY_PACE, DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET, WATER_CAPACITY } from "../src/sim/config";
+import { BODY_PACE, DISEASES, ILLNESSES, MEDICINE, MINUTES_PER_DAY, PETTING, PRODUCTS, SHELTER, VET } from "../src/sim/config";
 import { giveMedicine, isControlled } from "../src/sim/diseases";
 import { needsHumanMeds } from "../src/sim/illness";
 import { FUR_SPOTS, furVisible, isDryMess, pendingTufts, tuftsOf } from "../src/sim/household";
+import { waterCapacity } from "../src/sim/resources";
 import { DUST_SPOTS, dustOf, floorDust } from "../src/sim/dust";
 import { stateRng } from "../src/sim/rng";
 import { boxCount, canUnpack, freeSlots, supplyCount, utilitiesDue } from "../src/sim/economy";
@@ -197,7 +198,7 @@ export class Bot {
     if (s.cats.length > 0) {
       const bowl = this.bowlToFeed();
       if (bowl) return named("feed", () => this.feed(bowl.id));
-      const water = itemsOf(s, "water").find((w) => w.water < WATER_CAPACITY / 2 && !this.skipped(`item:${w.id}`));
+      const water = itemsOf(s, "water").find((w) => w.water < waterCapacity(w) / 2 && !this.skipped(`item:${w.id}`));
       if (water) return named("use", () => this.use(`item:${water.id}`));
     }
     // Мамині судочки (§6.4, рішення автора 2026-10-26): готові — з холодильника одразу на стіл, без плити. Холодильник і так

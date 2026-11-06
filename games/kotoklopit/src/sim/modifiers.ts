@@ -12,14 +12,15 @@ import { isNewborn } from "./reproduction";
 import { vetManner } from "./destinations";
 import { observe } from "./knowledge";
 import { changeStat, earn, spend } from "./character";
-import { DIFFICULTY, GUESTS, ILLNESS_EFFECTS, MODIFIERS, POSITIONS, PRODUCTS, VET, WATER_CAPACITY } from "./config";
+import { DIFFICULTY, GUESTS, ILLNESS_EFFECTS, MODIFIERS, POSITIONS, PRODUCTS, VET } from "./config";
 import { addSupply, stash, takeSupply } from "./economy";
 import { emit } from "./events";
 import { fallIllPerson } from "./illness";
 import { createRng, deriveSeed, stateRng, streamSeed, type Rng } from "./rng";
 import { weekdayOf } from "./time";
 import type { Cat, GameState } from "./types";
-import { furVisible, putVacuumDown, stockBowl } from "./household";
+import { fillFountainTank, furVisible, putVacuumDown, stockBowl } from "./household";
+import { waterCapacity } from "./resources";
 import { loudNoise } from "./noise";
 import { callImpression, changeReputation, isWorkday, noticeCallLook, onSickLeave, stopWork } from "./work";
 import { tickCleaner, tickConstructionDust } from "./cleaner";
@@ -677,9 +678,10 @@ function friendHelps(state: GameState, from: number, minutes: number): void {
   if (Math.floor(minute / 60) === Math.floor((minute + minutes) / 60)) return;
   const hour = Math.floor((minute + minutes) / 60) * 60;
   if (hour < m.from || hour >= m.to) return;
+  fillFountainTank(state);
   for (const item of state.home.items) {
     if (item.kind === "bowl") stockBowl(state, item);
-    if (item.kind === "water") item.water = WATER_CAPACITY;
+    if (item.kind === "water") item.water = waterCapacity(item);
     if (item.kind === "litter" && item.uses > 0) {
       const litter = takeSupply(state, "litter");
       if (litter !== null) {

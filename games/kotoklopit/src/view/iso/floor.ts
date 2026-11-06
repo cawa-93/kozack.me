@@ -27,7 +27,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierOccupied, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -226,7 +226,7 @@ export class IsoFloorView implements WorldPart {
       }
       this.place(spot, look, shownAt(item), isoItemLook(item.kind, item.quality).height, item.kind === "toy" ? item.hidden : undefined);
       // Фонтанчик (§8.7) — на кожній мисці з водою; брудний лоток пахне (§9.12).
-      if (item.kind === "water") this.extra(spot, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: look.state === "empty" ? "dry" : "on" } : null, ON.overlay);
+      if (item.kind === "water") this.extra(spot, "fountain", fountain ? fountainFrame(state, fountain, item) : null, ON.overlay);
       if (item.kind === "litter") {
         const smell: IsoFrame = { id: "fx/smell", state: Math.floor(frame.time / SMELL_MS) % 2 === 0 ? "a" : "b" };
         this.extra(spot, "smell", look.state?.endsWith("-dirty") ? smell : null, ON.fx, spot.height * SMELL_LIFT);
@@ -352,8 +352,8 @@ export class IsoFloorView implements WorldPart {
     const at = { x: place.x + 0.5, y: place.y + 0.5 };
     const ghost = this.single(`ghost:${kind}:${quality}`, placedFrame(held.item), at, look.height, { half: look.half });
     this.extra(ghost, "feeder", held.feeder ? feederFrame(held.feeder) : null, -ON.overlay);
-    const fountain = kind === "water" ? state.home.appliances.fountain : null;
-    this.extra(ghost, "fountain", fountain ? { id: `item/fountain/${fountain}`, state: "on" } : null, ON.overlay);
+    const fountain = held.item.kind === "water" ? state.home.appliances.fountain : null;
+    this.extra(ghost, "fountain", fountain && held.item.kind === "water" ? fountainFrame(state, fountain, held.item) : null, ON.overlay);
     ghost.image.setAlpha(GHOST_ALPHA);
     for (const extra of ghost.extras.values()) extra.image.setAlpha(GHOST_ALPHA);
     this.placeMark.show(at);

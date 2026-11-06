@@ -174,7 +174,7 @@ describe("прибиральниця (§4.1)", () => {
     // Порожня миска — доверху, у почату досипано того самого корму.
     expect(bowls.map((b) => b.food)).toEqual([BOWL_CAPACITY, BOWL_CAPACITY]);
     expect(state.home.supplies.catFood.cheap).toBe(10 - BOWL_CAPACITY - (BOWL_CAPACITY - 1));
-    expect(water.water).toBe(WATER_CAPACITY);
+    expect(water.water).toBe(WATER_CAPACITY.cheap);
     expect(visit).toMatchObject({ fed: "full", watered: true });
   });
 
@@ -189,7 +189,7 @@ describe("прибиральниця (§4.1)", () => {
     expect(boxes[0]?.uses).toBe(3);
     expect(state.home.washer.state).toBe("idle");
     expect(bowls.map((b) => b.food)).toEqual([0, 1]);
-    expect(water.water).toBe(WATER_CAPACITY);
+    expect(water.water).toBe(WATER_CAPACITY.cheap);
     expect(visit).toEqual({ messes: 10, tufts: 9, dust: DUST_SPOTS.length, litter: 0, hung: false, washing: false, fed: null, watered: true, sock: false });
   });
 
@@ -247,7 +247,7 @@ describe("прибиральниця (§4.1)", () => {
     const visit = cleanHome(empty);
     expect(idle.map((b) => b.food)).toEqual([0, 1]);
     expect(empty.home.supplies.catFood.cheap).toBe(10);
-    expect(water.water).toBe(WATER_CAPACITY);
+    expect(water.water).toBe(WATER_CAPACITY.cheap);
     expect(visit.fed).toBeNull();
   });
 
@@ -504,7 +504,7 @@ describe("сценарії", () => {
     expect(home.washer.state).toBe("washing");
     expect(home.supplies.detergent.cheap).toBe(0);
     expect(home.items.filter((i): i is BowlItem => i.kind === "bowl").map((b) => b.food)).toEqual([BOWL_CAPACITY, BOWL_CAPACITY]);
-    expect(home.items.filter((i): i is WaterItem => i.kind === "water").map((w) => w.water)).toEqual([WATER_CAPACITY, WATER_CAPACITY]);
+    expect(home.items.filter((i): i is WaterItem => i.kind === "water").map((w) => w.water)).toEqual([WATER_CAPACITY.cheap, WATER_CAPACITY.cheap]);
     expect(home.stove.item?.kind).toBe("raw");
     const visit = visitOf(events);
     expect(visit?.kind).toBe("cleaner");

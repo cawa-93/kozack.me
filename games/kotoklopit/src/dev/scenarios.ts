@@ -76,7 +76,7 @@ export function addCatCorner(state: GameState): void {
   const id = (): number => state.nextId++;
   state.home.items.push(
     { id: id(), kind: "bowl", quality: "cheap", slot: "bowl-1", food: 0, foodQuality: null, sterile: false },
-    { id: id(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY },
+    { id: id(), kind: "water", quality: "cheap", slot: "water-1", water: WATER_CAPACITY.cheap },
     { id: id(), kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 },
     { id: id(), kind: "toy", quality: "cheap", x: 5.5, y: 8.5, uses: 0 },
   );

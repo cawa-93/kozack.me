@@ -372,6 +372,8 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
   }
   if (isAppliance(thing)) {
     state.home.appliances[thing] = quality;
+    // Бак новий: вода з поламаного чи викинутого не переходить (§8.7).
+    if (thing === "fountain") state.home.fountainTank = 0;
     return null;
   }
   if (thing === "feeder") {
@@ -389,7 +391,7 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
     case "bowl":
       return { id, kind: "bowl", quality, slot, food: 0, foodQuality: null, sterile: false };
     case "water":
-      return { id, kind: "water", quality, slot, water: WATER_CAPACITY };
+      return { id, kind: "water", quality, slot, water: WATER_CAPACITY[quality] };
     case "litter":
       return { id, kind: "litter", quality, slot, litter: null, uses: 0 };
     case "house":

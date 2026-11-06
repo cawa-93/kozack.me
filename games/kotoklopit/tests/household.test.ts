@@ -416,6 +416,7 @@ describe("шерсть і техніка (§8.7)", () => {
   it("фонтанчик доливає воду; техніка й автогодівниці додають комунальних", () => {
     const save = game();
     save.current.home.appliances.fountain = "cheap";
+    save.current.home.fountainTank = 40;
     const bowl = firstBowl(save);
     save.current.home.feeders = [{ slot: bowl.slot, quality: "premium", food: 0, foodQuality: null, sterile: false }];
     const water = save.current.home.items.find((i) => i.kind === "water");

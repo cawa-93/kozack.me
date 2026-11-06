@@ -121,7 +121,7 @@ import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TIL
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
-import { enoughFor, isDirty, itemsOf, litterCapacity } from "./resources";
+import { enoughFor, fountainWorks, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
@@ -873,13 +873,13 @@ export function decide(state: GameState, cat: Cat, rng: Rng, context: CatContext
   if (n.thirst >= NEED_THRESHOLD.thirst) {
     // «Фонтанолюб» без фонтанчика сідає на умивальник і чекає, щоб відкрили кран (§9.12, рішення автора 2026-10-25).
     const drinking = traitLevel(cat, "drinking");
-    if (drinking > 0 && state.home.appliances.fountain === null && rng.chance(DRINKING.sinkStep * drinking)) {
+    if (drinking > 0 && !fountainWorks(state) && rng.chance(DRINKING.sinkStep * drinking)) {
       const sink = objectById("sink");
       return start(cat, "beg", { x: sink.x, y: sink.y }, CAT_ACT_MINUTES.beg, "sink");
     }
     // «+» п'є з вашого кухля на кухонному столі (фінальна перевірка рис 2026-10-26, «П'є зі склянок»): кухоль стоїть, а «ні» про
     // кухню кіт не пам'ятає. Шанс — останнім: кіт без риси rng тут не витрачає.
-    if (drinking > 0 && state.home.appliances.fountain === null && !state.home.trinkets?.mug && noGo(state, cat, "kitchen") === "go" && rng.chance(DRINKING.mug)) {
+    if (drinking > 0 && !fountainWorks(state) && !state.home.trinkets?.mug && noGo(state, cat, "kitchen") === "go" && rng.chance(DRINKING.mug)) {
       return start(cat, "drink", trinketTile("mug"), CAT_ACT_MINUTES.drink, "mug");
     }
     const waters = itemsOf(state, "water");
@@ -2191,13 +2191,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       itemMood(state, cat, water);
       wearOut(state, water, rng);
       const drinking = traitLevel(cat, "drinking");
-      if (drinking > 0 && state.home.appliances.fountain !== null) changeMood(state, cat, DRINKING.fountainMood, "фонтанчик");
-      // +2 перекидає миску з водою — калюжа (§9.12): так видно, що з миски він пити не любить.
-      if (drinking >= 2 && state.home.appliances.fountain === null && water.water > 0 && rng.chance(DRINKING.spill)) {
+      if (drinking > 0 && fountainWorks(state)) changeMood(state, cat, DRINKING.fountainMood, "фонтанчик");
+      // Легку пластикову поїлку може перекинути кожен, а +2 — частіше: так видно, що з миски він пити не любить (§9.12).
+      if (water.quality === "cheap" && !fountainWorks(state) && water.water > 0 && rng.chance(drinking >= 2 ? DRINKING.spill : DRINKING.cheapSpill)) {
         water.water = 0;
         const slot = slotById(water.slot);
         addMess(state, "puddle", visibleFloorNear(state, { x: slot.x + 0.5, y: slot.y + 1 }), cat.id);
-        observe(state, cat, "drinking");
+        if (drinking >= 2) observe(state, cat, "drinking");
       }
       return;
     }
@@ -4030,8 +4030,8 @@ const FRESH_FROM = new Set(["idle", "wander", "toy", "beg", "attention", "follow
  */
 export function stonesFactor(state: GameState, cat: Cat): number {
   const level = traitLevel(cat, "drinking");
-  if (level > 0 && state.home.appliances.fountain !== null) return 1;
-  return Math.max(0, 1 + DRINKING.stonesStep * level);
+  const risk = level > 0 && fountainWorks(state) ? 1 : Math.max(0, 1 + DRINKING.stonesStep * level);
+  return state.home.appliances.fountain === "premium" ? risk * DRINKING.premiumStones : risk;
 }
 
 /**

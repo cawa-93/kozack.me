@@ -2,7 +2,7 @@
 
 import { asleep, traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, FOUNTAIN, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
 import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
@@ -11,6 +11,7 @@ import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise, quietRobot } from "./noise";
+import { waterCapacity } from "./resources";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CleaningTool, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
@@ -440,6 +441,11 @@ export function tickVacuum(state: GameState, minutes: number): void {
  * місці (`VACUUM_HOME`), а почате «пилососити» біля шафи скасовано; жмути шерсті лягають на свої місця за шкалою шерсті. Пилосос,
  * якого сценарій дав у руки, — у руках, а не на підлозі.
  */
+/** Старе збереження з простим фонтанчиком (§8.7): бака тоді не було, тож він повний. */
+export function upgradeFountain(state: GameState): void {
+  if (state.home.appliances.fountain === "cheap") state.home.fountainTank ??= FOUNTAIN.tank;
+}
+
 export function upgradeVacuum(state: GameState): void {
   const home = state.home;
   home.appliances.vacuum ??= null;
@@ -451,6 +457,29 @@ export function upgradeVacuum(state: GameState): void {
   // Жмутів ще не було (старе збереження, сценарій) — лягають за шкалою одразу; у збереженні, де вони вже з'являлися по одному
   // (`tuftAt`), — і далі по одному: завантаження стану не змінює (§8.7, [Змінено пізніше]).
   if (home.tuftAt === undefined) topUpTufts(state);
+}
+
+/** Фонтанчик доливає поїлки (§8.7): простий — із бака, поки в ньому є вода, дорогий — без міри. */
+function topUpWater(state: GameState): void {
+  const { home } = state;
+  const fountain = home.appliances.fountain;
+  if (!fountain) return;
+  for (const item of home.items) {
+    if (item.kind !== "water") continue;
+    const gap = waterCapacity(item) - item.water;
+    const poured = fountain === "premium" ? gap : Math.min(gap, home.fountainTank ?? 0);
+    if (poured <= 0) continue;
+    item.water += poured;
+    if (fountain === "cheap") home.fountainTank = (home.fountainTank ?? 0) - poured;
+  }
+}
+
+/** Наповнити бак простого фонтанчика (§8.7). false — бака немає чи він і так повний. */
+export function fillFountainTank(state: GameState): boolean {
+  const { home } = state;
+  if (home.appliances.fountain !== "cheap" || (home.fountainTank ?? 0) >= FOUNTAIN.tank) return false;
+  home.fountainTank = FOUNTAIN.tank;
+  return true;
 }
 
 /** Хвилини побуту вдень і вночі: шерсть і жмути, пил, прання, техніка за розкладом. */
@@ -481,7 +510,7 @@ export function tickHousehold(state: GameState, from: number, minutes: number): 
   settleFeeders(state);
   const fed = feed(state);
   if (fed.length > 0) emit(state, { type: "feeder", bowls: fed });
-  if (home.appliances.fountain) for (const item of home.items) if (item.kind === "water") item.water = WATER_CAPACITY;
+  topUpWater(state);
   // Без світла робот-пилосос не виїжджає з бази (§4.1): ні прибирання, ні шуму, ні котів на ньому.
   const robot = home.appliances.robot;
   if (robot && minutes < 1440 && !powerOut(state)) for (const start of ROBOT[robot].starts) robotClean(state, robot, start, from, minutes, crossed);
