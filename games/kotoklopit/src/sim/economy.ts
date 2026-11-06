@@ -48,7 +48,7 @@ export function newHome(): Home {
     utilitiesDebt: 0,
     repairs: 0,
     carrier: null,
-    appliances: { fountain: null, robot: null },
+    appliances: { fountain: null, robot: null, vacuum: null },
     feeders: [],
     fur: 0,
     tufts: [],
@@ -479,7 +479,7 @@ export function utilitiesDue(state: GameState): number {
   );
 }
 
-export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "fountain" || thing === "robot";
+export const isAppliance = (thing: ThingKind): thing is Appliance => thing === "fountain" || thing === "robot" || thing === "vacuum";
 
 /**
  * Сплатити комунальні в ніч на понеділок (§6.4). Неоплачений тиждень — попередження;

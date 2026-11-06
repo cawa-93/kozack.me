@@ -377,7 +377,7 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(save.current.minute - before).toBeCloseTo(TRIPS.shop.visit + GIFTS.sockSearch + TRIPS.shop.road);
   });
 
-  it("пилосос знаходить шкарпетку сам — коли з ним у руках підійти до дивана (§8.7, рішення автора 2026-11-02)", () => {
+  it("віник і пилосос знаходять шкарпетку самі — коли з ними в руках підійти до дивана (§8.7)", () => {
     const save = game();
     save.current.home.sock = true;
     walkTo(save, "vacuum");
@@ -389,7 +389,7 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(save.current.home.sock).toBe(true);
     const body = save.current.character.body;
     body.x = STASHES.sofa.at.x + 0.3;
-    body.y = STASHES.sofa.at.y - 1;
+    body.y = STASHES.sofa.at.y - 0.8;
     advance(save, 0.5);
     stop();
     expect(save.current.home.sock).toBeUndefined();

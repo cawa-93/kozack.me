@@ -102,6 +102,7 @@ describe("спільні паузи (§9.12, рішення автора 2026-10
 describe("гучний звук (§9.12, рішення автора 2026-10-25)", () => {
   it("пилосос загудів у руках: несміливий ховається, сміливий іде подивитися — обидва прояви видно", () => {
     const save = game();
+    save.current.home.appliances.vacuum = "cheap";
     standAt(save, "vacuum");
     const plain = awake(withCat(save, {}, { x: 14.5, y: 8.5 }));
     const brave = awake(withCat(save, { bravery: 1 }, { x: 12.5, y: 8.5 }));
@@ -244,6 +245,7 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
 
   it("пилосос, який вмикають раз у раз, відкриває риси не частіше ніж раз на годину", () => {
     const save = game();
+    save.current.home.appliances.vacuum = "cheap";
     standAt(save, "vacuum");
     const brave = awake(withCat(save, { bravery: 1 }, { x: 14.5, y: 8.5 }));
     save.current.home.fur = 50;

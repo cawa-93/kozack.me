@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
-import { DUST, HOUSEHOLD } from "../src/sim/config";
+import { DUST, HOUSEHOLD, TOOL_REACH } from "../src/sim/config";
 import { addDust, DUST_SPOTS, dustOf, floorDust, tickDust, type DustKind } from "../src/sim/dust";
 import { advance, interact, newGame } from "../src/sim/game";
 import { hiddenTile, isFixedSolid, isWall, OBJECTS, ROOMS, SLOTS, VACUUM_HOME, type RoomId } from "../src/sim/home";
@@ -102,8 +102,13 @@ describe("місця пилу (§8.7, «Пил і павутина»)", () => {
     }
   });
 
-  it("до кожного місця можна підійти з пилососом ближче за його радіус, і не крізь стіну", () => {
-    for (const [i, s] of DUST_SPOTS.entries()) expect(closest(s), `${i}: ${s.room} ${s.kind} (${s.x}, ${s.y})`).toBeLessThan(1.45);
+  it("віник дістає кожне місце пилу й павутини, не крізь стіну", () => {
+    const { floor, web } = TOOL_REACH.broom;
+    for (const [i, s] of DUST_SPOTS.entries()) expect(closest(s), `${i}: ${s.room} ${s.kind} (${s.x}, ${s.y})`).toBeLessThan(s.kind === "cobweb" ? web : floor);
+  });
+
+  it("віник дістає кожне місце жмута шерсті", () => {
+    for (const [i, s] of FUR_SPOTS.entries()) expect(closest(s), `${i}: (${s.x}, ${s.y})`).toBeLessThan(TOOL_REACH.broom.floor);
   });
 
   it("павутина — вгорі в куті, над меблями: її не закриває нічого вище 150", () => {
@@ -222,6 +227,7 @@ describe("сценарій «Запилена квартира» (`scenarios/dus
     expect(furTufts(state)).toHaveLength(9);
     expect(state.home.vacuumAt).toEqual(VACUUM_HOME);
     expect(state.cats).toHaveLength(3);
+    state.home.appliances.vacuum = "cheap";
     standAt(save, "vacuum");
     interact(save);
     expect(state.character.held?.kind).toBe("vacuum");
@@ -237,6 +243,7 @@ describe("сценарій «Запилена квартира» (`scenarios/dus
 describe("пил прибирають (§8.7)", () => {
   it("пилосос у руках — пил і павутину поруч, крізь стіну — ні", () => {
     const save = game();
+    save.current.home.appliances.vacuum = "cheap";
     const bedroom = spotsOf("bedroom");
     save.current.home.dust = [...bedroom];
     standAt(save, "vacuum");
@@ -249,7 +256,7 @@ describe("пил прибирають (§8.7)", () => {
     const left = dustOf(save.current);
     for (const i of bedroom) {
       const s = DUST_SPOTS[i]!;
-      const near = Math.hypot(s.x - 2.4, s.y - 1.4) <= 1.5;
+      const near = Math.hypot(s.x - 2.4, s.y - 1.4) <= TOOL_REACH.vacuum.floor;
       expect(left.includes(i), `${i} ${s.kind}`).toBe(!near);
     }
     expect(left).not.toContain(bedroom[0]);

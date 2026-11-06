@@ -74,12 +74,12 @@ export interface HeldToy {
 }
 
 /**
- * Вертикальний пилосос у руках (§8.7, рішення автора 2026-11-02, «Пилосос у руках»): гуде й прибирає сухе сміття довкола
+ * Інструмент для прибирання в руках (§8.7): віник чи вертикальний пилосос (`cleaningTool`); гуде лише пилосос, прибирають обидва сухе сміття довкола
  * персонажа. Де він стоїть, коли не в руках, — `Home.vacuumAt`.
  */
 export interface HeldVacuum {
   kind: "vacuum";
-  /** Скільки хвилин він уже гуде в руках: гучний звук — щоразу через `VACUUM.noiseEvery`. */
+  /** Скільки хвилин він уже в руках: пилосос гучно гуде щоразу через `VACUUM.noiseEvery`. */
   minutes?: number;
 }
 
@@ -331,7 +331,9 @@ export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem |
 /** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі, замок — на шафці з кормом (§9.12). */
 export type ThingKind = HomeItem["kind"] | "carrier" | "feeder" | "lock" | Appliance;
 /** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. Автогодівниці — окремо, на мисках. */
-export type Appliance = "fountain" | "robot";
+export type Appliance = "fountain" | "robot" | "vacuum";
+/** Чим персонаж прибирає в руках (§8.7). */
+export type CleaningTool = "broom" | "vacuum";
 
 /**
  * Автогодівниця (§9.12, правка автора 2026-10-23): стоїть над місцем миски й тримає її повною, доки

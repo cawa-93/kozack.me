@@ -60,6 +60,7 @@ export function affordTable(curves: readonly MoneyCurve[]): string[] {
     `|---|---|${curves.map(() => "---|").join("")}`,
     row("Дорогий побут, доплата за тиждень", extra, (money) => gainCovers(money, extra)),
     row("Дорогий набір речей", set, (money) => savedFor(money, set)),
+    thing("Пилосос", "vacuum", "cheap"),
     thing("Фонтанчик, дешевий", "fountain", "cheap"),
     thing("Фонтанчик, дорогий", "fountain", "premium"),
     thing("Годівниця, дешева", "feeder", "cheap"),

@@ -452,7 +452,7 @@ function myThings(state: GameState, handlers: PhoneHandlers): HTMLElement {
   const extra: { kind: ThingKind; quality: Quality; thing: DiscardThing }[] = [
     ...(carrier === null ? [] : [{ kind: "carrier" as const, quality: carrier, thing: { owned: "carrier" as const } }]),
     ...(lock === undefined ? [] : [{ kind: "lock" as const, quality: lock, thing: { owned: "lock" as const } }]),
-    ...(["fountain", "robot"] as const).flatMap((a) => {
+    ...(["fountain", "robot", "vacuum"] as const).flatMap((a) => {
       const quality = state.home.appliances[a];
       return quality === null ? [] : [{ kind: a, quality, thing: { appliance: a } }];
     }),

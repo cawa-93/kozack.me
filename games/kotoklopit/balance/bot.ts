@@ -23,7 +23,7 @@ import { targetById, targetCenter, targetOf } from "../src/sim/targets";
 import type { BowlItem, Cat, GameState, Medicine, NightReport, Product, Save, Trip, Vec } from "../src/sim/types";
 import { isWorkday, isWorkTime, positionOf, standupToday } from "../src/sim/work";
 import { powerOut } from "../src/sim/modifiers";
-import { POSITIONS, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
+import { POSITIONS, TOOL_REACH, WORK_END_MINUTE, WORK_START_MINUTE } from "../src/sim/config";
 
 /** Скільки ігрових хвилин один крок ходьби. */
 const WALK_STEP = 0.1;
@@ -74,7 +74,7 @@ const VACUUM_DUST = 8;
 /** Найдовше, скільки бот ходить із пилососом за раз, хвилин: те, до чого не дійти, він пропускає й так. */
 const VACUUM_MAX_MINUTES = 45;
 /** Як близько бот підходить із пилососом до того, що прибирає: з запасом до радіуса пилососа (`VACUUM.radius` 1,5). */
-const VACUUM_NEAR = 1.3;
+const VACUUM_NEAR = TOOL_REACH.broom.floor - 0.2;
 
 export interface BotPolicy {
   /**

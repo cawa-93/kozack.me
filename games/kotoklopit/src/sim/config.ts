@@ -6,7 +6,7 @@
 // `observeEvery` — прояв риси (§9.9) не частіше; `[a, b]` — від і до.
 
 import type { RoomId } from "./home";
-import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
+import type { CatNeed, CatTrace, CleaningTool, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
 // Час (§8).
 export const REAL_SECONDS_PER_GAME_HOUR = 30;
@@ -179,6 +179,8 @@ export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: 
 export const UNSOLD: readonly Product[] = ["momMeal"];
 /** З одним варіантом (§9.10): магазин продає лише «дешевий». */
 export const SINGLE_VARIANT: readonly Product[] = ["collar"];
+/** Речі з одним варіантом: магазин теж продає лише «дешевий». */
+export const SINGLE_VARIANT_THINGS: readonly ThingKind[] = ["vacuum"];
 /** Для себе (§11.3а): лише їх магазин показує, поки вдома не було кота. */
 export const SELF_PRODUCTS: readonly Product[] = ["food", "hygiene", "humanMeds", "detergent"];
 export const START_SUPPLIES: Record<Product, Record<Quality, number>> = {
@@ -240,6 +242,8 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   robot: { price: { cheap: 1500, premium: 3000 }, utilities: 10 },
   // Замок на шафку з кормом (`CUNNING.cheapLock`).
   lock: { price: { cheap: 15, premium: 60 }, utilities: 0 },
+  // Замінює віник (§8.7). Новий запис — лише в кінець: місце в `GOODS` задає ціну магазину.
+  vacuum: { price: { cheap: 800, premium: 800 }, utilities: 4 },
 };
 /** Порції (§9.12). */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
@@ -874,7 +878,15 @@ export const HOUSEHOLD = {
 /**
  * Пилосос (§8.1, §8.7): `robotReach` — маршрут робота бере всі жмути, крім кухонного, і пил на підлозі вітальні й спальні.
  */
-export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10, radius: 1.5, robotReach: 0.9 } as const;
+export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10, robotReach: 0.9 } as const;
+/**
+ * Досяжність інструмента в руках (§8.7), клітинки. `web` — до павутини: у віника більша за `floor`, бо до павутин за ліжком,
+ * умивальником і холодильником ближче як на 1,33 не підійти, а персонаж у кут упирається не ідеально (`tests/dust.test.ts`).
+ */
+export const TOOL_REACH: Record<CleaningTool, { floor: number; web: number }> = {
+  broom: { floor: 1, web: 1.45 },
+  vacuum: { floor: 2, web: 2 },
+};
 /** Пил (§8.7): кімнати — по черзі, на чверть `everyMinutes` одна від одної. */
 export const DUST = { everyMinutes: 36 * 60 } as const;
 /** Ласощі (§7): `refund` — частка втрати в межах `hurtMinutes`; понад `perDay` — шанс «Шлунка» `stomach`. */

@@ -2,7 +2,7 @@
 // Той самий кошик — доставкою з телефона чи на місці в поїздці: у магазині, а ліки — у ветеринара й лікаря (§8.5).
 
 import { hadCat, spend } from "./character";
-import { PRODUCTS, SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, THINGS } from "./config";
+import { PRODUCTS, SELF_PRODUCTS, SHOP_TOYS_PER_ORDER, SINGLE_VARIANT, SINGLE_VARIANT_THINGS, THINGS } from "./config";
 import { GOODS, goodsKey, purchase, shopModifier, shopPrice, soldHere, type Goods } from "./destinations";
 import { canOrderProduct, deliveryCost, dispatch, feederRoom, freeSlots, isAppliance, ownsThing, productPrice } from "./economy";
 import { priceFactor } from "./modifiers";
@@ -27,11 +27,11 @@ export function offered(state: GameState, goods: Goods): boolean {
 }
 
 /**
- * Варіанти товару (§6.4): здебільшого два — дешевий і дорогий; нашийник один, без якостей (рішення автора 2026-10-29,
- * `GENERAL_REVIEW.md`, А17) — у магазині лише «дешевий».
+ * Варіанти товару (§6.4): здебільшого два — дешевий і дорогий; нашийник і пилосос без якостей — у магазині лише «дешевий».
  */
 export function variants(goods: Goods): readonly Quality[] {
-  return "product" in goods && SINGLE_VARIANT.includes(goods.product) ? ["cheap"] : ["cheap", "premium"];
+  const single = "product" in goods ? SINGLE_VARIANT.includes(goods.product) : SINGLE_VARIANT_THINGS.includes(goods.thing);
+  return single ? ["cheap"] : ["cheap", "premium"];
 }
 
 /** Доставка з телефона чи покупка на місці. */

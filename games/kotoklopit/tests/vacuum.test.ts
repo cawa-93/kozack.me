@@ -6,13 +6,16 @@ import { describe, expect, it } from "vitest";
 
 import { dropEverything } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
-import { HOUSEHOLD, VACUUM } from "../src/sim/config";
+import { HOUSEHOLD, THINGS, TOOL_REACH, VACUUM } from "../src/sim/config";
+import { DUST_SPOTS, dustOf } from "../src/sim/dust";
+import { discardAppliance, freeSlots, ownsThing, place as placeThing, utilitiesDue } from "../src/sim/economy";
 import { advance, deserialize, interact, newGame, serialize } from "../src/sim/game";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, LAUNDRY_BASKET, objectById, roomAt, slotById, VACUUM_HOME } from "../src/sim/home";
-import { FUR_SPOTS, furVisible, putVacuumDown, ROBOT_DOCK, tickHousehold, topUpTufts, tuftsOf } from "../src/sim/household";
+import { cleaningTool, FUR_SPOTS, furVisible, putVacuumDown, ROBOT_DOCK, tickHousehold, topUpTufts, tuftsOf } from "../src/sim/household";
 import { answerCall } from "../src/sim/modifiers";
 import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
+import { variants } from "../src/sim/shop";
 import { targetOf } from "../src/sim/targets";
 import type { Cat, MessKind, Save, Vec } from "../src/sim/types";
 import { PersonSwept } from "../src/view/iso/swept";
@@ -209,17 +212,18 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     expect(save.current.character.activity).toMatchObject({ kind: "use" });
   });
 
-  it("прибирає сухе сміття в радіусі 1,5 клітинки; мокре й органічне — ні, далі — ні, крізь стіну — ні", () => {
+  it("прибирає сухе сміття в радіусі; мокре й органічне — ні, далі — ні, крізь стіну — ні", () => {
     const save = game();
+    save.current.home.appliances.vacuum = "cheap";
     takeVacuum(save);
     const at = { x: 9.5, y: 8.5 };
     place(save, at);
     const dry: MessKind[] = ["fur", "litter", "paper", "garbage", "broken"];
     const wet: MessKind[] = ["puddle", "vomit", "surprise", "hairball", "mark"];
-    const near = dry.map((kind, i) => mess(save, kind, { x: at.x + 1.3 * Math.cos(i), y: at.y + 1.3 * Math.sin(i) }));
+    const near = dry.map((kind, i) => mess(save, kind, { x: at.x + 1.8 * Math.cos(i), y: at.y + 1.8 * Math.sin(i) }));
     const kept = [
       ...wet.map((kind, i) => mess(save, kind, { x: at.x + Math.cos(i + 0.5), y: at.y + Math.sin(i + 0.5) })),
-      mess(save, "litter", { x: at.x + 1.7, y: at.y }),
+      mess(save, "litter", { x: at.x + 2.2, y: at.y }),
     ];
     const { events, stop } = recordEvents();
     advance(save, 0.1);
@@ -230,7 +234,7 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
     expect(swept).toMatchObject({ by: "person", tufts: [] });
     expect(swept?.type === "vacuumed" && swept.messes.map((m) => m.kind).sort()).toEqual([...dry].sort());
     expect(swept?.type === "vacuumed" && swept.messes.map((m) => m.id).sort()).toEqual([...near].sort());
-    // За стіною ряду 5 (у ванній) — ні, хоч і ближче за 1,5.
+    // За стіною ряду 5 (у ванній) — ні, хоч і ближче за радіус.
     place(save, { x: 8.5, y: 6.35 });
     const behind = mess(save, "paper", { x: 8.5, y: 4.9 });
     advance(save, 0.1);
@@ -239,6 +243,7 @@ describe("пилосос у руках (§8.7, рішення автора 2026-
 
   it("гуде: гучний звук, щойно взяли, і далі щодесять хвилин тіла, поки в руках", () => {
     const save = game();
+    save.current.home.appliances.vacuum = "cheap";
     standAt(save, "vacuum");
     const { events, stop } = recordEvents();
     // Схованка йде за годинником, тож кіт, що злякався першим, може вилізти й злякатися знову: рахуємо кожного окремо.
@@ -398,5 +403,114 @@ describe("старі збереження (§8.7, рішення автора 20
     save.current.character.held = { kind: "vacuum" };
     const loaded = deserialize(serialize(save)).current;
     expect(loaded.home.vacuumAt).toBeNull();
+  });
+});
+
+describe("віник і пилосос (§8.7)", () => {
+  /** Покласти сміття за `distance` праворуч від персонажа в середині вітальні й зробити крок часу: чи прибрав. */
+  function sweeps(save: Save, distance: number): boolean {
+    const at = { x: 9.5, y: 8.5 };
+    place(save, at);
+    const id = mess(save, "paper", { x: at.x + distance, y: at.y });
+    advance(save, 0.1);
+    return !save.current.home.messes.some((m) => m.id === id);
+  }
+
+  it("на старті це віник: прибирає, але тихо — коти не лякаються", () => {
+    const save = game();
+    expect(cleaningTool(save.current)).toBe("broom");
+    standAt(save, "vacuum");
+    const cat = timidCat(save, { x: 12.5, y: 8.5 });
+    const { events, stop } = recordEvents();
+    interact(save);
+    advance(save, bodyMinutes(25));
+    stop();
+    expect(save.current.character.held?.kind).toBe("vacuum");
+    expect(events.filter((e) => e.type === "scared" && e.cat === cat.id)).toEqual([]);
+  });
+
+  it("радіус віника менший за колишній пилосос, а нового пилососа — більший", () => {
+    expect(TOOL_REACH.broom.floor).toBeLessThan(1.5);
+    expect(TOOL_REACH.vacuum.floor).toBeGreaterThan(1.5);
+    const broom = game();
+    takeVacuum(broom);
+    expect(sweeps(broom, TOOL_REACH.broom.floor - 0.1)).toBe(true);
+    expect(sweeps(broom, TOOL_REACH.broom.floor + 0.2)).toBe(false);
+    const vacuum = game();
+    vacuum.current.home.appliances.vacuum = "cheap";
+    takeVacuum(vacuum);
+    expect(sweeps(vacuum, TOOL_REACH.vacuum.floor - 0.1)).toBe(true);
+  });
+
+  it("павутину віник дістає далі, ніж сміття на підлозі, — так береться й павутина за меблями", () => {
+    const save = game();
+    takeVacuum(save);
+    const web = DUST_SPOTS.findIndex((s) => s.kind === "cobweb" && s.room === "bedroom");
+    const floor = DUST_SPOTS.findIndex((s) => s.kind === "floor" && s.room === "bedroom");
+    const spot = DUST_SPOTS[web]!;
+    expect(TOOL_REACH.broom.web).toBeGreaterThan(TOOL_REACH.broom.floor);
+    save.current.home.dust = [web];
+    place(save, { x: 2.3, y: 1.3 });
+    expect(Math.hypot(spot.x - 2.3, spot.y - 1.3)).toBeGreaterThan(TOOL_REACH.broom.floor);
+    advance(save, 0.1);
+    expect(dustOf(save.current)).toEqual([]);
+    // Пил на підлозі на такій самій відстані вже не дістати.
+    const dust = DUST_SPOTS[floor]!;
+    save.current.home.dust = [floor];
+    place(save, { x: dust.x + TOOL_REACH.broom.floor + 0.2, y: dust.y });
+    advance(save, 0.1);
+    expect(dustOf(save.current)).toEqual([floor]);
+  });
+
+  it("куплений пилосос стає там, де стояв віник; викинули — знову віник, хоч би й у руках", () => {
+    const save = game();
+    const state = save.current;
+    const stood = { ...state.home.vacuumAt! };
+    expect(freeSlots(state, "vacuum")).toBe(1);
+    placeThing(state, "vacuum", "cheap");
+    expect(cleaningTool(state)).toBe("vacuum");
+    expect(state.home.vacuumAt).toEqual(stood);
+    expect(freeSlots(state, "vacuum")).toBe(0);
+    takeVacuum(save);
+    expect(discardAppliance(state, "vacuum")).toBe(true);
+    expect(state.character.held?.kind).toBe("vacuum");
+    expect(cleaningTool(state)).toBe("broom");
+    expect(freeSlots(state, "vacuum")).toBe(1);
+  });
+
+  it("у магазині один варіант, а комунальні — як у техніки", () => {
+    const state = game().current;
+    expect(variants({ thing: "vacuum" })).toEqual(["cheap"]);
+    const before = utilitiesDue(state);
+    state.home.appliances.vacuum = "cheap";
+    expect(utilitiesDue(state)).toBe(before + THINGS.vacuum.utilities);
+  });
+
+  it("у день без світла пилосос стає віником: тихий і з його радіусом; світло повернулося — знову пилосос", () => {
+    const save = game();
+    const state = save.current;
+    state.home.appliances.vacuum = "cheap";
+    state.modifiers.day = "outage";
+    expect(cleaningTool(state)).toBe("broom");
+    standAt(save, "vacuum");
+    const cat = timidCat(save, { x: 12.5, y: 8.5 });
+    const { events, stop } = recordEvents();
+    interact(save);
+    advance(save, bodyMinutes(25));
+    stop();
+    expect(events.filter((e) => e.type === "scared" && e.cat === cat.id)).toEqual([]);
+    expect(sweeps(save, TOOL_REACH.broom.floor + 0.2)).toBe(false);
+    state.modifiers.day = null;
+    expect(cleaningTool(state)).toBe("vacuum");
+    expect(sweeps(save, TOOL_REACH.broom.floor + 0.2)).toBe(true);
+  });
+
+  it("у старому збереженні пилососа в техніці немає — удома віник, і пилосос можна купити", () => {
+    const save = game();
+    delete (save.current.home.appliances as Partial<typeof save.current.home.appliances>).vacuum;
+    const loaded = deserialize(serialize(save));
+    expect(loaded.current.home.appliances.vacuum).toBeNull();
+    expect(ownsThing(loaded.current, "vacuum")).toBe(false);
+    expect(cleaningTool(loaded.current)).toBe("broom");
   });
 });

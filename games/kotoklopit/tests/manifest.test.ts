@@ -366,6 +366,11 @@ describe("маніфест: квартира", () => {
 describe("маніфест: речі котів, у руках, бруд", () => {
   it("кожна річ магазину (THINGS) × якість — item/<річ>/<якість>, і речі котячого кутка серед них", () => {
     for (const thing of Object.keys(THINGS) as ThingKind[]) {
+      // Пилосос — річ у руках із ракурсами, без якостей.
+      if (thing === "vacuum") {
+        entry("item/vacuum");
+        continue;
+      }
       for (const quality of Object.keys(THINGS[thing].price) as Quality[]) entry(`item/${kebab(thing)}/${quality}`);
     }
     const homeKinds: Record<HomeItem["kind"], true> = { bowl: true, water: true, litter: true, toy: true, house: true, scratcher: true };

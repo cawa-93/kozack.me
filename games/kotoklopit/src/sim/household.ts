@@ -2,7 +2,7 @@
 
 import { asleep, traitLevel } from "./cat";
 import { changeStat, unpleasantTask } from "./character";
-import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, VACUUM, WATER_CAPACITY } from "./config";
+import { BOWL_CAPACITY, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, SHEDDING, TOOL_REACH, VACUUM, WATER_CAPACITY } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
 import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
@@ -13,7 +13,7 @@ import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY
 import { loudNoise } from "./noise";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
-import type { BowlItem, Cat, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
+import type { BowlItem, Cat, CleaningTool, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
 
 /** Шкала шерсті квартири (§8.7): 0–100. */
 const FUR_MAX = 100;
@@ -283,13 +283,13 @@ interface Swept {
 }
 
 /**
- * Прибрати пилососом довкола точки `at` у радіусі `radius` (§8.7): жмути шерсті (кожен знімає зі шкали свою частку), пил і
- * павутину, сухий безлад; крізь стіну — ні. Робот (`robot`) бере лише жмути й пил на підлозі: павутини він не дістає, а безладу
- * не прибирав і раніше. Прибране пилососом здорового глузду окремо не забирає (його забирає сам пилосос). Додає прибране до `out`.
+ * Прибрати довкола точки `at` (§8.7): жмути шерсті (кожен знімає зі шкали свою частку) і пил у `reach.floor`, павутину в
+ * `reach.web`, сухий безлад (`messes`); крізь стіну — ні. Прибране здорового глузду окремо не забирає (його забирає сам
+ * інструмент). Додає прибране до `out`.
  */
-function sweep(state: GameState, at: Vec, radius: number, robot: boolean, out: Swept): void {
+function sweep(state: GameState, at: Vec, reach: { floor: number; web: number }, messes: boolean, out: Swept): void {
   const home = state.home;
-  const near = (p: Vec): boolean => Math.hypot(p.x - at.x, p.y - at.y) <= radius && clearPath(at, p);
+  const near = (p: Vec, radius = reach.floor): boolean => Math.hypot(p.x - at.x, p.y - at.y) <= radius && clearPath(at, p);
   const tufts = tuftsOf(state).filter((i) => {
     const spot = FUR_SPOTS[i];
     return spot !== undefined && near(spot);
@@ -301,15 +301,15 @@ function sweep(state: GameState, at: Vec, radius: number, robot: boolean, out: S
   }
   for (const index of dustOf(state)) {
     const spot = DUST_SPOTS[index];
-    if (!spot || (robot && spot.kind === "cobweb") || !near(spot)) continue;
+    if (!spot || !near(spot, spot.kind === "cobweb" ? reach.web : reach.floor)) continue;
     removeDust(state, index);
     out.dust.push(index);
   }
-  if (robot) return;
-  const messes = home.messes.filter((m) => isDryMess(m.kind) && near(m));
-  if (messes.length === 0) return;
-  home.messes = home.messes.filter((m) => !messes.includes(m));
-  out.messes.push(...messes.map((m) => ({ id: m.id, kind: m.kind })));
+  if (!messes) return;
+  const dry = home.messes.filter((m) => isDryMess(m.kind) && near(m));
+  if (dry.length === 0) return;
+  home.messes = home.messes.filter((m) => !dry.includes(m));
+  out.messes.push(...dry.map((m) => ({ id: m.id, kind: m.kind })));
 }
 
 /** Пилосос щось прибрав (§8.7): подія для журналу. */
@@ -318,15 +318,20 @@ function reportSwept(state: GameState, by: "person" | "robot", swept: Swept): vo
   emit(state, { type: "vacuumed", by, ...swept });
 }
 
+/** Чим прибирає персонаж (§8.7): пилосос, коли його купили й є світло, інакше віник. Місце й руки в них спільні. */
+export function cleaningTool(state: GameState): CleaningTool {
+  return state.home.appliances.vacuum && !powerOut(state) ? "vacuum" : "broom";
+}
+
 /**
- * Узяти пилосос у руки (§8.7, «Пилосос у руках», рішення автора 2026-11-02): коротким натисканням біля нього, як іграшку. Він
- * загудів — гучний звук на всю квартиру (§9.12): коти, що не сплять, лякаються й ховаються, сміливі — ні.
+ * Узяти інструмент у руки (§8.7): коротким натисканням біля нього, як іграшку. Пилосос загудів — гучний звук на всю квартиру
+ * (§9.12): коти, що не сплять, лякаються й ховаються, сміливі — ні. Віник тихий.
  */
 export function takeVacuum(state: GameState): void {
   state.home.vacuumAt = null;
   state.character.held = { kind: "vacuum", minutes: 0 };
   emit(state, { type: "vacuum", stage: "taken" });
-  loudNoise(state, "vacuum", null);
+  if (cleaningTool(state) === "vacuum") loudNoise(state, "vacuum", null);
 }
 
 /**
@@ -406,23 +411,25 @@ export function putVacuumDown(state: GameState): void {
 }
 
 /**
- * Пилосос у руках за хвилини (§8.7, «Пилосос у руках»): гуде — гучний звук щоразу через `VACUUM.noiseEvery` хвилин (§9.12);
- * неприємне — здоровий глузд `VACUUM.sanityPerMinute` за хвилину (§8.1); прибирає сухе сміття в радіусі `VACUUM.radius` від
- * персонажа; біля дивана витягає шкарпетку з котячої схованки (§9.12, «Подарунки й схованки»).
+ * Інструмент у руках за хвилини (§8.7): пилосос гуде — гучний звук щоразу через `VACUUM.noiseEvery` хвилин (§9.12); неприємне —
+ * здоровий глузд `VACUUM.sanityPerMinute` за хвилину (§8.1); прибирає сухе сміття навколо персонажа (`TOOL_REACH`); біля дивана
+ * витягає шкарпетку з котячої схованки (§9.12, «Подарунки й схованки»).
  */
 export function tickVacuum(state: GameState, minutes: number): void {
   const held = state.character.held;
   if (held?.kind !== "vacuum") return;
   const before = held.minutes ?? 0;
   held.minutes = before + minutes;
-  if (Math.floor(held.minutes / VACUUM.noiseEvery) > Math.floor(before / VACUUM.noiseEvery)) loudNoise(state, "vacuum", null);
+  const tool = cleaningTool(state);
+  if (tool === "vacuum" && Math.floor(held.minutes / VACUUM.noiseEvery) > Math.floor(before / VACUUM.noiseEvery)) loudNoise(state, "vacuum", null);
   unpleasantTask(state, VACUUM.sanityPerMinute * minutes);
   const body = state.character.body;
   const swept: Swept = { tufts: [], dust: [], messes: [] };
-  sweep(state, body, VACUUM.radius, false, swept);
+  const reach = TOOL_REACH[tool];
+  sweep(state, body, reach, true, swept);
   reportSwept(state, "person", swept);
   const stash = STASHES.sofa.at;
-  if (state.home.sock === true && Math.hypot(stash.x - body.x, stash.y - body.y) <= VACUUM.radius) {
+  if (state.home.sock === true && Math.hypot(stash.x - body.x, stash.y - body.y) <= reach.floor) {
     delete state.home.sock;
     emit(state, { type: "sock-found", where: "vacuum" });
   }
@@ -435,6 +442,7 @@ export function tickVacuum(state: GameState, minutes: number): void {
  */
 export function upgradeVacuum(state: GameState): void {
   const home = state.home;
+  home.appliances.vacuum ??= null;
   const inHands = state.character.held?.kind === "vacuum";
   if (inHands) home.vacuumAt = null;
   else if (!home.vacuumAt) home.vacuumAt = { ...VACUUM_HOME };
@@ -504,6 +512,9 @@ function robotClean(state: GameState, from: number, minutes: number, crossed: (m
   heard.push(...loudNoise(state, "robot", along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes), (cat) => !heard.includes(cat.id)));
 }
 
+/** Робот павутини не дістає. */
+const ROBOT_REACH = { floor: VACUUM.robotReach, web: 0 };
+
 /** Крок, яким робот-пилосос «проходить» свій шлях за крок часу, клітинки: щоб не проскочити жмут чи пил між точками. */
 const ROBOT_SWEEP_STEP = 0.2;
 
@@ -511,7 +522,7 @@ const ROBOT_SWEEP_STEP = 0.2;
 function robotSweep(state: GameState, from: number, to: number): void {
   const steps = Math.max(1, Math.ceil(((to - from) * ROUTE_LENGTH) / ROBOT_SWEEP_STEP));
   const swept: Swept = { tufts: [], dust: [], messes: [] };
-  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), VACUUM.robotReach, true, swept);
+  for (let k = 0; k <= steps; k++) sweep(state, along(ROBOT_ROUTE, from + ((to - from) * k) / steps), ROBOT_REACH, false, swept);
   reportSwept(state, "robot", swept);
 }
 
