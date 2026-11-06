@@ -251,6 +251,17 @@ describe("картка на місці: тло й положення (§8.5 «Н
     expect(rule(".card")).toContain("width: min(560px, 100%);");
   });
 
+  it("CSS: рамка фокуса вміщається в поле, за яким її обтинає область прокрутки картки чи рядка вкладок", () => {
+    const px = (selector: string, property: string): number[] =>
+      (new RegExp(`\\n\\s*${property}: ([^;]+);`, "u").exec(rule(selector))?.[1] ?? "").split(" ").map(parseFloat);
+    const reach = (selector: string): number => (px(selector, "outline")[0] ?? NaN) + (px(selector, "outline-offset")[0] ?? NaN);
+    const underActions = px(".card-actions", "padding")[2] ?? NaN;
+    const aroundTabs = px(".card-tabs", "padding")[0] ?? NaN;
+    expect(reach(".trait:focus-visible")).toBeLessThanOrEqual(Math.min(underActions, aroundTabs));
+    // Хрестик стоїть упритул до кута картки: за його межі рамці не можна зовсім.
+    expect(reach(".card-close:focus-visible")).toBeLessThanOrEqual(0);
+  });
+
   it("CSS: слабше тло — за .away, а .aside лише притискає картку ліворуч", () => {
     expect(rule(".overlay.away:not(.cinematic):not(.solid)")).toContain("background: var(--dim-away);");
     expect(rule(".overlay.aside:not(.cinematic):not(.solid)")).not.toContain("background");

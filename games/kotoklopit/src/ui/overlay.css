@@ -364,12 +364,19 @@
   cursor: default;
 }
 
+/* Рамка фокуса — упритул до елемента: картка й рядок вкладок прокручуються й обтинають усе за своїм краєм, а місця там лише
+   на її товщину (під кнопками дій — 3 px, у рядку вкладок — 4 px). */
 .button:focus-visible,
-.card-close:focus-visible,
 .card-tab:focus-visible,
 .trait:focus-visible {
   outline: 3px solid var(--orange);
-  outline-offset: 3px;
+  outline-offset: 0;
+}
+
+/* Хрестик стоїть у самому куті картки, тож рамка — всередині нього, у порожньому полі картинки навколо кола. */
+.card-close:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
 }
 
 /* Магазин, доставка, поїздки, речі. */
