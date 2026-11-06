@@ -779,8 +779,7 @@ export function accidentLines(state: GameState): string[] {
   const each = (text: string, cats: readonly { cat: { sex: Sex; name: string } }[]): string[] => cats.map(({ cat }) => fill(text, cat.sex, { кіт: cat.name }));
   const loss = (kind: Exclude<AccidentLoss, "cat">): string => {
     if (kind !== "repair") return ACCIDENT_TEXTS[kind];
-    // У старих збереженнях скільки заплатили немає — тоді всю ціну.
-    const paid = trip.repaired ?? accident.repair;
+    const paid = trip.repaired ?? 0;
     const shown = Math.floor(paid);
     if (paid >= accident.repair) return fill(ACCIDENT_TEXTS.repair, address, { сума: shown });
     return shown > 0 ? fill(ACCIDENT_TEXTS.repairAll, address, { сума: shown }) : ACCIDENT_TEXTS.repairNone;
