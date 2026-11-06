@@ -237,7 +237,7 @@ describe("картка на місці: тло й положення (§8.5 «Н
     // В одній колонці бірка — перед ціною, а ціни однакової ширини: бірки стоять рівним стовпцем (рецензія 2026-11-03).
     const one = css.indexOf("@container catalog (min-width: 460px) and (max-width: 689px) {");
     expect(one).toBeGreaterThan(0);
-    expect(css.slice(one, css.indexOf("}", one))).toMatch(/\.shop-price \{\s*min-width: 2\.75em;/u);
+    expect(css.slice(one, css.indexOf("}", one))).toMatch(/\.shop-price \{\s*min-width: 3\.4em;/u);
     // Картка в один рядок: іконка, назва, бірка з ціною, «−», кількість, «+»; кнопки — не менші за 40 px.
     expect(rule(".shop-item")).toContain("grid-template-columns: 30px minmax(0, 1fr) auto 40px 2.2ch 40px;");
     expect(rule(".button.step,\n.button.step:active:not(:disabled),\n.button.step:disabled")).toContain("width: 40px;");

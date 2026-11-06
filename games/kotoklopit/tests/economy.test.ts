@@ -64,7 +64,7 @@ describe("доставка (§6.4)", () => {
     for (const [difficulty, fee] of [["easy", 8], ["normal", 10], ["hard", 12]] as const) {
       const state = newGame({ address: "she", difficulty, seed: 1 }).current;
       expect(productPrice(state, "food", "cheap")).toBe(40);
-      expect(productPrice(state, "hygiene", "premium")).toBe(35);
+      expect(productPrice(state, "hygiene", "premium")).toBe(50);
       expect(deliveryCost(state, 40)).toBe(4 + fee);
       // 10% від 15 — 1,5, округлено до 2.
       expect(deliveryCost(state, 15)).toBe(2 + fee);
@@ -76,8 +76,8 @@ describe("доставка (§6.4)", () => {
     const { events, stop } = recordEvents();
     const delivery = order(save.current, "food", "premium");
     expect(delivery?.at).toBe(absoluteMinute(0, hours(12)));
-    // Окреме замовлення: 80 за товар, 8 — 10% бази й 10 — надбавка.
-    expect(save.current.character.money).toBe(START_MONEY - 98);
+    // Окреме замовлення: 120 за товар, 12 — 10% бази й 10 — надбавка.
+    expect(save.current.character.money).toBe(START_MONEY - 142);
     advance(save, hours(6) - 1);
     expect(save.current.home.porch).toEqual([]);
     advance(save, 1);

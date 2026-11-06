@@ -336,7 +336,7 @@ export class Bot {
       if (sick("drops")) need("drops", 1);
       need("catFood", cats * 4);
       // Кіт блює й ходить повз лоток (розлад шлунка) — дорогий корм як дієта (§9.5), коли грошей удосталь: розлад і так
-      // минає за 4 дні, а пакунок коштує 200 (баланс 2026-10-27: без запасу грошей — виселення на «Реалістичному»).
+      // минає за 4 дні, а пакунок дорогий (баланс 2026-10-27: без запасу грошей — виселення на «Реалістичному»).
       const premium = s.home.supplies.catFood.premium + [...s.home.deliveries, ...s.home.porch].filter((d) => "product" in d && d.product === "catFood" && d.quality === "premium").length;
       const stomach = s.cats.some((c) => c.diseases.some((d) => d.id === "stomach"));
       if (premium === 0 && stomach && s.character.money > PRODUCTS.catFood.price.premium + SPARE_MONEY) cart.push({ goods: { product: "catFood" }, quality: "premium", count: 1 });

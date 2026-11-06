@@ -158,20 +158,20 @@ export const SHOWER_HYGIENE: Record<Quality | "none", number> = { none: 8, cheap
  * одиниці.
  */
 export const PRODUCTS: Record<Product, { units: Record<Quality, number>; price: Record<Quality, number> }> = {
-  food: { units: { cheap: 20, premium: 20 }, price: { cheap: 40, premium: 80 } },
-  hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 15, premium: 35 } },
-  catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 100, premium: 200 } },
-  sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 120, premium: 220 } },
+  food: { units: { cheap: 20, premium: 20 }, price: { cheap: 40, premium: 120 } },
+  hygiene: { units: { cheap: 15, premium: 15 }, price: { cheap: 15, premium: 50 } },
+  catFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 100, premium: 300 } },
+  sterileFood: { units: { cheap: 55, premium: 55 }, price: { cheap: 120, premium: 330 } },
   litter: { units: { cheap: 10, premium: 4 }, price: { cheap: 11, premium: 22 } },
-  pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 35 } },
-  drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 50 } },
-  humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 45 } },
-  treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 35 } },
+  pills: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 50 } },
+  drops: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 75 } },
+  humanMeds: { units: { cheap: 5, premium: 5 }, price: { cheap: 20, premium: 65 } },
+  treats: { units: { cheap: 20, premium: 20 }, price: { cheap: 15, premium: 50 } },
   // Без якостей: `SINGLE_VARIANT`.
   collar: { units: { cheap: 1, premium: 1 }, price: { cheap: 15, premium: 15 } },
-  shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 25 } },
-  detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 30 } },
-  catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 30 } },
+  shampoo: { units: { cheap: 5, premium: 5 }, price: { cheap: 10, premium: 40 } },
+  detergent: { units: { cheap: 5, premium: 5 }, price: { cheap: 12, premium: 45 } },
+  catnip: { units: { cheap: 5, premium: 5 }, price: { cheap: 15, premium: 45 } },
   // Не продаються (`UNSOLD`), ціни немає.
   momMeal: { units: { cheap: 2, premium: 2 }, price: { cheap: 0, premium: 0 } },
 };
@@ -227,18 +227,18 @@ export const DELIVERY_NEXT_DAY_MINUTE = 9 * MINUTES_PER_HOUR;
 export const UTILITIES_BASE = 34;
 /** Речі для котів: ціна й внесок у комунальні за тиждень. */
 export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utilities: number }> = {
-  bowl: { price: { cheap: 10, premium: 25 }, utilities: 1 },
-  water: { price: { cheap: 10, premium: 25 }, utilities: 1 },
-  litter: { price: { cheap: 25, premium: 60 }, utilities: 4 },
-  toy: { price: { cheap: 10, premium: 30 }, utilities: 0 },
-  house: { price: { cheap: 60, premium: 150 }, utilities: 6 },
-  scratcher: { price: { cheap: 60, premium: 150 }, utilities: 6 },
-  carrier: { price: { cheap: 30, premium: 80 }, utilities: 0 },
-  feeder: { price: { cheap: 120, premium: 250 }, utilities: 8 },
-  fountain: { price: { cheap: 60, premium: 140 }, utilities: 6 },
-  robot: { price: { cheap: 300, premium: 600 }, utilities: 10 },
+  bowl: { price: { cheap: 10, premium: 40 }, utilities: 1 },
+  water: { price: { cheap: 10, premium: 40 }, utilities: 1 },
+  litter: { price: { cheap: 25, premium: 90 }, utilities: 4 },
+  toy: { price: { cheap: 10, premium: 45 }, utilities: 0 },
+  house: { price: { cheap: 60, premium: 225 }, utilities: 6 },
+  scratcher: { price: { cheap: 60, premium: 225 }, utilities: 6 },
+  carrier: { price: { cheap: 30, premium: 120 }, utilities: 0 },
+  feeder: { price: { cheap: 1000, premium: 2000 }, utilities: 8 },
+  fountain: { price: { cheap: 1200, premium: 2400 }, utilities: 6 },
+  robot: { price: { cheap: 1500, premium: 3000 }, utilities: 10 },
   // Замок на шафку з кормом (`CUNNING.cheapLock`).
-  lock: { price: { cheap: 15, premium: 40 }, utilities: 0 },
+  lock: { price: { cheap: 15, premium: 60 }, utilities: 0 },
 };
 /** Порції (§9.12). */
 export const FEEDER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 20 };
