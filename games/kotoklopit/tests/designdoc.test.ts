@@ -4,7 +4,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import doc from "../GAME_DESIGN.md?raw";
+import breeds from "../BREEDS.md?raw";
+import dayModifiers from "../DAY_MODIFIERS.md?raw";
+import diseases from "../DISEASES.md?raw";
+import design from "../GAME_DESIGN.md?raw";
+import texts from "../TEXTS.md?raw";
+import traits from "../TRAITS.md?raw";
 import * as config from "../src/sim/config";
 
 const sources = Object.values(import.meta.glob<string>("../src/**/*.ts", { query: "?raw", import: "default", eager: true }));
@@ -45,15 +50,19 @@ function resolves(reference: string): boolean {
   return hasPath((config as Record<string, unknown>)[name], steps);
 }
 
-describe("GAME_DESIGN.md", () => {
+const DOCS = { "GAME_DESIGN.md": design, "TRAITS.md": traits, "DAY_MODIFIERS.md": dayModifiers, "DISEASES.md": diseases, "TEXTS.md": texts, "BREEDS.md": breeds };
+
+describe.each(Object.entries(DOCS))("%s", (_name, doc) => {
   it("посилається лише на наявні константи", () => {
-    const all = references(doc);
-    expect(all.length).toBeGreaterThan(100);
-    expect(all.filter((reference) => !resolves(reference))).toEqual([]);
+    expect(references(doc).filter((reference) => !resolves(reference))).toEqual([]);
   });
 
   it("не має позначок змін і дат", () => {
     expect(doc.match(/\[(?:Змінено пізніше|Уточнено|Пропозиція|Ухвалено|Пізніше)[^\]\n]*\]/gu) ?? []).toEqual([]);
     expect(doc.match(/\b20\d\d-\d\d-\d\d\b/g) ?? []).toEqual([]);
   });
+});
+
+it("дизайн-документ посилається на константи, а не на числа", () => {
+  expect(references(design).length).toBeGreaterThan(100);
 });
