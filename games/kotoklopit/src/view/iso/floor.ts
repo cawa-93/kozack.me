@@ -28,7 +28,7 @@ import { isoDepth, type IsoDepth, type IsoPointHandle, type IsoPointOptions } fr
 import { PlaceMark } from "./placemark";
 import { BASKET_AT, floorAnchorAt, SOFA_PEEK, stashPoint } from "./geometry";
 import { IsoHighlight } from "./highlight";
-import { basketState, carrierHolds, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
+import { basketState, carrierHolds, carrierShakes, carrierSlot, dockFrame, dustFrame, feederFrame, fountainFrame, itemFrame, litterSmells, messFrame, placedFrame, robotFrame, trinketFrame, type IsoFrame } from "./looks";
 import { PersonSwept } from "./swept";
 import { freshTuft, TUFT_APPEAR, tuftAppearLook, tuftRollFrom } from "./tuftappear";
 
@@ -234,7 +234,7 @@ export class IsoFloorView implements WorldPart {
       if (item.kind === "water") this.extra(spot, "fountain", fountain ? fountainFrame(state, fountain, item) : null, ON.overlay);
       if (item.kind === "litter") {
         const smell: IsoFrame = { id: "fx/smell", state: Math.floor(frame.time / SMELL_MS) % 2 === 0 ? "a" : "b" };
-        this.extra(spot, "smell", look.state?.endsWith("-dirty") ? smell : null, ON.fx, spot.height * SMELL_LIFT);
+        this.extra(spot, "smell", litterSmells(item) ? smell : null, ON.fx, spot.height * SMELL_LIFT);
       }
     }
 

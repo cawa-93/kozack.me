@@ -427,6 +427,7 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       broken: true,
       fur: true,
       mark: true,
+      pee: true,
       puddle: true,
       paper: true,
       garbage: true,

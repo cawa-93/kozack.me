@@ -2,7 +2,7 @@
 // поведінки котів (`catai.ts`), щоб ту саму межу «вистачає» брали й сварки, й зараження через лоток (`diseases.ts`) без
 // циклічного імпорту diseases ↔ catai (загальна ревізія 2026-10-29).
 
-import { LITTER_CAPACITY, WATER_CAPACITY } from "./config";
+import { CLOSED_LITTER_USES, LITTER_CAPACITY, WATER_CAPACITY } from "./config";
 import { SLOTS } from "./home";
 import { isNewborn } from "./reproduction";
 import type { Cat, GameState, HomeItem, LitterItem, WaterItem } from "./types";
@@ -24,7 +24,8 @@ export function fountainWorks(state: Pick<GameState, "home">): boolean {
 }
 
 export function litterCapacity(box: LitterItem): number {
-  return LITTER_CAPACITY[box.litter ?? "none"];
+  if (box.litter === null) return LITTER_CAPACITY.none;
+  return LITTER_CAPACITY[box.litter] + (box.quality === "premium" ? CLOSED_LITTER_USES : 0);
 }
 
 export function isDirty(box: LitterItem): boolean {

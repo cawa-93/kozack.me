@@ -476,7 +476,7 @@ export interface AccidentCost {
 /** Котячий безлад на підлозі (§9.12). */
 /** Калюжа (`puddle`) — «Фонтанолюб» перекинув миску з водою (§9.12, «Пиття»); папір (`paper`) — розмотаний рулон («Мисливський інстинкт»). */
 /** Сміття (`garbage`) — кіт перекинув смітник («Кмітливість у бешкеті»): поки його не прибрали, смітник лежить. */
-export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark" | "puddle" | "paper" | "garbage";
+export type MessKind = "surprise" | "vomit" | "hairball" | "litter" | "broken" | "fur" | "mark" | "pee" | "puddle" | "paper" | "garbage";
 
 export interface Mess {
   id: number;

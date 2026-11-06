@@ -196,9 +196,9 @@ export function moveBody(state: GameState, move: Vec, minutes: number): void {
       return;
     }
   }
-  // Шерстяна грудка й калюжа слизькі: ступив — може посковзнутися.
+  // Шерстяна грудка й калюжі слизькі: ступив — може посковзнутися.
   for (const mess of state.home.messes) {
-    if (mess.kind !== "hairball" && mess.kind !== "puddle") continue;
+    if (mess.kind !== "hairball" && mess.kind !== "puddle" && mess.kind !== "pee") continue;
     const now = Math.hypot(mess.x - body.x, mess.y - body.y) < 0.35;
     const before = Math.hypot(mess.x - from.x, mess.y - from.y) < 0.35;
     if (now && !before && rng.chance(SLIP_CHANCE) && stun(state)) {

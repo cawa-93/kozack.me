@@ -546,7 +546,8 @@ export function inspectionVisit(state: GameState): void {
   }
   const m = MODIFIERS.inspection;
   openDoor(state);
-  const dirty = state.home.items.filter((i) => i.kind === "litter" && isDirty(i)).length;
+  // Закритий лоток тримає запах: представник його не помічає (§9.12).
+  const dirty = state.home.items.filter((i) => i.kind === "litter" && i.quality === "cheap" && isDirty(i)).length;
   const fine = state.home.messes.length * m.mess + dirty * m.litter + (furVisible(state) ? m.fur : 0);
   const paid = Math.min(fine, Math.max(0, state.character.money));
   spend(state, paid, "other");

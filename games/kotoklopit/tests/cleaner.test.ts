@@ -47,7 +47,7 @@ function withCat(state: GameState, options: { sterilized?: boolean; at?: { x: nu
 /** Брудна квартира: безлад усіх видів, шерсть, пил, брудні лотки, випране в машині, порожні миски й поїлка, страва на плиті й столі. */
 function dirty(state: GameState): { bowls: BowlItem[]; water: WaterItem; boxes: LitterItem[] } {
   const home = state.home;
-  const kinds = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "puddle", "paper", "garbage"] as const;
+  const kinds = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "pee", "puddle", "paper", "garbage"] as const;
   home.messes = kinds.map((kind, i) => ({ id: 800 + i, kind, x: 2 + i, y: 8.5, cat: null }));
   home.fur = 80;
   home.tufts = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -108,10 +108,10 @@ describe("прибиральниця (§4.1)", () => {
     const { events, stop } = recordEvents();
     tickModifiers(state, CLEANER - GUESTS.ringLead - 0.5, 1, false);
     expect(events.filter((e) => e.type === "doorbell")).toHaveLength(1);
-    expect(state.home.messes).toHaveLength(10);
+    expect(state.home.messes).toHaveLength(11);
     // Хвилину до приходу — ще під дверима.
     tickModifiers(state, CLEANER - GUESTS.ringLead + 0.5, GUESTS.ringLead - 1.5, false);
-    expect(state.home.messes).toHaveLength(10);
+    expect(state.home.messes).toHaveLength(11);
     expect(visitOf(events)).toBeNull();
     tickModifiers(state, CLEANER - 1, 1.5, false);
     stop();
@@ -140,7 +140,7 @@ describe("прибиральниця (§4.1)", () => {
     expect(tuftsOf(state)).toEqual([]);
     expect(state.home.fur).toBe(0);
     expect(dustOf(state)).toEqual([]);
-    expect(visit).toMatchObject({ messes: 10, tufts: 9, dust: DUST_SPOTS.length });
+    expect(visit).toMatchObject({ messes: 11, tufts: 9, dust: DUST_SPOTS.length });
     expect(state.home.stove.item).toEqual({ kind: "raw", quality: "cheap" });
     expect(state.home.surfaces["table"]).toEqual({ kind: "meal", quality: "cheap" });
   });
@@ -190,7 +190,7 @@ describe("прибиральниця (§4.1)", () => {
     expect(state.home.washer.state).toBe("idle");
     expect(bowls.map((b) => b.food)).toEqual([0, 1]);
     expect(water.water).toBe(WATER_CAPACITY.cheap);
-    expect(visit).toEqual({ messes: 10, tufts: 9, dust: DUST_SPOTS.length, litter: 0, hung: false, washing: false, fed: null, watered: true, sock: false });
+    expect(visit).toEqual({ messes: 11, tufts: 9, dust: DUST_SPOTS.length, litter: 0, hung: false, washing: false, fed: null, watered: true, sock: false });
   });
 
   it("наповнювача на один лоток — чистить один; корму на одну миску — «насипано не всім»", () => {

@@ -258,6 +258,7 @@ const DRY: Record<MessKind, boolean> = {
   broken: true,
   fur: true,
   mark: false,
+  pee: false,
   puddle: false,
   paper: true,
   garbage: true,

@@ -536,7 +536,7 @@ describe("кадри квартири й підлоги (iso/looks.ts)", () => {
     ];
     for (const dish of dishes) expectFrame(dishFrame(dish));
     expect(dishFrame(dishes[3]!)).toEqual({ id: "item/dish/mom", state: null });
-    const messes: MessKind[] = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "puddle", "paper", "garbage"];
+    const messes: MessKind[] = ["surprise", "vomit", "hairball", "litter", "broken", "fur", "mark", "pee", "puddle", "paper", "garbage"];
     for (const kind of messes) expectFrame(messFrame(kind));
     for (const t of TRINKETS) for (const fallen of [false, true]) expectFrame(trinketFrame(t.kind, fallen));
     expect(basketState(5)).toBe("load-0");

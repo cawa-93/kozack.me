@@ -80,6 +80,7 @@ import {
   PORTION_HUNGER,
   RELATIONS,
   REVENGE,
+  LITTER_MISS,
   SCATTER_CHANCE,
   SCRATCH,
   SHEDDING,
@@ -116,11 +117,11 @@ import { afterMeal, afterTheft, cannotJump, eatFactor, eatsLess, fallIll, fatigu
 import { tickCaged } from "./carriers";
 import { feederAt, takeSupply } from "./economy";
 import { emit, type HissCause, type ScratchSpot } from "./events";
-import { robotAt, robotProgress, wearOut } from "./household";
+import { clearPath, robotAt, robotProgress, wearOut } from "./household";
 import { inView, observe, sees, setWitnessing, witnesses } from "./knowledge";
 import { loudNoise } from "./noise";
 import { catFatigueFactor, isCold, isHot, playFactor, thirstFactor, warmthBonus } from "./modifiers";
-import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
+import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TILE, HIGH_PLACES, isPresent, WIRE_TILE, PAPER_TRAIL, ROLL_TILE, STASHES, TRASH_PAW, distanceToRect, DOORFRAME, hasBoxes, hiddenTile, isSolid, itemPoint, itemTile, LAUNDRY_BASKET, nearestFreePlace, objectAt, objectById, roomAt, ROOMS, RUG, slotById, SLOTS, SURFACE_IDS, TRINKETS, trinketTile, type HomeObject } from "./home";
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
@@ -2044,6 +2045,16 @@ function itemMood(state: GameState, cat: Cat, item: HomeItem): void {
   changeMood(state, cat, item.quality === "premium" ? MOOD.premiumItem : MOOD.cheapItem);
 }
 
+/**
+ * Де лишається калюжа від промаху (§9.12): на вільній клітинці поруч із лотком. Просто нижче не годиться: лотки у ванній стоять над
+ * передньою стіною, і `visibleFloorNear` повернув би клітинку самого лотка, а той закрив би калюжу.
+ */
+export function peeSpot(state: GameState, box: LitterItem): Vec {
+  const at = itemPoint(box);
+  const place = nearestFreePlace(state, at, (center) => clearPath(at, center));
+  return place ? { x: place.x + 0.5, y: place.y + 0.5 } : visibleFloorNear(state, at);
+}
+
 /** Безлад на підлозі. */
 export function addMess(state: GameState, kind: MessKind, at: Vec, cat: number | null): void {
   const mess = { id: state.nextId++, kind, x: at.x, y: at.y, cat };
@@ -2283,8 +2294,13 @@ function finish(state: GameState, cat: Cat, rng: Rng): void {
       itemMood(state, cat, box);
       wearOut(state, box, rng);
       resourceConflict(state, cat, rng, enoughFor(state, "litter"), "litter");
-      // Розкидає наповнювач (§9.12): 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше.
       const scatter = traitLevel(cat, "scatter");
+      // Промах (§9.12): високі борти закритого лотка цього не дають.
+      if (box.quality === "cheap" && rng.chance(LITTER_MISS * Math.max(0, 1 + SCATTER_CHANCE.step * scatter))) {
+        addMess(state, "pee", peeSpot(state, box), cat.id);
+        observe(state, cat, "scatter");
+      }
+      // Розкидає наповнювач (§9.12): 20% × (1 + 0,75 × рівень), із закритого лотка — удвічі рідше.
       const scatters = SCATTER_CHANCE.base * Math.max(0, 1 + SCATTER_CHANCE.step * scatter) * (box.quality === "premium" ? SCATTER_CHANCE.closedBox : 1);
       if (rng.chance(scatters)) {
         const slot = slotById(box.slot);

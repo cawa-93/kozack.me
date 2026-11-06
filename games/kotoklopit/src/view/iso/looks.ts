@@ -378,6 +378,9 @@ export function fountainFrame(state: Pick<GameState, "home">, fountain: Quality,
   return frame(`item/fountain/${fountain}`, fountainWorks(state) && water.water > 0 ? "on" : "dry");
 }
 
+/** Брудний лоток пахне (§9.12); закритий тримає запах у собі. */
+export const litterSmells = (item: LitterItem): boolean => item.quality === "cheap" && isDirty(item);
+
 /** Кадр речі на клітинці, коли нею ніхто не користується (§8.7): у руках персонажа й на місці, куди вона стане. */
 export function placedFrame(item: PlacedItem): IsoFrame {
   switch (item.kind) {

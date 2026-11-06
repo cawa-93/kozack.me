@@ -419,11 +419,15 @@ export const WATER_CAPACITY: Record<Quality, number> = { cheap: 8, premium: 12 }
 export const FOUNTAIN = { tank: 40 } as const;
 /** Лоток брудний після стількох відвідин. */
 export const LITTER_CAPACITY: Record<Quality | "none", number> = { none: 1, cheap: 3, premium: 5 };
+/** Закритий лоток із наповнювачем служить на стільки походів довше (§9.12). */
+export const CLOSED_LITTER_USES = 1;
+/** Шанс промаху повз відкритий лоток (§9.12): × (1 + `SCATTER_CHANCE.step` × «Розкидання наповнювача»). */
+export const LITTER_MISS = 0.1;
 export const CLEAN_LITTER_MINUTES = 3;
 export const CLEAN_MESS_MINUTES = 2;
 /** Неприємні завдання (§8.1), здоровий глузд за раз. */
 export const LITTER_SANITY = -3;
-export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, puddle: -1, paper: -1, garbage: -3 };
+export const MESS_SANITY: Record<MessKind, number> = { surprise: -4, vomit: -4, hairball: -4, litter: -2, broken: -2, fur: -2, mark: -3, pee: -3, puddle: -1, paper: -1, garbage: -3 };
 
 /** Настрій кота від подій (§9.12). */
 export const MOOD = {
