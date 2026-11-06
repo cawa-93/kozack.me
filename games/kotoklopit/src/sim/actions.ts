@@ -51,6 +51,7 @@ import {
   SHEDDING,
   SHOO,
   STRESS_EFFECTS,
+  TOY,
   UNWILLING_ATTENTION,
   WORK_CAT,
 } from "./config";
@@ -992,6 +993,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
     return;
   }
   if (activity.done) return;
+  const toy = character.held.toy.quality;
   // Кіт, що не хоче гратися, на вудку не зважає: ні радості, ні пробудження.
   if (activity.minutes === 0 && cat.needs.play < PLAY.bored) {
     activity.done = true;
@@ -1000,7 +1002,7 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   // «Нудьгар» і того, що хоче гратися, з шансом 30% на вудку не зважає — відвертається (§9.12, «Ігривість»): відмова зі
   // своєю іконкою й прояв «−».
   const playful = traitLevel(cat, "playful");
-  if (activity.minutes === 0 && playful <= -PLAYFUL.boredLevel && !asleep(cat) && stateRng(state, "behavior").chance(PLAYFUL.ignore)) {
+  if (activity.minutes === 0 && playful <= -PLAYFUL.boredLevel && !asleep(cat) && stateRng(state, "behavior").chance(PLAYFUL.ignore * (toy === "premium" ? TOY.bell.ignore : 1))) {
     activity.done = true;
     cat.facing = character.body.x >= cat.x ? -1 : 1;
     refuse(state, `cat:${cat.id}`, "cat-bored");
@@ -1035,9 +1037,9 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
   changeStat(state, "sanity", PLAY.sanity * joy * DIFFICULTY[state.difficulty].catSanity * minutes);
   changeMood(state, cat, PLAY.mood * minutes);
   changeLove(state, cat, PLAY.love * minutes);
-  cat.needs.play = Math.max(0, cat.needs.play - playDrain(cat) * minutes);
+  cat.needs.play = Math.max(0, cat.needs.play - playDrain(cat, toy) * minutes);
   // Гра вудкою — рух: зайва вага йде (§9.12, «Схильність до повноти»), як від гри наодинці за ту саму частку потреби гри.
-  exercise(cat, (playDrain(cat) * minutes) / PLAY_RELIEF);
+  exercise(cat, (playDrain(cat, toy) * minutes) / PLAY_RELIEF);
   if (Math.floor(activity.minutes) !== Math.floor(before)) emit(state, { type: "purr", cat: cat.id, enjoyed: true });
   if (cat.needs.play < PLAY.bored) {
     activity.done = true;
@@ -1053,11 +1055,12 @@ function play(state: GameState, activity: PlayActivity, minutes: number): void {
 
 /**
  * Скільки потреби гри знімає хвилина гри вудкою (§9.12, «Ігривість»): «+» грається довше — 15 / (1 + 0,25 × рівень), «−» —
- * коротше: 15 × (1 + 0,25 × |рівень|).
+ * коротше: 15 × (1 + 0,25 × |рівень|). Дзвіночок на дорогій вудочці — × `TOY.bell.drain` (§6.4).
  */
-export function playDrain(cat: Cat): number {
+export function playDrain(cat: Cat, toy: Quality = "cheap"): number {
   const level = traitLevel(cat, "playful");
-  return level >= 0 ? PLAY.needPerMinute / (1 + PLAYFUL.lengthStep * level) : PLAY.needPerMinute * (1 + PLAYFUL.lengthStep * -level);
+  const drain = level >= 0 ? PLAY.needPerMinute / (1 + PLAYFUL.lengthStep * level) : PLAY.needPerMinute * (1 + PLAYFUL.lengthStep * -level);
+  return toy === "premium" ? drain * TOY.bell.drain : drain;
 }
 
 /** Персонаж заснув: робота й тривала дія закінчуються, річ із рук випадає (§8.7). */

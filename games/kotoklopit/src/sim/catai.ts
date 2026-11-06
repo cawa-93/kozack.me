@@ -554,7 +554,8 @@ function onHigh(state: GameState, cat: Cat, context: CatContext): void {
   }
   if (!upHigh(state, cat) || asleep(cat) || !context.present || state.character.held?.kind !== "toy") return;
   const body = state.character.body;
-  if (distance(cat, body) <= CLIMBING.lureReach && cat.act.target !== "lured") start(cat, "idle", tileAtDistance(state, body, cat, 1), 2, "lured");
+  const reach = CLIMBING.lureReach * (state.character.held.toy.quality === "premium" ? TOY.bell.lure : 1);
+  if (distance(cat, body) <= reach && cat.act.target !== "lured") start(cat, "idle", tileAtDistance(state, body, cat, 1), 2, "lured");
 }
 
 /** Кіт на руках персонажа: стоїть на місці, але потреби ростуть. */

@@ -60,7 +60,7 @@ export const VARIANT_TITLES: Record<string, Record<Quality, string>> = {
   "thing:bowl": { cheap: "Пластикова миска для корму", premium: "Керамічна миска для корму" },
   "thing:water": { cheap: "Пластикова поїлка", premium: "Керамічна поїлка" },
   "thing:litter": { cheap: "Простий лоток", premium: "Закритий лоток" },
-  "thing:toy": { cheap: "Вудочка з пір'ям", premium: "Міцна вудочка з пір'ям" },
+  "thing:toy": { cheap: "Вудочка з пір'ям", premium: "Міцна вудочка з дзвіночком" },
   "thing:house": { cheap: "Картонний будиночок", premium: "Повстяний будиночок" },
   // Як на малюнках (`art/item/scratcher/`): обидві сизалеві, у дорогої — широка полиця з подушкою.
   "thing:scratcher": { cheap: "Проста кігтеточка", premium: "Кігтеточка з лежанкою" },

@@ -232,8 +232,8 @@ export const THINGS: Record<ThingKind, { price: Record<Quality, number>; utiliti
   bowl: { price: { cheap: 10, premium: 60 }, utilities: 1 },
   water: { price: { cheap: 10, premium: 60 }, utilities: 1 },
   litter: { price: { cheap: 25, premium: 150 }, utilities: 4 },
-  // Дорога лише міцніша (`TOY.durability`): ціна за гру має лишатися близькою до дешевої.
-  toy: { price: { cheap: 10, premium: 30 }, utilities: 0 },
+  // Дорога міцніша (`TOY.durability`) і з дзвіночком (`TOY.bell`).
+  toy: { price: { cheap: 10, premium: 60 }, utilities: 0 },
   house: { price: { cheap: 60, premium: 350 }, utilities: 6 },
   scratcher: { price: { cheap: 60, premium: 350 }, utilities: 6 },
   carrier: { price: { cheap: 30, premium: 150 }, utilities: 0 },
@@ -596,7 +596,12 @@ export const WAKE_UP = {
 
 // Гра й бешкет (§9.12).
 /** Іграшка: `durability` — ігор. */
-export const TOY = { durability: { cheap: 15, premium: 40 } as Record<Quality, number>, aloneMinutes: 4 } as const;
+export const TOY = {
+  durability: { cheap: 15, premium: 40 } as Record<Quality, number>,
+  aloneMinutes: 4,
+  /** Дзвіночок на дорогій (§6.4): шанс, що «Нудьгар» не зважає, далекість зманювання з висоти, швидкість, з якою кіт награється. */
+  bell: { ignore: 0.5, lure: 1.6, drain: 1.5 },
+} as const;
 /** Гра з персонажем, за хвилину; нижче `bored` потреби гри кіт іде. */
 export const PLAY = { sanity: 4, playfulStep: 0.25, mood: 1, love: 0.5, needPerMinute: 15, bored: 10 } as const;
 /** «Ігривість» (§9.12): `boredLevel`, `ignore` — «Нудьгар». */
