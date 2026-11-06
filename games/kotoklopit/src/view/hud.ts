@@ -304,6 +304,8 @@ export class Hud {
     this.bill.icon.setPosition(disc, y);
     this.bill.amount.setPosition(disc + r + ROW_GAP.amount, y);
     this.schedule.setX(Math.max(columns.schedule, this.bill.amount.x + this.bill.amount.width + ROW_GAP.schedule));
+    // Довгий розклад не заходить під телефон: стискається вшир, як дата.
+    this.schedule.setScale(Math.min(1, (this.room - this.schedule.x) / Math.max(1, this.schedule.width)), 1);
   }
 
   /** Дата не налазить на кружечок першого показника: довга стискається вшир. */
@@ -333,6 +335,8 @@ export class Hud {
     const { ring, icon } = statDisc(2 * HINT.r * k + 2);
     this.hintUnder.setPosition(at.x, at.y).setDisplaySize(ring, ring);
     this.hintIcon.setPosition(at.x, at.y).setDisplaySize(icon, icon);
+    this.fitDate();
+    this.placeBill();
   }
 
   /**
@@ -432,17 +436,17 @@ export class Hud {
     if (product !== this.hinted) this.showHint(product);
     if (product !== undefined) this.phone.setScale(1 + 0.1 * (0.5 + 0.5 * Math.sin(time / 160)));
     else this.phone.setScale(1);
-    // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
-    this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
   }
 
-  /** Те, що змінюється не частіше за хвилину гри: годинник, дата й планові комунальні. */
+  /** Те, що змінюється не частіше за хвилину гри: годинник, дата, планові комунальні й розклад. */
   private showMinute(state: GameState): void {
     this.clock.show(formatClock(state.minute));
     this.date.setText(`Тиждень ${weekOf(state.day)}\n${WEEKDAY_NAMES[weekdayOf(state.day)]}`);
     this.fitDate();
     const planned = utilitiesPlanned(state);
     this.bill.amount.setText(planned > 0 ? `−${planned} ₴` : "0 ₴");
+    // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
+    this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
     this.placeBill();
   }
 
