@@ -173,6 +173,30 @@ describe("їжа за столом (§8.7)", () => {
     expect(events).toContainEqual({ type: "ate", satiety: MEAL_SATIETY.cheap, food: 5 });
   });
 
+  it("ситість приходить разом зі смугою: перервали на половині — пів порції, решта лишається на столі й доїдається за решту часу", () => {
+    const save = game();
+    serveMeal(save);
+    save.current.character.stats.satiety = 30;
+    const decay = (minutes: number): number => (SATIETY_PER_HOUR * bodyMinutes(minutes)) / MINUTES_PER_HOUR;
+    holdFor(save, 5);
+    expect(save.current.character.stats.satiety).toBeCloseTo(30 + MEAL_SATIETY.cheap / 2 + decay(5));
+    advance(save, 0.1, { move: { x: 1, y: 0 }, hold: true });
+    expect(save.current.character.activity).toBeNull();
+    expect(save.current.home.surfaces["table"]).toMatchObject({ kind: "meal", eaten: expect.closeTo(0.5) });
+    // Кнопку відпустили, персонаж знову за столом: смуга продовжується з половини, а не з нуля.
+    advance(save, 0.1);
+    standAt(save, "table");
+    const satiety = save.current.character.stats.satiety;
+    const { events, stop } = recordEvents();
+    holdFor(save, 1);
+    expect(useProgress(save.current)).toBeCloseTo(0.6);
+    holdFor(save, 4 + LAST_STEP);
+    stop();
+    expect(save.current.home.surfaces["table"]).toBeNull();
+    expect(save.current.character.stats.satiety).toBeCloseTo(satiety + MEAL_SATIETY.cheap / 2 + decay(5));
+    expect(events.filter((e) => e.type === "ate")).toHaveLength(1);
+  });
+
   it("страву на столі не взяти назад коротким натисканням", () => {
     const save = game();
     serveMeal(save);
@@ -230,6 +254,19 @@ describe("душ (§8.7)", () => {
       expect(stats.hygiene).toBeCloseTo(20 + hygiene + (HYGIENE_PER_HOUR * bodyMinutes(SHOWER_MINUTES)) / MINUTES_PER_HOUR);
       expect(supplyCount(save.current, "hygiene")).toBe(Math.max(0, supply.cheap + supply.premium - 1));
     }
+  });
+
+  it("гігієна росте разом зі смугою, а засіб беруть на вході в кабіну", () => {
+    const save = game();
+    const stats = save.current.character.stats;
+    stats.hygiene = 20;
+    save.current.home.supplies.hygiene = { cheap: 1, premium: 0 };
+    standAt(save, "shower");
+    interact(save);
+    advance(save, bodyMinutes(SHOWER_MINUTES / 2));
+    expect(useProgress(save.current)).toBeCloseTo(0.5);
+    expect(stats.hygiene).toBeCloseTo(20 + SHOWER_HYGIENE.cheap / 2 + (HYGIENE_PER_HOUR * bodyMinutes(SHOWER_MINUTES / 2)) / MINUTES_PER_HOUR);
+    expect(supplyCount(save.current, "hygiene")).toBe(0);
   });
 
   it("у брудному одязі душ не піднімає гігієну вище 60, а падає вона вдвічі швидше", () => {

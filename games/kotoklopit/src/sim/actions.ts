@@ -64,7 +64,7 @@ import { stateRng } from "./rng";
 import { canGoToSleep } from "./sleep";
 import { absoluteMinute } from "./time";
 import { targetById, targetOf, type Target } from "./targets";
-import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, Vec } from "./types";
+import type { BowlItem, Cat, Dish, GameState, HomeItem, Item, PetActivity, PlayActivity, Quality, UseActivity, Vec } from "./types";
 import { exercise } from "./weight";
 import { startWork, stopWork } from "./work";
 
@@ -680,11 +680,18 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
       character.activity = null;
       return;
     }
-    activity.progress += minutes * actionSpeed(state);
-    if (activity.progress >= (activity.bath === true ? bathMinutes(state) : useMinutes(state, target))) {
+    const total = activity.bath === true ? bathMinutes(state) : useMinutes(state, target);
+    const step = minutes * actionSpeed(state);
+    if (activity.bath !== true) {
+      // Не під час натискання, а тут: так само починається душ зі сценарію чи старого збереження, що вже йде.
+      const wash = (activity.wash ??= startWash(state));
+      changeStat(state, "hygiene", wash.hygiene * stepShare(activity.progress, step, total));
+    }
+    activity.progress += step;
+    if (activity.progress >= total) {
       character.activity = null;
       if (activity.bath === true) bathe(state, stateRng(state, "behavior"));
-      else finishUse(state, target);
+      else finishUse(state, target, activity);
       // Тримали кнопку весь душ — нова дія не почнеться, поки не відпустили (§10; перевірка побуту 2026-10-28).
       if (input.hold) character.holdSpent = true;
     }
@@ -746,7 +753,7 @@ function holdTick(state: GameState, minutes: number): boolean {
       return true;
     }
     else if (target.type === "cat") character.activity = { kind: "pet", cat: target.cat.id, minutes: 0 };
-    else character.activity = { kind: "use", target: target.id, progress: 0 };
+    else character.activity = { kind: "use", target: target.id, progress: eatenMinutes(state, target) };
   }
   const current = character.activity;
   if (current?.kind === "pet") {
@@ -763,12 +770,43 @@ function holdTick(state: GameState, minutes: number): boolean {
     character.activity = null;
     return true;
   }
-  current.progress += minutes * actionSpeed(state);
-  if (current.progress >= useMinutes(state, target)) {
+  const total = useMinutes(state, target);
+  const step = minutes * actionSpeed(state);
+  if (target.type === "object" && target.object.kind === "table") eat(state, target.object, stepShare(current.progress, step, total));
+  current.progress += step;
+  if (current.progress >= total) {
     character.activity = null;
-    finishUse(state, target);
+    finishUse(state, target, current);
   }
   return true;
+}
+
+/** Яку частку всієї дії (`total`) становить цей крок: останній не виходить за її кінець, тож разом — рівно вся дія. */
+function stepShare(progress: number, step: number, total: number): number {
+  return Math.max(0, Math.min(step, total - progress)) / total;
+}
+
+/** Початок душу (§8.7): засіб беруть на вході, щоб гігієна росла вже від першої хвилини. */
+function startWash(state: GameState): NonNullable<UseActivity["wash"]> {
+  // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі. Холодний душ без світла миє ×0,8 — і
+  // без засобу теж, тож межу перевіряють з тим самим множником (§4.1, рішення автора 2026-11-02).
+  const plain = state.character.stats.hygiene + showerHygiene(state, null) >= statCeiling(state, "hygiene");
+  const quality = plain ? null : useSupply(state, "hygiene");
+  return { hygiene: showerHygiene(state, quality), quality };
+}
+
+/** Скільки хвилин страву на столі вже їли (§8.7): з цього місця її доїдають. */
+function eatenMinutes(state: GameState, target: Target): number {
+  if (target.type !== "object" || target.object.kind !== "table") return 0;
+  return (state.home.surfaces[target.object.id]?.eaten ?? 0) * EAT_MINUTES;
+}
+
+/** Частка страви з'їдена (§8.7): ситість приходить разом із нею, а не наприкінці. */
+function eat(state: GameState, table: HomeObject, share: number): void {
+  const meal = state.home.surfaces[table.id];
+  if (!meal) return;
+  meal.eaten = (meal.eaten ?? 0) + share;
+  changeStat(state, "satiety", MEAL_SATIETY[meal.quality] * share);
 }
 
 /** Зняти застрягле нагорі кошеня (§9.12, «Лазіння»): неприємне, кошеня — на руки, і воно вже не застрягле. */
@@ -779,7 +817,7 @@ function rescueStuck(state: GameState, cat: Cat): void {
   delete cat.stuck;
 }
 
-function finishUse(state: GameState, target: Target): void {
+function finishUse(state: GameState, target: Target, activity: UseActivity): void {
   if (target.type === "item" && target.item.kind === "litter") {
     const box = target.item;
     box.uses = 0;
@@ -806,12 +844,7 @@ function finishUse(state: GameState, target: Target): void {
     return;
   }
   if (object.kind === "shower") {
-    // Засіб не витрачається, коли й без нього гігієна дійде до межі: 100 чи 60 у брудному одязі (§8.7). Холодний душ без світла
-    // миє ×0,8 — і без засобу теж, тож межу перевіряють з тим самим множником (§4.1, рішення автора 2026-11-02).
-    const plain = state.character.stats.hygiene + showerHygiene(state, null) >= statCeiling(state, "hygiene");
-    const quality = plain ? null : useSupply(state, "hygiene");
-    const hygiene = showerHygiene(state, quality);
-    changeStat(state, "hygiene", hygiene);
+    const { hygiene = 0, quality = null } = activity.wash ?? {};
     emit(state, { type: "showered", hygiene, quality, left: supplyCount(state, "hygiene"), ...(powerOut(state) ? { cold: true as const } : {}) });
     // Кабіна мокра: «Водолаз» приходить ловити краплі (§9.12).
     showerDrops(state);
@@ -820,9 +853,7 @@ function finishUse(state: GameState, target: Target): void {
   const meal = state.home.surfaces[object.id];
   if (!meal) return;
   state.home.surfaces[object.id] = null;
-  const satiety = MEAL_SATIETY[meal.quality];
-  changeStat(state, "satiety", satiety);
-  emit(state, { type: "ate", satiety, food: supplyCount(state, "food") });
+  emit(state, { type: "ate", satiety: MEAL_SATIETY[meal.quality], food: supplyCount(state, "food") });
 }
 
 /**
