@@ -5,10 +5,15 @@
 import { LITTER_CAPACITY, WATER_CAPACITY } from "./config";
 import { SLOTS } from "./home";
 import { isNewborn } from "./reproduction";
-import type { GameState, HomeItem, LitterItem, WaterItem } from "./types";
+import type { Cat, GameState, HomeItem, LitterItem, WaterItem } from "./types";
 
 export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
   state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
+
+/** Кіт сидить у дорогому будиночку (§9.12): товсті стіни глушать звук. */
+export function inQuietHouse(state: GameState, cat: Cat): boolean {
+  return itemsOf(state, "house").some((house) => house.quality === "premium" && `item:${house.id}` === cat.act.target);
+}
 
 export const waterCapacity = (item: WaterItem): number => WATER_CAPACITY[item.quality];
 

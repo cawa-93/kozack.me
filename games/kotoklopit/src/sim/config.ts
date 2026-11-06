@@ -1196,6 +1196,10 @@ export const RELATIONS = {
 } as const;
 /** Вага сну в будиночку. */
 export const HOUSE_SLEEP: Record<Quality, number> = { cheap: 2, premium: 4 };
+/** У скільки разів швидше кіт заспокоюється в дорогому будиночку (§9.12). */
+export const HOUSE_CALM = 2;
+/** Лежанка дорогої кігтеточки (§9.12): вага сну — `climbWeight` × `weight`; поки вона вільна, вага високих місць × `high`. */
+export const LOUNGER = { weight: 2, high: 0.5 } as const;
 /** Зумі (§9.12): `speed` — множник; `hit` — збиває персонажа ближче цього. */
 export const ZOOMIES = { speed: 3, minMinutes: 1, maxMinutes: 2, afterToilet: 0.3, hit: 0.5, knock: 0.15, knockReach: 0.8 } as const;
 /** Скільки гри знімає забава наодинці. */

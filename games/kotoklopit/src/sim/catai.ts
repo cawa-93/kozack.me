@@ -43,7 +43,9 @@ import {
   GULPING,
   HAIRBALL,
   HISS_PAUSE_MINUTES,
+  HOUSE_CALM,
   HOUSE_SLEEP,
+  LOUNGER,
   HUNGRY_THEFT,
   HUNTING,
   JEALOUSY,
@@ -122,7 +124,7 @@ import { WINDOWS, AMBUSH_SPOTS, BOX_SCRATCH, CABINET_PAW, CARRIER_TILE, COOL_TIL
 import { changeRelation, isEnemy, isFriend, isNewcomer, isPal, noteStrife, relation } from "./relations";
 import { DOOR, DOOR_TILE } from "./door";
 import { breedingHunger, fightFactor, inHeat, isNewborn, motherOf } from "./reproduction";
-import { enoughFor, fountainWorks, isDirty, itemsOf, litterCapacity } from "./resources";
+import { enoughFor, fountainWorks, inQuietHouse, isDirty, itemsOf, litterCapacity } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import { addTrace, SCRATCH_TRACES, tidyBoxTraces } from "./traces";
@@ -506,6 +508,11 @@ export function upHigh(state: GameState, cat: Cat): boolean {
   return home(state, cat) && cat.act.goal === null && highPlaceOf(state, cat) !== null;
 }
 
+/** Кіт уже сховався в дорогому будиночку (§9.12): там він заспокоюється швидше. */
+function hidesInQuietHouse(state: GameState, cat: Cat): boolean {
+  return cat.act.kind === "hide" && cat.act.goal === null && inQuietHouse(state, cat);
+}
+
 /** Вага високого місця для сну (§9.12, «Лазіння»): 1,5 × рівень, кіт без риси — 0,3, «−» — ніколи. */
 export function climbWeight(cat: Cat): number {
   const level = traitLevel(cat, "climbing");
@@ -790,10 +797,13 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
   // Нагорі — на холодильнику (він теплий: вага й від «Теплолюбності») і на шафі в спальні (§9.12, «Лазіння»).
   const climb = climbWeight(cat);
   if (climb > 0) {
+    const loungers = loungerSpots(state, cat, climb);
+    options.push(...loungers);
+    const up = loungers.length > 0 ? LOUNGER.high : 1;
     const fridge = objectById("fridge");
     const wardrobe = objectById("wardrobe");
-    options.push({ weight: climb + CLIMBING.warmStep * Math.max(0, traitLevel(cat, "warmth")), value: at({ x: fridge.x, y: fridge.y }) });
-    options.push({ weight: climb, value: at({ x: wardrobe.x, y: wardrobe.y }) });
+    options.push({ weight: (climb + CLIMBING.warmStep * Math.max(0, traitLevel(cat, "warmth"))) * up, value: at({ x: fridge.x, y: fridge.y }) });
+    options.push({ weight: climb * up, value: at({ x: wardrobe.x, y: wardrobe.y }) });
   }
   // Відчинена переноска біля дверей — будиночок для «Сам лізе в переноску» (§9.12, «Переноска»).
   // Поки переноска з котом у дорозі, у ній не поспиш (перевірка етапу 2026-10-26).
@@ -821,6 +831,14 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
   return weightedPick(rng, options) ?? at(randomFloor(rng));
+}
+
+/** Вільні лежанки дорогих кігтеточок (§9.12): одна на кота, поки там спить інший чи вже йде туди, інший її не обирає. */
+function loungerSpots(state: GameState, cat: Cat, climb: number): { weight: number; value: Spot }[] {
+  const taken = (target: string): boolean => state.cats.some((o) => o.id !== cat.id && o.act.kind === "sleep" && o.act.target === target);
+  return itemsOf(state, "scratcher")
+    .filter((post) => post.quality === "premium" && !taken(`item:${post.id}`))
+    .map((post) => ({ weight: climb * LOUNGER.weight, value: { at: itemTile(post), target: `item:${post.id}` } }));
 }
 
 /** Сховатися під ліжком, диваном чи в будиночку (§9.6); верхолаз ховається нагорі — на холодильнику чи шафі (§9.12, «Лазіння»). */
@@ -3216,7 +3234,7 @@ function tickCat(state: GameState, cat: Cat, minutes: number, rng: Rng, context:
       }
       continue;
     }
-    const scale = CLOCK_ACTS.has(cat.act.kind) ? pace : 1;
+    const scale = (CLOCK_ACTS.has(cat.act.kind) ? pace : 1) * (hidesInQuietHouse(state, cat) ? HOUSE_CALM : 1);
     const used = Math.min(left, Math.max(0, cat.act.minutes) / scale);
     perform(state, cat, used * scale, rng, context);
     cat.act.minutes -= used * scale;

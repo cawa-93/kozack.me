@@ -11,6 +11,7 @@ import { emit } from "./events";
 import { roomAt } from "./home";
 import { observe } from "./knowledge";
 import { isNewborn } from "./reproduction";
+import { inQuietHouse } from "./resources";
 import { stateRng, type Rng } from "./rng";
 import type { Cat, GameState, Vec } from "./types";
 
@@ -34,9 +35,12 @@ function hears(cat: Cat, at: Vec): boolean {
   return Math.hypot(cat.x - at.x, cat.y - at.y) <= NOISE.reach;
 }
 
+/** Кіт спить у дорогому будиночку: ні шуму, ні кроків він не чує (§9.12). */
+const sleepsMuffled = (state: GameState, cat: Cat): boolean => sleepsOn(cat) && cat.act.goal === null && inQuietHouse(state, cat);
+
 /** Чи кіт зважає на звук: хто ховається, б'ється чи стоїть у протистоянні (§9.4), не зважає. */
 function listens(state: GameState, cat: Cat, at: Vec | null, only?: (cat: Cat) => boolean): boolean {
-  if (cat.away !== null || isCarried(state, cat) || isNewborn(cat)) return false;
+  if (cat.away !== null || isCarried(state, cat) || isNewborn(cat) || sleepsMuffled(state, cat)) return false;
   if (cat.act.kind === "hide" || cat.act.kind === "fight" || cat.act.kind === "standoff") return false;
   if (at !== null && !hears(cat, at)) return false;
   return !only || only(cat);
@@ -140,7 +144,7 @@ function watch(state: GameState, cat: Cat): void {
 export function hearSteps(state: GameState, from: Vec): void {
   const body = state.character.body;
   for (const cat of state.cats) {
-    if (cat.away !== null || !sleepsOn(cat) || isNewborn(cat)) continue;
+    if (cat.away !== null || !sleepsOn(cat) || isNewborn(cat) || sleepsMuffled(state, cat)) continue;
     const level = traitLevel(cat, "sleep");
     if (level >= 0) continue;
     const near = (p: Vec): boolean => Math.hypot(cat.x - p.x, cat.y - p.y) <= STEPS_WAKE.distance;

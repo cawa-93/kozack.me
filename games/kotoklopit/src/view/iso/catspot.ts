@@ -40,8 +40,9 @@ import { shapedStage } from "./looks";
  * - `carrier` — спить у переносці: клубочок під ґратками (`CARRIER_GRATE_DEPTH`);
  * - `drum` — спить у барабані пральної машини;
  * - `robot` — їде на роботі-пилососі («Безстрашний»).
+ * - `lounger` — спить на лежанці дорогої кігтеточки.
  */
-export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "litter" | "blanket" | "carrier" | "drum" | "robot";
+export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "litter" | "blanket" | "carrier" | "drum" | "robot" | "lounger";
 
 /**
  * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста), лише очі (і кінчик
@@ -74,6 +75,8 @@ export interface CatSpot {
   show: CatShow;
   /** Річ, у якій кіт (будиночок): її id у реєстрі. */
   item: string | null;
+  /** Спить у відкритому будиночку: з входу на підлогу звисає хвіст. У закритому отвір над порогом, і хвоста не видно. */
+  doorTail: boolean;
   /**
    * Куди кіт дивиться (клітинки; лише ліворуч чи праворуч на екрані, `faceTo`): на річ, біля якої стоїть збоку (`besideSeat`),
    * на столі з комп'ютером — від клавіатури (`deskFaces`); null — як каже `catFacing`.
@@ -169,7 +172,7 @@ export function blanketOffset(cat: Pick<Cat, "ageWeeks" | "traits" | "breed" | "
 }
 
 function spot(kind: CatSpotKind, at: Vec, extra: Partial<CatSpot> = {}): CatSpot {
-  return { kind, at, lift: 0, offset: ZERO, box: null, behind: false, above: null, scale: 1, shadow: false, show: "rig", item: null, faces: null, ...extra };
+  return { kind, at, lift: 0, offset: ZERO, box: null, behind: false, above: null, scale: 1, shadow: false, show: "rig", item: null, doorTail: false, faces: null, ...extra };
 }
 
 // --- Схованка під меблями -------------------------------------------------------------------------
@@ -226,6 +229,15 @@ function houseOf(state: GameState, cat: Cat): HomeItem | null {
   const id = Number(act.target.slice(5));
   const item = state.home.items.find((i) => i.id === id);
   return item?.kind === "house" ? item : null;
+}
+
+/** Кігтеточка, на лежанці якої кіт спить (§9.12). */
+function loungerOf(state: GameState, cat: Cat): ScratcherItem | null {
+  const act = cat.act;
+  if (act.goal !== null || act.kind !== "sleep" || !act.target?.startsWith("item:")) return null;
+  const id = Number(act.target.slice(5));
+  const item = state.home.items.find((i) => i.id === id);
+  return item?.kind === "scratcher" ? item : null;
 }
 
 /**
@@ -454,7 +466,13 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   // У будиночку (§9.12): у темному вході — очі.
   const house = houseOf(state, cat);
   if (house) {
-    return spot("house", itemPoint(house), { offset: pointOf(`item/house/${house.quality}`, "door"), above: { id: `item:${house.id}`, offset: ABOVE_ITEM }, show: "eyes", item: `item:${house.id}` });
+    return spot("house", itemPoint(house), { offset: pointOf(`item/house/${house.quality}`, "door"), above: { id: `item:${house.id}`, offset: ABOVE_ITEM }, show: "eyes", item: `item:${house.id}`, doorTail: house.quality === "cheap" });
+  }
+  // На лежанці кігтеточки (§9.12): висота — стрибком, як на меблі.
+  const lounger = loungerOf(state, cat);
+  if (lounger) {
+    const top = pointOf(`item/scratcher/${lounger.quality}`, "top");
+    return spot("lounger", itemPoint(lounger), { lift: -top.y, offset: { x: top.x, y: 0 }, above: { id: `item:${lounger.id}`, offset: ABOVE_ITEM } });
   }
   // «Безстрашний» їде на роботі-пилососі (§8.7, §9.12): застрибнув — і сидить на ньому.
   const robot = state.home.appliances.robot;
@@ -557,7 +575,7 @@ export function lapSeat(back: boolean, flip: boolean, order: number, scale: numb
 }
 
 /** Чи кіт на чомусь над підлогою: на меблях, на роботі, у лотку (для плавного стрибка — висота змінюється не миттю). */
-export const raised = (kind: CatSpotKind): boolean => kind === "furniture" || kind === "robot" || kind === "litter";
+export const raised = (kind: CatSpotKind): boolean => kind === "furniture" || kind === "robot" || kind === "litter" || kind === "lounger";
 
 // --- Юрба на речах --------------------------------------------------------------------------------
 
