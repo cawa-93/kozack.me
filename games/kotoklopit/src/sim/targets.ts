@@ -35,8 +35,9 @@ const MESS_PRIORITY = 0.3;
 /** Кіт на меблях (комп'ютер, ліжко) важливіший за саму річ: щоб скористатися нею, кота треба забрати. */
 const CAT_ON_OBJECT_PRIORITY = 0.4;
 /**
- * Іграшка під холодильником чи диваном менш важлива за річ поруч: її дістають, ставши біля неї, а перед холодильником він сам —
- * ціль (рішення автора 2026-10-26: іграшка заступала холодильник).
+ * Іграшка під холодильником менш важлива за річ поруч: її дістають, ставши біля неї, а перед холодильником він сам — ціль. Під
+ * диваном штрафу немає: диван не ціль, а кіт, що щойно заштовхав іграшку, стоїть просто над нею, і зі штрафом кнопка діставалася
+ * б йому, звідки б персонаж не підійшов.
  */
 const HIDDEN_PRIORITY = 0.2;
 
@@ -173,7 +174,7 @@ export function targetOf(state: GameState): Target | null {
     // знімають (§9.12, «Лазіння», перевірка етапу 2026-10-26).
     const high = target.type === "cat" && target.cat.stuck !== true && highPlaceOf(state, target.cat) !== null;
     const onObject = target.type === "cat" && !high && isSolid(state, Math.floor(target.cat.x), Math.floor(target.cat.y));
-    const hidden = target.type === "item" && target.item.kind === "toy" && target.item.hidden !== undefined;
+    const hidden = target.type === "item" && target.item.kind === "toy" && target.item.hidden === "fridge";
     const score =
       distance - FACING_PRIORITY * facing - (target.type === "mess" ? MESS_PRIORITY : 0) - (onObject ? CAT_ON_OBJECT_PRIORITY : 0) + (hidden ? HIDDEN_PRIORITY : 0);
     if (score < bestScore) {

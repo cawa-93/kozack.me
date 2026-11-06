@@ -356,6 +356,20 @@ describe("«Подарунки й схованки» (§9.12, рішення а�
     expect(targetAt(STASHES.fridge.at.x, 2.4)).toBe(`item:${toy.id}`);
   });
 
+  it("іграшку під диваном дістають, навіть коли над нею стоїть кіт, що її заштовхав", () => {
+    const save = game();
+    const toy = toyOf(save);
+    Object.assign(toy, { x: STASHES.sofa.at.x, y: STASHES.sofa.at.y, hidden: "sofa" });
+    withCat(save, {}, STASHES.sofa.at);
+    const body = save.current.character.body;
+    for (const facing of [{ x: 0, y: 1 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: -1, y: 0 }]) {
+      Object.assign(body, { x: STASHES.sofa.at.x, y: STASHES.sofa.at.y - 0.5, facing });
+      expect(targetOf(save.current)?.id, `дивиться ${facing.x}, ${facing.y}`).toBe(`item:${toy.id}`);
+    }
+    interact(save);
+    expect(save.current.character.held).toMatchObject({ kind: "toy" });
+  });
+
   it("шкарпетку з кошика білизни несе в схованку під диваном: найближчий виїзд довший на 10 хвилин", () => {
     const save = game();
     save.current.home.clothes = 2;
