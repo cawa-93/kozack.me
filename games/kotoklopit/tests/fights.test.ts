@@ -74,7 +74,7 @@ function untilStandoff(save: Save, a: Cat, b: Cat): void {
 
 /** Дочекатися, доки протистояння скінчиться само. */
 function untilSettled(save: Save, a: Cat, b: Cat): void {
-  for (let i = 0; i < 100 && (a.act.kind === "standoff" || b.act.kind === "standoff"); i++) {
+  for (let i = 0; i < 200 && (a.act.kind === "standoff" || b.act.kind === "standoff"); i++) {
     calm(a);
     calm(b);
     tickCats(save.current, 0.1, { present: false });
@@ -115,12 +115,12 @@ describe("протистояння ворогів (§9.4, рішення авт�
     expect(left.facing).toBe(1);
     expect(right.facing).toBe(-1);
     expect(fights).toBe(0);
-    // 4–8 хвилин, щоб гравець встиг утрутитися (рішення автора 2026-10-26 після блоку 1: було 2–4).
+    // 8–16 хвилин, щоб гравець встиг утрутитися (рішення автора 2026-10-26 після блоку 1: було 2–4).
     const total = a.act.elapsed + a.act.minutes;
-    expect(total).toBeGreaterThanOrEqual(4);
-    expect(total).toBeLessThanOrEqual(8);
+    expect(total).toBeGreaterThanOrEqual(8);
+    expect(total).toBeLessThanOrEqual(16);
     // Шиплять обидва: при зустрічі й далі щохвилини, доки протистояння не скінчилося.
-    for (let i = 0; i < 200 && (a.act.kind === "standoff" || b.act.kind === "standoff"); i++) tickCats(s, 0.05, { present: false });
+    for (let i = 0; i < 400 && (a.act.kind === "standoff" || b.act.kind === "standoff"); i++) tickCats(s, 0.05, { present: false });
     stop();
     for (const cat of [a, b]) {
       const at = hisses.get(cat.id) ?? [];
@@ -585,7 +585,7 @@ describe("бійку видно й чути (§9.4, рішення автора 
         });
         untilStandoff(save, a, b);
         // Поки вороги сходилися, сплячий міг прокинутися й піти: кладемо його спати на місце, утомленим, на все протистояння
-        // (4–8 хвилин — за цей час він устиг би дійти й до вітальні).
+        // (8–16 хвилин — за цей час він устиг би дійти й до вітальні).
         Object.assign(sleeper, spot);
         sleeper.act = { kind: "sleep", target: null, goal: null, minutes: 480, elapsed: 0 };
         sleeper.needs.fatigue = 100;

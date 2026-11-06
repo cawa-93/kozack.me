@@ -1,3 +1,4 @@
+import { DIFFICULTY, LOST_CAT_REPEAT } from "../src/sim/config";
 import { describe, expect, it } from "vitest";
 
 import { createCat } from "../src/sim/cat";
@@ -140,7 +141,7 @@ describe("ранкові зміни здорового глузду (§4, §6.2)
     expect(current.character.stats.sanity).toBe(100);
   });
 
-  it("рішення автора 2026-10-29, А3: друга й наступні смерті тієї самої ночі — половина втрати (−25, −12,5, −12,5); одна — як і раніше", () => {
+  it("рішення автора 2026-10-29, А3: друга й наступні смерті тієї самої ночі — три чверті, половина втрати (−25, −12,5, −12,5); одна — як і раніше", () => {
     const { current } = game();
     current.modifiers.day = null;
     current.character.stats.sanity = 90;
@@ -148,7 +149,9 @@ describe("ранкові зміни здорового глузду (§4, §6.2)
     expect(current.character.stats.sanity).toBe(65);
     current.character.stats.sanity = 90;
     applyMorningSanity(current, 3, 0);
-    expect(current.character.stats.sanity).toBe(40);
+    expect(current.character.stats.sanity).toBe(27.5);
+    // Смерть болить більше за віддання кота на кожній складності, хоч би яка вона за ніч.
+    for (const { lostCatSanity, givenCatSanity } of Object.values(DIFFICULTY)) expect(lostCatSanity * LOST_CAT_REPEAT).toBeLessThan(givenCatSanity);
     // Межа 10% — як і раніше.
     current.character.stats.sanity = 40;
     applyMorningSanity(current, 3, 0);
@@ -171,6 +174,6 @@ describe("ранкові зміни здорового глузду (§4, §6.2)
     state.character.stats.sanity = 90;
     const report = goToSleep(save);
     expect(report?.lostCats).toEqual(cats.map((c) => c.id));
-    expect(report?.sanityMorning).toBe(40);
+    expect(report?.sanityMorning).toBe(27.5);
   });
 });

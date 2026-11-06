@@ -794,7 +794,7 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: { at: tileOf(other), target: `pile:${other.id}` } });
   }
   const sun = sunSpot(state.minute);
-  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + warmth), value: at(tileOf(sun)) });
+  if (sun) options.push({ weight: Math.max(0, WARMTH.sun + WARMTH.sunStep * warmth), value: at(tileOf(sun)) });
   // Прохолодна плитка у ванній: для «Не мерзне», а в «Спеку» — для всіх (§9.12, «Теплолюбність»).
   // Плитка одна: поки на ній спить кіт чи вже йде туди спати, інший її не обирає (перевірка етапу 2026-10-26: у спеку коти лягали
   // в ту саму точку, один в одного).

@@ -124,7 +124,7 @@ export const DIFFICULTY: Record<
   hard: { earnings: 0.8, catSanity: 0.8, newCatSanity: 40, lostCatSanity: -31, givenCatSanity: -19 },
 };
 /** Частка `lostCatSanity` за другу й наступні смерті тієї самої ночі (§6.2): старий виводок відходить разом. */
-export const LOST_CAT_REPEAT = 0.5;
+export const LOST_CAT_REPEAT = 0.75;
 /** Віддати кота раніше — втратити весь бонус за нього (§9.8). */
 export const GIVE_AWAY_GRACE_DAYS = 7;
 
@@ -497,7 +497,7 @@ export const WEIGHT = {
   girthStep: 0.6,
 } as const;
 /** «Теплолюбність» (§9.12): `tileStep`, `heatTile` — вага прохолодної плитки; `sillStep` — підвіконня над батареєю. */
-export const WARMTH = { sun: 2, coldStep: 0.5, coolStep: 0.5, tileStep: 1.5, heatTile: 2, blanketLevel: 2, feelEvery: 180, heatThirstStep: 0.25, observeEvery: 120, sillStep: 1 } as const;
+export const WARMTH = { sun: 4, sunStep: 2, coldStep: 0.5, coolStep: 0.5, tileStep: 1.5, heatTile: 2, blanketLevel: 2, feelEvery: 180, heatThirstStep: 0.25, observeEvery: 120, sillStep: 1 } as const;
 /**
  * Сонячна пляма для сну (§8.9): точка підлоги, де з `from` до `to` (хвилини доби) кіт лежить у яскравій смузі сонця. Смуга
  * мандрує, а рама кидає на неї тінь, тож точка не центр клітинки: такий ледь торкається смуги, і клубок лежав би поруч. Під
@@ -929,7 +929,7 @@ export const HOUSEHOLD = {
   robotMinute: 12 * 60,
   robotMinutes: 64 * BODY_PACE,
   breakPerUse: 1 / 150,
-  applianceBreakPerDay: 0.02,
+  applianceBreakPerDay: 0.01,
   difficulty: { easy: 0.8, normal: 1, hard: 1.25 } as Record<Difficulty, number>,
 } as const;
 /**
@@ -1206,7 +1206,7 @@ export const RELATIONS = {
   /** Бійка ворогів: `luck` — випадковість до програшу; того дня пара без `nightly`. */
   fight: { minutes: 2, mood: -3, relation: -5, injury: 0.1, injuryIntact: 2, separateSanity: -3, luck: 2, hide: [15, 30], winnerSits: 3, truce: [90, 120], gap: 0.6, knock: 0.15, knockReach: 0.8 },
   /** Протистояння: `perMinute` — під 3–5 на пару за день і ~1 бійку; `minutes` — щоб гравець встиг утрутитися. */
-  standoff: { distance: 3, perMinute: 0.01, wait: 3, reach: 1.5, minutes: [4, 8], fight: 0.4, territorialStep: 0.1, part: 2, touchSanity: -1 },
+  standoff: { distance: 3, perMinute: 0.01, wait: 3, reach: 1.5, minutes: [8, 16], fight: 0.4, territorialStep: 0.1, part: 2, touchSanity: -1 },
   /** Вороги уникають одне одного; `person` — не йде по увагу, коли ворог ближче до персонажа. */
   avoid: { distance: 2, step: 3, person: 2 },
   /** Коли ворог поруч. */
