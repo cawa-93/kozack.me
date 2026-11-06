@@ -9,7 +9,8 @@
 import { catOnComputer } from "../../sim/catai";
 import { CARRIER } from "../../sim/config";
 import { CARRIER_SPOT, HIGH_PLACES, isSolid, isWall, itemPoint, objectAt, objectById } from "../../sim/home";
-import type { Cat, GameState, HomeItem, LitterItem, ScratcherItem, Vec } from "../../sim/types";
+import { isNewborn } from "../../sim/reproduction";
+import type { Cat, GameState, HomeItem, HouseItem, LitterItem, Quality, ScratcherItem, Vec } from "../../sim/types";
 import { catMoving } from "../anim/catfacing";
 import type { CatAnimId } from "../anim/ids";
 import { isoScreenDir } from "../anim/iso";
@@ -33,6 +34,7 @@ import { shapedStage } from "./looks";
  *   (`deskSeat`);
  * - `under` — ховається під меблями: з-під ближчого видного краю визирає голова (з-під дивана — з боку сидіння, `hidePeek`);
  * - `house` — спить чи ховається в будиночку: у темному вході видно очі (сплячого — ще й кінчик хвоста з входу);
+ * - `nest` — новонароджений у гнізді (§9.8): клубочком у вході будиночка (`nestSeat`); кому там не вистачило місця, не видно;
  * - `litter` — присідає в лотку: на наповнювачі, над лотком у порядку малювання (`LITTER_SEAT`);
  * - `blanket` — під ковдрою на ліжку (горбик малює квартира, `bedState`): анімація `blanket` (N1) показує лише вушка над
  *   горбиком і кінчик хвоста;
@@ -41,7 +43,7 @@ import { shapedStage } from "./looks";
  * - `robot` — їде на роботі-пилососі («Безстрашний»).
  * - `lounger` — спить на лежанці дорогої кігтеточки.
  */
-export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "litter" | "blanket" | "carrier" | "drum" | "robot" | "lounger";
+export type CatSpotKind = "away" | "hands" | "floor" | "furniture" | "under" | "house" | "nest" | "litter" | "blanket" | "carrier" | "drum" | "robot" | "lounger";
 
 /**
  * Що з кота видно: скелет (що з нього видно — каже анімація: під ковдрою — лише вушка й кінчик хвоста, під меблями — голова),
@@ -224,12 +226,49 @@ export function hidePeek(state: GameState, id: string, cat: Vec): { at: Vec; beh
 const pointOf = (id: ArtId, name: string): Vec => artOffset(id, name) ?? ZERO;
 
 /** Будиночок, у якому кіт спить чи ховається (дійшов до нього). */
-function houseOf(state: GameState, cat: Cat): HomeItem | null {
+function houseOf(state: GameState, cat: Cat): HouseItem | null {
   const act = cat.act;
   if (act.goal !== null || (act.kind !== "sleep" && act.kind !== "hide") || !act.target?.startsWith("item:")) return null;
   const id = Number(act.target.slice(5));
   const item = state.home.items.find((i) => i.id === id);
   return item?.kind === "house" ? item : null;
+}
+
+/**
+ * Де лежать новонароджені у вході будиночка (§9.8): зсув кореня клубочка від pivot речі, одиниці арту, за порядком у виводку.
+ * Сплячий кіт у будиночку — лише заплющені очі в темряві, яких не видно, і будиночок здавався б порожнім. Вхід на грані +x, його
+ * поріг піднімається праворуч: у картонному арка широка, рядком стають троє, четвертий — над ними; у повстяному отвір вузький і
+ * над високим порогом, вміщується двоє.
+ */
+export const NEST_SEATS: Readonly<Record<Quality, readonly Vec[]>> = {
+  cheap: [
+    { x: 27, y: 6 },
+    { x: 18, y: 10 },
+    { x: 36, y: 1 },
+    { x: 27, y: -5 },
+  ],
+  premium: [
+    { x: 25, y: -4 },
+    { x: 26, y: -14 },
+  ],
+};
+
+/** Котре кошеня в будиночку (за порядком у `state.cats`): серед тих, хто вже лежить усередині. */
+function nestOrder(state: GameState, cat: Cat, house: HouseItem): number {
+  let order = 0;
+  for (const other of state.cats) {
+    if (other === cat) return order;
+    if (isNewborn(other) && other.nest === house.id && houseOf(state, other) === house) order++;
+  }
+  return order;
+}
+
+/** Новонароджений у гнізді: на своєму місці у вході, над будиночком; місця немає — усередині, його не видно. */
+function nestSpot(state: GameState, cat: Cat, house: HouseItem): CatSpot {
+  const order = nestOrder(state, cat, house);
+  const seat = NEST_SEATS[house.quality][order];
+  const above = { id: `item:${house.id}`, offset: ABOVE_ITEM };
+  return seat ? spot("nest", itemPoint(house), { offset: seat, above, item: above.id }) : spot("nest", itemPoint(house), { above, item: above.id, show: "none" });
 }
 
 /** Кігтеточка, на лежанці якої кіт спить (§9.12). */
@@ -466,6 +505,7 @@ export function catSpot(state: GameState, cat: Cat, anim: CatAnimId, pair: PairP
   }
   // У будиночку (§9.12): у темному вході — очі.
   const house = houseOf(state, cat);
+  if (house && isNewborn(cat)) return nestSpot(state, cat, house);
   if (house) {
     return spot("house", itemPoint(house), { offset: pointOf(`item/house/${house.quality}`, "door"), above: { id: `item:${house.id}`, offset: ABOVE_ITEM }, show: "eyes", item: `item:${house.id}`, doorTail: house.quality === "cheap" });
   }

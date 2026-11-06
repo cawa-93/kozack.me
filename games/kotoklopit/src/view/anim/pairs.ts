@@ -173,7 +173,8 @@ export function catPairs(state: GameState, sizeOf: SizeOf = ADULT): Map<number, 
 function nursing(state: GameState, sizeOf: SizeOf, placed: Map<number, PairPlacement>): void {
   for (const mother of state.cats) {
     if (!home(state, mother) || !asleep(mother)) continue;
-    const kittens = state.cats.filter((k) => k.parents.mother === mother.id && isNewborn(k) && home(state, k) && asleep(k) && distance(k, mother) <= NEAR);
+    // Ціль сну кошеняти — гніздо: там вони лежать у вході, а не рядком перед матір'ю (`nestSeat`).
+    const kittens = state.cats.filter((k) => k.parents.mother === mother.id && isNewborn(k) && home(state, k) && asleep(k) && k.act.target === null && distance(k, mother) <= NEAR);
     const first = kittens[0];
     if (first === undefined) continue;
     const pm = isoScreenDir(mother);

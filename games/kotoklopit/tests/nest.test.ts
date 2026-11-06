@@ -2,6 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
+import { applyScenario, FILE_SCENARIOS } from "../src/dev/scenarios";
 import { pickUpCat, putDownCat } from "../src/sim/actions";
 import { createCat, idleAct } from "../src/sim/cat";
 import { decide, hideSpot, tickCats } from "../src/sim/catai";
@@ -14,6 +15,8 @@ import { giveBirth, isNest, motherNest, nestOf } from "../src/sim/reproduction";
 import { createRng } from "../src/sim/rng";
 import { itemTargetId } from "../src/sim/targets";
 import type { Cat, GameState, HouseItem, Quality, Save } from "../src/sim/types";
+import { pairOf } from "../src/view/anim/pairs";
+import { catSpot, NEST_SEATS } from "../src/view/iso/catspot";
 import { hours, recordEvents, standAt, withCatCorner } from "./helpers";
 
 function game(): Save {
@@ -274,5 +277,92 @@ describe("кінець тижня (§9.8)", () => {
     const seen = new Set<string | null>();
     for (let seed = 0; seed < 200; seed++) seen.add(hideSpot(save.current, createRng(seed)).target);
     expect(seen.has(itemTargetId(nest))).toBe(true);
+  });
+});
+
+describe("вигляд гнізда (§9.8)", () => {
+  const DEPTHS = { grate: 0 };
+
+  /** Виводок із `count` новонароджених у будиночку якості `quality`. */
+  function litter(quality: Quality, count: number): { save: Save; nest: HouseItem; mother: Cat; kittens: Cat[] } {
+    const save = game();
+    const nest = house(save.current, quality, "house-3");
+    const mother = adult(save, "female");
+    const kittens: Cat[] = [];
+    for (let i = 0; i < count; i++) {
+      const kitten = createCat(save.current, createRng(i + 1), { source: "born", ageWeeks: 0, at: itemPoint(nest) });
+      kitten.parents = { mother: mother.id, father: null };
+      kitten.nest = nest.id;
+      kitten.act = { kind: "sleep", target: itemTargetId(nest), goal: null, minutes: 600, elapsed: 0 };
+      addCat(save.current, kitten);
+      kittens.push(kitten);
+    }
+    return { save, nest, mother, kittens };
+  }
+
+  for (const quality of ["cheap", "premium"] as const) {
+    it(`${quality}: кошенят видно у вході, кожне на своєму місці, над будиночком`, () => {
+      const seats = NEST_SEATS[quality];
+      const { save, nest, kittens } = litter(quality, seats.length);
+      const spots = kittens.map((k) => catSpot(save.current, k, "sleep", null, DEPTHS));
+      expect(spots.every((s) => s.kind === "nest" && s.show === "rig" && s.above?.id === itemTargetId(nest))).toBe(true);
+      expect(spots.map((s) => s.offset)).toEqual(seats);
+      expect(new Set(seats.map((s) => `${s.x}:${s.y}`)).size).toBe(seats.length);
+    });
+  }
+
+  it("у вузькому вході повстяного місць менше, ніж у широкій арці картонного; кому не вистачило, того не видно", () => {
+    expect(NEST_SEATS.premium.length).toBeLessThan(NEST_SEATS.cheap.length);
+    const { save, kittens } = litter("premium", NEST_SEATS.premium.length + 1);
+    const last = kittens[kittens.length - 1];
+    if (!last) throw new Error("немає кошеняти");
+    expect(catSpot(save.current, last, "sleep", null, DEPTHS)).toMatchObject({ kind: "nest", show: "none" });
+  });
+
+  it("кошеня, яке взяли з гнізда, не займає місця: решта зсуваються, і вхід не порожній", () => {
+    const { save, kittens } = litter("cheap", 2);
+    const [first, second] = kittens;
+    if (!first || !second) throw new Error("немає кошенят");
+    first.act = idleAct();
+    expect(catSpot(save.current, second, "sleep", null, DEPTHS).offset).toEqual(NEST_SEATS.cheap[0]);
+  });
+
+  it("кошенята в гнізді — не пара «мати й кошенята»: рядком перед матір'ю лежать лише без гнізда", () => {
+    const { save, nest, mother, kittens } = litter("cheap", 2);
+    sleepingIn(mother, nest);
+    expect(pairOf(save.current, kittens[0]!)).toBeNull();
+    expect(pairOf(save.current, mother)).toBeNull();
+    for (const kitten of kittens) {
+      delete kitten.nest;
+      kitten.act = { kind: "sleep", target: null, goal: null, minutes: 600, elapsed: 0 };
+    }
+    expect(pairOf(save.current, kittens[0]!)?.kind).toBe("nursing");
+  });
+
+  it("мати в гнізді — очі у вході, як будь-який кіт у будиночку; постарше кошеня теж", () => {
+    const { save, nest, mother, kittens } = litter("cheap", 1);
+    sleepingIn(mother, nest);
+    expect(catSpot(save.current, mother, "sleep", null, DEPTHS)).toMatchObject({ kind: "house", show: "eyes" });
+    const kitten = kittens[0];
+    if (!kitten) throw new Error("немає кошеняти");
+    kitten.ageWeeks = 1;
+    expect(catSpot(save.current, kitten, "sleep", null, DEPTHS)).toMatchObject({ kind: "house", show: "eyes" });
+  });
+
+  it("сценарій nest-house: усі кошенята в гніздах обох будиночків, будиночок не взяти", () => {
+    const scenario = FILE_SCENARIOS["nest-house"];
+    if (!scenario) throw new Error("немає сценарію");
+    const save = applyScenario(scenario);
+    const state = save.current;
+    const kittens = state.cats.filter((c) => c.source === "born");
+    expect(kittens.length).toBeGreaterThan(0);
+    expect(new Set(kittens.map((k) => nestOf(state, k)?.quality))).toEqual(new Set(["cheap", "premium"]));
+    const nest = nestOf(state, kittens[0]!);
+    if (!nest) throw new Error("немає гнізда");
+    standAt(save, itemTargetId(nest));
+    const { events, stop } = recordEvents();
+    moveThing(state);
+    stop();
+    expect(events).toContainEqual({ type: "refused", object: itemTargetId(nest), reason: "thing-busy" });
   });
 });
