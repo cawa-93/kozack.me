@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 84" width="112" height="84">
+<!-- ui/hud/calendar — відривний календарик на панелі (deskcalendar.ts, §8.4): аркуш на двох кільцях, під ним край наступних аркушів.
+size 112×84; pivot (56, 42) — центр; points: week (56, 28), day (56, 57) — центри написів, які кладе код.
+Шапка red (тиждень), аркуш enamelHi (день тижня); паперовий обідок — силует на темній смузі, як у годинника.
+-->
+<defs><clipPath id="ui-hud-calendar-in"><path d="M16.6 14Q56 13.5 95.4 14Q102.4 14 102.4 21Q102.9 43.9 102.4 66.8Q102.4 73.8 95.4 73.8Q56 74.3 16.6 73.8Q9.6 73.8 9.6 66.8Q9.1 43.9 9.6 21Q9.6 14 16.6 14Z"/></clipPath></defs>
+<g id="p-rim">
+<path d="M15.8 9.2Q56 8.7 96.2 9.2Q107.2 9.2 107.2 20.2Q107.7 44.4 107.2 68.6Q107.2 79.6 96.2 79.6Q56 80.1 15.8 79.6Q4.8 79.6 4.8 68.6Q4.3 44.4 4.8 20.2Q4.8 9.2 15.8 9.2Z" fill="#f2e7d0"/>
+</g>
+<g id="p-ink">
+<path d="M16.4 10.8Q56 10.3 95.6 10.8Q105.6 10.8 105.6 20.8Q106.1 44.4 105.6 68Q105.6 78 95.6 78Q56 78.5 16.4 78Q6.4 78 6.4 68Q5.9 44.4 6.4 20.8Q6.4 10.8 16.4 10.8Z" fill="#2e1f29"/>
+</g>
+<g id="p-stack">
+<path d="M16.6 18Q56 17.5 95.4 18Q102.4 18 102.4 25Q102.9 46.8 102.4 68.6Q102.4 75.6 95.4 75.6Q56 76.1 16.6 75.6Q9.6 75.6 9.6 68.6Q9.1 46.8 9.6 25Q9.6 18 16.6 18Z" fill="#cdc6be"/>
+</g>
+<g id="p-sheet">
+<path d="M16.6 14Q56 13.5 95.4 14Q102.4 14 102.4 21Q102.9 43.9 102.4 66.8Q102.4 73.8 95.4 73.8Q56 74.3 16.6 73.8Q9.6 73.8 9.6 66.8Q9.1 43.9 9.6 21Q9.6 14 16.6 14Z" fill="#f2e9d4"/>
+<g clip-path="url(#ui-hud-calendar-in)">
+<path d="M0 0L112 0L112 41Q56 42 0 41Z" fill="#c4524b"/>
+<path d="M0 62Q56 69 112 62L112 84L0 84Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<path d="M12 41.4Q56 42.4 100 41.4" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-rings">
+<path d="M32 8L32 20" fill="none" stroke="#2e1f29" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 8.6L32 19.4" fill="none" stroke="#cdc6be" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80 8L80 20" fill="none" stroke="#2e1f29" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M80 8.6L80 19.4" fill="none" stroke="#cdc6be" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

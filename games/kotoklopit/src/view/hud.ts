@@ -1,4 +1,4 @@
-// Інтерфейс рівня (§8.4): настільний годинник, шкали показників, гроші, планові комунальні, стани персонажа й короткий
+// Інтерфейс рівня (§8.4): настільний годинник, календарик, шкали показників, гроші, планові комунальні, стани персонажа й короткий
 // розклад дня. Приховані числа (терпіння, репутація) тут не показуються.
 // Смуга, кружечки показників, рамки шкал, телефон і кнопка повного екрана — кадри атласу `ui/hud/*` (крок 16, A13), іконки —
 // `icon/*`, а кольори й написи — з палітри арту (`iso/hudlook.ts`, `iso/uilook.ts`); заливку шкал малює код у рамках арту.
@@ -15,7 +15,8 @@ import { isDrowsy } from "../sim/sleep";
 import { onSickLeave } from "../sim/work";
 import { absoluteMinute, formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
 import type { GameState, Product, StatName } from "../sim/types";
-import { fill, ILLNESS_TITLES, PANEL_STATES } from "../texts";
+import { BILL_WHEN, fill, ILLNESS_TITLES, PANEL_STATES } from "../texts";
+import { DeskCalendar } from "./deskcalendar";
 import { DeskClock } from "./deskclock";
 import { iconArt, type IconName } from "./iconnames";
 import { StretchArt } from "./iso/hudart";
@@ -52,8 +53,10 @@ const STATS: readonly { name: StatName; icon: IconName }[] = [
 
 /** Верх розкладу на десктопі; на телефоні — на `HudLayout.drop` нижче. */
 const SCHEDULE_Y = 4;
-/** Просвіти в ряду показників: від грошей до квитанції, від кружечка до суми, від суми до розкладу; від дати до кружечка. */
-const ROW_GAP = { bill: 12, amount: 4, schedule: 12, date: 8 } as const;
+/** Просвіти в ряду показників: від грошей до квитанції, від кружечка до суми, від суми до розкладу. */
+const ROW_GAP = { bill: 26, amount: 4, schedule: 12 } as const;
+/** Неділя: цієї ночі комунальні й знімуть (§6.4). */
+const SUNDAY = 6;
 /** Штрихування частини шкали над межею (§6.3): крок смужок. */
 const HATCH_STEP = 6;
 /** Кнопки праворуч: відстань від правого краю до їхнього центру. */
@@ -74,7 +77,7 @@ const HINT = { x: 19, y: 19, r: 15 } as const;
  */
 const HINT_BIG = { x: 15, y: 14 } as const;
 /** Дрібні написи панелі: розмір шрифту на полотні до збільшення (`hudTextScale`). Гроші й комунальні — одного розміру. */
-const SMALL_TEXT = { date: 17, effects: 18, schedule: 18, news: 17, amount: 20 } as const;
+const SMALL_TEXT = { billWhen: 17, effects: 18, schedule: 18, news: 17, amount: 20 } as const;
 /** Кружечок підказки (`statDisc`, `HINT.r` з контуром 2): іконка менша за папір — довкола неї лишається просвіт. */
 const HINT_DISC = statDisc(2 * HINT.r + 2);
 
@@ -110,11 +113,11 @@ const barSlot = (i: number, layout: HudLayout, columns: HudColumns): BarRect => 
 export class Hud {
   /** Смуга панелі: розтягнути на ширину екрана й висоту панелі з безпечною зоною. */
   private readonly band: (width: number, height: number) => void;
-  /** Усе, що ліворуч: дата, годинник, шкали, гроші, розклад. */
+  /** Усе, що ліворуч: годинник, календарик, шкали, гроші, розклад. */
   private readonly left: Phaser.GameObjects.Container;
-  private readonly date: Phaser.GameObjects.Text;
+  private readonly calendar: DeskCalendar;
   private readonly clock: DeskClock;
-  /** Хвилина гри, яку показують годинник, дата й квитанція: щокадру їх не перераховують. */
+  /** Хвилина гри, яку показують годинник, календарик і квитанція: щокадру їх не перераховують. */
   private shownAt: number | null = null;
   private readonly bars: Phaser.GameObjects.Graphics;
   /** Кружечки показників: паперове кільце й іконка. */
@@ -129,9 +132,11 @@ export class Hud {
   /** Ширина панелі зараз і колонки за нею (`hudColumns`). */
   private room = 0;
   private columns: HudColumns | null = null;
+  /** Власні гроші: гаманець на кружечку й сума. */
+  private readonly wallet: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image };
   private readonly money: Phaser.GameObjects.Text;
-  /** Планові комунальні: квитанція на кружечку й сума. */
-  private readonly bill: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; amount: Phaser.GameObjects.Text };
+  /** Планові комунальні: квитанція на кружечку, сума й під ними — коли її знімуть. */
+  private readonly bill: { ring: Phaser.GameObjects.Image; icon: Phaser.GameObjects.Image; amount: Phaser.GameObjects.Text; when: Phaser.GameObjects.Text };
   private readonly effects: Phaser.GameObjects.Text;
   private readonly schedule: Phaser.GameObjects.Text;
   private readonly phone: Phaser.GameObjects.Container;
@@ -179,26 +184,28 @@ export class Hud {
     // Поле полотна смуги — за екраном, чорнильний край — у межах панелі (`HUD_BAND`).
     const band = new StretchArt(scene, layer, HUD_ART.band).setDepth(DEPTH - 1).setAlpha(HUD_BAND.alpha);
     this.band = (width, height) => band.place(bandRect(band.frame, width, height));
-    this.date = text(0, 0, SMALL_TEXT.date, UI_TEXT.muted).setOrigin(0, 0.5);
+    this.calendar = new DeskCalendar(scene, (size, color) => text(0, 0, size, color));
     this.clock = new DeskClock(scene);
     // Іконки намальовані чорнилом для світлого бабла: на темній панелі їм потрібна світла підкладка. Місце й розмір — `arrange`.
     this.discs = STATS.map((stat) => ({ ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, iconArt(stat.icon)) }));
     this.bars = scene.add.graphics();
     this.effects = text(0, 0, SMALL_TEXT.effects, UI_TEXT.warning);
+    this.wallet = { ring: addArt(scene, null, HUD_ART.stat), icon: addArt(scene, null, HUD_ART.purse) };
     this.money = text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5);
     this.bill = {
       ring: addArt(scene, null, HUD_ART.stat),
       icon: addArt(scene, null, iconArt(UTILITIES_ICON)),
       amount: text(0, 0, SMALL_TEXT.amount).setFontStyle("bold").setOrigin(0, 0.5),
+      when: text(0, 0, SMALL_TEXT.billWhen, UI_TEXT.muted),
     };
     this.schedule = text(0, 0, SMALL_TEXT.schedule, UI_TEXT.muted);
     this.left = scene.add
-      .container(0, 0, [this.date, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
+      .container(0, 0, [this.calendar.root, this.clock.root, ...this.discs.flatMap((disc) => [disc.ring, disc.icon]), this.bars])
       .setDepth(DEPTH)
       .addToDisplayList(layer);
     // Рамки шкал — «три частини» над заливкою.
     this.barFrames = STATS.map(() => new StretchArt(scene, this.left, HUD_ART.bar));
-    this.left.add([this.effects, this.money, this.bill.ring, this.bill.icon, this.bill.amount, this.schedule]);
+    this.left.add([this.effects, this.wallet.ring, this.wallet.icon, this.money, this.bill.ring, this.bill.icon, this.bill.amount, this.bill.when, this.schedule]);
     this.arrange(HUD_LAYOUT.desktop, BASE_WIDTH);
 
     // Телефон персонажа: доставка (§6.4).
@@ -259,7 +266,7 @@ export class Hud {
 
   /**
    * Розкласти панель за `layout` (десктоп чи низький екран, `hudLayout`) на ширину `room` — лише коли щось із них змінилося:
-   * годинник, дата, кружечки показників, рамки й заливка шкал, рядок станів, гроші й розклад. Повертає розклад, що діє.
+   * годинник, календарик, кружечки показників, рамки й заливка шкал, рядок станів, гроші й розклад. Повертає розклад, що діє.
    */
   private arrange(layout: HudLayout, room: number): HudLayout {
     if (layout === this.shape && room === this.room) return layout;
@@ -268,8 +275,7 @@ export class Hud {
     const columns = hudColumns(layout, room);
     this.columns = columns;
     this.clock.root.setPosition(layout.clock.x, layout.height / 2).setScale(layout.clock.scale);
-    this.date.setPosition(layout.dateX, layout.height / 2);
-    this.fitDate();
+    this.calendar.root.setPosition(layout.calendarX, layout.height / 2).setScale(layout.clock.scale);
     const { ring, icon } = statDisc(layout.disc.outer, layout.disc.fill);
     this.discs.forEach((disc, i) => {
       const x = layout.stats + i * columns.step + layout.disc.x;
@@ -285,7 +291,10 @@ export class Hud {
     // Заливка — під рамкою арту, тож її кінці — півкола.
     this.barLook.radius = (this.barRects[0]?.h ?? 0) / 2;
     this.effects.setPosition(layout.stats, layout.effectsY);
-    this.money.setPosition(columns.money, layout.disc.y);
+    const radius = layout.disc.outer / 2;
+    this.wallet.ring.setPosition(columns.money + radius, layout.disc.y).setDisplaySize(ring, ring);
+    this.wallet.icon.setPosition(columns.money + radius, layout.disc.y).setDisplaySize(icon, icon);
+    this.money.setPosition(columns.money + layout.disc.outer + ROW_GAP.amount, layout.disc.y);
     this.bill.ring.setDisplaySize(ring, ring);
     this.bill.icon.setDisplaySize(icon, icon);
     this.schedule.setY(SCHEDULE_Y + layout.drop);
@@ -293,7 +302,7 @@ export class Hud {
     return layout;
   }
 
-  /** Квитанція — одразу за грошима, а розклад — на своєму місці, хіба що довгі суми дійшли до нього. */
+  /** Квитанція — за грошима, підпис — під нею від лівого краю кружечка, а розклад — на своєму місці, хіба що довгі суми дійшли до нього. */
   private placeBill(): void {
     const { shape, columns } = this;
     if (!shape || !columns) return;
@@ -303,39 +312,40 @@ export class Hud {
     this.bill.ring.setPosition(disc, y);
     this.bill.icon.setPosition(disc, y);
     this.bill.amount.setPosition(disc + r + ROW_GAP.amount, y);
-    this.schedule.setX(Math.max(columns.schedule, this.bill.amount.x + this.bill.amount.width + ROW_GAP.schedule));
-    // Довгий розклад не заходить під телефон: стискається вшир, як дата.
+    // Рядок має поле над літерами: трохи заходить на кружечок, зате не впирається в нижній край смуги телефона.
+    this.bill.when.setPosition(disc - r, y + r * 0.8);
+    const right = Math.max(this.bill.amount.x + this.bill.amount.width, this.bill.when.x + this.bill.when.width);
+    this.schedule.setX(Math.max(columns.schedule, right + ROW_GAP.schedule));
+    // Довгий розклад не заходить під телефон: стискається вшир.
     this.schedule.setScale(Math.min(1, (this.room - this.schedule.x) / Math.max(1, this.schedule.width)), 1);
+    this.fitEffects();
   }
 
-  /** Дата не налазить на кружечок першого показника: довга стискається вшир. */
-  private fitDate(): void {
-    const { shape } = this;
-    if (!shape) return;
-    const room = shape.stats + shape.disc.x - shape.disc.outer / 2 - ROW_GAP.date - shape.dateX;
-    this.date.setScale(Math.min(1, room / Math.max(1, this.date.width)), 1);
+  /** Довгий рядок станів не заходить під підпис квитанції: стискається вшир. */
+  private fitEffects(): void {
+    const room = this.bill.when.x - ROW_GAP.schedule - this.effects.x;
+    this.effects.setScale(Math.min(1, room / Math.max(1, this.effects.width)), 1);
   }
 
   /**
-   * Дрібні написи (дата, стани, розклад, суми, бабл телефона) і підказка на телефоні — у `k` разів більші, коли полотно на
+   * Дрібні написи (стани, розклад, суми, підпис квитанції, бабл телефона) і підказка на телефоні — у `k` разів більші, коли полотно на
    * екрані зменшене (телефон, `hudTextScale`); лише коли масштаб змінився.
    */
   private scaleSmall(k: number): void {
     if (k === this.textScale) return;
     this.textScale = k;
     const px = (size: number): number => Math.round(size * k);
-    this.date.setFontSize(px(SMALL_TEXT.date));
     this.effects.setFontSize(px(SMALL_TEXT.effects));
     this.schedule.setFontSize(px(SMALL_TEXT.schedule));
     this.money.setFontSize(px(SMALL_TEXT.amount));
     this.bill.amount.setFontSize(px(SMALL_TEXT.amount));
+    this.bill.when.setFontSize(px(SMALL_TEXT.billWhen));
     this.newsTitle.setFontSize(px(SMALL_TEXT.news));
     this.newsText.setFontSize(px(SMALL_TEXT.news)).setWordWrapWidth(px(NEWS.width));
     const at = k > 1 ? HINT_BIG : HINT;
     const { ring, icon } = statDisc(2 * HINT.r * k + 2);
     this.hintUnder.setPosition(at.x, at.y).setDisplaySize(ring, ring);
     this.hintIcon.setPosition(at.x, at.y).setDisplaySize(icon, icon);
-    this.fitDate();
     this.placeBill();
   }
 
@@ -411,8 +421,8 @@ export class Hud {
       const ceiling = Math.max(value, statCeiling(state, stat.name));
       if (ceiling < 100) hatch(g, bar, bar.x + (bar.w * ceiling) / 100, bar.x + bar.w, look.hatch);
     });
-    // Гроші — символом гривні (§11.4).
-    const cash = `${Math.floor(money)} ₴`;
+    // Гаманець уже каже, що це гроші (§11.4): без символу гривні.
+    const cash = String(Math.floor(money));
     if (cash !== this.money.text) {
       this.money.setText(cash);
       this.placeBill();
@@ -429,7 +439,11 @@ export class Hud {
     // День «Планового відключення» (§4.1, рішення автора 2026-11-02): світла немає весь день — у розкладі події немає, тож тут.
     if (powerOut(state)) effects.push(PANEL_STATES.noPower);
     for (const illness of state.character.illnesses) effects.push(ILLNESS_TITLES[illness.id]);
-    this.effects.setText(effects.join(" · "));
+    const line = effects.join(" · ");
+    if (line !== this.effects.text) {
+      this.effects.setText(line);
+      this.fitEffects();
+    }
     // Запас уперше закінчився (§6.4): телефон пульсує з його іконкою, доки його не відкриють.
     const hints = state.home.phoneHints ?? [];
     const product = hints[hints.length - 1];
@@ -438,13 +452,15 @@ export class Hud {
     else this.phone.setScale(1);
   }
 
-  /** Те, що змінюється не частіше за хвилину гри: годинник, дата, планові комунальні й розклад. */
+  /** Те, що змінюється не частіше за хвилину гри: годинник, календарик, планові комунальні й розклад. */
   private showMinute(state: GameState): void {
     this.clock.show(formatClock(state.minute));
-    this.date.setText(`Тиждень ${weekOf(state.day)}\n${WEEKDAY_NAMES[weekdayOf(state.day)]}`);
-    this.fitDate();
+    const weekday = weekdayOf(state.day);
+    const name = WEEKDAY_NAMES[weekday] ?? "";
+    this.calendar.show(`Тиждень ${weekOf(state.day)}`, name.charAt(0).toUpperCase() + name.slice(1));
     const planned = utilitiesPlanned(state);
     this.bill.amount.setText(planned > 0 ? `−${planned} ₴` : "0 ₴");
+    this.bill.when.setText(planned > 0 ? (weekday === SUNDAY ? BILL_WHEN.sunday : BILL_WHEN.other) : "");
     // Два найважливіші пункти (§8.4): на телефоні третій рядок дрібнішим шрифтом уже не прочитати.
     this.schedule.setText(scheduleOf(state).slice(0, 2).join("\n"));
     this.placeBill();

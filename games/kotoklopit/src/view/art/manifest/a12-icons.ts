@@ -291,5 +291,5 @@ export const MANIFEST: readonly ArtEntry[] = [
   // одиниці × масштаб гонки, як іконка пункту в тій самій рамці, тож роздільність — та сама, що в іконок (`DEFAULT_RES`), а не
   // 1,125: інакше на щільному екрані телефона табличка дому розтягнута ≈ ×1,4 і м'якша за таблички пунктів (рецензія від'їзду
   // 2026-11-03). Решту гліфів у полотні не показують (DOM малює SVG сам, `src/ui/glyphs.ts`).
-  ...Object.values(GLYPH_ART).map((name): ArtEntry => ({ id: `ui/glyph/${name}`, ...centered(64), ...(name === "home" ? {} : { res: 1.125 }) })),
+  ...Object.values(GLYPH_ART).map((name): ArtEntry => ({ id: `ui/glyph/${name}`, ...centered(64), ...(name === "home" || name === "purse" ? {} : { res: 1.125 }) })),
 ];

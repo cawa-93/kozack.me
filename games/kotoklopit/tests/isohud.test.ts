@@ -9,10 +9,12 @@ import { describe, expect, it } from "vitest";
 
 import { parseSvg, type SvgNode } from "../scripts/art/svg";
 import { artEntry } from "../src/view/art/manifest";
+import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
 import { svgPath, type ArtEntry, type ArtId } from "../src/view/art/types";
 import {
   bandRect,
   CLOCK_DIGIT_SLOTS,
+  CALENDAR_TEXT,
   clockDigitStates,
   drawnInside,
   HUD_ART,
@@ -114,13 +116,32 @@ describe("настільний годинник (§8.4)", () => {
     }
   });
 
-  it("годинник із датою вміщуються в смугу й не заходять на перший показник", () => {
-    const { size } = entry(HUD_ART.clock);
+  it("годинник і календарик вміщуються в смугу й не заходять один на одного та на перший показник", () => {
+    const clock = entry(HUD_ART.clock).size;
+    const calendar = entry(HUD_ART.calendar).size;
     for (const layout of [HUD_LAYOUT.desktop, HUD_LAYOUT.phone]) {
-      expect(size.h * layout.clock.scale).toBeLessThanOrEqual(layout.height);
-      expect(layout.clock.x + (size.w / 2) * layout.clock.scale).toBeLessThanOrEqual(layout.dateX);
-      expect(layout.dateX).toBeLessThan(layout.stats);
+      const scale = layout.clock.scale;
+      expect(clock.h * scale).toBeLessThanOrEqual(layout.height);
+      expect(calendar.h * scale).toBeLessThanOrEqual(layout.height);
+      expect(layout.clock.x + (clock.w / 2) * scale).toBeLessThanOrEqual(layout.calendarX - (calendar.w / 2) * scale);
+      expect(layout.calendarX + (calendar.w / 2) * scale).toBeLessThanOrEqual(layout.stats + layout.disc.x - layout.disc.outer / 2);
     }
+  });
+
+  it("написи календарика стоять на його кадрі й вміщуються в ширину аркуша", () => {
+    const { points, size } = entry(HUD_ART.calendar);
+    for (const slot of ["week", "day"]) {
+      const at = points?.[slot];
+      expect(at?.x).toBe(size.w / 2);
+      expect(at?.y).toBeGreaterThan(0);
+      expect(at?.y).toBeLessThan(size.h);
+    }
+    expect(CALENDAR_TEXT.width).toBeLessThan(size.w);
+  });
+
+  it("гаманець панелі — той самий малюнок, що в картках", () => {
+    expect(HUD_ART.purse).toBe(`ui/glyph/${GLYPH_ART["👛"]}`);
+    expect(entry(HUD_ART.purse).res).toBeUndefined();
   });
 });
 

@@ -252,7 +252,7 @@ export function phoneCard(state: GameState, wanted: PhoneTab, handlers: PhoneHan
   const shop = tab === "shop" ? shopCatalog(state, "delivery", { checkout: handlers.checkout }) : null;
   if (shop) body.push(shop.list);
   if (tab === "mine") {
-    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень.`);
+    body.push(`${named(UTILITIES_ICON, "Комунальні")}: ${utilitiesDue(state)} ₴ на тиждень, знімаються самі в ніч на понеділок.`);
     // З попередженням — борг і скільки треба в понеділок (§6.4, рішення автора 2026-10-27, Е4).
     const debt = state.home.utilitiesDebt;
     if (debt > 0) body.push(fill(LEDGER_TEXTS.debt, state.character.address, { борг: debt, платіж: debt + utilitiesDue(state) }));

@@ -705,6 +705,9 @@ export const PANEL_STATES = {
   noPower: "Без світла",
 } as const;
 
+/** Коли знімуть планові комунальні (§6.4, §8.4): напис під квитанцією на панелі. */
+export const BILL_WHEN = { sunday: "знімуть уночі", other: "знімуть у пн" } as const;
+
 export const ILLNESS_TITLES: Record<IllnessId, string> = { cold: "Застуда", injury: "Травма", exhaustion: "Виснаження" };
 
 /**

@@ -21,6 +21,10 @@ export const HUD_ART = {
   clock: "ui/hud/clock",
   /** Цифра годинника, що світиться: стани `d0`…`d9` і `colon`. */
   clockDigit: "ui/hud/clock-digit",
+  /** Відривний календарик: точки запису — де стоять написи. */
+  calendar: "ui/hud/calendar",
+  /** Гаманець біля грошей: той самий малюнок, що в картках (`👛`). */
+  purse: "ui/glyph/purse",
   /** Кнопка телефону: `idle` і `hint` (запас уперше закінчився). */
   phone: "ui/hud/phone",
   /** Кнопка повного екрана: `enter` і `exit`. */
@@ -114,14 +118,17 @@ export const CLOCK_DIGIT_SLOTS = ["d0", "d1", "d2", "d3"] as const;
 /** Половина такту двокрапки, мс: раз на секунду, як у справжнього годинника. */
 export const CLOCK_BLINK_MS = 500;
 
+/** Написи календарика, одиниці кадру: розмір шрифту в шапці й на аркуші та найбільша ширина. */
+export const CALENDAR_TEXT = { week: 22, day: 24, width: 86 } as const;
+
 /** Кадри цифр для часу «ГГ:ХХ», без двокрапки: стани `ui/hud/clock-digit`. */
 export function clockDigitStates(clock: string): string[] {
   return [...clock.replace(":", "")].map((digit) => `d${digit}`);
 }
 
-/** Найменший розмір дрібних написів панелі на екрані, px CSS (дата, стани, розклад, бабл телефона). */
+/** Найменший розмір дрібних написів панелі на екрані, px CSS (підпис квитанції, стани, розклад, бабл телефона). */
 export const HUD_SMALL_TEXT_CSS = 12;
-/** Найдрібніший з цих написів, одиниць інтерфейсу (дата й бабл телефона — 17). */
+/** Найдрібніший з цих написів, одиниць інтерфейсу (підпис квитанції й бабл телефона — 17). */
 export const HUD_SMALL_TEXT = 17;
 /** Більше збільшувати не можна: смуга панелі тієї самої висоти (`HUD_HEIGHT`), і написи вилізли б за неї. */
 export const HUD_TEXT_MAX = 1.35;
@@ -149,8 +156,8 @@ export interface HudLayout {
   drop: number;
   /** Годинник: центр по горизонталі й масштаб кадру; по вертикалі він посередині смуги. */
   clock: { x: number; scale: number };
-  /** Лівий край дати. */
-  dateX: number;
+  /** Центр календарика по горизонталі; масштаб — той самий, що в годинника. */
+  calendarX: number;
   /** Де починається перший показник. */
   stats: number;
   /** Скільки місця лишити праворуч від шкал: гроші, квитанція й розклад (`hudColumns`). */
@@ -178,16 +185,16 @@ export interface HudLayout {
  *   нижча на ≈ 2 %); розклад опускається на половину цього — посередині смуги. Без вищої смуги більші кружечки лягли б на
  *   рядок станів, а перенести його нікуди: праворуч стоять гроші й розклад, а на телефоні 16:9 смуга не ширша за десктоп.
  *
- * Годинник намальовано під смугу телефона; на десктопі він менший, щоб лишався в нижчій смузі.
+ * Годинник і календарик намальовано під смугу телефона; на десктопі вони менші, щоб лишалися в нижчій смузі.
  */
 export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayout } = {
   desktop: {
     height: 76,
     drop: 0,
     clock: { x: 65, scale: 0.84 },
-    dateX: 126,
+    calendarX: 170,
     stats: 222,
-    reserve: { money: 92, bill: 124, schedule: 190 },
+    reserve: { money: 108, bill: 134, schedule: 190 },
     disc: { outer: 36, fill: HUD_STAT_FILL, x: 15, y: 26 },
     bar: { x: 34, y: 20, w: 116, h: 12 },
     effectsY: 44,
@@ -196,9 +203,9 @@ export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayou
     height: 88,
     drop: 6,
     clock: { x: 72, scale: 1 },
-    dateX: 142,
+    calendarX: 200,
     stats: 266,
-    reserve: { money: 108, bill: 144, schedule: 230 },
+    reserve: { money: 124, bill: 170, schedule: 224 },
     disc: { outer: 52, fill: 0.86, x: 23, y: 30 },
     bar: { x: 50, y: 24, w: 100, h: 12 },
     effectsY: 55,
@@ -206,7 +213,7 @@ export const HUD_LAYOUT: { readonly desktop: HudLayout; readonly phone: HudLayou
 };
 
 /** Крок показників: найбільший — шкали повні; найменший — коротші вже не прочитати; просвіт — від шкали до наступного кружечка. */
-export const HUD_STEP = { max: 158, min: 112, gap: 8 } as const;
+export const HUD_STEP = { max: 158, min: 104, gap: 8 } as const;
 
 /** Де на панелі що стоїть за шириною смуги. */
 export interface HudColumns {
