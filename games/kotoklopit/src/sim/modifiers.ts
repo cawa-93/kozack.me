@@ -623,7 +623,7 @@ export function tickModifiers(state: GameState, from: number, minutes: number, w
       emit(state, { type: "modifier", kind: attended ? "meeting-attended" : "meeting-missed", value: delta });
     }
   }
-  // Ветеринарка — візит, як гості й ОСББ: дзвонить за `GUESTS.ringLead` хвилин, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей; рішення автора 2026-10-29, А5: дзвінок — за 6 хвилин, щоб гравець встиг узяти кота на руки).
+  // Ветеринарка — візит, як гості й ОСББ: дзвонить за `GUESTS.ringLead` хвилин, заходить у відчинені двері (перевірка модифікаторів 2026-10-28: заходила без дзвінка й дверей; рішення автора 2026-10-29, А5: дзвінок — за `GUESTS.ringLead` хвилин, щоб гравець встиг узяти кота на руки).
   // Гравець відчинив раніше — у свою хвилину візит не повторюється (`takeGuest`, §9.12, рішення автора 2026-11-03).
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute - GUESTS.ringLead)) ringBell(state, "home-vet");
   if (day === "home-vet" && crossed(from, minutes, m.homeVetMinute) && takeGuest(state, "home-vet")) homeVetVisit(state);

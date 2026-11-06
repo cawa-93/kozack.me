@@ -35,21 +35,21 @@ function workFor(seconds: number, from = 0): number {
 }
 
 describe("прискорення роботи (§8)", () => {
-  it("числа — з дизайн-документа: до ×10 за 60 секунд", () => {
-    expect(WORK_BOOST).toEqual({ max: 10, rampSeconds: 60 });
+  it("числа — з дизайн-документа: до ×10 за 40 секунд", () => {
+    expect(WORK_BOOST).toEqual({ max: 10, rampSeconds: 40 });
   });
 
-  it("рівномірно від ×1 до ×10 за 60 секунд, далі ×10", () => {
+  it("рівномірно від ×1 до ×10 за 40 секунд, далі ×10", () => {
     expect(workBoost(0)).toBe(1);
-    expect(workBoost(30)).toBeCloseTo(5.5);
+    expect(workBoost(20)).toBeCloseTo(5.5);
+    expect(workBoost(40)).toBe(10);
     expect(workBoost(60)).toBe(10);
-    expect(workBoost(90)).toBe(10);
-    // На старті роботи кадр іде з ×1, а за 30 і 60 секунд кадрів — з ×5,5 і ×10.
+    // На старті роботи кадр іде з ×1, а за 20 і 40 секунд кадрів — з ×5,5 і ×10.
     expect(clockFrame(0, WORKING).minutes).toBeCloseTo(gameMinutes(0.05));
-    expect(workBoost(workFor(30))).toBeCloseTo(5.5);
-    expect(clockFrame(workFor(30), WORKING).minutes).toBeCloseTo(gameMinutes(0.05) * 5.5);
-    expect(workBoost(workFor(60))).toBeCloseTo(10);
-    expect(clockFrame(workFor(90), WORKING).minutes).toBeCloseTo(gameMinutes(0.05) * 10);
+    expect(workBoost(workFor(20))).toBeCloseTo(5.5);
+    expect(clockFrame(workFor(20), WORKING).minutes).toBeCloseTo(gameMinutes(0.05) * 5.5);
+    expect(workBoost(workFor(40))).toBeCloseTo(10);
+    expect(clockFrame(workFor(60), WORKING).minutes).toBeCloseTo(gameMinutes(0.05) * 10);
   });
 
   it("робота зупинилася — миттєво ×1, і наступна розганяється з нуля", () => {
@@ -69,11 +69,11 @@ describe("прискорення роботи (§8)", () => {
 
   it("швидкість режиму розробки множиться на розгін", () => {
     expect(clockFrame(0, { ...WORKING, speed: 5 }).minutes).toBeCloseTo(gameMinutes(0.05) * 5);
-    expect(clockFrame(workFor(60), { ...WORKING, speed: 5 }).minutes).toBeCloseTo(gameMinutes(0.05) * 5 * 10);
-    expect(clockFrame(workFor(60), { ...WORKING, speed: 5, working: false }).minutes).toBeCloseTo(gameMinutes(0.05) * 5);
-    // Розгін — за реальними секундами: і на ×60 до ×10 — ті самі 60 секунд.
+    expect(clockFrame(workFor(40), { ...WORKING, speed: 5 }).minutes).toBeCloseTo(gameMinutes(0.05) * 5 * 10);
+    expect(clockFrame(workFor(40), { ...WORKING, speed: 5, working: false }).minutes).toBeCloseTo(gameMinutes(0.05) * 5);
+    // Розгін — за реальними секундами: і на ×60 до ×10 — ті самі 40 секунд.
     let boost = 0;
-    for (let i = 0; i < 600; i++) boost = clockFrame(boost, { ...WORKING, seconds: 0.05, speed: 60 }).boostSeconds;
+    for (let i = 0; i < 400; i++) boost = clockFrame(boost, { ...WORKING, seconds: 0.05, speed: 60 }).boostSeconds;
     expect(workBoost(boost)).toBeCloseTo(5.5);
   });
 });
@@ -105,7 +105,7 @@ describe("чи йде робота (§8)", () => {
     interact(save);
     expect(isWorking(save.current)).toBe(true);
     let boost = 0;
-    for (let i = 0; i < 600; i++) {
+    for (let i = 0; i < 400; i++) {
       const working = workGoesOn(save.current, STILL);
       const clock = clockFrame(boost, { ...WORKING, working });
       boost = clock.boostSeconds;
@@ -181,10 +181,10 @@ describe("великі кроки часу не ламають симуляці�
     };
   };
 
-  it("ранок роботи на ×10 і ×60 кадрами по 0,1 с (80 ігрових хвилин за кадр) — як із розгону з ×1 кадрами по 1/60 с: зарплата, летучка, терпіння", () => {
+  it("ранок роботи на ×10 і ×60 кадрами по 0,1 с (120 ігрових хвилин за кадр) — як із розгону з ×1 кадрами по 1/60 с: зарплата, летучка, терпіння", () => {
     const slow = workday({ seconds: 1 / 60, speed: 1 });
     const fast = workday({ seconds: 0.1, speed: 60 }, WORK_BOOST.rampSeconds);
-    expect(clockFrame(WORK_BOOST.rampSeconds, { seconds: 0.1, speed: 60, running: true, working: true }).minutes).toBeCloseTo(80);
+    expect(clockFrame(WORK_BOOST.rampSeconds, { seconds: 0.1, speed: 60, running: true, working: true }).minutes).toBeCloseTo(120);
     for (const run of [slow, fast]) {
       expect(isWorking(run.save.current)).toBe(true);
       expect(run.standup).toBe(true);

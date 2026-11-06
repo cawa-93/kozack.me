@@ -170,9 +170,9 @@ describe("рух персонажа: темп ходи", () => {
     }
   });
 
-  it("за швидкості 1 ходьба — номінальна швидкість сима вздовж осі клітинки (≈ 256 од./с по горизонталі)", () => {
-    expect(rootSpeed("walk", 1)).toBeGreaterThan(250);
-    expect(rootSpeed("walk", 1)).toBeLessThan(262);
+  it("за швидкості 1 ходьба — номінальна швидкість сима вздовж осі клітинки (≈ 384 од./с по горизонталі)", () => {
+    expect(rootSpeed("walk", 1)).toBeGreaterThan(375);
+    expect(rootSpeed("walk", 1)).toBeLessThan(393);
     expect(rootSpeed("trudge", 1)).toBeCloseTo(rootSpeed("walk", 1), -1);
     expect(rootSpeed("limp", 1)).toBeCloseTo(rootSpeed("walk", 1) * ILLNESS_EFFECTS.slow, -1);
   });

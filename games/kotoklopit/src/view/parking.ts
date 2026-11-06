@@ -23,7 +23,7 @@ import { PALETTE } from "../../art/palette";
 import { RACE } from "../sim/config";
 import { carAt, driveRace, newRace } from "../sim/race";
 import { createRng, deriveSeed } from "../sim/rng";
-import { gameMinutes } from "../sim/time";
+import { raceMinutes } from "../sim/time";
 import type { Destination, Difficulty, Race, RaceCar, Trip } from "../sim/types";
 import { LOT_AHEAD, RACE_BUILDING, RACE_LOT } from "./art/manifest/a14-race";
 import type { ArtId } from "./art/types";
@@ -529,9 +529,9 @@ export interface ArrivalCar {
  * прибуття те саме й після зміни розміру кадру. Об'єкт не змінювати: план прибуття з нього рахується раз.
  */
 export interface ArrivalStart extends ParkingSpot {
-  /** Своя машина: `race.speed × gameMinutes(1) × швидкість сесії` — на екрані дорога біжить донизу на `speed × ppu` px/с. */
+  /** Своя машина: `race.speed × raceMinutes(1) × швидкість сесії` — на екрані дорога біжить донизу на `speed × ppu` px/с. */
   speed: number;
-  /** Машини потоку: `RACE.carSpeed × gameMinutes(1) × швидкість сесії`. */
+  /** Машини потоку: `RACE.carSpeed × raceMinutes(1) × швидкість сесії`. */
   trafficSpeed: number;
   /** Смуга своєї машини (дробова, поки перестроюється) і та, куди вона їхала. */
   lane: number;
@@ -544,7 +544,7 @@ export interface ArrivalStart extends ParkingSpot {
  * (`session.speed`), `lookOf` — вигляд машини потоку, який сцена вже показувала (`trafficLook` з першої зустрічі).
  */
 export function arrivalStart(race: Race, seed: number, sessionSpeed: number, lookOf: (car: RaceCar) => TrafficLook = trafficLook): ArrivalStart {
-  const perSecond = gameMinutes(1) * sessionSpeed;
+  const perSecond = raceMinutes(1) * sessionSpeed;
   return {
     done: race.done,
     seed,
@@ -844,12 +844,12 @@ const HOME_RISE = AISLE - HOME_END.y;
  */
 const HOME_BEND = HOME_RISE / HOME_SHIFT - 1;
 /** Машини потоку гонки на ×1, одиниць арту за секунду: на від'їзді час гри не йде, і швидкість гри (×N розробника) не діє. */
-const HOME_TRAFFIC = RACE.carSpeed * gameMinutes(1) * ROAD_UNIT;
+const HOME_TRAFFIC = RACE.carSpeed * raceMinutes(1) * ROAD_UNIT;
 /**
  * Своя машина на старті гонки на ×1 (`RACE.startSpeed`), одиниць арту за секунду: з нею машина доїжджає до старту, і з нею ж
  * біжить дорога наприкінці від'їзду — як у гонці в першу мить. Швидкість гри (×N розробника) тут не діє, як і в потоку.
  */
-const HOME_SPEED = RACE.startSpeed * gameMinutes(1) * ROAD_UNIT;
+const HOME_SPEED = RACE.startSpeed * raceMinutes(1) * ROAD_UNIT;
 
 /** Шлях від'їзду від свого будинку й рух ним. */
 interface HomeDeparturePlan {

@@ -310,7 +310,7 @@ function upperTracks(ms: number, n: number, up: Upper): Tracks {
 
 /**
  * Номінальна швидкість ходьби в симі по горизонталі екрана, одиниць арту за секунду: `WALK_TILES_PER_MINUTE` клітинок за
- * ігрову хвилину (0,75 с) уздовж осі клітинки, а вісь клітинки на екрані — півромба вбік на кожну клітинку.
+ * ігрову хвилину уздовж осі клітинки, а вісь клітинки на екрані — півромба вбік на кожну клітинку.
  */
 const NOMINAL_SPEED = (WALK_TILES_PER_MINUTE / (REAL_SECONDS_PER_GAME_HOUR / MINUTES_PER_HOUR)) * (ISO_TILE.width / 2);
 

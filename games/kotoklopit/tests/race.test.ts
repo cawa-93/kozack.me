@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { MODIFIERS, RACE, TRIPS } from "../src/sim/config";
 import { driveRace, newRace } from "../src/sim/race";
-import { gameMinutes } from "../src/sim/time";
+import { raceMinutes } from "../src/sim/time";
 import type { Difficulty, RaceCar } from "../src/sim/types";
 
 const GAS = { steer: 0 as const, throttle: 1 };
@@ -80,7 +80,7 @@ describe("старт гонки: своя смуга вільна, сусідн�
 
   it("сусідніх смуг вистачає на секунду реакції: перестроїлися першою дією, котилися секунду — ще встигаєш загальмувати", () => {
     // За секунду реакції (`startReaction`) без газу машина наздоганяє потік на стільки; швидкість тоді — `react`.
-    const t = gameMinutes(RACE.startReaction);
+    const t = raceMinutes(RACE.startReaction);
     const coast = (RACE.startSpeed - RACE.carSpeed) * t - (RACE.coasting * t * t) / 2;
     const react = RACE.startSpeed - RACE.coasting * t;
     // Гальмо з `react` до швидкості потоку наздоганяє ще на стільки.
@@ -136,8 +136,8 @@ describe("старт гонки: своя смуга вільна, сусідн�
 
   it("перестроїлися першою дією в сусідню смугу (рецензія 2026-11-03): за секунду реакції без аварії, і гальмо чи повернення рятують", () => {
     // Кадрами, як у сцені (60 кадрів за секунду): перестроювання — у першому кадрі, далі газ, гальмо чи смуга — за планом.
-    const frame = gameMinutes(1 / 60);
-    const react = gameMinutes(RACE.startReaction);
+    const frame = raceMinutes(1 / 60);
+    const react = raceMinutes(RACE.startReaction);
     const drive = (
       steer: -1 | 1,
       after: { throttle: number; back: boolean },

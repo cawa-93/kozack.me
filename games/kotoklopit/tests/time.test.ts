@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { TOTAL_DAYS } from "../src/sim/config";
-import { formatClock, gameMinutes, isLastDay, isSunday, weekdayOf, weekOf } from "../src/sim/time";
+import { formatClock, gameMinutes, isLastDay, isSunday, raceMinutes, weekdayOf, weekOf } from "../src/sim/time";
 import { hours } from "./helpers";
 
 describe("час", () => {
-  it("45 секунд — одна ігрова година (§8)", () => {
-    expect(gameMinutes(45)).toBe(60);
-    expect(gameMinutes(0.75)).toBe(1);
+  it("30 секунд — одна ігрова година, у гонці — 45 (§8)", () => {
+    expect(gameMinutes(30)).toBe(60);
+    expect(gameMinutes(0.5)).toBe(1);
+    expect(raceMinutes(45)).toBe(60);
   });
 
   it("50 тижнів — 350 днів (§4.2)", () => {

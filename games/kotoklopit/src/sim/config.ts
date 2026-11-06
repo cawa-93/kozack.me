@@ -4,13 +4,18 @@
 import type { RoomId } from "./home";
 import type { CatNeed, CatTrace, Destination, Difficulty, DiseaseId, IllnessId, Medicine, MessKind, Product, Quality, StatName, ThingKind } from "./types";
 
-/** Реальних секунд на одну ігрову годину (§8). */
-export const REAL_SECONDS_PER_GAME_HOUR = 45;
+/** Реальних секунд на одну ігрову годину (§8): день у 16 ігрових годин триває 8 хвилин. */
+export const REAL_SECONDS_PER_GAME_HOUR = 30;
+/**
+ * Реальних секунд на ігрову годину в гонці (§8, §8.5): дорога — зі своїм темпом, тож швидкість на екрані, час на реакцію й
+ * ігровий час дороги не залежать від темпу дня.
+ */
+export const RACE_SECONDS_PER_GAME_HOUR = 45;
 /**
  * Прискорення роботи (§8, рішення автора 2026-11-02): поки персонаж працює за комп'ютером, час рівномірно розганяється від ×1
  * до ×`max` за `rampSeconds` секунд реального часу й далі йде з ×`max`.
  */
-export const WORK_BOOST = { max: 10, rampSeconds: 60 } as const;
+export const WORK_BOOST = { max: 10, rampSeconds: 40 } as const;
 
 export const MINUTES_PER_HOUR = 60;
 export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
@@ -713,9 +718,9 @@ export const THOUGHTS = {
   attention: 40,
   sad: 35,
   personLow: 40,
-  catSeconds: 60,
-  catGapSeconds: 15,
-  personSeconds: 60,
+  catSeconds: 40,
+  catGapSeconds: 10,
+  personSeconds: 40,
   apartSeconds: 2,
   jitter: 0.2,
   frequency: { easy: 1.25, normal: 1, hard: 0.8 } as Record<Difficulty, number>,
@@ -1915,4 +1920,4 @@ export const ESCAPE = {
  * кожен «+» дає здоровий глузд `delight` (разом не більше `delightMax`, потім множник «Здоровий глузд від котів», §5.2),
  * кожен −2 — `hissSanity`. На виставці бал + `showStep` × рівень.
  */
-export const GUESTS = { greetMinutes: 5, hideStep: 30, ringLead: 6, delight: 3, delightMax: 6, hissSanity: -2, showStep: 0.05 } as const;
+export const GUESTS = { greetMinutes: 5, hideStep: 30, ringLead: 8, delight: 3, delightMax: 6, hissSanity: -2, showStep: 0.05 } as const;

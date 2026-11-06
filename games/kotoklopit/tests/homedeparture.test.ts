@@ -11,7 +11,7 @@ import { applyScenario, FILE_SCENARIOS, leaveHome, type Scenario } from "../src/
 import { MODIFIERS, RACE } from "../src/sim/config";
 import { deserialize, serialize } from "../src/sim/game";
 import { carAt, driveRace, newRace } from "../src/sim/race";
-import { gameMinutes } from "../src/sim/time";
+import { raceMinutes } from "../src/sim/time";
 import { canLeave } from "../src/sim/trips";
 import type { Difficulty, Race, RaceCar, Trip } from "../src/sim/types";
 import { GLYPH_ART } from "../src/view/art/manifest/a12-icons";
@@ -126,7 +126,7 @@ function raceStart(race: Race, height: number, difficulty: Difficulty, traffic: 
 }
 
 /** Швидкість старту гонки на ×1 на екрані, px за секунду на кадрі заввишки `height`: так біжить дорога в першу мить гонки. */
-const startScroll = (height: number): number => RACE.startSpeed * gameMinutes(1) * racePixelsPerUnit(height);
+const startScroll = (height: number): number => RACE.startSpeed * raceMinutes(1) * racePixelsPerUnit(height);
 
 describe("виїзд із дому: свій будинок", () => {
   it("дах — свого кольору з палітри, не такий, як у жодного пункту; табличка — гліф дому 🏠, не іконка пункту", () => {
@@ -306,7 +306,7 @@ describe("виїзд із дому: рух", () => {
           // Кадри гонки: перший — лише 0,7 dt (решта кадру за кінцем від'їзду), далі — по dt.
           const live = structuredClone(race);
           for (const ms of [0.7 * dt, dt, dt]) {
-            expect(driveRace(live, gameMinutes(ms / 1000), { steer: 0, throttle: 0 }, difficulty, 1)).toBeNull();
+            expect(driveRace(live, raceMinutes(ms / 1000), { steer: 0, throttle: 0 }, difficulty, 1)).toBeNull();
             frames.push(raceFrame(live, live.cars, height));
           }
           // Зсув дороги за кадр — той самий (з точністю до 2 %: швидкість ледь змінюється — без газу машина в гонці поступово
@@ -326,7 +326,7 @@ describe("виїзд із дому: рух", () => {
               if (same) moves.push(car.y - same.y);
             }
           }
-          const expected = (startScroll(height) - RACE.carSpeed * gameMinutes(1) * racePixelsPerUnit(height)) * (dt / 1000);
+          const expected = (startScroll(height) - RACE.carSpeed * raceMinutes(1) * racePixelsPerUnit(height)) * (dt / 1000);
           for (const move of moves) expect(move / expected).toBeCloseTo(1, 1);
         }
       }

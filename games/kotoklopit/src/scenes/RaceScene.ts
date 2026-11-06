@@ -18,7 +18,7 @@ import { PALETTE } from "../../art/palette";
 import { drive } from "../sim/game";
 import { trafficFactor } from "../sim/modifiers";
 import { carAt, type RaceInput } from "../sim/race";
-import { formatClock, gameMinutes } from "../sim/time";
+import { formatClock, raceMinutes } from "../sim/time";
 import type { Destination, GameState, RaceCar, Save, Trip } from "../sim/types";
 import type { Session } from "../session";
 import { isRotateNoticeShown, onRotateNotice, safeArea, type Insets } from "../screen";
@@ -369,7 +369,7 @@ export class RaceScene extends Phaser.Scene {
     if (state.trip?.phase !== "drive" || state.end !== null) return this.finish({ mode: "race" });
     if (this.running()) {
       const seconds = Math.min(delta / 1000, MAX_FRAME_SECONDS);
-      const { result, night } = drive(this.session.save, gameMinutes(seconds) * this.session.speed, this.input_());
+      const { result, night } = drive(this.session.save, raceMinutes(seconds) * this.session.speed, this.input_());
       // Врізалися (сим уже застосував аварію, §8.5) — спершу анімація аварії тут, а картку покаже день.
       if (result === "crash" && night === null && state.end === null) return this.startCrash();
       // Доїхали (§8.5 «На місці — кадр парковки») — спершу прибуття на парковку тут, а картку пункту покаже день поверх неї.

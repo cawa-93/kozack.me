@@ -12,7 +12,7 @@ import { tripCat } from "../src/sim/destinations";
 import { goHome } from "../src/sim/game";
 import { newRace } from "../src/sim/race";
 import { createRng, type Rng } from "../src/sim/rng";
-import { gameMinutes } from "../src/sim/time";
+import { raceMinutes } from "../src/sim/time";
 import { HOME_DOOR } from "../src/sim/trips";
 import type { Race, Save } from "../src/sim/types";
 import { asideCardRight } from "../src/ui/cardsize";
@@ -200,7 +200,7 @@ describe("прибуття: рух", () => {
       for (const session of [1, 3]) {
         for (const speed of SPEEDS) {
           const start = startAt(speed, { lane: 2, session });
-          const v0 = speed * ppu * gameMinutes(1) * session;
+          const v0 = speed * ppu * raceMinutes(1) * session;
           const a = arrivalFrame(0, height, start);
           const b = arrivalFrame(dt, height, start);
           const road = ((b.offset - a.offset) / dt) * 1000;
@@ -348,7 +348,7 @@ describe("прибуття: потік", () => {
     for (const speed of SPEEDS) {
       const start = startAt(speed, { lane: 2, cars: [{ lane: 0, start: ROAD + 1.5 }] });
       const ms = arrivalMs(start);
-      const perSecond = RACE.carSpeed * gameMinutes(1) * ROAD_UNIT;
+      const perSecond = RACE.carSpeed * raceMinutes(1) * ROAD_UNIT;
       for (let t = 0; t < ms - PARKING.vanishMs; t += 20) {
         const frame = arrivalFrame(t, height, start);
         const car = frame.traffic[0];

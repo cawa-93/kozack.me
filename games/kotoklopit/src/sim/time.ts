@@ -4,6 +4,7 @@ import {
   DAYS_PER_WEEK,
   MINUTES_PER_DAY,
   MINUTES_PER_HOUR,
+  RACE_SECONDS_PER_GAME_HOUR,
   REAL_SECONDS_PER_GAME_HOUR,
   TOTAL_DAYS,
   WORK_BOOST,
@@ -46,6 +47,11 @@ export function absoluteMinute(day: number, minute: number): number {
 /** Скільки ігрових хвилин минає за стільки реальних секунд. */
 export function gameMinutes(realSeconds: number): number {
   return (realSeconds / REAL_SECONDS_PER_GAME_HOUR) * MINUTES_PER_HOUR;
+}
+
+/** Скільки ігрових хвилин минає за стільки реальних секунд у гонці: дорога — зі своїм темпом (§8.5). */
+export function raceMinutes(realSeconds: number): number {
+  return (realSeconds / RACE_SECONDS_PER_GAME_HOUR) * MINUTES_PER_HOUR;
 }
 
 /**
