@@ -194,8 +194,7 @@ function grow(state: GameState, cat: Cat, minutes: number, rng: Rng): void {
   // Зайва вага потроху йде (§9.12).
   settleWeight(cat, minutes);
   // Шерстяна грудка: частіше вночі, у довгошерстих і в тих, хто сильно линяє (§9.12).
-  const hour = hourOf(state.minute);
-  const night = hour >= HAIRBALL.nightFrom || hour < HAIRBALL.nightTo;
+  const night = isNight(state.minute);
   const long = cat.shape.coat === null && !cat.genes.short[0] && !cat.genes.short[1];
   // Безшерстий шерсті не ковтає — і грудок не зригує (перевірка розмноження 2026-10-28).
   const rate =

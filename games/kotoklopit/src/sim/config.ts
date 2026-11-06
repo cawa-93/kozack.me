@@ -427,7 +427,6 @@ export const MOOD = {
   // Якість речі: за кожне використання (§6.4).
   premiumItem: 0.25,
   cheapItem: -0.25,
-  sickPerDay: -3,
 } as const;
 /** Шанс відмовитися від дешевого корму за одиницю. */
 export const PICKY_REFUSAL_STEP = 0.4;
@@ -1173,8 +1172,8 @@ export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
 export const COMPUTER_SLEEP = { base: 1, step: 2, helperStep: 0.5 } as const;
 /** Прогнали з місця (§9.12). */
 export const SHOO = { mood: -3, love: -2 } as const;
-/** Шерстяна грудка (§9.12): `perHour` — шанс; `night` — множник із години `nightFrom` до години `nightTo`; `wake*` — у спільній стелі нічних побудок. */
-export const HAIRBALL = { perHour: 1 / 72, night: 2, nightFrom: 23, nightTo: 5, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
+/** Шерстяна грудка (§9.12): `perHour` — шанс; `night` — множник уночі (`isNight`); `wake*` — у спільній стелі нічних побудок. */
+export const HAIRBALL = { perHour: 1 / 72, night: 2, longHair: 2, step: 0.5, sheddingStep: 0.25, coughMinutes: 1, wakeBedroom: 0.2, wakeElsewhere: 0.05 } as const;
 /** «Мітки» (§9.8, §9.12): `mood`, `crowd`, `newCatDays` — тригери. */
 export const MARKING = { triggerPerHour: 1 / 48, calmPerHour: 1 / 144, mood: 50, newCatDays: 3, crowd: 4, minutes: 1 } as const;
 /** Шанс блювоти за одиницю «Швидкості їжі». */
