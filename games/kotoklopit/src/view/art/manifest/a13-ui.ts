@@ -84,6 +84,14 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "ui/hud/phone", ...centered(60), states: ["idle", "hint"] },
   // Кнопка повного екрана, диск darkHi з паперовим обідком: `enter` — розгорнути, `exit` — згорнути.
   { id: "ui/hud/fullscreen", ...centered(48), states: ["enter", "exit"] },
+  // Настільний годинник на панелі (`deskclock.ts`, §8.4): корпус із тьмяними сегментами; `points` — центри цифр і двокрапки.
+  {
+    id: "ui/hud/clock",
+    ...centered(136, 84),
+    points: { d0: { x: 31, y: 40.5 }, d1: { x: 53, y: 40.5 }, colon: { x: 68, y: 40.5 }, d2: { x: 83, y: 40.5 }, d3: { x: 105, y: 40.5 } },
+  },
+  // Цифра, що світиться поверх тьмяної, і двокрапка.
+  { id: "ui/hud/clock-digit", ...centered(28, 40), states: ["d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "colon"] },
   // Основа джойстика (радіус 70): коло під лівим пальцем; і в гонці.
   { id: "ui/touch/stick-base", ...centered(148) },
   // Ручка джойстика (радіус 30).

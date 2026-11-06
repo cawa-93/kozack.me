@@ -12,6 +12,8 @@ import { artEntry } from "../src/view/art/manifest";
 import { svgPath, type ArtEntry, type ArtId } from "../src/view/art/types";
 import {
   bandRect,
+  CLOCK_DIGIT_SLOTS,
+  clockDigitStates,
   drawnInside,
   HUD_ART,
   HUD_BAND,
@@ -23,7 +25,9 @@ import {
   HUD_SMALL_TEXT_CSS,
   HUD_STATES,
   HUD_LAYOUT,
+  HUD_STEP,
   HUD_TEXT_MAX,
+  hudColumns,
   hudHeight,
   hudLayout,
   hudTextScale,
@@ -85,6 +89,72 @@ describe("панель і сенсорні кнопки нового вигля�
       { src: 232, srcW: 24, x: 15, w: 15 },
     ]);
     expect(stretchSlices(256, 24, 0)).toEqual([]);
+  });
+});
+
+describe("настільний годинник (§8.4)", () => {
+  it("кожна цифра часу — стан кадру цифри, двокрапка — своя", () => {
+    const states = entry(HUD_ART.clockDigit).states ?? [];
+    for (const clock of ["00:00", "09:30", "21:47", "23:59"]) {
+      const digits = clockDigitStates(clock);
+      expect(digits).toHaveLength(CLOCK_DIGIT_SLOTS.length);
+      for (const digit of digits) expect(states).toContain(digit);
+    }
+    expect(clockDigitStates("21:47")).toEqual(["d2", "d1", "d4", "d7"]);
+    expect(states).toContain("colon");
+  });
+
+  it("цифри стоять на екрані корпусу по порядку, зліва направо", () => {
+    const { points, size } = entry(HUD_ART.clock);
+    const xs = [...CLOCK_DIGIT_SLOTS.slice(0, 2), "colon", ...CLOCK_DIGIT_SLOTS.slice(2)].map((slot) => points?.[slot]?.x ?? NaN);
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    for (const x of xs) {
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThan(size.w);
+    }
+  });
+
+  it("годинник із датою вміщуються в смугу й не заходять на перший показник", () => {
+    const { size } = entry(HUD_ART.clock);
+    for (const layout of [HUD_LAYOUT.desktop, HUD_LAYOUT.phone]) {
+      expect(size.h * layout.clock.scale).toBeLessThanOrEqual(layout.height);
+      expect(layout.clock.x + (size.w / 2) * layout.clock.scale).toBeLessThanOrEqual(layout.dateX);
+      expect(layout.dateX).toBeLessThan(layout.stats);
+    }
+  });
+});
+
+describe("колонки панелі (§8.4)", () => {
+  /** Ширина панелі на екрані `width`: від лівого краю до телефона (`hud.ts`). */
+  const room = (width: number): number => width - 80;
+
+  it("на широкій панелі шкали повні, місця вистачає всім", () => {
+    for (const layout of [HUD_LAYOUT.desktop, HUD_LAYOUT.phone]) {
+      const columns = hudColumns(layout, room(1558));
+      expect(columns.step).toBe(HUD_STEP.max);
+      expect(columns.bar).toBe(layout.bar.w);
+      expect(columns.schedule + layout.reserve.schedule).toBeLessThanOrEqual(room(1558));
+    }
+  });
+
+  it("на вузькій панелі коротшають шкали, а гроші й розклад лишаються в межах", () => {
+    const desktop = hudColumns(HUD_LAYOUT.desktop, room(1280));
+    expect(desktop.bar).toBeLessThan(HUD_LAYOUT.desktop.bar.w);
+    expect(desktop.schedule + HUD_LAYOUT.desktop.reserve.schedule).toBeLessThanOrEqual(room(1280));
+    const phone = hudColumns(HUD_LAYOUT.phone, room(1280));
+    expect(phone.step).toBeGreaterThanOrEqual(HUD_STEP.min);
+    expect(phone.schedule + HUD_LAYOUT.phone.reserve.schedule).toBeLessThanOrEqual(room(1280));
+  });
+
+  it("шкала не заходить на наступний кружечок, а гроші — за останній показник", () => {
+    for (const layout of [HUD_LAYOUT.desktop, HUD_LAYOUT.phone]) {
+      for (const width of [1000, 1280, 1558, 2200]) {
+        const columns = hudColumns(layout, room(width));
+        expect(layout.bar.x + columns.bar + HUD_STEP.gap).toBe(columns.step);
+        expect(columns.bar).toBeGreaterThan(0);
+        expect(columns.money).toBe(layout.stats + 4 * columns.step);
+      }
+    }
   });
 });
 

@@ -61,6 +61,7 @@ export const ICON_NAMES = [
   "treats",
   "collar",
   "mind",
+  "utilities",
   "laundry",
   "washed",
   "cat",

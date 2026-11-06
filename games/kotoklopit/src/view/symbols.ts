@@ -76,6 +76,9 @@ export const STAT_ICONS: Record<StatName, IconName> = {
   sanity: "mind",
 };
 
+/** Планові комунальні (§8.4): на панелі й біля «Комунальні» у вкладці «Речі». */
+export const UTILITIES_ICON: IconName = "utilities";
+
 /** Сердечка настрою кота (§9.12): не бабли, а зміна настрою — зелене вгору, червоне розбите вниз. */
 export const MOOD_ICONS = { up: "mood-up", down: "mood-down" } as const satisfies Record<string, IconName>;
 

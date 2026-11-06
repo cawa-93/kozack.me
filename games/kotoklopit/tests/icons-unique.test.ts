@@ -14,7 +14,7 @@ import { addCat } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
 import type { Cat, CatAct, Destination, Dish, Item, Product, Save, StatName, ThingKind } from "../src/sim/types";
 import type { IconName, Mark } from "../src/view/iconnames";
-import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
+import { catAsk, DESTINATION_ICONS, DISEASE_ICONS, eventBubbles, ILLNESS_ICONS, itemIcon, MOOD_ICONS, PRODUCT_ICONS, refusalBubble, STAT_ICONS, UTILITIES_ICON, STATE_ICONS, stoveIcon, THING_ICONS } from "../src/view/symbols";
 import { catThought, personThought } from "../src/view/thoughts";
 import { EVENTS, REFUSALS } from "./bubblecases";
 import { withCatCorner } from "./helpers";
@@ -102,6 +102,7 @@ function collectCases(): Map<string, Shown[]> {
     add(`storage:${product}`, { icon: PRODUCT_ICONS[product], count: 5 });
     add(`hint:${product}`, { icon: PRODUCT_ICONS[product] });
   }
+  add("panel:utilities", { icon: UTILITIES_ICON });
   // Показники персонажа: панель і думка, коли показник низький.
   const { save, cat } = setup();
   for (const stat of STATS) {
