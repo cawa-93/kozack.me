@@ -19,7 +19,7 @@ import type { Cat, CatAct, DiseaseId, Save, TraitLevel } from "../src/sim/types"
 import { catEventAnims, catMemory, catTransition } from "../src/view/anim/catevents";
 import { blinkEyes, catFace, CAT_EARS, CAT_EYES, CAT_MOUTHS } from "../src/view/anim/catface";
 import { CAT_ANIM_GROUPS, CAT_ANIM_IDS, CAT_ONE_SHOT_MS, CAT_OVERLAYS } from "../src/view/anim/ids";
-import { CAT_ANIMS, PERSON_ANIMS } from "../src/view/rig/anims";
+import { CAT_ANIMS } from "../src/view/rig/anims";
 import { catAnim, catPose, hidesUnder } from "../src/view/pose";
 import { blinkAmount } from "../src/view/thoughts";
 import { recordEvents, withCatCorner } from "./helpers";
