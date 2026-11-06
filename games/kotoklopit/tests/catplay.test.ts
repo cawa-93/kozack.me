@@ -628,7 +628,7 @@ describe("гра фазами (§9.4, рішення автора 2026-10-26, Г
     expect(relation(save.current, a, b)).toBe(70);
   });
 
-  it("стара гра без фаз (збереження до блоку 3) догравається, як раніше", () => {
+  it("гра без фаз догравається", () => {
     const save = game();
     const a = withCat(save, {}, { x: 9.1, y: 8.5 });
     const b = withCat(save, {}, { x: 9.5, y: 8.5 });

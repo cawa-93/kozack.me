@@ -685,7 +685,7 @@ export function tickActivity(state: GameState, input: Input, minutes: number): v
     const total = activity.bath === true ? bathMinutes(state) : useMinutes(state, target);
     const step = minutes * actionSpeed(state);
     if (activity.bath !== true) {
-      // Не під час натискання, а тут: так само починається душ зі сценарію чи старого збереження, що вже йде.
+      // Не під час натискання, а тут: так само починається душ зі сценарію, що вже йде.
       const wash = (activity.wash ??= startWash(state));
       changeStat(state, "hygiene", wash.hygiene * stepShare(activity.progress, step, total));
     }

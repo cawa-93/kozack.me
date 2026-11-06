@@ -89,7 +89,7 @@ export function spend(state: GameState, amount: number, on: Spending): boolean {
   return true;
 }
 
-/** Гроші цього тижня (§6.4, «Куди йдуть гроші»); у старому збереженні — з нуля. */
+/** Гроші цього тижня (§6.4, «Куди йдуть гроші»); у новій грі — з нуля. */
 const ledgerOf = (state: GameState): Ledger => (state.ledger ??= { earned: 0, spent: {} });
 
 /** Ніч на понеділок: гроші тижня — у звіт, новий тиждень рахується з нуля (§6.4). */

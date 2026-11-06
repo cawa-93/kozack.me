@@ -436,7 +436,7 @@ function tickMom(state: GameState, from: number, minutes: number): void {
   if (!home) {
     if (mom.rang || end >= MODIFIERS.mom.until) {
       state.today.mom = { at: mom.at, porch: true };
-      // Мама вже не під дверима (§9.12): поки вона там, вирушити не можна, тож так буває лише в старих збереженнях.
+      // Мама вже не під дверима (§9.12).
       clearGuest(state);
     }
     return;
