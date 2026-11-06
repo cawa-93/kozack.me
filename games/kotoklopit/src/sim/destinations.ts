@@ -3,7 +3,7 @@
 // минає 15 хвилин (`visitMinutes`; рішення автора 2026-10-29, `GENERAL_REVIEW.md`, А6); додому персонаж їде вже без гонки. Що зроблено на місці, послуга сама пише
 // в журнал візиту (`trip.log`).
 
-import { changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
+import { markNewcomer, changeMood, createCat, offend, traitLevel, weightOf } from "./cat";
 import { changeStat, earn, spend } from "./character";
 import {
   BREEDER,
@@ -443,6 +443,7 @@ function welcome(state: GameState, cat: Cat): void {
   cat.bathedDay = state.day;
   cat.away = "trip";
   addCat(state, cat);
+  markNewcomer(cat);
   giveStarterPack(state, cat);
   applyMorningSanity(state, 0, 1);
 }

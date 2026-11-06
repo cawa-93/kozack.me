@@ -111,6 +111,8 @@ export const SANITY_FLOOR = 10;
 /** Невидимий захист (§8.3, §8.6): `floor` — здоровий глузд, поки вдома не було кота; `reputation` — перші `days` днів. */
 export const FIRST_WEEK_PROTECTION = { days: 7, floor: 1, reputation: 1 };
 export const KITTEN_AGE_WEEKS = 1;
+/** Найдовше ім'я, яке можна ввести: персонажа й кошеняти. */
+export const NAME_MAX_LENGTH = 20;
 
 /** Складність (§5.2): `earnings`, `catSanity` — множники, решта — здоровий глузд за кота. */
 export const DIFFICULTY: Record<

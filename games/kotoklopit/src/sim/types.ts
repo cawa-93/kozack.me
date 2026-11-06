@@ -892,6 +892,8 @@ export interface CatDisease {
 export interface Cat {
   id: number;
   name: string;
+  /** Кіт щойно прийшов у дім: гравець ще не бачив картки знайомства (§9.7). */
+  newcomer?: true;
   sex: Sex;
   source: CatSource;
   ageWeeks: number;

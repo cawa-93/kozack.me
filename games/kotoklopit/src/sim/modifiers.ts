@@ -2,7 +2,7 @@
 // Числові ефекти інші модулі беруть через функції-множники звідси.
 
 import { knownBreedHalves } from "./breeds";
-import { asleep, changeMood, createCat, isAdapting, traitLevel } from "./cat";
+import { asleep, markNewcomer, changeMood, createCat, isAdapting, traitLevel } from "./cat";
 import { clearGuest, openDoor, ringBell, takeGuest } from "./door";
 import { addCat, applyMorningSanity } from "./night";
 import { putDownCat, stopBath } from "./actions";
@@ -283,6 +283,7 @@ export function decideFoundling(state: GameState, take: boolean, rng: Rng = foun
   // Що видно про породу — як у притулку (§9.11).
   cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   addCat(state, cat);
+  markNewcomer(cat);
   applyMorningSanity(state, 0, 1);
   return cat;
 }

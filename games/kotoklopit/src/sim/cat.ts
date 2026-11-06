@@ -206,6 +206,23 @@ export function isKitten(cat: Cat): boolean {
   return cat.ageWeeks <= KITTEN_MAX_AGE;
 }
 
+/** Кіт уперше прийшов у дім: гравець із ним познайомиться (§9.7). */
+export function markNewcomer(cat: Cat): void {
+  cat.newcomer = true;
+}
+
+/** Новий кіт удома, з яким ще не знайомилися (§9.7); той, що ще в дорозі, зачекає. */
+export function nextNewcomer(state: GameState): Cat | undefined {
+  return state.cats.find((cat) => cat.newcomer === true && cat.away === null);
+}
+
+/** Гравець познайомився з котом (§9.7): порожнє поле лишає згенероване ім'я. */
+export function meetCat(cat: Cat, name: string): void {
+  const own = name.trim();
+  if (own !== "") cat.name = own;
+  delete cat.newcomer;
+}
+
 export function isOld(cat: Cat): boolean {
   return cat.ageWeeks > CAT_AGE_LIMIT;
 }

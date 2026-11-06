@@ -1,7 +1,7 @@
 // Вміст карток: титулка дня з ранковими повідомленнями, кінець гри, телефон, нова гра.
 
 import { PALETTE } from "../../art/palette";
-import { MODIFIERS, WAKE_MINUTE, WAKE_UP } from "../sim/config";
+import { MODIFIERS, NAME_MAX_LENGTH, WAKE_MINUTE, WAKE_UP } from "../sim/config";
 import { supplyCount, utilitiesDue } from "../sim/economy";
 import { breedById, MIXED } from "../sim/breeds";
 import { giveAwayBlocker } from "../sim/farewell";
@@ -10,7 +10,7 @@ import { WEEK_PAIRS } from "../sim/modifiers";
 import { inHeat, isNursing, showsPregnancy } from "../sim/reproduction";
 import { DEFAULT_NAME } from "../sim/game";
 import { formatClock, weekdayOf, WEEKDAY_NAMES, weekOf } from "../sim/time";
-import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, ThingKind } from "../sim/types";
+import type { Address, AlbumEntry, Appliance, Cat, Chronotype, Difficulty, GameEnd, GameState, HomeItem, Look, Medicine, NightReport, Quality, Sex, Trait, ThingKind } from "../sim/types";
 import {
   ADDRESS_TEXTS,
   BREED_ABOUT,
@@ -310,7 +310,7 @@ export function playerLine(state: GameState): string {
   return `${name} · ${job} · ${DIFFICULTY_TITLES[state.difficulty]}`;
 }
 
-const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
+export const weeks = (n: number): string => `${n} ${plural(n, "тиждень", "тижні", "тижнів")}`;
 
 /**
  * Порода, як її знає персонаж (§9.11): «мейнкун × ?», «[безпородний|безпородна]», «мейнкун, [чистокровний|чистокровна]»; null — невідома.
@@ -352,36 +352,43 @@ export function breedAbout(cat: Cat): string[] {
   return lines;
 }
 
+/** Що про кота вже відомо (§9.9): рядки про породу, стани, хвороби й здогадки та риси, відомі цілком. Без імені, статі й віку. */
+export function catFacts(state: GameState, cat: Cat): { lines: string[]; known: Trait[] } {
+  const lines: string[] = [];
+  const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
+  if (breed !== null) lines.push(breed);
+  lines.push(...breedAbout(cat));
+  const states: string[] = [];
+  if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
+  if (cat.pregnancy?.known) states.push("вагітна");
+  else if (showsPregnancy(state, cat)) states.push("здається, вагітна");
+  if (inHeat(state, cat)) states.push("у тічці");
+  if (isNursing(state, cat)) states.push("годує кошенят");
+  if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
+  if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
+  const found = cat.diseases.filter((d) => d.known).map((d) => diseaseLabel(d.id));
+  // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-29); іконка — як у картці
+  // ветеринара (§11.4 «Іконка біля назви»).
+  if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
+  // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
+  const known = cat.traits.filter((t) => visibility(state, t) === 3);
+  for (const trait of cat.traits) {
+    const seen = visibility(state, trait);
+    if (seen === 2) {
+      const hint = traitHint(cat, trait);
+      if (hint) lines.push(hint);
+    } else if (seen === 1) lines.push("❓ Помічено щось дивне");
+  }
+  if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
+  return { lines, known };
+}
+
 /** Картки котів (§9.9): ім'я, стать, вік, відомі риси й стани. */
 function catCards(state: GameState, handlers: PhoneHandlers): (string | HTMLElement)[] {
   if (state.cats.length === 0) return ["Котів поки немає."];
   return state.cats.map((cat) => {
-    const lines = [`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`];
-    const breed = breedLine(cat.breed, cat.breedKnown, cat.sex);
-    if (breed !== null) lines.push(breed);
-    lines.push(...breedAbout(cat));
-    const states: string[] = [];
-    if (cat.sterilized && cat.sterilizedKnown) states.push(cat.sex === "male" ? "кастрований" : "стерилізована");
-    if (cat.pregnancy?.known) states.push("вагітна");
-    else if (showsPregnancy(state, cat)) states.push("здається, вагітна");
-    if (inHeat(state, cat)) states.push("у тічці");
-    if (isNursing(state, cat)) states.push("годує кошенят");
-    if (cat.ageWeeks === 0 && cat.source === "born") states.push("новонароджене");
-    if (states.length > 0) lines.push(`${states.join(", ")}.`.replace(/^./, (c) => c.toUpperCase()));
-    const found = cat.diseases.filter((d) => d.known).map((d) => diseaseLabel(d.id));
-    // Хворобу могла знайти й ветеринарка вдома; назви посеред речення — з малої (крок 17, вичитка 2026-10-28), з іконкою, як у
-    // ветеринара (§11.4 «Іконка біля назви»).
-    if (found.length > 0) lines.push(`Хвороби: ${found.join(", ").toLowerCase()}.`);
-    // Відомі риси — назвами-чипами з описом під ними; помічене — здогадкою (§9.9).
-    const known = cat.traits.filter((t) => visibility(state, t) === 3);
-    for (const trait of cat.traits) {
-      const seen = visibility(state, trait);
-      if (seen === 2) {
-        const hint = traitHint(cat, trait);
-        if (hint) lines.push(hint);
-      } else if (seen === 1) lines.push("❓ Помічено щось дивне");
-    }
-    if (cat.traits.every((t) => visibility(state, t) === 0)) lines.push("Характер: ?");
+    const { lines, known } = catFacts(state, cat);
+    lines.unshift(`${cat.name} ${cat.sex === "male" ? "♂" : "♀"} · ${weeks(cat.ageWeeks)}`);
     const card = note(...lines);
     // Ім'я — заголовок картки, навіть коли під ним самі риси.
     const title = card.firstElementChild;
@@ -716,7 +723,7 @@ export function nameCard(address: Address, start: string, onDone: (name: string)
   const input = element("input");
   input.type = "text";
   input.value = start;
-  input.maxLength = 20;
+  input.maxLength = NAME_MAX_LENGTH;
   input.className = "button name-input";
   input.setAttribute("aria-label", "Ім'я");
   return {

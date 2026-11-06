@@ -705,6 +705,9 @@ export const PANEL_STATES = {
   noPower: "Без світла",
 } as const;
 
+/** Картка знайомства з новим котом (§9.7); `male` і `female` — надпис дорослого за статтю. */
+export const CAT_INTRO_TEXTS = { kitten: "Нове кошеня", male: "Новий кіт", female: "Нова кішка", title: "Знайомтеся", name: "Ім'я", done: "Готово" } as const;
+
 /** Коли знімуть планові комунальні (§6.4, §8.4): напис під квитанцією на панелі. */
 export const BILL_WHEN = { sunday: "знімуть уночі", other: "знімуть у пн" } as const;
 

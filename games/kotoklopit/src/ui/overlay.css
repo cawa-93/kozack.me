@@ -455,6 +455,35 @@
   border-image: url("../../art/ui/well.svg") 16 fill / 16px / 4px stretch;
 }
 
+/* Знайомство з новим котом (§9.7): портрет ліворуч, ім'я й те, що відомо, праворуч. */
+.cat-intro {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.cat-intro .portrait {
+  flex: none;
+}
+
+.cat-intro-side {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-intro-facts {
+  margin-top: 10px;
+}
+
+.cat-intro-line {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.cat-intro-head {
+  font-weight: 600;
+}
+
 .address-portrait {
   margin: 4px auto 8px;
 }
@@ -568,6 +597,15 @@
 }
 
 @media (max-width: 420px) {
+  .cat-intro {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cat-intro-side {
+    width: 100%;
+  }
+
   .look-editor {
     flex-direction: column;
     align-items: center;
@@ -1399,7 +1437,8 @@
      ховався під кнопками; що картка прокручується, видно не було. Тут картка ширша, повзунки — у три стовпці (три ряди), а
      портрет — не вищий, ніж лишає картка без прокрутки (`--look-chrome`: поля екрана, рамка, підзаголовок, заголовок,
      кнопки й рамка портрета); вигляду він не міняє, лише масштаб. */
-  .card:has(.look-editor) {
+  .card:has(.look-editor),
+  .card:has(.cat-intro) {
     --look-chrome: 182px;
     width: min(780px, 100%);
   }
@@ -1414,6 +1453,11 @@
     max-height: calc(100dvh - var(--look-chrome));
     max-width: calc((100vh - var(--look-chrome)) * 13 / 22);
     max-width: calc((100dvh - var(--look-chrome)) * 13 / 22);
+  }
+
+  .cat-intro .portrait {
+    max-height: calc(100dvh - var(--look-chrome));
+    max-width: calc(100dvh - var(--look-chrome));
   }
 }
 

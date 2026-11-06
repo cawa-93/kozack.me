@@ -5,7 +5,7 @@ import { newBody } from "./body";
 import { knownBreedHalves, shelterBreed } from "./breeds";
 import { observe, setWitnessing } from "./knowledge";
 import { cageStage } from "./carriers";
-import { ageCat, ageDue, asleep, closeCatDay, createCat, traitLevel } from "./cat";
+import { ageCat, ageDue, asleep, markNewcomer, closeCatDay, createCat, traitLevel } from "./cat";
 import { hourOf, isCarried, tickCats } from "./catai";
 import { changeStat, closeLedger, passSleepTime } from "./character";
 import {
@@ -342,6 +342,7 @@ function ageLimit({ state, report, rng }: Night): void {
 function births({ state, report, rng }: Night): void {
   for (const kitten of giveBirth(state, rng)) {
     addCat(state, kitten);
+    markNewcomer(kitten);
     report.newCats.push(kitten.id);
   }
 }
@@ -383,6 +384,7 @@ function kittenCheck({ state, report, rng }: Night): void {
   cat.breedKnown = knownBreedHalves(state, cat.breed, rng);
   cat.arrivedDay = state.day + 1;
   addCat(state, cat);
+  markNewcomer(cat);
   // Притулок: блохи (§9.5).
   maybeFallIll(state, cat, "fleas", ILLNESS.shelterFleas, rng);
   giveStarterPack(state, cat);

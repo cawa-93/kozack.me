@@ -572,7 +572,11 @@ const portraitWaiters = new WeakMap<object, () => void>();
  * заглушки) чи він ще вантажиться (тоді, коли завантажиться, кличе `onReady`), — і тоді полотно не змінюється.
  */
 export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, look: Look, opts: PortraitOptions = {}): boolean {
-  const parts = opts.parts ?? portraitHead(look);
+  return composeFigure(canvas, opts.parts ?? portraitHead(look), personRecipe(look, opts.stained ? { stained: true } : {}), opts);
+}
+
+/** Намалювати частини фігури тим самим рецептом, що в грі, вписавши в полотно; решта — як у `composePortrait`. */
+export function composeFigure(canvas: HTMLCanvasElement | OffscreenCanvas, parts: readonly PortraitPart[], recipe: TintRecipe, opts: PortraitOptions = {}): boolean {
   const frames: FrameId[] = parts.map((p) => frameId(p.id, p.state ?? null, p.view === undefined ? "front" : p.view));
   const state = artFrameState(frames);
   if (state === "missing") return false;
@@ -630,7 +634,6 @@ export function composePortrait(canvas: HTMLCanvasElement | OffscreenCanvas, loo
   const ox = (W - bw * k) / 2 - minX * k;
   const oy = (opts.align === "bottom" ? H - pad - bh * k : (H - bh * k) / 2) - minY * k;
 
-  const recipe = personRecipe(look, opts.stained ? { stained: true } : {});
   const far = farRecipe(recipe);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);

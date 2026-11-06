@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { IDLE, type Input } from "../sim/actions";
 import { canDash, dash, isMoving } from "../sim/body";
 import { changeLook } from "../sim/character";
+import { meetCat, nextNewcomer } from "../sim/cat";
 import { inStandoff, isDirty } from "../sim/catai";
 import { LOW_STAT, MODIFIERS, STANDUP_MINUTE, STANDUP_MINUTES } from "../sim/config";
 import { carrierRoom, discardCarrier } from "../sim/carriers";
@@ -24,6 +25,7 @@ import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Produc
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
+import { catIntroCard } from "../ui/catintro";
 import { lookRng, randomLook } from "../ui/look";
 import { diseaseLabel } from "../ui/icons";
 import { answerCall, decideFoundling, ignoreCall, powerOut } from "../sim/modifiers";
@@ -671,6 +673,7 @@ export class DayScene extends Phaser.Scene {
     this.showParking();
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
+    else this.introduceCat();
     if (this.updateTrip(delta)) {
       this.tickClock(0, false);
       this.render(time, 0);
@@ -1255,6 +1258,18 @@ export class DayScene extends Phaser.Scene {
       );
     };
     pickLook(randomLook(looks));
+  }
+
+  /** Новий кіт удома (§9.7): картка знайомства — щойно нічого не заважає, по одній на кота. */
+  private introduceCat(): void {
+    const cat = this.blocked() ? undefined : nextNewcomer(this.state);
+    if (!cat) return;
+    this.overlay.show(
+      catIntroCard(this.state, cat, (name) => {
+        meetCat(cat, name);
+        this.overlay.close();
+      }),
+    );
   }
 
   /** Шафа (§8.7): редактор зовнішності поверх гри. */
