@@ -34,6 +34,14 @@ function hears(cat: Cat, at: Vec): boolean {
   return Math.hypot(cat.x - at.x, cat.y - at.y) <= NOISE.reach;
 }
 
+/** Чи кіт зважає на звук: хто ховається, б'ється чи стоїть у протистоянні (§9.4), не зважає. */
+function listens(state: GameState, cat: Cat, at: Vec | null, only?: (cat: Cat) => boolean): boolean {
+  if (cat.away !== null || isCarried(state, cat) || isNewborn(cat)) return false;
+  if (cat.act.kind === "hide" || cat.act.kind === "fight" || cat.act.kind === "standoff") return false;
+  if (at !== null && !hears(cat, at)) return false;
+  return !only || only(cat);
+}
+
 /**
  * Гучний звук (§9.12): `at` — звідки; null — чути в усій квартирі (пилосос, феєрверки). Сплячий кіт може
  * прокинутися («Тривалість сну»), а той, хто не спить, ховається чи ні («Сміливість»). `only` — кого звук стосується
@@ -43,11 +51,7 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, onl
   const rng = stateRng(state, "behavior");
   const heard: number[] = [];
   for (const cat of state.cats) {
-    if (cat.away !== null || isCarried(state, cat) || isNewborn(cat)) continue;
-    // Хто вже ховається, б'ється чи стоїть у протистоянні (§9.4), на звук не зважає.
-    if (cat.act.kind === "hide" || cat.act.kind === "fight" || cat.act.kind === "standoff") continue;
-    if (at !== null && !hears(cat, at)) continue;
-    if (only && !only(cat)) continue;
+    if (!listens(state, cat, at, only)) continue;
     heard.push(cat.id);
     if (sleepsOn(cat)) {
       if (!rng.chance(NOISE.wake * (1 - NOISE.wakeStep * traitLevel(cat, "sleep")))) {
@@ -63,6 +67,21 @@ export function loudNoise(state: GameState, kind: NoiseKind, at: Vec | null, onl
     react(state, cat, kind, rng);
   }
   return heard;
+}
+
+/**
+ * Дорогий робот-пилосос проїжджає повз (§8.7): нікого не лякає й не будить, а сміливі реагують на нього, як на гучний. Сплячий
+ * його не помітив, тож прокинувшись, ще може. Повертає id котів, що помітили робота.
+ */
+export function quietRobot(state: GameState, at: Vec, only: (cat: Cat) => boolean): number[] {
+  const rng = stateRng(state, "behavior");
+  const noticed: number[] = [];
+  for (const cat of state.cats) {
+    if (!listens(state, cat, at, only) || sleepsOn(cat)) continue;
+    noticed.push(cat.id);
+    if (traitLevel(cat, "bravery") > 0) unafraid(state, cat, "robot", rng);
+  }
+  return noticed;
 }
 
 /** Кота розбудили шум чи кроки (§9.12): настрій −1, і це видно; чуйний сон — прояв «Тривалості сну −». */
@@ -82,12 +101,16 @@ function react(state: GameState, cat: Cat, kind: NoiseKind, rng: Rng): void {
   const big = BIG[kind];
   if (big !== undefined) {
     if (bravery <= 0) return scare(state, cat, kind, big, rng);
-    observe(state, cat, "bravery", 1, false, NOISE.observeEvery);
-    if (kind === "vacuum" && WATCH_FROM.has(cat.act.kind)) return watch(state, cat);
-    if (kind === "robot" && bravery >= 2 && rng.chance(NOISE.ride)) startAct(cat, "idle", null, HOUSEHOLD.robotMinutes, "robot");
-    return;
+    return unafraid(state, cat, kind, rng);
   }
   if (bravery < 0 && rng.chance(NOISE.smallStep * -bravery)) scare(state, cat, kind, NOISE.smallMinutes * -bravery, rng);
+}
+
+/** Сміливий кіт почув великий звук (§9.12): іде подивитися на пилосос, а «Безстрашний» може покататися на роботі. */
+function unafraid(state: GameState, cat: Cat, kind: NoiseKind, rng: Rng): void {
+  observe(state, cat, "bravery", 1, false, NOISE.observeEvery);
+  if (kind === "vacuum" && WATCH_FROM.has(cat.act.kind)) return watch(state, cat);
+  if (kind === "robot" && traitLevel(cat, "bravery") >= 2 && rng.chance(NOISE.ride)) startAct(cat, "idle", null, HOUSEHOLD.robotMinutes, "robot");
 }
 
 /** Кіт злякався й ховається (§9.12): як довго — «Стресостійкість»; від феєрверків ще й псується настрій (§4.1). */

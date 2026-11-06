@@ -879,11 +879,12 @@ export const HOUSEHOLD = {
 export const VACUUM = { sanityPerMinute: -0.2, noiseEvery: 10 } as const;
 /**
  * Робот-пилосос за якістю (§8.7): `reach` — досяжність із маршруту, клітинки; `starts` — коли виїжджає, хвилини доби; `messes` —
- * чи бере сухий безлад. Між двома `reach` лежать усі кути й смужки біля стін (`tests/robot.test.ts`).
+ * чи бере сухий безлад; `loud` — чи лякає й будить котів. Між двома `reach` лежать усі кути й смужки біля стін
+ * (`tests/robot.test.ts`).
  */
-export const ROBOT: Record<Quality, { reach: number; starts: readonly number[]; messes: boolean }> = {
-  cheap: { reach: 0.82, starts: [HOUSEHOLD.robotMinute], messes: false },
-  premium: { reach: 1, starts: [HOUSEHOLD.robotMinute, 18 * 60], messes: true },
+export const ROBOT: Record<Quality, { reach: number; starts: readonly number[]; messes: boolean; loud: boolean }> = {
+  cheap: { reach: 0.82, starts: [HOUSEHOLD.robotMinute], messes: false, loud: true },
+  premium: { reach: 1, starts: [HOUSEHOLD.robotMinute, 18 * 60], messes: true, loud: false },
 };
 /**
  * Досяжність інструмента в руках (§8.7), клітинки. `web` — до павутини: у віника більша за `floor`, бо до павутин за ліжком,

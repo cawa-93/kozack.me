@@ -211,6 +211,41 @@ describe("гучний звук (§9.12, рішення автора 2026-10-25)
     expect(rider.act.target).not.toBe("robot");
   });
 
+  it("дорогий робот нікого не лякає й не будить, а «Безстрашний» катається і на ньому", () => {
+    const save = game();
+    save.current.minute = HOUSEHOLD.robotMinute - 0.5;
+    save.current.home.appliances.robot = "premium";
+    const timid = Array.from({ length: 4 }, (_, i) => awake(withCat(save, { bravery: -2 }, { x: 2.5 + i, y: 9.5 })));
+    const light = asleep(withCat(save, { sleep: -2, bravery: -1 }, { x: 15.5, y: 8.5 }));
+    const fearless = Array.from({ length: 8 }, (_, i) => awake(withCat(save, { bravery: 2 }, { x: 2.5 + i, y: 8.5 })));
+    for (const cat of [...timid, ...fearless]) cat.act.minutes = 120;
+    light.act.minutes = 240;
+    const { events, stop } = recordEvents();
+    advance(save, 1);
+    expect(fearless.some((c) => c.act.target === "robot")).toBe(true);
+    for (let minutes = 0; minutes < HOUSEHOLD.robotMinutes; minutes += 0.5) advance(save, 0.5);
+    stop();
+    expect(events.filter((e) => e.type === "scared")).toEqual([]);
+    expect(events.filter((e) => e.type === "cat-woke")).toEqual([]);
+    expect(timid.some((c) => c.act.kind === "hide")).toBe(false);
+    expect(save.current.home.robotHeard).toBeUndefined();
+  });
+
+  it("сміливий помічає дорогого робота так само: це видно на рисі, а сплячий його не чує", () => {
+    const save = game();
+    save.current.minute = HOUSEHOLD.robotMinute - 0.5;
+    save.current.home.appliances.robot = "premium";
+    const brave = awake(withCat(save, { bravery: 1 }, { x: 15.5, y: 8.5 }));
+    const sleeping = asleep(withCat(save, { bravery: 1 }, { x: 14.5, y: 8.5 }));
+    brave.act.minutes = 120;
+    sleeping.act.minutes = 240;
+    advance(save, 1);
+    expect(brave.traits.find((t) => t.group === "bravery")?.seen).toBeGreaterThan(0);
+    expect(sleeping.traits.find((t) => t.group === "bravery")?.seen).toBe(0);
+    expect(save.current.home.robotHeard).toContain(brave.id);
+    expect(save.current.home.robotHeard).not.toContain(sleeping.id);
+  });
+
   it("робот-пилосос чути лише в кімнаті, де він їде, і кожен кіт чує його раз за прибирання (рішення автора 2026-10-26)", () => {
     const save = game();
     save.current.minute = HOUSEHOLD.robotMinute - 0.5;

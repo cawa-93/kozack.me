@@ -10,7 +10,7 @@ import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
 import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
-import { loudNoise } from "./noise";
+import { loudNoise, quietRobot } from "./noise";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
 import type { BowlItem, Cat, CleaningTool, Feeder, GameState, HomeItem, Mess, MessKind, Product, Quality, Vec } from "./types";
@@ -505,7 +505,9 @@ function robotClean(state: GameState, quality: Quality, start: number, from: num
     return;
   }
   const heard = (state.home.robotHeard ??= []);
-  heard.push(...loudNoise(state, "robot", along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes), (cat) => !heard.includes(cat.id)));
+  const at = along(ROBOT_ROUTE, (hi - start) / HOUSEHOLD.robotMinutes);
+  const fresh = (cat: Cat): boolean => !heard.includes(cat.id);
+  heard.push(...(ROBOT[quality].loud ? loudNoise(state, "robot", at, fresh) : quietRobot(state, at, fresh)));
 }
 
 /**
