@@ -33,6 +33,7 @@
    "destination": "shop",
    "phase": "visit",
    "cat": null,
+   "riders": [],
    "race": {
     "road": 45,
     "done": 45,

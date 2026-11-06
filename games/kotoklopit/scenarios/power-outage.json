@@ -32,7 +32,9 @@
    "appliances": {
     "robot": "cheap"
    },
-   "fur": 60
+   "fur": 60,
+   "tufts": [0, 1, 2, 3, 4, 5, 6],
+   "tuftAt": 12230
   }
  }
 }

@@ -47,6 +47,7 @@
    "destination": "doctor",
    "phase": "visit",
    "cat": null,
+   "riders": [],
    "race": {
     "road": 60,
     "done": 60,

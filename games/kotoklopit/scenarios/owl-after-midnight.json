@@ -9,7 +9,7 @@
     "modifiers": { "day": null },
     "character": {
       "stats": { "satiety": 50, "hygiene": 50, "sanity": 50 },
-      "body": { "x": 6.9, "y": 7.0, "facing": { "x": 0, "y": -1 } },
+      "body": { "x": 6.5, "y": 7.5, "facing": { "x": 0, "y": -1 } },
       "activity": { "kind": "work", "minutes": 0, "money": 0, "reputation": 0, "sanity": 0 }
     }
   },
