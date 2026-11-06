@@ -20,6 +20,9 @@ export function glyphUrl(symbol: string, files: Readonly<Record<string, string>>
   return Object.entries(files).find(([path]) => path.endsWith(`/${name}.svg`))?.[1] ?? null;
 }
 
+/** Усі файли гліфів. */
+export const glyphUrls = (): string[] => Object.values(GLYPH_FILES);
+
 const PATTERN = new RegExp(`(${Object.keys(GLYPH_ART).join("|")})`, "u");
 
 /** Замінити символи-позначки в тексті вузла на намальовані іконки. */

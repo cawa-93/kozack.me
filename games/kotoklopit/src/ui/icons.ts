@@ -31,6 +31,9 @@ export function iconUrl(name: IconName, files: Readonly<Record<string, string>> 
   return files[`${ICON_DIR}${name}.svg`] ?? null;
 }
 
+/** Усі файли іконок. */
+export const iconUrls = (): string[] => Object.values(ICON_FILES);
+
 const OPEN = "\u{E000}";
 const CLOSE = "\u{E001}";
 const KNOWN = new Set<string>(ICON_NAMES);

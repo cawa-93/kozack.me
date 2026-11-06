@@ -22,6 +22,7 @@ import Phaser from "phaser";
 
 import { LOAD_FAILED } from "../texts";
 import { markArtReady } from "../view/art/atlas";
+import { warmCardArt } from "../ui/warmart";
 import { loadArtAtlas, type ArtAtlasState } from "../view/art/atlasload";
 
 /** Заставка з index.html: назва, смуга й місце для повідомлення, що гра не завантажилася. */
@@ -115,5 +116,6 @@ export class PreloadScene extends Phaser.Scene {
       // І якщо сцена впала: скрипт знімків покаже її помилку, а не «не дочекався атласу».
       markArtReady(state);
     }
+    warmCardArt();
   }
 }
