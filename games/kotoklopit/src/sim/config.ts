@@ -1016,9 +1016,9 @@ export const SHOP_WINDOW: Record<Difficulty, { min: number; max: number }> = {
 };
 /** Модифікатори (§4.1, `DAY_MODIFIERS.md`): спершу шанси вибору, далі ефекти; `decay` — множник спаду терпіння. */
 export const MODIFIERS = {
-  noneShare: 1 / 3,
+  noneShare: 1 / 6,
   hardShare: { easy: 0.4, normal: 0.5, hard: 0.6 } as Record<Difficulty, number>,
-  weekShare: 0.5,
+  weekShare: 1,
   foundling: 0.03,
   foundlingGapDays: 14,
   foundlingShelterMinutes: 120,

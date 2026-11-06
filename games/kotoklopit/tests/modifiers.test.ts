@@ -109,12 +109,12 @@ describe("вибір модифікаторів: перевірка модифі
     expect(hardCount / total).toBeLessThan(0.64);
   });
 
-  it("безробітному модифікатор тижня — приблизно в половині тижнів; перерахунки додаються", () => {
+  it("безробітному модифікатор тижня — щотижня; перерахунки додаються", () => {
     const save = game();
     save.current.job.unemployed = true;
     let some = 0;
     for (let week = 1; week <= 400; week++) if (chooseWeekModifier(save.current, week)) some += 1;
-    expect(some / 400).toBeGreaterThan(0.4);
+    expect(some).toBe(400);
     const recalc = game();
     recalc.current.today.utilitiesDiscount = 10;
     recalc.current.day = 3;
@@ -337,7 +337,7 @@ describe("події модифікаторів: перевірка модифі
 });
 
 describe("вибір модифікаторів (§4.1)", () => {
-  it("приблизно третина днів без модифікатора; котячі — лише коли є кіт", () => {
+  it("частка днів без модифікатора — `noneShare`; котячі — лише коли є кіт", () => {
     const save = game();
     let none = 0;
     const seen = new Set<string>();
@@ -347,8 +347,8 @@ describe("вибір модифікаторів (§4.1)", () => {
       if (id === null) none += 1;
       else seen.add(id);
     }
-    expect(none / 600).toBeGreaterThan(0.25);
-    expect(none / 600).toBeLessThan(0.42);
+    expect(none / 600).toBeGreaterThan(MODIFIERS.noneShare - 0.07);
+    expect(none / 600).toBeLessThan(MODIFIERS.noneShare + 0.07);
     for (const catOnly of ["full-moon", "rain", "heat", "festival", "food-price-up"]) expect(seen.has(catOnly)).toBe(false);
   });
 
@@ -392,13 +392,11 @@ describe("вибір модифікаторів (§4.1)", () => {
     const withCat = (save: Save): void => addCat(save.current, createCat(save.current, createRng(3), { source: "shelter", ageWeeks: 4, at: { x: 5.5, y: 8.5 } }));
     const weeks = (save: Save): (string | null)[] => Array.from({ length: 400 }, (_, i) => chooseWeekModifier(save.current, i + 1));
 
-    it("без котів їх немає, а модифікатор тижня — так само в половині тижнів; з котом — бувають; не котячий тиждень від котів не залежить (§6.1)", () => {
+    it("без котів їх немає, а модифікатор тижня однаково щотижня; з котом — бувають; не котячий тиждень від котів не залежить (§6.1)", () => {
       const empty = game();
       const without = weeks(empty);
       expect(without.some((id) => id !== null && CAT_WEEKS.includes(id))).toBe(false);
-      const share = without.filter((id) => id !== null).length / without.length;
-      expect(share).toBeGreaterThan(0.4);
-      expect(share).toBeLessThan(0.6);
+      expect(without).not.toContain(null);
       const cat = game();
       withCat(cat);
       const withCats = weeks(cat);
@@ -436,12 +434,11 @@ describe("вибір модифікаторів (§4.1)", () => {
     });
   });
 
-  it("модифікатор тижня — приблизно в половині тижнів; у відпустку робочих модифікаторів немає", () => {
+  it("модифікатор тижня — щотижня; у відпустку робочих модифікаторів немає", () => {
     const save = game();
     let some = 0;
     for (let week = 1; week <= 200; week++) if (chooseWeekModifier(save.current, week)) some += 1;
-    expect(some / 200).toBeGreaterThan(0.38);
-    expect(some / 200).toBeLessThan(0.62);
+    expect(some).toBe(200);
     save.current.modifiers.week = "vacation";
     for (let seed = 0; seed < 300; seed++) {
       save.current.modifiers.day = null;
