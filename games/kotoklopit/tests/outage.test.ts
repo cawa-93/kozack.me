@@ -128,7 +128,7 @@ describe("«Планове відключення» — день без світ
       if (work) startWork(save.current);
       const before = save.current.job.reputation;
       const { events, stop } = recordEvents();
-      workMinutes(save, STANDUP_MINUTE - 5, 30);
+      workMinutes(save, STANDUP_MINUTE - 5, 90);
       stop();
       return { events: events.map((e) => e.type).filter((t) => t.startsWith("standup")), reputation: save.current.job.reputation - before };
     };
@@ -139,7 +139,7 @@ describe("«Планове відключення» — день без світ
     expect(run("outage", false)).toEqual({ events: [], reputation: 0 });
     const worked = run("outage", true);
     expect(worked.events).toEqual([]);
-    expect(worked.reputation).toBeCloseTo(0.5 * (POSITIONS[0]?.reputation ?? 0) * CAREER_PACE * MODIFIERS.outage.reputation, 6);
+    expect(worked.reputation).toBeCloseTo(1.5 * (POSITIONS[0]?.reputation ?? 0) * CAREER_PACE * MODIFIERS.outage.reputation, 6);
 
     const save = game("outage");
     expect(standupToday(save.current)).toBe(false);

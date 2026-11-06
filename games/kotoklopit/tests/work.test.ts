@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CAREER_PACE, POSITIONS } from "../src/sim/config";
+import { CAREER_PACE, POSITIONS, STANDUP_MINUTES } from "../src/sim/config";
 import { advance, interact, newGame } from "../src/sim/game";
 import { unpleasantTask } from "../src/sim/character";
 import type { Address, Chronotype, Difficulty, Save } from "../src/sim/types";
@@ -161,7 +161,7 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     const save = game();
     const { events, stop } = recordEvents();
     setup(save);
-    waitUntil(save, hours(10.5));
+    waitUntil(save, hours(10) + STANDUP_MINUTES + 30);
     stop();
     const result = events.find((e) => e.type === "standup");
     if (result?.type !== "standup") throw new Error("летучки не було");
@@ -189,11 +189,11 @@ describe("щоденна летучка о 10:00 (§8.6)", () => {
     const late = (minutes: number) =>
       standup((save) => {
         save.current.character.stats.hygiene = 60;
-        waitUntil(save, hours(10) + 15 - minutes);
+        waitUntil(save, hours(10) + STANDUP_MINUTES - minutes);
         startWork(save.current);
       });
-    expect(late(8).attended).toBe(true);
-    expect(late(7).attended).toBe(false);
+    expect(late(STANDUP_MINUTES / 2 + 1).attended).toBe(true);
+    expect(late(STANDUP_MINUTES / 2 - 1).attended).toBe(false);
   });
 
   it("у вихідні летучки немає", () => {
