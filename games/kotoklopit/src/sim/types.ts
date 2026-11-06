@@ -83,8 +83,16 @@ export interface HeldVacuum {
   minutes?: number;
 }
 
+/** Річ котячого кутка, яку переставляють (§8.7): поки вона в руках, у квартирі її немає. */
+export interface CarriedThing {
+  kind: "thing";
+  item: PlacedItem;
+  /** Автогодівниця, що їде разом із мискою. */
+  feeder?: Feeder;
+}
+
 /** Річ у руках (§8.4): у руках лише одна. */
-export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum;
+export type Item = Dish | CatFoodScoop | CarriedCat | HeldToy | HeldVacuum | CarriedThing;
 
 /** Положення персонажа в квартирі, у клітинках підлоги (§8.4). */
 export interface Body {
@@ -328,6 +336,8 @@ export interface ScratcherItem {
 
 /** Речі для котів (§9.12): миски, лотки, будиночки й кігтеточки — на своїх місцях, іграшки — будь-де на підлозі. */
 export type HomeItem = BowlItem | WaterItem | LitterItem | ToyItem | HouseItem | ScratcherItem;
+/** Речі, що стоять на клітинці (§8.7): усе, крім іграшки. */
+export type PlacedItem = Exclude<HomeItem, ToyItem>;
 /** Річ для котів, яку можна купити (§6.4); переноска не стоїть на місці в квартирі, замок — на шафці з кормом (§9.12). */
 export type ThingKind = HomeItem["kind"] | "carrier" | "feeder" | "lock" | Appliance;
 /** Побутова техніка (§8.7): одна кожного виду, без місця в квартирі. Автогодівниці — окремо, на мисках. */

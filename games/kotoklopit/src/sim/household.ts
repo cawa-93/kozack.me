@@ -9,7 +9,7 @@ import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from ".
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
-import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
+import { CARRIER_TILE, hiddenTile, isSolid, isWall, itemPoint, itemTile, LAUNDRY_BASKET, objectAt, objectById, ROBOT_DOCK, roomAt, slotCenter, STASHES, VACUUM_HOME } from "./home";
 import { loudNoise, quietRobot } from "./noise";
 import type { Rng } from "./rng";
 import { absoluteMinute } from "./time";
@@ -266,7 +266,7 @@ const DRY: Record<MessKind, boolean> = {
 export const isDryMess = (kind: MessKind): boolean => DRY[kind];
 
 /** Між точками немає стіни: пилосос крізь стіну не дістає, як і рука (§10, `targets.ts`); біля самої стіни — дістає. */
-function clearPath(a: Vec, b: Vec): boolean {
+export function clearPath(a: Vec, b: Vec): boolean {
   const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 0.1);
   for (let i = 1; i < steps - 1; i++) {
     const t = i / steps;
@@ -544,7 +544,6 @@ export function robotProgress(state: GameState): number | null {
  * зсув на десяту клітинки може це зламати (`tests/robot.test.ts`). Посеред ряду 8 вітальні й стовпця 15 кухні — бо там рідше стоять
  * речі, а ряду 9 заважають ящики біля входу.
  */
-export const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
 const ROBOT_ROUTE: readonly Vec[] = [
   ROBOT_DOCK,
   { x: 17.7, y: 7.4 },

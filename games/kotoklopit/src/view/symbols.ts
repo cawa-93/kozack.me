@@ -147,6 +147,8 @@ export function itemIcon(item: Item): IconName {
       // Вертикальний пилосос (§8.7, рішення автора 2026-11-02, «Пилосос у руках»): той самий, що стоїть у квартирі. Ні в відмову
       // «не сюди», ні на стіл чи плиту він не потрапляє — натискання з ним лише ставить його.
       return "vacuum";
+    case "thing":
+      return THING_ICONS[item.item.kind];
   }
 }
 
@@ -227,6 +229,10 @@ export function refusalBubble(refusal: Refusal): { icon: IconName; count?: numbe
       return { icon: "human-meds", mark: "ok" };
     case "no-room":
       return { icon: "no-room" };
+    case "no-place":
+      return { icon: "no-place", mark: "no" };
+    case "thing-busy":
+      return { icon: "thing-busy" };
     case "kit-empty":
       return { icon: "kit", count: 0 };
     case "cat-in-box":

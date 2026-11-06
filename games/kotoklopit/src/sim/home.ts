@@ -252,15 +252,22 @@ export const LAUNDRY_BASKET: Vec = { x: 9.5, y: 1.75 };
  */
 export const VACUUM_HOME: Vec = { x: 16.5, y: 10.5 };
 
+/** База робота-пилососа (§8.7). */
+export const ROBOT_DOCK: Vec = { x: 17.6, y: 8.2 };
+
 /** Де персонаж прокидається: біля ліжка (§8.7). */
 export const SPAWN: Vec = { x: 2.5, y: 2.5 };
 
-/** Місце на підлозі для речі котячого кутка (§9.12). Речі на підлозі не тверді. */
-export interface Slot {
+/** Клітинка підлоги, на якій може стояти річ котячого кутка (§8.7, §9.12). Речі на підлозі не тверді. */
+export interface Place {
   id: string;
-  kind: HomeItem["kind"];
   x: number;
   y: number;
+}
+
+/** Місце, куди стає нова річ свого виду (§6.4). */
+export interface Slot extends Place {
+  kind: HomeItem["kind"];
 }
 
 // Нижній ряд кімнат закриває передня стіна (камера «три чверті», §2.1), тож речі стоять вище.
@@ -289,10 +296,8 @@ export const SLOTS: readonly Slot[] = [
   { id: "scratcher-3", kind: "scratcher", x: 11, y: 9 },
 ];
 
-const SLOT_BY_ID = new Map(SLOTS.map((s) => [s.id, s]));
-
-export function slotById(id: string): Slot {
-  const found = SLOT_BY_ID.get(id);
+export function slotById(id: string): Place {
+  const found = PLACE_BY_ID.get(id);
   if (!found) throw new Error(`Немає місця «${id}»`);
   return found;
 }
@@ -371,4 +376,78 @@ export function distanceToRect(p: Vec, r: Rect): number {
 
 export function centerOf(r: Rect): Vec {
   return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+}
+
+/**
+ * Вільна підлога, куди річ усе одно не ставлять (§8.7): кошик, переноска, база робота й стілець за комп'ютером; позаду меблів і
+ * ящиків її не видно (`tests/places.test.ts`); на решті клітинок кіт щось робить сам і стояв би на речі.
+ */
+const NO_PLACE: readonly Vec[] = [
+  LAUNDRY_BASKET,
+  CARRIER_TILE,
+  ROBOT_DOCK,
+  { x: 6, y: 7 },
+  { x: 7, y: 7 },
+  { x: 4, y: 4 },
+  { x: 5, y: 1 },
+  { x: 14, y: 2 },
+  { x: 18, y: 2 },
+  { x: 11, y: 8 },
+  { x: 12, y: 8 },
+  ...AMBUSH_SPOTS,
+  BOX_SCRATCH,
+  COOL_TILE,
+  STASHES.fridge.tile,
+  STASHES.sofa.tile,
+  WIRE_TILE,
+];
+
+const sameTile = (a: Vec, x: number, y: number): boolean => Math.floor(a.x) === x && Math.floor(a.y) === y;
+
+/** Сюди гравець може поставити річ: видна підлога кімнати без меблів. */
+function placeable(x: number, y: number): boolean {
+  if (isWall(x, y) || hiddenTile(x, y) || roomAt({ x, y }) === null) return false;
+  return !OBJECTS.some((o) => covers(o, x, y)) && !NO_PLACE.some((p) => sameTile(p, x, y));
+}
+
+/**
+ * Усі клітинки для речей (§8.7): місця `SLOTS` і решта підлоги. На клітинці рівно одне місце, тож зайнятість за id — це зайнятість
+ * клітинки.
+ */
+export const PLACES: readonly Place[] = [
+  ...SLOTS,
+  ...MAP.flatMap((row, y) =>
+    [...row].flatMap((_, x): Place[] => (placeable(x, y) && !SLOTS.some((s) => s.x === x && s.y === y) ? [{ id: `floor-${x}-${y}`, x, y }] : [])),
+  ),
+];
+
+const PLACE_BY_ID = new Map(PLACES.map((p) => [p.id, p]));
+
+/** На місці стоїть річ котячого кутка. */
+export function slotTaken(state: Pick<GameState, "home">, id: string): boolean {
+  return state.home.items.some((i) => "slot" in i && i.slot === id);
+}
+
+/** На клітинку можна поставити річ (§8.7): немає речі, автогодівниці й того, що річ закрила б собою. */
+function placeFree(state: Pick<GameState, "home">, place: Place): boolean {
+  const { items, feeders, messes, vacuumAt } = state.home;
+  const here = (p: Vec): boolean => sameTile(p, place.x, place.y);
+  if (slotTaken(state, place.id) || feeders?.some((f) => f.slot === place.id) === true) return false;
+  if (items.some((i) => i.kind === "toy" && i.hidden === undefined && here(i))) return false;
+  return !messes.some(here) && !(vacuumAt && here(vacuumAt));
+}
+
+/** Вільна клітинка, чий центр найближчий до `at`; `fits` — серед яких центрів шукати. */
+export function nearestFreePlace(state: Pick<GameState, "home">, at: Vec, fits: (center: Vec) => boolean = () => true): Place | null {
+  let best: Place | null = null;
+  let bestDistance = Infinity;
+  for (const place of PLACES) {
+    const center = { x: place.x + 0.5, y: place.y + 0.5 };
+    const distance = Math.hypot(center.x - at.x, center.y - at.y);
+    if (distance < bestDistance && fits(center) && placeFree(state, place)) {
+      best = place;
+      bestDistance = distance;
+    }
+  }
+  return best;
 }

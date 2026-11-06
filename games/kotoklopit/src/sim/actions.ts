@@ -13,6 +13,7 @@ import { bathe } from "./care";
 import { catInWasher, emptyFeeder, furPerHour, putVacuumDown, sameFood, takeVacuum, tapWasher } from "./household";
 import { observe } from "./knowledge";
 import { cookFactor, powerOut } from "./modifiers";
+import { dropThing, putThing } from "./moving";
 import { changeStat, statCeiling, unpleasantTask } from "./character";
 import {
   AFFECTION,
@@ -81,7 +82,8 @@ type BareRefusal = Exclude<Refusal, { product: unknown } | { item: unknown } | {
 
 /** Відмовити (§11.4): сцена покаже над персонажем думку з іконкою саме цієї причини. */
 function refuse(state: GameState, target: string, refusal: Refusal | BareRefusal): null {
-  emit(state, { type: "refused", object: target, ...(typeof refusal === "string" ? { reason: refusal } : refusal) });
+  const detail = typeof refusal === "string" ? ({ reason: refusal } as Refusal) : refusal;
+  emit(state, { type: "refused", object: target, ...detail });
   return null;
 }
 
@@ -125,6 +127,11 @@ export function tap(state: GameState): TapResult {
   if (held?.kind === "vacuum") {
     putVacuumDown(state);
     character.holdSpent = true;
+    return null;
+  }
+  // Річ котячого кутка дія теж лише ставить (§8.7), як і кнопка перестановки.
+  if (held?.kind === "thing") {
+    putThing(state);
     return null;
   }
   // З іграшкою біля кота натискання нічого не робить: утримання тут же почне гру (§8.2).
@@ -1041,6 +1048,7 @@ export function dropEverything(state: GameState): void {
   if (held?.kind === "toy") dropToy(state);
   // Пилосос — на підлогу поруч (§8.7): уночі він не гуде.
   if (held?.kind === "vacuum") putVacuumDown(state);
+  dropThing(state);
   // Страву з рук — на вільну поверхню кухні, а не в нікуди.
   if (back === null && (held?.kind === "meal" || held?.kind === "burnt")) {
     const surfaces = state.home.surfaces;

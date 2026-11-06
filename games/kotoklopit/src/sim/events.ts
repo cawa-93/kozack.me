@@ -1,7 +1,7 @@
 // Події симуляції. З них сцена показує бабли (§11.4) і ранкові повідомлення (§4),
 // а режим розробки веде журнал прихованих змін (§11.5). Стан гри від підписників не залежить.
 
-import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, Product, Quality, TraitLevel, TrinketKind } from "./types";
+import type { AccidentLoss, AlbumEntry, CatTrace, Destination, Delivery, DiseaseId, Dish, ForbiddenZone, GameEnd, GameState, HomeItem, IllnessId, Item, Medicine, Mess, NightReport, PlacedItem, Product, Quality, TraitLevel, TrinketKind } from "./types";
 
 /** Рівень терпіння керівництва (§8.6): ok, «!» чи «Х». */
 export type PatienceLevel = "ok" | "warning" | "out";
@@ -103,6 +103,10 @@ export type Refusal =
   | { reason: "dose-taken" }
   /** Розкласти запаси з ящиків нікуди: сховища повні (§6.4). */
   | { reason: "no-room" }
+  /** Поставити річ із рук нікуди: поруч немає вільної клітинки (§8.7). */
+  | { reason: "no-place" }
+  /** Річ не взяти: нею саме користується кіт (§8.7). */
+  | { reason: "thing-busy" }
   /** В аптечці нічого для цього кота (§8.7). */
   | { reason: "kit-empty" }
   /** У ящиках біля входу спить кіт: розпакувати їх не можна, поки його не забрали (§9.12, «Допитливість»). */
@@ -164,6 +168,8 @@ export type GameEvent =
    * на підлогу (`put`). Без бабла: гул видно й чути з самого пилососа в руках (вигляд), а коти реагують на гучний звук.
    */
   | { type: "vacuum"; stage: "taken" | "put" }
+  /** Річ котячого кутка взяли в руки чи поставили (§8.7). */
+  | { type: "thing-moved"; stage: "taken" | "put"; item: PlacedItem }
   /**
    * Пилосос у руках (`person`) чи робот-пилосос (`robot`) щойно прибрав сухе сміття (§8.7): місця жмутів шерсті (`FUR_SPOTS`) і
    * пилу (`DUST_SPOTS`) і який безлад. Без бабла — для журналу режиму розробки й вигляду: прибране пилососом у руках втягується

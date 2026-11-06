@@ -38,6 +38,8 @@ export const REFUSALS: Refusal[] = [
   { reason: "healthy" },
   { reason: "dose-taken" },
   { reason: "no-room" },
+  { reason: "no-place" },
+  { reason: "thing-busy" },
   { reason: "kit-empty" },
   { reason: "cat-in-box" },
   { reason: "trash-tipped" },

@@ -92,4 +92,6 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "ui/touch/action", ...centered(140), states: ["idle", "held"] },
   // Кнопка ривка (радіус 46) з подвійною стрілкою: `ready` і `cooldown` (тьмяніє, поки перезаряджається).
   { id: "ui/touch/dash", ...centered(100), states: ["ready", "cooldown"] },
+  // Кнопка перестановки речі (радіус 46, §8.7): порожній диск, іконку речі кладе код.
+  { id: "ui/touch/carry", ...centered(100) },
 ];

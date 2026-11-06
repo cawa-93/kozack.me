@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/no-place — поставити річ нікуди: ромб плитки підлоги з тим самим контуром, що підсвічує клітинку під річчю. Пакет A11 «Іконки I», art/STYLE.md.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур плитки 6 (низ 8,5), пази 3,5.
+Відмова «Поруч немає вільної клітинки» (GAME_DESIGN §8.7): код кладе поверх позначку «ні». Від no-room (шафа) — силуетом: пласка плитка.
+-->
+<defs>
+<clipPath id="icon-no-place-tile"><path d="M32 15L59 32L32 49L5 32Z"/></clipPath>
+</defs>
+<g id="p-tile">
+<path d="M32 15L59 32L32 49L5 32Z" fill="#b98b60"/>
+<path d="M0 37L32 57L64 37L64 64L0 64Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-no-place-tile)"/>
+<path d="M18.5 23.5L45.5 40.5M18.5 40.5L45.5 23.5" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 22.5L47 32L32 41.5L17 32Z" fill="none" stroke="#f3d27a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32 15L59 32L32 49L5 32Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5 32L32 49L59 32" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

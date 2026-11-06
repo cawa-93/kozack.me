@@ -70,6 +70,8 @@ export const ICON_NAMES = [
   "vacuum",
   "mix",
   "no-room",
+  "no-place",
+  "thing-busy",
   "kit",
   "palms",
   "toy",

@@ -26,7 +26,7 @@ import {
   NOCTURNAL,
   CAT_ACT_MINUTES,
 } from "./config";
-import { addSupply, freeSlots, payUtilities, place, postponeDeliveries } from "./economy";
+import { addSupply, freeSlots, ownedItems, payUtilities, place, postponeDeliveries } from "./economy";
 import { emit } from "./events";
 import { agingDiseases, isHurting, maybeFallIll, nightlyDiseases } from "./diseases";
 import { nightlyIllness } from "./illness";
@@ -399,7 +399,7 @@ export function giveStarterPack(state: GameState, cat: Cat): void {
   addSupply(state, "litter", "cheap", SHELTER_STARTER_PACK.litter);
   // Без мисок і лотка кіт не проживе й ночі: притулок дає найпростіші, якщо вдома їх немає.
   for (const thing of ["bowl", "water", "litter"] as const) {
-    if (state.home.items.some((i) => i.kind === thing)) continue;
+    if (ownedItems(state).some((i) => i.kind === thing)) continue;
     // Місця не лишилося після речей, що вже їдуть: притулок свою не дає, інакше оплачена мовчки пропала б (перевірка побуту
     // 2026-10-28); місце є — дає, щоб новий кіт не чекав доставки (повторна перевірка розмноження й побуту 2026-10-28).
     if (freeSlots(state, thing) <= 0) continue;

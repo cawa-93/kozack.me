@@ -33,7 +33,7 @@ export interface PersonLocal {
  * звичайного корму й корму для стерилізованих, вудочка (`held`, `rod`), вертикальний пилосос (`held`, щітка на підлозі
  * попереду; §8.7, рішення автора 2026-11-02, «Пилосос у руках»).
  */
-export type HeldThing = "cat" | "raw" | "meal" | "burnt" | "mom-meal" | "scoop" | "sterile-scoop" | "rod" | "vacuum";
+export type HeldThing = "cat" | "raw" | "meal" | "burnt" | "mom-meal" | "scoop" | "sterile-scoop" | "rod" | "vacuum" | "thing";
 
 /** Річ у руках як `HeldThing`; null — руки порожні. */
 export function heldThing(item: Item | null): HeldThing | null {
@@ -50,6 +50,7 @@ export function heldThing(item: Item | null): HeldThing | null {
     case "raw":
     case "burnt":
     case "vacuum":
+    case "thing":
       return item.kind;
   }
 }
@@ -191,6 +192,8 @@ export function personEventAnim(event: GameEvent): PersonOneShot | null {
       return once("take");
     case "put":
       return once("put");
+    case "thing-moved":
+      return once(event.stage === "taken" ? "take" : "put");
     case "trashed":
       return once("trash");
     case "fed":

@@ -6,7 +6,7 @@ import { onEvent, type CleanerVisit, type GameEvent } from "../sim/events";
 import type { RoomId } from "../sim/home";
 import { formatClock, weekdayOf, weekOf } from "../sim/time";
 import { catDays } from "../sim/traces";
-import type { CatTrace, Delivery, GameState, Item, Quality } from "../sim/types";
+import type { CatTrace, Delivery, GameState, Item, PlacedItem, Quality } from "../sim/types";
 
 export interface JournalEntry {
   stamp: string;
@@ -20,10 +20,12 @@ const number = (value: number, digits = 1): string =>
   (Math.round(value * 10 ** digits) / 10 ** digits).toLocaleString("uk-UA");
 const signed = (value: number, digits = 1): string => (value >= 0 ? `+${number(value, digits)}` : `−${number(-value, digits)}`);
 const quality = (q: Quality): string => (q === "premium" ? "дорога" : "дешева");
+const placed = (i: PlacedItem): string => `${i.kind} (${quality(i.quality)})`;
 const item = (i: Item): string => {
   if (i.kind === "cat") return "кіт";
   if (i.kind === "toy") return `іграшка (${quality(i.toy.quality)})`;
   if (i.kind === "vacuum") return "пилосос";
+  if (i.kind === "thing") return placed(i.item);
   const name = { raw: "сира порція", meal: "страва", burnt: "підгоріла страва", catfood: "порція корму" }[i.kind];
   return `${name} (${quality(i.quality)})`;
 };
@@ -181,6 +183,8 @@ export function describe(event: GameEvent, state: GameState): string | null {
       return `Прання: ${event.stage}`;
     case "vacuum":
       return event.stage === "taken" ? "Пилосос у руках: гуде" : "Пилосос поставлено";
+    case "thing-moved":
+      return event.stage === "taken" ? `Узято в руки: ${placed(event.item)}` : `Поставлено: ${placed(event.item)} на ${event.item.slot}`;
     case "vacuumed": {
       const parts = [
         ...(event.tufts.length > 0 ? [`жмутів шерсті ${event.tufts.length}`] : []),

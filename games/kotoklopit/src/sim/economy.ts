@@ -18,7 +18,7 @@ import {
   UTILITIES_BASE,
 } from "./config";
 import { emit, endGame } from "./events";
-import { SLOTS, SURFACE_IDS, VACUUM_HOME } from "./home";
+import { nearestFreePlace, SLOTS, slotTaken, SURFACE_IDS, VACUUM_HOME } from "./home";
 import { priceFactor } from "./modifiers";
 import { absoluteMinute } from "./time";
 import { tidyBoxTraces } from "./traces";
@@ -262,7 +262,13 @@ export function dispatch(state: GameState, goods: { product: Product } | { thing
   return delivery;
 }
 
-/** Скільки ще речей цього типу вміститься: вільні місця мінус замовлені (§6.4). Іграшкам місце не потрібне. */
+/** Речі котячого кутка разом із тією, що в руках (§8.7): вона лише перейшла з підлоги в руки. */
+export function ownedItems(state: GameState): readonly HomeItem[] {
+  const held = state.character.held;
+  return held?.kind === "thing" ? [...state.home.items, held.item] : state.home.items;
+}
+
+/** Скільки ще речей цього типу вміститься: межа виду мінус ті, що вже є й що їдуть (§6.4, §8.7). Іграшкам місце не потрібне. */
 export function freeSlots(state: GameState, thing: ThingKind): number {
   if (thing === "toy") return Infinity;
   const home = state.home;
@@ -271,10 +277,8 @@ export function freeSlots(state: GameState, thing: ThingKind): number {
     return !ownsThing(state, thing) && !ordered ? 1 : 0;
   }
   if (thing === "feeder") return feederRoom(state);
-  const coming = packagesOf(state, thing);
-  const taken = new Set(home.items.map((i) => ("slot" in i ? i.slot : "")));
-  const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id)).length;
-  return free - coming;
+  const limit = SLOTS.filter((s) => s.kind === thing).length;
+  return limit - ownedItems(state).filter((i) => i.kind === thing).length - packagesOf(state, thing);
 }
 
 /** Скільки речей цього типу їде доставкою чи чекає під дверима. */
@@ -329,13 +333,21 @@ export function settleFeeders(state: GameState): void {
   }
 }
 
+/** Вільне місце виду `thing`, а зайняті всі (речі переставили) — найближча до них вільна клітинка (§8.7). */
+function spareSlot(state: GameState, thing: ThingKind): string | undefined {
+  const own = SLOTS.filter((s) => s.kind === thing);
+  const free = own.find((s) => !slotTaken(state, s.id) && feederAt(state, s.id) === null);
+  if (free) return free.id;
+  const first = own[0];
+  return first ? nearestFreePlace(state, first)?.id : undefined;
+}
+
 /**
  * Привезена автогодівниця стає над миской без годівниці; якщо такої вже немає (миска зламалася,
  * поки годівниця їхала) — над вільним місцем миски й чекає нову (§9.12).
  */
 function placeFeeder(state: GameState, quality: Quality): void {
-  const slot =
-    bowlsWithoutFeeder(state)[0]?.slot ?? SLOTS.find((s) => s.kind === "bowl" && feederAt(state, s.id) === null)?.id;
+  const slot = bowlsWithoutFeeder(state)[0]?.slot ?? spareSlot(state, "bowl");
   if (slot === undefined) return;
   (state.home.feeders ??= []).push({ slot, quality, food: 0, foodQuality: null, sterile: false });
 }
@@ -370,10 +382,8 @@ export function place(state: GameState, thing: ThingKind, quality: Quality): Hom
   // Нова річ (§9.12, «Допитливість»): допитливі підуть її обнюхати, обачні якийсь час обходитимуть.
   (state.home.fresh ??= []).push({ item: id, at: absoluteMinute(state.day, state.minute) });
   if (thing === "toy") return { id, kind: "toy", quality, x: DELIVERED_TOY_AT.x, y: DELIVERED_TOY_AT.y, uses: 0 };
-  const taken = new Set(state.home.items.map((i) => ("slot" in i ? i.slot : "")));
-  const free = SLOTS.filter((s) => s.kind === thing && !taken.has(s.id));
   // Нова миска — спершу під автогодівницю, що чекає миску (§9.12).
-  const slot = (free.find((s) => feederAt(state, s.id) !== null) ?? free[0])?.id;
+  const slot = (thing === "bowl" ? waitingFeeders(state)[0]?.slot : undefined) ?? spareSlot(state, thing);
   if (!slot) return null;
   switch (thing) {
     case "bowl":
@@ -469,12 +479,13 @@ export function postponeDeliveries(state: GameState): void {
 /** Комунальні за тиждень (§6.4): базова сума, внесок кожної речі й ремонт меблів. */
 export function utilitiesDue(state: GameState): number {
   const home = state.home;
+  const carried = state.character.held;
   const appliances = (Object.keys(home.appliances) as Appliance[]).filter((a) => home.appliances[a] !== null);
   return (
     UTILITIES_BASE +
-    home.items.reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) +
+    ownedItems(state).reduce((sum, i) => sum + THINGS[i.kind].utilities, 0) +
     appliances.reduce((sum, a) => sum + THINGS[a].utilities, 0) +
-    (home.feeders?.length ?? 0) * THINGS.feeder.utilities +
+    ((home.feeders?.length ?? 0) + (carried?.kind === "thing" && carried.feeder ? 1 : 0)) * THINGS.feeder.utilities +
     home.repairs
   );
 }

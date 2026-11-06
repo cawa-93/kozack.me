@@ -8,7 +8,8 @@ import { describe, expect, it } from "vitest";
 import { EXTRUDE, GAP, pack, PAGE_MAX } from "../scripts/art/pack";
 import { BOWL_CAPACITY, THINGS } from "../src/sim/config";
 import type { TabbyPattern } from "../src/sim/genetics";
-import { FUR_SPOTS, ROBOT_DOCK } from "../src/sim/household";
+import { ROBOT_DOCK } from "../src/sim/home";
+import { FUR_SPOTS } from "../src/sim/household";
 import { MAP, MAP_HEIGHT, MAP_WIDTH, OBJECTS, ROOMS, roomAt, TRINKETS, WINDOWS, type Rect } from "../src/sim/home";
 import { MAX_BOXES, STORAGES, type FillStage } from "../src/sim/storage";
 import type { Dish, Home, HomeItem, Item, Look, MessKind, Quality, Shape, ThingKind } from "../src/sim/types";
@@ -407,6 +408,8 @@ describe("маніфест: речі котів, у руках, бруд", () =>
       toy: "item/toy/cheap",
       // Вертикальний пилосос у руках (§8.7, рішення автора 2026-11-02): кадр із ракурсами, щітка на підлозі попереду.
       vacuum: "item/vacuum",
+      // Річ котячого кутка: той самий кадр, що на підлозі.
+      thing: "item/house/cheap",
     };
     for (const id of Object.values(held)) if (id !== null) entry(id);
     for (const kind of ["raw", "meal", "burnt"] as const satisfies readonly Dish["kind"][]) expect(states(`item/dish/${kind}`)).toEqual(keys(QUALITIES));

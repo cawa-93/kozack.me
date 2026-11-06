@@ -4,7 +4,7 @@
 import { highPlaceOf, isCarried } from "./catai";
 import { FACING_PRIORITY, REACH } from "./config";
 import { centerOf, distanceToRect, isSolid, isWall, itemPoint, objectsOf, slotById, type HomeObject } from "./home";
-import type { Cat, GameState, HomeItem, Mess, Vec } from "./types";
+import type { Body, Cat, GameState, HomeItem, Mess, PlacedItem, Vec } from "./types";
 
 export type Target =
   | { type: "object"; id: string; object: HomeObject }
@@ -124,6 +124,31 @@ function reachable(p: Vec, target: Target): boolean {
   return true;
 }
 
+/** Наскільки персонаж дивиться на точку, від −1 до 1; ціль під ногами — трохи «позаду». */
+function facingTo(body: Body, center: Vec): number {
+  const length = Math.hypot(center.x - body.x, center.y - body.y);
+  return length > UNDERFOOT ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : UNDERFOOT_FACING;
+}
+
+/** Річ, яку зараз візьме кнопка перестановки (§8.7): окремо від `candidates`, бо будиночок і кігтеточка цілями дії не бувають. */
+export function movableItem(state: GameState): PlacedItem | null {
+  const body = state.character.body;
+  let best: PlacedItem | null = null;
+  let bestScore = Infinity;
+  for (const item of state.home.items) {
+    if (item.kind === "toy") continue;
+    const target: Target = { type: "item", id: itemTargetId(item), item };
+    const distance = distanceTo(body, target);
+    if (distance > REACH || !reachable(body, target)) continue;
+    const score = distance - FACING_PRIORITY * facingTo(body, targetCenter(target));
+    if (score < bestScore) {
+      best = item;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 /** Ціль дії: найближча, і передусім та, на яку дивиться персонаж. */
 export function targetOf(state: GameState): Target | null {
   const body = state.character.body;
@@ -132,9 +157,7 @@ export function targetOf(state: GameState): Target | null {
   for (const target of candidates(state)) {
     const distance = distanceTo(body, target);
     if (distance > REACH || !reachable(body, target)) continue;
-    const center = targetCenter(target);
-    const length = Math.hypot(center.x - body.x, center.y - body.y);
-    const facing = length > UNDERFOOT ? ((center.x - body.x) * body.facing.x + (center.y - body.y) * body.facing.y) / length : UNDERFOOT_FACING;
+    const facing = facingTo(body, targetCenter(target));
     // Кіт нагорі — на холодильнику чи шафі — річ під собою не заступає: його й так не дістати; застрягле кошеня — ціль, його
     // знімають (§9.12, «Лазіння», перевірка етапу 2026-10-26).
     const high = target.type === "cat" && target.cat.stuck !== true && highPlaceOf(state, target.cat) !== null;
