@@ -13,6 +13,7 @@ import { allLives, catsMood } from "../src/sim/finale";
 import { newGame } from "../src/sim/game";
 import type { Chronotype, Difficulty, GameState } from "../src/sim/types";
 import { DIFFICULTY_TITLES, endingText } from "../src/texts";
+import { affordTable, type MoneyCurve } from "./afford";
 import { Bot } from "./bot";
 
 const WEEKS = Number(process.env["BALANCE_WEEKS"] ?? 6);
@@ -192,6 +193,8 @@ function report(runs: Run[]): string {
   lines.push(finalesLine(runs));
   lines.push("");
   lines.push(...careerTable(combos));
+  lines.push("");
+  lines.push(...affordTable(moneyCurves(combos)));
   const levels = new Array<number>(10).fill(0);
   for (const mood of runs.flatMap((r) => r.lives)) levels[level(mood)] = (levels[level(mood)] ?? 0) + 1;
   lines.push("");
@@ -249,6 +252,17 @@ function careerTable(combos: Map<string, Run[]>): string[] {
     lines.push(`| ${first.chronotype === "lark" ? "жайворонок" : "сова"} | ${DIFFICULTY_TITLES[first.difficulty]} | ${cells.join(" | ")} | ${director} |`);
   }
   return lines;
+}
+
+/** Середні гроші наприкінці кожного тижня серед тих, хто до нього дожив. */
+function moneyCurves(combos: Map<string, Run[]>): MoneyCurve[] {
+  return [...combos.values()].flatMap((group) => {
+    const first = group[0];
+    if (!first) return [];
+    const weeks = Math.max(...group.map((r) => r.weeks.length));
+    const money = Array.from({ length: weeks }, (_, w) => avg(group.flatMap((r) => r.weeks[w]?.money ?? [])));
+    return [{ title: `${first.chronotype === "lark" ? "жайворонок" : "сова"}, ${DIFFICULTY_TITLES[first.difficulty]}`, money }];
+  });
 }
 
 it("баланс: 6 комбінацій хронотипу й складності (§11.2)", () => {
