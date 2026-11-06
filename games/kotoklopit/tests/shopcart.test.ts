@@ -534,6 +534,41 @@ describe("картки поїздок (§8.5)", () => {
   const purses = (card: ReturnType<typeof visitCard>): number =>
     [...card.body.map((b) => (typeof b === "string" ? b : fake(b).textContent)), ...(card.aside ?? []), card.bar ? fake(card.bar).textContent : ""].join("|").split("👛").length - 1;
 
+  it("кілька котів на місці: кнопка «Далі» кличе наступного, кіт на руках названий чесно", () => {
+    const state = at("vet");
+    const first = state.cats[0];
+    const second = createCat(state, createRng(4), { source: "shelter", ageWeeks: 20, at: { x: 9.5, y: 8.5 } });
+    addCat(state, second);
+    if (!state.trip || !first) throw new Error("немає поїздки");
+    state.trip.riders = [
+      { cat: first.id, place: "cheap" },
+      { cat: second.id, place: "hands" },
+    ];
+    let next = 0;
+    const text = (card: ReturnType<typeof visitCard>): string => card.body.map((b) => (typeof b === "string" ? b : fake(b).textContent)).join(" ");
+    const card = visitCard(state, { exam: null, done: [] }, { ...handlers, nextCat: () => (next += 1) });
+    expect(text(card)).toContain(`${first.name} у переносці.`);
+    expect(text(card)).toContain(`Наступний кіт: ${second.name}`);
+    const row = card.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b?.textContent.includes("Наступний кіт") === true);
+    row?.find("button").click();
+    expect(next).toBe(1);
+    state.trip.cat = second.id;
+    const last = visitCard(state, { exam: null, done: [] }, handlers);
+    expect(text(last)).toContain(`${second.name} на руках.`);
+    expect(text(last)).not.toContain("Наступний кіт");
+  });
+
+  it("ветеринар без кота: лише ліки, карток кота немає", () => {
+    const state = at("vet");
+    if (!state.trip) throw new Error("немає поїздки");
+    state.trip.cat = null;
+    state.trip.riders = [];
+    const card = visitCard(state, { exam: null, done: [] }, handlers);
+    const text = card.body.map((b) => (typeof b === "string" ? b : fake(b).textContent)).join(" ");
+    expect(text).not.toContain("Огляд");
+    expect(text).toContain("Ліки");
+  });
+
   it("ветеринар — ліки для котів (таблетки й краплі), лікар — ліки для себе: розділ «Ліки» й смуга кошика з «Додому»", () => {
     const vet = visitCard(at("vet"), { exam: null, done: [] }, handlers);
     const vetList = vet.body.map((b) => (typeof b === "string" ? null : fake(b))).filter((b): b is FakeElement => b !== null && b.findAll("shop-item").length > 0)[0];
