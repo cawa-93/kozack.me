@@ -2196,59 +2196,6 @@
       ]
     },
     {
-      "id": "freepd/bryan-teoh-murder-on-the-bayou",
-      "title": "Murder On The Bayou",
-      "artist": "Bryan Teoh",
-      "source": "freepd",
-      "file": "freepd/Bryan Teoh - Murder On The Bayou.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "miscellaneous"
-      ],
-      "bpm": 148,
-      "key": "10B",
-      "contentIdCheck": "не перевірено",
-      "kind": "трек",
-      "durationSec": 128.2,
-      "album": "FreePD Music",
-      "year": "2020",
-      "comment": "This piece was composed and dedicated to the Public Domain in 2020.",
-      "bitrateKbps": 160,
-      "sampleRate": 48000,
-      "channels": 2,
-      "loudnessLufs": -9.9,
-      "loudnessRange": 2.5,
-      "truePeakDb": 0.4,
-      "sizeBytes": 2566917,
-      "sha256": "dd29c3fb3160cbab3b4da661a9ecb84194bb8b231bed453bc319b95178eaa6fd",
-      "evidence": "Присвята в тегах файлу",
-      "confidence": "висока",
-      "features": {
-        "styles": [
-          "кінематографічне",
-          "блюз"
-        ],
-        "moods": [
-          "темний",
-          "загадковий"
-        ],
-        "energy": "висока",
-        "tempo": "швидкий",
-        "vocals": "імовірно немає",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "низька",
-        "basis": [
-          "BPM",
-          "гучність",
-          "назва"
-        ]
-      },
-      "stations": [
-        "retro"
-      ]
-    },
-    {
       "id": "freepd/bryan-teoh-my-giant-bunny-friend",
       "title": "My Giant Bunny Friend",
       "artist": "Bryan Teoh",
@@ -15649,57 +15596,6 @@
       ]
     },
     {
-      "id": "freepd/knight-of-fire-ghosts-of-disease",
-      "title": "Ghosts of Disease",
-      "artist": "Knight of Fire",
-      "source": "freepd",
-      "file": "freepd/Knight of Fire - Ghosts of Disease.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 153.6,
-      "album": "Burnt Promises",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 201,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.6,
-      "loudnessRange": 4.9,
-      "truePeakDb": 0.5,
-      "sizeBytes": 3857876,
-      "sha256": "c8c16a9dbb5467738cf9ad35109688318c0996d5bbe73768e98ef55f4f406b89",
-      "features": {
-        "styles": [
-          "експериментальне"
-        ],
-        "moods": [
-          "темний",
-          "тривожний"
-        ],
-        "energy": "середня",
-        "tempo": "невідомо",
-        "vocals": "невідомо",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег",
-          "назва"
-        ]
-      },
-      "stations": [
-        "berezen"
-      ]
-    },
-    {
       "id": "freepd/knight-of-fire-global-resonance",
       "title": "Global Resonance",
       "artist": "Knight of Fire",
@@ -15936,57 +15832,6 @@
         "basis": [
           "гучність",
           "жанровий тег"
-        ]
-      },
-      "stations": [
-        "berezen"
-      ]
-    },
-    {
-      "id": "freepd/knight-of-fire-to-dance-with-demon",
-      "title": "To Dance with Demon",
-      "artist": "Knight of Fire",
-      "source": "freepd",
-      "file": "freepd/Knight of Fire - To Dance with Demon.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 223,
-      "album": "Burnt Promises",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 198,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -13.9,
-      "loudnessRange": 8.7,
-      "truePeakDb": -0.2,
-      "sizeBytes": 5523031,
-      "sha256": "f1e548e347ba6374656cfa84980247b83d074fbdada16c9934cec57178f57c3f",
-      "features": {
-        "styles": [
-          "експериментальне"
-        ],
-        "moods": [
-          "темний",
-          "тривожний"
-        ],
-        "energy": "середня",
-        "tempo": "невідомо",
-        "vocals": "невідомо",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег",
-          "назва"
         ]
       },
       "stations": [
@@ -17807,53 +17652,6 @@
       ]
     },
     {
-      "id": "freepd/splintered-gypsy-heavily-medicated",
-      "title": "Heavily Medicated",
-      "artist": "Splintered Gypsy",
-      "source": "freepd",
-      "file": "freepd/Splintered Gypsy - Heavily Medicated.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 181.7,
-      "album": "Splintered Gypsy",
-      "genre": "Electronic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 325,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11.6,
-      "loudnessRange": 2.4,
-      "truePeakDb": 1.3,
-      "sizeBytes": 7369005,
-      "sha256": "ebd8bc5397cb14c2fca03c057c968b532efc892ea1d97481e35dba020f298c93",
-      "features": {
-        "styles": [
-          "електроніка"
-        ],
-        "moods": [],
-        "energy": "середня",
-        "tempo": "невідомо",
-        "vocals": "імовірно немає",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег"
-        ]
-      },
-      "stations": [
-        "khvostobit"
-      ]
-    },
-    {
       "id": "freepd/splintered-gypsy-mana",
       "title": "Mana",
       "artist": "Splintered Gypsy",
@@ -17996,53 +17794,6 @@
       ]
     },
     {
-      "id": "freepd/splintered-gypsy-possession",
-      "title": "Possession",
-      "artist": "Splintered Gypsy",
-      "source": "freepd",
-      "file": "freepd/Splintered Gypsy - Possession.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 248.2,
-      "album": "Splintered Gypsy",
-      "genre": "Cinematic",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 323,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -11,
-      "loudnessRange": 3,
-      "truePeakDb": 2.9,
-      "sizeBytes": 10030346,
-      "sha256": "8ecc5ecf0e288eaff280e77c7fae3340c09607060f881e2f31cc14f8cabf15e5",
-      "features": {
-        "styles": [
-          "кінематографічне"
-        ],
-        "moods": [],
-        "energy": "середня",
-        "tempo": "невідомо",
-        "vocals": "імовірно немає",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег"
-        ]
-      },
-      "stations": [
-        "berezen"
-      ]
-    },
-    {
       "id": "freepd/splintered-gypsy-rebel",
       "title": "Rebel",
       "artist": "Splintered Gypsy",
@@ -18086,104 +17837,6 @@
       },
       "stations": [
         "zumi"
-      ]
-    },
-    {
-      "id": "freepd/splintered-gypsy-suicide",
-      "title": "Suicide",
-      "artist": "Splintered Gypsy",
-      "source": "freepd",
-      "file": "freepd/Splintered Gypsy - Suicide.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 207.1,
-      "album": "Splintered Gypsy",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 324,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -7.5,
-      "loudnessRange": 4.3,
-      "truePeakDb": 2.4,
-      "sizeBytes": 8386716,
-      "sha256": "063ba0b63df71798e8dd8c7fbed450baab08bd8d903480a8d23201769741e38b",
-      "features": {
-        "styles": [
-          "експериментальне"
-        ],
-        "moods": [
-          "дивний"
-        ],
-        "energy": "висока",
-        "tempo": "невідомо",
-        "vocals": "невідомо",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег"
-        ]
-      },
-      "stations": [
-        "berezen"
-      ]
-    },
-    {
-      "id": "freepd/splintered-gypsy-withdrawal",
-      "title": "Withdrawal",
-      "artist": "Splintered Gypsy",
-      "source": "freepd",
-      "file": "freepd/Splintered Gypsy - Withdrawal.mp3",
-      "license": "CC0-1.0",
-      "categories": [
-        "zoned"
-      ],
-      "contentIdCheck": "не перевірено",
-      "evidence": "Give Life Back To Music (теги файлу)",
-      "confidence": "середня",
-      "kind": "трек",
-      "durationSec": 186.8,
-      "album": "Splintered Gypsy",
-      "genre": "Experimental",
-      "year": "2013",
-      "comment": "This piece originally found on givelifebacktomusic.com",
-      "bitrateKbps": 324,
-      "sampleRate": 44100,
-      "channels": 2,
-      "loudnessLufs": -10.2,
-      "loudnessRange": 12.3,
-      "truePeakDb": 3.8,
-      "sizeBytes": 7574836,
-      "sha256": "ec6d7e2221ed2fe6568627e1cdea074a00651cad30e9fafbf38dda02b4294766",
-      "features": {
-        "styles": [
-          "експериментальне"
-        ],
-        "moods": [
-          "дивний"
-        ],
-        "energy": "середня",
-        "tempo": "невідомо",
-        "vocals": "невідомо",
-        "fit": "ризиковано",
-        "fitNote": "Назва показуватиметься в рядку «Зараз грає», а її тема не пасує до затишної гри.",
-        "certainty": "середня",
-        "basis": [
-          "гучність",
-          "жанровий тег"
-        ]
-      },
-      "stations": [
-        "berezen"
       ]
     },
     {
@@ -20594,6 +20247,16 @@
       ],
       "durationSec": 65,
       "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "Murder On The Bayou",
+      "artist": "Bryan Teoh",
+      "source": "freepd",
+      "categories": [
+        "miscellaneous"
+      ],
+      "durationSec": 128,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
     },
     {
       "title": "Stunted Adventure",
@@ -24266,6 +23929,16 @@
       "reason": "Сам автор пише, що його музика зареєстрована в Content ID"
     },
     {
+      "title": "Ghosts of Disease",
+      "artist": "Knight of Fire",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 154,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
+    },
+    {
       "title": "The Insurgent",
       "artist": "Knight of Fire",
       "source": "freepd",
@@ -24274,6 +23947,16 @@
       ],
       "durationSec": 101,
       "reason": "Коротший за дві хвилини"
+    },
+    {
+      "title": "To Dance with Demon",
+      "artist": "Knight of Fire",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 223,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
     },
     {
       "title": "A good bass for gambling",
@@ -25566,6 +25249,46 @@
       "reason": "У файлі немає ознак вільної ліцензії, а в оригінальному списку FreePD його теж немає"
     },
     {
+      "title": "Heavily Medicated",
+      "artist": "Splintered Gypsy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 182,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
+    },
+    {
+      "title": "Possession",
+      "artist": "Splintered Gypsy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 248,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
+    },
+    {
+      "title": "Suicide",
+      "artist": "Splintered Gypsy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 207,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
+    },
+    {
+      "title": "Withdrawal",
+      "artist": "Splintered Gypsy",
+      "source": "freepd",
+      "categories": [
+        "zoned"
+      ],
+      "durationSec": 187,
+      "reason": "Назва показувалася б у рядку «Зараз грає», а її тема не пасує до затишної гри"
+    },
+    {
       "title": "All in a Silver Line",
       "artist": "statusq",
       "source": "freepd",
@@ -25720,7 +25443,7 @@
     "energy": "низька, середня, висока",
     "tempo": "повільний, середній, швидкий, невідомо; за BPM чи умовностями стилю",
     "vocals": "є, імовірно є, імовірно немає, невідомо",
-    "fit": "Наскільки тема й назва пасують до затишної комедійної гри: добре, можливо, ризиковано. Якість звуку тут не оцінено.",
+    "fit": "Наскільки тема й назва пасують до затишної комедійної гри: добре, можливо. Якість звуку тут не оцінено.",
     "certainty": "висока — є опис автора; середня — жанровий тег, категорія FreePD чи стиль у назві збірки; низька — лише здогад за назвою.",
     "basis": "Звідки взято ознаки.",
     "emptyMoods": "Порожній список настроїв означає, що настрій із метаданих не видно."
