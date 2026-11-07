@@ -4,10 +4,11 @@
 //
 //   npm run audio:catalog -w games/kotoklopit
 
-import { spawnSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { promisify } from "node:util";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const LIBRARY = path.join(ROOT, "audio-library");
@@ -16,6 +17,10 @@ const AUDIO_FILE = /\.(mp3|ogg|wav|flac|m4a)$/i;
 /** Коротше за це трек на станції звучить не треком, а вставкою, тож групувати його треба окремо. */
 const STINGER_SECONDS = 15;
 const SHORT_SECONDS = 45;
+/** Заміри впираються в декодування, а не в диск. */
+const WORKERS = 6;
+
+const exec = promisify(execFile);
 
 interface Source {
   name: string;
@@ -47,6 +52,8 @@ interface Track {
   sizeBytes?: number;
   sha256?: string;
   contentIdCheck: string;
+  evidence?: string;
+  confidence?: string;
   note?: string;
 }
 
@@ -63,11 +70,7 @@ interface Probe {
   streams?: { sample_rate?: string; channels?: number }[];
 }
 
-function run(command: string, args: string[]): { stdout: string; stderr: string } {
-  const result = spawnSync(command, args, { encoding: "utf8", maxBuffer: 1 << 26 });
-  if (result.error) throw result.error;
-  return { stdout: result.stdout, stderr: result.stderr };
-}
+const run = (command: string, args: string[]): Promise<{ stdout: string; stderr: string }> => exec(command, args, { encoding: "utf8", maxBuffer: 1 << 26 });
 
 function audioFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -91,8 +94,8 @@ function tag(tags: Record<string, string>, name: string): string | undefined {
 }
 
 /** Числа зі зведення фільтра ebur128: воно в кінці stderr. */
-function loudness(file: string): Pick<Track, "loudnessLufs" | "loudnessRange" | "truePeakDb"> {
-  const { stderr } = run("ffmpeg", ["-hide_banner", "-nostats", "-i", file, "-filter_complex", "ebur128=peak=true", "-f", "null", "-"]);
+async function loudness(file: string): Promise<Pick<Track, "loudnessLufs" | "loudnessRange" | "truePeakDb">> {
+  const { stderr } = await run("ffmpeg", ["-hide_banner", "-nostats", "-i", file, "-filter_complex", "ebur128=peak=true:framelog=quiet", "-f", "null", "-"]);
   const summary = stderr.slice(stderr.lastIndexOf("Summary:"));
   const number = (pattern: RegExp): number | undefined => {
     const match = pattern.exec(summary)?.[1];
@@ -104,8 +107,9 @@ function loudness(file: string): Pick<Track, "loudnessLufs" | "loudnessRange" | 
   return { ...(lufs === undefined ? {} : { loudnessLufs: lufs }), ...(range === undefined ? {} : { loudnessRange: range }), ...(peak === undefined ? {} : { truePeakDb: peak }) };
 }
 
-function measure(track: Track, file: string): void {
-  const probe = JSON.parse(run("ffprobe", ["-v", "error", "-show_entries", "format=duration,bit_rate:format_tags:stream=sample_rate,channels", "-of", "json", file]).stdout) as Probe;
+async function measure(track: Track, file: string): Promise<void> {
+  const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration,bit_rate:format_tags:stream=sample_rate,channels", "-of", "json", file]);
+  const probe = JSON.parse(stdout) as Probe;
   const tags = probe.format?.tags ?? {};
   const stream = probe.streams?.[0];
   const duration = Number(probe.format?.duration ?? 0);
@@ -123,17 +127,18 @@ function measure(track: Track, file: string): void {
     bitrateKbps: Math.round(Number(probe.format?.bit_rate ?? 0) / 1000),
     sampleRate: Number(stream?.sample_rate ?? 0),
     channels: stream?.channels ?? 0,
-    ...loudness(file),
+    ...(await loudness(file)),
     sizeBytes: statSync(file).size,
     sha256: createHash("sha256").update(readFileSync(file)).digest("hex"),
   });
 }
 
-function newTrack(catalog: Catalog, relative: string, file: string): Track {
+async function newTrack(catalog: Catalog, relative: string, file: string): Promise<Track> {
   const sourceId = relative.split("/")[0] ?? "";
   const source = catalog.sources[sourceId];
   if (!source) throw new Error(`Джерело «${sourceId}» не описане в sources: ${relative}`);
-  const tags = (JSON.parse(run("ffprobe", ["-v", "error", "-show_entries", "format_tags", "-of", "json", file]).stdout) as Probe).format?.tags ?? {};
+  const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format_tags", "-of", "json", file]);
+  const tags = (JSON.parse(stdout) as Probe).format?.tags ?? {};
   const title = tag(tags, "title") ?? path.basename(file).replace(AUDIO_FILE, "");
   const artist = tag(tags, "artist") ?? source.name;
   return { id: `${sourceId}/${slug(artist)}-${slug(title)}`, title, artist, source: sourceId, file: relative, license: source.license, categories: [], contentIdCheck: "не перевірено" };
@@ -141,15 +146,21 @@ function newTrack(catalog: Catalog, relative: string, file: string): Track {
 
 const catalog = JSON.parse(readFileSync(CATALOG, "utf8")) as Catalog;
 const known = new Map(catalog.tracks.map((track) => [track.file, track]));
+const queue: { track: Track; file: string }[] = [];
 for (const file of audioFiles(LIBRARY)) {
   const relative = path.relative(LIBRARY, file).split(path.sep).join("/");
   let track = known.get(relative);
   if (!track) {
-    track = newTrack(catalog, relative, file);
+    track = await newTrack(catalog, relative, file);
     catalog.tracks.push(track);
   }
-  if (track.sha256 === undefined) measure(track, file);
+  if (track.sha256 === undefined) queue.push({ track, file });
 }
+await Promise.all(
+  Array.from({ length: WORKERS }, async () => {
+    for (let item = queue.pop(); item; item = queue.pop()) await measure(item.track, item.file);
+  }),
+);
 catalog.tracks.sort((a, b) => a.id.localeCompare(b.id));
 writeFileSync(CATALOG, `${JSON.stringify(catalog, null, 2)}\n`);
 

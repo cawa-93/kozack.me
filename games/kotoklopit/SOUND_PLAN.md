@@ -73,7 +73,7 @@
 
 **Беремо:**
 
-- **FreePD, надійна частина** (CC0): 51 трек, усі є в оригінальному списку файлів freepd.com. Це 35 треків Bryan Teoh (у 30 присвята суспільному надбанню записана прямо в тегах файлу) і дрібні автори; заявок на них не знайдено.
+- **FreePD, надійна частина** (CC0): 455 треків у каталозі. Автор гри завантажив копію en.freepd.cn, тож теги перевірені повністю, і кожен трек має власний доказ (`evidence`) і рівень (`confidence`). Найбільше — Frank Nora (245): він сам випустив [Midnight Cassette System під CC0](https://archive.org/details/New_Midnight_Cassette_System). Bryan Teoh (35): у 30 присвята записана прямо в тегах файлу. Решта — близько 20 менших авторів із приміткою FreePD «Give Life Back To Music» чи присвятою; заявок на них не знайдено, але й перевірити їх глибше нема де, тож YouTube для них обов'язковий.
 - **Tallbeard Studios / Abstraction, [Music Loop Bundle](https://tallbeard.itch.io/music-loop-bundle)** (CC0, понад 200 треків, автор прямо дозволяє стріми). Заявок не знайдено. Завантажує автор гри вручну (нижче).
 
 **Кандидати, потрібне ручне завантаження:** HoliznaCC0 (Free Music Archive вимагає вхід), Juhani Junkala (OpenGameArt; у нього лише частина робіт CC0, а на itch.io — CC-BY, тож перевіряти кожен пакет).
@@ -83,11 +83,13 @@
 - **Kevin MacLeod:** сам пише, що його музика [зареєстрована в Content ID](https://incompetech.com/music/royalty-free/youtube-contentid.html). Про його 105 треків у FreePD окремо він не каже, тож не ризикуємо й ними.
 - **Rafael Krux / Orchestralis:** його сайт [попереджає про заявки](https://www.orchestralis.net/youtube-id-claims.html) навіть із купленою ліцензією.
 - **Alexander Nakarada:** є [повідомлення про заявки](https://x.com/BlabberingC/status/1886079108024549607) від We Are Era Music BV.
-- **Komiku і Loyalty Freak Music:** на два треки Komiku є [повідомлення про заявки](https://freemusicarchive.org/music/Komiku/Captain_Glouglous_Incredible_Week_Soundtrack/mall_1328) від The Sound Project, а Loyalty Freak Music — його лейбл.
-- **FreePD без автора в тегах (63 треки)** і **категорія Zoned на en.freepd.cn** (719 із 732 треків немає ні в оригінальному списку, ні в дзеркалі).
+- **Komiku, Monplaisir і Loyalty Freak Music:** на два треки Komiku є [повідомлення про заявки](https://freemusicarchive.org/music/Komiku/Captain_Glouglous_Incredible_Week_Soundtrack/mall_1328) від The Sound Project, Monplaisir — той самий автор, а Loyalty Freak Music — його лейбл.
+- **FreePD без встановленого автора:** порожні теги чи псевдонім («Anonymous for Good Reasons»).
+- **FreePD без доказу в тегах:** кілька десятків треків Zoned, де немає ні присвяти, ні примітки, і вони не значаться в оригінальному списку.
+- **Memphis Slim:** комерційний виконавець серед треків Zoned, доказів вільної ліцензії немає. Це нагадування, що категорії Zoned загалом довіряти не можна, лише окремим трекам.
 - **Pixabay** (частина треків у Content ID), **YouTube Audio Library** (лише для власних відео й контенту), **StreamBeats** (сторінки треків — усі права застережено, дозволу на ігри не знайдено).
 
-**Обмеження доступу.** `robots.txt` OpenGameArt і en.freepd.cn закриває доступ ботам Anthropic, Free Music Archive вимагає вхід, itch.io забороняє ботам `/game/download/`, kenney.nl відповідає 403. Цього не обходимо: FreePD беремо з незалежного дзеркала, решту завантажує автор. Файли кладуться в `audio-library/<джерело>/`, каталог їх підхоплює.
+**Обмеження доступу.** `robots.txt` OpenGameArt і en.freepd.cn закриває доступ ботам Anthropic, Free Music Archive вимагає вхід, itch.io забороняє ботам `/game/download/`, kenney.nl відповідає 403. Цього не обходимо: такі файли завантажує автор. Файли кладуться в `audio-library/<джерело>/`, каталог їх підхоплює.
 
 **Перевірка на YouTube.** Автор завантажує одне приватне відео зі склейкою затверджених треків і дивиться колонку обмежень у YouTube Studio. Заявку отримав — трек випадає. YouTube попереджає, що результат не остаточний, тож стовідсоткової гарантії не буде; каталог зберігає докази ліцензії для оскарження.
 
