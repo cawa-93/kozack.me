@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 57" width="41" height="57">
+<!-- env/candle-shelf/back — настінна поличка зі свічкою на задній стіні y = 0 (лице y = 1), лише в день відключення (§4.1 «Планове відключення», рішення автора 2026-11-03: «Настінні полички» — по одній у кімнаті, високо на задній стіні). Ванна й кухня (CANDLE_SHELVES у src/view/decor.ts).
+size 41×57; pivot (26, 28.5) — точка на лиці стіни під серединою дошки, на висоті верху дошки (CANDLE_SHELVES[].z: полички однієї стіни висять на різній висоті); points: flame (24.5, 13) — середина полум'я, на 15.5 над верхом дошки.
+Дерев'яна дошка 0,25 × 0,17 клітинки завтовшки 5 на фігурній консолі (до 15 під дошкою), тінь під дошкою на стіні — base. Склянка Ø 0,12 заввишки 15 (glass, коса смуга glassHi), крізь неї видно віск (enamelHi, нижче за обідок — свічку вже палили), зверху — поверхня воску paper і гніт.
+Історія: червоний коробок сірників на лівому кінці дошки (етикетка paper) — чим запалюють свічку.
+Стани: st-out — погашена, загнутий ґніт; st-lit — язичок полум'я orange з серцевиною mustardHi (сяйво — код, BACKDROP.glow). Контур LINE_RIG: річ 20–40 (art/STYLE.md §5). Без шарів.
+-->
+<g id="p-shadow">
+<path d="M18.6 29.8L34 37.5L34 44.5Q27.3 39 19.9 34.5L18.6 29.8Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-bracket">
+<path d="M26.8 48.9L28.8 49.9L28.8 33.9L26.8 32.9Z" fill="#9a6a47"/>
+<path d="M26.8 32.9L18.1 37.2Q20.9 44.1 26.8 48.9Z" fill="#9a6a47"/>
+<path d="M26.8 48.9Q20.9 44.1 18.1 37.2L20.6 37.7Q22.4 46.6 26.8 48.9Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M26.8 32.9L18.1 37.2Q20.9 44.1 26.8 48.9Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.8 48.9L28.8 49.9L28.8 33.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-board">
+<path d="M23.1 37.9L34 32.5L34 37.5L23.1 42.9L23.1 37.9Z" fill="#9a6a47"/>
+<path d="M7.1 29.9Q15 34.2 23.1 37.9L23.1 42.9Q15.3 38.6 7.1 34.9L7.1 29.9Z" fill="#9a6a47"/>
+<path d="M18 24.5Q26.2 28.1 34 32.5Q28.4 35 23.1 37.9Q15.3 33.6 7.1 29.9Q12.4 27 18 24.5Z" fill="#b98b60"/>
+<path d="M7.1 33.3L23.1 41.3L23.1 42.9Q15.3 38.6 7.1 34.9L7.1 33.3Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M22.8 28.8Q26 30.8 29.4 32.2" fill="none" stroke="#6d4a35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10 30.4Q13.7 32 17.2 34.2" fill="none" stroke="#6d4a35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.1 29.9Q15 34.2 23.1 37.9L34 32.5" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23.1 37.9L23.1 42.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 24.5Q26.2 28.1 34 32.5L34 37.5L23.1 42.9Q15.3 38.6 7.1 34.9L7.1 29.9L18 24.5Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-matches">
+<path d="M14.1 22.5L18.8 24.9L18.8 29.9L14.1 27.5L14.1 22.5Z" fill="#c4524b"/>
+<path d="M18.8 24.9L22.4 23.1L22.4 28.1L18.8 29.9L18.8 24.9Z" fill="#963b3a"/>
+<path d="M17.7 20.7L22.4 23.1L18.8 24.9L14.1 22.5L17.7 20.7Z" fill="#dc7c69"/>
+<path d="M18.4 21.6L19.9 22.3L17.3 23.6L15.9 22.9L18.4 21.6Z" fill="#f2e7d0"/>
+<path d="M14.1 22.5L18.8 24.9L22.4 23.1" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17.7 20.7L22.4 23.1L22.4 28.1L18.8 29.9L14.1 27.5L14.1 22.5L17.7 20.7Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-jar">
+<path d="M18.7 33.2A6.8 3.5 0 0 0 32.3 33.2A6.8 3.5 0 0 0 18.7 33.2Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M18.9 17.6Q18.5 25.1 19.2 32.6A5.3 2.8 0 0 0 29.8 32.6Q30.5 25.1 30.1 17.6A5.6 2.8 0 0 1 18.9 17.6Z" fill="#a8c4c4"/>
+<path d="M19.5 24.1A5 2.5 0 0 0 29.5 24.1L29.7 32.1A5.2 2.6 0 0 1 19.3 32.1Z" fill="#f2e9d4"/>
+<path d="M19.1 17.6A5.4 2.7 0 0 0 29.9 17.6A5.4 2.7 0 0 0 19.1 17.6Z" fill="#a8c4c4"/>
+<path d="M20 19A4.5 2.2 0 0 0 29 19A4.5 2.2 0 0 0 20 19Z" fill="#f2e7d0"/>
+<path d="M20 19A4.5 2.2 0 0 0 29 19A4.5 2.2 0 0 0 20 19Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M20.5 20.2Q20.1 25.7 21.1 31.2Q21.6 25.6 20.5 20.2Z" fill="#d4e3dc"/>
+<path d="M18.9 17.6A5.6 2.8 0 0 0 30.1 17.6A5.6 2.8 0 0 0 18.9 17.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.9 17.6Q18.5 25.1 19.2 32.6A5.3 2.8 0 0 0 29.8 32.6Q30.5 25.1 30.1 17.6" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wick-out" class="st-out">
+<path d="M24.5 18.8L24.7 16.2Q25.1 15 26.3 14.9" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-flame" class="st-lit">
+<path d="M24.5 18.8L24.6 16.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.5 17.4C20.6 17.2 20.4 12.8 22.4 10.8Q24 9.8 24.9 6.9Q25.7 10.2 27.1 11.6C28.7 13.5 28.1 17.2 24.5 17.4Z" fill="#d9843f"/>
+<path d="M24.5 16.7C22.5 16.5 22.6 13.1 24.6 10.4C26.5 13.1 26.5 16.5 24.5 16.7Z" fill="#e8c47d"/>
+<path d="M24.5 17.4C20.6 17.2 20.4 12.8 22.4 10.8Q24 9.8 24.9 6.9Q25.7 10.2 27.1 11.6C28.7 13.5 28.1 17.2 24.5 17.4Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

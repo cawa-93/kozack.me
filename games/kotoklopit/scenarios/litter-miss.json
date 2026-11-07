@@ -1,0 +1,118 @@
+{
+ "name": "Промах повз лоток",
+ "description": "Субота другого тижня, 11:00. Ванна: відкритий лоток із калюжею сечі поруч (§9.12) і брудний закритий лоток без запаху, над відкритим брудним запах є. «Землекоп» просить у лоток і промахується частіше. У руках дорога вудочка з дзвіночком.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 9.5,
+   "y": 2.5,
+   "traits": [
+    {
+     "group": "scatter",
+     "level": 2,
+     "seen": 0,
+     "known": false
+    }
+   ],
+   "needs": {
+    "toilet": 90
+   }
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 10.5,
+    "y": 3.5,
+    "facing": {
+     "x": -0.7071,
+     "y": 0.7071
+    }
+   },
+   "held": {
+    "kind": "toy",
+    "toy": {
+     "id": 905,
+     "kind": "toy",
+     "quality": "premium",
+     "x": 0,
+     "y": 0,
+     "uses": 0
+    }
+   }
+  },
+  "home": {
+   "items": [
+    {
+     "id": 901,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-1",
+     "litter": "cheap",
+     "uses": 3
+    },
+    {
+     "id": 902,
+     "kind": "litter",
+     "quality": "premium",
+     "slot": "litter-3",
+     "litter": "cheap",
+     "uses": 4
+    },
+    {
+     "id": 903,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-1",
+     "food": 2,
+     "foodQuality": "cheap",
+     "sterile": false
+    },
+    {
+     "id": 904,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-1",
+     "water": 8
+    }
+   ],
+   "messes": [
+    {
+     "id": 910,
+     "kind": "pee",
+     "x": 8.5,
+     "y": 2.5,
+     "cat": null
+    },
+    {
+     "id": 911,
+     "kind": "puddle",
+     "x": 10.5,
+     "y": 2.5,
+     "cat": null
+    },
+    {
+     "id": 912,
+     "kind": "mark",
+     "x": 9.3,
+     "y": 3.6,
+     "cat": null
+    }
+   ]
+  }
+ }
+}

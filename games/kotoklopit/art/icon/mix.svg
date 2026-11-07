@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/mix — корми не змішують: два струмені буквою V сходяться в одну миску — ліворуч бурі гранули звичайного корму, праворуч зелені палички корму для стерилізованих, і в мисці дві купки двох кольорів поруч. Ревізія іконок 2026-11-03 (доручення автора: «зрозумілі для людини й розбірливі в малому масштабі»), art/STYLE.md (іконки, еталони F1 icon/kibble і icon/heart).
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах; контур — LINE (силует 6, низ 8,5, внутрішні 3,5).
+Завжди з позначкою «ні» (відмова mixed): мазок ↗ іде через середину, а бурий струмінь лишається ліворуч угорі від нього, зелений — праворуч унизу. Миска — еталона icon/kibble, гранули — його ж, палички — ті самі, що в icon/kibble-sterile. Ковша немає: у 24 px він не читався. Від icon/kibble з «ні» (перекреслена миска з бурим кормом) — двома кольорами й двома струменями.
+-->
+<defs>
+<clipPath id="icon-mix-c0"><path d="M9.39 8.19Q12.14 7.68 14.68 8.67Q17.71 8.98 15.6 11.28Q14.27 13.91 11.74 15.47Q9.63 17.77 8.73 14.85Q7.29 13.03 7.34 10.75Q6.37 7.87 9.39 8.19Z"/></clipPath>
+<clipPath id="icon-mix-c1"><path d="M18.31 17.25Q20.3 19.21 20.95 21.86Q22.43 24.52 19.33 24.11Q16.42 24.53 13.69 23.35Q10.59 22.94 12.47 20.53Q13.13 18.31 15.03 17.04Q16.83 14.59 18.31 17.25Z"/></clipPath>
+<clipPath id="icon-mix-c2"><path d="M13.5 27.6Q16.6 28.7 18.6 31.2Q21.5 33.3 18 34.4Q15.1 36.3 11.6 36.4Q8.1 37.5 8.9 34Q8.5 31.3 9.9 29Q10.6 25.5 13.5 27.6Z"/></clipPath>
+<clipPath id="icon-mix-c3"><path d="M22.56 28.21Q25.84 28.18 28.58 29.85Q32.02 30.83 29.11 33.06Q27.03 35.84 23.78 37.13Q20.87 39.36 20.42 35.79Q19.12 33.39 19.65 30.75Q19.11 27.23 22.56 28.21Z"/></clipPath>
+<clipPath id="icon-mix-c4"><path d="M51.89 22.72L55.33 19.83A3.75 3.75 0 0 0 50.51 14.08L47.07 16.97A3.75 3.75 0 0 0 51.89 22.72Z"/></clipPath>
+<clipPath id="icon-mix-c5"><path d="M42.88 26.95L46.95 28.85A3.75 3.75 0 0 0 50.12 22.05L46.05 20.15A3.75 3.75 0 0 0 42.88 26.95Z"/></clipPath>
+<clipPath id="icon-mix-c6"><path d="M37.64 36.98L43.02 35.84A4 4 0 0 0 41.36 28.02L35.98 29.16A4 4 0 0 0 37.64 36.98Z"/></clipPath>
+<clipPath id="icon-mix-c7"><path d="M46.25 36.09L51.54 37.6A4 4 0 0 0 53.75 29.91L48.46 28.4A4 4 0 0 0 46.25 36.09Z"/></clipPath>
+</defs>
+<g id="p-brown">
+<path d="M9.39 8.19Q12.14 7.68 14.68 8.67Q17.71 8.98 15.6 11.28Q14.27 13.91 11.74 15.47Q9.63 17.77 8.73 14.85Q7.29 13.03 7.34 10.75Q6.37 7.87 9.39 8.19Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M9.39 8.19Q12.14 7.68 14.68 8.67Q17.71 8.98 15.6 11.28Q14.27 13.91 11.74 15.47Q9.63 17.77 8.73 14.85Q7.29 13.03 7.34 10.75Q6.37 7.87 9.39 8.19Z" fill="#bd8650"/>
+<path d="M0 12.36Q16 13.16 32 12.36Q48 11.56 64 12.36L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c0)"/>
+<path d="M18.31 17.25Q20.3 19.21 20.95 21.86Q22.43 24.52 19.33 24.11Q16.42 24.53 13.69 23.35Q10.59 22.94 12.47 20.53Q13.13 18.31 15.03 17.04Q16.83 14.59 18.31 17.25Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.31 17.25Q20.3 19.21 20.95 21.86Q22.43 24.52 19.33 24.11Q16.42 24.53 13.69 23.35Q10.59 22.94 12.47 20.53Q13.13 18.31 15.03 17.04Q16.83 14.59 18.31 17.25Z" fill="#bd8650"/>
+<path d="M0 22.36Q16 23.16 32 22.36Q48 21.56 64 22.36L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c1)"/>
+<path d="M13.5 27.6Q16.6 28.7 18.6 31.2Q21.5 33.3 18 34.4Q15.1 36.3 11.6 36.4Q8.1 37.5 8.9 34Q8.5 31.3 9.9 29Q10.6 25.5 13.5 27.6Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 27.6Q16.6 28.7 18.6 31.2Q21.5 33.3 18 34.4Q15.1 36.3 11.6 36.4Q8.1 37.5 8.9 34Q8.5 31.3 9.9 29Q10.6 25.5 13.5 27.6Z" fill="#bd8650"/>
+<path d="M0 33.6Q16 34.4 32 33.6Q48 32.8 64 33.6L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c2)"/>
+<path d="M22.56 28.21Q25.84 28.18 28.58 29.85Q32.02 30.83 29.11 33.06Q27.03 35.84 23.78 37.13Q20.87 39.36 20.42 35.79Q19.12 33.39 19.65 30.75Q19.11 27.23 22.56 28.21Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.56 28.21Q25.84 28.18 28.58 29.85Q32.02 30.83 29.11 33.06Q27.03 35.84 23.78 37.13Q20.87 39.36 20.42 35.79Q19.12 33.39 19.65 30.75Q19.11 27.23 22.56 28.21Z" fill="#bd8650"/>
+<path d="M0 33.6Q16 34.4 32 33.6Q48 32.8 64 33.6L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c3)"/>
+</g>
+<g id="p-green">
+<path d="M51.89 22.72L55.33 19.83A3.75 3.75 0 0 0 50.51 14.08L47.07 16.97A3.75 3.75 0 0 0 51.89 22.72Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.89 22.72L55.33 19.83A3.75 3.75 0 0 0 50.51 14.08L47.07 16.97A3.75 3.75 0 0 0 51.89 22.72Z" fill="#a2b584"/>
+<path d="M0 19.52Q16 20.02 32 19.52Q48 19.02 64 19.52L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c4)"/>
+<path d="M42.88 26.95L46.95 28.85A3.75 3.75 0 0 0 50.12 22.05L46.05 20.15A3.75 3.75 0 0 0 42.88 26.95Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42.88 26.95L46.95 28.85A3.75 3.75 0 0 0 50.12 22.05L46.05 20.15A3.75 3.75 0 0 0 42.88 26.95Z" fill="#a2b584"/>
+<path d="M0 25.63Q16 26.13 32 25.63Q48 25.13 64 25.63L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c5)"/>
+<path d="M37.64 36.98L43.02 35.84A4 4 0 0 0 41.36 28.02L35.98 29.16A4 4 0 0 0 37.64 36.98Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M37.64 36.98L43.02 35.84A4 4 0 0 0 41.36 28.02L35.98 29.16A4 4 0 0 0 37.64 36.98Z" fill="#a2b584"/>
+<path d="M0 33.7Q16 34.2 32 33.7Q48 33.2 64 33.7L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c6)"/>
+<path d="M46.25 36.09L51.54 37.6A4 4 0 0 0 53.75 29.91L48.46 28.4A4 4 0 0 0 46.25 36.09Z" fill="none" stroke="#2e1f29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M46.25 36.09L51.54 37.6A4 4 0 0 0 53.75 29.91L48.46 28.4A4 4 0 0 0 46.25 36.09Z" fill="#a2b584"/>
+<path d="M0 34.2Q16 34.7 32 34.2Q48 33.7 64 34.2L64 64L0 64Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-mix-c7)"/>
+</g>
+<g id="p-bowl">
+<path d="M7 37C8 47 13 54 17 55L47 55C51 54 56 47 57 37Z" fill="#6c84a3"/>
+<path d="M11 49Q32 52 53 49C50 54 49 55 47 55L17 55C15 55 14 54 11 49Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M7 37Q32 52 57 37L56 41.5Q32 56 8 41.5Z" fill="#94a8c0"/>
+<path d="M8 41.5Q32 56 56 41.5" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7 37C8 47 13 54 17 55L47 55C51 54 56 47 57 37Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M17 55L47 55" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 60">
+  <!-- Фікстура конвеєра: частина з шарами; заливка й контур — одне коло з <defs>, тож мусять збігатися піксель у піксель. -->
+  <defs>
+    <circle id="skull" cx="32" cy="30" r="20"/>
+  </defs>
+  <g id="fill"><use href="#skull" fill="#ffffff"/></g>
+  <g id="shade"><ellipse cx="32" cy="40" rx="12" ry="6" fill="#bdb3c2"/></g>
+  <g id="ink"><use href="#skull" fill="none" stroke="#1f1a24" stroke-width="6"/></g>
+</svg>

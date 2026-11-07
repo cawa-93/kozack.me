@@ -1,0 +1,31 @@
+{
+ "name": "Кіт на радіо",
+ "description": "Понеділок першого тижня, 10:00. Теплолюбка спить на приймачі (§8.10): поки вона там, ціль дії — кішка, а не радіо.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 5
+ },
+ "state": {
+  "day": 0,
+  "minute": 600,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 3.5,
+    "y": 7.5,
+    "facing": {
+     "x": -1,
+     "y": 0
+    }
+   }
+  }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 9, "name": "Батарейка", "sex": "female", "arrivedDay": -10, "x": 1.5, "y": 6.5, "needs": { "play": 10, "attention": 10, "fatigue": 90 },
+    "act": { "kind": "sleep", "target": "radio", "goal": null, "minutes": 240, "elapsed": 0 },
+    "traits": [{ "group": "warmth", "level": 2, "seen": 0, "known": true }] }
+ ]
+}

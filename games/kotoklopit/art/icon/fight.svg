@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/fight — бійка: світло-сірий клубок пилу (≈ 55 % поля), з якого в різні боки стирчать товсті лапи-«рукавички» — дві руді й сіра, кожна з рожевою подушечкою й пальцями, — руде вухо й сірий хвіст; обабіч — дві гірчичні зірочки. Ревізія іконок 2026-11-03 (пачка b2-cat-actions-meds; було — A12a), art/STYLE.md.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах.
+Один бабл стану над клубком котів, що б'ються. Без спіралі (вона — dizzy). Хмара світла greyHi — не темний дим smoke; лапи ≥ 10 завширшки (складена форма: чорнило 7,6 під фарбою) — не жмут шерсті fur. Зірочки 14–15 одиниць, контур 4. Від angry (знак) і loud (звук) — силуетом клубка з лапами.
+-->
+<defs>
+<clipPath id="icon-fight-clip1"><path d="M18.2 31.6A6.6 6.6 0 1 0 31.3 31.6A6.6 6.6 0 1 0 18.2 31.6ZM24.7 27.9A7.1 7.1 0 1 0 39 27.9A7.1 7.1 0 1 0 24.7 27.9ZM32.2 32A6.6 6.6 0 1 0 45.3 32A6.6 6.6 0 1 0 32.2 32ZM33.7 39.1A6 6 0 1 0 45.7 39.1A6 6 0 1 0 33.7 39.1ZM25.3 41A6.9 6.9 0 1 0 39.1 41A6.9 6.9 0 1 0 25.3 41ZM18.5 39.5A6.2 6.2 0 1 0 30.9 39.5A6.2 6.2 0 1 0 18.5 39.5Z"/></clipPath>
+</defs>
+<g id="p-limbs">
+<path d="M22.3 44.2C22.2 45.3 18.8 47.5 17.2 48.5C15.6 49.4 12.7 50.3 11.6 50.2C10.5 50.1 9.5 48.4 9.6 47.5C9.7 46.7 11.2 45.8 12.6 44.7C13.9 43.8 16.7 41.1 18.2 41C19.7 40.9 22.5 43 22.3 44.2Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22.3 44.2C22.2 45.3 18.8 47.5 17.2 48.5C15.6 49.4 12.7 50.3 11.6 50.2C10.5 50.1 9.5 48.4 9.6 47.5C9.7 46.7 11.2 45.8 12.6 44.7C13.9 43.8 16.7 41.1 18.2 41C19.7 40.9 22.5 43 22.3 44.2Z" fill="#a69f9b"/>
+<path d="M22.3 44.2C22.2 45.3 18.8 47.5 17.2 48.5C15.6 49.4 12.7 50.3 11.6 50.2C10.5 50.1 9.5 48.4 9.6 47.5C9.7 46.7 11.2 45.8 12.6 44.7C13.9 43.8 16.7 41.1 18.2 41C19.7 40.9 22.5 43 22.3 44.2Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M27 21.7C27 21.7 27.7 10.8 27.7 10.8C27.7 10.8 36.3 19.3 36.3 19.3C36.3 19.3 27 21.7 27 21.7Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27 21.7C27 21.7 27.7 10.8 27.7 10.8C27.7 10.8 36.3 19.3 36.3 19.3C36.3 19.3 27 21.7 27 21.7Z" fill="#d9843f"/>
+<path d="M29 18.9C29 18.9 29.4 14.2 29.4 14.2C29.4 14.2 33.1 18 33.1 18C33.1 18 29 18.9 29 18.9Z" fill="#ecbcb2"/>
+<path d="M29.2 27.9L18.3 15.4A5.4 5.4 0 0 0 10.6 23.1L22.8 34.2A4.5 4.5 0 0 0 29.2 27.9Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.2 27.9L18.3 15.4A5.4 5.4 0 0 0 10.6 23.1L22.8 34.2A4.5 4.5 0 0 0 29.2 27.9Z" fill="#d9843f"/>
+<path d="M11.8 19.6A3 3 0 1 0 17.8 19.6A3 3 0 1 0 11.8 19.6Z" fill="#ecbcb2"/>
+<path d="M11.1 18.6L9.4 16.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.8 16L12.1 14.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.2 34.1L52.2 23A5.4 5.4 0 0 0 44.1 15.9L34.5 28.1A4.5 4.5 0 0 0 41.2 34.1Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.2 34.1L52.2 23A5.4 5.4 0 0 0 44.1 15.9L34.5 28.1A4.5 4.5 0 0 0 41.2 34.1Z" fill="#a69f9b"/>
+<path d="M44.8 19.8A3 3 0 1 0 50.7 19.8A3 3 0 1 0 44.8 19.8Z" fill="#ecbcb2"/>
+<path d="M48.6 16.1L50.2 14.3" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.4 18.6L53 16.7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34 43L44.7 53.1A5.4 5.4 0 0 0 51.6 44.6L39.8 36A4.5 4.5 0 0 0 34 43Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34 43L44.7 53.1A5.4 5.4 0 0 0 51.6 44.6L39.8 36A4.5 4.5 0 0 0 34 43Z" fill="#d9843f"/>
+<path d="M44.7 48.5A3 3 0 1 0 50.7 48.5A3 3 0 1 0 44.7 48.5Z" fill="#ecbcb2"/>
+<path d="M51.5 49.2L53.4 50.7" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.1 52.1L50.9 53.6" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-cloud">
+<path d="M18.2 31.6A6.6 6.6 0 1 0 31.3 31.6A6.6 6.6 0 1 0 18.2 31.6Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.7 27.9A7.1 7.1 0 1 0 39 27.9A7.1 7.1 0 1 0 24.7 27.9Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M32.2 32A6.6 6.6 0 1 0 45.3 32A6.6 6.6 0 1 0 32.2 32Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.7 39.1A6 6 0 1 0 45.7 39.1A6 6 0 1 0 33.7 39.1Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.3 41A6.9 6.9 0 1 0 39.1 41A6.9 6.9 0 1 0 25.3 41Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.5 39.5A6.2 6.2 0 1 0 30.9 39.5A6.2 6.2 0 1 0 18.5 39.5Z" fill="#2e1f29" stroke="#2e1f29" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.2 31.6A6.6 6.6 0 1 0 31.3 31.6A6.6 6.6 0 1 0 18.2 31.6Z" fill="#cdc6be"/>
+<path d="M24.7 27.9A7.1 7.1 0 1 0 39 27.9A7.1 7.1 0 1 0 24.7 27.9Z" fill="#cdc6be"/>
+<path d="M32.2 32A6.6 6.6 0 1 0 45.3 32A6.6 6.6 0 1 0 32.2 32Z" fill="#cdc6be"/>
+<path d="M33.7 39.1A6 6 0 1 0 45.7 39.1A6 6 0 1 0 33.7 39.1Z" fill="#cdc6be"/>
+<path d="M25.3 41A6.9 6.9 0 1 0 39.1 41A6.9 6.9 0 1 0 25.3 41Z" fill="#cdc6be"/>
+<path d="M18.5 39.5A6.2 6.2 0 1 0 30.9 39.5A6.2 6.2 0 1 0 18.5 39.5Z" fill="#cdc6be"/>
+<path d="M1.7 39.5Q16.7 41.9 31.6 41Q46.6 40.1 61.6 41.7L61.6 62L1.7 62Z" fill="#3f2541" fill-opacity="0.16" clip-path="url(#icon-fight-clip1)"/>
+<path d="M28.1 26Q26.6 28.3 27.3 31.1" fill="none" stroke="#a69f9b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M35 35.2Q37.6 36.1 39.5 34.4" fill="none" stroke="#a69f9b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.3 37.2Q28.8 39.5 31.3 39.1" fill="none" stroke="#a69f9b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-stars">
+<path d="M52 27.4C52 27.4 53.3 31.4 53.7 32.2C54.2 32.8 57.6 35.5 57.6 35.5C57.6 35.5 53.6 36.8 52.8 37.2C52.2 37.7 49.5 41.1 49.5 41.1C49.5 41.1 48.2 37.1 47.8 36.3C47.3 35.7 43.9 33 43.9 33C43.9 33 47.9 31.7 48.7 31.3C49.3 30.8 52 27.4 52 27.4Z" fill="#d4a54c"/>
+<path d="M52 27.4C52 27.4 53.3 31.4 53.7 32.2C54.2 32.8 57.6 35.5 57.6 35.5C57.6 35.5 53.6 36.8 52.8 37.2C52.2 37.7 49.5 41.1 49.5 41.1C49.5 41.1 48.2 37.1 47.8 36.3C47.3 35.7 43.9 33 43.9 33C43.9 33 47.9 31.7 48.7 31.3C49.3 30.8 52 27.4 52 27.4Z" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.3 27.1C11.3 27.1 14 30.1 14.6 30.6C15.3 31 19.1 32.1 19.1 32.1C19.1 32.1 16.1 34.7 15.6 35.4C15.3 36 14.1 39.9 14.1 39.9C14.1 39.9 11.5 36.9 10.9 36.4C10.2 36 6.4 34.9 6.4 34.9C6.4 34.9 9.4 32.3 9.8 31.6C10.2 31 11.3 27.1 11.3 27.1Z" fill="#d4a54c"/>
+<path d="M11.3 27.1C11.3 27.1 14 30.1 14.6 30.6C15.3 31 19.1 32.1 19.1 32.1C19.1 32.1 16.1 34.7 15.6 35.4C15.3 36 14.1 39.9 14.1 39.9C14.1 39.9 11.5 36.9 10.9 36.4C10.2 36 6.4 34.9 6.4 34.9C6.4 34.9 9.4 32.3 9.8 31.6C10.2 31 11.3 27.1 11.3 27.1Z" fill="none" stroke="#2e1f29" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

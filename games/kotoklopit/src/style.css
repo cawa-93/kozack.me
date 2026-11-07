@@ -1,0 +1,72 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #2b2530;
+}
+
+body {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#game {
+  position: fixed;
+  inset: 0;
+}
+
+/* Полотно — на всю теку гри, а його пікселі — пікселі пристрою (src/view/viewport.ts, `fitCanvas`): розмір полотна веде
+   гра, тож браузер його не розтягує. `!important` — поверх стилю, який Phaser може поставити полотну сам. */
+#game > canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+}
+
+/* Гра горизонтальна: на телефоні в портретній орієнтації просимо його повернути (§10) — малюнок над рукописним підписом на
+   чорнилі палітри. Токени кольорів і шрифт (`--ink`, `--paper`, `--hand`) — у src/ui/overlay.css, він вантажиться з грою. */
+.rotate {
+  display: none;
+  position: fixed;
+  inset: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 400 25px/1.3 var(--hand);
+  text-align: center;
+}
+
+.rotate p {
+  max-width: 300px;
+  margin: 0;
+}
+
+.rotate-art {
+  display: block;
+  width: 192px;
+  height: 144px;
+  background: url("../art/ui/rotate.svg") 0 0 / 100% 100% no-repeat;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate {
+    display: flex;
+  }
+}
+
+/* Зонд безпечної зони (src/screen.ts): виріз камери й заокруглені кути екрана. */
+.safe-area {
+  position: fixed;
+  visibility: hidden;
+  pointer-events: none;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+}

@@ -1,0 +1,94 @@
+{
+ "name": "Перестановка речей",
+ "description": "Субота другого тижня, 11:00. У руках дорогий будиночок (§8.7): на підлозі видно, де він стане, — напівпрозора річ і контур клітинки. F чи дія ставить його, F біля речі бере її знову. У правому куті вітальні — миска з годівницею: вони їдуть разом.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 12.5,
+   "y": 7.5
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "stats": {
+    "satiety": 80,
+    "hygiene": 70,
+    "sanity": 70
+   },
+   "body": {
+    "x": 6.5,
+    "y": 8.5,
+    "facing": {
+     "x": 0.7071,
+     "y": 0.7071
+    }
+   },
+   "held": {
+    "kind": "thing",
+    "item": {
+     "id": 900,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "house-3"
+    }
+   }
+  },
+  "home": {
+   "items": [
+    {
+     "id": 901,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-5",
+     "food": 2,
+     "foodQuality": "cheap",
+     "sterile": false
+    },
+    {
+     "id": 902,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-3",
+     "water": 3
+    },
+    {
+     "id": 903,
+     "kind": "litter",
+     "quality": "premium",
+     "slot": "floor-3-7",
+     "litter": "cheap",
+     "uses": 1
+    },
+    {
+     "id": 904,
+     "kind": "scratcher",
+     "quality": "cheap",
+     "slot": "floor-9-7"
+    }
+   ],
+   "feeders": [
+    {
+     "slot": "bowl-5",
+     "quality": "premium",
+     "food": 6,
+     "foodQuality": "cheap",
+     "sterile": false
+    }
+   ]
+  }
+ }
+}

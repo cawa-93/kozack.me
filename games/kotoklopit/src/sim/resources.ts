@@ -1,0 +1,46 @@
+// Котячі ресурси квартири (§9.4 «Ресурси»): речі одного виду, брудний лоток і чи вистачає мисок і лотків. Окремо від
+// поведінки котів (`catai.ts`), щоб ту саму межу «вистачає» брали й сварки, й зараження через лоток (`diseases.ts`) без
+// циклічного імпорту diseases ↔ catai (загальна ревізія 2026-10-29).
+
+import { CLOSED_LITTER_USES, LITTER_CAPACITY, WATER_CAPACITY } from "./config";
+import { SLOTS } from "./home";
+import { isNewborn } from "./reproduction";
+import type { Cat, GameState, HomeItem, LitterItem, WaterItem } from "./types";
+
+export const itemsOf = <K extends HomeItem["kind"]>(state: GameState, kind: K): Extract<HomeItem, { kind: K }>[] =>
+  state.home.items.filter((i): i is Extract<HomeItem, { kind: K }> => i.kind === kind);
+
+/** Кіт сидить у дорогому будиночку (§9.12): товсті стіни глушать звук. */
+export function inQuietHouse(state: GameState, cat: Cat): boolean {
+  return itemsOf(state, "house").some((house) => house.quality === "premium" && `item:${house.id}` === cat.act.target);
+}
+
+export const waterCapacity = (item: WaterItem): number => WATER_CAPACITY[item.quality];
+
+/** Фонтанчик працює (§8.7): дорогий завжди, простий — поки в баку є вода. Порожній для рис кота — усе одно що його немає. */
+export function fountainWorks(state: Pick<GameState, "home">): boolean {
+  const { appliances, fountainTank } = state.home;
+  return appliances.fountain === "premium" || (appliances.fountain === "cheap" && (fountainTank ?? 0) > 0);
+}
+
+export function litterCapacity(box: LitterItem): number {
+  if (box.litter === null) return LITTER_CAPACITY.none;
+  return LITTER_CAPACITY[box.litter] + (box.quality === "premium" ? CLOSED_LITTER_USES : 0);
+}
+
+export function isDirty(box: LitterItem): boolean {
+  return box.uses >= litterCapacity(box);
+}
+
+/**
+ * Чи вистачає мисок чи лотків (§9.4 «Ресурси»; «Згода, охорона й сварки», рішення автора 2026-10-26, Р3 і Р4): котів рахують лише
+ * тих, що вдома, без новонароджених; брудний лоток не рахується; лотків — на один більше, ніж котів, мисок — скільки котів, але
+ * не більше, ніж є місць (для мисок — поширення виконавця, ухвалено — рішення автора 2026-10-26 після блоку 4). Раніше рахували всіх котів і всі лотки, і з 6 котами лотків не вистачало ніколи.
+ * Та сама межа — для глистів через лоток (§9.5, загальна ревізія 2026-10-29).
+ */
+export function enoughFor(state: GameState, kind: "bowl" | "litter"): boolean {
+  const cats = state.cats.filter((c) => c.away === null && !isNewborn(c)).length;
+  const places = SLOTS.filter((s) => s.kind === kind).length;
+  if (kind === "bowl") return itemsOf(state, "bowl").length >= Math.min(cats, places);
+  return itemsOf(state, "litter").filter((box) => !isDirty(box)).length >= Math.min(cats + 1, places);
+}

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- icon/pain — крик болю: руда голова (≈ 2/3 ширини) з бровами вгору «/ \», міцно зажмуреними очима (товсті пласкі дуги з двома зморшками біля зовнішніх кутиків), роззявленим ротом «ой» кутиками донизу з язиком, а з боків і знизу — чотири червоні рисочки болю. Ревізія іконок 2026-11-03 (пачка b1-cat-faces-hiss), art/STYLE.md.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів: один кадр у готових кольорах.
+Сечокам'яна в лотку: бабл вголос над котом і значок біля назви хвороби в картці (22–26 px). Рисочки ≈ 4,6 × 10 — родинна ознака хвороб (stomach, joints, spine, urine). Без червоного зубчастого спалаху (злість чи переляк), без сліз (sad) і без «> <» (sneeze); рот кутиками донизу — не сміх.
+-->
+<defs>
+<clipPath id="icon-pain-clip1"><path d="M12 32.1C11.6 28.7 13.2 24.7 13.4 23.1C13.6 21.5 13.4 22.5 13.4 22.5C13.4 22.5 13.9 7.3 13.9 7.3C13.9 7.3 24.4 14.9 24.4 14.9C24.4 14.9 29.4 13.4 32 13.4C34.6 13.4 39.6 14.9 39.6 14.9C39.6 14.9 50.1 7.3 50.1 7.3C50.1 7.3 50.6 22.5 50.6 22.5C50.6 22.5 50.4 21.5 50.6 23.1C50.8 24.7 52.4 28.7 52 32.1C51.6 35.5 51.7 40.9 48.4 43.4C45 45.9 37.4 46.8 32 46.8C26.6 46.8 19 45.9 15.6 43.4C12.3 40.9 12.4 35.5 12 32.1Z"/></clipPath>
+<clipPath id="icon-pain-clip2"><path d="M25.1 45.5C25.1 45.5 27.1 41.1 28.2 40.1C29.3 39 30.8 39 32 39C33.2 39 34.7 39 35.8 40.1C36.9 41.1 38.9 45.5 38.9 45.5C38.9 45.5 36 45 34.9 44.9C33.7 44.8 33 44.8 32 44.8C31 44.8 30.3 44.8 29.1 44.9C28 45 25.1 45.5 25.1 45.5Z"/></clipPath>
+</defs>
+<g id="p-head">
+<path d="M12 32.1C11.6 28.7 13.2 24.7 13.4 23.1C13.6 21.5 13.4 22.5 13.4 22.5C13.4 22.5 13.9 7.3 13.9 7.3C13.9 7.3 24.4 14.9 24.4 14.9C24.4 14.9 29.4 13.4 32 13.4C34.6 13.4 39.6 14.9 39.6 14.9C39.6 14.9 50.1 7.3 50.1 7.3C50.1 7.3 50.6 22.5 50.6 22.5C50.6 22.5 50.4 21.5 50.6 23.1C50.8 24.7 52.4 28.7 52 32.1C51.6 35.5 51.7 40.9 48.4 43.4C45 45.9 37.4 46.8 32 46.8C26.6 46.8 19 45.9 15.6 43.4C12.3 40.9 12.4 35.5 12 32.1Z" fill="#d9843f"/>
+<path d="M17 20.9C17 20.9 15.4 10.7 15.4 10.7C15.4 10.7 23 16.7 23 16.7C23 16.7 17 20.9 17 20.9Z" fill="#ecbcb2"/>
+<path d="M47 20.9C47 20.9 48.6 10.7 48.6 10.7C48.6 10.7 41 16.7 41 16.7C41 16.7 47 20.9 47 20.9Z" fill="#ecbcb2"/>
+<path d="M-0.4 38.1C-0.4 38.1 8.5 36.9 13 36.9C17.4 37 21.8 38.6 26.3 38.6C30.8 38.6 35.1 37.2 39.6 37.2C44.1 37.2 48.8 38.4 52.9 38.4C57 38.5 64.4 37.5 64.4 37.5C64.4 37.5 64.4 64.4 64.4 64.4C64.4 64.4 -0.4 64.4 -0.4 64.4C-0.4 64.4 -0.4 38.1 -0.4 38.1Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#icon-pain-clip1)"/>
+<path d="M18.2 25.8Q22.5 24.4 27.2 20.1" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.8 25.8Q41.5 24.4 36.8 20.1" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.6 30.4Q23.4 29.2 19.1 32.9" fill="none" stroke="#2e1f29" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.6 29L14.3 28.1" fill="none" stroke="#2e1f29" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M16.4 33.8L14.3 35.1" fill="none" stroke="#2e1f29" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M36.4 30.4Q40.6 29.2 44.9 32.9" fill="none" stroke="#2e1f29" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.4 29L49.7 28.1" fill="none" stroke="#2e1f29" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.6 33.8L49.7 35.1" fill="none" stroke="#2e1f29" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.6 34.1C29.6 34.1 34.4 34.1 34.4 34.1C34.4 34.1 32 37.1 32 37.1C32 37.1 29.6 34.1 29.6 34.1Z" fill="#d99a93"/>
+<path d="M29.6 34.1C29.6 34.1 34.4 34.1 34.4 34.1C34.4 34.1 32 37.1 32 37.1C32 37.1 29.6 34.1 29.6 34.1Z" fill="none" stroke="#2e1f29" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.1 45.5C25.1 45.5 27.1 41.1 28.2 40.1C29.3 39 30.8 39 32 39C33.2 39 34.7 39 35.8 40.1C36.9 41.1 38.9 45.5 38.9 45.5C38.9 45.5 36 45 34.9 44.9C33.7 44.8 33 44.8 32 44.8C31 44.8 30.3 44.8 29.1 44.9C28 45 25.1 45.5 25.1 45.5Z" fill="#8a3a46"/>
+<path d="M36.4 45.7C36.4 47 34.4 48.2 32 48.2C29.6 48.2 27.6 47 27.6 45.7C27.6 44.4 29.6 43.2 32 43.2C34.4 43.2 36.4 44.4 36.4 45.7Z" fill="#d99a93" clip-path="url(#icon-pain-clip2)"/>
+<path d="M25.1 45.5C25.1 45.5 27.1 41.1 28.2 40.1C29.3 39 30.8 39 32 39C33.2 39 34.7 39 35.8 40.1C36.9 41.1 38.9 45.5 38.9 45.5C38.9 45.5 36 45 34.9 44.9C33.7 44.8 33 44.8 32 44.8C31 44.8 30.3 44.8 29.1 44.9C28 45 25.1 45.5 25.1 45.5Z" fill="none" stroke="#2e1f29" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12 32.1C11.6 28.7 13.2 24.7 13.4 23.1C13.6 21.5 13.4 22.5 13.4 22.5C13.4 22.5 13.9 7.3 13.9 7.3C13.9 7.3 24.4 14.9 24.4 14.9C24.4 14.9 29.4 13.4 32 13.4C34.6 13.4 39.6 14.9 39.6 14.9C39.6 14.9 50.1 7.3 50.1 7.3C50.1 7.3 50.6 22.5 50.6 22.5C50.6 22.5 50.4 21.5 50.6 23.1C50.8 24.7 52.4 28.7 52 32.1C51.6 35.5 51.7 40.9 48.4 43.4C45 45.9 37.4 46.8 32 46.8C26.6 46.8 19 45.9 15.6 43.4C12.3 40.9 12.4 35.5 12 32.1Z" fill="none" stroke="#2e1f29" stroke-width="5.7" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ache">
+<path d="M10.6 45.3L6.8 50.6" fill="none" stroke="#c4524b" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M53.4 45.3L57.2 50.6" fill="none" stroke="#c4524b" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M23 51.5L21.1 56.6" fill="none" stroke="#c4524b" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41 51.5L42.9 56.6" fill="none" stroke="#c4524b" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

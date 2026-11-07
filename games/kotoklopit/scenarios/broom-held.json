@@ -1,0 +1,50 @@
+{
+ "name": "Віник у руках",
+ "description": "Субота другого тижня, 11:00. Віник уже в руках: у вітальні клапті шерсті й папір, кіт поруч не лякається (§8.7). Пройтися — сміття зникає ближче, ніж від пилососа («Куплений пилосос»).",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "stats": {
+    "satiety": 80,
+    "hygiene": 70,
+    "sanity": 70
+   },
+   "held": {
+    "kind": "vacuum",
+    "minutes": 0
+   },
+   "body": {
+    "x": 11.5,
+    "y": 8.5,
+    "facing": {
+     "x": 1,
+     "y": 0
+    }
+   }
+  },
+  "home": {
+   "fur": 60,
+   "tufts": [0, 1, 2, 3, 4, 5, 6],
+   "tuftAt": 17940,
+   "vacuumAt": null,
+   "messes": [
+    {
+     "id": 901,
+     "kind": "paper",
+     "x": 10.5,
+     "y": 7.5,
+     "cat": null
+    }
+   ]
+  }
+ }
+}

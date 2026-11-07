@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 178" width="144" height="178">
+<!-- env/broom — віник із совком, що стоять на підлозі (GAME_DESIGN §8.7 «Віник і пилосос у руках»); art/STYLE.md.
+size 144×178 (те саме полотно сліду 1 × 1 і висота 98, що в env/vacuum); pivot (72, 138) — точка підлоги під річчю; points: grip (73.5, 50) — хват на держаку.
+Без станів і шарів: один кадр у готових кольорах, LINE_SMALL (вузька висока річ). Держак — дерево, віник — сизаль rope, перев'язка — red, совок — teal.
+-->
+<g id="p-shadow">
+<path d="M44 139Q62 127 92 130Q113 133 112 141Q110 149 88 151Q60 154 44 147Q37 143 44 139Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-handle">
+<path d="M78.8 42.6L71.3 103.8L64.3 103L71.4 41.8Q71.9 39.6 75.5 39.8Q79.2 40.2 78.8 42.6Z" fill="#9a6a47"/>
+<path d="M74.2 44.5L67.9 99" fill="none" stroke="#b98b60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M78.8 42.6L71.3 103.8L64.3 103L71.4 41.8Q71.9 39.6 75.5 39.8Q79.2 40.2 78.8 42.6Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bristle">
+<path d="M58 104Q52 120 42 134Q39.6 138.5 44 139.5Q49 141.5 53 139Q58 142.5 63 140Q68 143 73 140Q78 142 81 138.5Q84 136 82 132Q75 118 74 105Z" fill="#c9a872"/>
+<path d="M58 104Q55 112 51 119Q61 124 77 120Q75 112 74 105Z" fill="#ddc391"/>
+<path d="M60 112L51 136M64.5 114L60 138M68.5 114L69.5 138M71.5 112L77.5 135" fill="none" stroke="#a5844f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M58 104Q52 120 42 134Q39.6 138.5 44 139.5Q49 141.5 53 139Q58 142.5 63 140Q68 143 73 140Q78 142 81 138.5Q84 136 82 132Q75 118 74 105Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44 139.5Q49 141.5 53 139Q58 142.5 63 140Q68 143 73 140Q78 142 81 138.5" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-bind">
+<path d="M55.5 98.5Q66 94.5 77 98.6L77.8 107.5Q66 111.5 54.6 107.4Z" fill="#c4524b"/>
+<path d="M58.5 100.6Q66 98 74 100.6" fill="none" stroke="#dc7c69" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M59 106Q66 108 73.5 106" fill="none" stroke="#963b3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M55.5 98.5Q66 94.5 77 98.6L77.8 107.5Q66 111.5 54.6 107.4Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-pan">
+<path d="M98.5 113.5L104 95.5Q104.8 93 107.3 93.8Q109.7 94.7 109 97.2L103.6 115.5Z" fill="#5f9089"/>
+<path d="M98.5 113.5L104 95.5Q104.8 93 107.3 93.8Q109.7 94.7 109 97.2L103.6 115.5Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M88 117.5Q100 111 114 116.5Q116.5 117.6 116.1 120.4L112.6 143.5Q112.2 146 109.7 146.6Q93 150.5 78.5 145.3Q75.8 144.2 76.8 141.6L85.5 120Q86.2 118.5 88 117.5Z" fill="#5f9089"/>
+<path d="M88 117.5Q100 111 114 116.5Q116.5 117.6 116.1 120.4L115.5 124.5Q100 118 85 124.5L85.5 120Q86.2 118.5 88 117.5Z" fill="#8bb3aa"/>
+<path d="M83.5 130Q98 124 113.5 130L110.5 141Q95 144 80.5 140.5Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M88 117.5Q100 111 114 116.5Q116.5 117.6 116.1 120.4L112.6 143.5Q112.2 146 109.7 146.6Q93 150.5 78.5 145.3Q75.8 144.2 76.8 141.6L85.5 120Q86.2 118.5 88 117.5Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M78.5 145.3Q93 150.5 109.7 146.6" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

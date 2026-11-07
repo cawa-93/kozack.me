@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 142" width="48" height="142">
+<!-- env/sconce/back — бра на задній стіні y = 0 (лице y = 1) у спальні над узголів'ям ліжка (SCONCES у src/view/decor.ts, (1,5; 1)). Пакет P2a «Арт і вигляд декору» (§8.9, рішення автора 2026-11-02: «кілька настінних світильників як декор та світлові ефекти до них»).
+size 48×142; pivot (36, 138) — точка підлоги біля лиця стіни під бра (як env/toilet-roll); points: lamp (22.5, 22.5) — центр абажура на висоті 122 (SCONCES[].lamp), вісь на 0,21 від стіни.
+Латунна пластина на стіні (z 91–108), трубка-кронштейн, патрон; гірчичний тканинний абажур — зрізаний конус Ø 0,33 знизу, Ø 0,19 угорі, z 111–133.
+Історія: шнурок-вимикач із дерев'яною намистиною (до z ≈ 82, вище за узголів'я 72).
+Стани: st-off — тканина mustard, у верхньому отворі темне нутро й сіра колба; st-on — тканина mustardHi, світла смуга під обідком, нутро й колба paper
+(сяйво домальовує код, BACKDROP.glow). Контур LINE_SMALL (річ менша за 60). Без шарів.
+-->
+<g id="p-plate">
+<path d="M30.9 46L37.9 49.6L37.9 32.6L30.9 29Z" fill="#d4a54c"/>
+<path d="M37.9 49.6L39.5 48.8L39.5 31.8L37.9 32.6Z" fill="#d4a54c"/>
+<path d="M30.9 29L37.9 32.6L39.5 31.8L32.5 28.2Z" fill="#e8c47d"/>
+<path d="M37.9 49.6L39.5 48.8L39.5 31.8L37.9 32.6Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M33 43.3A1.4 1.4 0 0 0 35.8 43.3A1.4 1.4 0 0 0 33 43.3Z" fill="#2e1f29"/>
+<path d="M33 35.3A1.4 1.4 0 0 0 35.8 35.3A1.4 1.4 0 0 0 33 35.3Z" fill="#2e1f29"/>
+<path d="M30.9 46Q34.3 48.1 37.9 49.6L39.5 48.8L39.5 31.8L32.5 28.2L30.9 29L30.9 46Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.9 29L37.9 32.6L37.9 49.6" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-arm">
+<path d="M34.7 39.1L25.5 44.7Q22.6 47.2 22.6 36.7" fill="none" stroke="#2e1f29" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34.7 39.1L25.5 44.7Q22.6 47.2 22.6 36.7" fill="none" stroke="#d4a54c" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.4 35.7L18.4 29.7A4.2 2.1 0 0 0 26.8 29.7L26.8 35.7A4.2 2.1 0 0 1 18.4 35.7Z" fill="#d4a54c"/>
+<path d="M18.4 35.7L18.4 29.7A4.2 2.1 0 0 0 26.8 29.7L26.8 35.7A4.2 2.1 0 0 1 18.4 35.7Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shade-off" class="st-off">
+<path d="M14 11.7Q10.2 22.6 7.6 33.7A14.9 7.5 0 0 0 37.5 33.7Q33.7 22.9 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="#d4a54c"/>
+<path d="M7.6 33.7A14.9 7.5 0 0 0 37.5 33.7L35.8 27.7A13.2 6.6 0 0 1 9.4 27.7Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M18.7 15.6Q16.4 27.9 15.8 40.4Q18.2 28.1 18.7 15.6Z" fill="#6b5263"/>
+<path d="M26.4 15.6Q27 28.1 29.3 40.4Q28.7 27.9 26.4 15.6Z" fill="#6b5263"/>
+<path d="M14 11.7A8.6 4.3 0 0 0 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="#d4a54c"/>
+<path d="M14 11.7A8.6 4.3 0 0 0 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="#3f2541" fill-opacity="0.5"/>
+<path d="M18.4 12.8A4.1 2.4 0 0 0 26.7 12.8A4.1 2.4 0 0 0 18.4 12.8Z" fill="#cdc6be"/>
+<path d="M18.4 12.8A4.1 2.4 0 0 0 26.7 12.8A4.1 2.4 0 0 0 18.4 12.8Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 11.7A8.6 4.3 0 0 0 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 11.7Q10.2 22.6 7.6 33.7A14.9 7.5 0 0 0 37.5 33.7Q33.7 22.9 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shade-on" class="st-on">
+<path d="M14 11.7Q10.2 22.6 7.6 33.7A14.9 7.5 0 0 0 37.5 33.7Q33.7 22.9 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="#e8c47d"/>
+<path d="M7.6 33.7A14.9 7.5 0 0 0 37.5 33.7L36.5 30.2A13.9 7 0 0 1 8.6 30.2Z" fill="#f2e7d0"/>
+<path d="M18.7 15.6Q16.4 27.9 15.8 40.4Q18.2 28.1 18.7 15.6Z" fill="#d4a54c"/>
+<path d="M26.4 15.6Q27 28.1 29.3 40.4Q28.7 27.9 26.4 15.6Z" fill="#d4a54c"/>
+<path d="M14 11.7A8.6 4.3 0 0 0 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="#f2e7d0"/>
+<path d="M18.4 12.8A4.1 2.4 0 0 0 26.7 12.8A4.1 2.4 0 0 0 18.4 12.8Z" fill="#f2e7d0"/>
+<path d="M18.4 12.8A4.1 2.4 0 0 0 26.7 12.8A4.1 2.4 0 0 0 18.4 12.8Z" fill="none" stroke="#e8c47d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 11.7A8.6 4.3 0 0 0 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14 11.7Q10.2 22.6 7.6 33.7A14.9 7.5 0 0 0 37.5 33.7Q33.7 22.9 31.2 11.7A8.6 4.3 0 0 0 14 11.7Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-cord">
+<path d="M30.8 38.9Q32.4 51.9 31.6 64.9" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29 67.9A2.6 3.4 0 0 0 34.2 67.9A2.6 3.4 0 0 0 29 67.9Z" fill="#9a6a47"/>
+<path d="M30.4 66.1Q30.8 67.2 32 67.3Q31.5 66.2 30.4 66.1Z" fill="#b98b60"/>
+<path d="M29 67.9A2.6 3.4 0 0 0 34.2 67.9A2.6 3.4 0 0 0 29 67.9Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 50" width="120" height="50">
+<!-- mess/paper — паперовий слід (§9.12, «Мисливський інстинкт»): туалетний папір, який кіт розмотав від рулону у ванній (env/toilet-roll, unrolled) аж у вітальню. Стрічка приходить згори праворуч рваним навскіс кінцем і закінчується зім'ятим клубком ліворуч унизу (PAPER_TRAIL).
+size 120×50; pivot (60, 29) — точка підлоги під серединою сліду; points: —.
+Без станів і шарів. Стрічка — пласка смуга заввишки ≈ 11 із заливних панелей: три лицем угору й між ними дві Z-складки, де видно темніший зворот (enamelLo під тінню soft); кожна наступна панель лежить поверх попередньої. Контур стрічки — LINE_RIG.inner: папір тонкий, а з outer смуга вужчає й знову читається шнуром. Перфорація — поперечні рисочки inkSoft через рівні проміжки, як на хвостику env/toilet-roll.
+Клубок — кутастий ком із контуром LINE_RIG.outer, заломи — inkSoft (чорнилом він читається тріснутим каменем); стрічка заходить під нього збоку.
+-->
+<g id="p-shadow">
+<path d="M114.3 8.8Q103.8 7.8 98.3 9.3Q92.8 10.8 83.8 10.6L79.3 22.2Q86.8 22.2 91.8 20.6Q96.8 19 105.8 20.8L109.7 18.4L108.4 16.8L112 15L110.6 13.8L114.6 12.1L113 10.8ZM83.8 10.6Q92.3 15.9 100.8 21.2L95.8 32.7Q87.6 27.5 79.3 22.2ZM100.8 21.2Q89.8 25.6 82.3 24.4Q74.8 23.2 68.3 21.5Q61.8 19.8 53.3 22.2L48.3 33.8Q57.8 31.4 64.3 33Q70.8 34.6 78.3 35.6Q85.8 36.6 95.8 32.7ZM53.3 22.2Q61.1 26.2 68.8 30.2L64.3 41.8Q56.3 37.8 48.3 33.8ZM68.8 30.2Q58.8 34 53.3 33.4Q47.8 32.8 42.8 31.2Q37.8 29.6 28.8 31.2L26.8 42.2Q34.8 40.8 39.8 42.4Q44.8 44 49.8 44.5Q54.8 45 64.3 41.8ZM8.6 35.7L12.8 27.2L20.3 25.6L27.3 21.8L32.8 26.2L39.2 28L37.4 34.8L38.8 40.8L29.8 44.8L23.3 43L15.3 45.2L9.6 42.2Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-ribbon">
+<path d="M113.5 6.6Q103 5.6 97.5 7.1Q92 8.6 83 8.4L78.5 20Q86 20 91 18.4Q96 16.8 105 18.6L108.9 16.2L107.6 14.6L111.2 12.8L109.8 11.6L113.8 9.9L112.2 8.6Z" fill="#f2e7d0"/>
+<path d="M104.2 8.2L99.3 15.7M92.9 9.8L89 17.2" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.9 3"/>
+<path d="M113.5 6.6Q103 5.6 97.5 7.1Q92 8.6 83 8.4L78.5 20Q86 20 91 18.4Q96 16.8 105 18.6L108.9 16.2L107.6 14.6L111.2 12.8L109.8 11.6L113.8 9.9L112.2 8.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M83 8.4Q91.5 13.7 100 19L95 30.5Q86.8 25.3 78.5 20Z" fill="#bfb093"/>
+<path d="M83 8.4Q91.5 13.7 100 19L95 30.5Q86.8 25.3 78.5 20Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M100 19Q89 23.4 81.5 22.2Q74 21 67.5 19.3Q61 17.6 52.5 20L47.5 31.6Q57 29.2 63.5 30.8Q70 32.4 77.5 33.4Q85 34.4 95 30.5Z" fill="#f2e7d0"/>
+<path d="M90.6 23.6L87.2 31.1M79.6 23.9L76.3 31.2M68.8 21.8L65.5 29.2" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.9 3"/>
+<path d="M100 19Q89 23.4 81.5 22.2Q74 21 67.5 19.3Q61 17.6 52.5 20L47.5 31.6Q57 29.2 63.5 30.8Q70 32.4 77.5 33.4Q85 34.4 95 30.5Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M52.5 20Q60.3 24 68 28L63.5 39.6Q55.5 35.6 47.5 31.6Z" fill="#bfb093"/>
+<path d="M52.5 20Q60.3 24 68 28L63.5 39.6Q55.5 35.6 47.5 31.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M68 28Q58 31.8 52.5 31.2Q47 30.6 42 29Q37 27.4 28 29L26 40Q34 38.6 39 40.2Q44 41.8 49 42.3Q54 42.8 63.5 39.6Z" fill="#f2e7d0"/>
+<path d="M56.4 32.9L53.9 40.3M45.3 32L43.2 39.3" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.9 3"/>
+<path d="M68 28Q58 31.8 52.5 31.2Q47 30.6 42 29Q37 27.4 28 29L26 40Q34 38.6 39 40.2Q44 41.8 49 42.3Q54 42.8 63.5 39.6Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wad">
+<path d="M7.8 33.5L12 25L19.5 23.4L26.5 19.6L32 24L38.4 25.8L36.6 32.6L38 38.6L29 42.6L22.5 40.8L14.5 43L8.8 40Z" fill="#f2e7d0"/>
+<path d="M9.6 30L19 30.5L16.5 37L22.5 40.8L14.5 43L8.8 40L7.8 33.5Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M32 24L38.4 25.8L36.6 32.6L38 38.6L29 42.6L22.5 40.8L23.5 36.5L29 31Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M12.5 28L19 30.5L26 25.5M19 30.5L16.5 37M31.5 25L29 31L34.5 34.5M29 31L23.5 36.5L26.5 40.5" fill="none" stroke="#6b5263" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.8 33.5L12 25L19.5 23.4L26.5 19.6L32 24L38.4 25.8L36.6 32.6L38 38.6L29 42.6L22.5 40.8L14.5 43L8.8 40Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

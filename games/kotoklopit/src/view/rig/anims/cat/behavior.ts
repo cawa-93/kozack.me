@@ -1,0 +1,1449 @@
+// Анімації групи «behavior» — пакет N2 «Кіт — поведінка» (крок 16, хвиля 2, GRAPHICS_PLAN.md; назви й що кожна означає —
+// `anim/ids.ts`, `CAT_ANIM_GROUPS.behavior`; де їх обирають — `pose.ts`, `catAnim`; пози стосунків — GAME_DESIGN.md, §9.4).
+//
+// Пози описано ключовими позами тіла (`Pose`): зсув і поворот таза, поворот тулуба, шиї, голови й хвоста — відносно вихідної
+// пози ракурсу (`rig/types.ts`), а лапи, що стоять, — точкою подушечки на підлозі. Поворот і довжину такої лапи рахує `build`
+// (обернена кінематика однієї кістки) для кожного ракурсу окремо: ззаду ближні й дальні лапи міняються місцями, тож у
+// `back` лапи мають свої доріжки (`views.back`). Числа вихідної пози — з визначення скелета (`CAT_RIG`), тож якщо скелет
+// підженуть під арт (A7), лапи й далі стоятимуть на підлозі. Решта руху — доріжки поверх ключових поз (`over`): хвіст, що
+// б'є, кивки голови.
+//
+// Сидить і лежить буханцем кіт так само, як у N1 (`basic.ts`, `SIT` і `LOAF`: ті самі числа), тож перехід «сидить → просить»
+// чи «буханець → не хоче гратися» міняє лише голову, лапи й хвіст, а не всю позу. Хвіст повертається довкола свого корінця
+// (`tailMove`, як `tail()` у N1): інакше товстий корінець кадру вилазить за круп світлою «гулею».
+//
+// Кути — градуси за годинниковою стрілкою (кіт дивиться праворуч): додатний поворот тулуба опускає морду, лапи — відводить
+// назад, хвоста — піднімає його вперед-угору. Вісь y — донизу. Кадри обличчя (очі, рот, вуха) задає `catFace`, тож доріжок
+// кадрів цих слотів тут немає (клубок бійки лише ховає голову за тулуб доріжкою z).
+//
+// Ззаду (¾ ззаду) ближня передня лапа — під тулубом і всередину від краю грудей, як у N1 (`BACK_NEAR_IN`, `BACK_NEAR_Z`).
+//
+// Що анімації лишають вигляду (T1, T4): «несе» — та сама рись, що хода N1 (цикл і крок ті самі), тож грати її з тією самою
+// швидкістю відтворення (`catWalkRate` N1); клубок бійки — другого кота пари з фазою, зсунутою на `CAT_BRAWL_PHASE_MS`, а
+// бабл «бійка» — у точці `catBrawlTop()` (не на якорі `head`).
+
+import { CAT_ONE_SHOT_MS } from "../../../anim/ids";
+import type { ArtView } from "../../../art/types";
+import { CAT_RIG } from "../../defs/cat";
+import { easeValue } from "../../rigcore";
+import {
+  defineAnims,
+  type AnimOf,
+  type BoneOf,
+  type BoneTracks,
+  type Ease,
+  type Key,
+  type RigTracks,
+  type SlotOf,
+  type SlotTracks,
+  type StepKey,
+  type Vec2,
+} from "../../types";
+
+type CatBone = BoneOf<typeof CAT_RIG>;
+type CatSlot = SlotOf<typeof CAT_RIG>;
+type CatAnim = AnimOf<typeof CAT_RIG>;
+type Tracks = RigTracks<CatBone, CatSlot>;
+
+/** Лапи кота. */
+type Leg = "leg-front-far" | "leg-front-near" | "leg-back-far" | "leg-back-near";
+const LEGS: readonly Leg[] = ["leg-front-far", "leg-front-near", "leg-back-far", "leg-back-near"];
+
+// --- Ключові пози ------------------------------------------------------------------------------
+
+/** Зміна кістки відносно вихідної пози: поворот (градуси), зсув у системі батька (одиниці арту), масштаб (1 — як є). */
+interface Move {
+  rot?: number;
+  x?: number;
+  y?: number;
+  sx?: number;
+  sy?: number;
+}
+
+/**
+ * Лапа, що стоїть: подушечка — у вихідній точці лапи плюс `paw` (одиниці арту в системі кореня: x — уперед, y — донизу,
+ * тобто від'ємний — лапу піднято). Поворот і довжину лапи рахує `build`. `x`, `y` — зсув суглоба в системі батька (лапа
+ * кріпиться нижче чи вище на тулубі), `sy` — товщина лапи на екрані. `back` — те саме для ракурсу ¾ ззаду, де лапа стоїть
+ * інакше (ближні й дальні там міняються місцями по x).
+ */
+interface Plant {
+  paw: Vec2;
+  x?: number;
+  y?: number;
+  sy?: number;
+  back?: Omit<Plant, "back">;
+}
+
+/**
+ * Хвіст у позі: поворот довкола корінця (градуси), масштаб (рівномірний) і чи віддзеркалено кадр уздовж кістки. Кадр хвоста
+ * намальовано гачком угору вже у вихідній позі (поворот 0 — хвіст угору, гачок уперед); віддзеркалений (гачок назад) стоїть
+ * прямо вгору за повороту ≈ 75 (разом із нахилом таза).
+ */
+interface TailPose {
+  rot: number;
+  s?: number;
+  mirror?: boolean;
+}
+
+/**
+ * Ключова поза: кістки без запису — у вихідній позі (лапи — разом із тулубом, без підлаштування). Масштаб голови й лап на
+ * тулубі — як їх видно на екрані: поправку на нерівномірний масштаб тулуба (горб дуги, куля бійки) рахує `solve`.
+ */
+interface Pose {
+  root?: Move;
+  pelvis?: Move;
+  body?: Move;
+  neck?: Move;
+  head?: Move;
+  tail?: TailPose;
+  legs?: Partial<Record<Leg, Plant | Move>>;
+}
+
+/** Ключ анімації: поза в момент `t`; `ease` — як іти до наступного ключа (за замовчуванням `inOut`). */
+interface PoseKey {
+  t: number;
+  pose: Pose;
+  ease?: Ease;
+}
+
+/** Подушечка на місці. */
+const ON_FLOOR: Plant = { paw: { x: 0, y: 0 } };
+/** Подушечка на підлозі, зсунута вздовж (уперед — додатне). */
+const at = (x: number, y = 0, more: Omit<Plant, "paw"> = {}): Plant => ({ paw: { x, y }, ...more });
+/** Усі чотири лапи стоять на своїх місцях. */
+const STANDING: Readonly<Record<Leg, Plant>> = { "leg-front-far": ON_FLOOR, "leg-front-near": ON_FLOOR, "leg-back-far": ON_FLOOR, "leg-back-near": ON_FLOOR };
+
+const isPlant = (leg: Plant | Move): leg is Plant => "paw" in leg;
+
+/** Та сама лапа, піднята на `dy` (в обох ракурсах). */
+const lifted = (plant: Plant, dy: number): Plant => ({
+  ...plant,
+  paw: { x: plant.paw.x, y: plant.paw.y - dy },
+  ...(plant.back ? { back: { ...plant.back, paw: { x: plant.back.paw.x, y: plant.back.paw.y - dy } } } : {}),
+});
+
+// --- Обернена кінематика -----------------------------------------------------------------------
+
+/** Афінне перетворення: (x, y) → (a·x + c·y + tx, b·x + d·y + ty). */
+interface Affine {
+  a: number;
+  b: number;
+  c: number;
+  d: number;
+  tx: number;
+  ty: number;
+}
+
+const DEG = Math.PI / 180;
+
+function trs(x: number, y: number, rot: number, sx: number, sy: number): Affine {
+  const cos = Math.cos(rot * DEG);
+  const sin = Math.sin(rot * DEG);
+  return { a: cos * sx, b: sin * sx, c: -sin * sy, d: cos * sy, tx: x, ty: y };
+}
+
+function mul(p: Affine, l: Affine): Affine {
+  return {
+    a: p.a * l.a + p.c * l.b,
+    b: p.b * l.a + p.d * l.b,
+    c: p.a * l.c + p.c * l.d,
+    d: p.b * l.c + p.d * l.d,
+    tx: p.a * l.tx + p.c * l.ty + p.tx,
+    ty: p.b * l.tx + p.d * l.ty + p.ty,
+  };
+}
+
+const apply = (m: Affine, x: number, y: number): Vec2 => ({ x: m.a * x + m.c * y + m.tx, y: m.b * x + m.d * y + m.ty });
+
+/** Вектор у систему перетворення (без зсуву). */
+function unrotate(m: Affine, v: Vec2): Vec2 {
+  const det = m.a * m.d - m.b * m.c || 1;
+  return { x: (m.d * v.x - m.c * v.y) / det, y: (m.a * v.y - m.b * v.x) / det };
+}
+
+/** Вектор, повернутий на `deg` градусів. */
+function turn(v: Vec2, deg: number): Vec2 {
+  const c = Math.cos(deg * DEG);
+  const s = Math.sin(deg * DEG);
+  return { x: c * v.x - s * v.y, y: s * v.x + c * v.y };
+}
+
+/** Вихідна поза кістки в ракурсі — з визначення скелета й перевизначень ракурсу. */
+function setupOf(id: CatBone, view: ArtView): { x: number; y: number; rot: number; len: number; parent: CatBone | null } {
+  const bone = CAT_RIG.bones.find((b) => b.id === id);
+  if (!bone) throw new Error(`Кістки «${id}» немає`);
+  const over = CAT_RIG.views[view].bones?.[id];
+  return { x: over?.x ?? bone.x, y: over?.y ?? bone.y, rot: over?.rot ?? bone.rot, len: over?.len ?? bone.len, parent: bone.parent };
+}
+
+/** Світове перетворення кістки в позі (лапи — без своїх змін: потрібні лише батьки лап). */
+function worldOf(id: CatBone, view: ArtView, pose: Pose, cache: Map<CatBone, Affine>): Affine {
+  const have = cache.get(id);
+  if (have) return have;
+  const s = setupOf(id, view);
+  const m = moveOf(pose, id) ?? {};
+  const local = trs(s.x + (m.x ?? 0), s.y + (m.y ?? 0), s.rot + (m.rot ?? 0), m.sx ?? 1, m.sy ?? 1);
+  const world = s.parent === null ? local : mul(worldOf(s.parent, view, pose, cache), local);
+  cache.set(id, world);
+  return world;
+}
+
+/** Зміна батька лап у позі (корінь, таз, тулуб); решта кісток лапам не батьки. */
+function moveOf(pose: Pose, id: CatBone): Move | undefined {
+  switch (id) {
+    case "root":
+    case "pelvis":
+    case "body":
+    case "neck":
+      return pose[id];
+    default:
+      return undefined;
+  }
+}
+
+/** Де подушечка лапи у вихідній позі ракурсу (система кореня). */
+function setupPaw(leg: Leg, view: ArtView): Vec2 {
+  const s = setupOf(leg, view);
+  const parent = worldOf(s.parent ?? "root", view, {}, new Map());
+  const origin = apply(parent, s.x, s.y);
+  const r = s.rot * DEG;
+  return { x: origin.x + Math.cos(r) * s.len, y: origin.y + Math.sin(r) * s.len };
+}
+
+/** Масштаб тулуба в позі (за модулем): горб дуги, куля бійки. */
+const bodyScale = (pose: Pose): Vec2 => ({ x: Math.abs(pose.body?.sx ?? 1), y: Math.abs(pose.body?.sy ?? 1) });
+
+/**
+ * Масштаб кістки на тулубі (`sx` — уздовж, `sy` — упоперек), щоб на екрані вона мала довжину `along` і товщину `across`:
+ * нерівномірний масштаб тулуба розтягує дітей по-різному залежно від кута `deg` (у системі тулуба). Кадр слота бере з
+ * перетворення лише напрям кістки, довжину й площу (`rigcore`, `place`), тож поправка точна.
+ */
+function onBody(deg: number, along: number, across: number, sb: Vec2): { sx: number; sy: number } {
+  const len = Math.hypot(sb.x * Math.cos(deg * DEG), sb.y * Math.sin(deg * DEG));
+  const area = sb.x * sb.y;
+  return { sx: along / len, sy: (across * len) / area };
+}
+
+/** Зміна лапи, що стоїть: поворот і довжина, щоб подушечка стала в `plant.paw` від вихідної точки. */
+function plantLeg(leg: Leg, view: ArtView, pose: Pose, plant: Plant, cache: Map<CatBone, Affine>): Move {
+  const p = view === "back" && plant.back ? plant.back : plant;
+  const s = setupOf(leg, view);
+  const parent = worldOf(s.parent ?? "root", view, pose, cache);
+  const origin = apply(parent, s.x + (p.x ?? 0), s.y + (p.y ?? 0));
+  const home = setupPaw(leg, view);
+  const reach = { x: home.x + p.paw.x - origin.x, y: home.y + p.paw.y - origin.y };
+  const v = unrotate(parent, reach);
+  const sx = Math.hypot(v.x, v.y) / s.len;
+  // Товщина на екрані — площа перетворення на довжину: під масштабованим тулубом лапа інакше тоншала б чи товщала.
+  const area = Math.abs(parent.a * parent.d - parent.b * parent.c) || 1;
+  const sy = ((p.sy ?? 1) * Math.hypot(reach.x, reach.y)) / (area * sx * s.len || 1);
+  return { rot: Math.atan2(v.y, v.x) / DEG - s.rot, x: p.x ?? 0, y: p.y ?? 0, sx, sy };
+}
+
+/**
+ * Корінь хвоста в кадрі (`cat/tail/long`) — товстий «корінець», зсунутий від pivot на стільки (одиниці арту, у системі
+ * тулуба): у вихідній позі його ховає тулуб, а поворот навколо pivot виносить корінець за силует крупа. Те саме число, що
+ * `TAIL_ROOT` у N1 (`basic.ts`).
+ */
+const TAIL_ROOT: Vec2 = { x: 3.5, y: 0.5 };
+
+/**
+ * Віддзеркалений кадр хвоста в ракурсі ¾ ззаду (свій кадр `back`) за того самого повороту лягає на ≈ 22° більше назад, ніж
+ * спереду, — тож ззаду його повернуто ще на стільки, щоб хвіст стояв так само (`solve`; доріжки поверх поз — свої для `back`).
+ */
+const TAIL_MIRROR_BACK = 22;
+
+/**
+ * Хвіст, повернутий (і масштабований, і віддзеркалений) довкола корінця: зсув лишає корінець там, де він у вихідній позі. Під
+ * нерівномірним масштабом тулуба масштаб хвоста — з поправкою (`onBody`), щоб на екрані він був рівно в `s` разів.
+ */
+function tailMove(tail: TailPose, sb: Vec2 = { x: 1, y: 1 }): Move {
+  const setup = setupOf("tail", "front").rot;
+  const angle = setup + tail.rot;
+  const k = tail.s ?? 1;
+  const fix = onBody(angle, k, k, sb);
+  const sy = tail.mirror ? -fix.sy : fix.sy;
+  const root = turn(TAIL_ROOT, -setup);
+  const now = turn({ x: fix.sx * root.x, y: sy * root.y }, angle);
+  return { rot: tail.rot, x: TAIL_ROOT.x - now.x, y: TAIL_ROOT.y - now.y, sx: fix.sx, sy };
+}
+
+/**
+ * Ракурс ¾ ззаду: ближня передня лапа там — на самому краю грудей, і її верх (без контуру — за STYLE він ховається в
+ * тулубі) вилазить за силует грудей світлою плямою й розриває контур. Тож ззаду вона малюється під тулубом (`BACK_NEAR_Z`:
+ * контур грудей накриває її верх, лапа виходить з-під тулуба, як дальні) і кріпиться трохи всередину від краю
+ * (`BACK_NEAR_IN`, у системі тулуба) — ті самі числа, що `BACK_NEAR` у N1 (`basic.ts`), тож перехід із ходи чи сидіння N1
+ * у пози N2 не перебудовує лапу. Сидячі пози мають для неї свої числа (`SIT`, `back`), буханець і «на спині» — як у N1, без
+ * перевизначення (`build`, `nearIn`). Якщо суглоб у скелеті чи кадрі колись посунуть усередину (A7), `BACK_NEAR_IN` має
+ * стати 0.
+ */
+const BACK_NEAR_IN = -3.5;
+const BACK_NEAR_Z = 4.9;
+
+/**
+ * Зміни всіх кісток пози в ракурсі. `nearIn` — у ракурсі `back` ближня передня лапа кріпиться всередину від краю грудей
+ * (`BACK_NEAR_IN`), якщо поза не задає для неї свого суглоба ззаду.
+ */
+function solve(pose: Pose, view: ArtView, nearIn = true): Partial<Record<CatBone, Move>> {
+  const cache = new Map<CatBone, Affine>();
+  const sb = bodyScale(pose);
+  const out: Partial<Record<CatBone, Move>> = {};
+  if (pose.root) out.root = pose.root;
+  if (pose.pelvis) out.pelvis = pose.pelvis;
+  if (pose.body) out.body = pose.body;
+  if (pose.neck) out.neck = pose.neck;
+  if (pose.head) {
+    const angle = setupOf("neck", view).rot + setupOf("head", view).rot + (pose.neck?.rot ?? 0) + (pose.head.rot ?? 0);
+    out.head = { ...pose.head, ...onBody(angle, pose.head.sx ?? 1, pose.head.sy ?? 1, sb) };
+  }
+  if (pose.tail) out.tail = tailMove(view === "back" && pose.tail.mirror ? { ...pose.tail, rot: pose.tail.rot + TAIL_MIRROR_BACK } : pose.tail, sb);
+  for (const leg of LEGS) {
+    const spec = pose.legs?.[leg];
+    const inward = nearIn && view === "back" && leg === "leg-front-near";
+    if (!spec) {
+      if (inward) out[leg] = { x: BACK_NEAR_IN };
+      continue;
+    }
+    if (isPlant(spec)) {
+      out[leg] = plantLeg(leg, view, pose, inward && !spec.back ? { ...spec, x: (spec.x ?? 0) + BACK_NEAR_IN } : spec, cache);
+    } else {
+      const move = inward ? { ...spec, x: (spec.x ?? 0) + BACK_NEAR_IN } : spec;
+      out[leg] = setupOf(leg, view).parent === "body" ? { ...move, ...onBody(setupOf(leg, view).rot + (move.rot ?? 0), move.sx ?? 1, move.sy ?? 1, sb) } : move;
+    }
+  }
+  return out;
+}
+
+/** Подушечка лапи (кінець кістки) в позі, система кореня. */
+function pawOf(leg: Leg, view: ArtView, pose: Pose): Vec2 {
+  const cache = new Map<CatBone, Affine>();
+  const s = setupOf(leg, view);
+  const m = solve(pose, view)[leg] ?? {};
+  const world = mul(worldOf(s.parent ?? "root", view, pose, cache), trs(s.x + (m.x ?? 0), s.y + (m.y ?? 0), s.rot + (m.rot ?? 0), m.sx ?? 1, m.sy ?? 1));
+  return apply(world, s.len, 0);
+}
+
+// --- Доріжки -----------------------------------------------------------------------------------
+
+const EPS = 1e-3;
+const round = (v: number): number => Math.round(v * 100) / 100;
+
+/** Доріжки кісток з ключових поз в одному ракурсі; порожні (усюди вихідна поза) — пропущено. */
+function tracksOf(keys: readonly PoseKey[], view: ArtView, nearIn: boolean): Partial<Record<CatBone, BoneTracks>> {
+  const solved = keys.map((k) => solve(k.pose, view, nearIn));
+  const out: Partial<Record<CatBone, BoneTracks>> = {};
+  for (const bone of CAT_RIG.bones) {
+    const id = bone.id;
+    const moves = solved.map((s) => s[id] ?? {});
+    const rot = moves.map((m) => round(m.rot ?? 0));
+    const pos = moves.map((m) => ({ x: round(m.x ?? 0), y: round(m.y ?? 0) }));
+    const scale = moves.map((m) => ({ x: round(m.sx ?? 1), y: round(m.sy ?? 1) }));
+    const tracks: BoneTracks = {};
+    if (rot.some((v) => Math.abs(v) > EPS)) tracks.rot = keyed(keys, rot);
+    if (pos.some((v) => Math.abs(v.x) > EPS || Math.abs(v.y) > EPS)) tracks.pos = keyed(keys, pos);
+    if (scale.some((v) => Math.abs(v.x - 1) > EPS || Math.abs(v.y - 1) > EPS)) tracks.scale = keyed(keys, scale);
+    if (tracks.rot || tracks.pos || tracks.scale) out[id] = tracks;
+  }
+  return out;
+}
+
+/** Ключі доріжки за часом ключових поз; однакові поспіль ключі (і всі однакові) — стиснуто. */
+function keyed<V>(keys: readonly PoseKey[], values: readonly V[]): Key<V>[] {
+  const same = (a: V, b: V): boolean => JSON.stringify(a) === JSON.stringify(b);
+  if (values.every((v) => same(v, values[0] as V))) return [{ t: 0, v: values[0] as V }];
+  return keys.map((k, i) => ({ t: k.t, v: values[i] as V, ease: k.ease ?? "inOut" }));
+}
+
+const sameTracks = (a: BoneTracks | undefined, b: BoneTracks | undefined): boolean => JSON.stringify(a ?? {}) === JSON.stringify(b ?? {});
+
+/** Доріжки поверх ключових поз: замінюють ті самі доріжки (rot, pos чи scale) тих самих кісток; слоти — доріжки слотів. */
+interface Over {
+  bones?: Partial<Record<CatBone, BoneTracks>>;
+  slots?: Partial<Record<CatSlot, SlotTracks>>;
+  /** Те саме лише для ракурсу `back`. */
+  back?: { bones?: Partial<Record<CatBone, BoneTracks>>; slots?: Partial<Record<CatSlot, SlotTracks>> };
+}
+
+/**
+ * Анімація з ключових поз: доріжки кісток для `front`, а де `back` інакший (лапи, що стоять) — перевизначення ракурсу. По
+ * колу — перший і останній ключі мають бути тією самою позою (без ривка на стику). `nearIn` — ззаду ближня передня лапа під
+ * тулубом і всередину від краю грудей (`BACK_NEAR_IN`, `BACK_NEAR_Z`); вимкнено лише для поз, де N1 її не переставляє
+ * (буханець, на спині).
+ */
+function build(duration: number, loop: boolean, keys: readonly PoseKey[], over: Over = {}, nearIn = true): CatAnim {
+  const front = { ...tracksOf(keys, "front", nearIn) };
+  const backAll = tracksOf(keys, "back", nearIn);
+  const back: Partial<Record<CatBone, BoneTracks>> = {};
+  for (const bone of CAT_RIG.bones) {
+    const id = bone.id;
+    if (!sameTracks(front[id], backAll[id])) back[id] = { ...(backAll[id] ?? {}) };
+  }
+  for (const [id, tracks] of Object.entries(over.bones ?? {}) as [CatBone, BoneTracks][]) {
+    front[id] = { ...front[id], ...tracks };
+    if (back[id]) back[id] = { ...back[id], ...tracks };
+  }
+  for (const [id, tracks] of Object.entries(over.back?.bones ?? {}) as [CatBone, BoneTracks][]) back[id] = { ...(back[id] ?? front[id]), ...tracks };
+  // Перевизначення ракурсу замінює доріжку лише тоді, коли вона в ньому є: доріжку, якої в `back` немає (там усюди вихідна
+  // поза), задати явно — інакше діяла б доріжка `front`.
+  for (const [id, tracks] of Object.entries(back) as [CatBone, BoneTracks][]) {
+    const main = front[id];
+    if (main?.rot && !tracks.rot) tracks.rot = [{ t: 0, v: 0 }];
+    if (main?.pos && !tracks.pos) tracks.pos = [{ t: 0, v: v2(0, 0) }];
+    if (main?.scale && !tracks.scale) tracks.scale = [{ t: 0, v: v2(1, 1) }];
+  }
+  const views: Partial<Record<ArtView, Tracks>> = {};
+  const backTracks: Tracks = {};
+  if (Object.keys(back).length > 0) backTracks.bones = back;
+  const backSlots: Partial<Record<CatSlot, SlotTracks>> = { ...(nearIn ? { "leg-front-near": { z: [{ t: 0, v: BACK_NEAR_Z }] } } : {}), ...over.back?.slots };
+  if (Object.keys(backSlots).length > 0) backTracks.slots = backSlots;
+  if (backTracks.bones || backTracks.slots) views.back = backTracks;
+  const anim: CatAnim = { duration, loop, bones: front, ...(over.slots ? { slots: over.slots } : {}), ...(views.back ? { views } : {}) };
+  return anim;
+}
+
+/**
+ * Синусоїда без ривка на стику: ключі кожні чверть періоду — від екстремуму до нуля `in`, від нуля до екстремуму `out`, тож
+ * між ключами крива — точно синус. `phase` — у чвертях періоду (0 — починає з `mid + amp`, 1 — з середини донизу, 2 — з
+ * `mid − amp`, 3 — з середини догори). `duration` — ціле число періодів.
+ */
+function sine(duration: number, period: number, mid: number, amp: number, phase = 0): Key<number>[] {
+  const quarter = period / 4;
+  const keys: Key<number>[] = [];
+  for (let i = 0; i * quarter <= duration + 1e-6; i++) {
+    const q = (i + phase) % 4;
+    const v = q === 0 ? mid + amp : q === 2 ? mid - amp : mid;
+    keys.push({ t: Math.round(i * quarter), v: round(v), ease: q % 2 === 0 ? "in" : "out" });
+  }
+  return keys;
+}
+
+/** Ключі довільної доріжки: [t, v] або [t, v, ease]; за замовчуванням `inOut`. */
+function track<V>(...list: readonly (readonly [number, V] | readonly [number, V, Ease])[]): Key<V>[] {
+  return list.map(([t, v, ease]) => ({ t, v, ease: ease ?? "inOut" }));
+}
+
+/**
+ * Доріжки хвоста, що б'є, поверх ключових поз: кути `keys` — довкола корінця (зсув на кожному ключі — з `tailMove`, між
+ * ключами корінець лишається на місці з точністю до частки одиниці). `s` — масштаб хвоста в позах, `mirror` — кадр
+ * віддзеркалено вздовж кістки (гачок кінчика назад).
+ */
+function tailWave(keys: readonly Key<number>[], s = 1, mirror = false): BoneTracks {
+  const moves = keys.map((k) => tailMove({ rot: k.v, s, mirror }));
+  const pos = keys.map((k, i) => ({ ...k, v: v2(round(moves[i]?.x ?? 0), round(moves[i]?.y ?? 0)) }));
+  const tracks: BoneTracks = { rot: keys.map((k) => ({ ...k, v: round(k.v) })), pos };
+  return s === 1 && !mirror ? tracks : { ...tracks, scale: [{ t: 0, v: v2(round(s), round(mirror ? -s : s)) }] };
+}
+
+/** Вектор. */
+const v2 = (x: number, y: number): Vec2 => ({ x, y });
+
+/** Дихання: тулуб ледь ширшає впоперек (груди) і вертається — доріжка масштабу тулуба, `amp` — частка. */
+function breathe(duration: number, period: number, amp: number): Key<Vec2>[] {
+  return sine(duration, period, 1 + amp / 2, amp / 2, 2).map((k) => ({ ...k, v: v2(1, k.v) }));
+}
+
+/** Поза `base` зі змінами `delta`: повороти й зсуви додаються, масштаби множаться; лапи з `delta` замінюють лапи `base`. */
+function withPose(base: Pose, delta: Pose): Pose {
+  const sum = (a: Move | undefined, d: Move | undefined): Move | undefined => {
+    if (!a) return d;
+    if (!d) return a;
+    return { rot: (a.rot ?? 0) + (d.rot ?? 0), x: (a.x ?? 0) + (d.x ?? 0), y: (a.y ?? 0) + (d.y ?? 0), sx: (a.sx ?? 1) * (d.sx ?? 1), sy: (a.sy ?? 1) * (d.sy ?? 1) };
+  };
+  const out: Pose = { legs: { ...base.legs, ...delta.legs } };
+  for (const id of ["root", "pelvis", "body", "neck", "head"] as const) {
+    const m = sum(base[id], delta[id]);
+    if (m) out[id] = m;
+  }
+  const tail = base.tail && delta.tail ? { ...base.tail, rot: base.tail.rot + delta.tail.rot, s: (base.tail.s ?? 1) * (delta.tail.s ?? 1) } : (delta.tail ?? base.tail);
+  if (tail) out.tail = tail;
+  return out;
+}
+
+// --- Спільні пози ------------------------------------------------------------------------------
+
+/** Хвіст того, хто сидить (спадає на підлогу позаду), і того, хто лежить буханцем (лежить позаду) — як у N1. */
+const SIT_TAIL = -95;
+const LOAF_TAIL = -80;
+
+/**
+ * Сидить — так само, як `SIT` у N1 (`basic.ts`): таз повернутий носом угору навколо стегон (круп на підлозі), передні лапи
+ * прямо вниз від трохи зсунутих уздовж тулуба плечей (лопатки), задні підібрано під стегно, голова рівно, хвіст спадає на
+ * підлогу. Точки подушечок — ті самі, що в N1, для кожного ракурсу (ззаду лапи стоять за місцем на екрані).
+ */
+const SIT: Pose = {
+  pelvis: { rot: -32, y: 2 },
+  head: { rot: 30 },
+  tail: { rot: SIT_TAIL },
+  legs: {
+    "leg-front-far": { paw: v2(-5.2, 0), x: -5, y: 8.7, back: { paw: v2(-4.2, 0), x: -4, y: 7.5 } },
+    // Ззаду ближня передня кріпиться глибше в груди: верх лапи (без контуру) ховається під грудьми (як `SIT_BACK` у N1).
+    "leg-front-near": { paw: v2(-2.6, 0), x: -4, y: 7, back: { paw: v2(-5.7, 0), x: -12.5, y: 7.6 } },
+    "leg-back-far": { paw: v2(5.4, 0), back: { paw: v2(11.6, 0) } },
+    "leg-back-near": { paw: v2(12.5, 0), back: { paw: v2(6, 0) } },
+  },
+};
+
+/** Лапа того, хто сидить (як стоїть у `SIT`). */
+const sitPaw = (leg: Leg): Plant => SIT.legs?.[leg] as Plant;
+
+/** Сидить зі змінами (повороти й зсуви додаються до `SIT`, лапи — замінюються). */
+const sitWith = (delta: Pose): Pose => withPose(SIT, delta);
+
+/**
+ * Буханець — так само, як `LOAF` у N1: тулуб на підлозі, лапи підібрані під себе (видно лише подушечки), голова трохи
+ * схилена, хвіст лежить позаду.
+ */
+const LOAF: Pose = {
+  pelvis: { y: 9 },
+  head: { rot: 5 },
+  tail: { rot: LOAF_TAIL },
+  legs: {
+    "leg-back-near": { sx: 0.35 },
+    "leg-back-far": { sx: 0.35 },
+    "leg-front-near": { rot: -10, sx: 0.38 },
+    "leg-front-far": { sx: 0.35 },
+  },
+};
+
+const loafWith = (delta: Pose): Pose => withPose(LOAF, delta);
+
+/** Стоїть, як у вихідній позі. */
+const STAND: Pose = { legs: STANDING };
+
+const standWith = (more: Pose): Pose => ({ ...STAND, ...more, legs: { ...STANDING, ...more.legs } });
+
+// --- Анімації ------------------------------------------------------------------------------------
+
+/** «Спина дугою» (§9.4, поза 1): цикл, мс — шерсть повільно настовбурчується й опадає, поверх — дрібне тремтіння. */
+const ARCH_MS = 1200;
+/** Тулуб у дузі: вищий — горб, і нахилений носом униз (градуси): спина спадає від крупа до голови, плечі нижчі. */
+const ARCH_BODY = { x: 1, y: 1.5 } as const;
+const ARCH_TILT = 6;
+/** Крок ключів тремтіння, мс, і його сила: тулуб (градуси), хвіст (градуси). */
+const ARCH_STEP = 50;
+const ARCH_SHIVER = 1.8;
+const ARCH_TAIL_SHAKE = 5;
+/** Нерівне тремтіння: розмах на кожному кроці (чергується знак) — щоб не було рівного «моторчика». */
+const ARCH_JITTER = [1, -0.7, 0.9, -1, 0.6, -0.9, 1, -0.8, 0.7, -1, 0.9, -0.6] as const;
+
+/**
+ * Дуга: кіт стоїть «на пальчиках» на високих прямих лапах, зібраних під тулуб буквою А (передні — назад, задні — уперед),
+ * тулуб — високий короткий горб, морда опущена нижче спини й дивиться на суперника, хвіст трубою — прямо вгору, товстий.
+ * `puff` — наскільки настовбурчено (1 — як завжди в дузі), `shiver` і `shake` — тремтіння тулуба й хвоста (−1…1). Кіт трохи
+ * відступив тулубом над зібраними лапами, щоб двоє в протистоянні (64 одиниці між точками) стояли морда до морди, а не одне
+ * в одному.
+ */
+function archPose(puff: number, shiver: number, shake: number): Pose {
+  return {
+    pelvis: { x: -4, y: -9, rot: 3 },
+    body: { rot: ARCH_TILT + shiver * ARCH_SHIVER, sx: ARCH_BODY.x * puff, sy: ARCH_BODY.y * puff },
+    neck: { x: -4, y: 9 },
+    head: { rot: 4, sx: 1.03, sy: 1.03 },
+    // Кадр хвоста віддзеркалено вздовж кістки: гачок кінчика загинається назад, від голови, а не вперед знаком питання
+    // (так кіт вітається, а не погрожує).
+    tail: { rot: 66 + shake * ARCH_TAIL_SHAKE, s: 1.22 * puff, mirror: true },
+    legs: {
+      "leg-front-far": at(-8, 0, { sy: 0.92 }),
+      "leg-front-near": at(-8, 0, { sy: 0.92 }),
+      "leg-back-far": at(4, 0, { sy: 0.92 }),
+      "leg-back-near": at(4, 0, { sy: 0.92 }),
+    },
+  };
+}
+
+/** «Спина дугою» (§9.4, поза 1): настовбурчена дуга дихає, тулуб і хвіст нерівно тремтять. */
+function arch(): CatAnim {
+  const keys: PoseKey[] = [];
+  const n = ARCH_MS / ARCH_STEP;
+  for (let i = 0; i <= n; i++) {
+    const t = i * ARCH_STEP;
+    const puff = 1 + 0.035 * (1 - Math.cos((2 * Math.PI * t) / ARCH_MS));
+    const shiver = ARCH_JITTER[i % ARCH_JITTER.length] ?? 0;
+    const shake = Math.sin((2 * Math.PI * t) / 150);
+    keys.push({ t, pose: archPose(puff, shiver, i === n ? 0 : shake) });
+  }
+  // Стик: останній ключ — та сама поза, що перший (тривалість ділиться на крок і на період джиттера).
+  keys[n] = { t: ARCH_MS, pose: archPose(1, ARCH_JITTER[0], 0) };
+  return build(ARCH_MS, true, keys);
+}
+
+/**
+ * Шипіння — накладка, разова (`CAT_ONE_SHOT_MS.hiss`; рот з іклами й вуха назад — з `catFace`): кидок — голова подається
+ * вперед і трохи вгору, назустріч супернику, ніс задертий, хвіст настовбурчується; тримає, здригаючись, і м'яко вертається —
+ * накладка закінчується нулем, тож основна анімація продовжується без ривка. Рухає лише шию, голову й хвіст: таз і тулуб —
+ * батьки лап, і будь-яка основа (дуга, хода, засідка) лишається на своїх подушечках. Кидок не вниз: над позами з головою
+ * внизу (їсть, п'є, нюхає — сварка за миску) морда інакше пірнала б під підлогу, а так голова піднімається до суперника.
+ */
+function hiss(): CatAnim {
+  const D = CAT_ONE_SHOT_MS.hiss;
+  /** Кидок триває до `LUNGE`, тримає до `HOLD`, далі — назад. */
+  const LUNGE = Math.round(D / 7);
+  const HOLD = Math.round((D * 3) / 4);
+  const during = (part: number): number => Math.round(LUNGE + (HOLD - LUNGE) * part);
+  return {
+    duration: D,
+    loop: false,
+    bones: {
+      neck: {
+        pos: track([0, v2(0, 0), "out"], [LUNGE, v2(6, -3)], [during(0.5), v2(5, -3)], [HOLD, v2(6, -3)], [D, v2(0, 0)]),
+        rot: track([0, 0, "out"], [LUNGE, 3], [HOLD, 3], [D, 0]),
+      },
+      head: { rot: track([0, 0, "out"], [LUNGE, -12], [during(0.25), -9], [during(0.5), -12], [during(0.75), -9], [HOLD, -12], [D, 0]) },
+      tail: { scale: track([0, v2(1, 1), "out"], [LUNGE, v2(1.08, 1.08)], [HOLD, v2(1.08, 1.08)], [D, v2(1, 1)]) },
+    },
+  };
+}
+
+/** «Клубок бійки»: цикл, мс; центр кулі (система кореня), тулуб кулею. */
+const BRAWL_MS = 900;
+const BALL: Vec2 = { x: 2, y: -28 };
+const BRAWL_BODY = { x: 0.7, y: 1.25 } as const;
+/** Середина тулуба в системі таза (до масштабу тулуба): довкола неї крутиться клубок. */
+const BODY_MIDDLE: Vec2 = { x: 8, y: -4 };
+/**
+ * Наскільки вище своєї лінії підлоги (вихідної точки подушечки) мусять лишатися лапи клубка: із запасом на статури, у яких
+ * суглоби з точок арту трохи нижчі.
+ */
+const BRAWL_CLEAR = 1.5;
+
+/**
+ * Для вигляду (T1): другого кота пари клубка пускати з фазою, зсунутою на стільки, мс (`play`, `from`). Обидва грають ту
+ * саму анімацію, другий — віддзеркалено, тож з тим самим часом клубок був би точним дзеркалом.
+ */
+export const CAT_BRAWL_PHASE_MS = 400;
+
+/** Висота точки бабла над клубком (`catBrawlTop`), одиниці арту від підлоги вгору. */
+const BRAWL_TOP = 70;
+
+/**
+ * Для бабла «бійка» (T4; §9.4 — над верхом більшої кулі): точка над кулею клубка в системі кореня кота (як і решта кота,
+ * під масштабом кореня: у кошеняти — менша й нижча). Якір `head` у клубку для бабла не годиться: голову сховано, і він ходить
+ * під кулю й до підлоги. Верх кулі з лапами й хвостом, що стирчать, ходить від −58 до −80 (медіана −66), тож точка — трохи
+ * над медіаною. Функція, а не стала-об'єкт: експорти-об'єкти файлу — групи анімацій для галереї й тестів.
+ */
+export function catBrawlTop(): Vec2 {
+  return { x: BALL.x, y: -BRAWL_TOP };
+}
+
+/**
+ * Таз, повернутий на `rot`, так, щоб середина тулуба (з масштабом `sb`) стала в точку `at` (система кореня): клубок
+ * крутиться довкола себе, а не довкола стегон.
+ */
+function spin(rot: number, at: Vec2, sb: Vec2): Move {
+  const pelvis = setupOf("pelvis", "front");
+  const mid = turn({ x: BODY_MIDDLE.x * sb.x, y: BODY_MIDDLE.y * sb.y }, rot);
+  return { rot, x: round(at.x - pelvis.x - mid.x), y: round(at.y - pelvis.y - mid.y) };
+}
+
+/** Лапи клубка не пробивають підлогу: лапу, що сягає нижче своєї лінії підлоги (з запасом `BRAWL_CLEAR`), вкорочено (в обох ракурсах). */
+function aboveFloor(pose: Pose): Pose {
+  const legs: Partial<Record<Leg, Plant | Move>> = { ...pose.legs };
+  for (const leg of LEGS) {
+    const spec = legs[leg];
+    if (!spec || isPlant(spec)) continue;
+    let sx = spec.sx ?? 1;
+    const below = (view: ArtView): number => pawOf(leg, view, { ...pose, legs: { ...legs, [leg]: { ...spec, sx } } }).y - setupPaw(leg, view).y;
+    for (let i = 0; i < 16; i++) {
+      if (Math.max(below("front"), below("back")) <= -BRAWL_CLEAR || sx < 0.35) break;
+      sx *= 0.92;
+    }
+    legs[leg] = { ...spec, sx: round(sx) };
+  }
+  return { ...pose, legs };
+}
+
+/**
+ * Поза кулі: `turnDeg` — оберт кулі, `hop` — підскок; лапи — кути (кожна стирчить назовні: передні — уперед, задні — назад)
+ * і довжина `reach`; `tail` — куди стирчить хвіст на екрані (градуси, −90 — угору): лише вгору й убік, щоб не пробивав
+ * підлогу. Голову підібрано до грудей (морду ховає доріжка z), тулуб — куля.
+ */
+function ballPose(turnDeg: number, hop: number, ff: number, fn: number, bf: number, bn: number, tail: number, reach: number): Pose {
+  return aboveFloor({
+    root: { y: hop },
+    pelvis: spin(turnDeg, BALL, BRAWL_BODY),
+    body: { sx: BRAWL_BODY.x, sy: BRAWL_BODY.y },
+    neck: { rot: 85, x: -8, y: 6 },
+    head: { rot: -12, sx: 0.9, sy: 0.9 },
+    tail: { rot: tail - turnDeg - setupOf("tail", "front").rot },
+    legs: {
+      "leg-front-far": { rot: ff, sx: 1.1 * reach },
+      "leg-front-near": { rot: fn, sx: 1.17 * reach },
+      "leg-back-far": { rot: bf, sx: 1.04 * reach },
+      "leg-back-near": { rot: bn, sx: 1.14 * reach },
+    },
+  });
+}
+
+/** Слоти голови: у клубку їх ховає за тулуб (z нижче тулуба, 5), лише часом морда проблискує. */
+const HEAD_SLOTS = ["ear-far", "ear-near", "head", "muzzle", "eyes", "mouth"] as const satisfies readonly CatSlot[];
+/** z слотів голови, сховано за тулубом (порядок між собою — як у вихідній позі). */
+const HEAD_HIDDEN: Readonly<Record<(typeof HEAD_SLOTS)[number], number>> = { "ear-far": 3.2, "ear-near": 3.4, head: 3.6, muzzle: 3.8, eyes: 4, mouth: 4.2 };
+
+/** Вихідний z слота в ракурсі. */
+function slotZ(id: CatSlot, view: ArtView): number {
+  const over = CAT_RIG.views[view].slots?.[id]?.z;
+  return over ?? CAT_RIG.slots.find((s) => s.id === id)?.z ?? 0;
+}
+
+/** Ключ клубка: момент, оберт, підскок, кути лап (ff, fn, bf, bn), куди стирчить хвіст, довжина лап і перехід до наступного. */
+type BallKey = readonly [t: number, turn: number, hop: number, ff: number, fn: number, bf: number, bn: number, tail: number, reach: number, ease: "out" | "inOut"];
+
+/**
+ * «Клубок бійки» (§9.4, поза 2): кіт згорнувся кулею довкола точки посередині пари (`PAIR_GAPS.brawl` = 0) — тулуб круглий,
+ * голова підібрана до грудей і схована за тулубом (морда лише проблискує на мить), з кулі стирчать лапи, хвіст і вуха. Куля
+ * перекочується ривками — за цикл повний оберт чвертями: ривок уперед з підскоком, віддача назад, — а лапи на кожному ривку
+ * міняються місцями й коротко б'ють назовні. Найнижчі точки — не нижче лінії підлоги (`aboveFloor`).
+ *
+ * Пара: обидва коти грають те саме, другий — віддзеркалено, тож на екрані кулі котяться в протилежні боки. Щоб пара не була
+ * точним дзеркалом, вигляд (T1) має пускати другого кота пари з іншою фазою — `from` зсунутим на `CAT_BRAWL_PHASE_MS`; бабл
+ * «бійка» — у точці `catBrawlTop()`.
+ */
+function brawl(): CatAnim {
+  const D = BRAWL_MS;
+  const spec: readonly BallKey[] = [
+    [0, 0, 0, -150, -60, 120, 60, -160, 1, "out"],
+    [110, 100, -4, -40, -130, 50, 140, -40, 1.05, "inOut"],
+    [220, 82, -1, -90, -170, 90, 30, -80, 0.9, "out"],
+    [330, 195, -5, -130, -30, 150, 70, -170, 1.05, "inOut"],
+    [440, 176, -1, -60, -110, 40, 120, -20, 0.9, "out"],
+    [560, 282, -4, -160, -80, 110, 30, -120, 1.05, "inOut"],
+    [670, 268, -1, -100, -150, 70, 150, -60, 0.9, "out"],
+    [790, 372, -4, -120, -50, 140, 50, -150, 1.05, "inOut"],
+    [D, 360, 0, -150, -60, 120, 60, -160, 1, "out"],
+  ];
+  // Між ключами куля провертається на сотню градусів, і лапа могла б пройти крізь підлогу посередині переходу: тож ключі
+  // густі (кожен перехід — `SUB` кроків з тим самим згладжуванням), і на кожному лапи підрізано над підлогою.
+  const SUB = 4;
+  const keys: PoseKey[] = [];
+  for (let i = 0; i < spec.length - 1; i++) {
+    const a = spec[i];
+    const b = spec[i + 1];
+    if (!a || !b) continue;
+    for (let j = 0; j < SUB; j++) {
+      const u = easeValue(a[9], j / SUB);
+      const mix = (k: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8): number => a[k] + (b[k] - a[k]) * u;
+      const t = Math.round(a[0] + ((b[0] - a[0]) * j) / SUB);
+      keys.push({ t, pose: ballPose(mix(1), mix(2), mix(3), mix(4), mix(5), mix(6), mix(7), mix(8)), ease: "linear" });
+    }
+  }
+  const last = spec[spec.length - 1];
+  if (last) keys.push({ t: D, pose: ballPose(last[1], last[2], last[3], last[4], last[5], last[6], last[7], last[8]) });
+  // Морда проблискує на мить після ривків, коли голова нагорі; решту часу голову ховає тулуб. Ззаду голова й так за тулубом.
+  const shown: readonly StepKey<boolean>[] = [
+    { t: 0, v: true },
+    { t: 70, v: false },
+    { t: 560, v: true },
+    { t: 640, v: false },
+  ];
+  const slots: Partial<Record<CatSlot, SlotTracks>> = {};
+  const backSlots: Partial<Record<CatSlot, SlotTracks>> = {};
+  for (const id of HEAD_SLOTS) {
+    slots[id] = { z: shown.map((k) => ({ t: k.t, v: k.v ? slotZ(id, "front") : HEAD_HIDDEN[id] })) };
+    backSlots[id] = { z: [{ t: 0, v: slotZ(id, "back") }] };
+  }
+  return build(D, true, keys, { slots, back: { slots: backSlots } });
+}
+
+/**
+ * «Вилизує іншого» (§9.4, поза 3): сидить упритул збоку (як `SIT`), шия витягнута вперед-униз, і рот — на висоті шиї й
+ * плеча того, хто сидить, і голови того, хто лежить чи спить («прийшов лягти до сплячого»): мазок починається знизу й
+ * швидко йде вгору, назад — повільніше; два мазки й пауза. Голова лише торкається друга збоку, тож його морду видно.
+ * Хвіст спокійно лежить. Очі напівзаплющені й язичок — з `catFace`.
+ */
+function lick(): CatAnim {
+  const D = 1200;
+  // Подався грудьми вперед (таз на 12° від сидіння), шия вперед-униз: рот ≈ 25–31 одиниця над підлогою.
+  const reach = (up: number): Pose => sitWith({ pelvis: { rot: 12 }, neck: { rot: 30 - up * 14, x: -3, y: 5 - up * 3 }, head: { rot: -25 + up * 6 } });
+  const down = reach(0);
+  const up = reach(1);
+  const rest = reach(0.6);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: rest, ease: "inOut" },
+      { t: 160, pose: down, ease: "out" },
+      { t: 280, pose: up, ease: "inOut" },
+      { t: 470, pose: down, ease: "out" },
+      { t: 590, pose: up, ease: "inOut" },
+      { t: 820, pose: rest },
+      { t: D, pose: rest },
+    ],
+    { bones: { tail: tailWave(sine(D, D, SIT_TAIL, 4)) } },
+  );
+}
+
+/**
+ * Ігрова боротьба, зверху (§9.4, поза 4): стоїть над другом, що лежить на спині, — тіло відсунуте назад і трохи піднесене,
+ * ближня передня лапа піднята вперед-угору перед мордою (подушечкою на висоті очей, попереду носа; плече подалося вперед,
+ * голова відхилилася назад-угору, щоб лапу було видно окремо від голови) й легенько б'є згори вниз (двічі й пауза); хвіст
+ * угору й мотається. Лапа весь час під головою (z вихідної пози): піднята, вона попереду морди й голову не перетинає.
+ */
+function paw(): CatAnim {
+  const D = 1400;
+  /** `lift` — 1: лапу піднято, 0: вдарила вниз. */
+  const base = (lift: number, rot: number): Pose =>
+    standWith({
+      pelvis: { x: -9 - lift, y: -1 },
+      body: { rot: -10 - lift * 4 },
+      neck: { rot: 18 - lift * 34, x: -lift * 6 },
+      head: { rot: -6 + lift * 16 },
+      legs: {
+        "leg-front-near": { rot, x: lift * 5, y: -2 - lift * 2, sx: 0.95 + lift * 0.04 },
+        "leg-front-far": at(-6),
+        "leg-back-far": at(-9),
+        "leg-back-near": at(-9),
+      },
+    });
+  const raised = base(1, -114);
+  const hit = base(0, -40);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: raised, ease: "in" },
+      { t: 140, pose: hit, ease: "out" },
+      { t: 380, pose: raised, ease: "in" },
+      { t: 520, pose: hit, ease: "out" },
+      { t: 800, pose: base(0.8, -106) },
+      { t: D, pose: raised },
+    ],
+    { bones: { tail: tailWave(sine(D, 700, 22, 14)) } },
+  );
+}
+
+/**
+ * Ігрова боротьба, знизу (§9.4, поза 4): лежить на спині — тулуб перевернуто животом догори, лапи догори дриґають
+ * (повільніше, ніж у клубку бійки), голова підведена до того, хто зверху, хвіст мотається.
+ */
+function kick(): CatAnim {
+  const D = 1100;
+  const pose = (ff: number, fn: number, bf: number, bn: number, rock: number): Pose => ({
+    pelvis: { x: -4, y: 5, rot: rock, sy: -1 },
+    neck: { rot: -10, y: 7 },
+    head: { rot: -12, sy: -1 },
+    tail: { rot: -20, mirror: true },
+    legs: {
+      "leg-front-far": { rot: ff, sx: 1.12 },
+      "leg-front-near": { rot: fn, sx: 1.12 },
+      "leg-back-far": { rot: bf, sx: 1.08 },
+      "leg-back-near": { rot: bn, sx: 1.08 },
+    },
+  });
+  const A = pose(-55, 10, -25, 45, -3);
+  const B = pose(10, -55, 45, -25, 3);
+  const wave = sine(D, 550, -20, 16).map((k) => tailMove({ rot: k.v, mirror: true }));
+  const keys = sine(D, 550, -20, 16);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: D / 2, pose: B },
+      { t: D, pose: A },
+    ],
+    {
+      bones: {
+        tail: {
+          rot: keys,
+          pos: keys.map((k, i) => ({ ...k, v: v2(round(wave[i]?.x ?? 0), round(wave[i]?.y ?? 0)) })),
+          scale: [{ t: 0, v: v2(1, -1) }],
+        },
+      },
+    },
+    // На спині — як «belly» у N1: ближня передня лапа ззаду без перевизначення.
+    false,
+  );
+}
+
+/**
+ * Засідка (§9.12, §9.4, поза 5): припав до підлоги пласким клином — голова низько й уперед (шия витягнута вперед-униз,
+ * голова назустріч, дивиться вперед на здобич, підборіддя на рівні плечей), — і зад виляє: кілька швидких ривків крупом
+ * угору-вниз з поворотом, щораз швидше; голова тим часом тримає ціль (шия компенсує нахил тулуба). Потім завмирає й ледь
+ * підкрадається вперед; кінчик хвоста смикається. Від буханця («не хоче гратися») відрізняє силует: там голова висока.
+ */
+function crouch(): CatAnim {
+  const D = 1600;
+  const TAIL = -100;
+  const low = (rump: number, creep = 0): Pose => ({
+    pelvis: { x: creep, y: 9 - rump * 4.5, rot: rump * 7 },
+    body: { rot: 2 - rump * 6 },
+    neck: { rot: 30 + rump * 6, x: 4 + creep * 0.5, y: 7 },
+    head: { rot: -30 },
+    tail: { rot: TAIL },
+    legs: {
+      "leg-front-far": at(9, 0, { sy: 1.1 }),
+      "leg-front-near": at(9, 0, { sy: 1.1 }),
+      "leg-back-far": at(5, 0, { sy: 1.1 }),
+      "leg-back-near": at(5, 0, { sy: 1.1 }),
+    },
+  });
+  const rest = low(0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: rest },
+      { t: 160, pose: low(1) },
+      { t: 300, pose: low(-0.3) },
+      { t: 420, pose: low(1) },
+      { t: 520, pose: low(-0.3) },
+      { t: 600, pose: low(1), ease: "out" },
+      { t: 680, pose: low(-0.2) },
+      { t: 820, pose: rest },
+      { t: 1150, pose: low(0, 1.5) },
+      { t: 1250, pose: low(0, 1.5) },
+      { t: D, pose: rest },
+    ],
+    { bones: { tail: tailWave(track([0, TAIL], [860, TAIL], [960, TAIL + 18], [1060, TAIL - 4], [1160, TAIL + 16], [1300, TAIL], [D, TAIL])) } },
+  );
+}
+
+/**
+ * Дряпає (§9.12, «Дряпання»; і лапає рулон на стіні): стоїть на задніх лапах, витягнувшись угору, голова задерта, передні
+ * лапи високо на кігтеточці й по черзі тягнуть униз; ближня лапа — перед мордою.
+ */
+function scratch(): CatAnim {
+  const D = 1100;
+  const up = (near: number, far: number): Pose => ({
+    pelvis: { x: 2, y: 2, rot: -62 },
+    neck: { rot: 40, x: -3 },
+    head: { rot: 10 },
+    tail: { rot: -55 },
+    legs: {
+      "leg-front-far": { rot: far },
+      "leg-front-near": { rot: near },
+      "leg-back-far": at(4),
+      "leg-back-near": at(4),
+    },
+  });
+  const A = up(-66, -34);
+  const B = up(-34, -66);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A, ease: "in" },
+      { t: 420, pose: B, ease: "inOut" },
+      { t: 550, pose: B, ease: "in" },
+      { t: 970, pose: A, ease: "inOut" },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, D, -55, 8, 1)) } },
+  );
+}
+
+/**
+ * Потягується на килимку (§9.12, «Дряпання»): груди й голова до підлоги, зад догори на прямих задніх лапах, хвіст угору,
+ * передні лапи далеко вперед і по черзі шкрябають килимок — тягнуть кігтями назад по ворсу, а вперед переносять у повітрі.
+ */
+function stretch(): CatAnim {
+  const D = 2400;
+  const bow = (near: Plant, far: Plant): Pose => ({
+    pelvis: { x: -2, y: 1, rot: 26 },
+    neck: { rot: 4 },
+    head: { rot: -22 },
+    tail: { rot: 22 },
+    legs: { "leg-front-far": far, "leg-front-near": near, "leg-back-far": at(-3), "leg-back-near": at(-3) },
+  });
+  const NEAR = 22;
+  const FAR = 24;
+  const A = bow(at(NEAR), at(FAR));
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 350, pose: bow(at(NEAR - 8), at(FAR)), ease: "in" },
+      { t: 520, pose: bow(at(NEAR - 3, -4), at(FAR)) },
+      { t: 700, pose: A },
+      { t: 1050, pose: bow(at(NEAR), at(FAR - 8)), ease: "in" },
+      { t: 1220, pose: bow(at(NEAR), at(FAR - 3, -4)) },
+      { t: 1400, pose: A },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, D / 2, 22, 5, 1)) } },
+  );
+}
+
+/**
+ * «Мітить»: нахил таза (зад угору, груди нижче), градуси; хвіст — віддзеркалений, прямо вертикально вгору на екрані (≈ 78°
+ * разом із нахилом таза, `TailPose`) і його тремтіння, градуси.
+ */
+const MARK_PELVIS = 16;
+const MARK_TAIL = 78 - MARK_PELVIS;
+const MARK_SHAKE = 7;
+
+/**
+ * Мітить (§9.12, «Мітки»): стоїть задом до цілі — зад високо на прямих задніх лапах, груди нижче, хвіст стирчить прямо
+ * вертикально вгору (не гачком, як у вітанні) й дрібно тремтить, задні лапи весь час по черзі переступають.
+ */
+function mark(): CatAnim {
+  const D = 1200;
+  const stand = (bn: number, bf: number): Pose =>
+    standWith({
+      pelvis: { x: -2, y: -5, rot: MARK_PELVIS },
+      neck: { rot: -24 },
+      head: { rot: 4 },
+      // Кадр хвоста віддзеркалено: гачок кінчика — назад, від голови, тож хвіст читається прямою «антеною», а не знаком
+      // питання вітання (як у bodання й ходи).
+      tail: { rot: MARK_TAIL, s: 1.05, mirror: true },
+      legs: { "leg-back-near": at(-2, bn), "leg-back-far": at(-2, bf), "leg-front-far": at(3), "leg-front-near": at(3) },
+    });
+  const A = stand(0, 0);
+  // Переступає весь цикл: ближня задня, дальня, знову ближня…
+  const STEP = 150;
+  const keys: PoseKey[] = [];
+  for (let i = 0; i * STEP < D; i++) {
+    keys.push({ t: i * STEP, pose: A });
+    keys.push({ t: i * STEP + STEP / 2, pose: i % 2 === 0 ? stand(-4, 0) : stand(0, -4) });
+  }
+  keys.push({ t: D, pose: A });
+  // Тремтіння нерівне: розмах щоразу трохи інший, щоб не було рівного «моторчика».
+  const SHAKE_STEP = 50;
+  const JITTER = [1, -0.8, 0.9, -1, 0.7, -0.9] as const;
+  const shake: Key<number>[] = [];
+  for (let t = 0, i = 0; t <= D; t += SHAKE_STEP, i++) shake.push({ t, v: MARK_TAIL + (t === 0 || t === D ? 0 : (JITTER[i % JITTER.length] ?? 0) * MARK_SHAKE) });
+  const shakeBack = shake.map((k) => ({ ...k, v: k.v + TAIL_MIRROR_BACK }));
+  return build(D, true, keys, { bones: { tail: tailWave(shake, 1.05, true) }, back: { bones: { tail: tailWave(shakeBack, 1.05, true) } } });
+}
+
+/** Та сама лапа, зсунута на (`dx`, `dy`) від того місця, де стоїть (в обох ракурсах). */
+const shifted = (plant: Plant, dx: number, dy: number): Plant => ({
+  ...plant,
+  paw: { x: plant.paw.x + dx, y: plant.paw.y + dy },
+  ...(plant.back ? { back: { ...plant.back, paw: { x: plant.back.paw.x + dx, y: plant.back.paw.y + dy } } } : {}),
+});
+
+/**
+ * Скидає лапою (§9.12, «Скидання речей»; і лапає дверцята шафки чи смітник): сидить, подається вперед і тягнеться ближньою
+ * лапою — штовхає раз, другий і відводить її. Лапу спершу піднято, а тоді вона йде вперед (і назад так само), тож по
+ * підлозі не ковзає.
+ */
+function knock(): CatAnim {
+  const D = 1400;
+  const near = sitPaw("leg-front-near");
+  const pose = (dx: number, dy: number, lean: number): Pose =>
+    sitWith({ pelvis: { rot: lean }, neck: { rot: -lean }, head: { rot: -lean * 0.5 }, legs: { "leg-front-near": shifted(near, dx, dy) } });
+  const rest = sitWith({});
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: rest },
+      { t: 150, pose: pose(1, -7, 2) },
+      { t: 300, pose: pose(12, -10, 6) },
+      { t: 400, pose: pose(17, -5, 8), ease: "out" },
+      { t: 540, pose: pose(12, -10, 6) },
+      { t: 640, pose: pose(17, -5, 8), ease: "out" },
+      { t: 880, pose: pose(2, -8, 2) },
+      { t: 1040, pose: rest },
+      { t: D, pose: rest },
+    ],
+    { bones: { tail: tailWave(sine(D, D / 2, SIT_TAIL, 5, 1)) } },
+  );
+}
+
+/**
+ * Просить (§9.12; і чекає крана на умивальнику): сидить рівно, витягнувшись, морда задерта до персонажа; ближньою лапою
+ * двічі б'є повітря (високо, вперед), дальньою тупцяє — і раз за цикл ненадовго підводиться «стовпчиком» на задніх, передні
+ * лапки підібрані до грудей: силует вищий за сидіння. Хвіст повільно мете підлогу.
+ */
+function beg(): CatAnim {
+  const D = 2000;
+  /** `up` — 1: підвівся на задніх (таз ще на 20° вгору, лапи до грудей, голова менше задерта — її піднімає тулуб). */
+  const pose = (ff: Vec2, fn: Vec2, up = 0): Pose =>
+    sitWith({
+      pelvis: { rot: -6 - up * 20, y: -1 },
+      neck: { rot: -4 },
+      head: { rot: -28 + up * 16 },
+      legs: { "leg-front-far": shifted(sitPaw("leg-front-far"), ff.x, -ff.y), "leg-front-near": shifted(sitPaw("leg-front-near"), fn.x, -fn.y) },
+    });
+  const DOWN = v2(0, 0);
+  const A = pose(DOWN, DOWN);
+  const TAIL = SIT_TAIL + 3;
+  /** Лапки до грудей, коли підвівся (від того місця, де стояли, вгору й трохи вперед). */
+  const TUCK_FAR = v2(3, 22);
+  const TUCK_NEAR = v2(5, 22);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 160, pose: pose(DOWN, v2(4, 11)), ease: "out" },
+      { t: 300, pose: pose(DOWN, v2(1, 3)) },
+      { t: 440, pose: pose(DOWN, v2(5, 12)), ease: "out" },
+      { t: 620, pose: A },
+      { t: 780, pose: pose(v2(1, 6), DOWN) },
+      { t: 920, pose: A },
+      { t: 1180, pose: pose(TUCK_FAR, TUCK_NEAR, 1), ease: "out" },
+      { t: 1500, pose: pose(v2(TUCK_FAR.x, TUCK_FAR.y + 1), v2(TUCK_NEAR.x, TUCK_NEAR.y + 1), 1) },
+      { t: 1760, pose: A },
+      { t: D, pose: A },
+    ],
+    // Хвіст мете підлогу; поки кіт підвівся, таз повернуто на 20° носом угору, тож хвіст — на стільки ж назад угору, щоб
+    // лишався на підлозі, а не пірнав під неї.
+    { bones: { tail: tailWave(track([0, TAIL + 9], [500, TAIL], [920, TAIL - 9], [1180, TAIL + 24], [1500, TAIL + 30], [1760, TAIL + 4], [D, TAIL + 9])) } },
+  );
+}
+
+/**
+ * Буцає головою (§9.12, «Ласкавість»): стоїть біля персонажа й тре лобом — подається вперед, голова вгору (лоб уперед),
+ * потім ковзає щокою назад; хвіст трубою, кінчик тремтить.
+ */
+function nudge(): CatAnim {
+  const D = 1600;
+  const pose = (push: number, tilt: number): Pose =>
+    standWith({ pelvis: { x: push * 0.6 }, body: { rot: -push * 0.5 }, neck: { rot: -push * 2, x: push }, head: { rot: tilt }, tail: { rot: 22 } });
+  const A = pose(0, 0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 320, pose: pose(5, -22) },
+      { t: 520, pose: pose(5, -14) },
+      { t: 820, pose: pose(2, 12) },
+      { t: 1100, pose: A },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, 400, 22, 3)) } },
+  );
+}
+
+/** На клавіатурі (§9.12, «Кіт і робота»): сидить і місить клавіші передніми лапками, голова повільно роззирається. */
+function keyboard(): CatAnim {
+  const D = 3000;
+  const pose = (ff: number, fn: number, look: number): Pose =>
+    sitWith({ head: { rot: look }, legs: { "leg-front-far": lifted(sitPaw("leg-front-far"), ff), "leg-front-near": lifted(sitPaw("leg-front-near"), fn) } });
+  const A = pose(0, 0, 0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 250, pose: pose(0, 6, -3) },
+      { t: 500, pose: pose(6, 0, -6) },
+      { t: 750, pose: pose(0, 6, -8) },
+      { t: 1000, pose: pose(0, 0, -8) },
+      { t: 1700, pose: pose(0, 0, 8) },
+      { t: 1950, pose: pose(6, 0, 8) },
+      { t: 2200, pose: pose(0, 6, 5) },
+      { t: 2450, pose: pose(0, 0, 3) },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, D / 2, SIT_TAIL, 6, 1)) } },
+  );
+}
+
+/**
+ * Біля вікна (§9.12, «Вікно»): сидить, задерши голову, стежить за птахами — голова веде за ними й смикається за новим,
+ * кінчик хвоста сіпається. Здебільшого спиною до нас — у вікно в задній стіні (`catFacing`).
+ */
+function watchWindow(): CatAnim {
+  const D = 4000;
+  const pose = (look: number): Pose => sitWith({ pelvis: { rot: -4 }, neck: { rot: -12 }, head: { rot: -14 + look } });
+  const A = pose(0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 900, pose: pose(-16) },
+      { t: 1500, pose: pose(-18) },
+      { t: 1620, pose: pose(8), ease: "out" },
+      { t: 2600, pose: pose(14) },
+      { t: 2700, pose: pose(-6), ease: "out" },
+      { t: 3300, pose: pose(-2) },
+      { t: D, pose: A },
+    ],
+    {
+      bones: {
+        body: { scale: breathe(D, 2000, 0.02) },
+        tail: tailWave(track([0, SIT_TAIL], [1600, SIT_TAIL], [1700, SIT_TAIL + 12], [1800, SIT_TAIL - 1], [1900, SIT_TAIL + 10], [2000, SIT_TAIL], [D, SIT_TAIL])),
+      },
+    },
+  );
+}
+
+/**
+ * Стрибає за пером вудки (§8.2, §9.12; і б'є свою іграшку): припадає, відсунувшись тазом назад, і виляє задом, вистрибує
+ * вгору — тіло витягнуте, передні лапи над головою ловлять перо, — і падає передніми лапами на 12 одиниць уперед: притискає
+ * здобич (перо, що впало, чи іграшку на підлозі), голова схиляється до лап; потім відпускає й переступає назад на місце.
+ * Висоту стрибка задає таз, а не корінь, тож кошеня стрибає на свій зріст, а не на дорослий. Лапи, поки на підлозі, не
+ * ковзають.
+ */
+function pounce(): CatAnim {
+  const D = 1400;
+  /** Куди падають передні лапи, одиниці арту вперед від того місця, де стояли. */
+  const PIN = 12;
+  const ready = (rump: number): Pose =>
+    standWith({
+      pelvis: { x: -3, y: 7 - rump, rot: rump },
+      body: { rot: 3 - rump },
+      neck: { rot: -4 },
+    });
+  const launch: Pose = {
+    pelvis: { y: -8, rot: -35 },
+    neck: { rot: 12 },
+    head: { rot: 4 },
+    tail: { rot: -40 },
+    legs: { "leg-front-far": { rot: -125 }, "leg-front-near": { rot: -95 }, "leg-back-far": { rot: 30 }, "leg-back-near": { rot: 35 } },
+  };
+  const top: Pose = {
+    pelvis: { x: 4, y: -20, rot: -58 },
+    neck: { rot: 24 },
+    head: { rot: 16 },
+    tail: { rot: -30 },
+    legs: { "leg-front-far": { rot: -150 }, "leg-front-near": { rot: -118 }, "leg-back-far": { rot: 10 }, "leg-back-near": { rot: 20 } },
+  };
+  /** Притиснув: передні лапи на здобичі попереду, груди низько, голова до лап; `press` — дотискає. */
+  const pin = (press: number): Pose =>
+    standWith({
+      pelvis: { x: 5 + press * 0.5, y: 5 + press, rot: 9 },
+      neck: { rot: 24 + press * 4 },
+      head: { rot: -8 },
+      tail: { rot: -25 },
+      legs: { "leg-front-far": at(PIN + 1), "leg-front-near": at(PIN) },
+    });
+  /** Відпускає: передні лапи підняті й переносяться назад на свої місця (задні весь час стоять). */
+  const release = (back: number): Pose =>
+    standWith({
+      pelvis: { x: 3 * (1 - back), y: 2 * (1 - back), rot: 4 * (1 - back) },
+      neck: { rot: 10 * (1 - back) },
+      tail: { rot: -15 * (1 - back) },
+      legs: { "leg-front-far": at(round((PIN - 6) * (1 - back)), -6 + back * 3.5), "leg-front-near": at(round((PIN - 6) * (1 - back)), -6 + back * 3.5) },
+    });
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: STAND },
+      { t: 180, pose: ready(0) },
+      { t: 270, pose: ready(2) },
+      { t: 360, pose: ready(0), ease: "in" },
+      { t: 470, pose: launch, ease: "out" },
+      { t: 620, pose: top, ease: "in" },
+      { t: 760, pose: pin(0), ease: "out" },
+      { t: 880, pose: pin(1) },
+      { t: 1040, pose: pin(0.6) },
+      { t: 1160, pose: release(0) },
+      { t: 1260, pose: release(1) },
+      { t: 1330, pose: STAND },
+      { t: D, pose: STAND },
+    ],
+    // У стрибку ближня лапа ловить перо перед мордою — поверх голови; падаючи на здобич, вона вже під підборіддям.
+    {
+      slots: {
+        "leg-front-near": {
+          z: [
+            { t: 0, v: 7 },
+            { t: 430, v: 10.5 },
+            { t: 700, v: 7 },
+          ],
+        },
+      },
+    },
+  );
+}
+
+/**
+ * Хода — та сама рись, що `walk` у N1 (`basic.ts`: `WALK_MS`, `WALK_AMP`, `WALK_REACH`, `WALK_LIFT`, `WALK_BOB` — ті самі
+ * числа й ті самі доріжки лап): лапа ходить поворотом від суглоба з розмахом `GAIT_AMP` від вертикалі, однаковим спереду й
+ * ззаду, тож обидві лапи пари за опору проходять ту саму відстань, а крок масштабується з довжиною лапи (кошеня, короткі
+ * лапи). За цикл кіт ступає на `CAT_WALK_STRIDE` = 4·`GAIT_REACH`·sin `GAIT_AMP` ≈ 2,42 довжини лапи — тож T1 грає «несе» з
+ * тією самою швидкістю відтворення, що й ходу (`catWalkRate` N1), лапи не ковзають, а перехід walk ↔ carry не стрибає.
+ * Якщо N1 змінить ходу, ці числа мають змінитися разом із нею.
+ */
+const GAIT_MS = 340;
+const GAIT_AMP = 34;
+const GAIT_REACH = 1.08;
+const GAIT_LIFT = 0.78;
+const GAIT_BOB = 2;
+
+/**
+ * Лапа в ході (як `gaitLeg` у N1): опора — з моменту `start` пів циклу (лапа на підлозі йде спереду назад рівномірно, на
+ * краях опори трохи витягнута), потім перенос (підібрана й м'яко вперед).
+ */
+function gaitLeg(start: 0 | 0.5): BoneTracks {
+  const T = GAIT_MS;
+  const H = T / 2;
+  const Q = T / 4;
+  const reach = v2(GAIT_REACH, 1);
+  if (start === 0) {
+    return {
+      rot: track([0, -GAIT_AMP, "linear"], [H, GAIT_AMP], [T, -GAIT_AMP]),
+      scale: track([0, reach, "out"], [Q, v2(1, 1), "in"], [H, reach], [H + Q, v2(GAIT_LIFT, 1)], [T, reach]),
+    };
+  }
+  return {
+    rot: track([0, GAIT_AMP], [H, -GAIT_AMP, "linear"], [T, GAIT_AMP]),
+    scale: track([0, reach], [Q, v2(GAIT_LIFT, 1)], [H, reach, "out"], [H + Q, v2(1, 1), "in"], [T, reach]),
+  };
+}
+
+/** Таз у ході (як `gaitBob` у N1): найвище посередині опори (лапи прямо), найнижче — на зміні пар (лапи навскіс). */
+function gaitBob(): BoneTracks {
+  const T = GAIT_MS;
+  const Q = T / 4;
+  const low = v2(0, GAIT_BOB);
+  return { pos: track([0, low, "out"], [Q, v2(0, 0), "in"], [2 * Q, low, "out"], [3 * Q, v2(0, 0), "in"], [T, low]) };
+}
+
+/**
+ * Несе в зубах (§9.12: шкарпетку, іграшку) — рись N1 (діагональні пари: ближня передня з дальньою задньою), лише голова
+ * високо піднята (річ не волочиться) і хвіст угору й похитується. Ззаду ближня передня лапа — під тулубом і всередину від
+ * краю грудей, як у ході N1. Темп — як у ходи: `catWalkRate` N1.
+ */
+function carry(): CatAnim {
+  const T = GAIT_MS;
+  return {
+    duration: T,
+    loop: true,
+    bones: {
+      pelvis: gaitBob(),
+      "leg-front-near": gaitLeg(0),
+      "leg-back-far": gaitLeg(0),
+      "leg-front-far": gaitLeg(0.5),
+      "leg-back-near": gaitLeg(0.5),
+      neck: { rot: [{ t: 0, v: -14 }] },
+      head: { rot: sine(T, T / 2, 6, 1.5, 1) },
+      tail: tailWave(sine(T, T, 18, 4)),
+    },
+    views: {
+      back: {
+        bones: { "leg-front-near": { pos: [{ t: 0, v: v2(BACK_NEAR_IN, 0) }] } },
+        slots: { "leg-front-near": { z: [{ t: 0, v: BACK_NEAR_Z }] } },
+      },
+    },
+  };
+}
+
+/** Гризе дріт чи пакет (§9.12, «Гризіння»): лежить буханцем, морда до підлоги, голова повернута набік і ходить у ритмі жування. */
+function chew(): CatAnim {
+  const D = 900;
+  const pose = (tilt: number, dip: number): Pose => loafWith({ neck: { rot: 30 + dip, x: 2, y: 2 }, head: { rot: tilt } });
+  const A = pose(5, 0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 200, pose: pose(-15, 4) },
+      { t: 450, pose: A },
+      { t: 650, pose: pose(-15, 4) },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, D, LOAF_TAIL, 5, 1)) } },
+    // Буханець — як «loaf» у N1: ближня передня лапа ззаду без перевизначення.
+    false,
+  );
+}
+
+/**
+ * «Образливий» дметься (§9.12): сидить спиною до персонажа (`catFacing`), згорбившись — плечі вперед-униз, голова опущена в
+ * плечі (ззаду її майже ховає спина), хвіст лежить на підлозі; кінчик зрідка сіпається.
+ */
+function sulk(): CatAnim {
+  const D = 3200;
+  const TAIL = SIT_TAIL + 8;
+  // Важко зітхає раз за пів циклу: груди ширшають, плечі ледь піднімаються, голова хилиться нижче на видиху.
+  const pose = (head: number, breath: number): Pose =>
+    sitWith({ pelvis: { rot: 8 - breath * 2 }, body: { sy: 1 + breath * 0.04 }, neck: { rot: 46, x: -4, y: 3 }, head: { rot: -32 + head - breath * 2 }, tail: { rot: 8 } });
+  const A = pose(0, 0);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 700, pose: pose(2, 1) },
+      { t: 1600, pose: pose(5, 0) },
+      { t: 2300, pose: pose(3, 1) },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(track([0, TAIL], [2200, TAIL], [2350, TAIL + 10], [2500, TAIL - 1], [2650, TAIL + 6], [D, TAIL])) } },
+  );
+}
+
+/**
+ * Не хоче гратися (§9.4, поза 6): лежить буханцем, голова піднята до того, хто кликав; хвіст лежить, кінчик швидко б'є по
+ * підлозі — частіше, ніж у спокійного кота. Рух — лише хвіст.
+ */
+function decline(): CatAnim {
+  const D = 1500;
+  const pose = loafWith({ neck: { rot: -6 }, head: { rot: -4 } });
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose },
+      { t: D, pose },
+    ],
+    {
+      bones: {
+        body: { scale: breathe(D, 1500, 0.03) },
+        tail: tailWave(track([0, LOAF_TAIL], [140, LOAF_TAIL + 19, "out"], [300, LOAF_TAIL - 3], [440, LOAF_TAIL + 19, "out"], [600, LOAF_TAIL - 3], [D, LOAF_TAIL])),
+      },
+    },
+    false,
+  );
+}
+
+/**
+ * Нюхає (§9.12: дрібничку, нову річ, м'яту, корм чи лоток, від яких відмовився): морда біля самої підлоги — передні лапи
+ * зігнуті, груди низько, шия донизу, — і принюхується дрібними ривками там, унизу.
+ */
+function sniff(): CatAnim {
+  const D = 1800;
+  const pose = (dip: number, reach: number): Pose =>
+    standWith({
+      pelvis: { y: 2 },
+      body: { rot: 14 },
+      neck: { rot: 52 + dip, x: reach },
+      head: { rot: -26 },
+      tail: { rot: -10 },
+      legs: { "leg-front-far": at(2), "leg-front-near": at(2) },
+    });
+  const A = pose(0, 0);
+  const B = pose(3, 1);
+  return build(
+    D,
+    true,
+    [
+      { t: 0, pose: A },
+      { t: 120, pose: B },
+      { t: 240, pose: A },
+      { t: 360, pose: B },
+      { t: 480, pose: A },
+      { t: 1000, pose: pose(-6, -1) },
+      { t: 1400, pose: A },
+      { t: D, pose: A },
+    ],
+    { bones: { tail: tailWave(sine(D, D, -10, 7, 1)) } },
+  );
+}
+
+/** Анімації групи «behavior» (`CAT_ANIM_GROUPS.behavior`). */
+export const CAT_BEHAVIOR = defineAnims(CAT_RIG, {
+  arch: arch(),
+  hiss: hiss(),
+  brawl: brawl(),
+  lick: lick(),
+  paw: paw(),
+  kick: kick(),
+  crouch: crouch(),
+  scratch: scratch(),
+  stretch: stretch(),
+  mark: mark(),
+  knock: knock(),
+  beg: beg(),
+  nudge: nudge(),
+  keyboard: keyboard(),
+  window: watchWindow(),
+  pounce: pounce(),
+  carry: carry(),
+  chew: chew(),
+  sulk: sulk(),
+  decline: decline(),
+  sniff: sniff(),
+});

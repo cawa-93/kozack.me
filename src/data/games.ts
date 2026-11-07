@@ -3,6 +3,7 @@
 import type { ImageMetadata } from 'astro';
 import vtechaCover from '../assets/games/vtecha.jpg';
 import kutochokTyshiCover from '../assets/games/kutochok-tyshi.jpg';
+import kotoklopitCover from '../assets/games/kotoklopit.jpg';
 
 type GameText = {
     title: string,
@@ -39,6 +40,18 @@ export const games: Game[] = [
         en: {
             title: 'Quiet Corner',
             description: 'A cozy tower defence about an introvert. Build walls of books and put wizard cats on them so the guests don\'t drain her social battery.',
+        },
+    },
+    {
+        slug: 'kotoklopit',
+        cover: kotoklopitCover,
+        uk: {
+            title: 'Котоклопіт',
+            description: 'Симулятор життя з котами в одній квартирі. Робота, побут і рахунки тиснуть щодня, а кожен кіт має власний характер і свої плани на ваш вечір.',
+        },
+        en: {
+            title: 'Cat Trouble',
+            description: 'A life sim about sharing a flat with cats. Work, chores and bills press on you every day, and every cat has a character of its own and plans for your evening.',
         },
     },
 ];

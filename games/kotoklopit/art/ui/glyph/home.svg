@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<!-- ui/glyph/home — дім (🏠): світлі стіни, червоний дах і дерев'яні двері. Пакет A12b «Іконки II: ситуації, позначки, бульбашки, гліфи» (хвиля 2), art/STYLE.md.
+size 64×64; pivot (32, 32) — центр; points: —. Без станів і шарів. Гліф DOM (src/ui/glyphs.ts): стоїть у тексті карток ≈ 1,15em (18–24 px) на папері —
+одна-дві великі форми, товстий контур, без дрібниць.
+-->
+<defs>
+<clipPath id="ui-glyph-home-walls"><path d="M15 28.3Q32 28.3 49 28.3Q50 28.3 50 29.3Q50.5 40.8 50 52.3Q50 54.3 48 54.3Q32 54.8 16 54.3Q14 54.3 14 52.3Q13.5 40.8 14 29.3Q14 28.3 15 28.3Z"/></clipPath>
+</defs>
+<g id="p-walls">
+<path d="M15 28.3Q32 28.3 49 28.3Q50 28.3 50 29.3Q50.5 40.8 50 52.3Q50 54.3 48 54.3Q32 54.8 16 54.3Q14 54.3 14 52.3Q13.5 40.8 14 29.3Q14 28.3 15 28.3Z" fill="#e0d4b9"/>
+<path d="M14 30.3L50 30.3L50 36.3Q32 34.3 14 36.3Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#ui-glyph-home-walls)"/>
+<path d="M29.5 38.3Q32 37.9 34.5 38.3Q37.5 38.3 37.5 41.3Q37.7 47.8 37.5 54.3Q37.5 54.3 37.5 54.3Q32 54.5 26.5 54.3Q26.5 54.3 26.5 54.3Q26.3 47.8 26.5 41.3Q26.5 38.3 29.5 38.3Z" fill="#9a6a47"/>
+<path d="M29.5 38.3Q32 37.9 34.5 38.3Q37.5 38.3 37.5 41.3Q37.7 47.8 37.5 54.3Q37.5 54.3 37.5 54.3Q32 54.5 26.5 54.3Q26.5 54.3 26.5 54.3Q26.3 47.8 26.5 41.3Q26.5 38.3 29.5 38.3Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15 28.3Q32 28.3 49 28.3Q50 28.3 50 29.3Q50.5 40.8 50 52.3Q50 54.3 48 54.3Q32 54.8 16 54.3Q14 54.3 14 52.3Q13.5 40.8 14 29.3Q14 28.3 15 28.3Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.5 54.6Q32 55.6 49.5 54.6" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-roof">
+<path d="M34.2 8.8Q45.3 18 55.3 28.3Q57.5 30.3 54.5 30.3Q32 30.8 9.5 30.3Q6.5 30.3 8.7 28.3Q18.7 18 29.8 8.8Q32 6.8 34.2 8.8Z" fill="#c4524b"/>
+<path d="M34.2 8.8Q45.3 18 55.3 28.3Q57.5 30.3 54.5 30.3Q32 30.8 9.5 30.3Q6.5 30.3 8.7 28.3Q18.7 18 29.8 8.8Q32 6.8 34.2 8.8Z" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,0 +1,104 @@
+{
+ "name": "Переноски",
+ "description": "Субота другого тижня, 11:00. Три переноски, у них троє котів (§8.7): над купою бабл із кількістю, перша смикається, бо двоє вже гризуть. Дія порожніми руками випускає всіх, з котом на руках садить. Четвертий кіт вільний: його можна посадити чи везти на руках.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "id": 901,
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 8.5,
+   "y": 9.5,
+   "away": "carrier",
+   "cage": {
+    "clock": 320,
+    "cry": 0
+   }
+  },
+  {
+   "id": 902,
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Мурка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 8.5,
+   "y": 9.5,
+   "away": "carrier",
+   "cage": {
+    "clock": 320,
+    "cry": 0
+   }
+  },
+  {
+   "id": 903,
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Сірко",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 8.5,
+   "y": 9.5,
+   "away": "carrier",
+   "cage": {
+    "clock": 20,
+    "cry": 0
+   }
+  },
+  {
+   "id": 904,
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Пухнастик",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 6.5,
+   "y": 8.5
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 7.5,
+    "y": 8.5,
+    "facing": {
+     "x": 0.7071,
+     "y": 0.7071
+    }
+   }
+  },
+  "home": {
+   "carriers": [
+    {
+     "quality": "premium",
+     "wear": 0
+    },
+    {
+     "quality": "cheap",
+     "wear": 0
+    },
+    {
+     "quality": "cheap",
+     "wear": 0
+    }
+   ],
+   "caged": [
+    901,
+    902,
+    903
+   ]
+  }
+ }
+}

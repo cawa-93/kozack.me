@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 40" width="80" height="40">
+<!-- ui/tag — бірка знижки «−X%» у каталозі (`.price-tag`, `src/ui/shop.ts`): як цінник-знижка в супермаркеті — червона бірка з
+гострим кінцем ліворуч і пробитим отвором біля нього, верх світліший (redHi), низ — губа тіні. Напис «−X%» — текстом CSS поверх
+(паперовим кольором, праворуч від отвору), навскіс бірку ставить CSS. Рішення автора 2026-11-03 (GAME_DESIGN §6.4, «Бірка знижки
+й кошик унизу»), малюнок — рішення виконавця; art/STYLE.md.
+size 80×40; pivot (40, 20) — центр; без points (ціла картинка, тягнеться на розмір елемента). Поле 4 — CSS не виносить: бірка
+стоїть у рядку товару цілою картинкою. Контур 3,5 (у CSS ≈ 0,7 px на одиницю — ≈ 2,5 px, як рамки карток).
+-->
+<defs>
+<clipPath id="ui-tag-body"><path d="M7.2 20L18.4 7.6Q44 6.8 68.6 7.4Q72.8 7.5 72.8 11.6L73 28.4Q73 32.6 68.8 32.6Q44 33.2 18.4 32.4Z"/></clipPath>
+<clipPath id="ui-tag-hole"><path d="M13.2 20A3.4 3.4 0 1 0 20 20A3.4 3.4 0 1 0 13.2 20Z"/></clipPath>
+</defs>
+<g id="p-body">
+<path d="M7.2 20L18.4 7.6Q44 6.8 68.6 7.4Q72.8 7.5 72.8 11.6L73 28.4Q73 32.6 68.8 32.6Q44 33.2 18.4 32.4Z" fill="#c4524b"/>
+<path d="M0 0L80 0L80 11Q60 11.8 40 11.2Q20 10.6 0 11.2Z" fill="#dc7c69" clip-path="url(#ui-tag-body)"/>
+<path d="M0 28.6Q20 29.2 40 28.8Q60 28.4 80 29L80 40L0 40Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#ui-tag-body)"/>
+</g>
+<g id="p-hole">
+<path d="M13.2 20A3.4 3.4 0 1 0 20 20A3.4 3.4 0 1 0 13.2 20Z" fill="#f2e7d0"/>
+<path d="M12 14L21 14L21 19.4Q16.6 18.2 12 19.4Z" fill="#3f2541" fill-opacity="0.3" clip-path="url(#ui-tag-hole)"/>
+<path d="M13.2 20A3.4 3.4 0 1 0 20 20A3.4 3.4 0 1 0 13.2 20Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M7.2 20L18.4 7.6Q44 6.8 68.6 7.4Q72.8 7.5 72.8 11.6L73 28.4Q73 32.6 68.8 32.6Q44 33.2 18.4 32.4Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

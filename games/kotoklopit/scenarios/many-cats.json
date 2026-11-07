@@ -1,0 +1,572 @@
+{
+ "name": "22 коти",
+ "description": "Субота другого тижня, 17:00. Двадцять два коти різного віку (є тижневі кошенята) по всій квартирі — у вітальні, спальні, ванній і на кухні; шість мисок і лотків, три поїлки, два будиночки й кігтеточка. Перевірка продуктивності нової графіки (крок 16): скільки об'єктів, пам'ять запечених частин котів і частота кадрів на повільному телефоні. Квартира «прожита» великою зграєю: усі котячі сліди (§9.12), крім слідів на коробках біля входу — коробок немає.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 22
+ },
+ "state": {
+  "day": 12,
+  "minute": 1020,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 600,
+   "stats": {
+    "satiety": 70,
+    "hygiene": 70,
+    "sanity": 60
+   }
+  },
+  "home": {
+   "items": [
+    {
+     "id": 1,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-1",
+     "food": 2,
+     "foodQuality": "cheap"
+    },
+    {
+     "id": 2,
+     "kind": "bowl",
+     "quality": "premium",
+     "slot": "bowl-2",
+     "food": 2,
+     "foodQuality": "cheap"
+    },
+    {
+     "id": 3,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-3",
+     "food": 2,
+     "foodQuality": "cheap"
+    },
+    {
+     "id": 4,
+     "kind": "bowl",
+     "quality": "premium",
+     "slot": "bowl-4",
+     "food": 0,
+     "foodQuality": null
+    },
+    {
+     "id": 5,
+     "kind": "bowl",
+     "quality": "cheap",
+     "slot": "bowl-5",
+     "food": 0,
+     "foodQuality": null
+    },
+    {
+     "id": 6,
+     "kind": "bowl",
+     "quality": "premium",
+     "slot": "bowl-6",
+     "food": 0,
+     "foodQuality": null
+    },
+    {
+     "id": 7,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-1",
+     "water": 8
+    },
+    {
+     "id": 8,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-2",
+     "water": 8
+    },
+    {
+     "id": 9,
+     "kind": "water",
+     "quality": "cheap",
+     "slot": "water-3",
+     "water": 8
+    },
+    {
+     "id": 10,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-1",
+     "litter": "cheap",
+     "uses": 1
+    },
+    {
+     "id": 11,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-2",
+     "litter": "cheap",
+     "uses": 2
+    },
+    {
+     "id": 12,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-3",
+     "litter": "cheap",
+     "uses": 0
+    },
+    {
+     "id": 13,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-4",
+     "litter": "cheap",
+     "uses": 1
+    },
+    {
+     "id": 14,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-5",
+     "litter": "cheap",
+     "uses": 2
+    },
+    {
+     "id": 15,
+     "kind": "litter",
+     "quality": "cheap",
+     "slot": "litter-6",
+     "litter": "cheap",
+     "uses": 0
+    },
+    {
+     "id": 16,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "house-1"
+    },
+    {
+     "id": 17,
+     "kind": "house",
+     "quality": "cheap",
+     "slot": "house-2"
+    },
+    {
+     "id": 18,
+     "kind": "scratcher",
+     "quality": "cheap",
+     "slot": "scratcher-1"
+    },
+    {
+     "id": 19,
+     "kind": "toy",
+     "quality": "cheap",
+     "x": 5.5,
+     "y": 8.5,
+     "uses": 0
+    },
+    {
+     "id": 20,
+     "kind": "toy",
+     "quality": "premium",
+     "x": 14.5,
+     "y": 7.5,
+     "uses": 0
+    }
+   ],
+   "supplies": {
+    "catFood": {
+     "cheap": 60,
+     "premium": 10
+    },
+    "litter": {
+     "cheap": 20,
+     "premium": 0
+    }
+   },
+   "traces": [
+    "sofa",
+    "bath-mat",
+    "rug",
+    "cabinet",
+    "bedroom-rug",
+    "door",
+    "wallpaper",
+    "doorframe",
+    "wardrobe",
+    "lino"
+   ],
+   "catDays": 400
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 8,
+   "name": "Мурка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 2.5,
+   "y": 7.5,
+   "needs": {
+    "hunger": 50,
+    "play": 40,
+    "attention": 90,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 30,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 4.1,
+   "y": 8.5,
+   "needs": {
+    "hunger": 10,
+    "play": 10,
+    "attention": 70,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 60,
+   "name": "Пушок",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 5.7,
+   "y": 9.5,
+   "needs": {
+    "hunger": 90,
+    "play": 40,
+    "attention": 10,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 4,
+   "name": "Сіма",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 7.3,
+   "y": 7.5,
+   "needs": {
+    "hunger": 70,
+    "play": 90,
+    "attention": 10,
+    "fatigue": 30
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 90,
+   "name": "Тигра",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 8.9,
+   "y": 8.5,
+   "needs": {
+    "hunger": 10,
+    "play": 90,
+    "attention": 10,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 20,
+   "name": "Люся",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 10.5,
+   "y": 9.5,
+   "needs": {
+    "hunger": 30,
+    "play": 10,
+    "attention": 90,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 12,
+   "name": "Боня",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 12.1,
+   "y": 7.5,
+   "needs": {
+    "hunger": 30,
+    "play": 10,
+    "attention": 40,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Чорнушка",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 13.7,
+   "y": 8.5,
+   "needs": {
+    "hunger": 70,
+    "play": 40,
+    "attention": 10,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 2,
+   "name": "Рижик",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 15.3,
+   "y": 9.5,
+   "needs": {
+    "hunger": 90,
+    "play": 40,
+    "attention": 10,
+    "fatigue": 30
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 150,
+   "name": "Дуся",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 16.9,
+   "y": 7.5,
+   "needs": {
+    "hunger": 50,
+    "play": 10,
+    "attention": 10,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 1,
+   "name": "Кексик",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 3.5,
+   "y": 10.2,
+   "needs": {
+    "hunger": 90,
+    "play": 40,
+    "attention": 90,
+    "fatigue": 85
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 1,
+   "name": "Ласка",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 6.5,
+   "y": 6.6,
+   "needs": {
+    "hunger": 50,
+    "play": 90,
+    "attention": 90,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 50,
+   "name": "Маркіз",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 9.5,
+   "y": 10.3,
+   "needs": {
+    "hunger": 50,
+    "play": 40,
+    "attention": 40,
+    "fatigue": 30
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 6,
+   "name": "Ніжка",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 11.5,
+   "y": 6.6,
+   "needs": {
+    "hunger": 10,
+    "play": 70,
+    "attention": 90,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 70,
+   "name": "Оскар",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 14.5,
+   "y": 10.2,
+   "needs": {
+    "hunger": 70,
+    "play": 70,
+    "attention": 10,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 25,
+   "name": "Персик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 17.5,
+   "y": 9.0,
+   "needs": {
+    "hunger": 90,
+    "play": 90,
+    "attention": 40,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 3,
+   "name": "Ромашка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 2.5,
+   "y": 2.5,
+   "needs": {
+    "hunger": 30,
+    "play": 90,
+    "attention": 90,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 110,
+   "name": "Смужка",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 4.5,
+   "y": 3.5,
+   "needs": {
+    "hunger": 10,
+    "play": 70,
+    "attention": 70,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 9,
+   "name": "Тіма",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 9.5,
+   "y": 3.0,
+   "needs": {
+    "hunger": 90,
+    "play": 90,
+    "attention": 90,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 45,
+   "name": "Фіра",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 14.5,
+   "y": 3.5,
+   "needs": {
+    "hunger": 10,
+    "play": 70,
+    "attention": 90,
+    "fatigue": 10
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 15,
+   "name": "Хвостик",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 16.5,
+   "y": 2.5,
+   "needs": {
+    "hunger": 10,
+    "play": 70,
+    "attention": 90,
+    "fatigue": 60
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 35,
+   "name": "Цукерка",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 5.5,
+   "y": 1.8,
+   "needs": {
+    "hunger": 70,
+    "play": 70,
+    "attention": 10,
+    "fatigue": 85
+   }
+  }
+ ],
+ "relations": [
+  [
+   0,
+   3,
+   70
+  ],
+  [
+   4,
+   7,
+   65
+  ],
+  [
+   1,
+   8,
+   -70
+  ],
+  [
+   1,
+   6,
+   -60
+  ],
+  [
+   2,
+   5,
+   55
+  ],
+  [
+   10,
+   11,
+   60
+  ],
+  [
+   12,
+   13,
+   -50
+  ]
+ ]
+}

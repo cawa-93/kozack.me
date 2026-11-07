@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#2b2530" />
+    <title>Котоклопіт</title>
+    <!--
+      Заставка, поки вантажиться гра (крок 16): видно одразу, ще до коду гри (≈ 600 КБ) й атласу (≈ 3,7 МБ), — назва гри й
+      смуга, без JS. Смуга — того самого розміру й місця, що й одиниці інтерфейсу гри (280 × 6 з 1280 × 720, посередині):
+      поки коду немає, вона біжить туди-сюди, а потім заповнюється ходом завантаження атласу (`--boot-progress`,
+      src/scenes/PreloadScene.ts). Гра готова — заставку прибирає PreloadScene. Кольори — тло й папір гри (art/palette.ts).
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #2b2530;
+      }
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f3e9dc;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      .boot-title {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(50% + 22px);
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .boot-bar {
+        position: relative;
+        width: min(21.875vw, 38.889vh);
+        height: max(3px, min(0.469vw, 0.833vh));
+        border-radius: 99px;
+        background: #3b3340;
+        overflow: hidden;
+      }
+      .boot-bar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: #f3e9dc;
+        transform-origin: left;
+        animation: boot-run 1.1s ease-in-out infinite alternate;
+        transform: scaleX(0.3);
+      }
+      .boot.boot-progress .boot-bar::after {
+        animation: none;
+        transform: scaleX(var(--boot-progress, 0));
+        transition: transform 0.2s;
+      }
+      @keyframes boot-run {
+        from {
+          translate: 0 0;
+        }
+        to {
+          translate: 70% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-bar::after {
+          animation: none;
+          opacity: 0.5;
+        }
+      }
+      /* Не вдалося завантажити (лише в продакшні): повідомлення й кнопка замість смуги. */
+      .boot-fail {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        max-width: 340px;
+        padding: 0 16px;
+        font-size: 17px;
+        line-height: 1.35;
+      }
+      .boot-fail p {
+        margin: 0;
+      }
+      .boot.boot-failed .boot-bar {
+        display: none;
+      }
+      .boot.boot-failed .boot-fail {
+        display: flex;
+      }
+      .boot.boot-failed .boot-title {
+        position: static;
+      }
+      .boot.boot-failed {
+        flex-direction: column;
+        gap: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="game" aria-label="Котоклопіт"></main>
+    <div class="boot" id="boot" role="status">
+      <p class="boot-title">Котоклопіт</p>
+      <span class="boot-bar" aria-hidden="true"></span>
+      <div class="boot-fail"></div>
+    </div>
+    <div class="rotate" role="status">
+      <span class="rotate-art" aria-hidden="true"></span>
+      <p>Поверніть телефон горизонтально</p>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

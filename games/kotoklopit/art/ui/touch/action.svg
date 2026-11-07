@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" width="140" height="140">
+<!-- ui/touch/action — кнопка дії (touch.ts, радіус 66): «взяти, покласти, увімкнути».
+size 140×140; pivot (70, 70) — центр; без points. Стани: st-idle, st-held.
+idle — коло paper, відкрита долоня pinkHi (пальці вгору); held — коло highlight, рука стиснута в кулак (тримає).
+Контур ink (5, низ 7). Малюється непрозорим: напівпрозорість дає код.
+-->
+<defs><clipPath id="ui-touch-action-in"><path d="M70 4.8C106.1 4.8 135.4 34.01 135.4 70C135.4 106.1 106.1 135.4 70 135.4C34.06 135.4 4.9 106.1 4.9 70C4.9 34.01 34.06 4.8 70 4.8Z"/></clipPath></defs>
+<g id="p-disc-idle" class="st-idle">
+<path d="M70 6.2C105.33 6.2 134 34.78 134 70C134 105.33 105.33 134 70 134C34.84 134 6.3 105.33 6.3 70C6.3 34.78 34.84 6.2 70 6.2Z" fill="#f2e7d0"/>
+</g>
+<g id="p-disc-held" class="st-held">
+<path d="M70 6.2C105.33 6.2 134 34.78 134 70C134 105.33 105.33 134 70 134C34.84 134 6.3 105.33 6.3 70C6.3 34.78 34.84 6.2 70 6.2Z" fill="#f3d27a"/>
+</g>
+<g id="p-disc-shade">
+<g clip-path="url(#ui-touch-action-in)"><path d="M0 104Q70 116 140 104L140 140L0 140Z" fill="#3f2541" fill-opacity="0.16"/></g>
+</g>
+<g id="p-open" class="st-idle">
+<path d="M61.44 63.13L57.84 36.53A6.5 6.5 0 0 0 44.96 38.27L48.56 64.87Z" fill="#ecbcb2"/>
+<path d="M71.49 61.61L69.49 27.01A6.7 6.7 0 0 0 56.11 27.79L58.11 62.39Z" fill="#ecbcb2"/>
+<path d="M81.6 62.08L82 28.68A6.6 6.6 0 0 0 68.8 28.52L68.4 61.92Z" fill="#ecbcb2"/>
+<path d="M90.65 64.74L93.65 40.34A6.1 6.1 0 0 0 81.55 38.86L78.55 63.26Z" fill="#ecbcb2"/>
+<path d="M61.44 63.13L57.84 36.53A6.5 6.5 0 0 0 44.96 38.27L48.56 64.87Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M71.49 61.61L69.49 27.01A6.7 6.7 0 0 0 56.11 27.79L58.11 62.39Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M81.6 62.08L82 28.68A6.6 6.6 0 0 0 68.8 28.52L68.4 61.92Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M90.65 64.74L93.65 40.34A6.1 6.1 0 0 0 81.55 38.86L78.55 63.26Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M59.89 79.72L41.49 58.72A6.5 6.5 0 0 0 31.71 67.28L50.11 88.28Z" fill="#ecbcb2"/>
+<path d="M59.89 79.72L41.49 58.72A6.5 6.5 0 0 0 31.71 67.28L50.11 88.28Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.6 60Q70 56 91.4 60Q95.6 70 94 82Q91 102 70.6 104Q51 102 47.4 82Q46 70 49.6 60Z" fill="#ecbcb2"/>
+<path d="M47.6 84Q70 92 93.6 84Q90 101 70.6 104Q51 101 47.6 84Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M48.6 64Q46.4 72 47.4 82Q51 102 70.6 104Q91 102 94 82Q95.4 72 92.4 62.6" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M56 70Q63 74 66.6 84" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-fist" class="st-held">
+<path d="M45 72Q44 52 56 48Q70 44 86 48Q97 52 96 68Q95 92 74 98Q50 99 45 72Z" fill="#ecbcb2"/>
+<path d="M46 78Q70 88 95 76Q93 94 74 98Q51 98 46 78Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M57.4 48.6Q56 57 58.4 64.6M70 46.6Q68.8 56 71 64M82.4 48Q81.4 57 83.6 64.6" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M46 74Q47 64 58 64Q70 64 76 70Q72 76 60 76Q52 77 46 74Z" fill="#ecbcb2"/>
+<path d="M46 74Q47 64 58 64Q70 64 76 70Q72 76 60 76Q52 77 46 74Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45 72Q44 52 56 48Q70 44 86 48Q97 52 96 68Q95 92 74 98Q50 99 45 72Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M70 4.8C106.1 4.8 135.4 34.01 135.4 70C135.4 106.1 106.1 135.4 70 135.4C34.06 135.4 4.9 106.1 4.9 70C4.9 34.01 34.06 4.8 70 4.8ZM70 9.8C102.79 9.8 129.4 36.32 129.4 69C129.4 101.79 102.79 128.4 70 128.4C37.38 128.4 10.9 101.79 10.9 69C10.9 36.32 37.38 9.8 70 9.8Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>

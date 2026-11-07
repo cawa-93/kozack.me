@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+<!-- ui/close — хрестик у кутку картки (`.card-close`): закриває її, як Esc.
+size 40×40; pivot (20, 20) — центр; без points (ціла картинка).
+Паперове коло enamelHi, низ — губа enamel (передня грань), хрест — два штрихи ink 3,8 з круглими кінцями, контур
+кільцем (низ товщий).
+-->
+<defs><clipPath id="ui-close-lip"><path d="M4 26.5L36 26.5L36 36L4 36Z"/></clipPath></defs>
+<g id="p-body">
+<path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6Z" fill="#f2e9d4"/>
+<path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6Z" fill="#e0d4b9" clip-path="url(#ui-close-lip)"/>
+<path d="M7.5 26.5Q20 27.6 32.5 26.5" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-cross">
+<path d="M14.4 12Q20.6 17 25.6 22.4M25.8 12.2Q19.4 17.6 14.2 22" fill="none" stroke="#2e1f29" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M20 4.6C28.39 4.6 35.2 11.32 35.2 19.6C35.2 28.1 28.39 35 20 35C11.66 35 4.9 28.1 4.9 19.6C4.9 11.32 11.66 4.6 20 4.6ZM20 8.2C25.96 8.2 30.8 12.95 30.8 18.8C30.8 24.87 25.96 29.8 20 29.8C14.09 29.8 9.3 24.87 9.3 18.8C9.3 12.95 14.09 8.2 20 8.2Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>

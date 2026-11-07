@@ -1,0 +1,76 @@
+{
+ "name": "Згода, охорона й сварки",
+ "description": "Субота другого тижня, 17:30 (§9.4, «Згода, охорона й сварки», рішення автора 2026-10-26, блок 4). Мурчик біжить кликати гратися Тихона, а той застуджений: не погоджується, лягає «буханцем», сіпає хвостом і шипить — підказка, що кіт хворий (Г5). Тихон і сам хоче гратися (потреба гри 95), а поруч вільний друг Ревнивець і кошеня Малюк, — але хворий сам не кличе (рішення автора 2026-10-26 після блоку 4): відлежавшись, Тихон ні до кого не біжить, а бродить, ганяє іграшку чи гасає сам. Рижик кличе Бусю, а вона награлася й утомилася: найпевніше відмовиться так само, лише без шипіння (згода — 10%). На кухні Мурка їсть, а її ворог Барсик іде до тієї самої миски — вона шипить, над нею злість зі значком миски, і він відходить голодний (Б3, Р2; Мурка ще й «Господар території», тож 60%, ворог без риси — 30%). «Сам ще кошеня» Буркотун шипить на кошеня Малюка, що пробігає повз, — значок кошеняти. Погладьте Лапку біля себе — Ревнивець зашипить зі значком руки. Гратися кличуть лише вільного кота поруч (Г6). Уповільнити час — панель розробника.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 3
+ },
+ "state": {
+  "day": 12,
+  "minute": 1050,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 600,
+   "body": {
+    "x": 9.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 70,
+    "hygiene": 70,
+    "sanity": 70
+   }
+  },
+  "home": {
+   "items": [
+    { "id": 90, "kind": "bowl", "quality": "cheap", "slot": "bowl-1", "food": 2, "foodQuality": "cheap", "sterile": false },
+    { "id": 91, "kind": "bowl", "quality": "cheap", "slot": "bowl-2", "food": 0, "foodQuality": null, "sterile": false },
+    { "id": 92, "kind": "water", "quality": "cheap", "slot": "water-1", "water": 8 },
+    { "id": 93, "kind": "litter", "quality": "cheap", "slot": "litter-1", "litter": "cheap", "uses": 0 },
+    { "id": 94, "kind": "litter", "quality": "cheap", "slot": "litter-2", "litter": "cheap", "uses": 0 },
+    { "id": 95, "kind": "toy", "quality": "cheap", "x": 5.5, "y": 9.5, "uses": 0 }
+   ]
+  }
+ },
+ "cats": [
+  { "source": "shelter", "ageWeeks": 3, "name": "Мурчик", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 2.5, "y": 8.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 95, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "wrestle", "target": "cat:101", "goal": { "x": 4, "y": 8 }, "minutes": 8, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 3, "name": "Тихон", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 4.5, "y": 8.5, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 95, "attention": 10, "fatigue": 20 },
+    "diseases": [{ "id": "cold", "day": 11, "doses": 0, "diet": 0, "calm": 0, "controlled": null, "known": false }],
+    "act": { "kind": "wrestle", "target": "cat:100", "goal": null, "minutes": 10, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 3, "name": "Рижик", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 6.5, "y": 7.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 95, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "wrestle", "target": "cat:103", "goal": { "x": 8, "y": 7 }, "minutes": 8, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 3, "name": "Буся", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 8.5, "y": 7.5, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 0, "attention": 10, "fatigue": 40 },
+    "act": { "kind": "wrestle", "target": "cat:102", "goal": null, "minutes": 10, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Мурка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 17.5, "y": 3.5, "facing": -1,
+    "needs": { "hunger": 70, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "eat", "target": "item:90", "goal": null, "minutes": 10, "elapsed": 0.5, "nibble": false },
+    "traits": [{ "group": "territorial", "level": 2, "seen": 0, "known": true }] },
+  { "source": "shelter", "ageWeeks": 4, "name": "Барсик", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 13.5, "y": 3.5, "facing": 1,
+    "needs": { "hunger": 90, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "eat", "target": "item:90", "goal": { "x": 17, "y": 3 }, "minutes": 3, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 6, "name": "Буркотун", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 13.5, "y": 8.6, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+    "traits": [{ "group": "nurturing", "level": -2, "seen": 0, "known": true }] },
+  { "source": "shelter", "ageWeeks": 1, "name": "Малюк", "sex": "male", "arrivedDay": -3, "x": 11.5, "y": 9.5, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 60, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "wander", "target": "play", "goal": { "x": 16, "y": 9 }, "minutes": 8, "elapsed": 0 }, "traits": [] },
+  { "source": "shelter", "ageWeeks": 5, "name": "Ревнивець", "sex": "male", "sterilized": true, "arrivedDay": -10, "x": 7.5, "y": 9.8, "facing": 1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 50, "attention": 10, "fatigue": 10 },
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 },
+    "traits": [{ "group": "jealousy", "level": 2, "seen": 0, "known": true }] },
+  { "source": "shelter", "ageWeeks": 5, "name": "Лапка", "sex": "female", "sterilized": true, "arrivedDay": -10, "x": 10.3, "y": 10.2, "facing": -1,
+    "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 70, "fatigue": 10 },
+    "act": { "kind": "idle", "target": null, "goal": null, "minutes": 30, "elapsed": 0 }, "traits": [] }
+ ],
+ "relations": [[0, 1, 70], [2, 3, 70], [4, 5, -80], [1, 8, 70]]
+}

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 62 66" width="62" height="66">
+<!-- env/desk-lamp — настільна лампа на столі з комп'ютером (§8.9 «День і ніч», рішення автора 2026-11-03: «Додати лампу на робочий стіл»), у задньому правому куті стола біля стіни (DESK_LAMP у src/view/decor.ts).
+size 62×66; pivot (33, 47.5) — центр основи на стільниці (висота 54); points: lamp (21, 19) — лампочка в абажурі, на 28.5 над стільницею і -12 убік від pivot.
+Зелена емальована основа Ø 0,18 з кнопкою-вимикачем, металева стійка до шарніра (z 29), плече вперед-угору, зелений абажур-конус дивиться ліворуч-униз — на стіл перед монітором, тож видно нутро абажура.
+Історія: кабель від основи назад, за задній край стола (до розетки на стіні ряду 5).
+Стани: st-off — нутро абажура greenLo в тіні, лампочка greyHi; st-on — нутро mustardHi / paper, лампочка enamelHi (сяйво й пляма на столі й підлозі — код). Вмикається сама з лампами квартири (lampsOn), у день відключення — off.
+Контур LINE_RIG: річ 20–40 (art/STYLE.md §5). Без шарів.
+-->
+<g id="p-shadow">
+<path d="M24.1 48.7A10.5 5.5 0 0 0 45.1 48.7A10.5 5.5 0 0 0 24.1 48.7Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-cable">
+<path d="M37.5 46Q43 46.5 44 43Q45 39.5 49 39" fill="none" stroke="#2e1f29" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M37.5 46Q43 46.5 44 43Q45 39.5 49 39" fill="none" stroke="#6d6266" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-base">
+<path d="M24.9 42A8.1 4.1 0 0 0 41.1 42L41.1 47.5A8.1 4.1 0 0 1 24.9 47.5Z" fill="#7e9662"/>
+<path d="M24.9 42A8.1 4.1 0 0 0 41.1 42A8.1 4.1 0 0 0 24.9 42Z" fill="#a2b584"/>
+<path d="M24.9 45.7A8.1 4.1 0 0 0 41.1 45.7L41.1 47.5A8.1 4.1 0 0 1 24.9 47.5Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M27.5 42.8A1.9 1.1 0 0 0 31.3 42.8A1.9 1.1 0 0 0 27.5 42.8Z" fill="#4b4146"/>
+<path d="M24.9 42A8.1 4.1 0 0 0 41.1 42A8.1 4.1 0 0 0 24.9 42Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.9 42A8.1 4.1 0 0 1 41.1 42L41.1 47.5A8.1 4.1 0 0 1 24.9 47.5Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-stem">
+<path d="M35.6 41.5L36 18.5L32 18.5L31.6 41.5Z" fill="#a69f9b"/>
+<path d="M34.6 40Q35.3 30.3 34.8 20.5Q34.1 30.2 34.6 40Z" fill="#cdc6be"/>
+<path d="M35.6 41.5L36 18.5L32 18.5L31.6 41.5Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-arm">
+<path d="M35.3 17.3L27.8 9.3L25.2 11.7L32.7 19.7Z" fill="#a69f9b"/>
+<path d="M35.3 17.3L27.8 9.3L25.2 11.7L32.7 19.7Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M31.2 18.5A2.8 2.8 0 0 0 36.8 18.5A2.8 2.8 0 0 0 31.2 18.5Z" fill="#7e9662"/>
+<path d="M31.2 18.5A2.8 2.8 0 0 0 36.8 18.5A2.8 2.8 0 0 0 31.2 18.5Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-shade">
+<path d="M14.1 25.1Q19.3 6.3 26.3 6.1Q31.5 7.3 31.3 11.8Q30.3 9.9 26.3 14.9A7.9 4.3 -40 0 1 14.1 25.1Z" fill="#7e9662"/>
+<path d="M25.3 7.8Q19.8 14.4 17.1 22.6Q22.6 16 25.3 7.8Z" fill="#a2b584"/>
+<path d="M26.3 14.9Q30.3 9.9 31.3 11.8Q28.3 14.3 24.8 13.9Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M14.1 25.1Q19.3 6.3 26.3 6.1Q31.5 7.3 31.3 11.8Q30.3 9.9 26.3 14.9" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-mouth-off" class="st-off">
+<path d="M14.1 25.1A7.9 4.3 -40 0 0 26.3 14.9A7.9 4.3 -40 0 0 14.1 25.1Z" fill="#5e7449"/>
+<path d="M16.3 23.4A5.9 2.9 -40 0 0 25.3 15.8A5.9 2.9 -40 0 0 16.3 23.4Z" fill="#3f2541" fill-opacity="0.5"/>
+<path d="M18.8 18.8A3 2.6 0 0 0 24.8 18.8A3 2.6 0 0 0 18.8 18.8Z" fill="#cdc6be"/>
+<path d="M18.8 18.8A3 2.6 0 0 0 24.8 18.8A3 2.6 0 0 0 18.8 18.8Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.1 25.1A7.9 4.3 -40 0 0 26.3 14.9A7.9 4.3 -40 0 0 14.1 25.1Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-mouth-on" class="st-on">
+<path d="M14.1 25.1A7.9 4.3 -40 0 0 26.3 14.9A7.9 4.3 -40 0 0 14.1 25.1Z" fill="#e8c47d"/>
+<path d="M16.3 23.4A5.9 2.9 -40 0 0 25.3 15.8A5.9 2.9 -40 0 0 16.3 23.4Z" fill="#f2e7d0"/>
+<path d="M18.8 18.8A3 2.6 0 0 0 24.8 18.8A3 2.6 0 0 0 18.8 18.8Z" fill="#f2e9d4"/>
+<path d="M18.8 18.8A3 2.6 0 0 0 24.8 18.8A3 2.6 0 0 0 18.8 18.8Z" fill="none" stroke="#e8c47d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M14.1 25.1A7.9 4.3 -40 0 0 26.3 14.9A7.9 4.3 -40 0 0 14.1 25.1Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

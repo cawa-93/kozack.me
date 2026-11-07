@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 26 20" width="26" height="20">
+<!-- person/eyes/back — очі з бровами (ближнє ліворуч більше, дальнє вужче), ракурс back (¾ ззаду). Еталон F1b, art/STYLE.md.
+size 26×20; pivot (13, 12) — середина між очима.
+Шари: fill-iris, detail, ink. Стани: st-open, st-half, st-closed.
+Повік-шкіри немає: де ока не намальовано, видно голову. back — порожні шари: скелет ховає очі ззаду.
+-->
+<g id="fill-iris"/>
+<g id="detail"/>
+<g id="ink"/>
+</svg>

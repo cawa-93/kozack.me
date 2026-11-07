@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 54" width="44" height="54">
+<!-- env/desk-candle — свічка на столі з комп'ютером у день відключення замість настільної лампи (§4.1 «Планове відключення», §8.9 «День і ніч»; рішення автора 2026-11-03: «Під час евенту відключення на столі замість лампи - свічка»), на місці лампи в задньому правому куті стола біля стіни (DESK_CANDLE у src/view/decor.ts).
+size 44×54; pivot (18, 42) — центр дна підсвічника на стільниці (висота 54); points: flame (18, 13) — середина полум'я, на 29 над стільницею.
+Синій емальований підсвічник-блюдце Ø 0,25 клітинки з вушком праворуч і біла господарська свічка Ø 0,1 заввишки 22 над стільницею — та сама свічка, що на поличці env/candle-shelf/left (синя емаль, віск, підтік), трохи обгоріла: зверху ямка розтопленого воску.
+Історія: підтік воску по лівому боці свічки (enamelHi з краєм inkSoft), як у свічки на поличці.
+Стани: st-out — погашена, загнутий чорний ґніт; st-lit — язичок полум'я orange з серцевиною mustardHi (сяйво й пляма — код). Тінь на стільниці — base.
+Контур LINE_RIG: дрібниця 20–40 (art/STYLE.md §5), як ручка й кухоль на тому самому столі. Без шарів. Основа — колишня свічка на меблях env/candle (прибрана 2026-11-03, «Настінні полички»).
+-->
+<g id="p-shadow">
+<path d="M6.1 42.4A12.7 6.3 0 0 0 31.5 42.4A12.7 6.3 0 0 0 6.1 42.4Z" fill="#3f2541" fill-opacity="0.3"/>
+</g>
+<g id="p-dish">
+<path d="M28 38.6C32.6 35.6 37.4 39.8 34.4 43.2C32.8 44.8 30 44 28.6 42.4" fill="none" stroke="#2e1f29" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28 38.6C32.6 35.6 37.4 39.8 34.4 43.2C32.8 44.8 30 44 28.6 42.4" fill="none" stroke="#94a8c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.7 36.8A11.3 5.7 0 0 0 29.3 36.8L29.3 42A11.3 5.7 0 0 1 6.7 42Z" fill="#6c84a3"/>
+<path d="M6.7 36.8A11.3 5.7 0 0 0 29.3 36.8A11.3 5.7 0 0 0 6.7 36.8Z" fill="#94a8c0"/>
+<path d="M10.3 37.3A7.7 3.8 0 0 0 25.7 37.3A7.7 3.8 0 0 0 10.3 37.3Z" fill="#94a8c0"/>
+<path d="M10.3 37.3A7.7 3.8 0 0 0 25.7 37.3A7.7 3.8 0 0 0 10.3 37.3Z" fill="none" stroke="#6c84a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.7 37.2A11.3 5.7 0 0 0 28.3 37.2" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.7 36.8A11.3 5.7 0 0 1 29.3 36.8L29.3 42A11.3 5.7 0 0 1 6.7 42Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-candle">
+<path d="M13.5 20Q13.1 28.1 13.5 36.2A4.5 2.3 0 0 0 22.5 36.2Q22.8 28.1 22.5 20A4.5 2.3 0 0 0 13.5 20Z" fill="#f2e7d0"/>
+<path d="M19.6 22L22.5 20L22.5 36.2A4.5 2.3 0 0 1 19.6 38.3Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M13.5 20A4.5 2.3 0 0 0 22.5 20A4.5 2.3 0 0 0 13.5 20Z" fill="#f2e9d4"/>
+<path d="M15.3 20.3A2.7 1.2 0 0 0 20.7 20.3A2.7 1.2 0 0 0 15.3 20.3Z" fill="#3f2541" fill-opacity="0.16"/>
+<path d="M13.9 20.6Q12.9 24.4 13.8 28Q15.4 28.8 15.2 25.9Q15.1 22.4 13.9 20.6Z" fill="#f2e9d4"/>
+<path d="M13.9 20.6Q12.9 24.4 13.8 28Q15.4 28.8 15.2 25.9Q15.1 22.4 13.9 20.6Z" fill="none" stroke="#6b5263" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 20A4.5 2.3 0 0 0 22.5 20A4.5 2.3 0 0 0 13.5 20Z" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 20Q13.1 28.1 13.5 36.2A4.5 2.3 0 0 0 22.5 36.2Q22.8 28.1 22.5 20A4.5 2.3 0 0 0 13.5 20Z" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-wick-out" class="st-out">
+<path d="M18 20L18.2 17Q18.6 15.6 19.8 15.4" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-flame" class="st-lit">
+<path d="M18 20L18.1 16.8" fill="none" stroke="#2e1f29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18 18.4C13.6 18.2 13.4 12.8 15.6 10.4Q17.4 9.4 18.4 6Q19.4 10 21 11.6C22.8 13.8 22.2 18.2 18 18.4Z" fill="#d9843f"/>
+<path d="M18 17.6C15.7 17.4 15.8 13.4 18.1 10.2C20.3 13.4 20.3 17.4 18 17.6Z" fill="#e8c47d"/>
+<path d="M18 18.4C13.6 18.2 13.4 12.8 15.6 10.4Q17.4 9.4 18.4 6Q19.4 10 21 11.6C22.8 13.8 22.2 18.2 18 18.4Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

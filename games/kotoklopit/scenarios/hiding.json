@@ -1,0 +1,280 @@
+{
+ "name": "Кіт ховається",
+ "description": "Субота другого тижня, 11:00. Коти сховалися: чорний під ліжком, рудий під диваном, смугастий у картонному будиночку, білий у повстяному (§9.12). Видно лише очі й кінчик хвоста.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Вугілля",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 1.5,
+   "y": 2.5,
+   "act": {
+    "kind": "hide",
+    "target": null,
+    "goal": null,
+    "minutes": 600,
+    "elapsed": 0
+   },
+   "genes": {
+    "orange": [
+     false,
+     false
+    ],
+    "black": [
+     true,
+     true
+    ],
+    "dense": [
+     true,
+     true
+    ],
+    "agouti": [
+     false,
+     false
+    ],
+    "tabby": [
+     1,
+     1
+    ],
+    "white": [
+     0,
+     0
+    ],
+    "full": [
+     true,
+     true
+    ],
+    "short": [
+     true,
+     true
+    ],
+    "eyes": 1
+   },
+   "shape": {
+    "muzzle": "normal",
+    "ears": "normal",
+    "tail": "long",
+    "build": "normal",
+    "legs": "normal",
+    "coat": null
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Рижик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 14.5,
+   "y": 10.5,
+   "act": {
+    "kind": "hide",
+    "target": null,
+    "goal": null,
+    "minutes": 600,
+    "elapsed": 0
+   },
+   "genes": {
+    "orange": [
+     true,
+     true
+    ],
+    "black": [
+     true,
+     true
+    ],
+    "dense": [
+     true,
+     true
+    ],
+    "agouti": [
+     true,
+     true
+    ],
+    "tabby": [
+     1,
+     1
+    ],
+    "white": [
+     0,
+     0
+    ],
+    "full": [
+     true,
+     true
+    ],
+    "short": [
+     true,
+     true
+    ],
+    "eyes": 1
+   },
+   "shape": {
+    "muzzle": "normal",
+    "ears": "normal",
+    "tail": "long",
+    "build": "normal",
+    "legs": "normal",
+    "coat": null
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Смужка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 4.5,
+   "y": 8.5,
+   "act": {
+    "kind": "hide",
+    "target": "item:901",
+    "goal": null,
+    "minutes": 600,
+    "elapsed": 0
+   },
+   "genes": {
+    "orange": [
+     false,
+     false
+    ],
+    "black": [
+     true,
+     true
+    ],
+    "dense": [
+     true,
+     true
+    ],
+    "agouti": [
+     true,
+     true
+    ],
+    "tabby": [
+     1,
+     1
+    ],
+    "white": [
+     0,
+     0
+    ],
+    "full": [
+     true,
+     true
+    ],
+    "short": [
+     true,
+     true
+    ],
+    "eyes": 1
+   },
+   "shape": {
+    "muzzle": "normal",
+    "ears": "normal",
+    "tail": "long",
+    "build": "normal",
+    "legs": "normal",
+    "coat": null
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Сніжка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 7.5,
+   "y": 8.5,
+   "act": {
+    "kind": "hide",
+    "target": "item:902",
+    "goal": null,
+    "minutes": 600,
+    "elapsed": 0
+   },
+   "genes": {
+    "orange": [
+     false,
+     false
+    ],
+    "black": [
+     true,
+     true
+    ],
+    "dense": [
+     true,
+     true
+    ],
+    "agouti": [
+     false,
+     false
+    ],
+    "tabby": [
+     1,
+     1
+    ],
+    "white": [
+     2,
+     2
+    ],
+    "full": [
+     true,
+     true
+    ],
+    "short": [
+     true,
+     true
+    ],
+    "eyes": 0
+   },
+   "shape": {
+    "muzzle": "normal",
+    "ears": "normal",
+    "tail": "long",
+    "build": "normal",
+    "legs": "normal",
+    "coat": null
+   }
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 9.5,
+    "y": 8.5,
+    "facing": {
+     "x": 0.7071,
+     "y": -0.7071
+    }
+   }
+  },
+  "home": {
+   "items": [
+    {
+     "id": 901,
+     "kind": "house",
+     "quality": "cheap",
+     "slot": "floor-4-8"
+    },
+    {
+     "id": 902,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "floor-7-8"
+    }
+   ]
+  }
+ }
+}

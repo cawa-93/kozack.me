@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 136" width="144" height="136">
+<!-- env/cat-kit/collar — накладка котячої аптечки: нашийник із жетоном звисає з краю (§9.10). Пакет A4, art/STYLE.md.
+size 144×136; pivot (72, 96) — те саме полотно й pivot, що env/cat-kit (накладка кладеться в pivot аптечки); points: —.
+Без станів і шарів; показується, поки цей запас є (стани аптечки 1–4: кришка зачинена чи відхилена).
+-->
+<g id="p-collar">
+<path d="M86.2 79.2C81.2 83.2 83.2 99.2 93.2 99.2C102.2 99.2 103.2 85.2 96.2 76.2" fill="none" stroke="#2e1f29" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M86.2 79.2C81.2 83.2 83.2 99.2 93.2 99.2C102.2 99.2 103.2 85.2 96.2 76.2" fill="none" stroke="#c4524b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M84.2 89.3L88.2 90Q89.2 90.2 89.2 91.2L89.2 95.2Q89.2 96.2 88.2 96L84.2 95.3Q83.2 95.2 83.2 94.2L83.2 90.2Q83.2 89.2 84.2 89.3Z" fill="#e8c47d"/>
+<path d="M84.2 89.3L88.2 90Q89.2 90.2 89.2 91.2L89.2 95.2Q89.2 96.2 88.2 96L84.2 95.3Q83.2 95.2 83.2 94.2L83.2 90.2Q83.2 89.2 84.2 89.3Z" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M93.2 99.2L94.2 101.2" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M98.6 104.2C98.6 106.8 96.6 109 94.2 109C91.8 109 89.8 106.8 89.8 104.2C89.8 101.5 91.8 99.4 94.2 99.4C96.6 99.4 98.6 101.5 98.6 104.2Z" fill="#d4a54c"/>
+<path d="M94.8 102.8C94.8 103.5 94.1 104.2 93.2 104.2C92.3 104.2 91.6 103.5 91.6 102.8C91.6 102 92.3 101.4 93.2 101.4C94.1 101.4 94.8 102 94.8 102.8Z" fill="#e8c47d"/>
+<path d="M98.6 104.2C98.6 106.8 96.6 109 94.2 109C91.8 109 89.8 106.8 89.8 104.2C89.8 101.5 91.8 99.4 94.2 99.4C96.6 99.4 98.6 101.5 98.6 104.2Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

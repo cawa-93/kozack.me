@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252 158" width="252" height="158">
+<!-- env/door/post — правий стояк вхідних дверей, коли двері відчинені (env/door, стан open). Пакет A1b, хвиля 3 — окремим записом.
+size 252×158; pivot (106, 100) — точка підлоги під центром сліду дверей (11; 11,5), як у env/door; points — немає.
+Білий укіс і коробка (enamel, шов enamelLo) від кімнати до зовнішнього краю коробки (x 11,9–12, y 11–11,65, до z 45), той самий, що в
+env/door у стані closed: у грі — своєю коробкою глибини над прочиненим полотном (закриває завіси) і над усім у кімнаті.
+Без шарів.
+-->
+<g id="p-post">
+<path d="M152.1 132.6L160.4 136.8L160.4 91.8L152.1 87.6Z" fill="#e0d4b9"/>
+<path d="M202 116L160.4 136.8L160.4 91.8L202 71Z" fill="#e0d4b9"/>
+<path d="M193.7 66.8L202 71L160.4 91.8L152.1 87.6Z" fill="#65505d"/>
+<path d="M182.2 122.9Q182.3 103.5 181.9 84" fill="none" stroke="#bfb093" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M160.4 91.8L160.4 136.8M152.1 87.6L160.4 91.8L202 71" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M152.1 132.6Q151.6 110.1 152.1 87.6Q173.1 77.6 193.7 66.8Q197.8 69 202 71Q202.4 93.5 202 116" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M152.1 132.6Q156.2 134.8 160.4 136.8Q181 126.1 202 116" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

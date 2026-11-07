@@ -1,0 +1,112 @@
+{
+ "name": "Будиночки й лежанка",
+ "description": "Субота другого тижня, 11:00. Коти сплять у картонному й повстяному будиночках і на лежанці дорогої кігтеточки (§9.12). Картонний відкритий: широкий вхід і хвіст на порозі. Повстяний закритий: вузький круглий вхід, узятий у руки пилосос кота в ньому не будить, а в картонному — може. На дешевій кігтеточці поруч не сплять.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 23
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 4.5,
+   "y": 8.5,
+   "act": {
+    "kind": "sleep",
+    "target": "item:901",
+    "goal": null,
+    "minutes": 300,
+    "elapsed": 0
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Мурка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 7.5,
+   "y": 8.5,
+   "act": {
+    "kind": "sleep",
+    "target": "item:902",
+    "goal": null,
+    "minutes": 300,
+    "elapsed": 0
+   }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Пухнастик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 10.5,
+   "y": 8.5,
+   "act": {
+    "kind": "sleep",
+    "target": "item:903",
+    "goal": null,
+    "minutes": 300,
+    "elapsed": 0
+   },
+   "traits": [
+    {
+     "group": "climbing",
+     "level": 2,
+     "seen": 0,
+     "known": false
+    }
+   ]
+  }
+ ],
+ "state": {
+  "day": 12,
+  "minute": 660,
+  "modifiers": {
+   "day": null
+  },
+  "character": {
+   "body": {
+    "x": 12.5,
+    "y": 7.5,
+    "facing": {
+     "x": 0.7071,
+     "y": -0.7071
+    }
+   }
+  },
+  "home": {
+   "items": [
+    {
+     "id": 901,
+     "kind": "house",
+     "quality": "cheap",
+     "slot": "floor-4-8"
+    },
+    {
+     "id": 902,
+     "kind": "house",
+     "quality": "premium",
+     "slot": "floor-7-8"
+    },
+    {
+     "id": 903,
+     "kind": "scratcher",
+     "quality": "premium",
+     "slot": "floor-10-8"
+    },
+    {
+     "id": 904,
+     "kind": "scratcher",
+     "quality": "cheap",
+     "slot": "floor-13-8"
+    }
+   ]
+  }
+ }
+}

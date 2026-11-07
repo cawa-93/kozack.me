@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" width="160" height="120">
+<!-- ui/rotate — екран «поверніть телефон» (index.html, §10): вертикальний телефон стає горизонтальним.
+size 160×120; pivot (80, 60) — центр; без points.
+Тло екрана темне (ink), тож «був» — контур cut без заливки, «став» — світлий корпус enamelHi з контуром ink і
+екраном glass, на якому знизу визирає кіт (dark, очі mustard). Стрілка дугою — mustard з контуром ink.
+-->
+<g id="p-ghost">
+<path d="M21 22L41.5 22C44.75 22 48 25.25 48 28.5L48 85C48 88.85 44.85 92 41 92L21.5 92C17 92 14 89 14 84.5L14 29C14 24.8 16.8 22 21 22Z" fill="none" stroke="#65505d" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M22 29L40 29C41.38 29 42.5 30.13 42.5 31.5L42.5 78.5C42.5 79.88 41.38 81 40 81L22 81C20.63 81 19.5 79.88 19.5 78.5L19.5 31.5C19.5 30.13 20.63 29 22 29Z" fill="none" stroke="#65505d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M28 86.5L34 86.5" fill="none" stroke="#65505d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-arrow">
+<path d="M30 16Q72 -2 116 30L121 23L128 49L102 46L109 39Q74 14 37 26Z" fill="#d4a54c"/>
+<path d="M37 26Q74 14 109 39L102 46L128 49L127 45L110 42Q74 18 38 22Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M30 16Q72 -2 116 30L121 23L128 49L102 46L109 39Q74 14 37 26Z" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-phone">
+<path d="M65 108Q107 112 150 108L152 104L63 104Z" fill="#3f2541" fill-opacity="0.3"/>
+<path d="M70 54L143.5 54C147.92 54 152 58.08 152 62.5L152 94.5C152 99.73 147.73 104 142.5 104L70 104C64.6 104 61 100.4 61 95L61 63C61 57.78 64.78 54 70 54Z" fill="#f2e9d4"/>
+<path d="M77 60L140 60C141.65 60 143 61.35 143 63L143 95C143 96.65 141.65 98 140 98L77 98C75.35 98 74 96.65 74 95L74 63C74 61.35 75.35 60 77 60Z" fill="#a8c4c4"/>
+<path d="M86 64Q93.6 73.57 104 80Q95.73 71.18 86 64Z" fill="#d4e3dc"/>
+<path d="M67.8 76.6C69.12 76.6 70.2 77.68 70.2 79C70.2 80.32 69.12 81.4 67.8 81.4C66.48 81.4 65.4 80.32 65.4 79C65.4 77.68 66.48 76.6 67.8 76.6Z" fill="#bfb093"/>
+</g>
+<g id="p-cat">
+<defs><clipPath id="ui-rotate-screen"><path d="M77 60L140 60C141.65 60 143 61.35 143 63L143 95C143 96.65 141.65 98 140 98L77 98C75.35 98 74 96.65 74 95L74 63C74 61.35 75.35 60 77 60Z"/></clipPath></defs>
+<g clip-path="url(#ui-rotate-screen)"><path d="M95 98Q94 86 99 81L97 70.5Q103 74 106 77.5Q111 76 116 77.5Q119 74 125 70.5L123 81Q128 86 127 98Z" fill="#4b4146"/><path d="M95 98Q94 86 99 81L97 70.5Q103 74 106 77.5Q111 76 116 77.5Q119 74 125 70.5L123 81Q128 86 127 98Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M100.5 77.5Q101.84 76.58 101.5 75Q100.16 75.92 100.5 77.5Z" fill="#d99a93"/><path d="M121.5 77.5Q121.84 75.92 120.5 75Q120.16 76.58 121.5 77.5Z" fill="#d99a93"/><path d="M105.5 85.4C106.77 85.4 107.8 86.56 107.8 88C107.8 89.44 106.77 90.6 105.5 90.6C104.23 90.6 103.2 89.44 103.2 88C103.2 86.56 104.23 85.4 105.5 85.4Z" fill="#d4a54c"/><path d="M116.5 85.4C117.77 85.4 118.8 86.56 118.8 88C118.8 89.44 117.77 90.6 116.5 90.6C115.23 90.6 114.2 89.44 114.2 88C114.2 86.56 115.23 85.4 116.5 85.4Z" fill="#d4a54c"/><path d="M105.9 86.8C106.34 86.8 106.7 87.52 106.7 88.4C106.7 89.28 106.34 90 105.9 90C105.46 90 105.1 89.28 105.1 88.4C105.1 87.52 105.46 86.8 105.9 86.8Z" fill="#2e1f29"/><path d="M116.9 86.8C117.34 86.8 117.7 87.52 117.7 88.4C117.7 89.28 117.34 90 116.9 90C116.46 90 116.1 89.28 116.1 88.4C116.1 87.52 116.46 86.8 116.9 86.8Z" fill="#2e1f29"/><path d="M109 93.2L113 93.2L111 95.4Z" fill="#d99a93"/></g>
+</g>
+<g id="p-ink">
+<path d="M77 60L140 60C141.65 60 143 61.35 143 63L143 95C143 96.65 141.65 98 140 98L77 98C75.35 98 74 96.65 74 95L74 63C74 61.35 75.35 60 77 60Z" fill="none" stroke="#2e1f29" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70 54L143.5 54C147.92 54 152 58.08 152 62.5L152 94.5C152 99.73 147.73 104 142.5 104L70 104C64.6 104 61 100.4 61 95L61 63C61 57.78 64.78 54 70 54Z" fill="none" stroke="#2e1f29" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M70 104L142.5 104" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

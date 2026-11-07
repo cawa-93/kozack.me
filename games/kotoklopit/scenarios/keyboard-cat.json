@@ -1,0 +1,25 @@
+{
+  "name": "Кіт на клавіатурі",
+  "description": "Вівторок першого тижня, 9:20. Персонажка працювала за комп'ютером, і Клавіша («Клавіатурна окупантка») сіла саме на клавіатуру: робота стоїть, над комп'ютером виринає бабл кота на ноутбуці, на екрані — рядки однієї літери (§9.12 «Кіт і робота», [Уточнено] 2026-11-03). Подушка лежить буханцем на тому самому столі поруч із клавіатурою, праворуч, — роботі вона не заважає. Забрати Клавішу на руки — і можна знову сісти працювати: Подушка так і лежить поруч, на клавіатуру не переходить.",
+  "game": { "address": "she", "difficulty": "normal", "seed": 21 },
+  "state": {
+    "day": 1,
+    "minute": 560,
+    "modifiers": { "day": null },
+    "character": {
+      "stats": { "satiety": 70, "hygiene": 70, "sanity": 70 },
+      "body": { "x": 7, "y": 7.35, "facing": { "x": 0, "y": -1 } },
+      "activity": { "kind": "work", "minutes": 0, "money": 0, "reputation": 0, "sanity": 0 }
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 40, "name": "Клавіша", "sex": "female", "arrivedDay": -10, "x": 6.5, "y": 6.5, "facing": 1,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 30, "fatigue": 10 },
+      "act": { "kind": "keyboard", "target": "computer", "goal": null, "minutes": 60, "elapsed": 0 },
+      "traits": [{ "group": "helper", "level": 2, "seen": 0, "known": true }] },
+    { "source": "shelter", "ageWeeks": 40, "name": "Подушка", "sex": "male", "arrivedDay": -10, "x": 7.5, "y": 6.5, "facing": 1,
+      "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 10, "attention": 10, "fatigue": 61 },
+      "act": { "kind": "idle", "target": null, "goal": null, "minutes": 120, "elapsed": 0 },
+      "traits": [{ "group": "energy", "level": 1, "seen": 0, "known": true }] }
+  ]
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 70" width="64" height="70">
+<!-- person/head/2/back — широка голова (ширші щоки, квадратна щелепа) з вухом (без очей і волосся), ракурс back (¾ ззаду). A10, від еталона F1b: череп той самий (зачіски спільні), змінено щоки й щелепу.
+size 64×70; pivot (32, 46) — шия під підборіддям; на тому самому полотні й з тим самим pivot — person/hair-back/* і person/hair-front/*; points: eyes (37.9, 32.1), top (32.5, 4.5).
+Шари: fill-skin, detail, shade, ink.
+-->
+<defs>
+<path id="person-head-2-back-shape" d="M32.6 47.9C34.7 47.7 36.6 47.2 38.8 46.3C41.2 45.5 44.8 44 46.8 42.9C48.4 41.5 48.4 39.4 49.2 38.5C50.1 37.5 51.6 37.9 52.5 37.2C53.6 36.6 54.7 35.4 55.1 34.2C55.4 33.1 54.5 31.1 53.7 30.2C52.9 29.4 51.3 29.7 50.5 29.1C49.6 28.6 49.8 28.5 48.8 27C47.9 25.5 47 22.4 45.5 20.5C44 18.5 41.8 16.7 39.3 15.8C36.9 14.8 33.6 14.3 30.8 14.5C28.1 14.7 24.9 15.5 22.6 16.9C20.2 18.2 18.2 20.3 17 22.6C15.5 24.8 14.5 27.6 13.8 30.1C13.3 32.6 13.4 35.9 14 38.4C14.3 41.2 15.2 43.5 17.3 44.8C19.9 45.9 23.6 46.4 26 47C28.3 47.8 30.4 48 32.6 47.9Z"/>
+<clipPath id="person-head-2-back-clip"><use href="#person-head-2-back-shape"/></clipPath>
+</defs>
+<g id="fill-skin">
+<use href="#person-head-2-back-shape" fill="#ffffff"/>
+</g>
+<g id="detail"/>
+<g id="shade" clip-path="url(#person-head-2-back-clip)">
+<path d="M13.3 37.1C14.5 35.7 15.9 43 19.7 44.1C23.7 45.1 28.6 46.3 32.6 46.3C36.5 46.1 41.3 45 45.3 43.9C49.1 42.4 52.6 35.6 54.2 37C55.7 38.4 61 49.4 54.1 51.8C47.4 54.3 20.2 54.3 13.4 51.8C6.6 49.4 12 38.6 13.3 37.1Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="ink">
+<use href="#person-head-2-back-shape" fill="none" stroke="#2e1f29" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M52.5 32.1Q50.6 33.2 51.5 35.5" fill="none" stroke="#2e1f29" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

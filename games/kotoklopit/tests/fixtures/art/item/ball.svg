@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <!-- Фікстура конвеєра: два стани без класів st-* дають однакові кадри — на сторінці один растр. -->
+  <circle cx="15" cy="15" r="11" fill="#f3e9dc" stroke="#1f1a24" stroke-width="3"/>
+</svg>

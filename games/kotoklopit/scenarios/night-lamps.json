@@ -1,0 +1,26 @@
+{
+  "name": "Ніч, лампи",
+  "description": "Четвер першого тижня, 22:30, сова у вітальні (§8.9 «День і ніч»). Темно: синьо-сірий тон доби, невидимі стельові світильники світять конусами-променями з плямами на підлозі в кожній кімнаті, горять бра в спальні й обабіч вікна вітальні й настільна лампа в задньому правому куті стола з комп'ютером (тепла пляма на столі й підлозі перед ним), скло вікон темно-синє, на бойлері горить індикатор. Три коти в спальні, вітальні й на кухні та трохи безладу — перевірка, що вночі коти, безлад і ціль дії читаються.",
+  "game": { "address": "she", "chronotype": "owl", "difficulty": "normal", "seed": 11 },
+  "state": {
+    "day": 3,
+    "minute": 1350,
+    "modifiers": { "day": null },
+    "nextId": 200,
+    "character": { "stats": { "satiety": 70, "hygiene": 70, "sanity": 60 }, "body": { "x": 9.5, "y": 8.6, "facing": { "x": -1, "y": 0 } } },
+    "home": {
+      "supplies": { "catFood": { "cheap": 20, "premium": 0 }, "litter": { "cheap": 6, "premium": 0 } },
+      "messes": [
+        { "id": 190, "kind": "vomit", "x": 11.6, "y": 8.3, "cat": null },
+        { "id": 191, "kind": "hairball", "x": 4.6, "y": 3.9, "cat": null },
+        { "id": 192, "kind": "litter", "x": 6.8, "y": 9.6, "cat": null },
+        { "id": 193, "kind": "paper", "x": 15.2, "y": 3.9, "cat": null }
+      ]
+    }
+  },
+  "cats": [
+    { "source": "shelter", "ageWeeks": 30, "name": "Мурка", "sex": "female", "arrivedDay": -5, "x": 5.5, "y": 9.2, "needs": { "hunger": 20, "attention": 40, "fatigue": 10 } },
+    { "source": "shelter", "ageWeeks": 12, "name": "Вуглик", "sex": "male", "arrivedDay": -5, "x": 15.6, "y": 3.4, "needs": { "hunger": 30, "play": 60, "fatigue": 10 } },
+    { "source": "shelter", "ageWeeks": 60, "name": "Пушинка", "sex": "female", "arrivedDay": -5, "x": 3.2, "y": 3.3, "needs": { "hunger": 10, "attention": 20, "fatigue": 20 } }
+  ]
+}

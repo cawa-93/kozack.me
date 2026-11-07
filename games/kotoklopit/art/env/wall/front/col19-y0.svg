@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 194" width="340" height="194">
+<!-- env/wall/front/col19-y0 — передній плінтус: клітинки x 19–19, y 0–3, висота 14. Пакет A1b, за еталоном F1 (art/STYLE.md, §11 «Внутрішні стіни», «Передні плінтуси»).
+size 340×194; pivot (266, 24) — верхня вершина ромба першої клітинки (19, 0) на підлозі; points — немає.
+Кришка — cut, видимі зовнішні грані — cut і тінь soft; контур: силует outer, ребра inner, низ heavy.
+Кутовий шматок (19, 0): лівий край кришки при y 0–1 упирається в торець задньої стіни кухні — лінія inner; ближній край (y = 4) стикується з col19-y4 без контуру й на 0,03 клітинки заходить під нього.
+Без станів і шарів.
+-->
+<g id="p-face">
+<path d="M330 56L72.1 185L72.1 171L330 42Z" fill="#65505d"/>
+<path d="M330 56L72.1 185L72.1 171L330 42Z" fill="#3f2541" fill-opacity="0.16"/>
+</g>
+<g id="p-cap">
+<path d="M266 10L330 42L72.1 171L8.1 139Z" fill="#65505d"/>
+</g>
+<g id="p-ink">
+<path d="M10 138Q105.3 88.6 202 42" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M202 42Q233.6 25.2 266 10" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M266 10Q298.3 25.3 330 42Q330.1 49 330 56" fill="none" stroke="#2e1f29" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M330 42Q202.7 107.4 74 170" fill="none" stroke="#2e1f29" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74 184Q202.3 120.5 330 56" fill="none" stroke="#2e1f29" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

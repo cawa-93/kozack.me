@@ -1,0 +1,119 @@
+{
+ "name": "Бійки котів",
+ "description": "Субота другого тижня, 17:00, вітальня. Три пари ворогів (§9.4, рішення автора 2026-10-26): Барсик і Рижик уже в протистоянні — «спина дугою», щохвилини шиплять; Мурка й Сніжка б'ються — «клубок бійки»; сміливе кошеня Кузя йде до гладкої Димки, а та чекає, вигнувши спину. Натисніть на кота в протистоянні — розійдуться; візьміть на руки того, хто б'ється, — розборонити. Далі вороги сходяться рідко: у середньому раз на ~100 хвилин поруч (§9.4) — перемотуйте час.",
+ "game": {
+  "address": "she",
+  "difficulty": "normal",
+  "seed": 26
+ },
+ "state": {
+  "day": 12,
+  "minute": 1020,
+  "modifiers": {
+   "day": null
+  },
+  "nextId": 100,
+  "character": {
+   "money": 600,
+   "body": {
+    "x": 6.5,
+    "y": 10.5
+   },
+   "stats": {
+    "satiety": 70,
+    "hygiene": 70,
+    "sanity": 70
+   }
+  }
+ },
+ "cats": [
+  {
+   "source": "shelter",
+   "ageWeeks": 40,
+   "name": "Барсик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 8.2,
+   "y": 8.5,
+   "facing": 1,
+   "genes": { "orange": [false], "black": [true, true], "dense": [true, true], "agouti": [false, false], "tabby": [1, 1], "white": [0, 0], "full": [true, true], "short": [true, true], "eyes": 2 },
+   "shape": { "muzzle": "normal", "ears": "normal", "tail": "long", "build": "stocky", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "standoff", "target": "cat:105", "goal": null, "minutes": 3, "elapsed": 0, "paired": true },
+   "traits": [{ "group": "territorial", "level": 1, "seen": 0, "known": true }]
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 30,
+   "name": "Рижик",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 8.8,
+   "y": 8.5,
+   "facing": -1,
+   "genes": { "orange": [true], "black": [true, true], "dense": [true, true], "agouti": [true, true], "tabby": [1, 1], "white": [1, 0], "full": [true, true], "short": [true, true], "eyes": 1 },
+   "shape": { "muzzle": "normal", "ears": "large", "tail": "long", "build": "slim", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "standoff", "target": "cat:104", "goal": null, "minutes": 3, "elapsed": 0, "paired": true }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 50,
+   "name": "Мурка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 4.2,
+   "y": 9.5,
+   "facing": 1,
+   "genes": { "orange": [true, false], "black": [true, true], "dense": [true, true], "agouti": [false, false], "tabby": [0, 0], "white": [1, 1], "full": [true, true], "short": [false, false], "eyes": 2 },
+   "shape": { "muzzle": "long", "ears": "tufted", "tail": "fluffy", "build": "normal", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "fight", "target": "cat:107", "goal": null, "minutes": 2, "elapsed": 0, "paired": true }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 35,
+   "name": "Сніжка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 4.8,
+   "y": 9.5,
+   "facing": -1,
+   "genes": { "orange": [false, false], "black": [true, true], "dense": [false, false], "agouti": [false, false], "tabby": [0, 0], "white": [0, 0], "full": [false, false], "short": [true, true], "eyes": 0 },
+   "shape": { "muzzle": "flat", "ears": "folded", "tail": "short", "build": "normal", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "fight", "target": "cat:106", "goal": null, "minutes": 2, "elapsed": 0, "paired": true, "lost": true }
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 2,
+   "name": "Кузя",
+   "sex": "male",
+   "arrivedDay": -10,
+   "x": 11.5,
+   "y": 8.5,
+   "facing": 1,
+   "genes": { "orange": [false], "black": [true, true], "dense": [false, false], "agouti": [true, true], "tabby": [1, 1], "white": [0, 0], "full": [true, true], "short": [true, true], "eyes": 0 },
+   "shape": { "muzzle": "normal", "ears": "normal", "tail": "long", "build": "normal", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "standoff", "target": "cat:109", "goal": { "x": 13, "y": 8 }, "minutes": 3, "elapsed": 0 },
+   "traits": [{ "group": "bravery", "level": 2, "seen": 0, "known": true }]
+  },
+  {
+   "source": "shelter",
+   "ageWeeks": 70,
+   "name": "Димка",
+   "sex": "female",
+   "arrivedDay": -10,
+   "x": 13.5,
+   "y": 8.5,
+   "facing": -1,
+   "weight": 90,
+   "genes": { "orange": [false, false], "black": [false, false], "dense": [false, false], "agouti": [true, true], "tabby": [2, 2], "white": [0, 0], "full": [true, true], "short": [true, true], "eyes": 1 },
+   "shape": { "muzzle": "normal", "ears": "curled", "tail": "bobtail", "build": "stocky", "legs": "normal", "coat": null },
+   "needs": { "hunger": 10, "thirst": 10, "toilet": 10, "play": 20, "attention": 20, "fatigue": 10 },
+   "act": { "kind": "standoff", "target": "cat:108", "goal": null, "minutes": 3, "elapsed": 0 }
+  }
+ ],
+ "relations": [[0, 1, -70], [2, 3, -70], [4, 5, -70]]
+}

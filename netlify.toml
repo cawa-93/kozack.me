@@ -5,6 +5,12 @@ command = "npm run build"
 [build.environment]
 NODE_VERSION = "24"
 
+# Файли збірки гри мають хеш у назві, тож змінюються разом із нею: без цього браузер перепитував би кожен файл при кожному запуску.
+[[headers]]
+  for = "/games/kotoklopit/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 
 [[redirects]]
   from = "/ru"

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+<!-- ui/hud/fullscreen — кнопка повного екрана HUD (§10).
+size 48×48; pivot (24, 24) — центр; без points. Стани: st-enter, st-exit.
+Коло darkHi (світліше за смугу панелі dark), кутики paper (3,5): enter — вершини назовні (розгорнути), exit — вершини до
+центру (згорнути). Зовні — паперовий обідок paper 1,6 (силует на темній смузі), далі кільце ink (низ товщий).
+-->
+<g id="p-rim">
+<path d="M24 4.7C34.71 4.7 43.4 13.35 43.4 24C43.4 34.71 34.71 43.4 24 43.4C13.4 43.4 4.8 34.71 4.8 24C4.8 13.35 13.4 4.7 24 4.7Z" fill="#f2e7d0"/>
+</g>
+<g id="p-disc">
+<path d="M24 6.3C33.83 6.3 41.8 14.23 41.8 24C41.8 33.83 33.83 41.8 24 41.8C14.28 41.8 6.4 33.83 6.4 24C6.4 14.23 14.28 6.3 24 6.3Z" fill="#6d6266"/>
+<defs><clipPath id="ui-hud-fullscreen-in"><path d="M24 6.3C33.83 6.3 41.8 14.23 41.8 24C41.8 33.83 33.83 41.8 24 41.8C14.28 41.8 6.4 33.83 6.4 24C6.4 14.23 14.28 6.3 24 6.3Z"/></clipPath></defs>
+<g clip-path="url(#ui-hud-fullscreen-in)"><path d="M0 33Q24 37 48 33L48 48L0 48Z" fill="#3f2541" fill-opacity="0.16"/></g>
+</g>
+<g id="p-enter" class="st-enter">
+<path d="M20.6 14.6L15 14.6L15 20.2M20.6 32.6L15 32.6L15 27M27.4 14.6L33 14.6L33 20.2M27.4 32.6L33 32.6L33 27" fill="none" stroke="#f2e7d0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-exit" class="st-exit">
+<path d="M14.6 20.2L20.6 20.2L20.6 14.2M14.6 27L20.6 27L20.6 33M33.4 20.2L27.4 20.2L27.4 14.2M33.4 27L27.4 27L27.4 33" fill="none" stroke="#f2e7d0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<g id="p-ink">
+<path d="M24 6.3C33.83 6.3 41.8 14.23 41.8 24C41.8 33.83 33.83 41.8 24 41.8C14.28 41.8 6.4 33.83 6.4 24C6.4 14.23 14.28 6.3 24 6.3ZM24 8.9C32.11 8.9 38.7 15.44 38.7 23.5C38.7 31.61 32.11 38.2 24 38.2C16 38.2 9.5 31.61 9.5 23.5C9.5 15.44 16 8.9 24 8.9Z" fill="#2e1f29" fill-rule="evenodd"/>
+</g>
+</svg>
