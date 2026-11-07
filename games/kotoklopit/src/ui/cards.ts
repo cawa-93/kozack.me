@@ -30,6 +30,7 @@ import {
   LEDGER_TEXTS,
   ledgerLines,
   UTILITIES_MESSAGES,
+  SOUND_TEXTS,
   WAKE_TEXTS,
 } from "../texts";
 import { allControls, homeControls } from "./controls";
@@ -239,6 +240,8 @@ export interface PhoneHandlers {
   importSave: (file: File) => void;
   tab: (tab: PhoneTab) => void;
   close: () => void;
+  /** Гучність звуків (§11.4а) — вподобання гравця, як і радіо. */
+  effects: { volume: number; set: (volume: number) => void };
 }
 
 const PHONE_TABS: Record<PhoneTab, string> = { shop: "🛒 Магазин", mine: "🏠 Речі", cats: "🐱 Коти", album: "Альбом", game: "Гра" };
@@ -292,9 +295,19 @@ function gameMenu(state: GameState, handlers: PhoneHandlers): (string | HTMLElem
   const load = element("button", "button", "Завантажити з файлу");
   load.addEventListener("click", () => input.click());
   box.append(fresh, save, load, input);
+  const effects = element("input", "sound-volume");
+  effects.type = "range";
+  effects.min = "0";
+  effects.max = "100";
+  effects.value = String(Math.round(handlers.effects.volume * 100));
+  effects.setAttribute("aria-label", SOUND_TEXTS.effects);
+  effects.addEventListener("input", () => handlers.effects.set(Number(effects.value) / 100));
+  const sound = element("label", "sound-volume-box", SOUND_TEXTS.effects);
+  sound.append(effects);
   return [
     element("p", "game-player", playerLine(state)),
     allControls(isTouch()),
+    sound,
     box,
     element("p", "game-note", "Гра зберігається в браузері сама, але браузер може її стерти — тож довгу гру варто часом зберігати файлом."),
   ];

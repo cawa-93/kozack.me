@@ -1,8 +1,8 @@
 // Радіо (§8.10): вподобання гравця, ефір і завантаження разом. Сцени й картка працюють лише з цим класом.
 
 import { RADIO } from "../config";
-import { AudioEngine } from "../engine";
-import { loadAudioSettings, saveAudioSettings, type AudioSettings } from "../settings";
+import type { AudioEngine } from "../engine";
+import type { AudioPrefs } from "../settings";
 import { Broadcast } from "./broadcast";
 import { ChunkStore } from "./chunks";
 import { setRadioLit } from "./lamp";
@@ -22,39 +22,39 @@ const fetchBytes = persistentFetch(
 
 export class Radio {
   readonly stations: readonly Station[] = STATIONS;
-  private readonly engine = new AudioEngine();
   private readonly store = new ChunkStore(chunkUrl, fetchBytes);
-  private readonly broadcast = new Broadcast(this.engine, this.store, clock);
-  private settings: AudioSettings;
+  private readonly broadcast: Broadcast;
   /** Відколи решта станцій напоготові; null — персонаж далеко. */
   private nearSince: number | null = null;
 
-  constructor() {
-    this.settings = loadAudioSettings(storage(), this.stations.map((station) => station.id));
+  constructor(
+    private readonly engine: AudioEngine,
+    private readonly prefs: AudioPrefs,
+  ) {
+    this.broadcast = new Broadcast(engine, this.store, clock);
   }
 
   /** Викликати один раз під час запуску гри. */
   start(): void {
-    this.engine.start();
     this.engine.onRunning(() => {
       this.applyVolume();
       this.broadcast.tune(this.playing());
     });
-    setRadioLit(this.settings.radioOn);
+    setRadioLit(this.on);
     window.setInterval(() => this.tick(), RADIO.tickMs);
     this.tick();
   }
 
   get on(): boolean {
-    return this.settings.radioOn;
+    return this.prefs.value.radioOn;
   }
 
   get station(): Station {
-    return this.stations.find((station) => station.id === this.settings.station) ?? this.stations[0]!;
+    return this.stations.find((station) => station.id === this.prefs.value.station) ?? this.stations[0]!;
   }
 
   get volume(): number {
-    return this.settings.volume;
+    return this.prefs.value.volume;
   }
 
   choose(station: Station): void {
@@ -63,7 +63,7 @@ export class Radio {
   }
 
   toggle(): void {
-    this.update({ radioOn: !this.settings.radioOn });
+    this.update({ radioOn: !this.on });
     this.broadcast.tune(this.playing());
   }
 
@@ -86,31 +86,22 @@ export class Radio {
   }
 
   private playing(): Station | null {
-    return this.settings.radioOn ? this.station : null;
+    return this.on ? this.station : null;
   }
 
-  private update(change: Partial<AudioSettings>): void {
-    this.settings = { ...this.settings, ...change };
-    saveAudioSettings(storage(), this.settings);
-    setRadioLit(this.settings.radioOn);
+  private update(change: { station?: string; radioOn?: boolean; volume?: number }): void {
+    this.prefs.update(change);
+    setRadioLit(this.on);
   }
 
   private applyVolume(): void {
     const music = this.engine.music;
-    if (music) music.gain.value = this.settings.volume;
+    if (music) music.gain.value = this.volume;
   }
 
   private tick(): void {
     const now = clock();
     this.store.want(wantedChunks({ stations: this.stations, listening: this.playing()?.id ?? null, nearSeconds: this.nearSince === null ? null : now - this.nearSince, now }));
     this.broadcast.tick();
-  }
-}
-
-function storage(): Storage | null {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
   }
 }

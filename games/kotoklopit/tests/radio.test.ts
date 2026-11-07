@@ -116,8 +116,8 @@ describe("вподобання (§8.10)", () => {
 
   it("зберігає й читає", () => {
     const storage = memory(null);
-    saveAudioSettings(storage, { radioOn: false, station: "mur", volume: 0.25 });
-    expect(loadAudioSettings(storage, IDS)).toEqual({ radioOn: false, station: "mur", volume: 0.25 });
+    saveAudioSettings(storage, { radioOn: false, station: "mur", volume: 0.25, effects: 0.5 });
+    expect(loadAudioSettings(storage, IDS)).toEqual({ radioOn: false, station: "mur", volume: 0.25, effects: 0.5 });
   });
 
   it("зіпсоване значення дає типове, а гучність лишається в межах", () => {

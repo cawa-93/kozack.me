@@ -25,6 +25,7 @@ import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Qualit
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import { RADIO } from "../audio/config";
 import type { Radio } from "../audio/radio/radio";
+import type { SoundMode, Sounds } from "../audio/sfx/sounds";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
 import { catIntroCard } from "../ui/catintro";
@@ -151,6 +152,7 @@ export class DayScene extends Phaser.Scene {
   constructor(
     private readonly session: Session,
     private readonly radio: Radio,
+    private readonly sounds: Sounds,
   ) {
     super("day");
   }
@@ -188,6 +190,7 @@ export class DayScene extends Phaser.Scene {
     this.setupKeyboard();
 
     this.cleanup.push(onEvent((event) => this.onGameEvent(event)));
+    this.sounds.attach({ mode: () => this.soundMode(), state: () => this.state });
     this.cleanup.push(this.session.onReset(() => this.restart()));
     // Телефон повернули вертикально — гра на паузі (§10), а утримання дії й джойстик скидаються: інакше після повороту
     // дія тривала б сама, бо палець відпустили вже під заглушкою.
@@ -256,6 +259,7 @@ export class DayScene extends Phaser.Scene {
 
   /** Показати день заново: після нової гри, перегравання чи сценарію. */
   private restart(): void {
+    this.sounds.reset();
     this.overlay.close();
     this.queued.length = 0;
     this.parkingRequested = false;
@@ -351,6 +355,7 @@ export class DayScene extends Phaser.Scene {
   private fallAsleep(collapsed: boolean): void {
     this.asleep = { started: this.time.now, collapsed };
     this.moving = false;
+    this.sounds.moment(collapsed ? "collapse" : "fall-asleep");
   }
 
   /** Засинання триває; коли екран уже темний — ніч (у ліжку чи там, де впав без сил). */
@@ -360,11 +365,20 @@ export class DayScene extends Phaser.Scene {
     this.asleep = null;
     const save = this.session.save;
     // До межі лишалися частки хвилини; більше — стан змінився, і перемотувати день не можна.
-    if (asleep.collapsed) advance(save, Math.min(1, Math.max(0, collapseMinute(save.current) - save.current.minute)));
-    else interact(save);
+    // Ніч прокручується за мить: її події не звучать (§11.4а).
+    this.sounds.hush(() => {
+      if (asleep.collapsed) advance(save, Math.min(1, Math.max(0, collapseMinute(save.current) - save.current.minute)));
+      else interact(save);
+    });
     // Темряву прибрати, коли екран уже закрила титулка чи екран кінця гри; без них — одразу.
     const covered = this.overlay.isOpen || this.state.end !== null;
     this.time.delayedCall(covered ? 1000 : 0, () => this.wakeUp());
+  }
+
+  /** Що зараз звучить (§11.4а): засинання й ніч — тиша, поїздка — лише інтерфейс. */
+  private soundMode(): SoundMode {
+    if (this.asleep !== null) return "silent";
+    return this.state.trip || this.state.end !== null ? "away" : "live";
   }
 
   /** Прибрати засинання: очі, наїзд і темряву (і темряву після дороги). */
@@ -686,6 +700,7 @@ export class DayScene extends Phaser.Scene {
     const { body } = this.state.character;
     this.radio.setNear(Math.hypot(body.x - RADIO_CENTER.x, body.y - RADIO_CENTER.y) <= RADIO.nearTiles);
     setRadioOn(this.state, this.radio.on);
+    this.sounds.frame(delta);
     this.showParking();
     const next = this.overlay.isOpen ? undefined : this.queued.shift();
     if (next) this.overlay.show(next);
@@ -1026,6 +1041,7 @@ export class DayScene extends Phaser.Scene {
   }
 
   private showMorning(night: GameState["lastNight"]): void {
+    this.sounds.moment("morning");
     // Зміни настрою за ніч гравець не бачив: сердечками їх не показують. Думки вранці — з нуля.
     this.hearts.clear();
     this.thoughts = new ThoughtClock();
@@ -1157,6 +1173,7 @@ export class DayScene extends Phaser.Scene {
   private showEnd(): void {
     const end = this.state.end;
     if (end === null) return;
+    this.sounds.moment("end");
     const save = this.session.save;
     const { parts, actions } = endScreen(this.state, end, {
       replayDay: () => {
@@ -1392,6 +1409,7 @@ export class DayScene extends Phaser.Scene {
           },
           tab: show,
           close: () => this.overlay.close(),
+          effects: { volume: this.sounds.volume, set: (volume) => this.sounds.setVolume(volume) },
         }),
       );
     show("shop");

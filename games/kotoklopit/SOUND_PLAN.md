@@ -9,7 +9,7 @@
 
 ## Що є зараз і що з цього випливає
 
-- Звуку немає зовсім: ні файлів, ні коду, ні налаштувань, ні титрів. Файл ліцензій, який обіцяє §2.1, теж ще не створено.
+- Радіо готове (§8.10). Ефекти — блок 5 і партії 6–9 разом, за контрактом «Ефекти» нижче.
 - **Музика не йде через Phaser.** Він декодує файл у пам'ять цілком (`decodeAudioData`): трек на 3 хвилини — близько 60 МБ.
 - **Звук живе окремо від Phaser.** Картки — це DOM, і звуки потрібні їм теж. Тому `src/audio/`, а Phaser — з `audio: { noAudio: true }`, щоб не створював другий `AudioContext`.
 - **Розблокування — свій слухач першої дії.** `fullscreenOnFirstAction` одразу виходить там, де повного екрана немає (iPhone), тож покластися на нього не можна.
@@ -64,20 +64,17 @@
 
 `src/audio/` — дрібні модулі, симуляція про них не знає:
 
-- `engine.ts` — єдиний `AudioContext`, шини master → music / sfx / ambient / ui, розблокування, пауза на прихованій вкладці, відновлення після дзвінка на iOS.
-- `settings.ts` — гучності й станція, ключ `kotoklopit:audio`.
+- `engine.ts` — єдиний `AudioContext`, шини music / world / ui, розблокування, пауза на прихованій вкладці, відновлення після дзвінка на iOS.
+- `settings.ts` — гучності й станція, ключ `kotoklopit:audio`; `AudioPrefs` — одна копія на радіо й звуки.
 - `radio/schedule.ts` — розклад і сітка шматків (чисті функції); `radio/chunks.ts` — запити й пам'ять; `radio/prefetch.ts` — що вантажити зараз (чиста функція); `radio/broadcast.ts` — ланцюг відтворення й шум ефіру; `radio/radio.ts` — усе разом для сцен і картки; `radio/playlist.json` — станції й треки, пише `scripts/audio/encode.ts`.
-- `sfx.ts` — короткі звуки: буфери вантажаться групами, обмеження голосів і пауза між повторами, щоб п'ятеро котів не злилися в кашу.
-- `events.ts` — таблиця «подія → звук» через `onEvent`, за зразком `eventBubbles`.
-- `loops.ts` — петлі зі стану (пилосос, пральна, душ, мурчання): міняються лише коли змінився набір, а не щокадру.
-- `manifest/<група>.ts` — файли й ліцензії, своя група у своєму файлі, щоб партії не конфліктували.
+- `sfx/` — ефекти, «Ефекти» нижче.
 
 **Файли.**
 
 - Оригінали — `audio-library/`, поза git і поза Netlify. Автор тримає резервну копію.
 - Каталог кандидатів — `audio/catalog.json`, у git.
 - **Музика.** `scripts/audio/` локально кодує затверджені треки ffmpeg (вирівняти гучність `loudnorm`, обрізати тишу), ріже на шматки в `cloudflare-music/public/music/` (поза git) і викладає окремим статичним проєктом Cloudflare `kotoklopit-music` (Workers Static Assets, `cloudflare-music/wrangler.jsonc`); довантажуються лише змінені файли. `cloudflare-music/public/_headers` задає `Access-Control-Allow-Origin` і кеш. У коді гри — лише адреса хостингу й станції. Хостинг недоступний — гра працює далі, радіо шумить ефіром.
-- **Короткі звуки** малі, тож лежать в `audio/sfx/` у git і підключаються через `import.meta.glob` з `?url`: Vite кладе їх в `assets/` із хешем під наявний довгий кеш `netlify.toml`.
+- **Короткі звуки** малі, тож лежать в `audio/sfx/<група>/` у git; оригінали — `sfx-library/`, поза git (автор тримає копію). Vite кладе файли в `assets/` із хешем під наявний довгий кеш `netlify.toml`.
 
 **Обсяг і ліміти.** Година музики — 21,6 МБ у типовому профілі (моно 48) і 43 МБ у стерео 96, і на хостингу, і в трафіку гравця за годину прослуховування. Запити до статичних файлів Cloudflare безкоштовні й без ліміту; файлів — до 20 000 (450 на годину музики, тобто близько 44 годин), до 25 МіБ кожен. Умови Cloudflare вимагають подавати великі файли через Developer Platform, але Workers там прямо не названі; шматки по 128 КБ навряд чи вважатимуться великими, проте певності немає. Запасні варіанти — Cloudflare R2 чи платний тариф Netlify.
 
@@ -109,20 +106,37 @@
 
 **Перевірка на YouTube.** Автор завантажує одне приватне відео зі склейкою затверджених треків і дивиться колонку обмежень у YouTube Studio. Заявку отримав — трек випадає. YouTube попереджає, що результат не остаточний, тож стовідсоткової гарантії не буде; каталог зберігає докази ліцензії для оскарження.
 
-Звуки: Freesound з фільтром CC0 (пошук звідси працює), Kenney (CC0, вручну), Sonniss GDC (без атрибуції; умови звірити для конкретного року).
+Звуки — «Ефекти», «Джерела». Freesound (ботам Anthropic закрито), Kenney і Sonniss — лише вручну автором.
 
 ## Як обираємо
 
 **Станції.** Розподіл зроблено за ознаками, без прослуховування: п'ять станцій по 267–311 хвилин, у кожного треку перша станція — основна. Ретро природно коротше (161 хвилина), тож добрано повторами реггі й живою музикою; коли з'явиться Tallbeard, повтори можна замінити. Слух автора ще перевіряє склад.
 
-**Звуки** — партіями: 10–15 подій, по 2–4 кандидати на кожну.
+**Звуки.** Claude шукає, обирає й ставить у гру: слухати не може, тож відсіює технічно (тривалість, рівень, перевантаження, шум, тиша по краях) і за описом. Автор слухає в грі й каже, що замінити; що перевірити — у відповіді наприкінці блоку.
 
-1. Claude шукає кандидатів і перевіряє ліцензію.
-2. Claude не чує, але відсіює технічно: тривалість, гучність, перевантаження, шум, тиша по краях.
-3. Сторінка з плеєрами: автор слухає, позначає обране, з телефона чи комп'ютера. Вибір повертається до Claude.
-4. Обрані файли проходять обробку й потрапляють у маніфест і в гру. Звук не підійшов — наступна партія кандидатів на цю подію.
+## Ефекти
 
-Сторінку ще не випробувано: перша партія заразом перевіряє, чи завантажуються аудіо й чи повертається вибір. Запасний варіант — локальна HTML-сторінка.
+Контракт для паралельної роботи: кожна група — свої файли, спільне не правиться.
+
+**Будова** (`src/audio/sfx/`): `types.ts` — контракт групи; `registry.ts` сам знаходить групи `groups/<id>.ts`; `sounds.ts` — події симуляції, моменти сцени, петлі й кроки → програвач, ліміти голосів і пауз; `player.ts` — декодування на першу потребу з межею пам'яті; `place.ts` — відстань і зсув; `files.ts` — закодовані файли; `sourcetypes.ts` — формат `sources.json` і ліцензії. Сцена квартири каже режим (`live`, `away` — поїздка, `silent` — засинання) і загортає ніч у `hush`. Картки грають звук через `uiSound(група, звук)`.
+
+**Група** — `src/audio/sfx/groups/<id>.ts` з `export const group: SoundGroup`: `sounds` (назва → файли-варіанти, `gain`, розкид висоти й гучності, пауза, скільки водночас, петля, шина інтерфейсу), `onEvent`, `onScene`, `loops`, `tick`, `reset`. Допоміжне — у `src/audio/sfx/<id>/`, тест — `tests/sfx-<id>.test.ts`; цілісність усіх груп, файлів і ліцензій стереже `tests/sfx-files.test.ts`.
+
+**Файли групи** — `audio/sfx/<id>/`: `sources.json` (`originals` — звідки й ліцензія, пише `find.ts`; `files` — рецепти: відрізок, петля, рівень, краї, фільтр), `encoded.json` і `*.mp3` пише `npm run audio:sfx -w games/kotoklopit -- <id>`. Моно 64 кбіт/с; разові — пік −1 дБ FS, петлі — RMS −20 дБ FS, замкнені в коло; гучність між звуками вирівнює `gain` групи. Разовий — зазвичай до 1,5 с, петля — 3–8 с. Межа всіх звуків — 6 МБ: інтерфейс 0,5, робота 0,6, персонаж 1, дім 1,5, коти 1,8.
+
+**Джерела** — `node scripts/audio/find.ts` (команди на початку файлу): Wikimedia Commons лише через `/wiki/` і upload.wikimedia.org, Internet Archive — пошук, метадані, файли. На Commons: «Audio files from LaSonotheque.org» (CC0, Joseph Sardin), «Audio files by Gravity Sound» (CC BY 4.0), «Files from Freesound.org», «Sounds of …». Ліцензії — `LICENSES`: CC0, PD, CC BY, без NC, ND і SA. Без музики й розбірливої мови; джингли — CC0 чи PD без повідомлень про заявки Content ID.
+
+**Хто що озвучує** — подія лише в одній групі:
+
+| Група | Події й стан |
+|---|---|
+| `ui` | DOM: картка відкрилась і закрилась, кнопка, вкладка. `refused`, `glitch`, `trait-noticed` (сповіщення телефона), `ordered`, `bought`. Моменти `morning`, `end` (причина — `state.end`). Шкала персонажа опустилась нижче `LOW_STAT` (`tick`) |
+| `work` | `work-started`, клавіатура петлею (`activity.kind === "work"`), `work-stopped` (гроші), `patience`, `standup-started`, `standup`, `career`, `job-rejected`, `call-remark`; `modifier`: `reputation`, `meeting-*`, `office-missed`, `vacation-pay`, `mom-call` |
+| `person` | Кроки й ривок (`tick`, `dash`), `tripped`, `slipped`, `knocked-down`, `ambushed`, `ate`, `showered` і душ петлею, купання кота петлею, `cleaned`, `fed`, `watered`, `treat`, `collar`, `medicine`, `person-ill`, `person-meds`, `person-cured`, `sock-found`, сонливість (`tick`). Моменти `fall-asleep`, `collapse` |
+| `home` | `took`, `put`, `thing-moved`, `trashed`, `discarded`, `unpacked`, `received`, `supply-landed`, `doorbell`, `carrier-opened`, `cooked` і плита петлею, `laundry` і пральна петлею, `vacuum`, `vacuumed` і пилосос петлею, `robot` і робот петлею, `broke`, `feeder`, `feeder-emptied`, `wire-fixed`, мухи над брудним лотком петлею; `modifier`: `guests`, `inspection`, `home-vet`, `cleaner`, `mom-food`, `fireworks` |
+| `cats` | Решта подій котів: `meow`, `carrier-cry`, `purr` і мурчання петлею під пестощами, `hissed`, `hissed-guests`, `standoff`, `standoff-parted`, `cat-fight`, `fight-stopped`, `bite`, `clawed`, `cat-ate`, `cat-refused-food`, `litter-refused`, `coughing`, `symptom`, `catnip`, `chatter`, `window-angry`, `knocked`, `trinket-fell`, `stole`, `toy-broke`, `scratched`, `keyboard`, `trash-tipped`, `chewing`, `wire-chewed`, `bag-chewed`, `cabinet-pawed`, `played`, `cats-played`, `groom-started`, `groomed`, `cat-cuddled`, `picked-up`, `put-down`, `cat-broke-free`, `cat-dodged`, `scared`, `cat-woke`, `nervous`, `escaped`, `cat-returned`, `cat-arrived`, `birth`, `medicine-spat`, `tap-opened`, `mess`, `treat-snatched`, `play-declined`, `sulked`, `cat-left`; стан котів петлями й `tick` (зумі, пиття, лоток, дряпання) |
+
+Без звуку: думки (§11.4), приховані зміни (`cat-mood`, `cat-felt`, `cat-love`, `cat-day`, `cat-trait`, `cat-seated`, `supply-used`), `night` і `game-over` (замість них — моменти), поїздки й гонка (`trip-*`, `vet-exam`, `sterilized` — блок 11).
 
 ## Блоки
 

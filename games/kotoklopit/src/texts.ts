@@ -46,6 +46,11 @@ export const RADIO_TEXTS = {
   volume: "Гучність",
 } as const;
 
+/** Звуки (§11.4а, `TEXTS.md`, «Звуки»): повзунок у вкладці «Гра» телефона. */
+export const SOUND_TEXTS = {
+  effects: "Звуки",
+} as const;
+
 /** Станції радіо (§8.10, `TEXTS.md`, «Радіо»); id і склад — `audio/catalog.json`. */
 export const RADIO_STATIONS: Readonly<Record<string, { name: string; tagline: string }>> = {
   mur: { name: "Тихий Мур", tagline: "Тихо. Хтось спить у вас на клавіатурі." },

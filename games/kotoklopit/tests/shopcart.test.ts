@@ -658,7 +658,7 @@ describe("картки поїздок (§8.5)", () => {
 
   it("телефон: смуга кошика — у картці внизу, лише на вкладці магазину", () => {
     const state = at(null);
-    const phone: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop };
+    const phone: PhoneHandlers = { checkout: noop, discard: noop, discardThing: noop, advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop } };
     const shop = phoneCard(state, "shop", phone);
     expect(shop.bar ? fake(shop.bar).find("shop-pay").textContent : "").toBe("Замовити");
     expect(phoneCard(state, "mine", phone).bar).toBeUndefined();
@@ -672,7 +672,7 @@ describe("картки поїздок (§8.5)", () => {
     const thrown: [string, string][] = [];
     const phone: PhoneHandlers = {
       checkout: noop, discard: (item) => thrown.push([item.kind, item.quality]), discardThing: (thing, quality) => thrown.push([JSON.stringify(thing), quality]),
-      advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop,
+      advertise: noop, cancelAd: noop, newGame: noop, exportSave: noop, importSave: noop, tab: noop, close: noop, effects: { volume: 1, set: noop },
     };
     const card = phoneCard(state, "mine", phone);
     const list = card.body.map((b) => (typeof b === "string" ? null : fake(b))).find((b) => b !== null && b.findAll("shop-row").length > 0);

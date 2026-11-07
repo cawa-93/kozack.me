@@ -15,7 +15,9 @@
     "art": "node scripts/art/cli.ts",
     "audio:catalog": "node scripts/audio/catalog.ts",
     "audio:encode": "node scripts/audio/encode.ts",
-    "audio:deploy": "node scripts/audio/deploy.ts"
+    "audio:deploy": "node scripts/audio/deploy.ts",
+    "audio:sfx": "node scripts/audio/sfx.ts",
+    "audio:find": "node scripts/audio/find.ts"
   },
   "license": "UNLICENSED",
   "dependencies": {
