@@ -1,5 +1,5 @@
 {
-  "about": "Єдиний каталог музики для радіо (GAME_DESIGN.md §2.1, §8.10). tracks — надійні, лежать в audio-library/ (поза git; заміри оновлює npm run audio:catalog -w games/kotoklopit). evidence — чому трек вільний; confidence — висока, якщо це заявив сам автор чи стоїть у файлі, середня — якщо лише кураторська примітка FreePD. features — ознаки для станцій, значення в featuresLegend. origin — MadPlayer: трек створено генератором музики. pending — надійні, але їх завантажує автор вручну. rejected — не підходять, причина в reason; у бібліотеку не потрапляють. bpm — автоматична оцінка, буває вдвічі більшою чи меншою за справжню; є не в усіх. contentIdCheck — результат перевірки на YouTube приватним відео.",
+  "about": "Єдиний каталог музики для радіо (GAME_DESIGN.md §2.1, §8.10). tracks — надійні, лежать в audio-library/ (поза git; заміри оновлює npm run audio:catalog -w games/kotoklopit). evidence — чому трек вільний; confidence — висока, якщо це заявив сам автор чи стоїть у файлі, середня — якщо лише кураторська примітка FreePD. stations — станції; у треку stations: перша основна, решта — повтори для рівноваги тривалості; назви й гасла — TEXTS.md, «Радіо». stations — станції; у треку stations: перша основна, решта — повтори для рівноваги тривалості; назви й гасла — TEXTS.md, «Радіо». features — ознаки для станцій, значення в featuresLegend. origin — MadPlayer: трек створено генератором музики. pending — надійні, але їх завантажує автор вручну. rejected — не підходять, причина в reason; у бібліотеку не потрапляють. bpm — автоматична оцінка, буває вдвічі більшою чи меншою за справжню; є не в усіх. contentIdCheck — результат перевірки на YouTube приватним відео.",
   "sources": {
     "freepd": {
       "name": "FreePD",
@@ -71,7 +71,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/alpha-hydrae-hashiandkiku",
@@ -116,7 +119,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/alpha-hydrae-keratine-rust-and-a-clear-soul",
@@ -162,7 +169,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/alpha-hydrae-paix",
@@ -207,7 +217,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/alpha-hydrae-to-be-like-a-chased-rabbit",
@@ -252,7 +266,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/alpha-hydrae-zrem",
@@ -297,7 +315,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/arthur-fordsworthy-downy-feathers",
@@ -344,7 +366,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/arthur-fordsworthy-last-call",
@@ -389,7 +414,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/boringxtreme-electroscat-trippityglitchhop",
@@ -438,7 +466,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/boringxtreme-i",
@@ -484,7 +515,10 @@
           "BPM",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/boringxtreme-solace-in-imaginary-places",
@@ -530,7 +564,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/boringxtreme-the-aquatic-wombat-becomes-a-butterfly",
@@ -579,7 +616,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/boringxtreme-timewarp",
@@ -627,7 +667,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/brian-boyko-ambush-in-rattlesnake-gulch",
@@ -675,7 +718,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-born-barnstomers",
@@ -729,7 +775,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-circumspection",
@@ -781,7 +830,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-city-slickers",
@@ -835,7 +887,11 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-connection",
@@ -889,7 +945,11 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-folk-song",
@@ -939,7 +999,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-groovin",
@@ -994,7 +1057,10 @@
           "категорія FreePD",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-long-trail",
@@ -1042,7 +1108,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-miranda",
@@ -1095,7 +1164,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/brian-boyko-nightshift",
@@ -1145,7 +1217,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/brian-boyko-orchestral-mix",
@@ -1191,7 +1266,10 @@
           "жанровий тег",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-alls-fair-in-love",
@@ -1239,7 +1317,10 @@
           "гучність",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-bar-brawl",
@@ -1288,7 +1369,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-downtown-boogie",
@@ -1337,7 +1421,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-drop-point",
@@ -1384,7 +1471,11 @@
           "гучність",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-finally-see-the-light",
@@ -1432,7 +1523,10 @@
           "гучність",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-fright-night-twist",
@@ -1481,7 +1575,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-from-page-to-practice",
@@ -1528,7 +1625,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-go-on-without-me",
@@ -1575,7 +1675,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-going-bananas",
@@ -1625,7 +1728,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-gotta-keep-on-movin",
@@ -1672,7 +1778,10 @@
           "гучність",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-hold-me-love-me",
@@ -1719,7 +1828,11 @@
           "гучність",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-hold-on-a-sec",
@@ -1766,7 +1879,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-honor-bound",
@@ -1813,7 +1929,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-i-guess-what-i-m-trying-to-say",
@@ -1860,7 +1979,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-inventing-flight",
@@ -1907,7 +2029,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-isolation-waltz",
@@ -1955,7 +2080,11 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-lucky-break",
@@ -2009,7 +2138,10 @@
           "категорія FreePD",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-managing-mischief",
@@ -2058,7 +2190,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-murder-on-the-bayou",
@@ -2108,7 +2243,10 @@
           "гучність",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-my-giant-bunny-friend",
@@ -2157,7 +2295,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-mysterious-lights",
@@ -2205,7 +2346,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-neptunian-princess",
@@ -2254,7 +2398,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-patron-saint-of-heists",
@@ -2304,7 +2451,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-planeteer-reaction",
@@ -2351,7 +2501,10 @@
           "BPM",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-slice-of-life",
@@ -2400,7 +2553,11 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-soundtrack-from-the-starcourt-mall",
@@ -2450,7 +2607,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-spring-chicken",
@@ -2500,7 +2660,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-take-the-ride",
@@ -2547,7 +2710,10 @@
           "гучність",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-trip-up-north",
@@ -2596,7 +2762,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/bryan-teoh-wakka-wakka",
@@ -2644,7 +2813,10 @@
           "гучність",
           "категорія FreePD"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/dimensionbucket-the-walrus-and-the-carpenter",
@@ -2691,7 +2863,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/dogsounds-a-waltz-for-naseem",
@@ -2740,7 +2915,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/dogsounds-brandenburg-concerto-iii-allegro-i",
@@ -2797,7 +2975,10 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/dogsounds-dream-freedom",
@@ -2842,7 +3023,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/dogsounds-k-s-theme",
@@ -2885,7 +3069,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/dogsounds-kokarrah-dawn",
@@ -2931,7 +3118,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/dogsounds-kokoarrah-dusk",
@@ -2977,7 +3167,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/dogsounds-moogalicious",
@@ -3027,7 +3220,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/dogsounds-requiem-titanic",
@@ -3075,7 +3271,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/dogsounds-russian-microtheme",
@@ -3117,7 +3316,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/dogsounds-sa-mo-do-do",
@@ -3159,7 +3361,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/dogsounds-sinfonia-to-cantata-29",
@@ -3210,7 +3415,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/dom-raven-rain",
@@ -3256,7 +3464,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/dom-raven-rain-remastered",
@@ -3302,7 +3513,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-a-terrible-sounding-piece-of-music",
@@ -3351,7 +3565,10 @@
           "жанровий тег",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/frank-nora-acid-beat",
@@ -3394,7 +3611,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-b-eastern-thought",
@@ -3441,7 +3661,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-c-motion",
@@ -3487,7 +3710,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-d-edges",
@@ -3533,7 +3759,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-d-wooden-blocks",
@@ -3579,7 +3808,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-e-singing-bells",
@@ -3625,7 +3857,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-f-swirl-noise",
@@ -3671,7 +3906,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-g-glowing",
@@ -3717,7 +3955,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-i-tibet-groove",
@@ -3763,7 +4004,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-j-thoughtful",
@@ -3809,7 +4053,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-k-slow-go",
@@ -3855,7 +4102,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-l-delicate",
@@ -3901,7 +4151,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-m-squee-bell",
@@ -3948,7 +4201,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-n-vibe-train",
@@ -3994,7 +4250,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-o-sub-plucker",
@@ -4040,7 +4299,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-ambient-q-chime-song",
@@ -4086,7 +4348,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-blipotron",
@@ -4131,7 +4396,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-chaoserate",
@@ -4178,7 +4446,10 @@
           "жанровий тег",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-a",
@@ -4225,7 +4496,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-air",
@@ -4272,7 +4546,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-awash",
@@ -4320,7 +4597,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-beat",
@@ -4367,7 +4647,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-bells",
@@ -4415,7 +4698,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-breathe",
@@ -4462,7 +4748,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-c",
@@ -4509,7 +4798,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-china-love",
@@ -4557,7 +4849,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-cool-night",
@@ -4604,7 +4899,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-deep",
@@ -4651,7 +4949,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-denoumont",
@@ -4699,7 +5000,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-float",
@@ -4746,7 +5050,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-openness",
@@ -4793,7 +5100,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-soft",
@@ -4840,7 +5150,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chill-urban",
@@ -4887,7 +5200,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-chillectro",
@@ -4934,7 +5250,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-count-bass",
@@ -4981,7 +5300,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-a-squish",
@@ -5029,7 +5351,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-b-drive",
@@ -5076,7 +5401,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-c-super-shaker",
@@ -5123,7 +5451,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-d-coexistant",
@@ -5170,7 +5501,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-e-energy",
@@ -5217,7 +5551,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-f-plausible",
@@ -5264,7 +5601,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-g-terrible",
@@ -5313,7 +5653,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-h-stutter",
@@ -5361,7 +5704,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-i-almost-awesome",
@@ -5408,7 +5754,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-j-hit-me",
@@ -5455,7 +5804,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-drum-n-bass-k-megatrack",
@@ -5502,7 +5854,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-a",
@@ -5549,7 +5904,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-c",
@@ -5596,7 +5954,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-d",
@@ -5643,7 +6004,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-e",
@@ -5690,7 +6054,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-f",
@@ -5737,7 +6104,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-chill-g",
@@ -5784,7 +6154,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-dnb-a",
@@ -5831,7 +6204,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-dnb-b-chaos",
@@ -5879,7 +6255,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-dnb-c",
@@ -5926,7 +6305,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-dnb-decent",
@@ -5973,7 +6355,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-dnb-quirk",
@@ -6020,7 +6405,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-shaker-heaven",
@@ -6065,7 +6453,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electro-softie",
@@ -6112,7 +6503,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-electrofreak",
@@ -6155,7 +6549,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electrolush",
@@ -6198,7 +6595,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-a-groove-out",
@@ -6241,7 +6641,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-b-demo-button",
@@ -6284,7 +6687,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-c-squee-crash",
@@ -6329,7 +6735,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-e-system-is-down",
@@ -6372,7 +6781,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-g-percussive-party",
@@ -6417,7 +6829,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-h-organizer",
@@ -6460,7 +6875,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-i-crazy-fun",
@@ -6503,7 +6921,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-j-flattened-funk",
@@ -6546,7 +6967,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-k-deep-nyah",
@@ -6589,7 +7013,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-l-discoed",
@@ -6632,7 +7059,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-m-techweather",
@@ -6675,7 +7105,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-n-weirgroove",
@@ -6718,7 +7151,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-p-disco-accordion",
@@ -6761,7 +7197,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electronic-q-80s-incarnate",
@@ -6804,7 +7243,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-electroshuffle-dark",
@@ -6849,7 +7291,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-flat-straight",
@@ -6892,7 +7337,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-a-outside",
@@ -6938,7 +7386,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-b-thick-beat",
@@ -6984,7 +7435,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-c-wind-up",
@@ -7030,7 +7484,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-corp",
@@ -7076,7 +7533,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-d-ungood",
@@ -7122,7 +7582,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-dark-shot",
@@ -7169,7 +7632,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-epics",
@@ -7215,7 +7681,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-interrupt",
@@ -7262,7 +7731,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-lost-in-thought",
@@ -7309,7 +7781,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-hip-hop-outside",
@@ -7355,7 +7830,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-a-square",
@@ -7403,7 +7881,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-b-hard-off",
@@ -7451,7 +7932,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-c-lighter-than-snare",
@@ -7499,7 +7983,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-d-reasonably-cool",
@@ -7547,7 +8034,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-e-watery-groove",
@@ -7595,7 +8085,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-f-boochee",
@@ -7643,7 +8136,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-g-room-to-breathe",
@@ -7692,7 +8188,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-h-the-builder",
@@ -7740,7 +8239,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-i-aquabeat",
@@ -7788,7 +8290,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-j-grindstone",
@@ -7836,7 +8341,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-house-k-annoy",
@@ -7884,7 +8392,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-a",
@@ -7931,7 +8442,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-b",
@@ -7978,7 +8492,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-edge",
@@ -8026,7 +8543,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-frentic",
@@ -8074,7 +8594,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-party",
@@ -8122,7 +8645,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungle-space",
@@ -8170,7 +8696,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-jungleshine",
@@ -8217,7 +8746,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-latinish",
@@ -8264,7 +8796,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-light-and-lush",
@@ -8312,7 +8848,10 @@
           "жанровий тег",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-a",
@@ -8359,7 +8898,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-c",
@@ -8406,7 +8948,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-d",
@@ -8453,7 +8998,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-e",
@@ -8500,7 +9048,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-f-chuffy",
@@ -8547,7 +9098,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-g",
@@ -8594,7 +9148,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-h",
@@ -8641,7 +9198,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-i",
@@ -8688,7 +9248,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-j",
@@ -8735,7 +9298,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-o",
@@ -8782,7 +9348,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-r",
@@ -8829,7 +9398,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-s-early-eighties",
@@ -8876,7 +9448,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-t",
@@ -8923,7 +9498,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-u-outside",
@@ -8970,7 +9548,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-w",
@@ -9017,7 +9598,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-x",
@@ -9064,7 +9648,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-mc-ballad-y",
@@ -9111,7 +9698,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-montageur",
@@ -9154,7 +9744,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-c-chimer",
@@ -9201,7 +9794,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-d-detective",
@@ -9249,7 +9845,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-e-aspire",
@@ -9297,7 +9896,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-f-bender",
@@ -9344,7 +9946,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-g-awful",
@@ -9393,7 +9998,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-h-backer-ice",
@@ -9440,7 +10048,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-i-dissonant",
@@ -9487,7 +10098,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-j-promise",
@@ -9534,7 +10148,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-l-wood-synth",
@@ -9581,7 +10198,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-n-mysterion",
@@ -9628,7 +10248,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-p-space-kudzu",
@@ -9675,7 +10298,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-r-water-shine",
@@ -9723,7 +10349,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-new-age-s-path-to-light",
@@ -9770,7 +10399,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-octave-jumper",
@@ -9813,7 +10445,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-b-electroisland",
@@ -9861,7 +10496,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-e-harsh-love-theme",
@@ -9910,7 +10549,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-f-disjoint",
@@ -9959,7 +10602,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-h-funky",
@@ -10007,7 +10654,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-i-fast-bubble",
@@ -10055,7 +10706,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-j-groundlink",
@@ -10103,7 +10758,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-k-hyperaccordion",
@@ -10151,7 +10810,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-l-cool-island",
@@ -10200,7 +10863,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-m-stomp-buzz",
@@ -10248,7 +10915,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-n-atonal-island",
@@ -10297,7 +10968,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-o-slick-bass",
@@ -10345,7 +11020,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-p-space-palm",
@@ -10394,7 +11073,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-q-party-chill",
@@ -10443,7 +11126,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-ragga-r-spaceship-colada",
@@ -10491,7 +11178,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-bad-brass-groove",
@@ -10537,7 +11228,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-chill",
@@ -10583,7 +11277,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-deep-groove",
@@ -10629,7 +11326,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-disjunct",
@@ -10675,7 +11375,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-fingered",
@@ -10721,7 +11424,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-funk",
@@ -10767,7 +11473,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-light-and-heavy",
@@ -10814,7 +11523,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-lop-a-dop",
@@ -10860,7 +11572,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-low-down",
@@ -10906,7 +11621,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rap-with-metals",
@@ -10952,7 +11670,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-raveminimal",
@@ -10995,7 +11716,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-reggae-remix-a",
@@ -11041,7 +11765,11 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia",
+        "retro"
+      ]
     },
     {
       "id": "freepd/frank-nora-relentless",
@@ -11086,7 +11814,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-rnb-blipstorm",
@@ -11133,7 +11864,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-soft-urban-a",
@@ -11180,7 +11914,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/frank-nora-space-rap",
@@ -11227,7 +11964,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-squanch",
@@ -11272,7 +12012,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-super-snare",
@@ -11314,7 +12057,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-a-cool",
@@ -11360,7 +12106,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-b-jab",
@@ -11406,7 +12155,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-c-eyepoke",
@@ -11452,7 +12204,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-d-acidic",
@@ -11498,7 +12253,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-e-thumper",
@@ -11544,7 +12302,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-f-grind",
@@ -11590,7 +12351,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-g-disorient",
@@ -11636,7 +12400,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-h-divorce",
@@ -11682,7 +12449,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-i-gunshot",
@@ -11728,7 +12498,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-j-spacebend",
@@ -11774,7 +12547,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-tech-k-youturn",
@@ -11820,7 +12596,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-terrible-electronic",
@@ -11869,7 +12648,10 @@
           "жанровий тег",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-a-metal-rush",
@@ -11916,7 +12698,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-b-clunk",
@@ -11963,7 +12748,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-c-bright-blip",
@@ -12011,7 +12799,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-d-base-dance",
@@ -12058,7 +12849,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-e-frantic-bomb",
@@ -12105,7 +12899,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-f-trade-pep",
@@ -12152,7 +12949,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-g-dampen",
@@ -12199,7 +12999,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-h-jumper",
@@ -12246,7 +13049,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-i-pickitah-motion",
@@ -12293,7 +13099,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-j-sweeper",
@@ -12340,7 +13149,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-k-space-trance",
@@ -12388,7 +13200,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-trance-l-pickitah-motion",
@@ -12435,7 +13250,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/frank-nora-twister",
@@ -12478,7 +13296,10 @@
         "basis": [
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-awful",
@@ -12527,7 +13348,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-brastard",
@@ -12574,7 +13398,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-confused-mystery",
@@ -12622,7 +13449,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-cool-trip",
@@ -12669,7 +13499,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-funk-b",
@@ -12716,7 +13549,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-hooter",
@@ -12764,7 +13600,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-mixer",
@@ -12811,7 +13650,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-no-glue",
@@ -12858,7 +13700,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-sad-demo",
@@ -12906,7 +13751,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-scour",
@@ -12954,7 +13802,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/frank-nora-urban-soft-groove",
@@ -13002,7 +13853,10 @@
           "назва",
           "опис збірки"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/hussalonia-foaf",
@@ -13050,7 +13904,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/hussalonia-like-tetanus-in-a-wound",
@@ -13095,7 +13952,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/hussalonia-meaning-isn-t-based-on-the-importance-of-being-but-on-the-relationships-in-between",
@@ -13140,7 +14001,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/hussalonia-nitl",
@@ -13188,7 +14053,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/hussalonia-rbtl",
@@ -13236,7 +14104,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/hussalonia-there-s-more-than-that-to-being-poor",
@@ -13281,7 +14152,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/hussalonia-this-song-won-t-sell-a-thing",
@@ -13326,7 +14201,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/hussalonia-tldr",
@@ -13374,7 +14253,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/hussalonia-ttyl",
@@ -13422,7 +14304,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-acoustic-shifter",
@@ -13467,7 +14352,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/imp-analogue-brainworm",
@@ -13514,7 +14402,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-depressor-superchill",
@@ -13561,7 +14452,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/imp-fractal-planetoid",
@@ -13606,7 +14500,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/imp-germ-factory",
@@ -13650,7 +14547,10 @@
         "basis": [
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/imp-hilary-s-walk-in-the-woods",
@@ -13697,7 +14597,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/imp-island-mystery",
@@ -13743,7 +14646,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/imp-light-infusor",
@@ -13789,7 +14695,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/imp-mysterions",
@@ -13834,7 +14743,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/imp-native-dream",
@@ -13879,7 +14791,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-post-operative-dream",
@@ -13925,7 +14840,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/imp-radio-ghost",
@@ -13971,7 +14889,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-rip-in-the-wide-sky",
@@ -14016,7 +14937,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-sublimination-groove",
@@ -14063,7 +14987,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-waiting-on-platform-9",
@@ -14108,7 +15035,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/imp-when-trees-complain",
@@ -14154,7 +15084,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/imp-your-sparking-rubber-soul",
@@ -14199,7 +15132,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/james-anderson-goldcrest",
@@ -14253,7 +15189,10 @@
           "категорія FreePD",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-alison",
@@ -14299,7 +15238,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-bird-in-hand",
@@ -14346,7 +15289,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-feel-good-feel",
@@ -14394,7 +15340,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-river-meditation",
@@ -14442,7 +15391,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-rubix-cube",
@@ -14489,7 +15441,11 @@
         "basis": [
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-summer-sidewalk",
@@ -14537,7 +15493,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "retro"
+      ]
     },
     {
       "id": "freepd/jason-shaw-triangle",
@@ -14583,7 +15542,11 @@
         "basis": [
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-freezing-ivory",
@@ -14631,7 +15594,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-freezing-winds",
@@ -14677,7 +15643,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-ghosts-of-disease",
@@ -14725,7 +15694,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-global-resonance",
@@ -14769,7 +15741,10 @@
         "basis": [
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-hope-in-the-sight-of-fear",
@@ -14815,7 +15790,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-peace-in-sunlight",
@@ -14862,7 +15840,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-proper-timing",
@@ -14907,7 +15888,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-subterranians",
@@ -14952,7 +15937,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/knight-of-fire-to-dance-with-demon",
@@ -15000,7 +15988,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/lost-misfit-experimental-01",
@@ -15045,7 +16036,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/lost-misfit-experimental-02",
@@ -15090,7 +16084,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/lost-misfit-thunder-storm",
@@ -15139,7 +16136,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-a-wormhole-in-the-top-of-the-world",
@@ -15184,7 +16184,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/magdalen-apart",
@@ -15229,7 +16233,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/magdalen-automatic",
@@ -15274,7 +16282,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/magdalen-blue-day-creature",
@@ -15321,7 +16333,11 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen",
+        "retro"
+      ]
     },
     {
       "id": "freepd/magdalen-dynamo",
@@ -15366,7 +16382,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-grain-of-sand",
@@ -15411,7 +16430,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-once-in-the-crash",
@@ -15456,7 +16478,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-psychobabble",
@@ -15501,7 +16526,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-that-way",
@@ -15546,7 +16574,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-the-honeycomb",
@@ -15591,7 +16622,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-the-mysterious-body",
@@ -15636,7 +16670,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-the-star-said",
@@ -15681,7 +16718,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-we-re-on-the-other-side-now",
@@ -15726,7 +16766,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-where",
@@ -15771,7 +16814,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/magdalen-white-eyes",
@@ -15816,7 +16862,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-30-seconds-live",
@@ -15860,7 +16909,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-aydagee-live",
@@ -15904,7 +16956,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-bougyman-live",
@@ -15950,7 +17005,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-brighter-sun",
@@ -15996,7 +17054,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-ddj",
@@ -16040,7 +17101,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-hit-the-brink",
@@ -16084,7 +17148,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/manny-the-martyr-it-s-alright",
@@ -16128,7 +17195,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/mustard-seed-faith-media-edgar-s-bells",
@@ -16180,7 +17250,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/mustard-seed-faith-media-edgar-s-bells-movement-4-iron",
@@ -16232,7 +17305,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/phase-shift-enigmatic",
@@ -16278,7 +17354,11 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/phase-shift-forest-night",
@@ -16331,7 +17411,11 @@
           "категорія FreePD",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/phase-shift-shine",
@@ -16377,7 +17461,11 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "mur",
+        "retro"
+      ]
     },
     {
       "id": "freepd/severed-personality-abstract-anxiety",
@@ -16425,7 +17513,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-aphrodite",
@@ -16470,7 +17561,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-aphrodite-mix-2-chirpless",
@@ -16515,7 +17609,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-ares",
@@ -16560,7 +17657,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-artemis",
@@ -16605,7 +17705,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-bipolarcaps",
@@ -16650,7 +17753,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-hades",
@@ -16695,7 +17801,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-heavily-medicated",
@@ -16739,7 +17848,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "pidvikonnia"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-mana",
@@ -16782,7 +17894,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-mangler-feat-dj-kaos",
@@ -16827,7 +17942,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-mannequins",
@@ -16872,7 +17990,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-possession",
@@ -16916,7 +18037,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-rebel",
@@ -16959,7 +18083,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-suicide",
@@ -17005,7 +18132,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/splintered-gypsy-withdrawal",
@@ -17051,7 +18181,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/statusq-3-am-west-end",
@@ -17106,7 +18239,10 @@
           "категорія FreePD",
           "опис автора"
         ]
-      }
+      },
+      "stations": [
+        "mur"
+      ]
     },
     {
       "id": "freepd/thundermine-distant-star",
@@ -17155,7 +18291,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/thundermine-spring-remastered",
@@ -17200,7 +18339,10 @@
           "жанровий тег",
           "назва"
         ]
-      }
+      },
+      "stations": [
+        "zumi"
+      ]
     },
     {
       "id": "freepd/white-flag-agenda-faux-pas-bitter-endings",
@@ -17244,7 +18386,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/white-flag-agenda-monster",
@@ -17288,7 +18433,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/white-flag-agenda-reference",
@@ -17332,7 +18480,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     },
     {
       "id": "freepd/white-flag-agenda-reject",
@@ -17376,7 +18527,10 @@
           "гучність",
           "жанровий тег"
         ]
-      }
+      },
+      "stations": [
+        "berezen"
+      ]
     }
   ],
   "pending": [
@@ -24570,5 +25724,32 @@
     "certainty": "висока — є опис автора; середня — жанровий тег, категорія FreePD чи стиль у назві збірки; низька — лише здогад за назвою.",
     "basis": "Звідки взято ознаки.",
     "emptyMoods": "Порожній список настроїв означає, що настрій із метаданих не видно."
-  }
+  },
+  "stations": [
+    {
+      "id": "mur",
+      "frequency": "88,2",
+      "theme": "Спокій: ембієнт, нью-ейдж, чил-аут, балади, тиха романтика."
+    },
+    {
+      "id": "pidvikonnia",
+      "frequency": "93,5",
+      "theme": "Розслаблений ритм: хіп-хоп-біти, реггі, урбан, спокійна електроніка."
+    },
+    {
+      "id": "retro",
+      "frequency": "97,1",
+      "theme": "Жива старосвітська музика: джаз, регтайм, кантрі, блюграс, кумедне, класика; добрано реггі й живою музикою з інших станцій."
+    },
+    {
+      "id": "zumi",
+      "frequency": "101,8",
+      "theme": "Драйв: драм-н-бейс, джангл, хаус, транс, техно."
+    },
+    {
+      "id": "berezen",
+      "frequency": "105,4",
+      "theme": "Живий звук і дивина: пісні, рок, експериментальне, тривожне кіно."
+    }
+  ]
 }
