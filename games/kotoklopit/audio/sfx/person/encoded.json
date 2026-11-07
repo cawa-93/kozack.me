@@ -80,7 +80,7 @@
     "seconds": 0.37
   },
   "gasp-she-1": {
-    "hash": "ccc8c9bfb3e72f94",
+    "hash": "73ebe6b58a1b7bdc",
     "seconds": 0.33
   },
   "gasp-he-2": {
@@ -88,16 +88,16 @@
     "seconds": 0.39
   },
   "gasp-she-2": {
-    "hash": "b90bb0858de8481c",
-    "seconds": 0.348
+    "hash": "c39f5c38533e2f98",
+    "seconds": 0.348021
   },
   "gasp-he-3": {
     "hash": "51bf4957a619f016",
     "seconds": 0.34
   },
   "gasp-she-3": {
-    "hash": "d8802ff3b0d06b28",
-    "seconds": 0.304
+    "hash": "f7b6484019254586",
+    "seconds": 0.304021
   },
   "swallow": {
     "hash": "f8c7b30cc4a5f2d4",
@@ -232,15 +232,15 @@
     "seconds": 1.25
   },
   "pant-she": {
-    "hash": "8e532aad6edcb2b1",
-    "seconds": 1.116
+    "hash": "6d02af4cf1dfc761",
+    "seconds": 1.115979
   },
   "relief-he": {
     "hash": "394b8999920fd533",
     "seconds": 1.2
   },
   "relief-she": {
-    "hash": "8b9b907b2ed30124",
+    "hash": "df244799a415709f",
     "seconds": 1.071
   },
   "yawn-he": {
@@ -248,7 +248,7 @@
     "seconds": 2.7
   },
   "yawn-she": {
-    "hash": "4415c2026555508f",
+    "hash": "635d244d07e04d70",
     "seconds": 2.41
   },
   "sigh-he": {
@@ -256,8 +256,8 @@
     "seconds": 1.75
   },
   "sigh-she": {
-    "hash": "c28137e6e0a79e9b",
-    "seconds": 1.562
+    "hash": "17d5e55f03ec7277",
+    "seconds": 1.561979
   },
   "blanket-1": {
     "hash": "977525894bef6500",
