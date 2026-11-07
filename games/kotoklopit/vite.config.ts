@@ -22,6 +22,12 @@ export default defineConfig(({ command }) => ({
   base: command === "build" ? "/games/kotoklopit/" : "/",
   // Атлас арту з SVG теки art/: у dev — з пам'яті за адресою art/…, у збірці — файли art/ у теці збірки.
   plugins: [artPlugin()],
+  server: {
+    // Сирі бібліотеки звуків і вивантаження музики (поза git, їх беруть лише скрипти `scripts/audio/`) — понад 10 тисяч
+    // файлів, а наглядач Vite ставить `fs.watch` на кожен: на Windows це блокує dev-сервер на хвилини (і завантаження
+    // маніфесту атласу падає з таймаутом).
+    watch: { ignored: ["**/audio-library/**", "**/sfx-library/**", "**/cloudflare-music/**", "**/.wrangler/**"] },
+  },
   define: {
     __DEV_TOOLS__: JSON.stringify(devTools(command)),
   },
