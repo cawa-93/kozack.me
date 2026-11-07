@@ -44,6 +44,8 @@ async function get(url: string): Promise<Response> {
 
 const text = (html: string): string =>
   html
+    // Шаблон Creator вбудовує стилі просто в поле автора.
+    .replace(/<style[\s\S]*?<\/style>/g, " ")
     .replace(/<[^>]*>/g, " ")
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
     .replace(/&amp;/g, "&")
