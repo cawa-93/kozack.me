@@ -2078,11 +2078,11 @@ export function addMess(state: GameState, kind: MessKind, at: Vec, cat: number |
 function surpriseSpot(rng: Rng): Vec {
   const spots: Vec[] = [
     { x: 3.5, y: 1.6 },
-    { x: 1.5, y: 7.5 },
+    { x: 2.5, y: 7.5 },
     { x: 18.5, y: 7.5 },
     { x: 5.5, y: 3.5 },
   ];
-  const spot = spots[rng.int(0, spots.length - 1)] ?? { x: 1.5, y: 7.5 };
+  const spot = spots[rng.int(0, spots.length - 1)] ?? { x: 2.5, y: 7.5 };
   return { x: spot.x + (rng.next() - 0.5) * 0.4, y: spot.y + (rng.next() - 0.5) * 0.4 };
 }
 

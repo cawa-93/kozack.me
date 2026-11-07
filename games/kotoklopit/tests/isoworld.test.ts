@@ -74,6 +74,8 @@ function framesOf(state: GameState): IsoFrame[] {
     { id: "env/stove", state: stoveState(state) },
     { id: "env/trash", state: trashState(state) },
     { id: "env/computer", state: computerState(state) },
+    { id: "env/radio", state: "off" },
+    { id: "env/radio", state: "on" },
     { id: "env/bed", state: bedState(state) },
     { id: "env/washer", state: state.home.washer.state },
     { id: "env/shower", state: showerState(state) },

@@ -29,6 +29,7 @@ const VACUUM = furniture({ w: 1, h: 1 }, { top: 98 });
 const LITTER_BAG = furniture(objectById("litter-bag"), { top: 56, pad: { left: 16 } });
 const STERILE_BIN = furniture(objectById("sterile-bin"), { top: 50, pad: { right: 16 } });
 const CAT_KIT = furniture(objectById("cat-kit"), { top: 40, tall: 56 });
+const RADIO = furniture(objectById("radio"), { top: 78, tall: 112, pad: { bottom: 8 } });
 const BOXES = furniture(objectById("boxes"), { top: 64 });
 
 const penAt = TRINKETS.find((t) => t.kind === "pen")?.at ?? 0.85;
@@ -80,6 +81,7 @@ export const MANIFEST: readonly ArtEntry[] = [
   // Котяча аптечка (§6.4): зелена скринька з білою лапкою, у кришці — віконце; стан — середнє наповнення таблеток, крапель,
   // ласощів, нашийника й м'яти: 0 — кришка відкинута, усередині порожньо; 1–3 — крізь віконце видно 1, 3, 7 речей; 4 —
   // кришка не зачиняється, лежить на купі.
+  { id: "env/radio", ...RADIO.geometry, states: ["off", "on"] },
   { id: "env/cat-kit", ...CAT_KIT.geometry, states: FULL },
   // Накладка аптечки «ласощі»: рибка визирає з-під кришки, поки ласощі є.
   { id: "env/cat-kit/treats", ...CAT_KIT.geometry },

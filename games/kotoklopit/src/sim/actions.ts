@@ -349,8 +349,9 @@ function tapObject(state: GameState, target: HomeObject, held: Item | null): Tap
       if (!takeHumanMeds(state, stateRng(state, "behavior"))) return refuse(state, target.id, { reason: "empty", product: "humanMeds" });
       return null;
     }
+    case "radio":
     case "wardrobe":
-      // Порожніми руками редактор відкриває сцена (`DayScene.act`), сюди доходять лише з річчю.
+      // Порожніми руками картку відкриває сцена (`DayScene.act`), сюди доходять лише з річчю.
       return held !== null ? refuse(state, target.id, "hands-full") : null;
     case "sofa":
     case "windowsill":

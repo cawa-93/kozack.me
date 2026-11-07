@@ -19,6 +19,7 @@
 import type Phaser from "phaser";
 
 import { DUST_SPOTS, dustOf } from "../../sim/dust";
+import { radioLit } from "../../audio/radio/lamp";
 import { isPresent, objectById, OBJECTS, ROOMS, TOILET_ROLL, TRINKETS, WIRE_TILE, type HomeObject } from "../../sim/home";
 import type { GameEvent } from "../../sim/events";
 import type { Target } from "../../sim/targets";
@@ -517,6 +518,7 @@ export class IsoApartmentView implements ApartmentPart {
     this.show(this.get("stove"), { id: "env/stove", state: stoveArtState(state) });
     this.show(this.get("trash"), { id: "env/trash", state: trashState(state) });
     this.show(this.get("computer"), { id: "env/computer", state: computerState(state) });
+    this.show(this.get("radio"), { id: "env/radio", state: radioLit() ? "on" : "off" });
     this.show(this.get("bed"), { id: "env/bed", state: bedState(state) });
     // Шафи з пилососом більше немає (§8.7, рішення автора 2026-11-02): пилосос стоїть на підлозі (`home.vacuumAt`) — його
     // малюватиме пакет вигляду.
