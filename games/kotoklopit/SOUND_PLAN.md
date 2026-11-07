@@ -81,6 +81,8 @@
 - **FreePD, надійна частина** (CC0): 371 трек у каталозі, усі не коротші за дві хвилини. Автор гри завантажив копію en.freepd.cn, тож теги перевірені повністю, і кожен трек має власний доказ (`evidence`) і рівень (`confidence`). Найбільше — Frank Nora (208): він сам випустив [Midnight Cassette System під CC0](https://archive.org/details/New_Midnight_Cassette_System). Bryan Teoh (30): у 26 присвята записана прямо в тегах файлу. Решта — близько 20 менших авторів із приміткою FreePD «Give Life Back To Music» чи присвятою; заявок на них не знайдено, але й перевірити їх глибше нема де, тож YouTube для них обов'язковий.
 - **Tallbeard Studios / Abstraction, [Music Loop Bundle](https://tallbeard.itch.io/music-loop-bundle)** (CC0, понад 200 треків, автор прямо дозволяє стріми). Заявок не знайдено. Завантажує автор гри вручну (нижче).
 
+**Рішення автора: чи лишати MadPlayer.** Треки Frank Nora (56% каталогу, `origin: "MadPlayer"`) створено апаратним генератором музики 2002 року. Наступна збірка серії [прямо описана так](https://archive.org/details/New_Midnight_Cassette_System), а назви стилів у нашій ті самі. Це алгоритм, а не сучасний ШІ, проте §2.1 каже «не з ШІ», тож вирішує автор.
+
 **Кандидати, потрібне ручне завантаження:** HoliznaCC0 (Free Music Archive вимагає вхід), Juhani Junkala (OpenGameArt; у нього лише частина робіт CC0, а на itch.io — CC-BY, тож перевіряти кожен пакет).
 
 **Не беремо:**
