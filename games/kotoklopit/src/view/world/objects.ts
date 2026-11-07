@@ -100,7 +100,7 @@ const LOOKS: Readonly<Record<string, LookSpec>> = {
   computer: { top: DESK, tall: 112, use: front(7, 7.35, "sit"), bubble: { x: 16, y: 0 } },
   wardrobe: { top: 170, use: front(6.5, 2.35) },
   // Радіо (§8.10): тумбочка 40, приймач до 78, антена вище.
-  radio: { top: 78, tall: 112, use: { at: { x: 2.35, y: 7.5 }, pose: "stand", facing: { x: -1, y: 0 } } },
+  radio: { top: 78, tall: 112, use: { at: { x: 2.35, y: 6.5 }, pose: "stand", facing: { x: -1, y: 0 } } },
   // Підвіконня: вузька дошка з батареєю вздовж стіни з вікном — слід лише дошки, решта клітинки — підлога перед нею.
   "sill-bedroom": { top: SILL, tall: SILL + 6, use: null, footprint: { x0: 4, y0: 1, x1: 5, y1: 1.3 } },
   "sill-living": { top: SILL, tall: SILL + 6, use: null, footprint: { x0: 1, y0: 8, x1: 1.3, y1: 9 } },

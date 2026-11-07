@@ -706,13 +706,13 @@ describe("де кіт (`catSpot`)", () => {
     const save = game();
     const home = save.current.home;
     home.items = home.items.filter((i) => i.kind !== "litter");
-    const left = { id: 831, kind: "litter", quality: "cheap", slot: "litter-5", litter: "cheap", uses: 0 } as HomeItem;
-    const right = { id: 832, kind: "litter", quality: "cheap", slot: "litter-6", litter: null, uses: 0 } as HomeItem;
+    const left = { id: 831, kind: "litter", quality: "cheap", slot: "litter-1", litter: "cheap", uses: 0 } as HomeItem;
+    const right = { id: 832, kind: "litter", quality: "cheap", slot: "litter-2", litter: null, uses: 0 } as HomeItem;
     home.items.push(right);
     // Нікого поруч — з боку, звідки дивиться.
     expect(besideSide(save.current, right, true, BESIDE.litter.along, BESIDE.litter.front)).toBe(-1);
     expect(besideSide(save.current, right, false, BESIDE.litter.along, BESIDE.litter.front)).toBe(1);
-    // Ліворуч на екрані (−x) — сусідній лоток (1, 6): стати праворуч.
+    // Ліворуч на екрані (−x) — сусідній лоток (8, 3): стати праворуч.
     home.items.push(left);
     expect(besideSide(save.current, right, true, BESIDE.litter.along, BESIDE.litter.front)).toBe(1);
   });

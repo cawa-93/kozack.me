@@ -96,6 +96,17 @@ export function stoveArtState(state: GameState): string {
  * Кадр пральної машини (§8.7): її стан, а прання, що стало на паузу без світла (§4.1, рішення автора 2026-11-02; запущене до
  * відключення — `household.ts`), — як машина, що стоїть: барабан не крутиться, вогник погас.
  */
+/** Кадрів хвиль на екрані радіо (`env/radio/waves`, §8.10) і скільки мс кожен: хвилі йдуть по колу. */
+const RADIO_WAVE = { frames: 6, ms: 130 } as const;
+
+/** Де екран відносно опорної точки радіо, одиниці арту. */
+export const RADIO_WAVES_AT = { x: 2, y: -54 } as const;
+
+/** Хвилі на екрані: лише поки радіо грає. */
+export function radioWaves(on: boolean, time: number): IsoFrame | null {
+  return on ? { id: "env/radio/waves", state: `wave-${Math.floor(time / RADIO_WAVE.ms) % RADIO_WAVE.frames}` } : null;
+}
+
 export function washerArtState(state: GameState): string {
   const washer = state.home.washer.state;
   return washer === "washing" && powerOut(state) ? "idle" : washer;
