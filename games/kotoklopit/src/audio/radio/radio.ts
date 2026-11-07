@@ -7,17 +7,18 @@ import { Broadcast } from "./broadcast";
 import { ChunkStore } from "./chunks";
 import { setRadioLit } from "./lamp";
 import { STATIONS, chunkUrl } from "./playlist";
+import { persistentFetch, RADIO_CACHE } from "./persist";
 import { wantedChunks } from "./prefetch";
 import type { Station } from "./schedule";
 
 /** Реальний час, с: той самий годинник і для ефіру, і для завантажень. */
 const clock = (): number => Date.now() / 1000;
 
-async function fetchBytes(url: string): Promise<ArrayBuffer> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`${response.status} ${url}`);
-  return response.arrayBuffer();
-}
+/** Шматки: пам'ять (`ChunkStore`), далі сховище між сесіями, далі мережа з HTTP-кешем браузера. */
+const fetchBytes = persistentFetch(
+  () => (typeof caches === "undefined" ? Promise.resolve(null) : caches.open(RADIO_CACHE)),
+  (url) => fetch(url),
+);
 
 export class Radio {
   readonly stations: readonly Station[] = STATIONS;
