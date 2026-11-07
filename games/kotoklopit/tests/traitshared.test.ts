@@ -621,7 +621,7 @@ describe("«Нічна активність» і «Ранкова побудка
 
   it("голодний «Терплячий зранку» чекає біля ліжка, поки персонаж прокинеться, — прояв «−»", () => {
     // Зерно, за якого кіт на світанку не йде в лоток: лоток важливіший за чекання біля ліжка.
-    const save = game(4);
+    const save = game(1);
     const patient = withCat(save, { morning: -1 });
     const plain = withCat(save, {}, { x: 7.5, y: 8.5 });
     for (const cat of [patient, plain]) cat.needs = { hunger: 30, thirst: 0, toilet: 0, fatigue: 20, attention: 0, play: 0 };

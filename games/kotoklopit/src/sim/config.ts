@@ -1265,6 +1265,8 @@ export const WATCH_SANITY = { asleep: 1, awake: 3 } as const;
 export const MESS_ANNOYANCE = { perHour: -1, max: -4 } as const;
 /** Сон на комп'ютері (§9.12): `helperStep` — частка за одиницю «−». */
 export const COMPUTER_SLEEP = { base: 1, step: 2, helperStep: 0.5 } as const;
+/** Сон на радіо (§8.10, `TRAITS.md`, «Теплолюбність»): `warmStep` — лише на увімкненому. */
+export const RADIO_SLEEP = { base: 1, warmStep: 2 } as const;
 /** Прогнали з місця (§9.12). */
 export const SHOO = { mood: -3, love: -2 } as const;
 /** Шерстяна грудка (§9.12): `perHour` — шанс; `night` — множник уночі (`isNight`); `wake*` — у спільній стелі нічних побудок. */

@@ -1023,6 +1023,8 @@ describe("сценарій «Згода, охорона й сварки» (`scen
     const tykhon = save.current.cats.find((c) => c.name === "Тихон")!;
     const alone = new Set<string>();
     for (let t = 0; t < 120; t += 0.25) {
+      // Кіт увесь час хоче гратися: чи встигне захотіти сам, не тут перевіряємо.
+      tykhon.needs.play = 100;
       advance(save, 0.25);
       // Хворий не грається в парі ні як той, кого кличуть (Г5), ні як той, хто кличе.
       expect(tykhon.act.kind === "wrestle" && tykhon.act.paired === true).toBe(false);

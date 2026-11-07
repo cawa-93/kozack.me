@@ -109,6 +109,7 @@ import {
   WATCH_SANITY,
   WATER_PLAY,
   WEIGHT,
+  RADIO_SLEEP,
   WARMTH,
   WINDOW,
   WORK_CAT,
@@ -830,6 +831,12 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     const washer = objectById("washer");
     options.push({ weight: 0.5 + Math.max(0, traitLevel(cat, "curiosity")), value: { at: { x: washer.x, y: washer.y }, target: "washer" } });
   }
+  // Радіо (§8.10): на приймачі вміщується один кіт, і туди треба вистрибнути.
+  const radioTaken = state.cats.some((c) => c.id !== cat.id && home(state, c) && c.act.kind === "sleep" && c.act.target === "radio");
+  if (!radioTaken && !cannotJump(cat)) {
+    const radio = objectById("radio");
+    options.push({ weight: radioSleepWeight(state, cat), value: { at: { x: radio.x, y: radio.y }, target: "radio" } });
+  }
   // Пам'ятає «ні» про комп'ютер — там не спить (§9.12, «Слухняність»).
   if (!isWorking(state) && !catOnComputer(state) && noGo(state, cat, "desk") === "go") {
     const computer = objectById("computer");
@@ -842,6 +849,15 @@ function sleepSpot(state: GameState, cat: Cat, rng: Rng): Spot {
     options.push({ weight, value: at({ x: computer.x + rng.int(0, computer.w - 1), y: computer.y }) });
   }
   return weightedPick(rng, options) ?? at(randomFloor(rng));
+}
+
+/** Вага сну на радіо (§8.10): увімкнене гріє, як комп'ютер. */
+export function radioSleepWeight(state: GameState, cat: Cat): number {
+  if (state.home.radioOn !== true) return RADIO_SLEEP.base;
+  const warmth = traitLevel(cat, "warmth");
+  const cold = warmthBonus(state) * Math.max(0, 1 + WARMTH.coldStep * warmth);
+  const cool = Math.max(0, 1 + WARMTH.coolStep * Math.min(0, warmth));
+  return (RADIO_SLEEP.base + cold + RADIO_SLEEP.warmStep * Math.max(0, warmth)) * cool;
 }
 
 /** Вільні лежанки дорогих кігтеточок (§9.12): одна на кота, поки там спить інший чи вже йде туди, інший її не обирає. */
@@ -3372,7 +3388,8 @@ function sleptWarm(state: GameState, cat: Cat): void {
     cat.x = sun.x;
     cat.y = sun.y;
   }
-  if (cat.act.blanket === true || o?.kind === "computer" || sunny) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
+  const warmRadio = o?.kind === "radio" && state.home.radioOn === true;
+  if (cat.act.blanket === true || o?.kind === "computer" || warmRadio || sunny) observe(state, cat, "warmth", 1, false, WARMTH.observeEvery);
 }
 
 /** Новонароджений лежить у гнізді чи біля матері й нічого не потребує сам (§9.8). */

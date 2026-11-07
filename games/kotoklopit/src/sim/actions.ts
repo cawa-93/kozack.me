@@ -604,6 +604,12 @@ function showerHygiene(state: GameState, quality: Quality | null): number {
   return SHOWER_HYGIENE[quality ?? "none"] * (powerOut(state) ? MODIFIERS.outage.showerHygiene : 1);
 }
 
+/** Вимикач радіо (§8.10): коти зважають на нього, вибираючи місце для сну. */
+export function setRadioOn(state: GameState, on: boolean): void {
+  if (on) state.home.radioOn = true;
+  else delete state.home.radioOn;
+}
+
 /** Чи можна зараз почати чи продовжити тривалу дію з ціллю. */
 export function canUse(state: GameState, target: Target): boolean {
   if (state.character.held !== null) return false;

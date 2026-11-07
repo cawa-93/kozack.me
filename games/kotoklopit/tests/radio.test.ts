@@ -5,18 +5,22 @@ import { describe, expect, it } from "vitest";
 import { RADIO, SAMPLE_RATE } from "../src/audio/config";
 import { STATIONS } from "../src/audio/radio/playlist";
 import { DEFAULT_AUDIO, loadAudioSettings, saveAudioSettings } from "../src/audio/settings";
-import { tap } from "../src/sim/actions";
+import { setRadioOn, tap } from "../src/sim/actions";
+import { createCat } from "../src/sim/cat";
+import { radioSleepWeight } from "../src/sim/catai";
+import { RADIO_SLEEP } from "../src/sim/config";
 import { onEvent } from "../src/sim/events";
 import { newGame } from "../src/sim/game";
 import { isSolid, objectById } from "../src/sim/home";
 import { targetOf } from "../src/sim/targets";
-import type { GameState } from "../src/sim/types";
+import { createRng } from "../src/sim/rng";
+import type { Cat, GameState, TraitLevel } from "../src/sim/types";
 import { RADIO_STATIONS } from "../src/texts";
 
 /** Персонаж стоїть перед радіо, обличчям до нього. */
 function atRadio(): GameState {
   const state = newGame({ address: "she", difficulty: "normal", seed: 1 }).current;
-  Object.assign(state.character.body, { x: 2.35, y: 7.5, facing: { x: -1, y: 0 } });
+  Object.assign(state.character.body, { x: 2.35, y: 6.5, facing: { x: -1, y: 0 } });
   return state;
 }
 
@@ -51,6 +55,43 @@ describe("радіо в квартирі (§8.10)", () => {
   });
 });
 
+describe("сон на радіо (§8.10)", () => {
+  /** Кіт із цією «Теплолюбністю». */
+  function catWith(warmth: TraitLevel | 0): { state: GameState; cat: Cat } {
+    const state = atRadio();
+    const cat = createCat(state, createRng(4), { source: "shelter", ageWeeks: 10, at: { x: 5.5, y: 8.5 } });
+    cat.traits = warmth === 0 ? [] : [{ group: "warmth", level: warmth, seen: 0, known: false }];
+    return { state, cat };
+  }
+
+  it("вимкнене — звичайне місце для сну, байдуже до тепла", () => {
+    for (const warmth of [-2, 0, 2] as const) {
+      const { state, cat } = catWith(warmth);
+      expect(radioSleepWeight(state, cat)).toBe(RADIO_SLEEP.base);
+    }
+  });
+
+  it("увімкнене гріє: теплолюба тягне сильніше", () => {
+    const { state, cat } = catWith(2);
+    setRadioOn(state, true);
+    expect(radioSleepWeight(state, cat)).toBeGreaterThan(RADIO_SLEEP.base);
+  });
+
+  it("тому, хто не мерзне, увімкнене радіо гірше за вимкнене", () => {
+    const { state, cat } = catWith(-1);
+    setRadioOn(state, true);
+    expect(radioSleepWeight(state, cat)).toBeLessThan(RADIO_SLEEP.base);
+  });
+
+  it("вимикач лишає в стані лише поле увімкненого радіо", () => {
+    const state = atRadio();
+    setRadioOn(state, true);
+    expect(state.home.radioOn).toBe(true);
+    setRadioOn(state, false);
+    expect("radioOn" in state.home).toBe(false);
+  });
+});
+
 describe("вподобання (§8.10)", () => {
   const IDS = ["mur", "retro"];
   const memory = (saved: string | null): Pick<Storage, "getItem" | "setItem"> & { value: string | null } => ({
@@ -61,6 +102,10 @@ describe("вподобання (§8.10)", () => {
     setItem(_key, value) {
       this.value = value;
     },
+  });
+
+  it("типово радіо вимкнене", () => {
+    expect(DEFAULT_AUDIO.radioOn).toBe(false);
   });
 
   it("без збереженого — типові", () => {
