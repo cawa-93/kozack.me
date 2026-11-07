@@ -117,15 +117,6 @@
       "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
       "sha256": "6360791fdcee1f64638f0fc9abd6d2c7a1aa75fd3d2b80033170a02d025099dc"
     },
-    "keyboard-4": {
-      "file": "archive/keyboard-stock-photos-by-meee/clickity_clackity_keyboard_november_13th_2023_(4).mp3",
-      "url": "https://archive.org/details/keyboard-stock-photos-by-meee",
-      "title": "Keyboard Stock Photos and audio — clickity clackity keyboard november 13th 2023 (4).mp3",
-      "author": "Tinyel",
-      "license": "PD",
-      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
-      "sha256": "1216f8ecdedcfecc1f496efb4a0d7ee8a01cbe08ff2ff1297b75fb75dc7ea16a"
-    },
     "gs-accept": {
       "file": "commons/Accept_(Gravity_Sound).wav",
       "url": "https://commons.wikimedia.org/wiki/File:Accept_(Gravity_Sound).wav",
@@ -134,6 +125,24 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
       "sha256": "48e2aee2a5923d35faed75d3a9c65457acaf0579dcc5466a12ba28523980e441"
+    },
+    "typing-fast": {
+      "file": "commons/Typing_fast.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Typing_fast.ogg",
+      "title": "Typing fast",
+      "author": "stephan (PDSounds)",
+      "license": "PD",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/File:Typing_fast.ogg",
+      "sha256": "7aeb5a95a7f3c87bf1b829c533c17242643d4b08f99495e466f5b58744d846a2"
+    },
+    "phone-ae80": {
+      "file": "archive/yellow-ae-80/Blue_AE80.mp3",
+      "url": "https://archive.org/details/yellow-ae-80",
+      "title": "Automatic Electric (AE) Telephone Ringing — Blue_AE80.mp3",
+      "author": "Cloud16 Films",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "sha256": "1fe20a40f789959f718931473c6090757c661ce2cb7c01788deea07f64b7d3be"
     }
   },
   "files": {
@@ -143,11 +152,11 @@
       "note": "Сів за комп'ютер: м'який подвійний сигнал"
     },
     "keyboard": {
-      "from": "keyboard-4",
-      "start": 0.85,
-      "end": 5.85,
+      "from": "typing-fast",
+      "start": 4,
+      "end": 9.3,
       "loop": true,
-      "note": "Клавіатура петлею: рівний набір без пауз"
+      "note": "Клавіатура петлею: швидкий рівний набір без пауз"
     },
     "coin": {
       "from": "gs-coins-1",
@@ -226,10 +235,12 @@
       "note": "Відпускні: пригорща монет"
     },
     "ring": {
-      "from": "us-ringback",
-      "filter": "aresample=48000,atrim=4:8.6,asetpts=PTS-STARTPTS,asetrate=96000,aresample=48000,tremolo=f=22:d=0.9",
+      "from": "phone-ae80",
+      "start": 0.15,
+      "end": 4.75,
+      "filter": "highpass=f=150,highpass=f=150",
       "loop": true,
-      "note": "Мама дзвонить: дзвінок телефона петлею — секунда трелі, секунда тиші (гудок CC0 октавою вище з тремоло)"
+      "note": "Мама дзвонить: дзвінок дискового телефона петлею — трель 2,6 с і тиша; гул кімнати нижче 150 Гц зрізано"
     },
     "murmur": {
       "from": "cafe",

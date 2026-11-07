@@ -4,11 +4,11 @@
     "seconds": 0.375
   },
   "keyboard": {
-    "hash": "7af66b96b2ccba1a",
-    "seconds": 4.7,
+    "hash": "e02a951164430a2a",
+    "seconds": 5,
     "loop": {
       "start": 0.1,
-      "end": 4.8
+      "end": 5.1
     }
   },
   "coin": {
@@ -60,11 +60,11 @@
     "seconds": 1.23
   },
   "ring": {
-    "hash": "bb7f2e5f6015b3a6",
-    "seconds": 2,
+    "hash": "5b4e0289a2d44b8e",
+    "seconds": 4.3,
     "loop": {
       "start": 0.1,
-      "end": 2.1
+      "end": 4.4
     }
   },
   "murmur": {
