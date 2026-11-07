@@ -1,0 +1,745 @@
+{
+  "originals": {
+    "steps-stone": {
+      "file": "archive/aporee_22211_25783/HansenHouseFootstepsIndoors.ogg",
+      "url": "https://archive.org/details/aporee_22211_25783",
+      "title": "Hansen House, Jerusalem, Israel - Footsteps in Hansen House Interior — HansenHouseFootstepsIndoors.ogg",
+      "author": "Josef Sprinzak (radio aporee ::: maps)",
+      "license": "CC-BY-3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by/3.0/",
+      "sha256": "d82bef5beca034cde06b5ac3ad0e0fcf51f0f389230c1e1baba2fd1a861e4aca"
+    },
+    "sigh": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_CU_Sigh_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone, CU_Sigh_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "0a8c125830703c02f1a483568986fe6905f59759915fa126b807cfbbaa42c4c2"
+    },
+    "breath": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_Breathing_Deep_Inhale_Exhale_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone_Breathing, Deep, Inhale, Exhale_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b34fd7015654a405b35220147e1522cbff075179ae2a310237e8abb4754b3577"
+    },
+    "gasps": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_CU_Gasps_Short_Various_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone, CU_Gasps, Short, Various_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "32ccaa7b1e4b43c21bd039e1b7e54f1f5a9cf55dc9f38ea5b1ec7fd1d92d51d1"
+    },
+    "panting": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNBrth-Blue_Snowball_Microphone_Panting_Slow_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/BREATH/HMNBrth-Blue Snowball Microphone_Panting, Slow_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "2a622da44921c0a10b38dc0e4b1bfc9184dee48b7c74531807e6b50c9b4c5cb0"
+    },
+    "swallow": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNMisc-Blue_Snowball_Microphone_Swallow_Liquid_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/MISC/HMNMisc-Blue Snowball Microphone_Swallow, Liquid_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "040f5da3177576ed0db10844eeee30185185c22a74d168aff1f884acbac2a205"
+    },
+    "sneeze-he": {
+      "file": "archive/Designers-Choice-Collection-Human/HMNSneez-Samsung_Galaxy_Smartphone_CU_Sneeze_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Human",
+      "title": "The Designer's Choice UCS Collection - HUMAN — HUMAN/SNEEZE/HMNSneez-Samsung Galaxy Smartphone, CU_Sneeze_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ec19dca5ed843e34106f90c39899943474c5762793434ff77d16cd40dd94197f"
+    },
+    "swoosh": {
+      "file": "archive/Designers-Choice-Collection-Swooshes/SWSH-Samsung_Galaxy_Smartphone_MCU_Cloth_Swoosh_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Swooshes",
+      "title": "The Designer's Choice UCS Collection - SWOOSHES — SWOOSHES/SWISH/SWSH-Samsung Galaxy Smartphone, MCU_Cloth, Swoosh_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "8430a7a93bc2f92d1dcdec73d0900bbb910ae114b2829ff111e90c88b36d59c3"
+    },
+    "bodyfall-grass": {
+      "file": "archive/Designers-Choice-Collection-Fight/FGHTBf-Samsung_Galaxy_Smartphone_CU_Bodyfall_On_Grass_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Fight",
+      "title": "The Designer's Choice UCS Collection - FIGHT — FIGHT/BODYFALL/FGHTBf-Samsung Galaxy Smartphone, CU_Bodyfall, On Grass_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f597a039523aa8eeff7fb84ce14f526baa7e9420b81e56ec3146cd5855ef79ef"
+    },
+    "shower": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRPlmb_Shower_Turn_On_Running_Turn_Off_Big_Drips_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/PLUMBING/WATRPlmb_Shower Turn On, Running, Turn Off, Big Drips_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f8af5a4e1a14c11e2bf9527a4a79538462e5a612710ffd9701ac6abdaf3f801d"
+    },
+    "pour-water": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRPour_Water_Pouring_Into_Cup_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/POUR/WATRPour_Water Pouring, Into Cup_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "3dce806f96639fc032070620c1adb0aa194efc5fd71a45d9e1c7ad19f32f8b3b"
+    },
+    "splash": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRSplsh-Samsung_Galaxy_Smartphone_CU_Water_Jump_In_Splash_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/SPLASH/WATRSplsh-Samsung Galaxy Smartphone, CU_Water, Jump In, Splash_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "734d14d90222fc3eb89ea04840262e16a5e23e2393eab970974f72ec7433bf45"
+    },
+    "snap": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJFash-Blue_Snowball_Microphone_MCU_Button_Snap_On_Off_Windbreaker_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/FASHION/OBJFash-Blue Snowball Microphone, MCU_Button, Snap On, Off, Windbreaker_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "41a52714ac9600536b4a6e4f135a32688294649623be2d7034b50d810ea910ba"
+    },
+    "pillow": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJFurn-Blue_Snowball_Microphone_MCU_Pillow_Fluff_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/FURNITURE/OBJFurn-Blue Snowball Microphone, MCU_Pillow, Fluff_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "f16397020ee91a0820000e33cdb15881194c41892f2d350fe439126f19428a61"
+    },
+    "wipe": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJHsehld-Samsung_Galaxy_Smartphone_Window_Mirror_Wiping_Squeaks_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/HOUSEHOLD/OBJHsehld-Samsung Galaxy Smartphone_Window, Mirror, Wiping Squeaks_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "367141a97c72a8418cbcd0708c7e1d9e2a4ac777d887388c3bc3ac13260dff67"
+    },
+    "scoop": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJMisc-Samsung_Galaxy_Smartphone_CU_Metal_Scooper_Scooping_Ice_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/MISC/OBJMisc-Samsung Galaxy Smartphone, CU_Metal Scooper, Scooping Ice_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "660e72791cde2ca0741d04362009b1576d04c8b00acea06089da07654d5ba4f3"
+    },
+    "brush": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJMisc-Samsung_Galaxy_Smartphone_CU_Paintbrush_Brushing_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/MISC/OBJMisc-Samsung Galaxy Smartphone, CU_Paintbrush, Brushing_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "ea5b9a8836b5f342878f7c28138f8cf91bf75590ab637efd6b9c2d7be5df541b"
+    },
+    "ziploc": {
+      "file": "archive/Designers-Choice-Collection-Objects/OBJZipr-Blue_Snowball_Microphone_MCU_Ziploc_Plastic_Bag_Zip_Unzip_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Objects",
+      "title": "The Designer's Choice UCS Collection - OBJECTS — OBJECTS/ZIPPER/OBJZipr-Blue Snowball Microphone, MCU_Ziploc Plastic Bag, Zip, Unzip_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "81c669ab8b15cc4072c26e04b713141a7fb0c9b2d35eaae43c9d62dfa0513fcd"
+    },
+    "grain": {
+      "file": "archive/pouring-grain-into-container-d.-d.-teoli-jr.-2/Pouring_grain_into_container_D.D.Teoli_Jr._2.mp3",
+      "url": "https://archive.org/details/pouring-grain-into-container-d.-d.-teoli-jr.-2",
+      "title": "Pouring Grain Into Container D. D. Teoli Jr. 2 — Pouring grain into container D.D.Teoli Jr. 2.mp3",
+      "author": "D.D.Teoli Jr.",
+      "license": "PD",
+      "licenseUrl": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "sha256": "f2a66b534e94fb69260e0e2c358c7465687d51b3b34fec39d6ff3c7e0e12faa5"
+    },
+    "pills": {
+      "file": "archive/Designers-Choice-Collection-Cartoon/TOONShake-Samsung_Galaxy_Smartphone_CU_Pill_Bottle_01_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Cartoon",
+      "title": "The Designer's Choice UCS Collection - CARTOON — CARTOON/SHAKE/TOONShake-Samsung Galaxy Smartphone, CU_Pill Bottle 01_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "993e0a2b11e8c6c535ab40b5bb478f96aa63cf867846ccc9e911ab7b3640391c"
+    },
+    "bell": {
+      "file": "archive/Designers-Choice-Collection-Bells/BELLHand-Blue_Snowball_Microphone_CU_Small_Metal_Shake_Short_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Bells",
+      "title": "The Designer's Choice UCS Collection - BELLS — BELLS/HANDBELL/BELLHand-Blue Snowball Microphone, CU_Small, Metal, Shake, Short_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "7530bcf641e2a3ad7253dd8dc487d471177d2f2d58c12b34bc757c878c77c453"
+    },
+    "bowl": {
+      "file": "archive/Designers-Choice-Collection-Ceramics/CERMHndl-Blue_Snowball_Microphone_CU_Bowl_Ceramic_Pick_Up_Put_Down_The_Designer_s_Choice_GNRL2.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Ceramics",
+      "title": "The Designer's Choice UCS Collection - CERAMICS — CERAMICS/HANDLE/CERMHndl-Blue Snowball Microphone, CU_Bowl, Ceramic, Pick Up, Put Down_The Designer's Choice_GNRL2.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "1a55e0f4c118dab86fe5f5de8fb6f8548dd7a341b34ac2926d17fd8e46aac8b5"
+    },
+    "sneeze-neo": {
+      "file": "commons/Sneeze.ogg",
+      "url": "https://commons.wikimedia.org/wiki/File:Sneeze.ogg",
+      "title": "Sneeze",
+      "author": "Neo139",
+      "license": "CC0-1.0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sha256": "701ff1210f925d28c9c7b878e2c44208130be5b73c3b325442aa284d72edffb5"
+    },
+    "drip": {
+      "file": "archive/Designers-Choice-Collection-Water/WATRDrip_Bathtub_Dripping_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Water",
+      "title": "The Designer's Choice UCS Collection - WATER — WATER/DRIP/WATRDrip_Bathtub Dripping_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "446b67f8cf757b1996f4a9a9ab74fb3b3d5b89b9e732d79bd6de586e663e8f5a"
+    },
+    "board-2": {
+      "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-Samsung_Galaxy_Smartphone_CU_Board_Drop_02_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
+      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/IMPACT/WOODImpt-Samsung Galaxy Smartphone, CU_Board Drop 02_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "47183acb5c5433c337eba9a23c5ff8703a9f70ae8e7336b6ab710b652b9bd21d"
+    },
+    "board-4": {
+      "file": "archive/Designers-Choice-Collection-Wood/WOODImpt-Samsung_Galaxy_Smartphone_CU_Board_Drop_04_Nicholas_Judy_TDC.flac",
+      "url": "https://archive.org/details/Designers-Choice-Collection-Wood",
+      "title": "The Designer's Choice UCS Collection - WOOD — WOOD/IMPACT/WOODImpt-Samsung Galaxy Smartphone, CU_Board Drop 04_Nicholas Judy_TDC.flac",
+      "author": "Nicholas A. Judy",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "sha256": "b4ee47589502770c9413a0556a077ff28ac26295eca1727b63e9e9a8e0a1e6a2"
+    }
+  },
+  "files": {
+    "step-tile-1": {
+      "from": "steps-stone",
+      "start": 39,
+      "end": 39.24,
+      "filter": "highpass=f=90",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по плитці (ванна)"
+    },
+    "step-tile-2": {
+      "from": "steps-stone",
+      "start": 42.57,
+      "end": 42.81,
+      "filter": "highpass=f=90",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по плитці (ванна)"
+    },
+    "step-tile-3": {
+      "from": "steps-stone",
+      "start": 43.74,
+      "end": 43.98,
+      "filter": "highpass=f=90",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по плитці (ванна)"
+    },
+    "step-tile-4": {
+      "from": "steps-stone",
+      "start": 46,
+      "end": 46.24,
+      "filter": "highpass=f=90",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по плитці (ванна)"
+    },
+    "step-tile-5": {
+      "from": "steps-stone",
+      "start": 58.23,
+      "end": 58.47,
+      "filter": "highpass=f=90",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по плитці (ванна)"
+    },
+    "step-wood-1": {
+      "from": "steps-stone",
+      "start": 57.265,
+      "end": 57.505,
+      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+    },
+    "step-wood-2": {
+      "from": "steps-stone",
+      "start": 44.84,
+      "end": 45.08,
+      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+    },
+    "step-wood-3": {
+      "from": "steps-stone",
+      "start": 40.6,
+      "end": 40.84,
+      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+    },
+    "step-wood-4": {
+      "from": "steps-stone",
+      "start": 47.19,
+      "end": 47.43,
+      "filter": "highpass=f=90,lowpass=f=2200,lowpass=f=2200",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по дошках, паркету й лінолеуму — той самий запис, глухіший"
+    },
+    "step-rug-1": {
+      "from": "steps-stone",
+      "start": 22.035,
+      "end": 22.275,
+      "filter": "lowpass=f=650,lowpass=f=650",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по килиму — той самий запис, ще глухіший"
+    },
+    "step-rug-2": {
+      "from": "steps-stone",
+      "start": 27.49,
+      "end": 27.73,
+      "filter": "lowpass=f=650,lowpass=f=650",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по килиму — той самий запис, ще глухіший"
+    },
+    "step-rug-3": {
+      "from": "steps-stone",
+      "start": 24.86,
+      "end": 25.1,
+      "filter": "lowpass=f=650,lowpass=f=650",
+      "fadeIn": 0.002,
+      "fadeOut": 0.08,
+      "note": "крок по килиму — той самий запис, ще глухіший"
+    },
+    "dash-1": {
+      "from": "swoosh",
+      "start": 0.15,
+      "end": 0.55,
+      "fadeOut": 0.06,
+      "note": "ривок: свист одягу"
+    },
+    "dash-2": {
+      "from": "swoosh",
+      "start": 1.7,
+      "end": 2.15,
+      "fadeOut": 0.06,
+      "note": "ривок: свист одягу"
+    },
+    "dash-3": {
+      "from": "swoosh",
+      "start": 7.66,
+      "end": 8.15,
+      "fadeOut": 0.06,
+      "note": "ривок: свист одягу"
+    },
+    "dash-4": {
+      "from": "swoosh",
+      "start": 10.4,
+      "end": 10.85,
+      "fadeOut": 0.06,
+      "note": "ривок: свист одягу"
+    },
+    "fall-1": {
+      "from": "bodyfall-grass",
+      "start": 0.08,
+      "end": 0.8,
+      "fadeOut": 0.2,
+      "note": "падіння тіла: глухий удар"
+    },
+    "knock-1": {
+      "from": "board-2",
+      "start": 0.3,
+      "end": 0.8,
+      "fadeOut": 0.15,
+      "note": "удар об підлогу під падінням"
+    },
+    "knock-2": {
+      "from": "board-4",
+      "start": 0,
+      "end": 0.45,
+      "fadeOut": 0.15,
+      "note": "удар об підлогу під падінням"
+    },
+    "gasp-he-1": {
+      "from": "gasps",
+      "start": 3.41,
+      "end": 3.78,
+      "fadeOut": 0.08,
+      "note": "різкий вдих: оступився, вдарився (він)"
+    },
+    "gasp-she-1": {
+      "from": "gasps",
+      "start": 3.045,
+      "end": 3.375,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeOut": 0.08,
+      "note": "різкий вдих (вона): той самий голос вище"
+    },
+    "gasp-he-2": {
+      "from": "gasps",
+      "start": 6.56,
+      "end": 6.95,
+      "fadeOut": 0.08,
+      "note": "різкий вдих: оступився, вдарився (він)"
+    },
+    "gasp-she-2": {
+      "from": "gasps",
+      "start": 5.857,
+      "end": 6.205,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeOut": 0.08,
+      "note": "різкий вдих (вона): той самий голос вище"
+    },
+    "gasp-he-3": {
+      "from": "gasps",
+      "start": 8.26,
+      "end": 8.6,
+      "fadeOut": 0.08,
+      "note": "різкий вдих: оступився, вдарився (він)"
+    },
+    "gasp-she-3": {
+      "from": "gasps",
+      "start": 7.375,
+      "end": 7.679,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeOut": 0.08,
+      "note": "різкий вдих (вона): той самий голос вище"
+    },
+    "swallow": {
+      "from": "swallow",
+      "start": 0.08,
+      "end": 0.45,
+      "fadeOut": 0.06,
+      "note": "ковток"
+    },
+    "plate-1": {
+      "from": "bowl",
+      "start": 7.22,
+      "end": 7.62,
+      "fadeOut": 0.12,
+      "note": "тарілку поставили"
+    },
+    "plate-2": {
+      "from": "bowl",
+      "start": 11.82,
+      "end": 12.22,
+      "fadeOut": 0.12,
+      "note": "тарілку поставили"
+    },
+    "shower-loop": {
+      "from": "shower",
+      "start": 31,
+      "end": 37,
+      "loop": true,
+      "note": "вода душу, поки персонаж у кабіні"
+    },
+    "shower-off": {
+      "from": "shower",
+      "start": 75.85,
+      "end": 77.35,
+      "fadeIn": 0.03,
+      "fadeOut": 0.3,
+      "note": "вода стихла, краплі: душ скінчився"
+    },
+    "splash-loop": {
+      "from": "splash",
+      "start": 2,
+      "end": 6.25,
+      "loop": true,
+      "note": "плюскіт: купання кота"
+    },
+    "scoop-1": {
+      "from": "scoop",
+      "start": 0,
+      "end": 1.05,
+      "filter": "lowpass=f=5000",
+      "fadeOut": 0.15,
+      "note": "совок у лотку"
+    },
+    "scoop-2": {
+      "from": "scoop",
+      "start": 7,
+      "end": 7.95,
+      "filter": "lowpass=f=5000",
+      "fadeOut": 0.15,
+      "note": "совок у лотку"
+    },
+    "litter-pour": {
+      "from": "grain",
+      "start": 6.62,
+      "end": 7.62,
+      "fadeIn": 0.02,
+      "fadeOut": 0.25,
+      "note": "свіжий наповнювач сиплеться в лоток"
+    },
+    "wipe-1": {
+      "from": "wipe",
+      "start": 2.55,
+      "end": 3.25,
+      "fadeOut": 0.1,
+      "note": "витерти мокрий безлад"
+    },
+    "wipe-2": {
+      "from": "wipe",
+      "start": 7.05,
+      "end": 8.1,
+      "fadeOut": 0.1,
+      "note": "витерти мокрий безлад"
+    },
+    "sweep-1": {
+      "from": "brush",
+      "start": 1.56,
+      "end": 2.45,
+      "fadeOut": 0.1,
+      "note": "підмести сухий безлад"
+    },
+    "sweep-2": {
+      "from": "brush",
+      "start": 12.79,
+      "end": 13.85,
+      "fadeOut": 0.1,
+      "note": "підмести сухий безлад"
+    },
+    "kibble-1": {
+      "from": "grain",
+      "start": 3.35,
+      "end": 4.55,
+      "fadeIn": 0.02,
+      "fadeOut": 0.25,
+      "note": "корм сиплеться в миску"
+    },
+    "kibble-2": {
+      "from": "grain",
+      "start": 8.45,
+      "end": 9.45,
+      "fadeIn": 0.02,
+      "fadeOut": 0.25,
+      "note": "корм сиплеться в миску"
+    },
+    "water-1": {
+      "from": "pour-water",
+      "start": 0,
+      "end": 1.5,
+      "fadeOut": 0.3,
+      "note": "вода ллється в поїлку"
+    },
+    "water-2": {
+      "from": "pour-water",
+      "start": 3,
+      "end": 4.4,
+      "fadeIn": 0.05,
+      "fadeOut": 0.3,
+      "note": "вода ллється в поїлку"
+    },
+    "treat-1": {
+      "from": "ziploc",
+      "start": 1.68,
+      "end": 2.02,
+      "fadeOut": 0.05,
+      "note": "пакет ласощів відкрили"
+    },
+    "treat-2": {
+      "from": "ziploc",
+      "start": 3.45,
+      "end": 3.8,
+      "fadeOut": 0.05,
+      "note": "пакет ласощів відкрили"
+    },
+    "buckle-1": {
+      "from": "snap",
+      "start": 1.6,
+      "end": 1.95,
+      "fadeOut": 0.08,
+      "note": "застібка нашийника"
+    },
+    "buckle-2": {
+      "from": "snap",
+      "start": 0,
+      "end": 0.25,
+      "fadeOut": 0.08,
+      "note": "застібка нашийника"
+    },
+    "bell": {
+      "from": "bell",
+      "start": 0,
+      "end": 0.9,
+      "level": -2.5,
+      "fadeOut": 0.3,
+      "note": "дзвіночок нашийника"
+    },
+    "pills-1": {
+      "from": "pills",
+      "start": 0.05,
+      "end": 0.75,
+      "fadeOut": 0.08,
+      "note": "таблетки в баночці"
+    },
+    "pills-2": {
+      "from": "pills",
+      "start": 1.1,
+      "end": 1.75,
+      "fadeOut": 0.08,
+      "note": "таблетки в баночці"
+    },
+    "drop-1": {
+      "from": "drip",
+      "start": 1.62,
+      "end": 1.87,
+      "fadeOut": 0.08,
+      "note": "крапля з піпетки"
+    },
+    "drop-2": {
+      "from": "drip",
+      "start": 6.455,
+      "end": 6.705,
+      "fadeOut": 0.08,
+      "note": "крапля з піпетки"
+    },
+    "drop-3": {
+      "from": "drip",
+      "start": 14.43,
+      "end": 14.68,
+      "fadeOut": 0.08,
+      "note": "крапля з піпетки"
+    },
+    "drop-4": {
+      "from": "drip",
+      "start": 25.79,
+      "end": 26.04,
+      "fadeOut": 0.08,
+      "note": "крапля з піпетки"
+    },
+    "sneeze-he": {
+      "from": "sneeze-he",
+      "start": 0.14,
+      "end": 1.55,
+      "fadeOut": 0.1,
+      "note": "чхання: застуда (він)"
+    },
+    "sneeze-she": {
+      "from": "sneeze-neo",
+      "start": 0,
+      "end": 0.39,
+      "fadeOut": 0.05,
+      "note": "чхання: застуда (вона)"
+    },
+    "pant-he": {
+      "from": "panting",
+      "start": 1.95,
+      "end": 3.2,
+      "fadeOut": 0.12,
+      "note": "важко дихає: виснаження (він)"
+    },
+    "pant-she": {
+      "from": "panting",
+      "start": 1.741,
+      "end": 2.857,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeOut": 0.12,
+      "note": "важко дихає (вона)"
+    },
+    "relief-he": {
+      "from": "breath",
+      "start": 1.55,
+      "end": 2.75,
+      "fadeOut": 0.15,
+      "note": "видих полегшення: одужав (він)"
+    },
+    "relief-she": {
+      "from": "breath",
+      "start": 1.384,
+      "end": 2.455,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeOut": 0.15,
+      "note": "видих полегшення (вона)"
+    },
+    "yawn-he": {
+      "from": "breath",
+      "start": 0.05,
+      "end": 2.75,
+      "fadeIn": 0.05,
+      "fadeOut": 0.15,
+      "note": "глибокий сонний вдих і видих замість позіху: «Сонливість» (він)"
+    },
+    "yawn-she": {
+      "from": "breath",
+      "start": 0.045,
+      "end": 2.455,
+      "filter": "asetrate=49392,aresample=48000",
+      "fadeIn": 0.05,
+      "fadeOut": 0.15,
+      "note": "сонний вдих і видих (вона)"
+    },
+    "sigh-he": {
+      "from": "sigh",
+      "start": 0,
+      "end": 1.75,
+      "fadeIn": 0.02,
+      "fadeOut": 0.2,
+      "note": "зітхання: засинає (він)"
+    },
+    "sigh-she": {
+      "from": "sigh",
+      "start": 0,
+      "end": 1.562,
+      "filter": "asetrate=107520,aresample=48000",
+      "fadeIn": 0.02,
+      "fadeOut": 0.2,
+      "note": "зітхання (вона)"
+    },
+    "blanket-1": {
+      "from": "pillow",
+      "start": 7.45,
+      "end": 8.05,
+      "fadeOut": 0.12,
+      "note": "ковдра й подушка: ліг у ліжко"
+    },
+    "blanket-2": {
+      "from": "pillow",
+      "start": 8.63,
+      "end": 9.2,
+      "fadeOut": 0.12,
+      "note": "ковдра й подушка: ліг у ліжко"
+    },
+    "sock": {
+      "from": "pillow",
+      "start": 4.97,
+      "end": 5.45,
+      "fadeOut": 0.08,
+      "note": "шкарпетку витягли й струсили"
+    }
+  }
+}

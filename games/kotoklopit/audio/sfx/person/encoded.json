@@ -1,0 +1,274 @@
+{
+  "step-tile-1": {
+    "hash": "3ae8aaaf929cef93",
+    "seconds": 0.241333
+  },
+  "step-tile-2": {
+    "hash": "285ac193d1f6fe46",
+    "seconds": 0.242
+  },
+  "step-tile-3": {
+    "hash": "f28b609343fbac75",
+    "seconds": 0.245333
+  },
+  "step-tile-4": {
+    "hash": "b384ade9e5be3779",
+    "seconds": 0.244
+  },
+  "step-tile-5": {
+    "hash": "cd5143a1e822f165",
+    "seconds": 0.246
+  },
+  "step-wood-1": {
+    "hash": "6e982d52cdd66055",
+    "seconds": 0.240333
+  },
+  "step-wood-2": {
+    "hash": "e400e66de64fe028",
+    "seconds": 0.246667
+  },
+  "step-wood-3": {
+    "hash": "00214227845b3eff",
+    "seconds": 0.24
+  },
+  "step-wood-4": {
+    "hash": "6f65930b6727775d",
+    "seconds": 0.240667
+  },
+  "step-rug-1": {
+    "hash": "bca6c93d07993ea1",
+    "seconds": 0.243667
+  },
+  "step-rug-2": {
+    "hash": "89e7dce24a38f606",
+    "seconds": 0.24
+  },
+  "step-rug-3": {
+    "hash": "1062748a48699a16",
+    "seconds": 0.24
+  },
+  "dash-1": {
+    "hash": "e4960a002c11baf8",
+    "seconds": 0.4
+  },
+  "dash-2": {
+    "hash": "066e2d7f6c497a81",
+    "seconds": 0.45
+  },
+  "dash-3": {
+    "hash": "dc9c10268e8eca67",
+    "seconds": 0.49
+  },
+  "dash-4": {
+    "hash": "fb11944adec1d469",
+    "seconds": 0.45
+  },
+  "fall-1": {
+    "hash": "d9dbda15cf4e0ae2",
+    "seconds": 0.72
+  },
+  "knock-1": {
+    "hash": "4b51234732c95841",
+    "seconds": 0.5
+  },
+  "knock-2": {
+    "hash": "8517d84298c2f68b",
+    "seconds": 0.45
+  },
+  "gasp-he-1": {
+    "hash": "c30575b1f6e9af0d",
+    "seconds": 0.37
+  },
+  "gasp-she-1": {
+    "hash": "ccc8c9bfb3e72f94",
+    "seconds": 0.33
+  },
+  "gasp-he-2": {
+    "hash": "078334471a8b6deb",
+    "seconds": 0.39
+  },
+  "gasp-she-2": {
+    "hash": "b90bb0858de8481c",
+    "seconds": 0.348
+  },
+  "gasp-he-3": {
+    "hash": "51bf4957a619f016",
+    "seconds": 0.34
+  },
+  "gasp-she-3": {
+    "hash": "d8802ff3b0d06b28",
+    "seconds": 0.304
+  },
+  "swallow": {
+    "hash": "f8c7b30cc4a5f2d4",
+    "seconds": 0.37
+  },
+  "plate-1": {
+    "hash": "e087bacb1d711c09",
+    "seconds": 0.4
+  },
+  "plate-2": {
+    "hash": "fbf71fd73c5d4a05",
+    "seconds": 0.4
+  },
+  "shower-loop": {
+    "hash": "571adc3879664497",
+    "seconds": 5.7,
+    "loop": {
+      "start": 0.1,
+      "end": 5.8
+    }
+  },
+  "shower-off": {
+    "hash": "742f5b25b5391301",
+    "seconds": 1.5
+  },
+  "splash-loop": {
+    "hash": "c7e11a85ae6df91f",
+    "seconds": 3.95,
+    "loop": {
+      "start": 0.1,
+      "end": 4.05
+    }
+  },
+  "scoop-1": {
+    "hash": "5a606adbfe16c44a",
+    "seconds": 1.05
+  },
+  "scoop-2": {
+    "hash": "0e8869da8b31a8bb",
+    "seconds": 0.95
+  },
+  "litter-pour": {
+    "hash": "505d05cd1a5f926c",
+    "seconds": 1
+  },
+  "wipe-1": {
+    "hash": "67cf775e191147b1",
+    "seconds": 0.7
+  },
+  "wipe-2": {
+    "hash": "fde36cb3eb9eaf8a",
+    "seconds": 1.05
+  },
+  "sweep-1": {
+    "hash": "922c293bfc96cf88",
+    "seconds": 0.89
+  },
+  "sweep-2": {
+    "hash": "f57203b05b770ffe",
+    "seconds": 1.06
+  },
+  "kibble-1": {
+    "hash": "16c304f71b8f2dd6",
+    "seconds": 1.2
+  },
+  "kibble-2": {
+    "hash": "8df55aeb253d22d5",
+    "seconds": 1
+  },
+  "water-1": {
+    "hash": "a0aca561fed20fb1",
+    "seconds": 1.5
+  },
+  "water-2": {
+    "hash": "ddebd6b0b99ee347",
+    "seconds": 1.4
+  },
+  "treat-1": {
+    "hash": "ccc3db7b8e1dfff2",
+    "seconds": 0.34
+  },
+  "treat-2": {
+    "hash": "dd4c618cf77bdec7",
+    "seconds": 0.35
+  },
+  "buckle-1": {
+    "hash": "c2d6955648772e29",
+    "seconds": 0.35
+  },
+  "buckle-2": {
+    "hash": "38b9af2d057ee6e9",
+    "seconds": 0.25
+  },
+  "bell": {
+    "hash": "d89dc8b71ed0ef03",
+    "seconds": 0.9
+  },
+  "pills-1": {
+    "hash": "df1641ab54b9b0b7",
+    "seconds": 0.7
+  },
+  "pills-2": {
+    "hash": "f40eeee81b6b4c25",
+    "seconds": 0.65
+  },
+  "drop-1": {
+    "hash": "73e35bfce45fa29b",
+    "seconds": 0.25
+  },
+  "drop-2": {
+    "hash": "ceb3466079c1097b",
+    "seconds": 0.25
+  },
+  "drop-3": {
+    "hash": "7bf3cda6f80513bc",
+    "seconds": 0.25
+  },
+  "drop-4": {
+    "hash": "83641a8107a9febc",
+    "seconds": 0.25
+  },
+  "sneeze-he": {
+    "hash": "d29b67c7a67db473",
+    "seconds": 1.41
+  },
+  "sneeze-she": {
+    "hash": "12d1ae5eb78f3b28",
+    "seconds": 0.39
+  },
+  "pant-he": {
+    "hash": "1be51c5557ebe531",
+    "seconds": 1.25
+  },
+  "pant-she": {
+    "hash": "8e532aad6edcb2b1",
+    "seconds": 1.116
+  },
+  "relief-he": {
+    "hash": "394b8999920fd533",
+    "seconds": 1.2
+  },
+  "relief-she": {
+    "hash": "8b9b907b2ed30124",
+    "seconds": 1.071
+  },
+  "yawn-he": {
+    "hash": "03a9583cf68ce24b",
+    "seconds": 2.7
+  },
+  "yawn-she": {
+    "hash": "4415c2026555508f",
+    "seconds": 2.41
+  },
+  "sigh-he": {
+    "hash": "a86482e0dd06d282",
+    "seconds": 1.75
+  },
+  "sigh-she": {
+    "hash": "c28137e6e0a79e9b",
+    "seconds": 1.562
+  },
+  "blanket-1": {
+    "hash": "977525894bef6500",
+    "seconds": 0.6
+  },
+  "blanket-2": {
+    "hash": "abb918da1905f894",
+    "seconds": 0.57
+  },
+  "sock": {
+    "hash": "c218b5f8780e3d65",
+    "seconds": 0.48
+  }
+}
