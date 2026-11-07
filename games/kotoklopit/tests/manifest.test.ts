@@ -525,7 +525,7 @@ describe("маніфест: персонаж", () => {
     for (let i = 0; i < count("hair"); i++) for (const id of [`person/hair-back/${i}`, `person/hair-front/${i}`]) entry(id);
     for (let i = 0; i < count("build"); i++) for (const id of [`person/torso/${i}`, `person/torso-extra/${i}`]) entry(id);
     expect(artEntry(`person/head/${count("face")}`)).toBeUndefined();
-    for (const id of ["person/eyes", "person/arm", "person/leg", "person/shoe", "person/leg-extra"]) entry(id);
+    for (const id of ["person/eyes", "person/arm", "person/arm-far", "person/leg", "person/shoe", "person/leg-extra"]) entry(id);
     expect(states("person/eyes")).toEqual(["open", "half", "closed"]);
   });
 

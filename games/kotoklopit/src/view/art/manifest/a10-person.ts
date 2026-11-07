@@ -100,6 +100,8 @@ const TORSO = [
     },
   },
 ] as const satisfies readonly { size: { w: number; h: number }; pivot: ArtPoint; points: Record<string, ArtPoint> }[];
+/** Рука: pivot — плече, `hand` — зап'ясток (кістка кисті, гнізда `held` і `rod`), `grip` — середина долоні (рука, що гладить кота, тримає вудку, тарілку, кота). */
+const ARM = { size: { w: 27, h: 73 }, pivot: { x: 13, y: 14 }, points: { hand: { x: 14, y: 54.6 }, grip: { x: 14.2, y: 61 } } } as const;
 /** Нога від стегна до кісточки (еталон F1b): pivot — стегно, `foot` — кісточка, куди стає pivot взуття. */
 const LEG = { size: { w: 33, h: 74 }, pivot: { x: 16, y: 18 }, points: { foot: { x: 16.6, y: 67.2 } } } as const;
 
@@ -145,16 +147,11 @@ export const MANIFEST: readonly ArtEntry[] = [
   { id: "person/torso/1", ...TORSO[1], layers: ["fill-top", "fill-bottom", "fill-skin", "shade", "ink"], views: PART_VIEWS },
   // Кремезна статура (`BUILDS[2]`): ширші плечі й живіт.
   { id: "person/torso/2", ...TORSO[2], layers: ["fill-top", "fill-bottom", "fill-skin", "shade", "ink"], views: PART_VIEWS },
-  // Рука (слоти `arm-far`, `arm-near`): рукав (`fill-top`) і долоня (`fill-skin`); pivot — плече, `hand` — зап'ясток (кістка
-  // кисті, гнізда `held` і `rod`), `grip` — середина долоні (рука, що гладить кота, тримає вудку, тарілку, кота).
-  {
-    id: "person/arm",
-    size: { w: 27, h: 73 },
-    pivot: { x: 13, y: 14 },
-    points: { hand: { x: 14, y: 54.6 }, grip: { x: 14.2, y: 61 } },
-    layers: ["fill-top", "fill-skin", "shade", "ink"],
-    views: PART_VIEWS,
-  },
+  // Ближня рука (слот `arm-near`): рукав (`fill-top`) і долоня (`fill-skin`). Лежить поверх торса, тож верх внутрішнього боку
+  // рукава без контуру — зливається з сорочкою.
+  { id: "person/arm", ...ARM, layers: ["fill-top", "fill-skin", "shade", "ink"], views: PART_VIEWS },
+  // Дальня рука (слот `arm-far`): та сама рука, але з замкненим контуром: вона за торсом, і верх рукава стирчить над плечем.
+  { id: "person/arm-far", ...ARM, layers: ["fill-top", "fill-skin", "shade", "ink"], views: PART_VIEWS },
   // Нога (слоти `leg-far`, `leg-near`): штанина (`fill-bottom`); pivot — стегно, `foot` — кісточка, куди кріпиться взуття.
   { id: "person/leg", ...LEG, layers: ["fill-bottom", "shade", "ink"], views: PART_VIEWS },
   // Взуття (слоти `shoe-far`, `shoe-near`): носком уперед, підошва й шнурки — `detail`; pivot — кісточка.

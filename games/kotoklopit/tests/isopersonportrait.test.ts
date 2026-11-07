@@ -35,7 +35,7 @@ describe("personPortraitParts: фігура для портрета", () => {
     const parts = personPortraitParts({ ...DEFAULT_LOOK });
     expect(parts.filter((p) => p.far === true)).toHaveLength(PERSON_FAR_SLOTS.length);
     const far = parts.filter((p) => p.far === true).map((p) => p.id);
-    expect(far.sort()).toEqual(["person/arm", "person/leg", "person/shoe"]);
+    expect(far.sort()).toEqual(["person/arm-far", "person/leg", "person/shoe"]);
     expect(parts.filter((p) => p.id === "person/leg" && p.far !== true)).toHaveLength(1);
   });
 

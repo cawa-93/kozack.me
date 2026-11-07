@@ -2,7 +2,7 @@
 // пози двох ракурсів і пропорції статури. Персонаж дивиться праворуч; ліворуч — віддзеркалення.
 //
 // Одиниці арту = px світу. Корінь — точка підлоги між ступнями; персонаж ≈ 140 заввишки до маківки. Кістки — по одній
-// на частину арту (рука й нога — один кадр, `person/arm`, `person/leg`), плюс таз, шия і короткі кістки кисті й стопи
+// на частину арту (нога — один кадр `person/leg`, рука — `person/arm`, дальня — `person/arm-far`), плюс таз, шия і короткі кістки кисті й стопи
 // (кисть тримає гнізда рук, стопа — взуття):
 //
 //   root ─ pelvis ─┬─ torso ─┬─ neck ─ head            (волосся ззаду й спереду, очі — слоти на голові)
@@ -131,7 +131,7 @@ export const PERSON_RIG = defineRig({
   },
   skin: {
     "hair-back": "person/hair-back/0",
-    "arm-far": "person/arm",
+    "arm-far": "person/arm-far",
     "leg-far": "person/leg",
     "shoe-far": "person/shoe",
     "leg-near": "person/leg",
@@ -195,7 +195,7 @@ export const PERSON_FIT = defineFit(PERSON_RIG, {
 /** Варіанти частин за слотами — за виглядом персонажа (`Look`, §5.1) і контрактом id арту (галерея, перевірки). */
 export const PERSON_VARIANTS: Readonly<Record<PersonSlot, readonly (ArtId | null)[]>> = {
   "hair-back": HAIR_STYLES.map((_, i): ArtId => `person/hair-back/${i}`),
-  "arm-far": ["person/arm"],
+  "arm-far": ["person/arm-far"],
   "leg-far": ["person/leg"],
   "shoe-far": ["person/shoe"],
   "leg-near": ["person/leg"],
