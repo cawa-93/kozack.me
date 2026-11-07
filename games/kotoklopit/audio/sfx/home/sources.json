@@ -519,15 +519,15 @@
     },
     "spin-start": {
       "from": "dryer",
-      "end": 1.04,
+      "end": 1.3,
       "filter": "asetrate=55125,highpass=f=90",
       "fadeOut": 0.25,
       "note": "Віджим починається: барабан розганяється (той самий пришвидшений барабан, 0–1,3 с оригіналу)"
     },
     "spin-loop": {
       "from": "dryer",
-      "start": 0.64,
-      "end": 3.92,
+      "start": 0.8,
+      "end": 4.9,
       "loop": true,
       "filter": "asetrate=55125,highpass=f=90",
       "note": "Віджим: барабан сушарки, пришвидшений ×1,25 (asetrate; -ss/-to діють після фільтра, тож це 0,8–4,9 с оригіналу, без перевантажень)"
@@ -626,8 +626,8 @@
     },
     "flies-loop": {
       "from": "bees",
-      "start": 4.35,
-      "end": 8.26,
+      "start": 5.0025,
+      "end": 9.499,
       "loop": true,
       "filter": "asetrate=50715,highpass=f=150",
       "note": "Мухи над брудним лотком: бджоли, вище ×1,15 (asetrate; це 5,0–9,5 с оригіналу)"

@@ -32,7 +32,8 @@ async function get(url: string): Promise<Response> {
   for (let attempt = 0; ; attempt++) {
     lastRequest = Date.now();
     try {
-      const response = await fetch(url, { headers: { "User-Agent": UA } });
+      // Без таймауту завантаження на нестабільній мережі висіло без кінця.
+      const response = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(120_000) });
       if (response.ok || response.status === 404 || attempt >= 2) return response;
     } catch (error) {
       if (attempt >= 2) throw error;

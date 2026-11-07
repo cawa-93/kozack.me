@@ -128,11 +128,11 @@
     }
   },
   "spin-start": {
-    "hash": "9a74b69f90d2febd",
+    "hash": "d3ca09ba1e9092e0",
     "seconds": 1.04
   },
   "spin-loop": {
-    "hash": "88548ea8152c349a",
+    "hash": "19c12ca53fad602d",
     "seconds": 2.98,
     "loop": {
       "start": 0.1,
@@ -204,11 +204,11 @@
     "seconds": 0.66
   },
   "flies-loop": {
-    "hash": "147d3de6759211c3",
-    "seconds": 3.61,
+    "hash": "0bb9180b50f6703b",
+    "seconds": 3.610021,
     "loop": {
       "start": 0.1,
-      "end": 3.71
+      "end": 3.710021
     }
   },
   "guests": {

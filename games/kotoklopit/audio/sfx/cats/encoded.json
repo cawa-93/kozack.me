@@ -12,8 +12,8 @@
     "seconds": 0.83
   },
   "meow-4": {
-    "hash": "e85a21c7fc606a94",
-    "seconds": 0.943
+    "hash": "84975f2edaa731d4",
+    "seconds": 0.943042
   },
   "meow-ask-1": {
     "hash": "e62a88aa6af9e132",
@@ -36,32 +36,32 @@
     "seconds": 1.12
   },
   "meow-happy-1": {
-    "hash": "017af38b93197d07",
+    "hash": "001e4c4594092226",
     "seconds": 0.509
   },
   "meow-happy-2": {
-    "hash": "70f93dc65b15bc3a",
+    "hash": "5235e83cff7f4683",
     "seconds": 0.506313
   },
   "meow-happy-3": {
-    "hash": "72df520403be6b4d",
+    "hash": "35030e00ca21accc",
     "seconds": 0.428
   },
   "meow-sad-1": {
-    "hash": "48c1d523437c22a2",
-    "seconds": 1.273
+    "hash": "0341267de1cca6bf",
+    "seconds": 1.272979
   },
   "meow-sad-2": {
-    "hash": "9adb7a95888f462e",
-    "seconds": 1.889
+    "hash": "3a7ab47873d7d8fb",
+    "seconds": 1.889021
   },
   "meow-old-1": {
     "hash": "60d6af9eea6d9f28",
     "seconds": 0.86
   },
   "meow-old-2": {
-    "hash": "c580950644f6196c",
-    "seconds": 2.012
+    "hash": "967e1480bc7d6723",
+    "seconds": 2.012062
   },
   "meow-kitten-1": {
     "hash": "3780503974d0ca6d",
@@ -112,23 +112,23 @@
     "seconds": 1.12
   },
   "cry-2": {
-    "hash": "2fd86751803d9317",
-    "seconds": 1.619
+    "hash": "f88adbf71338a6c6",
+    "seconds": 1.618958
   },
   "squeak-1": {
-    "hash": "f11184f194a437d9",
-    "seconds": 0.292
+    "hash": "66f0e312517fbcb5",
+    "seconds": 0.292021
   },
   "squeak-2": {
-    "hash": "0eadd037ca31db33",
-    "seconds": 0.281
+    "hash": "981d4244baf69279",
+    "seconds": 0.281063
   },
   "chatter-1": {
-    "hash": "620ce61d24a0b7f1",
+    "hash": "81c82c76653439a5",
     "seconds": 0.112
   },
   "chatter-2": {
-    "hash": "a85318972416e092",
+    "hash": "c80fed51448ceb41",
     "seconds": 0.112
   },
   "hiss-1": {
@@ -140,8 +140,8 @@
     "seconds": 0.9
   },
   "hiss-3": {
-    "hash": "58cc3ac2a309a841",
-    "seconds": 0.833
+    "hash": "b80c05111cb0ec56",
+    "seconds": 0.833021
   },
   "growl-1": {
     "hash": "a94535a9d2b0a7f4",
@@ -216,15 +216,15 @@
     "seconds": 0.4
   },
   "scamper-1": {
-    "hash": "92bc5f7c239f3eb3",
+    "hash": "c610c90447b32b87",
     "seconds": 1.5
   },
   "scamper-2": {
-    "hash": "3dc31397229c6fa4",
+    "hash": "da1d59463959aa54",
     "seconds": 1.5
   },
   "zoom-loop": {
-    "hash": "e0595975c68b4551",
+    "hash": "7ac2d4d24cf66b31",
     "seconds": 8.033333,
     "loop": {
       "start": 0.1,
@@ -232,11 +232,11 @@
     }
   },
   "land-1": {
-    "hash": "80fe5d32d323a4f4",
-    "seconds": 0.261
+    "hash": "eb7484f97dff99d4",
+    "seconds": 0.261021
   },
   "land-2": {
-    "hash": "b59f222d2c7537e2",
+    "hash": "fd6ee04ba6b44408",
     "seconds": 0.5
   },
   "claw-1": {
@@ -244,23 +244,23 @@
     "seconds": 0.59
   },
   "sneeze-1": {
-    "hash": "7f2beef9af48dccb",
+    "hash": "0249231aa4bdad50",
     "seconds": 0.187
   },
   "sneeze-2": {
-    "hash": "969038e995b8465b",
+    "hash": "512413e809d38e37",
     "seconds": 0.237
   },
   "hack-1": {
-    "hash": "f03057e06466294f",
+    "hash": "42b93b4fabe7152e",
     "seconds": 0.263
   },
   "retch-1": {
-    "hash": "a6b06f3953ceb7c9",
+    "hash": "d87c91b49b246b73",
     "seconds": 0.48
   },
   "spit-1": {
-    "hash": "b9288cae8d8bc3be",
+    "hash": "f735c44d9fa0f8e5",
     "seconds": 0.292
   },
   "crunch-1": {
@@ -272,8 +272,8 @@
     "seconds": 0.43
   },
   "chew-wire-1": {
-    "hash": "85519ef0a9dc4ce0",
-    "seconds": 0.461
+    "hash": "c1fcde6438014b16",
+    "seconds": 0.460979
   },
   "chew-box-1": {
     "hash": "5913d0601ec01371",
@@ -328,7 +328,7 @@
     "seconds": 0.92
   },
   "mug-drop-1": {
-    "hash": "8fd61bc3f146e576",
+    "hash": "2ca4fb9ca099c7c2",
     "seconds": 0.376
   },
   "phone-drop-1": {
@@ -348,11 +348,11 @@
     "seconds": 1.34
   },
   "keys-1": {
-    "hash": "dc3355173070401b",
+    "hash": "73e9772e7ddb677b",
     "seconds": 1.021438
   },
   "keys-2": {
-    "hash": "0d2d4b94c78874e3",
+    "hash": "e2e250afe26610b8",
     "seconds": 0.7
   },
   "spark-1": {
