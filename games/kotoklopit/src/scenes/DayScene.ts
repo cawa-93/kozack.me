@@ -21,7 +21,7 @@ import { objectById } from "../sim/home";
 import { canGoToSleep, collapseMinute, isDrowsy } from "../sim/sleep";
 import { CARRIER_TARGET, targetOf } from "../sim/targets";
 import { clockFrame, weekOf } from "../sim/time";
-import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Product, Quality, Save, ThingKind } from "../sim/types";
+import type { Address, Chronotype, Difficulty, GameState, HomeItem, Look, Quality, Save, ThingKind } from "../sim/types";
 import { isWorking, isWorkday, isWorkTime, patienceLevel, standupToday, workGoesOn } from "../sim/work";
 import type { Session } from "../session";
 import { callCard, careCard, chronotypeCard, difficultyCard, titleCard, endScreen, foundlingCard, hasCareSupplies, lookCard, dayTitle, nameCard, phoneCard, addressCard, startName, wardrobeCard, type EnteredName, type PhoneTab } from "../ui/cards";
@@ -888,8 +888,8 @@ export class DayScene extends Phaser.Scene {
    * Іконка летить дугою від однієї точки до іншої: запаси з ящиків і корм із годівниці — у сховища (§6.4, §9.12). Політ у
    * манері арту — `src/view/iso/marksflight.ts` (крок 16, T4).
    */
-  private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number, onArrive?: () => void): void {
-    flyIsoIcon(this, this.viewport.world, icon, from, to, delay, onArrive);
+  private flyIcon(icon: IconName, from: { x: number; y: number }, to: { x: number; y: number }, delay: number): void {
+    flyIsoIcon(this, this.viewport.world, icon, from, to, delay);
   }
 
   /**
@@ -919,10 +919,6 @@ export class DayScene extends Phaser.Scene {
     // Частини світу дізнаються про подію першими: червона смужка відмови, разові анімації.
     this.world.onEvent(event, this.time.now);
     for (const bubble of eventBubbles(event)) this.bubbles.show(bubble, this.anchorFn(bubble.at, bubble.kind));
-    // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
-    const landed = (storage: string, product: Product): void => {
-      this.bubbles.show({ kind: "say", at: storage, icon: PRODUCT_ICONS[product], count: supplyCount(this.state, product) }, this.anchorFn(storage, "say"));
-    };
     switch (event.type) {
       case "unpacked": {
         // Запаси розлітаються з ящиків по своїх сховищах (§6.4); скільки в сховищі тепер, скаже `supply-landed`.
@@ -937,19 +933,20 @@ export class DayScene extends Phaser.Scene {
         break;
       }
       case "supply-landed": {
+        // Над сховищем, куди долетів запас, — вголос, скільки в ньому тепер (§6.4).
         const storage = STORAGES.find((s) => s.products.includes(event.product));
-        if (storage) landed(storage.object, event.product);
+        if (storage) this.bubbles.show({ kind: "say", at: storage.object, icon: PRODUCT_ICONS[event.product], count: supplyCount(this.state, event.product) }, this.anchorFn(storage.object, "say"));
         break;
       }
       case "feeder-emptied": {
-        // Корм із годівниці летить назад у своє сховище (§9.12).
+        // Корм із годівниці летить назад у своє сховище (§9.12); скільки в сховищі тепер, скаже `supply-landed`.
         const from = this.world.anchor(`item:${event.item}`);
         if (!from) break;
         event.products.forEach((product, i) => {
           const storage = STORAGES.find((s) => s.products.includes(product));
           const to = storage ? this.world.anchor(storage.object) : null;
-          if (!storage || !to) return;
-          this.flyIcon(PRODUCT_ICONS[product], from, to, i * SUPPLY_FLIGHT.staggerMs, () => landed(storage.object, product));
+          if (!to) return;
+          this.flyIcon(PRODUCT_ICONS[product], from, to, i * SUPPLY_FLIGHT.staggerMs);
         });
         break;
       }

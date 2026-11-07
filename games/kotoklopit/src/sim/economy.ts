@@ -161,7 +161,7 @@ export function returnSupply(state: GameState, product: Product, quality: Qualit
   addSupply(state, product, quality, 1);
 }
 
-/** Скільки запасу летить із ящиків у сховище (§6.4). */
+/** Скільки запасу летить у сховище (§6.4). */
 function flyingCount(state: GameState, product: Product): number {
   return (state.home.flying ?? []).reduce((sum, f) => (f.product === product ? sum + f.amounts.cheap + f.amounts.premium : sum), 0);
 }
@@ -191,29 +191,34 @@ export function canUnpack(state: GameState): boolean {
 }
 
 /**
- * Розпакувати ящики (§6.4): кожен запас вилітає до свого сховища, скільки влазить, — спершу дорожчий; що не влізло, лишається
- * в ящиках. У сховище запас ляже, коли долетить (`tickFlying`). Повертає, що й скільки вилетіло.
+ * Запас вилітає у своє сховище (§6.4), скільки влазить, — спершу дорожчий; решта одразу в ящиках біля входу. `order` — котрим
+ * по черзі вилітає. Ляже, коли долетить (`tickFlying`). Повертає, скільки вилетіло.
  */
+export function flySupply(state: GameState, product: Product, amounts: Readonly<Record<Quality, number>>, order: number): number {
+  const room = storageRoom(state, product);
+  const flying: Record<Quality, number> = { cheap: 0, premium: 0 };
+  let sent = 0;
+  for (const quality of TAKE_ORDER) {
+    const fits = Math.min(amounts[quality], room - sent);
+    flying[quality] = fits;
+    sent += fits;
+    stash(state, product, quality, amounts[quality] - fits);
+  }
+  if (sent > 0) (state.home.flying ??= []).push({ product, amounts: flying, minutes: flightMinutes(order) });
+  return sent;
+}
+
+/** Розпакувати ящики (§6.4): запаси вилітають у свої сховища, що не влізло, лишається в ящиках. Повертає, що й скільки вилетіло. */
 export function unpack(state: GameState): { product: Product; amount: number }[] {
   const boxes = state.home.boxes ?? {};
   const moved: { product: Product; amount: number }[] = [];
   for (const product of Object.keys(boxes) as Product[]) {
     const box = boxes[product];
     if (!box) continue;
-    const room = storageRoom(state, product);
-    const amounts: Record<Quality, number> = { cheap: 0, premium: 0 };
-    let amount = 0;
-    for (const quality of TAKE_ORDER) {
-      const fits = Math.min(box[quality], room - amount);
-      amounts[quality] = fits;
-      box[quality] -= fits;
-      amount += fits;
-    }
-    if (amount > 0) {
-      (state.home.flying ??= []).push({ product, amounts, minutes: flightMinutes(moved.length) });
-      moved.push({ product, amount });
-    }
-    if (box.cheap + box.premium <= 0) delete boxes[product];
+    // Що не влізе, `flySupply` покладе назад.
+    delete boxes[product];
+    const amount = flySupply(state, product, box, moved.length);
+    if (amount > 0) moved.push({ product, amount });
   }
   // Усе розпаковано — коробки зникають разом із котячими слідами на них (§9.12, «Котячі сліди в квартирі»).
   tidyBoxTraces(state);

@@ -14,6 +14,7 @@ import { TRAIT_GROUPS } from "../src/sim/traits";
 import { coughWakes } from "../src/sim/night";
 import { interact } from "../src/sim/game";
 import { nightlyRelations, relation } from "../src/sim/relations";
+import { landFlying } from "../src/sim/economy";
 import { emptyFeeder, furPerHour } from "../src/sim/household";
 import { advance, newGame } from "../src/sim/game";
 import { addCat } from "../src/sim/night";
@@ -135,6 +136,7 @@ describe("«Апетит» (рішення автора 2026-10-25)", () => {
     const feeder = { slot: bowl.slot, quality: "cheap" as const, food: 3, foodQuality: "cheap" as const, sterile: false };
     const before = save.current.home.supplies.catFood.cheap;
     emptyFeeder(save.current, bowl, feeder);
+    landFlying(save.current);
     expect(save.current.home.supplies.catFood.cheap + (save.current.home.boxes?.catFood?.cheap ?? 0)).toBe(before + 4);
     expect(bowl.half).toBeUndefined();
   });

@@ -529,7 +529,7 @@ export interface Home {
    * Безлімітні, брати з них не можна — лише розпакувати.
    */
   boxes?: Partial<Record<Product, Record<Quality, number>>>;
-  /** Запаси в польоті з ящиків (§6.4): з ящиків уже вийшли, у сховище ще не лягли; `minutes` — скільки ще летіти. */
+  /** Запаси в польоті (§6.4): звідки летять, там їх уже немає, у сховище ще не лягли; `minutes` — скільки ще летіти. */
   flying?: { product: Product; amounts: Record<Quality, number>; minutes: number }[];
   /** Запаси, що вже хоч раз закінчувалися (§6.4): підказка телефоном — лише вперше. */
   ranOut?: Product[];

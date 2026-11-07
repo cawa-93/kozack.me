@@ -5,7 +5,7 @@ import { changeStat, unpleasantTask } from "./character";
 import { BOWL_CAPACITY, FOUNTAIN, HOUSEHOLD, MESS_ANNOYANCE, MINUTES_PER_HOUR, NOISE, ROBOT, SHEDDING, TOOL_REACH, VACUUM } from "./config";
 import { DUST_SPOTS, dustOf, floorDust, removeDust, tickDust } from "./dust";
 import { inView, observe } from "./knowledge";
-import { addSupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
+import { addSupply, flySupply, settleFeeders, takeSupplies, topQuality, useSupply } from "./economy";
 import { emit } from "./events";
 import { hygieneFactorMod, powerOut } from "./modifiers";
 import { addMess, whereIs } from "./catai";
@@ -621,30 +621,34 @@ export function robotAt(state: GameState): Vec {
 }
 
 /**
- * Спорожнити автогодівницю (§9.12, правка автора 2026-10-25): корм із неї й з миски під нею — назад у
- * сховище, а що не влазить — у ящики біля входу. Повертає, які запаси поповнилися.
+ * Спорожнити автогодівницю (§9.12): корм із неї й з миски під нею летить назад у сховище, а що не влазить — у ящики біля входу.
+ * Повертає, які запаси повернулися.
  */
 export function emptyFeeder(state: GameState, bowl: BowlItem, feeder: Feeder): Product[] {
-  const products: Product[] = [];
   // Повертати нічого, лише надкльована половинка в мисці — миску не чіпають (перевірка побуту 2026-10-28: половинка зникала, а
   // персонаж бачив відмову, ніби нічого не сталося).
-  if (feeder.food <= 0 && bowl.food - (bowl.half === true ? 1 : 0) <= 0) return products;
+  if (feeder.food <= 0 && bowl.food - (bowl.half === true ? 1 : 0) <= 0) return [];
   // Надкльовану половинку порції (§9.12, «Апетит») назад у сховище не кладуть — її викидають.
   const nibbled = bowl.half === true ? 1 : 0;
   delete bowl.half;
+  // Годівниця й миска — один запас: два польоти дали б два бабли з кількістю над сховищем.
+  const back = new Map<Product, Record<Quality, number>>();
   for (const holder of [feeder, bowl]) {
     const food = holder.food - (holder === bowl ? nibbled : 0);
     if (food > 0 && holder.foodQuality !== null) {
       const product = holder.sterile ? "sterileFood" : "catFood";
-      addSupply(state, product, holder.foodQuality, food);
-      if (!products.includes(product)) products.push(product);
+      const amounts = back.get(product) ?? { cheap: 0, premium: 0 };
+      amounts[holder.foodQuality] += food;
+      back.set(product, amounts);
     }
     holder.food = 0;
     holder.foodQuality = null;
     holder.sterile = false;
   }
-  if (products.length > 0) emit(state, { type: "feeder-emptied", item: bowl.id, products });
-  return products;
+  const flown: Product[] = [];
+  for (const [product, amounts] of back) if (flySupply(state, product, amounts, flown.length) > 0) flown.push(product);
+  if (back.size > 0) emit(state, { type: "feeder-emptied", item: bowl.id, products: flown });
+  return [...back.keys()];
 }
 
 /** Викинути автогодівницю (§8.7): корм із бункера — назад у сховище, як «спорожнити»; миска під нею лишається. */

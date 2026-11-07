@@ -11,8 +11,8 @@ import type { Point } from "../world/part";
 import { FLIGHT, flightArc, flightPoint, flightScale, flightTilt } from "./markslayout";
 
 /**
- * Іконка `icon` летить дугою від `from` до `to` (px світу), починаючи за `delay` мс; долетівши, зникає й кличе `onArrive`,
- * якщо він є (сцена показує над сховищем, скільки в ньому тепер). Над баблами, під підписами котів (`WORLD_LAYERS.flying`).
+ * Іконка `icon` летить дугою від `from` до `to` (px світу), починаючи за `delay` мс; долетівши, зникає. Над баблами, під
+ * підписами котів (`WORLD_LAYERS.flying`).
  */
 export function flyIsoIcon(
   scene: Phaser.Scene,
@@ -21,7 +21,6 @@ export function flyIsoIcon(
   from: Point,
   to: Point,
   delay: number,
-  onArrive?: () => void,
 ): void {
   const arc = flightArc(from, to);
   const image = scene.add.image(from.x, from.y, iconTexture(icon)).setDepth(WORLD_LAYERS.flying).setVisible(false).addToDisplayList(layer);
@@ -45,7 +44,6 @@ export function flyIsoIcon(
     },
     onComplete: () => {
       image.destroy();
-      onArrive?.();
     },
   });
 }

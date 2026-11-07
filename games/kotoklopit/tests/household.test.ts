@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { bathe, giveTreat, nightlyCare, putCollar } from "../src/sim/care";
 import { changeLove, createCat, idleAct } from "../src/sim/cat";
 import { discardCarrier } from "../src/sim/carriers";
-import { addSupply, discard, discardAppliance, discardLock, freeSlots, place, receivePackages, tickDeliveries, utilitiesDue } from "../src/sim/economy";
+import { addSupply, boxCount, discard, discardAppliance, discardLock, freeSlots, landFlying, place, receivePackages, supplyCount, tickDeliveries, utilitiesDue } from "../src/sim/economy";
 import { advance, interact, newGame } from "../src/sim/game";
 import { bathMinutes, useProgress } from "../src/sim/actions";
 import { annoyingMesses, discardFeeder, emptyFeeder, FUR_SPOTS, furTufts, hygieneFactor, nightlyHousehold, robotProgress, tapWasher, tickHousehold, topUpTufts, tuftsOf, wearOut } from "../src/sim/household";
@@ -14,7 +14,7 @@ import { stun } from "../src/sim/body";
 import { tickModifiers } from "../src/sim/modifiers";
 import { addCat, giveStarterPack } from "../src/sim/night";
 import { createRng } from "../src/sim/rng";
-import { FEEDER_CAPACITY, HOUSEHOLD } from "../src/sim/config";
+import { FEEDER_CAPACITY, HOUSEHOLD, STORAGE_LIMITS } from "../src/sim/config";
 import type { GameEvent } from "../src/sim/events";
 import { checkout, room, unavailable } from "../src/sim/shop";
 import type { BowlItem, Cat, Feeder, LitterItem, Quality, Save, TraitLevel } from "../src/sim/types";
@@ -662,6 +662,7 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     interact(save);
     stop();
     expect(events).toContainEqual({ type: "feeder-emptied", item: bowl.id, products: ["catFood"] });
+    landFlying(save.current);
     expect(save.current.home.supplies.catFood.cheap).toBe(14);
     expect(feeder).toMatchObject({ food: 0, foodQuality: null });
     expect(bowl).toMatchObject({ food: 0, foodQuality: null });
@@ -676,6 +677,60 @@ describe("автогодівниці (§9.12, правка автора 2026-10-
     interact(save);
     again.stop();
     expect(again.events).toContainEqual({ type: "refused", object: `item:${bowl.id}`, reason: "need", need: "catfood" });
+  });
+
+  it("корм із годівниці лягає у сховище, лише коли долетів", () => {
+    const { save, bowl, feeder } = withFeeder("premium", 0);
+    Object.assign(feeder, { food: 12, foodQuality: "cheap", sterile: false });
+    Object.assign(bowl, { food: 2, foodQuality: "cheap", sterile: false });
+    const { events, stop } = recordEvents();
+    emptyFeeder(save.current, bowl, feeder);
+    expect(supplyCount(save.current, "catFood")).toBe(0);
+    expect(events.some((e) => e.type === "supply-landed")).toBe(false);
+    landFlying(save.current);
+    stop();
+    expect(save.current.home.supplies.catFood.cheap).toBe(14);
+    expect(events.filter((e) => e.type === "supply-landed")).toEqual([{ type: "supply-landed", product: "catFood" }]);
+  });
+
+  it("різна якість у годівниці й мисці — один політ, а різний корм — кожен свій", () => {
+    const same = withFeeder("premium", 0);
+    Object.assign(same.feeder, { food: 5, foodQuality: "premium", sterile: false });
+    Object.assign(same.bowl, { food: 2, foodQuality: "cheap", sterile: false });
+    emptyFeeder(same.save.current, same.bowl, same.feeder);
+    expect(same.save.current.home.flying?.map((f) => f.amounts)).toEqual([{ cheap: 2, premium: 5 }]);
+
+    const mixed = withFeeder("premium", 0);
+    Object.assign(mixed.feeder, { food: 5, foodQuality: "cheap", sterile: true });
+    Object.assign(mixed.bowl, { food: 2, foodQuality: "cheap", sterile: false });
+    const { events, stop } = recordEvents();
+    emptyFeeder(mixed.save.current, mixed.bowl, mixed.feeder);
+    stop();
+    expect(events).toContainEqual({ type: "feeder-emptied", item: mixed.bowl.id, products: ["sterileFood", "catFood"] });
+    const [first, second] = mixed.save.current.home.flying ?? [];
+    expect(first?.minutes).toBeLessThan(second?.minutes ?? 0);
+  });
+
+  it("сховище майже повне: що не влізло — одразу в ящики, летить лише решта", () => {
+    const { save, bowl, feeder } = withFeeder("premium", 0);
+    save.current.home.supplies.catFood = { cheap: STORAGE_LIMITS.catFood - 5, premium: 0 };
+    Object.assign(feeder, { food: 12, foodQuality: "cheap", sterile: false });
+    Object.assign(bowl, { food: 2, foodQuality: "cheap", sterile: false });
+    emptyFeeder(save.current, bowl, feeder);
+    expect(save.current.home.flying?.map((f) => f.amounts)).toEqual([{ cheap: 5, premium: 0 }]);
+    expect(boxCount(save.current, "catFood")).toBe(9);
+  });
+
+  it("сховище повне: увесь корм у ящиках, нічого не летить, а спорожнити вдалося", () => {
+    const { save, bowl, feeder } = withFeeder("premium", 0);
+    save.current.home.supplies.catFood = { cheap: STORAGE_LIMITS.catFood, premium: 0 };
+    Object.assign(feeder, { food: 3, foodQuality: "cheap", sterile: false });
+    const { events, stop } = recordEvents();
+    expect(emptyFeeder(save.current, bowl, feeder)).toEqual(["catFood"]);
+    stop();
+    expect(save.current.home.flying).toBeUndefined();
+    expect(boxCount(save.current, "catFood")).toBe(3);
+    expect(events).toContainEqual({ type: "feeder-emptied", item: bowl.id, products: [] });
   });
 
   it("годівниця не за годинами, а завжди тримає миску повною, доки в ній є корм", () => {
