@@ -54,7 +54,8 @@ export const group: SoundGroup = {
     "work-start": { files: ["work-start"], gain: 0.15 },
     keyboard: { files: ["keyboard"], loop: true, gain: 0.55 },
     murmur: { files: ["murmur"], loop: true, gain: 0.28 },
-    ring: { files: ["ring"], loop: true, gain: 0.55 },
+    // Дзвінок — сама картка «Мама дзвонить»: поки вона висить, час стоїть, а дзвінок не тихне.
+    ring: { files: ["ring"], loop: true, gain: 0.55, ui: true },
     coin: { files: ["coin"], gain: 0.75, pitch: 0.03 },
     "patience-warning": { files: ["patience-warning"], gain: 0.8, voices: 1 },
     "patience-out": { files: ["patience-out"], gain: 1, voices: 1 },

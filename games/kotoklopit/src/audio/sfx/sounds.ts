@@ -13,10 +13,11 @@ import { GROUPS } from "./registry";
 import type { Cue, LoopCue, SceneMoment, SoundDef, SoundGroup } from "./types";
 
 /**
- * Що зараз звучить: усе (`live`), лише інтерфейс (`away`: персонаж у поїздці, квартири не чути) чи нічого (`silent`:
- * засинання й ніч — вона прокручується за мить, і її події не мають звучати разом).
+ * Що зараз звучить: усе (`live`); усе, але петлі світу тихо (`paused`: картка чи пауза — час стоїть); лише інтерфейс
+ * (`away`: персонаж у поїздці, квартири не чути) чи нічого (`silent`: засинання й ніч — вона прокручується за мить, і її
+ * події не мають звучати разом).
  */
-export type SoundMode = "live" | "away" | "silent";
+export type SoundMode = "live" | "paused" | "away" | "silent";
 
 export interface SoundScene {
   mode(): SoundMode;
@@ -138,7 +139,7 @@ export class Sounds {
       if (!cues) continue;
       for (const cue of cues) {
         const def = group.sounds[cue.sound];
-        if (def && (mode === "live" || def.ui)) this.fire(group, cue, state);
+        if (def && (mode !== "away" || def.ui)) this.fire(group, cue, state);
       }
     }
   }
@@ -184,7 +185,7 @@ export class Sounds {
         if (!cues) continue;
         for (const cue of cues) {
           const def = group.sounds[cue.sound];
-          if (def?.loop && (mode === "live" || def.ui)) wanted.set(`${group.id}/${cue.key}`, { group, cue, def });
+          if (def?.loop && (mode !== "away" || def.ui)) wanted.set(`${group.id}/${cue.key}`, { group, cue, def });
         }
       }
     }
@@ -197,7 +198,7 @@ export class Sounds {
     const listener = state.trip ? null : state.character.body;
     for (const [key, { group, cue, def }] of wanted) {
       const place = placement(listener, soundPoint(state, cue.at));
-      const gain = (def.gain ?? 1) * (cue.gain ?? 1) * place.gain;
+      const gain = (def.gain ?? 1) * (cue.gain ?? 1) * place.gain * (mode === "paused" && !def.ui ? SFX.pausedLoops : 1);
       const playing = this.loops.get(key);
       if (playing) {
         playing.voice.set(gain, place.pan);

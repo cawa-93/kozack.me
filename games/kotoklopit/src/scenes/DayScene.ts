@@ -378,7 +378,8 @@ export class DayScene extends Phaser.Scene {
   /** Що зараз звучить (§11.4а): засинання й ніч — тиша, поїздка — лише інтерфейс. */
   private soundMode(): SoundMode {
     if (this.asleep !== null) return "silent";
-    return this.state.trip || this.state.end !== null ? "away" : "live";
+    if (this.state.trip || this.state.end !== null) return "away";
+    return this.overlay.isOpen || this.session.paused ? "paused" : "live";
   }
 
   /** Прибрати засинання: очі, наїзд і темряву (і темряву після дороги). */
