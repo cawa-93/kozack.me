@@ -68,6 +68,8 @@ async function verify(base: string, playlist: Playlist): Promise<void> {
   if (!id) throw new Error("Список треків порожній");
   const url = `${base}${id}/0.mp3`;
   const response = await fetch(url, { headers: { Origin: GAME_ORIGIN } });
+  // Тіло не потрібне, але незакрита відповідь тримає з'єднання, і скрипт не завершується.
+  await response.body?.cancel();
   const problems = [
     response.ok ? null : `статус ${response.status}`,
     response.headers.get("access-control-allow-origin") === "*" ? null : `Access-Control-Allow-Origin: ${response.headers.get("access-control-allow-origin")}`,
